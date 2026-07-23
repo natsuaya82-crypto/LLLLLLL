@@ -1,0 +1,14 @@
+# node
+node_modules/
+# fastlane / build artifacts
+build/
+*.ipa
+*.dSYM.zip
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/test_output/
+# macOS
+.DS_Store
+# Xcode user data
+xcuserdata/
+*.xcuserstate

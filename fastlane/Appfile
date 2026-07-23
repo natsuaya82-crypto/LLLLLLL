@@ -1,0 +1,2 @@
+app_identifier("com.tokinets.lingua")
+# Apple ID / Team は App Store Connect API キー（環境変数）で認証するため未記載でOK

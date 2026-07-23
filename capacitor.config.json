@@ -1,0 +1,6 @@
+{
+  "appId": "com.tokinets.lingua",
+  "appName": "Lingua",
+  "webDir": "www",
+  "server": { "iosScheme": "capacitor" }
+}
