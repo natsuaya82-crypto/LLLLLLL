@@ -271,7 +271,7 @@ button{font-family:inherit;cursor:pointer}
       いま入っているものは全部「その人が自分で書いたもの」だけ。初期辞書は無い。
    ========================================================================= */
 var LS_W='lingua.words', LS_N='lingua.lang', LS_S='lingua.set', LS_L='lingua.lines';
-var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:false, order:'SOV', read:'both', voice:''};
+var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:false, order:'SOV', read:'both', voice:'', ui:''};
 
 try{ var a=JSON.parse(localStorage.getItem(LS_W)||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
 try{ var l=JSON.parse(localStorage.getItem(LS_L)||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
@@ -456,7 +456,66 @@ function sylKana(sy){
 }
 function kana(word){ return syl(word).map(sylKana).join(''); }
 
-/* ---- 発音記号（IPA）。カナは日本語話者むけの近い音、IPAが本当の音。 ---- */
+/* ---- 英語話者むけの読み（respelling）------------------------------------
+   カタカナと同じ役目。IPA が読めない人に、自分の母語の綴りで近い音を見せる。
+   カタカナが日本語話者むけの近似であるように、これは英語話者むけの近似。
+   母音は「大陸式」（a=ah, e=eh, i=ee…）で、第1音節を大文字にして強勢を示す。 */
+var RE_V={ae:'ay',ai:'eye',ao:'ow',au:'ow',ea:'ay-ah',ei:'ay',eo:'ay-oh',eu:'eh-oo',
+          ia:'ee-ah',ie:'ee-eh',io:'ee-oh',iu:'ew',oa:'oh-ah',oe:'oh-eh',oi:'oy',ou:'oh',
+          ua:'wah',ue:'weh',ui:'wee',uo:'woh',ay:'ay',ey:'ay',oy:'oy',uy:'wee',
+          aa:'ah',ee:'ee',ii:'ee',oo:'oh',uu:'oo',yy:'ee',
+          a:'ah',e:'eh',i:'ee',o:'oh',u:'oo',y:'ee'};
+var RE_C={b:'b',ch:'ch',d:'d',f:'f',g:'g',h:'h',j:'y',k:'k',l:'l',m:'m',n:'n',
+          p:'p',r:'r',s:'s',sh:'sh',t:'t',th:'th',v:'v',w:'w',z:'z',
+          c:'k',q:'k',x:'ks',y:'y'};
+function reC(str){ return splitC(str).map(function(c){ return RE_C[c]||c; }).join(''); }
+function reV(str){
+  if(RE_V[str]) return RE_V[str];
+  var out=[], i=0;
+  while(i<str.length){
+    var two=str.substr(i,2);
+    if(two.length===2 && RE_V[two]){ out.push(RE_V[two]); i+=2; }
+    else { out.push(RE_V[str[i]]||str[i]); i++; }
+  }
+  return out.join('-');
+}
+function respSyl(sy){
+  var p=parts(sy);
+  if(!p) return reC(sy);
+  return reC(p.on)+reV(p.nu)+reC(p.co);
+}
+function resp(word){
+  return syl(word).map(respSyl).map(function(s,i){
+    return i===0? s.toUpperCase() : s;      /* 第1音節に強勢を置いて読ませる */
+  }).join('-');
+}
+
+/* ---- 読みの近似は、UIの言語ごとに差し替える -----------------------------
+   IPA は世界共通なので触らない。「読み」だけが母語ごとに変わる。
+   ここに1行足せば、ハングルでも拼音でも同じ仕組みで足せる。 */
+var APPROX={
+  ja:{word:kana, syl:sylKana},
+  en:{word:resp, syl:respSyl}
+};
+/* 読みの器の名前。ここに1行足せば、ハングルでも拼音でも同じ仕組みで増やせる */
+var LANGS={
+  ja:{label:'日本語', rdName:'カタカナ',
+      pos:{n:'名詞', v:'動詞', adj:'形容詞', x:'その他'}, all:'すべて'},
+  en:{label:'English', rdName:'respelling',
+      pos:{n:'noun', v:'verb', adj:'adjective', x:'other'}, all:'all'}
+};
+function autoLang(){
+  var l=String((navigator.language||navigator.userLanguage||'en')).toLowerCase();
+  return APPROX[l.split('-')[0]] ? l.split('-')[0] : 'en';
+}
+function uiLang(){ return SET.ui || autoLang(); }
+function approx(){ return APPROX[uiLang()] || APPROX.en; }
+function rd(word){ return approx().word(word); }        /* その言語むけの読み */
+function rdSyl(sy){ return approx().syl(sy); }
+/* 検索は「つづり・意味・読み・発音記号」のどれに当たっても拾う */
+function srcKey(w){ return (w.hw+' '+(w.mn||'')+' '+rd(w.hw)+' '+ipa(w.hw)).toLowerCase(); }
+
+/* ---- 発音記号（IPA）。読みは母語むけの近い音、IPAが本当の音。 ---- */
 var IPA_C={b:'b',ch:'tʃ',d:'d',f:'f',g:'ɡ',h:'h',j:'j',k:'k',l:'l',m:'m',n:'n',
            p:'p',r:'r',s:'s',sh:'ʃ',t:'t',th:'θ',v:'v',w:'w',z:'z',
            c:'k',q:'k',x:'ks',y:'j'};
@@ -489,7 +548,7 @@ function linked(words){
   }
   var chunks=out.split(' ');
   return {chunks:chunks,
-          kana: chunks.map(kana).join(' '),
+          rd:   chunks.map(rd).join(' '),
           ipa: '/'+chunks.map(ipaWord).join(' ')+'/',
           isLink:any};
 }
@@ -498,14 +557,14 @@ function readMode(){ return SET.read||'both'; }
 function readOut(word){
   var m=readMode();
   if(m==='ipa')  return ipa(word);
-  if(m==='kana') return kana(word);
-  return ipa(word)+'　'+kana(word);
+  if(m==='kana') return rd(word);
+  return ipa(word)+'　'+rd(word);
 }
 function readLink(L){
   var m=readMode();
   if(m==='ipa')  return L.ipa;
-  if(m==='kana') return L.kana;
-  return L.ipa+'<br><span class="kn">'+esc(L.kana)+'</span>';
+  if(m==='kana') return L.rd;
+  return L.ipa+'<br><span class="kn">'+esc(L.rd)+'</span>';
 }
 /* 音の在庫の1マス。文字とIPAを並べて出す（文字＝つづり、IPA＝その実際の音） */
 function phChip(c,cls,isVowel){
@@ -584,7 +643,7 @@ function pick(o){
   return e[0][0];
 }
 function taken(){
-  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['読:'+kana(w.hw)]=1; }); return s;
+  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['音:'+ipa(w.hw)]=1; }); return s;
 }
 function makeWord(pos, A, tk){
   A=A||analyze(); tk=tk||taken();
@@ -604,9 +663,9 @@ function makeWord(pos, A, tk){
     } else if(Object.keys(A.co).length && Math.random()<.35){ w+=pick(A.co); }
     if(w.length< (t<70?4:3)) continue;   /* まず4文字以上で探し、無理なら3文字まで許す */
     if(tk[w]) continue;
-    var rd='読:'+kana(w);
-    if(tk[rd]) continue;
-    tk[w]=1; tk[rd]=1;
+    var key='音:'+ipa(w);
+    if(tk[key]) continue;
+    tk[w]=1; tk[key]=1;
     return w.charAt(0).toUpperCase()+w.slice(1);
   }
   return null;
@@ -677,11 +736,11 @@ function nextHint(){
   var A=analyze(), byPos={};
   WORDS.forEach(function(w){ byPos[w.pos]=(byPos[w.pos]||0)+1; });
   var need=null;
-  ['名詞','動詞','形容詞'].forEach(function(p){
+  ['n','v','adj'].forEach(function(p){
     if(need) return;
     if(!A.finalRule[p] && (byPos[p]||0)<3) need={p:p, n:3-(byPos[p]||0)};
   });
-  if(need) return need.p+'をあと'+need.n+'語書くと、「'+need.p+'はこう終わる」という規則が出てきます。';
+  if(need) return posLabel(need.p)+'をあと'+need.n+'語書くと、「'+posLabel(need.p)+'はこう終わる」という規則が出てきます。';
   if(WORDS.length<8) return 'ことばが増えるほど、拾える規則も増えます。';
   return null;
 }
@@ -697,7 +756,40 @@ function toast(m){
   clearTimeout(tt); tt=setTimeout(function(){t.classList.remove('on');},1900);
 }
 function go(r){ route=r; render(); window.scrollTo(0,0); }
-var POS=['名詞','動詞','形容詞','その他'];
+/* ---- 品詞は「鍵」で保存する ---------------------------------------------
+   保存されるのは n / v / adj / x という短い鍵だけで、画面に出る「名詞」
+   「noun」は、そのときの言語の見出しにすぎない。読みの近似と同じ考えかた。
+   こうしておかないと、UIを訳したときに、すでに保存された辞書の中に
+   日本語が残ってしまって、二度と直せなくなる。 */
+var POS=['n','v','adj','x'];
+var POS_ALL='*';                       /* 「すべて」の鍵 */
+function posLabel(k){
+  var t=(LANGS[uiLang()]||LANGS.en).pos;
+  if(k===POS_ALL) return (LANGS[uiLang()]||LANGS.en).all;
+  return t[k]||k;
+}
+/* CSVで来た「名詞 / noun / n」を、どれでも鍵として受ける */
+function posKey(s){
+  var v=String(s||'').trim();
+  if(POS.indexOf(v)>=0) return v;
+  var k=null;
+  Object.keys(LANGS).forEach(function(L){
+    Object.keys(LANGS[L].pos).forEach(function(p){
+      if(!k && LANGS[L].pos[p]===v) k=p;
+    });
+  });
+  return k||'n';
+}
+/* 前のかたち（日本語の literal）で保存された辞書を、そっと鍵に置き換える。
+   一度でも開けば直るので、使う人には何も起きない。 */
+(function migratePos(){
+  var moved=0;
+  WORDS.forEach(function(w){
+    if(POS.indexOf(w.pos)>=0) return;
+    w.pos=posKey(w.pos); moved++;
+  });
+  if(moved) save();
+})();
 
 /* =========================================================================
    5. オンボーディング（唯一、最初から在る画面）
@@ -722,7 +814,7 @@ function obAdd(){
   var w=String(ob.hw).replace(/[^A-Za-z]/g,'');
   if(w.length<2 || !ob.mn){ toast('つづりと意味を入れてください'); return; }
   w=w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
-  var pos = (ob.mn==='愛する'||ob.mn==='歩く') ? '動詞' : '名詞';
+  var pos = (ob.mn==='愛する'||ob.mn==='歩く') ? 'v' : 'n';
   WORDS.push({hw:w, mn:ob.mn, pos:pos, at:Date.now()});
   save();
   ob.mn=''; ob.hw='';
@@ -829,7 +921,7 @@ function vHome(){
           ? '<button class="recent" onclick="go(\'sent\')">'+
             '<div class="rh">最近つくった一文</div>'+
             '<div class="line">'+esc(lastLine.ws.join(' '))+'</div>'+
-            '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).kana : linked(lastLine.ws).ipa)+'</div></button>'
+            '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).rd : linked(lastLine.ws).ipa)+'</div></button>'
           : last? '<button class="recent" onclick="go(\'words\')">'+
             '<div class="rh">最後に書いたことば</div>'+
             '<div class="line">'+esc(last.hw)+'</div>'+
@@ -851,7 +943,7 @@ var q='';
 function vWords(){
   var items=WORDS.slice().sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));});
   if(q) items=items.filter(function(w){
-    return (w.hw+w.mn+kana(w.hw)).toLowerCase().indexOf(q.toLowerCase())>=0;
+    return srcKey(w).indexOf(q.toLowerCase())>=0;
   });
   var body = items.length ? groupHTML(items)
     : '<div class="empty"><div class="eb">'+(q?'見つかりません':'まだ一語もありません')+'</div></div>';
@@ -868,7 +960,7 @@ function setQ(v){
   q=v;
   var el=document.querySelector('.body');
   var items=WORDS.slice().sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));})
-    .filter(function(w){ return !q || (w.hw+w.mn+kana(w.hw)).toLowerCase().indexOf(q.toLowerCase())>=0; });
+    .filter(function(w){ return !q || srcKey(w).indexOf(q.toLowerCase())>=0; });
   el.innerHTML = items.length? groupHTML(items) : '<div class="empty"><div class="eb">見つかりません</div></div>';
 }
 function groupHTML(items){
@@ -879,7 +971,7 @@ function groupHTML(items){
     out+='<button class="entry" onclick="openWord(\''+esc(w.hw)+'\')">'+
       '<div class="hwrow"><span class="hw">'+esc(w.hw)+'</span>'+
       '<span class="rd">'+esc(readOut(w.hw))+'</span>'+
-      '<span class="pos">'+esc(w.pos)+'</span></div>'+
+      '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
       '<div class="mn">'+esc(w.mn)+'</div></button>';
   });
   return out;
@@ -949,7 +1041,7 @@ function setOrder(id){ SET.order=id; save(); render(); }
 
 /* 文は自由に編む。語順は「決めた規則」で、後から答え合わせに使う。
    長さも語数も縛らない。同じ語を何度でも置ける。 */
-var comp=[], compSel=-1, compQ='', compPos='すべて', compSeeded=false;
+var comp=[], compSel=-1, compQ='', compPos=POS_ALL, compSeeded=false;
 function compAdd(hw){ comp.push(hw); compSel=comp.length-1; render(); }
 function compPick(i){ compSel = (compSel===i? -1 : i); render(); }
 function compMove(d){
@@ -967,9 +1059,9 @@ function setCompQ(v){
 }
 function palList(){
   var list=WORDS.filter(function(w){
-    if(compPos!=='すべて' && w.pos!==compPos) return false;
+    if(compPos!==POS_ALL && w.pos!==compPos) return false;
     if(!compQ) return true;
-    return (w.hw+w.mn+kana(w.hw)).toLowerCase().indexOf(compQ.toLowerCase())>=0;
+    return srcKey(w).indexOf(compQ.toLowerCase())>=0;
   }).sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));});
   if(!list.length) return '<div class="note">見つかりません。</div>';
   return list.map(function(w){
@@ -983,11 +1075,11 @@ function palList(){
 function orderCheck(){
   var ws=comp.map(findWord).filter(Boolean);
   if(ws.length<2) return null;
-  var verbs=ws.filter(function(w){return w.pos==='動詞';});
-  var nouns=ws.filter(function(w){return w.pos==='名詞';});
+  var verbs=ws.filter(function(w){return w.pos==='v';});
+  var nouns=ws.filter(function(w){return w.pos==='n';});
   if(verbs.length!==1 || nouns.length<1 || nouns.length>2 || ws.length!==verbs.length+nouns.length) return null;
   var seq=ws.map(function(w){
-    if(w.pos==='動詞') return 'V';
+    if(w.pos==='v') return 'V';
     return (nouns.indexOf(w)===0)?'S':'O';
   }).join('');
   var want=orderDef().seq.filter(function(k){
@@ -1000,8 +1092,8 @@ function orderCheck(){
 function fixOrder(){
   var c=orderCheck(); if(!c||c.ok) return;
   var ws=comp.map(findWord).filter(Boolean);
-  var verbs=ws.filter(function(w){return w.pos==='動詞';});
-  var nouns=ws.filter(function(w){return w.pos==='名詞';});
+  var verbs=ws.filter(function(w){return w.pos==='v';});
+  var nouns=ws.filter(function(w){return w.pos==='n';});
   var slot={V:verbs[0], S:nouns[0], O:nouns[1]};
   comp=orderDef().seq.map(function(k){ return slot[k]?slot[k].hw:null; }).filter(Boolean);
   compSel=-1; save(); render(); toast('決めた語順に並べ直しました');
@@ -1012,7 +1104,7 @@ function vSent(){
      一度でも入れたら二度と勝手に入れない（「全部消す」が効かなくなるため） */
   if(!compSeeded && !comp.length && WORDS.length>=2){
     compSeeded=true;
-    var nouns=byPos('名詞'), verbs=byPos('動詞');
+    var nouns=byPos('n'), verbs=byPos('v');
     if(nouns.length && verbs.length){
       var vf=null, i;
       for(i=0;i<nouns.length;i++) if(isV(String(nouns[i].hw).charAt(0).toLowerCase())){ vf=nouns[i]; break; }
@@ -1077,8 +1169,8 @@ function vSent(){
 
     /* --- 3. ことばを選ぶ --- */
     '<div class="sec">ことばを選ぶ</div>'+
-    '<div class="segs">'+['すべて'].concat(POS).map(function(p){
-      return '<button class="seg'+(p===compPos?' on':'')+'" onclick="setCompPos(\''+p+'\')">'+p+'</button>';
+    '<div class="segs">'+[POS_ALL].concat(POS).map(function(p){
+      return '<button class="seg'+(p===compPos?' on':'')+'" onclick="setCompPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     '<div class="search"><span style="color:var(--txm)">⌕</span>'+
     '<input placeholder="つづり・意味で探す" value="'+esc(compQ)+'" oninput="setCompQ(this.value)"></div>'+
@@ -1123,7 +1215,7 @@ function dropLine(i){ LINES.splice(i,1); save(); render(); toast('消しまし�
 /* =========================================================================
    10. つくる（規則にそって量産＝無料。AI一括生成は上位プラン）
    ========================================================================= */
-var mkPos='名詞', cands=[];
+var mkPos='n', cands=[];
 function buildCands(n){
   var A=analyze(), tk=taken(); cands=[];
   for(var i=0;i<(n||8);i++){
@@ -1141,11 +1233,11 @@ function vMake(){
     '<div class="chap"><span class="rn">V</span><span class="ct">Make</span></div></div>'+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
-      return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+p+'</button>';
+      return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     '<div class="note">'+(rule
-      ? 'いまの'+mkPos+'の規則（<span style="color:var(--gold)">-'+rule.ch+'</span> で終わる）を守って作ります。'
-      : 'まだ'+mkPos+'の規則が定まっていないので、いまある音の在庫だけを使って作ります。')+'</div>'+
+      ? 'いまの'+posLabel(mkPos)+'の規則（<span style="color:var(--gold)">-'+rule.ch+'</span> で終わる）を守って作ります。'
+      : 'まだ'+posLabel(mkPos)+'の規則が定まっていないので、いまある音の在庫だけを使って作ります。')+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
         '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?'✓':'')+'</button>'+
@@ -1198,9 +1290,9 @@ function vSettings(){
     '</div>'+
     '<div class="note">「システム」は端末の設定に合わせて自動で切り替わります。</div>'+
 
-    '<div class="sec">読みの表記</div>'+
+    '<div class="sec">ことばの読み</div>'+
     '<div class="pick">'+
-      [['ipa','発音記号'],['kana','カタカナ'],['both','両方']].map(function(m){
+      [['ipa','発音記号'],['kana',LANGS[uiLang()].rdName],['both','両方']].map(function(m){
         return '<button class="'+(readMode()===m[0]?'on':'')+'" onclick="setRead(\''+m[0]+'\')">'+m[1]+'</button>';
       }).join('')+
     '</div>'+
@@ -1210,7 +1302,23 @@ function vSettings(){
       '<b style="color:var(--tx);font-weight:500">/ /</b> の中の '+
       '<b style="color:var(--tx);font-weight:500">.</b> は音節の切れ目、'+
       '<b style="color:var(--tx);font-weight:500">ː</b> は音を伸ばす印。'+
-      'カタカナは日本語話者向けの近似で、正確なのは発音記号のほうです。</div>'+
+      '正確なのは発音記号のほうで、'+LANGS[uiLang()].rdName+'は読める人むけの近似です。</div>'+
+
+    '<div class="sec">読みを出すことば</div>'+
+    '<div class="pick">'+
+      Object.keys(LANGS).map(function(k){
+        return '<button class="'+(uiLang()===k?'on':'')+'" onclick="setUi(\''+k+'\')">'+LANGS[k].label+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+
+      esc(WORDS.length?WORDS[0].hw:'Aelin')+'</span>'+
+      Object.keys(LANGS).map(function(k){
+        return '<span class="pvk" style="font-size:.82rem;margin-left:10px">'+
+          esc(LANGS[k].rdName)+'：'+esc(APPROX[k].word(WORDS.length?WORDS[0].hw:'Aelin'))+'</span>';
+      }).join('')+'</div>'+
+    '<div class="note">発音記号は世界共通なので、どの言語でも同じものが出ます。'+
+      '変わるのは「読み」だけ。日本語ならカタカナ、英語なら <b style="color:var(--tx);font-weight:500">AY-lin</b> の'+
+      'ような綴り直し（大文字が強く読むところ）。既定は端末の言語に合わせます。</div>'+
 
     '<div class="sec">声</div>'+
     '<button class="set"><span class="sl">いま使う声</span><span class="sv">'+esc(voiceLabel())+'</span></button>'+
@@ -1255,6 +1363,7 @@ function vSettings(){
 }
 function setTheme(t){ SET.theme=t; save(); applyTheme(); render(); }
 function setRead(m){ SET.read=m; save(); render(); }
+function setUi(l){ SET.ui=l; save(); render(); }
 function setVoice(v){ SET.voice=v; save(); render(); var t=WORDS.length?WORDS[0].hw:'Aelin'; speak(t); }
 function wipe(){
   if(!confirm('つくったことばを全部消して、最初からやり直しますか？')) return;
@@ -1292,7 +1401,7 @@ function choose(id){
 /* =========================================================================
    13. ことばを書くシート／CSV
    ========================================================================= */
-var addPos='名詞';
+var addPos='n';
 function openAdd(){
   if(!capOK(1)){ go('plans'); toast('無料プランは'+FREE_LIMIT+'語までです'); return; }
   document.getElementById('sheet').innerHTML=
@@ -1304,7 +1413,7 @@ function openAdd(){
     '<button onclick="sayField()">▶ 聞く</button></div>'+
     '<div class="row2"><div class="field"><label>意味</label><input id="f-mn" placeholder="星"></div>'+
     '<div class="field"><label>品詞</label><select id="f-pos">'+
-    POS.map(function(p){return '<option'+(p===addPos?' selected':'')+'>'+p+'</option>';}).join('')+
+    POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
     '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">加える</button>'+
     '<button class="lock" onclick="closeSheet();go(\'plans\')"><span class="lk">✧</span>'+
@@ -1357,19 +1466,19 @@ function openWord(hw){
     '<div class="whd"><span class="whw">'+esc(w.hw)+'</span>'+
       '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">▶ 聞く</button></div>'+
     '<div class="wsub">'+esc(ipa(w.hw))+'</div>'+
-    '<div class="wsub2">'+esc(kana(w.hw))+'</div>'+
+    '<div class="wsub2">'+esc(rd(w.hw))+'</div>'+
     '<div class="sec" style="margin:18px 0 8px">音の切れ目</div>'+
     '<div class="sylrow">'+sy.map(function(s,i){
       var d=i===0? s.charAt(0).toUpperCase()+s.slice(1) : s;
       return '<span class="sy"><span class="sya">'+esc(d)+'</span>'+
         '<span class="syi">'+esc(ipaSyl(s))+'</span>'+
-        '<span class="syk">'+esc(sylKana(s))+'</span></span>';
+        '<span class="syk">'+esc(rdSyl(s))+'</span></span>';
     }).join('<span class="sysep">·</span>')+'</div>'+
-    '<div class="note" style="margin-top:8px">'+sy.length+'音節。読みはこの切れ目から自動で決まっています。<br>上段が発音記号（IPA）、下段が日本語話者向けのだいたいの読み。</div>'+
+    '<div class="note" style="margin-top:8px">'+sy.length+'音節。読みはこの切れ目から自動で決まっています。<br>上段が発音記号（IPA）、下段が'+esc(LANGS[uiLang()].label)+'話者向けのだいたいの読み（'+esc(LANGS[uiLang()].rdName)+'）。</div>'+
     '<div class="sec" style="margin:20px 0 8px">なおす</div>'+
     '<div class="row2"><div class="field"><label>意味</label><input id="w-mn" value="'+esc(w.mn||'')+'" placeholder="まだ決めていない"></div>'+
     '<div class="field"><label>品詞</label><select id="w-pos">'+
-    POS.map(function(p){return '<option'+(p===w.pos?' selected':'')+'>'+p+'</option>';}).join('')+
+    POS.map(function(p){return '<option value="'+p+'"'+(p===w.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
     '<button class="btn" style="width:100%;margin-top:4px" onclick="saveWord()">なおす</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
@@ -1391,8 +1500,8 @@ function delWord(){
 }
 
 function exportCSV(){
-  var csv='spelling,meaning,pos,ipa,kana\n'+WORDS.map(function(w){
-    return [w.hw,w.mn,w.pos,ipa(w.hw),kana(w.hw)].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
+  var csv='spelling,meaning,pos,ipa,reading\n'+WORDS.map(function(w){
+    return [w.hw,w.mn,posLabel(w.pos),ipa(w.hw),rd(w.hw)].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
   }).join('\n');
   try{
     var b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a');
@@ -1404,7 +1513,7 @@ function openImport(){
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div><h3>CSVから取り込む</h3>'+
     '<div class="note" style="margin-bottom:10px">1行に「つづり,意味,品詞」。1行目に見出しがあっても大丈夫です。</div>'+
-    '<div class="field"><textarea id="f-csv" placeholder="Aelin,星,名詞&#10;Naeth,水,名詞"></textarea></div>'+
+    '<div class="field"><textarea id="f-csv" placeholder="Aelin,'+(uiLang()==='ja'?'星,名詞&#10;Naeth,水,名詞':'star,noun&#10;Naeth,water,noun')+'"></textarea></div>'+
     '<button class="btn" style="width:100%" onclick="doImport()">取り込む</button>';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
@@ -1419,7 +1528,7 @@ function doImport(){
     if(/^spelling$/i.test(c[0])) return;
     hw=hw.charAt(0).toUpperCase()+hw.slice(1).toLowerCase();
     if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})) return;
-    WORDS.push({hw:hw, mn:c[1]||'', pos:(POS.indexOf(c[2])>=0?c[2]:'名詞'), at:Date.now()});
+    WORDS.push({hw:hw, mn:c[1]||'', pos:posKey(c[2]), at:Date.now()});
     n++;
   });
   save(); closeSheet(); cands=[]; render();
