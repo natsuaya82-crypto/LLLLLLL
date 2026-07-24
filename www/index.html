@@ -138,6 +138,11 @@ let WORDS=[
   {hw:'Vaera',rd:'ヴァエラ',mn:'空',pos:'名詞'},
   {hw:'Ythe',rd:'イーゼ',mn:'風',pos:'名詞'},
 ];
+// --- persistence (localStorage): 追加した語や言語名を保存 ---
+const LS_W='lingua.words', LS_N='lingua.lang';
+try{const w=JSON.parse(localStorage.getItem(LS_W)); if(Array.isArray(w)&&w.length) WORDS=w;}catch(e){}
+try{const n=localStorage.getItem(LS_N); if(n) langName=n;}catch(e){}
+function save(){try{localStorage.setItem(LS_W,JSON.stringify(WORDS));localStorage.setItem(LS_N,langName);}catch(e){}}
 const TOC=[
   {n:'I', t:'ことば', v:()=>WORDS.length+'', k:'words', route:'words'},
   {n:'II', t:'文字', v:()=>'つくる', flag:true, k:'文字体系', route:'soon'},
@@ -164,7 +169,7 @@ function go(route,dir){
   else renderSoon(route);
   window.scrollTo(0,0);
 }
-function editName(){const v=prompt('言語名',langName);if(v&&v.trim()){langName=v.trim();renderHome();}}
+function editName(){const v=prompt('言語名',langName);if(v&&v.trim()){langName=v.trim();save();renderHome();}}
 
 /* ---------------- HOME ---------------- */
 function renderHome(dir){
@@ -248,7 +253,7 @@ function addWord(){
   if(!hw||!mn){toast('語形と意味を入れてください');return;}
   WORDS.unshift({hw:hw.charAt(0).toUpperCase()+hw.slice(1),rd:document.getElementById('f-rd').value.trim(),mn,pos:document.getElementById('f-pos').value});
   document.getElementById('f-hw').value='';document.getElementById('f-mn').value='';document.getElementById('f-rd').value='';
-  closeS();
+  closeS(); save();
   if(current==='words')renderWords();
   toast('「'+hw+'」を辞書に加えました');
 }

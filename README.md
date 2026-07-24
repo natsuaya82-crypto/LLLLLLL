@@ -114,3 +114,20 @@ lingua/
 
 ## 署名で詰まったら
 手順書の「ハマりどころ集」を参照。特に **Bundle ID / プロファイル名 `Lingua Distribution` / Team ID の完全一致**を指差し確認。`does not support provisioning profiles` が出たら、xcodebuild に署名引数を渡していないか（＝pbxproj側で持てているか）を確認。
+
+---
+
+# Web版プレビュー（Vercel）— 開発中にスマホで触る用
+
+App Store版とは別に、**同じ `www/index.html` を Vercel で公開**して、開発中いつでもスマホで最新を触れるようにできます（審査・証明書・Mac不要）。
+
+- リポジトリ直下の `vercel.json` により、**Vercelは追加設定ゼロ**で `www/` を配信します（`public/` にコピーして静的公開）。
+- Vercel でこのGitHubリポジトリをインポート → ドメインに `lingua.tokinets.com` を追加するだけ。
+- 以降は **main へ push するたび自動で本番反映**。iOSアプリのビルドは `build-*` タグの時だけなので、**普段のpush＝Web更新／タグ＝アプリ配信**ときれいに分かれます。
+- 追加した単語・言語名は端末に**保存(localStorage)**されるので、リロードしても消えません。
+
+## 帰宅後の go-live 手順（PCがあれば5分）
+1. このリポジトリを GitHub に push（`git push`。いつもの保存済みログインでOK）
+2. Vercel → Add New → Project → このリポジトリをインポート（設定はそのままでOK。`vercel.json` が効きます）
+3. Vercel の Project → Settings → Domains → `lingua.tokinets.com` を追加
+4. 反映を確認 → 以降は push するたび自動更新
