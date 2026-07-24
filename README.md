@@ -48,31 +48,65 @@ syllable by syllable, and II Sound attaches an IPA symbol to every consonant and
 
 ### Multilingual (what depends on a language, and what doesn't)
 
+Lingua ships in **ten interface languages**, and each one carries **its own way of writing the reading**
+— not a translated interface wrapped around an English pronunciation.
+
+| | language | the reading is written as | `Aelin` becomes |
+|---|---|---|---|
+| `en` | English | respelling | `AY-leen` |
+| `es` | Español | transcripción figurada | `AE-lin` |
+| `pt` | Português | transcrição figurada | `AE-lin` |
+| `fr` | Français | transcription figurée | `AÉ-linne` |
+| `de` | Deutsch | Lautschreibung | `AJEH-lien` |
+| `it` | Italiano | trascrizione figurata | `AE-lin` |
+| `ru` | Русский | практическая транскрипция | `А́элин` |
+| `zh` | 中文（简体） | 汉字音译 | `艾林` |
+| `ko` | 한국어 | 한글 표기 | `아엘린` |
+| `ja` | 日本語 | カタカナ | `アエリン` |
+
+Each of those is written the way that language actually writes a foreign name, and each is wrong in its
+own honest way. French doubles a coda nasal and hangs a mute `e` off a final consonant so the reader does
+not swallow it (`Wyn` → `OUINNE`). German wedges a `j` into a hiatus its orthography would otherwise
+hijack and writes prevocalic /s/ as `ss`, because German `s` before a vowel is /z/ (`Silva` → `SSIEL-wa`).
+Spanish reaches for `qu`, `c` and `z` where the letter alone would palatalise. Russian is a practical
+transcription with a combining acute on the stress. Korean composes real hangul blocks
+(`0xAC00 + (initial×21 + medial)×28 + final`). Chinese follows the shape of the 新华社
+《世界人名翻译大辞典》 tables — a grid of consonant rows against vowel columns, one character per cell,
+with every cluster and every coda but `-n` broken out into a syllable of its own, so the mapping can be
+corrected cell by cell.
+
 There are three layers, and **only the middle one depends on the reader's language**.
 
 1. **IPA — language-independent.** The symbols are the same everywhere, so anyone sees the same thing.
    That is why it is the core. Duplicate detection (`taken()` / `makeWord()`) compares **IPA**, not the
    approximation, so changing the interface language can never produce two words that sound alike.
-2. **The reading approximation — swapped per language (`APPROX` / `LANGS`).** English speakers get a
-   **respelling** like `AY-leen` (capitals mark the stressed syllable); Japanese speakers get katakana.
-   The default follows the device (`autoLang()`) and can be set by hand. Korean hangul, pinyin, anything
-   else: one row in `APPROX` and one in `LANGS`. Every place a reading appears goes through the single
-   `rd()` / `rdSyl()` pair, so the moment a language is added it works in the dictionary, the detail
-   sheet, the syllable table, linking, sentences and CSV alike.
+2. **The reading approximation — swapped per language (`APPROX` / `LANGS`).** Every one of the ten
+   readings is a pair of plain functions over the same `{on, nu, co}` syllable the syllabifier produced:
+   `syl_xx(p)` writes one syllable, `word_xx(ps)` joins them and marks the stress its own way (English
+   capitalises, Russian accents, Chinese joins with nothing at all). `mkApprox()` wraps that pair once,
+   and every place a reading appears in the app goes through the single `rd()` / `rdSyl()` pair — so a
+   reading works in the dictionary, the detail sheet, the syllable table, linking, sentences and CSV the
+   moment it is registered. An eleventh language is one file and two rows.
 3. **Interface copy — translated, English first.** Every visible string lives in the `STR` table and is
-   fetched with `t()` (or `tn()`, which picks a singular variant for counted strings). `STR.en` is the
-   base and the fallback; `STR.ja` is the same key set in Japanese. `UI_LANGS` lists what exists,
-   `autoLang()` guesses from the device, and `SET.ui` remembers the choice. Adding a language is one more
-   block of keys — nothing else in the app has to change.
+   fetched with `t()` (or `tn()`, which picks the right form for a counted string: a `.1` singular in the
+   languages that inflect for one, and a `.few` in Russian for 2–4). `STR.en` is the base and the
+   fallback; the other nine hold the identical key set. `UI_LANGS` lists what exists, `autoLang()` guesses
+   from the device, and `SET.ui` remembers the choice. The five chapter titles (Words / Sound / Rules /
+   Sentences / Make) stay in English everywhere — they are set in a display serif and are part of the book
+   design — while the contents rows the reader navigates by are translated.
 
-   **No Japanese — no language at all — survives in saved data.** Part of speech is stored as the key
-   `n` / `v` / `adj` / `x` and turned into a heading by `posLabel()` only at display time (dictionaries
-   saved in the old format are migrated to keys on launch). CSV headers are English in every locale, so
-   a file written on one device imports cleanly on another.
+   **No language at all survives in saved data.** Part of speech is stored as the key `n` / `v` / `adj` /
+   `x` and turned into a heading by `posLabel()` only at display time (dictionaries saved in the old
+   format are migrated to keys on launch). CSV headers are English in every locale, so a file written on
+   one device imports cleanly on another. `render()` also sets `document.documentElement.lang`, which
+   picks the right font and line-breaking and lets the stylesheet drop the wide Latin tracking from
+   headings in Japanese, Chinese and Korean, where it would only pull the word apart.
 
 **Settings has one control, not two.** "Display language" drives the interface *and* the reading
-together, because a person who reads the screen in English wants the reading in English too. The IPA
-never follows it.
+together, because a person who reads the screen in Korean wants the reading in hangul too. It is a list
+rather than a segmented control, and **each row carries the reading it would give the first word in your
+own dictionary** — so the choice is made by looking at the result, not by trusting the name of a script.
+The IPA never follows it.
 
 **A known limit:** the phonological engine assumes the Latin alphabet (`VOW='aeiouy'`, `CONS`, and the
 digraphs `th` / `sh` / `ch`). Cyrillic or Brahmic spellings can't be fed in directly. Conlangs are
@@ -121,14 +155,17 @@ one the person wrote.
 - `syl()` / `onsetOK()` … splits syllables. A medial consonant cluster hands the next syllable only as
   much as can legally start one, and leaves the rest as the previous coda (`silva` → `sil.va`,
   `ondra` → `on.dra`)
-- `kana()` / `resp()` … derives the reading mechanically from the spelling, so nobody has to invent one.
-  `kana()` is the Japanese approximation, `resp()` the English respelling
-- `APPROX` / `LANGS` / `rd()` / `rdSyl()` / `autoLang()` … the one place the reading approximation is
-  swapped per language. One row here adds a language
+- `syl_xx()` / `word_xx()` … ten blocks, one per language, each deriving the reading mechanically from
+  the spelling so nobody has to invent one: `resp()` English, `kana()` Japanese, and `syl_es` … `syl_ko`
+  for the other eight. None of them knows anything about the app — each takes a syllable and returns text
+- `sylParts()` / `mkApprox()` / `APPROX` / `LANGS` / `rd()` / `rdSyl()` / `autoLang()` … the one place the
+  reading approximation is swapped per language. One block plus two rows adds a language
 - `STR` / `t()` / `tn()` / `UI_LANGS` / `SET.ui` … the one place interface copy lives. `STR.en` is the
-  base and the fallback; `tn()` handles counted strings
+  base and the fallback for all ten; `tn()` handles counted strings, including the Russian 2–4 form
 - `POS` / `posLabel()` / `posKey()` … part of speech is saved as `n`/`v`/`adj`/`x` and only the heading
   changes per language. Values saved in the old Japanese form are migrated on launch
+- `parts()` … splits a syllable into onset, nucleus and coda, and hands a `y` back to the onset when a
+  vowel follows it, so `Yamosh` is /ja.moʃ/ and not /i.a.moʃ/ — in the IPA and in all ten readings alike
 - `srcKey()` … search hits on spelling, meaning, reading or IPA alike
 - `ipa()` / `ipaSyl()` … derives IPA from the spelling. `.` is a syllable boundary; a doubled vowel becomes `ː`
 - `readOut()` / `readLink()` / `readMode()` … the single gate that renders IPA / reading / both according
