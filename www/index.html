@@ -1,265 +1,1447 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0a0a0e">
+<meta name="theme-color" content="#0a0a0e" id="tcolor">
 <title>Lingua</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0a0a0e;--pane:#101017;--sf:#15151d;--sf2:#1e1e29;--line:rgba(255,255,255,.09);--tx:#ece9e3;--txs:#a9a6b3;--txm:#6f6c7a;--gold:#c9a86a;--pur:#8c7eff}
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
-  body{background:var(--bg);color:var(--tx);font-family:'Noto Sans JP',system-ui,sans-serif;line-height:1.7;overflow-x:hidden}
-  .serif{font-family:'Cinzel',serif}.cor{font-family:'Cormorant Garamond',serif}
-  #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
-  /* view transition */
-  .view{animation:vin .32s cubic-bezier(.2,.8,.2,1)}
-  @keyframes vin{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
-  .view.back{animation:vback .32s cubic-bezier(.2,.8,.2,1)}
-  @keyframes vback{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+/* =========================================================================
+   テーマ：ダークが既定（v1の黒×金を復元）。ライトは同じ骨格のまま紙に置き換え。
+   色の指定は全部この2ブロックの中だけ。画面側は変数しか触らない。
+   ========================================================================= */
+html[data-theme="dark"]{
+  --bg:#0a0a0e; --pane:#101017; --sf:#15151d; --sf2:#1e1e29;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
+  --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
+  --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
+  --pur:#8c7eff; --pursf:rgba(140,126,255,.10); --purln:rgba(140,126,255,.42);
+  --onGold:#241d10; --dot:rgba(255,255,255,.18); --shadow:0 10px 26px rgba(0,0,0,.5);
+}
+html[data-theme="light"]{
+  --bg:#faf8f3; --pane:#ffffff; --sf:#f3efe6; --sf2:#eae5da;
+  --line:rgba(26,23,18,.12); --line2:rgba(26,23,18,.06);
+  --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
+  --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
+  --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
+  --onGold:#fffdf6; --dot:rgba(26,23,18,.2); --shadow:0 8px 22px rgba(60,50,30,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+     line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+.cz{font-family:'Cinzel',Georgia,serif}
+.cor{font-family:'Cormorant Garamond',Georgia,serif}
+#app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
+.view{animation:vin .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes vin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+button{font-family:inherit;cursor:pointer}
 
-  /* ---------- HOME ---------- */
-  .top{display:flex;align-items:center;padding:calc(env(safe-area-inset-top,0) + 16px) 24px 0}
-  .brand{font-family:'Cinzel',serif;letter-spacing:.22em;font-size:.9rem;color:var(--txs)}
-  .brand .st{color:var(--gold)}
-  .av{margin-left:auto;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--gold)}
-  .title{padding:30px 30px 22px;text-align:center}
-  .tkick{font-size:.6rem;letter-spacing:.34em;color:var(--txm);text-transform:uppercase;margin-bottom:14px}
-  .tname{font-family:'Cinzel',serif;font-weight:600;font-size:2.3rem;line-height:1.1;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
-  .tname .pen{font-size:.72rem;color:var(--txm)}
-  .tnative{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.15rem;color:var(--pur);margin-top:6px}
-  .rule{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto 0}
-  .hbody{padding:6px 30px 120px}
-  .clabel{font-size:.6rem;letter-spacing:.3em;color:var(--txm);text-transform:uppercase;text-align:center;margin:8px 0 6px}
-  .toc{margin-top:8px}
-  .trow{display:flex;align-items:baseline;gap:12px;padding:17px 2px;cursor:pointer}
-  .trow:active{opacity:.6}
-  .trow .rn{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:1rem;width:26px;flex-shrink:0}
-  .trow .rt{font-size:1.12rem;font-weight:500}
-  .trow .rt.flag{color:var(--pur)}
-  .trow .tag{font-size:.54rem;letter-spacing:.06em;color:var(--pur);border:1px solid rgba(140,126,255,.4);border-radius:10px;padding:1px 7px;margin-left:8px;vertical-align:middle}
-  .trow .lead{flex:1;border-bottom:1px dotted rgba(255,255,255,.18);transform:translateY(-3px)}
-  .trow .rv{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--txs);flex-shrink:0}
-  .trow .rv.mk{color:var(--pur)}
-  .recent{margin-top:26px;background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:20px 22px;cursor:pointer}
-  .recent .rh{font-size:.58rem;letter-spacing:.24em;color:var(--txm);text-transform:uppercase;margin-bottom:12px}
-  .recent .line{font-family:'Cinzel',serif;font-size:1.25rem;color:var(--tx);letter-spacing:.02em}
-  .recent .tr{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--txs);margin-top:4px}
+/* ---------- 共通パーツ ---------- */
+.top{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0) + 16px) 24px 0}
+.brand{font-family:'Cinzel',Georgia,serif;letter-spacing:.22em;font-size:.86rem;color:var(--txs)}
+.brand .st{color:var(--gold)}
+.iconb{margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:none;
+       color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
+.iconb:active{opacity:.5}
+.back{background:none;border:none;color:var(--txs);font-size:.88rem;padding:4px 0;display:inline-flex;align-items:center;gap:6px}
+.back:active{opacity:.5}
+.chead{padding:calc(env(safe-area-inset-top,0) + 14px) 24px 6px}
+.chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
+.chap .rn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.3rem}
+.chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
+.chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
+.body{padding:10px 24px calc(env(safe-area-inset-bottom,0) + 120px)}
+.note{color:var(--txm);font-size:.74rem;line-height:1.75}
+.sec{font-size:.6rem;letter-spacing:.28em;color:var(--txm);text-transform:uppercase;margin:28px 0 10px}
+.card{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.rule{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto 0}
 
-  /* ---------- CHAPTER (words) ---------- */
-  .chead{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,var(--bg) 78%,transparent);padding:calc(env(safe-area-inset-top,0) + 14px) 24px 8px}
-  .back{background:none;border:none;color:var(--txs);font-size:.9rem;font-family:inherit;cursor:pointer;padding:4px 0;display:inline-flex;align-items:center;gap:5px}
-  .back:active{opacity:.5}
-  .chap{display:flex;align-items:baseline;gap:12px;margin-top:12px}
-  .chap .rn{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:1.3rem}
-  .chap .ct{font-family:'Cinzel',serif;font-size:1.7rem;font-weight:600}
-  .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--txm);font-size:1.05rem}
-  .search{margin:14px 24px 4px;display:flex;align-items:center;gap:10px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
-  .search input{flex:1;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.9rem;outline:none}
-  .search svg{color:var(--txm)}
-  .lex{padding:8px 24px 130px}
-  .gl{font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--gold);font-size:1.15rem;margin:20px 0 2px;opacity:.85}
-  .entry{padding:14px 2px;border-bottom:1px solid var(--line);cursor:pointer}
-  .entry:active{opacity:.6}
-  .hwrow{display:flex;align-items:baseline;gap:10px}
-  .hw{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--tx);letter-spacing:.02em}
-  .rd{font-size:.72rem;color:var(--txm)}
-  .pos{margin-left:auto;font-size:.6rem;color:var(--txm);border:1px solid var(--line);border-radius:8px;padding:2px 8px}
-  .mn{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.12rem;color:var(--txs);margin-top:1px}
+/* ---------- 扉（ホーム） ---------- */
+.title{padding:34px 30px 20px;text-align:center}
+.tkick{font-size:.58rem;letter-spacing:.34em;color:var(--txm);text-transform:uppercase;margin-bottom:14px}
+.tname{font-family:'Cinzel',Georgia,serif;font-weight:600;font-size:2.2rem;line-height:1.15;
+       display:inline-flex;align-items:center;gap:10px;background:none;border:none;color:var(--tx)}
+.tname .pen{font-size:.68rem;color:var(--txm)}
+.tsub{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.1rem;color:var(--pur);margin-top:6px}
+.toc{margin-top:14px}
+.trow{display:flex;align-items:baseline;gap:12px;padding:16px 2px;width:100%;background:none;border:none;color:var(--tx);text-align:left}
+.trow:active{opacity:.55}
+.trow .rn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1rem;width:26px;flex:0 0 auto}
+.trow .rt{font-size:1.1rem;font-weight:500}
+.trow .lead{flex:1;border-bottom:1px dotted var(--dot);transform:translateY(-3px)}
+.trow .rv{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.02rem;color:var(--txs);flex:0 0 auto}
+.recent{margin-top:24px;background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;width:100%;text-align:left;color:var(--tx)}
+.recent .rh{font-size:.56rem;letter-spacing:.24em;color:var(--txm);text-transform:uppercase;margin-bottom:10px}
+.recent .line{font-family:'Cinzel',Georgia,serif;font-size:1.25rem;letter-spacing:.02em}
+.recent .tr{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--txs);margin-top:2px}
 
-  /* ---------- placeholder chapter ---------- */
-  .soon{padding:60px 40px;text-align:center}
-  .soon .big{font-family:'Cinzel',serif;font-size:1.5rem;margin-bottom:10px}
-  .soon .sub{color:var(--txm);font-size:.9rem}
-  .soon .badge{display:inline-block;margin-top:22px;font-size:.6rem;letter-spacing:.2em;color:var(--pur);border:1px solid rgba(140,126,255,.4);border-radius:20px;padding:6px 16px}
+/* ---------- 空っぽの状態 ---------- */
+.empty{padding:54px 30px;text-align:center}
+.empty .eb{font-family:'Cinzel',Georgia,serif;font-size:1.3rem;margin-bottom:8px}
+.empty .es{color:var(--txm);font-size:.86rem;line-height:1.9}
 
-  /* ---------- floating buttons ---------- */
-  .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0) + 22px);z-index:20;display:flex;align-items:center;gap:8px;background:linear-gradient(120deg,var(--gold),#e6cf9a);color:#241d10;font-weight:700;font-size:.95rem;padding:14px 22px;border-radius:28px;border:none;box-shadow:0 10px 26px rgba(201,168,106,.32);cursor:pointer}
-  .fab:active{transform:scale(.96)}
-  .ai{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0) + 22px);z-index:20;display:flex;align-items:center;gap:8px;background:rgba(140,126,255,.14);border:1px solid rgba(140,126,255,.45);color:var(--pur);font-weight:600;font-size:.86rem;padding:11px 18px;border-radius:26px;cursor:pointer;backdrop-filter:blur(6px)}
-  .ai:active{transform:scale(.96)}
+/* ---------- 辞書 ---------- */
+.search{display:flex;align-items:center;gap:10px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0 2px}
+.search input{flex:1;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
+.gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
+.entry{padding:13px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
+.entry:active{opacity:.55}
+.hwrow{display:flex;align-items:baseline;gap:10px}
+.hw{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
+.rd{font-size:.72rem;color:var(--txm)}
+.pos{margin-left:auto;font-size:.6rem;color:var(--txm);border:1px solid var(--line);border-radius:8px;padding:2px 8px}
+.mn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.08rem;color:var(--txs);margin-top:1px}
 
-  /* ---------- add sheet ---------- */
-  .sbg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:.25s}
-  .sbg.on{opacity:1;pointer-events:auto}
-  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:480px;margin:0 auto;background:#101017;border:1px solid var(--line);border-radius:22px 22px 0 0;padding:10px 22px calc(env(safe-area-inset-bottom,0) + 22px);transform:translateY(100%);transition:.28s cubic-bezier(.2,.8,.2,1)}
-  .sheet.on{transform:none}
-  .grip{width:40px;height:4px;border-radius:3px;background:rgba(255,255,255,.2);margin:6px auto 14px}
-  .sheet h3{font-size:1.1rem;margin:0 2px 14px;font-weight:700}
-  .field{margin-bottom:11px}
-  .field label{font-size:.66rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
-  .field input,.field select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--tx);padding:12px 13px;font-family:inherit;font-size:.95rem;outline:none}
-  .field input.hwf{font-family:'Cinzel',serif}
-  .row2{display:flex;gap:10px}.row2 .field{flex:1}
-  .aihint{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:11px;border:1px dashed rgba(140,126,255,.5);background:rgba(140,126,255,.07);color:var(--pur);font-family:inherit;font-size:.86rem;font-weight:600;cursor:pointer;margin:2px 0 14px}
-  .aihint:active{opacity:.6}
-  .add{width:100%;padding:15px;border-radius:12px;border:none;background:linear-gradient(120deg,var(--gold),#e6cf9a);color:#241d10;font-weight:700;font-size:1rem;font-family:inherit;cursor:pointer}
-  .add:active{opacity:.85}
+/* ---------- 音 ---------- */
+.ph{display:inline-flex;flex-direction:column;align-items:center;font-family:'Cinzel',Georgia,serif;
+    font-size:.92rem;border:1px solid var(--line);line-height:1.15;
+    border-radius:9px;padding:5px 10px;margin:0 6px 8px 0;color:var(--tx);background:var(--sf);min-width:34px}
+.ph i{font-style:normal;font-family:'Cormorant Garamond',Georgia,serif;font-size:.66rem;color:var(--gold);margin-top:2px}
+.ph.off{color:var(--txm);border-style:dashed;background:none;opacity:.6}
+.ph.off i{color:var(--txm)}
+.link{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:center}
+.link .src{font-family:'Cinzel',Georgia,serif;font-size:1.16rem;letter-spacing:.03em}
+.link .arw{color:var(--txm);font-size:.72rem;margin:9px 0 7px}
+.link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
+.play{margin-top:14px;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
+      border-radius:22px;padding:9px 20px;font-size:.86rem;font-weight:600}
+.play:active{opacity:.6}
 
-  /* ---------- toast ---------- */
-  .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0) + 96px);transform:translateX(-50%) translateY(10px);background:rgba(30,30,41,.96);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;border-radius:20px;z-index:60;opacity:0;pointer-events:none;transition:.25s}
-  .toast.on{opacity:1;transform:translateX(-50%)}
-  .mock{position:fixed;top:0;left:50%;transform:translateX(-50%);background:rgba(140,126,255,.85);color:#100e1c;font-size:.54rem;letter-spacing:.2em;padding:3px 13px;border-radius:0 0 8px 8px;z-index:99;font-weight:700;pointer-events:none}
+/* ---------- 規則 ---------- */
+.find{padding:16px 0;border-bottom:1px solid var(--line)}
+.ft{font-size:1rem;font-weight:500;line-height:1.6}
+.ft em{font-style:normal;color:var(--gold);font-family:'Cinzel',Georgia,serif}
+.fd{color:var(--txm);font-size:.78rem;margin-top:5px;line-height:1.8}
+.bar{height:2px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold)}
+
+/* ---------- つくる ---------- */
+.segs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.seg{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:7px 15px;font-size:.84rem}
+.seg.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
+.cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
+.cand .ck{width:20px;height:20px;border-radius:6px;border:1px solid var(--line);flex:0 0 auto;
+          display:flex;align-items:center;justify-content:center;font-size:.68rem;color:var(--onGold);background:none}
+.cand .ck.on{background:var(--gold);border-color:var(--gold)}
+.cand .cw{font-family:'Cinzel',Georgia,serif;font-size:1.1rem}
+.cand .crd{font-size:.7rem;color:var(--txm);margin-left:2px}
+.cand .cm{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txs);font-size:1rem}
+.cand .rr{background:none;border:none;color:var(--txm);font-size:.9rem;padding:2px 4px}
+
+/* ---------- 設定 ---------- */
+.set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
+.set .sl{font-size:.95rem}
+.set .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
+.pick{display:flex;background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:3px;margin:10px 0 4px}
+.pick button{flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}
+.pick button.on{background:var(--pane);color:var(--tx);font-weight:600;box-shadow:var(--shadow)}
+.plan{border:1px solid var(--line);border-radius:16px;padding:17px 18px;margin-bottom:11px;background:var(--pane)}
+.plan.cur{border-color:var(--goldln);background:var(--goldsf)}
+.plan .ph2{display:flex;align-items:baseline;gap:9px}
+.plan .pn{font-family:'Cinzel',Georgia,serif;font-size:1.05rem}
+.plan .pp{margin-left:auto;color:var(--gold);font-size:.95rem;font-weight:600}
+.plan .pl{color:var(--txs);font-size:.82rem;margin-top:9px;line-height:1.95}
+.plan .badge{font-size:.56rem;letter-spacing:.16em;color:var(--gold);border:1px solid var(--goldln);border-radius:20px;padding:2px 9px}
+.plan button{width:100%;margin-top:13px;padding:11px;border-radius:11px;border:1px solid var(--goldln);
+             background:var(--goldsf);color:var(--gold);font-weight:600;font-size:.88rem}
+
+/* ---------- ロック（上位プラン） ---------- */
+.lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;
+      border:1px dashed var(--line);border-radius:13px;padding:14px 16px;color:var(--txs);margin-top:10px}
+.lock .lk{color:var(--txm);font-size:.86rem}
+.lock .lt{font-size:.9rem;color:var(--txs)}
+.lock .ld{font-size:.7rem;color:var(--txm)}
+.lock .tag{margin-left:auto;font-size:.55rem;letter-spacing:.14em;color:var(--pur);
+           border:1px solid var(--purln);border-radius:20px;padding:2px 9px;flex:0 0 auto}
+
+/* ---------- 下部バー・シート・トースト ---------- */
+.barfix{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:480px;margin:0 auto;
+        padding:12px 24px calc(env(safe-area-inset-bottom,0) + 14px);
+        background:linear-gradient(180deg,transparent,var(--bg) 34%);display:flex;gap:10px}
+.btn{flex:1;padding:15px;border-radius:13px;border:none;background:var(--gold);color:var(--onGold);font-weight:700;font-size:.98rem}
+.btn:active{opacity:.82}
+.btn:disabled{opacity:.3}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--txs);font-weight:500}
+.sbg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.24s}
+.sbg.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:480px;margin:0 auto;background:var(--pane);
+       border-top:1px solid var(--line);border-radius:22px 22px 0 0;
+       padding:8px 22px calc(env(safe-area-inset-bottom,0) + 20px);transform:translateY(101%);
+       transition:.27s cubic-bezier(.2,.8,.2,1);max-height:92dvh;overflow:auto}
+.sheet.on{transform:none}
+.grip{width:40px;height:4px;border-radius:3px;background:var(--line);margin:6px auto 14px}
+.sheet h3{font-size:1.05rem;margin:0 2px 6px;font-weight:700}
+.field{margin-bottom:11px}
+.field label{font-size:.66rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+       color:var(--tx);padding:12px 13px;font-family:inherit;font-size:.95rem;outline:none}
+.field input.hwf{font-family:'Cinzel',Georgia,serif;font-size:1.14rem;letter-spacing:.03em}
+.field textarea{height:120px;line-height:1.6}
+.row2{display:flex;gap:10px}.row2 .field{flex:1}
+.pvbox{display:flex;align-items:center;gap:10px;margin:2px 0 12px;min-height:26px}
+.pvbox .pvk{font-size:1.02rem;color:var(--gold)}
+.pvbox .pvn{font-size:.72rem;color:var(--txm)}
+.pvbox button{margin-left:auto;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
+              border-radius:18px;padding:5px 13px;font-size:.78rem}
+/* 一語の詳細 */
+.whd{display:flex;align-items:center;gap:12px;margin:0 2px}
+.whw{font-family:'Cinzel',Georgia,serif;font-size:1.7rem;letter-spacing:.03em}
+.wsub{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
+.wsub2{font-size:.8rem;color:var(--txm);margin:2px 2px 0}
+.sylrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sy{display:inline-flex;flex-direction:column;align-items:center;background:var(--sf);border:1px solid var(--line);
+    border-radius:10px;padding:7px 13px;min-width:52px}
+.sy .sya{font-family:'Cinzel',Georgia,serif;font-size:1.02rem}
+.sy .syi{font-family:'Cormorant Garamond',Georgia,serif;font-size:.78rem;color:var(--gold);margin-top:3px}
+.sy .syk{font-size:.66rem;color:var(--txm);margin-top:1px}
+.sysep{color:var(--txm);font-size:.8rem}
+/* 文 */
+.sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
+.sw{display:inline-flex;flex-direction:column;align-items:center}
+.sw .sww{font-family:'Cinzel',Georgia,serif;font-size:1.18rem;letter-spacing:.02em}
+.sw .swk{font-size:.56rem;letter-spacing:.14em;color:var(--txm);margin-top:4px}
+.rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:16px;padding:5px 12px;font-size:.72rem}
+.rr2:active{opacity:.55}
+.link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
+/* 文を編む */
+.weave{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:var(--pane);border:1px solid var(--line);border-radius:14px}
+.wc{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);
+    border:1px solid var(--line);border-radius:11px;padding:8px 13px;color:var(--tx)}
+.wc.on{background:var(--goldsf);border-color:var(--goldln)}
+.wc .wcw{font-family:'Cinzel',Georgia,serif;font-size:1.04rem}
+.wc .wcm{font-size:.62rem;color:var(--txm)}
+.wctl,.wctl2{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.wctl button,.wctl2 button{background:none;border:1px solid var(--line);color:var(--txs);
+    border-radius:16px;padding:7px 13px;font-size:.75rem}
+.wctl button{border-color:var(--goldln);color:var(--gold)}
+.pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:220px;overflow:auto}
+.pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
+    border:1px solid var(--line);border-radius:11px;padding:7px 12px;color:var(--tx)}
+.pw:active{opacity:.55}
+.pw .pww{font-family:'Cinzel',Georgia,serif;font-size:.98rem}
+.pw .pwm{font-size:.64rem;color:var(--txs)}
+.pw .pwm.dim{color:var(--txm);opacity:.6}
+.chk{margin-top:12px;font-size:.78rem;line-height:1.8;border-radius:12px;padding:11px 14px;border:1px solid var(--line)}
+.chk.ok{color:var(--txs);background:var(--goldsf);border-color:var(--goldln)}
+.chk.ng{color:var(--txs);background:var(--sf)}
+.chk b{color:var(--gold);font-family:'Cinzel',Georgia,serif}
+.chk button{display:block;margin-top:9px;background:none;border:1px solid var(--goldln);color:var(--gold);
+    border-radius:16px;padding:6px 13px;font-size:.74rem}
+.ipa{font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:.02em}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0) + 96px);transform:translateX(-50%) translateY(10px);
+       background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
+       border-radius:20px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+/* ---------- オンボーディング ---------- */
+.ob{min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0) + 22px) 30px calc(env(safe-area-inset-bottom,0) + 26px)}
+.ob .obtop{display:flex;gap:6px}
+.ob .dot{width:22px;height:2px;border-radius:2px;background:var(--line)}
+.ob .dot.on{background:var(--gold)}
+.ob .mid{margin:34px 0 auto}
+.ob.center .mid{margin:auto 0}
+.ob .obfoot .btn{width:100%}
+.ob h1{font-family:'Cinzel',Georgia,serif;font-size:2.5rem;letter-spacing:.06em;line-height:1.15}
+.ob h2{font-size:1.42rem;font-weight:500;line-height:1.55;letter-spacing:.01em}
+.ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
+.ob .obfoot{margin-top:auto;padding-top:22px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
+.chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:8px 15px;font-size:.88rem}
+.chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
+.mini{font-size:.72rem;color:var(--txm);margin-top:8px;line-height:1.8}
 </style>
 </head>
 <body>
-<div class="mock" id="mock">NOTEBOOK</div>
 <div id="app"></div>
 
-<!-- add sheet (shared) -->
-<div class="sbg" id="sbg" onclick="closeS(event)">
-  <div class="sheet" id="sheet" onclick="event.stopPropagation()">
-    <div class="grip"></div>
-    <h3>ことばを加える</h3>
-    <div class="aihint" onclick="aiFill()">✦ AIに提案してもらう（意味だけ入れてもOK）</div>
-    <div class="field"><label>コンラング語形</label><input class="hwf" id="f-hw" placeholder="Aelin" autocomplete="off"></div>
-    <div class="row2">
-      <div class="field"><label>意味</label><input id="f-mn" placeholder="星"></div>
-      <div class="field"><label>読み（任意）</label><input id="f-rd" placeholder="エリン"></div>
-    </div>
-    <div class="field"><label>品詞</label><select id="f-pos"><option>名詞</option><option>動詞</option><option>形容詞</option><option>副詞</option><option>その他</option></select></div>
-    <button class="add" onclick="addWord()">辞書に加える</button>
-  </div>
+<div class="sbg" id="sbg" onclick="closeSheet(event)">
+  <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-/* ---------------- state ---------------- */
-let langName='Elyrra語';
-let WORDS=[
-  {hw:'Aelin',rd:'エリン',mn:'星',pos:'名詞'},
-  {hw:'Elora',rd:'エローラ',mn:'光',pos:'名詞'},
-  {hw:'Lsuna',rd:'ルーナ',mn:'月',pos:'名詞'},
-  {hw:'Mirae',rd:'ミラエ',mn:'愛する',pos:'動詞'},
-  {hw:'Naeth',rd:'ナイス',mn:'水',pos:'名詞'},
-  {hw:'Silva',rd:'シルヴァ',mn:'森',pos:'名詞'},
-  {hw:'Vaera',rd:'ヴァエラ',mn:'空',pos:'名詞'},
-  {hw:'Ythe',rd:'イーゼ',mn:'風',pos:'名詞'},
+/* =========================================================================
+   0. 保存されるもの
+      words / lang / set(テーマ・プラン・オンボ済み)
+      いま入っているものは全部「その人が自分で書いたもの」だけ。初期辞書は無い。
+   ========================================================================= */
+var LS_W='lingua.words', LS_N='lingua.lang', LS_S='lingua.set', LS_L='lingua.lines';
+var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:false, order:'SOV', read:'both', voice:''};
+
+try{ var a=JSON.parse(localStorage.getItem(LS_W)||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
+try{ var l=JSON.parse(localStorage.getItem(LS_L)||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
+try{ langName=localStorage.getItem(LS_N)||''; }catch(e){}
+try{ var s=JSON.parse(localStorage.getItem(LS_S)||'null'); if(s) SET=Object.assign(SET,s); }catch(e){}
+
+function save(){
+  try{
+    localStorage.setItem(LS_W,JSON.stringify(WORDS));
+    localStorage.setItem(LS_L,JSON.stringify(LINES));
+    localStorage.setItem(LS_N,langName);
+    localStorage.setItem(LS_S,JSON.stringify(SET));
+  }catch(e){}
+}
+
+/* =========================================================================
+   1. プラン
+      無料でどこまでできるかが、このアプリの一番大事な設計。
+      分析・読みの導出・リンキング・規則にそった生成は、全部この端末の中の
+      ただの計算。通信もAIも要らない。だから無料に置く。
+      有料は「保管（クラウド・CSV・無制限）」と「AIとの共作」だけ。
+   ========================================================================= */
+var PLANS=[
+  {id:'free',  name:'Free',   price:'¥0',
+   lines:['自分の手でことばをつくる（全部）','規則の自動分析・読みの自動導出','リンキング表示と読み上げ','規則にそった語の量産','端末に保存・100語まで']},
+  {id:'plus',  name:'Plus',   price:'$9 / 月',
+   lines:['単語数 無制限','クラウド保存（機種変・複数端末）','CSVで単語をまとめて取り込み／書き出し','Free の内容すべて']},
+  {id:'studio',name:'Studio', price:'$19 / 月',
+   lines:['AIと共作（意味から語形の相談・文法の設計・例文）','テーマから語彙をまとめて生成','Plus の内容すべて']}
 ];
-// --- persistence (localStorage): 追加した語や言語名を保存 ---
-const LS_W='lingua.words', LS_N='lingua.lang';
-try{const w=JSON.parse(localStorage.getItem(LS_W)); if(Array.isArray(w)&&w.length) WORDS=w;}catch(e){}
-try{const n=localStorage.getItem(LS_N); if(n) langName=n;}catch(e){}
-function save(){try{localStorage.setItem(LS_W,JSON.stringify(WORDS));localStorage.setItem(LS_N,langName);}catch(e){}}
-const TOC=[
-  {n:'I', t:'ことば', v:()=>WORDS.length+'', k:'words', route:'words'},
-  {n:'II', t:'文字', v:()=>'つくる', flag:true, k:'文字体系', route:'soon'},
-  {n:'III', t:'音', v:()=>'11', k:'音韻', route:'soon'},
-  {n:'IV', t:'文法', v:()=>'3 / 6', k:'文法', route:'soon'},
-  {n:'V', t:'例文', v:()=>'2', k:'例文', route:'soon'},
-  {n:'VI', t:'世界', v:()=>'—', k:'世界観', route:'soon'},
+var FREE_LIMIT=100;
+function plan(){ return SET.plan||'free'; }
+function has(level){ /* level: 'plus' | 'studio' */
+  var p=plan();
+  if(level==='plus')   return p==='plus'||p==='studio';
+  if(level==='studio') return p==='studio';
+  return true;
+}
+function capOK(add){
+  add=add||1;
+  if(has('plus')) return true;
+  return WORDS.length+add<=FREE_LIMIT;
+}
+
+/* =========================================================================
+   2. テーマ
+   ========================================================================= */
+var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
+function applyTheme(){
+  var t=SET.theme;
+  if(t==='system') t = (mq && mq.matches) ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  var m=document.getElementById('tcolor');
+  if(m) m.setAttribute('content', t==='light' ? '#faf8f3' : '#0a0a0e');
+}
+if(mq && mq.addEventListener) mq.addEventListener('change', function(){ if(SET.theme==='system') applyTheme(); });
+applyTheme();
+
+/* =========================================================================
+   3. 音韻コア（端末内で動く。通信なし）
+   ========================================================================= */
+var VOW='aeiouy';
+function isV(c){return VOW.indexOf(c)>=0;}
+/* 語の頭に立てる子音のかたまり（＝音節の頭にできるもの）。
+   silva を si-lva ではなく sil-va と切るために要る。世界の言語に共通する
+   「頭は だんだん響きが大きくなる」並びだけを頭として認める。 */
+var LIQ={l:1,r:1,w:1,y:1,j:1};
+function onsetOK(u){
+  if(u.length<=1) return true;
+  if(u.length===2){
+    if(LIQ[u[1]] && !LIQ[u[0]] && u[0]!=='m' && u[0]!=='n' && u[0]!==u[1]) return true;   /* pr, tr, kl, θr … */
+    if(u[0]==='s' && 'ptkmnlw'.indexOf(u[1])>=0) return true;                              /* sp, st, sk, sl … */
+    return false;
+  }
+  if(u.length===3 && u[0]==='s') return onsetOK(u.slice(1));                               /* spr, str … */
+  return false;
+}
+function syl(word){
+  var s=String(word).toLowerCase().replace(/[^a-z]/g,''), out=[], i=0;
+  while(i<s.length){
+    var c=''; while(i<s.length && !isV(s[i])){c+=s[i];i++;}
+    var v=''; while(i<s.length &&  isV(s[i])){v+=s[i];i++;}
+    if(v===''){ if(out.length) out[out.length-1]+=c; else if(c) out.push(c); }
+    else {
+      /* 語中の子音のかたまりは、頭に立てる分だけ持っていき、残りは前の音節の尻に置く */
+      if(out.length && c){
+        var u=splitC(c), k=0;
+        while(k<u.length && !onsetOK(u.slice(k))) k++;
+        if(k>0){ out[out.length-1]+=u.slice(0,k).join(''); c=u.slice(k).join(''); }
+      }
+      out.push(c+v);
+    }
+  }
+  return out;
+}
+var PART=/^([^aeiouy]*)([aeiouy]+)([^aeiouy]*)$/;
+function parts(sy){ var m=sy.match(PART); return m?{on:m[1],nu:m[2],co:m[3]}:null; }
+var CONS=['b','ch','d','f','g','h','j','k','l','m','n','p','r','s','sh','t','th','v','w','z'];
+function splitC(str){
+  var out=[], i=0;
+  while(i<str.length){
+    var two=str.substr(i,2);
+    if(two==='th'||two==='sh'||two==='ch'){out.push(two);i+=2;}
+    else {out.push(str[i]);i++;}
+  }
+  return out;
+}
+function analyze(){
+  var on={},onI={},onM={},nu={},co={},cnt={},fin={},posN={};
+  WORDS.forEach(function(w){
+    var ss=syl(w.hw);
+    cnt[ss.length]=(cnt[ss.length]||0)+1;
+    ss.forEach(function(s,si){
+      var p=parts(s); if(!p) return;
+      on[p.on]=(on[p.on]||0)+1; nu[p.nu]=(nu[p.nu]||0)+1;
+      if(si===0) onI[p.on]=(onI[p.on]||0)+1; else onM[p.on]=(onM[p.on]||0)+1;
+      if(p.co) co[p.co]=(co[p.co]||0)+1;
+    });
+    var f=String(w.hw).toLowerCase().slice(-1);
+    fin[w.pos]=fin[w.pos]||{}; fin[w.pos][f]=(fin[w.pos][f]||0)+1;
+    posN[w.pos]=(posN[w.pos]||0)+1;
+  });
+  var finalRule={};
+  Object.keys(fin).forEach(function(p){
+    if(posN[p]<3) return;
+    var e=Object.keys(fin[p]).map(function(k){return [k,fin[p][k]];}).sort(function(a,b){return b[1]-a[1];})[0];
+    if(e && e[1]/posN[p]>=0.5) finalRule[p]={ch:e[0],hit:e[1],all:posN[p],rate:e[1]/posN[p]};
+  });
+  var used={};
+  Object.keys(on).forEach(function(o){ if(o) splitC(o).forEach(function(c){used[c]=1;}); });
+  Object.keys(co).forEach(function(o){ splitC(o).forEach(function(c){used[c]=1;}); });
+  var usedA=Object.keys(used).sort();
+  var unused=CONS.filter(function(c){return !used[c];});
+  var sm=Object.keys(cnt).map(function(k){return [k,cnt[k]];}).sort(function(a,b){return b[1]-a[1];})[0];
+  var vset={}; Object.keys(nu).forEach(function(n){ n.split('').forEach(function(v){vset[v]=1;}); });
+  return {on:on,onI:onI,onM:onM,nu:nu,co:co,cnt:cnt,finalRule:finalRule,used:usedA,unused:unused,
+          sylMode: sm?{n:+sm[0],hit:sm[1],all:WORDS.length}:null,
+          vowels:Object.keys(vset).sort()};
+}
+
+/* 発音：つづりから読みを機械的に導く */
+var KT={
+  '' :['ア','イ','ウ','エ','オ'],
+  k:['カ','キ','ク','ケ','コ'], g:['ガ','ギ','グ','ゲ','ゴ'],
+  s:['サ','スィ','ス','セ','ソ'], z:['ザ','ズィ','ズ','ゼ','ゾ'],
+  t:['タ','ティ','トゥ','テ','ト'], d:['ダ','ディ','ドゥ','デ','ド'],
+  n:['ナ','ニ','ヌ','ネ','ノ'], h:['ハ','ヒ','フ','ヘ','ホ'],
+  b:['バ','ビ','ブ','ベ','ボ'], p:['パ','ピ','プ','ペ','ポ'],
+  m:['マ','ミ','ム','メ','モ'], y:['ヤ','イ','ユ','イェ','ヨ'],
+  r:['ラ','リ','ル','レ','ロ'], l:['ラ','リ','ル','レ','ロ'],
+  w:['ワ','ウィ','ウ','ウェ','ウォ'], v:['ヴァ','ヴィ','ヴ','ヴェ','ヴォ'],
+  f:['ファ','フィ','フ','フェ','フォ'], j:['ジャ','ジ','ジュ','ジェ','ジョ'],
+  sh:['シャ','シ','シュ','シェ','ショ'], ch:['チャ','チ','チュ','チェ','チョ'],
+  th:['サ','シ','ス','セ','ソ'],
+  c:['カ','キ','ク','ケ','コ'], q:['クァ','クィ','ク','クェ','クォ'], x:['クサ','クシ','クス','クセ','クソ']
+};
+var VI={a:0,i:1,u:2,e:3,o:4,y:1};
+var VK=['ア','イ','ウ','エ','オ'];
+var CODA={n:'ン',m:'ム',s:'ス',th:'ス',sh:'シュ',t:'ト',d:'ド',k:'ク',g:'グ',l:'ル',r:'ル',
+          p:'プ',b:'ブ',v:'ヴ',f:'フ',z:'ズ',ch:'チ',j:'ジ',h:'フ',w:'ウ',y:'イ',
+          c:'ク',q:'ク',x:'クス'};
+function vi(ch){ return VI[ch]===undefined?0:VI[ch]; }
+function onsetKana(on,idx){
+  if(on==='') return KT[''][idx];
+  if(KT[on]) return KT[on][idx];
+  var cs=splitC(on), out='';
+  for(var i=0;i<cs.length-1;i++){
+    var c=cs[i], fill=(c==='t'||c==='d')?4:2;
+    out += KT[c] ? KT[c][fill] : (CODA[c]||'');
+  }
+  var last=cs[cs.length-1];
+  out += KT[last] ? KT[last][idx] : KT[''][idx];
+  return out;
+}
+function sylKana(sy){
+  var p=parts(sy); if(!p) return '';
+  var vs=p.nu.split('');
+  var out=onsetKana(p.on, vi(vs[0]));
+  for(var i=1;i<vs.length;i++) out+=VK[vi(vs[i])];
+  if(p.co) splitC(p.co).forEach(function(c){ out += CODA[c]||''; });
+  return out;
+}
+function kana(word){ return syl(word).map(sylKana).join(''); }
+
+/* ---- 発音記号（IPA）。カナは日本語話者むけの近い音、IPAが本当の音。 ---- */
+var IPA_C={b:'b',ch:'tʃ',d:'d',f:'f',g:'ɡ',h:'h',j:'j',k:'k',l:'l',m:'m',n:'n',
+           p:'p',r:'r',s:'s',sh:'ʃ',t:'t',th:'θ',v:'v',w:'w',z:'z',
+           c:'k',q:'k',x:'ks',y:'j'};
+var IPA_V={a:'a',e:'e',i:'i',o:'o',u:'u',y:'i'};
+function ipaC(str){ return splitC(str).map(function(c){ return IPA_C[c]||c; }).join(''); }
+function ipaV(str){
+  var out='', prev='';
+  str.split('').forEach(function(v){
+    var s=IPA_V[v]||v;
+    if(s===prev) out+='ː';            /* 同じ母音が続いたら長音 */
+    else { out+=s; prev=s; }
+  });
+  return out;
+}
+function ipaSyl(sy){
+  var p=parts(sy);
+  if(!p) return ipaC(sy);
+  return ipaC(p.on)+ipaV(p.nu)+ipaC(p.co);
+}
+function ipaWord(word){ return syl(word).map(ipaSyl).join('.'); }   /* . は音節の切れ目 */
+function ipa(word){ return '/'+ipaWord(word)+'/'; }
+
+function linked(words){
+  var raw=words.map(function(w){return String(w).toLowerCase().replace(/[^a-z]/g,'');});
+  var out='', any=false;
+  for(var i=0;i<raw.length;i++){
+    var cur=raw[i], nxt=raw[i+1];
+    if(nxt && !isV(cur.charAt(cur.length-1)) && isV(nxt.charAt(0))){ out += cur; any=true; }
+    else { out += cur; if(nxt) out+=' '; }
+  }
+  var chunks=out.split(' ');
+  return {chunks:chunks,
+          kana: chunks.map(kana).join(' '),
+          ipa: '/'+chunks.map(ipaWord).join(' ')+'/',
+          isLink:any};
+}
+/* 読みの見せかた（設定で切り替え）：発音記号／カタカナ／両方 */
+function readMode(){ return SET.read||'both'; }
+function readOut(word){
+  var m=readMode();
+  if(m==='ipa')  return ipa(word);
+  if(m==='kana') return kana(word);
+  return ipa(word)+'　'+kana(word);
+}
+function readLink(L){
+  var m=readMode();
+  if(m==='ipa')  return L.ipa;
+  if(m==='kana') return L.kana;
+  return L.ipa+'<br><span class="kn">'+esc(L.kana)+'</span>';
+}
+/* 音の在庫の1マス。文字とIPAを並べて出す（文字＝つづり、IPA＝その実際の音） */
+function phChip(c,cls,isVowel){
+  var s=isVowel? (IPA_V[c]||c) : (IPA_C[c]||c);
+  return '<span class="ph'+(cls||'')+'">'+esc(c)+'<i>'+esc(s)+'</i></span>';
+}
+/* ---- 声 ----------------------------------------------------------------
+   iOS アプリ（WKWebView）でも Web Speech は動く。落とし穴は3つ：
+   ①声の一覧が最初は空（voiceschanged を待つ）②その言語の声が入っていない
+   ③本体の消音スイッチ。②③に備えて、声を選べるようにし、
+   日本語の声しか無い端末ではカナを読ませる。ネイティブTTSプラグインが
+   入っている場合はそちらを優先する（アプリ化後の保険）。 */
+var VOICES=[];
+function loadVoices(){
+  var before=VOICES.length;
+  try{ VOICES=(window.speechSynthesis && speechSynthesis.getVoices()) || []; }catch(e){ VOICES=[]; }
+  /* 一覧が後から届いたら、設定画面を開いている人にだけ描き直す */
+  if(!before && VOICES.length && typeof route!=='undefined' && route==='settings'){
+    try{ render(); }catch(e){}
+  }
+}
+if(window.speechSynthesis){
+  loadVoices();
+  try{
+    if(speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    else speechSynthesis.onvoiceschanged=loadVoices;
+  }catch(e){}
+}
+/* ラテン系の素直な母音を持つ言語を上から順に探す */
+var VOICE_PREF=['it','es','pt','fi','ro','id','sw','la','ja','en'];
+function pickVoice(){
+  if(!VOICES.length) loadVoices();
+  var i;
+  if(SET.voice){
+    for(i=0;i<VOICES.length;i++) if(VOICES[i].voiceURI===SET.voice || VOICES[i].name===SET.voice) return VOICES[i];
+  }
+  for(var p=0;p<VOICE_PREF.length;p++){
+    for(i=0;i<VOICES.length;i++){
+      var lg=String(VOICES[i].lang||'').replace('_','-').toLowerCase();
+      if(lg.split('-')[0]===VOICE_PREF[p]) return VOICES[i];
+    }
+  }
+  return VOICES[0]||null;
+}
+function voiceLabel(){
+  var v=pickVoice();
+  return v ? (v.name+'（'+v.lang+'）') : '見つかりません';
+}
+function speak(text){
+  var t=String(text||'').trim(); if(!t) return;
+  var v=pickVoice();
+  /* 日本語の声しか無い端末では、つづりではなくカナを読ませる（そのほうが近い） */
+  var say = (v && /^ja/i.test(v.lang)) ? t.split(/\s+/).map(kana).join(' ') : t;
+  try{
+    var N = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.TextToSpeech;
+    if(N && N.speak){ N.speak({text:say, lang:(v&&v.lang)||'it-IT', rate:1.0}); return; }
+  }catch(e){}
+  try{
+    if(!window.speechSynthesis){ toast('この端末では読み上げできません'); return; }
+    speechSynthesis.cancel();
+    var u=new SpeechSynthesisUtterance(say);
+    if(v){ u.voice=v; u.lang=v.lang; } else { u.lang='it-IT'; }
+    u.rate=.82;
+    u.onerror=function(){ toast('声が出ませんでした。設定 →「声」で選び直せます'); };
+    speechSynthesis.speak(u);
+  }catch(e){ toast('読み上げできませんでした'); }
+}
+
+/* 生成：推定した規則を守って新語をつくる（これも端末内の計算） */
+function pick(o){
+  var e=Object.keys(o).map(function(k){return [k,o[k]];});
+  if(!e.length) return '';
+  var t=0,i; for(i=0;i<e.length;i++) t+=e[i][1];
+  var r=Math.random()*t;
+  for(i=0;i<e.length;i++){ r-=e[i][1]; if(r<=0) return e[i][0]; }
+  return e[0][0];
+}
+function taken(){
+  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['読:'+kana(w.hw)]=1; }); return s;
+}
+function makeWord(pos, A, tk){
+  A=A||analyze(); tk=tk||taken();
+  if(!Object.keys(A.nu).length) return null;
+  var rule=A.finalRule[pos];
+  for(var t=0;t<120;t++){
+    var n=Math.max(1,Math.min(3,+pick(A.cnt)||2));
+    var w='';
+    for(var i=0;i<n;i++){
+      var pool = i===0 ? A.onI : (Object.keys(A.onM).length?A.onM:A.onI);
+      w += pick(pool)+pick(A.nu);
+    }
+    if(rule){
+      var ch=rule.ch;
+      if(isV(ch)){ w=w.replace(/[^aeiouy]+$/,'').replace(/[aeiouy]+$/,ch); }
+      else { w=w.replace(/[^aeiouy]+$/,'')+ch; }
+    } else if(Object.keys(A.co).length && Math.random()<.35){ w+=pick(A.co); }
+    if(w.length< (t<70?4:3)) continue;   /* まず4文字以上で探し、無理なら3文字まで許す */
+    if(tk[w]) continue;
+    var rd='読:'+kana(w);
+    if(tk[rd]) continue;
+    tk[w]=1; tk[rd]=1;
+    return w.charAt(0).toUpperCase()+w.slice(1);
+  }
+  return null;
+}
+function linkRun(){
+  if(!WORDS.length) return [];
+  var used={}, seq=[], all=WORDS.slice(), start=null;
+  for(var i=0;i<all.length;i++){
+    var h=String(all[i].hw).toLowerCase();
+    if(!isV(h.charAt(h.length-1))){ start=all[i]; break; }
+  }
+  seq.push(start||all[0]); used[seq[0].hw]=1;
+  while(seq.length<3 && seq.length<all.length){
+    var last=String(seq[seq.length-1].hw).toLowerCase();
+    var want=!isV(last.charAt(last.length-1));
+    var nxt=null;
+    for(var k=0;k<all.length;k++){
+      if(used[all[k].hw]) continue;
+      var s2=String(all[k].hw).toLowerCase();
+      if(want && isV(s2.charAt(0))){ nxt=all[k]; break; }
+    }
+    if(!nxt) for(var m=0;m<all.length;m++){ if(!used[all[m].hw]){nxt=all[m];break;} }
+    if(!nxt) break;
+    used[nxt.hw]=1; seq.push(nxt);
+  }
+  return seq;
+}
+function findings(){
+  var A=analyze(), out=[], N=WORDS.length;
+  if(!N) return out;
+
+  /* 語末規則（同じ品詞が3語たまってから） */
+  Object.keys(A.finalRule).forEach(function(p){
+    var r=A.finalRule[p];
+    out.push({t:p+'は <em>-'+r.ch+'</em> で終わる',
+              d:r.all+'語中'+r.hit+'語がそうなっています。この形のまま新しい語をつくれます。', rate:r.rate});
+  });
+
+  /* 音の在庫は1語目から言える。ここが最初の手がかりになる */
+  if(A.used.length){
+    out.push({t:'いま鳴っている子音は <em>'+A.used.join(', ')+'</em>',
+              d:N+'語ぶんの、あなたの音の在庫です。ここに無い音を足すと、言語の印象が変わります。',
+              rate:Math.min(1,A.used.length/10)});
+  }
+  if(A.vowels.length && A.vowels.length<=4){
+    out.push({t:'母音は <em>'+A.vowels.join(', ')+'</em> の'+A.vowels.length+'つだけ',
+              d:'母音が少ないほど、ことば全体の響きがそろいます。増やすのはいつでもできます。',
+              rate:1-A.vowels.length/6});
+  }
+  if(A.sylMode && N>=3){
+    out.push({t:'ことばは <em>'+A.sylMode.n+'音節</em> が基本',
+              d:A.sylMode.all+'語中'+A.sylMode.hit+'語。長さがそろうと、声に出したとき言語らしく響きます。',
+              rate:A.sylMode.hit/A.sylMode.all});
+  }
+  var codas=Object.keys(A.co);
+  if(codas.length && codas.length<=4 && N>=3){
+    out.push({t:'語の終わりに立つ子音は <em>'+codas.join(', ')+'</em> だけ',
+              d:'ここが限られているほど、語をつなげたときの音が崩れません。', rate:1-codas.length/8});
+  }
+  if(A.unused.length>=4 && N>=3){
+    out.push({t:'<em>'+A.unused.slice(0,6).join(', ')+'</em> の音を使っていない',
+              d:'使わない音が決まっていること自体が、その言語らしさになります。', rate:A.unused.length/CONS.length});
+  }
+  return out;
+}
+/* 次に何をすれば規則が増えるかを、素人にわかる言葉で返す */
+function nextHint(){
+  var A=analyze(), byPos={};
+  WORDS.forEach(function(w){ byPos[w.pos]=(byPos[w.pos]||0)+1; });
+  var need=null;
+  ['名詞','動詞','形容詞'].forEach(function(p){
+    if(need) return;
+    if(!A.finalRule[p] && (byPos[p]||0)<3) need={p:p, n:3-(byPos[p]||0)};
+  });
+  if(need) return need.p+'をあと'+need.n+'語書くと、「'+need.p+'はこう終わる」という規則が出てきます。';
+  if(WORDS.length<8) return 'ことばが増えるほど、拾える規則も増えます。';
+  return null;
+}
+
+/* =========================================================================
+   4. 画面の土台
+   ========================================================================= */
+var route='home', app=document.getElementById('app');
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+var tt;
+function toast(m){
+  var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on');
+  clearTimeout(tt); tt=setTimeout(function(){t.classList.remove('on');},1900);
+}
+function go(r){ route=r; render(); window.scrollTo(0,0); }
+var POS=['名詞','動詞','形容詞','その他'];
+
+/* =========================================================================
+   5. オンボーディング（唯一、最初から在る画面）
+      ここで「知識がなくても書ける」を身体で分からせる。AIは一度も出てこない。
+   ========================================================================= */
+var ob={step:0, name:'', mn:'', hw:''};
+var OB_SEEDS=['星','水','風','光','森','空','愛する','歩く'];
+
+function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
+function obName(v){ ob.name=v; }
+function obPickMn(m){ ob.mn=m; render(); setTimeout(function(){var e=document.getElementById('ob-hw'); if(e) e.focus();},60); }
+function obHw(v){
+  ob.hw=v;
+  var k=document.getElementById('ob-k');
+  var w=String(v).replace(/[^A-Za-z]/g,'');
+  if(k) k.textContent = w ? readOut(w) : '';
+  var b=document.getElementById('ob-add');
+  if(b) b.disabled = !(w.length>=2 && ob.mn);
+}
+function obSay(){ var w=String(ob.hw).replace(/[^A-Za-z]/g,''); if(w) speak(w); }
+function obAdd(){
+  var w=String(ob.hw).replace(/[^A-Za-z]/g,'');
+  if(w.length<2 || !ob.mn){ toast('つづりと意味を入れてください'); return; }
+  w=w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+  var pos = (ob.mn==='愛する'||ob.mn==='歩く') ? '動詞' : '名詞';
+  WORDS.push({hw:w, mn:ob.mn, pos:pos, at:Date.now()});
+  save();
+  ob.mn=''; ob.hw='';
+  if(WORDS.length>=3) obGo(4); else render();
+}
+function obFinish(){
+  langName = (ob.name||'').trim() || 'わたしの言語';
+  SET.done=true; save();
+  route='home'; render(); window.scrollTo(0,0);
+}
+
+function vOb(){
+  var s=ob.step, h='';
+  var dots='<div class="obtop">'+[0,1,2,3,4].map(function(i){
+    return '<div class="dot'+(i<=s?' on':'')+'"></div>';}).join('')+'</div>';
+
+  if(s===0){
+    h='<div class="mid"><h1>Lingua</h1>'+
+      '<p style="margin-top:22px">ことばを、ゼロからつくる。<br>'+
+      '文法の知識も、発音記号の読み方も、要りません。<br>'+
+      'つづりを書けば、読みはこのアプリが決めます。</p></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obGo(1)">はじめる</button>'+
+      '<div class="mini" style="text-align:center;margin-top:12px">アカウントも通信も要りません。全部この端末の中で動きます。</div></div>';
+  }
+  else if(s===1){
+    h='<div class="mid"><h2>この言語を、<br>なんと呼びますか。</h2>'+
+      '<div class="field" style="margin-top:22px"><input id="ob-n" placeholder="例：エリラ語" value="'+esc(ob.name)+'" oninput="obName(this.value)" autocomplete="off"></div>'+
+      '<div class="mini">あとからいつでも変えられます。決まっていなければ空のままで大丈夫です。</div></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obGo(2)">つぎへ</button></div>';
+  }
+  else if(s===2){
+    h='<div class="mid"><h2>最初のひとことを<br>書いてみます。</h2>'+
+      '<p>意味をひとつ選んで、思いついたつづりを書くだけ。<br>正解はありません。</p></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obGo(3)">書いてみる</button></div>';
+  }
+  else if(s===3){
+    var need=3-WORDS.length;
+    h='<div class="mid">'+
+      '<h2 style="font-size:1.2rem">'+(WORDS.length===0?'どの意味のことばをつくる？':'あと'+need+'語。次はどれ？')+'</h2>'+
+      '<div class="chips">'+OB_SEEDS.filter(function(m){
+        return !WORDS.some(function(w){return w.mn===m;});
+      }).map(function(m){
+        return '<button class="chip'+(ob.mn===m?' on':'')+'" onclick="obPickMn(\''+m+'\')">'+m+'</button>';
+      }).join('')+'</div>'+
+      (ob.mn ? ('<div class="field" style="margin-top:16px"><label>「'+esc(ob.mn)+'」を、あなたの言語でどう書く？</label>'+
+        '<input class="hwf" id="ob-hw" placeholder="Aelin" value="'+esc(ob.hw)+'" oninput="obHw(this.value)" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
+        '<div class="pvbox"><span class="pvn">読み</span><span class="pvk" id="ob-k"></span>'+
+        '<button onclick="obSay()">▶ 聞く</button></div>'+
+        '<div class="mini">読みは、あなたが書いたつづりから自動で決まります。<br>考えなくていいところは、考えなくていいです。</div>')
+       : '<div class="mini" style="margin-top:14px">意味をひとつ選んでください。</div>')+
+      '</div>'+
+      '<div class="obfoot">'+
+      (WORDS.length? '<div class="mini" style="margin-bottom:10px">つくったことば：'+WORDS.map(function(w){return esc(w.hw);}).join('、')+'</div>':'')+
+      '<button class="btn" id="ob-add" onclick="obAdd()"'+((ob.mn&&String(ob.hw).replace(/[^A-Za-z]/g,'').length>=2)?'':' disabled')+'>この一語を加える</button></div>';
+  }
+  else {
+    var f=findings(), A=analyze();
+    h='<div class="mid"><h2>もう、規則が<br>見えはじめています。</h2>'+
+      '<div class="card" style="margin-top:20px">'+
+      (f.length ? f.slice(0,2).map(function(x){return '<div class="ft" style="margin-bottom:8px">'+x.t+'</div>';}).join('')
+                : '<div class="ft">つかっている音：<em>'+esc(A.used.join(', '))+'</em></div>')+
+      '<div class="fd">3語書いただけで、あなたの言語には既に癖ができています。この癖のまま、あとは何語でも増やせます。</div>'+
+      '</div>'+
+      '<p>これを見つけているのはAIではなく、この端末の中の計算です。だから無料のまま、何度でも使えます。</p></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obFinish()">はじめる</button></div>';
+  }
+  return '<div class="ob view'+((s===0||s===2||s===4)?' center':'')+'">'+dots+h+'</div>';
+}
+
+/* =========================================================================
+   6. ホーム＝扉と目次
+   ========================================================================= */
+function vHome(){
+  var A=analyze();
+  var last=WORDS.length?WORDS[WORDS.length-1]:null;
+  var toc=[
+    ['I','ことば','words', WORDS.length?WORDS.length+'語':'—'],
+    ['II','音','sound', A.used.length?A.used.length+'音':'—'],
+    ['III','規則','rules', findings().length?findings().length+'つ':'—'],
+    ['IV','文','sent', LINES.length?LINES.length+'文':'—'],
+    ['V','つくる','make', '']
+  ];
+  var lastLine = LINES.length?LINES[LINES.length-1]:null;
+  return '<div class="view">'+
+    '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
+    '<button class="iconb" onclick="go(\'settings\')">⚙</button></div>'+
+    '<div class="title">'+
+      '<div class="tkick">Your Language</div>'+
+      '<button class="tname" onclick="editName()">'+esc(langName||'名前をつける')+'<span class="pen">✎</span></button>'+
+      '<div class="tsub">'+(WORDS.length? esc(ipa(WORDS[0].hw)) : '　')+'</div>'+
+      '<div class="rule"></div>'+
+    '</div>'+
+    '<div class="body" style="padding-top:0">'+
+    (WORDS.length===0
+      ? '<div class="empty"><div class="eb">まだ、一語もありません</div>'+
+        '<div class="es">最初の一語を書くところから始めます。<br>つづりを書けば、読みは自動で決まります。</div></div>'+
+        '<button class="btn" onclick="openAdd()" style="margin-top:6px">最初の一語を書く</button>'
+      : '<div class="toc">'+toc.map(function(t){
+          return '<button class="trow" onclick="go(\''+t[2]+'\')">'+
+            '<span class="rn">'+t[0]+'</span><span class="rt">'+t[1]+'</span>'+
+            '<span class="lead"></span><span class="rv">'+t[3]+'</span></button>';
+        }).join('')+'</div>'+
+        (lastLine
+          ? '<button class="recent" onclick="go(\'sent\')">'+
+            '<div class="rh">最近つくった一文</div>'+
+            '<div class="line">'+esc(lastLine.ws.join(' '))+'</div>'+
+            '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).kana : linked(lastLine.ws).ipa)+'</div></button>'
+          : last? '<button class="recent" onclick="go(\'words\')">'+
+            '<div class="rh">最後に書いたことば</div>'+
+            '<div class="line">'+esc(last.hw)+'</div>'+
+            '<div class="tr">'+(last.mn? esc(last.mn)+' ・ ':'')+esc(readOut(last.hw))+'</div></button>' : '')
+    )+
+    '</div>'+
+    (WORDS.length? '<div class="barfix"><button class="btn" onclick="openAdd()">ことばを書く</button></div>':'')+
+  '</div>';
+}
+function editName(){
+  var v=prompt('言語の名前', langName);
+  if(v!==null && v.trim()){ langName=v.trim(); save(); render(); }
+}
+
+/* =========================================================================
+   7. ことば（辞書）
+   ========================================================================= */
+var q='';
+function vWords(){
+  var items=WORDS.slice().sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));});
+  if(q) items=items.filter(function(w){
+    return (w.hw+w.mn+kana(w.hw)).toLowerCase().indexOf(q.toLowerCase())>=0;
+  });
+  var body = items.length ? groupHTML(items)
+    : '<div class="empty"><div class="eb">'+(q?'見つかりません':'まだ一語もありません')+'</div></div>';
+  return '<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<div class="chap"><span class="rn">I</span><span class="ct">Words</span>'+
+    '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
+    '<div class="search"><span style="color:var(--txm)">⌕</span>'+
+    '<input placeholder="つづり・意味・読みで探す" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
+    '</div><div class="body">'+body+'</div>'+
+    '<div class="barfix"><button class="btn" onclick="openAdd()">ことばを書く</button></div></div>';
+}
+function setQ(v){
+  q=v;
+  var el=document.querySelector('.body');
+  var items=WORDS.slice().sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));})
+    .filter(function(w){ return !q || (w.hw+w.mn+kana(w.hw)).toLowerCase().indexOf(q.toLowerCase())>=0; });
+  el.innerHTML = items.length? groupHTML(items) : '<div class="empty"><div class="eb">見つかりません</div></div>';
+}
+function groupHTML(items){
+  var out='', cur='';
+  items.forEach(function(w){
+    var L=String(w.hw).charAt(0).toUpperCase();
+    if(L!==cur){ cur=L; out+='<div class="gl">'+esc(cur)+'</div>'; }
+    out+='<button class="entry" onclick="openWord(\''+esc(w.hw)+'\')">'+
+      '<div class="hwrow"><span class="hw">'+esc(w.hw)+'</span>'+
+      '<span class="rd">'+esc(readOut(w.hw))+'</span>'+
+      '<span class="pos">'+esc(w.pos)+'</span></div>'+
+      '<div class="mn">'+esc(w.mn)+'</div></button>';
+  });
+  return out;
+}
+
+/* =========================================================================
+   8. 音
+   ========================================================================= */
+function vSound(){
+  var A=analyze();
+  var seq=linkRun(), L=seq.length>=2?linked(seq.map(function(w){return w.hw;})):null;
+  return '<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<div class="chap"><span class="rn">II</span><span class="ct">Sound</span>'+
+    '<span class="cn">'+A.used.length+' + '+A.vowels.length+'</span></div></div>'+
+    '<div class="body">'+
+    '<div class="sec">使っている子音</div>'+
+    (A.used.length? A.used.map(function(c){return phChip(c,'');}).join('') : '<div class="note">まだありません。</div>')+
+    '<div class="sec">使っていない子音</div>'+
+    (A.unused.length? A.unused.map(function(c){return phChip(c,' off');}).join('') : '<div class="note">全部つかっています。</div>')+
+    '<div class="note" style="margin-top:8px">使わないと決めた音があることが、その言語らしさになります。<br>下の小さな記号は国際音声記号（IPA）です。世界のどの言語のどの音かを、ひとつずつ言い当てるための記号。</div>'+
+    '<div class="sec">母音</div>'+
+    (A.vowels.length? A.vowels.map(function(c){return phChip(c,'',true);}).join('') : '<div class="note">まだありません。</div>')+
+    (L? '<div class="sec">つなげて言うと</div>'+
+      '<div class="link"><div class="src">'+seq.map(function(w){return esc(w.hw);}).join(' ')+'</div>'+
+      '<div class="arw">'+(L.isLink?'語尾の子音が次の語の頭に流れこむ':'それぞれ切れたまま')+'</div>'+
+      '<div class="out">'+readLink(L)+'</div>'+
+      '<button class="play" onclick="speak(\''+esc(seq.map(function(w){return w.hw;}).join(' '))+'\')">▶ 聞いてみる</button></div>'+
+      (L.isLink? '' : '<div class="note" style="margin-top:8px">母音ではじまる語をつくると、前の語の語尾がそこへ流れこんで、ひと息の音になります。</div>')
+      : '')+
+    '<div class="note" style="margin-top:22px">この計算は全部この端末の中で動いています。通信もAIも使っていません。</div>'+
+    '</div></div>';
+}
+
+/* =========================================================================
+   9. 規則
+   ========================================================================= */
+function vRules(){
+  var f=findings();
+  return '<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<div class="chap"><span class="rn">III</span><span class="ct">Rules</span>'+
+    '<span class="cn">'+f.length+'</span></div></div>'+
+    '<div class="body">'+
+    '<div class="note" style="margin-bottom:6px">あなたが書いた'+WORDS.length+'語を数えて出てきた癖です。決めたものではなく、見つかったもの。</div>'+
+    (f.length? f.map(function(x){
+      return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
+        '<div class="bar"><i style="width:'+Math.round(Math.max(.12,Math.min(1,x.rate))*100)+'%"></i></div></div>';
+    }).join('') : '<div class="empty"><div class="eb">まだ規則は出ていません</div><div class="es">まず何語か書いてください。</div></div>')+
+    (nextHint()? '<div class="note" style="margin-top:18px">つぎの一手：'+esc(nextHint())+'</div>':'')+
+    '<button class="btn ghost" style="width:100%;margin-top:18px" onclick="go(\'make\')">この規則のまま語を増やす</button>'+
+    '</div></div>';
+}
+
+/* =========================================================================
+   9.5 文（語順を決めて、つないだときの音を聞く）
+       これも全部この端末の中の計算。無料。
+   ========================================================================= */
+var ORDERS=[
+  {id:'SOV', lab:'主語 → 目的語 → 動詞', ex:'日本語と同じ並び。「わたしは 星を 見る」', seq:['S','O','V']},
+  {id:'SVO', lab:'主語 → 動詞 → 目的語', ex:'英語と同じ並び。「わたしは 見る 星を」', seq:['S','V','O']},
+  {id:'VSO', lab:'動詞 → 主語 → 目的語', ex:'アラビア語などの並び。「見る わたしは 星を」', seq:['V','S','O']}
 ];
-const S={sparkle:'<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 6.1L20 10l-6.3 1.9L12 18l-1.7-6.1L4 10l6.3-1.9z"/></svg>'};
-const ICON_S='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
-const app=document.getElementById('app');
-let current='home';
+function orderDef(){ for(var i=0;i<ORDERS.length;i++) if(ORDERS[i].id===(SET.order||'SOV')) return ORDERS[i]; return ORDERS[0]; }
+function byPos(p){ return WORDS.filter(function(w){return w.pos===p;}); }
+function setOrder(id){ SET.order=id; save(); render(); }
 
-/* ---------------- toast ---------------- */
-let toastT;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),1600);}
+/* 文は自由に編む。語順は「決めた規則」で、後から答え合わせに使う。
+   長さも語数も縛らない。同じ語を何度でも置ける。 */
+var comp=[], compSel=-1, compQ='', compPos='すべて', compSeeded=false;
+function compAdd(hw){ comp.push(hw); compSel=comp.length-1; render(); }
+function compPick(i){ compSel = (compSel===i? -1 : i); render(); }
+function compMove(d){
+  var i=compSel, j=i+d;
+  if(i<0||j<0||j>=comp.length) return;
+  var t=comp[i]; comp[i]=comp[j]; comp[j]=t; compSel=j; render();
+}
+function compDel(){ if(compSel<0) return; comp.splice(compSel,1); compSel=-1; render(); }
+function compClear(){ comp=[]; compSel=-1; render(); }
+function compUndo(){ comp.pop(); compSel=-1; render(); }
+function setCompPos(p){ compPos=p; render(); }
+function setCompQ(v){
+  compQ=v;
+  var el=document.getElementById('pal'); if(el) el.innerHTML=palList();
+}
+function palList(){
+  var list=WORDS.filter(function(w){
+    if(compPos!=='すべて' && w.pos!==compPos) return false;
+    if(!compQ) return true;
+    return (w.hw+w.mn+kana(w.hw)).toLowerCase().indexOf(compQ.toLowerCase())>=0;
+  }).sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));});
+  if(!list.length) return '<div class="note">見つかりません。</div>';
+  return list.map(function(w){
+    return '<button class="pw" onclick="compAdd(\''+esc(w.hw)+'\')">'+
+      '<span class="pww">'+esc(w.hw)+'</span>'+
+      (w.mn? '<span class="pwm">'+esc(w.mn)+'</span>':'<span class="pwm dim">意味なし</span>')+
+      '</button>';
+  }).join('');
+}
+/* いま並んでいる順が、自分で決めた語順と合っているか */
+function orderCheck(){
+  var ws=comp.map(findWord).filter(Boolean);
+  if(ws.length<2) return null;
+  var verbs=ws.filter(function(w){return w.pos==='動詞';});
+  var nouns=ws.filter(function(w){return w.pos==='名詞';});
+  if(verbs.length!==1 || nouns.length<1 || nouns.length>2 || ws.length!==verbs.length+nouns.length) return null;
+  var seq=ws.map(function(w){
+    if(w.pos==='動詞') return 'V';
+    return (nouns.indexOf(w)===0)?'S':'O';
+  }).join('');
+  var want=orderDef().seq.filter(function(k){
+    if(k==='V') return true;
+    if(k==='S') return nouns.length>=1;
+    return nouns.length>=2;
+  }).join('');
+  return {now:seq, want:want, ok:seq===want};
+}
+function fixOrder(){
+  var c=orderCheck(); if(!c||c.ok) return;
+  var ws=comp.map(findWord).filter(Boolean);
+  var verbs=ws.filter(function(w){return w.pos==='動詞';});
+  var nouns=ws.filter(function(w){return w.pos==='名詞';});
+  var slot={V:verbs[0], S:nouns[0], O:nouns[1]};
+  comp=orderDef().seq.map(function(k){ return slot[k]?slot[k].hw:null; }).filter(Boolean);
+  compSel=-1; save(); render(); toast('決めた語順に並べ直しました');
+}
+function vSent(){
+  var d=orderDef();
+  /* 開いた瞬間から音が鳴るように、最初の一回だけ勝手に入れておく。
+     一度でも入れたら二度と勝手に入れない（「全部消す」が効かなくなるため） */
+  if(!compSeeded && !comp.length && WORDS.length>=2){
+    compSeeded=true;
+    var nouns=byPos('名詞'), verbs=byPos('動詞');
+    if(nouns.length && verbs.length){
+      var vf=null, i;
+      for(i=0;i<nouns.length;i++) if(isV(String(nouns[i].hw).charAt(0).toLowerCase())){ vf=nouns[i]; break; }
+      var subj=null;
+      for(i=0;i<nouns.length;i++){
+        var h=String(nouns[i].hw).toLowerCase();
+        if(nouns[i]!==vf && !isV(h.charAt(h.length-1))){ subj=nouns[i]; break; }
+      }
+      if(!subj) for(i=0;i<nouns.length;i++) if(nouns[i]!==vf){ subj=nouns[i]; break; }
+      var slot={S:(subj||nouns[0]), O:(vf&&vf!==subj?vf:nouns[1]), V:verbs[0]};
+      comp=d.seq.map(function(k){return slot[k]?slot[k].hw:null;}).filter(Boolean);
+    }
+  }
+  var ws=comp.map(findWord).filter(Boolean);
+  var L = ws.length>=2 ? linked(ws.map(function(w){return w.hw;})) : null;
+  var chk=orderCheck();
+  var head='<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<div class="chap"><span class="rn">IV</span><span class="ct">Sentence</span>'+
+    '<span class="cn">'+LINES.length+'</span></div></div><div class="body">';
 
-/* ---------------- nav ---------------- */
-function go(route,dir){
-  current=route;
-  document.getElementById('mock').textContent = route==='home'?'NOTEBOOK':(route==='words'?'NOTEBOOK · ことば':'NOTEBOOK · '+route);
-  if(route==='home') renderHome(dir);
-  else if(route==='words') renderWords();
-  else renderSoon(route);
-  window.scrollTo(0,0);
-}
-function editName(){const v=prompt('言語名',langName);if(v&&v.trim()){langName=v.trim();save();renderHome();}}
+  if(WORDS.length<2){
+    return head+'<div class="empty"><div class="eb">まだ文にできません</div>'+
+      '<div class="es">文をつくるには、ことばが2語は要ります。<br>先に何語か書いてください。</div></div>'+
+      '<button class="btn" style="width:100%" onclick="openAdd()">ことばを書く</button></div></div>';
+  }
 
-/* ---------------- HOME ---------------- */
-function renderHome(dir){
-  app.innerHTML=`<div class="view ${dir==='back'?'back':''}">
-  <div class="top"><div class="brand">LINGUA <span class="st">✦</span></div><div class="av">${S.sparkle}</div></div>
-  <div class="title">
-    <div class="tkick">Your language</div>
-    <div class="tname serif" onclick="editName()">${langName} <span class="pen">✎</span></div>
-    <div class="tnative">Elyrra</div>
-    <div class="rule"></div>
-  </div>
-  <div class="hbody">
-    <div class="clabel">— 目次 —</div>
-    <div class="toc">
-      ${TOC.map(r=>`<div class="trow" onclick="tocTap('${r.route}','${r.k}')">
-        <span class="rn">${r.n}</span>
-        <span class="rt ${r.flag?'flag':''}">${r.t}${r.flag?'<span class="tag">看板</span>':''}</span>
-        <span class="lead"></span>
-        <span class="rv ${r.flag?'mk':''}">${r.v()}</span>
-      </div>`).join('')}
-    </div>
-    <div class="recent" onclick="toast('（例文ページは準備中）')">
-      <div class="rh">最近書いた一文</div>
-      <div class="line">Aelin Mirae</div>
-      <div class="tr cor">「星を、愛する。」</div>
-    </div>
-  </div></div>
-  <button class="ai" onclick="toast('（AIに聞く — 準備中）')">${S.sparkle} AIに聞く</button>`;
-}
-function tocTap(route,k){ if(route==='words') go('words'); else go('soon-'+k); }
+  return head+
+    /* --- 1. 編む（自由。語数も並びも縛らない） --- */
+    '<div class="sec">編む</div>'+
+    (comp.length
+      ? '<div class="weave">'+comp.map(function(hw,i){
+          var w=findWord(hw);
+          return '<button class="wc'+(i===compSel?' on':'')+'" onclick="compPick('+i+')">'+
+            '<span class="wcw">'+esc(hw)+'</span>'+
+            (w&&w.mn? '<span class="wcm">'+esc(w.mn)+'</span>':'')+'</button>';
+        }).join('')+'</div>'+
+        (compSel>=0
+          ? '<div class="wctl"><button onclick="compMove(-1)">← 前へ</button>'+
+            '<button onclick="compMove(1)">後ろへ →</button>'+
+            '<button onclick="compDel()">この語を外す</button></div>'
+          : '<div class="note">語をタップすると、動かす・外すができます。</div>')
+      : '<div class="note">下からことばを選ぶと、ここに並びます。何語でも、同じ語を何度でも。</div>')+
+    (comp.length? '<div class="wctl2"><button onclick="compUndo()">ひとつ戻す</button>'+
+      '<button onclick="compClear()">全部消す</button></div>':'')+
 
-/* ---------------- WORDS ---------------- */
-function renderWords(){
-  const sorted=[...WORDS].sort((a,b)=>a.hw.localeCompare(b.hw));
-  app.innerHTML=`<div class="view">
-  <div class="chead">
-    <button class="back" onclick="go('home','back')">‹ 目次</button>
-    <div class="chap"><span class="rn">I</span><span class="ct">ことば</span><span class="cn">${WORDS.length} words</span></div>
-  </div>
-  <div class="search">${ICON_S}<input placeholder="ことば・意味をさがす" oninput="filter(this.value)"></div>
-  <div class="lex" id="lex">${lexHTML(sorted,true)}</div>
-  </div>
-  <button class="fab" onclick="openS()">＋ ことば</button>`;
+    /* --- 2. 音（リンキング込み） --- */
+    (L
+      ? '<div class="sec">この並びを読むと</div>'+
+        '<div class="link">'+
+        '<div class="sline">'+ws.map(function(w){
+          return '<span class="sw"><span class="sww">'+esc(w.hw)+'</span>'+
+                 '<span class="swk">'+esc(w.mn||'—')+'</span></span>';
+        }).join('')+'</div>'+
+        '<div class="arw">'+(L.isLink?'語尾の子音が次の語の頭に流れこみます':'それぞれ切れたまま読みます')+'</div>'+
+        '<div class="out">'+readLink(L)+'</div>'+
+        '<button class="play" onclick="speak(\''+esc(ws.map(function(w){return w.hw;}).join(' '))+'\')">▶ 声に出す</button>'+
+        '</div>'+
+        (L.isLink? '' : '<div class="note" style="margin-top:8px">母音ではじまる語を並びに入れると、前の語の語尾がそこへ流れこんで、ひと息の音になります。</div>')+
+        '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="keepLine()">この文を残す</button>'
+      : '<div class="note" style="margin-top:14px">2語以上ならべると、つないだときの音が出ます。</div>')+
+
+    /* --- 3. ことばを選ぶ --- */
+    '<div class="sec">ことばを選ぶ</div>'+
+    '<div class="segs">'+['すべて'].concat(POS).map(function(p){
+      return '<button class="seg'+(p===compPos?' on':'')+'" onclick="setCompPos(\''+p+'\')">'+p+'</button>';
+    }).join('')+'</div>'+
+    '<div class="search"><span style="color:var(--txm)">⌕</span>'+
+    '<input placeholder="つづり・意味で探す" value="'+esc(compQ)+'" oninput="setCompQ(this.value)"></div>'+
+    '<div class="pal" id="pal">'+palList()+'</div>'+
+
+    /* --- 4. 語順は「決めた規則」。並びの答え合わせに使う --- */
+    '<div class="sec">語順（この言語の規則）</div>'+
+    '<div class="segs">'+ORDERS.map(function(o){
+      return '<button class="seg'+(o.id===d.id?' on':'')+'" onclick="setOrder(\''+o.id+'\')">'+o.id+'</button>';
+    }).join('')+'</div>'+
+    '<div class="note"><b style="color:var(--tx);font-weight:500">'+d.lab+'</b><br>'+d.ex+'</div>'+
+    (chk
+      ? (chk.ok
+          ? '<div class="chk ok">いまの並びは <b>'+chk.now+'</b>。決めた語順どおりです。</div>'
+          : '<div class="chk ng">いまの並びは <b>'+chk.now+'</b>。決めた語順（<b>'+chk.want+'</b>）と違います。'+
+            '<button onclick="fixOrder()">決めた順に直す</button></div>')
+      : '<div class="note" style="margin-top:10px">主語・目的語・動詞のかたちに並べると、決めた語順と合っているか答え合わせします。<br>それ以外の並べかたも自由です。規則は縛りではなく、目安です。</div>')+
+
+    /* --- 5. 残した文 --- */
+    (LINES.length? '<div class="sec">残した文</div>'+LINES.slice().reverse().map(function(l,i){
+        var idx=LINES.length-1-i, lk=linked(l.ws);
+        return '<div class="entry" style="display:block">'+
+          '<div class="hwrow"><span class="hw" style="font-size:1.06rem">'+esc(l.ws.join(' '))+'</span>'+
+          '<span class="pos">'+esc(l.order||'')+'</span></div>'+
+          '<div class="mn" style="font-size:.92rem">'+readLink(lk)+'</div>'+
+          '<div style="display:flex;gap:8px;margin-top:8px">'+
+          '<button class="rr2" onclick="speak(\''+esc(l.ws.join(' '))+'\')">▶ 聞く</button>'+
+          '<button class="rr2" onclick="reopenLine('+idx+')">編みなおす</button>'+
+          '<button class="rr2" onclick="dropLine('+idx+')">消す</button></div></div>';
+      }).join('') : '')+
+    '<div class="note" style="margin-top:22px">読みも、つなげたときの音も、この端末の中で計算しています。</div>'+
+    '</div></div>';
 }
-function lexHTML(items,clickable){
-  let html='',letter='';
-  items.forEach(w=>{const L=w.hw[0].toUpperCase();if(L!==letter){letter=L;html+=`<div class="gl">${L}</div>`;}
-    const onc=clickable?`onclick="toast('${w.hw} — 編集は次のステップ')"`:'';
-    html+=`<div class="entry" ${onc}><div class="hwrow"><span class="hw">${w.hw}</span><span class="rd">${w.rd||''}</span><span class="pos">${w.pos}</span></div><div class="mn">${w.mn}</div></div>`;});
-  return html;
+function keepLine(){
+  if(comp.length<2){ toast('2語以上ならべてください'); return; }
+  LINES.push({ws:comp.slice(), order:(orderCheck()? orderDef().id : ''), at:Date.now()});
+  save(); render(); toast('文を残しました');
 }
-function filter(q){q=q.trim().toLowerCase();const lex=document.getElementById('lex');
-  const items=WORDS.filter(w=>!q||w.hw.toLowerCase().includes(q)||w.mn.includes(q)).sort((a,b)=>a.hw.localeCompare(b.hw));
-  lex.innerHTML=lexHTML(items,true)||'<div style="color:var(--txm);text-align:center;padding:30px">見つかりません</div>';
+function reopenLine(i){ comp=LINES[i].ws.slice(); compSel=-1; render(); window.scrollTo(0,0); }
+function dropLine(i){ LINES.splice(i,1); save(); render(); toast('消しました'); }
+
+/* =========================================================================
+   10. つくる（規則にそって量産＝無料。AI一括生成は上位プラン）
+   ========================================================================= */
+var mkPos='名詞', cands=[];
+function buildCands(n){
+  var A=analyze(), tk=taken(); cands=[];
+  for(var i=0;i<(n||8);i++){
+    var w=makeWord(mkPos,A,tk);
+    if(w) cands.push({w:w,on:true});
+  }
+}
+function vMake(){
+  var A=analyze();
+  if(!cands.length) buildCands(8);
+  var rule=A.finalRule[mkPos];
+  var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
+  return '<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<div class="chap"><span class="rn">V</span><span class="ct">Make</span></div></div>'+
+    '<div class="body">'+
+    '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
+      return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+p+'</button>';
+    }).join('')+'</div>'+
+    '<div class="note">'+(rule
+      ? 'いまの'+mkPos+'の規則（<span style="color:var(--gold)">-'+rule.ch+'</span> で終わる）を守って作ります。'
+      : 'まだ'+mkPos+'の規則が定まっていないので、いまある音の在庫だけを使って作ります。')+'</div>'+
+    (cands.length? cands.map(function(c,i){
+      return '<div class="cand">'+
+        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?'✓':'')+'</button>'+
+        '<span class="cw">'+esc(c.w)+'</span><span class="crd">'+esc(readOut(c.w))+'</span>'+
+        '<button class="rr" onclick="reroll('+i+')">↻</button>'+
+        '<button class="rr" onclick="speak(\''+esc(c.w)+'\')">▶</button></div>';
+    }).join('') : '<div class="empty"><div class="eb">材料が足りません</div><div class="es">先に何語か自分で書いてください。<br>その音づかいを真似して作ります。</div></div>')+
+    (left!==null? '<div class="note" style="margin-top:16px">無料プランはあと '+Math.max(0,left)+' 語です。</div>':'')+
+    '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+      '<span><span class="lt">テーマを言うと、まとめて作ってもらう</span><br>'+
+      '<span class="ld">「海にまつわる語を30」のように頼む</span></span>'+
+      '<span class="tag">STUDIO</span></button>'+
+    '</div>'+
+    '<div class="barfix"><button class="btn ghost" onclick="regen()">引き直す</button>'+
+    '<button class="btn" onclick="commit()">選んだ語を加える</button></div></div>';
+}
+function setPos(p){ mkPos=p; cands=[]; render(); }
+function tog(i){ cands[i].on=!cands[i].on; render(); }
+function reroll(i){
+  var A=analyze(), tk=taken();
+  cands.forEach(function(c,j){ if(j!==i){ tk[c.w.toLowerCase()]=1; } });
+  var w=makeWord(mkPos,A,tk); if(w){ cands[i]={w:w,on:cands[i].on}; render(); }
+}
+function regen(){ cands=[]; render(); }
+function commit(){
+  var sel=cands.filter(function(c){return c.on;});
+  if(!sel.length){ toast('加える語が選ばれていません'); return; }
+  if(!capOK(sel.length)){ go('plans'); toast('無料プランは'+FREE_LIMIT+'語までです'); return; }
+  sel.forEach(function(c){ WORDS.push({hw:c.w, mn:'', pos:mkPos, at:Date.now()}); });
+  save(); cands=[];
+  toast(sel.length+'語を加えました。意味はことばの一覧から書けます');
+  go('words');
 }
 
-/* ---------------- SOON ---------------- */
-function renderSoon(route){
-  const name=route.replace('soon-','');
-  app.innerHTML=`<div class="view">
-  <div class="chead"><button class="back" onclick="go('home','back')">‹ 目次</button></div>
-  <div class="soon">
-    <div class="big">${name}</div>
-    <div class="sub">この章はこれから作ります。<br>「ことば」と同じ"章を開く"型で、<br>${name}に合った画面にします。</div>
-    <div class="badge">NEXT — ここを一緒に設計</div>
-  </div></div>`;
+/* =========================================================================
+   11. 設定
+   ========================================================================= */
+function vSettings(){
+  var p=PLANS.filter(function(x){return x.id===plan();})[0];
+  return '<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<div class="chap"><span class="ct">設定</span></div></div>'+
+    '<div class="body">'+
+    '<div class="sec">見た目</div>'+
+    '<div class="pick">'+
+      ['system','light','dark'].map(function(t){
+        var lab={system:'システム',light:'ライト',dark:'ダーク'}[t];
+        return '<button class="'+(SET.theme===t?'on':'')+'" onclick="setTheme(\''+t+'\')">'+lab+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="note">「システム」は端末の設定に合わせて自動で切り替わります。</div>'+
+
+    '<div class="sec">読みの表記</div>'+
+    '<div class="pick">'+
+      [['ipa','発音記号'],['kana','カタカナ'],['both','両方']].map(function(m){
+        return '<button class="'+(readMode()===m[0]?'on':'')+'" onclick="setRead(\''+m[0]+'\')">'+m[1]+'</button>';
+      }).join('')+
+    '</div>'+
+    '<div class="pvbox" style="margin-top:10px"><span class="pvn">見本</span>'+
+      '<span class="pvk">'+esc(readOut(WORDS.length?WORDS[0].hw:'Aelin'))+'</span></div>'+
+    '<div class="note">発音記号（IPA）は、その音を世界共通で言い当てるための記号です。'+
+      '<b style="color:var(--tx);font-weight:500">/ /</b> の中の '+
+      '<b style="color:var(--tx);font-weight:500">.</b> は音節の切れ目、'+
+      '<b style="color:var(--tx);font-weight:500">ː</b> は音を伸ばす印。'+
+      'カタカナは日本語話者向けの近似で、正確なのは発音記号のほうです。</div>'+
+
+    '<div class="sec">声</div>'+
+    '<button class="set"><span class="sl">いま使う声</span><span class="sv">'+esc(voiceLabel())+'</span></button>'+
+    (VOICES.length
+      ? '<div class="field" style="margin-top:12px"><label>声を選ぶ</label>'+
+        '<select onchange="setVoice(this.value)">'+
+        '<option value=""'+(SET.voice?'':' selected')+'>自動でえらぶ</option>'+
+        VOICES.map(function(v){
+          return '<option value="'+esc(v.voiceURI)+'"'+(SET.voice===v.voiceURI?' selected':'')+'>'+
+            esc(v.name)+'（'+esc(v.lang)+'）</option>';
+        }).join('')+'</select></div>'
+      : '<div class="note">この端末の声の一覧がまだ読み込めていません。一度どこかで「▶ 聞く」を押すと出てきます。</div>')+
+    '<div class="pvbox" style="margin-top:10px"><span class="pvn">ためす</span>'+
+      '<span class="pvk">'+esc(WORDS.length?WORDS[0].hw:'Aelin')+'</span>'+
+      '<button onclick="speak(\''+esc(WORDS.length?WORDS[0].hw:'Aelin')+'\')">▶ 聞く</button></div>'+
+    '<div class="note">音が出ないときは、①iPhone 横の<b style="color:var(--tx);font-weight:500">消音スイッチ</b>が下がっていないか、'+
+      '②音量が0でないか、を先に確かめてください。'+
+      'それでも出ないときは、上の一覧から別の声を選ぶと鳴ることがあります。'+
+      'イタリア語やスペイン語の声は母音が素直なので、つくった言語には合いやすいです。</div>'+
+
+    '<div class="sec">言語</div>'+
+    '<button class="set" onclick="editName()"><span class="sl">名前</span><span class="sv">'+esc(langName||'—')+' ›</span></button>'+
+    '<button class="set" onclick="go(\'words\')"><span class="sl">ことばの数</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+' ›</span></button>'+
+
+    '<div class="sec">プラン</div>'+
+    '<button class="set" onclick="go(\'plans\')"><span class="sl">いまのプラン</span><span class="sv">'+esc(p?p.name:'Free')+' ›</span></button>'+
+
+    '<div class="sec">データ</div>'+
+    (has('plus')
+      ? '<button class="set" onclick="exportCSV()"><span class="sl">CSVで書き出す</span><span class="sv">›</span></button>'+
+        '<button class="set" onclick="openImport()"><span class="sl">CSVから取り込む</span><span class="sv">›</span></button>'+
+        '<button class="set"><span class="sl">クラウド保存</span><span class="sv">オン</span></button>'
+      : '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+        '<span><span class="lt">CSVの取り込み・書き出し</span><br><span class="ld">表計算でまとめて作った単語を流し込む</span></span>'+
+        '<span class="tag">PLUS</span></button>'+
+        '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+        '<span><span class="lt">クラウド保存</span><br><span class="ld">機種変しても消えない・複数端末で同じ辞書</span></span>'+
+        '<span class="tag">PLUS</span></button>')+
+    '<button class="set" style="margin-top:18px" onclick="wipe()"><span class="sl" style="color:#c9553f">すべて消してやり直す</span></button>'+
+    '<div class="note" style="margin-top:26px">Lingua ・ ことばは端末の中に保存されています。'+(has('plus')?'':'無料プランでは通信を一切しません。')+'</div>'+
+    '</div></div>';
+}
+function setTheme(t){ SET.theme=t; save(); applyTheme(); render(); }
+function setRead(m){ SET.read=m; save(); render(); }
+function setVoice(v){ SET.voice=v; save(); render(); var t=WORDS.length?WORDS[0].hw:'Aelin'; speak(t); }
+function wipe(){
+  if(!confirm('つくったことばを全部消して、最初からやり直しますか？')) return;
+  WORDS=[]; LINES=[]; langName=''; SET.done=false; comp=[]; compSel=-1; save();
+  ob={step:0,name:'',mn:'',hw:''}; render();
 }
 
-/* ---------------- add sheet ---------------- */
-function openS(){document.getElementById('sbg').classList.add('on');document.getElementById('sheet').classList.add('on');}
-function closeS(e){document.getElementById('sbg').classList.remove('on');document.getElementById('sheet').classList.remove('on');}
-function aiFill(){
-  const mn=document.getElementById('f-mn').value.trim()||'星';
-  document.getElementById('f-mn').value=mn;
-  const syl=['ae','li','na','sil','ve','ry','lo','en','tha','ith','mi','ra'];
-  let w='';const n=2+ (mn.length%2);for(let i=0;i<n;i++)w+=syl[(mn.charCodeAt(i%mn.length)+i)%syl.length];
-  document.getElementById('f-hw').value=w.charAt(0).toUpperCase()+w.slice(1);
+/* =========================================================================
+   12. プラン画面
+   ========================================================================= */
+function vPlans(){
+  return '<div class="view"><div class="chead">'+
+    '<button class="back" onclick="go(\'settings\')">← 設定</button>'+
+    '<div class="chap"><span class="ct">プラン</span></div></div>'+
+    '<div class="body">'+
+    '<div class="note" style="margin-bottom:16px">ことばをつくること自体は、ずっと無料です。<br>お金がかかるのは「たくさん保管する」ことと「AIと一緒に考える」ことだけ。</div>'+
+    PLANS.map(function(p){
+      var cur = p.id===plan();
+      return '<div class="plan'+(cur?' cur':'')+'">'+
+        '<div class="ph2"><span class="pn">'+p.name+'</span>'+
+        (cur?'<span class="badge">いま</span>':'')+
+        '<span class="pp">'+p.price+'</span></div>'+
+        '<div class="pl">'+p.lines.map(function(l){return '・'+l;}).join('<br>')+'</div>'+
+        (cur?'':'<button onclick="choose(\''+p.id+'\')">'+(p.id==='free'?'無料にもどす':'このプランにする')+'</button>')+
+        '</div>';
+    }).join('')+
+    '<div class="note" style="margin-top:14px">※ 課金はまだ繋いでいません。いまは切り替えて画面の違いを見るためのものです。</div>'+
+    '</div></div>';
 }
-function addWord(){
-  const hw=document.getElementById('f-hw').value.trim(),mn=document.getElementById('f-mn').value.trim();
-  if(!hw||!mn){toast('語形と意味を入れてください');return;}
-  WORDS.unshift({hw:hw.charAt(0).toUpperCase()+hw.slice(1),rd:document.getElementById('f-rd').value.trim(),mn,pos:document.getElementById('f-pos').value});
-  document.getElementById('f-hw').value='';document.getElementById('f-mn').value='';document.getElementById('f-rd').value='';
-  closeS(); save();
-  if(current==='words')renderWords();
-  toast('「'+hw+'」を辞書に加えました');
+function choose(id){
+  SET.plan=id; save(); render();
+  toast(id==='free'?'無料プランにしました':'（仮）'+id+' にしました');
 }
 
-/* ---------------- boot ---------------- */
-go('home');
+/* =========================================================================
+   13. ことばを書くシート／CSV
+   ========================================================================= */
+var addPos='名詞';
+function openAdd(){
+  if(!capOK(1)){ go('plans'); toast('無料プランは'+FREE_LIMIT+'語までです'); return; }
+  document.getElementById('sheet').innerHTML=
+    '<div class="grip"></div><h3>ことばを書く</h3>'+
+    '<div class="note" style="margin-bottom:12px">読みは書いたつづりから自動で決まります。</div>'+
+    '<div class="field"><label>つづり</label>'+
+    '<input class="hwf" id="f-hw" placeholder="Aelin" oninput="pv()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
+    '<div class="pvbox"><span class="pvn">読み</span><span class="pvk" id="f-pv"></span>'+
+    '<button onclick="sayField()">▶ 聞く</button></div>'+
+    '<div class="row2"><div class="field"><label>意味</label><input id="f-mn" placeholder="星"></div>'+
+    '<div class="field"><label>品詞</label><select id="f-pos">'+
+    POS.map(function(p){return '<option'+(p===addPos?' selected':'')+'>'+p+'</option>';}).join('')+
+    '</select></div></div>'+
+    '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">加える</button>'+
+    '<button class="lock" onclick="closeSheet();go(\'plans\')"><span class="lk">✧</span>'+
+      '<span><span class="lt">意味からつづりを相談する</span><br>'+
+      '<span class="ld">「静けさ、みたいな語がほしい」と話しかける</span></span>'+
+      '<span class="tag">STUDIO</span></button>';
+  document.getElementById('sbg').classList.add('on');
+  document.getElementById('sheet').classList.add('on');
+  setTimeout(function(){var e=document.getElementById('f-hw'); if(e) e.focus();},260);
+}
+function closeSheet(e){
+  if(e && e.target && e.target.id!=='sbg') return;
+  document.getElementById('sbg').classList.remove('on');
+  document.getElementById('sheet').classList.remove('on');
+}
+function pv(){
+  var v=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
+  document.getElementById('f-pv').textContent = v? readOut(v) : '';
+}
+function sayField(){
+  var v=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
+  if(v) speak(v);
+}
+function addOne(){
+  var hw=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
+  var mn=document.getElementById('f-mn').value.trim();
+  var pos=document.getElementById('f-pos').value;
+  if(hw.length<2){ toast('つづりを2文字以上で'); return; }
+  if(!capOK(1)){ closeSheet(); go('plans'); return; }
+  hw=hw.charAt(0).toUpperCase()+hw.slice(1).toLowerCase();
+  if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast('もうある語です'); return; }
+  addPos=pos;
+  WORDS.push({hw:hw, mn:mn, pos:pos, at:Date.now()});
+  save(); closeSheet(); cands=[];
+  toast(hw+' を加えました');
+  render();
+}
+/* 一語を開く：読み・音節の切れ目・意味・品詞。ここで直せる／消せる。 */
+var openHw='';
+function findWord(hw){
+  for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
+  return null;
+}
+function openWord(hw){
+  var w=findWord(hw); if(!w) return;
+  openHw=w.hw;
+  var sy=syl(w.hw);
+  document.getElementById('sheet').innerHTML=
+    '<div class="grip"></div>'+
+    '<div class="whd"><span class="whw">'+esc(w.hw)+'</span>'+
+      '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">▶ 聞く</button></div>'+
+    '<div class="wsub">'+esc(ipa(w.hw))+'</div>'+
+    '<div class="wsub2">'+esc(kana(w.hw))+'</div>'+
+    '<div class="sec" style="margin:18px 0 8px">音の切れ目</div>'+
+    '<div class="sylrow">'+sy.map(function(s,i){
+      var d=i===0? s.charAt(0).toUpperCase()+s.slice(1) : s;
+      return '<span class="sy"><span class="sya">'+esc(d)+'</span>'+
+        '<span class="syi">'+esc(ipaSyl(s))+'</span>'+
+        '<span class="syk">'+esc(sylKana(s))+'</span></span>';
+    }).join('<span class="sysep">·</span>')+'</div>'+
+    '<div class="note" style="margin-top:8px">'+sy.length+'音節。読みはこの切れ目から自動で決まっています。<br>上段が発音記号（IPA）、下段が日本語話者向けのだいたいの読み。</div>'+
+    '<div class="sec" style="margin:20px 0 8px">なおす</div>'+
+    '<div class="row2"><div class="field"><label>意味</label><input id="w-mn" value="'+esc(w.mn||'')+'" placeholder="まだ決めていない"></div>'+
+    '<div class="field"><label>品詞</label><select id="w-pos">'+
+    POS.map(function(p){return '<option'+(p===w.pos?' selected':'')+'>'+p+'</option>';}).join('')+
+    '</select></div></div>'+
+    '<button class="btn" style="width:100%;margin-top:4px" onclick="saveWord()">なおす</button>'+
+    '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
+      '<span class="sl" style="color:#c9553f">この語を消す</span></button>';
+  document.getElementById('sbg').classList.add('on');
+  document.getElementById('sheet').classList.add('on');
+}
+function saveWord(){
+  var w=findWord(openHw); if(!w) return;
+  w.mn=document.getElementById('w-mn').value.trim();
+  w.pos=document.getElementById('w-pos').value;
+  save(); closeSheet(); cands=[]; render(); toast(w.hw+' をなおしました');
+}
+function delWord(){
+  var w=findWord(openHw); if(!w) return;
+  if(!confirm(w.hw+' を消しますか？')) return;
+  WORDS=WORDS.filter(function(x){return x!==w;});
+  save(); closeSheet(); cands=[]; render(); toast(w.hw+' を消しました');
+}
+
+function exportCSV(){
+  var csv='spelling,meaning,pos,ipa,kana\n'+WORDS.map(function(w){
+    return [w.hw,w.mn,w.pos,ipa(w.hw),kana(w.hw)].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
+  }).join('\n');
+  try{
+    var b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a');
+    a.href=u; a.download=(langName||'lingua')+'.csv'; a.click(); URL.revokeObjectURL(u);
+    toast('書き出しました');
+  }catch(e){ toast('書き出せませんでした'); }
+}
+function openImport(){
+  document.getElementById('sheet').innerHTML=
+    '<div class="grip"></div><h3>CSVから取り込む</h3>'+
+    '<div class="note" style="margin-bottom:10px">1行に「つづり,意味,品詞」。1行目に見出しがあっても大丈夫です。</div>'+
+    '<div class="field"><textarea id="f-csv" placeholder="Aelin,星,名詞&#10;Naeth,水,名詞"></textarea></div>'+
+    '<button class="btn" style="width:100%" onclick="doImport()">取り込む</button>';
+  document.getElementById('sbg').classList.add('on');
+  document.getElementById('sheet').classList.add('on');
+}
+function doImport(){
+  var t=document.getElementById('f-csv').value, n=0;
+  t.split(/\r?\n/).forEach(function(line){
+    if(!line.trim()) return;
+    var c=line.split(',').map(function(x){return x.trim().replace(/^"|"$/g,'');});
+    var hw=String(c[0]||'').replace(/[^A-Za-z]/g,'');
+    if(hw.length<2) return;
+    if(/^spelling$/i.test(c[0])) return;
+    hw=hw.charAt(0).toUpperCase()+hw.slice(1).toLowerCase();
+    if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})) return;
+    WORDS.push({hw:hw, mn:c[1]||'', pos:(POS.indexOf(c[2])>=0?c[2]:'名詞'), at:Date.now()});
+    n++;
+  });
+  save(); closeSheet(); cands=[]; render();
+  toast(n+'語を取り込みました');
+}
+
+/* =========================================================================
+   14. 描画
+   ========================================================================= */
+function render(){
+  if(!SET.done){ app.innerHTML=vOb(); return; }
+  var v = route==='words'? vWords()
+        : route==='sound'? vSound()
+        : route==='rules'? vRules()
+        : route==='sent' ? vSent()
+        : route==='make' ? vMake()
+        : route==='settings'? vSettings()
+        : route==='plans'? vPlans()
+        : vHome();
+  app.innerHTML=v;
+}
+render();
 </script>
 </body>
 </html>
