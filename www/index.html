@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
@@ -11,8 +11,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:ital,wght@0,500;1,500;1,600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 /* =========================================================================
-   テーマ：ダークが既定（v1の黒×金を復元）。ライトは同じ骨格のまま紙に置き換え。
-   色の指定は全部この2ブロックの中だけ。画面側は変数しか触らない。
+   Theme. Dark is the default (the black-and-gold of v1). Light is the same
+   skeleton printed on paper instead. Every colour lives in these two blocks
+   and nowhere else; the views only ever touch the variables.
    ========================================================================= */
 html[data-theme="dark"]{
   --bg:#0a0a0e; --pane:#101017; --sf:#15151d; --sf2:#1e1e29;
@@ -32,7 +33,7 @@ html[data-theme="light"]{
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{background:var(--bg);color:var(--tx);font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
      line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
 .cz{font-family:'Cinzel',Georgia,serif}
 .cor{font-family:'Cormorant Garamond',Georgia,serif}
@@ -41,7 +42,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Noto Sans JP',-apple-syst
 @keyframes vin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 button{font-family:inherit;cursor:pointer}
 
-/* ---------- 共通パーツ ---------- */
+/* ---------- shared parts ---------- */
 .top{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0) + 16px) 24px 0}
 .brand{font-family:'Cinzel',Georgia,serif;letter-spacing:.22em;font-size:.86rem;color:var(--txs)}
 .brand .st{color:var(--gold)}
@@ -61,7 +62,7 @@ button{font-family:inherit;cursor:pointer}
 .card{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
 .rule{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto 0}
 
-/* ---------- 扉（ホーム） ---------- */
+/* ---------- the title page (home) ---------- */
 .title{padding:34px 30px 20px;text-align:center}
 .tkick{font-size:.58rem;letter-spacing:.34em;color:var(--txm);text-transform:uppercase;margin-bottom:14px}
 .tname{font-family:'Cinzel',Georgia,serif;font-weight:600;font-size:2.2rem;line-height:1.15;
@@ -80,12 +81,12 @@ button{font-family:inherit;cursor:pointer}
 .recent .line{font-family:'Cinzel',Georgia,serif;font-size:1.25rem;letter-spacing:.02em}
 .recent .tr{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--txs);margin-top:2px}
 
-/* ---------- 空っぽの状態 ---------- */
+/* ---------- the empty state ---------- */
 .empty{padding:54px 30px;text-align:center}
 .empty .eb{font-family:'Cinzel',Georgia,serif;font-size:1.3rem;margin-bottom:8px}
 .empty .es{color:var(--txm);font-size:.86rem;line-height:1.9}
 
-/* ---------- 辞書 ---------- */
+/* ---------- the dictionary ---------- */
 .search{display:flex;align-items:center;gap:10px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0 2px}
 .search input{flex:1;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
 .gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
@@ -97,7 +98,7 @@ button{font-family:inherit;cursor:pointer}
 .pos{margin-left:auto;font-size:.6rem;color:var(--txm);border:1px solid var(--line);border-radius:8px;padding:2px 8px}
 .mn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.08rem;color:var(--txs);margin-top:1px}
 
-/* ---------- 音 ---------- */
+/* ---------- sound ---------- */
 .ph{display:inline-flex;flex-direction:column;align-items:center;font-family:'Cinzel',Georgia,serif;
     font-size:.92rem;border:1px solid var(--line);line-height:1.15;
     border-radius:9px;padding:5px 10px;margin:0 6px 8px 0;color:var(--tx);background:var(--sf);min-width:34px}
@@ -112,7 +113,7 @@ button{font-family:inherit;cursor:pointer}
       border-radius:22px;padding:9px 20px;font-size:.86rem;font-weight:600}
 .play:active{opacity:.6}
 
-/* ---------- 規則 ---------- */
+/* ---------- rules ---------- */
 .find{padding:16px 0;border-bottom:1px solid var(--line)}
 .ft{font-size:1rem;font-weight:500;line-height:1.6}
 .ft em{font-style:normal;color:var(--gold);font-family:'Cinzel',Georgia,serif}
@@ -120,7 +121,7 @@ button{font-family:inherit;cursor:pointer}
 .bar{height:2px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--gold)}
 
-/* ---------- つくる ---------- */
+/* ---------- make ---------- */
 .segs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .seg{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:7px 15px;font-size:.84rem}
 .seg.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
@@ -133,7 +134,7 @@ button{font-family:inherit;cursor:pointer}
 .cand .cm{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txs);font-size:1rem}
 .cand .rr{background:none;border:none;color:var(--txm);font-size:.9rem;padding:2px 4px}
 
-/* ---------- 設定 ---------- */
+/* ---------- settings ---------- */
 .set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
 .set .sl{font-size:.95rem}
 .set .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
@@ -150,7 +151,7 @@ button{font-family:inherit;cursor:pointer}
 .plan button{width:100%;margin-top:13px;padding:11px;border-radius:11px;border:1px solid var(--goldln);
              background:var(--goldsf);color:var(--gold);font-weight:600;font-size:.88rem}
 
-/* ---------- ロック（上位プラン） ---------- */
+/* ---------- locked behind a paid plan ---------- */
 .lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;
       border:1px dashed var(--line);border-radius:13px;padding:14px 16px;color:var(--txs);margin-top:10px}
 .lock .lk{color:var(--txm);font-size:.86rem}
@@ -159,7 +160,7 @@ button{font-family:inherit;cursor:pointer}
 .lock .tag{margin-left:auto;font-size:.55rem;letter-spacing:.14em;color:var(--pur);
            border:1px solid var(--purln);border-radius:20px;padding:2px 9px;flex:0 0 auto}
 
-/* ---------- 下部バー・シート・トースト ---------- */
+/* ---------- bottom bar, sheet, toast ---------- */
 .barfix{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:480px;margin:0 auto;
         padding:12px 24px calc(env(safe-area-inset-bottom,0) + 14px);
         background:linear-gradient(180deg,transparent,var(--bg) 34%);display:flex;gap:10px}
@@ -188,7 +189,7 @@ button{font-family:inherit;cursor:pointer}
 .pvbox .pvn{font-size:.72rem;color:var(--txm)}
 .pvbox button{margin-left:auto;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
               border-radius:18px;padding:5px 13px;font-size:.78rem}
-/* 一語の詳細 */
+/* one word, opened */
 .whd{display:flex;align-items:center;gap:12px;margin:0 2px}
 .whw{font-family:'Cinzel',Georgia,serif;font-size:1.7rem;letter-spacing:.03em}
 .wsub{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
@@ -200,7 +201,7 @@ button{font-family:inherit;cursor:pointer}
 .sy .syi{font-family:'Cormorant Garamond',Georgia,serif;font-size:.78rem;color:var(--gold);margin-top:3px}
 .sy .syk{font-size:.66rem;color:var(--txm);margin-top:1px}
 .sysep{color:var(--txm);font-size:.8rem}
-/* 文 */
+/* sentences */
 .sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
 .sw{display:inline-flex;flex-direction:column;align-items:center}
 .sw .sww{font-family:'Cinzel',Georgia,serif;font-size:1.18rem;letter-spacing:.02em}
@@ -208,7 +209,7 @@ button{font-family:inherit;cursor:pointer}
 .rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:16px;padding:5px 12px;font-size:.72rem}
 .rr2:active{opacity:.55}
 .link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
-/* 文を編む */
+/* weaving a sentence */
 .weave{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:var(--pane);border:1px solid var(--line);border-radius:14px}
 .wc{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);
     border:1px solid var(--line);border-radius:11px;padding:8px 13px;color:var(--tx)}
@@ -238,7 +239,7 @@ button{font-family:inherit;cursor:pointer}
        border-radius:20px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 
-/* ---------- オンボーディング ---------- */
+/* ---------- onboarding ---------- */
 .ob{min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0) + 22px) 30px calc(env(safe-area-inset-bottom,0) + 26px)}
 .ob .obtop{display:flex;gap:6px}
 .ob .dot{width:22px;height:2px;border-radius:2px;background:var(--line)}
@@ -266,9 +267,10 @@ button{font-family:inherit;cursor:pointer}
 
 <script>
 /* =========================================================================
-   0. 保存されるもの
-      words / lang / set(テーマ・プラン・オンボ済み)
-      いま入っているものは全部「その人が自分で書いたもの」だけ。初期辞書は無い。
+   0. What gets stored
+      words / lines / language name / settings (theme, plan, onboarded)
+      Everything in here is something the person wrote themselves.
+      There is no starter dictionary, on purpose.
    ========================================================================= */
 var LS_W='lingua.words', LS_N='lingua.lang', LS_S='lingua.set', LS_L='lingua.lines';
 var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:false, order:'SOV', read:'both', voice:'', ui:''};
@@ -288,19 +290,560 @@ function save(){
 }
 
 /* =========================================================================
-   1. プラン
-      無料でどこまでできるかが、このアプリの一番大事な設計。
-      分析・読みの導出・リンキング・規則にそった生成は、全部この端末の中の
-      ただの計算。通信もAIも要らない。だから無料に置く。
-      有料は「保管（クラウド・CSV・無制限）」と「AIとの共作」だけ。
+   0.5 Language of the interface
+       English is the base. Every other locale is a fallback layer on top of
+       it, so a missing key degrades to English rather than to a blank.
+
+       The rule this app follows everywhere: the stable machine key is what
+       gets stored; the human-readable label is chosen at render time. That
+       is why a dictionary written in Japanese can be reopened in English
+       without a single stale string surviving inside the saved data.
+   ========================================================================= */
+var UI_LANGS=['en','ja'];
+function autoLang(){
+  var l=String((navigator.language||navigator.userLanguage||'en')).toLowerCase().split('-')[0];
+  return UI_LANGS.indexOf(l)>=0 ? l : 'en';
+}
+function uiLang(){ return (UI_LANGS.indexOf(SET.ui)>=0) ? SET.ui : autoLang(); }
+
+var STR={};
+STR.en={
+  /* onboarding */
+  'ob.start'        : "Begin",
+  'ob.next'         : "Next",
+  'ob.0.p'          : "Build a language out of nothing.<br>No grammar training, no phonetics, no notation.<br>Write a spelling and Lingua works out how it sounds.",
+  'ob.0.mini'       : "No account, no connection. All of it runs on this device.",
+  'ob.1.h'          : "What will you<br>call this language?",
+  'ob.1.ph'         : "e.g. Elira",
+  'ob.1.mini'       : "You can change it whenever. Leave it empty if you have not decided.",
+  'ob.2.h'          : "Now write<br>your first word.",
+  'ob.2.p'          : "Pick a meaning and write whatever spelling comes to you.<br>There is no correct answer.",
+  'ob.2.btn'        : "Write one",
+  'ob.3.h0'         : "Which meaning will you build first?",
+  'ob.3.hn'         : "{0} to go. Which one next?",
+  'ob.3.ask'        : "How is “{0}” written in your language?",
+  'ob.3.reading'    : "reading",
+  'ob.3.listen'     : "▶ Listen",
+  'ob.3.mini'       : "The reading comes out of the spelling you wrote.<br>The parts you would rather not think about, you do not have to.",
+  'ob.3.pickfirst'  : "Pick a meaning first.",
+  'ob.3.made'       : "So far: {0}",
+  'ob.3.add'        : "Add this word",
+  'ob.3.need'       : "Write a spelling and pick a meaning",
+  'ob.4.h'          : "Your rules are<br>already showing.",
+  'ob.4.using'      : "Sounds in use: <em>{0}</em>",
+  'ob.4.fd'         : "Three words in, and your language already has habits. Everything after this can follow them.",
+  'ob.4.p'          : "No AI found those. It is arithmetic running inside this device — which is why it stays free, however often you use it.",
+  /* seed meanings: the key is stored on the word, this is only the label */
+  'seed.star'       : "star",
+  'seed.water'      : "water",
+  'seed.wind'       : "wind",
+  'seed.light'      : "light",
+  'seed.forest'     : "forest",
+  'seed.sky'        : "sky",
+  'seed.love'       : "to love",
+  'seed.walk'       : "to walk",
+  'lang.default'    : "My language",
+  /* home */
+  'nav.contents'    : "← Contents",
+  'nav.settings'    : "← Settings",
+  'home.kicker'     : "Your Language",
+  'home.unnamed'    : "Name it",
+  'home.name.prompt': "Name of the language",
+  'toc.words'       : "Words",
+  'toc.sound'       : "Sound",
+  'toc.rules'       : "Rules",
+  'toc.sent'        : "Sentences",
+  'toc.make'        : "Make",
+  'count.words'     : "{0} words",
+  'count.words.1'   : "1 word",
+  'count.sounds'    : "{0} sounds",
+  'count.sounds.1'  : "1 sound",
+  'count.rules'     : "{0} found",
+  'count.lines'     : "{0} lines",
+  'count.lines.1'   : "1 line",
+  'home.empty.t'    : "Not one word yet",
+  'home.empty.s'    : "It begins with a single word.<br>Write the spelling; the reading follows on its own.",
+  'home.empty.btn'  : "Write the first word",
+  'home.recent.line': "Latest sentence",
+  'home.recent.word': "Last word written",
+  'home.write'      : "Write a word",
+  /* words */
+  'words.search'    : "Search spelling, meaning, reading",
+  'words.nomatch'   : "Nothing found",
+  'words.empty'     : "No words yet",
+  /* sound */
+  'sound.used'      : "Consonants in use",
+  'sound.unused'    : "Consonants not used",
+  'sound.none'      : "None yet.",
+  'sound.allused'   : "Every one of them is in use.",
+  'sound.note'      : "The sounds a language refuses are as much a part of it as the ones it keeps.<br>The small mark under each letter is the International Phonetic Alphabet: one symbol for one sound, in any language on earth.",
+  'sound.vowels'    : "Vowels",
+  'sound.together'  : "Said together",
+  'link.yes'        : "the final consonant runs into the next word",
+  'link.no'         : "each word stays separate",
+  'sound.listen'    : "▶ Listen",
+  'sound.linkhint'  : "Write a word that starts with a vowel and the consonant before it runs across, so the two become one breath.",
+  'sound.footer'    : "All of this arithmetic happens inside your device. No network, no AI.",
+  /* rules */
+  'rules.intro'     : "Habits found by counting the {0} words you wrote. Not decided — discovered.",
+  'rules.intro.1'   : "Habits found by counting the one word you wrote. Not decided — discovered.",
+  'rules.empty.t'   : "No rules yet",
+  'rules.empty.s'   : "Write a few words first.",
+  'rules.next'      : "Next: {0}",
+  'rules.make'      : "Make more words that keep these rules",
+  'find.final.t'    : "{0}s end in <em>-{1}</em>",
+  'find.final.d'    : "{1} of {0} do. New words can hold the same shape.",
+  'find.cons.t'     : "Consonants ringing now: <em>{0}</em>",
+  'find.cons.d'     : "Your stock of sounds across {0} words. Add one that is not here and the whole language changes colour.",
+  'find.vow.t'      : "Only <em>{0}</em> — {1} in all",
+  'find.vow.d'      : "The fewer the vowels, the more the language sounds of a piece. You can widen it whenever you like.",
+  'find.syl.t'      : "Words run to <em>{0} syllables</em>",
+  'find.syl.t.1'    : "Words run to <em>one syllable</em>",
+  'find.syl.d'      : "{1} of {0} words. Even lengths make a language sound spoken rather than assembled.",
+  'find.coda.t'     : "Words only ever end in <em>{0}</em>",
+  'find.coda.d'     : "The narrower that list, the cleaner words join when you say them in a row.",
+  'find.unused.t'   : "<em>{0}</em> never appear",
+  'find.unused.d'   : "Having sounds you never use is itself a signature.",
+  'hint.pos'        : "Write {0} more {1}s and a rule — how a {1} ends — will surface.",
+  'hint.pos.1'      : "Write one more {1} and a rule — how a {1} ends — will surface.",
+  'hint.more'       : "The more words there are, the more rules there are to find.",
+  /* sentences */
+  'sent.empty.t'    : "Not enough for a sentence",
+  'sent.empty.s'    : "A sentence needs at least two words.<br>Write a few first.",
+  'sent.weave'      : "Weave",
+  'sent.prev'       : "← Earlier",
+  'sent.later'      : "Later →",
+  'sent.remove'     : "Take this word out",
+  'sent.taphint'    : "Tap a word to move it or take it out.",
+  'sent.palhint'    : "Choose words below and they line up here. Any number of them, and the same word as often as you like.",
+  'sent.undo'       : "Undo one",
+  'sent.clear'      : "Clear",
+  'sent.reads'      : "Read aloud, this line is",
+  'sent.say'        : "▶ Say it",
+  'sent.linkhint'   : "Put a word beginning with a vowel into the line and the consonant before it runs across, so they become one breath.",
+  'sent.keep'       : "Keep this sentence",
+  'sent.need2'      : "Line up two or more words to hear how they join.",
+  'sent.choose'     : "Choose words",
+  'sent.search'     : "Search spelling or meaning",
+  'sent.nomatch'    : "Nothing found.",
+  'sent.nomean'     : "no meaning",
+  'sent.order'      : "Word order (a rule of this language)",
+  'order.SOV.lab'   : "Subject → Object → Verb",
+  'order.SOV.ex'    : "Japanese and Turkish sit here. “I the star see.”",
+  'order.SVO.lab'   : "Subject → Verb → Object",
+  'order.SVO.ex'    : "English sits here. “I see the star.”",
+  'order.VSO.lab'   : "Verb → Subject → Object",
+  'order.VSO.ex'    : "Arabic and Irish sit here. “See I the star.”",
+  'sent.chk.ok'     : "The line reads <b>{0}</b> — exactly the order you chose.",
+  'sent.chk.ng'     : "The line reads <b>{0}</b>, but the order you chose is <b>{1}</b>.",
+  'sent.chk.fix'    : "Put it in the order I chose",
+  'sent.chk.hint'   : "Line up a subject, an object and a verb and Lingua checks the order against your rule.<br>Any other arrangement is fine too. The rule is a guide, not a fence.",
+  'sent.kept'       : "Kept sentences",
+  'sent.listen'     : "▶ Listen",
+  'sent.reweave'    : "Weave again",
+  'sent.drop'       : "Delete",
+  'sent.footer'     : "The readings, and the way words run together, are worked out inside this device.",
+  'toast.need2'     : "Line up at least two words",
+  'toast.kept'      : "Sentence kept",
+  'toast.dropped'   : "Deleted",
+  'toast.reordered' : "Put back into the order you chose",
+  /* make */
+  'make.rule'       : "Keeping your current rule for {0}s — they end in <span style=\"color:var(--gold)\">-{1}</span>.",
+  'make.norule'     : "No rule has settled for {0}s yet, so these are built only from the sounds you already use.",
+  'make.empty.t'    : "Not enough to work from",
+  'make.empty.s'    : "Write a few words yourself first.<br>Lingua copies the way those sound.",
+  'make.left'       : "{0} words left on the free plan.",
+  'make.left.1'     : "One word left on the free plan.",
+  'make.lock.t'     : "Ask for a whole set at once",
+  'make.lock.d'     : "“Thirty words about the sea” — and they arrive",
+  'make.reroll'     : "Draw again",
+  'make.commit'     : "Add the ones I picked",
+  'toast.noselect'  : "Nothing is selected",
+  'toast.cap'       : "The free plan holds {0} words",
+  'toast.added.n'   : "Added {0} words. Meanings can be written from the word list",
+  'toast.added.n.1' : "Added one word. Its meaning can be written from the word list",
+  /* settings */
+  'set.title'       : "Settings",
+  'set.look'        : "Appearance",
+  'theme.system'    : "System",
+  'theme.light'     : "Light",
+  'theme.dark'      : "Dark",
+  'set.theme.note'  : "“System” follows whatever your device is set to.",
+  'set.reading'     : "How readings are shown",
+  'read.ipa'        : "IPA",
+  'read.both'       : "Both",
+  'set.sample'      : "Sample",
+  'set.ipa.note'    : "The IPA is how the world writes a sound so that anyone can say it. Inside <b style=\"color:var(--tx);font-weight:500\">/ /</b>, a <b style=\"color:var(--tx);font-weight:500\">.</b> is a syllable break and <b style=\"color:var(--tx);font-weight:500\">ː</b> holds the sound longer. The IPA is the exact one; {0} is an approximation for people who read it.",
+  'set.display'     : "Display language",
+  'set.display.note': "The screen and the reading of your words both follow this. The IPA does not — it is the same in every language. Katakana for Japanese, <b style=\"color:var(--tx);font-weight:500\">AY-leen</b>-style respelling for English, where the capitals mark the stress. The default follows your device.",
+  'set.voice'       : "Voice",
+  'set.voice.cur'   : "Voice in use",
+  'set.voice.none'  : "none found",
+  'set.voice.pick'  : "Choose a voice",
+  'set.voice.auto'  : "Choose automatically",
+  'set.voice.wait'  : "The list of voices on this device has not loaded yet. Press “▶ Listen” anywhere once and it will appear.",
+  'set.voice.try'   : "Try it",
+  'set.voice.note'  : "If nothing plays, check the silent switch on the side of the phone first, then the volume. If it still will not play, another voice from the list above often will. Italian and Spanish voices have plain, even vowels, which usually suits an invented language.",
+  'set.lang'        : "Language",
+  'set.name'        : "Name",
+  'set.count'       : "Words",
+  'set.plan'        : "Plan",
+  'set.plan.cur'    : "Current plan",
+  'set.data'        : "Data",
+  'set.csv.out'     : "Export as CSV",
+  'set.csv.in'      : "Import from CSV",
+  'set.cloud'       : "Cloud backup",
+  'set.on'          : "On",
+  'set.lock.csv.t'  : "CSV import and export",
+  'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
+  'set.lock.cloud.t': "Cloud backup",
+  'set.lock.cloud.d': "Survives a new phone; one dictionary across devices",
+  'set.wipe'        : "Erase everything and start again",
+  'set.footer'      : "Lingua · your words are stored on this device.",
+  'set.footer.free' : " The free plan never touches the network.",
+  'confirm.wipe'    : "Erase every word you have made and start again?",
+  /* plans */
+  'plans.title'     : "Plans",
+  'plans.intro'     : "Making a language is free, and stays free.<br>What costs money is keeping a great deal of it, and thinking alongside an AI.",
+  'plan.cur'        : "current",
+  'plan.tofree'     : "Back to free",
+  'plan.choose'     : "Choose this plan",
+  'plans.note'      : "Payment is not wired up yet. For now this only switches what the screens show.",
+  'plan.free.1'     : "Build every word by hand — all of it",
+  'plan.free.2'     : "Rules found for you, readings derived for you",
+  'plan.free.3'     : "Linking shown, and read aloud",
+  'plan.free.4'     : "Mass-produce words that keep your rules",
+  'plan.free.5'     : "Stored on the device · up to 100 words",
+  'plan.plus.1'     : "Unlimited words",
+  'plan.plus.2'     : "Cloud backup (new phone, several devices)",
+  'plan.plus.3'     : "Import and export words as CSV",
+  'plan.plus.4'     : "Everything in Free",
+  'plan.studio.1'   : "Work with an AI (shape from meaning, grammar, examples)",
+  'plan.studio.2'   : "Generate a whole vocabulary from a theme",
+  'plan.studio.3'   : "Everything in Plus",
+  'plan.price.free' : "$0",
+  'plan.price.plus' : "$9 / month",
+  'plan.price.studio':"$19 / month",
+  'toast.plan.free' : "Back on the free plan",
+  'toast.plan.other': "(mock) switched to {0}",
+  /* the write / edit sheets */
+  'add.title'       : "Write a word",
+  'add.note'        : "The reading is worked out from the spelling you write.",
+  'f.spelling'      : "Spelling",
+  'f.reading'       : "Reading",
+  'f.listen'        : "▶ Listen",
+  'f.meaning'       : "Meaning",
+  'f.meaning.ph'    : "star",
+  'f.pos'           : "Part of speech",
+  'add.btn'         : "Add",
+  'add.lock.t'      : "Talk out a shape for a meaning",
+  'add.lock.d'      : "“I want a word that feels like stillness”",
+  'toast.hw2'       : "A spelling needs two letters or more",
+  'toast.dup'       : "That word already exists",
+  'toast.added.1'   : "{0} added",
+  'word.syl'        : "Syllable breaks",
+  'word.note'       : "{0} syllables. The reading falls out of these breaks.<br>Above is the IPA; below is the rough reading for {1} speakers ({2}).",
+  'word.note.1'     : "One syllable. The reading falls out of the spelling.<br>Above is the IPA; below is the rough reading for {1} speakers ({2}).",
+  'word.edit'       : "Change it",
+  'word.mn.ph'      : "not decided yet",
+  'word.save'       : "Save",
+  'word.del'        : "Delete this word",
+  'confirm.del'     : "Delete {0}?",
+  'toast.saved'     : "{0} updated",
+  'toast.deleted'   : "{0} deleted",
+  'csv.title'       : "Import from CSV",
+  'csv.note'        : "One word per line: spelling, meaning, part of speech. A header row is fine.",
+  'csv.ph'          : "Aelin,star,noun&#10;Naeth,water,noun",
+  'csv.btn'         : "Import",
+  'toast.exported'  : "Exported",
+  'toast.exportfail': "Could not export",
+  'toast.imported'  : "Imported {0} words",
+  'toast.imported.1': "Imported one word",
+  /* voice errors */
+  'tts.none'        : "This device cannot read aloud",
+  'tts.err'         : "No sound came out. Settings → Voice lets you pick another",
+  'tts.fail'        : "Could not read that aloud",
+  /* how IPA and reading are joined when both are shown */
+  'read.sep'        : "  "
+};
+STR.ja={
+  'ob.start'        : 'はじめる',
+  'ob.next'         : 'つぎへ',
+  'ob.0.p'          : 'ことばを、ゼロからつくる。<br>文法の知識も、発音記号の読み方も、要りません。<br>つづりを書けば、読みはこのアプリが決めます。',
+  'ob.0.mini'       : 'アカウントも通信も要りません。全部この端末の中で動きます。',
+  'ob.1.h'          : 'この言語を、<br>なんと呼びますか。',
+  'ob.1.ph'         : '例：エリラ語',
+  'ob.1.mini'       : 'あとからいつでも変えられます。決まっていなければ空のままで大丈夫です。',
+  'ob.2.h'          : '最初のひとことを<br>書いてみます。',
+  'ob.2.p'          : '意味をひとつ選んで、思いついたつづりを書くだけ。<br>正解はありません。',
+  'ob.2.btn'        : '書いてみる',
+  'ob.3.h0'         : 'どの意味のことばをつくる？',
+  'ob.3.hn'         : 'あと{0}語。次はどれ？',
+  'ob.3.ask'        : '「{0}」を、あなたの言語でどう書く？',
+  'ob.3.reading'    : '読み',
+  'ob.3.listen'     : '▶ 聞く',
+  'ob.3.mini'       : '読みは、あなたが書いたつづりから自動で決まります。<br>考えなくていいところは、考えなくていいです。',
+  'ob.3.pickfirst'  : '意味をひとつ選んでください。',
+  'ob.3.made'       : 'つくったことば：{0}',
+  'ob.3.add'        : 'この一語を加える',
+  'ob.3.need'       : 'つづりと意味を入れてください',
+  'ob.4.h'          : 'もう、規則が<br>見えはじめています。',
+  'ob.4.using'      : 'つかっている音：<em>{0}</em>',
+  'ob.4.fd'         : '3語書いただけで、あなたの言語には既に癖ができています。この癖のまま、あとは何語でも増やせます。',
+  'ob.4.p'          : 'これを見つけているのはAIではなく、この端末の中の計算です。だから無料のまま、何度でも使えます。',
+  'seed.star'       : '星',
+  'seed.water'      : '水',
+  'seed.wind'       : '風',
+  'seed.light'      : '光',
+  'seed.forest'     : '森',
+  'seed.sky'        : '空',
+  'seed.love'       : '愛する',
+  'seed.walk'       : '歩く',
+  'lang.default'    : 'わたしの言語',
+  'nav.contents'    : '← 目次',
+  'nav.settings'    : '← 設定',
+  'home.kicker'     : 'Your Language',
+  'home.unnamed'    : '名前をつける',
+  'home.name.prompt': '言語の名前',
+  'toc.words'       : 'ことば',
+  'toc.sound'       : '音',
+  'toc.rules'       : '規則',
+  'toc.sent'        : '文',
+  'toc.make'        : 'つくる',
+  'count.words'     : '{0}語',
+  'count.sounds'    : '{0}音',
+  'count.rules'     : '{0}つ',
+  'count.lines'     : '{0}文',
+  'home.empty.t'    : 'まだ、一語もありません',
+  'home.empty.s'    : '最初の一語を書くところから始めます。<br>つづりを書けば、読みは自動で決まります。',
+  'home.empty.btn'  : '最初の一語を書く',
+  'home.recent.line': '最近つくった一文',
+  'home.recent.word': '最後に書いたことば',
+  'home.write'      : 'ことばを書く',
+  'words.search'    : 'つづり・意味・読みで探す',
+  'words.nomatch'   : '見つかりません',
+  'words.empty'     : 'まだ一語もありません',
+  'sound.used'      : '使っている子音',
+  'sound.unused'    : '使っていない子音',
+  'sound.none'      : 'まだありません。',
+  'sound.allused'   : '全部つかっています。',
+  'sound.note'      : '使わないと決めた音があることが、その言語らしさになります。<br>下の小さな記号は国際音声記号（IPA）です。世界のどの言語のどの音かを、ひとつずつ言い当てるための記号。',
+  'sound.vowels'    : '母音',
+  'sound.together'  : 'つなげて言うと',
+  'link.yes'        : '語尾の子音が次の語の頭に流れこむ',
+  'link.no'         : 'それぞれ切れたまま',
+  'sound.listen'    : '▶ 聞いてみる',
+  'sound.linkhint'  : '母音ではじまる語をつくると、前の語の語尾がそこへ流れこんで、ひと息の音になります。',
+  'sound.footer'    : 'この計算は全部この端末の中で動いています。通信もAIも使っていません。',
+  'rules.intro'     : 'あなたが書いた{0}語を数えて出てきた癖です。決めたものではなく、見つかったもの。',
+  'rules.empty.t'   : 'まだ規則は出ていません',
+  'rules.empty.s'   : 'まず何語か書いてください。',
+  'rules.next'      : 'つぎの一手：{0}',
+  'rules.make'      : 'この規則のまま語を増やす',
+  'find.final.t'    : '{0}は <em>-{1}</em> で終わる',
+  'find.final.d'    : '{0}語中{1}語がそうなっています。この形のまま新しい語をつくれます。',
+  'find.cons.t'     : 'いま鳴っている子音は <em>{0}</em>',
+  'find.cons.d'     : '{0}語ぶんの、あなたの音の在庫です。ここに無い音を足すと、言語の印象が変わります。',
+  'find.vow.t'      : '母音は <em>{0}</em> の{1}つだけ',
+  'find.vow.d'      : '母音が少ないほど、ことば全体の響きがそろいます。増やすのはいつでもできます。',
+  'find.syl.t'      : 'ことばは <em>{0}音節</em> が基本',
+  'find.syl.d'      : '{0}語中{1}語。長さがそろうと、声に出したとき言語らしく響きます。',
+  'find.coda.t'     : '語の終わりに立つ子音は <em>{0}</em> だけ',
+  'find.coda.d'     : 'ここが限られているほど、語をつなげたときの音が崩れません。',
+  'find.unused.t'   : '<em>{0}</em> の音を使っていない',
+  'find.unused.d'   : '使わない音が決まっていること自体が、その言語らしさになります。',
+  'hint.pos'        : '{1}をあと{0}語書くと、「{1}はこう終わる」という規則が出てきます。',
+  'hint.more'       : 'ことばが増えるほど、拾える規則も増えます。',
+  'sent.empty.t'    : 'まだ文にできません',
+  'sent.empty.s'    : '文をつくるには、ことばが2語は要ります。<br>先に何語か書いてください。',
+  'sent.weave'      : '編む',
+  'sent.prev'       : '← 前へ',
+  'sent.later'      : '後ろへ →',
+  'sent.remove'     : 'この語を外す',
+  'sent.taphint'    : '語をタップすると、動かす・外すができます。',
+  'sent.palhint'    : '下からことばを選ぶと、ここに並びます。何語でも、同じ語を何度でも。',
+  'sent.undo'       : 'ひとつ戻す',
+  'sent.clear'      : '全部消す',
+  'sent.reads'      : 'この並びを読むと',
+  'sent.say'        : '▶ 声に出す',
+  'sent.linkhint'   : '母音ではじまる語を並びに入れると、前の語の語尾がそこへ流れこんで、ひと息の音になります。',
+  'sent.keep'       : 'この文を残す',
+  'sent.need2'      : '2語以上ならべると、つないだときの音が出ます。',
+  'sent.choose'     : 'ことばを選ぶ',
+  'sent.search'     : 'つづり・意味で探す',
+  'sent.nomatch'    : '見つかりません。',
+  'sent.nomean'     : '意味なし',
+  'sent.order'      : '語順（この言語の規則）',
+  'order.SOV.lab'   : '主語 → 目的語 → 動詞',
+  'order.SOV.ex'    : '日本語と同じ並び。「わたしは 星を 見る」',
+  'order.SVO.lab'   : '主語 → 動詞 → 目的語',
+  'order.SVO.ex'    : '英語と同じ並び。「わたしは 見る 星を」',
+  'order.VSO.lab'   : '動詞 → 主語 → 目的語',
+  'order.VSO.ex'    : 'アラビア語などの並び。「見る わたしは 星を」',
+  'sent.chk.ok'     : 'いまの並びは <b>{0}</b>。決めた語順どおりです。',
+  'sent.chk.ng'     : 'いまの並びは <b>{0}</b>。決めた語順（<b>{1}</b>）と違います。',
+  'sent.chk.fix'    : '決めた順に直す',
+  'sent.chk.hint'   : '主語・目的語・動詞のかたちに並べると、決めた語順と合っているか答え合わせします。<br>それ以外の並べかたも自由です。規則は縛りではなく、目安です。',
+  'sent.kept'       : '残した文',
+  'sent.listen'     : '▶ 聞く',
+  'sent.reweave'    : '編みなおす',
+  'sent.drop'       : '消す',
+  'sent.footer'     : '読みも、つなげたときの音も、この端末の中で計算しています。',
+  'toast.need2'     : '2語以上ならべてください',
+  'toast.kept'      : '文を残しました',
+  'toast.dropped'   : '消しました',
+  'toast.reordered' : '決めた語順に並べ直しました',
+  'make.rule'       : 'いまの{0}の規則（<span style="color:var(--gold)">-{1}</span> で終わる）を守って作ります。',
+  'make.norule'     : 'まだ{0}の規則が定まっていないので、いまある音の在庫だけを使って作ります。',
+  'make.empty.t'    : '材料が足りません',
+  'make.empty.s'    : '先に何語か自分で書いてください。<br>その音づかいを真似して作ります。',
+  'make.left'       : '無料プランはあと {0} 語です。',
+  'make.lock.t'     : 'テーマを言うと、まとめて作ってもらう',
+  'make.lock.d'     : '「海にまつわる語を30」のように頼む',
+  'make.reroll'     : '引き直す',
+  'make.commit'     : '選んだ語を加える',
+  'toast.noselect'  : '加える語が選ばれていません',
+  'toast.cap'       : '無料プランは{0}語までです',
+  'toast.added.n'   : '{0}語を加えました。意味はことばの一覧から書けます',
+  'set.title'       : '設定',
+  'set.look'        : '見た目',
+  'theme.system'    : 'システム',
+  'theme.light'     : 'ライト',
+  'theme.dark'      : 'ダーク',
+  'set.theme.note'  : '「システム」は端末の設定に合わせて自動で切り替わります。',
+  'set.reading'     : 'ことばの読み',
+  'read.ipa'        : '発音記号',
+  'read.both'       : '両方',
+  'set.sample'      : '見本',
+  'set.ipa.note'    : '発音記号（IPA）は、その音を世界共通で言い当てるための記号です。<b style="color:var(--tx);font-weight:500">/ /</b> の中の <b style="color:var(--tx);font-weight:500">.</b> は音節の切れ目、<b style="color:var(--tx);font-weight:500">ː</b> は音を伸ばす印。正確なのは発音記号のほうで、{0}は読める人むけの近似です。',
+  'set.display'     : '表示する言語',
+  'set.display.note': '画面のことばと、単語の「読み」がこれに従います。発音記号は世界共通なので変わりません。日本語ならカタカナ、英語なら <b style="color:var(--tx);font-weight:500">AY-leen</b> のような綴り直し（大文字が強く読むところ）。既定は端末の言語に合わせます。',
+  'set.voice'       : '声',
+  'set.voice.cur'   : 'いま使う声',
+  'set.voice.none'  : '見つかりません',
+  'set.voice.pick'  : '声を選ぶ',
+  'set.voice.auto'  : '自動でえらぶ',
+  'set.voice.wait'  : 'この端末の声の一覧がまだ読み込めていません。一度どこかで「▶ 聞く」を押すと出てきます。',
+  'set.voice.try'   : 'ためす',
+  'set.voice.note'  : '音が出ないときは、まず本体横の消音スイッチ、次に音量を確かめてください。それでも出ないときは、上の一覧から別の声を選ぶと鳴ることがあります。イタリア語やスペイン語の声は母音が素直なので、つくった言語には合いやすいです。',
+  'set.lang'        : '言語',
+  'set.name'        : '名前',
+  'set.count'       : 'ことばの数',
+  'set.plan'        : 'プラン',
+  'set.plan.cur'    : 'いまのプラン',
+  'set.data'        : 'データ',
+  'set.csv.out'     : 'CSVで書き出す',
+  'set.csv.in'      : 'CSVから取り込む',
+  'set.cloud'       : 'クラウド保存',
+  'set.on'          : 'オン',
+  'set.lock.csv.t'  : 'CSVの取り込み・書き出し',
+  'set.lock.csv.d'  : '表計算でまとめて作った単語を流し込む',
+  'set.lock.cloud.t': 'クラウド保存',
+  'set.lock.cloud.d': '機種変しても消えない・複数端末で同じ辞書',
+  'set.wipe'        : 'すべて消してやり直す',
+  'set.footer'      : 'Lingua ・ ことばは端末の中に保存されています。',
+  'set.footer.free' : '無料プランでは通信を一切しません。',
+  'confirm.wipe'    : 'つくったことばを全部消して、最初からやり直しますか？',
+  'plans.title'     : 'プラン',
+  'plans.intro'     : 'ことばをつくること自体は、ずっと無料です。<br>お金がかかるのは「たくさん保管する」ことと「AIと一緒に考える」ことだけ。',
+  'plan.cur'        : 'いま',
+  'plan.tofree'     : '無料にもどす',
+  'plan.choose'     : 'このプランにする',
+  'plans.note'      : '※ 課金はまだ繋いでいません。いまは切り替えて画面の違いを見るためのものです。',
+  'plan.free.1'     : '自分の手でことばをつくる（全部）',
+  'plan.free.2'     : '規則の自動分析・読みの自動導出',
+  'plan.free.3'     : 'リンキング表示と読み上げ',
+  'plan.free.4'     : '規則にそった語の量産',
+  'plan.free.5'     : '端末に保存・100語まで',
+  'plan.plus.1'     : '単語数 無制限',
+  'plan.plus.2'     : 'クラウド保存（機種変・複数端末）',
+  'plan.plus.3'     : 'CSVで単語をまとめて取り込み／書き出し',
+  'plan.plus.4'     : 'Free の内容すべて',
+  'plan.studio.1'   : 'AIと共作（意味から語形の相談・文法の設計・例文）',
+  'plan.studio.2'   : 'テーマから語彙をまとめて生成',
+  'plan.studio.3'   : 'Plus の内容すべて',
+  'plan.price.free' : '$0',
+  'plan.price.plus' : '$9 / 月',
+  'plan.price.studio':'$19 / 月',
+  'toast.plan.free' : '無料プランにしました',
+  'toast.plan.other': '（仮）{0} にしました',
+  'add.title'       : 'ことばを書く',
+  'add.note'        : '読みは書いたつづりから自動で決まります。',
+  'f.spelling'      : 'つづり',
+  'f.reading'       : '読み',
+  'f.listen'        : '▶ 聞く',
+  'f.meaning'       : '意味',
+  'f.meaning.ph'    : '星',
+  'f.pos'           : '品詞',
+  'add.btn'         : '加える',
+  'add.lock.t'      : '意味からつづりを相談する',
+  'add.lock.d'      : '「静けさ、みたいな語がほしい」と話しかける',
+  'toast.hw2'       : 'つづりを2文字以上で',
+  'toast.dup'       : 'もうある語です',
+  'toast.added.1'   : '{0} を加えました',
+  'word.syl'        : '音の切れ目',
+  'word.note'       : '{0}音節。読みはこの切れ目から自動で決まっています。<br>上段が発音記号（IPA）、下段が{1}話者向けのだいたいの読み（{2}）。',
+  'word.edit'       : 'なおす',
+  'word.mn.ph'      : 'まだ決めていない',
+  'word.save'       : 'なおす',
+  'word.del'        : 'この語を消す',
+  'confirm.del'     : '{0} を消しますか？',
+  'toast.saved'     : '{0} をなおしました',
+  'toast.deleted'   : '{0} を消しました',
+  'csv.title'       : 'CSVから取り込む',
+  'csv.note'        : '1行に「つづり,意味,品詞」。1行目に見出しがあっても大丈夫です。',
+  'csv.ph'          : 'Aelin,星,名詞&#10;Naeth,水,名詞',
+  'csv.btn'         : '取り込む',
+  'toast.exported'  : '書き出しました',
+  'toast.exportfail': '書き出せませんでした',
+  'toast.imported'  : '{0}語を取り込みました',
+  'tts.none'        : 'この端末では読み上げできません',
+  'tts.err'         : '声が出ませんでした。設定 →「声」で選び直せます',
+  'tts.fail'        : '読み上げできませんでした',
+  'read.sep'        : '　'
+};
+/* t('key', a, b) — {0} and {1} are filled from the extra arguments.
+   The strings may carry markup, so nothing here is escaped; anything that
+   comes from the person (a headword, a meaning) is escaped at the call site. */
+function t(k){
+  var d=STR[uiLang()]||STR.en;
+  var s=(d[k]!==undefined) ? d[k] : (STR.en[k]!==undefined ? STR.en[k] : k);
+  if(arguments.length>1){
+    var args=arguments;
+    s=String(s).replace(/\{(\d)\}/g,function(m,i){
+      var v=args[(+i)+1];
+      return v===undefined ? m : String(v);
+    });
+  }
+  return s;
+}
+/* tn('key', n, ...) — the same, for strings that carry a count. English
+   inflects for number, so a key may also define a ".1" form used when the
+   count is exactly one. The variant is looked up in the current language
+   only: a language without one simply never sees it, instead of falling
+   through to the English singular. */
+function tn(k,n){
+  var d=STR[uiLang()]||STR.en;
+  var args=Array.prototype.slice.call(arguments,1);
+  args.unshift((n===1 && d[k+'.1']!==undefined) ? k+'.1' : k);
+  return t.apply(null,args);
+}
+
+/* =========================================================================
+   1. Plans
+      How much can be done for nothing is the most important decision in
+      this app. Analysis, deriving readings, linking, generating words that
+      keep the rules — every one of those is plain arithmetic on the device.
+      No network, no model. So all of it is free.
+      Money buys storage (cloud, CSV, unlimited) and working with an AI.
    ========================================================================= */
 var PLANS=[
-  {id:'free',  name:'Free',   price:'¥0',
-   lines:['自分の手でことばをつくる（全部）','規則の自動分析・読みの自動導出','リンキング表示と読み上げ','規則にそった語の量産','端末に保存・100語まで']},
-  {id:'plus',  name:'Plus',   price:'$9 / 月',
-   lines:['単語数 無制限','クラウド保存（機種変・複数端末）','CSVで単語をまとめて取り込み／書き出し','Free の内容すべて']},
-  {id:'studio',name:'Studio', price:'$19 / 月',
-   lines:['AIと共作（意味から語形の相談・文法の設計・例文）','テーマから語彙をまとめて生成','Plus の内容すべて']}
+  {id:'free',  name:'Free',   price:'plan.price.free',
+   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4','plan.free.5']},
+  {id:'plus',  name:'Plus',   price:'plan.price.plus',
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4']},
+  {id:'studio',name:'Studio', price:'plan.price.studio',
+   lines:['plan.studio.1','plan.studio.2','plan.studio.3']}
 ];
 var FREE_LIMIT=100;
 function plan(){ return SET.plan||'free'; }
@@ -317,36 +860,37 @@ function capOK(add){
 }
 
 /* =========================================================================
-   2. テーマ
+   2. Theme
    ========================================================================= */
 var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
 function applyTheme(){
-  var t=SET.theme;
-  if(t==='system') t = (mq && mq.matches) ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', t);
+  var t2=SET.theme;
+  if(t2==='system') t2 = (mq && mq.matches) ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t2);
   var m=document.getElementById('tcolor');
-  if(m) m.setAttribute('content', t==='light' ? '#faf8f3' : '#0a0a0e');
+  if(m) m.setAttribute('content', t2==='light' ? '#faf8f3' : '#0a0a0e');
 }
 if(mq && mq.addEventListener) mq.addEventListener('change', function(){ if(SET.theme==='system') applyTheme(); });
 applyTheme();
 
 /* =========================================================================
-   3. 音韻コア（端末内で動く。通信なし）
+   3. The phonology core. Runs on the device. Nothing leaves it.
    ========================================================================= */
 var VOW='aeiouy';
 function isV(c){return VOW.indexOf(c)>=0;}
-/* 語の頭に立てる子音のかたまり（＝音節の頭にできるもの）。
-   silva を si-lva ではなく sil-va と切るために要る。世界の言語に共通する
-   「頭は だんだん響きが大きくなる」並びだけを頭として認める。 */
+/* Consonant clusters that can stand at the head of a syllable.
+   This is what makes "silva" break as sil-va rather than si-lva. Only the
+   orderings every language agrees on are allowed: an onset gets louder as
+   it approaches the vowel. */
 var LIQ={l:1,r:1,w:1,y:1,j:1};
 function onsetOK(u){
   if(u.length<=1) return true;
   if(u.length===2){
-    if(LIQ[u[1]] && !LIQ[u[0]] && u[0]!=='m' && u[0]!=='n' && u[0]!==u[1]) return true;   /* pr, tr, kl, θr … */
-    if(u[0]==='s' && 'ptkmnlw'.indexOf(u[1])>=0) return true;                              /* sp, st, sk, sl … */
+    if(LIQ[u[1]] && !LIQ[u[0]] && u[0]!=='m' && u[0]!=='n' && u[0]!==u[1]) return true;   /* pr, tr, kl, thr ... */
+    if(u[0]==='s' && 'ptkmnlw'.indexOf(u[1])>=0) return true;                              /* sp, st, sk, sl ... */
     return false;
   }
-  if(u.length===3 && u[0]==='s') return onsetOK(u.slice(1));                               /* spr, str … */
+  if(u.length===3 && u[0]==='s') return onsetOK(u.slice(1));                               /* spr, str ... */
   return false;
 }
 function syl(word){
@@ -356,7 +900,8 @@ function syl(word){
     var v=''; while(i<s.length &&  isV(s[i])){v+=s[i];i++;}
     if(v===''){ if(out.length) out[out.length-1]+=c; else if(c) out.push(c); }
     else {
-      /* 語中の子音のかたまりは、頭に立てる分だけ持っていき、残りは前の音節の尻に置く */
+      /* A cluster in the middle of a word keeps only as much as can stand as
+         an onset; whatever is left over sticks to the end of the syllable before. */
       if(out.length && c){
         var u=splitC(c), k=0;
         while(k<u.length && !onsetOK(u.slice(k))) k++;
@@ -412,7 +957,7 @@ function analyze(){
           vowels:Object.keys(vset).sort()};
 }
 
-/* 発音：つづりから読みを機械的に導く */
+/* ---- Approximate reading for Japanese speakers (katakana) --------------- */
 var KT={
   '' :['ア','イ','ウ','エ','オ'],
   k:['カ','キ','ク','ケ','コ'], g:['ガ','ギ','グ','ゲ','ゴ'],
@@ -456,10 +1001,12 @@ function sylKana(sy){
 }
 function kana(word){ return syl(word).map(sylKana).join(''); }
 
-/* ---- 英語話者むけの読み（respelling）------------------------------------
-   カタカナと同じ役目。IPA が読めない人に、自分の母語の綴りで近い音を見せる。
-   カタカナが日本語話者むけの近似であるように、これは英語話者むけの近似。
-   母音は「大陸式」（a=ah, e=eh, i=ee…）で、第1音節を大文字にして強勢を示す。 */
+/* ---- Approximate reading for English speakers (respelling) --------------
+   Same job as the katakana above: show someone who cannot read the IPA
+   roughly what the word sounds like, using the spelling conventions of
+   their own language. Vowels are continental (a=ah, e=eh, i=ee, o=oh,
+   u=oo) and the first syllable is capitalised to mark the stress, the way
+   dictionaries and Tolkien's appendices do it. */
 var RE_V={ae:'ay',ai:'eye',ao:'ow',au:'ow',ea:'ay-ah',ei:'ay',eo:'ay-oh',eu:'eh-oo',
           ia:'ee-ah',ie:'ee-eh',io:'ee-oh',iu:'ew',oa:'oh-ah',oe:'oh-eh',oi:'oy',ou:'oh',
           ua:'wah',ue:'weh',ui:'wee',uo:'woh',ay:'ay',ey:'ay',oy:'oy',uy:'wee',
@@ -486,36 +1033,36 @@ function respSyl(sy){
 }
 function resp(word){
   return syl(word).map(respSyl).map(function(s,i){
-    return i===0? s.toUpperCase() : s;      /* 第1音節に強勢を置いて読ませる */
+    return i===0? s.toUpperCase() : s;      /* stress falls on the first syllable */
   }).join('-');
 }
 
-/* ---- 読みの近似は、UIの言語ごとに差し替える -----------------------------
-   IPA は世界共通なので触らない。「読み」だけが母語ごとに変わる。
-   ここに1行足せば、ハングルでも拼音でも同じ仕組みで足せる。 */
+/* ---- The approximate reading is swapped out per interface language ------
+   The IPA is universal, so it is never touched. Only the approximation
+   changes. Adding hangul or pinyin is one more line in each of these two
+   tables and nothing else in the app has to know. */
 var APPROX={
-  ja:{word:kana, syl:sylKana},
-  en:{word:resp, syl:respSyl}
+  en:{word:resp, syl:respSyl},
+  ja:{word:kana, syl:sylKana}
 };
-/* 読みの器の名前。ここに1行足せば、ハングルでも拼音でも同じ仕組みで増やせる */
 var LANGS={
-  ja:{label:'日本語', rdName:'カタカナ',
-      pos:{n:'名詞', v:'動詞', adj:'形容詞', x:'その他'}, all:'すべて'},
   en:{label:'English', rdName:'respelling',
-      pos:{n:'noun', v:'verb', adj:'adjective', x:'other'}, all:'all'}
+      pos:{n:'noun', v:'verb', adj:'adjective', x:'other'}, all:'all'},
+  ja:{label:'日本語', rdName:'カタカナ',
+      pos:{n:'名詞', v:'動詞', adj:'形容詞', x:'その他'}, all:'すべて'}
 };
-function autoLang(){
-  var l=String((navigator.language||navigator.userLanguage||'en')).toLowerCase();
-  return APPROX[l.split('-')[0]] ? l.split('-')[0] : 'en';
-}
-function uiLang(){ return SET.ui || autoLang(); }
+function langDef(){ return LANGS[uiLang()]||LANGS.en; }
+/* The name of the approximation reads as a common noun inside a sentence
+   ("respelling is an approximation") but wants a capital as a button. */
+function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
 function approx(){ return APPROX[uiLang()] || APPROX.en; }
-function rd(word){ return approx().word(word); }        /* その言語むけの読み */
+function rd(word){ return approx().word(word); }        /* reading for this language */
 function rdSyl(sy){ return approx().syl(sy); }
-/* 検索は「つづり・意味・読み・発音記号」のどれに当たっても拾う */
+/* Search hits on any of spelling, meaning, reading or IPA */
 function srcKey(w){ return (w.hw+' '+(w.mn||'')+' '+rd(w.hw)+' '+ipa(w.hw)).toLowerCase(); }
 
-/* ---- 発音記号（IPA）。読みは母語むけの近い音、IPAが本当の音。 ---- */
+/* ---- The IPA. The reading is the near miss in a familiar script;
+        this is the actual sound. ---- */
 var IPA_C={b:'b',ch:'tʃ',d:'d',f:'f',g:'ɡ',h:'h',j:'j',k:'k',l:'l',m:'m',n:'n',
            p:'p',r:'r',s:'s',sh:'ʃ',t:'t',th:'θ',v:'v',w:'w',z:'z',
            c:'k',q:'k',x:'ks',y:'j'};
@@ -525,7 +1072,7 @@ function ipaV(str){
   var out='', prev='';
   str.split('').forEach(function(v){
     var s=IPA_V[v]||v;
-    if(s===prev) out+='ː';            /* 同じ母音が続いたら長音 */
+    if(s===prev) out+='ː';            /* the same vowel twice is one long vowel */
     else { out+=s; prev=s; }
   });
   return out;
@@ -535,7 +1082,7 @@ function ipaSyl(sy){
   if(!p) return ipaC(sy);
   return ipaC(p.on)+ipaV(p.nu)+ipaC(p.co);
 }
-function ipaWord(word){ return syl(word).map(ipaSyl).join('.'); }   /* . は音節の切れ目 */
+function ipaWord(word){ return syl(word).map(ipaSyl).join('.'); }   /* . marks the syllable break */
 function ipa(word){ return '/'+ipaWord(word)+'/'; }
 
 function linked(words){
@@ -552,13 +1099,15 @@ function linked(words){
           ipa: '/'+chunks.map(ipaWord).join(' ')+'/',
           isLink:any};
 }
-/* 読みの見せかた（設定で切り替え）：発音記号／カタカナ／両方 */
+/* How readings are displayed (a setting): IPA / approximation / both.
+   The stored value 'kana' is kept as-is for dictionaries saved before this
+   layer existed; it means "the approximation", whatever language that is. */
 function readMode(){ return SET.read||'both'; }
 function readOut(word){
   var m=readMode();
   if(m==='ipa')  return ipa(word);
   if(m==='kana') return rd(word);
-  return ipa(word)+'　'+rd(word);
+  return ipa(word)+t('read.sep')+rd(word);
 }
 function readLink(L){
   var m=readMode();
@@ -566,22 +1115,24 @@ function readLink(L){
   if(m==='kana') return L.rd;
   return L.ipa+'<br><span class="kn">'+esc(L.rd)+'</span>';
 }
-/* 音の在庫の1マス。文字とIPAを並べて出す（文字＝つづり、IPA＝その実際の音） */
+/* One tile in the inventory of sounds: the letter, and under it the IPA
+   symbol for what that letter actually says. */
 function phChip(c,cls,isVowel){
   var s=isVowel? (IPA_V[c]||c) : (IPA_C[c]||c);
   return '<span class="ph'+(cls||'')+'">'+esc(c)+'<i>'+esc(s)+'</i></span>';
 }
-/* ---- 声 ----------------------------------------------------------------
-   iOS アプリ（WKWebView）でも Web Speech は動く。落とし穴は3つ：
-   ①声の一覧が最初は空（voiceschanged を待つ）②その言語の声が入っていない
-   ③本体の消音スイッチ。②③に備えて、声を選べるようにし、
-   日本語の声しか無い端末ではカナを読ませる。ネイティブTTSプラグインが
-   入っている場合はそちらを優先する（アプリ化後の保険）。 */
+/* ---- Voice ------------------------------------------------------------
+   Web Speech works inside the iOS app (WKWebView) too. Three traps:
+   (1) the list of voices is empty at first, so wait for voiceschanged;
+   (2) the device may not have a voice for the language;
+   (3) the hardware silent switch. For (1) and (2) the voice is selectable,
+   and on a device that only has a Japanese voice the katakana is read
+   instead of the spelling. If a native TTS plugin is present it wins. */
 var VOICES=[];
 function loadVoices(){
   var before=VOICES.length;
   try{ VOICES=(window.speechSynthesis && speechSynthesis.getVoices()) || []; }catch(e){ VOICES=[]; }
-  /* 一覧が後から届いたら、設定画面を開いている人にだけ描き直す */
+  /* If the list turns up late, redraw only for someone sitting on settings */
   if(!before && VOICES.length && typeof route!=='undefined' && route==='settings'){
     try{ render(); }catch(e){}
   }
@@ -593,7 +1144,7 @@ if(window.speechSynthesis){
     else speechSynthesis.onvoiceschanged=loadVoices;
   }catch(e){}
 }
-/* ラテン系の素直な母音を持つ言語を上から順に探す */
+/* Languages with plain, even vowels, in the order we would rather have them */
 var VOICE_PREF=['it','es','pt','fi','ro','id','sw','la','ja','en'];
 function pickVoice(){
   if(!VOICES.length) loadVoices();
@@ -611,45 +1162,48 @@ function pickVoice(){
 }
 function voiceLabel(){
   var v=pickVoice();
-  return v ? (v.name+'（'+v.lang+'）') : '見つかりません';
+  return v ? (v.name+' ('+v.lang+')') : t('set.voice.none');
 }
 function speak(text){
-  var t=String(text||'').trim(); if(!t) return;
+  var str=String(text||'').trim(); if(!str) return;
   var v=pickVoice();
-  /* 日本語の声しか無い端末では、つづりではなくカナを読ませる（そのほうが近い） */
-  var say = (v && /^ja/i.test(v.lang)) ? t.split(/\s+/).map(kana).join(' ') : t;
+  /* On a device that only has a Japanese voice, read the katakana rather
+     than the spelling: it lands much closer to the intended sound. */
+  var say = (v && /^ja/i.test(v.lang)) ? str.split(/\s+/).map(kana).join(' ') : str;
   try{
     var N = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.TextToSpeech;
     if(N && N.speak){ N.speak({text:say, lang:(v&&v.lang)||'it-IT', rate:1.0}); return; }
   }catch(e){}
   try{
-    if(!window.speechSynthesis){ toast('この端末では読み上げできません'); return; }
+    if(!window.speechSynthesis){ toast(t('tts.none')); return; }
     speechSynthesis.cancel();
     var u=new SpeechSynthesisUtterance(say);
     if(v){ u.voice=v; u.lang=v.lang; } else { u.lang='it-IT'; }
     u.rate=.82;
-    u.onerror=function(){ toast('声が出ませんでした。設定 →「声」で選び直せます'); };
+    u.onerror=function(){ toast(t('tts.err')); };
     speechSynthesis.speak(u);
-  }catch(e){ toast('読み上げできませんでした'); }
+  }catch(e){ toast(t('tts.fail')); }
 }
 
-/* 生成：推定した規則を守って新語をつくる（これも端末内の計算） */
+/* Generation: build new words that keep the rules we inferred.
+   Also plain arithmetic on the device. */
 function pick(o){
   var e=Object.keys(o).map(function(k){return [k,o[k]];});
   if(!e.length) return '';
-  var t=0,i; for(i=0;i<e.length;i++) t+=e[i][1];
-  var r=Math.random()*t;
+  var sum=0,i; for(i=0;i<e.length;i++) sum+=e[i][1];
+  var r=Math.random()*sum;
   for(i=0;i<e.length;i++){ r-=e[i][1]; if(r<=0) return e[i][0]; }
   return e[0][0];
 }
+/* Two words that are spelled differently but sound identical count as taken */
 function taken(){
-  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['音:'+ipa(w.hw)]=1; }); return s;
+  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['ipa:'+ipa(w.hw)]=1; }); return s;
 }
 function makeWord(pos, A, tk){
   A=A||analyze(); tk=tk||taken();
   if(!Object.keys(A.nu).length) return null;
   var rule=A.finalRule[pos];
-  for(var t=0;t<120;t++){
+  for(var tr=0;tr<120;tr++){
     var n=Math.max(1,Math.min(3,+pick(A.cnt)||2));
     var w='';
     for(var i=0;i<n;i++){
@@ -661,15 +1215,16 @@ function makeWord(pos, A, tk){
       if(isV(ch)){ w=w.replace(/[^aeiouy]+$/,'').replace(/[aeiouy]+$/,ch); }
       else { w=w.replace(/[^aeiouy]+$/,'')+ch; }
     } else if(Object.keys(A.co).length && Math.random()<.35){ w+=pick(A.co); }
-    if(w.length< (t<70?4:3)) continue;   /* まず4文字以上で探し、無理なら3文字まで許す */
+    if(w.length< (tr<70?4:3)) continue;   /* look for four letters first, settle for three */
     if(tk[w]) continue;
-    var key='音:'+ipa(w);
+    var key='ipa:'+ipa(w);
     if(tk[key]) continue;
     tk[w]=1; tk[key]=1;
     return w.charAt(0).toUpperCase()+w.slice(1);
   }
   return null;
 }
+/* Pick a short run of words that shows linking off, if the dictionary has one */
 function linkRun(){
   if(!WORDS.length) return [];
   var used={}, seq=[], all=WORDS.slice(), start=null;
@@ -693,82 +1248,84 @@ function linkRun(){
   }
   return seq;
 }
+/* What the dictionary has quietly decided, said in ordinary words */
 function findings(){
   var A=analyze(), out=[], N=WORDS.length;
   if(!N) return out;
 
-  /* 語末規則（同じ品詞が3語たまってから） */
+  /* The word-final rule, once three words of one part of speech exist */
   Object.keys(A.finalRule).forEach(function(p){
     var r=A.finalRule[p];
-    out.push({t:p+'は <em>-'+r.ch+'</em> で終わる',
-              d:r.all+'語中'+r.hit+'語がそうなっています。この形のまま新しい語をつくれます。', rate:r.rate});
+    out.push({t:t('find.final.t', posLabel(p), r.ch),
+              d:t('find.final.d', r.all, r.hit), rate:r.rate});
   });
 
-  /* 音の在庫は1語目から言える。ここが最初の手がかりになる */
+  /* The inventory can be named from the very first word. It is the first
+     thing anybody can see about their own language. */
   if(A.used.length){
-    out.push({t:'いま鳴っている子音は <em>'+A.used.join(', ')+'</em>',
-              d:N+'語ぶんの、あなたの音の在庫です。ここに無い音を足すと、言語の印象が変わります。',
+    out.push({t:t('find.cons.t', A.used.join(', ')),
+              d:t('find.cons.d', N),
               rate:Math.min(1,A.used.length/10)});
   }
   if(A.vowels.length && A.vowels.length<=4){
-    out.push({t:'母音は <em>'+A.vowels.join(', ')+'</em> の'+A.vowels.length+'つだけ',
-              d:'母音が少ないほど、ことば全体の響きがそろいます。増やすのはいつでもできます。',
+    out.push({t:t('find.vow.t', A.vowels.join(', '), A.vowels.length),
+              d:t('find.vow.d'),
               rate:1-A.vowels.length/6});
   }
   if(A.sylMode && N>=3){
-    out.push({t:'ことばは <em>'+A.sylMode.n+'音節</em> が基本',
-              d:A.sylMode.all+'語中'+A.sylMode.hit+'語。長さがそろうと、声に出したとき言語らしく響きます。',
+    out.push({t:tn('find.syl.t', A.sylMode.n),
+              d:t('find.syl.d', A.sylMode.all, A.sylMode.hit),
               rate:A.sylMode.hit/A.sylMode.all});
   }
   var codas=Object.keys(A.co);
   if(codas.length && codas.length<=4 && N>=3){
-    out.push({t:'語の終わりに立つ子音は <em>'+codas.join(', ')+'</em> だけ',
-              d:'ここが限られているほど、語をつなげたときの音が崩れません。', rate:1-codas.length/8});
+    out.push({t:t('find.coda.t', codas.join(', ')),
+              d:t('find.coda.d'), rate:1-codas.length/8});
   }
   if(A.unused.length>=4 && N>=3){
-    out.push({t:'<em>'+A.unused.slice(0,6).join(', ')+'</em> の音を使っていない',
-              d:'使わない音が決まっていること自体が、その言語らしさになります。', rate:A.unused.length/CONS.length});
+    out.push({t:t('find.unused.t', A.unused.slice(0,6).join(', ')),
+              d:t('find.unused.d'), rate:A.unused.length/CONS.length});
   }
   return out;
 }
-/* 次に何をすれば規則が増えるかを、素人にわかる言葉で返す */
+/* What to do next so that another rule appears, in words a beginner can act on */
 function nextHint(){
-  var A=analyze(), byPos={};
-  WORDS.forEach(function(w){ byPos[w.pos]=(byPos[w.pos]||0)+1; });
+  var A=analyze(), by={};
+  WORDS.forEach(function(w){ by[w.pos]=(by[w.pos]||0)+1; });
   var need=null;
   ['n','v','adj'].forEach(function(p){
     if(need) return;
-    if(!A.finalRule[p] && (byPos[p]||0)<3) need={p:p, n:3-(byPos[p]||0)};
+    if(!A.finalRule[p] && (by[p]||0)<3) need={p:p, n:3-(by[p]||0)};
   });
-  if(need) return posLabel(need.p)+'をあと'+need.n+'語書くと、「'+posLabel(need.p)+'はこう終わる」という規則が出てきます。';
-  if(WORDS.length<8) return 'ことばが増えるほど、拾える規則も増えます。';
+  if(need) return tn('hint.pos', need.n, posLabel(need.p));
+  if(WORDS.length<8) return t('hint.more');
   return null;
 }
 
 /* =========================================================================
-   4. 画面の土台
+   4. The shell every screen sits in
    ========================================================================= */
 var route='home', app=document.getElementById('app');
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
 function toast(m){
-  var t=document.getElementById('toast'); t.textContent=m; t.classList.add('on');
-  clearTimeout(tt); tt=setTimeout(function(){t.classList.remove('on');},1900);
+  var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
+  clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);
 }
 function go(r){ route=r; render(); window.scrollTo(0,0); }
-/* ---- 品詞は「鍵」で保存する ---------------------------------------------
-   保存されるのは n / v / adj / x という短い鍵だけで、画面に出る「名詞」
-   「noun」は、そのときの言語の見出しにすぎない。読みの近似と同じ考えかた。
-   こうしておかないと、UIを訳したときに、すでに保存された辞書の中に
-   日本語が残ってしまって、二度と直せなくなる。 */
+/* ---- A part of speech is stored as a key ------------------------------
+   What is saved on a word is one of n / v / adj / x. "noun" and "名詞" are
+   only the label that key wears in whichever language is on screen. Same
+   idea as the reading approximation.
+   Without this, translating the interface would leave the old language
+   frozen inside every dictionary anyone had already written. */
 var POS=['n','v','adj','x'];
-var POS_ALL='*';                       /* 「すべて」の鍵 */
+var POS_ALL='*';                       /* the key for "all" */
 function posLabel(k){
-  var t=(LANGS[uiLang()]||LANGS.en).pos;
-  if(k===POS_ALL) return (LANGS[uiLang()]||LANGS.en).all;
-  return t[k]||k;
+  if(k===POS_ALL) return langDef().all;
+  return langDef().pos[k]||k;
 }
-/* CSVで来た「名詞 / noun / n」を、どれでも鍵として受ける */
+/* A CSV can say 名詞, noun or n; all three are accepted as the same key */
 function posKey(s){
   var v=String(s||'').trim();
   if(POS.indexOf(v)>=0) return v;
@@ -780,8 +1337,8 @@ function posKey(s){
   });
   return k||'n';
 }
-/* 前のかたち（日本語の literal）で保存された辞書を、そっと鍵に置き換える。
-   一度でも開けば直るので、使う人には何も起きない。 */
+/* Quietly upgrade a dictionary saved in the older shape, where the label
+   itself was stored. Opening the app once is enough; nobody sees anything. */
 (function migratePos(){
   var moved=0;
   WORDS.forEach(function(w){
@@ -790,17 +1347,26 @@ function posKey(s){
   });
   if(moved) save();
 })();
-
 /* =========================================================================
-   5. オンボーディング（唯一、最初から在る画面）
-      ここで「知識がなくても書ける」を身体で分からせる。AIは一度も出てこない。
+   5. Onboarding (the only screen that exists before anything else)
+      Its job is to prove, physically, that you can write a language without
+      knowing anything first. AI is never mentioned here, not once.
    ========================================================================= */
 var ob={step:0, name:'', mn:'', hw:''};
-var OB_SEEDS=['星','水','風','光','森','空','愛する','歩く'];
+/* Seeds are stored as keys; the label is looked up per locale at draw time. */
+var OB_SEEDS=[
+  {k:'star',pos:'n'},  {k:'water',pos:'n'}, {k:'wind',pos:'n'},   {k:'light',pos:'n'},
+  {k:'forest',pos:'n'},{k:'sky',pos:'n'},   {k:'love',pos:'v'},   {k:'walk',pos:'v'}
+];
+function seedLabel(k){ return t('seed.'+k); }
+function seedOf(k){
+  for(var i=0;i<OB_SEEDS.length;i++) if(OB_SEEDS[i].k===k) return OB_SEEDS[i];
+  return null;
+}
 
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
 function obName(v){ ob.name=v; }
-function obPickMn(m){ ob.mn=m; render(); setTimeout(function(){var e=document.getElementById('ob-hw'); if(e) e.focus();},60); }
+function obPickMn(k){ ob.mn=k; render(); setTimeout(function(){var e=document.getElementById('ob-hw'); if(e) e.focus();},60); }
 function obHw(v){
   ob.hw=v;
   var k=document.getElementById('ob-k');
@@ -812,16 +1378,17 @@ function obHw(v){
 function obSay(){ var w=String(ob.hw).replace(/[^A-Za-z]/g,''); if(w) speak(w); }
 function obAdd(){
   var w=String(ob.hw).replace(/[^A-Za-z]/g,'');
-  if(w.length<2 || !ob.mn){ toast('つづりと意味を入れてください'); return; }
+  if(w.length<2 || !ob.mn){ toast(t('ob.3.need')); return; }
   w=w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
-  var pos = (ob.mn==='愛する'||ob.mn==='歩く') ? 'v' : 'n';
-  WORDS.push({hw:w, mn:ob.mn, pos:pos, at:Date.now()});
+  var sd=seedOf(ob.mn);
+  /* The part of speech comes from the seed itself, not from its wording. */
+  WORDS.push({hw:w, mn:seedLabel(ob.mn), pos:(sd?sd.pos:'n'), at:Date.now()});
   save();
   ob.mn=''; ob.hw='';
   if(WORDS.length>=3) obGo(4); else render();
 }
 function obFinish(){
-  langName = (ob.name||'').trim() || 'わたしの言語';
+  langName = (ob.name||'').trim() || t('lang.default');
   SET.done=true; save();
   route='home'; render(); window.scrollTo(0,0);
 }
@@ -833,111 +1400,112 @@ function vOb(){
 
   if(s===0){
     h='<div class="mid"><h1>Lingua</h1>'+
-      '<p style="margin-top:22px">ことばを、ゼロからつくる。<br>'+
-      '文法の知識も、発音記号の読み方も、要りません。<br>'+
-      'つづりを書けば、読みはこのアプリが決めます。</p></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obGo(1)">はじめる</button>'+
-      '<div class="mini" style="text-align:center;margin-top:12px">アカウントも通信も要りません。全部この端末の中で動きます。</div></div>';
+      '<p style="margin-top:22px">'+t('ob.0.p')+'</p></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obGo(1)">'+t('ob.start')+'</button>'+
+      '<div class="mini" style="text-align:center;margin-top:12px">'+t('ob.0.mini')+'</div></div>';
   }
   else if(s===1){
-    h='<div class="mid"><h2>この言語を、<br>なんと呼びますか。</h2>'+
-      '<div class="field" style="margin-top:22px"><input id="ob-n" placeholder="例：エリラ語" value="'+esc(ob.name)+'" oninput="obName(this.value)" autocomplete="off"></div>'+
-      '<div class="mini">あとからいつでも変えられます。決まっていなければ空のままで大丈夫です。</div></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obGo(2)">つぎへ</button></div>';
+    h='<div class="mid"><h2>'+t('ob.1.h')+'</h2>'+
+      '<div class="field" style="margin-top:22px"><input id="ob-n" placeholder="'+esc(t('ob.1.ph'))+'" value="'+esc(ob.name)+'" oninput="obName(this.value)" autocomplete="off"></div>'+
+      '<div class="mini">'+t('ob.1.mini')+'</div></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obGo(2)">'+t('ob.next')+'</button></div>';
   }
   else if(s===2){
-    h='<div class="mid"><h2>最初のひとことを<br>書いてみます。</h2>'+
-      '<p>意味をひとつ選んで、思いついたつづりを書くだけ。<br>正解はありません。</p></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obGo(3)">書いてみる</button></div>';
+    h='<div class="mid"><h2>'+t('ob.2.h')+'</h2>'+
+      '<p>'+t('ob.2.p')+'</p></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obGo(3)">'+t('ob.2.btn')+'</button></div>';
   }
   else if(s===3){
     var need=3-WORDS.length;
     h='<div class="mid">'+
-      '<h2 style="font-size:1.2rem">'+(WORDS.length===0?'どの意味のことばをつくる？':'あと'+need+'語。次はどれ？')+'</h2>'+
-      '<div class="chips">'+OB_SEEDS.filter(function(m){
-        return !WORDS.some(function(w){return w.mn===m;});
-      }).map(function(m){
-        return '<button class="chip'+(ob.mn===m?' on':'')+'" onclick="obPickMn(\''+m+'\')">'+m+'</button>';
+      '<h2 style="font-size:1.2rem">'+(WORDS.length===0? t('ob.3.h0') : t('ob.3.hn', need))+'</h2>'+
+      '<div class="chips">'+OB_SEEDS.filter(function(sd){
+        var lab=seedLabel(sd.k);
+        return !WORDS.some(function(w){return w.mn===lab;});
+      }).map(function(sd){
+        return '<button class="chip'+(ob.mn===sd.k?' on':'')+'" onclick="obPickMn(\''+sd.k+'\')">'+esc(seedLabel(sd.k))+'</button>';
       }).join('')+'</div>'+
-      (ob.mn ? ('<div class="field" style="margin-top:16px"><label>「'+esc(ob.mn)+'」を、あなたの言語でどう書く？</label>'+
+      (ob.mn ? ('<div class="field" style="margin-top:16px"><label>'+t('ob.3.ask', esc(seedLabel(ob.mn)))+'</label>'+
         '<input class="hwf" id="ob-hw" placeholder="Aelin" value="'+esc(ob.hw)+'" oninput="obHw(this.value)" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
-        '<div class="pvbox"><span class="pvn">読み</span><span class="pvk" id="ob-k"></span>'+
-        '<button onclick="obSay()">▶ 聞く</button></div>'+
-        '<div class="mini">読みは、あなたが書いたつづりから自動で決まります。<br>考えなくていいところは、考えなくていいです。</div>')
-       : '<div class="mini" style="margin-top:14px">意味をひとつ選んでください。</div>')+
+        '<div class="pvbox"><span class="pvn">'+t('ob.3.reading')+'</span><span class="pvk" id="ob-k"></span>'+
+        '<button onclick="obSay()">'+t('ob.3.listen')+'</button></div>'+
+        '<div class="mini">'+t('ob.3.mini')+'</div>')
+       : '<div class="mini" style="margin-top:14px">'+t('ob.3.pickfirst')+'</div>')+
       '</div>'+
       '<div class="obfoot">'+
-      (WORDS.length? '<div class="mini" style="margin-bottom:10px">つくったことば：'+WORDS.map(function(w){return esc(w.hw);}).join('、')+'</div>':'')+
-      '<button class="btn" id="ob-add" onclick="obAdd()"'+((ob.mn&&String(ob.hw).replace(/[^A-Za-z]/g,'').length>=2)?'':' disabled')+'>この一語を加える</button></div>';
+      (WORDS.length? '<div class="mini" style="margin-bottom:10px">'+t('ob.3.made', WORDS.map(function(w){return esc(w.hw);}).join(', '))+'</div>':'')+
+      '<button class="btn" id="ob-add" onclick="obAdd()"'+((ob.mn&&String(ob.hw).replace(/[^A-Za-z]/g,'').length>=2)?'':' disabled')+'>'+t('ob.3.add')+'</button></div>';
   }
   else {
     var f=findings(), A=analyze();
-    h='<div class="mid"><h2>もう、規則が<br>見えはじめています。</h2>'+
+    h='<div class="mid"><h2>'+t('ob.4.h')+'</h2>'+
       '<div class="card" style="margin-top:20px">'+
       (f.length ? f.slice(0,2).map(function(x){return '<div class="ft" style="margin-bottom:8px">'+x.t+'</div>';}).join('')
-                : '<div class="ft">つかっている音：<em>'+esc(A.used.join(', '))+'</em></div>')+
-      '<div class="fd">3語書いただけで、あなたの言語には既に癖ができています。この癖のまま、あとは何語でも増やせます。</div>'+
+                : '<div class="ft">'+t('ob.4.using', esc(A.used.join(', ')))+'</div>')+
+      '<div class="fd">'+t('ob.4.fd')+'</div>'+
       '</div>'+
-      '<p>これを見つけているのはAIではなく、この端末の中の計算です。だから無料のまま、何度でも使えます。</p></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obFinish()">はじめる</button></div>';
+      '<p>'+t('ob.4.p')+'</p></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obFinish()">'+t('ob.start')+'</button></div>';
   }
   return '<div class="ob view'+((s===0||s===2||s===4)?' center':'')+'">'+dots+h+'</div>';
 }
 
 /* =========================================================================
-   6. ホーム＝扉と目次
+   6. Home = the cover and the table of contents
+      The chapter names stay in Cinzel English everywhere, the way a book
+      keeps its own typography; only the contents rows follow the locale.
    ========================================================================= */
 function vHome(){
   var A=analyze();
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
   var toc=[
-    ['I','ことば','words', WORDS.length?WORDS.length+'語':'—'],
-    ['II','音','sound', A.used.length?A.used.length+'音':'—'],
-    ['III','規則','rules', findings().length?findings().length+'つ':'—'],
-    ['IV','文','sent', LINES.length?LINES.length+'文':'—'],
-    ['V','つくる','make', '']
+    ['I',  t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
+    ['II', t('toc.sound'),'sound', A.used.length? tn('count.sounds', A.used.length):'—'],
+    ['III',t('toc.rules'),'rules', findings().length? tn('count.rules', findings().length):'—'],
+    ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
+    ['V',  t('toc.make'), 'make',  '']
   ];
   var lastLine = LINES.length?LINES[LINES.length-1]:null;
   return '<div class="view">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
     '<button class="iconb" onclick="go(\'settings\')">⚙</button></div>'+
     '<div class="title">'+
-      '<div class="tkick">Your Language</div>'+
-      '<button class="tname" onclick="editName()">'+esc(langName||'名前をつける')+'<span class="pen">✎</span></button>'+
+      '<div class="tkick">'+t('home.kicker')+'</div>'+
+      '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">✎</span></button>'+
       '<div class="tsub">'+(WORDS.length? esc(ipa(WORDS[0].hw)) : '　')+'</div>'+
       '<div class="rule"></div>'+
     '</div>'+
     '<div class="body" style="padding-top:0">'+
     (WORDS.length===0
-      ? '<div class="empty"><div class="eb">まだ、一語もありません</div>'+
-        '<div class="es">最初の一語を書くところから始めます。<br>つづりを書けば、読みは自動で決まります。</div></div>'+
-        '<button class="btn" onclick="openAdd()" style="margin-top:6px">最初の一語を書く</button>'
-      : '<div class="toc">'+toc.map(function(t){
-          return '<button class="trow" onclick="go(\''+t[2]+'\')">'+
-            '<span class="rn">'+t[0]+'</span><span class="rt">'+t[1]+'</span>'+
-            '<span class="lead"></span><span class="rv">'+t[3]+'</span></button>';
+      ? '<div class="empty"><div class="eb">'+t('home.empty.t')+'</div>'+
+        '<div class="es">'+t('home.empty.s')+'</div></div>'+
+        '<button class="btn" onclick="openAdd()" style="margin-top:6px">'+t('home.empty.btn')+'</button>'
+      : '<div class="toc">'+toc.map(function(row){
+          return '<button class="trow" onclick="go(\''+row[2]+'\')">'+
+            '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
+            '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span></button>';
         }).join('')+'</div>'+
         (lastLine
           ? '<button class="recent" onclick="go(\'sent\')">'+
-            '<div class="rh">最近つくった一文</div>'+
+            '<div class="rh">'+t('home.recent.line')+'</div>'+
             '<div class="line">'+esc(lastLine.ws.join(' '))+'</div>'+
             '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).rd : linked(lastLine.ws).ipa)+'</div></button>'
           : last? '<button class="recent" onclick="go(\'words\')">'+
-            '<div class="rh">最後に書いたことば</div>'+
+            '<div class="rh">'+t('home.recent.word')+'</div>'+
             '<div class="line">'+esc(last.hw)+'</div>'+
-            '<div class="tr">'+(last.mn? esc(last.mn)+' ・ ':'')+esc(readOut(last.hw))+'</div></button>' : '')
+            '<div class="tr">'+(last.mn? esc(last.mn)+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')
     )+
     '</div>'+
-    (WORDS.length? '<div class="barfix"><button class="btn" onclick="openAdd()">ことばを書く</button></div>':'')+
+    (WORDS.length? '<div class="barfix"><button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div>':'')+
   '</div>';
 }
 function editName(){
-  var v=prompt('言語の名前', langName);
+  var v=prompt(t('home.name.prompt'), langName);
   if(v!==null && v.trim()){ langName=v.trim(); save(); render(); }
 }
 
 /* =========================================================================
-   7. ことば（辞書）
+   7. Words (the dictionary)
    ========================================================================= */
 var q='';
 function vWords(){
@@ -946,22 +1514,22 @@ function vWords(){
     return srcKey(w).indexOf(q.toLowerCase())>=0;
   });
   var body = items.length ? groupHTML(items)
-    : '<div class="empty"><div class="eb">'+(q?'見つかりません':'まだ一語もありません')+'</div></div>';
+    : '<div class="empty"><div class="eb">'+(q? t('words.nomatch') : t('words.empty'))+'</div></div>';
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">I</span><span class="ct">Words</span>'+
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span style="color:var(--txm)">⌕</span>'+
-    '<input placeholder="つづり・意味・読みで探す" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
+    '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
     '</div><div class="body">'+body+'</div>'+
-    '<div class="barfix"><button class="btn" onclick="openAdd()">ことばを書く</button></div></div>';
+    '<div class="barfix"><button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
 }
 function setQ(v){
   q=v;
   var el=document.querySelector('.body');
   var items=WORDS.slice().sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));})
     .filter(function(w){ return !q || srcKey(w).indexOf(q.toLowerCase())>=0; });
-  el.innerHTML = items.length? groupHTML(items) : '<div class="empty"><div class="eb">見つかりません</div></div>';
+  el.innerHTML = items.length? groupHTML(items) : '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>';
 }
 function groupHTML(items){
   var out='', cur='';
@@ -978,76 +1546,81 @@ function groupHTML(items){
 }
 
 /* =========================================================================
-   8. 音
+   8. Sound
    ========================================================================= */
 function vSound(){
   var A=analyze();
   var seq=linkRun(), L=seq.length>=2?linked(seq.map(function(w){return w.hw;})):null;
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">II</span><span class="ct">Sound</span>'+
     '<span class="cn">'+A.used.length+' + '+A.vowels.length+'</span></div></div>'+
     '<div class="body">'+
-    '<div class="sec">使っている子音</div>'+
-    (A.used.length? A.used.map(function(c){return phChip(c,'');}).join('') : '<div class="note">まだありません。</div>')+
-    '<div class="sec">使っていない子音</div>'+
-    (A.unused.length? A.unused.map(function(c){return phChip(c,' off');}).join('') : '<div class="note">全部つかっています。</div>')+
-    '<div class="note" style="margin-top:8px">使わないと決めた音があることが、その言語らしさになります。<br>下の小さな記号は国際音声記号（IPA）です。世界のどの言語のどの音かを、ひとつずつ言い当てるための記号。</div>'+
-    '<div class="sec">母音</div>'+
-    (A.vowels.length? A.vowels.map(function(c){return phChip(c,'',true);}).join('') : '<div class="note">まだありません。</div>')+
-    (L? '<div class="sec">つなげて言うと</div>'+
+    '<div class="sec">'+t('sound.used')+'</div>'+
+    (A.used.length? A.used.map(function(c){return phChip(c,'');}).join('') : '<div class="note">'+t('sound.none')+'</div>')+
+    '<div class="sec">'+t('sound.unused')+'</div>'+
+    (A.unused.length? A.unused.map(function(c){return phChip(c,' off');}).join('') : '<div class="note">'+t('sound.allused')+'</div>')+
+    '<div class="note" style="margin-top:8px">'+t('sound.note')+'</div>'+
+    '<div class="sec">'+t('sound.vowels')+'</div>'+
+    (A.vowels.length? A.vowels.map(function(c){return phChip(c,'',true);}).join('') : '<div class="note">'+t('sound.none')+'</div>')+
+    (L? '<div class="sec">'+t('sound.together')+'</div>'+
       '<div class="link"><div class="src">'+seq.map(function(w){return esc(w.hw);}).join(' ')+'</div>'+
-      '<div class="arw">'+(L.isLink?'語尾の子音が次の語の頭に流れこむ':'それぞれ切れたまま')+'</div>'+
+      '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
       '<div class="out">'+readLink(L)+'</div>'+
-      '<button class="play" onclick="speak(\''+esc(seq.map(function(w){return w.hw;}).join(' '))+'\')">▶ 聞いてみる</button></div>'+
-      (L.isLink? '' : '<div class="note" style="margin-top:8px">母音ではじまる語をつくると、前の語の語尾がそこへ流れこんで、ひと息の音になります。</div>')
+      '<button class="play" onclick="speak(\''+esc(seq.map(function(w){return w.hw;}).join(' '))+'\')">'+t('sound.listen')+'</button></div>'+
+      (L.isLink? '' : '<div class="note" style="margin-top:8px">'+t('sound.linkhint')+'</div>')
       : '')+
-    '<div class="note" style="margin-top:22px">この計算は全部この端末の中で動いています。通信もAIも使っていません。</div>'+
+    '<div class="note" style="margin-top:22px">'+t('sound.footer')+'</div>'+
     '</div></div>';
 }
 
 /* =========================================================================
-   9. 規則
+   9. Rules
    ========================================================================= */
 function vRules(){
   var f=findings();
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">III</span><span class="ct">Rules</span>'+
     '<span class="cn">'+f.length+'</span></div></div>'+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:6px">あなたが書いた'+WORDS.length+'語を数えて出てきた癖です。決めたものではなく、見つかったもの。</div>'+
+    '<div class="note" style="margin-bottom:6px">'+tn('rules.intro', WORDS.length)+'</div>'+
     (f.length? f.map(function(x){
       return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
         '<div class="bar"><i style="width:'+Math.round(Math.max(.12,Math.min(1,x.rate))*100)+'%"></i></div></div>';
-    }).join('') : '<div class="empty"><div class="eb">まだ規則は出ていません</div><div class="es">まず何語か書いてください。</div></div>')+
-    (nextHint()? '<div class="note" style="margin-top:18px">つぎの一手：'+esc(nextHint())+'</div>':'')+
-    '<button class="btn ghost" style="width:100%;margin-top:18px" onclick="go(\'make\')">この規則のまま語を増やす</button>'+
+    }).join('') : '<div class="empty"><div class="eb">'+t('rules.empty.t')+'</div><div class="es">'+t('rules.empty.s')+'</div></div>')+
+    (nextHint()? '<div class="note" style="margin-top:18px">'+t('rules.next', esc(nextHint()))+'</div>':'')+
+    '<button class="btn ghost" style="width:100%;margin-top:18px" onclick="go(\'make\')">'+t('rules.make')+'</button>'+
     '</div></div>';
 }
 
 /* =========================================================================
-   9.5 文（語順を決めて、つないだときの音を聞く）
-       これも全部この端末の中の計算。無料。
+   9.5 Sentences (choose a word order, then hear how the words run together)
+       Also pure arithmetic on the device. Also free.
    ========================================================================= */
+/* The label and the example are keys; only the id and the slot order
+   are data. A locale can describe SOV however it likes. */
 var ORDERS=[
-  {id:'SOV', lab:'主語 → 目的語 → 動詞', ex:'日本語と同じ並び。「わたしは 星を 見る」', seq:['S','O','V']},
-  {id:'SVO', lab:'主語 → 動詞 → 目的語', ex:'英語と同じ並び。「わたしは 見る 星を」', seq:['S','V','O']},
-  {id:'VSO', lab:'動詞 → 主語 → 目的語', ex:'アラビア語などの並び。「見る わたしは 星を」', seq:['V','S','O']}
+  {id:'SOV', seq:['S','O','V']},
+  {id:'SVO', seq:['S','V','O']},
+  {id:'VSO', seq:['V','S','O']}
 ];
+function orderLab(o){ return t('order.'+o.id+'.lab'); }
+function orderEx(o){ return t('order.'+o.id+'.ex'); }
 function orderDef(){ for(var i=0;i<ORDERS.length;i++) if(ORDERS[i].id===(SET.order||'SOV')) return ORDERS[i]; return ORDERS[0]; }
 function byPos(p){ return WORDS.filter(function(w){return w.pos===p;}); }
 function setOrder(id){ SET.order=id; save(); render(); }
 
-/* 文は自由に編む。語順は「決めた規則」で、後から答え合わせに使う。
-   長さも語数も縛らない。同じ語を何度でも置ける。 */
+/* A line is woven freely. The word order is a rule you set, used afterwards
+   to check what you built — never to stop you building it. Any length, and
+   the same word as many times as you like. */
 var comp=[], compSel=-1, compQ='', compPos=POS_ALL, compSeeded=false;
 function compAdd(hw){ comp.push(hw); compSel=comp.length-1; render(); }
 function compPick(i){ compSel = (compSel===i? -1 : i); render(); }
 function compMove(d){
   var i=compSel, j=i+d;
   if(i<0||j<0||j>=comp.length) return;
-  var t=comp[i]; comp[i]=comp[j]; comp[j]=t; compSel=j; render();
+  var sw=comp[i]; comp[i]=comp[j]; comp[j]=sw; compSel=j; render();
 }
 function compDel(){ if(compSel<0) return; comp.splice(compSel,1); compSel=-1; render(); }
 function compClear(){ comp=[]; compSel=-1; render(); }
@@ -1063,15 +1636,15 @@ function palList(){
     if(!compQ) return true;
     return srcKey(w).indexOf(compQ.toLowerCase())>=0;
   }).sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));});
-  if(!list.length) return '<div class="note">見つかりません。</div>';
+  if(!list.length) return '<div class="note">'+t('sent.nomatch')+'</div>';
   return list.map(function(w){
     return '<button class="pw" onclick="compAdd(\''+esc(w.hw)+'\')">'+
       '<span class="pww">'+esc(w.hw)+'</span>'+
-      (w.mn? '<span class="pwm">'+esc(w.mn)+'</span>':'<span class="pwm dim">意味なし</span>')+
+      (w.mn? '<span class="pwm">'+esc(w.mn)+'</span>':'<span class="pwm dim">'+t('sent.nomean')+'</span>')+
       '</button>';
   }).join('');
 }
-/* いま並んでいる順が、自分で決めた語順と合っているか */
+/* Does the line as it stands match the order you chose for this language? */
 function orderCheck(){
   var ws=comp.map(findWord).filter(Boolean);
   if(ws.length<2) return null;
@@ -1096,12 +1669,12 @@ function fixOrder(){
   var nouns=ws.filter(function(w){return w.pos==='n';});
   var slot={V:verbs[0], S:nouns[0], O:nouns[1]};
   comp=orderDef().seq.map(function(k){ return slot[k]?slot[k].hw:null; }).filter(Boolean);
-  compSel=-1; save(); render(); toast('決めた語順に並べ直しました');
+  compSel=-1; save(); render(); toast(t('toast.reordered'));
 }
 function vSent(){
   var d=orderDef();
-  /* 開いた瞬間から音が鳴るように、最初の一回だけ勝手に入れておく。
-     一度でも入れたら二度と勝手に入れない（「全部消す」が効かなくなるため） */
+  /* Seed the line once, so the screen makes a sound the moment it opens.
+     Only ever once — otherwise "Clear" would never stay cleared. */
   if(!compSeeded && !comp.length && WORDS.length>=2){
     compSeeded=true;
     var nouns=byPos('n'), verbs=byPos('v');
@@ -1122,19 +1695,19 @@ function vSent(){
   var L = ws.length>=2 ? linked(ws.map(function(w){return w.hw;})) : null;
   var chk=orderCheck();
   var head='<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">IV</span><span class="ct">Sentence</span>'+
     '<span class="cn">'+LINES.length+'</span></div></div><div class="body">';
 
   if(WORDS.length<2){
-    return head+'<div class="empty"><div class="eb">まだ文にできません</div>'+
-      '<div class="es">文をつくるには、ことばが2語は要ります。<br>先に何語か書いてください。</div></div>'+
-      '<button class="btn" style="width:100%" onclick="openAdd()">ことばを書く</button></div></div>';
+    return head+'<div class="empty"><div class="eb">'+t('sent.empty.t')+'</div>'+
+      '<div class="es">'+t('sent.empty.s')+'</div></div>'+
+      '<button class="btn" style="width:100%" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
   }
 
   return head+
-    /* --- 1. 編む（自由。語数も並びも縛らない） --- */
-    '<div class="sec">編む</div>'+
+    /* --- 1. Weave (free: any length, any arrangement) --- */
+    '<div class="sec">'+t('sent.weave')+'</div>'+
     (comp.length
       ? '<div class="weave">'+comp.map(function(hw,i){
           var w=findWord(hw);
@@ -1143,77 +1716,78 @@ function vSent(){
             (w&&w.mn? '<span class="wcm">'+esc(w.mn)+'</span>':'')+'</button>';
         }).join('')+'</div>'+
         (compSel>=0
-          ? '<div class="wctl"><button onclick="compMove(-1)">← 前へ</button>'+
-            '<button onclick="compMove(1)">後ろへ →</button>'+
-            '<button onclick="compDel()">この語を外す</button></div>'
-          : '<div class="note">語をタップすると、動かす・外すができます。</div>')
-      : '<div class="note">下からことばを選ぶと、ここに並びます。何語でも、同じ語を何度でも。</div>')+
-    (comp.length? '<div class="wctl2"><button onclick="compUndo()">ひとつ戻す</button>'+
-      '<button onclick="compClear()">全部消す</button></div>':'')+
+          ? '<div class="wctl"><button onclick="compMove(-1)">'+t('sent.prev')+'</button>'+
+            '<button onclick="compMove(1)">'+t('sent.later')+'</button>'+
+            '<button onclick="compDel()">'+t('sent.remove')+'</button></div>'
+          : '<div class="note">'+t('sent.taphint')+'</div>')
+      : '<div class="note">'+t('sent.palhint')+'</div>')+
+    (comp.length? '<div class="wctl2"><button onclick="compUndo()">'+t('sent.undo')+'</button>'+
+      '<button onclick="compClear()">'+t('sent.clear')+'</button></div>':'')+
 
-    /* --- 2. 音（リンキング込み） --- */
+    /* --- 2. The sound of it, linking included --- */
     (L
-      ? '<div class="sec">この並びを読むと</div>'+
+      ? '<div class="sec">'+t('sent.reads')+'</div>'+
         '<div class="link">'+
         '<div class="sline">'+ws.map(function(w){
           return '<span class="sw"><span class="sww">'+esc(w.hw)+'</span>'+
                  '<span class="swk">'+esc(w.mn||'—')+'</span></span>';
         }).join('')+'</div>'+
-        '<div class="arw">'+(L.isLink?'語尾の子音が次の語の頭に流れこみます':'それぞれ切れたまま読みます')+'</div>'+
+        '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
         '<div class="out">'+readLink(L)+'</div>'+
-        '<button class="play" onclick="speak(\''+esc(ws.map(function(w){return w.hw;}).join(' '))+'\')">▶ 声に出す</button>'+
+        '<button class="play" onclick="speak(\''+esc(ws.map(function(w){return w.hw;}).join(' '))+'\')">'+t('sent.say')+'</button>'+
         '</div>'+
-        (L.isLink? '' : '<div class="note" style="margin-top:8px">母音ではじまる語を並びに入れると、前の語の語尾がそこへ流れこんで、ひと息の音になります。</div>')+
-        '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="keepLine()">この文を残す</button>'
-      : '<div class="note" style="margin-top:14px">2語以上ならべると、つないだときの音が出ます。</div>')+
+        (L.isLink? '' : '<div class="note" style="margin-top:8px">'+t('sent.linkhint')+'</div>')+
+        '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="keepLine()">'+t('sent.keep')+'</button>'
+      : '<div class="note" style="margin-top:14px">'+t('sent.need2')+'</div>')+
 
-    /* --- 3. ことばを選ぶ --- */
-    '<div class="sec">ことばを選ぶ</div>'+
+    /* --- 3. Choosing words --- */
+    '<div class="sec">'+t('sent.choose')+'</div>'+
     '<div class="segs">'+[POS_ALL].concat(POS).map(function(p){
       return '<button class="seg'+(p===compPos?' on':'')+'" onclick="setCompPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     '<div class="search"><span style="color:var(--txm)">⌕</span>'+
-    '<input placeholder="つづり・意味で探す" value="'+esc(compQ)+'" oninput="setCompQ(this.value)"></div>'+
+    '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(compQ)+'" oninput="setCompQ(this.value)"></div>'+
     '<div class="pal" id="pal">'+palList()+'</div>'+
 
-    /* --- 4. 語順は「決めた規則」。並びの答え合わせに使う --- */
-    '<div class="sec">語順（この言語の規則）</div>'+
+    /* --- 4. Word order: the rule you set, used to check what you built --- */
+    '<div class="sec">'+t('sent.order')+'</div>'+
     '<div class="segs">'+ORDERS.map(function(o){
       return '<button class="seg'+(o.id===d.id?' on':'')+'" onclick="setOrder(\''+o.id+'\')">'+o.id+'</button>';
     }).join('')+'</div>'+
-    '<div class="note"><b style="color:var(--tx);font-weight:500">'+d.lab+'</b><br>'+d.ex+'</div>'+
+    '<div class="note"><b style="color:var(--tx);font-weight:500">'+orderLab(d)+'</b><br>'+orderEx(d)+'</div>'+
     (chk
       ? (chk.ok
-          ? '<div class="chk ok">いまの並びは <b>'+chk.now+'</b>。決めた語順どおりです。</div>'
-          : '<div class="chk ng">いまの並びは <b>'+chk.now+'</b>。決めた語順（<b>'+chk.want+'</b>）と違います。'+
-            '<button onclick="fixOrder()">決めた順に直す</button></div>')
-      : '<div class="note" style="margin-top:10px">主語・目的語・動詞のかたちに並べると、決めた語順と合っているか答え合わせします。<br>それ以外の並べかたも自由です。規則は縛りではなく、目安です。</div>')+
+          ? '<div class="chk ok">'+t('sent.chk.ok', chk.now)+'</div>'
+          : '<div class="chk ng">'+t('sent.chk.ng', chk.now, chk.want)+
+            '<button onclick="fixOrder()">'+t('sent.chk.fix')+'</button></div>')
+      : '<div class="note" style="margin-top:10px">'+t('sent.chk.hint')+'</div>')+
 
-    /* --- 5. 残した文 --- */
-    (LINES.length? '<div class="sec">残した文</div>'+LINES.slice().reverse().map(function(l,i){
+    /* --- 5. Sentences you kept --- */
+    (LINES.length? '<div class="sec">'+t('sent.kept')+'</div>'+LINES.slice().reverse().map(function(l,i){
         var idx=LINES.length-1-i, lk=linked(l.ws);
         return '<div class="entry" style="display:block">'+
           '<div class="hwrow"><span class="hw" style="font-size:1.06rem">'+esc(l.ws.join(' '))+'</span>'+
           '<span class="pos">'+esc(l.order||'')+'</span></div>'+
           '<div class="mn" style="font-size:.92rem">'+readLink(lk)+'</div>'+
           '<div style="display:flex;gap:8px;margin-top:8px">'+
-          '<button class="rr2" onclick="speak(\''+esc(l.ws.join(' '))+'\')">▶ 聞く</button>'+
-          '<button class="rr2" onclick="reopenLine('+idx+')">編みなおす</button>'+
-          '<button class="rr2" onclick="dropLine('+idx+')">消す</button></div></div>';
+          '<button class="rr2" onclick="speak(\''+esc(l.ws.join(' '))+'\')">'+t('sent.listen')+'</button>'+
+          '<button class="rr2" onclick="reopenLine('+idx+')">'+t('sent.reweave')+'</button>'+
+          '<button class="rr2" onclick="dropLine('+idx+')">'+t('sent.drop')+'</button></div></div>';
       }).join('') : '')+
-    '<div class="note" style="margin-top:22px">読みも、つなげたときの音も、この端末の中で計算しています。</div>'+
+    '<div class="note" style="margin-top:22px">'+t('sent.footer')+'</div>'+
     '</div></div>';
 }
 function keepLine(){
-  if(comp.length<2){ toast('2語以上ならべてください'); return; }
+  if(comp.length<2){ toast(t('toast.need2')); return; }
   LINES.push({ws:comp.slice(), order:(orderCheck()? orderDef().id : ''), at:Date.now()});
-  save(); render(); toast('文を残しました');
+  save(); render(); toast(t('toast.kept'));
 }
 function reopenLine(i){ comp=LINES[i].ws.slice(); compSel=-1; render(); window.scrollTo(0,0); }
-function dropLine(i){ LINES.splice(i,1); save(); render(); toast('消しました'); }
+function dropLine(i){ LINES.splice(i,1); save(); render(); toast(t('toast.dropped')); }
 
 /* =========================================================================
-   10. つくる（規則にそって量産＝無料。AI一括生成は上位プラン）
+   10. Make (mass-producing words that keep your rules — free.
+       Generating a whole themed vocabulary with an AI is the paid tier.)
    ========================================================================= */
 var mkPos='n', cands=[];
 function buildCands(n){
@@ -1229,30 +1803,30 @@ function vMake(){
   var rule=A.finalRule[mkPos];
   var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
+    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">V</span><span class="ct">Make</span></div></div>'+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
       return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     '<div class="note">'+(rule
-      ? 'いまの'+posLabel(mkPos)+'の規則（<span style="color:var(--gold)">-'+rule.ch+'</span> で終わる）を守って作ります。'
-      : 'まだ'+posLabel(mkPos)+'の規則が定まっていないので、いまある音の在庫だけを使って作ります。')+'</div>'+
+      ? t('make.rule', posLabel(mkPos), rule.ch)
+      : t('make.norule', posLabel(mkPos)))+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
         '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?'✓':'')+'</button>'+
         '<span class="cw">'+esc(c.w)+'</span><span class="crd">'+esc(readOut(c.w))+'</span>'+
         '<button class="rr" onclick="reroll('+i+')">↻</button>'+
         '<button class="rr" onclick="speak(\''+esc(c.w)+'\')">▶</button></div>';
-    }).join('') : '<div class="empty"><div class="eb">材料が足りません</div><div class="es">先に何語か自分で書いてください。<br>その音づかいを真似して作ります。</div></div>')+
-    (left!==null? '<div class="note" style="margin-top:16px">無料プランはあと '+Math.max(0,left)+' 語です。</div>':'')+
+    }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
+    (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
     '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
-      '<span><span class="lt">テーマを言うと、まとめて作ってもらう</span><br>'+
-      '<span class="ld">「海にまつわる語を30」のように頼む</span></span>'+
+      '<span><span class="lt">'+t('make.lock.t')+'</span><br>'+
+      '<span class="ld">'+t('make.lock.d')+'</span></span>'+
       '<span class="tag">STUDIO</span></button>'+
     '</div>'+
-    '<div class="barfix"><button class="btn ghost" onclick="regen()">引き直す</button>'+
-    '<button class="btn" onclick="commit()">選んだ語を加える</button></div></div>';
+    '<div class="barfix"><button class="btn ghost" onclick="regen()">'+t('make.reroll')+'</button>'+
+    '<button class="btn" onclick="commit()">'+t('make.commit')+'</button></div></div>';
 }
 function setPos(p){ mkPos=p; cands=[]; render(); }
 function tog(i){ cands[i].on=!cands[i].on; render(); }
@@ -1264,161 +1838,153 @@ function reroll(i){
 function regen(){ cands=[]; render(); }
 function commit(){
   var sel=cands.filter(function(c){return c.on;});
-  if(!sel.length){ toast('加える語が選ばれていません'); return; }
-  if(!capOK(sel.length)){ go('plans'); toast('無料プランは'+FREE_LIMIT+'語までです'); return; }
+  if(!sel.length){ toast(t('toast.noselect')); return; }
+  if(!capOK(sel.length)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   sel.forEach(function(c){ WORDS.push({hw:c.w, mn:'', pos:mkPos, at:Date.now()}); });
   save(); cands=[];
-  toast(sel.length+'語を加えました。意味はことばの一覧から書けます');
+  toast(tn('toast.added.n', sel.length));
   go('words');
 }
 
 /* =========================================================================
-   11. 設定
+   11. Settings
    ========================================================================= */
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
+  var sample=WORDS.length?WORDS[0].hw:'Aelin';
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">← 目次</button>'+
-    '<div class="chap"><span class="ct">設定</span></div></div>'+
+    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<div class="chap"><span class="ct">'+t('set.title')+'</span></div></div>'+
     '<div class="body">'+
-    '<div class="sec">見た目</div>'+
+    '<div class="sec">'+t('set.look')+'</div>'+
     '<div class="pick">'+
-      ['system','light','dark'].map(function(t){
-        var lab={system:'システム',light:'ライト',dark:'ダーク'}[t];
-        return '<button class="'+(SET.theme===t?'on':'')+'" onclick="setTheme(\''+t+'\')">'+lab+'</button>';
+      ['system','light','dark'].map(function(th){
+        return '<button class="'+(SET.theme===th?'on':'')+'" onclick="setTheme(\''+th+'\')">'+t('theme.'+th)+'</button>';
       }).join('')+
     '</div>'+
-    '<div class="note">「システム」は端末の設定に合わせて自動で切り替わります。</div>'+
+    '<div class="note">'+t('set.theme.note')+'</div>'+
 
-    '<div class="sec">ことばの読み</div>'+
+    '<div class="sec">'+t('set.reading')+'</div>'+
     '<div class="pick">'+
-      [['ipa','発音記号'],['kana',LANGS[uiLang()].rdName],['both','両方']].map(function(m){
-        return '<button class="'+(readMode()===m[0]?'on':'')+'" onclick="setRead(\''+m[0]+'\')">'+m[1]+'</button>';
+      [['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
+        return '<button class="'+(readMode()===m[0]?'on':'')+'" onclick="setRead(\''+m[0]+'\')">'+esc(m[1])+'</button>';
       }).join('')+
     '</div>'+
-    '<div class="pvbox" style="margin-top:10px"><span class="pvn">見本</span>'+
-      '<span class="pvk">'+esc(readOut(WORDS.length?WORDS[0].hw:'Aelin'))+'</span></div>'+
-    '<div class="note">発音記号（IPA）は、その音を世界共通で言い当てるための記号です。'+
-      '<b style="color:var(--tx);font-weight:500">/ /</b> の中の '+
-      '<b style="color:var(--tx);font-weight:500">.</b> は音節の切れ目、'+
-      '<b style="color:var(--tx);font-weight:500">ː</b> は音を伸ばす印。'+
-      '正確なのは発音記号のほうで、'+LANGS[uiLang()].rdName+'は読める人むけの近似です。</div>'+
+    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
+      '<span class="pvk">'+esc(readOut(sample))+'</span></div>'+
+    '<div class="note">'+t('set.ipa.note', esc(langDef().rdName))+'</div>'+
 
-    '<div class="sec">読みを出すことば</div>'+
+    /* One control for the whole interface: the screen and the reading
+       of every word follow it. The IPA never does. */
+    '<div class="sec">'+t('set.display')+'</div>'+
     '<div class="pick">'+
       Object.keys(LANGS).map(function(k){
-        return '<button class="'+(uiLang()===k?'on':'')+'" onclick="setUi(\''+k+'\')">'+LANGS[k].label+'</button>';
+        return '<button class="'+(uiLang()===k?'on':'')+'" onclick="setUi(\''+k+'\')">'+esc(LANGS[k].label)+'</button>';
       }).join('')+
     '</div>'+
-    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+
-      esc(WORDS.length?WORDS[0].hw:'Aelin')+'</span>'+
+    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+esc(sample)+'</span>'+
       Object.keys(LANGS).map(function(k){
         return '<span class="pvk" style="font-size:.82rem;margin-left:10px">'+
-          esc(LANGS[k].rdName)+'：'+esc(APPROX[k].word(WORDS.length?WORDS[0].hw:'Aelin'))+'</span>';
+          esc(LANGS[k].rdName)+': '+esc(APPROX[k].word(sample))+'</span>';
       }).join('')+'</div>'+
-    '<div class="note">発音記号は世界共通なので、どの言語でも同じものが出ます。'+
-      '変わるのは「読み」だけ。日本語ならカタカナ、英語なら <b style="color:var(--tx);font-weight:500">AY-lin</b> の'+
-      'ような綴り直し（大文字が強く読むところ）。既定は端末の言語に合わせます。</div>'+
+    '<div class="note">'+t('set.display.note')+'</div>'+
 
-    '<div class="sec">声</div>'+
-    '<button class="set"><span class="sl">いま使う声</span><span class="sv">'+esc(voiceLabel())+'</span></button>'+
+    '<div class="sec">'+t('set.voice')+'</div>'+
+    '<button class="set"><span class="sl">'+t('set.voice.cur')+'</span><span class="sv">'+esc(voiceLabel())+'</span></button>'+
     (VOICES.length
-      ? '<div class="field" style="margin-top:12px"><label>声を選ぶ</label>'+
+      ? '<div class="field" style="margin-top:12px"><label>'+t('set.voice.pick')+'</label>'+
         '<select onchange="setVoice(this.value)">'+
-        '<option value=""'+(SET.voice?'':' selected')+'>自動でえらぶ</option>'+
+        '<option value=""'+(SET.voice?'':' selected')+'>'+esc(t('set.voice.auto'))+'</option>'+
         VOICES.map(function(v){
           return '<option value="'+esc(v.voiceURI)+'"'+(SET.voice===v.voiceURI?' selected':'')+'>'+
-            esc(v.name)+'（'+esc(v.lang)+'）</option>';
+            esc(v.name)+' ('+esc(v.lang)+')</option>';
         }).join('')+'</select></div>'
-      : '<div class="note">この端末の声の一覧がまだ読み込めていません。一度どこかで「▶ 聞く」を押すと出てきます。</div>')+
-    '<div class="pvbox" style="margin-top:10px"><span class="pvn">ためす</span>'+
-      '<span class="pvk">'+esc(WORDS.length?WORDS[0].hw:'Aelin')+'</span>'+
-      '<button onclick="speak(\''+esc(WORDS.length?WORDS[0].hw:'Aelin')+'\')">▶ 聞く</button></div>'+
-    '<div class="note">音が出ないときは、①iPhone 横の<b style="color:var(--tx);font-weight:500">消音スイッチ</b>が下がっていないか、'+
-      '②音量が0でないか、を先に確かめてください。'+
-      'それでも出ないときは、上の一覧から別の声を選ぶと鳴ることがあります。'+
-      'イタリア語やスペイン語の声は母音が素直なので、つくった言語には合いやすいです。</div>'+
+      : '<div class="note">'+t('set.voice.wait')+'</div>')+
+    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.voice.try')+'</span>'+
+      '<span class="pvk">'+esc(sample)+'</span>'+
+      '<button onclick="speak(\''+esc(sample)+'\')">'+t('f.listen')+'</button></div>'+
+    '<div class="note">'+t('set.voice.note')+'</div>'+
 
-    '<div class="sec">言語</div>'+
-    '<button class="set" onclick="editName()"><span class="sl">名前</span><span class="sv">'+esc(langName||'—')+' ›</span></button>'+
-    '<button class="set" onclick="go(\'words\')"><span class="sl">ことばの数</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+' ›</span></button>'+
+    '<div class="sec">'+t('set.lang')+'</div>'+
+    '<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span><span class="sv">'+esc(langName||'—')+' ›</span></button>'+
+    '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+' ›</span></button>'+
 
-    '<div class="sec">プラン</div>'+
-    '<button class="set" onclick="go(\'plans\')"><span class="sl">いまのプラン</span><span class="sv">'+esc(p?p.name:'Free')+' ›</span></button>'+
+    '<div class="sec">'+t('set.plan')+'</div>'+
+    '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span><span class="sv">'+esc(p?p.name:'Free')+' ›</span></button>'+
 
-    '<div class="sec">データ</div>'+
+    '<div class="sec">'+t('set.data')+'</div>'+
     (has('plus')
-      ? '<button class="set" onclick="exportCSV()"><span class="sl">CSVで書き出す</span><span class="sv">›</span></button>'+
-        '<button class="set" onclick="openImport()"><span class="sl">CSVから取り込む</span><span class="sv">›</span></button>'+
-        '<button class="set"><span class="sl">クラウド保存</span><span class="sv">オン</span></button>'
+      ? '<button class="set" onclick="exportCSV()"><span class="sl">'+t('set.csv.out')+'</span><span class="sv">›</span></button>'+
+        '<button class="set" onclick="openImport()"><span class="sl">'+t('set.csv.in')+'</span><span class="sv">›</span></button>'+
+        '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
       : '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
-        '<span><span class="lt">CSVの取り込み・書き出し</span><br><span class="ld">表計算でまとめて作った単語を流し込む</span></span>'+
+        '<span><span class="lt">'+t('set.lock.csv.t')+'</span><br><span class="ld">'+t('set.lock.csv.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>'+
         '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
-        '<span><span class="lt">クラウド保存</span><br><span class="ld">機種変しても消えない・複数端末で同じ辞書</span></span>'+
+        '<span><span class="lt">'+t('set.lock.cloud.t')+'</span><br><span class="ld">'+t('set.lock.cloud.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>')+
-    '<button class="set" style="margin-top:18px" onclick="wipe()"><span class="sl" style="color:#c9553f">すべて消してやり直す</span></button>'+
-    '<div class="note" style="margin-top:26px">Lingua ・ ことばは端末の中に保存されています。'+(has('plus')?'':'無料プランでは通信を一切しません。')+'</div>'+
+    '<button class="set" style="margin-top:18px" onclick="wipe()"><span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>'+
+    '<div class="note" style="margin-top:26px">'+t('set.footer')+(has('plus')?'':t('set.footer.free'))+'</div>'+
     '</div></div>';
 }
-function setTheme(t){ SET.theme=t; save(); applyTheme(); render(); }
+function setTheme(v){ SET.theme=v; save(); applyTheme(); render(); }
 function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
-function setVoice(v){ SET.voice=v; save(); render(); var t=WORDS.length?WORDS[0].hw:'Aelin'; speak(t); }
+function setVoice(v){ SET.voice=v; save(); render(); var s=WORDS.length?WORDS[0].hw:'Aelin'; speak(s); }
 function wipe(){
-  if(!confirm('つくったことばを全部消して、最初からやり直しますか？')) return;
+  if(!confirm(t('confirm.wipe'))) return;
   WORDS=[]; LINES=[]; langName=''; SET.done=false; comp=[]; compSel=-1; save();
   ob={step:0,name:'',mn:'',hw:''}; render();
 }
 
 /* =========================================================================
-   12. プラン画面
+   12. Plans
    ========================================================================= */
 function vPlans(){
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'settings\')">← 設定</button>'+
-    '<div class="chap"><span class="ct">プラン</span></div></div>'+
+    '<button class="back" onclick="go(\'settings\')">'+t('nav.settings')+'</button>'+
+    '<div class="chap"><span class="ct">'+t('plans.title')+'</span></div></div>'+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:16px">ことばをつくること自体は、ずっと無料です。<br>お金がかかるのは「たくさん保管する」ことと「AIと一緒に考える」ことだけ。</div>'+
+    '<div class="note" style="margin-bottom:16px">'+t('plans.intro')+'</div>'+
     PLANS.map(function(p){
       var cur = p.id===plan();
       return '<div class="plan'+(cur?' cur':'')+'">'+
         '<div class="ph2"><span class="pn">'+p.name+'</span>'+
-        (cur?'<span class="badge">いま</span>':'')+
-        '<span class="pp">'+p.price+'</span></div>'+
-        '<div class="pl">'+p.lines.map(function(l){return '・'+l;}).join('<br>')+'</div>'+
-        (cur?'':'<button onclick="choose(\''+p.id+'\')">'+(p.id==='free'?'無料にもどす':'このプランにする')+'</button>')+
+        (cur?'<span class="badge">'+t('plan.cur')+'</span>':'')+
+        '<span class="pp">'+t(p.price)+'</span></div>'+
+        '<div class="pl">'+p.lines.map(function(l){return '· '+t(l);}).join('<br>')+'</div>'+
+        (cur?'':'<button onclick="choose(\''+p.id+'\')">'+(p.id==='free'? t('plan.tofree') : t('plan.choose'))+'</button>')+
         '</div>';
     }).join('')+
-    '<div class="note" style="margin-top:14px">※ 課金はまだ繋いでいません。いまは切り替えて画面の違いを見るためのものです。</div>'+
+    '<div class="note" style="margin-top:14px">'+t('plans.note')+'</div>'+
     '</div></div>';
 }
 function choose(id){
   SET.plan=id; save(); render();
-  toast(id==='free'?'無料プランにしました':'（仮）'+id+' にしました');
+  toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
 
 /* =========================================================================
-   13. ことばを書くシート／CSV
+   13. The sheet for writing a word, and CSV
    ========================================================================= */
 var addPos='n';
 function openAdd(){
-  if(!capOK(1)){ go('plans'); toast('無料プランは'+FREE_LIMIT+'語までです'); return; }
+  if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>ことばを書く</h3>'+
-    '<div class="note" style="margin-bottom:12px">読みは書いたつづりから自動で決まります。</div>'+
-    '<div class="field"><label>つづり</label>'+
+    '<div class="grip"></div><h3>'+t('add.title')+'</h3>'+
+    '<div class="note" style="margin-bottom:12px">'+t('add.note')+'</div>'+
+    '<div class="field"><label>'+t('f.spelling')+'</label>'+
     '<input class="hwf" id="f-hw" placeholder="Aelin" oninput="pv()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
-    '<div class="pvbox"><span class="pvn">読み</span><span class="pvk" id="f-pv"></span>'+
-    '<button onclick="sayField()">▶ 聞く</button></div>'+
-    '<div class="row2"><div class="field"><label>意味</label><input id="f-mn" placeholder="星"></div>'+
-    '<div class="field"><label>品詞</label><select id="f-pos">'+
+    '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
+    '<button onclick="sayField()">'+t('f.listen')+'</button></div>'+
+    '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div>'+
+    '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos">'+
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
-    '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">加える</button>'+
+    '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">'+t('add.btn')+'</button>'+
     '<button class="lock" onclick="closeSheet();go(\'plans\')"><span class="lk">✧</span>'+
-      '<span><span class="lt">意味からつづりを相談する</span><br>'+
-      '<span class="ld">「静けさ、みたいな語がほしい」と話しかける</span></span>'+
+      '<span><span class="lt">'+t('add.lock.t')+'</span><br>'+
+      '<span class="ld">'+t('add.lock.d')+'</span></span>'+
       '<span class="tag">STUDIO</span></button>';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
@@ -1441,17 +2007,18 @@ function addOne(){
   var hw=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
   var mn=document.getElementById('f-mn').value.trim();
   var pos=document.getElementById('f-pos').value;
-  if(hw.length<2){ toast('つづりを2文字以上で'); return; }
+  if(hw.length<2){ toast(t('toast.hw2')); return; }
   if(!capOK(1)){ closeSheet(); go('plans'); return; }
   hw=hw.charAt(0).toUpperCase()+hw.slice(1).toLowerCase();
-  if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast('もうある語です'); return; }
+  if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
   addPos=pos;
   WORDS.push({hw:hw, mn:mn, pos:pos, at:Date.now()});
   save(); closeSheet(); cands=[];
-  toast(hw+' を加えました');
+  toast(t('toast.added.1', hw));
   render();
 }
-/* 一語を開く：読み・音節の切れ目・意味・品詞。ここで直せる／消せる。 */
+/* One word, opened: reading, syllable breaks, meaning, part of speech.
+   Everything here can be changed or deleted. */
 var openHw='';
 function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
@@ -1464,25 +2031,25 @@ function openWord(hw){
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div>'+
     '<div class="whd"><span class="whw">'+esc(w.hw)+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">▶ 聞く</button></div>'+
+      '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">'+t('f.listen')+'</button></div>'+
     '<div class="wsub">'+esc(ipa(w.hw))+'</div>'+
     '<div class="wsub2">'+esc(rd(w.hw))+'</div>'+
-    '<div class="sec" style="margin:18px 0 8px">音の切れ目</div>'+
+    '<div class="sec" style="margin:18px 0 8px">'+t('word.syl')+'</div>'+
     '<div class="sylrow">'+sy.map(function(s,i){
       var d=i===0? s.charAt(0).toUpperCase()+s.slice(1) : s;
       return '<span class="sy"><span class="sya">'+esc(d)+'</span>'+
         '<span class="syi">'+esc(ipaSyl(s))+'</span>'+
         '<span class="syk">'+esc(rdSyl(s))+'</span></span>';
     }).join('<span class="sysep">·</span>')+'</div>'+
-    '<div class="note" style="margin-top:8px">'+sy.length+'音節。読みはこの切れ目から自動で決まっています。<br>上段が発音記号（IPA）、下段が'+esc(LANGS[uiLang()].label)+'話者向けのだいたいの読み（'+esc(LANGS[uiLang()].rdName)+'）。</div>'+
-    '<div class="sec" style="margin:20px 0 8px">なおす</div>'+
-    '<div class="row2"><div class="field"><label>意味</label><input id="w-mn" value="'+esc(w.mn||'')+'" placeholder="まだ決めていない"></div>'+
-    '<div class="field"><label>品詞</label><select id="w-pos">'+
+    '<div class="note" style="margin-top:8px">'+tn('word.note', sy.length, esc(langDef().label), esc(langDef().rdName))+'</div>'+
+    '<div class="sec" style="margin:20px 0 8px">'+t('word.edit')+'</div>'+
+    '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="w-mn" value="'+esc(w.mn||'')+'" placeholder="'+esc(t('word.mn.ph'))+'"></div>'+
+    '<div class="field"><label>'+t('f.pos')+'</label><select id="w-pos">'+
     POS.map(function(p){return '<option value="'+p+'"'+(p===w.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
-    '<button class="btn" style="width:100%;margin-top:4px" onclick="saveWord()">なおす</button>'+
+    '<button class="btn" style="width:100%;margin-top:4px" onclick="saveWord()">'+t('word.save')+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
-      '<span class="sl" style="color:#c9553f">この語を消す</span></button>';
+      '<span class="sl" style="color:#c9553f">'+t('word.del')+'</span></button>';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
 }
@@ -1490,37 +2057,40 @@ function saveWord(){
   var w=findWord(openHw); if(!w) return;
   w.mn=document.getElementById('w-mn').value.trim();
   w.pos=document.getElementById('w-pos').value;
-  save(); closeSheet(); cands=[]; render(); toast(w.hw+' をなおしました');
+  save(); closeSheet(); cands=[]; render(); toast(t('toast.saved', w.hw));
 }
 function delWord(){
   var w=findWord(openHw); if(!w) return;
-  if(!confirm(w.hw+' を消しますか？')) return;
+  if(!confirm(t('confirm.del', w.hw))) return;
   WORDS=WORDS.filter(function(x){return x!==w;});
-  save(); closeSheet(); cands=[]; render(); toast(w.hw+' を消しました');
+  save(); closeSheet(); cands=[]; render(); toast(t('toast.deleted', w.hw));
 }
 
+/* The CSV header stays English in every locale, so a file written on one
+   device imports cleanly on another. The part of speech comes back through
+   posKey(), which accepts a key or a label in any supported language. */
 function exportCSV(){
   var csv='spelling,meaning,pos,ipa,reading\n'+WORDS.map(function(w){
-    return [w.hw,w.mn,posLabel(w.pos),ipa(w.hw),rd(w.hw)].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
+    return [w.hw,w.mn,w.pos,ipa(w.hw),rd(w.hw)].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
   }).join('\n');
   try{
     var b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a');
     a.href=u; a.download=(langName||'lingua')+'.csv'; a.click(); URL.revokeObjectURL(u);
-    toast('書き出しました');
-  }catch(e){ toast('書き出せませんでした'); }
+    toast(t('toast.exported'));
+  }catch(e){ toast(t('toast.exportfail')); }
 }
 function openImport(){
   document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>CSVから取り込む</h3>'+
-    '<div class="note" style="margin-bottom:10px">1行に「つづり,意味,品詞」。1行目に見出しがあっても大丈夫です。</div>'+
-    '<div class="field"><textarea id="f-csv" placeholder="Aelin,'+(uiLang()==='ja'?'星,名詞&#10;Naeth,水,名詞':'star,noun&#10;Naeth,water,noun')+'"></textarea></div>'+
-    '<button class="btn" style="width:100%" onclick="doImport()">取り込む</button>';
+    '<div class="grip"></div><h3>'+t('csv.title')+'</h3>'+
+    '<div class="note" style="margin-bottom:10px">'+t('csv.note')+'</div>'+
+    '<div class="field"><textarea id="f-csv" placeholder="'+t('csv.ph')+'"></textarea></div>'+
+    '<button class="btn" style="width:100%" onclick="doImport()">'+t('csv.btn')+'</button>';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
 }
 function doImport(){
-  var t=document.getElementById('f-csv').value, n=0;
-  t.split(/\r?\n/).forEach(function(line){
+  var src=document.getElementById('f-csv').value, n=0;
+  src.split(/\r?\n/).forEach(function(line){
     if(!line.trim()) return;
     var c=line.split(',').map(function(x){return x.trim().replace(/^"|"$/g,'');});
     var hw=String(c[0]||'').replace(/[^A-Za-z]/g,'');
@@ -1532,11 +2102,11 @@ function doImport(){
     n++;
   });
   save(); closeSheet(); cands=[]; render();
-  toast(n+'語を取り込みました');
+  toast(tn('toast.imported', n));
 }
 
 /* =========================================================================
-   14. 描画
+   14. Drawing
    ========================================================================= */
 function render(){
   if(!SET.done){ app.innerHTML=vOb(); return; }
