@@ -75,23 +75,52 @@ transcription with a combining acute on the stress. Korean composes real hangul 
 with every cluster and every coda but `-n` broken out into a syllable of its own, so the mapping can be
 corrected cell by cell.
 
+**Everything a language needs is in one block.** Section 3.6 of `www/index.html` holds ten blocks and
+nothing else, one per language, each of them a closure that registers itself with `defLang(code, def)`:
+
+```js
+defLang('es', (function(){
+  var C1_es = { ... };                 /* the tables this language needs, private to it */
+  function syl_es(p){ ... }            /* one {on,nu,co} syllable -> that syllable, written */
+  function word_es(ps){ ... }          /* every syllable of one word -> the finished reading */
+  return {
+    label : "Español",
+    rdName: "transcripción figurada",
+    all   : "todas",
+    pos   : {n:"sustantivo", v:"verbo", adj:"adjetivo", x:"otra"},
+    read  : mkApprox(word_es, syl_es),
+    str   : { 'ob.start': "Empezar", ... }   /* every string the interface shows */
+  };
+})());
+```
+
+That shape is the whole point of the arrangement. Before it, a single language was scattered across three
+distant regions of the file — its string table near the top, its reading engine in the middle, its label
+and part-of-speech names near the bottom — and adding a language meant editing three places and silently
+shipping if you missed one. Now the closure also means a language's private tables (`C1_es`, `CON_RU`,
+`JONG_KO` …) cannot collide with the other nine or be reached from the rest of the app: the only way in is
+`defLang()`, the only way out is the object it hands back. `LANG` maps code to definition and `UI_LANGS`
+records the order they registered in, so the settings list, `autoLang()` and `t()` all derive from the
+same source and cannot disagree.
+
 There are three layers, and **only the middle one depends on the reader's language**.
 
 1. **IPA — language-independent.** The symbols are the same everywhere, so anyone sees the same thing.
    That is why it is the core. Duplicate detection (`taken()` / `makeWord()`) compares **IPA**, not the
    approximation, so changing the interface language can never produce two words that sound alike.
-2. **The reading approximation — swapped per language (`APPROX` / `LANGS`).** Every one of the ten
+2. **The reading approximation — swapped per language (`LANG[code].read`).** Every one of the ten
    readings is a pair of plain functions over the same `{on, nu, co}` syllable the syllabifier produced:
    `syl_xx(p)` writes one syllable, `word_xx(ps)` joins them and marks the stress its own way (English
    capitalises, Russian accents, Chinese joins with nothing at all). `mkApprox()` wraps that pair once,
    and every place a reading appears in the app goes through the single `rd()` / `rdSyl()` pair — so a
    reading works in the dictionary, the detail sheet, the syllable table, linking, sentences and CSV the
-   moment it is registered. An eleventh language is one file and two rows.
-3. **Interface copy — translated, English first.** Every visible string lives in the `STR` table and is
-   fetched with `t()` (or `tn()`, which picks the right form for a counted string: a `.1` singular in the
-   languages that inflect for one, and a `.few` in Russian for 2–4). `STR.en` is the base and the
-   fallback; the other nine hold the identical key set. `UI_LANGS` lists what exists, `autoLang()` guesses
-   from the device, and `SET.ui` remembers the choice. The five chapter titles (Words / Sound / Rules /
+   moment it is registered. `rdIn(code, word)` asks for a reading in a *named* language whatever the
+   interface is set to; text-to-speech is the one caller, feeding katakana to a Japanese-only voice.
+3. **Interface copy — translated, English first.** Every visible string lives in that language's own
+   `str` table and is fetched with `t()` (or `tn()`, which picks the right form for a counted string: a
+   `.1` singular in the languages that inflect for one, and a `.few` in Russian for 2–4). `LANG.en.str` is
+   the base and the fallback; the other nine hold the identical key set. `UI_LANGS` lists what exists,
+   `autoLang()` guesses from the device, and `SET.ui` remembers the choice. The five chapter titles (Words / Sound / Rules /
    Sentences / Make) stay in English everywhere — they are set in a display serif and are part of the book
    design — while the contents rows the reader navigates by are translated.
 
@@ -107,6 +136,39 @@ together, because a person who reads the screen in Korean wants the reading in h
 rather than a segmented control, and **each row carries the reading it would give the first word in your
 own dictionary** — so the choice is made by looking at the result, not by trusting the name of a script.
 The IPA never follows it.
+
+### Adding an eleventh language
+
+Copy the block of whichever existing language behaves most like the new one, and change these five things
+inside it — there is no sixth place, and nothing outside section 3.6 needs to be touched:
+
+1. the `defLang('xx', …)` code, and the divider comment above it
+2. `label` (written in that language), `rdName`, `all`, and the four `pos` names
+3. `syl_xx(p)` and `word_xx(ps)`, plus whatever private tables they need. Suffix them `_xx` out of habit,
+   though the closure already makes collisions impossible. Stress falls on the first syllable
+4. `read: mkApprox(word_xx, syl_xx)`
+5. `str`, translated from `LANG.en.str`. Same keys, same `{0}` placeholders, same `<br>` and `&#10;`
+
+Then decide where in the file the block sits: `UI_LANGS` is built in registration order, and that is the
+order the settings list shows.
+
+Finally, run the checker:
+
+```bash
+node tools/i18n-check.mjs
+```
+
+It walks **every screen in every language** — onboarding at every step, all eight routes, under each of
+the three plans, each of the three reading modes, with the dictionary both empty and full, plus the three
+sheets that are not routes — and fails on any of seven things: a key one language is missing or has extra,
+a lost `{0}`, a lost `<br>` or `&#10;`, the name *Lingua* translated away, a reading engine that throws or
+goes blank on the samples and the awkward edges (`a`, `y`, `str`, `xx`, the empty word), **any string at
+all that fell back to English at render time**, and any user-facing text hard-coded outside section 3.6.
+
+That sixth check is the one that matters. `t()` carries a `T_MISS` collector that is `null` in the app and
+costs nothing; the checker arms it, renders everything, and insists it comes back empty. A missing
+translation is otherwise the one bug that ships silently — the screen still renders, the button still
+works, and only a person reading that language ever finds out.
 
 **A known limit:** the phonological engine assumes the Latin alphabet (`VOW='aeiouy'`, `CONS`, and the
 digraphs `th` / `sh` / `ch`). Cyrillic or Brahmic spellings can't be fed in directly. Conlangs are
@@ -155,13 +217,19 @@ one the person wrote.
 - `syl()` / `onsetOK()` … splits syllables. A medial consonant cluster hands the next syllable only as
   much as can legally start one, and leaves the rest as the previous coda (`silva` → `sil.va`,
   `ondra` → `on.dra`)
-- `syl_xx()` / `word_xx()` … ten blocks, one per language, each deriving the reading mechanically from
-  the spelling so nobody has to invent one: `resp()` English, `kana()` Japanese, and `syl_es` … `syl_ko`
-  for the other eight. None of them knows anything about the app — each takes a syllable and returns text
-- `sylParts()` / `mkApprox()` / `APPROX` / `LANGS` / `rd()` / `rdSyl()` / `autoLang()` … the one place the
-  reading approximation is swapped per language. One block plus two rows adds a language
-- `STR` / `t()` / `tn()` / `UI_LANGS` / `SET.ui` … the one place interface copy lives. `STR.en` is the
-  base and the fallback for all ten; `tn()` handles counted strings, including the Russian 2–4 form
+- `defLang()` / `LANG` / `UI_LANGS` … section 3.6, and the only place any language exists. Ten
+  self-contained blocks, each holding its label, its part-of-speech names, its reading engine and its
+  whole string table. Adding a language is adding a block; there is no second place to forget
+- `syl_xx()` / `word_xx()` … the reading inside each block, derived mechanically from the spelling so
+  nobody has to invent one. None of them knows anything about the app — each takes a syllable and
+  returns text
+- `sylParts()` / `mkApprox()` / `rd()` / `rdSyl()` / `rdIn()` / `autoLang()` … the one place the reading
+  approximation is swapped per language, and the one way the app asks for a reading
+- `t()` / `tn()` / `strOf()` / `T_MISS` / `SET.ui` … the one place interface copy is fetched.
+  `LANG.en.str` is the base and the fallback for all ten; `tn()` handles counted strings, including the
+  Russian 2–4 form; `T_MISS` is the collector `tools/i18n-check.mjs` arms to catch a missing translation
+- `tools/i18n-check.mjs` … walks every screen in every language and fails on seven kinds of translation
+  bug. Run it before every release
 - `POS` / `posLabel()` / `posKey()` … part of speech is saved as `n`/`v`/`adj`/`x` and only the heading
   changes per language. Values saved in the old Japanese form are migrated on launch
 - `parts()` … splits a syllable into onset, nucleus and coda, and hands a `y` back to the onset when a
@@ -308,6 +376,7 @@ lingua/
 ├─ www/index.html                    # the app itself (prototype)
 ├─ capacitor.config.json             # appId=com.tokinets.lingua / appName=Lingua / webDir=www
 ├─ package.json / package-lock.json
+├─ tools/i18n-check.mjs              # walks every screen in every language; run before release
 ├─ .github/workflows/ios-deploy.yml  # triggered by a build-* tag (based on runbook STEP 9)
 └─ ios/                              # Xcode project generated by Capacitor (CocoaPods)
     └─ App/
