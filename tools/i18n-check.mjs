@@ -17,16 +17,33 @@
                         awkward edges without throwing or going blank
      6. the walk        every view, in every language, with T_MISS armed:
                         one fallback to English anywhere and this fails
-     7. the source      no user-facing text hard-coded outside section 3.6
+     7. the source      no user-facing text hard-coded outside section 3.6,
+                        and nothing spoken through toast/alert/confirm/prompt
+                        as a quoted literal — those never reach a screen, so
+                        check 8 cannot see them
      8. the mirror      every view rendered in a pseudo-language whose every
                         string is spelled with accented look-alikes. Anything
                         that comes out in plain letters never passed through
                         t() at all — that is text hard-coded into a template,
-                        which no amount of translating would ever reach.
+                        which no amount of translating would ever reach. Reads
+                        placeholders, titles and aria-labels too: they are read
+                        by a person but do not look like copy.
 
    Checks 6 and 8 find the views by asking the page for them (every global
    named v + a capital), so a screen written next year is walked the day it is
    written. Nobody has to remember to add it here.
+
+   What it cannot see, so that nobody mistakes silence for safety:
+     - anything outside www/index.html. The iOS side (Info.plist, the store
+       listing, permission prompts) has no localisation at all yet
+     - whether a translation is any good. It proves a string exists and is
+       shaped right; it cannot read Korean
+     - a right-to-left language. Nothing sets dir=rtl; Arabic or Hebrew would
+       need layout work this check would happily pass
+     - plural systems beyond one / few. tn() models English and Russian;
+       Arabic and Polish would need more forms
+     - a new way of speaking to a person. The list in SPEAKS is by hand;
+       add to it when something new starts talking
 
    Exit code is 0 only when all eight pass.
    --------------------------------------------------------------------------- */
@@ -131,6 +148,8 @@ function checkSource(){
   /* prose sitting between two tags in a template: >Save< and the like */
   const PROSE = />([A-Za-z][A-Za-z’'!?,. -]{3,})</g;
   const OK_PROSE = /^(br|em|b|i|span|div|button|input|style|script|meta|title|link|path|svg|g|defs|use|option|label|textarea|p|h1|h2|h3|small|strong)$/i;
+  /* the functions that speak to a person without going through a screen */
+  const SPEAKS = /\b(toast|alert|confirm|prompt)\s*\(\s*(['"][^'"]*['"])/g;
 
   lines.forEach((l, i) => {
     if (!outside(i)) return;
@@ -145,6 +164,17 @@ function checkSource(){
       if (s.length < 5) continue;
       if (!/ /.test(s)) continue;                 /* single words are usually markup */
       notes.push('line ' + (i + 1) + ' literal prose in a template: ' + s);
+    }
+
+    /* Some text never reaches a template at all: the app says it out loud
+       through one of these. Check 8 renders screens, so it cannot see them —
+       nothing here is called during a render. The rule is simple enough to
+       read off the source instead: what they are handed must come from t(),
+       never from a quotation mark. Add to the list when something new speaks. */
+    SPEAKS.lastIndex = 0;
+    while ((m = SPEAKS.exec(l))) {
+      fail('source', 'line ' + (i + 1) + ' says something in English out loud: ' +
+        m[1] + '(' + m[2].slice(0, 40) + '…  — it must be t(…), not a literal');
     }
   });
 }
@@ -359,18 +389,26 @@ const R = await pg.evaluate(() => {
   UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });
 
   const seen = {};
-  function look(where, html){
-    const txt = String(html).replace(/<[^>]*>/g, '\n').replace(/&[a-z#0-9]+;/g, ' ');
+  function words(where, s, how){
     const re = /[A-Za-z][A-Za-z'’]*(?:[ \-][A-Za-z'’]+)*/g;
     let m;
-    while ((m = re.exec(txt))){
-      const s = m[0].trim();
-      if (s.length < 3) continue;
-      const unknown = s.split(/[^A-Za-z]+/).filter(w => w && !PLAIN[w.toLowerCase()]);
-      if (!unknown.length) continue;
-      const key = where + ' shows "' + s + '" in every language';
+    while ((m = re.exec(String(s)))){
+      const w = m[0].trim();
+      if (w.length < 3) continue;
+      if (!w.split(/[^A-Za-z]+/).filter(x => x && !PLAIN[x.toLowerCase()]).length) continue;
+      const key = where + ' ' + how + ' "' + w + '" in every language';
       if (!seen[key]){ seen[key] = 1; out.hard.push(key); }
     }
+  }
+  /* The words a person reads are not only between the tags. A placeholder, a
+     tooltip, a screen-reader label — all of them are read, and all of them are
+     easy to leave in English because they do not look like copy. */
+  const ATTRS = /(?:placeholder|title|alt|aria-label|aria-description)\s*=\s*"([^"]*)"/gi;
+  function look(where, html){
+    const raw = String(html);
+    words(where, raw.replace(/<[^>]*>/g, '\n').replace(/&[a-z#0-9]+;/g, ' '), 'shows');
+    let a; ATTRS.lastIndex = 0;
+    while ((a = ATTRS.exec(raw))) words(where, a[1], 'has an attribute reading');
   }
 
   SET.ui = 'zz'; SET.done = false;

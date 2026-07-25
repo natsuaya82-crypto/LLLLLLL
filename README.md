@@ -183,6 +183,12 @@ visible at the top of that check.) This is how the five chapter headings were fo
 `Rules`, `Sentence` and `Make` were sitting in the templates in English while `toc.words` and its siblings
 were translated ten times over and never used.
 
+Two smaller things sit alongside it. The mirror reads `placeholder`, `title`, `alt` and `aria-label` as
+well as the text between the tags — a person reads those too, and they are easy to leave in English
+because they do not look like copy. And some text never reaches a screen at all: `toast()`, `alert()`,
+`confirm()` and `prompt()` speak directly, so no rendering check can see them. The rule for those is read
+off the source instead — what they are handed must come from `t()`, never from a quotation mark.
+
 Neither check has a list of screens to keep up to date. Both ask the page which views exist — every global
 named `v` plus a capital, and every `open` plus a capital — so a screen written next year is walked the day
 it is written. The screens it found are printed on every run; if that line ever gets shorter, coverage
@@ -201,8 +207,26 @@ git commit               # runs it too, when www/index.html changed
 `.github/workflows/i18n.yml` runs the same check on every push, so the net holds even on a clone where
 nobody installed the hook.
 
-**A known limit:** the phonological engine assumes the Latin alphabet (`VOW='aeiouy'`, `CONS`, and the
-digraphs `th` / `sh` / `ch`). Cyrillic or Brahmic spellings can't be fed in directly. Conlangs are
+### What the net does not catch
+
+Worth writing down, so silence is never mistaken for safety:
+
+- **Anything outside `www/index.html`.** The iOS side has no localisation at all yet — `CFBundleDisplayName`
+  is a single string, there are no `.lproj` folders, and the App Store listing (description, keywords,
+  screenshots) is written per-locale in App Store Connect by hand. That is the next piece of work, and
+  it is the one this net will never grow into.
+- **Whether a translation is any good.** It proves a string exists and is shaped right. It cannot read
+  Korean. A machine-translated line that means the wrong thing passes every check here.
+- **Right-to-left.** Nothing sets `dir="rtl"`. Arabic or Hebrew would need real layout work, and this
+  check would happily pass a screen that renders backwards.
+- **Plural systems past one / few.** `tn()` models English and Russian. Arabic has six forms, Polish
+  three by a different rule; adding either means extending `tn()` first.
+- **A new way of speaking.** The list of speaking functions is maintained by hand. If something new
+  starts talking to a person, add it to `SPEAKS` in the checker.
+- **`git commit --no-verify`,** and a red CI run that gets merged anyway.
+
+**And a known limit of the engine:** the phonology assumes the Latin alphabet (`VOW='aeiouy'`, `CONS`, and
+the digraphs `th` / `sh` / `ch`). Cyrillic or Brahmic spellings can't be fed in directly. Conlangs are
 normally written in romanisation, so for now that is an accepted trade-off.
 
 ### Voice (built so it still speaks once it's an app)
