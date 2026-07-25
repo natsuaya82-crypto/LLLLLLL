@@ -158,17 +158,48 @@ Finally, run the checker:
 node tools/i18n-check.mjs
 ```
 
-It walks **every screen in every language** — onboarding at every step, all eight routes, under each of
-the three plans, each of the three reading modes, with the dictionary both empty and full, plus the three
-sheets that are not routes — and fails on any of seven things: a key one language is missing or has extra,
+It walks **every screen in every language** — onboarding at every step, every route, under each of
+the three plans, each of the three reading modes, with the dictionary both empty and full, plus the
+sheets that are not routes — and fails on any of eight things: a key one language is missing or has extra,
 a lost `{0}`, a lost `<br>` or `&#10;`, the name *Lingua* translated away, a reading engine that throws or
 goes blank on the samples and the awkward edges (`a`, `y`, `str`, `xx`, the empty word), **any string at
-all that fell back to English at render time**, and any user-facing text hard-coded outside section 3.6.
+all that fell back to English at render time**, any user-facing text hard-coded outside section 3.6, and
+**any text that reaches the screen without passing through `t()` at all**.
 
-That sixth check is the one that matters. `t()` carries a `T_MISS` collector that is `null` in the app and
-costs nothing; the checker arms it, renders everything, and insists it comes back empty. A missing
-translation is otherwise the one bug that ships silently — the screen still renders, the button still
-works, and only a person reading that language ever finds out.
+The last two checks are the ones that matter, and they catch different things.
+
+`t()` carries a `T_MISS` collector that is `null` in the app and costs nothing; the checker arms it,
+renders everything, and insists it comes back empty. A missing translation is otherwise the one bug that
+ships silently — the screen still renders, the button still works, and only a person reading that language
+ever finds out.
+
+But `T_MISS` can only see text that *asked*. Text written straight into a template never asks, so it never
+registers as missing — it simply stays English in all ten languages forever. To catch that, the checker
+builds an eleventh language on the fly: English respelled in accented look-alikes, `Not one word yet` →
+`Ñøţ øñé ŵøŕđ ýéţ`, with tags, `{0}` slots and the name *Lingua* left alone. It renders every screen in it
+and reads the output back. Anything still in plain letters was baked into a template. (Proper nouns and
+notation — the tier names, `SOV`, the chapter numerals — are listed as allowed; the list is short and
+visible at the top of that check.) This is how the five chapter headings were found: `Words`, `Sound`,
+`Rules`, `Sentence` and `Make` were sitting in the templates in English while `toc.words` and its siblings
+were translated ten times over and never used.
+
+Neither check has a list of screens to keep up to date. Both ask the page which views exist — every global
+named `v` plus a capital, and every `open` plus a capital — so a screen written next year is walked the day
+it is written. The screens it found are printed on every run; if that line ever gets shorter, coverage
+was lost.
+
+### Not having to remember
+
+```bash
+npm test                 # the same check
+git commit               # runs it too, when www/index.html changed
+```
+
+`tools/pre-commit` is the hook; install it once per clone with
+`ln -sf ../../tools/pre-commit .git/hooks/pre-commit`. It only fires when the app itself changed, and
+`git commit --no-verify` skips it when landing something deliberately half-done.
+`.github/workflows/i18n.yml` runs the same check on every push, so the net holds even on a clone where
+nobody installed the hook.
 
 **A known limit:** the phonological engine assumes the Latin alphabet (`VOW='aeiouy'`, `CONS`, and the
 digraphs `th` / `sh` / `ch`). Cyrillic or Brahmic spellings can't be fed in directly. Conlangs are
@@ -228,8 +259,9 @@ one the person wrote.
 - `t()` / `tn()` / `strOf()` / `T_MISS` / `SET.ui` … the one place interface copy is fetched.
   `LANG.en.str` is the base and the fallback for all ten; `tn()` handles counted strings, including the
   Russian 2–4 form; `T_MISS` is the collector `tools/i18n-check.mjs` arms to catch a missing translation
-- `tools/i18n-check.mjs` … walks every screen in every language and fails on seven kinds of translation
-  bug. Run it before every release
+- `tools/i18n-check.mjs` … finds the screens by asking the page, walks every one of them in every language
+  and fails on eight kinds of translation bug — including text that never passed through `t()` at all.
+  `npm test`, and the pre-commit hook and the `i18n` workflow both run it for you
 - `POS` / `posLabel()` / `posKey()` … part of speech is saved as `n`/`v`/`adj`/`x` and only the heading
   changes per language. Values saved in the old Japanese form are migrated on launch
 - `parts()` … splits a syllable into onset, nucleus and coda, and hands a `y` back to the onset when a
@@ -376,7 +408,10 @@ lingua/
 ├─ www/index.html                    # the app itself (prototype)
 ├─ capacitor.config.json             # appId=com.tokinets.lingua / appName=Lingua / webDir=www
 ├─ package.json / package-lock.json
-├─ tools/i18n-check.mjs              # walks every screen in every language; run before release
+├─ tools/
+│   ├─ i18n-check.mjs               # walks every screen in every language (npm test)
+│   └─ pre-commit                   # the same check, before each commit; install with ln -sf
+├─ .github/workflows/i18n.yml        # the same check, on every push
 ├─ .github/workflows/ios-deploy.yml  # triggered by a build-* tag (based on runbook STEP 9)
 └─ ios/                              # Xcode project generated by Capacitor (CocoaPods)
     └─ App/

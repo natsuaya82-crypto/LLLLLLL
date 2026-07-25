@@ -1,0 +1,18 @@
+#!/bin/sh
+# Refuse a commit that leaves a screen untranslated.
+#
+# Install once:  ln -sf ../../tools/pre-commit .git/hooks/pre-commit
+# Skip once:     git commit --no-verify
+#
+# Only runs when the app itself changed, so commits that touch the README or
+# the workflow files stay instant.
+
+if git diff --cached --name-only | grep -q '^www/index.html$'; then
+  echo 'i18n: checking every screen in every language...'
+  node tools/i18n-check.mjs || {
+    echo ''
+    echo 'i18n check failed. Fix the above, or commit with --no-verify if you'
+    echo 'are deliberately landing this half-done.'
+    exit 1
+  }
+fi

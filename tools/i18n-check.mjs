@@ -18,8 +18,17 @@
      6. the walk        every view, in every language, with T_MISS armed:
                         one fallback to English anywhere and this fails
      7. the source      no user-facing text hard-coded outside section 3.6
+     8. the mirror      every view rendered in a pseudo-language whose every
+                        string is spelled with accented look-alikes. Anything
+                        that comes out in plain letters never passed through
+                        t() at all — that is text hard-coded into a template,
+                        which no amount of translating would ever reach.
 
-   Exit code is 0 only when all seven pass.
+   Checks 6 and 8 find the views by asking the page for them (every global
+   named v + a capital), so a screen written next year is walked the day it is
+   written. Nobody has to remember to add it here.
+
+   Exit code is 0 only when all eight pass.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -46,7 +55,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
 const SRC  = path.join(ROOT, 'index.html');
 const PORT = 8121;
+/* Use the browser this machine already has if there is one; on a CI runner
+   there is not, and Playwright's own copy is the right answer. */
 const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
+const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
 const fails = [];
 const notes = [];
@@ -148,7 +160,7 @@ const srv = http.createServer((req, res) => {
 });
 await new Promise(r => srv.listen(PORT, r));
 
-const br = await chromium.launch({ executablePath: CHROME });
+const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage();
 const pageErrors = [];
 pg.on('pageerror', e => pageErrors.push(e.message));
@@ -156,7 +168,8 @@ await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
 
 const R = await pg.evaluate(() => {
-  const out = { keys: [], ph: [], mk: [], name: [], read: [], miss: [], langs: UI_LANGS.slice() };
+  const out = { keys: [], ph: [], mk: [], name: [], read: [], miss: [], hard: [],
+                langs: UI_LANGS.slice(), walked: [] };
   const en = LANG.en.str;
   const enK = Object.keys(en);
   const VARIANT = /\.(1|few)$/;
@@ -233,10 +246,23 @@ const R = await pg.evaluate(() => {
   LINES = [{ws:['Aelin','Naeth','Silvar'], mn:'the star goes to the water'}];
   langName = 'Aelinor';
   comp = ['Aelin','Silvar']; compSel = 0;
-  cands = [{hw:'Aelor', on:true}, {hw:'Naethis', on:false}];
+  cands = [{w:'Aelor', on:true}, {w:'Naethis', on:false}];
 
-  const views = ['vHome','vWords','vSound','vRules','vSent','vMake','vSettings','vPlans'];
-  const routes = ['home','words','sound','rules','sent','make','settings','plans'];
+  /* Ask the page which views exist rather than keeping a list here — a view
+     added later is covered without anyone remembering to come back. vOb is
+     the onboarding and is driven by its own step counter, so it is separate.
+     Every view is a global named v + a capital and takes no arguments; the
+     route it belongs to is its name in lower case. */
+  const views  = Object.keys(window).filter(k =>
+    /^v[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'vOb');
+  const routes = views.map(v => v.slice(1).toLowerCase());
+  /* The sheets are opened, not routed. openWord needs a headword; the rest
+     take nothing. */
+  const opens  = Object.keys(window).filter(k =>
+    /^open[A-Z]/.test(k) && typeof window[k] === 'function');
+  const callOpen = (o) => (window[o].length ? window[o]('Aelin') : window[o]());
+  out.walked = views.concat(opens).concat(['vOb']).sort();
+  if (views.length < 5) out.miss.push('only found ' + views.length + ' views — the view discovery is broken');
 
   UI_LANGS.forEach(c => {
     SET.ui = c;
@@ -265,9 +291,9 @@ const R = await pg.evaluate(() => {
     SET.plan = 'free'; SET.read = 'both';
 
     /* the sheets, which are not routes */
-    try { openAdd(); } catch (e) { out.miss.push(c + ' openAdd threw: ' + e.message); }
-    try { openWord('Aelin'); } catch (e) { out.miss.push(c + ' openWord threw: ' + e.message); }
-    try { openImport(); } catch (e) { out.miss.push(c + ' openImport threw: ' + e.message); }
+    opens.forEach(o => {
+      try { callOpen(o); } catch (e) { out.miss.push(c + ' ' + o + ' threw: ' + e.message); }
+    });
     try { closeSheet(); } catch (e) {}
 
     /* the labels that are looked up, not templated */
@@ -280,6 +306,93 @@ const R = await pg.evaluate(() => {
     Object.keys(T_MISS).forEach(k => out.miss.push('fell back to English: ' + k));
   });
   T_MISS = null;
+
+  /* ---- the mirror: a language spelled in look-alikes ---------------------
+     Every English string is respelled with accented letters, then every view
+     is rendered in it. Anything that comes back in plain a-z was written into
+     a template instead of into a string table, and would stay English forever
+     in all nine other languages. T_MISS cannot see this: text that never asks
+     t() for anything never registers as missing. */
+  const MIRROR = {a:'å',b:'ƀ',c:'ç',d:'đ',e:'é',f:'ƒ',g:'ğ',h:'ħ',i:'í',j:'ĵ',
+    k:'ķ',l:'ĺ',m:'ḿ',n:'ñ',o:'ø',p:'ƥ',q:'ǫ',r:'ŕ',s:'š',t:'ţ',u:'ü',v:'ṽ',
+    w:'ŵ',x:'ẋ',y:'ý',z:'ž',A:'Å',B:'Ɓ',C:'Ç',D:'Đ',E:'É',F:'Ƒ',G:'Ğ',H:'Ħ',
+    I:'Í',J:'Ĵ',K:'Ķ',L:'Ĺ',M:'Ḿ',N:'Ñ',O:'Ø',P:'Ƥ',Q:'Ǫ',R:'Ŕ',S:'Š',T:'Ţ',
+    U:'Ü',V:'Ṽ',W:'Ŵ',X:'Ẋ',Y:'Ý',Z:'Ž'};
+  /* Tags, entities and {0} slots are structure, not words: they pass through
+     untouched, and so does the name of the app. */
+  function mirror(s){
+    s = String(s); let o = '', i = 0;
+    while (i < s.length){
+      const c = s[i];
+      if (c === '<'){ let j = s.indexOf('>', i); if (j < 0) j = s.length - 1; o += s.slice(i, j + 1); i = j + 1; continue; }
+      if (c === '&'){ const j = s.indexOf(';', i); if (j >= 0 && j - i < 8){ o += s.slice(i, j + 1); i = j + 1; continue; } }
+      if (c === '{' && /^\{\d\}/.test(s.slice(i))){ o += s.slice(i, i + 3); i += 3; continue; }
+      if (s.slice(i, i + 6) === 'Lingua'){ o += 'Lingua'; i += 6; continue; }
+      o += (MIRROR[c] || c); i++;
+    }
+    return o;
+  }
+  const zz = {};
+  Object.keys(LANG.en.str).forEach(k => { zz[k] = mirror(LANG.en.str[k]); });
+  defLang('zz', { label: 'ZZ', rdName: mirror('reading'), all: mirror('all'),
+    pos: {n: mirror('noun'), v: mirror('verb'), adj: mirror('adjective'), x: mirror('other')},
+    read: LANG.en.read, str: zz });
+
+  /* Plain letters that are allowed to stay plain: the app's name, the names of
+     the paid tiers, the linguistic notation for word order, the roman numerals
+     that number the chapters, and the two halves of the wordmark. Everything
+     here is a proper noun or a symbol — none of it is a sentence. */
+  const PLAIN = {};
+  'lingua free plus studio sov svo vso osv ovs vos ipa csv i ii iii iv v lin ua g'
+    .split(' ').forEach(w => { PLAIN[w] = 1; });
+  /* and everything that is data: the words themselves, their meanings, their
+     readings in every language, their sounds and their syllables */
+  function learn(s){ String(s).split(/[^A-Za-z]+/).forEach(w => { if (w) PLAIN[w.toLowerCase()] = 1; }); }
+  function learnWord(hw){
+    learn(hw); learn(ipa(hw)); learn(syl(hw).join(' '));
+    syl(hw).forEach(s => UI_LANGS.forEach(c => { try { learn(LANG[c].read.syl(s)); } catch (e) {} }));
+    UI_LANGS.forEach(c => { try { learn(LANG[c].read.word(hw)); } catch (e) {} });
+  }
+  WORDS.forEach(w => { learnWord(w.hw); learn(w.mn); });
+  LINES.forEach(l => { learn(l.mn); l.ws.forEach(learnWord); });
+  learn(langName); cands.forEach(c => learnWord(c.w));
+  UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });
+
+  const seen = {};
+  function look(where, html){
+    const txt = String(html).replace(/<[^>]*>/g, '\n').replace(/&[a-z#0-9]+;/g, ' ');
+    const re = /[A-Za-z][A-Za-z'’]*(?:[ \-][A-Za-z'’]+)*/g;
+    let m;
+    while ((m = re.exec(txt))){
+      const s = m[0].trim();
+      if (s.length < 3) continue;
+      const unknown = s.split(/[^A-Za-z]+/).filter(w => w && !PLAIN[w.toLowerCase()]);
+      if (!unknown.length) continue;
+      const key = where + ' shows "' + s + '" in every language';
+      if (!seen[key]){ seen[key] = 1; out.hard.push(key); }
+    }
+  }
+
+  SET.ui = 'zz'; SET.done = false;
+  for (let s = 0; s <= 4; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
+  SET.done = true;
+  ['free','plus','studio'].forEach(p => {
+    SET.plan = p;
+    [false, true].forEach(empty => {
+      const keep = WORDS, keepL = LINES;
+      if (empty){ WORDS = []; LINES = []; }
+      views.forEach((v, i) => {
+        route = routes[i];
+        try { look(v, window[v]()); } catch (e) {}
+      });
+      WORDS = keep; LINES = keepL;
+    });
+  });
+  opens.forEach(o => {
+    try { callOpen(o); look(o, document.getElementById('sheet').innerHTML); } catch (e) {}
+  });
+  try { closeSheet(); } catch (e) {}
+
   return out;
 });
 
@@ -296,8 +409,10 @@ R.mk.forEach(m => fail('markup', m));
 R.name.forEach(m => fail('the name', m));
 R.read.forEach(m => fail('readings', m));
 R.miss.forEach(m => fail('the walk', m));
+R.hard.forEach(m => fail('hard-coded', m));
 
 console.log('languages checked: ' + R.langs.join(' '));
+console.log('screens walked (' + R.walked.length + '): ' + R.walked.join(' '));
 if (notes.length){
   console.log('\nworth a look (' + notes.length + '):');
   notes.slice(0, 40).forEach(n => console.log('  ' + n));
@@ -309,4 +424,4 @@ if (fails.length){
   if (fails.length > 60) console.log('  ... and ' + (fails.length - 60) + ' more');
   process.exit(1);
 }
-console.log('\nall seven checks pass in all ' + R.langs.length + ' languages.');
+console.log('\nall eight checks pass in all ' + R.langs.length + ' languages.');

@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "i18n": "node tools/i18n-check.mjs",
+    "test": "node tools/i18n-check.mjs"
   },
   "keywords": [],
   "author": "",

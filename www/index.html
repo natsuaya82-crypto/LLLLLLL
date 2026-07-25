@@ -4943,7 +4943,7 @@ function vWords(){
     : '<div class="empty"><div class="eb">'+(q? t('words.nomatch') : t('words.empty'))+'</div></div>';
   return '<div class="view"><div class="chead">'+
     '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">I</span><span class="ct">Words</span>'+
+    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span style="color:var(--txm)">⌕</span>'+
     '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
@@ -4979,7 +4979,7 @@ function vSound(){
   var seq=linkRun(), L=seq.length>=2?linked(seq.map(function(w){return w.hw;})):null;
   return '<div class="view"><div class="chead">'+
     '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">II</span><span class="ct">Sound</span>'+
+    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
     '<span class="cn">'+A.used.length+' + '+A.vowels.length+'</span></div></div>'+
     '<div class="body">'+
     '<div class="sec">'+t('sound.used')+'</div>'+
@@ -5007,7 +5007,7 @@ function vRules(){
   var f=findings();
   return '<div class="view"><div class="chead">'+
     '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">III</span><span class="ct">Rules</span>'+
+    '<div class="chap"><span class="rn">III</span><span class="ct">'+esc(t('toc.rules'))+'</span>'+
     '<span class="cn">'+f.length+'</span></div></div>'+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:6px">'+tn('rules.intro', WORDS.length)+'</div>'+
@@ -5122,7 +5122,7 @@ function vSent(){
   var chk=orderCheck();
   var head='<div class="view"><div class="chead">'+
     '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">IV</span><span class="ct">Sentence</span>'+
+    '<div class="chap"><span class="rn">IV</span><span class="ct">'+esc(t('toc.sent'))+'</span>'+
     '<span class="cn">'+LINES.length+'</span></div></div><div class="body">';
 
   if(WORDS.length<2){
@@ -5230,7 +5230,7 @@ function vMake(){
   var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
   return '<div class="view"><div class="chead">'+
     '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">V</span><span class="ct">Make</span></div></div>'+
+    '<div class="chap"><span class="rn">V</span><span class="ct">'+esc(t('toc.make'))+'</span></div></div>'+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
       return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
