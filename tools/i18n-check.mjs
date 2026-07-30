@@ -330,7 +330,7 @@ const R = await pg.evaluate(() => {
     try {
       ['n','v','adj','x',POS_ALL].forEach(posLabel);
       ORDERS.forEach(orderLab); ORDERS.forEach(orderEx);
-      OB_SEEDS.forEach(s => seedLabel(s.k !== undefined ? s.k : s));
+      /* the seed words went with the old onboarding: */ // OB_SEEDS.forEach(s => seedLabel(s.k !== undefined ? s.k : s));
     } catch (e) { out.miss.push(c + ' a label lookup threw: ' + e.message); }
 
     Object.keys(T_MISS).forEach(k => out.miss.push('fell back to English: ' + k));

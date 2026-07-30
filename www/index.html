@@ -266,6 +266,104 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
 .mini{font-size:.72rem;color:var(--txm);margin-top:8px;line-height:1.8}
 </style>
+<style id="ob-rework">
+.langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
+.lpo{padding:14px 12px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.03);color:inherit;font:inherit;font-size:1rem;cursor:pointer;transition:.15s;text-align:center;-webkit-tap-highlight-color:transparent}
+.lpo:active{transform:scale(.97)}
+.lo:hover,.lpo:hover{border-color:rgba(255,255,255,.35)}
+.lpo.on{border-color:#c9a86a;background:rgba(201,168,106,.14);color:#e9d9b0}
+.obtag{margin-top:20px;font-size:1.15rem;line-height:1.7;opacity:.92;text-align:center}
+.btn.signin{width:100%;justify-content:center;display:inline-flex;align-items:center;gap:10px;margin-bottom:10px}
+.btn.google{background:#fff;color:#1f1f1f;border:1px solid #e2e2e2}
+.btn.apple{background:#000;color:#fff;border:1px solid #000}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:inherit}
+.btn.obauto{margin-top:10px}
+.obhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.obback{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;opacity:.75;cursor:pointer;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent;flex-shrink:0}
+.obback:hover{opacity:1}
+.obback:active{transform:scale(.92)}
+.obback.ph{pointer-events:none;opacity:0}
+.btn.signin .mk{flex-shrink:0}
+
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;margin-bottom:10px}
+.ptile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  height:58px;padding:4px;border:1px solid var(--line);border-radius:10px;background:transparent;
+  color:var(--tx);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ptile.has{border-color:rgba(201,168,106,.45)}
+.ptile:active{transform:scale(.96)}
+.pch{font-size:1.4rem;line-height:1.1}
+.ptile:not(.has) .pch{font-size:.95rem;color:var(--txm)}
+.psn{font-family:ui-monospace,Menlo,monospace;font-size:.6rem;color:var(--txm)}
+.pdel{position:absolute;top:0;right:3px;font-size:.8rem;color:var(--txm);line-height:1}
+.pkown{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.pkown .btn{flex-shrink:0}
+.pkclear{width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--line);border-radius:9px;
+  background:transparent;color:var(--txm);font:inherit;font-size:.75rem;cursor:pointer}
+.pktabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:9px;
+  border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch}
+.pktab{display:flex;align-items:center;gap:5px;flex-shrink:0;padding:6px 10px;border:1px solid var(--line);
+  border-radius:16px;background:transparent;color:var(--txm);font:inherit;font-size:.68rem;cursor:pointer;white-space:nowrap}
+.pktab.on{border-color:var(--gold);color:var(--gold)}
+.pkpv{font-size:.9rem;color:var(--gold)}
+.pkchars{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px;
+  max-height:34dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pkch{height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
+  border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
+.pkch.had{opacity:.28}
+.pkch.cur{border-color:var(--gold);color:var(--gold)}
+.sndgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;max-height:46dvh;overflow-y:auto}
+.sndchip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:52px;
+  border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--tx);font:inherit;cursor:pointer}
+.sc1{font-family:ui-monospace,Menlo,monospace;font-size:.86rem}
+.sc2{font-size:.62rem;color:var(--txm)}
+.scrpv{display:flex;flex-direction:column;gap:4px;padding:13px;border:1px solid var(--line);border-radius:11px;margin-bottom:10px}
+.scrpvw{font-size:1.5rem;line-height:1.4;word-break:break-all}
+.scrpvr{font-size:.7rem;color:var(--txm);font-family:ui-monospace,Menlo,monospace}
+.scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
+  color:var(--tx);font:inherit;font-size:1rem;outline:none}
+.scin:focus{border-color:var(--gold)}
+.scin.own{text-align:left}
+.scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
+  color:var(--tx);font:inherit;font-size:1.05rem;text-align:center;outline:none}
+.scin:focus{border-color:var(--gold)}
+.scrpv{display:flex;flex-direction:column;gap:5px;padding:15px;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
+.scrpvw{font-size:1.7rem;line-height:1.4;word-break:break-all}
+.scrpvr{font-size:.72rem;color:var(--txm);font-family:ui-monospace,Menlo,monospace}
+.sugask{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 12px;
+  padding:11px 13px;border:1px dashed var(--line);border-radius:11px;background:transparent;color:var(--txm);
+  font:inherit;font-size:.79rem;cursor:pointer;text-align:left}
+.sugask:active{transform:scale(.99)}
+.sual{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sut{font-size:.82rem;color:var(--tx)}
+.sud{font-size:.68rem;color:var(--txm);line-height:1.5}
+.sugn{color:var(--gold);font-size:.7rem;flex-shrink:0}
+.sugbox{margin:2px 0 12px;padding:11px;border:1px solid var(--line);border-radius:11px}
+.sugchips{display:flex;flex-wrap:wrap;gap:7px}
+.sugchip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 12px;border:1px solid var(--line);
+  border-radius:9px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sugchip:active{transform:scale(.97)}
+.sugchip .sw{font-size:.92rem}
+.sugchip .sr{font-size:.64rem;color:var(--txm)}
+.sugfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
+.sughint{font-size:.66rem;color:var(--txm);line-height:1.5}
+.sugmore{background:none;border:0;color:var(--gold);font:inherit;font-size:.72rem;cursor:pointer;padding:0;flex-shrink:0;text-decoration:underline}
+.sugout{display:block;width:100%;margin:2px 0 12px;padding:11px 13px;border:1px solid rgba(201,168,106,.34);border-radius:11px;
+  background:transparent;color:var(--txm);font:inherit;font-size:.76rem;line-height:1.6;text-align:left;cursor:pointer}
+.sugout b{color:var(--gold);font-weight:600;white-space:nowrap}
+.capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
+  border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.78rem;cursor:pointer}
+.capgo{color:var(--gold);flex-shrink:0}
+.sh2{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;color:var(--txm);margin:26px 0 10px}
+.set.lock .sv{color:var(--gold)}
+.nextcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:2px 0 18px;padding:14px 16px;
+  border:1px solid rgba(201,168,106,.34);border-radius:12px;background:rgba(201,168,106,.09);color:inherit;
+  font:inherit;cursor:pointer;transition:.15s;-webkit-tap-highlight-color:transparent}
+.nextcard:hover{border-color:rgba(201,168,106,.6)}
+.nextcard:active{transform:scale(.99)}
+.nextcard .nk{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);flex-shrink:0}
+.nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
+.nextcard .na{color:var(--gold);font-size:1.2rem;flex-shrink:0}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -575,31 +673,87 @@ defLang('en', (function(){
     pos    : {n:"noun", v:"verb", adj:"adjective", x:"other"},
     read   : mkApprox(word_en, syl_en),
     str    : {
+      "ai.a.home"                 : "You have {0} words and {1} sounds. The fastest way forward is more words — rules emerge from them, not before.",
+      "ai.a.make"                 : "Coinage follows the sounds you already use, so new words will feel related to the old ones. Keep the ones that sound right to you.",
+      "ai.a.rules"                : "{0} rules have surfaced so far. Keep writing in the same habits and they will sharpen on their own.",
+      "ai.a.sent"                 : "You have {0} sentences. Write the same idea two ways — the difference is where your grammar lives.",
+      "ai.a.sound"                : "You are using {0} sounds: {1}. A small, consistent inventory sounds more like a real language than a large scattered one.",
+      "ai.a.words"                : "Your lexicon is {0} words. Coin words for what you actually talk about; a language grows from use, not from lists.",
+      "ai.ask"                    : "Ask the advisor",
+      "ai.hint"                   : "The advisor reads your language and answers from it.",
+      "ai.left"                   : "{0} left today",
+      "ai.limit.s"                : "Plus gives you unlimited advice, every day.",
+      "ai.limit.t"                : "You've used today's questions",
+      "ai.see"                    : "See plans",
+      "ai.title"                  : "Language advisor",
+      "ai.unl"                    : "Unlimited",
+      "cap.warn"                  : "{0} words left on Free",
+      "ch.clear"                  : "No character",
+      "ch.for"                    : "A character for “{0}”",
+      "count.script"              : "{0} of {1}",
+      "home.write"                : "Add a word",
+      "lock.ai"                   : "Unlimited advice",
+      "lock.export"               : "Export & backup",
+      "lock.sync"                 : "Cloud sync",
+      "lock.t"                    : "A Plus feature",
+      "ob.back"                   : "Back",
+      "ob.enter"                  : "Start",
+      "ob.lang.h"                 : "Choose your language",
+      "ob.name.auto"              : "Pick one for me",
+      "ob.name.h"                 : "What will you call<br>your language?",
+      "ob.name.mini"              : "You can change this anytime.",
+      "ob.name.ph"                : "e.g. Aelira",
+      "ob.signin.apple"           : "Continue with Apple",
+      "ob.signin.google"          : "Continue with Google",
+      "ob.signin.note"            : "Sign in to begin.",
+      "ob.tagline"                : "Give your words new color.",
+      "script.add"                : "Add characters",
+      "script.cons"               : "Consonants",
+      "script.dup"                : "Already taken",
+      "script.empty"              : "Coin a few words first — the sounds come from them.",
+      "script.h"                  : "Give each sound a character",
+      "script.mine"               : "Your characters",
+      "script.none"               : "No characters yet",
+      "script.none2"              : "No characters yet",
+      "script.none2s"             : "Choose a script below, or type a character of your own.",
+      "script.own"                : "Or type your own",
+      "script.own.ph"             : "Paste or type a character",
+      "script.pick"               : "Tap a character to take it",
+      "script.prev"               : "Preview",
+      "script.rm"                 : "Remove",
+      "script.set"                : "Use",
+      "script.show"               : "Write in your script",
+      "script.snd"                : "sound",
+      "script.sub"                : "These are the sounds your language actually uses. A sound with no character keeps its letters.",
+      "script.vow"                : "Vowels",
+      "snd.add"                   : "Add a sound",
+      "snd.add.s"                 : "Sounds your language has not used yet.",
+      "snd.have"                  : "Already in your language",
+      "sug.ask"                   : "Nothing coming to mind?",
+      "sug.for"                   : "Shapes for “{0}” — tap one to keep it.",
+      "sug.hint"                  : "Built from the sounds you already use — tap one to keep it.",
+      "sug.left"                  : "{0} left today",
+      "sug.more"                  : "Other ideas",
+      "sug.out"                   : "Out of ideas for today. Plus keeps them coming.",
+      "toc.script"                : "Script",
+      "up.cta"                    : "Upgrade",
+      "ws.arabic"                 : "Arabic",
+      "ws.armenian"               : "Armenian",
+      "ws.cyrillic"               : "Cyrillic",
+      "ws.devanagari"             : "Devanagari",
+      "ws.geez"                   : "Ge'ez",
+      "ws.georgian"               : "Georgian",
+      "ws.glagolitic"             : "Glagolitic",
+      "ws.greek"                  : "Greek",
+      "ws.hangul"                 : "Hangul",
+      "ws.hebrew"                 : "Hebrew",
+      "ws.ogham"                  : "Ogham",
+      "ws.phoenician"             : "Phoenician",
+      "ws.runic"                  : "Runic",
+      "ws.thai"                   : "Thai",
+      "ws.tibetan"                : "Tibetan",
       /* onboarding */
       'ob.start'        : "Begin",
-      'ob.next'         : "Next",
-      'ob.0.p'          : "Build a language out of nothing.<br>No grammar training, no phonetics, no notation.<br>Write a spelling and Lingua works out how it sounds.",
-      'ob.0.mini'       : "No account, no connection. All of it runs on this device.",
-      'ob.1.h'          : "What will you<br>call this language?",
-      'ob.1.ph'         : "e.g. Elira",
-      'ob.1.mini'       : "You can change it whenever. Leave it empty if you have not decided.",
-      'ob.2.h'          : "Now write<br>your first word.",
-      'ob.2.p'          : "Pick a meaning and write whatever spelling comes to you.<br>There is no correct answer.",
-      'ob.2.btn'        : "Write one",
-      'ob.3.h0'         : "Which meaning will you build first?",
-      'ob.3.hn'         : "{0} to go. Which one next?",
-      'ob.3.ask'        : "How is “{0}” written in your language?",
-      'ob.3.reading'    : "reading",
-      'ob.3.listen'     : "▶ Listen",
-      'ob.3.mini'       : "The reading comes out of the spelling you wrote.<br>The parts you would rather not think about, you do not have to.",
-      'ob.3.pickfirst'  : "Pick a meaning first.",
-      'ob.3.made'       : "So far: {0}",
-      'ob.3.add'        : "Add this word",
-      'ob.3.need'       : "Write a spelling and pick a meaning",
-      'ob.4.h'          : "Your rules are<br>already showing.",
-      'ob.4.using'      : "Sounds in use: <em>{0}</em>",
-      'ob.4.fd'         : "Three words in, and your language already has habits. Everything after this can follow them.",
-      'ob.4.p'          : "No AI found those. It is arithmetic running inside this device — which is why it stays free, however often you use it.",
       /* seed meanings: the key is stored on the word, this is only the label */
       'seed.star'       : "star",
       'seed.water'      : "water",
@@ -616,11 +770,16 @@ defLang('en', (function(){
       'home.kicker'     : "Your Language",
       'home.unnamed'    : "Name it",
       'home.name.prompt': "Name of the language",
-      'toc.words'       : "Words",
-      'toc.sound'       : "Sound",
-      'toc.rules'       : "Rules",
+      'next.t'   : "Next",
+      'next.w0'  : "Coin your first word",
+      'next.w1'  : "Add more words — {0} to go before rules appear",
+      'next.s0'  : "Write your first sentence",
+      'next.mk'  : "Coin new words from your own sounds",
+      'toc.words'       : "Lexicon",
+      'toc.sound'       : "Phonology",
+      'toc.rules'       : "Grammar",
       'toc.sent'        : "Sentences",
-      'toc.make'        : "Make",
+      'toc.make'        : "Coinage",
       'count.words'     : "{0} words",
       'count.words.1'   : "1 word",
       'count.sounds'    : "{0} sounds",
@@ -937,30 +1096,86 @@ defLang('es', (function(){
     pos    : {n:"sustantivo", v:"verbo", adj:"adjetivo", x:"otra"},
     read   : mkApprox(word_es, syl_es),
     str    : {
+      "ai.a.home"                 : "Tienes {0} palabras y {1} sonidos. Lo más rápido es crear más palabras: las reglas surgen de ellas.",
+      "ai.a.make"                 : "La acuñación sigue los sonidos que ya usas, así que las palabras nuevas sonarán emparentadas. Conserva las que te suenen bien.",
+      "ai.a.rules"                : "Han surgido {0} reglas. Sigue escribiendo con los mismos hábitos y se afinarán solas.",
+      "ai.a.sent"                 : "Tienes {0} oraciones. Escribe la misma idea de dos formas: en la diferencia vive tu gramática.",
+      "ai.a.sound"                : "Usas {0} sonidos: {1}. Un inventario pequeño y coherente suena más real que uno amplio y disperso.",
+      "ai.a.words"                : "Tu léxico tiene {0} palabras. Crea palabras para lo que realmente dices; un idioma crece con el uso.",
+      "ai.ask"                    : "Consultar al asesor",
+      "ai.hint"                   : "El asesor lee tu idioma y responde a partir de él.",
+      "ai.left"                   : "Quedan {0} hoy",
+      "ai.limit.s"                : "Plus te da consejos ilimitados, cada día.",
+      "ai.limit.t"                : "Has usado las consultas de hoy",
+      "ai.see"                    : "Ver planes",
+      "ai.title"                  : "Asesor lingüístico",
+      "ai.unl"                    : "Ilimitado",
+      "cap.warn"                  : "Quedan {0} palabras en Gratis",
+      "ch.clear"                  : "Sin carácter",
+      "ch.for"                    : "Un carácter para «{0}»",
+      "count.script"              : "{0} de {1}",
+      "home.write"                : "Añadir palabra",
+      "lock.ai"                   : "Consejos ilimitados",
+      "lock.export"               : "Exportar y respaldo",
+      "lock.sync"                 : "Sincronización en la nube",
+      "lock.t"                    : "Función de Plus",
+      "ob.back"                   : "Atrás",
+      "ob.enter"                  : "Comenzar",
+      "ob.lang.h"                 : "Elige tu idioma",
+      "ob.name.auto"              : "Elige uno por mí",
+      "ob.name.h"                 : "¿Cómo se llama<br>tu idioma?",
+      "ob.name.mini"              : "Puedes cambiarlo cuando quieras.",
+      "ob.name.ph"                : "ej. Aelira",
+      "ob.signin.apple"           : "Continuar con Apple",
+      "ob.signin.google"          : "Continuar con Google",
+      "ob.signin.note"            : "Inicia sesión para empezar.",
+      "ob.tagline"                : "Dale nuevos colores a tus palabras.",
+      "script.add"                : "Añadir caracteres",
+      "script.cons"               : "Consonantes",
+      "script.dup"                : "Ya tomado",
+      "script.empty"              : "Crea algunas palabras primero: de ahí salen los sonidos.",
+      "script.h"                  : "Da un carácter a cada sonido",
+      "script.mine"               : "Tus caracteres",
+      "script.none"               : "Aún no hay caracteres",
+      "script.none2"              : "Aún no hay caracteres",
+      "script.none2s"             : "Elige una escritura abajo, o escribe un carácter propio.",
+      "script.own"                : "O escribe el tuyo",
+      "script.own.ph"             : "Pega o escribe un carácter",
+      "script.pick"               : "Toca un carácter para tomarlo",
+      "script.prev"               : "Vista previa",
+      "script.rm"                 : "Quitar",
+      "script.set"                : "Usar",
+      "script.show"               : "Escribir con tu escritura",
+      "script.snd"                : "sonido",
+      "script.sub"                : "Estos son los sonidos que tu idioma usa. Un sonido sin carácter conserva sus letras.",
+      "script.vow"                : "Vocales",
+      "snd.add"                   : "Añadir un sonido",
+      "snd.add.s"                 : "Sonidos que tu idioma aún no ha usado.",
+      "snd.have"                  : "Ya en tu idioma",
+      "sug.ask"                   : "¿No se te ocurre nada?",
+      "sug.for"                   : "Formas para «{0}» — toca una para quedártela.",
+      "sug.hint"                  : "Creadas con los sonidos que ya usas — toca una para quedártela.",
+      "sug.left"                  : "Quedan {0} hoy",
+      "sug.more"                  : "Otras ideas",
+      "sug.out"                   : "Se acabaron las ideas por hoy. Con Plus siguen llegando.",
+      "toc.script"                : "Escritura",
+      "up.cta"                    : "Mejorar",
+      "ws.arabic"                 : "Árabe",
+      "ws.armenian"               : "Armenio",
+      "ws.cyrillic"               : "Cirílico",
+      "ws.devanagari"             : "Devanagari",
+      "ws.geez"                   : "Ge'ez",
+      "ws.georgian"               : "Georgiano",
+      "ws.glagolitic"             : "Glagolítico",
+      "ws.greek"                  : "Griego",
+      "ws.hangul"                 : "Hangul",
+      "ws.hebrew"                 : "Hebreo",
+      "ws.ogham"                  : "Ogham",
+      "ws.phoenician"             : "Fenicio",
+      "ws.runic"                  : "Rúnico",
+      "ws.thai"                   : "Tailandés",
+      "ws.tibetan"                : "Tibetano",
       "ob.start"         : "Empezar",
-      "ob.next"          : "Siguiente",
-      "ob.0.p"           : "Crea una lengua desde la nada.<br>Sin estudios de gramática, sin fonética, sin notación.<br>Escribe una grafía y Lingua deduce cómo suena.",
-      "ob.0.mini"        : "Sin cuenta, sin conexión. Todo ocurre en este dispositivo.",
-      "ob.1.h"           : "¿Cómo vas a<br>llamar a esta lengua?",
-      "ob.1.ph"          : "p. ej. Elira",
-      "ob.1.mini"        : "Puedes cambiarlo cuando quieras. Déjalo vacío si aún no lo has decidido.",
-      "ob.2.h"           : "Ahora escribe<br>tu primera palabra.",
-      "ob.2.p"           : "Elige un significado y escribe la grafía que se te ocurra.<br>No hay respuesta correcta.",
-      "ob.2.btn"         : "Escribir una",
-      "ob.3.h0"          : "¿Qué significado construyes primero?",
-      "ob.3.hn"          : "Faltan {0}. ¿Cuál sigue?",
-      "ob.3.ask"         : "¿Cómo se escribe «{0}» en tu lengua?",
-      "ob.3.reading"     : "lectura",
-      "ob.3.listen"      : "▶ Escuchar",
-      "ob.3.mini"        : "La lectura sale de la grafía que escribiste.<br>Lo que prefieras no pensar, no hace falta que lo pienses.",
-      "ob.3.pickfirst"   : "Elige antes un significado.",
-      "ob.3.made"        : "Hasta ahora: {0}",
-      "ob.3.add"         : "Añadir esta palabra",
-      "ob.3.need"        : "Escribe una grafía y elige un significado",
-      "ob.4.h"           : "Tus reglas ya<br>empiezan a verse.",
-      "ob.4.using"       : "Sonidos en uso: <em>{0}</em>",
-      "ob.4.fd"          : "Tres palabras y tu lengua ya tiene costumbres. Todo lo que venga después puede seguirlas.",
-      "ob.4.p"           : "No las encontró ninguna IA. Es aritmética dentro de este dispositivo: por eso sigue siendo gratis, por mucho que la uses.",
       "seed.star"        : "estrella",
       "seed.water"       : "agua",
       "seed.wind"        : "viento",
@@ -975,11 +1190,16 @@ defLang('es', (function(){
       "home.kicker"      : "Tu lengua",
       "home.unnamed"     : "Ponle nombre",
       "home.name.prompt" : "Nombre de la lengua",
-      "toc.words"        : "Palabras",
-      "toc.sound"        : "Sonido",
-      "toc.rules"        : "Reglas",
-      "toc.sent"         : "Frases",
-      "toc.make"         : "Crear",
+      'next.t'   : "Siguiente",
+      'next.w0'  : "Acuña tu primera palabra",
+      'next.w1'  : "Añade más palabras — faltan {0} para ver reglas",
+      'next.s0'  : "Escribe tu primera oración",
+      'next.mk'  : "Acuña palabras con tus propios sonidos",
+      "toc.words"        : "Léxico",
+      "toc.sound"        : "Fonología",
+      "toc.rules"        : "Gramática",
+      "toc.sent"         : "Oraciones",
+      "toc.make"         : "Acuñación",
       "count.words"      : "{0} palabras",
       "count.words.1"    : "1 palabra",
       "count.sounds"     : "{0} sonidos",
@@ -1334,31 +1554,86 @@ defLang('pt', (function(){
     pos    : {n:"substantivo", v:"verbo", adj:"adjetivo", x:"outra"},
     read   : mkApprox(word_pt, syl_pt),
     str    : {
+      "ai.a.home"                 : "Você tem {0} palavras e {1} sons. O caminho mais rápido é criar mais palavras: as regras surgem delas.",
+      "ai.a.make"                 : "A criação segue os sons que você já usa, então as novas palavras parecerão aparentadas. Guarde as que soarem certas.",
+      "ai.a.rules"                : "{0} regras surgiram até agora. Continue escrevendo com os mesmos hábitos e elas se firmarão sozinhas.",
+      "ai.a.sent"                 : "Você tem {0} frases. Escreva a mesma ideia de dois jeitos — a diferença é onde mora a sua gramática.",
+      "ai.a.sound"                : "Você usa {0} sons: {1}. Um inventário pequeno e coerente soa mais real que um amplo e disperso.",
+      "ai.a.words"                : "Seu léxico tem {0} palavras. Crie palavras para o que você realmente fala; um idioma cresce pelo uso.",
+      "ai.ask"                    : "Consultar",
+      "ai.hint"                   : "O consultor lê o seu idioma e responde a partir dele.",
+      "ai.left"                   : "Restam {0} hoje",
+      "ai.limit.s"                : "O Plus dá conselhos ilimitados, todos os dias.",
+      "ai.limit.t"                : "Você usou as consultas de hoje",
+      "ai.see"                    : "Ver planos",
+      "ai.title"                  : "Consultor linguístico",
+      "ai.unl"                    : "Ilimitado",
+      "cap.warn"                  : "Restam {0} palavras no Grátis",
+      "ch.clear"                  : "Sem caractere",
+      "ch.for"                    : "Um caractere para “{0}”",
+      "count.script"              : "{0} de {1}",
+      "home.write"                : "Adicionar palavra",
+      "lock.ai"                   : "Conselhos ilimitados",
+      "lock.export"               : "Exportar e backup",
+      "lock.sync"                 : "Sincronização na nuvem",
+      "lock.t"                    : "Recurso do Plus",
+      "ob.back"                   : "Voltar",
+      "ob.enter"                  : "Começar",
+      "ob.lang.h"                 : "Escolha o seu idioma",
+      "ob.name.auto"              : "Escolha um por mim",
+      "ob.name.h"                 : "Como se chama<br>o seu idioma?",
+      "ob.name.mini"              : "Você pode mudar isso quando quiser.",
+      "ob.name.ph"                : "ex. Aelira",
+      "ob.signin.apple"           : "Continuar com a Apple",
+      "ob.signin.google"          : "Continuar com o Google",
+      "ob.signin.note"            : "Entre para começar.",
+      "ob.tagline"                : "Dê novas cores às suas palavras.",
+      "script.add"                : "Adicionar caracteres",
+      "script.cons"               : "Consoantes",
+      "script.dup"                : "Já escolhido",
+      "script.empty"              : "Crie algumas palavras primeiro — os sons vêm delas.",
+      "script.h"                  : "Dê um caractere a cada som",
+      "script.mine"               : "Seus caracteres",
+      "script.none"               : "Ainda sem caracteres",
+      "script.none2"              : "Ainda sem caracteres",
+      "script.none2s"             : "Escolha uma escrita abaixo, ou digite um caractere seu.",
+      "script.own"                : "Ou digite o seu",
+      "script.own.ph"             : "Cole ou digite um caractere",
+      "script.pick"               : "Toque num caractere para pegá-lo",
+      "script.prev"               : "Prévia",
+      "script.rm"                 : "Remover",
+      "script.set"                : "Usar",
+      "script.show"               : "Escrever na sua escrita",
+      "script.snd"                : "som",
+      "script.sub"                : "Estes são os sons que o seu idioma usa. Um som sem caractere mantém as letras.",
+      "script.vow"                : "Vogais",
+      "snd.add"                   : "Adicionar um som",
+      "snd.add.s"                 : "Sons que o seu idioma ainda não usou.",
+      "snd.have"                  : "Já no seu idioma",
+      "sug.ask"                   : "Não vem nada à cabeça?",
+      "sug.for"                   : "Formas para “{0}” — toque para ficar com uma.",
+      "sug.hint"                  : "Feitas com os sons que você já usa — toque para ficar com uma.",
+      "sug.left"                  : "Restam {0} hoje",
+      "sug.more"                  : "Outras ideias",
+      "sug.out"                   : "Acabaram as ideias por hoje. Com o Plus elas continuam.",
+      "toc.script"                : "Escrita",
+      "up.cta"                    : "Fazer upgrade",
+      "ws.arabic"                 : "Árabe",
+      "ws.armenian"               : "Armênio",
+      "ws.cyrillic"               : "Cirílico",
+      "ws.devanagari"             : "Devanágari",
+      "ws.geez"                   : "Ge'ez",
+      "ws.georgian"               : "Georgiano",
+      "ws.glagolitic"             : "Glagolítico",
+      "ws.greek"                  : "Grego",
+      "ws.hangul"                 : "Hangul",
+      "ws.hebrew"                 : "Hebraico",
+      "ws.ogham"                  : "Ogham",
+      "ws.phoenician"             : "Fenício",
+      "ws.runic"                  : "Rúnico",
+      "ws.thai"                   : "Tailandês",
+      "ws.tibetan"                : "Tibetano",
       "ob.start"         : "Começar",
-      "ob.next"          : "Avançar",
-      "ob.0.p"           : "Crie uma língua a partir do nada.<br>Sem estudar gramática, fonética ou notação.<br>Você escreve uma grafia e o Lingua descobre como ela soa.",
-      "ob.0.mini"        : "Sem conta, sem conexão. Tudo roda neste aparelho.",
-      "ob.1.h"           : "Como você vai<br>chamar essa língua?",
-      "ob.1.ph"          : "ex.: Elira",
-      "ob.1.mini"        : "Você pode mudar quando quiser. Deixe em branco se ainda não decidiu.",
-      "ob.2.h"           : "Agora escreva<br>sua primeira palavra.",
-      "ob.2.p"           : "Escolha um significado e escreva a grafia que vier à cabeça.<br>Não existe resposta certa.",
-      "ob.2.btn"         : "Escrever uma",
-      "ob.3.h0"          : "Qual significado você vai construir primeiro?",
-      "ob.3.hn"          : "Faltam {0}. Qual vem agora?",
-      "ob.3.hn.1"        : "Falta 1. Qual vem agora?",
-      "ob.3.ask"         : "Como se escreve “{0}” na sua língua?",
-      "ob.3.reading"     : "leitura",
-      "ob.3.listen"      : "▶ Ouvir",
-      "ob.3.mini"        : "A leitura vem da grafia que você escreveu.<br>Nas partes em que você prefere não pensar, não precisa pensar.",
-      "ob.3.pickfirst"   : "Escolha um significado primeiro.",
-      "ob.3.made"        : "Até agora: {0}",
-      "ob.3.add"         : "Adicionar esta palavra",
-      "ob.3.need"        : "Escreva uma grafia e escolha um significado",
-      "ob.4.h"           : "Suas regras já<br>estão aparecendo.",
-      "ob.4.using"       : "Sons em uso: <em>{0}</em>",
-      "ob.4.fd"          : "Três palavras e sua língua já tem hábitos. Tudo daqui em diante pode segui-los.",
-      "ob.4.p"           : "Nenhuma IA achou isso. É aritmética rodando dentro deste aparelho — por isso continua de graça, use quanto usar.",
       "seed.star"        : "estrela",
       "seed.water"       : "água",
       "seed.wind"        : "vento",
@@ -1373,11 +1648,16 @@ defLang('pt', (function(){
       "home.kicker"      : "Sua língua",
       "home.unnamed"     : "Dar um nome",
       "home.name.prompt" : "Nome da língua",
-      "toc.words"        : "Palavras",
-      "toc.sound"        : "Som",
-      "toc.rules"        : "Regras",
+      'next.t'   : "Próximo",
+      'next.w0'  : "Crie a sua primeira palavra",
+      'next.w1'  : "Adicione mais palavras — faltam {0} para surgirem regras",
+      'next.s0'  : "Escreva a sua primeira frase",
+      'next.mk'  : "Crie palavras a partir dos seus sons",
+      "toc.words"        : "Léxico",
+      "toc.sound"        : "Fonologia",
+      "toc.rules"        : "Gramática",
       "toc.sent"         : "Frases",
-      "toc.make"         : "Criar",
+      "toc.make"         : "Neologia",
       "count.words"      : "{0} palavras",
       "count.words.1"    : "1 palavra",
       "count.sounds"     : "{0} sons",
@@ -1773,30 +2053,86 @@ defLang('fr', (function(){
     pos    : {n:"nom", v:"verbe", adj:"adjectif", x:"autre"},
     read   : mkApprox(word_fr, syl_fr),
     str    : {
+      "ai.a.home"                 : "Vous avez {0} mots et {1} sons. Le plus rapide est de créer d’autres mots : les règles en découlent.",
+      "ai.a.make"                 : "La création suit les sons que vous employez déjà : les nouveaux mots sembleront apparentés. Gardez ceux qui sonnent juste.",
+      "ai.a.rules"                : "{0} règles sont apparues. Continuez avec les mêmes habitudes et elles se préciseront d’elles-mêmes.",
+      "ai.a.sent"                 : "Vous avez {0} phrases. Écrivez la même idée de deux façons — la différence, c’est votre grammaire.",
+      "ai.a.sound"                : "Vous utilisez {0} sons : {1}. Un inventaire restreint et cohérent sonne plus vrai qu’un inventaire large et dispersé.",
+      "ai.a.words"                : "Votre lexique compte {0} mots. Créez des mots pour ce dont vous parlez vraiment ; une langue grandit par l’usage.",
+      "ai.ask"                    : "Consulter",
+      "ai.hint"                   : "Le conseiller lit votre langue et répond à partir d’elle.",
+      "ai.left"                   : "{0} restantes aujourd’hui",
+      "ai.limit.s"                : "Plus offre des conseils illimités, chaque jour.",
+      "ai.limit.t"                : "Vous avez utilisé vos questions du jour",
+      "ai.see"                    : "Voir les forfaits",
+      "ai.title"                  : "Conseiller linguistique",
+      "ai.unl"                    : "Illimité",
+      "cap.warn"                  : "{0} mots restants en Gratuit",
+      "ch.clear"                  : "Aucun caractère",
+      "ch.for"                    : "Un caractère pour « {0} »",
+      "count.script"              : "{0} sur {1}",
+      "home.write"                : "Ajouter un mot",
+      "lock.ai"                   : "Conseils illimités",
+      "lock.export"               : "Export et sauvegarde",
+      "lock.sync"                 : "Synchronisation cloud",
+      "lock.t"                    : "Fonction Plus",
+      "ob.back"                   : "Retour",
+      "ob.enter"                  : "Commencer",
+      "ob.lang.h"                 : "Choisissez votre langue",
+      "ob.name.auto"              : "Choisir pour moi",
+      "ob.name.h"                 : "Comment s'appelle<br>votre langue ?",
+      "ob.name.mini"              : "Vous pourrez le changer à tout moment.",
+      "ob.name.ph"                : "ex. Aelira",
+      "ob.signin.apple"           : "Continuer avec Apple",
+      "ob.signin.google"          : "Continuer avec Google",
+      "ob.signin.note"            : "Connectez-vous pour commencer.",
+      "ob.tagline"                : "Donnez de nouvelles couleurs à vos mots.",
+      "script.add"                : "Ajouter des caractères",
+      "script.cons"               : "Consonnes",
+      "script.dup"                : "Déjà pris",
+      "script.empty"              : "Créez d’abord quelques mots — les sons en viennent.",
+      "script.h"                  : "Donnez un caractère à chaque son",
+      "script.mine"               : "Vos caractères",
+      "script.none"               : "Pas encore de caractères",
+      "script.none2"              : "Pas encore de caractères",
+      "script.none2s"             : "Choisissez une écriture ci-dessous, ou saisissez votre propre caractère.",
+      "script.own"                : "Ou saisissez le vôtre",
+      "script.own.ph"             : "Collez ou saisissez un caractère",
+      "script.pick"               : "Touchez un caractère pour le prendre",
+      "script.prev"               : "Aperçu",
+      "script.rm"                 : "Retirer",
+      "script.set"                : "Choisir",
+      "script.show"               : "Écrire dans votre écriture",
+      "script.snd"                : "son",
+      "script.sub"                : "Voici les sons que votre langue emploie. Un son sans caractère garde ses lettres.",
+      "script.vow"                : "Voyelles",
+      "snd.add"                   : "Ajouter un son",
+      "snd.add.s"                 : "Des sons que votre langue n’a pas encore employés.",
+      "snd.have"                  : "Déjà dans votre langue",
+      "sug.ask"                   : "Rien ne vient ?",
+      "sug.for"                   : "Des formes pour « {0} » — touchez pour garder.",
+      "sug.hint"                  : "Formés à partir des sons que vous employez déjà — touchez pour garder.",
+      "sug.left"                  : "{0} restantes aujourd’hui",
+      "sug.more"                  : "D’autres idées",
+      "sug.out"                   : "Plus d’idées pour aujourd’hui. Avec Plus, elles continuent.",
+      "toc.script"                : "Écriture",
+      "up.cta"                    : "Passer à Plus",
+      "ws.arabic"                 : "Arabe",
+      "ws.armenian"               : "Arménien",
+      "ws.cyrillic"               : "Cyrillique",
+      "ws.devanagari"             : "Dévanagari",
+      "ws.geez"                   : "Guèze",
+      "ws.georgian"               : "Géorgien",
+      "ws.glagolitic"             : "Glagolitique",
+      "ws.greek"                  : "Grec",
+      "ws.hangul"                 : "Hangeul",
+      "ws.hebrew"                 : "Hébreu",
+      "ws.ogham"                  : "Ogam",
+      "ws.phoenician"             : "Phénicien",
+      "ws.runic"                  : "Runique",
+      "ws.thai"                   : "Thaï",
+      "ws.tibetan"                : "Tibétain",
       "ob.start"         : "Commencer",
-      "ob.next"          : "Suivant",
-      "ob.0.p"           : "Construisez une langue à partir de rien.<br>Aucune grammaire à apprendre, aucune phonétique, aucune notation.<br>Écrivez une graphie, Lingua en déduit le son.",
-      "ob.0.mini"        : "Sans compte, sans connexion. Tout se passe sur cet appareil.",
-      "ob.1.h"           : "Quel nom donnerez-vous<br>à cette langue ?",
-      "ob.1.ph"          : "p. ex. Elira",
-      "ob.1.mini"        : "Vous pourrez le changer quand vous voudrez. Laissez vide si vous n’avez pas encore choisi.",
-      "ob.2.h"           : "Écrivez maintenant<br>votre premier mot.",
-      "ob.2.p"           : "Choisissez un sens et écrivez la graphie qui vous vient.<br>Il n’y a pas de bonne réponse.",
-      "ob.2.btn"         : "En écrire un",
-      "ob.3.h0"          : "Par quel sens commencerez-vous ?",
-      "ob.3.hn"          : "Encore {0}. Lequel ensuite ?",
-      "ob.3.ask"         : "Comment s’écrit « {0} » dans votre langue ?",
-      "ob.3.reading"     : "lecture",
-      "ob.3.listen"      : "▶ Écouter",
-      "ob.3.mini"        : "La lecture découle de la graphie que vous avez écrite.<br>Ce à quoi vous préférez ne pas penser, vous n’avez pas à y penser.",
-      "ob.3.pickfirst"   : "Choisissez d’abord un sens.",
-      "ob.3.made"        : "Jusqu’ici : {0}",
-      "ob.3.add"         : "Ajouter ce mot",
-      "ob.3.need"        : "Écrivez une graphie et choisissez un sens",
-      "ob.4.h"           : "Vos règles<br>se dessinent déjà.",
-      "ob.4.using"       : "Sons employés : <em>{0}</em>",
-      "ob.4.fd"          : "Trois mots, et votre langue a déjà ses habitudes. Tout le reste peut les suivre.",
-      "ob.4.p"           : "Aucune IA ne les a trouvées. C’est du calcul, à l’intérieur de cet appareil : voilà pourquoi cela reste gratuit, quel que soit votre usage.",
       "seed.star"        : "étoile",
       "seed.water"       : "eau",
       "seed.wind"        : "vent",
@@ -1811,11 +2147,16 @@ defLang('fr', (function(){
       "home.kicker"      : "Votre langue",
       "home.unnamed"     : "Nommez-la",
       "home.name.prompt" : "Nom de la langue",
-      "toc.words"        : "Mots",
-      "toc.sound"        : "Sons",
-      "toc.rules"        : "Règles",
+      'next.t'   : "Ensuite",
+      'next.w0'  : "Créez votre premier mot",
+      'next.w1'  : "Ajoutez des mots — encore {0} avant de voir des règles",
+      'next.s0'  : "Écrivez votre première phrase",
+      'next.mk'  : "Créez des mots à partir de vos sons",
+      "toc.words"        : "Lexique",
+      "toc.sound"        : "Phonologie",
+      "toc.rules"        : "Grammaire",
       "toc.sent"         : "Phrases",
-      "toc.make"         : "Créer",
+      "toc.make"         : "Néologie",
       "count.words"      : "{0} mots",
       "count.words.1"    : "1 mot",
       "count.sounds"     : "{0} sons",
@@ -2151,30 +2492,86 @@ defLang('de', (function(){
     pos    : {n:"Substantiv", v:"Verb", adj:"Adjektiv", x:"andere"},
     read   : mkApprox(word_de, syl_de),
     str    : {
+      "ai.a.home"                 : "Du hast {0} Wörter und {1} Laute. Am schnellsten kommst du mit mehr Wörtern weiter — Regeln entstehen daraus.",
+      "ai.a.make"                 : "Die Wortbildung folgt deinen bisherigen Lauten, neue Wörter wirken also verwandt. Behalte, was für dich stimmig klingt.",
+      "ai.a.rules"                : "Bisher sind {0} Regeln aufgetaucht. Bleib bei denselben Gewohnheiten, dann schärfen sie sich von selbst.",
+      "ai.a.sent"                 : "Du hast {0} Sätze. Schreib denselben Gedanken zweimal — im Unterschied wohnt deine Grammatik.",
+      "ai.a.sound"                : "Du nutzt {0} Laute: {1}. Ein kleines, konsequentes Inventar klingt echter als ein großes, beliebiges.",
+      "ai.a.words"                : "Dein Lexikon hat {0} Wörter. Präge Wörter für das, worüber du wirklich sprichst; eine Sprache wächst im Gebrauch.",
+      "ai.ask"                    : "Berater fragen",
+      "ai.hint"                   : "Der Berater liest deine Sprache und antwortet daraus.",
+      "ai.left"                   : "Heute noch {0}",
+      "ai.limit.s"                : "Plus gibt dir jeden Tag unbegrenzte Beratung.",
+      "ai.limit.t"                : "Die Fragen für heute sind aufgebraucht",
+      "ai.see"                    : "Tarife ansehen",
+      "ai.title"                  : "Sprachberater",
+      "ai.unl"                    : "Unbegrenzt",
+      "cap.warn"                  : "Noch {0} Wörter in Gratis",
+      "ch.clear"                  : "Kein Zeichen",
+      "ch.for"                    : "Ein Zeichen für „{0}“",
+      "count.script"              : "{0} von {1}",
+      "home.write"                : "Wort hinzufügen",
+      "lock.ai"                   : "Unbegrenzte Beratung",
+      "lock.export"               : "Export & Sicherung",
+      "lock.sync"                 : "Cloud-Sync",
+      "lock.t"                    : "Plus-Funktion",
+      "ob.back"                   : "Zurück",
+      "ob.enter"                  : "Los geht's",
+      "ob.lang.h"                 : "Wähle deine Sprache",
+      "ob.name.auto"              : "Für mich auswählen",
+      "ob.name.h"                 : "Wie heißt<br>deine Sprache?",
+      "ob.name.mini"              : "Du kannst das jederzeit ändern.",
+      "ob.name.ph"                : "z. B. Aelira",
+      "ob.signin.apple"           : "Mit Apple fortfahren",
+      "ob.signin.google"          : "Mit Google fortfahren",
+      "ob.signin.note"            : "Melde dich an, um zu beginnen.",
+      "ob.tagline"                : "Verleih deinen Worten neue Farben.",
+      "script.add"                : "Zeichen hinzufügen",
+      "script.cons"               : "Konsonanten",
+      "script.dup"                : "Schon genommen",
+      "script.empty"              : "Präge zuerst ein paar Wörter — daraus kommen die Laute.",
+      "script.h"                  : "Gib jedem Laut ein Zeichen",
+      "script.mine"               : "Deine Zeichen",
+      "script.none"               : "Noch keine Zeichen",
+      "script.none2"              : "Noch keine Zeichen",
+      "script.none2s"             : "Wähle unten eine Schrift oder tippe ein eigenes Zeichen.",
+      "script.own"                : "Oder tippe ein eigenes",
+      "script.own.ph"             : "Zeichen einfügen oder tippen",
+      "script.pick"               : "Tippe ein Zeichen an, um es zu nehmen",
+      "script.prev"               : "Vorschau",
+      "script.rm"                 : "Entfernen",
+      "script.set"                : "Setzen",
+      "script.show"               : "In deiner Schrift schreiben",
+      "script.snd"                : "Laut",
+      "script.sub"                : "Das sind die Laute, die deine Sprache benutzt. Ein Laut ohne Zeichen behält seine Buchstaben.",
+      "script.vow"                : "Vokale",
+      "snd.add"                   : "Laut hinzufügen",
+      "snd.add.s"                 : "Laute, die deine Sprache noch nicht benutzt hat.",
+      "snd.have"                  : "Schon in deiner Sprache",
+      "sug.ask"                   : "Fällt dir nichts ein?",
+      "sug.for"                   : "Formen für „{0}“ — tippe eine an, um sie zu behalten.",
+      "sug.hint"                  : "Aus den Lauten gebaut, die du schon nutzt — tippe eines an, um es zu behalten.",
+      "sug.left"                  : "Heute noch {0}",
+      "sug.more"                  : "Andere Vorschläge",
+      "sug.out"                   : "Für heute keine Vorschläge mehr. Mit Plus geht es weiter.",
+      "toc.script"                : "Schrift",
+      "up.cta"                    : "Upgraden",
+      "ws.arabic"                 : "Arabisch",
+      "ws.armenian"               : "Armenisch",
+      "ws.cyrillic"               : "Kyrillisch",
+      "ws.devanagari"             : "Devanagari",
+      "ws.geez"                   : "Ge’ez",
+      "ws.georgian"               : "Georgisch",
+      "ws.glagolitic"             : "Glagolitisch",
+      "ws.greek"                  : "Griechisch",
+      "ws.hangul"                 : "Hangul",
+      "ws.hebrew"                 : "Hebräisch",
+      "ws.ogham"                  : "Ogham",
+      "ws.phoenician"             : "Phönizisch",
+      "ws.runic"                  : "Runen",
+      "ws.thai"                   : "Thai",
+      "ws.tibetan"                : "Tibetisch",
       "ob.start"         : "Beginnen",
-      "ob.next"          : "Weiter",
-      "ob.0.p"           : "Bau eine Sprache aus dem Nichts.<br>Keine Grammatikschulung, keine Phonetik, keine Notation.<br>Schreib ein Wort auf, und Lingua findet heraus, wie es klingt.",
-      "ob.0.mini"        : "Kein Konto, keine Verbindung. Alles läuft auf diesem Gerät.",
-      "ob.1.h"           : "Wie soll diese<br>Sprache heißen?",
-      "ob.1.ph"          : "z. B. Elira",
-      "ob.1.mini"        : "Du kannst das jederzeit ändern. Lass es leer, wenn du dich noch nicht entschieden hast.",
-      "ob.2.h"           : "Jetzt schreib<br>dein erstes Wort.",
-      "ob.2.p"           : "Wähl eine Bedeutung und schreib die Schreibweise, die dir einfällt.<br>Es gibt keine richtige Antwort.",
-      "ob.2.btn"         : "Eines schreiben",
-      "ob.3.h0"          : "Welche Bedeutung baust du zuerst?",
-      "ob.3.hn"          : "Noch {0}. Welche als Nächstes?",
-      "ob.3.ask"         : "Wie schreibt sich „{0}“ in deiner Sprache?",
-      "ob.3.reading"     : "Aussprache",
-      "ob.3.listen"      : "▶ Hören",
-      "ob.3.mini"        : "Die Aussprache ergibt sich aus deiner Schreibweise.<br>Worüber du lieber nicht nachdenkst, darüber musst du auch nicht nachdenken.",
-      "ob.3.pickfirst"   : "Wähl zuerst eine Bedeutung.",
-      "ob.3.made"        : "Bisher: {0}",
-      "ob.3.add"         : "Wort hinzufügen",
-      "ob.3.need"        : "Schreib ein Wort und wähl eine Bedeutung",
-      "ob.4.h"           : "Deine Regeln<br>zeigen sich schon.",
-      "ob.4.using"       : "Laute in Gebrauch: <em>{0}</em>",
-      "ob.4.fd"          : "Drei Wörter, und deine Sprache hat schon Gewohnheiten. Alles Weitere kann ihnen folgen.",
-      "ob.4.p"           : "Das hat keine KI gefunden. Es ist Rechnen in diesem Gerät — deshalb bleibt es kostenlos, so oft du es auch nutzt.",
       "seed.star"        : "Stern",
       "seed.water"       : "Wasser",
       "seed.wind"        : "Wind",
@@ -2189,11 +2586,16 @@ defLang('de', (function(){
       "home.kicker"      : "Deine Sprache",
       "home.unnamed"     : "Benennen",
       "home.name.prompt" : "Name der Sprache",
-      "toc.words"        : "Wörter",
-      "toc.sound"        : "Laute",
-      "toc.rules"        : "Regeln",
+      'next.t'   : "Als Nächstes",
+      'next.w0'  : "Präge dein erstes Wort",
+      'next.w1'  : "Füge Wörter hinzu — noch {0} bis Regeln erscheinen",
+      'next.s0'  : "Schreibe deinen ersten Satz",
+      'next.mk'  : "Bilde Wörter aus deinen eigenen Lauten",
+      "toc.words"        : "Lexikon",
+      "toc.sound"        : "Phonologie",
+      "toc.rules"        : "Grammatik",
       "toc.sent"         : "Sätze",
-      "toc.make"         : "Bauen",
+      "toc.make"         : "Wortbildung",
       "count.words"      : "{0} Wörter",
       "count.words.1"    : "1 Wort",
       "count.sounds"     : "{0} Laute",
@@ -2540,31 +2942,86 @@ defLang('it', (function(){
     pos    : {n:"sostantivo", v:"verbo", adj:"aggettivo", x:"altro"},
     read   : mkApprox(word_it, syl_it),
     str    : {
+      "ai.a.home"                 : "Hai {0} parole e {1} suoni. La via più rapida è creare altre parole: le regole nascono da lì.",
+      "ai.a.make"                 : "La coniazione segue i suoni che già usi, così le parole nuove sembreranno imparentate. Tieni quelle che ti suonano giuste.",
+      "ai.a.rules"                : "Finora sono emerse {0} regole. Continua con le stesse abitudini e si affineranno da sole.",
+      "ai.a.sent"                 : "Hai {0} frasi. Scrivi la stessa idea in due modi: nella differenza vive la tua grammatica.",
+      "ai.a.sound"                : "Usi {0} suoni: {1}. Un inventario piccolo e coerente suona più vero di uno ampio e disperso.",
+      "ai.a.words"                : "Il tuo lessico ha {0} parole. Conia parole per ciò di cui parli davvero; una lingua cresce con l’uso.",
+      "ai.ask"                    : "Consulta",
+      "ai.hint"                   : "Il consulente legge la tua lingua e risponde a partire da essa.",
+      "ai.left"                   : "Ne restano {0} oggi",
+      "ai.limit.s"                : "Con Plus i consigli sono illimitati, ogni giorno.",
+      "ai.limit.t"                : "Hai esaurito le domande di oggi",
+      "ai.see"                    : "Vedi i piani",
+      "ai.title"                  : "Consulente linguistico",
+      "ai.unl"                    : "Illimitato",
+      "cap.warn"                  : "Restano {0} parole nel piano Gratis",
+      "ch.clear"                  : "Nessun carattere",
+      "ch.for"                    : "Un carattere per “{0}”",
+      "count.script"              : "{0} su {1}",
+      "home.write"                : "Aggiungi parola",
+      "lock.ai"                   : "Consigli illimitati",
+      "lock.export"               : "Esportazione e backup",
+      "lock.sync"                 : "Sincronizzazione cloud",
+      "lock.t"                    : "Funzione Plus",
+      "ob.back"                   : "Indietro",
+      "ob.enter"                  : "Inizia",
+      "ob.lang.h"                 : "Scegli la tua lingua",
+      "ob.name.auto"              : "Scegli tu per me",
+      "ob.name.h"                 : "Come si chiama<br>la tua lingua?",
+      "ob.name.mini"              : "Puoi cambiarlo quando vuoi.",
+      "ob.name.ph"                : "es. Aelira",
+      "ob.signin.apple"           : "Continua con Apple",
+      "ob.signin.google"          : "Continua con Google",
+      "ob.signin.note"            : "Accedi per iniziare.",
+      "ob.tagline"                : "Dai nuovi colori alle tue parole.",
+      "script.add"                : "Aggiungi caratteri",
+      "script.cons"               : "Consonanti",
+      "script.dup"                : "Già preso",
+      "script.empty"              : "Conia prima qualche parola: i suoni vengono da lì.",
+      "script.h"                  : "Dai un carattere a ogni suono",
+      "script.mine"               : "I tuoi caratteri",
+      "script.none"               : "Ancora nessun carattere",
+      "script.none2"              : "Ancora nessun carattere",
+      "script.none2s"             : "Scegli una scrittura qui sotto, o scrivi un carattere tuo.",
+      "script.own"                : "Oppure scrivi il tuo",
+      "script.own.ph"             : "Incolla o scrivi un carattere",
+      "script.pick"               : "Tocca un carattere per prenderlo",
+      "script.prev"               : "Anteprima",
+      "script.rm"                 : "Rimuovi",
+      "script.set"                : "Usa",
+      "script.show"               : "Scrivere nella tua scrittura",
+      "script.snd"                : "suono",
+      "script.sub"                : "Questi sono i suoni che la tua lingua usa. Un suono senza carattere resta in lettere.",
+      "script.vow"                : "Vocali",
+      "snd.add"                   : "Aggiungi un suono",
+      "snd.add.s"                 : "Suoni che la tua lingua non ha ancora usato.",
+      "snd.have"                  : "Già nella tua lingua",
+      "sug.ask"                   : "Non ti viene in mente niente?",
+      "sug.for"                   : "Forme per “{0}” — tocca per tenerne una.",
+      "sug.hint"                  : "Costruite con i suoni che già usi — tocca per tenerne una.",
+      "sug.left"                  : "Ne restano {0} oggi",
+      "sug.more"                  : "Altre idee",
+      "sug.out"                   : "Idee finite per oggi. Con Plus continuano.",
+      "toc.script"                : "Scrittura",
+      "up.cta"                    : "Passa a Plus",
+      "ws.arabic"                 : "Arabo",
+      "ws.armenian"               : "Armeno",
+      "ws.cyrillic"               : "Cirillico",
+      "ws.devanagari"             : "Devanagari",
+      "ws.geez"                   : "Ge'ez",
+      "ws.georgian"               : "Georgiano",
+      "ws.glagolitic"             : "Glagolitico",
+      "ws.greek"                  : "Greco",
+      "ws.hangul"                 : "Hangul",
+      "ws.hebrew"                 : "Ebraico",
+      "ws.ogham"                  : "Ogamico",
+      "ws.phoenician"             : "Fenicio",
+      "ws.runic"                  : "Runico",
+      "ws.thai"                   : "Thai",
+      "ws.tibetan"                : "Tibetano",
       "ob.start"         : "Inizia",
-      "ob.next"          : "Avanti",
-      "ob.0.p"           : "Costruisci una lingua dal nulla.<br>Nessuno studio di grammatica, niente fonetica, nessuna notazione.<br>Scrivi una grafia e Lingua ricava come suona.",
-      "ob.0.mini"        : "Nessun account, nessuna connessione. Tutto avviene su questo dispositivo.",
-      "ob.1.h"           : "Come vuoi<br>chiamare questa lingua?",
-      "ob.1.ph"          : "es. Elira",
-      "ob.1.mini"        : "Puoi cambiarlo quando vuoi. Lascialo vuoto se non hai ancora deciso.",
-      "ob.2.h"           : "Ora scrivi<br>la tua prima parola.",
-      "ob.2.p"           : "Scegli un significato e scrivi la grafia che ti viene.<br>Non esiste una risposta giusta.",
-      "ob.2.btn"         : "Scrivine una",
-      "ob.3.h0"          : "Da quale significato cominci?",
-      "ob.3.hn"          : "Ne restano {0}. Quale adesso?",
-      "ob.3.hn.1"        : "Ne resta uno. Quale?",
-      "ob.3.ask"         : "Come si scrive «{0}» nella tua lingua?",
-      "ob.3.reading"     : "lettura",
-      "ob.3.listen"      : "▶ Ascolta",
-      "ob.3.mini"        : "La lettura nasce dalla grafia che hai scritto.<br>Alle parti a cui preferiresti non pensare, non devi pensare.",
-      "ob.3.pickfirst"   : "Prima scegli un significato.",
-      "ob.3.made"        : "Finora: {0}",
-      "ob.3.add"         : "Aggiungi questa parola",
-      "ob.3.need"        : "Scrivi una grafia e scegli un significato",
-      "ob.4.h"           : "Le tue regole<br>si vedono già.",
-      "ob.4.using"       : "Suoni in uso: <em>{0}</em>",
-      "ob.4.fd"          : "Tre parole, e la tua lingua ha già delle abitudini. Tutto quello che viene dopo può seguirle.",
-      "ob.4.p"           : "Non le ha trovate un'AI. È aritmetica che gira dentro questo dispositivo: per questo resta gratis, per quanto tu lo usi.",
       "seed.star"        : "stella",
       "seed.water"       : "acqua",
       "seed.wind"        : "vento",
@@ -2579,11 +3036,16 @@ defLang('it', (function(){
       "home.kicker"      : "La tua lingua",
       "home.unnamed"     : "Dalle un nome",
       "home.name.prompt" : "Nome della lingua",
-      "toc.words"        : "Parole",
-      "toc.sound"        : "Suono",
-      "toc.rules"        : "Regole",
+      'next.t'   : "Poi",
+      'next.w0'  : "Conia la tua prima parola",
+      'next.w1'  : "Aggiungi parole — ne mancano {0} per vedere le regole",
+      'next.s0'  : "Scrivi la tua prima frase",
+      'next.mk'  : "Conia parole dai tuoi suoni",
+      "toc.words"        : "Lessico",
+      "toc.sound"        : "Fonologia",
+      "toc.rules"        : "Grammatica",
       "toc.sent"         : "Frasi",
-      "toc.make"         : "Crea",
+      "toc.make"         : "Neologia",
       "count.words"      : "{0} parole",
       "count.words.1"    : "1 parola",
       "count.sounds"     : "{0} suoni",
@@ -2938,32 +3400,86 @@ defLang('ru', (function(){
     pos    : {n:"существительное", v:"глагол", adj:"прилагательное", x:"другое"},
     read   : mkApprox(word_ru, syl_ru),
     str    : {
+      "ai.a.home"                 : "У вас {0} слов и {1} звуков. Быстрее всего — добавить слов: правила рождаются из них.",
+      "ai.a.make"                 : "Словотворчество опирается на уже используемые звуки, поэтому новые слова покажутся родственными. Оставляйте те, что звучат верно.",
+      "ai.a.rules"                : "Пока проступило правил: {0}. Продолжайте в тех же привычках — они закрепятся сами.",
+      "ai.a.sent"                 : "У вас {0} предложений. Запишите одну мысль двумя способами — в различии и живёт ваша грамматика.",
+      "ai.a.sound"                : "Вы используете {0} звуков: {1}. Небольшой и последовательный набор звучит естественнее большого и разрозненного.",
+      "ai.a.words"                : "В вашем словаре {0} слов. Создавайте слова для того, о чём вы правда говорите; язык растёт из употребления.",
+      "ai.ask"                    : "Спросить консультанта",
+      "ai.hint"                   : "Консультант читает ваш язык и отвечает исходя из него.",
+      "ai.left"                   : "Сегодня осталось: {0}",
+      "ai.limit.s"                : "В Plus консультации без ограничений, каждый день.",
+      "ai.limit.t"                : "Вопросы на сегодня закончились",
+      "ai.see"                    : "Посмотреть тарифы",
+      "ai.title"                  : "Языковой консультант",
+      "ai.unl"                    : "Без ограничений",
+      "cap.warn"                  : "На бесплатном тарифе осталось слов: {0}",
+      "ch.clear"                  : "Без знака",
+      "ch.for"                    : "Знак для «{0}»",
+      "count.script"              : "{0} из {1}",
+      "home.write"                : "Добавить слово",
+      "lock.ai"                   : "Безлимитные консультации",
+      "lock.export"               : "Экспорт и резервная копия",
+      "lock.sync"                 : "Облачная синхронизация",
+      "lock.t"                    : "Возможность Plus",
+      "ob.back"                   : "Назад",
+      "ob.enter"                  : "Начать",
+      "ob.lang.h"                 : "Выберите язык",
+      "ob.name.auto"              : "Выбрать за меня",
+      "ob.name.h"                 : "Как называется<br>ваш язык?",
+      "ob.name.mini"              : "Это можно изменить в любой момент.",
+      "ob.name.ph"                : "напр. Aelira",
+      "ob.signin.apple"           : "Продолжить с Apple",
+      "ob.signin.google"          : "Продолжить с Google",
+      "ob.signin.note"            : "Войдите, чтобы начать.",
+      "ob.tagline"                : "Придайте новые краски вашим словам.",
+      "script.add"                : "Добавить знаки",
+      "script.cons"               : "Согласные",
+      "script.dup"                : "Уже взят",
+      "script.empty"              : "Сначала создайте несколько слов — звуки берутся из них.",
+      "script.h"                  : "Дайте каждому звуку знак",
+      "script.mine"               : "Ваши знаки",
+      "script.none"               : "Знаков пока нет",
+      "script.none2"              : "Знаков пока нет",
+      "script.none2s"             : "Выберите письмо ниже или введите собственный знак.",
+      "script.own"                : "Или введите свой",
+      "script.own.ph"             : "Вставьте или введите знак",
+      "script.pick"               : "Коснитесь знака, чтобы взять его",
+      "script.prev"               : "Предпросмотр",
+      "script.rm"                 : "Убрать",
+      "script.set"                : "Взять",
+      "script.show"               : "Писать своим письмом",
+      "script.snd"                : "звук",
+      "script.sub"                : "Это звуки, которые ваш язык действительно использует. Звук без знака остаётся буквами.",
+      "script.vow"                : "Гласные",
+      "snd.add"                   : "Добавить звук",
+      "snd.add.s"                 : "Звуки, которых ваш язык ещё не использовал.",
+      "snd.have"                  : "Уже в вашем языке",
+      "sug.ask"                   : "Ничего не приходит в голову?",
+      "sug.for"                   : "Формы для «{0}» — коснитесь, чтобы оставить.",
+      "sug.hint"                  : "Собраны из звуков, которые вы уже используете — коснитесь, чтобы оставить.",
+      "sug.left"                  : "Сегодня осталось: {0}",
+      "sug.more"                  : "Другие варианты",
+      "sug.out"                   : "На сегодня варианты закончились. С Plus они не кончаются.",
+      "toc.script"                : "Письмо",
+      "up.cta"                    : "Перейти на Plus",
+      "ws.arabic"                 : "Арабское",
+      "ws.armenian"               : "Армянское",
+      "ws.cyrillic"               : "Кириллица",
+      "ws.devanagari"             : "Деванагари",
+      "ws.geez"                   : "Геэз",
+      "ws.georgian"               : "Грузинское",
+      "ws.glagolitic"             : "Глаголица",
+      "ws.greek"                  : "Греческое",
+      "ws.hangul"                 : "Хангыль",
+      "ws.hebrew"                 : "Иврит",
+      "ws.ogham"                  : "Огам",
+      "ws.phoenician"             : "Финикийское",
+      "ws.runic"                  : "Руны",
+      "ws.thai"                   : "Тайское",
+      "ws.tibetan"                : "Тибетское",
       "ob.start"          : "Начать",
-      "ob.next"           : "Дальше",
-      "ob.0.p"            : "Соберите язык из ничего.<br>Без грамматики, без фонетики, без нотации.<br>Вы пишете написание — Lingua выводит, как оно звучит.",
-      "ob.0.mini"         : "Без аккаунта и без сети. Всё считается на этом устройстве.",
-      "ob.1.h"            : "Как вы<br>назовёте этот язык?",
-      "ob.1.ph"           : "например, Elira",
-      "ob.1.mini"         : "Название можно поменять когда угодно. Оставьте пустым, если ещё не решили.",
-      "ob.2.h"            : "Теперь напишите<br>первое слово.",
-      "ob.2.p"            : "Выберите значение и напишите любое написание, какое придёт.<br>Правильного ответа нет.",
-      "ob.2.btn"          : "Написать",
-      "ob.3.h0"           : "С какого значения начнёте?",
-      "ob.3.hn"           : "Осталось {0} значений. Какое дальше?",
-      "ob.3.hn.1"         : "Осталось одно значение.",
-      "ob.3.hn.few"       : "Осталось {0} значения. Какое дальше?",
-      "ob.3.ask"          : "Как пишется «{0}» на вашем языке?",
-      "ob.3.reading"      : "чтение",
-      "ob.3.listen"       : "▶ Послушать",
-      "ob.3.mini"         : "Чтение выводится из написания, которое вы задали.<br>О том, о чём думать не хочется, думать не нужно.",
-      "ob.3.pickfirst"    : "Сначала выберите значение.",
-      "ob.3.made"         : "Уже есть: {0}",
-      "ob.3.add"          : "Добавить слово",
-      "ob.3.need"         : "Напишите написание и выберите значение",
-      "ob.4.h"            : "Ваши правила<br>уже проступают.",
-      "ob.4.using"        : "В ходу звуки: <em>{0}</em>",
-      "ob.4.fd"           : "Три слова — и у языка уже есть привычки. Всё, что дальше, может им следовать.",
-      "ob.4.p"            : "Их нашёл не искусственный интеллект. Это арифметика внутри вашего устройства — потому она и остаётся бесплатной, как часто ею ни пользуйтесь.",
       "seed.star"         : "звезда",
       "seed.water"        : "вода",
       "seed.wind"         : "ветер",
@@ -2978,11 +3494,16 @@ defLang('ru', (function(){
       "home.kicker"       : "Ваш язык",
       "home.unnamed"      : "Дать имя",
       "home.name.prompt"  : "Название языка",
-      "toc.words"         : "Слова",
-      "toc.sound"         : "Звук",
-      "toc.rules"         : "Правила",
+      'next.t'   : "Дальше",
+      'next.w0'  : "Создайте первое слово",
+      'next.w1'  : "Добавьте слова — ещё {0} до появления правил",
+      'next.s0'  : "Напишите первое предложение",
+      'next.mk'  : "Создавайте слова из своих звуков",
+      "toc.words"         : "Лексика",
+      "toc.sound"         : "Фонология",
+      "toc.rules"         : "Грамматика",
       "toc.sent"          : "Предложения",
-      "toc.make"          : "Создание",
+      "toc.make"          : "Словотворчество",
       "count.words"       : "{0} слов",
       "count.words.1"     : "1 слово",
       "count.words.few"   : "{0} слова",
@@ -3359,30 +3880,86 @@ defLang('zh', (function(){
     pos    : {n:"名词", v:"动词", adj:"形容词", x:"其他"},
     read   : mkApprox(word_zh, syl_zh),
     str    : {
+      "ai.a.home"                 : "你已有 {0} 个词、{1} 个音。最快的推进方式是继续造词——规则从词中浮现。",
+      "ai.a.make"                 : "造词会沿用你已有的音，所以新词会与旧词自然同族。留下你听着顺耳的那些。",
+      "ai.a.rules"                : "目前已浮现 {0} 条规则。保持同样的习惯书写，它们会自行清晰起来。",
+      "ai.a.sent"                 : "你已有 {0} 个句子。把同一个意思写成两种说法——差异之处正是你的语法。",
+      "ai.a.sound"                : "你在使用 {0} 个音：{1}。小而一致的音系，比庞杂零散的更像一门真实语言。",
+      "ai.a.words"                : "你的词汇量是 {0} 个词。为你真正会说的事物造词；语言是用出来的，不是列出来的。",
+      "ai.ask"                    : "咨询顾问",
+      "ai.hint"                   : "顾问会读取你的语言，并据此作答。",
+      "ai.left"                   : "今日还剩 {0} 次",
+      "ai.limit.s"                : "升级 Plus，每天都能无限咨询。",
+      "ai.limit.t"                : "今天的咨询次数已用完",
+      "ai.see"                    : "查看方案",
+      "ai.title"                  : "语言顾问",
+      "ai.unl"                    : "无限制",
+      "cap.warn"                  : "免费版还可再添加 {0} 个词",
+      "ch.clear"                  : "不配字",
+      "ch.for"                    : "给「{0}」配字",
+      "count.script"              : "{0} / {1}",
+      "home.write"                : "添加词",
+      "lock.ai"                   : "无限咨询",
+      "lock.export"               : "导出与备份",
+      "lock.sync"                 : "云端同步",
+      "lock.t"                    : "Plus 功能",
+      "ob.back"                   : "返回",
+      "ob.enter"                  : "开始",
+      "ob.lang.h"                 : "选择你的语言",
+      "ob.name.auto"              : "帮我取一个",
+      "ob.name.h"                 : "给你的语言<br>取个名字。",
+      "ob.name.mini"              : "以后随时可以更改。",
+      "ob.name.ph"                : "例：Aelira",
+      "ob.signin.apple"           : "使用 Apple 继续",
+      "ob.signin.google"          : "使用 Google 继续",
+      "ob.signin.note"            : "登录以开始。",
+      "ob.tagline"                : "为你的语言添上新的色彩。",
+      "script.add"                : "添加字",
+      "script.cons"               : "辅音",
+      "script.dup"                : "已取用",
+      "script.empty"              : "先造几个词——音是从词里来的。",
+      "script.h"                  : "为每个音配一个字",
+      "script.mine"               : "你的字",
+      "script.none"               : "还没有字",
+      "script.none2"              : "还没有字",
+      "script.none2s"             : "从下面选一种文字，或自己输入一个字。",
+      "script.own"                : "或自己输入",
+      "script.own.ph"             : "粘贴或输入一个字",
+      "script.pick"               : "点一个字就取用",
+      "script.prev"               : "预览",
+      "script.rm"                 : "移除",
+      "script.set"                : "使用",
+      "script.show"               : "用你的文字书写",
+      "script.snd"                : "音",
+      "script.sub"                : "这些是你的语言实际使用的音。没有配字的音保持原字母。",
+      "script.vow"                : "元音",
+      "snd.add"                   : "添加音",
+      "snd.add.s"                 : "你的语言还没用过的音。",
+      "snd.have"                  : "已在你的语言中",
+      "sug.ask"                   : "想不出来？",
+      "sug.for"                   : "为「{0}」造的形——点一个就留下。",
+      "sug.hint"                  : "用你已有的音造的候选——点一个就留下。",
+      "sug.left"                  : "今日还剩 {0} 次",
+      "sug.more"                  : "换一批",
+      "sug.out"                   : "今天的灵感用完了。升级 Plus 可以继续。",
+      "toc.script"                : "文字",
+      "up.cta"                    : "升级",
+      "ws.arabic"                 : "阿拉伯字母",
+      "ws.armenian"               : "亚美尼亚字母",
+      "ws.cyrillic"               : "西里尔字母",
+      "ws.devanagari"             : "天城文",
+      "ws.geez"                   : "吉兹字母",
+      "ws.georgian"               : "格鲁吉亚字母",
+      "ws.glagolitic"             : "格拉哥里字母",
+      "ws.greek"                  : "希腊字母",
+      "ws.hangul"                 : "谚文",
+      "ws.hebrew"                 : "希伯来字母",
+      "ws.ogham"                  : "欧甘文字",
+      "ws.phoenician"             : "腓尼基字母",
+      "ws.runic"                  : "如尼文字",
+      "ws.thai"                   : "泰文",
+      "ws.tibetan"                : "藏文",
       "ob.start"         : "开始",
-      "ob.next"          : "下一步",
-      "ob.0.p"           : "凭空造一门语言。<br>不必懂语法，不必懂语音学，不必会记音。<br>写下拼写，Lingua 会算出它怎么念。",
-      "ob.0.mini"        : "不用注册，不用联网。一切都在这台设备上运行。",
-      "ob.1.h"           : "这门语言，<br>你打算叫它什么？",
-      "ob.1.ph"          : "例如：Elira",
-      "ob.1.mini"        : "随时可以改。还没想好就先空着。",
-      "ob.2.h"           : "现在，写下<br>你的第一个词。",
-      "ob.2.p"           : "选一个意思，写下你想到的拼写。<br>没有标准答案。",
-      "ob.2.btn"         : "写一个",
-      "ob.3.h0"          : "先从哪个意思开始？",
-      "ob.3.hn"          : "还剩 {0} 个。下一个写哪个？",
-      "ob.3.ask"         : "“{0}”在你的语言里怎么写？",
-      "ob.3.reading"     : "读音",
-      "ob.3.listen"      : "▶ 听一听",
-      "ob.3.mini"        : "读音是从你写下的拼写里推出来的。<br>你不想操心的部分，可以不必操心。",
-      "ob.3.pickfirst"   : "先选一个意思。",
-      "ob.3.made"        : "目前：{0}",
-      "ob.3.add"         : "加入这个词",
-      "ob.3.need"        : "写下拼写，并选一个意思",
-      "ob.4.h"           : "你的规律，<br>已经开始显形。",
-      "ob.4.using"       : "已用到的音：<em>{0}</em>",
-      "ob.4.fd"          : "才三个词，你的语言已经有了自己的习惯。此后的一切都可以顺着它们走。",
-      "ob.4.p"           : "这些不是 AI 找出来的。只是这台设备里的算术——所以无论你用多少次，它都免费。",
       "seed.star"        : "星",
       "seed.water"       : "水",
       "seed.wind"        : "风",
@@ -3397,10 +3974,15 @@ defLang('zh', (function(){
       "home.kicker"      : "你的语言",
       "home.unnamed"     : "取个名字",
       "home.name.prompt" : "语言的名字",
+      'next.t'   : "下一步",
+      'next.w0'  : "创造第一个词",
+      'next.w1'  : "继续添加词汇 — 还差 {0} 个就能看出规则",
+      'next.s0'  : "写下第一个句子",
+      'next.mk'  : "用你的音系造新词",
       "toc.words"        : "词汇",
-      "toc.sound"        : "声音",
-      "toc.rules"        : "规律",
-      "toc.sent"         : "句子",
+      "toc.sound"        : "音系",
+      "toc.rules"        : "语法",
+      "toc.sent"         : "例句",
       "toc.make"         : "造词",
       "count.words"      : "{0} 个词",
       "count.words.1"    : "1 个词",
@@ -3927,30 +4509,86 @@ defLang('ko', (function(){
     pos    : {n:"명사", v:"동사", adj:"형용사", x:"기타"},
     read   : mkApprox(word_ko, syl_ko),
     str    : {
+      "ai.a.home"                 : "지금 {0}개의 단어와 {1}개의 소리가 있어요. 가장 빠른 길은 단어를 더 만드는 것 — 규칙은 단어에서 나옵니다.",
+      "ai.a.make"                 : "조어는 이미 쓰는 소리를 따르므로 새 단어도 한 갈래로 들려요. 소리가 맞다고 느껴지는 것만 남기세요.",
+      "ai.a.rules"                : "지금까지 {0}개의 규칙이 드러났어요. 같은 습관으로 계속 쓰면 저절로 또렷해집니다.",
+      "ai.a.sent"                 : "문장이 {0}개예요. 같은 생각을 두 가지로 써보세요 — 그 차이에 당신의 문법이 있습니다.",
+      "ai.a.sound"                : "{0}개의 소리를 쓰고 있어요: {1}. 작고 일관된 음운이 넓고 흩어진 것보다 더 진짜 언어처럼 들립니다.",
+      "ai.a.words"                : "어휘가 {0}개예요. 실제로 말하는 것을 위한 단어를 만드세요; 언어는 목록이 아니라 쓰임에서 자랍니다.",
+      "ai.ask"                    : "자문 받기",
+      "ai.hint"                   : "자문은 당신의 언어를 읽고 그것을 바탕으로 답합니다.",
+      "ai.left"                   : "오늘 {0}회 남음",
+      "ai.limit.s"                : "Plus라면 매일 무제한으로 상담할 수 있어요.",
+      "ai.limit.t"                : "오늘의 질문을 모두 사용했어요",
+      "ai.see"                    : "요금제 보기",
+      "ai.title"                  : "언어 자문",
+      "ai.unl"                    : "무제한",
+      "cap.warn"                  : "무료 플랜에서 {0}개 더 가능",
+      "ch.clear"                  : "글자 없음",
+      "ch.for"                    : "“{0}”의 글자",
+      "count.script"              : "{1}개 중 {0}개",
+      "home.write"                : "단어 추가",
+      "lock.ai"                   : "무제한 자문",
+      "lock.export"               : "내보내기 및 백업",
+      "lock.sync"                 : "클라우드 동기화",
+      "lock.t"                    : "Plus 기능",
+      "ob.back"                   : "뒤로",
+      "ob.enter"                  : "시작하기",
+      "ob.lang.h"                 : "언어를 선택하세요",
+      "ob.name.auto"              : "대신 지어주기",
+      "ob.name.h"                 : "당신의 언어를<br>뭐라고 부를까요?",
+      "ob.name.mini"              : "나중에 언제든 바꿀 수 있어요.",
+      "ob.name.ph"                : "예: Aelira",
+      "ob.signin.apple"           : "Apple로 계속하기",
+      "ob.signin.google"          : "Google로 계속하기",
+      "ob.signin.note"            : "시작하려면 로그인하세요.",
+      "ob.tagline"                : "당신의 언어에 새로운 빛깔을.",
+      "script.add"                : "글자 추가",
+      "script.cons"               : "자음",
+      "script.dup"                : "이미 가져옴",
+      "script.empty"              : "먼저 단어를 몇 개 만드세요 — 소리는 거기서 나옵니다.",
+      "script.h"                  : "소리마다 글자를 정하세요",
+      "script.mine"               : "내 글자",
+      "script.none"               : "아직 글자가 없어요",
+      "script.none2"              : "아직 글자가 없어요",
+      "script.none2s"             : "아래에서 문자를 고르거나, 직접 글자를 입력하세요.",
+      "script.own"                : "또는 직접 입력",
+      "script.own.ph"             : "글자를 붙여넣거나 입력",
+      "script.pick"               : "글자를 탭하면 가져옵니다",
+      "script.prev"               : "미리보기",
+      "script.rm"                 : "제거",
+      "script.set"                : "적용",
+      "script.show"               : "내 문자로 쓰기",
+      "script.snd"                : "소리",
+      "script.sub"                : "당신의 언어가 실제로 쓰는 소리들입니다. 글자가 없는 소리는 알파벳 그대로 남습니다.",
+      "script.vow"                : "모음",
+      "snd.add"                   : "소리 추가",
+      "snd.add.s"                 : "아직 쓰지 않은 소리들이에요.",
+      "snd.have"                  : "이미 쓰는 소리",
+      "sug.ask"                   : "떠오르지 않나요?",
+      "sug.for"                   : "“{0}”에 어울리는 형태 — 탭하면 그대로 들어갑니다.",
+      "sug.hint"                  : "이미 쓰는 소리로 만든 후보예요 — 탭하면 그대로 들어갑니다.",
+      "sug.left"                  : "오늘 {0}회 남음",
+      "sug.more"                  : "다른 안",
+      "sug.out"                   : "오늘의 제안을 다 썼어요. Plus면 계속 받을 수 있어요.",
+      "toc.script"                : "문자",
+      "up.cta"                    : "업그레이드",
+      "ws.arabic"                 : "아랍 문자",
+      "ws.armenian"               : "아르메니아 문자",
+      "ws.cyrillic"               : "키릴 문자",
+      "ws.devanagari"             : "데바나가리",
+      "ws.geez"                   : "그으즈 문자",
+      "ws.georgian"               : "조지아 문자",
+      "ws.glagolitic"             : "글라골 문자",
+      "ws.greek"                  : "그리스 문자",
+      "ws.hangul"                 : "한글",
+      "ws.hebrew"                 : "히브리 문자",
+      "ws.ogham"                  : "오검 문자",
+      "ws.phoenician"             : "페니키아 문자",
+      "ws.runic"                  : "룬 문자",
+      "ws.thai"                   : "타이 문자",
+      "ws.tibetan"                : "티베트 문자",
       "ob.start"         : "시작하기",
-      "ob.next"          : "다음",
-      "ob.0.p"           : "아무것도 없는 곳에서 언어를 하나 지어요.<br>문법을 배운 적 없어도, 음성학을 몰라도, 기호를 몰라도 괜찮아요.<br>철자를 적으면 Lingua가 그 소리를 헤아려요.",
-      "ob.0.mini"        : "계정도, 연결도 필요 없어요. 전부 이 기기 안에서 돌아가요.",
-      "ob.1.h"           : "이 언어를<br>뭐라고 부를까요?",
-      "ob.1.ph"          : "예: Elira",
-      "ob.1.mini"        : "언제든 바꿀 수 있어요. 아직 정하지 않았다면 비워 두어도 괜찮아요.",
-      "ob.2.h"           : "이제 첫 낱말을<br>적어 보세요.",
-      "ob.2.p"           : "뜻을 하나 고르고, 떠오르는 대로 철자를 적어 보세요.<br>정답은 없어요.",
-      "ob.2.btn"         : "하나 적기",
-      "ob.3.h0"          : "어떤 뜻부터 지어 볼까요?",
-      "ob.3.hn"          : "{0}개 남았어요. 다음은 어떤 뜻으로 할까요?",
-      "ob.3.ask"         : "‘{0}’, 이 언어에서는 어떻게 쓸까요?",
-      "ob.3.reading"     : "발음",
-      "ob.3.listen"      : "▶ 들어보기",
-      "ob.3.mini"        : "발음은 적어 둔 철자에서 저절로 나와요.<br>굳이 생각하고 싶지 않은 부분은, 생각하지 않아도 괜찮아요.",
-      "ob.3.pickfirst"   : "뜻부터 골라 주세요.",
-      "ob.3.made"        : "지금까지: {0}",
-      "ob.3.add"         : "이 낱말 담기",
-      "ob.3.need"        : "철자를 적고 뜻을 골라 주세요",
-      "ob.4.h"           : "벌써 규칙이<br>보이기 시작해요.",
-      "ob.4.using"       : "쓰고 있는 소리: <em>{0}</em>",
-      "ob.4.fd"          : "낱말 셋 만에 이 언어에 버릇이 생겼어요. 앞으로 짓는 것들은 그 버릇을 따라가면 돼요.",
-      "ob.4.p"           : "AI가 찾아낸 게 아니에요. 이 기기 안에서 도는 셈이 찾아냈어요. 그래서 아무리 많이 써도 계속 무료예요.",
       "seed.star"        : "별",
       "seed.water"       : "물",
       "seed.wind"        : "바람",
@@ -3965,11 +4603,16 @@ defLang('ko', (function(){
       "home.kicker"      : "당신의 언어",
       "home.unnamed"     : "이름 짓기",
       "home.name.prompt" : "언어의 이름",
-      "toc.words"        : "낱말",
-      "toc.sound"        : "소리",
-      "toc.rules"        : "규칙",
-      "toc.sent"         : "문장",
-      "toc.make"         : "짓기",
+      'next.t'   : "다음",
+      'next.w0'  : "첫 단어를 만들기",
+      'next.w1'  : "단어를 더 추가 — 규칙이 보이기까지 {0}개",
+      'next.s0'  : "첫 문장을 써보기",
+      'next.mk'  : "내 음운으로 새 단어 만들기",
+      "toc.words"        : "어휘",
+      "toc.sound"        : "음운",
+      "toc.rules"        : "문법",
+      "toc.sent"         : "예문",
+      "toc.make"         : "조어",
       "count.words"      : "낱말 {0}개",
       "count.words.1"    : "낱말 1개",
       "count.sounds"     : "소리 {0}개",
@@ -4232,30 +4875,86 @@ defLang('ja', (function(){
     pos    : {n:"名詞", v:"動詞", adj:"形容詞", x:"その他"},
     read   : mkApprox(word_ja, syl_ja),
     str    : {
+      "ai.a.home"                 : "いま語彙が{0}語、音が{1}個あります。先へ進む一番の近道は語を増やすこと——規則は語から立ち上がります。",
+      "ai.a.make"                 : "造語は既にある音を辿るので、新しい語も自然と同じ血筋に響きます。しっくりくるものだけ残してください。",
+      "ai.a.rules"                : "これまでに{0}個の規則が見えています。同じ癖のまま書き続ければ、輪郭は自然に定まります。",
+      "ai.a.sent"                 : "例文が{0}文あります。同じ意味を二通りに書いてみてください——その差にあなたの文法が宿ります。",
+      "ai.a.sound"                : "使っている音は{0}個：{1}。音は少なく一貫している方が、多く散らばっているより本物の言語らしく響きます。",
+      "ai.a.words"                : "語彙は{0}語です。実際に話したいことから語を作りましょう。言語は一覧ではなく、使うことで育ちます。",
+      "ai.ask"                    : "相談する",
+      "ai.hint"                   : "アドバイザーはあなたの言語を読んで答えます。",
+      "ai.left"                   : "今日はあと{0}回",
+      "ai.limit.s"                : "Plus なら毎日、回数を気にせず相談できます。",
+      "ai.limit.t"                : "今日の相談回数を使い切りました",
+      "ai.see"                    : "プランを見る",
+      "ai.title"                  : "言語アドバイザー",
+      "ai.unl"                    : "無制限",
+      "cap.warn"                  : "無料プランはあと{0}語",
+      "ch.clear"                  : "字をあてない",
+      "ch.for"                    : "「{0}」の字",
+      "count.script"              : "{1}音中 {0}音",
+      "home.write"                : "単語を追加",
+      "lock.ai"                   : "相談し放題",
+      "lock.export"               : "書き出し・バックアップ",
+      "lock.sync"                 : "クラウド同期",
+      "lock.t"                    : "Plus の機能です",
+      "ob.back"                   : "もどる",
+      "ob.enter"                  : "はじめる",
+      "ob.lang.h"                 : "言語を選択",
+      "ob.name.auto"              : "おまかせで決める",
+      "ob.name.h"                 : "この言語を、<br>なんと呼びますか。",
+      "ob.name.mini"              : "あとからいつでも変えられます。",
+      "ob.name.ph"                : "例：エリラ語",
+      "ob.signin.apple"           : "Apple で続ける",
+      "ob.signin.google"          : "Google で続ける",
+      "ob.signin.note"            : "サインインして始めましょう。",
+      "ob.tagline"                : "あなたの言葉に新たないろどりを。",
+      "script.add"                : "字を足す",
+      "script.cons"               : "子音",
+      "script.dup"                : "取り込み済み",
+      "script.empty"              : "まず単語をいくつか作ってください。音はそこから生まれます。",
+      "script.h"                  : "音のひとつずつに、字をあてる",
+      "script.mine"               : "あなたの字",
+      "script.none"               : "まだ字がありません",
+      "script.none2"              : "まだ字がありません",
+      "script.none2s"             : "下から文字体系を選ぶか、自分で字を入力してください。",
+      "script.own"                : "自分で入力する",
+      "script.own.ph"             : "字を貼り付け／入力",
+      "script.pick"               : "字に触れると取り込みます",
+      "script.prev"               : "プレビュー",
+      "script.rm"                 : "外す",
+      "script.set"                : "これにする",
+      "script.show"               : "自分の文字で書く",
+      "script.snd"                : "音",
+      "script.sub"                : "あなたの言語が実際に使っている音です。字をあてていない音は、そのままローマ字で残ります。",
+      "script.vow"                : "母音",
+      "snd.add"                   : "音を足す",
+      "snd.add.s"                 : "まだ使っていない音です。",
+      "snd.have"                  : "すでに使っている音",
+      "sug.ask"                   : "思い浮かばない？",
+      "sug.for"                   : "「{0}」に合う形。触れるとそのまま入ります。",
+      "sug.hint"                  : "あなたが使っている音からつくった候補です。触れるとそのまま入ります。",
+      "sug.left"                  : "今日はあと{0}回",
+      "sug.more"                  : "別の案",
+      "sug.out"                   : "今日の案は使い切りました。Plus なら続けて出せます。",
+      "toc.script"                : "文字体系",
+      "up.cta"                    : "アップグレード",
+      "ws.arabic"                 : "アラビア文字",
+      "ws.armenian"               : "アルメニア文字",
+      "ws.cyrillic"               : "キリル文字",
+      "ws.devanagari"             : "デーヴァナーガリー",
+      "ws.geez"                   : "ゲエズ文字",
+      "ws.georgian"               : "ジョージア文字",
+      "ws.glagolitic"             : "グラゴル文字",
+      "ws.greek"                  : "ギリシャ文字",
+      "ws.hangul"                 : "ハングル",
+      "ws.hebrew"                 : "ヘブライ文字",
+      "ws.ogham"                  : "オガム文字",
+      "ws.phoenician"             : "フェニキア文字",
+      "ws.runic"                  : "ルーン文字",
+      "ws.thai"                   : "タイ文字",
+      "ws.tibetan"                : "チベット文字",
       'ob.start'        : 'はじめる',
-      'ob.next'         : 'つぎへ',
-      'ob.0.p'          : 'ことばを、ゼロからつくる。<br>文法の知識も、発音記号の読み方も、要りません。<br>つづりを書けば、読みは Lingua が決めます。',
-      'ob.0.mini'       : 'アカウントも通信も要りません。全部この端末の中で動きます。',
-      'ob.1.h'          : 'この言語を、<br>なんと呼びますか。',
-      'ob.1.ph'         : '例：エリラ語',
-      'ob.1.mini'       : 'あとからいつでも変えられます。決まっていなければ空のままで大丈夫です。',
-      'ob.2.h'          : '最初のひとことを<br>書いてみます。',
-      'ob.2.p'          : '意味をひとつ選んで、思いついたつづりを書くだけ。<br>正解はありません。',
-      'ob.2.btn'        : '書いてみる',
-      'ob.3.h0'         : 'どの意味のことばをつくる？',
-      'ob.3.hn'         : 'あと{0}語。次はどれ？',
-      'ob.3.ask'        : '「{0}」を、あなたの言語でどう書く？',
-      'ob.3.reading'    : '読み',
-      'ob.3.listen'     : '▶ 聞く',
-      'ob.3.mini'       : '読みは、あなたが書いたつづりから自動で決まります。<br>考えなくていいところは、考えなくていいです。',
-      'ob.3.pickfirst'  : '意味をひとつ選んでください。',
-      'ob.3.made'       : 'つくったことば：{0}',
-      'ob.3.add'        : 'この一語を加える',
-      'ob.3.need'       : 'つづりと意味を入れてください',
-      'ob.4.h'          : 'もう、規則が<br>見えはじめています。',
-      'ob.4.using'      : 'つかっている音：<em>{0}</em>',
-      'ob.4.fd'         : '3語書いただけで、あなたの言語には既に癖ができています。この癖のまま、あとは何語でも増やせます。',
-      'ob.4.p'          : 'これを見つけているのはAIではなく、この端末の中の計算です。だから無料のまま、何度でも使えます。',
       'seed.star'       : '星',
       'seed.water'      : '水',
       'seed.wind'       : '風',
@@ -4270,11 +4969,16 @@ defLang('ja', (function(){
       'home.kicker'     : 'Your Language',
       'home.unnamed'    : '名前をつける',
       'home.name.prompt': '言語の名前',
-      'toc.words'       : 'ことば',
-      'toc.sound'       : '音',
-      'toc.rules'       : '規則',
-      'toc.sent'        : '文',
-      'toc.make'        : 'つくる',
+      'next.t'   : "次にすること",
+      'next.w0'  : "最初の単語をつくる",
+      'next.w1'  : "単語を増やす — あと{0}語で規則が見えます",
+      'next.s0'  : "はじめての例文をつくる",
+      'next.mk'  : "造語で語彙を広げる",
+      'toc.words'       : '語彙',
+      'toc.sound'       : '音韻',
+      'toc.rules'       : '文法',
+      'toc.sent'        : '例文',
+      'toc.make'        : '造語',
       'count.words'     : '{0}語',
       'count.sounds'    : '{0}音',
       'count.rules'     : '{0}つ',
@@ -4778,109 +5482,263 @@ function posKey(s){
       Its job is to prove, physically, that you can write a language without
       knowing anything first. AI is never mentioned here, not once.
    ========================================================================= */
-var ob={step:0, name:'', mn:'', hw:''};
-/* Seeds are stored as keys; the label is looked up per locale at draw time. */
-var OB_SEEDS=[
-  {k:'star',pos:'n'},  {k:'water',pos:'n'}, {k:'wind',pos:'n'},   {k:'light',pos:'n'},
-  {k:'forest',pos:'n'},{k:'sky',pos:'n'},   {k:'love',pos:'v'},   {k:'walk',pos:'v'}
-];
-function seedLabel(k){ return t('seed.'+k); }
-function seedOf(k){
-  for(var i=0;i<OB_SEEDS.length;i++) if(OB_SEEDS[i].k===k) return OB_SEEDS[i];
-  return null;
-}
 
+
+/* Brand marks for the sign-in buttons. Google keeps its four brand colors;
+   the Apple mark is monochrome and follows the button's text color. */
+var MARK_GOOGLE='<svg class="mk" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true">'+
+  '<path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>'+
+  '<path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18z"/>'+
+  '<path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"/>'+
+  '<path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>';
+var MARK_APPLE='<svg class="mk" viewBox="0 0 16 20" width="17" height="17" fill="currentColor" aria-hidden="true">'+
+  '<path d="M13.29 10.6c.02-2.02 1.65-2.99 1.72-3.04-.94-1.37-2.4-1.56-2.92-1.58-1.24-.13-2.42.73-3.05.73-.63 0-1.6-.71-2.63-.69-1.35.02-2.6.79-3.29 2-1.4 2.43-.36 6.03 1 8 .67.96 1.46 2.04 2.5 2 1-.04 1.38-.65 2.59-.65 1.21 0 1.55.65 2.61.63 1.08-.02 1.76-.98 2.42-1.95.76-1.11 1.07-2.19 1.09-2.25-.02-.01-2.09-.8-2.11-3.18z"/>'+
+  '<path d="M11.35 4.63c.55-.67.92-1.6.82-2.53-.79.03-1.75.53-2.32 1.2-.51.58-.96 1.53-.84 2.43.88.07 1.79-.45 2.34-1.1z"/></svg>';
+
+/* The scripts a character can be taken from. The inventories are written as
+   escapes because they are code points, not copy: nothing here is translated,
+   and spelled out they would read as untranslated text. Names live in 3.6. */
+var WORLD_SCRIPTS = [
+  {id:"runic",pv:"\u16a0\u16a2\u16a6\u16a8\u16b1",ch:"\u16a0 \u16a2 \u16a6 \u16a8 \u16b1 \u16b2 \u16b7 \u16b9 \u16ba \u16be \u16c1 \u16c3 \u16c7 \u16c8 \u16c9 \u16ca \u16cf \u16d2 \u16d6 \u16d7 \u16da \u16dc \u16de \u16df"},
+  {id:"ogham",pv:"\u1681\u1682\u1683",ch:"\u1681 \u1682 \u1683 \u1684 \u1685 \u1686 \u1687 \u1688 \u1689 \u168a \u168b \u168c \u168d \u168e \u168f \u1690 \u1691 \u1692 \u1693 \u1694 \u1695 \u1696 \u1697 \u1698 \u1699 \u169a"},
+  {id:"phoenician",pv:"\ud802\udd00\ud802\udd01\ud802\udd02",ch:"\ud802\udd00 \ud802\udd01 \ud802\udd02 \ud802\udd03 \ud802\udd04 \ud802\udd05 \ud802\udd06 \ud802\udd07 \ud802\udd08 \ud802\udd09 \ud802\udd0a \ud802\udd0b \ud802\udd0c \ud802\udd0d \ud802\udd0e \ud802\udd0f \ud802\udd10 \ud802\udd11 \ud802\udd12 \ud802\udd13 \ud802\udd14 \ud802\udd15"},
+  {id:"glagolitic",pv:"\u2c00\u2c01\u2c02",ch:"\u2c00 \u2c01 \u2c02 \u2c03 \u2c04 \u2c05 \u2c06 \u2c07 \u2c08 \u2c09 \u2c0a \u2c0b \u2c0c \u2c0d \u2c0e \u2c0f \u2c10 \u2c11 \u2c12 \u2c13 \u2c14 \u2c15 \u2c16 \u2c17 \u2c18 \u2c19 \u2c1a \u2c1b \u2c1c \u2c1d \u2c1e \u2c1f \u2c20 \u2c21 \u2c22 \u2c23 \u2c24 \u2c25 \u2c26"},
+  {id:"greek",pv:"\u0391\u0392\u0393\u0394\u0395",ch:"\u0391 \u0392 \u0393 \u0394 \u0395 \u0396 \u0397 \u0398 \u0399 \u039a \u039b \u039c \u039d \u039e \u039f \u03a0 \u03a1 \u03a3 \u03a4 \u03a5 \u03a6 \u03a7 \u03a8 \u03a9 \u03b1 \u03b2 \u03b3 \u03b4 \u03b5 \u03b6 \u03b7 \u03b8 \u03b9 \u03ba \u03bb \u03bc \u03bd \u03be \u03bf \u03c0 \u03c1 \u03c3 \u03c4 \u03c5 \u03c6 \u03c7 \u03c8 \u03c9"},
+  {id:"cyrillic",pv:"\u0410\u0411\u0412\u0413\u0414",ch:"\u0410 \u0411 \u0412 \u0413 \u0414 \u0415 \u0416 \u0417 \u0418 \u041a \u041b \u041c \u041d \u041e \u041f \u0420 \u0421 \u0422 \u0423 \u0424 \u0425 \u0426 \u0427 \u0428 \u0429 \u042a \u042b \u042c \u042d \u042e \u042f \u0430 \u0431 \u0432 \u0433 \u0434 \u0435 \u0436 \u0437 \u0438 \u043a \u043b \u043c \u043d \u043e \u043f \u0440 \u0441 \u0442 \u0443 \u0444 \u0445 \u0446 \u0447 \u0448 \u0449"},
+  {id:"hebrew",pv:"\u05d0\u05d1\u05d2\u05d3",ch:"\u05d0 \u05d1 \u05d2 \u05d3 \u05d4 \u05d5 \u05d6 \u05d7 \u05d8 \u05d9 \u05db \u05dc \u05de \u05e0 \u05e1 \u05e2 \u05e4 \u05e6 \u05e7 \u05e8 \u05e9 \u05ea"},
+  {id:"georgian",pv:"\u10d0\u10d1\u10d2",ch:"\u10d0 \u10d1 \u10d2 \u10d3 \u10d4 \u10d5 \u10d6 \u10d7 \u10d8 \u10d9 \u10da \u10db \u10dc \u10dd \u10de \u10df \u10e0 \u10e1 \u10e2 \u10e3 \u10e4 \u10e5 \u10e6 \u10e7 \u10e8 \u10e9 \u10ea \u10eb \u10ec \u10ed \u10ee \u10ef \u10f0"},
+  {id:"armenian",pv:"\u0531\u0532\u0533",ch:"\u0531 \u0532 \u0533 \u0534 \u0535 \u0536 \u0537 \u0538 \u0539 \u053a \u053b \u053c \u053d \u053e \u053f \u0540 \u0541 \u0542 \u0543 \u0544 \u0545 \u0546 \u0547 \u0548 \u0549 \u054a \u054b \u054c \u054d \u054e \u054f \u0550 \u0551 \u0552 \u0553 \u0554 \u0555 \u0556"},
+  {id:"devanagari",pv:"\u0905\u0906\u0907",ch:"\u0905 \u0906 \u0907 \u0908 \u0909 \u090a \u090f \u0910 \u0913 \u0914 \u0915 \u0916 \u0917 \u0918 \u091a \u091b \u091c \u091d \u091f \u0920 \u0921 \u0922 \u0924 \u0925 \u0926 \u0927 \u0928 \u092a \u092b \u092c \u092d \u092e \u092f \u0930 \u0932 \u0935 \u0936 \u0937 \u0938 \u0939"},
+  {id:"tibetan",pv:"\u0f40\u0f41\u0f42",ch:"\u0f40 \u0f41 \u0f42 \u0f44 \u0f45 \u0f46 \u0f47 \u0f49 \u0f4f \u0f50 \u0f51 \u0f53 \u0f54 \u0f55 \u0f56 \u0f58 \u0f59 \u0f5a \u0f5b \u0f5d \u0f5e \u0f5f \u0f60 \u0f61 \u0f62 \u0f63 \u0f64 \u0f66 \u0f67 \u0f68"},
+  {id:"geez",pv:"\u1200\u1208\u1210",ch:"\u1200 \u1201 \u1202 \u1203 \u1204 \u1205 \u1206 \u1208 \u1209 \u120a \u120b \u120c \u120d \u120e \u1210 \u1211 \u1212 \u1213 \u1214 \u1215 \u1216 \u1218 \u1219 \u121a \u121b \u121c \u121d \u121e \u1220 \u1221 \u1222 \u1223 \u1224 \u1225 \u1226 \u1228 \u1229 \u122a \u122b \u122c \u122d \u122e \u1230 \u1231 \u1232 \u1233 \u1234 \u1235 \u1236"},
+  {id:"arabic",pv:"\u0627\u0628\u062a\u062b",ch:"\u0627 \u0628 \u062a \u062b \u062c \u062d \u062e \u062f \u0630 \u0631 \u0632 \u0633 \u0634 \u0635 \u0636 \u0637 \u0638 \u0639 \u063a \u0641 \u0642 \u0643 \u0644 \u0645 \u0646 \u0647 \u0648 \u064a"},
+  {id:"thai",pv:"\u0e01\u0e02\u0e04",ch:"\u0e01 \u0e02 \u0e03 \u0e04 \u0e05 \u0e06 \u0e07 \u0e08 \u0e09 \u0e0a \u0e0b \u0e0c \u0e0d \u0e0e \u0e0f \u0e10 \u0e11 \u0e12 \u0e13 \u0e14 \u0e15 \u0e16 \u0e17 \u0e18 \u0e19 \u0e1a \u0e1b \u0e1c \u0e1d \u0e1e \u0e1f \u0e20 \u0e21 \u0e22 \u0e23 \u0e25 \u0e27 \u0e28 \u0e29 \u0e2a \u0e2b \u0e2c \u0e2d \u0e2e"},
+  {id:"hangul",pv:"\u3131\u3134\u3137",ch:"\u3131 \u3134 \u3137 \u3139 \u3141 \u3142 \u3145 \u3147 \u3148 \u314a \u314b \u314c \u314d \u314e \u314f \u3151 \u3153 \u3155 \u3157 \u315b \u315c \u3160 \u3161 \u3163"}
+];
+
+var ob={step:0, name:''};
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
+/* Step 0 is the first screen, so there is nothing to go back to from there. */
+function obBack(){ if(ob.step>0) obGo(ob.step-1); }
+function obPickLang(code){ SET.ui=code; save(); obGo(1); }
 function obName(v){ ob.name=v; }
-function obPickMn(k){ ob.mn=k; render(); setTimeout(function(){var e=document.getElementById('ob-hw'); if(e) e.focus();},60); }
-function obHw(v){
-  ob.hw=v;
-  var k=document.getElementById('ob-k');
-  var w=String(v).replace(/[^A-Za-z]/g,'');
-  if(k) k.textContent = w ? readOut(w) : '';
-  var b=document.getElementById('ob-add');
-  if(b) b.disabled = !(w.length>=2 && ob.mn);
-}
-function obSay(){ var w=String(ob.hw).replace(/[^A-Za-z]/g,''); if(w) speak(w); }
-function obAdd(){
-  var w=String(ob.hw).replace(/[^A-Za-z]/g,'');
-  if(w.length<2 || !ob.mn){ toast(t('ob.3.need')); return; }
-  w=w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
-  var sd=seedOf(ob.mn);
-  /* The part of speech comes from the seed itself, not from its wording. */
-  WORDS.push({hw:w, mn:seedLabel(ob.mn), pos:(sd?sd.pos:'n'), at:Date.now()});
-  save();
-  ob.mn=''; ob.hw='';
-  if(WORDS.length>=3) obGo(4); else render();
+/* Sign-in internals (Google/Apple) are wired in just before app packaging.
+   For now these buttons only advance the flow. */
+function obSignIn(){ obGo(2); }
+/* "Pick one for me": build a Latin conlang name from consonant+vowel syllables. */
+var OB_ONS=['k','s','t','n','h','m','r','l','v','th','sh','y','d','g','br','tr','vel','ael'];
+var OB_VOW=['a','e','i','o','u','ae','ei','ia','or','en','ael','ir'];
+function obGenName(){
+  var n=2+Math.floor(Math.random()*2), w='';
+  for(var i=0;i<n;i++){ w+=OB_ONS[Math.floor(Math.random()*OB_ONS.length)]+OB_VOW[Math.floor(Math.random()*OB_VOW.length)]; }
+  w=w.charAt(0).toUpperCase()+w.slice(1);
+  ob.name=w;
+  var e=document.getElementById('ob-n'); if(e) e.value=w;
 }
 function obFinish(){
-  langName = (ob.name||'').trim() || t('lang.default');
+  langName=(ob.name||'').trim() || t('lang.default');
   SET.done=true; save();
   route='home'; render(); window.scrollTo(0,0);
 }
 
 function vOb(){
   var s=ob.step, h='';
-  var dots='<div class="obtop">'+[0,1,2,3,4].map(function(i){
-    return '<div class="dot'+(i<=s?' on':'')+'"></div>';}).join('')+'</div>';
+  var dots='<div class="obhead">'+
+    (s>0 ? '<button class="obback" onclick="obBack()" aria-label="'+esc(t('ob.back'))+'">'+
+           '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>'
+          : '<span class="obback ph"></span>')+
+    '<div class="obtop">'+[0,1,2].map(function(i){
+      return '<div class="dot'+(i<=s?' on':'')+'"></div>';}).join('')+'</div>'+
+    '<span class="obback ph"></span></div>';
 
   if(s===0){
-    h='<div class="mid"><h1>Lingua</h1>'+
-      '<p style="margin-top:22px">'+t('ob.0.p')+'</p></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obGo(1)">'+t('ob.start')+'</button>'+
-      '<div class="mini" style="text-align:center;margin-top:12px">'+t('ob.0.mini')+'</div></div>';
+    h='<div class="mid"><h2>'+t('ob.lang.h')+'</h2>'+
+      '<div class="langpick">'+UI_LANGS.map(function(code){
+        return '<button class="lpo'+(uiLang()===code?' on':'')+'" onclick="obPickLang(\''+code+'\')">'+esc(LANG[code].label)+'</button>';
+      }).join('')+'</div></div>';
   }
   else if(s===1){
-    h='<div class="mid"><h2>'+t('ob.1.h')+'</h2>'+
-      '<div class="field" style="margin-top:22px"><input id="ob-n" placeholder="'+esc(t('ob.1.ph'))+'" value="'+esc(ob.name)+'" oninput="obName(this.value)" autocomplete="off"></div>'+
-      '<div class="mini">'+t('ob.1.mini')+'</div></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obGo(2)">'+t('ob.next')+'</button></div>';
-  }
-  else if(s===2){
-    h='<div class="mid"><h2>'+t('ob.2.h')+'</h2>'+
-      '<p>'+t('ob.2.p')+'</p></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obGo(3)">'+t('ob.2.btn')+'</button></div>';
-  }
-  else if(s===3){
-    var need=3-WORDS.length;
-    h='<div class="mid">'+
-      '<h2 style="font-size:1.2rem">'+(WORDS.length===0? t('ob.3.h0') : t('ob.3.hn', need))+'</h2>'+
-      '<div class="chips">'+OB_SEEDS.filter(function(sd){
-        var lab=seedLabel(sd.k);
-        return !WORDS.some(function(w){return w.mn===lab;});
-      }).map(function(sd){
-        return '<button class="chip'+(ob.mn===sd.k?' on':'')+'" onclick="obPickMn(\''+sd.k+'\')">'+esc(seedLabel(sd.k))+'</button>';
-      }).join('')+'</div>'+
-      (ob.mn ? ('<div class="field" style="margin-top:16px"><label>'+t('ob.3.ask', esc(seedLabel(ob.mn)))+'</label>'+
-        '<input class="hwf" id="ob-hw" placeholder="Aelin" value="'+esc(ob.hw)+'" oninput="obHw(this.value)" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
-        '<div class="pvbox"><span class="pvn">'+t('ob.3.reading')+'</span><span class="pvk" id="ob-k"></span>'+
-        '<button onclick="obSay()">'+t('ob.3.listen')+'</button></div>'+
-        '<div class="mini">'+t('ob.3.mini')+'</div>')
-       : '<div class="mini" style="margin-top:14px">'+t('ob.3.pickfirst')+'</div>')+
-      '</div>'+
+    h='<div class="mid"><h1>Lingua</h1>'+
+      '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
       '<div class="obfoot">'+
-      (WORDS.length? '<div class="mini" style="margin-bottom:10px">'+t('ob.3.made', WORDS.map(function(w){return esc(w.hw);}).join(', '))+'</div>':'')+
-      '<button class="btn" id="ob-add" onclick="obAdd()"'+((ob.mn&&String(ob.hw).replace(/[^A-Za-z]/g,'').length>=2)?'':' disabled')+'>'+t('ob.3.add')+'</button></div>';
+      '<button class="btn signin google" onclick="obSignIn()">'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
+      '<button class="btn signin apple" onclick="obSignIn()">'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+      '<div class="mini" style="text-align:center;margin-top:10px">'+t('ob.signin.note')+'</div></div>';
   }
-  else {
-    var f=findings(), A=analyze();
-    h='<div class="mid"><h2>'+t('ob.4.h')+'</h2>'+
-      '<div class="card" style="margin-top:20px">'+
-      (f.length ? f.slice(0,2).map(function(x){return '<div class="ft" style="margin-bottom:8px">'+x.t+'</div>';}).join('')
-                : '<div class="ft">'+t('ob.4.using', esc(A.used.join(', ')))+'</div>')+
-      '<div class="fd">'+t('ob.4.fd')+'</div>'+
-      '</div>'+
-      '<p>'+t('ob.4.p')+'</p></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obFinish()">'+t('ob.start')+'</button></div>';
+  else{
+    h='<div class="mid"><h2>'+t('ob.name.h')+'</h2>'+
+      '<div class="field" style="margin-top:22px"><input id="ob-n" placeholder="'+esc(t('ob.name.ph'))+'" value="'+esc(ob.name)+'" oninput="obName(this.value)" autocomplete="off"></div>'+
+      '<button class="btn ghost obauto" onclick="obGenName()">'+t('ob.name.auto')+'</button>'+
+      '<div class="mini">'+t('ob.name.mini')+'</div></div>'+
+      '<div class="obfoot"><button class="btn" onclick="obFinish()">'+t('ob.enter')+'</button></div>';
   }
-  return '<div class="ob view'+((s===0||s===2||s===4)?' center':'')+'">'+dots+h+'</div>';
+  return '<div class="ob view'+((s===0||s===1)?' center':'')+'">'+dots+h+'</div>';
 }
+
 
 /* =========================================================================
    6. Home = the cover and the table of contents
       The chapter names stay in Cinzel English everywhere, the way a book
       keeps its own typography; only the contents rows follow the locale.
    ========================================================================= */
+/* The one thing worth doing next, given where this language currently stands.
+   Without it the contents page is a list of rooms with no reason to enter any. */
+
+/* Free accounts hit a ceiling; saying so before they reach it reads as
+   information rather than as an interruption. */
+function capBanner(){
+  if(has('plus')) return '';
+  var left=FREE_LIMIT-WORDS.length;
+  if(left>20 || left<0) return '';
+  return '<button class="capwarn" onclick="go(\'plans\')">'+t('cap.warn', left)+
+    '<span class="capgo">'+t('up.cta')+' \u203A</span></button>';
+}
+
+function nextStep(){
+  var n=WORDS.length, act, label;
+  if(n===0){ act="openAdd()"; label=t('next.w0'); }
+  else if(n<5){ act="openAdd()"; label=t('next.w1', 5-n); }
+  else if(LINES.length===0){ act="go('sent')"; label=t('next.s0'); }
+  else { act="go('make')"; label=t('next.mk'); }
+  return '<button class="nextcard" onclick="'+act+'">'+
+    '<span class="nk">'+t('next.t')+'</span>'+
+    '<span class="nl">'+esc(label)+'</span>'+
+    '<span class="na">\u203A</span></button>';
+}
+
+/* =========================================================================
+   Writing system. The map is sound -> {ch}; an entry can later carry {svg}
+   from the drawing tool without any reader here needing to change.
+   ========================================================================= */
+/* Sound -> character. The sound is the key because a sound is what a word is
+   made of; the character is the clothing you choose for it. An entry is a
+   plain string today and can become {ch, svg} when glyphs can be drawn. */
+function scriptMap(){ if(!SET.script) SET.script={}; return SET.script; }
+function chOf(p){ var v=scriptMap()[p]; return v||''; }
+function phonemes(word){
+  var w=String(word||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0;
+  while(i<w.length){
+    var two=w.substr(i,2);
+    if(two==='th'||two==='sh'||two==='ch'){ out.push(two); i+=2; }
+    else { out.push(w.charAt(i)); i++; }
+  }
+  return out;
+}
+/* A sound belongs to the language either because a word already uses it or
+   because you said so; before this, only the first way existed. */
+function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
+function inventory(){
+  var A=analyze(), add=addedSnd();
+  var uniq=function(a){ var o={},r=[]; a.forEach(function(x){ if(x&&!o[x]){o[x]=1;r.push(x);} }); return r; };
+  return {
+    cons: uniq(A.used.concat(add.filter(function(p){ return CONS.indexOf(p)>=0; }))).sort(),
+    vow:  uniq(A.vowels.concat(add.filter(function(p){ return CONS.indexOf(p)<0; }))).sort()
+  };
+}
+function takeSnd(p){
+  var a=addedSnd();
+  if(a.indexOf(p)<0) a.push(p);
+  save(); closeSheet({target:{id:'sbg'}}); render();
+}
+function dropSnd(p){
+  var a=addedSnd(), i=a.indexOf(p);
+  if(i>=0){ a.splice(i,1); save(); }
+  delete scriptMap()[p]; save(); render();
+}
+function invAll(){ var v=inventory(); return v.cons.concat(v.vow); }
+function scriptHave(){ var m=scriptMap(); return invAll().filter(function(p){return m[p];}).length; }
+function inScript(word){
+  var m=scriptMap();
+  return phonemes(word).map(function(p){ return m[p]||p; }).join('');
+}
+function scriptOn(){ return !!SET.showScript && scriptHave()>0; }
+/* Named wOut, not hw: openWord(hw) already binds hw as its parameter, and a
+   global of the same name is invisible from inside it. */
+function wOut(word){ return scriptOn() ? inScript(word) : String(word||''); }
+
+/* Which sound the picker is currently open for. */
+/* Both pickers use the sheet the app already has: it is sized to the phone
+   column, scrolls on its own, and leaves the page underneath untouched. */
+/* Nothing is expanded to begin with — the characters of a script appear only
+   when you ask for that script, and tapping it again folds them away. */
+var pkScript = '';
+function showSheet(html){
+  var sh=document.getElementById('sheet'); if(!sh) return;
+  sh.innerHTML='<div class="grip"></div>'+html;
+  document.getElementById('sbg').classList.add('on');
+  sh.classList.add('on');
+}
+function pkSwitch(id){
+  pkScript = (pkScript===id ? '' : id);           /* tap again to fold away */
+  var e=document.getElementById('pk-chars'); if(e) e.innerHTML=pkCharsHTML();
+  var r=document.querySelectorAll('.pktab'); for(var i=0;i<r.length;i++){ var b=r[i];
+    if(b.getAttribute('data-id')===pkScript) b.classList.add('on'); else b.classList.remove('on'); } }
+var pkFor='';
+function pkCharsHTML(){
+  if(!pkScript) return '';
+  var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===pkScript) w=x; });
+  if(!w) return '';
+  var cur=chOf(pkFor), taken=chTaken();
+  return w.ch.split(' ').map(function(ch){
+    var used=taken[ch] && taken[ch]!==pkFor;
+    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'" onclick="setCh(\''+esc(pkFor)+'\',\''+esc(ch)+'\')">'+esc(ch)+'</button>';
+  }).join('');
+}
+function openPick(p){
+  pkFor=p;
+  var cur=chOf(p);
+  showSheet('<h3>'+t('ch.for', esc(p))+'</h3>'+
+    '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();takeOwn();}">'+
+    '<button class="btn" onclick="takeOwn()">'+t('script.set')+'</button></div>'+
+    (cur? '<button class="pkclear" onclick="setCh(\''+esc(p)+'\',\'\')">'+t('ch.clear')+'</button>':'')+
+    '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
+      return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'" onclick="pkSwitch(\''+w.id+'\')">'+
+        '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+esc(t('ws.'+w.id))+'</button>';
+    }).join('')+'</div>'+
+    '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
+}
+function openAddSnd(){
+  var inv=inventory(), have={};
+  inv.cons.concat(inv.vow).forEach(function(p){ have[p]=1; });
+  var all=CONS.concat(['a','e','i','o','u','y']);
+  var free=all.filter(function(p){ return !have[p]; });
+  showSheet('<h3>'+t('snd.add')+'</h3><div class="note" style="margin-bottom:12px">'+t('snd.add.s')+'</div>'+
+    (free.length? '<div class="sndgrid">'+free.map(function(p){
+      return '<button class="sndchip" onclick="takeSnd(\''+esc(p)+'\')"><span class="sc1">'+esc(p)+'</span>'+
+        '<span class="sc2">'+esc(IPA_V[p]||IPA_C[p]||'')+'</span></button>';
+    }).join('')+'</div>' : '<div class="note">'+t('sound.allused')+'</div>'));
+}
+function setCh(p, ch){
+  var m=scriptMap();
+  ch=String(ch||'').trim();
+  if(ch) m[p]=ch; else delete m[p];
+  save(); closeSheet({target:{id:'sbg'}}); render();
+}
+function clearCh(p){ delete scriptMap()[p]; save(); render(); }
+function takeOwn(){
+  var e=document.getElementById('own-ch'); if(!e) return;
+  setCh(pkFor, e.value);
+}
+function toggleScript(){ SET.showScript=!SET.showScript; save(); render(); }
+function scrPreview(){
+  var w = WORDS.length? WORDS[WORDS.length-1].hw : '';
+  if(!w) return '';
+  return '<span class="scrpvw">'+esc(inScript(w))+'</span><span class="scrpvr">'+esc(w)+'</span>';
+}
+/* Characters already spoken for, so the palette can grey them out. */
+function chTaken(){ var m=scriptMap(), o={}; for(var k in m) o[m[k]]=k; return o; }
+
+/* One sound as a small tile: the character it wears above, the sound below.
+   Tapping opens the picker in the sheet rather than growing the page. */
+function phTile(p){
+  var cur=chOf(p), added=addedSnd().indexOf(p)>=0;
+  return '<button class="ptile'+(cur?' has':'')+'" onclick="openPick(\''+esc(p)+'\')">'+
+    (added? '<span class="pdel" onclick="event.stopPropagation();dropSnd(\''+esc(p)+'\')">×</span>':'')+
+    '<span class="pch">'+(cur?esc(cur):'+')+'</span>'+
+    '<span class="psn">'+esc(p)+'</span></button>';
+}
+
 function vHome(){
   var A=analyze();
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
@@ -4902,6 +5760,7 @@ function vHome(){
       '<div class="rule"></div>'+
     '</div>'+
     '<div class="body" style="padding-top:0">'+
+    capBanner()+nextStep()+
     (WORDS.length===0
       ? '<div class="empty"><div class="eb">'+t('home.empty.t')+'</div>'+
         '<div class="es">'+t('home.empty.s')+'</div></div>'+
@@ -4918,11 +5777,11 @@ function vHome(){
             '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).rd : linked(lastLine.ws).ipa)+'</div></button>'
           : last? '<button class="recent" onclick="go(\'words\')">'+
             '<div class="rh">'+t('home.recent.word')+'</div>'+
-            '<div class="line">'+esc(last.hw)+'</div>'+
+            '<div class="line">'+esc(wOut(last.hw))+'</div>'+
             '<div class="tr">'+(last.mn? esc(last.mn)+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')
     )+
     '</div>'+
-    (WORDS.length? '<div class="barfix"><button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div>':'')+
+
   '</div>';
 }
 function editName(){
@@ -4963,7 +5822,7 @@ function groupHTML(items){
     var L=String(w.hw).charAt(0).toUpperCase();
     if(L!==cur){ cur=L; out+='<div class="gl">'+esc(cur)+'</div>'; }
     out+='<button class="entry" onclick="openWord(\''+esc(w.hw)+'\')">'+
-      '<div class="hwrow"><span class="hw">'+esc(w.hw)+'</span>'+
+      '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
       '<span class="rd">'+esc(readOut(w.hw))+'</span>'+
       '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
       '<div class="mn">'+esc(w.mn)+'</div></button>';
@@ -4975,7 +5834,7 @@ function groupHTML(items){
    8. Sound
    ========================================================================= */
 function vSound(){
-  var A=analyze();
+  var A=analyze(), inv=inventory();
   var seq=linkRun(), L=seq.length>=2?linked(seq.map(function(w){return w.hw;})):null;
   return '<div class="view"><div class="chead">'+
     '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
@@ -4983,12 +5842,15 @@ function vSound(){
     '<span class="cn">'+A.used.length+' + '+A.vowels.length+'</span></div></div>'+
     '<div class="body">'+
     '<div class="sec">'+t('sound.used')+'</div>'+
-    (A.used.length? A.used.map(function(c){return phChip(c,'');}).join('') : '<div class="note">'+t('sound.none')+'</div>')+
-    '<div class="sec">'+t('sound.unused')+'</div>'+
-    (A.unused.length? A.unused.map(function(c){return phChip(c,' off');}).join('') : '<div class="note">'+t('sound.allused')+'</div>')+
-    '<div class="note" style="margin-top:8px">'+t('sound.note')+'</div>'+
+    '<div class="note" style="margin-bottom:10px">'+t('script.sub')+'</div>'+
+    (inv.cons.length? '<div class="pgrid">'+inv.cons.map(phTile).join('')+'</div>' : '<div class="note">'+t('sound.none')+'</div>')+
     '<div class="sec">'+t('sound.vowels')+'</div>'+
-    (A.vowels.length? A.vowels.map(function(c){return phChip(c,'',true);}).join('') : '<div class="note">'+t('sound.none')+'</div>')+
+    (inv.vow.length? '<div class="pgrid">'+inv.vow.map(phTile).join('')+'</div>' : '<div class="note">'+t('sound.none')+'</div>')+
+    '<button class="set" onclick="openAddSnd()"><span class="sl">'+t('snd.add')+'</span><span class="sv">+</span></button>'+
+    (scriptHave()? '<div class="sec">'+t('script.prev')+'</div>'+
+      '<div class="scrpv">'+scrPreview()+'</div>'+
+      '<button class="set" onclick="toggleScript()"><span class="sl">'+t('script.show')+'</span>'+
+      '<span class="sv">'+(SET.showScript?t('set.on'):'—')+'</span></button>' : '')+
     (L? '<div class="sec">'+t('sound.together')+'</div>'+
       '<div class="link"><div class="src">'+seq.map(function(w){return esc(w.hw);}).join(' ')+'</div>'+
       '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
@@ -5192,7 +6054,7 @@ function vSent(){
     (LINES.length? '<div class="sec">'+t('sent.kept')+'</div>'+LINES.slice().reverse().map(function(l,i){
         var idx=LINES.length-1-i, lk=linked(l.ws);
         return '<div class="entry" style="display:block">'+
-          '<div class="hwrow"><span class="hw" style="font-size:1.06rem">'+esc(l.ws.join(' '))+'</span>'+
+          '<div class="hwrow"><span class="hw" style="font-size:1.06rem">'+esc(l.ws.map(wOut).join(' '))+'</span>'+
           '<span class="pos">'+esc(l.order||'')+'</span></div>'+
           '<div class="mn" style="font-size:.92rem">'+readLink(lk)+'</div>'+
           '<div style="display:flex;gap:8px;margin-top:8px">'+
@@ -5246,10 +6108,10 @@ function vMake(){
         '<button class="rr" onclick="speak(\''+esc(c.w)+'\')">▶</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
-    '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+    (has('studio')?'':'<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
       '<span><span class="lt">'+t('make.lock.t')+'</span><br>'+
       '<span class="ld">'+t('make.lock.d')+'</span></span>'+
-      '<span class="tag">STUDIO</span></button>'+
+      '<span class="tag">STUDIO</span></button>')+
     '</div>'+
     '<div class="barfix"><button class="btn ghost" onclick="regen()">'+t('make.reroll')+'</button>'+
     '<button class="btn" onclick="commit()">'+t('make.commit')+'</button></div></div>';
@@ -5393,7 +6255,48 @@ function choose(id){
    13. The sheet for writing a word, and CSV
    ========================================================================= */
 var addPos='n';
+
+/* Suggestions are drawn with the same generator the coinage screen uses, so
+   what it offers already obeys the language's own sounds and shape. */
+var SUG=[], sugMn='';
+/* Studio is the tier that advertises this, so Studio is what lifts the ceiling. */
+function sugUnl(){ return has('studio'); }
+function sugLeft(){ return sugUnl() ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
+function sugMean(){ var e=document.getElementById('f-mn'); return e? String(e.value||'').trim() : ''; }
+function sugBuild(){
+  var A=analyze(), tk=taken(); SUG=[];
+  for(var i=0;i<3;i++){ var w=makeWord(addPos||POS[0], A, tk); if(w){ SUG.push(w); tk[w.toLowerCase()]=1; } }
+}
+function sugHTML(){
+  var left=sugLeft(), unl=(left===Infinity);
+  if(!SUG.length){
+    if(!unl && left<=0) return '<button class="sugout" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+' \u203A</b></button>';
+    return '<button class="sugask" onclick="sugGo()">'+
+      '<span class="sual"><span class="sut">'+t('add.lock.t')+'</span><span class="sud">'+t('add.lock.d')+'</span></span>'+
+      (unl?'':'<span class="sugn">'+t('sug.left', left)+'</span>')+'</button>';
+  }
+  return '<div class="sugbox"><div class="sugchips">'+
+    SUG.map(function(w){ return '<button class="sugchip" onclick="sugPick(\''+esc(w)+'\')"><span class="sw">'+esc(w)+'</span><span class="sr">'+esc(readOut(w))+'</span></button>'; }).join('')+
+    '</div><div class="sugfoot"><span class="sughint">'+(sugMn? t('sug.for', esc(sugMn)) : t('sug.hint'))+'</span>'+
+    ((unl||left>0)?'<button class="sugmore" onclick="sugGo()">'+t('sug.more')+'</button>':'')+
+    '</div>'+
+    ((!unl&&left<=0)?'<button class="sugout" style="margin:9px 0 0" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+' \u203A</b></button>':'')+
+    '</div>';
+}
+function sugPaint(){ var e=document.getElementById('sugwrap'); if(e) e.innerHTML=sugHTML(); }
+function sugGo(){
+  if(sugLeft()<=0){ closeSheet(); go('plans'); toast(t('sug.out')); return; }
+  if(!sugUnl()) aiSpend();
+  sugMn=sugMean(); sugBuild(); sugPaint();
+}
+function sugPick(w){
+  var f=document.getElementById('f-hw');
+  if(f){ f.value=w; pv(); f.focus(); }
+  SUG=[]; sugPaint();
+}
+
 function openAdd(){
+  SUG=[]; sugMn='';
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div><h3>'+t('add.title')+'</h3>'+
@@ -5406,11 +6309,9 @@ function openAdd(){
     '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos">'+
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
+    '<div id="sugwrap">'+sugHTML()+'</div>'+
     '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">'+t('add.btn')+'</button>'+
-    '<button class="lock" onclick="closeSheet();go(\'plans\')"><span class="lk">✧</span>'+
-      '<span><span class="lt">'+t('add.lock.t')+'</span><br>'+
-      '<span class="ld">'+t('add.lock.d')+'</span></span>'+
-      '<span class="tag">STUDIO</span></button>';
+    '';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
   setTimeout(function(){var e=document.getElementById('f-hw'); if(e) e.focus();},260);
@@ -5455,7 +6356,7 @@ function openWord(hw){
   var sy=syl(w.hw);
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div>'+
-    '<div class="whd"><span class="whw">'+esc(w.hw)+'</span>'+
+    '<div class="whd"><span class="whw">'+esc(wOut(w.hw))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">'+t('f.listen')+'</button></div>'+
     '<div class="wsub">'+esc(ipa(w.hw))+'</div>'+
     '<div class="wsub2">'+esc(rd(w.hw))+'</div>'+
@@ -5533,6 +6434,26 @@ function doImport(){
 /* =========================================================================
    14. Drawing
    ========================================================================= */
+
+/* =========================================================================
+   Advisor — the companion that walks alongside the language.
+   Free accounts get a small daily allowance; Plus removes the ceiling, which
+   is what makes the advisor the main reason to upgrade.
+   ========================================================================= */
+var AI_FREE_DAILY = 3;
+function aiToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function aiUsed(){ if(SET.aiDate!==aiToday()){ SET.aiDate=aiToday(); SET.aiN=0; save(); } return SET.aiN||0; }
+function aiLeft(){ return has('plus') ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
+function aiSpend(){ if(has('plus')) return; SET.aiDate=aiToday(); SET.aiN=aiUsed()+1; save(); }
+
+/* AI_SEAM — where the hosted model plugs in.
+   A browser cannot hold an API key, so the request must go through your own
+   endpoint, which then calls Claude (model "claude-opus-5") server-side and
+   returns the text. Until that endpoint exists, the advice below is computed
+   here from the language itself, which is why it still says something true. */
+
+
+
 function render(){
   /* the document's own language, so the browser picks the right font and
      line-breaking for it — and so the CSS above can drop Latin tracking */
@@ -5546,7 +6467,11 @@ function render(){
         : route==='settings'? vSettings()
         : route==='plans'? vPlans()
         : vHome();
+  /* Replacing the view resets the scroll, which threw you to the top on every
+     edit. Put it back; go() is what deliberately returns to the top. */
+  var y = window.scrollY || window.pageYOffset || 0;
   app.innerHTML=v;
+  if(y) window.scrollTo(0, y);
 }
 render();
 </script>

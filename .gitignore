@@ -1,14 +1,20 @@
-# node
-node_modules/
-# fastlane / build artifacts
-build/
-*.ipa
-*.dSYM.zip
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/test_output/
-# macOS
-.DS_Store
 # Xcode user data
-xcuserdata/
+# fastlane / build artifacts
+# macOS
+# node
+*.dSYM.zip
+*.ipa
+*.mobileprovision
+*.p12
+*.p8
 *.xcuserstate
+.DS_Store
+build/
+fastlane/Preview.html
+fastlane/report.xml
+fastlane/test_output/
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/Pods/
+node_modules/
+xcuserdata/
