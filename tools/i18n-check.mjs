@@ -17,7 +17,7 @@
                         awkward edges without throwing or going blank
      6. the walk        every view, in every language, with T_MISS armed:
                         one fallback to English anywhere and this fails
-     7. the source      no user-facing text hard-coded outside section 3.6,
+     7. the source      no user-facing text hard-coded in a screen file,
                         and nothing spoken through toast/alert/confirm/prompt
                         as a quoted literal — those never reach a screen, so
                         check 8 cannot see them
@@ -34,7 +34,7 @@
    written. Nobody has to remember to add it here.
 
    What it cannot see, so that nobody mistakes silence for safety:
-     - anything outside www/index.html. The iOS side (Info.plist, the store
+     - anything outside www/. The iOS side (Info.plist, the store
        listing, permission prompts) has no localisation at all yet
      - whether a translation is any good. It proves a string exists and is
        shaped right; it cannot read Korean
@@ -70,7 +70,11 @@ const chromium = await loadChromium();
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
-const SRC  = path.join(ROOT, 'index.html');
+/* Everything a screen is built out of. The ten language files are excluded on
+   purpose — they are where foreign text belongs — and so is the font writer,
+   which has no user-facing text in it at all. */
+const APP_SRC = ['index.html', 'core.js', 'reading.js', 'screens.js',
+                 'sentences.js', 'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
 const PORT = 8121;
 /* Use the browser this machine already has if there is one; on a CI runner
    there is not, and Playwright's own copy is the right answer. */
@@ -82,9 +86,9 @@ const notes = [];
 function fail(area, msg){ fails.push(area + ': ' + msg); }
 
 /* ---- 7. the source ------------------------------------------------------- */
-/* Everything a person reads lives inside section 3.6. Anything outside it
-   that looks like prose is a string that will never be translated, because
-   there is nowhere for the translation to go. */
+/* Everything a person reads lives in one of the ten www/i18n files. Prose in a
+   screen file is a string that will never be translated, because there is
+   nowhere for the translation to go. */
 /* Blank out every comment, keeping the newlines, so a line number still means
    what it says. Strings are tracked as we go, or an apostrophe in a comment
    would swallow the rest of the file. */
@@ -133,59 +137,68 @@ function stripComments(s){
 }
 
 function checkSource(){
-  const text = fs.readFileSync(SRC, 'utf8');
-  const raw = text.split('\n');
-  const lines = stripComments(text).split('\n');
-  const secA = raw.findIndex(l => l.indexOf('3.6 The languages') >= 0);
-  let secZ = -1;
-  for (let i = raw.length - 1; i > 0; i--) if (raw[i].indexOf('})());') === 0) { secZ = i; break; }
-  if (secA < 0 || secZ < 0) return fail('source', 'cannot find section 3.6');
+  /* The app used to be one file, and this check meant "anywhere outside
+     section 3.6". It is several files now, so it means "any file that is not
+     one of the ten languages" — which is the same rule, stated where it can no
+     longer drift: a new screen file is covered by adding it to APP_SRC, and a
+     new language needs nothing. */
+  APP_SRC.forEach((file) => {
+    const rel = path.basename(file);
+    const raw = fs.readFileSync(file, 'utf8').split('\n');
+    const lines = stripComments(raw.join('\n')).split('\n');
 
-  const outside = (i) => i < secA || i > secZ;
-  /* a script other than the Latin one, outside the language section, is text
-     that was typed straight into a screen */
-  const FOREIGN = /[぀-ヿ㐀-鿿가-힯Ѐ-ӿ]/;
-  /* prose sitting between two tags in a template: >Save< and the like */
-  const PROSE = />([A-Za-z][A-Za-z’'!?,. -]{3,})</g;
-  const OK_PROSE = /^(br|em|b|i|span|div|button|input|style|script|meta|title|link|path|svg|g|defs|use|option|label|textarea|p|h1|h2|h3|small|strong)$/i;
-  /* the functions that speak to a person without going through a screen */
-  const SPEAKS = /\b(toast|alert|confirm|prompt)\s*\(\s*(['"][^'"]*['"])/g;
+    /* a script other than the Latin one, in a screen file, is text that was
+       typed straight into the app instead of into a language */
+    const FOREIGN = /[぀-ヿ㐀-鿿가-힯Ѐ-ӿ]/;
+    /* prose sitting between two tags in a template: >Save< and the like */
+    const PROSE = />([A-Za-z][A-Za-z’\'!?,. -]{3,})</g;
+    const OK_PROSE = /^(br|em|b|i|span|div|button|input|style|script|meta|title|link|path|svg|g|defs|use|option|label|textarea|p|h1|h2|h3|small|strong)$/i;
+    /* the functions that speak to a person without going through a screen */
+    const SPEAKS = /\b(toast|alert|confirm|prompt)\s*\(\s*([\'"][^\'"]*[\'"])/g;
 
-  lines.forEach((l, i) => {
-    if (!outside(i)) return;
-    if (FOREIGN.test(l)) {
-      fail('source', 'line ' + (i + 1) + ' carries text in another script outside 3.6: ' + raw[i].trim().slice(0, 70));
-    }
-    let m;
-    PROSE.lastIndex = 0;
-    while ((m = PROSE.exec(l))) {
-      const s = m[1].trim();
-      if (OK_PROSE.test(s)) continue;
-      if (s.length < 5) continue;
-      if (!/ /.test(s)) continue;                 /* single words are usually markup */
-      notes.push('line ' + (i + 1) + ' literal prose in a template: ' + s);
-    }
+    lines.forEach((l, i) => {
+      const where = rel + ' line ' + (i + 1);
+      if (FOREIGN.test(l)) {
+        fail('source', where + ' carries text in another script: ' + raw[i].trim().slice(0, 70));
+      }
+      let m;
+      PROSE.lastIndex = 0;
+      while ((m = PROSE.exec(l))) {
+        const t = m[1].trim();
+        if (OK_PROSE.test(t)) continue;
+        if (t.length < 5) continue;
+        if (!/ /.test(t)) continue;                 /* single words are usually markup */
+        notes.push(where + ' literal prose in a template: ' + t);
+      }
 
-    /* Some text never reaches a template at all: the app says it out loud
-       through one of these. Check 8 renders screens, so it cannot see them —
-       nothing here is called during a render. The rule is simple enough to
-       read off the source instead: what they are handed must come from t(),
-       never from a quotation mark. Add to the list when something new speaks. */
-    SPEAKS.lastIndex = 0;
-    while ((m = SPEAKS.exec(l))) {
-      fail('source', 'line ' + (i + 1) + ' says something in English out loud: ' +
-        m[1] + '(' + m[2].slice(0, 40) + '…  — it must be t(…), not a literal');
-    }
+      /* Some text never reaches a template at all: the app says it out loud
+         through one of these. Check 8 renders screens, so it cannot see them —
+         nothing here is called during a render. The rule is simple enough to
+         read off the source instead: what they are handed must come from t(),
+         never from a quotation mark. Add to the list when something new speaks. */
+      SPEAKS.lastIndex = 0;
+      while ((m = SPEAKS.exec(l))) {
+        fail('source', where + ' says something in English out loud: ' +
+          m[1] + '(' + m[2].slice(0, 40) + '…  — it must be t(…), not a literal');
+      }
+    });
   });
 }
 
 /* ---- everything else runs inside the page -------------------------------- */
+/* The app is several files now, and a browser will refuse to run a script
+   served as text/plain when it is told not to sniff. Say what things are. */
+const mime = (f) => f.endsWith('.html') ? 'text/html; charset=utf-8'
+  : f.endsWith('.js') ? 'application/javascript; charset=utf-8'
+  : f.endsWith('.css') ? 'text/css; charset=utf-8'
+  : 'text/plain; charset=utf-8';
+
 const srv = http.createServer((req, res) => {
   const f = path.join(ROOT, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
   let d = null;
   try { d = fs.readFileSync(f); } catch (e) { d = null; }
   if (d === null) { res.writeHead(404); res.end('no'); return; }
-  res.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html; charset=utf-8' : 'text/plain' });
+  res.writeHead(200, { 'Content-Type': mime(f) });
   res.end(d);
 });
 await new Promise(r => srv.listen(PORT, r));

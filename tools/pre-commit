@@ -1,13 +1,33 @@
 #!/bin/sh
-# Refuse a commit that leaves a screen untranslated.
+# Refuse a commit that would ship a blank screen or an untranslated one.
 #
-# Install once:  ln -sf ../../tools/pre-commit .git/hooks/pre-commit
+# Install once:  git config core.hooksPath tools
 # Skip once:     git commit --no-verify
 #
 # Only runs when the app itself changed, so commits that touch the README or
 # the workflow files stay instant.
+#
+# The font writer used to live twice — once in tools/font-spike/otf5.js and
+# once copied into www/index.html — and this hook's first job was catching a
+# commit that changed one and not the other. It lives once now, at
+# www/otf5.js, and that whole class of mistake is gone with it.
 
-if git diff --cached --name-only | grep -q '^www/index.html$'; then
+if git diff --cached --name-only | grep -q '^www/'; then
+  echo 'es5: the app has to run in an old WKWebView...'
+  node tools/es5-check.mjs >/dev/null || {
+    echo ''
+    node tools/es5-check.mjs
+    echo ''
+    echo 'Modern syntax under www/ is a blank screen on a real iPhone, and'
+    echo 'nothing on this machine would ever show it to you. Rewrite it in ES5.'
+    exit 1
+  }
+fi
+
+# The screen files are the ones that can carry untranslated text; the ten
+# language files and the font writer cannot, so a commit that only touches
+# those does not need the two-minute walk.
+if git diff --cached --name-only | grep -qE '^www/(index\.html|core\.js|reading\.js|screens\.js|sentences\.js|settings\.js|glyph\.js)$'; then
   echo 'i18n: checking every screen in every language...'
   node tools/i18n-check.mjs || {
     echo ''

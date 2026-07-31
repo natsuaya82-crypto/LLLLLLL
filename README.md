@@ -75,8 +75,8 @@ transcription with a combining acute on the stress. Korean composes real hangul 
 with every cluster and every coda but `-n` broken out into a syllable of its own, so the mapping can be
 corrected cell by cell.
 
-**Everything a language needs is in one block.** Section 3.6 of `www/index.html` holds ten blocks and
-nothing else, one per language, each of them a closure that registers itself with `defLang(code, def)`:
+**Everything a language needs is in one file.** `www/i18n/` holds ten files and nothing else, one per
+language, each of them a closure that registers itself with `defLang(code, def)`:
 
 ```js
 defLang('es', (function(){
@@ -139,8 +139,10 @@ The IPA never follows it.
 
 ### Adding an eleventh language
 
-Copy the block of whichever existing language behaves most like the new one, and change these five things
-inside it — there is no sixth place, and nothing outside section 3.6 needs to be touched:
+Copy `www/i18n/xx.js` from whichever existing language behaves most like the new one, and change these
+five things inside it. Then add one `<script src="i18n/xx.js">` tag to `www/index.html`, in the position
+you want it to hold in the language picker — that tag is the whole of the wiring, and no other file needs
+to be touched:
 
 1. the `defLang('xx', …)` code, and the divider comment above it
 2. `label` (written in that language), `rdName`, `all`, and the four `pos` names
@@ -163,7 +165,7 @@ the three plans, each of the three reading modes, with the dictionary both empty
 sheets that are not routes — and fails on any of eight things: a key one language is missing or has extra,
 a lost `{0}`, a lost `<br>` or `&#10;`, the name *Lingua* translated away, a reading engine that throws or
 goes blank on the samples and the awkward edges (`a`, `y`, `str`, `xx`, the empty word), **any string at
-all that fell back to English at render time**, any user-facing text hard-coded outside section 3.6, and
+all that fell back to English at render time**, any user-facing text hard-coded into a screen file, and
 **any text that reaches the screen without passing through `t()` at all**.
 
 The last two checks are the ones that matter, and they catch different things.
@@ -197,12 +199,13 @@ was lost.
 ### Not having to remember
 
 ```bash
-npm test                 # the same check
-git commit               # runs it too, when www/index.html changed
+npm test                 # ES5, then the same check
+npm run es5              # just the ES5 gate over everything under www/
+git commit               # runs both, when anything under www/ changed
 ```
 
-`tools/pre-commit` is the hook; install it once per clone with
-`ln -sf ../../tools/pre-commit .git/hooks/pre-commit`. It only fires when the app itself changed, and
+`tools/pre-commit` is the hook; install it once per clone with `git config core.hooksPath tools`.
+It only fires when the app itself changed, and
 `git commit --no-verify` skips it when landing something deliberately half-done.
 `.github/workflows/i18n.yml` runs the same check on every push, so the net holds even on a clone where
 nobody installed the hook.
@@ -211,7 +214,7 @@ nobody installed the hook.
 
 Worth writing down, so silence is never mistaken for safety:
 
-- **Anything outside `www/index.html`.** The iOS side has no localisation at all yet — `CFBundleDisplayName`
+- **Anything outside `www/`.** The iOS side has no localisation at all yet — `CFBundleDisplayName`
   is a single string, there are no `.lproj` folders, and the App Store listing (description, keywords,
   screenshots) is written per-locale in App Store Connect by hand. That is the next piece of work, and
   it is the one this net will never grow into.
@@ -266,16 +269,38 @@ one the person wrote.
   contents page
 - **V Make** … mass-produce words that obey the rules
 
-### Inside (`www/index.html`)
+### Why it is more than one file
+
+It was one file for most of its life, and being one file was load-bearing: it is both the Vercel preview
+and the Capacitor `webDir`, so there was never a build step to lose. That has not changed — these are
+plain `<script src>` tags sharing one global scope, exactly as the single `<script>` did. There is still
+no bundler, no transpiler and nothing generated.
+
+What changed is that 465 KB in one file could not be *sent* anywhere — not to a review, not through an
+API, not in one piece by anything with a size limit. The largest file now is 40 KB. The font writer also
+used to live twice, edited at `tools/font-spike/otf5.js` and copied into `index.html` by a script, so an
+edit made in the wrong copy was silently destroyed on the next commit; it lives once now, at
+`www/otf5.js`, and the copier is gone.
+
+The load order in `index.html` is the only thing that matters: `core.js` defines `defLang()` so it comes
+before the ten languages, `otf5.js` defines the font writer so it comes before `glyph.js`, and `glyph.js`
+goes last because the app starts on its final two lines.
+
+Splitting it also widened the ES5 gate. It used to run over the font writer alone, as a side effect of
+copying it; `tools/es5-check.mjs` now reads every file under `www/`, which is how the one `Object.assign`
+that had been sitting in the storage loader since the beginning finally turned up.
+
+### Inside `www/`
 - `analyze()` … reads the whole dictionary and **actually tallies** syllables, the sound inventory,
   word-final rules per part of speech, and which consonants can begin a word
 - `syl()` / `onsetOK()` … splits syllables. A medial consonant cluster hands the next syllable only as
   much as can legally start one, and leaves the rest as the previous coda (`silva` → `sil.va`,
   `ondra` → `on.dra`)
-- `defLang()` / `LANG` / `UI_LANGS` … section 3.6, and the only place any language exists. Ten
-  self-contained blocks, each holding its label, its part-of-speech names, its reading engine and its
-  whole string table. Adding a language is adding a block; there is no second place to forget
-- `syl_xx()` / `word_xx()` … the reading inside each block, derived mechanically from the spelling so
+- `defLang()` / `LANG` / `UI_LANGS` … `www/core.js`, and the doorway every language comes through. The
+  ten files under `www/i18n/` are the only place any language exists — each self-contained, holding its
+  label, its part-of-speech names, its reading engine and its whole string table. Adding a language is
+  adding a file and a `<script>` tag; there is no second place to forget
+- `syl_xx()` / `word_xx()` … the reading inside each language file, derived mechanically from the spelling so
   nobody has to invent one. None of them knows anything about the app — each takes a syllable and
   returns text
 - `sylParts()` / `mkApprox()` / `rd()` / `rdSyl()` / `rdIn()` / `autoLang()` … the one place the reading
@@ -323,8 +348,9 @@ App Store Connect (TestFlight) automatically.** No Mac required.
 
 This app's premises differ slightly from JPEL Manager, so exactly two steps were adjusted.
 
-1. **The web side is a single static HTML file** (`www/index.html`), not Vite/TS. So there is no
-   `npm run build` and no "version consistency check (appMeta.ts)" step — just `npm ci` → `npx cap sync ios`.
+1. **The web side is plain static files** (`www/`), not Vite/TS — no bundler, no transpiler, nothing
+   generated. So there is no `npm run build` and no "version consistency check (appMeta.ts)" step —
+   just `npm ci` → `npx cap sync ios`.
 2. **The Team ID is a GitHub Secret** (the runbook writes it into pbxproj). This keeps the source
    untouched: registering the secret is enough. CI substitutes the `__APPLE_TEAM_ID__` placeholder in
    pbxproj immediately before building.
@@ -412,7 +438,7 @@ your own iPhone through the **TestFlight app**, then "Submit for Review" if it l
 
 After that it's just the next number: `git tag build-2 && git push origin build-2` …
 
-> To change what's on screen, edit `www/index.html` and push a tag the same way.
+> To change what's on screen, edit the file under `www/` that owns it and push a tag the same way.
 
 ---
 
@@ -429,12 +455,23 @@ feature and resubmitting is the normal path. We can reinforce that side when it 
 
 ```
 lingua/
-├─ www/index.html                    # the app itself (prototype)
+├─ www/                              # the app itself — plain scripts, no bundler
+│   ├─ index.html                   # the markup, the whole stylesheet, and the load order
+│   ├─ core.js                      # storage, plans, theme, phonology, defLang()
+│   ├─ i18n/{en,es,pt,fr,de,it,ru,zh,ko,ja}.js   # one interface language each
+│   ├─ reading.js                   # IPA, the approximation, the voice
+│   ├─ screens.js                   # the shell, onboarding, the cover, words, sounds, rules
+│   ├─ sentences.js                 # sentences, and coining words in bulk
+│   ├─ settings.js                  # settings, plans, the word sheet, CSV
+│   ├─ otf5.js                      # the ES5 OpenType/CFF writer
+│   └─ glyph.js                     # drawing your own letters; starts the app on its last two lines
 ├─ capacitor.config.json             # appId=com.tokinets.lingua / appName=Lingua / webDir=www
 ├─ package.json / package-lock.json
 ├─ tools/
+│   ├─ es5-check.mjs                # everything under www/ must run in an old WKWebView
 │   ├─ i18n-check.mjs               # walks every screen in every language (npm test)
-│   └─ pre-commit                   # the same check, before each commit; install with ln -sf
+│   ├─ verify-script.mjs            # drives the letter editor the way a person would
+│   └─ pre-commit                   # both checks, before each commit; git config core.hooksPath tools
 ├─ .github/workflows/i18n.yml        # the same check, on every push
 ├─ .github/workflows/ios-deploy.yml  # triggered by a build-* tag (based on runbook STEP 9)
 └─ ios/                              # Xcode project generated by Capacitor (CocoaPods)
@@ -462,7 +499,7 @@ the profile name `Lingua Distribution` and the Team ID match exactly**. If you s
 
 # Web preview (Vercel) — for touching it on a phone during development
 
-Separately from the App Store build, **the same `www/index.html` can be published on Vercel** so the
+Separately from the App Store build, **the same `www/` can be published on Vercel** so the
 latest version is always reachable on a phone (no review, no certificates, no Mac).
 
 - `vercel.json` at the repository root makes Vercel serve `www/` with **zero extra configuration**

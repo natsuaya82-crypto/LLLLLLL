@@ -1,5 +1,6 @@
-# Every push runs the translation net. A screen that is not fully translated
-# in all ten languages fails here, before it can reach a build tag.
+# Every push runs the two nets under the app. Modern syntax that would be a
+# blank screen on an old iPhone, or a screen not fully translated in all ten
+# languages, fails here — before it can reach a build tag.
 name: i18n
 
 on:
@@ -22,6 +23,10 @@ jobs:
         run: |
           npm install --no-save playwright
           npx playwright install --with-deps chromium
+
+      # Cheap and dependency-free, so it runs first and fails fast.
+      - name: Check the app is still ES5
+        run: node tools/es5-check.mjs
 
       - name: Check every screen in every language
         run: node tools/i18n-check.mjs

@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "es5": "node tools/es5-check.mjs",
     "i18n": "node tools/i18n-check.mjs",
-    "test": "node tools/i18n-check.mjs"
+    "verify": "node tools/verify-script.mjs",
+    "test": "node tools/es5-check.mjs && node tools/i18n-check.mjs"
   },
   "keywords": [],
   "author": "",
