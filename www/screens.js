@@ -86,63 +86,170 @@ var WORLD_SCRIPTS = [
   {id:"hangul",pv:"\u3131\u3134\u3137",ch:"\u3131 \u3134 \u3137 \u3139 \u3141 \u3142 \u3145 \u3147 \u3148 \u314a \u314b \u314c \u314d \u314e \u314f \u3151 \u3153 \u3155 \u3157 \u315b \u315c \u3160 \u3161 \u3163"}
 ];
 
-var ob={step:0, name:''};
+/* ---- Onboarding -------------------------------------------------------
+   Three steps, and the first one is not a form.
+
+   It used to open on a language picker. That is a question the app needs
+   answered, not one the person came to answer — and core.js can already
+   guess it from the device, so it was being asked for nothing. It moved to
+   the corner of the bar, where changing it is still one tap.
+
+   What replaced it is the one thing no other tool for this lets anyone do:
+   draw a letter. Whoever would rather borrow an alphabet that exists takes
+   the quiet row underneath. Both roads meet on step 2 — a shape with no
+   sound is the same unfinished thing however you came by it — so nothing
+   after this point has to be built twice.
+
+   Nothing is asked that can be answered later. No name, no account. By the
+   door there is already a letter, a sound, and a writing system. */
+var ob={step:0, mode:'draw', pick:'', strokes:null, ch:'', snd:''};
+var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+/* A starter inventory, not the whole IPA: enough to name the letter just
+   drawn, small enough to read on a phone without scrolling. Everything else
+   is added later from the sounds screen, which is built for it. */
+var OB_SND=['a','e','i','o','u','k','s','t','n','m','r','l','h','p'];
+/* The five shown in the escape row before it folds into a count. Named
+   rather than sliced off the front of WORLD_SCRIPTS, because that order is
+   historical and its first entries — Ogham, Phoenician, Glagolitic — are the
+   ones a phone is least likely to have a font for. A row of empty boxes is a
+   worse first impression than a shorter row. */
+var OB_ESC=['greek','cyrillic','armenian','devanagari','hangul'];
+
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
-/* Step 0 is the first screen, so there is nothing to go back to from there. */
-function obBack(){ if(ob.step>0) obGo(ob.step-1); }
-function obPickLang(code){ SET.ui=code; save(); obGo(1); }
-function obName(v){ ob.name=v; }
-/* Sign-in internals (Google/Apple) are wired in just before app packaging.
-   For now these buttons only advance the flow. */
-function obSignIn(){ obGo(2); }
-/* "Pick one for me": build a Latin conlang name from consonant+vowel syllables. */
-var OB_ONS=['k','s','t','n','h','m','r','l','v','th','sh','y','d','g','br','tr','vel','ael'];
-var OB_VOW=['a','e','i','o','u','ae','ei','ia','or','en','ael','ir'];
-function obGenName(){
-  var n=2+Math.floor(Math.random()*2), w='';
-  for(var i=0;i<n;i++){ w+=OB_ONS[Math.floor(Math.random()*OB_ONS.length)]+OB_VOW[Math.floor(Math.random()*OB_VOW.length)]; }
-  w=w.charAt(0).toUpperCase()+w.slice(1);
-  ob.name=w;
-  var e=document.getElementById('ob-n'); if(e) e.value=w;
+function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
+function obBack(){
+  if(ob.step===0 && ob.mode==='borrow'){ ob.mode='draw'; ob.pick=''; render(); window.scrollTo(0,0); return; }
+  if(ob.step>0) obGo(ob.step-1);
 }
+function obLang(v){ SET.ui=v; save(); render(); }
+
+/* ---- step 0, drawing -------------------------------------------------- */
+/* The editor is the real one from the glyph screen — same canvas id, same
+   tools, same lattice — so whatever is learned here is not relearned later.
+   The strokes are held on `ob` rather than written into SCRIPT.g, because
+   which letter this is is not known until the next step. */
+function obDone(){
+  var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
+  if(!keep.length){ toast(t('ob.draw.empty')); return; }
+  ob.strokes=JSON.parse(JSON.stringify(keep)); ob.ch=''; GE=null; obGo(1);
+}
+function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
+function obPickScript(id){ ob.pick=(ob.pick===id?'':id); render(); }
+function obTakeCh(ch){ ob.ch=ch; ob.strokes=null; obGo(1); }
+
+/* ---- step 1, the sound ------------------------------------------------ */
+/* Two writing systems live side by side in this app: borrowed characters
+   replace the text, drawn letters only re-set it. Which one the person is
+   building was decided on step 0, so this writes into whichever of the two
+   it was and turns that one on. */
+function obSnd(p){
+  ob.snd=p;
+  var a=addedSnd(); if(a.indexOf(p)<0) a.push(p);
+  if(ob.strokes){ SCRIPT.g[p]=ob.strokes; SET.myfont=true; }
+  else if(ob.ch){ scriptMap()[p]=ob.ch; SET.showScript=true; }
+  save();
+  if(ob.strokes) installScriptFont();
+  obGo(2);
+}
+
 function obFinish(){
-  langName=(ob.name||'').trim() || t('lang.default');
+  if(!langName) langName=t('lang.default');
   SET.done=true; save();
   route='home'; render(); window.scrollTo(0,0);
 }
 
-function vOb(){
-  var s=ob.step, h='';
-  var dots='<div class="obhead">'+
-    (s>0 ? '<button class="obback" onclick="obBack()" aria-label="'+esc(t('ob.back'))+'">'+
-           '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>'
-          : '<span class="obback ph"></span>')+
-    '<div class="obtop">'+[0,1,2].map(function(i){
-      return '<div class="dot'+(i<=s?' on':'')+'"></div>';}).join('')+'</div>'+
-    '<span class="obback ph"></span></div>';
+/* The letter as it now stands, at whatever size the screen wants it.
+   glyphContours returns the same polygons the font is built from, so this
+   is the letter itself and not a second drawing of it that could drift. */
+function obGlyph(size){
+  if(ob.ch) return '<div class="obch" style="font-size:'+Math.round(size*0.8)+'px" aria-hidden="true">'+esc(ob.ch)+'</div>';
+  if(!ob.strokes) return '';
+  var polys=[];
+  try{ polys=LinguaFont.glyphContours({strokes:ob.strokes}, GPEN)||[]; }catch(e){ polys=[]; }
+  var d=polys.map(function(poly){
+    return poly.map(function(pt,i){ return (i?'L':'M')+Math.round(pt[0])+' '+Math.round(pt[1]); }).join(' ')+'Z';
+  }).join(' ');
+  return '<svg class="obgl" viewBox="0 0 800 800" width="'+size+'" height="'+size+'" aria-hidden="true">'+
+         '<path d="'+d+'" fill="currentColor"/></svg>';
+}
 
-  if(s===0){
-    h='<div class="mid"><h2>'+t('ob.lang.h')+'</h2>'+
-      '<div class="langpick">'+UI_LANGS.map(function(code){
-        return '<button class="lpo'+(uiLang()===code?' on':'')+'" onclick="obPickLang(\''+code+'\')">'+esc(LANG[code].label)+'</button>';
-      }).join('')+'</div></div>';
-  }
-  else if(s===1){
-    h='<div class="mid"><h1>Lingua</h1>'+
-      '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
-      '<div class="obfoot">'+
-      '<button class="btn signin google" onclick="obSignIn()">'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-      '<button class="btn signin apple" onclick="obSignIn()">'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
-      '<div class="mini" style="text-align:center;margin-top:10px">'+t('ob.signin.note')+'</div></div>';
-  }
-  else{
-    h='<div class="mid"><h2>'+t('ob.name.h')+'</h2>'+
-      '<div class="field" style="margin-top:22px"><input id="ob-n" placeholder="'+esc(t('ob.name.ph'))+'" value="'+esc(ob.name)+'" oninput="obName(this.value)" autocomplete="off"></div>'+
-      '<button class="btn ghost obauto" onclick="obGenName()">'+t('ob.name.auto')+'</button>'+
-      '<div class="mini">'+t('ob.name.mini')+'</div></div>'+
-      '<div class="obfoot"><button class="btn" onclick="obFinish()">'+t('ob.enter')+'</button></div>';
-  }
-  return '<div class="ob view'+((s===0||s===1)?' center':'')+'">'+dots+h+'</div>';
+function obDrawHTML(){
+  if(!GE) GE=newGE('');
+  var st=GE.st[GE.si], pts=0;
+  GE.st.forEach(function(x){ pts+=x.pts.length; });
+  var esc5=WORLD_SCRIPTS.filter(function(w){ return OB_ESC.indexOf(w.id)>=0; }).map(function(w){
+    return '<button class="obescb" onclick="obBorrow(\''+w.id+'\')" aria-label="'+esc(t('ws.'+w.id))+'">'+
+           esc(w.pv.slice(0,3))+'</button>';
+  }).join('');
+  return '<div class="mid">'+
+    '<h2>'+t('ob.draw.h')+'</h2>'+
+    '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
+    '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
+    '<div class="gtools">'+
+      gbtn('geCircle','circle','glyph.circle', !!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o'))+
+      gbtn('geNew','new','glyph.new', !!(st&&st.pts.length), false)+
+    '</div>'+
+    '<div class="gclearwrap">'+
+      '<button class="gclear" onclick="geUndo()"'+(GE.undo.length?'':' disabled')+'>'+esc(t('glyph.undo'))+'</button>'+
+      '<button class="gclear" onclick="geClear()"'+(pts?'':' disabled')+'>'+esc(t('glyph.clear'))+'</button>'+
+    '</div>'+
+    '<div class="obesc"><div class="obesclbl">'+t('ob.or')+'</div>'+
+      '<div class="obescrow">'+esc5+
+      '<button class="obescb more" onclick="obBorrow(\'\')">'+t('ob.more', String(WORLD_SCRIPTS.length-OB_ESC.length))+'</button>'+
+    '</div></div></div>'+
+    '<div class="obfoot"><button class="btn" onclick="obDone()">'+t('ob.draw.done')+'</button></div>';
+}
+
+function obBorrowHTML(){
+  var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===ob.pick) w=x; });
+  var chars = w? '<div class="obchars">'+w.ch.split(' ').map(function(ch){
+      return '<button class="obchb" onclick="obTakeCh(\''+esc(ch)+'\')">'+esc(ch)+'</button>';
+    }).join('')+'</div>' : '';
+  return '<div class="mid obleft">'+
+    '<h2>'+t('ob.borrow.h')+'</h2>'+
+    '<p class="obsub">'+t('ob.borrow.sub')+'</p>'+
+    '<div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
+      return '<button class="obsrow'+(x.id===ob.pick?' on':'')+'" onclick="obPickScript(\''+x.id+'\')">'+
+        '<span class="obpv">'+esc(x.pv.slice(0,3))+'</span>'+
+        '<span class="obnm">'+esc(t('ws.'+x.id))+'</span></button>'+
+        (x.id===ob.pick? chars : '');
+    }).join('')+'</div></div>'+
+    (w? '<div class="obfoot"><div class="mini">'+t('ob.borrow.take')+'</div></div>' : '');
+}
+
+function obSndHTML(){
+  return '<div class="mid">'+obGlyph(120)+
+    '<h2 class="obq">'+t('ob.snd.h')+'</h2>'+
+    '<div class="obsndgrid">'+OB_SND.map(function(p){
+      return '<button class="obsnd'+(ob.snd===p?' on':'')+'" onclick="obSnd(\''+p+'\')">'+esc(p)+'</button>';
+    }).join('')+'</div>'+
+    '<div class="mini obnote">'+(ob.ch? t('ob.snd.note.borrow') : t('ob.snd.note.draw'))+'</div></div>';
+}
+
+function obDoorHTML(){
+  return '<div class="mid"><div class="obdoor">'+obGlyph(76)+'</div>'+
+    '<p class="obtag">'+t('ob.door.h')+'</p></div>'+
+    '<div class="obfoot"><button class="btn" onclick="obFinish()">'+t('ob.open')+'</button>'+
+    '<div class="mini obnote">'+t('ob.door.note')+'</div></div>';
+}
+
+function vOb(){
+  var s=ob.step;
+  var head='<div class="obhead">'+
+    (obCanBack()? '<button class="obback" onclick="obBack()" aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
+                : '<span class="obback ph"></span>')+
+    '<div class="obtop">'+[0,1,2].map(function(i){
+      return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join('')+'</div>'+
+    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'" onchange="obLang(this.value)">'+
+      UI_LANGS.map(function(c){
+        return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
+      }).join('')+
+    '</select></div>';
+  var h = (s===0 && ob.mode==='borrow')? obBorrowHTML()
+        : (s===0)? obDrawHTML()
+        : (s===1)? obSndHTML()
+        : obDoorHTML();
+  return '<div class="ob view'+(s===2?' center':'')+'">'+head+h+'</div>';
 }
 
 
