@@ -189,7 +189,6 @@ defLang('zh', (function(){
       "ob.draw.h"                 : "画下你这门语言的<br>第一个字母。",
       "ob.draw.sub"               : "画什么都行。它是你的。",
       "ob.lang.a"                 : "界面语言",
-      "ob.more"                   : "+{0}",
       "ob.open"                   : "推开门",
       "ob.or"                     : "或者，从一种已有的文字开始",
       "ob.snd.h"                  : "它发什么音？",

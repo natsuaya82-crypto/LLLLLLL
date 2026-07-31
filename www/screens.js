@@ -108,12 +108,11 @@ var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke=
    drawn, small enough to read on a phone without scrolling. Everything else
    is added later from the sounds screen, which is built for it. */
 var OB_SND=['a','e','i','o','u','k','s','t','n','m','r','l','h','p'];
-/* The five shown in the escape row before it folds into a count. Named
-   rather than sliced off the front of WORLD_SCRIPTS, because that order is
-   historical and its first entries — Ogham, Phoenician, Glagolitic — are the
-   ones a phone is least likely to have a font for. A row of empty boxes is a
-   worse first impression than a shorter row. */
-var OB_ESC=['greek','cyrillic','armenian','devanagari','hangul'];
+/* The way out of drawing is one row of words, not a row of sample letters
+   in boxes. Sample letters cost a font the phone may not have, they are
+   unreadable at the size a row allows, and five of fifteen is an arbitrary
+   five. The row says what it does and opens the full list. */
+var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
 function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
@@ -177,10 +176,6 @@ function obDrawHTML(){
   if(!GE) GE=newGE('');
   var st=GE.st[GE.si], pts=0;
   GE.st.forEach(function(x){ pts+=x.pts.length; });
-  var esc5=WORLD_SCRIPTS.filter(function(w){ return OB_ESC.indexOf(w.id)>=0; }).map(function(w){
-    return '<button class="obescb" onclick="obBorrow(\''+w.id+'\')" aria-label="'+esc(t('ws.'+w.id))+'">'+
-           esc(w.pv.slice(0,3))+'</button>';
-  }).join('');
   return '<div class="mid">'+
     '<h2>'+t('ob.draw.h')+'</h2>'+
     '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
@@ -193,10 +188,9 @@ function obDrawHTML(){
       '<button class="gclear" onclick="geUndo()"'+(GE.undo.length?'':' disabled')+'>'+esc(t('glyph.undo'))+'</button>'+
       '<button class="gclear" onclick="geClear()"'+(pts?'':' disabled')+'>'+esc(t('glyph.clear'))+'</button>'+
     '</div>'+
-    '<div class="obesc"><div class="obesclbl">'+t('ob.or')+'</div>'+
-      '<div class="obescrow">'+esc5+
-      '<button class="obescb more" onclick="obBorrow(\'\')">'+t('ob.more', String(WORLD_SCRIPTS.length-OB_ESC.length))+'</button>'+
-    '</div></div></div>'+
+    '<div class="obesc"><button class="obescb" onclick="obBorrow(\'\')">'+
+      '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
+    '</button></div></div>'+
     '<div class="obfoot"><button class="btn" onclick="obDone()">'+t('ob.draw.done')+'</button></div>';
 }
 

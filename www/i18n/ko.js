@@ -360,7 +360,6 @@ defLang('ko', (function(){
       "ob.draw.h"                 : "당신 언어의 첫 글자를<br>그려 보세요.",
       "ob.draw.sub"               : "무엇이든 좋아요. 당신의 것이니까요.",
       "ob.lang.a"                 : "인터페이스 언어",
-      "ob.more"                   : "+{0}",
       "ob.open"                   : "문 열기",
       "ob.or"                     : "또는 이미 있는 문자에서 시작하기",
       "ob.snd.h"                  : "어떤 소리인가요?",

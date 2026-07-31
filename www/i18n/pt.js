@@ -188,7 +188,6 @@ defLang('pt', (function(){
       "ob.draw.h"                 : "Desenhe a primeira letra<br>do seu idioma.",
       "ob.draw.sub"               : "Qualquer coisa. Ela é sua.",
       "ob.lang.a"                 : "Idioma da interface",
-      "ob.more"                   : "+{0}",
       "ob.open"                   : "Abrir a porta",
       "ob.or"                     : "Ou comece por uma escrita que já existe",
       "ob.snd.h"                  : "Como ela soa?",

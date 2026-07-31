@@ -83,7 +83,6 @@ defLang('en', (function(){
       "ob.draw.h"                 : "Draw the first letter<br>of your language.",
       "ob.draw.sub"               : "Anything. It is yours.",
       "ob.lang.a"                 : "Interface language",
-      "ob.more"                   : "+{0}",
       "ob.open"                   : "Open the door",
       "ob.or"                     : "Or start from a script that already exists",
       "ob.snd.h"                  : "How does it sound?",

@@ -169,7 +169,6 @@ defLang('de', (function(){
       "ob.draw.h"                 : "Zeichne den ersten Buchstaben<br>deiner Sprache.",
       "ob.draw.sub"               : "Was auch immer. Er gehört dir.",
       "ob.lang.a"                 : "Sprache der Oberfläche",
-      "ob.more"                   : "+{0}",
       "ob.open"                   : "Die Tür öffnen",
       "ob.or"                     : "Oder beginne mit einer Schrift, die es schon gibt",
       "ob.snd.h"                  : "Wie klingt dieser Buchstabe?",
