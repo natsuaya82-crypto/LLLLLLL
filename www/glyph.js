@@ -230,7 +230,7 @@ function newGE(r){
   var src=SCRIPT.g[r]||[];
   return { r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
-           drag:false, hit:false, again:false, moved:false };
+           drag:false, hit:false, again:false, moved:false, fresh:false };
 }
 function editGlyph(r){ GE=newGE(r); go('glyph'); }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
@@ -363,6 +363,13 @@ function geMount(){
   c.width=s; c.height=s;
   c.onpointerdown=geDown; c.onpointermove=geMove;
   c.onpointerup=geUp; c.onpointercancel=geUp;
+  /* Said again in an inline style so no later rule, and no page that embeds
+     this canvas somewhere new, can quietly hand these gestures back to the
+     browser. */
+  c.style.touchAction='none';
+  c.style.webkitUserSelect='none';
+  c.style.userSelect='none';
+  c.style.webkitTouchCallout='none';
   geDraw();
 }
 /* ---- the hint ------------------------------------------------------------
@@ -548,6 +555,10 @@ function geAt(c,ev){
    Both are on the dot your thumb is already over, both are reversible by
    doing them again, and neither needs a word in ten languages. */
 function geDown(ev){
+  /* First, before anything else can decide this gesture is a selection or a
+     zoom. Doing it at the end of the handler was too late on iOS: the browser
+     had already begun its own interpretation of the touch. */
+  if(ev.preventDefault) ev.preventDefault();
   var c=ev.currentTarget, p=geAt(c,ev);
   /* Both the tap and the existing points are on the lattice, so "did you mean
      this point or a new one" is an equality test, not a distance guess. No
@@ -579,17 +590,29 @@ function geDown(ev){
     }
     st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1;
     GE.again=false; GE.hit=false;
+    /* A point placed on empty lattice is the start of a line if the finger
+       keeps going. geMove turns it into one. Before this, pressing and
+       dragging moved the point you had just put down, so a line took two
+       separate taps and nobody found that out by trying. */
+    GE.fresh=true;
   }
   GE.drag=true;
   if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
   geDraw(); geTools();
-  if(ev.preventDefault) ev.preventDefault();
 }
 function geMove(ev){
   if(!GE||!GE.drag||GE.pi<0) return;
   var c=ev.currentTarget, p=geAt(c,ev), st=GE.st[GE.si];
   if(!st) return;
   if(st.pts[GE.pi][0]===p[0] && st.pts[GE.pi][1]===p[1]) return;
+  /* The finger has left the dot it just placed: that dot is the beginning of
+     the line, and what is being dragged is its other end. Only once, and only
+     while there is room in this stroke — after that the drag goes back to
+     moving the end it is holding. */
+  if(GE.fresh){
+    GE.fresh=false;
+    if(!geFull(st)){ st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1; }
+  }
   st.pts[GE.pi][0]=p[0];
   st.pts[GE.pi][1]=p[1];
   GE.moved=true;
@@ -602,7 +625,7 @@ function geMove(ev){
    editor has would look broken. */
 function geUp(){
   if(!GE) return;
-  GE.drag=false;
+  GE.drag=false; GE.fresh=false;
   /* A dot that was pressed and let go without travelling is a tap, and a tap
      on a dot that is already there is one of the two answers. Dragging the
      same dot is a move — so the finger, not a mode, tells them apart. */
