@@ -117,7 +117,10 @@ var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
 function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
 function obBack(){
-  if(ob.step===0 && ob.mode==='borrow'){ ob.mode='draw'; ob.pick=''; render(); window.scrollTo(0,0); return; }
+  if(ob.step===0 && ob.mode==='borrow'){
+    if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
+    ob.mode='draw'; render(); window.scrollTo(0,0); return;
+  }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -133,7 +136,7 @@ function obDone(){
   ob.strokes=JSON.parse(JSON.stringify(keep)); ob.ch=''; GE=null; obGo(1);
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
-function obPickScript(id){ ob.pick=(ob.pick===id?'':id); render(); }
+function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
 function obTakeCh(ch){ ob.ch=ch; ob.strokes=null; obGo(1); }
 
 /* ---- step 1, the sound ------------------------------------------------ */
@@ -196,19 +199,21 @@ function obDrawHTML(){
 
 function obBorrowHTML(){
   var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===ob.pick) w=x; });
-  var chars = w? '<div class="obchars">'+w.ch.split(' ').map(function(ch){
+  if(w) return '<div class="mid obleft">'+
+    '<h2 class="obh">'+esc(t('ws.'+w.id))+'</h2>'+
+    '<p class="obsub">'+t('ob.borrow.take')+'</p>'+
+    '<div class="obchars">'+w.ch.split(' ').map(function(ch){
       return '<button class="obchb" onclick="obTakeCh(\''+esc(ch)+'\')">'+esc(ch)+'</button>';
-    }).join('')+'</div>' : '';
+    }).join('')+'</div></div>';
+  /* Two columns, because fifteen rows do not fit on a phone and a first
+     screen that scrolls is a first screen that has already lost. */
   return '<div class="mid obleft">'+
-    '<h2>'+t('ob.borrow.h')+'</h2>'+
+    '<h2 class="obh">'+t('ob.borrow.h')+'</h2>'+
     '<p class="obsub">'+t('ob.borrow.sub')+'</p>'+
     '<div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
-      return '<button class="obsrow'+(x.id===ob.pick?' on':'')+'" onclick="obPickScript(\''+x.id+'\')">'+
-        '<span class="obpv">'+esc(x.pv.slice(0,3))+'</span>'+
-        '<span class="obnm">'+esc(t('ws.'+x.id))+'</span></button>'+
-        (x.id===ob.pick? chars : '');
-    }).join('')+'</div></div>'+
-    (w? '<div class="obfoot"><div class="mini">'+t('ob.borrow.take')+'</div></div>' : '');
+      return '<button class="obsrow" onclick="obPickScript(\''+x.id+'\')">'+
+        '<span class="obnm">'+esc(t('ws.'+x.id))+'</span></button>';
+    }).join('')+'</div></div>';
 }
 
 function obSndHTML(){

@@ -250,17 +250,21 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .toast.on{opacity:1;transform:translateX(-50%)}
 
 /* ---------- onboarding ---------- */
-.ob{min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0) + 22px) 30px calc(env(safe-area-inset-bottom,0) + 26px)}
+.ob{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;
+    padding:calc(env(safe-area-inset-top,0) + 16px) 24px calc(env(safe-area-inset-bottom,0) + 18px)}
 .ob .obtop{display:flex;gap:6px}
 .ob .dot{width:22px;height:2px;border-radius:2px;background:var(--line)}
 .ob .dot.on{background:var(--gold)}
-.ob .mid{margin:34px 0 auto}
-.ob.center .mid{margin:auto 0}
+.ob .mid{margin:20px 0 0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+         justify-content:center}
+.ob .mid.obleft{justify-content:flex-start}
+.ob.center .mid{margin:0}
 .ob .obfoot .btn{width:100%}
 .ob h1{font-family:'Cinzel',Georgia,serif;font-size:2.5rem;letter-spacing:.06em;line-height:1.15}
-.ob h2{font-size:1.42rem;font-weight:500;line-height:1.55;letter-spacing:.01em}
+.ob h2{font-size:clamp(1.12rem,4.6vw,1.42rem);font-weight:500;line-height:1.45;letter-spacing:.01em}
+.ob h2.obh{font-size:clamp(1.02rem,4.2vw,1.24rem)}
 .ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
-.ob .obfoot{margin-top:auto;padding-top:22px}
+.ob .obfoot{margin-top:auto;padding-top:12px;flex:0 0 auto}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
 .chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:8px 15px;font-size:.88rem}
 .chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
@@ -354,38 +358,49 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
         font:inherit;font-size:.74rem;padding:12px 10px;min-height:44px;
         -webkit-appearance:none;appearance:none;max-width:118px}
 .ob .obsub{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
-           font-size:1.05rem;color:var(--txs);margin-top:10px}
+           font-size:clamp(.86rem,3.4vw,1.02rem);color:var(--txs);margin-top:6px;flex:0 0 auto}
 .ob .obleft{text-align:left}
 .ob .obq{margin-top:16px}
 .ob .obnote{text-align:center}
-.obpad{margin-top:18px}
-.obesc{margin-top:22px;border-top:1px solid var(--line)}
+/* The drawing surface takes what the rest of the screen has not asked for.
+   Every term is a ceiling: never wider than the column, never taller than a
+   third of the screen, never bigger than it was on a large phone. The short
+   phones are what the vh term is for -- on a 568pt screen the button below
+   this used to end up underneath the row above it. */
+.obpad{margin:8px auto 0;flex:0 1 auto;
+       width:min(70vw, 32vh, 300px);height:min(70vw, 32vh, 300px)}
+.obpad .gcanv{width:100%;height:100%;display:block}
+.ob .gtools{margin-top:8px;padding:6px 0 4px;flex:0 0 auto}
+.ob .gclearwrap{margin-top:0;flex:0 0 auto}
+.obesc{margin-top:6px;border-top:1px solid var(--line);flex:0 0 auto}
 /* Apple's floor for anything a thumb has to hit is 44pt. Everything on these
    three screens is sized from that number up, never down to what looks tidy. */
-.obescb{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;
-        background:none;border:0;padding:15px 2px;color:var(--txs);
-        font:inherit;font-size:.82rem;line-height:1.5;text-align:left}
+.obescb{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;
+        background:none;border:0;padding:12px 2px;color:var(--txs);
+        font:inherit;font-size:.8rem;line-height:1.4;text-align:left}
 .obescb svg{margin-left:auto;color:var(--txm);flex:0 0 auto}
 .obescb:active{opacity:.55}
-.obscripts{margin-top:18px}
-.obsrow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+.obscripts{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+           display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.obsrow{display:flex;align-items:center;width:100%;text-align:left;
         border:1px solid var(--line);background:var(--pane);border-radius:12px;
-        padding:13px;margin-bottom:8px;color:var(--tx);min-height:52px}
+        padding:10px 12px;color:var(--tx);min-height:52px}
 .obsrow.on{border-color:var(--goldln);background:var(--goldsf)}
 .obpv{font-size:1.16rem;color:var(--gold);min-width:56px}
 .obnm{font-size:.86rem}
-.obchars{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 12px}
+.obchars{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+         display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-content:start}
 .obchb{border:1px solid var(--line);background:var(--sf);border-radius:9px;
-       padding:10px;font-size:1.05rem;color:var(--tx);min-width:48px;min-height:48px}
-.obsndgrid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:18px}
+       padding:0;font-size:1.05rem;color:var(--tx);min-width:44px;min-height:48px}
+.obsndgrid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px;flex:0 0 auto}
 .obsnd{border:1px solid var(--line);background:var(--sf);border-radius:10px;
        padding:12px 16px;font-size:1.05rem;color:var(--tx);min-width:52px;min-height:52px}
 .obsnd.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 .obgl{color:var(--gold);display:block;margin:0 auto}
 .obch{color:var(--gold);line-height:1;text-align:center}
-.obdoor{width:132px;height:200px;margin:0 auto;border:1px solid var(--goldln);
+.obdoor{width:min(34vw,132px);height:min(52vw,200px);margin:0 auto;border:1px solid var(--goldln);
         border-radius:66px 66px 6px 6px;display:flex;align-items:center;justify-content:center;
-        background:linear-gradient(180deg,var(--goldsf),transparent)}
+        background:linear-gradient(180deg,var(--goldsf),transparent);flex:0 0 auto}
 
 .obback{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;opacity:.75;cursor:pointer;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent;flex-shrink:0;min-width:44px;min-height:44px}
 .obback:hover{opacity:1}
