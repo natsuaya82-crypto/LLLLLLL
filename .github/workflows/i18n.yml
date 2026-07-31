@@ -24,6 +24,12 @@ jobs:
           npm install --no-save playwright
           npx playwright install --with-deps chromium
 
+      # Runs before the other two because they both read the working
+      # directory, so neither can see a file that is present but uncommitted.
+      # This one asks git, not the filesystem.
+      - name: Check index.html points at files that are in the commit
+        run: node tools/assets-check.mjs
+
       # Cheap and dependency-free, so it runs first and fails fast.
       - name: Check the app is still ES5
         run: node tools/es5-check.mjs

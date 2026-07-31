@@ -13,6 +13,19 @@
 # www/otf5.js, and that whole class of mistake is gone with it.
 
 if git diff --cached --name-only | grep -q '^www/'; then
+  echo 'assets: checking index.html points at files that are in the commit...'
+  node tools/assets-check.mjs >/dev/null || {
+    echo ''
+    node tools/assets-check.mjs
+    echo ''
+    echo 'index.html would ship pointing at files this commit does not carry.'
+    echo 'That is a white screen for everyone but you. `git add` them, or fix'
+    echo 'the script tags.'
+    exit 1
+  }
+fi
+
+if git diff --cached --name-only | grep -q '^www/'; then
   echo 'es5: the app has to run in an old WKWebView...'
   node tools/es5-check.mjs >/dev/null || {
     echo ''
