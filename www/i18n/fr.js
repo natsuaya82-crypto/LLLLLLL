@@ -1,0 +1,529 @@
+/* Lingua — the interface in Français (fr).
+   Everything this language needs lives in this one closure: what it is
+   called, what it calls the parts of speech, how it writes a foreign word,
+   and every string a screen shows. It registers itself through defLang(),
+   which www/core.js defines and which must therefore load first.
+   Adding an eleventh language is adding one file and one <script> tag.
+   ES5 only: this runs in an old WKWebView. */
+
+/* --- fr — Français ----------------------------------------------------- */
+defLang('fr', (function(){
+  /* ---- Approximate reading for French speakers (transcription figurée) -----
+     Same job as the English respelling and the Japanese katakana: show someone
+     who cannot read the IPA roughly what the word sounds like, using French
+     spelling conventions only.
+
+     The whole difficulty is that French orthography is built to hide things
+     this conlang wants heard, so every entry below is a defence:
+       u  is /y/          -> /u/ has to be written  ou
+       e  is mute or /e/  -> /e/ has to be written  é
+       n m nasalise the vowel in front of them -> every coda nasal is doubled
+       a final consonant is silent -> a mute e is added to make it sound
+       ch is /ʃ/          -> /tʃ/ is  tch  and /ʃ/ is  ch
+       j  is /ʒ/          -> /j/ is written  y  (yeux, yaourt)
+       s  between vowels voices to /z/ -> it is doubled there
+       h  is never pronounced, so /h/ simply disappears, as it does in every
+          name French borrows (Hambourg, hall)
+     Two vowels that French would read as one digraph are prised apart with a
+     diaeresis, exactly as in naïf and coïncidence. */
+
+  var VFR_ = {a:'a', e:'é', i:'i', o:'o', u:'ou', y:'i'};
+
+  var CFR_ = {b:'b', d:'d', f:'f', g:'g', k:'k', l:'l', m:'m', n:'n', p:'p',
+              r:'r', s:'s', t:'t', v:'v', z:'z',
+              c:'k', q:'k', x:'ks',
+              h:'h',            /* silent in French; kept only for the eye     */
+              j:'y', y:'y',     /* /j/ — j itself would be read /ʒ/            */
+              w:'ou',           /* /w/ — oui, ouest, ouate                     */
+              ch:'tch', sh:'ch',
+              th:'s'};          /* no /θ/ in French; /s/ is what a French
+                                   mouth actually produces (Smith -> Smisse)   */
+
+  var VFRSET_ = 'aeéèiouï';
+
+  /* A vowel run. Length is never written (French has no long vowels), and a
+     junction that French would swallow as a digraph gets a diaeresis. */
+  function nuFr_(nu){
+    var out = '', prev = '', i, base, last, nxt;
+    for(i = 0; i < nu.length; i++){
+      base = VFR_[nu.charAt(i)];
+      if(base === undefined) base = nu.charAt(i);
+      /* a leading y onto another vowel is the glide /j/, and French writes that
+         y (yeux, yoga, yaourt) — a bare i there would be given its own syllable */
+      if(i === 0 && nu.charAt(0) === 'y' && nu.length > 1){
+        nxt = VFR_[nu.charAt(1)];
+        if(nxt !== undefined && nxt !== 'i'){ out = 'y'; prev = 'y'; continue; }
+      }
+      if(base === prev) continue;                 /* aa, uu, iy -> held, unwritten */
+      prev = base;
+      last = out.charAt(out.length - 1);
+      /* ai = /ɛ/ and oi = /wa/, so an i after a or o must be broken open */
+      if(base === 'i' && (last === 'a' || last === 'o')) base = 'ï';
+      /* o + ou cannot take a diaeresis (ü would be read /y/), so the hiatus is
+         marked the other French way, with a mute h: cahier, envahir, trahison */
+      if(base === 'ou' && last === 'o') base = 'hou';
+      out += base;
+    }
+    return out;
+  }
+
+  /* The onset. prevV says the syllable before ended in a vowel, which is the
+     only place an s would voice. */
+  function onFr_(on, nuOut, prevV){
+    var u = splitC(on), out = '', i, c, m, alone, head;
+    alone = (u.length === 1);
+    for(i = 0; i < u.length; i++){
+      c = u[i];
+      m = CFR_[c];
+      if(m === undefined) m = c;
+      if(c === 'h' && i > 0) m = '';              /* ph, th, sh would be read wrong */
+      if(alone && prevV && (c === 's' || c === 'th')) m = 'ss';
+      if(m === 'g' && i === u.length - 1){
+        head = nuOut.charAt(0);
+        if(head === 'i' || head === 'é' || head === 'è' || head === 'e') m = 'gu';
+      }
+      out += dedupFr_(out, m);
+    }
+    return out;
+  }
+
+  /* French writes no geminate that it does not pronounce: t + tch is tch. */
+  function dedupFr_(sofar, m){
+    if(m.length > 1 && sofar.charAt(sofar.length - 1) === m.charAt(0)) return m.substr(1);
+    return m;
+  }
+
+  /* The coda. A coda n or m nasalises the vowel in front of it, so it is
+     always doubled: canne, année, Corinne, homme. */
+  function coFr_(co){
+    var u = splitC(co), out = '', i, c, m, seen = '';
+    for(i = 0; i < u.length; i++){
+      c = u[i];
+      if(c === seen) continue;                    /* nn in the source is still one n */
+      seen = c;
+      m = CFR_[c];
+      if(m === undefined) m = c;
+      if(c === 'h') m = '';
+      if(c === 'n' || c === 'm') m = m + m;
+      out += dedupFr_(out, m);
+    }
+    return out;
+  }
+
+  /* A word-final consonant is mute in French unless a mute e follows it. */
+  function finFr_(s){
+    var lastc, before;
+    if(s === '') return s;
+    lastc = s.charAt(s.length - 1);
+    if(VFRSET_.indexOf(lastc) >= 0) return s;     /* already open */
+    if(lastc === 'g') return s.substr(0, s.length - 1) + 'gue';  /* ge would be /ʒ/ */
+    if(lastc === 's'){
+      before = s.charAt(s.length - 2);
+      if(VFRSET_.indexOf(before) >= 0) return s + 'se';          /* -sse, or it voices */
+      return s + 'e';
+    }
+    return s + 'e';
+  }
+
+  /* One syllable. The two trailing arguments are context supplied by word_fr;
+     called with none, the syllable is treated as a whole little word. */
+  function syl_fr(p, prevV, isLast){
+    var nu, on, co, s;
+    if(prevV === undefined) prevV = false;
+    if(isLast === undefined) isLast = true;
+    nu = nuFr_(p.nu);
+    if(nu === ''){                                /* a bare consonant tail */
+      s = onFr_(p.on, '', prevV) + coFr_(p.co);
+      return isLast ? finFr_(s) : s;
+    }
+    co = coFr_(p.co);
+    /* loi de position: a lone /e/ shut in by a consonant is è to a French eye
+       (père, sel, bel) — é there would look, and read, like an open syllable */
+    if(nu === 'é' && co !== '') nu = 'è';
+    on = onFr_(p.on, nu, prevV);
+    s = on + nu + co;
+    if(isLast && co !== '') s = finFr_(s);
+    return s;
+  }
+
+  /* The whole word. Stress is always on the first syllable and is shown in
+     capitals, accents kept, the way French typography keeps them (ÉCOLE). */
+  function word_fr(ps){
+    var out = [], i, prevV, s, prev, tail;
+    for(i = 0; i < ps.length; i++){
+      prevV = false;
+      if(i > 0){
+        tail = out[i - 1].charAt(out[i - 1].length - 1);
+        prevV = VFRSET_.indexOf(tail) >= 0;
+      }
+      out.push(syl_fr(ps[i], prevV, i === ps.length - 1));
+    }
+    for(i = 1; i < out.length; i++){
+      prev = out[i - 1];
+      s = out[i];
+      tail = prev.charAt(prev.length - 1);
+      /* French splits a double s across the break: as-sez, not a-ssez */
+      if(s.substr(0, 2) === 'ss' && VFRSET_.indexOf(tail) >= 0){
+        out[i - 1] = prev + 's';
+        out[i] = s.substr(1);
+        continue;
+      }
+      /* the doubling that blocked nasalisation is undone if the next syllable
+         supplies the second nasal itself: AN-na, not ANN-na */
+      if((tail === 'n' || tail === 'm') && s.charAt(0) === tail &&
+         prev.charAt(prev.length - 2) === tail){
+        out[i - 1] = prev.substr(0, prev.length - 1);
+        continue;
+      }
+      /* g + n would be read /ɲ/; gh keeps it hard, as in spaghetti */
+      if(tail === 'g' && s.charAt(0) === 'n'){ out[i - 1] = prev + 'h'; continue; }
+      /* a silent h that would glue onto the syllable before it is dropped */
+      if(s.charAt(0) === 'h' && 'ptscg'.indexOf(tail) >= 0) out[i] = s.substr(1);
+    }
+    /* a word-initial ss- has nothing to lean on, so it is written single */
+    if(out.length && out[0].substr(0, 2) === 'ss') out[0] = out[0].substr(1);
+    for(i = 0; i < out.length; i++){
+      if(i === 0) out[i] = out[i].toUpperCase();
+    }
+    return out.join('-');
+  }
+
+  return {
+    label  : "Français",
+    rdName : "transcription figurée",
+    all    : "tous",
+    pos    : {n:"nom", v:"verbe", adj:"adjectif", x:"autre"},
+    read   : mkApprox(word_fr, syl_fr),
+    str    : {
+      "ai.a.home"                 : "Vous avez {0} mots et {1} sons. Le plus rapide est de créer d’autres mots : les règles en découlent.",
+      "ai.a.make"                 : "La création suit les sons que vous employez déjà : les nouveaux mots sembleront apparentés. Gardez ceux qui sonnent juste.",
+      "ai.a.rules"                : "{0} règles sont apparues. Continuez avec les mêmes habitudes et elles se préciseront d’elles-mêmes.",
+      "ai.a.sent"                 : "Vous avez {0} phrases. Écrivez la même idée de deux façons — la différence, c’est votre grammaire.",
+      "ai.a.sound"                : "Vous utilisez {0} sons : {1}. Un inventaire restreint et cohérent sonne plus vrai qu’un inventaire large et dispersé.",
+      "ai.a.words"                : "Votre lexique compte {0} mots. Créez des mots pour ce dont vous parlez vraiment ; une langue grandit par l’usage.",
+      "ai.ask"                    : "Consulter",
+      "ai.hint"                   : "Le conseiller lit votre langue et répond à partir d’elle.",
+      "ai.left"                   : "{0} restantes aujourd’hui",
+      "ai.limit.s"                : "Plus offre des conseils illimités, chaque jour.",
+      "ai.limit.t"                : "Vous avez utilisé vos questions du jour",
+      "ai.see"                    : "Voir les forfaits",
+      "ai.title"                  : "Conseiller linguistique",
+      "ai.unl"                    : "Illimité",
+      "cap.warn"                  : "{0} mots restants en Gratuit",
+      "ch.clear"                  : "Aucun caractère",
+      "ch.for"                    : "Un caractère pour « {0} »",
+      "count.script"              : "{0} sur {1}",
+      "home.write"                : "Ajouter un mot",
+      "lock.ai"                   : "Conseils illimités",
+      "lock.export"               : "Export et sauvegarde",
+      "lock.sync"                 : "Synchronisation cloud",
+      "lock.t"                    : "Fonction Plus",
+      "ob.back"                   : "Retour",
+      "ob.enter"                  : "Commencer",
+      "ob.lang.h"                 : "Choisissez votre langue",
+      "ob.name.auto"              : "Choisir pour moi",
+      "ob.name.h"                 : "Comment s'appelle<br>votre langue ?",
+      "ob.name.mini"              : "Vous pourrez le changer à tout moment.",
+      "ob.name.ph"                : "ex. Aelira",
+      "ob.signin.apple"           : "Continuer avec Apple",
+      "ob.signin.google"          : "Continuer avec Google",
+      "ob.signin.note"            : "Connectez-vous pour commencer.",
+      "ob.tagline"                : "Donnez de nouvelles couleurs à vos mots.",
+      "script.add"                : "Ajouter des caractères",
+      "script.cons"               : "Consonnes",
+      "script.dup"                : "Déjà pris",
+      "script.empty"              : "Créez d’abord quelques mots — les sons en viennent.",
+      "script.h"                  : "Donnez un caractère à chaque son",
+      "script.mine"               : "Vos caractères",
+      "script.none"               : "Pas encore de caractères",
+      "script.none2"              : "Pas encore de caractères",
+      "script.none2s"             : "Choisissez une écriture ci-dessous, ou saisissez votre propre caractère.",
+      "script.own"                : "Ou saisissez le vôtre",
+      "script.own.ph"             : "Collez ou saisissez un caractère",
+      "script.pick"               : "Touchez un caractère pour le prendre",
+      "script.prev"               : "Aperçu",
+      "script.rm"                 : "Retirer",
+      "script.set"                : "Choisir",
+      "script.show"               : "Écrire dans votre écriture",
+      "script.snd"                : "son",
+      "script.sub"                : "Voici les sons que votre langue emploie. Un son sans caractère garde ses lettres.",
+      "script.vow"                : "Voyelles",
+      "snd.add"                   : "Ajouter un son",
+      "snd.add.s"                 : "Des sons que votre langue n’a pas encore employés.",
+      "snd.have"                  : "Déjà dans votre langue",
+      "sug.ask"                   : "Rien ne vient ?",
+      "sug.for"                   : "Des formes pour « {0} » — touchez pour garder.",
+      "sug.hint"                  : "Formés à partir des sons que vous employez déjà — touchez pour garder.",
+      "sug.left"                  : "{0} restantes aujourd’hui",
+      "sug.more"                  : "D’autres idées",
+      "sug.out"                   : "Plus d’idées pour aujourd’hui. Avec Plus, elles continuent.",
+      "toc.script"                : "Écriture",
+      "up.cta"                    : "Passer à Plus",
+      "ws.arabic"                 : "Arabe",
+      "ws.armenian"               : "Arménien",
+      "ws.cyrillic"               : "Cyrillique",
+      "ws.devanagari"             : "Dévanagari",
+      "ws.geez"                   : "Guèze",
+      "ws.georgian"               : "Géorgien",
+      "ws.glagolitic"             : "Glagolitique",
+      "ws.greek"                  : "Grec",
+      "ws.hangul"                 : "Hangeul",
+      "ws.hebrew"                 : "Hébreu",
+      "ws.ogham"                  : "Ogam",
+      "ws.phoenician"             : "Phénicien",
+      "ws.runic"                  : "Runique",
+      "ws.thai"                   : "Thaï",
+      "ws.tibetan"                : "Tibétain",
+      "ob.start"         : "Commencer",
+      "seed.star"        : "étoile",
+      "seed.water"       : "eau",
+      "seed.wind"        : "vent",
+      "seed.light"       : "lumière",
+      "seed.forest"      : "forêt",
+      "seed.sky"         : "ciel",
+      "seed.love"        : "aimer",
+      "seed.walk"        : "marcher",
+      "lang.default"     : "Ma langue",
+      "nav.contents"     : "← Sommaire",
+      "nav.settings"     : "← Réglages",
+      "home.kicker"      : "Votre langue",
+      "home.unnamed"     : "Nommez-la",
+      "home.name.prompt" : "Nom de la langue",
+      'next.t'   : "Ensuite",
+      'next.w0'  : "Créez votre premier mot",
+      'next.w1'  : "Ajoutez des mots — encore {0} avant de voir des règles",
+      'next.s0'  : "Écrivez votre première phrase",
+      'next.mk'  : "Créez des mots à partir de vos sons",
+      "toc.words"        : "Lexique",
+      "toc.sound"        : "Phonologie",
+      "toc.rules"        : "Grammaire",
+      "toc.sent"         : "Phrases",
+      "toc.make"         : "Néologie",
+      /* the writing system */
+      "toc.script"        : "Lettres",
+      "script.preview"    : "Votre écriture",
+      "script.show"       : "Afficher les mots en",
+      "script.show.roman" : "Alphabet latin",
+      "script.show.own"   : "Vos lettres",
+      "script.show.note"  : "Seul l’affichage change. Ce que vous tapez et ce qui est enregistré restent les mêmes lettres : rien n’est enfermé dans une police.",
+      "script.needs"      : "Dessinez une lettre et vos mots s’afficheront ici avec elle.",
+      "script.letters"    : "L’alphabet",
+      "script.empty.t"    : "Pas encore de lettres",
+      "script.empty.s"    : "Écrivez d’abord un mot : ses sons apparaîtront ici, en attendant d’être dessinés.",
+      "script.add"        : "Ajouter une lettre",
+      "script.add.prompt" : "À quel son correspond cette lettre ? (a, k, sh …)",
+      "script.add.bad"    : "Une à trois lettres latines.",
+      "script.note"       : "Chaque lettre se dessine dans le même carré et avec la même épaisseur de trait, comme un téléphone dessine toutes les lettres du japonais ou du coréen à une seule taille. La police est fabriquée sur votre appareil ; rien n’est envoyé nulle part.",
+      /* the letter editor */
+      "glyph.circle"      : "Arrondir",
+      "glyph.new"         : "Nouveau",
+      "glyph.undo"        : "Annuler",
+      "glyph.clear"       : "Tout effacer",
+      "glyph.cancel"      : "Abandonner",
+      "glyph.save"        : "Enregistrer",
+      "glyph.saved"       : "{0} enregistrée",
+      "count.words"      : "{0} mots",
+      "count.words.1"    : "1 mot",
+      "count.sounds"     : "{0} sons",
+      "count.sounds.1"   : "1 son",
+      "count.rules"      : "{0} trouvées",
+      "count.rules.1"    : "1 trouvée",
+      "count.lines"      : "{0} lignes",
+      "count.lines.1"    : "1 ligne",
+      "home.empty.t"     : "Pas encore un seul mot",
+      "home.empty.s"     : "Tout commence par un mot unique.<br>Écrivez la graphie ; la lecture suit d’elle-même.",
+      "home.empty.btn"   : "Écrire le premier mot",
+      "home.recent.line" : "Dernière phrase",
+      "home.recent.word" : "Dernier mot écrit",
+      "home.write"       : "Écrire un mot",
+      "words.search"     : "Chercher graphie, sens, lecture",
+      "words.nomatch"    : "Rien trouvé",
+      "words.empty"      : "Aucun mot encore",
+      "sound.used"       : "Consonnes employées",
+      "sound.unused"     : "Consonnes non employées",
+      "sound.none"       : "Aucune pour l’instant.",
+      "sound.allused"    : "Toutes sont employées.",
+      "sound.note"       : "Les sons qu’une langue refuse lui appartiennent autant que ceux qu’elle garde.<br>La petite marque sous chaque lettre est l’alphabet phonétique international : un symbole pour un son, dans toutes les langues de la terre.",
+      "sound.vowels"     : "Voyelles",
+      "sound.together"   : "Dits ensemble",
+      "link.yes"         : "la consonne finale se lie au mot suivant",
+      "link.no"          : "chaque mot reste séparé",
+      "sound.listen"     : "▶ Écouter",
+      "sound.linkhint"   : "Écrivez un mot qui commence par une voyelle : la consonne qui le précède se lie à lui, et les deux ne font plus qu’un souffle.",
+      "sound.footer"     : "Tout ce calcul se fait dans votre appareil. Aucun réseau, aucune IA.",
+      "rules.intro"      : "Habitudes relevées en comptant les {0} mots que vous avez écrits. Non pas décidées : découvertes.",
+      "rules.intro.1"    : "Habitudes relevées en comptant l’unique mot que vous avez écrit. Non pas décidées : découvertes.",
+      "rules.empty.t"    : "Aucune règle encore",
+      "rules.empty.s"    : "Écrivez d’abord quelques mots.",
+      "rules.next"       : "Ensuite : {0}",
+      "rules.make"       : "Créer d’autres mots qui suivent ces règles",
+      "find.final.t"     : "Les {0} finissent en <em>-{1}</em>",
+      "find.final.d"     : "{1} sur {0} le font. Les nouveaux mots peuvent garder cette forme.",
+      "find.cons.t"      : "Consonnes qui sonnent : <em>{0}</em>",
+      "find.cons.d"      : "Votre réserve de sons sur {0} mots. Ajoutez-en un qui manque et toute la langue change de couleur.",
+      "find.vow.t"       : "Seulement <em>{0}</em> — {1} en tout",
+      "find.vow.d"       : "Moins il y a de voyelles, plus la langue sonne d’un seul tenant. Vous pourrez l’élargir quand il vous plaira.",
+      "find.syl.t"       : "Les mots font <em>{0} syllabes</em>",
+      "find.syl.t.1"     : "Les mots font <em>une syllabe</em>",
+      "find.syl.d"       : "{1} mots sur {0}. Des longueurs égales font une langue parlée plutôt qu’assemblée.",
+      "find.coda.t"      : "Les mots ne finissent jamais que par <em>{0}</em>",
+      "find.coda.d"      : "Plus cette liste est étroite, plus les mots s’enchaînent proprement quand on les dit à la suite.",
+      "find.unused.t"    : "<em>{0}</em> n’apparaissent jamais",
+      "find.unused.d"    : "Avoir des sons dont on ne se sert jamais est aussi une signature.",
+      "hint.pos"         : "Écrivez {0} {1} de plus et une règle apparaîtra : la façon dont finit un {1}.",
+      "hint.pos.1"       : "Écrivez un {1} de plus et une règle apparaîtra : la façon dont finit un {1}.",
+      "hint.more"        : "Plus il y a de mots, plus il y a de règles à trouver.",
+      "sent.empty.t"     : "Pas assez pour une phrase",
+      "sent.empty.s"     : "Une phrase demande au moins deux mots.<br>Écrivez-en d’abord quelques-uns.",
+      "sent.weave"       : "Tisser",
+      "sent.prev"        : "← Avant",
+      "sent.later"       : "Après →",
+      "sent.remove"      : "Retirer ce mot",
+      "sent.taphint"     : "Touchez un mot pour le déplacer ou le retirer.",
+      "sent.palhint"     : "Choisissez des mots ci-dessous et ils s’alignent ici. Autant que vous voulez, et le même mot aussi souvent qu’il vous plaira.",
+      "sent.undo"        : "Annuler un",
+      "sent.clear"       : "Effacer",
+      "sent.reads"       : "À voix haute, cette ligne donne",
+      "sent.say"         : "▶ La dire",
+      "sent.linkhint"    : "Mettez dans la ligne un mot qui commence par une voyelle : la consonne qui le précède se lie à lui, et les deux ne font plus qu’un souffle.",
+      "sent.keep"        : "Garder cette phrase",
+      "sent.need2"       : "Alignez deux mots ou plus pour entendre comment ils se lient.",
+      "sent.choose"      : "Choisir des mots",
+      "sent.search"      : "Chercher graphie ou sens",
+      "sent.nomatch"     : "Rien trouvé.",
+      "sent.nomean"      : "sans sens",
+      "sent.order"       : "Ordre des mots (une règle de cette langue)",
+      "order.SOV.lab"    : "Sujet → Objet → Verbe",
+      "order.SOV.ex"     : "Le japonais et le turc sont ici. « Je l’étoile vois. »",
+      "order.SVO.lab"    : "Sujet → Verbe → Objet",
+      "order.SVO.ex"     : "Le français est ici. « Je vois l’étoile. »",
+      "order.VSO.lab"    : "Verbe → Sujet → Objet",
+      "order.VSO.ex"     : "L’arabe et l’irlandais sont ici. « Vois je l’étoile. »",
+      "sent.chk.ok"      : "La ligne donne <b>{0}</b> — exactement l’ordre que vous avez choisi.",
+      "sent.chk.ng"      : "La ligne donne <b>{0}</b>, mais l’ordre que vous avez choisi est <b>{1}</b>.",
+      "sent.chk.fix"     : "Remettre dans l’ordre choisi",
+      "sent.chk.hint"    : "Alignez un sujet, un objet et un verbe : Lingua compare l’ordre à votre règle.<br>Tout autre agencement convient aussi. La règle est un repère, pas une barrière.",
+      "sent.kept"        : "Phrases gardées",
+      "sent.listen"      : "▶ Écouter",
+      "sent.reweave"     : "Tisser encore",
+      "sent.drop"        : "Supprimer",
+      "sent.footer"      : "Les lectures, et la façon dont les mots se lient, se calculent dans cet appareil.",
+      "toast.need2"      : "Alignez au moins deux mots",
+      "toast.kept"       : "Phrase gardée",
+      "toast.dropped"    : "Supprimée",
+      "toast.reordered"  : "Remis dans l’ordre que vous aviez choisi",
+      "make.rule"        : "En gardant votre règle actuelle pour les {0} : ils finissent en <span style=\"color:var(--gold)\">-{1}</span>.",
+      "make.norule"      : "Aucune règle ne s’est encore fixée pour les {0} : ceux-ci sont bâtis seulement à partir des sons que vous employez déjà.",
+      "make.empty.t"     : "Pas assez de matière",
+      "make.empty.s"     : "Écrivez d’abord vous-même quelques mots.<br>Lingua imite leur sonorité.",
+      "make.left"        : "Il reste {0} mots dans la formule Free.",
+      "make.left.1"      : "Il reste un mot dans la formule Free.",
+      "make.lock.t"      : "Demander tout un lot d’un coup",
+      "make.lock.d"      : "« Trente mots autour de la mer » — et ils arrivent",
+      "make.reroll"      : "Tirer encore",
+      "make.commit"      : "Ajouter ceux que j’ai choisis",
+      "toast.noselect"   : "Rien n’est sélectionné",
+      "toast.cap"        : "La formule Free contient {0} mots",
+      "toast.added.n"    : "{0} mots ajoutés. Les sens s’écrivent depuis la liste des mots",
+      "toast.added.n.1"  : "Un mot ajouté. Son sens s’écrit depuis la liste des mots",
+      "set.title"        : "Réglages",
+      "set.look"         : "Apparence",
+      "theme.system"     : "Système",
+      "theme.light"      : "Clair",
+      "theme.dark"       : "Sombre",
+      "set.theme.note"   : "« Système » suit le réglage de votre appareil.",
+      "set.reading"      : "Affichage des lectures",
+      "read.ipa"         : "IPA",
+      "read.both"        : "Les deux",
+      "set.sample"       : "Exemple",
+      "set.ipa.note"     : "L’IPA est la manière dont le monde entier écrit un son pour que chacun puisse le dire. Entre <b style=\"color:var(--tx);font-weight:500\">/ /</b>, un <b style=\"color:var(--tx);font-weight:500\">.</b> marque une coupe de syllabe et <b style=\"color:var(--tx);font-weight:500\">ː</b> tient le son plus longtemps. L’IPA est la notation exacte ; {0} n’en est qu’une approximation, pour ceux qui la lisent.",
+      "set.display"      : "Langue d’affichage",
+      "set.display.note" : "L’écran et la lecture de vos mots suivent tous deux ce réglage. L’IPA, non : il est le même dans toutes les langues. Katakana pour le japonais, transcription figurée à la <b style=\"color:var(--tx);font-weight:500\">AY-leen</b> pour l’anglais, où les capitales marquent l’accent. Par défaut, celle de votre appareil.",
+      "set.voice"        : "Voix",
+      "set.voice.cur"    : "Voix employée",
+      "set.voice.none"   : "aucune trouvée",
+      "set.voice.pick"   : "Choisir une voix",
+      "set.voice.auto"   : "Choisir automatiquement",
+      "set.voice.wait"   : "La liste des voix de cet appareil n’est pas encore chargée. Touchez une fois « ▶ Écouter » n’importe où et elle apparaîtra.",
+      "set.voice.try"    : "Essayer",
+      "set.voice.note"   : "Si rien ne se fait entendre, vérifiez d’abord le bouton silencieux sur le côté du téléphone, puis le volume. Si le son ne vient toujours pas, une autre voix de la liste ci-dessus y parvient souvent. Les voix italiennes et espagnoles ont des voyelles nettes et régulières, ce qui convient en général à une langue inventée.",
+      "set.lang"         : "Langue",
+      "set.name"         : "Nom",
+      "set.count"        : "Mots",
+      "set.plan"         : "Formule",
+      "set.plan.cur"     : "Formule actuelle",
+      "set.data"         : "Données",
+      "set.csv.out"      : "Exporter en CSV",
+      "set.csv.in"       : "Importer depuis un CSV",
+      "set.cloud"        : "Sauvegarde en ligne",
+      "set.on"           : "Activée",
+      "set.lock.csv.t"   : "Import et export CSV",
+      "set.lock.csv.d"   : "Versez d’un coup un lot préparé dans un tableur",
+      "set.lock.cloud.t" : "Sauvegarde en ligne",
+      "set.lock.cloud.d" : "Survit à un nouveau téléphone ; un seul dictionnaire sur tous vos appareils",
+      "set.wipe"         : "Tout effacer et recommencer",
+      "set.footer"       : "Lingua · vos mots sont conservés sur cet appareil.",
+      "set.footer.free"  : " La formule Free ne touche jamais au réseau.",
+      "confirm.wipe"     : "Effacer tous les mots que vous avez faits et recommencer ?",
+      "plans.title"      : "Formules",
+      "plans.intro"      : "Faire une langue est gratuit, et le restera.<br>Ce qui coûte, c’est d’en garder beaucoup, et de penser aux côtés d’une IA.",
+      "plan.cur"         : "actuelle",
+      "plan.tofree"      : "Revenir à Free",
+      "plan.choose"      : "Choisir cette formule",
+      "plans.note"       : "Le paiement n’est pas encore branché. Pour l’instant, cela ne change que ce qu’affichent les écrans.",
+      "plan.free.1"      : "Bâtir chaque mot à la main, du premier au dernier",
+      "plan.free.2"      : "Règles trouvées pour vous, lectures déduites pour vous",
+      "plan.free.3"      : "Liaisons montrées, et lues à voix haute",
+      "plan.free.4"      : "Produire en série des mots qui suivent vos règles",
+      "plan.free.5"      : "Conservé sur l’appareil · jusqu’à 100 mots",
+      "plan.plus.1"      : "Mots sans limite",
+      "plan.plus.2"      : "Sauvegarde en ligne (nouveau téléphone, plusieurs appareils)",
+      "plan.plus.3"      : "Importer et exporter les mots en CSV",
+      "plan.plus.4"      : "Tout ce que contient Free",
+      "plan.studio.1"    : "Travailler avec une IA (forme à partir du sens, grammaire, exemples)",
+      "plan.studio.2"    : "Engendrer tout un vocabulaire à partir d’un thème",
+      "plan.studio.3"    : "Tout ce que contient Plus",
+      "plan.price.free"  : "0 $",
+      "plan.price.plus"  : "9 $ / mois",
+      "plan.price.studio": "19 $ / mois",
+      "toast.plan.free"  : "Retour à la formule Free",
+      "toast.plan.other" : "(simulation) passé à {0}",
+      "add.title"        : "Écrire un mot",
+      "add.note"         : "La lecture se déduit de la graphie que vous écrivez.",
+      "f.spelling"       : "Graphie",
+      "f.reading"        : "Lecture",
+      "f.listen"         : "▶ Écouter",
+      "f.meaning"        : "Sens",
+      "f.meaning.ph"     : "étoile",
+      "f.pos"            : "Nature du mot",
+      "add.btn"          : "Ajouter",
+      "add.lock.t"       : "Chercher une forme en parlant",
+      "add.lock.d"       : "« Je veux un mot qui ait le goût du calme »",
+      "toast.hw2"        : "Une graphie demande au moins deux lettres",
+      "toast.dup"        : "Ce mot existe déjà",
+      "toast.added.1"    : "{0} ajouté",
+      "word.syl"         : "Coupes de syllabes",
+      "word.note"        : "{0} syllabes. La lecture découle de ces coupes.<br>Au-dessus, l’IPA ; au-dessous, la lecture approchée pour qui lit {1} ({2}).",
+      "word.note.1"      : "Une syllabe. La lecture découle de la graphie.<br>Au-dessus, l’IPA ; au-dessous, la lecture approchée pour qui lit {1} ({2}).",
+      "word.edit"        : "Modifier",
+      "word.mn.ph"       : "pas encore décidé",
+      "word.save"        : "Enregistrer",
+      "word.del"         : "Supprimer ce mot",
+      "confirm.del"      : "Supprimer {0} ?",
+      "toast.saved"      : "{0} mis à jour",
+      "toast.deleted"    : "{0} supprimé",
+      "csv.title"        : "Importer depuis un CSV",
+      "csv.note"         : "Un mot par ligne : graphie, sens, nature du mot. Une ligne d’en-tête est acceptée.",
+      "csv.ph"           : "Aelin,étoile,nom&#10;Naeth,eau,nom",
+      "csv.btn"          : "Importer",
+      "toast.exported"   : "Exporté",
+      "toast.exportfail" : "Export impossible",
+      "toast.imported"   : "{0} mots importés",
+      "toast.imported.1" : "Un mot importé",
+      "tts.none"         : "Cet appareil ne peut pas lire à voix haute",
+      "tts.err"          : "Aucun son n’est sorti. Réglages → Voix permet d’en choisir une autre",
+      "tts.fail"         : "Lecture à voix haute impossible",
+      "read.sep"         : "  "
+    }
+  };
+})());
