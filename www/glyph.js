@@ -238,7 +238,8 @@ function newGE(r){
   return { r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
-           free:false, seal:!!(src.length && src[src.length-1].pts.length) };
+           free:false, round:false,
+           seal:!!(src.length && src[src.length-1].pts.length) };
 }
 function editGlyph(r){ GE=newGE(r); go('glyph'); }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
@@ -349,10 +350,58 @@ function geTail(st){
    circle; three are a curve that has to pass through the middle one. So you
    place the shape first and round it after, and once it is round it is
    settled: the next tap is the next stroke. */
+/* Distance from a point to the line through a and b. Used to find the far
+   point of a curve: the one the arc has to pass through. */
+function geOff(a,b,q){
+  var vx=b[0]-a[0], vy=b[1]-a[1], L=Math.sqrt(vx*vx+vy*vy);
+  if(L<1e-6) return Math.sqrt((q[0]-a[0])*(q[0]-a[0])+(q[1]-a[1])*(q[1]-a[1]));
+  return Math.abs(vx*(a[1]-q[1]) - vy*(a[0]-q[0]))/L;
+}
+/* Take the path a finger actually drew and say what curve it meant.
+
+   Three points is all the format needs for an arc: where it started, where it
+   ended, and the one place in between that is furthest off the straight line
+   between them. Everything else in the path is hand tremor. Drawing a curve
+   by hand and then placing exactly three points on it was the hard part --
+   this does the placing.
+
+   Two things it refuses to do. A path that never leaves its own chord was a
+   straight line and stays one, because two points marked round are read as
+   the ends of a circle and would balloon into a half-circle nobody drew. And
+   a path that comes back to where it started is a ring, so it closes. */
+function geRoundify(st){
+  var p=st.pts, n=p.length, i, d;
+  if(n<2) return;
+  var a=p[0], b=p[n-1], step=gstep();
+  var far=null, fd=-1;
+  for(i=1;i<n-1;i++){ d=geOff(a,b,p[i]); if(d>fd){ fd=d; far=p[i]; } }
+  var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
+  if(n>4 && span<=step*1.2){
+    /* back where it began: keep three points spread around the loop */
+    st.pts=[p[0], p[Math.floor(n/3)], p[Math.floor(2*n/3)]];
+    st.k='o'; st.closed=true; return;
+  }
+  /* How far the path has to bow before it counts as a curve. Snapping a
+     drag to the lattice turns even a ruler-straight diagonal into a
+     staircase, and the corners of that staircase stand up to three quarters
+     of a step off the line -- so anything under that is the lattice talking,
+     not the hand. Long strokes need proportionally more, or a slight lean
+     across the whole width reads as a bow. */
+  if(far && fd>Math.max(step*0.75, span*0.08)){ st.pts=[a,far,b]; st.k='o'; delete st.closed; }
+  else { st.pts=[a,b]; delete st.k; delete st.closed; }
+}
+/* Round is a mode, not an operation. Switched on, every stroke drawn from
+   then on is read as a curve -- which is the only way a curve drawn at an
+   angle was ever going to come out as one. It also rounds the stroke just
+   drawn, so pressing it straight after a line does what it looks like it
+   does. */
 function geCircle(){
-  var st=GE.st[GE.si]; if(!st || st.pts.length<2 || st.pts.length>3) return;
   geMark();
-  if(st.k==='o') delete st.k; else st.k='o';
+  GE.round=!GE.round;
+  if(GE.round){
+    var st=GE.st[GE.st.length-1];
+    if(st && st.pts.length>=2 && st.k!=='o') geRoundify(st);
+  }
   GE.pi=-1; render();
 }
 function geNew(){
@@ -691,7 +740,10 @@ function geUp(ev){
   /* Lifting the finger after drawing ends that stroke. Lifting it after a
      tap does not, so points can still be placed one at a time when a shape
      wants to be exact rather than quick. */
-  if(GE.free && GE.moved) GE.seal=true;
+  if(GE.free && GE.moved){
+    GE.seal=true;
+    if(GE.round){ var rst=GE.st[GE.si]; if(rst) geRoundify(rst); }
+  }
   GE.free=false;
   /* A dot that was pressed and let go without travelling is a tap, and a tap
      on a dot that is already there is one of the two answers. Dragging the
@@ -725,7 +777,7 @@ function geUp(ev){
    same size as everything else a thumb has to hit. */
 function geRail(st, pts){
   return '<div class="gtools">'+
-    gbtn('geCircle','circle','glyph.circle', !!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o'))+
+    gbtn('geCircle','circle','glyph.circle', true, !!GE.round)+
     gbtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     gbtn('geClear','clear','glyph.clear', !!pts, false)+
   '</div>';
@@ -738,7 +790,7 @@ function geTools(){
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   /* Keyed by name, not by position: the row can be reordered or added to
      without this quietly disabling the wrong button. */
-  var S={ 'circle':[!!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o')],
+  var S={ 'circle':[true, !!GE.round],
           'undo'  :[!!GE.undo.length, false],
           'clear' :[!!pts, false] };
   var b=box.getElementsByTagName('button'), i, s, g, cl;
