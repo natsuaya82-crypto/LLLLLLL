@@ -104,29 +104,27 @@ function glyphKey(r){
   return out.join('_');
 }
 
-/* The alphabet the script has to cover: every sound this language has chosen,
-   plus anything already drawn or set aside by hand. It used to be worked out
-   from the letters the words were spelled with, filtered to a-z -- which quietly
-   meant no sound outside the Latin alphabet could ever be given a letter. */
-function scriptLetters(){
-  var seen={}, out=[];
-  function push(c){ if(c && !seen[c]){ seen[c]=1; out.push(c); } }
-  addedSnd().forEach(push);
-  SCRIPT.extra.forEach(push);
-  Object.keys(SCRIPT.g).forEach(push);
-  out.sort();
-  return out;
-}
+/* What the script has to cover is not always the sounds. It is whatever the
+   chosen kind of writing has letters for -- sounds, syllables, consonants
+   alone, or whole words -- and www/wsys.js is the one place that knows which.
+   Everything below simply asks it. */
+function scriptLetters(){ return wsUnits(); }
 function scriptDrawn(L){
   var n=0;
-  L.forEach(function(r){ if(SCRIPT.g[r] && SCRIPT.g[r].length) n++; });
+  L.forEach(function(r){ if(wsDrawn(r)) n++; });
   return n;
 }
 
-/* One glyph per letter, plus the single letters a digraph is spelled with —
-   a ligature needs its own components to exist as glyphs even when your script
-   never shows them alone. Upper and lower case map to the same drawing,
-   because a script you invented has no case unless you draw one. */
+/* One glyph per unit, plus the single characters a longer unit is spelled
+   with -- a ligature needs its own components to exist as glyphs even when
+   your script never shows them alone. Upper and lower case map to the same
+   drawing, because a script you invented has no case unless you draw one.
+
+   A unit of more than one character has no code point of its own, so it is
+   reached by an OpenType ligature over the characters it is made of: you type
+   the sounds and the font draws the one letter. That is how "ka" becomes a
+   single syllabary letter, and how a whole word becomes a single logograph.
+   Longer ligatures are offered first, so ka.i does not win over kai. */
 function scriptGlyphDefs(){
   var L=scriptLetters(), have={}, defs=[], ligs=[], need=[];
   L.forEach(function(r){ have[r]=1; });
@@ -134,7 +132,7 @@ function scriptGlyphDefs(){
     if(r.length>1) r.split('').forEach(function(c){ if(!have[c]){ have[c]=1; need.push(c); } });
   });
   L.concat(need).sort().forEach(function(r){
-    var st=SCRIPT.g[r], up=r.toUpperCase();
+    var st=wsStrokes(r), up=r.toUpperCase();
     defs.push({
       name: glyphKey(r),
       /* one code unit, so it has a code point of its own; a script you invented
@@ -142,8 +140,9 @@ function scriptGlyphDefs(){
       roman: r.length===1 ? (up!==r ? r+up : r) : null,
       strokes: (st && st.length) ? st : GPLACE
     });
-    if(r.length>1) ligs.push({sub:r.split(''), by:glyphKey(r)});
+    if(r.length>1) ligs.push({sub:r.split('').map(glyphKey), by:glyphKey(r), n:r.length});
   });
+  ligs.sort(function(a,b){ return b.n-a.n; });
   return {defs:defs, ligs:ligs};
 }
 
@@ -155,9 +154,9 @@ var SFONT={built:false, sig:null};
    not built with — this is how the page notices without rebuilding on every
    render. Building costs about a millisecond, so it is cheap to be right. */
 function scriptSig(){
-  var L=scriptLetters(), s=[];
+  var L=scriptLetters(), s=[wsys()];
   L.forEach(function(r){
-    var g=SCRIPT.g[r];
+    var g=wsStrokes(r);
     s.push(r+':'+(g? JSON.stringify(g).length : 0));
   });
   return s.join(',');
@@ -311,7 +310,7 @@ function vGlyph(){
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   return '<div class="view"><div class="chead">'+
     '<button class="back nb" onclick="go(\'sound\')">'+ICON_BACK+esc(t('toc.sound'))+'</button>'+
-    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(GE.r)+'</span>'+
+    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(GE.r)+'</span>'+
     '<span class="cn">'+pts+'</span></div></div>'+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
@@ -1141,7 +1140,7 @@ function render(){
      so the editor it embeds has to be mounted here or its canvas stays blank.
      Every editor action ends in render(), which lands back on this line. */
   if(!SET.done){ app.innerHTML=vOb();
-    if(ob.step===1 && ob.mode==='draw') geMount();
+    if(ob.step===4 && ob.mode==='draw') geMount();
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();

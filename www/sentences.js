@@ -211,7 +211,7 @@ function vMake(){
   var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
   return '<div class="view"><div class="chead">'+
     '<button class="back nb" onclick="go(\'words\')">'+ICON_BACK+t('toc.words')+'</button>'+
-    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.make'))+'</span></div></div>'+
+    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.make'))+'</span></div></div>'+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
       return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';

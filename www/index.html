@@ -457,6 +457,18 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .obsrow.on{border-color:var(--goldln);background:var(--goldsf)}
 .obpv{font-size:.94rem;color:var(--gold);line-height:1.2;letter-spacing:.06em;opacity:.9}
 .obnm{font-size:.86rem}
+/* The five kinds of writing are one column, not two: each carries a line of
+   explanation, and a name like "Abugida" tells nobody anything without it. */
+.obws{font-size:.72rem;color:var(--txm);line-height:1.5}
+.ob .obscripts.one{grid-template-columns:1fr}
+/* the name, which is the only thing typed in the whole of onboarding */
+.obnamebox{width:100%;margin-top:20px}
+.obnamebox input{width:100%;background:var(--sf);border:1px solid var(--line);border-radius:12px;
+  padding:16px 16px;color:var(--tx);font-family:'Cinzel',Georgia,serif;font-size:1.25rem;
+  text-align:center;outline:none}
+.obnamebox input:focus{border-color:var(--goldln)}
+/* a letter the app worked out rather than one anybody drew */
+.gtile.made{border-style:dashed}
 .obchars{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
          display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-content:start}
 .obchb{border:1px solid var(--line);background:var(--sf);border-radius:9px;
@@ -722,6 +734,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 <script src="reading.js"></script>
 <script src="screens.js"></script>
 <script src="sentences.js"></script>
+<script src="wsys.js"></script>
 <script src="grammar.js"></script>
 <script src="notes.js"></script>
 <script src="talk.js"></script>

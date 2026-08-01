@@ -89,31 +89,28 @@ var WORLD_SCRIPTS = [
 ];
 
 /* ---- Onboarding -------------------------------------------------------
-   Three steps, and the first one is not a form.
+   Five steps, in the order a language is actually built.
 
-   It used to open on a language picker. That is a question the app needs
-   answered, not one the person came to answer — and core.js can already
-   guess it from the device, so it was being asked for nothing. It moved to
-   the corner of the bar, where changing it is still one tap.
+   It used to open on a language picker, which is a question the app needs
+   answered rather than one anybody came to answer. Then it opened on a
+   drawing square: draw a shape, and immediately -- which single sound is
+   this? That is only a question an alphabet has an answer to. It quietly
+   decided, on the person's behalf, that they were making one, and it asked
+   them to name a sound before they had chosen any sounds at all.
 
-   What replaced it is the one thing no other tool for this lets anyone do:
-   draw a letter. Whoever would rather borrow an alphabet that exists takes
-   the quiet row underneath. Both roads meet on step 2 — a shape with no
-   sound is the same unfinished thing however you came by it — so nothing
-   after this point has to be built twice.
+   And then it put them on a screen that said: coin your first word. With no
+   sounds, no letters and no name, out of nothing.
 
-   Nothing is asked that can be answered later. No name, no account. By the
-   door there is already a letter, a sound, and a writing system. */
-var ob={step:0, mode:'draw', pick:'', strokes:null, ch:'', snd:''};
+   The order here is the order the work goes in. Name it, because that is the
+   one thing anybody arrives already having an opinion about. Say what kind of
+   writing it uses, because that decides what a letter even is. Choose the
+   sounds it is made of. Draw one letter, to see that it can be done. No word
+   is asked for: a word is made of sounds and written in letters, and by the
+   end of this there are both, so the dictionary is somewhere to go rather
+   than somewhere to be sent. */
+var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', snd:''};
+var OB_STEPS=5;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
-/* A starter inventory, not the whole IPA: enough to name the letter just
-   drawn, small enough to read on a phone without scrolling. Everything else
-   is added later from the sounds screen, which is built for it. */
-var OB_SND=['a','e','i','o','u','k','s','t','n','m','r','l','h','p'];
-/* The way out of drawing is one row of words, not a row of sample letters
-   in boxes. Sample letters cost a font the phone may not have, they are
-   unreadable at the size a row allows, and five of fifteen is an arbitrary
-   five. The row says what it does and opens the full list. */
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
    Nothing stands in the doorway -- it has not been opened yet, and a letter
@@ -126,10 +123,10 @@ var OB_DOOR='<svg viewBox="0 0 124 188" fill="none" stroke="currentColor" stroke
   '<path d="M2 186h120" stroke-width="1.2" opacity=".5"/></svg>';
 var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
-function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
+function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
 function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
 function obBack(){
-  if(ob.step===1 && ob.mode==='borrow'){
+  if(ob.step===4 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
@@ -167,69 +164,117 @@ function obDoorHTML(){
     '<div class="mini obnote">'+t('ob.signin.local')+'</div></div>';
 }
 
-/* ---- step 0, drawing -------------------------------------------------- */
-/* The editor is the real one from the glyph screen — same canvas id, same
-   tools, same lattice — so whatever is learned here is not relearned later.
-   The strokes are held on `ob` rather than written into SCRIPT.g, because
-   which letter this is is not known until the next step. */
+/* ---- step 1, its name -------------------------------------------------
+   The one thing somebody arrives already having an opinion about, and the
+   only question here they can answer without being taught anything. It can
+   be left blank and changed at any time from the cover. */
+function obName(){
+  var e=document.getElementById('ob-name');
+  if(e) ob.name=String(e.value||'').trim();
+  langName=ob.name;
+  save(); obGo(2);
+}
+function obNameHTML(){
+  return '<div class="mid">'+
+    '<h2>'+t('ob.name.h')+'</h2>'+
+    '<p class="obsub">'+t('ob.name.sub')+'</p>'+
+    '<div class="obnamebox"><input id="ob-name" value="'+esc(ob.name||langName||'')+'" '+
+      'placeholder="'+esc(t('ob.name.ph'))+'" autocomplete="off" '+
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();obName();}"></div>'+
+    '</div>'+
+    '<div class="obfoot"><button class="btn" onclick="obName()">'+t('ob.next')+'</button>'+
+    '<div class="mini obnote">'+t('ob.name.note')+'</div></div>';
+}
+
+/* ---- step 2, what a letter is a letter of -----------------------------
+   Asked before any letter is drawn, because it decides what drawing one
+   means. Each row says what it is and names a writing that works that way,
+   so the choice is made by recognising something rather than by parsing a
+   definition. */
+function obWsys(k){ SET.wsys=k; save(); render(); }
+function obWsysHTML(){
+  return '<div class="mid obleft">'+
+    '<h2 class="obh">'+t('ob.ws.h')+'</h2>'+
+    '<p class="obsub">'+t('ob.ws.sub')+'</p>'+
+    '<div class="obscripts one">'+WSYS.map(function(k){
+      return '<button class="obsrow'+(wsys()===k?' on':'')+'" onclick="obWsys(\''+k+'\')">'+
+        '<span class="obnm">'+esc(t('ws.k.'+k))+'</span>'+
+        '<span class="obws">'+esc(t('ws.k.'+k+'.eg'))+'</span>'+
+        '</button>';
+    }).join('')+'</div></div>'+
+    '<div class="obfoot"><button class="btn" onclick="obGo(3)">'+t('ob.next')+'</button>'+
+    '<div class="mini obnote">'+t('ob.ws.note')+'</div></div>';
+}
+
+/* ---- step 3, the sounds -----------------------------------------------
+   A starter inventory, not the whole IPA: enough to build words with, small
+   enough to read on a phone without scrolling. The whole chart is one tap
+   away afterwards, on a screen built for it. */
+var OB_SND=['a','e','i','o','u','p','t','k','m','n','s','r','l','h'];
+function obPickSnd(p){
+  var a=addedSnd(), i=a.indexOf(p);
+  if(i>=0) a.splice(i,1); else a.push(p);
+  save(); render();
+}
+function obSndsHTML(){
+  var have=addedSnd();
+  return '<div class="mid">'+
+    '<h2>'+t('ob.snds.h')+'</h2>'+
+    '<p class="obsub">'+t('ob.snds.sub')+'</p>'+
+    '<div class="obsndgrid">'+OB_SND.map(function(p){
+      return '<button class="obsnd'+(have.indexOf(p)>=0?' on':'')+'" onclick="obPickSnd(\''+p+'\')">'+esc(p)+'</button>';
+    }).join('')+'</div>'+
+    '<div class="mini obnote">'+tn('ob.snds.n', have.length)+'</div></div>'+
+    '<div class="obfoot"><button class="btn" onclick="obToDraw()"'+(have.length?'':' disabled')+'>'+t('ob.next')+'</button>'+
+    '<div class="mini obnote">'+t('ob.snds.note')+'</div></div>';
+}
+function obToDraw(){
+  if(!addedSnd().length){ toast(t('ob.snds.need')); return; }
+  ob.snd=wsUnits()[0]||addedSnd()[0];
+  obGo(4);
+}
+
+/* ---- step 4, one letter -----------------------------------------------
+   The editor is the real one from the letter screen -- same canvas id, same
+   tools, same lattice -- so whatever is learned here is not relearned later.
+   Which letter is being drawn is known before it is drawn now, because the
+   kind of writing and the sounds were both decided on the way here. */
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  ob.strokes=JSON.parse(JSON.stringify(keep)); ob.ch=''; GE=null; obGo(2);
+  SCRIPT.g[ob.snd]=JSON.parse(JSON.stringify(keep));
+  SET.myfont=true;
+  save(); installScriptFont(); GE=null;
+  obFinish();
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
-function obTakeCh(ch){ ob.ch=ch; ob.strokes=null; obGo(2); }
-
-/* ---- step 1, the sound ------------------------------------------------ */
-/* Two writing systems live side by side in this app: borrowed characters
-   replace the text, drawn letters only re-set it. Which one the person is
-   building was decided on step 0, so this writes into whichever of the two
-   it was and turns that one on. */
-function obSnd(p){
-  ob.snd=p;
-  var a=addedSnd(); if(a.indexOf(p)<0) a.push(p);
-  if(ob.strokes){ SCRIPT.g[p]=ob.strokes; SET.myfont=true; }
-  else if(ob.ch){ scriptMap()[p]=ob.ch; SET.showScript=true; }
-  save();
-  if(ob.strokes) installScriptFont();
-  obFinish();
+function obTakeCh(ch){
+  scriptMap()[ob.snd]=ch; SET.showScript=true;
+  save(); obFinish();
 }
+function obSkipDraw(){ obFinish(); }
 
 function obFinish(){
-  if(!langName) langName=t('lang.default');
+  if(!langName) langName=ob.name||t('lang.default');
   SET.done=true; save();
-  route='home'; render(); window.scrollTo(0,0);
-}
-
-/* The letter as it now stands, at whatever size the screen wants it.
-   glyphContours returns the same polygons the font is built from, so this
-   is the letter itself and not a second drawing of it that could drift. */
-function obGlyph(size){
-  if(ob.ch) return '<div class="obch" style="font-size:'+Math.round(size*0.8)+'px" aria-hidden="true">'+esc(ob.ch)+'</div>';
-  if(!ob.strokes) return '';
-  var polys=[];
-  try{ polys=LinguaFont.glyphContours({strokes:ob.strokes}, GPEN)||[]; }catch(e){ polys=[]; }
-  var d=polys.map(function(poly){
-    return poly.map(function(pt,i){ return (i?'L':'M')+Math.round(pt[0])+' '+Math.round(pt[1]); }).join(' ')+'Z';
-  }).join(' ');
-  return '<svg class="obgl" viewBox="0 0 800 800" width="'+size+'" height="'+size+'" aria-hidden="true">'+
-         '<path d="'+d+'" fill="currentColor"/></svg>';
+  route='home'; RENDERED=null; render(); window.scrollTo(0,0);
 }
 
 function obDrawHTML(){
-  if(!GE) GE=newGE('');
+  if(!GE) GE=newGE(ob.snd);
   var st=GE.st[GE.si], pts=0;
   GE.st.forEach(function(x){ pts+=x.pts.length; });
   return '<div class="mid">'+
-    '<h2>'+t('ob.draw.h')+'</h2>'+
+    '<h2>'+t('ob.draw.h2', esc(ob.snd))+'</h2>'+
     '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
     '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="obesc"><button class="obescb" onclick="obBorrow(\'\')">'+
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+
-    '<div class="obfoot"><button class="btn" onclick="obDone()">'+t('ob.draw.done')+'</button></div>';
+    '<div class="obfoot"><button class="btn" onclick="obDone()">'+t('ob.draw.done')+'</button>'+
+    '<button class="obskip" onclick="obSkipDraw()">'+t('ob.draw.later')+'</button></div>';
 }
 
 /* A sample is worth showing only if this phone can actually draw it. Some of
@@ -246,7 +291,7 @@ function obPv(w){
   try{
     var c=document.createElement('canvas'), x=c.getContext('2d');
     x.font='24px -apple-system, system-ui, sans-serif';
-    var miss=x.measureText('\uFFFF\uFFFF').width/2, chars=w.ch.split(' '), got=[];
+    var miss=x.measureText('￿￿').width/2, chars=w.ch.split(' '), got=[];
     for(var i=0;i<chars.length && got.length<3;i++){
       var ch=chars[i], wd=x.measureText(ch).width;
       if(wd>0 && Math.abs(wd-miss)>0.5) got.push(ch);
@@ -281,21 +326,12 @@ function obBorrowHTML(){
     }).join('')+'</div></div>';
 }
 
-function obSndHTML(){
-  return '<div class="mid">'+obGlyph(120)+
-    '<h2 class="obq">'+t('ob.snd.h')+'</h2>'+
-    '<div class="obsndgrid">'+OB_SND.map(function(p){
-      return '<button class="obsnd'+(ob.snd===p?' on':'')+'" onclick="obSnd(\''+p+'\')">'+esc(p)+'</button>';
-    }).join('')+'</div>'+
-    '<div class="mini obnote">'+(ob.ch? t('ob.snd.note.borrow') : t('ob.snd.note.draw'))+'</div></div>';
-}
-
 function vOb(){
   var s=ob.step;
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback" onclick="obBack()" aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
-    '<div class="obtop">'+[0,1,2].map(function(i){
+    '<div class="obtop">'+[0,1,2,3,4].map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join('')+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'" onchange="obLang(this.value)">'+
       UI_LANGS.map(function(c){
@@ -303,12 +339,13 @@ function vOb(){
       }).join('')+
     '</select></div>';
   var h = (s===0)? obDoorHTML()
-        : (s===1 && ob.mode==='borrow')? obBorrowHTML()
-        : (s===1)? obDrawHTML()
-        : obSndHTML();
+        : (s===1)? obNameHTML()
+        : (s===2)? obWsysHTML()
+        : (s===3)? obSndsHTML()
+        : (s===4 && ob.mode==='borrow')? obBorrowHTML()
+        : obDrawHTML();
   return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
 }
-
 
 /* =========================================================================
    6. Home = the cover and the table of contents
@@ -331,23 +368,17 @@ function capBanner(){
 /* One letter is a beginning; a handful is a writing system you can read a
    word in. Below that line the app talks about letters, above it about words. */
 var SC_ENOUGH=5;
-function scriptLetterCount(){
-  var n=0, k;
-  for(k in SCRIPT.g) if(Object.prototype.hasOwnProperty.call(SCRIPT.g,k) && SCRIPT.g[k].length) n++;
-  var m=scriptMap();
-  for(k in m) if(Object.prototype.hasOwnProperty.call(m,k) && m[k]) n++;
-  return n;
-}
+function scriptLetterCount(){ return wsHave(); }
 function scriptStarted(){ return scriptLetterCount()>0; }
 function scriptEnough(){ return scriptLetterCount()>=SC_ENOUGH; }
 
 function nextStep(){
   var n=WORDS.length, act, label;
-  /* Somebody who has just come through the door has drawn one letter and
-     given it a sound. Sending them straight to "coin your first word" throws
-     away what they just made and starts them somewhere else. The alphabet is
-     what is half-built, so the alphabet is what gets offered. */
-  if(n===0 && scriptStarted() && !scriptEnough()){ act="go('sound')"; label=t('next.sc0'); }
+  /* Whatever is half-built. Somebody who has just come through the door has a
+     name, a kind of writing, a handful of sounds and one letter -- so the rest
+     of the alphabet is what is nearest to hand, not a word written out of
+     nothing. Once there is enough to write with, words; then sentences. */
+  if(n===0 && !scriptEnough()){ act="go('sound')"; label=t('next.sc0'); }
   else if(n===0){ act="openAdd()"; label=t('next.w0'); }
   else if(n<5){ act="openAdd()"; label=t('next.w1', 5-n); }
   else if(LINES.length===0){ act="go('sent')"; label=t('next.s0'); }
@@ -380,14 +411,12 @@ function dropSnd(p){
   if(i>=0){ a.splice(i,1); save(); }
   delete scriptMap()[p]; save(); render();
 }
-function invAll(){ return addedSnd().slice(); }
+function invAll(){ return wsUnits(); }
 function scriptHave(){ var m=scriptMap(); return invAll().filter(function(p){return m[p];}).length; }
-/* A word written in the characters borrowed for its sounds. The sounds are
-   the word -- there is nothing to parse out of a spelling any more. */
-function inScript(hw){
-  var m=scriptMap();
-  return seqOf(hw).map(function(p){ return m[p]||p; }).join('');
-}
+/* A word written in the characters borrowed for it. What a character is
+   borrowed FOR depends on the kind of writing: a sound, a syllable, a whole
+   word. wsys.js cuts it; this looks each piece up. */
+function inScript(hw){ return wsInScript(hw); }
 function scriptOn(){ return !!SET.showScript && scriptHave()>0; }
 /* Named wOut, not hw: openWord(hw) already binds hw as its parameter, and a
    global of the same name is invisible from inside it. */
@@ -470,19 +499,21 @@ function phTile(p){
 function vHome(){
   var A=analyze();
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
+  /* The contents are in the order the work happens now. They used to open on
+     the dictionary, which meant the first thing offered was writing a word --
+     before a single sound had been chosen and before there was anything to
+     write it with. You choose sounds, you give them letters, and then there
+     is something a word can be made of.
+
+     Sounds and letters are one chapter, because giving a sound a letter used
+     to mean being in the other one. Coinage is not a chapter at all; it is
+     the second button at the foot of the dictionary. */
   var toc=[
-    /* Coinage was a chapter of its own, which made writing one word and
-       writing eight of them two different places to be. It is the second
-       button at the foot of the dictionary now, where the first one is
-       "write a word". */
-    ['I',  t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
-    /* Sounds and letters were two chapters, and giving a sound a letter meant
-       being in the other one. They are one now: the count is how many of this
-       language's sounds have been given a letter. */
-    ['II', t('toc.sound'),'sound', (function(){
-      var mine=addedSnd();
-      return mine.length? (sndDrawn()+' / '+mine.length) : '—';
+    ['I',  t('toc.sound'),'sound', (function(){
+      var u=wsUnits();
+      return u.length? (sndDrawn()+' / '+u.length) : '—';
     })()],
+    ['II', t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
     ['III',t('toc.gram'), 'gram',  tn('count.gram', gramCount())],
     ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
     ['V',  t('toc.notes'),'notes', NOTES.length? tn('count.notes', NOTES.length):'—'],
@@ -499,32 +530,28 @@ function vHome(){
       '<div class="rule"></div>'+
     '</div>'+
     '<div class="body" style="padding-top:0">'+
+    /* The contents used to be hidden until the first word existed, and what
+       stood in their place was a card saying "write the first word" -- so the
+       app's own table of contents was withheld from the one person who most
+       needed to see what was in the book. There is a language here from the
+       first screen now: a name, a kind of writing, sounds. The contents are
+       shown, and what to do next is the card above them. */
     capBanner()+nextStep()+
-    (WORDS.length===0
-      ? (scriptStarted() && !scriptEnough()
-          ? '<div class="empty"><div class="eb">'+t('home.new.t')+'</div>'+
-            '<div class="es">'+t('home.new.s')+'</div></div>'+
-            '<button class="btn" onclick="go(\'sound\')" style="margin-top:6px">'+t('next.sc0')+'</button>'
-          : '<div class="empty"><div class="eb">'+t('home.empty.t')+'</div>'+
-            '<div class="es">'+t('home.empty.s')+'</div></div>'+
-            '<button class="btn" onclick="openAdd()" style="margin-top:6px">'+t('home.empty.btn')+'</button>')
-      : '<div class="toc">'+toc.map(function(row){
-          return '<button class="trow" onclick="go(\''+row[2]+'\')">'+
-            '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
-            '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span></button>';
-        }).join('')+'</div>'+
-        (lastLine
-          ? '<button class="recent" onclick="go(\'sent\')">'+
+    '<div class="toc">'+toc.map(function(row){
+      return '<button class="trow" onclick="go(\''+row[2]+'\')">'+
+        '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
+        '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span></button>';
+    }).join('')+'</div>'+
+    (lastLine
+      ? '<button class="recent" onclick="go(\'sent\')">'+
             '<div class="rh">'+t('home.recent.line')+'</div>'+
             '<div class="line">'+esc(lastLine.ws.join(' '))+'</div>'+
             '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).rd : linked(lastLine.ws).ipa)+'</div></button>'
           : last? '<button class="recent" onclick="go(\'words\')">'+
             '<div class="rh">'+t('home.recent.word')+'</div>'+
             '<div class="line">'+esc(wOut(last.hw))+'</div>'+
-            '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')
-    )+
+            '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')+
     '</div>'+
-
   '</div>';
 }
 function editName(){
@@ -545,7 +572,7 @@ function vWords(){
     : '<div class="empty"><div class="eb">'+(q? t('words.nomatch') : t('words.empty'))+'</div></div>';
   return '<div class="view"><div class="chead">'+
     '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
+    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
@@ -591,24 +618,34 @@ function groupHTML(items){
    word happens to be spelled, because there is nothing left to guess: the
    sounds were chosen here. */
 function sndLetter(sym){
-  if(SCRIPT.g[sym] && SCRIPT.g[sym].length) return 'drawn';
+  if(wsDrawn(sym)) return 'drawn';
   if(chOf(sym)) return 'borrowed';
   return '';
 }
-function sndDrawn(){
-  var mine=addedSnd(), n=0, i;
-  for(i=0;i<mine.length;i++) if(sndLetter(mine[i])) n++;
-  return n;
-}
-/* One of this language's sounds, with whatever letter it has been given.
-   Tapping it goes to the surface where that letter is drawn. */
+function sndDrawn(){ return wsHave(); }
+/* One letter of the writing system, with whatever has been given to it.
+   What it is a letter OF depends on the kind of writing: a sound, a syllable,
+   a consonant, a whole word. Tapping it opens the surface it is drawn on.
+
+   A letter an abugida has worked out for itself -- a consonant with a vowel
+   mark on it -- is shown as what it is and cannot be drawn over: the two
+   pieces it is made of are what you change. */
 function sndTile(sym){
-  var kind=sndLetter(sym);
+  var kind=sndLetter(sym), made=(!SCRIPT.g[sym] && kind==='drawn');
   var face = kind==='drawn' ? '<canvas class="tc" data-r="'+esc(sym)+'"></canvas>'
            : kind==='borrowed' ? '<span class="bch">'+esc(chOf(sym))+'</span>'
            : '<span class="nol">+</span>';
-  return '<button class="gtile'+(kind?'':' empty')+'" onclick="editGlyph(\''+sym+'\')">'+
+  return '<button class="gtile'+(kind?'':' empty')+(made?' made':'')+'" onclick="editGlyph(\''+sym+'\')">'+
     face+'<span class="rl">'+esc(sym)+'</span></button>';
+}
+/* The five kinds of writing, as a rail. Changing it changes what there is to
+   draw, so the font is rebuilt and the tiles below redrawn. */
+function wsysRow(){
+  return '<div class="segs">'+WSYS.map(function(k){
+    return '<button class="seg'+(wsys()===k?' on':'')+'" onclick="setWsys(\''+k+'\')">'+
+      esc(t('ws.k.'+k))+'</button>';
+  }).join('')+'</div>'+
+  '<div class="note">'+t('ws.k.'+wsys()+'.d')+'</div>';
 }
 function sndHas(sym){
   var a=addedSnd();
@@ -662,16 +699,27 @@ function ipaVowTable(){
 }
 
 function vSound(){
-  var mine=addedSnd();
+  var mine=addedSnd(), units=wsUnits(), bases=wsBases(), marks=wsMarks();
   return '<div class="view"><div class="chead">'+
     '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
+    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
     '<span class="cn">'+mine.length+'</span></div></div>'+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:10px">'+t('ipa.note')+'</div>'+
+
+    '<div class="sec">'+t('ws.kind')+'</div>'+
+    wsysRow()+
+
     '<div class="sec">'+t('ipa.mine')+'</div>'+
     (mine.length
-      ? '<div class="gtiles">'+mine.map(sndTile).join('')+'</div>'+
+      ? (wsHasMarks()
+          ? '<div class="note" style="margin-bottom:8px">'+t('ws.bases')+'</div>'+
+            '<div class="gtiles">'+bases.map(sndTile).join('')+'</div>'+
+            '<div class="note" style="margin:14px 0 8px">'+t('ws.marks')+'</div>'+
+            '<div class="gtiles">'+marks.map(sndTile).join('')+'</div>'+
+            (wsMade().length? '<div class="note" style="margin:14px 0 8px">'+t('ws.made')+'</div>'+
+              '<div class="gtiles">'+wsMade().slice(0,24).map(sndTile).join('')+'</div>' : '')
+          : '<div class="gtiles">'+units.map(sndTile).join('')+'</div>')+
         '<div class="note" style="margin-top:8px">'+t('ipa.letters')+'</div>'+
         (sndDrawn()? '<div class="sec">'+t('script.preview')+'</div>'+
           '<div class="spv"><div class="big sfont">'+esc(WORDS.length?WORDS[0].hw:mine.join(''))+'</div></div>'+
