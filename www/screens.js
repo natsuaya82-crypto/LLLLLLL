@@ -117,13 +117,35 @@ var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
 function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
 function obBack(){
-  if(ob.step===0 && ob.mode==='borrow'){
+  if(ob.step===1 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
+
+/* ---- step 0, the door ------------------------------------------------- */
+/* Signing in comes first, and the door is what it looks like. Everything in
+   this app is metered or carried somewhere: a hundred words, three questions
+   a day, a plan that has to hold on the web too. None of that can be counted
+   without knowing whose it is, and an account made after the fact brings a
+   question nobody should be asked on their first day -- you drew a letter
+   here, and the account you just signed into already has a language: which
+   one survives. Asking first means that question never exists.
+   The provider handshakes are wired in at packaging. Until then these open
+   the door, so the app can be walked end to end. */
+function obSignIn(){ if(SET.done){ toast(t('set.account.soon')); return; } obGo(1); }
+
+function obDoorHTML(){
+  return '<div class="mid"><div class="obdoor"><span class="obmk">A</span></div>'+
+    '<h1 class="obh1">Lingua</h1>'+
+    '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
+    '<div class="obfoot">'+
+    '<button class="btn signin google" onclick="obSignIn()">'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
+    '<button class="btn signin apple" onclick="obSignIn()">'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+    '<div class="mini obnote">'+t('ob.signin.note')+'</div></div>';
+}
 
 /* ---- step 0, drawing -------------------------------------------------- */
 /* The editor is the real one from the glyph screen — same canvas id, same
@@ -133,11 +155,11 @@ function obLang(v){ SET.ui=v; save(); render(); }
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  ob.strokes=JSON.parse(JSON.stringify(keep)); ob.ch=''; GE=null; obGo(1);
+  ob.strokes=JSON.parse(JSON.stringify(keep)); ob.ch=''; GE=null; obGo(2);
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
-function obTakeCh(ch){ ob.ch=ch; ob.strokes=null; obGo(1); }
+function obTakeCh(ch){ ob.ch=ch; ob.strokes=null; obGo(2); }
 
 /* ---- step 1, the sound ------------------------------------------------ */
 /* Two writing systems live side by side in this app: borrowed characters
@@ -151,12 +173,8 @@ function obSnd(p){
   else if(ob.ch){ scriptMap()[p]=ob.ch; SET.showScript=true; }
   save();
   if(ob.strokes) installScriptFont();
-  obGo(2);
+  obFinish();
 }
-
-/* The provider handshakes are wired in at packaging time. Until then this is
-   honest about it rather than looking broken. */
-function obSignIn(){ toast(t('set.account.soon')); }
 
 function obFinish(){
   if(!langName) langName=t('lang.default');
@@ -252,13 +270,6 @@ function obSndHTML(){
     '<div class="mini obnote">'+(ob.ch? t('ob.snd.note.borrow') : t('ob.snd.note.draw'))+'</div></div>';
 }
 
-function obDoorHTML(){
-  return '<div class="mid"><div class="obdoor">'+obGlyph(76)+'</div>'+
-    '<p class="obtag">'+t('ob.door.h')+'</p></div>'+
-    '<div class="obfoot"><button class="btn" onclick="obFinish()">'+t('ob.open')+'</button>'+
-    '<div class="mini obnote">'+t('ob.door.note')+'</div></div>';
-}
-
 function vOb(){
   var s=ob.step;
   var head='<div class="obhead">'+
@@ -271,11 +282,11 @@ function vOb(){
         return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
       }).join('')+
     '</select></div>';
-  var h = (s===0 && ob.mode==='borrow')? obBorrowHTML()
-        : (s===0)? obDrawHTML()
-        : (s===1)? obSndHTML()
-        : obDoorHTML();
-  return '<div class="ob view'+(s===2?' center':'')+'">'+head+h+'</div>';
+  var h = (s===0)? obDoorHTML()
+        : (s===1 && ob.mode==='borrow')? obBorrowHTML()
+        : (s===1)? obDrawHTML()
+        : obSndHTML();
+  return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
 }
 
 

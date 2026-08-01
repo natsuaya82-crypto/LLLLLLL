@@ -847,7 +847,7 @@ function render(){
      so the editor it embeds has to be mounted here or its canvas stays blank.
      Every editor action ends in render(), which lands back on this line. */
   if(!SET.done){ app.innerHTML=vOb();
-    if(ob.step===0 && ob.mode==='draw') geMount();
+    if(ob.step===1 && ob.mode==='draw') geMount();
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
