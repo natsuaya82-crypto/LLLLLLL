@@ -10,10 +10,6 @@
 function approx(){ return langDef().read || LANG.en.read; }
 function rd(word){ return approx().word(word); }        /* reading for this language */
 function rdSyl(sy){ return approx().syl(sy); }
-/* A reading in a named language whatever the interface is set to. The
-   text-to-speech needs this: on a device whose only voice is Japanese, the
-   katakana lands far closer to the intended sound than the spelling does. */
-function rdIn(code, word){ return (LANG[code]||LANG.en).read.word(word); }
 /* The name of the approximation reads as a common noun inside a sentence
    ("respelling is an approximation") but wants a capital as a button. */
 function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
@@ -80,69 +76,13 @@ function phChip(c,cls,isVowel){
   var s=isVowel? (IPA_V[c]||c) : (IPA_C[c]||c);
   return '<span class="ph'+(cls||'')+'">'+esc(c)+'<i>'+esc(s)+'</i></span>';
 }
-/* ---- Voice ------------------------------------------------------------
-   Web Speech works inside the iOS app (WKWebView) too. Three traps:
-   (1) the list of voices is empty at first, so wait for voiceschanged;
-   (2) the device may not have a voice for the language;
-   (3) the hardware silent switch. For (1) and (2) the voice is selectable,
-   and on a device that only has a Japanese voice the katakana is read
-   instead of the spelling. If a native TTS plugin is present it wins. */
-var VOICES=[];
-function loadVoices(){
-  var before=VOICES.length;
-  try{ VOICES=(window.speechSynthesis && speechSynthesis.getVoices()) || []; }catch(e){ VOICES=[]; }
-  /* If the list turns up late, redraw only for someone sitting on settings */
-  if(!before && VOICES.length && typeof route!=='undefined' && route==='settings'){
-    try{ render(); }catch(e){}
-  }
-}
-if(window.speechSynthesis){
-  loadVoices();
-  try{
-    if(speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', loadVoices);
-    else speechSynthesis.onvoiceschanged=loadVoices;
-  }catch(e){}
-}
-/* Languages with plain, even vowels, in the order we would rather have them */
-var VOICE_PREF=['it','es','pt','fi','ro','id','sw','la','ja','en'];
-function pickVoice(){
-  if(!VOICES.length) loadVoices();
-  var i;
-  if(SET.voice){
-    for(i=0;i<VOICES.length;i++) if(VOICES[i].voiceURI===SET.voice || VOICES[i].name===SET.voice) return VOICES[i];
-  }
-  for(var p=0;p<VOICE_PREF.length;p++){
-    for(i=0;i<VOICES.length;i++){
-      var lg=String(VOICES[i].lang||'').replace('_','-').toLowerCase();
-      if(lg.split('-')[0]===VOICE_PREF[p]) return VOICES[i];
-    }
-  }
-  return VOICES[0]||null;
-}
-function voiceLabel(){
-  var v=pickVoice();
-  return v ? (v.name+' ('+v.lang+')') : t('set.voice.none');
-}
-function speak(text){
-  var str=String(text||'').trim(); if(!str) return;
-  var v=pickVoice();
-  /* On a device that only has a Japanese voice, read the katakana rather
-     than the spelling: it lands much closer to the intended sound. */
-  var say = (v && /^ja/i.test(v.lang)) ? str.split(/\s+/).map(function(w){ return rdIn('ja', w); }).join(' ') : str;
-  try{
-    var N = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.TextToSpeech;
-    if(N && N.speak){ N.speak({text:say, lang:(v&&v.lang)||'it-IT', rate:1.0}); return; }
-  }catch(e){}
-  try{
-    if(!window.speechSynthesis){ toast(t('tts.none')); return; }
-    speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(say);
-    if(v){ u.voice=v; u.lang=v.lang; } else { u.lang='it-IT'; }
-    u.rate=.82;
-    u.onerror=function(){ toast(t('tts.err')); };
-    speechSynthesis.speak(u);
-  }catch(e){ toast(t('tts.fail')); }
-}
+/* ---- The device's voice is not here any more ---------------------------
+   There used to be a block below this line that found a voice on the phone,
+   picked the one whose language had the plainest vowels, and read a word
+   through it -- reading the katakana instead of the spelling when the only
+   voice was Japanese. All of it was a way of choosing whose accent to be
+   wrong in. A phoneme is built now, in www/voice.js, out of the chart's own
+   features, so there is nothing left for a device voice to do. */
 
 /* Generation: build new words that keep the rules we inferred.
    Also plain arithmetic on the device. */

@@ -74,7 +74,7 @@ const ROOT = path.join(HERE, '..', 'www');
    purpose — they are where foreign text belongs — and so is the font writer,
    which has no user-facing text in it at all. */
 const APP_SRC = ['index.html', 'core.js', 'reading.js', 'screens.js',
-                 'sentences.js', 'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
+                 'sentences.js', 'grammar.js', 'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
 const PORT = 8121;
 /* Use the browser this machine already has if there is one; on a CI runner
    there is not, and Playwright's own copy is the right answer. */
@@ -342,7 +342,13 @@ const R = await pg.evaluate(() => {
     /* the labels that are looked up, not templated */
     try {
       ['n','v','adj','x',POS_ALL].forEach(posLabel);
-      ORDERS.forEach(orderLab); ORDERS.forEach(orderEx);
+      /* word order is three roles now, looked up one at a time, and the
+         grammar decisions are each a title, a line of explanation and a
+         row of choices -- none of which any view passes through t() as a
+         whole string, so they are asked for here by hand. */
+      ['S','O','V'].forEach(k => t('gram.role.' + k));
+      GFEATS.forEach(f => { t('gram.' + f.id + '.t'); t('gram.' + f.id + '.d');
+        f.opts.forEach(o => t('gram.how.' + o)); });
       /* the seed words went with the old onboarding: */ // OB_SEEDS.forEach(s => seedLabel(s.k !== undefined ? s.k : s));
     } catch (e) { out.miss.push(c + ' a label lookup threw: ' + e.message); }
 

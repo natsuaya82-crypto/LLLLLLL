@@ -558,6 +558,32 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
 .nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
 
+/* ---------- grammar: a decision, and what it does ----------
+   A row of choices, then the piece of sound the choice is carried by, then
+   one of your own words before and after it. The demonstration is the point,
+   so the panel is built around it. */
+.gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
+.gor{font-size:.86rem;color:var(--tx)}
+.gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
+.gpiece{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0 0;padding:12px 14px;
+  border:1px solid var(--line);border-radius:11px;background:var(--pane);color:inherit;font:inherit;
+  text-align:left;cursor:pointer;min-height:48px}
+.gpiece.has{border-color:var(--goldln)}
+.gpiece .gpl{font-size:.78rem;color:var(--txs)}
+.gpiece .gpv{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:.9rem;color:var(--gold)}
+.gpiece:not(.has) .gpv{color:var(--txm);font-family:inherit;font-size:.76rem}
+.gdemo{margin:12px 0 2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--pane)}
+.gside{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
+.gside:first-child{border-top:0}
+.gside .gsl{flex:0 0 auto;font-size:.58rem;letter-spacing:.13em;text-transform:uppercase;color:var(--txm);min-width:50px}
+.gside .gsw{font-family:'Cinzel',Georgia,serif;font-size:1.04rem;color:var(--tx);word-break:break-word}
+.gside .gsi{font-family:ui-monospace,Menlo,monospace;font-size:.66rem;color:var(--gold)}
+.gside .gsg{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:.88rem;color:var(--txs)}
+.gside .gsp{margin-left:auto;flex:0 0 auto;min-width:38px;min-height:38px;background:none;border:0;
+  color:var(--txs);display:flex;align-items:center;justify-content:center;align-self:center}
+.gside .gsp:active{opacity:.5}
+.gneed{margin:10px 0 2px}
+
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever
    font answered. A drawn one does neither, so every place that used to hold
@@ -612,6 +638,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 <script src="reading.js"></script>
 <script src="screens.js"></script>
 <script src="sentences.js"></script>
+<script src="grammar.js"></script>
 <script src="settings.js"></script>
 <script src="otf5.js"></script>
 <script src="glyph.js"></script>

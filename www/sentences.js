@@ -6,18 +6,11 @@
    9.5 Sentences (choose a word order, then hear how the words run together)
        Also pure arithmetic on the device. Also free.
    ========================================================================= */
-/* The label and the example are keys; only the id and the slot order
-   are data. A locale can describe SOV however it likes. */
-var ORDERS=[
-  {id:'SOV', seq:['S','O','V']},
-  {id:'SVO', seq:['S','V','O']},
-  {id:'VSO', seq:['V','S','O']}
-];
-function orderLab(o){ return t('order.'+o.id+'.lab'); }
-function orderEx(o){ return t('order.'+o.id+'.ex'); }
-function orderDef(){ for(var i=0;i<ORDERS.length;i++) if(ORDERS[i].id===(SET.order||'SOV')) return ORDERS[i]; return ORDERS[0]; }
+/* The word order this screen checks against is not chosen here any more. It
+   is one of the grammar decisions, so it lives with the others, in the
+   chapter where decisions are made; this screen reads it and says where it
+   came from. ORDERS, orderDef and setOrder are in www/grammar.js. */
 function byPos(p){ return WORDS.filter(function(w){return w.pos===p;}); }
-function setOrder(id){ SET.order=id; save(); render(); }
 
 /* A line is woven freely. The word order is a rule you set, used afterwards
    to check what you built — never to stop you building it. Any length, and
@@ -142,7 +135,7 @@ function vSent(){
         }).join('')+'</div>'+
         '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
         '<div class="out">'+readLink(L)+'</div>'+
-        '<button class="play" onclick="sayWords('+esc(JSON.stringify(ws.map(function(w){return w.hw;})))+')">'+t('sent.say')+'</button>'+
+        '<button class="play" onclick="sayWords('+esc(JSON.stringify(ws.map(function(w){return w.hw;})))+')">'+ICON_PLAY+t('sent.say')+'</button>'+
         '</div>'+
         (L.isLink? '' : '<div class="note" style="margin-top:8px">'+t('sent.linkhint')+'</div>')+
         '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="keepLine()">'+t('sent.keep')+'</button>'
@@ -157,12 +150,13 @@ function vSent(){
     '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(compQ)+'" oninput="setCompQ(this.value)"></div>'+
     '<div class="pal" id="pal">'+palList()+'</div>'+
 
-    /* --- 4. Word order: the rule you set, used to check what you built --- */
+    /* --- 4. Word order: the rule you set in the grammar, used to check
+       what you built here. It is shown, not offered: one place decides it. --- */
     '<div class="sec">'+t('sent.order')+'</div>'+
-    '<div class="segs">'+ORDERS.map(function(o){
-      return '<button class="seg'+(o.id===d.id?' on':'')+'" onclick="setOrder(\''+o.id+'\')">'+o.id+'</button>';
-    }).join('')+'</div>'+
-    '<div class="note"><b style="color:var(--tx);font-weight:500">'+orderLab(d)+'</b><br>'+orderEx(d)+'</div>'+
+    '<button class="gpiece has" onclick="go(\'gram\')">'+
+      '<span class="gpl">'+esc(t('toc.gram'))+'</span>'+
+      '<span class="gpv">'+esc(d.id)+'</span>'+ICON_GO+'</button>'+
+    '<div class="note">'+t('sent.order.d')+'</div>'+
     (chk
       ? (chk.ok
           ? '<div class="chk ok">'+t('sent.chk.ok', chk.now)+'</div>'

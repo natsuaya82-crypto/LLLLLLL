@@ -505,7 +505,7 @@ function vHome(){
       var mine=addedSnd();
       return mine.length? (sndDrawn()+' / '+mine.length) : '—';
     })()],
-    ['III',t('toc.rules'),'rules', findings().length? tn('count.rules', findings().length):'—'],
+    ['III',t('toc.gram'), 'gram',  tn('count.gram', gramCount())],
     ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
     ['V',  t('toc.make'), 'make',  '']
   ];
@@ -698,25 +698,3 @@ function vSound(){
     '<div class="note" style="margin-top:22px">'+t('ipa.footer')+'</div>'+
     '</div></div>';
 }
-
-
-/* =========================================================================
-   9. Rules
-   ========================================================================= */
-function vRules(){
-  var f=findings();
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">III</span><span class="ct">'+esc(t('toc.rules'))+'</span>'+
-    '<span class="cn">'+f.length+'</span></div></div>'+
-    '<div class="body">'+
-    '<div class="note" style="margin-bottom:6px">'+tn('rules.intro', WORDS.length)+'</div>'+
-    (f.length? f.map(function(x){
-      return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
-        '<div class="bar"><i style="width:'+Math.round(Math.max(.12,Math.min(1,x.rate))*100)+'%"></i></div></div>';
-    }).join('') : '<div class="empty"><div class="eb">'+t('rules.empty.t')+'</div><div class="es">'+t('rules.empty.s')+'</div></div>')+
-    (nextHint()? '<div class="note" style="margin-top:18px">'+t('rules.next', esc(nextHint()))+'</div>':'')+
-    '<button class="btn ghost" style="width:100%;margin-top:18px" onclick="go(\'make\')">'+t('rules.make')+'</button>'+
-    '</div></div>';
-}
-

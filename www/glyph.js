@@ -1100,7 +1100,7 @@ function render(){
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
   var v = route==='words'? vWords()
         : route==='sound'? vSound()
-        : route==='rules'? vRules()
+        : route==='gram' ? vGram()
         : route==='sent' ? vSent()
         : route==='make' ? vMake()
         : route==='settings'? vSettings()
