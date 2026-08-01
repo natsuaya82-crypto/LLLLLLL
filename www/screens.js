@@ -183,14 +183,7 @@ function obDrawHTML(){
     '<h2>'+t('ob.draw.h')+'</h2>'+
     '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
     '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
-    '<div class="gtools">'+
-      gbtn('geCircle','circle','glyph.circle', !!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o'))+
-      gbtn('geNew','new','glyph.new', !!(st&&st.pts.length), false)+
-    '</div>'+
-    '<div class="gclearwrap">'+
-      '<button class="gclear" onclick="geUndo()"'+(GE.undo.length?'':' disabled')+'>'+esc(t('glyph.undo'))+'</button>'+
-      '<button class="gclear" onclick="geClear()"'+(pts?'':' disabled')+'>'+esc(t('glyph.clear'))+'</button>'+
-    '</div>'+
+    geRail(st, pts)+
     '<div class="obesc"><button class="obescb" onclick="obBorrow(\'\')">'+
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+

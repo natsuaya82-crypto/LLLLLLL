@@ -252,9 +252,12 @@ function geMark(){
    24-unit box each, stroked not filled, so they inherit the caption's colour
    and go gold with it. */
 var GICON={
-  /* the mark is the thing it does: a line bowed through a dot that is on it */
+  /* Each mark is the thing it does. Bowed line through a dot that sits on it;
+     one arrow turning back on itself; a ring drawn in dots, which is the shape
+     of something that is no longer there. */
   'circle': '<path d="M4.5 17.5Q12 3.5 19.5 17.5"/><circle cx="12" cy="10.5" r="1.6"/>',
-  'new'   : '<path d="M4.5 18.5 10.5 7.5" stroke-dasharray="2.4 2.6"/><path d="M16.5 11v8M12.5 15h8"/>'
+  'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
+  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
 function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function gbtn(fn,n,key,en,on){
@@ -286,16 +289,7 @@ function vGlyph(){
     '<span class="cn">'+pts+'</span></div></div>'+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
-    '<div class="gtools">'+
-      gbtn('geCircle','circle','glyph.circle', !!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o'))+
-      gbtn('geNew','new','glyph.new', !!(st&&st.pts.length), false)+
-    '</div>'+
-    '<div class="gclearwrap">'+
-      '<button class="gclear" onclick="geUndo()"'+(GE.undo.length?'':' disabled')+'>'+
-        esc(t('glyph.undo'))+'</button>'+
-      '<button class="gclear" onclick="geClear()"'+(pts?'':' disabled')+'>'+
-        esc(t('glyph.clear'))+'</button>'+
-    '</div>'+
+    geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div>'+
     '<div class="barfix">'+
@@ -402,6 +396,8 @@ var GHDEMO={
               b:[{pts:[[184,616],[400,184],[616,616]], k:'o'}], m:[400,184] },
   'new'   : { a:[{pts:[[256,256],[256,544]]}],
               b:[{pts:[[256,256],[256,544]]},{pts:[[472,256],[616,256],[616,544]]}], m:[472,256] }
+  /* 'new' is kept only so the hint reel still has its demonstration; no
+     button calls it any more -- lifting the finger starts the next stroke. */
 };
 function ghShow(k){
   if(!GHDEMO[k]) return;
@@ -678,6 +674,18 @@ function geUp(){
 /* The toolbar's enabled/disabled state depends on the selection, and the
    selection changes on every tap — but re-rendering the whole view would tear
    the canvas down mid-gesture. So only the toolbar is redrawn. */
+/* Round, undo, clear. NEW used to sit here and is gone: a stroke ends when
+   the finger lifts, so there was nothing left for it to start. Undo and clear
+   were words in a corner underneath; they are marks on the rail now, at the
+   same size as everything else a thumb has to hit. */
+function geRail(st, pts){
+  return '<div class="gtools">'+
+    gbtn('geCircle','circle','glyph.circle', !!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o'))+
+    gbtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
+    gbtn('geClear','clear','glyph.clear', !!pts, false)+
+  '</div>';
+}
+
 function geTools(){
   var box=document.querySelector('.gtools');
   if(!box) return;
@@ -686,7 +694,8 @@ function geTools(){
   /* Keyed by name, not by position: the row can be reordered or added to
      without this quietly disabling the wrong button. */
   var S={ 'circle':[!!(st&&st.pts.length>1&&st.pts.length<4), !!(st&&st.k==='o')],
-          'new'   :[!!(st&&st.pts.length), false] };
+          'undo'  :[!!GE.undo.length, false],
+          'clear' :[!!pts, false] };
   var b=box.getElementsByTagName('button'), i, s, g, cl;
   for(i=0;i<b.length;i++){
     g=b[i].getAttribute('data-g'); s=S[g];
@@ -702,8 +711,6 @@ function geTools(){
       b[i].className=s[1]?'on':'';
     }
   }
-  var q=document.querySelectorAll('.gclearwrap button');
-  if(q.length>1){ q[0].disabled=!GE.undo.length; q[1].disabled=!pts; }
   var cn=document.querySelector('.chap .cn');
   if(cn) cn.textContent=String(pts);
 }
