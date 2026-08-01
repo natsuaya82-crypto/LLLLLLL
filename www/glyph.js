@@ -635,6 +635,16 @@ function geDown(ev){
   geDraw(); geTools();
 }
 function geMove(ev){
+  /* First, unconditionally, before any of the returns below.
+     This was at the foot of the function, after four early returns -- and one
+     of those fires on almost every event a real finger sends. The lattice is
+     about 25px apart and a fingertip travels less than that between frames,
+     so most moves land on the point they are already on and returned early.
+     iOS reads a move it was not asked to keep as the start of a scroll,
+     cancels the pointer stream, and the stroke ends before it exists. On a
+     mouse none of this happens, which is why it looked fine here and could
+     not be drawn on a phone. */
+  if(ev && ev.preventDefault) ev.preventDefault();
   if(!GE||!GE.drag||GE.pi<0) return;
   var c=ev.currentTarget, p=geAt(c,ev), st=GE.st[GE.si];
   if(!st) return;
@@ -660,13 +670,13 @@ function geMove(ev){
   st.pts[GE.pi][1]=p[1];
   GE.moved=true;
   geDraw();
-  if(ev.preventDefault) ev.preventDefault();
 }
 /* The undo entry is stamped at the end of the gesture, not the start, and only
    if the letter actually changed. Otherwise merely choosing a point would fill
    the stack with steps that undo to the same drawing, and the one recovery the
    editor has would look broken. */
-function geUp(){
+function geUp(ev){
+  if(ev && ev.preventDefault) ev.preventDefault();
   if(!GE) return;
   GE.drag=false; GE.fresh=false;
   /* Lifting the finger after drawing ends that stroke. Lifting it after a
@@ -754,12 +764,15 @@ function geDraw(){
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
      along here", and that is the thing being taken away. */
   var gs=gstep(), gi, gj;
-  x.fillStyle=cssVar('--line2');
+  /* --line2 is 5% white. On a desk that reads as a lattice; on a phone in
+     daylight it reads as nothing, and a lattice you cannot see is a lattice
+     that is not there -- which is the one thing this surface has to show. */
+  x.fillStyle=cssVar('--dot');
   for(gi=0; gi<GGRID.n; gi++){
     for(gj=0; gj<GGRID.n; gj++){
       x.beginPath();
       /* the dot scales with the step, so 100 dots do not read as a grey wash */
-      x.arc(k*(GGRID.inset+gi*gs), k*(GGRID.inset+gj*gs), Math.max(1,k*gs*0.075), 0, Math.PI*2);
+      x.arc(k*(GGRID.inset+gi*gs), k*(GGRID.inset+gj*gs), Math.max(1.5,k*gs*0.095), 0, Math.PI*2);
       x.fill();
     }
   }
