@@ -863,6 +863,27 @@ function geUp(ev){
       GE.pi=-1;
     }
   }
+  /* Tapping is the other way to build, and on a lattice this fine it is the
+     easier one: two dots and a line between them, no dragging a fingertip
+     along a path a quarter its width.
+
+     Off: two taps make a straight line and that line is finished.
+     On:  two taps set the ends, and a third says where the line passes --
+          the arc bows through it, as deep or as shallow as it was put.
+
+     Two taps cannot make a curve on their own. A two-point round is read as
+     the ends of a circle, so it is always a half circle bowing the same way
+     whichever end was tapped first -- measured, both directions, 50% of the
+     chord every time. The third tap is what makes it a curve anyone chose. */
+  if(!GE.moved && !GE.hit){
+    var tst=GE.st[GE.si];
+    if(tst && !GE.round && tst.pts.length>=2){ GE.seal=true; GE.pi=-1; }
+    else if(tst && GE.round && tst.pts.length>=3){
+      var t0=tst.pts[0], t1=tst.pts[1], t2=tst.pts[2];
+      tst.pts=[[t0[0],t0[1]], [t2[0],t2[1]], [t1[0],t1[1]]];
+      tst.k='o'; GE.seal=true; GE.pi=-1;
+    }
+  }
   GE.hit=false; GE.again=false;
   if(GE.pre && GE.pre!==JSON.stringify(GE.st)){
     GE.undo.push(GE.pre);
