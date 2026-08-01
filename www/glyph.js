@@ -238,7 +238,7 @@ function newGE(r){
   return { r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
-           free:false, round:false,
+           free:false, round:false, raw:null, rawFor:-1,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 function editGlyph(r){ GE=newGE(r); go('glyph'); }
@@ -376,6 +376,30 @@ function geSimplify(p, tol){
   return out;
 }
 
+/* A moving average, run a couple of times. Endpoints stay put. */
+function geSmooth(p, passes){
+  var q=p.slice(), i, j, out;
+  for(j=0;j<passes;j++){
+    out=[q[0]];
+    for(i=1;i<q.length-1;i++){
+      out.push([(q[i-1][0]+2*q[i][0]+q[i+1][0])/4, (q[i-1][1]+2*q[i][1]+q[i+1][1])/4]);
+    }
+    out.push(q[q.length-1]);
+    q=out;
+  }
+  return q;
+}
+
+/* Both ends of a stroke go back onto the lattice so strokes can meet; every
+   point between them stays where the finger put it. */
+function geEnds(s, raw){
+  if(!raw || s.length<2) return s;
+  var a=s[0], b=s[s.length-1];
+  s[0]=[gsnap(a[0]), gsnap(a[1])];
+  s[s.length-1]=[gsnap(b[0]), gsnap(b[1])];
+  return s;
+}
+
 /* What a finished gesture becomes.
 
    The first attempt reduced a whole gesture to one arc: start, end, and the
@@ -396,12 +420,30 @@ function geSimplify(p, tol){
    gets used: a true arc through the middle point rather than a corner
    rounded off. */
 function geShape(st){
-  var p=st.pts, n=p.length;
+  /* Prefer what the finger actually did. The snapped copy is a staircase
+     wherever the gesture was not straight, and no amount of corner-rounding
+     turns a staircase into a curve. Only the two ends go back onto the
+     lattice, because that is what lets one stroke meet another. */
+  var raw = (GE.round && GE.raw && GE.rawFor===GE.si && GE.raw.length>3) ? GE.raw : null;
+  var p = raw || st.pts, n = p.length;
   if(n<3){ delete st.k; delete st.closed; return; }
   var step=gstep(), i;
   var a=p[0], b=p[n-1];
   var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
-  var ring=(n>6 && span<=step*1.4);
+  /* Whether the gesture came back to where it started, judged against how
+     big the loop is rather than against a fixed distance. Nobody closes a
+     circle exactly: a bowl drawn by hand stops twenty or thirty degrees
+     short, which at this size is nearly two lattice steps of gap and read as
+     an open curve under a fixed threshold. Measured against the loop's own
+     span it is unambiguous -- a bowl left open by a third of a turn still
+     closes, a half circle never does. */
+  var lo0=p[0][0], hi0=p[0][0], lo1=p[0][1], hi1=p[0][1];
+  for(i=1;i<n;i++){
+    if(p[i][0]<lo0) lo0=p[i][0]; if(p[i][0]>hi0) hi0=p[i][0];
+    if(p[i][1]<lo1) lo1=p[i][1]; if(p[i][1]>hi1) hi1=p[i][1];
+  }
+  var diag=Math.sqrt((hi0-lo0)*(hi0-lo0)+(hi1-lo1)*(hi1-lo1));
+  var ring=(n>6 && span<=Math.max(step*1.2, diag*0.45));
   /* Two passes. The first is coarse enough to throw away the staircase a
      snapped diagonal leaves; if what survives is still four points or more
      the gesture really was curved, and it is thinned again from the original
@@ -409,8 +451,13 @@ function geShape(st){
      its shorter arm, so widely spaced points leave straight stretches between
      the corners and a bowl comes out as a rounded box. Closer points, shorter
      arms, and the straight stretches disappear. */
-  var s=geSimplify(p, step*0.6);
-  if(s.length>=4) s=geSimplify(p, step*0.3);
+  /* A hand shakes. Averaging each raw point with its neighbours takes the
+     tremor out without taking the curve out, which a coarse thinning alone
+     cannot do -- it would have to throw away real bends to reach the same
+     smoothness. Then thin what is left. */
+  if(raw) p=geSmooth(p, 2);
+  var s = raw ? geSimplify(p, step*0.28) : geSimplify(p, step*0.6);
+  if(!raw && s.length>=4) s=geSimplify(p, step*0.3);
   delete st.k; delete st.closed;
   if(!GE.round){ st.pts=s; return; }
   /* A ring is the one shape a chain of rounded corners cannot tell: eight
@@ -422,13 +469,13 @@ function geShape(st){
      loop kept as eight filleted corners wobbles by a tenth of its width. */
   if(ring && s.length>=3){
     st.closed=true; st.k='o';
-    st.pts=[p[0], p[Math.floor(n/3)], p[Math.floor(2*n/3)]];
+    st.pts=[p[0].slice(0,2), p[Math.floor(n/3)].slice(0,2), p[Math.floor(2*n/3)].slice(0,2)];
     return;
   }
   /* One clean bow, and the round primitive draws a true arc through it. */
-  if(s.length===3){ st.pts=s; st.k='o'; return; }
+  if(s.length===3){ st.pts=geEnds(s, raw); st.k='o'; return; }
   for(i=1;i<s.length-1;i++) s[i][2]='c';
-  st.pts=s;
+  st.pts=geEnds(s, raw);
 }
 function geCircle(){
   geMark();
@@ -665,6 +712,21 @@ function ghDraw(c,t){
 /* How much of the canvas is margin at each edge, so the pen has somewhere to
    go at the outermost lattice points. Applied by geDraw, undone here. */
 var GEPAD=0.055;
+/* The same mapping as geAt, without the snap. A curve drawn through an 11x11
+   lattice can only ever be a staircase -- every point of it lands on an
+   intersection, so an arc came out as alternating one-step jogs and marking
+   those corners as bends only rounded the jogs off. The lattice is what makes
+   straight strokes agree with each other; a curve between two of its points
+   does not have to touch it on the way. Clamped to the inset so the pen still
+   has room, which is what keeps ink inside the square. */
+function geAtRaw(c,ev){
+  var b=c.getBoundingClientRect();
+  var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
+  var x=((ev.clientX-b.left)-px)/(w-2*px)*800;
+  var y=((ev.clientY-b.top)-py)/(h-2*py)*800;
+  var lo=GGRID.inset, hi=800-GGRID.inset;
+  return [Math.max(lo,Math.min(hi,x)), Math.max(lo,Math.min(hi,y))];
+}
 function geAt(c,ev){
   var b=c.getBoundingClientRect();
   var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
@@ -722,6 +784,7 @@ function geDown(ev){
        dragging moved the point you had just put down, so a line took two
        separate taps and nobody found that out by trying. */
     GE.fresh=true; GE.free=true;
+    GE.raw=[geAtRaw(c,ev)]; GE.rawFor=GE.si;
   }
   GE.drag=true;
   if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
@@ -756,6 +819,11 @@ function geMove(ev){
     else if(n < GE_MAXPTS){ st.pts.push([p[0],p[1]]); }
     else { st.pts[n-1][0]=p[0]; st.pts[n-1][1]=p[1]; }
     GE.pi=st.pts.length-1; GE.fresh=false; GE.moved=true;
+    /* the finger's own path, kept beside the snapped one */
+    if(GE.raw){
+      var rp=geAtRaw(c,ev), lastr=GE.raw[GE.raw.length-1];
+      if(Math.abs(rp[0]-lastr[0])+Math.abs(rp[1]-lastr[1]) > 6) GE.raw.push(rp);
+    }
     geDraw();
     return;
   }
