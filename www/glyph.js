@@ -231,10 +231,14 @@ function addLetter(){
 var GE=null;
 function newGE(r){
   var src=SCRIPT.g[r]||[];
+  /* A letter opened for editing is finished work, the same as a drawing
+     handed back by undo, so it opens sealed: the first press starts a new
+     stroke instead of picking up the last one you drew last time. Only what
+     is drawn in this sitting, before the finger comes up, can be grabbed. */
   return { r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
-           free:false, seal:false };
+           free:false, seal:!!(src.length && src[src.length-1].pts.length) };
 }
 function editGlyph(r){ GE=newGE(r); go('glyph'); }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
@@ -359,7 +363,13 @@ function geNew(){
 function geUndo(){
   if(!GE.undo.length) return;
   GE.st=JSON.parse(GE.undo.pop());
-  GE.si=GE.st.length-1; GE.pi=-1; GE.seal=false; render();
+  GE.si=GE.st.length-1; GE.pi=-1;
+  /* What comes back from undo is a finished drawing, not a stroke still under
+     the finger, so it is sealed like one. Left open, the last stroke's dots
+     stayed live and the next press -- meant to begin a new line -- landed on
+     one of them and dragged the old line out of shape instead. */
+  GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
+  render();
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
 function geSave(){
