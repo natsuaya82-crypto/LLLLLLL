@@ -182,6 +182,7 @@ defLang('de', (function(){
       "ipa.m.tap"                 : "Getippt",
       "ipa.m.trill"               : "Vibrant",
       "ipa.mine"                  : "Diese Sprache nutzt",
+      "ipa.letters"               : "Tippe einen Laut an, um seinen Buchstaben zu zeichnen oder einen auszuleihen.",
       "ipa.mine.none"             : "Noch nichts gewählt.",
       "ipa.note"                  : "Wähle die Laute, aus denen diese Sprache besteht. Nur ein hier gewählter Laut kann einen Buchstaben bekommen.",
       "ipa.other"                 : "Außerdem",

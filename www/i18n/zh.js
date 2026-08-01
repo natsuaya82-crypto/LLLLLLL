@@ -202,6 +202,7 @@ defLang('zh', (function(){
       "ipa.m.tap"                 : "闪音",
       "ipa.m.trill"               : "颤音",
       "ipa.mine"                  : "这门语言用的音",
+      "ipa.letters"               : "点一个音，画出它的字母，或借一个字来用。",
       "ipa.mine.none"             : "还没有选。",
       "ipa.note"                  : "选出这门语言由哪些音组成。只有在这里选过的音，才能配上字母。",
       "ipa.other"                 : "此外",

@@ -1094,7 +1094,7 @@ function render(){
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
-  if(route==='script') geTiles();
+  if(route==='script' || route==='sound') geTiles();
 }
 migratePh();
 installScriptFont();

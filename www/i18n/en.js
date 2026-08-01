@@ -96,6 +96,7 @@ defLang('en', (function(){
       "ipa.m.tap"                 : "tap",
       "ipa.m.trill"               : "trill",
       "ipa.mine"                  : "This language uses",
+      "ipa.letters"               : "Tap a sound to draw its letter, or to borrow one.",
       "ipa.mine.none"             : "Nothing chosen yet.",
       "ipa.note"                  : "Choose the sounds this language is made of. Only a sound chosen here can be given a letter.",
       "ipa.other"                 : "Besides",

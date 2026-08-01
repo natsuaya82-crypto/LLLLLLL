@@ -154,6 +154,7 @@ defLang('es', (function(){
       "ipa.m.tap"                 : "vibr. simple",
       "ipa.m.trill"               : "vibr. múlt.",
       "ipa.mine"                  : "Esta lengua usa",
+      "ipa.letters"               : "Toca un sonido para dibujar su letra, o para tomar una prestada.",
       "ipa.mine.none"             : "Aún no has elegido ninguno.",
       "ipa.note"                  : "Elige los sonidos de los que está hecha esta lengua. Solo un sonido elegido aquí puede recibir una letra.",
       "ipa.other"                 : "Además",

@@ -373,6 +373,7 @@ defLang('ko', (function(){
       "ipa.m.tap"                 : "탄음",
       "ipa.m.trill"               : "전동음",
       "ipa.mine"                  : "이 언어가 쓰는 소리",
+      "ipa.letters"               : "소리를 탭하면 글자를 그리거나 빌려 올 수 있어요.",
       "ipa.mine.none"             : "아직 고른 것이 없어요.",
       "ipa.note"                  : "이 언어를 이루는 소리를 골라요. 여기서 고른 소리에만 글자를 줄 수 있어요.",
       "ipa.other"                 : "그 밖에",

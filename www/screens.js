@@ -496,14 +496,16 @@ function vHome(){
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
   var toc=[
     ['I',  t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
-    ['II', t('toc.sound'),'sound', A.used.length? tn('count.sounds', A.used.length):'—'],
+    /* Sounds and letters were two chapters, and giving a sound a letter meant
+       being in the other one. They are one now: the count is how many of this
+       language's sounds have been given a letter. */
+    ['II', t('toc.sound'),'sound', (function(){
+      var mine=addedSnd();
+      return mine.length? (sndDrawn()+' / '+mine.length) : '—';
+    })()],
     ['III',t('toc.rules'),'rules', findings().length? tn('count.rules', findings().length):'—'],
     ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
-    ['V',  t('toc.make'), 'make',  ''],
-    ['VI', t('toc.script'),'script', (function(){
-      var L=scriptLetters(), d=scriptDrawn(L);
-      return d? d+' / '+L.length : '—';
-    })()]
+    ['V',  t('toc.make'), 'make',  '']
   ];
   var lastLine = LINES.length?LINES[LINES.length-1]:null;
   return '<div class="view">'+
@@ -597,6 +599,26 @@ function groupHTML(items){
    sound; tapping it again says it does not. Nothing is guessed from how a
    word happens to be spelled, because there is nothing left to guess: the
    sounds were chosen here. */
+function sndLetter(sym){
+  if(SCRIPT.g[sym] && SCRIPT.g[sym].length) return 'drawn';
+  if(chOf(sym)) return 'borrowed';
+  return '';
+}
+function sndDrawn(){
+  var mine=addedSnd(), n=0, i;
+  for(i=0;i<mine.length;i++) if(sndLetter(mine[i])) n++;
+  return n;
+}
+/* One of this language's sounds, with whatever letter it has been given.
+   Tapping it goes to the surface where that letter is drawn. */
+function sndTile(sym){
+  var kind=sndLetter(sym);
+  var face = kind==='drawn' ? '<canvas class="tc" data-r="'+esc(sym)+'"></canvas>'
+           : kind==='borrowed' ? '<span class="bch">'+esc(chOf(sym))+'</span>'
+           : '<span class="nol">+</span>';
+  return '<button class="gtile'+(kind?'':' empty')+'" onclick="editGlyph(\''+sym+'\')">'+
+    face+'<span class="rl">'+esc(sym)+'</span></button>';
+}
 function sndHas(sym){
   var a=addedSnd();
   return a.indexOf(sym)>=0;
@@ -657,9 +679,16 @@ function vSound(){
     '<div class="body">'+
     '<div class="note" style="margin-bottom:10px">'+t('ipa.note')+'</div>'+
     '<div class="sec">'+t('ipa.mine')+'</div>'+
-    '<div class="ipamine">'+(mine.length
-      ? mine.map(function(x){ return '<b>'+esc(x)+'</b>'; }).join('')
-      : '<span class="none">'+t('ipa.mine.none')+'</span>')+'</div>'+
+    (mine.length
+      ? '<div class="gtiles">'+mine.map(sndTile).join('')+'</div>'+
+        '<div class="note" style="margin-top:8px">'+t('ipa.letters')+'</div>'+
+        (sndDrawn()? '<div class="sec">'+t('script.preview')+'</div>'+
+          '<div class="spv"><div class="big sfont">'+esc(WORDS.length?WORDS[0].hw:mine.join(''))+'</div></div>'+
+          '<div class="pick">'+
+            '<button class="'+(SET.myfont?'':'on')+'" onclick="setMyFont(false)">'+t('script.show.roman')+'</button>'+
+            '<button class="'+(SET.myfont?'on':'')+'" onclick="setMyFont(true)">'+t('script.show.own')+'</button>'+
+          '</div>' : '')
+      : '<div class="ipamine"><span class="none">'+t('ipa.mine.none')+'</span></div>')+
     '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
     '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
     '<div class="sec">'+t('ipa.other')+'</div>'+

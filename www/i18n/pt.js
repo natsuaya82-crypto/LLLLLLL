@@ -201,6 +201,7 @@ defLang('pt', (function(){
       "ipa.m.tap"                 : "tepe",
       "ipa.m.trill"               : "vibrante",
       "ipa.mine"                  : "Esta língua usa",
+      "ipa.letters"               : "Toque num som para desenhar a sua letra, ou para pegar uma emprestada.",
       "ipa.mine.none"             : "Ainda nada escolhido.",
       "ipa.note"                  : "Escolha os sons de que esta língua é feita. Só um som escolhido aqui pode receber uma letra.",
       "ipa.other"                 : "Além disso",

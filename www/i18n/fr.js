@@ -242,6 +242,7 @@ defLang('fr', (function(){
       "ipa.m.tap"                 : "battue",
       "ipa.m.trill"               : "roulée",
       "ipa.mine"                  : "Cette langue emploie",
+      "ipa.letters"               : "Touchez un son pour dessiner sa lettre, ou pour en emprunter une.",
       "ipa.mine.none"             : "Rien de choisi pour l’instant.",
       "ipa.note"                  : "Choisissez les sons dont cette langue est faite. Seul un son choisi ici pourra recevoir une lettre.",
       "ipa.other"                 : "En outre",

@@ -194,6 +194,7 @@ defLang('it', (function(){
       "ipa.m.tap"                 : "monovibr.",
       "ipa.m.trill"               : "polivibr.",
       "ipa.mine"                  : "Questa lingua usa",
+      "ipa.letters"               : "Tocca un suono per disegnare la sua lettera, o per prenderne una in prestito.",
       "ipa.mine.none"             : "Ancora nulla di scelto.",
       "ipa.note"                  : "Scegli i suoni di cui questa lingua è fatta. Solo un suono scelto qui può ricevere una lettera.",
       "ipa.other"                 : "Inoltre",

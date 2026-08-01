@@ -110,6 +110,7 @@ defLang('ja', (function(){
       "ipa.m.tap"                 : "はじき",
       "ipa.m.trill"               : "ふるえ",
       "ipa.mine"                  : "この言語が使う音",
+      "ipa.letters"               : "音に触れると、その字を描くか、ほかの文字から借りることができます。",
       "ipa.mine.none"             : "まだ選んでいません。",
       "ipa.note"                  : "この言語を成す音を選びます。ここで選んだ音にだけ、文字を与えられます。",
       "ipa.other"                 : "そのほか",
