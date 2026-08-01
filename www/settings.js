@@ -92,7 +92,8 @@ function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
 function wipe(){
   if(!confirm(t('confirm.wipe'))) return;
-  WORDS=[]; LINES=[]; langName=''; SET.done=false; comp=[]; compSel=-1; save();
+  WORDS=[]; LINES=[]; langName=''; SET.done=false; comp=[]; compSel=-1;
+  NOTES=[]; saveNotes(); TALK=[]; tcomp=[]; saveTalk(); save();
   ob={step:0,name:'',mn:'',hw:''}; render();
 }
 

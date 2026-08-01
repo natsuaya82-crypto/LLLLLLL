@@ -497,6 +497,10 @@ function vHome(){
   var A=analyze();
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
   var toc=[
+    /* Coinage was a chapter of its own, which made writing one word and
+       writing eight of them two different places to be. It is the second
+       button at the foot of the dictionary now, where the first one is
+       "write a word". */
     ['I',  t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
     /* Sounds and letters were two chapters, and giving a sound a letter meant
        being in the other one. They are one now: the count is how many of this
@@ -507,7 +511,8 @@ function vHome(){
     })()],
     ['III',t('toc.gram'), 'gram',  tn('count.gram', gramCount())],
     ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
-    ['V',  t('toc.make'), 'make',  '']
+    ['V',  t('toc.notes'),'notes', NOTES.length? tn('count.notes', NOTES.length):'—'],
+    ['VI', t('toc.talk'), 'talk',  TALK.length? tn('count.turns', TALK.length):'—']
   ];
   var lastLine = LINES.length?LINES[LINES.length-1]:null;
   return '<div class="view">'+
@@ -571,7 +576,8 @@ function vWords(){
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
     '</div><div class="body">'+body+'</div>'+
-    '<div class="barfix"><button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
+    '<div class="barfix"><button class="btn ghost" onclick="go(\'make\')">'+t('toc.make')+'</button>'+
+    '<button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
 }
 function setQ(v){
   q=v;

@@ -558,6 +558,38 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
 .nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
 
+/* ---------- notes ----------
+   A notebook page: a heading and the first line of what is under it. */
+.ntlist{display:flex;flex-direction:column;gap:10px}
+.ntrow{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:14px 16px;
+  border:1px solid var(--line);border-radius:12px;background:var(--pane);color:inherit;font:inherit;cursor:pointer}
+.ntrow:active{transform:scale(.995)}
+.ntrow .nth{font-size:.95rem;color:var(--tx)}
+.ntrow .ntb{font-size:.78rem;color:var(--txm);line-height:1.6}
+.ntbody{min-height:180px;line-height:1.8}
+
+/* ---------- the conversation ----------
+   Its turns sit against the left margin, yours against the right, and every
+   one carries what it means underneath because you are still learning to
+   read this. */
+.tkthread{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}
+.tk{position:relative;max-width:88%;align-self:flex-start;padding:12px 44px 12px 14px;
+  border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--pane)}
+.tk.me{align-self:flex-end;border-radius:14px 14px 4px 14px;
+  border-color:var(--goldln);background:var(--goldsf)}
+.tk .tkw{font-family:'Cinzel',Georgia,serif;font-size:1.06rem;color:var(--tx);word-break:break-word}
+.tk .tki{font-family:ui-monospace,Menlo,monospace;font-size:.66rem;color:var(--gold);margin-top:3px}
+.tk .tkg{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:.9rem;
+  color:var(--txs);margin-top:4px;line-height:1.5}
+.tk .tkp{position:absolute;top:8px;right:6px;min-width:32px;min-height:32px;background:none;border:0;
+  color:var(--txm);display:flex;align-items:center;justify-content:center}
+.tk .tkp:active{opacity:.5}
+.tsend{display:flex;gap:10px;margin-top:12px}
+.tmks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.tmk{min-height:44px;padding:8px 16px;border:1px solid var(--goldln);border-radius:20px;
+  background:var(--goldsf);color:var(--gold);font:inherit;font-size:.82rem;cursor:pointer}
+.tmk:disabled{opacity:.35;border-color:var(--line);background:none;color:var(--txm)}
+
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then
    one of your own words before and after it. The demonstration is the point,
@@ -639,6 +671,8 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 <script src="screens.js"></script>
 <script src="sentences.js"></script>
 <script src="grammar.js"></script>
+<script src="notes.js"></script>
+<script src="talk.js"></script>
 <script src="settings.js"></script>
 <script src="otf5.js"></script>
 <script src="glyph.js"></script>

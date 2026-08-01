@@ -74,7 +74,8 @@ const ROOT = path.join(HERE, '..', 'www');
    purpose — they are where foreign text belongs — and so is the font writer,
    which has no user-facing text in it at all. */
 const APP_SRC = ['index.html', 'core.js', 'reading.js', 'screens.js',
-                 'sentences.js', 'grammar.js', 'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
+                 'sentences.js', 'grammar.js', 'notes.js', 'talk.js',
+                 'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
 const PORT = 8121;
 /* Use the browser this machine already has if there is one; on a CI runner
    there is not, and Playwright's own copy is the right answer. */

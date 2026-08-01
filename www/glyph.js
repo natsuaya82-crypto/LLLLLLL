@@ -1103,6 +1103,8 @@ function render(){
         : route==='gram' ? vGram()
         : route==='sent' ? vSent()
         : route==='make' ? vMake()
+        : route==='notes'? vNotes()
+        : route==='talk' ? vTalk()
         : route==='settings'? vSettings()
         : route==='plans'? vPlans()
         : route==='script'? vScript()
