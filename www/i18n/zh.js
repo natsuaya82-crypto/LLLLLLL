@@ -209,6 +209,8 @@ defLang('zh', (function(){
       "ob.signin.apple"           : "使用 Apple 继续",
       "ob.signin.google"          : "使用 Google 继续",
       "ob.signin.note"            : "登录以开始。",
+      "ob.signin.skip"            : "不用账号继续",
+      "ob.signin.local"           : "没有账号，你的语言只留在这台手机上，网页上看不到。",
       "ob.tagline"                : "为你的语言添上新的色彩。",
       "script.add"                : "添加字",
       "script.cons"               : "辅音",

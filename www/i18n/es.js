@@ -161,6 +161,8 @@ defLang('es', (function(){
       "ob.signin.apple"           : "Continuar con Apple",
       "ob.signin.google"          : "Continuar con Google",
       "ob.signin.note"            : "Inicia sesión para empezar.",
+      "ob.signin.skip"            : "Continuar sin cuenta",
+      "ob.signin.local"           : "Sin ella tu idioma se queda en este teléfono, y la web no puede verlo.",
       "ob.tagline"                : "Dale nuevos colores a tus palabras.",
       "script.add"                : "Añadir caracteres",
       "script.cons"               : "Consonantes",

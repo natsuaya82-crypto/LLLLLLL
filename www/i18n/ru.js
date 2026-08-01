@@ -206,6 +206,8 @@ defLang('ru', (function(){
       "ob.signin.apple"           : "Продолжить с Apple",
       "ob.signin.google"          : "Продолжить с Google",
       "ob.signin.note"            : "Войдите, чтобы начать.",
+      "ob.signin.skip"            : "Продолжить без учётной записи",
+      "ob.signin.local"           : "Без неё ваш язык останется на этом телефоне, и веб его не увидит.",
       "ob.tagline"                : "Придайте новые краски вашим словам.",
       "script.add"                : "Добавить знаки",
       "script.cons"               : "Согласные",

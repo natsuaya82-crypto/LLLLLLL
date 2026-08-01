@@ -425,14 +425,23 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 /* Allowed to shrink, and capped against the height as well as the width:
    on a 568pt screen a door sized off the width alone pushed the name and
    the buttons into each other. */
-.obdoor{flex:0 1 auto;min-height:0;width:min(40vw, 22vh, 148px);color:var(--gold);line-height:0}
-.obdoor svg{width:100%;height:auto;display:block}
+/* The box is what shrinks; the drawing fits inside whatever is left of it.
+   Sized off the width alone the arch could not give ground, so on a short
+   screen in a long language -- Russian on a 568pt phone -- the name was
+   printed across the door. */
+.obdoor{flex:0 1 auto;min-height:0;height:min(30vh, 224px);
+        display:flex;align-items:center;justify-content:center;color:var(--gold);line-height:0}
+.obdoor svg{height:100%;width:auto;max-width:min(40vw,148px);display:block}
 .obrule{width:56px;height:1px;margin:clamp(12px,2.4vh,20px) auto 0;flex:0 0 auto;
         background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 .ob .obh1{font-family:'Cinzel',Georgia,serif;font-size:clamp(1.35rem,5.6vw,1.8rem);
           letter-spacing:.2em;margin-top:clamp(10px,2vh,16px);font-weight:600;flex:0 0 auto}
 .ob .obtag{margin-top:clamp(6px,1.4vh,10px);font-size:clamp(.9rem,3.6vw,1.05rem);flex:0 0 auto}
 .ob .obfoot .btn.signin{margin-bottom:10px}
+.obskip{display:block;width:100%;min-height:44px;margin-top:4px;background:none;border:0;
+        color:var(--txs);font:inherit;font-size:.84rem;text-decoration:underline;
+        text-underline-offset:3px;text-decoration-color:var(--line)}
+.obskip:active{opacity:.55}
 
 .obback{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;opacity:.75;cursor:pointer;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent;flex-shrink:0;min-width:44px;min-height:44px}
 .obback:hover{opacity:1}

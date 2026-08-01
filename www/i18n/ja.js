@@ -117,6 +117,8 @@ defLang('ja', (function(){
       "ob.signin.apple"           : "Apple で続ける",
       "ob.signin.google"          : "Google で続ける",
       "ob.signin.note"            : "サインインして始めましょう。",
+      "ob.signin.skip"            : "アカウントなしで続ける",
+      "ob.signin.local"           : "アカウントがなければ、ことばはこの端末の中だけに残り、ウェブからは見えません。",
       "ob.tagline"                : "あなたの言葉に新たないろどりを。",
       "script.add"                : "字を足す",
       "script.cons"               : "子音",

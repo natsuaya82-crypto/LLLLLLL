@@ -380,6 +380,8 @@ defLang('ko', (function(){
       "ob.signin.apple"           : "Apple로 계속하기",
       "ob.signin.google"          : "Google로 계속하기",
       "ob.signin.note"            : "시작하려면 로그인하세요.",
+      "ob.signin.skip"            : "계정 없이 계속하기",
+      "ob.signin.local"           : "계정이 없으면 언어는 이 기기 안에만 남고, 웹에서는 보이지 않아요.",
       "ob.tagline"                : "당신의 언어에 새로운 빛깔을.",
       "script.add"                : "글자 추가",
       "script.cons"               : "자음",

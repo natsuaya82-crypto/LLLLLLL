@@ -201,6 +201,8 @@ defLang('it', (function(){
       "ob.signin.apple"           : "Continua con Apple",
       "ob.signin.google"          : "Continua con Google",
       "ob.signin.note"            : "Accedi per iniziare.",
+      "ob.signin.skip"            : "Continua senza account",
+      "ob.signin.local"           : "Senza account la tua lingua resta su questo telefono, e il web non può vederla.",
       "ob.tagline"                : "Dai nuovi colori alle tue parole.",
       "script.add"                : "Aggiungi caratteri",
       "script.cons"               : "Consonanti",

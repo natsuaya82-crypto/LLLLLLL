@@ -208,6 +208,8 @@ defLang('pt', (function(){
       "ob.signin.apple"           : "Continuar com a Apple",
       "ob.signin.google"          : "Continuar com o Google",
       "ob.signin.note"            : "Entre para começar.",
+      "ob.signin.skip"            : "Continuar sem conta",
+      "ob.signin.local"           : "Sem ela o seu idioma fica apenas neste aparelho, e a web não consegue vê-lo.",
       "ob.tagline"                : "Dê novas cores às suas palavras.",
       "script.add"                : "Adicionar caracteres",
       "script.cons"               : "Consoantes",

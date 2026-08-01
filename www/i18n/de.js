@@ -189,6 +189,8 @@ defLang('de', (function(){
       "ob.signin.apple"           : "Mit Apple fortfahren",
       "ob.signin.google"          : "Mit Google fortfahren",
       "ob.signin.note"            : "Melde dich an, um zu beginnen.",
+      "ob.signin.skip"            : "Ohne Konto fortfahren",
+      "ob.signin.local"           : "Ohne eines bleibt deine Sprache auf diesem Telefon, und das Web kann sie nicht sehen.",
       "ob.tagline"                : "Verleih deinen Worten neue Farben.",
       "script.add"                : "Zeichen hinzufügen",
       "script.cons"               : "Konsonanten",

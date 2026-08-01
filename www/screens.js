@@ -145,7 +145,13 @@ function obLang(v){ SET.ui=v; save(); render(); }
    one survives. Asking first means that question never exists.
    The provider handshakes are wired in at packaging. Until then these open
    the door, so the app can be walked end to end. */
-function obSignIn(){ if(SET.done){ toast(t('set.account.soon')); return; } obGo(1); }
+function obSignIn(){ if(SET.done){ toast(t('set.account.soon')); return; } SET.anon=false; save(); obGo(1); }
+/* A way past the door without an account. It is here for the plainest reason:
+   once signing in really signs in, there is no way to see the app as somebody
+   opening it for the first time without throwing away whatever is in the
+   account -- and the first run is the part that gets rebuilt most. It is also
+   honest about what it costs, which is why the line underneath changes. */
+function obSkip(){ SET.anon=true; save(); obGo(1); }
 
 function obDoorHTML(){
   return '<div class="mid"><div class="obdoor">'+OB_DOOR+'</div>'+
@@ -155,7 +161,8 @@ function obDoorHTML(){
     '<div class="obfoot">'+
     '<button class="btn signin google" onclick="obSignIn()">'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
     '<button class="btn signin apple" onclick="obSignIn()">'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
-    '<div class="mini obnote">'+t('ob.signin.note')+'</div></div>';
+    '<button class="obskip" onclick="obSkip()">'+t('ob.signin.skip')+'</button>'+
+    '<div class="mini obnote">'+t('ob.signin.local')+'</div></div>';
 }
 
 /* ---- step 0, drawing -------------------------------------------------- */

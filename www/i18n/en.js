@@ -103,6 +103,8 @@ defLang('en', (function(){
       "ob.signin.apple"           : "Continue with Apple",
       "ob.signin.google"          : "Continue with Google",
       "ob.signin.note"            : "Sign in to begin.",
+      "ob.signin.skip"            : "Continue without an account",
+      "ob.signin.local"           : "Without one your language stays on this phone, and the web cannot see it.",
       "ob.tagline"                : "Give your words new color.",
       "script.add"                : "Add characters",
       "script.cons"               : "Consonants",

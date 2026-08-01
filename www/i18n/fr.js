@@ -249,6 +249,8 @@ defLang('fr', (function(){
       "ob.signin.apple"           : "Continuer avec Apple",
       "ob.signin.google"          : "Continuer avec Google",
       "ob.signin.note"            : "Connectez-vous pour commencer.",
+      "ob.signin.skip"            : "Continuer sans compte",
+      "ob.signin.local"           : "Sans lui, votre langue reste sur ce téléphone, et le web ne peut pas la voir.",
       "ob.tagline"                : "Donnez de nouvelles couleurs à vos mots.",
       "script.add"                : "Ajouter des caractères",
       "script.cons"               : "Consonnes",
