@@ -50,7 +50,13 @@ button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obsnd,.obescb{touch-action:man
 .cz{font-family:'Cinzel',Georgia,serif}
 .cor{font-family:'Cormorant Garamond',Georgia,serif}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
-.view{animation:vin .3s cubic-bezier(.2,.8,.2,1)}
+/* A screen slides in when you arrive at it. It must NOT slide in again every
+   time something on it is tapped -- but every tap redraws the whole view, so
+   it did: choose a writing system and the entire screen jumped twelve pixels
+   and faded back, which on a phone reads as a shudder. The animation is now
+   attached to the arrival, not to the redraw: render() marks the app fresh
+   only when the screen it is drawing is a different one. */
+#app[data-fresh="1"] .view{animation:vin .3s cubic-bezier(.2,.8,.2,1)}
 @keyframes vin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 button{font-family:inherit;cursor:pointer}
 

@@ -217,6 +217,7 @@ function obWsysHTML(){
    away afterwards, on a screen built for it. */
 var OB_SND=['a','e','i','o','u','p','t','k','m','n','s','r','l','h'];
 function obPickSnd(p){
+  sayOne(p);
   var a=addedSnd(), i=a.indexOf(p);
   if(i>=0) a.splice(i,1); else a.push(p);
   save(); render();
@@ -672,9 +673,13 @@ function sayWords(list){
   }
   sayPh(seq);
 }
-/* Tapping a sound on the chart says it. */
+/* Tapping a sound plays it, and adds it. Tapping it again plays it and takes
+   it back out. It used to be a double-tap to hear, which nobody discovers, so
+   in practice the chart made no sound at all -- on the one screen whose whole
+   subject is what things sound like. */
+function sndTap(sym){ sayOne(sym); sndToggle(sym); }
 function ipaBtn(sym){
-  return '<button class="ph2'+(sndHas(sym)?' on':'')+'" onclick="sndToggle(\''+sym+'\')" ondblclick="sayOne(\''+sym+'\')">'+esc(sym)+'</button>';
+  return '<button class="ph2'+(sndHas(sym)?' on':'')+'" onclick="sndTap(\''+sym+'\')">'+esc(sym)+'</button>';
 }
 function ipaConsTable(){
   var rows='', mi, pi, m, cell;
