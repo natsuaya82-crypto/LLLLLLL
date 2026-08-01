@@ -578,10 +578,14 @@ function ghDraw(c,t){
   x.restore();
   x.globalAlpha=1;
 }
+/* How much of the canvas is margin at each edge, so the pen has somewhere to
+   go at the outermost lattice points. Applied by geDraw, undone here. */
+var GEPAD=0.055;
 function geAt(c,ev){
   var b=c.getBoundingClientRect();
-  var x=(ev.clientX-b.left)/(b.width||1)*800;
-  var y=(ev.clientY-b.top)/(b.height||1)*800;
+  var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
+  var x=((ev.clientX-b.left)-px)/(w-2*px)*800;
+  var y=((ev.clientY-b.top)-py)/(h-2*py)*800;
   return [gsnap(x), gsnap(y)];
 }
 /* Tapping is the whole language of this editor, so the two actions that used
@@ -619,18 +623,13 @@ function geDown(ev){
     GE.si=best[0]; GE.pi=best[1]; GE.hit=true;
   }else{
     var st=geCur();
-    /* Lifting the finger ends the stroke, so this press begins a new one --
-       wherever it lands, joined to nothing. */
-    if(GE.seal){ GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false; }
-    else
-    /* Once the stroke is settled the tap does not go on changing it — it starts
-       the next one, from the point the last one finished on so the drawing
-       stays joined. Nothing to press, and nothing already decided gets
-       rewritten under your finger. */
-    if(geFull(st)){
-      var tail=geTail(st);
-      GE.st.push({pts: tail ? [[tail[0],tail[1]]] : []});
-      GE.si=GE.st.length-1; st=GE.st[GE.si];
+    /* A new stroke starts where the finger lands and is joined to nothing.
+       It used to begin at the end of the stroke before it, so every line
+       after the first came out welded to the last whether that was wanted or
+       not. Two strokes that share a dot still meet -- the drawing decides
+       that, by where it is drawn, and not the editor. */
+    if(GE.seal || geFull(st)){
+      GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false;
     }
     st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1;
     GE.again=false; GE.hit=false;
@@ -767,10 +766,19 @@ function geTools(){
 function geDraw(){
   var c=document.getElementById('gcanv');
   if(!c||!GE) return;
-  var x=c.getContext('2d'), S=c.width, k=S/800;
+  var x=c.getContext('2d'), S=c.width;
+  /* The pen is 60 wide in an 800 cell, so ink reaches 30 past whatever point
+     it is drawn through, and the outermost lattice points sit 40 from the
+     edge. Drawn straight at S/800 a stroke along the edge of the lattice came
+     right up against the frame, and at the corners went outside it. The
+     drawing is put into an inset square instead: the frame is the canvas, the
+     lattice lives within it with room for the pen. geAt undoes exactly this,
+     so where the finger is and where the dot appears stay the same place. */
+  var pad=S*GEPAD, k=(S-2*pad)/800;
+  var X=function(v){ return pad+v*k; };
   x.clearRect(0,0,S,S);
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2.5);
-  x.strokeRect(k*10,k*10,S-k*20,S-k*20);
+  x.strokeRect(k*3,k*3,S-k*6,S-k*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
      along here", and that is the thing being taken away. */
   var gs=gstep(), gi, gj;
@@ -782,7 +790,7 @@ function geDraw(){
     for(gj=0; gj<GGRID.n; gj++){
       x.beginPath();
       /* the dot scales with the step, so 100 dots do not read as a grey wash */
-      x.arc(k*(GGRID.inset+gi*gs), k*(GGRID.inset+gj*gs), Math.max(1.5,k*gs*0.095), 0, Math.PI*2);
+      x.arc(X(GGRID.inset+gi*gs), X(GGRID.inset+gj*gs), Math.max(1.5,k*gs*0.095), 0, Math.PI*2);
       x.fill();
     }
   }
@@ -793,7 +801,7 @@ function geDraw(){
   cont.forEach(function(poly){
     if(poly.length<3) return;
     x.beginPath();
-    poly.forEach(function(p,i){ if(i) x.lineTo(p[0]*k,p[1]*k); else x.moveTo(p[0]*k,p[1]*k); });
+    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),X(p[1])); else x.moveTo(X(p[0]),X(p[1])); });
     x.closePath(); x.fill();
   });
 
@@ -802,17 +810,17 @@ function geDraw(){
     if(s.pts.length<2) return;
     var poly=LinguaFont.toPolyline(s);
     x.beginPath();
-    poly.forEach(function(p,i){ if(i) x.lineTo(p[0]*k,p[1]*k); else x.moveTo(p[0]*k,p[1]*k); });
+    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),X(p[1])); else x.moveTo(X(p[0]),X(p[1])); });
     x.stroke();
   });
   GE.st.forEach(function(s,si){
     s.pts.forEach(function(p,pi){
       var sel=(si===GE.si && pi===GE.pi);
-      x.beginPath(); x.arc(p[0]*k,p[1]*k,k*(sel?24:16),0,Math.PI*2);
+      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?24:16),0,Math.PI*2);
       x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold');
       x.fill();
       if(sel){
-        x.beginPath(); x.arc(p[0]*k,p[1]*k,k*40,0,Math.PI*2);
+        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*40,0,Math.PI*2);
         x.strokeStyle=cssVar('--gold'); x.lineWidth=k*4; x.stroke();
       }
     });
