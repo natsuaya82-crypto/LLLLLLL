@@ -112,6 +112,16 @@ var OB_SND=['a','e','i','o','u','k','s','t','n','m','r','l','h','p'];
    in boxes. Sample letters cost a font the phone may not have, they are
    unreadable at the size a row allows, and five of fifteen is an arbitrary
    five. The row says what it does and opens the full list. */
+/* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
+   so it is gold in both themes and needs no fill to be legible on either.
+   Nothing stands in the doorway -- it has not been opened yet, and a letter
+   there would be one nobody has drawn. */
+var OB_DOOR='<svg viewBox="0 0 124 188" fill="none" stroke="currentColor" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M6 186V62a56 56 0 0 1 112 0v124" stroke-width="1.6" opacity=".85"/>'+
+  '<path d="M6 186V62a56 56 0 0 1 112 0v124Z" stroke="none" fill="currentColor" opacity=".055"/>'+
+  '<path d="M17 186V64a45 45 0 0 1 90 0v122" stroke-width="1" opacity=".38"/>'+
+  '<circle cx="98" cy="120" r="3.1" stroke="none" fill="currentColor" opacity=".8"/>'+
+  '<path d="M2 186h120" stroke-width="1.2" opacity=".5"/></svg>';
 var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 function obGo(n){ ob.step=n; render(); window.scrollTo(0,0); }
@@ -138,7 +148,8 @@ function obLang(v){ SET.ui=v; save(); render(); }
 function obSignIn(){ if(SET.done){ toast(t('set.account.soon')); return; } obGo(1); }
 
 function obDoorHTML(){
-  return '<div class="mid"><div class="obdoor"><span class="obmk">A</span></div>'+
+  return '<div class="mid"><div class="obdoor">'+OB_DOOR+'</div>'+
+    '<div class="obrule"></div>'+
     '<h1 class="obh1">Lingua</h1>'+
     '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
     '<div class="obfoot">'+
