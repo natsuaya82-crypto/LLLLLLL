@@ -573,6 +573,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
      The order is the only thing here that matters:
        core.js      defines defLang(), so it comes before the ten languages
        ipa.js       the chart every sound is chosen from; data only
+       voice.js     what a phoneme sounds like; reads ipa.js, so after it
        i18n/*.js    each registers itself; this order is the order they appear
                     in the language picker
        otf5.js      defines the font writer, so it comes before glyph.js
@@ -580,6 +581,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
                     on its last two lines, so it goes last -->
 <script src="core.js"></script>
 <script src="ipa.js"></script>
+<script src="voice.js"></script>
 <script src="i18n/en.js"></script>
 <script src="i18n/es.js"></script>
 <script src="i18n/pt.js"></script>

@@ -142,7 +142,7 @@ function vSent(){
         }).join('')+'</div>'+
         '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
         '<div class="out">'+readLink(L)+'</div>'+
-        '<button class="play" onclick="speak(\''+esc(ws.map(function(w){return w.hw;}).join(' '))+'\')">'+t('sent.say')+'</button>'+
+        '<button class="play" onclick="sayWords('+esc(JSON.stringify(ws.map(function(w){return w.hw;})))+')">'+t('sent.say')+'</button>'+
         '</div>'+
         (L.isLink? '' : '<div class="note" style="margin-top:8px">'+t('sent.linkhint')+'</div>')+
         '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="keepLine()">'+t('sent.keep')+'</button>'
@@ -178,7 +178,7 @@ function vSent(){
           '<span class="pos">'+esc(l.order||'')+'</span></div>'+
           '<div class="mn" style="font-size:.92rem">'+readLink(lk)+'</div>'+
           '<div style="display:flex;gap:8px;margin-top:8px">'+
-          '<button class="rr2" onclick="speak(\''+esc(l.ws.join(' '))+'\')">'+ICON_PLAY+t('sent.listen')+'</button>'+
+          '<button class="rr2" onclick="sayWords('+esc(JSON.stringify(l.ws))+')">'+ICON_PLAY+t('sent.listen')+'</button>'+
           '<button class="rr2" onclick="reopenLine('+idx+')">'+t('sent.reweave')+'</button>'+
           '<button class="rr2" onclick="dropLine('+idx+')">'+t('sent.drop')+'</button></div></div>';
       }).join('') : '')+
@@ -225,7 +225,7 @@ function vMake(){
         '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?'✓':'')+'</button>'+
         '<span class="cw">'+esc(c.w)+'</span><span class="crd">'+esc(readOut(c.w))+'</span>'+
         '<button class="rr" onclick="reroll('+i+')">↻</button>'+
-        '<button class="rr" onclick="speak(\''+esc(c.w)+'\')">▶</button></div>';
+        '<button class="rr" onclick="sayWords([\''+esc(c.w)+'\'])" aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
     (has('studio')?'':'<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+

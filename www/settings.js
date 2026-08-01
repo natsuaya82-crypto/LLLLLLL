@@ -44,20 +44,14 @@ function vSettings(){
     }).join('')+
     '<div class="note">'+t('set.display.note')+'</div>'+
 
+    /* The voice picker went with the voices. Nothing here speaks through the
+       device any more -- a device voice can only say a language, and this is
+       not one -- so there was nothing left for it to choose between. What is
+       kept is the sample, said the way every word in this language is said. */
     '<div class="sec">'+t('set.voice')+'</div>'+
-    '<button class="set"><span class="sl">'+t('set.voice.cur')+'</span><span class="sv">'+esc(voiceLabel())+'</span></button>'+
-    (VOICES.length
-      ? '<div class="field" style="margin-top:12px"><label>'+t('set.voice.pick')+'</label>'+
-        '<select onchange="setVoice(this.value)">'+
-        '<option value=""'+(SET.voice?'':' selected')+'>'+esc(t('set.voice.auto'))+'</option>'+
-        VOICES.map(function(v){
-          return '<option value="'+esc(v.voiceURI)+'"'+(SET.voice===v.voiceURI?' selected':'')+'>'+
-            esc(v.name)+' ('+esc(v.lang)+')</option>';
-        }).join('')+'</select></div>'
-      : '<div class="note">'+t('set.voice.wait')+'</div>')+
-    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.voice.try')+'</span>'+
+    '<div class="pvbox"><span class="pvn">'+t('set.voice.try')+'</span>'+
       '<span class="pvk">'+esc(sample)+'</span>'+
-      '<button onclick="speak(\''+esc(sample)+'\')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
+      '<button onclick="sayWords([\''+esc(sample)+'\'])">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="note">'+t('set.voice.note')+'</div>'+
 
     '<div class="sec">'+t('set.lang')+'</div>'+
@@ -96,7 +90,6 @@ function vSettings(){
 function setTheme(v){ SET.theme=v; save(); applyTheme(); render(); }
 function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
-function setVoice(v){ SET.voice=v; save(); render(); var s=WORDS.length?WORDS[0].hw:'Aelin'; speak(s); }
 function wipe(){
   if(!confirm(t('confirm.wipe'))) return;
   WORDS=[]; LINES=[]; langName=''; SET.done=false; comp=[]; compSel=-1; save();
@@ -227,7 +220,7 @@ function closeSheet(e){
   document.getElementById('sheet').classList.remove('on');
 }
 function pv(){ addPaint(); }
-function sayField(){ if(addSeq.length) speak(addSeq.join('')); }
+function sayField(){ if(addSeq.length) sayPh(addSeq); }
 function addOne(){
   var hw=addSeq.join('');
   var mn=document.getElementById('f-mn').value.trim();
@@ -268,7 +261,7 @@ function openWord(hw){
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div>'+
     '<div class="whd"><span class="whw">'+esc(wOut(w.hw))+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
+      '<button class="play" style="margin:0 0 0 auto" onclick="sayWords([\''+esc(w.hw)+'\'])">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(wPh(w)))+'</div>'+
     '<div class="wsub2">'+esc(wordSyl(w))+'</div>'+
     '<div class="sec" style="margin:18px 0 8px">'+t('word.syl')+'</div>'+

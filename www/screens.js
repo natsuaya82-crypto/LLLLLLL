@@ -606,8 +606,20 @@ function sndToggle(sym){
   if(i>=0) a.splice(i,1); else a.push(sym);
   save(); render();
 }
+/* Spoken from the words' own sequences. A spelling is only what those
+   sequences look like written down, so it is looked up rather than read. */
+function sayWords(list){
+  var seq=[], i, j, w;
+  for(i=0;i<list.length;i++){
+    w=null;
+    for(j=0;j<WORDS.length;j++) if(String(WORDS[j].hw)===String(list[i])){ w=WORDS[j]; break; }
+    seq=seq.concat(w? wPh(w) : phGuess(list[i]));
+  }
+  sayPh(seq);
+}
+/* Tapping a sound on the chart says it. */
 function ipaBtn(sym){
-  return '<button class="ph2'+(sndHas(sym)?' on':'')+'" onclick="sndToggle(\''+sym+'\')">'+esc(sym)+'</button>';
+  return '<button class="ph2'+(sndHas(sym)?' on':'')+'" onclick="sndToggle(\''+sym+'\')" ondblclick="sayOne(\''+sym+'\')">'+esc(sym)+'</button>';
 }
 function ipaConsTable(){
   var rows='', mi, pi, m, cell;
