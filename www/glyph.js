@@ -357,50 +357,85 @@ function geOff(a,b,q){
   if(L<1e-6) return Math.sqrt((q[0]-a[0])*(q[0]-a[0])+(q[1]-a[1])*(q[1]-a[1]));
   return Math.abs(vx*(a[1]-q[1]) - vy*(a[0]-q[0]))/L;
 }
-/* Take the path a finger actually drew and say what curve it meant.
-
-   Three points is all the format needs for an arc: where it started, where it
-   ended, and the one place in between that is furthest off the straight line
-   between them. Everything else in the path is hand tremor. Drawing a curve
-   by hand and then placing exactly three points on it was the hard part --
-   this does the placing.
-
-   Two things it refuses to do. A path that never leaves its own chord was a
-   straight line and stays one, because two points marked round are read as
-   the ends of a circle and would balloon into a half-circle nobody drew. And
-   a path that comes back to where it started is a ring, so it closes. */
-function geRoundify(st){
-  var p=st.pts, n=p.length, i, d;
-  if(n<2) return;
-  var a=p[0], b=p[n-1], step=gstep();
-  var far=null, fd=-1;
-  for(i=1;i<n-1;i++){ d=geOff(a,b,p[i]); if(d>fd){ fd=d; far=p[i]; } }
-  var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
-  if(n>4 && span<=step*1.2){
-    /* back where it began: keep three points spread around the loop */
-    st.pts=[p[0], p[Math.floor(n/3)], p[Math.floor(2*n/3)]];
-    st.k='o'; st.closed=true; return;
+/* Ramer-Douglas-Peucker. Keeps the points that carry the shape and drops the
+   ones that only carry the lattice: the staircase a snapped diagonal leaves
+   behind, and the handful of dots a slow finger deposits in one place. */
+function geSimplify(p, tol){
+  var n=p.length, i, j;
+  if(n<3) return p.slice();
+  var mark=[]; for(i=0;i<n;i++) mark[i]=false;
+  mark[0]=true; mark[n-1]=true;
+  var stack=[[0,n-1]];
+  while(stack.length){
+    var seg=stack.pop(), s=seg[0], e=seg[1], far=-1, fd=-1, d;
+    for(j=s+1;j<e;j++){ d=geOff(p[s],p[e],p[j]); if(d>fd){ fd=d; far=j; } }
+    if(far>0 && fd>tol){ mark[far]=true; stack.push([s,far]); stack.push([far,e]); }
   }
-  /* How far the path has to bow before it counts as a curve. Snapping a
-     drag to the lattice turns even a ruler-straight diagonal into a
-     staircase, and the corners of that staircase stand up to three quarters
-     of a step off the line -- so anything under that is the lattice talking,
-     not the hand. Long strokes need proportionally more, or a slight lean
-     across the whole width reads as a bow. */
-  if(far && fd>Math.max(step*0.75, span*0.08)){ st.pts=[a,far,b]; st.k='o'; delete st.closed; }
-  else { st.pts=[a,b]; delete st.k; delete st.closed; }
+  var out=[];
+  for(i=0;i<n;i++) if(mark[i]) out.push([p[i][0],p[i][1]]);
+  return out;
 }
-/* Round is a mode, not an operation. Switched on, every stroke drawn from
-   then on is read as a curve -- which is the only way a curve drawn at an
-   angle was ever going to come out as one. It also rounds the stroke just
-   drawn, so pressing it straight after a line does what it looks like it
-   does. */
+
+/* What a finished gesture becomes.
+
+   The first attempt reduced a whole gesture to one arc: start, end, and the
+   point furthest off the line between them. That can draw a bow and nothing
+   else, and almost no letter is one bow -- the second stroke of me curves,
+   loops and leaves; a has a bowl that is not a circle and a stem that is not
+   a curve. One arc per gesture was the wrong unit.
+
+   So the path is kept, not replaced. It is thinned to the points that carry
+   the shape, and then each interior point is marked as a bend, which the
+   font writer draws as a curve passing through it. Any number of them, in
+   any direction: a half circle, an S, a bowl with a tail. A gesture that
+   ends where it began closes into a ring instead, and there every point
+   bends, including the one it starts on.
+
+   Three points left after thinning is the one case worth special-casing --
+   a single clean bow -- and that is what the round primitive is for, so it
+   gets used: a true arc through the middle point rather than a corner
+   rounded off. */
+function geShape(st){
+  var p=st.pts, n=p.length;
+  if(n<3){ delete st.k; delete st.closed; return; }
+  var step=gstep(), i;
+  var a=p[0], b=p[n-1];
+  var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
+  var ring=(n>6 && span<=step*1.4);
+  /* Two passes. The first is coarse enough to throw away the staircase a
+     snapped diagonal leaves; if what survives is still four points or more
+     the gesture really was curved, and it is thinned again from the original
+     path at a finer tolerance. A bend is only rounded off by a fraction of
+     its shorter arm, so widely spaced points leave straight stretches between
+     the corners and a bowl comes out as a rounded box. Closer points, shorter
+     arms, and the straight stretches disappear. */
+  var s=geSimplify(p, step*0.6);
+  if(s.length>=4) s=geSimplify(p, step*0.3);
+  delete st.k; delete st.closed;
+  if(!GE.round){ st.pts=s; return; }
+  /* A ring is the one shape a chain of rounded corners cannot tell: eight
+     lattice points with their corners filleted still reads as an octagon,
+     because a corner is only ever rounded by a fraction of its shorter arm
+     and the straight run between two corners survives. Three points spread
+     around the loop, closed and marked round, is a real circle through them
+     -- measured at 220-230 against a drawn radius of 216, where the same
+     loop kept as eight filleted corners wobbles by a tenth of its width. */
+  if(ring && s.length>=3){
+    st.closed=true; st.k='o';
+    st.pts=[p[0], p[Math.floor(n/3)], p[Math.floor(2*n/3)]];
+    return;
+  }
+  /* One clean bow, and the round primitive draws a true arc through it. */
+  if(s.length===3){ st.pts=s; st.k='o'; return; }
+  for(i=1;i<s.length-1;i++) s[i][2]='c';
+  st.pts=s;
+}
 function geCircle(){
   geMark();
   GE.round=!GE.round;
   if(GE.round){
     var st=GE.st[GE.st.length-1];
-    if(st && st.pts.length>=2 && st.k!=='o') geRoundify(st);
+    if(st && st.pts.length>=2) geShape(st);
   }
   GE.pi=-1; render();
 }
@@ -742,7 +777,7 @@ function geUp(ev){
      wants to be exact rather than quick. */
   if(GE.free && GE.moved){
     GE.seal=true;
-    if(GE.round){ var rst=GE.st[GE.si]; if(rst) geRoundify(rst); }
+    var rst=GE.st[GE.si]; if(rst) geShape(rst);
   }
   GE.free=false;
   /* A dot that was pressed and let go without travelling is a tap, and a tap
