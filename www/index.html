@@ -21,7 +21,7 @@ html[data-theme="dark"]{
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
   --pur:#8c7eff; --pursf:rgba(140,126,255,.10); --purln:rgba(140,126,255,.42);
-  --onGold:#241d10; --dot:rgba(255,255,255,.18); --shadow:0 10px 26px rgba(0,0,0,.5);
+  --onGold:#241d10; --dot:rgba(255,255,255,.42); --shadow:0 10px 26px rgba(0,0,0,.5);
 }
 html[data-theme="light"]{
   --bg:#faf8f3; --pane:#ffffff; --sf:#f3efe6; --sf2:#eae5da;
@@ -29,7 +29,7 @@ html[data-theme="light"]{
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
-  --onGold:#fffdf6; --dot:rgba(26,23,18,.2); --shadow:0 8px 22px rgba(60,50,30,.10);
+  --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -424,8 +424,12 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
    third of the screen, never bigger than it was on a large phone. The short
    phones are what the vh term is for -- on a 568pt screen the button below
    this used to end up underneath the row above it. */
+/* As large as the screen will give it. Eleven dots across 212 points is 19
+   points between them, against a thumb that cannot do better than about 40 --
+   so every point the square gains is aim the drawing gets back. Verified at
+   320x568 in all ten languages: the step still fits without scrolling. */
 .obpad{margin:8px auto 0;flex:0 1 auto;
-       width:min(70vw, 32vh, 300px);height:min(70vw, 32vh, 300px)}
+       width:min(80vw, 38vh, 330px);height:min(80vw, 38vh, 330px)}
 .obpad .gcanv{width:100%;height:100%;display:block}
 /* Centring the column stopped these stretching, and the rail's three
    thirds collapsed to 33px each. They span the column explicitly. */

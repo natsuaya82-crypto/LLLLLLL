@@ -516,12 +516,30 @@ function geSave(){
 function cssVar(n){
   return (getComputedStyle(document.documentElement).getPropertyValue(n)||'').trim()||'#888';
 }
+/* The canvas is sized in device pixels, which is something no markup can say,
+   so it has to be measured after the layout exists. If it is measured before
+   the layout exists the answer is zero, and a canvas sized from zero shows
+   nothing at all -- no lattice, no frame, no letter. That is not reproducible
+   here in any browser, and it is exactly what an unlucky phone would look
+   like, so this stops trusting the first measurement: a zero is tried again on
+   the next frame, and a change of size afterwards (a rotation, a keyboard
+   opening, a late font) is redrawn rather than left stretched. */
+var GEFIT=0;
 function geMount(){
   var c=document.getElementById('gcanv');
   if(!c||!GE) return;
   var dpr=window.devicePixelRatio||1;
   var box=c.getBoundingClientRect();
-  var s=Math.round((box.width||300)*dpr);
+  var w=box.width || c.offsetWidth || 0;
+  if(!w){
+    if(GEFIT<10 && window.requestAnimationFrame){
+      GEFIT++; requestAnimationFrame(function(){ geMount(); });
+      return;
+    }
+    w=300;
+  }
+  GEFIT=0;
+  var s=Math.round(w*dpr);
   c.width=s; c.height=s;
   c.onpointerdown=geDown; c.onpointermove=geMove;
   c.onpointerup=geUp; c.onpointercancel=geUp;
@@ -533,6 +551,29 @@ function geMount(){
   c.style.userSelect='none';
   c.style.webkitTouchCallout='none';
   geDraw();
+  geWatch();
+}
+/* One listener for the life of the page, not one per mount. */
+var GEWATCH=false;
+function geWatch(){
+  if(GEWATCH || !window.addEventListener) return;
+  GEWATCH=true;
+  var pending=false;
+  function again(){
+    if(pending) return;
+    pending=true;
+    setTimeout(function(){
+      pending=false;
+      var c=document.getElementById('gcanv');
+      if(!c || !GE) return;
+      var w=Math.round((c.getBoundingClientRect().width||0)*(window.devicePixelRatio||1));
+      if(w && w!==c.width) geMount();
+    }, 120);
+  }
+  window.addEventListener('resize', again);
+  window.addEventListener('orientationchange', again);
+  /* a web font arriving reflows the column the canvas sits in */
+  try{ if(document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(again); }catch(e){}
 }
 /* ---- the hint ------------------------------------------------------------
    This used to be a paragraph. Nobody reads a paragraph with a thumb already
@@ -965,15 +1006,21 @@ function geDraw(){
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
      along here", and that is the thing being taken away. */
   var gs=gstep(), gi, gj;
-  /* --line2 is 5% white. On a desk that reads as a lattice; on a phone in
-     daylight it reads as nothing, and a lattice you cannot see is a lattice
-     that is not there -- which is the one thing this surface has to show. */
+  /* A lattice you cannot see is a lattice that is not there, and this surface
+     has one job: to show where a point may land. It has been too faint twice.
+     First at 5% white, which reads on a desk and vanishes on a phone. Then at
+     18%, which measures 1.7:1 against the panel behind it -- barely half of
+     the 3:1 that anything non-text needs to be reliably seen, and less than
+     that on a bright screen out of doors. The measurement is the rule now:
+     tools/mock/contrast reads the composited dot against the gap beside it and
+     both themes clear 3:1. The dot is also a little larger, because 1.6 points
+     across is under what a thumb can aim at even when it can be seen. */
   x.fillStyle=cssVar('--dot');
   for(gi=0; gi<GGRID.n; gi++){
     for(gj=0; gj<GGRID.n; gj++){
       x.beginPath();
       /* the dot scales with the step, so 100 dots do not read as a grey wash */
-      x.arc(X(GGRID.inset+gi*gs), X(GGRID.inset+gj*gs), Math.max(1.5,k*gs*0.095), 0, Math.PI*2);
+      x.arc(X(GGRID.inset+gi*gs), X(GGRID.inset+gj*gs), Math.max(2,k*gs*0.115), 0, Math.PI*2);
       x.fill();
     }
   }
