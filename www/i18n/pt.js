@@ -319,6 +319,7 @@ defLang('pt', (function(){
       "ob.next"           : "Próximo",
       "ob.name.sub"       : "A única coisa sobre a qual você já tem uma opinião.",
       "ob.name.note"      : "Você pode mudar quando quiser.",
+      "ob.name.later"      : "Decidir depois",
       "ob.ws.h"           : "Como ele se escreve?",
       "ob.ws.sub"         : "Isto decide o que é uma letra, por isso vem antes de desenhar uma.",
       "ob.ws.note"        : "Você pode mudar isso depois, e o que já desenhou fica guardado.",

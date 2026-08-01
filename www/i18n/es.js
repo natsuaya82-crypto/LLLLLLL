@@ -272,6 +272,7 @@ defLang('es', (function(){
       "ob.next"           : "Siguiente",
       "ob.name.sub"       : "Lo único sobre lo que ya tienes una opinión.",
       "ob.name.note"      : "Puedes cambiarlo cuando quieras.",
+      "ob.name.later"      : "Decidir después",
       "ob.ws.h"           : "¿Cómo se escribe?",
       "ob.ws.sub"         : "Esto decide qué es una letra, así que viene antes de dibujar la primera.",
       "ob.ws.note"        : "Puedes cambiarlo más adelante, y lo que hayas dibujado se conserva.",

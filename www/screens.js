@@ -183,8 +183,13 @@ function obNameHTML(){
       'onkeydown="if(event.key===\'Enter\'){event.preventDefault();obName();}"></div>'+
     '</div>'+
     '<div class="obfoot"><button class="btn" onclick="obName()">'+t('ob.next')+'</button>'+
+    '<button class="obskip" onclick="obNameLater()">'+t('ob.name.later')+'</button>'+
     '<div class="mini obnote">'+t('ob.name.note')+'</div></div>';
 }
+/* Not everyone has a name yet, and being stuck on the first question of the
+   app because of it is absurd. The cover asks again, and the pencil beside
+   the title is there whenever the answer arrives. */
+function obNameLater(){ ob.name=''; obGo(2); }
 
 /* ---- step 2, what a letter is a letter of -----------------------------
    Asked before any letter is drawn, because it decides what drawing one

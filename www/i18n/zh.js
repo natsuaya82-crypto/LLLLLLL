@@ -320,6 +320,7 @@ defLang('zh', (function(){
       "ob.next"          : "下一步",
       "ob.name.sub"      : "这一件事，你心里多半早就有主意。",
       "ob.name.note"     : "以后随时可以更改。",
+      "ob.name.later"     : "稍后再定",
       "ob.ws.h"          : "它怎么写？",
       "ob.ws.sub"        : "这决定了一个字母是什么，所以要在画字母之前定下来。",
       "ob.ws.note"       : "以后可以更改，你画过的都会留着。",

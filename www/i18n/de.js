@@ -300,6 +300,7 @@ defLang('de', (function(){
       "ob.next"          : "Weiter",
       "ob.name.sub"      : "Das Eine, zu dem du schon eine Meinung hast.",
       "ob.name.note"     : "Du kannst ihn ändern, wann immer du magst.",
+      "ob.name.later"     : "Später entscheiden",
       "ob.ws.h"          : "Wie wird sie geschrieben?",
       "ob.ws.sub"        : "Das entscheidet, was ein Buchstabe ist, und kommt deshalb vor dem Zeichnen.",
       "ob.ws.note"       : "Du kannst das später ändern, und was du gezeichnet hast, bleibt erhalten.",

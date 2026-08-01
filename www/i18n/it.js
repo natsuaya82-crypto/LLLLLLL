@@ -312,6 +312,7 @@ defLang('it', (function(){
       "ob.next"          : "Avanti",
       "ob.name.sub"      : "L'unica cosa su cui hai già un'opinione.",
       "ob.name.note"     : "Puoi cambiarlo in qualsiasi momento.",
+      "ob.name.later"     : "Decido dopo",
       "ob.ws.h"          : "Come si scrive?",
       "ob.ws.sub"        : "Questo decide che cos'è una lettera, perciò viene prima di disegnarne una.",
       "ob.ws.note"       : "Puoi cambiarlo più avanti, e quello che hai disegnato resta.",

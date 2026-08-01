@@ -360,6 +360,7 @@ defLang('fr', (function(){
       "ob.next"           : "Suivant",
       "ob.name.sub"       : "La seule chose sur laquelle vous avez déjà un avis.",
       "ob.name.note"      : "Vous pourrez le changer quand vous voudrez.",
+      "ob.name.later"      : "Plus tard",
       "ob.ws.h"           : "Comment s’écrit-elle ?",
       "ob.ws.sub"         : "C’est ce qui décide ce qu’est une lettre ; le choix vient donc avant le dessin.",
       "ob.ws.note"        : "Vous pourrez changer plus tard, et ce que vous avez dessiné sera gardé.",
