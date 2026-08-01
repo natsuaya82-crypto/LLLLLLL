@@ -593,34 +593,69 @@ function groupHTML(items){
 /* =========================================================================
    8. Sound
    ========================================================================= */
+/* The chart is the picker. Tapping a symbol says this language uses that
+   sound; tapping it again says it does not. Nothing is guessed from how a
+   word happens to be spelled, because there is nothing left to guess: the
+   sounds were chosen here. */
+function sndHas(sym){
+  var a=addedSnd();
+  return a.indexOf(sym)>=0;
+}
+function sndToggle(sym){
+  var a=addedSnd(), i=a.indexOf(sym);
+  if(i>=0) a.splice(i,1); else a.push(sym);
+  save(); render();
+}
+function ipaBtn(sym){
+  return '<button class="ph2'+(sndHas(sym)?' on':'')+'" onclick="sndToggle(\''+sym+'\')">'+esc(sym)+'</button>';
+}
+function ipaConsTable(){
+  var rows='', mi, pi, m, cell;
+  for(mi=0; mi<IPA_MANNERS.length; mi++){
+    m=IPA_MANNERS[mi];
+    if(!ipaHasManner(m)) continue;
+    rows+='<tr><th>'+esc(t('ipa.m.'+m))+'</th>';
+    for(pi=0; pi<IPA_PLACES.length; pi++){
+      cell=ipaCell(m, IPA_PLACES[pi]);
+      rows+='<td>'+cell.map(function(c){ return ipaBtn(c.s); }).join('')+'</td>';
+    }
+    rows+='</tr>';
+  }
+  return '<div class="ipascroll"><table class="ipatab">'+rows+'</table></div>';
+}
+function ipaVowTable(){
+  var rows='', hi, bi, cell;
+  for(hi=0; hi<IPA_HEIGHTS.length; hi++){
+    rows+='<tr><th>'+esc(t('ipa.h.'+IPA_HEIGHTS[hi]))+'</th>';
+    for(bi=0; bi<IPA_BACKS.length; bi++){
+      cell=ipaVCell(IPA_HEIGHTS[hi], IPA_BACKS[bi]);
+      rows+='<td>'+cell.map(function(v){ return ipaBtn(v.s); }).join('')+'</td>';
+    }
+    rows+='</tr>';
+  }
+  return '<table class="ipatab">'+rows+'</table>';
+}
+
 function vSound(){
-  var A=analyze(), inv=inventory();
-  var seq=linkRun(), L=seq.length>=2?linked(seq.map(function(w){return w.hw;})):null;
+  var mine=addedSnd();
   return '<div class="view"><div class="chead">'+
     '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
-    '<span class="cn">'+A.used.length+' + '+A.vowels.length+'</span></div></div>'+
+    '<span class="cn">'+mine.length+'</span></div></div>'+
     '<div class="body">'+
-    '<div class="sec">'+t('sound.used')+'</div>'+
-    '<div class="note" style="margin-bottom:10px">'+t('script.sub')+'</div>'+
-    (inv.cons.length? '<div class="pgrid">'+inv.cons.map(phTile).join('')+'</div>' : '<div class="note">'+t('sound.none')+'</div>')+
-    '<div class="sec">'+t('sound.vowels')+'</div>'+
-    (inv.vow.length? '<div class="pgrid">'+inv.vow.map(phTile).join('')+'</div>' : '<div class="note">'+t('sound.none')+'</div>')+
-    '<button class="set" onclick="openAddSnd()"><span class="sl">'+t('snd.add')+'</span><span class="sv">+</span></button>'+
-    (scriptHave()? '<div class="sec">'+t('script.prev')+'</div>'+
-      '<div class="scrpv">'+scrPreview()+'</div>'+
-      '<button class="set" onclick="toggleScript()"><span class="sl">'+t('script.show')+'</span>'+
-      '<span class="sv">'+(SET.showScript?t('set.on'):'—')+'</span></button>' : '')+
-    (L? '<div class="sec">'+t('sound.together')+'</div>'+
-      '<div class="link"><div class="src">'+seq.map(function(w){return esc(w.hw);}).join(' ')+'</div>'+
-      '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
-      '<div class="out">'+readLink(L)+'</div>'+
-      '<button class="play" onclick="speak(\''+esc(seq.map(function(w){return w.hw;}).join(' '))+'\')">'+ICON_PLAY+t('sound.listen')+'</button></div>'+
-      (L.isLink? '' : '<div class="note" style="margin-top:8px">'+t('sound.linkhint')+'</div>')
-      : '')+
-    '<div class="note" style="margin-top:22px">'+t('sound.footer')+'</div>'+
+    '<div class="note" style="margin-bottom:10px">'+t('ipa.note')+'</div>'+
+    '<div class="sec">'+t('ipa.mine')+'</div>'+
+    '<div class="ipamine">'+(mine.length
+      ? mine.map(function(x){ return '<b>'+esc(x)+'</b>'; }).join('')
+      : '<span class="none">'+t('ipa.mine.none')+'</span>')+'</div>'+
+    '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
+    '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
+    '<div class="sec">'+t('ipa.other')+'</div>'+
+    '<div class="ipafree">'+IPA_OTHER.map(function(o){ return ipaBtn(o.s); }).join('')+'</div>'+
+    '<div class="note" style="margin-top:22px">'+t('ipa.footer')+'</div>'+
     '</div></div>';
 }
+
 
 /* =========================================================================
    9. Rules

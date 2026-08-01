@@ -61,6 +61,23 @@ button{font-family:inherit;cursor:pointer}
 .iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .iconb:active{opacity:.5}
+/* --- the IPA chart ---------------------------------------------------- */
+.ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
+.ipascroll table{width:660px}
+.ipatab{border-collapse:collapse;width:100%;table-layout:fixed}
+.ipatab th{font-size:.5rem;color:var(--txm);font-weight:400;text-align:left;
+           padding:2px 4px 4px 0;white-space:nowrap;width:44px}
+.ipatab td{padding:1px;vertical-align:top}
+.ph2{width:100%;min-height:44px;border:1px solid var(--line);background:var(--sf);
+     border-radius:8px;color:var(--txs);font-size:.95rem;padding:6px 0;margin-bottom:2px;display:block}
+.ph2.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+.ph2:active{opacity:.55}
+.ipafree{display:flex;flex-wrap:wrap;gap:6px}
+.ipafree .ph2{width:auto;min-width:48px;padding:8px 11px}
+.ipamine{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px;min-height:44px}
+.ipamine b{border:1px solid var(--goldln);background:var(--goldsf);color:var(--gold);
+           border-radius:8px;padding:8px 12px;font-weight:400;font-size:1rem}
+.ipamine .none{color:var(--txm);font-size:.76rem;align-self:center}
 /* Buttons whose mark is drawn rather than typed line it up with the word. */
 .back.nb,.play,.rr2,.wctl button,.pvbox button{display:inline-flex;align-items:center;gap:6px}
 .back.nb svg,.play svg,.rr2 svg,.wctl button svg,.pvbox button svg{flex:0 0 auto}
@@ -544,12 +561,14 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 
      The order is the only thing here that matters:
        core.js      defines defLang(), so it comes before the ten languages
+       ipa.js       the chart every sound is chosen from; data only
        i18n/*.js    each registers itself; this order is the order they appear
                     in the language picker
        otf5.js      defines the font writer, so it comes before glyph.js
        glyph.js     ends with installScriptFont() and render() — the app starts
                     on its last two lines, so it goes last -->
 <script src="core.js"></script>
+<script src="ipa.js"></script>
 <script src="i18n/en.js"></script>
 <script src="i18n/es.js"></script>
 <script src="i18n/pt.js"></script>
