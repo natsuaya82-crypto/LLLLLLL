@@ -9,7 +9,7 @@ function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   var sample=WORDS.length?WORDS[0].hw:'Aelin';
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="ct">'+t('set.title')+'</span></div></div>'+
     '<div class="body">'+
     '<div class="sec">'+t('set.look')+'</div>'+
@@ -57,12 +57,23 @@ function vSettings(){
       : '<div class="note">'+t('set.voice.wait')+'</div>')+
     '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.voice.try')+'</span>'+
       '<span class="pvk">'+esc(sample)+'</span>'+
-      '<button onclick="speak(\''+esc(sample)+'\')">'+t('f.listen')+'</button></div>'+
+      '<button onclick="speak(\''+esc(sample)+'\')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="note">'+t('set.voice.note')+'</div>'+
 
     '<div class="sec">'+t('set.lang')+'</div>'+
     '<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span><span class="sv">'+esc(langName||'—')+' ›</span></button>'+
     '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+' ›</span></button>'+
+
+    /* Signing in used to be the second thing the app asked for, before a
+       single letter existed. It is here now, where it has a reason: an
+       account is what carries a language off this one phone. Nothing above
+       this line needs it. */
+    '<div class="sec">'+t('set.account')+'</div>'+
+    '<button class="set signin google" onclick="obSignIn()"><span class="sl">'+MARK_GOOGLE+
+      '<span>'+t('ob.signin.google')+'</span></span><span class="sv">\u203A</span></button>'+
+    '<button class="set signin apple" onclick="obSignIn()"><span class="sl">'+MARK_APPLE+
+      '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">\u203A</span></button>'+
+    '<div class="note">'+t('set.account.note')+'</div>'+
 
     '<div class="sec">'+t('set.plan')+'</div>'+
     '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span><span class="sv">'+esc(p?p.name:'Free')+' ›</span></button>'+
@@ -72,10 +83,10 @@ function vSettings(){
       ? '<button class="set" onclick="exportCSV()"><span class="sl">'+t('set.csv.out')+'</span><span class="sv">›</span></button>'+
         '<button class="set" onclick="openImport()"><span class="sl">'+t('set.csv.in')+'</span><span class="sv">›</span></button>'+
         '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
-      : '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+      : '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.csv.t')+'</span><br><span class="ld">'+t('set.lock.csv.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>'+
-        '<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+        '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.cloud.t')+'</span><br><span class="ld">'+t('set.lock.cloud.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>')+
     '<button class="set" style="margin-top:18px" onclick="wipe()"><span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>'+
@@ -97,7 +108,7 @@ function wipe(){
    ========================================================================= */
 function vPlans(){
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'settings\')">'+t('nav.settings')+'</button>'+
+    '<button class="back nb" onclick="go(\'settings\')">'+ICON_BACK+t('nav.settings')+'</button>'+
     '<div class="chap"><span class="ct">'+t('plans.title')+'</span></div></div>'+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:16px">'+t('plans.intro')+'</div>'+
@@ -172,7 +183,7 @@ function openAdd(){
     '<div class="field"><label>'+t('f.spelling')+'</label>'+
     '<input class="hwf" id="f-hw" placeholder="Aelin" oninput="pv()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
-    '<button onclick="sayField()">'+t('f.listen')+'</button></div>'+
+    '<button onclick="sayField()">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div>'+
     '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos">'+
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
@@ -225,7 +236,7 @@ function openWord(hw){
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div>'+
     '<div class="whd"><span class="whw">'+esc(wOut(w.hw))+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">'+t('f.listen')+'</button></div>'+
+      '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="wsub">'+esc(ipa(w.hw))+'</div>'+
     '<div class="wsub2">'+esc(rd(w.hw))+'</div>'+
     '<div class="sec" style="margin:18px 0 8px">'+t('word.syl')+'</div>'+

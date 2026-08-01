@@ -58,10 +58,15 @@ button{font-family:inherit;cursor:pointer}
 .top{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0) + 16px) 24px 0}
 .brand{font-family:'Cinzel',Georgia,serif;letter-spacing:.22em;font-size:.86rem;color:var(--txs)}
 .brand .st{color:var(--gold)}
-.iconb{margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:none;
+.iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .iconb:active{opacity:.5}
-.back{background:none;border:none;color:var(--txs);font-size:.88rem;padding:4px 0;display:inline-flex;align-items:center;gap:6px}
+/* Buttons whose mark is drawn rather than typed line it up with the word. */
+.back.nb,.play,.rr2,.wctl button,.pvbox button{display:inline-flex;align-items:center;gap:6px}
+.back.nb svg,.play svg,.rr2 svg,.wctl button svg,.pvbox button svg{flex:0 0 auto}
+.set.signin .sl{display:flex;align-items:center;gap:10px}
+.set.signin .sl svg{width:18px;height:18px;flex:0 0 auto}
+.back{background:none;border:none;color:var(--txs);font-size:.88rem;padding:10px 0;display:inline-flex;align-items:center;gap:6px;min-height:44px}
 .back:active{opacity:.5}
 .chead{padding:calc(env(safe-area-inset-top,0) + 14px) 24px 6px}
 .chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
@@ -83,8 +88,8 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .title{padding:34px 30px 20px;text-align:center}
 .tkick{font-size:.58rem;letter-spacing:.34em;color:var(--txm);text-transform:uppercase;margin-bottom:14px}
 .tname{font-family:'Cinzel',Georgia,serif;font-weight:600;font-size:2.2rem;line-height:1.15;
-       display:inline-flex;align-items:center;gap:10px;background:none;border:none;color:var(--tx)}
-.tname .pen{font-size:.68rem;color:var(--txm)}
+       display:inline-flex;align-items:center;gap:10px;background:none;border:none;color:var(--tx);min-height:44px}
+.tname .pen{font-size:.68rem;color:var(--txm);display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px}
 .tsub{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.1rem;color:var(--pur);margin-top:6px}
 .toc{margin-top:14px}
 .trow{display:flex;align-items:baseline;gap:12px;padding:16px 2px;width:100%;background:none;border:none;color:var(--tx);text-align:left}
@@ -140,7 +145,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 
 /* ---------- make ---------- */
 .segs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.seg{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:7px 15px;font-size:.84rem}
+.seg{min-height:44px;background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:7px 15px;font-size:.84rem}
 .seg.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
 .cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
 .cand .ck{width:20px;height:20px;border-radius:6px;border:1px solid var(--line);flex:0 0 auto;
@@ -156,7 +161,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .set .sl{font-size:.95rem}
 .set .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
 .pick{display:flex;background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:3px;margin:10px 0 4px}
-.pick button{flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}
+.pick button{min-height:44px;flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}
 .pick button.on{background:var(--pane);color:var(--tx);font-weight:600;box-shadow:var(--shadow)}
 .lrow{justify-content:space-between;gap:10px}
 .lrow .sl{flex:0 0 auto}
@@ -170,7 +175,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .plan .pp{margin-left:auto;color:var(--gold);font-size:.95rem;font-weight:600}
 .plan .pl{color:var(--txs);font-size:.82rem;margin-top:9px;line-height:1.95}
 .plan .badge{font-size:.56rem;letter-spacing:.16em;color:var(--gold);border:1px solid var(--goldln);border-radius:20px;padding:2px 9px}
-.plan button{width:100%;margin-top:13px;padding:11px;border-radius:11px;border:1px solid var(--goldln);
+.plan button{min-height:44px;width:100%;margin-top:13px;padding:11px;border-radius:11px;border:1px solid var(--goldln);
              background:var(--goldsf);color:var(--gold);font-weight:600;font-size:.88rem}
 
 /* ---------- locked behind a paid plan ---------- */
@@ -209,7 +214,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .pvbox{display:flex;align-items:center;gap:10px;margin:2px 0 12px;min-height:26px}
 .pvbox .pvk{font-size:1.02rem;color:var(--gold)}
 .pvbox .pvn{font-size:.72rem;color:var(--txm)}
-.pvbox button{margin-left:auto;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
+.pvbox button{min-height:44px;margin-left:auto;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
               border-radius:18px;padding:5px 13px;font-size:.78rem}
 /* one word, opened */
 .whd{display:flex;align-items:center;gap:12px;margin:0 2px}
@@ -330,7 +335,7 @@ html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .g
 .gclear:active{opacity:.55}
 html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
   letter-spacing:.02em;font-size:.68rem}
-.ghintwrap{margin:18px 0 2px;display:flex;justify-content:center}
+.ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
 .spv{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
 .spv .big{font-size:2.4rem;line-height:1.5;word-break:break-word}

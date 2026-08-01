@@ -154,6 +154,10 @@ function obSnd(p){
   obGo(2);
 }
 
+/* The provider handshakes are wired in at packaging time. Until then this is
+   honest about it rather than looking broken. */
+function obSignIn(){ toast(t('set.account.soon')); }
+
 function obFinish(){
   if(!langName) langName=t('lang.default');
   SET.done=true; save();
@@ -293,9 +297,27 @@ function capBanner(){
     '<span class="capgo">'+t('up.cta')+' \u203A</span></button>';
 }
 
+/* One letter is a beginning; a handful is a writing system you can read a
+   word in. Below that line the app talks about letters, above it about words. */
+var SC_ENOUGH=5;
+function scriptLetterCount(){
+  var n=0, k;
+  for(k in SCRIPT.g) if(Object.prototype.hasOwnProperty.call(SCRIPT.g,k) && SCRIPT.g[k].length) n++;
+  var m=scriptMap();
+  for(k in m) if(Object.prototype.hasOwnProperty.call(m,k) && m[k]) n++;
+  return n;
+}
+function scriptStarted(){ return scriptLetterCount()>0; }
+function scriptEnough(){ return scriptLetterCount()>=SC_ENOUGH; }
+
 function nextStep(){
   var n=WORDS.length, act, label;
-  if(n===0){ act="openAdd()"; label=t('next.w0'); }
+  /* Somebody who has just come through the door has drawn one letter and
+     given it a sound. Sending them straight to "coin your first word" throws
+     away what they just made and starts them somewhere else. The alphabet is
+     what is half-built, so the alphabet is what gets offered. */
+  if(n===0 && scriptStarted() && !scriptEnough()){ act="go('script')"; label=t('next.sc0'); }
+  else if(n===0){ act="openAdd()"; label=t('next.w0'); }
   else if(n<5){ act="openAdd()"; label=t('next.w1', 5-n); }
   else if(LINES.length===0){ act="go('sent')"; label=t('next.s0'); }
   else { act="go('make')"; label=t('next.mk'); }
@@ -457,19 +479,23 @@ function vHome(){
   var lastLine = LINES.length?LINES[LINES.length-1]:null;
   return '<div class="view">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
-    '<button class="iconb" onclick="go(\'settings\')">⚙</button></div>'+
+    '<button class="iconb" onclick="go(\'settings\')" aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
     '<div class="title">'+
       '<div class="tkick">'+t('home.kicker')+'</div>'+
-      '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">✎</span></button>'+
+      '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
       '<div class="tsub">'+(WORDS.length? esc(ipa(WORDS[0].hw)) : '　')+'</div>'+
       '<div class="rule"></div>'+
     '</div>'+
     '<div class="body" style="padding-top:0">'+
     capBanner()+nextStep()+
     (WORDS.length===0
-      ? '<div class="empty"><div class="eb">'+t('home.empty.t')+'</div>'+
-        '<div class="es">'+t('home.empty.s')+'</div></div>'+
-        '<button class="btn" onclick="openAdd()" style="margin-top:6px">'+t('home.empty.btn')+'</button>'
+      ? (scriptStarted() && !scriptEnough()
+          ? '<div class="empty"><div class="eb">'+t('home.new.t')+'</div>'+
+            '<div class="es">'+t('home.new.s')+'</div></div>'+
+            '<button class="btn" onclick="go(\'script\')" style="margin-top:6px">'+t('next.sc0')+'</button>'
+          : '<div class="empty"><div class="eb">'+t('home.empty.t')+'</div>'+
+            '<div class="es">'+t('home.empty.s')+'</div></div>'+
+            '<button class="btn" onclick="openAdd()" style="margin-top:6px">'+t('home.empty.btn')+'</button>')
       : '<div class="toc">'+toc.map(function(row){
           return '<button class="trow" onclick="go(\''+row[2]+'\')">'+
             '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
@@ -506,7 +532,7 @@ function vWords(){
   var body = items.length ? groupHTML(items)
     : '<div class="empty"><div class="eb">'+(q? t('words.nomatch') : t('words.empty'))+'</div></div>';
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span style="color:var(--txm)">⌕</span>'+
@@ -542,7 +568,7 @@ function vSound(){
   var A=analyze(), inv=inventory();
   var seq=linkRun(), L=seq.length>=2?linked(seq.map(function(w){return w.hw;})):null;
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
     '<span class="cn">'+A.used.length+' + '+A.vowels.length+'</span></div></div>'+
     '<div class="body">'+
@@ -560,7 +586,7 @@ function vSound(){
       '<div class="link"><div class="src">'+seq.map(function(w){return esc(w.hw);}).join(' ')+'</div>'+
       '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
       '<div class="out">'+readLink(L)+'</div>'+
-      '<button class="play" onclick="speak(\''+esc(seq.map(function(w){return w.hw;}).join(' '))+'\')">'+t('sound.listen')+'</button></div>'+
+      '<button class="play" onclick="speak(\''+esc(seq.map(function(w){return w.hw;}).join(' '))+'\')">'+ICON_PLAY+t('sound.listen')+'</button></div>'+
       (L.isLink? '' : '<div class="note" style="margin-top:8px">'+t('sound.linkhint')+'</div>')
       : '')+
     '<div class="note" style="margin-top:22px">'+t('sound.footer')+'</div>'+
@@ -573,7 +599,7 @@ function vSound(){
 function vRules(){
   var f=findings();
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">III</span><span class="ct">'+esc(t('toc.rules'))+'</span>'+
     '<span class="cn">'+f.length+'</span></div></div>'+
     '<div class="body">'+

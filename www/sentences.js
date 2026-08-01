@@ -103,7 +103,7 @@ function vSent(){
   var L = ws.length>=2 ? linked(ws.map(function(w){return w.hw;})) : null;
   var chk=orderCheck();
   var head='<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">IV</span><span class="ct">'+esc(t('toc.sent'))+'</span>'+
     '<span class="cn">'+LINES.length+'</span></div></div><div class="body">';
 
@@ -124,7 +124,7 @@ function vSent(){
             (w&&w.mn? '<span class="wcm">'+esc(w.mn)+'</span>':'')+'</button>';
         }).join('')+'</div>'+
         (compSel>=0
-          ? '<div class="wctl"><button onclick="compMove(-1)">'+t('sent.prev')+'</button>'+
+          ? '<div class="wctl"><button onclick="compMove(-1)">'+ICON_BACK+t('sent.prev')+'</button>'+
             '<button onclick="compMove(1)">'+t('sent.later')+'</button>'+
             '<button onclick="compDel()">'+t('sent.remove')+'</button></div>'
           : '<div class="note">'+t('sent.taphint')+'</div>')
@@ -178,7 +178,7 @@ function vSent(){
           '<span class="pos">'+esc(l.order||'')+'</span></div>'+
           '<div class="mn" style="font-size:.92rem">'+readLink(lk)+'</div>'+
           '<div style="display:flex;gap:8px;margin-top:8px">'+
-          '<button class="rr2" onclick="speak(\''+esc(l.ws.join(' '))+'\')">'+t('sent.listen')+'</button>'+
+          '<button class="rr2" onclick="speak(\''+esc(l.ws.join(' '))+'\')">'+ICON_PLAY+t('sent.listen')+'</button>'+
           '<button class="rr2" onclick="reopenLine('+idx+')">'+t('sent.reweave')+'</button>'+
           '<button class="rr2" onclick="dropLine('+idx+')">'+t('sent.drop')+'</button></div></div>';
       }).join('') : '')+
@@ -211,7 +211,7 @@ function vMake(){
   var rule=A.finalRule[mkPos];
   var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">V</span><span class="ct">'+esc(t('toc.make'))+'</span></div></div>'+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
@@ -228,7 +228,7 @@ function vMake(){
         '<button class="rr" onclick="speak(\''+esc(c.w)+'\')">▶</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
-    (has('studio')?'':'<button class="lock" onclick="go(\'plans\')"><span class="lk">✧</span>'+
+    (has('studio')?'':'<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
       '<span><span class="lt">'+t('make.lock.t')+'</span><br>'+
       '<span class="ld">'+t('make.lock.d')+'</span></span>'+
       '<span class="tag">STUDIO</span></button>')+

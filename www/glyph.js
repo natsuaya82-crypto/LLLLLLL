@@ -182,7 +182,7 @@ function vScript(){
   var line = LINES.length ? LINES[LINES.length-1].ws.join(' ')
            : WORDS.slice(0,4).map(function(w){return w.hw;}).join(' ');
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'home\')">'+t('nav.contents')+'</button>'+
+    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">VI</span><span class="ct">'+esc(t('toc.script'))+'</span>'+
     '<span class="cn">'+drawn+' / '+L.length+'</span></div></div>'+
     '<div class="body">'+
@@ -259,6 +259,32 @@ var GICON={
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
   'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
+/* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
+   drawing: it arrives at whatever weight and colour the system feels like,
+   which is never the weight of every other line in this app. */
+/* The mark on a locked row was a dingbat typed into the HTML, which is the
+   same borrowing as an emoji: it arrives at the font's weight, not the app's.
+   Drawn instead, in the stroke weight every other line here uses. */
+/* Every back button spelled its arrow with U+2190, which is a character in
+   whatever font happens to answer, at whatever weight that font draws it.
+   The arrow is part of the button, not part of the sentence, so it moved out
+   of the ten translations and into one mark drawn like every other. */
+var ICON_PLAY='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" '+
+  'aria-hidden="true"><path d="M7.5 5.2 19 12 7.5 18.8Z"/></svg>';
+var ICON_BACK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M20 12H4.6"/><path d="M10.5 5.5 4 12l6.5 6.5"/></svg>';
+var ICON_PEN='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 20h4L19.2 8.8a2 2 0 0 0-2.8-2.8L5 17.2V20Z"/><path d="M15.2 7.2 18 10"/></svg>';
+var ICON_PLUS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
+var ICON_GEAR='<svg class="ic" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" '+
+  'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/>'+
+  '<path d="M12 5V3.2M12 19v1.8M19 12h1.8M3.2 12H5'+
+  'M16.95 7.05l1.27-1.27M5.78 18.22l1.27-1.27M16.95 16.95l1.27 1.27M5.78 5.78 7.05 7.05"/></svg>';
 function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function gbtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=fn+'()';
@@ -284,7 +310,7 @@ function vGlyph(){
   var pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   return '<div class="view"><div class="chead">'+
-    '<button class="back" onclick="go(\'script\')">'+esc(t('toc.script'))+'</button>'+
+    '<button class="back nb" onclick="go(\'script\')">'+ICON_BACK+esc(t('toc.script'))+'</button>'+
     '<div class="chap"><span class="rn">VI</span><span class="ct">'+esc(GE.r)+'</span>'+
     '<span class="cn">'+pts+'</span></div></div>'+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
