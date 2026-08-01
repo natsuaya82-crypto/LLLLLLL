@@ -88,18 +88,30 @@ var GPLACE=[
   {pts:[[256,688],[112,688],[112,544]]}
 ];
 
-/* 'sh' cannot be a glyph name with a codepoint, so it becomes s_h and is
-   reached by a ligature. Same rule as the spike, same names. */
-function glyphKey(r){ return r.length>1 ? r.split('').join('_') : r; }
+/* A glyph name may only be letters, digits and a few punctuation marks, and a
+   sound is any symbol on the IPA chart -- so anything that is not a plain
+   Latin letter is named by its code point. A symbol written with more than one
+   code unit (a letter and a diacritic under it) cannot have a code point of
+   its own at all, so it becomes a ligature of its parts, exactly the way the
+   old two-letter digraphs did. */
+function glyphCode(c){ return 'u'+('000'+c.charCodeAt(0).toString(16)).slice(-4); }
+function glyphKey(r){
+  var out=[], i, c;
+  for(i=0;i<r.length;i++){
+    c=r.charAt(i);
+    out.push(/[A-Za-z]/.test(c) ? c : glyphCode(c));
+  }
+  return out.join('_');
+}
 
-/* The alphabet the script has to cover: every sound your words already use,
-   plus anything you added by hand, plus anything you have already drawn. It
-   grows on its own as the dictionary does. */
+/* The alphabet the script has to cover: every sound this language has chosen,
+   plus anything already drawn or set aside by hand. It used to be worked out
+   from the letters the words were spelled with, filtered to a-z -- which quietly
+   meant no sound outside the Latin alphabet could ever be given a letter. */
 function scriptLetters(){
-  var A=analyze(), seen={}, out=[];
-  function push(c){ if(c && /^[a-z]{1,3}$/.test(c) && !seen[c]){ seen[c]=1; out.push(c); } }
-  A.used.forEach(push);
-  (A.vowels||[]).forEach(push);
+  var seen={}, out=[];
+  function push(c){ if(c && !seen[c]){ seen[c]=1; out.push(c); } }
+  addedSnd().forEach(push);
   SCRIPT.extra.forEach(push);
   Object.keys(SCRIPT.g).forEach(push);
   out.sort();
@@ -122,10 +134,12 @@ function scriptGlyphDefs(){
     if(r.length>1) r.split('').forEach(function(c){ if(!have[c]){ have[c]=1; need.push(c); } });
   });
   L.concat(need).sort().forEach(function(r){
-    var st=SCRIPT.g[r];
+    var st=SCRIPT.g[r], up=r.toUpperCase();
     defs.push({
       name: glyphKey(r),
-      roman: r.length===1 ? r+r.toUpperCase() : null,
+      /* one code unit, so it has a code point of its own; a script you invented
+         has no case unless you draw one, so both cases point at one glyph */
+      roman: r.length===1 ? (up!==r ? r+up : r) : null,
       strokes: (st && st.length) ? st : GPLACE
     });
     if(r.length>1) ligs.push({sub:r.split(''), by:glyphKey(r)});
@@ -178,55 +192,11 @@ function setMyFont(v){
   save(); render();
 }
 
-/* ---- the letter grid ---------------------------------------------------- */
-function vScript(){
-  var L=scriptLetters(), drawn=scriptDrawn(L);
-  var sample = WORDS.length ? WORDS[0].hw : (langName || L.slice(0,5).join(''));
-  var line = LINES.length ? LINES[LINES.length-1].ws.join(' ')
-           : WORDS.slice(0,4).map(function(w){return w.hw;}).join(' ');
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">VI</span><span class="ct">'+esc(t('toc.script'))+'</span>'+
-    '<span class="cn">'+drawn+' / '+L.length+'</span></div></div>'+
-    '<div class="body">'+
-    (drawn
-      ? '<div class="sec">'+t('script.preview')+'</div>'+
-        '<div class="spv">'+
-          '<div class="big sfont">'+esc(sample)+'</div>'+
-          (line? '<div class="sm sfont">'+esc(line)+'</div>':'')+
-          '<div class="rom">'+esc(sample)+'</div>'+
-        '</div>'+
-        '<div class="sec">'+t('script.show')+'</div>'+
-        '<div class="pick">'+
-          '<button class="'+(SET.myfont?'':'on')+'" onclick="setMyFont(false)">'+t('script.show.roman')+'</button>'+
-          '<button class="'+(SET.myfont?'on':'')+'" onclick="setMyFont(true)">'+t('script.show.own')+'</button>'+
-        '</div>'+
-        '<div class="note">'+t('script.show.note')+'</div>'
-      : '<div class="note">'+t('script.needs')+'</div>')+
-    '<div class="sec">'+t('script.letters')+'</div>'+
-    (L.length
-      ? '<div class="gtiles">'+L.map(function(r,i){
-          var has=SCRIPT.g[r] && SCRIPT.g[r].length;
-          return '<button class="gtile'+(has?'':' empty')+'" onclick="editGlyph(\''+r+'\')">'+
-            (has? '<canvas class="tc" data-r="'+r+'"></canvas>' : '<span>'+r+'</span>')+
-            '<span class="rl">'+r+'</span></button>';
-        }).join('')+
-        '<button class="gtile add" onclick="addLetter()">+</button></div>'
-      : '<div class="empty"><div class="eb">'+t('script.empty.t')+'</div>'+
-        '<div class="es">'+t('script.empty.s')+'</div></div>'+
-        '<button class="btn" onclick="addLetter()" style="margin-top:6px">'+t('script.add')+'</button>')+
-    '<div class="note" style="margin-top:18px">'+t('script.note')+'</div>'+
-    '</div></div>';
-}
-function addLetter(){
-  var v=prompt(t('script.add.prompt'),'');
-  if(v===null) return;
-  v=String(v).toLowerCase().replace(/[^a-z]/g,'');
-  if(!v || v.length>3){ toast(t('script.add.bad')); return; }
-  if(SCRIPT.extra.indexOf(v)<0) SCRIPT.extra.push(v);
-  save(); editGlyph(v);
-}
-
+/* ---- the letter grid ----------------------------------------------------
+   There was a chapter here called Letters, showing every sound of the language
+   as a tile with whatever had been drawn for it. The sounds screen shows
+   exactly that now, above the chart, so being in two places to give a sound a
+   letter is over. What is left is the editor those tiles open. */
 /* ---- the editor --------------------------------------------------------- */
 /* GE is the letter being drawn. st is the same stroke list the font writer
    eats, so what you see on the canvas and what ends up in the font are the
@@ -340,8 +310,8 @@ function vGlyph(){
   var pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'script\')">'+ICON_BACK+esc(t('toc.script'))+'</button>'+
-    '<div class="chap"><span class="rn">VI</span><span class="ct">'+esc(GE.r)+'</span>'+
+    '<button class="back nb" onclick="go(\'sound\')">'+ICON_BACK+esc(t('toc.sound'))+'</button>'+
+    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(GE.r)+'</span>'+
     '<span class="cn">'+pts+'</span></div></div>'+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
@@ -349,7 +319,7 @@ function vGlyph(){
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div>'+
     '<div class="barfix">'+
-      '<button class="btn ghost" onclick="go(\'script\')">'+t('glyph.cancel')+'</button>'+
+      '<button class="btn ghost" onclick="go(\'sound\')">'+t('glyph.cancel')+'</button>'+
       '<button class="btn" onclick="geSave()">'+t('glyph.save')+'</button>'+
     '</div></div>';
 }
@@ -538,7 +508,7 @@ function geSave(){
   save();
   installScriptFont();
   var r=GE.r; GE=null;
-  go('script');
+  go('sound');
   toast(t('glyph.saved', r));
 }
 
@@ -1107,7 +1077,6 @@ function render(){
         : route==='talk' ? vTalk()
         : route==='settings'? vSettings()
         : route==='plans'? vPlans()
-        : route==='script'? vScript()
         : route==='glyph'? vGlyph()
         : vHome();
   /* one attribute decides whether words are shown in roman letters or in the
@@ -1126,7 +1095,7 @@ function render(){
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
-  if(route==='script' || route==='sound') geTiles();
+  if(route==='sound') geTiles();
 }
 migratePh();
 installScriptFont();

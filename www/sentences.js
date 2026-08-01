@@ -80,12 +80,14 @@ function vSent(){
     compSeeded=true;
     var nouns=byPos('n'), verbs=byPos('v');
     if(nouns.length && verbs.length){
-      var vf=null, i;
-      for(i=0;i<nouns.length;i++) if(isV(String(nouns[i].hw).charAt(0).toLowerCase())){ vf=nouns[i]; break; }
+      /* a noun that opens on a vowel, after one that closes on a consonant:
+         the pair that makes the linking audible the moment the screen opens */
+      var vf=null, i, q;
+      for(i=0;i<nouns.length;i++){ q=wPh(nouns[i]); if(q.length && ipaIsVowel(q[0])){ vf=nouns[i]; break; } }
       var subj=null;
       for(i=0;i<nouns.length;i++){
-        var h=String(nouns[i].hw).toLowerCase();
-        if(nouns[i]!==vf && !isV(h.charAt(h.length-1))){ subj=nouns[i]; break; }
+        q=wPh(nouns[i]);
+        if(nouns[i]!==vf && q.length && !ipaIsVowel(q[q.length-1])){ subj=nouns[i]; break; }
       }
       if(!subj) for(i=0;i<nouns.length;i++) if(nouns[i]!==vf){ subj=nouns[i]; break; }
       var slot={S:(subj||nouns[0]), O:(vf&&vf!==subj?vf:nouns[1]), V:verbs[0]};
@@ -192,13 +194,16 @@ function dropLine(i){ LINES.splice(i,1); save(); render(); toast(t('toast.droppe
        Generating a whole themed vocabulary with an AI is the paid tier.)
    ========================================================================= */
 var mkPos='n', cands=[];
+/* A candidate is a sequence of sounds. Its spelling is what that sequence
+   looks like written down, which is why nothing here stores one. */
 function buildCands(n){
   var A=analyze(), tk=taken(); cands=[];
   for(var i=0;i<(n||8);i++){
-    var w=makeWord(mkPos,A,tk);
-    if(w) cands.push({w:w,on:true});
+    var q=makeWord(mkPos,A,tk);
+    if(q) cands.push({q:q, on:true});
   }
 }
+function candHw(c){ return c.q.join(''); }
 function vMake(){
   var A=analyze();
   if(!cands.length) buildCands(8);
@@ -216,10 +221,11 @@ function vMake(){
       : t('make.norule', posLabel(mkPos)))+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
-        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?ICON_TICK:'')+'</button>'+
-        '<span class="cw">'+esc(c.w)+'</span><span class="crd">'+esc(readOut(c.w))+'</span>'+
+        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')" aria-label="'+esc(t('make.commit'))+'">'+
+          '<span class="ckb">'+(c.on?ICON_TICK:'')+'</span></button>'+
+        '<span class="cw">'+esc(candHw(c))+'</span><span class="crd">'+esc(readSeq(c.q))+'</span>'+
         '<button class="rr" onclick="reroll('+i+')" aria-label="'+esc(t('make.reroll'))+'">'+ICON_AGAIN+'</button>'+
-        '<button class="rr" onclick="sayWords([\''+esc(c.w)+'\'])" aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
+        '<button class="rr" onclick="sayPh('+esc(JSON.stringify(c.q))+')" aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
     (has('studio')?'':'<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
@@ -234,15 +240,15 @@ function setPos(p){ mkPos=p; cands=[]; render(); }
 function tog(i){ cands[i].on=!cands[i].on; render(); }
 function reroll(i){
   var A=analyze(), tk=taken();
-  cands.forEach(function(c,j){ if(j!==i){ tk[c.w.toLowerCase()]=1; } });
-  var w=makeWord(mkPos,A,tk); if(w){ cands[i]={w:w,on:cands[i].on}; render(); }
+  cands.forEach(function(c,j){ if(j!==i) tk[candHw(c)]=1; });
+  var q=makeWord(mkPos,A,tk); if(q){ cands[i]={q:q, on:cands[i].on}; render(); }
 }
 function regen(){ cands=[]; render(); }
 function commit(){
   var sel=cands.filter(function(c){return c.on;});
   if(!sel.length){ toast(t('toast.noselect')); return; }
   if(!capOK(sel.length)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
-  sel.forEach(function(c){ WORDS.push({hw:c.w, mn:'', pos:mkPos, at:Date.now()}); });
+  sel.forEach(function(c){ WORDS.push({hw:candHw(c), ph:c.q.slice(), mn:'', pos:mkPos, at:Date.now()}); });
   save(); cands=[];
   toast(tn('toast.added.n', sel.length));
   go('words');

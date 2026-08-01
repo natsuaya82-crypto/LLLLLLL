@@ -66,3 +66,19 @@ function ipaHasManner(m){
 /* What the twenty-six used to be, in the symbols they actually stood for.
    Only three of them differ: everything else was already an IPA symbol. */
 var IPA_WAS={"sh":"\u0283","ch":"t\u0283","th":"\u03b8","y":"j"};
+
+/* A rough Latin spelling for each symbol, and nothing more than that.
+   The IPA is exact and is what a word actually is; this is the ladder up to
+   it for somebody who does not read the IPA yet. Each language's own
+   respelling engine reads Latin, so this is what it is handed: /\u0283a\u014bo/
+   becomes shano, which an English respelling then writes SHAH-noh and a
+   Japanese one \u30b7\u30e3\u30ce. Nothing here decides how a sound is said --
+   www/voice.js does that, from the chart. This only decides how it is
+   approximated on the page, which is a different question and an honest one.
+   A few symbols spell to nothing: a glottal stop has no Latin letter that
+   would not be a lie about it. */
+var IPA_ROMAN={"p":"p", "b":"b", "p̪":"p", "b̪":"b", "t̪":"t", "d̪":"d", "t":"t", "d":"d", "ʈ":"t", "ɖ":"d", "c":"k", "ɟ":"g", "k":"k", "ɡ":"g", "q":"k", "ɢ":"g", "ʡ":"h", "ʔ":"", "m":"m", "ɱ":"m", "n":"n", "ɳ":"n", "ɲ":"ny", "ŋ":"ng", "ɴ":"ng", "ʙ":"b", "r":"r", "ʀ":"r", "ⱱ":"v", "ɾ":"r", "ɽ":"r", "ɸ":"f", "β":"v", "f":"f", "v":"v", "θ":"th", "ð":"d", "s":"s", "z":"z", "ʃ":"sh", "ʒ":"sh", "ʂ":"sh", "ʐ":"sh", "ç":"h", "ʝ":"j", "x":"k", "ɣ":"g", "χ":"k", "ʁ":"r", "ħ":"h", "ʕ":"", "h":"h", "ɦ":"h", "ɬ":"l", "ɮ":"l", "ʋ":"v", "ɹ":"r", "ɻ":"r", "j":"j", "ɰ":"w", "l":"l", "ɭ":"l", "ʎ":"l", "ʟ":"l", "i":"i", "y":"u", "ɨ":"i", "ʉ":"u", "ɯ":"u", "u":"u", "ɪ":"i", "ʏ":"u", "ʊ":"u", "e":"e", "ø":"e", "ɘ":"e", "ɵ":"o", "ɤ":"o", "o":"o", "ə":"a", "ɛ":"e", "œ":"e", "ɜ":"e", "ɞ":"o", "ʌ":"a", "ɔ":"o", "æ":"a", "ɐ":"a", "a":"a", "ɶ":"a", "ɑ":"a", "ɒ":"o", "ʍ":"w", "w":"w", "ɥ":"w", "ʜ":"h", "ʢ":"h", "ɕ":"sh", "ʑ":"sh", "ɺ":"r", "ɧ":"sh", "ʘ":"p", "ǀ":"t", "ǃ":"k", "ǂ":"k", "ǁ":"l", "ɓ":"b", "ɗ":"d", "ʄ":"j", "ɠ":"g", "ʛ":"g"};
+function ipaRoman(sym){
+  if(IPA_ROMAN[sym]!==undefined) return IPA_ROMAN[sym];
+  return /^[a-z]$/.test(sym) ? sym : '';
+}

@@ -76,10 +76,14 @@ button{font-family:inherit;cursor:pointer}
 .phk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 /* --- the IPA chart ---------------------------------------------------- */
 .ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
-.ipascroll table{width:660px}
+.ipascroll table{width:674px}
 .ipatab{border-collapse:collapse;width:100%;table-layout:fixed}
+/* The row heading is the name of a manner or a height, and some of those are
+   long words in some of the ten. Fixed at 44px and told not to wrap, they
+   were cut off mid-word; they wrap now, and the chart is wide enough to pay
+   for the extra column. */
 .ipatab th{font-size:.5rem;color:var(--txm);font-weight:400;text-align:left;
-           padding:2px 4px 4px 0;white-space:nowrap;width:44px}
+           padding:2px 6px 4px 0;white-space:normal;line-height:1.25;width:58px;word-break:break-word}
 .ipatab td{padding:1px;vertical-align:top}
 .ph2{width:100%;min-height:44px;border:1px solid var(--line);background:var(--sf);
      border-radius:8px;color:var(--txs);font-size:.95rem;padding:6px 0;margin-bottom:2px;display:block}
@@ -178,13 +182,16 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .seg{min-height:44px;background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:7px 15px;font-size:.84rem}
 .seg.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
 .cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
-.cand .ck{width:20px;height:20px;border-radius:6px;border:1px solid var(--line);flex:0 0 auto;
-          display:flex;align-items:center;justify-content:center;font-size:.68rem;color:var(--onGold);background:none}
-.cand .ck.on{background:var(--gold);border-color:var(--gold)}
+.cand .ck{width:44px;height:44px;margin-left:-11px;border:0;background:none;flex:0 0 auto;
+          display:flex;align-items:center;justify-content:center}
+.cand .ck .ckb{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
+          display:flex;align-items:center;justify-content:center;color:var(--onGold)}
+.cand .ck.on .ckb{background:var(--gold);border-color:var(--gold)}
 .cand .cw{font-family:'Cinzel',Georgia,serif;font-size:1.1rem}
 .cand .crd{font-size:.7rem;color:var(--txm);margin-left:2px}
 .cand .cm{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txs);font-size:1rem}
-.cand .rr{background:none;border:none;color:var(--txm);font-size:.9rem;padding:2px 4px}
+.cand .rr{background:none;border:none;color:var(--txm);min-width:44px;min-height:44px;
+          display:flex;align-items:center;justify-content:center}
 
 /* ---------- settings ---------- */
 .set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
@@ -221,7 +228,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .barfix{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:480px;margin:0 auto;
         padding:12px 24px calc(env(safe-area-inset-bottom,0) + 14px);
         background:linear-gradient(180deg,transparent,var(--bg) 34%);display:flex;gap:10px}
-.btn{flex:1;padding:15px;border-radius:13px;border:none;background:var(--gold);color:var(--onGold);font-weight:700;font-size:.98rem}
+/* A flex item will not shrink below its content by default, so two long
+   labels side by side pushed the bar off a 320px screen in Russian. */
+.btn{flex:1;min-width:0;padding:15px 12px;border-radius:13px;border:none;background:var(--gold);
+     color:var(--onGold);font-weight:700;font-size:.98rem;line-height:1.3;word-break:break-word}
 .btn:active{opacity:.82}
 .btn:disabled{opacity:.3}
 .btn.ghost{background:none;border:1px solid var(--line);color:var(--txs);font-weight:500}
@@ -615,6 +625,16 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
   color:var(--txs);display:flex;align-items:center;justify-content:center;align-self:center}
 .gside .gsp:active{opacity:.5}
 .gneed{margin:10px 0 2px}
+
+/* ---------- nothing tappable smaller than a thumb ----------
+   Apple's floor is 44px and a phone has nothing finer to point with. These
+   are the buttons that were drawn to the size of their mark rather than to
+   the size of the finger that has to find them. */
+.wctl button,.wctl2 button,.play,.rr2,.tkp,.gside .gsp,.pkclear,.obskip{min-height:44px}
+.tkp{min-width:44px}
+.gside .gsp{min-width:44px}
+.sylrow .syk{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
+  display:flex;align-items:center;justify-content:center}
 
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever

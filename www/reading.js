@@ -5,77 +5,73 @@
 
 /* ---- What the rest of the app is allowed to know ------------------------
    The IPA is universal, so it is never swapped. Only the reading changes,
-   and every screen goes through rd() / rdSyl(), so no screen knows which
-   language it is showing. */
+   and every screen goes through rd(), so no screen knows which language it
+   is showing. What rd() is handed is the Latin approximation of a sequence,
+   never a word as it is stored. */
 function approx(){ return langDef().read || LANG.en.read; }
 function rd(word){ return approx().word(word); }        /* reading for this language */
-function rdSyl(sy){ return approx().syl(sy); }
 /* The name of the approximation reads as a common noun inside a sentence
    ("respelling is an approximation") but wants a capital as a button. */
 function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
 /* Search hits on any of spelling, meaning, reading or IPA */
 function srcKey(w){ return (w.hw+' '+(w.mn||'')+' '+phIpa(wPh(w))).toLowerCase(); }
 
-/* ---- The IPA. The reading is the near miss in a familiar script;
-        this is the actual sound. ---- */
-var IPA_C={b:'b',ch:'tʃ',d:'d',f:'f',g:'ɡ',h:'h',j:'j',k:'k',l:'l',m:'m',n:'n',
-           p:'p',r:'r',s:'s',sh:'ʃ',t:'t',th:'θ',v:'v',w:'w',z:'z',
-           c:'k',q:'k',x:'ks',y:'j'};
-var IPA_V={a:'a',e:'e',i:'i',o:'o',u:'u',y:'i'};
-function ipaC(str){ return splitC(str).map(function(c){ return IPA_C[c]||c; }).join(''); }
-function ipaV(str){
-  var out='', prev='';
-  str.split('').forEach(function(v){
-    var s=IPA_V[v]||v;
-    if(s===prev) out+='ː';            /* the same vowel twice is one long vowel */
-    else { out+=s; prev=s; }
-  });
-  return out;
-}
-function ipaSyl(sy){
-  var p=parts(sy);
-  if(!p) return ipaC(sy);
-  return ipaC(p.on)+ipaV(p.nu)+ipaC(p.co);
-}
-function ipaWord(word){ return syl(word).map(ipaSyl).join('.'); }   /* . marks the syllable break */
-function ipa(word){ return '/'+ipaWord(word)+'/'; }
+/* ---- How a word is read out ------------------------------------------
+   A word is a sequence of IPA symbols, so its exact reading is that sequence
+   and there is nothing to derive: phIpa() in core.js is the whole of it.
 
-function linked(words){
-  var raw=words.map(function(w){return String(w).toLowerCase().replace(/[^a-z]/g,'');});
-  var out='', any=false;
-  for(var i=0;i<raw.length;i++){
-    var cur=raw[i], nxt=raw[i+1];
-    if(nxt && !isV(cur.charAt(cur.length-1)) && isV(nxt.charAt(0))){ out += cur; any=true; }
-    else { out += cur; if(nxt) out+=' '; }
-  }
-  var chunks=out.split(' ');
-  return {chunks:chunks,
-          rd:   chunks.map(rd).join(' '),
-          ipa: '/'+chunks.map(ipaWord).join(' ')+'/',
-          isLink:any};
-}
-/* How readings are displayed (a setting): IPA / approximation / both.
-   The stored value 'kana' is kept as-is for dictionaries saved before this
-   layer existed; it means "the approximation", whatever language that is. */
-function readMode(){ return SET.read||'both'; }
-function readOut(word){
+   What used to sit here derived the IPA from the Latin spelling instead --
+   th was one sound because English reads it as one, a doubled vowel was a
+   long one, x was ks. Every one of those is a rule from somebody else's
+   language. All of it is gone.
+
+   The respelling stays, because it answers a different question: not what
+   the sound is, but what it looks like to somebody who does not read the
+   IPA. It is handed the Latin approximation from ipaRoman(), and the ten
+   engines below carry on reading Latin as they always did. */
+function readSeq(seq){
   var m=readMode();
-  if(m==='ipa')  return ipa(word);
-  if(m==='kana') return rd(word);
-  return ipa(word)+t('read.sep')+rd(word);
+  if(m==='ipa')  return phIpa(seq);
+  if(m==='kana') return rd(phRoman(seq));
+  return phIpa(seq)+t('read.sep')+rd(phRoman(seq));
 }
+/* Called with a headword, which is what every screen has to hand. A word in
+   the dictionary is read from its own sounds; anything else -- a word being
+   coined, a sample -- from the sounds its spelling would be made of. */
+function seqOf(hw){
+  var w=(typeof findWord==='function')? findWord(hw) : null;
+  return w? wPh(w) : phGuess(hw);
+}
+function readOut(hw){ return readSeq(seqOf(hw)); }
 function readLink(L){
   var m=readMode();
   if(m==='ipa')  return L.ipa;
   if(m==='kana') return L.rd;
   return L.ipa+'<br><span class="kn">'+esc(L.rd)+'</span>';
 }
-/* One tile in the inventory of sounds: the letter, and under it the IPA
-   symbol for what that letter actually says. */
-function phChip(c,cls,isVowel){
-  var s=isVowel? (IPA_V[c]||c) : (IPA_C[c]||c);
-  return '<span class="ph'+(cls||'')+'">'+esc(c)+'<i>'+esc(s)+'</i></span>';
+/* Words run together when one ends on a consonant and the next opens on a
+   vowel. Decided on the sounds, which is where it was always happening. */
+function linked(hws){
+  var seqs=[], i, cur, prev, nxt, chunks=[], any=false;
+  for(i=0;i<hws.length;i++) seqs.push(seqOf(hws[i]));
+  if(!seqs.length) return {chunks:[], rd:'', ipa:'//', isLink:false};
+  cur=seqs[0].slice();
+  for(i=1;i<seqs.length;i++){
+    prev=cur[cur.length-1]; nxt=seqs[i][0];
+    if(prev && nxt && !ipaIsVowel(prev) && ipaIsVowel(nxt)){ cur=cur.concat(seqs[i]); any=true; }
+    else { chunks.push(cur); cur=seqs[i].slice(); }
+  }
+  chunks.push(cur);
+  return {chunks:chunks,
+          rd:  chunks.map(function(c){ return rd(phRoman(c)); }).join(' '),
+          ipa: '/'+chunks.map(function(c){ return c.join(''); }).join(' ')+'/',
+          isLink:any};
 }
+/* How readings are displayed (a setting): IPA / approximation / both.
+   The stored value 'kana' is kept as-is for dictionaries saved before this
+   layer existed; it means "the approximation", whatever language that is. */
+function readMode(){ return SET.read||'both'; }
+
 /* ---- The device's voice is not here any more ---------------------------
    There used to be a block below this line that found a voice on the phone,
    picked the one whose language had the plainest vowels, and read a word
@@ -94,54 +90,58 @@ function pick(o){
   for(i=0;i<e.length;i++){ r-=e[i][1]; if(r<=0) return e[i][0]; }
   return e[0][0];
 }
-/* Two words that are spelled differently but sound identical count as taken */
+/* Two words that sound identical are the same word, whatever they look like */
 function taken(){
-  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['ipa:'+phIpa(wPh(w))]=1; }); return s;
+  var s={}; WORDS.forEach(function(w){ s[wPh(w).join('')]=1; }); return s;
 }
+/* Coining a word means choosing sounds, in the shapes this language already
+   uses them in. It used to mean assembling Latin letters and then guessing
+   what they said -- so a coined word could contain a sound the language had
+   never chosen. It cannot now: every piece comes out of the dictionary's own
+   sequences. Hands back a sequence, because that is what a word is. */
 function makeWord(pos, A, tk){
   A=A||analyze(); tk=tk||taken();
   if(!Object.keys(A.nu).length) return null;
   var rule=A.finalRule[pos];
   for(var tr=0;tr<120;tr++){
     var n=Math.max(1,Math.min(3,+pick(A.cnt)||2));
-    var w='';
-    for(var i=0;i<n;i++){
-      var pool = i===0 ? A.onI : (Object.keys(A.onM).length?A.onM:A.onI);
-      w += pick(pool)+pick(A.nu);
+    var seq=[], i, pool;
+    for(i=0;i<n;i++){
+      pool = i===0 ? A.onI : (Object.keys(A.onM).length?A.onM:A.onI);
+      seq = seq.concat(phUnkey(pick(pool))).concat(phUnkey(pick(A.nu)));
     }
     if(rule){
       var ch=rule.ch;
-      if(isV(ch)){ w=w.replace(/[^aeiouy]+$/,'').replace(/[aeiouy]+$/,ch); }
-      else { w=w.replace(/[^aeiouy]+$/,'')+ch; }
-    } else if(Object.keys(A.co).length && Math.random()<.35){ w+=pick(A.co); }
-    if(w.length< (tr<70?4:3)) continue;   /* look for four letters first, settle for three */
-    if(tk[w]) continue;
-    var key='ipa:'+ipa(w);
+      while(seq.length && !ipaIsVowel(seq[seq.length-1])) seq.pop();
+      if(ipaIsVowel(ch)){ while(seq.length && ipaIsVowel(seq[seq.length-1])) seq.pop(); }
+      seq.push(ch);
+    } else if(Object.keys(A.co).length && Math.random()<.35){
+      seq = seq.concat(phUnkey(pick(A.co)));
+    }
+    if(seq.length < (tr<70?3:2)) continue;   /* look for three sounds first, settle for two */
+    var key=seq.join('');
     if(tk[key]) continue;
-    tk[w]=1; tk[key]=1;
-    return w.charAt(0).toUpperCase()+w.slice(1);
+    tk[key]=1;
+    return seq;
   }
   return null;
 }
-/* Pick a short run of words that shows linking off, if the dictionary has one */
+/* Pick a short run of words that shows linking off, if the dictionary has one:
+   one that ends on a consonant followed by one that opens on a vowel. */
 function linkRun(){
   if(!WORDS.length) return [];
-  var used={}, seq=[], all=WORDS.slice(), start=null;
-  for(var i=0;i<all.length;i++){
-    var h=String(all[i].hw).toLowerCase();
-    if(!isV(h.charAt(h.length-1))){ start=all[i]; break; }
-  }
+  var used={}, seq=[], all=WORDS.slice(), start=null, i, k, m, last, want, nxt;
+  function endsOpen(w){ var q=wPh(w); return q.length && ipaIsVowel(q[q.length-1]); }
+  function opensVowel(w){ var q=wPh(w); return q.length && ipaIsVowel(q[0]); }
+  for(i=0;i<all.length;i++) if(!endsOpen(all[i])){ start=all[i]; break; }
   seq.push(start||all[0]); used[seq[0].hw]=1;
   while(seq.length<3 && seq.length<all.length){
-    var last=String(seq[seq.length-1].hw).toLowerCase();
-    var want=!isV(last.charAt(last.length-1));
-    var nxt=null;
-    for(var k=0;k<all.length;k++){
+    last=seq[seq.length-1]; want=!endsOpen(last); nxt=null;
+    for(k=0;k<all.length;k++){
       if(used[all[k].hw]) continue;
-      var s2=String(all[k].hw).toLowerCase();
-      if(want && isV(s2.charAt(0))){ nxt=all[k]; break; }
+      if(want && opensVowel(all[k])){ nxt=all[k]; break; }
     }
-    if(!nxt) for(var m=0;m<all.length;m++){ if(!used[all[m].hw]){nxt=all[m];break;} }
+    if(!nxt) for(m=0;m<all.length;m++){ if(!used[all[m].hw]){ nxt=all[m]; break; } }
     if(!nxt) break;
     used[nxt.hw]=1; seq.push(nxt);
   }
@@ -183,7 +183,7 @@ function findings(){
   }
   if(A.unused.length>=4 && N>=3){
     out.push({t:t('find.unused.t', A.unused.slice(0,6).join(', ')),
-              d:t('find.unused.d'), rate:A.unused.length/CONS.length});
+              d:t('find.unused.d'), rate:A.unused.length/Math.max(1,addedSnd().length)});
   }
   return out;
 }

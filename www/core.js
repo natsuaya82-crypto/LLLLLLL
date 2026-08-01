@@ -248,10 +248,13 @@ function migratePh(){
   });
   if(changed) save();
 }
-/* Syllables, from the sounds rather than from the letters: a run of
-   consonants, then the vowels, then whatever consonants close it. */
-function phSyl(seq){
-  var out=[], i=0, on, nu, co;
+/* Syllables, cut out of the sounds rather than out of the letters.
+   A run of consonants, then the vowels. Then the run of consonants before the
+   next vowel is split: the last one starts the next syllable and whatever is
+   left closes this one, which is the rule every language agrees on and needs
+   no table of clusters to apply. */
+function phCut(seq){
+  var out=[], i=0, on, nu, k, run;
   while(i<seq.length){
     on=[]; while(i<seq.length && !ipaIsVowel(seq[i])){ on.push(seq[i]); i++; }
     nu=[]; while(i<seq.length &&  ipaIsVowel(seq[i])){ nu.push(seq[i]); i++; }
@@ -260,27 +263,50 @@ function phSyl(seq){
       else if(on.length) out.push({on:on, nu:[], co:[]});
       break;
     }
-    co=[];
-    /* a consonant run between two vowels starts the next syllable, except
-       for the last one before it, which closes this one */
-    out.push({on:on, nu:nu, co:co});
+    out.push({on:on, nu:nu, co:[]});
+  }
+  for(k=1;k<out.length;k++){
+    run=out[k].on;
+    if(run.length>1){
+      out[k-1].co=out[k-1].co.concat(run.slice(0, run.length-1));
+      out[k].on=run.slice(run.length-1);
+    }
   }
   return out;
 }
+/* A run of symbols as one key, and back again. Some symbols are two code
+   units (a letter and a diacritic), so they cannot be joined and then split
+   on characters -- a space between them is a separator no symbol contains. */
+function phKey(a){ return a.join(' '); }
+function phUnkey(k){ return k? String(k).split(' ') : []; }
+/* The Latin approximation of a whole sequence, for the respelling engines,
+   which read Latin and nothing else. */
+function phRoman(seq){
+  var out='', i;
+  for(i=0;i<seq.length;i++) out+=ipaRoman(seq[i]);
+  return out || 'a';
+}
 function phIpa(seq){ return '/'+seq.join('')+'/'; }
 
+/* What the dictionary has quietly settled into. Every count here is over the
+   sounds a word is made of. It used to be over the letters it is spelled with,
+   which meant reading a Latin spelling by English rules -- one more place a
+   language that is not English was being measured as though it were. */
 function analyze(){
-  var on={},onI={},onM={},nu={},co={},cnt={},fin={},posN={};
+  var on={},onI={},onM={},nu={},co={},cnt={},fin={},posN={},used={},vset={};
   WORDS.forEach(function(w){
-    var ss=syl(w.hw), seq=wPh(w);
+    var seq=wPh(w), ss=phCut(seq), i;
     cnt[ss.length]=(cnt[ss.length]||0)+1;
-    ss.forEach(function(s,si){
-      var p=parts(s); if(!p) return;
-      on[p.on]=(on[p.on]||0)+1; nu[p.nu]=(nu[p.nu]||0)+1;
-      if(si===0) onI[p.on]=(onI[p.on]||0)+1; else onM[p.on]=(onM[p.on]||0)+1;
-      if(p.co) co[p.co]=(co[p.co]||0)+1;
+    ss.forEach(function(p,si){
+      var o=phKey(p.on), n=phKey(p.nu), c=phKey(p.co);
+      on[o]=(on[o]||0)+1; nu[n]=(nu[n]||0)+1;
+      if(si===0) onI[o]=(onI[o]||0)+1; else onM[o]=(onM[o]||0)+1;
+      if(p.co.length) co[c]=(co[c]||0)+1;
+      p.on.forEach(function(x){ used[x]=1; });
+      p.co.forEach(function(x){ used[x]=1; });
+      p.nu.forEach(function(x){ vset[x]=1; });
     });
-    /* what a word ends on is its last sound, not its last letter */
+    /* what a word ends on is its last sound */
     var f=seq.length? seq[seq.length-1] : '';
     fin[w.pos]=fin[w.pos]||{}; fin[w.pos][f]=(fin[w.pos][f]||0)+1;
     posN[w.pos]=(posN[w.pos]||0)+1;
@@ -291,13 +317,13 @@ function analyze(){
     var e=Object.keys(fin[p]).map(function(k){return [k,fin[p][k]];}).sort(function(a,b){return b[1]-a[1];})[0];
     if(e && e[1]/posN[p]>=0.5) finalRule[p]={ch:e[0],hit:e[1],all:posN[p],rate:e[1]/posN[p]};
   });
-  var used={};
-  Object.keys(on).forEach(function(o){ if(o) splitC(o).forEach(function(c){used[c]=1;}); });
-  Object.keys(co).forEach(function(o){ splitC(o).forEach(function(c){used[c]=1;}); });
   var usedA=Object.keys(used).sort();
-  var unused=CONS.filter(function(c){return !used[c];});
+  /* A sound is unused when the language has chosen it and no word says it.
+     Measured against the inventory you picked, not against somebody else's
+     twenty-six letters. */
+  var mine=(typeof addedSnd==='function')? addedSnd() : [];
+  var unused=mine.filter(function(c){ return !used[c] && !vset[c]; });
   var sm=Object.keys(cnt).map(function(k){return [k,cnt[k]];}).sort(function(a,b){return b[1]-a[1];})[0];
-  var vset={}; Object.keys(nu).forEach(function(n){ n.split('').forEach(function(v){vset[v]=1;}); });
   return {on:on,onI:onI,onM:onM,nu:nu,co:co,cnt:cnt,finalRule:finalRule,used:usedA,unused:unused,
           sylMode: sm?{n:+sm[0],hit:sm[1],all:WORDS.length}:null,
           vowels:Object.keys(vset).sort()};

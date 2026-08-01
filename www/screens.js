@@ -347,7 +347,7 @@ function nextStep(){
      given it a sound. Sending them straight to "coin your first word" throws
      away what they just made and starts them somewhere else. The alphabet is
      what is half-built, so the alphabet is what gets offered. */
-  if(n===0 && scriptStarted() && !scriptEnough()){ act="go('script')"; label=t('next.sc0'); }
+  if(n===0 && scriptStarted() && !scriptEnough()){ act="go('sound')"; label=t('next.sc0'); }
   else if(n===0){ act="openAdd()"; label=t('next.w0'); }
   else if(n<5){ act="openAdd()"; label=t('next.w1', 5-n); }
   else if(LINES.length===0){ act="go('sent')"; label=t('next.s0'); }
@@ -367,26 +367,9 @@ function nextStep(){
    plain string today and can become {ch, svg} when glyphs can be drawn. */
 function scriptMap(){ if(!SET.script) SET.script={}; return SET.script; }
 function chOf(p){ var v=scriptMap()[p]; return v||''; }
-function phonemes(word){
-  var w=String(word||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0;
-  while(i<w.length){
-    var two=w.substr(i,2);
-    if(two==='th'||two==='sh'||two==='ch'){ out.push(two); i+=2; }
-    else { out.push(w.charAt(i)); i++; }
-  }
-  return out;
-}
 /* A sound belongs to the language either because a word already uses it or
    because you said so; before this, only the first way existed. */
 function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
-function inventory(){
-  var A=analyze(), add=addedSnd();
-  var uniq=function(a){ var o={},r=[]; a.forEach(function(x){ if(x&&!o[x]){o[x]=1;r.push(x);} }); return r; };
-  return {
-    cons: uniq(A.used.concat(add.filter(function(p){ return CONS.indexOf(p)>=0; }))).sort(),
-    vow:  uniq(A.vowels.concat(add.filter(function(p){ return CONS.indexOf(p)<0; }))).sort()
-  };
-}
 function takeSnd(p){
   var a=addedSnd();
   if(a.indexOf(p)<0) a.push(p);
@@ -397,11 +380,13 @@ function dropSnd(p){
   if(i>=0){ a.splice(i,1); save(); }
   delete scriptMap()[p]; save(); render();
 }
-function invAll(){ var v=inventory(); return v.cons.concat(v.vow); }
+function invAll(){ return addedSnd().slice(); }
 function scriptHave(){ var m=scriptMap(); return invAll().filter(function(p){return m[p];}).length; }
-function inScript(word){
+/* A word written in the characters borrowed for its sounds. The sounds are
+   the word -- there is nothing to parse out of a spelling any more. */
+function inScript(hw){
   var m=scriptMap();
-  return phonemes(word).map(function(p){ return m[p]||p; }).join('');
+  return seqOf(hw).map(function(p){ return m[p]||p; }).join('');
 }
 function scriptOn(){ return !!SET.showScript && scriptHave()>0; }
 /* Named wOut, not hw: openWord(hw) already binds hw as its parameter, and a
@@ -451,17 +436,6 @@ function openPick(p){
         '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+esc(t('ws.'+w.id))+'</button>';
     }).join('')+'</div>'+
     '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
-}
-function openAddSnd(){
-  var inv=inventory(), have={};
-  inv.cons.concat(inv.vow).forEach(function(p){ have[p]=1; });
-  var all=CONS.concat(['a','e','i','o','u','y']);
-  var free=all.filter(function(p){ return !have[p]; });
-  showSheet('<h3>'+t('snd.add')+'</h3><div class="note" style="margin-bottom:12px">'+t('snd.add.s')+'</div>'+
-    (free.length? '<div class="sndgrid">'+free.map(function(p){
-      return '<button class="sndchip" onclick="takeSnd(\''+esc(p)+'\')"><span class="sc1">'+esc(p)+'</span>'+
-        '<span class="sc2">'+esc(IPA_V[p]||IPA_C[p]||'')+'</span></button>';
-    }).join('')+'</div>' : '<div class="note">'+t('sound.allused')+'</div>'));
 }
 function setCh(p, ch){
   var m=scriptMap();
@@ -521,7 +495,7 @@ function vHome(){
     '<div class="title">'+
       '<div class="tkick">'+t('home.kicker')+'</div>'+
       '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
-      '<div class="tsub">'+(WORDS.length? esc(ipa(WORDS[0].hw)) : '　')+'</div>'+
+      '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
       '<div class="rule"></div>'+
     '</div>'+
     '<div class="body" style="padding-top:0">'+
@@ -530,7 +504,7 @@ function vHome(){
       ? (scriptStarted() && !scriptEnough()
           ? '<div class="empty"><div class="eb">'+t('home.new.t')+'</div>'+
             '<div class="es">'+t('home.new.s')+'</div></div>'+
-            '<button class="btn" onclick="go(\'script\')" style="margin-top:6px">'+t('next.sc0')+'</button>'
+            '<button class="btn" onclick="go(\'sound\')" style="margin-top:6px">'+t('next.sc0')+'</button>'
           : '<div class="empty"><div class="eb">'+t('home.empty.t')+'</div>'+
             '<div class="es">'+t('home.empty.s')+'</div></div>'+
             '<button class="btn" onclick="openAdd()" style="margin-top:6px">'+t('home.empty.btn')+'</button>')

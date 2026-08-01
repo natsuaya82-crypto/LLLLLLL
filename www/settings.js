@@ -7,7 +7,10 @@
    ========================================================================= */
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
-  var sample=WORDS.length?WORDS[0].hw:'Aelin';
+  /* The sample is a word of this language if there is one, shown as its own
+     sounds; the Latin beside it is only what the respelling engines read. */
+  var sseq=WORDS.length? wPh(WORDS[0]) : phGuess('aelin');
+  var sample=sseq.join(''), srom=phRoman(sseq);
   return '<div class="view"><div class="chead">'+
     '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="ct">'+t('set.title')+'</span></div></div>'+
@@ -20,6 +23,10 @@ function vSettings(){
     '</div>'+
     '<div class="note">'+t('set.theme.note')+'</div>'+
 
+    /* How a word comes out, in one place. The exact reading, the rough one,
+       and the voice were three separate sections, and the voice section was a
+       picker for a thing the app no longer uses. There is one question here:
+       what do you want to see, and what does it sound like. */
     '<div class="sec">'+t('set.reading')+'</div>'+
     '<div class="pick">'+
       [['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
@@ -27,8 +34,10 @@ function vSettings(){
       }).join('')+
     '</div>'+
     '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
-      '<span class="pvk">'+esc(readOut(sample))+'</span></div>'+
+      '<span class="pvk">'+esc(readSeq(sseq))+'</span>'+
+      '<button onclick="sayPh('+esc(JSON.stringify(sseq))+')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="note">'+t('set.ipa.note', esc(langDef().rdName))+'</div>'+
+    '<div class="note" style="margin-top:10px">'+t('set.voice.note')+'</div>'+
 
     /* One control for the whole interface: the screen and the reading
        of every word follow it. The IPA never does. */
@@ -39,20 +48,10 @@ function vSettings(){
     UI_LANGS.map(function(k){
       return '<button class="set lrow'+(uiLang()===k?' on':'')+'" onclick="setUi(\''+k+'\')">'+
         '<span class="sl">'+esc(LANG[k].label)+'</span>'+
-        '<span class="pvk lsam">'+esc(LANG[k].read.word(sample))+'</span>'+
+        '<span class="pvk lsam">'+esc(LANG[k].read.word(srom))+'</span>'+
         '<span class="lchk">'+(uiLang()===k?ICON_TICK:'')+'</span></button>';
     }).join('')+
     '<div class="note">'+t('set.display.note')+'</div>'+
-
-    /* The voice picker went with the voices. Nothing here speaks through the
-       device any more -- a device voice can only say a language, and this is
-       not one -- so there was nothing left for it to choose between. What is
-       kept is the sample, said the way every word in this language is said. */
-    '<div class="sec">'+t('set.voice')+'</div>'+
-    '<div class="pvbox"><span class="pvn">'+t('set.voice.try')+'</span>'+
-      '<span class="pvk">'+esc(sample)+'</span>'+
-      '<button onclick="sayWords([\''+esc(sample)+'\'])">'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    '<div class="note">'+t('set.voice.note')+'</div>'+
 
     '<div class="sec">'+t('set.lang')+'</div>'+
     '<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span><span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
@@ -138,7 +137,7 @@ function sugLeft(){ return sugUnl() ? Infinity : Math.max(0, AI_FREE_DAILY-aiUse
 function sugMean(){ var e=document.getElementById('f-mn'); return e? String(e.value||'').trim() : ''; }
 function sugBuild(){
   var A=analyze(), tk=taken(); SUG=[];
-  for(var i=0;i<3;i++){ var w=makeWord(addPos||POS[0], A, tk); if(w){ SUG.push(w); tk[w.toLowerCase()]=1; } }
+  for(var i=0;i<3;i++){ var q=makeWord(addPos||POS[0], A, tk); if(q){ SUG.push(q); tk[q.join('')]=1; } }
 }
 function sugHTML(){
   var left=sugLeft(), unl=(left===Infinity);
@@ -149,7 +148,7 @@ function sugHTML(){
       (unl?'':'<span class="sugn">'+t('sug.left', left)+'</span>')+'</button>';
   }
   return '<div class="sugbox"><div class="sugchips">'+
-    SUG.map(function(w){ return '<button class="sugchip" onclick="sugPick(\''+esc(w)+'\')"><span class="sw">'+esc(w)+'</span><span class="sr">'+esc(readOut(w))+'</span></button>'; }).join('')+
+    SUG.map(function(q,i){ return '<button class="sugchip" onclick="sugPick('+i+')"><span class="sw">'+esc(q.join(''))+'</span><span class="sr">'+esc(readSeq(q))+'</span></button>'; }).join('')+
     '</div><div class="sugfoot"><span class="sughint">'+(sugMn? t('sug.for', esc(sugMn)) : t('sug.hint'))+'</span>'+
     ((unl||left>0)?'<button class="sugmore" onclick="sugGo()">'+t('sug.more')+'</button>':'')+
     '</div>'+
@@ -162,10 +161,12 @@ function sugGo(){
   if(!sugUnl()) aiSpend();
   sugMn=sugMean(); sugBuild(); sugPaint();
 }
-function sugPick(w){
-  var f=document.getElementById('f-hw');
-  if(f){ f.value=w; pv(); f.focus(); }
-  SUG=[]; sugPaint();
+/* A suggestion is a sequence, so taking one loads the sequence you are
+   building. There is no spelling to type into a box; there is no box. */
+function sugPick(i){
+  if(!SUG[i]) return;
+  addSeq=SUG[i].slice();
+  SUG=[]; sugPaint(); addPaint();
 }
 
 /* A word is built from the sounds this language has, not typed and then
@@ -244,21 +245,18 @@ function findWord(hw){
 }
 /* The syllables, from the sounds. What used to sit here was the respelling
    -- the word written out in the reader's own script -- and a word made of
-   IPA symbols gives it nothing to work from. */
+   IPA symbols gives it nothing to work from. One syllabifier, in core.js,
+   used by the dictionary, the analysis and this. */
 function wordSyl(w){
-  var seq=wPh(w), out=[], cur=[], i, v=false;
-  for(i=0;i<seq.length;i++){
-    if(ipaIsVowel(seq[i])){ cur.push(seq[i]); v=true; }
-    else { if(v){ out.push(cur.join('')); cur=[]; v=false; } cur.push(seq[i]); }
-  }
-  if(cur.length) out.push(cur.join(''));
-  return out.join('\u00b7');
+  return phCut(wPh(w)).map(function(p){
+    return p.on.join('')+p.nu.join('')+p.co.join('');
+  }).join('\u00b7');
 }
 
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw;
-  var sy=syl(w.hw);
+  var sy=phCut(wPh(w));
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div>'+
     '<div class="whd"><span class="whw">'+esc(wOut(w.hw))+'</span>'+
@@ -266,12 +264,12 @@ function openWord(hw){
     '<div class="wsub">'+esc(phIpa(wPh(w)))+'</div>'+
     '<div class="wsub2">'+esc(wordSyl(w))+'</div>'+
     '<div class="sec" style="margin:18px 0 8px">'+t('word.syl')+'</div>'+
-    '<div class="sylrow">'+sy.map(function(s,i){
-      var d=i===0? s.charAt(0).toUpperCase()+s.slice(1) : s;
-      return '<span class="sy"><span class="sya">'+esc(d)+'</span>'+
-        '<span class="syi">'+esc(ipaSyl(s))+'</span>'+
-        '<span class="syk">'+esc(rdSyl(s))+'</span></span>';
-    }).join('<span class="sysep">·</span>')+'</div>'+
+    '<div class="sylrow">'+sy.map(function(p){
+      var q=p.on.concat(p.nu).concat(p.co);
+      return '<span class="sy"><span class="sya">'+esc(q.join(''))+'</span>'+
+        '<span class="syi">'+esc(rd(phRoman(q)))+'</span>'+
+        '<button class="syk" onclick="sayPh('+esc(JSON.stringify(q))+')" aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button></span>';
+    }).join('<span class="sysep">\u00b7</span>')+'</div>'+
     '<div class="note" style="margin-top:8px">'+tn('word.note', sy.length, esc(langDef().label), esc(langDef().rdName))+'</div>'+
     '<div class="sec" style="margin:20px 0 8px">'+t('word.edit')+'</div>'+
     '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="w-mn" value="'+esc(w.mn||'')+'" placeholder="'+esc(t('word.mn.ph'))+'"></div>'+

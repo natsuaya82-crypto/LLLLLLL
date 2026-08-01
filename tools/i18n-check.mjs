@@ -9,6 +9,9 @@
    refuses to let that happen quietly.
 
    What it checks
+     0. no shadowing    no file defines the same key twice. The second wins
+                        silently, so the first is a translation nobody will
+                        ever see and a change nobody's edit will take effect
      1. key parity      every language answers exactly the keys English asks
      2. placeholders    {0} {1} {2} survive translation, in the same set
      3. markup          <br>, <b>, &#10; survive translation, in the same count
@@ -45,7 +48,7 @@
      - a new way of speaking to a person. The list in SPEAKS is by hand;
        add to it when something new starts talking
 
-   Exit code is 0 only when all eight pass.
+   Exit code is 0 only when all nine pass.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -186,6 +189,25 @@ function checkSource(){
   });
 }
 
+/* ---- 0. no key defined twice in one file ---------------------------------
+   Read off the source, not off the page: by the time a language file has been
+   evaluated the second definition has already overwritten the first, and the
+   page cannot tell that there ever was one. A shadowed key is a translation
+   nobody will ever see and, worse, one that swallows an edit silently. */
+function checkShadow(){
+  fs.readdirSync(path.join(ROOT, 'i18n')).forEach((f) => {
+    if (!f.endsWith('.js')) return;
+    const src = fs.readFileSync(path.join(ROOT, 'i18n', f), 'utf8');
+    const seen = {}, re = /\n *['"]([A-Za-z][A-Za-z0-9._]*)['"] *:/g;
+    let m;
+    while ((m = re.exec(src))){
+      if (seen[m[1]]) fail('shadow', 'i18n/' + f + ' defines ' + m[1] + ' twice — the second one wins and the first is dead');
+      seen[m[1]] = 1;
+    }
+  });
+}
+checkShadow();
+
 /* ---- everything else runs inside the page -------------------------------- */
 /* The app is several files now, and a browser will refuse to run a script
    served as text/plain when it is told not to sniff. Say what things are. */
@@ -290,7 +312,7 @@ const R = await pg.evaluate(() => {
   LINES = [{ws:['Aelin','Naeth','Silvar'], mn:'the star goes to the water'}];
   langName = 'Aelinor';
   comp = ['Aelin','Silvar']; compSel = 0;
-  cands = [{w:'Aelor', on:true}, {w:'Naethis', on:false}];
+  cands = [{q:['a','e','l','o','r'], on:true}, {q:['n','e','\u03b8','i','s'], on:false}];
 
   /* Ask the page which views exist rather than keeping a list here — a view
      added later is covered without anyone remembering to come back. vOb is
@@ -398,10 +420,23 @@ const R = await pg.evaluate(() => {
   /* and everything that is data: the words themselves, their meanings, their
      readings in every language, their sounds and their syllables */
   function learn(s){ String(s).split(/[^A-Za-z]+/).forEach(w => { if (w) PLAIN[w.toLowerCase()] = 1; }); }
+  /* Everything a word can come out as. It is its sounds, so the IPA is the
+     sequence itself; the respelling is read off the Latin approximation of
+     that sequence, in each of the ten. None of it is copy, so none of it may
+     be mistaken for untranslated copy. */
   function learnWord(hw){
-    learn(hw); learn(ipa(hw)); learn(syl(hw).join(' '));
-    syl(hw).forEach(s => UI_LANGS.forEach(c => { try { learn(LANG[c].read.syl(s)); } catch (e) {} }));
-    UI_LANGS.forEach(c => { try { learn(LANG[c].read.word(hw)); } catch (e) {} });
+    let seq = [];
+    try { seq = seqOf(hw); } catch (e) { seq = []; }
+    learn(hw); learnSeq(seq);
+  }
+  function learnSeq(seq){
+    learn(seq.join('')); learn(seq.join(' '));
+    try { learn(phIpa(seq)); } catch (e) {}
+    const rom = (() => { try { return phRoman(seq); } catch (e) { return ''; } })();
+    learn(rom);
+    try { phCut(seq).forEach(p => learn(p.on.join('') + p.nu.join('') + p.co.join(''))); } catch (e) {}
+    try { syl(rom).forEach(s => UI_LANGS.forEach(c => { try { learn(LANG[c].read.syl(s)); } catch (e) {} })); } catch (e) {}
+    UI_LANGS.forEach(c => { try { learn(LANG[c].read.word(rom)); } catch (e) {} });
   }
   /* A word carries its sounds now, and what the screens show is built from
      those rather than from the spelling: the sequence, the IPA of it, and the
@@ -414,7 +449,8 @@ const R = await pg.evaluate(() => {
     try { learn(wordSyl(w)); } catch (e) {}
   });
   LINES.forEach(l => { learn(l.mn); l.ws.forEach(learnWord); });
-  learn(langName); cands.forEach(c => learnWord(c.w));
+  learn(langName);
+  cands.forEach(c => { try { learnSeq(c.q); } catch (e) {} });
   UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });
 
   const seen = {};
@@ -491,4 +527,4 @@ if (fails.length){
   if (fails.length > 60) console.log('  ... and ' + (fails.length - 60) + ' more');
   process.exit(1);
 }
-console.log('\nall eight checks pass in all ' + R.langs.length + ' languages.');
+console.log('\nall nine checks pass in all ' + R.langs.length + ' languages.');
