@@ -397,11 +397,12 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .obescb:active{opacity:.55}
 .obscripts{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
            display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
-.obsrow{display:flex;align-items:center;width:100%;text-align:left;
+.obsrow{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;
+        gap:3px;width:100%;text-align:left;
         border:1px solid var(--line);background:var(--pane);border-radius:12px;
-        padding:10px 12px;color:var(--tx);min-height:52px}
+        padding:9px 12px;color:var(--tx);min-height:56px}
 .obsrow.on{border-color:var(--goldln);background:var(--goldsf)}
-.obpv{font-size:1.16rem;color:var(--gold);min-width:56px}
+.obpv{font-size:.94rem;color:var(--gold);line-height:1.2;letter-spacing:.06em;opacity:.9}
 .obnm{font-size:.86rem}
 .obchars{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
          display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-content:start}

@@ -197,6 +197,31 @@ function obDrawHTML(){
     '<div class="obfoot"><button class="btn" onclick="obDone()">'+t('ob.draw.done')+'</button></div>';
 }
 
+/* A sample is worth showing only if this phone can actually draw it. Some of
+   these -- Ogham, Phoenician, Glagolitic -- are missing from a lot of
+   systems, and a row of empty boxes says less than no row at all. The test is
+   the width of the character against the width of one that certainly is not
+   in any font: identical means both came out as the same missing-glyph box.
+   Measured once per script and remembered, because it cannot change while
+   the app is open. */
+var OB_PV={};
+function obPv(w){
+  if(OB_PV[w.id]!==undefined) return OB_PV[w.id];
+  var out='';
+  try{
+    var c=document.createElement('canvas'), x=c.getContext('2d');
+    x.font='24px -apple-system, system-ui, sans-serif';
+    var miss=x.measureText('\uFFFF\uFFFF').width/2, chars=w.ch.split(' '), got=[];
+    for(var i=0;i<chars.length && got.length<3;i++){
+      var ch=chars[i], wd=x.measureText(ch).width;
+      if(wd>0 && Math.abs(wd-miss)>0.5) got.push(ch);
+    }
+    if(got.length===3) out=got.join(' ');
+  }catch(e){ out=w.pv.slice(0,3); }
+  OB_PV[w.id]=out;
+  return out;
+}
+
 function obBorrowHTML(){
   var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===ob.pick) w=x; });
   if(w) return '<div class="mid obleft">'+
@@ -206,13 +231,18 @@ function obBorrowHTML(){
       return '<button class="obchb" onclick="obTakeCh(\''+esc(ch)+'\')">'+esc(ch)+'</button>';
     }).join('')+'</div></div>';
   /* Two columns, because fifteen rows do not fit on a phone and a first
-     screen that scrolls is a first screen that has already lost. */
+     screen that scrolls is a first screen that has already lost. Each row
+     shows a few of its own characters under the name: "Phoenician" tells you
+     nothing you can picture, and three of its letters tell you everything. */
   return '<div class="mid obleft">'+
     '<h2 class="obh">'+t('ob.borrow.h')+'</h2>'+
     '<p class="obsub">'+t('ob.borrow.sub')+'</p>'+
     '<div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
+      var pv=obPv(x);
       return '<button class="obsrow" onclick="obPickScript(\''+x.id+'\')">'+
-        '<span class="obnm">'+esc(t('ws.'+x.id))+'</span></button>';
+        '<span class="obnm">'+esc(t('ws.'+x.id))+'</span>'+
+        (pv? '<span class="obpv">'+esc(pv)+'</span>' : '')+
+        '</button>';
     }).join('')+'</div></div>';
 }
 

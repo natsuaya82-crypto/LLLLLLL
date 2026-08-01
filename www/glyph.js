@@ -64,6 +64,9 @@ var GPEN={width:60, angleDeg:0, contrast:1.0};
    800-2*40 = 720 divides evenly by 4, 6, 9 and 10, so the dots stay integers at
    5, 7, 10 and 11. */
 var GGRID={n:11, inset:40};
+/* A stroke drawn in one go can be long, but not unbounded: past this it is
+   a scribble, and every point is a corner the font writer has to round. */
+var GE_MAXPTS=24;
 function gstep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
 function gsnap(v){
   var s=gstep(), i=Math.round((v - GGRID.inset) / s);
@@ -230,7 +233,8 @@ function newGE(r){
   var src=SCRIPT.g[r]||[];
   return { r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
-           drag:false, hit:false, again:false, moved:false, fresh:false };
+           drag:false, hit:false, again:false, moved:false, fresh:false,
+           free:false, seal:false };
 }
 function editGlyph(r){ GE=newGE(r); go('glyph'); }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
@@ -330,14 +334,14 @@ function geCircle(){
 function geNew(){
   var st=GE.st[GE.si];
   if(!st || !st.pts.length) return;
-  geMark(); GE.st.push({pts:[]}); GE.si=GE.st.length-1; GE.pi=-1; render();
+  geMark(); GE.st.push({pts:[]}); GE.si=GE.st.length-1; GE.pi=-1; GE.seal=false; render();
 }
 function geUndo(){
   if(!GE.undo.length) return;
   GE.st=JSON.parse(GE.undo.pop());
-  GE.si=GE.st.length-1; GE.pi=-1; render();
+  GE.si=GE.st.length-1; GE.pi=-1; GE.seal=false; render();
 }
-function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; render(); }
+function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
 function geSave(){
   var keep=GE.st.filter(function(s){ return s.pts.length>0; });
   if(keep.length) SCRIPT.g[GE.r]=keep; else delete SCRIPT.g[GE.r];
@@ -564,12 +568,16 @@ function geDown(ev){
      this point or a new one" is an equality test, not a distance guess. No
      grab radius to tune, and no dead zone around a point where a new one
      cannot be placed. */
+  /* Only the stroke still being drawn can be grabbed. Once a stroke is
+     finished its dots are inert, so pressing near a letter you have already
+     drawn starts the next stroke instead of quietly dragging the last one
+     out of shape -- which is what a finger on a 25px lattice kept doing. */
   var best=null;
-  GE.st.forEach(function(s,si){
-    s.pts.forEach(function(q,qi){
-      if(best===null && q[0]===p[0] && q[1]===p[1]) best=[si,qi];
+  if(!GE.seal && GE.si>=0 && GE.st[GE.si]){
+    GE.st[GE.si].pts.forEach(function(q,qi){
+      if(best===null && q[0]===p[0] && q[1]===p[1]) best=[GE.si,qi];
     });
-  });
+  }
   GE.pre=JSON.stringify(GE.st);
   GE.moved=false;
   if(best){
@@ -579,6 +587,10 @@ function geDown(ev){
     GE.si=best[0]; GE.pi=best[1]; GE.hit=true;
   }else{
     var st=geCur();
+    /* Lifting the finger ends the stroke, so this press begins a new one --
+       wherever it lands, joined to nothing. */
+    if(GE.seal){ GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false; }
+    else
     /* Once the stroke is settled the tap does not go on changing it — it starts
        the next one, from the point the last one finished on so the drawing
        stays joined. Nothing to press, and nothing already decided gets
@@ -594,7 +606,7 @@ function geDown(ev){
        keeps going. geMove turns it into one. Before this, pressing and
        dragging moved the point you had just put down, so a line took two
        separate taps and nobody found that out by trying. */
-    GE.fresh=true;
+    GE.fresh=true; GE.free=true;
   }
   GE.drag=true;
   if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
@@ -609,9 +621,18 @@ function geMove(ev){
      the line, and what is being dragged is its other end. Only once, and only
      while there is room in this stroke — after that the drag goes back to
      moving the end it is holding. */
-  if(GE.fresh){
-    GE.fresh=false;
-    if(!geFull(st)){ st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1; }
+  if(GE.free){
+    /* Drawing, not nudging: the line follows the finger across the lattice and
+       every new dot it reaches becomes part of the stroke. Doubling back onto
+       the dot before it takes that one off again, so a wobble does not leave
+       a spur behind. */
+    var n=st.pts.length, prev=n>=2? st.pts[n-2] : null;
+    if(prev && prev[0]===p[0] && prev[1]===p[1]){ st.pts.pop(); }
+    else if(n < GE_MAXPTS){ st.pts.push([p[0],p[1]]); }
+    else { st.pts[n-1][0]=p[0]; st.pts[n-1][1]=p[1]; }
+    GE.pi=st.pts.length-1; GE.fresh=false; GE.moved=true;
+    geDraw();
+    return;
   }
   st.pts[GE.pi][0]=p[0];
   st.pts[GE.pi][1]=p[1];
@@ -626,6 +647,11 @@ function geMove(ev){
 function geUp(){
   if(!GE) return;
   GE.drag=false; GE.fresh=false;
+  /* Lifting the finger after drawing ends that stroke. Lifting it after a
+     tap does not, so points can still be placed one at a time when a shape
+     wants to be exact rather than quick. */
+  if(GE.free && GE.moved) GE.seal=true;
+  GE.free=false;
   /* A dot that was pressed and let go without travelling is a tap, and a tap
      on a dot that is already there is one of the two answers. Dragging the
      same dot is a move — so the finger, not a mode, tells them apart. */
