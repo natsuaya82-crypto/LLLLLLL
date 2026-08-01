@@ -351,7 +351,7 @@ defLang('es', (function(){
       "sent.empty.s"     : "Una frase necesita al menos dos palabras.<br>Escribe antes unas cuantas.",
       "sent.weave"       : "Tejer",
       "sent.prev"        : "Antes",
-      "sent.later"       : "Después →",
+      "sent.later"       : "Después",
       "sent.remove"      : "Quitar esta palabra",
       "sent.taphint"     : "Toca una palabra para moverla o quitarla.",
       "sent.palhint"     : "Elige palabras abajo y se irán colocando aquí. Las que quieras, y la misma palabra tantas veces como quieras.",

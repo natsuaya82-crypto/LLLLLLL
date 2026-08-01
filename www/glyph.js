@@ -293,6 +293,28 @@ var ICON_GEAR='<svg class="ic" viewBox="0 0 24 24" width="21" height="21" fill="
   '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/>'+
   '<path d="M12 5V3.2M12 19v1.8M19 12h1.8M3.2 12H5'+
   'M16.95 7.05l1.27-1.27M5.78 18.22l1.27-1.27M16.95 16.95l1.27 1.27M5.78 5.78 7.05 7.05"/></svg>';
+/* The last of the borrowed marks. A tick, a lens, a turning arrow, a cross and
+   the small chevron that ends a row were all characters typed into the HTML --
+   drawn by whichever font answered, at whatever weight it felt like. Every one
+   of them is a line now, in the weight the rest of the app is drawn in. */
+var ICON_TICK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4.5 12.5 9.5 17.5 19.5 6.5"/></svg>';
+var ICON_LENS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
+  '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/></svg>';
+var ICON_AGAIN='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M19 12a7 7 0 1 1-2.05-4.95"/><path d="M19 4v4h-4"/></svg>';
+var ICON_CROSS='<svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" '+
+  'stroke-width="1.9" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M6 6l12 12M18 6 6 18"/></svg>';
+var ICON_GO='<svg class="ic go" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M9 5l7 7-7 7"/></svg>';
+var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M6 3.5h12v17l-6-3.4-6 3.4Z"/><path d="M9 8h6M9 11.5h4"/></svg>';
 function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function gbtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=fn+'()';
@@ -1061,6 +1083,9 @@ function aiSpend(){ if(has('plus')) return; SET.aiDate=aiToday(); SET.aiN=aiUsed
 
 
 
+/* Which screen the markup on the page belongs to, so the next render can tell
+   a redraw of this one from a move to another. */
+var RENDERED=null;
 function render(){
   /* the document's own language, so the browser picks the right font and
      line-breaking for it — and so the CSS above can drop Latin tracking */
@@ -1087,10 +1112,15 @@ function render(){
      ones you drew — the text itself never changes, only the family it is set in */
   document.documentElement.setAttribute('data-script', myFontOn()? 'on':'off');
   /* Replacing the view resets the scroll, which threw you to the top on every
-     edit. Put it back; go() is what deliberately returns to the top. */
-  var y = window.scrollY || window.pageYOffset || 0;
+     edit, so the old offset is put back. Only within one screen, though: a
+     chapter opened from the contents was being handed the offset of whatever
+     you were looking at before, drawn at the top and then dropped to it a
+     frame later. That fall is what made every chapter open on its middle.
+     A different screen starts where a page starts. */
+  var y = (RENDERED===route) ? (window.scrollY || window.pageYOffset || 0) : 0;
+  RENDERED=route;
   app.innerHTML=v;
-  if(y) window.scrollTo(0, y);
+  window.scrollTo(0, y);
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }

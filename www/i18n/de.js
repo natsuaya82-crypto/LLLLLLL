@@ -378,7 +378,7 @@ defLang('de', (function(){
       "sent.empty.s"     : "Ein Satz braucht mindestens zwei Wörter.<br>Schreib zuerst ein paar.",
       "sent.weave"       : "Weben",
       "sent.prev"        : "Früher",
-      "sent.later"       : "Später →",
+      "sent.later"       : "Später",
       "sent.remove"      : "Wort herausnehmen",
       "sent.taphint"     : "Tipp ein Wort an, um es zu verschieben oder herauszunehmen.",
       "sent.palhint"     : "Wähl unten Wörter, und sie reihen sich hier auf. Beliebig viele, und dasselbe Wort so oft du magst.",

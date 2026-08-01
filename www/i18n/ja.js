@@ -300,7 +300,7 @@ defLang('ja', (function(){
       'sent.empty.s'    : '文をつくるには、ことばが2語は要ります。<br>先に何語か書いてください。',
       'sent.weave'      : '編む',
       'sent.prev'       : '前へ',
-      'sent.later'      : '後ろへ →',
+      'sent.later'      : '後ろへ',
       'sent.remove'     : 'この語を外す',
       'sent.taphint'    : '語をタップすると、動かす・外すができます。',
       'sent.palhint'    : '下からことばを選ぶと、ここに並びます。何語でも、同じ語を何度でも。',

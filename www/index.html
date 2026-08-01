@@ -556,7 +556,22 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .nextcard:active{transform:scale(.99)}
 .nextcard .nk{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);flex-shrink:0}
 .nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
-.nextcard .na{color:var(--gold);font-size:1.2rem;flex-shrink:0}
+.nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
+
+/* ---------- the marks, now that they are drawn ----------
+   A typed character sat on the text baseline and took its size from whichever
+   font answered. A drawn one does neither, so every place that used to hold
+   one is told where to put it instead. */
+.ic{vertical-align:-.12em}
+.search .lens{display:flex;align-items:center;color:var(--txm);flex:0 0 auto}
+.set .sv{display:flex;align-items:center;gap:6px}
+.set .sv .go,.capgo .go,.sugout .go{opacity:.75}
+.capgo,.sugout b{display:inline-flex;align-items:center;gap:4px}
+.lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
+.cand .ck svg,.pdel svg{display:block}
+.cand .rr{display:flex;align-items:center;justify-content:center;min-width:26px}
+.pdel{position:absolute;top:2px;right:2px;color:var(--txm);line-height:1;
+      display:flex;align-items:center;justify-content:center;width:15px;height:15px}
 </style>
 </head>
 <body>

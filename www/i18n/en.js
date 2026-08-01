@@ -299,7 +299,7 @@ defLang('en', (function(){
       'sent.empty.s'    : "A sentence needs at least two words.<br>Write a few first.",
       'sent.weave'      : "Weave",
       'sent.prev'       : "Earlier",
-      'sent.later'      : "Later →",
+      'sent.later'      : "Later",
       'sent.remove'     : "Take this word out",
       'sent.taphint'    : "Tap a word to move it or take it out.",
       'sent.palhint'    : "Choose words below and they line up here. Any number of them, and the same word as often as you like.",

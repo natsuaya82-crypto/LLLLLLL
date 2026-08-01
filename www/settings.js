@@ -40,7 +40,7 @@ function vSettings(){
       return '<button class="set lrow'+(uiLang()===k?' on':'')+'" onclick="setUi(\''+k+'\')">'+
         '<span class="sl">'+esc(LANG[k].label)+'</span>'+
         '<span class="pvk lsam">'+esc(LANG[k].read.word(sample))+'</span>'+
-        '<span class="lchk">'+(uiLang()===k?'✓':'')+'</span></button>';
+        '<span class="lchk">'+(uiLang()===k?ICON_TICK:'')+'</span></button>';
     }).join('')+
     '<div class="note">'+t('set.display.note')+'</div>'+
 
@@ -55,8 +55,8 @@ function vSettings(){
     '<div class="note">'+t('set.voice.note')+'</div>'+
 
     '<div class="sec">'+t('set.lang')+'</div>'+
-    '<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span><span class="sv">'+esc(langName||'—')+' ›</span></button>'+
-    '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+' ›</span></button>'+
+    '<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span><span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
+    '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
 
     /* Signing in used to be the second thing the app asked for, before a
        single letter existed. It is here now, where it has a reason: an
@@ -64,18 +64,18 @@ function vSettings(){
        this line needs it. */
     '<div class="sec">'+t('set.account')+'</div>'+
     '<button class="set signin google" onclick="obSignIn()"><span class="sl">'+MARK_GOOGLE+
-      '<span>'+t('ob.signin.google')+'</span></span><span class="sv">\u203A</span></button>'+
+      '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
     '<button class="set signin apple" onclick="obSignIn()"><span class="sl">'+MARK_APPLE+
-      '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">\u203A</span></button>'+
+      '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
     '<div class="note">'+t('set.account.note')+'</div>'+
 
     '<div class="sec">'+t('set.plan')+'</div>'+
-    '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span><span class="sv">'+esc(p?p.name:'Free')+' ›</span></button>'+
+    '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span><span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>'+
 
     '<div class="sec">'+t('set.data')+'</div>'+
     (has('plus')
-      ? '<button class="set" onclick="exportCSV()"><span class="sl">'+t('set.csv.out')+'</span><span class="sv">›</span></button>'+
-        '<button class="set" onclick="openImport()"><span class="sl">'+t('set.csv.in')+'</span><span class="sv">›</span></button>'+
+      ? '<button class="set" onclick="exportCSV()"><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
+        '<button class="set" onclick="openImport()"><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
       : '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.csv.t')+'</span><br><span class="ld">'+t('set.lock.csv.d')+'</span></span>'+
@@ -142,7 +142,7 @@ function sugBuild(){
 function sugHTML(){
   var left=sugLeft(), unl=(left===Infinity);
   if(!SUG.length){
-    if(!unl && left<=0) return '<button class="sugout" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+' \u203A</b></button>';
+    if(!unl && left<=0) return '<button class="sugout" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>';
     return '<button class="sugask" onclick="sugGo()">'+
       '<span class="sual"><span class="sut">'+t('add.lock.t')+'</span><span class="sud">'+t('add.lock.d')+'</span></span>'+
       (unl?'':'<span class="sugn">'+t('sug.left', left)+'</span>')+'</button>';
@@ -152,7 +152,7 @@ function sugHTML(){
     '</div><div class="sugfoot"><span class="sughint">'+(sugMn? t('sug.for', esc(sugMn)) : t('sug.hint'))+'</span>'+
     ((unl||left>0)?'<button class="sugmore" onclick="sugGo()">'+t('sug.more')+'</button>':'')+
     '</div>'+
-    ((!unl&&left<=0)?'<button class="sugout" style="margin:9px 0 0" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+' \u203A</b></button>':'')+
+    ((!unl&&left<=0)?'<button class="sugout" style="margin:9px 0 0" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>':'')+
     '</div>';
 }
 function sugPaint(){ var e=document.getElementById('sugwrap'); if(e) e.innerHTML=sugHTML(); }

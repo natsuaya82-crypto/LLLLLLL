@@ -398,7 +398,7 @@ defLang('pt', (function(){
       "sent.empty.s"     : "Uma frase precisa de pelo menos duas palavras.<br>Escreva algumas primeiro.",
       "sent.weave"       : "Tecer",
       "sent.prev"        : "Anterior",
-      "sent.later"       : "Seguinte →",
+      "sent.later"       : "Seguinte",
       "sent.remove"      : "Tirar esta palavra",
       "sent.taphint"     : "Toque em uma palavra para movê-la ou tirá-la.",
       "sent.palhint"     : "Escolha palavras abaixo e elas se alinham aqui. Quantas você quiser, e a mesma palavra quantas vezes quiser.",

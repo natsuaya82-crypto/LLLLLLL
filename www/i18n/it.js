@@ -392,7 +392,7 @@ defLang('it', (function(){
       "sent.empty.s"     : "Una frase vuole almeno due parole.<br>Prima scrivine qualcuna.",
       "sent.weave"       : "Intreccia",
       "sent.prev"        : "Prima",
-      "sent.later"       : "Dopo →",
+      "sent.later"       : "Dopo",
       "sent.remove"      : "Togli questa parola",
       "sent.taphint"     : "Tocca una parola per spostarla o toglierla.",
       "sent.palhint"     : "Scegli le parole qui sotto e si allineano qui. Quante vuoi, e la stessa parola tutte le volte che vuoi.",

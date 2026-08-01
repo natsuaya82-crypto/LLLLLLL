@@ -125,7 +125,7 @@ function vSent(){
         }).join('')+'</div>'+
         (compSel>=0
           ? '<div class="wctl"><button onclick="compMove(-1)">'+ICON_BACK+t('sent.prev')+'</button>'+
-            '<button onclick="compMove(1)">'+t('sent.later')+'</button>'+
+            '<button onclick="compMove(1)">'+t('sent.later')+ICON_GO+'</button>'+
             '<button onclick="compDel()">'+t('sent.remove')+'</button></div>'
           : '<div class="note">'+t('sent.taphint')+'</div>')
       : '<div class="note">'+t('sent.palhint')+'</div>')+
@@ -153,7 +153,7 @@ function vSent(){
     '<div class="segs">'+[POS_ALL].concat(POS).map(function(p){
       return '<button class="seg'+(p===compPos?' on':'')+'" onclick="setCompPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
-    '<div class="search"><span style="color:var(--txm)">⌕</span>'+
+    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(compQ)+'" oninput="setCompQ(this.value)"></div>'+
     '<div class="pal" id="pal">'+palList()+'</div>'+
 
@@ -222,9 +222,9 @@ function vMake(){
       : t('make.norule', posLabel(mkPos)))+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
-        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?'✓':'')+'</button>'+
+        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')">'+(c.on?ICON_TICK:'')+'</button>'+
         '<span class="cw">'+esc(c.w)+'</span><span class="crd">'+esc(readOut(c.w))+'</span>'+
-        '<button class="rr" onclick="reroll('+i+')">↻</button>'+
+        '<button class="rr" onclick="reroll('+i+')" aria-label="'+esc(t('make.reroll'))+'">'+ICON_AGAIN+'</button>'+
         '<button class="rr" onclick="sayWords([\''+esc(c.w)+'\'])" aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+

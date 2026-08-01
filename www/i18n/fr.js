@@ -439,7 +439,7 @@ defLang('fr', (function(){
       "sent.empty.s"     : "Une phrase demande au moins deux mots.<br>Écrivez-en d’abord quelques-uns.",
       "sent.weave"       : "Tisser",
       "sent.prev"        : "Avant",
-      "sent.later"       : "Après →",
+      "sent.later"       : "Après",
       "sent.remove"      : "Retirer ce mot",
       "sent.taphint"     : "Touchez un mot pour le déplacer ou le retirer.",
       "sent.palhint"     : "Choisissez des mots ci-dessous et ils s’alignent ici. Autant que vous voulez, et le même mot aussi souvent qu’il vous plaira.",

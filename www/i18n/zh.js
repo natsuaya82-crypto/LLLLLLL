@@ -398,7 +398,7 @@ defLang('zh', (function(){
       "sent.empty.s"     : "一个句子至少要两个词。<br>先写几个。",
       "sent.weave"       : "编织",
       "sent.prev"        : "前移",
-      "sent.later"       : "后移 →",
+      "sent.later"       : "后移",
       "sent.remove"      : "把这个词拿出来",
       "sent.taphint"     : "点一个词，可以挪动它，或把它拿出来。",
       "sent.palhint"     : "在下面选词，它们会排到这里。想放多少个都行，同一个词也可以重复。",

@@ -569,7 +569,7 @@ defLang('ko', (function(){
       "sent.empty.s"     : "문장에는 낱말이 적어도 둘은 필요해요.<br>몇 개 먼저 적어 보세요.",
       "sent.weave"       : "엮기",
       "sent.prev"        : "앞으로",
-      "sent.later"       : "뒤로 →",
+      "sent.later"       : "뒤로",
       "sent.remove"      : "이 낱말 빼기",
       "sent.taphint"     : "낱말을 누르면 자리를 옮기거나 뺄 수 있어요.",
       "sent.palhint"     : "아래에서 낱말을 고르면 여기에 차례로 놓여요. 몇 개든 좋고, 같은 낱말을 몇 번이든 써도 좋아요.",

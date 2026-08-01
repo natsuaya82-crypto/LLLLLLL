@@ -12,7 +12,9 @@ function toast(m){
   var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);
 }
-function go(r){ route=r; render(); window.scrollTo(0,0); }
+/* Changing the screen is all this does. Where it lands is render()'s to say,
+   and it says the top, because the screen is a different one. */
+function go(r){ route=r; render(); }
 /* ---- A part of speech is stored as a key ------------------------------
    What is saved on a word is one of n / v / adj / x. "noun" and "名詞" are
    only the label that key wears in whichever language is on screen. Same
@@ -323,7 +325,7 @@ function capBanner(){
   var left=FREE_LIMIT-WORDS.length;
   if(left>20 || left<0) return '';
   return '<button class="capwarn" onclick="go(\'plans\')">'+t('cap.warn', left)+
-    '<span class="capgo">'+t('up.cta')+' \u203A</span></button>';
+    '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
 
 /* One letter is a beginning; a handful is a writing system you can read a
@@ -353,7 +355,7 @@ function nextStep(){
   return '<button class="nextcard" onclick="'+act+'">'+
     '<span class="nk">'+t('next.t')+'</span>'+
     '<span class="nl">'+esc(label)+'</span>'+
-    '<span class="na">\u203A</span></button>';
+    '<span class="na">'+ICON_GO+'</span></button>';
 }
 
 /* =========================================================================
@@ -486,7 +488,7 @@ function chTaken(){ var m=scriptMap(), o={}; for(var k in m) o[m[k]]=k; return o
 function phTile(p){
   var cur=chOf(p), added=addedSnd().indexOf(p)>=0;
   return '<button class="ptile'+(cur?' has':'')+'" onclick="openPick(\''+esc(p)+'\')">'+
-    (added? '<span class="pdel" onclick="event.stopPropagation();dropSnd(\''+esc(p)+'\')">×</span>':'')+
+    (added? '<span class="pdel" onclick="event.stopPropagation();dropSnd(\''+esc(p)+'\')">'+ICON_CROSS+'</span>':'')+
     '<span class="pch">'+(cur?esc(cur):'+')+'</span>'+
     '<span class="psn">'+esc(p)+'</span></button>';
 }
@@ -566,7 +568,7 @@ function vWords(){
     '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
     '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
-    '<div class="search"><span style="color:var(--txm)">⌕</span>'+
+    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
     '</div><div class="body">'+body+'</div>'+
     '<div class="barfix"><button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
