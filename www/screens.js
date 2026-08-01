@@ -583,7 +583,7 @@ function groupHTML(items){
     if(L!==cur){ cur=L; out+='<div class="gl">'+esc(cur)+'</div>'; }
     out+='<button class="entry" onclick="openWord(\''+esc(w.hw)+'\')">'+
       '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
-      '<span class="rd">'+esc(readOut(w.hw))+'</span>'+
+      '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
       '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
       '<div class="mn">'+esc(w.mn)+'</div></button>';
   });

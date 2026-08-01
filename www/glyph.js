@@ -1096,5 +1096,6 @@ function render(){
   if(route==='glyph'){ geMount(); ghMount(); }
   if(route==='script') geTiles();
 }
+migratePh();
 installScriptFont();
 render();

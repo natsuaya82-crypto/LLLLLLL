@@ -61,6 +61,17 @@ button{font-family:inherit;cursor:pointer}
 .iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .iconb:active{opacity:.5}
+/* --- a word being built out of its sounds ----------------------------- */
+.seqbox{display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 14px;
+        border:1px solid var(--line);background:var(--pane);border-radius:12px}
+.seqbox .seq{flex:1;font-size:1.5rem;letter-spacing:.02em;min-height:1.5rem;color:var(--tx)}
+.seqdel{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
+        display:inline-flex;align-items:center;justify-content:center}
+.seqdel:disabled{opacity:.25}
+.phkeys{display:flex;flex-wrap:wrap;gap:6px}
+.phk{min-width:48px;min-height:48px;border:1px solid var(--line);background:var(--sf);
+     border-radius:9px;color:var(--tx);font-size:1.05rem;padding:8px 10px}
+.phk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 /* --- the IPA chart ---------------------------------------------------- */
 .ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
 .ipascroll table{width:660px}

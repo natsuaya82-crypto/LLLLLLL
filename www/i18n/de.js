@@ -159,6 +159,8 @@ defLang('de', (function(){
       "lock.sync"                 : "Cloud-Sync",
       "lock.t"                    : "Plus-Funktion",
       "ob.back"                   : "Zurück",
+      "add.ph"                    : "Laute dieser Sprache",
+      "add.ph.none"               : "Diese Sprache hat noch keine Laute. Wähle welche, dann lassen sich Wörter daraus bauen.",
       "ipa.b.back"                : "hinten",
       "ipa.b.central"             : "zentral",
       "ipa.b.front"               : "vorne",

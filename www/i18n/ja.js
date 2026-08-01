@@ -87,6 +87,8 @@ defLang('ja', (function(){
       "lock.sync"                 : "クラウド同期",
       "lock.t"                    : "Plus の機能です",
       "ob.back"                   : "もどる",
+      "add.ph"                    : "この言語の音",
+      "add.ph.none"               : "この言語にはまだ音がありません。いくつか選ぶと、その音でことばを作れます。",
       "ipa.b.back"                : "後舌",
       "ipa.b.central"             : "中舌",
       "ipa.b.front"               : "前舌",

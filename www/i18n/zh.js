@@ -179,6 +179,8 @@ defLang('zh', (function(){
       "lock.sync"                 : "云端同步",
       "lock.t"                    : "Plus 功能",
       "ob.back"                   : "返回",
+      "add.ph"                    : "这门语言的音",
+      "add.ph.none"               : "这门语言还没有音。先选几个，词就能用它们搭起来。",
       "ipa.b.back"                : "后",
       "ipa.b.central"             : "央",
       "ipa.b.front"               : "前",

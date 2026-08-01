@@ -350,6 +350,8 @@ defLang('ko', (function(){
       "lock.sync"                 : "클라우드 동기화",
       "lock.t"                    : "Plus 기능",
       "ob.back"                   : "뒤로",
+      "add.ph"                    : "이 언어의 소리",
+      "add.ph.none"               : "이 언어에는 아직 소리가 없어요. 몇 개 고르면 그 소리로 낱말을 지을 수 있어요.",
       "ipa.b.back"                : "후설",
       "ipa.b.central"             : "중설",
       "ipa.b.front"               : "전설",

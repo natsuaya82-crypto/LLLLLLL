@@ -18,7 +18,7 @@ function rdIn(code, word){ return (LANG[code]||LANG.en).read.word(word); }
    ("respelling is an approximation") but wants a capital as a button. */
 function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
 /* Search hits on any of spelling, meaning, reading or IPA */
-function srcKey(w){ return (w.hw+' '+(w.mn||'')+' '+rd(w.hw)+' '+ipa(w.hw)).toLowerCase(); }
+function srcKey(w){ return (w.hw+' '+(w.mn||'')+' '+phIpa(wPh(w))).toLowerCase(); }
 
 /* ---- The IPA. The reading is the near miss in a familiar script;
         this is the actual sound. ---- */
@@ -156,7 +156,7 @@ function pick(o){
 }
 /* Two words that are spelled differently but sound identical count as taken */
 function taken(){
-  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['ipa:'+ipa(w.hw)]=1; }); return s;
+  var s={}; WORDS.forEach(function(w){ s[String(w.hw).toLowerCase()]=1; s['ipa:'+phIpa(wPh(w))]=1; }); return s;
 }
 function makeWord(pos, A, tk){
   A=A||analyze(); tk=tk||taken();

@@ -214,10 +214,65 @@ function splitC(str){
   }
   return out;
 }
+/* ---- A word is the sounds it is made of --------------------------------
+   It used to be a Latin string that everything else guessed at: th was read
+   as one sound because English reads it as one, x became ks, a doubled vowel
+   became a long one. Every one of those is a rule from somebody else's
+   language, applied to a language that is not theirs.
+
+   A word carries its sounds now. They were chosen from the chart, so there
+   is nothing to work out -- the spelling is what those symbols look like
+   written down, and nothing is read back out of it.
+
+   Words written before this carry no sequence, so they are given one once,
+   by the old guess, and never guessed at again. */
+function wPh(w){
+  if(w && w.ph && w.ph.length) return w.ph;
+  return phGuess(w? w.hw : '');
+}
+/* The old reading of a Latin spelling, kept for exactly one job: giving the
+   words that predate the chart a sequence to carry from now on. */
+function phGuess(hw){
+  var s=String(hw||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0, two;
+  while(i<s.length){
+    two=s.substr(i,2);
+    if(IPA_WAS[two]){ out.push(IPA_WAS[two]); i+=2; }
+    else { out.push(IPA_WAS[s.charAt(i)] || s.charAt(i)); i++; }
+  }
+  return out;
+}
+function migratePh(){
+  var changed=false;
+  WORDS.forEach(function(w){
+    if(!w.ph || !w.ph.length){ w.ph=phGuess(w.hw); changed=true; }
+  });
+  if(changed) save();
+}
+/* Syllables, from the sounds rather than from the letters: a run of
+   consonants, then the vowels, then whatever consonants close it. */
+function phSyl(seq){
+  var out=[], i=0, on, nu, co;
+  while(i<seq.length){
+    on=[]; while(i<seq.length && !ipaIsVowel(seq[i])){ on.push(seq[i]); i++; }
+    nu=[]; while(i<seq.length &&  ipaIsVowel(seq[i])){ nu.push(seq[i]); i++; }
+    if(!nu.length){
+      if(out.length) out[out.length-1].co=out[out.length-1].co.concat(on);
+      else if(on.length) out.push({on:on, nu:[], co:[]});
+      break;
+    }
+    co=[];
+    /* a consonant run between two vowels starts the next syllable, except
+       for the last one before it, which closes this one */
+    out.push({on:on, nu:nu, co:co});
+  }
+  return out;
+}
+function phIpa(seq){ return '/'+seq.join('')+'/'; }
+
 function analyze(){
   var on={},onI={},onM={},nu={},co={},cnt={},fin={},posN={};
   WORDS.forEach(function(w){
-    var ss=syl(w.hw);
+    var ss=syl(w.hw), seq=wPh(w);
     cnt[ss.length]=(cnt[ss.length]||0)+1;
     ss.forEach(function(s,si){
       var p=parts(s); if(!p) return;
@@ -225,7 +280,8 @@ function analyze(){
       if(si===0) onI[p.on]=(onI[p.on]||0)+1; else onM[p.on]=(onM[p.on]||0)+1;
       if(p.co) co[p.co]=(co[p.co]||0)+1;
     });
-    var f=String(w.hw).toLowerCase().slice(-1);
+    /* what a word ends on is its last sound, not its last letter */
+    var f=seq.length? seq[seq.length-1] : '';
     fin[w.pos]=fin[w.pos]||{}; fin[w.pos][f]=(fin[w.pos][f]||0)+1;
     posN[w.pos]=(posN[w.pos]||0)+1;
   });

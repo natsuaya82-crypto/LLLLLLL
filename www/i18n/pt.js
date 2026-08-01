@@ -178,6 +178,8 @@ defLang('pt', (function(){
       "lock.sync"                 : "Sincronização na nuvem",
       "lock.t"                    : "Recurso do Plus",
       "ob.back"                   : "Voltar",
+      "add.ph"                    : "Sons da língua",
+      "add.ph.none"               : "Esta língua ainda não tem sons. Escolha alguns, e com eles as palavras poderão ser construídas.",
       "ipa.b.back"                : "posterior",
       "ipa.b.central"             : "central",
       "ipa.b.front"               : "anterior",

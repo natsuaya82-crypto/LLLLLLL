@@ -174,14 +174,40 @@ function sugPick(w){
   SUG=[]; sugPaint();
 }
 
+/* A word is built from the sounds this language has, not typed and then
+   guessed at. The keys are the language's own inventory: what is not in it
+   cannot go in a word, which is the whole point of having chosen it. */
+var addSeq=[];
+function addPh(sym){ addSeq.push(sym); addPaint(); }
+function addBack(){ addSeq.pop(); addPaint(); }
+function addPaint(){
+  var w=document.getElementById('f-seq'), r=document.getElementById('f-pv'),
+      b=document.getElementById('f-back');
+  if(w) w.textContent = addSeq.join('');
+  if(r) r.textContent = addSeq.length? phIpa(addSeq) : '';
+  if(b) b.disabled = !addSeq.length;
+}
+function addKeys(){
+  var mine=addedSnd();
+  if(!mine.length){
+    return '<div class="note">'+t('add.ph.none')+'</div>'+
+      '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="closeSheet({target:{id:\'sbg\'}});go(\'sound\')">'+
+      esc(t('toc.sound'))+'</button>';
+  }
+  return '<div class="phkeys">'+mine.map(function(x){
+    return '<button class="phk" onclick="addPh(\''+x+'\')">'+esc(x)+'</button>';
+  }).join('')+'</div>';
+}
 function openAdd(){
-  SUG=[]; sugMn='';
+  SUG=[]; sugMn=''; addSeq=[];
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div><h3>'+t('add.title')+'</h3>'+
     '<div class="note" style="margin-bottom:12px">'+t('add.note')+'</div>'+
-    '<div class="field"><label>'+t('f.spelling')+'</label>'+
-    '<input class="hwf" id="f-hw" placeholder="Aelin" oninput="pv()" autocomplete="off" autocapitalize="off" spellcheck="false"></div>'+
+    '<div class="seqbox"><span class="seq" id="f-seq"></span>'+
+      '<button class="seqdel" id="f-back" onclick="addBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+    '<div class="sec">'+t('add.ph')+'</div>'+
+    addKeys()+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
     '<button onclick="sayField()">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div>'+
@@ -193,32 +219,25 @@ function openAdd(){
     '';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
-  setTimeout(function(){var e=document.getElementById('f-hw'); if(e) e.focus();},260);
+  addPaint();
 }
 function closeSheet(e){
   if(e && e.target && e.target.id!=='sbg') return;
   document.getElementById('sbg').classList.remove('on');
   document.getElementById('sheet').classList.remove('on');
 }
-function pv(){
-  var v=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
-  document.getElementById('f-pv').textContent = v? readOut(v) : '';
-}
-function sayField(){
-  var v=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
-  if(v) speak(v);
-}
+function pv(){ addPaint(); }
+function sayField(){ if(addSeq.length) speak(addSeq.join('')); }
 function addOne(){
-  var hw=String(document.getElementById('f-hw').value).replace(/[^A-Za-z]/g,'');
+  var hw=addSeq.join('');
   var mn=document.getElementById('f-mn').value.trim();
   var pos=document.getElementById('f-pos').value;
-  if(hw.length<2){ toast(t('toast.hw2')); return; }
+  if(addSeq.length<2){ toast(t('toast.hw2')); return; }
   if(!capOK(1)){ closeSheet(); go('plans'); return; }
-  hw=hw.charAt(0).toUpperCase()+hw.slice(1).toLowerCase();
   if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
   addPos=pos;
-  WORDS.push({hw:hw, mn:mn, pos:pos, at:Date.now()});
-  save(); closeSheet(); cands=[];
+  WORDS.push({hw:hw, ph:addSeq.slice(), mn:mn, pos:pos, at:Date.now()});
+  save(); closeSheet(); cands=[]; addSeq=[];
   toast(t('toast.added.1', hw));
   render();
 }
@@ -229,6 +248,19 @@ function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
   return null;
 }
+/* The syllables, from the sounds. What used to sit here was the respelling
+   -- the word written out in the reader's own script -- and a word made of
+   IPA symbols gives it nothing to work from. */
+function wordSyl(w){
+  var seq=wPh(w), out=[], cur=[], i, v=false;
+  for(i=0;i<seq.length;i++){
+    if(ipaIsVowel(seq[i])){ cur.push(seq[i]); v=true; }
+    else { if(v){ out.push(cur.join('')); cur=[]; v=false; } cur.push(seq[i]); }
+  }
+  if(cur.length) out.push(cur.join(''));
+  return out.join('\u00b7');
+}
+
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw;
@@ -237,8 +269,8 @@ function openWord(hw){
     '<div class="grip"></div>'+
     '<div class="whd"><span class="whw">'+esc(wOut(w.hw))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto" onclick="speak(\''+esc(w.hw)+'\')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    '<div class="wsub">'+esc(ipa(w.hw))+'</div>'+
-    '<div class="wsub2">'+esc(rd(w.hw))+'</div>'+
+    '<div class="wsub">'+esc(phIpa(wPh(w)))+'</div>'+
+    '<div class="wsub2">'+esc(wordSyl(w))+'</div>'+
     '<div class="sec" style="margin:18px 0 8px">'+t('word.syl')+'</div>'+
     '<div class="sylrow">'+sy.map(function(s,i){
       var d=i===0? s.charAt(0).toUpperCase()+s.slice(1) : s;
@@ -276,7 +308,7 @@ function delWord(){
    posKey(), which accepts a key or a label in any supported language. */
 function exportCSV(){
   var csv='spelling,meaning,pos,ipa,reading\n'+WORDS.map(function(w){
-    return [w.hw,w.mn,w.pos,ipa(w.hw),rd(w.hw)].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
+    return [w.hw,w.mn,w.pos,phIpa(wPh(w)),wPh(w).join(' ')].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
   }).join('\n');
   try{
     var b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a');

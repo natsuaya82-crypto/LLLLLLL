@@ -396,7 +396,16 @@ const R = await pg.evaluate(() => {
     syl(hw).forEach(s => UI_LANGS.forEach(c => { try { learn(LANG[c].read.syl(s)); } catch (e) {} }));
     UI_LANGS.forEach(c => { try { learn(LANG[c].read.word(hw)); } catch (e) {} });
   }
-  WORDS.forEach(w => { learnWord(w.hw); learn(w.mn); });
+  /* A word carries its sounds now, and what the screens show is built from
+     those rather than from the spelling: the sequence, the IPA of it, and the
+     syllables it falls into. All three are data, and none of them changes
+     with the language being read -- which is the point of them. */
+  WORDS.forEach(w => {
+    learnWord(w.hw); learn(w.mn);
+    try { learn((w.ph || wPh(w)).join(' ')); } catch (e) {}
+    try { learn(phIpa(wPh(w))); } catch (e) {}
+    try { learn(wordSyl(w)); } catch (e) {}
+  });
   LINES.forEach(l => { learn(l.mn); l.ws.forEach(learnWord); });
   learn(langName); cands.forEach(c => learnWord(c.w));
   UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });

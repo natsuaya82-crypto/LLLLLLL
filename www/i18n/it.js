@@ -171,6 +171,8 @@ defLang('it', (function(){
       "lock.sync"                 : "Sincronizzazione cloud",
       "lock.t"                    : "Funzione Plus",
       "ob.back"                   : "Indietro",
+      "add.ph"                    : "I suoni della lingua",
+      "add.ph.none"               : "Questa lingua non ha ancora suoni. Scegline alcuni, e con quelli si potranno costruire le parole.",
       "ipa.b.back"                : "posteriore",
       "ipa.b.central"             : "centrale",
       "ipa.b.front"               : "anteriore",

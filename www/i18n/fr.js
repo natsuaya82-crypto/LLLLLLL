@@ -219,6 +219,8 @@ defLang('fr', (function(){
       "lock.sync"                 : "Synchronisation cloud",
       "lock.t"                    : "Fonction Plus",
       "ob.back"                   : "Retour",
+      "add.ph"                    : "Ses sons",
+      "add.ph.none"               : "Cette langue n’a pas encore de sons. Choisissez-en, et les mots pourront en être faits.",
       "ipa.b.back"                : "postérieure",
       "ipa.b.central"             : "centrale",
       "ipa.b.front"               : "antérieure",

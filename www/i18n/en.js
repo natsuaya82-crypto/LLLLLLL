@@ -73,6 +73,8 @@ defLang('en', (function(){
       "lock.sync"                 : "Cloud sync",
       "lock.t"                    : "A Plus feature",
       "ob.back"                   : "Back",
+      "add.ph"                    : "Its sounds",
+      "add.ph.none"               : "This language has no sounds yet. Choose some, and words can be built from them.",
       "ipa.b.back"                : "back",
       "ipa.b.central"             : "central",
       "ipa.b.front"               : "front",

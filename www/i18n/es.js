@@ -131,6 +131,8 @@ defLang('es', (function(){
       "lock.sync"                 : "Sincronización en la nube",
       "lock.t"                    : "Función de Plus",
       "ob.back"                   : "Atrás",
+      "add.ph"                    : "Sus sonidos",
+      "add.ph.none"               : "Esta lengua aún no tiene sonidos. Elige algunos y con ellos podrán construirse palabras.",
       "ipa.b.back"                : "posterior",
       "ipa.b.central"             : "central",
       "ipa.b.front"               : "anterior",
