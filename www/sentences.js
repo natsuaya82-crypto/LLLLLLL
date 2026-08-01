@@ -41,7 +41,7 @@ function palList(){
   return list.map(function(w){
     return '<button class="pw" onclick="compAdd(\''+esc(w.hw)+'\')">'+
       '<span class="pww">'+esc(w.hw)+'</span>'+
-      (w.mn? '<span class="pwm">'+esc(w.mn)+'</span>':'<span class="pwm dim">'+t('sent.nomean')+'</span>')+
+      (wMn(w)? '<span class="pwm">'+esc(wMn(w))+'</span>':'<span class="pwm dim">'+t('sent.nomean')+'</span>')+
       '</button>';
   }).join('');
 }
@@ -116,7 +116,7 @@ function vSent(){
           var w=findWord(hw);
           return '<button class="wc'+(i===compSel?' on':'')+'" onclick="compPick('+i+')">'+
             '<span class="wcw">'+esc(hw)+'</span>'+
-            (w&&w.mn? '<span class="wcm">'+esc(w.mn)+'</span>':'')+'</button>';
+            (w&&wMn(w)? '<span class="wcm">'+esc(wMn(w))+'</span>':'')+'</button>';
         }).join('')+'</div>'+
         (compSel>=0
           ? '<div class="wctl"><button onclick="compMove(-1)">'+ICON_BACK+t('sent.prev')+'</button>'+
@@ -133,7 +133,7 @@ function vSent(){
         '<div class="link">'+
         '<div class="sline">'+ws.map(function(w){
           return '<span class="sw"><span class="sww">'+esc(w.hw)+'</span>'+
-                 '<span class="swk">'+esc(w.mn||'—')+'</span></span>';
+                 '<span class="swk">'+esc(wMn(w)||'—')+'</span></span>';
         }).join('')+'</div>'+
         '<div class="arw">'+(L.isLink? t('link.yes') : t('link.no'))+'</div>'+
         '<div class="out">'+readLink(L)+'</div>'+

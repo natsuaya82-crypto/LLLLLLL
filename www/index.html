@@ -166,7 +166,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .link .arw{color:var(--txm);font-size:.72rem;margin:9px 0 7px}
 .link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
 .play{margin-top:14px;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
-      border-radius:22px;padding:9px 20px;font-size:.86rem;font-weight:600}
+      border-radius:9px;padding:9px 18px;font-size:.86rem;font-weight:600}
 .play:active{opacity:.6}
 
 /* ---------- rules ---------- */
@@ -178,9 +178,14 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .bar i{display:block;height:100%;background:var(--gold)}
 
 /* ---------- make ---------- */
-.segs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.seg{min-height:44px;background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:7px 15px;font-size:.84rem}
-.seg.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
+/* Not pills. A pill is a rounded box with a word shut inside it, and this
+   app has been told more than once that it does not want those anywhere. A
+   choice between a few named things is a rail: the words sit on a line, the
+   chosen one is gold and underscored, and nothing is enclosed. */
+.segs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:8px;border-bottom:1px solid var(--line)}
+.seg{min-height:44px;background:none;border:0;border-bottom:2px solid transparent;
+     color:var(--txs);padding:9px 14px;font-size:.84rem;margin-bottom:-1px}
+.seg.on{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
 .cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
 .cand .ck{width:44px;height:44px;margin-left:-11px;border:0;background:none;flex:0 0 auto;
           display:flex;align-items:center;justify-content:center}
@@ -211,7 +216,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .plan .pn{font-family:'Cinzel',Georgia,serif;font-size:1.05rem}
 .plan .pp{margin-left:auto;color:var(--gold);font-size:.95rem;font-weight:600}
 .plan .pl{color:var(--txs);font-size:.82rem;margin-top:9px;line-height:1.95}
-.plan .badge{font-size:.56rem;letter-spacing:.16em;color:var(--gold);border:1px solid var(--goldln);border-radius:20px;padding:2px 9px}
+.plan .badge{font-size:.56rem;letter-spacing:.16em;color:var(--gold);border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
 .plan button{min-height:44px;width:100%;margin-top:13px;padding:11px;border-radius:11px;border:1px solid var(--goldln);
              background:var(--goldsf);color:var(--gold);font-weight:600;font-size:.88rem}
 
@@ -222,7 +227,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .lock .lt{font-size:.9rem;color:var(--txs)}
 .lock .ld{font-size:.7rem;color:var(--txm)}
 .lock .tag{margin-left:auto;font-size:.55rem;letter-spacing:.14em;color:var(--pur);
-           border:1px solid var(--purln);border-radius:20px;padding:2px 9px;flex:0 0 auto}
+           border:1px solid var(--purln);border-radius:3px;padding:2px 8px;flex:0 0 auto}
 
 /* ---------- bottom bar, sheet, toast ---------- */
 .barfix{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:480px;margin:0 auto;
@@ -255,7 +260,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .pvbox .pvk{font-size:1.02rem;color:var(--gold)}
 .pvbox .pvn{font-size:.72rem;color:var(--txm)}
 .pvbox button{min-height:44px;margin-left:auto;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
-              border-radius:18px;padding:5px 13px;font-size:.78rem}
+              border-radius:8px;padding:5px 13px;font-size:.78rem}
 /* one word, opened */
 .whd{display:flex;align-items:center;gap:12px;margin:0 2px}
 .whw{font-family:'Cinzel',Georgia,serif;font-size:1.7rem;letter-spacing:.03em}
@@ -273,7 +278,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .sw{display:inline-flex;flex-direction:column;align-items:center}
 .sw .sww{font-family:'Cinzel',Georgia,serif;font-size:1.18rem;letter-spacing:.02em}
 .sw .swk{font-size:.56rem;letter-spacing:.14em;color:var(--txm);margin-top:4px}
-.rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:16px;padding:5px 12px;font-size:.72rem}
+.rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:5px 12px;font-size:.72rem}
 .rr2:active{opacity:.55}
 .link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
 /* weaving a sentence */
@@ -285,7 +290,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .wc .wcm{font-size:.62rem;color:var(--txm)}
 .wctl,.wctl2{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .wctl button,.wctl2 button{background:none;border:1px solid var(--line);color:var(--txs);
-    border-radius:16px;padding:7px 13px;font-size:.75rem}
+    border-radius:8px;padding:7px 13px;font-size:.75rem}
 .wctl button{border-color:var(--goldln);color:var(--gold)}
 .pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:220px;overflow:auto}
 .pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
@@ -299,11 +304,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .chk.ng{color:var(--txs);background:var(--sf)}
 .chk b{color:var(--gold);font-family:'Cinzel',Georgia,serif}
 .chk button{display:block;margin-top:9px;background:none;border:1px solid var(--goldln);color:var(--gold);
-    border-radius:16px;padding:6px 13px;font-size:.74rem}
+    border-radius:8px;padding:6px 13px;font-size:.74rem}
 .ipa{font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:.02em}
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0) + 96px);transform:translateX(-50%) translateY(10px);
        background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
-       border-radius:20px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
+       border-radius:10px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
 
 /* ---------- onboarding ---------- */
@@ -324,7 +329,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
 .ob .obfoot{margin-top:auto;padding-top:12px;flex:0 0 auto}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
-.chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:20px;padding:8px 15px;font-size:.88rem}
+.chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:8px 15px;font-size:.88rem}
 .chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
 .mini{font-size:.72rem;color:var(--txm);margin-top:8px;line-height:1.8}
 
@@ -487,7 +492,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
         text-underline-offset:3px;text-decoration-color:var(--line)}
 .obskip:active{opacity:.55}
 
-.obback{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;opacity:.75;cursor:pointer;padding:0;border-radius:50%;-webkit-tap-highlight-color:transparent;flex-shrink:0;min-width:44px;min-height:44px}
+.obback{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border:0;background:transparent;color:inherit;opacity:.75;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;flex-shrink:0;min-width:44px;min-height:44px}
 .obback:hover{opacity:1}
 .obback:active{transform:scale(.92)}
 .obback.ph{pointer-events:none;opacity:0}
@@ -510,7 +515,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .pktabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:9px;
   border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch}
 .pktab{display:flex;align-items:center;gap:5px;flex-shrink:0;padding:6px 10px;border:1px solid var(--line);
-  border-radius:16px;background:transparent;color:var(--txm);font:inherit;font-size:.68rem;cursor:pointer;white-space:nowrap}
+  border-radius:8px;background:transparent;color:var(--txm);font:inherit;font-size:.68rem;cursor:pointer;white-space:nowrap}
 .pktab.on{border-color:var(--gold);color:var(--gold)}
 .pkpv{font-size:.9rem;color:var(--gold)}
 .pkchars{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px;
@@ -572,6 +577,29 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
 .nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
 
+/* ---------- a word, opened ----------
+   Its meanings are a list, because a word can mean more than one thing, and
+   the words derived from it are listed under it as the entries they are. */
+/* a derived word, set in from the margin under the one it came from */
+.entry.kid{padding-left:20px;border-left:1px solid var(--goldln);margin-left:2px}
+.entry.kid .hw{font-size:1.02rem}
+.mnlist{display:flex;flex-direction:column;gap:0;margin-bottom:10px}
+.mnrow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.mnrow .mnv{flex:1;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--tx)}
+.mnrow .mnx{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+  display:flex;align-items:center;justify-content:center}
+.mnadd{display:flex;gap:8px;align-items:stretch}
+.mnadd input{flex:1;min-width:0;background:var(--sf);border:1px solid var(--line);border-radius:9px;
+  padding:12px 13px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
+.mnadd .btn{flex:0 0 auto}
+/* the letter a sound wears, when it was borrowed rather than drawn */
+.gborrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);
+  border-radius:11px;background:var(--pane)}
+.gborrow .gbch{font-size:1.7rem;color:var(--gold);line-height:1}
+.gborrow .gbl{font-size:.78rem;color:var(--txs)}
+.gborrow .gbx{margin-left:auto;min-height:44px;padding:6px 12px;background:none;
+  border:1px solid var(--line);border-radius:8px;color:var(--txm);font:inherit;font-size:.74rem}
+
 /* ---------- notes ----------
    A notebook page: a heading and the first line of what is under it. */
 .ntlist{display:flex;flex-direction:column;gap:10px}
@@ -600,7 +628,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .tk .tkp:active{opacity:.5}
 .tsend{display:flex;gap:10px;margin-top:12px}
 .tmks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
-.tmk{min-height:44px;padding:8px 16px;border:1px solid var(--goldln);border-radius:20px;
+.tmk{min-height:44px;padding:8px 14px;border:1px solid var(--goldln);border-radius:8px;
   background:var(--goldsf);color:var(--gold);font:inherit;font-size:.82rem;cursor:pointer}
 .tmk:disabled{opacity:.35;border-color:var(--line);background:none;color:var(--txm)}
 

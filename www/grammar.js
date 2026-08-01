@@ -111,6 +111,14 @@ function gSide(lab, ws, gloss){
     '<button class="gsp" onclick="sayPh('+esc(JSON.stringify(gFlat(ws)))+')" aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
 }
 function gNeedWords(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
+/* "before" and "after" mean two different things. For a describing word they
+   are where it stands; for saying no they are a separate word standing before
+   or after. One label for both read as nonsense on the adjective row -- "a
+   word before" where the answer is simply "before it" -- so the one feature
+   that means position asks for its own. */
+function gOptLab(id, o){
+  return (id==='adj') ? t('gram.adj.'+o) : t('gram.how.'+o);
+}
 
 function gDemo(id){
   var n=gWordOf('n'), v=gWordOf('v'), a=gWordOf('adj'), n2=gWordOf('n', n);
@@ -122,7 +130,7 @@ function gDemo(id){
     if(!n || !a) return gNeedWords();
     var ph = gHow('adj')==='before' ? [wPh(a), wPh(n)] : [wPh(n), wPh(a)];
     return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), ph,
-      (a.mn||'') + (a.mn&&n.mn? ' + ':'') + (n.mn||''))+'</div>';
+      [wMn(a), wMn(n)].filter(Boolean).join(' + '))+'</div>';
   }
   if(id==='q'){
     /* A question is asked of a whole line, not of a word, so this one is
@@ -136,15 +144,15 @@ function gDemo(id){
   }
   if(id==='poss'){
     if(!n || !n2) return gNeedWords();
-    return '<div class="gdemo">'+gSide(t('gram.pair.plain'), [wPh(n2)], n2.mn||'')+
+    return '<div class="gdemo">'+gSide(t('gram.pair.plain'), [wPh(n2)], wMn(n2))+
       gSide(t('gram.pair.owned'), gMark(wPh(n2),'poss').concat([wPh(n)]),
-        (n.mn||'')+(n.mn&&n2.mn?' / ':'')+(n2.mn||''))+'</div>';
+        [wMn(n), wMn(n2)].filter(Boolean).join(' / '))+'</div>';
   }
   base = (id==='num') ? n : v;
   if(!base) return gNeedWords();
   var labA = id==='num'? t('gram.pair.one') : id==='past'? t('gram.pair.now') : t('gram.pair.yes');
   var labB = id==='num'? t('gram.pair.many'): id==='past'? t('gram.pair.past'): t('gram.pair.no');
-  return '<div class="gdemo">'+gSide(labA, [wPh(base)], base.mn||'')+
+  return '<div class="gdemo">'+gSide(labA, [wPh(base)], wMn(base))+
          gSide(labB, gMark(wPh(base), id), '')+'</div>';
 }
 
@@ -204,7 +212,7 @@ function gOrderDemo(){
   if(!n || !v) return gNeedWords();
   var slot={S:n, O:(n2||n), V:v};
   var ws=orderDef().seq.map(function(k){ return wPh(slot[k]); });
-  var gl=orderDef().seq.map(function(k){ return slot[k].mn||slot[k].hw; }).join(' ');
+  var gl=orderDef().seq.map(function(k){ return wMn(slot[k])||slot[k].hw; }).join(' ');
   return '<div class="gdemo">'+gSide(t('gram.pair.line'), ws, gl)+'</div>';
 }
 
@@ -229,7 +237,7 @@ function vGram(){
         '<div class="note">'+t('gram.'+x.id+'.d')+'</div>'+
         '<div class="segs">'+x.opts.map(function(o){
           return '<button class="seg'+(o===gHow(x.id)?' on':'')+'" onclick="gSet(\''+x.id+'\',\''+o+'\')">'+
-            esc(t('gram.how.'+o))+'</button>';
+            esc(gOptLab(x.id, o))+'</button>';
         }).join('')+'</div>'+
         (gNeedsPiece(x.id)
           ? '<button class="gpiece'+(gPhOf(x.id).length?' has':'')+'" onclick="openGramPiece(\''+x.id+'\')">'+

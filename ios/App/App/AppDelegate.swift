@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Every sound in this app is built in the web layer with Web Audio.
+        // A web view's audio belongs to the app's audio session, and the
+        // default one is ambient: it obeys the ring/silent switch on the side
+        // of the phone. So on any phone with that switch flipped -- which is
+        // most of them, most of the time -- tapping a sound played nothing at
+        // all, silently, with no way to tell that from a bug.
+        //
+        // This is a language app whose whole point is hearing the sounds you
+        // chose, so its audio is playback, not ambience: it plays whether the
+        // switch is on or off, the way a music or a video app does. It does
+        // not mix itself over anything else, because it never plays on its own
+        // -- every sound here is the answer to a tap.
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            // A phone that refuses the category still runs the app; it just
+            // goes back to obeying the silent switch.
+        }
         return true
     }
 

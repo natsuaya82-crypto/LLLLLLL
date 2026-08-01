@@ -27,6 +27,27 @@ function vxCtx(){
   }catch(e){ VX=null; }
   return VX;
 }
+/* iOS starts every audio context asleep and will only wake one inside a real
+   gesture. Waking it on the first touch anywhere means the first sound the
+   person asks for is the first sound they hear, instead of the second.
+
+   The other half of this is not in the web layer at all: a web view's audio
+   belongs to the app's audio session, and the default session obeys the
+   ring/silent switch on the side of the phone. On a phone with that switch
+   flipped every sound here played into nothing, silently. ios/App/App/
+   AppDelegate.swift sets the session to playback, the way a music app does. */
+var VXWOKE=false;
+function vxWake(){
+  if(VXWOKE) return;
+  VXWOKE=true;
+  var x=vxCtx();
+  if(!x) return;
+  try{ if(x.state==='suspended' && x.resume) x.resume(); }catch(e){}
+}
+if(document.addEventListener){
+  document.addEventListener('pointerdown', vxWake, true);
+  document.addEventListener('touchstart', vxWake, true);
+}
 
 /* Where in the mouth the noise of a consonant lives, in hertz. Front of the
    mouth is a short tube and rings high; the back is a long one and rings low. */
@@ -196,7 +217,10 @@ function vxOne(x, out, sym, t0, f0){
    involved: the sounds were chosen, and this is what they sound like. */
 function sayPh(seq, ctx, f0){
   var x=ctx||vxCtx();
-  if(!x || !seq || !seq.length) return 0;
+  /* A tap that makes no sound and says nothing is indistinguishable from a
+     broken app, so the one case where sound is genuinely impossible says so. */
+  if(!x){ if(!ctx && typeof toast==='function') toast(t('voice.none')); return 0; }
+  if(!seq || !seq.length) return 0;
   /* A page that has not been touched yet has its audio held; the first tap
      is what lets it go. An offline context is rendering rather than playing
      and must not be woken -- asking throws. */

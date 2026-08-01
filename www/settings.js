@@ -89,11 +89,33 @@ function vSettings(){
 function setTheme(v){ SET.theme=v; save(); applyTheme(); render(); }
 function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
+/* Erase everything means everything. It used to empty the words, the
+   sentences and the name and stop there, so the sounds you had chosen, the
+   letters you had drawn, the characters you had borrowed and every grammar
+   decision survived a wipe and turned up inside the next language you
+   started -- which is not a language you made, it is two of them mixed.
+   The storage keys are removed rather than overwritten, so nothing can be
+   left behind by a shape this version does not know about. */
 function wipe(){
   if(!confirm(t('confirm.wipe'))) return;
-  WORDS=[]; LINES=[]; langName=''; SET.done=false; comp=[]; compSel=-1;
-  NOTES=[]; saveNotes(); TALK=[]; tcomp=[]; saveTalk(); save();
-  ob={step:0,name:'',mn:'',hw:''}; render();
+  WORDS=[]; LINES=[]; langName=''; comp=[]; compSel=-1; cands=[]; SUG=[];
+  NOTES=[]; TALK=[]; tcomp=[];
+  SCRIPT={g:{}, extra:[]};
+  SFONT={built:false, sig:null};
+  var css=document.getElementById('sfontcss');
+  if(css && css.parentNode) css.parentNode.removeChild(css);
+  /* everything the person chose, back to the defaults in core.js */
+  SET={theme:SET.theme, plan:'free', done:false, order:'SOV', read:'both',
+       voice:'', ui:SET.ui, script:false};
+  try{
+    localStorage.removeItem(LS_W); localStorage.removeItem(LS_L);
+    localStorage.removeItem(LS_N); localStorage.removeItem(LS_G);
+    localStorage.removeItem(LS_NT); localStorage.removeItem(LS_TK);
+  }catch(e){}
+  save();
+  ob={step:0, mode:'draw', pick:'', strokes:null, ch:'', snd:''};
+  GE=null; route='home'; RENDERED=null;
+  render();
 }
 
 /* =========================================================================
@@ -193,12 +215,18 @@ function addKeys(){
     return '<button class="phk" onclick="addPh(\''+x+'\')">'+esc(x)+'</button>';
   }).join('')+'</div>';
 }
-function openAdd(){
+/* Written from nothing, or derived from a word that already exists -- in
+   which case it opens as that word's sounds, to be changed from there. */
+var addFrom='';
+function openAdd(from){
   SUG=[]; sugMn=''; addSeq=[];
+  var par=from? findWord(from) : null;
+  addFrom = par? String(par.hw) : '';
+  if(par) addSeq=wPh(par).slice();
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>'+t('add.title')+'</h3>'+
-    '<div class="note" style="margin-bottom:12px">'+t('add.note')+'</div>'+
+    '<div class="grip"></div><h3>'+(addFrom? t('add.title.from', esc(addFrom)) : t('add.title'))+'</h3>'+
+    '<div class="note" style="margin-bottom:12px">'+(addFrom? t('add.note.from') : t('add.note'))+'</div>'+
     '<div class="seqbox"><span class="seq" id="f-seq"></span>'+
       '<button class="seqdel" id="f-back" onclick="addBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="sec">'+t('add.ph')+'</div>'+
@@ -231,14 +259,13 @@ function addOne(){
   if(!capOK(1)){ closeSheet(); go('plans'); return; }
   if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
   addPos=pos;
-  WORDS.push({hw:hw, ph:addSeq.slice(), mn:mn, pos:pos, at:Date.now()});
-  save(); closeSheet(); cands=[]; addSeq=[];
+  var w={hw:hw, ph:addSeq.slice(), mn:mn, mns:(mn?[mn]:[]), pos:pos, at:Date.now()};
+  if(addFrom && addFrom!==hw) w.from=addFrom;
+  WORDS.push(w);
+  save(); closeSheet(); cands=[]; addSeq=[]; addFrom='';
   toast(t('toast.added.1', hw));
   render();
 }
-/* One word, opened: reading, syllable breaks, meaning, part of speech.
-   Everything here can be changed or deleted. */
-var openHw='';
 function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
   return null;
@@ -253,54 +280,148 @@ function wordSyl(w){
   }).join('\u00b7');
 }
 
+/* ---- One word, opened ---------------------------------------------------
+   It used to be a read-only card with a meaning box on it: you could change
+   what a word meant and nothing else. Not the word. A word built out of the
+   wrong sound had to be deleted and written again, and the one meaning box
+   meant a word that means two things had nowhere to put the second one.
+
+   Everything about a word is editable here: the sounds it is made of, on the
+   same keyboard it was written with; as many meanings as it has; what part of
+   speech it is; and the words derived from it, which are words in their own
+   right that remember where they came from. */
+var openHw='', wEdit=null;
+
+function wdSeqHTML(){
+  return '<div class="seqbox"><span class="seq" id="wd-seq">'+esc(wEdit.seq.join(''))+'</span>'+
+    '<button class="seqdel" onclick="wdBack()"'+(wEdit.seq.length?'':' disabled')+
+    ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
+}
+function wdKeysHTML(){
+  var mine=addedSnd();
+  if(!mine.length) return '<div class="note">'+t('add.ph.none')+'</div>';
+  return '<div class="phkeys">'+mine.map(function(x){
+    return '<button class="phk" onclick="wdKey(\''+x+'\')">'+esc(x)+'</button>'; }).join('')+'</div>';
+}
+function wdMnsHTML(){
+  var rows=wEdit.mns.map(function(m,i){
+    return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
+      '<button class="mnx" onclick="wdDelMn('+i+')" aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
+  }).join('');
+  return '<div class="mnlist">'+rows+'</div>'+
+    '<div class="mnadd"><input id="wd-mn" placeholder="'+esc(t('word.mn.ph'))+'" '+
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddMn();}">'+
+    '<button class="btn ghost" onclick="wdAddMn()">'+t('word.mn.add')+'</button></div>';
+}
+function wdKidsHTML(){
+  var w=findWord(openHw); if(!w) return '';
+  var kids=wKids(w), par=wParent(w);
+  return (par? '<button class="ntrow" onclick="openWord(\''+esc(par.hw)+'\')">'+
+            '<span class="nth">'+t('word.from', esc(par.hw))+'</span>'+
+            (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
+    (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
+        return '<button class="ntrow" onclick="openWord(\''+esc(k.hw)+'\')">'+
+          '<span class="nth">'+esc(k.hw)+'</span>'+
+          '<span class="ntb">'+esc(wMn(k)||t('sent.nomean'))+'</span></button>';
+      }).join('')+'</div>' : '')+
+    '<button class="btn ghost" style="width:100%;margin-top:10px" onclick="wdDerive()">'+t('word.derive')+'</button>';
+}
+function wdPaint(){
+  var b=document.getElementById('wd-body'); if(!b) return;
+  b.innerHTML=wdBodyHTML();
+}
+function wdBodyHTML(){
+  var seq=wEdit.seq;
+  return '<div class="whd"><span class="whw">'+esc(seq.join(''))+'</span>'+
+      '<button class="play" style="margin:0 0 0 auto" onclick="sayPh('+esc(JSON.stringify(seq))+')">'+
+      ICON_PLAY+t('f.listen')+'</button></div>'+
+    '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
+    '<div class="wsub2">'+esc(phCut(seq).map(function(p){
+        return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
+
+    '<div class="sec">'+t('word.sounds')+'</div>'+
+    '<div class="note" style="margin-bottom:8px">'+t('word.sounds.d')+'</div>'+
+    wdSeqHTML()+wdKeysHTML()+
+
+    '<div class="sec">'+t('word.means')+'</div>'+
+    wdMnsHTML()+
+
+    '<div class="sec">'+t('f.pos')+'</div>'+
+    '<div class="field"><select id="wd-pos" onchange="wEdit.pos=this.value">'+
+      POS.map(function(p){return '<option value="'+p+'"'+(p===wEdit.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
+    '</select></div>'+
+
+    '<div class="sec">'+t('word.family')+'</div>'+
+    wdKidsHTML()+
+
+    '<button class="btn" style="width:100%;margin-top:18px" onclick="saveWord()">'+t('word.save')+'</button>'+
+    '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
+      '<span class="sl" style="color:#c9553f">'+t('word.del')+'</span></button>';
+}
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw;
-  var sy=phCut(wPh(w));
+  wEdit={seq:wPh(w).slice(), mns:wMns(w).slice(), pos:w.pos};
   document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div>'+
-    '<div class="whd"><span class="whw">'+esc(wOut(w.hw))+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto" onclick="sayWords([\''+esc(w.hw)+'\'])">'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    '<div class="wsub">'+esc(phIpa(wPh(w)))+'</div>'+
-    '<div class="wsub2">'+esc(wordSyl(w))+'</div>'+
-    '<div class="sec" style="margin:18px 0 8px">'+t('word.syl')+'</div>'+
-    '<div class="sylrow">'+sy.map(function(p){
-      var q=p.on.concat(p.nu).concat(p.co);
-      return '<span class="sy"><span class="sya">'+esc(q.join(''))+'</span>'+
-        '<span class="syi">'+esc(rd(phRoman(q)))+'</span>'+
-        '<button class="syk" onclick="sayPh('+esc(JSON.stringify(q))+')" aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button></span>';
-    }).join('<span class="sysep">\u00b7</span>')+'</div>'+
-    '<div class="note" style="margin-top:8px">'+tn('word.note', sy.length, esc(langDef().label), esc(langDef().rdName))+'</div>'+
-    '<div class="sec" style="margin:20px 0 8px">'+t('word.edit')+'</div>'+
-    '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="w-mn" value="'+esc(w.mn||'')+'" placeholder="'+esc(t('word.mn.ph'))+'"></div>'+
-    '<div class="field"><label>'+t('f.pos')+'</label><select id="w-pos">'+
-    POS.map(function(p){return '<option value="'+p+'"'+(p===w.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
-    '</select></div></div>'+
-    '<button class="btn" style="width:100%;margin-top:4px" onclick="saveWord()">'+t('word.save')+'</button>'+
-    '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
-      '<span class="sl" style="color:#c9553f">'+t('word.del')+'</span></button>';
+    '<div class="grip"></div><div id="wd-body">'+wdBodyHTML()+'</div>';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
 }
+function wdKey(sym){ wEdit.seq.push(sym); wdPaint(); }
+function wdBack(){ wEdit.seq.pop(); wdPaint(); }
+function wdAddMn(){
+  var e=document.getElementById('wd-mn'); if(!e) return;
+  var v=String(e.value||'').trim();
+  if(!v) return;
+  if(wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
+  wdPaint();
+}
+function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
+/* A derived word starts as its parent and is changed from there, which is what
+   deriving is. It is a real entry, so it can itself be derived from. */
+function wdDerive(){
+  var w=findWord(openHw); if(!w) return;
+  closeSheet({target:{id:'sbg'}});
+  openAdd(w.hw);
+}
 function saveWord(){
   var w=findWord(openHw); if(!w) return;
-  w.mn=document.getElementById('w-mn').value.trim();
-  w.pos=document.getElementById('w-pos').value;
-  save(); closeSheet(); cands=[]; render(); toast(t('toast.saved', w.hw));
+  var hw=wEdit.seq.join('');
+  if(!wEdit.seq.length){ toast(t('toast.hw2')); return; }
+  var clash=findWord(hw);
+  if(clash && clash!==w){ toast(t('toast.dup')); return; }
+  var old=String(w.hw);
+  w.ph=wEdit.seq.slice(); w.hw=hw;
+  w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
+  w.pos=wEdit.pos;
+  /* A word that changes is still the same word, so everything pointing at it
+     is told its new name rather than left pointing at one that is gone. */
+  if(hw!==old){
+    WORDS.forEach(function(x){ if(x.from===old) x.from=hw; });
+    LINES.forEach(function(l){ l.ws=l.ws.map(function(x){ return x===old? hw : x; }); });
+    comp=comp.map(function(x){ return x===old? hw : x; });
+  }
+  save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.saved', hw));
 }
 function delWord(){
   var w=findWord(openHw); if(!w) return;
   if(!confirm(t('confirm.del', w.hw))) return;
+  var gone=String(w.hw);
   WORDS=WORDS.filter(function(x){return x!==w;});
-  save(); closeSheet(); cands=[]; render(); toast(t('toast.deleted', w.hw));
+  /* its children keep their own life; they simply stop pointing at a parent
+     that is not there */
+  WORDS.forEach(function(x){ if(x.from===gone) delete x.from; });
+  LINES=LINES.filter(function(l){ return l.ws.indexOf(gone)<0; });
+  comp=comp.filter(function(x){ return x!==gone; });
+  save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.deleted', gone));
 }
 
 /* The CSV header stays English in every locale, so a file written on one
    device imports cleanly on another. The part of speech comes back through
    posKey(), which accepts a key or a label in any supported language. */
 function exportCSV(){
-  var csv='spelling,meaning,pos,ipa,reading\n'+WORDS.map(function(w){
-    return [w.hw,w.mn,w.pos,phIpa(wPh(w)),wPh(w).join(' ')].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
+  var csv='spelling,meaning,pos,ipa,sounds,from\n'+WORDS.map(function(w){
+    return [w.hw,wMns(w).join(' / '),w.pos,phIpa(wPh(w)),wPh(w).join(' '),w.from||''].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
   }).join('\n');
   try{
     var b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a');

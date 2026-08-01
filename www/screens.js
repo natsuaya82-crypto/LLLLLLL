@@ -521,7 +521,7 @@ function vHome(){
           : last? '<button class="recent" onclick="go(\'words\')">'+
             '<div class="rh">'+t('home.recent.word')+'</div>'+
             '<div class="line">'+esc(wOut(last.hw))+'</div>'+
-            '<div class="tr">'+(last.mn? esc(last.mn)+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')
+            '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')
     )+
     '</div>'+
 
@@ -550,7 +550,7 @@ function vWords(){
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
     '</div><div class="body">'+body+'</div>'+
-    '<div class="barfix"><button class="btn ghost" onclick="go(\'make\')">'+t('toc.make')+'</button>'+
+    '<div class="barfix"><button class="btn ghost" onclick="go(\'make\')">'+t('words.coin')+'</button>'+
     '<button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
 }
 function setQ(v){
@@ -560,16 +560,25 @@ function setQ(v){
     .filter(function(w){ return !q || srcKey(w).indexOf(q.toLowerCase())>=0; });
   el.innerHTML = items.length? groupHTML(items) : '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>';
 }
+/* One entry. A word derived from another is drawn under it and set in from
+   the margin, because that is what it is: the same word, further on. */
+function entryHTML(w, kid){
+  return '<button class="entry'+(kid?' kid':'')+'" onclick="openWord(\''+esc(w.hw)+'\')">'+
+    '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
+    '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
+    '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
+    '<div class="mn">'+esc(wMn(w))+'</div></button>';
+}
 function groupHTML(items){
-  var out='', cur='';
+  var out='', cur='', shown={};
+  items.forEach(function(w){ shown[String(w.hw)]=1; });
   items.forEach(function(w){
+    /* a derived word is listed under its parent, not twice */
+    if(w.from && shown[w.from]) return;
     var L=String(w.hw).charAt(0).toUpperCase();
     if(L!==cur){ cur=L; out+='<div class="gl">'+esc(cur)+'</div>'; }
-    out+='<button class="entry" onclick="openWord(\''+esc(w.hw)+'\')">'+
-      '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
-      '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
-      '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-      '<div class="mn">'+esc(w.mn)+'</div></button>';
+    out+=entryHTML(w, false);
+    wKids(w).forEach(function(k){ if(shown[String(k.hw)]) out+=entryHTML(k, true); });
   });
   return out;
 }

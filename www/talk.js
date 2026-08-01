@@ -49,7 +49,7 @@ function tkAnyBy(pos){ return tkBy(pos, null); }
 function tkReady(){ return !!(tkAnyBy('n') && tkAnyBy('v')); }
 
 /* One word of a line: the sounds it is made of, and what it means. */
-function tkPart(w){ return {s:wPh(w), g:w.mn||String(w.hw)}; }
+function tkPart(w){ return {s:wPh(w), g:wMn(w)||String(w.hw)}; }
 /* A describing word goes where the grammar says it goes. */
 function tkWith(list, noun, adj){
   if(!adj){ list.push(tkPart(noun)); return; }
@@ -206,7 +206,7 @@ function tkPal(){
   return list.map(function(w){
     return '<button class="pw" onclick="tkAdd(\''+esc(w.hw)+'\')">'+
       '<span class="pww">'+esc(wOut(w.hw))+'</span>'+
-      (w.mn? '<span class="pwm">'+esc(w.mn)+'</span>' : '<span class="pwm dim">'+t('sent.nomean')+'</span>')+
+      (wMn(w)? '<span class="pwm">'+esc(wMn(w))+'</span>' : '<span class="pwm dim">'+t('sent.nomean')+'</span>')+
       '</button>';
   }).join('');
 }

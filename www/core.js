@@ -241,6 +241,38 @@ function phGuess(hw){
   }
   return out;
 }
+/* ---- A word can mean more than one thing ------------------------------
+   It carried a single string, so the second meaning of a word had nowhere to
+   go and people wrote "river; road" into the one box, which no screen can
+   read back. It carries a list now. Words written before this are given a
+   list of one, once. */
+function wMns(w){
+  if(w && w.mns && w.mns.length) return w.mns;
+  return (w && w.mn) ? [w.mn] : [];
+}
+function wMn(w){ return wMns(w).join(' / '); }
+function migrateMn(){
+  var changed=false;
+  WORDS.forEach(function(w){
+    if(!w.mns){ w.mns = w.mn? [String(w.mn)] : []; changed=true; }
+  });
+  if(changed) save();
+}
+/* ---- and a word can come from another word ----------------------------
+   A derived word is a word in its own right -- it has its own sounds, its own
+   meanings, its own part of speech -- that remembers what it was built from.
+   The dictionary shows it under its parent instead of filed away from it. */
+function wKids(w){
+  var out=[], i, k=String(w.hw);
+  for(i=0;i<WORDS.length;i++) if(WORDS[i].from===k) out.push(WORDS[i]);
+  return out;
+}
+function wParent(w){
+  if(!w || !w.from) return null;
+  var i;
+  for(i=0;i<WORDS.length;i++) if(String(WORDS[i].hw)===w.from) return WORDS[i];
+  return null;
+}
 function migratePh(){
   var changed=false;
   WORDS.forEach(function(w){

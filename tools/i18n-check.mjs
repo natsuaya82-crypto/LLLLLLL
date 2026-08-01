@@ -371,7 +371,7 @@ const R = await pg.evaluate(() => {
          whole string, so they are asked for here by hand. */
       ['S','O','V'].forEach(k => t('gram.role.' + k));
       GFEATS.forEach(f => { t('gram.' + f.id + '.t'); t('gram.' + f.id + '.d');
-        f.opts.forEach(o => t('gram.how.' + o)); });
+        f.opts.forEach(o => gOptLab(f.id, o)); });
       /* the seed words went with the old onboarding: */ // OB_SEEDS.forEach(s => seedLabel(s.k !== undefined ? s.k : s));
     } catch (e) { out.miss.push(c + ' a label lookup threw: ' + e.message); }
 

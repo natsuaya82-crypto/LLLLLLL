@@ -317,6 +317,19 @@ function vGlyph(){
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
+    /* A letter could be drawn and could be changed, and there was no way to
+       take it back off a sound -- nor to reach the borrowed characters from
+       here, which meant the two ways of writing a sound lived on two screens.
+       Both are here now, where the sound's letter is decided. */
+    '<div class="sec">'+t('glyph.other')+'</div>'+
+    (chOf(GE.r)
+      ? '<div class="gborrow"><span class="gbch">'+esc(chOf(GE.r))+'</span>'+
+        '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
+        '<button class="gbx" onclick="clearCh(\''+esc(GE.r)+'\')">'+t('ch.clear')+'</button></div>'
+      : '<button class="btn ghost" style="width:100%" onclick="openPick(\''+esc(GE.r)+'\')">'+t('glyph.borrow')+'</button>')+
+    ((SCRIPT.g[GE.r] && SCRIPT.g[GE.r].length) || chOf(GE.r)
+      ? '<button class="set" style="margin-top:14px;border-bottom:none" onclick="geDelete()">'+
+        '<span class="sl" style="color:#c9553f">'+t('glyph.del')+'</span></button>' : '')+
     '</div>'+
     '<div class="barfix">'+
       '<button class="btn ghost" onclick="go(\'sound\')">'+t('glyph.cancel')+'</button>'+
@@ -510,6 +523,23 @@ function geSave(){
   var r=GE.r; GE=null;
   go('sound');
   toast(t('glyph.saved', r));
+}
+
+/* Taking the letter off a sound entirely -- the drawing and the borrowed
+   character both. The sound stays in the language; only its letter goes. */
+function geDelete(){
+  if(!GE) return;
+  var r=GE.r;
+  if(!confirm(t('glyph.del.ask'))) return;
+  delete SCRIPT.g[r];
+  delete scriptMap()[r];
+  var i=SCRIPT.extra.indexOf(r);
+  if(i>=0) SCRIPT.extra.splice(i,1);
+  save();
+  installScriptFont();
+  GE=null;
+  go('sound');
+  toast(t('glyph.deleted', r));
 }
 
 /* ---- canvas ------------------------------------------------------------- */
@@ -1145,5 +1175,6 @@ function render(){
   if(route==='sound') geTiles();
 }
 migratePh();
+migrateMn();
 installScriptFont();
 render();

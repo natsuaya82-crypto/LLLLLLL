@@ -14,7 +14,7 @@ function rd(word){ return approx().word(word); }        /* reading for this lang
    ("respelling is an approximation") but wants a capital as a button. */
 function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
 /* Search hits on any of spelling, meaning, reading or IPA */
-function srcKey(w){ return (w.hw+' '+(w.mn||'')+' '+phIpa(wPh(w))).toLowerCase(); }
+function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))).toLowerCase(); }
 
 /* ---- How a word is read out ------------------------------------------
    A word is a sequence of IPA symbols, so its exact reading is that sequence
