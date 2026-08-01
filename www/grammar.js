@@ -26,7 +26,7 @@ function orderDef(){
   if(ORDERS.indexOf(o)<0) o='SOV';
   return {id:o, seq:o.split('')};
 }
-function setOrder(id){ SET.order=id; save(); render(); }
+function setOrder(id){ SET.order=id; save(); stMarkSet('order'); render(); }
 
 /* Each decision, and what it can be set to.
    `none` means the language does not mark this at all, which is a decision
@@ -56,7 +56,7 @@ function gNeedsPiece(id){ var h=gHow(id); return h!=='none' && h!=='redup'; }
 function gPieceOK(id){ return !gNeedsPiece(id) || gPhOf(id).length>0; }
 function gSet(id, how){
   var f=gFeat(id);
-  f.how=how; save(); render();
+  f.how=how; save(); stMarkSet(id); render();
   /* Choosing "suffix" without saying which suffix is half a decision, so the
      keyboard opens on the spot rather than waiting to be found. */
   if(gNeedsPiece(id) && !f.ph.length) openGramPiece(id);
@@ -214,49 +214,4 @@ function gOrderDemo(){
   var ws=orderDef().seq.map(function(k){ return wPh(slot[k]); });
   var gl=orderDef().seq.map(function(k){ return wMn(slot[k])||slot[k].hw; }).join(' ');
   return '<div class="gdemo">'+gSide(t('gram.pair.line'), ws, gl)+'</div>';
-}
-
-function vGram(){
-  var f=findings();
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
-    '<div class="chap"><span class="rn">III</span><span class="ct">'+esc(t('toc.gram'))+'</span>'+
-    '<span class="cn">'+gramCount()+'</span></div></div>'+
-    '<div class="body">'+
-    '<div class="note" style="margin-bottom:8px">'+t('gram.note')+'</div>'+
-
-    '<div class="sec">'+t('gram.order.t')+'</div>'+
-    '<div class="note">'+t('gram.order.d')+'</div>'+
-    '<div class="segs">'+ORDERS.map(function(o){
-      return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
-    }).join('')+'</div>'+
-    gOrderLine()+gOrderDemo()+
-
-    GFEATS.map(function(x){
-      return '<div class="sec">'+t('gram.'+x.id+'.t')+'</div>'+
-        '<div class="note">'+t('gram.'+x.id+'.d')+'</div>'+
-        '<div class="segs">'+x.opts.map(function(o){
-          return '<button class="seg'+(o===gHow(x.id)?' on':'')+'" onclick="gSet(\''+x.id+'\',\''+o+'\')">'+
-            esc(gOptLab(x.id, o))+'</button>';
-        }).join('')+'</div>'+
-        (gNeedsPiece(x.id)
-          ? '<button class="gpiece'+(gPhOf(x.id).length?' has':'')+'" onclick="openGramPiece(\''+x.id+'\')">'+
-            '<span class="gpl">'+t('gram.piece')+'</span>'+
-            '<span class="gpv">'+(gPhOf(x.id).length? esc(phIpa(gPhOf(x.id))) : esc(t('gram.piece.none')))+'</span>'+
-            ICON_GO+'</button>'
-          : '')+
-        gDemo(x.id);
-    }).join('')+
-
-    /* What the dictionary happens to do. A description, kept, and put where a
-       description belongs: under the decisions rather than in place of them. */
-    '<div class="sec">'+t('gram.seen')+'</div>'+
-    '<div class="note" style="margin-bottom:6px">'+tn('rules.intro', WORDS.length)+'</div>'+
-    (f.length? f.map(function(x){
-      return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
-        '<div class="bar"><i style="width:'+Math.round(Math.max(.12,Math.min(1,x.rate))*100)+'%"></i></div></div>';
-    }).join('') : '<div class="empty"><div class="eb">'+t('rules.empty.t')+'</div><div class="es">'+t('rules.empty.s')+'</div></div>')+
-    (nextHint()? '<div class="note" style="margin-top:18px">'+t('rules.next', esc(nextHint()))+'</div>':'')+
-    '<div class="note" style="margin-top:22px">'+t('gram.footer')+'</div>'+
-    '</div></div>';
 }

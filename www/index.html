@@ -595,6 +595,47 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
 .nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
 
+/* ---------- the grammar, in stages ----------
+   A list of stages, each with what it still needs; then one stage open, with
+   its words as rows you can fill on the spot. */
+.stlist{display:flex;flex-direction:column;gap:0}
+.strow{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:14px 2px;
+  border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;
+  text-align:left;cursor:pointer}
+/* The title takes the room that is left and wraps if it has to; the number,
+   the count and the chevron never shrink. Fixed-width titles pushed the count
+   off a 320px screen in the languages with longer words. */
+.strow .stn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);
+  font-size:1.05rem;min-width:20px;flex:0 0 auto}
+.strow .stt{font-size:.98rem;flex:1 1 auto;min-width:0;line-height:1.4}
+.strow .lead{display:none}
+.strow .stv{font-size:.78rem;color:var(--txm);flex:0 0 auto;white-space:nowrap}
+.strow .go{color:var(--txm);flex:0 0 auto}
+.strow.done .stt{color:var(--txs)}
+.strow.done .stv{color:var(--gold)}
+.sth{font-family:'Cinzel',Georgia,serif;font-size:1.35rem;margin:6px 0 8px}
+.stslots{display:flex;flex-direction:column;gap:0}
+.stslot{display:flex;align-items:baseline;gap:10px;width:100%;min-height:56px;padding:13px 2px;
+  border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;
+  text-align:left;cursor:pointer;flex-wrap:wrap}
+.stslot .psm{font-size:.95rem;flex:0 0 auto;min-width:78px}
+.stslot .psw{font-family:'Cinzel',Georgia,serif;font-size:1.06rem;color:var(--gold)}
+.stslot .psi{font-family:ui-monospace,Menlo,monospace;font-size:.66rem;color:var(--txm)}
+.stslot .psn{font-size:.76rem;color:var(--txm)}
+.stslot .go{margin-left:auto;color:var(--txm);flex:0 0 auto;align-self:center}
+.stslot.has .psn{display:none}
+
+/* ---------- what the app proposes ----------
+   The inventory it drew, laid out so every sound in it can be heard on its
+   own before the whole thing is accepted. */
+.obheard{margin-top:14px;padding:14px;border:1px solid var(--goldln);border-radius:12px;
+  background:var(--goldsf)}
+.obheard .obhl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.obhs{display:flex;flex-wrap:wrap;gap:6px}
+.obhb{min-width:44px;min-height:44px;border:1px solid var(--goldln);border-radius:8px;
+  background:var(--pane);color:var(--tx);font-size:1.02rem;padding:8px 11px}
+.obhb:active{opacity:.55}
+
 /* ---------- a word, opened ----------
    Its meanings are a list, because a word can mean more than one thing, and
    the words derived from it are listed under it as the entries they are. */
@@ -741,7 +782,9 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 <script src="screens.js"></script>
 <script src="sentences.js"></script>
 <script src="wsys.js"></script>
+<script src="assist.js"></script>
 <script src="grammar.js"></script>
+<script src="phases.js"></script>
 <script src="notes.js"></script>
 <script src="talk.js"></script>
 <script src="settings.js"></script>

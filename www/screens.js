@@ -212,27 +212,57 @@ function obWsysHTML(){
 }
 
 /* ---- step 3, the sounds -----------------------------------------------
-   A starter inventory, not the whole IPA: enough to build words with, small
-   enough to read on a phone without scrolling. The whole chart is one tap
-   away afterwards, on a screen built for it. */
-var OB_SND=['a','e','i','o','u','p','t','k','m','n','s','r','l','h'];
-function obPickSnd(p){
-  sayOne(p);
+   It used to be fourteen buttons and no help: pick the sounds your language
+   is made of, from a list somebody chose for you, with no way to hear any of
+   them. Nobody who has not made a language before can answer that.
+
+   So the app proposes. You say what the language should sound like -- soft,
+   hard, flowing, breathy, plain -- and it draws an inventory out of that
+   region of the chart, says the whole thing out loud, and waits. Take it, ask
+   for another, or open the chart and do it yourself. */
+var obPick2='';
+function obChar(id){
+  obPick2=id;
+  SET.snd=asSounds(id, 12);
+  save();
+  asSay(SET.snd);
+  render();
+}
+function obAgain(){ if(obPick2) obChar(obPick2); }
+function obHearSnd(p){ sayOne(p); }
+function obDropSnd(p){
   var a=addedSnd(), i=a.indexOf(p);
-  if(i>=0) a.splice(i,1); else a.push(p);
-  save(); render();
+  if(i>=0){ a.splice(i,1); save(); render(); }
 }
 function obSndsHTML(){
   var have=addedSnd();
-  return '<div class="mid">'+
-    '<h2>'+t('ob.snds.h')+'</h2>'+
+  return '<div class="mid obleft">'+
+    '<h2 class="obh">'+t('ob.snds.h')+'</h2>'+
     '<p class="obsub">'+t('ob.snds.sub')+'</p>'+
-    '<div class="obsndgrid">'+OB_SND.map(function(p){
-      return '<button class="obsnd'+(have.indexOf(p)>=0?' on':'')+'" onclick="obPickSnd(\''+p+'\')">'+esc(p)+'</button>';
+    '<div class="obscripts one">'+AS_CHARS.map(function(c){
+      return '<button class="obsrow'+(obPick2===c.id?' on':'')+'" onclick="obChar(\''+c.id+'\')">'+
+        '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
+        '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
     }).join('')+'</div>'+
-    '<div class="mini obnote">'+tn('ob.snds.n', have.length)+'</div></div>'+
+    (have.length
+      ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
+        '<div class="obhs">'+have.map(function(p){
+          return '<button class="obhb" onclick="obHearSnd(\''+esc(p)+'\')">'+esc(p)+'</button>'; }).join('')+'</div>'+
+        '<div class="wctl2"><button onclick="asSay(addedSnd())">'+ICON_PLAY+t('as.hear')+'</button>'+
+        (obPick2? '<button onclick="obAgain()">'+t('as.again')+'</button>':'')+'</div></div>'
+      : '')+
+    '</div>'+
     '<div class="obfoot"><button class="btn" onclick="obToDraw()"'+(have.length?'':' disabled')+'>'+t('ob.next')+'</button>'+
+    '<button class="obskip" onclick="obOwnSnd()">'+t('as.own')+'</button>'+
     '<div class="mini obnote">'+t('ob.snds.note')+'</div></div>';
+}
+/* The whole chart, for somebody who would rather choose it themselves. It is
+   the sounds chapter, which is built for exactly this, so onboarding ends
+   here and the chapter opens. */
+function obOwnSnd(){
+  if(!langName) langName=ob.name||t('lang.default');
+  SET.done=true; save();
+  route='sound'; RENDERED=null; render(); window.scrollTo(0,0);
 }
 function obToDraw(){
   if(!addedSnd().length){ toast(t('ob.snds.need')); return; }
@@ -520,7 +550,9 @@ function vHome(){
       return u.length? (sndDrawn()+' / '+u.length) : '—';
     })()],
     ['II', t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
-    ['III',t('toc.gram'), 'gram',  tn('count.gram', gramCount())],
+    /* how many stages are finished, out of how many there are -- the same
+       shape the sounds row uses, because it is the same kind of fact */
+    ['III',t('toc.gram'), 'gram',  stCount()+' / '+stAll().length],
     ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
     ['V',  t('toc.notes'),'notes', NOTES.length? tn('count.notes', NOTES.length):'—'],
     ['VI', t('toc.talk'), 'talk',  TALK.length? tn('count.turns', TALK.length):'—']

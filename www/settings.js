@@ -100,6 +100,7 @@ function wipe(){
   if(!confirm(t('confirm.wipe'))) return;
   WORDS=[]; LINES=[]; langName=''; comp=[]; compSel=-1; cands=[]; SUG=[];
   NOTES=[]; TALK=[]; tcomp=[];
+  STG={done:{}, notes:{}, set:{}, extra:[]}; saveStg(); gOpen=null;
   SCRIPT={g:{}, extra:[]};
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
@@ -111,6 +112,7 @@ function wipe(){
     localStorage.removeItem(LS_W); localStorage.removeItem(LS_L);
     localStorage.removeItem(LS_N); localStorage.removeItem(LS_G);
     localStorage.removeItem(LS_NT); localStorage.removeItem(LS_TK);
+    localStorage.removeItem(LS_STG);
   }catch(e){}
   save();
   ob={step:0, mode:'draw', pick:'', strokes:null, ch:'', snd:''};
