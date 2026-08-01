@@ -64,9 +64,12 @@ var GPEN={width:60, angleDeg:0, contrast:1.0};
    800-2*40 = 720 divides evenly by 4, 6, 9 and 10, so the dots stay integers at
    5, 7, 10 and 11. */
 var GGRID={n:11, inset:40};
-/* A stroke drawn in one go can be long, but not unbounded: past this it is
-   a scribble, and every point is a corner the font writer has to round. */
-var GE_MAXPTS=24;
+/* A stroke drawn in one go can be long, but not unbounded. It used to stop
+   at 24, and past that the drag stopped adding points and only dragged the
+   last one about -- which is why a long stroke cut off halfway through. The
+   thinning afterwards is what decides how many points a shape really keeps,
+   so this only has to be higher than any real stroke. */
+var GE_MAXPTS=160;
 function gstep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
 function gsnap(v){
   var s=gstep(), i=Math.round((v - GGRID.inset) / s);
@@ -456,7 +459,7 @@ function geShape(st){
      cannot do -- it would have to throw away real bends to reach the same
      smoothness. Then thin what is left. */
   if(raw) p=geSmooth(p, 2);
-  var s = raw ? geSimplify(p, step*0.28) : geSimplify(p, step*0.6);
+  var s = raw ? geSimplify(p, step*0.18) : geSimplify(p, step*0.45);
   if(!raw && s.length>=4) s=geSimplify(p, step*0.3);
   delete st.k; delete st.closed;
   if(!GE.round){ st.pts=s; return; }
@@ -504,7 +507,9 @@ function geUndo(){
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
 function geSave(){
-  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
+  /* A single dot is a stroke half-placed, not a shape. It does not get
+     saved, and it does not get left behind for the next press to trip on. */
+  var keep=GE.st.filter(function(s){ return s.pts.length>1; });
   if(keep.length) SCRIPT.g[GE.r]=keep; else delete SCRIPT.g[GE.r];
   var i=SCRIPT.extra.indexOf(GE.r);
   if(i>=0 && keep.length) SCRIPT.extra.splice(i,1);   /* it is a real letter now */
@@ -774,7 +779,10 @@ function geDown(ev){
        after the first came out welded to the last whether that was wanted or
        not. Two strokes that share a dot still meet -- the drawing decides
        that, by where it is drawn, and not the editor. */
-    if(GE.seal || geFull(st)){
+    /* A stroke ends when the finger lifts from a drag, or when the dot just
+       placed is tapped again. Not at three points -- taps go on adding to the
+       same curve for as long as they are wanted. */
+    if(GE.seal || (st && (st.closed || st.k==='o'))){
       GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false;
     }
     st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1;
@@ -854,10 +862,7 @@ function geUp(ev){
   if(GE.hit && !GE.moved){
     var st=GE.st[GE.si];
     if(st && GE.again){
-      st.pts.splice(GE.pi,1);
-      if(st.k==='o' && st.pts.length<2) delete st.k;
-      if(!st.pts.length){ GE.st.splice(GE.si,1); GE.si=GE.st.length-1; }
-      GE.pi=-1;
+      /* handled after this block: it finishes the stroke */
     }else if(st && GE.pi===0 && st.pts.length>2){
       if(st.closed) delete st.closed; else st.closed=true;
       GE.pi=-1;
@@ -875,19 +880,29 @@ function geUp(ev){
      the ends of a circle, so it is always a half circle bowing the same way
      whichever end was tapped first -- measured, both directions, 50% of the
      chord every time. The third tap is what makes it a curve anyone chose. */
+  /* Tapping builds too, and needs no mode. Two dots are a line. A third and
+     any after it bend that line through themselves, in the order they were
+     put. Round is for the finger, not for this. */
   if(!GE.moved && !GE.hit){
     var tst=GE.st[GE.si];
-    if(tst && !GE.round && tst.pts.length>=2){ GE.seal=true; GE.pi=-1; }
-    else if(tst && GE.round && tst.pts.length>=3){
-      var t0=tst.pts[0], t1=tst.pts[1], t2=tst.pts[2];
-      tst.pts=[[t0[0],t0[1]], [t2[0],t2[1]], [t1[0],t1[1]]];
-      tst.k='o'; GE.seal=true; GE.pi=-1;
+    if(tst && tst.pts.length>=3){
+      delete tst.k;
+      for(var ti=1; ti<tst.pts.length-1; ti++) tst.pts[ti][2]='c';
     }
   }
+  /* Tapping the dot just placed says the stroke is finished. It used to
+     delete that dot; undo does that now, and a whole stroke at a time. */
+  if(GE.hit && !GE.moved && GE.again){ GE.seal=true; GE.pi=-1; }
   GE.hit=false; GE.again=false;
+  /* One press of undo takes back one stroke, not one tap. A stroke being
+     built by tapping is one thing to the person building it, so only its
+     first tap files a snapshot; the taps that extend it do not. */
   if(GE.pre && GE.pre!==JSON.stringify(GE.st)){
-    GE.undo.push(GE.pre);
-    if(GE.undo.length>60) GE.undo.shift();
+    var only=GE.st[GE.si], fresh=!!(only && only.pts.length<=1);
+    if(fresh || GE.moved || GE.hit){
+      GE.undo.push(GE.pre);
+      if(GE.undo.length>60) GE.undo.shift();
+    }
   }
   GE.pre=null;
   geDraw(); geTools();
