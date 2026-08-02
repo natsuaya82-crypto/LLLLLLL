@@ -284,6 +284,12 @@ var ICON_GO='<svg class="ic go" viewBox="0 0 24 24" width="13" height="13" fill=
 var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M6 3.5h12v17l-6-3.4-6 3.4Z"/><path d="M9 8h6M9 11.5h4"/></svg>';
+/* An actual plus. ICON_PLUS above is a four-pointed star and always was: it
+   marks what the paid plan adds. Putting it on "one more consonant" would say
+   the sound costs money. */
+var ICON_ADD='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M12 5v14M5 12h14"/></svg>';
 function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function gbtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=fn+'()';
@@ -554,6 +560,10 @@ function geSave(){
   installScriptFont();
   var r=GE.r; GE=null;
   go('sound');
+  /* The shape and the sound are the same thing seen twice. Drawing one in
+     silence leaves them unconnected, so the letter says itself as it is put
+     away -- and only if there is a letter, since deleting one should not. */
+  if(keep.length) sayOne(r);
   toast(t('glyph.saved', r));
 }
 

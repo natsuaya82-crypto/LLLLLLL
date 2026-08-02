@@ -239,13 +239,29 @@ function obDropSnd(p){
    consonants, which is the single most useful thing about an inventory and
    the thing that decides what a syllable can look like. Consonants first,
    vowels under them, each row labelled -- the same two words the chart uses,
-   so nothing new has to be learned to read it. */
-function obSndRow(lab, list){
-  if(!list.length) return '';
+   so nothing new has to be learned to read it.
+
+   Each row ends with the way to lengthen it: one more consonant, one more
+   vowel, drawn from the same character of sound and said as it arrives. And
+   each sound carries the way to take it back out, because a proposal you can
+   only accept whole is not a proposal. */
+function obSndRow(lab, list, kind){
   return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
     '<div class="obhs">'+list.map(function(p){
-      return '<button class="obhb" onclick="obHearSnd(\''+esc(p)+'\')">'+esc(p)+'</button>';
-    }).join('')+'</div></div>';
+      return '<span class="obhp"><button class="obhb" onclick="obHearSnd(\''+esc(p)+'\')">'+esc(p)+'</button>'+
+        '<button class="obhx" onclick="obDropSnd(\''+esc(p)+'\')" aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
+    }).join('')+
+    '<button class="obhadd" onclick="obMore(\''+kind+'\')">'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
+    '</div></div>';
+}
+/* One more sound of the kind asked for. It is said on arrival -- an inventory
+   is a set of sounds, so a sound that joins it silently has not really been
+   heard about. */
+function obMore(kind){
+  var have=addedSnd(), s=asMore(obPick2||AS_CHARS[0].id, kind, have);
+  if(!s){ toast(t('as.more.none')); return; }
+  SET.snd=asOrder(have.concat([s]));
+  save(); sayOne(s); render();
 }
 function obSndsHTML(){
   var have=addedSnd(), cs=[], vs=[], i;
@@ -260,9 +276,12 @@ function obSndsHTML(){
         '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
         '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
     }).join('')+'</div>'+
-    (have.length
+    /* the panel stays once a character has been chosen, even if every sound
+       in it has been taken back out -- otherwise dropping the last one takes
+       away the buttons that would put another back */
+    ((have.length || obPick2)
       ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
-        obSndRow(t('ipa.cons'), cs)+obSndRow(t('ipa.vows'), vs)+
+        obSndRow(t('ipa.cons'), cs, 'c')+obSndRow(t('ipa.vows'), vs, 'v')+
         '<div class="wctl2"><button onclick="asSay(addedSnd())">'+ICON_PLAY+t('as.hear')+'</button>'+
         (obPick2? '<button onclick="obAgain()">'+t('as.again')+'</button>':'')+'</div></div>'
       : '')+
@@ -296,13 +315,14 @@ function obDone(){
   SCRIPT.g[ob.snd]=JSON.parse(JSON.stringify(keep));
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
+  sayOne(ob.snd);
   obFinish();
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
 function obTakeCh(ch){
   scriptMap()[ob.snd]=ch; SET.showScript=true;
-  save(); obFinish();
+  save(); sayOne(ob.snd); obFinish();
 }
 function obSkipDraw(){ obFinish(); }
 
@@ -630,6 +650,10 @@ function vWords(){
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)"></div>'+
+    (items.length>1
+      ? '<button class="wsay'+(vxRunning()?' on':'')+'" onclick="wordsSay()">'+
+        (vxRunning()? ICON_CROSS+t('words.stop') : ICON_PLAY+t('words.sayall'))+'</button>'
+      : '')+
     '</div><div class="body">'+body+'</div>'+
     '<div class="barfix"><button class="btn ghost" onclick="go(\'make\')">'+t('words.coin')+'</button>'+
     '<button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
@@ -643,12 +667,28 @@ function setQ(v){
 }
 /* One entry. A word derived from another is drawn under it and set in from
    the margin, because that is what it is: the same word, further on. */
+/* The word says itself when you touch it. The whole row used to open the
+   editor, so the only way to hear a word you had made was to open it, listen,
+   go back, open the next -- which tells you about one word and nothing about
+   a language. Listening is the thing you do dozens of times on this screen
+   and editing is the thing you do once, so listening gets the row and editing
+   gets the chevron at its edge, which is what a chevron has always meant. */
 function entryHTML(w, kid){
-  return '<button class="entry'+(kid?' kid':'')+'" onclick="openWord(\''+esc(w.hw)+'\')">'+
+  return '<div class="entry'+(kid?' kid':'')+'">'+
+    '<button class="ebody" onclick="sayPh('+esc(JSON.stringify(wPh(w)))+')" aria-label="'+esc(t('f.listen'))+'">'+
     '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
-    '<div class="mn">'+esc(wMn(w))+'</div></button>';
+    '<div class="mn">'+esc(wMn(w))+'</div></button>'+
+    '<button class="eopen" onclick="openWord(\''+esc(w.hw)+'\')" aria-label="'+esc(t('words.open'))+'">'+ICON_GO+'</button></div>';
+}
+/* Every word on screen, said straight through. What is on screen and not what
+   is in the dictionary: if a search has narrowed it to the verbs, the verbs
+   are what you meant. Pressing it again stops it. */
+function wordsSay(){
+  var items=WORDS.slice().sort(function(a,b){return String(a.hw).localeCompare(String(b.hw));})
+    .filter(function(w){ return !q || srcKey(w).indexOf(q.toLowerCase())>=0; });
+  saySeqs(items.map(function(w){ return wPh(w); }));
 }
 function groupHTML(items){
   var out='', cur='', shown={};

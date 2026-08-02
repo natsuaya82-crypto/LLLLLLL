@@ -186,8 +186,21 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .search{display:flex;align-items:center;gap:10px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0 2px}
 .search input{flex:1;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
 .gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
-.entry{padding:13px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
-.entry:active{opacity:.55}
+/* An entry is two controls now -- the word, which says itself, and the
+   chevron, which opens it -- so the row is a container and the padding and
+   the rule under it stay on the row while the touch targets sit inside. */
+.entry{display:flex;align-items:center;gap:4px;padding:13px 2px;
+       border-bottom:1px solid var(--line);width:100%;color:var(--tx)}
+.ebody{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;color:inherit;font-family:inherit}
+.ebody:active{opacity:.55}
+.eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+       display:inline-flex;align-items:center;justify-content:center}
+.eopen:active{color:var(--gold)}
+/* Every word on screen, said straight through. */
+.wsay{display:inline-flex;align-items:center;gap:7px;margin-top:10px;min-height:40px;
+      padding:8px 14px;border:1px solid var(--line);border-radius:10px;
+      background:none;color:var(--txs);font-family:inherit;font-size:.8rem}
+.wsay.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 .hwrow{display:flex;align-items:baseline;gap:10px}
 .hw{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
 .rd{font-size:.72rem;color:var(--txm)}
@@ -672,9 +685,23 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .obhr{margin-bottom:10px}
 .obhr:last-child{margin-bottom:0}
 .obhk{display:block;font-size:.66rem;letter-spacing:.06em;color:var(--txm);margin-bottom:5px}
-.obhb{min-width:44px;min-height:44px;border:1px solid var(--goldln);border-radius:8px;
-  background:var(--pane);color:var(--tx);font-size:1.02rem;padding:8px 11px}
+/* A sound and the way to take it back out, joined as one block so it reads
+   as one thing. The sound says itself; the cross removes it. Both are full
+   height, because a target you have to aim at is a target you will miss. */
+.obhp{display:inline-flex;align-items:stretch;border:1px solid var(--goldln);border-radius:8px;
+  background:var(--pane);overflow:hidden}
+.obhb{min-width:40px;min-height:44px;border:0;border-radius:0;
+  background:none;color:var(--tx);font-size:1.02rem;padding:8px 4px 8px 11px}
 .obhb:active{opacity:.55}
+.obhx{min-width:34px;min-height:44px;border:0;background:none;color:var(--txm);
+  display:inline-flex;align-items:center;justify-content:center;padding:0 8px 0 4px}
+.obhx:active{color:var(--gold)}
+/* And the way to lengthen the row. Dashed, because it is not one of the
+   sounds -- it is the space where the next one would go. */
+.obhadd{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 12px;
+  border:1px dashed var(--line);border-radius:8px;background:none;
+  color:var(--txs);font-family:inherit;font-size:.76rem}
+.obhadd:active{border-color:var(--goldln);color:var(--gold)}
 
 /* ---------- a word, opened ----------
    Its meanings are a list, because a word can mean more than one thing, and

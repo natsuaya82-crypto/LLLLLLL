@@ -199,7 +199,10 @@ function sugPick(i){
    guessed at. The keys are the language's own inventory: what is not in it
    cannot go in a word, which is the whole point of having chosen it. */
 var addSeq=[];
-function addPh(sym){ addSeq.push(sym); addPaint(); }
+/* A key says its own sound. Pressing one used to be silent, which in an app
+   where a word IS its sounds meant you assembled a word you could not hear
+   until you had finished it and found the play button. */
+function addPh(sym){ sayOne(sym); addSeq.push(sym); addPaint(); }
 function addBack(){ addSeq.pop(); addPaint(); }
 function addPaint(){
   var w=document.getElementById('f-seq'), r=document.getElementById('f-pv'),
@@ -372,7 +375,7 @@ function openWord(hw){
   document.getElementById('sheet').classList.add('on');
   phkMount();
 }
-function wdKey(sym){ wEdit.seq.push(sym); wdPaint(); }
+function wdKey(sym){ sayOne(sym); wEdit.seq.push(sym); wdPaint(); }
 function wdBack(){ wEdit.seq.pop(); wdPaint(); }
 function wdAddMn(){
   var e=document.getElementById('wd-mn'); if(!e) return;

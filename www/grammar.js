@@ -161,7 +161,7 @@ function gDemo(id){
    written with. Nothing outside the inventory can be used, which is the whole
    reason for having chosen one. */
 var gPhFor='', gPhSeq=[];
-function gPhKey(sym){ gPhSeq.push(sym); gPhPaint(); }
+function gPhKey(sym){ sayOne(sym); gPhSeq.push(sym); gPhPaint(); }
 function gPhBack(){ gPhSeq.pop(); gPhPaint(); }
 function gPhPaint(){
   var s=document.getElementById('gp-seq'), r=document.getElementById('gp-ipa'),

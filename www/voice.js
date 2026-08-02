@@ -267,3 +267,57 @@ function sayPh(seq, ctx, f0){
 }
 /* One sound on its own, for the chart. */
 function sayOne(sym){ return sayPh([sym]); }
+
+/* ---- a run of words, one after another --------------------------------
+   Hearing a language is not hearing a word. Until now the only way to hear
+   what you had built was to open one word, listen, go back, open the next --
+   which tells you about a word and nothing about a language. This says a
+   list straight through, with a breath between each one so they stay
+   separate words rather than becoming one long one.
+
+   It stops by throwing the audio context away, because every sound in the
+   run has already been scheduled on it and there is nothing else that stops
+   a sound the browser has been told to make in four seconds' time. */
+var VXRUN=0;
+function vxRunning(){ return !!VXRUN; }
+function sayStop(){
+  VXRUN=0;
+  if(VX){ try{ VX.close(); }catch(e){} VX=null; }
+  VXEND=0;
+  if(typeof render==='function') render();
+}
+function saySeqs(list, gap){
+  var g=(gap==null? 0.22 : gap);
+  if(!list || !list.length) return 0;
+  if(VXRUN){ sayStop(); return 0; }
+  var x=vxCtx();
+  if(!x){ if(typeof toast==='function') toast(t('voice.none')); return 0; }
+  function run(){
+    /* vxPlay hands back how far from now its word ends, and every word after
+       the first starts where the last one stopped -- so adding those up
+       counts the same seconds many times over. The clock is the only thing
+       that knows: the length of the run is where VXEND lands, less now. */
+    var i, t0=(x.currentTime||0), secs;
+    VXEND=0;
+    for(i=0;i<list.length;i++){
+      if(!list[i] || !list[i].length) continue;
+      vxPlay(x, list[i]);
+      VXEND += g;
+    }
+    secs=Math.max(0, VXEND-t0);
+    /* the button has to go back to saying "listen" on its own, because the
+       run ends without anything else happening */
+    VXRUN=setTimeout(function(){ VXRUN=0; if(typeof render==='function') render(); },
+                     Math.round(secs*1000)+120);
+    if(typeof render==='function') render();
+  }
+  if(x.state==='suspended' && x.resume){
+    try{
+      var pr=x.resume();
+      if(pr && pr.then){ pr.then(run); return 0; }
+    }catch(e){}
+    if(x.state==='suspended'){ setTimeout(run, 60); return 0; }
+  }
+  run();
+  return 0;
+}

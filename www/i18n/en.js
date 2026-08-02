@@ -205,6 +205,10 @@ defLang('en', (function(){
       'as.hear'         : "Hear them all",
       'as.again'        : "Another set",
       'as.own'          : "Choose them myself",
+      'as.drop'         : 'Take this sound out',
+      'as.more.c'       : 'One more consonant',
+      'as.more.v'       : 'One more vowel',
+      'as.more.none'    : 'No more sounds to add.',
       /* the grammar, in stages */
       'stg.list.d'       : "A grammar is built in stages. Each one holds the words it needs, the decisions it carries, and a line you can say once it is done.",
       'stg.words'        : "Words this stage needs",
@@ -335,6 +339,9 @@ defLang('en', (function(){
       'home.write'      : "Write a word",
       /* words */
       'words.search'    : "Search spelling, meaning, reading",
+      'words.open'      : 'Open this word',
+      'words.sayall'    : 'Hear them all',
+      'words.stop'      : 'Stop',
       'words.nomatch'   : "Nothing found",
       'words.empty'     : "No words yet",
       /* sound */

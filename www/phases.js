@@ -111,7 +111,7 @@ function stCount(){
 
 /* ---- the sheet where a slot's word is made ---------------------------- */
 var stFor=null, stSlot='', stSeq=[], stSug=[];
-function stTap(sym){ stSeq.push(sym); stPaint(); }
+function stTap(sym){ sayOne(sym); stSeq.push(sym); stPaint(); }
 function stBack(){ stSeq.pop(); stPaint(); }
 function stPaint(){
   var s=document.getElementById('st-seq'), r=document.getElementById('st-ipa'),
