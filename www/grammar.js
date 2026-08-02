@@ -189,12 +189,12 @@ function openGramPiece(id){
       '<button onclick="if(gPhSeq.length)sayPh(gPhSeq)">'+ICON_PLAY+t('f.listen')+'</button></div>'+
     (mine.length
       ? '<div class="sec">'+t('add.ph')+'</div><div class="phkeys">'+mine.map(function(x){
-          return '<button class="phk" onclick="gPhKey(\''+x+'\')">'+esc(x)+'</button>'; }).join('')+'</div>'+
+          return phkHTML(x, 'gPhKey(\''+x+'\')'); }).join('')+'</div>'+
         '<button class="btn" style="width:100%;margin-top:14px" onclick="gPhSave()">'+t('gram.piece.set')+'</button>'
       : '<div class="note">'+t('add.ph.none')+'</div>'+
         '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="closeSheet({target:{id:\'sbg\'}});go(\'sound\')">'+
         esc(t('toc.sound'))+'</button>'));
-  gPhPaint();
+  gPhPaint(); phkMount();
 }
 
 /* ---- the screen -------------------------------------------------------- */

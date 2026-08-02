@@ -593,6 +593,8 @@ defLang('zh', (function(){
       "make.lock.t"      : "一次要来一整批",
       "make.lock.d"      : "“三十个关于海的词”——它们就来了",
       "make.reroll"      : "再抽一次",
+      "make.pick"        : "选这个",
+      "make.one"         : "重新生成这个",
       "make.commit"      : "加入我选的",
       "toast.noselect"   : "还没有选中任何词",
       "toast.cap"        : "免费方案最多存 {0} 个词",

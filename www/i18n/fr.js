@@ -636,6 +636,8 @@ defLang('fr', (function(){
       "make.lock.t"      : "Demander tout un lot d’un coup",
       "make.lock.d"      : "« Trente mots autour de la mer » — et ils arrivent",
       "make.reroll"      : "Tirer encore",
+      "make.pick"        : "Choisir celui-ci",
+      "make.one"         : "Regénérer celui-ci",
       "make.commit"      : "Ajouter ceux que j’ai choisis",
       "toast.noselect"   : "Rien n’est sélectionné",
       "toast.cap"        : "La formule Free contient {0} mots",

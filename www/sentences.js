@@ -97,8 +97,9 @@ function vSent(){
   var ws=comp.map(findWord).filter(Boolean);
   var L = ws.length>=2 ? linked(ws.map(function(w){return w.hw;})) : null;
   var chk=orderCheck();
-  var head='<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  var head='<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">IV</span><span class="ct">'+esc(t('toc.sent'))+'</span>'+
     '<span class="cn">'+LINES.length+'</span></div></div><div class="body">';
 
@@ -209,8 +210,9 @@ function vMake(){
   if(!cands.length) buildCands(8);
   var rule=A.finalRule[mkPos];
   var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'words\')">'+ICON_BACK+t('toc.words')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'words\')">'+ICON_BACK+t('toc.words')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.make'))+'</span></div></div>'+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
@@ -221,10 +223,10 @@ function vMake(){
       : t('make.norule', posLabel(mkPos)))+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
-        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')" aria-label="'+esc(t('make.commit'))+'">'+
+        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')" aria-label="'+esc(t('make.pick'))+'">'+
           '<span class="ckb">'+(c.on?ICON_TICK:'')+'</span></button>'+
         '<span class="cw">'+esc(candHw(c))+'</span><span class="crd">'+esc(readSeq(c.q))+'</span>'+
-        '<button class="rr" onclick="reroll('+i+')" aria-label="'+esc(t('make.reroll'))+'">'+ICON_AGAIN+'</button>'+
+        '<button class="rr" onclick="reroll('+i+')" aria-label="'+esc(t('make.one'))+'">'+ICON_AGAIN+'</button>'+
         '<button class="rr" onclick="sayPh('+esc(JSON.stringify(c.q))+')" aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+

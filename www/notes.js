@@ -77,8 +77,9 @@ function vNotes(){
       (noteBody(NOTES[i])? '<span class="ntb">'+esc(noteBody(NOTES[i]))+'</span>' : '')+
       '</button>';
   }
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">V</span><span class="ct">'+esc(t('toc.notes'))+'</span>'+
     '<span class="cn">'+NOTES.length+'</span></div></div>'+
     '<div class="body">'+

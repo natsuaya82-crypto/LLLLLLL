@@ -577,6 +577,8 @@ defLang('de', (function(){
       "make.lock.t"      : "Einen ganzen Satz auf einmal erbitten",
       "make.lock.d"      : "„Dreißig Wörter über das Meer“ — und sie kommen",
       "make.reroll"      : "Neu ziehen",
+      "make.pick"        : "Dieses auswählen",
+      "make.one"         : "Dieses neu ziehen",
       "make.commit"      : "Ausgewählte hinzufügen",
       "toast.noselect"   : "Nichts ausgewählt",
       "toast.cap"        : "Der Tarif Free fasst {0} Wörter",

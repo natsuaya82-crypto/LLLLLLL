@@ -763,6 +763,8 @@ defLang('ko', (function(){
       "make.lock.t"      : "한 번에 한 묶음 부탁하기",
       "make.lock.d"      : "“바다에 관한 낱말 서른 개” — 그러면 도착해요",
       "make.reroll"      : "다시 뽑기",
+      "make.pick"        : "이 단어 고르기",
+      "make.one"         : "이 단어 다시 뽑기",
       "make.commit"      : "고른 것 담기",
       "toast.noselect"   : "고른 것이 없어요",
       "toast.cap"        : "무료 요금제는 낱말 {0}개까지 담을 수 있어요",

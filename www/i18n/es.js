@@ -548,6 +548,8 @@ defLang('es', (function(){
       "make.lock.t"      : "Pedir un lote entero de una vez",
       "make.lock.d"      : "«Treinta palabras sobre el mar»: y llegan",
       "make.reroll"      : "Sacar otras",
+      "make.pick"        : "Elegir esta",
+      "make.one"         : "Volver a generar esta",
       "make.commit"      : "Añadir las que elegí",
       "toast.noselect"   : "No hay nada seleccionado",
       "toast.cap"        : "El plan Free admite {0} palabras",

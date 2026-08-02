@@ -308,8 +308,9 @@ function vGlyph(){
   var st=GE.st[GE.si], p=(st && GE.pi>=0)? st.pts[GE.pi] : null;
   var pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'sound\')">'+ICON_BACK+esc(t('toc.sound'))+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'sound\')">'+ICON_BACK+esc(t('toc.sound'))+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(GE.r)+'</span>'+
     '<span class="cn">'+pts+'</span></div></div>'+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
@@ -476,13 +477,45 @@ function geShape(st){
      loop kept as eight filleted corners wobbles by a tenth of its width. */
   if(ring && s.length>=3){
     st.closed=true; st.k='o';
-    st.pts=[p[0].slice(0,2), p[Math.floor(n/3)].slice(0,2), p[Math.floor(2*n/3)].slice(0,2)];
+    st.pts=geLattice([p[0].slice(0,2), p[Math.floor(n/3)].slice(0,2), p[Math.floor(2*n/3)].slice(0,2)]);
+    if(st.pts.length<3){ st.pts=[p[0].slice(0,2), p[Math.floor(n/3)].slice(0,2), p[Math.floor(2*n/3)].slice(0,2)]; }
     return;
   }
   /* One clean bow, and the round primitive draws a true arc through it. */
-  if(s.length===3){ st.pts=geEnds(s, raw); st.k='o'; return; }
+  if(s.length===3){ st.pts=geLattice(s); st.k='o'; return; }
   for(i=1;i<s.length-1;i++) s[i][2]='c';
-  st.pts=geEnds(s, raw);
+  st.pts=geLattice(s);
+}
+/* Every point onto the lattice, not just the two ends.
+   The old rule was that a snapped path is a staircase, so the traced shape
+   was kept where the finger put it. That is true of a path snapped BEFORE it
+   is thinned -- a hundred points snapped to eleven columns is a staircase.
+   Thinned first, what is left is four or five points, and putting those on
+   the lattice is not a staircase, it is the drawing lining up: a traced curve
+   passes through the dots it was traced over instead of a hand's-width to one
+   side of them. The corners between them are still rounded, so it stays a
+   curve; it just stops being a wobbly one.
+
+   Points that land on the same dot collapse into one -- two names for one
+   place is not a bend. */
+function geLattice(p){
+  var out=[], i, x, y, last=null;
+  for(i=0;i<p.length;i++){
+    x=gsnap(p[i][0]); y=gsnap(p[i][1]);
+    if(last && last[0]===x && last[1]===y){
+      /* keep the roundness if either copy had it */
+      if(p[i][2]==='c') last[2]='c';
+      continue;
+    }
+    last = (p[i][2]==='c') ? [x,y,'c'] : [x,y];
+    out.push(last);
+  }
+  /* a shape that collapsed to one dot is not a shape */
+  if(out.length<2) return p;
+  /* the ends are never rounded: a corner needs something on both sides */
+  if(out[0][2]) out[0]=[out[0][0], out[0][1]];
+  if(out[out.length-1][2]) out[out.length-1]=[out[out.length-1][0], out[out.length-1][1]];
+  return out;
 }
 function geCircle(){
   geMark();
@@ -1085,6 +1118,42 @@ function geDraw(){
     });
   });
 }
+/* ---- the keyboard a word is typed on ----------------------------------
+   It used to be a row of IPA symbols, which is the right thing to store and
+   the wrong thing to look at: by the time somebody is writing words they have
+   drawn letters, and the letter is what they think in. So a key shows the
+   letter -- the one drawn, or the one borrowed -- with the symbol small
+   underneath, because the symbol is still what the sound IS.
+
+   A syllabary and a logography have no letter for a single sound, so their
+   keys stay symbols. There is nothing else they could honestly show. */
+function phkHTML(sym, call){
+  var st=wsStrokes(sym), ch=chOf(sym), face='';
+  if(st && st.length) face='<canvas class="pkc" data-r="'+esc(sym)+'"></canvas>';
+  else if(ch) face='<span class="pkb">'+esc(ch)+'</span>';
+  return '<button class="phk'+(face?' hasg':'')+'" onclick="'+call+'">'+face+
+    '<span class="pks">'+esc(sym)+'</span></button>';
+}
+function phkMount(){
+  var els=document.querySelectorAll('canvas.pkc'), i;
+  for(i=0;i<els.length;i++){
+    var c=els[i], r=c.getAttribute('data-r'), st=wsStrokes(r);
+    if(!st || !st.length) continue;
+    var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
+    var S=Math.max(40, Math.round((box.width||34)*dpr));
+    c.width=S; c.height=S;
+    var x=c.getContext('2d'), k=S/800, cont=[];
+    try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){}
+    x.fillStyle=cssVar('--tx');
+    cont.forEach(function(poly){
+      if(poly.length<3) return;
+      x.beginPath();
+      poly.forEach(function(pt,j){ if(j) x.lineTo(pt[0]*k,pt[1]*k); else x.moveTo(pt[0]*k,pt[1]*k); });
+      x.closePath(); x.fill();
+    });
+  }
+}
+
 /* The tiles on the letter grid are the same ink again, scaled down. */
 function geTiles(){
   var els=document.querySelectorAll('.gtile canvas.tc');

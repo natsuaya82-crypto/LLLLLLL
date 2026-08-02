@@ -498,6 +498,8 @@ defLang('en', (function(){
       'make.lock.t'     : "Ask for a whole set at once",
       'make.lock.d'     : "“Thirty words about the sea” — and they arrive",
       'make.reroll'     : "Draw again",
+      'make.pick'       : "Pick this one",
+      'make.one'        : "Draw this one again",
       'make.commit'     : "Add the ones I picked",
       'toast.noselect'  : "Nothing is selected",
       'toast.cap'       : "The free plan holds {0} words",

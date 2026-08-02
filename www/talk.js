@@ -227,8 +227,9 @@ function tkMarks(){
 }
 
 function vTalk(){
-  var head='<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  var head='<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">VI</span><span class="ct">'+esc(t('toc.talk'))+'</span>'+
     '<span class="cn">'+TALK.length+'</span></div></div><div class="body">';
 

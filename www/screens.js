@@ -234,8 +234,24 @@ function obDropSnd(p){
   var a=addedSnd(), i=a.indexOf(p);
   if(i>=0){ a.splice(i,1); save(); render(); }
 }
+/* The proposal, shown in two rows. A flat list of twelve symbols is a wall:
+   there is no way to see that the language has five vowels and seven
+   consonants, which is the single most useful thing about an inventory and
+   the thing that decides what a syllable can look like. Consonants first,
+   vowels under them, each row labelled -- the same two words the chart uses,
+   so nothing new has to be learned to read it. */
+function obSndRow(lab, list){
+  if(!list.length) return '';
+  return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
+    '<div class="obhs">'+list.map(function(p){
+      return '<button class="obhb" onclick="obHearSnd(\''+esc(p)+'\')">'+esc(p)+'</button>';
+    }).join('')+'</div></div>';
+}
 function obSndsHTML(){
-  var have=addedSnd();
+  var have=addedSnd(), cs=[], vs=[], i;
+  for(i=0;i<have.length;i++){
+    if(ipaIsVowel(have[i])) vs.push(have[i]); else cs.push(have[i]);
+  }
   return '<div class="mid obleft">'+
     '<h2 class="obh">'+t('ob.snds.h')+'</h2>'+
     '<p class="obsub">'+t('ob.snds.sub')+'</p>'+
@@ -246,8 +262,7 @@ function obSndsHTML(){
     }).join('')+'</div>'+
     (have.length
       ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
-        '<div class="obhs">'+have.map(function(p){
-          return '<button class="obhb" onclick="obHearSnd(\''+esc(p)+'\')">'+esc(p)+'</button>'; }).join('')+'</div>'+
+        obSndRow(t('ipa.cons'), cs)+obSndRow(t('ipa.vows'), vs)+
         '<div class="wctl2"><button onclick="asSay(addedSnd())">'+ICON_PLAY+t('as.hear')+'</button>'+
         (obPick2? '<button onclick="obAgain()">'+t('as.again')+'</button>':'')+'</div></div>'
       : '')+
@@ -608,8 +623,9 @@ function vWords(){
   });
   var body = items.length ? groupHTML(items)
     : '<div class="empty"><div class="eb">'+(q? t('words.nomatch') : t('words.empty'))+'</div></div>';
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
     '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
@@ -742,8 +758,9 @@ function ipaVowTable(){
 
 function vSound(){
   var mine=addedSnd(), units=wsUnits(), bases=wsBases(), marks=wsMarks();
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
     '<span class="cn">'+mine.length+'</span></div></div>'+
     '<div class="body">'+

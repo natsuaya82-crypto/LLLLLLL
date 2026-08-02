@@ -56,8 +56,17 @@ button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obsnd,.obescb{touch-action:man
    and faded back, which on a phone reads as a shudder. The animation is now
    attached to the arrival, not to the redraw: render() marks the app fresh
    only when the screen it is drawing is a different one. */
-#app[data-fresh="1"] .view{animation:vin .3s cubic-bezier(.2,.8,.2,1)}
-@keyframes vin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+/* Opacity only, and no transform -- this is not taste, it is the fix for a
+   bug that has been in the app since the animation was written. A transform
+   on an element makes it the containing block for every position:fixed thing
+   inside it. The bottom button bar is position:fixed and lives inside .view,
+   so for the third of a second the slide was running, the bar was positioned
+   against the whole page instead of against the screen: it sat wherever the
+   content ended, and then snapped to the bottom of the screen when the
+   animation finished. That snap is the "the button is somewhere else and then
+   drops down the moment it opens" that has been reported three times. */
+#app[data-fresh="1"] .view{animation:vin .26s ease-out}
+@keyframes vin{from{opacity:0}to{opacity:1}}
 button{font-family:inherit;cursor:pointer}
 
 /* ---------- shared parts ---------- */
@@ -77,9 +86,25 @@ button{font-family:inherit;cursor:pointer}
         display:inline-flex;align-items:center;justify-content:center}
 .seqdel:disabled{opacity:.25}
 .phkeys{display:flex;flex-wrap:wrap;gap:6px}
-.phk{min-width:48px;min-height:48px;border:1px solid var(--line);background:var(--sf);
+.phk{min-width:56px;min-height:62px;border:1px solid var(--line);background:var(--sf);
      border-radius:9px;color:var(--tx);font-size:1.05rem;padding:8px 10px}
 .phk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* A key with a letter on it. The letter you drew is the face of the key --
+   large, and the only thing on it that is yours -- and the sound symbol sits
+   small underneath so two letters that look alike can still be told apart.
+   The other way round, with the symbol large, the keyboard was a chart of the
+   IPA and your own letters were a footnote on it, which is backwards for
+   somebody who has just spent an hour drawing them. */
+.phk.hasg{display:flex;flex-direction:column;align-items:center;justify-content:center;
+          gap:3px;padding:6px 8px}
+canvas.pkc{width:34px;height:34px;display:block}
+.phk .pkb{font-size:1.5rem;line-height:34px;height:34px;display:block;color:var(--tx)}
+/* A sound with no letter yet has nothing else to show, so the symbol is the
+   face of the key at full size. Once a letter exists the symbol steps back
+   and becomes the small line under it. */
+.phk .pks{font-size:1.05rem;color:var(--tx);line-height:1}
+.phk.hasg .pks{font-size:.62rem;color:var(--txm);letter-spacing:.02em}
+.phk.hasg:active .pks{color:var(--gold)}
 /* --- the IPA chart ---------------------------------------------------- */
 .ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
 .ipascroll table{width:674px}
@@ -108,7 +133,16 @@ button{font-family:inherit;cursor:pointer}
 .set.signin .sl svg{width:18px;height:18px;flex:0 0 auto}
 .back{background:none;border:none;color:var(--txs);font-size:.88rem;padding:10px 0;display:inline-flex;align-items:center;gap:6px;min-height:44px}
 .back:active{opacity:.5}
-.chead{padding:calc(env(safe-area-inset-top,0) + 14px) 24px 6px}
+/* The back button is a bar of its own, directly under .view, so it can stick
+   to the top of the screen for the whole of the scroll instead of leaving with
+   the first swipe. Its parent has to be the tall element -- a sticky thing
+   only sticks inside its own parent's box -- which is why it is no longer
+   inside .chead. */
+.navtop{position:sticky;top:0;z-index:30;background:var(--bg);
+        padding:calc(env(safe-area-inset-top,0) + 8px) 24px 0}
+.navtop:after{content:"";display:block;height:8px;
+              background:linear-gradient(180deg,var(--bg),transparent)}
+.chead{padding:0 24px 6px}
 .chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
 .chap .rn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.3rem}
 .chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
@@ -632,6 +666,12 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
   background:var(--goldsf)}
 .obheard .obhl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
 .obhs{display:flex;flex-wrap:wrap;gap:6px}
+/* Consonants and vowels on their own rows, each with its name to the side.
+   The name is quiet and small: it is there to be read once, and after that it
+   is only a marker for which row is which. */
+.obhr{margin-bottom:10px}
+.obhr:last-child{margin-bottom:0}
+.obhk{display:block;font-size:.66rem;letter-spacing:.06em;color:var(--txm);margin-bottom:5px}
 .obhb{min-width:44px;min-height:44px;border:1px solid var(--goldln);border-radius:8px;
   background:var(--pane);color:var(--tx);font-size:1.02rem;padding:8px 11px}
 .obhb:active{opacity:.55}

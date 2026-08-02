@@ -163,14 +163,14 @@ function openSlot(pid, k){
     '<div id="st-sug">'+stSugHTML()+'</div>'+
     (mine.length
       ? '<div class="sec">'+t('add.ph')+'</div><div class="phkeys">'+mine.map(function(x){
-          return '<button class="phk" onclick="stTap(\''+x+'\')">'+esc(x)+'</button>'; }).join('')+'</div>'
+          return phkHTML(x, 'stTap(\''+x+'\')'); }).join('')+'</div>'
       : '<div class="note">'+t('add.ph.none')+'</div>')+
     '<button class="btn" id="st-keep" style="width:100%;margin-top:14px" onclick="stKeep()" disabled>'+t('stg.keep')+'</button>'+
     (had? '<button class="set" style="margin-top:10px;border-bottom:none" onclick="stDrop()">'+
       '<span class="sl" style="color:#c9553f">'+t('stg.drop')+'</span></button>' : '');
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
-  stPaint();
+  stPaint(); phkMount();
 }
 function stKeep(){
   if(!stFor || !stSeq.length) return;
@@ -370,8 +370,9 @@ function stFeatHTML(id){
 
 function vGram(){
   var p = gOpen? stBy(gOpen) : null;
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="rn">III</span><span class="ct">'+esc(t('toc.gram'))+'</span>'+
     '<span class="cn">'+stCount()+' / '+stAll().length+'</span></div></div>'+
     '<div class="body">'+

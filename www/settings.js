@@ -11,8 +11,9 @@ function vSettings(){
      sounds; the Latin beside it is only what the respelling engines read. */
   var sseq=WORDS.length? wPh(WORDS[0]) : phGuess('aelin');
   var sample=sseq.join(''), srom=phRoman(sseq);
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="ct">'+t('set.title')+'</span></div></div>'+
     '<div class="body">'+
     '<div class="sec">'+t('set.look')+'</div>'+
@@ -124,8 +125,9 @@ function wipe(){
    12. Plans
    ========================================================================= */
 function vPlans(){
-  return '<div class="view"><div class="chead">'+
-    '<button class="back nb" onclick="go(\'settings\')">'+ICON_BACK+t('nav.settings')+'</button>'+
+  return '<div class="view">'+
+    '<div class="navtop">'+'<button class="back nb" onclick="go(\'settings\')">'+ICON_BACK+t('nav.settings')+'</button>'+'</div>'+
+    '<div class="chead">'+
     '<div class="chap"><span class="ct">'+t('plans.title')+'</span></div></div>'+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:16px">'+t('plans.intro')+'</div>'+
@@ -214,7 +216,7 @@ function addKeys(){
       esc(t('toc.sound'))+'</button>';
   }
   return '<div class="phkeys">'+mine.map(function(x){
-    return '<button class="phk" onclick="addPh(\''+x+'\')">'+esc(x)+'</button>';
+    return phkHTML(x, 'addPh(\''+x+'\')');
   }).join('')+'</div>';
 }
 /* Written from nothing, or derived from a word that already exists -- in
@@ -244,7 +246,7 @@ function openAdd(from){
     '';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
-  addPaint();
+  addPaint(); phkMount();
 }
 function closeSheet(e){
   if(e && e.target && e.target.id!=='sbg') return;
@@ -303,7 +305,7 @@ function wdKeysHTML(){
   var mine=addedSnd();
   if(!mine.length) return '<div class="note">'+t('add.ph.none')+'</div>';
   return '<div class="phkeys">'+mine.map(function(x){
-    return '<button class="phk" onclick="wdKey(\''+x+'\')">'+esc(x)+'</button>'; }).join('')+'</div>';
+    return phkHTML(x, 'wdKey(\''+x+'\')'); }).join('')+'</div>';
 }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
@@ -330,7 +332,7 @@ function wdKidsHTML(){
 }
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
-  b.innerHTML=wdBodyHTML();
+  b.innerHTML=wdBodyHTML(); phkMount();
 }
 function wdBodyHTML(){
   var seq=wEdit.seq;
@@ -368,6 +370,7 @@ function openWord(hw){
     '<div class="grip"></div><div id="wd-body">'+wdBodyHTML()+'</div>';
   document.getElementById('sbg').classList.add('on');
   document.getElementById('sheet').classList.add('on');
+  phkMount();
 }
 function wdKey(sym){ wEdit.seq.push(sym); wdPaint(); }
 function wdBack(){ wEdit.seq.pop(); wdPaint(); }

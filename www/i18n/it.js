@@ -589,6 +589,8 @@ defLang('it', (function(){
       "make.lock.t"      : "Chiedi un intero gruppo in una volta",
       "make.lock.d"      : "«Trenta parole sul mare» — e arrivano",
       "make.reroll"      : "Estrai ancora",
+      "make.pick"        : "Scegli questa",
+      "make.one"         : "Rigenera questa",
       "make.commit"      : "Aggiungi quelle scelte",
       "toast.noselect"   : "Non hai selezionato nulla",
       "toast.cap"        : "Il piano Free tiene {0} parole",

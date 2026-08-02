@@ -214,27 +214,56 @@ function vxOne(x, out, sym, t0, f0){
 }
 
 /* Say a sequence of phonemes. No language is consulted, because none is
-   involved: the sounds were chosen, and this is what they sound like. */
+   involved: the sounds were chosen, and this is what they sound like.
+
+   Two things made a tap go silent, both of them about time.
+
+   iOS suspends an audio context whenever it feels like it -- after a pause,
+   after a phone call, after the app goes to the background. Resuming is
+   asynchronous: the clock is not running yet when resume() returns. Everything
+   scheduled in that moment was scheduled into the past, and the past does not
+   play. So a resume now waits for the context to actually be running before
+   anything is laid onto its timeline.
+
+   And two taps close together were writing over each other, because both
+   started from the same "now". Each utterance now begins after the last one
+   has finished, so pressing twice quickly says the sound twice instead of
+   once and a half. */
+var VXEND=0;
+function vxPlay(x, seq, f0){
+  var out=x.createGain();
+  out.gain.value=0.9;
+  out.connect(x.destination);
+  var now=(x.currentTime||0);
+  var t=Math.max(now+0.03, VXEND), i, d, base=f0||118;
+  for(i=0;i<seq.length;i++){
+    d=vxOne(x, out, seq[i], t, base);
+    /* sounds run into each other rather than sitting in a row */
+    t += d*0.86;
+  }
+  if(!x.startRendering) VXEND=t+0.04;
+  return t-now;
+}
 function sayPh(seq, ctx, f0){
   var x=ctx||vxCtx();
   /* A tap that makes no sound and says nothing is indistinguishable from a
      broken app, so the one case where sound is genuinely impossible says so. */
   if(!x){ if(!ctx && typeof toast==='function') toast(t('voice.none')); return 0; }
   if(!seq || !seq.length) return 0;
-  /* A page that has not been touched yet has its audio held; the first tap
-     is what lets it go. An offline context is rendering rather than playing
-     and must not be woken -- asking throws. */
-  try{ if(x.state==='suspended' && x.resume && !x.startRendering) x.resume(); }catch(e){}
-  var out=x.createGain();
-  out.gain.value=0.9;
-  out.connect(x.destination);
-  var t=(x.currentTime||0)+0.03, i, d, base=f0||118;
-  for(i=0;i<seq.length;i++){
-    d=vxOne(x, out, seq[i], t, base);
-    /* sounds run into each other rather than sitting in a row */
-    t += d*0.86;
+  /* An offline context is rendering rather than playing and must not be
+     woken -- asking throws. */
+  if(!ctx && x.state==='suspended' && x.resume){
+    try{
+      var pr=x.resume();
+      if(pr && pr.then){ pr.then(function(){ VXEND=0; vxPlay(x, seq, f0); }); return 0; }
+    }catch(e){}
+    /* an old WebKit resumes without a promise; give the clock a moment */
+    if(x.state==='suspended'){
+      setTimeout(function(){ VXEND=0; vxPlay(x, seq, f0); }, 60);
+      return 0;
+    }
   }
-  return t-((x.currentTime||0)+0.03);
+  return vxPlay(x, seq, f0);
 }
 /* One sound on its own, for the chart. */
 function sayOne(sym){ return sayPh([sym]); }

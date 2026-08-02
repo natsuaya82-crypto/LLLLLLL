@@ -595,6 +595,8 @@ defLang('pt', (function(){
       "make.lock.t"      : "Peça um conjunto inteiro de uma vez",
       "make.lock.d"      : "“Trinta palavras sobre o mar” — e elas chegam",
       "make.reroll"      : "Sortear de novo",
+      "make.pick"        : "Escolher esta",
+      "make.one"         : "Gerar esta de novo",
       "make.commit"      : "Adicionar as que escolhi",
       "toast.noselect"   : "Nada selecionado",
       "toast.cap"        : "O plano Free guarda {0} palavras",
