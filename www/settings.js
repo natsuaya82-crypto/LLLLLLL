@@ -320,6 +320,35 @@ function wdMnsHTML(){
       'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddMn();}">'+
     '<button class="btn ghost" onclick="wdAddMn()">'+t('word.mn.add')+'</button></div>';
 }
+/* ---- what else a dictionary entry holds -------------------------------
+   Spelling, reading, part of speech, senses and where the word came from
+   were all here. The two a real entry has that this one did not are a note
+   -- where a word came from in your head, which sense is the older one, what
+   it must never be confused with -- and a used-in line. The second one is
+   already in the app: the sentences chapter knows which words each line was
+   built out of. It was simply never shown on the word. */
+function wdUsesHTML(){
+  var w=findWord(openHw); if(!w) return '';
+  var used=[], i;
+  for(i=0;i<LINES.length;i++)
+    if(LINES[i].ws && LINES[i].ws.indexOf(w.hw)>=0) used.push({i:i, l:LINES[i]});
+  if(!used.length) return '<div class="note">'+t('word.uses.none')+'</div>';
+  return '<div class="ntlist">'+used.map(function(u){
+    var seq=[], j, x;
+    for(j=0;j<u.l.ws.length;j++){ x=findWord(u.l.ws[j]); if(x) seq=seq.concat(wPh(x)); }
+    return '<div class="useln"><span class="usew">'+esc(u.l.ws.map(wOut).join(' '))+'</span>'+
+      /* the first sense only. A gloss under a line is a reminder of what the
+         line says, and three senses of one word in it stops being that */
+      '<span class="usem">'+esc(u.l.ws.map(function(h){
+        var y=findWord(h); return (y&&wMns(y)[0])||h; }).join(' '))+'</span>'+
+      '<button class="usep" onclick="sayPh('+esc(JSON.stringify(seq))+')" aria-label="'+
+        esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
+  }).join('')+'</div>';
+}
+function wdNoteHTML(){
+  return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
+    '" oninput="wEdit.nt=this.value">'+esc(wEdit.nt||'')+'</textarea></div>';
+}
 function wdKidsHTML(){
   var w=findWord(openHw); if(!w) return '';
   var kids=wKids(w), par=wParent(w);
@@ -361,6 +390,13 @@ function wdBodyHTML(){
     '<div class="sec">'+t('word.family')+'</div>'+
     wdKidsHTML()+
 
+    '<div class="sec">'+ICON_LINE+t('word.uses')+'</div>'+
+    wdUsesHTML()+
+
+    '<div class="sec">'+t('word.note')+'</div>'+
+    '<div class="note" style="margin-bottom:8px">'+t('word.note.d')+'</div>'+
+    wdNoteHTML()+
+
     '<button class="btn" style="width:100%;margin-top:18px" onclick="saveWord()">'+t('word.save')+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
       '<span class="sl" style="color:#c9553f">'+t('word.del')+'</span></button>';
@@ -368,7 +404,7 @@ function wdBodyHTML(){
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw;
-  wEdit={seq:wPh(w).slice(), mns:wMns(w).slice(), pos:w.pos};
+  wEdit={seq:wPh(w).slice(), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
   document.getElementById('sheet').innerHTML=
     '<div class="grip"></div><div id="wd-body">'+wdBodyHTML()+'</div>';
   document.getElementById('sbg').classList.add('on');
@@ -402,6 +438,9 @@ function saveWord(){
   w.ph=wEdit.seq.slice(); w.hw=hw;
   w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
   w.pos=wEdit.pos;
+  /* An empty note is no note, not an empty one: a key that is always there
+     and always blank ends up in every export and every backup. */
+  if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
   /* A word that changes is still the same word, so everything pointing at it
      is told its new name rather than left pointing at one that is gone. */
   if(hw!==old){

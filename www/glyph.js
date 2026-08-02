@@ -290,6 +290,15 @@ var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="
 var ICON_ADD='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M12 5v14M5 12h14"/></svg>';
+/* Two arrows facing opposite ways: the order the list is in, and that there
+   is another one. */
+var ICON_SORT='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M7 4v16M7 4 4 7.5M7 4l3 3.5"/><path d="M17 20V4M17 20l3-3.5M17 20l-3-3.5"/></svg>';
+/* A page with a line of writing on it: a sentence this word is used in. */
+var ICON_LINE='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 6h16M4 11h16M4 16h9"/></svg>';
 function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function gbtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=fn+'()';

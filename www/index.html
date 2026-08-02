@@ -196,11 +196,48 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
        display:inline-flex;align-items:center;justify-content:center}
 .eopen:active{color:var(--gold)}
-/* Every word on screen, said straight through. */
-.wsay{display:inline-flex;align-items:center;gap:7px;margin-top:10px;min-height:40px;
-      padding:8px 14px;border:1px solid var(--line);border-radius:10px;
-      background:none;color:var(--txs);font-family:inherit;font-size:.8rem}
+/* How many are on screen, what order they are in, and the way to hear them
+   all. One row, because they are all answers to "what am I looking at". */
+.wmeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+.wct{font-size:.72rem;color:var(--txm);letter-spacing:.04em;margin-right:auto}
+.wsrt,.wsay{display:inline-flex;align-items:center;gap:7px;min-height:40px;
+      padding:8px 13px;border:1px solid var(--line);border-radius:10px;
+      background:none;color:var(--txs);font-family:inherit;font-size:.76rem}
 .wsay.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+.wsrt:active{border-color:var(--goldln);color:var(--gold)}
+/* Six ways to narrow the list will not fit across 320px, so the rail slides
+   sideways rather than wrapping into a second row that pushes the words off
+   the screen. */
+.segs.scrollx{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      margin:0 -24px;padding:0 24px;scrollbar-width:none}
+.segs.scrollx::-webkit-scrollbar{display:none}
+.segs.scrollx .seg{flex:0 0 auto;white-space:nowrap}
+/* Clearing the search. It is only there when there is something to clear. */
+.search .sx{flex:0 0 auto;min-width:40px;min-height:40px;margin:-8px -8px -8px 0;
+      background:none;border:0;color:var(--txm);
+      display:inline-flex;align-items:center;justify-content:center}
+.search .sx:active{color:var(--gold)}
+.search .sx[hidden]{display:none}
+/* A sense number, and a word with no sense yet. */
+.mn .sn{font-family:'Cinzel',Georgia,serif;font-style:normal;font-size:.62rem;
+      color:var(--gold);margin-right:3px;vertical-align:.15em}
+.mn .sn + span{margin-right:0}
+.mn .nomn{opacity:.42}
+/* Where a word came from, and how many have come from it. */
+.erel{display:flex;flex-wrap:wrap;gap:10px;margin-top:3px}
+.efrom,.ekids{font-size:.64rem;color:var(--txm);letter-spacing:.02em}
+.ekids{color:var(--gold);opacity:.75}
+/* A sentence this word is used in. */
+.useln{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.useln:last-child{border-bottom:0}
+.usew{font-family:'Cinzel',Georgia,serif;font-size:.95rem;flex:0 0 auto;max-width:45%;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usem{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
+      font-size:.9rem;color:var(--txs);flex:1;min-width:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usep{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+      display:inline-flex;align-items:center;justify-content:center}
+.usep:active{color:var(--gold)}
 .hwrow{display:flex;align-items:baseline;gap:10px}
 .hw{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
 .rd{font-size:.72rem;color:var(--txm)}
@@ -308,6 +345,8 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
        color:var(--tx);padding:12px 13px;font-family:inherit;font-size:.95rem;outline:none}
 .field input.hwf{font-family:'Cinzel',Georgia,serif;font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
+/* A note on a word is a line or two, not a page. */
+.field textarea#wd-nt{height:76px}
 .row2{display:flex;gap:10px}.row2 .field{flex:1}
 .pvbox{display:flex;align-items:center;gap:10px;margin:2px 0 12px;min-height:26px}
 .pvbox .pvk{font-size:1.02rem;color:var(--gold)}
