@@ -194,6 +194,38 @@ canvas.pkc{width:34px;height:34px;display:block}
 .cvst:active{border-color:var(--goldln);color:var(--gold)}
 .cvv{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.14rem}
 .cvl{font-size:.6rem;color:var(--txm);letter-spacing:.06em}
+/* ---------- I. sounds, II. letters ----------
+   A sound is a row: the sound itself, the letters that write it, and the two
+   ways to add one. A letter is a row: its face, its name, what it reads. The
+   same face component in both, because it is the same letter. */
+.sndlist,.ltlist{border-top:1px solid var(--line)}
+.sndrow,.ltrow{display:flex;align-items:center;gap:9px;padding:9px 0;
+               border-bottom:1px solid var(--line)}
+.ltrow.on{background:var(--goldsf)}
+.sndp{flex:0 0 auto;min-width:56px;min-height:48px;border:1px solid var(--line);border-radius:9px;
+      background:var(--sf);color:var(--tx);font-size:1.06rem}
+.sndp:active{border-color:var(--goldln);color:var(--gold)}
+.sndls{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ltf{width:48px;height:48px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;
+     background:var(--pane);color:var(--tx);
+     display:inline-flex;align-items:center;justify-content:center;padding:0}
+.ltf:active{border-color:var(--goldln)}
+.ltf canvas.tc{width:34px;height:34px;display:block}
+.ltf .bch{font-size:1.4rem;line-height:1}
+.ltf .nol{color:var(--txm);display:inline-flex}
+.sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;
+        background:none;color:var(--txm);
+        display:inline-flex;align-items:center;justify-content:center}
+.sndadd:active{border-color:var(--goldln);color:var(--gold)}
+.sndx{flex:0 0 auto;min-width:40px;min-height:44px;background:none;border:0;color:var(--txm);
+      display:inline-flex;align-items:center;justify-content:center}
+.sndx:active{color:var(--gold)}
+.ltmid{flex:1;min-width:0;background:none;border:0;text-align:left;color:var(--tx);
+       font-family:inherit;padding:4px 0}
+.ltnm{display:block;font-family:'Cinzel',Georgia,serif;font-size:1rem}
+.ltsn{display:block;font-size:.64rem;color:var(--txm);margin-top:2px}
+.ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
+.phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 /* ---------- search, the tab ---------- */
 .fcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .fcard.soon{border-style:dashed;opacity:.62}
@@ -977,6 +1009,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 <script src="i18n/ko.js"></script>
 <script src="i18n/ja.js"></script>
 <script src="reading.js"></script>
+<script src="letters.js"></script>
 <script src="screens.js"></script>
 <script src="sentences.js"></script>
 <script src="wsys.js"></script>

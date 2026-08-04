@@ -76,7 +76,7 @@ const ROOT = path.join(HERE, '..', 'www');
 /* Everything a screen is built out of. The ten language files are excluded on
    purpose — they are where foreign text belongs — and so is the font writer,
    which has no user-facing text in it at all. */
-const APP_SRC = ['index.html', 'core.js', 'reading.js', 'screens.js',
+const APP_SRC = ['index.html', 'core.js', 'reading.js', 'letters.js', 'screens.js',
                  'sentences.js', 'wsys.js', 'assist.js', 'grammar.js', 'phases.js',
                  'notes.js', 'talk.js',
                  'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
@@ -350,7 +350,10 @@ const R = await pg.evaluate(() => {
           const keep = WORDS, keepL = LINES;
           if (empty) { WORDS = []; LINES = []; }
           views.forEach((v, i) => {
-            route = routes[i];
+            /* a screen is a route AND its argument now, and several read that
+               argument -- so put the trail where the screen expects it rather
+               than leaving whatever the last opened form left behind */
+            route = routes[i]; NAV = [{ r: route }];
             try { window[v](); } catch (e) { out.miss.push(c + ' ' + v + ' threw (' + p + '/' + rm + '/' + (empty ? 'empty' : 'full') + '): ' + e.message); }
           });
           WORDS = keep; LINES = keepL;
@@ -425,7 +428,7 @@ const R = await pg.evaluate(() => {
      that number the chapters, and the two halves of the wordmark. Everything
      here is a proper noun or a symbol — none of it is a sentence. */
   const PLAIN = {};
-  'lingua free plus studio sov svo vso osv ovs vos ipa csv i ii iii iv v lin ua g'
+  'lingua free plus studio sov svo vso osv ovs vos ipa csv i ii iii iv v vi vii viii ix x lin ua g'
     .split(' ').forEach(w => { PLAIN[w] = 1; });
   /* and everything that is data: the words themselves, their meanings, their
      readings in every language, their sounds and their syllables */
@@ -495,7 +498,7 @@ const R = await pg.evaluate(() => {
       const keep = WORDS, keepL = LINES;
       if (empty){ WORDS = []; LINES = []; }
       views.forEach((v, i) => {
-        route = routes[i];
+        route = routes[i]; NAV = [{ r: route }];
         try { look(v, window[v]()); } catch (e) {}
       });
       WORDS = keep; LINES = keepL;

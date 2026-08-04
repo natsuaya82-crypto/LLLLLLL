@@ -56,13 +56,16 @@ var PAGES={
   find:    {tab:'find',  k:'tab.find'},
   form:    {tab:'build'},
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
-  glyph:   {tab:'build', n:'I'},
-  words:   {tab:'build', n:'II',  k:'toc.words'},
-  make:    {tab:'build', n:'II',  k:'toc.make'},
-  gram:    {tab:'build', n:'III', k:'toc.gram'},   /* the numeral is dropped on a single stage */
-  sent:    {tab:'build', n:'IV',  k:'toc.sent'},
-  notes:   {tab:'build', n:'V',   k:'toc.notes'},
-  talk:    {tab:'build', n:'VI',  k:'toc.talk'},
+  letters: {tab:'build', n:'II',  k:'toc.letters'},
+  pickltr: {tab:'build', k:'lt.use'},
+  picksnd: {tab:'build', k:'lt.addsnd'},
+  glyph:   {tab:'build', n:'II'},
+  words:   {tab:'build', n:'III', k:'toc.words'},
+  make:    {tab:'build', n:'III', k:'toc.make'},
+  gram:    {tab:'build', n:'IV',  k:'toc.gram'},   /* the numeral is dropped on a single stage */
+  sent:    {tab:'build', n:'V',   k:'toc.sent'},
+  notes:   {tab:'build', n:'VI',  k:'toc.notes'},
+  talk:    {tab:'build', n:'VII', k:'toc.talk'},
   settings:{tab:'home',  k:'set.title'},
   plans:   {tab:'home',  k:'plans.title'}
 };
@@ -71,7 +74,15 @@ function pageName(r, a){
   /* A page opened on a particular thing is named after that thing. The
      letter you are drawing, the stage you are in -- not the chapter it
      belongs to, which the back button already says. */
-  if(r==='glyph') return a? String(a) : t('toc.sound');
+  if(r==='glyph'){
+    var g=(typeof ltById==='function')? ltById(a) : null;
+    return (g? ltName(g) : '') || t('lt.untitled');
+  }
+  if(r==='pickltr') return t('lt.use');
+  if(r==='picksnd'){
+    var pl=(typeof ltById==='function')? ltById(a) : null;
+    return (pl? ltName(pl) : '') || t('lt.untitled');
+  }
   /* A form is named after what it is a form for -- the word, the note, the
      slot -- which the opener knows and nothing else does. */
   if(r==='form'){
@@ -422,7 +433,7 @@ function obToDraw(){
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  SCRIPT.g[ob.snd]=JSON.parse(JSON.stringify(keep));
+  ltSetStrokes(ltForUnit(ob.snd).id, JSON.parse(JSON.stringify(keep)));
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
   sayOne(ob.snd);
@@ -431,8 +442,9 @@ function obDone(){
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
 function obTakeCh(ch){
-  scriptMap()[ob.snd]=ch; SET.showScript=true;
-  save(); sayOne(ob.snd); obFinish();
+  ltSetChar(ltForUnit(ob.snd).id, ch);
+  SET.showScript=true;
+  save(); installScriptFont(); sayOne(ob.snd); obFinish();
 }
 function obSkipDraw(){ obFinish(); }
 
@@ -578,7 +590,10 @@ function nextStep(){
    made of; the character is the clothing you choose for it. An entry is a
    plain string today and can become {ch, svg} when glyphs can be drawn. */
 function scriptMap(){ if(!SET.script) SET.script={}; return SET.script; }
-function chOf(p){ var v=scriptMap()[p]; return v||''; }
+/* Which borrowed character writes this unit. It used to be a lookup in a map
+   of unit -> character; it is now a question about the letter that writes the
+   unit, because a character is one of the two shapes a letter can have. */
+function chOf(p){ return ltChar(p); }
 /* A sound belongs to the language either because a word already uses it or
    because you said so; before this, only the first way existed. */
 function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
@@ -587,13 +602,17 @@ function takeSnd(p){
   if(a.indexOf(p)<0) a.push(p);
   save(); closeSheet({target:{id:'sbg'}}); render();
 }
+/* Dropping a sound unhooks the letters that read it. It does not delete them:
+   a letter is a thing you drew and it survives a sound being reconsidered --
+   which is the whole point of them being separate. */
 function dropSnd(p){
   var a=addedSnd(), i=a.indexOf(p);
   if(i>=0){ a.splice(i,1); save(); }
-  delete scriptMap()[p]; save(); render();
+  ltFor(p).forEach(function(l){ ltUnlink(l.id, p); });
+  render();
 }
 function invAll(){ return wsUnits(); }
-function scriptHave(){ var m=scriptMap(); return invAll().filter(function(p){return m[p];}).length; }
+function scriptHave(){ return invAll().filter(function(p){ return !!ltChar(p); }).length; }
 /* A word written in the characters borrowed for it. What a character is
    borrowed FOR depends on the kind of writing: a sound, a syllable, a whole
    word. wsys.js cuts it; this looks each piece up. */
@@ -672,14 +691,15 @@ function pkCharsHTML(){
     return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'" onclick="setCh(\''+esc(pkFor)+'\',\''+esc(ch)+'\')">'+esc(ch)+'</button>';
   }).join('');
 }
-function openPick(p){
-  pkFor=p;
-  var cur=chOf(p);
-  openForm('pick:'+p, t('ch.for', p),
+function openPick(lid){
+  pkFor=lid;
+  var l=ltById(lid);
+  var cur=(l && l.ch)||'';
+  openForm('pick:'+lid, t('ch.for', ltName(l)||t('lt.untitled')),
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
       'onkeydown="if(event.key===\'Enter\'){event.preventDefault();takeOwn();}">'+
     '<button class="btn" onclick="takeOwn()">'+t('script.set')+'</button></div>'+
-    (cur? '<button class="pkclear" onclick="setCh(\''+esc(p)+'\',\'\')">'+t('ch.clear')+'</button>':'')+
+    (cur? '<button class="pkclear" onclick="setCh(\''+esc(lid)+'\',\'\')">'+t('ch.clear')+'</button>':'')+
     '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
       return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'" onclick="pkSwitch(\''+w.id+'\')">'+
         '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+esc(t('ws.'+w.id))+'</button>';
@@ -687,13 +707,14 @@ function openPick(p){
     '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
 }
 FORM_OPEN.pick=function(x){ openPick(x); };
-function setCh(p, ch){
-  var m=scriptMap();
-  ch=String(ch||'').trim();
-  if(ch) m[p]=ch; else delete m[p];
-  save(); closeSheet({target:{id:'sbg'}}); render();
+/* pkFor is a letter's id. A borrowed character is one of the two shapes a
+   letter can have, so taking one is setting that letter's shape. */
+function setCh(lid, ch){
+  ltSetChar(lid, ch);
+  SET.showScript=true; save(); installScriptFont();
+  if(here().r==='form') back(); else render();
 }
-function clearCh(p){ delete scriptMap()[p]; save(); render(); }
+function clearCh(lid){ ltSetChar(lid, ''); save(); installScriptFont(); render(); }
 function takeOwn(){
   var e=document.getElementById('own-ch'); if(!e) return;
   setCh(pkFor, e.value);
@@ -705,7 +726,14 @@ function scrPreview(){
   return '<span class="scrpvw">'+esc(inScript(w))+'</span><span class="scrpvr">'+esc(w)+'</span>';
 }
 /* Characters already spoken for, so the palette can grey them out. */
-function chTaken(){ var m=scriptMap(), o={}; for(var k in m) o[m[k]]=k; return o; }
+/* Characters already spoken for, so the palette can grey them out. Two
+   letters may not wear the same borrowed character; there would be no way to
+   tell them apart on the page. */
+function chTaken(){
+  var o={};
+  LETTERS.forEach(function(l){ if(l.ch) o[l.ch]=l.id; });
+  return o;
+}
 
 /* One sound as a small tile: the character it wears above, the sound below.
    Tapping opens the picker in the sheet rather than growing the page. */
@@ -742,9 +770,9 @@ function vHome(){
       '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
       '<div class="rule"></div>'+
       '<div class="cvrow">'+
-        cvStat(t('toc.sound'), (function(){ var u=wsUnits(); return u.length? (sndDrawn()+' / '+u.length):'—'; })(), 'sound')+
+        cvStat(t('toc.sound'), addedSnd().length||'—', 'sound')+
+        cvStat(t('toc.letters'), ltShaped()||'—', 'letters')+
         cvStat(t('toc.words'), WORDS.length||'—', 'words')+
-        cvStat(t('toc.gram'),  stCount()+' / '+stAll().length, 'gram')+
       '</div>'+
       nextStep()+
       (last? '<button class="recent" onclick="go(\'words\')">'+
@@ -763,15 +791,13 @@ function cvStat(lab, val, r){
    them letters, and then there is something a word can be made of. */
 function vBuild(){
   var toc=[
-    ['I',  t('toc.sound'),'sound', (function(){
-      var u=wsUnits();
-      return u.length? (sndDrawn()+' / '+u.length) : '—';
-    })()],
-    ['II', t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
-    ['III',t('toc.gram'), 'gram',  stCount()+' / '+stAll().length],
-    ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
-    ['V',  t('toc.notes'),'notes', NOTES.length? tn('count.notes', NOTES.length):'—'],
-    ['VI', t('toc.talk'), 'talk',  TALK.length? tn('count.turns', TALK.length):'—']
+    ['I',  t('toc.sound'),  'sound',   addedSnd().length||'—'],
+    ['II', t('toc.letters'),'letters', LETTERS.length? (ltShaped()+' / '+LETTERS.length):'—'],
+    ['III',t('toc.words'),  'words',   WORDS.length? tn('count.words', WORDS.length):'—'],
+    ['IV', t('toc.gram'),   'gram',    stCount()+' / '+stAll().length],
+    ['V',  t('toc.sent'),   'sent',    LINES.length? tn('count.lines', LINES.length):'—'],
+    ['VI', t('toc.notes'),  'notes',   NOTES.length? tn('count.notes', NOTES.length):'—'],
+    ['VII',t('toc.talk'),   'talk',    TALK.length? tn('count.turns', TALK.length):'—']
   ];
   return '<div class="view">'+
     '<div class="navtop"><span class="navt">'+esc(t('tab.build'))+'</span></div>'+
@@ -993,7 +1019,7 @@ function sndDrawn(){ return wsHave(); }
    mark on it -- is shown as what it is and cannot be drawn over: the two
    pieces it is made of are what you change. */
 function sndTile(sym){
-  var kind=sndLetter(sym), made=(!SCRIPT.g[sym] && kind==='drawn');
+  var kind=sndLetter(sym), made=(!ltStrokes(sym) && kind==='drawn');
   var face = kind==='drawn' ? '<canvas class="tc" data-r="'+esc(sym)+'"></canvas>'
            : kind==='borrowed' ? '<span class="bch">'+esc(chOf(sym))+'</span>'
            : '<span class="nol">+</span>';
@@ -1064,38 +1090,149 @@ function ipaVowTable(){
   return '<table class="ipatab">'+rows+'</table>';
 }
 
+/* ---- I. sounds --------------------------------------------------------
+   The inventory, and nothing about shapes except which letters read each
+   sound and the way to reach them. What a sound is written with is a fact
+   about the letter, so it is shown here as a reference and edited there --
+   but making one from here is one tap, because that is the moment you want
+   it. 「音専用ページと文字アルファベットページ別にして。どっちからでもお互い追加でき
+   るようにすればいいから」 */
 function vSound(){
-  var mine=addedSnd(), units=wsUnits(), bases=wsBases(), marks=wsMarks();
+  var mine=addedSnd();
   return '<div class="view">'+
     navTop(mine.length)+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:10px">'+t('ipa.note')+'</div>'+
-
-    '<div class="sec">'+t('ws.kind')+'</div>'+
-    wsysRow()+
-
     '<div class="sec">'+t('ipa.mine')+'</div>'+
     (mine.length
-      ? (wsHasMarks()
-          ? '<div class="note" style="margin-bottom:8px">'+t('ws.bases')+'</div>'+
-            '<div class="gtiles">'+bases.map(sndTile).join('')+'</div>'+
-            '<div class="note" style="margin:14px 0 8px">'+t('ws.marks')+'</div>'+
-            '<div class="gtiles">'+marks.map(sndTile).join('')+'</div>'+
-            (wsMade().length? '<div class="note" style="margin:14px 0 8px">'+t('ws.made')+'</div>'+
-              '<div class="gtiles">'+wsMade().slice(0,24).map(sndTile).join('')+'</div>' : '')
-          : '<div class="gtiles">'+units.map(sndTile).join('')+'</div>')+
-        '<div class="note" style="margin-top:8px">'+t('ipa.letters')+'</div>'+
-        (sndDrawn()? '<div class="sec">'+t('script.preview')+'</div>'+
-          '<div class="spv"><div class="big sfont">'+esc(WORDS.length?WORDS[0].hw:mine.join(''))+'</div></div>'+
-          '<div class="pick">'+
-            '<button class="'+(SET.myfont?'':'on')+'" onclick="setMyFont(false)">'+t('script.show.roman')+'</button>'+
-            '<button class="'+(SET.myfont?'on':'')+'" onclick="setMyFont(true)">'+t('script.show.own')+'</button>'+
-          '</div>' : '')
+      ? '<div class="sndlist">'+mine.map(sndRow).join('')+'</div>'+
+        '<button class="trow" onclick="go(\'letters\')" style="margin-top:14px">'+
+          '<span class="rn"></span><span class="rt">'+esc(t('toc.letters'))+'</span>'+
+          '<span class="lead"></span><span class="rv">'+ltShaped()+'</span>'+ICON_GO+'</button>'
       : '<div class="ipamine"><span class="none">'+t('ipa.mine.none')+'</span></div>')+
     '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
     '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
     '<div class="sec">'+t('ipa.other')+'</div>'+
     '<div class="ipafree">'+IPA_OTHER.map(function(o){ return ipaBtn(o.s); }).join('')+'</div>'+
     '<div class="note" style="margin-top:22px">'+t('ipa.footer')+'</div>'+
+    '</div></div>';
+}
+/* One sound: itself, what it is written with, and the two ways to change
+   that -- draw a new letter for it, or hand it to a letter that exists. */
+function sndRow(p){
+  var ls=ltFor(p), i, faces='';
+  for(i=0;i<ls.length;i++) faces+=ltFace(ls[i], 'editLetter(\''+ls[i].id+'\')');
+  return '<div class="sndrow">'+
+    '<button class="sndp" onclick="sayOne(\''+esc(p)+'\')">'+esc(p)+'</button>'+
+    '<div class="sndls">'+faces+
+      '<button class="sndadd" onclick="editGlyph(\''+esc(p)+'\')" aria-label="'+
+        esc(t('lt.draw'))+'">'+ICON_ADD+'</button>'+
+      (LETTERS.length? '<button class="sndadd" onclick="go(\'pickltr\',\''+esc(p)+'\')" aria-label="'+
+        esc(t('lt.use'))+'">'+ICON_LINK+'</button>' : '')+
+    '</div>'+
+    '<button class="sndx" onclick="dropSnd(\''+esc(p)+'\')" aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button>'+
+    '</div>';
+}
+/* A letter's face, wherever one is shown: what was drawn, or the character it
+   borrows, or -- for a letter with neither yet -- its name. */
+function ltFace(l, call){
+  var face;
+  if(l.st && l.st.length) face='<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
+  else if(l.ch) face='<span class="bch">'+esc(l.ch)+'</span>';
+  else face='<span class="nol">'+ICON_PEN+'</span>';
+  return '<button class="ltf" onclick="'+call+'">'+face+'</button>';
+}
+
+/* ---- II. letters ------------------------------------------------------
+   The alphabet, as a thing in itself. Every letter you have, what it reads,
+   and the letters that read nothing yet -- which is the case the old model
+   could not hold at all, and the reason the two are two chapters. */
+function vLetters(){
+  var loose=ltLoose();
+  return '<div class="view">'+
+    navTop(ltShaped()+' / '+LETTERS.length)+
+    '<div class="body">'+
+    '<div class="note" style="margin-bottom:10px">'+t('lt.note')+'</div>'+
+    '<div class="sec">'+t('ws.kind')+'</div>'+
+    wsysRow()+
+    '<div class="sec">'+t('lt.all')+'</div>'+
+    (LETTERS.length
+      ? '<div class="ltlist">'+LETTERS.map(ltRow).join('')+'</div>'
+      : '<div class="note">'+t('lt.none')+'</div>')+
+    '<button class="btn ghost" style="width:100%;margin-top:12px" onclick="newLetter()">'+
+      ICON_ADD+t('lt.new')+'</button>'+
+    (loose.length? '<div class="mini" style="margin-top:8px">'+tn('lt.loose', loose.length)+'</div>' : '')+
+    (ltShaped()
+      ? '<div class="sec">'+t('script.preview')+'</div>'+
+        '<div class="spv"><div class="big sfont">'+esc(WORDS.length?WORDS[0].hw:addedSnd().join(''))+'</div></div>'+
+        '<div class="pick">'+
+          '<button class="'+(SET.myfont?'':'on')+'" onclick="setMyFont(false)">'+t('script.show.roman')+'</button>'+
+          '<button class="'+(SET.myfont?'on':'')+'" onclick="setMyFont(true)">'+t('script.show.own')+'</button>'+
+        '</div>' : '')+
+    '<button class="trow" onclick="go(\'sound\')" style="margin-top:18px">'+
+      '<span class="rn"></span><span class="rt">'+esc(t('toc.sound'))+'</span>'+
+      '<span class="lead"></span><span class="rv">'+addedSnd().length+'</span>'+ICON_GO+'</button>'+
+    '</div></div>';
+}
+function ltRow(l){
+  var snd=(l.snd||[]);
+  return '<div class="ltrow">'+
+    ltFace(l, 'editLetter(\''+l.id+'\')')+
+    '<button class="ltmid" onclick="editLetter(\''+l.id+'\')">'+
+      '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
+      '<span class="ltsn">'+(snd.length? esc(t('lt.reads', snd.join(' / '))) : esc(t('lt.reads.none')))+'</span>'+
+    '</button>'+
+    '<button class="sndadd" onclick="go(\'picksnd\',\''+esc(l.id)+'\')" aria-label="'+
+      esc(t('lt.addsnd'))+'">'+ICON_LINK+'</button>'+
+    '</div>';
+}
+
+/* ---- joining the two, from either end ---------------------------------
+   Two pages, one job: put a tick next to the ones that go together. From a
+   sound you are choosing letters; from a letter you are choosing sounds. */
+function vPickLtr(){
+  var unit=here().a, on=ltFor(unit).map(function(l){ return l.id; });
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="note" style="margin-bottom:12px">'+t('lt.use.d', unit)+'</div>'+
+    (LETTERS.length
+      ? '<div class="ltlist">'+LETTERS.map(function(l){
+          var has=on.indexOf(l.id)>=0;
+          return '<div class="ltrow'+(has?' on':'')+'">'+
+            ltFace(l, 'toggleLtr(\''+esc(unit)+'\',\''+l.id+'\')')+
+            '<button class="ltmid" onclick="toggleLtr(\''+esc(unit)+'\',\''+l.id+'\')">'+
+              '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
+              '<span class="ltsn">'+((l.snd&&l.snd.length)? esc(t('lt.reads', l.snd.join(' / '))) : esc(t('lt.reads.none')))+'</span>'+
+            '</button>'+
+            '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
+        }).join('')+'</div>'
+      : '<div class="note">'+t('lt.none')+'</div>')+
+    '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="editGlyph(\''+esc(unit)+'\')">'+
+      ICON_ADD+t('lt.draw')+'</button>'+
+    '</div></div>';
+}
+function toggleLtr(unit, id){
+  var l=ltById(id); if(!l) return;
+  if((l.snd||[]).indexOf(unit)>=0) ltUnlink(id, unit); else ltLink(id, unit);
+  save(); installScriptFont(); render();
+}
+function vPickSnd(){
+  var lid=here().a, l=ltById(lid);
+  if(!l) return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  var units=wsUnits(), on=(l.snd||[]);
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="note" style="margin-bottom:12px">'+t('lt.addsnd.d')+'</div>'+
+    '<div class="field"><label>'+t('lt.name')+'</label>'+
+      '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
+      'oninput="ltSetName(\''+esc(lid)+'\',this.value)"></div>'+
+    '<div class="sec">'+t('lt.reads.h')+'</div>'+
+    (units.length
+      ? '<div class="phkeys">'+units.map(function(u){
+          return '<button class="phk'+(on.indexOf(u)>=0?' on':'')+'" onclick="toggleLtr(\''+esc(u)+'\',\''+esc(lid)+'\')">'+
+            '<span class="pks">'+esc(u)+'</span></button>';
+        }).join('')+'</div>'
+      : '<div class="note">'+t('add.ph.none')+'</div>')+
+    '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="go(\'sound\')">'+
+      esc(t('toc.sound'))+'</button>'+
     '</div></div>';
 }

@@ -221,19 +221,39 @@ function setMyFont(v){
    eats, so what you see on the canvas and what ends up in the font are the
    same numbers going through the same code — not two drawings that agree. */
 var GE=null;
-function newGE(r){
-  var src=SCRIPT.g[r]||[];
+/* The editor is opened on a LETTER, not on a sound. It used to be opened on
+   a sound and to write its result into SCRIPT.g under that sound, which is
+   exactly the assumption 「音に対して文字入れるのおかしくね？」 objects to. GE.lid
+   is which letter; GE.r is only what to call it on screen. */
+function newGE(lid, label){
+  var l=ltById(lid), src=(l && l.st)? l.st : [];
+  var r=label || ltName(l) || '';
   /* A letter opened for editing is finished work, the same as a drawing
      handed back by undo, so it opens sealed: the first press starts a new
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
-  return { r:r, st:JSON.parse(JSON.stringify(src)),
+  return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, raw:null, rawFor:-1,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
-function editGlyph(r){ GE=newGE(r); go('glyph', r); }
+/* From the sound chapter: draw the letter this unit is written with, making
+   one if it has none. */
+function editGlyph(unit){
+  var l=ltForUnit(unit);
+  GE=newGE(l.id, unit); go('glyph', l.id);
+}
+/* From the letters chapter: draw this letter, whatever it reads. */
+function editLetter(id){
+  var l=ltById(id); if(!l) return;
+  GE=newGE(id, ltName(l)); go('glyph', id);
+}
+/* A letter with nothing on it yet -- 「文字から作るだろ普通」 */
+function newLetter(){
+  var l=ltNew({});
+  GE=newGE(l.id, ''); go('glyph', l.id);
+}
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
    so there is no reason to be clever about it. */
 function geMark(){
@@ -317,6 +337,12 @@ var TAB_ICON={
 var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M6 3.5h12v17l-6-3.4-6 3.4Z"/><path d="M9 8h6M9 11.5h4"/></svg>';
+/* Two links of a chain: joining a letter to a sound, or a sound to a letter.
+   The same mark from both ends, because it is the same join. */
+var ICON_LINK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M10 13.8a3.6 3.6 0 0 0 5.1 0l2.9-2.9a3.6 3.6 0 0 0-5.1-5.1l-1.3 1.3"/>'+
+  '<path d="M14 10.2a3.6 3.6 0 0 0-5.1 0L6 13.1a3.6 3.6 0 0 0 5.1 5.1l1.3-1.3"/></svg>';
 /* An actual plus. ICON_PLUS above is a four-pointed star and always was: it
    marks what the paid plan adds. Putting it on "one more consonant" would say
    the sound costs money. */
@@ -367,12 +393,12 @@ function vGlyph(){
        here, which meant the two ways of writing a sound lived on two screens.
        Both are here now, where the sound's letter is decided. */
     '<div class="sec">'+t('glyph.other')+'</div>'+
-    (chOf(GE.r)
-      ? '<div class="gborrow"><span class="gbch">'+esc(chOf(GE.r))+'</span>'+
+    ((ltById(GE.lid)||{}).ch
+      ? '<div class="gborrow"><span class="gbch">'+esc((ltById(GE.lid)||{}).ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
-        '<button class="gbx" onclick="clearCh(\''+esc(GE.r)+'\')">'+t('ch.clear')+'</button></div>'
-      : '<button class="btn ghost" style="width:100%" onclick="openPick(\''+esc(GE.r)+'\')">'+t('glyph.borrow')+'</button>')+
-    ((SCRIPT.g[GE.r] && SCRIPT.g[GE.r].length) || chOf(GE.r)
+        '<button class="gbx" onclick="ltSetChar(\''+esc(GE.lid)+'\',\'\');installScriptFont();render()">'+t('ch.clear')+'</button></div>'
+      : '<button class="btn ghost" style="width:100%" onclick="openPick(\''+esc(GE.lid)+'\')">'+t('glyph.borrow')+'</button>')+
+    (ltHasShape(ltById(GE.lid))
       ? '<button class="set" style="margin-top:14px;border-bottom:none" onclick="geDelete()">'+
         '<span class="sl" style="color:#c9553f">'+t('glyph.del')+'</span></button>' : '')+
     '</div>'+
@@ -592,39 +618,37 @@ function geSave(){
   /* A single dot is a stroke half-placed, not a shape. It does not get
      saved, and it does not get left behind for the next press to trip on. */
   var keep=GE.st.filter(function(s){ return s.pts.length>1; });
-  if(keep.length) SCRIPT.g[GE.r]=keep; else delete SCRIPT.g[GE.r];
+  ltSetStrokes(GE.lid, keep);
   /* Drawing a letter is asking for your own writing. Only onboarding ever set
      this, so every letter drawn in the letters chapter went into a font that
      nothing had been told to use -- which is 「単語に自作文字出てこない」. */
   if(keep.length) SET.myfont=true;
-  var i=SCRIPT.extra.indexOf(GE.r);
-  if(i>=0 && keep.length) SCRIPT.extra.splice(i,1);   /* it is a real letter now */
   save();
   installScriptFont();
-  var r=GE.r; GE=null;
-  go('sound');
+  var r=GE.r, snd=(ltById(GE.lid)||{}).snd||[];
+  GE=null;
+  back();
   /* The shape and the sound are the same thing seen twice. Drawing one in
      silence leaves them unconnected, so the letter says itself as it is put
      away -- and only if there is a letter, since deleting one should not. */
-  if(keep.length) sayOne(r);
-  toast(t('glyph.saved', r));
+  if(keep.length && snd.length===1 && snd[0].length===1) sayOne(snd[0]);
+  toast(t('glyph.saved', r||t('lt.untitled')));
 }
 
 /* Taking the letter off a sound entirely -- the drawing and the borrowed
    character both. The sound stays in the language; only its letter goes. */
+/* Deleting the letter, shape and sounds and all. The sounds it read stay in
+   the language -- they are not the letter's to take with it. */
 function geDelete(){
   if(!GE) return;
   var r=GE.r;
   if(!confirm(t('glyph.del.ask'))) return;
-  delete SCRIPT.g[r];
-  delete scriptMap()[r];
-  var i=SCRIPT.extra.indexOf(r);
-  if(i>=0) SCRIPT.extra.splice(i,1);
+  ltDel(GE.lid);
   save();
   installScriptFont();
   GE=null;
-  go('sound');
-  toast(t('glyph.deleted', r));
+  back();
+  toast(t('glyph.deleted', r||t('lt.untitled')));
 }
 
 /* ---- canvas ------------------------------------------------------------- */
@@ -1209,10 +1233,11 @@ function phkMount(){
 
 /* The tiles on the letter grid are the same ink again, scaled down. */
 function geTiles(){
-  var els=document.querySelectorAll('.gtile canvas.tc');
+  var els=document.querySelectorAll('canvas.tc');
   for(var i=0;i<els.length;i++){
-    var c=els[i], r=c.getAttribute('data-r'), st=SCRIPT.g[r];
-    if(!st) continue;
+    var c=els[i], r=c.getAttribute('data-r'), lid=c.getAttribute('data-l');
+    var st = lid? ((ltById(lid)||{}).st||null) : wsStrokes(r);
+    if(!st || !st.length) continue;
     var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
     var S=Math.max(48,Math.round((box.width||72)*dpr));
     c.width=S; c.height=S;
@@ -1284,6 +1309,9 @@ function render(){
         : route==='settings'? vSettings()
         : route==='plans'? vPlans()
         : route==='glyph'? vGlyph()
+        : route==='letters'? vLetters()
+        : route==='pickltr'? vPickLtr()
+        : route==='picksnd'? vPickSnd()
         : vHome();
   /* one attribute decides whether words are shown in roman letters or in the
      ones you drew — the text itself never changes, only the family it is set in */
@@ -1304,11 +1332,12 @@ function render(){
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
-  if(route==='sound') geTiles();
+  if(route==='sound' || route==='letters' || route==='pickltr') geTiles();
   if(route==='form') formMount();
 }
 migratePh();
 migrateMn();
+migrateLetters();
 installScriptFont();
 render();
 if(window.splashDone) splashDone();

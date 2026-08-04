@@ -123,7 +123,9 @@ function wsUnits(){
       if(!out.length) vs.forEach(push);
     }
   }
-  Object.keys(SCRIPT.g).forEach(push);
+  /* and everything a letter already reads, so a unit no word needs any more
+     never silently drops off the page it was drawn on */
+  LETTERS.forEach(function(l){ (l.snd||[]).forEach(push); });
   return out;
 }
 /* In an abugida the consonants are letters and the vowels are marks put on
@@ -143,14 +145,14 @@ function wsMarks(){ return wsHasMarks() ? wsVows() : []; }
    know how to combine drawings, because there is nothing to combine: strokes
    in the same square are already one letter. */
 function wsStrokes(unit){
-  var own=SCRIPT.g[unit];
+  var own=ltStrokes(unit);
   if(own && own.length) return own;
   if(wsHasMarks() && unit && unit.length>1){
     var i, base=null, mark=null, ch;
     for(i=0;i<unit.length;i++){
       ch=unit.charAt(i);
-      if(ipaIsVowel(ch)) mark=SCRIPT.g[ch];
-      else base=SCRIPT.g[ch];
+      if(ipaIsVowel(ch)) mark=ltStrokes(ch);
+      else base=ltStrokes(ch);
     }
     if(base && base.length && mark && mark.length) return base.concat(mark);
     if(base && base.length) return base;
@@ -168,7 +170,7 @@ function wsHave(){
 /* A word in the letters chosen for it. Used for borrowed characters; drawn
    letters are a font and need no substitution. */
 function wsInScript(hw){
-  var m=scriptMap(), u=wsSplit(seqOf(hw)), out=[], i;
-  for(i=0;i<u.length;i++) out.push(m[u[i]] || u[i]);
+  var u=wsSplit(seqOf(hw)), out=[], i, c;
+  for(i=0;i<u.length;i++){ c=ltChar(u[i]); out.push(c || u[i]); }
   return out.join('');
 }
