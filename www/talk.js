@@ -24,14 +24,13 @@
    model would join, and what it would add is judgement, not the language: the
    language is already all here. */
 
-var LS_TK='lingua.talk';
 var TALK=[];
-try{ var tk=JSON.parse(localStorage.getItem(LS_TK)||'[]'); if(Array.isArray(tk)) TALK=tk; }catch(e){}
+try{ var tk=JSON.parse(localStorage.getItem(langKey('talk'))||'[]'); if(Array.isArray(tk)) TALK=tk; }catch(e){}
 /* A conversation is not an archive. Keeping the last forty turns is enough to
    scroll back through and small enough never to be a storage question. */
 function saveTalk(){
   try{ if(TALK.length>40) TALK=TALK.slice(TALK.length-40);
-       localStorage.setItem(LS_TK, JSON.stringify(TALK)); }catch(e){}
+       localStorage.setItem(langKey('talk'), JSON.stringify(TALK)); }catch(e){}
 }
 
 /* ---- what it has to work with ----------------------------------------- */

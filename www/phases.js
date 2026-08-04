@@ -25,7 +25,6 @@
    in a stage is the words you cannot make a sentence without: pronouns,
    question words, numbers, the words for yes and no. */
 
-var LS_STG='lingua.phases';
 /* {done:{}, notes:{}, set:{}, extra:[]} -- `set` is which decisions have been
    touched, because every decision has a default and a default is not a
    choice. */
@@ -33,11 +32,11 @@ var LS_STG='lingua.phases';
    notes stays for what is neither. */
 var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}};
 try{
-  var stgs=JSON.parse(localStorage.getItem(LS_STG)||'null');
+  var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
   if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
             STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{}; }
 }catch(e){}
-function saveStg(){ try{ localStorage.setItem(LS_STG, JSON.stringify(STG)); }catch(e){} }
+function saveStg(){ try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
 
 /* The stages, in the order they open each other up. `slots` are the words the
    stage cannot do without; `feats` are the decisions from www/grammar.js it

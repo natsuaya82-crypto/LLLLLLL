@@ -9,16 +9,16 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + i18n + act + press — green before any commit (~75s)
+npm test        # assets + es5 + dead + migrate + i18n + act + press — green before a commit (~85s)
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run i18n` / `npm run act` / `npm run press`.
+Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` / `npm run i18n` / `npm run act` / `npm run press`.
 `tools/pre-commit` runs them as a hook.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
 
-## The six rules the gate enforces
+## The seven rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -104,7 +104,29 @@ orphaned function is not in the action table, so `act-check` cannot see it;
 26 of them were sitting in `www/` when this check was written. Deleting one
 often turns up another on the next run — its only caller was the one deleted.
 
-### 6. Script load order in `index.html`
+### 6. A language somebody already has still opens
+
+Storage is per language. Eight slices — words, lines, name, script, letters,
+notes, phases, talk — live under `lingua.<id>.<slice>`; `lingua.langs` says
+which languages are here and whose; `lingua.set` is the person's settings and
+belongs to no language. `langKey('words')` is the only thing that knows how a
+language is filed.
+
+The globals do not change. `WORDS` is the open language's dictionary, because
+the app shows one language at a time and 290-odd places say `WORDS` meaning
+"the one in front of me".
+
+Migration from the eight flat keys **copies**; it never removes what it read.
+It runs once, on a phone, against the only copy of something somebody spent
+months on. `migrate-check` seeds the old keys and asks what came through —
+every other check opens an empty browser, which is the one kind of phone that
+does not exist.
+
+It asserts what a thing *is*, never how many there are. The app rebuilds
+letters it cannot find from the drawn glyphs, so a dropped slice comes back as
+plausible auto-generated letters with the right count and the wrong ids.
+
+### 7. Script load order in `index.html`
 
 - `core.js` defines `defLang()` → precedes the ten language files
 - `otf5.js` defines `LinguaFont` → precedes `glyph.js`

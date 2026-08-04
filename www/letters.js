@@ -29,10 +29,9 @@
    it could do. Which of them a particular word uses is the word's business
    and lives on the word. */
 
-var LS_LT='lingua.letters';
 var LETTERS=[];
-try{ var lt=JSON.parse(localStorage.getItem(LS_LT)||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
-function saveLetters(){ try{ localStorage.setItem(LS_LT, JSON.stringify(LETTERS)); }catch(e){} }
+try{ var lt=JSON.parse(localStorage.getItem(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
+function saveLetters(){ try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
 
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is

@@ -5,12 +5,32 @@
 
 /* =========================================================================
    0. What gets stored
-      words / lines / language name / settings (theme, plan, onboarded)
+      words / lines / language name / writing system, per language
+      settings (theme, plan, onboarded) once, for the person
       Everything in here is something the person wrote themselves.
       There is no starter dictionary, on purpose.
+
+      A language used to be the only thing there was, so it was stored under
+      eight flat keys -- lingua.words, lingua.letters and so on. You can make
+      one language and read any number of other people's, so those eight keys
+      belong to a language rather than to the app, and they carry its id:
+
+        lingua.<id>.words          the dictionary of that language
+        lingua.<id>.letters        its alphabet
+        lingua.langs               which languages exist here, and whose
+        lingua.cur                 which one is open
+        lingua.set                 the person's settings -- not a language's
+
+      Everything a screen reads is still a single global: WORDS is the open
+      language's dictionary, not a table of every language's. The app shows
+      one language at a time, because you are either writing yours or reading
+      somebody else's, and 290-odd places say WORDS meaning "the one in front
+      of me". They still do.
    ========================================================================= */
-var LS_W='lingua.words', LS_N='lingua.lang', LS_S='lingua.set', LS_L='lingua.lines';
-var LS_G='lingua.script';
+var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
+/* id -> { name, mine } and nothing more: the index says which languages are
+   here, and the language's own keys hold what it is. */
+var LANGS={}, langId='';
 var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:false, order:'SOV', read:'both', voice:'', ui:'', script:false};
 /* The writing system. `g` maps a romanisation to the strokes drawn for it;
    `extra` holds letters the person added by hand that no word uses yet, so a
@@ -18,9 +38,64 @@ var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:fals
    stored as text — a word is roman letters in WORDS and stays that way. */
 var SCRIPT={g:{}, extra:[]};
 
-try{ var a=JSON.parse(localStorage.getItem(LS_W)||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
-try{ var l=JSON.parse(localStorage.getItem(LS_L)||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-try{ langName=localStorage.getItem(LS_N)||''; }catch(e){}
+/* The key a slice of the open language is stored under. Called by every file
+   that keeps a slice of its own -- letters, notes, phases, talk -- so that
+   there is one place that knows how a language is filed. */
+function langKey(slice){ return 'lingua.' + langId + '.' + slice; }
+
+/* Which languages are here, and which one is open. Read before anything else
+   in this file, because every other key is built out of langId. */
+try{
+  var lx=JSON.parse(localStorage.getItem(LS_LANGS)||'null');
+  if(lx && typeof lx==='object') LANGS=lx;
+}catch(e){}
+try{ langId=localStorage.getItem(LS_CUR)||''; }catch(e){}
+
+/* A language made before this app could hold more than one is sitting under
+   the eight flat keys. It becomes the person's own language, and its old keys
+   are left exactly where they are: this runs once, on a phone, against the
+   only copy of something somebody spent months on. Copying costs a few
+   hundred kilobytes and cannot lose anything. Moving could. */
+function langMigrate(){
+  var FLAT={ words:'lingua.words', lines:'lingua.lines', lang:'lingua.lang',
+             script:'lingua.script', letters:'lingua.letters',
+             notes:'lingua.notes', phases:'lingua.phases', talk:'lingua.talk' };
+  var had=false, k;
+  for(k in FLAT) if(localStorage.getItem(FLAT[k])!==null) had=true;
+  if(!had) return false;
+  var id='L'+(new Date()).getTime().toString(36);
+  var prev=langId; langId=id;
+  for(k in FLAT){
+    var v=localStorage.getItem(FLAT[k]);
+    if(v!==null) localStorage.setItem(langKey(k), v);
+  }
+  langId=prev;
+  LANGS[id]={ name: localStorage.getItem('lingua.lang')||'', mine:true };
+  langId=id;
+  langStore();
+  return true;
+}
+function langStore(){
+  try{
+    localStorage.setItem(LS_LANGS, JSON.stringify(LANGS));
+    localStorage.setItem(LS_CUR, langId);
+  }catch(e){}
+}
+/* Nothing here at all: a first run, or a first run after the migration found
+   nothing to move. The person gets one empty language of their own. */
+function langFirst(){
+  var id='L'+(new Date()).getTime().toString(36);
+  LANGS[id]={ name:'', mine:true };
+  langId=id;
+  langStore();
+}
+try{
+  if(!langId || !LANGS[langId]){ if(!langMigrate()) langFirst(); }
+}catch(e){ langFirst(); }
+
+try{ var a=JSON.parse(localStorage.getItem(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
+try{ var l=JSON.parse(localStorage.getItem(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
+try{ langName=localStorage.getItem(langKey('lang'))||''; }catch(e){}
 /* Settings saved by an older version are missing whatever was added since, so
    they are laid over the defaults rather than replacing them. Written out by
    hand because Object.assign is not ES5 and this has to run on an old phone. */
@@ -29,17 +104,21 @@ try{
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
 }catch(e){}
 try{
-  var gg=JSON.parse(localStorage.getItem(LS_G)||'null');
+  var gg=JSON.parse(localStorage.getItem(langKey('script'))||'null');
   if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
 }catch(e){}
 
 function save(){
   try{
-    localStorage.setItem(LS_W,JSON.stringify(WORDS));
-    localStorage.setItem(LS_L,JSON.stringify(LINES));
-    localStorage.setItem(LS_N,langName);
+    localStorage.setItem(langKey('words'),JSON.stringify(WORDS));
+    localStorage.setItem(langKey('lines'),JSON.stringify(LINES));
+    localStorage.setItem(langKey('lang'),langName);
+    localStorage.setItem(langKey('script'),JSON.stringify(SCRIPT));
     localStorage.setItem(LS_S,JSON.stringify(SET));
-    localStorage.setItem(LS_G,JSON.stringify(SCRIPT));
+    /* the index carries the name so a list of languages can be shown without
+       opening each one to find out what it is called */
+    if(LANGS[langId]) LANGS[langId].name=langName;
+    langStore();
   }catch(e){}
 }
 

@@ -134,11 +134,10 @@ function wipeAll(){
   SET={theme:SET.theme, plan:'free', done:false, order:'SOV', read:'both',
        voice:'', ui:SET.ui, script:false, world:{}};
   try{
-    localStorage.removeItem(LS_W); localStorage.removeItem(LS_L);
-    localStorage.removeItem(LS_N); localStorage.removeItem(LS_G);
-    localStorage.removeItem(LS_LT);
-    localStorage.removeItem(LS_NT); localStorage.removeItem(LS_TK);
-    localStorage.removeItem(LS_STG);
+    /* the open language, slice by slice -- not the person's settings, and
+       not any other language they are reading */
+    var sl=['words','lines','lang','script','letters','notes','phases','talk'], si;
+    for(si=0; si<sl.length; si++) localStorage.removeItem(langKey(sl[si]));
   }catch(e){}
   save();
   ob={step:0, mode:'draw', pick:'', strokes:null, ch:'', snd:''};
