@@ -863,7 +863,7 @@ var fq='';
 function findBodyHTML(hits, qq){
   if(!qq)
     return '<div class="fcard"><div class="fch">'+t('find.mine.h')+'</div>'+
-      '<div class="note">'+t('find.mine.d')+'</div></div>'+
+      '</div>'+
       '<button class="trow" onclick="openImport()"><span class="rn"></span>'+
       '<span class="rt">'+esc(t('set.csv.in'))+'</span><span class="lead"></span>'+ICON_GO+'</button>'+
       '<div class="fcard soon"><div class="fch">'+t('find.world.h')+'</div>'+
@@ -1060,8 +1060,7 @@ function wsysRow(){
   return '<div class="segs">'+WSYS.map(function(k){
     return '<button class="seg'+(wsys()===k?' on':'')+'" onclick="setWsys(\''+k+'\')">'+
       esc(t('ws.k.'+k))+'</button>';
-  }).join('')+'</div>'+
-  '<div class="note">'+t('ws.k.'+wsys()+'.d')+'</div>';
+  }).join('')+'</div>';
 }
 /* ---- the abugida bench ------------------------------------------------
    「アブギダの場合は、調整しやすいように別エディターが欲しい。母音+子音を見てチェック
@@ -1124,7 +1123,6 @@ function vAbugida(){
       '<button class="btn ghost" style="width:100%;margin-top:12px" onclick="go(\'letters\')">'+
       esc(t('toc.letters'))+'</button></div></div>';
   return '<div class="view">'+navTop(cs.length+' × '+vs.length)+'<div class="body">'+
-    '<div class="note" style="margin-bottom:10px">'+t('ab.d')+'</div>'+
     '<div class="segs scrollx">'+vs.map(function(x){
       return '<button class="seg'+(x===v?' on':'')+'" onclick="setAbVow(\''+esc(x)+'\')">'+esc(x)+'</button>';
     }).join('')+'</div>'+
@@ -1220,7 +1218,6 @@ function vSound(){
   return '<div class="view">'+
     navTop(mine.length)+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:10px">'+t('ipa.note')+'</div>'+
     '<div class="sec">'+t('ipa.mine')+'</div>'+
     (mine.length
       ? '<div class="sndlist">'+mine.map(sndRow).join('')+'</div>'+
@@ -1232,7 +1229,6 @@ function vSound(){
     '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
     '<div class="sec">'+t('ipa.other')+'</div>'+
     '<div class="ipafree">'+IPA_OTHER.map(function(o){ return ipaBtn(o.s); }).join('')+'</div>'+
-    '<div class="note" style="margin-top:22px">'+t('ipa.footer')+'</div>'+
     '</div></div>';
 }
 /* One sound: itself, what it is written with, and the two ways to change
@@ -1270,7 +1266,6 @@ function vLetters(){
   return '<div class="view">'+
     navTop(ltShaped()+' / '+LETTERS.length)+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:10px">'+t('lt.note')+'</div>'+
     '<div class="sec">'+t('ws.kind')+'</div>'+
     wsysRow()+
     (wsHasMarks()
@@ -1316,7 +1311,6 @@ function ltRow(l){
 function vPickLtr(){
   var unit=here().a, on=ltFor(unit).map(function(l){ return l.id; });
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="note" style="margin-bottom:12px">'+t('lt.use.d', unit)+'</div>'+
     (LETTERS.length
       ? '<div class="ltlist">'+LETTERS.map(function(l){
           var has=on.indexOf(l.id)>=0;
@@ -1344,7 +1338,6 @@ function vPickSnd(){
     '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
   var units=wsUnits(), on=(l.snd||[]);
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="note" style="margin-bottom:12px">'+t('lt.addsnd.d')+'</div>'+
     '<div class="field"><label>'+t('lt.name')+'</label>'+
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
       'oninput="ltSetName(\''+esc(lid)+'\',this.value)"></div>'+

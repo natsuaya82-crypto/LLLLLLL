@@ -154,7 +154,6 @@ function openSlot(pid, k){
   stSug=[];
   var mine=addedSnd();
   openForm('slot:'+p.id+'/'+stSlot, stSlotLabel(p, stSlot),
-    '<div class="note" style="margin-bottom:12px">'+t('stg.make.d')+'</div>'+
     '<div class="seqbox"><span class="seq" id="st-seq"></span>'+
       '<button class="seqdel" id="st-back" onclick="stBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="st-ipa"></span>'+
@@ -192,7 +191,6 @@ function stDrop(){
 /* ---- a stage of your own ---------------------------------------------- */
 function openOwnPhase(){
   openForm('own:', t('stg.own.h'),
-    '<div class="note" style="margin-bottom:12px">'+t('stg.own.d')+'</div>'+
     '<div class="field"><label>'+t('stg.own.title')+'</label>'+
       '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
@@ -298,13 +296,10 @@ function stRow(p, n){
 function stListHTML(){
   var a=stAll(), i, rows='';
   for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
-  return '<div class="note" style="margin-bottom:12px">'+t('stg.list.d')+'</div>'+
-    '<div class="stlist">'+rows+'</div>'+
+  return '<div class="stlist">'+rows+'</div>'+
     '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="openOwnPhase()">'+
       ICON_PLUS+t('stg.own.add.btn')+'</button>'+
-    '<div class="note" style="margin-top:10px">'+t('stg.own.hint')+'</div>'+
     '<div class="sec">'+t('gram.seen')+'</div>'+
-    '<div class="note" style="margin-bottom:6px">'+tn('rules.intro', WORDS.length)+'</div>'+
     (findings().length? findings().map(function(x){
       return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
         '<div class="bar"><i style="width:'+Math.round(Math.max(.12,Math.min(1,x.rate))*100)+'%"></i></div></div>';
@@ -348,8 +343,7 @@ function stDetailHTML(p){
    it has actually been chosen rather than left at its default. */
 function stFeatHTML(id){
   if(id==='order'){
-    return '<div class="note">'+t('gram.order.d')+'</div>'+
-      '<div class="segs">'+ORDERS.map(function(o){
+    return       '<div class="segs">'+ORDERS.map(function(o){
         return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
       }).join('')+'</div>'+gOrderLine();
   }

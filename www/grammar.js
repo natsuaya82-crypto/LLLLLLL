@@ -182,7 +182,6 @@ function openGramPiece(id){
   gPhSeq = gPhOf(gPhFor).slice();
   var mine=addedSnd();
   openForm('gpiece:'+gPhFor, t('gram.piece.h'),
-    '<div class="note" style="margin-bottom:12px">'+t('gram.piece.d', esc(t('gram.'+gPhFor+'.t')))+'</div>'+
     '<div class="seqbox"><span class="seq" id="gp-seq"></span>'+
       '<button class="seqdel" id="gp-back" onclick="gPhBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="gp-ipa"></span>'+

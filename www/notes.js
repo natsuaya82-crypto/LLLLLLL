@@ -83,7 +83,6 @@ function vNotes(){
       ? '<div class="ntlist">'+rows+'</div>'
       : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
         '<div class="es">'+t('notes.empty.s')+'</div></div>')+
-    '<div class="note" style="margin-top:22px">'+t('notes.footer')+'</div>'+
     '</div>'+
     '<div class="barfix"><button class="btn" onclick="openNote()">'+ICON_NOTE+t('notes.new')+'</button></div>'+
     '</div>';

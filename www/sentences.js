@@ -176,7 +176,6 @@ function vSent(){
           '<button class="rr2" onclick="reopenLine('+idx+')">'+t('sent.reweave')+'</button>'+
           '<button class="rr2" onclick="dropLine('+idx+')">'+t('sent.drop')+'</button></div></div>';
       }).join('') : '')+
-    '<div class="note" style="margin-top:22px">'+t('sent.footer')+'</div>'+
     '</div></div>';
 }
 function keepLine(){
@@ -213,9 +212,6 @@ function vMake(){
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
       return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
-    '<div class="note">'+(rule
-      ? t('make.rule', posLabel(mkPos), rule.ch)
-      : t('make.norule', posLabel(mkPos)))+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
         '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')" aria-label="'+esc(t('make.pick'))+'">'+

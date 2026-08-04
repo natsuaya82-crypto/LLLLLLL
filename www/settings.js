@@ -36,7 +36,6 @@ function vSettings(){
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
-    '<div class="note" style="margin-top:26px">'+t('set.footer')+(has('plus')?'':t('set.footer.free'))+'</div>'+
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered
@@ -67,8 +66,7 @@ function vSet(){
       '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
         '<span class="pvk">'+esc(readSeq(S.seq))+'</span>'+
         '<button onclick="sayPh('+esc(JSON.stringify(S.seq))+')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
-      '<div class="note">'+t('set.ipa.note', esc(langDef().rdName))+'</div>'+
-      '<div class="note" style="margin-top:10px">'+t('set.voice.note')+'</div>';
+      '';
   } else if(id==='ui'){
     body=UI_LANGS.map(function(k){
       return '<button class="set lrow'+(uiLang()===k?' on':'')+'" onclick="setUi(\''+k+'\')">'+
@@ -76,7 +74,7 @@ function vSet(){
         '<span class="pvk lsam">'+esc(LANG[k].read.word(S.rom))+'</span>'+
         '<span class="lchk">'+(uiLang()===k?ICON_TICK:'')+'</span></button>';
     }).join('')+
-    '<div class="note">'+t('set.display.note')+'</div>';
+    '';
   } else if(id==='lang'){
     body='<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
@@ -93,7 +91,6 @@ function vSet(){
       '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
       '<button class="set signin apple" onclick="obSignIn()"><span class="sl">'+MARK_APPLE+
       '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
-      '<div class="note">'+t('set.account.note')+'</div>'+
       '<div class="sec">'+t('set.plan')+'</div>'+
       '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span>'+
       '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
@@ -259,7 +256,6 @@ function openAdd(from){
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
-    '<div class="note" style="margin-bottom:12px">'+(addFrom? t('add.note.from') : t('add.note'))+'</div>'+
     '<div class="seqbox"><span class="seq" id="f-seq"></span>'+
       '<button class="seqdel" id="f-back" onclick="addBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="sec">'+t('add.ph')+'</div>'+
@@ -427,6 +423,13 @@ function exGloss(ln){
   var ps=String(ln||'').trim().split(/\s+/);
   return ps.map(function(x){ var w=findWord(x); return (w && wMns(w)[0]) || x; }).join(' ');
 }
+/* The placeholder is two of this language's own words. An instruction there
+   -- "words with spaces between them" -- is a sentence nobody wants to read
+   in a box they are about to type in; two words show the shape at a glance. */
+function exHint(){
+  var a=WORDS.slice(0,2).map(function(w){ return String(w.hw); });
+  return a.length>1? a.join(' ') : (a[0]||'');
+}
 function wdExHTML(){
   var w=findWord(openHw); if(!w) return '';
   var ex=w.ex||[];
@@ -443,7 +446,7 @@ function wdExHTML(){
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
-      '<input id="wd-exl" placeholder="'+esc(t('word.ex.ln.ph'))+'" autocomplete="off">'+
+      '<input id="wd-exl" placeholder="'+esc(exHint())+'" autocomplete="off">'+
       '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddEx();}">'+
       '<button class="btn ghost" onclick="wdAddEx()">'+t('word.mn.add')+'</button>'+
@@ -471,7 +474,6 @@ function vRelate(){
   var on=wRel(w,k), list=WORDS.filter(function(x){ return x!==w; })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
   return '<div class="view">'+navTop(on.length)+'<div class="body">'+
-    '<div class="note" style="margin-bottom:12px">'+t('word.'+k+'.d', wOut(w.hw))+'</div>'+
     (list.length
       ? list.map(function(x){
           var has=on.indexOf(x.hw)>=0;
@@ -516,7 +518,6 @@ function wdBodyHTML(){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
 
     '<div class="sec">'+t('word.sounds')+'</div>'+
-    '<div class="note" style="margin-bottom:8px">'+t('word.sounds.d')+'</div>'+
     wdSeqHTML()+wdKeysHTML()+
 
     '<div class="sec">'+t('word.means')+'</div>'+
@@ -537,14 +538,12 @@ function wdBodyHTML(){
     wdRelHTML('ant')+
 
     '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+
-    '<div class="note" style="margin-bottom:8px">'+t('word.ex.d')+'</div>'+
     wdExHTML()+
 
     '<div class="sec">'+t('word.uses')+'</div>'+
     wdUsesHTML()+
 
     '<div class="sec">'+t('word.note')+'</div>'+
-    '<div class="note" style="margin-bottom:8px">'+t('word.note.d')+'</div>'+
     wdNoteHTML()+
 
     '<button class="btn" style="width:100%;margin-top:18px" onclick="saveWord()">'+t('word.save')+'</button>'+

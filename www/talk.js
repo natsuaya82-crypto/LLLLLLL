@@ -240,10 +240,9 @@ function vTalk(){
   for(i=0;i<TALK.length;i++) thread+=tkBubble(TALK[i]);
 
   return head+
-    '<div class="note">'+t('talk.knows', WORDS.length, addedSnd().length, gramCount())+'</div>'+
     (TALK.length
       ? '<div class="tkthread">'+thread+'</div>'
-      : '<div class="note" style="margin-top:14px">'+t('talk.first')+'</div>')+
+      : '')+
 
     '<div class="sec">'+t('talk.compose')+'</div>'+
     '<div class="seqbox"><span class="seq" id="t-seq">'+
@@ -269,6 +268,5 @@ function vTalk(){
       '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
       '<span><span class="lt">'+t('ai.title')+'</span><br><span class="ld">'+t('ai.hint')+'</span></span>'+
       '<span class="tag">PLUS</span></button>')+
-    '<div class="note" style="margin-top:20px">'+t('talk.footer')+'</div>'+
     '</div></div>';
 }
