@@ -1359,6 +1359,8 @@ function render(){
         : route==='pickltr'? vPickLtr()
         : route==='picksnd'? vPickSnd()
         : route==='abugida'? vAbugida()
+        : route==='relate'? vRelate()
+        : route==='set'   ? vSet()
         : vHome();
   /* one attribute decides whether words are shown in roman letters or in the
      ones you drew — the text itself never changes, only the family it is set in */

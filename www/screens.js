@@ -60,6 +60,7 @@ var PAGES={
   pickltr: {tab:'build', k:'lt.use'},
   picksnd: {tab:'build', k:'lt.addsnd'},
   abugida: {tab:'build', k:'ab.title'},
+  relate:  {tab:'build'},
   glyph:   {tab:'build', n:'II'},
   words:   {tab:'build', n:'III', k:'toc.words'},
   make:    {tab:'build', n:'III', k:'toc.make'},
@@ -68,6 +69,7 @@ var PAGES={
   notes:   {tab:'build', n:'VI',  k:'toc.notes'},
   talk:    {tab:'build', n:'VII', k:'toc.talk'},
   settings:{tab:'home',  k:'set.title'},
+  set:     {tab:'home'},
   plans:   {tab:'home',  k:'plans.title'}
 };
 function pageName(r, a){
@@ -80,6 +82,15 @@ function pageName(r, a){
     return (g? ltName(g) : '') || t('lt.untitled');
   }
   if(r==='pickltr') return t('lt.use');
+  if(r==='set'){
+    var si, sa=String(a||'');
+    for(si=0;si<SETS.length;si++) if(SETS[si].id===sa) return t(SETS[si].k);
+    return t('set.title');
+  }
+  if(r==='relate'){
+    var rk=String(a||'').split(':')[0];
+    return (rk==='syn'||rk==='ant')? t('word.'+rk+'.add') : t('toc.words');
+  }
   if(r==='picksnd'){
     var pl=(typeof ltById==='function')? ltById(a) : null;
     return (pl? ltName(pl) : '') || t('lt.untitled');
@@ -450,7 +461,23 @@ function obTakeCh(ch){
 function obSkipDraw(){ obFinish(); }
 
 function obFinish(){
-  if(!langName) langName=ob.name||t('lang.default');
+  /* 「言語名決まってないのに音だけ決まってるの何？」 A language that reached the
+     end of this without a name used to be handed the word "language" in the
+     interface's language, which is not a name and is not even in the right
+     one. It gets a word out of its own inventory instead -- which is a name
+     it could actually have -- and the pencil on the cover changes it. */
+  if(!langName){
+    langName=ob.name||'';
+    if(!langName){
+      var seq=null;
+      try{ seq=asWord('n'); }catch(e){}
+      if(seq && seq.length){
+        langName=seq.join('');
+        langName=langName.charAt(0).toUpperCase()+langName.slice(1);
+      }
+    }
+    if(!langName) langName=t('lang.default');
+  }
   SET.done=true; save();
   route='home'; RENDERED=null; render(); window.scrollTo(0,0);
 }

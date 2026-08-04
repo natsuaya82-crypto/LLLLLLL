@@ -5,73 +5,100 @@
 /* =========================================================================
    11. Settings
    ========================================================================= */
-function vSettings(){
+function setSample(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   /* The sample is a word of this language if there is one, shown as its own
      sounds; the Latin beside it is only what the respelling engines read. */
   var sseq=WORDS.length? wPh(WORDS[0]) : phGuess('aelin');
   var sample=sseq.join(''), srom=phRoman(sseq);
-  return '<div class="view">'+
-    navTop('')+
-    '<div class="body">'+
-    '<div class="sec">'+t('set.look')+'</div>'+
-    '<div class="pick">'+
+  return {seq:sseq, rom:srom, sample:sample};
+}
+/* ---- settings, in rooms ------------------------------------------------
+   「設定もなんで言語全部表示なんだよ。設定は分類分けしてページ遷移。」
+
+   It was one page carrying six unrelated things and, in the middle of them,
+   ten rows of interface languages -- so the way to reach "erase everything"
+   was to scroll past every language the app speaks. Six pages now, and the
+   first one is a list of six rows. Each of them is one question. */
+var SETS=[
+  {id:'look',  k:'set.look'},
+  {id:'read',  k:'set.reading'},
+  {id:'ui',    k:'set.display'},
+  {id:'lang',  k:'set.lang'},
+  {id:'acct',  k:'set.account'},
+  {id:'data',  k:'set.data'}
+];
+function vSettings(){
+  var p=PLANS.filter(function(x){return x.id===plan();})[0];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    SETS.map(function(x){
+      return '<button class="set" onclick="go(\'set\',\''+x.id+'\')">'+
+        '<span class="sl">'+esc(t(x.k))+'</span>'+
+        '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
+    }).join('')+
+    '<div class="note" style="margin-top:26px">'+t('set.footer')+(has('plus')?'':t('set.footer.free'))+'</div>'+
+    '</div></div>';
+}
+/* What each room answers, said on its door, so most questions are answered
+   without opening anything. */
+function setSummary(id, p){
+  if(id==='look')  return t('theme.'+(SET.theme||'system'));
+  if(id==='read')  return readMode()==='kana'? capFirst(langDef().rdName) : t('read.'+readMode());
+  if(id==='ui')    return LANG[uiLang()].label;
+  if(id==='lang')  return langName||'—';
+  if(id==='acct')  return t('set.account.guest');
+  if(id==='data')  return has('plus')? t('set.on') : 'Free';
+  return '';
+}
+function vSet(){
+  var id=String(here().a||''), p=PLANS.filter(function(x){return x.id===plan();})[0], S=setSample();
+  var body='';
+  if(id==='look'){
+    body='<div class="pick">'+
       ['system','light','dark'].map(function(th){
         return '<button class="'+(SET.theme===th?'on':'')+'" onclick="setTheme(\''+th+'\')">'+t('theme.'+th)+'</button>';
-      }).join('')+
-    '</div>'+
-    '<div class="note">'+t('set.theme.note')+'</div>'+
-
-    /* How a word comes out, in one place. The exact reading, the rough one,
-       and the voice were three separate sections, and the voice section was a
-       picker for a thing the app no longer uses. There is one question here:
-       what do you want to see, and what does it sound like. */
-    '<div class="sec">'+t('set.reading')+'</div>'+
-    '<div class="pick">'+
+      }).join('')+'</div>'+
+      '<div class="note">'+t('set.theme.note')+'</div>';
+  } else if(id==='read'){
+    body='<div class="pick">'+
       [['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
         return '<button class="'+(readMode()===m[0]?'on':'')+'" onclick="setRead(\''+m[0]+'\')">'+esc(m[1])+'</button>';
-      }).join('')+
-    '</div>'+
-    '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
-      '<span class="pvk">'+esc(readSeq(sseq))+'</span>'+
-      '<button onclick="sayPh('+esc(JSON.stringify(sseq))+')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    '<div class="note">'+t('set.ipa.note', esc(langDef().rdName))+'</div>'+
-    '<div class="note" style="margin-top:10px">'+t('set.voice.note')+'</div>'+
-
-    /* One control for the whole interface: the screen and the reading
-       of every word follow it. The IPA never does. */
-    '<div class="sec">'+t('set.display')+'</div>'+
-    /* One row per language, each carrying the reading it would give the
-       first word in the dictionary — so the choice is made by looking at
-       the result, not by trusting the name of a script. */
-    UI_LANGS.map(function(k){
+      }).join('')+'</div>'+
+      '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
+        '<span class="pvk">'+esc(readSeq(S.seq))+'</span>'+
+        '<button onclick="sayPh('+esc(JSON.stringify(S.seq))+')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
+      '<div class="note">'+t('set.ipa.note', esc(langDef().rdName))+'</div>'+
+      '<div class="note" style="margin-top:10px">'+t('set.voice.note')+'</div>';
+  } else if(id==='ui'){
+    body=UI_LANGS.map(function(k){
       return '<button class="set lrow'+(uiLang()===k?' on':'')+'" onclick="setUi(\''+k+'\')">'+
         '<span class="sl">'+esc(LANG[k].label)+'</span>'+
-        '<span class="pvk lsam">'+esc(LANG[k].read.word(srom))+'</span>'+
+        '<span class="pvk lsam">'+esc(LANG[k].read.word(S.rom))+'</span>'+
         '<span class="lchk">'+(uiLang()===k?ICON_TICK:'')+'</span></button>';
     }).join('')+
-    '<div class="note">'+t('set.display.note')+'</div>'+
-
-    '<div class="sec">'+t('set.lang')+'</div>'+
-    '<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span><span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
-    '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span><span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
-
-    /* Signing in used to be the second thing the app asked for, before a
-       single letter existed. It is here now, where it has a reason: an
-       account is what carries a language off this one phone. Nothing above
-       this line needs it. */
-    '<div class="sec">'+t('set.account')+'</div>'+
-    '<button class="set signin google" onclick="obSignIn()"><span class="sl">'+MARK_GOOGLE+
+    '<div class="note">'+t('set.display.note')+'</div>';
+  } else if(id==='lang'){
+    body='<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span>'+
+      '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
+      '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span>'+
+      '<span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
+      '<button class="set" onclick="go(\'sound\')"><span class="sl">'+t('toc.sound')+'</span>'+
+      '<span class="sv">'+addedSnd().length+ICON_GO+'</span></button>'+
+      '<button class="set" onclick="go(\'letters\')"><span class="sl">'+t('toc.letters')+'</span>'+
+      '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
+      '<button class="set" style="margin-top:18px" onclick="wipe()">'+
+      '<span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>';
+  } else if(id==='acct'){
+    body='<button class="set signin google" onclick="obSignIn()"><span class="sl">'+MARK_GOOGLE+
       '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
-    '<button class="set signin apple" onclick="obSignIn()"><span class="sl">'+MARK_APPLE+
+      '<button class="set signin apple" onclick="obSignIn()"><span class="sl">'+MARK_APPLE+
       '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
-    '<div class="note">'+t('set.account.note')+'</div>'+
-
-    '<div class="sec">'+t('set.plan')+'</div>'+
-    '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span><span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>'+
-
-    '<div class="sec">'+t('set.data')+'</div>'+
-    (has('plus')
+      '<div class="note">'+t('set.account.note')+'</div>'+
+      '<div class="sec">'+t('set.plan')+'</div>'+
+      '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span>'+
+      '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
+  } else if(id==='data'){
+    body=(has('plus')
       ? '<button class="set" onclick="exportCSV()"><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set" onclick="openImport()"><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
@@ -80,10 +107,11 @@ function vSettings(){
         '<span class="tag">PLUS</span></button>'+
         '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.cloud.t')+'</span><br><span class="ld">'+t('set.lock.cloud.d')+'</span></span>'+
-        '<span class="tag">PLUS</span></button>')+
-    '<button class="set" style="margin-top:18px" onclick="wipe()"><span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>'+
-    '<div class="note" style="margin-top:26px">'+t('set.footer')+(has('plus')?'':t('set.footer.free'))+'</div>'+
-    '</div></div>';
+        '<span class="tag">PLUS</span></button>');
+  } else {
+    body='<div class="empty"><div class="eb">'+t('form.gone')+'</div></div>';
+  }
+  return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
 }
 function setTheme(v){ SET.theme=v; save(); applyTheme(); render(); }
 function setRead(m){ SET.read=m; save(); render(); }
@@ -336,6 +364,127 @@ function wdUsesHTML(){
         esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
   }).join('')+'</div>';
 }
+/* ---- what a dictionary entry still had not got ------------------------
+   「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
+
+   An example, a synonym and an antonym are the three things every dictionary
+   in the world has and this one did not. All three are edited on the word
+   and saved as they are made, like the derivations above them, because they
+   are facts about the word rather than a draft of it.
+
+   A relation goes both ways or it is not a relation: making B a synonym of A
+   makes A a synonym of B, and the same for opposites. A dictionary where you
+   can look a word up from one side only is half a dictionary. */
+function wRel(w, k){ if(!w[k]) w[k]=[]; return w[k]; }
+function wRelWords(w, k){
+  return wRel(w,k).map(findWord).filter(function(x){ return !!x; });
+}
+function wRelToggle(hw, k, other){
+  var a=findWord(hw), b=findWord(other);
+  if(!a || !b || a===b) return;
+  var A=wRel(a,k), B=wRel(b,k), i=A.indexOf(b.hw), j=B.indexOf(a.hw);
+  if(i>=0){ A.splice(i,1); if(j>=0) B.splice(j,1); }
+  else { A.push(b.hw); if(j<0) B.push(a.hw); }
+  save(); render();
+}
+/* Everything pointing at a word is told its new name when the name changes,
+   which is why this is a list of headwords and not of objects. */
+function wRelRename(old, hw){
+  WORDS.forEach(function(x){
+    ['syn','ant'].forEach(function(k){
+      if(!x[k]) return;
+      x[k]=x[k].map(function(y){ return y===old? hw : y; });
+    });
+    if(x.ex) x.ex.forEach(function(e){
+      e.ln=String(e.ln||'').split(/\s+/).map(function(y){ return y===old? hw : y; }).join(' ');
+    });
+  });
+}
+function wdRelHTML(k){
+  var w=findWord(openHw); if(!w) return '';
+  var ws=wRelWords(w,k);
+  return (ws.length
+    ? '<div class="rels">'+ws.map(function(x){
+        return '<button class="rel" onclick="openWord(\''+esc(x.hw)+'\')">'+
+          '<span class="relw">'+esc(wOut(x.hw))+'</span>'+
+          (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
+      }).join('')+'</div>'
+    : '<div class="note">'+t('word.'+k+'.none')+'</div>')+
+    '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="go(\'relate\',\''+
+      k+':'+esc(w.hw)+'\')">'+ICON_LINK+t('word.'+k+'.add')+'</button>';
+}
+/* ---- an example ------------------------------------------------------
+   A line in this language and what it means. The line is written as words
+   separated by spaces; any of them the dictionary knows can be said, and the
+   ones it does not are shown as they were typed rather than refused -- a
+   word you have not made yet is exactly the reason to write the example. */
+function exSeq(ln){
+  var out=[], i, w, ps=String(ln||'').trim().split(/\s+/);
+  for(i=0;i<ps.length;i++){ w=findWord(ps[i]); if(w) out=out.concat(wPh(w)); }
+  return out;
+}
+function exGloss(ln){
+  var ps=String(ln||'').trim().split(/\s+/);
+  return ps.map(function(x){ var w=findWord(x); return (w && wMns(w)[0]) || x; }).join(' ');
+}
+function wdExHTML(){
+  var w=findWord(openHw); if(!w) return '';
+  var ex=w.ex||[];
+  return (ex.length
+    ? '<div class="exlist">'+ex.map(function(e,i){
+        var seq=exSeq(e.ln);
+        return '<div class="exrow">'+
+          '<div class="exb"><span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
+          '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
+          (seq.length? '<button class="usep" onclick="sayPh('+esc(JSON.stringify(seq))+')" aria-label="'+
+            esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
+          '<button class="usep" onclick="wdDelEx('+i+')" aria-label="'+esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button>'+
+          '</div>';
+      }).join('')+'</div>'
+    : '')+
+    '<div class="exadd">'+
+      '<input id="wd-exl" placeholder="'+esc(t('word.ex.ln.ph'))+'" autocomplete="off">'+
+      '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddEx();}">'+
+      '<button class="btn ghost" onclick="wdAddEx()">'+t('word.mn.add')+'</button>'+
+    '</div>';
+}
+function wdAddEx(){
+  var w=findWord(openHw), a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg');
+  if(!w || !a) return;
+  var ln=String(a.value||'').trim();
+  if(!ln){ toast(t('word.ex.need')); return; }
+  if(!w.ex) w.ex=[];
+  w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
+  save(); wdPaint();
+}
+function wdDelEx(i){
+  var w=findWord(openHw); if(!w || !w.ex) return;
+  w.ex.splice(i,1); save(); wdPaint();
+}
+/* Choosing the other end of a relation: every word, ticked or not. */
+function vRelate(){
+  var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
+  var w=(k==='syn'||k==='ant')? findWord(hw) : null;
+  if(!w) return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  var on=wRel(w,k), list=WORDS.filter(function(x){ return x!==w; })
+    .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
+  return '<div class="view">'+navTop(on.length)+'<div class="body">'+
+    '<div class="note" style="margin-bottom:12px">'+t('word.'+k+'.d', wOut(w.hw))+'</div>'+
+    (list.length
+      ? list.map(function(x){
+          var has=on.indexOf(x.hw)>=0;
+          return '<div class="entry'+(has?' on':'')+'">'+
+            '<button class="ebody" onclick="wRelToggle(\''+esc(hw)+'\',\''+k+'\',\''+esc(x.hw)+'\')">'+
+            '<div class="hwrow"><span class="hw">'+esc(wOut(x.hw))+'</span>'+
+            '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
+            '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
+            '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
+        }).join('')
+      : '<div class="note">'+t('words.empty')+'</div>')+
+    '</div></div>';
+}
 function wdNoteHTML(){
   return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
     '" oninput="wEdit.nt=this.value">'+esc(wEdit.nt||'')+'</textarea></div>';
@@ -381,7 +530,17 @@ function wdBodyHTML(){
     '<div class="sec">'+t('word.family')+'</div>'+
     wdKidsHTML()+
 
-    '<div class="sec">'+ICON_LINE+t('word.uses')+'</div>'+
+    '<div class="sec">'+t('word.syn')+'</div>'+
+    wdRelHTML('syn')+
+
+    '<div class="sec">'+t('word.ant')+'</div>'+
+    wdRelHTML('ant')+
+
+    '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+
+    '<div class="note" style="margin-bottom:8px">'+t('word.ex.d')+'</div>'+
+    wdExHTML()+
+
+    '<div class="sec">'+t('word.uses')+'</div>'+
     wdUsesHTML()+
 
     '<div class="sec">'+t('word.note')+'</div>'+
@@ -434,6 +593,7 @@ function saveWord(){
      is told its new name rather than left pointing at one that is gone. */
   if(hw!==old){
     WORDS.forEach(function(x){ if(x.from===old) x.from=hw; });
+    wRelRename(old, hw);
     LINES.forEach(function(l){ l.ws=l.ws.map(function(x){ return x===old? hw : x; }); });
     comp=comp.map(function(x){ return x===old? hw : x; });
   }
@@ -447,6 +607,12 @@ function delWord(){
   /* its children keep their own life; they simply stop pointing at a parent
      that is not there */
   WORDS.forEach(function(x){ if(x.from===gone) delete x.from; });
+  /* and nothing is left pointing at a word that has gone */
+  WORDS.forEach(function(x){
+    ['syn','ant'].forEach(function(k){
+      if(x[k]) x[k]=x[k].filter(function(y){ return y!==gone; });
+    });
+  });
   LINES=LINES.filter(function(l){ return l.ws.indexOf(gone)<0; });
   comp=comp.filter(function(x){ return x!==gone; });
   save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.deleted', gone));
