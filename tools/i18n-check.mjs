@@ -236,7 +236,7 @@ await pg.waitForTimeout(300);
 
 const R = await pg.evaluate(() => {
   const out = { keys: [], ph: [], mk: [], name: [], read: [], miss: [], hard: [],
-                langs: UI_LANGS.slice(), walked: [] };
+                langs: UI_LANGS.slice(), walked: [], mirrored: 0 };
   const en = LANG.en.str;
   const enK = Object.keys(en);
   const VARIANT = /\.(1|few)$/;
@@ -323,6 +323,24 @@ const R = await pg.evaluate(() => {
   const views  = Object.keys(window).filter(k =>
     /^v[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'vOb');
   const routes = views.map(v => v.slice(1).toLowerCase());
+  /* A screen is a route and its argument, and several screens read that
+     argument. vSet with no argument takes none of its six branches; vGram
+     with none renders the list instead of a stage. So a walk that only ever
+     asks for the argument-less face never renders the inside of a settings
+     room or a grammar stage at all.
+
+     Key parity would still catch a key that is missing a translation there.
+     What it cannot catch is a string that was never a key -- and the mirror,
+     the only check that can, was not looking at those screens. A hard-coded
+     line inside a settings room passed all nine checks.
+
+     Asked of the page, like the views themselves, so a room or a stage added
+     later is walked the day it is added. tools/act-check.mjs walks the same
+     ground for the same reason; see walkArg there. */
+  const argsOf = (r) =>
+    r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
+    r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
+    [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
   /* openForm is the mechanism every one of these goes through, not a screen
@@ -353,8 +371,10 @@ const R = await pg.evaluate(() => {
             /* a screen is a route AND its argument now, and several read that
                argument -- so put the trail where the screen expects it rather
                than leaving whatever the last opened form left behind */
-            route = routes[i]; NAV = [{ r: route }];
-            try { window[v](); } catch (e) { out.miss.push(c + ' ' + v + ' threw (' + p + '/' + rm + '/' + (empty ? 'empty' : 'full') + '): ' + e.message); }
+            argsOf(routes[i]).forEach(a => {
+              route = routes[i]; NAV = [{ r: route, a: a }];
+              try { window[v](); } catch (e) { out.miss.push(c + ' ' + v + (a ? ':' + a : '') + ' threw (' + p + '/' + rm + '/' + (empty ? 'empty' : 'full') + '): ' + e.message); }
+            });
           });
           WORDS = keep; LINES = keepL;
         });
@@ -494,6 +514,7 @@ const R = await pg.evaluate(() => {
      easy to leave in English because they do not look like copy. */
   const ATTRS = /(?:placeholder|title|alt|aria-label|aria-description)\s*=\s*"([^"]*)"/gi;
   function look(where, html){
+    out.mirrored++;
     const raw = String(html);
     words(where, raw.replace(/<[^>]*>/g, '\n').replace(/&[a-z#0-9]+;/g, ' '), 'shows');
     let a; ATTRS.lastIndex = 0;
@@ -509,8 +530,10 @@ const R = await pg.evaluate(() => {
       const keep = WORDS, keepL = LINES;
       if (empty){ WORDS = []; LINES = []; }
       views.forEach((v, i) => {
-        route = routes[i]; NAV = [{ r: route }];
-        try { look(v, window[v]()); } catch (e) {}
+        argsOf(routes[i]).forEach(a => {
+          route = routes[i]; NAV = [{ r: route, a: a }];
+          try { look(v + (a ? ':' + a : ''), window[v]()); } catch (e) {}
+        });
       });
       WORDS = keep; LINES = keepL;
     });
@@ -546,6 +569,11 @@ R.hard.forEach(m => fail('hard-coded', m));
 
 console.log('languages checked: ' + R.langs.join(' '));
 console.log('screens walked (' + R.walked.length + '): ' + R.walked.join(' '));
+/* Printed because the walk and the mirror do not cover the same ground and
+   nothing in a green run would ever say so. tools/act-check.mjs prints its own
+   count for the same reason; when these two drift apart, the smaller one is a
+   set of screens where a hard-coded string can sit forever. */
+console.log('screens the mirror rendered: ' + R.mirrored);
 if (notes.length){
   console.log('\nworth a look (' + notes.length + '):');
   notes.slice(0, 40).forEach(n => console.log('  ' + n));

@@ -102,12 +102,15 @@ Adding a script file means adding its tag and `git add`-ing it in the same commi
 A new view is found automatically by the checks (they ask the page for globals named
 `v` + a capital), so a screen written today is walked today. Nobody adds it to a list.
 
-**The two walks do not cover the same ground.** `i18n-check` walks 30 views — plan
-× empty/full, but always with no route argument. `act-check` walks 162, because it
-also renders each argument-taking screen once per argument (`walkArg`: every settings
-room, every grammar stage, every letter) plus the half-done states. A screen reached
-only with an argument — the body of a settings room, a grammar stage's detail — is
-therefore proven for its buttons but **not** swept for hard-coded strings.
+**A screen is a route AND its argument.** `vSet` with no argument takes none of its
+six branches; `vGram` with none shows the list, not a stage. Both walks render each
+argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` in
+`i18n-check` — and both ask the page for the list, so a room or stage added later is
+walked the day it is added. Do not narrow either one back to the argument-less face:
+a screen the mirror never renders is a screen where a hard-coded string sits forever.
+
+Both checks print their coverage (`screens walked: 162`, `screens the mirror
+rendered: 270`) because nothing else in a green run would show it shrinking.
 
 ## Working on this repo
 
