@@ -187,7 +187,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
        padding:0 30px calc(56px + env(safe-area-inset-bottom,0));text-align:center}
-.cvrow{display:flex;gap:8px;margin:22px 0 6px}
+/* What the language is for, on the cover, because that is where what a book
+   is about belongs. */
+.wldrow{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;
+        min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;
+        background:none;color:var(--txs);font-family:inherit;font-size:.76rem}
+.wldrow:active{border-color:var(--goldln)}
+.wldl{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wldl.none{color:var(--txm)}
+.cvrow{display:flex;gap:8px;margin:16px 0 6px}
 .cvst{flex:1;min-height:56px;background:none;border:1px solid var(--line);border-radius:10px;
       padding:9px 4px;color:var(--tx);font-family:inherit;
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}

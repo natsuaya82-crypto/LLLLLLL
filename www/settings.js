@@ -132,7 +132,7 @@ function wipe(){
   if(css && css.parentNode) css.parentNode.removeChild(css);
   /* everything the person chose, back to the defaults in core.js */
   SET={theme:SET.theme, plan:'free', done:false, order:'SOV', read:'both',
-       voice:'', ui:SET.ui, script:false};
+       voice:'', ui:SET.ui, script:false, world:{}};
   try{
     localStorage.removeItem(LS_W); localStorage.removeItem(LS_L);
     localStorage.removeItem(LS_N); localStorage.removeItem(LS_G);
@@ -786,27 +786,88 @@ function exportCSV(){
     toast(t('toast.exported'));
   }catch(e){ toast(t('toast.exportfail')); }
 }
+/* ---- bringing a list in ------------------------------------------------
+   The old importer took a CSV whose first column was a spelling in Latin
+   letters, stripped everything that was not A-Z, and refused anything under
+   two characters. That works for a language somebody already wrote in roman
+   letters and for nothing else -- not for a word made of ʃ and ŋ, and not at
+   all for the thing a person actually has lying around, which is a list of
+   MEANINGS: a Swadesh list, the nouns of a setting, the two hundred words a
+   story needs.
+
+   So a line is read as whatever it is. One field is a meaning and the word
+   for it is coined out of this language's own sounds. Two or three fields
+   are a word you already have: spelling, meaning, part of speech. Both can
+   be in the same paste, because a real list is usually both. */
+function impHead(x){
+  var v=String(x||'').trim().toLowerCase(), c, k;
+  if(v==='spelling' || v==='word' || v==='hw') return true;
+  for(c=0;c<UI_LANGS.length;c++){
+    k=LANG[UI_LANGS[c]].str['f.spelling'];
+    if(k && String(k).trim().toLowerCase()===v) return true;
+  }
+  return false;
+}
+function impParse(src){
+  var out=[], lines=String(src||'').split(/\r?\n/), i, c, ln;
+  for(i=0;i<lines.length;i++){
+    ln=lines[i].trim();
+    if(!ln) continue;
+    c=ln.split(/\t|,/).map(function(x){ return x.trim().replace(/^"|"$/g,''); });
+    /* a header row, in whichever of the ten the list was written in: the
+       label a spelling column would carry is a string this app already has */
+    if(impHead(c[0])) continue;
+    if(c.length===1) out.push({mn:c[0], hw:''});
+    else out.push({hw:c[0], mn:c[1]||'', pos:posKey(c[2]||'n')});
+  }
+  return out;
+}
 function openImport(){
   openForm('csv:', t('csv.title'),
-    '<div class="note" style="margin-bottom:10px">'+t('csv.note')+'</div>'+
-    '<div class="field"><textarea id="f-csv" placeholder="'+t('csv.ph')+'"></textarea></div>'+
+    '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
     '<button class="btn" style="width:100%" onclick="doImport()">'+t('csv.btn')+'</button>');
 }
 FORM_OPEN.csv=function(){ openImport(); };
 function doImport(){
-  var src=document.getElementById('f-csv').value, n=0;
-  src.split(/\r?\n/).forEach(function(line){
-    if(!line.trim()) return;
-    var c=line.split(',').map(function(x){return x.trim().replace(/^"|"$/g,'');});
-    var hw=String(c[0]||'').replace(/[^A-Za-z]/g,'');
-    if(hw.length<2) return;
-    if(/^spelling$/i.test(c[0])) return;
-    hw=hw.charAt(0).toUpperCase()+hw.slice(1).toLowerCase();
-    if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})) return;
-    WORDS.push({hw:hw, mn:c[1]||'', pos:posKey(c[2]), at:Date.now()});
-    n++;
-  });
-  save(); closeSheet(); cands=[]; render();
-  toast(tn('toast.imported', n));
+  var e=document.getElementById('f-csv');
+  if(!e) return;
+  var rows=impParse(e.value), made=0, took=0, i, r, seq, hw, guard;
+  for(i=0;i<rows.length;i++){
+    r=rows[i];
+    if(!capOK(1)) break;
+    if(r.hw){
+      /* a word that already exists somewhere else: its spelling is its own,
+         and its sounds are read off that spelling as well as they can be */
+      hw=String(r.hw);
+      if(findWord(hw)) continue;
+      seq=phGuess(hw);
+      if(!seq.length) continue;
+      WORDS.push({hw:hw, ph:seq, mn:r.mn, mns:(r.mn?[r.mn]:[]), pos:r.pos||'n', at:Date.now()+i});
+      took++;
+    } else {
+      if(!r.mn) continue;
+      if(!addedSnd().length) continue;
+      /* asWord and not makeWord: makeWord copies the shapes the dictionary
+         already uses, and a dictionary of one word has one shape, so a list
+         of two hundred meanings would get two words out of it. asWord falls
+         back to the plainest shape there is, built from the whole inventory,
+         which is the only thing that can be done before there is a pattern
+         to imitate. */
+      seq=null; guard=0;
+      while(guard<40){
+        guard++;
+        seq=asWord('n');
+        if(seq && seq.length && !findWord(seq.join(''))) break;
+        seq=null;
+      }
+      if(!seq) continue;
+      hw=seq.join('');
+      WORDS.push({hw:hw, ph:seq, mn:r.mn, mns:[r.mn], pos:'n', at:Date.now()+i});
+      made++;
+    }
+  }
+  save(); cands=[];
+  if(here().r==='form') back(); else render();
+  toast(t('csv.done', took, made));
 }
 

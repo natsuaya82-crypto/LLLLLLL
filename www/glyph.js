@@ -1361,6 +1361,7 @@ function render(){
         : route==='abugida'? vAbugida()
         : route==='relate'? vRelate()
         : route==='set'   ? vSet()
+        : route==='world' ? vWorld()
         : route==='spell' ? vSpell()
         : route==='aspell'? vASpell()
         : vHome();

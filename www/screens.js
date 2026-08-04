@@ -72,6 +72,7 @@ var PAGES={
   talk:    {tab:'build', n:'VI',  k:'toc.talk'},
   settings:{tab:'home',  k:'set.title'},
   set:     {tab:'home'},
+  world:   {tab:'home', k:'wld.title'},
   plans:   {tab:'home',  k:'plans.title'}
 };
 function pageName(r, a){
@@ -798,6 +799,9 @@ function vHome(){
       '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
       '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
       '<div class="rule"></div>'+
+      '<button class="wldrow" onclick="go(\'world\')">'+
+        (wldSaid()? '<span class="wldl">'+esc(wldLine()||t('wld.title'))+'</span>'
+                  : '<span class="wldl none">'+esc(t('wld.ask'))+'</span>')+ICON_GO+'</button>'+
       '<div class="cvrow">'+
         cvStat(t('toc.sound'), addedSnd().length||'—', 'sound')+
         cvStat(t('toc.letters'), ltShaped()||'—', 'letters')+
@@ -884,6 +888,54 @@ function clearFq(){
   var e=document.getElementById('f-q');
   fq=''; if(e){ e.value=''; e.focus(); }
   setFq('');
+}
+/* ---- what the language is for ----------------------------------------
+   「世界観とか、物語で使うなら物語用なのか設定できたり」
+
+   A language made for a story is not the same object as a language made to
+   be spoken on a Tuesday, and the difference is not decoration: it decides
+   what words come first, whether names of places matter more than words for
+   weather, and who is supposed to be able to say any of it. Nothing in the
+   app knew, so nothing in the app could act on it.
+
+   Four things, all optional and all short: what it is for, where it is
+   spoken, who speaks it, and anything else. They live on the cover, because
+   that is where what a book is about belongs, and they travel with the
+   language, because they are part of it. */
+var WORLDS=['story','people','place','real','play'];
+function world(){ if(!SET.world) SET.world={}; return SET.world; }
+function wldUse(){ var u=world().use; return WORLDS.indexOf(u)>=0? u : ''; }
+function setWldUse(u){ world().use=(wldUse()===u? '' : u); save(); render(); }
+function setWld(k, v){ world()[k]=String(v||''); save(); }
+function wldSaid(){
+  var w=world();
+  return !!(wldUse() || (w.where||'').length || (w.who||'').length || (w.note||'').length);
+}
+function wldLine(){
+  var w=world(), a=[];
+  if(wldUse()) a.push(t('wld.'+wldUse()));
+  if(w.where) a.push(w.where);
+  return a.join(' · ');
+}
+function vWorld(){
+  var w=world();
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="sec">'+t('wld.use')+'</div>'+
+    '<div class="obscripts one">'+WORLDS.map(function(k){
+      return '<button class="obsrow'+(wldUse()===k?' on':'')+'" onclick="setWldUse(\''+k+'\')">'+
+        '<span class="obnm">'+esc(t('wld.'+k))+'</span>'+
+        '<span class="obws">'+esc(t('wld.'+k+'.d'))+'</span></button>';
+    }).join('')+'</div>'+
+    '<div class="sec">'+t('wld.where')+'</div>'+
+    '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
+      'placeholder="'+esc(t('wld.where.ph'))+'" oninput="setWld(\'where\',this.value)"></div>'+
+    '<div class="sec">'+t('wld.who')+'</div>'+
+    '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
+      'placeholder="'+esc(t('wld.who.ph'))+'" oninput="setWld(\'who\',this.value)"></div>'+
+    '<div class="sec">'+t('wld.note')+'</div>'+
+    '<textarea class="ntbody" style="min-height:140px" placeholder="'+esc(t('wld.note.ph'))+'" '+
+      'onchange="setWld(\'note\',this.value)">'+esc(w.note||'')+'</textarea>'+
+    '</div></div>';
 }
 function editName(){
   var v=prompt(t('home.name.prompt'), langName);
