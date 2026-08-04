@@ -9,16 +9,16 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets-check + es5-check + i18n-check — must be green before any commit
+npm test        # assets + es5 + i18n + act — must be green before any commit
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run i18n`.
+Individual: `npm run assets` / `npm run es5` / `npm run i18n` / `npm run act`.
 `tools/pre-commit` runs them as a hook.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
 
-## The three rules the gate enforces
+## The four rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -50,7 +50,29 @@ Ten interface languages live in `www/i18n/{en,es,pt,fr,de,it,ru,zh,ko,ja}.js`.
 comes out in plain letters never passed through `t()` and fails the build. It also walks all
 30 screens in all 10 languages with fallback-to-English armed — one fallback fails.
 
-### 3. Script load order in `index.html`
+### 3. No JavaScript inside the markup
+
+A button carries a **name**, never code. Never write `onclick="..."` or any other
+`on*=` attribute — `act-check` fails on one anywhere, so the class cannot come back.
+
+```js
+'<button' + DO('tkAdd', [w.hw]) + '>'      // -> data-do="tkAdd" data-a="[...]"
+```
+
+`www/act.js` holds the tables and the one delegated listener: `DO` (pressed),
+`AFTER` (a second name on the same press), `IN` (typed into), `CH` (changed),
+`KD` (Enter). Arguments travel as JSON, so a number stays a number and nothing
+is escaped by hand.
+
+Every name a screen can say is registered in `www/act-map.js` **with the function
+itself, not its name** — `act('openWord', openWord)` — so a deleted function stops
+the app loudly on load instead of failing on someone's phone weeks later.
+
+Adding a button means adding its `act(...)` line in the same commit. `act-check`
+proves both directions: no name without a function, and no entry no screen names
+(a dead entry is a button that used to exist).
+
+### 4. Script load order in `index.html`
 
 - `core.js` defines `defLang()` → precedes the ten language files
 - `otf5.js` defines `LinguaFont` → precedes `glyph.js`
@@ -65,6 +87,9 @@ Adding a script file means adding its tag and `git add`-ing it in the same commi
 | file | what it is |
 |---|---|
 | `www/core.js` | language registry, `t()`, storage |
+| `www/act.js` | the action tables and the one delegated listener (`DO`/`AFTER`/`IN`/`CH`/`KD`) |
+| `www/act-map.js` | every name a screen may say, bound to the real function |
+| `www/boot.js` | where the app starts |
 | `www/screens.js` | all 30 views (`vHome`, `vWords`, `vSound`, … — global `v` + capital) |
 | `www/settings.js` | settings screens |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
@@ -76,6 +101,13 @@ Adding a script file means adding its tag and `git add`-ing it in the same commi
 
 A new view is found automatically by the checks (they ask the page for globals named
 `v` + a capital), so a screen written today is walked today. Nobody adds it to a list.
+
+**The two walks do not cover the same ground.** `i18n-check` walks 30 views — plan
+× empty/full, but always with no route argument. `act-check` walks 162, because it
+also renders each argument-taking screen once per argument (`walkArg`: every settings
+room, every grammar stage, every letter) plus the half-done states. A screen reached
+only with an argument — the body of a settings room, a grammar stage's detail — is
+therefore proven for its buttons but **not** swept for hard-coded strings.
 
 ## Working on this repo
 
