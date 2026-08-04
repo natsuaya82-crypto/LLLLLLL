@@ -370,14 +370,13 @@ const R = await pg.evaluate(() => {
 
     /* the labels that are looked up, not templated */
     try {
-      ['n','v','adj','x',POS_ALL].forEach(posLabel);
-      /* word order is three roles now, looked up one at a time, and the
-         grammar decisions are each a title, a line of explanation and a
-         row of choices -- none of which any view passes through t() as a
-         whole string, so they are asked for here by hand. */
+      POS.concat([POS_ALL]).forEach(posLabel);
+      /* Word order is three roles, looked up one at a time. The decisions
+         behind them are machinery with no screen now: the labels they still
+         use are the ones the conversation chapter reads, and the line of
+         explanation each of them had went with the screen that showed it. */
       ['S','O','V'].forEach(k => t('gram.role.' + k));
-      GFEATS.forEach(f => { t('gram.' + f.id + '.t'); t('gram.' + f.id + '.d');
-        f.opts.forEach(o => gOptLab(f.id, o)); });
+      GFEATS.forEach(f => { f.opts.forEach(o => gOptLab(f.id, o)); });
       /* the seed words went with the old onboarding: */ // OB_SEEDS.forEach(s => seedLabel(s.k !== undefined ? s.k : s));
     } catch (e) { out.miss.push(c + ' a label lookup threw: ' + e.message); }
 

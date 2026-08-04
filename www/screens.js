@@ -486,6 +486,7 @@ function obFinish(){
 }
 
 function obDrawHTML(){
+  if(!ob.snd) ob.snd=(wsUnits()[0]||addedSnd()[0]||'');
   if(!GE) GE=newGE(ob.snd);
   var st=GE.st[GE.si], pts=0;
   GE.st.forEach(function(x){ pts+=x.pts.length; });
