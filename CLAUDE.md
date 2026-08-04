@@ -145,8 +145,13 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/act-map.js` | every name a screen may say, bound to the real function |
 | `www/route-map.js` | every route, bound to the view it shows |
 | `www/boot.js` | where the app starts |
-| `www/screens.js` | all 30 views (`vHome`, `vWords`, `vSound`, … — global `v` + capital) |
-| `www/settings.js` | settings screens |
+| `www/shell.js` | the shell every screen sits in (ch 4) |
+| `www/onboard.js` | onboarding — what the app is until `SET.done` (ch 5) |
+| `www/home.js` | the cover, the contents, the writing system (ch 6) |
+| `www/words.js` | the dictionary (ch 7) |
+| `www/sound.js` | sound (ch 8) |
+| `www/settings.js` | settings and plans (ch 11-12) |
+| `www/wordsheet.js` | the sheet for writing one word, and CSV (ch 13) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
@@ -169,8 +174,11 @@ rendered: 270`) because nothing else in a green run would show it shrinking.
 
 ## Working on this repo
 
-- `www/screens.js` is 80 KB and `www/settings.js` 42 KB. Grep for the view or function
-  and read that range — do not read them whole.
+- The book is numbered: chapter 0 opens `core.js`, chapter 14 closes `glyph.js`, and
+  a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
+  grew to hold five was split along those banners, not along anything new.
+- `www/glyph.js` is still 47 KB (the font writer and the drawing surface). Grep for
+  the function and read that range rather than the whole file.
 - Run `npm test` after every change, not once at the end. It is fast and it is the spec.
 - iOS build and device testing must happen on a Mac with Xcode
   (`npx cap sync ios`); it cannot be done from a Linux session.
