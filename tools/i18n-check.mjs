@@ -362,6 +362,17 @@ const R = await pg.evaluate(() => {
     });
     SET.plan = 'free'; SET.read = 'both';
 
+    /* The search tab has three faces and only one of them is what a plain
+       render gives you: the rest, a list of results, and what one pressed
+       sound or letter is in. A view walk would never reach the other two. */
+    try {
+      fq = ''; fpick = null; findBodyHTML();
+      fq = 'a'; findBodyHTML();
+      fq = ''; fpick = { k: 's', v: (addedSnd()[0] || 'a') }; findBodyHTML();
+      fpick = { k: 'l', v: ((LETTERS[0] || {}).id || 'x') }; findBodyHTML();
+      fq = ''; fpick = null;
+    } catch (e) { out.miss.push(c + ' the search tab threw: ' + e.message); }
+
     /* the sheets, which are not routes */
     opens.forEach(o => {
       try { callOpen(o); } catch (e) { out.miss.push(c + ' ' + o + ' threw: ' + e.message); }

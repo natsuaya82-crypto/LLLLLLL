@@ -1386,6 +1386,8 @@ function render(){
   if(route==='glyph'){ geMount(); ghMount(); }
   if(route==='sound' || route==='letters' || route==='pickltr' || route==='abugida' ||
      route==='spell' || route==='aspell' || route==='form') geTiles();
+  /* the search tab draws letters and sounds as keys, which are canvases */
+  if(route==='find') phkMount();
   if(route==='form') formMount();
 }
 migratePh();

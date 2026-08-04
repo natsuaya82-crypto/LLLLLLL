@@ -846,14 +846,32 @@ function vBuild(){
       '<span class="lead"></span>'+ICON_GO+'</button>'+
     '</div>'+tabBar()+'</div>';
 }
-/* Search, over everything, from anywhere -- and the way other people's work
-   comes in. */
+/* ---- the search tab ---------------------------------------------------
+   「なんで下タブはsns用に作ったのにそれすら存在しないゴミデータなの？」
+
+   He is right and it was indefensible. This screen opened on an empty box
+   headed "everything you have made" with nothing inside it, and a dashed
+   card headed "other people's languages" saying "not open yet" -- a heading
+   with no content and a promise with no date, taking up a third of a tab
+   that the bottom bar sends you to. A tab has to be worth arriving at.
+
+   It is worth arriving at when it can do something no other screen can. Two
+   things only this one does:
+
+     pull from the other end   every word that uses a sound, every word a
+                               letter writes -- the dictionary read backwards
+     what is still half done   words with no meaning, letters with no sound,
+                               sounds nothing writes, stages not finished,
+                               each one a row that goes straight to the thing
+
+   And the search box now reaches the whole language, not only the words:
+   letters, sounds, notes, the rules you wrote and the lines you wrote to
+   show them. Results come back in groups, so a hit in a grammar stage does
+   not sit in a list pretending to be a word.
+
+   The gallery card is gone. When there is something to show there it can
+   come back; until then the tab does not claim it. */
 function vFind(){
-  var qq=String(fq||'').trim().toLowerCase(), hits=[];
-  if(qq){
-    hits=WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
-      .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
-  }
   return '<div class="view">'+
     '<div class="navtop"><span class="navt">'+esc(t('tab.find'))+'</span></div>'+
     '<div class="chead">'+
@@ -861,34 +879,146 @@ function vFind(){
     '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'" oninput="setFq(this.value)">'+
     '<button class="sx" id="f-x" onclick="clearFq()"'+(fq?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
-    '<div class="body" id="f-list">'+findBodyHTML(hits, qq)+'</div>'+
+    '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
     tabBar()+'</div>';
 }
-var fq='';
-function findBodyHTML(hits, qq){
-  if(!qq)
-    return '<div class="fcard"><div class="fch">'+t('find.mine.h')+'</div>'+
-      '</div>'+
-      '<button class="trow" onclick="openImport()"><span class="rn"></span>'+
-      '<span class="rt">'+esc(t('set.csv.in'))+'</span><span class="lead"></span>'+ICON_GO+'</button>'+
-      '<div class="fcard soon"><div class="fch">'+t('find.world.h')+'</div>'+
-      '<div class="note">'+t('find.world.d')+'</div></div>';
-  if(!hits.length) return '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>';
-  return hits.map(function(w){ return entryHTML(w, false); }).join('');
+var fq='', fpick=null;
+
+/* ---- reading the dictionary backwards --------------------------------- */
+function fWordsWithSnd(sym){
+  return WORDS.filter(function(w){ return wPh(w).indexOf(sym)>=0; });
 }
-function setFq(v){
-  fq=v;
-  var el=document.getElementById('f-list'); if(!el) return;
-  var qq=String(v||'').trim().toLowerCase();
-  el.innerHTML=findBodyHTML(qq? WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
-    .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); }) : [], qq);
+function fWordsWithLtr(id){
+  var l=ltById(id);
+  if(!l) return [];
+  var u=ltUnits(l);
+  return WORDS.filter(function(w){
+    var sp=spOf(w), i, j;
+    for(i=0;i<sp.length;i++){
+      if(sp[i].l===id) return true;
+      for(j=0;j<u.length;j++) if(sp[i].u===u[j]) return true;
+    }
+    return false;
+  });
+}
+function fPick(kind, key){
+  fpick=(fpick && fpick.k===kind && fpick.v===key)? null : {k:kind, v:key};
+  fq=''; findPaint();
+}
+/* A letter as a key, the same shape the sound keys have, because they are
+   the same act: press the thing, see what it is in. */
+function ltkHTML(l, call){
+  var face='';
+  if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
+  else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
+  return '<button class="phk'+(face?' hasg':'')+'" onclick="'+call+'">'+face+
+    '<span class="pks">'+esc(ltName(l)||'\u00b7')+'</span></button>';
+}
+
+/* ---- what is still half done ------------------------------------------
+   Every count here is a real query over real data, and every row lands on
+   the screen where the thing gets finished. A count of zero shows nothing:
+   a list of what you have already done is not a list of what to do. */
+function fTodo(){
+  var out=[];
+  var noMn=WORDS.filter(function(w){ return !wMns(w).length; }).length;
+  var noSnd=LETTERS.filter(function(l){ return ltHasShape(l) && !ltUnits(l).length; }).length;
+  var noLt=addedSnd().filter(function(x){ return !ltStrokes(x) && !ltChar(x); }).length;
+  var stg=stAll().filter(function(p){ return !stIsDone(p); }).length;
+  if(noMn) out.push([t('find.todo.mn'), noMn, 'words']);
+  if(noSnd) out.push([t('find.todo.lt'), noSnd, 'letters']);
+  if(noLt) out.push([t('find.todo.sn'), noLt, 'sound']);
+  if(stg) out.push([t('find.todo.st'), stg, 'gram']);
+  return out;
+}
+
+/* ---- searching the whole language -------------------------------------- */
+function fHits(qq){
+  var g={w:[], l:[], s:[], n:[], r:[]};
+  g.w=WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
+    .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
+  g.l=LETTERS.filter(function(l){
+    return (ltName(l)+' '+(l.ch||'')+' '+ltUnits(l).join(' ')).toLowerCase().indexOf(qq)>=0; });
+  g.s=addedSnd().filter(function(x){ return String(x).toLowerCase().indexOf(qq)>=0; });
+  g.n=[];
+  NOTES.forEach(function(n,i){
+    if((String(n.t||'')+' '+String(n.b||'')).toLowerCase().indexOf(qq)>=0) g.n.push({i:i, n:n}); });
+  g.r=[];
+  stAll().forEach(function(p){
+    var body=stRules(p.id)+' '+stEx(p.id).map(function(e){
+      return (e.lb||'')+' '+(e.ln||'')+' '+(e.gl||''); }).join(' ');
+    var hay=(stTitle(p)+' '+body).toLowerCase();
+    if(hay.indexOf(qq)>=0) g.r.push({p:p, body:body.trim()});
+  });
+  return g;
+}
+function fSec(label, n){ return '<div class="sec">'+esc(label)+(n?' '+n:'')+'</div>'; }
+function fRow(title, val, call){
+  return '<button class="trow" onclick="'+call+'"><span class="rn"></span>'+
+    '<span class="rt">'+esc(title)+'</span><span class="lead"></span>'+
+    (val!==''? '<span class="rv">'+esc(String(val))+'</span>' : '')+ICON_GO+'</button>';
+}
+function findBodyHTML(){
+  var qq=String(fq||'').trim().toLowerCase();
+  if(qq) return fResultsHTML(qq);
+  if(fpick) return fPickedHTML();
+  return fRestHTML();
+}
+function fResultsHTML(qq){
+  var g=fHits(qq), out='', total=g.w.length+g.l.length+g.s.length+g.n.length+g.r.length;
+  if(!total) return '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>';
+  if(g.w.length) out+=fSec(t('toc.words'), g.w.length)+g.w.map(function(w){ return entryHTML(w, false); }).join('');
+  if(g.l.length) out+=fSec(t('toc.letters'), g.l.length)+
+    '<div class="phkeys">'+g.l.map(function(l){
+      return ltkHTML(l, 'fPick(\'l\',\''+esc(l.id)+'\')'); }).join('')+'</div>';
+  if(g.s.length) out+=fSec(t('toc.sound'), g.s.length)+
+    '<div class="phkeys">'+g.s.map(function(x){
+      return phkHTML(x, 'fPick(\'s\',\''+esc(x)+'\')'); }).join('')+'</div>';
+  if(g.n.length) out+=fSec(t('toc.notes'), g.n.length)+g.n.map(function(h){
+      return fRow(h.n.t||t('note.untitled'), '', 'openNote('+h.i+')'); }).join('');
+  if(g.r.length) out+=fSec(t('toc.gram'), g.r.length)+g.r.map(function(h){
+      return fRow(stTitle(h.p), '', 'stOpen(\''+esc(h.p.id)+'\')'); }).join('');
+  return out;
+}
+/* What a pressed sound or letter is in. */
+function fPickedHTML(){
+  var hits = fpick.k==='s'? fWordsWithSnd(fpick.v) : fWordsWithLtr(fpick.v);
+  var name = fpick.k==='s'? fpick.v : (ltName(ltById(fpick.v))||'');
+  return '<button class="trow" onclick="fPick(\''+esc(fpick.k)+'\',\''+esc(fpick.v)+'\')">'+
+      '<span class="rn"></span><span class="rt">'+esc(t('find.back'))+'</span>'+
+      '<span class="lead"></span></button>'+
+    fSec(t(fpick.k==='s'? 'find.hit.snd':'find.hit.lt', name), hits.length)+
+    (hits.length? hits.map(function(w){ return entryHTML(w, false); }).join('')
+                : '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>');
+}
+function fRestHTML(){
+  var snd=addedSnd(), lt=LETTERS.filter(ltHasShape), todo=fTodo(), out='';
+  if(snd.length) out+=fSec(t('find.by.snd'), snd.length)+
+    '<div class="phkeys">'+snd.map(function(x){
+      return phkHTML(x, 'fPick(\'s\',\''+esc(x)+'\')'); }).join('')+'</div>';
+  if(lt.length) out+=fSec(t('find.by.lt'), lt.length)+
+    '<div class="phkeys">'+lt.map(function(l){
+      return ltkHTML(l, 'fPick(\'l\',\''+esc(l.id)+'\')'); }).join('')+'</div>';
+  out+=fSec(t('find.todo'), todo.length||'');
+  out+= todo.length
+    ? todo.map(function(r){ return fRow(r[0], r[1], 'goTab(\'build\');go(\''+r[2]+'\')'); }).join('')
+    : '<div class="note">'+t('find.todo.no')+'</div>';
+  out+=fSec(t('find.in'), '')+fRow(t('set.csv.in'), '', 'openImport()');
+  return out;
+}
+function findPaint(){
+  var el=document.getElementById('f-list');
+  if(!el){ render(); return; }
+  el.innerHTML=findBodyHTML();
+  phkMount();
   var x=document.getElementById('f-x');
-  if(x){ if(v) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
+  if(x){ if(fq) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
+function setFq(v){ fq=v; if(v) fpick=null; findPaint(); }
 function clearFq(){
   var e=document.getElementById('f-q');
   fq=''; if(e){ e.value=''; e.focus(); }
-  setFq('');
+  findPaint();
 }
 /* ---- what the language is for ----------------------------------------
    「世界観とか、物語で使うなら物語用なのか設定できたり」
