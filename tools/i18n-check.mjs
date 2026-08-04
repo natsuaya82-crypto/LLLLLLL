@@ -73,13 +73,20 @@ const chromium = await loadChromium();
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
-/* Everything a screen is built out of. The ten language files are excluded on
-   purpose — they are where foreign text belongs — and so is the font writer,
-   which has no user-facing text in it at all. */
-const APP_SRC = ['index.html', 'core.js', 'reading.js', 'letters.js', 'screens.js',
-                 'sentences.js', 'wsys.js', 'assist.js', 'grammar.js', 'phases.js',
-                 'notes.js', 'talk.js',
-                 'settings.js', 'glyph.js'].map(f => path.join(ROOT, f));
+/* Everything a screen is built out of: index.html and every .js in www/, asked
+   for rather than listed. It was a list, and a list of source files is a thing
+   that goes quietly out of date -- a file split in two is half-checked, and a
+   new one is not checked at all, in both cases silently.
+
+   The ten language files are excluded because they are where foreign text
+   belongs. Anything else that has no user-facing text in it is named here
+   with the reason, so that adding to this is a decision rather than a habit. */
+const NO_TEXT = {
+  'otf5.js': 'the OpenType writer: byte tables, no words'
+};
+const APP_SRC = ['index.html'].concat(
+  fs.readdirSync(ROOT).filter(f => f.endsWith('.js') && !NO_TEXT[f]).sort()
+).map(f => path.join(ROOT, f));
 const PORT = 8121;
 /* Use the browser this machine already has if there is one; on a CI runner
    there is not, and Playwright's own copy is the right answer. */
@@ -145,7 +152,7 @@ function checkSource(){
   /* The app used to be one file, and this check meant "anywhere outside
      section 3.6". It is several files now, so it means "any file that is not
      one of the ten languages" — which is the same rule, stated where it can no
-     longer drift: a new screen file is covered by adding it to APP_SRC, and a
+     longer drift: a new screen file is covered the moment it exists, and a
      new language needs nothing. */
   APP_SRC.forEach((file) => {
     const rel = path.basename(file);
@@ -567,6 +574,7 @@ R.read.forEach(m => fail('readings', m));
 R.miss.forEach(m => fail('the walk', m));
 R.hard.forEach(m => fail('hard-coded', m));
 
+console.log('source files read: ' + APP_SRC.length + ' (index.html and every .js in www/ but ' + Object.keys(NO_TEXT).join(', ') + ')');
 console.log('languages checked: ' + R.langs.join(' '));
 console.log('screens walked (' + R.walked.length + '): ' + R.walked.join(' '));
 /* Printed because the walk and the mirror do not cover the same ground and
