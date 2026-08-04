@@ -313,8 +313,6 @@ function gOpenOf(){ return (here().r==='gram')? (here().a||null) : null; }
    is the trail's argument now, not a separate piece of state that a second
    back button had to clear. */
 function stOpen(id){ go('gram', id); }
-function stClose(){ back(); }
-
 function stRow(p, n){
   var done=stIsDone(p), tot=stTotal(p);
   return '<button class="strow'+(done?' done':'')+'"' + DO('stOpen', [p.id]) + '>'+

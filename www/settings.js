@@ -377,12 +377,6 @@ function findWord(hw){
    -- the word written out in the reader's own script -- and a word made of
    IPA symbols gives it nothing to work from. One syllabifier, in core.js,
    used by the dictionary, the analysis and this. */
-function wordSyl(w){
-  return phCut(wPh(w)).map(function(p){
-    return p.on.join('')+p.nu.join('')+p.co.join('');
-  }).join('\u00b7');
-}
-
 /* ---- One word, opened ---------------------------------------------------
    It used to be a read-only card with a meaning box on it: you could change
    what a word meant and nothing else. Not the word. A word built out of the

@@ -9,16 +9,16 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets + es5 + i18n + act + press — green before any commit (~75s)
+npm test        # assets + es5 + dead + i18n + act + press — green before any commit (~75s)
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run i18n` / `npm run act` / `npm run press`.
+Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run i18n` / `npm run act` / `npm run press`.
 `tools/pre-commit` runs them as a hook.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
 
-## The four rules the gate enforces
+## The five rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -79,7 +79,18 @@ calls that button fine. Both fixtures and the half-done screen list live in
 `tools/fixture.mjs` so the two walk the same app; add a screen there, not to one
 of them.
 
-### 4. Script load order in `index.html`
+### 4. Nothing that nothing reaches
+
+Every function declared in `www/` must be named somewhere other than its own
+declaration. `dead-check` fails otherwise, and the fix is to delete it — git
+remembers, and a reader cannot tell a dead function from a live one.
+
+This is `act-check`'s "no entry no screen names", one step further out. An
+orphaned function is not in the action table, so `act-check` cannot see it;
+26 of them were sitting in `www/` when this check was written. Deleting one
+often turns up another on the next run — its only caller was the one deleted.
+
+### 5. Script load order in `index.html`
 
 - `core.js` defines `defLang()` → precedes the ten language files
 - `otf5.js` defines `LinguaFont` → precedes `glyph.js`

@@ -135,7 +135,6 @@ function tabBar(){
       TAB_ICON[TABS[i].r]+'<span class="tabl">'+esc(t(TABS[i].k))+'</span></button>';
   return '<div class="tabbar">'+out+'</div>';
 }
-function atRoot(){ var r=here().r; return r==='home'||r==='build'||r==='find'; }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
 function toast(m){
@@ -597,7 +596,6 @@ function capBanner(){
    word in. Below that line the app talks about letters, above it about words. */
 var SC_ENOUGH=5;
 function scriptLetterCount(){ return wsHave(); }
-function scriptStarted(){ return scriptLetterCount()>0; }
 function scriptEnough(){ return scriptLetterCount()>=SC_ENOUGH; }
 
 function nextStep(){
@@ -623,7 +621,6 @@ function nextStep(){
 /* Sound -> character. The sound is the key because a sound is what a word is
    made of; the character is the clothing you choose for it. An entry is a
    plain string today and can become {ch, svg} when glyphs can be drawn. */
-function scriptMap(){ if(!SET.script) SET.script={}; return SET.script; }
 /* Which borrowed character writes this unit. It used to be a lookup in a map
    of unit -> character; it is now a question about the letter that writes the
    unit, because a character is one of the two shapes a letter can have. */
@@ -631,11 +628,6 @@ function chOf(p){ return ltChar(p); }
 /* A sound belongs to the language either because a word already uses it or
    because you said so; before this, only the first way existed. */
 function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
-function takeSnd(p){
-  var a=addedSnd();
-  if(a.indexOf(p)<0) a.push(p);
-  save(); closeSheet({target:{id:'sbg'}}); render();
-}
 /* Dropping a sound unhooks the letters that read it. It does not delete them:
    a letter is a thing you drew and it survives a sound being reconsidered --
    which is the whole point of them being separate. */
@@ -707,7 +699,6 @@ function closeSheet(e){
   if(e && e.target && e.target.id!=='sbg') return;
   if(here().r==='form') back();
 }
-function showSheet(html){ openForm('x:'+(FORM_SEQ++), '', html, null); }
 var FORM_SEQ=0;
 function pkSwitch(id){
   pkScript = (pkScript===id ? '' : id);           /* tap again to fold away */
@@ -748,16 +739,9 @@ function setCh(lid, ch){
   SET.showScript=true; save(); installScriptFont();
   if(here().r==='form') back(); else render();
 }
-function clearCh(lid){ ltSetChar(lid, ''); save(); installScriptFont(); render(); }
 function takeOwn(){
   var e=document.getElementById('own-ch'); if(!e) return;
   setCh(pkFor, e.value);
-}
-function toggleScript(){ SET.showScript=!SET.showScript; save(); render(); }
-function scrPreview(){
-  var w = WORDS.length? WORDS[WORDS.length-1].hw : '';
-  if(!w) return '';
-  return '<span class="scrpvw">'+esc(inScript(w))+'</span><span class="scrpvr">'+esc(w)+'</span>';
 }
 /* Characters already spoken for, so the palette can grey them out. */
 /* Characters already spoken for, so the palette can grey them out. Two
@@ -771,14 +755,6 @@ function chTaken(){
 
 /* One sound as a small tile: the character it wears above, the sound below.
    Tapping opens the picker in the sheet rather than growing the page. */
-function phTile(p){
-  var cur=chOf(p), added=addedSnd().indexOf(p)>=0;
-  return '<button class="ptile'+(cur?' has':'')+'"' + DO('openPick', [p]) + '>'+
-    (added? '<span class="pdel"' + DO('dropSnd', [p], 1) + '>'+ICON_CROSS+'</span>':'')+
-    '<span class="pch">'+(cur?esc(cur):'+')+'</span>'+
-    '<span class="psn">'+esc(p)+'</span></button>';
-}
-
 /* ---- the three roots -------------------------------------------------
    One screen used to be the cover and the contents and the recent work all
    at once, and it scrolled -- so the name of your language slid off the top
@@ -1219,12 +1195,6 @@ function wordsSay(){
    sound; tapping it again says it does not. Nothing is guessed from how a
    word happens to be spelled, because there is nothing left to guess: the
    sounds were chosen here. */
-function sndLetter(sym){
-  if(wsDrawn(sym)) return 'drawn';
-  if(chOf(sym)) return 'borrowed';
-  return '';
-}
-function sndDrawn(){ return wsHave(); }
 /* One letter of the writing system, with whatever has been given to it.
    What it is a letter OF depends on the kind of writing: a sound, a syllable,
    a consonant, a whole word. Tapping it opens the surface it is drawn on.
@@ -1232,14 +1202,6 @@ function sndDrawn(){ return wsHave(); }
    A letter an abugida has worked out for itself -- a consonant with a vowel
    mark on it -- is shown as what it is and cannot be drawn over: the two
    pieces it is made of are what you change. */
-function sndTile(sym){
-  var kind=sndLetter(sym), made=(!ltStrokes(sym) && kind==='drawn');
-  var face = kind==='drawn' ? '<canvas class="tc" data-r="'+esc(sym)+'"></canvas>'
-           : kind==='borrowed' ? '<span class="bch">'+esc(chOf(sym))+'</span>'
-           : '<span class="nol">+</span>';
-  return '<button class="gtile'+(kind?'':' empty')+(made?' made':'')+'"' + DO('editGlyph', [sym]) + '>'+
-    face+'<span class="rl">'+esc(sym)+'</span></button>';
-}
 /* The five kinds of writing, as a rail. Changing it changes what there is to
    draw, so the font is rebuilt and the tiles below redrawn. */
 function wsysRow(){
@@ -1348,15 +1310,6 @@ function sndToggle(sym){
 }
 /* Spoken from the words' own sequences. A spelling is only what those
    sequences look like written down, so it is looked up rather than read. */
-function sayWords(list){
-  var seq=[], i, j, w;
-  for(i=0;i<list.length;i++){
-    w=null;
-    for(j=0;j<WORDS.length;j++) if(String(WORDS[j].hw)===String(list[i])){ w=WORDS[j]; break; }
-    seq=seq.concat(w? wPh(w) : phGuess(list[i]));
-  }
-  sayPh(seq);
-}
 /* Tapping a sound plays it, and adds it. Tapping it again plays it and takes
    it back out. It used to be a double-tap to hear, which nobody discovers, so
    in practice the chart made no sound at all -- on the one screen whose whole

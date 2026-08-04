@@ -425,15 +425,8 @@ function geCur(){
    is nothing left to decide about it, and every extra dot is one more thing
    that has to be true at once. Full is the moment it is settled — and the
    canvas moves on by itself rather than making you say so. */
-function geFull(st){
-  return !!st && (!!st.closed || st.k==='o' || st.pts.length>=3);
-}
 /* A shape you can carry on from has an end to carry on from. A circle and a
    joined line do not, so the next mark starts on its own. */
-function geTail(st){
-  if(!geFull(st) || st.closed || (st.k==='o' && st.pts.length<3)) return null;
-  return st.pts[st.pts.length-1];
-}
 /* Round does not add or remove anything — it makes the line you already drew
    bow through the dots that are already on it. Two dots are the two ends of a
    circle; three are a curve that has to pass through the middle one. So you
@@ -481,14 +474,6 @@ function geSmooth(p, passes){
 
 /* Both ends of a stroke go back onto the lattice so strokes can meet; every
    point between them stays where the finger put it. */
-function geEnds(s, raw){
-  if(!raw || s.length<2) return s;
-  var a=s[0], b=s[s.length-1];
-  s[0]=[gsnap(a[0]), gsnap(a[1])];
-  s[s.length-1]=[gsnap(b[0]), gsnap(b[1])];
-  return s;
-}
-
 /* What a finished gesture becomes.
 
    The first attempt reduced a whole gesture to one arc: start, end, and the
@@ -606,11 +591,6 @@ function geCircle(){
     if(st && st.pts.length>=2) geShape(st);
   }
   GE.pi=-1; render();
-}
-function geNew(){
-  var st=GE.st[GE.si];
-  if(!st || !st.pts.length) return;
-  geMark(); GE.st.push({pts:[]}); GE.si=GE.st.length-1; GE.pi=-1; GE.seal=false; render();
 }
 function geUndo(){
   if(!GE.undo.length) return;
@@ -1318,7 +1298,6 @@ function geTiles(){
 var AI_FREE_DAILY = 3;
 function aiToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function aiUsed(){ if(SET.aiDate!==aiToday()){ SET.aiDate=aiToday(); SET.aiN=0; save(); } return SET.aiN||0; }
-function aiLeft(){ return has('plus') ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
 function aiSpend(){ if(has('plus')) return; SET.aiDate=aiToday(); SET.aiN=aiUsed()+1; save(); }
 
 /* AI_SEAM — where the hosted model plugs in.

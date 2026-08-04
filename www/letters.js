@@ -61,7 +61,6 @@ function migrateLetters(){
 }
 
 /* ---- reading the join ------------------------------------------------- */
-function ltAll(){ return LETTERS; }
 function ltById(id){
   var i; for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id) return LETTERS[i];
   return null;

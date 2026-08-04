@@ -130,15 +130,8 @@ function wsUnits(){
 }
 /* In an abugida the consonants are letters and the vowels are marks put on
    them, so the screen shows them as two lists and says which is which. */
-function wsBases(){ return wsHasMarks() ? wsCons() : wsUnits(); }
 /* The letters an abugida works out for itself: a consonant with a vowel on
    it. They are shown but not drawn -- the two pieces are what you change. */
-function wsMade(){
-  if(!wsHasMarks()) return [];
-  return wsUnits().filter(function(u){ return u.length>1; });
-}
-function wsMarks(){ return wsHasMarks() ? wsVows() : []; }
-
 /* ---- an abugida's letter is made, not drawn ---------------------------
    A letter is a list of strokes and so is a vowel mark, so the letter for a
    consonant-plus-vowel is the two lists one after the other. Nothing has to

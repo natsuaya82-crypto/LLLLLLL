@@ -43,30 +43,8 @@ function seqOf(hw){
   return w? wPh(w) : phGuess(hw);
 }
 function readOut(hw){ return readSeq(seqOf(hw)); }
-function readLink(L){
-  var m=readMode();
-  if(m==='ipa')  return L.ipa;
-  if(m==='kana') return L.rd;
-  return L.ipa+'<br><span class="kn">'+esc(L.rd)+'</span>';
-}
 /* Words run together when one ends on a consonant and the next opens on a
    vowel. Decided on the sounds, which is where it was always happening. */
-function linked(hws){
-  var seqs=[], i, cur, prev, nxt, chunks=[], any=false;
-  for(i=0;i<hws.length;i++) seqs.push(seqOf(hws[i]));
-  if(!seqs.length) return {chunks:[], rd:'', ipa:'//', isLink:false};
-  cur=seqs[0].slice();
-  for(i=1;i<seqs.length;i++){
-    prev=cur[cur.length-1]; nxt=seqs[i][0];
-    if(prev && nxt && !ipaIsVowel(prev) && ipaIsVowel(nxt)){ cur=cur.concat(seqs[i]); any=true; }
-    else { chunks.push(cur); cur=seqs[i].slice(); }
-  }
-  chunks.push(cur);
-  return {chunks:chunks,
-          rd:  chunks.map(function(c){ return rd(phRoman(c)); }).join(' '),
-          ipa: '/'+chunks.map(function(c){ return c.join(''); }).join(' ')+'/',
-          isLink:any};
-}
 /* How readings are displayed (a setting): IPA / approximation / both.
    The stored value 'kana' is kept as-is for dictionaries saved before this
    layer existed; it means "the approximation", whatever language that is. */
@@ -128,25 +106,6 @@ function makeWord(pos, A, tk){
 }
 /* Pick a short run of words that shows linking off, if the dictionary has one:
    one that ends on a consonant followed by one that opens on a vowel. */
-function linkRun(){
-  if(!WORDS.length) return [];
-  var used={}, seq=[], all=WORDS.slice(), start=null, i, k, m, last, want, nxt;
-  function endsOpen(w){ var q=wPh(w); return q.length && ipaIsVowel(q[q.length-1]); }
-  function opensVowel(w){ var q=wPh(w); return q.length && ipaIsVowel(q[0]); }
-  for(i=0;i<all.length;i++) if(!endsOpen(all[i])){ start=all[i]; break; }
-  seq.push(start||all[0]); used[seq[0].hw]=1;
-  while(seq.length<3 && seq.length<all.length){
-    last=seq[seq.length-1]; want=!endsOpen(last); nxt=null;
-    for(k=0;k<all.length;k++){
-      if(used[all[k].hw]) continue;
-      if(want && opensVowel(all[k])){ nxt=all[k]; break; }
-    }
-    if(!nxt) for(m=0;m<all.length;m++){ if(!used[all[m].hw]){ nxt=all[m]; break; } }
-    if(!nxt) break;
-    used[nxt.hw]=1; seq.push(nxt);
-  }
-  return seq;
-}
 /* What the dictionary has quietly decided, said in ordinary words */
 function findings(){
   var A=analyze(), out=[], N=WORDS.length;
@@ -188,16 +147,3 @@ function findings(){
   return out;
 }
 /* What to do next so that another rule appears, in words a beginner can act on */
-function nextHint(){
-  var A=analyze(), by={};
-  WORDS.forEach(function(w){ by[w.pos]=(by[w.pos]||0)+1; });
-  var need=null;
-  ['n','v','adj'].forEach(function(p){
-    if(need) return;
-    if(!A.finalRule[p] && (by[p]||0)<3) need={p:p, n:3-(by[p]||0)};
-  });
-  if(need) return tn('hint.pos', need.n, posLabel(need.p));
-  if(WORDS.length<8) return t('hint.more');
-  return null;
-}
-
