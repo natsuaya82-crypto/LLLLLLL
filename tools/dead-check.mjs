@@ -33,6 +33,10 @@
      - a function that is called, from another function that is itself dead.
        Delete the outer one and the inner turns up on the next run
      - anything outside www/. The tools are read for mentions, never judged
+     - a file with its own variable or parameter of that name is skipped for
+       that name, so a genuine call sitting in the same file as an unrelated
+       thing of that name is not counted. It errs towards calling something
+       dead, which is the way round that gets looked at
 
    Exit code is 0 only when nothing is unreachable.
    --------------------------------------------------------------------------- */
@@ -78,7 +82,11 @@ function bare(s){
         else if (s[i] === '\n') break;
         i++;
       }
-      i++; out += ' '; continue;
+      /* Consume the closing slash, never the newline: a division mistaken for
+         a regex would otherwise swallow the line break and every declaration
+         below it would stop being at the start of a line. */
+      if (s[i] === '/') i++;
+      out += ' '; continue;
     }
     out += c;
     if (c.trim() !== '') prev += c;
@@ -111,10 +119,41 @@ appFiles.forEach(f => {
   });
 });
 
-const haystack = mentionFiles.map(f => bare(fs.readFileSync(f, 'utf8'))).join('\n');
+/* What follows the name decides whether it is a mention of the function or a
+   different thing wearing the same word. `pv:` is a key in a table of scripts;
+   `pv=prevPage()` is somebody's local variable in another file. Neither reaches
+   function pv(), and counting them kept a dead one alive through the first
+   version of this check. Ruling out what cannot be a mention was not enough:
+   the same local variable is also read as `pv?` and `pv.r`, and neither of
+   those is a `:` or an `=`.
+
+   So this asks what a function is actually used as, rather than what it is
+   not. A function is called -- `pv(` -- or handed over as a value, which in
+   this app means `act('go', go)` and `gbtn(geUndo, …)`: the name against a
+   bracket, a comma or a semicolon. A local variable being read for one of its
+   fields never looks like that.
+
+   That still leaves esc(pv), where somebody's local variable is handed to a
+   function and looks exactly like a function handed to a function. Nothing in
+   the shape of the text can tell those apart, so the last rule is about scope
+   rather than shape: a file with its own thing of that name -- assigned to, or
+   taken as an argument -- is not talking about the global one in any of its
+   mentions. A parameter list is what caught the last of these: the Portuguese
+   respelling engine takes `function sylp_pt(p, pv, st)`, and `pv,` in a list
+   of parameters is the same handful of characters as `pv,` in a list of
+   arguments. */
+const USE = '(?![\\w$])\\s*[(),;]';
+const bared = new Map(mentionFiles.map(f => [path.relative(ROOT, f), bare(fs.readFileSync(f, 'utf8'))]));
 const dead = decls.filter(d => {
-  const re = new RegExp('(?<![\\w$.])' + d.name + '(?![\\w$])', 'g');
-  return (haystack.match(re) || []).length <= 1;   /* its own declaration */
+  const use = new RegExp('(?<![\\w$.])' + d.name + USE, 'g');
+  const own = new RegExp('(?<![\\w$.])' + d.name + '\\s*=(?!=)');
+  const arg = new RegExp('function\\s*[\\w$]*\\s*\\([^)]*(?<![\\w$.])' + d.name + '(?![\\w$])[^)]*\\)');
+  let n = 0;
+  bared.forEach((src, rel) => {
+    if (rel !== d.file && (own.test(src) || arg.test(src))) return;   /* shadowed there */
+    n += (src.match(use) || []).length;
+  });
+  return n <= 1;   /* its own declaration */
 });
 
 if (dead.length){

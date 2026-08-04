@@ -350,7 +350,6 @@ function addPv(){
   if(r) r.textContent = addSeq.length? phIpa(addSeq) : '';
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
-function pv(){ addPaint(); }
 function sayField(){ if(addSeq.length) sayPh(addSeq); }
 function addOne(){
   var hw=addSeq.join('');
