@@ -244,12 +244,36 @@ function vxPlay(x, seq, f0){
   if(!x.startRendering) VXEND=t+0.04;
   return t-now;
 }
+/* ---- what you press now beats what is already queued -------------------
+   Every sound is scheduled on the clock, each one starting where the last
+   one ended, so that two sounds asked for in the same instant do not play
+   on top of each other. That is right for two taps a moment apart and wrong
+   the moment a whole dictionary is playing: thirty words is half a minute
+   of queue, and a key pressed during it was scheduled after all of it. The
+   key made no sound for thirty seconds, which is not a queue, it is a
+   broken app -- 「あと音声流れない」.
+
+   So anything asked for while a long queue is still ahead throws the queue
+   away first. Throwing it away means closing the context, because every
+   sound in it is already scheduled and nothing else stops a sound the
+   browser has been told to make twenty seconds from now. */
+function vxCut(x){
+  var now=(x.currentTime||0);
+  if(VXEND <= now+1.2) return x;
+  if(VXRUN){ clearTimeout(VXRUN); VXRUN=0; }
+  try{ x.close(); }catch(e){}
+  VX=null; VXEND=0;
+  /* the button that said "stop" has nothing left to stop */
+  if(typeof render==='function') setTimeout(render, 0);
+  return vxCtx();
+}
 function sayPh(seq, ctx, f0){
   var x=ctx||vxCtx();
   /* A tap that makes no sound and says nothing is indistinguishable from a
      broken app, so the one case where sound is genuinely impossible says so. */
   if(!x){ if(!ctx && typeof toast==='function') toast(t('voice.none')); return 0; }
   if(!seq || !seq.length) return 0;
+  if(!ctx){ x=vxCut(x); if(!x) return 0; }
   /* An offline context is rendering rather than playing and must not be
      woken -- asking throws. */
   if(!ctx && x.state==='suspended' && x.resume){
