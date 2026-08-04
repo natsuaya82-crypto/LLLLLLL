@@ -339,6 +339,15 @@ var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="
   '<path d="M6 3.5h12v17l-6-3.4-6 3.4Z"/><path d="M9 8h6M9 11.5h4"/></svg>';
 /* Two links of a chain: joining a letter to a sound, or a sound to a letter.
    The same mark from both ends, because it is the same join. */
+/* Four arrows, for nudging a vowel mark one lattice step at a time. */
+var ICON_ARR_L='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5l-7 7 7 7"/></svg>';
+var ICON_ARR_R='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 5l7 7-7 7"/></svg>';
+var ICON_ARR_U='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 14l7-7 7 7"/></svg>';
+var ICON_ARR_D='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10l7 7 7-7"/></svg>';
 var ICON_LINK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M10 13.8a3.6 3.6 0 0 0 5.1 0l2.9-2.9a3.6 3.6 0 0 0-5.1-5.1l-1.3 1.3"/>'+
@@ -614,10 +623,47 @@ function geUndo(){
   render();
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
+/* ---- centring a letter across the square ------------------------------
+   「あと文字だけど、左端とか右端に書く場合左右差でかなりバランス悪い。もし文字がない
+   範囲が広い場合、点と点の間分の1行に全体的に詰めよう。横幅ね。縦はいじらないで。」
+
+   A letter drawn against the left dots and one drawn against the right sit at
+   different distances from the letters beside them, and in a word that reads
+   as bad spacing. The font writer centres the ink it is given, but the ink it
+   is given was already lopsided against the square the editor draws, so what
+   you saw while drawing was not what you got.
+
+   So the whole drawing slides sideways until the gap on the left and the gap
+   on the right are within half a lattice step of each other -- and it slides
+   in whole lattice steps, so every point that was on a dot stays on a dot.
+   Vertical is untouched: a letter that sits high sits high on purpose, and an
+   ascender is not a mistake. */
+function geCentreX(st){
+  var s=gstep(), lo=1e9, hi=-1e9, i, j, p, n;
+  for(i=0;i<st.length;i++) for(j=0;j<st[i].pts.length;j++){
+    p=st[i].pts[j][0];
+    if(p<lo) lo=p;
+    if(p>hi) hi=p;
+  }
+  if(lo>hi) return st;
+  var left=lo-GGRID.inset, right=(800-GGRID.inset)-hi;
+  n=Math.round((right-left)/(2*s));
+  if(!n) return st;
+  /* never push any of it off the square */
+  var room=Math.floor(left/s), space=Math.floor(right/s);
+  if(n<0) n=Math.max(n, -room);
+  else n=Math.min(n, space);
+  if(!n) return st;
+  var dx=n*s;
+  for(i=0;i<st.length;i++) for(j=0;j<st[i].pts.length;j++)
+    st[i].pts[j][0]=Math.round(st[i].pts[j][0]+dx);
+  return st;
+}
 function geSave(){
   /* A single dot is a stroke half-placed, not a shape. It does not get
      saved, and it does not get left behind for the next press to trip on. */
   var keep=GE.st.filter(function(s){ return s.pts.length>1; });
+  geCentreX(keep);
   ltSetStrokes(GE.lid, keep);
   /* Drawing a letter is asking for your own writing. Only onboarding ever set
      this, so every letter drawn in the letters chapter went into a font that
@@ -1312,6 +1358,7 @@ function render(){
         : route==='letters'? vLetters()
         : route==='pickltr'? vPickLtr()
         : route==='picksnd'? vPickSnd()
+        : route==='abugida'? vAbugida()
         : vHome();
   /* one attribute decides whether words are shown in roman letters or in the
      ones you drew — the text itself never changes, only the family it is set in */
@@ -1332,7 +1379,7 @@ function render(){
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
-  if(route==='sound' || route==='letters' || route==='pickltr') geTiles();
+  if(route==='sound' || route==='letters' || route==='pickltr' || route==='abugida') geTiles();
   if(route==='form') formMount();
 }
 migratePh();

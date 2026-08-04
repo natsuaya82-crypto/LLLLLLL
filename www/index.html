@@ -226,6 +226,26 @@ canvas.pkc{width:34px;height:34px;display:block}
 .ltsn{display:block;font-size:.64rem;color:var(--txm);margin-top:2px}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* ---------- the abugida bench ----------
+   Every consonant wearing one vowel, at a size you can judge. Three across
+   at 320px and four above it: fewer and you cannot compare, more and each is
+   too small to see what the mark is doing. */
+.abmark{border:1px solid var(--goldln);background:var(--goldsf);border-radius:12px;
+        padding:12px 13px;margin-top:10px}
+.abmh{font-size:.68rem;color:var(--gold);letter-spacing:.06em;margin-bottom:9px}
+.abctl{display:flex;flex-wrap:wrap;gap:6px}
+.abctl button{min-width:46px;min-height:44px;border:1px solid var(--line);border-radius:9px;
+              background:var(--pane);color:var(--txs);font-family:inherit;font-size:.72rem;
+              display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px}
+.abctl button:active{border-color:var(--goldln);color:var(--gold)}
+.abgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.abcell{border:1px solid var(--line);border-radius:10px;background:var(--pane);
+        padding:8px 4px 6px;color:var(--tx);
+        display:flex;flex-direction:column;align-items:center;gap:4px;min-height:96px}
+.abcell.own{border-color:var(--goldln)}
+.abcell canvas.tc{width:60px;height:60px;display:block}
+.abu{font-size:.6rem;color:var(--txm);letter-spacing:.03em}
+.abcell.own .abu{color:var(--gold)}
 /* ---------- search, the tab ---------- */
 .fcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .fcard.soon{border-style:dashed;opacity:.62}

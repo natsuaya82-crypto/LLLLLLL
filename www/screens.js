@@ -59,6 +59,7 @@ var PAGES={
   letters: {tab:'build', n:'II',  k:'toc.letters'},
   pickltr: {tab:'build', k:'lt.use'},
   picksnd: {tab:'build', k:'lt.addsnd'},
+  abugida: {tab:'build', k:'ab.title'},
   glyph:   {tab:'build', n:'II'},
   words:   {tab:'build', n:'III', k:'toc.words'},
   make:    {tab:'build', n:'III', k:'toc.make'},
@@ -1035,6 +1036,96 @@ function wsysRow(){
   }).join('')+'</div>'+
   '<div class="note">'+t('ws.k.'+wsys()+'.d')+'</div>';
 }
+/* ---- the abugida bench ------------------------------------------------
+   「アブギダの場合は、調整しやすいように別エディターが欲しい。母音+子音を見てチェック
+   できるように。」
+
+   An abugida is the one writing system whose letters are not drawn one at a
+   time. A consonant letter carries a vowel mark, and the letter you actually
+   read is the two together -- so the thing that has to be right is not any
+   one drawing, it is how the mark sits on every consonant there is. Drawing
+   them one at a time and hoping is not a way to find that out.
+
+   This is a bench: one vowel at a time, every consonant of the language
+   wearing it, all at once and at a size you can judge. The mark can be moved
+   and resized from here, and every cell changes together, because that is
+   what "adjust it" means when the mark is one drawing used thirty times. A
+   cell that will not come right whatever the mark does can be opened and
+   drawn as itself -- which is how a real abugida works too: a handful of
+   combinations are irregular and the rest are the rule. */
+var abVow='';
+function abVowel(){
+  var vs=wsVows();
+  if(vs.indexOf(abVow)>=0) return abVow;
+  return vs.length? vs[0] : '';
+}
+function setAbVow(v){ abVow=v; render(); }
+/* Moving the mark moves the mark, not this one letter: it is one drawing and
+   every combination is made out of it. Whole lattice steps, so what was on a
+   dot stays on a dot. */
+function abNudge(dx, dy){
+  var v=abVowel(), l=ltMain(v);
+  if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
+  var s=gstep(), i, j, p;
+  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
+    p=l.st[i].pts[j];
+    p[0]=gsnap(p[0]+dx*s); p[1]=gsnap(p[1]+dy*s);
+  }
+  saveLetters(); installScriptFont(); render();
+}
+function abScale(f){
+  var v=abVowel(), l=ltMain(v);
+  if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
+  var lo=[1e9,1e9], hi=[-1e9,-1e9], i, j, p;
+  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
+    p=l.st[i].pts[j];
+    if(p[0]<lo[0]) lo[0]=p[0]; if(p[0]>hi[0]) hi[0]=p[0];
+    if(p[1]<lo[1]) lo[1]=p[1]; if(p[1]>hi[1]) hi[1]=p[1];
+  }
+  var cx=(lo[0]+hi[0])/2, cy=(lo[1]+hi[1])/2;
+  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
+    p=l.st[i].pts[j];
+    p[0]=gsnap(cx+(p[0]-cx)*f); p[1]=gsnap(cy+(p[1]-cy)*f);
+  }
+  saveLetters(); installScriptFont(); render();
+}
+function vAbugida(){
+  var vs=wsVows(), cs=wsCons(), v=abVowel();
+  if(!wsHasMarks())
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      '<div class="note">'+t('ab.notabugida')+'</div>'+
+      '<button class="btn ghost" style="width:100%;margin-top:12px" onclick="go(\'letters\')">'+
+      esc(t('toc.letters'))+'</button></div></div>';
+  return '<div class="view">'+navTop(cs.length+' × '+vs.length)+'<div class="body">'+
+    '<div class="note" style="margin-bottom:10px">'+t('ab.d')+'</div>'+
+    '<div class="segs scrollx">'+vs.map(function(x){
+      return '<button class="seg'+(x===v?' on':'')+'" onclick="setAbVow(\''+esc(x)+'\')">'+esc(x)+'</button>';
+    }).join('')+'</div>'+
+    (v
+      ? '<div class="abmark">'+
+          '<div class="abmh">'+esc(t('ab.mark', v))+'</div>'+
+          '<div class="abctl">'+
+            '<button onclick="abNudge(-1,0)" aria-label="'+esc(t('ab.left'))+'">'+ICON_ARR_L+'</button>'+
+            '<button onclick="abNudge(1,0)" aria-label="'+esc(t('ab.right'))+'">'+ICON_ARR_R+'</button>'+
+            '<button onclick="abNudge(0,-1)" aria-label="'+esc(t('ab.up'))+'">'+ICON_ARR_U+'</button>'+
+            '<button onclick="abNudge(0,1)" aria-label="'+esc(t('ab.down'))+'">'+ICON_ARR_D+'</button>'+
+            '<button onclick="abScale(1.25)">'+t('ab.bigger')+'</button>'+
+            '<button onclick="abScale(0.8)">'+t('ab.smaller')+'</button>'+
+            '<button onclick="editGlyph(\''+esc(v)+'\')">'+ICON_PEN+t('ab.draw')+'</button>'+
+          '</div></div>'+
+        '<div class="sec">'+t('ab.every', v)+'</div>'+
+        (cs.length
+          ? '<div class="abgrid">'+cs.map(function(c){
+              var u=wsKey([c,v]), own=!!ltStrokes(u);
+              return '<button class="abcell'+(own?' own':'')+'" onclick="editGlyph(\''+esc(u)+'\')">'+
+                '<canvas class="tc" data-r="'+esc(u)+'"></canvas>'+
+                '<span class="abu">'+esc(u)+'</span></button>';
+            }).join('')+'</div>'+
+            '<div class="mini" style="margin-top:8px">'+t('ab.cell')+'</div>'
+          : '<div class="note">'+t('ab.nocons')+'</div>')
+      : '<div class="note">'+t('ab.novow')+'</div>')+
+    '</div></div>';
+}
 function sndHas(sym){
   var a=addedSnd();
   return a.indexOf(sym)>=0;
@@ -1155,6 +1246,11 @@ function vLetters(){
     '<div class="note" style="margin-bottom:10px">'+t('lt.note')+'</div>'+
     '<div class="sec">'+t('ws.kind')+'</div>'+
     wsysRow()+
+    (wsHasMarks()
+      ? '<button class="trow" onclick="go(\'abugida\')" style="margin-top:6px">'+
+          '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
+          '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
+      : '')+
     '<div class="sec">'+t('lt.all')+'</div>'+
     (LETTERS.length
       ? '<div class="ltlist">'+LETTERS.map(ltRow).join('')+'</div>'
