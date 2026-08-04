@@ -33,6 +33,15 @@
      4. no code left      no on-anything attribute survives anywhere in any
                           rendered screen. One is enough to bring the whole
                           class of bug back
+     5. every page shows   every route in PAGES has a view on it, and every
+        something, and     view belongs to a route. A route with no view fell
+        every view is a    through to the home screen under another screen's
+        page               name and looked like nothing was wrong; a view with
+                           no route simply stopped being reachable. vOb is the
+                           one exception -- the onboarding is what the app is
+                           until SET.done, not somewhere you navigate to --
+                           and it is exempt by name so a second one cannot
+                           quietly join it
 
    What it cannot see, so that nobody mistakes silence for safety:
      - whether the function does the right thing. It proves the button is
@@ -103,7 +112,7 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(() => {
   const out = { missing: [], dead: [], bad: [], inline: [], screens: 0,
-                seen: { do: [], in: [], kd: [] }, threw: [] };
+                seen: { do: [], in: [], kd: [] }, threw: [], routes: [], pages: 0, placed: 0, views: 0 };
   const seenDo = {}, seenIn = {}, seenKd = {};
 
   /* Every name this piece of markup asks for, and whether its arguments are
@@ -248,6 +257,24 @@ const R = await pg.evaluate(() => {
   Object.keys(ACT_IN).forEach(k => { if (!seenIn[k]) out.dead.push('typed: ' + k); });
   Object.keys(ACT_KEY).forEach(k => { if (!seenKd[k]) out.dead.push('Enter: ' + k); });
 
+  /* ---- 5. the routes ---------------------------------------------------
+     PAGES says what a route is called; www/route-map.js says what it shows.
+     Both directions, for the same reason the action table is checked both
+     ways: a page with no view is a screen that silently becomes the home
+     screen, and a view with no page is a screen nobody can reach. */
+  Object.keys(PAGES).forEach(r => {
+    out.pages++;
+    if (typeof PAGES[r].view !== 'function') out.routes.push('PAGES.' + r + ' shows nothing');
+  });
+  const shown = Object.keys(PAGES).map(r => PAGES[r].view).filter(Boolean);
+  Object.keys(window).filter(k => /^v[A-Z]/.test(k) && typeof window[k] === 'function')
+    .forEach(v => {
+      if (v === 'vOb') return;            /* what the app is, not a place in it */
+      out.views++;
+      if (shown.indexOf(window[v]) < 0) out.routes.push(v + ' is on no page');
+      else out.placed++;
+    });
+
   out.seen.do = Object.keys(seenDo).length;
   out.seen.in = Object.keys(seenIn).length;
   out.seen.kd = Object.keys(seenKd).length;
@@ -265,9 +292,11 @@ say('an entry no screen ever names', R.dead);
 say('an argument that is not the JSON it was written as', R.bad);
 say('JavaScript still inside markup', R.inline);
 say('a screen that threw while being walked', R.threw);
+say('a page with no view, or a view on no page', R.routes);
 if (pageErrors.length) fails.push(['the page itself', pageErrors]);
 
 console.log(`screens walked: ${R.screens}`);
+console.log(`pages: ${R.pages}  views placed ${R.placed}/${R.views}  (vOb is what the app is, not a place in it)`);
 console.log(`names: pressed ${R.seen.do}/${R.have.do}  typed ${R.seen.in}/${R.have.in}  Enter ${R.seen.kd}/${R.have.kd}`);
 
 if (fails.length) {
@@ -279,4 +308,4 @@ if (fails.length) {
   }
   process.exit(1);
 }
-console.log('\nall four checks pass: every button names something, and everything named is a button.');
+console.log('\nall five checks pass: every name resolves, and everything that resolves is named.');

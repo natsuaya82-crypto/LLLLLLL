@@ -1328,28 +1328,11 @@ function render(){
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
-  var v = route==='build'? vBuild()
-        : route==='find' ? vFind()
-        : route==='form' ? vForm()
-        : route==='words'? vWords()
-        : route==='sound'? vSound()
-        : route==='gram' ? vGram()
-        : route==='make' ? vMake()
-        : route==='notes'? vNotes()
-        : route==='talk' ? vTalk()
-        : route==='settings'? vSettings()
-        : route==='plans'? vPlans()
-        : route==='glyph'? vGlyph()
-        : route==='letters'? vLetters()
-        : route==='pickltr'? vPickLtr()
-        : route==='picksnd'? vPickSnd()
-        : route==='abugida'? vAbugida()
-        : route==='relate'? vRelate()
-        : route==='set'   ? vSet()
-        : route==='world' ? vWorld()
-        : route==='spell' ? vSpell()
-        : route==='aspell'? vASpell()
-        : vHome();
+  /* Which screen this route shows is written on the page itself, in
+     www/route-map.js, with the view function rather than its name. This used
+     to be twenty-two conditions here -- a second copy of PAGES that nothing
+     could check against the first. */
+  var pg = PAGES[route], v = (pg && pg.view)? pg.view() : vHome();
   /* one attribute decides whether words are shown in roman letters or in the
      ones you drew — the text itself never changes, only the family it is set in */
   document.documentElement.setAttribute('data-script', myFontOn()? 'on':'off');

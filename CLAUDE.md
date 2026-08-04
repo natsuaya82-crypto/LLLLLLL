@@ -18,7 +18,7 @@ Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run i18n` /
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
 
-## The five rules the gate enforces
+## The six rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -79,7 +79,21 @@ calls that button fine. Both fixtures and the half-done screen list live in
 `tools/fixture.mjs` so the two walk the same app; add a screen there, not to one
 of them.
 
-### 4. Nothing that nothing reaches
+### 4. A route carries its view
+
+`PAGES` in `www/screens.js` says what a route is called and which tab it is
+under. `www/route-map.js` says what it *shows* — `page('build', vBuild)`, the
+function itself, never its name, exactly as `act-map.js` does. `render()` looks
+it up; it used to be twenty-two conditions, a second copy of `PAGES` that
+nothing could check against the first.
+
+Adding a screen means a `PAGES` entry and a `page(...)` line. `act-check`
+proves both directions: a route with no view silently became the home screen
+under another screen's name, and a view on no route was simply unreachable.
+`vOb` is the one exempt view — the onboarding is what the app *is* until
+`SET.done`, not a place you navigate to.
+
+### 5. Nothing that nothing reaches
 
 Every function declared in `www/` must be named somewhere other than its own
 declaration. `dead-check` fails otherwise, and the fix is to delete it — git
@@ -90,7 +104,7 @@ orphaned function is not in the action table, so `act-check` cannot see it;
 26 of them were sitting in `www/` when this check was written. Deleting one
 often turns up another on the next run — its only caller was the one deleted.
 
-### 5. Script load order in `index.html`
+### 6. Script load order in `index.html`
 
 - `core.js` defines `defLang()` → precedes the ten language files
 - `otf5.js` defines `LinguaFont` → precedes `glyph.js`
@@ -129,6 +143,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/core.js` | language registry, `t()`, storage |
 | `www/act.js` | the action tables and the one delegated listener (`DO`/`AFTER`/`IN`/`CH`/`KD`) |
 | `www/act-map.js` | every name a screen may say, bound to the real function |
+| `www/route-map.js` | every route, bound to the view it shows |
 | `www/boot.js` | where the app starts |
 | `www/screens.js` | all 30 views (`vHome`, `vWords`, `vSound`, … — global `v` + capital) |
 | `www/settings.js` | settings screens |
