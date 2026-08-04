@@ -5,7 +5,101 @@
 /* =========================================================================
    4. The shell every screen sits in
    ========================================================================= */
-var route='home', app=document.getElementById('app');
+var app=document.getElementById('app');
+
+/* ---- where you are, and what you came through ------------------------
+   Every screen used to be reached by setting one global to a string, and
+   every back button was hard-wired to a particular screen. So the word
+   editor's back went to the dictionary whether you had come from the
+   dictionary or from a grammar stage, a stage had two back buttons -- one
+   to the contents and one to the grammar -- and nothing could be opened
+   from two places without lying about where it came from.
+
+   A trail instead. Going somewhere pushes it; back pops it and lands on
+   whatever you were actually looking at. 「普通に1個前のページに必ず戻る戻る
+   ボタン以外いらない」
+
+   A screen is a route and at most one argument -- which word, which stage --
+   because a screen that needs two is two screens. */
+var NAV=[{r:'home'}];
+function here(){ return NAV[NAV.length-1]; }
+function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
+function go(r, a){
+  var h=here();
+  if(h.r===r && h.a===a) return;
+  /* Going back to a page already on the trail is going back, not deeper.
+     Without this, contents -> words -> contents -> words piles up four
+     screens and the back button walks a circle. */
+  var i;
+  for(i=NAV.length-2;i>=0;i--){
+    if(NAV[i].r===r && NAV[i].a===a){ NAV.length=i+1; route=r; render(); window.scrollTo(0,0); return; }
+  }
+  NAV.push({r:r, a:a}); route=r; render(); window.scrollTo(0,0);
+}
+function back(){
+  if(NAV.length>1) NAV.pop(); else NAV=[{r:'home'}];
+  route=here().r; render(); window.scrollTo(0,0);
+}
+/* A tab is not somewhere you came through, it is where you are. Tapping one
+   throws the trail away rather than stacking three tabs on top of it. */
+function goTab(r){ NAV=[{r:r}]; route=r; render(); window.scrollTo(0,0); }
+/* Kept because a hundred lines still read it. It is here()'s route. */
+var route='home';
+
+/* ---- every page ------------------------------------------------------
+   Its numeral in the book, its name, and which tab it lives under. The back
+   button says where it goes and the heading says where you are, side by
+   side: 「←目次　Ⅰ 単語」 */
+var PAGES={
+  home:    {tab:'home'},
+  build:   {tab:'build', k:'tab.build'},
+  find:    {tab:'find',  k:'tab.find'},
+  sound:   {tab:'build', n:'I',   k:'toc.sound'},
+  glyph:   {tab:'build', n:'I'},
+  words:   {tab:'build', n:'II',  k:'toc.words'},
+  make:    {tab:'build', n:'II',  k:'toc.make'},
+  gram:    {tab:'build', n:'III', k:'toc.gram'},   /* the numeral is dropped on a single stage */
+  sent:    {tab:'build', n:'IV',  k:'toc.sent'},
+  notes:   {tab:'build', n:'V',   k:'toc.notes'},
+  talk:    {tab:'build', n:'VI',  k:'toc.talk'},
+  settings:{tab:'home',  k:'set.title'},
+  plans:   {tab:'home',  k:'plans.title'}
+};
+function pageName(r, a){
+  if(r==='home') return t('tab.home');
+  /* A page opened on a particular thing is named after that thing. The
+     letter you are drawing, the stage you are in -- not the chapter it
+     belongs to, which the back button already says. */
+  if(r==='glyph') return a? String(a) : t('toc.sound');
+  if(r==='gram' && a){
+    var st=(typeof stBy==='function')? stBy(a) : null;
+    if(st) return stTitle(st);
+  }
+  var p=PAGES[r];
+  return (p && p.k)? t(p.k) : t('tab.build');
+}
+/* One bar, and it is always the same one: back, where you are, and the count
+   if the page has one. Nothing else has a back button anywhere. */
+function navTop(count){
+  var h=here(), p=PAGES[h.r]||{}, pv=prevPage();
+  var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
+  return '<div class="navtop"><button class="back nb" onclick="back()">'+ICON_BACK+esc(lab)+'</button>'+
+    ((p.n && !h.a)? '<span class="navn">'+p.n+'</span>' : '')+
+    '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
+    (count? '<span class="navc">'+count+'</span>' : '')+
+    '</div>';
+}
+/* The three roots. A tab bar belongs on them and nowhere else: on an inner
+   page the thing at the bottom of the screen is that page's own button. */
+var TABS=[{r:'build', k:'tab.build'}, {r:'find', k:'tab.find'}, {r:'home', k:'tab.home'}];
+function tabBar(){
+  var cur=here().r, i, out='';
+  for(i=0;i<TABS.length;i++)
+    out+='<button class="tab'+(cur===TABS[i].r?' on':'')+'" onclick="goTab(\''+TABS[i].r+'\')">'+
+      TAB_ICON[TABS[i].r]+'<span class="tabl">'+esc(t(TABS[i].k))+'</span></button>';
+  return '<div class="tabbar">'+out+'</div>';
+}
+function atRoot(){ var r=here().r; return r==='home'||r==='build'||r==='find'; }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
 function toast(m){
@@ -14,7 +108,6 @@ function toast(m){
 }
 /* Changing the screen is all this does. Where it lands is render()'s to say,
    and it says the top, because the screen is a different one. */
-function go(r){ route=r; render(); }
 /* ---- A part of speech is stored as a key ------------------------------
    What is saved on a word is one of n / v / adj / x. "noun" and "名詞" are
    only the label that key wears in whichever language is on screen. Same
@@ -567,65 +660,119 @@ function phTile(p){
     '<span class="psn">'+esc(p)+'</span></button>';
 }
 
-function vHome(){
-  var A=analyze();
-  var last=WORDS.length?WORDS[WORDS.length-1]:null;
-  /* The contents are in the order the work happens now. They used to open on
-     the dictionary, which meant the first thing offered was writing a word --
-     before a single sound had been chosen and before there was anything to
-     write it with. You choose sounds, you give them letters, and then there
-     is something a word can be made of.
+/* ---- the three roots -------------------------------------------------
+   One screen used to be the cover and the contents and the recent work all
+   at once, and it scrolled -- so the name of your language slid off the top
+   of the first thing you saw. Three now, one per tab.
 
-     Sounds and letters are one chapter, because giving a sound a letter used
-     to mean being in the other one. Coinage is not a chapter at all; it is
-     the second button at the foot of the dictionary. */
+   HOME is the cover. It does not scroll: 「ホームもスクロールさせるな固定させて
+   くれ」. The name, what state the language is in, and the one thing to do
+   next.
+
+   BUILD is the old contents -- 「今の目次画面が制作画面になる」.
+
+   FIND is search across the whole language and bringing other people's work
+   in. It is where a public gallery goes when there is one; until then it is
+   already the fastest way into a word, which is what it is for. */
+function vHome(){
+  var last=WORDS.length?WORDS[WORDS.length-1]:null;
+  return '<div class="view fixed">'+
+    '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
+    '<button class="iconb" onclick="go(\'settings\')" aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
+    '<div class="cover">'+
+      '<div class="tkick">'+t('home.kicker')+'</div>'+
+      '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
+      '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
+      '<div class="rule"></div>'+
+      '<div class="cvrow">'+
+        cvStat(t('toc.sound'), (function(){ var u=wsUnits(); return u.length? (sndDrawn()+' / '+u.length):'—'; })(), 'sound')+
+        cvStat(t('toc.words'), WORDS.length||'—', 'words')+
+        cvStat(t('toc.gram'),  stCount()+' / '+stAll().length, 'gram')+
+      '</div>'+
+      nextStep()+
+      (last? '<button class="recent" onclick="go(\'words\')">'+
+            '<div class="rh">'+t('home.recent.word')+'</div>'+
+            '<div class="line'+(myFontOn()?' sfont':'')+'">'+esc(wOut(last.hw))+'</div>'+
+            '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')+
+    '</div>'+
+    tabBar()+
+  '</div>';
+}
+function cvStat(lab, val, r){
+  return '<button class="cvst" onclick="go(\''+r+'\')"><span class="cvv">'+esc(String(val))+'</span>'+
+    '<span class="cvl">'+esc(lab)+'</span></button>';
+}
+/* The contents, in the order the work happens: you choose sounds, you give
+   them letters, and then there is something a word can be made of. */
+function vBuild(){
   var toc=[
     ['I',  t('toc.sound'),'sound', (function(){
       var u=wsUnits();
       return u.length? (sndDrawn()+' / '+u.length) : '—';
     })()],
     ['II', t('toc.words'),'words', WORDS.length? tn('count.words', WORDS.length):'—'],
-    /* how many stages are finished, out of how many there are -- the same
-       shape the sounds row uses, because it is the same kind of fact */
     ['III',t('toc.gram'), 'gram',  stCount()+' / '+stAll().length],
     ['IV', t('toc.sent'), 'sent',  LINES.length? tn('count.lines', LINES.length):'—'],
     ['V',  t('toc.notes'),'notes', NOTES.length? tn('count.notes', NOTES.length):'—'],
     ['VI', t('toc.talk'), 'talk',  TALK.length? tn('count.turns', TALK.length):'—']
   ];
-  var lastLine = LINES.length?LINES[LINES.length-1]:null;
   return '<div class="view">'+
-    '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
-    '<button class="iconb" onclick="go(\'settings\')" aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
-    '<div class="title">'+
-      '<div class="tkick">'+t('home.kicker')+'</div>'+
-      '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
-      '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
-      '<div class="rule"></div>'+
-    '</div>'+
-    '<div class="body" style="padding-top:0">'+
-    /* The contents used to be hidden until the first word existed, and what
-       stood in their place was a card saying "write the first word" -- so the
-       app's own table of contents was withheld from the one person who most
-       needed to see what was in the book. There is a language here from the
-       first screen now: a name, a kind of writing, sounds. The contents are
-       shown, and what to do next is the card above them. */
-    capBanner()+nextStep()+
+    '<div class="navtop"><span class="navt">'+esc(t('tab.build'))+'</span></div>'+
+    '<div class="body" style="padding-top:4px">'+
+    capBanner()+
     '<div class="toc">'+toc.map(function(row){
       return '<button class="trow" onclick="go(\''+row[2]+'\')">'+
         '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
-        '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span></button>';
+        '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
-    (lastLine
-      ? '<button class="recent" onclick="go(\'sent\')">'+
-            '<div class="rh">'+t('home.recent.line')+'</div>'+
-            '<div class="line">'+esc(lastLine.ws.join(' '))+'</div>'+
-            '<div class="tr">'+esc(readMode()==='kana'? linked(lastLine.ws).rd : linked(lastLine.ws).ipa)+'</div></button>'
-          : last? '<button class="recent" onclick="go(\'words\')">'+
-            '<div class="rh">'+t('home.recent.word')+'</div>'+
-            '<div class="line">'+esc(wOut(last.hw))+'</div>'+
-            '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')+
-    '</div>'+
-  '</div>';
+    '<button class="trow" onclick="go(\'settings\')" style="margin-top:18px">'+
+      '<span class="rn"></span><span class="rt">'+esc(t('set.title'))+'</span>'+
+      '<span class="lead"></span>'+ICON_GO+'</button>'+
+    '</div>'+tabBar()+'</div>';
+}
+/* Search, over everything, from anywhere -- and the way other people's work
+   comes in. */
+function vFind(){
+  var qq=String(fq||'').trim().toLowerCase(), hits=[];
+  if(qq){
+    hits=WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
+      .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
+  }
+  return '<div class="view">'+
+    '<div class="navtop"><span class="navt">'+esc(t('tab.find'))+'</span></div>'+
+    '<div class="chead">'+
+    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+    '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'" oninput="setFq(this.value)">'+
+    '<button class="sx" id="f-x" onclick="clearFq()"'+(fq?'':' hidden')+
+      ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
+    '<div class="body" id="f-list">'+findBodyHTML(hits, qq)+'</div>'+
+    tabBar()+'</div>';
+}
+var fq='';
+function findBodyHTML(hits, qq){
+  if(!qq)
+    return '<div class="fcard"><div class="fch">'+t('find.mine.h')+'</div>'+
+      '<div class="note">'+t('find.mine.d')+'</div></div>'+
+      '<button class="trow" onclick="openImport()"><span class="rn"></span>'+
+      '<span class="rt">'+esc(t('set.csv.in'))+'</span><span class="lead"></span>'+ICON_GO+'</button>'+
+      '<div class="fcard soon"><div class="fch">'+t('find.world.h')+'</div>'+
+      '<div class="note">'+t('find.world.d')+'</div></div>';
+  if(!hits.length) return '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>';
+  return hits.map(function(w){ return entryHTML(w, false); }).join('');
+}
+function setFq(v){
+  fq=v;
+  var el=document.getElementById('f-list'); if(!el) return;
+  var qq=String(v||'').trim().toLowerCase();
+  el.innerHTML=findBodyHTML(qq? WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
+    .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); }) : [], qq);
+  var x=document.getElementById('f-x');
+  if(x){ if(v) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
+}
+function clearFq(){
+  var e=document.getElementById('f-q');
+  fq=''; if(e){ e.value=''; e.focus(); }
+  setFq('');
 }
 function editName(){
   var v=prompt(t('home.name.prompt'), langName);
@@ -694,10 +841,8 @@ function wMetaHTML(items){
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
+    navTop(WORDS.length+(has('plus')?'':' / '+FREE_LIMIT))+
     '<div class="chead">'+
-    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.words'))+'</span>'+
-    '<span class="cn">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+'</span></div>'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)">'+
     /* always in the page, shown when there is something to clear -- typing
@@ -862,10 +1007,7 @@ function ipaVowTable(){
 function vSound(){
   var mine=addedSnd(), units=wsUnits(), bases=wsBases(), marks=wsMarks();
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(t('toc.sound'))+'</span>'+
-    '<span class="cn">'+mine.length+'</span></div></div>'+
+    navTop(mine.length)+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:10px">'+t('ipa.note')+'</div>'+
 

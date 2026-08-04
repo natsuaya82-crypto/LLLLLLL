@@ -138,9 +138,19 @@ canvas.pkc{width:34px;height:34px;display:block}
    the first swipe. Its parent has to be the tall element -- a sticky thing
    only sticks inside its own parent's box -- which is why it is no longer
    inside .chead. */
-.navtop{position:sticky;top:0;z-index:30;background:var(--bg);
-        padding:calc(env(safe-area-inset-top,0) + 8px) 24px 0}
-.navtop:after{content:"";display:block;height:8px;
+/* Back, and where you are, on one line: 「←目次　Ⅰ 単語」. The chapter used to
+   be a second heading below this bar, which meant the name of the page you
+   were on was the third thing down and the bar itself said only where you
+   would go if you left. */
+.navtop{position:sticky;top:0;z-index:30;background:var(--bg);display:flex;align-items:baseline;
+        gap:9px;padding:calc(env(safe-area-inset-top,0) + 8px) 24px 8px}
+.navtop .back{flex:0 0 auto;margin-right:3px}
+.navn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.06rem}
+.navt{font-family:'Cinzel',Georgia,serif;font-size:1.12rem;font-weight:600;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navc{margin-left:auto;flex:0 0 auto;font-family:'Cormorant Garamond',Georgia,serif;
+      font-style:italic;color:var(--txm);font-size:.98rem}
+.navtop:after{content:"";position:absolute;left:0;right:0;top:100%;height:8px;
               background:linear-gradient(180deg,var(--bg),transparent)}
 .chead{padding:0 24px 6px}
 .chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
@@ -148,6 +158,46 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
 .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(env(safe-area-inset-bottom,0) + 120px)}
+/* ---------- the door ----------
+   The name, a rule under it, and then the app. Nothing moves except the
+   rule drawing itself, because a spinner says "this is slow" and this is
+   not slow -- it is a moment on purpose. */
+#splash{position:fixed;inset:0;z-index:900;background:var(--bg);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+        transition:opacity .38s ease}
+#splash.off{opacity:0;pointer-events:none}
+.splbrand{font-family:'Cinzel',Georgia,serif;font-size:1.5rem;letter-spacing:.42em;
+          text-indent:.42em;color:var(--tx)}
+.splbrand .st{color:var(--gold)}
+.splrule{width:0;height:1px;background:var(--goldln);animation:splr .85s ease-out forwards}
+@keyframes splr{from{width:0}to{width:132px}}
+/* ---------- the three tabs ----------
+   Only the three roots carry this. On an inner page the thing at the bottom
+   of the screen is that page's own button, and a tab bar under it would be
+   two bars competing for the same thumb. */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;max-width:480px;margin:0 auto;
+        display:flex;background:var(--bg);border-top:1px solid var(--line);
+        padding-bottom:env(safe-area-inset-bottom,0)}
+.tab{flex:1;min-height:56px;background:none;border:0;color:var(--txm);
+     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+     font-family:inherit;padding:8px 4px}
+.tab .tabl{font-size:.62rem;letter-spacing:.04em}
+.tab.on{color:var(--gold)}
+/* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
+.view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
+       padding:0 30px calc(56px + env(safe-area-inset-bottom,0));text-align:center}
+.cvrow{display:flex;gap:8px;margin:22px 0 6px}
+.cvst{flex:1;min-height:56px;background:none;border:1px solid var(--line);border-radius:10px;
+      padding:9px 4px;color:var(--tx);font-family:inherit;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.cvst:active{border-color:var(--goldln);color:var(--gold)}
+.cvv{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.14rem}
+.cvl{font-size:.6rem;color:var(--txm);letter-spacing:.06em}
+/* ---------- search, the tab ---------- */
+.fcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.fcard.soon{border-style:dashed;opacity:.62}
+.fch{font-family:'Cinzel',Georgia,serif;font-size:1rem;margin-bottom:6px}
 .note{color:var(--txm);font-size:.74rem;line-height:1.75}
 .sec{font-size:.6rem;letter-spacing:.28em;color:var(--txm);text-transform:uppercase;margin:28px 0 10px}
 /* The wide tracking is what makes a Latin small-caps heading read as a
@@ -850,12 +900,38 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 </style>
 </head>
 <body>
+<!-- The door. The app used to appear mid-flight: the first frame drawn was
+     whatever screen you had left, arriving before the fonts, before the
+     custom typeface had been built out of your own letters, and before the
+     first paint had settled -- so opening it felt like being dropped rather
+     than let in. This holds for a moment and goes. -->
+<div id="splash"><div class="splbrand">LIN<span class="st">G</span>UA</div>
+<div class="splrule"></div></div>
 <div id="app"></div>
 
 <div class="sbg" id="sbg" onclick="closeSheet(event)">
   <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
 </div>
 <div class="toast" id="toast"></div>
+<script>
+/* Plain script, no module: it must run before anything heavy. The splash is
+   dismissed on the later of "the app has drawn" and 900ms, so a fast phone
+   still sees the name rather than a flash. */
+(function(){
+  var el=document.getElementById('splash'), t0=Date.now(), done=false;
+  function shut(){
+    if(done) return; done=true;
+    el.className='off';
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 420);
+  }
+  window.splashDone=function(){
+    var w=900-(Date.now()-t0);
+    setTimeout(shut, w>0? w : 0);
+  };
+  /* if anything at all goes wrong, the door still opens */
+  setTimeout(shut, 4000);
+})();
+</script>
 
 <!-- The app, in load order. It used to be one file; it is now several, because
      a file small enough to send is a file that can be changed. Nothing else

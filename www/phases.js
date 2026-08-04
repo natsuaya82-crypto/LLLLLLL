@@ -222,7 +222,7 @@ function stAddOwn(){
 function stDelOwn(id){
   if(!confirm(t('stg.own.del.ask'))) return;
   STG.extra=STG.extra.filter(function(x){ return x.id!==id; });
-  saveStg(); gOpen=null; render();
+  saveStg(); if(gOpenOf()) back(); else render();
 }
 
 /* ---- the note a stage carries ----------------------------------------- */
@@ -280,9 +280,15 @@ function stLineHTML(p){
 }
 
 /* ---- the screens ------------------------------------------------------ */
-var gOpen=null;                  /* which stage is open, null = the list */
-function stOpen(id){ gOpen=id; render(); window.scrollTo(0,0); }
-function stClose(){ gOpen=null; render(); window.scrollTo(0,0); }
+/* Which stage is open comes from the trail, so leaving the page and coming
+   back lands on the same stage and the back button needs no help. */
+function gOpenOf(){ return (here().r==='gram')? (here().a||null) : null; }
+/* A stage is a page of its own, reached and left like every other page, so
+   there is one back button on it and it goes wherever you came from. gOpen
+   is the trail's argument now, not a separate piece of state that a second
+   back button had to clear. */
+function stOpen(id){ go('gram', id); }
+function stClose(){ back(); }
 
 function stRow(p, n){
   var done=stIsDone(p), tot=stTotal(p);
@@ -320,7 +326,7 @@ function stSlotRow(p, k){
 }
 function stDetailHTML(p){
   var i, out='';
-  out+='<button class="back nb" onclick="stClose()">'+ICON_BACK+t('toc.gram')+'</button>';
+
   out+='<h2 class="sth">'+esc(stTitle(p))+'</h2>';
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
 
@@ -369,12 +375,10 @@ function stFeatHTML(id){
 }
 
 function vGram(){
+  var gOpen=gOpenOf();
   var p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="rn">III</span><span class="ct">'+esc(t('toc.gram'))+'</span>'+
-    '<span class="cn">'+stCount()+' / '+stAll().length+'</span></div></div>'+
+    navTop(gOpen? '' : (stCount()+' / '+stAll().length))+
     '<div class="body">'+
     (p? stDetailHTML(p) : stListHTML())+
     '</div></div>';

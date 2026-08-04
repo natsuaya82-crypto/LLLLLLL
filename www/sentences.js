@@ -98,10 +98,7 @@ function vSent(){
   var L = ws.length>=2 ? linked(ws.map(function(w){return w.hw;})) : null;
   var chk=orderCheck();
   var head='<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="rn">IV</span><span class="ct">'+esc(t('toc.sent'))+'</span>'+
-    '<span class="cn">'+LINES.length+'</span></div></div><div class="body">';
+    navTop(LINES.length)+'<div class="body">';
 
   if(WORDS.length<2){
     return head+'<div class="empty"><div class="eb">'+t('sent.empty.t')+'</div>'+
@@ -211,9 +208,7 @@ function vMake(){
   var rule=A.finalRule[mkPos];
   var left = has('plus') ? null : (FREE_LIMIT-WORDS.length);
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'words\')">'+ICON_BACK+t('toc.words')+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="rn">II</span><span class="ct">'+esc(t('toc.make'))+'</span></div></div>'+
+    navTop('')+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
       return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';

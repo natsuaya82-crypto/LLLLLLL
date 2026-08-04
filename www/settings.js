@@ -12,9 +12,7 @@ function vSettings(){
   var sseq=WORDS.length? wPh(WORDS[0]) : phGuess('aelin');
   var sample=sseq.join(''), srom=phRoman(sseq);
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'home\')">'+ICON_BACK+t('nav.contents')+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="ct">'+t('set.title')+'</span></div></div>'+
+    navTop('')+
     '<div class="body">'+
     '<div class="sec">'+t('set.look')+'</div>'+
     '<div class="pick">'+
@@ -126,9 +124,7 @@ function wipe(){
    ========================================================================= */
 function vPlans(){
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'settings\')">'+ICON_BACK+t('nav.settings')+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="ct">'+t('plans.title')+'</span></div></div>'+
+    navTop('')+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:16px">'+t('plans.intro')+'</div>'+
     PLANS.map(function(p){

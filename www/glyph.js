@@ -213,7 +213,7 @@ function newGE(r){
            free:false, round:false, raw:null, rawFor:-1,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
-function editGlyph(r){ GE=newGE(r); go('glyph'); }
+function editGlyph(r){ GE=newGE(r); go('glyph', r); }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
    so there is no reason to be clever about it. */
 function geMark(){
@@ -281,6 +281,19 @@ var ICON_CROSS='<svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill=
 var ICON_GO='<svg class="ic go" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M9 5l7 7-7 7"/></svg>';
+/* The three tabs. Drawn, like everything else: a stack of pages being made,
+   a lens, and a door. */
+var TAB_ICON={
+  build:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+    'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+    '<path d="M4 6.5 12 3l8 3.5-8 3.5Z"/><path d="M4 12l8 3.5 8-3.5"/><path d="M4 17.5 12 21l8-3.5"/></svg>',
+  find:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+    'stroke-width="1.5" stroke-linecap="round" aria-hidden="true">'+
+    '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 20 20"/></svg>',
+  home:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+    'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+    '<path d="M4 10.5 12 4l8 6.5V20H4Z"/><path d="M9.5 20v-6h5v6"/></svg>'
+};
 var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M6 3.5h12v17l-6-3.4-6 3.4Z"/><path d="M9 8h6M9 11.5h4"/></svg>';
@@ -324,10 +337,7 @@ function vGlyph(){
   var pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   return '<div class="view">'+
-    '<div class="navtop">'+'<button class="back nb" onclick="go(\'sound\')">'+ICON_BACK+esc(t('toc.sound'))+'</button>'+'</div>'+
-    '<div class="chead">'+
-    '<div class="chap"><span class="rn">I</span><span class="ct">'+esc(GE.r)+'</span>'+
-    '<span class="cn">'+pts+'</span></div></div>'+
+    navTop(pts)+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
@@ -1237,7 +1247,9 @@ function render(){
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
-  var v = route==='words'? vWords()
+  var v = route==='build'? vBuild()
+        : route==='find' ? vFind()
+        : route==='words'? vWords()
         : route==='sound'? vSound()
         : route==='gram' ? vGram()
         : route==='sent' ? vSent()
@@ -1273,3 +1285,4 @@ migratePh();
 migrateMn();
 installScriptFont();
 render();
+if(window.splashDone) splashDone();
