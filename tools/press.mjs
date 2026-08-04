@@ -1,0 +1,257 @@
+/* ---------------------------------------------------------------------------
+   tools/press.mjs — press every button and see whether anything breaks.
+
+   Run it:   node tools/press.mjs
+
+   tools/act-check.mjs proves that every name a screen says has a function
+   behind it. That is a statement about the table, and it is worth having, but
+   it is not the same statement as "the button works". A name can resolve to a
+   function that throws the moment it runs — on a word with no meanings yet, on
+   a letter that was borrowed rather than drawn, on the free plan. act-check
+   would call that button fine, because the name is in the table and the table
+   points at a real function. Only pressing it finds out.
+
+   So this presses them. Every button on every screen, one at a time, with the
+   screen rebuilt from the same fixture before each press so that what the last
+   press did cannot change what the next one sees.
+
+   What it checks
+     1. nothing throws    an uncaught error during a press fails, named with
+                          the screen and the button that caused it
+     2. nothing goes      the app still has a screen in it afterwards. A press
+        blank             that empties #app is the white screen this whole
+                          family of checks exists to prevent
+
+   How a press is made: the real thing. The click is dispatched on the element,
+   so it travels through the one delegated listener in www/act.js, is looked up
+   in the same table the app uses, and is called with the arguments the markup
+   carried. Nothing here knows the name of a single function in the app.
+
+   What it cannot see, so that nobody mistakes silence for safety:
+     - whether the button did the right thing. This proves it did not throw
+       and did not empty the screen, not that it worked
+     - anything behind a confirm. confirm() is answered no, so a press that
+       asks before destroying something takes the "no" branch here. Answering
+       yes would delete the fixture out from under the rest of the walk
+     - anything that needs a second press to reach. Each press starts from a
+       freshly built screen, so a two-step gesture is only ever half made
+     - anything asynchronous. A press that fails inside a promise or a timer
+       resolves after this has moved on and is not attributed to it
+     - the drawing surface. A canvas is drawn on with a finger, not pressed
+
+   Exit code is 0 only when both pass.
+   --------------------------------------------------------------------------- */
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+import { seed, obStates, halfDone } from './fixture.mjs';
+
+async function loadChromium(){
+  const { createRequire } = await import('module');
+  const req = createRequire(import.meta.url);
+  try { return req('playwright').chromium; } catch (e) {}
+  try {
+    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    return req(path.join(g, 'playwright')).chromium;
+  } catch (e) {}
+  console.error('playwright is not installed. npm i -g playwright');
+  process.exit(2);
+}
+const chromium = await loadChromium();
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(HERE, '..', 'www');
+const PORT = 8123;
+const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
+const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
+
+const mime = (f) => f.endsWith('.html') ? 'text/html; charset=utf-8'
+  : f.endsWith('.js') ? 'application/javascript; charset=utf-8'
+  : f.endsWith('.css') ? 'text/css; charset=utf-8'
+  : 'text/plain; charset=utf-8';
+const srv = http.createServer((req, res) => {
+  const f = path.join(ROOT, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
+  let d = null;
+  try { d = fs.readFileSync(f); } catch (e) { d = null; }
+  if (d === null) { res.writeHead(404); res.end('no'); return; }
+  res.writeHead(200, { 'Content-Type': mime(f) });
+  res.end(d);
+});
+await new Promise(r => srv.listen(PORT, r));
+
+const br = await chromium.launch(LAUNCH);
+const pg = await br.newPage();
+await pg.goto(`http://127.0.0.1:${PORT}/`);
+await pg.waitForTimeout(300);
+
+/* The fixture is shared with act-check, so the two press and walk the same
+   app. It goes in as a page global because it has to be called again before
+   every screen: a press is allowed to change things, and the next screen must
+   not inherit what the last one did. */
+await pg.evaluate('window.__seed = ' + seed.toString());
+/* The same half-done screens act-check walks. Shared rather than copied: a
+   screen added to one list has to be pressed by this one too, and a second
+   copy would drift the first time somebody added to only one of them. */
+await pg.evaluate('window.__obStates = ' + obStates.toString());
+await pg.evaluate('window.__halfDone = ' + halfDone.toString());
+
+const R = await pg.evaluate(() => {
+  const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [] };
+
+  /* An exception inside a click listener does not come back out of .click() —
+     the browser reports it and carries on. So catch it where it is reported,
+     and read the list after each press to know which press caused it. */
+  let errs = [];
+  window.addEventListener('error', (e) => errs.push(e.message || String(e.error)));
+  window.onunhandledrejection = (e) => errs.push('unhandled rejection: ' + e.reason);
+
+  /* Nothing may stop and wait for a person. confirm answers no, so a button
+     that asks before destroying something leaves the fixture alone. */
+  window.confirm = () => false;
+  window.alert = () => {};
+  window.prompt = () => null;
+
+  const app = () => document.getElementById('app');
+  const buttons = () => Array.prototype.slice.call(app().querySelectorAll('[data-do]'));
+
+  /* Every screen is a route and its argument, so the rooms and the stages are
+     each their own screen. Asked of the page, like everywhere else. */
+  const views = Object.keys(window).filter(k =>
+    /^v[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'vOb');
+  const opens = Object.keys(window).filter(k =>
+    /^open[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'openForm');
+  const argsOf = (r) =>
+    r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
+    r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
+    [null];
+
+  /* A screen is a label and the way back to it. Rebuilding rather than
+     remembering is the point: a press may navigate, delete, or open a form,
+     and the next press has to start from the same place this one did.
+
+     The screen is put into the page by hand rather than by calling render().
+     render() dispatches on the route, and its first act is to send everything
+     to the onboarding while SET.done is false -- so a walk that trusted it
+     would press the same two onboarding buttons a thousand times and report a
+     thousand presses. Asking the view for its own HTML says what screen this
+     is with no way to be quietly redirected. The press itself is still the
+     real thing: it is dispatched on the element, travels through the one
+     listener www/act.js wired to #app at boot, and is looked up in the same
+     table the app uses. */
+  const show = (html) => { document.getElementById('app').innerHTML = html; };
+  const hit = {};
+  const screens = [];
+
+  /* Onboarding, which is the one screen render() reaches on its own. */
+  for (let s = 0; s <= 4; s++) {
+    screens.push({
+      label: 'vOb step ' + s,
+      build: () => { window.__seed(); SET.done = false; ob.step = s; show(vOb()); }
+    });
+  }
+
+  /* Every view, under both plans, because a button behind the paywall is a
+     button and the lock offered in its place is another one. */
+  ['free','plus'].forEach(plan => {
+    views.forEach(v => {
+      const r = v.slice(1).toLowerCase();
+      argsOf(r).forEach(a => {
+        screens.push({
+          label: v + (a ? ':' + a : '') + ' (' + plan + ')',
+          build: () => { window.__seed(); SET.done = true; SET.plan = plan;
+                         window.route = r; NAV = [{ r: r, a: a }]; show(window[v]()); }
+        });
+      });
+    });
+  });
+
+  /* The onboarding's second faces, and the screens that only exist once
+     something is half-done. Both lists come from tools/fixture.mjs, which is
+     also where act-check gets them. */
+  window.__obStates().forEach(([label, run]) => {
+    screens.push({ label: 'ob: ' + label,
+      build: () => { window.__seed(); SET.done = false; show(run()); } });
+  });
+  /* Under three standings, not one. A button can exist only for somebody who
+     has not paid, and one of them -- the offer to upgrade -- appears only once
+     the free allowance is also spent. Pressing every screen as a paid account
+     would never render either. */
+  const standings = [
+    ['paid',        () => { SET.plan = 'plus'; }],
+    ['free',        () => { SET.plan = 'free'; }],
+    ['out of room', () => { SET.plan = 'free'; SET.aiDay = ''; SET.aiN = 999; }]
+  ];
+  standings.forEach(([who, stand]) => {
+    window.__halfDone().forEach(([label, run]) => {
+      screens.push({ label: label + ' (' + who + ')',
+        build: () => { window.__seed(); SET.done = true; stand(); show(run()); } });
+    });
+  });
+
+  /* The forms, which are opened rather than routed to. They render into
+     FORM.html, so that is what goes on the page. */
+  opens.forEach(o => {
+    screens.push({
+      label: o,
+      build: () => { window.__seed(); SET.done = true; SET.plan = 'plus';
+                     window.route = 'words'; NAV = [{ r: 'words' }];
+                     window[o].length ? window[o]('kano') : window[o]();
+                     show((typeof FORM !== 'undefined' && FORM && FORM.html) ? FORM.html : ''); }
+    });
+  });
+
+  screens.forEach(sc => {
+    let n = 0;
+    try { sc.build(); n = buttons().length; }
+    catch (e) { out.skipped.push(sc.label + ' would not build: ' + e.message); return; }
+    out.screens++;
+    for (let i = 0; i < n; i++) {
+      try { sc.build(); } catch (e) { out.skipped.push(sc.label + ' #' + i + ': ' + e.message); continue; }
+      const els = buttons();
+      if (i >= els.length) break;     /* the screen got shorter; nothing left at i */
+      const name = els[i].getAttribute('data-do');
+      hit[name] = 1;
+      errs = [];
+      els[i].click();
+      out.pressed++;
+      errs.forEach(m => out.threw.push(sc.label + ' -> ' + name + ': ' + m));
+      const left = app() ? app().innerHTML.trim().length : 0;
+      if (left < 20) out.blank.push(sc.label + ' -> ' + name + ' left the screen empty');
+    }
+  });
+  out.names = Object.keys(hit).sort();
+  out.never = Object.keys(ACT).filter(k => !hit[k]).sort();
+  return out;
+});
+
+await br.close();
+srv.close();
+
+const fails = [];
+R.threw.forEach(m => fails.push('threw: ' + m));
+R.blank.forEach(m => fails.push('blank: ' + m));
+
+console.log('screens built: ' + R.screens);
+console.log('buttons pressed: ' + R.pressed +
+            '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
+/* Printed, not silently tolerated. A name nothing here presses is a button
+   this check says nothing about, and a reader who saw only a green line would
+   reasonably think otherwise. act-check proves these names resolve; it is
+   this one that cannot reach them. */
+if (R.never.length) {
+  console.log('\nnever pressed (' + R.never.length + '), so nothing here is claimed about them:');
+  console.log('  ' + R.never.join(' '));
+}
+if (R.skipped.length) {
+  console.log('\ncould not be built (' + R.skipped.length + '):');
+  R.skipped.slice(0, 20).forEach(m => console.log('  ' + m));
+}
+if (fails.length) {
+  console.error('\nFAILED (' + fails.length + '):');
+  fails.slice(0, 40).forEach(m => console.error('  ' + m));
+  if (fails.length > 40) console.error('  ...and ' + (fails.length - 40) + ' more');
+  process.exit(1);
+}
+console.log('\nevery button pressed: nothing threw, nothing went blank.');

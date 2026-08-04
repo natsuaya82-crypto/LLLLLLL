@@ -9,10 +9,10 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets + es5 + i18n + act — must be green before any commit
+npm test        # assets + es5 + i18n + act + press — green before any commit (~75s)
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run i18n` / `npm run act`.
+Individual: `npm run assets` / `npm run es5` / `npm run i18n` / `npm run act` / `npm run press`.
 `tools/pre-commit` runs them as a hook.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
@@ -71,6 +71,13 @@ the app loudly on load instead of failing on someone's phone weeks later.
 Adding a button means adding its `act(...)` line in the same commit. `act-check`
 proves both directions: no name without a function, and no entry no screen names
 (a dead entry is a button that used to exist).
+
+`press-check` is the other half and not the same statement: it dispatches a real
+click on every button of every screen and fails if one throws or empties `#app`.
+A name can resolve to a function that throws the moment it runs — `act-check`
+calls that button fine. Both fixtures and the half-done screen list live in
+`tools/fixture.mjs` so the two walk the same app; add a screen there, not to one
+of them.
 
 ### 4. Script load order in `index.html`
 

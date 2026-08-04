@@ -50,6 +50,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { seed, obStates, halfDone } from './fixture.mjs';
 
 async function loadChromium(){
   const { createRequire } = await import('module');
@@ -91,6 +92,15 @@ pg.on('pageerror', e => pageErrors.push(e.message));
 await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
 
+/* Fill the app with something to walk. Shared with tools/press.mjs so the two
+   never drift into walking different apps. */
+await pg.evaluate(seed);
+/* The half-done screens go in as page globals rather than staying inline here,
+   because tools/press.mjs has to build each of them again before every press
+   and a second copy of this list would drift the first time one was added. */
+await pg.evaluate('window.__obStates = ' + obStates.toString());
+await pg.evaluate('window.__halfDone = ' + halfDone.toString());
+
 const R = await pg.evaluate(() => {
   const out = { missing: [], dead: [], bad: [], inline: [], screens: 0,
                 seen: { do: [], in: [], kd: [] }, threw: [] };
@@ -128,25 +138,7 @@ const R = await pg.evaluate(() => {
     out.screens++;
   }
 
-  /* Something for the screens to be about. */
-  WORDS = [
-    {hw:'kano', ph:['k','a','n','o'], mn:'mountain', mns:['mountain'], pos:'n', at:1},
-    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', at:2},
-    {hw:'mos',  ph:['m','o','s'],     mn:'tall',     mns:['tall'],     pos:'adj', at:3},
-    {hw:'sar',  ph:['s','a','r'],     mn:'river',    mns:['river'],    pos:'n', at:4},
-    {hw:'nak',  ph:['n','a','k'],     mn:'not',      mns:['not'],      pos:'part', slot:'neg.not', at:5},
-    {hw:'ke',   ph:['k','e'],         mn:'what',     mns:['what'],     pos:'pro',  slot:'ask.what', at:6}
-  ];
-  langName = 'Shango';
-  SET.snd = ['k','t','m','n','s','r','a','i','u','e','o'];
-  NOTES = [{t:'note', b:'body'}];
-  TALK = [];
-  LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
-             {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
-             {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]}];
-  STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
-         rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
-  fq = ''; fpick = null;
+  /* The fixture was seeded by tools/fixture.mjs before this ran. */
 
   const views  = Object.keys(window).filter(k =>
     /^v[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'vOb');
@@ -179,14 +171,7 @@ const R = await pg.evaluate(() => {
     ob.step = s;
     try { harvest('vOb step ' + s, vOb()); } catch (e) { out.threw.push('vOb ' + s + ': ' + e.message); }
   }
-  const obStates = [
-    ['choosing a writing system', () => { ob.step = 2; ob.sc = ''; return vOb(); }],
-    ['sounds offered again',      () => { ob.step = 3; obPick2 = true; return vOb(); }],
-    ['characters to borrow',      () => { ob.step = 4; ob.mode = 'borrow';
-                                          ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
-    ['no script picked to borrow from', () => { ob.step = 4; ob.mode = 'borrow';
-                                                ob.pick = ''; return vOb(); }]
-  ];
+  const obStates = window.__obStates();
   obStates.forEach(([label, run]) => {
     try { harvest(label, run()); } catch (e) { out.threw.push(label + ': ' + e.message); }
   });
@@ -244,82 +229,7 @@ const R = await pg.evaluate(() => {
 
   /* Screens whose buttons only exist once something is half-done: a word
      being spelled, a letter being drawn, suggestions on the table. */
-  const states = [
-    ['the word being edited', () => { openWord('kano'); wEdit.mns = ['mountain','peak'];
-                                      wEdit.ex = [{ln:'kano tir', gl:'sees the mountain'}];
-                                      return FORM.html; }],
-    ['the word being spelled', () => { openWord('kano'); window.route='spell';
-                                       NAV=[{r:'spell'}]; return vSpell(); }],
-    ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
-                                       abVow = 'a'; return vAbugida(); }],
-    ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
-                                       NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    ['words being suggested',  () => { window.route='make'; NAV=[{r:'make'}];
-                                       cands=[{q:['k','a','n','o'], on:true},
-                                              {q:['t','i','r'], on:false}];
-                                       return vMake(); }],
-    ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
-                                          return vRelate('kano'); }],
-    ['borrowing a character',  () => { window.route='pickltr'; NAV=[{r:'pickltr', a:'l1'}];
-                                       pkFor='k'; return vPickLtr(); }],
-    ['picking a sound',        () => { window.route='picksnd'; NAV=[{r:'picksnd', a:'l1'}];
-                                       return vPickSnd(); }],
-    ['a conversation under way', () => { TALK=[{me:true, w:[['k','a','n','o']], g:['mountain']}];
-                                         window.route='talk'; NAV=[{r:'talk'}];
-                                         const h=vTalk(); TALK=[]; return h; }],
-    ['a word being written',   () => { openAdd(); addSeq=['k','a','n','o'];
-                                       addSp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                       SUG=[['k','a'],['t','i']];
-                                       return wdBodyHTML? FORM.html+vForm() : FORM.html; }],
-    ['a word being spelled again', () => { openWord('kano'); window.route='spell';
-                                           NAV=[{r:'spell'}];
-                                           wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           return vSpell(); }],
-    ['a word with a sentence in it', () => { findWord('kano').ex=[{ln:'kano tir', gl:'sees it'}];
-                                             openWord('kano');
-                                             const h=wdBodyHTML();
-                                             delete findWord('kano').ex; return h; }],
-    ['relatives to choose from', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
-                                         return vRelate('kano'); }],
-    ['a stage of your own',    () => { STG.extra=[{id:'own1', title:'mine', slots:['s1'],
-                                                   labels:{s1:'a'}, what:''}];
-                                       window.route='gram'; NAV=[{r:'gram', a:'own1'}];
-                                       const h=vGram(); return h; }],
-    ['a slot already filled',  () => { openSlot('neg','not'); return FORM.html; }],
-    ['words being suggested for a slot', () => { openSlot('greet','yes');
-                                                 stSug=[['k','a'],['t','i']];
-                                                 return FORM.html.replace(/$/, stSugHTML()); }],
-    ['one position of a word',   () => { openWord('kano');
-                                          wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                          window.route='spell'; NAV=[{r:'spell', a:'0'}];
-                                          return vSpell(); }],
-    ['one position of a new word', () => { openAdd(); addSp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           window.route='aspell'; NAV=[{r:'aspell', a:'0'}];
-                                           return vASpell(); }],
-    ['the sound keyboard in a word', () => { openWord('kano'); wdMode='ph';
-                                             return wdBodyHTML(); }],
-    ['the sound keyboard in a new word', () => { openAdd(); addMode='ph';
-                                                 return FORM.html; }],
-    ['words offered for a meaning', () => { SUG=[['k','a'],['t','i']]; sugMn='mountain';
-                                            const h=sugHTML(); SUG=[]; return h; }],
-    ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
-                                         return vRelate(); }],
-    ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;
-                                         return FORM.html + pkCharsHTML(); }],
-    ['an abugida being placed',  () => { SET.wsys='abugida';
-                                         LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
-                                                       ch:'', nm:'', snd:['a']});
-                                         window.route='abugida'; NAV=[{r:'abugida'}];
-                                         abVow='a';
-                                         const h=vAbugida(); SET.wsys='alpha'; return h; }],
-    ['a letter wearing a borrowed character', () => { editGlyph('t'); GE.ch='Ϙ';
-                                                      window.route='glyph';
-                                                      NAV=[{r:'glyph', a:GE.lid}];
-                                                      return vGlyph(); }],
-    ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
-                                          SET.aiN=999; openAdd();
-                                          const h=FORM.html; SET.aiN=0; return h; }]
-  ];
+  const states = window.__halfDone();
   states.forEach(([label, run]) => {
     try { harvest(label, run() || ''); }
     catch (e) { out.threw.push(label + ': ' + e.message); }
