@@ -45,8 +45,8 @@ function openNote(i){
       '<input id="nt-t" value="'+esc(n.t||'')+'" placeholder="'+esc(t('notes.t.ph'))+'"></div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'">'+esc(n.b||'')+'</textarea></div>'+
-    '<button class="btn" style="width:100%;margin-top:6px" onclick="saveNote()">'+t('notes.save')+'</button>'+
-    (k>=0? '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delNote()">'+
+    '<button class="btn" style="width:100%;margin-top:6px"' + DO('saveNote') + '>'+t('notes.save')+'</button>'+
+    (k>=0? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('notes.del')+'</span></button>' : ''));
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
@@ -70,7 +70,7 @@ function vNotes(){
   /* Newest first: a notebook is read from the end. */
   var rows='', i;
   for(i=NOTES.length-1;i>=0;i--){
-    rows+='<button class="ntrow" onclick="openNote('+i+')">'+
+    rows+='<button class="ntrow"' + DO('openNote', [i]) + '>'+
       '<span class="nth">'+esc(noteHead(NOTES[i]))+'</span>'+
       (noteBody(NOTES[i])? '<span class="ntb">'+esc(noteBody(NOTES[i]))+'</span>' : '')+
       '</button>';
@@ -84,6 +84,6 @@ function vNotes(){
       : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
         '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
-    '<div class="barfix"><button class="btn" onclick="openNote()">'+ICON_NOTE+t('notes.new')+'</button></div>'+
+    '<div class="barfix"><button class="btn"' + DO('openNote') + '>'+ICON_NOTE+t('notes.new')+'</button></div>'+
     '</div>';
 }

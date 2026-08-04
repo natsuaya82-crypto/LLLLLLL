@@ -42,6 +42,9 @@ function back(){
 }
 /* A tab is not somewhere you came through, it is where you are. Tapping one
    throws the trail away rather than stacking three tabs on top of it. */
+/* Leaving the search tab for a chapter of the build tab: two moves, and the
+   pair of them is one thing a row does. It was two statements inside markup. */
+function goIn(r){ goTab('build'); go(r); }
 function goTab(r){ NAV=[{r:r}]; route=r; render(); window.scrollTo(0,0); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
 var route='home';
@@ -116,7 +119,7 @@ function pageName(r, a){
 function navTop(count){
   var h=here(), p=PAGES[h.r]||{}, pv=prevPage();
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
-  return '<div class="navtop"><button class="back nb" onclick="back()">'+ICON_BACK+esc(lab)+'</button>'+
+  return '<div class="navtop"><button class="back nb"' + DO('back') + '>'+ICON_BACK+esc(lab)+'</button>'+
     ((p.n && !h.a)? '<span class="navn">'+p.n+'</span>' : '')+
     '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
@@ -128,7 +131,7 @@ var TABS=[{r:'build', k:'tab.build'}, {r:'find', k:'tab.find'}, {r:'home', k:'ta
 function tabBar(){
   var cur=here().r, i, out='';
   for(i=0;i<TABS.length;i++)
-    out+='<button class="tab'+(cur===TABS[i].r?' on':'')+'" onclick="goTab(\''+TABS[i].r+'\')">'+
+    out+='<button class="tab'+(cur===TABS[i].r?' on':'')+'"' + DO('goTab', [TABS[i].r]) + '>'+
       TAB_ICON[TABS[i].r]+'<span class="tabl">'+esc(t(TABS[i].k))+'</span></button>';
   return '<div class="tabbar">'+out+'</div>';
 }
@@ -294,9 +297,9 @@ function obDoorHTML(){
     '<h1 class="obh1">Lingua</h1>'+
     '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
     '<div class="obfoot">'+
-    '<button class="btn signin google" onclick="obSignIn()">'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-    '<button class="btn signin apple" onclick="obSignIn()">'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
-    '<button class="obskip" onclick="obSkip()">'+t('ob.signin.skip')+'</button>'+
+    '<button class="btn signin google"' + DO('obSignIn') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
+    '<button class="btn signin apple"' + DO('obSignIn') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+    '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>'+
     '<div class="mini obnote">'+t('ob.signin.local')+'</div></div>';
 }
 
@@ -316,10 +319,10 @@ function obNameHTML(){
     '<p class="obsub">'+t('ob.name.sub')+'</p>'+
     '<div class="obnamebox"><input id="ob-name" value="'+esc(ob.name||langName||'')+'" '+
       'placeholder="'+esc(t('ob.name.ph'))+'" autocomplete="off" '+
-      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();obName();}"></div>'+
+      '' + KD('obName') + '></div>'+
     '</div>'+
-    '<div class="obfoot"><button class="btn" onclick="obName()">'+t('ob.next')+'</button>'+
-    '<button class="obskip" onclick="obNameLater()">'+t('ob.name.later')+'</button>'+
+    '<div class="obfoot"><button class="btn"' + DO('obName') + '>'+t('ob.next')+'</button>'+
+    '<button class="obskip"' + DO('obNameLater') + '>'+t('ob.name.later')+'</button>'+
     '<div class="mini obnote">'+t('ob.name.note')+'</div></div>';
 }
 /* Not everyone has a name yet, and being stuck on the first question of the
@@ -338,12 +341,12 @@ function obWsysHTML(){
     '<h2 class="obh">'+t('ob.ws.h')+'</h2>'+
     '<p class="obsub">'+t('ob.ws.sub')+'</p>'+
     '<div class="obscripts one">'+WSYS.map(function(k){
-      return '<button class="obsrow'+(wsys()===k?' on':'')+'" onclick="obWsys(\''+k+'\')">'+
+      return '<button class="obsrow'+(wsys()===k?' on':'')+'"' + DO('obWsys', [k]) + '>'+
         '<span class="obnm">'+esc(t('ws.k.'+k))+'</span>'+
         '<span class="obws">'+esc(t('ws.k.'+k+'.eg'))+'</span>'+
         '</button>';
     }).join('')+'</div></div>'+
-    '<div class="obfoot"><button class="btn" onclick="obGo(3)">'+t('ob.next')+'</button>'+
+    '<div class="obfoot"><button class="btn"' + DO('obGo', [3]) + '>'+t('ob.next')+'</button>'+
     '<div class="mini obnote">'+t('ob.ws.note')+'</div></div>';
 }
 
@@ -384,10 +387,10 @@ function obDropSnd(p){
 function obSndRow(lab, list, kind){
   return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
     '<div class="obhs">'+list.map(function(p){
-      return '<span class="obhp"><button class="obhb" onclick="obHearSnd(\''+esc(p)+'\')">'+esc(p)+'</button>'+
-        '<button class="obhx" onclick="obDropSnd(\''+esc(p)+'\')" aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
+      return '<span class="obhp"><button class="obhb"' + DO('obHearSnd', [p]) + '>'+esc(p)+'</button>'+
+        '<button class="obhx"' + DO('obDropSnd', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
     }).join('')+
-    '<button class="obhadd" onclick="obMore(\''+kind+'\')">'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
+    '<button class="obhadd"' + DO('obMore', [kind]) + '>'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
     '</div></div>';
 }
 /* One more sound of the kind asked for. It is said on arrival -- an inventory
@@ -408,7 +411,7 @@ function obSndsHTML(){
     '<h2 class="obh">'+t('ob.snds.h')+'</h2>'+
     '<p class="obsub">'+t('ob.snds.sub')+'</p>'+
     '<div class="obscripts one">'+AS_CHARS.map(function(c){
-      return '<button class="obsrow'+(obPick2===c.id?' on':'')+'" onclick="obChar(\''+c.id+'\')">'+
+      return '<button class="obsrow'+(obPick2===c.id?' on':'')+'"' + DO('obChar', [c.id]) + '>'+
         '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
         '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
     }).join('')+'</div>'+
@@ -418,12 +421,12 @@ function obSndsHTML(){
     ((have.length || obPick2)
       ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
         obSndRow(t('ipa.cons'), cs, 'c')+obSndRow(t('ipa.vows'), vs, 'v')+
-        '<div class="wctl2"><button onclick="asSay(addedSnd())">'+ICON_PLAY+t('as.hear')+'</button>'+
-        (obPick2? '<button onclick="obAgain()">'+t('as.again')+'</button>':'')+'</div></div>'
+        '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_PLAY+t('as.hear')+'</button>'+
+        (obPick2? '<button' + DO('obAgain') + '>'+t('as.again')+'</button>':'')+'</div></div>'
       : '')+
     '</div>'+
-    '<div class="obfoot"><button class="btn" onclick="obToDraw()"'+(have.length?'':' disabled')+'>'+t('ob.next')+'</button>'+
-    '<button class="obskip" onclick="obOwnSnd()">'+t('as.own')+'</button>'+
+    '<div class="obfoot"><button class="btn"' + DO('obToDraw') + ''+(have.length?'':' disabled')+'>'+t('ob.next')+'</button>'+
+    '<button class="obskip"' + DO('obOwnSnd') + '>'+t('as.own')+'</button>'+
     '<div class="mini obnote">'+t('ob.snds.note')+'</div></div>';
 }
 /* The whole chart, for somebody who would rather choose it themselves. It is
@@ -495,11 +498,11 @@ function obDrawHTML(){
     '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
     '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
-    '<div class="obesc"><button class="obescb" onclick="obBorrow(\'\')">'+
+    '<div class="obesc"><button class="obescb"' + DO('obBorrow', [""]) + '>'+
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+
-    '<div class="obfoot"><button class="btn" onclick="obDone()">'+t('ob.draw.done')+'</button>'+
-    '<button class="obskip" onclick="obSkipDraw()">'+t('ob.draw.later')+'</button></div>';
+    '<div class="obfoot"><button class="btn"' + DO('obDone') + '>'+t('ob.draw.done')+'</button>'+
+    '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button></div>';
 }
 
 /* A sample is worth showing only if this phone can actually draw it. Some of
@@ -533,7 +536,7 @@ function obBorrowHTML(){
     '<h2 class="obh">'+esc(t('ws.'+w.id))+'</h2>'+
     '<p class="obsub">'+t('ob.borrow.take')+'</p>'+
     '<div class="obchars">'+w.ch.split(' ').map(function(ch){
-      return '<button class="obchb" onclick="obTakeCh(\''+esc(ch)+'\')">'+esc(ch)+'</button>';
+      return '<button class="obchb"' + DO('obTakeCh', [ch]) + '>'+esc(ch)+'</button>';
     }).join('')+'</div></div>';
   /* Two columns, because fifteen rows do not fit on a phone and a first
      screen that scrolls is a first screen that has already lost. Each row
@@ -544,7 +547,7 @@ function obBorrowHTML(){
     '<p class="obsub">'+t('ob.borrow.sub')+'</p>'+
     '<div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
       var pv=obPv(x);
-      return '<button class="obsrow" onclick="obPickScript(\''+x.id+'\')">'+
+      return '<button class="obsrow"' + DO('obPickScript', [x.id]) + '>'+
         '<span class="obnm">'+esc(t('ws.'+x.id))+'</span>'+
         (pv? '<span class="obpv">'+esc(pv)+'</span>' : '')+
         '</button>';
@@ -554,11 +557,11 @@ function obBorrowHTML(){
 function vOb(){
   var s=ob.step;
   var head='<div class="obhead">'+
-    (obCanBack()? '<button class="obback" onclick="obBack()" aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
+    (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
     '<div class="obtop">'+[0,1,2,3,4].map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join('')+'</div>'+
-    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'" onchange="obLang(this.value)">'+
+    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){
         return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
       }).join('')+
@@ -586,7 +589,7 @@ function capBanner(){
   if(has('plus')) return '';
   var left=FREE_LIMIT-WORDS.length;
   if(left>20 || left<0) return '';
-  return '<button class="capwarn" onclick="go(\'plans\')">'+t('cap.warn', left)+
+  return '<button class="capwarn"' + DO('go', ["plans"]) + '>'+t('cap.warn', left)+
     '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
 
@@ -603,11 +606,11 @@ function nextStep(){
      name, a kind of writing, a handful of sounds and one letter -- so the rest
      of the alphabet is what is nearest to hand, not a word written out of
      nothing. Once there is enough to write with, words; then sentences. */
-  if(n===0 && !scriptEnough()){ act="go('sound')"; label=t('next.sc0'); }
-  else if(n===0){ act="openAdd()"; label=t('next.w0'); }
-  else if(n<5){ act="openAdd()"; label=t('next.w1', 5-n); }
-  else { act="go('make')"; label=t('next.mk'); }
-  return '<button class="nextcard" onclick="'+act+'">'+
+  if(n===0 && !scriptEnough()){ act=DO('go',['sound']); label=t('next.sc0'); }
+  else if(n===0){ act=DO('openAdd'); label=t('next.w0'); }
+  else if(n<5){ act=DO('openAdd'); label=t('next.w1', 5-n); }
+  else { act=DO('go',['make']); label=t('next.mk'); }
+  return '<button class="nextcard"'+act+'>'+
     '<span class="nk">'+t('next.t')+'</span>'+
     '<span class="nl">'+esc(label)+'</span>'+
     '<span class="na">'+ICON_GO+'</span></button>';
@@ -719,7 +722,7 @@ function pkCharsHTML(){
   var cur=chOf(pkFor), taken=chTaken();
   return w.ch.split(' ').map(function(ch){
     var used=taken[ch] && taken[ch]!==pkFor;
-    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'" onclick="setCh(\''+esc(pkFor)+'\',\''+esc(ch)+'\')">'+esc(ch)+'</button>';
+    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('setCh', [pkFor, ch]) + '>'+esc(ch)+'</button>';
   }).join('');
 }
 function openPick(lid){
@@ -728,11 +731,11 @@ function openPick(lid){
   var cur=(l && l.ch)||'';
   openForm('pick:'+lid, t('ch.for', ltName(l)||t('lt.untitled')),
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
-      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();takeOwn();}">'+
-    '<button class="btn" onclick="takeOwn()">'+t('script.set')+'</button></div>'+
-    (cur? '<button class="pkclear" onclick="setCh(\''+esc(lid)+'\',\'\')">'+t('ch.clear')+'</button>':'')+
+      '' + KD('takeOwn') + '>'+
+    '<button class="btn"' + DO('takeOwn') + '>'+t('script.set')+'</button></div>'+
+    (cur? '<button class="pkclear"' + DO('setCh', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
     '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
-      return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'" onclick="pkSwitch(\''+w.id+'\')">'+
+      return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'"' + DO('pkSwitch', [w.id]) + '>'+
         '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+esc(t('ws.'+w.id))+'</button>';
     }).join('')+'</div>'+
     '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
@@ -770,8 +773,8 @@ function chTaken(){
    Tapping opens the picker in the sheet rather than growing the page. */
 function phTile(p){
   var cur=chOf(p), added=addedSnd().indexOf(p)>=0;
-  return '<button class="ptile'+(cur?' has':'')+'" onclick="openPick(\''+esc(p)+'\')">'+
-    (added? '<span class="pdel" onclick="event.stopPropagation();dropSnd(\''+esc(p)+'\')">'+ICON_CROSS+'</span>':'')+
+  return '<button class="ptile'+(cur?' has':'')+'"' + DO('openPick', [p]) + '>'+
+    (added? '<span class="pdel"' + DO('dropSnd', [p], 1) + '>'+ICON_CROSS+'</span>':'')+
     '<span class="pch">'+(cur?esc(cur):'+')+'</span>'+
     '<span class="psn">'+esc(p)+'</span></button>';
 }
@@ -794,13 +797,13 @@ function vHome(){
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
   return '<div class="view fixed">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
-    '<button class="iconb" onclick="go(\'settings\')" aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
+    '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
     '<div class="cover">'+
       '<div class="tkick">'+t('home.kicker')+'</div>'+
-      '<button class="tname" onclick="editName()">'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
+      '<button class="tname"' + DO('editName') + '>'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
       '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
       '<div class="rule"></div>'+
-      '<button class="wldrow" onclick="go(\'world\')">'+
+      '<button class="wldrow"' + DO('go', ["world"]) + '>'+
         (wldSaid()? '<span class="wldl">'+esc(wldLine()||t('wld.title'))+'</span>'
                   : '<span class="wldl none">'+esc(t('wld.ask'))+'</span>')+ICON_GO+'</button>'+
       '<div class="cvrow">'+
@@ -809,7 +812,7 @@ function vHome(){
         cvStat(t('toc.words'), WORDS.length||'—', 'words')+
       '</div>'+
       nextStep()+
-      (last? '<button class="recent" onclick="go(\'words\')">'+
+      (last? '<button class="recent"' + DO('go', ["words"]) + '>'+
             '<div class="rh">'+t('home.recent.word')+'</div>'+
             '<div class="line'+(myFontOn()?' sfont':'')+'">'+esc(wOut(last.hw))+'</div>'+
             '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')+
@@ -818,7 +821,7 @@ function vHome(){
   '</div>';
 }
 function cvStat(lab, val, r){
-  return '<button class="cvst" onclick="go(\''+r+'\')"><span class="cvv">'+esc(String(val))+'</span>'+
+  return '<button class="cvst"' + DO('go', [r]) + '><span class="cvv">'+esc(String(val))+'</span>'+
     '<span class="cvl">'+esc(lab)+'</span></button>';
 }
 /* The contents, in the order the work happens: you choose sounds, you give
@@ -837,11 +840,11 @@ function vBuild(){
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
     '<div class="toc">'+toc.map(function(row){
-      return '<button class="trow" onclick="go(\''+row[2]+'\')">'+
+      return '<button class="trow"' + DO('go', [row[2]]) + '>'+
         '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
         '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
-    '<button class="trow" onclick="go(\'settings\')" style="margin-top:18px">'+
+    '<button class="trow"' + DO('go', ["settings"]) + ' style="margin-top:18px">'+
       '<span class="rn"></span><span class="rt">'+esc(t('set.title'))+'</span>'+
       '<span class="lead"></span>'+ICON_GO+'</button>'+
     '</div>'+tabBar()+'</div>';
@@ -876,8 +879,8 @@ function vFind(){
     '<div class="navtop"><span class="navt">'+esc(t('tab.find'))+'</span></div>'+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'" oninput="setFq(this.value)">'+
-    '<button class="sx" id="f-x" onclick="clearFq()"'+(fq?'':' hidden')+
+    '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'"' + IN('setFq') + '>'+
+    '<button class="sx" id="f-x"' + DO('clearFq') + ''+(fq?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
     tabBar()+'</div>';
@@ -911,7 +914,7 @@ function ltkHTML(l, call){
   var face='';
   if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
   else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
-  return '<button class="phk'+(face?' hasg':'')+'" onclick="'+call+'">'+face+
+  return '<button class="phk'+(face?' hasg':'')+'"'+call+'>'+face+
     '<span class="pks">'+esc(ltName(l)||'\u00b7')+'</span></button>';
 }
 
@@ -954,7 +957,7 @@ function fHits(qq){
 }
 function fSec(label, n){ return '<div class="sec">'+esc(label)+(n?' '+n:'')+'</div>'; }
 function fRow(title, val, call){
-  return '<button class="trow" onclick="'+call+'"><span class="rn"></span>'+
+  return '<button class="trow"'+call+'><span class="rn"></span>'+
     '<span class="rt">'+esc(title)+'</span><span class="lead"></span>'+
     (val!==''? '<span class="rv">'+esc(String(val))+'</span>' : '')+ICON_GO+'</button>';
 }
@@ -970,21 +973,21 @@ function fResultsHTML(qq){
   if(g.w.length) out+=fSec(t('toc.words'), g.w.length)+g.w.map(function(w){ return entryHTML(w, false); }).join('');
   if(g.l.length) out+=fSec(t('toc.letters'), g.l.length)+
     '<div class="phkeys">'+g.l.map(function(l){
-      return ltkHTML(l, 'fPick(\'l\',\''+esc(l.id)+'\')'); }).join('')+'</div>';
+      return ltkHTML(l, DO('fPick',['l', l.id])); }).join('')+'</div>';
   if(g.s.length) out+=fSec(t('toc.sound'), g.s.length)+
     '<div class="phkeys">'+g.s.map(function(x){
-      return phkHTML(x, 'fPick(\'s\',\''+esc(x)+'\')'); }).join('')+'</div>';
+      return phkHTML(x, DO('fPick',['s', x])); }).join('')+'</div>';
   if(g.n.length) out+=fSec(t('toc.notes'), g.n.length)+g.n.map(function(h){
-      return fRow(h.n.t||t('note.untitled'), '', 'openNote('+h.i+')'); }).join('');
+      return fRow(h.n.t||t('note.untitled'), '', DO('openNote',[h.i])); }).join('');
   if(g.r.length) out+=fSec(t('toc.gram'), g.r.length)+g.r.map(function(h){
-      return fRow(stTitle(h.p), '', 'stOpen(\''+esc(h.p.id)+'\')'); }).join('');
+      return fRow(stTitle(h.p), '', DO('stOpen',[h.p.id])); }).join('');
   return out;
 }
 /* What a pressed sound or letter is in. */
 function fPickedHTML(){
   var hits = fpick.k==='s'? fWordsWithSnd(fpick.v) : fWordsWithLtr(fpick.v);
   var name = fpick.k==='s'? fpick.v : (ltName(ltById(fpick.v))||'');
-  return '<button class="trow" onclick="fPick(\''+esc(fpick.k)+'\',\''+esc(fpick.v)+'\')">'+
+  return '<button class="trow"' + DO('fPick', [fpick.k, fpick.v]) + '>'+
       '<span class="rn"></span><span class="rt">'+esc(t('find.back'))+'</span>'+
       '<span class="lead"></span></button>'+
     fSec(t(fpick.k==='s'? 'find.hit.snd':'find.hit.lt', name), hits.length)+
@@ -995,15 +998,15 @@ function fRestHTML(){
   var snd=addedSnd(), lt=LETTERS.filter(ltHasShape), todo=fTodo(), out='';
   if(snd.length) out+=fSec(t('find.by.snd'), snd.length)+
     '<div class="phkeys">'+snd.map(function(x){
-      return phkHTML(x, 'fPick(\'s\',\''+esc(x)+'\')'); }).join('')+'</div>';
+      return phkHTML(x, DO('fPick',['s', x])); }).join('')+'</div>';
   if(lt.length) out+=fSec(t('find.by.lt'), lt.length)+
     '<div class="phkeys">'+lt.map(function(l){
-      return ltkHTML(l, 'fPick(\'l\',\''+esc(l.id)+'\')'); }).join('')+'</div>';
+      return ltkHTML(l, DO('fPick',['l', l.id])); }).join('')+'</div>';
   out+=fSec(t('find.todo'), todo.length||'');
   out+= todo.length
-    ? todo.map(function(r){ return fRow(r[0], r[1], 'goTab(\'build\');go(\''+r[2]+'\')'); }).join('')
+    ? todo.map(function(r){ return fRow(r[0], r[1], DO('goIn',[r[2]])); }).join('')
     : '<div class="note">'+t('find.todo.no')+'</div>';
-  out+=fSec(t('find.in'), '')+fRow(t('set.csv.in'), '', 'openImport()');
+  out+=fSec(t('find.in'), '')+fRow(t('set.csv.in'), '', DO('openImport'));
   return out;
 }
 function findPaint(){
@@ -1053,19 +1056,19 @@ function vWorld(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="sec">'+t('wld.use')+'</div>'+
     '<div class="obscripts one">'+WORLDS.map(function(k){
-      return '<button class="obsrow'+(wldUse()===k?' on':'')+'" onclick="setWldUse(\''+k+'\')">'+
+      return '<button class="obsrow'+(wldUse()===k?' on':'')+'"' + DO('setWldUse', [k]) + '>'+
         '<span class="obnm">'+esc(t('wld.'+k))+'</span>'+
         '<span class="obws">'+esc(t('wld.'+k+'.d'))+'</span></button>';
     }).join('')+'</div>'+
     '<div class="sec">'+t('wld.where')+'</div>'+
     '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
-      'placeholder="'+esc(t('wld.where.ph'))+'" oninput="setWld(\'where\',this.value)"></div>'+
+      'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('setWld', ["where"]) + '></div>'+
     '<div class="sec">'+t('wld.who')+'</div>'+
     '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
-      'placeholder="'+esc(t('wld.who.ph'))+'" oninput="setWld(\'who\',this.value)"></div>'+
+      'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('setWld', ["who"]) + '></div>'+
     '<div class="sec">'+t('wld.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:140px" placeholder="'+esc(t('wld.note.ph'))+'" '+
-      'onchange="setWld(\'note\',this.value)">'+esc(w.note||'')+'</textarea>'+
+      '' + CH('setWld', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
     '</div></div>';
 }
 function editName(){
@@ -1125,10 +1128,10 @@ function wordsBodyHTML(items){
 }
 function wMetaHTML(items){
   return '<span class="wct">'+tn('words.n', items.length)+'</span>'+
-    '<button class="wsrt" onclick="setSort()">'+ICON_SORT+
+    '<button class="wsrt"' + DO('setSort') + '>'+ICON_SORT+
       esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>'+
     (items.length>1
-      ? '<button class="wsay'+(vxRunning()?' on':'')+'" onclick="wordsSay()">'+
+      ? '<button class="wsay'+(vxRunning()?' on':'')+'"' + DO('wordsSay') + '>'+
         (vxRunning()? ICON_CROSS+t('words.stop') : ICON_PLAY+t('words.sayall'))+'</button>'
       : '');
 }
@@ -1138,20 +1141,20 @@ function vWords(){
     navTop(WORDS.length+(has('plus')?'':' / '+FREE_LIMIT))+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'" oninput="setQ(this.value)">'+
+    '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('setQ') + '>'+
     /* always in the page, shown when there is something to clear -- typing
        repaints the list, not the header, so a button conjured up by the query
        string would never appear until the screen was left and come back to */
-    '<button class="sx" id="w-x" onclick="clearQ()"'+(q?'':' hidden')+
+    '<button class="sx" id="w-x"' + DO('clearQ') + ''+(q?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+
     '<div class="segs scrollx">'+wFilters().map(function(f){
-      return '<button class="seg'+(wFil===f.k?' on':'')+'" onclick="setFil(\''+f.k+'\')">'+esc(f.lab)+'</button>';
+      return '<button class="seg'+(wFil===f.k?' on':'')+'"' + DO('setFil', [f.k]) + '>'+esc(f.lab)+'</button>';
     }).join('')+'</div>'+
     '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+'</div>'+
-    '<div class="barfix"><button class="btn ghost" onclick="go(\'make\')">'+t('words.coin')+'</button>'+
-    '<button class="btn" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
+    '<div class="barfix"><button class="btn ghost"' + DO('go', ["make"]) + '>'+t('words.coin')+'</button>'+
+    '<button class="btn"' + DO('openAdd') + '>'+t('home.write')+'</button></div></div>';
 }
 /* Typing redraws the list and the count and nothing else, because redrawing
    the screen would take the keyboard's focus off the box being typed into. */
@@ -1194,14 +1197,14 @@ function entryHTML(w, kid){
   if(kids.length && !(wSort==='a' && !q && wFil===POS_ALL))
     line+='<span class="ekids">'+esc(tn('words.kids', kids.length))+'</span>';
   return '<div class="entry'+(kid?' kid':'')+'">'+
-    '<button class="ebody" onclick="sayPh('+esc(JSON.stringify(wPh(w)))+')" aria-label="'+esc(t('f.listen'))+'">'+
+    '<button class="ebody"' + DO('sayPh', [wPh(w)]) + ' aria-label="'+esc(t('f.listen'))+'">'+
     '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
     '<div class="mn">'+mn+'</div>'+
     (line? '<div class="erel">'+line+'</div>' : '')+
     '</button>'+
-    '<button class="eopen" onclick="openWord(\''+esc(w.hw)+'\')" aria-label="'+esc(t('words.open'))+'">'+ICON_GO+'</button></div>';
+    '<button class="eopen"' + DO('openWord', [w.hw]) + ' aria-label="'+esc(t('words.open'))+'">'+ICON_GO+'</button></div>';
 }
 /* Every word on screen, said straight through -- on screen and not in the
    dictionary, so a search narrowed to the verbs says the verbs. */
@@ -1234,14 +1237,14 @@ function sndTile(sym){
   var face = kind==='drawn' ? '<canvas class="tc" data-r="'+esc(sym)+'"></canvas>'
            : kind==='borrowed' ? '<span class="bch">'+esc(chOf(sym))+'</span>'
            : '<span class="nol">+</span>';
-  return '<button class="gtile'+(kind?'':' empty')+(made?' made':'')+'" onclick="editGlyph(\''+sym+'\')">'+
+  return '<button class="gtile'+(kind?'':' empty')+(made?' made':'')+'"' + DO('editGlyph', [sym]) + '>'+
     face+'<span class="rl">'+esc(sym)+'</span></button>';
 }
 /* The five kinds of writing, as a rail. Changing it changes what there is to
    draw, so the font is rebuilt and the tiles below redrawn. */
 function wsysRow(){
   return '<div class="segs">'+WSYS.map(function(k){
-    return '<button class="seg'+(wsys()===k?' on':'')+'" onclick="setWsys(\''+k+'\')">'+
+    return '<button class="seg'+(wsys()===k?' on':'')+'"' + DO('setWsys', [k]) + '>'+
       esc(t('ws.k.'+k))+'</button>';
   }).join('')+'</div>';
 }
@@ -1303,29 +1306,29 @@ function vAbugida(){
   if(!wsHasMarks())
     return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="note">'+t('ab.notabugida')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:12px" onclick="go(\'letters\')">'+
+      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button></div></div>';
   return '<div class="view">'+navTop(cs.length+' × '+vs.length)+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
-      return '<button class="seg'+(x===v?' on':'')+'" onclick="setAbVow(\''+esc(x)+'\')">'+esc(x)+'</button>';
+      return '<button class="seg'+(x===v?' on':'')+'"' + DO('setAbVow', [x]) + '>'+esc(x)+'</button>';
     }).join('')+'</div>'+
     (v
       ? '<div class="abmark">'+
           '<div class="abmh">'+esc(t('ab.mark', v))+'</div>'+
           '<div class="abctl">'+
-            '<button onclick="abNudge(-1,0)" aria-label="'+esc(t('ab.left'))+'">'+ICON_ARR_L+'</button>'+
-            '<button onclick="abNudge(1,0)" aria-label="'+esc(t('ab.right'))+'">'+ICON_ARR_R+'</button>'+
-            '<button onclick="abNudge(0,-1)" aria-label="'+esc(t('ab.up'))+'">'+ICON_ARR_U+'</button>'+
-            '<button onclick="abNudge(0,1)" aria-label="'+esc(t('ab.down'))+'">'+ICON_ARR_D+'</button>'+
-            '<button onclick="abScale(1.25)">'+t('ab.bigger')+'</button>'+
-            '<button onclick="abScale(0.8)">'+t('ab.smaller')+'</button>'+
-            '<button onclick="editGlyph(\''+esc(v)+'\')">'+ICON_PEN+t('ab.draw')+'</button>'+
+            '<button' + DO('abNudge', [-1, 0]) + ' aria-label="'+esc(t('ab.left'))+'">'+ICON_ARR_L+'</button>'+
+            '<button' + DO('abNudge', [1, 0]) + ' aria-label="'+esc(t('ab.right'))+'">'+ICON_ARR_R+'</button>'+
+            '<button' + DO('abNudge', [0, -1]) + ' aria-label="'+esc(t('ab.up'))+'">'+ICON_ARR_U+'</button>'+
+            '<button' + DO('abNudge', [0, 1]) + ' aria-label="'+esc(t('ab.down'))+'">'+ICON_ARR_D+'</button>'+
+            '<button' + DO('abScale', [1.25]) + '>'+t('ab.bigger')+'</button>'+
+            '<button' + DO('abScale', [0.8]) + '>'+t('ab.smaller')+'</button>'+
+            '<button' + DO('editGlyph', [v]) + '>'+ICON_PEN+t('ab.draw')+'</button>'+
           '</div></div>'+
         '<div class="sec">'+t('ab.every', v)+'</div>'+
         (cs.length
           ? '<div class="abgrid">'+cs.map(function(c){
               var u=wsKey([c,v]), own=!!ltStrokes(u);
-              return '<button class="abcell'+(own?' own':'')+'" onclick="editGlyph(\''+esc(u)+'\')">'+
+              return '<button class="abcell'+(own?' own':'')+'"' + DO('editGlyph', [u]) + '>'+
                 '<canvas class="tc" data-r="'+esc(u)+'"></canvas>'+
                 '<span class="abu">'+esc(u)+'</span></button>';
             }).join('')+'</div>'+
@@ -1360,7 +1363,7 @@ function sayWords(list){
    subject is what things sound like. */
 function sndTap(sym){ sayOne(sym); sndToggle(sym); }
 function ipaBtn(sym){
-  return '<button class="ph2'+(sndHas(sym)?' on':'')+'" onclick="sndTap(\''+sym+'\')">'+esc(sym)+'</button>';
+  return '<button class="ph2'+(sndHas(sym)?' on':'')+'"' + DO('sndTap', [sym]) + '>'+esc(sym)+'</button>';
 }
 function ipaConsTable(){
   var rows='', mi, pi, m, cell;
@@ -1404,7 +1407,7 @@ function vSound(){
     '<div class="sec">'+t('ipa.mine')+'</div>'+
     (mine.length
       ? '<div class="sndlist">'+mine.map(sndRow).join('')+'</div>'+
-        '<button class="trow" onclick="go(\'letters\')" style="margin-top:14px">'+
+        '<button class="trow"' + DO('go', ["letters"]) + ' style="margin-top:14px">'+
           '<span class="rn"></span><span class="rt">'+esc(t('toc.letters'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+ltShaped()+'</span>'+ICON_GO+'</button>'
       : '<div class="ipamine"><span class="none">'+t('ipa.mine.none')+'</span></div>')+
@@ -1418,16 +1421,16 @@ function vSound(){
    that -- draw a new letter for it, or hand it to a letter that exists. */
 function sndRow(p){
   var ls=ltFor(p), i, faces='';
-  for(i=0;i<ls.length;i++) faces+=ltFace(ls[i], 'editLetter(\''+ls[i].id+'\')');
+  for(i=0;i<ls.length;i++) faces+=ltFace(ls[i], DO('editLetter',[ls[i].id]));
   return '<div class="sndrow">'+
-    '<button class="sndp" onclick="sayOne(\''+esc(p)+'\')">'+esc(p)+'</button>'+
+    '<button class="sndp"' + DO('sayOne', [p]) + '>'+esc(p)+'</button>'+
     '<div class="sndls">'+faces+
-      '<button class="sndadd" onclick="editGlyph(\''+esc(p)+'\')" aria-label="'+
+      '<button class="sndadd"' + DO('editGlyph', [p]) + ' aria-label="'+
         esc(t('lt.draw'))+'">'+ICON_ADD+'</button>'+
-      (LETTERS.length? '<button class="sndadd" onclick="go(\'pickltr\',\''+esc(p)+'\')" aria-label="'+
+      (LETTERS.length? '<button class="sndadd"' + DO('go', ["pickltr", p]) + ' aria-label="'+
         esc(t('lt.use'))+'">'+ICON_LINK+'</button>' : '')+
     '</div>'+
-    '<button class="sndx" onclick="dropSnd(\''+esc(p)+'\')" aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button>'+
+    '<button class="sndx"' + DO('dropSnd', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button>'+
     '</div>';
 }
 /* A letter's face, wherever one is shown: what was drawn, or the character it
@@ -1437,7 +1440,7 @@ function ltFace(l, call){
   if(l.st && l.st.length) face='<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
   else if(l.ch) face='<span class="bch">'+esc(l.ch)+'</span>';
   else face='<span class="nol">'+ICON_PEN+'</span>';
-  return '<button class="ltf" onclick="'+call+'">'+face+'</button>';
+  return '<button class="ltf"'+call+'>'+face+'</button>';
 }
 
 /* ---- II. letters ------------------------------------------------------
@@ -1452,7 +1455,7 @@ function vLetters(){
     '<div class="sec">'+t('ws.kind')+'</div>'+
     wsysRow()+
     (wsHasMarks()
-      ? '<button class="trow" onclick="go(\'abugida\')" style="margin-top:6px">'+
+      ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
@@ -1460,17 +1463,17 @@ function vLetters(){
     (LETTERS.length
       ? '<div class="ltlist">'+LETTERS.map(ltRow).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:12px" onclick="newLetter()">'+
+    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('newLetter') + '>'+
       ICON_ADD+t('lt.new')+'</button>'+
     (loose.length? '<div class="mini" style="margin-top:8px">'+tn('lt.loose', loose.length)+'</div>' : '')+
     (ltShaped()
       ? '<div class="sec">'+t('script.preview')+'</div>'+
         '<div class="spv"><div class="big sfont">'+esc(WORDS.length?WORDS[0].hw:addedSnd().join(''))+'</div></div>'+
         '<div class="pick">'+
-          '<button class="'+(SET.myfont?'':'on')+'" onclick="setMyFont(false)">'+t('script.show.roman')+'</button>'+
-          '<button class="'+(SET.myfont?'on':'')+'" onclick="setMyFont(true)">'+t('script.show.own')+'</button>'+
+          '<button class="'+(SET.myfont?'':'on')+'"' + DO('setMyFont', [false]) + '>'+t('script.show.roman')+'</button>'+
+          '<button class="'+(SET.myfont?'on':'')+'"' + DO('setMyFont', [true]) + '>'+t('script.show.own')+'</button>'+
         '</div>' : '')+
-    '<button class="trow" onclick="go(\'sound\')" style="margin-top:18px">'+
+    '<button class="trow"' + DO('go', ["sound"]) + ' style="margin-top:18px">'+
       '<span class="rn"></span><span class="rt">'+esc(t('toc.sound'))+'</span>'+
       '<span class="lead"></span><span class="rv">'+addedSnd().length+'</span>'+ICON_GO+'</button>'+
     '</div></div>';
@@ -1478,12 +1481,12 @@ function vLetters(){
 function ltRow(l){
   var snd=(l.snd||[]);
   return '<div class="ltrow">'+
-    ltFace(l, 'editLetter(\''+l.id+'\')')+
-    '<button class="ltmid" onclick="editLetter(\''+l.id+'\')">'+
+    ltFace(l, DO('editLetter',[l.id]))+
+    '<button class="ltmid"' + DO('editLetter', [l.id]) + '>'+
       '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
       '<span class="ltsn">'+(snd.length? esc(t('lt.reads', snd.join(' / '))) : esc(t('lt.reads.none')))+'</span>'+
     '</button>'+
-    '<button class="sndadd" onclick="go(\'picksnd\',\''+esc(l.id)+'\')" aria-label="'+
+    '<button class="sndadd"' + DO('go', ["picksnd", l.id]) + ' aria-label="'+
       esc(t('lt.addsnd'))+'">'+ICON_LINK+'</button>'+
     '</div>';
 }
@@ -1498,15 +1501,15 @@ function vPickLtr(){
       ? '<div class="ltlist">'+LETTERS.map(function(l){
           var has=on.indexOf(l.id)>=0;
           return '<div class="ltrow'+(has?' on':'')+'">'+
-            ltFace(l, 'toggleLtr(\''+esc(unit)+'\',\''+l.id+'\')')+
-            '<button class="ltmid" onclick="toggleLtr(\''+esc(unit)+'\',\''+l.id+'\')">'+
+            ltFace(l, DO('toggleLtr',[unit, l.id]))+
+            '<button class="ltmid"' + DO('toggleLtr', [unit, l.id]) + '>'+
               '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
               '<span class="ltsn">'+((l.snd&&l.snd.length)? esc(t('lt.reads', l.snd.join(' / '))) : esc(t('lt.reads.none')))+'</span>'+
             '</button>'+
             '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
         }).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="editGlyph(\''+esc(unit)+'\')">'+
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('editGlyph', [unit]) + '>'+
       ICON_ADD+t('lt.draw')+'</button>'+
     '</div></div>';
 }
@@ -1523,15 +1526,15 @@ function vPickSnd(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="field"><label>'+t('lt.name')+'</label>'+
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
-      'oninput="ltSetName(\''+esc(lid)+'\',this.value)"></div>'+
+      '' + IN('ltSetName', [lid]) + '></div>'+
     '<div class="sec">'+t('lt.reads.h')+'</div>'+
     (units.length
       ? '<div class="phkeys">'+units.map(function(u){
-          return '<button class="phk'+(on.indexOf(u)>=0?' on':'')+'" onclick="toggleLtr(\''+esc(u)+'\',\''+esc(lid)+'\')">'+
+          return '<button class="phk'+(on.indexOf(u)>=0?' on':'')+'"' + DO('toggleLtr', [u, lid]) + '>'+
             '<span class="pks">'+esc(u)+'</span></button>';
         }).join('')+'</div>'
       : '<div class="note">'+t('add.ph.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="go(\'sound\')">'+
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('go', ["sound"]) + '>'+
       esc(t('toc.sound'))+'</button>'+
     '</div></div>';
 }
