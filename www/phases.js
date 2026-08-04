@@ -152,6 +152,10 @@ function stCount(){
 var stFor=null, stSlot='', stSeq=[], stSug=[];
 function stTap(sym){ sayOne(sym); stSeq.push(sym); stPaint(); }
 function stBack(){ stSeq.pop(); stPaint(); }
+/* Nothing to say until something has been typed. This was a condition written
+   inside the button's own markup -- the smallest possible example of code in a
+   place no checker reads. */
+function stSay(){ if(stSeq.length) sayPh(stSeq); }
 function stPaint(){
   var s=document.getElementById('st-seq'), r=document.getElementById('st-ipa'),
       b=document.getElementById('st-back'), k=document.getElementById('st-keep');
@@ -170,14 +174,14 @@ function stAsk(){
   stSugPaint();
 }
 function stSugHTML(){
-  if(!stSug.length) return '<button class="btn ghost" style="width:100%" onclick="stAsk()">'+t('stg.help')+'</button>';
+  if(!stSug.length) return '<button class="btn ghost" style="width:100%"' + DO('stAsk') + '>'+t('stg.help')+'</button>';
   return '<div class="sugbox"><div class="sugchips">'+stSug.map(function(q,i){
-      return '<button class="sugchip" onclick="stTake('+i+')">'+
+      return '<button class="sugchip"' + DO('stTake', [i]) + '>'+
         '<span class="sw">'+esc(q.join(''))+'</span>'+
         '<span class="sr">'+esc(phIpa(q))+'</span></button>';
     }).join('')+'</div>'+
     '<div class="sugfoot"><span class="sughint">'+t('stg.help.d')+'</span>'+
-    '<button class="sugmore" onclick="stAsk()">'+t('stg.again')+'</button></div></div>';
+    '<button class="sugmore"' + DO('stAsk') + '>'+t('stg.again')+'</button></div></div>';
 }
 function stTake(i){
   if(!stSug[i]) return;
@@ -194,16 +198,16 @@ function openSlot(pid, k){
   var mine=addedSnd();
   openForm('slot:'+p.id+'/'+stSlot, stSlotLabel(p, stSlot),
     '<div class="seqbox"><span class="seq" id="st-seq"></span>'+
-      '<button class="seqdel" id="st-back" onclick="stBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+      '<button class="seqdel" id="st-back"' + DO('stBack') + ' disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="st-ipa"></span>'+
-      '<button onclick="if(stSeq.length)sayPh(stSeq)">'+ICON_PLAY+t('f.listen')+'</button></div>'+
+      '<button' + DO('stSay') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div id="st-sug">'+stSugHTML()+'</div>'+
     (mine.length
       ? '<div class="sec">'+t('add.ph')+'</div><div class="phkeys">'+mine.map(function(x){
-          return phkHTML(x, 'stTap(\''+x+'\')'); }).join('')+'</div>'
+          return phkHTML(x, DO('stTap',[x])); }).join('')+'</div>'
       : '<div class="note">'+t('add.ph.none')+'</div>')+
-    '<button class="btn" id="st-keep" style="width:100%;margin-top:14px" onclick="stKeep()" disabled>'+t('stg.keep')+'</button>'+
-    (had? '<button class="set" style="margin-top:10px;border-bottom:none" onclick="stDrop()">'+
+    '<button class="btn" id="st-keep" style="width:100%;margin-top:14px"' + DO('stKeep') + ' disabled>'+t('stg.keep')+'</button>'+
+    (had? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('stDrop') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('stg.drop')+'</span></button>' : ''),
     function(){ stPaint(); phkMount(); });
 }
@@ -234,7 +238,7 @@ function openOwnPhase(){
       '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
-    '<button class="btn" style="width:100%;margin-top:6px" onclick="stAddOwn()">'+t('stg.own.add')+'</button>');
+    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') + '>'+t('stg.own.add')+'</button>');
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
 function stAddOwn(){
@@ -286,9 +290,9 @@ function stExHTML(id){
             (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
             '<span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
             '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
-          (seq.length? '<button class="usep" onclick="sayPh('+esc(JSON.stringify(seq))+')" aria-label="'+
+          (seq.length? '<button class="usep"' + DO('sayPh', [seq]) + ' aria-label="'+
             esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
-          '<button class="usep" onclick="stDelEx(\''+id+'\','+i+')" aria-label="'+
+          '<button class="usep"' + DO('stDelEx', [id, i]) + ' aria-label="'+
             esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button></div>';
       }).join('')+'</div>'
     : '')+
@@ -296,8 +300,8 @@ function stExHTML(id){
       '<input id="sx-lb" class="exsm" placeholder="'+esc(t('stg.ex.lb.ph'))+'" autocomplete="off">'+
       '<input id="sx-ln" placeholder="'+esc(exHint())+'" autocomplete="off">'+
       '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
-        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();stAddEx(\''+id+'\');}">'+
-      '<button class="btn ghost" onclick="stAddEx(\''+id+'\')">'+t('word.mn.add')+'</button>'+
+        '' + KD('stAddEx', [id]) + '>'+
+      '<button class="btn ghost"' + DO('stAddEx', [id]) + '>'+t('word.mn.add')+'</button>'+
     '</div>';
 }
 
@@ -313,7 +317,7 @@ function stClose(){ back(); }
 
 function stRow(p, n){
   var done=stIsDone(p), tot=stTotal(p);
-  return '<button class="strow'+(done?' done':'')+'" onclick="stOpen(\''+p.id+'\')">'+
+  return '<button class="strow'+(done?' done':'')+'"' + DO('stOpen', [p.id]) + '>'+
     '<span class="stn">'+n+'</span>'+
     '<span class="stt">'+esc(stTitle(p))+'</span>'+
     '<span class="lead"></span>'+
@@ -324,7 +328,7 @@ function stListHTML(){
   var a=stAll(), i, rows='';
   for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
   return '<div class="stlist">'+rows+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:14px" onclick="openOwnPhase()">'+
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
       ICON_PLUS+t('stg.own.add.btn')+'</button>'+
     '<div class="sec">'+t('gram.seen')+'</div>'+
     (findings().length? findings().map(function(x){
@@ -335,7 +339,7 @@ function stListHTML(){
 
 function stSlotRow(p, k){
   var w=stWordFor(p, k);
-  return '<button class="stslot'+(w?' has':'')+'" onclick="openSlot(\''+p.id+'\',\''+k+'\')">'+
+  return '<button class="stslot'+(w?' has':'')+'"' + DO('openSlot', [p.id, k]) + '>'+
     '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
     (w ? '<span class="psw">'+esc(w.hw)+'</span>'+
          '<span class="psi">'+esc(phIpa(wPh(w)))+'</span>'
@@ -359,14 +363,14 @@ function stDetailHTML(p){
   }
   out+='<div class="sec">'+t('stg.rules')+'</div>'+
     '<textarea class="ntbody" style="min-height:130px" placeholder="'+esc(t('stg.rules.ph'))+'" '+
-    'onchange="stSetRules(\''+p.id+'\', this.value)">'+esc(stRules(p.id))+'</textarea>';
+    '' + CH('stSetRules', [p.id]) + '>'+esc(stRules(p.id))+'</textarea>';
 
   out+='<div class="sec">'+ICON_LINE+t('stg.ex')+'</div>'+stExHTML(p.id);
 
   out+='<div class="sec">'+t('stg.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
-    'onchange="stNote(\''+p.id+'\', this.value)">'+esc(STG.notes[p.id]||'')+'</textarea>';
-  if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none" onclick="stDelOwn(\''+p.id+'\')">'+
+    '' + CH('stNote', [p.id]) + '>'+esc(STG.notes[p.id]||'')+'</textarea>';
+  if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none"' + DO('stDelOwn', [p.id]) + '>'+
     '<span class="sl" style="color:#c9553f">'+t('stg.own.del')+'</span></button>';
   return out;
 }
@@ -377,12 +381,12 @@ function stDetailHTML(p){
 function stFeatHTML(id){
   if(id==='order'){
     return '<div class="segs">'+ORDERS.map(function(o){
-        return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
+        return '<button class="seg'+(o===orderDef().id?' on':'')+'"' + DO('setOrder', [o]) + '>'+o+'</button>';
       }).join('')+'</div>'+gOrderLine()+gOrderDemo();
   }
   if(id!=='adj' && id!=='negp' && id!=='adp') return '';
   return '<div class="segs">'+['before','after'].map(function(o){
-      return '<button class="seg'+(o===gPos(id)?' on':'')+'" onclick="setGPos(\''+id+'\',\''+o+'\')">'+
+      return '<button class="seg'+(o===gPos(id)?' on':'')+'"' + DO('setGPos', [id, o]) + '>'+
         esc(gPosLab(id, o))+'</button>';
     }).join('')+'</div>'+gPosDemo(id);
 }

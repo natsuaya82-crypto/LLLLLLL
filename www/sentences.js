@@ -36,24 +36,24 @@ function vMake(){
     navTop('')+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
-      return '<button class="seg'+(p===mkPos?' on':'')+'" onclick="setPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
+      return '<button class="seg'+(p===mkPos?' on':'')+'"' + DO('setPos', [p]) + '>'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
-        '<button class="ck'+(c.on?' on':'')+'" onclick="tog('+i+')" aria-label="'+esc(t('make.pick'))+'">'+
+        '<button class="ck'+(c.on?' on':'')+'"' + DO('tog', [i]) + ' aria-label="'+esc(t('make.pick'))+'">'+
           '<span class="ckb">'+(c.on?ICON_TICK:'')+'</span></button>'+
         '<span class="cw">'+esc(candHw(c))+'</span><span class="crd">'+esc(readSeq(c.q))+'</span>'+
-        '<button class="rr" onclick="reroll('+i+')" aria-label="'+esc(t('make.one'))+'">'+ICON_AGAIN+'</button>'+
-        '<button class="rr" onclick="sayPh('+esc(JSON.stringify(c.q))+')" aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
+        '<button class="rr"' + DO('reroll', [i]) + ' aria-label="'+esc(t('make.one'))+'">'+ICON_AGAIN+'</button>'+
+        '<button class="rr"' + DO('sayPh', [c.q]) + ' aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
-    (has('studio')?'':'<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
+    (has('studio')?'':'<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
       '<span><span class="lt">'+t('make.lock.t')+'</span><br>'+
       '<span class="ld">'+t('make.lock.d')+'</span></span>'+
       '<span class="tag">STUDIO</span></button>')+
     '</div>'+
-    '<div class="barfix"><button class="btn ghost" onclick="regen()">'+t('make.reroll')+'</button>'+
-    '<button class="btn" onclick="commit()">'+t('make.commit')+'</button></div></div>';
+    '<div class="barfix"><button class="btn ghost"' + DO('regen') + '>'+t('make.reroll')+'</button>'+
+    '<button class="btn"' + DO('commit') + '>'+t('make.commit')+'</button></div></div>';
 }
 function setPos(p){ mkPos=p; cands=[]; render(); }
 function tog(i){ cands[i].on=!cands[i].on; render(); }

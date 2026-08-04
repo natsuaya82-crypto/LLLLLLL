@@ -1,0 +1,170 @@
+/* Lingua — everything a screen is allowed to ask for
+   Loaded by www/index.html LAST but one, after every file that defines these,
+   and before www/boot.js starts the app.
+   ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
+
+   This is the list of names a button may carry. It is written by hand, and it
+   is written with the function itself rather than with its name as text:
+
+     act('openWord', openWord);
+
+   That second argument is the whole point. If openWord is deleted or renamed,
+   this line stops the app the moment it loads -- loudly, on the first screen,
+   in front of whoever is working -- instead of the button failing silently on
+   a device weeks later. Nothing else in this codebase has that property.
+
+   Three tables, because three things happen to a control:
+
+     act      pressed
+     actIn    typed into, or chosen from a list. The value comes last, after
+              whatever the markup named
+     actKey   Enter pressed in a field
+
+   tools/act-check.mjs walks every screen in every language, collects every
+   name the markup asks for, and proves both directions: nothing is asked for
+   that is not here, and nothing is here that no screen ever asks for. A dead
+   entry is as much a bug as a missing one -- it is a button that used to
+   exist. */
+
+/* ---- pressed ----------------------------------------------------------- */
+act('abNudge', abNudge);
+act('abScale', abScale);
+act('addBack', addBack);
+act('addDropAt', addDropAt);
+act('addLtr', addLtr);
+act('addOne', addOne);
+act('addPh', addPh);
+act('addSetU', addSetU);
+act('asSay', asSay);
+act('back', back);
+act('choose', choose);
+act('clearFq', clearFq);
+act('clearQ', clearQ);
+act('commit', commit);
+act('delNote', delNote);
+act('delWord', delWord);
+act('doImport', doImport);
+act('dropSnd', dropSnd);
+act('editGlyph', editGlyph);
+act('editLetter', editLetter);
+act('editName', editName);
+act('exportCSV', exportCSV);
+act('fPick', fPick);
+act('geCircle', geCircle);
+act('geClear', geClear);
+act('geDelete', geDelete);
+act('geUndo', geUndo);
+act('geSave', geSave);
+act('ghShow', ghShow);
+act('go', go);
+act('goIn', goIn);
+act('goPlans', goPlans);
+act('goTab', goTab);
+act('ltDropChar', ltDropChar);
+act('newLetter', newLetter);
+act('obAgain', obAgain);
+act('obBack', obBack);
+act('obBorrow', obBorrow);
+act('obChar', obChar);
+act('obDone', obDone);
+act('obDropSnd', obDropSnd);
+act('obGo', obGo);
+act('obHearSnd', obHearSnd);
+act('obMore', obMore);
+act('obName', obName);
+act('obNameLater', obNameLater);
+act('obOwnSnd', obOwnSnd);
+act('obPickScript', obPickScript);
+act('obSignIn', obSignIn);
+act('obSkip', obSkip);
+act('obSkipDraw', obSkipDraw);
+act('obTakeCh', obTakeCh);
+act('obToDraw', obToDraw);
+act('obWsys', obWsys);
+act('openAdd', openAdd);
+act('openImport', openImport);
+act('openNote', openNote);
+act('openOwnPhase', openOwnPhase);
+act('openPick', openPick);
+act('openSlot', openSlot);
+act('openWord', openWord);
+act('pkSwitch', pkSwitch);
+act('regen', regen);
+act('reroll', reroll);
+act('saveNote', saveNote);
+act('saveWord', saveWord);
+act('sayField', sayField);
+act('sayOne', sayOne);
+act('sayPh', sayPh);
+act('setAbVow', setAbVow);
+act('setAddMode', setAddMode);
+act('setCh', setCh);
+act('setFil', setFil);
+act('setGPos', setGPos);
+act('setMyFont', setMyFont);
+act('setOrder', setOrder);
+act('setPos', setPos);
+act('setRead', setRead);
+act('setSort', setSort);
+act('setTheme', setTheme);
+act('setTkPos', setTkPos);
+act('setUi', setUi);
+act('setWdMode', setWdMode);
+act('setWldUse', setWldUse);
+act('setWsys', setWsys);
+act('sndTap', sndTap);
+act('stAddEx', stAddEx);
+act('stAddOwn', stAddOwn);
+act('stAsk', stAsk);
+act('stBack', stBack);
+act('stDelEx', stDelEx);
+act('stDelOwn', stDelOwn);
+act('stDrop', stDrop);
+act('stKeep', stKeep);
+act('stOpen', stOpen);
+act('stSay', stSay);
+act('stTake', stTake);
+act('stTap', stTap);
+act('sugGo', sugGo);
+act('sugPick', sugPick);
+act('takeOwn', takeOwn);
+act('tkAdd', tkAdd);
+act('tkBack', tkBack);
+act('tkClear', tkClear);
+act('tkSend', tkSend);
+act('tkWipe', tkWipe);
+act('tog', tog);
+act('toggleLtr', toggleLtr);
+act('wRelToggle', wRelToggle);
+act('wdAddEx', wdAddEx);
+act('wdAddMn', wdAddMn);
+act('wdBack', wdBack);
+act('wdDelEx', wdDelEx);
+act('wdDelMn', wdDelMn);
+act('wdDerive', wdDerive);
+act('wdDropAt', wdDropAt);
+act('wdKey', wdKey);
+act('wdLtr', wdLtr);
+act('wdSay', wdSay);
+act('wdSetU', wdSetU);
+act('wipe', wipe);
+act('wordsSay', wordsSay);
+
+/* ---- typed into, or chosen ---------------------------------------------- */
+actIn('ltSetName', ltSetName);
+actIn('obLang', obLang);
+actIn('setFq', setFq);
+actIn('setQ', setQ);
+actIn('setTkQ', setTkQ);
+actIn('setWld', setWld);
+actIn('stNote', stNote);
+actIn('stSetRules', stSetRules);
+actIn('wdSetNt', wdSetNt);
+actIn('wdSetPos', wdSetPos);
+
+/* ---- Enter ------------------------------------------------------------- */
+actKey('obName', obName);
+actKey('stAddEx', stAddEx);
+actKey('takeOwn', takeOwn);
+actKey('wdAddEx', wdAddEx);
+actKey('wdAddMn', wdAddMn);

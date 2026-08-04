@@ -167,7 +167,7 @@ function tkBubble(msg){
     '<div class="tkw">'+esc(tkText(msg))+'</div>'+
     '<div class="tki">'+esc(tkIpa(msg))+'</div>'+
     '<div class="tkg">'+esc(msg.g.join(' · '))+'</div>'+
-    '<button class="tkp" onclick="sayPh('+esc(JSON.stringify(tkFlat(msg)))+')" aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
+    '<button class="tkp"' + DO('sayPh', [tkFlat(msg)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
     '</div>';
 }
 
@@ -205,7 +205,7 @@ function tkPal(){
   }).sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
   if(!list.length) return '<div class="note">'+t('sent.nomatch')+'</div>';
   return list.map(function(w){
-    return '<button class="pw" onclick="tkAdd(\''+esc(w.hw)+'\')">'+
+    return '<button class="pw"' + DO('tkAdd', [w.hw]) + '>'+
       '<span class="pww">'+esc(wOut(w.hw))+'</span>'+
       (wMn(w)? '<span class="pwm">'+esc(wMn(w))+'</span>' : '<span class="pwm dim">'+t('sent.nomean')+'</span>')+
       '</button>';
@@ -232,7 +232,7 @@ function tkGramHTML(){
   if(!a.length) return '';
   return '<div class="sec">'+t('talk.gram')+'</div>'+
     '<div class="pal">'+a.map(function(w){
-      return '<button class="pw" onclick="tkAdd(\''+esc(w.hw)+'\')">'+
+      return '<button class="pw"' + DO('tkAdd', [w.hw]) + '>'+
         '<span class="pww">'+esc(wOut(w.hw))+'</span>'+
         '<span class="pwm">'+esc(wMn(w)||String(w.hw))+'</span></button>';
     }).join('')+'</div>';
@@ -245,7 +245,7 @@ function vTalk(){
   if(!tkReady()){
     return head+'<div class="empty"><div class="eb">'+t('talk.empty.t')+'</div>'+
       '<div class="es">'+t('talk.empty.s')+'</div></div>'+
-      '<button class="btn" style="width:100%" onclick="openAdd()">'+t('home.write')+'</button></div></div>';
+      '<button class="btn" style="width:100%"' + DO('openAdd') + '>'+t('home.write')+'</button></div></div>';
   }
 
   var i, thread='';
@@ -259,25 +259,25 @@ function vTalk(){
     '<div class="sec">'+t('talk.compose')+'</div>'+
     '<div class="seqbox"><span class="seq" id="t-seq">'+
       esc(tcomp.map(function(p){ return p.s.join(''); }).join(' '))+'</span>'+
-      '<button class="seqdel" onclick="tkBack()"'+(tcomp.length?'':' disabled')+
+      '<button class="seqdel"' + DO('tkBack') + ''+(tcomp.length?'':' disabled')+
       ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     (tcomp.length? '<div class="note">'+esc(tcomp.map(function(p){ return p.g; }).join(' · '))+'</div>' : '')+
-    '<div class="tsend"><button class="btn" onclick="tkSend()"'+(tcomp.length?'':' disabled')+'>'+t('talk.send')+'</button>'+
-      '<button class="btn ghost" onclick="tkClear()"'+(tcomp.length?'':' disabled')+'>'+t('sent.clear')+'</button></div>'+
+    '<div class="tsend"><button class="btn"' + DO('tkSend') + ''+(tcomp.length?'':' disabled')+'>'+t('talk.send')+'</button>'+
+      '<button class="btn ghost"' + DO('tkClear') + ''+(tcomp.length?'':' disabled')+'>'+t('sent.clear')+'</button></div>'+
 
     tkGramHTML()+
     '<div class="sec">'+t('sent.choose')+'</div>'+
     '<div class="segs">'+[POS_ALL].concat(POS).map(function(p){
-      return '<button class="seg'+(p===tkPos?' on':'')+'" onclick="setTkPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';
+      return '<button class="seg'+(p===tkPos?' on':'')+'"' + DO('setTkPos', [p]) + '>'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(tq)+'" oninput="setTkQ(this.value)"></div>'+
+    '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(tq)+'"' + IN('setTkQ') + '></div>'+
     '<div class="pal" id="tpal">'+tkPal()+'</div>'+
 
-    (TALK.length? '<button class="btn ghost" style="width:100%;margin-top:16px" onclick="tkWipe()">'+
+    (TALK.length? '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('tkWipe') + '>'+
       t('talk.wipe')+'</button>' : '')+
     (has('plus')? '' :
-      '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
+      '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
       '<span><span class="lt">'+t('ai.title')+'</span><br><span class="ld">'+t('ai.hint')+'</span></span>'+
       '<span class="tag">PLUS</span></button>')+
     '</div></div>';

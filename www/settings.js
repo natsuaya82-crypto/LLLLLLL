@@ -32,7 +32,7 @@ function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     SETS.map(function(x){
-      return '<button class="set" onclick="go(\'set\',\''+x.id+'\')">'+
+      return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
@@ -55,54 +55,54 @@ function vSet(){
   if(id==='look'){
     body='<div class="pick">'+
       ['system','light','dark'].map(function(th){
-        return '<button class="'+(SET.theme===th?'on':'')+'" onclick="setTheme(\''+th+'\')">'+t('theme.'+th)+'</button>';
+        return '<button class="'+(SET.theme===th?'on':'')+'"' + DO('setTheme', [th]) + '>'+t('theme.'+th)+'</button>';
       }).join('')+'</div>'+
       '<div class="note">'+t('set.theme.note')+'</div>';
   } else if(id==='read'){
     body='<div class="pick">'+
       [['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
-        return '<button class="'+(readMode()===m[0]?'on':'')+'" onclick="setRead(\''+m[0]+'\')">'+esc(m[1])+'</button>';
+        return '<button class="'+(readMode()===m[0]?'on':'')+'"' + DO('setRead', [m[0]]) + '>'+esc(m[1])+'</button>';
       }).join('')+'</div>'+
       '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
         '<span class="pvk">'+esc(readSeq(S.seq))+'</span>'+
-        '<button onclick="sayPh('+esc(JSON.stringify(S.seq))+')">'+ICON_PLAY+t('f.listen')+'</button></div>'+
+        '<button' + DO('sayPh', [S.seq]) + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
       '';
   } else if(id==='ui'){
     body=UI_LANGS.map(function(k){
-      return '<button class="set lrow'+(uiLang()===k?' on':'')+'" onclick="setUi(\''+k+'\')">'+
+      return '<button class="set lrow'+(uiLang()===k?' on':'')+'"' + DO('setUi', [k]) + '>'+
         '<span class="sl">'+esc(LANG[k].label)+'</span>'+
         '<span class="pvk lsam">'+esc(LANG[k].read.word(S.rom))+'</span>'+
         '<span class="lchk">'+(uiLang()===k?ICON_TICK:'')+'</span></button>';
     }).join('')+
     '';
   } else if(id==='lang'){
-    body='<button class="set" onclick="editName()"><span class="sl">'+t('set.name')+'</span>'+
+    body='<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
-      '<button class="set" onclick="go(\'words\')"><span class="sl">'+t('set.count')+'</span>'+
+      '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
       '<span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
-      '<button class="set" onclick="go(\'sound\')"><span class="sl">'+t('toc.sound')+'</span>'+
+      '<button class="set"' + DO('go', ["sound"]) + '><span class="sl">'+t('toc.sound')+'</span>'+
       '<span class="sv">'+addedSnd().length+ICON_GO+'</span></button>'+
-      '<button class="set" onclick="go(\'letters\')"><span class="sl">'+t('toc.letters')+'</span>'+
+      '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
-      '<button class="set" style="margin-top:18px" onclick="wipe()">'+
+      '<button class="set" style="margin-top:18px"' + DO('wipe') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>';
   } else if(id==='acct'){
-    body='<button class="set signin google" onclick="obSignIn()"><span class="sl">'+MARK_GOOGLE+
+    body='<button class="set signin google"' + DO('obSignIn') + '><span class="sl">'+MARK_GOOGLE+
       '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
-      '<button class="set signin apple" onclick="obSignIn()"><span class="sl">'+MARK_APPLE+
+      '<button class="set signin apple"' + DO('obSignIn') + '><span class="sl">'+MARK_APPLE+
       '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
       '<div class="sec">'+t('set.plan')+'</div>'+
-      '<button class="set" onclick="go(\'plans\')"><span class="sl">'+t('set.plan.cur')+'</span>'+
+      '<button class="set"' + DO('go', ["plans"]) + '><span class="sl">'+t('set.plan.cur')+'</span>'+
       '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
   } else if(id==='data'){
     body=(has('plus')
-      ? '<button class="set" onclick="exportCSV()"><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
-        '<button class="set" onclick="openImport()"><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
+      ? '<button class="set"' + DO('exportCSV') + '><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
+        '<button class="set"' + DO('openImport') + '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
-      : '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
+      : '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.csv.t')+'</span><br><span class="ld">'+t('set.lock.csv.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>'+
-        '<button class="lock" onclick="go(\'plans\')"><span class="lk">'+ICON_PLUS+'</span>'+
+        '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.cloud.t')+'</span><br><span class="ld">'+t('set.lock.cloud.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>');
   } else {
@@ -161,7 +161,7 @@ function vPlans(){
         (cur?'<span class="badge">'+t('plan.cur')+'</span>':'')+
         '<span class="pp">'+t(p.price)+'</span></div>'+
         '<div class="pl">'+p.lines.map(function(l){return '· '+t(l);}).join('<br>')+'</div>'+
-        (cur?'':'<button onclick="choose(\''+p.id+'\')">'+(p.id==='free'? t('plan.tofree') : t('plan.choose'))+'</button>')+
+        (cur?'':'<button' + DO('choose', [p.id]) + '>'+(p.id==='free'? t('plan.tofree') : t('plan.choose'))+'</button>')+
         '</div>';
     }).join('')+
     '<div class="note" style="margin-top:14px">'+t('plans.note')+'</div>'+
@@ -191,17 +191,17 @@ function sugBuild(){
 function sugHTML(){
   var left=sugLeft(), unl=(left===Infinity);
   if(!SUG.length){
-    if(!unl && left<=0) return '<button class="sugout" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>';
-    return '<button class="sugask" onclick="sugGo()">'+
+    if(!unl && left<=0) return '<button class="sugout"' + DO('goPlans') + '>'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>';
+    return '<button class="sugask"' + DO('sugGo') + '>'+
       '<span class="sual"><span class="sut">'+t('add.lock.t')+'</span><span class="sud">'+t('add.lock.d')+'</span></span>'+
       (unl?'':'<span class="sugn">'+t('sug.left', left)+'</span>')+'</button>';
   }
   return '<div class="sugbox"><div class="sugchips">'+
-    SUG.map(function(q,i){ return '<button class="sugchip" onclick="sugPick('+i+')"><span class="sw">'+esc(q.join(''))+'</span><span class="sr">'+esc(readSeq(q))+'</span></button>'; }).join('')+
+    SUG.map(function(q,i){ return '<button class="sugchip"' + DO('sugPick', [i]) + '><span class="sw">'+esc(q.join(''))+'</span><span class="sr">'+esc(readSeq(q))+'</span></button>'; }).join('')+
     '</div><div class="sugfoot"><span class="sughint">'+(sugMn? t('sug.for', esc(sugMn)) : t('sug.hint'))+'</span>'+
-    ((unl||left>0)?'<button class="sugmore" onclick="sugGo()">'+t('sug.more')+'</button>':'')+
+    ((unl||left>0)?'<button class="sugmore"' + DO('sugGo') + '>'+t('sug.more')+'</button>':'')+
     '</div>'+
-    ((!unl&&left<=0)?'<button class="sugout" style="margin:9px 0 0" onclick="closeSheet();go(\'plans\')">'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>':'')+
+    ((!unl&&left<=0)?'<button class="sugout" style="margin:9px 0 0"' + DO('goPlans') + '>'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>':'')+
     '</div>';
 }
 function sugPaint(){ var e=document.getElementById('sugwrap'); if(e) e.innerHTML=sugHTML(); }
@@ -257,7 +257,7 @@ function addSpellHTML(){
   var i, l, out='';
   for(i=0;i<addSp.length;i++){
     l=ltById(addSp[i].l);
-    out+='<button class="spc'+(spOdd(addSp[i])?' odd':'')+'" onclick="go(\'aspell\','+i+')">'+
+    out+='<button class="spc'+(spOdd(addSp[i])?' odd':'')+'"' + DO('go', ["aspell", i]) + '>'+
       '<span class="spf">'+(ltHasShape(l)
         ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
                             : '<span class="bch">'+esc(l.ch)+'</span>')
@@ -265,7 +265,7 @@ function addSpellHTML(){
       '<span class="spu">'+esc(addSp[i].u)+'</span></button>';
   }
   return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
-    '<button class="seqdel" id="f-back" onclick="addBack()"'+(addSp.length?'':' disabled')+
+    '<button class="seqdel" id="f-back"' + DO('addBack') + ''+(addSp.length?'':' disabled')+
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
 }
 var addMode='';
@@ -275,19 +275,19 @@ function addKeys(){
   var m=addMode || (ls.length? 'lt' : 'ph');
   if(!mine.length && !ls.length){
     return '<div class="note">'+t('add.ph.none')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="go(\'sound\')">'+
+      '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["sound"]) + '>'+
       esc(t('toc.sound'))+'</button>';
   }
   var rail = (ls.length && mine.length)
     ? '<div class="segs" style="margin-bottom:8px">'+
-      '<button class="seg'+(m==='lt'?' on':'')+'" onclick="setAddMode(\'lt\')">'+t('toc.letters')+'</button>'+
-      '<button class="seg'+(m==='ph'?' on':'')+'" onclick="setAddMode(\'ph\')">'+t('toc.sound')+'</button>'+
+      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('setAddMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('setAddMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
   if(m==='lt' && ls.length)
     return rail+'<div class="phkeys">'+ls.map(function(l){
-      return ltkHTML(l, 'addLtr(\''+l.id+'\')'); }).join('')+'</div>';
+      return ltkHTML(l, DO('addLtr',[l.id])); }).join('')+'</div>';
   return rail+'<div class="phkeys">'+mine.map(function(x){
-    return phkHTML(x, 'addPh(\''+x+'\')');
+    return phkHTML(x, DO('addPh',[x]));
   }).join('')+'</div>';
 }
 /* One position of the word being made. Same page as the editor's, on the
@@ -305,10 +305,10 @@ function vASpell(){
                           : '<span class="bch">'+esc(l.ch)+'</span>')
       : esc(ltName(l)||'·'))+'</div>'+
     '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'" onclick="addSetU('+i+',\''+esc(o.u)+'\')">'+
+      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'"' + DO('addSetU', [i, o.u]) + '>'+
         '<span class="pks">'+esc(o.u)+'</span></button>';
     }).join('')+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:16px" onclick="addDropAt('+i+')">'+
+    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('addDropAt', [i]) + '>'+
       t('word.sp.del')+'</button>'+
     '</div></div>';
 }
@@ -336,13 +336,13 @@ function openAdd(from){
     '<div class="sec">'+t('add.ph')+'</div>'+
     addKeys()+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
-    '<button onclick="sayField()">'+ICON_PLAY+t('f.listen')+'</button></div>'+
+    '<button' + DO('sayField') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div>'+
     '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos">'+
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
     '<div id="sugwrap">'+sugHTML()+'</div>'+
-    '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">'+t('add.btn')+'</button>',
+    '<button class="btn" style="width:100%;margin-top:6px"' + DO('addOne') + '>'+t('add.btn')+'</button>',
     function(){ phkMount(); geTiles(); addPv(); });
 }
 function addPv(){
@@ -416,7 +416,7 @@ function wdSeqHTML(){
   var sp=wEdit.sp||[], i, l, out='';
   for(i=0;i<sp.length;i++){
     l=ltById(sp[i].l);
-    out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'" onclick="go(\'spell\','+i+')">'+
+    out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'"' + DO('go', ["spell", i]) + '>'+
       '<span class="spf">'+(ltHasShape(l)
         ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
                             : '<span class="bch">'+esc(l.ch)+'</span>')
@@ -424,11 +424,11 @@ function wdSeqHTML(){
       '<span class="spu">'+esc(sp[i].u)+'</span></button>';
   }
   return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
-    '<button class="seqdel" onclick="wdBack()"'+(sp.length?'':' disabled')+
+    '<button class="seqdel"' + DO('wdBack') + ''+(sp.length?'':' disabled')+
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="pvbox" style="margin-top:8px"><span class="pvn">'+t('f.reading')+'</span>'+
     '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span>'+
-    '<button onclick="if(wEdit.seq.length)sayPh(wEdit.seq)">'+ICON_PLAY+t('f.listen')+'</button></div>';
+    '<button' + DO('wdSay') + '>'+ICON_PLAY+t('f.listen')+'</button></div>';
 }
 var wdMode='';
 function wdKeyMode(){
@@ -441,14 +441,14 @@ function wdKeysHTML(){
   if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
   var rail = (ls.length && mine.length)
     ? '<div class="segs" style="margin-bottom:8px">'+
-      '<button class="seg'+(m==='lt'?' on':'')+'" onclick="setWdMode(\'lt\')">'+t('toc.letters')+'</button>'+
-      '<button class="seg'+(m==='ph'?' on':'')+'" onclick="setWdMode(\'ph\')">'+t('toc.sound')+'</button>'+
+      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('setWdMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('setWdMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
   if(m==='lt' && ls.length)
     return rail+'<div class="phkeys">'+ls.map(function(l){
-      return ltkHTML(l, 'wdLtr(\''+l.id+'\')'); }).join('')+'</div>';
+      return ltkHTML(l, DO('wdLtr',[l.id])); }).join('')+'</div>';
   return rail+'<div class="phkeys">'+mine.map(function(x){
-    return phkHTML(x, 'wdKey(\''+x+'\')'); }).join('')+'</div>';
+    return phkHTML(x, DO('wdKey',[x])); }).join('')+'</div>';
 }
 /* A letter on a keyboard: its face, and what it says under it. */
 function ltkHTML(l, call){
@@ -456,18 +456,18 @@ function ltkHTML(l, call){
   if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
   else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
   else face='<span class="pkb">'+esc(ltName(l)||'·')+'</span>';
-  return '<button class="phk hasg" onclick="'+call+'">'+face+
+  return '<button class="phk hasg"'+call+'>'+face+
     '<span class="pks">'+esc(ltFirstUnit(l))+'</span></button>';
 }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
     return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
-      '<button class="mnx" onclick="wdDelMn('+i+')" aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
+      '<button class="mnx"' + DO('wdDelMn', [i]) + ' aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
   }).join('');
   return '<div class="mnlist">'+rows+'</div>'+
     '<div class="mnadd"><input id="wd-mn" placeholder="'+esc(t('word.mn.ph'))+'" '+
-      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddMn();}">'+
-    '<button class="btn ghost" onclick="wdAddMn()">'+t('word.mn.add')+'</button></div>';
+      '' + KD('wdAddMn') + '>'+
+    '<button class="btn ghost"' + DO('wdAddMn') + '>'+t('word.mn.add')+'</button></div>';
 }
 /* ---- what a dictionary entry still had not got ------------------------
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
@@ -510,13 +510,12 @@ function wdRelHTML(k){
   var ws=wRelWords(w,k);
   return (ws.length
     ? '<div class="rels">'+ws.map(function(x){
-        return '<button class="rel" onclick="openWord(\''+esc(x.hw)+'\')">'+
+        return '<button class="rel"' + DO('openWord', [x.hw]) + '>'+
           '<span class="relw">'+esc(wOut(x.hw))+'</span>'+
           (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
       }).join('')+'</div>'
     : '<div class="note">'+t('word.'+k+'.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="go(\'relate\',\''+
-      k+':'+esc(w.hw)+'\')">'+ICON_LINK+t('word.'+k+'.add')+'</button>';
+    '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["relate", k+":"+w.hw]) + '>'+ICON_LINK+t('word.'+k+'.add')+'</button>';
 }
 /* ---- an example ------------------------------------------------------
    A line in this language and what it means. The line is written as words
@@ -548,17 +547,17 @@ function wdExHTML(){
         return '<div class="exrow">'+
           '<div class="exb"><span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
           '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
-          (seq.length? '<button class="usep" onclick="sayPh('+esc(JSON.stringify(seq))+')" aria-label="'+
+          (seq.length? '<button class="usep"' + DO('sayPh', [seq]) + ' aria-label="'+
             esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
-          '<button class="usep" onclick="wdDelEx('+i+')" aria-label="'+esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button>'+
+          '<button class="usep"' + DO('wdDelEx', [i]) + ' aria-label="'+esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button>'+
           '</div>';
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
       '<input id="wd-exl" placeholder="'+esc(exHint())+'" autocomplete="off">'+
       '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
-        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddEx();}">'+
-      '<button class="btn ghost" onclick="wdAddEx()">'+t('word.mn.add')+'</button>'+
+        '' + KD('wdAddEx') + '>'+
+      '<button class="btn ghost"' + DO('wdAddEx') + '>'+t('word.mn.add')+'</button>'+
     '</div>';
 }
 function wdAddEx(){
@@ -587,7 +586,7 @@ function vRelate(){
       ? list.map(function(x){
           var has=on.indexOf(x.hw)>=0;
           return '<div class="entry'+(has?' on':'')+'">'+
-            '<button class="ebody" onclick="wRelToggle(\''+esc(hw)+'\',\''+k+'\',\''+esc(x.hw)+'\')">'+
+            '<button class="ebody"' + DO('wRelToggle', [hw, k, x.hw]) + '>'+
             '<div class="hwrow"><span class="hw">'+esc(wOut(x.hw))+'</span>'+
             '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
             '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
@@ -598,20 +597,20 @@ function vRelate(){
 }
 function wdNoteHTML(){
   return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
-    '" oninput="wEdit.nt=this.value">'+esc(wEdit.nt||'')+'</textarea></div>';
+    '"' + IN('wdSetNt') + '>'+esc(wEdit.nt||'')+'</textarea></div>';
 }
 function wdKidsHTML(){
   var w=findWord(openHw); if(!w) return '';
   var kids=wKids(w), par=wParent(w);
-  return (par? '<button class="ntrow" onclick="openWord(\''+esc(par.hw)+'\')">'+
+  return (par? '<button class="ntrow"' + DO('openWord', [par.hw]) + '>'+
             '<span class="nth">'+t('word.from', esc(par.hw))+'</span>'+
             (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
     (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
-        return '<button class="ntrow" onclick="openWord(\''+esc(k.hw)+'\')">'+
+        return '<button class="ntrow"' + DO('openWord', [k.hw]) + '>'+
           '<span class="nth">'+esc(k.hw)+'</span>'+
           '<span class="ntb">'+esc(wMn(k)||t('sent.nomean'))+'</span></button>';
       }).join('')+'</div>' : '')+
-    '<button class="btn ghost" style="width:100%;margin-top:10px" onclick="wdDerive()">'+t('word.derive')+'</button>';
+    '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('wdDerive') + '>'+t('word.derive')+'</button>';
 }
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
@@ -620,7 +619,7 @@ function wdPaint(){
 function wdBodyHTML(){
   var seq=wEdit.seq;
   return '<div class="whd"><span class="whw">'+esc(seq.join(''))+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto" onclick="sayPh('+esc(JSON.stringify(seq))+')">'+
+      '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) + '>'+
       ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2">'+esc(phCut(seq).map(function(p){
@@ -633,7 +632,7 @@ function wdBodyHTML(){
     wdMnsHTML()+
 
     '<div class="sec">'+t('f.pos')+'</div>'+
-    '<div class="field"><select id="wd-pos" onchange="wEdit.pos=this.value">'+
+    '<div class="field"><select id="wd-pos"' + CH('wdSetPos') + '>'+
       POS.map(function(p){return '<option value="'+p+'"'+(p===wEdit.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div>'+
 
@@ -653,8 +652,8 @@ function wdBodyHTML(){
     '<div class="sec">'+t('word.note')+'</div>'+
     wdNoteHTML()+
 
-    '<button class="btn" style="width:100%;margin-top:18px" onclick="saveWord()">'+t('word.save')+'</button>'+
-    '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delWord()">'+
+    '<button class="btn" style="width:100%;margin-top:18px"' + DO('saveWord') + '>'+t('word.save')+'</button>'+
+    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delWord') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('word.del')+'</span></button>';
 }
 function openWord(hw){
@@ -682,6 +681,13 @@ function wdKey(sym){
   wEdit.sp.push({l:l? l.id : '', u:sym});
   wdSync(); sayOne(sym); wdPaint();
 }
+/* Four things that were written as code inside a button: a condition, a pair
+   of statements, and two assignments. Each is one line now, in a file a
+   checker can read. */
+function wdSay(){ if(wEdit && wEdit.seq.length) sayPh(wEdit.seq); }
+function goPlans(){ closeSheet(); go('plans'); }
+function wdSetNt(v){ wEdit.nt=v; }
+function wdSetPos(v){ wEdit.pos=v; }
 function wdBack(){
   if(wEdit.sp && wEdit.sp.length) wEdit.sp.pop();
   wdSync(); wdPaint();
@@ -702,10 +708,10 @@ function vSpell(){
                           : '<span class="bch">'+esc(l.ch)+'</span>')
       : esc(ltName(l)||'·'))+'</div>'+
     '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'" onclick="wdSetU('+i+',\''+esc(o.u)+'\')">'+
+      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'"' + DO('wdSetU', [i, o.u]) + '>'+
         '<span class="pks">'+esc(o.u)+'</span></button>';
     }).join('')+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:16px" onclick="wdDropAt('+i+')">'+
+    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('wdDropAt', [i]) + '>'+
       t('word.sp.del')+'</button>'+
     '</div></div>';
 }
@@ -825,7 +831,7 @@ function impParse(src){
 function openImport(){
   openForm('csv:', t('csv.title'),
     '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
-    '<button class="btn" style="width:100%" onclick="doImport()">'+t('csv.btn')+'</button>');
+    '<button class="btn" style="width:100%"' + DO('doImport') + '>'+t('csv.btn')+'</button>');
 }
 FORM_OPEN.csv=function(){ openImport(); };
 function doImport(){

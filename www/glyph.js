@@ -369,18 +369,19 @@ var ICON_LINE='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="
   '<path d="M4 6h16M4 11h16M4 16h9"/></svg>';
 function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function gbtn(fn,n,key,en,on){
-  var lb=t(key), cl=on?'on':'', act=fn+'()';
+  var lb=t(key), cl=on?'on':'', act=DO(fn);
   /* A button that can demonstrate itself stays tappable when it is unavailable
      — it goes dim and does nothing, but it still answers "what is this". The
      two history buttons have nothing to show, so those are plainly disabled. */
   if(GHDEMO[n]){
     if(!en) cl=cl?cl+' off':'off';
-    act=act+";ghShow('"+n+"')";   /* after, because acting redraws the view */
-    return '<button data-g="'+n+'" onclick="'+act+'"'+(en?'':' aria-disabled="true"')+
+    /* the demonstration comes after, because acting redraws the view */
+    act=act+AFTER('ghShow',[n]);
+    return '<button data-g="'+n+'"'+act+(en?'':' aria-disabled="true"')+
            (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
            gicon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
   }
-  return '<button data-g="'+n+'" onclick="'+act+'"'+(en?'':' disabled')+
+  return '<button data-g="'+n+'"'+act+(en?'':' disabled')+
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
          gicon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
 }
@@ -405,15 +406,15 @@ function vGlyph(){
     ((ltById(GE.lid)||{}).ch
       ? '<div class="gborrow"><span class="gbch">'+esc((ltById(GE.lid)||{}).ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
-        '<button class="gbx" onclick="ltSetChar(\''+esc(GE.lid)+'\',\'\');installScriptFont();render()">'+t('ch.clear')+'</button></div>'
-      : '<button class="btn ghost" style="width:100%" onclick="openPick(\''+esc(GE.lid)+'\')">'+t('glyph.borrow')+'</button>')+
+        '<button class="gbx"' + DO('ltDropChar', [GE.lid]) + '>'+t('ch.clear')+'</button></div>'
+      : '<button class="btn ghost" style="width:100%"' + DO('openPick', [GE.lid]) + '>'+t('glyph.borrow')+'</button>')+
     (ltHasShape(ltById(GE.lid))
-      ? '<button class="set" style="margin-top:14px;border-bottom:none" onclick="geDelete()">'+
+      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('geDelete') + '>'+
         '<span class="sl" style="color:#c9553f">'+t('glyph.del')+'</span></button>' : '')+
     '</div>'+
     '<div class="barfix">'+
-      '<button class="btn ghost" onclick="go(\'sound\')">'+t('glyph.cancel')+'</button>'+
-      '<button class="btn" onclick="geSave()">'+t('glyph.save')+'</button>'+
+      '<button class="btn ghost"' + DO('go', ["sound"]) + '>'+t('glyph.cancel')+'</button>'+
+      '<button class="btn"' + DO('geSave') + '>'+t('glyph.save')+'</button>'+
     '</div></div>';
 }
 function geCur(){
@@ -1250,11 +1251,16 @@ function geDraw(){
 
    A syllabary and a logography have no letter for a single sound, so their
    keys stay symbols. There is nothing else they could honestly show. */
+/* Taking a borrowed character off a letter: forget the character, rebuild the
+   font without it, redraw. It was three statements inside a button. */
+function ltDropChar(lid){ ltSetChar(lid, ''); installScriptFont(); render(); }
+/* `call` is what pressing this key does, already written as attributes by
+   DO(). It used to be a line of JavaScript handed across as text. */
 function phkHTML(sym, call){
   var st=wsStrokes(sym), ch=chOf(sym), face='';
   if(st && st.length) face='<canvas class="pkc" data-r="'+esc(sym)+'"></canvas>';
   else if(ch) face='<span class="pkb">'+esc(ch)+'</span>';
-  return '<button class="phk'+(face?' hasg':'')+'" onclick="'+call+'">'+face+
+  return '<button class="phk'+(face?' hasg':'')+'"'+call+'>'+face+
     '<span class="pks">'+esc(sym)+'</span></button>';
 }
 function phkMount(){
@@ -1390,9 +1396,3 @@ function render(){
   if(route==='find') phkMount();
   if(route==='form') formMount();
 }
-migratePh();
-migrateMn();
-migrateLetters();
-installScriptFont();
-render();
-if(window.splashDone) splashDone();

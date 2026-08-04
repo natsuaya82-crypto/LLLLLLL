@@ -6,8 +6,9 @@
   "scripts": {
     "es5": "node tools/es5-check.mjs",
     "i18n": "node tools/i18n-check.mjs",
+    "act": "node tools/act-check.mjs",
     "verify": "node tools/verify-script.mjs",
-    "test": "node tools/assets-check.mjs && node tools/es5-check.mjs && node tools/i18n-check.mjs",
+    "test": "node tools/assets-check.mjs && node tools/es5-check.mjs && node tools/i18n-check.mjs && node tools/act-check.mjs",
     "assets": "node tools/assets-check.mjs"
   },
   "keywords": [],

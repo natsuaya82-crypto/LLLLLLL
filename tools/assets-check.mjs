@@ -125,10 +125,16 @@ const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'ru', 'zh', 'ko', 'ja']
 const core = at('core.js')
 const otf5 = at('otf5.js')
 const glyph = at('glyph.js')
+const actjs = at('act.js')
+const actmap = at('act-map.js')
+const boot = at('boot.js')
 
 if (core === -1) note('core.js is not loaded. It defines defLang().')
 if (otf5 === -1) note('otf5.js is not loaded. It defines LinguaFont.')
-if (glyph === -1) note('glyph.js is not loaded. The app starts on its last two lines.')
+if (glyph === -1) note('glyph.js is not loaded. Nothing can be drawn.')
+if (actjs === -1) note('act.js is not loaded. No button would do anything.')
+if (actmap === -1) note('act-map.js is not loaded. Every button would be a name with nothing behind it.')
+if (boot === -1) note('boot.js is not loaded. The app never starts.')
 
 for (const code of LANGS) {
   const i = at(`i18n/${code}.js`)
@@ -143,12 +149,24 @@ if (otf5 !== -1 && glyph !== -1 && otf5 > glyph) {
   note('otf5.js loads after glyph.js. glyph.js needs LinguaFont at load time.')
 }
 
-if (glyph !== -1 && glyph !== referenced.length - 1) {
+/* The app starts on the last line of boot.js, so boot.js goes last and the
+   table of what buttons do goes immediately before it: act-map.js names every
+   function directly, so every one of them has to exist by the time it runs. */
+if (boot !== -1 && boot !== referenced.length - 1) {
   note(
-    `glyph.js is not the last script. It ends with installScriptFont() and\n` +
-      `      render(), so anything loaded after it has not registered itself yet\n` +
-      `      when the app draws its first screen.`
+    `boot.js is not the last script. It is what starts the app, so anything\n` +
+      `      loaded after it has not registered itself yet when the first screen\n` +
+      `      is drawn.`
   )
+}
+if (actmap !== -1 && boot !== -1 && actmap > boot) {
+  note('act-map.js loads after boot.js, so the first screen would be drawn with no buttons wired.')
+}
+if (actmap !== -1 && glyph !== -1 && actmap < glyph) {
+  note('act-map.js loads before glyph.js, which defines some of the functions it names.')
+}
+if (actjs !== -1 && actmap !== -1 && actjs > actmap) {
+  note('act.js loads after act-map.js, which calls the act() it defines.')
 }
 
 // ------------------------------------------------------------------- verdict
