@@ -30,7 +30,12 @@
    and lives on the word. */
 
 var LETTERS=[];
-try{ var lt=JSON.parse(localStorage.getItem(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
+/* The open language's alphabet. Empty first: see langRead() in core.js. */
+function ltRead(){
+  LETTERS=[];
+  try{ var lt=JSON.parse(localStorage.getItem(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
+}
+ltRead();
 function saveLetters(){ try{ localStorage.setItem(langKey('letters'), JSON.stringify(LETTERS)); }catch(e){} }
 
 /* ---- moving the old shape of things over ------------------------------

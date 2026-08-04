@@ -93,19 +93,29 @@ try{
   if(!langId || !LANGS[langId]){ if(!langMigrate()) langFirst(); }
 }catch(e){ langFirst(); }
 
-try{ var a=JSON.parse(localStorage.getItem(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
-try{ var l=JSON.parse(localStorage.getItem(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-try{ langName=localStorage.getItem(langKey('lang'))||''; }catch(e){}
+/* Read the open language into the globals the screens use.
+   Called once here, and again every time a different language is opened, so
+   it puts back what an empty language looks like before it reads anything. A
+   version of this that only overwrote what the incoming language happens to
+   have would leave the last one's words sitting behind it -- you would open
+   somebody else's language and find your own dictionary in it. */
+function langRead(){
+  WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
+  try{ var a=JSON.parse(localStorage.getItem(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
+  try{ var l=JSON.parse(localStorage.getItem(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
+  try{ langName=localStorage.getItem(langKey('lang'))||''; }catch(e){}
+  try{
+    var gg=JSON.parse(localStorage.getItem(langKey('script'))||'null');
+    if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
+  }catch(e){}
+}
+langRead();
 /* Settings saved by an older version are missing whatever was added since, so
    they are laid over the defaults rather than replacing them. Written out by
    hand because Object.assign is not ES5 and this has to run on an old phone. */
 try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
-}catch(e){}
-try{
-  var gg=JSON.parse(localStorage.getItem(langKey('script'))||'null');
-  if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
 }catch(e){}
 
 function save(){

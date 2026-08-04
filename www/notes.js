@@ -13,7 +13,12 @@
    the device with everything else. */
 
 var NOTES=[];
-try{ var nt=JSON.parse(localStorage.getItem(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
+/* The open language's notes. Empty first: see langRead() in core.js. */
+function noteRead(){
+  NOTES=[];
+  try{ var nt=JSON.parse(localStorage.getItem(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
+}
+noteRead();
 function saveNotes(){ try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
 
 /* The first line of a note stands in for a title when there is none, the way

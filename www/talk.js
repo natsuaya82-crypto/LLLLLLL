@@ -25,7 +25,12 @@
    language is already all here. */
 
 var TALK=[];
-try{ var tk=JSON.parse(localStorage.getItem(langKey('talk'))||'[]'); if(Array.isArray(tk)) TALK=tk; }catch(e){}
+/* The open language's conversation. Empty first: see langRead() in core.js. */
+function tkRead(){
+  TALK=[];
+  try{ var tk=JSON.parse(localStorage.getItem(langKey('talk'))||'[]'); if(Array.isArray(tk)) TALK=tk; }catch(e){}
+}
+tkRead();
 /* A conversation is not an archive. Keeping the last forty turns is enough to
    scroll back through and small enough never to be a storage question. */
 function saveTalk(){

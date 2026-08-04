@@ -31,11 +31,16 @@
 /* rules: what you decided, written by you. ex: the lines that show it.
    notes stays for what is neither. */
 var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}};
-try{
-  var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
-  if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
-            STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{}; }
-}catch(e){}
+/* How far the open language has got. Empty first: see langRead() in core.js. */
+function stRead(){
+  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}};
+  try{
+    var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
+    if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
+              STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{}; }
+  }catch(e){}
+}
+stRead();
 function saveStg(){ try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
 
 /* The stages, in the order they open each other up. `slots` are the words the
