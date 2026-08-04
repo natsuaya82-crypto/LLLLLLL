@@ -26,3 +26,6 @@ tools/font-spike/manifest*.json
 tools/font-spike/measure*.json
 tools/font-spike/calibrate*.json
 tools/font-spike/shot*.json
+
+# pictures taken to look at once (tools/shot.mjs)
+shots/
