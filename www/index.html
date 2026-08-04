@@ -226,6 +226,27 @@ canvas.pkc{width:34px;height:34px;display:block}
 .ltsn{display:block;font-size:.64rem;color:var(--txm);margin-top:2px}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* ---------- a word, spelled ----------
+   Each position is the letter and, under it, what it says here. A position
+   saying something other than the letter's own reading is marked, because a
+   sound change is the one thing on this row worth noticing. */
+.spellrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:60px;
+          padding:8px 10px;border:1px solid var(--line);background:var(--pane);border-radius:12px}
+.spc{min-width:48px;min-height:52px;border:1px solid var(--line);border-radius:9px;
+     background:var(--sf);color:var(--tx);padding:5px 6px;
+     display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.spc.odd{border-color:var(--purln);background:var(--pursf)}
+.spf{display:inline-flex;align-items:center;justify-content:center;height:26px;font-size:1.2rem}
+.spf canvas.tc{width:26px;height:26px;display:block}
+.spf .bch{font-size:1.2rem;line-height:1}
+.spu{font-size:.6rem;color:var(--txm);line-height:1}
+.spc.odd .spu{color:var(--pur)}
+.spnone{flex:1;color:var(--txm);font-size:.8rem}
+.spellrow .seqdel{margin-left:auto}
+.spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
+       margin-bottom:14px;color:var(--tx)}
+.spbig canvas.tc{width:80px;height:80px;display:block}
+.phk.own{border-color:var(--goldln)}
 /* A label on an example, so a pair reads as a comparison. */
 .exlb{display:inline-block;font-size:.58rem;letter-spacing:.08em;color:var(--gold);
       border:1px solid var(--goldln);border-radius:5px;padding:2px 6px;margin-bottom:5px}

@@ -61,6 +61,8 @@ var PAGES={
   picksnd: {tab:'build', k:'lt.addsnd'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
+  spell:   {tab:'build', k:'word.sp'},
+  aspell:  {tab:'build', k:'word.sp'},
   glyph:   {tab:'build', n:'II'},
   words:   {tab:'build', n:'III', k:'toc.words'},
   make:    {tab:'build', n:'III', k:'toc.make'},

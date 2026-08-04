@@ -139,3 +139,59 @@ function ltForUnit(unit){
 }
 /* Everything the two chapters count. */
 function ltShaped(){ return LETTERS.filter(ltHasShape).length; }
+
+/* ---- spelling a word with letters -------------------------------------
+   「単語も音単位で決めるやついねえだろ。アルファベットに決まった音があるならそのまま、
+   漣音化とか音が変わるならそこの単語から変更できるようにして。」
+
+   Nobody spells by phoneme. You press the letters, the letters have sounds,
+   and where a sound changes -- a consonant softening before a vowel, a
+   syllable running into the next -- you change it on that word and nowhere
+   else. A sound change is a fact about a word, not about the alphabet.
+
+   So a word carries a spelling: a list of {l, u}. l is which letter was
+   pressed; u is what it says HERE, which is normally the letter's own first
+   reading and occasionally something else. The sounds of the word are those
+   readings run together, which is what everything else in the app has always
+   read, so nothing downstream changes.
+
+   A word made before this, or typed on the sound keyboard, has no spelling
+   and does not need one: one is worked out from its sounds when it is
+   opened, by asking which letter writes each piece. */
+function ltUnits(l){ return (l && l.snd)? l.snd : []; }
+function ltFirstUnit(l){ var u=ltUnits(l); return u.length? u[0] : ''; }
+/* A unit is one or more sounds run together. Splitting it back is asking the
+   inventory which of its sounds the unit starts with, longest first, so "tʃa"
+   comes apart as tʃ + a and not as t + ʃ + a. */
+function uSplit(u){
+  var out=[], s=String(u||''), snd=addedSnd().slice(), i, hit;
+  snd.sort(function(a,b){ return b.length-a.length; });
+  while(s.length){
+    hit=null;
+    for(i=0;i<snd.length;i++) if(snd[i] && s.indexOf(snd[i])===0){ hit=snd[i]; break; }
+    if(!hit){ out.push(s.charAt(0)); s=s.slice(1); }
+    else { out.push(hit); s=s.slice(hit.length); }
+  }
+  return out;
+}
+function spPh(sp){
+  var out=[], i;
+  for(i=0;i<sp.length;i++) out=out.concat(uSplit(sp[i].u));
+  return out;
+}
+/* The spelling of a word that has none: cut it the way its writing system
+   would, and ask which letter writes each piece. */
+function spOf(w){
+  if(w && w.sp && w.sp.length) return w.sp;
+  var u=wsSplit(wPh(w||{ph:[]})), out=[], i, l;
+  for(i=0;i<u.length;i++){
+    l=ltMain(u[i]);
+    out.push({l:l? l.id : '', u:u[i]});
+  }
+  return out;
+}
+/* Every letter that can be pressed: the ones that read something. A letter
+   with no sound cannot spell anything yet. */
+function ltTypable(){
+  return LETTERS.filter(function(l){ return ltUnits(l).length>0; });
+}

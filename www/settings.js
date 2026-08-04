@@ -225,39 +225,114 @@ var addSeq=[];
 /* A key says its own sound. Pressing one used to be silent, which in an app
    where a word IS its sounds meant you assembled a word you could not hear
    until you had finished it and found the play button. */
-function addPh(sym){ sayOne(sym); addSeq.push(sym); addPaint(); }
-function addBack(){ addSeq.pop(); addPaint(); }
-function addPaint(){
-  var w=document.getElementById('f-seq'), r=document.getElementById('f-pv'),
-      b=document.getElementById('f-back');
-  if(w) w.textContent = addSeq.join('');
-  if(r) r.textContent = addSeq.length? phIpa(addSeq) : '';
-  if(b) b.disabled = !addSeq.length;
+/* The same spelling a word being edited has: letters, each with what it says
+   here. addSeq is what those readings come out as, kept because everything
+   downstream reads it. */
+var addSp=[];
+function addSync(){ addSeq=spPh(addSp); }
+function addPh(sym){
+  var l=ltMain(sym);
+  addSp.push({l:l? l.id : '', u:sym});
+  addSync(); sayOne(sym); addRedraw();
 }
+function addLtr(id){
+  var l=ltById(id); if(!l) return;
+  var u=ltFirstUnit(l);
+  addSp.push({l:id, u:u});
+  addSync(); sayPh(uSplit(u)); addRedraw();
+}
+function addBack(){ addSp.pop(); addSync(); addRedraw(); }
+function addPaint(){ addRedraw(); }
+/* The row of letters has to be rebuilt, not just retyped, so the whole form
+   body is redrawn -- the two text fields keep their values because they are
+   read back before it happens. */
+function addRedraw(){
+  var b=document.getElementById('form-body'); if(!b) return;
+  var mn=document.getElementById('f-mn'), pos=document.getElementById('f-pos');
+  if(mn) addMn=mn.value;
+  if(pos) addPos=pos.value;
+  openAdd(addFrom);
+}
+function addSpellHTML(){
+  var i, l, out='';
+  for(i=0;i<addSp.length;i++){
+    l=ltById(addSp[i].l);
+    out+='<button class="spc'+(spOdd(addSp[i])?' odd':'')+'" onclick="go(\'aspell\','+i+')">'+
+      '<span class="spf">'+(ltHasShape(l)
+        ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
+                            : '<span class="bch">'+esc(l.ch)+'</span>')
+        : esc(ltName(l)||'·'))+'</span>'+
+      '<span class="spu">'+esc(addSp[i].u)+'</span></button>';
+  }
+  return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
+    '<button class="seqdel" id="f-back" onclick="addBack()"'+(addSp.length?'':' disabled')+
+    ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
+}
+var addMode='';
+function setAddMode(m){ addMode=m; addRedraw(); }
 function addKeys(){
-  var mine=addedSnd();
-  if(!mine.length){
+  var mine=addedSnd(), ls=ltTypable();
+  var m=addMode || (ls.length? 'lt' : 'ph');
+  if(!mine.length && !ls.length){
     return '<div class="note">'+t('add.ph.none')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="closeSheet({target:{id:\'sbg\'}});go(\'sound\')">'+
+      '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="go(\'sound\')">'+
       esc(t('toc.sound'))+'</button>';
   }
-  return '<div class="phkeys">'+mine.map(function(x){
+  var rail = (ls.length && mine.length)
+    ? '<div class="segs" style="margin-bottom:8px">'+
+      '<button class="seg'+(m==='lt'?' on':'')+'" onclick="setAddMode(\'lt\')">'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'" onclick="setAddMode(\'ph\')">'+t('toc.sound')+'</button>'+
+      '</div>' : '';
+  if(m==='lt' && ls.length)
+    return rail+'<div class="phkeys">'+ls.map(function(l){
+      return ltkHTML(l, 'addLtr(\''+l.id+'\')'); }).join('')+'</div>';
+  return rail+'<div class="phkeys">'+mine.map(function(x){
     return phkHTML(x, 'addPh(\''+x+'\')');
   }).join('')+'</div>';
 }
+/* One position of the word being made. Same page as the editor's, on the
+   other list. */
+function vASpell(){
+  var i=parseInt(here().a,10), st=addSp[i];
+  if(!st) return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
+  for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
+  for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="spbig">'+(ltHasShape(l)
+      ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
+                          : '<span class="bch">'+esc(l.ch)+'</span>')
+      : esc(ltName(l)||'·'))+'</div>'+
+    '<div class="phkeys">'+opts.map(function(o){
+      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'" onclick="addSetU('+i+',\''+esc(o.u)+'\')">'+
+        '<span class="pks">'+esc(o.u)+'</span></button>';
+    }).join('')+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin-top:16px" onclick="addDropAt('+i+')">'+
+      t('word.sp.del')+'</button>'+
+    '</div></div>';
+}
+function addSetU(i, u){
+  if(!addSp[i]) return;
+  addSp[i].u=u; addSync(); sayPh(uSplit(u)); back(); openAdd(addFrom);
+}
+function addDropAt(i){ addSp.splice(i,1); addSync(); back(); openAdd(addFrom); }
 /* Written from nothing, or derived from a word that already exists -- in
    which case it opens as that word's sounds, to be changed from there. */
 var addFrom='';
+var addMn='';
 function openAdd(from){
-  SUG=[]; sugMn=''; addSeq=[];
+  /* Reopened by its own redraw, so the spelling is only cleared when the form
+     is genuinely new -- otherwise every keypress would empty the word. */
+  var fresh = !(here().r==='form' && here().a==='add:'+(from||''));
+  if(fresh){ SUG=[]; sugMn=''; addSeq=[]; addSp=[]; addMn=''; }
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
-  if(par) addSeq=wPh(par).slice();
+  if(fresh && par){ addSp=JSON.parse(JSON.stringify(spOf(par))); addSync(); }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
-    '<div class="seqbox"><span class="seq" id="f-seq"></span>'+
-      '<button class="seqdel" id="f-back" onclick="addBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+    addSpellHTML()+
     '<div class="sec">'+t('add.ph')+'</div>'+
     addKeys()+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
@@ -268,7 +343,11 @@ function openAdd(from){
     '</select></div></div>'+
     '<div id="sugwrap">'+sugHTML()+'</div>'+
     '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">'+t('add.btn')+'</button>',
-    function(){ addPaint(); phkMount(); });
+    function(){ phkMount(); geTiles(); addPv(); });
+}
+function addPv(){
+  var r=document.getElementById('f-pv');
+  if(r) r.textContent = addSeq.length? phIpa(addSeq) : '';
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
 function pv(){ addPaint(); }
@@ -282,9 +361,11 @@ function addOne(){
   if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
   addPos=pos;
   var w={hw:hw, ph:addSeq.slice(), mn:mn, mns:(mn?[mn]:[]), pos:pos, at:Date.now()};
+  if(addSp.length) w.sp=JSON.parse(JSON.stringify(addSp));
   if(addFrom && addFrom!==hw) w.from=addFrom;
   WORDS.push(w);
-  save(); closeSheet(); cands=[]; addSeq=[]; addFrom='';
+  save(); cands=[]; addSeq=[]; addSp=[]; addMn=''; addFrom='';
+  if(here().r==='form') back();
   toast(t('toast.added.1', hw));
   render();
 }
@@ -314,16 +395,69 @@ function wordSyl(w){
    right that remember where they came from. */
 var openHw='', wEdit=null;
 
-function wdSeqHTML(){
-  return '<div class="seqbox"><span class="seq" id="wd-seq">'+esc(wEdit.seq.join(''))+'</span>'+
-    '<button class="seqdel" onclick="wdBack()"'+(wEdit.seq.length?'':' disabled')+
-    ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
+/* A position is marked only when its letter exists and says something else
+   here. A sound with no letter at all is not a sound change -- it is a sound
+   nobody has drawn yet, which is a different thing and not worth a colour. */
+function spOdd(st){
+  var l=ltById(st.l);
+  return !!(l && ltFirstUnit(l) && st.u!==ltFirstUnit(l));
 }
+/* ---- spelling a word --------------------------------------------------
+   The word is a row of letters, each with the sound it makes underneath. Tap
+   a letter in the row and you change what it says HERE and nowhere else --
+   which is what a sound change is: 「アルファベットに決まった音があるならそのまま、
+   漣音化とか音が変わるならそこの単語から変更できるようにして」
+
+   The keyboard is letters when the language has any, and sounds when it does
+   not or when you ask for sounds. Nobody spells by phoneme -- but a language
+   three days old has no letters yet, and it still has to be possible to make
+   a word. */
+function wdSeqHTML(){
+  var sp=wEdit.sp||[], i, l, out='';
+  for(i=0;i<sp.length;i++){
+    l=ltById(sp[i].l);
+    out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'" onclick="go(\'spell\','+i+')">'+
+      '<span class="spf">'+(ltHasShape(l)
+        ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
+                            : '<span class="bch">'+esc(l.ch)+'</span>')
+        : esc(ltName(l)||'·'))+'</span>'+
+      '<span class="spu">'+esc(sp[i].u)+'</span></button>';
+  }
+  return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
+    '<button class="seqdel" onclick="wdBack()"'+(sp.length?'':' disabled')+
+    ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+    '<div class="pvbox" style="margin-top:8px"><span class="pvn">'+t('f.reading')+'</span>'+
+    '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span>'+
+    '<button onclick="if(wEdit.seq.length)sayPh(wEdit.seq)">'+ICON_PLAY+t('f.listen')+'</button></div>';
+}
+var wdMode='';
+function wdKeyMode(){
+  if(wdMode) return wdMode;
+  return ltTypable().length? 'lt' : 'ph';
+}
+function setWdMode(m){ wdMode=m; wdPaint(); }
 function wdKeysHTML(){
-  var mine=addedSnd();
-  if(!mine.length) return '<div class="note">'+t('add.ph.none')+'</div>';
-  return '<div class="phkeys">'+mine.map(function(x){
+  var mine=addedSnd(), ls=ltTypable(), m=wdKeyMode();
+  if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
+  var rail = (ls.length && mine.length)
+    ? '<div class="segs" style="margin-bottom:8px">'+
+      '<button class="seg'+(m==='lt'?' on':'')+'" onclick="setWdMode(\'lt\')">'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'" onclick="setWdMode(\'ph\')">'+t('toc.sound')+'</button>'+
+      '</div>' : '';
+  if(m==='lt' && ls.length)
+    return rail+'<div class="phkeys">'+ls.map(function(l){
+      return ltkHTML(l, 'wdLtr(\''+l.id+'\')'); }).join('')+'</div>';
+  return rail+'<div class="phkeys">'+mine.map(function(x){
     return phkHTML(x, 'wdKey(\''+x+'\')'); }).join('')+'</div>';
+}
+/* A letter on a keyboard: its face, and what it says under it. */
+function ltkHTML(l, call){
+  var face;
+  if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
+  else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
+  else face='<span class="pkb">'+esc(ltName(l)||'·')+'</span>';
+  return '<button class="phk hasg" onclick="'+call+'">'+face+
+    '<span class="pks">'+esc(ltFirstUnit(l))+'</span></button>';
 }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
@@ -481,7 +615,7 @@ function wdKidsHTML(){
 }
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
-  b.innerHTML=wdBodyHTML(); phkMount();
+  b.innerHTML=wdBodyHTML(); phkMount(); geTiles();
 }
 function wdBodyHTML(){
   var seq=wEdit.seq;
@@ -526,13 +660,63 @@ function wdBodyHTML(){
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw;
-  wEdit={seq:wPh(w).slice(), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
+  wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdBodyHTML()+'</div>',
            function(){ phkMount(); });
 }
 FORM_OPEN.word=function(hw){ openWord(hw); };
-function wdKey(sym){ sayOne(sym); wEdit.seq.push(sym); wdPaint(); }
-function wdBack(){ wEdit.seq.pop(); wdPaint(); }
+/* Both keyboards write the same thing: a step in the spelling. A sound
+   pressed on the sound keyboard is a step whose letter is whichever letter
+   writes it, or none at all if nothing does yet. */
+function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
+function wdLtr(id){
+  var l=ltById(id); if(!l) return;
+  var u=ltFirstUnit(l);
+  if(!wEdit.sp) wEdit.sp=[];
+  wEdit.sp.push({l:id, u:u});
+  wdSync(); sayPh(uSplit(u)); wdPaint();
+}
+function wdKey(sym){
+  var l=ltMain(sym);
+  if(!wEdit.sp) wEdit.sp=[];
+  wEdit.sp.push({l:l? l.id : '', u:sym});
+  wdSync(); sayOne(sym); wdPaint();
+}
+function wdBack(){
+  if(wEdit.sp && wEdit.sp.length) wEdit.sp.pop();
+  wdSync(); wdPaint();
+}
+/* One position of one word, and what it says there. The letter's own
+   readings first, then every sound the language has, because a sound change
+   is exactly the case where the letter's own readings are not enough. */
+function vSpell(){
+  var i=parseInt(here().a,10), sp=(wEdit&&wEdit.sp)||[], st=sp[i];
+  if(!st) return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
+  for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
+  for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="spbig">'+(ltHasShape(l)
+      ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
+                          : '<span class="bch">'+esc(l.ch)+'</span>')
+      : esc(ltName(l)||'·'))+'</div>'+
+    '<div class="phkeys">'+opts.map(function(o){
+      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'" onclick="wdSetU('+i+',\''+esc(o.u)+'\')">'+
+        '<span class="pks">'+esc(o.u)+'</span></button>';
+    }).join('')+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin-top:16px" onclick="wdDropAt('+i+')">'+
+      t('word.sp.del')+'</button>'+
+    '</div></div>';
+}
+function wdSetU(i, u){
+  if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;
+  wEdit.sp[i].u=u; wdSync(); sayPh(uSplit(u)); back(); wdPaint();
+}
+function wdDropAt(i){
+  if(!wEdit || !wEdit.sp) return;
+  wEdit.sp.splice(i,1); wdSync(); back(); wdPaint();
+}
 function wdAddMn(){
   var e=document.getElementById('wd-mn'); if(!e) return;
   var v=String(e.value||'').trim();
@@ -556,6 +740,7 @@ function saveWord(){
   if(clash && clash!==w){ toast(t('toast.dup')); return; }
   var old=String(w.hw);
   w.ph=wEdit.seq.slice(); w.hw=hw;
+  if(wEdit.sp && wEdit.sp.length) w.sp=JSON.parse(JSON.stringify(wEdit.sp)); else delete w.sp;
   w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
   w.pos=wEdit.pos;
   /* An empty note is no note, not an empty one: a key that is always there

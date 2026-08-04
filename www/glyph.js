@@ -1260,7 +1260,8 @@ function phkHTML(sym, call){
 function phkMount(){
   var els=document.querySelectorAll('canvas.pkc'), i;
   for(i=0;i<els.length;i++){
-    var c=els[i], r=c.getAttribute('data-r'), st=wsStrokes(r);
+    var c=els[i], r=c.getAttribute('data-r'), lid=c.getAttribute('data-l');
+    var st = lid? ((ltById(lid)||{}).st||null) : wsStrokes(r);
     if(!st || !st.length) continue;
     var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
     var S=Math.max(40, Math.round((box.width||34)*dpr));
@@ -1360,6 +1361,8 @@ function render(){
         : route==='abugida'? vAbugida()
         : route==='relate'? vRelate()
         : route==='set'   ? vSet()
+        : route==='spell' ? vSpell()
+        : route==='aspell'? vASpell()
         : vHome();
   /* one attribute decides whether words are shown in roman letters or in the
      ones you drew — the text itself never changes, only the family it is set in */
@@ -1380,7 +1383,8 @@ function render(){
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
-  if(route==='sound' || route==='letters' || route==='pickltr' || route==='abugida') geTiles();
+  if(route==='sound' || route==='letters' || route==='pickltr' || route==='abugida' ||
+     route==='spell' || route==='aspell' || route==='form') geTiles();
   if(route==='form') formMount();
 }
 migratePh();
