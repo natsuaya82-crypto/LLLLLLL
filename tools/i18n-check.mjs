@@ -371,12 +371,13 @@ const R = await pg.evaluate(() => {
     /* the labels that are looked up, not templated */
     try {
       POS.concat([POS_ALL]).forEach(posLabel);
-      /* Word order is three roles, looked up one at a time. The decisions
-         behind them are machinery with no screen now: the labels they still
-         use are the ones the conversation chapter reads, and the line of
-         explanation each of them had went with the screen that showed it. */
+      /* Word order is three roles, looked up one at a time. The three places
+         a word can stand are two sides each, and which side of what depends
+         on the decision, so both halves are walked. A stage with none of its
+         words made yet shows the "write a few more" line instead of the
+         buttons, so a render alone would never reach these. */
       ['S','O','V'].forEach(k => t('gram.role.' + k));
-      GFEATS.forEach(f => { f.opts.forEach(o => gOptLab(f.id, o)); });
+      ['adj','negp','adp'].forEach(id => ['before','after'].forEach(o => gPosLab(id, o)));
       /* the seed words went with the old onboarding: */ // OB_SEEDS.forEach(s => seedLabel(s.k !== undefined ? s.k : s));
     } catch (e) { out.miss.push(c + ' a label lookup threw: ' + e.message); }
 

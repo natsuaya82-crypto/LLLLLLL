@@ -8,16 +8,16 @@
 
    So there is somebody here, and the only language it speaks is yours. It has
    read the whole of it: every word and what it means, every sound you chose,
-   and every decision in the grammar chapter. It answers by composing lines out
-   of your words, in your order, with your marks on them, and it will say them
-   out loud in your sounds. Underneath each line is what the words mean, so a
-   language you cannot yet read is still a language you can hold a conversation
-   in on the day you invent it.
+   the order you put words in, and the words you made in the grammar stages --
+   the pronouns, the word for no, the six question words. It answers by
+   composing lines out of those, and it will say them out loud in your sounds.
+   Underneath each line is what the words mean, so a language you cannot yet
+   read is still a language you can hold a conversation in on the day you
+   invent it.
 
-   You answer the same way: by choosing your own words, and putting your own
-   grammar on them. That is what the row of marks under the palette is -- the
-   plural you decided, the past you decided, the no you decided, applied to the
-   word you just picked.
+   You answer the same way. The grammar words are given their own palette
+   above the dictionary, because a line needs them constantly and hunting for
+   "not" among two hundred nouns is not a thing anybody should have to do.
 
    Everything here is arithmetic on the device, which is why it is free and
    why it works with no network. AI_SEAM in www/glyph.js is where a hosted
@@ -53,7 +53,7 @@ function tkPart(w){ return {s:wPh(w), g:wMn(w)||String(w.hw)}; }
 /* A describing word goes where the grammar says it goes. */
 function tkWith(list, noun, adj){
   if(!adj){ list.push(tkPart(noun)); return; }
-  if(gHow('adj')==='before'){ list.push(tkPart(adj)); list.push(tkPart(noun)); }
+  if(gPos('adj')==='before'){ list.push(tkPart(adj)); list.push(tkPart(noun)); }
   else { list.push(tkPart(noun)); list.push(tkPart(adj)); }
 }
 /* Subject, object and verb, arranged the way this language arranges them. */
@@ -71,16 +71,13 @@ function tkLine(subj, obj, verb, adj){
   }
   return out;
 }
-/* Putting one of your decisions onto one of your words. */
-function tkMarked(part, id){
-  var ws=gMark(part.s, id), out=[], i, same,
-      lab = id==='num'? t('gram.pair.many') : id==='past'? t('gram.pair.past') : t('gram.pair.no');
-  for(i=0;i<ws.length;i++){
-    same = ws[i].join('')===part.s.join('');
-    if(ws.length===1) out.push({s:ws[i], g:part.g+' · '+lab});
-    else out.push({s:ws[i], g: same? part.g : lab});
-  }
-  return out;
+/* Saying no is a word standing on one side of the verb -- the word you made
+   in the 否定 stage, on the side you chose there. */
+function tkNo(list, verb){
+  var x=gSlot('neg','not');
+  if(x && gPos('negp')==='before'){ list.push(tkPart(x)); list.push(tkPart(verb)); return; }
+  list.push(tkPart(verb));
+  if(x) list.push(tkPart(x));
 }
 
 /* ---- what it says back ------------------------------------------------
@@ -106,34 +103,50 @@ function tkFromUsed(pos, used, avoid){
   }
   return null;
 }
-/* Did the line you just sent end (or begin) with the mark you chose for
-   asking? Then it was a question, and a question wants an answer. */
+/* Was one of your question words in the line you just sent? Then it was a
+   question, and a question wants an answer. */
+function tkSaid(msg, w){
+  if(!msg || !w) return false;
+  var p=wPh(w).join(''), i;
+  for(i=0;i<msg.w.length;i++) if(msg.w[i].join('')===p) return true;
+  return false;
+}
 function tkAsked(msg){
-  if(!msg || gHow('q')==='none' || !gPhOf('q').length) return false;
-  var p=gPhOf('q').join(''), n=msg.w.length;
-  if(!n) return false;
-  return gHow('q')==='start' ? msg.w[0].join('')===p : msg.w[n-1].join('')===p;
+  var q=gSlotAll('ask'), i;
+  for(i=0;i<q.length;i++) if(tkSaid(msg, q[i])) return true;
+  return false;
+}
+/* If you spoke about yourself, it answers about you, and the other way round.
+   That is the smallest thing that makes two lines a conversation rather than
+   two announcements. */
+function tkTurn(msg){
+  var me=gSlot('pron','i'), you=gSlot('pron','you');
+  if(me && tkSaid(msg, me)) return you || me;
+  if(you && tkSaid(msg, you)) return me || you;
+  return null;
 }
 function tkReply(){
   var last=TALK.length? TALK[TALK.length-1] : null;
   var used=tkHeard(last), avoid={};
   var verb=tkFromUsed('v',used,null) || tkAnyBy('v');
-  var subj=tkFromUsed('n',used,null) || tkAnyBy('n');
+  var subj=tkTurn(last) || tkFromUsed('n',used,null) || tkAnyBy('n');
   if(subj) avoid[String(subj.hw)]=1;
   var obj=tkBy('n',avoid);
   var adj=tkFromUsed('adj',used,null) || tkAnyBy('adj');
   if(!verb || !subj) return null;
 
-  /* An answer to a question is short: the thing, and whether it does it. Every
-     other answer says no, so that the negation you decided is heard as well as
-     the plain form. */
+  /* An answer to a question is short: yes or no, then the thing and whether
+     it does it. It does not answer yes every time, because a language whose
+     word for no is never spoken is a language you never get to hear. */
   if(tkAsked(last)){
     var saidNo = (TALK.length % 4)===1;
-    var line=[tkPart(subj), tkPart(verb)];
-    if(saidNo && gHow('neg')!=='none' && gPhOf('neg').length){
-      var m=tkMarked(line[1],'neg'), k;
-      line=[line[0]];
-      for(k=0;k<m.length;k++) line.push(m[k]);
+    var head=saidNo? gSlot('greet','no') : gSlot('greet','yes');
+    var line=[], seq=orderDef().seq, i, k;
+    if(head) line.push(tkPart(head));
+    for(i=0;i<seq.length;i++){
+      k=seq[i];
+      if(k==='S') line.push(tkPart(subj));
+      else if(k==='V'){ if(saidNo) tkNo(line, verb); else line.push(tkPart(verb)); }
     }
     return line;
   }
@@ -166,18 +179,6 @@ function tkAdd(hw){
 }
 function tkBack(){ tcomp.pop(); render(); }
 function tkClear(){ tcomp=[]; render(); }
-function tkMark(id){
-  if(!tcomp.length) return;
-  var last=tcomp.pop(), m=tkMarked(last,id), i;
-  for(i=0;i<m.length;i++) tcomp.push(m[i]);
-  render();
-}
-function tkAsk(){
-  if(gHow('q')==='none' || !gPhOf('q').length) return;
-  var p={s:gPhOf('q').slice(), g:t('gram.pair.ask')};
-  if(gHow('q')==='start') tcomp.unshift(p); else tcomp.push(p);
-  render();
-}
 function tkSend(){
   if(!tcomp.length) return;
   TALK.push(tkMsg(tcomp, true));
@@ -210,20 +211,31 @@ function tkPal(){
       '</button>';
   }).join('');
 }
-/* The marks that exist. A decision you have not made puts no button here,
-   which is the shortest possible statement of what the grammar chapter is for. */
-function tkMarks(){
-  var out=[], ids=['num','past','neg'], i, id, lab;
+/* The words the grammar stages made, kept together and kept at hand: yes, no,
+   not, the six question words, the joining words, the times and the places. A
+   stage you have not filled puts nothing here, which is the shortest possible
+   statement of what the grammar chapter is for. */
+function tkGramWords(){
+  var out=[], seen={}, ids=['greet','pron','neg','ask','conj','when','where'], i, j, a, w, hw;
   for(i=0;i<ids.length;i++){
-    id=ids[i];
-    if(gHow(id)==='none' || (gNeedsPiece(id) && !gPhOf(id).length)) continue;
-    lab = id==='num'? t('gram.pair.many') : id==='past'? t('gram.pair.past') : t('gram.pair.no');
-    out.push('<button class="tmk" onclick="tkMark(\''+id+'\')"'+(tcomp.length?'':' disabled')+'>'+esc(lab)+'</button>');
+    a=gSlotAll(ids[i]);
+    for(j=0;j<a.length;j++){
+      w=a[j]; hw=String(w.hw);
+      if(seen[hw]) continue;
+      seen[hw]=1; out.push(w);
+    }
   }
-  if(gHow('q')!=='none' && gPhOf('q').length)
-    out.push('<button class="tmk" onclick="tkAsk()">'+esc(t('gram.pair.ask'))+'</button>');
-  if(!out.length) return '';
-  return '<div class="tmks">'+out.join('')+'</div>';
+  return out;
+}
+function tkGramHTML(){
+  var a=tkGramWords();
+  if(!a.length) return '';
+  return '<div class="sec">'+t('talk.gram')+'</div>'+
+    '<div class="pal">'+a.map(function(w){
+      return '<button class="pw" onclick="tkAdd(\''+esc(w.hw)+'\')">'+
+        '<span class="pww">'+esc(wOut(w.hw))+'</span>'+
+        '<span class="pwm">'+esc(wMn(w)||String(w.hw))+'</span></button>';
+    }).join('')+'</div>';
 }
 
 function vTalk(){
@@ -250,10 +262,10 @@ function vTalk(){
       '<button class="seqdel" onclick="tkBack()"'+(tcomp.length?'':' disabled')+
       ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     (tcomp.length? '<div class="note">'+esc(tcomp.map(function(p){ return p.g; }).join(' · '))+'</div>' : '')+
-    tkMarks()+
     '<div class="tsend"><button class="btn" onclick="tkSend()"'+(tcomp.length?'':' disabled')+'>'+t('talk.send')+'</button>'+
       '<button class="btn ghost" onclick="tkClear()"'+(tcomp.length?'':' disabled')+'>'+t('sent.clear')+'</button></div>'+
 
+    tkGramHTML()+
     '<div class="sec">'+t('sent.choose')+'</div>'+
     '<div class="segs">'+[POS_ALL].concat(POS).map(function(p){
       return '<button class="seg'+(p===tkPos?' on':'')+'" onclick="setTkPos(\''+p+'\')">'+esc(posLabel(p))+'</button>';

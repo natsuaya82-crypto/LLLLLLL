@@ -74,9 +74,9 @@ var STAGES=[
   {id:'order', slots:[], pos:'v', feats:['order']},
   {id:'noun',  slots:[], pos:'n',  feats:[]},
   {id:'verb',  slots:[], pos:'v',  feats:[]},
-  {id:'neg',   slots:['not'], pos:'part', feats:[]},
+  {id:'neg',   slots:['not'], pos:'part', feats:['negp']},
   {id:'ask',   slots:['what','who','where','when','why','how'], pos:'pro', feats:[]},
-  {id:'desc',  slots:[], pos:'adj', feats:[]},
+  {id:'desc',  slots:[], pos:'adj', feats:['adj']},
   {id:'have',  slots:[], pos:'n', feats:[]},
   /* The numbers are numerals, which read the same in every language on the
      list, so they are the one set of labels that needs no translating. */
@@ -84,7 +84,7 @@ var STAGES=[
   {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
   {id:'part',  slots:[], pos:'part', feats:[]},
   {id:'polite',slots:[], pos:'x',  feats:[]},
-  {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:[]},
+  {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:['adp']},
   {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]}
 ];
 function stAll(){
@@ -370,13 +370,21 @@ function stDetailHTML(p){
     '<span class="sl" style="color:#c9553f">'+t('stg.own.del')+'</span></button>';
   return out;
 }
-/* The one decision left that is a decision: six orders, one answer, and the
-   answer changes every sentence in the language. */
+/* The decisions that are decisions: word order, and the three places a word
+   can stand. Each is one answer for the whole language, each changes every
+   sentence that uses it, and each is shown in your own words underneath so it
+   can be heard rather than only read. Everything else on a stage is written. */
 function stFeatHTML(id){
-  if(id!=='order') return '';
-  return '<div class="segs">'+ORDERS.map(function(o){
-      return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
-    }).join('')+'</div>'+gOrderLine()+gOrderDemo();
+  if(id==='order'){
+    return '<div class="segs">'+ORDERS.map(function(o){
+        return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
+      }).join('')+'</div>'+gOrderLine()+gOrderDemo();
+  }
+  if(id!=='adj' && id!=='negp' && id!=='adp') return '';
+  return '<div class="segs">'+['before','after'].map(function(o){
+      return '<button class="seg'+(o===gPos(id)?' on':'')+'" onclick="setGPos(\''+id+'\',\''+o+'\')">'+
+        esc(gPosLab(id, o))+'</button>';
+    }).join('')+'</div>'+gPosDemo(id);
 }
 function vGram(){
   var gOpen=gOpenOf();

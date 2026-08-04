@@ -1,22 +1,26 @@
-/* Lingua — grammar: the decisions, not the observations
+/* Lingua — grammar: the decisions, and the words that carry them
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
 
    This chapter used to be called Rules and contained none. It listed what the
    dictionary had happened to do -- most of your nouns end in a, you have not
-   used v yet -- which is a description of your typing, not a grammar. Nothing
-   on it could be decided, and nothing it said changed a single word.
+   used v yet -- which is a description of your typing, not a grammar.
 
-   A grammar is a small number of decisions, each with a consequence you can
-   hear. Where does a describing word go. Is more than one marked, and with
-   what. What does a verb do when the thing already happened. How do you say
-   no, how do you ask, how do you say something is somebody's. Each one here
-   is chosen by you, the piece of sound that carries it is built from your own
-   inventory, and the moment it is set the app shows one of your own words
-   going through it and will say it out loud.
+   Then it was six rows of "does your language mark this, and with which piece
+   of sound", which is one sentence of grammar dressed as a chapter, and which
+   he threw out: 「全部示す示さないみたいなゴミみたいな決め方」. Writing the rules
+   out in your own words replaced it, and that was right -- but prose is not
+   something a machine can compute with, and the conversation chapter had been
+   assembling its replies out of those six rows. Removing them left it able to
+   do nothing but put words in order. That was my breakage.
 
-   What the old chapter did survives at the foot of the screen, where a
-   description belongs: under the decisions, not instead of them. */
+   What is here now is neither. There is no second grammar written for the
+   machine to read: the words made in the stages ARE the grammar. The 否定
+   stage made a word for "not". The 代名詞 stage made six pronouns. The 疑問
+   stage made six question words. The conversation reads those, and the only
+   thing it has to be told besides is where a word stands -- which is one
+   answer for the whole language, changes every sentence, and is exactly the
+   kind of thing word order already is. */
 
 /* All six orders, because all six are used by languages on this planet. The
    old list had three, which quietly ruled out the other half. */
@@ -28,62 +32,45 @@ function orderDef(){
 }
 function setOrder(id){ SET.order=id; save(); stMarkSet('order'); render(); }
 
-/* Each decision, and what it can be set to.
-   `none` means the language does not mark this at all, which is a decision
-   like any other -- plenty of languages do not mark number, or tense.
-   `redup` is saying the word twice, which needs no piece of sound. */
-var GFEATS=[
-  {id:'adj',  opts:['before','after']},
-  {id:'num',  opts:['none','suffix','prefix','redup']},
-  {id:'past', opts:['none','suffix','prefix']},
-  {id:'neg',  opts:['none','prefix','suffix','before','after']},
-  {id:'q',    opts:['none','end','start']},
-  {id:'poss', opts:['none','suffix','prefix']}
-];
-var G_DEF={adj:'after', num:'none', past:'none', neg:'none', q:'none', poss:'none'};
+/* ---- where a word stands ----------------------------------------------
+   Three positions. Each is one answer for the whole language and each is
+   heard in every sentence that uses it, which is why these three have buttons
+   and nothing else does. None of them asks whether the language marks
+   something, and none asks you to invent a piece of sound: the word already
+   exists, made in the stage that needed it. */
+var GPOS_DEF={adj:'after', negp:'after', adp:'after'};
+function gPos(id){
+  if(!SET.gpos) SET.gpos={};
+  if(!SET.gpos[id]) SET.gpos[id]=GPOS_DEF[id]||'after';
+  return SET.gpos[id];
+}
+function setGPos(id, v){
+  if(!SET.gpos) SET.gpos={};
+  SET.gpos[id]=v; save(); stMarkSet(id); render();
+}
+/* Which side, and of what. "Before" on its own is not a label: before the
+   noun and before the verb are different facts. */
+var GPOS_OF={adj:'n', negp:'v', adp:'n'};
+function gPosLab(id, o){ return t('gram.pos.'+o+'.'+(GPOS_OF[id]||'n')); }
 
-function gramAll(){ if(!SET.gram) SET.gram={}; return SET.gram; }
-function gFeat(id){
-  var g=gramAll();
-  if(!g[id]) g[id]={how:(G_DEF[id]||'none'), ph:[]};
-  if(!g[id].ph) g[id].ph=[];
-  return g[id];
+/* ---- reading the words the stages made --------------------------------- */
+function gSlot(pid, k){
+  var p=(typeof stBy==='function')? stBy(pid) : null;
+  return p? stWordFor(p, k) : null;
 }
-function gHow(id){ return gFeat(id).how; }
-function gPhOf(id){ return gFeat(id).ph; }
-/* Everything except "not marked" and "said twice" needs a piece of sound. */
-function gNeedsPiece(id){ var h=gHow(id); return h!=='none' && h!=='redup'; }
-function gPieceOK(id){ return !gNeedsPiece(id) || gPhOf(id).length>0; }
-function gSet(id, how){
-  var f=gFeat(id);
-  f.how=how; save(); stMarkSet(id); render();
+function gSlotAny(pid){
+  var p=(typeof stBy==='function')? stBy(pid) : null, i, w;
+  if(!p) return null;
+  for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) return w; }
+  return null;
 }
-/* How much of a grammar exists. Order and the place of a describing word are
-   always decided -- there is no "undecided" for those -- so they always count;
-   the rest count once they mark something and have the sound to mark it with. */
-function gramCount(){
-  var n=2, i, f;
-  for(i=0;i<GFEATS.length;i++){
-    f=GFEATS[i];
-    if(f.id==='adj') continue;
-    if(gHow(f.id)!=='none' && gPieceOK(f.id)) n++;
-  }
-  return n;
+function gSlotAll(pid){
+  var p=(typeof stBy==='function')? stBy(pid) : null, out=[], i, w;
+  if(!p) return out;
+  for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) out.push(w); }
+  return out;
 }
 
-/* ---- applying a decision to an actual word ----------------------------
-   A word is its sounds, so a mark is sounds added to those. Some marks are
-   part of the word and some are a word of their own, which is why this hands
-   back a list of words rather than one sequence. */
-function gMark(seq, id){
-  var f=gFeat(id), p=(f.ph||[]).slice();
-  if(f.how==='suffix') return [seq.concat(p)];
-  if(f.how==='prefix') return [p.concat(seq)];
-  if(f.how==='redup')  return [seq.concat(seq)];
-  if(f.how==='before') return [p, seq.slice()];
-  if(f.how==='after')  return [seq.slice(), p];
-  return [seq.slice()];
-}
 function gTxt(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return o.join(' '); }
 function gIpaOf(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return '/'+o.join(' ')+'/'; }
 function gFlat(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o=o.concat(ws[i]); return o; }
@@ -98,8 +85,8 @@ function gWordOf(pos, not){
 }
 
 /* ---- the demonstration ------------------------------------------------
-   Two sides, and the difference between them is the decision. Both can be
-   said, because a grammar you can only read is a grammar you cannot check. */
+   A position you cannot hear is a position you cannot check, so every one of
+   them is shown in your own words and will say itself out loud. */
 function gSide(lab, ws, gloss){
   return '<div class="gside"><span class="gsl">'+esc(lab)+'</span>'+
     '<span class="gsw">'+esc(gTxt(ws))+'</span>'+
@@ -108,63 +95,27 @@ function gSide(lab, ws, gloss){
     '<button class="gsp" onclick="sayPh('+esc(JSON.stringify(gFlat(ws)))+')" aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
 }
 function gNeedWords(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
-/* "before" and "after" mean two different things. For a describing word they
-   are where it stands; for saying no they are a separate word standing before
-   or after. One label for both read as nonsense on the adjective row -- "a
-   word before" where the answer is simply "before it" -- so the one feature
-   that means position asks for its own. */
-function gOptLab(id, o){
-  return (id==='adj') ? t('gram.adj.'+o) : t('gram.how.'+o);
+function gPair(a, b){
+  var g=[wMn(a), wMn(b)].filter(Boolean).join(' + ');
+  return {ws:[wPh(a), wPh(b)], gl:g};
 }
-
-function gDemo(id){
-  var n=gWordOf('n'), v=gWordOf('v'), a=gWordOf('adj'), n2=gWordOf('n', n);
-  var base, out='';
-  /* "not marked" has nothing to demonstrate. Showing the bare word under a
-     label that says "many" would be claiming a difference there isn't one. */
-  if(id!=='adj' && gHow(id)==='none') return '';
+function gPosDemo(id){
+  var pair=null, n, v, a, x;
   if(id==='adj'){
+    n=gWordOf('n'); a=gWordOf('adj');
     if(!n || !a) return gNeedWords();
-    var ph = gHow('adj')==='before' ? [wPh(a), wPh(n)] : [wPh(n), wPh(a)];
-    return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), ph,
-      [wMn(a), wMn(n)].filter(Boolean).join(' + '))+'</div>';
+    pair = gPos('adj')==='before' ? gPair(a, n) : gPair(n, a);
+  } else if(id==='negp'){
+    v=gWordOf('v'); x=gSlot('neg','not');
+    if(!v || !x) return gNeedWords();
+    pair = gPos('negp')==='before' ? gPair(x, v) : gPair(v, x);
+  } else {
+    n=gWordOf('n'); x=gSlotAny('where');
+    if(!n || !x) return gNeedWords();
+    pair = gPos('adp')==='before' ? gPair(x, n) : gPair(n, x);
   }
-  if(id==='q'){
-    /* A question is asked of a whole line, not of a word, so this one is
-       shown on the shortest line the dictionary can make. */
-    if(!n || !v) return gNeedWords();
-    var say=[wPh(n), wPh(v)], ask;
-    if(gHow('q')==='start') ask=[gPhOf('q').slice(), wPh(n), wPh(v)];
-    else ask=[wPh(n), wPh(v), gPhOf('q').slice()];
-    return '<div class="gdemo">'+gSide(t('gram.pair.say'), say, '')+
-           gSide(t('gram.pair.ask'), ask, '')+'</div>';
-  }
-  if(id==='poss'){
-    if(!n || !n2) return gNeedWords();
-    return '<div class="gdemo">'+gSide(t('gram.pair.plain'), [wPh(n2)], wMn(n2))+
-      gSide(t('gram.pair.owned'), gMark(wPh(n2),'poss').concat([wPh(n)]),
-        [wMn(n), wMn(n2)].filter(Boolean).join(' / '))+'</div>';
-  }
-  base = (id==='num') ? n : v;
-  if(!base) return gNeedWords();
-  var labA = id==='num'? t('gram.pair.one') : id==='past'? t('gram.pair.now') : t('gram.pair.yes');
-  var labB = id==='num'? t('gram.pair.many'): id==='past'? t('gram.pair.past'): t('gram.pair.no');
-  return '<div class="gdemo">'+gSide(labA, [wPh(base)], wMn(base))+
-         gSide(labB, gMark(wPh(base), id), '')+'</div>';
+  return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
 }
-
-/* ---- what the conversation chapter still reads -----------------------
-   The decisions above are no longer set from any screen: a grammar is
-   written now, in your own words, and prose is not something this app can
-   compute with. What is left here is the machinery the conversation chapter
-   assembles a reply out of. With nothing set it assembles by word order and
-   the words themselves, which is the honest answer for a language whose
-   rules live in prose -- and it is the seam a future "the app can use this"
-   layer plugs into.
-
-   The editor that used to set the piece of sound is gone. It asked, for six
-   different things, whether the language marks it and which sound the mark
-   is, which is one sentence of grammar dressed as a chapter. */
 
 /* ---- the screen -------------------------------------------------------- */
 /* Word order, written as the three roles in the order chosen, with the drawn
