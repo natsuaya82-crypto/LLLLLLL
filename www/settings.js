@@ -122,7 +122,7 @@ function setUi(l){ SET.ui=l; save(); render(); }
    left behind by a shape this version does not know about. */
 function wipe(){
   if(!confirm(t('confirm.wipe'))) return;
-  WORDS=[]; LINES=[]; langName=''; comp=[]; compSel=-1; cands=[]; SUG=[];
+  WORDS=[]; LINES=[]; langName=''; cands=[]; SUG=[];
   NOTES=[]; TALK=[]; tcomp=[];
   STG={done:{}, notes:{}, set:{}, extra:[]}; saveStg();
   SCRIPT={g:{}, extra:[]};
@@ -335,31 +335,6 @@ function wdMnsHTML(){
       'onkeydown="if(event.key===\'Enter\'){event.preventDefault();wdAddMn();}">'+
     '<button class="btn ghost" onclick="wdAddMn()">'+t('word.mn.add')+'</button></div>';
 }
-/* ---- what else a dictionary entry holds -------------------------------
-   Spelling, reading, part of speech, senses and where the word came from
-   were all here. The two a real entry has that this one did not are a note
-   -- where a word came from in your head, which sense is the older one, what
-   it must never be confused with -- and a used-in line. The second one is
-   already in the app: the sentences chapter knows which words each line was
-   built out of. It was simply never shown on the word. */
-function wdUsesHTML(){
-  var w=findWord(openHw); if(!w) return '';
-  var used=[], i;
-  for(i=0;i<LINES.length;i++)
-    if(LINES[i].ws && LINES[i].ws.indexOf(w.hw)>=0) used.push({i:i, l:LINES[i]});
-  if(!used.length) return '<div class="note">'+t('word.uses.none')+'</div>';
-  return '<div class="ntlist">'+used.map(function(u){
-    var seq=[], j, x;
-    for(j=0;j<u.l.ws.length;j++){ x=findWord(u.l.ws[j]); if(x) seq=seq.concat(wPh(x)); }
-    return '<div class="useln"><span class="usew">'+esc(u.l.ws.map(wOut).join(' '))+'</span>'+
-      /* the first sense only. A gloss under a line is a reminder of what the
-         line says, and three senses of one word in it stops being that */
-      '<span class="usem">'+esc(u.l.ws.map(function(h){
-        var y=findWord(h); return (y&&wMns(y)[0])||h; }).join(' '))+'</span>'+
-      '<button class="usep" onclick="sayPh('+esc(JSON.stringify(seq))+')" aria-label="'+
-        esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
-  }).join('')+'</div>';
-}
 /* ---- what a dictionary entry still had not got ------------------------
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
 
@@ -540,8 +515,6 @@ function wdBodyHTML(){
     '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+
     wdExHTML()+
 
-    '<div class="sec">'+t('word.uses')+'</div>'+
-    wdUsesHTML()+
 
     '<div class="sec">'+t('word.note')+'</div>'+
     wdNoteHTML()+
@@ -594,7 +567,6 @@ function saveWord(){
     WORDS.forEach(function(x){ if(x.from===old) x.from=hw; });
     wRelRename(old, hw);
     LINES.forEach(function(l){ l.ws=l.ws.map(function(x){ return x===old? hw : x; }); });
-    comp=comp.map(function(x){ return x===old? hw : x; });
   }
   save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.saved', hw));
 }
@@ -613,7 +585,6 @@ function delWord(){
     });
   });
   LINES=LINES.filter(function(l){ return l.ws.indexOf(gone)<0; });
-  comp=comp.filter(function(x){ return x!==gone; });
   save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.deleted', gone));
 }
 

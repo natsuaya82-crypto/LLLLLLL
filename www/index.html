@@ -226,6 +226,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 .ltsn{display:block;font-size:.64rem;color:var(--txm);margin-top:2px}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* A label on an example, so a pair reads as a comparison. */
+.exlb{display:inline-block;font-size:.58rem;letter-spacing:.08em;color:var(--gold);
+      border:1px solid var(--goldln);border-radius:5px;padding:2px 6px;margin-bottom:5px}
+.exadd .exsm{flex:0 0 96px}
 /* ---------- what an entry still had not got ----------
    A synonym or an opposite, as a word you can walk to. An example, as a line
    with its meaning under it. */
@@ -914,6 +918,11 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .ntrow .nth{font-size:.95rem;color:var(--tx)}
 .ntrow .ntb{font-size:.78rem;color:var(--txm);line-height:1.6}
 .ntbody{min-height:180px;line-height:1.8}
+/* A textarea outside a .field had no styling of its own, so a rule written
+   straight onto a page came out as a white box on a dark screen. */
+textarea.ntbody{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+   padding:12px 14px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
+textarea.ntbody:focus{border-color:var(--goldln)}
 
 /* ---------- the conversation ----------
    Its turns sit against the left margin, yours against the right, and every

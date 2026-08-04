@@ -57,9 +57,6 @@ function gPieceOK(id){ return !gNeedsPiece(id) || gPhOf(id).length>0; }
 function gSet(id, how){
   var f=gFeat(id);
   f.how=how; save(); stMarkSet(id); render();
-  /* Choosing "suffix" without saying which suffix is half a decision, so the
-     keyboard opens on the spot rather than waiting to be found. */
-  if(gNeedsPiece(id) && !f.ph.length) openGramPiece(id);
 }
 /* How much of a grammar exists. Order and the place of a describing word are
    always decided -- there is no "undecided" for those -- so they always count;
@@ -156,46 +153,18 @@ function gDemo(id){
          gSide(labB, gMark(wPh(base), id), '')+'</div>';
 }
 
-/* ---- the piece of sound a decision is carried by ----------------------
-   Typed from the language's own inventory, the same keyboard a word is
-   written with. Nothing outside the inventory can be used, which is the whole
-   reason for having chosen one. */
-var gPhFor='', gPhSeq=[];
-function gPhKey(sym){ sayOne(sym); gPhSeq.push(sym); gPhPaint(); }
-function gPhBack(){ gPhSeq.pop(); gPhPaint(); }
-function gPhPaint(){
-  var s=document.getElementById('gp-seq'), r=document.getElementById('gp-ipa'),
-      b=document.getElementById('gp-back');
-  if(s) s.textContent=gPhSeq.join('');
-  if(r) r.textContent=gPhSeq.length? phIpa(gPhSeq) : '';
-  if(b) b.disabled=!gPhSeq.length;
-}
-function gPhSave(){
-  var f=gFeat(gPhFor||'num');
-  f.ph=gPhSeq.slice(); save();
-  closeSheet({target:{id:'sbg'}}); render();
-}
-function openGramPiece(id){
-  var known=false, i;
-  for(i=0;i<GFEATS.length;i++) if(GFEATS[i].id===id) known=true;
-  gPhFor = known ? id : GFEATS[1].id;
-  gPhSeq = gPhOf(gPhFor).slice();
-  var mine=addedSnd();
-  openForm('gpiece:'+gPhFor, t('gram.piece.h'),
-    '<div class="seqbox"><span class="seq" id="gp-seq"></span>'+
-      '<button class="seqdel" id="gp-back" onclick="gPhBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
-    '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="gp-ipa"></span>'+
-      '<button onclick="if(gPhSeq.length)sayPh(gPhSeq)">'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    (mine.length
-      ? '<div class="sec">'+t('add.ph')+'</div><div class="phkeys">'+mine.map(function(x){
-          return phkHTML(x, 'gPhKey(\''+x+'\')'); }).join('')+'</div>'+
-        '<button class="btn" style="width:100%;margin-top:14px" onclick="gPhSave()">'+t('gram.piece.set')+'</button>'
-      : '<div class="note">'+t('add.ph.none')+'</div>'+
-        '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="go(\'sound\')">'+
-        esc(t('toc.sound'))+'</button>'),
-    function(){ gPhPaint(); phkMount(); });
-}
-FORM_OPEN.gpiece=function(id){ openGramPiece(id); };
+/* ---- what the conversation chapter still reads -----------------------
+   The decisions above are no longer set from any screen: a grammar is
+   written now, in your own words, and prose is not something this app can
+   compute with. What is left here is the machinery the conversation chapter
+   assembles a reply out of. With nothing set it assembles by word order and
+   the words themselves, which is the honest answer for a language whose
+   rules live in prose -- and it is the seam a future "the app can use this"
+   layer plugs into.
+
+   The editor that used to set the piece of sound is gone. It asked, for six
+   different things, whether the language marks it and which sound the mark
+   is, which is one sentence of grammar dressed as a chapter. */
 
 /* ---- the screen -------------------------------------------------------- */
 /* Word order, written as the three roles in the order chosen, with the drawn

@@ -29,29 +29,63 @@ var LS_STG='lingua.phases';
 /* {done:{}, notes:{}, set:{}, extra:[]} -- `set` is which decisions have been
    touched, because every decision has a default and a default is not a
    choice. */
-var STG={done:{}, notes:{}, set:{}, extra:[]};
+/* rules: what you decided, written by you. ex: the lines that show it.
+   notes stays for what is neither. */
+var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}};
 try{
   var stgs=JSON.parse(localStorage.getItem(LS_STG)||'null');
-  if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{}; STG.extra=stgs.extra||[]; }
+  if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
+            STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{}; }
 }catch(e){}
 function saveStg(){ try{ localStorage.setItem(LS_STG, JSON.stringify(STG)); }catch(e){} }
 
 /* The stages, in the order they open each other up. `slots` are the words the
    stage cannot do without; `feats` are the decisions from www/grammar.js it
    carries. A stage may have only one of the two. */
+/* ---- the parts of a grammar ------------------------------------------
+   「語順のページなにそれ。SVOを決めて終わり？そんなページいらねえよ。もっと長い文法の
+   時は？キモい分け方すんなよ。接続詞とかもっと会話に必要なところあるだろ。」
+   「否定のページも何これ？意味がわからない。音で決めるの何さっきから」
+   「メモじゃなくてもうルールを書き記せるページにしてくれ。例文で比較したいし、決める
+   こと決めて、あとは例文。文法のページ全部がゴミ。全部示す示さないみたいなゴミみたいな
+   決め方。」
+
+   What was here asked, for six different things, whether the language marks
+   it -- yes or no -- and then which piece of sound the mark is. That is one
+   sentence of grammar dressed as a whole chapter, it cannot describe a
+   language that does the same job by word order or by a separate word or by
+   nothing at all, and it left the parts a conversation actually needs --
+   conjunctions, particles, politeness, conditionals -- with nowhere to go.
+
+   A part of a grammar is three things now:
+
+     the words it needs      made here, as before, because that worked
+     the rule                written by you, in your own words
+     lines that show it      pairs you can put side by side and compare
+
+   Word order stays a choice with buttons, because it genuinely is one: six
+   options, one answer, and the answer changes every sentence. Nothing else
+   is. The rest are written, because a grammar is written.
+
+   Fifteen parts, and you can add as many of your own as you like. */
 var STAGES=[
   {id:'greet', slots:['yes','no','hello','bye','thanks'], pos:'x',   feats:[]},
-  {id:'pron',  slots:['i','you','he','we','youpl','they'], pos:'n',  feats:[]},
+  {id:'pron',  slots:['i','you','he','we','youpl','they'], pos:'pro', feats:[]},
   {id:'order', slots:[], pos:'v', feats:['order']},
-  {id:'num',   slots:[], pos:'n', feats:['num']},
-  {id:'time',  slots:[], pos:'v', feats:['past']},
-  {id:'neg',   slots:[], pos:'v', feats:['neg']},
-  {id:'ask',   slots:['what','who','where','when'], pos:'x', feats:['q']},
-  {id:'desc',  slots:[], pos:'adj', feats:['adj']},
-  {id:'have',  slots:[], pos:'n', feats:['poss']},
+  {id:'noun',  slots:[], pos:'n',  feats:[]},
+  {id:'verb',  slots:[], pos:'v',  feats:[]},
+  {id:'neg',   slots:['not'], pos:'part', feats:[]},
+  {id:'ask',   slots:['what','who','where','when','why','how'], pos:'pro', feats:[]},
+  {id:'desc',  slots:[], pos:'adj', feats:[]},
+  {id:'have',  slots:[], pos:'n', feats:[]},
   /* The numbers are numerals, which read the same in every language on the
      list, so they are the one set of labels that needs no translating. */
-  {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'x', feats:[]}
+  {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num', feats:[]},
+  {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
+  {id:'part',  slots:[], pos:'part', feats:[]},
+  {id:'polite',slots:[], pos:'x',  feats:[]},
+  {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:[]},
+  {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]}
 ];
 function stAll(){
   var out=STAGES.slice(), i;
@@ -100,9 +134,14 @@ function stFeatsDone(p){
   for(i=0;i<p.feats.length;i++) if(stTouched(p.feats[i])) n++;
   return n;
 }
-function stTotal(p){ return p.slots.length + p.feats.length; }
-function stFilled(p){ return stSlotsDone(p) + stFeatsDone(p); }
-function stIsDone(p){ return stTotal(p)>0 && stFilled(p)>=stTotal(p); }
+function stTotal(p){ return p.slots.length + p.feats.length + 1; }
+/* The +1 is the part itself: something written about it, or a line showing
+   it. A part with no words and no buttons -- politeness, particles -- is
+   finished when you have said what it does, which is the only thing it could
+   ever have meant. */
+function stSaid(p){ return (stRules(p.id).length || stEx(p.id).length)? 1 : 0; }
+function stFilled(p){ return stSlotsDone(p) + stFeatsDone(p) + stSaid(p); }
+function stIsDone(p){ return stFilled(p)>=stTotal(p); }
 function stCount(){
   var a=stAll(), n=0, i;
   for(i=0;i<a.length;i++) if(stIsDone(a[i])) n++;
@@ -221,59 +260,47 @@ function stDelOwn(id){
 
 /* ---- the note a stage carries ----------------------------------------- */
 function stNote(id, v){ STG.notes[id]=String(v||''); saveStg(); }
-
-/* ---- the line a stage makes possible ----------------------------------
-   Built from the words that exist by the end of it, in this language's own
-   order, so finishing a stage is finishing something you can say. */
-function stLine(p){
-  var i, w, out=[];
-  function add(x){ if(x) out.push({s:wPh(x), g:wMn(x)||String(x.hw)}); }
-  if(p.id==='greet'){ add(stWordFor(p,'hello')); }
-  else if(p.id==='pron'){ add(stWordFor(p,'i')); }
-  else if(p.id==='count'){ for(i=0;i<3;i++) add(stWordFor(p,String(i+1))); }
-  else if(p.own){ for(i=0;i<p.slots.length && i<3;i++) add(stWordFor(p,p.slots[i])); }
-  else {
-    /* everything from the word order onwards is a sentence, so it is built
-       the way the sentence screen builds one: subject, object, verb, in the
-       order this language puts them */
-    var pr=stBy('pron'), subj = pr? stWordFor(pr,'i') : null;
-    var verb=null, obj=null, adj=null;
-    for(i=0;i<WORDS.length;i++){
-      w=WORDS[i];
-      if(!verb && w.pos==='v') verb=w;
-      if(!obj && w.pos==='n' && w!==subj && !w.slot) obj=w;
-      if(!adj && w.pos==='adj') adj=w;
-    }
-    if(!subj || !verb) return null;
-    var slot={S:subj, O:obj, V:verb}, seq=orderDef().seq;
-    for(i=0;i<seq.length;i++) if(slot[seq[i]]) add(slot[seq[i]]);
-    if(p.id==='num' && out.length) out[0]={s:gMark(out[0].s,'num')[0], g:out[0].g+' · '+t('gram.pair.many')};
-    if(p.id==='time' && verb && gHow('past')!=='none'){
-      var m=gMark(wPh(verb),'past');
-      out[out.length-1]={s:m[0], g:wMn(verb)+' · '+t('gram.pair.past')};
-    }
-    if(p.id==='ask' && gHow('q')!=='none' && gPhOf('q').length){
-      if(gHow('q')==='start') out.unshift({s:gPhOf('q').slice(), g:t('gram.pair.ask')});
-      else out.push({s:gPhOf('q').slice(), g:t('gram.pair.ask')});
-    }
-  }
-  return out.length? out : null;
+/* ---- the rule, and the lines that show it ----------------------------- */
+function stRules(id){ if(!STG.rules) STG.rules={}; return STG.rules[id]||''; }
+function stSetRules(id, v){ if(!STG.rules) STG.rules={}; STG.rules[id]=String(v||''); saveStg(); }
+function stEx(id){ if(!STG.ex) STG.ex={}; if(!STG.ex[id]) STG.ex[id]=[]; return STG.ex[id]; }
+function stAddEx(id){
+  var a=document.getElementById('sx-lb'), b=document.getElementById('sx-ln'),
+      c=document.getElementById('sx-gl');
+  if(!b) return;
+  var ln=String(b.value||'').trim();
+  if(!ln){ toast(t('word.ex.need')); return; }
+  stEx(id).push({lb:String((a&&a.value)||'').trim(), ln:ln, gl:String((c&&c.value)||'').trim()});
+  saveStg(); render();
 }
-function stLineHTML(p){
-  var L=stLine(p);
-  if(!L) return '';
-  var flat=[], txt=[], gl=[], i;
-  for(i=0;i<L.length;i++){ flat=flat.concat(L[i].s); txt.push(L[i].s.join('')); gl.push(L[i].g); }
-  return '<div class="sec">'+t('stg.line')+'</div>'+
-    '<div class="gdemo"><div class="gside">'+
-      '<span class="gsw">'+esc(txt.join(' '))+'</span>'+
-      '<span class="gsi">/'+esc(txt.join(' '))+'/</span>'+
-      '<span class="gsg">'+esc(gl.join(' · '))+'</span>'+
-      '<button class="gsp" onclick="sayPh('+esc(JSON.stringify(flat))+')" aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
-    '</div></div>';
+function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); render(); }
+/* Two lines side by side is the whole of comparing: a label on each says what
+   the pair is a pair of -- 肯定 / 否定 -- and the two read as one thought. */
+function stExHTML(id){
+  var a=stEx(id);
+  return (a.length
+    ? '<div class="exlist">'+a.map(function(e,i){
+        var seq=exSeq(e.ln);
+        return '<div class="exrow">'+
+          '<div class="exb">'+
+            (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
+            '<span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
+            '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
+          (seq.length? '<button class="usep" onclick="sayPh('+esc(JSON.stringify(seq))+')" aria-label="'+
+            esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
+          '<button class="usep" onclick="stDelEx(\''+id+'\','+i+')" aria-label="'+
+            esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button></div>';
+      }).join('')+'</div>'
+    : '')+
+    '<div class="exadd">'+
+      '<input id="sx-lb" class="exsm" placeholder="'+esc(t('stg.ex.lb.ph'))+'" autocomplete="off">'+
+      '<input id="sx-ln" placeholder="'+esc(exHint())+'" autocomplete="off">'+
+      '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
+        'onkeydown="if(event.key===\'Enter\'){event.preventDefault();stAddEx(\''+id+'\');}">'+
+      '<button class="btn ghost" onclick="stAddEx(\''+id+'\')">'+t('word.mn.add')+'</button>'+
+    '</div>';
 }
 
-/* ---- the screens ------------------------------------------------------ */
 /* Which stage is open comes from the trail, so leaving the page and coming
    back lands on the same stage and the back button needs no help. */
 function gOpenOf(){ return (here().r==='gram')? (here().a||null) : null; }
@@ -317,53 +344,40 @@ function stSlotRow(p, k){
 }
 function stDetailHTML(p){
   var i, out='';
-
   out+='<h2 class="sth">'+esc(stTitle(p))+'</h2>';
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
 
+  if(p.feats.length){
+    out+='<div class="sec">'+t('stg.decide')+'</div>';
+    for(i=0;i<p.feats.length;i++) out+=stFeatHTML(p.feats[i]);
+  }
   if(p.slots.length){
     out+='<div class="sec">'+t('stg.words')+'</div>';
     out+='<div class="stslots">';
     for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
     out+='</div>';
   }
-  if(p.feats.length){
-    out+='<div class="sec">'+t('stg.decide')+'</div>';
-    for(i=0;i<p.feats.length;i++) out+=stFeatHTML(p.feats[i]);
-  }
-  out+=stLineHTML(p);
+  out+='<div class="sec">'+t('stg.rules')+'</div>'+
+    '<textarea class="ntbody" style="min-height:130px" placeholder="'+esc(t('stg.rules.ph'))+'" '+
+    'onchange="stSetRules(\''+p.id+'\', this.value)">'+esc(stRules(p.id))+'</textarea>';
+
+  out+='<div class="sec">'+ICON_LINE+t('stg.ex')+'</div>'+stExHTML(p.id);
+
   out+='<div class="sec">'+t('stg.note')+'</div>'+
-    '<textarea class="ntbody" style="min-height:110px" placeholder="'+esc(t('stg.note.ph'))+'" '+
+    '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
     'onchange="stNote(\''+p.id+'\', this.value)">'+esc(STG.notes[p.id]||'')+'</textarea>';
   if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none" onclick="stDelOwn(\''+p.id+'\')">'+
     '<span class="sl" style="color:#c9553f">'+t('stg.own.del')+'</span></button>';
   return out;
 }
-/* One decision, drawn the way the grammar chapter drew it, plus the mark that
-   it has actually been chosen rather than left at its default. */
+/* The one decision left that is a decision: six orders, one answer, and the
+   answer changes every sentence in the language. */
 function stFeatHTML(id){
-  if(id==='order'){
-    return       '<div class="segs">'+ORDERS.map(function(o){
-        return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
-      }).join('')+'</div>'+gOrderLine();
-  }
-  var f=null, i;
-  for(i=0;i<GFEATS.length;i++) if(GFEATS[i].id===id) f=GFEATS[i];
-  if(!f) return '';
-  return '<div class="note">'+t('gram.'+f.id+'.d')+'</div>'+
-    '<div class="segs">'+f.opts.map(function(o){
-      return '<button class="seg'+(o===gHow(f.id)?' on':'')+'" onclick="gSet(\''+f.id+'\',\''+o+'\')">'+
-        esc(gOptLab(f.id, o))+'</button>';
-    }).join('')+'</div>'+
-    (gNeedsPiece(f.id)
-      ? '<button class="gpiece'+(gPhOf(f.id).length?' has':'')+'" onclick="openGramPiece(\''+f.id+'\')">'+
-        '<span class="gpl">'+t('gram.piece')+'</span>'+
-        '<span class="gpv">'+(gPhOf(f.id).length? esc(phIpa(gPhOf(f.id))) : esc(t('gram.piece.none')))+'</span>'+
-        ICON_GO+'</button>'
-      : '')+
-    gDemo(f.id);
+  if(id!=='order') return '';
+  return '<div class="segs">'+ORDERS.map(function(o){
+      return '<button class="seg'+(o===orderDef().id?' on':'')+'" onclick="setOrder(\''+o+'\')">'+o+'</button>';
+    }).join('')+'</div>'+gOrderLine()+gOrderDemo();
 }
-
 function vGram(){
   var gOpen=gOpenOf();
   var p = gOpen? stBy(gOpen) : null;

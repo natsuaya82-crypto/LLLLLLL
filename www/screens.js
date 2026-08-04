@@ -65,9 +65,9 @@ var PAGES={
   words:   {tab:'build', n:'III', k:'toc.words'},
   make:    {tab:'build', n:'III', k:'toc.make'},
   gram:    {tab:'build', n:'IV',  k:'toc.gram'},   /* the numeral is dropped on a single stage */
-  sent:    {tab:'build', n:'V',   k:'toc.sent'},
-  notes:   {tab:'build', n:'VI',  k:'toc.notes'},
-  talk:    {tab:'build', n:'VII', k:'toc.talk'},
+
+  notes:   {tab:'build', n:'V',   k:'toc.notes'},
+  talk:    {tab:'build', n:'VI',  k:'toc.talk'},
   settings:{tab:'home',  k:'set.title'},
   set:     {tab:'home'},
   plans:   {tab:'home',  k:'plans.title'}
@@ -602,7 +602,6 @@ function nextStep(){
   if(n===0 && !scriptEnough()){ act="go('sound')"; label=t('next.sc0'); }
   else if(n===0){ act="openAdd()"; label=t('next.w0'); }
   else if(n<5){ act="openAdd()"; label=t('next.w1', 5-n); }
-  else if(LINES.length===0){ act="go('sent')"; label=t('next.s0'); }
   else { act="go('make')"; label=t('next.mk'); }
   return '<button class="nextcard" onclick="'+act+'">'+
     '<span class="nk">'+t('next.t')+'</span>'+
@@ -823,9 +822,8 @@ function vBuild(){
     ['II', t('toc.letters'),'letters', LETTERS.length? (ltShaped()+' / '+LETTERS.length):'—'],
     ['III',t('toc.words'),  'words',   WORDS.length? tn('count.words', WORDS.length):'—'],
     ['IV', t('toc.gram'),   'gram',    stCount()+' / '+stAll().length],
-    ['V',  t('toc.sent'),   'sent',    LINES.length? tn('count.lines', LINES.length):'—'],
-    ['VI', t('toc.notes'),  'notes',   NOTES.length? tn('count.notes', NOTES.length):'—'],
-    ['VII',t('toc.talk'),   'talk',    TALK.length? tn('count.turns', TALK.length):'—']
+    ['V',  t('toc.notes'),  'notes',   NOTES.length? tn('count.notes', NOTES.length):'—'],
+    ['VI', t('toc.talk'),   'talk',    TALK.length? tn('count.turns', TALK.length):'—']
   ];
   return '<div class="view">'+
     '<div class="navtop"><span class="navt">'+esc(t('tab.build'))+'</span></div>'+
