@@ -40,18 +40,16 @@ function openNote(i){
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   noteAt=k;
   var n = k>=0 ? NOTES[k] : {t:'',b:''};
-  document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>'+(k>=0? t('notes.edit') : t('notes.new'))+'</h3>'+
+  openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
     '<div class="field"><label>'+t('notes.t')+'</label>'+
       '<input id="nt-t" value="'+esc(n.t||'')+'" placeholder="'+esc(t('notes.t.ph'))+'"></div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'">'+esc(n.b||'')+'</textarea></div>'+
     '<button class="btn" style="width:100%;margin-top:6px" onclick="saveNote()">'+t('notes.save')+'</button>'+
     (k>=0? '<button class="set" style="margin-top:10px;border-bottom:none" onclick="delNote()">'+
-      '<span class="sl" style="color:#c9553f">'+t('notes.del')+'</span></button>' : '');
-  document.getElementById('sbg').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
+      '<span class="sl" style="color:#c9553f">'+t('notes.del')+'</span></button>' : ''));
 }
+FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 function saveNote(){
   var a=document.getElementById('nt-t'), b=document.getElementById('nt-b');
   if(!a||!b) return;

@@ -125,13 +125,32 @@ function scriptDrawn(L){
    the sounds and the font draws the one letter. That is how "ka" becomes a
    single syllabary letter, and how a whole word becomes a single logograph.
    Longer ligatures are offered first, so ka.i does not win over kai. */
+/* A letter you have not drawn gets NO glyph. It used to get GPLACE, the dashed
+   placeholder box the editor draws on an empty canvas -- so a font built from
+   three letters out of eleven put a box where the other eight belonged, and a
+   three-letter word came out as one letter and two boxes. 「なんで、1単語に1文字用
+   の四角が出てくるの？」 That is what it was.
+
+   With no glyph there is no code point, so the browser falls through to the
+   serif underneath and writes that letter in roman. A half-drawn script shows
+   the half that exists and the rest legibly, which is the only useful thing to
+   do while a script is being drawn -- and it is being drawn for a long time.
+
+   The one place a placeholder is still unavoidable: a syllabary letter for
+   "ka" is reached by a ligature over k and a, and an OpenType ligature can
+   only fire over glyphs that exist. If "ka" is drawn but "k" alone is not --
+   which is normal in a syllabary, where k alone is not a letter -- k needs a
+   glyph for the rule to be written against. Those get the placeholder, and
+   only those. */
 function scriptGlyphDefs(){
-  var L=scriptLetters(), have={}, defs=[], ligs=[], need=[];
-  L.forEach(function(r){ have[r]=1; });
+  var L=scriptLetters(), have={}, defs=[], ligs=[], need=[], drawn={};
+  L.forEach(function(r){ have[r]=1; if(wsHasStrokes(r)) drawn[r]=1; });
+  /* components of a drawn multi-character unit, and nothing else */
   L.forEach(function(r){
-    if(r.length>1) r.split('').forEach(function(c){ if(!have[c]){ have[c]=1; need.push(c); } });
+    if(r.length>1 && drawn[r])
+      r.split('').forEach(function(c){ if(!have[c] && !drawn[c]){ have[c]=1; need.push(c); } });
   });
-  L.concat(need).sort().forEach(function(r){
+  L.filter(function(r){ return drawn[r]; }).concat(need).sort().forEach(function(r){
     var st=wsStrokes(r), up=r.toUpperCase();
     defs.push({
       name: glyphKey(r),
@@ -145,6 +164,7 @@ function scriptGlyphDefs(){
   ligs.sort(function(a,b){ return b.n-a.n; });
   return {defs:defs, ligs:ligs};
 }
+function wsHasStrokes(r){ var st=wsStrokes(r); return !!(st && st.length); }
 
 /* Build the font and hand it to the browser as a @font-face. This runs on the
    device, in about a millisecond, and touches no network. */
@@ -573,6 +593,10 @@ function geSave(){
      saved, and it does not get left behind for the next press to trip on. */
   var keep=GE.st.filter(function(s){ return s.pts.length>1; });
   if(keep.length) SCRIPT.g[GE.r]=keep; else delete SCRIPT.g[GE.r];
+  /* Drawing a letter is asking for your own writing. Only onboarding ever set
+     this, so every letter drawn in the letters chapter went into a font that
+     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
+  if(keep.length) SET.myfont=true;
   var i=SCRIPT.extra.indexOf(GE.r);
   if(i>=0 && keep.length) SCRIPT.extra.splice(i,1);   /* it is a real letter now */
   save();
@@ -1249,6 +1273,7 @@ function render(){
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
   var v = route==='build'? vBuild()
         : route==='find' ? vFind()
+        : route==='form' ? vForm()
         : route==='words'? vWords()
         : route==='sound'? vSound()
         : route==='gram' ? vGram()
@@ -1280,6 +1305,7 @@ function render(){
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
   if(route==='sound') geTiles();
+  if(route==='form') formMount();
 }
 migratePh();
 migrateMn();

@@ -536,11 +536,27 @@ html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
    not the meaning, not the kana. The sentence screen counts twice — the chips
    you are weaving and the line they read as — and it was the one place the
    switch used to miss. */
+/* Everywhere a word of this language is written, it is written in this
+   language's letters. The list was five places and the app has fifteen: the
+   words a grammar stage holds, the sentence a word is used in, a proposed
+   word, the word being built out of sounds, the demonstration under a
+   grammar decision. A letter that has not been drawn falls through to the
+   serif underneath, which is what a font stack is for -- so a half-drawn
+   script shows the half that exists instead of nothing at all. */
 html[data-script="on"] .hw,
 html[data-script="on"] .line,
 html[data-script="on"] .tname,
 html[data-script="on"] .wcw,
 html[data-script="on"] .sww,
+html[data-script="on"] .psw,
+html[data-script="on"] .usew,
+html[data-script="on"] .lcs,
+html[data-script="on"] .whw,
+html[data-script="on"] .cw,
+html[data-script="on"] .gsw,
+html[data-script="on"] .gor,
+html[data-script="on"] .seq,
+html[data-script="on"] .st-seq,
 html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacing:0}
 .sfont{font-family:'LinguaScript',serif}
 </style>

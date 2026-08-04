@@ -325,8 +325,10 @@ const R = await pg.evaluate(() => {
   const routes = views.map(v => v.slice(1).toLowerCase());
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
+  /* openForm is the mechanism every one of these goes through, not a screen
+     of its own; calling it with a stub argument renders that argument. */
   const opens  = Object.keys(window).filter(k =>
-    /^open[A-Z]/.test(k) && typeof window[k] === 'function');
+    /^open[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'openForm');
   const callOpen = (o) => (window[o].length ? window[o]('Aelin') : window[o]());
   out.walked = views.concat(opens).concat(['vOb']).sort();
   if (views.length < 5) out.miss.push('only found ' + views.length + ' views — the view discovery is broken');
@@ -408,7 +410,14 @@ const R = await pg.evaluate(() => {
   const zz = {};
   Object.keys(LANG.en.str).forEach(k => { zz[k] = mirror(LANG.en.str[k]); });
   defLang('zz', { label: 'ZZ', rdName: mirror('reading'), all: mirror('all'),
-    pos: {n: mirror('noun'), v: mirror('verb'), adj: mirror('adjective'), x: mirror('other')},
+    /* Mirrored from English's own table rather than written out here, so
+       adding a part of speech cannot leave the pseudo-language behind and
+       have the key itself come out as plain text on the screen. */
+    pos: (function(){
+      const o = {}, en = LANG.en.pos;
+      Object.keys(en).forEach(k => { o[k] = mirror(en[k]); });
+      return o;
+    })(),
     read: LANG.en.read, str: zz });
 
   /* Plain letters that are allowed to stay plain: the app's name, the names of
@@ -492,8 +501,14 @@ const R = await pg.evaluate(() => {
       WORDS = keep; LINES = keepL;
     });
   });
+  /* The sheets are pages now, so what they render is FORM.html and no longer
+     the sheet element -- which is empty forever. Reading the old place would
+     have quietly stopped checking every form in the app. */
   opens.forEach(o => {
-    try { callOpen(o); look(o, document.getElementById('sheet').innerHTML); } catch (e) {}
+    try {
+      callOpen(o);
+      look(o, (typeof FORM !== 'undefined' && FORM) ? FORM.html : '');
+    } catch (e) {}
   });
   try { closeSheet(); } catch (e) {}
 

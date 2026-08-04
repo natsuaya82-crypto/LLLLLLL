@@ -153,8 +153,7 @@ function openSlot(pid, k){
   stSeq = had? wPh(had).slice() : [];
   stSug=[];
   var mine=addedSnd();
-  document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>'+esc(stSlotLabel(p, stSlot))+'</h3>'+
+  openForm('slot:'+p.id+'/'+stSlot, stSlotLabel(p, stSlot),
     '<div class="note" style="margin-bottom:12px">'+t('stg.make.d')+'</div>'+
     '<div class="seqbox"><span class="seq" id="st-seq"></span>'+
       '<button class="seqdel" id="st-back" onclick="stBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
@@ -167,11 +166,10 @@ function openSlot(pid, k){
       : '<div class="note">'+t('add.ph.none')+'</div>')+
     '<button class="btn" id="st-keep" style="width:100%;margin-top:14px" onclick="stKeep()" disabled>'+t('stg.keep')+'</button>'+
     (had? '<button class="set" style="margin-top:10px;border-bottom:none" onclick="stDrop()">'+
-      '<span class="sl" style="color:#c9553f">'+t('stg.drop')+'</span></button>' : '');
-  document.getElementById('sbg').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
-  stPaint(); phkMount();
+      '<span class="sl" style="color:#c9553f">'+t('stg.drop')+'</span></button>' : ''),
+    function(){ stPaint(); phkMount(); });
 }
+FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i), a.slice(i+1)); };
 function stKeep(){
   if(!stFor || !stSeq.length) return;
   var hw=stSeq.join(''), key=stFor.id+'.'+stSlot, had=stWordFor(stFor, stSlot);
@@ -193,17 +191,15 @@ function stDrop(){
 
 /* ---- a stage of your own ---------------------------------------------- */
 function openOwnPhase(){
-  document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>'+t('stg.own.h')+'</h3>'+
+  openForm('own:', t('stg.own.h'),
     '<div class="note" style="margin-bottom:12px">'+t('stg.own.d')+'</div>'+
     '<div class="field"><label>'+t('stg.own.title')+'</label>'+
       '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
-    '<button class="btn" style="width:100%;margin-top:6px" onclick="stAddOwn()">'+t('stg.own.add')+'</button>';
-  document.getElementById('sbg').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
+    '<button class="btn" style="width:100%;margin-top:6px" onclick="stAddOwn()">'+t('stg.own.add')+'</button>');
 }
+FORM_OPEN.own=function(){ openOwnPhase(); };
 function stAddOwn(){
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;

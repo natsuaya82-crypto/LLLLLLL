@@ -227,8 +227,8 @@ function openAdd(from){
   addFrom = par? String(par.hw) : '';
   if(par) addSeq=wPh(par).slice();
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
-  document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>'+(addFrom? t('add.title.from', esc(addFrom)) : t('add.title'))+'</h3>'+
+  openForm('add:'+addFrom,
+    (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div class="note" style="margin-bottom:12px">'+(addFrom? t('add.note.from') : t('add.note'))+'</div>'+
     '<div class="seqbox"><span class="seq" id="f-seq"></span>'+
       '<button class="seqdel" id="f-back" onclick="addBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
@@ -241,17 +241,10 @@ function openAdd(from){
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
     '<div id="sugwrap">'+sugHTML()+'</div>'+
-    '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">'+t('add.btn')+'</button>'+
-    '';
-  document.getElementById('sbg').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
-  addPaint(); phkMount();
+    '<button class="btn" style="width:100%;margin-top:6px" onclick="addOne()">'+t('add.btn')+'</button>',
+    function(){ addPaint(); phkMount(); });
 }
-function closeSheet(e){
-  if(e && e.target && e.target.id!=='sbg') return;
-  document.getElementById('sbg').classList.remove('on');
-  document.getElementById('sheet').classList.remove('on');
-}
+FORM_OPEN.add=function(from){ openAdd(from||''); };
 function pv(){ addPaint(); }
 function sayField(){ if(addSeq.length) sayPh(addSeq); }
 function addOne(){
@@ -401,12 +394,10 @@ function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw;
   wEdit={seq:wPh(w).slice(), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
-  document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><div id="wd-body">'+wdBodyHTML()+'</div>';
-  document.getElementById('sbg').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
-  phkMount();
+  openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdBodyHTML()+'</div>',
+           function(){ phkMount(); });
 }
+FORM_OPEN.word=function(hw){ openWord(hw); };
 function wdKey(sym){ sayOne(sym); wEdit.seq.push(sym); wdPaint(); }
 function wdBack(){ wEdit.seq.pop(); wdPaint(); }
 function wdAddMn(){
@@ -473,14 +464,12 @@ function exportCSV(){
   }catch(e){ toast(t('toast.exportfail')); }
 }
 function openImport(){
-  document.getElementById('sheet').innerHTML=
-    '<div class="grip"></div><h3>'+t('csv.title')+'</h3>'+
+  openForm('csv:', t('csv.title'),
     '<div class="note" style="margin-bottom:10px">'+t('csv.note')+'</div>'+
     '<div class="field"><textarea id="f-csv" placeholder="'+t('csv.ph')+'"></textarea></div>'+
-    '<button class="btn" style="width:100%" onclick="doImport()">'+t('csv.btn')+'</button>';
-  document.getElementById('sbg').classList.add('on');
-  document.getElementById('sheet').classList.add('on');
+    '<button class="btn" style="width:100%" onclick="doImport()">'+t('csv.btn')+'</button>');
 }
+FORM_OPEN.csv=function(){ openImport(); };
 function doImport(){
   var src=document.getElementById('f-csv').value, n=0;
   src.split(/\r?\n/).forEach(function(line){

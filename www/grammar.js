@@ -181,7 +181,7 @@ function openGramPiece(id){
   gPhFor = known ? id : GFEATS[1].id;
   gPhSeq = gPhOf(gPhFor).slice();
   var mine=addedSnd();
-  showSheet('<h3>'+t('gram.piece.h')+'</h3>'+
+  openForm('gpiece:'+gPhFor, t('gram.piece.h'),
     '<div class="note" style="margin-bottom:12px">'+t('gram.piece.d', esc(t('gram.'+gPhFor+'.t')))+'</div>'+
     '<div class="seqbox"><span class="seq" id="gp-seq"></span>'+
       '<button class="seqdel" id="gp-back" onclick="gPhBack()" disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
@@ -192,10 +192,11 @@ function openGramPiece(id){
           return phkHTML(x, 'gPhKey(\''+x+'\')'); }).join('')+'</div>'+
         '<button class="btn" style="width:100%;margin-top:14px" onclick="gPhSave()">'+t('gram.piece.set')+'</button>'
       : '<div class="note">'+t('add.ph.none')+'</div>'+
-        '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="closeSheet({target:{id:\'sbg\'}});go(\'sound\')">'+
-        esc(t('toc.sound'))+'</button>'));
-  gPhPaint(); phkMount();
+        '<button class="btn ghost" style="width:100%;margin-top:8px" onclick="go(\'sound\')">'+
+        esc(t('toc.sound'))+'</button>'),
+    function(){ gPhPaint(); phkMount(); });
 }
+FORM_OPEN.gpiece=function(id){ openGramPiece(id); };
 
 /* ---- the screen -------------------------------------------------------- */
 /* Word order, written as the three roles in the order chosen, with the drawn

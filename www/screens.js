@@ -54,6 +54,7 @@ var PAGES={
   home:    {tab:'home'},
   build:   {tab:'build', k:'tab.build'},
   find:    {tab:'find',  k:'tab.find'},
+  form:    {tab:'build'},
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
   glyph:   {tab:'build', n:'I'},
   words:   {tab:'build', n:'II',  k:'toc.words'},
@@ -71,6 +72,12 @@ function pageName(r, a){
      letter you are drawing, the stage you are in -- not the chapter it
      belongs to, which the back button already says. */
   if(r==='glyph') return a? String(a) : t('toc.sound');
+  /* A form is named after what it is a form for -- the word, the note, the
+     slot -- which the opener knows and nothing else does. */
+  if(r==='form'){
+    if(FORM && FORM.key===a && FORM.title) return FORM.title;
+    return t('tab.build');
+  }
   if(r==='gram' && a){
     var st=(typeof stBy==='function')? stBy(a) : null;
     if(st) return stTitle(st);
@@ -114,7 +121,17 @@ function toast(m){
    idea as the reading approximation.
    Without this, translating the interface would leave the old language
    frozen inside every dictionary anyone had already written. */
-var POS=['n','v','adj','x'];
+/* Four was not a language's worth. 「品詞は3種類しかないんですか？は？」 -- it was
+   four, three of them plus "other", which is the same complaint. A language
+   being invented needs at least somewhere to put a pronoun, a particle, a
+   conjunction and a name, because those are the words a grammar is made of
+   and they were all landing in "other" together.
+
+   The key is what is stored; the label is what that key wears in whichever
+   of the ten interface languages is on screen, so an old dictionary keeps
+   working and a translated one is not frozen in the language it was written
+   in. Nothing is renamed here, so nothing already saved moves. */
+var POS=['n','v','adj','adv','pro','num','part','conj','intj','aff','nm','x'];
 var POS_ALL='*';                       /* the key for "all" */
 function posLabel(k){
   if(k===POS_ALL) return langDef().all;
@@ -594,12 +611,51 @@ function wOut(word){ return (scriptOn() && !myFontOn()) ? inScript(word) : Strin
 /* Nothing is expanded to begin with — the characters of a script appear only
    when you ask for that script, and tapping it again folds them away. */
 var pkScript = '';
-function showSheet(html){
-  var sh=document.getElementById('sheet'); if(!sh) return;
-  sh.innerHTML='<div class="grip"></div>'+html;
-  document.getElementById('sbg').classList.add('on');
-  sh.classList.add('on');
+/* ---- a form is a page --------------------------------------------------
+   Everything you fill in used to slide up from the bottom over the screen you
+   were on: a word, a note, a stage's word, the piece of sound a grammar
+   decision is carried by, a note's whole body. A sheet is the wrong shape for
+   all of them. It is half a screen, the keyboard eats the other half, it has
+   no back button, and you were being asked to write a paragraph in it.
+
+   「単語画面開いて下からスライドして出てくるのやめて欲しい。別ページ遷移で戻るボタンで
+   戻る感じにして」「メモのページも下から出てくるのやめてくんない？そんなんじゃ書きづらい
+   んだけど？」「基本ページ遷移型にしてくれ」
+
+   Each is a page now. What made this cheap is that every opener already built
+   its whole body as one string; only where that string is put has changed,
+   and the paint functions that redraw a piece of it by id still work because
+   the ids are the same. */
+var FORM=null;      /* {key, title, html, mount} — the one being shown */
+var FORM_OPEN={};   /* what rebuilds it when you arrive by the back button */
+function openForm(key, title, html, mount){
+  FORM={key:key, title:title, html:html, mount:mount||null};
+  if(here().r==='form' && here().a===key){ render(); window.scrollTo(0,0); }
+  else go('form', key);
 }
+function formArg(a){
+  var i=String(a||'').indexOf(':');
+  return (i<0)? {kind:String(a||''), rest:''} : {kind:a.slice(0,i), rest:a.slice(i+1)};
+}
+function vForm(){
+  var a=here().a;
+  if(!FORM || FORM.key!==a){
+    var s=formArg(a), f=FORM_OPEN[s.kind];
+    if(f) try{ f(s.rest); }catch(e){}
+    if(!FORM || FORM.key!==a)
+      return '<div class="view">'+navTop('')+'<div class="body">'+
+        '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  }
+  return '<div class="view">'+navTop('')+'<div class="body" id="form-body">'+FORM.html+'</div></div>';
+}
+function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
+/* Kept because a dozen save buttons call it. Closing a form is leaving a page. */
+function closeSheet(e){
+  if(e && e.target && e.target.id!=='sbg') return;
+  if(here().r==='form') back();
+}
+function showSheet(html){ openForm('x:'+(FORM_SEQ++), '', html, null); }
+var FORM_SEQ=0;
 function pkSwitch(id){
   pkScript = (pkScript===id ? '' : id);           /* tap again to fold away */
   var e=document.getElementById('pk-chars'); if(e) e.innerHTML=pkCharsHTML();
@@ -619,7 +675,7 @@ function pkCharsHTML(){
 function openPick(p){
   pkFor=p;
   var cur=chOf(p);
-  showSheet('<h3>'+t('ch.for', esc(p))+'</h3>'+
+  openForm('pick:'+p, t('ch.for', p),
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
       'onkeydown="if(event.key===\'Enter\'){event.preventDefault();takeOwn();}">'+
     '<button class="btn" onclick="takeOwn()">'+t('script.set')+'</button></div>'+
@@ -630,6 +686,7 @@ function openPick(p){
     }).join('')+'</div>'+
     '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
 }
+FORM_OPEN.pick=function(x){ openPick(x); };
 function setCh(p, ch){
   var m=scriptMap();
   ch=String(ch||'').trim();
@@ -888,7 +945,10 @@ function setSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
    dictionary and an indent alone cannot say it. */
 function entryHTML(w, kid){
   var mns=wMns(w), kids=wKids(w), par=wParent(w), mn;
-  if(!mns.length) mn='<span class="nomn">'+esc(t('sent.nomean'))+'</span>';
+  /* A missing meaning in a dictionary row is something to do, not a fact to
+     report -- 「意味のところにまだ決めてないって書くのやめてくんない？」. As the name
+     of a filter it stays "no meaning", because there it does describe a set. */
+  if(!mns.length) mn='<span class="nomn">'+esc(t('words.addmn'))+'</span>';
   else if(mns.length===1) mn=esc(mns[0]);
   else mn=mns.map(function(m,i){
     return '<span class="sn">'+(i+1)+'</span>'+esc(m); }).join(' ');
