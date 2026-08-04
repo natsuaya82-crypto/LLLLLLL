@@ -2,9 +2,8 @@
 -- Lingua — what the server holds, and who may touch it.
 --
 -- NOT APPLIED. This is for reading before it is run once against an empty
--- project. Closing an account asks the person which of two things they mean;
--- locked accounts come later, and the note on the post policy says what they
--- will cost. One thing is still open and is marked ASK.
+-- project. Locked accounts come later, and the note on the post policy says
+-- what they will cost.
 --
 -- The rule this file exists to enforce is the one that ends a small app if it
 -- is wrong: row level security. Every table below denies everything by default
@@ -39,30 +38,25 @@ create table profile (
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
 --
--- Closing an account asks which of two things it means, because it means both
--- to different people: keep the language, or take it with you. So this is not
--- a foreign key behaviour at all -- see account_close() at the foot of this
--- file. owner is `on delete set null` because that is the outcome that
--- destroys nothing; the destructive answer deletes the languages first, on
--- purpose, and never happens as a side effect of removing a person.
+-- Deleting an account deletes this too. There is no half-deleted language
+-- with no owner waiting to be reclaimed: coming back later is what signing
+-- out is for, and signing out leaves everything exactly where it was. The two
+-- were one thing here for a while, and a delete that quietly kept your work
+-- is a delete that lied.
 --
--- A kept language has no owner and cannot be edited by anyone, which is right
--- until its author comes back. claim is the sha-256 of a code handed to them
--- once as they leave: language_claim() takes it and makes the language theirs
--- again. Keeping a language is close to logging out, and this is the password
--- for the door back in. We store the hash, so a copy of this database is not
--- a set of keys to everybody's abandoned work.
+-- What this cannot reach: a copy already on somebody else's phone. A language
+-- is published by being copied, and a reader who downloaded yours has it. The
+-- promise a person can be given is that it goes from here, which is the only
+-- promise that is true.
 create table language (
   id           uuid primary key default gen_random_uuid(),
-  owner        uuid references profile(id) on delete set null,
+  owner        uuid not null references profile(id) on delete cascade,
   name         text not null default '',
   -- what the author says others may do with the font and the glyphs. The app
   -- shows this; it does not enforce it. We are the record, not the arbiter.
   license      text not null default 'ask'
                check (license in ('ask', 'personal', 'free')),
   published_at timestamptz,
-  retired_at   timestamptz,
-  claim        text,
   created_at   timestamptz not null default now()
 );
 create index language_owner_idx on language(owner);
@@ -88,13 +82,6 @@ create index publication_language_idx on publication(language, at desc);
 -- a record of an utterance and the author of the language may redraw a letter
 -- tomorrow. The outlines are stored once per post and referenced per letter,
 -- so a long post in a 30-letter alphabet carries 30 shapes, not 300.
--- ASK: a post goes when its author does, even when they chose to keep the
--- language. That is the careful way round -- a post is a person speaking, and
--- "delete my account" ought to mean it -- but it leaves a kept language with
--- no examples in it, and examples are most of what makes a language readable
--- to somebody learning it. The other answer is author becoming nullable and
--- set null on the keep path: the words stay as a corpus, the person does not.
--- Worth deciding on purpose rather than by which line was easier to write.
 create table post (
   id         uuid primary key default gen_random_uuid(),
   author     uuid not null references profile(id) on delete cascade,
@@ -213,64 +200,25 @@ create policy follow_drop on follow for delete using (is_member() and follower =
 
 
 -- ---------------------------------------------------------------------------
--- Leaving, and coming back
+-- Leaving
 --
--- These run as the definer because closing an account reaches auth.users,
--- which no ordinary policy can. Both are the only writes in this file that a
--- person cannot express as a plain insert or update, and that is on purpose:
--- irreversible things should be one named act with one argument, not a
--- sequence a client could get half-way through.
+-- Signing out is not here, because signing out is not a change to anything:
+-- the account stays, the languages stay, and signing back in finds them. Only
+-- deletion needs writing down, and only because it reaches auth.users, which
+-- no policy in this file can.
+--
+-- It takes no argument. A deletion with options is how the last version of
+-- this ended up with a language that outlived the person who asked for it to
+-- be gone. Everything of theirs goes: the languages cascade from the profile,
+-- the posts and follows and publication records with them.
 -- ---------------------------------------------------------------------------
-
--- keep_languages true  -> published languages stay, unowned and unwritable,
---                         and the returned code is the way back to them. A
---                         language nobody published is deleted either way:
---                         nobody is reading it, and the phone is the original.
--- keep_languages false -> everything of theirs goes, languages first, so it is
---                         a deletion that was asked for rather than a cascade.
-create or replace function account_close(keep_languages boolean)
-returns text
-language plpgsql security definer set search_path = public, extensions as $$
-declare
-  me   uuid := auth.uid();
-  code text;
+create or replace function account_delete()
+returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid();
 begin
   if me is null then raise exception 'not signed in'; end if;
-
-  if keep_languages then
-    code := encode(gen_random_bytes(18), 'hex');
-    delete from language where owner = me and published_at is null;
-    update language
-       set owner = null, retired_at = now(),
-           claim = encode(digest(code, 'sha256'), 'hex')
-     where owner = me;
-  else
-    delete from language where owner = me;
-  end if;
-
-  delete from auth.users where id = me;   -- profile and posts follow it
-  return code;                            -- null when nothing was kept
+  delete from auth.users where id = me;
 end $$;
-revoke all on function account_close(boolean) from public;
-grant execute on function account_close(boolean) to authenticated;
-
--- The way back. A language that was kept becomes yours again, and the code
--- stops working the moment it is used.
-create or replace function language_claim(code text)
-returns uuid
-language plpgsql security definer set search_path = public, extensions as $$
-declare
-  me  uuid := auth.uid();
-  got uuid;
-begin
-  if me is null then raise exception 'not signed in'; end if;
-  update language
-     set owner = me, retired_at = null, claim = null
-   where owner is null
-     and claim = encode(digest(code, 'sha256'), 'hex')
-  returning id into got;
-  if got is null then raise exception 'no language answers to that code'; end if;
-  return got;
-end $$;
-revoke all on function language_claim(text) from public;
-grant execute on function language_claim(text) to authenticated;
+revoke all on function account_delete() from public;
+grant execute on function account_delete() to authenticated;
