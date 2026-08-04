@@ -62,4 +62,5 @@ page('talk',     vTalk);
 page('settings', vSettings);
 page('set',      vSet);
 page('world',    vWorld);
+page('langs',    vLangs);
 page('plans',    vPlans);

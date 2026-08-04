@@ -60,6 +60,7 @@ act('go', go);
 act('goIn', goIn);
 act('goPlans', goPlans);
 act('goTab', goTab);
+act('langOpen', langOpen);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
 act('obAgain', obAgain);

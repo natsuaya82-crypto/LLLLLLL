@@ -118,6 +118,19 @@ try{
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
 }catch(e){}
 
+/* Switch which language is open. Order matters: the language that is open
+   when this is called has to be written out before langId changes, or its
+   words end up saved under the language being switched to. */
+function langOpen(id){
+  if(!LANGS[id] || id===langId) return;
+  /* 開いているものを先に書き出す。id を変えてから保存すると、この言語の
+     辞書が相手の id の下に書かれる */
+  save(); saveLetters(); saveNotes(); saveStg(); saveTalk();
+  langId=id; langStore();
+  langRead(); ltRead(); noteRead(); stRead(); tkRead();
+  goTab('home');
+}
+
 function save(){
   try{
     localStorage.setItem(langKey('words'),JSON.stringify(WORDS));

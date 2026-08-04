@@ -480,3 +480,29 @@ function editName(){
   if(v!==null && v.trim()){ langName=v.trim(); save(); render(); }
 }
 
+/* =========================================================================
+   Languages -- which ones are here, and which one is open.
+   LANGS holds every language this device knows about, yours and anyone
+   else's you are reading; langId says which one the rest of the app means
+   by WORDS. Pressing a row is the only way to change that. */
+function langRow(id){
+  var l=LANGS[id]||{}, isOpen=(id===langId);
+  return '<button class="set lrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
+    (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
+    '<span class="sl">'+esc(l.name||t('langs.untitled'))+'</span>'+
+    '<span class="lchk">'+(isOpen?ICON_TICK:'')+'</span></button>';
+}
+function vLangs(){
+  var ids=Object.keys(LANGS), mine=[], reading=[], i;
+  for(i=0;i<ids.length;i++){
+    if(LANGS[ids[i]].mine) mine.push(ids[i]); else reading.push(ids[i]);
+  }
+  var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
+    mine.map(function(id){ return langRow(id); }).join('')+
+    (mine.length && plan()==='free'? '<div class="note">'+esc(t('langs.more'))+'</div>' : '')+
+    '<div class="sec">'+esc(t('langs.reading'))+'</div>'+
+    (reading.length? reading.map(function(id){ return langRow(id); }).join('')
+                    : '<div class="empty"><div class="eb">'+esc(t('langs.none'))+'</div></div>');
+  return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
+}
+

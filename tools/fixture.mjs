@@ -135,6 +135,9 @@ export function halfDone(){
                                                       return vGlyph(); }],
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
-                                          const h=FORM.html; SET.aiN=0; return h; }]
+                                          const h=FORM.html; SET.aiN=0; return h; }],
+    ['a language somebody else is reading', () => { LANGS.L_other={name:'Necwe', mine:false};
+                                                     window.route='langs'; NAV=[{r:'langs'}];
+                                                     const h=vLangs(); delete LANGS.L_other; return h; }]
   ];
 }

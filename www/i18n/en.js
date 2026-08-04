@@ -572,6 +572,14 @@ defLang('en', (function(){
       'set.lock.cloud.d': "Survives a new phone; one dictionary across devices",
       'set.wipe'        : "Erase everything",
       'confirm.wipe'    : "Erase every word you have made and start again?",
+      /* languages */
+      'langs.title'     : "Languages",
+      'langs.mine'      : "Your languages",
+      'langs.reading'   : "Reading",
+      'langs.untitled'  : "Untitled",
+      'langs.open'      : "Open",
+      'langs.more'      : "The free plan holds one language of your own. Plus adds more.",
+      'langs.none'      : "Nothing yet",
       /* plans */
       'plans.title'     : "Plans",
       'plans.intro'     : "Making a language is free, and stays free.<br>What costs money is keeping a great deal of it, and thinking alongside an AI.",

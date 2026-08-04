@@ -76,7 +76,9 @@ function vSet(){
     }).join('')+
     '';
   } else if(id==='lang'){
-    body='<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
+    body='<button class="set"' + DO('go', ["langs"]) + '><span class="sl">'+t('langs.title')+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></button>'+
+      '<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
       '<span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+

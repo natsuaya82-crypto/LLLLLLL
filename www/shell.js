@@ -76,6 +76,7 @@ var PAGES={
   settings:{tab:'home',  k:'set.title'},
   set:     {tab:'home'},
   world:   {tab:'home', k:'wld.title'},
+  langs:   {tab:'home', k:'langs.title'},
   plans:   {tab:'home',  k:'plans.title'}
 };
 function pageName(r, a){
