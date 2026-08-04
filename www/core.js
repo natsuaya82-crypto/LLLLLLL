@@ -123,8 +123,6 @@ try{
    words end up saved under the language being switched to. */
 function langOpen(id){
   if(!LANGS[id] || id===langId) return;
-  /* 開いているものを先に書き出す。id を変えてから保存すると、この言語の
-     辞書が相手の id の下に書かれる */
   save(); saveLetters(); saveNotes(); saveStg(); saveTalk();
   langId=id; langStore();
   langRead(); ltRead(); noteRead(); stRead(); tkRead();

@@ -77,12 +77,23 @@ const br = await chromium.launch(fs.existsSync(CHROME) ? { executablePath: CHROM
 const pg = await br.newPage({ viewport: { width: 390, height: 844 },
                               deviceScaleFactor: 2 });
 await pg.goto(`http://localhost:${PORT}/`);
+/* index.html holds a splash over everything for the later of 900 ms and the
+   first draw, then fades it for another 420. Waiting a fixed moment
+   photographed the splash instead of the screen -- and a picture of the
+   splash looks like a screen that renders, so nothing said otherwise. Wait
+   for it to be gone, and refuse to take the picture if it is not. */
+await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 await pg.evaluate(({ s, ui, dk }) => {
   eval('(' + s + ')()');           /* the fixture, run inside the page */
   SET.done = true;                 /* past the onboarding, which is its own screen */
   SET.ui = ui;
   SET.theme = dk ? 'dark' : 'light';
+  /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
+     document. Setting the one without calling the other photographed the
+     light theme with --dark on the command line, and the picture looked
+     perfectly fine -- which is how it would have gone unnoticed. */
+  if (typeof applyTheme === 'function') applyTheme();
 }, { s: seed.toString(), ui: uiLang, dk: dark });
 
 /* Every route the app has, and every argument each one takes, asked of the
@@ -103,6 +114,10 @@ for (const spec of shots) {
   }, { r, a });
   if (err) { console.error(`  ${spec} threw: ${err}`); continue; }
   await pg.waitForTimeout(120);            /* fonts and any transition settle */
+  const covered = await pg.evaluate(() => !!document.getElementById('splash') ||
+                                          !document.getElementById('app') ||
+                                          !document.getElementById('app').innerHTML.trim());
+  if (covered) { console.error(`  ${spec}: the splash is still up, or #app is empty`); continue; }
   const name = spec.replace(':', '-') + (dark ? '-dark' : '') +
                (uiLang === 'en' ? '' : '-' + uiLang) + '.png';
   const file = path.join(OUT, name);
