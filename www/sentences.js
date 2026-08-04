@@ -36,14 +36,14 @@ function vMake(){
     navTop('')+
     '<div class="body">'+
     '<div class="segs" style="margin-top:10px">'+POS.map(function(p){
-      return '<button class="seg'+(p===mkPos?' on':'')+'"' + DO('setPos', [p]) + '>'+esc(posLabel(p))+'</button>';
+      return '<button class="seg'+(p===mkPos?' on':'')+'"' + DO('mkSetPos', [p]) + '>'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     (cands.length? cands.map(function(c,i){
       return '<div class="cand">'+
-        '<button class="ck'+(c.on?' on':'')+'"' + DO('tog', [i]) + ' aria-label="'+esc(t('make.pick'))+'">'+
+        '<button class="ck'+(c.on?' on':'')+'"' + DO('mkTog', [i]) + ' aria-label="'+esc(t('make.pick'))+'">'+
           '<span class="ckb">'+(c.on?ICON_TICK:'')+'</span></button>'+
         '<span class="cw">'+esc(candHw(c))+'</span><span class="crd">'+esc(readSeq(c.q))+'</span>'+
-        '<button class="rr"' + DO('reroll', [i]) + ' aria-label="'+esc(t('make.one'))+'">'+ICON_AGAIN+'</button>'+
+        '<button class="rr"' + DO('mkReroll', [i]) + ' aria-label="'+esc(t('make.one'))+'">'+ICON_AGAIN+'</button>'+
         '<button class="rr"' + DO('sayPh', [c.q]) + ' aria-label="'+esc(t('sent.say'))+'">'+ICON_PLAY+'</button></div>';
     }).join('') : '<div class="empty"><div class="eb">'+t('make.empty.t')+'</div><div class="es">'+t('make.empty.s')+'</div></div>')+
     (left!==null? '<div class="note" style="margin-top:16px">'+tn('make.left', Math.max(0,left))+'</div>':'')+
@@ -52,18 +52,18 @@ function vMake(){
       '<span class="ld">'+t('make.lock.d')+'</span></span>'+
       '<span class="tag">STUDIO</span></button>')+
     '</div>'+
-    '<div class="barfix"><button class="btn ghost"' + DO('regen') + '>'+t('make.reroll')+'</button>'+
-    '<button class="btn"' + DO('commit') + '>'+t('make.commit')+'</button></div></div>';
+    '<div class="barfix"><button class="btn ghost"' + DO('mkRegen') + '>'+t('make.reroll')+'</button>'+
+    '<button class="btn"' + DO('mkCommit') + '>'+t('make.commit')+'</button></div></div>';
 }
-function setPos(p){ mkPos=p; cands=[]; render(); }
-function tog(i){ cands[i].on=!cands[i].on; render(); }
-function reroll(i){
+function mkSetPos(p){ mkPos=p; cands=[]; render(); }
+function mkTog(i){ cands[i].on=!cands[i].on; render(); }
+function mkReroll(i){
   var A=analyze(), tk=taken();
   cands.forEach(function(c,j){ if(j!==i) tk[candHw(c)]=1; });
   var q=makeWord(mkPos,A,tk); if(q){ cands[i]={q:q, on:cands[i].on}; render(); }
 }
-function regen(){ cands=[]; render(); }
-function commit(){
+function mkRegen(){ cands=[]; render(); }
+function mkCommit(){
   var sel=cands.filter(function(c){return c.on;});
   if(!sel.length){ toast(t('toast.noselect')); return; }
   if(!capOK(sel.length)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }

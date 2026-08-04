@@ -100,6 +100,28 @@ Also: every `.js` under `www/` must be referenced by `index.html`, and every fil
 `index.html` references must be **tracked by git** (not merely present on disk).
 Adding a script file means adding its tag and `git add`-ing it in the same commit.
 
+## Names
+
+A function's prefix says which part of the app it belongs to, and it must be
+telling the truth. The prefix is how 500-odd globals in one namespace stay
+findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
+`tk*` talk, `lt*` letters, `wd*` the word sheet, `add*` the new-word sheet,
+`mk*` the make screen, `wld*` the world, `w*` word data, `words*` the word
+list, `f*` search, `v*` a view, `open*` a form.
+
+`set*` is reserved for settings: it writes `SET.x`, or it builds part of the
+settings screen. It is not the English word "set". `setAbVow` wrote `abVow`
+and never touched `SET` at all — it is `abSetVow`. Thirteen were like that.
+
+Single bare verbs are not names here. `commit`, `tog`, `regen`, `reroll`,
+`wipe`, `choose` said nothing about what they acted on, in a namespace where
+everything is global; they are `mkCommit`, `mkTog`, `mkRegen`, `mkReroll`,
+`wipeAll`, `setPlan`. Watch the case, too: `g*` is grammar (`gOpenOf`), so
+the glyph editor's `gbtn`/`gsnap` are `geBtn`/`geSnap`.
+
+Renaming an acted function means renaming it in `www/act-map.js` **twice** —
+the string and the function — and `act-check` fails on either half alone.
+
 ## Layout
 
 | file | what it is |

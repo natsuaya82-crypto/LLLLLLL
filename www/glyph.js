@@ -70,9 +70,9 @@ var GGRID={n:11, inset:40};
    thinning afterwards is what decides how many points a shape really keeps,
    so this only has to be higher than any real stroke. */
 var GE_MAXPTS=160;
-function gstep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
-function gsnap(v){
-  var s=gstep(), i=Math.round((v - GGRID.inset) / s);
+function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
+function geSnap(v){
+  var s=geStep(), i=Math.round((v - GGRID.inset) / s);
   if(i<0) i=0; if(i>GGRID.n-1) i=GGRID.n-1;
   return Math.round(GGRID.inset + i*s);
 }
@@ -367,8 +367,8 @@ var ICON_SORT='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="
 var ICON_LINE='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 6h16M4 11h16M4 16h9"/></svg>';
-function gicon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
-function gbtn(fn,n,key,en,on){
+function geIcon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
+function geBtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=DO(fn);
   /* A button that can demonstrate itself stays tappable when it is unavailable
      — it goes dim and does nothing, but it still answers "what is this". The
@@ -379,11 +379,11 @@ function gbtn(fn,n,key,en,on){
     act=act+AFTER('ghShow',[n]);
     return '<button data-g="'+n+'"'+act+(en?'':' aria-disabled="true"')+
            (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
-           gicon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
+           geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
   }
   return '<button data-g="'+n+'"'+act+(en?'':' disabled')+
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
-         gicon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
+         geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
 }
 function vGlyph(){
   /* GE is always set by editGlyph before this is routed to; the fallback is
@@ -501,7 +501,7 @@ function geShape(st){
   var raw = (GE.round && GE.raw && GE.rawFor===GE.si && GE.raw.length>3) ? GE.raw : null;
   var p = raw || st.pts, n = p.length;
   if(n<3){ delete st.k; delete st.closed; return; }
-  var step=gstep(), i;
+  var step=geStep(), i;
   var a=p[0], b=p[n-1];
   var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
   /* Whether the gesture came back to where it started, judged against how
@@ -567,7 +567,7 @@ function geShape(st){
 function geLattice(p){
   var out=[], i, x, y, last=null;
   for(i=0;i<p.length;i++){
-    x=gsnap(p[i][0]); y=gsnap(p[i][1]);
+    x=geSnap(p[i][0]); y=geSnap(p[i][1]);
     if(last && last[0]===x && last[1]===y){
       /* keep the roundness if either copy had it */
       if(p[i][2]==='c') last[2]='c';
@@ -620,7 +620,7 @@ function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; rende
    Vertical is untouched: a letter that sits high sits high on purpose, and an
    ascender is not a mistake. */
 function geCentreX(st){
-  var s=gstep(), lo=1e9, hi=-1e9, i, j, p, n;
+  var s=geStep(), lo=1e9, hi=-1e9, i, j, p, n;
   for(i=0;i<st.length;i++) for(j=0;j<st[i].pts.length;j++){
     p=st[i].pts[j][0];
     if(p<lo) lo=p;
@@ -801,7 +801,7 @@ function ghField(x,S,k){
   var i,j;
   x.strokeStyle=cssVar('--line'); x.lineWidth=Math.max(1,k*2.5);
   x.strokeRect(k*10,k*10,S-k*20,S-k*20);
-  var gs=gstep();
+  var gs=geStep();
   x.fillStyle=cssVar('--line2');
   for(i=0;i<GGRID.n;i++) for(j=0;j<GGRID.n;j++){
     x.beginPath();
@@ -936,7 +936,7 @@ function geAt(c,ev){
   var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
   var x=((ev.clientX-b.left)-px)/(w-2*px)*800;
   var y=((ev.clientY-b.top)-py)/(h-2*py)*800;
-  return [gsnap(x), gsnap(y)];
+  return [geSnap(x), geSnap(y)];
 }
 /* Tapping is the whole language of this editor, so the two actions that used
    to be buttons are answers the canvas gives instead:
@@ -1115,9 +1115,9 @@ function geUp(ev){
    same size as everything else a thumb has to hit. */
 function geRail(st, pts){
   return '<div class="gtools">'+
-    gbtn('geCircle','circle','glyph.circle', true, !!GE.round)+
-    gbtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
-    gbtn('geClear','clear','glyph.clear', !!pts, false)+
+    geBtn('geCircle','circle','glyph.circle', true, !!GE.round)+
+    geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
+    geBtn('geClear','clear','glyph.clear', !!pts, false)+
   '</div>';
 }
 
@@ -1171,7 +1171,7 @@ function geDraw(){
   x.strokeRect(k*3,k*3,S-k*6,S-k*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
      along here", and that is the thing being taken away. */
-  var gs=gstep(), gi, gj;
+  var gs=geStep(), gi, gj;
   /* A lattice you cannot see is a lattice that is not there, and this surface
      has one job: to show where a point may land. It has been too faint twice.
      First at 5% white, which reads on a desk and vanishes on a phone. Then at

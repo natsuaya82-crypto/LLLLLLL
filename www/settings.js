@@ -84,7 +84,7 @@ function vSet(){
       '<span class="sv">'+addedSnd().length+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
-      '<button class="set" style="margin-top:18px"' + DO('wipe') + '>'+
+      '<button class="set" style="margin-top:18px"' + DO('wipeAll') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>';
   } else if(id==='acct'){
     body='<button class="set signin google"' + DO('obSignIn') + '><span class="sl">'+MARK_GOOGLE+
@@ -116,11 +116,11 @@ function setUi(l){ SET.ui=l; save(); render(); }
 /* Erase everything means everything. It used to empty the words, the
    sentences and the name and stop there, so the sounds you had chosen, the
    letters you had drawn, the characters you had borrowed and every grammar
-   decision survived a wipe and turned up inside the next language you
+   decision survived a wipeAll and turned up inside the next language you
    started -- which is not a language you made, it is two of them mixed.
    The storage keys are removed rather than overwritten, so nothing can be
    left behind by a shape this version does not know about. */
-function wipe(){
+function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
   WORDS=[]; LINES=[]; langName=''; cands=[]; SUG=[];
   NOTES=[]; TALK=[]; tcomp=[];
@@ -161,13 +161,13 @@ function vPlans(){
         (cur?'<span class="badge">'+t('plan.cur')+'</span>':'')+
         '<span class="pp">'+t(p.price)+'</span></div>'+
         '<div class="pl">'+p.lines.map(function(l){return '· '+t(l);}).join('<br>')+'</div>'+
-        (cur?'':'<button' + DO('choose', [p.id]) + '>'+(p.id==='free'? t('plan.tofree') : t('plan.choose'))+'</button>')+
+        (cur?'':'<button' + DO('setPlan', [p.id]) + '>'+(p.id==='free'? t('plan.tofree') : t('plan.choose'))+'</button>')+
         '</div>';
     }).join('')+
     '<div class="note" style="margin-top:14px">'+t('plans.note')+'</div>'+
     '</div></div>';
 }
-function choose(id){
+function setPlan(id){
   SET.plan=id; save(); render();
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
@@ -269,7 +269,7 @@ function addSpellHTML(){
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
 }
 var addMode='';
-function setAddMode(m){ addMode=m; addRedraw(); }
+function addSetMode(m){ addMode=m; addRedraw(); }
 function addKeys(){
   var mine=addedSnd(), ls=ltTypable();
   var m=addMode || (ls.length? 'lt' : 'ph');
@@ -280,8 +280,8 @@ function addKeys(){
   }
   var rail = (ls.length && mine.length)
     ? '<div class="segs" style="margin-bottom:8px">'+
-      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('setAddMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
-      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('setAddMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
+      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('addSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('addSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
   if(m==='lt' && ls.length)
     return rail+'<div class="phkeys">'+ls.map(function(l){
@@ -428,14 +428,14 @@ function wdKeyMode(){
   if(wdMode) return wdMode;
   return ltTypable().length? 'lt' : 'ph';
 }
-function setWdMode(m){ wdMode=m; wdPaint(); }
+function wdSetMode(m){ wdMode=m; wdPaint(); }
 function wdKeysHTML(){
   var mine=addedSnd(), ls=ltTypable(), m=wdKeyMode();
   if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
   var rail = (ls.length && mine.length)
     ? '<div class="segs" style="margin-bottom:8px">'+
-      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('setWdMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
-      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('setWdMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
+      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('wdSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('wdSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
   if(m==='lt' && ls.length)
     return rail+'<div class="phkeys">'+ls.map(function(l){

@@ -428,7 +428,7 @@ function obSndsHTML(){
     '<button class="obskip"' + DO('obOwnSnd') + '>'+t('as.own')+'</button>'+
     '<div class="mini obnote">'+t('ob.snds.note')+'</div></div>';
 }
-/* The whole chart, for somebody who would rather choose it themselves. It is
+/* The whole chart, for somebody who would rather setPlan it themselves. It is
    the sounds chapter, which is built for exactly this, so onboarding ends
    here and the chapter opens. */
 function obOwnSnd(){
@@ -619,7 +619,7 @@ function nextStep(){
    from the drawing tool without any reader here needing to change.
    ========================================================================= */
 /* Sound -> character. The sound is the key because a sound is what a word is
-   made of; the character is the clothing you choose for it. An entry is a
+   made of; the character is the clothing you setPlan for it. An entry is a
    plain string today and can become {ch, svg} when glyphs can be drawn. */
 /* Which borrowed character writes this unit. It used to be a lookup in a map
    of unit -> character; it is now a question about the letter that writes the
@@ -713,7 +713,7 @@ function pkCharsHTML(){
   var cur=chOf(pkFor), taken=chTaken();
   return w.ch.split(' ').map(function(ch){
     var used=taken[ch] && taken[ch]!==pkFor;
-    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('setCh', [pkFor, ch]) + '>'+esc(ch)+'</button>';
+    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('ltTakeChar', [pkFor, ch]) + '>'+esc(ch)+'</button>';
   }).join('');
 }
 function openPick(lid){
@@ -724,7 +724,7 @@ function openPick(lid){
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
       '' + KD('takeOwn') + '>'+
     '<button class="btn"' + DO('takeOwn') + '>'+t('script.set')+'</button></div>'+
-    (cur? '<button class="pkclear"' + DO('setCh', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
+    (cur? '<button class="pkclear"' + DO('ltTakeChar', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
     '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
       return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'"' + DO('pkSwitch', [w.id]) + '>'+
         '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+esc(t('ws.'+w.id))+'</button>';
@@ -734,14 +734,14 @@ function openPick(lid){
 FORM_OPEN.pick=function(x){ openPick(x); };
 /* pkFor is a letter's id. A borrowed character is one of the two shapes a
    letter can have, so taking one is setting that letter's shape. */
-function setCh(lid, ch){
+function ltTakeChar(lid, ch){
   ltSetChar(lid, ch);
   SET.showScript=true; save(); installScriptFont();
   if(here().r==='form') back(); else render();
 }
 function takeOwn(){
   var e=document.getElementById('own-ch'); if(!e) return;
-  setCh(pkFor, e.value);
+  ltTakeChar(pkFor, e.value);
 }
 /* Characters already spoken for, so the palette can grey them out. */
 /* Characters already spoken for, so the palette can grey them out. Two
@@ -800,7 +800,7 @@ function cvStat(lab, val, r){
   return '<button class="cvst"' + DO('go', [r]) + '><span class="cvv">'+esc(String(val))+'</span>'+
     '<span class="cvl">'+esc(lab)+'</span></button>';
 }
-/* The contents, in the order the work happens: you choose sounds, you give
+/* The contents, in the order the work happens: you setPlan sounds, you give
    them letters, and then there is something a word can be made of. */
 function vBuild(){
   var toc=[
@@ -855,7 +855,7 @@ function vFind(){
     '<div class="navtop"><span class="navt">'+esc(t('tab.find'))+'</span></div>'+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'"' + IN('setFq') + '>'+
+    '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'"' + IN('fSetQ') + '>'+
     '<button class="sx" id="f-x"' + DO('clearFq') + ''+(fq?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
@@ -993,7 +993,7 @@ function findPaint(){
   var x=document.getElementById('f-x');
   if(x){ if(fq) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
-function setFq(v){ fq=v; if(v) fpick=null; findPaint(); }
+function fSetQ(v){ fq=v; if(v) fpick=null; findPaint(); }
 function clearFq(){
   var e=document.getElementById('f-q');
   fq=''; if(e){ e.value=''; e.focus(); }
@@ -1015,8 +1015,8 @@ function clearFq(){
 var WORLDS=['story','people','place','real','play'];
 function world(){ if(!SET.world) SET.world={}; return SET.world; }
 function wldUse(){ var u=world().use; return WORLDS.indexOf(u)>=0? u : ''; }
-function setWldUse(u){ world().use=(wldUse()===u? '' : u); save(); render(); }
-function setWld(k, v){ world()[k]=String(v||''); save(); }
+function wldSetUse(u){ world().use=(wldUse()===u? '' : u); save(); render(); }
+function wldSet(k, v){ world()[k]=String(v||''); save(); }
 function wldSaid(){
   var w=world();
   return !!(wldUse() || (w.where||'').length || (w.who||'').length || (w.note||'').length);
@@ -1032,19 +1032,19 @@ function vWorld(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="sec">'+t('wld.use')+'</div>'+
     '<div class="obscripts one">'+WORLDS.map(function(k){
-      return '<button class="obsrow'+(wldUse()===k?' on':'')+'"' + DO('setWldUse', [k]) + '>'+
+      return '<button class="obsrow'+(wldUse()===k?' on':'')+'"' + DO('wldSetUse', [k]) + '>'+
         '<span class="obnm">'+esc(t('wld.'+k))+'</span>'+
         '<span class="obws">'+esc(t('wld.'+k+'.d'))+'</span></button>';
     }).join('')+'</div>'+
     '<div class="sec">'+t('wld.where')+'</div>'+
     '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
-      'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('setWld', ["where"]) + '></div>'+
+      'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
     '<div class="sec">'+t('wld.who')+'</div>'+
     '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
-      'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('setWld', ["who"]) + '></div>'+
+      'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>'+
     '<div class="sec">'+t('wld.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:140px" placeholder="'+esc(t('wld.note.ph'))+'" '+
-      '' + CH('setWld', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
+      '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
     '</div></div>';
 }
 function editName(){
@@ -1104,7 +1104,7 @@ function wordsBodyHTML(items){
 }
 function wMetaHTML(items){
   return '<span class="wct">'+tn('words.n', items.length)+'</span>'+
-    '<button class="wsrt"' + DO('setSort') + '>'+ICON_SORT+
+    '<button class="wsrt"' + DO('wSetSort') + '>'+ICON_SORT+
       esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>'+
     (items.length>1
       ? '<button class="wsay'+(vxRunning()?' on':'')+'"' + DO('wordsSay') + '>'+
@@ -1117,7 +1117,7 @@ function vWords(){
     navTop(WORDS.length+(has('plus')?'':' / '+FREE_LIMIT))+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('setQ') + '>'+
+    '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+
     /* always in the page, shown when there is something to clear -- typing
        repaints the list, not the header, so a button conjured up by the query
        string would never appear until the screen was left and come back to */
@@ -1125,7 +1125,7 @@ function vWords(){
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+
     '<div class="segs scrollx">'+wFilters().map(function(f){
-      return '<button class="seg'+(wFil===f.k?' on':'')+'"' + DO('setFil', [f.k]) + '>'+esc(f.lab)+'</button>';
+      return '<button class="seg'+(wFil===f.k?' on':'')+'"' + DO('wSetFil', [f.k]) + '>'+esc(f.lab)+'</button>';
     }).join('')+'</div>'+
     '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+'</div>'+
@@ -1141,7 +1141,7 @@ function wordsPaint(){
   var m=document.getElementById('w-meta'); if(m) m.innerHTML=wMetaHTML(items);
   var x=document.getElementById('w-x'); if(x){ if(q) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
-function setQ(v){ q=v; wordsPaint(); }
+function wordsSetQ(v){ q=v; wordsPaint(); }
 /* Clearing leaves the cursor where it was, because clearing a search is
    nearly always the first half of typing a different one. */
 function clearQ(){
@@ -1149,8 +1149,8 @@ function clearQ(){
   q=''; if(e){ e.value=''; e.focus(); }
   wordsPaint();
 }
-function setFil(k){ wFil=k; render(); }
-function setSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
+function wSetFil(k){ wFil=k; render(); }
+function wSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and
    editing is what you do once.
@@ -1233,17 +1233,17 @@ function abVowel(){
   if(vs.indexOf(abVow)>=0) return abVow;
   return vs.length? vs[0] : '';
 }
-function setAbVow(v){ abVow=v; render(); }
+function abSetVow(v){ abVow=v; render(); }
 /* Moving the mark moves the mark, not this one letter: it is one drawing and
    every combination is made out of it. Whole lattice steps, so what was on a
    dot stays on a dot. */
 function abNudge(dx, dy){
   var v=abVowel(), l=ltMain(v);
   if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
-  var s=gstep(), i, j, p;
+  var s=geStep(), i, j, p;
   for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
     p=l.st[i].pts[j];
-    p[0]=gsnap(p[0]+dx*s); p[1]=gsnap(p[1]+dy*s);
+    p[0]=geSnap(p[0]+dx*s); p[1]=geSnap(p[1]+dy*s);
   }
   saveLetters(); installScriptFont(); render();
 }
@@ -1259,7 +1259,7 @@ function abScale(f){
   var cx=(lo[0]+hi[0])/2, cy=(lo[1]+hi[1])/2;
   for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
     p=l.st[i].pts[j];
-    p[0]=gsnap(cx+(p[0]-cx)*f); p[1]=gsnap(cy+(p[1]-cy)*f);
+    p[0]=geSnap(cx+(p[0]-cx)*f); p[1]=geSnap(cy+(p[1]-cy)*f);
   }
   saveLetters(); installScriptFont(); render();
 }
@@ -1272,7 +1272,7 @@ function vAbugida(){
       esc(t('toc.letters'))+'</button></div></div>';
   return '<div class="view">'+navTop(cs.length+' × '+vs.length)+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
-      return '<button class="seg'+(x===v?' on':'')+'"' + DO('setAbVow', [x]) + '>'+esc(x)+'</button>';
+      return '<button class="seg'+(x===v?' on':'')+'"' + DO('abSetVow', [x]) + '>'+esc(x)+'</button>';
     }).join('')+'</div>'+
     (v
       ? '<div class="abmark">'+

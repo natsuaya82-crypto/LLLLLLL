@@ -39,7 +39,7 @@
 var ACT={}, ACT_IN={}, ACT_KEY={};
 function act(name, fn){ ACT[name]=fn; }
 /* Something typed into: the value comes last, after whatever the markup
-   named. IN('setWld',['where']) calls setWld('where', <what was typed>). */
+   named. IN('wldSet',['where']) calls wldSet('where', <what was typed>). */
 function actIn(name, fn){ ACT_IN[name]=fn; }
 /* Enter pressed in a field. */
 function actKey(name, fn){ ACT_KEY[name]=fn; }

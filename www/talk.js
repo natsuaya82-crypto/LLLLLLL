@@ -3,7 +3,7 @@
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
 
    The point of inventing a language is to use it, and there was nowhere in
-   this app where it was used. You could write words, choose sounds, decide a
+   this app where it was used. You could write words, setPlan sounds, decide a
    grammar -- and then close the app, having said nothing to anybody.
 
    So there is somebody here, and the only language it speaks is yours. It has
@@ -192,8 +192,8 @@ function tkWipe(){
   if(!confirm(t('confirm.talk.clear'))) return;
   TALK=[]; tcomp=[]; saveTalk(); render();
 }
-function setTkPos(p){ tkPos=p; render(); }
-function setTkQ(v){
+function tkSetPos(p){ tkPos=p; render(); }
+function tkSetQ(v){
   tq=v;
   var el=document.getElementById('tpal'); if(el) el.innerHTML=tkPal();
 }
@@ -268,10 +268,10 @@ function vTalk(){
     tkGramHTML()+
     '<div class="sec">'+t('sent.choose')+'</div>'+
     '<div class="segs">'+[POS_ALL].concat(POS).map(function(p){
-      return '<button class="seg'+(p===tkPos?' on':'')+'"' + DO('setTkPos', [p]) + '>'+esc(posLabel(p))+'</button>';
+      return '<button class="seg'+(p===tkPos?' on':'')+'"' + DO('tkSetPos', [p]) + '>'+esc(posLabel(p))+'</button>';
     }).join('')+'</div>'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(tq)+'"' + IN('setTkQ') + '></div>'+
+    '<input placeholder="'+esc(t('sent.search'))+'" value="'+esc(tq)+'"' + IN('tkSetQ') + '></div>'+
     '<div class="pal" id="tpal">'+tkPal()+'</div>'+
 
     (TALK.length? '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('tkWipe') + '>'+
