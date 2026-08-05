@@ -213,6 +213,12 @@ const R = await pg.evaluate(() => {
       if (i >= els.length) break;     /* the screen got shorter; nothing left at i */
       const name = els[i].getAttribute('data-do');
       hit[name] = 1;
+      /* A second name on the same press. The click below fires both, so the
+         one in data-do2 is pressed exactly as hard as the one in data-do --
+         it was simply never written down, which made every AFTER name look
+         unreachable forever. */
+      const also = els[i].getAttribute('data-do2');
+      if (also) hit[also] = 1;
       errs = [];
       els[i].click();
       out.pressed++;

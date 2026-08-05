@@ -38,7 +38,22 @@ export function seed(){
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]}];
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
-  fq = ''; fpick = null;
+  /* Every screen that remembers something between renders, put back to what
+     it is on a fresh app. This is not tidiness. press.mjs rebuilds a screen
+     before each press and takes the button at position i, so a filter left on
+     by press i-1 makes the rebuilt screen shorter and every position after it
+     mean something else -- and then the loop runs off the end and stops. The
+     word list starts with 32 buttons, is down to 19 by the sixteenth press,
+     and never reaches the two at the bottom at all.
+
+     act-check walks with the same fixture, so it was counting the same
+     narrowed screens. */
+  q = ''; wFil = '*'; wSort = 'a';        /* the word list: search, filter, order */
+  fq = ''; fpick = null;                  /* the find screen */
+  mkPos = 'n'; cands = [];                /* the make screen */
+  abVow = '';                             /* the abugida editor */
+  addSeq = []; addMode = ''; wdMode = ''; /* the new-word sheet and the word sheet */
+  tq = ''; tkPos = POS_ALL;               /* talk */
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to
@@ -51,7 +66,12 @@ export function obStates(){
     ['characters to borrow',      () => { ob.step = 4; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
     ['no script picked to borrow from', () => { ob.step = 4; ob.mode = 'borrow';
-                                                ob.pick = ''; return vOb(); }]
+                                                ob.pick = ''; return vOb(); }],
+    /* The step where a letter is drawn. Its two buttons -- finish, or skip the
+       drawing -- are the last thing a person touches before the app becomes
+       the app, and nothing had ever pressed either of them. */
+    ['drawing the first letter', () => { ob.step = 4; ob.mode = ''; ob.snd = 'k';
+                                         return vOb(); }]
   ];
 }
 
@@ -77,6 +97,14 @@ export function halfDone(){
                                        return vMake(); }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
+    /* A note that already exists: the delete button only appears once there
+       is something to delete, so a form opened empty never shows it. */
+    ['a note being edited',    () => { openNote(0); return FORM.html; }],
+    /* The new-word sheet has two faces, and the buttons differ on each. */
+    ['a word being added, by letter', () => { openAdd(''); addSetMode('lt');
+                                              return FORM.html; }],
+    ['a word being added, by sound',  () => { openAdd(''); addSetMode('ph');
+                                              return FORM.html; }],
     ['borrowing a character',  () => { window.route='pickltr'; NAV=[{r:'pickltr', a:'l1'}];
                                        pkFor='k'; return vPickLtr(); }],
     ['picking a sound',        () => { window.route='picksnd'; NAV=[{r:'picksnd', a:'l1'}];
