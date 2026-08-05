@@ -107,14 +107,20 @@ canvas.pkc{width:34px;height:34px;display:block}
 .phk.hasg:active .pks{color:var(--gold)}
 /* --- the IPA chart ---------------------------------------------------- */
 .ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
-.ipascroll table{width:674px}
+.ipascroll table{width:734px}
 .ipatab{border-collapse:collapse;width:100%;table-layout:fixed}
 /* The row heading is the name of a manner or a height, and some of those are
-   long words in some of the ten. Fixed at 44px and told not to wrap, they
-   were cut off mid-word; they wrap now, and the chart is wide enough to pay
-   for the extra column. */
+   long words in some of the ten. Fixed at 44px and told not to wrap, they were
+   cut off mid-word. Widening to 58px and adding word-break:break-word stopped
+   the cutting and started the breaking -- "approximant" came out as approxi /
+   mant, and Russian broke ten of its labels that way. English broke two, which
+   is why it read as fixed.
+   108px is the widest single word any of the ten has, measured rather than
+   guessed: полуоткрытый at 102px plus the padding. Nothing may break inside a
+   word now; the chart is wider and it was already a horizontal scroller. */
 .ipatab th{font-size:.82rem;color:var(--txm);font-weight:400;text-align:left;
-           padding:2px 6px 4px 0;white-space:normal;line-height:1.25;width:58px;word-break:break-word}
+           padding:2px 6px 4px 0;white-space:normal;line-height:1.25;width:108px;
+           word-break:normal;overflow-wrap:normal}
 .ipatab td{padding:1px;vertical-align:top}
 .ph2{width:100%;min-height:44px;border:1px solid var(--line);background:var(--sf);
      border-radius:8px;color:var(--txs);font-size:.95rem;padding:6px 0;margin-bottom:2px;display:block}

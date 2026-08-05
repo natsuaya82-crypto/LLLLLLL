@@ -100,8 +100,21 @@ await pg.evaluate(({ s, ui, dk }) => {
    page rather than listed here -- so a screen added tomorrow can be
    photographed tomorrow. */
 const routes = await pg.evaluate(() => Object.keys(PAGES));
+/* A screen is a route AND its argument -- vSet with none takes none of its
+   six branches, vGram with none is the list rather than a stage. --all means
+   all of them, and the list comes from the app the way act-check and
+   i18n-check get theirs, so a stage added tomorrow is photographed tomorrow. */
+const withArgs = await pg.evaluate((rs) => {
+  const argsOf = (r) =>
+    r === 'set'  ? [null].concat(SETS.map((x) => x.id)) :
+    r === 'gram' ? [null].concat(stAll().map((p) => p.id)) :
+    [null];
+  const out = [];
+  rs.forEach((r) => argsOf(r).forEach((a) => out.push(a === null ? r : r + ':' + a)));
+  return out;
+}, routes);
 const shots = all
-  ? routes.map((r) => r)
+  ? withArgs
   : named.length ? named : ['home'];
 
 const made = [];
