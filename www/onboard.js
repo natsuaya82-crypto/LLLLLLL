@@ -42,7 +42,7 @@ var WORLD_SCRIPTS = [
 ];
 
 /* ---- Onboarding -------------------------------------------------------
-   Four steps: the door, one letter drawn, what it reads, the name.
+   Three steps: the door, one letter drawn, the name.
 
    It used to open on a language picker, which is a question the app needs
    answered rather than one anybody came to answer. Then it opened on a
@@ -54,20 +54,24 @@ var WORLD_SCRIPTS = [
    And then it put them on a screen that said: coin your first word. With no
    sounds, no letters and no name, out of nothing.
 
-   The order is: a mark, then what it says. A letter is a thing somebody drew;
-   a sound is something a letter may turn out to read, and may not -- so the
-   drawing comes first and nothing here fastens the two together. The name is
-   last, because a language is easier to name once it has made a mark, and
-   obFinish() can invent one for anybody who skips it. No word is asked for:
-   a word is made of sounds and written in letters, and by the end of this
-   there are both, so the dictionary is somewhere to go rather than somewhere
-   to be sent. */
+   A mark, and then a name. Nothing is asked about sound: the language has an
+   inventory from the moment it exists, and a drawn letter takes the next
+   sound nothing reads yet. Making a script is a substitution on an alphabet
+   somebody already has -- ohayo, annyon, ni hao -- so the sound is carried
+   over rather than answered for, and the reading is corrected on the letter
+   in the glyph editor by anyone who wants a different one.
+
+   The name is last, because a language is easier to name once it has made a
+   mark, and obFinish() can invent one for anybody who skips it. No word is
+   asked for: a word is made of sounds and written in letters, and by the end
+   of this there are both, so the dictionary is somewhere to go rather than
+   somewhere to be sent. */
 var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
 /* How many steps there are, in one place: the dots count them and shot.mjs
    photographs them. It said 5 for as long as there were four, because nothing
    read it -- dead-check finds functions nobody calls, not numbers nobody
    asks. */
-var OB_STEPS=4;
+var OB_STEPS=3;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -149,32 +153,20 @@ function obNameHTML(){
    the title is there whenever the answer arrives. */
 function obNameLater(){ ob.name=''; obFinish(); }
 
-/* ---- step 2, what a letter is a letter of -----------------------------
-   Asked before any letter is drawn, because it decides what drawing one
-   means. Each row says what it is and names a writing that works that way,
-   so the choice is made by recognising something rather than by parsing a
-   definition. */
-
-/* ---- step 3, the sounds -----------------------------------------------
-   It used to be fourteen buttons and no help: pick the sounds your language
-   is made of, from a list somebody chose for you, with no way to hear any of
-   them. Nobody who has not made a language before can answer that.
-
-   So the app proposes. You say what the language should sound like -- soft,
-   hard, flowing, breathy, plain -- and it draws an inventory out of that
-   region of the chart, says the whole thing out loud, and waits. Take it, ask
-   for another, or open the chart and do it yourself. */
-
 /* ---- one letter -------------------------------------------------------
-   Nothing about this letter is decided before it is drawn. The app used to
-   pick a sound out of the inventory, put "the letter for k" at the top, and
-   open the editor already belonging to k -- so the first thing anybody made
-   here was an answer to a question the app had asked itself. What it reads
-   is the next step, and it is a person who says. */
+   The app used to pick a sound out of the inventory, put "the letter for k"
+   at the top, and open the editor already belonging to k -- so the first
+   thing anybody made here was an answer to a question the app had asked
+   itself. Then it asked the question outright on a screen of its own, which
+   was the same question with a longer walk to it.
+
+   It is not asked at all now. ltNew() gives a new letter the next sound
+   nothing reads yet, because that is what making a script is: your K looks
+   like this. The reading is corrected in the glyph editor, on the letter, by
+   typing what it says -- and most people will never need to. */
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  /* a letter of its own, reading nothing yet */
   ob.lid=ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id;
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
@@ -188,39 +180,7 @@ function obTakeCh(ch){
   save(); installScriptFont();
   ob.mode=''; obGo(2);
 }
-function obSkipDraw(){ ob.lid=''; obGo(3); }
-
-/* ---- what it reads ----------------------------------------------------
-   The letter exists and says nothing. Here is where a person gives it a
-   sound, or leaves it for later -- a letter with no sound is a perfectly
-   good letter to have, and the letters chapter lists it as one still to
-   finish.
-
-   Only a sound. Whether a letter is a mark rather than a sound is asked in
-   the glyph editor, next to the letter it is about, and nobody starting a
-   language decides on the third screen that their first letter is a
-   question mark.
-
-   The sounds come from the chart itself rather than from an inventory,
-   because a language that has just been started does not have one yet. The
-   sound picked joins it. */
-function obReads(sym){
-  if(!ob.lid) { obGo(3); return; }
-  var a=addedSnd();
-  if(a.indexOf(sym)<0) a.push(sym);
-  ltLink(ob.lid, sym);
-  save(); installScriptFont(); sayOne(sym);
-  obGo(3);
-}
-function obReadLater(){ obGo(3); }
-function obReadHTML(){
-  return '<div class="mid obleft">'+
-    '<h2 class="obh">'+t('ob.read.h')+'</h2>'+
-    '<p class="obsub">'+t('ob.read.sub')+'</p>'+
-    '<div class="obscroll">'+sndFeelHTML('obReads')+'</div>'+
-    '</div>'+
-    '<div class="obfoot"><button class="obskip"' + DO('obReadLater') + '>'+t('ob.read.later')+'</button></div>';
-}
+function obSkipDraw(){ ob.lid=''; obGo(2); }
 
 function obFinish(){
   /* A language that reached the
@@ -336,7 +296,6 @@ function vOb(){
   var h = (s===0)? obDoorHTML()
         : (s===1 && ob.mode==='borrow')? obBorrowHTML()
         : (s===1)? obDrawHTML()
-        : (s===2)? obReadHTML()
         : obNameHTML();
   return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
 }

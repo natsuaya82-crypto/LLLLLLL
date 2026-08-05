@@ -387,6 +387,8 @@ defLang('fr', (function(){
       "lt.reads"         : "lit {0}",
       "lt.reads.none"    : "ne lit encore rien",
       "lt.reads.h"       : "Lit",
+      "lt.reads.ph"     : "k, sh, ng, ka",
+      "lt.reads.no"     : "Ce n’est pas un son qu’elle peut lire.",
       "lt.name"          : "Nom",
       "lt.name.ph"       : "p. ex. esh",
       "lt.loose"         : "{0} lettres ne lisent encore rien.",
@@ -544,9 +546,6 @@ defLang('fr', (function(){
       "ob.snds.note"      : "Le tableau entier vient après",
       "ob.snds.need"      : "Choisissez un son",
       "ob.draw.h"        : "Dessinez une lettre",
-      "ob.read.h"        : "Que lit-elle ?",
-      "ob.read.sub"        : "Choisissez un son. Vous pouvez décider plus tard.",
-      "ob.read.later"        : "Décider plus tard",
       "ob.draw.later"     : "La dessiner plus tard",
       /* the writing system */
       "script.preview"    : "Votre écriture",

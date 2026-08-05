@@ -255,6 +255,8 @@ defLang('ja', (function(){
       'lt.reads'        : '{0} を読む',
       'lt.reads.none'   : '読みが未設定',
       'lt.reads.h'      : '読み',
+      'lt.reads.ph'     : 'k, sh, ng, ka',
+      'lt.reads.no'     : 'それは読める音ではない。',
       'lt.name'         : '名前',
       'lt.name.ph'      : '例：エシュ',
       'lt.loose'        : '読みのない文字 {0}',
@@ -412,9 +414,6 @@ defLang('ja', (function(){
       'ob.snds.note'    : 'あとで選び直せます',
       'ob.snds.need'    : "音を選んでください",
       'ob.draw.h'      : '字をひとつ描く',
-      'ob.read.h'      : 'これは何を読む？',
-      'ob.read.sub'      : '音を選ぶ。あとで決めてもいい。',
-      'ob.read.later'      : 'あとで決める',
       'ob.draw.later'   : "あとで描く",
       /* the writing system */
       'script.preview'    : "この文字で書くと",

@@ -347,6 +347,8 @@ defLang('zh', (function(){
       "lt.reads"         : "读 {0}",
       "lt.reads.none"    : "还什么都不读",
       "lt.reads.h"       : "读音",
+      "lt.reads.ph"     : "k, sh, ng, ka",
+      "lt.reads.no"     : "这不是它能读的音。",
       "lt.name"          : "名字",
       "lt.name.ph"       : "例：esh",
       "lt.loose"         : "有 {0} 个字还什么都不读。",
@@ -503,9 +505,6 @@ defLang('zh', (function(){
       "ob.snds.note"     : "完整的表在之后",
       "ob.snds.need"     : "请选一个音",
       "ob.draw.h"       : "画一个字",
-      "ob.read.h"       : "它读什么？",
-      "ob.read.sub"       : "选一个音。也可以以后再定。",
-      "ob.read.later"       : "以后再定",
       "ob.draw.later"    : "以后再画",
       /* the writing system */
       "script.preview"    : "你的文字",

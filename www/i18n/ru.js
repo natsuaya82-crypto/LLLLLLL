@@ -342,6 +342,8 @@ defLang('ru', (function(){
       "lt.reads"          : "читает {0}",
       "lt.reads.none"     : "пока ничего не читает",
       "lt.reads.h"        : "Читает",
+      "lt.reads.ph"     : "k, sh, ng, ka",
+      "lt.reads.no"     : "Это не звук, который она может читать.",
       "lt.name"           : "Имя",
       "lt.name.ph"        : "напр. эш",
       "lt.loose"          : "Букв, которые пока ничего не читают: {0}.",
@@ -502,9 +504,6 @@ defLang('ru', (function(){
       "ob.snds.note"      : "Полная таблица будет позже",
       "ob.snds.need"      : "Выберите звук",
       "ob.draw.h"        : "Нарисуйте одну букву",
-      "ob.read.h"        : "Что она читает?",
-      "ob.read.sub"        : "Выберите звук. Можно решить позже.",
-      "ob.read.later"        : "Решить позже",
       "ob.draw.later"     : "Нарисовать позже",
       /* the writing system */
       "script.preview"    : "Ваше письмо",

@@ -518,6 +518,8 @@ defLang('ko', (function(){
       "lt.reads"         : "{0} 을(를) 읽음",
       "lt.reads.none"    : "아직 아무것도 읽지 않음",
       "lt.reads.h"       : "읽는 소리",
+      "lt.reads.ph"     : "k, sh, ng, ka",
+      "lt.reads.no"     : "그것은 읽을 수 있는 소리가 아닙니다.",
       "lt.name"          : "이름",
       "lt.name.ph"       : "예: 에시",
       "lt.loose"         : "아직 아무것도 읽지 않는 문자가 {0}개 있습니다.",
@@ -674,9 +676,6 @@ defLang('ko', (function(){
       "ob.snds.note"    : "전체 표는 나중에",
       "ob.snds.need"    : "소리를 골라 주세요",
       "ob.draw.h"      : "글자를 하나 그리세요",
-      "ob.read.h"      : "무엇을 읽나요?",
-      "ob.read.sub"      : "소리를 고르세요. 나중에 정해도 됩니다.",
-      "ob.read.later"      : "나중에 정하기",
       "ob.draw.later"   : "나중에 그리기",
       /* the writing system */
       "script.preview"    : "내 글씨",

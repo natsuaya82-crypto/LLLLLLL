@@ -425,6 +425,18 @@ function vGlyph(){
       '<button class="'+(role==='snd'?'on':'')+'"' + DO('ltSetRole', [GE.lid, 'snd']) + '>'+t('lt.role.snd')+'</button>'+
       '<button class="'+(role==='mark'?'on':'')+'"' + DO('ltSetRole', [GE.lid, 'mark']) + '>'+t('lt.role.mark')+'</button>'+
     '</div>'+
+    /* What it reads, spelled the way somebody would write it -- k, sh, ng, ka.
+       This is the whole of what anybody is ever asked about a sound: the
+       letter arrived carrying one, and this is where it is corrected. The IPA
+       under the field is what the app made of it, shown rather than chosen. */
+    (role==='snd'
+      ? '<div class="sec">'+t('lt.reads.h')+'</div>'+
+        '<div class="field"><input id="lt-rom" value="'+esc(ltRoman(l))+'" '+
+          'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
+          'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [GE.lid]) + '></div>'+
+        '<div class="note">'+((l && l.snd && l.snd.length)
+          ? '/'+esc(l.snd.join(''))+'/' : t('lt.reads.none'))+'</div>'
+      : '')+
     (role==='mark'
       ? '<div class="field"><label>'+t('lt.mark.key')+'</label>'+
           '<input id="mk-key" maxlength="1" value="'+esc(curKey)+'" placeholder="'+esc(t('lt.mark.none'))+'" '+

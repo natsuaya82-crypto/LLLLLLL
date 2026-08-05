@@ -242,6 +242,8 @@ defLang('en', (function(){
       'lt.reads'        : 'reads {0}',
       'lt.reads.none'   : 'reads nothing yet',
       'lt.reads.h'      : 'Reads',
+      'lt.reads.ph'     : 'k, sh, ng, ka',
+      'lt.reads.no'     : 'That is not a sound this can read.',
       'lt.name'         : 'Name',
       'lt.name.ph'      : 'e.g. esh',
       'lt.loose'        : '{0} letters read nothing yet.',
@@ -401,9 +403,6 @@ defLang('en', (function(){
       'ob.snds.note'    : "The full chart comes later",
       'ob.snds.need'    : "Choose a sound",
       'ob.draw.h'      : 'Draw one letter',
-      'ob.read.h'      : 'What does it read?',
-      'ob.read.sub'      : 'Pick a sound. You can decide later.',
-      'ob.read.later'      : 'Decide later',
       'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.preview'    : "Your writing",

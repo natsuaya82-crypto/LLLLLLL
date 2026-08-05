@@ -82,3 +82,44 @@ function ipaRoman(sym){
   if(IPA_ROMAN[sym]!==undefined) return IPA_ROMAN[sym];
   return /^[a-z]$/.test(sym) ? sym : '';
 }
+
+/* The same ladder, climbed downwards: a spelling somebody typed, read back as
+   sounds. Nobody pictures their script as a set of IPA symbols -- they
+   picture it as an alphabet, and ohayo, annyon and ni hao all come out of one
+   even though none of the three is written in it. So a letter's reading is
+   corrected by typing what it says.
+
+   Not phGuess(): that one answers for words written before the chart existed
+   and has to keep answering the same way forever, or somebody's dictionary
+   changes underneath them. This one is asked live, by a person looking at one
+   letter, so it prefers the sounds their language already has -- type sh in a
+   language whose only hushing sound is ɕ and you get that one rather than a
+   second one nothing else uses.
+
+   Longest spelling first, so ng is ŋ and not n followed by ɡ. And among
+   sounds spelled the same, the one that IS that letter wins: ipaRoman says k
+   for both c and k -- c is a palatal stop and k is on the chart before it --
+   so typing ka got ca, a sound almost nobody meant and no keyboard would have
+   suggested.
+
+   Returns null when some of what was typed is not a sound at all, because a
+   letter reading half of what somebody wrote is worse than a letter telling
+   them so. */
+function ipaFromRoman(sp){
+  var s=String(sp||'').toLowerCase().replace(/[^a-z]/g,'');
+  var cand=addedSnd().concat(ipaAll()), out=[], i, best, bestR, r;
+  while(s.length){
+    best=''; bestR='';
+    for(i=0;i<cand.length;i++){
+      r=ipaRoman(cand[i]);
+      if(!r || s.indexOf(r)!==0) continue;
+      if(r.length>bestR.length ||
+         (r.length===bestR.length && best!==bestR && cand[i]===r)){
+        best=cand[i]; bestR=r;
+      }
+    }
+    if(!best) return null;
+    out.push(best); s=s.slice(bestR.length);
+  }
+  return out;
+}

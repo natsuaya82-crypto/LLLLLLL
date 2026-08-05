@@ -62,10 +62,6 @@ export function obStates(){
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
     ['no script picked to borrow from', () => { ob.step = 1; ob.mode = 'borrow';
                                                 ob.pick = ''; return vOb(); }],
-    /* the letter exists and says nothing: the step where a person tells it
-       what it reads, which is the one the app used to answer for them */
-    ['saying what a letter reads', () => { ob.step = 2; ob.mode = '';
-                                           ob.lid = 'l1'; return vOb(); }],
     /* The step where a letter is drawn. Its two buttons -- finish, or skip the
        drawing -- are the last thing a person touches before the app becomes
        the app, and nothing had ever pressed either of them. */

@@ -127,12 +127,26 @@ function ltSetRole(id, role, key){
   var l=ltById(id); if(!l) return null;
   l.role = (role==='mark') ? 'mark' : 'snd';
   l.key  = (l.role==='mark') ? (key||'') : '';
-  if(l.role==='mark') l.snd=[];      /* しるしは音を読まない */
+  if(l.role==='mark') l.snd=[];      /* a mark reads nothing */
   saveLetters(); installScriptFont();
   render();
   return l;
 }
 
+/* The first sound in the inventory that nothing reads yet, in the chart's
+   order. Empty when every one of them is spoken for.
+
+   This is what a newly drawn letter is given. Making a script is a
+   substitution: you are saying "my K looks like this", and the sound was
+   already there -- ohayo, annyon, ni hao all spell out in an alphabet
+   somebody already has. So the sound is carried over rather than asked for,
+   and what a letter reads is corrected on the letter, not decided before it
+   exists. */
+function ltNextFree(){
+  var have=addedSnd(), i;
+  for(i=0;i<have.length;i++) if(!ltFor(have[i]).length) return have[i];
+  return '';
+}
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
          snd:(o&&o.snd)? o.snd.slice() : [],
@@ -140,8 +154,44 @@ function ltNew(o){
          /* what you type to get this one. Empty for a sound letter, where the
             roman spelling of the sound answers it. */
          key:(o&&o.key)||''};
+  /* A sound letter made with nothing said about what it reads takes the next
+     free sound. A letter made FOR a sound (ltForUnit) already carries one and
+     is left alone, and a mark reads nothing on purpose. */
+  if(l.role==='snd' && !l.snd.length){
+    var u=ltNextFree();
+    if(u) l.snd=[u];
+  }
   LETTERS.push(l); saveLetters();
   return l;
+}
+/* What this letter reads, spelled the way a person would write it. The field
+   in the glyph editor shows this, and ltSetRoman reads it back. */
+function ltRoman(l){
+  var u=ltUnits(l), out='', i, j, p;
+  for(i=0;i<u.length;i++){
+    p=uSplit(u[i]);
+    for(j=0;j<p.length;j++) out+=ipaRoman(p[j]);
+  }
+  return out;
+}
+/* Correcting what a letter reads -- the only time anybody says anything about
+   a sound, because the letter was given one when it was drawn. Emptying the
+   field takes the reading off; a letter that reads nothing is a letter, and
+   the letters chapter lists it as one still to finish.
+
+   A sound somebody says their letter reads is a sound their language has, so
+   it joins the inventory rather than being refused for not being in it. */
+function ltSetRoman(id, sp){
+  var l=ltById(id); if(!l) return;
+  var txt=String(sp||'').replace(/[^A-Za-z]/g,'');
+  if(!txt.length){ l.snd=[]; saveLetters(); installScriptFont(); render(); return; }
+  var parts=ipaFromRoman(txt);
+  if(!parts){ toast(t('lt.reads.no')); return; }
+  var have=addedSnd(), i;
+  for(i=0;i<parts.length;i++) if(have.indexOf(parts[i])<0) have.push(parts[i]);
+  SET.snd=asOrder(have);
+  l.snd=[parts.join('')];
+  save(); saveLetters(); installScriptFont(); render();
 }
 function ltSetStrokes(id, st){
   var l=ltById(id); if(!l) return null;

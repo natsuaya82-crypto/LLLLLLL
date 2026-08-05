@@ -73,8 +73,6 @@ act('obPickScript', obPickScript);
 act('obSignIn', obSignIn);
 act('obSkip', obSkip);
 act('obSkipDraw', obSkipDraw);
-act('obReads', obReads);
-act('obReadLater', obReadLater);
 act('sndFeel', sndFeel);
 act('sndFeelAgain', sndFeelAgain);
 act('sndHear', sndHear);
@@ -153,6 +151,7 @@ act('wordsSay', wordsSay);
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('ltSetName', ltSetName);
 actIn('ltSetRole', ltSetRole);
+actIn('ltSetRoman', ltSetRoman);
 actIn('obLang', obLang);
 actIn('fSetQ', fSetQ);
 actIn('wordsSetQ', wordsSetQ);

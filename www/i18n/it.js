@@ -339,6 +339,8 @@ defLang('it', (function(){
       "lt.reads"         : "legge {0}",
       "lt.reads.none"    : "non legge ancora niente",
       "lt.reads.h"       : "Legge",
+      "lt.reads.ph"     : "k, sh, ng, ka",
+      "lt.reads.no"     : "Questo non è un suono che possa leggere.",
       "lt.name"          : "Nome",
       "lt.name.ph"       : "p. es. esh",
       "lt.loose"         : "{0} lettere non leggono ancora niente.",
@@ -496,9 +498,6 @@ defLang('it', (function(){
       "ob.snds.note"     : "La tabella intera viene dopo",
       "ob.snds.need"     : "Scelga un suono",
       "ob.draw.h"       : "Disegna una lettera",
-      "ob.read.h"       : "Che cosa legge?",
-      "ob.read.sub"       : "Scegli un suono. Puoi decidere dopo.",
-      "ob.read.later"       : "Decidere dopo",
       "ob.draw.later"    : "Disegnala più tardi",
       /* the writing system */
       "script.preview"    : "La tua scrittura",
