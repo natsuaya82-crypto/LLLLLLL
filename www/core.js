@@ -307,7 +307,6 @@ function parts(sy){
   if(nu.length>1 && nu.charAt(0)==='y'){ on+='y'; nu=nu.slice(1); }
   return {on:on, nu:nu, co:m[3]};
 }
-var CONS=['b','ch','d','f','g','h','j','k','l','m','n','p','r','s','sh','t','th','v','w','z'];
 function splitC(str){
   var out=[], i=0;
   while(i<str.length){

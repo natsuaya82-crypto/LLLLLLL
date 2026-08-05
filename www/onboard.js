@@ -69,8 +69,9 @@ var WORLD_SCRIPTS = [
 var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
 /* How many steps there are, in one place: the dots count them and shot.mjs
    photographs them. It said 5 for as long as there were four, because nothing
-   read it -- dead-check finds functions nobody calls, not numbers nobody
-   asks. */
+   read it -- and dead-check, which watched functions, could not see a number
+   nobody asked for. It watches top-level vars now, so this one is deleted the
+   day it stops being read. */
 var OB_STEPS=3;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor

@@ -127,7 +127,6 @@ function closeSheet(e){
   if(e && e.target && e.target.id!=='sbg') return;
   if(here().r==='form') back();
 }
-var FORM_SEQ=0;
 function pkSwitch(id){
   pkScript = (pkScript===id ? '' : id);           /* tap again to fold away */
   var e=document.getElementById('pk-chars'); if(e) e.innerHTML=pkCharsHTML();
