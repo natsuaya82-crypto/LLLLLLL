@@ -93,11 +93,17 @@ under another screen's name, and a view on no route was simply unreachable.
 `vOb` is the one exempt view — the onboarding is what the app *is* until
 `SET.done`, not a place you navigate to.
 
-### 5. Nothing that nothing reaches
+### 5. Nothing that nothing reaches, and nothing that is nothing
 
 Every function declared in `www/` must be named somewhere other than its own
 declaration. `dead-check` fails otherwise, and the fix is to delete it — git
 remembers, and a reader cannot tell a dead function from a live one.
+
+The other way too: every name **called** must be something — a function
+declared in `www/`, a variable or parameter bound there, a `window.x =` from
+`index.html`, or one of the browser's, which are listed in `dead-check` by
+name. A call to a function nobody wrote shipped once, in a branch the walks
+never took.
 
 This is `act-check`'s "no entry no screen names", one step further out. An
 orphaned function is not in the action table, so `act-check` cannot see it;

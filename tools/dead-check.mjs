@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   tools/dead-check.mjs — a function nothing reaches.
+   tools/dead-check.mjs — a function nothing reaches, and a name nothing is.
 
    Run it:   node tools/dead-check.mjs
 
@@ -38,7 +38,23 @@
        thing of that name is not counted. It errs towards calling something
        dead, which is the way round that gets looked at
 
-   Exit code is 0 only when nothing is unreachable.
+   The other direction
+     A name that is called has to be something. This check proved that every
+     function declared is reached and said nothing at all about whether a name
+     being called exists, which is how wsGuess() shipped a call to wsCut() --
+     a function that was never written. Nothing caught it: act-check proves
+     both directions for the names a button says, but a plain call is not a
+     button, and press-check only runs the paths it walks. That one ran when
+     SET.wsys was empty, and the fixture fills it in, so the single path that
+     would have thrown was the single path nothing took.
+
+     Every name called in www/ must be a function declared in www/, a variable
+     or parameter bound there, something index.html defines, or one of the
+     browser's, which are listed below by name. There were fourteen such names
+     when this was written and thirteen were the browser's, so the list stays
+     short enough to read.
+
+   Exit code is 0 only when nothing is unreachable and every name resolves.
    --------------------------------------------------------------------------- */
 import fs from 'fs';
 import path from 'path';
@@ -176,6 +192,55 @@ if (twice.length){
   process.exit(1);
 }
 
+/* ---- the other direction: a name that is called has to be something -----
+   The browser's, named rather than pattern-matched, because a pattern would
+   quietly forgive a typo that happens to look like a global. */
+const BROWSER = ['Date','String','Number','Boolean','Object','Array','Math','JSON',
+  'RegExp','Error','Function','Uint8Array','Blob','Image','Path2D',
+  'parseInt','parseFloat','isNaN','isFinite','encodeURIComponent','decodeURIComponent',
+  'setTimeout','clearTimeout','setInterval','clearInterval',
+  'requestAnimationFrame','cancelAnimationFrame',
+  'getComputedStyle','confirm','alert','prompt','eval'];
+
+const bindings = new Set(decls.map(d => d.name));
+const calls = new Map();
+appFiles.concat([path.join(WWW, 'index.html')]).forEach(f => {
+  const src = bare(fs.readFileSync(f, 'utf8'));
+  const rel = path.relative(ROOT, f);
+  /* A function declared anywhere, not only at the start of a line. The dead
+     check above deliberately looks only at column zero -- a nested helper is
+     reached by the function around it and is not the thing it is hunting --
+     but for resolving a call, an inner function is a perfectly good answer.
+     Reading only the outer ones made otf5.js look like thirty missing
+     names. */
+  [...src.matchAll(/\bfunction\s+([A-Za-z_$][\w$]*)\s*\(/g)].forEach(m =>
+    bindings.add(m[1]));
+  /* everything else a name can be */
+  [...src.matchAll(/\bvar\s+([^;]+)/g)].forEach(m =>
+    m[1].split(',').forEach(part => {
+      const n = part.trim().split(/[=\s[(]/)[0];
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) bindings.add(n);
+    }));
+  [...src.matchAll(/\bfunction\s*[\w$]*\s*\(([^)]*)\)/g)].forEach(m =>
+    m[1].split(',').forEach(pp => {
+      const n = pp.trim();
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) bindings.add(n);
+    }));
+  [...src.matchAll(/\bcatch\s*\(\s*([\w$]+)/g)].forEach(m => bindings.add(m[1]));
+  /* a global put on window by hand. index.html defines splashDone that way,
+     and boot.js calls it: the two files are one program even though only one
+     of them is JavaScript as far as this walk is concerned. */
+  [...src.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)].forEach(m => bindings.add(m[1]));
+  if (f.endsWith('.js'))
+    [...src.matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)\s*\(/g)].forEach(m => {
+      if (!calls.has(m[1])) calls.set(m[1], rel);
+    });
+});
+const KEYWORD = new Set(['if','for','while','switch','catch','function','return','typeof',
+  'new','delete','void','do','else','in','of','instanceof','var','try','throw','case']);
+const unresolved = [...calls].filter(([n]) =>
+  !bindings.has(n) && !KEYWORD.has(n) && BROWSER.indexOf(n) < 0);
+
 const dead = decls.filter(d => {
   const use = new RegExp('(?<![\\w$.])' + d.name + USE, 'g');
   const own = new RegExp('(?<![\\w$.])' + d.name + '\\s*=(?!=)');
@@ -188,6 +253,14 @@ const dead = decls.filter(d => {
   return n <= 1;   /* its own declaration */
 });
 
+if (unresolved.length){
+  console.error(unresolved.length + ' name' + (unresolved.length === 1 ? ' is' : 's are') +
+                ' called and never defined:\n');
+  unresolved.forEach(([n, f]) => console.error('  ' + f + '  ' + n + '()'));
+  console.error('\nEither it was never written, or it is the browser\'s and belongs in\n' +
+                'BROWSER at the top of this file, by name, with the others.');
+  process.exit(1);
+}
 if (dead.length){
   console.error(dead.length + ' function' + (dead.length === 1 ? '' : 's') +
                 ' nothing reaches:\n');
@@ -196,4 +269,5 @@ if (dead.length){
                 'tell\nthem apart from the ones that still do something.');
   process.exit(1);
 }
-console.log('dead code: ' + decls.length + ' functions in www/, every one of them reached.');
+console.log('dead code: ' + decls.length + ' functions in www/, every one of them reached,');
+console.log('           and every name called is one of them, a binding, or the browser\'s.');
