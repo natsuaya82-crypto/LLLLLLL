@@ -120,6 +120,18 @@ function ltRole(l){ return (l && l.role === 'mark') ? 'mark' : 'snd'; }
 function ltMarks(){
   return LETTERS.filter(function(l){ return ltRole(l) === 'mark'; });
 }
+/* Changing what a letter is for. A mark reads nothing, so choosing 'mark'
+   drops whatever sounds it had; choosing 'snd' back drops the key, since a
+   sound letter is read from its sounds and not typed for. */
+function ltSetRole(id, role, key){
+  var l=ltById(id); if(!l) return null;
+  l.role = (role==='mark') ? 'mark' : 'snd';
+  l.key  = (l.role==='mark') ? (key||'') : '';
+  if(l.role==='mark') l.snd=[];      /* しるしは音を読まない */
+  saveLetters(); installScriptFont();
+  render();
+  return l;
+}
 
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',

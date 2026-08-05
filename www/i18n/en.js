@@ -246,6 +246,12 @@ defLang('en', (function(){
       'lt.name.ph'      : 'e.g. esh',
       'lt.loose'        : '{0} letters read nothing yet.',
       'lt.loose.1'      : 'One letter reads nothing yet.',
+      'lt.role'         : 'What this letter is for',
+      'lt.role.snd'     : 'Reads a sound',
+      'lt.role.mark'    : 'A mark',
+      'lt.mark.key'     : 'Types as',
+      'lt.mark.none'    : 'Not set',
+      'lt.marks'        : 'Marks',
       'toc.gram'        : "Grammar",
       'toc.make'        : "Coin several",
       /* what the app proposes */

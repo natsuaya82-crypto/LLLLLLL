@@ -222,6 +222,8 @@ function ltFace(l, call){
    could not hold at all, and the reason the two are two chapters. */
 function vLetters(){
   var loose=ltLoose();
+  var snds=LETTERS.filter(function(l){ return ltRole(l)==='snd'; });
+  var marks=ltMarks();
   return '<div class="view">'+
     navTop(ltShaped()+' / '+LETTERS.length)+
     '<div class="body">'+
@@ -233,8 +235,12 @@ function vLetters(){
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
     '<div class="sec">'+t('lt.all')+'</div>'+
-    (LETTERS.length
-      ? '<div class="ltlist">'+LETTERS.map(ltRow).join('')+'</div>'
+    (snds.length
+      ? '<div class="ltlist">'+snds.map(ltRow).join('')+'</div>'
+      : '<div class="note">'+t('lt.none')+'</div>')+
+    '<div class="sec">'+t('lt.marks')+'</div>'+
+    (marks.length
+      ? '<div class="ltlist">'+marks.map(ltRow).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
     '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('newLetter') + '>'+
       ICON_ADD+t('lt.new')+'</button>'+
@@ -258,15 +264,17 @@ function vLetters(){
     '</div></div>';
 }
 function ltRow(l){
-  var snd=(l.snd||[]);
+  var role=ltRole(l), snd=(l.snd||[]);
   return '<div class="ltrow">'+
     ltFace(l, DO('editLetter',[l.id]))+
     '<button class="ltmid"' + DO('editLetter', [l.id]) + '>'+
       '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
-      '<span class="ltsn">'+(snd.length? esc(t('lt.reads', snd.join(' / '))) : esc(t('lt.reads.none')))+'</span>'+
+      '<span class="ltsn">'+(role==='mark'
+        ? esc(l.key||t('lt.mark.none'))
+        : (snd.length? esc(t('lt.reads', snd.join(' / '))) : esc(t('lt.reads.none'))))+'</span>'+
     '</button>'+
-    '<button class="sndadd"' + DO('go', ["picksnd", l.id]) + ' aria-label="'+
-      esc(t('lt.addsnd'))+'">'+ICON_LINK+'</button>'+
+    (role==='mark' ? '' : '<button class="sndadd"' + DO('go', ["picksnd", l.id]) + ' aria-label="'+
+      esc(t('lt.addsnd'))+'">'+ICON_LINK+'</button>')+
     '</div>';
 }
 

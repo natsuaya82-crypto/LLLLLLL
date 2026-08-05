@@ -399,6 +399,9 @@ function geBtn(fn,n,key,en,on){
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
          geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
 }
+/* One character per candidate, offered so a mark rarely needs the keyboard
+   at all: the punctuation an alphabet already has room for. */
+var MARK_CANDS=['?','!','.',',',':',';','"',"'",'(',')'];
 function vGlyph(){
   /* GE is always set by editGlyph before this is routed to; the fallback is
      for the release check, which walks every view cold. */
@@ -406,12 +409,31 @@ function vGlyph(){
   var st=GE.st[GE.si], p=(st && GE.pi>=0)? st.pts[GE.pi] : null;
   var pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
+  var l=ltById(GE.lid), role=ltRole(l), curKey=(l && l.key)||'';
   return '<div class="view">'+
     navTop(pts)+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
+    /* What this letter is for. A sound letter is read from the sounds it is
+       linked to, on the sound and letters chapters -- nothing about that
+       changes here. A mark reads nothing, and instead carries the one
+       character that types it. */
+    '<div class="sec">'+t('lt.role')+'</div>'+
+    '<div class="pick">'+
+      '<button class="'+(role==='snd'?'on':'')+'"' + DO('ltSetRole', [GE.lid, 'snd']) + '>'+t('lt.role.snd')+'</button>'+
+      '<button class="'+(role==='mark'?'on':'')+'"' + DO('ltSetRole', [GE.lid, 'mark']) + '>'+t('lt.role.mark')+'</button>'+
+    '</div>'+
+    (role==='mark'
+      ? '<div class="field"><label>'+t('lt.mark.key')+'</label>'+
+          '<input id="mk-key" maxlength="1" value="'+esc(curKey)+'" placeholder="'+esc(t('lt.mark.none'))+'" '+
+          '' + CH('ltSetRole', [GE.lid, 'mark']) + '></div>'+
+        '<div class="phkeys">'+MARK_CANDS.map(function(c){
+          return '<button class="phk'+(curKey===c?' on':'')+'"' + DO('ltSetRole', [GE.lid, 'mark', c]) + '>'+
+            '<span class="pks">'+esc(c)+'</span></button>';
+        }).join('')+'</div>'
+      : '')+
     /* A letter could be drawn and could be changed, and there was no way to
        take it back off a sound -- nor to reach the borrowed characters from
        here, which meant the two ways of writing a sound lived on two screens.

@@ -259,6 +259,12 @@ defLang('ja', (function(){
       'lt.name.ph'      : '例：エシュ',
       'lt.loose'        : '読みのない文字 {0}',
       'lt.loose.1'      : '読みのない文字 1',
+      'lt.role'         : 'この字は何をするか',
+      'lt.role.snd'     : '音を読む',
+      'lt.role.mark'    : 'しるし',
+      'lt.mark.key'     : '打つと出る文字',
+      'lt.mark.none'    : '未設定',
+      'lt.marks'        : 'しるし',
       'toc.gram'        : '文法',
       'toc.make'        : 'まとめて作成',
       /* what the app proposes */

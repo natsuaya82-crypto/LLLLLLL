@@ -62,6 +62,7 @@ act('goPlans', goPlans);
 act('goTab', goTab);
 act('langOpen', langOpen);
 act('ltDropChar', ltDropChar);
+act('ltSetRole', ltSetRole);
 act('newLetter', newLetter);
 act('obAgain', obAgain);
 act('obBack', obBack);
@@ -153,6 +154,7 @@ act('wordsSay', wordsSay);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('ltSetName', ltSetName);
+actIn('ltSetRole', ltSetRole);
 actIn('obLang', obLang);
 actIn('fSetQ', fSetQ);
 actIn('wordsSetQ', wordsSetQ);

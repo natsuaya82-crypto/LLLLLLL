@@ -522,6 +522,12 @@ defLang('ko', (function(){
       "lt.name.ph"       : "예: 에시",
       "lt.loose"         : "아직 아무것도 읽지 않는 문자가 {0}개 있습니다.",
       "lt.loose.1"       : "아직 아무것도 읽지 않는 문자가 1개 있습니다.",
+      "lt.role"          : "이 글자는 무엇을 하나요",
+      "lt.role.snd"      : "소리를 읽어요",
+      "lt.role.mark"     : "기호예요",
+      "lt.mark.key"      : "입력하면 나오는 글자",
+      "lt.mark.none"     : "설정 안 됨",
+      "lt.marks"         : "기호",
       "toc.gram"         : "문법",
       "toc.make"         : "여러 개 만들기",
       /* what the app proposes */

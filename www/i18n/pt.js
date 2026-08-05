@@ -350,6 +350,12 @@ defLang('pt', (function(){
       "lt.name.ph"       : "p. ex. esh",
       "lt.loose"         : "{0} letras ainda não leem nada.",
       "lt.loose.1"       : "Uma letra ainda não lê nada.",
+      "lt.role"          : "Para que serve esta letra",
+      "lt.role.snd"      : "Lê um som",
+      "lt.role.mark"     : "Um sinal",
+      "lt.mark.key"      : "Digitado como",
+      "lt.mark.none"     : "Não definido",
+      "lt.marks"         : "Sinais",
       "toc.gram"         : "Gramática",
       "toc.make"         : "Cunhar várias",
       /* what the app proposes */
