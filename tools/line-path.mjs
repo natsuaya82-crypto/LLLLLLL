@@ -41,6 +41,21 @@
 
    Ink in the wrong place is not a subtle difference. That is what the
    tolerance is for and what it is set well inside of.
+
+   The round trip. A post stores its runs and nothing else -- no language id
+   to look a letter up by, no alphabet to join against. It has to, because a
+   post is a thing somebody said once and the author of the language may
+   redraw a letter tomorrow; whoever reads it in a year should get what was
+   said rather than what the alphabet has become. So the line is drawn a third
+   time from the frozen post alone, and that one is held to zero:
+
+     redrawn from the frozen post   0 of 234,080 differ
+     one run dropped when freezing  2,800, worst by 238/255
+     a borrowed letter moved by 10  1,204, worst by 238/255
+
+   Zero rather than a tolerance, because this is the same string of
+   coordinates drawn the same way, not two rasterisations of one geometry.
+   Four words came to 482 bytes.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -207,13 +222,26 @@ const out = await pg.evaluate((line) => {
   window.__draw = function(which){
     document.body.innerHTML =
       '<div id="a" style="background:#fff;padding:10px">' +
-      svg(which === 'merged' ? merged : perGlyph) + '</div>';
+      (which === 'thawed' ? window.__thaw(window.__frozen)
+                          : svg(which === 'merged' ? merged : perGlyph)) + '</div>';
   };
   /* Compare the two drawings as pixels, in here, rather than as PNG files
      outside. A byte comparison of two PNGs answers a different question --
      encoders are free to vary -- and it cannot say how far apart they are
      when they do differ. This rasterises both at the same size and counts. */
-  window.__diff = function(){
+  window.perGlyphOf = function(){ return perGlyph; };
+  window.mergedOf = function(){ return merged; };
+  window.frozenInnerOf = function(){
+    var inner = '';
+    window.__frozen.runs.forEach(function(r){
+      inner += r.k === 't'
+        ? '<text x="' + r.x + '" y="' + (GRID * 0.8) + '" font-size="' + GRID * 0.8 +
+          '" style="fill:#111;stroke:none">' + r.ch + '</text>'
+        : '<path d="' + r.d + '"/>';
+    });
+    return inner;
+  };
+  window.__diff = function(a, b){
     var doc = function(inner){
       return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + GRID +
@@ -229,7 +257,7 @@ const out = await pg.evaluate((line) => {
         im.src = src;
       });
     }
-    return Promise.all([load(doc(perGlyph)), load(doc(merged))]).then(function(ims){
+    return Promise.all([load(doc(a)), load(doc(b))]).then(function(ims){
       var w = ims[0].width, h = ims[0].height, d = [], i;
       for (i = 0; i < 2; i++) {
         var c = document.createElement('canvas');
@@ -245,6 +273,40 @@ const out = await pg.evaluate((line) => {
       }
       return { pixels: (w * h), differing: off, worst: worst };
     });
+  };
+
+  /* ---- what a post actually stores -------------------------------------
+     The runs, and nothing else. No language id to look a letter up by, no
+     alphabet to join against: a post is a thing somebody said once, and the
+     person who wrote the language may redraw a letter tomorrow. Whoever reads
+     this in a year gets what was said, not what the alphabet has become.
+
+     The romanisation and the gloss ride along because a path cannot be
+     searched, read aloud, or understood by anybody who does not have the
+     language -- and the citation, so the language it came from gets its link
+     every time somebody speaks it. */
+  window.__frozen = {
+    w: Math.round(W), h: GRID,
+    runs: runs.map(function(r){
+      return r.kind === 'text' ? { k: 't', ch: r.ch, x: Math.round(r.x) }
+                               : { k: 'p', d: r.d };
+    }),
+    text: line
+  };
+  /* Draw it from that alone. This function may not touch LETTERS, SCRIPT or
+     anything else the app knows -- if it can draw the line from the frozen
+     post and nothing else, the frozen post is complete. */
+  window.__thaw = function(f){
+    var inner = '';
+    f.runs.forEach(function(r){
+      inner += r.k === 't'
+        ? '<text x="' + r.x + '" y="' + (f.h * 0.8) + '" font-size="' + f.h * 0.8 +
+          '" style="fill:#111;stroke:none">' + r.ch + '</text>'
+        : '<path d="' + r.d + '"/>';
+    });
+    return '<svg viewBox="0 0 ' + f.w + ' ' + f.h + '" width="760" ' +
+           'style="stroke:#111;fill:none;stroke-width:26;stroke-linecap:round;' +
+           'stroke-linejoin:round;display:block">' + inner + '</svg>';
   };
 
   function nodes(which){
@@ -264,7 +326,13 @@ const out = await pg.evaluate((line) => {
   };
 }, LINE);
 
-const diff = await pg.evaluate(() => window.__diff());
+const diff  = await pg.evaluate(() => window.__diff(perGlyphOf(), mergedOf()));
+/* And the round trip: the same line drawn from the frozen post alone, with
+   no letter looked up and no alphabet joined against. If that differs, the
+   post is not self-contained and the day its language changes it stops being
+   what was said. */
+const trip  = await pg.evaluate(() => window.__diff(mergedOf(), frozenInnerOf()));
+const frozen = await pg.evaluate(() => window.__frozen);
 await pg.evaluate(() => window.__draw('perGlyph'));
 fs.writeFileSync(path.join(OUT, 'line-per-glyph.png'), await (await pg.$('#a')).screenshot());
 await pg.evaluate(() => window.__draw('merged'));
@@ -275,7 +343,8 @@ fs.writeFileSync(path.join(OUT, 'line-merged.png'), await (await pg.$('#a')).scr
    differ is where the ink is. A letter in the wrong place lights up thousands
    of pixels at the full 255; edges disagreeing by a fraction of a channel
    along 0.2% of the picture is the renderer, not the sums. */
-const same = diff.worst < 128 && diff.differing < diff.pixels / 100;
+const same = diff.worst < 128 && diff.differing < diff.pixels / 100
+          && trip.differing === 0;
 
 await br.close();
 srv.close();
@@ -290,6 +359,10 @@ console.log(`  nodes          ${out.nodesPerGlyph} per glyph -> ${out.nodesMerge
 console.log(`  merged path    ${out.bytes} bytes`);
 console.log(`  pixels         ${diff.differing} of ${diff.pixels} differ` +
             (diff.differing ? `, worst by ${diff.worst}/255` : ''));
+console.log(`\n  frozen post    ${JSON.stringify(frozen).length} bytes, ` +
+            `${frozen.runs.length} runs, nothing to look up`);
+console.log(`  redrawn from it ${trip.differing} of ${trip.pixels} differ` +
+            (trip.differing ? `, worst by ${trip.worst}/255` : ''));
 console.log(`\n  ${same ? 'identical: the merge is invisible, which is what correct looks like'
                        : 'DIFFERENT — the merged line does not draw what the letters draw'}`);
 console.log('  shots/line-per-glyph.png  shots/line-merged.png');

@@ -87,8 +87,12 @@ create table post (
   author     uuid not null references profile(id) on delete cascade,
   language   uuid references language(id) on delete set null,
   body       jsonb not null,
+  -- the day's sentence this answers, when it answers one. Most posts do not:
+  -- a post is whatever somebody felt like saying.
+  prompt     bigint references prompt(id) on delete set null,
   created_at timestamptz not null default now()
 );
+create index post_prompt_idx on post(prompt, created_at desc);
 create index post_author_idx on post(author, created_at desc);
 create index post_language_idx on post(language, created_at desc);
 
@@ -103,6 +107,26 @@ create table quote (
   primary key (post, language, word)
 );
 create index quote_language_idx on quote(language);
+
+-- ---- asked --------------------------------------------------------------
+-- One sentence a day, put up by us, that anybody may answer in their own
+-- language. It is the loop this whole thing turns on: everyone already knows
+-- what the day's sentence means, so a feed of two hundred unreadable scripts
+-- becomes two hundred readable ones, and nobody has to learn anything to read
+-- it. Posts stay, so a prompt accumulates -- the same meaning in every
+-- language anybody has built, which is a page worth coming back to long after
+-- the day it belonged to.
+--
+-- Nobody but us writes one. There is no insert policy below, so the API
+-- cannot make one at all: they arrive through the service role, which is a
+-- key that lives on our side and answers to no policy. A prompt table anyone
+-- could write to is a second posting surface with no author on it.
+create table prompt (
+  id      bigint generated always as identity primary key,
+  on_day  date not null unique,        -- one a day, and the unique says so
+  text    text not null,               -- English, and translated on the device
+  created_at timestamptz not null default now()
+);
 
 create table follow (
   follower   uuid not null references profile(id) on delete cascade,
@@ -130,6 +154,7 @@ alter table language    enable row level security;
 alter table publication enable row level security;
 alter table post        enable row level security;
 alter table quote       enable row level security;
+alter table prompt      enable row level security;
 alter table follow      enable row level security;
 
 -- A signed-in account that is not an anonymous one.
@@ -193,6 +218,10 @@ create policy quote_drop on quote for delete using (
 );
 
 -- follow: everyone sees who follows whom; you add and remove your own following
+-- prompt: everyone reads. Nothing else -- no insert, no update, no delete
+-- policy exists, so the day's sentence can only come from the service role.
+create policy prompt_read on prompt for select using (true);
+
 create policy follow_read on follow for select using (true);
 create policy follow_make on follow for insert
   with check (is_member() and follower = auth.uid());
