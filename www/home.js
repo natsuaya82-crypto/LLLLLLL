@@ -487,9 +487,15 @@ function editName(){
    by WORDS. Pressing a row is the only way to change that. */
 function langRow(id){
   var l=LANGS[id]||{}, isOpen=(id===langId);
+  /* The index carries a name so a row can be drawn without opening the
+     language to find out what it is called. For the one that IS open, langName
+     is the live answer and the index is a copy of it made at the last save --
+     so renaming a language and looking at this list before anything saved
+     showed the old name here and the new one everywhere else. */
+  var nm = isOpen? langName : l.name;
   return '<button class="set lrow'+(isOpen?' on':'')+'"' + DO('langOpen', [id]) +
     (isOpen? ' aria-label="'+esc(t('langs.open'))+'"' : '') + '>'+
-    '<span class="sl">'+esc(l.name||t('langs.untitled'))+'</span>'+
+    '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
     '<span class="lchk">'+(isOpen?ICON_TICK:'')+'</span></button>';
 }
 function vLangs(){
@@ -501,8 +507,11 @@ function vLangs(){
     mine.map(function(id){ return langRow(id); }).join('')+
     (mine.length && plan()==='free'? '<div class="note">'+esc(t('langs.more'))+'</div>' : '')+
     '<div class="sec">'+esc(t('langs.reading'))+'</div>'+
+    /* .empty is the full-screen one: 54px of padding and a serif heading,
+       which is right for a screen with nothing on it and far too loud for a
+       section of a screen that has something on it. */
     (reading.length? reading.map(function(id){ return langRow(id); }).join('')
-                    : '<div class="empty"><div class="eb">'+esc(t('langs.none'))+'</div></div>');
+                    : '<div class="note">'+esc(t('langs.none'))+'</div>');
   return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
 }
 
