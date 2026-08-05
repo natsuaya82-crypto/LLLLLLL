@@ -235,7 +235,13 @@ function vLetters(){
     (loose.length? '<div class="mini" style="margin-top:8px">'+tn('lt.loose', loose.length)+'</div>' : '')+
     (ltShaped()
       ? '<div class="sec">'+t('script.preview')+'</div>'+
-        '<div class="spv"><div class="big sfont">'+esc(WORDS.length?WORDS[0].hw:addedSnd().join(''))+'</div></div>'+
+        /* The Roman / your-letters pair sits directly under this box, so the
+           box has to answer it. .sfont is added by myFontOn() in the three
+           other places it appears; this one had it unconditionally, which
+           made pressing Roman change the whole app and nothing in front of
+           you. */
+        '<div class="spv"><div class="big'+(myFontOn()?' sfont':'')+'">'+
+          esc(WORDS.length?WORDS[0].hw:addedSnd().join(''))+'</div></div>'+
         '<div class="pick">'+
           '<button class="'+(SET.myfont?'':'on')+'"' + DO('setMyFont', [false]) + '>'+t('script.show.roman')+'</button>'+
           '<button class="'+(SET.myfont?'on':'')+'"' + DO('setMyFont', [true]) + '>'+t('script.show.own')+'</button>'+
