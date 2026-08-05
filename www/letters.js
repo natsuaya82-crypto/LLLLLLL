@@ -91,14 +91,43 @@ function ltName(l){
 }
 /* Letters with no sound on them yet. The reason the two chapters are two
    chapters: you can draw an alphabet first and decide later. */
+/* Letters that read nothing yet, which is a thing to finish. A mark reads
+   nothing on purpose and is finished, so it is not one of these. */
 function ltLoose(){
-  return LETTERS.filter(function(l){ return !l.snd || !l.snd.length; });
+  return LETTERS.filter(function(l){
+    return ltRole(l) === 'snd' && (!l.snd || !l.snd.length);
+  });
 }
 
 /* ---- writing the join -------------------------------------------------- */
+/* ---- what a letter is for ---------------------------------------------
+   A letter used to be one thing: the shape for a sound. Everything the
+   writing system draws was worked out from the phonology, so a shape that
+   reads nothing had no way to exist -- a question mark was a letter you had
+   not finished yet, and the app said so, forever.
+
+   So a letter says what it is for. 'snd' reads one or more sounds, which is
+   every letter that has ever been made in this app. 'mark' reads nothing on
+   purpose: a question mark, a full stop, a quotation mark. It is drawn or
+   borrowed exactly like any other letter -- that axis is separate -- and it
+   carries the character that types it, because a mark cannot borrow its code
+   point from the roman spelling of a sound it does not have.
+
+   Absent means 'snd'. Nothing on anybody's phone has this field, and reading
+   it as the only thing it could have been is cheaper and safer than rewriting
+   every letter somebody has drawn. */
+function ltRole(l){ return (l && l.role === 'mark') ? 'mark' : 'snd'; }
+function ltMarks(){
+  return LETTERS.filter(function(l){ return ltRole(l) === 'mark'; });
+}
+
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
-         snd:(o&&o.snd)? o.snd.slice() : []};
+         snd:(o&&o.snd)? o.snd.slice() : [],
+         role:(o&&o.role==='mark')? 'mark' : 'snd',
+         /* what you type to get this one. Empty for a sound letter, where the
+            roman spelling of the sound answers it. */
+         key:(o&&o.key)||''};
   LETTERS.push(l); saveLetters();
   return l;
 }

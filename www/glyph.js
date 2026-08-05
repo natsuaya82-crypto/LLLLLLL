@@ -162,6 +162,15 @@ function scriptGlyphDefs(){
     if(r.length>1) ligs.push({sub:r.split('').map(glyphKey), by:glyphKey(r), n:r.length});
   });
   ligs.sort(function(a,b){ return b.n-a.n; });
+  /* The marks. A question mark is not derived from anything -- it is a shape
+     somebody drew and a character they said types it -- so it is added here
+     rather than found by wsUnits(), which only ever answers with sounds.
+     A borrowed mark is already a character and needs no glyph. */
+  ltMarks().forEach(function(l){
+    if(!l.st || !l.st.length || !l.key) return;
+    defs.push({ name:'mk_'+l.id, roman:l.key, strokes:l.st });
+  });
+
   return {defs:defs, ligs:ligs};
 }
 function wsHasStrokes(r){ var st=wsStrokes(r); return !!(st && st.length); }
@@ -178,6 +187,11 @@ function scriptSig(){
   L.forEach(function(r){
     var g=wsStrokes(r);
     s.push(r+':'+(g? JSON.stringify(g).length : 0));
+  });
+  /* the marks too, or drawing one would never rebuild the font: they are not
+     in scriptLetters(), which is the whole point of them */
+  ltMarks().forEach(function(l){
+    s.push('mk'+l.id+':'+l.key+':'+(l.st? JSON.stringify(l.st).length : 0));
   });
   return s.join(',');
 }
