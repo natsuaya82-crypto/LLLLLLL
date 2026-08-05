@@ -90,7 +90,7 @@ var PAGES={
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
   pickltr: {tab:'build', k:'lt.use'},
-  picksnd: {tab:'build', k:'lt.addsnd'},
+  letter:  {tab:'build', k:'lt.title'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
@@ -127,7 +127,7 @@ function pageName(r, a){
     var rk=String(a||'').split(':')[0];
     return (rk==='syn'||rk==='ant')? t('word.'+rk+'.add') : t('toc.words');
   }
-  if(r==='picksnd'){
+  if(r==='letter'){
     var pl=(typeof ltById==='function')? ltById(a) : null;
     return (pl? ltName(pl) : '') || t('lt.untitled');
   }

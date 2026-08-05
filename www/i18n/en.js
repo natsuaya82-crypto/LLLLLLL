@@ -242,6 +242,7 @@ defLang('en', (function(){
       'lt.reads'        : 'reads {0}',
       'lt.reads.none'   : 'reads nothing yet',
       'lt.reads.h'      : 'Reads',
+      'lt.title'     : 'Letter',
       'lt.reads.ph'     : 'k, sh, ng, ka',
       'lt.reads.no'     : 'That is not a sound this can read.',
       'lt.name'         : 'Name',

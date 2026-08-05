@@ -409,56 +409,20 @@ function vGlyph(){
   var st=GE.st[GE.si], p=(st && GE.pi>=0)? st.pts[GE.pi] : null;
   var pts=0;
   GE.st.forEach(function(s){ pts+=s.pts.length; });
-  var l=ltById(GE.lid), role=ltRole(l), curKey=(l && l.key)||'';
+  /* The square, the tools, and the shape they make. Nothing else.
+
+     This screen used to carry what the letter is as well -- sound or mark,
+     what it reads, the character it borrows, and a way to delete it -- and it
+     came to 1207 px on a 844 px phone, so drawing a line meant scrolling to
+     find the square again. Those four are what a letter IS, not how it is
+     drawn, and vLetter is the screen about that. The canvas, the rail and the
+     preview come to 844 exactly. */
   return '<div class="view">'+
     navTop(pts)+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
-    /* What this letter is for. A sound letter is read from the sounds it is
-       linked to, on the sound and letters chapters -- nothing about that
-       changes here. A mark reads nothing, and instead carries the one
-       character that types it. */
-    '<div class="sec">'+t('lt.role')+'</div>'+
-    '<div class="pick">'+
-      '<button class="'+(role==='snd'?'on':'')+'"' + DO('ltSetRole', [GE.lid, 'snd']) + '>'+t('lt.role.snd')+'</button>'+
-      '<button class="'+(role==='mark'?'on':'')+'"' + DO('ltSetRole', [GE.lid, 'mark']) + '>'+t('lt.role.mark')+'</button>'+
-    '</div>'+
-    /* What it reads, spelled the way somebody would write it -- k, sh, ng, ka.
-       This is the whole of what anybody is ever asked about a sound: the
-       letter arrived carrying one, and this is where it is corrected. The IPA
-       under the field is what the app made of it, shown rather than chosen. */
-    (role==='snd'
-      ? '<div class="sec">'+t('lt.reads.h')+'</div>'+
-        '<div class="field"><input id="lt-rom" value="'+esc(ltRoman(l))+'" '+
-          'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
-          'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [GE.lid]) + '></div>'+
-        '<div class="note">'+((l && l.snd && l.snd.length)
-          ? '/'+esc(l.snd.join(''))+'/' : t('lt.reads.none'))+'</div>'
-      : '')+
-    (role==='mark'
-      ? '<div class="field"><label>'+t('lt.mark.key')+'</label>'+
-          '<input id="mk-key" maxlength="1" value="'+esc(curKey)+'" placeholder="'+esc(t('lt.mark.none'))+'" '+
-          '' + CH('ltSetRole', [GE.lid, 'mark']) + '></div>'+
-        '<div class="phkeys">'+MARK_CANDS.map(function(c){
-          return '<button class="phk'+(curKey===c?' on':'')+'"' + DO('ltSetRole', [GE.lid, 'mark', c]) + '>'+
-            '<span class="pks">'+esc(c)+'</span></button>';
-        }).join('')+'</div>'
-      : '')+
-    /* A letter could be drawn and could be changed, and there was no way to
-       take it back off a sound -- nor to reach the borrowed characters from
-       here, which meant the two ways of writing a sound lived on two screens.
-       Both are here now, where the sound's letter is decided. */
-    '<div class="sec">'+t('glyph.other')+'</div>'+
-    ((ltById(GE.lid)||{}).ch
-      ? '<div class="gborrow"><span class="gbch">'+esc((ltById(GE.lid)||{}).ch)+'</span>'+
-        '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
-        '<button class="gbx"' + DO('ltDropChar', [GE.lid]) + '>'+t('ch.clear')+'</button></div>'
-      : '<button class="btn ghost" style="width:100%"' + DO('openPick', [GE.lid]) + '>'+t('glyph.borrow')+'</button>')+
-    (ltHasShape(ltById(GE.lid))
-      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('geDelete') + '>'+
-        '<span class="sl" style="color:#c9553f">'+t('glyph.del')+'</span></button>' : '')+
     '</div>'+
     '<div class="barfix">'+
       '<button class="btn ghost"' + DO('go', ["sound"]) + '>'+t('glyph.cancel')+'</button>'+
@@ -714,18 +678,6 @@ function geSave(){
    character both. The sound stays in the language; only its letter goes. */
 /* Deleting the letter, shape and sounds and all. The sounds it read stay in
    the language -- they are not the letter's to take with it. */
-function geDelete(){
-  if(!GE) return;
-  var r=GE.r;
-  if(!confirm(t('glyph.del.ask'))) return;
-  ltDel(GE.lid);
-  save();
-  installScriptFont();
-  GE=null;
-  back();
-  toast(t('glyph.deleted', r||t('lt.untitled')));
-}
-
 /* ---- canvas ------------------------------------------------------------- */
 function cssVar(n){
   return (getComputedStyle(document.documentElement).getPropertyValue(n)||'').trim()||'#888';

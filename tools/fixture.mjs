@@ -105,8 +105,14 @@ export function halfDone(){
                                               return FORM.html; }],
     ['borrowing a character',  () => { window.route='pickltr'; NAV=[{r:'pickltr', a:'l1'}];
                                        pkFor='k'; return vPickLtr(); }],
-    ['picking a sound',        () => { window.route='picksnd'; NAV=[{r:'picksnd', a:'l1'}];
-                                       return vPickSnd(); }],
+    ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
+                                       return vLetter(); }],
+    ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
+                                       return vLetter(); }],
+    /* A letter that borrowed a character rather than being drawn. The way to
+       give the character back only exists once there is one. */
+    ['a borrowed letter, opened', () => { window.route='letter'; NAV=[{r:'letter', a:'l2'}];
+                                          return vLetter(); }],
     ['a conversation under way', () => { TALK=[{me:true, w:[['k','a','n','o']], g:['mountain']}];
                                          window.route='talk'; NAV=[{r:'talk'}];
                                          const h=vTalk(); TALK=[]; return h; }],

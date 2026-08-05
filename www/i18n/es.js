@@ -299,6 +299,7 @@ defLang('es', (function(){
       "lt.reads"         : "lee {0}",
       "lt.reads.none"    : "todavía no lee nada",
       "lt.reads.h"       : "Lee",
+      "lt.title"     : "Letra",
       "lt.reads.ph"     : "k, sh, ng, ka",
       "lt.reads.no"     : "Eso no es un sonido que pueda leer.",
       "lt.name"          : "Nombre",

@@ -48,7 +48,7 @@ page('form',     vForm);
 page('sound',    vSound);
 page('letters',  vLetters);
 page('pickltr',  vPickLtr);
-page('picksnd',  vPickSnd);
+page('letter',   vLetter);
 page('abugida',  vAbugida);
 page('relate',   vRelate);
 page('spell',    vSpell);

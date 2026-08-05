@@ -353,14 +353,12 @@ function ltRow(l){
   var role=ltRole(l), snd=(l.snd||[]);
   return '<div class="ltrow">'+
     ltFace(l, DO('editLetter',[l.id]))+
-    '<button class="ltmid"' + DO('editLetter', [l.id]) + '>'+
+    '<button class="ltmid"' + DO('go', ["letter", l.id]) + '>'+
       '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
       '<span class="ltsn">'+(role==='mark'
         ? esc(l.key||t('lt.mark.none'))
         : (snd.length? esc(t('lt.reads', snd.join(' / '))) : esc(t('lt.reads.none'))))+'</span>'+
     '</button>'+
-    (role==='mark' ? '' : '<button class="sndadd"' + DO('go', ["picksnd", l.id]) + ' aria-label="'+
-      esc(t('lt.addsnd'))+'">'+ICON_LINK+'</button>')+
     '</div>';
 }
 
@@ -391,23 +389,56 @@ function toggleLtr(unit, id){
   if((l.snd||[]).indexOf(unit)>=0) ltUnlink(id, unit); else ltLink(id, unit);
   save(); installScriptFont(); render();
 }
-function vPickSnd(){
+/* One letter: its name, whether it reads a sound or is a mark, what it reads,
+   the character it borrows instead of a drawing, and a way to be rid of it.
+
+   It used to be a grid of every unit in the writing system with ticks on the
+   ones this letter reads, which asks somebody to work in IPA to say a thing
+   they already know how to spell. The field takes what they would write --
+   k, sh, ng, ka -- and more than one, separated by spaces, for a letter that
+   reads more than one thing. The IPA under it is what the app made of that,
+   shown rather than chosen.
+
+   The rest of this was on the drawing screen, which made that screen scroll
+   and made this one a second place to say the same thing. Drawing is drawing;
+   this is the letter. */
+function vLetter(){
   var lid=here().a, l=ltById(lid);
   if(!l) return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
-  var units=wsUnits(), on=(l.snd||[]);
+  var role=ltRole(l), curKey=l.key||'';
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="field"><label>'+t('lt.name')+'</label>'+
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
       '' + IN('ltSetName', [lid]) + '></div>'+
-    '<div class="sec">'+t('lt.reads.h')+'</div>'+
-    (units.length
-      ? '<div class="phkeys">'+units.map(function(u){
-          return '<button class="phk'+(on.indexOf(u)>=0?' on':'')+'"' + DO('toggleLtr', [u, lid]) + '>'+
-            '<span class="pks">'+esc(u)+'</span></button>';
-        }).join('')+'</div>'
-      : '<div class="note">'+t('add.ph.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('go', ["sound"]) + '>'+
-      esc(t('toc.sound'))+'</button>'+
+    '<div class="sec">'+t('lt.role')+'</div>'+
+    '<div class="pick">'+
+      '<button class="'+(role==='snd'?'on':'')+'"' + DO('ltSetRole', [lid, 'snd']) + '>'+t('lt.role.snd')+'</button>'+
+      '<button class="'+(role==='mark'?'on':'')+'"' + DO('ltSetRole', [lid, 'mark']) + '>'+t('lt.role.mark')+'</button>'+
+    '</div>'+
+    (role==='snd'
+      ? '<div class="sec">'+t('lt.reads.h')+'</div>'+
+        '<div class="field"><input id="lt-rom" value="'+esc(ltRoman(l))+'" '+
+          'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
+          'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+
+        '<div class="note">'+((l.snd && l.snd.length)
+          ? '/'+esc(l.snd.join(' '))+'/' : t('lt.reads.none'))+'</div>'
+      : '<div class="sec">'+t('lt.mark.key')+'</div>'+
+        '<div class="field"><input id="mk-key" maxlength="1" value="'+esc(curKey)+'" '+
+          'placeholder="'+esc(t('lt.mark.none'))+'"' + CH('ltSetRole', [lid, 'mark']) + '></div>'+
+        '<div class="mkeys">'+MARK_CANDS.map(function(c){
+          return '<button class="mkey'+(curKey===c?' on':'')+'"' + DO('ltSetRole', [lid, 'mark', c]) + '>'+
+            esc(c)+'</button>';
+        }).join('')+'</div>')+
+    '<div class="sec">'+t('glyph.other')+'</div>'+
+    '<button class="btn ghost" style="width:100%"' + DO('editLetter', [lid]) + '>'+t('lt.draw')+'</button>'+
+    (l.ch
+      ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
+        '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
+        '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
+      : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
+        t('glyph.borrow')+'</button>')+
+    '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+      '<span class="sl" style="color:#c9553f">'+t('glyph.del')+'</span></button>'+
     '</div></div>';
 }

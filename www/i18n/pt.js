@@ -346,6 +346,7 @@ defLang('pt', (function(){
       "lt.reads"         : "lê {0}",
       "lt.reads.none"    : "ainda não lê nada",
       "lt.reads.h"       : "Lê",
+      "lt.title"     : "Letra",
       "lt.reads.ph"     : "k, sh, ng, ka",
       "lt.reads.no"     : "Isso não é um som que ela possa ler.",
       "lt.name"          : "Nome",

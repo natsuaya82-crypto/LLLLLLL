@@ -327,6 +327,7 @@ defLang('de', (function(){
       "lt.reads"         : "liest {0}",
       "lt.reads.none"    : "liest noch nichts",
       "lt.reads.h"       : "Liest",
+      "lt.title"     : "Buchstabe",
       "lt.reads.ph"     : "k, sh, ng, ka",
       "lt.reads.no"     : "Das ist kein Laut, den er lesen kann.",
       "lt.name"          : "Name",

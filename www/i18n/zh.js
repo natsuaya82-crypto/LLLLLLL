@@ -347,6 +347,7 @@ defLang('zh', (function(){
       "lt.reads"         : "读 {0}",
       "lt.reads.none"    : "还什么都不读",
       "lt.reads.h"       : "读音",
+      "lt.title"     : "字母",
       "lt.reads.ph"     : "k, sh, ng, ka",
       "lt.reads.no"     : "这不是它能读的音。",
       "lt.name"          : "名字",

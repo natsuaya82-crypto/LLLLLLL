@@ -52,7 +52,7 @@ act('exportCSV', exportCSV);
 act('fPick', fPick);
 act('geCircle', geCircle);
 act('geClear', geClear);
-act('geDelete', geDelete);
+act('ltDelete', ltDelete);
 act('geUndo', geUndo);
 act('geSave', geSave);
 act('ghShow', ghShow);

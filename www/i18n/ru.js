@@ -342,6 +342,7 @@ defLang('ru', (function(){
       "lt.reads"          : "читает {0}",
       "lt.reads.none"     : "пока ничего не читает",
       "lt.reads.h"        : "Читает",
+      "lt.title"     : "Буква",
       "lt.reads.ph"     : "k, sh, ng, ka",
       "lt.reads.no"     : "Это не звук, который она может читать.",
       "lt.name"           : "Имя",

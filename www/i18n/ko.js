@@ -518,6 +518,7 @@ defLang('ko', (function(){
       "lt.reads"         : "{0} 을(를) 읽음",
       "lt.reads.none"    : "아직 아무것도 읽지 않음",
       "lt.reads.h"       : "읽는 소리",
+      "lt.title"     : "글자",
       "lt.reads.ph"     : "k, sh, ng, ka",
       "lt.reads.no"     : "그것은 읽을 수 있는 소리가 아닙니다.",
       "lt.name"          : "이름",

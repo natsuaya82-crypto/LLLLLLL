@@ -255,6 +255,7 @@ defLang('ja', (function(){
       'lt.reads'        : '{0} を読む',
       'lt.reads.none'   : '読みが未設定',
       'lt.reads.h'      : '読み',
+      'lt.title'     : '文字',
       'lt.reads.ph'     : 'k, sh, ng, ka',
       'lt.reads.no'     : 'それは読める音ではない。',
       'lt.name'         : '名前',

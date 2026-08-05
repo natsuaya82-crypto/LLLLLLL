@@ -164,15 +164,18 @@ function ltNew(o){
   LETTERS.push(l); saveLetters();
   return l;
 }
-/* What this letter reads, spelled the way a person would write it. The field
-   in the glyph editor shows this, and ltSetRoman reads it back. */
+/* What this letter reads, spelled the way a person would write it. One word
+   per unit, separated by spaces, because a letter may read more than one
+   thing -- c reads /k/ and /s/. The field on the letter screen shows this and
+   ltSetRoman reads it back. */
 function ltRoman(l){
-  var u=ltUnits(l), out='', i, j, p;
+  var u=ltUnits(l), out=[], i, j, p, w;
   for(i=0;i<u.length;i++){
-    p=uSplit(u[i]);
-    for(j=0;j<p.length;j++) out+=ipaRoman(p[j]);
+    p=uSplit(u[i]); w='';
+    for(j=0;j<p.length;j++) w+=ipaRoman(p[j]);
+    out.push(w);
   }
-  return out;
+  return out.join(' ');
 }
 /* Correcting what a letter reads -- the only time anybody says anything about
    a sound, because the letter was given one when it was drawn. Emptying the
@@ -180,18 +183,28 @@ function ltRoman(l){
    the letters chapter lists it as one still to finish.
 
    A sound somebody says their letter reads is a sound their language has, so
-   it joins the inventory rather than being refused for not being in it. */
+   it joins the inventory rather than being refused for not being in it.
+
+   Nothing is written if any part of what was typed cannot be read: half a
+   correction applied silently is worse than none. */
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
-  var txt=String(sp||'').replace(/[^A-Za-z]/g,'');
-  if(!txt.length){ l.snd=[]; saveLetters(); installScriptFont(); render(); return; }
-  var parts=ipaFromRoman(txt);
-  if(!parts){ toast(t('lt.reads.no')); return; }
-  var have=addedSnd(), i;
-  for(i=0;i<parts.length;i++) if(have.indexOf(parts[i])<0) have.push(parts[i]);
-  SET.snd=asOrder(have);
-  l.snd=[parts.join('')];
-  save(); saveLetters(); installScriptFont(); render();
+  var words=String(sp||'').replace(/[^A-Za-z ]/g,' ').split(' '), units=[], seen=[], i, j, parts;
+  for(i=0;i<words.length;i++){
+    if(!words[i].length) continue;
+    parts=ipaFromRoman(words[i]);
+    if(!parts){ toast(t('lt.reads.no')); return; }
+    units.push(parts.join(''));
+    for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
+  }
+  if(units.length){
+    var have=addedSnd();
+    for(i=0;i<seen.length;i++) if(have.indexOf(seen[i])<0) have.push(seen[i]);
+    SET.snd=asOrder(have);
+    save();
+  }
+  l.snd=units;
+  saveLetters(); installScriptFont(); render();
 }
 function ltSetStrokes(id, st){
   var l=ltById(id); if(!l) return null;
@@ -219,6 +232,20 @@ function ltUnlink(id, unit){
   var i=l.snd.indexOf(unit);
   if(i>=0) l.snd.splice(i,1);
   saveLetters(); return l;
+}
+/* Deleting a letter: asked for, confirmed, and left behind. ltDel() below is
+   the storage half and says nothing to anybody. This was geDelete() on the
+   drawing screen, which is why it read the editor's state instead of an id --
+   and why deleting a letter meant opening the surface it was drawn on. */
+function ltDelete(id){
+  var l=ltById(id); if(!l) return;
+  var nm=ltName(l)||t('lt.untitled');
+  if(!confirm(t('glyph.del.ask'))) return;
+  ltDel(id);
+  if(GE && GE.lid===id) GE=null;
+  save(); installScriptFont();
+  back();
+  toast(t('glyph.deleted', nm));
 }
 function ltDel(id){
   LETTERS=LETTERS.filter(function(l){ return l.id!==id; });
