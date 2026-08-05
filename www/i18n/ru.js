@@ -502,7 +502,11 @@ defLang('ru', (function(){
       "ob.snds.n.few"     : "Выбрано {0} звука",
       "ob.snds.note"      : "Полная таблица будет позже",
       "ob.snds.need"      : "Выберите звук",
-      "ob.draw.h2"        : "Буква для {0}",
+      "ob.draw.h"        : "Нарисуйте одну букву",
+      "ob.read.h"        : "Что она читает?",
+      "ob.read.sub"        : "Выберите звук или сделайте её знаком. Можно решить позже.",
+      "ob.read.mark"        : "Или знак",
+      "ob.read.later"        : "Решить позже",
       "ob.draw.later"     : "Нарисовать позже",
       /* the writing system */
       "script.preview"    : "Ваше письмо",

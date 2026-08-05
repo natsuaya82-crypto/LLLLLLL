@@ -61,7 +61,7 @@ var WORLD_SCRIPTS = [
    is asked for: a word is made of sounds and written in letters, and by the
    end of this there are both, so the dictionary is somewhere to go rather
    than somewhere to be sent. */
-var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', snd:''};
+var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
 var OB_STEPS=5;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
@@ -79,7 +79,7 @@ var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke
 function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
 function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
 function obBack(){
-  if(ob.step===2 && ob.mode==='borrow'){
+  if(ob.step===1 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
@@ -159,112 +159,67 @@ function obNameLater(){ ob.name=''; obFinish(); }
    hard, flowing, breathy, plain -- and it draws an inventory out of that
    region of the chart, says the whole thing out loud, and waits. Take it, ask
    for another, or open the chart and do it yourself. */
-var obPick2='';
-function obChar(id){
-  obPick2=id;
-  SET.snd=asSounds(id, 12);
-  save();
-  asSay(SET.snd);
-  render();
-}
-function obAgain(){ if(obPick2) obChar(obPick2); }
-function obHearSnd(p){ sayOne(p); }
-function obDropSnd(p){
-  var a=addedSnd(), i=a.indexOf(p);
-  if(i>=0){ a.splice(i,1); save(); render(); }
-}
-/* The proposal, shown in two rows. A flat list of twelve symbols is a wall:
-   there is no way to see that the language has five vowels and seven
-   consonants, which is the single most useful thing about an inventory and
-   the thing that decides what a syllable can look like. Consonants first,
-   vowels under them, each row labelled -- the same two words the chart uses,
-   so nothing new has to be learned to read it.
 
-   Each row ends with the way to lengthen it: one more consonant, one more
-   vowel, drawn from the same character of sound and said as it arrives. And
-   each sound carries the way to take it back out, because a proposal you can
-   only accept whole is not a proposal. */
-function obSndRow(lab, list, kind){
-  return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
-    '<div class="obhs">'+list.map(function(p){
-      return '<span class="obhp"><button class="obhb"' + DO('obHearSnd', [p]) + '>'+esc(p)+'</button>'+
-        '<button class="obhx"' + DO('obDropSnd', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
-    }).join('')+
-    '<button class="obhadd"' + DO('obMore', [kind]) + '>'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
-    '</div></div>';
-}
-/* One more sound of the kind asked for. It is said on arrival -- an inventory
-   is a set of sounds, so a sound that joins it silently has not really been
-   heard about. */
-function obMore(kind){
-  var have=addedSnd(), s=asMore(obPick2||AS_CHARS[0].id, kind, have);
-  if(!s){ toast(t('as.more.none')); return; }
-  SET.snd=asOrder(have.concat([s]));
-  save(); sayOne(s); render();
-}
-function obSndsHTML(){
-  var have=addedSnd(), cs=[], vs=[], i;
-  for(i=0;i<have.length;i++){
-    if(ipaIsVowel(have[i])) vs.push(have[i]); else cs.push(have[i]);
-  }
-  return '<div class="mid obleft">'+
-    '<h2 class="obh">'+t('ob.snds.h')+'</h2>'+
-    '<p class="obsub">'+t('ob.snds.sub')+'</p>'+
-    '<div class="obscripts one">'+AS_CHARS.map(function(c){
-      return '<button class="obsrow'+(obPick2===c.id?' on':'')+'"' + DO('obChar', [c.id]) + '>'+
-        '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
-        '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
-    }).join('')+'</div>'+
-    /* the panel stays once a character has been chosen, even if every sound
-       in it has been taken back out -- otherwise dropping the last one takes
-       away the buttons that would put another back */
-    ((have.length || obPick2)
-      ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
-        obSndRow(t('ipa.cons'), cs, 'c')+obSndRow(t('ipa.vows'), vs, 'v')+
-        '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_PLAY+t('as.hear')+'</button>'+
-        (obPick2? '<button' + DO('obAgain') + '>'+t('as.again')+'</button>':'')+'</div></div>'
-      : '')+
-    '</div>'+
-    '<div class="obfoot"><button class="btn"' + DO('obToDraw') + ''+(have.length?'':' disabled')+'>'+t('ob.next')+'</button>'+
-    '<button class="obskip"' + DO('obOwnSnd') + '>'+t('as.own')+'</button>'+
-    '<div class="mini obnote">'+t('ob.snds.note')+'</div></div>';
-}
-/* The whole chart, for somebody who would rather setPlan it themselves. It is
-   the sounds chapter, which is built for exactly this, so onboarding ends
-   here and the chapter opens. */
-function obOwnSnd(){
-  if(!langName) langName=ob.name||t('lang.default');
-  SET.done=true; save();
-  route='sound'; RENDERED=null; render(); window.scrollTo(0,0);
-}
-function obToDraw(){
-  if(!addedSnd().length){ toast(t('ob.snds.need')); return; }
-  ob.snd=wsUnits()[0]||addedSnd()[0];
-  obGo(2);
-}
-
-/* ---- step 4, one letter -----------------------------------------------
-   The editor is the real one from the letter screen -- same canvas id, same
-   tools, same lattice -- so whatever is learned here is not relearned later.
-   Which letter is being drawn is known before it is drawn now, because the
-   kind of writing and the sounds were both decided on the way here. */
+/* ---- one letter -------------------------------------------------------
+   Nothing about this letter is decided before it is drawn. The app used to
+   pick a sound out of the inventory, put "the letter for k" at the top, and
+   open the editor already belonging to k -- so the first thing anybody made
+   here was an answer to a question the app had asked itself. What it reads
+   is the next step, and it is a person who says. */
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  ltSetStrokes(ltForUnit(ob.snd).id, JSON.parse(JSON.stringify(keep)));
+  /* a letter of its own, reading nothing yet */
+  ob.lid=ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id;
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
-  sayOne(ob.snd);
-  obGo(3);
+  obGo(2);
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
 function obTakeCh(ch){
-  ltSetChar(ltForUnit(ob.snd).id, ch);
+  ob.lid=ltNew({ ch: ch }).id;
   SET.showScript=true;
-  save(); installScriptFont(); sayOne(ob.snd); obFinish();
+  save(); installScriptFont();
+  ob.mode=''; obGo(2);
 }
-function obSkipDraw(){ obGo(3); }
+function obSkipDraw(){ ob.lid=''; obGo(3); }
+
+/* ---- what it reads ----------------------------------------------------
+   The letter exists and says nothing. Here is where a person gives it a
+   sound, or says it is a mark and reads nothing at all, or leaves it for
+   later -- a letter with no sound is a perfectly good letter to have, and
+   the letters chapter lists it as one still to finish.
+
+   The sounds come from the chart itself rather than from an inventory,
+   because a language that has just been started does not have one yet. The
+   sound picked joins it. */
+function obReads(sym){
+  if(!ob.lid) { obGo(3); return; }
+  var a=addedSnd();
+  if(a.indexOf(sym)<0) a.push(sym);
+  ltLink(ob.lid, sym);
+  save(); installScriptFont(); sayOne(sym);
+  obGo(3);
+}
+function obReadsMark(ch){
+  if(ob.lid) ltSetRole(ob.lid, 'mark', ch);
+  obGo(3);
+}
+function obReadLater(){ obGo(3); }
+function obReadHTML(){
+  return '<div class="mid obleft">'+
+    '<h2 class="obh">'+t('ob.read.h')+'</h2>'+
+    '<p class="obsub">'+t('ob.read.sub')+'</p>'+
+    '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable('obReads')+
+    '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable('obReads')+
+    '<div class="sec">'+t('ob.read.mark')+'</div>'+
+    '<div class="phkeys">'+['?','!','.',',',':',';'].map(function(c){
+      return '<button class="ph2"' + DO('obReadsMark', [c]) + '>'+esc(c)+'</button>';
+    }).join('')+'</div>'+
+    '</div>'+
+    '<div class="obfoot"><button class="obskip"' + DO('obReadLater') + '>'+t('ob.read.later')+'</button></div>';
+}
 
 function obFinish(){
   /* 「言語名決まってないのに音だけ決まってるの何？」 A language that reached the
@@ -289,12 +244,11 @@ function obFinish(){
 }
 
 function obDrawHTML(){
-  if(!ob.snd) ob.snd=(wsUnits()[0]||addedSnd()[0]||'');
-  if(!GE) GE=newGE(ob.snd);
+  if(!GE) GE=newGE('');
   var st=GE.st[GE.si], pts=0;
   GE.st.forEach(function(x){ pts+=x.pts.length; });
   return '<div class="mid">'+
-    '<h2>'+t('ob.draw.h2', esc(ob.snd))+'</h2>'+
+    '<h2>'+t('ob.draw.h')+'</h2>'+
     '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
     '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
@@ -374,9 +328,9 @@ function vOb(){
      always been able to invent one out of the inventory for anybody who
      skips it. */
   var h = (s===0)? obDoorHTML()
-        : (s===1)? obSndsHTML()
-        : (s===2 && ob.mode==='borrow')? obBorrowHTML()
-        : (s===2)? obDrawHTML()
+        : (s===1 && ob.mode==='borrow')? obBorrowHTML()
+        : (s===1)? obDrawHTML()
+        : (s===2)? obReadHTML()
         : obNameHTML();
   return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
 }

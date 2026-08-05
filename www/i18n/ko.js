@@ -674,7 +674,11 @@ defLang('ko', (function(){
       "ob.snds.n"       : "소리 {0}개 골랐어요",
       "ob.snds.note"    : "전체 표는 나중에",
       "ob.snds.need"    : "소리를 골라 주세요",
-      "ob.draw.h2"      : "{0} 의 문자",
+      "ob.draw.h"      : "글자를 하나 그리세요",
+      "ob.read.h"      : "무엇을 읽나요?",
+      "ob.read.sub"      : "소리를 고르거나 부호로 만드세요. 나중에 정해도 됩니다.",
+      "ob.read.mark"      : "또는 부호",
+      "ob.read.later"      : "나중에 정하기",
       "ob.draw.later"   : "나중에 그리기",
       /* the writing system */
       "script.preview"    : "내 글씨",

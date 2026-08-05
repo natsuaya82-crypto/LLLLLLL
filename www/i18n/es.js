@@ -456,7 +456,11 @@ defLang('es', (function(){
       "ob.snds.n.1"       : "1 sonido elegido",
       "ob.snds.note"      : "La tabla entera viene después",
       "ob.snds.need"      : "Elija un sonido",
-      "ob.draw.h2"        : "La letra de {0}",
+      "ob.draw.h"        : "Dibuja una letra",
+      "ob.read.h"        : "¿Qué dice?",
+      "ob.read.sub"        : "Elige un sonido, o hazla un signo. Puedes decidir después.",
+      "ob.read.mark"        : "O un signo",
+      "ob.read.later"        : "Decidir después",
       "ob.draw.later"     : "Dibujarla más tarde",
       /* the writing system */
       "script.preview"    : "Tu escritura",

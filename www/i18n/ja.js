@@ -412,7 +412,11 @@ defLang('ja', (function(){
       'ob.snds.n.1'     : "1音を選びました",
       'ob.snds.note'    : 'あとで選び直せます',
       'ob.snds.need'    : "音を選んでください",
-      'ob.draw.h2'      : '{0} の文字',
+      'ob.draw.h'      : '字をひとつ描く',
+      'ob.read.h'      : 'これは何を読む？',
+      'ob.read.sub'      : '音を選ぶか、しるしにする。あとで決めてもいい。',
+      'ob.read.mark'      : 'または しるし',
+      'ob.read.later'      : 'あとで決める',
       'ob.draw.later'   : "あとで描く",
       /* the writing system */
       'script.preview'    : "この文字で書くと",

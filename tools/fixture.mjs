@@ -58,16 +58,18 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
-    ['sounds offered again',      () => { ob.step = 1; obPick2 = true; return vOb(); }],
-    ['characters to borrow',      () => { ob.step = 2; ob.mode = 'borrow';
+    ['characters to borrow',      () => { ob.step = 1; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
-    ['no script picked to borrow from', () => { ob.step = 2; ob.mode = 'borrow';
+    ['no script picked to borrow from', () => { ob.step = 1; ob.mode = 'borrow';
                                                 ob.pick = ''; return vOb(); }],
+    /* the letter exists and says nothing: the step where a person tells it
+       what it reads, which is the one the app used to answer for them */
+    ['saying what a letter reads', () => { ob.step = 2; ob.mode = '';
+                                           ob.lid = 'l1'; return vOb(); }],
     /* The step where a letter is drawn. Its two buttons -- finish, or skip the
        drawing -- are the last thing a person touches before the app becomes
        the app, and nothing had ever pressed either of them. */
-    ['drawing the first letter', () => { ob.step = 2; ob.mode = ''; ob.snd = 'k';
-                                         return vOb(); }]
+    ['drawing the first letter', () => { ob.step = 1; ob.mode = ''; return vOb(); }]
   ];
 }
 
@@ -91,6 +93,10 @@ export function halfDone(){
                                        cands=[{q:['k','a','n','o'], on:true},
                                               {q:['t','i','r'], on:false}];
                                        return vMake(); }],
+    /* the phonology chapter with an inventory proposed: the row of sounds and
+       the way to ask for another only exist once a character has been picked */
+    ['an inventory proposed',  () => { window.route='sound'; NAV=[{r:'sound'}];
+                                       sndFeelPick = AS_CHARS[0].id; return vSound(); }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
     /* A note that already exists: the delete button only appears once there

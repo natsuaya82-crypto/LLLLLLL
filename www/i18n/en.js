@@ -401,7 +401,11 @@ defLang('en', (function(){
       'ob.snds.n.1'     : "1 sound chosen",
       'ob.snds.note'    : "The full chart comes later",
       'ob.snds.need'    : "Choose a sound",
-      'ob.draw.h2'      : "The letter for {0}",
+      'ob.draw.h'      : 'Draw one letter',
+      'ob.read.h'      : 'What does it read?',
+      'ob.read.sub'      : 'Pick a sound, or make it a mark. You can decide later.',
+      'ob.read.mark'      : 'Or a mark',
+      'ob.read.later'      : 'Decide later',
       'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.preview'    : "Your writing",

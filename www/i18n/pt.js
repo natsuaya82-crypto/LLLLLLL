@@ -503,7 +503,11 @@ defLang('pt', (function(){
       "ob.snds.n.1"       : "1 som escolhido",
       "ob.snds.note"      : "A tabela inteira vem depois",
       "ob.snds.need"      : "Escolha um som",
-      "ob.draw.h2"        : "A letra de {0}",
+      "ob.draw.h"        : "Desenhe uma letra",
+      "ob.read.h"        : "O que ela lê?",
+      "ob.read.sub"        : "Escolha um som, ou faça dela um sinal. Pode decidir depois.",
+      "ob.read.mark"        : "Ou um sinal",
+      "ob.read.later"        : "Decidir depois",
       "ob.draw.later"     : "Desenhar depois",
       /* the writing system */
       "script.preview"    : "A sua escrita",

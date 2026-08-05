@@ -129,10 +129,89 @@ function sndToggle(sym){
    in practice the chart made no sound at all -- on the one screen whose whole
    subject is what things sound like. */
 function sndTap(sym){ sayOne(sym); sndToggle(sym); }
-function ipaBtn(sym){
-  return '<button class="ph2'+(sndHas(sym)?' on':'')+'"' + DO('sndTap', [sym]) + '>'+esc(sym)+'</button>';
+/* ---- an inventory to start from ---------------------------------------
+   Fourteen buttons and no help is not a question anybody can answer the
+   first time. So the app proposes: say what the language should sound like
+   -- soft, hard, flowing, breathy, plain -- and it draws an inventory out of
+   that region of the chart, says it out loud, and waits. Take it, ask for
+   another, or use the chart below and do it yourself.
+
+   This was the third step of onboarding, where it stood between somebody and
+   the first thing they came to do. It belongs here, in the chapter about
+   sounds, where it can be reached on any day rather than once. */
+var sndFeelPick='';
+function sndFeel(id){
+  sndFeelPick=id;
+  SET.snd=asSounds(id, 12);
+  save();
+  asSay(SET.snd);
+  render();
 }
-function ipaConsTable(){
+function sndFeelAgain(){ if(sndFeelPick) sndFeel(sndFeelPick); }
+function sndHear(p){ sayOne(p); }
+function sndDrop(p){
+  var a=addedSnd(), i=a.indexOf(p);
+  if(i>=0){ a.splice(i,1); save(); render(); }
+}
+/* The proposal, shown in two rows. A flat list of twelve symbols is a wall:
+   there is no way to see that the language has five vowels and seven
+   consonants, which is the single most useful thing about an inventory and
+   the thing that decides what a syllable can look like. Consonants first,
+   vowels under them, each row labelled -- the same two words the chart uses,
+   so nothing new has to be learned to read it.
+
+   Each row ends with the way to lengthen it: one more consonant, one more
+   vowel, drawn from the same character of sound and said as it arrives. And
+   each sound carries the way to take it back out, because a proposal you can
+   only accept whole is not a proposal. */
+function sndFeelRow(lab, list, kind){
+  return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
+    '<div class="obhs">'+list.map(function(p){
+      return '<span class="obhp"><button class="obhb"' + DO('sndHear', [p]) + '>'+esc(p)+'</button>'+
+        '<button class="obhx"' + DO('sndDrop', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
+    }).join('')+
+    '<button class="obhadd"' + DO('sndFeelMore', [kind]) + '>'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
+    '</div></div>';
+}
+/* One more sound of the kind asked for. It is said on arrival -- an inventory
+   is a set of sounds, so a sound that joins it silently has not really been
+   heard about. */
+function sndFeelMore(kind){
+  var have=addedSnd(), s=asMore(sndFeelPick||AS_CHARS[0].id, kind, have);
+  if(!s){ toast(t('as.more.none')); return; }
+  SET.snd=asOrder(have.concat([s]));
+  save(); sayOne(s); render();
+}
+function sndFeelHTML(){
+  var have=addedSnd(), cs=[], vs=[], i;
+  for(i=0;i<have.length;i++){
+    if(ipaIsVowel(have[i])) vs.push(have[i]); else cs.push(have[i]);
+  }
+  return '<div class="sec">'+esc(t('ob.snds.h'))+'</div>'+
+    '<p class="note">'+t('ob.snds.sub')+'</p>'+
+    '<div class="obscripts one">'+AS_CHARS.map(function(c){
+      return '<button class="obsrow'+(sndFeelPick===c.id?' on':'')+'"' + DO('sndFeel', [c.id]) + '>'+
+        '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
+        '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
+    }).join('')+'</div>'+
+    /* the panel stays once a character has been chosen, even if every sound
+       in it has been taken back out -- otherwise dropping the last one takes
+       away the buttons that would put another back */
+    ((have.length || sndFeelPick)
+      ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
+        sndFeelRow(t('ipa.cons'), cs, 'c')+sndFeelRow(t('ipa.vows'), vs, 'v')+
+        '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_PLAY+t('as.hear')+'</button>'+
+        (sndFeelPick? '<button' + DO('sndFeelAgain') + '>'+t('as.again')+'</button>':'')+'</div></div>'
+      : '');
+}
+
+/* The chart is also how a letter is told what it reads, and that is a
+   different thing to do with the same button, so the name it says is passed
+   in rather than assumed. Nothing else about the chart changes. */
+function ipaBtn(sym, act){
+  return '<button class="ph2'+(sndHas(sym)?' on':'')+'"' + DO(act||'sndTap', [sym]) + '>'+esc(sym)+'</button>';
+}
+function ipaConsTable(act){
   var rows='', mi, pi, m, cell;
   for(mi=0; mi<IPA_MANNERS.length; mi++){
     m=IPA_MANNERS[mi];
@@ -140,19 +219,19 @@ function ipaConsTable(){
     rows+='<tr><th>'+esc(t('ipa.m.'+m))+'</th>';
     for(pi=0; pi<IPA_PLACES.length; pi++){
       cell=ipaCell(m, IPA_PLACES[pi]);
-      rows+='<td>'+cell.map(function(c){ return ipaBtn(c.s); }).join('')+'</td>';
+      rows+='<td>'+cell.map(function(c){ return ipaBtn(c.s, act); }).join('')+'</td>';
     }
     rows+='</tr>';
   }
   return '<div class="ipascroll"><table class="ipatab">'+rows+'</table></div>';
 }
-function ipaVowTable(){
+function ipaVowTable(act){
   var rows='', hi, bi, cell;
   for(hi=0; hi<IPA_HEIGHTS.length; hi++){
     rows+='<tr><th>'+esc(t('ipa.h.'+IPA_HEIGHTS[hi]))+'</th>';
     for(bi=0; bi<IPA_BACKS.length; bi++){
       cell=ipaVCell(IPA_HEIGHTS[hi], IPA_BACKS[bi]);
-      rows+='<td>'+cell.map(function(v){ return ipaBtn(v.s); }).join('')+'</td>';
+      rows+='<td>'+cell.map(function(v){ return ipaBtn(v.s, act); }).join('')+'</td>';
     }
     rows+='</tr>';
   }
@@ -178,6 +257,7 @@ function vSound(){
           '<span class="rn"></span><span class="rt">'+esc(t('toc.letters'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+ltShaped()+'</span>'+ICON_GO+'</button>'
       : '<div class="ipamine"><span class="none">'+t('ipa.mine.none')+'</span></div>')+
+    sndFeelHTML()+
     '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
     '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
     '<div class="sec">'+t('ipa.other')+'</div>'+

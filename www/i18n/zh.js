@@ -503,7 +503,11 @@ defLang('zh', (function(){
       "ob.snds.n"        : "已选 {0} 个音",
       "ob.snds.note"     : "完整的表在之后",
       "ob.snds.need"     : "请选一个音",
-      "ob.draw.h2"       : "{0} 的文字",
+      "ob.draw.h"       : "画一个字",
+      "ob.read.h"       : "它读什么？",
+      "ob.read.sub"       : "选一个音，或把它变成符号。也可以以后再定。",
+      "ob.read.mark"       : "或者符号",
+      "ob.read.later"       : "以后再定",
       "ob.draw.later"    : "以后再画",
       /* the writing system */
       "script.preview"    : "你的文字",
