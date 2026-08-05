@@ -126,6 +126,9 @@ function langOpen(id){
   save(); saveLetters(); saveNotes(); saveStg(); saveTalk();
   langId=id; langStore();
   langRead(); ltRead(); noteRead(); stRead(); tkRead();
+  /* and where you were standing in the old one is not a place in this one:
+     a filter left on would hide most of a dictionary you have never seen. */
+  viewReset();
   goTab('home');
 }
 

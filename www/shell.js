@@ -7,6 +7,35 @@
    ========================================================================= */
 var app=document.getElementById('app');
 
+/* ---- what a screen forgets when you leave it -------------------------
+   Fifteen things across eight files are remembered between renders: which
+   words the list is filtered to, what was typed into a search, which face a
+   sheet is showing, what the make screen has produced but not committed.
+   None of that belongs to the language -- it is where you happen to be
+   standing in it.
+
+   There was no one place that said so, and things were added to it one at a
+   time over the app's life. tools/fixture.mjs put two of the fifteen back
+   and had no way to know about the rest, so every walk of the app was
+   walking screens that the previous press had narrowed: the word list starts
+   with 32 buttons and was down to 19 by the sixteenth press, which is how
+   five buttons came to be reported as unreachable when they were merely
+   filtered away.
+
+   So: one place. Adding a screen that remembers something means adding it
+   here, and tools/press.mjs fails if the two ever disagree -- it presses
+   every button on a screen and requires the screen to be the same screen
+   afterwards, which is not a rule anybody has to remember. */
+function viewReset(){
+  q=''; wFil='*'; wSort='a';           /* the word list */
+  fq=''; fpick=null;                   /* the find screen */
+  mkPos='n'; cands=[];                 /* the make screen */
+  abVow='';                            /* the abugida editor */
+  addSeq=[]; addMode=''; wdMode='';    /* the two sheets */
+  tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
+  GE=null;                             /* the glyph editor */
+}
+
 /* ---- where you are, and what you came through ------------------------
    Every screen used to be reached by setting one global to a string, and
    every back button was hard-wired to a particular screen. So the word

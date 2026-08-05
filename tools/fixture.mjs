@@ -30,6 +30,13 @@ export function seed(){
     {hw:'ke',   ph:['k','e'],         mn:'what',     mns:['what'],     pos:'pro',  slot:'ask.what', at:6}
   ];
   langName = 'Shango';
+  /* The person's settings, back to what a fresh install has. A press that
+     writes SET.x -- a theme, a reading mode, a writing system -- was
+     otherwise still in force on every screen built after it, so the walk was
+     covering one arrangement of the app and calling it all of them. */
+  SET.theme='system'; SET.plan='free'; SET.done=true; SET.order='SOV';
+  SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
+  SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
   SET.snd = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
@@ -38,22 +45,11 @@ export function seed(){
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]}];
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
-  /* Every screen that remembers something between renders, put back to what
-     it is on a fresh app. This is not tidiness. press.mjs rebuilds a screen
-     before each press and takes the button at position i, so a filter left on
-     by press i-1 makes the rebuilt screen shorter and every position after it
-     mean something else -- and then the loop runs off the end and stops. The
-     word list starts with 32 buttons, is down to 19 by the sixteenth press,
-     and never reaches the two at the bottom at all.
-
-     act-check walks with the same fixture, so it was counting the same
-     narrowed screens. */
-  q = ''; wFil = '*'; wSort = 'a';        /* the word list: search, filter, order */
-  fq = ''; fpick = null;                  /* the find screen */
-  mkPos = 'n'; cands = [];                /* the make screen */
-  abVow = '';                             /* the abugida editor */
-  addSeq = []; addMode = ''; wdMode = ''; /* the new-word sheet and the word sheet */
-  tq = ''; tkPos = POS_ALL;               /* talk */
+  /* Where you are standing is the app's to say, not this file's. viewReset()
+     in www/shell.js is the one list of what a screen forgets when you leave
+     it; a copy here would be a second list to keep in step, and the first
+     version of this was exactly that -- two of the fifteen. */
+  viewReset();
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to

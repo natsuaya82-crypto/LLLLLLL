@@ -136,6 +136,30 @@ Also: every `.js` under `www/` must be referenced by `index.html`, and every fil
 `index.html` references must be **tracked by git** (not merely present on disk).
 Adding a script file means adding its tag and `git add`-ing it in the same commit.
 
+## One place, not fifteen
+
+The three bugs found in one afternoon were the same bug: something was added
+and the one place that governs it was not. `.sfont` is added by `myFontOn()`
+in three files and was unconditional in a fourth. The IPA column got a patch
+on top of a patch. `seed()` put back two of the fifteen things a screen
+remembers.
+
+So: **a rule lives in one place, and the places that follow it do not restate
+it.**
+
+`viewReset()` in `www/shell.js` is where a screen forgets. Which words the
+list is filtered to, what was typed, which face a sheet shows, what the make
+screen has produced but not committed — none of it belongs to the language,
+it is where you are standing in it. Adding a screen that remembers something
+means adding it there, and `langOpen()` calls it because arriving in somebody
+else's language with your filter still on hides most of a dictionary you have
+never seen.
+
+The language itself is the other way round and deliberately so: `WORDS`,
+`LETTERS`, `SCRIPT`, `STG` are single globals meaning "the one in front of
+me", read from 290 places, filed under `langKey()`. One thing seen from many
+places is not the same as one rule written out many times.
+
 ## Names
 
 A function's prefix says which part of the app it belongs to, and it must be
