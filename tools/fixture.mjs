@@ -58,16 +58,15 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
-    ['choosing a writing system', () => { ob.step = 2; ob.sc = ''; return vOb(); }],
-    ['sounds offered again',      () => { ob.step = 3; obPick2 = true; return vOb(); }],
-    ['characters to borrow',      () => { ob.step = 4; ob.mode = 'borrow';
+    ['sounds offered again',      () => { ob.step = 1; obPick2 = true; return vOb(); }],
+    ['characters to borrow',      () => { ob.step = 2; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
-    ['no script picked to borrow from', () => { ob.step = 4; ob.mode = 'borrow';
+    ['no script picked to borrow from', () => { ob.step = 2; ob.mode = 'borrow';
                                                 ob.pick = ''; return vOb(); }],
     /* The step where a letter is drawn. Its two buttons -- finish, or skip the
        drawing -- are the last thing a person touches before the app becomes
        the app, and nothing had ever pressed either of them. */
-    ['drawing the first letter', () => { ob.step = 4; ob.mode = ''; ob.snd = 'k';
+    ['drawing the first letter', () => { ob.step = 2; ob.mode = ''; ob.snd = 'k';
                                          return vOb(); }]
   ];
 }

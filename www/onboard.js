@@ -79,7 +79,7 @@ var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke
 function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
 function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
 function obBack(){
-  if(ob.step===4 && ob.mode==='borrow'){
+  if(ob.step===2 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
@@ -125,7 +125,7 @@ function obName(){
   var e=document.getElementById('ob-name');
   if(e) ob.name=String(e.value||'').trim();
   langName=ob.name;
-  save(); obGo(2);
+  save(); obFinish();
 }
 function obNameHTML(){
   return '<div class="mid">'+
@@ -142,27 +142,13 @@ function obNameHTML(){
 /* Not everyone has a name yet, and being stuck on the first question of the
    app because of it is absurd. The cover asks again, and the pencil beside
    the title is there whenever the answer arrives. */
-function obNameLater(){ ob.name=''; obGo(2); }
+function obNameLater(){ ob.name=''; obFinish(); }
 
 /* ---- step 2, what a letter is a letter of -----------------------------
    Asked before any letter is drawn, because it decides what drawing one
    means. Each row says what it is and names a writing that works that way,
    so the choice is made by recognising something rather than by parsing a
    definition. */
-function obWsys(k){ SET.wsys=k; save(); render(); }
-function obWsysHTML(){
-  return '<div class="mid obleft">'+
-    '<h2 class="obh">'+t('ob.ws.h')+'</h2>'+
-    '<p class="obsub">'+t('ob.ws.sub')+'</p>'+
-    '<div class="obscripts one">'+WSYS.map(function(k){
-      return '<button class="obsrow'+(wsys()===k?' on':'')+'"' + DO('obWsys', [k]) + '>'+
-        '<span class="obnm">'+esc(t('ws.k.'+k))+'</span>'+
-        '<span class="obws">'+esc(t('ws.k.'+k+'.eg'))+'</span>'+
-        '</button>';
-    }).join('')+'</div></div>'+
-    '<div class="obfoot"><button class="btn"' + DO('obGo', [3]) + '>'+t('ob.next')+'</button>'+
-    '<div class="mini obnote">'+t('ob.ws.note')+'</div></div>';
-}
 
 /* ---- step 3, the sounds -----------------------------------------------
    It used to be fourteen buttons and no help: pick the sounds your language
@@ -254,7 +240,7 @@ function obOwnSnd(){
 function obToDraw(){
   if(!addedSnd().length){ toast(t('ob.snds.need')); return; }
   ob.snd=wsUnits()[0]||addedSnd()[0];
-  obGo(4);
+  obGo(2);
 }
 
 /* ---- step 4, one letter -----------------------------------------------
@@ -269,7 +255,7 @@ function obDone(){
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
   sayOne(ob.snd);
-  obFinish();
+  obGo(3);
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
@@ -278,7 +264,7 @@ function obTakeCh(ch){
   SET.showScript=true;
   save(); installScriptFont(); sayOne(ob.snd); obFinish();
 }
-function obSkipDraw(){ obFinish(); }
+function obSkipDraw(){ obGo(3); }
 
 function obFinish(){
   /* 「言語名決まってないのに音だけ決まってるの何？」 A language that reached the
@@ -373,19 +359,25 @@ function vOb(){
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
-    '<div class="obtop">'+[0,1,2,3,4].map(function(i){
+    '<div class="obtop">'+[0,1,2,3].map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join('')+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){
         return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
       }).join('')+
     '</select></div>';
+  /* Drawing used to be fourth, behind a name, a writing system and the
+     sounds. The writing system is gone -- wsGuess() reads it off the letters
+     rather than asking somebody to choose between an abjad and an abugida
+     before they have drawn anything -- and the name went last, because a
+     language is easier to name once it has made a mark, and obFinish() has
+     always been able to invent one out of the inventory for anybody who
+     skips it. */
   var h = (s===0)? obDoorHTML()
-        : (s===1)? obNameHTML()
-        : (s===2)? obWsysHTML()
-        : (s===3)? obSndsHTML()
-        : (s===4 && ob.mode==='borrow')? obBorrowHTML()
-        : obDrawHTML();
+        : (s===1)? obSndsHTML()
+        : (s===2 && ob.mode==='borrow')? obBorrowHTML()
+        : (s===2)? obDrawHTML()
+        : obNameHTML();
   return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
 }
 

@@ -145,7 +145,7 @@ const R = await pg.evaluate(() => {
   const screens = [];
 
   /* Onboarding, which is the one screen render() reaches on its own. */
-  for (let s = 0; s <= 4; s++) {
+  for (let s = 0; s <= 3; s++) {
     screens.push({
       label: 'vOb step ' + s,
       build: () => { window.__seed(); SET.done = false; ob.step = s; show(vOb()); }

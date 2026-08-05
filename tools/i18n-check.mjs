@@ -363,7 +363,7 @@ const R = await pg.evaluate(() => {
     T_MISS = {};
     /* onboarding, every step */
     SET.done = false;
-    for (let s = 0; s <= 4; s++) { ob.step = s; try { vOb(); } catch (e) { out.miss.push(c + ' vOb step ' + s + ' threw: ' + e.message); } }
+    for (let s = 0; s <= 3; s++) { ob.step = s; try { vOb(); } catch (e) { out.miss.push(c + ' vOb step ' + s + ' threw: ' + e.message); } }
     SET.done = true;
 
     /* every screen, under every plan and every reading mode, empty and full */
@@ -529,7 +529,7 @@ const R = await pg.evaluate(() => {
   }
 
   SET.ui = 'zz'; SET.done = false;
-  for (let s = 0; s <= 4; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
+  for (let s = 0; s <= 3; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
   SET.done = true;
   ['free','plus','studio'].forEach(p => {
     SET.plan = p;
