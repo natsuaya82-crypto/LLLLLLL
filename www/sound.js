@@ -207,7 +207,13 @@ function ltFace(l, call){
   if(l.st && l.st.length) face='<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
   else if(l.ch) face='<span class="bch">'+esc(l.ch)+'</span>';
   else face='<span class="nol">'+ICON_PEN+'</span>';
-  return '<button class="ltf"'+call+'>'+face+'</button>';
+  /* The face is a drawing, a borrowed character, or a pen. Only the middle
+     one is text, so the other two announce as nothing to somebody using
+     VoiceOver -- and a letter tile is the whole point of these screens.
+     ltName falls back to what the letter reads, and to nothing at all for one
+     that is neither named nor sounded, which t('lt.untitled') covers. */
+  return '<button class="ltf" aria-label="'+esc(ltName(l)||t('lt.untitled'))+'"'+
+         call+'>'+face+'</button>';
 }
 
 /* ---- II. letters ------------------------------------------------------

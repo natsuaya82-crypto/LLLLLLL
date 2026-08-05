@@ -144,6 +144,38 @@ appFiles.forEach(f => {
    arguments. */
 const USE = '(?![\\w$])\\s*[(),;]';
 const bared = new Map(mentionFiles.map(f => [path.relative(ROOT, f), bare(fs.readFileSync(f, 'utf8'))]));
+/* Everything here shares one global scope, so two files may not declare the
+   same function: the one loaded later silently replaces the other, and the
+   replaced one goes on sitting in its file looking like the code that runs.
+   ltkHTML was declared in home.js and in wordsheet.js. wordsheet.js loads
+   second, so the find screen -- which home.js builds -- had been drawing its
+   letters with the word sheet's version for as long as both existed: the
+   caption showed what a letter reads instead of what it is called, letters
+   with no drawn shape got the class that means "has one", and a letter that
+   reads nothing yet came out as a button with no text in it at all, which a
+   screen reader announces as nothing.
+
+   Nothing could see it. Both were reached, so this check was happy; both were
+   in no action table, so act-check was happy; the screen rendered and its
+   buttons worked, so press-check was happy. */
+const byName = new Map();
+decls.forEach(d => {
+  if (!byName.has(d.name)) byName.set(d.name, []);
+  byName.get(d.name).push(d);
+});
+const twice = [...byName.values()].filter(v => v.length > 1);
+if (twice.length){
+  console.error(twice.length + ' function' + (twice.length === 1 ? ' is' : 's are') +
+                ' declared in more than one file:\n');
+  twice.forEach(v => {
+    console.error('  ' + v[0].name);
+    v.forEach(d => console.error('      ' + d.file + ':' + d.line));
+    console.error('      the last one loaded is the one that runs; the rest are ' +
+                  'read as if they were.\n');
+  });
+  process.exit(1);
+}
+
 const dead = decls.filter(d => {
   const use = new RegExp('(?<![\\w$.])' + d.name + USE, 'g');
   const own = new RegExp('(?<![\\w$.])' + d.name + '\\s*=(?!=)');

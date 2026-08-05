@@ -314,7 +314,12 @@ function fPick(kind, key){
 }
 /* A letter as a key, the same shape the sound keys have, because they are
    the same act: press the thing, see what it is in. */
-function ltkHTML(l, call){
+/* The find screen's letter key. Named apart from the word sheet's ltkHTML,
+   which is a different button: that one captions with what a letter reads,
+   this one with what it is called, because here you are looking for a letter
+   rather than spelling with it. They shared a name until 2026 and this file
+   loads first, so every key on this screen was drawn by the other one. */
+function fLtkHTML(l, call){
   var face='';
   if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
   else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
@@ -377,7 +382,7 @@ function fResultsHTML(qq){
   if(g.w.length) out+=fSec(t('toc.words'), g.w.length)+g.w.map(function(w){ return entryHTML(w, false); }).join('');
   if(g.l.length) out+=fSec(t('toc.letters'), g.l.length)+
     '<div class="phkeys">'+g.l.map(function(l){
-      return ltkHTML(l, DO('fPick',['l', l.id])); }).join('')+'</div>';
+      return fLtkHTML(l, DO('fPick',['l', l.id])); }).join('')+'</div>';
   if(g.s.length) out+=fSec(t('toc.sound'), g.s.length)+
     '<div class="phkeys">'+g.s.map(function(x){
       return phkHTML(x, DO('fPick',['s', x])); }).join('')+'</div>';
@@ -405,7 +410,7 @@ function fRestHTML(){
       return phkHTML(x, DO('fPick',['s', x])); }).join('')+'</div>';
   if(lt.length) out+=fSec(t('find.by.lt'), lt.length)+
     '<div class="phkeys">'+lt.map(function(l){
-      return ltkHTML(l, DO('fPick',['l', l.id])); }).join('')+'</div>';
+      return fLtkHTML(l, DO('fPick',['l', l.id])); }).join('')+'</div>';
   out+=fSec(t('find.todo'), todo.length||'');
   out+= todo.length
     ? todo.map(function(r){ return fRow(r[0], r[1], DO('goIn',[r[2]])); }).join('')
