@@ -164,10 +164,13 @@ function sndDrop(p){
    vowel, drawn from the same character of sound and said as it arrives. And
    each sound carries the way to take it back out, because a proposal you can
    only accept whole is not a proposal. */
-function sndFeelRow(lab, list, kind){
+/* The same row in two places: in the chapter a sound is tapped to hear it,
+   and in onboarding it is tapped to say that the letter just drawn reads it.
+   The name the button says is passed in rather than assumed. */
+function sndFeelRow(lab, list, kind, act){
   return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
     '<div class="obhs">'+list.map(function(p){
-      return '<span class="obhp"><button class="obhb"' + DO('sndHear', [p]) + '>'+esc(p)+'</button>'+
+      return '<span class="obhp"><button class="obhb"' + DO(act||'sndHear', [p]) + '>'+esc(p)+'</button>'+
         '<button class="obhx"' + DO('sndDrop', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
     }).join('')+
     '<button class="obhadd"' + DO('sndFeelMore', [kind]) + '>'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
@@ -182,13 +185,12 @@ function sndFeelMore(kind){
   SET.snd=asOrder(have.concat([s]));
   save(); sayOne(s); render();
 }
-function sndFeelHTML(){
+function sndFeelHTML(act){
   var have=addedSnd(), cs=[], vs=[], i;
   for(i=0;i<have.length;i++){
     if(ipaIsVowel(have[i])) vs.push(have[i]); else cs.push(have[i]);
   }
-  return '<div class="sec">'+esc(t('ob.snds.h'))+'</div>'+
-    '<p class="note">'+t('ob.snds.sub')+'</p>'+
+  return '<p class="note">'+t('ob.snds.sub')+'</p>'+
     '<div class="obscripts one">'+AS_CHARS.map(function(c){
       return '<button class="obsrow'+(sndFeelPick===c.id?' on':'')+'"' + DO('sndFeel', [c.id]) + '>'+
         '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
@@ -199,7 +201,7 @@ function sndFeelHTML(){
        away the buttons that would put another back */
     ((have.length || sndFeelPick)
       ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
-        sndFeelRow(t('ipa.cons'), cs, 'c')+sndFeelRow(t('ipa.vows'), vs, 'v')+
+        sndFeelRow(t('ipa.cons'), cs, 'c', act)+sndFeelRow(t('ipa.vows'), vs, 'v', act)+
         '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_PLAY+t('as.hear')+'</button>'+
         (sndFeelPick? '<button' + DO('sndFeelAgain') + '>'+t('as.again')+'</button>':'')+'</div></div>'
       : '');

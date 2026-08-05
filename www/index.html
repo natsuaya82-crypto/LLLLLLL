@@ -739,6 +739,14 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
    explanation, and a name like "Abugida" tells nobody anything without it. */
 .obws{font-size:.86rem;color:var(--txm);line-height:1.5}
 .ob .obscripts.one{grid-template-columns:1fr}
+/* A step with one thing on it hands its height to that thing -- .obscripts is
+   flex:1 and scrolls, and every step until now had exactly one. The step that
+   asks what a letter reads has three: the proposal, the marks, and the way
+   past. So that step scrolls as a whole and its children take the height they
+   need, or .obscripts eats all of it and the rest lands on top of the foot. */
+.ob .obscroll{flex:1 1 auto;min-height:0;overflow-y:auto;align-self:stretch}
+.ob .obscroll .obscripts{flex:none;min-height:auto;overflow:visible}
+.ob .obmarks{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 /* the name, which is the only thing typed in the whole of onboarding */
 .obnamebox{width:100%;margin-top:20px}
 .obnamebox input{width:100%;background:var(--sf);border:1px solid var(--line);border-radius:12px;

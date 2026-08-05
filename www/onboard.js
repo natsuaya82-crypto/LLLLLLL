@@ -211,12 +211,13 @@ function obReadHTML(){
   return '<div class="mid obleft">'+
     '<h2 class="obh">'+t('ob.read.h')+'</h2>'+
     '<p class="obsub">'+t('ob.read.sub')+'</p>'+
-    '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable('obReads')+
-    '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable('obReads')+
-    '<div class="sec">'+t('ob.read.mark')+'</div>'+
-    '<div class="phkeys">'+['?','!','.',',',':',';'].map(function(c){
-      return '<button class="ph2"' + DO('obReadsMark', [c]) + '>'+esc(c)+'</button>';
-    }).join('')+'</div>'+
+    '<div class="obscroll">'+
+      sndFeelHTML('obReads')+
+      '<div class="sec">'+t('ob.read.mark')+'</div>'+
+      '<div class="obmarks">'+['?','!','.',',',':',';'].map(function(c){
+        return '<button class="obhb"' + DO('obReadsMark', [c]) + '>'+esc(c)+'</button>';
+      }).join('')+'</div>'+
+    '</div>'+
     '</div>'+
     '<div class="obfoot"><button class="obskip"' + DO('obReadLater') + '>'+t('ob.read.later')+'</button></div>';
 }
