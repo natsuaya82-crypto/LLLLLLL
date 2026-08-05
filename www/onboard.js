@@ -62,7 +62,6 @@ var WORLD_SCRIPTS = [
    end of this there are both, so the dictionary is somewhere to go rather
    than somewhere to be sent. */
 var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', snd:''};
-var OB_STEPS=5;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.

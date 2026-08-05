@@ -20,6 +20,32 @@
      declaration — by the app, by index.html, by one of the ten languages, or
      by a tool. Anything else is deleted, not kept "just in case": git has it.
 
+   A top-level var, the same way
+     OB_STEPS sat in www/onboard.js saying there were five steps to the
+     onboarding while there were four, for as long as nothing read it -- the
+     count is not derived from anything, it is a number somebody wrote down
+     and then the app changed shape around. Nothing that reads var
+     declarations existed to say so. A dead function is a call nobody makes;
+     a dead top-level var is exactly the same shape of bug wearing the other
+     keyword, and the fix is the same too: it is not read anywhere, so
+     whatever it currently says cannot be checked against anything and
+     cannot be trusted.
+
+     Only a var at column zero -- one declared inside a function is that
+     function's business, reached or not, the moment the function itself is
+     reached. A file wrapped in `(function(){ ... })()` for a one-time
+     migration is not at column zero either; nothing here walks into it. And
+     files matching www/_*.bak do not count as declaring anything: they are
+     old drafts index.html does not load, not the app.
+
+     A function is dead when nothing calls it or hands it over as a value;
+     a var can also be read, indexed, compared, concatenated -- anything a
+     value can be done to -- so this counts any mention of its name at all,
+     the same way the declaration line itself is one such mention. A name
+     that turns up only where it was declared, and nowhere else in the app,
+     index.html, the ten languages, or a tool, is exactly the OB_STEPS bug:
+     nobody would notice if it said something else.
+
    Comments and the insides of strings do not count as a mention. A name that
    survives only in a comment describing what used to happen is precisely the
    thing being looked for, and a name that survives only inside a string is
@@ -132,6 +158,29 @@ appFiles.forEach(f => {
   src.split('\n').forEach((line, i) => {
     const m = /^function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(line);
     if (m) decls.push({ name: m[1], file: path.relative(ROOT, f), line: i + 1 });
+  });
+});
+
+/* Top-level vars, the same way: only `var` sitting at column zero, which a
+   migration wrapped in `(function(){ ... })()` never reaches — that indents
+   everything inside it, `var` included. A declaration can name more than one
+   thing (`var LS_LANGS='lingua.langs', LS_CUR='lingua.cur';`) and its value
+   can run past the line `var` sits on, so this reads to the closing `;`,
+   wherever that is, and splits on the commas between declarators -- the same
+   split the call-resolution walk below already does for a `var` anywhere,
+   reused rather than written twice. A comma inside one declarator's own
+   value (an object literal's fields) splits into pieces that are not bare
+   identifiers, and those are dropped the same way there too. */
+const varDecls = [];
+appFiles.forEach(f => {
+  const src = bare(fs.readFileSync(f, 'utf8'));
+  const rel = path.relative(ROOT, f);
+  [...src.matchAll(/^var\s+([^;]+);/gm)].forEach(m => {
+    const line = src.slice(0, m.index).split('\n').length;
+    m[1].split(',').forEach(part => {
+      const n = part.trim().split(/[=\s[(]/)[0];
+      if (/^[A-Za-z_$][\w$]*$/.test(n)) varDecls.push({ name: n, file: rel, line });
+    });
   });
 });
 
@@ -253,6 +302,27 @@ const dead = decls.filter(d => {
   return n <= 1;   /* its own declaration */
 });
 
+/* A var is not called, so the call-shaped USE pattern above is the wrong
+   question for one -- OB_STEPS is read as OB_STEPS.length, not OB_STEPS(.
+   What counts here is any mention of the name at all, which is exactly what
+   the declaration line itself is one of, so the same n<=1 threshold still
+   means "nowhere but its own declaration". own/arg are reused unchanged: a
+   file with its own local of that name, assigned or taken as a parameter,
+   is talking about that local in every mention it makes, not about the
+   global sitting in www/, the same shadowing rule the function check
+   already answers to. */
+const deadVars = varDecls.filter(d => {
+  const use = new RegExp('(?<![\\w$.])' + d.name + '(?![\\w$])', 'g');
+  const own = new RegExp('(?<![\\w$.])' + d.name + '\\s*=(?!=)');
+  const arg = new RegExp('function\\s*[\\w$]*\\s*\\([^)]*(?<![\\w$.])' + d.name + '(?![\\w$])[^)]*\\)');
+  let n = 0;
+  bared.forEach((src, rel) => {
+    if (rel !== d.file && (own.test(src) || arg.test(src))) return;   /* shadowed there */
+    n += (src.match(use) || []).length;
+  });
+  return n <= 1;   /* its own declaration */
+});
+
 if (unresolved.length){
   console.error(unresolved.length + ' name' + (unresolved.length === 1 ? ' is' : 's are') +
                 ' called and never defined:\n');
@@ -269,5 +339,15 @@ if (dead.length){
                 'tell\nthem apart from the ones that still do something.');
   process.exit(1);
 }
-console.log('dead code: ' + decls.length + ' functions in www/, every one of them reached,');
+if (deadVars.length){
+  console.error(deadVars.length + ' top-level var' + (deadVars.length === 1 ? '' : 's') +
+                ' nothing reaches:\n');
+  deadVars.forEach(d => console.error('  ' + d.file + ':' + d.line + '  ' + d.name));
+  console.error('\nDelete them. Whatever they currently say cannot be checked against\n' +
+                'anything nothing reads -- that is how OB_STEPS said five for as long\n' +
+                'as it said anything at all.');
+  process.exit(1);
+}
+console.log('dead code: ' + decls.length + ' functions and ' + varDecls.length +
+            ' top-level vars in www/, every one of them reached,');
 console.log('           and every name called is one of them, a binding, or the browser\'s.');
