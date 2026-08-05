@@ -30,6 +30,14 @@
                            time they open the app after the update
      4. a fresh install    nothing to migrate, so one empty language of their
                            own, not zero and not a broken half-language
+     5. switching          opening a second language puts the first one away
+                           and brings the second one out -- all of it, and
+                           nothing of the first. This is the one that can lose
+                           somebody's dictionary rather than fail to show it:
+                           write A's words while B is open and they are B's
+                           words now, under B's key, and A's copy is gone the
+                           next time A is saved. Nothing on screen would look
+                           wrong at any point
 
    Exit code is 0 only when all four hold.
    --------------------------------------------------------------------------- */
@@ -98,6 +106,7 @@ const REPORT = () => ({
   langs: Object.keys(LANGS).length, id: langId,
   mine: !!(LANGS[langId] && LANGS[langId].mine),
   indexName: LANGS[langId] && LANGS[langId].name,
+  cur: localStorage.getItem('lingua.cur'),
   oldKept: localStorage.getItem('lingua.words') !== null,
   filed: localStorage.getItem('lingua.' + langId + '.words') !== null
 });
@@ -160,6 +169,69 @@ want('a fresh install gets one language', c.langs, 1);
 want('and it is theirs to write in', c.mine, true);
 want('with nothing in it', c.words, 0);
 want('and it is the one that is open', c.id, await pg.evaluate(() => langId));
+
+/* ---- 5: two languages, and the door between them ------------------------
+   Built straight into storage rather than through the app, because the app
+   has no way to make a second language yet and this is what it will have to
+   survive when it does. A is somebody's real language; B is the empty one
+   they just started, which is the case that matters -- the emptiness has to
+   arrive along with it, or A's words are still sitting in WORDS when B is
+   saved. */
+await pg.evaluate(() => {
+  localStorage.clear();
+  var A = 'LA', B = 'LB';
+  localStorage.setItem('lingua.langs', JSON.stringify({
+    LA: { name: 'Vaska', mine: true }, LB: { name: 'Toko', mine: false } }));
+  localStorage.setItem('lingua.cur', A);
+  localStorage.setItem('lingua.LA.words', JSON.stringify(
+    [{ hw: 'tuf' }, { hw: 'ark' }, { hw: 'geb' }]));
+  localStorage.setItem('lingua.LA.lang', 'Vaska');
+  localStorage.setItem('lingua.LA.letters', JSON.stringify(
+    [{ id: 'aA' }, { id: 'aB' }, { id: 'aC' }]));
+  localStorage.setItem('lingua.LA.notes', JSON.stringify([{ t: 'A note' }]));
+  localStorage.setItem('lingua.LA.talk', JSON.stringify([{ q: 'A talk' }]));
+  localStorage.setItem('lingua.LA.phases', JSON.stringify(
+    { done: { sound: true }, notes: {}, set: {}, extra: [] }));
+  localStorage.setItem('lingua.LA.script', JSON.stringify({ g: { t: [[1, 2]] }, extra: [] }));
+  /* B has nothing at all: no keys, not empty ones. A language somebody has
+     only just made. */
+});
+await pg.reload();
+
+const A1 = await pg.evaluate(REPORT);
+want('A opens as itself', A1.word0, 'tuf');
+want('with its letters', A1.letterIds, 'aA,aB,aC');
+
+/* over to B */
+await pg.evaluate(() => langOpen('LB'));
+const B1 = await pg.evaluate(REPORT);
+want('B is open now', B1.id, 'LB');
+want('and localStorage agrees', B1.cur, 'LB');
+want('B has no words of A\'s', B1.words, 0);
+want('nor A\'s letters', B1.letterIds, '');
+want('nor A\'s notes', B1.notes, 0);
+want('nor A\'s conversation', B1.talk, 0);
+want('nor how far A had got', B1.sound, false);
+want('nor A\'s name', B1.name, '');
+want('nor A\'s drawn script', B1.script, '');
+
+/* saving B is what makes a leak permanent, so do it before going back */
+await pg.evaluate(() => { save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); });
+const leaked = await pg.evaluate(() =>
+  (localStorage.getItem('lingua.LB.words') || '').indexOf('tuf') >= 0);
+want('and B did not save them under its own id', leaked, false);
+
+/* and back */
+await pg.evaluate(() => langOpen('LA'));
+const A2 = await pg.evaluate(REPORT);
+want('A is still A', A2.word0, 'tuf');
+want('with all of its words', A2.words, 3);
+want('and all of its letters', A2.letterIds, 'aA,aB,aC');
+want('and its note', A2.note0, 'A note');
+want('and its conversation', A2.talk0, 'A talk');
+want('and the stage it had finished', A2.sound, true);
+want('and its name', A2.name, 'Vaska');
+want('and its drawn script', A2.script, 't');
 
 await br.close();
 srv.close();
