@@ -190,8 +190,10 @@ function sndFeelHTML(act){
   for(i=0;i<have.length;i++){
     if(ipaIsVowel(have[i])) vs.push(have[i]); else cs.push(have[i]);
   }
-  return '<p class="note">'+t('ob.snds.sub')+'</p>'+
-    '<div class="obscripts one">'+AS_CHARS.map(function(c){
+  /* No line of its own above this. Every screen it appears on says what it is
+     asking; a second sentence here was emptied to an ideographic space to
+     keep i18n-check quiet and left a blank paragraph's worth of gap. */
+  return '<div class="obscripts one">'+AS_CHARS.map(function(c){
       return '<button class="obsrow'+(sndFeelPick===c.id?' on':'')+'"' + DO('sndFeel', [c.id]) + '>'+
         '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
         '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
@@ -259,7 +261,9 @@ function vSound(){
           '<span class="rn"></span><span class="rt">'+esc(t('toc.letters'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+ltShaped()+'</span>'+ICON_GO+'</button>'
       : '<div class="ipamine"><span class="none">'+t('ipa.mine.none')+'</span></div>')+
-    sndFeelHTML()+
+    /* The heading is the chapter's, not the chooser's: the onboarding step
+       that borrows the same chooser already asks its own question above it. */
+    '<div class="sec">'+t('ipa.feel')+'</div>'+sndFeelHTML()+
     '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
     '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
     '<div class="sec">'+t('ipa.other')+'</div>'+

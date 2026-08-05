@@ -74,7 +74,6 @@ act('obSignIn', obSignIn);
 act('obSkip', obSkip);
 act('obSkipDraw', obSkipDraw);
 act('obReads', obReads);
-act('obReadsMark', obReadsMark);
 act('obReadLater', obReadLater);
 act('sndFeel', sndFeel);
 act('sndFeelAgain', sndFeelAgain);

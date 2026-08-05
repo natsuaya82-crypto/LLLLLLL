@@ -1355,12 +1355,17 @@ function render(){
      so the editor it embeds has to be mounted here or its canvas stays blank.
      Every editor action ends in render(), which lands back on this line. */
   if(!SET.done){
-    /* onboarding is one screen with five faces; moving between them animates,
-       tapping something on one of them does not */
+    /* onboarding is one screen with several faces; moving between them
+       animates, tapping something on one of them does not */
     app.setAttribute('data-fresh', (RENDERED==='ob:'+ob.step) ? '0' : '1');
     RENDERED='ob:'+ob.step;
     app.innerHTML=vOb();
-    if(ob.step===4 && ob.mode==='draw') geMount();
+    /* The drawing step needs its canvas filled. This asked for step 4 and
+       mode 'draw', which is where drawing was when the onboarding had five
+       steps and the mode was named -- both moved, and the square went blank
+       with nothing to say so. What it means is "there is a canvas on screen",
+       so that is what it asks. */
+    if(document.getElementById('gcanv')) geMount();
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();

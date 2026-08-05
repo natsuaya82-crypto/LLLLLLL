@@ -15,6 +15,14 @@
    `set:voice` is that room of the settings. Bare `gram` is the list, which is
    a different screen, and both are worth looking at.
 
+   `ob` is the exception, because the onboarding is the one screen with no
+   route -- it is what the app is until SET.done, not a place you go. It is
+   also the screen that gets rebuilt most often, and it was the only one
+   nobody could ask for a picture of. `ob` is every step; `ob:2` is one. The
+   steps with a second face -- borrowing, the sound offered again -- come from
+   obStates() in tools/fixture.mjs, the same list act-check and press walk, so
+   a face added there is photographed without touching this file.
+
    The app is filled from tools/fixture.mjs first -- the same six words and
    three letters the checks walk -- so two pictures taken a week apart differ
    because the screen changed and for no other reason.
@@ -28,7 +36,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
-import { seed } from './fixture.mjs';
+import { seed, obStates } from './fixture.mjs';
 
 const req = createRequire(import.meta.url);
 function loadChromium(){
@@ -84,9 +92,16 @@ await pg.goto(`http://localhost:${PORT}/`);
    for it to be gone, and refuse to take the picture if it is not. */
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
+/* As a string, so it is evaluated in the page's own global scope. Handed to a
+   function instead, the closures it returns capture this file's scope -- and
+   the parameter holding the source was called `ob`, which is also the name of
+   the app's onboarding state, so every `ob.step = 1` inside them set a
+   property on a string and the faces silently never happened. act-check and
+   press already did it this way. */
+await pg.evaluate('window.OB_STATES = (' + obStates.toString() + ')()');
 await pg.evaluate(({ s, ui, dk }) => {
   eval('(' + s + ')()');           /* the fixture, run inside the page */
-  SET.done = true;                 /* past the onboarding, which is its own screen */
+  SET.done = true;                 /* past the onboarding, unless it is what was asked for */
   SET.ui = ui;
   SET.theme = dk ? 'dark' : 'light';
   /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
@@ -113,25 +128,50 @@ const withArgs = await pg.evaluate((rs) => {
   rs.forEach((r) => argsOf(r).forEach((a) => out.push(a === null ? r : r + ':' + a)));
   return out;
 }, routes);
-const shots = all
-  ? withArgs
-  : named.length ? named : ['home'];
+/* The onboarding's steps, and the extra faces some of them have, asked of the
+   app the same way. OB_STEPS is the app's count, obStates() is the fixture's
+   list -- neither is written out again here. */
+const obShots = await pg.evaluate(() =>
+  [].concat(Array.apply(null, { length: OB_STEPS }).map((_, i) => 'ob:' + i),
+            OB_STATES.map((_, i) => 'ob@' + i)));
+/* A face is filed under what the fixture calls it, because "ob@2" says
+   nothing and "saying what a letter reads" is the whole point of looking. */
+const obLabel = await pg.evaluate(() =>
+  OB_STATES.map((s) => s[0].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')));
+const expand = (s) => (s === 'ob' ? obShots : [s]);
+const shots = (all
+  ? withArgs.concat(obShots)
+  : named.length ? named : ['home']).reduce((a, s) => a.concat(expand(s)), []);
 
 const made = [];
 for (const spec of shots) {
+  const ob = /^ob[:@](\d+)$/.exec(spec);
   const [r, a] = spec.split(':');
-  if (routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
-  const err = await pg.evaluate(({ r, a }) => {
-    try { go(r, a === undefined ? undefined : a); render(); return null; }
-    catch (e) { return String(e && e.message || e); }
-  }, { r, a });
+  if (!ob && routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
+  const err = ob
+    ? await pg.evaluate(({ n, face }) => {
+        try {
+          /* The onboarding is not somewhere you go: it is what render() shows
+             while SET.done is false, so that is how it is asked for. */
+          SET.done = false;
+          window.ob.step = n; window.ob.mode = ''; window.ob.lid = '';
+          if (face) OB_STATES[n][1]();   /* sets ob.* and returns the html render() rebuilds */
+          render();
+          return null;
+        } catch (e) { return String(e && e.message || e); }
+      }, { n: Number(ob[1]), face: spec.charAt(2) === '@' })
+    : await pg.evaluate(({ r, a }) => {
+        try { SET.done = true; go(r, a === undefined ? undefined : a); render(); return null; }
+        catch (e) { return String(e && e.message || e); }
+      }, { r, a });
   if (err) { console.error(`  ${spec} threw: ${err}`); continue; }
   await pg.waitForTimeout(120);            /* fonts and any transition settle */
   const covered = await pg.evaluate(() => !!document.getElementById('splash') ||
                                           !document.getElementById('app') ||
                                           !document.getElementById('app').innerHTML.trim());
   if (covered) { console.error(`  ${spec}: the splash is still up, or #app is empty`); continue; }
-  const name = spec.replace(':', '-') + (dark ? '-dark' : '') +
+  const name = (spec.charAt(2) === '@' ? 'ob-' + obLabel[Number(ob[1])] : spec.replace(':', '-')) +
+               (dark ? '-dark' : '') +
                (uiLang === 'en' ? '' : '-' + uiLang) + '.png';
   const file = path.join(OUT, name);
   await pg.screenshot({ path: file, fullPage: true });

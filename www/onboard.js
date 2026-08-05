@@ -42,7 +42,7 @@ var WORLD_SCRIPTS = [
 ];
 
 /* ---- Onboarding -------------------------------------------------------
-   Five steps, in the order a language is actually built.
+   Four steps: the door, one letter drawn, what it reads, the name.
 
    It used to open on a language picker, which is a question the app needs
    answered rather than one anybody came to answer. Then it opened on a
@@ -54,15 +54,20 @@ var WORLD_SCRIPTS = [
    And then it put them on a screen that said: coin your first word. With no
    sounds, no letters and no name, out of nothing.
 
-   The order here is the order the work goes in. Name it, because that is the
-   one thing anybody arrives already having an opinion about. Say what kind of
-   writing it uses, because that decides what a letter even is. Choose the
-   sounds it is made of. Draw one letter, to see that it can be done. No word
-   is asked for: a word is made of sounds and written in letters, and by the
-   end of this there are both, so the dictionary is somewhere to go rather
-   than somewhere to be sent. */
+   The order is: a mark, then what it says. A letter is a thing somebody drew;
+   a sound is something a letter may turn out to read, and may not -- so the
+   drawing comes first and nothing here fastens the two together. The name is
+   last, because a language is easier to name once it has made a mark, and
+   obFinish() can invent one for anybody who skips it. No word is asked for:
+   a word is made of sounds and written in letters, and by the end of this
+   there are both, so the dictionary is somewhere to go rather than somewhere
+   to be sent. */
 var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
-var OB_STEPS=5;
+/* How many steps there are, in one place: the dots count them and shot.mjs
+   photographs them. It said 5 for as long as there were four, because nothing
+   read it -- dead-check finds functions nobody calls, not numbers nobody
+   asks. */
+var OB_STEPS=4;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -187,9 +192,14 @@ function obSkipDraw(){ ob.lid=''; obGo(3); }
 
 /* ---- what it reads ----------------------------------------------------
    The letter exists and says nothing. Here is where a person gives it a
-   sound, or says it is a mark and reads nothing at all, or leaves it for
-   later -- a letter with no sound is a perfectly good letter to have, and
-   the letters chapter lists it as one still to finish.
+   sound, or leaves it for later -- a letter with no sound is a perfectly
+   good letter to have, and the letters chapter lists it as one still to
+   finish.
+
+   Only a sound. Whether a letter is a mark rather than a sound is asked in
+   the glyph editor, next to the letter it is about, and nobody starting a
+   language decides on the third screen that their first letter is a
+   question mark.
 
    The sounds come from the chart itself rather than from an inventory,
    because a language that has just been started does not have one yet. The
@@ -202,28 +212,18 @@ function obReads(sym){
   save(); installScriptFont(); sayOne(sym);
   obGo(3);
 }
-function obReadsMark(ch){
-  if(ob.lid) ltSetRole(ob.lid, 'mark', ch);
-  obGo(3);
-}
 function obReadLater(){ obGo(3); }
 function obReadHTML(){
   return '<div class="mid obleft">'+
     '<h2 class="obh">'+t('ob.read.h')+'</h2>'+
     '<p class="obsub">'+t('ob.read.sub')+'</p>'+
-    '<div class="obscroll">'+
-      sndFeelHTML('obReads')+
-      '<div class="sec">'+t('ob.read.mark')+'</div>'+
-      '<div class="obmarks">'+['?','!','.',',',':',';'].map(function(c){
-        return '<button class="obhb"' + DO('obReadsMark', [c]) + '>'+esc(c)+'</button>';
-      }).join('')+'</div>'+
-    '</div>'+
+    '<div class="obscroll">'+sndFeelHTML('obReads')+'</div>'+
     '</div>'+
     '<div class="obfoot"><button class="obskip"' + DO('obReadLater') + '>'+t('ob.read.later')+'</button></div>';
 }
 
 function obFinish(){
-  /* 「言語名決まってないのに音だけ決まってるの何？」 A language that reached the
+  /* A language that reached the
      end of this without a name used to be handed the word "language" in the
      interface's language, which is not a name and is not even in the right
      one. It gets a word out of its own inventory instead -- which is a name
@@ -300,21 +300,26 @@ function obBorrowHTML(){
   return '<div class="mid obleft">'+
     '<h2 class="obh">'+t('ob.borrow.h')+'</h2>'+
     '<p class="obsub">'+t('ob.borrow.sub')+'</p>'+
-    '<div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
+    '<div class="obscroll"><div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
       var pv=obPv(x);
       return '<button class="obsrow"' + DO('obPickScript', [x.id]) + '>'+
         '<span class="obnm">'+esc(t('ws.'+x.id))+'</span>'+
         (pv? '<span class="obpv">'+esc(pv)+'</span>' : '')+
         '</button>';
-    }).join('')+'</div></div>';
+    }).join('')+'</div></div></div>';
 }
 
+function obDots(){
+  var a=[], i;
+  for(i=0;i<OB_STEPS;i++) a.push(i);
+  return a;
+}
 function vOb(){
   var s=ob.step;
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
-    '<div class="obtop">'+[0,1,2,3].map(function(i){
+    '<div class="obtop">'+obDots().map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join('')+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){
