@@ -32,7 +32,63 @@
    used before any of this. You type the sounds and the font draws the letter. */
 
 var WSYS=['alpha','syll','abjad','abugida','logo'];
-function wsys(){ return WSYS.indexOf(SET.wsys)>=0 ? SET.wsys : 'alpha'; }
+
+/* ---- which of the five this is ----------------------------------------
+   Asking somebody to choose between an abjad and an abugida before they have
+   drawn anything is asking them to know the answer to a question they came
+   here to find out. So it is worked out from what they made, and the letters
+   are the evidence: what a letter reads is exactly where the language is
+   being cut, which is the only thing that separates the five.
+
+     a letter reads a whole word           logography
+     a letter reads more than one sound    syllabary
+     letters read single sounds, and the
+       language has vowels that none of
+       them reads                          abjad
+     otherwise                             alphabet
+
+   An abugida is not in that list because it cannot be. Its letters read
+   single sounds like an alphabet's; what makes it an abugida is that the
+   vowel is a mark added to the consonant rather than a letter beside it, and
+   that is a fact about how the two are drawn together, not about what any one
+   of them reads. It stays a thing you say, and saying it is what SET.wsys is
+   for.
+
+   Which is also why nothing anybody already has moves: SET.wsys is set for
+   everyone who was asked during onboarding, and a stored answer wins. The
+   guess is for the people who are never going to be asked. */
+function wsGuess(){
+  var read = [], i, j, u;
+  for(i=0;i<LETTERS.length;i++){
+    if(typeof ltRole==='function' && ltRole(LETTERS[i])!=='snd') continue;
+    var sn=LETTERS[i].snd;
+    if(!sn) continue;
+    for(j=0;j<sn.length;j++) if(sn[j] && read.indexOf(sn[j])<0) read.push(sn[j]);
+  }
+  if(!read.length) return 'alpha';       /* nothing to go on yet */
+
+  /* a letter that reads a whole word */
+  for(i=0;i<WORDS.length;i++){
+    u=wsKey(wPh(WORDS[i]));
+    if(u && read.indexOf(u)>=0) return 'logo';
+  }
+  /* a letter that reads more than one sound. A unit that is one of the
+     language's sounds is one sound; anything else is several joined
+     together, which is what wsKey does to make a unit in the first place. */
+  var snds=addedSnd();
+  for(i=0;i<read.length;i++){
+    if(snds.indexOf(read[i])<0) return 'syll';
+  }
+  /* single sounds only: is any vowel written? */
+  var vows=snds.filter(function(p){ return ipaIsVowel(p); });
+  if(vows.length){
+    for(i=0;i<vows.length;i++) if(read.indexOf(vows[i])>=0) return 'alpha';
+    return 'abjad';
+  }
+  return 'alpha';
+}
+/* A stored answer wins, always. Otherwise the guess. */
+function wsys(){ return WSYS.indexOf(SET.wsys)>=0 ? SET.wsys : wsGuess(); }
 function setWsys(k){
   if(WSYS.indexOf(k)<0) return;
   SET.wsys=k; save();
