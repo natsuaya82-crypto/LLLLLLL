@@ -510,7 +510,7 @@ defLang('ru', (function(){
       "ob.draw.h"        : "Нарисуйте одну букву",
       "ob.draw.later"     : "Нарисовать позже",
       /* the writing system */
-      "script.preview"    : "Ваше письмо",
+      "script.show"     : "Показывать",
       "script.show.roman" : "Латиницей",
       "script.show.own"   : "Своими буквами",
       /* the letter editor */

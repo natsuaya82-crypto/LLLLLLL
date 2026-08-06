@@ -492,7 +492,7 @@ defLang('de', (function(){
       "ob.draw.h"       : "Zeichne einen Buchstaben",
       "ob.draw.later"    : "Später zeichnen",
       /* the writing system */
-      "script.preview"    : "Deine Schrift",
+      "script.show"     : "Anzeigen",
       "script.show.roman" : "Lateinisch",
       "script.show.own"   : "Deinen Buchstaben",
       /* the letter editor */

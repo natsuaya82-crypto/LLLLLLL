@@ -511,7 +511,7 @@ defLang('pt', (function(){
       "ob.draw.h"        : "Desenhe uma letra",
       "ob.draw.later"     : "Desenhar depois",
       /* the writing system */
-      "script.preview"    : "A sua escrita",
+      "script.show"     : "Mostrar",
       "script.show.roman" : "Alfabeto latino",
       "script.show.own"   : "As suas letras",
       /* the letter editor */

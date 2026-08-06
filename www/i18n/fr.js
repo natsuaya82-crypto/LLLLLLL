@@ -552,7 +552,7 @@ defLang('fr', (function(){
       "ob.draw.h"        : "Dessinez une lettre",
       "ob.draw.later"     : "La dessiner plus tard",
       /* the writing system */
-      "script.preview"    : "Votre écriture",
+      "script.show"     : "Afficher",
       "script.show.roman" : "Alphabet latin",
       "script.show.own"   : "Vos lettres",
       /* the letter editor */

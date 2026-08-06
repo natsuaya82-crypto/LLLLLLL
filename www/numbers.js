@@ -87,11 +87,15 @@ function numFree(){
   for(i=0;i<b;i++) if(!numByVal(i)) return i;
   return -1;
 }
-/* The base, on the digits page, because that is the page it is about. */
-function numBaseHTML(){
+/* The base goes where the kind of writing goes, and for the same reason the
+   five kinds moved off the letters chapter: it is answered once and then
+   never again, so it does not belong on a page opened every day.
+   「10新法とかは決めたら変えねえんだからそこじゃないだろ」 */
+function numBaseRows(){
   return '<div class="sec">'+esc(t('num.base'))+'</div>'+
-    '<div class="segs">'+NUM_BASES.map(function(b){
-    return '<button class="seg'+(numBase()===b? ' on':'')+'"' + DO('numSetBase', [b]) + '>'+
-      esc(numLabel(b))+'</button>';
-  }).join('')+'</div>';
+    NUM_BASES.map(function(b){
+      return '<button class="set"' + DO('numSetBase', [b]) + '>'+
+        '<span class="sl">'+esc(numLabel(b))+'</span>'+
+        '<span class="sv">'+(numBase()===b? ICON_TICK : '')+'</span></button>';
+    }).join('');
 }

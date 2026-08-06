@@ -409,7 +409,7 @@ defLang('en', (function(){
       'ob.draw.h'      : 'Draw one letter',
       'ob.draw.later'   : "Draw it later",
       /* the writing system */
-      'script.preview'    : "Your writing",
+      'script.show'     : 'Show',
       'script.show.roman' : "Roman",
       'script.show.own'   : "Your letters",
       /* the letter editor */

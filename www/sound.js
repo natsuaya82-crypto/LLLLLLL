@@ -28,6 +28,15 @@ function vWsys(){
         '<span class="sv">'+(wsys()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
     '<div class="note" style="margin-top:12px">'+t('ws.kind.note')+'</div>'+
+    numBaseRows()+
+    /* Roman or your own letters is the same kind of decision -- it changes
+       every screen in the app and nobody flips it twice a day -- so it sits
+       with the others rather than under a specimen box on a chapter. */
+    '<div class="sec">'+t('script.show')+'</div>'+
+    '<div class="pick">'+
+      '<button class="'+(SET.myfont?'':'on')+'"' + DO('setMyFont', [false]) + '>'+t('script.show.roman')+'</button>'+
+      '<button class="'+(SET.myfont?'on':'')+'"' + DO('setMyFont', [true]) + '>'+t('script.show.own')+'</button>'+
+    '</div>'+
     '</div></div>';
 }
 /* ---- the abugida bench ------------------------------------------------
@@ -378,19 +387,6 @@ function vLetters(){
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
     '<div class="toc">'+LT_KINDS.map(ltKindRow).join('')+'</div>'+
-    (ltShaped()
-      ? '<div class="sec">'+t('script.preview')+'</div>'+
-        /* The Roman / your-letters pair sits directly under this box, so the
-           box has to answer it. .sfont is added by myFontOn() in the three
-           other places it appears; this one had it unconditionally, which
-           made pressing Roman change the whole app and nothing in front of
-           you. */
-        '<div class="spv"><div class="big'+(myFontOn()?' sfont':'')+'">'+
-          esc(WORDS.length?WORDS[0].hw:addedSnd().join(''))+'</div></div>'+
-        '<div class="pick">'+
-          '<button class="'+(SET.myfont?'':'on')+'"' + DO('setMyFont', [false]) + '>'+t('script.show.roman')+'</button>'+
-          '<button class="'+(SET.myfont?'on':'')+'"' + DO('setMyFont', [true]) + '>'+t('script.show.own')+'</button>'+
-        '</div>' : '')+
     '<button class="trow"' + DO('go', ["sound"]) + ' style="margin-top:18px">'+
       '<span class="rn"></span><span class="rt">'+esc(t('toc.sound'))+'</span>'+
       '<span class="lead"></span><span class="rv">'+addedSnd().length+'</span>'+ICON_GO+'</button>'+
@@ -398,6 +394,21 @@ function vLetters(){
 }
 /* One of the three. The base belongs on the digits page and nowhere else,
    because that is the page it decides the shape of. */
+/* This page's signs, side by side, at a size you can judge -- which is the
+   only thing a specimen is for. It used to be one word set in the font, on
+   the chapter's front page, answering nothing. 「この文字で書くといらん。せめ
+   てアルファベットの下とか数字並べて表示するとかそう言う使い方しろよ」 */
+function ltStrip(list){
+  var shown=list.filter(ltHasShape);
+  if(!shown.length) return '';
+  /* No heading: it is the same letters as the list under it, so a line
+     saying so would be a line saying so. */
+  return '<div class="spv"><div class="ltstrip">'+shown.map(function(l){
+      return (l.st && l.st.length)
+        ? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
+        : '<span class="bch">'+esc(l.ch)+'</span>';
+    }).join('')+'</div></div>';
+}
 function vLtset(){
   var k=here().a;
   if(LT_KINDS.indexOf(k)<0) k='alpha';
@@ -405,7 +416,7 @@ function vLtset(){
   return '<div class="view">'+
     navTop(list.length)+
     '<div class="body">'+
-    (k==='num'? numBaseHTML() : '')+
+    ltStrip(list)+
     (list.length
       ? '<div class="ltlist">'+list.map(ltRow).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+

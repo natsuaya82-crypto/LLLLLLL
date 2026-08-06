@@ -511,7 +511,7 @@ defLang('zh', (function(){
       "ob.draw.h"       : "画一个字",
       "ob.draw.later"    : "以后再画",
       /* the writing system */
-      "script.preview"    : "你的文字",
+      "script.show"     : "显示",
       "script.show.roman" : "拉丁字母",
       "script.show.own"   : "自造文字",
       /* the letter editor */

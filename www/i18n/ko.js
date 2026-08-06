@@ -682,7 +682,7 @@ defLang('ko', (function(){
       "ob.draw.h"      : "글자를 하나 그리세요",
       "ob.draw.later"   : "나중에 그리기",
       /* the writing system */
-      "script.preview"    : "내 글씨",
+      "script.show"     : "표시",
       "script.show.roman" : "로마자",
       "script.show.own"   : "내 글자",
       /* the letter editor */
