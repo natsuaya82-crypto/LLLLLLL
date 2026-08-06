@@ -19,9 +19,12 @@
 // Three things are checked:
 //
 //   1. Every local file index.html references exists AND is tracked by git.
-//   2. Every .js under www/ is referenced by index.html. A script file nobody
+//   2. Every file under www/ is referenced by index.html. A script file nobody
 //      loads is a feature that silently does nothing — the same blank screen,
-//      one screen down.
+//      one screen down. It asked that of .js only, and www/ is not a source
+//      directory: `npx cap copy` puts the whole of it inside the app, so two
+//      old versions kept as _v1-notebook.html.bak and _v2-paper.html.bak — 52
+//      KB of a program nothing runs — were being carried onto every phone.
 //   3. The load order still holds. core.js defines defLang() so it precedes
 //      the ten languages; otf5.js defines LinguaFont so it precedes glyph.js;
 //      glyph.js ends with installScriptFont() and render(), so the app starts
@@ -107,12 +110,11 @@ const walk = (dir) => {
 const refSet = new Set(referenced)
 for (const abs of walk(WWW)) {
   const rel = relative(WWW, abs).split('\\').join('/')
-  if (!rel.endsWith('.js')) continue
+  if (rel === 'index.html') continue
   if (!refSet.has(rel)) {
     note(
-      `www/${rel} exists but index.html never loads it. Either add a\n` +
-        `      <script src="${rel}"></script> in the right place in the load\n` +
-        `      order, or delete the file.`
+      `www/${rel} exists but index.html never references it. Either\n` +
+        `      reference it, or delete the file.`
     )
   }
 }
