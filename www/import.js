@@ -512,15 +512,18 @@ function impMapHTML(){
   out+='<div class="impsum">'+
     (p.add?  '<span><b>'+p.add+'</b>'+esc(t('imp.new'))+'</span>' : '')+
     (p.coin? '<span><b>'+p.coin+'</b>'+esc(t('imp.coin'))+'</span>' : '')+
-    (p.dup?  '<span><b>'+p.dup+'</b>'+esc(t('imp.have'))+'</span>' : '')+
     '</div>';
-  /* The choice only exists when there is something to choose about. */
+  /* The choice only exists when there is something to choose about -- and it
+     sits ON the count it is about. Two words floating under a table say
+     nothing: 「飛ばすってなんの話？」 They are about the words that are
+     already here, so they are beside the number of them. */
   if(p.dup)
-    out+='<div class="segs">'+
+    out+='<div class="impdup"><span class="impn"><b>'+p.dup+'</b>'+esc(t('imp.have'))+'</span>'+
+      '<div class="segs">'+
       '<button class="seg'+(IMP.dup==='skip'? ' on':'')+'"' + DO('impSetDup', ["skip"]) + '>'+
         esc(t('imp.skip'))+'</button>'+
       '<button class="seg'+(IMP.dup==='over'? ' on':'')+'"' + DO('impSetDup', ["over"]) + '>'+
-        esc(t('imp.over'))+'</button></div>';
+        esc(t('imp.over'))+'</button></div></div>';
   out+='<button class="btn" style="width:100%;margin-top:14px"' + DO('doImport') + '>'+
     esc(t('csv.btn'))+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impAgain') + '>'+

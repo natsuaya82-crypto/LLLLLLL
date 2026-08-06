@@ -203,9 +203,14 @@ canvas.pkc{width:34px;height:34px;display:block}
 .imptab td{padding:7px 10px;color:var(--txs);border-bottom:1px solid var(--line2);
            max-width:190px;overflow:hidden;text-overflow:ellipsis}
 .impsum{display:flex;flex-wrap:wrap;gap:16px;margin:2px 2px 12px}
+/* What to do about the words that are already here, beside how many there
+   are, because the choice is about those and about nothing else. */
+.impdup{display:flex;align-items:center;gap:14px;margin:0 2px 4px}
+.impdup .impn{flex:0 0 auto;font-size:.92rem;color:var(--txs)}
+.impdup .segs{margin:0;flex:1 1 auto;justify-content:flex-end}
 .impsum span{font-size:.92rem;color:var(--txs)}
-.impsum b{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;color:var(--gold);
-          font-weight:600;margin-right:6px}
+.impsum b, .impdup b{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;
+          color:var(--gold);font-weight:600;margin-right:6px}
 /* The file button holds the input on top of itself, invisible and the whole
    size of it, because a native file control cannot be styled and a hidden one
    cannot be pressed. */
