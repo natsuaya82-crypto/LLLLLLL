@@ -375,6 +375,8 @@ function wdExHTML(){
           '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
           (seq.length? '<button class="usep"' + DO('sayPh', [seq]) + ' aria-label="'+
             esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
+          '<button class="usep"' + DO('cardOpen', ["x", openHw+'#'+i]) + ' aria-label="'+
+            esc(t('card.title'))+'">'+ICON_CARD+'</button>'+
           '<button class="usep"' + DO('wdDelEx', [i]) + ' aria-label="'+esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button>'+
           '</div>';
       }).join('')+'</div>'
@@ -446,7 +448,11 @@ function wdBodyHTML(){
   var seq=wEdit.seq;
   return '<div class="whd"><span class="whw">'+esc(seq.join(''))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) + '>'+
-      ICON_PLAY+t('f.listen')+'</button></div>'+
+      ICON_PLAY+t('f.listen')+'</button>'+
+      /* the one way out of the app: this word as a picture, in the letters
+         it is written in, for somewhere that is not Lingua */
+      '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
+        esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2">'+esc(phCut(seq).map(function(p){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+

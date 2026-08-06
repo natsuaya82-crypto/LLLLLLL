@@ -245,7 +245,7 @@ if (twice.length){
    The browser's, named rather than pattern-matched, because a pattern would
    quietly forgive a typo that happens to look like a global. */
 const BROWSER = ['Date','String','Number','Boolean','Object','Array','Math','JSON',
-  'RegExp','Error','Function','Uint8Array','Blob','Image','Path2D',
+  'RegExp','Error','Function','Uint8Array','Blob','File','Image','Path2D',
   'parseInt','parseFloat','isNaN','isFinite','encodeURIComponent','decodeURIComponent',
   'setTimeout','clearTimeout','setInterval','clearInterval',
   'requestAnimationFrame','cancelAnimationFrame',

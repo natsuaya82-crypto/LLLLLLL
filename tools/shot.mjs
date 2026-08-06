@@ -146,7 +146,14 @@ const shots = (all
 const made = [];
 for (const spec of shots) {
   const ob = /^ob[:@](\d+)$/.exec(spec);
-  const [r, a] = spec.split(':');
+  /* Only the first colon separates the route from its argument. A form's
+     argument has colons of its own -- `form:card:w/kano` is the card of the
+     word kano -- and splitting on all of them handed vForm the word "card",
+     which is not a form key, so every sheet in the app photographed as
+     "this form is gone". */
+  const ci = spec.indexOf(':');
+  const r = ci < 0 ? spec : spec.slice(0, ci);
+  const a = ci < 0 ? undefined : spec.slice(ci + 1);
   if (!ob && routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
   const err = ob
     ? await pg.evaluate(({ n, face }) => {
@@ -170,7 +177,10 @@ for (const spec of shots) {
                                           !document.getElementById('app') ||
                                           !document.getElementById('app').innerHTML.trim());
   if (covered) { console.error(`  ${spec}: the splash is still up, or #app is empty`); continue; }
-  const name = (spec.charAt(2) === '@' ? 'ob-' + obLabel[Number(ob[1])] : spec.replace(':', '-')) +
+  /* Every separator a route may carry becomes a dash: a form key with a
+     slash in it wrote the picture into a directory named after half of it. */
+  const name = (spec.charAt(2) === '@' ? 'ob-' + obLabel[Number(ob[1])]
+                                       : spec.replace(/[:/#]+/g, '-')) +
                (dark ? '-dark' : '') +
                (uiLang === 'en' ? '' : '-' + uiLang) + '.png';
   const file = path.join(OUT, name);

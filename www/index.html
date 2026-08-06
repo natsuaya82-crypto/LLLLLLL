@@ -174,6 +174,12 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
 .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(env(safe-area-inset-bottom,0) + 120px)}
+/* ---------- the card ----------
+   The picture is 1080 square whatever the phone is; the preview is however
+   wide the sheet is. Nothing here says what is drawn on it -- that is
+   www/card.js -- and nothing there says how big it looks. */
+.cardbox{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
+.cardc{display:block;width:100%;height:auto}
 /* ---------- the door ----------
    The name, a rule under it, and then the app. Nothing moves except the
    rule drawing itself, because a spinner says "this is slow" and this is
@@ -1173,6 +1179,7 @@ textarea.ntbody:focus{border-color:var(--goldln)}
   <script src="wordsheet.js"></script>
 <script src="otf5.js"></script>
 <script src="glyph.js"></script>
+<script src="card.js"></script>
 <script src="route-map.js"></script>
   <script src="act-map.js"></script>
 <script src="boot.js"></script>

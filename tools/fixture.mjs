@@ -179,6 +179,14 @@ export function halfDone(){
                                                      window.route='langs'; NAV=[{r:'langs'}];
                                                      const h=vLangs(); delete LANGS.L_other; return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
-                                       NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }]
+                                       NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    /* The card, which is the only screen whose output leaves the app. Both
+       faces: a word, and one of the sentences written under a word -- they
+       compose the picture differently (one spelling, or several with the
+       gaps between them) and only the second can overflow the width. */
+    ['a word as a card',       () => { cardOpen('w', 'kano'); return FORM.html; }],
+    ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
+                                       cardOpen('x', 'kano#0');
+                                       const h=FORM.html; delete findWord('kano').ex; return h; }]
   ];
 }

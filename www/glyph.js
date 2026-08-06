@@ -386,6 +386,10 @@ var ICON_SORT='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="
 var ICON_LINE='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 6h16M4 11h16M4 16h9"/></svg>';
+/* the card: a framed picture with a line written across it */
+var ICON_CARD='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 11h10M7 15h6"/></svg>';
 function geIcon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function geBtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=DO(fn);
@@ -1245,48 +1249,53 @@ function phkHTML(sym, call){
   return '<button class="phk'+(face?' hasg':'')+'"'+call+'>'+face+
     '<span class="pks">'+esc(sym)+'</span></button>';
 }
-function phkMount(){
-  var els=document.querySelectorAll('canvas.pkc'), i;
-  for(i=0;i<els.length;i++){
-    var c=els[i], r=c.getAttribute('data-r'), lid=c.getAttribute('data-l');
-    var st = lid? ((ltById(lid)||{}).st||null) : wsStrokes(r);
-    if(!st || !st.length) continue;
-    var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
-    var S=Math.max(40, Math.round((box.width||34)*dpr));
-    c.width=S; c.height=S;
-    var x=c.getContext('2d'), k=S/800, cont=[];
-    try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){}
-    x.fillStyle=cssVar('--tx');
-    cont.forEach(function(poly){
-      if(poly.length<3) return;
-      x.beginPath();
-      poly.forEach(function(pt,j){ if(j) x.lineTo(pt[0]*k,pt[1]*k); else x.moveTo(pt[0]*k,pt[1]*k); });
-      x.closePath(); x.fill();
+/* A letter's strokes as filled ink: scaled by k, laid down at (ox,oy).
+   The one place that turns strokes into a shape on a canvas. The keyboard,
+   the tiles and the card all come through here, so a letter cannot look like
+   one thing on a key and another on a picture somebody posts. */
+function inkStrokes(x, st, k, ox, oy, col){
+  var cont=[];
+  try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return; }
+  x.fillStyle=col;
+  cont.forEach(function(poly){
+    if(poly.length<3) return;
+    x.beginPath();
+    poly.forEach(function(p,j){
+      if(j) x.lineTo(ox+p[0]*k, oy+p[1]*k); else x.moveTo(ox+p[0]*k, oy+p[1]*k);
     });
-  }
+    x.closePath(); x.fill();
+  });
 }
+/* What a canvas is a picture of: a letter named by its id in data-l, or
+   whatever writes the sound named in data-r. Null when there is nothing
+   drawn to show. */
+function inkOf(lid, sym){
+  var st = lid? ((ltById(lid)||{}).st||null) : wsStrokes(sym);
+  return (st && st.length)? st : null;
+}
+/* Every canvas matching `sel`, filled with the letter it names. Sized in
+   device pixels, which is something no markup can say, so it has to happen
+   after the layout exists.
 
-/* The tiles on the letter grid are the same ink again, scaled down. */
-function geTiles(){
-  var els=document.querySelectorAll('canvas.tc');
-  for(var i=0;i<els.length;i++){
-    var c=els[i], r=c.getAttribute('data-r'), lid=c.getAttribute('data-l');
-    var st = lid? ((ltById(lid)||{}).st||null) : wsStrokes(r);
-    if(!st || !st.length) continue;
+   phkMount and geTiles were this function written out twice -- the same
+   fourteen lines, differing only in the selector and the floor under the
+   size. A change to how a letter is inked reached the keyboard and left the
+   tiles as they were, and nothing anywhere could see the two had come
+   apart. */
+function inkCanvases(sel, floor, dflt){
+  var els=document.querySelectorAll(sel), i;
+  for(i=0;i<els.length;i++){
+    var c=els[i], st=inkOf(c.getAttribute('data-l'), c.getAttribute('data-r'));
+    if(!st) continue;
     var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
-    var S=Math.max(48,Math.round((box.width||72)*dpr));
+    var S=Math.max(floor, Math.round((box.width||dflt)*dpr));
     c.width=S; c.height=S;
-    var x=c.getContext('2d'), k=S/800, cont=[];
-    try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){}
-    x.fillStyle=cssVar('--tx');
-    cont.forEach(function(poly){
-      if(poly.length<3) return;
-      x.beginPath();
-      poly.forEach(function(p,j){ if(j) x.lineTo(p[0]*k,p[1]*k); else x.moveTo(p[0]*k,p[1]*k); });
-      x.closePath(); x.fill();
-    });
+    inkStrokes(c.getContext('2d'), st, S/800, 0, 0, cssVar('--tx'));
   }
 }
+function phkMount(){ inkCanvases('canvas.pkc', 40, 34); }
+/* The tiles on the letter grid are the same ink again, scaled down. */
+function geTiles(){ inkCanvases('canvas.tc', 48, 72); }
 
 /* =========================================================================
    14. Drawing

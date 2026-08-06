@@ -127,6 +127,8 @@ act('takeOwn', takeOwn);
 act('tkAdd', tkAdd);
 act('tkBack', tkBack);
 act('tkClear', tkClear);
+act('cardOpen', cardOpen);
+act('cardSave', cardSave);
 act('tkSend', tkSend);
 act('tkWipe', tkWipe);
 act('mkTog', mkTog);
