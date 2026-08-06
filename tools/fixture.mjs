@@ -104,8 +104,6 @@ export function halfDone(){
                                               return FORM.html; }],
     ['a word being added, by sound',  () => { openAdd(''); addSetMode('ph');
                                               return FORM.html; }],
-    ['borrowing a character',  () => { window.route='pickltr'; NAV=[{r:'pickltr', a:'l1'}];
-                                       pkFor='k'; return vPickLtr(); }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];

@@ -16,13 +16,19 @@
    A letter an abugida has worked out for itself -- a consonant with a vowel
    mark on it -- is shown as what it is and cannot be drawn over: the two
    pieces it is made of are what you change. */
-/* The five kinds of writing, as a rail. Changing it changes what there is to
-   draw, so the font is rebuilt and the tiles below redrawn. */
-function wsysRow(){
-  return '<div class="segs">'+WSYS.map(function(k){
-    return '<button class="seg'+(wsys()===k?' on':'')+'"' + DO('setWsys', [k]) + '>'+
-      esc(t('ws.k.'+k))+'</button>';
-  }).join('')+'</div>';
+/* The five kinds of writing, one to a row, each saying what it is. It was a
+   rail of five tabs across the top of the letters chapter, wrapping so that
+   Logography sat alone on a second line, on a screen you open every day to
+   answer a question you answer once. */
+function vWsys(){
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    WSYS.map(function(k){
+      return '<button class="set"' + DO('setWsys', [k]) + '>'+
+        '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
+        '<span class="sv">'+(wsys()===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    '<div class="note" style="margin-top:12px">'+t('ws.kind.note')+'</div>'+
+    '</div></div>';
 }
 /* ---- the abugida bench ------------------------------------------------
    「アブギダの場合は、調整しやすいように別エディターが欲しい。母音+子音を見てチェック
@@ -309,7 +315,7 @@ function ltFace(l, call){
 function vLetters(){
   var loose=ltLoose();
   var marks=ltMarks();
-  var snds=LETTERS.filter(function(l){ return marks.indexOf(l)<0; });
+  var snds=ltOrder(LETTERS.filter(function(l){ return marks.indexOf(l)<0; }));
   return '<div class="view">'+
     navTop(ltShaped()+' / '+LETTERS.length)+
     '<div class="body">'+
@@ -347,45 +353,26 @@ function vLetters(){
       '<span class="lead"></span><span class="rv">'+addedSnd().length+'</span>'+ICON_GO+'</button>'+
     '</div></div>';
 }
+/* One line, not two. The second said "reads k" under a first line that said
+   "k", because a letter with no name of its own is called by what it reads --
+   so it was the same fact twice, in a sentence.
+
+   Red when another letter already reads the same thing. A font maps one code
+   point to one glyph, so the first of them wins and the rest are invisible
+   without being wrong; nothing said so. */
 function ltRow(l){
-  var snd=(l.snd||[]);
+  var snd=(l.snd||[]), dup=ltTaken(l);
   return '<div class="ltrow">'+
     ltFace(l, DO('editLetter',[l.id]))+
     '<button class="ltmid"' + DO('go', ["letter", l.id]) + '>'+
-      '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
-      '<span class="ltsn">'+(snd.length? esc(t('lt.reads', snd.join(' / ')))
-                                        : esc(t('lt.reads.none')))+'</span>'+
+      '<span class="ltnm">'+esc(ltName(l)||t('lt.reads.none'))+'</span>'+
+      (dup? '<span class="ltdup">'+esc(t('lt.dup', dup))+'</span>' : '')+
     '</button>'+
+    (ltHasSound(l)? '<button class="ltsay"' + DO('sayPh', [snd]) + ' aria-label="'+
+      esc(t('f.listen'))+'">'+ICON_SPK+'</button>' : '')+
     '</div>';
 }
 
-/* ---- joining the two, from either end ---------------------------------
-   Two pages, one job: put a tick next to the ones that go together. From a
-   sound you are choosing letters; from a letter you are choosing sounds. */
-function vPickLtr(){
-  var unit=here().a, on=ltFor(unit).map(function(l){ return l.id; });
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    (LETTERS.length
-      ? '<div class="ltlist">'+LETTERS.map(function(l){
-          var has=on.indexOf(l.id)>=0;
-          return '<div class="ltrow'+(has?' on':'')+'">'+
-            ltFace(l, DO('toggleLtr',[unit, l.id]))+
-            '<button class="ltmid"' + DO('toggleLtr', [unit, l.id]) + '>'+
-              '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
-              '<span class="ltsn">'+((l.snd&&l.snd.length)? esc(t('lt.reads', l.snd.join(' / '))) : esc(t('lt.reads.none')))+'</span>'+
-            '</button>'+
-            '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
-        }).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('editGlyph', [unit]) + '>'+
-      ICON_ADD+t('lt.draw')+'</button>'+
-    '</div></div>';
-}
-function toggleLtr(unit, id){
-  var l=ltById(id); if(!l) return;
-  if((l.snd||[]).indexOf(unit)>=0) ltUnlink(id, unit); else ltLink(id, unit);
-  save(); installScriptFont(); render();
-}
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,
    the character it borrows instead of a drawing, and a way to be rid of it.
 

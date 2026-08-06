@@ -131,7 +131,6 @@ act('tkClear', tkClear);
 act('tkSend', tkSend);
 act('tkWipe', tkWipe);
 act('mkTog', mkTog);
-act('toggleLtr', toggleLtr);
 act('wRelToggle', wRelToggle);
 act('wdAddEx', wdAddEx);
 act('wdAddMn', wdAddMn);

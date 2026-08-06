@@ -89,8 +89,8 @@ var PAGES={
   form:    {tab:'build'},
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
-  pickltr: {tab:'build', k:'lt.use'},
   letter:  {tab:'build', k:'lt.title'},
+  wsys:    {tab:'home',  k:'ws.kind'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
@@ -117,7 +117,6 @@ function pageName(r, a){
     var g=(typeof ltById==='function')? ltById(a) : null;
     return (g? ltName(g) : '') || t('lt.untitled');
   }
-  if(r==='pickltr') return t('lt.use');
   if(r==='set'){
     var si, sa=String(a||'');
     for(si=0;si<SETS.length;si++) if(SETS[si].id===sa) return t(SETS[si].k);

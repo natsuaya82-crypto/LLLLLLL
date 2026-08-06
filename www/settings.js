@@ -88,8 +88,11 @@ function vSet(){
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
       /* Answered once, if ever: wsGuess() reads it off the letters, and the
          letters chapter used to put these five across the top of the screen
-         every time it was opened. Nobody changes their writing system twice. */
-      '<div class="sec">'+t('ws.kind')+'</div>'+wsysRow()+
+         every time it was opened. A row like the rows above it, because it is
+         one -- it arrived here as a rail of five tabs among a column of rows,
+         which is the sort of thing that looks wrong before it is read. */
+      '<button class="set"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
+      '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '<button class="set" style="margin-top:18px"' + DO('wipeAll') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>';
   } else if(id==='acct'){

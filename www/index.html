@@ -238,6 +238,14 @@ canvas.pkc{width:34px;height:34px;display:block}
        font-family:inherit;padding:4px 0}
 .ltnm{display:block;font-family:'Cinzel',Georgia,serif;font-size:1rem}
 .ltsn{display:block;font-size:.84rem;color:var(--txm);margin-top:2px}
+/* A clash, said where it happens. Two letters reading the same unit is not an
+   error -- the font takes the first and the second is simply never drawn --
+   but nothing on the screen said which was which. */
+.ltdup{display:block;font-size:.84rem;color:#c9553f;margin-top:2px}
+/* One sound, so a speaker rather than the play triangle a whole word gets. */
+.ltsay{flex:0 0 auto;width:44px;height:44px;display:inline-flex;align-items:center;
+       justify-content:center;background:none;border:0;color:var(--txm)}
+.ltsay:active{color:var(--gold)}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 /* ---------- a word, spelled ----------

@@ -127,6 +127,44 @@ function ltHasSound(l){
   return false;
 }
 function ltMarks(){ return LETTERS.filter(ltIsMark); }
+/* In the chart's order, so the alphabet and the phonology chapter read the
+   same way down the page. Letters that read nothing sort last -- they are the
+   ones still to finish and belong at the bottom, not scattered through it. */
+function ltOrder(list){
+  var all=ipaAll();
+  function at(l){
+    var u=ltUnits(l);
+    if(!u.length) return 1e9;
+    var p=uSplit(u[0]), i=all.indexOf(p[0]);
+    return i<0? 1e8 : i;
+  }
+  return list.slice().sort(function(a,b){ return at(a)-at(b); });
+}
+/* What this letter reads that another letter already read. A font maps one
+   code point to one glyph, so ltMain() -- the first of them -- is the one that
+   gets drawn and the others quietly do not.
+
+   ltSetRoman refuses to make a new one, so this only ever answers for letters
+   that already clashed: an import, or a phone from before the refusal. Saying
+   so in red and letting it be set anyway was pointing at a mess rather than
+   not making one. */
+function ltTaken(l){
+  var u=ltUnits(l), i, first;
+  for(i=0;i<u.length;i++){
+    first=ltMain(u[i]);
+    if(first && first.id!==l.id) return u[i];
+  }
+  return '';
+}
+/* The first of these units that some OTHER letter already reads. */
+function ltClash(id, units){
+  var i, held;
+  for(i=0;i<units.length;i++){
+    held=ltFor(units[i]);
+    if(held.length && held[0].id!==id) return units[i];
+  }
+  return '';
+}
 /* Letters that had the switch: role 'mark' with the character in `key`. The
    character is what it reads now. Runs once, on a phone, and touches only the
    letters that carry the old shape. */
@@ -204,6 +242,8 @@ function ltSetRoman(id, sp){
     units.push(parts.join(''));
     for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
   }
+  var clash=ltClash(id, units);
+  if(clash){ toast(t('lt.dup', clash)); return; }
   if(seen.length){
     var have=addedSnd();
     for(i=0;i<seen.length;i++) if(have.indexOf(seen[i])<0) have.push(seen[i]);
@@ -227,12 +267,6 @@ function ltSetChar(id, ch){
 function ltSetName(id, nm){
   var l=ltById(id); if(!l) return null;
   l.nm=String(nm||'').trim(); saveLetters(); return l;
-}
-function ltLink(id, unit){
-  var l=ltById(id); if(!l || !unit) return null;
-  if(!l.snd) l.snd=[];
-  if(l.snd.indexOf(unit)<0) l.snd.push(unit);
-  saveLetters(); return l;
 }
 function ltUnlink(id, unit){
   var l=ltById(id); if(!l || !l.snd) return null;
