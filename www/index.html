@@ -23,6 +23,11 @@ html[data-theme="dark"]{
   --bad:#d9705c;
   --pur:#8c7eff; --pursf:rgba(140,126,255,.10); --purln:rgba(140,126,255,.42);
   --onGold:#241d10; --dot:rgba(255,255,255,.42); --shadow:0 10px 26px rgba(0,0,0,.5);
+  /* glass: what the tab bar is made of. --glassop is the same surface for a
+     webview too old to blur, so the bar is never a transparent smear. */
+  --glass:rgba(30,30,41,.58); --glassop:#1a1a24;
+  --glassrim:rgba(255,255,255,.13); --glassspec:rgba(255,255,255,.22);
+  --glassdrop:rgba(0,0,0,.46);
 }
 html[data-theme="light"]{
   --bg:#faf8f3; --pane:#ffffff; --sf:#f3efe6; --sf2:#eae5da;
@@ -32,6 +37,9 @@ html[data-theme="light"]{
   --bad:#c9553f;
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
+  --glass:rgba(255,255,255,.62); --glassop:#f6f2ea;
+  --glassrim:rgba(26,23,18,.10); --glassspec:rgba(255,255,255,.9);
+  --glassdrop:rgba(60,50,30,.16);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
@@ -182,19 +190,32 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* ---------- the three tabs ----------
    Only the three roots carry this. On an inner page the thing at the bottom
    of the screen is that page's own button, and a tab bar under it would be
-   two bars competing for the same thumb. */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:25;max-width:480px;margin:0 auto;
-        display:flex;background:var(--bg);border-top:1px solid var(--line);
-        padding-bottom:env(safe-area-inset-bottom,0)}
-.tab{flex:1;min-height:56px;background:none;border:0;color:var(--txm);
-     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-     font-family:inherit;padding:8px 4px}
-.tab .tabl{font-size:.82rem;letter-spacing:.04em}
-.tab.on{color:var(--gold)}
+   two bars competing for the same thumb.
+
+   It floats clear of the bottom edge rather than sitting on it, because the
+   page has to run underneath for the glass to have anything to refract. The
+   blur is behind an @supports: a webview that cannot blur gets --glassop, a
+   solid surface, instead of a transparent bar with the text showing through. */
+.tabbar{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0) + 10px);
+        z-index:25;max-width:420px;margin:0 auto;display:flex;gap:4px;padding:5px;
+        border-radius:999px;background:var(--glassop);border:1px solid var(--glassrim);
+        box-shadow:inset 0 1px 0 var(--glassspec), 0 12px 32px var(--glassdrop)}
+@supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  .tabbar{background:var(--glass);
+          -webkit-backdrop-filter:blur(22px) saturate(180%);
+          backdrop-filter:blur(22px) saturate(180%)}
+}
+.tab{flex:1;min-height:52px;background:none;border:0;color:var(--txm);border-radius:999px;
+     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+     font-family:inherit;padding:6px 4px;transition:color .18s,background .18s}
+.tab .tabl{font-size:.76rem;letter-spacing:.04em}
+/* the lens: the one tab you are on is a solid pill inside the glass */
+.tab.on{color:var(--gold);background:var(--goldsf);
+        box-shadow:inset 0 0 0 1px var(--goldln), inset 0 1px 0 var(--glassspec)}
 /* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
-       padding:0 30px calc(56px + env(safe-area-inset-bottom,0));text-align:center}
+       padding:0 30px calc(84px + env(safe-area-inset-bottom,0));text-align:center}
 /* What the language is for, on the cover, because that is where what a book
    is about belongs. */
 .wldrow{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;
