@@ -37,7 +37,7 @@ export function seed(){
   SET.theme='system'; SET.plan='free'; SET.done=true; SET.order='SOV';
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
   SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
-  SET.snd = ['k','t','m','n','s','r','a','i','u','e','o'];
+  SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},

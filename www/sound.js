@@ -119,6 +119,45 @@ function vAbugida(){
       : '<div class="note">'+t('ab.novow')+'</div>')+
     '</div></div>';
 }
+/* ---- the language's sounds --------------------------------------------
+   Which sounds a language uses is the language's, and it was the person's:
+   SET.snd, in lingua.set, beside the theme and the interface language. One
+   inventory for every language somebody has. Nothing showed it because there
+   was no way to have two languages yet -- open somebody else's and you would
+   have found your own sounds in it, and the letters you drew for them.
+
+   It is the ninth slice, filed under langKey('snd') exactly as letters are. */
+var SND=[];
+/* The open language's sounds. Empty first: see langRead() in core.js. */
+function sndRead(){
+  SND=[];
+  try{ var s=JSON.parse(localStorage.getItem(langKey('snd'))||'null');
+       if(s && s.length) SND=s; }catch(e){}
+}
+sndRead();
+function saveSnd(){ try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
+/* The one sound inventory anything reads. 35 places say addedSnd() meaning
+   "the sounds of the language in front of me", and they still do. */
+function addedSnd(){ return SND; }
+/* Whatever was in SET.snd belonged to whichever language was open when it was
+   written, which is this one. Copied, then taken off the settings so nothing
+   can read it again. */
+function migrateSnd(){
+  if(SND.length || !SET.snd || !SET.snd.length) return;
+  SND=SET.snd.slice();
+  delete SET.snd;
+  saveSnd(); save();
+}
+/* A language has sounds from the moment it exists: a drawn letter takes the
+   next one nothing reads yet, so a language with none is one where every
+   letter reads nothing. Called when the app starts and when a different
+   language is opened, which are the two moments a language can turn out to
+   have none. Never overwrites. */
+function sndStart(){
+  if(SND.length) return;
+  SND=asOrder(asSounds('plain', 12));
+  saveSnd();
+}
 function sndHas(sym){
   var a=addedSnd();
   return a.indexOf(sym)>=0;
@@ -130,7 +169,7 @@ function sndHas(sym){
 function sndToggle(sym){
   var a=addedSnd();
   if(a.indexOf(sym)>=0){ dropSnd(sym); return; }
-  a.push(sym); save(); render();
+  a.push(sym); saveSnd(); render();
 }
 /* Spoken from the words' own sequences. A spelling is only what those
    sequences look like written down, so it is looked up rather than read. */
@@ -152,9 +191,9 @@ function sndTap(sym){ sayOne(sym); sndToggle(sym); }
 var sndFeelPick='';
 function sndFeel(id){
   sndFeelPick=id;
-  SET.snd=asSounds(id, 12);
-  save();
-  asSay(SET.snd);
+  SND=asSounds(id, 12);
+  saveSnd();
+  asSay(SND);
   render();
 }
 function sndFeelAgain(){ if(sndFeelPick) sndFeel(sndFeelPick); }
@@ -188,8 +227,8 @@ function sndFeelRow(lab, list, kind, act){
 function sndFeelMore(kind){
   var have=addedSnd(), s=asMore(sndFeelPick||AS_CHARS[0].id, kind, have);
   if(!s){ toast(t('as.more.none')); return; }
-  SET.snd=asOrder(have.concat([s]));
-  save(); sayOne(s); render();
+  SND=asOrder(have.concat([s]));
+  saveSnd(); sayOne(s); render();
 }
 function sndFeelHTML(act){
   var have=addedSnd(), cs=[], vs=[], i;

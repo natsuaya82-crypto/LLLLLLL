@@ -86,7 +86,8 @@ const OLD = {
   'lingua.phases':  JSON.stringify({ done: { sound: true }, notes: {}, set: {}, extra: [] }),
   'lingua.talk':    JSON.stringify([{ q: 'hi' }]),
   'lingua.script':  JSON.stringify({ g: { t: [[1, 2]] }, extra: [] }),
-  'lingua.set':     JSON.stringify({ theme: 'dark', plan: 'free', done: true })
+  'lingua.set':     JSON.stringify({ theme: 'dark', plan: 'free', done: true,
+                                     snd: ['k', 't', 'a'] })
 };
 
 /* Everything a screen would read, plus what the storage layer thinks it did.
@@ -101,6 +102,8 @@ const REPORT = () => ({
   letters: LETTERS.length, letterIds: LETTERS.map(function(x){ return x.id; }).join(','),
   notes: NOTES.length, note0: NOTES[0] && NOTES[0].t,
   talk: TALK.length, talk0: TALK[0] && TALK[0].q, sound: !!STG.done.sound,
+  snd: addedSnd().join(','), sndInSet: SET.snd === undefined,
+  sndFiled: localStorage.getItem('lingua.' + langId + '.snd') !== null,
   script: Object.keys(SCRIPT.g).join(','),
   theme: SET.theme, done: SET.done, plan: SET.plan,
   langs: Object.keys(LANGS).length, id: langId,
@@ -112,6 +115,7 @@ const REPORT = () => ({
 });
 
 const fails = [];
+const addedSndLen = (s) => (s ? s.split(',').length : 0);
 const want = (label, got, expected) => {
   if (got !== expected) fails.push(`${label}: got ${JSON.stringify(got)}, wanted ${JSON.stringify(expected)}`);
 };
@@ -146,6 +150,12 @@ want('the drawn script carried over', a.script, 't');
 want('their theme survived', a.theme, 'dark');
 want('their onboarding is still done', a.done, true);
 want('their plan survived', a.plan, 'free');
+/* The sounds were the person's, in lingua.set, and are the language's now.
+   They arrive, they are filed under the language, and nothing reads them off
+   the settings any more. */
+want('their sounds carried over', a.snd, 'k,t,a');
+want('and are filed under the language', a.sndFiled, true);
+want('and are off the settings', a.sndInSet, true);
 want('one language is listed', a.langs, 1);
 want('and it is theirs', a.mine, true);
 want('the index knows what it is called', a.indexName, 'Vaska');
@@ -160,6 +170,7 @@ want('still the same language', b.id, a.id);
 want('still their words', b.words, 2);
 want('still their letters', b.letterIds, 'lA,lB,lC');
 want('still their name', b.name, 'Vaska');
+want('still their sounds', b.snd, 'k,t,a');
 
 /* ---- 4: a phone that never had this app --------------------------------- */
 await pg.evaluate(() => localStorage.clear());
@@ -168,6 +179,9 @@ const c = await pg.evaluate(REPORT);
 want('a fresh install gets one language', c.langs, 1);
 want('and it is theirs to write in', c.mine, true);
 want('with nothing in it', c.words, 0);
+/* not nothing at all: a language with no sounds is one where every letter
+   drawn in it reads nothing, so a fresh one is given a set to start from */
+want('and sounds to start from', addedSndLen(c.snd) > 0, true);
 want('and it is the one that is open', c.id, await pg.evaluate(() => langId));
 
 /* ---- 5: two languages, and the door between them ------------------------
@@ -193,6 +207,7 @@ await pg.evaluate(() => {
   localStorage.setItem('lingua.LA.phases', JSON.stringify(
     { done: { sound: true }, notes: {}, set: {}, extra: [] }));
   localStorage.setItem('lingua.LA.script', JSON.stringify({ g: { t: [[1, 2]] }, extra: [] }));
+  localStorage.setItem('lingua.LA.snd', JSON.stringify(['t', 'u', 'f']));
   /* B has nothing at all: no keys, not empty ones. A language somebody has
      only just made. */
 });
@@ -214,6 +229,9 @@ want('nor A\'s conversation', B1.talk, 0);
 want('nor how far A had got', B1.sound, false);
 want('nor A\'s name', B1.name, '');
 want('nor A\'s drawn script', B1.script, '');
+/* B gets its own set rather than A's -- this is the one that would have been
+   invisible: the sounds looked right because they were somebody's. */
+want('nor A\'s sounds', B1.snd.indexOf('t,u,f'), -1);
 
 /* saving B is what makes a leak permanent, so do it before going back */
 await pg.evaluate(() => { save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); });
@@ -232,6 +250,7 @@ want('and its conversation', A2.talk0, 'A talk');
 want('and the stage it had finished', A2.sound, true);
 want('and its name', A2.name, 'Vaska');
 want('and its drawn script', A2.script, 't');
+want('and its sounds', A2.snd, 't,u,f');
 
 await br.close();
 srv.close();

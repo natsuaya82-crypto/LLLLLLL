@@ -55,7 +55,6 @@ function nextStep(){
 function chOf(p){ return ltChar(p); }
 /* A sound belongs to the language either because a word already uses it or
    because you said so; before this, only the first way existed. */
-function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
 /* Dropping a sound unhooks the letters that read it. It does not delete them:
    a letter is a thing you drew and it survives a sound being reconsidered --
    which is the whole point of them being separate.
@@ -67,7 +66,7 @@ function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
    had. The same act, twice, agreeing about the easy half. */
 function dropSnd(p){
   var a=addedSnd(), i=a.indexOf(p);
-  if(i>=0){ a.splice(i,1); save(); }
+  if(i>=0){ a.splice(i,1); saveSnd(); }
   ltFor(p).forEach(function(l){ ltUnlink(l.id, p); });
   render();
 }

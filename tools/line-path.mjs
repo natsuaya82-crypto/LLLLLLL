@@ -108,7 +108,7 @@ await pg.evaluate((s) => {
      its real lookup and its real stroke format. What is under test is the
      arithmetic and the drawing, not whether the shapes are handsome. */
   var made = [];
-  SET.snd.forEach(function(u, i){
+  addedSnd().forEach(function(u, i){
     var a = (i * 37) % 360, r = 260;
     function pt(k){
       var t = (a + k * 97) * Math.PI / 180;
@@ -118,7 +118,7 @@ await pg.evaluate((s) => {
   });
   /* one borrowed character in the middle, because a real line has them and
      they are the thing that cuts a run in two */
-  made[3] = { id: 'x3', st: null, ch: '\u03D8', nm: '', snd: [SET.snd[3]] };
+  made[3] = { id: 'x3', st: null, ch: '\u03D8', nm: '', snd: [addedSnd()[3]] };
   LETTERS = made;
 }, seed.toString());
 

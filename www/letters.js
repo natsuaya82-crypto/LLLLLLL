@@ -247,8 +247,8 @@ function ltSetRoman(id, sp){
   if(seen.length){
     var have=addedSnd();
     for(i=0;i<seen.length;i++) if(have.indexOf(seen[i])<0) have.push(seen[i]);
-    SET.snd=asOrder(have);
-    save();
+    SND=asOrder(have);
+    saveSnd();
   }
   l.snd=units;
   saveLetters(); installScriptFont(); render();

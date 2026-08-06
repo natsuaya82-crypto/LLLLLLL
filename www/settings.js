@@ -143,7 +143,7 @@ function wipeAll(){
   try{
     for(si=0; si<SLICES.length; si++) localStorage.removeItem(langKey(SLICES[si]));
   }catch(e){}
-  langRead(); ltRead(); noteRead(); stRead(); tkRead();
+  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart();
   /* the person's settings, back to what a fresh install has -- keeping the two
      that are about them rather than about the language */
   var theme=SET.theme, ui=SET.ui;
@@ -151,7 +151,7 @@ function wipeAll(){
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  save(); saveLetters(); saveNotes(); saveStg(); saveTalk();
+  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd();
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};

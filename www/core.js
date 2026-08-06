@@ -31,7 +31,7 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
 /* The eight slices a language is filed under. One list, because emptying a
    language and reading one both have to name all eight, and a wipe that named
    seven would leave a slice of the old language inside the new one. */
-var SLICES=['words','lines','lang','script','letters','notes','phases','talk'];
+var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd'];
 /* id -> { name, mine } and nothing more: the index says which languages are
    here, and the language's own keys hold what it is. */
 var LANGS={}, langId='';
@@ -135,9 +135,9 @@ try{
    words end up saved under the language being switched to. */
 function langOpen(id){
   if(!LANGS[id] || id===langId) return;
-  save(); saveLetters(); saveNotes(); saveStg(); saveTalk();
+  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd();
   langId=id; langStore();
-  langRead(); ltRead(); noteRead(); stRead(); tkRead();
+  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart();
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
