@@ -342,16 +342,26 @@ var ICON_GO='<svg class="ic go" viewBox="0 0 24 24" width="13" height="13" fill=
   '<path d="M9 5l7 7-7 7"/></svg>';
 /* The three tabs. Drawn, like everything else: a stack of pages being made,
    a lens, and a door. */
+/* One per tab, keyed by its route. The house is the timeline because that is
+   what "home" means to somebody arriving from any other social app; the
+   language's own cover moved under the person. */
 var TAB_ICON={
+  feed:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+    'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+    '<path d="M4 10.5 12 4l8 6.5V20H4Z"/><path d="M9.5 20v-6h5v6"/></svg>',
+  explore:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+    'stroke-width="1.5" stroke-linecap="round" aria-hidden="true">'+
+    '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 20 20"/></svg>',
+  notif:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+    'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+    '<path d="M6 9a6 6 0 0 1 12 0c0 4 1.3 5.5 2 6.2H4c.7-.7 2-2.2 2-6.2Z"/>'+
+    '<path d="M10 18.5a2 2 0 0 0 4 0"/></svg>',
   build:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
     'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
     '<path d="M4 6.5 12 3l8 3.5-8 3.5Z"/><path d="M4 12l8 3.5 8-3.5"/><path d="M4 17.5 12 21l8-3.5"/></svg>',
-  find:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
-    'stroke-width="1.5" stroke-linecap="round" aria-hidden="true">'+
-    '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4 20 20"/></svg>',
-  home:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+  profile:'<svg class="tic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
     'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
-    '<path d="M4 10.5 12 4l8 6.5V20H4Z"/><path d="M9.5 20v-6h5v6"/></svg>'
+    '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>'
 };
 var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
@@ -1348,7 +1358,7 @@ function render(){
      www/route-map.js, with the view function rather than its name. This used
      to be twenty-two conditions here -- a second copy of PAGES that nothing
      could check against the first. */
-  var pg = PAGES[route], v = (pg && pg.view)? pg.view() : vHome();
+  var pg = PAGES[route], v = (pg && pg.view)? pg.view() : vProfile();
   /* one attribute decides whether words are shown in roman letters or in the
      ones you drew — the text itself never changes, only the family it is set in */
   document.documentElement.setAttribute('data-script', myFontOn()? 'on':'off');

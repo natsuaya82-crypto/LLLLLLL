@@ -202,7 +202,7 @@ function obFinish(){
     if(!langName) langName=t('lang.default');
   }
   SET.done=true; save();
-  route='home'; RENDERED=null; render(); window.scrollTo(0,0);
+  route='profile'; RENDERED=null; render(); window.scrollTo(0,0);
 }
 
 function obDrawHTML(){

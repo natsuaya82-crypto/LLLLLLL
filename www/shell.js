@@ -50,7 +50,7 @@ function viewReset(){
 
    A screen is a route and at most one argument -- which word, which stage --
    because a screen that needs two is two screens. */
-var NAV=[{r:'home'}];
+var NAV=[{r:'profile'}];
 function here(){ return NAV[NAV.length-1]; }
 function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
 function go(r, a){
@@ -66,7 +66,7 @@ function go(r, a){
   NAV.push({r:r, a:a}); route=r; render(); window.scrollTo(0,0);
 }
 function back(){
-  if(NAV.length>1) NAV.pop(); else NAV=[{r:'home'}];
+  if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
 }
 /* A tab is not somewhere you came through, it is where you are. Tapping one
@@ -76,21 +76,24 @@ function back(){
 function goIn(r){ goTab('build'); go(r); }
 function goTab(r){ NAV=[{r:r}]; route=r; render(); window.scrollTo(0,0); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
-var route='home';
+var route='profile';
 
 /* ---- every page ------------------------------------------------------
    Its numeral in the book, its name, and which tab it lives under. The back
    button says where it goes and the heading says where you are, side by
    side: 「←目次　Ⅰ 単語」 */
 var PAGES={
-  home:    {tab:'home'},
+  feed:    {tab:'feed',    k:'tab.home'},
+  explore: {tab:'explore', k:'tab.find'},
+  notif:   {tab:'notif',   k:'tab.notif'},
+  profile: {tab:'profile'},
   build:   {tab:'build', k:'tab.build'},
   find:    {tab:'build', k:'tab.find'},
   form:    {tab:'build'},
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
-  wsys:    {tab:'home',  k:'ws.kind'},
+  wsys:    {tab:'profile',  k:'ws.kind'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
@@ -102,14 +105,14 @@ var PAGES={
 
   notes:   {tab:'build', n:'V',   k:'toc.notes'},
   talk:    {tab:'build', n:'VI',  k:'toc.talk'},
-  settings:{tab:'home',  k:'set.title'},
-  set:     {tab:'home'},
-  world:   {tab:'home', k:'wld.title'},
-  langs:   {tab:'home', k:'langs.title'},
-  plans:   {tab:'home',  k:'plans.title'}
+  settings:{tab:'profile',  k:'set.title'},
+  set:     {tab:'profile'},
+  world:   {tab:'profile', k:'wld.title'},
+  langs:   {tab:'profile', k:'langs.title'},
+  plans:   {tab:'profile',  k:'plans.title'}
 };
 function pageName(r, a){
-  if(r==='home') return t('tab.home');
+  if(r==='profile') return t('tab.me');
   /* A page opened on a particular thing is named after that thing. The
      letter you are drawing, the stage you are in -- not the chapter it
      belongs to, which the back button already says. */
@@ -160,7 +163,11 @@ function navTop(count){
    the app -- it is a thing you do to the language -- so it moved to the
    contents page it belongs to, and the bar went back to saying only where
    you are. 「snsの探すと横断検索は別物ね」 */
-var TABS=[{r:'build', k:'tab.build'}, {r:'home', k:'tab.home'}];
+var TABS=[{r:'feed',    k:'tab.home'},
+          {r:'explore', k:'tab.find'},
+          {r:'notif',   k:'tab.notif'},
+          {r:'build',   k:'tab.build'},
+          {r:'profile', k:'tab.me'}];
 function tabBar(){
   var cur=here().r, i, out='';
   for(i=0;i<TABS.length;i++)

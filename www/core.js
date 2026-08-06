@@ -141,7 +141,7 @@ function langOpen(id){
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
-  goTab('home');
+  goTab('profile');
 }
 
 function save(){

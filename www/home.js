@@ -201,7 +201,7 @@ function chTaken(){
    FIND is search across the whole language and bringing other people's work
    in. It is where a public gallery goes when there is one; until then it is
    already the fastest way into a word, which is what it is for. */
-function vHome(){
+function vProfile(){
   var last=WORDS.length?WORDS[WORDS.length-1]:null;
   return '<div class="view fixed">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+

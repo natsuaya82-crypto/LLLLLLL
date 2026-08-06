@@ -155,7 +155,7 @@ function wipeAll(){
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
-  GE=null; route='home'; RENDERED=null;
+  GE=null; route='profile'; RENDERED=null;
   render();
 }
 

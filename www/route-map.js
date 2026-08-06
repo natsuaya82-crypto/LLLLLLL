@@ -41,7 +41,10 @@ function page(r, view){
   PAGES[r].view = view;
 }
 
-page('home',     vHome);
+page('feed',     vFeed);
+page('explore',  vExplore);
+page('notif',    vNotif);
+page('profile',  vProfile);
 page('build',    vBuild);
 page('find',     vFind);
 page('form',     vForm);

@@ -141,7 +141,7 @@ const obLabel = await pg.evaluate(() =>
 const expand = (s) => (s === 'ob' ? obShots : [s]);
 const shots = (all
   ? withArgs.concat(obShots)
-  : named.length ? named : ['home']).reduce((a, s) => a.concat(expand(s)), []);
+  : named.length ? named : ['profile']).reduce((a, s) => a.concat(expand(s)), []);
 
 const made = [];
 for (const spec of shots) {
