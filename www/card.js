@@ -110,66 +110,135 @@ function cardInk(x, items, ox, oy, box, gap, wgap){
     if(items[i].sp){ cur+=wgap; continue; }
     if(items[i].st){ inkStrokes(x, items[i].st, box/800, cur, oy, cssVar('--tx')); }
     else {
+      /* A sound with no letter stands in capitals at nearly the height of a
+         drawn one. In lower case it came out half the size of the letters
+         beside it, which reads as a small letter rather than as a gap. */
       x.fillStyle=cssVar('--tx');
       x.textAlign='left'; x.textBaseline='alphabetic';
-      x.font=Math.round(box*0.80)+'px Georgia, serif';
-      x.fillText(items[i].tx, cur, oy+box*0.82);
+      x.font=Math.round(box*0.95)+'px '+CARD_CAPS;
+      x.fillText(String(items[i].tx).toUpperCase(), cur, oy+box*0.85);
     }
     cur+=box;
   }
 }
-/* The largest size at which a string still fits the width it is given. A
-   sentence is longer than a word and there is no wrapping on a canvas. */
-function cardFit(x, s, max, size, fam){
-  var sz=size;
-  x.font=sz+'px '+fam;
-  while(sz>10 && x.measureText(s).width>max){ sz-=2; x.font=sz+'px '+fam; }
+/* The largest size at which a string still fits the width it is given, with
+   the canvas left set to it. A sentence is longer than a word and there is no
+   wrapping on a canvas.
+
+   `style` goes in front of the size, not after it: a canvas font is the CSS
+   shorthand, so "64px italic Cormorant" is not a slower way of saying
+   "italic 64px Cormorant" -- it is nothing at all, and the line silently
+   keeps whatever font was set before it. */
+function cardFit(x, s, max, size, fam, style){
+  var pre=style? style+' ' : '', sz=size;
+  x.font=pre+sz+'px '+fam;
+  while(sz>10 && x.measureText(s).width>max){ sz-=2; x.font=pre+sz+'px '+fam; }
   return sz;
 }
 
-var CARD_FAM='-apple-system, Georgia, serif';
+/* The card is set in the app's own two faces: the capitals in Cinzel, the
+   meaning in Cormorant italic, both already loaded by index.html. Georgia is
+   behind each of them for the moment before a webfont arrives, and a fallback
+   nobody sees is still the difference between a card and a blank square. */
+var CARD_CAPS="'Cinzel', Georgia, serif";
+var CARD_ITAL="'Cormorant Garamond', Georgia, serif";
+
+/* Letterspaced, centred on cx. Canvas has no tracking on the webviews this
+   has to run in, and every small capital in the app is tracked, so without
+   this the card would be the one place the type looked like somebody else's. */
+function cardTrack(x, s, cx, y, track){
+  var i, w=0, cur;
+  for(i=0;i<s.length;i++) w += x.measureText(s.charAt(i)).width + track;
+  w -= track;
+  cur = cx - w/2;
+  x.textAlign='left';
+  for(i=0;i<s.length;i++){
+    x.fillText(s.charAt(i), cur, y);
+    cur += x.measureText(s.charAt(i)).width + track;
+  }
+  return w;
+}
+/* The plate a book prints a specimen on: a heavier rule with a hairline
+   inside it. Both are --goldln, so a card cannot be a shade of gold the app
+   does not have. */
+function cardFrame(x, S){
+  var o=Math.round(S*0.050), i=Math.round(S*0.063);
+  x.strokeStyle=cssVar('--goldln');
+  x.lineWidth=Math.max(1, Math.round(S*0.0026));
+  x.strokeRect(o, o, S-o*2, S-o*2);
+  x.lineWidth=Math.max(1, Math.round(S*0.0011));
+  x.strokeRect(i, i, S-i*2, S-i*2);
+}
+/* A lozenge between the writing and the reading of it, where a book would
+   put a fleuron. It is the only ornament on the card and it is four lines. */
+function cardMark(x, cx, cy, r){
+  x.fillStyle=cssVar('--gold');
+  x.beginPath();
+  x.moveTo(cx, cy-r); x.lineTo(cx+r, cy); x.lineTo(cx, cy+r); x.lineTo(cx-r, cy);
+  x.closePath(); x.fill();
+}
+
 function cardPaint(c){
   var S=CARD_S, x=c.getContext('2d'), src=cardSrc(), items=cardUnits(src.line);
-  var pad=Math.round(S*0.12), avail=S-pad*2;
+  var pad=Math.round(S*0.115), avail=S-pad*2, g;
   c.width=S; c.height=S;
-  x.fillStyle=cssVar('--bg'); x.fillRect(0,0,S,S);
 
-  /* the script, as large as it can be and still stand inside the margins */
-  var box=Math.round(S*0.21), gap=Math.round(box*0.17), wgap=Math.round(box*0.55);
+  /* The ground is lit a little at the middle and falls off to the corners --
+     --sf over --bg, the app's own surface over the app's own paper. A card
+     that was one flat rectangle read as a screenshot rather than a plate. */
+  x.fillStyle=cssVar('--bg'); x.fillRect(0,0,S,S);
+  g=x.createRadialGradient(S/2, S*0.40, S*0.04, S/2, S*0.48, S*0.80);
+  g.addColorStop(0, cssVar('--sf'));
+  g.addColorStop(1, cssVar('--bg'));
+  x.fillStyle=g; x.fillRect(0,0,S,S);
+  cardFrame(x, S);
+
+  /* the script, as large as it can be and still stand inside the frame, hung
+     about a line above the middle so the reading has room under it */
+  var box=Math.round(S*0.26), gap=Math.round(box*0.16), wgap=Math.round(box*0.55);
   var wide=cardWidth(items, box, gap, wgap), f;
   if(wide>avail && wide>0){
     f=avail/wide;
     box=Math.round(box*f); gap=Math.round(gap*f); wgap=Math.round(wgap*f);
     wide=cardWidth(items, box, gap, wgap);
   }
-  cardInk(x, items, Math.round((S-wide)/2), Math.round(S*0.30), box, gap, wgap);
+  cardInk(x, items, Math.round((S-wide)/2), Math.round(S*0.372-box/2), box, gap, wgap);
 
-  /* the spelling, the rule, the meaning */
-  x.textAlign='center'; x.textBaseline='alphabetic';
+  cardMark(x, S/2, Math.round(S*0.566), Math.round(S*0.0105));
+
+  /* the spelling, in capitals and tracked, the way the app says a small
+     heading everywhere else */
+  x.textBaseline='alphabetic';
   x.fillStyle=cssVar('--txs');
-  cardFit(x, src.line, avail, Math.round(S*0.044), CARD_FAM);
-  x.fillText(src.line, S/2, Math.round(S*0.625));
+  var rs=cardFit(x, src.line.toUpperCase(), avail*0.86, Math.round(S*0.040), CARD_CAPS, '');
+  cardTrack(x, src.line.toUpperCase(), S/2, Math.round(S*0.652), rs*0.24);
 
-  x.fillStyle=cssVar('--goldln');
-  x.fillRect(Math.round(S/2-S*0.055), Math.round(S*0.672),
-             Math.round(S*0.11), Math.max(1, Math.round(S*0.0016)));
-
+  /* what it means, in the italic every meaning in this app is set in */
   if(src.mn){
     x.fillStyle=cssVar('--tx');
-    cardFit(x, src.mn, avail, Math.round(S*0.052), CARD_FAM);
-    x.fillText(src.mn, S/2, Math.round(S*0.745));
+    cardFit(x, src.mn, avail, Math.round(S*0.064), CARD_ITAL, 'italic');
+    x.textAlign='center';
+    x.fillText(src.mn, S/2, Math.round(S*0.752));
   }
 
   /* whose language it is, and what made it. "Lingua" is never translated. */
-  x.font=Math.round(S*0.027)+'px Georgia, serif';
-  x.textAlign='left';  x.fillStyle=cssVar('--gold');
-  x.fillText(String(langName||'').toUpperCase(), pad, Math.round(S*0.905));
-  x.textAlign='right'; x.fillStyle=cssVar('--txm');
-  x.fillText('LINGUA', S-pad, Math.round(S*0.905));
+  x.fillStyle=cssVar('--gold');
+  x.font=Math.round(S*0.024)+'px '+CARD_CAPS;
+  cardTrack(x, String(langName||'').toUpperCase(), S*0.30, Math.round(S*0.888), S*0.0055);
+  x.fillStyle=cssVar('--txm');
+  cardTrack(x, 'LINGUA', S*0.70, Math.round(S*0.888), S*0.0055);
 }
 function cardMount(){
   var c=document.getElementById('cardc');
-  if(c) cardPaint(c);
+  if(!c) return;
+  cardPaint(c);
+  /* Cinzel and Cormorant arrive after the first frame on a cold start, and a
+     card drawn in Georgia and left there is the whole point missed. */
+  if(document.fonts && document.fonts.ready)
+    document.fonts.ready.then(function(){
+      var el=document.getElementById('cardc');
+      if(el) cardPaint(el);
+    });
 }
 
 /* ---- getting it off the phone -------------------------------------------

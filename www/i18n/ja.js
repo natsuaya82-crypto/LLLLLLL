@@ -660,7 +660,7 @@ defLang('ja', (function(){
       'toast.deleted'   : '{0} を消しました',
       'card.title'      : 'カード',
       'card.save'       : '共有',
-      'card.saved'      : '保存した',
+      'card.saved'      : '保存',
       'csv.title'       : 'リストの取り込み',
       'csv.note'        : '1行に1つ。意味だけならその語を作成します。',
       'csv.ph'          : 'ねこ\nみず\n歩く\n\nkano, 山, 名詞',
