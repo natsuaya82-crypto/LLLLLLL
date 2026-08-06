@@ -83,7 +83,15 @@ export function halfDone(){
     ['the word being spelled', () => { openWord('kano'); window.route='spell';
                                        NAV=[{r:'spell'}]; return vSpell(); }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
-                                       abVow = 'a'; return vAbugida(); }],
+                                       SET.wsys='abugida'; abVow = 'a';
+                                       const h = vAbugida(); SET.wsys=''; return h; }],
+    /* The letters chapter of a language that IS an abugida. The row that opens
+       the bench only exists there, so a fixture whose language is an alphabet
+       walks a chapter with no way to reach it -- which is indistinguishable,
+       from outside, from a bench nothing can reach at all. */
+    ['the letters chapter of an abugida', () => { window.route='letters'; NAV=[{r:'letters'}];
+                                       SET.wsys='abugida';
+                                       const h = vLetters(); SET.wsys=''; return h; }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     ['words being suggested',  () => { window.route='make'; NAV=[{r:'make'}];

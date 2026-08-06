@@ -123,10 +123,14 @@ function sndHas(sym){
   var a=addedSnd();
   return a.indexOf(sym)>=0;
 }
+/* Tapping a symbol the language already has takes it back out, which is the
+   same act as the × on its row -- so it is the same function. This spliced the
+   list itself and left the letters reading a sound that was gone: the third
+   copy of one rule, and the second that got it wrong. */
 function sndToggle(sym){
-  var a=addedSnd(), i=a.indexOf(sym);
-  if(i>=0) a.splice(i,1); else a.push(sym);
-  save(); render();
+  var a=addedSnd();
+  if(a.indexOf(sym)>=0){ dropSnd(sym); return; }
+  a.push(sym); save(); render();
 }
 /* Spoken from the words' own sequences. A spelling is only what those
    sequences look like written down, so it is looked up rather than read. */
@@ -155,10 +159,6 @@ function sndFeel(id){
 }
 function sndFeelAgain(){ if(sndFeelPick) sndFeel(sndFeelPick); }
 function sndHear(p){ sayOne(p); }
-function sndDrop(p){
-  var a=addedSnd(), i=a.indexOf(p);
-  if(i>=0){ a.splice(i,1); save(); render(); }
-}
 /* The proposal, shown in two rows. A flat list of twelve symbols is a wall:
    there is no way to see that the language has five vowels and seven
    consonants, which is the single most useful thing about an inventory and
@@ -177,7 +177,7 @@ function sndFeelRow(lab, list, kind, act){
   return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
     '<div class="obhs">'+list.map(function(p){
       return '<span class="obhp"><button class="obhb"' + DO(act||'sndHear', [p]) + '>'+esc(p)+'</button>'+
-        '<button class="obhx"' + DO('sndDrop', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
+        '<button class="obhx"' + DO('dropSnd', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
     }).join('')+
     '<button class="obhadd"' + DO('sndFeelMore', [kind]) + '>'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
     '</div></div>';

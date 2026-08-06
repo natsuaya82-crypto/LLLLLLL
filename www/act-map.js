@@ -75,7 +75,6 @@ act('obSkipDraw', obSkipDraw);
 act('sndFeel', sndFeel);
 act('sndFeelAgain', sndFeelAgain);
 act('sndHear', sndHear);
-act('sndDrop', sndDrop);
 act('sndFeelMore', sndFeelMore);
 act('obTakeCh', obTakeCh);
 act('openAdd', openAdd);

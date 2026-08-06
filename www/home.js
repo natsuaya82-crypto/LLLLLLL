@@ -58,7 +58,13 @@ function chOf(p){ return ltChar(p); }
 function addedSnd(){ if(!SET.snd) SET.snd=[]; return SET.snd; }
 /* Dropping a sound unhooks the letters that read it. It does not delete them:
    a letter is a thing you drew and it survives a sound being reconsidered --
-   which is the whole point of them being separate. */
+   which is the whole point of them being separate.
+
+   There were two of these. This one, on the × of a row in the chapter, and
+   sndDrop() on the × of the same sound in the proposal panel a few hundred
+   pixels above it -- which spliced the inventory and stopped, leaving every
+   letter that read the sound still reading a sound the language no longer
+   had. The same act, twice, agreeing about the easy half. */
 function dropSnd(p){
   var a=addedSnd(), i=a.indexOf(p);
   if(i>=0){ a.splice(i,1); save(); }

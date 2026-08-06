@@ -28,10 +28,22 @@
       of me". They still do.
    ========================================================================= */
 var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
+/* The eight slices a language is filed under. One list, because emptying a
+   language and reading one both have to name all eight, and a wipe that named
+   seven would leave a slice of the old language inside the new one. */
+var SLICES=['words','lines','lang','script','letters','notes','phases','talk'];
 /* id -> { name, mine } and nothing more: the index says which languages are
    here, and the language's own keys hold what it is. */
 var LANGS={}, langId='';
-var WORDS=[], LINES=[], langName='', SET={theme:'system', plan:'free', done:false, order:'SOV', read:'both', voice:'', ui:'', script:false};
+var WORDS=[], LINES=[], langName='', SET=setDefaults();
+/* What a person's settings are before they touch anything. A function rather
+   than a literal because it is needed twice -- here, and when everything is
+   wiped -- and the second copy was written out by hand and did not have the
+   same keys in it. */
+function setDefaults(){
+  return {theme:'system', plan:'free', done:false, order:'SOV', read:'both',
+          voice:'', ui:'', script:false};
+}
 /* The writing system. `g` maps a romanisation to the strokes drawn for it;
    `extra` holds letters the person added by hand that no word uses yet, so a
    script can be built before the dictionary is. Nothing here is ever what gets

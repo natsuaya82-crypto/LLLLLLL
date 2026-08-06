@@ -113,12 +113,12 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 const R = await pg.evaluate(() => {
   const out = { missing: [], dead: [], bad: [], inline: [], screens: 0,
                 seen: { do: [], in: [], kd: [] }, threw: [], routes: [], pages: 0, placed: 0, views: 0 };
-  const seenDo = {}, seenIn = {}, seenKd = {};
+  const seenDo = {}, seenIn = {}, seenKd = {}, named = {};
 
   /* Every name this piece of markup asks for, and whether its arguments are
      the JSON they were written as. */
   function harvest(where, html){
-    let m;
+    let m, lastDo = '';
     const attr = /\sdata-(do2?|in|ch|kd|a|b)="([^"]*)"/g;
     while ((m = attr.exec(html))) {
       const k = m[1];
@@ -127,11 +127,18 @@ const R = await pg.evaluate(() => {
       const v = m[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')
                     .replace(/&lt;/g, '<').replace(/&gt;/g, '>');
       if (k === 'a' || k === 'b') {
-        try { JSON.parse(v); } catch (e) { out.bad.push(where + ': ' + v); }
+        try {
+          const args = JSON.parse(v);
+          /* The route a button goes to. data-a follows its data-do on the same
+             element, so the name just read is the one these belong to. */
+          if (/^go(In|Tab)?$/.test(lastDo) && args.length && typeof args[0] === 'string')
+            named[args[0]] = 1;
+        } catch (e) { out.bad.push(where + ': ' + v); }
         continue;
       }
       if (k === 'do' || k === 'do2') {
         seenDo[v] = 1;
+        lastDo = v;
         if (!ACT[v]) out.missing.push(where + ': pressed -> ' + v);
       } else if (k === 'in' || k === 'ch') {
         seenIn[v] = 1;
@@ -262,6 +269,7 @@ const R = await pg.evaluate(() => {
      Both directions, for the same reason the action table is checked both
      ways: a page with no view is a screen that silently becomes the home
      screen, and a view with no page is a screen nobody can reach. */
+  out.pageNames = Object.keys(PAGES);
   Object.keys(PAGES).forEach(r => {
     out.pages++;
     if (typeof PAGES[r].view !== 'function') out.routes.push('PAGES.' + r + ' shows nothing');
@@ -275,6 +283,7 @@ const R = await pg.evaluate(() => {
       else out.placed++;
     });
 
+  out.named = Object.keys(named);
   out.seen.do = Object.keys(seenDo).length;
   out.seen.in = Object.keys(seenIn).length;
   out.seen.kd = Object.keys(seenKd).length;
@@ -285,6 +294,31 @@ const R = await pg.evaluate(() => {
 await br.close();
 srv.close();
 
+/* ---- 6. a screen somebody can get to ---------------------------------
+   Check 5 proves every route has a view and every view has a route. It does
+   not ask whether anybody can arrive: `pickltr` had a view, was on a page,
+   and the only two buttons that opened it had been deleted -- so it passed,
+   green, holding the one remaining way to break a rule the rest of the app
+   enforced. Nothing was wrong with it except that it was gone.
+
+   A route is reached by a button that names it -- go / goIn / goTab, which
+   the walk above collected -- or by a function that calls go('x') with the
+   name written out. The second is why this reads the source as well as the
+   screens: editGlyph() lands on `glyph` and no markup says so. */
+const goCalls = {};
+for (const f of fs.readdirSync(ROOT)) {
+  if (!f.endsWith('.js')) continue;
+  const src = fs.readFileSync(path.join(ROOT, f), "utf8");
+  let m;
+  const re = /\bgo(?:In|Tab)?\s*\(\s*(['"])([a-z]+)\1/g;
+  while ((m = re.exec(src))) goCalls[m[2]] = f;
+}
+/* home is where the app opens, so nothing has to name it. */
+const reachable = { home: 1 };
+R.named.forEach((r) => { reachable[r] = 1; });
+Object.keys(goCalls).forEach((r) => { reachable[r] = 1; });
+const stranded = R.pageNames.filter((r) => !reachable[r]);
+
 const fails = [];
 const say = (label, list) => { if (list.length) fails.push([label, list]); };
 say('a name with nothing behind it', R.missing);
@@ -293,9 +327,12 @@ say('an argument that is not the JSON it was written as', R.bad);
 say('JavaScript still inside markup', R.inline);
 say('a screen that threw while being walked', R.threw);
 say('a page with no view, or a view on no page', R.routes);
+say('a screen with no way in', stranded.map((r) =>
+  r + ': in PAGES, has a view, and nothing anywhere goes to it'));
 if (pageErrors.length) fails.push(['the page itself', pageErrors]);
 
 console.log(`screens walked: ${R.screens}`);
+console.log(`routes reached: ${R.pageNames.length - stranded.length}/${R.pageNames.length}`);
 console.log(`pages: ${R.pages}  views placed ${R.placed}/${R.views}  (vOb is what the app is, not a place in it)`);
 console.log(`names: pressed ${R.seen.do}/${R.have.do}  typed ${R.seen.in}/${R.have.in}  Enter ${R.seen.kd}/${R.have.kd}`);
 

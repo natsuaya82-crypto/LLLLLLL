@@ -131,25 +131,30 @@ function setUi(l){ SET.ui=l; save(); render(); }
    left behind by a shape this version does not know about. */
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
-  WORDS=[]; LINES=[]; langName=''; cands=[]; SUG=[];
-  NOTES=[]; TALK=[]; tcomp=[];
-  STG={done:{}, notes:{}, set:{}, extra:[]}; saveStg();
-  SCRIPT={g:{}, extra:[]};
-  LETTERS=[]; saveLetters();
+  /* Throw the stored slices away and read the language back. What an empty
+     language IS is langRead() and its four siblings, the same five langOpen()
+     calls to bring a different one out -- so this does not describe emptiness
+     a second time.
+
+     It used to: eleven assignments written out by hand, which is how ob was
+     still being reset to {snd:''} after that field had been replaced by lid,
+     and how STG was rebuilt without the rules and ex it has carried since. */
+  var si;
+  try{
+    for(si=0; si<SLICES.length; si++) localStorage.removeItem(langKey(SLICES[si]));
+  }catch(e){}
+  langRead(); ltRead(); noteRead(); stRead(); tkRead();
+  /* the person's settings, back to what a fresh install has -- keeping the two
+     that are about them rather than about the language */
+  var theme=SET.theme, ui=SET.ui;
+  SET=setDefaults(); SET.theme=theme; SET.ui=ui;
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  /* everything the person chose, back to the defaults in core.js */
-  SET={theme:SET.theme, plan:'free', done:false, order:'SOV', read:'both',
-       voice:'', ui:SET.ui, script:false, world:{}};
-  try{
-    /* the open language, slice by slice -- not the person's settings, and
-       not any other language they are reading */
-    var sl=['words','lines','lang','script','letters','notes','phases','talk'], si;
-    for(si=0; si<sl.length; si++) localStorage.removeItem(langKey(sl[si]));
-  }catch(e){}
-  save();
-  ob={step:0, mode:'draw', pick:'', strokes:null, ch:'', snd:''};
+  save(); saveLetters(); saveNotes(); saveStg(); saveTalk();
+  /* and where you were standing is nowhere now */
+  viewReset();
+  ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
   GE=null; route='home'; RENDERED=null;
   render();
 }
