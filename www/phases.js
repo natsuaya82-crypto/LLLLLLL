@@ -212,7 +212,7 @@ function openSlot(pid, k){
       : '<div class="note">'+t('add.ph.none')+'</div>')+
     '<button class="btn" id="st-keep" style="width:100%;margin-top:14px"' + DO('stKeep') + ' disabled>'+t('stg.keep')+'</button>'+
     (had? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('stDrop') + '>'+
-      '<span class="sl" style="color:#c9553f">'+t('stg.drop')+'</span></button>' : ''),
+      '<span class="sl bad">'+t('stg.drop')+'</span></button>' : ''),
     function(){ stPaint(); phkMount(); });
 }
 FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i), a.slice(i+1)); };
@@ -373,7 +373,7 @@ function stDetailHTML(p){
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
     '' + CH('stNote', [p.id]) + '>'+esc(STG.notes[p.id]||'')+'</textarea>';
   if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none"' + DO('stDelOwn', [p.id]) + '>'+
-    '<span class="sl" style="color:#c9553f">'+t('stg.own.del')+'</span></button>';
+    '<span class="sl bad">'+t('stg.own.del')+'</span></button>';
   return out;
 }
 /* The decisions that are decisions: word order, and the three places a word

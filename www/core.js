@@ -262,8 +262,13 @@ function applyTheme(){
   var t2=SET.theme;
   if(t2==='system') t2 = (mq && mq.matches) ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', t2);
+  /* The bar above the app is the app's background. It was two hex values
+     written out here, which is the same colour said twice -- change --bg and
+     the top of the screen would stay the old one. Asked of the page. */
   var m=document.getElementById('tcolor');
-  if(m) m.setAttribute('content', t2==='light' ? '#faf8f3' : '#0a0a0e');
+  if(m) m.setAttribute('content',
+    (getComputedStyle(document.documentElement).getPropertyValue('--bg')||'').trim() ||
+    (t2==='light' ? '#faf8f3' : '#0a0a0e'));
 }
 if(mq && mq.addEventListener) mq.addEventListener('change', function(){ if(SET.theme==='system') applyTheme(); });
 applyTheme();

@@ -148,6 +148,15 @@ const R = await pg.evaluate(() => {
         if (!ACT_KEY[v]) out.missing.push(where + ': Enter -> ' + v);
       }
     }
+    /* A colour written into the markup. Six screens carried
+       style="color:#c9553f" for the same delete red, and this file carried a
+       seventh -- none of which changed when the theme did, because a hex in a
+       style attribute cannot. Colours are variables in index.html. Brand marks
+       are not caught by this: they use fill= on a path, which is what a logo
+       is, not what a screen decides. */
+    const paint = /\sstyle="[^"]*(?:color|background)\s*:\s*(#[0-9a-fA-F]{3,8}|rgb)/gi;
+    let pm;
+    while ((pm = paint.exec(html))) out.inline.push(where + ': a colour in the markup -- ' + pm[1]);
     /* Any on-anything attribute at all is the old disease coming back. */
     const inline = /\son(click|input|change|keydown|pointerdown|touchstart|submit|focus|blur)\s*=/gi;
     while ((m = inline.exec(html))) out.inline.push(where + ': ' + m[0].trim());

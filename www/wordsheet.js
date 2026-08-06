@@ -480,7 +480,7 @@ function wdBodyHTML(){
 
     '<button class="btn" style="width:100%;margin-top:18px"' + DO('saveWord') + '>'+t('word.save')+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delWord') + '>'+
-      '<span class="sl" style="color:#c9553f">'+t('word.del')+'</span></button>';
+      '<span class="sl bad">'+t('word.del')+'</span></button>';
 }
 function openWord(hw){
   var w=findWord(hw); if(!w) return;

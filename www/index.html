@@ -20,6 +20,7 @@ html[data-theme="dark"]{
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
+  --bad:#d9705c;
   --pur:#8c7eff; --pursf:rgba(140,126,255,.10); --purln:rgba(140,126,255,.42);
   --onGold:#241d10; --dot:rgba(255,255,255,.42); --shadow:0 10px 26px rgba(0,0,0,.5);
 }
@@ -28,6 +29,7 @@ html[data-theme="light"]{
   --line:rgba(26,23,18,.12); --line2:rgba(26,23,18,.06);
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
+  --bad:#c9553f;
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
 }
@@ -242,7 +244,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
    but nothing on the screen said which was which. */
-.ltdup{display:block;font-size:.84rem;color:#c9553f;margin-top:2px}
+.ltdup{display:block;font-size:.84rem;color:var(--bad);margin-top:2px}
 /* One sound, so a speaker rather than the play triangle a whole word gets. */
 .ltsay{flex:0 0 auto;width:44px;height:44px;display:inline-flex;align-items:center;
        justify-content:center;background:none;border:0;color:var(--txm)}
@@ -473,6 +475,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* ---------- settings ---------- */
 .set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
 .set .sl{font-size:.95rem}
+/* Deleting something, wherever it is offered. It was written out as
+   style="color:#c9553f" on six screens and once more in this file -- seven
+   copies of one colour, none of which changed when the dark theme did. */
+.bad{color:var(--bad)}
 .set .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
 .pick{display:flex;background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:3px;margin:10px 0 4px}
 .pick button{min-height:44px;flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}

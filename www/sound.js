@@ -449,6 +449,6 @@ function vLetter(){
       : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
     '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
-      '<span class="sl" style="color:#c9553f">'+t('glyph.del')+'</span></button>'+
+      '<span class="sl bad">'+t('glyph.del')+'</span></button>'+
     '</div></div>';
 }

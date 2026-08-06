@@ -94,7 +94,7 @@ function vSet(){
       '<button class="set"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '<button class="set" style="margin-top:18px"' + DO('wipeAll') + '>'+
-      '<span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>';
+      '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='acct'){
     body='<button class="set signin google"' + DO('obSignIn') + '><span class="sl">'+MARK_GOOGLE+
       '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+

@@ -52,7 +52,7 @@ function openNote(i){
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'">'+esc(n.b||'')+'</textarea></div>'+
     '<button class="btn" style="width:100%;margin-top:6px"' + DO('saveNote') + '>'+t('notes.save')+'</button>'+
     (k>=0? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delNote') + '>'+
-      '<span class="sl" style="color:#c9553f">'+t('notes.del')+'</span></button>' : ''));
+      '<span class="sl bad">'+t('notes.del')+'</span></button>' : ''));
 }
 FORM_OPEN.note=function(i){ openNote(parseInt(i,10)); };
 function saveNote(){
