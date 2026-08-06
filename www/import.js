@@ -213,10 +213,16 @@ function impRead(src){
 }
 
 /* ---- what a column is --------------------------------------------------- */
-/* Five things a column can be. `skip` is a column the app has no use for --
-   a date, an id, an etymology note -- and saying so is a decision the person
-   makes, not something guessed away silently. */
-var IMP_ROLES=['hw', 'mn', 'pos', 'ph', 'skip'];
+/* What a column can be. `skip` is a column the app has no use for -- a date,
+   an id, an etymology note -- and saying so is a decision the person makes,
+   not something guessed away silently.
+
+   `ch` is what makes a row a letter rather than a word. Somebody keeping
+   their alphabet in a spreadsheet has a table of character, sound and name,
+   and it is the same act of importing as a list of words -- so it is the same
+   screen and the same table, and what comes out is decided by what is in the
+   file rather than by which button was pressed to open it. */
+var IMP_ROLES=['hw', 'mn', 'pos', 'ph', 'ch', 'nm', 'skip'];
 /* Names seen in the wild. Not a table of services: a table of words, so that
    a service that renames its columns tomorrow still lands, and one nobody
    here has heard of lands the first time. */
@@ -229,13 +235,17 @@ var IMP_NAME={
   pos: ['pos','part of speech','partofspeech','word class','class','type',
         'category','ps','wordtype','grammar'],
   ph:  ['ipa','pronunciation','phonetic','phonetics','phonemic','phonology',
-        'sounds','sound','phonemes','transcription','ph','pron','say']
+        'sounds','sound','phonemes','transcription','ph','pron','say','value'],
+  ch:  ['character','char','glyph','letter','letters','symbol','sign','sigil',
+        'grapheme','graph','ch','rune','sc'],
+  nm:  ['name','letter name','called','nm','label','title']
 };
 /* The app already knows what it calls these, in ten languages, and that is
    where those names live. Reading them off here means a person whose
    spreadsheet is headed 「つづり」 or 「品詞」 is understood without anybody
    typing those words into this file. */
-var IMP_KEY={hw:['f.spelling'], mn:['f.meaning','word.means'], pos:['f.pos']};
+var IMP_KEY={hw:['f.spelling'], mn:['f.meaning','word.means'], pos:['f.pos'],
+             ch:['lt.title','toc.letters'], nm:['lt.name']};
 function impNames(role){
   var out=IMP_NAME[role].slice(), keys=IMP_KEY[role]||[], i, j, L, v;
   if(typeof LANG==='undefined' || typeof UI_LANGS==='undefined') return out;
@@ -313,6 +323,17 @@ function impLooksPh(col){
   }
   return hits>=col.length*0.5;
 }
+/* A character is one or two of them, and mostly not a plain roman letter --
+   a column of single a-z would be a spelling, and this has to stay off it. */
+function impLooksChar(col){
+  var i, odd=0;
+  if(!col.length) return false;
+  for(i=0;i<col.length;i++){
+    if(col[i].length>2) return false;
+    if(!/^[A-Za-z0-9]+$/.test(col[i])) odd++;
+  }
+  return odd>=col.length*0.5;
+}
 /* A word is short and mostly unbroken; a meaning has spaces in it or is long. */
 function impLooksWord(col){
   var i, spaced=0, long=0;
@@ -342,7 +363,13 @@ function impGuess(read){
     if(roles[i]) continue;
     col=impCol(rows, i);
     if(!taken.pos && impLooksPos(col)){ roles[i]='pos'; taken.pos=1; continue; }
+    if(!taken.ch && impLooksChar(col)){ roles[i]='ch'; taken.ch=1; continue; }
     if(!taken.ph && impLooksPh(col)){ roles[i]='ph'; taken.ph=1; continue; }
+    /* Once one column is characters the table is an alphabet, and an alphabet
+       has no word spellings in it: what sits beside a character is what it
+       reads, and after that what it is called. */
+    if(taken.ch && !taken.ph){ roles[i]='ph'; taken.ph=1; continue; }
+    if(taken.ch && !taken.nm){ roles[i]='nm'; taken.nm=1; continue; }
     if(!taken.hw && impLooksWord(col)){ roles[i]='hw'; taken.hw=1; continue; }
     roles[i]='';
   }
@@ -369,16 +396,18 @@ function impWidth(rows){
 function impRows(read, roles, snd){
   var rows=read.rows||[], out=[], i, j, rec, r, v;
   for(i=0;i<rows.length;i++){
-    rec={hw:'', mn:'', pos:'', ph:[]};
+    rec={hw:'', mn:'', pos:'', ph:[], phRaw:'', ch:'', nm:''};
     for(j=0;j<roles.length;j++){
       r=roles[j]; v=String(rows[i][j]||'').trim();
       if(!r || r==='skip' || !v) continue;
       if(r==='hw' && !rec.hw) rec.hw=v;
       else if(r==='mn') rec.mn = rec.mn? rec.mn+' / '+v : v;
       else if(r==='pos' && !rec.pos) rec.pos=v;
-      else if(r==='ph' && !rec.ph.length) rec.ph=impPh(v, snd);
+      else if(r==='ph' && !rec.ph.length){ rec.ph=impPh(v, snd); rec.phRaw=impClean(v); }
+      else if(r==='ch' && !rec.ch) rec.ch=v;
+      else if(r==='nm' && !rec.nm) rec.nm=v;
     }
-    if(rec.hw || rec.mn) out.push(rec);
+    if(rec.hw || rec.mn || rec.ch) out.push(rec);
   }
   return out;
 }
@@ -392,11 +421,16 @@ function impRows(read, roles, snd){
    sound only because somebody's language says so. Without it, "tʃa" is three
    sounds, which is the honest answer for a language that has no tʃ. */
 function impPh(v, snd){
-  var s=String(v||'').trim();
-  s=s.replace(/^[\/\[]+/, '').replace(/[\/\]]+$/, '').replace(/[ˈˌ.]/g, '').trim();
+  var s=impClean(v);
   if(!s) return [];
   if(/\s/.test(s)) return s.split(/\s+/);
   return impCut(s, snd);
+}
+/* Slashes, brackets, stress and syllable marks are not sounds. One place,
+   because the letter side wants the same string cleaned the same way. */
+function impClean(v){
+  return String(v||'').trim()
+    .replace(/^[\/\[]+/, '').replace(/[\/\]]+$/, '').replace(/[ˈˌ.]/g, '').trim();
 }
 function impCut(s, snd){
   var all=(snd||[]).concat((typeof ipaAll==='function')? ipaAll() : []), out=[], i, hit;
@@ -511,14 +545,15 @@ function impMapHTML(){
   out+='</table></div>';
   out+='<div class="impsum">'+
     (p.add?  '<span><b>'+p.add+'</b>'+esc(t('imp.new'))+'</span>' : '')+
+    (p.ltr?  '<span><b>'+p.ltr+'</b>'+esc(t('imp.ltr'))+'</span>' : '')+
     (p.coin? '<span><b>'+p.coin+'</b>'+esc(t('imp.coin'))+'</span>' : '')+
     '</div>';
   /* The choice only exists when there is something to choose about -- and it
      sits ON the count it is about. Two words floating under a table say
      nothing: 「飛ばすってなんの話？」 They are about the words that are
      already here, so they are beside the number of them. */
-  if(p.dup)
-    out+='<div class="impdup"><span class="impn"><b>'+p.dup+'</b>'+esc(t('imp.have'))+'</span>'+
+  if(p.have)
+    out+='<div class="impdup"><span class="impn"><b>'+p.have+'</b>'+esc(t('imp.have'))+'</span>'+
       '<div class="segs">'+
       '<button class="seg'+(IMP.dup==='skip'? ' on':'')+'"' + DO('impSetDup', ["skip"]) + '>'+
         esc(t('imp.skip'))+'</button>'+
@@ -532,14 +567,51 @@ function impMapHTML(){
 }
 function impSetRole(j, v){ IMP.roles[j]=v; openImport(); }
 function impSetDup(v){ IMP.dup=v; openImport(); }
-/* What pressing it would do, said before it is pressed. */
+/* What pressing it would do, said before it is pressed. A row carrying a
+   character is a letter and everything else is a word, so one file can be
+   both and the counts say which. */
 function impPlan(){
-  var rows=impRows(IMP.read, IMP.roles, addedSnd()), p={add:0, dup:0, coin:0}, i;
+  var rows=impRows(IMP.read, IMP.roles, addedSnd());
+  var p={add:0, ltr:0, coin:0, have:0}, i, r;
   for(i=0;i<rows.length;i++){
-    if(rows[i].hw){ if(findWord(rows[i].hw)) p.dup++; else p.add++; }
-    else if(rows[i].mn) p.coin++;
+    r=rows[i];
+    if(r.ch){ if(impLtrBy(r.ch)) p.have++; else p.ltr++; }
+    else if(r.hw){ if(findWord(r.hw)) p.have++; else p.add++; }
+    else if(r.mn) p.coin++;
   }
   return p;
+}
+/* The letter wearing this character, if there is one. A borrowed character is
+   a letter's shape, and two letters cannot wear the same one. */
+function impLtrBy(ch){
+  var i;
+  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].ch===String(ch)) return LETTERS[i];
+  return null;
+}
+/* What a letter reads, by the same rule the letter screen uses: roman letters
+   are a SPELLING of a sound and go through the chart, so "sh" is ʃ and not s
+   followed by h; anything else is already the sound. */
+function impLtrSnd(r){
+  var words=String(r.phRaw||'').split(/\s+/), out=[], i, w, u;
+  for(i=0;i<words.length;i++){
+    w=impClean(words[i]);
+    if(!w) continue;
+    if(/^[A-Za-z]+$/.test(w)){ u=ipaFromRoman(w); if(u) out.push(u.join('')); }
+    else out.push(w);
+  }
+  return out;
+}
+/* A letter that reads a sound the language does not have is a letter for
+   nothing, so the sounds come in with it -- the same thing ltSetRoman does
+   when somebody types a reading in by hand. */
+function impGrow(units){
+  var have=addedSnd().slice(), all=ipaAll(), grew=false, i, j, parts;
+  for(i=0;i<units.length;i++){
+    parts=impCut(units[i], have);
+    for(j=0;j<parts.length;j++)
+      if(all.indexOf(parts[j])>=0 && have.indexOf(parts[j])<0){ have.push(parts[j]); grew=true; }
+  }
+  if(grew){ SND=asOrder(have); saveSnd(); }
 }
 
 /* ---- 3. what happened, and putting it back ------------------------------ */
@@ -567,9 +639,19 @@ function impUndo(){
     k=impAt(d.was[i].hw);
     if(k>=0) WORDS[k]=d.was[i].w;
   }
-  save(); cands=[];
+  for(i=0;i<d.lts.length;i++) ltDel(d.lts[i]);
+  for(i=0;i<d.wasL.length;i++){
+    k=impLtrAt(d.wasL[i].id);
+    if(k>=0) LETTERS[k]=d.wasL[i].l;
+  }
+  save(); saveLetters(); installScriptFont(); cands=[];
   IMP=impBlank(); openImport();
   toast(t('imp.undone'));
+}
+function impLtrAt(id){
+  var i;
+  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id) return i;
+  return -1;
 }
 function impAt(hw){
   var i;
@@ -595,9 +677,26 @@ function impSenses(mn){
    own sounds, which is the commonest thing anybody imports: a list of what
    the words are for, with no words yet. */
 function impPut(rows){
-  var added=[], was=[], full=false, i, r, seq, hw, w, guard;
+  var added=[], was=[], lts=[], wasL=[], full=false, i, r, seq, hw, w, l, u, guard;
   for(i=0;i<rows.length;i++){
     r=rows[i];
+    /* A letter, not a word. It costs no room on the free plan: the ceiling is
+       on the dictionary, and an alphabet is not one. */
+    if(r.ch){
+      u=impLtrSnd(r);
+      l=impLtrBy(r.ch);
+      if(l){
+        if(IMP.dup!=='over') continue;
+        wasL.push({id:l.id, l:JSON.parse(JSON.stringify(l))});
+        if(r.nm) l.nm=r.nm;
+        if(u.length){ impGrow(u); l.snd=u; }
+      } else {
+        if(u.length) impGrow(u);
+        l=ltNew({ch:r.ch, nm:r.nm, snd:u});
+        lts.push(l.id);
+      }
+      continue;
+    }
     if(!capOK(1)){ full=true; break; }
     hw='';
     if(r.hw){
@@ -636,7 +735,10 @@ function impPut(rows){
                 pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i});
     added.push(hw);
   }
-  save(); cands=[];
-  IMP.done={n:added.length+was.length, hws:added, was:was, full:full};
+  save();
+  if(lts.length || wasL.length){ saveLetters(); installScriptFont(); }
+  cands=[];
+  IMP.done={n:added.length+was.length+lts.length+wasL.length,
+            hws:added, was:was, lts:lts, wasL:wasL, full:full};
   openImport();
 }

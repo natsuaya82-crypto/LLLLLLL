@@ -119,7 +119,7 @@ function read(sample){
   const r = read(s);
   is('excel paste: tab wins', IMP.impDelim(s), '\t');
   is('excel paste: the date is not a meaning', r.roles, ['hw', 'mn', 'pos', 'skip']);
-  is('excel paste: the row', r.rows[0], { hw: 'kano', mn: '山', pos: '名詞', ph: [] });
+  is('excel paste: the row', r.rows[0], { hw: 'kano', mn: '山', pos: '名詞', ph: [], phRaw: '', ch: '', nm: '' });
 }
 
 /* ---- 3. a European Excel, which writes semicolons ----------------------- */
@@ -139,7 +139,7 @@ function read(sample){
   const s = 'kano,mountain,n\ntir,to see,v\nmos,tall,adj\n';
   const r = read(s);
   is('headless: read off the contents', r.roles, ['hw', 'mn', 'pos']);
-  is('headless: the row', r.rows[1], { hw: 'tir', mn: 'to see', pos: 'v', ph: [] });
+  is('headless: the row', r.rows[1], { hw: 'tir', mn: 'to see', pos: 'v', ph: [], phRaw: '', ch: '', nm: '' });
 }
 
 /* ---- 5. a pronunciation column, named and unnamed ----------------------- */
@@ -159,7 +159,7 @@ function read(sample){
   is('mdf: recognised', r.shape, 'mdf');
   is('mdf: two records', r.rows.length, 2);
   is('mdf: two senses join', r.rows[0].mn, 'mountain / hill');
-  is('mdf: the row', r.rows[1], { hw: 'tir', mn: 'to see', pos: 'v', ph: ['t', 'i', 'r'] });
+  is('mdf: the row', r.rows[1], { hw: 'tir', mn: 'to see', pos: 'v', ph: ['t', 'i', 'r'], phRaw: 'tir', ch: '', nm: '' });
 }
 
 /* ---- 7. json, wrapped in something -------------------------------------- */
@@ -180,7 +180,7 @@ function read(sample){
   const r = read(s);
   is('lines: recognised', r.shape, 'lines');
   is('lines: three of them', r.rows.length, 3);
-  is('lines: dash', r.rows[0], { hw: 'kano', mn: 'mountain', pos: '', ph: [] });
+  is('lines: dash', r.rows[0], { hw: 'kano', mn: 'mountain', pos: '', ph: [], phRaw: '', ch: '', nm: '' });
   is('lines: colon', r.rows[1].mn, 'to see');
   is('lines: two spaces', r.rows[2].hw, 'mos');
 }
@@ -194,10 +194,37 @@ function read(sample){
   const s = 'mountain\nto see\ntall\nriver\n';
   const r = read(s);
   is('meanings only: one column of meanings', r.roles, ['mn']);
-  is('meanings only: nothing became a spelling', r.rows[0], { hw: '', mn: 'mountain', pos: '', ph: [] });
+  is('meanings only: nothing became a spelling', r.rows[0], { hw: '', mn: 'mountain', pos: '', ph: [], phRaw: '', ch: '', nm: '' });
 }
 
-/* ---- 10. the awkward edges ---------------------------------------------- */
+/* ---- 10. an alphabet rather than a dictionary --------------------------- */
+/* Somebody keeping their script in a spreadsheet has a table of character,
+   sound and name. It is the same act of importing, so it is the same screen
+   -- what comes out is decided by what is in the file. */
+{
+  const s = 'Letter,Sound,Name\nϘ,k,qoppa\nᛗ,m,mannaz\nϠ,sh,sampi\n';
+  const r = read(s);
+  is('alphabet: the roles', r.roles, ['ch', 'ph', 'nm']);
+  is('alphabet: the character', r.rows[0].ch, 'Ϙ');
+  is('alphabet: what it reads is kept as written, for the chart to read',
+     r.rows[2].phRaw, 'sh');
+  is('alphabet: the name', r.rows[1].nm, 'mannaz');
+  is('alphabet: nothing became a word', r.rows[0].hw, '');
+}
+/* The same table with no headings at all: one column of single characters
+   makes it an alphabet, and what sits beside a character is what it reads. */
+{
+  const r = read('Ϙ,k,qoppa\nᛗ,m,mannaz\nϠ,s,sampi\n');
+  is('alphabet with no headings', r.roles, ['ch', 'ph', 'nm']);
+}
+/* And a column of single ROMAN letters is a spelling, not an alphabet --
+   otherwise every one-letter word list would arrive as a writing system. */
+{
+  const r = read('a,first\nb,second\nc,third\n');
+  is('single roman letters are not characters', r.roles, ['hw', 'mn']);
+}
+
+/* ---- 11. the awkward edges ---------------------------------------------- */
 {
   is('a newline inside a quoted field',
      IMP.impCells('a,"one\ntwo",c\n', ',')[0], ['a', 'one\ntwo', 'c']);

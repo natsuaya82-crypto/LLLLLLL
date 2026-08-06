@@ -192,6 +192,11 @@ export function halfDone(){
     ['a list with words already here', () => { IMP = impBlank();
         impTake('Word,Meaning\nkano,mountain\nzzk,a thing\n');
         return FORM.html; }],
+    /* An alphabet rather than a dictionary: the same screen, and the counts
+       below the table say letters instead of words. */
+    ['an alphabet waiting to be understood', () => { IMP = impBlank();
+        impTake('Letter,Sound,Name\nϘ,k,qoppa\nϠ,sh,sampi\n');
+        return FORM.html; }],
     ['a list just brought in', () => { IMP = impBlank();
         IMP.read = {shape:'table', head:null, rows:[['zzk', 'a thing']]};
         IMP.roles = ['hw', 'mn'];
