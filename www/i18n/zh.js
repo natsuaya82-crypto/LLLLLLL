@@ -758,6 +758,7 @@ defLang('zh', (function(){
       "csv.note"         : "一行一个。只写意思就会造出这个词。",
       "csv.ph"           : "猫\n水\n走\n\nkano, 山, 名词",
       "csv.btn"          : "导入",
+      "csv.full"        : "已导入 {0}，已创建 {1} — Free 已满",
       "csv.done"         : "取入 {0} 个，造出 {1} 个",
       "toast.exported"   : "已导出",
       "toast.exportfail" : "导出失败",

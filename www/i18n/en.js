@@ -667,6 +667,7 @@ defLang('en', (function(){
       'csv.note'        : "One per line. A meaning alone becomes a new word.",
       'csv.ph'          : "cat\nwater\nto walk\n\nkano, mountain, noun",
       'csv.btn'         : "Import",
+      'csv.full'        : '{0} taken, {1} coined — Free is full',
       'csv.done'        : '{0} taken, {1} coined',
       'toast.exported'  : "Exported",
       'toast.exportfail': "Could not export",

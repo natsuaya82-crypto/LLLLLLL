@@ -713,6 +713,7 @@ defLang('es', (function(){
       "csv.note"         : "Uno por línea. Un significado solo se convierte en palabra nueva.",
       "csv.ph"           : "gato\nagua\ncaminar\n\nkano, montaña, sustantivo",
       "csv.btn"          : "Importar",
+      "csv.full"        : "{0} importadas, {1} creadas — Free está lleno",
       "csv.done"         : "{0} traídas, {1} acuñadas",
       "toast.exported"   : "Exportado",
       "toast.exportfail" : "No se pudo exportar",

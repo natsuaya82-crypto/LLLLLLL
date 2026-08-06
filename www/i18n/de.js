@@ -742,6 +742,7 @@ defLang('de', (function(){
       "csv.note"         : "Eins pro Zeile. Eine Bedeutung allein wird ein neues Wort.",
       "csv.ph"           : "Katze\nWasser\ngehen\n\nkano, Berg, Substantiv",
       "csv.btn"          : "Importieren",
+      "csv.full"        : "{0} übernommen, {1} erstellt — Free ist voll",
       "csv.done"         : "{0} übernommen, {1} geprägt",
       "toast.exported"   : "Exportiert",
       "toast.exportfail" : "Export nicht möglich",

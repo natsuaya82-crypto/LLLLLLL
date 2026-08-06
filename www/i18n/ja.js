@@ -669,6 +669,7 @@ defLang('ja', (function(){
       'csv.note'        : '1行に1つ。意味だけならその語を作成します。',
       'csv.ph'          : 'ねこ\nみず\n歩く\n\nkano, 山, 名詞',
       'csv.btn'         : '取り込み',
+      'csv.full'        : '{0}語取り込み、{1}語作成。Freeの上限に達しました',
       'csv.done'        : '{0}語を取り込み、{1}語を作成しました',
       'toast.exported'  : '書き出しました',
       'toast.exportfail': '書き出せませんでした',

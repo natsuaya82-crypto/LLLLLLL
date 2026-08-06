@@ -760,6 +760,7 @@ defLang('pt', (function(){
       "csv.note"         : "Um por linha. Um significado sozinho vira uma palavra nova.",
       "csv.ph"           : "gato\nágua\nandar\n\nkano, montanha, substantivo",
       "csv.btn"          : "Importar",
+      "csv.full"        : "{0} importadas, {1} criadas — o Free está cheio",
       "csv.done"         : "{0} trazidas, {1} cunhadas",
       "toast.exported"   : "Exportado",
       "toast.exportfail" : "Não foi possível exportar",

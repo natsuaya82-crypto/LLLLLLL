@@ -801,6 +801,7 @@ defLang('fr', (function(){
       "csv.note"         : "Un par ligne. Un sens seul devient un mot nouveau.",
       "csv.ph"           : "chat\neau\nmarcher\n\nkano, montagne, nom",
       "csv.btn"          : "Importer",
+      "csv.full"        : "{0} importés, {1} créés — Free est plein",
       "csv.done"         : "{0} reprises, {1} forgées",
       "toast.exported"   : "Exporté",
       "toast.exportfail" : "Export impossible",

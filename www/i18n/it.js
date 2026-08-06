@@ -755,6 +755,7 @@ defLang('it', (function(){
       "csv.note"         : "Uno per riga. Un significato da solo diventa una parola nuova.",
       "csv.ph"           : "gatto\nacqua\ncamminare\n\nkano, montagna, sostantivo",
       "csv.btn"          : "Importare",
+      "csv.full"        : "{0} importate, {1} create — Free è pieno",
       "csv.done"         : "{0} riprese, {1} coniate",
       "toast.exported"   : "Esportato",
       "toast.exportfail" : "Esportazione non riuscita",

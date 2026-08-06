@@ -928,6 +928,7 @@ defLang('ko', (function(){
       "csv.note"         : "한 줄에 하나. 뜻만 쓰면 그 낱말을 만듭니다.",
       "csv.ph"           : "고양이\n물\n걷다\n\nkano, 산, 명사",
       "csv.btn"          : "가져오기",
+      "csv.full"        : "{0}개 가져옴, {1}개 만듦 — Free가 가득 찼습니다",
       "csv.done"         : "{0}개 가져오고 {1}개 만들었습니다",
       "toast.exported"   : "내보냈어요",
       "toast.exportfail" : "내보내지 못했어요",
