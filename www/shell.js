@@ -85,7 +85,7 @@ var route='home';
 var PAGES={
   home:    {tab:'home'},
   build:   {tab:'build', k:'tab.build'},
-  find:    {tab:'find',  k:'tab.find'},
+  find:    {tab:'build', k:'tab.find'},
   form:    {tab:'build'},
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
@@ -156,7 +156,11 @@ function navTop(count){
 }
 /* The three roots. A tab bar belongs on them and nowhere else: on an inner
    page the thing at the bottom of the screen is that page's own button. */
-var TABS=[{r:'build', k:'tab.build'}, {r:'find', k:'tab.find'}, {r:'home', k:'tab.home'}];
+/* Searching your own language used to be one of these. It is not a place in
+   the app -- it is a thing you do to the language -- so it moved to the
+   contents page it belongs to, and the bar went back to saying only where
+   you are. 「snsの探すと横断検索は別物ね」 */
+var TABS=[{r:'build', k:'tab.build'}, {r:'home', k:'tab.home'}];
 function tabBar(){
   var cur=here().r, i, out='';
   for(i=0;i<TABS.length;i++)

@@ -244,7 +244,13 @@ function vBuild(){
     ['VI', t('toc.talk'),   'talk',    TALK.length? tn('count.turns', TALK.length):'—']
   ];
   return '<div class="view">'+
-    '<div class="navtop"><span class="navt">'+esc(t('tab.build'))+'</span></div>'+
+    /* Searching the language is part of building it, so it sits on the
+       contents page rather than holding a tab of its own. The bottom bar has
+       to be about where you are in the app; this is about what you are
+       looking for inside one screen's worth of it. */
+    '<div class="navtop"><span class="navt">'+esc(t('tab.build'))+'</span>'+
+    '<button class="iconb"' + DO('go', ["find"]) + ' aria-label="'+
+      esc(t('tab.find'))+'">'+ICON_LENS+'</button></div>'+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
     '<div class="toc">'+toc.map(function(row){
@@ -284,14 +290,14 @@ function vBuild(){
    come back; until then the tab does not claim it. */
 function vFind(){
   return '<div class="view">'+
-    '<div class="navtop"><span class="navt">'+esc(t('tab.find'))+'</span></div>'+
+    navTop()+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'"' + IN('fSetQ') + '>'+
     '<button class="sx" id="f-x"' + DO('clearFq') + ''+(fq?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
-    tabBar()+'</div>';
+    '</div>';
 }
 var fq='', fpick=null;
 
