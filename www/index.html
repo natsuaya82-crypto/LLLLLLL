@@ -25,6 +25,9 @@ html[data-theme="dark"]{
   --onGold:#241d10; --dot:rgba(255,255,255,.42); --shadow:0 10px 26px rgba(0,0,0,.5);
   /* glass: what the tab bar is made of. --glassop is the same surface for a
      webview too old to blur, so the bar is never a transparent smear. */
+  /* the two the card is built out of: a surface that sits above --bg, and
+     the ground falling away behind it */
+  --raise:#191922; --sink:#06060a;
   --glass:rgba(30,30,41,.58); --glassop:#1a1a24;
   --glassrim:rgba(255,255,255,.13); --glassspec:rgba(255,255,255,.22);
   --glassdrop:rgba(0,0,0,.46);
@@ -37,6 +40,7 @@ html[data-theme="light"]{
   --bad:#c9553f;
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
+  --raise:#ffffff; --sink:#efeade;
   --glass:rgba(255,255,255,.62); --glassop:#f6f2ea;
   --glassrim:rgba(26,23,18,.10); --glassspec:rgba(255,255,255,.9);
   --glassdrop:rgba(60,50,30,.16);
@@ -178,7 +182,9 @@ canvas.pkc{width:34px;height:34px;display:block}
    The picture is 1080 square whatever the phone is; the preview is however
    wide the sheet is. Nothing here says what is drawn on it -- that is
    www/card.js -- and nothing there says how big it looks. */
-.cardbox{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
+/* No border and no ground of its own: the picture already has both, and a
+   box drawn round it was a fourth frame inside three. */
+.cardbox{border-radius:14px;overflow:hidden}
 .cardc{display:block;width:100%;height:auto}
 /* ---------- the door ----------
    The name, a rule under it, and then the app. Nothing moves except the

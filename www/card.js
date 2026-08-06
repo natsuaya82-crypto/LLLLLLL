@@ -25,10 +25,12 @@
 /* What the card is of. `w` is a word, `x` is one of the sentences written
    under a word (`kano#0` is that word's first). */
 var CARD={k:'w', v:''};
-/* The picture is made at this many pixels square whatever the phone is, so a
-   card saved on an old small screen is the same file as one saved on a new
-   large one. What the preview is shown at is the CSS's business. */
-var CARD_S=1080;
+/* The picture is made at this size whatever the phone is, so a card saved on
+   an old small screen is the same file as one saved on a new large one.
+   Sixteen by nine: it is the shape a link preview is cropped to on every
+   timeline that is not Lingua's, and a square posted there loses its sides.
+   What the preview is shown at is the CSS's business. */
+var CARD_W=1920, CARD_H=1080;
 
 function cardOpen(kind, key){
   CARD={k:String(kind), v:String(key)};
@@ -158,16 +160,56 @@ function cardTrack(x, s, cx, y, track){
   }
   return w;
 }
-/* The plate a book prints a specimen on: a heavier rule with a hairline
-   inside it. Both are --goldln, so a card cannot be a shade of gold the app
-   does not have. */
-function cardFrame(x, S){
-  var o=Math.round(S*0.050), i=Math.round(S*0.063);
+/* A rounded rectangle. Old WKWebViews have no roundRect, and a plate with
+   square corners is a box rather than an object lying on something. */
+function cardRR(x, l, t, w, h, r){
+  x.beginPath();
+  x.moveTo(l+r, t);
+  x.arcTo(l+w, t,   l+w, t+h, r);
+  x.arcTo(l+w, t+h, l,   t+h, r);
+  x.arcTo(l,   t+h, l,   t,   r);
+  x.arcTo(l,   t,   l+w, t,   r);
+  x.closePath();
+}
+/* The plate the specimen is printed on, raised off the ground: --pane over
+   --bg, a shadow beneath it and a hairline of --glassspec along its top edge
+   where the light would catch. Those two are the same pair the tab bar's
+   glass is made of, so the card is lit the way the app is lit, in both
+   themes, without a colour of its own.
+
+   Inside it the double rule a book frames a specimen with -- the heavier
+   line and a hairline within it -- and the hairline gets --glassspec a pixel
+   under it, which is what makes a rule look cut into the surface rather than
+   drawn on top of it. */
+function cardPlate(x, W, H, m){
+  var r=Math.round(H*0.048), i=Math.round(H*0.028), o;
+
+  x.save();
+  x.shadowColor=cssVar('--glassdrop');
+  x.shadowBlur=Math.round(H*0.045);
+  x.shadowOffsetY=Math.round(H*0.016);
+  x.fillStyle=cssVar('--raise');
+  cardRR(x, m, m, W-m*2, H-m*2, r); x.fill();
+  x.restore();
+
+  /* the lit edge along the top */
+  x.save();
+  cardRR(x, m, m, W-m*2, H-m*2, r); x.clip();
+  x.strokeStyle=cssVar('--glassspec');
+  x.lineWidth=Math.max(1, Math.round(H*0.0022));
+  x.beginPath(); x.moveTo(m, m+x.lineWidth/2); x.lineTo(W-m, m+x.lineWidth/2); x.stroke();
+  x.restore();
+
+  o=m+i;
   x.strokeStyle=cssVar('--goldln');
-  x.lineWidth=Math.max(1, Math.round(S*0.0026));
-  x.strokeRect(o, o, S-o*2, S-o*2);
-  x.lineWidth=Math.max(1, Math.round(S*0.0011));
-  x.strokeRect(i, i, S-i*2, S-i*2);
+  x.lineWidth=Math.max(1, Math.round(H*0.0030));
+  cardRR(x, o, o, W-o*2, H-o*2, Math.max(0, r-i)); x.stroke();
+  o=m+Math.round(i*1.5);
+  x.strokeStyle=cssVar('--glassspec');
+  x.lineWidth=Math.max(1, Math.round(H*0.0013));
+  cardRR(x, o, o+x.lineWidth, W-o*2, H-o*2, Math.max(0, r-i*1.5)); x.stroke();
+  x.strokeStyle=cssVar('--goldln');
+  cardRR(x, o, o, W-o*2, H-o*2, Math.max(0, r-i*1.5)); x.stroke();
 }
 /* A lozenge between the writing and the reading of it, where a book would
    put a fleuron. It is the only ornament on the card and it is four lines. */
@@ -179,54 +221,61 @@ function cardMark(x, cx, cy, r){
 }
 
 function cardPaint(c){
-  var S=CARD_S, x=c.getContext('2d'), src=cardSrc(), items=cardUnits(src.line);
-  var pad=Math.round(S*0.115), avail=S-pad*2, g;
-  c.width=S; c.height=S;
+  var W=CARD_W, H=CARD_H, x=c.getContext('2d');
+  var src=cardSrc(), items=cardUnits(src.line);
+  var m=Math.round(H*0.072), pad=m+Math.round(H*0.10), avail=W-pad*2, g;
+  c.width=W; c.height=H;
 
-  /* The ground is lit a little at the middle and falls off to the corners --
-     --sf over --bg, the app's own surface over the app's own paper. A card
-     that was one flat rectangle read as a screenshot rather than a plate. */
-  x.fillStyle=cssVar('--bg'); x.fillRect(0,0,S,S);
-  g=x.createRadialGradient(S/2, S*0.40, S*0.04, S/2, S*0.48, S*0.80);
-  g.addColorStop(0, cssVar('--sf'));
-  g.addColorStop(1, cssVar('--bg'));
-  x.fillStyle=g; x.fillRect(0,0,S,S);
-  cardFrame(x, S);
+  /* The ground: --bg, lifted toward the upper left the way a surface under a
+     light is, and falling away at the far corner. A card that was one flat
+     rectangle read as a screenshot of a screen rather than as an object. */
+  g=x.createLinearGradient(0, 0, W*0.9, H);
+  g.addColorStop(0, cssVar('--bg'));
+  g.addColorStop(1, cssVar('--sink'));
+  x.fillStyle=g; x.fillRect(0,0,W,H);
+  cardPlate(x, W, H, m);
 
-  /* the script, as large as it can be and still stand inside the frame, hung
-     about a line above the middle so the reading has room under it */
-  var box=Math.round(S*0.26), gap=Math.round(box*0.16), wgap=Math.round(box*0.55);
+  /* the script, as large as it can be and still stand inside the rules, hung
+     above the middle so the reading has room under it */
+  var box=Math.round(H*0.285), gap=Math.round(box*0.16), wgap=Math.round(box*0.55);
   var wide=cardWidth(items, box, gap, wgap), f;
   if(wide>avail && wide>0){
     f=avail/wide;
     box=Math.round(box*f); gap=Math.round(gap*f); wgap=Math.round(wgap*f);
     wide=cardWidth(items, box, gap, wgap);
   }
-  cardInk(x, items, Math.round((S-wide)/2), Math.round(S*0.372-box/2), box, gap, wgap);
+  /* The writing sits on the plate rather than in it: a soft shadow under the
+     ink is the whole difference between a letter and a hole. */
+  x.save();
+  x.shadowColor=cssVar('--glassdrop');
+  x.shadowBlur=Math.round(H*0.026);
+  x.shadowOffsetY=Math.round(H*0.010);
+  cardInk(x, items, Math.round((W-wide)/2), Math.round(H*0.345-box/2), box, gap, wgap);
+  x.restore();
 
-  cardMark(x, S/2, Math.round(S*0.566), Math.round(S*0.0105));
+  cardMark(x, W/2, Math.round(H*0.562), Math.round(H*0.0125));
 
   /* the spelling, in capitals and tracked, the way the app says a small
      heading everywhere else */
   x.textBaseline='alphabetic';
   x.fillStyle=cssVar('--txs');
-  var rs=cardFit(x, src.line.toUpperCase(), avail*0.86, Math.round(S*0.040), CARD_CAPS, '');
-  cardTrack(x, src.line.toUpperCase(), S/2, Math.round(S*0.652), rs*0.24);
+  var rs=cardFit(x, src.line.toUpperCase(), avail*0.80, Math.round(H*0.050), CARD_CAPS, '');
+  cardTrack(x, src.line.toUpperCase(), W/2, Math.round(H*0.639), rs*0.24);
 
   /* what it means, in the italic every meaning in this app is set in */
   if(src.mn){
     x.fillStyle=cssVar('--tx');
-    cardFit(x, src.mn, avail, Math.round(S*0.064), CARD_ITAL, 'italic');
+    cardFit(x, src.mn, avail, Math.round(H*0.082), CARD_ITAL, 'italic');
     x.textAlign='center';
-    x.fillText(src.mn, S/2, Math.round(S*0.752));
+    x.fillText(src.mn, W/2, Math.round(H*0.747));
   }
 
   /* whose language it is, and what made it. "Lingua" is never translated. */
   x.fillStyle=cssVar('--gold');
-  x.font=Math.round(S*0.024)+'px '+CARD_CAPS;
-  cardTrack(x, String(langName||'').toUpperCase(), S*0.30, Math.round(S*0.888), S*0.0055);
+  x.font=Math.round(H*0.030)+'px '+CARD_CAPS;
+  cardTrack(x, String(langName||'').toUpperCase(), W*0.22, Math.round(H*0.852), H*0.0068);
   x.fillStyle=cssVar('--txm');
-  cardTrack(x, 'LINGUA', S*0.70, Math.round(S*0.888), S*0.0055);
+  cardTrack(x, 'LINGUA', W*0.78, Math.round(H*0.852), H*0.0068);
 }
 function cardMount(){
   var c=document.getElementById('cardc');
