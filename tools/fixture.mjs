@@ -4,8 +4,9 @@
    A screen with no words in it renders almost nothing, and a check that walks
    an empty app proves almost nothing. So every tool that opens the app in a
    browser first fills it with the same small language: six words, eleven
-   sounds, three letters (one drawn, one borrowed, one drawn again), a note, a
-   grammar stage with a rule and an example.
+   sounds, a letter of each of the three kinds there are -- one that reads a
+   sound, one that reads something that is not a sound, one that is a digit --
+   a note, and a grammar stage with a rule and an example.
 
    It lives here rather than inside one of the checks because two of them need
    it and a copy in each would drift the first time a field is added — and the
@@ -44,7 +45,9 @@ export function seed(){
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
              /* a mark: a letter that reads something with no sound in it */
-             {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']}];
+             {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']},
+             /* a digit: a letter with a value instead of a reading */
+             {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1}];
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
   /* Where you are standing is the app's to say, not this file's. viewReset()
@@ -115,6 +118,10 @@ export function halfDone(){
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
+                                       return vLetter(); }],
+    /* A digit: a letter with a value instead of a reading. The row of values
+       is on every letter, but only one of them is on. */
+    ['a digit, opened',         () => { window.route='letter'; NAV=[{r:'letter', a:'l5'}];
                                        return vLetter(); }],
     /* A letter that borrowed a character rather than being drawn. The way to
        give the character back only exists once there is one. */

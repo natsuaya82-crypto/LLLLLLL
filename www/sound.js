@@ -354,7 +354,9 @@ function ltFace(l, call){
 function vLetters(){
   var loose=ltLoose();
   var marks=ltMarks();
-  var snds=ltOrder(LETTERS.filter(function(l){ return marks.indexOf(l)<0; }));
+  /* Three kinds, and each list is the letters that are not the other two. */
+  var snds=ltOrder(LETTERS.filter(function(l){
+    return marks.indexOf(l)<0 && !numIsDigit(l); }));
   return '<div class="view">'+
     navTop(ltShaped()+' / '+LETTERS.length)+
     '<div class="body">'+
@@ -367,6 +369,7 @@ function vLetters(){
     (snds.length
       ? '<div class="ltlist">'+snds.map(ltRow).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
+    numSection()+
     '<div class="sec">'+t('lt.marks')+'</div>'+
     (marks.length
       ? '<div class="ltlist">'+marks.map(ltRow).join('')+'</div>'
@@ -440,6 +443,7 @@ function vLetter(){
     '<div class="note">'+(ltUnits(l).length
       ? (ltHasSound(l)? '/'+esc(l.snd.join(' '))+'/' : esc(l.snd.join(' ')))
       : t('lt.reads.none'))+'</div>'+
+    numPick(l)+
     '<div class="sec">'+t('glyph.other')+'</div>'+
     '<button class="btn ghost" style="width:100%"' + DO('editLetter', [lid]) + '>'+t('lt.draw')+'</button>'+
     (l.ch

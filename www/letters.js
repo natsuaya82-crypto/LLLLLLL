@@ -86,6 +86,9 @@ function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
 function ltName(l){
   if(!l) return '';
   if(l.nm) return l.nm;
+  /* A digit says what it is worth. It reads no sound, so without this every
+     digit in the chapter was a dash. */
+  if(numIsDigit(l)) return numLabel(l.val);
   if(l.snd && l.snd.length) return l.snd.join(' ');
   return '';
 }
@@ -94,7 +97,10 @@ function ltName(l){
 /* Letters that read nothing at all, which is a thing to finish. A letter that
    reads `?` reads something and is finished. */
 function ltLoose(){
-  return LETTERS.filter(function(l){ return !ltUnits(l).length; });
+  /* A digit is not loose. It reads no sound because it is not for one -- it
+     has a value, which is the whole of what it says. */
+  return LETTERS.filter(function(l){
+    return !ltUnits(l).length && !numIsDigit(l); });
 }
 
 /* ---- writing the join -------------------------------------------------- */
@@ -113,6 +119,7 @@ function ltLoose(){
    sound. A character that is not a roman letter is itself: `?` reads `?`. The
    font takes its code point from the same place either way. */
 function ltIsMark(l){
+  if(numIsDigit(l)) return false;   /* a digit is the third kind, not a mark */
   var u=ltUnits(l);
   return u.length>0 && !ltHasSound(l);
 }
@@ -197,6 +204,7 @@ function ltNextFree(){
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
          snd:(o&&o.snd)? o.snd.slice() : []};
+  if(o && typeof o.val==='number') l.val=o.val;
   /* A letter made with nothing said about what it reads takes the next free
      sound. One made FOR something (ltForUnit) already carries it. */
   if(!l.snd.length){
@@ -250,7 +258,9 @@ function ltSetRoman(id, sp){
     SND=asOrder(have);
     saveSnd();
   }
-  l.snd=units;
+  /* A sign is one thing: taking a reading gives up being a digit, the same
+     way giving a value gives up the reading. */
+  l.snd=units; delete l.val;
   saveLetters(); installScriptFont(); render();
 }
 function ltSetStrokes(id, st){

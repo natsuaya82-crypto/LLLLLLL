@@ -67,6 +67,8 @@ act('goTab', goTab);
 act('langOpen', langOpen);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
+act('numSetBase', numSetBase);
+act('numSetVal', numSetVal);
 act('obBack', obBack);
 act('obBorrow', obBorrow);
 act('obDone', obDone);
