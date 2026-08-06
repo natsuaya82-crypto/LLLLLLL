@@ -248,9 +248,9 @@ function vBuild(){
        contents page rather than holding a tab of its own. The bottom bar has
        to be about where you are in the app; this is about what you are
        looking for inside one screen's worth of it. */
-    '<div class="navtop"><span class="navt">'+esc(t('tab.build'))+'</span>'+
+    '<div class="navtop"><span class="navt">'+esc(pageName('build'))+'</span>'+
     '<button class="iconb"' + DO('go', ["find"]) + ' aria-label="'+
-      esc(t('tab.find'))+'">'+ICON_LENS+'</button></div>'+
+      esc(pageName('find'))+'">'+ICON_LENS+'</button></div>'+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
     '<div class="toc">'+toc.map(function(row){

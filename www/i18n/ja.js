@@ -212,6 +212,7 @@ defLang('ja', (function(){
       'sent.say'        : '再生',
       'sent.clear'      : '消去',
       'tab.build'       : '制作',
+      'tab.explore'       : 'さがす',
       'tab.notif'       : '通知',
       'tab.me'          : 'プロフィール',
       'sns.none'        : 'まだ何もない',

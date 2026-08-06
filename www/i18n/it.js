@@ -296,6 +296,7 @@ defLang('it', (function(){
       "sent.say"         : "Riprodurre",
       "sent.clear"       : "Svuota",
       "tab.build"        : "Creare",
+      "tab.explore"       : "Esplora",
       "tab.notif"       : "Avvisi",
       "tab.me"          : "Profilo",
       "sns.none"        : "Ancora niente",

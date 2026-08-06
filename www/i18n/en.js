@@ -199,6 +199,7 @@ defLang('en', (function(){
       'sent.say'        : "Play",
       'sent.clear'      : "Clear",
       'tab.build'       : 'Build',
+      'tab.explore'       : 'Explore',
       'tab.notif'       : 'Notices',
       'tab.me'          : 'Profile',
       'sns.none'        : 'Nothing here yet',

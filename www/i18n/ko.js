@@ -475,6 +475,7 @@ defLang('ko', (function(){
       "sent.say"         : "재생",
       "sent.clear"       : "비우기",
       "tab.build"        : "만들기",
+      "tab.explore"       : "탐색",
       "tab.notif"       : "알림",
       "tab.me"          : "프로필",
       "sns.none"        : "아직 아무것도 없습니다",

@@ -304,6 +304,7 @@ defLang('zh', (function(){
       "sent.say"         : "播放",
       "sent.clear"       : "清空",
       "tab.build"        : "制作",
+      "tab.explore"       : "发现",
       "tab.notif"       : "通知",
       "tab.me"          : "个人",
       "sns.none"        : "这里还什么都没有",

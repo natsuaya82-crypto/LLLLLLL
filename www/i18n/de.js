@@ -284,6 +284,7 @@ defLang('de', (function(){
       "sent.say"         : "Abspielen",
       "sent.clear"       : "Leeren",
       "tab.build"        : "Bauen",
+      "tab.explore"       : "Entdecken",
       "tab.notif"       : "Hinweise",
       "tab.me"          : "Profil",
       "sns.none"        : "Noch nichts hier",

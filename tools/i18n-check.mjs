@@ -20,10 +20,13 @@
                         awkward edges without throwing or going blank
      6. the walk        every view, in every language, with T_MISS armed:
                         one fallback to English anywhere and this fails
-     7. the source      no user-facing text hard-coded in a screen file,
-                        and nothing spoken through toast/alert/confirm/prompt
-                        as a quoted literal — those never reach a screen, so
-                        check 8 cannot see them
+     7. the source      no user-facing text hard-coded in a screen file;
+                        nothing spoken through toast/alert/confirm/prompt as a
+                        quoted literal, and nothing painted onto a canvas as
+                        one — neither reaches a screen, so check 8 cannot see
+                        them. And no screen names a page itself: what a page
+                        is called lives in PAGES and comes back through
+                        pageName()
      8. the mirror      every view rendered in a pseudo-language whose every
                         string is spelled with accented look-alikes. Anything
                         that comes out in plain letters never passed through
@@ -167,6 +170,23 @@ function checkSource(){
     const OK_PROSE = /^(br|em|b|i|span|div|button|input|style|script|meta|title|link|path|svg|g|defs|use|option|label|textarea|p|h1|h2|h3|small|strong)$/i;
     /* the functions that speak to a person without going through a screen */
     const SPEAKS = /\b(toast|alert|confirm|prompt)\s*\(\s*([\'"][^\'"]*[\'"])/g;
+    /* Text painted on a canvas is the same blind spot one step further out.
+       Check 8 renders every screen into a mirror and reads what came back —
+       but a canvas returns nothing to read, so a word drawn on the card would
+       have shipped in English to all ten languages with the walk still green.
+       The card is the one thing in this app that leaves the phone, so that is
+       exactly the wrong place for it. What is painted must come from t() or
+       from the language itself. "Lingua" is never translated. */
+    const PAINTS = /\b(fillText|strokeText)\s*\(\s*([\'"][^\'"]*[\'"])/g;
+    const OK_PAINT = /^[\'"](LINGUA|Lingua)[\'"]$/;
+    /* What a page is called lives in PAGES, once, and is read back through
+       pageName(). A screen that reaches for t('tab.x') itself has named that
+       page a second time, in a second file, and the two drift the first time
+       one of them is edited -- which is how the feed and the search tab came
+       to be named twice over, with `tab.find` doing duty for two different
+       screens at once. shell.js is where PAGES is, so it is the one file
+       allowed to say these out loud. */
+    const NAMES = /\bt\(\s*[\'"]tab\.[A-Za-z0-9.]*[\'"]/g;
 
     lines.forEach((l, i) => {
       const where = rel + ' line ' + (i + 1);
@@ -192,6 +212,20 @@ function checkSource(){
       while ((m = SPEAKS.exec(l))) {
         fail('source', where + ' says something in English out loud: ' +
           m[1] + '(' + m[2].slice(0, 40) + '…  — it must be t(…), not a literal');
+      }
+      if (rel !== 'shell.js') {
+        NAMES.lastIndex = 0;
+        while ((m = NAMES.exec(l))) {
+          fail('source', where + ' names a page itself: ' + m[0] +
+            ') — a page is named in PAGES and read back with pageName(r)');
+        }
+      }
+      PAINTS.lastIndex = 0;
+      while ((m = PAINTS.exec(l))) {
+        if (OK_PAINT.test(m[2])) continue;
+        fail('source', where + ' paints a literal onto a canvas: ' +
+          m[1] + '(' + m[2].slice(0, 40) + '…  — no mirror can read a canvas, ' +
+          'so it must be t(…) or the language\'s own');
       }
     });
   });

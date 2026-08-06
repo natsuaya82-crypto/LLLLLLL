@@ -303,6 +303,7 @@ defLang('pt', (function(){
       "sent.say"         : "Reproduzir",
       "sent.clear"       : "Limpar",
       "tab.build"        : "Criar",
+      "tab.explore"       : "Explorar",
       "tab.notif"       : "Avisos",
       "tab.me"          : "Perfil",
       "sns.none"        : "Ainda não há nada",

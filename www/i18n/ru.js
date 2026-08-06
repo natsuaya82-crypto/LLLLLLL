@@ -299,6 +299,7 @@ defLang('ru', (function(){
       "sent.say"          : "Прослушать",
       "sent.clear"        : "Очистить",
       "tab.build"         : "Создать",
+      "tab.explore"       : "Обзор",
       "tab.notif"       : "Уведомления",
       "tab.me"          : "Профиль",
       "sns.none"        : "Пока ничего нет",

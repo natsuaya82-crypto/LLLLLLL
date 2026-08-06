@@ -84,9 +84,9 @@ var route='profile';
    side: 「←目次　Ⅰ 単語」 */
 var PAGES={
   feed:    {tab:'feed',    k:'tab.home'},
-  explore: {tab:'explore', k:'tab.find'},
+  explore: {tab:'explore', k:'tab.explore'},
   notif:   {tab:'notif',   k:'tab.notif'},
-  profile: {tab:'profile'},
+  profile: {tab:'profile', k:'tab.me'},
   build:   {tab:'build', k:'tab.build'},
   find:    {tab:'build', k:'tab.find'},
   form:    {tab:'build'},
@@ -112,7 +112,6 @@ var PAGES={
   plans:   {tab:'profile',  k:'plans.title'}
 };
 function pageName(r, a){
-  if(r==='profile') return t('tab.me');
   /* A page opened on a particular thing is named after that thing. The
      letter you are drawing, the stage you are in -- not the chapter it
      belongs to, which the back button already says. */
@@ -163,16 +162,19 @@ function navTop(count){
    the app -- it is a thing you do to the language -- so it moved to the
    contents page it belongs to, and the bar went back to saying only where
    you are. 「snsの探すと横断検索は別物ね」 */
-var TABS=[{r:'feed',    k:'tab.home'},
-          {r:'explore', k:'tab.find'},
-          {r:'notif',   k:'tab.notif'},
-          {r:'build',   k:'tab.build'},
-          {r:'profile', k:'tab.me'}];
+/* Only which routes are down there, and in what order. What each one is
+   CALLED is PAGES' to say, and it already says it -- carrying the key here as
+   well meant one screen named twice, in two tables, with nothing to hold them
+   together. The feed and the search tab were named `tab.home` and `tab.find`
+   in both places, and `tab.find` was doing duty for two different screens. */
+var TABS=['feed', 'explore', 'notif', 'build', 'profile'];
 function tabBar(){
-  var cur=here().r, i, out='';
-  for(i=0;i<TABS.length;i++)
-    out+='<button class="tab'+(cur===TABS[i].r?' on':'')+'"' + DO('goTab', [TABS[i].r]) + '>'+
-      TAB_ICON[TABS[i].r]+'<span class="tabl">'+esc(t(TABS[i].k))+'</span></button>';
+  var cur=here().r, i, r, out='';
+  for(i=0;i<TABS.length;i++){
+    r=TABS[i];
+    out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) + '>'+
+      TAB_ICON[r]+'<span class="tabl">'+esc(pageName(r))+'</span></button>';
+  }
   return '<div class="tabbar">'+out+'</div>';
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}

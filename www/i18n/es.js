@@ -256,6 +256,7 @@ defLang('es', (function(){
       "sent.say"         : "Reproducir",
       "sent.clear"       : "Vaciar",
       "tab.build"        : "Crear",
+      "tab.explore"       : "Explorar",
       "tab.notif"       : "Avisos",
       "tab.me"          : "Perfil",
       "sns.none"        : "Aún no hay nada",

@@ -344,6 +344,7 @@ defLang('fr', (function(){
       "sent.say"         : "Écouter",
       "sent.clear"       : "Effacer",
       "tab.build"        : "Créer",
+      "tab.explore"       : "Explorer",
       "tab.notif"       : "Avis",
       "tab.me"          : "Profil",
       "sns.none"        : "Rien pour l'instant",
