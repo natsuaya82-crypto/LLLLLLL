@@ -86,6 +86,10 @@ function vSet(){
       '<span class="sv">'+addedSnd().length+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
+      /* Answered once, if ever: wsGuess() reads it off the letters, and the
+         letters chapter used to put these five across the top of the screen
+         every time it was opened. Nobody changes their writing system twice. */
+      '<div class="sec">'+t('ws.kind')+'</div>'+wsysRow()+
       '<button class="set" style="margin-top:18px"' + DO('wipeAll') + '>'+
       '<span class="sl" style="color:#c9553f">'+t('set.wipe')+'</span></button>';
   } else if(id==='acct'){

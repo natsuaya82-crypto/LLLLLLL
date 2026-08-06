@@ -10,6 +10,7 @@
 migratePh();
 migrateMn();
 migrateLetters();
+migrateMarks();
 /* A language has sounds from the moment it exists. Nothing asks for them --
    a drawn letter takes the next one nothing reads yet, and the whole set is
    changed in the phonology chapter or one letter at a time in the editor. The

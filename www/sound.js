@@ -272,17 +272,17 @@ function vSound(){
 }
 /* One sound: itself, what it is written with, and the two ways to change
    that -- draw a new letter for it, or hand it to a letter that exists. */
+/* A sound, what writes it, and a way to be rid of it. It used to carry two
+   more buttons -- draw a letter for this sound, hand this sound to a letter
+   that exists -- both unlabelled icons, and both the same move: start at a
+   sound and give it a letter. That is the direction this app stopped working
+   in. The chapter about letters is where a letter is made. */
 function sndRow(p){
   var ls=ltFor(p), i, faces='';
-  for(i=0;i<ls.length;i++) faces+=ltFace(ls[i], DO('editLetter',[ls[i].id]));
+  for(i=0;i<ls.length;i++) faces+=ltFace(ls[i], DO('go',["letter", ls[i].id]));
   return '<div class="sndrow">'+
     '<button class="sndp"' + DO('sayOne', [p]) + '>'+esc(p)+'</button>'+
-    '<div class="sndls">'+faces+
-      '<button class="sndadd"' + DO('editGlyph', [p]) + ' aria-label="'+
-        esc(t('lt.draw'))+'">'+ICON_ADD+'</button>'+
-      (LETTERS.length? '<button class="sndadd"' + DO('go', ["pickltr", p]) + ' aria-label="'+
-        esc(t('lt.use'))+'">'+ICON_LINK+'</button>' : '')+
-    '</div>'+
+    '<div class="sndls">'+faces+'</div>'+
     '<button class="sndx"' + DO('dropSnd', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button>'+
     '</div>';
 }
@@ -308,13 +308,11 @@ function ltFace(l, call){
    could not hold at all, and the reason the two are two chapters. */
 function vLetters(){
   var loose=ltLoose();
-  var snds=LETTERS.filter(function(l){ return ltRole(l)==='snd'; });
   var marks=ltMarks();
+  var snds=LETTERS.filter(function(l){ return marks.indexOf(l)<0; });
   return '<div class="view">'+
     navTop(ltShaped()+' / '+LETTERS.length)+
     '<div class="body">'+
-    '<div class="sec">'+t('ws.kind')+'</div>'+
-    wsysRow()+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
@@ -350,14 +348,13 @@ function vLetters(){
     '</div></div>';
 }
 function ltRow(l){
-  var role=ltRole(l), snd=(l.snd||[]);
+  var snd=(l.snd||[]);
   return '<div class="ltrow">'+
     ltFace(l, DO('editLetter',[l.id]))+
     '<button class="ltmid"' + DO('go', ["letter", l.id]) + '>'+
       '<span class="ltnm">'+esc(ltName(l)||t('lt.untitled'))+'</span>'+
-      '<span class="ltsn">'+(role==='mark'
-        ? esc(l.key||t('lt.mark.none'))
-        : (snd.length? esc(t('lt.reads', snd.join(' / '))) : esc(t('lt.reads.none'))))+'</span>'+
+      '<span class="ltsn">'+(snd.length? esc(t('lt.reads', snd.join(' / ')))
+                                        : esc(t('lt.reads.none')))+'</span>'+
     '</button>'+
     '</div>';
 }
@@ -406,30 +403,17 @@ function vLetter(){
   var lid=here().a, l=ltById(lid);
   if(!l) return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
-  var role=ltRole(l), curKey=l.key||'';
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="field"><label>'+t('lt.name')+'</label>'+
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
       '' + IN('ltSetName', [lid]) + '></div>'+
-    '<div class="sec">'+t('lt.role')+'</div>'+
-    '<div class="pick">'+
-      '<button class="'+(role==='snd'?'on':'')+'"' + DO('ltSetRole', [lid, 'snd']) + '>'+t('lt.role.snd')+'</button>'+
-      '<button class="'+(role==='mark'?'on':'')+'"' + DO('ltSetRole', [lid, 'mark']) + '>'+t('lt.role.mark')+'</button>'+
-    '</div>'+
-    (role==='snd'
-      ? '<div class="sec">'+t('lt.reads.h')+'</div>'+
-        '<div class="field"><input id="lt-rom" value="'+esc(ltRoman(l))+'" '+
-          'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
-          'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+
-        '<div class="note">'+((l.snd && l.snd.length)
-          ? '/'+esc(l.snd.join(' '))+'/' : t('lt.reads.none'))+'</div>'
-      : '<div class="sec">'+t('lt.mark.key')+'</div>'+
-        '<div class="field"><input id="mk-key" maxlength="1" value="'+esc(curKey)+'" '+
-          'placeholder="'+esc(t('lt.mark.none'))+'"' + CH('ltSetRole', [lid, 'mark']) + '></div>'+
-        '<div class="mkeys">'+MARK_CANDS.map(function(c){
-          return '<button class="mkey'+(curKey===c?' on':'')+'"' + DO('ltSetRole', [lid, 'mark', c]) + '>'+
-            esc(c)+'</button>';
-        }).join('')+'</div>')+
+    '<div class="sec">'+t('lt.reads.h')+'</div>'+
+    '<div class="field"><input id="lt-rom" value="'+esc(ltRoman(l))+'" '+
+      'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
+      'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+
+    '<div class="note">'+(ltUnits(l).length
+      ? (ltHasSound(l)? '/'+esc(l.snd.join(' '))+'/' : esc(l.snd.join(' ')))
+      : t('lt.reads.none'))+'</div>'+
     '<div class="sec">'+t('glyph.other')+'</div>'+
     '<button class="btn ghost" style="width:100%"' + DO('editLetter', [lid]) + '>'+t('lt.draw')+'</button>'+
     (l.ch

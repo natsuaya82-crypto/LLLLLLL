@@ -62,7 +62,6 @@ act('goPlans', goPlans);
 act('goTab', goTab);
 act('langOpen', langOpen);
 act('ltDropChar', ltDropChar);
-act('ltSetRole', ltSetRole);
 act('newLetter', newLetter);
 act('obBack', obBack);
 act('obBorrow', obBorrow);
@@ -143,14 +142,12 @@ act('wdDerive', wdDerive);
 act('wdDropAt', wdDropAt);
 act('wdKey', wdKey);
 act('wdLtr', wdLtr);
-act('wdSay', wdSay);
 act('wdSetU', wdSetU);
 act('wipeAll', wipeAll);
 act('wordsSay', wordsSay);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('ltSetName', ltSetName);
-actIn('ltSetRole', ltSetRole);
 actIn('ltSetRoman', ltSetRoman);
 actIn('obLang', obLang);
 actIn('fSetQ', fSetQ);

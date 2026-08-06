@@ -43,7 +43,8 @@ export function seed(){
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
-             {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:[], role:'mark', key:'?'}];
+             /* a mark: a letter that reads something with no sound in it */
+             {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']}];
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
   /* Where you are standing is the app's to say, not this file's. viewReset()

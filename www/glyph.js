@@ -167,8 +167,8 @@ function scriptGlyphDefs(){
      rather than found by wsUnits(), which only ever answers with sounds.
      A borrowed mark is already a character and needs no glyph. */
   ltMarks().forEach(function(l){
-    if(!l.st || !l.st.length || !l.key) return;
-    defs.push({ name:'mk_'+l.id, roman:l.key, strokes:l.st });
+    if(!l.st || !l.st.length) return;
+    defs.push({ name:'mk_'+l.id, roman:l.snd.join(''), strokes:l.st });
   });
 
   return {defs:defs, ligs:ligs};
@@ -191,7 +191,7 @@ function scriptSig(){
   /* the marks too, or drawing one would never rebuild the font: they are not
      in scriptLetters(), which is the whole point of them */
   ltMarks().forEach(function(l){
-    s.push('mk'+l.id+':'+l.key+':'+(l.st? JSON.stringify(l.st).length : 0));
+    s.push('mk'+l.id+':'+l.snd.join('')+':'+(l.st? JSON.stringify(l.st).length : 0));
   });
   return s.join(',');
 }
@@ -399,9 +399,6 @@ function geBtn(fn,n,key,en,on){
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
          geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
 }
-/* One character per candidate, offered so a mark rarely needs the keyboard
-   at all: the punctuation an alphabet already has room for. */
-var MARK_CANDS=['?','!','.',',',':',';','"',"'",'(',')'];
 function vGlyph(){
   /* GE is always set by editGlyph before this is routed to; the fallback is
      for the release check, which walks every view cold. */

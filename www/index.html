@@ -89,16 +89,6 @@ button{font-family:inherit;cursor:pointer}
 .phk{min-width:56px;min-height:62px;border:1px solid var(--line);background:var(--sf);
      border-radius:9px;color:var(--tx);font-size:1.05rem;padding:8px 10px}
 .phk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-/* The characters a mark can be typed as. These used to be .phk, which is a key
-   with a letter's FACE on it and is 62 tall to hold a drawing -- ten of them
-   came to three rows and pushed the letter screen 11 px past the phone. A mark
-   is one character. 44 is Apple's floor for a thumb and nothing here goes
-   under it. */
-.mkeys{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.mkey{min-width:44px;min-height:44px;border:1px solid var(--line);background:var(--sf);
-      border-radius:9px;color:var(--tx);font-size:1.05rem;padding:0 10px}
-.mkey.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-.mkey:active{opacity:.55}
 /* A key with a letter on it. The letter you drew is the face of the key --
    large, and the only thing on it that is yours -- and the sound symbol sits
    small underneath so two letters that look alike can still be told apart.

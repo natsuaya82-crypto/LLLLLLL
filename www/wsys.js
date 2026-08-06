@@ -60,7 +60,7 @@ var WSYS=['alpha','syll','abjad','abugida','logo'];
 function wsGuess(){
   var read = [], i, j, u;
   for(i=0;i<LETTERS.length;i++){
-    if(typeof ltRole==='function' && ltRole(LETTERS[i])!=='snd') continue;
+    if(typeof ltIsMark==='function' && ltIsMark(LETTERS[i])) continue;
     var sn=LETTERS[i].snd;
     if(!sn) continue;
     for(j=0;j<sn.length;j++) if(sn[j] && read.indexOf(sn[j])<0) read.push(sn[j]);

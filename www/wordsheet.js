@@ -249,9 +249,12 @@ function wdSeqHTML(){
   return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
     '<button class="seqdel"' + DO('wdBack') + ''+(sp.length?'':' disabled')+
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+    /* No second play. This one and the one at the head of the sheet were both
+       sayPh(wEdit.seq) -- the same sound, twice, and this copy sat inside the
+       block about which letters spell the word, which is not what a sound is
+       for. */
     '<div class="pvbox" style="margin-top:8px"><span class="pvn">'+t('f.reading')+'</span>'+
-    '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span>'+
-    '<button' + DO('wdSay') + '>'+ICON_PLAY+t('f.listen')+'</button></div>';
+    '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span></div>';
 }
 var wdMode='';
 function wdKeyMode(){
@@ -507,7 +510,6 @@ function wdKey(sym){
 /* Four things that were written as code inside a button: a condition, a pair
    of statements, and two assignments. Each is one line now, in a file a
    checker can read. */
-function wdSay(){ if(wEdit && wEdit.seq.length) sayPh(wEdit.seq); }
 function goPlans(){ closeSheet(); go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }

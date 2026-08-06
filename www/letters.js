@@ -91,46 +91,55 @@ function ltName(l){
 }
 /* Letters with no sound on them yet. The reason the two chapters are two
    chapters: you can draw an alphabet first and decide later. */
-/* Letters that read nothing yet, which is a thing to finish. A mark reads
-   nothing on purpose and is finished, so it is not one of these. */
+/* Letters that read nothing at all, which is a thing to finish. A letter that
+   reads `?` reads something and is finished. */
 function ltLoose(){
-  return LETTERS.filter(function(l){
-    return ltRole(l) === 'snd' && (!l.snd || !l.snd.length);
-  });
+  return LETTERS.filter(function(l){ return !ltUnits(l).length; });
 }
 
 /* ---- writing the join -------------------------------------------------- */
-/* ---- what a letter is for ---------------------------------------------
+/* ---- a mark is a letter with no sound in it ----------------------------
    A letter used to be one thing: the shape for a sound. Everything the
    writing system draws was worked out from the phonology, so a shape that
    reads nothing had no way to exist -- a question mark was a letter you had
    not finished yet, and the app said so, forever.
 
-   So a letter says what it is for. 'snd' reads one or more sounds, which is
-   every letter that has ever been made in this app. 'mark' reads nothing on
-   purpose: a question mark, a full stop, a quotation mark. It is drawn or
-   borrowed exactly like any other letter -- that axis is separate -- and it
-   carries the character that types it, because a mark cannot borrow its code
-   point from the roman spelling of a sound it does not have.
+   The fix for that was a switch on every letter: reads a sound, or is a mark.
+   Two more fields, a segmented control on a screen, and a question nobody
+   wanted answered -- a question mark IS a question mark, and it has no sound
+   because it has no sound. Saying so twice is what made the screen ugly.
 
-   Absent means 'snd'. Nothing on anybody's phone has this field, and reading
-   it as the only thing it could have been is cheaper and safer than rewriting
-   every letter somebody has drawn. */
-function ltRole(l){ return (l && l.role === 'mark') ? 'mark' : 'snd'; }
-function ltMarks(){
-  return LETTERS.filter(function(l){ return ltRole(l) === 'mark'; });
+   So there is one field, and it is what the letter reads. Roman letters are a
+   sound. A character that is not a roman letter is itself: `?` reads `?`. The
+   font takes its code point from the same place either way. */
+function ltIsMark(l){
+  var u=ltUnits(l);
+  return u.length>0 && !ltHasSound(l);
 }
-/* Changing what a letter is for. A mark reads nothing, so choosing 'mark'
-   drops whatever sounds it had; choosing 'snd' back drops the key, since a
-   sound letter is read from its sounds and not typed for. */
-function ltSetRole(id, role, key){
-  var l=ltById(id); if(!l) return null;
-  l.role = (role==='mark') ? 'mark' : 'snd';
-  l.key  = (l.role==='mark') ? (key||'') : '';
-  if(l.role==='mark') l.snd=[];      /* a mark reads nothing */
-  saveLetters(); installScriptFont();
-  render();
-  return l;
+/* Whether any part of what this reads is on the chart. A unit is one or more
+   sounds run together, so `ka` counts and `?` does not. */
+function ltHasSound(l){
+  var u=ltUnits(l), all=ipaAll(), i, j, p;
+  for(i=0;i<u.length;i++){
+    p=uSplit(u[i]);
+    for(j=0;j<p.length;j++) if(all.indexOf(p[j])>=0) return true;
+  }
+  return false;
+}
+function ltMarks(){ return LETTERS.filter(ltIsMark); }
+/* Letters that had the switch: role 'mark' with the character in `key`. The
+   character is what it reads now. Runs once, on a phone, and touches only the
+   letters that carry the old shape. */
+function migrateMarks(){
+  var moved=0, i, l;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(l.role===undefined && l.key===undefined) continue;
+    if(l.role==='mark' && l.key && (!l.snd || !l.snd.length)) l.snd=[l.key];
+    delete l.role; delete l.key;
+    moved++;
+  }
+  if(moved) saveLetters();
 }
 
 /* The first sound in the inventory that nothing reads yet, in the chart's
@@ -149,15 +158,10 @@ function ltNextFree(){
 }
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
-         snd:(o&&o.snd)? o.snd.slice() : [],
-         role:(o&&o.role==='mark')? 'mark' : 'snd',
-         /* what you type to get this one. Empty for a sound letter, where the
-            roman spelling of the sound answers it. */
-         key:(o&&o.key)||''};
-  /* A sound letter made with nothing said about what it reads takes the next
-     free sound. A letter made FOR a sound (ltForUnit) already carries one and
-     is left alone, and a mark reads nothing on purpose. */
-  if(l.role==='snd' && !l.snd.length){
+         snd:(o&&o.snd)? o.snd.slice() : []};
+  /* A letter made with nothing said about what it reads takes the next free
+     sound. One made FOR something (ltForUnit) already carries it. */
+  if(!l.snd.length){
     var u=ltNextFree();
     if(u) l.snd=[u];
   }
@@ -169,10 +173,10 @@ function ltNew(o){
    thing -- c reads /k/ and /s/. The field on the letter screen shows this and
    ltSetRoman reads it back. */
 function ltRoman(l){
-  var u=ltUnits(l), out=[], i, j, p, w;
+  var u=ltUnits(l), all=ipaAll(), out=[], i, j, p, w;
   for(i=0;i<u.length;i++){
     p=uSplit(u[i]); w='';
-    for(j=0;j<p.length;j++) w+=ipaRoman(p[j]);
+    for(j=0;j<p.length;j++) w+=(all.indexOf(p[j])>=0)? ipaRoman(p[j]) : p[j];
     out.push(w);
   }
   return out.join(' ');
@@ -189,15 +193,18 @@ function ltRoman(l){
    correction applied silently is worse than none. */
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
-  var words=String(sp||'').replace(/[^A-Za-z ]/g,' ').split(' '), units=[], seen=[], i, j, parts;
+  var words=String(sp||'').split(/\s+/), units=[], seen=[], i, j, parts;
   for(i=0;i<words.length;i++){
     if(!words[i].length) continue;
+    /* Not roman letters: it is itself. `?` reads `?`, and joins no inventory
+       because it is not a sound. */
+    if(!/^[A-Za-z]+$/.test(words[i])){ units.push(words[i]); continue; }
     parts=ipaFromRoman(words[i]);
     if(!parts){ toast(t('lt.reads.no')); return; }
     units.push(parts.join(''));
     for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
   }
-  if(units.length){
+  if(seen.length){
     var have=addedSnd();
     for(i=0;i<seen.length;i++) if(have.indexOf(seen[i])<0) have.push(seen[i]);
     SET.snd=asOrder(have);
