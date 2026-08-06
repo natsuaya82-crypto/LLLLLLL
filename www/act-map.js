@@ -44,6 +44,10 @@ act('mkCommit', mkCommit);
 act('delNote', delNote);
 act('delWord', delWord);
 act('doImport', doImport);
+act('impScan', impScan);
+act('impSetDup', impSetDup);
+act('impAgain', impAgain);
+act('impUndo', impUndo);
 act('dropSnd', dropSnd);
 act('editGlyph', editGlyph);
 act('editLetter', editLetter);
@@ -147,6 +151,7 @@ act('wipeAll', wipeAll);
 act('wordsSay', wordsSay);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
+actIn('impSetRole', impSetRole);
 actIn('ltSetName', ltSetName);
 actIn('ltSetRoman', ltSetRoman);
 actIn('obLang', obLang);

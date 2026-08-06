@@ -415,21 +415,167 @@ function impCut(s, snd){
    tools/import-check.mjs runs that half directly in Node, over one sample per
    format, which is the only thing holding "we can read anybody's file"
    upright. Everything below is the app -- the screen, the plan, the
-   dictionary -- and is walked by press.mjs like any other screen.
+   dictionary -- and press.mjs walks it like any other screen.
+   ========================================================================= */
 
-   ---- the screen, and putting them in ------------------------------------ */
-function openImport(){
-  openForm('csv:', t('csv.title'),
-    '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
-    '<button class="btn" style="width:100%"' + DO('doImport') + '>'+t('csv.btn')+'</button>');
-}
+/* ---- where you are in it ------------------------------------------------
+   Cleared by viewReset() in www/shell.js, which is the one place a screen
+   forgets, because arriving at somebody else's language holding half of a
+   spreadsheet you were reading into your own is the worst kind of bug. */
+var IMP=impBlank();
+function impBlank(){ return {read:null, roles:[], dup:'skip', done:null}; }
+
+/* Three faces, and which one you see is what has happened so far: nothing
+   yet, a file read and waiting to be understood, or a dictionary that just
+   grew by two thousand words and can be put back. */
+function openImport(){ openForm('csv:', t('csv.title'), impHTML(), impMount); }
 FORM_OPEN.csv=function(){ openImport(); };
-function doImport(){
-  var e=document.getElementById('f-csv');
-  if(!e) return;
-  var read=impRead(e.value);
-  impPut(impRows(read, impGuess(read), addedSnd()));
+function impHTML(){
+  if(IMP.done) return impDoneHTML();
+  if(IMP.read) return impMapHTML();
+  return impGetHTML();
 }
+/* Rebuilding it rather than patching a piece: choosing what a column is
+   changes the counts underneath it and can change the buttons, and a screen
+   that redraws two of its three parts is where the third goes stale. */
+function impAgain(){ IMP=impBlank(); openImport(); }
+
+/* ---- 1. getting it in --------------------------------------------------- */
+function impGetHTML(){
+  return '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
+    impFileHTML()+
+    '<button class="btn" style="width:100%;margin-top:12px"' + DO('impScan') + '>'+
+      esc(t('imp.next'))+'</button>';
+}
+/* A file rather than a paste. Pasting is fine for forty words and impossible
+   for four thousand, which is the size of list this is for -- so this is
+   where the paid plan starts, and the free one still gets the paste. */
+function impFileHTML(){
+  if(!has('plus'))
+    return '<button class="impfile"' + DO('go', ["plans"]) + '>'+esc(t('imp.file'))+
+      '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+  return '<label class="impfile">'+esc(t('imp.file'))+
+    '<input type="file" id="f-file" accept=".csv,.tsv,.tab,.txt,.json,.db,.dic,.lex"></label>';
+}
+/* The file input is the one control in the app that cannot go through the
+   action tables: they hand a listener the element's value, and a file input's
+   value is a made-up path -- what is wanted is the file itself. So it is
+   bound here, the way the drawing canvas is, when the screen is built. */
+function impMount(){
+  var e=document.getElementById('f-file');
+  if(!e || e.getAttribute('data-wired')) return;
+  e.setAttribute('data-wired', '1');
+  e.addEventListener('change', function(){
+    var f=e.files && e.files[0];
+    if(!f) return;
+    var r=new FileReader();
+    r.onload=function(){ impTake(String(r.result||'')); };
+    r.readAsText(f);
+  }, false);
+}
+function impScan(){
+  var e=document.getElementById('f-csv');
+  impTake(e? e.value : '');
+}
+/* Whatever came in -- typed, pasted or read off a file -- goes through the
+   same door. */
+function impTake(src){
+  var r=impRead(src);
+  if(!r.rows.length){ toast(t('imp.empty')); return; }
+  IMP.read=r; IMP.roles=impGuess(r); IMP.done=null;
+  openImport();
+}
+
+/* ---- 2. what each column is --------------------------------------------- */
+/* The guess is already made and already chosen; this is where it gets
+   corrected. Three rows are enough to recognise your own spreadsheet and
+   few enough to fit on a phone. */
+function impMapHTML(){
+  var rows=IMP.read.rows, head=IMP.read.head, n=Math.min(3, rows.length);
+  var p=impPlan(), i, j, out='';
+  out+='<div class="imptab"><table><tr>';
+  for(j=0;j<IMP.roles.length;j++){
+    out+='<th><select' + CH('impSetRole', [j]) + '>'+
+      IMP_ROLES.map(function(r){
+        return '<option value="'+r+'"'+(IMP.roles[j]===r? ' selected':'')+'>'+
+          esc(t('imp.role.'+r))+'</option>';
+      }).join('')+'</select>'+
+      (head? '<div class="impcap">'+esc(head[j]||'')+'</div>' : '')+'</th>';
+  }
+  out+='</tr>';
+  for(i=0;i<n;i++){
+    out+='<tr>';
+    for(j=0;j<IMP.roles.length;j++) out+='<td>'+esc(rows[i][j]||'')+'</td>';
+    out+='</tr>';
+  }
+  out+='</table></div>';
+  out+='<div class="impsum">'+
+    (p.add?  '<span><b>'+p.add+'</b>'+esc(t('imp.new'))+'</span>' : '')+
+    (p.coin? '<span><b>'+p.coin+'</b>'+esc(t('imp.coin'))+'</span>' : '')+
+    (p.dup?  '<span><b>'+p.dup+'</b>'+esc(t('imp.have'))+'</span>' : '')+
+    '</div>';
+  /* The choice only exists when there is something to choose about. */
+  if(p.dup)
+    out+='<div class="segs">'+
+      '<button class="seg'+(IMP.dup==='skip'? ' on':'')+'"' + DO('impSetDup', ["skip"]) + '>'+
+        esc(t('imp.skip'))+'</button>'+
+      '<button class="seg'+(IMP.dup==='over'? ' on':'')+'"' + DO('impSetDup', ["over"]) + '>'+
+        esc(t('imp.over'))+'</button></div>';
+  out+='<button class="btn" style="width:100%;margin-top:14px"' + DO('doImport') + '>'+
+    esc(t('csv.btn'))+'</button>'+
+    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impAgain') + '>'+
+      '<span class="sl">'+esc(t('imp.again'))+'</span></button>';
+  return out;
+}
+function impSetRole(j, v){ IMP.roles[j]=v; openImport(); }
+function impSetDup(v){ IMP.dup=v; openImport(); }
+/* What pressing it would do, said before it is pressed. */
+function impPlan(){
+  var rows=impRows(IMP.read, IMP.roles, addedSnd()), p={add:0, dup:0, coin:0}, i;
+  for(i=0;i<rows.length;i++){
+    if(rows[i].hw){ if(findWord(rows[i].hw)) p.dup++; else p.add++; }
+    else if(rows[i].mn) p.coin++;
+  }
+  return p;
+}
+
+/* ---- 3. what happened, and putting it back ------------------------------ */
+function impDoneHTML(){
+  var d=IMP.done;
+  return '<div class="impbig">'+esc(t('imp.done', d.n))+'</div>'+
+    (d.full? '<div class="note">'+esc(t('csv.full', d.n, 0))+'</div>' : '')+
+    '<button class="btn" style="width:100%;margin-top:16px"' + DO('back') + '>'+
+      esc(t('imp.ok'))+'</button>'+
+    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impUndo') + '>'+
+      '<span class="sl bad">'+esc(t('imp.undo'))+'</span></button>';
+}
+/* Putting two thousand words into the only copy of something somebody spent
+   years on is not a thing anybody should have to be brave about. Every word
+   this added is remembered by its spelling, and every word it overwrote is
+   remembered whole, so one press is enough to make it not have happened. */
+function impUndo(){
+  var d=IMP.done, i, k;
+  if(!d) return;
+  for(i=0;i<d.hws.length;i++){
+    k=impAt(d.hws[i]);
+    if(k>=0) WORDS.splice(k, 1);
+  }
+  for(i=0;i<d.was.length;i++){
+    k=impAt(d.was[i].hw);
+    if(k>=0) WORDS[k]=d.was[i].w;
+  }
+  save(); cands=[];
+  IMP=impBlank(); openImport();
+  toast(t('imp.undone'));
+}
+function impAt(hw){
+  var i;
+  for(i=0;i<WORDS.length;i++) if(WORDS[i].hw===hw) return i;
+  return -1;
+}
+
+/* ---- doing it ----------------------------------------------------------- */
+function doImport(){ impPut(impRows(IMP.read, IMP.roles, addedSnd())); }
 /* Meanings arrive joined, because a file can hold several in one cell and
    several cells can each hold one. The app keeps them apart. */
 function impSenses(mn){
@@ -440,24 +586,30 @@ function impSenses(mn){
    A row that brought a spelling keeps it, and keeps the sounds the file gave
    it. Only a row with no sounds falls back to guessing them off the letters,
    which is all that can be done and is wrong for anything not written in
-   roman -- it used to be what happened to every row.
+   roman -- and it used to be what happened to every row.
 
    A row that brought only a meaning gets a word coined out of this language's
    own sounds, which is the commonest thing anybody imports: a list of what
    the words are for, with no words yet. */
 function impPut(rows){
-  var made=0, took=0, full=false, i, r, seq, hw, guard;
+  var added=[], was=[], full=false, i, r, seq, hw, w, guard;
   for(i=0;i<rows.length;i++){
     r=rows[i];
     if(!capOK(1)){ full=true; break; }
+    hw='';
     if(r.hw){
       hw=String(r.hw);
-      if(findWord(hw)) continue;
+      w=findWord(hw);
+      if(w){
+        if(IMP.dup!=='over') continue;
+        was.push({hw:hw, w:JSON.parse(JSON.stringify(w))});
+        if(r.mn){ w.mn=r.mn; w.mns=impSenses(r.mn); }
+        if(r.pos) w.pos=posKey(r.pos);
+        if(r.ph.length) w.ph=r.ph;
+        continue;
+      }
       seq = r.ph.length? r.ph : phGuess(hw);
       if(!seq.length) continue;
-      WORDS.push({hw:hw, ph:seq, mn:r.mn, mns:impSenses(r.mn),
-                  pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i});
-      took++;
     } else {
       if(!r.mn) continue;
       if(!addedSnd().length) continue;
@@ -476,12 +628,12 @@ function impPut(rows){
       }
       if(!seq) continue;
       hw=seq.join('');
-      WORDS.push({hw:hw, ph:seq, mn:r.mn, mns:impSenses(r.mn),
-                  pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i});
-      made++;
     }
+    WORDS.push({hw:hw, ph:seq, mn:r.mn, mns:impSenses(r.mn),
+                pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i});
+    added.push(hw);
   }
   save(); cands=[];
-  if(here().r==='form') back(); else render();
-  toast(full? t('csv.full', took, made) : t('csv.done', took, made));
+  IMP.done={n:added.length+was.length, hws:added, was:was, full:full};
+  openImport();
 }

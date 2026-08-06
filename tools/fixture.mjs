@@ -180,6 +180,28 @@ export function halfDone(){
                                                      const h=vLangs(); delete LANGS.L_other; return h; }],
     ['a mark in the editor',   () => { editLetter('l4'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    /* A list being read in has three faces and they share no buttons: the
+       paste box, the table where each column is said to be something, and
+       what happened afterwards with the way to undo it. */
+    ['a list waiting to be understood', () => { IMP = impBlank();
+        impTake('Word,Meaning,Part of Speech,Made\n' +
+                'kano,mountain,noun,2024\nzzk,a thing,verb,2024\n');
+        return FORM.html; }],
+    /* The same list where one of its words is already in the dictionary, so
+       the choice between skipping and overwriting exists at all. */
+    ['a list with words already here', () => { IMP = impBlank();
+        impTake('Word,Meaning\nkano,mountain\nzzk,a thing\n');
+        return FORM.html; }],
+    ['a list just brought in', () => { IMP = impBlank();
+        IMP.read = {shape:'table', head:null, rows:[['zzk', 'a thing']]};
+        IMP.roles = ['hw', 'mn'];
+        doImport();
+        const h = FORM.html; impUndo(); return h; }],
+    /* On the paid plan the file button is a real file input rather than the
+       way to the plans. */
+    ['a file being chosen', () => { SET.plan = 'plus'; IMP = impBlank();
+        openImport();
+        const h = FORM.html; SET.plan = 'free'; return h; }],
     /* The card, which is the only screen whose output leaves the app. Both
        faces: a word, and one of the sentences written under a word -- they
        compose the picture differently (one spelling, or several with the
