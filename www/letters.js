@@ -206,8 +206,9 @@ function ltNew(o){
          snd:(o&&o.snd)? o.snd.slice() : []};
   if(o && typeof o.val==='number') l.val=o.val;
   /* A letter made with nothing said about what it reads takes the next free
-     sound. One made FOR something (ltForUnit) already carries it. */
-  if(!l.snd.length){
+     sound. One made FOR something (ltForUnit) already carries it, and one
+     made as a digit is not for a sound at all. */
+  if(!l.snd.length && !numIsDigit(l)){
     var u=ltNextFree();
     if(u) l.snd=[u];
   }
@@ -218,6 +219,10 @@ function ltNew(o){
    per unit, separated by spaces, because a letter may read more than one
    thing -- c reads /k/ and /s/. The field on the letter screen shows this and
    ltSetRoman reads it back. */
+/* What the one box shows: a digit's value, or the reading. */
+function ltBoxed(l){
+  return numIsDigit(l)? numLabel(l.val) : ltRoman(l);
+}
 function ltRoman(l){
   var u=ltUnits(l), all=ipaAll(), out=[], i, j, p, w;
   for(i=0;i<u.length;i++){
@@ -239,6 +244,15 @@ function ltRoman(l){
    correction applied silently is worse than none. */
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
+  /* One box, three outcomes, and no switch to set first. Roman letters are a
+     reading; a bare number is a value, which is how a sign is said to be a
+     digit; anything else reads itself, which is what a mark is. A row of
+     buttons for the value was a second control that grew with the base and
+     did not fit beside the first. 「▫️に文字入れてtとか書くだけにしようよ」 */
+  if(/^[0-9]+$/.test(String(sp||'').trim())){
+    numSetVal(id, parseInt(String(sp).trim(), 10));
+    return;
+  }
   var words=String(sp||'').split(/\s+/), units=[], seen=[], i, j, parts;
   for(i=0;i<words.length;i++){
     if(!words[i].length) continue;

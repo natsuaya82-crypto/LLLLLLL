@@ -50,14 +50,6 @@ function numSetBase(b){
   STG.base=(NUM_BASES.indexOf(b)>=0)? b : 10;
   saveStg(); render();
 }
-/* Every value a single digit can hold: 0 up to one less than the base. A
-   quantity as big as the base is two digits, which is what a base IS. */
-function numVals(){
-  var out=[], i, b=numBase();
-  for(i=0;i<b;i++) out.push(i);
-  return out;
-}
-
 function numIsDigit(l){ return !!(l && typeof l.val==='number'); }
 /* In the order they count in, which is the only order a digit has. */
 function numDigits(){
@@ -76,6 +68,9 @@ function numSetVal(id, v){
   var l=ltById(id), other;
   if(!l) return;
   if(v<0){ delete l.val; saveLetters(); installScriptFont(); render(); return; }
+  /* A quantity as big as the base is two digits, which is what a base IS, so
+     there is no single sign for it. */
+  if(v>=numBase()){ toast(t('num.big', numLabel(numBase()-1))); return; }
   other=numByVal(v);
   if(other && other.id!==id){ toast(t('lt.dup', numLabel(v))); return; }
   l.val=v; l.snd=[];
@@ -86,29 +81,17 @@ function numSetVal(id, v){
    somebody count in twelve to find the button. */
 function numLabel(v){ return String(v); }
 
-/* ---- on the letters chapter --------------------------------------------- */
-function numSection(){
-  var d=numDigits();
-  return '<div class="sec">'+esc(t('num.h'))+'</div>'+
-    '<div class="segs">'+NUM_BASES.map(function(b){
-      return '<button class="seg'+(numBase()===b? ' on':'')+'"' + DO('numSetBase', [b]) + '>'+
-        esc(numLabel(b))+'</button>';
-    }).join('')+'</div>'+
-    (d.length
-      ? '<div class="ltlist">'+d.map(ltRow).join('')+'</div>'
-      : '<div class="note">'+esc(t('lt.none'))+'</div>');
+/* The smallest value nothing has yet, for a digit made from the + button. */
+function numFree(){
+  var i, b=numBase();
+  for(i=0;i<b;i++) if(!numByVal(i)) return i;
+  return -1;
 }
-/* ---- on one letter ------------------------------------------------------ */
-/* Every value the base allows, and the way out. A row rather than a field:
-   there are between ten and twenty of them and they are all one tap. */
-function numPick(l){
-  var cur=numIsDigit(l)? l.val : -1;
-  return '<div class="sec">'+esc(t('num.val'))+'</div>'+
-    '<div class="numrow">'+
-    '<button class="numk'+(cur<0? ' on':'')+'"' + DO('numSetVal', [l.id, -1]) + '>'+
-      esc(t('num.none'))+'</button>'+
-    numVals().map(function(v){
-      return '<button class="numk'+(cur===v? ' on':'')+'"' + DO('numSetVal', [l.id, v]) + '>'+
-        esc(numLabel(v))+'</button>';
-    }).join('')+'</div>';
+/* The base, on the digits page, because that is the page it is about. */
+function numBaseHTML(){
+  return '<div class="sec">'+esc(t('num.base'))+'</div>'+
+    '<div class="segs">'+NUM_BASES.map(function(b){
+    return '<button class="seg'+(numBase()===b? ' on':'')+'"' + DO('numSetBase', [b]) + '>'+
+      esc(numLabel(b))+'</button>';
+  }).join('')+'</div>';
 }

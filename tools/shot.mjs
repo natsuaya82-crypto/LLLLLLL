@@ -123,6 +123,7 @@ const withArgs = await pg.evaluate((rs) => {
   const argsOf = (r) =>
     r === 'set'  ? [null].concat(SETS.map((x) => x.id)) :
     r === 'gram' ? [null].concat(stAll().map((p) => p.id)) :
+    r === 'ltset' ? [null].concat(LT_KINDS) :
     [null];
   const out = [];
   rs.forEach((r) => argsOf(r).forEach((a) => out.push(a === null ? r : r + ':' + a)));

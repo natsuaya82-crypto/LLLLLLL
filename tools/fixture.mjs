@@ -95,6 +95,15 @@ export function halfDone(){
     ['the letters chapter of an abugida', () => { window.route='letters'; NAV=[{r:'letters'}];
                                        SET.wsys='abugida';
                                        const h = vLetters(); SET.wsys=''; return h; }],
+    /* An alphabet with a letter nobody has given a reading yet: the line
+       saying how many only exists then, and only on that one of the three. */
+    ['the alphabet with a letter unread', () => { window.route='ltset';
+                                       NAV=[{r:'ltset', a:'alpha'}]; return vLtset(); }],
+    /* The digits page, which is the only one of the three carrying the base. */
+    ['the digits', () => { window.route='ltset';
+                           NAV=[{r:'ltset', a:'num'}]; return vLtset(); }],
+    ['the marks',  () => { window.route='ltset';
+                           NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     ['words being suggested',  () => { window.route='make'; NAV=[{r:'make'}];

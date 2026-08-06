@@ -351,12 +351,24 @@ function ltFace(l, call){
    The alphabet, as a thing in itself. Every letter you have, what it reads,
    and the letters that read nothing yet -- which is the case the old model
    could not hold at all, and the reason the two are two chapters. */
+/* The three kinds a letter can be, as the chapter's contents. They were one
+   page with three lists on it, which is fine at three letters each and
+   unreadable at forty. 「文字の一覧をアルファベット>記号>数字>とかにして中で
+   見れるようにして」 */
+var LT_KINDS=['alpha', 'mark', 'num'];
+var LT_KIND={alpha:'lt.all', mark:'lt.marks', num:'num.h'};
+function ltOfKind(k){
+  if(k==='num') return numDigits();
+  if(k==='mark') return ltMarks();
+  return ltOrder(LETTERS.filter(function(l){
+    return !ltIsMark(l) && !numIsDigit(l); }));
+}
+function ltKindRow(k){
+  return '<button class="trow"' + DO('go', ["ltset", k]) + '>'+
+    '<span class="rn"></span><span class="rt">'+esc(t(LT_KIND[k]))+'</span>'+
+    '<span class="lead"></span><span class="rv">'+ltOfKind(k).length+'</span>'+ICON_GO+'</button>';
+}
 function vLetters(){
-  var loose=ltLoose();
-  var marks=ltMarks();
-  /* Three kinds, and each list is the letters that are not the other two. */
-  var snds=ltOrder(LETTERS.filter(function(l){
-    return marks.indexOf(l)<0 && !numIsDigit(l); }));
   return '<div class="view">'+
     navTop(ltShaped()+' / '+LETTERS.length)+
     '<div class="body">'+
@@ -365,18 +377,7 @@ function vLetters(){
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
-    '<div class="sec">'+t('lt.all')+'</div>'+
-    (snds.length
-      ? '<div class="ltlist">'+snds.map(ltRow).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>')+
-    numSection()+
-    '<div class="sec">'+t('lt.marks')+'</div>'+
-    (marks.length
-      ? '<div class="ltlist">'+marks.map(ltRow).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('newLetter') + '>'+
-      ICON_ADD+t('lt.new')+'</button>'+
-    (loose.length? '<div class="mini" style="margin-top:8px">'+tn('lt.loose', loose.length)+'</div>' : '')+
+    '<div class="toc">'+LT_KINDS.map(ltKindRow).join('')+'</div>'+
     (ltShaped()
       ? '<div class="sec">'+t('script.preview')+'</div>'+
         /* The Roman / your-letters pair sits directly under this box, so the
@@ -393,6 +394,25 @@ function vLetters(){
     '<button class="trow"' + DO('go', ["sound"]) + ' style="margin-top:18px">'+
       '<span class="rn"></span><span class="rt">'+esc(t('toc.sound'))+'</span>'+
       '<span class="lead"></span><span class="rv">'+addedSnd().length+'</span>'+ICON_GO+'</button>'+
+    '</div></div>';
+}
+/* One of the three. The base belongs on the digits page and nowhere else,
+   because that is the page it decides the shape of. */
+function vLtset(){
+  var k=here().a;
+  if(LT_KINDS.indexOf(k)<0) k='alpha';
+  var list=ltOfKind(k), loose=ltLoose();
+  return '<div class="view">'+
+    navTop(list.length)+
+    '<div class="body">'+
+    (k==='num'? numBaseHTML() : '')+
+    (list.length
+      ? '<div class="ltlist">'+list.map(ltRow).join('')+'</div>'
+      : '<div class="note">'+t('lt.none')+'</div>')+
+    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('newLetter', [k]) + '>'+
+      ICON_ADD+t('lt.new')+'</button>'+
+    ((k==='alpha' && loose.length)
+      ? '<div class="mini" style="margin-top:8px">'+tn('lt.loose', loose.length)+'</div>' : '')+
     '</div></div>';
 }
 /* One line, not two. The second said "reads k" under a first line that said
@@ -437,13 +457,14 @@ function vLetter(){
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
       '' + IN('ltSetName', [lid]) + '></div>'+
     '<div class="sec">'+t('lt.reads.h')+'</div>'+
-    '<div class="field"><input id="lt-rom" value="'+esc(ltRoman(l))+'" '+
+    '<div class="field"><input id="lt-rom" value="'+esc(ltBoxed(l))+'" '+
       'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+
-    '<div class="note">'+(ltUnits(l).length
-      ? (ltHasSound(l)? '/'+esc(l.snd.join(' '))+'/' : esc(l.snd.join(' ')))
-      : t('lt.reads.none'))+'</div>'+
-    numPick(l)+
+    '<div class="note">'+(numIsDigit(l)
+      ? esc(t('num.h'))
+      : ltUnits(l).length
+        ? (ltHasSound(l)? '/'+esc(l.snd.join(' '))+'/' : esc(l.snd.join(' ')))
+        : t('lt.reads.none'))+'</div>'+
     '<div class="sec">'+t('glyph.other')+'</div>'+
     '<button class="btn ghost" style="width:100%"' + DO('editLetter', [lid]) + '>'+t('lt.draw')+'</button>'+
     (l.ch

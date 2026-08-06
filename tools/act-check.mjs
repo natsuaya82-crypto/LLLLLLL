@@ -222,6 +222,10 @@ const R = await pg.evaluate(() => {
   });
   SET.plan = 'free';
   walkArg('gram', vGram, stAll().map(p => p.id), 'vGram');
+  /* The letters chapter is three lists now and they share no buttons:
+     only the digits page carries the base, only the alphabet counts the
+     ones with no reading. */
+  walkArg('ltset', vLtset, LT_KINDS, 'vLtset');
 
   /* the forms, which are pages reached by opening rather than by routing */
   const forms = [

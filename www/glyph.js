@@ -264,8 +264,11 @@ function editLetter(id){
   GE=newGE(id, ltName(l)); go('glyph', id);
 }
 /* A letter with nothing on it yet -- 「文字から作るだろ普通」 */
-function newLetter(){
-  var l=ltNew({});
+/* The + on a list makes that list's kind: on the digits page a new sign is a
+   digit, and it takes the smallest value nothing has yet. */
+function newLetter(kind){
+  var v=(kind==='num')? numFree() : -1;
+  var l=ltNew(v>=0? {val:v} : {});
   GE=newGE(l.id, ''); go('glyph', l.id);
 }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
@@ -1378,9 +1381,12 @@ function render(){
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
   if(route==='glyph'){ geMount(); ghMount(); }
-  if(route==='sound' || route==='letters' || route==='abugida' ||
-     route==='spell' || route==='aspell' || route==='form') geTiles();
-  /* the search tab draws letters and sounds as keys, which are canvases */
-  if(route==='find') phkMount();
+  /* Which screens have canvases on them was a list of route names here, and
+     a list of route names is a thing that goes out of date the moment a screen
+     is split in two -- the letters chapter became three pages and every digit
+     on them was an empty box. Both of these ask the document what is on it
+     instead, which is the same fix the onboarding's canvas got above: they
+     find nothing and do nothing on a screen that has none. */
+  geTiles(); phkMount();
   if(route==='form') formMount();
 }

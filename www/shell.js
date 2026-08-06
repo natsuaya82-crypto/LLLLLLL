@@ -93,6 +93,7 @@ var PAGES={
   form:    {tab:'build'},
   sound:   {tab:'build', n:'I',   k:'toc.sound'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
+  ltset:   {tab:'build', n:'II',  k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},
   abugida: {tab:'build', k:'ab.title'},
@@ -129,6 +130,8 @@ function pageName(r, a){
     var rk=String(a||'').split(':')[0];
     return (rk==='syn'||rk==='ant')? t('word.'+rk+'.add') : t('toc.words');
   }
+  /* One of the three lists is named after which one it is. */
+  if(r==='ltset') return t(LT_KIND[a] || 'lt.all');
   if(r==='letter'){
     var pl=(typeof ltById==='function')? ltById(a) : null;
     return (pl? ltName(pl) : '') || t('lt.untitled');

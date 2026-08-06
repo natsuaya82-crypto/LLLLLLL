@@ -50,6 +50,7 @@ page('find',     vFind);
 page('form',     vForm);
 page('sound',    vSound);
 page('letters',  vLetters);
+page('ltset',    vLtset);
 page('letter',   vLetter);
 page('wsys',     vWsys);
 page('abugida',  vAbugida);

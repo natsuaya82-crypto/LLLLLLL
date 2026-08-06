@@ -381,6 +381,7 @@ const R = await pg.evaluate(() => {
   const argsOf = (r) =>
     r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
     r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
+    r === 'ltset' ? [null].concat(LT_KINDS) :
     [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
