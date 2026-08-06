@@ -471,6 +471,7 @@ function vLetter(){
     '<div class="field"><input id="lt-rom" value="'+esc(ltBoxed(l))+'" '+
       'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+
+    (numIsDigit(l)? numWordRow(l) : '')+
     '<div class="note">'+(numIsDigit(l)
       ? esc(t('num.h'))
       : ltUnits(l).length

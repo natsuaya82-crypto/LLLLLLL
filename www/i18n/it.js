@@ -351,6 +351,7 @@ defLang('it', (function(){
       "lt.name.ph"       : "p. es. esh",
       "lt.loose"         : "{0} lettere non leggono ancora niente.",
       "lt.loose.1"       : "Una lettera non legge ancora niente.",
+      "num.word"        : "Numerale",
       "num.h"           : "Cifre",
       "num.big"         : "Fino a {0}",
       "num.base"        : "Base",
@@ -472,7 +473,7 @@ defLang('it', (function(){
       "stg.have.t"       : "Appartenere",
       "stg.have.d"       : "Come si dice il possesso",
       "stg.count.t"      : "Contare",
-      "stg.count.d"      : "Da uno a dieci",
+      "stg.count.d"      : "Da uno a {0}",
       /* the kinds of writing */
       "ws.kind"          : "Tipo di scrittura",
       "ws.k.alpha"       : "Alfabeto",

@@ -359,6 +359,7 @@ defLang('zh', (function(){
       "lt.name.ph"       : "例：esh",
       "lt.loose"         : "有 {0} 个字还什么都不读。",
       "lt.loose.1"       : "有 1 个字还什么都不读。",
+      "num.word"        : "数词",
       "num.h"           : "数字",
       "num.big"         : "最大 {0}",
       "num.base"        : "进制",
@@ -480,7 +481,7 @@ defLang('zh', (function(){
       "stg.have.t"       : "属于谁",
       "stg.have.d"       : "怎么说所属",
       "stg.count.t"      : "数数",
-      "stg.count.d"      : "一到十",
+      "stg.count.d"      : "1 到 {0}",
       /* the kinds of writing */
       "ws.kind"          : "文字的种类",
       "ws.k.alpha"       : "全音素文字",

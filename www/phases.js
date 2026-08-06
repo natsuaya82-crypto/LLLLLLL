@@ -92,7 +92,14 @@ var STAGES=[
   {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]}
 ];
 function stAll(){
-  var out=STAGES.slice(), i;
+  var out=[], i;
+  /* The counting stage's slots are the base's, not a fixed ten: twelve words
+     in base twelve. Rebuilt rather than written over, because STAGES is one
+     array shared by every call and a stage edited in place stays edited. */
+  for(i=0;i<STAGES.length;i++)
+    out.push(STAGES[i].id==='count'
+      ? {id:'count', slots:numWordSlots(), pos:STAGES[i].pos, feats:STAGES[i].feats}
+      : STAGES[i]);
   for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
                                            pos:'x', feats:[], own:STG.extra[i]});
   return out;
@@ -113,7 +120,12 @@ function stSlotLabel(p, k){
   return t('stg.'+p.id+'.'+k);
 }
 function stTitle(p){ return p.own ? (p.own.title||t('stg.own.untitled')) : t('stg.'+p.id+'.t'); }
-function stWhat(p){ return p.own ? (p.own.what||'') : t('stg.'+p.id+'.d'); }
+function stWhat(p){
+  if(p.own) return p.own.what||'';
+  /* "One to ten" is only true in base ten. */
+  if(p.id==='count') return t('stg.count.d', numLabel(numBase()));
+  return t('stg.'+p.id+'.d');
+}
 
 /* ---- a word made for a slot -------------------------------------------
    It goes into the dictionary like any other word. It also remembers which
@@ -342,6 +354,7 @@ function stListHTML(){
 function stSlotRow(p, k){
   var w=stWordFor(p, k);
   return '<button class="stslot'+(w?' has':'')+'"' + DO('openSlot', [p.id, k]) + '>'+
+    (p.id==='count'? numFace(k) : '')+
     '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
     (w ? '<span class="psw">'+esc(w.hw)+'</span>'+
          '<span class="psi">'+esc(phIpa(wPh(w)))+'</span>'

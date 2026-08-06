@@ -267,6 +267,7 @@ defLang('ja', (function(){
       'lt.name.ph'      : '例：エシュ',
       'lt.loose'        : '読みのない文字 {0}',
       'lt.loose.1'      : '読みのない文字 1',
+      'num.word'        : '数詞',
       'num.h'           : '数字',
       'num.big'         : '{0}までです',
       'num.base'        : '進法',
@@ -388,7 +389,7 @@ defLang('ja', (function(){
       'stg.have.t'       : '所有',
       'stg.have.d'       : '所有の表し方',
       'stg.count.t'      : '数詞',
-      'stg.count.d'      : '1から10まで',
+      'stg.count.d'      : '1から{0}まで',
       /* the kinds of writing */
       'ws.kind'         : "文字の種類",
       'ws.k.alpha'      : "音素文字",

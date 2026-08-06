@@ -530,6 +530,7 @@ defLang('ko', (function(){
       "lt.name.ph"       : "예: 에시",
       "lt.loose"         : "아직 아무것도 읽지 않는 문자가 {0}개 있습니다.",
       "lt.loose.1"       : "아직 아무것도 읽지 않는 문자가 1개 있습니다.",
+      "num.word"        : "수사",
       "num.h"           : "숫자",
       "num.big"         : "{0}까지",
       "num.base"        : "진법",
@@ -651,7 +652,7 @@ defLang('ko', (function(){
       "stg.have.t"       : "누구의 것",
       "stg.have.d"       : "소유는 어떻게 말하는지",
       "stg.count.t"      : "세기",
-      "stg.count.d"      : "하나에서 열까지",
+      "stg.count.d"      : "1부터 {0}까지",
       /* the kinds of writing */
       "ws.kind"         : "문자의 종류",
       "ws.k.alpha"      : "음소문자",

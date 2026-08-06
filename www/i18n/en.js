@@ -254,6 +254,7 @@ defLang('en', (function(){
       'lt.name.ph'      : 'e.g. esh',
       'lt.loose'        : '{0} letters read nothing yet.',
       'lt.loose.1'      : 'One letter reads nothing yet.',
+      'num.word'        : 'Number word',
       'num.h'           : 'Digits',
       'num.big'         : 'Up to {0}',
       'num.base'        : 'Base',
@@ -375,7 +376,7 @@ defLang('en', (function(){
       'stg.have.t'       : "Belonging",
       'stg.have.d'       : "How belonging is said",
       'stg.count.t'      : "Counting",
-      'stg.count.d'      : "One to ten",
+      'stg.count.d'      : "One to {0}",
       /* the kinds of writing */
       'ws.kind'         : "Kind of writing",
       'ws.k.alpha'      : "Alphabet",

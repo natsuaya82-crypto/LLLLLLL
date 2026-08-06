@@ -99,3 +99,41 @@ function numBaseRows(){
         '<span class="sv">'+(numBase()===b? ICON_TICK : '')+'</span></button>';
     }).join('');
 }
+
+/* ---- the words, and the signs beside them ------------------------------- */
+/* One word for every digit, and one for the base itself: ten of them in base
+   ten, twelve in base twelve. Everything above that is those words put
+   together, which is what a base IS and is the grammar's business rather than
+   this list's. */
+function numWordSlots(){
+  var out=[], i, b=numBase();
+  for(i=1;i<=b;i++) out.push(numLabel(i));
+  return out;
+}
+/* The word the counting stage holds for a value, if it has been made. */
+function numWordFor(v){
+  var p=stBy('count');
+  return p? stWordFor(p, numLabel(v)) : null;
+}
+/* A digit's sign, small, beside its word on the counting stage. A value as
+   big as the base has no single sign -- it is two of them -- so it shows
+   nothing rather than something wrong. */
+function numFace(k){
+  var v=parseInt(k, 10), l;
+  if(isNaN(v)) return '';
+  l=numByVal(v);
+  if(!l || !ltHasShape(l)) return '';
+  return (l.st && l.st.length)
+    ? '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>'
+    : '<span class="bch numsm">'+esc(l.ch)+'</span>';
+}
+/* And the other way round: a digit's word, on the digit, with the way to go
+   and make it. The sign and the word are one thing seen from two chapters. */
+function numWordRow(l){
+  var w=numWordFor(l.val);
+  return '<div class="sec">'+esc(t('num.word'))+'</div>'+
+    '<button class="trow"' + DO('openSlot', ["count", numLabel(l.val)]) + '>'+
+      '<span class="rn"></span><span class="rt">'+esc(w? w.hw : t('stg.make'))+'</span>'+
+      '<span class="lead"></span>'+
+      '<span class="rv">'+esc(w? phIpa(wPh(w)) : '')+'</span>'+ICON_GO+'</button>';
+}
