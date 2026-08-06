@@ -231,10 +231,11 @@ canvas.pkc{width:34px;height:34px;display:block}
         background:none;color:var(--txm);
         display:inline-flex;align-items:center;justify-content:center}
 .sndadd:active{border-color:var(--goldln);color:var(--gold)}
-.sndx{flex:0 0 auto;min-width:40px;min-height:44px;background:none;border:0;color:var(--txm);
+.sndx{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
       display:inline-flex;align-items:center;justify-content:center}
 .sndx:active{color:var(--gold)}
-.ltmid{flex:1;min-width:0;background:none;border:0;text-align:left;color:var(--tx);
+.ltmid{flex:1;min-width:0;min-height:44px;display:flex;flex-direction:column;
+       justify-content:center;background:none;border:0;text-align:left;color:var(--tx);
        font-family:inherit;padding:4px 0}
 .ltnm{display:block;font-family:'Cinzel',Georgia,serif;font-size:1rem}
 .ltsn{display:block;font-size:.84rem;color:var(--txm);margin-top:2px}
@@ -272,7 +273,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A label on an example, so a pair reads as a comparison. */
 .exlb{display:inline-block;font-size:.82rem;letter-spacing:.08em;color:var(--gold);
       border:1px solid var(--goldln);border-radius:5px;padding:2px 6px;margin-bottom:5px}
-.exadd .exsm{flex:0 0 96px}
+.exadd .exsm{flex:0 0 96px;min-height:44px}
 /* ---------- what an entry still had not got ----------
    A synonym or an opposite, as a word you can walk to. An example, as a line
    with its meaning under it. */
@@ -290,7 +291,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .exg{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
      font-size:.88rem;color:var(--txs);margin-top:2px}
 .exadd{display:flex;flex-wrap:wrap;gap:7px}
-.exadd input{flex:1 1 100%;min-width:0;background:var(--bg);border:1px solid var(--line);
+.exadd input{flex:1 1 100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);
              border-radius:10px;padding:11px 13px;color:var(--tx);font-family:inherit;
              font-size:.92rem;outline:none}
 .exadd .btn{flex:0 0 auto}
@@ -359,7 +360,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 
 /* ---------- the dictionary ---------- */
 .search{display:flex;align-items:center;gap:10px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0 2px}
-.search input{flex:1;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
+.search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
 .gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
 /* An entry is two controls now -- the word, which says itself, and the
    chevron, which opens it -- so the row is a container and the padding and
@@ -375,7 +376,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    all. One row, because they are all answers to "what am I looking at". */
 .wmeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
 .wct{font-size:.86rem;color:var(--txm);letter-spacing:.04em;margin-right:auto}
-.wsrt,.wsay{display:inline-flex;align-items:center;gap:7px;min-height:40px;
+.wsrt,.wsay{display:inline-flex;align-items:center;gap:7px;min-height:44px;
       padding:8px 13px;border:1px solid var(--line);border-radius:10px;
       background:none;color:var(--txs);font-family:inherit;font-size:.88rem}
 .wsay.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
@@ -448,7 +449,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    choice between a few named things is a rail: the words sit on a line, the
    chosen one is gold and underscored, and nothing is enclosed. */
 .segs{display:flex;gap:0;flex-wrap:wrap;margin-bottom:8px;border-bottom:1px solid var(--line)}
-.seg{min-height:44px;background:none;border:0;border-bottom:2px solid transparent;
+.seg{min-height:44px;min-width:44px;background:none;border:0;border-bottom:2px solid transparent;
      color:var(--txs);padding:9px 14px;font-size:.84rem;margin-bottom:-1px}
 .seg.on{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
 .cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
@@ -460,6 +461,12 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .cand .cw{font-family:'Cinzel',Georgia,serif;font-size:1.1rem}
 .cand .crd{font-size:.86rem;color:var(--txm);margin-left:2px}
 .cand .cm{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txs);font-size:1rem}
+/* 44 is Apple's floor for anything a thumb has to hit, and this said so --
+   then a second .cand .rr three hundred lines further down, in a batch of
+   fixes made when characters became drawings, repeated three of these four
+   declarations and set min-width to 26. A later rule undoing an earlier one
+   about the same thing, so the row's two controls were half a target wide for
+   as long as nobody measured them. There is one rule. */
 .cand .rr{background:none;border:none;color:var(--txm);min-width:44px;min-height:44px;
           display:flex;align-items:center;justify-content:center}
 
@@ -516,7 +523,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .sheet h3{font-size:1.05rem;margin:0 2px 6px;font-weight:700}
 .field{margin-bottom:11px}
 .field label{font-size:.84rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
-.field input,.field select,.field textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
+.field input,.field select,.field textarea{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:10px;
        color:var(--tx);padding:12px 13px;font-family:inherit;font-size:.95rem;outline:none}
 .field input.hwf{font-family:'Cinzel',Georgia,serif;font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
@@ -816,18 +823,20 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .psn{font-family:ui-monospace,Menlo,monospace;font-size:.82rem;color:var(--txm)}
 .pdel{position:absolute;top:0;right:3px;font-size:.88rem;color:var(--txm);line-height:1}
 .pkown{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-.pkown .btn{flex-shrink:0}
+/* .btn is flex:1 so a row of them shares the width; one beside a field is
+   not sharing anything and shrank to the width of its word and grew tall. */
+.pkown .btn{flex:0 0 auto;min-width:88px}
 .pkclear{width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--line);border-radius:9px;
   background:transparent;color:var(--txm);font:inherit;font-size:.86rem;cursor:pointer}
 .pktabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:9px;
   border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch}
-.pktab{display:flex;align-items:center;gap:5px;flex-shrink:0;padding:6px 10px;border:1px solid var(--line);
+.pktab{display:flex;align-items:center;gap:5px;flex-shrink:0;min-height:44px;padding:6px 10px;border:1px solid var(--line);
   border-radius:8px;background:transparent;color:var(--txm);font:inherit;font-size:.84rem;cursor:pointer;white-space:nowrap}
 .pktab.on{border-color:var(--gold);color:var(--gold)}
 .pkpv{font-size:.9rem;color:var(--gold)}
-.pkchars{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px;
+.pkchars{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;
   max-height:34dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.pkch{height:42px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
+.pkch{min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}
 .pkch.cur{border-color:var(--gold);color:var(--gold)}
@@ -839,7 +848,7 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .scrpv{display:flex;flex-direction:column;gap:4px;padding:13px;border:1px solid var(--line);border-radius:11px;margin-bottom:10px}
 .scrpvw{font-size:1.5rem;line-height:1.4;word-break:break-all}
 .scrpvr{font-size:.86rem;color:var(--txm);font-family:ui-monospace,Menlo,monospace}
-.scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
+.scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
   color:var(--tx);font:inherit;font-size:1rem;outline:none}
 .scin:focus{border-color:var(--gold)}
 .scin.own{text-align:left}
@@ -866,7 +875,8 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .sugchip .sr{font-size:.84rem;color:var(--txm)}
 .sugfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
 .sughint{font-size:.84rem;color:var(--txm);line-height:1.5}
-.sugmore{background:none;border:0;color:var(--gold);font:inherit;font-size:.86rem;cursor:pointer;padding:0;flex-shrink:0;text-decoration:underline}
+.sugmore{background:none;border:0;color:var(--gold);font:inherit;font-size:.86rem;cursor:pointer;
+         min-height:44px;padding:0 2px;flex-shrink:0;text-decoration:underline}
 .sugout{display:block;width:100%;margin:2px 0 12px;padding:11px 13px;border:1px solid rgba(201,168,106,.34);border-radius:11px;
   background:transparent;color:var(--txm);font:inherit;font-size:.88rem;line-height:1.6;text-align:left;cursor:pointer}
 .sugout b{color:var(--gold);font-weight:600;white-space:nowrap}
@@ -932,10 +942,10 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
    height, because a target you have to aim at is a target you will miss. */
 .obhp{display:inline-flex;align-items:stretch;border:1px solid var(--goldln);border-radius:8px;
   background:var(--pane);overflow:hidden}
-.obhb{min-width:40px;min-height:44px;border:0;border-radius:0;
+.obhb{min-width:44px;min-height:44px;border:0;border-radius:0;
   background:none;color:var(--tx);font-size:1.02rem;padding:8px 4px 8px 11px}
 .obhb:active{opacity:.55}
-.obhx{min-width:34px;min-height:44px;border:0;background:none;color:var(--txm);
+.obhx{min-width:44px;min-height:44px;border:0;background:none;color:var(--txm);
   display:inline-flex;align-items:center;justify-content:center;padding:0 8px 0 4px}
 .obhx:active{color:var(--gold)}
 /* And the way to lengthen the row. Dashed, because it is not one of the
@@ -996,7 +1006,7 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 .tk .tki{font-family:ui-monospace,Menlo,monospace;font-size:.84rem;color:var(--gold);margin-top:3px}
 .tk .tkg{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:.9rem;
   color:var(--txs);margin-top:4px;line-height:1.5}
-.tk .tkp{position:absolute;top:8px;right:6px;min-width:32px;min-height:32px;background:none;border:0;
+.tk .tkp{position:absolute;top:8px;right:6px;min-width:44px;min-height:44px;background:none;border:0;
   color:var(--txm);display:flex;align-items:center;justify-content:center}
 .tk .tkp:active{opacity:.5}
 .tsend{display:flex;gap:10px;margin-top:12px}
@@ -1052,7 +1062,6 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 .capgo,.sugout b{display:inline-flex;align-items:center;gap:4px}
 .lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
 .cand .ck svg,.pdel svg{display:block}
-.cand .rr{display:flex;align-items:center;justify-content:center;min-width:26px}
 .pdel{position:absolute;top:2px;right:2px;color:var(--txm);line-height:1;
       display:flex;align-items:center;justify-content:center;width:15px;height:15px}
 </style>

@@ -98,7 +98,30 @@ await pg.evaluate('window.__obStates = ' + obStates.toString());
 await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(() => {
-  const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [] };
+  const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
+                small: [] };
+  /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
+     already standing in front of every screen with a phone-sized viewport, so
+     it measures while it is here.
+
+     Nothing checked it, and nothing would have: .cand .rr said min-width:44px
+     and then a second rule for the same class three hundred lines further
+     down said 26, so the two controls on every row of the make screen were
+     half a target wide. It looked fine. It always looks fine. */
+  const TAP = 44;
+  const seenSmall = {};
+  function measure(where){
+    const els = document.querySelectorAll('#app button, #app input, #app select, #app textarea');
+    for (let i = 0; i < els.length; i++) {
+      const e = els[i], r = e.getBoundingClientRect();
+      if (!r.width || !r.height) continue;          /* hidden is not small */
+      if (r.width >= TAP && r.height >= TAP) continue;
+      const k = (e.className || e.tagName) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
+      if (seenSmall[k]) continue;
+      seenSmall[k] = 1;
+      out.small.push(where + ': ' + k + ' -- under ' + TAP);
+    }
+  }
 
   /* An exception inside a click listener does not come back out of .click() —
      the browser reports it and carries on. So catch it where it is reported,
@@ -207,6 +230,7 @@ const R = await pg.evaluate(() => {
     try { sc.build(); n = buttons().length; }
     catch (e) { out.skipped.push(sc.label + ' would not build: ' + e.message); return; }
     out.screens++;
+    measure(sc.label);
     for (let i = 0; i < n; i++) {
       try { sc.build(); } catch (e) { out.skipped.push(sc.label + ' #' + i + ': ' + e.message); continue; }
       const els = buttons();
@@ -238,8 +262,10 @@ srv.close();
 const fails = [];
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
+R.small.forEach(m => fails.push('too small to hit: ' + m));
 
 console.log('screens built: ' + R.screens);
+console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
 console.log('buttons pressed: ' + R.pressed +
             '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
 /* Printed, not silently tolerated. A name nothing here presses is a button
