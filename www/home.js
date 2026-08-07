@@ -207,6 +207,7 @@ function vProfile(){
   return '<div class="view fixed">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
     '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
+    meCard()+
     '<div class="cover">'+
       '<div class="tkick">'+t('home.kicker')+'</div>'+
       '<button class="tname"' + DO('editName') + '>'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+

@@ -103,7 +103,7 @@ function pwGlossHTML(){
 }
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
-  return (to? '<div class="pwto">'+esc(t('post.re', to.lname||''))+'</div>' : '')+
+  return (to? '<div class="pwto">'+esc(t('post.re', meName()))+'</div>' : '')+
     '<div class="pwtop"><div class="pav">'+
       postFace({lname:langName})+'</div>'+
     '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
@@ -178,11 +178,10 @@ function postWhen(at){
   if(s<86400) return t('when.h', Math.floor(s/3600));
   return t('when.d', Math.floor(s/86400));
 }
-/* Until there are accounts, the language is who you are -- so it is the name,
-   and the handle is what it is called with the spaces taken out. */
-function postHandle(p){
-  return '@'+String(p.lname||'').toLowerCase().replace(/[^a-z0-9]+/g, '');
-}
+/* Who wrote it comes from the account, live -- rename yourself and every post
+   of yours says the new name, which is what every timeline does. What it is
+   WRITTEN IN is frozen on the post, because renaming a language later would
+   rewrite what old posts say they are. */
 /* The face is a letter of the language the post is written in. It is the one
    picture this app has of anybody, and a better one than an initial. */
 function postFace(p){
@@ -201,8 +200,9 @@ function postRow(p){
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
       '<div class="phead">'+
-        '<span class="pname">'+esc(p.lname||'')+'</span>'+
-        '<span class="phandle">'+esc(postHandle(p))+'</span>'+
+        '<span class="pname">'+esc(meName())+'</span>'+
+        (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
+        '<span class="phandle">@'+esc(meHandle())+'</span>'+
         '<span class="pdot">·</span>'+
         '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
         '<button class="pmore"' + DO('postDel', [p.id]) + ' aria-label="'+

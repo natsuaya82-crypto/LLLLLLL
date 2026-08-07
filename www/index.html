@@ -197,7 +197,25 @@ canvas.pkc{width:34px;height:34px;display:block}
 .phead{display:flex;align-items:center;gap:5px;line-height:1.3}
 .pname{font-weight:700;font-size:.95rem;color:var(--tx);
        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* What it is written in, beside who wrote it -- the place a timeline puts an
+   affiliation, small and quiet, because it is not the name. */
+.plangtag{flex:0 0 auto;font-size:.72rem;letter-spacing:.08em;color:var(--gold);
+          border:1px solid var(--goldln);border-radius:5px;padding:1px 6px;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
 .phandle,.pdot,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
+/* Who you are, at the top of your own page. */
+/* The profile screen does not scroll and has no body padding of its own, so
+   this carries its own margins -- without them the face was cut off by the
+   left edge of the phone. */
+.mecard{display:flex;align-items:center;gap:12px;padding:2px 24px 8px}
+.mecard .pav{width:52px;height:52px}
+.mecard .pav canvas{width:34px;height:34px}
+.mewho{flex:1 1 auto;min-width:0}
+.mewho .pname{font-size:1.1rem}
+.meedit{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;
+        border:1px solid var(--line);background:none;color:var(--tx);
+        font-family:inherit;font-size:.88rem}
+.meedit:active{border-color:var(--goldln);color:var(--gold)}
 .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .pmore{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;margin-right:-12px;
        background:none;border:0;color:var(--txm);
@@ -1303,6 +1321,7 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 <script src="card.js"></script>
 <script src="sns.js"></script>
 <script src="post.js"></script>
+<script src="me.js"></script>
 <script src="route-map.js"></script>
   <script src="act-map.js"></script>
 <script src="boot.js"></script>

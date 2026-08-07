@@ -41,6 +41,7 @@ export function seed(){
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
+  ME = {name:'Aya', handle:'aya'};
   POSTS = [{id:'p1', at:9, lang:langId, lname:'Shango', ln:'kano mos tir',
             mn:'a tall mountain is seen', ui:'en',
             gl:[{w:'kano', m:'mountain', p:'n'}, {w:'mos', m:'tall', p:'adj'},
@@ -211,6 +212,7 @@ export function halfDone(){
         pwSetLn('kano mos tir'); return vForm(); }],
     ['a reply being written', () => { PW = pwBlank(); PW.to = POSTS[0].id;
         openPost(); pwSetLn('sar'); return vForm(); }],
+    ['who you are, being edited', () => { openMe(); return vForm(); }],
     ['a list waiting to be understood', () => { IMP = impBlank();
         impTake('Word,Meaning,Part of Speech,Made\n' +
                 'kano,mountain,noun,2024\nzzk,a thing,verb,2024\n');
