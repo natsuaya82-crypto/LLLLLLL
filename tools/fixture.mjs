@@ -41,7 +41,7 @@ export function seed(){
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
-  ME = {name:'Aya', handle:'aya'};
+  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.'};
   /* Two posts, and the second one is the whole reason the timeline is written
      the way it is: it is by somebody else, in a language this phone does not
      have, and every word of it is unknown to the dictionary above. A walk
