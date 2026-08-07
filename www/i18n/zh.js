@@ -269,7 +269,6 @@ defLang('zh', (function(){
       "seed.sky"         : "天空",
       "seed.love"        : "爱",
       "seed.walk"        : "走",
-      "lang.default"     : "我的语言",
       "nav.contents"     : "目录",
       "nav.settings"     : "设置",
       "home.kicker"      : "你的语言",
@@ -513,6 +512,7 @@ defLang('zh', (function(){
       "ws.made"          : "两者拼在一起是什么样子",
       /* onboarding */
       "ob.next"          : "下一步",
+      "ob.rom.h"          : "这是哪个字母？",
       "ob.name.sub"      : "　",
       "ob.name.note"     : "以后可以改",
       "ob.name.later"     : "稍后再定",

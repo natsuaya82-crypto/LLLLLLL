@@ -309,7 +309,6 @@ defLang('fr', (function(){
       "seed.sky"         : "ciel",
       "seed.love"        : "aimer",
       "seed.walk"        : "marcher",
-      "lang.default"     : "Ma langue",
       "nav.contents"     : "Sommaire",
       "nav.settings"     : "Réglages",
       "home.kicker"      : "Votre langue",
@@ -553,6 +552,7 @@ defLang('fr', (function(){
       "ws.made"           : "Ce que les deux forment ensemble",
       /* onboarding */
       "ob.next"           : "Suivant",
+      "ob.rom.h"           : "Quelle lettre est-ce ?",
       "ob.name.sub"       : "　",
       "ob.name.note"      : "Modifiable plus tard",
       "ob.name.later"      : "Plus tard",

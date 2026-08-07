@@ -221,7 +221,6 @@ defLang('es', (function(){
       "seed.sky"         : "cielo",
       "seed.love"        : "amar",
       "seed.walk"        : "caminar",
-      "lang.default"     : "Mi lengua",
       "nav.contents"     : "Índice",
       "nav.settings"     : "Ajustes",
       "home.kicker"      : "Su lengua",
@@ -465,6 +464,7 @@ defLang('es', (function(){
       "ws.made"           : "Lo que forman las dos juntas",
       /* onboarding */
       "ob.next"           : "Siguiente",
+      "ob.rom.h"           : "¿Qué letra es?",
       "ob.name.sub"       : "　",
       "ob.name.note"      : "Se puede cambiar después",
       "ob.name.later"      : "Decidir después",

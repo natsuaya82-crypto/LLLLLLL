@@ -261,7 +261,6 @@ defLang('it', (function(){
       "seed.sky"         : "cielo",
       "seed.love"        : "amare",
       "seed.walk"        : "camminare",
-      "lang.default"     : "La mia lingua",
       "nav.contents"     : "Indice",
       "nav.settings"     : "Impostazioni",
       "home.kicker"      : "La sua lingua",
@@ -505,6 +504,7 @@ defLang('it', (function(){
       "ws.made"          : "Che cosa formano insieme",
       /* onboarding */
       "ob.next"          : "Avanti",
+      "ob.rom.h"          : "Che lettera è?",
       "ob.name.sub"      : "　",
       "ob.name.note"     : "Modificabile dopo",
       "ob.name.later"     : "Decido dopo",

@@ -163,7 +163,6 @@ defLang('en', (function(){
       'seed.sky'        : "sky",
       'seed.love'       : "to love",
       'seed.walk'       : "to walk",
-      'lang.default'    : "My language",
       /* home */
       'nav.contents'    : "Contents",
       'nav.settings'    : "Settings",
@@ -408,6 +407,7 @@ defLang('en', (function(){
       'ws.made'         : "The two combined",
       /* onboarding */
       'ob.next'         : "Next",
+      'ob.rom.h'         : 'Which letter is it?',
       'ob.name.h'       : "Name of the language",
       'ob.name.sub'     : "　",
       'ob.name.ph'      : "a name",

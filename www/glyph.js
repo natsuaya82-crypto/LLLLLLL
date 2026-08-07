@@ -1375,6 +1375,12 @@ function render(){
        with nothing to say so. What it means is "there is a canvas on screen",
        so that is what it asks. */
     if(document.getElementById('gcanv')) geMount();
+    /* And the same for a letter that has already been drawn: the step that
+       asks which letter of the alphabet the shape is shows the shape, and a
+       tile is filled after the HTML exists or it is an empty box. geTiles
+       asks the document what is on it, so on the steps with no tile it finds
+       nothing and does nothing. */
+    geTiles();
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();

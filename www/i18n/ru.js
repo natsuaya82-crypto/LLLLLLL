@@ -264,7 +264,6 @@ defLang('ru', (function(){
       "seed.sky"          : "небо",
       "seed.love"         : "любить",
       "seed.walk"         : "ходить",
-      "lang.default"      : "Мой язык",
       "nav.contents"      : "Оглавление",
       "nav.settings"      : "Настройки",
       "home.kicker"       : "Ваш язык",
@@ -508,6 +507,7 @@ defLang('ru', (function(){
       "ws.made"           : "Что получается из них вместе",
       /* знакомство */
       "ob.next"           : "Дальше",
+      "ob.rom.h"           : "Какая это буква?",
       "ob.name.h"         : "Название языка",
       "ob.name.sub"       : "　",
       "ob.name.ph"        : "название",

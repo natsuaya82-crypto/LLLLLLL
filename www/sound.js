@@ -454,6 +454,17 @@ function ltRow(l){
    The rest of this was on the drawing screen, which made that screen scroll
    and made this one a second place to say the same thing. Drawing is drawing;
    this is the letter. */
+/* The alphabet, laid out to be tapped, with the one this letter stands for
+   marked. The box under it still takes anything -- sh, ng, ka, a value -- but
+   a single letter is what nearly every shape wants, and it should not need
+   typing. The same row is the onboarding's whole second step. */
+function ltRomPick(l, act, pre){
+  var now=l? ltRoman(l) : '';
+  return '<div class="ipafree">'+ltRomans().map(function(c){
+    return '<button class="ph2'+(now===c? ' on':'')+'"' +
+      DO(act, pre.concat([c])) + '>'+esc(c.toUpperCase())+'</button>';
+  }).join('')+'</div>';
+}
 function vLetter(){
   var lid=here().a, l=ltById(lid);
   if(!l) return viewGone();
@@ -462,6 +473,7 @@ function vLetter(){
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
       '' + IN('ltSetName', [lid]) + '></div>'+
     '<div class="sec">'+t('lt.reads.h')+'</div>'+
+    ltRomPick(l, 'ltTakeRom', [lid])+
     '<div class="field"><input id="lt-rom" value="'+esc(ltBoxed(l))+'" '+
       'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+

@@ -249,7 +249,6 @@ defLang('de', (function(){
       "seed.sky"         : "Himmel",
       "seed.love"        : "lieben",
       "seed.walk"        : "gehen",
-      "lang.default"     : "Meine Sprache",
       "nav.contents"     : "Inhalt",
       "nav.settings"     : "Einstellungen",
       "home.kicker"      : "Ihre Sprache",
@@ -493,6 +492,7 @@ defLang('de', (function(){
       "ws.made"          : "Was die beiden zusammen ergeben",
       /* onboarding */
       "ob.next"          : "Weiter",
+      "ob.rom.h"          : "Welcher Buchstabe ist das?",
       "ob.name.sub"      : "　",
       "ob.name.note"     : "Später änderbar",
       "ob.name.later"     : "Später entscheiden",

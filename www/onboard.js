@@ -72,7 +72,7 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    read it -- and dead-check, which watched functions, could not see a number
    nobody asked for. It watches top-level vars now, so this one is deleted the
    day it stops being read. */
-var OB_STEPS=3;
+var OB_STEPS=4;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -93,6 +93,9 @@ function obBack(){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
+  /* Back out of the name with nothing drawn returns to the square, not to a
+     step about a shape that does not exist. */
+  if(ob.step===3 && !ob.lid){ obGo(1); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -185,26 +188,42 @@ function obTakeCh(ch){
   save(); installScriptFont();
   ob.mode=''; obGo(2);
 }
-function obSkipDraw(){ ob.lid=''; obGo(2); }
+/* Nothing was drawn, so there is nothing to say which letter it is: step 2 is
+   about a shape and there is no shape. */
+function obSkipDraw(){ ob.lid=''; obGo(3); }
+
+/* ---- step 2, which letter it is ---------------------------------------
+   The shape, big, and the alphabet under it. This is the step that used to
+   not exist, which is why ltNew() answered it on everybody's behalf.
+
+   No line under the heading. The question is four words long and the answer
+   is on the screen; a sentence explaining it would be the app talking about
+   itself again. */
+function obRomHTML(){
+  var l=ltById(ob.lid);
+  return '<div class="mid">'+
+    '<h2>'+t('ob.rom.h')+'</h2>'+
+    '<div class="spbig">'+ltInk(l, '')+'</div>'+
+    ltRomPick(l, 'obTakeRom', [])+
+    '</div>'+
+    '<div class="obfoot"><button class="btn"' + DO('obRomDone') + '>'+t('ob.next')+'</button></div>';
+}
+function obTakeRom(c){ if(ob.lid) ltTakeRom(ob.lid, c); }
+/* Choosing is not required to leave: a shape whose letter nobody has decided
+   is one of the loose ones, and the letters chapter already lists those. */
+function obRomDone(){ obGo(3); }
 
 function obFinish(){
-  /* A language that reached the
-     end of this without a name used to be handed the word "language" in the
-     interface's language, which is not a name and is not even in the right
-     one. It gets a word out of its own inventory instead -- which is a name
-     it could actually have -- and the pencil on the cover changes it. */
-  if(!langName){
-    langName=ob.name||'';
-    if(!langName){
-      var seq=null;
-      try{ seq=asWord('n'); }catch(e){}
-      if(seq && seq.length){
-        langName=seq.join('');
-        langName=langName.charAt(0).toUpperCase()+langName.slice(1);
-      }
-    }
-    if(!langName) langName=t('lang.default');
-  }
+  /* A language that reached the end of this without a name keeps not having
+     one. It used to be given the word "language" in the interface's language,
+     which is not a name; then a word coined out of its own inventory, which
+     is worse, because that IS a name and it is not the person's. Nothing on
+     the cover said where it came from, so it read as a name they had somehow
+     already chosen. 「言語名も勝手に決まるの何」
+
+     Unnamed is a state this app already has: the cover says so and offers the
+     pencil, settings shows a dash. */
+  if(!langName) langName=ob.name||'';
   SET.done=true; save();
   route='profile'; RENDERED=null; render(); window.scrollTo(0,0);
 }
@@ -301,6 +320,7 @@ function vOb(){
   var h = (s===0)? obDoorHTML()
         : (s===1 && ob.mode==='borrow')? obBorrowHTML()
         : (s===1)? obDrawHTML()
+        : (s===2)? obRomHTML()
         : obNameHTML();
   return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
 }

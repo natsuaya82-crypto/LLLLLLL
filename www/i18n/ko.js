@@ -440,7 +440,6 @@ defLang('ko', (function(){
       "seed.sky"         : "하늘",
       "seed.love"        : "사랑하다",
       "seed.walk"        : "걷다",
-      "lang.default"     : "내 언어",
       "nav.contents"     : "차례",
       "nav.settings"     : "설정",
       "home.kicker"      : "당신의 언어",
@@ -684,6 +683,7 @@ defLang('ko', (function(){
       "ws.made"         : "둘이 합쳐 만드는 것",
       /* onboarding */
       "ob.next"         : "다음",
+      "ob.rom.h"         : "어떤 글자인가요?",
       "ob.name.sub"     : "　",
       "ob.name.note"    : "나중에 바꿀 수 있습니다",
       "ob.name.later"    : "나중에 정하기",

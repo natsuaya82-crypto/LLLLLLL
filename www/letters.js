@@ -241,6 +241,32 @@ function ltRoman(l){
   }
   return out.join(' ');
 }
+/* ---- which letter of the alphabet a shape stands for --------------------
+   Making a script is a substitution: you are saying "my T looks like this".
+   So what a newly drawn shape needs is a letter, not a sound -- the sound is
+   a harder question with its own box, and asking it first is what made this
+   screen ask something nobody could answer.
+   「文字書いたらそれがどのアルファベットに対応してるかを選べばいいだろ」
+
+   Only the letters that resolve to a sound are offered. A button that cannot
+   work is worse than no button: it looks like a choice and answers with an
+   error. */
+var LT_ROMAN='abcdefghijklmnopqrstuvwxyz';
+function ltRomans(){
+  var out=[], i, c;
+  for(i=0;i<LT_ROMAN.length;i++){
+    c=LT_ROMAN.charAt(i);
+    if(ipaFromRoman(c)) out.push(c);
+  }
+  return out;
+}
+/* Tapping one is the same act as typing it into the box, so it goes through
+   the same function -- which is where the clash check, the inventory and the
+   font live. Tapping the one it already is takes it back off. */
+function ltTakeRom(id, c){
+  var l=ltById(id); if(!l) return;
+  ltSetRoman(id, (ltRoman(l)===c)? '' : c);
+}
 /* Correcting what a letter reads -- the only time anybody says anything about
    a sound, because the letter was given one when it was drawn. Emptying the
    field takes the reading off; a letter that reads nothing is a letter, and

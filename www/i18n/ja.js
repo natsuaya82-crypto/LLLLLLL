@@ -177,7 +177,6 @@ defLang('ja', (function(){
       'seed.sky'        : '空',
       'seed.love'       : '愛する',
       'seed.walk'       : '歩く',
-      'lang.default'    : 'わたしの言語',
       'nav.contents'    : '目次',
       'nav.settings'    : '設定',
       'home.kicker'     : '作成中の言語',
@@ -421,6 +420,7 @@ defLang('ja', (function(){
       'ws.made'         : "二つを合わせた形",
       /* onboarding */
       'ob.next'         : '次へ',
+      'ob.rom.h'         : 'どの文字ですか',
       'ob.name.sub'     : '　',
       'ob.name.note'    : "あとで変更できます",
       'ob.name.later'   : 'あとで決める',

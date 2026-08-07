@@ -86,7 +86,14 @@ export function obStates(){
     /* The step where a letter is drawn. Its two buttons -- finish, or skip the
        drawing -- are the last thing a person touches before the app becomes
        the app, and nothing had ever pressed either of them. */
-    ['drawing the first letter', () => { ob.step = 1; ob.mode = ''; return vOb(); }]
+    ['drawing the first letter', () => { ob.step = 1; ob.mode = ''; return vOb(); }],
+    /* The shape is drawn and the alphabet is under it. This step is the one
+       ltNew() used to answer on everybody's behalf, so it is also the one
+       nothing had ever walked. */
+    ['choosing which letter the shape is', () => { ob.step = 2; ob.mode = '';
+                                                   ob.lid = (LETTERS[0] || {}).id || '';
+                                                   return vOb(); }],
+    ['naming the language',      () => { ob.step = 3; ob.mode = ''; return vOb(); }]
   ];
 }
 
