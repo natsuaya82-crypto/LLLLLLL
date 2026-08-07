@@ -209,13 +209,6 @@ function wsStrokes(unit){
   return null;
 }
 function wsDrawn(unit){ var st=wsStrokes(unit); return !!(st && st.length); }
-/* How much of the writing system exists: the units a word would need, and how
-   many of those can be written. */
-function wsHave(){
-  var u=wsUnits(), n=0, i;
-  for(i=0;i<u.length;i++) if(wsDrawn(u[i]) || chOf(u[i])) n++;
-  return n;
-}
 /* A word in the letters chosen for it. Used for borrowed characters; drawn
    letters are a font and need no substitution. */
 function wsInScript(hw){

@@ -20,26 +20,44 @@ function capBanner(){
     '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
 
-/* One letter is a beginning; a handful is a writing system you can read a
-   word in. Below that line the app talks about letters, above it about words. */
-var SC_ENOUGH=5;
-function scriptLetterCount(){ return wsHave(); }
-function scriptEnough(){ return scriptLetterCount()>=SC_ENOUGH; }
+/* ---- the book's contents, once -----------------------------------------
+   Its numeral, its name, where it goes, how much of it there is, and whether
+   there is any of it at all. The contents page reads this and so does the
+   card on the cover -- which used to be a ladder of four hand-written
+   sentences saying the same thing in its own words, including one that told
+   people to coin words out of their sounds. 「音から単語生成するやついない
+   だろってほんまにゴミみたいなこと書くなよ一本化しろ」
 
+   A chapter's name is what the card says now. It is already written, already
+   translated into ten languages, and already the word on the row you land
+   on. */
+function tocRows(){
+  return [
+    {n:'I',   k:'toc.sound',   r:'sound',   v:addedSnd().length,
+     txt:addedSnd().length||'—'},
+    {n:'II',  k:'toc.letters', r:'letters', v:ltShaped(),
+     txt:LETTERS.length? (ltShaped()+' / '+LETTERS.length) : '—'},
+    {n:'III', k:'toc.words',   r:'words',   v:WORDS.length,
+     txt:WORDS.length? tn('count.words', WORDS.length) : '—'},
+    {n:'IV',  k:'toc.gram',    r:'gram',    v:stCount(),
+     txt:stCount()+' / '+stAll().length},
+    {n:'V',   k:'toc.notes',   r:'notes',   v:NOTES.length,
+     txt:NOTES.length? tn('count.notes', NOTES.length) : '—'},
+    {n:'VI',  k:'toc.talk',    r:'talk',    v:TALK.length,
+     txt:TALK.length? tn('count.turns', TALK.length) : '—'}
+  ];
+}
+/* The first chapter with nothing in it yet, and nothing at all once every
+   chapter has been started -- a language somebody is already working on does
+   not need to be told where to go. */
 function nextStep(){
-  var n=WORDS.length, act, label;
-  /* Whatever is half-built. Somebody who has just come through the door has a
-     name, a kind of writing, a handful of sounds and one letter -- so the rest
-     of the alphabet is what is nearest to hand, not a word written out of
-     nothing. Once there is enough to write with, words; then sentences. */
-  if(n===0 && !scriptEnough()){ act=DO('go',['sound']); label=t('next.sc0'); }
-  else if(n===0){ act=DO('openAdd'); label=t('next.w0'); }
-  else if(n<5){ act=DO('openAdd'); label=t('next.w1', 5-n); }
-  else { act=DO('go',['make']); label=t('next.mk'); }
-  return '<button class="nextcard"'+act+'>'+
-    '<span class="nk">'+t('next.t')+'</span>'+
-    '<span class="nl">'+esc(label)+'</span>'+
-    '<span class="na">'+ICON_GO+'</span></button>';
+  var rows=tocRows(), i;
+  for(i=0;i<rows.length;i++) if(!rows[i].v)
+    return '<button class="nextcard"' + DO('go', [rows[i].r]) + '>'+
+      '<span class="nk">'+t('next.t')+'</span>'+
+      '<span class="nl">'+esc(t(rows[i].k))+'</span>'+
+      '<span class="na">'+ICON_GO+'</span></button>';
+  return '';
 }
 
 /* =========================================================================
@@ -237,14 +255,7 @@ function cvStat(lab, val, r){
 /* The contents, in the order the work happens: you setPlan sounds, you give
    them letters, and then there is something a word can be made of. */
 function vBuild(){
-  var toc=[
-    ['I',  t('toc.sound'),  'sound',   addedSnd().length||'—'],
-    ['II', t('toc.letters'),'letters', LETTERS.length? (ltShaped()+' / '+LETTERS.length):'—'],
-    ['III',t('toc.words'),  'words',   WORDS.length? tn('count.words', WORDS.length):'—'],
-    ['IV', t('toc.gram'),   'gram',    stCount()+' / '+stAll().length],
-    ['V',  t('toc.notes'),  'notes',   NOTES.length? tn('count.notes', NOTES.length):'—'],
-    ['VI', t('toc.talk'),   'talk',    TALK.length? tn('count.turns', TALK.length):'—']
-  ];
+
   return '<div class="view">'+
     /* Searching the language is part of building it, so it sits on the
        contents page rather than holding a tab of its own. The bottom bar has
@@ -255,10 +266,10 @@ function vBuild(){
       esc(pageName('find'))+'">'+ICON_LENS+'</button></div>'+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
-    '<div class="toc">'+toc.map(function(row){
-      return '<button class="trow"' + DO('go', [row[2]]) + '>'+
-        '<span class="rn">'+row[0]+'</span><span class="rt">'+esc(row[1])+'</span>'+
-        '<span class="lead"></span><span class="rv">'+esc(row[3])+'</span>'+ICON_GO+'</button>';
+    '<div class="toc">'+tocRows().map(function(row){
+      return '<button class="trow"' + DO('go', [row.r]) + '>'+
+        '<span class="rn">'+row.n+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
+        '<span class="lead"></span><span class="rv">'+esc(row.txt)+'</span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
     '<button class="trow"' + DO('go', ["settings"]) + ' style="margin-top:18px">'+
       '<span class="rn"></span><span class="rt">'+esc(t('set.title'))+'</span>'+
