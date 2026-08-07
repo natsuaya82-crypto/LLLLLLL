@@ -204,7 +204,7 @@ function installScriptFont(){
   if(!L.length || !scriptDrawn(L)) return;
   try{
     var d=scriptGlyphDefs();
-    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, ligatures:d.ligs,
+    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geStep()/2, ligatures:d.ligs,
                                     family:'LinguaScript', style:'Regular'});
     el=document.createElement('style');
     el.id='sfontcss';
@@ -665,47 +665,10 @@ function geUndo(){
   render();
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
-/* ---- centring a letter across the square ------------------------------
-   「あと文字だけど、左端とか右端に書く場合左右差でかなりバランス悪い。もし文字がない
-   範囲が広い場合、点と点の間分の1行に全体的に詰めよう。横幅ね。縦はいじらないで。」
-
-   A letter drawn against the left dots and one drawn against the right sit at
-   different distances from the letters beside them, and in a word that reads
-   as bad spacing. The font writer centres the ink it is given, but the ink it
-   is given was already lopsided against the square the editor draws, so what
-   you saw while drawing was not what you got.
-
-   So the whole drawing slides sideways until the gap on the left and the gap
-   on the right are within half a lattice step of each other -- and it slides
-   in whole lattice steps, so every point that was on a dot stays on a dot.
-   Vertical is untouched: a letter that sits high sits high on purpose, and an
-   ascender is not a mistake. */
-function geCentreX(st){
-  var s=geStep(), lo=1e9, hi=-1e9, i, j, p, n;
-  for(i=0;i<st.length;i++) for(j=0;j<st[i].pts.length;j++){
-    p=st[i].pts[j][0];
-    if(p<lo) lo=p;
-    if(p>hi) hi=p;
-  }
-  if(lo>hi) return st;
-  var left=lo-GGRID.inset, right=(800-GGRID.inset)-hi;
-  n=Math.round((right-left)/(2*s));
-  if(!n) return st;
-  /* never push any of it off the square */
-  var room=Math.floor(left/s), space=Math.floor(right/s);
-  if(n<0) n=Math.max(n, -room);
-  else n=Math.min(n, space);
-  if(!n) return st;
-  var dx=n*s;
-  for(i=0;i<st.length;i++) for(j=0;j<st[i].pts.length;j++)
-    st[i].pts[j][0]=Math.round(st[i].pts[j][0]+dx);
-  return st;
-}
 function geSave(){
   /* A single dot is a stroke half-placed, not a shape. It does not get
      saved, and it does not get left behind for the next press to trip on. */
   var keep=GE.st.filter(function(s){ return s.pts.length>1; });
-  geCentreX(keep);
   ltSetStrokes(GE.lid, keep);
   /* Drawing a letter is asking for your own writing. Only onboarding ever set
      this, so every letter drawn in the letters chapter went into a font that

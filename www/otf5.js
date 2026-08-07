@@ -600,6 +600,7 @@ var LinguaFont = (function () {
 
   // ---------------------------------------------------------------- build
   var DEFAULTS = {
+    side: 36,
     em: 1000, base: 800, asc: 800, desc: -200,
     cell: 800, fitMargin: 0.06,
     mode: 'center',                                   // 'asdrawn' | 'center' | 'fit'
@@ -615,6 +616,14 @@ var LinguaFont = (function () {
     var EM = opt(o, 'em'), BASE = opt(o, 'base'), ASC = opt(o, 'asc'), DESC = opt(o, 'desc');
     var CELL = opt(o, 'cell'), MARGIN = opt(o, 'fitMargin'), mode = opt(o, 'mode');
     var PEN = opt(o, 'pen'), ligatures = opt(o, 'ligatures');
+    // Half the gap that has to sit between the ink of one letter and the ink
+    // of the next. A letter's width is its own ink plus twice this, so the
+    // gap is always the same whatever two letters meet -- which is the whole
+    // point, and not what a fixed cell with the ink centred in it gives:
+    // there the gap is (cell - inkA/2 - inkB/2) and every pair is different.
+    // 「どこから並んでも1点線分の隙間があるからバランス崩れない」
+    // Half, not whole: a whole one each side puts two dots between them.
+    var SIDE = opt(o, 'side');
 
     var raw = glyphDefs.map(function (g) { return { g: g, cs: glyphContours(g, PEN) }; });
     var B0 = Infinity, B1 = -Infinity;
@@ -650,9 +659,12 @@ var LinguaFont = (function () {
         }, PEN);
       }
       var p = profile(cs, BAND);
+      var wide = p.xMax - p.xMin;
       var dx = mode === 'asdrawn' ? 0
-             : Math.round((CELL - (p.xMax - p.xMin)) / 2 - p.xMin);
-      var adv = CELL;
+             : mode === 'fit' ? Math.round((CELL - wide) / 2 - p.xMin)
+             : Math.round(SIDE - p.xMin);
+      var adv = (mode === 'asdrawn' || mode === 'fit') ? CELL
+              : Math.round(wide + 2 * SIDE);
 
       var contours = cs.map(function (c) {
         var nodes = signedArea(c) < 0 ? c : c.slice().reverse();
