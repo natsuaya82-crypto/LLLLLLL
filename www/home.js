@@ -33,17 +33,15 @@ function capBanner(){
    on. */
 function tocRows(){
   return [
-    {n:'I',   k:'toc.sound',   r:'sound',   v:addedSnd().length,
-     txt:addedSnd().length||'—'},
-    {n:'II',  k:'toc.letters', r:'letters', v:ltShaped(),
+    {n:'I',  k:'toc.letters', r:'letters', v:ltShaped(),
      txt:LETTERS.length? (ltShaped()+' / '+LETTERS.length) : '—'},
-    {n:'III', k:'toc.words',   r:'words',   v:WORDS.length,
+    {n:'II', k:'toc.words',   r:'words',   v:WORDS.length,
      txt:WORDS.length? tn('count.words', WORDS.length) : '—'},
-    {n:'IV',  k:'toc.gram',    r:'gram',    v:stCount(),
+    {n:'III', k:'toc.gram',    r:'gram',    v:stCount(),
      txt:stCount()+' / '+stAll().length},
-    {n:'V',   k:'toc.notes',   r:'notes',   v:NOTES.length,
+    {n:'IV',  k:'toc.notes',   r:'notes',   v:NOTES.length,
      txt:NOTES.length? tn('count.notes', NOTES.length) : '—'},
-    {n:'VI',  k:'toc.talk',    r:'talk',    v:TALK.length,
+    {n:'V',   k:'toc.talk',    r:'talk',    v:TALK.length,
      txt:TALK.length? tn('count.turns', TALK.length) : '—'}
   ];
 }
@@ -234,7 +232,6 @@ function vProfile(){
         (wldSaid()? '<span class="wldl">'+esc(wldLine()||t('wld.title'))+'</span>'
                   : '<span class="wldl none">'+esc(t('wld.ask'))+'</span>')+ICON_GO+'</button>'+
       '<div class="cvrow">'+
-        cvStat(t('toc.sound'), addedSnd().length||'—', 'sound')+
         cvStat(t('toc.letters'), ltShaped()||'—', 'letters')+
         cvStat(t('toc.words'), WORDS.length||'—', 'words')+
       '</div>'+
@@ -270,9 +267,9 @@ function vBuild(){
         '<span class="rn">'+row.n+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
         '<span class="lead"></span><span class="rv">'+esc(row.txt)+'</span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
-    '<button class="trow"' + DO('go', ["settings"]) + ' style="margin-top:18px">'+
-      '<span class="rn"></span><span class="rt">'+esc(t('set.title'))+'</span>'+
-      '<span class="lead"></span>'+ICON_GO+'</button>'+
+    /* Settings used to hang off the bottom of the contents. It belongs to the
+       person, not to the language, and it is already on the profile where
+       everything else of theirs is. 「制作のところに設定ボタンはいらない」 */
     '</div>'+tabBar()+'</div>';
 }
 /* ---- the search tab ---------------------------------------------------
@@ -361,7 +358,7 @@ function fTodo(){
   var stg=stAll().filter(function(p){ return !stIsDone(p); }).length;
   if(noMn) out.push([t('find.todo.mn'), noMn, 'words']);
   if(noSnd) out.push([t('find.todo.lt'), noSnd, 'letters']);
-  if(noLt) out.push([t('find.todo.sn'), noLt, 'sound']);
+  if(noLt) out.push([t('find.todo.sn'), noLt, 'letters']);
   if(stg) out.push([t('find.todo.st'), stg, 'gram']);
   return out;
 }

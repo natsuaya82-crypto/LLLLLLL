@@ -109,8 +109,8 @@ function addKeys(){
   var m=addMode || (ls.length? 'lt' : 'ph');
   if(!mine.length && !ls.length){
     return '<div class="note">'+t('add.ph.none')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["sound"]) + '>'+
-      esc(t('toc.sound'))+'</button>';
+      '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["letters"]) + '>'+
+      esc(t('toc.letters'))+'</button>';
   }
   var rail = (ls.length && mine.length)
     ? '<div class="segs" style="margin-bottom:8px">'+

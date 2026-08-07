@@ -82,7 +82,7 @@ function vSet(){
       '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
       '<span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
-      '<button class="set"' + DO('go', ["sound"]) + '><span class="sl">'+t('toc.sound')+'</span>'+
+      '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+addedSnd().length+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+

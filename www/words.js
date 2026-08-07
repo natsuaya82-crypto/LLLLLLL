@@ -79,8 +79,7 @@ function vWords(){
     }).join('')+'</div>'+
     '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+'</div>'+
-    '<div class="barfix"><button class="btn ghost"' + DO('go', ["make"]) + '>'+t('words.coin')+'</button>'+
-    '<button class="btn"' + DO('openAdd') + '>'+t('home.write')+'</button></div></div>';
+    '<div class="barfix"><button class="btn"' + DO('openAdd') + '>'+t('home.write')+'</button></div></div>';
 }
 /* Typing redraws the list and the count and nothing else, because redrawing
    the screen would take the keyboard's focus off the box being typed into. */

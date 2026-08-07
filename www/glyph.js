@@ -266,10 +266,22 @@ function editLetter(id){
 /* A letter with nothing on it yet -- 「文字から作るだろ普通」 */
 /* The + on a list makes that list's kind: on the digits page a new sign is a
    digit, and it takes the smallest value nothing has yet. */
+/* Three lists and one way in. The + on the alphabet, the + on the marks and
+   the + on the digits each made a sign that was nothing and put a blank
+   canvas in front of it, so WHAT it was got decided afterwards, on a
+   different screen, or never. 「文字を追加押したら、アルファベット選べて、そこ
+   から文字を追加するようにしてくれ。記号も数字も一緒。ここは一本化して」
+
+   It opens the letter's own page instead, which is already the one place
+   that asks -- one box, red when it collides, and ltSetRoman reads all
+   three kinds out of it: roman is a sound, a bare number is a digit's
+   value, anything else reads itself and is a mark. Say what it is, then
+   draw it. Nothing here has to know which of the three lists it came from
+   beyond the value a digit starts with. */
 function newLetter(kind){
   var v=(kind==='num')? numFree() : -1;
   var l=ltNew(v>=0? {val:v} : {});
-  GE=newGE(l.id, ''); go('glyph', l.id);
+  go('letter', l.id);
 }
 /* Every change stamps a copy of the whole letter — it is a few hundred bytes,
    so there is no reason to be clever about it. */
@@ -334,9 +346,6 @@ var ICON_TICK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="
 var ICON_LENS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
   '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/></svg>';
-var ICON_AGAIN='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
-  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
-  '<path d="M19 12a7 7 0 1 1-2.05-4.95"/><path d="M19 4v4h-4"/></svg>';
 var ICON_CROSS='<svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" '+
   'stroke-width="1.9" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M6 6l12 12M18 6 6 18"/></svg>';
@@ -465,7 +474,7 @@ function vGlyph(){
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div>'+
     '<div class="barfix">'+
-      '<button class="btn ghost"' + DO('go', ["sound"]) + '>'+t('glyph.cancel')+'</button>'+
+      '<button class="btn ghost"' + DO('back') + '>'+t('glyph.cancel')+'</button>'+
       '<button class="btn"' + DO('geSave') + '>'+t('glyph.save')+'</button>'+
     '</div></div>';
 }

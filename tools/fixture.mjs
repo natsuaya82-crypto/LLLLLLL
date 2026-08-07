@@ -160,14 +160,12 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    ['words being suggested',  () => { window.route='make'; NAV=[{r:'make'}];
-                                       cands=[{q:['k','a','n','o'], on:true},
-                                              {q:['t','i','r'], on:false}];
-                                       return vMake(); }],
-    /* the phonology chapter with an inventory proposed: the row of sounds and
-       the way to ask for another only exist once a character has been picked */
-    ['an inventory proposed',  () => { window.route='sound'; NAV=[{r:'sound'}];
-                                       sndFeelPick = AS_CHARS[0].id; return vSound(); }],
+    /* The chart, opened from the letter it is about. It is a sheet now
+       rather than a chapter, so nothing reaches it by walking the routes --
+       and the proposal inside it, with its row of sounds and its way to ask
+       for one more, only exists once a character has been picked. */
+    ['the chart, for one letter', () => { sndFeelPick = AS_CHARS[0].id;
+                                          openSnd(LETTERS[0].id); return FORM.html; }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
     /* A note that already exists: the delete button only appears once there

@@ -92,7 +92,6 @@ var PAGES={
   build:   {tab:'build', k:'tab.build'},
   find:    {tab:'build', k:'tab.find'},
   form:    {tab:'build'},
-  sound:   {tab:'build', n:'I',   k:'toc.sound'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
   ltset:   {tab:'build', n:'II',  k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
@@ -103,7 +102,6 @@ var PAGES={
   aspell:  {tab:'build', k:'word.sp'},
   glyph:   {tab:'build', n:'II'},
   words:   {tab:'build', n:'III', k:'toc.words'},
-  make:    {tab:'build', n:'III', k:'toc.make'},
   gram:    {tab:'build', n:'IV',  k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
   notes:   {tab:'build', n:'V',   k:'toc.notes'},

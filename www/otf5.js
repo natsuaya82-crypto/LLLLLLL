@@ -137,17 +137,20 @@ var LinguaFont = (function () {
     return out;
   }
 
-  function nib(pen, n) {
-    n = n || 12;
+  // The shape of the tip, swept along every stroke. It was a twelve-sided
+  // circle, and a circle dragged along a line leaves a lozenge: every stroke
+  // in the app ended in a dome, and so did every glyph in the exported font.
+  // 「文字の線が丸いのが気になる"ー"のように角張ったフォントにして」 -- a square
+  // tip ends a horizontal stroke exactly as ー ends, flat and square, and it
+  // costs four points where the circle cost twelve.
+  function nib(pen) {
     var a = pen.width / 2, b = a * (pen.contrast === undefined ? 1 : pen.contrast);
     var th = (pen.angleDeg || 0) * Math.PI / 180, ca = Math.cos(th), sa = Math.sin(th);
-    var pts = [];
-    for (var i = 0; i < n; i++) {
-      var t = (i / n) * Math.PI * 2;
-      var x = Math.cos(t) * a, y = Math.sin(t) * b;
-      pts.push([x * ca - y * sa, x * sa + y * ca]);
+    var pts = [[-a, -b], [a, -b], [a, b], [-a, b]], i, out = [];
+    for (i = 0; i < pts.length; i++) {
+      out.push([pts[i][0] * ca - pts[i][1] * sa, pts[i][0] * sa + pts[i][1] * ca]);
     }
-    return pts;
+    return out;
   }
 
   function hull(pts) {

@@ -343,18 +343,20 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
           -webkit-backdrop-filter:blur(22px) saturate(180%);
           backdrop-filter:blur(22px) saturate(180%)}
 }
-/* Five tabs and ten languages do not fit five labels: 「プロフィール」 is six
-   characters and a fifth of 343 px is sixty-six of them, so the word broke in
-   half and took the pill with it. Only the tab you are on says its name --
-   the other four are their icon, at full width for a thumb. */
-.tab{flex:0 1 auto;min-width:46px;min-height:52px;background:none;border:0;color:var(--txm);
-     border-radius:999px;display:flex;align-items:center;justify-content:center;gap:7px;
-     font-family:inherit;padding:6px 8px;transition:color .18s,background .18s}
-.tab .tabl{display:none;font-size:.78rem;letter-spacing:.03em;white-space:nowrap}
+/* An icon over its name, which is what a phone's bottom bar is, and all five
+   say their name rather than only the one you are on. 「下タブの横に文字つける
+   のやめて」 -- side by side, the label pushed the icon off centre and the
+   pill had to grow to hold both. Stacked, every tab is the same width and
+   the longest label in ten languages (Уведомления) still fits. */
+.tab{flex:1 1 0;min-width:0;min-height:52px;background:none;border:0;color:var(--txm);
+     border-radius:999px;display:flex;flex-direction:column;align-items:center;
+     justify-content:center;gap:3px;
+     font-family:inherit;padding:5px 2px;transition:color .18s,background .18s}
+.tab .tabl{display:block;font-size:.62rem;letter-spacing:.01em;white-space:nowrap;
+           max-width:100%;overflow:hidden;text-overflow:ellipsis}
 /* the lens: the one tab you are on is a solid pill inside the glass */
-.tab.on{flex:1 1 auto;color:var(--gold);background:var(--goldsf);
+.tab.on{color:var(--gold);background:var(--goldsf);
         box-shadow:inset 0 0 0 1px var(--goldln), inset 0 1px 0 var(--glassspec)}
-.tab.on .tabl{display:block}
 /* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
@@ -530,7 +532,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .empty .es{color:var(--txm);font-size:.86rem;line-height:1.9}
 
 /* ---------- the dictionary ---------- */
-.search{display:flex;align-items:center;gap:10px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:12px 0 2px}
+/* The box is as tall as the field inside it and no taller. It carried ten
+   pixels of padding above and below a 44px input, which made a 66px bar
+   across the top of two screens. 「検索バー縦長すぎる」 */
+.search{display:flex;align-items:center;gap:9px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:0 13px;margin:8px 0 2px}
 .search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
 .gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
 /* An entry is two controls now -- the word, which says itself, and the
@@ -555,7 +560,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* Six ways to narrow the list will not fit across 320px, so the rail slides
    sideways rather than wrapping into a second row that pushes the words off
    the screen. */
-.segs.scrollx{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+/* touch-action pins it to one axis. Without it a thumb sliding along the
+   rail is read as a drag in whichever direction it drifted, so aiming at
+   「動詞」 scrolled the dictionary away underneath. 「横にスライドだけにして」 */
+.segs.scrollx{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;touch-action:pan-x;
       margin:0 -24px;padding:0 24px;scrollbar-width:none}
 .segs.scrollx::-webkit-scrollbar{display:none}
 .segs.scrollx .seg{flex:0 0 auto;white-space:nowrap}
@@ -1347,7 +1356,6 @@ textarea.ntbody:focus{border-color:var(--goldln)}
   <script src="home.js"></script>
   <script src="words.js"></script>
   <script src="sound.js"></script>
-<script src="sentences.js"></script>
 <script src="wsys.js"></script>
 <script src="assist.js"></script>
 <script src="grammar.js"></script>
