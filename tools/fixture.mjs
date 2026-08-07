@@ -79,10 +79,10 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
-    /* The door itself. It was never in this list and did not need to be while
-       nothing on it did anything; it now has four ways through and one of them
-       replaces the face, so the walk has to be told to render it. */
-    ['the door',                  () => { ob.step = 0; ob.mode = ''; OBM.mode = '';
+    /* The door itself, which is the sign-in screen: there is no splash in
+       front of it any more. It was never in this list and did not need to be
+       while nothing on it did anything. */
+    ['the door',                  () => { ob.step = 0; ob.mode = ''; OBM.mode = 'in';
                                           return vOb(); }],
     ['characters to borrow',      () => { ob.step = 1; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
@@ -99,18 +99,22 @@ export function obStates(){
                                                    ob.lid = (LETTERS[0] || {}).id || '';
                                                    return vOb(); }],
     ['naming the language',      () => { ob.step = 3; ob.mode = ''; return vOb(); }],
-    /* The door has a second face: signing in with an address. Four of them,
-       and none is reachable from a screen at rest, so a walk that only ever
-       renders the door presses none of their buttons. */
-    ['signing in by mail',       () => { ob.step = 0; OBM.mode = 'in';
-                                         const h = vOb(); OBM.mode = ''; return h; }],
-    ['making an account by mail',() => { ob.step = 0; OBM.mode = 'up';
-                                         const h = vOb(); OBM.mode = ''; return h; }],
+    /* The door's other three faces. None is reachable from a screen at rest,
+       so a walk that only ever renders the door presses none of their
+       buttons.
+
+       Each leaves the mode where it put it, like every other entry here
+       leaves ob.step. They used to put it back, and the walks did not care
+       because they read the html these return -- but shot.mjs calls render()
+       afterwards, so a fixture that tidied up photographed the screen it had
+       tidied back to, and three pictures of the door were captioned as three
+       different screens. */
+    ['making an account',        () => { ob.step = 0; OBM.mode = 'up';
+                                         return vOb(); }],
     ['the six digits out of the mail', () => { ob.step = 0; OBM.mode = 'code';
-                                         OBM.em = 'a@b.c';
-                                         const h = vOb(); OBM.mode = ''; return h; }],
+                                         OBM.em = 'a@b.c'; return vOb(); }],
     ['having forgotten the password',  () => { ob.step = 0; OBM.mode = 'forgot';
-                                         const h = vOb(); OBM.mode = ''; return h; }]
+                                         return vOb(); }]
   ];
 }
 

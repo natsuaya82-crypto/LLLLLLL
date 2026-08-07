@@ -976,6 +976,36 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
           letter-spacing:.2em;margin-top:clamp(10px,2vh,16px);font-weight:600;flex:0 0 auto}
 .ob .obtag{margin-top:clamp(6px,1.4vh,10px);font-size:clamp(.9rem,3.6vw,1.05rem);flex:0 0 auto}
 .ob .obfoot .btn.signin{margin-bottom:10px}
+/* The door's faces are forms, so they are read down the left edge and they
+   scroll. A sign-in screen on a 568pt phone does not fit -- crest, two
+   fields, a button, a link, a rule, Apple, Google -- and it must not be the
+   one screen in the app that quietly clips its last button off. */
+.ob .mid.obform{justify-content:flex-start;align-items:stretch;text-align:left;
+                overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* A column that scrolls gives nothing away: the register face has four
+   children and the flex box handed the last one every pixel left over, so
+   the button was two thirds of the screen. */
+.ob .mid.obform>*{flex:0 0 auto}
+/* .ob.center is what took the margin off the splash, which was centred in the
+   whole screen. The forms that replaced it are read from the top and want it
+   back, or the heading sits against the chevron. */
+.ob.center .mid.obform{margin:20px 0 0}
+.ob .mid.obform .btn{width:100%;margin-top:6px}
+.ob .obcrest{text-align:center;flex:0 0 auto;margin-bottom:20px}
+.ob .obcrest .obdoor{height:min(16vh,116px)}
+.ob .obcrest .obh1{margin-top:10px}
+.obor{display:flex;align-items:center;gap:12px;margin:20px 0 14px;
+      color:var(--txm);font-size:.82rem;flex:0 0 auto}
+.obor::before,.obor::after{content:"";flex:1 1 auto;height:1px;background:var(--line)}
+/* Instagram's bar, and it is the whole reason there are two screens: the way
+   from one to the other is a fixed line at the foot, not a link buried under
+   the button that does the other thing. */
+.obbar{flex:0 0 auto;margin:0 -24px;padding:14px 24px 0;border-top:1px solid var(--line);
+       display:flex;justify-content:center;align-items:center;gap:7px;
+       font-size:.86rem;color:var(--txm)}
+.obbar button{background:none;border:0;padding:0;font:inherit;font-size:.86rem;
+              font-weight:600;color:var(--gold);min-height:44px}
+.obbar button:active{opacity:.55}
 .obskip{display:block;width:100%;min-height:44px;margin-top:4px;background:none;border:0;
         color:var(--txs);font:inherit;font-size:.84rem;text-decoration:underline;
         text-underline-offset:3px;text-decoration-color:var(--line)}

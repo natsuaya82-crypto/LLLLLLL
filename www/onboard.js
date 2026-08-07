@@ -87,16 +87,15 @@ var OB_DOOR='<svg viewBox="0 0 124 188" fill="none" stroke="currentColor" stroke
 var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
-function obCanBack(){ return ob.step>0 || ob.mode==='borrow' || !!OBM.mode; }
+function obCanBack(){ return ob.step>0 || ob.mode==='borrow' || OBM.mode!=='in'; }
 function obBack(){
   /* The chevron in the corner is the only way back in the onboarding, so the
-     mail door goes through it too rather than growing one of its own. Out of
-     the code back to the account it was sent for, out of the reset back to
-     signing in, and out of either of those back to the door. */
-  if(OBM.mode){
+     door goes through it too rather than growing one of its own. Out of the
+     code back to the account it was sent for, out of anything else back to
+     signing in -- which is the door itself, so there is nothing behind it. */
+  if(ob.step===0){
     if(OBM.mode==='code'){ obMailGo('up'); return; }
-    if(OBM.mode==='forgot'){ obMailGo('in'); return; }
-    OBM.mode=''; OBM.msg=''; render(); return;
+    obMailGo('in'); return;
   }
   if(ob.step===1 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
@@ -151,7 +150,7 @@ function obSignInGoogle(){
 /* Closing the sheet is not a failure and is not told about. */
 function obShrug(){ OBM.busy=false; render(); }
 function obIn(){
-  OBM.busy=false; OBM.mode=''; OBM.pw='';
+  OBM.busy=false; OBM.mode='in'; OBM.pw='';
   SET.anon=false; save();
   obGo(1);
 }
@@ -169,7 +168,7 @@ function obNo(d, s){
    Filling the field in the first place is the operating system's job: the
    autocomplete words below are what make iOS offer the Keychain, and they are
    the reason there is nothing here that stores an address either. */
-var OBM={ mode:'', em:'', pw:'', code:'', busy:false, msg:'' };
+var OBM={ mode:'in', em:'', pw:'', code:'', busy:false, msg:'' };
 function obMailGo(m){ OBM.mode=m; OBM.msg=''; render(); window.scrollTo(0,0); }
 function obMailSet(k, v){ OBM[k]=String(v||''); }
 function obMailAsk(){
@@ -210,32 +209,58 @@ function obMailField(id, k, type, auto, ph){
     'autocomplete="'+auto+'" autocapitalize="none" autocorrect="off" '+
     'spellcheck="false"' + IN('obMailSet', [k]) + '></div>';
 }
-function obMailHTML(){
-  var m=OBM.mode, go, lab;
-  if(m==='code'){ go='obMailCode'; lab='ob.mail.verify'; }
-  else if(m==='forgot'){ go='obMailForgot'; lab='ob.mail.send'; }
-  else if(m==='up'){ go='obMailUp'; lab='ob.mail.up'; }
-  else { go='obMailIn'; lab='ob.mail.in'; }
-  return '<div class="mid obleft">'+
-    '<h2 class="obh">'+t('ob.mail.h.'+m)+'</h2>'+
-    (m==='code'
+/* The arch and the wordmark, small, over every face of the door. There used
+   to be a splash carrying them and a form behind it; the splash asked
+   nothing, so it was a page whose whole content was a button that opened the
+   page somebody wanted. The mark sits on the form instead. */
+function obCrestHTML(){
+  return '<div class="obcrest"><div class="obdoor">'+OB_DOOR+'</div>'+
+    '<h1 class="obh1">Lingua</h1>'+
+    '<p class="obtag">'+t('ob.tagline')+'</p></div>';
+}
+
+/* Signing in and making an account are two screens, not one screen with a
+   toggle. The two fields are the same and nothing else is: what the button
+   does, whether a forgotten password is offered, whether Apple and Google
+   are there at all -- they make an account and sign in with one press, so
+   they belong on the door and are not a second way to register -- and what
+   the bar across the foot offers instead of itself. On one screen all of
+   that would be written twice in conditionals anyway, and the person would
+   not be able to tell which of the two they were looking at. */
+function obFormHTML(up){
+  return '<div class="mid obform">'+
+    obCrestHTML()+
+    obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
+    obMailField('ob-pw', 'pw', 'password',
+                (up? 'new-password' : 'current-password'), 'ob.mail.pw.ph')+
+    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
+    '<button class="btn"' + DO(up? 'obMailUp' : 'obMailIn') + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : (up? 'ob.mail.up' : 'ob.mail.in'))+'</button>'+
+    (up? ''
+       : '<button class="obskip"' + DO('obMailGo', ["forgot"]) + '>'+t('ob.mail.to.forgot')+'</button>'+
+         '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
+         '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+         '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
+         '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>')+
+    '</div>'+
+    '<div class="obbar"><span>'+t(up? 'ob.bar.in.q' : 'ob.bar.up.q')+'</span>'+
+    '<button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
+      t(up? 'ob.bar.in.a' : 'ob.bar.up.a')+'</button></div>';
+}
+
+/* The two faces that ask for one thing: the six digits, and the address to
+   send a reset to. Neither is a place to arrive at, so neither carries the
+   bar -- the chevron is the way out of both. */
+function obAskHTML(code){
+  return '<div class="mid obform">'+
+    '<h2 class="obh">'+t(code? 'ob.mail.h.code' : 'ob.mail.h.forgot')+'</h2>'+
+    (code
       ? '<p class="obsub">'+esc(t('ob.mail.code.sub', OBM.em))+'</p>'+
         obMailField('ob-code', 'code', 'text', 'one-time-code', 'ob.mail.code.ph')
-      : obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
-        (m==='forgot'? ''
-          : obMailField('ob-pw', 'pw', 'password',
-              (m==='up'? 'new-password' : 'current-password'), 'ob.mail.pw.ph')))+
+      : obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph'))+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
-    '</div>'+
-    '<div class="obfoot">'+
-    '<button class="btn"' + DO(go) + (OBM.busy? ' disabled':'') + '>'+
-      t(OBM.busy? 'ob.mail.wait' : lab)+'</button>'+
-    (m==='in'
-      ? '<button class="obskip"' + DO('obMailGo', ["up"]) + '>'+t('ob.mail.to.up')+'</button>'+
-        '<button class="obskip"' + DO('obMailGo', ["forgot"]) + '>'+t('ob.mail.to.forgot')+'</button>'
-      : m==='up'
-        ? '<button class="obskip"' + DO('obMailGo', ["in"]) + '>'+t('ob.mail.to.in')+'</button>'
-        : '')+
+    '<button class="btn"' + DO(code? 'obMailCode' : 'obMailForgot') + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : (code? 'ob.mail.verify' : 'ob.mail.send'))+'</button>'+
     '</div>';
 }
 
@@ -246,17 +271,9 @@ function obMailHTML(){
 function obSkip(){ SET.anon=true; save(); obGo(1); }
 
 function obDoorHTML(){
-  if(OBM.mode) return obMailHTML();
-  return '<div class="mid"><div class="obdoor">'+OB_DOOR+'</div>'+
-    '<div class="obrule"></div>'+
-    '<h1 class="obh1">Lingua</h1>'+
-    '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
-    '<div class="obfoot">'+
-    '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
-    '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-    '<button class="btn ghost"' + DO('obMailGo', ["in"]) + '>'+t('ob.signin.mail')+'</button>'+
-    '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>'+
-    '<div class="mini obnote">'+t('ob.signin.local')+'</div></div>';
+  var m=OBM.mode;
+  if(m==='code' || m==='forgot') return obAskHTML(m==='code');
+  return obFormHTML(m==='up');
 }
 
 /* ---- step 1, its name -------------------------------------------------
