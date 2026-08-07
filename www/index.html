@@ -700,6 +700,12 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .field label{font-size:.84rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:10px;
        color:var(--tx);padding:12px 13px;font-family:inherit;font-size:.95rem;outline:none}
+/* The @ belongs to the field, not to the placeholder: it is the one
+   character of a handle nobody types and everybody has. */
+.field.at{display:flex;align-items:center;background:var(--bg);
+          border:1px solid var(--line);border-radius:10px}
+.field.at>span{padding-left:13px;color:var(--txm);font-size:.95rem}
+.field.at input{border:0;background:none;padding-left:3px;border-radius:0}
 .field input.hwf{font-family:'Cinzel',Georgia,serif;font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
 /* A note on a word is a line or two, not a page. */

@@ -114,7 +114,11 @@ export function obStates(){
     ['the six digits out of the mail', () => { ob.step = 0; OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
     ['having forgotten the password',  () => { ob.step = 0; OBM.mode = 'forgot';
-                                         return vOb(); }]
+                                         return vOb(); }],
+    /* Through the door and not yet anybody. Only a signed-in person reaches
+       it, so nothing else in this file or in shot.mjs ever renders it. */
+    ['saying who you are',       () => { ob.step = 0; OBM.mode = 'who';
+                                         OBM.busy = false; return vOb(); }]
   ];
 }
 

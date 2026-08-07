@@ -61,11 +61,11 @@ function netSignedIn(){ return !!(SESS && SESS.rt); }
    XHR rather than fetch: this has to run on a WKWebView old enough that the
    rest of the file is ES5, and a Promise is banned three lines up. Both
    callbacks are always called, so nothing is left waiting on a spinner. */
-function netPost(path, body, tok, ok, bad){
+function netSend(method, path, body, tok, ok, bad){
   var x=new XMLHttpRequest();
-  x.open('POST', SB_URL+path, true);
+  x.open(method, SB_URL+path, true);
   x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Content-Type', 'application/json');
+  if(body) x.setRequestHeader('Content-Type', 'application/json');
   /* Signed in, this is the person; signed out, it is the key again, which is
      what PostgREST expects and how the anon role is reached. */
   x.setRequestHeader('Authorization', 'Bearer '+(tok || SB_KEY));
@@ -77,7 +77,16 @@ function netPost(path, body, tok, ok, bad){
     else bad(d, x.status);
   };
   x.onerror=function(){ bad(null, 0); };
-  x.send(JSON.stringify(body||{}));
+  x.send(body? JSON.stringify(body) : null);
+}
+function netPost(path, body, tok, ok, bad){
+  netSend('POST', path, body||{}, tok, ok, bad);
+}
+/* Reading is signed where there is a session and open where there is not:
+   profile_read in schema.sql is `using (true)`, because a handle has to be
+   checkable by somebody who does not have an account yet. */
+function netGet(path, ok, bad){
+  netSend('GET', path, null, (SESS && SESS.at) || '', ok, bad);
 }
 
 /* What Supabase says when it refuses, in the person's language where we have
@@ -92,6 +101,9 @@ function netWhy(d, status){
   if(status===403 || status===401) return t('net.badlogin');
   if(status===422 && /password/i.test(m)) return t('net.weak');
   if(status===429) return t('net.toomany');
+  /* profile.handle is unique in the schema, so this is the server settling a
+     race the check a moment ago could not see. */
+  if(status===409) return t('net.handle.taken');
   return m || t('net.failed');
 }
 
@@ -150,6 +162,35 @@ function netRecover(email, ok, bad){
    Nothing calls this until the Capacitor plugins are installed and the
    capability is set in Xcode, which is a Mac's work. The door's two buttons
    reach it through obSignInApple and obSignInGoogle. */
+/* ---- who the account belongs to ----------------------------------------
+   Signing in makes a row in auth.users, which is Supabase's and which
+   nothing outside net.js reads. A person exists to the rest of the app when
+   there is a row in profile, and that row cannot be written without a
+   handle: it is `unique not null` in the schema, so the name after the @ is
+   settled before anybody has one, not left to be invented later out of
+   whatever they called their language.
+
+   Asked before the person is: somebody signing in on a second phone already
+   has a profile and must not be asked to choose a handle they picked a year
+   ago. */
+function netMyProfile(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netGet('/rest/v1/profile?select=handle,display&limit=1&id=eq.'+
+         encodeURIComponent(SESS.uid),
+         function(d){ ok(d && d.length? d[0] : null); }, bad);
+}
+/* The polite half of unique. It answers a moment before the insert does and
+   can be wrong by that much; the constraint is what actually decides, and
+   netWhy turns its 409 into the same sentence. */
+function netHandleFree(h, ok, bad){
+  netGet('/rest/v1/profile?select=handle&limit=1&handle=eq.'+encodeURIComponent(h),
+         function(d){ ok(!(d && d.length)); }, bad);
+}
+function netMakeProfile(h, name, ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netPost('/rest/v1/profile', {id:SESS.uid, handle:h, display:name},
+          SESS.at, ok, bad);
+}
 function netIdToken(provider, token, nonce, ok, bad){
   var b={ provider:provider, id_token:token };
   if(nonce) b.nonce=nonce;

@@ -58,6 +58,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { obStates } from './fixture.mjs';
 
 /* Playwright is a developer tool, not a dependency of the app, so it may be
    installed globally rather than beside this file. Look in both places. */
@@ -274,6 +275,12 @@ const pageErrors = [];
 pg.on('pageerror', e => pageErrors.push(e.message));
 await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
+/* The door's faces, from the same list act-check walks. The mirror rendered
+   vOb once per step and the door has five faces at step 0 -- sign in, make
+   an account, the six digits, the reset, and saying who you are -- so four
+   of them were screens the mirror had never seen, which is where a
+   hard-coded string sits forever. */
+await pg.evaluate('window.__obStates = ' + obStates.toString());
 
 const R = await pg.evaluate(() => {
   const out = { keys: [], ph: [], mk: [], name: [], read: [], miss: [], hard: [],
@@ -398,7 +405,14 @@ const R = await pg.evaluate(() => {
     T_MISS = {};
     /* onboarding, every step */
     SET.done = false;
-    for (let s = 0; s <= 3; s++) { ob.step = s; try { vOb(); } catch (e) { out.miss.push(c + ' vOb step ' + s + ' threw: ' + e.message); } }
+    for (let s = 0; s < OB_STEPS; s++) { ob.step = s; try { vOb(); } catch (e) { out.miss.push(c + ' vOb step ' + s + ' threw: ' + e.message); } }
+    /* and every face a step has, which is the door's five and the borrow
+       list -- asked of tools/fixture.mjs, so a face added there is mirrored
+       the day it is added rather than the day somebody remembers this line. */
+    window.__obStates().forEach(([label, run]) => {
+      try { run(); } catch (e) { out.miss.push(c + ' ob "' + label + '" threw: ' + e.message); }
+    });
+    ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in';
     SET.done = true;
 
     /* every screen, under every plan and every reading mode, empty and full */
@@ -564,7 +578,11 @@ const R = await pg.evaluate(() => {
   }
 
   SET.ui = 'zz'; SET.done = false;
-  for (let s = 0; s <= 3; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
+  for (let s = 0; s < OB_STEPS; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
+  window.__obStates().forEach(([label, run]) => {
+    try { look('ob "' + label + '"', run()); } catch (e) {}
+  });
+  ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in';
   SET.done = true;
   ['free','plus','studio'].forEach(p => {
     SET.plan = p;

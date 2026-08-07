@@ -82,6 +82,7 @@ act('obMailIn', obMailIn);
 act('obMailUp', obMailUp);
 act('obMailCode', obMailCode);
 act('obMailForgot', obMailForgot);
+act('obWhoGo', obWhoGo);
 act('setSignOut', setSignOut);
 act('setMail', setMail);
 act('obSkip', obSkip);

@@ -87,7 +87,12 @@ var OB_DOOR='<svg viewBox="0 0 124 188" fill="none" stroke="currentColor" stroke
 var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
-function obCanBack(){ return ob.step>0 || ob.mode==='borrow' || OBM.mode!=='in'; }
+/* There is no way back out of 'who': the account exists by then, and the
+   screen behind it would offer to sign in as somebody else. */
+function obCanBack(){
+  return ob.step>0 || ob.mode==='borrow' ||
+         (OBM.mode!=='in' && OBM.mode!=='who');
+}
 function obBack(){
   /* The chevron in the corner is the only way back in the onboarding, so the
      door goes through it too rather than growing one of its own. Out of the
@@ -149,10 +154,27 @@ function obSignInGoogle(){
 }
 /* Closing the sheet is not a failure and is not told about. */
 function obShrug(){ OBM.busy=false; render(); }
+/* Through the door, by whichever of the four ways. What is on the far side
+   is not the drawing yet: a name and a handle are, and only for somebody who
+   does not already have them. Signing in on a second phone is not a new
+   account and must not be asked to name itself again. */
 function obIn(){
-  OBM.busy=false; OBM.mode='in'; OBM.pw='';
-  SET.anon=false; save();
-  obGo(1);
+  OBM.busy=true; OBM.mode='who'; OBM.pw=''; OBM.msg='';
+  SET.anon=false; save(); render();
+  netMyProfile(function(p){
+    OBM.busy=false;
+    if(p){
+      ME.name=String(p.display||''); ME.handle=String(p.handle||''); saveMe();
+      OBM.mode='in'; obGo(1); return;
+    }
+    OBM.nm=ME.name; OBM.hd=ME.handle; render();
+  }, function(d, s){
+    /* The lookup failed, so we do not know whether there is a row. Asking is
+       the safe half: an insert that turns out to be a duplicate is refused
+       by the constraint and says so, where skipping would leave somebody
+       with an account nobody can address. */
+    OBM.busy=false; OBM.msg=netWhy(d, s); render();
+  });
 }
 function obNo(d, s){
   OBM.busy=false; OBM.msg=netWhy(d, s); render();
@@ -168,7 +190,7 @@ function obNo(d, s){
    Filling the field in the first place is the operating system's job: the
    autocomplete words below are what make iOS offer the Keychain, and they are
    the reason there is nothing here that stores an address either. */
-var OBM={ mode:'in', em:'', pw:'', code:'', busy:false, msg:'' };
+var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'' };
 function obMailGo(m){ OBM.mode=m; OBM.msg=''; render(); window.scrollTo(0,0); }
 function obMailSet(k, v){ OBM[k]=String(v||''); }
 function obMailAsk(){
@@ -247,6 +269,50 @@ function obFormHTML(up){
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
 }
 
+/* ---- who the account belongs to ---------------------------------------
+   Two things, once, and neither of them invented for anybody. The handle is
+   `unique not null` on the server, so it cannot be put off; the name is
+   asked for beside it because a timeline with a handle and no name is a
+   timeline of strangers.
+
+   This is a face of the door rather than a step of the onboarding. Somebody
+   who came in without an account never sees it, and the dots above count
+   what everybody does. */
+function obWhoHTML(){
+  return '<div class="mid obform">'+
+    '<h2 class="obh">'+t('ob.who.h')+'</h2>'+
+    obMailField('ob-nm', 'nm', 'text', 'name', 'ob.who.nm.ph')+
+    '<div class="field at"><span>@</span>'+
+      '<input id="ob-hd" type="text" value="'+esc(OBM.hd)+'" '+
+      'placeholder="'+esc(t('ob.who.hd.ph'))+'" autocomplete="username" '+
+      'autocapitalize="none" autocorrect="off" spellcheck="false"' +
+      IN('obMailSet', ['hd']) + '></div>'+
+    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
+    '<button class="btn"' + DO('obWhoGo') + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : 'ob.next')+'</button>'+
+    '</div>';
+}
+/* A handle is what survives being typed after an @, and the range is the
+   schema's: check (handle ~ '^[a-z0-9_]{2,24}$'). Cleaning it here and
+   showing the cleaned one back is the only way somebody finds out that the
+   space they typed is not in it. */
+function obWhoGo(){
+  if(OBM.busy) return;
+  OBM.hd=String(OBM.hd||'').toLowerCase().replace(/[^a-z0-9_]+/g, '');
+  OBM.nm=String(OBM.nm||'').replace(/^\s+|\s+$/g, '');
+  if(!OBM.nm){ OBM.msg=t('net.needname'); render(); return; }
+  if(OBM.hd.length<2 || OBM.hd.length>24){ OBM.msg=t('net.badhandle'); render(); return; }
+  OBM.busy=true; OBM.msg=''; render();
+  var h=OBM.hd, nm=OBM.nm;
+  netHandleFree(h, function(free){
+    if(!free){ OBM.busy=false; OBM.msg=t('net.handle.taken'); render(); return; }
+    netMakeProfile(h, nm, function(){
+      ME.name=nm; ME.handle=h; saveMe();
+      OBM.busy=false; OBM.mode='in'; obGo(1);
+    }, obNo);
+  }, obNo);
+}
+
 /* The two faces that ask for one thing: the six digits, and the address to
    send a reset to. Neither is a place to arrive at, so neither carries the
    bar -- the chevron is the way out of both. */
@@ -271,6 +337,7 @@ function obSkip(){ SET.anon=true; save(); obGo(1); }
 
 function obDoorHTML(){
   var m=OBM.mode;
+  if(m==='who') return obWhoHTML();
   if(m==='code' || m==='forgot') return obAskHTML(m==='code');
   return obFormHTML(m==='up');
 }
