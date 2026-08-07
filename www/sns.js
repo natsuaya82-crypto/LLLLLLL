@@ -32,14 +32,17 @@ function snsEmpty(r){
 function vFeed(){
   var list=postAll();
   return '<div class="view">'+
-    '<div class="navtop"><span class="navt">'+esc(pageName('feed'))+'</span>'+
-      '<button class="iconb"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
-      ICON_PLUS+'</button></div>'+
+    '<div class="navtop"><span class="navt">'+esc(pageName('feed'))+'</span></div>'+
     '<div class="body">'+
     (list.length
       ? list.map(postRow).join('')
       : '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>')+
-    '</div>'+tabBar()+'</div>';
+    '</div>'+
+    /* Where every timeline puts it: over the feed, above the bar, under the
+       thumb of the hand already holding the phone. */
+    '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
+      ICON_PEN+'</button>'+
+    tabBar()+'</div>';
 }
 /* Posts, not your own language -- that search is in the build tab, on the
    contents page, because it searches what is on that page. 「snsの探すと横断

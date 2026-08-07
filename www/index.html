@@ -179,20 +179,49 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(env(safe-area-inset-bottom,0) + 120px)}
 /* ---------- a post ----------
-   The line, what it means, and the gloss under them in the smallest type on
-   the screen: word by word is what somebody who makes languages came to read
-   and what everybody else does not. A word the dictionary has never heard of
-   stands in the colour of a problem, because that is what it is. */
-.post{padding:16px 2px;border-bottom:1px solid var(--line)}
-.pline{font-size:1.32rem;line-height:1.5;color:var(--tx)}
+   The shape everybody already knows: a face on the left, who and when on one
+   line, the post under it, what you can do with it along the bottom. Being
+   unfamiliar is worth nothing on a timeline.
+
+   What is INSIDE it is this app's: the line as written, what it means, and
+   the gloss word by word in the smallest type on the screen. A word the
+   dictionary has never heard of stands in the colour of a problem. */
+.post{display:flex;gap:12px;padding:14px 2px;border-bottom:1px solid var(--line)}
+.pav{flex:0 0 auto;width:44px;height:44px;border-radius:50%;overflow:hidden;
+     background:var(--sf);border:1px solid var(--line);
+     display:flex;align-items:center;justify-content:center}
+.pav canvas{width:28px;height:28px}
+.pav .bch{font-size:1.15rem;color:var(--gold);line-height:1}
+.pbody{flex:1 1 auto;min-width:0}
+.phead{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
+.pname{font-family:'Cinzel',Georgia,serif;font-size:.84rem;font-weight:600;
+       letter-spacing:.06em;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pwhen{flex:0 0 auto;font-size:.78rem;color:var(--txm)}
+.pline{font-size:1.2rem;line-height:1.5;color:var(--tx);word-break:break-word}
 .pmn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
-     font-size:1.06rem;color:var(--txs);margin-top:4px}
-.pgl,.pwgl{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px}
-.pwg{font-size:.78rem;color:var(--txm);letter-spacing:.02em}
+     font-size:1.02rem;color:var(--txs);margin-top:2px}
+.pgl,.pwgl{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px}
+.pwg{font-size:.76rem;color:var(--txm);letter-spacing:.02em}
 .pwg.none{color:var(--bad)}
-.pfoot{display:flex;align-items:center;gap:4px;margin-top:8px}
-.plang{flex:1 1 auto;font-family:'Cinzel',Georgia,serif;font-size:.7rem;
-       letter-spacing:.14em;color:var(--gold)}
+.pacts{display:flex;gap:24px;margin:4px 0 -8px -11px}
+.pact{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+      display:inline-flex;align-items:center;justify-content:center}
+.pact:active{color:var(--gold)}
+/* Writing one wears the same face, so the thing you are about to make looks
+   like the things around it. */
+.pwtop{display:flex;gap:12px;margin-bottom:6px}
+.pwfield{flex:1 1 auto;min-width:0}
+.pwfield input{width:100%;background:none;border:0;color:var(--tx);
+               font-family:inherit;font-size:1.2rem;line-height:1.5;min-height:44px;padding:0}
+.pwfield input:focus{outline:none}
+/* Over the feed, above the bar, under the thumb already holding the phone. */
+.fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0) + 92px);
+     z-index:26;width:56px;height:56px;border-radius:50%;border:0;
+     background:var(--gold);color:var(--onGold);
+     box-shadow:0 10px 26px var(--glassdrop);
+     display:flex;align-items:center;justify-content:center}
+.fab:active{opacity:.75}
+.fab .ic{width:22px;height:22px}
 /* ---------- a list being read in ----------
    The table scrolls sideways rather than the page: a spreadsheet has as many
    columns as it has, and a phone has one width. */

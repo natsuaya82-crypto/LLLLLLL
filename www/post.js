@@ -99,10 +99,12 @@ function pwGlossHTML(){
   }).join('');
 }
 function pwHTML(){
-  return '<div class="field"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
+  return '<div class="pwtop"><div class="pav">'+
+      postFace({lname:langName})+'</div>'+
+    '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
       'placeholder="'+esc(t('post.ln.ph'))+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('pwSetLn') + '></div>'+
-    '<div class="pwgl" id="pw-gl">'+pwGlossHTML()+'</div>'+
+      'autocorrect="off" spellcheck="false"' + IN('pwSetLn') + '>'+
+      '<div class="pwgl" id="pw-gl">'+pwGlossHTML()+'</div></div></div>'+
     '<div class="sec">'+esc(t('post.mn'))+'</div>'+
     '<div class="field"><input id="pw-mn" value="'+esc(PW.mn)+'" '+
       'placeholder="'+esc(postGlossLine(postGloss(PW.ln)))+'"' + IN('pwSetMn') + '></div>'+
@@ -141,23 +143,54 @@ function pwSend(){
   goTab('feed');
 }
 
-/* ---- reading one -------------------------------------------------------- */
-/* The line as it was written, what the author said it means, and -- folded
-   away -- the gloss. The third one is what a person who makes languages
-   actually wants and what everybody else does not, which is exactly what a
-   fold is for. */
+/* ---- reading one -------------------------------------------------------
+   The shape everybody already knows: a face on the left, who and when on one
+   line, the post under it, and what you can do with it along the bottom.
+   Nothing here is invented, because a timeline is the one screen in this app
+   where being unfamiliar is worth nothing at all.
+
+   What is inside that shape is not Twitter's: three layers rather than one --
+   the line as it was written, what it means, and the gloss word by word. The
+   third is what somebody who makes languages came for and the reason to read
+   a stranger's post at all.
+
+   Only the things that work are along the bottom. There are no likes and no
+   replies here because there is no server, and a row of buttons that do
+   nothing is the thing this app already got wrong once at the bottom of a
+   screen. */
+function postWhen(at){
+  var s=Math.floor((Date.now()-(at||0))/1000);
+  if(s<60) return t('when.now');
+  if(s<3600) return t('when.m', Math.floor(s/60));
+  if(s<86400) return t('when.h', Math.floor(s/3600));
+  return t('when.d', Math.floor(s/86400));
+}
+/* The face is a letter of the language the post is written in, because that
+   is the one picture this app has of anybody. */
+function postFace(p){
+  var l=null, i;
+  for(i=0;i<LETTERS.length;i++) if(ltHasShape(LETTERS[i])){ l=LETTERS[i]; break; }
+  if(l && l.st && l.st.length) return '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
+  if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
+  return '<span class="bch">'+esc(String(p.lname||'?').charAt(0))+'</span>';
+}
 function postRow(p){
   return '<div class="post">'+
-    '<div class="pline'+(myFontOn()? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
-    '<div class="pmn">'+esc(p.mn)+'</div>'+
-    '<div class="pgl">'+(p.gl||[]).map(function(g){
-      return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
-    }).join('')+'</div>'+
-    '<div class="pfoot"><span class="plang">'+esc(p.lname||'')+'</span>'+
-      '<button class="usep"' + DO('postCard', [p.id]) + ' aria-label="'+
-        esc(t('card.title'))+'">'+ICON_CARD+'</button>'+
-      '<button class="usep"' + DO('postDel', [p.id]) + ' aria-label="'+
-        esc(t('post.del'))+'">'+ICON_CROSS+'</button>'+
+    '<div class="pav">'+postFace(p)+'</div>'+
+    '<div class="pbody">'+
+      '<div class="phead"><span class="pname">'+esc(p.lname||'')+'</span>'+
+        '<span class="pwhen">'+esc(postWhen(p.at))+'</span></div>'+
+      '<div class="pline'+(myFontOn()? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
+      '<div class="pmn">'+esc(p.mn)+'</div>'+
+      '<div class="pgl">'+(p.gl||[]).map(function(g){
+        return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
+      }).join('')+'</div>'+
+      '<div class="pacts">'+
+        '<button class="pact"' + DO('postCard', [p.id]) + ' aria-label="'+
+          esc(t('card.title'))+'">'+ICON_CARD+'</button>'+
+        '<button class="pact"' + DO('postDel', [p.id]) + ' aria-label="'+
+          esc(t('post.del'))+'">'+ICON_CROSS+'</button>'+
+      '</div>'+
     '</div></div>';
 }
 /* A post as a picture, which is the one way any of this leaves the app. */
