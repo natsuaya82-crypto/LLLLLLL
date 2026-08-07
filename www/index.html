@@ -744,8 +744,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
         display:flex;align-items:center;justify-content:center;color:transparent}
 .thcard.on .thtick{background:var(--gold);border-color:var(--gold);color:#fff}
 /* The switch on a settings row. */
+/* The .sv it sits in is a row of text with a chevron; a switch is not text
+   and was riding on the text baseline. */
 .sw{width:50px;height:30px;border-radius:999px;background:var(--line);display:inline-flex;
-    align-items:center;padding:2px;transition:background .18s}
+    align-items:center;padding:2px;transition:background .18s;
+    flex:0 0 auto;vertical-align:middle;box-sizing:border-box}
 .sw.on{background:var(--gold)}
 .swk{width:26px;height:26px;border-radius:999px;background:#fff;
      box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s}

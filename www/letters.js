@@ -230,7 +230,12 @@ function ltNew(o){
    ltSetRoman reads it back. */
 /* What the one box shows: a digit's value, or the reading. */
 function ltBoxed(l){
-  return numIsDigit(l)? numLabel(l.val) : ltRoman(l);
+  if(!l) return '';
+  if(numIsDigit(l)) return numLabel(l.val);
+  /* What they typed, if they typed it. ltRoman is the fallback for letters
+     made before the box kept its own answer, and for the ones the app made
+     out of a borrowed character. */
+  return (l && l.ab) || ltRoman(l);
 }
 function ltRoman(l){
   var u=ltUnits(l), all=ipaAll(), out=[], i, j, p, w;
@@ -306,6 +311,16 @@ function ltSetRoman(id, sp){
      shape is stays where it is: that is a different sentence about the same
      letter, and this box has never had anything to say about it. */
   l.snd=units; delete l.val;
+  /* What was typed, kept as typed. It used to be thrown away and rebuilt out
+     of the sounds by ltRoman, so `g` was stored as its sound and came back as
+     whatever letter that sound is usually spelled with -- you asked for G and
+     the alphabet showed you J. And somebody who wants nothing to do with
+     sounds, who just wants their own A B C D, could not have one: every
+     label was a spelling of a phoneme rather than a name they chose.
+     「音で当てられるとGが置けないやん。ただ文字を独自のアルファベットにしたい人も
+     いる」 The sound is still read off it -- that is what makes the letter
+     work in words -- but the name on the letter is theirs. */
+  l.ab=String(sp||'').replace(/^\s+|\s+$/g, '');
   saveLetters(); installScriptFont(); render();
 }
 function ltSetStrokes(id, st){
