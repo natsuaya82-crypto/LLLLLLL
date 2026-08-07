@@ -41,6 +41,10 @@ export function seed(){
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
+  POSTS = [{id:'p1', at:9, lang:langId, lname:'Shango', ln:'kano mos tir',
+            mn:'a tall mountain is seen', ui:'en',
+            gl:[{w:'kano', m:'mountain', p:'n'}, {w:'mos', m:'tall', p:'adj'},
+                {w:'zzq', m:'', p:''}]}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
@@ -199,6 +203,10 @@ export function halfDone(){
     /* A list being read in has three faces and they share no buttons: the
        paste box, the table where each column is said to be something, and
        what happened afterwards with the way to undo it. */
+    /* A post being written: the gloss under the line only exists once there
+       is a line, and the meaning is filled from it. */
+    ['a post being written', () => { PW = pwBlank(); openPost();
+        pwSetLn('kano mos tir'); return FORM.html; }],
     ['a list waiting to be understood', () => { IMP = impBlank();
         impTake('Word,Meaning,Part of Speech,Made\n' +
                 'kano,mountain,noun,2024\nzzk,a thing,verb,2024\n');

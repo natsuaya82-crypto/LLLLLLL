@@ -87,6 +87,10 @@ act('openImport', openImport);
 act('openNote', openNote);
 act('openOwnPhase', openOwnPhase);
 act('openPick', openPick);
+act('openPost', openPost);
+act('postCard', postCard);
+act('postDel', postDel);
+act('pwSend', pwSend);
 act('openSlot', openSlot);
 act('openWord', openWord);
 act('pkSwitch', pkSwitch);
@@ -153,6 +157,8 @@ act('wordsSay', wordsSay);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('impSetRole', impSetRole);
+actIn('pwSetLn', pwSetLn);
+actIn('pwSetMn', pwSetMn);
 actIn('ltSetName', ltSetName);
 actIn('ltSetRoman', ltSetRoman);
 actIn('obLang', obLang);

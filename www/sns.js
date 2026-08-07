@@ -25,8 +25,22 @@ function snsEmpty(r){
     '<div class="body"><div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div></div>'+
     tabBar()+'</div>';
 }
-/* Everybody's languages, as they are written. */
-function vFeed(){ return snsEmpty('feed'); }
+/* Everybody's languages, as they are written -- which for the moment is
+   yours, because there is no server yet and a post has nowhere else to go.
+   It is not a placeholder: a post written here is a real post, kept, and it
+   is what the timeline will show when the rest of the world arrives. */
+function vFeed(){
+  var list=postAll();
+  return '<div class="view">'+
+    '<div class="navtop"><span class="navt">'+esc(pageName('feed'))+'</span>'+
+      '<button class="iconb"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
+      ICON_PLUS+'</button></div>'+
+    '<div class="body">'+
+    (list.length
+      ? list.map(postRow).join('')
+      : '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>')+
+    '</div>'+tabBar()+'</div>';
+}
 /* Posts, not your own language -- that search is in the build tab, on the
    contents page, because it searches what is on that page. 「snsの探すと横断
    検索は別物ね」 */

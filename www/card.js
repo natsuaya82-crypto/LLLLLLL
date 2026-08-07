@@ -53,7 +53,13 @@ FORM_OPEN.card=function(rest){
    A card asked for a word that is gone falls back to the newest one, because
    an empty picture is worse than a picture of something else. */
 function cardSrc(){
-  var v=CARD.v, i, w, ex;
+  var v=CARD.v, i, w, ex, po;
+  /* A post is already a line with its meaning fixed to it, which is what a
+     card is. Nothing to work out. */
+  if(CARD.k==='p'){
+    po=postById(v);
+    if(po) return {line:String(po.ln||''), mn:String(po.mn||'')};
+  }
   if(CARD.k==='x'){
     i=String(v).indexOf('#');
     w=findWord(i<0? v : v.slice(0,i));

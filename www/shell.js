@@ -35,6 +35,7 @@ function viewReset(){
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   IMP=impBlank();                      /* a list being read in */
+  PW=pwBlank();                        /* a post being written */
 }
 
 /* ---- where you are, and what you came through ------------------------
