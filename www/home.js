@@ -106,8 +106,8 @@ var pkScript = '';
    the ids are the same. */
 var FORM=null;      /* {key, title, html, mount} — the one being shown */
 var FORM_OPEN={};   /* what rebuilds it when you arrive by the back button */
-function openForm(key, title, html, mount){
-  FORM={key:key, title:title, html:html, mount:mount||null};
+function openForm(key, title, html, mount, right){
+  FORM={key:key, title:title, html:html, mount:mount||null, right:right||''};
   if(here().r==='form' && here().a===key){ render(); window.scrollTo(0,0); }
   else go('form', key);
 }
@@ -124,7 +124,8 @@ function vForm(){
       return '<div class="view">'+navTop('')+'<div class="body">'+
         '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
   }
-  return '<div class="view">'+navTop('')+'<div class="body" id="form-body">'+FORM.html+'</div></div>';
+  return '<div class="view">'+navTop('', FORM.right)+
+    '<div class="body" id="form-body">'+FORM.html+'</div></div>';
 }
 function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
 /* Kept because a dozen save buttons call it. Closing a form is leaving a page. */

@@ -41,7 +41,7 @@ function vFeed(){
     /* Where every timeline puts it: over the feed, above the bar, under the
        thumb of the hand already holding the phone. */
     '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
-      ICON_PEN+'</button>'+
+      ICON_ADD2+'</button>'+
     tabBar()+'</div>';
 }
 /* Posts, not your own language -- that search is in the build tab, on the

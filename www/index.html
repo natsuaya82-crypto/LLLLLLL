@@ -210,20 +210,26 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwg{font-size:.76rem;color:var(--txm)}
 .pwg.none{color:var(--bad)}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
-.pacts{display:flex;justify-content:space-between;max-width:330px;
-       margin:2px 0 -10px -10px}
+/* Edge to edge under the post, the way a thumb expects to find them. */
+.pacts{display:flex;justify-content:space-between;margin:2px -8px -10px -10px}
 .pact{min-width:44px;min-height:44px;padding:0 6px;background:none;border:0;
       color:var(--txm);display:inline-flex;align-items:center;gap:5px}
 .pact .pn{font-size:.8rem;min-width:8px;text-align:left}
 .pact:active{color:var(--gold)}
 .pact.on{color:var(--gold)}
 /* Writing one wears the same face and the same type as the things around it. */
+/* The button that finishes it, filled, at the end of the bar. */
+.navdo{margin-left:auto;align-self:center;flex:0 0 auto;min-height:44px;min-width:44px;
+       padding:0 20px;border:0;border-radius:999px;background:var(--gold);
+       color:var(--onGold);font-family:inherit;font-size:.92rem;font-weight:700}
+.navdo:active{opacity:.75}
 .pwto{font-size:.86rem;color:var(--txm);margin-bottom:8px}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
 .pwfield input{width:100%;background:none;border:0;color:var(--tx);
                font-family:inherit;font-size:1.2rem;line-height:1.5;min-height:44px;padding:0}
 .pwfield input:focus{outline:none}
+.pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
 .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0) + 92px);
      z-index:26;width:56px;height:56px;border-radius:50%;border:0;

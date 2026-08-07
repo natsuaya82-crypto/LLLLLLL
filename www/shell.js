@@ -152,13 +152,17 @@ function pageName(r, a){
 }
 /* One bar, and it is always the same one: back, where you are, and the count
    if the page has one. Nothing else has a back button anywhere. */
-function navTop(count){
+/* `right` is one control pinned to the far end of the bar -- the place every
+   phone puts the thing that finishes what you are doing. It is markup rather
+   than a count because the only screen that wants it wants a button. */
+function navTop(count, right){
   var h=here(), p=PAGES[h.r]||{}, pv=prevPage();
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
   return '<div class="navtop"><button class="back nb"' + DO('back') + '>'+ICON_BACK+esc(lab)+'</button>'+
     ((p.n && !h.a)? '<span class="navn">'+p.n+'</span>' : '')+
     '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
+    (right||'')+
     '</div>';
 }
 /* The three roots. A tab bar belongs on them and nowhere else: on an inner

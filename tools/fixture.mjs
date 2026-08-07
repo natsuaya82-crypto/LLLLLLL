@@ -205,8 +205,12 @@ export function halfDone(){
        what happened afterwards with the way to undo it. */
     /* A post being written: the gloss under the line only exists once there
        is a line, and the meaning is filled from it. */
+    /* The whole form, not just its body: the button that posts it sits in the
+       top bar now, and a face that returns only FORM.html cannot see it. */
     ['a post being written', () => { PW = pwBlank(); openPost();
-        pwSetLn('kano mos tir'); return FORM.html; }],
+        pwSetLn('kano mos tir'); return vForm(); }],
+    ['a reply being written', () => { PW = pwBlank(); PW.to = POSTS[0].id;
+        openPost(); pwSetLn('sar'); return vForm(); }],
     ['a list waiting to be understood', () => { IMP = impBlank();
         impTake('Word,Meaning,Part of Speech,Made\n' +
                 'kano,mountain,noun,2024\nzzk,a thing,verb,2024\n');

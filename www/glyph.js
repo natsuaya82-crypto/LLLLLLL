@@ -411,6 +411,12 @@ var ICON_BOOST='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill=
 var ICON_HEART='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 20.2 4.9 13.4a4.4 4.4 0 0 1 6.2-6.2l.9.9.9-.9a4.4 4.4 0 1 1 6.2 6.2Z"/></svg>';
+/* An actual plus. ICON_PLUS is a four-pointed star -- it means "make me one"
+   where the app is asking a model for something, which is not what the button
+   that opens a blank page means. */
+var ICON_ADD2='<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" '+
+  'stroke-width="2" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M12 5v14M5 12h14"/></svg>';
 var ICON_DOTS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '+
   'aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/>'+
   '<circle cx="19" cy="12" r="1.7"/></svg>';

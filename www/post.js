@@ -87,8 +87,11 @@ function postGlossLine(gl){
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
 function pwBlank(){ return {ln:'', mn:'', to:''}; }
+/* The thing that finishes it goes in the top bar, filled, where every phone
+   puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
-  openForm('post:', t('post.new'), pwHTML());
+  openForm('post:', t('post.new'), pwHTML(), null,
+    '<button class="navdo"' + DO('pwSend') + '>'+esc(t('post.send'))+'</button>');
 }
 FORM_OPEN.post=function(){ openPost(); };
 /* Word by word, and the row is always there even when it is empty, so the
@@ -106,12 +109,13 @@ function pwHTML(){
     '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
       'placeholder="'+esc(t('post.ln.ph'))+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + IN('pwSetLn') + '>'+
-      '<div class="pwgl" id="pw-gl">'+pwGlossHTML()+'</div></div></div>'+
-    '<div class="sec">'+esc(t('post.mn'))+'</div>'+
-    '<div class="field"><input id="pw-mn" value="'+esc(PW.mn)+'" '+
-      'placeholder="'+esc(postGlossLine(postGloss(PW.ln)))+'"' + IN('pwSetMn') + '></div>'+
-    '<button class="btn" style="width:100%;margin-top:14px"' + DO('pwSend') + '>'+
-      esc(t('post.send'))+'</button>';
+      '<div class="pwgl" id="pw-gl">'+pwGlossHTML()+'</div>'+
+      /* The meaning sits in the same column as the line, in the same
+         borderless field, because it is the second half of the same act. */
+      '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
+        'placeholder="'+esc(postGlossLine(postGloss(PW.ln)) || t('post.mn'))+'"' +
+        IN('pwSetMn') + '>'+
+      '</div></div>';
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
    body would put the caret back at the end of the field on every letter.
