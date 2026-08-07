@@ -273,13 +273,25 @@ function ltDupOf(l){
 
    Nothing is written if any part of what was typed cannot be read: half a
    correction applied silently is worse than none. */
+/* What letter of the alphabet this shape is, and -- separately -- what that
+   letter reads. Two facts, in that order, and the order is the app:
+   「文字を書く、その文字をアルファベットで表すと何になるかを決める。そのアルファ
+   ベットがどんなよみになるかきまる」
+
+   They were one. The box wrote the sound and the name was rebuilt out of it,
+   so a person who wanted their own A B C D -- who has nothing to say about
+   sound at all and only wants to swap the shapes -- could not have one, and
+   G came back as J. 「音をそれぞれ分けて作れるようにしろってずっと言ってるのに
+   こいつ音から作る」
+
+   So the box writes the name. The sound is filled in from it ONCE, the first
+   time, where it can be worked out at all -- a reads /a/ and everyone knows
+   it, so nobody should have to say so. After that the two do not touch:
+   renaming a letter leaves its sound alone, and openSnd changes the sound
+   without renaming anything. A name nothing can be read from -- 山 -- simply
+   leaves the sound empty rather than inventing one. */
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
-  /* One box, three outcomes, and no switch to set first. Roman letters are a
-     reading; a bare number is a value, which is how a sign is said to be a
-     digit; anything else reads itself, which is what a mark is. A row of
-     buttons for the value was a second control that grew with the base and
-     did not fit beside the first. 「▫️に文字入れてtとか書くだけにしようよ」 */
   if(/^[0-9]+$/.test(String(sp||'').trim())){
     numSetVal(id, parseInt(String(sp).trim(), 10));
     return;
@@ -289,9 +301,9 @@ function ltSetRoman(id, sp){
     if(!words[i].length) continue;
     /* Not roman letters: it is itself. `?` reads `?`, and joins no inventory
        because it is not a sound. */
-    if(!/^[A-Za-z]+$/.test(words[i])){ units.push(words[i]); continue; }
+    if(!/^[A-Za-z]+$/.test(words[i])){ continue; }
     parts=ipaFromRoman(words[i]);
-    if(!parts){ toast(t('lt.reads.no')); return; }
+    if(!parts) continue;              /* not readable: leave the sound alone */
     units.push(parts.join(''));
     for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
   }
@@ -310,7 +322,11 @@ function ltSetRoman(id, sp){
      way giving a value gives up the reading. Which letter of the alphabet the
      shape is stays where it is: that is a different sentence about the same
      letter, and this box has never had anything to say about it. */
-  l.snd=units; delete l.val;
+  delete l.val;
+  /* The sound is a default, not an echo. It goes in when the letter has none
+     -- which is the moment it is named -- and never again, so a letter whose
+     sound was set on the chart keeps it when its name changes. */
+  if(units.length && !(l.snd && l.snd.length)) l.snd=units;
   /* What was typed, kept as typed. It used to be thrown away and rebuilt out
      of the sounds by ltRoman, so `g` was stored as its sound and came back as
      whatever letter that sound is usually spelled with -- you asked for G and
