@@ -9,16 +9,20 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + migrate + i18n + act + press — green before a commit (~85s)
+npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + press
+                # green before a commit (~90s)
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` / `npm run i18n` / `npm run act` / `npm run press`.
-`tools/pre-commit` runs them as a hook.
+Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
+`npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run press`.
+`tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
+about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
+`npm test` yourself.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
 
-## The seven rules the gate enforces
+## The nine rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -47,8 +51,15 @@ Ten interface languages live in `www/i18n/{en,es,pt,fr,de,it,ru,zh,ko,ja}.js`.
 - "Lingua" is never translated.
 
 `i18n-check` renders every screen in a pseudo-language of accented look-alikes; text that
-comes out in plain letters never passed through `t()` and fails the build. It also walks all
-30 screens in all 10 languages with fallback-to-English armed — one fallback fails.
+comes out in plain letters never passed through `t()` and fails the build. It also walks
+every screen in all 10 languages with fallback-to-English armed — one fallback fails.
+
+It reads the source for three things the mirror cannot see, because they never reach the
+DOM: `SPEAKS` (a literal handed to `toast`/`alert`/`confirm`/`prompt`), `PAINTS` (a literal
+handed to `fillText`/`strokeText` — the card is a canvas, and a canvas is not text; only
+`Lingua` may be painted), and `NAMES` (`t('tab.x')` outside `shell.js` — what a screen is
+called is `PAGES`' to say through `pageName()`, and naming one anywhere else is the same
+screen named twice).
 
 ### 3. No JavaScript inside the markup
 
@@ -81,7 +92,7 @@ of them.
 
 ### 4. A route carries its view
 
-`PAGES` in `www/screens.js` says what a route is called and which tab it is
+`PAGES` in `www/shell.js` says what a route is called and which tab it is
 under. `www/route-map.js` says what it *shows* — `page('build', vBuild)`, the
 function itself, never its name, exactly as `act-map.js` does. `render()` looks
 it up; it used to be twenty-two conditions, a second copy of `PAGES` that
@@ -132,7 +143,47 @@ It asserts what a thing *is*, never how many there are. The app rebuilds
 letters it cannot find from the drawn glyphs, so a dropped slice comes back as
 plausible auto-generated letters with the right count and the wrong ids.
 
-### 7. Script load order in `index.html`
+### 7. A list somebody already has comes in whole
+
+`www/import.js` has a line across it. Above it is the reader: what shape a paste or a file
+is in, and what each column means. It is DOM-free and globals-free on purpose, so
+`tools/import-check.mjs` can `eval` that half in Node and put eleven real samples through
+it — a spreadsheet with any columns in any order, Excel pasted straight in, semicolon CSV,
+backslash-coded SIL lexicons, JSON, plain lines, a bare list of meanings. Below the line is
+the app.
+
+Adding a shape means adding a sample. A reader that guesses wrong loses somebody's word
+list silently, and no screen would ever look wrong.
+
+### 8. The making side and the reading side are separate
+
+The app is two things. On one side somebody makes a language: one dictionary, one
+alphabet, one writing system, all open at once and all global. On the other is a timeline,
+where a post was written by somebody else, in a language this phone has never seen.
+
+**Every global on the making side is a lie on the reading side** — and a lie that tells the
+truth for as long as you are the only person there. That is what makes it dangerous: it
+tests green, screenshots right and demos perfectly, and the day the second person arrives
+every post in the timeline is signed with your name, wears your font and carries your
+letter. Five were live at once: the face, the name, the handle, the font, and the language
+name on a card.
+
+So `www/post.js` has a line across it, and below that line **a post renders from the post**.
+What a reader needs is put ON the post when it is written, above the line, where the making
+side still exists — the name, the handle, the language's name, and the SHAPE of a letter
+rather than a reference to one, because the reader does not have that alphabet.
+
+`tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
+`STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
+siblings. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
+a second argument and `list.map(postRow)` handed each row its index, so post 0 was right
+and every post after it wore my font anyway.
+
+What it cannot catch is the composer, which is above the line and has to be: it renders one
+thing belonging to somebody else — whom you are replying to. That said `meName()`, so every
+reply announced you were replying to yourself.
+
+### 9. Script load order in `index.html`
 
 - `core.js` defines `defLang()` → precedes the ten language files
 - `otf5.js` defines `LinguaFont` → precedes `glyph.js`
@@ -152,6 +203,35 @@ remembers.
 
 So: **a rule lives in one place, and the places that follow it do not restate
 it.**
+
+A later audit found twelve more. Six by reading the seam between the two sides:
+the root bar (`rootTop()` — the contents page and the timeline each hand-rolled
+it and had already drifted in what goes in the corner), the gloss row
+(`postGlossHTML()`), what the meaning defaults to (`pwMn()`), what to call an
+author (`postWho()`), "nothing here yet" (`snsNone()`), and "the thing you came
+back for is gone" (`viewGone()`, five screens in four files).
+
+Six more by running a three-line sliding window over every line of `www/`,
+which is worth doing again and takes a minute to write: a letter's face
+(`ltInk()`), strokes into ink (`inkStrokes()`), the spelling page
+(`spPageHTML()`), the spelling row (`spRowHTML()`), an example sentence
+(`exRowHTML()`), and where the thumb is (`geXY()`).
+
+**The worst two sat under comments claiming to be the one place.** `ltFace`
+opened with "a letter's face, wherever one is shown" and there were five others.
+`inkStrokes` says it is "the one place that turns strokes into a shape on a
+canvas" and the glyph *editor* did not go through it — the letter under your
+finger was drawn by different code from the letter on the key, the tile and the
+card. A third, `vASpell`, carried the comment "Same page as the editor's, on the
+other list" directly above a copy of that page.
+
+A comment saying "this is the one place" is worth nothing on its own: whoever
+reads it will fix that one and go home. Either a check holds the claim, or do
+not make it.
+
+Not everything that repeats is duplication. `cffNum` and `csNum` in `otf5.js`
+encode the same integers to different byte forms because that is what CFF
+specifies. Merging them would be inventing a rule, not finding one.
 
 `viewReset()` in `www/shell.js` is where a screen forgets. Which words the
 list is filtered to, what was typed, which face a sheet shows, what the make
@@ -204,6 +284,12 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/sound.js` | sound (ch 8) |
 | `www/settings.js` | settings and plans (ch 11-12) |
 | `www/wordsheet.js` | the sheet for writing one word, and CSV (ch 13) |
+| `www/card.js` | the card — one line as a picture that can leave the phone (ch 15) |
+| `www/sns.js` | the timeline, the search and the notices (ch 16) |
+| `www/import.js` | bringing somebody's existing list in (ch 17) |
+| `www/numbers.js` | numbers — a digit is a letter with a value (ch 18) |
+| `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
+| `www/me.js` | who you are: the account, beside the language (ch 20) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
@@ -221,16 +307,25 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 162`, `screens the mirror
-rendered: 270`) because nothing else in a green run would show it shrinking.
+Both checks print their coverage (`screens walked: 208`, `screens the mirror
+rendered: 319`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 3067` for the same reason — and it is what a
+change that is meant to alter nothing has to leave untouched.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js`, chapter 14 closes `glyph.js`, and
+- The book is numbered: chapter 0 opens `core.js`, chapter 20 closes `me.js`, and
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
   grew to hold five was split along those banners, not along anything new.
 - `www/glyph.js` is still 47 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
 - Run `npm test` after every change, not once at the end. It is fast and it is the spec.
+- Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
+  Not a gate — it is how a change to a screen gets looked at instead of read as a
+  diff of string concatenation. A refactor that is meant to change nothing can be
+  held to it: shoot every screen before and after and compare. Expect noise —
+  the same code twice does not give the same bytes, so compare against that
+  floor rather than against zero.
 - iOS build and device testing must happen on a Mac with Xcode
-  (`npx cap sync ios`); it cannot be done from a Linux session.
+  (`npx cap sync ios`); it cannot be done from a Linux session. **Do not trigger
+  a build without being asked.**

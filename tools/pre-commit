@@ -37,6 +37,22 @@ if git diff --cached --name-only | grep -q '^www/'; then
   }
 fi
 
+# The three that need no browser, so they cost about a second and a half between
+# them. sides-check is here rather than only in `npm test` because what it
+# catches -- the making side reaching into the timeline -- is invisible while
+# every post is yours, which is to say invisible to whoever is committing.
+if git diff --cached --name-only | grep -q '^www/'; then
+  echo 'dead + import + sides: the fast three...'
+  node tools/dead-check.mjs >/dev/null && node tools/import-check.mjs >/dev/null \
+    && node tools/sides-check.mjs >/dev/null || {
+    echo ''
+    node tools/dead-check.mjs >/dev/null || node tools/dead-check.mjs
+    node tools/import-check.mjs >/dev/null || node tools/import-check.mjs
+    node tools/sides-check.mjs >/dev/null || node tools/sides-check.mjs
+    exit 1
+  }
+fi
+
 # The screen files are the ones that can carry untranslated text; the ten
 # language files and the font writer cannot, so a commit that only touches
 # those does not need the two-minute walk.
