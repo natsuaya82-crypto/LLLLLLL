@@ -399,6 +399,21 @@ var ICON_SORT='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="
 var ICON_LINE='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 6h16M4 11h16M4 16h9"/></svg>';
+/* The row under a post. A speech bubble, two arrows going round, a heart and
+   a way out -- the four everybody's thumb already knows where to find. */
+var ICON_REPLY='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M20.5 11.5a7.5 7.5 0 0 1-10.9 6.7L4 19.5l1.4-4.6A7.5 7.5 0 1 1 20.5 11.5Z"/></svg>';
+var ICON_BOOST='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 8.5h11.5a3 3 0 0 1 3 3V13"/><path d="M7 5.5 4 8.5l3 3"/>'+
+  '<path d="M20 15.5H8.5a3 3 0 0 1-3-3V11"/><path d="m17 18.5 3-3-3-3"/></svg>';
+var ICON_HEART='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 20.2 4.9 13.4a4.4 4.4 0 0 1 6.2-6.2l.9.9.9-.9a4.4 4.4 0 1 1 6.2 6.2Z"/></svg>';
+var ICON_DOTS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '+
+  'aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/>'+
+  '<circle cx="19" cy="12" r="1.7"/></svg>';
 /* the card: a framed picture with a line written across it */
 var ICON_CARD='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+

@@ -179,36 +179,46 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(env(safe-area-inset-bottom,0) + 120px)}
 /* ---------- a post ----------
-   The shape everybody already knows: a face on the left, who and when on one
-   line, the post under it, what you can do with it along the bottom. Being
-   unfamiliar is worth nothing on a timeline.
+   The row everybody's thumb already knows: face, a bold name with the handle
+   and the time in grey beside it, the post, four things spread along the
+   bottom, dividers running the whole width. Deliberately NOT the app's serif
+   and gold -- those belong to the book side, and a feed that looks like a
+   book looks like something you have to learn.
 
-   What is INSIDE it is this app's: the line as written, what it means, and
-   the gloss word by word in the smallest type on the screen. A word the
-   dictionary has never heard of stands in the colour of a problem. */
-.post{display:flex;gap:12px;padding:14px 2px;border-bottom:1px solid var(--line)}
-.pav{flex:0 0 auto;width:44px;height:44px;border-radius:50%;overflow:hidden;
-     background:var(--sf);border:1px solid var(--line);
-     display:flex;align-items:center;justify-content:center}
-.pav canvas{width:28px;height:28px}
-.pav .bch{font-size:1.15rem;color:var(--gold);line-height:1}
+   What is inside it is this app's: three layers, and a word the dictionary
+   has never heard of standing in the colour of a problem. */
+.post{display:flex;gap:12px;margin:0 -24px;padding:12px 16px;
+      border-bottom:1px solid var(--line)}
+.pav{flex:0 0 auto;width:40px;height:40px;border-radius:50%;overflow:hidden;
+     background:var(--sf);display:flex;align-items:center;justify-content:center}
+.pav canvas{width:26px;height:26px}
+.pav .bch{font-size:1.05rem;color:var(--txs);line-height:1}
 .pbody{flex:1 1 auto;min-width:0}
-.phead{display:flex;align-items:baseline;gap:8px;margin-bottom:2px}
-.pname{font-family:'Cinzel',Georgia,serif;font-size:.84rem;font-weight:600;
-       letter-spacing:.06em;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pwhen{flex:0 0 auto;font-size:.78rem;color:var(--txm)}
-.pline{font-size:1.2rem;line-height:1.5;color:var(--tx);word-break:break-word}
-.pmn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
-     font-size:1.02rem;color:var(--txs);margin-top:2px}
-.pgl,.pwgl{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px}
-.pwg{font-size:.76rem;color:var(--txm);letter-spacing:.02em}
+.phead{display:flex;align-items:center;gap:5px;line-height:1.3}
+.pname{font-weight:700;font-size:.95rem;color:var(--tx);
+       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phandle,.pdot,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
+.phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.pmore{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;margin-right:-12px;
+       background:none;border:0;color:var(--txm);
+       display:inline-flex;align-items:center;justify-content:center}
+.pmore:active{color:var(--bad)}
+.pline{font-size:1.06rem;line-height:1.45;color:var(--tx);
+       margin-top:2px;word-break:break-word}
+.pmn{font-size:1.0rem;line-height:1.45;color:var(--txs);margin-top:2px}
+.pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
+.pwg{font-size:.76rem;color:var(--txm)}
 .pwg.none{color:var(--bad)}
-.pacts{display:flex;gap:24px;margin:4px 0 -8px -11px}
-.pact{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
-      display:inline-flex;align-items:center;justify-content:center}
+/* Spread edge to edge under the post, the way a thumb expects to find them. */
+.pacts{display:flex;justify-content:space-between;max-width:330px;
+       margin:2px 0 -10px -10px}
+.pact{min-width:44px;min-height:44px;padding:0 6px;background:none;border:0;
+      color:var(--txm);display:inline-flex;align-items:center;gap:5px}
+.pact .pn{font-size:.8rem;min-width:8px;text-align:left}
 .pact:active{color:var(--gold)}
-/* Writing one wears the same face, so the thing you are about to make looks
-   like the things around it. */
+.pact.on{color:var(--gold)}
+/* Writing one wears the same face and the same type as the things around it. */
+.pwto{font-size:.86rem;color:var(--txm);margin-bottom:8px}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
 .pwfield input{width:100%;background:none;border:0;color:var(--tx);

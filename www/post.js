@@ -86,7 +86,7 @@ function postGlossLine(gl){
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
-function pwBlank(){ return {ln:'', mn:''}; }
+function pwBlank(){ return {ln:'', mn:'', to:''}; }
 function openPost(){
   openForm('post:', t('post.new'), pwHTML());
 }
@@ -99,7 +99,9 @@ function pwGlossHTML(){
   }).join('');
 }
 function pwHTML(){
-  return '<div class="pwtop"><div class="pav">'+
+  var to=PW.to? postById(PW.to) : null;
+  return (to? '<div class="pwto">'+esc(t('post.re', to.lname||''))+'</div>' : '')+
+    '<div class="pwtop"><div class="pav">'+
       postFace({lname:langName})+'</div>'+
     '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
       'placeholder="'+esc(t('post.ln.ph'))+'" autocapitalize="none" '+
@@ -134,30 +136,37 @@ function pwSend(){
   var ln=String(PW.ln||'').trim();
   if(!ln){ toast(t('post.none')); return; }
   var gl=postGloss(ln);
-  POSTS.push({id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
-              lang:langId, lname:langName||'',
-              ln:ln, mn:String(PW.mn||'').trim() || postGlossLine(gl),
-              ui:uiLang(), gl:gl});
+  var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
+            lang:langId, lname:langName||'',
+            ln:ln, mn:String(PW.mn||'').trim() || postGlossLine(gl),
+            ui:uiLang(), gl:gl, li:0, bo:0, re:0};
+  if(PW.to){
+    mine.to=PW.to;
+    var up=postById(PW.to);
+    if(up){ up.re=(up.re||0)+1; }
+  }
+  POSTS.push(mine);
   savePosts();
   PW=pwBlank();
   goTab('feed');
 }
 
 /* ---- reading one -------------------------------------------------------
-   The shape everybody already knows: a face on the left, who and when on one
-   line, the post under it, and what you can do with it along the bottom.
-   Nothing here is invented, because a timeline is the one screen in this app
-   where being unfamiliar is worth nothing at all.
+   A timeline is the one screen in this app where being unfamiliar is worth
+   nothing at all, so this is the row everybody's thumb already knows: the
+   face, the name in bold with the handle and the time in grey beside it, the
+   post, and four things spread along the bottom. Not the app's serif and gold
+   -- those belong to the book side, and a feed that looks like a book looks
+   like something you have to learn. 「TwitterとかXと同じように作って」
 
-   What is inside that shape is not Twitter's: three layers rather than one --
-   the line as it was written, what it means, and the gloss word by word. The
-   third is what somebody who makes languages came for and the reason to read
-   a stranger's post at all.
+   What is INSIDE the row is this app's and nothing else's: three layers, the
+   line as it was written, what its author says it means, and the gloss word
+   by word. That is the reason to read a stranger's post at all.
 
-   Only the things that work are along the bottom. There are no likes and no
-   replies here because there is no server, and a row of buttons that do
-   nothing is the thing this app already got wrong once at the bottom of a
-   screen. */
+   Every one of the four works. There is no server, so a like is a like on
+   this phone -- kept, counted, and the first thing that syncs when there is
+   one. A row of buttons that do nothing is what this app already got wrong
+   once at the bottom of a screen. */
 function postWhen(at){
   var s=Math.floor((Date.now()-(at||0))/1000);
   if(s<60) return t('when.now');
@@ -165,8 +174,13 @@ function postWhen(at){
   if(s<86400) return t('when.h', Math.floor(s/3600));
   return t('when.d', Math.floor(s/86400));
 }
-/* The face is a letter of the language the post is written in, because that
-   is the one picture this app has of anybody. */
+/* Until there are accounts, the language is who you are -- so it is the name,
+   and the handle is what it is called with the spaces taken out. */
+function postHandle(p){
+  return '@'+String(p.lname||'').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+/* The face is a letter of the language the post is written in. It is the one
+   picture this app has of anybody, and a better one than an initial. */
 function postFace(p){
   var l=null, i;
   for(i=0;i<LETTERS.length;i++) if(ltHasShape(LETTERS[i])){ l=LETTERS[i]; break; }
@@ -174,24 +188,58 @@ function postFace(p){
   if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
   return '<span class="bch">'+esc(String(p.lname||'?').charAt(0))+'</span>';
 }
+function postAct(fn, id, icon, n, on){
+  return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) + '>'+icon+
+    '<span class="pn">'+(n? String(n) : '')+'</span></button>';
+}
 function postRow(p){
   return '<div class="post">'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
-      '<div class="phead"><span class="pname">'+esc(p.lname||'')+'</span>'+
-        '<span class="pwhen">'+esc(postWhen(p.at))+'</span></div>'+
+      '<div class="phead">'+
+        '<span class="pname">'+esc(p.lname||'')+'</span>'+
+        '<span class="phandle">'+esc(postHandle(p))+'</span>'+
+        '<span class="pdot">·</span>'+
+        '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+        '<button class="pmore"' + DO('postDel', [p.id]) + ' aria-label="'+
+          esc(t('post.del'))+'">'+ICON_DOTS+'</button>'+
+      '</div>'+
       '<div class="pline'+(myFontOn()? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
       '<div class="pmn">'+esc(p.mn)+'</div>'+
       '<div class="pgl">'+(p.gl||[]).map(function(g){
         return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
       }).join('')+'</div>'+
       '<div class="pacts">'+
-        '<button class="pact"' + DO('postCard', [p.id]) + ' aria-label="'+
-          esc(t('card.title'))+'">'+ICON_CARD+'</button>'+
-        '<button class="pact"' + DO('postDel', [p.id]) + ' aria-label="'+
-          esc(t('post.del'))+'">'+ICON_CROSS+'</button>'+
+        postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
+        postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+
+        postAct('postLike',  p.id, ICON_HEART, (p.li||0), !!p.lime)+
+        postAct('postCard',  p.id, ICON_CARD,  0, false)+
       '</div>'+
     '</div></div>';
+}
+/* A like is a like on this phone. It is kept and counted, and it is the first
+   thing that will have somewhere else to go when there is a server. */
+function postLike(id){
+  var p=postById(id);
+  if(!p) return;
+  p.lime=!p.lime;
+  p.li=Math.max(0, (p.li||0)+(p.lime? 1 : -1));
+  savePosts(); render();
+}
+function postBoost(id){
+  var p=postById(id);
+  if(!p) return;
+  p.bome=!p.bome;
+  p.bo=Math.max(0, (p.bo||0)+(p.bome? 1 : -1));
+  savePosts(); render();
+}
+/* Replying opens the same screen a post is written on, holding on to what it
+   is a reply TO. */
+function postReply(id){
+  var p=postById(id);
+  if(!p) return;
+  PW=pwBlank(); PW.to=id;
+  openPost();
 }
 /* A post as a picture, which is the one way any of this leaves the app. */
 function postCard(id){

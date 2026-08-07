@@ -310,6 +310,7 @@ defLang('zh', (function(){
       "post.new"        : "新帖",
       "post.ln.ph"      : "用你的语言写一句",
       "post.mn"         : "这句话的意思",
+      "post.re"         : "回复 {0}",
       "post.send"       : "发布",
       "post.none"       : "没有可发布的内容",
       "post.del"        : "删除",

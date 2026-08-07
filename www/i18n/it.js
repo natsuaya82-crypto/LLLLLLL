@@ -302,6 +302,7 @@ defLang('it', (function(){
       "post.new"        : "Nuovo post",
       "post.ln.ph"      : "una frase nella tua lingua",
       "post.mn"         : "Cosa vuol dire",
+      "post.re"         : "In risposta a {0}",
       "post.send"       : "Pubblica",
       "post.none"       : "Niente da pubblicare",
       "post.del"        : "Elimina",

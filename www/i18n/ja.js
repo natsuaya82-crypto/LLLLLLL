@@ -218,6 +218,7 @@ defLang('ja', (function(){
       'post.new'        : '投稿',
       'post.ln.ph'      : '自分の言語で一行',
       'post.mn'         : '意味',
+      'post.re'         : '{0} への返信',
       'post.send'       : '投稿する',
       'post.none'       : '書いてください',
       'post.del'        : '削除',
