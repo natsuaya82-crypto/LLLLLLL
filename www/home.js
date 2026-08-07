@@ -45,18 +45,6 @@ function tocRows(){
      txt:TALK.length? tn('count.turns', TALK.length) : '—'}
   ];
 }
-/* The first chapter with nothing in it yet, and nothing at all once every
-   chapter has been started -- a language somebody is already working on does
-   not need to be told where to go. */
-function nextStep(){
-  var rows=tocRows(), i;
-  for(i=0;i<rows.length;i++) if(!rows[i].v)
-    return '<button class="nextcard"' + DO('go', [rows[i].r]) + '>'+
-      '<span class="nk">'+t('next.t')+'</span>'+
-      '<span class="nl">'+esc(t(rows[i].k))+'</span>'+
-      '<span class="na">'+ICON_GO+'</span></button>';
-  return '';
-}
 
 /* =========================================================================
    Writing system. The map is sound -> {ch}; an entry can later carry {svg}
@@ -217,8 +205,17 @@ function chTaken(){
    FIND is search across the whole language and bringing other people's work
    in. It is where a public gallery goes when there is one; until then it is
    already the fastest way into a word, which is what it is for. */
+/* Who you are, and then what you are making. It carried neither: a card,
+   and under it a cover with the language's name set like a title page, a
+   line about what it is for, two counts, a card telling you what to do
+   next, and the last word you wrote. 「プロフィール画面ごちゃごちゃしすぎ。
+   まずは、プロフィールを載せようよSNS用の。写真 名前 @ 自己紹介。その下に
+   作成中の言語、言語の用途とか並べて。次にすることと最後に作成した単語は消して」
+
+   Two things go, and they are the two that were about the app rather than
+   about the person: what to do next, and the most recent word. Neither is
+   a profile -- they are a home screen's, and this stopped being one. */
 function vProfile(){
-  var last=WORDS.length?WORDS[WORDS.length-1]:null;
   return '<div class="view fixed">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
     '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
@@ -226,7 +223,7 @@ function vProfile(){
     '<div class="cover">'+
       '<div class="tkick">'+t('home.kicker')+'</div>'+
       '<button class="tname"' + DO('editName') + '>'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
-      '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '　')+'</div>'+
+      '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '\u3000')+'</div>'+
       '<div class="rule"></div>'+
       '<button class="wldrow"' + DO('go', ["world"]) + '>'+
         (wldSaid()? '<span class="wldl">'+esc(wldLine()||t('wld.title'))+'</span>'
@@ -235,11 +232,6 @@ function vProfile(){
         cvStat(t('toc.letters'), ltShaped()||'—', 'letters')+
         cvStat(t('toc.words'), WORDS.length||'—', 'words')+
       '</div>'+
-      nextStep()+
-      (last? '<button class="recent"' + DO('go', ["words"]) + '>'+
-            '<div class="rh">'+t('home.recent.word')+'</div>'+
-            '<div class="line'+(myFontOn()?' sfont':'')+'">'+esc(wOut(last.hw))+'</div>'+
-            '<div class="tr">'+(wMn(last)? esc(wMn(last))+' · ':'')+esc(readOut(last.hw))+'</div></button>' : '')+
     '</div>'+
     tabBar()+
   '</div>';

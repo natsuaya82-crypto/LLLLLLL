@@ -720,6 +720,34 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* A note on a word is a line or two, not a page. */
 .field textarea#wd-nt{height:76px}
 .row2{display:flex;gap:10px}.row2 .field{flex:1}
+/* The look, shown as what it looks like. The two minis are painted in
+   literal colours, not variables: the light card has to stay light while
+   the app around it is dark, which is the only reason it is a picture. */
+.thcards{display:flex;gap:18px;justify-content:center;margin:8px 0 4px}
+.thcard{flex:1 1 0;max-width:172px;background:none;border:0;padding:6px 0;font:inherit;
+        color:var(--tx);display:flex;flex-direction:column;align-items:center;gap:11px;min-height:44px}
+.thmini{width:100%;height:176px;border-radius:15px;border:1px solid var(--line);
+        display:flex;flex-direction:column;gap:9px;padding:16px 13px;overflow:hidden}
+.thmini.light{background:#F7F5EF;border-color:#E3DED1}
+.thmini.dark{background:#131210;border-color:#2B2822}
+.thbar{height:11px;width:54%;border-radius:3px;background:#A5822F;flex:0 0 auto}
+.thl{height:7px;border-radius:4px;flex:0 0 auto;margin-top:3px}
+.thmini.light .thl{background:#DFD9C9}
+.thmini.dark .thl{background:#35312A}
+.thl.w1{width:90%}.thl.w2{width:70%}.thl.w3{width:82%}
+.thnm{font-size:.92rem}
+.thtick{width:25px;height:25px;border-radius:999px;border:1.5px solid var(--line);
+        display:flex;align-items:center;justify-content:center;color:transparent}
+.thcard.on .thtick{background:var(--gold);border-color:var(--gold);color:#fff}
+/* The switch on a settings row. */
+.sw{width:50px;height:30px;border-radius:999px;background:var(--line);display:inline-flex;
+    align-items:center;padding:2px;transition:background .18s}
+.sw.on{background:var(--gold)}
+.swk{width:26px;height:26px;border-radius:999px;background:#fff;
+     box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s}
+.sw.on .swk{transform:translateX(20px)}
+.pbio{margin-top:5px;font-size:.88rem;line-height:1.65;color:var(--txs);white-space:pre-wrap}
+.field textarea#me-bio{height:84px}
 .pvbox{display:flex;align-items:center;gap:10px;margin:2px 0 12px;min-height:26px}
 .pvbox .pvk{font-size:1.02rem;color:var(--gold)}
 .pvbox .pvn{font-size:.86rem;color:var(--txm)}

@@ -71,23 +71,55 @@ function delNote(){
   saveNotes(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.note.gone'));
 }
 
+/* Searching the notebook. The lens in the corner rather than a box always
+   across the top: a note is read far more often than it is looked for, and
+   the box would push the first note off the screen every day to serve the
+   day it is wanted. 「メモの右上に🔍ボタン置いて、メモ内検索できるように」
+
+   It looks in both halves of a note -- the heading and the body -- because
+   what somebody remembers about a note they wrote is as often a word
+   inside it as the line at the top. */
+var ntQ='', ntFind=false;
+function ntSearch(){
+  ntFind=!ntFind; if(!ntFind) ntQ='';
+  render();
+  var e=document.getElementById('nt-q'); if(e) e.focus();
+}
+function ntSetQ(v){ ntQ=v; render(); }
+function notesFound(){
+  var qq=String(ntQ||'').trim().toLowerCase(), out=[], i;
+  for(i=NOTES.length-1;i>=0;i--){
+    if(qq && (String(noteHead(NOTES[i])||'')+' '+String(noteBody(NOTES[i])||''))
+             .toLowerCase().indexOf(qq)<0) continue;
+    out.push(i);
+  }
+  return out;
+}
 function vNotes(){
   /* Newest first: a notebook is read from the end. */
-  var rows='', i;
-  for(i=NOTES.length-1;i>=0;i--){
+  var found=notesFound(), rows='';
+  found.forEach(function(i){
     rows+='<button class="ntrow"' + DO('openNote', [i]) + '>'+
       '<span class="nth">'+esc(noteHead(NOTES[i]))+'</span>'+
       (noteBody(NOTES[i])? '<span class="ntb">'+esc(noteBody(NOTES[i]))+'</span>' : '')+
       '</button>';
-  }
+  });
   return '<div class="view">'+
-    navTop(NOTES.length)+
+    navTop(NOTES.length,
+      '<button class="iconb'+(ntFind?' on':'')+'"' + DO('ntSearch') + ' aria-label="'+
+        esc(t('notes.search'))+'">'+ICON_LENS+'</button>')+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
-    (NOTES.length
+    (ntFind
+      ? '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+        '<input id="nt-q" placeholder="'+esc(t('notes.search'))+'" value="'+esc(ntQ)+'"' +
+        IN('ntSetQ') + '></div>'
+      : '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>')+
+    (found.length
       ? '<div class="ntlist">'+rows+'</div>'
-      : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
-        '<div class="es">'+t('notes.empty.s')+'</div></div>')+
+      : ntQ
+        ? '<div class="empty"><div class="eb">'+t('words.nomatch')+'</div></div>'
+        : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
+          '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
     '<div class="barfix"><button class="btn"' + DO('openNote') + '>'+ICON_NOTE+t('notes.new')+'</button></div>'+
     '</div>';

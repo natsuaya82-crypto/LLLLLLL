@@ -23,12 +23,13 @@
    ========================================================================= */
 
 var LS_ME='lingua.me';
-var ME={name:'', handle:''};
+var ME={name:'', handle:'', bio:''};
 function meRead(){
-  ME={name:'', handle:''};
+  ME={name:'', handle:'', bio:''};
   try{
     var m=JSON.parse(localStorage.getItem(LS_ME)||'null');
-    if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||''); }
+    if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||'');
+           ME.bio=String(m.bio||''); }
   }catch(e){}
 }
 meRead();
@@ -44,6 +45,10 @@ function meHandle(){
   return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 function meSetName(v){ ME.name=String(v||''); saveMe(); }
+/* A line about yourself, which is the one thing on a profile that is not
+   about the language. It is never invented and never stands in for
+   anything: with nothing written there is nothing there. */
+function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
 function meSetHandle(v){
   /* A handle is what somebody types after an @, so it is the characters that
      survive being typed after one. */
@@ -59,6 +64,7 @@ function meCard(){
     '<div class="mewho">'+
       '<div class="pname">'+esc(meName())+'</div>'+
       '<div class="phandle">@'+esc(meHandle())+'</div>'+
+      (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
     '</div>'+
     '<button class="meedit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
     '</div>';
@@ -73,6 +79,9 @@ function openMe(){
     '<div class="sec">'+esc(t('me.handle'))+'</div>'+
     '<div class="field"><input id="me-hd" value="'+esc(ME.handle)+'" '+
       'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>');
+      'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
+    '<div class="sec">'+esc(t('me.bio'))+'</div>'+
+    '<div class="field"><textarea id="me-bio" placeholder="'+esc(t('me.bio.ph'))+'"' +
+      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>');
 }
 FORM_OPEN.me=function(){ openMe(); };

@@ -53,16 +53,27 @@ function vSet(){
   var id=String(here().a||''), p=PLANS.filter(function(x){return x.id===plan();})[0], S=setSample();
   var body='';
   if(id==='look'){
-    body='<div class="pick">'+
-      ['system','light','dark'].map(function(th){
-        return '<button class="'+(SET.theme===th?'on':'')+'"' + DO('setTheme', [th]) + '>'+t('theme.'+th)+'</button>';
-      }).join('')+'</div>'+
+    /* Three words in a row said nothing about what they did. A phone shows
+       this as the screen itself, twice, with a tick under the one you are
+       looking at -- so the picture is a picture of Lingua, not a swatch.
+       「設定の見た目は外観モードを写真と同じようにして。Linguaの画面のスクショ
+       みたいな感じ」 */
+    body='<div class="thcards">'+setLookCard('light')+setLookCard('dark')+'</div>'+
+      '<button class="set" style="margin-top:14px;border-bottom:none"' +
+        DO('setAuto', [SET.theme!=='system']) + '>'+
+        '<span class="sl">'+t('theme.system')+'</span>'+
+        '<span class="sv"><span class="sw'+(SET.theme==='system'?' on':'')+'">'+
+        '<span class="swk"></span></span></span></button>'+
       '<div class="note">'+t('set.theme.note')+'</div>';
   } else if(id==='read'){
-    body='<div class="pick">'+
-      [['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
-        return '<button class="'+(readMode()===m[0]?'on':'')+'"' + DO('setRead', [m[0]]) + '>'+esc(m[1])+'</button>';
-      }).join('')+'</div>'+
+    /* Down the page, one to a row, ticked -- not three words sharing the
+       width of the screen. 「読みの表示も横に切り替えるやつじゃなくて縦に並ぶ
+       ようにして」 */
+    body=[['ipa',t('read.ipa')],['kana',capFirst(langDef().rdName)],['both',t('read.both')]].map(function(m){
+        return '<button class="set"' + DO('setRead', [m[0]]) + '>'+
+          '<span class="sl">'+esc(m[1])+'</span>'+
+          '<span class="sv">'+(readMode()===m[0]? ICON_TICK : '')+'</span></button>';
+      }).join('')+
       '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
         '<span class="pvk">'+esc(readSeq(S.seq))+'</span>'+
         '<button' + DO('sayPh', [S.seq]) + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
@@ -83,8 +94,6 @@ function vSet(){
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
       '<span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
-      '<span class="sv">'+addedSnd().length+ICON_GO+'</span></button>'+
-      '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
       /* Answered once, if ever: wsGuess() reads it off the letters, and the
          letters chapter used to put these five across the top of the screen
@@ -93,8 +102,7 @@ function vSet(){
          which is the sort of thing that looks wrong before it is read. */
       '<button class="set"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
-      '<button class="set" style="margin-top:18px"' + DO('wipeAll') + '>'+
-      '<span class="sl bad">'+t('set.wipe')+'</span></button>';
+      '';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
@@ -111,7 +119,13 @@ function vSet(){
         '<span class="sv">'+ICON_GO+'</span></button>')+
       '<div class="sec">'+t('set.plan')+'</div>'+
       '<button class="set"' + DO('go', ["plans"]) + '><span class="sl">'+t('set.plan.cur')+'</span>'+
-      '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
+      '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>'+
+      /* Erasing what is on this phone is the person's, beside signing out --
+         it sat at the foot of the language room, which is the one place it
+         is not about. Signing out leaves everything where it is; this does
+         not, so it says so and asks. */
+      '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
+      '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='data'){
     body=(has('plus')
       ? '<button class="set"' + DO('exportCSV') + '><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
@@ -128,7 +142,29 @@ function vSet(){
   }
   return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
 }
+/* One card: a small Lingua in that theme, its name, and a tick. The colours
+   are written out rather than taken from the variables, because the light
+   card has to look light while the app around it is dark -- that is the
+   whole of what it is for. */
+function setLookCard(th){
+  var on=(SET.theme===th);
+  return '<button class="thcard'+(on?' on':'')+'"' + DO('setTheme', [th]) + '>'+
+    '<span class="thmini '+th+'"><span class="thbar"></span>'+
+      '<span class="thl w1"></span><span class="thl w2"></span>'+
+      '<span class="thl w3"></span><span class="thl w2"></span></span>'+
+    '<span class="thnm">'+t('theme.'+th)+'</span>'+
+    '<span class="thtick">'+ICON_TICK+'</span></button>';
+}
 function setTheme(v){ SET.theme=v; save(); applyTheme(); render(); }
+/* Following the phone, or not. Turning it off has to land on one of the two
+   cards, and the honest one is whichever the phone was already showing --
+   otherwise the screen changes colour at the moment somebody says "stop
+   changing colour". */
+function setAuto(on){
+  if(on){ setTheme('system'); return; }
+  var dark=!!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  setTheme(dark? 'dark' : 'light');
+}
 function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
 /* Erase everything means everything. It used to empty the words, the

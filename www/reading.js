@@ -42,7 +42,6 @@ function seqOf(hw){
   var w=(typeof findWord==='function')? findWord(hw) : null;
   return w? wPh(w) : phGuess(hw);
 }
-function readOut(hw){ return readSeq(seqOf(hw)); }
 /* Words run together when one ends on a consonant and the next opens on a
    vowel. Decided on the sounds, which is where it was always happening. */
 /* How readings are displayed (a setting): IPA / approximation / both.

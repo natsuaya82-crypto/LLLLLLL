@@ -209,6 +209,12 @@ export function halfDone(){
                                                    labels:{s1:'a'}, what:''}];
                                        window.route='gram'; NAV=[{r:'gram', a:'own1'}];
                                        const h=vGram(); return h; }],
+    /* The notebook with its lens pressed. The box is not on the screen at
+       rest -- that is the whole point of the lens -- so nothing typed into
+       it was ever reached by a walk over the routes. */
+    ['searching the notes', () => { ntFind = true; ntQ = 'a';
+                                    window.route='notes'; NAV=[{r:'notes'}];
+                                    return vNotes(); }],
     ['a slot already filled',  () => { openSlot('neg','not'); return FORM.html; }],
     ['words being suggested for a slot', () => { openSlot('greet','yes');
                                                  stSug=[['k','a'],['t','i']];
