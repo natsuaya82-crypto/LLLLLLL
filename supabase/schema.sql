@@ -76,6 +76,31 @@ create table publication (
 );
 create index publication_language_idx on publication(language, at desc);
 
+-- ---- asked --------------------------------------------------------------
+-- One sentence a day, put up by us, that anybody may answer in their own
+-- language. It is the loop this whole thing turns on: everyone already knows
+-- what the day's sentence means, so a feed of two hundred unreadable scripts
+-- becomes two hundred readable ones, and nobody has to learn anything to read
+-- it. Posts stay, so a prompt accumulates -- the same meaning in every
+-- language anybody has built, which is a page worth coming back to long after
+-- the day it belonged to.
+--
+-- Nobody but us writes one. There is no insert policy below, so the API
+-- cannot make one at all: they arrive through the service role, which is a
+-- key that lives on our side and answers to no policy. A prompt table anyone
+-- could write to is a second posting surface with no author on it.
+--
+-- It is here, above the post, rather than below it where it reads better: post
+-- has a foreign key to this table, and a foreign key cannot point at a table
+-- that does not exist yet. This file had it the other way round and had never
+-- been run, so nobody had found out.
+create table prompt (
+  id      bigint generated always as identity primary key,
+  on_day  date not null unique,        -- one a day, and the unique says so
+  text    text not null,               -- English, and translated on the device
+  created_at timestamptz not null default now()
+);
+
 -- ---- said ------------------------------------------------------------------
 -- A post is a thing somebody said, once. body holds the runs of text and the
 -- glyph outlines they were drawn with AT THE TIME -- frozen, because a post is
@@ -108,26 +133,7 @@ create table quote (
 );
 create index quote_language_idx on quote(language);
 
--- ---- asked --------------------------------------------------------------
--- One sentence a day, put up by us, that anybody may answer in their own
--- language. It is the loop this whole thing turns on: everyone already knows
--- what the day's sentence means, so a feed of two hundred unreadable scripts
--- becomes two hundred readable ones, and nobody has to learn anything to read
--- it. Posts stay, so a prompt accumulates -- the same meaning in every
--- language anybody has built, which is a page worth coming back to long after
--- the day it belonged to.
---
--- Nobody but us writes one. There is no insert policy below, so the API
--- cannot make one at all: they arrive through the service role, which is a
--- key that lives on our side and answers to no policy. A prompt table anyone
--- could write to is a second posting surface with no author on it.
-create table prompt (
-  id      bigint generated always as identity primary key,
-  on_day  date not null unique,        -- one a day, and the unique says so
-  text    text not null,               -- English, and translated on the device
-  created_at timestamptz not null default now()
-);
-
+-- ---- followed ------------------------------------------------------------
 create table follow (
   follower   uuid not null references profile(id) on delete cascade,
   followed   uuid not null references profile(id) on delete cascade,
@@ -217,11 +223,11 @@ create policy quote_drop on quote for delete using (
   and exists (select 1 from post p where p.id = post and p.author = auth.uid())
 );
 
--- follow: everyone sees who follows whom; you add and remove your own following
 -- prompt: everyone reads. Nothing else -- no insert, no update, no delete
 -- policy exists, so the day's sentence can only come from the service role.
 create policy prompt_read on prompt for select using (true);
 
+-- follow: everyone sees who follows whom; you add and remove your own following
 create policy follow_read on follow for select using (true);
 create policy follow_make on follow for insert
   with check (is_member() and follower = auth.uid());
