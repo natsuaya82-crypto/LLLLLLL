@@ -212,6 +212,12 @@ export function halfDone(){
     /* The notebook with its lens pressed. The box is not on the screen at
        rest -- that is the whole point of the lens -- so nothing typed into
        it was ever reached by a walk over the routes. */
+    /* A face already chosen. The way to take it off only exists once there
+       is one, and a walk over a fresh install never has one. The data URL is
+       a real 1x1 gif: postFace puts it in an <img src>. */
+    ['a face already chosen', () => {
+        ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        openMe(); const h = FORM.html; ME.pic = ''; return h; }],
     ['searching the notes', () => { ntFind = true; ntQ = 'a';
                                     window.route='notes'; NAV=[{r:'notes'}];
                                     return vNotes(); }],

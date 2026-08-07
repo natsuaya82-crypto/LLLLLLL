@@ -172,6 +172,10 @@ function pwSend(){
    phone. A shape, not a reference. */
 function postAvatar(){
   var i, l;
+  /* A photo if there is one. It travels on the post like the letter does,
+     for the same reason: whoever reads it has neither this person's camera
+     roll nor their alphabet. */
+  if(ME.pic) return {pic:ME.pic};
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     if(l.st && l.st.length) return {st:l.st};
@@ -254,6 +258,7 @@ function postFace(p){
     PFACE[k]=av.st;
     return '<canvas class="tcp" data-p="'+esc(k)+'"></canvas>';
   }
+  if(av && av.pic) return '<img class="bpic" src="'+esc(av.pic)+'" alt="">';
   if(av && av.ch) return '<span class="bch">'+esc(av.ch)+'</span>';
   return '<span class="bch">'+esc((postWho(p)||'?').charAt(0))+'</span>';
 }

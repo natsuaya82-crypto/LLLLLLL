@@ -23,13 +23,13 @@
    ========================================================================= */
 
 var LS_ME='lingua.me';
-var ME={name:'', handle:'', bio:''};
+var ME={name:'', handle:'', bio:'', pic:''};
 function meRead(){
-  ME={name:'', handle:'', bio:''};
+  ME={name:'', handle:'', bio:'', pic:''};
   try{
     var m=JSON.parse(localStorage.getItem(LS_ME)||'null');
     if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||'');
-           ME.bio=String(m.bio||''); }
+           ME.bio=String(m.bio||''); ME.pic=String(m.pic||''); }
   }catch(e){}
 }
 meRead();
@@ -49,6 +49,47 @@ function meSetName(v){ ME.name=String(v||''); saveMe(); }
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
 function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
+/* ---- a face of your own ------------------------------------------------
+   A file input, because that is the one way a WKWebView opens the camera
+   roll without a plugin, and the plugin would have to be installed on a
+   Mac before anybody could try it.
+
+   It is kept as a data URL, square, 128 across. Not the picture somebody
+   chose: a phone photo is three or four megabytes and localStorage holds a
+   few for everything this person owns -- their words, their letters, their
+   whole language -- so a face at full size would be the thing that filled
+   it. 128 is twice what the largest place it is shown needs.
+
+   The element is reached by id rather than handed in, because a file input
+   has no value worth passing: what was chosen is in .files. */
+var ME_PIC=128;
+function meSetPic(){
+  var el=document.getElementById('me-pic'), f=el && el.files && el.files[0];
+  if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){ mePicKeep(String(r.result||'')); };
+  r.onerror=function(){ toast(t('me.pic.bad')); };
+  r.readAsDataURL(f);
+}
+/* Cropped to the middle square, then squeezed. Everything that shows a face
+   shows a circle, so the sides of a landscape photo were never going to be
+   seen and keeping them would only cost room. */
+function mePicKeep(url){
+  var im=new Image();
+  im.onload=function(){
+    var side=Math.min(im.width, im.height);
+    var c=document.createElement('canvas'), x;
+    c.width=ME_PIC; c.height=ME_PIC;
+    x=c.getContext('2d');
+    x.drawImage(im, (im.width-side)/2, (im.height-side)/2, side, side, 0, 0, ME_PIC, ME_PIC);
+    try{ ME.pic=c.toDataURL('image/jpeg', 0.82); saveMe(); }
+    catch(e){ toast(t('me.pic.bad')); return; }
+    openMe();
+  };
+  im.onerror=function(){ toast(t('me.pic.bad')); };
+  im.src=url;
+}
+function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
 function meSetHandle(v){
   /* A handle is what somebody types after an @, so it is the characters that
      survive being typed after one. */
@@ -82,6 +123,14 @@ function openMe(){
       'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
     '<div class="field"><textarea id="me-bio" placeholder="'+esc(t('me.bio.ph'))+'"' +
-      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>');
+      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
+    '<div class="sec">'+esc(t('me.pic'))+'</div>'+
+    '<div class="picrow"><span class="pav">'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<label class="btn ghost picpick">'+esc(t('me.pic.pick'))+
+        '<input type="file" id="me-pic" accept="image/*"' + CH('meSetPic') + '></label>'+
+    '</div>'+
+    (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
+       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : ''));
 }
 FORM_OPEN.me=function(){ openMe(); };
