@@ -16,13 +16,17 @@
    16. The timeline, the search and the notices
    ========================================================================= */
 
-/* One shape for all three, because all three are the same screen until there
-   is something to put in them, and three copies of it would be three places
-   to change when there is. */
+/* Nothing here yet, said once. The timeline says it too, on the day the
+   account is new, and it has to say the same thing. */
+function snsNone(){
+  return '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>';
+}
+/* One shape for the search and the notices, because both are the same screen
+   until there is something to put in them, and two copies of it would be two
+   places to change when there is. */
 function snsEmpty(r){
-  return '<div class="view">'+
-    '<div class="navtop"><span class="navt">'+esc(pageName(r))+'</span></div>'+
-    '<div class="body"><div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div></div>'+
+  return '<div class="view">'+rootTop(r)+
+    '<div class="body">'+snsNone()+'</div>'+
     tabBar()+'</div>';
 }
 /* Everybody's languages, as they are written -- which for the moment is
@@ -36,11 +40,11 @@ function vFeed(){
      that is yours. list.map(postRow) would have handed each row its index
      instead, and every post after the first would have worn it.  */
   return '<div class="view">'+
-    '<div class="navtop"><span class="navt">'+esc(pageName('feed'))+'</span></div>'+
+    rootTop('feed')+
     '<div class="body">'+
     (list.length
       ? list.map(function(p){ return postRow(p, mf); }).join('')
-      : '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>')+
+      : snsNone())+
     '</div>'+
     /* Where every timeline puts it: over the feed, above the bar, under the
        thumb of the hand already holding the phone. */

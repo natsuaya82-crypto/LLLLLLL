@@ -96,11 +96,13 @@ function openPost(){
 FORM_OPEN.post=function(){ openPost(); };
 /* Word by word, and the row is always there even when it is empty, so the
    one thing that changes as you type has somewhere to be put. */
-function pwGlossHTML(){
-  return postGloss(PW.ln).map(function(g){
-    return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
-  }).join('');
-}
+/* What the meaning field starts as, and what its placeholder says: the gloss
+   run together. It was worked out in three places and they have to agree --
+   what you are offered has to be what you get if you type nothing. */
+function pwMn(){ return postGlossLine(postGloss(PW.ln)); }
+/* And the row of it, which is drawn once when the screen is built and again
+   on every letter typed. */
+function pwGl(){ return postGlossHTML(postGloss(PW.ln)); }
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
@@ -114,11 +116,11 @@ function pwHTML(){
     '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
       'placeholder="'+esc(t('post.ln.ph'))+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + IN('pwSetLn') + '>'+
-      '<div class="pwgl" id="pw-gl">'+pwGlossHTML()+'</div>'+
+      '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
-        'placeholder="'+esc(postGlossLine(postGloss(PW.ln)) || t('post.mn'))+'"' +
+        'placeholder="'+esc(pwMn() || t('post.mn'))+'"' +
         IN('pwSetMn') + '>'+
       '</div></div>';
 }
@@ -133,9 +135,9 @@ function pwFresh(){ if(FORM && FORM.key==='post:') FORM.html=pwHTML(); }
 function pwSetLn(v){
   PW.ln=String(v||'');
   var g=document.getElementById('pw-gl');
-  if(g) g.innerHTML=pwGlossHTML();
+  if(g) g.innerHTML=pwGl();
   var m=document.getElementById('pw-mn');
-  if(m) m.setAttribute('placeholder', postGlossLine(postGloss(PW.ln)));
+  if(m) m.setAttribute('placeholder', pwMn());
   pwFresh();
 }
 function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
@@ -232,6 +234,18 @@ function postWhen(at){
 /* The face the post carries, drawn from the shape ON it. A letter of the
    language it is written in is the one picture this app has of anybody, and
    a better one than an initial -- but it has to travel with the post. */
+/* What to call whoever wrote it: their name, or failing that the language's,
+   which is what stood in before there were accounts. The face and the head of
+   the row both need it and they were answering it separately. */
+function postWho(p){ return String((p && (p.who || p.lname)) || ''); }
+/* The gloss, word by word. The composer shows the same row while you type --
+   it is the same thing, so it is drawn by the same six lines. A word the
+   dictionary does not know stands in the colour of a problem. */
+function postGlossHTML(gl){
+  return (gl||[]).map(function(g){
+    return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
+  }).join('');
+}
 var PFACE={};
 function postFace(p){
   var av=p && p.av, k;
@@ -241,7 +255,7 @@ function postFace(p){
     return '<canvas class="tcp" data-p="'+esc(k)+'"></canvas>';
   }
   if(av && av.ch) return '<span class="bch">'+esc(av.ch)+'</span>';
-  return '<span class="bch">'+esc(String((p&&(p.who||p.lname))||'?').charAt(0))+'</span>';
+  return '<span class="bch">'+esc((postWho(p)||'?').charAt(0))+'</span>';
 }
 /* The strokes are drawn by the one function that draws strokes -- the same
    ink as the keyboard, the tiles and the card. What is different here is
@@ -260,7 +274,7 @@ function postRow(p, myFont){
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
       '<div class="phead">'+
-        '<span class="pname">'+esc(p.who||p.lname||'')+'</span>'+
+        '<span class="pname">'+esc(postWho(p))+'</span>'+
         (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
         '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
         '<span class="pdot">·</span>'+
@@ -272,9 +286,7 @@ function postRow(p, myFont){
          your own line. */
       '<div class="pline'+((p.mine && myFont)? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
       '<div class="pmn">'+esc(p.mn)+'</div>'+
-      '<div class="pgl">'+(p.gl||[]).map(function(g){
-        return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
-      }).join('')+'</div>'+
+      '<div class="pgl">'+postGlossHTML(p.gl)+'</div>'+
       '<div class="pacts">'+
         postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
         postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+

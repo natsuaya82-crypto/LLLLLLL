@@ -461,8 +461,7 @@ function ltRow(l){
    this is the letter. */
 function vLetter(){
   var lid=here().a, l=ltById(lid);
-  if(!l) return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  if(!l) return viewGone();
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="field"><label>'+t('lt.name')+'</label>'+
       '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+

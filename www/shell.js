@@ -165,6 +165,25 @@ function navTop(count, right){
     (right||'')+
     '</div>';
 }
+/* Coming back to a screen for a thing that is no longer there -- a word that
+   was deleted, a form that was closed, a letter that is gone. Five screens
+   said this, in the same nine words, in four files. */
+function goneBox(){
+  return '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div>';
+}
+function viewGone(){
+  return '<div class="view">'+navTop('')+'<div class="body">'+goneBox()+'</div></div>';
+}
+/* And the bar a ROOT carries, which is a different bar: there is nothing
+   behind a root, so it has no way back -- only its name, and at most one
+   control at the far end. It was written out on the contents page and again
+   on the timeline, and the two had already drifted apart in what they put in
+   the corner. Both bars live here now, so which one a screen wears is one
+   decision made in one place. */
+function rootTop(r, right){
+  return '<div class="navtop"><span class="navt">'+esc(pageName(r))+'</span>'+
+    (right||'')+'</div>';
+}
 /* The three roots. A tab bar belongs on them and nowhere else: on an inner
    page the thing at the bottom of the screen is that page's own button. */
 /* Searching your own language used to be one of these. It is not a place in

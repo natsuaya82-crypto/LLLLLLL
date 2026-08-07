@@ -53,7 +53,7 @@ FORM_OPEN.card=function(rest){
    A card asked for a word that is gone falls back to the newest one, because
    an empty picture is worse than a picture of something else. */
 function cardSrc(){
-  var v=CARD.v, i, w, ex, po;
+  var v=CARD.v, i, w, ex, po, nm=String(langName||'');
   /* A post is already a line with its meaning fixed to it, which is what a
      card is. Nothing to work out. */
   if(CARD.k==='p'){
@@ -69,12 +69,11 @@ function cardSrc(){
     i=String(v).indexOf('#');
     w=findWord(i<0? v : v.slice(0,i));
     ex=(w && w.ex)? w.ex[parseInt(i<0? '0' : v.slice(i+1), 10)] : null;
-    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
-                   nm:String(langName||'')};
+    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''), nm:nm};
   }
   w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {line:'', mn:'', nm:String(langName||'')};
-  return {line:String(w.hw), mn:String(wMns(w)[0]||''), nm:String(langName||'')};
+  if(!w) return {line:'', mn:'', nm:nm};
+  return {line:String(w.hw), mn:String(wMns(w)[0]||''), nm:nm};
 }
 
 /* The line as things to draw, left to right: a letter's strokes, a character

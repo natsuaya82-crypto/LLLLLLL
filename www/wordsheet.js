@@ -124,8 +124,7 @@ function addKeys(){
    other list. */
 function vASpell(){
   var i=parseInt(here().a,10), st=addSp[i];
-  if(!st) return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  if(!st) return viewGone();
   var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
   for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
   for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
@@ -405,8 +404,7 @@ function wdDelEx(i){
 function vRelate(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
   var w=(k==='syn'||k==='ant')? findWord(hw) : null;
-  if(!w) return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  if(!w) return viewGone();
   var on=wRel(w,k), list=WORDS.filter(function(x){ return x!==w; })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
   return '<div class="view">'+navTop(on.length)+'<div class="body">'+
@@ -528,8 +526,7 @@ function wdBack(){
    is exactly the case where the letter's own readings are not enough. */
 function vSpell(){
   var i=parseInt(here().a,10), sp=(wEdit&&wEdit.sp)||[], st=sp[i];
-  if(!st) return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+  if(!st) return viewGone();
   var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
   for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
   for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }

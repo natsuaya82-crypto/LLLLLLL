@@ -139,8 +139,7 @@ function vForm(){
     var s=formArg(a), f=FORM_OPEN[s.kind];
     if(f) try{ f(s.rest); }catch(e){}
     if(!FORM || FORM.key!==a)
-      return '<div class="view">'+navTop('')+'<div class="body">'+
-        '<div class="empty"><div class="eb">'+t('form.gone')+'</div></div></div></div>';
+      return viewGone();
   }
   return '<div class="view">'+navTop('', FORM.right)+
     '<div class="body" id="form-body">'+FORM.html+'</div></div>';
@@ -261,9 +260,9 @@ function vBuild(){
        contents page rather than holding a tab of its own. The bottom bar has
        to be about where you are in the app; this is about what you are
        looking for inside one screen's worth of it. */
-    '<div class="navtop"><span class="navt">'+esc(pageName('build'))+'</span>'+
-    '<button class="iconb"' + DO('go', ["find"]) + ' aria-label="'+
-      esc(pageName('find'))+'">'+ICON_LENS+'</button></div>'+
+    rootTop('build',
+      '<button class="iconb"' + DO('go', ["find"]) + ' aria-label="'+
+        esc(pageName('find'))+'">'+ICON_LENS+'</button>')+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
     '<div class="toc">'+tocRows().map(function(row){

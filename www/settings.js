@@ -115,7 +115,7 @@ function vSet(){
         '<span><span class="lt">'+t('set.lock.cloud.t')+'</span><br><span class="ld">'+t('set.lock.cloud.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>');
   } else {
-    body='<div class="empty"><div class="eb">'+t('form.gone')+'</div></div>';
+    body=goneBox();
   }
   return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
 }
