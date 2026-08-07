@@ -22,6 +22,23 @@ about two seconds) plus i18n when a screen file changed. It is not the whole gat
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
 
+```
+npm run rls     # supabase/schema.sql, and somebody who is not you (~15s)
+```
+
+Not in `npm test`, because it stands up a real PostgreSQL and the gate has to
+run on a laptop in an airport. Run it whenever `supabase/schema.sql` changes —
+that is the only time it can start failing.
+
+The phone talks to Supabase directly; there is no server of ours in front of
+it, so the app is a suggestion and the row level security in `schema.sql` is
+the whole of the security. A policy that is too wide breaks nothing: nothing
+throws, every screenshot is right, and `npm test` is green, because there is
+only ever one person in a test. So `rls-check` is a second person — it applies
+`schema.sql` unchanged to an empty database and then tries, as B and as
+somebody with no account, to do all 34 things the file says cannot be done.
+Adding a policy means adding the line somebody would use against it.
+
 ## The nine rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
@@ -295,6 +312,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
 | `www/talk.js`, `assist.js`, `sentences.js`, `grammar.js` | the AI (Studio) side |
 | `www/voice.js`, `notes.js` | speech, notes |
+| `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
 A new view is found automatically by the checks (they ask the page for globals named
