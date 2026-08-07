@@ -43,7 +43,7 @@
    (tools/pen-pick.mjs), pen 36 inks 10% of the cell where the real font inks 19%,
    and pen 60 inks exactly the real font's 19%. A third of the ink is a visibly
    paler page; two strokes welding is one dot's worth of redrawing. */
-var GPEN={width:60, angleDeg:0, contrast:1.0};
+var GPEN={width:60, angleDeg:0, contrast:1.0, curve:72};
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of

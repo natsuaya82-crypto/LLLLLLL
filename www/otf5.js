@@ -41,7 +41,18 @@ var LinguaFont = (function () {
   // checks for roundness, and at editor scale (about one screen pixel per unit) a
   // 3-unit sag reads as a visible facet. Round strokes therefore get a tolerance
   // five times tighter; it costs a few dozen extra hulls and nothing else.
-  var ROUND = 0.44, FLAT_TOL = 3, RING_TOL = 0.6;
+  var FLAT_TOL = 3, RING_TOL = 0.6;
+  // How far back from a curve point the bend starts, and it is a distance on
+  // the lattice, not a fraction of anything. It was 0.44 x the SHORTER of the
+  // two legs, so the size of a bend was decided by how far apart the points
+  // happened to be: two points close together barely bent, the same two
+  // further apart swung wide, and one letter held both. That is the wobble.
+  // 「なんのために点線置いてんの？それ使わずに曲線やるせいでふにゃふにゃになる」
+  // The dots govern where a line goes; they govern how it turns too, so every
+  // bend in a script is the same bend. A point whose legs are too short to
+  // hold one stays a corner -- refusing to bend is honest where bending a
+  // little is the thing that looked hand-drawn.
+  var CURVE = 72;
 
   function sub(a, b) { return [a[0] - b[0], a[1] - b[1]]; }
   function add(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
@@ -111,7 +122,8 @@ var LinguaFont = (function () {
     return out;
   }
 
-  function toPolyline(st) {
+  function toPolyline(st, curve) {
+    var R = curve || CURVE;
     var v = st.pts, m = v.length;
     if (m === 1) return [[v[0][0], v[0][1]]];
     if (st.k === 'o') {
@@ -120,12 +132,14 @@ var LinguaFont = (function () {
     }
     var closed = !!st.closed;
     var P = function (i) { var p = v[((i % m) + m) % m]; return [p[0], p[1]]; };
+    var leg = function (i) {
+      return Math.min(len(sub(P(i - 1), P(i))), len(sub(P(i + 1), P(i))));
+    };
     var bends = function (i) {
-      return v[((i % m) + m) % m][2] === 'c' && (closed || (i > 0 && i < m - 1));
+      return v[((i % m) + m) % m][2] === 'c' && (closed || (i > 0 && i < m - 1))
+             && leg(i) >= R;
     };
-    var radius = function (i) {
-      return Math.min(ROUND * len(sub(P(i - 1), P(i))), ROUND * len(sub(P(i + 1), P(i))));
-    };
+    var radius = function (i) { return R; };
     var entry = function (i) { return add(P(i), mul(unit(sub(P(i - 1), P(i))), radius(i))); };
     var exit_ = function (i) { return add(P(i), mul(unit(sub(P(i + 1), P(i))), radius(i))); };
     var out = [];
@@ -202,7 +216,7 @@ var LinguaFont = (function () {
   function glyphContours(g, pen) {
     var N = nib(pen), out = [];
     g.strokes.forEach(function (st) {
-      var line = toPolyline(st);
+      var line = toPolyline(st, pen && pen.curve);
       var at = function (p) {
         return N.map(function (d) { return [p[0] + d[0], p[1] + d[1]]; });
       };
