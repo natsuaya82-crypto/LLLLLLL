@@ -103,9 +103,14 @@ function pwGlossHTML(){
 }
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
-  return (to? '<div class="pwto">'+esc(t('post.re', meName()))+'</div>' : '')+
+  /* Whom you are replying to is on the post you pressed reply on. It read the
+     account here, so every reply said you were replying to yourself. */
+  return (to? '<div class="pwto">'+
+      esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>' : '')+
+    /* The face you are about to post under, which is the one this post will
+       carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwtop"><div class="pav">'+
-      postFace({lname:langName})+'</div>'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
       'placeholder="'+esc(t('post.ln.ph'))+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + IN('pwSetLn') + '>'+
@@ -140,8 +145,13 @@ function pwSend(){
   var ln=String(PW.ln||'').trim();
   if(!ln){ toast(t('post.none')); return; }
   var gl=postGloss(ln);
+  /* Everything a reader needs is put ON the post, now, because the reader may
+     not be here and may not have this language: who wrote it, what they are
+     called, what it is written in, and a face. A timeline that asks the open
+     language who wrote a post answers "me" for everybody. */
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
+            who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
             ln:ln, mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), gl:gl, li:0, bo:0, re:0};
   if(PW.to){
@@ -154,6 +164,45 @@ function pwSend(){
   PW=pwBlank();
   goTab('feed');
 }
+
+/* The face a post carries: one letter of the language it is written in, cut
+   loose from that language so it survives being read on somebody else's
+   phone. A shape, not a reference. */
+function postAvatar(){
+  var i, l;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(l.st && l.st.length) return {st:l.st};
+    if(l.ch) return {ch:l.ch};
+  }
+  return null;
+}
+/* Posts written before a post carried its author. They are all this person's,
+   because there was nowhere else for one to come from. */
+function migratePosts(){
+  var i, n=0;
+  for(i=0;i<POSTS.length;i++){
+    if(POSTS[i].who!==undefined) continue;
+    POSTS[i].who=meName(); POSTS[i].hd=meHandle();
+    POSTS[i].mine=true; POSTS[i].av=postAvatar();
+    n++;
+  }
+  if(n) savePosts();
+}
+
+/* ==== below this line a post renders from the post ====
+   Nothing here may ask the open language, the open dictionary, the drawn
+   letters or the account anything. A post is read by people who do not have
+   any of those -- that is the whole point of a timeline -- and every one of
+   these was wrong when this was written:
+
+     the face was the OPEN language's first letter, on everybody's post
+     the name and handle were the account's, on everybody's post
+     the line wore MY font, on everybody's post
+
+   All three are invisible while every post is yours and all three are
+   catastrophic the day one is not. tools/sides-check.mjs holds the line.
+   ===================================================================== */
 
 /* ---- reading one -------------------------------------------------------
    A timeline is the one screen in this app where being unfamiliar is worth
@@ -178,37 +227,50 @@ function postWhen(at){
   if(s<86400) return t('when.h', Math.floor(s/3600));
   return t('when.d', Math.floor(s/86400));
 }
-/* Who wrote it comes from the account, live -- rename yourself and every post
-   of yours says the new name, which is what every timeline does. What it is
-   WRITTEN IN is frozen on the post, because renaming a language later would
-   rewrite what old posts say they are. */
-/* The face is a letter of the language the post is written in. It is the one
-   picture this app has of anybody, and a better one than an initial. */
+/* All of it comes off the post. Renaming yourself does not rewrite old posts,
+   which is the price of a timeline that can hold anybody else's. */
+/* The face the post carries, drawn from the shape ON it. A letter of the
+   language it is written in is the one picture this app has of anybody, and
+   a better one than an initial -- but it has to travel with the post. */
+var PFACE={};
 function postFace(p){
-  var l=null, i;
-  for(i=0;i<LETTERS.length;i++) if(ltHasShape(LETTERS[i])){ l=LETTERS[i]; break; }
-  if(l && l.st && l.st.length) return '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
-  if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
-  return '<span class="bch">'+esc(String(p.lname||'?').charAt(0))+'</span>';
+  var av=p && p.av, k;
+  if(av && av.st && av.st.length){
+    k=String((p && p.id) || 'me');
+    PFACE[k]=av.st;
+    return '<canvas class="tcp" data-p="'+esc(k)+'"></canvas>';
+  }
+  if(av && av.ch) return '<span class="bch">'+esc(av.ch)+'</span>';
+  return '<span class="bch">'+esc(String((p&&(p.who||p.lname))||'?').charAt(0))+'</span>';
+}
+/* The strokes are drawn by the one function that draws strokes -- the same
+   ink as the keyboard, the tiles and the card. What is different here is
+   only where they came FROM: the post, not LETTERS. */
+function postFaces(){
+  inkCanvases('canvas.tcp', 40, 34, function(c){
+    return PFACE[c.getAttribute('data-p')] || null;
+  });
 }
 function postAct(fn, id, icon, n, on){
   return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) + '>'+icon+
     '<span class="pn">'+(n? String(n) : '')+'</span></button>';
 }
-function postRow(p){
+function postRow(p, myFont){
   return '<div class="post">'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
       '<div class="phead">'+
-        '<span class="pname">'+esc(meName())+'</span>'+
+        '<span class="pname">'+esc(p.who||p.lname||'')+'</span>'+
         (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
-        '<span class="phandle">@'+esc(meHandle())+'</span>'+
+        '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
         '<span class="pdot">·</span>'+
         '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
-        '<button class="pmore"' + DO('postDel', [p.id]) + ' aria-label="'+
-          esc(t('post.del'))+'">'+ICON_DOTS+'</button>'+
+        (p.mine? '<button class="pmore"' + DO('postDel', [p.id]) + ' aria-label="'+
+          esc(t('post.del'))+'">'+ICON_DOTS+'</button>' : '')+
       '</div>'+
-      '<div class="pline'+(myFontOn()? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
+      /* Your own font is the font of YOUR language, so it is only ever put on
+         your own line. */
+      '<div class="pline'+((p.mine && myFont)? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
       '<div class="pmn">'+esc(p.mn)+'</div>'+
       '<div class="pgl">'+(p.gl||[]).map(function(g){
         return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
@@ -217,7 +279,9 @@ function postRow(p){
         postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
         postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+
         postAct('postLike',  p.id, ICON_HEART, (p.li||0), !!p.lime)+
-        postAct('postCard',  p.id, ICON_CARD,  0, false)+
+        /* A card is drawn out of a dictionary and a set of letters, so it can
+           only be made of a post whose language is here. */
+        (p.mine? postAct('postCard', p.id, ICON_CARD, 0, false) : '')+
       '</div>'+
     '</div></div>';
 }

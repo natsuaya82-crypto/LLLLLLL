@@ -58,17 +58,23 @@ function cardSrc(){
      card is. Nothing to work out. */
   if(CARD.k==='p'){
     po=postById(v);
-    if(po) return {line:String(po.ln||''), mn:String(po.mn||'')};
+    /* Named by the post, not by the open language. A card of a post is a
+       picture of what somebody published; stamping the language you happen
+       to have open across the foot of it is the same bug the timeline had
+       three times over. */
+    if(po) return {line:String(po.ln||''), mn:String(po.mn||''),
+                   nm:String(po.lname||'')};
   }
   if(CARD.k==='x'){
     i=String(v).indexOf('#');
     w=findWord(i<0? v : v.slice(0,i));
     ex=(w && w.ex)? w.ex[parseInt(i<0? '0' : v.slice(i+1), 10)] : null;
-    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || '')};
+    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
+                   nm:String(langName||'')};
   }
   w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {line:'', mn:''};
-  return {line:String(w.hw), mn:String(wMns(w)[0]||'')};
+  if(!w) return {line:'', mn:'', nm:String(langName||'')};
+  return {line:String(w.hw), mn:String(wMns(w)[0]||''), nm:String(langName||'')};
 }
 
 /* The line as things to draw, left to right: a letter's strokes, a character
@@ -279,7 +285,7 @@ function cardPaint(c){
   /* whose language it is, and what made it. "Lingua" is never translated. */
   x.fillStyle=cssVar('--gold');
   x.font=Math.round(H*0.030)+'px '+CARD_CAPS;
-  cardTrack(x, String(langName||'').toUpperCase(), W*0.22, Math.round(H*0.852), H*0.0068);
+  cardTrack(x, String(src.nm||'').toUpperCase(), W*0.22, Math.round(H*0.852), H*0.0068);
   x.fillStyle=cssVar('--txm');
   cardTrack(x, 'LINGUA', W*0.78, Math.round(H*0.852), H*0.0068);
 }
@@ -304,7 +310,9 @@ function cardMount(){
 function cardSave(){
   var c=document.getElementById('cardc');
   if(!c) return;
-  var name=(langName||'lingua')+'.png';
+  /* Named after what is ON the card, which for a post is the language it was
+     written in and not the one you happen to have open. */
+  var name=(cardSrc().nm || 'lingua')+'.png';
   if(c.toBlob){ c.toBlob(function(b){ cardDeliver(b, name); }, 'image/png'); return; }
   cardDeliver(null, name);
 }

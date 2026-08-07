@@ -54,7 +54,8 @@ function meSetHandle(v){
 /* ---- the block at the top of the profile ------------------------------- */
 function meCard(){
   return '<div class="mecard">'+
-    '<div class="pav">'+postFace({lname:langName})+'</div>'+
+    '<div class="pav">'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="mewho">'+
       '<div class="pname">'+esc(meName())+'</div>'+
       '<div class="phandle">@'+esc(meHandle())+'</div>'+

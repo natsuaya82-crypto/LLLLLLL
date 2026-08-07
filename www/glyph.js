@@ -1315,12 +1315,18 @@ function inkOf(lid, sym){
    fourteen lines, differing only in the selector and the floor under the
    size. A change to how a letter is inked reached the keyboard and left the
    tiles as they were, and nothing anywhere could see the two had come
-   apart. */
-function inkCanvases(sel, floor, dflt){
+   apart.
+
+   A post's face comes through here too, and it is the one caller whose
+   strokes are NOT read out of LETTERS -- they travel on the post, because
+   whoever is reading it does not have that language. Hence stOf: what a
+   canvas is a picture of is the caller's to say. */
+function inkCanvases(sel, floor, dflt, stOf){
   var els=document.querySelectorAll(sel), i;
   for(i=0;i<els.length;i++){
-    var c=els[i], st=inkOf(c.getAttribute('data-l'), c.getAttribute('data-r'));
-    if(!st) continue;
+    var c=els[i];
+    var st=stOf? stOf(c) : inkOf(c.getAttribute('data-l'), c.getAttribute('data-r'));
+    if(!st || !st.length) continue;
     var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
     var S=Math.max(floor, Math.round((box.width||dflt)*dpr));
     c.width=S; c.height=S;
@@ -1408,6 +1414,6 @@ function render(){
      on them was an empty box. Both of these ask the document what is on it
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
-  geTiles(); phkMount();
+  geTiles(); phkMount(); postFaces();
   if(route==='form') formMount();
 }

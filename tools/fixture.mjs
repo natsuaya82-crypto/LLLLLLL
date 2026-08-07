@@ -42,10 +42,22 @@ export function seed(){
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
   ME = {name:'Aya', handle:'aya'};
-  POSTS = [{id:'p1', at:9, lang:langId, lname:'Shango', ln:'kano mos tir',
+  /* Two posts, and the second one is the whole reason the timeline is written
+     the way it is: it is by somebody else, in a language this phone does not
+     have, and every word of it is unknown to the dictionary above. A walk
+     over one post that happens to be yours proves nothing -- it is exactly
+     the state in which drawing your letter, your name and your font on
+     everybody's post looks perfectly correct. */
+  POSTS = [{id:'p1', at:Date.now()-3600000, lang:langId, lname:'Shango', ln:'kano mos tir',
+            who:'Aya', hd:'aya', mine:true,
+            av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
             mn:'a tall mountain is seen', ui:'en',
             gl:[{w:'kano', m:'mountain', p:'n'}, {w:'mos', m:'tall', p:'adj'},
-                {w:'zzq', m:'', p:''}]}];
+                {w:'zzq', m:'', p:''}]},
+           {id:'p2', at:Date.now()-7200000, lang:'other', lname:'Vethi', ln:'qel dross',
+            who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            mn:'the sea has gone quiet', ui:'en',
+            gl:[{w:'qel', m:'sea', p:'n'}, {w:'dross', m:'quiet', p:'adj'}]}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
