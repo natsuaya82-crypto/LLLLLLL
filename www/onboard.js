@@ -87,8 +87,17 @@ var OB_DOOR='<svg viewBox="0 0 124 188" fill="none" stroke="currentColor" stroke
 var OB_CHEVR='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
 
 function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
-function obCanBack(){ return ob.step>0 || ob.mode==='borrow'; }
+function obCanBack(){ return ob.step>0 || ob.mode==='borrow' || !!OBM.mode; }
 function obBack(){
+  /* The chevron in the corner is the only way back in the onboarding, so the
+     mail door goes through it too rather than growing one of its own. Out of
+     the code back to the account it was sent for, out of the reset back to
+     signing in, and out of either of those back to the door. */
+  if(OBM.mode){
+    if(OBM.mode==='code'){ obMailGo('up'); return; }
+    if(OBM.mode==='forgot'){ obMailGo('in'); return; }
+    OBM.mode=''; OBM.msg=''; render(); return;
+  }
   if(ob.step===1 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
@@ -110,22 +119,142 @@ function obLang(v){ SET.ui=v; save(); render(); }
    one survives. Asking first means that question never exists.
    The provider handshakes are wired in at packaging. Until then these open
    the door, so the app can be walked end to end. */
-function obSignIn(){ if(SET.done){ toast(t('set.account.soon')); return; } SET.anon=false; save(); obGo(1); }
-/* A way past the door without an account. It is here for the plainest reason:
-   once signing in really signs in, there is no way to see the app as somebody
-   opening it for the first time without throwing away whatever is in the
-   account -- and the first run is the part that gets rebuilt most. It is also
-   honest about what it costs, which is why the line underneath changes. */
+/* Signing in with Apple, and with Google. Both hand the app an identity
+   token without ever opening a browser, and net.js exchanges it for a
+   session -- one call, one word different.
+
+   Neither works until the Capacitor plugins are installed and the capability
+   is set in Xcode, which is a Mac's work and cannot be done from a Linux
+   session. Until then the plugin is simply absent and the button says so
+   rather than appearing to do nothing. */
+function obNative(name, call){
+  var P=window.Capacitor && Capacitor.Plugins, p=P && P[name];
+  if(!p){ toast(t('net.nonative')); return null; }
+  return call(p);
+}
+function obSignInApple(){
+  obNative('SignInWithApple', function(p){
+    p.authorize({ clientId:'com.tokinets.lingua', redirectURI:'',
+                  scopes:'name email' })
+     .then(function(r){
+       netIdToken('apple', r.response.identityToken, '', obIn, obNo);
+     })['catch'](obShrug);
+  });
+}
+function obSignInGoogle(){
+  obNative('GoogleAuth', function(p){
+    p.signIn().then(function(r){
+      netIdToken('google', r.authentication.idToken, '', obIn, obNo);
+    })['catch'](obShrug);
+  });
+}
+/* Closing the sheet is not a failure and is not told about. */
+function obShrug(){ OBM.busy=false; render(); }
+function obIn(){
+  OBM.busy=false; OBM.mode=''; OBM.pw='';
+  SET.anon=false; save();
+  obGo(1);
+}
+function obNo(d, s){
+  OBM.busy=false; OBM.msg=netWhy(d, s); render();
+}
+
+/* ---- the door, by mail -------------------------------------------------
+   Apple and Google cover almost everybody on a phone and not everybody wants
+   either, which is the whole of the argument for this being here.
+
+   The password is typed and sent and never written down. What signs somebody
+   in on the second launch is the refresh token net.js keeps -- so the
+   convenience of a remembered password is there without a password to lose.
+   Filling the field in the first place is the operating system's job: the
+   autocomplete words below are what make iOS offer the Keychain, and they are
+   the reason there is nothing here that stores an address either. */
+var OBM={ mode:'', em:'', pw:'', code:'', busy:false, msg:'' };
+function obMailGo(m){ OBM.mode=m; OBM.msg=''; render(); window.scrollTo(0,0); }
+function obMailSet(k, v){ OBM[k]=String(v||''); }
+function obMailAsk(){
+  if(!OBM.em || OBM.em.indexOf('@')<0){ OBM.msg=t('net.needmail'); render(); return false; }
+  return true;
+}
+function obMailIn(){
+  if(OBM.busy || !obMailAsk()) return;
+  OBM.busy=true; OBM.msg=''; render();
+  netSignIn(OBM.em, OBM.pw, obIn, obNo);
+}
+function obMailUp(){
+  if(OBM.busy || !obMailAsk()) return;
+  OBM.busy=true; OBM.msg=''; render();
+  netSignUp(OBM.em, OBM.pw, function(){
+    /* Confirmation is on, so this did not sign anybody in: it sent six digits
+       to an address that may have a typo in it. The typo is the whole reason
+       confirmation is on -- an address nobody can read is an account nobody
+       can recover, months later, when the password is what they forgot. */
+    OBM.busy=false; OBM.pw=''; obMailGo('code');
+  }, obNo);
+}
+function obMailCode(){
+  if(OBM.busy) return;
+  OBM.busy=true; OBM.msg=''; render();
+  netVerify(OBM.em, OBM.code, obIn, obNo);
+}
+function obMailForgot(){
+  if(OBM.busy || !obMailAsk()) return;
+  OBM.busy=true; OBM.msg=''; render();
+  netRecover(OBM.em, function(){
+    OBM.busy=false; OBM.msg=t('net.sent'); render();
+  }, obNo);
+}
+function obMailField(id, k, type, auto, ph){
+  return '<div class="field"><input id="'+id+'" type="'+type+'" '+
+    'value="'+esc(OBM[k])+'" placeholder="'+esc(t(ph))+'" '+
+    'autocomplete="'+auto+'" autocapitalize="none" autocorrect="off" '+
+    'spellcheck="false"' + IN('obMailSet', [k]) + '></div>';
+}
+function obMailHTML(){
+  var m=OBM.mode, go, lab;
+  if(m==='code'){ go='obMailCode'; lab='ob.mail.verify'; }
+  else if(m==='forgot'){ go='obMailForgot'; lab='ob.mail.send'; }
+  else if(m==='up'){ go='obMailUp'; lab='ob.mail.up'; }
+  else { go='obMailIn'; lab='ob.mail.in'; }
+  return '<div class="mid obleft">'+
+    '<h2 class="obh">'+t('ob.mail.h.'+m)+'</h2>'+
+    (m==='code'
+      ? '<p class="obsub">'+esc(t('ob.mail.code.sub', OBM.em))+'</p>'+
+        obMailField('ob-code', 'code', 'text', 'one-time-code', 'ob.mail.code.ph')
+      : obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
+        (m==='forgot'? ''
+          : obMailField('ob-pw', 'pw', 'password',
+              (m==='up'? 'new-password' : 'current-password'), 'ob.mail.pw.ph')))+
+    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
+    '</div>'+
+    '<div class="obfoot">'+
+    '<button class="btn"' + DO(go) + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : lab)+'</button>'+
+    (m==='in'
+      ? '<button class="obskip"' + DO('obMailGo', ["up"]) + '>'+t('ob.mail.to.up')+'</button>'+
+        '<button class="obskip"' + DO('obMailGo', ["forgot"]) + '>'+t('ob.mail.to.forgot')+'</button>'
+      : m==='up'
+        ? '<button class="obskip"' + DO('obMailGo', ["in"]) + '>'+t('ob.mail.to.in')+'</button>'
+        : '')+
+    '</div>';
+}
+
+/* A way past the door without an account: the timeline is world-readable, so
+   somebody who has not decided yet can read it without being asked for
+   anything. Making a language is where the question comes back, because a
+   language nobody can prove is theirs is a language nobody can get back. */
 function obSkip(){ SET.anon=true; save(); obGo(1); }
 
 function obDoorHTML(){
+  if(OBM.mode) return obMailHTML();
   return '<div class="mid"><div class="obdoor">'+OB_DOOR+'</div>'+
     '<div class="obrule"></div>'+
     '<h1 class="obh1">Lingua</h1>'+
     '<p class="obtag">'+t('ob.tagline')+'</p></div>'+
     '<div class="obfoot">'+
-    '<button class="btn signin google"' + DO('obSignIn') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-    '<button class="btn signin apple"' + DO('obSignIn') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+    '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+    '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
+    '<button class="btn ghost"' + DO('obMailGo', ["in"]) + '>'+t('ob.signin.mail')+'</button>'+
     '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>'+
     '<div class="mini obnote">'+t('ob.signin.local')+'</div></div>';
 }

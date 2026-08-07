@@ -249,6 +249,9 @@ const BROWSER = ['Date','String','Number','Boolean','Object','Array','Math','JSO
   'parseInt','parseFloat','isNaN','isFinite','encodeURIComponent','decodeURIComponent',
   'setTimeout','clearTimeout','setInterval','clearInterval',
   'requestAnimationFrame','cancelAnimationFrame',
+  /* The one way anything leaves this phone. fetch is newer and returns a
+     Promise, which es5-check bans and an old WKWebView may not have. */
+  'XMLHttpRequest',
   'getComputedStyle','confirm','alert','prompt','eval'];
 
 const bindings = new Set(decls.map(d => d.name));

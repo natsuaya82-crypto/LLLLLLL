@@ -45,7 +45,7 @@ function setSummary(id, p){
   if(id==='read')  return readMode()==='kana'? capFirst(langDef().rdName) : t('read.'+readMode());
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
-  if(id==='acct')  return t('set.account.guest');
+  if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
   if(id==='data')  return has('plus')? t('set.on') : 'Free';
   return '';
 }
@@ -96,10 +96,19 @@ function vSet(){
       '<button class="set" style="margin-top:18px"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='acct'){
-    body='<button class="set signin google"' + DO('obSignIn') + '><span class="sl">'+MARK_GOOGLE+
-      '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
-      '<button class="set signin apple"' + DO('obSignIn') + '><span class="sl">'+MARK_APPLE+
-      '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
+    /* Signed in or not, and the way in or out. It said "guest" and offered two
+       buttons that did nothing whatever the answer was. */
+    body=(netSignedIn()
+      ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
+        '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
+        '<button class="set"' + DO('setSignOut') + '>'+
+        '<span class="sl bad">'+t('set.signout')+'</span></button>'
+      : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
+        '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
+        '<button class="set signin google"' + DO('obSignInGoogle') + '><span class="sl">'+MARK_GOOGLE+
+        '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
+        '<button class="set"' + DO('setMail') + '><span class="sl">'+t('ob.signin.mail')+'</span>'+
+        '<span class="sv">'+ICON_GO+'</span></button>')+
       '<div class="sec">'+t('set.plan')+'</div>'+
       '<button class="set"' + DO('go', ["plans"]) + '><span class="sl">'+t('set.plan.cur')+'</span>'+
       '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
@@ -185,3 +194,13 @@ function setPlan(id){
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
 
+
+/* Signing out leaves everything where it is: the languages are on the phone
+   and the account is on the server, and coming back finds both. Only the pair
+   of tokens goes. */
+function setSignOut(){ netOut(); toast(t('set.signout.done')); render(); }
+/* The mail door, reached from settings rather than from the door itself. It is
+   the same screen -- there is one way to sign in with an address and it is
+   written once -- so this only says which face of it to open and puts the app
+   back where onboarding shows it. */
+function setMail(){ OBM.mode='in'; OBM.msg=''; SET.done=false; save(); render(); }

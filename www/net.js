@@ -1,0 +1,158 @@
+/* Lingua — the server, and the one window onto it (chapter 21)
+   Loaded by www/index.html as a plain script, in the order listed there.
+   ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
+
+   Everything that leaves this phone leaves through this file. Not for tidiness
+   -- because there are exactly two secrets in this app and one of them must
+   never be here, and a single window is the only place that claim can be
+   checked by reading.
+
+     the publishable key      is below, in the open, and that is correct.
+                              It grants nothing on its own: every table is
+                              denied by default and opened one row-level
+                              policy at a time in supabase/schema.sql.
+     the service role key     bypasses every one of those policies. It does
+                              not appear in this repository and must never
+                              reach a phone.
+
+   The password is the third thing people expect to find here and it is not
+   here either. It goes from the field to Supabase over TLS and is hashed
+   there; this app never holds it, never stores it and never logs it. What
+   comes back is a pair of tokens, and the refresh one is what signs somebody
+   in tomorrow without typing anything -- the same convenience as remembering
+   a password, except that it expires, it can be revoked from the server, and
+   it is worth nothing to anybody on any other site.
+
+   Reading needs no account at all. post, profile and a published language are
+   world-readable, so the timeline works with the key alone and somebody who
+   has not decided yet is not asked to. Anonymous sign-in would create an
+   account that exists only as a token on one phone -- lose the phone and
+   nobody, including us, can prove it was theirs. So there is none.
+   ========================================================================= */
+
+/* =========================================================================
+   21. The server
+   ========================================================================= */
+
+var SB_URL='https://iimwukyyasbybfrirhsf.supabase.co';
+var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
+
+/* The session belongs to this phone and to no language, so it is filed beside
+   lingua.set and lingua.me rather than under langKey(). */
+var LS_SESS='lingua.sess';
+var SESS=null;
+function netRead(){
+  SESS=null;
+  try{
+    var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
+    if(s && s.rt) SESS=s;
+  }catch(e){}
+}
+netRead();
+function netSave(){
+  try{
+    if(SESS) localStorage.setItem(LS_SESS, JSON.stringify(SESS));
+    else localStorage.removeItem(LS_SESS);
+  }catch(e){}
+}
+function netSignedIn(){ return !!(SESS && SESS.rt); }
+
+/* ---- the wire ----------------------------------------------------------
+   XHR rather than fetch: this has to run on a WKWebView old enough that the
+   rest of the file is ES5, and a Promise is banned three lines up. Both
+   callbacks are always called, so nothing is left waiting on a spinner. */
+function netPost(path, body, tok, ok, bad){
+  var x=new XMLHttpRequest();
+  x.open('POST', SB_URL+path, true);
+  x.setRequestHeader('apikey', SB_KEY);
+  x.setRequestHeader('Content-Type', 'application/json');
+  /* Signed in, this is the person; signed out, it is the key again, which is
+     what PostgREST expects and how the anon role is reached. */
+  x.setRequestHeader('Authorization', 'Bearer '+(tok || SB_KEY));
+  x.onreadystatechange=function(){
+    if(x.readyState!==4) return;
+    var d=null;
+    try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
+    if(x.status>=200 && x.status<300) ok(d);
+    else bad(d, x.status);
+  };
+  x.onerror=function(){ bad(null, 0); };
+  x.send(JSON.stringify(body||{}));
+}
+
+/* What Supabase says when it refuses, in the person's language where we have
+   one and in its own words where we do not. A message invented here would be
+   a second copy of a rule the server owns -- how long a password has to be,
+   what an address may look like -- and it would go out of date silently. */
+function netWhy(d, status){
+  if(!status) return t('net.offline');
+  var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
+  if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
+  if(status===400 && /already registered/i.test(m)) return t('net.taken');
+  if(status===403 || status===401) return t('net.badlogin');
+  if(status===422 && /password/i.test(m)) return t('net.weak');
+  if(status===429) return t('net.toomany');
+  return m || t('net.failed');
+}
+
+/* ---- coming and going --------------------------------------------------- */
+/* A session, put away. Everything that signs somebody in ends here, so there
+   is one place that knows what a session is made of. */
+function netTook(d){
+  if(!d || !d.access_token) return false;
+  SESS={ at:d.access_token, rt:d.refresh_token||'',
+         uid:(d.user && d.user.id) || (SESS && SESS.uid) || '' };
+  netSave();
+  return true;
+}
+function netOut(){
+  SESS=null; netSave();
+}
+/* The token in hand lasts an hour. This is what makes the next launch silent:
+   nothing is typed, nothing is remembered by the person, and the thing on the
+   phone that does it can be taken away from the server's side. */
+function netResume(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netPost('/auth/v1/token?grant_type=refresh_token',
+          {refresh_token:SESS.rt}, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); },
+          function(d, s){
+            /* A refresh token that is no longer accepted is not an error to
+               show anybody: it means the session ended, which is a state, not
+               a failure. */
+            if(s===400 || s===401) netOut();
+            bad(d, s);
+          });
+}
+function netSignUp(email, pass, ok, bad){
+  netPost('/auth/v1/signup', {email:email, password:pass}, null, ok, bad);
+}
+function netSignIn(email, pass, ok, bad){
+  netPost('/auth/v1/token?grant_type=password',
+          {email:email, password:pass}, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+}
+/* The six digits out of the mail. A link would have to land somewhere, and
+   there is nowhere for it to land: this is a Capacitor app with no web page
+   behind it, so the default confirmation URL opens nothing on the tester's
+   phone. A code goes back to the screen that asked for it. */
+function netVerify(email, code, ok, bad){
+  netPost('/auth/v1/verify', {type:'signup', email:email, token:code}, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+}
+function netRecover(email, ok, bad){
+  netPost('/auth/v1/recover', {email:email}, null, ok, bad);
+}
+/* A native sign-in hands back an identity token and Supabase gives a session
+   for it. Apple and Google are the same call with a different word, and
+   neither opens a browser: the app is never left.
+
+   Nothing calls this until the Capacitor plugins are installed and the
+   capability is set in Xcode, which is a Mac's work. The door's two buttons
+   reach it through obSignInApple and obSignInGoogle. */
+function netIdToken(provider, token, nonce, ok, bad){
+  var b={ provider:provider, id_token:token };
+  if(nonce) b.nonce=nonce;
+  netPost('/auth/v1/token?grant_type=id_token', b, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+}

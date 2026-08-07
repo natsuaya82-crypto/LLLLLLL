@@ -409,6 +409,8 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    error -- the font takes the first and the second is simply never drawn --
    but nothing on the screen said which was which. */
 .ltdup{display:block;font-size:.84rem;color:var(--bad);margin-top:2px}
+/* What the server said, where it was asked. */
+.obmsg{color:var(--bad);font-size:.9rem;margin-top:10px}
 /* What this letter is in the alphabet, when another letter already says
    the same. Shown, not refused. */
 .field input.dup{color:var(--bad);border-color:var(--bad)}
@@ -1304,6 +1306,7 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 <script src="reading.js"></script>
 <script src="letters.js"></script>
 <script src="shell.js"></script>
+  <script src="net.js"></script>
   <script src="onboard.js"></script>
   <script src="home.js"></script>
   <script src="words.js"></script>

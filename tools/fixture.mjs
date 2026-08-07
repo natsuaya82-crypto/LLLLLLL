@@ -79,6 +79,11 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
+    /* The door itself. It was never in this list and did not need to be while
+       nothing on it did anything; it now has four ways through and one of them
+       replaces the face, so the walk has to be told to render it. */
+    ['the door',                  () => { ob.step = 0; ob.mode = ''; OBM.mode = '';
+                                          return vOb(); }],
     ['characters to borrow',      () => { ob.step = 1; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
     ['no script picked to borrow from', () => { ob.step = 1; ob.mode = 'borrow';
@@ -93,7 +98,19 @@ export function obStates(){
     ['choosing which letter the shape is', () => { ob.step = 2; ob.mode = '';
                                                    ob.lid = (LETTERS[0] || {}).id || '';
                                                    return vOb(); }],
-    ['naming the language',      () => { ob.step = 3; ob.mode = ''; return vOb(); }]
+    ['naming the language',      () => { ob.step = 3; ob.mode = ''; return vOb(); }],
+    /* The door has a second face: signing in with an address. Four of them,
+       and none is reachable from a screen at rest, so a walk that only ever
+       renders the door presses none of their buttons. */
+    ['signing in by mail',       () => { ob.step = 0; OBM.mode = 'in';
+                                         const h = vOb(); OBM.mode = ''; return h; }],
+    ['making an account by mail',() => { ob.step = 0; OBM.mode = 'up';
+                                         const h = vOb(); OBM.mode = ''; return h; }],
+    ['the six digits out of the mail', () => { ob.step = 0; OBM.mode = 'code';
+                                         OBM.em = 'a@b.c';
+                                         const h = vOb(); OBM.mode = ''; return h; }],
+    ['having forgotten the password',  () => { ob.step = 0; OBM.mode = 'forgot';
+                                         const h = vOb(); OBM.mode = ''; return h; }]
   ];
 }
 
@@ -104,6 +121,11 @@ export function obStates(){
    needs the same list act-check walks or the two drift apart silently. */
 export function halfDone(){
   return [
+    /* The account screen has two faces and the walk arrives with no session,
+       so the way back out -- signing out -- was on neither of them. */
+    ['the account, signed in', () => { SESS = { at:'a', rt:'r', uid:'u' };
+                                       window.route = 'set'; NAV = [{ r:'set', a:'acct' }];
+                                       const h = vSet(); SESS = null; return h; }],
     ['the word being edited', () => { openWord('kano'); wEdit.mns = ['mountain','peak'];
                                       wEdit.ex = [{ln:'kano tir', gl:'sees the mountain'}];
                                       return FORM.html; }],
