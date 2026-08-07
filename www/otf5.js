@@ -41,12 +41,7 @@ var LinguaFont = (function () {
   // checks for roundness, and at editor scale (about one screen pixel per unit) a
   // 3-unit sag reads as a visible facet. Round strokes therefore get a tolerance
   // five times tighter; it costs a few dozen extra hulls and nothing else.
-  // FLAT_TOL was 3 and RING_TOL 0.6, because a circle was held to be the one
-  // shape an eye checks for roundness. That is not what anybody is drawing:
-  // at editor scale one unit is about one screen pixel, so three units of sag
-  // read as a visible facet on every curve that is not a circle. One number
-  // now, and it is the tight one.
-  var FLAT_TOL = 0.6, RING_TOL = 0.6;
+  var ROUND = 0.44, FLAT_TOL = 3, RING_TOL = 0.6;
 
   function sub(a, b) { return [a[0] - b[0], a[1] - b[1]]; }
   function add(a, b) { return [a[0] + b[0], a[1] + b[1]]; }
@@ -54,47 +49,14 @@ var LinguaFont = (function () {
   function len(a) { return Math.sqrt(a[0] * a[0] + a[1] * a[1]) || 1e-9; }  // no Math.hypot in ES5
   function unit(a) { return mul(a, 1 / len(a)); }
 
-  function flattenCubic(p0, c1, c2, p3, out) {
-    var straight = sub(p3, p0);
-    var dev = Math.max(len(sub(c1, add(p0, mul(straight, 1 / 3)))),
-                       len(sub(c2, add(p0, mul(straight, 2 / 3)))));
-    var n = Math.max(2, Math.min(64, Math.ceil(3 * Math.sqrt(dev / FLAT_TOL))));
+  function flattenQuad(p0, c, p1, out) {
+    var dev = len(sub(mul(add(p0, p1), 0.5), c));
+    var n = Math.max(2, Math.min(16, Math.ceil(Math.sqrt(dev / (2 * FLAT_TOL)))));
     for (var i = 1; i <= n; i++) {
       var t = i / n, u = 1 - t;
-      out.push([u*u*u*p0[0] + 3*u*u*t*c1[0] + 3*u*t*t*c2[0] + t*t*t*p3[0],
-                u*u*u*p0[1] + 3*u*u*t*c1[1] + 3*u*t*t*c2[1] + t*t*t*p3[1]]);
+      out.push([u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0],
+                u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]]);
     }
-  }
-
-  // A run of curve points is ONE curve. It used to be a row of corners each
-  // rounded on its own -- pulled back ROUND x the shorter leg, a quad through
-  // the corner, and a straight line left between one rounded corner and the
-  // next. That straight run is the wobble: the line stops curving, goes
-  // straight for a while, and starts again at a slightly different angle, so
-  // a shape drawn through five points reads as hand-drawn however carefully
-  // the points were placed. 「フォントって綺麗やん。この歪みのなさを作りたい」
-  //
-  // The tangent at a curve point is Catmull-Rom's -- half the vector between
-  // its neighbours -- so the curve arrives and leaves along the same line and
-  // the join cannot be seen. At a point NOT marked as a curve the tangent is
-  // the segment's own direction, which leaves a corner a corner: the two
-  // kinds of vertex still mean what they meant, and a diagonal between two
-  // corners is still exactly straight.
-  function smoothPoly(v, m, closed) {
-    var P = function (i) { var p = v[((i % m) + m) % m]; return [p[0], p[1]]; };
-    var soft = function (i) {
-      if (!closed && (i <= 0 || i >= m - 1)) return false;
-      return v[((i % m) + m) % m][2] === 'c';
-    };
-    var tan = function (i) { return soft(i) ? mul(sub(P(i + 1), P(i - 1)), 0.5) : null; };
-    var out = [P(0)], last = closed ? m : m - 1, i, a, b, ta, tb, d;
-    for (i = 0; i < last; i++) {
-      a = P(i); b = P(i + 1); ta = tan(i); tb = tan(i + 1);
-      if (!ta && !tb) { out.push(b); continue; }
-      d = sub(b, a);
-      flattenCubic(a, add(a, mul(ta || d, 1 / 3)), sub(b, mul(tb || d, 1 / 3)), b, out);
-    }
-    return out;
   }
 
   // A skeleton stroke becomes a polyline. A vertex marked 'c' is not a point the
@@ -157,11 +119,20 @@ var LinguaFont = (function () {
       if (round) return round;
     }
     var closed = !!st.closed;
-    var soft = false, si;
-    for (si = 0; si < m; si++) if (v[si][2] === 'c') soft = true;
-    if (soft) return smoothPoly(v, m, closed);
-    var out = [], i;
-    for (i = 0; i < m; i++) out.push([v[i][0], v[i][1]]);
+    var P = function (i) { var p = v[((i % m) + m) % m]; return [p[0], p[1]]; };
+    var bends = function (i) {
+      return v[((i % m) + m) % m][2] === 'c' && (closed || (i > 0 && i < m - 1));
+    };
+    var radius = function (i) {
+      return Math.min(ROUND * len(sub(P(i - 1), P(i))), ROUND * len(sub(P(i + 1), P(i))));
+    };
+    var entry = function (i) { return add(P(i), mul(unit(sub(P(i - 1), P(i))), radius(i))); };
+    var exit_ = function (i) { return add(P(i), mul(unit(sub(P(i + 1), P(i))), radius(i))); };
+    var out = [];
+    for (var i = 0; i < m; i++) {
+      if (bends(i)) { var A = entry(i), B = exit_(i); out.push(A); flattenQuad(A, P(i), B, out); }
+      else { out.push(P(i)); }
+    }
     if (closed) out.push(out[0].slice());
     return out;
   }
