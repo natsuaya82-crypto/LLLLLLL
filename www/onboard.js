@@ -161,10 +161,14 @@ function obNameLater(){ ob.name=''; obFinish(); }
    itself. Then it asked the question outright on a screen of its own, which
    was the same question with a longer walk to it.
 
-   It is not asked at all now. ltNew() gives a new letter the next sound
-   nothing reads yet, because that is what making a script is: your K looks
-   like this. The reading is corrected in the glyph editor, on the letter, by
-   typing what it says -- and most people will never need to. */
+   It is not asked at all now, and it is not answered either. ltNew() used to
+   answer it -- the drawn letter took the next sound nothing read yet, so the
+   first mark anybody made in this app came back labelled p and the second t.
+   That is the same question a third time: the app deciding, silently, and
+   showing the answer on a later screen as though it were a fact.
+
+   A letter here is a shape. What it reads is said on the letter, whenever
+   somebody has something to say. */
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }

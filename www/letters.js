@@ -200,31 +200,27 @@ function migrateMarks(){
   if(moved) saveLetters();
 }
 
-/* The first sound in the inventory that nothing reads yet, in the chart's
-   order. Empty when every one of them is spoken for.
+/* A letter is what somebody drew, and nothing else.
 
-   This is what a newly drawn letter is given. Making a script is a
-   substitution: you are saying "my K looks like this", and the sound was
-   already there -- ohayo, annyon, ni hao all spell out in an alphabet
-   somebody already has. So the sound is carried over rather than asked for,
-   and what a letter reads is corrected on the letter, not decided before it
-   exists. */
-function ltNextFree(){
-  var have=addedSnd(), i;
-  for(i=0;i<have.length;i++) if(!ltFor(have[i]).length) return have[i];
-  return '';
-}
+   It used to be handed the first sound in the inventory that nothing read yet,
+   on the argument that making a script is a substitution -- you are saying "my
+   K looks like this", and the sound was already there. The argument is not
+   wrong about scripts. It is wrong about who is doing it: the app does not
+   know what somebody meant by a shape, and it said so out loud anyway. You
+   drew a mark and the alphabet said it was p; you drew a second and it was t.
+   Nothing on the drawing screen mentions it and nothing says it can be
+   changed, so it reads as the app having decided.
+
+   「アルファベット書いたら勝手にTってなった」
+
+   A letter with no sound is already a thing this app has -- ltLoose() is the
+   list of them and ltRow says "reads nothing yet" -- so a drawn letter is now
+   simply one of those until somebody says otherwise. One made FOR a sound
+   (ltForUnit, and an import that carries one) still arrives with it. */
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
          snd:(o&&o.snd)? o.snd.slice() : []};
   if(o && typeof o.val==='number') l.val=o.val;
-  /* A letter made with nothing said about what it reads takes the next free
-     sound. One made FOR something (ltForUnit) already carries it, and one
-     made as a digit is not for a sound at all. */
-  if(!l.snd.length && !numIsDigit(l)){
-    var u=ltNextFree();
-    if(u) l.snd=[u];
-  }
   LETTERS.push(l); saveLetters();
   return l;
 }
