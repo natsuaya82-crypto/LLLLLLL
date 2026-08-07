@@ -112,8 +112,8 @@ of them.
 `PAGES` in `www/shell.js` says what a route is called and which tab it is
 under. `www/route-map.js` says what it *shows* — `page('build', vBuild)`, the
 function itself, never its name, exactly as `act-map.js` does. `render()` looks
-it up; it used to be twenty-two conditions, a second copy of `PAGES` that
-nothing could check against the first.
+it up; it used to be a chain of conditions, a second copy of `PAGES` that
+nothing could check against the first. There are 25 routes.
 
 Adding a screen means a `PAGES` entry and a `page(...)` line. `act-check`
 proves both directions: a route with no view silently became the home screen
@@ -210,6 +210,26 @@ Also: every `.js` under `www/` must be referenced by `index.html`, and every fil
 `index.html` references must be **tracked by git** (not merely present on disk).
 Adding a script file means adding its tag and `git add`-ing it in the same commit.
 
+## Two chapters that are closed
+
+Neither is a gap waiting to be filled. Both were a second place for something
+that already had one, and both are in git if the argument turns out to be
+wrong.
+
+**Sound.** There was a chapter for the language's inventory beside the chapter
+for its letters, and a letter's sound was a fact reachable from either.
+「文字に音もあるのに音ページもあるしごちゃごちゃ」 The sound belongs to the letter,
+so the chart is a sheet opened from the letter it is about (`openSnd`), and
+pressing a symbol puts it on that letter — which is the only way it ever
+joined the language. `SND` is still the ninth slice under `langKey('snd')`,
+because the spelling engine reads it; it is no longer a place you go.
+
+**Make.** A screen that generated eight candidate words. Its only door was one
+button on the dictionary, and the button was reported as not working
+「まとめて押してんのに作成できないけど？」. Deleting the button would have left a
+screen nothing could reach and every check still green, which is rule 5 one
+step further out, so the screen went with it.
+
 ## One place, not fifteen
 
 The three bugs found in one afternoon were the same bug: something was added
@@ -269,17 +289,16 @@ A function's prefix says which part of the app it belongs to, and it must be
 telling the truth. The prefix is how 500-odd globals in one namespace stay
 findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
 `tk*` talk, `lt*` letters, `wd*` the word sheet, `add*` the new-word sheet,
-`mk*` the make screen, `wld*` the world, `w*` word data, `words*` the word
-list, `f*` search, `v*` a view, `open*` a form.
+`wld*` the world, `w*` word data, `words*` the word list, `nt*` the notebook,
+`f*` search, `v*` a view, `open*` a form, `net*` the server.
 
 `set*` is reserved for settings: it writes `SET.x`, or it builds part of the
 settings screen. It is not the English word "set". `setAbVow` wrote `abVow`
 and never touched `SET` at all — it is `abSetVow`. Thirteen were like that.
 
-Single bare verbs are not names here. `commit`, `tog`, `regen`, `reroll`,
-`wipe`, `choose` said nothing about what they acted on, in a namespace where
-everything is global; they are `mkCommit`, `mkTog`, `mkRegen`, `mkReroll`,
-`wipeAll`, `setPlan`. Watch the case, too: `g*` is grammar (`gOpenOf`), so
+Single bare verbs are not names here. `wipe` and `choose` said nothing about
+what they acted on, in a namespace where everything is global; they are
+`wipeAll` and `setPlan`. Watch the case, too: `g*` is grammar (`gOpenOf`), so
 the glyph editor's `gbtn`/`gsnap` are `geBtn`/`geSnap`.
 
 Renaming an acted function means renaming it in `www/act-map.js` **twice** —
@@ -298,7 +317,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/onboard.js` | onboarding — what the app is until `SET.done` (ch 5) |
 | `www/home.js` | the cover, the contents, the writing system (ch 6) |
 | `www/words.js` | the dictionary (ch 7) |
-| `www/sound.js` | sound (ch 8) |
+| `www/sound.js` | the alphabet's three lists, one letter, and the chart a letter's sound is picked on (ch 8) |
 | `www/settings.js` | settings and plans (ch 11-12) |
 | `www/wordsheet.js` | the sheet for writing one word, and CSV (ch 13) |
 | `www/card.js` | the card — one line as a picture that can leave the phone (ch 15) |
@@ -306,13 +325,15 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/import.js` | bringing somebody's existing list in (ch 17) |
 | `www/numbers.js` | numbers — a digit is a letter with a value (ch 18) |
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
-| `www/me.js` | who you are: the account, beside the language (ch 20) |
+| `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
+| `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
-| `www/talk.js`, `assist.js`, `sentences.js`, `grammar.js` | the AI (Studio) side |
+| `www/talk.js`, `assist.js`, `grammar.js` | the AI (Studio) side |
 | `www/voice.js`, `notes.js` | speech, notes |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
+| `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
 A new view is found automatically by the checks (they ask the page for globals named
@@ -325,17 +346,20 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 208`, `screens the mirror
-rendered: 319`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 3067` for the same reason — and it is what a
-change that is meant to alter nothing has to leave untouched.
+Both checks print their coverage (`screens walked: 209`, `screens the mirror
+rendered: 318`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 2583` for the same reason — and it is what a
+change that is meant to alter nothing has to leave untouched. Two chapters
+closed on the day those numbers were last written down, which is why they are
+smaller than they were and not a sign that something stopped being walked.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js`, chapter 20 closes `me.js`, and
+- The book is numbered: chapter 0 opens `core.js`, chapter 21 closes `net.js`, and
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
-  grew to hold five was split along those banners, not along anything new.
-- `www/glyph.js` is still 47 KB (the font writer and the drawing surface). Grep for
+  grew to hold five was split along those banners, not along anything new. The
+  numbering has gaps where a chapter was closed; it is a shelf, not a count.
+- `www/glyph.js` is 73 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
 - Run `npm test` after every change, not once at the end. It is fast and it is the spec.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
