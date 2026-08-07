@@ -143,6 +143,14 @@ var LinguaFont = (function () {
   // 「文字の線が丸いのが気になる"ー"のように角張ったフォントにして」 -- a square
   // tip ends a horizontal stroke exactly as ー ends, flat and square, and it
   // costs four points where the circle cost twelve.
+  // The one rule, on whichever axis it is asked about: what a letter takes up
+  // is its own ink plus the gap, half of it at each end. Horizontally that is
+  // the advance width; vertically it is the line box, and when vmtx is written
+  // it will be the vertical advance. Three answers, one formula -- which is
+  // the point, because the day they were three formulas the horizontal one
+  // took nine different values over ten letters.
+  function reach(lo, hi, side) { return Math.round((hi - lo) + 2 * side); }
+
   function nib(pen) {
     var a = pen.width / 2, b = a * (pen.contrast === undefined ? 1 : pen.contrast);
     var th = (pen.angleDeg || 0) * Math.PI / 180, ca = Math.cos(th), sa = Math.sin(th);
@@ -664,7 +672,7 @@ var LinguaFont = (function () {
              : mode === 'fit' ? Math.round((CELL - wide) / 2 - p.xMin)
              : Math.round(SIDE - p.xMin);
       var adv = (mode === 'asdrawn' || mode === 'fit') ? CELL
-              : Math.round(wide + 2 * SIDE);
+              : reach(p.xMin, p.xMax, SIDE);
 
       var contours = cs.map(function (c) {
         var nodes = signedArea(c) < 0 ? c : c.slice().reverse();

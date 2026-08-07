@@ -71,6 +71,16 @@ var GGRID={n:11, inset:40};
    so this only has to be higher than any real stroke. */
 var GE_MAXPTS=160;
 function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
+/* Where the ink can reach, in font space, which is y-up from the baseline.
+   A stroke on the top row of dots puts ink half a pen above that row; one on
+   the bottom row half a pen below. Nothing goes further, because nothing can
+   be drawn off the lattice.
+
+   The line box is those two plus one step, by the rule that puts one step
+   between two letters side by side -- so the gap above a line and the gap
+   beside a letter are the same number, and neither is a screen's to decide. */
+function geInkTop(){ return Math.round(800 - (GGRID.inset - GPEN.width/2)); }
+function geInkSpan(){ return Math.round(geStep()*(GGRID.n-1) + GPEN.width); }
 function geSnap(v){
   var s=geStep(), i=Math.round((v - GGRID.inset) / s);
   if(i<0) i=0; if(i>GGRID.n-1) i=GGRID.n-1;
@@ -204,7 +214,8 @@ function installScriptFont(){
   if(!L.length || !scriptDrawn(L)) return;
   try{
     var d=scriptGlyphDefs();
-    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geStep()/2, ligatures:d.ligs,
+    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geStep()/2,
+                       asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(), ligatures:d.ligs,
                                     family:'LinguaScript', style:'Regular'});
     el=document.createElement('style');
     el.id='sfontcss';

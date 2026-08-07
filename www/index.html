@@ -924,7 +924,10 @@ html[data-script="on"] .gor,
 html[data-script="on"] .seq,
 html[data-script="on"] .st-seq,
 html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacing:0}
-.sfont{font-family:'LinguaScript',serif}
+/* `normal` hands the line box to the font, which is where the rule lives:
+   ink plus one lattice step. A number here would be a screen deciding the
+   spacing of somebody else's script, and there are four screens. */
+.sfont{font-family:'LinguaScript',serif;line-height:normal}
 </style>
 <style id="ob-rework">
 .langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
