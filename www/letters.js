@@ -241,31 +241,22 @@ function ltRoman(l){
   }
   return out.join(' ');
 }
-/* ---- which letter of the alphabet a shape stands for --------------------
-   Making a script is a substitution: you are saying "my T looks like this".
-   So what a newly drawn shape needs is a letter, not a sound -- the sound is
-   a harder question with its own box, and asking it first is what made this
-   screen ask something nobody could answer.
-   「文字書いたらそれがどのアルファベットに対応してるかを選べばいいだろ」
+/* ---- what a letter is in the alphabet ----------------------------------
+   The shape is drawn, and then it is said what it is: T, or sh, or ka. The
+   reading follows from that -- it is not a second question, and it was never
+   asked as one. 「文字書いたらそれがどのアルファベットに対応してるかを選べばいいだろ」
 
-   Only the letters that resolve to a sound are offered. A button that cannot
-   work is worse than no button: it looks like a choice and answers with an
-   error. */
-var LT_ROMAN='abcdefghijklmnopqrstuvwxyz';
-function ltRomans(){
-  var out=[], i, c;
-  for(i=0;i<LT_ROMAN.length;i++){
-    c=LT_ROMAN.charAt(i);
-    if(ipaFromRoman(c)) out.push(c);
-  }
-  return out;
-}
-/* Tapping one is the same act as typing it into the box, so it goes through
-   the same function -- which is where the clash check, the inventory and the
-   font live. Tapping the one it already is takes it back off. */
-function ltTakeRom(id, c){
-  var l=ltById(id); if(!l) return;
-  ltSetRoman(id, (ltRoman(l)===c)? '' : c);
+   This was a row of twenty-six buttons for a while. A B C laid out as keys
+   says the alphabet is those twenty-six and no more, which is not true of any
+   language somebody would build here -- sh and ng are one letter each, an
+   abugida writes ka as one, and nothing above Z exists. It is typed.
+   「abcみたいにボタン並べるのはありえない。全部入力で被ったら赤字」
+
+   Two letters reading the same thing is allowed and shown, not refused: c and
+   k in English are two letters and one sound, and a language being built is
+   allowed to be halfway through. ltDupOf is what turns the field red. */
+function ltDupOf(l){
+  return l? ltClash(l.id, ltUnits(l)) : '';
 }
 /* Correcting what a letter reads -- the only time anybody says anything about
    a sound, because the letter was given one when it was drawn. Emptying the
@@ -299,8 +290,11 @@ function ltSetRoman(id, sp){
     units.push(parts.join(''));
     for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
   }
-  var clash=ltClash(id, units);
-  if(clash){ toast(t('lt.dup', clash)); return; }
+  /* A clash is shown, not refused. Refusing meant the box silently kept its
+     old value and a toast said why, which is a correction somebody has to
+     read and then retype; and it made two letters for one sound impossible,
+     which c and k are. ltDupOf turns the field red and the line under it
+     says which letter already has it. 「全部入力で被ったら赤字」 */
   if(seen.length){
     var have=addedSnd();
     for(i=0;i<seen.length;i++) if(have.indexOf(seen[i])<0) have.push(seen[i]);
@@ -308,7 +302,9 @@ function ltSetRoman(id, sp){
     saveSnd();
   }
   /* A sign is one thing: taking a reading gives up being a digit, the same
-     way giving a value gives up the reading. */
+     way giving a value gives up the reading. Which letter of the alphabet the
+     shape is stays where it is: that is a different sentence about the same
+     letter, and this box has never had anything to say about it. */
   l.snd=units; delete l.val;
   saveLetters(); installScriptFont(); render();
 }
@@ -322,10 +318,6 @@ function ltSetChar(id, ch){
   ch=String(ch||'').trim();
   if(ch){ l.ch=ch; l.st=null; } else l.ch='';
   saveLetters(); return l;
-}
-function ltSetName(id, nm){
-  var l=ltById(id); if(!l) return null;
-  l.nm=String(nm||'').trim(); saveLetters(); return l;
 }
 function ltUnlink(id, unit){
   var l=ltById(id); if(!l || !l.snd) return null;

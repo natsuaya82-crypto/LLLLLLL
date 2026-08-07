@@ -204,11 +204,10 @@ function obRomHTML(){
   return '<div class="mid">'+
     '<h2>'+t('ob.rom.h')+'</h2>'+
     '<div class="spbig">'+ltInk(l, '')+'</div>'+
-    ltRomPick(l, 'obTakeRom', [])+
+    ltAbField(l, ob.lid)+
     '</div>'+
     '<div class="obfoot"><button class="btn"' + DO('obRomDone') + '>'+t('ob.next')+'</button></div>';
 }
-function obTakeRom(c){ if(ob.lid) ltTakeRom(ob.lid, c); }
 /* Choosing is not required to leave: a shape whose letter nobody has decided
    is one of the loose ones, and the letters chapter already lists those. */
 function obRomDone(){ obGo(3); }

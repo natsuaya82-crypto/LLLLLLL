@@ -454,37 +454,48 @@ function ltRow(l){
    The rest of this was on the drawing screen, which made that screen scroll
    and made this one a second place to say the same thing. Drawing is drawing;
    this is the letter. */
-/* The alphabet, laid out to be tapped, with the one this letter stands for
-   marked. The box under it still takes anything -- sh, ng, ka, a value -- but
-   a single letter is what nearly every shape wants, and it should not need
-   typing. The same row is the onboarding's whole second step. */
-function ltRomPick(l, act, pre){
-  var now=l? ltRoman(l) : '';
-  return '<div class="ipafree">'+ltRomans().map(function(c){
-    return '<button class="ph2'+(now===c? ' on':'')+'"' +
-      DO(act, pre.concat([c])) + '>'+esc(c.toUpperCase())+'</button>';
-  }).join('')+'</div>';
+/* The one field: what this letter is in the alphabet. Red when another letter
+   already says the same thing -- shown, not refused, because c and k are two
+   letters and one sound and a language being built is allowed to be halfway
+   through. The same field is the onboarding's second step, so it is written
+   once and the caller says which letter it is for. */
+function ltAbField(l, id){
+  var dup=ltDupOf(l);
+  return '<div class="field"><input id="lt-rom" value="'+esc(ltBoxed(l))+'" '+
+    'class="'+(dup? 'dup':'')+'" placeholder="'+esc(t('lt.reads.ph'))+'" '+
+    'autocapitalize="none" autocorrect="off" spellcheck="false"' +
+    CH('ltSetRoman', [id]) + '></div>'+
+    (dup? '<div class="ltdup">'+esc(t('lt.dup', dup))+'</div>' : '');
 }
+/* One letter of the alphabet, opened from the list. Not where an alphabet is
+   made -- that is the list, which has the button that adds one -- and there
+   are only three things to do to a letter that already exists: change what it
+   says, draw it again, or take an existing character instead.
+   「そこは文字の書き直しor既存文字から選ぶor音変えるくらいしか無いだろ」
+
+   It used to open with a Name field nobody had been told the purpose of, under
+   a heading that repeated the name of the list behind it, over a section
+   called Letter holding three buttons that each said Letter -- one of which
+   said "create" and redrew this one. */
 function vLetter(){
   var lid=here().a, l=ltById(lid);
   if(!l) return viewGone();
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="field"><label>'+t('lt.name')+'</label>'+
-      '<input id="lt-nm" value="'+esc(l.nm||'')+'" placeholder="'+esc(t('lt.name.ph'))+'" '+
-      '' + IN('ltSetName', [lid]) + '></div>'+
-    '<div class="sec">'+t('lt.reads.h')+'</div>'+
-    ltRomPick(l, 'ltTakeRom', [lid])+
-    '<div class="field"><input id="lt-rom" value="'+esc(ltBoxed(l))+'" '+
-      'placeholder="'+esc(t('lt.reads.ph'))+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + CH('ltSetRoman', [lid]) + '></div>'+
+    /* The letter itself, first and big. A page about one letter that does not
+       show it is a page of three buttons about nothing, and "draw it again"
+       on a screen with nothing on it says nothing. A letter with no shape yet
+       gets the pen, which is what it wears everywhere else. */
+    '<div class="spbig">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</div>'+
+    '<div class="sec">'+t('lt.snd.h')+'</div>'+
+    ltAbField(l, lid)+
     (numIsDigit(l)? numWordRow(l) : '')+
     '<div class="note">'+(numIsDigit(l)
       ? esc(t('num.h'))
       : ltUnits(l).length
-        ? (ltHasSound(l)? '/'+esc(l.snd.join(' '))+'/' : esc(l.snd.join(' ')))
+        ? (ltHasSound(l)? '/'+esc(l.snd.join('/'))+'/' : esc(l.snd.join(' ')))
         : t('lt.reads.none'))+'</div>'+
-    '<div class="sec">'+t('glyph.other')+'</div>'+
-    '<button class="btn ghost" style="width:100%"' + DO('editLetter', [lid]) + '>'+t('lt.draw')+'</button>'+
+    '<button class="btn ghost" style="width:100%;margin-top:18px"' +
+      DO('editLetter', [lid]) + '>'+t('lt.draw')+'</button>'+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
