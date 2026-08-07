@@ -243,9 +243,8 @@ function obFormHTML(up){
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
          '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>')+
     '</div>'+
-    '<div class="obbar"><span>'+t(up? 'ob.bar.in.q' : 'ob.bar.up.q')+'</span>'+
-    '<button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
-      t(up? 'ob.bar.in.a' : 'ob.bar.up.a')+'</button></div>';
+    '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
+      t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
 }
 
 /* The two faces that ask for one thing: the six digits, and the address to
