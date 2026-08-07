@@ -83,20 +83,24 @@ function addRedraw(){
   if(pos) addPos=pos.value;
   openAdd(addFrom);
 }
-function addSpellHTML(){
+/* The letters a word is spelled with, in order, each one a way back into the
+   position it holds. The new-word sheet and the editor show the same row of
+   the same thing -- they differ in which list it is, where a tap goes and
+   what undo is called, and in nothing else. */
+function spRowHTML(sp, route, back, id){
   var i, l, out='';
-  for(i=0;i<addSp.length;i++){
-    l=ltById(addSp[i].l);
-    out+='<button class="spc'+(spOdd(addSp[i])?' odd':'')+'"' + DO('go', ["aspell", i]) + '>'+
-      '<span class="spf">'+(ltHasShape(l)
-        ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
-                            : '<span class="bch">'+esc(l.ch)+'</span>')
-        : esc(ltName(l)||'·'))+'</span>'+
-      '<span class="spu">'+esc(addSp[i].u)+'</span></button>';
+  for(i=0;i<sp.length;i++){
+    l=ltById(sp[i].l);
+    out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'"' + DO('go', [route, i]) + '>'+
+      '<span class="spf">'+ltInk(l, esc(ltName(l)||'\u00b7'))+'</span>'+
+      '<span class="spu">'+esc(sp[i].u)+'</span></button>';
   }
   return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
-    '<button class="seqdel" id="f-back"' + DO('addBack') + ''+(addSp.length?'':' disabled')+
+    '<button class="seqdel"'+(id? ' id="'+id+'"' : '') + DO(back) + (sp.length?'':' disabled')+
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
+}
+function addSpellHTML(){
+  return spRowHTML(addSp, 'aspell', 'addBack', 'f-back');
 }
 var addMode='';
 function addSetMode(m){ addMode=m; addRedraw(); }
@@ -121,25 +125,10 @@ function addKeys(){
   }).join('')+'</div>';
 }
 /* One position of the word being made. Same page as the editor's, on the
-   other list. */
+   other list -- and it used to say exactly that, in a comment, above a copy
+   of it. */
 function vASpell(){
-  var i=parseInt(here().a,10), st=addSp[i];
-  if(!st) return viewGone();
-  var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
-  for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
-  for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="spbig">'+(ltHasShape(l)
-      ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
-                          : '<span class="bch">'+esc(l.ch)+'</span>')
-      : esc(ltName(l)||'·'))+'</div>'+
-    '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'"' + DO('addSetU', [i, o.u]) + '>'+
-        '<span class="pks">'+esc(o.u)+'</span></button>';
-    }).join('')+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('addDropAt', [i]) + '>'+
-      t('word.sp.del')+'</button>'+
-    '</div></div>';
+  return spPageHTML(addSp, 'addSetU', 'addDropAt');
 }
 function addSetU(i, u){
   if(!addSp[i]) return;
@@ -235,19 +224,8 @@ function spOdd(st){
    three days old has no letters yet, and it still has to be possible to make
    a word. */
 function wdSeqHTML(){
-  var sp=wEdit.sp||[], i, l, out='';
-  for(i=0;i<sp.length;i++){
-    l=ltById(sp[i].l);
-    out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'"' + DO('go', ["spell", i]) + '>'+
-      '<span class="spf">'+(ltHasShape(l)
-        ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
-                            : '<span class="bch">'+esc(l.ch)+'</span>')
-        : esc(ltName(l)||'·'))+'</span>'+
-      '<span class="spu">'+esc(sp[i].u)+'</span></button>';
-  }
-  return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
-    '<button class="seqdel"' + DO('wdBack') + ''+(sp.length?'':' disabled')+
-    ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+  var sp=wEdit.sp||[];
+  return spRowHTML(sp, 'spell', 'wdBack', '')+
     /* No second play. This one and the one at the head of the sheet were both
        sayPh(wEdit.seq) -- the same sound, twice, and this copy sat inside the
        block about which letters spell the word, which is not what a sound is
@@ -359,6 +337,26 @@ function exGloss(ln){
 /* The placeholder is two of this language's own words. An instruction there
    -- "words with spaces between them" -- is a sentence nobody wants to read
    in a box they are about to type in; two words show the shape at a glance. */
+/* One button at the end of an example: listen, make a card, throw it away.
+   Five of them, in two files, were the same line with a different icon. */
+function exBtn(fn, args, key, icon){
+  return '<button class="usep"' + DO(fn, args) + ' aria-label="'+
+    esc(t(key))+'">'+icon+'</button>';
+}
+/* One example sentence: what it says, what it means, and a way to hear it.
+   The grammar stages show these and so does the word sheet -- the same row,
+   for the same reason -- and they differ only in what goes at the end of it.
+   A stage's examples carry a label (肯定 / 否定); a word's do not, and an
+   example with none simply has none. */
+function exRowHTML(e, seq, tail){
+  return '<div class="exrow">'+
+    '<div class="exb">'+
+      (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
+      '<span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
+      '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
+    (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_PLAY) : '')+
+    tail+'</div>';
+}
 function exHint(){
   var a=WORDS.slice(0,2).map(function(w){ return String(w.hw); });
   return a.length>1? a.join(' ') : (a[0]||'');
@@ -368,16 +366,9 @@ function wdExHTML(){
   var ex=w.ex||[];
   return (ex.length
     ? '<div class="exlist">'+ex.map(function(e,i){
-        var seq=exSeq(e.ln);
-        return '<div class="exrow">'+
-          '<div class="exb"><span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
-          '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
-          (seq.length? '<button class="usep"' + DO('sayPh', [seq]) + ' aria-label="'+
-            esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
-          '<button class="usep"' + DO('cardOpen', ["x", openHw+'#'+i]) + ' aria-label="'+
-            esc(t('card.title'))+'">'+ICON_CARD+'</button>'+
-          '<button class="usep"' + DO('wdDelEx', [i]) + ' aria-label="'+esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button>'+
-          '</div>';
+        return exRowHTML(e, exSeq(e.ln),
+          exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_CARD)+
+          exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
@@ -523,25 +514,28 @@ function wdBack(){
 }
 /* One position of one word, and what it says there. The letter's own
    readings first, then every sound the language has, because a sound change
-   is exactly the case where the letter's own readings are not enough. */
-function vSpell(){
-  var i=parseInt(here().a,10), sp=(wEdit&&wEdit.sp)||[], st=sp[i];
+   is exactly the case where the letter's own readings are not enough.
+
+   Which position is the route's argument; which LIST is the caller's, and
+   that is the whole of the difference between the two screens that use this. */
+function spPageHTML(sp, setU, drop){
+  var i=parseInt(here().a,10), st=sp[i];
   if(!st) return viewGone();
   var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
   for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
   for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="spbig">'+(ltHasShape(l)
-      ? (l.st&&l.st.length? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
-                          : '<span class="bch">'+esc(l.ch)+'</span>')
-      : esc(ltName(l)||'·'))+'</div>'+
+    '<div class="spbig">'+ltInk(l, esc(ltName(l)||'\u00b7'))+'</div>'+
     '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'"' + DO('wdSetU', [i, o.u]) + '>'+
+      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'"' + DO(setU, [i, o.u]) + '>'+
         '<span class="pks">'+esc(o.u)+'</span></button>';
     }).join('')+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('wdDropAt', [i]) + '>'+
+    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO(drop, [i]) + '>'+
       t('word.sp.del')+'</button>'+
     '</div></div>';
+}
+function vSpell(){
+  return spPageHTML((wEdit&&wEdit.sp)||[], 'wdSetU', 'wdDropAt');
 }
 function wdSetU(i, u){
   if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;

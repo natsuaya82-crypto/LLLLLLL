@@ -851,15 +851,7 @@ function ghField(x,S,k){
 }
 /* the ink, through the font's own outliner, and the points still on top of it */
 function ghInk(x,k,strokes){
-  var cont=[];
-  try{ cont=LinguaFont.glyphContours({strokes:strokes}, GPEN); }catch(e){}
-  x.fillStyle=cssVar('--tx');
-  cont.forEach(function(poly){
-    if(poly.length<3) return;
-    x.beginPath();
-    poly.forEach(function(q,qi){ if(qi) x.lineTo(q[0]*k,q[1]*k); else x.moveTo(q[0]*k,q[1]*k); });
-    x.closePath(); x.fill();
-  });
+  inkStrokes(x, strokes, k, 0, 0, cssVar('--tx'));
   x.fillStyle=cssVar('--gold');
   strokes.forEach(function(s){
     s.pts.forEach(function(q){
@@ -963,20 +955,23 @@ var GEPAD=0.055;
    straight strokes agree with each other; a curve between two of its points
    does not have to touch it on the way. Clamped to the inset so the pen still
    has room, which is what keeps ink inside the square. */
-function geAtRaw(c,ev){
+/* Where the thumb is, in the square's own 0-800. The canvas is laid out in
+   CSS pixels with a padding round it, and the drawing is not; this is the one
+   place that knows the difference. Both of the two below started with the
+   same four lines. */
+function geXY(c,ev){
   var b=c.getBoundingClientRect();
   var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
-  var x=((ev.clientX-b.left)-px)/(w-2*px)*800;
-  var y=((ev.clientY-b.top)-py)/(h-2*py)*800;
-  var lo=GGRID.inset, hi=800-GGRID.inset;
-  return [Math.max(lo,Math.min(hi,x)), Math.max(lo,Math.min(hi,y))];
+  return [((ev.clientX-b.left)-px)/(w-2*px)*800,
+          ((ev.clientY-b.top)-py)/(h-2*py)*800];
+}
+function geAtRaw(c,ev){
+  var p=geXY(c,ev), lo=GGRID.inset, hi=800-GGRID.inset;
+  return [Math.max(lo,Math.min(hi,p[0])), Math.max(lo,Math.min(hi,p[1]))];
 }
 function geAt(c,ev){
-  var b=c.getBoundingClientRect();
-  var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
-  var x=((ev.clientX-b.left)-px)/(w-2*px)*800;
-  var y=((ev.clientY-b.top)-py)/(h-2*py)*800;
-  return [geSnap(x), geSnap(y)];
+  var p=geXY(c,ev);
+  return [geSnap(p[0]), geSnap(p[1])];
 }
 /* Tapping is the whole language of this editor, so the two actions that used
    to be buttons are answers the canvas gives instead:
@@ -1231,15 +1226,12 @@ function geDraw(){
     }
   }
 
-  var cont=[];
-  try{ cont=LinguaFont.glyphContours({strokes:GE.st}, GPEN); }catch(e){}
-  x.fillStyle=cssVar('--tx');
-  cont.forEach(function(poly){
-    if(poly.length<3) return;
-    x.beginPath();
-    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),X(p[1])); else x.moveTo(X(p[0]),X(p[1])); });
-    x.closePath(); x.fill();
-  });
+  /* The ink, through the one function that lays ink down. X(v) is pad+v*k,
+     which is exactly what inkStrokes does with an origin -- so the letter you
+     are drawing is drawn by the same code as the letter on the key, the tile
+     and the card. It was not, and a letter could have looked like one thing
+     under your finger and another everywhere else. */
+  inkStrokes(x, GE.st, k, pad, pad, cssVar('--tx'));
 
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2);
   GE.st.forEach(function(s){
@@ -1285,8 +1277,10 @@ function phkHTML(sym, call){
 }
 /* A letter's strokes as filled ink: scaled by k, laid down at (ox,oy).
    The one place that turns strokes into a shape on a canvas. The keyboard,
-   the tiles and the card all come through here, so a letter cannot look like
-   one thing on a key and another on a picture somebody posts. */
+   the tiles, the card, the glyph preview and the editor's own canvas all come
+   through here, so a letter cannot look like one thing on a key and another
+   on a picture somebody posts. The last two did not, and the letter under
+   your finger was drawn by different code from the letter everywhere else. */
 function inkStrokes(x, st, k, ox, oy, col){
   var cont=[];
   try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return; }

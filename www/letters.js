@@ -80,6 +80,19 @@ function ltMain(unit){ var a=ltFor(unit); return a.length? a[0] : null; }
 function ltStrokes(unit){ var l=ltMain(unit); return (l && l.st && l.st.length)? l.st : null; }
 function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
 function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
+/* What a letter LOOKS like: what was drawn, or the character it borrows, or
+   whatever the caller wants for a letter that is neither yet -- a pen on the
+   alphabet, its name on a spelling, nothing at all on a strip.
+
+   This was written out six times, in three files, and one of the six carried
+   a comment saying it was the place it lived. That comment was the bug: a
+   change to how a letter is shown reached one screen and left five alone,
+   and nothing anywhere could see the six had come apart. */
+function ltInk(l, none){
+  if(l && l.st && l.st.length) return '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
+  if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
+  return none||'';
+}
 /* What a letter is called. Its own name if it was given one, otherwise what
    it reads -- and if it reads nothing yet, nothing. A letter with no name and
    no sound is still a letter; it is drawn and it is on the page. */

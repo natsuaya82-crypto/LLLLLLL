@@ -343,10 +343,7 @@ function sndRow(p){
 /* A letter's face, wherever one is shown: what was drawn, or the character it
    borrows, or -- for a letter with neither yet -- its name. */
 function ltFace(l, call){
-  var face;
-  if(l.st && l.st.length) face='<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
-  else if(l.ch) face='<span class="bch">'+esc(l.ch)+'</span>';
-  else face='<span class="nol">'+ICON_PEN+'</span>';
+  var face=ltInk(l, '<span class="nol">'+ICON_PEN+'</span>');
   /* The face is a drawing, a borrowed character, or a pen. Only the middle
      one is text, so the other two announce as nothing to somebody using
      VoiceOver -- and a letter tile is the whole point of these screens.
@@ -404,9 +401,7 @@ function ltStrip(list){
   /* No heading: it is the same letters as the list under it, so a line
      saying so would be a line saying so. */
   return '<div class="spv"><div class="ltstrip">'+shown.map(function(l){
-      return (l.st && l.st.length)
-        ? '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>'
-        : '<span class="bch">'+esc(l.ch)+'</span>';
+      return ltInk(l, '');
     }).join('')+'</div></div>';
 }
 function vLtset(){

@@ -300,16 +300,8 @@ function stExHTML(id){
   var a=stEx(id);
   return (a.length
     ? '<div class="exlist">'+a.map(function(e,i){
-        var seq=exSeq(e.ln);
-        return '<div class="exrow">'+
-          '<div class="exb">'+
-            (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
-            '<span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
-            '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
-          (seq.length? '<button class="usep"' + DO('sayPh', [seq]) + ' aria-label="'+
-            esc(t('f.listen'))+'">'+ICON_PLAY+'</button>' : '')+
-          '<button class="usep"' + DO('stDelEx', [id, i]) + ' aria-label="'+
-            esc(t('word.ex.del'))+'">'+ICON_CROSS+'</button></div>';
+        return exRowHTML(e, exSeq(e.ln),
+          exBtn('stDelEx', [id, i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
