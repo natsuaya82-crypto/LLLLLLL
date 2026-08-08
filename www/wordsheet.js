@@ -104,8 +104,12 @@ function addSpellHTML(){
 }
 var addMode='';
 function addSetMode(m){ addMode=m; addRedraw(); }
+/* A key pressed on the language's own keyboard. The blank is the backspace,
+   because typing a letter and taking one back are the same press through the
+   same door -- www/keyboard.js has no idea which sheet it is in. */
+function addKbTap(v){ if(v) addLtr(v); else addBack(); }
 function addKeys(){
-  var mine=addedSnd(), ls=ltTypable();
+  var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha'));
   var m=addMode || (ls.length? 'lt' : 'ph');
   if(!mine.length && !ls.length){
     return '<div class="note">'+t('add.ph.none')+'</div>'+
@@ -117,9 +121,7 @@ function addKeys(){
       '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('addSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
       '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('addSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
-  if(m==='lt' && ls.length)
-    return rail+'<div class="phkeys">'+ls.map(function(l){
-      return ltkHTML(l, DO('addLtr',[l.id])); }).join('')+'</div>';
+  if(m==='lt' && ls.length){ kbUse(addKbTap); return rail+kbHTML('kbTap', null); }
   return rail+'<div class="phkeys">'+mine.map(function(x){
     return phkHTML(x, DO('addPh',[x]));
   }).join('')+'</div>';
@@ -236,31 +238,21 @@ function wdSeqHTML(){
 var wdMode='';
 function wdKeyMode(){
   if(wdMode) return wdMode;
-  return ltTypable().length? 'lt' : 'ph';
+  return ltOfKind('alpha').length? 'lt' : 'ph';
 }
 function wdSetMode(m){ wdMode=m; wdPaint(); }
+function wdKbTap(v){ if(v) wdLtr(v); else wdBack(); }
 function wdKeysHTML(){
-  var mine=addedSnd(), ls=ltTypable(), m=wdKeyMode();
+  var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha')), m=wdKeyMode();
   if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
   var rail = (ls.length && mine.length)
     ? '<div class="segs" style="margin-bottom:8px">'+
       '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('wdSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
       '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('wdSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
-  if(m==='lt' && ls.length)
-    return rail+'<div class="phkeys">'+ls.map(function(l){
-      return ltkHTML(l, DO('wdLtr',[l.id])); }).join('')+'</div>';
+  if(m==='lt' && ls.length){ kbUse(wdKbTap); return rail+kbHTML('kbTap', null); }
   return rail+'<div class="phkeys">'+mine.map(function(x){
     return phkHTML(x, DO('wdKey',[x])); }).join('')+'</div>';
-}
-/* A letter on a keyboard: its face, and what it says under it. */
-function ltkHTML(l, call){
-  var face;
-  if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
-  else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
-  else face='<span class="pkb">'+esc(ltName(l)||'·')+'</span>';
-  return '<button class="phk hasg"'+call+'>'+face+
-    '<span class="pks">'+esc(ltFirstUnit(l))+'</span></button>';
 }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){

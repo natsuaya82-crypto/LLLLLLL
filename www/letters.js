@@ -629,8 +629,3 @@ function spOf(w){
   }
   return out;
 }
-/* Every letter that can be pressed: the ones that read something. A letter
-   with no sound cannot spell anything yet. */
-function ltTypable(){
-  return LETTERS.filter(function(l){ return ltUnits(l).length>0; });
-}

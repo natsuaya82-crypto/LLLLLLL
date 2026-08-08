@@ -113,7 +113,7 @@ of them.
 under. `www/route-map.js` says what it *shows* — `page('build', vBuild)`, the
 function itself, never its name, exactly as `act-map.js` does. `render()` looks
 it up; it used to be a chain of conditions, a second copy of `PAGES` that
-nothing could check against the first. There are 25 routes.
+nothing could check against the first. There are 26 routes.
 
 Adding a screen means a `PAGES` entry and a `page(...)` line. `act-check`
 proves both directions: a route with no view silently became the home screen
@@ -140,8 +140,8 @@ often turns up another on the next run — its only caller was the one deleted.
 
 ### 6. A language somebody already has still opens
 
-Storage is per language. Eight slices — words, lines, name, script, letters,
-notes, phases, talk — live under `lingua.<id>.<slice>`; `lingua.langs` says
+Storage is per language. Ten slices — words, lines, name, script, letters,
+notes, phases, talk, sounds, keyboard — live under `lingua.<id>.<slice>`; `lingua.langs` says
 which languages are here and whose; `lingua.set` is the person's settings and
 belongs to no language. `langKey('words')` is the only thing that knows how a
 language is filed.
@@ -338,6 +338,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/sound.js` | the alphabet's three lists, one letter, and the chart a letter's sound is picked on (ch 8) |
 | `www/settings.js` | settings and plans (ch 11-12) |
 | `www/wordsheet.js` | the sheet for writing one word, and CSV (ch 13) |
+| `www/keyboard.js` | the keyboard, which the language owns and the person builds (ch 22) |
 | `www/card.js` | the card — one line as a picture that can leave the phone (ch 15) |
 | `www/sns.js` | the timeline, the search and the notices (ch 16) |
 | `www/import.js` | bringing somebody's existing list in (ch 17) |
@@ -364,16 +365,16 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 211`, `screens the mirror
-rendered: 318`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 2522` for the same reason — and it is what a
+Both checks print their coverage (`screens walked: 219`, `screens the mirror
+rendered: 322`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 2695` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. Two chapters
 closed on the day those numbers were last written down, which is why they are
 smaller than they were and not a sign that something stopped being walked.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js`, chapter 21 closes `net.js`, and
+- The book is numbered: chapter 0 opens `core.js`, chapter 22 closes `keyboard.js`, and
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
   grew to hold five was split along those banners, not along anything new. The
   numbering has gaps where a chapter was closed; it is a shelf, not a count.

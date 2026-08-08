@@ -355,6 +355,11 @@ function vLetters(){
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
     '<div class="toc">'+LT_KINDS.map(ltKindRow).join('')+'</div>'+
+    /* The keyboard is made of these letters and is set out by hand, so the
+       way to it is from the chapter they are in. */
+    '<button class="trow" style="margin-top:10px"' + DO('go', ["kb"]) + '>'+
+      '<span class="rn"></span><span class="rt">'+esc(t('kb.title'))+'</span>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
     '</div></div>';
 }
 /* One of the three. The base belongs on the digits page and nowhere else,

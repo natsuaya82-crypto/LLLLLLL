@@ -49,6 +49,7 @@ page('build',    vBuild);
 page('find',     vFind);
 page('form',     vForm);
 page('letters',  vLetters);
+page('kb',       vKb);
 page('ltset',    vLtset);
 page('letter',   vLetter);
 page('wsys',     vWsys);

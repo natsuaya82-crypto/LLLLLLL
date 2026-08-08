@@ -124,6 +124,42 @@ canvas.pkc{width:34px;height:34px;display:block}
 .phk .pks{font-size:1.05rem;color:var(--tx);line-height:1}
 .phk.hasg .pks{font-size:.82rem;color:var(--txm);letter-spacing:.02em}
 .phk.hasg:active .pks{color:var(--gold)}
+/* --- the keyboard, which the language owns ------------------------------
+   Rows of keys, and a key is as wide as it was made. Nothing here decides how
+   many keys or how big: that is the whole point of the screen that builds it.
+   Full width of the screen rather than of the page, because a keyboard that
+   stops short of the edge is a picture of a keyboard. */
+.kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0}
+.kbrow{display:flex;gap:5px}
+.kbk{position:relative;min-height:52px;min-width:0;border:1px solid var(--line);
+     border-radius:9px;background:var(--sf);color:var(--tx);font-family:inherit;padding:0;
+     display:flex;align-items:center;justify-content:center;overflow:hidden}
+.kbk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+.kbk.fn{background:var(--pane);color:var(--txs)}
+.kbk.on{border-color:var(--gold);background:var(--goldsf)}
+.kbc{display:flex;align-items:center;justify-content:center;line-height:1}
+.kbc canvas.tc{width:28px;height:28px;display:block}
+.kbc .bch{font-size:1.35rem;line-height:1}
+.kbl{font-size:1.05rem;color:inherit}
+/* What each corner of a key holds, in the corner it comes from -- so a key
+   says what it can do without being pressed. */
+.kbf{position:absolute;font-size:.62rem;color:var(--txm);line-height:1;pointer-events:none}
+.kbf canvas.tc{width:13px;height:13px;display:block}
+.kbf .bch{font-size:.7rem;line-height:1}
+.kbfup{top:3px;left:50%;transform:translateX(-50%)}
+.kbfdown{bottom:3px;left:50%;transform:translateX(-50%)}
+.kbfleft{left:3px;top:50%;transform:translateY(-50%)}
+.kbfright{right:3px;top:50%;transform:translateY(-50%)}
+.kbadd{display:flex;gap:8px;margin-top:12px}
+/* One slot of a key -- the key itself, or one of its four corners -- and what
+   is in it. The same row shape either way, because they hold the same thing. */
+.kbslot{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;
+        background:none;border:0;border-bottom:1px solid var(--line);
+        color:var(--tx);font-family:inherit;padding:6px 2px;text-align:left}
+.kbslot .sl{flex:0 0 auto;color:var(--txs);font-size:.9rem;min-width:76px}
+.kbsv{flex:1;min-width:0;display:flex;align-items:center;gap:6px;color:var(--tx)}
+.kbsv canvas.tc{width:30px;height:30px;display:block}
+.kbsv .bch{font-size:1.2rem;line-height:1}
 /* --- the IPA chart ---------------------------------------------------- */
 .ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
 .ipascroll table{width:734px}
@@ -1431,6 +1467,7 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 <script src="talk.js"></script>
 <script src="settings.js"></script>
   <script src="wordsheet.js"></script>
+<script src="keyboard.js"></script>
 <script src="import.js"></script>
 <script src="numbers.js"></script>
 <script src="otf5.js"></script>

@@ -135,9 +135,9 @@ try{
    words end up saved under the language being switched to. */
 function langOpen(id){
   if(!LANGS[id] || id===langId) return;
-  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd();
+  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd(); saveKb();
   langId=id; langStore();
-  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart();
+  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart(); kbRead();
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();

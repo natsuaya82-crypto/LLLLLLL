@@ -34,6 +34,7 @@ function viewReset(){
   addSeq=[]; addMode=''; wdMode='';    /* the two sheets */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
+  kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
   ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
@@ -94,6 +95,7 @@ var PAGES={
   find:    {tab:'build', k:'tab.find'},
   form:    {tab:'build'},
   letters: {tab:'build', n:'II',  k:'toc.letters'},
+  kb:      {tab:'build', k:'kb.title'},
   ltset:   {tab:'build', n:'II',  k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},

@@ -172,6 +172,22 @@ export function halfDone(){
        is something to delete, so a form opened empty never shows it. */
     ['a note being edited',    () => { openNote(0); return FORM.html; }],
     /* The new-word sheet has two faces, and the buttons differ on each. */
+    /* The keyboard the language owns, and the two sheets that build it: one
+       key opened, and the alphabet being chosen from for one of its slots.
+       Neither is a route -- they are forms, so nothing reaches them by
+       walking. */
+    ['a key of the keyboard, opened', () => { kbLay = 0; kbPick(0, 0); return FORM.html; }],
+    /* A key that switches layers rather than typing one: which layer it goes
+       to is a question only that kind of key is asked. */
+    ['a key that switches layers', () => { kbLay = 0; kbSetKind(0, 0, 'lay');
+                                           const h = FORM.html; KB = null; return h; }],
+    ['the alphabet, for one slot of a key', () => { kbLay = 0; kbSlot(0, 0, -1);
+                                                    const h = FORM.html;
+                                                    kbSlotFor = null; return h; }],
+    /* A keyboard with more than one layer: the rail that switches between
+       them only exists then. */
+    ['a keyboard of two layers', () => { kbAddLay(); const h = vKb();
+                                         KB = null; kbLay = 0; return h; }],
     ['a word being added, by letter', () => { openAdd(''); addSetMode('lt');
                                               return FORM.html; }],
     ['a word being added, by sound',  () => { openAdd(''); addSetMode('ph');
