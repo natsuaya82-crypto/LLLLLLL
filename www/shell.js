@@ -34,6 +34,7 @@ function viewReset(){
   addSeq=[]; addMode=''; wdMode='';    /* the two sheets */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
+  ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
 }

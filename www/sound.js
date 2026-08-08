@@ -318,22 +318,12 @@ function ltTakeSnd(sym){
     l.snd.push(sym);
     if(addedSnd().indexOf(sym)<0){ SND=asOrder(addedSnd().concat([sym])); saveSnd(); }
   }
+  /* Chosen, not guessed -- so renaming the letter leaves this alone. It is the
+     one thing that tells the app's reading of a name apart from an answer. */
+  l.chose=1;
   saveLetters(); installScriptFont(); sayOne(sym);
   openSnd(sndFor);
 }
-/* A letter's face, wherever one is shown: what was drawn, or the character it
-   borrows, or -- for a letter with neither yet -- its name. */
-function ltFace(l, call){
-  var face=ltInk(l, '<span class="nol">'+ICON_PEN+'</span>');
-  /* The face is a drawing, a borrowed character, or a pen. Only the middle
-     one is text, so the other two announce as nothing to somebody using
-     VoiceOver -- and a letter tile is the whole point of these screens.
-     ltName falls back to what the letter reads, and to nothing at all for one
-     that is neither named nor sounded, which t('lt.untitled') covers. */
-  return '<button class="ltf" aria-label="'+esc(ltName(l)||t('lt.untitled'))+'"'+
-         call+'>'+face+'</button>';
-}
-
 /* ---- II. letters ------------------------------------------------------
    The alphabet, as a thing in itself. Every letter you have, what it reads,
    and the letters that read nothing yet -- which is the case the old model
@@ -369,19 +359,19 @@ function vLetters(){
 }
 /* One of the three. The base belongs on the digits page and nowhere else,
    because that is the page it decides the shape of. */
-/* This page's signs, side by side, at a size you can judge -- which is the
-   only thing a specimen is for. It used to be one word set in the font, on
-   the chapter's front page, answering nothing. 「この文字で書くといらん。せめ
-   てアルファベットの下とか数字並べて表示するとかそう言う使い方しろよ」 */
-function ltStrip(list){
-  var shown=list.filter(ltHasShape);
-  if(!shown.length) return '';
-  /* No heading: it is the same letters as the list under it, so a line
-     saying so would be a line saying so. */
-  return '<div class="spv"><div class="ltstrip">'+shown.map(function(l){
-      return ltInk(l, '');
-    }).join('')+'</div></div>';
-}
+/* The alphabet, as many letters as there are. A letter is its shape and what
+   it is called and nothing else, in a cell the width of a shape -- so seven
+   letters and seventy read the same way and neither costs a scroll per letter.
+
+   It was a list of rows: the shape, the name, the reading in red when it
+   clashed, and a speaker, each row a thumb high. 「この並び方増えたとき困るから、
+   G N O L みたいにもう文字とアルファベットだけ並べて何個でもいけるように」
+
+   Above it was a strip of the same letters at a larger size, so every letter
+   was on the screen twice. The cell is the specimen now.
+
+   Holding a letter picks it up and moving it sets the alphabet's order --
+   ltDragMount, in www/letters.js, over ltOrder. */
 function vLtset(){
   var k=here().a;
   if(LT_KINDS.indexOf(k)<0) k='alpha';
@@ -389,34 +379,31 @@ function vLtset(){
   return '<div class="view">'+
     navTop(list.length)+
     '<div class="body">'+
-    ltStrip(list)+
     (list.length
-      ? '<div class="ltlist">'+list.map(ltRow).join('')+'</div>'
+      ? '<div class="ltgrid" id="ltgrid" data-k="'+esc(k)+'">'+
+          list.map(ltCell).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('newLetter', [k]) + '>'+
-      ICON_ADD+t('lt.new')+'</button>'+
     ((k==='alpha' && loose.length)
-      ? '<div class="mini" style="margin-top:8px">'+tn('lt.loose', loose.length)+'</div>' : '')+
+      ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
+    /* At the foot of the screen: a grid that grows is a grid you would have
+       to scroll to the end of to add to. */
+    '<div class="barfix"><button class="btn ghost"' + DO('newLetter', [k]) + '>'+
+      ICON_ADD+t('lt.new')+'</button></div>'+
     '</div></div>';
 }
-/* One line, not two. The second said "reads k" under a first line that said
-   "k", because a letter with no name of its own is called by what it reads --
-   so it was the same fact twice, in a sentence.
+/* One letter: the shape, and under it what the letter is called.
 
-   Red when another letter already reads the same thing. A font maps one code
-   point to one glyph, so the first of them wins and the rest are invisible
-   without being wrong; nothing said so. */
-function ltRow(l){
-  var snd=(l.snd||[]), dup=ltTaken(l);
-  return '<div class="ltrow">'+
-    ltFace(l, DO('editLetter',[l.id]))+
-    '<button class="ltmid"' + DO('go', ["letter", l.id]) + '>'+
-      '<span class="ltnm">'+esc(ltName(l)||t('lt.reads.none'))+'</span>'+
-      (dup? '<span class="ltdup">'+esc(t('lt.dup', dup))+'</span>' : '')+
-    '</button>'+
-    (ltHasSound(l)? '<button class="ltsay"' + DO('sayPh', [snd]) + ' aria-label="'+
-      esc(t('f.listen'))+'">'+ICON_SPK+'</button>' : '')+
-    '</div>';
+   Red when another letter already reads the same thing -- a font maps one code
+   point to one glyph, so the first of them is drawn and the rest are invisible
+   without being wrong. The sentence saying which reading is taken is on the
+   letter's own page: there is no room for a sentence in a cell, and no reason
+   to say it in both places. */
+function ltCell(l){
+  var nm=ltName(l)||t('lt.reads.none');
+  return '<button class="ltc'+(ltTaken(l)? ' dup':'')+'" data-id="'+esc(l.id)+'"'+
+    DO('go', ["letter", l.id]) + ' aria-label="'+esc(nm)+'">'+
+    '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
+    '<span class="ltcn">'+esc(nm)+'</span></button>';
 }
 
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,
@@ -436,13 +423,17 @@ function ltRow(l){
    already says the same thing -- shown, not refused, because c and k are two
    letters and one sound and a language being built is allowed to be halfway
    through. The same field is the onboarding's second step, so it is written
-   once and the caller says which letter it is for. */
+   once and the caller says which letter it is for.
+
+   It types into a draft and the caller's button writes it: the letter page's
+   Save, and the onboarding's Next. The red line is about what the letter IS,
+   so it answers to the saved name and not to the one being typed. */
 function ltAbField(l, id){
   var dup=ltDupOf(l);
-  return '<div class="field"><input id="lt-rom" value="'+esc(ltBoxed(l))+'" '+
+  return '<div class="field"><input id="lt-rom" value="'+esc(ltDraftAb(l))+'" '+
     'class="'+(dup? 'dup':'')+'" placeholder="'+esc(t('lt.reads.ph'))+'" '+
     'autocapitalize="none" autocorrect="off" spellcheck="false"' +
-    CH('ltSetRoman', [id]) + '></div>'+
+    IN('ltDraftName', [id]) + '></div>'+
     (dup? '<div class="ltdup">'+esc(t('lt.dup', dup))+'</div>' : '');
 }
 /* One letter of the alphabet, opened from the list. Not where an alphabet is
@@ -491,5 +482,11 @@ function vLetter(){
         t('glyph.borrow')+'</button>')+
     '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
       '<span class="sl bad">'+t('glyph.del')+'</span></button>'+
-    '</div></div>';
+    '</div>'+
+    /* At the foot of the screen, on top of the tab bar, where the drawing
+       screen's Save already is -- and in reach without scrolling past the
+       sound, the borrowed character and the way to delete the letter. */
+    '<div class="barfix"><button class="btn"' + DO('ltSave', [lid]) + '>'+
+      t('glyph.save')+'</button></div>'+
+    '</div>';
 }

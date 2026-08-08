@@ -421,8 +421,15 @@ function obRomHTML(){
     '<div class="obfoot"><button class="btn"' + DO('obRomDone') + '>'+t('ob.next')+'</button></div>';
 }
 /* Choosing is not required to leave: a shape whose letter nobody has decided
-   is one of the loose ones, and the letters chapter already lists those. */
-function obRomDone(){ obGo(3); }
+   is one of the loose ones, and the letters chapter already lists those.
+
+   Next is this step's Save. The box types into a draft -- the same box the
+   letter page has -- so a step that only moved on would throw the answer
+   away. */
+function obRomDone(){
+  if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid);
+  obGo(3);
+}
 
 function obFinish(){
   /* A language that reached the end of this without a name keeps not having

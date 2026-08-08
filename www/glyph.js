@@ -362,11 +362,6 @@ var GICON={
    whatever font happens to answer, at whatever weight that font draws it.
    The arrow is part of the button, not part of the sentence, so it moved out
    of the ten translations and into one mark drawn like every other. */
-/* A speaker. The play triangle is for a whole word or a list; one letter gets
-   this, because it is a sound and not a track. */
-var ICON_SPK='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" '+
-  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
-  'aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a4 4 0 0 1 0 5"/></svg>';
 var ICON_PLAY='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" '+
   'aria-hidden="true"><path d="M7.5 5.2 19 12 7.5 18.8Z"/></svg>';
 var ICON_BACK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
@@ -1481,5 +1476,8 @@ function render(){
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
   geTiles(); phkMount(); postFaces();
+  /* and the alphabet, if that is what is on the page, can have a letter held
+     and carried to where it belongs */
+  ltDragMount();
   if(route==='form') formMount();
 }

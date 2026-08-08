@@ -151,18 +151,123 @@ function ltHasSound(l){
   return false;
 }
 function ltMarks(){ return LETTERS.filter(ltIsMark); }
-/* In the chart's order, so the alphabet and the phonology chapter read the
-   same way down the page. Letters that read nothing sort last -- they are the
-   ones still to finish and belong at the bottom, not scattered through it. */
-function ltOrder(list){
-  var all=ipaAll();
-  function at(l){
-    var u=ltUnits(l);
-    if(!u.length) return 1e9;
-    var p=uSplit(u[0]), i=all.indexOf(p[0]);
-    return i<0? 1e8 : i;
+/* ---- the order the alphabet is in --------------------------------------
+   Which is the person's. あいうえお is not a fact about sounds and neither is
+   ABC; the sequence somebody puts their letters in is most of what makes them
+   an alphabet rather than a pile of shapes. So it is theirs to set, by holding
+   a letter and carrying it. 「長押しで並べ替え可能。初期配置はabc順にして」
+
+   Until one is moved it is abc, by the name they gave the letter -- and a name
+   that is not roman at all (山, or nothing yet) goes after all of them,
+   because there is no answer to where 山 falls in abc and the end is the
+   honest place to put a question nobody asked.
+
+   `ord` is written to every letter of the list the moment one is moved, so a
+   list half-numbered only ever means "before the first move" or "a letter was
+   added since" -- and a new letter belongs at the end, which is where the
+   unnumbered ones sort.
+
+   It used to be the chart's order, so the alphabet read down the page the way
+   the phonology chapter did. That is a fact about sounds, on a page about
+   letters, and it had the side that a letter reading nothing sat at the bottom
+   however it was named. */
+function ltOrder(list){ return list.slice().sort(ltOrdCmp); }
+function ltAbcKey(l){
+  var n=String(ltName(l)||'');
+  return (/^[A-Za-z]/.test(n)? '0'+n.toLowerCase() : '1'+n);
+}
+function ltOrdCmp(a, b){
+  var oa=(typeof a.ord==='number'), ob=(typeof b.ord==='number');
+  if(oa && ob) return a.ord-b.ord;
+  if(oa!==ob) return oa? -1 : 1;
+  var ka=ltAbcKey(a), kb=ltAbcKey(b);
+  return ka<kb? -1 : ka>kb? 1 : 0;
+}
+/* Where a letter sits, written down. The whole list is renumbered and not just
+   the two that swapped: a list where some letters have a number and some do
+   not is the state before anybody set an order, not an order. */
+function ltMove(k, id, to){
+  var list=ltOrder(ltOfKind(k)), from=-1, i;
+  for(i=0;i<list.length;i++) if(list[i].id===id) from=i;
+  if(from<0 || to<0 || to>=list.length) return;
+  list.splice(to, 0, list.splice(from, 1)[0]);
+  for(i=0;i<list.length;i++) list[i].ord=i;
+  saveLetters(); render();
+}
+
+/* ---- holding a letter and moving it ------------------------------------
+   A press that stays still for a moment picks the letter up; after that the
+   finger carries it and the others move aside as it passes. A press that
+   travels before it lifts is a scroll and is left alone -- which is the only
+   thing the delay is for.
+
+   The order is written when the finger comes up, not on every swap: the
+   letters move in the page while it is happening, and the language is told
+   once, at the end. */
+var LTD=null;
+function ltDragMount(){
+  var g=document.getElementById('ltgrid');
+  /* A digit's place is what it is worth, so there is nothing here to set. */
+  if(!g || g.getAttribute('data-k')==='num') return;
+  g.addEventListener('touchstart', ltDown, false);
+  g.addEventListener('touchmove', ltDrag, false);
+  g.addEventListener('touchend', ltUp, false);
+  g.addEventListener('touchcancel', ltUp, false);
+}
+/* The cell a touch landed in. What is under a finger is the canvas or the
+   label as often as it is the button. */
+function ltCellAt(el){
+  while(el && el.classList && !el.classList.contains('ltc')) el=el.parentNode;
+  return (el && el.classList && el.classList.contains('ltc'))? el : null;
+}
+function ltDown(e){
+  var b=ltCellAt(e.target), p=e.touches? e.touches[0] : e;
+  if(!b || !p) return;
+  LTD={el:b, g:b.parentNode, id:b.getAttribute('data-id'),
+       x:p.clientX, y:p.clientY, on:false, timer:0};
+  LTD.timer=setTimeout(ltLift, 380);
+}
+function ltLift(){
+  if(!LTD) return;
+  LTD.on=true;
+  LTD.el.classList.add('lift');
+  LTD.g.classList.add('moving');
+}
+function ltDrag(e){
+  if(!LTD) return;
+  var p=e.touches? e.touches[0] : e;
+  if(!p) return;
+  var dx=p.clientX-LTD.x, dy=p.clientY-LTD.y;
+  if(!LTD.on){
+    if(dx*dx+dy*dy>144){ clearTimeout(LTD.timer); LTD=null; }
+    return;
   }
-  return list.slice().sort(function(a,b){ return at(a)-at(b); });
+  /* the page does not scroll while a letter is being carried */
+  e.preventDefault();
+  LTD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  var over=ltCellAt(document.elementFromPoint(p.clientX, p.clientY));
+  if(!over || over===LTD.el) return;
+  var kids=LTD.g.children, a=-1, b=-1, i;
+  for(i=0;i<kids.length;i++){ if(kids[i]===LTD.el) a=i; if(kids[i]===over) b=i; }
+  LTD.g.insertBefore(LTD.el, b>a? over.nextSibling : over);
+  /* it is in a different slot now, so the finger's offset from it starts over */
+  LTD.x=p.clientX; LTD.y=p.clientY;
+  LTD.el.style.transform='';
+}
+function ltUp(e){
+  if(!LTD) return;
+  clearTimeout(LTD.timer);
+  var d=LTD, kids, to=-1, i;
+  LTD=null;
+  d.el.style.transform='';
+  d.el.classList.remove('lift');
+  d.g.classList.remove('moving');
+  if(!d.on) return;
+  /* and the press does not also open the letter it was moving */
+  if(e && e.preventDefault) e.preventDefault();
+  kids=d.g.children;
+  for(i=0;i<kids.length;i++) if(kids[i]===d.el) to=i;
+  ltMove(d.g.getAttribute('data-k'), d.id, to);
 }
 /* What this letter reads that another letter already read. A font maps one
    code point to one glyph, so ltMain() -- the first of them -- is the one that
@@ -223,7 +328,10 @@ function migrateMarks(){
    (ltForUnit, and an import that carries one) still arrives with it. */
 function ltNew(o){
   var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
-         snd:(o&&o.snd)? o.snd.slice() : []};
+         snd:(o&&o.snd)? o.snd.slice() : [],
+         /* A letter made FOR a sound arrives with an answer; one that is just
+            a shape gets the app's guess as soon as it is named. */
+         chose:(o && o.snd && o.snd.length)? 1 : 0};
   if(o && typeof o.val==='number') l.val=o.val;
   LETTERS.push(l); saveLetters();
   return l;
@@ -294,23 +402,75 @@ function ltDupOf(l){
    renaming a letter leaves its sound alone, and openSnd changes the sound
    without renaming anything. A name nothing can be read from -- 山 -- simply
    leaves the sound empty rather than inventing one. */
+/* ---- the name box, before it is the name -------------------------------
+   What has been typed into the box and not yet put on the letter. The box
+   used to write straight through on every change: the alphabet rebuilt itself
+   under a moving finger, the font was recompiled per keystroke, and a
+   half-typed name was, for as long as it took to type the rest, what the
+   letter was called. 「保存ボタンつけようもう。単語作るのにも、文字作るのにも」
+
+   One draft, not one per letter: only one letter is open at a time, and the
+   id it carries is how a box on a different letter knows the draft is not
+   about it. viewReset() throws it away, because a half-typed name is where
+   you are standing and not something the language has. */
+var ltDraft=null;
+function ltDraftName(id, v){ ltDraft={id:id, ab:String(v||'')}; }
+function ltDraftAb(l){
+  return (l && ltDraft && ltDraft.id===l.id)? ltDraft.ab : ltBoxed(l);
+}
+/* The letter, as typed. This is the only thing that writes it. */
+function ltSave(id){
+  var l=ltById(id); if(!l) return;
+  ltSetRoman(id, ltDraftAb(l));
+  ltDraft=null;
+  toast(t('toast.saved', ltName(ltById(id))||t('lt.untitled')));
+}
+/* What a typed name reads: one unit per word, and the phonemes those units
+   are made of. Two answers off one pass, because both callers want both --
+   the name is what the sound is guessed from, and the phonemes are what joins
+   the inventory. */
+function ltReadName(sp){
+  var words=String(sp||'').split(/\s+/), units=[], seen=[], i, j, parts;
+  for(i=0;i<words.length;i++){
+    if(!words[i].length) continue;
+    /* Not roman letters: it is itself. `?` reads `?`, and joins no inventory
+       because it is not a sound. */
+    if(!/^[A-Za-z]+$/.test(words[i])) continue;
+    parts=ipaFromRoman(words[i]);
+    if(!parts) continue;              /* not readable: leave the sound alone */
+    units.push(parts.join(''));
+    for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
+  }
+  return {units:units, seen:seen};
+}
+/* Letters from before the guess followed the name. `chose` is the answer to
+   "did somebody pick this sound, or did the app read it off the name", and a
+   letter that has never been asked has no answer at all -- which is what makes
+   this run once per letter and not once per launch. Not asked means not
+   chosen, so the name wins, and the letter renamed from n to O stops being
+   told that n is taken.
+
+   Aligning a sound somebody DID choose on the chart is the cost, and it is
+   paid once, by letters that could not say which they were. */
+function migrateSndName(){
+  var moved=0, i, l, units;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(l.chose!==undefined) continue;
+    units=ltReadName(l.ab||'').units;
+    if(units.length) l.snd=units;
+    l.chose=0;
+    moved++;
+  }
+  if(moved) saveLetters();
+}
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
   if(/^[0-9]+$/.test(String(sp||'').trim())){
     numSetVal(id, parseInt(String(sp).trim(), 10));
     return;
   }
-  var words=String(sp||'').split(/\s+/), units=[], seen=[], i, j, parts;
-  for(i=0;i<words.length;i++){
-    if(!words[i].length) continue;
-    /* Not roman letters: it is itself. `?` reads `?`, and joins no inventory
-       because it is not a sound. */
-    if(!/^[A-Za-z]+$/.test(words[i])){ continue; }
-    parts=ipaFromRoman(words[i]);
-    if(!parts) continue;              /* not readable: leave the sound alone */
-    units.push(parts.join(''));
-    for(j=0;j<parts.length;j++) if(seen.indexOf(parts[j])<0) seen.push(parts[j]);
-  }
+  var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to
      read and then retype; and it made two letters for one sound impossible,
@@ -327,10 +487,19 @@ function ltSetRoman(id, sp){
      shape is stays where it is: that is a different sentence about the same
      letter, and this box has never had anything to say about it. */
   delete l.val;
-  /* The sound is a default, not an echo. It goes in when the letter has none
-     -- which is the moment it is named -- and never again, so a letter whose
-     sound was set on the chart keeps it when its name changes. */
-  if(units.length && !(l.snd && l.snd.length)) l.snd=units;
+  /* The sound follows the name, unless somebody has said otherwise.
+
+     It used to go in once -- at the moment the letter was named -- and never
+     again, on the argument that a sound set on the chart should survive a
+     rename. The argument is right about the chart and wrong about everything
+     else: a letter drawn, called n, and then called O kept /n/, and since N
+     already read /n/ the alphabet showed O with a red line underneath saying
+     that n was taken. Which was true, about a letter with O on it. 「Oだっつーの」
+
+     So the guess follows the name, and what was chosen on the chart is left
+     alone -- ltTakeSnd says so by setting `chose`, and that is the only thing
+     that distinguishes the two. */
+  if(units.length && !l.chose) l.snd=units;
   /* What was typed, kept as typed. It used to be thrown away and rebuilt out
      of the sounds by ltRoman, so `g` was stored as its sound and came back as
      whatever letter that sound is usually spelled with -- you asked for G and

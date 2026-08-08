@@ -11,6 +11,7 @@ migratePh();
 migrateMn();
 migrateLetters();
 migrateMarks();
+migrateSndName();
 migrateSnd();
 migratePosts();
 /* and a language that still has none gets a set to start from */

@@ -288,9 +288,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A page's signs side by side, at a size you can judge. */
 .numsm{flex:0 0 auto;width:26px;height:26px;margin-right:2px}
 span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
-.ltstrip{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center}
-.ltstrip canvas{width:40px;height:40px}
-.ltstrip .bch{font-size:1.7rem;line-height:40px;color:var(--tx)}
 .impsum{display:flex;flex-wrap:wrap;gap:16px;margin:2px 2px 12px}
 /* What to do about the words that are already here, beside how many there
    are, because the choice is about those and about nothing else. */
@@ -383,23 +380,35 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .cvl{font-size:.82rem;color:var(--txm);letter-spacing:.06em}
 /* ---------- I. sounds, II. letters ----------
    A sound is a row: the sound itself, the letters that write it, and the two
-   ways to add one. A letter is a row: its face, its name, what it reads. The
-   same face component in both, because it is the same letter. */
-.sndlist,.ltlist{border-top:1px solid var(--line)}
-.sndrow,.ltrow{display:flex;align-items:center;gap:9px;padding:9px 0;
-               border-bottom:1px solid var(--line)}
-.ltrow.on{background:var(--goldsf)}
+   ways to add one. A letter is a cell, because there are as many letters as
+   somebody decides there are. */
+.sndlist{border-top:1px solid var(--line)}
+.sndrow{display:flex;align-items:center;gap:9px;padding:9px 0;
+        border-bottom:1px solid var(--line)}
 .sndp{flex:0 0 auto;min-width:56px;min-height:48px;border:1px solid var(--line);border-radius:9px;
       background:var(--sf);color:var(--tx);font-size:1.06rem}
 .sndp:active{border-color:var(--goldln);color:var(--gold)}
 .sndls{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.ltf{width:48px;height:48px;flex:0 0 auto;border:1px solid var(--line);border-radius:9px;
-     background:var(--pane);color:var(--tx);
-     display:inline-flex;align-items:center;justify-content:center;padding:0}
-.ltf:active{border-color:var(--goldln)}
-.ltf canvas.tc{width:34px;height:34px;display:block}
-.ltf .bch{font-size:1.4rem;line-height:1}
-.ltf .nol{color:var(--txm);display:inline-flex}
+/* The alphabet: one cell per letter, the shape and what it is called, as many
+   across as the screen holds. A row per letter was a thumb high each and read
+   as a settings screen at seven letters and as a scroll at forty.
+   `moving` is on the grid while a letter is being carried, so the page under
+   the finger does not scroll away from it. */
+.ltgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-top:2px}
+.ltgrid.moving{touch-action:none}
+.ltc{min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+     gap:6px;padding:10px 4px 8px;background:var(--pane);border:1px solid var(--line);
+     border-radius:14px;color:var(--tx);font-family:inherit}
+.ltc:active{border-color:var(--goldln)}
+.ltcf{height:38px;display:flex;align-items:center;justify-content:center}
+.ltc canvas.tc{width:38px;height:38px;display:block}
+.ltc .bch{font-size:1.6rem;line-height:1}
+.ltc .nol{color:var(--txm);display:inline-flex}
+.ltcn{display:block;font-family:'Cinzel',Georgia,serif;font-size:.95rem;color:var(--txs);
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ltc.dup .ltcn{color:var(--bad)}
+/* Picked up: it rides over the others and follows the finger. */
+.ltc.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
 .sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;
         background:none;color:var(--txm);
         display:inline-flex;align-items:center;justify-content:center}
@@ -407,11 +416,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .sndx{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
       display:inline-flex;align-items:center;justify-content:center}
 .sndx:active{color:var(--gold)}
-.ltmid{flex:1;min-width:0;min-height:44px;display:flex;flex-direction:column;
-       justify-content:center;background:none;border:0;text-align:left;color:var(--tx);
-       font-family:inherit;padding:4px 0}
-.ltnm{display:block;font-family:'Cinzel',Georgia,serif;font-size:1rem}
-.ltsn{display:block;font-size:.84rem;color:var(--txm);margin-top:2px}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
    but nothing on the screen said which was which. */
@@ -421,10 +425,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* What this letter is in the alphabet, when another letter already says
    the same. Shown, not refused. */
 .field input.dup{color:var(--bad);border-color:var(--bad)}
-/* One sound, so a speaker rather than the play triangle a whole word gets. */
-.ltsay{flex:0 0 auto;width:44px;height:44px;display:inline-flex;align-items:center;
-       justify-content:center;background:none;border:0;color:var(--txm)}
-.ltsay:active{color:var(--gold)}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 /* ---------- a word, spelled ----------

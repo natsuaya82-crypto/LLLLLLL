@@ -689,7 +689,9 @@ function impPut(rows){
         if(IMP.dup!=='over') continue;
         wasL.push({id:l.id, l:JSON.parse(JSON.stringify(l))});
         if(r.nm) l.nm=r.nm;
-        if(u.length){ impGrow(u); l.snd=u; }
+        /* The list said what this letter reads, so it is an answer and not
+           the app's guess: renaming the letter later leaves it alone. */
+        if(u.length){ impGrow(u); l.snd=u; l.chose=1; }
       } else {
         if(u.length) impGrow(u);
         l=ltNew({ch:r.ch, nm:r.nm, snd:u});

@@ -160,7 +160,7 @@ function openAdd(from){
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
     '<div id="sugwrap">'+sugHTML()+'</div>'+
-    '<button class="btn" style="width:100%;margin-top:6px"' + DO('addOne') + '>'+t('add.btn')+'</button>',
+    '<div class="barfix"><button class="btn"' + DO('addOne') + '>'+t('add.btn')+'</button></div>',
     function(){ phkMount(); geTiles(); addPv(); });
 }
 function addPv(){
@@ -473,9 +473,13 @@ function wdBodyHTML(){
     '<div class="sec">'+t('word.note')+'</div>'+
     wdNoteHTML()+
 
-    '<button class="btn" style="width:100%;margin-top:18px"' + DO('saveWord') + '>'+t('word.save')+'</button>'+
-    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('delWord') + '>'+
-      '<span class="sl bad">'+t('word.del')+'</span></button>';
+    '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('delWord') + '>'+
+      '<span class="sl bad">'+t('word.del')+'</span></button>'+
+    /* At the foot of the screen rather than at the foot of the page. It was
+       under the meanings, the part of speech, the family, the synonyms, the
+       antonyms, the examples and the note -- so saving a word meant scrolling
+       past everything the word has. 「保存ボタンつけようもう」 */
+    '<div class="barfix"><button class="btn"' + DO('saveWord') + '>'+t('word.save')+'</button></div>';
 }
 function openWord(hw){
   var w=findWord(hw); if(!w) return;

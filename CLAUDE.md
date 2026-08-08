@@ -255,6 +255,7 @@ which is worth doing again and takes a minute to write: a letter's face
 (`exRowHTML()`), and where the thumb is (`geXY()`).
 
 **The worst two sat under comments claiming to be the one place.** `ltFace`
+(since deleted — the alphabet is cells now, and `ltInk` is the face)
 opened with "a letter's face, wherever one is shown" and there were five others.
 `inkStrokes` says it is "the one place that turns strokes into a shape on a
 canvas" and the glyph *editor* did not go through it — the letter under your
@@ -348,7 +349,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 211`, `screens the mirror
 rendered: 318`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 2541` for the same reason — and it is what a
+`press` prints `buttons pressed: 2522` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. Two chapters
 closed on the day those numbers were last written down, which is why they are
 smaller than they were and not a sign that something stopped being walked.

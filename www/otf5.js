@@ -6,10 +6,11 @@
  * font writer has to be hand-written.
  *
  * That sounds worse than it is, because of one property of the outliner: a stroke
- * is a convex nib swept along a segment, which is the convex hull of the nib at
- * both endpoints. EVERY contour this file emits is therefore a convex polygon —
- * straight lines only. The CFF charstrings need rmoveto, rlineto and endchar and
- * nothing else. No curve operators, no hints, no subroutines.
+ * is a run of rectangles, one per segment, each laid across its own direction,
+ * with the hull of two meeting ends filling the corner between them. EVERY
+ * contour this file emits is therefore a convex polygon — straight lines only.
+ * The CFF charstrings need rmoveto, rlineto and endchar and nothing else. No
+ * curve operators, no hints, no subroutines.
  *
  * Geometry is a straight port of tools/font-spike/build5.mjs lines 82-178 and its
  * profile()/spanAt() scanliner, deliberately including the scanline sampling, so
@@ -187,12 +188,15 @@ var LinguaFont = (function () {
     return out;
   }
 
-  // The shape of the tip, swept along every stroke. It was a twelve-sided
-  // circle, and a circle dragged along a line leaves a lozenge: every stroke
-  // in the app ended in a dome, and so did every glyph in the exported font.
-  // 「文字の線が丸いのが気になる"ー"のように角張ったフォントにして」 -- a square
-  // tip ends a horizontal stroke exactly as ー ends, flat and square, and it
-  // costs four points where the circle cost twelve.
+  // The shape of the tip, for a stroke that has no direction -- a dot. It was
+  // a twelve-sided circle, and a circle dragged along a line leaves a lozenge:
+  // every stroke in the app ended in a dome, and so did every glyph in the
+  // exported font. 「文字の線が丸いのが気になる"ー"のように角張ったフォントにして」
+  // A square tip ends a horizontal stroke exactly as ー ends, flat and square,
+  // and it costs four points where the circle cost twelve.
+  //
+  // A line gets `bar` below instead, because a standing square is only the
+  // right width in the two directions it faces.
   // The one rule, on whichever axis it is asked about: what a letter takes up
   // is its own ink plus the gap, half of it at each end. Horizontally that is
   // the advance width; vertically it is the line box, and when vmtx is written
@@ -209,6 +213,28 @@ var LinguaFont = (function () {
       out.push([pts[i][0] * ca - pts[i][1] * sa, pts[i][0] * sa + pts[i][1] * ca]);
     }
     return out;
+  }
+
+  // The ink one segment lays down: `width` across, cut square at both ends,
+  // and -- this is the whole of it -- perpendicular to the segment's OWN
+  // direction rather than to the page.
+  //
+  // The square nib stood still, so the width of a stroke depended on which
+  // way it went: a square of side w swept along 45° measures w*sqrt(2) across,
+  // half again as thick as every upright and every crossbar in the same
+  // letter. 「斜めの線太くなってね？太さは一定にして欲しい」
+  //
+  // The end is still flat and square. It is cut across the stroke instead of
+  // across the page, which is what a chisel held to the line does, and what ー
+  // looks like. `contrast` and `angleDeg` are the standing square's two knobs
+  // and a varying thickness is exactly what they are for, so they stay with
+  // the nib and the dot; the pen has held 1.0 and 0 since it was written.
+  function bar(a, b, w) {
+    var dx = b[0] - a[0], dy = b[1] - a[1], L = Math.sqrt(dx * dx + dy * dy);
+    if (!L) return null;
+    var nx = -dy / L * w / 2, ny = dx / L * w / 2;
+    return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny],
+            [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]];
   }
 
   function hull(pts) {
@@ -246,21 +272,31 @@ var LinguaFont = (function () {
     return a / 2;
   }
 
-  // Minkowski sum: the nib at A hulled with the nib at B is exactly the swept
-  // stroke, because the nib is convex. Result is authoring space, y-DOWN, every
-  // contour convex, all the same winding.
+  // A segment is its own bar; a turn is the hull of the two ends that meet at
+  // it, which fills the notch the outside of a corner leaves and nothing more.
+  // Result is authoring space, y-DOWN, every contour convex, all the same
+  // winding -- which is what the profile below is allowed to assume.
   function glyphContours(g, pen) {
-    var N = nib(pen), out = [];
+    var N = nib(pen), w = pen.width, out = [];
+    /* A corner between two segments that continue straight on has no notch to
+       fill, and its hull comes back a line. Nothing downstream wants a
+       contour with no inside. */
+    var add = function (c) { if (c.length > 2) out.push(c); };
     g.strokes.forEach(function (st) {
       var line = toPolyline(st, pen && pen.curve);
-      var at = function (p) {
-        return N.map(function (d) { return [p[0] + d[0], p[1] + d[1]]; });
-      };
-      if (line.length === 1) { out.push(hull(at(line[0]))); return; }
+      if (line.length === 1) {
+        add(hull(N.map(function (d) {
+          return [line[0][0] + d[0], line[0][1] + d[1]];
+        })));
+        return;
+      }
+      var prev = null;
       for (var i = 0; i < line.length - 1; i++) {
-        var a = line[i], b = line[i + 1];
-        if (Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6) continue;
-        out.push(hull(at(a).concat(at(b))));
+        var q = bar(line[i], line[i + 1], w);
+        if (!q) continue;
+        if (prev) add(hull([prev[1], prev[2], q[0], q[3]]));
+        add(hull(q));
+        prev = q;
       }
     });
     return out;
