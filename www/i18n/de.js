@@ -379,6 +379,7 @@ defLang('de', (function(){
       "lt.use"           : "Vorhandenen Buchstaben nehmen",
       "lt.addsnd"        : "Lesung",
       "lt.reads.none"    : "—",
+      'lt.ab.h' : "Buchstabe",
       "lt.snd.h"       : "Laut",
       "lt.title"     : "Buchstabe",
       "lt.reads.ph"     : "k, sh, ng, ka",

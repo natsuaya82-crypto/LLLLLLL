@@ -398,6 +398,7 @@ defLang('pt', (function(){
       "lt.use"           : "Usar uma letra existente",
       "lt.addsnd"        : "Leitura",
       "lt.reads.none"    : "—",
+      'lt.ab.h' : "Letra",
       "lt.snd.h"       : "Som",
       "lt.title"     : "Letra",
       "lt.reads.ph"     : "k, sh, ng, ka",

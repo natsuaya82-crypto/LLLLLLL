@@ -621,8 +621,15 @@ function geShape(st){
   }
   /* One clean bow, and the round primitive draws a true arc through it. */
   if(s.length===3){ st.pts=geLattice(s); st.k='o'; return; }
-  for(i=1;i<s.length-1;i++) s[i][2]='c';
-  st.pts=geLattice(s);
+  /* The lattice first, the curve flags after. It was the other way round, so
+     every interior point of a traced stroke was marked as a curve BEFORE the
+     staircase pass ran -- and that pass will not drop a point somebody meant
+     as a curve, so it dropped nothing at all and a dragged diagonal came back
+     as stairs however carefully it was drawn. Flatten it, then say which of
+     what is left bends. */
+  var lat=geLattice(s);
+  for(i=1;i<lat.length-1;i++) lat[i][2]='c';
+  st.pts=lat;
 }
 /* Every point onto the lattice, not just the two ends.
    The old rule was that a snapped path is a staircase, so the traced shape

@@ -102,6 +102,10 @@ function ltName(l){
   /* A digit says what it is worth. It reads no sound, so without this every
      digit in the chapter was a dash. */
   if(numIsDigit(l)) return numLabel(l.val);
+  /* What they typed. It was the sound spelled the usual way, so a letter
+     named G was called by whatever /ɟ/ is normally written with -- on its own
+     page, in the list, and in the bar at the top. The name is theirs. */
+  if(l.ab) return l.ab;
   if(l.snd && l.snd.length) return l.snd.join(' ');
   return '';
 }

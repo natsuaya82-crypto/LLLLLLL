@@ -570,6 +570,7 @@ defLang('ko', (function(){
       "lt.use"           : "이미 있는 문자 쓰기",
       "lt.addsnd"        : "읽기",
       "lt.reads.none"    : "—",
+      'lt.ab.h' : "글자",
       "lt.snd.h"       : "소리",
       "lt.title"     : "글자",
       "lt.reads.ph"     : "k, sh, ng, ka",

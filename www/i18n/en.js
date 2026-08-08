@@ -294,6 +294,7 @@ defLang('en', (function(){
       'lt.use'          : 'Use an existing letter',
       'lt.addsnd'       : 'Reading',
       'lt.reads.none'   : '—',
+      'lt.ab.h' : "Letter",
       'lt.snd.h'      : 'Sound',
       'lt.title'     : 'Letter',
       'lt.reads.ph'     : 'k, sh, ng, ka',

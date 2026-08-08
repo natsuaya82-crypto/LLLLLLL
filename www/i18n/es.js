@@ -351,6 +351,7 @@ defLang('es', (function(){
       "lt.use"           : "Usar una letra existente",
       "lt.addsnd"        : "Lectura",
       "lt.reads.none"    : "—",
+      'lt.ab.h' : "Letra",
       "lt.snd.h"       : "Sonido",
       "lt.title"     : "Letra",
       "lt.reads.ph"     : "k, sh, ng, ka",

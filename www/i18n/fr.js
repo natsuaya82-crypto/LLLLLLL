@@ -439,6 +439,7 @@ defLang('fr', (function(){
       "lt.use"           : "Employer une lettre existante",
       "lt.addsnd"        : "Lecture",
       "lt.reads.none"    : "—",
+      'lt.ab.h' : "Lettre",
       "lt.snd.h"       : "Son",
       "lt.title"     : "Lettre",
       "lt.reads.ph"     : "k, sh, ng, ka",

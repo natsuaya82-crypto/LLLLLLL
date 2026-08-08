@@ -464,7 +464,7 @@ function vLetter(){
        on a screen with nothing on it says nothing. A letter with no shape yet
        gets the pen, which is what it wears everywhere else. */
     '<div class="spbig">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</div>'+
-    '<div class="sec">'+t('lt.snd.h')+'</div>'+
+    '<div class="sec">'+t('lt.ab.h')+'</div>'+
     ltAbField(l, lid)+
     (numIsDigit(l)? numWordRow(l) : '')+
     /* What it sounds like, and the way to change it. It was a line of text

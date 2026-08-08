@@ -391,6 +391,7 @@ defLang('it', (function(){
       "lt.use"           : "Usare una lettera esistente",
       "lt.addsnd"        : "Lettura",
       "lt.reads.none"    : "—",
+      'lt.ab.h' : "Lettera",
       "lt.snd.h"       : "Suono",
       "lt.title"     : "Lettera",
       "lt.reads.ph"     : "k, sh, ng, ka",

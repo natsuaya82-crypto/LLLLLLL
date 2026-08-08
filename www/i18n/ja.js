@@ -307,6 +307,7 @@ defLang('ja', (function(){
       'lt.use'          : '既存の文字から選択',
       'lt.addsnd'       : '読みの設定',
       'lt.reads.none'   : '—',
+      'lt.ab.h' : "アルファベット",
       'lt.snd.h'      : '音',
       'lt.title'     : '文字',
       'lt.reads.ph'     : 'k, sh, ng, ka',

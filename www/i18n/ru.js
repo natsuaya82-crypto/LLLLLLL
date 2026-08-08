@@ -394,6 +394,7 @@ defLang('ru', (function(){
       "lt.use"            : "Взять существующую букву",
       "lt.addsnd"         : "Чтение",
       "lt.reads.none"     : "—",
+      'lt.ab.h' : "Буква",
       "lt.snd.h"        : "Звук",
       "lt.title"     : "Буква",
       "lt.reads.ph"     : "k, sh, ng, ka",
