@@ -1484,7 +1484,7 @@ function render(){
      on them was an empty box. Both of these ask the document what is on it
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
-  geTiles(); phkMount(); postFaces();
+  geTiles(); phkMount(); postFaces(); postLines();
   /* and the alphabet, if that is what is on the page, can have a letter held
      and carried to where it belongs */
   ltDragMount();

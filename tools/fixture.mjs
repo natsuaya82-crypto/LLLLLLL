@@ -54,8 +54,16 @@ export function seed(){
             mn:'a tall mountain is seen', ui:'en',
             gl:[{w:'kano', m:'mountain', p:'n'}, {w:'mos', m:'tall', p:'adj'},
                 {w:'zzq', m:'', p:''}]},
+           /* Somebody else's language, in somebody else's letters. The shapes
+              are ON the post -- this phone has never seen the alphabet they
+              were drawn in and never will -- which is the whole reason the
+              line carries ink at all. Two letters, used four times between
+              them, and the space between the words is text. */
            {id:'p2', at:Date.now()-7200000, lang:'other', lname:'Vethi', ln:'qel dross',
             who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}],
+                    [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
+                 s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},
             mn:'the sea has gone quiet', ui:'en',
             gl:[{w:'qel', m:'sea', p:'n'}, {w:'dross', m:'quiet', p:'adj'}]}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
@@ -71,6 +79,9 @@ export function seed(){
      five-letter alphabet that no free phone can be holding, and the QWERTY
      was three keys wide. */
   ltStart();
+  /* and the ink for the post that is this person's own, for the same reason:
+     boot.js cut what it could before this file put these posts here. */
+  migratePostInk();
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
   /* Where you are standing is the app's to say, not this file's. viewReset()

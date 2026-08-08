@@ -153,7 +153,8 @@ function pwSend(){
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
-            ln:ln, mn:String(PW.mn||'').trim() || postGlossLine(gl),
+            ln:ln, ink:postInk(ln),
+            mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), gl:gl, li:0, bo:0, re:0};
   if(PW.to){
     mine.to=PW.to;
@@ -182,6 +183,62 @@ function postAvatar(){
   }
   return null;
 }
+/* ---- the line, cut into the shapes it is written with -----------------
+   The face has travelled on the post since the day the timeline was written,
+   because a reader has neither this person's camera roll nor their alphabet.
+   The line had not, and it is the same sentence: a post is somebody else's
+   language, and reading somebody else's letters is most of the reason to
+   look at a timeline at all.
+
+   The line's text stays as it is -- it is what the gloss is built from and
+   what a search would look through. What is added is the ink: the same line,
+   already cut into letters, with each letter's strokes ON it.
+
+   Cutting has to happen here because it cannot happen there. The reader has
+   no alphabet to cut with, so `ka` would be k then a on their phone and one
+   letter on this one. The cut travels with the shapes.
+
+   Longest name first, for the same reason the font's ligatures are sorted
+   that way: a letter called `ka` must be found before the letter called `k`,
+   or nothing longer than one character is ever drawn. */
+function postCut(ln){
+  var names=[], i, l, n;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(!l.st || !l.st.length) continue;
+    n=String(ltName(l)||'');
+    if(!n) continue;
+    names.push({n:n, st:l.st});
+  }
+  names.sort(function(a, b){ return b.n.length-a.n.length; });
+  var s=String(ln||''), out=[], txt='', at=0, j, hit;
+  while(at<s.length){
+    hit=null;
+    for(j=0;j<names.length;j++)
+      if(s.substr(at, names[j].n.length)===names[j].n){ hit=names[j]; break; }
+    if(!hit){ txt+=s.charAt(at); at++; continue; }
+    if(txt){ out.push({t:txt}); txt=''; }
+    out.push({st:hit.st});
+    at+=hit.n.length;
+  }
+  if(txt) out.push({t:txt});
+  return out;
+}
+/* The same cut, filed so a letter used twelve times travels once. `g` is the
+   shapes, `s` is the line: a number is an index into `g`, a string is itself
+   -- a space, a full stop, a character somebody borrowed rather than drew. */
+function postInk(ln){
+  var cut=postCut(ln), g=[], s=[], seen=[], i, k, key;
+  for(i=0;i<cut.length;i++){
+    if(cut[i].t!==undefined){ s.push(cut[i].t); continue; }
+    key=JSON.stringify(cut[i].st);
+    k=seen.indexOf(key);
+    if(k<0){ k=g.length; g.push(cut[i].st); seen.push(key); }
+    s.push(k);
+  }
+  if(!g.length) return null;   /* nothing drawn in it: the text is the post */
+  return {g:g, s:s};
+}
 /* Posts written before a post carried its author. They are all this person's,
    because there was nowhere else for one to come from. */
 function migratePosts(){
@@ -190,6 +247,23 @@ function migratePosts(){
     if(POSTS[i].who!==undefined) continue;
     POSTS[i].who=meName(); POSTS[i].hd=meHandle();
     POSTS[i].mine=true; POSTS[i].av=postAvatar();
+    n++;
+  }
+  if(n) savePosts();
+}
+/* And posts written before a post carried its ink. Only the ones written in
+   the language that is open can be cut, because they are the only ones this
+   phone has the letters for -- so this is not once, it is once per language,
+   and a post it cannot reach yet keeps `ink` undefined and is picked up on
+   the day that language is opened. Cutting somebody's post with the wrong
+   alphabet is the one outcome worth going to this trouble to avoid. */
+function migratePostInk(){
+  var i, p, n=0;
+  for(i=0;i<POSTS.length;i++){
+    p=POSTS[i];
+    if(p.ink!==undefined) continue;
+    if(!p.mine || p.lang!==langId) continue;
+    p.ink=postInk(p.ln);
     n++;
   }
   if(n) savePosts();
@@ -273,7 +347,37 @@ function postAct(fn, id, icon, n, on){
   return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) + '>'+icon+
     '<span class="pn">'+(n? String(n) : '')+'</span></button>';
 }
-function postRow(p, myFont){
+/* The line, drawn. Each letter is a canvas of the strokes the post carries,
+   so a post in a language this phone has never seen is still in that
+   language's letters -- which is most of the reason to look at a timeline.
+   Anything the writer's alphabet had no shape for -- a space, a full stop, a
+   character they borrowed rather than drew -- is text, and stays text.
+
+   A post with no ink is text. That is every post written before this, and
+   every post whose language is written in borrowed characters, and both are
+   right: there is nothing to draw.
+
+   It is one canvas per letter rather than one per line so that a long post
+   wraps the way any other line of text wraps. */
+var PLINE={};
+function postLnHTML(p){
+  if(!p || !p.ink || !p.ink.s || !p.ink.s.length) return esc(String((p && p.ln)||''));
+  var out='', i, x, k;
+  for(i=0;i<p.ink.s.length;i++){
+    x=p.ink.s[i];
+    if(typeof x!=='number'){ out+=esc(String(x)); continue; }
+    k=String((p.id)||'p')+'_'+i;
+    PLINE[k]=p.ink.g[x];
+    out+='<canvas class="tcln" data-p="'+esc(k)+'"></canvas>';
+  }
+  return out;
+}
+function postLines(){
+  inkCanvases('canvas.tcln', 34, 22, function(c){
+    return PLINE[c.getAttribute('data-p')] || null;
+  });
+}
+function postRow(p){
   return '<div class="post">'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
@@ -286,9 +390,12 @@ function postRow(p, myFont){
         (p.mine? '<button class="pmore"' + DO('postDel', [p.id]) + ' aria-label="'+
           esc(t('post.del'))+'">'+ICON_DOTS+'</button>' : '')+
       '</div>'+
-      /* Your own font is the font of YOUR language, so it is only ever put on
-         your own line. */
-      '<div class="pline'+((p.mine && myFont)? ' sfont':'')+'">'+esc(p.ln)+'</div>'+
+      /* It used to be text wearing MY font, and only ever on my own post,
+         because my font is the font of MY language and putting it on
+         somebody else's line drew their words in my shapes. Now the shapes
+         are on the post, so there is no font to put on anything and no
+         reason to treat my own post differently from anybody's. */
+      '<div class="pline">'+postLnHTML(p)+'</div>'+
       '<div class="pmn">'+esc(p.mn)+'</div>'+
       '<div class="pgl">'+postGlossHTML(p.gl)+'</div>'+
       '<div class="pacts">'+

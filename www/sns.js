@@ -34,16 +34,17 @@ function snsEmpty(r){
    It is not a placeholder: a post written here is a real post, kept, and it
    is what the timeline will show when the rest of the world arrives. */
 function vFeed(){
-  var list=postAll(), mf=myFontOn();
-  /* Whether YOUR font is switched on is a setting of this phone, so it is
-     read here, once, and handed to the row -- which puts it only on a post
-     that is yours. list.map(postRow) would have handed each row its index
-     instead, and every post after the first would have worn it.  */
+  var list=postAll();
+  /* A row takes one argument again. It used to take a second -- whether YOUR
+     font was switched on -- and `list.map(postRow)` handed each row its index
+     as that argument, so post 0 was right and every post after it wore my
+     font anyway. There is no font to hand it now: a post carries the shapes
+     its own line is written in, so a row is read out of the row. */
   return '<div class="view">'+
     rootTop('feed')+
     '<div class="body">'+
     (list.length
-      ? list.map(function(p){ return postRow(p, mf); }).join('')
+      ? list.map(postRow).join('')
       : snsNone())+
     '</div>'+
     /* Where every timeline puts it: over the feed, above the bar, under the

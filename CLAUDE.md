@@ -203,6 +203,15 @@ What a reader needs is put ON the post when it is written, above the line, where
 side still exists — the name, the handle, the language's name, and the SHAPE of a letter
 rather than a reference to one, because the reader does not have that alphabet.
 
+The line itself is one of those shapes now. It used to be text wearing MY font, and only
+on my own post, which was correct and was also the app quietly deciding that somebody
+else's letters were not worth looking at — and looking at them is most of the reason a
+timeline exists. So a post carries its **ink**: the line already cut into letters, with
+each letter's strokes on it. The cut has to travel too, because the reader has no alphabet
+to cut with — `ka` is one letter on the writer's phone and two on everybody else's.
+Anything the writer never drew is text and stays text, which is why a half-drawn alphabet
+gives a half-drawn line. `postRow` takes one argument again.
+
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
 siblings. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
