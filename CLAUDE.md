@@ -102,6 +102,11 @@ proves both directions: no name without a function, and no entry no screen names
 
 `press-check` is the other half and not the same statement: it dispatches a real
 click on every button of every screen and fails if one throws or empties `#app`.
+It also measures: 44pt on both sides of anything a thumb has to hit. A key of a
+keyboard is the one exception and is measured on its height alone — ten letters
+in a row is what QWERTY *is*, and ten of anything across a phone is 35pt on
+every phone ever made, Apple's own keyboard included. Widening that floor to 44
+would not make a keyboard safer to type on; it would forbid a keyboard.
 A name can resolve to a function that throws the moment it runs — `act-check`
 calls that button fine. Both fixtures and the half-done screen list live in
 `tools/fixture.mjs` so the two walk the same app; add a screen there, not to one
@@ -160,6 +165,14 @@ It asserts what a thing *is*, never how many there are. The app rebuilds
 letters it cannot find from the drawn glyphs, so a dropped slice comes back as
 plausible auto-generated letters with the right count and the wrong ids.
 
+Two of its assertions are `keeps` and `lacks` rather than equality, because
+the alphabet arriving is no longer the whole alphabet: `ltStart` fills a free
+language out to its twenty-eight slots, so three letters arrive and thirty-one
+are there a moment later. `keeps` says all of these, still in this order, in a
+list that may be longer; `lacks` says none of these, which is the only thing
+the empty list was ever saying. Equality would have forbidden the twenty-eight
+in the name of checking the three.
+
 ### 7. A list somebody already has comes in whole
 
 `www/import.js` has a line across it. Above it is the reader: what shape a paste or a file
@@ -209,6 +222,46 @@ reply announced you were replying to yourself.
 Also: every `.js` under `www/` must be referenced by `index.html`, and every file
 `index.html` references must be **tracked by git** (not merely present on disk).
 Adding a script file means adding its tag and `git add`-ing it in the same commit.
+
+## What the free plan is
+
+One sentence: **your own shapes for a-z.** `ltStart` puts twenty-eight letters
+there the moment a free language exists — a to z, `!` and `?` — and nothing on
+the free plan adds one, deletes one or renames one. Drawing on them is the
+whole of it.
+
+That is not a restriction bolted onto the app; it is what makes the rest of the
+free plan possible. Because the twenty-eight are exactly a-z and their names
+cannot change, the keyboard can be a **QWERTY with the drawn letters
+substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
+stored nowhere, with no editor and nothing to set.
+「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
+Rename one letter and the key it answers to is gone, which is why the name
+field is not on the free letter page rather than merely being discouraged.
+
+Four places say it, and they say four different things:
+
+| where | what it says |
+|---|---|
+| `ltStart` in `letters.js` | free languages get the twenty-eight slots, topped up by name |
+| `kbOf` in `keyboard.js` | free reads `kbFixed()` and never `KB` |
+| `wsys()` in `wsys.js` | free is an alphabet; there is nothing to guess |
+| the screens | `vLtset` `vLetter` `vLetters` `vWsys` `vKb` each drop what free cannot use |
+
+`ltStart` **tops up**: a language that already has letters keeps every one of
+them and is given only the names it is missing, so it can run on any launch and
+a paid language coming back down to free is filled in rather than rearranged.
+It does not touch the inventory — `ltSetRoman` adds a sound to `SND` when
+somebody names a letter by hand, because they said the word, and nobody said
+anything here. A language given three sounds would otherwise come back holding
+twenty-two after an update, which is the app saying what the language sounds
+like.
+
+Because the walks run on the free plan, every paid face needs a `halfDone`
+entry in `tools/fixture.mjs` that flips `SET.plan` and puts it back — otherwise
+`act-check` reports its buttons as an entry no screen names, which is true and
+is not what you meant. The abugida bench needs `SET.wsys` too: it is reached
+only from a door that only exists while the writing is an abugida.
 
 ## Two chapters that are closed
 
@@ -365,12 +418,14 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 219`, `screens the mirror
-rendered: 322`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 2952` for the same reason — and it is what a
-change that is meant to alter nothing has to leave untouched. Two chapters
-closed on the day those numbers were last written down, which is why they are
-smaller than they were and not a sign that something stopped being walked.
+Both checks print their coverage (`screens walked: 224`, `screens the mirror
+rendered: 324`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 5172` for the same reason — and it is what a
+change that is meant to alter nothing has to leave untouched. The pressed
+count jumped from 2952 the day the free plan got its twenty-eight letters:
+every screen holding a keyboard went from a handful of keys to a QWERTY. A
+number moving is only ever a question — what changed — and the answer has to
+be a change somebody made on purpose.
 
 ## Working on this repo
 

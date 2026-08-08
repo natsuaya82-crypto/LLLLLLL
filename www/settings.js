@@ -193,6 +193,9 @@ function wipeAll(){
      that are about them rather than about the language */
   var theme=SET.theme, ui=SET.ui;
   SET=setDefaults(); SET.theme=theme; SET.ui=ui;
+  /* after the plan is back to free, because that is what decides whether the
+     language gets the twenty-eight slots at all */
+  ltStart();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);

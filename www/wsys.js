@@ -88,9 +88,21 @@ function wsGuess(){
   return 'alpha';
 }
 /* A stored answer wins, always. Otherwise the guess. */
-function wsys(){ return WSYS.indexOf(SET.wsys)>=0 ? SET.wsys : wsGuess(); }
+/* An alphabet, and nothing to guess, on the free plan: the other four are
+   paid, and the free alphabet is a-z with the sounds those letters are
+   normally read with -- most of which the language has not taken up on the
+   chart, which is exactly what wsGuess reads as a syllabary. So the guess
+   was answering a question that only has one answer here. */
+function wsys(){
+  if(!has('plus')) return 'alpha';
+  return WSYS.indexOf(SET.wsys)>=0 ? SET.wsys : wsGuess();
+}
 function setWsys(k){
   if(WSYS.indexOf(k)<0) return;
+  /* The screen only offers the alphabet on the free plan; this is the same
+     sentence said where it can be relied on, since a route can be arrived at
+     from anywhere and a plan can end while one of the other four is set. */
+  if(!has('plus') && k!=='alpha'){ goPlans(); return; }
   SET.wsys=k; save();
   installScriptFont();
   render();

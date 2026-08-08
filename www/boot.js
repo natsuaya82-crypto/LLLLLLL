@@ -17,6 +17,8 @@ migratePosts();
 migrateSp();
 /* and a language that still has none gets a set to start from */
 sndStart();
+/* and a free language gets the twenty-eight slots it is allowed */
+ltStart();
 /* the font built from whatever letters have been drawn */
 installScriptFont();
 /* The session, resumed. The token in hand lasts an hour, so a launch the next

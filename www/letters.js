@@ -336,6 +336,55 @@ function ltNew(o){
   LETTERS.push(l); saveLetters();
   return l;
 }
+/* ---- the alphabet a free language starts with -------------------------
+   Twenty-six letters and two marks, already there, waiting to be drawn on.
+
+   The free app is one sentence: your own shapes for a-z. There is no adding
+   a letter, no deleting one and no renaming one -- so the slot is the whole
+   of what the free plan gives, and it has to be there from the first second
+   or there is nothing to press.
+   「無料の場合はもう最初からa〜z!?が置いてあってそこから書くだけで追加する自体が
+   ない」
+
+   It tops up rather than seeds: a language that already has letters keeps
+   every one of them and is given only the slots it is missing, matched by
+   name. So this can run on any launch, and a paid language that comes back
+   down to free is filled in rather than rearranged.
+
+   Nothing here sets `ord`, so the twenty-eight sort by name -- which is abc,
+   and the two marks after it, because that is where ltAbcKey puts a name
+   that is not roman.
+
+   Paid does not get this. A syllabary, an abjad and a logography are all
+   paid, and handing a logography twenty-six roman letters on the day it is
+   made would be the app deciding what somebody's writing is -- which is the
+   one thing the alphabet chapter is written not to do. */
+var LT_START='abcdefghijklmnopqrstuvwxyz!?';
+function ltStart(){
+  if(has('plus')) return;
+  var have={}, made=0, i, c, l, read;
+  for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
+  for(i=0;i<LT_START.length;i++){
+    c=LT_START.charAt(i);
+    if(have[c]) continue;
+    read=ltReadName(c);
+    l=ltNew({});
+    l.ab=c;
+    /* A roman letter reads its sound; a mark reads itself, which is what
+       migrateMarks made of every mark that came before this.
+
+       The inventory is not touched. ltSetRoman adds a sound to it when
+       somebody names a letter by hand, because they said the word; nobody
+       said anything here. A language that has been given three sounds and
+       then opened after an update would come back holding twenty-two of
+       them, which is the app saying what the language sounds like -- and a
+       letter is allowed to read something the phonology has not taken up
+       yet, which is what the sound chapter is for. */
+    l.snd=read.units.length? read.units : [c];
+    made++;
+  }
+  if(made) saveLetters();
+}
 /* What this letter reads, spelled the way a person would write it. One word
    per unit, separated by spaces, because a letter may read more than one
    thing -- c reads /k/ and /s/. The field on the letter screen shows this and

@@ -108,7 +108,9 @@ function addSetMode(m){ addMode=m; addRedraw(); }
 /* A key pressed on the language's own keyboard. The blank is the backspace,
    because typing a letter and taking one back are the same press through the
    same door -- www/keyboard.js has no idea which sheet it is in. */
-function addKbTap(v){ if(v) addLtr(v); else addBack(); }
+/* A word is one word, so the space key does nothing here -- the same
+   keyboard is under a sentence field, where it does. */
+function addKbTap(v, sp){ if(sp) return; if(v) addLtr(v); else addBack(); }
 function addKeys(){
   var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha'));
   var m=addMode || (ls.length? 'lt' : 'ph');
@@ -251,7 +253,7 @@ function wdKeyMode(){
   return ltOfKind('alpha').length? 'lt' : 'ph';
 }
 function wdSetMode(m){ wdMode=m; wdPaint(); }
-function wdKbTap(v){ if(v) wdLtr(v); else wdBack(); }
+function wdKbTap(v, sp){ if(sp) return; if(v) wdLtr(v); else wdBack(); }
 function wdKeysHTML(){
   var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha')), m=wdKeyMode();
   if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';

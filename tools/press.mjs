@@ -115,6 +115,15 @@ const R = await pg.evaluate(() => {
     for (let i = 0; i < els.length; i++) {
       const e = els[i], r = e.getBoundingClientRect();
       if (!r.width || !r.height) continue;          /* hidden is not small */
+      /* A key of a keyboard is measured on its height only. Ten letters in a
+         row is what QWERTY is, and ten of anything across a phone is 35pt on
+         every phone ever made -- Apple's own keyboard included. The floor
+         that means something for a key is how tall it is, and that one still
+         holds here. Widening it to 44 would not make a keyboard safer to
+         type on; it would forbid a keyboard. */
+      if ((' ' + e.className + ' ').indexOf(' kbk ') >= 0) {
+        if (r.height >= TAP) continue;
+      } else
       if (r.width >= TAP && r.height >= TAP) continue;
       const k = (e.className || e.tagName) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
       if (seenSmall[k]) continue;

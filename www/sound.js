@@ -20,13 +20,23 @@
    rail of five tabs across the top of the letters chapter, wrapping so that
    Logography sat alone on a second line, on a screen you open every day to
    answer a question you answer once. */
+/* Four of the five are paid. An alphabet is one letter per sound and the
+   free plan is exactly that -- twenty-six slots with roman names on them --
+   so a syllabary, an abjad, an abugida and a logography are all the same
+   purchase: letters that are not a-z. Hidden rather than shown locked,
+   because a row that cannot be pressed is a row that has to explain itself
+   every time the screen is opened. */
 function vWsys(){
+  var kinds=has('plus')? WSYS : ['alpha'];
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    WSYS.map(function(k){
+    kinds.map(function(k){
       return '<button class="set"' + DO('setWsys', [k]) + '>'+
         '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
         '<span class="sv">'+(wsys()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
+    (has('plus')? '' :
+      '<button class="capwarn" style="margin-top:10px"' + DO('goPlans') + '>'+t('ws.locked')+
+        '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>')+
     '<div class="note" style="margin-top:12px">'+t('ws.kind.note')+'</div>'+
     numBaseRows()+
     /* Roman or your own letters is the same kind of decision -- it changes
@@ -334,6 +344,11 @@ function ltTakeSnd(sym){
    見れるようにして」 */
 var LT_KINDS=['alpha', 'mark', 'num'];
 var LT_KIND={alpha:'lt.all', mark:'lt.marks', num:'num.h'};
+/* Which of the three the chapter shows a door to. A digit is a letter you
+   add and give a value to, and the free plan adds nothing -- so on free the
+   room would be empty forever and there would be no way to put anything in
+   it. A room like that is worse than no room. */
+function ltKinds(){ return has('plus')? LT_KINDS : ['alpha', 'mark']; }
 function ltOfKind(k){
   if(k==='num') return numDigits();
   if(k==='mark') return ltMarks();
@@ -354,12 +369,16 @@ function vLetters(){
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
-    '<div class="toc">'+LT_KINDS.map(ltKindRow).join('')+'</div>'+
+    '<div class="toc">'+ltKinds().map(ltKindRow).join('')+'</div>'+
     /* The keyboard is made of these letters and is set out by hand, so the
-       way to it is from the chapter they are in. */
-    '<button class="trow" style="margin-top:10px"' + DO('go', ["kb"]) + '>'+
-      '<span class="rn"></span><span class="rt">'+esc(t('kb.title'))+'</span>'+
-      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+       way to it is from the chapter they are in. On the free plan there is
+       nothing to set out -- it is QWERTY with the drawn letters in it and
+       that is the whole of it -- so there is nowhere to go. */
+    (has('plus')
+      ? '<button class="trow" style="margin-top:10px"' + DO('go', ["kb"]) + '>'+
+          '<span class="rn"></span><span class="rt">'+esc(t('kb.title'))+'</span>'+
+          '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'
+      : '')+
     '</div></div>';
 }
 /* One of the three. The base belongs on the digits page and nowhere else,
@@ -391,9 +410,13 @@ function vLtset(){
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
     /* At the foot of the screen: a grid that grows is a grid you would have
-       to scroll to the end of to add to. */
-    '<div class="barfix"><button class="btn ghost"' + DO('newLetter', [k]) + '>'+
-      ICON_ADD+t('lt.new')+'</button></div>'+
+       to scroll to the end of to add to. The free alphabet does not grow --
+       the twenty-eight are there from the first second and drawing on them
+       is the whole of it -- so there is nothing at the foot of it. */
+    (has('plus')
+      ? '<div class="barfix"><button class="btn ghost"' + DO('newLetter', [k]) + '>'+
+          ICON_ADD+t('lt.new')+'</button></div>'
+      : '')+
     '</div></div>';
 }
 /* One letter: the shape, and under it what the letter is called.
@@ -465,8 +488,13 @@ function vLetter(){
        押しても反応しない」 */
     '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
       ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>'+
-    '<div class="sec">'+t('lt.ab.h')+'</div>'+
-    ltAbField(l, lid)+
+    /* What the letter is called. Not on the free plan: the twenty-eight are
+       a, b, c and the two marks, and that is what makes the free keyboard a
+       QWERTY that works -- a key is found by the letter's name. Renaming one
+       would take the key away and leave a hole nothing could fill. */
+    (has('plus')
+      ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
+      : '')+
     (numIsDigit(l)? numWordRow(l) : '')+
     /* What it sounds like, and the way to change it. It was a line of text
        reporting the sound, and the sound was set on a chapter of its own two
@@ -485,13 +513,21 @@ function vLetter(){
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
       : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
-    '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
-      '<span class="sl bad">'+t('glyph.del')+'</span></button>'+
+    (has('plus')
+      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+          '<span class="sl bad">'+t('glyph.del')+'</span></button>'
+      : '')+
     '</div>'+
     /* At the foot of the screen, on top of the tab bar, where the drawing
        screen's Save already is -- and in reach without scrolling past the
-       sound, the borrowed character and the way to delete the letter. */
-    '<div class="barfix"><button class="btn"' + DO('ltSave', [lid]) + '>'+
-      t('glyph.save')+'</button></div>'+
+       sound, the borrowed character and the way to delete the letter.
+
+       It saves the name, so on the free plan, where there is no name to
+       type, there is nothing for it to do. The drawing has its own Save on
+       the screen it is drawn on. */
+    (has('plus')
+      ? '<div class="barfix"><button class="btn"' + DO('ltSave', [lid]) + '>'+
+          t('glyph.save')+'</button></div>'
+      : '')+
     '</div>';
 }

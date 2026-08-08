@@ -100,6 +100,12 @@ const REPORT = () => ({
   words: WORDS.length, word0: WORDS[0] && WORDS[0].hw, gloss0: WORDS[0] && WORDS[0].gl,
   name: langName, lines: LINES.length, line0: LINES[0] && LINES[0].a,
   letters: LETTERS.length, letterIds: LETTERS.map(function(x){ return x.id; }).join(','),
+  /* Which of the free plan's twenty-eight slots nothing answers to. Empty is
+     the answer on every language a free phone can be holding. */
+  gaps: LT_START.split('').filter(function(c){
+          return !LETTERS.filter(function(l){
+            return String(ltName(l)||'').toLowerCase() === c; }).length;
+        }).join(''),
   notes: NOTES.length, note0: NOTES[0] && NOTES[0].t,
   talk: TALK.length, talk0: TALK[0] && TALK[0].q, sound: !!STG.done.sound,
   snd: addedSnd().join(','), sndInSet: SET.snd === undefined,
@@ -118,6 +124,30 @@ const fails = [];
 const addedSndLen = (s) => (s ? s.split(',').length : 0);
 const want = (label, got, expected) => {
   if (got !== expected) fails.push(`${label}: got ${JSON.stringify(got)}, wanted ${JSON.stringify(expected)}`);
+};
+/* All of these, still in this order, in a list that may be longer.
+
+   The alphabet is no longer only what somebody made: on the free plan
+   ltStart fills it out to a-z and the two marks, so a language that arrives
+   with three letters is holding thirty-one a moment later. What has to hold
+   is that not one of the three was dropped, reordered or renumbered on the
+   way -- which is what a subsequence says, and what a whole-list comparison
+   can only say by also forbidding the twenty-eight. */
+const keeps = (label, got, expected) => {
+  const g = String(got || '').split(',').filter(Boolean);
+  const e = String(expected || '').split(',').filter(Boolean);
+  let i = 0;
+  for (const x of g) if (x === e[i]) i++;
+  if (i !== e.length)
+    fails.push(`${label}: got ${JSON.stringify(got)}, wanted all of ${JSON.stringify(expected)}, in order`);
+};
+/* And the other direction, which is the only thing the empty list was ever
+   saying: none of these, in a list that is allowed to hold other things. */
+const lacks = (label, got, unwanted) => {
+  const g = String(got || '').split(',').filter(Boolean);
+  const bad = String(unwanted || '').split(',').filter(Boolean).filter((x) => g.indexOf(x) >= 0);
+  if (bad.length)
+    fails.push(`${label}: got ${JSON.stringify(got)}, which still has ${bad.join(',')}`);
 };
 
 const br = await chromium.launch(fs.existsSync(CHROME) ? { executablePath: CHROME } : {});
@@ -138,9 +168,11 @@ want('with their meanings', a.gloss0, 'hello');
 want('the language kept its name', a.name, 'Vaska');
 want('lines carried over', a.lines, 1);
 want('and it is the line that was there', a.line0, 'tuf ark');
-want('letters carried over', a.letters, 3);
-want('and they are the letters that were drawn, not ones rebuilt from the glyphs',
-     a.letterIds, 'lA,lB,lC');
+keeps('the letters that were drawn carried over, not ones rebuilt from the glyphs',
+      a.letterIds, 'lA,lB,lC');
+/* And the free plan's twenty-eight slots were filled in around them rather
+   than instead of them. */
+want('and the alphabet was filled out around them', a.gaps, '');
 want('notes carried over', a.notes, 1);
 want('and it is what they wrote', a.note0, 'a note');
 want('talk carried over', a.talk, 1);
@@ -168,7 +200,7 @@ const b = await pg.evaluate(REPORT);
 want('still one language on the second load', b.langs, 1);
 want('still the same language', b.id, a.id);
 want('still their words', b.words, 2);
-want('still their letters', b.letterIds, 'lA,lB,lC');
+keeps('still their letters', b.letterIds, 'lA,lB,lC');
 want('still their name', b.name, 'Vaska');
 want('still their sounds', b.snd, 'k,t,a');
 
@@ -215,7 +247,7 @@ await pg.reload();
 
 const A1 = await pg.evaluate(REPORT);
 want('A opens as itself', A1.word0, 'tuf');
-want('with its letters', A1.letterIds, 'aA,aB,aC');
+keeps('with its letters', A1.letterIds, 'aA,aB,aC');
 
 /* over to B */
 await pg.evaluate(() => langOpen('LB'));
@@ -223,7 +255,7 @@ const B1 = await pg.evaluate(REPORT);
 want('B is open now', B1.id, 'LB');
 want('and localStorage agrees', B1.cur, 'LB');
 want('B has no words of A\'s', B1.words, 0);
-want('nor A\'s letters', B1.letterIds, '');
+lacks('nor A\'s letters', B1.letterIds, 'aA,aB,aC');
 want('nor A\'s notes', B1.notes, 0);
 want('nor A\'s conversation', B1.talk, 0);
 want('nor how far A had got', B1.sound, false);
@@ -244,7 +276,7 @@ await pg.evaluate(() => langOpen('LA'));
 const A2 = await pg.evaluate(REPORT);
 want('A is still A', A2.word0, 'tuf');
 want('with all of its words', A2.words, 3);
-want('and all of its letters', A2.letterIds, 'aA,aB,aC');
+keeps('and all of its letters', A2.letterIds, 'aA,aB,aC');
 want('and its note', A2.note0, 'A note');
 want('and its conversation', A2.talk0, 'A talk');
 want('and the stage it had finished', A2.sound, true);

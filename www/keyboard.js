@@ -55,10 +55,54 @@ function kbDefault(){
     if(row.length===5){ rows.push(row); row=[]; }
   }
   if(row.length) rows.push(row);
-  rows.push([kbKey('del')]);
+  var sp=kbKey('sp'); sp.w=3;
+  rows.push([sp, kbKey('del')]);
   return {lay:[{rows:rows}]};
 }
-function kbOf(){ return KB || kbDefault(); }
+/* ---- the keyboard the free plan gets ----------------------------------
+   QWERTY, with the drawn letters standing in for the roman ones.
+   「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
+
+   The free alphabet is exactly a-z and the two marks -- ltStart puts them
+   there and nothing can add to it -- so the one layout that certainly fits
+   is the one everybody's thumbs already know. Nothing is stored and nothing
+   is read: this is built from LETTERS every time it is shown, so a letter
+   drawn ten seconds ago is on the key.
+
+   A key is found by name, over every letter and not just the alphabet,
+   because `!` and `?` read themselves and are therefore marks. A name that
+   nothing answers to is simply left out rather than made into an empty key. */
+var KB_QWERTY=['qwertyuiop', 'asdfghjkl', 'zxcvbnm!?'];
+function kbNamed(c){
+  var i, n;
+  for(i=0;i<LETTERS.length;i++){
+    n=String(ltName(LETTERS[i])||'').toLowerCase();
+    if(n===c) return LETTERS[i].id;
+  }
+  return '';
+}
+function kbFixed(){
+  var rows=[], r, i, j, row, id;
+  for(i=0;i<KB_QWERTY.length;i++){
+    r=KB_QWERTY[i]; row=[];
+    for(j=0;j<r.length;j++){
+      id=kbNamed(r.charAt(j));
+      if(id) row.push(kbKey('lt', id));
+    }
+    if(i===KB_QWERTY.length-1) row.push(kbKey('del'));
+    if(row.length) rows.push(row);
+  }
+  /* And the bar along the bottom. A line of the language is more than one
+     word -- an example under a word, a post -- and without this there is no
+     way to put a gap between two of them. */
+  var sp=kbKey('sp'); sp.w=4;
+  rows.push([sp]);
+  return {lay:[{rows:rows}]};
+}
+function kbOf(){
+  if(!has('plus')) return kbFixed();
+  return KB || kbDefault();
+}
 /* Which layer is showing, and which key is being edited. Both are where you
    are standing rather than anything the language has, so viewReset() drops
    them. */
@@ -80,6 +124,10 @@ function kbAt(ri, ki){
 function kbFace(key){
   if(!key) return '';
   if(key.k==='del') return ICON_BACK;
+  /* A space wears nothing. It is the widest key on the board and the only
+     one whose shape is the whole of what it says, which is how every phone
+     keyboard already draws it. */
+  if(key.k==='sp') return '';
   if(key.k==='lay') return '<span class="kbl">'+esc(kbLayName(parseInt(key.v, 10)||0))+'</span>';
   var l=ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
@@ -174,6 +222,11 @@ function kbTap(ri, ki){
   if(!key) return;
   if(key.k==='lay'){ kbLay=parseInt(key.v, 10)||0; render(); return; }
   if(key.k==='del'){ if(KB_TAP) KB_TAP(''); return; }
+  /* The gap between two words. It is not a letter -- there is no letter for
+     it and there never will be -- so it cannot travel as an id, and it must
+     not arrive as an empty one either, which is what backspace is. It is the
+     second argument, and every taker that spells a single word ignores it. */
+  if(key.k==='sp'){ if(KB_TAP) KB_TAP('', 'sp'); return; }
   if(key.v && KB_TAP) KB_TAP(key.v);
 }
 
@@ -189,10 +242,11 @@ function kbTap(ri, ki){
 
    One function, three callers. It was going to be three. */
 function kbField(id){
-  return function(v){
+  return function(v, sp){
     var e=document.getElementById(id);
     if(!e) return;
-    if(!v){ e.value=String(e.value||'').slice(0, -1); }
+    if(sp){ e.value=String(e.value||'')+' '; }
+    else if(!v){ e.value=String(e.value||'').slice(0, -1); }
     else { e.value=String(e.value||'')+String(ltName(ltById(v))||''); }
     if(e.oninput) e.oninput();
   };
@@ -218,6 +272,16 @@ function kbFieldHTML(id, ph, attrs){
    pressing one opens what that key is rather than typing with it. There is
    no preview beside an editor, because the editor is the preview. */
 function vKb(){
+  /* The chapter shows no door to here on the free plan, but a route can be
+     arrived at from anywhere and a plan can end while somebody is standing
+     in it -- so the screen says what it is rather than showing an editor
+     over a keyboard that does not read what it writes. */
+  if(!has('plus'))
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      '<div class="note">'+t('kb.locked')+'</div>'+
+      '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
+        t('up.cta')+'</button>'+
+      '</div></div>';
   var b=kbOf(), out='';
   if(b.lay.length>1){
     out+='<div class="segs" style="margin-bottom:8px">'+b.lay.map(function(x, i){
@@ -268,6 +332,7 @@ function kbKeyHTML(ri, ki){
   out='<div class="sec">'+t('kb.what')+'</div>'+
     '<div class="segs">'+
       '<button class="seg'+(key.k==='lt'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(key.k==='sp'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "sp"]) + '>'+t('kb.sp')+'</button>'+
       '<button class="seg'+(key.k==='del'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "del"]) + '>'+t('kb.del')+'</button>'+
       '<button class="seg'+(key.k==='lay'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lay"]) + '>'+t('kb.lay')+'</button>'+
     '</div>';
@@ -346,7 +411,7 @@ function kbSetKind(ri, ki, kind){
   key.k=kind;
   if(kind!=='lt') key.f=['','','',''];
   if(kind==='lay' && !/^[0-9]+$/.test(String(key.v))) key.v='0';
-  if(kind==='del') key.v='';
+  if(kind==='del' || kind==='sp') key.v='';
   saveKb(); kbPick(ri, ki);
 }
 function kbSetLay(ri, ki, i){

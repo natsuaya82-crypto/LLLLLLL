@@ -65,6 +65,12 @@ export function seed(){
              {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']},
              /* a digit: a letter with a value instead of a reading */
              {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1}];
+  /* And the twenty-eight slots the free plan puts there. boot.js already ran
+     it, against an empty language, before this file replaced LETTERS -- so
+     without this line every check and every screenshot was looking at a
+     five-letter alphabet that no free phone can be holding, and the QWERTY
+     was three keys wide. */
+  ltStart();
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
   /* Where you are standing is the app's to say, not this file's. viewReset()
@@ -175,19 +181,51 @@ export function halfDone(){
     /* The keyboard the language owns, and the two sheets that build it: one
        key opened, and the alphabet being chosen from for one of its slots.
        Neither is a route -- they are forms, so nothing reaches them by
-       walking. */
-    ['a key of the keyboard, opened', () => { kbLay = 0; kbPick(0, 0); return FORM.html; }],
+       walking. Every one of them is on the paid plan, because the editor is: the free
+       keyboard is a QWERTY built from the letters every time it is shown and
+       there is nothing on it to open. */
+    ['a key of the keyboard, opened', () => { SET.plan = 'plus'; kbLay = 0; kbPick(0, 0);
+                                              const h = FORM.html; KB = null;
+                                              SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
-    ['a key that switches layers', () => { kbLay = 0; kbSetKind(0, 0, 'lay');
-                                           const h = FORM.html; KB = null; return h; }],
-    ['the alphabet, for one slot of a key', () => { kbLay = 0; kbSlot(0, 0, -1);
-                                                    const h = FORM.html;
-                                                    kbSlotFor = null; return h; }],
+    ['a key that switches layers', () => { SET.plan = 'plus'; kbLay = 0; kbSetKind(0, 0, 'lay');
+                                           const h = FORM.html; KB = null;
+                                           SET.plan = 'free'; return h; }],
+    ['the alphabet, for one slot of a key', () => { SET.plan = 'plus'; kbLay = 0; kbSlot(0, 0, -1);
+                                                    const h = FORM.html; KB = null;
+                                                    kbSlotFor = null;
+                                                    SET.plan = 'free'; return h; }],
     /* A keyboard with more than one layer: the rail that switches between
-       them only exists then. */
-    ['a keyboard of two layers', () => { kbAddLay(); const h = vKb();
-                                         KB = null; kbLay = 0; return h; }],
+       them only exists then -- and so does the rest of the editor: the way
+       to add a row, to add a layer, and to put the whole thing back. */
+    ['a keyboard of two layers', () => { SET.plan = 'plus'; kbAddLay(); const h = vKb();
+                                         KB = null; kbLay = 0;
+                                         SET.plan = 'free'; return h; }],
+    /* ---- the paid faces of the making side ----------------------------
+       Four screens the free plan does not show, because on free the
+       alphabet is twenty-eight slots that cannot be added to, renamed or
+       deleted from. Each of these is the same screen with the plan changed,
+       and without them the buttons that do those things belong to no screen
+       at all. */
+    ['the alphabet, on the paid plan', () => { SET.plan = 'plus';
+        window.route = 'ltset'; NAV = [{r:'ltset', a:'alpha'}];
+        const h = vLtset(); SET.plan = 'free'; return h; }],
+    ['one letter, on the paid plan', () => { SET.plan = 'plus';
+        window.route = 'letter'; NAV = [{r:'letter', a:'l1'}];
+        const h = vLetter(); SET.plan = 'free'; return h; }],
+    /* The letters chapter with everything open: the keyboard's door, and the
+       abugida bench's -- which is the only way to that screen, and only
+       exists while the writing is an abugida, which is itself paid. */
+    ['the letters chapter, on the paid plan', () => { SET.plan = 'plus'; SET.wsys = 'abugida';
+        window.route = 'letters'; NAV = [{r:'letters'}];
+        const h = vLetters(); SET.plan = 'free'; SET.wsys = ''; return h; }],
+    ['the abugida bench', () => { SET.plan = 'plus'; SET.wsys = 'abugida';
+        window.route = 'abugida'; NAV = [{r:'abugida'}];
+        const h = vAbugida(); SET.plan = 'free'; SET.wsys = ''; return h; }],
+    ['the five kinds of writing', () => { SET.plan = 'plus';
+        window.route = 'wsys'; NAV = [{r:'wsys'}];
+        const h = vWsys(); SET.plan = 'free'; return h; }],
     ['a word being added, by letter', () => { openAdd(''); addSetMode('lt');
                                               return FORM.html; }],
     ['a word being added, by sound',  () => { openAdd(''); addSetMode('ph');
