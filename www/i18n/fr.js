@@ -214,6 +214,7 @@ defLang('fr', (function(){
       "ob.back"                   : "Retour",
       "add.ph"                    : "Sons de cette langue",
       "add.ph.none"               : "Pas encore de sons",
+      "add.ty"               : "Saisir",
       "ipa.b.back"                : "postérieure",
       "ipa.b.central"             : "centrale",
       "ipa.b.front"               : "antérieure",

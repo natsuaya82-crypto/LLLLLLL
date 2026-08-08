@@ -124,6 +124,40 @@ canvas.pkc{width:34px;height:34px;display:block}
 .phk .pks{font-size:1.05rem;color:var(--tx);line-height:1}
 .phk.hasg .pks{font-size:.82rem;color:var(--txm);letter-spacing:.02em}
 .phk.hasg:active .pks{color:var(--gold)}
+/* --- typing a word ------------------------------------------------------
+   The strip of what the typed tail could still turn into, over a keyboard the
+   app draws. It scrolls sideways rather than wrapping, because a strip that
+   grows a second row pushes the keyboard down under the finger mid-word. */
+.tysug{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+       margin:0 -24px;padding:2px 24px 6px;min-height:56px;align-items:center}
+/* What has been typed and is not yet a letter, underlined the way an IME
+   underlines it -- there is no field for it to sit in. */
+.typ{flex:0 0 auto;font-size:1.05rem;color:var(--gold);letter-spacing:.06em;
+     border-bottom:2px solid var(--goldln);padding:0 2px 3px;margin-right:4px}
+/* QWERTY, full width of the screen rather than of the page. Ten keys to a
+   row is what makes a key 32pt wide, which is what Apple's own keyboard is
+   and what a keyboard has to be: a row of 44pt keys is seven wide, and seven
+   wide is a chart of the alphabet, not a keyboard. */
+.tykb{display:flex;flex-direction:column;gap:7px;margin:4px -20px 0}
+.tyrow{display:flex;gap:4px;justify-content:center}
+.tyq{flex:0 0 calc((100% - 36px) / 10);min-height:46px;border:1px solid var(--line);
+     border-radius:7px;background:var(--sf);color:var(--tx);font-family:inherit;
+     font-size:1.06rem;padding:0}
+.tyq:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* A key that leads nowhere from here. Dimmed, not removed: a keyboard whose
+   keys move is a keyboard nobody can learn. */
+.tyq.off{opacity:.34}
+.tyq.del{flex:0 0 calc(((100% - 36px) / 10) * 1.5 + 4px);opacity:1;
+         display:inline-flex;align-items:center;justify-content:center;color:var(--txs)}
+.tyk{flex:0 0 auto;min-width:54px;min-height:54px;display:flex;flex-direction:column;
+     align-items:center;justify-content:center;gap:3px;padding:6px 9px;
+     border:1px solid var(--line);border-radius:9px;background:var(--sf);color:var(--tx)}
+.tyk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+.tyf{height:30px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.tyk canvas.tc{width:30px;height:30px;display:block}
+.tyk .bch{font-size:1.3rem;line-height:1}
+.tyn{font-size:.8rem;color:var(--txm);letter-spacing:.02em;line-height:1}
+.tyk:active .tyn{color:var(--gold)}
 /* --- the IPA chart ---------------------------------------------------- */
 .ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
 .ipascroll table{width:734px}

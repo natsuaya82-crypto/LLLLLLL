@@ -166,6 +166,7 @@ defLang('it', (function(){
       "ob.back"                   : "Indietro",
       "add.ph"                    : "Suoni di questa lingua",
       "add.ph.none"               : "Ancora nessun suono",
+      "add.ty"               : "Digitare",
       "ipa.b.back"                : "posteriore",
       "ipa.b.central"             : "centrale",
       "ipa.b.front"               : "anteriore",

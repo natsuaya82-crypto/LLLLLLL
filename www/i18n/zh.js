@@ -174,6 +174,7 @@ defLang('zh', (function(){
       "ob.back"                   : "返回",
       "add.ph"                    : "这门语言的音",
       "add.ph.none"               : "还没有音",
+      "add.ty"               : "输入",
       "ipa.b.back"                : "后",
       "ipa.b.central"             : "央",
       "ipa.b.front"               : "前",

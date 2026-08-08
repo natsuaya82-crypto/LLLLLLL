@@ -173,6 +173,7 @@ defLang('pt', (function(){
       "ob.back"                   : "Voltar",
       "add.ph"                    : "Sons desta língua",
       "add.ph.none"               : "Ainda não há sons",
+      "add.ty"               : "Digitar",
       "ipa.b.back"                : "posterior",
       "ipa.b.central"             : "central",
       "ipa.b.front"               : "anterior",

@@ -32,6 +32,7 @@ function viewReset(){
   mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
   addSeq=[]; addMode=''; wdMode='';    /* the two sheets */
+  addTyq=''; wdTyq='';                 /* and what is typed into them, half converted */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   ltDraft=null;                        /* a letter's name, typed and unsaved */

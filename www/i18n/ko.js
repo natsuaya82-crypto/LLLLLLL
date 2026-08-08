@@ -345,6 +345,7 @@ defLang('ko', (function(){
       "ob.back"                   : "뒤로",
       "add.ph"                    : "이 언어의 소리",
       "add.ph.none"               : "아직 소리가 없습니다",
+      "add.ty"               : "입력",
       "ipa.b.back"                : "후설",
       "ipa.b.central"             : "중설",
       "ipa.b.front"               : "전설",

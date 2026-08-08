@@ -109,12 +109,24 @@ const R = await pg.evaluate(() => {
      down said 26, so the two controls on every row of the make screen were
      half a target wide. It looked fine. It always looks fine. */
   const TAP = 44;
+  /* One exception, and it is a keyboard key. Ten keys to a row is what makes a
+     keyboard a keyboard, and ten keys to a row on a phone is 32pt wide --
+     Apple's own is exactly that. Held to 44 it comes out seven wide, which is
+     a chart of the alphabet that nobody can type on; that was built once and
+     the reply was 「それの何がキーボードなの？」
+
+     Not an exemption: a floor of its own, at Apple's size less a hair, so a
+     key that shrinks past what every phone ships still fails here. */
+  const KEY = 'tyq', KEY_W = 30, KEY_H = 42;
   const seenSmall = {};
   function measure(where){
     const els = document.querySelectorAll('#app button, #app input, #app select, #app textarea');
     for (let i = 0; i < els.length; i++) {
       const e = els[i], r = e.getBoundingClientRect();
       if (!r.width || !r.height) continue;          /* hidden is not small */
+      if (String(e.className || '').split(' ').indexOf(KEY) >= 0) {
+        if (r.width >= KEY_W && r.height >= KEY_H) continue;
+      }
       if (r.width >= TAP && r.height >= TAP) continue;
       const k = (e.className || e.tagName) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height);
       if (seenSmall[k]) continue;
