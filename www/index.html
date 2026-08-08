@@ -151,6 +151,14 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbfleft{left:3px;top:50%;transform:translateY(-50%)}
 .kbfright{right:3px;top:50%;transform:translateY(-50%)}
 .kbadd{display:flex;gap:8px;margin-top:12px}
+/* A line of the language, typed on the language's own keyboard. `readonly`
+   keeps the phone's keyboard from coming up over it -- the keys are on the
+   page, and two keyboards at once is one too many. */
+.kbwrap{flex:1 1 100%;min-width:100%}
+.kbin{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);
+      border-radius:10px;color:var(--tx);padding:11px 13px;font-family:inherit;
+      font-size:.98rem;outline:none;margin-bottom:6px}
+.kbin:focus{border-color:var(--goldln)}
 /* One slot of a key -- the key itself, or one of its four corners -- and what
    is in it. The same row shape either way, because they hold the same thing. */
 .kbslot{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;

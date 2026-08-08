@@ -113,9 +113,8 @@ function pwHTML(){
        carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwtop"><div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
-    '<div class="pwfield"><input id="pw-ln" value="'+esc(PW.ln)+'" '+
-      'placeholder="'+esc(t('post.ln.ph'))+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('pwSetLn') + '>'+
+    '<div class="pwfield">'+
+      kbFieldHTML('pw-ln', t('post.ln.ph'), ' value="'+esc(PW.ln)+'"'+IN('pwSetLn'))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */

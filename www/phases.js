@@ -306,7 +306,7 @@ function stExHTML(id){
     : '')+
     '<div class="exadd">'+
       '<input id="sx-lb" class="exsm" placeholder="'+esc(t('stg.ex.lb.ph'))+'" autocomplete="off">'+
-      '<input id="sx-ln" placeholder="'+esc(exHint())+'" autocomplete="off">'+
+      kbFieldHTML('sx-ln', exHint(), '')+
       '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('stAddEx', [id]) + '>'+
       '<button class="btn ghost"' + DO('stAddEx', [id]) + '>'+t('word.mn.add')+'</button>'+

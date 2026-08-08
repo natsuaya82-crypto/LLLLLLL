@@ -177,6 +177,42 @@ function kbTap(ri, ki){
   if(key.v && KB_TAP) KB_TAP(key.v);
 }
 
+/* ---- a line of the language, typed into a plain field -------------------
+   Three places hold one: a word's example, a grammar stage's example, and a
+   post. All three are shown in the font somebody drew, and all three were
+   typed on the phone's keyboard, in roman, and only LOOKED like the language
+   afterwards.
+
+   A key puts the letter's NAME into the field, because the name is the code
+   point the font draws -- so what lands in the box is the letter itself. The
+   font unification is what makes this one line instead of a conversion table.
+
+   One function, three callers. It was going to be three. */
+function kbField(id){
+  return function(v){
+    var e=document.getElementById(id);
+    if(!e) return;
+    if(!v){ e.value=String(e.value||'').slice(0, -1); }
+    else { e.value=String(e.value||'')+String(ltName(ltById(v))||''); }
+    if(e.oninput) e.oninput();
+  };
+}
+/* The field, and the keyboard under it. `attrs` is whatever that caller's
+   field already carried -- the name it types into, the Enter it answers. */
+function kbFieldHTML(id, ph, attrs){
+  if(!ltOfKind('alpha').length)
+    return '<input id="'+id+'" placeholder="'+esc(ph)+'" autocomplete="off" '+
+      'autocorrect="off" spellcheck="false"'+(attrs||'')+'>';
+  kbUse(kbField(id));
+  /* Wrapped, because two of the three callers put their field in a flex row
+     beside a gloss and an add button -- and a keyboard is not something that
+     shares a row. */
+  return '<div class="kbwrap"><input id="'+id+'" class="kbin'+(myFontOn()? ' sfont':'')+'" '+
+    'placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
+    'spellcheck="false" readonly'+(attrs||'')+'>'+
+    kbHTML('kbTap', null)+'</div>';
+}
+
 /* ---- building one -----------------------------------------------------
    The keyboard, shown the size it will be, with every key pressable -- and
    pressing one opens what that key is rather than typing with it. There is

@@ -374,7 +374,7 @@ function wdExHTML(){
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
-      '<input id="wd-exl" placeholder="'+esc(exHint())+'" autocomplete="off">'+
+      kbFieldHTML('wd-exl', exHint(), '')+
       '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('wdAddEx') + '>'+
       '<button class="btn ghost"' + DO('wdAddEx') + '>'+t('word.mn.add')+'</button>'+

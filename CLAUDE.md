@@ -367,7 +367,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 219`, `screens the mirror
 rendered: 322`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 2695` for the same reason — and it is what a
+`press` prints `buttons pressed: 2952` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. Two chapters
 closed on the day those numbers were last written down, which is why they are
 smaller than they were and not a sign that something stopped being walked.
