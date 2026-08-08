@@ -406,6 +406,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/voice.js`, `notes.js` | speech, notes |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
+| `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
 A new view is found automatically by the checks (they ask the page for globals named
