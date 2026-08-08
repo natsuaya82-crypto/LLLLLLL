@@ -154,7 +154,10 @@ function openAdd(from){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     addSpellHTML()+
-    '<div class="sec">'+t('add.ph')+'</div>'+
+    /* No heading over the keyboard. It said "the sounds of this language",
+       which was true of the only keyboard there used to be and is a heading
+       about the wrong one of two now -- and the rail under it already says
+       which. */
     addKeys()+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
     '<button' + DO('sayField') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
