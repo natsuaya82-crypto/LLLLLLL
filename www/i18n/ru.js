@@ -389,8 +389,6 @@ defLang('ru', (function(){
       "lt.none"           : "Букв пока нет",
       "lt.new"            : "Новая буква",
       "lt.untitled"       : "Без имени",
-      "lt.draw"           : "Нарисовать заново",
-      'lt.draw.new' : "Нарисовать",
       "lt.use"            : "Взять существующую букву",
       "lt.addsnd"         : "Чтение",
       "lt.reads.none"     : "—",

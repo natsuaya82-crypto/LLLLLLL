@@ -289,8 +289,6 @@ defLang('en', (function(){
       'lt.none'         : 'No letters yet',
       'lt.new'          : 'New letter',
       'lt.untitled'     : 'Untitled',
-      'lt.draw'         : 'Draw it again',
-      'lt.draw.new' : "Draw it",
       'lt.use'          : 'Use an existing letter',
       'lt.addsnd'       : 'Reading',
       'lt.reads.none'   : '—',

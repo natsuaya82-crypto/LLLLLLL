@@ -434,8 +434,6 @@ defLang('fr', (function(){
       "lt.none"          : "Pas encore de lettres",
       "lt.new"           : "Nouvelle lettre",
       "lt.untitled"      : "Sans nom",
-      "lt.draw"          : "La redessiner",
-      'lt.draw.new' : "La dessiner",
       "lt.use"           : "Employer une lettre existante",
       "lt.addsnd"        : "Lecture",
       "lt.reads.none"    : "—",

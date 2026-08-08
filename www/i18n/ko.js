@@ -565,8 +565,6 @@ defLang('ko', (function(){
       "lt.none"          : "아직 문자가 없습니다",
       "lt.new"           : "새 문자",
       "lt.untitled"      : "이름 없음",
-      "lt.draw"          : "다시 그리기",
-      'lt.draw.new' : "그리기",
       "lt.use"           : "이미 있는 문자 쓰기",
       "lt.addsnd"        : "읽기",
       "lt.reads.none"    : "—",

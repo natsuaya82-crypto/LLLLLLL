@@ -393,8 +393,6 @@ defLang('pt', (function(){
       "lt.none"          : "Ainda não há letras",
       "lt.new"           : "Letra nova",
       "lt.untitled"      : "Sem nome",
-      "lt.draw"          : "Desenhar de novo",
-      'lt.draw.new' : "Desenhar",
       "lt.use"           : "Usar uma letra existente",
       "lt.addsnd"        : "Leitura",
       "lt.reads.none"    : "—",

@@ -346,8 +346,6 @@ defLang('es', (function(){
       "lt.none"          : "Todavía no hay letras",
       "lt.new"           : "Letra nueva",
       "lt.untitled"      : "Sin nombre",
-      "lt.draw"          : "Volver a dibujarla",
-      'lt.draw.new' : "Dibujarla",
       "lt.use"           : "Usar una letra existente",
       "lt.addsnd"        : "Lectura",
       "lt.reads.none"    : "—",

@@ -463,7 +463,12 @@ function vLetter(){
        show it is a page of three buttons about nothing, and "draw it again"
        on a screen with nothing on it says nothing. A letter with no shape yet
        gets the pen, which is what it wears everywhere else. */
-    '<div class="spbig">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</div>'+
+    /* The letter itself, and pressing it is how it gets drawn. There was a
+       pen sitting on it that did nothing and a button underneath saying the
+       same thing in words. 「上にペンマークあるのに文字を書くもある。ペンマーク
+       押しても反応しない」 */
+    '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
+      ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>'+
     '<div class="sec">'+t('lt.ab.h')+'</div>'+
     ltAbField(l, lid)+
     (numIsDigit(l)? numWordRow(l) : '')+
@@ -478,8 +483,6 @@ function vLetter(){
         : ltUnits(l).length
           ? (ltHasSound(l)? '/'+esc(l.snd.join('/'))+'/' : esc(l.snd.join(' ')))
           : esc(t('lt.reads.none')))+'</span>'+ICON_GO+'</button>'+
-    '<button class="btn'+(ltHasShape(l)? ' ghost':'')+'" style="width:100%;margin-top:18px"' +
-      DO('editLetter', [lid]) + '>'+t(ltHasShape(l)? 'lt.draw' : 'lt.draw.new')+'</button>'+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+

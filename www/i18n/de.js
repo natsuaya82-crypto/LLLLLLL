@@ -374,8 +374,6 @@ defLang('de', (function(){
       "lt.none"          : "Noch keine Buchstaben",
       "lt.new"           : "Neuer Buchstabe",
       "lt.untitled"      : "Ohne Namen",
-      "lt.draw"          : "Neu zeichnen",
-      'lt.draw.new' : "Zeichnen",
       "lt.use"           : "Vorhandenen Buchstaben nehmen",
       "lt.addsnd"        : "Lesung",
       "lt.reads.none"    : "—",

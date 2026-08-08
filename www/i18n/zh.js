@@ -394,8 +394,6 @@ defLang('zh', (function(){
       "lt.none"          : "还没有文字",
       "lt.new"           : "新的文字",
       "lt.untitled"      : "没有名字",
-      "lt.draw"          : "重新绘制",
-      'lt.draw.new' : "画出来",
       "lt.use"           : "用已有的字",
       "lt.addsnd"        : "读音",
       "lt.reads.none"    : "—",

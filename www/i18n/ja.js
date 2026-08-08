@@ -302,8 +302,6 @@ defLang('ja', (function(){
       'lt.none'         : '文字がまだありません',
       'lt.new'          : '文字の追加',
       'lt.untitled'     : '名前なし',
-      'lt.draw'         : '文字の書き直し',
-      'lt.draw.new' : "文字を描く",
       'lt.use'          : '既存の文字から選択',
       'lt.addsnd'       : '読みの設定',
       'lt.reads.none'   : '—',

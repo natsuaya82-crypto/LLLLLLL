@@ -386,8 +386,6 @@ defLang('it', (function(){
       "lt.none"          : "Ancora nessuna lettera",
       "lt.new"           : "Lettera nuova",
       "lt.untitled"      : "Senza nome",
-      "lt.draw"          : "Ridisegnarla",
-      'lt.draw.new' : "Disegnala",
       "lt.use"           : "Usare una lettera esistente",
       "lt.addsnd"        : "Lettura",
       "lt.reads.none"    : "—",
