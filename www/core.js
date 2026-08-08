@@ -346,6 +346,11 @@ function splitC(str){
    Words written before this carry no sequence, so they are given one once,
    by the old guess, and never guessed at again. */
 function wPh(w){
+  /* The spelling is the word, so what it sounds like is asked of the letters
+     it is spelled with -- every time, so a letter that changes its sound
+     changes the words it is in. `ph` is what a word carries when it has no
+     spelling: an import, or a word from before this. */
+  if(w && w.sp && w.sp.length) return spPh(w.sp);
   if(w && w.ph && w.ph.length) return w.ph;
   return phGuess(w? w.hw : '');
 }

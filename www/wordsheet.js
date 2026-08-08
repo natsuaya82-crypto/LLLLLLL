@@ -65,11 +65,12 @@ function addPh(sym){
   addSp.push({l:l? l.id : '', u:sym});
   addSync(); sayOne(sym); addRedraw();
 }
+/* The letter goes in. Only the letter: what it sounds like is its own to say
+   and is asked of it whenever anybody wants to know. */
 function addLtr(id){
   var l=ltById(id); if(!l) return;
-  var u=ltFirstUnit(l);
-  addSp.push({l:id, u:u});
-  addSync(); sayPh(uSplit(u)); addRedraw();
+  addSp.push({l:id});
+  addSync(); sayPh(uSplit(ltFirstUnit(l))); addRedraw();
 }
 function addBack(){ addSp.pop(); addSync(); addRedraw(); }
 function addPaint(){ addRedraw(); }
@@ -93,7 +94,7 @@ function spRowHTML(sp, route, back, id){
     l=ltById(sp[i].l);
     out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'"' + DO('go', [route, i]) + '>'+
       '<span class="spf">'+ltInk(l, esc(ltName(l)||'\u00b7'))+'</span>'+
-      '<span class="spu">'+esc(sp[i].u)+'</span></button>';
+      '<span class="spu">'+esc(spUnit(sp[i]))+'</span></button>';
   }
   return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
     '<button class="seqdel"'+(id? ' id="'+id+'"' : '') + DO(back) + (sp.length?'':' disabled')+
@@ -134,7 +135,7 @@ function vASpell(){
 }
 function addSetU(i, u){
   if(!addSp[i]) return;
-  addSp[i].u=u; addSync(); sayPh(uSplit(u)); back(); openAdd(addFrom);
+  spSetU(addSp[i], u); addSync(); sayPh(uSplit(u)); back(); openAdd(addFrom);
 }
 function addDropAt(i){ addSp.splice(i,1); addSync(); back(); openAdd(addFrom); }
 /* Written from nothing, or derived from a word that already exists -- in
@@ -172,15 +173,21 @@ function addPv(){
 FORM_OPEN.add=function(from){ openAdd(from||''); };
 function sayField(){ if(addSeq.length) sayPh(addSeq); }
 function addOne(){
-  var hw=addSeq.join('');
+  /* The word is what was typed, letter by letter -- not the sounds those
+     letters happen to read. */
+  var hw=spWord(addSp);
   var mn=document.getElementById('f-mn').value.trim();
   var pos=document.getElementById('f-pos').value;
-  if(addSeq.length<2){ toast(t('toast.hw2')); return; }
+  if(!addSp.length || !hw){ toast(t('toast.hw2')); return; }
   if(!capOK(1)){ closeSheet(); go('plans'); return; }
   if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
   addPos=pos;
-  var w={hw:hw, ph:addSeq.slice(), mn:mn, mns:(mn?[mn]:[]), pos:pos, at:Date.now()};
-  if(addSp.length) w.sp=JSON.parse(JSON.stringify(addSp));
+  /* No `ph` on it: the spelling is the word, and what it sounds like is
+     asked of the letters every time it is wanted. A stored copy is a copy of
+     a sound, and a copy of a sound is what went stale the day the letter's
+     sound changed. */
+  var w={hw:hw, mn:mn, mns:(mn?[mn]:[]), pos:pos, at:Date.now()};
+  w.sp=JSON.parse(JSON.stringify(addSp));
   if(addFrom && addFrom!==hw) w.from=addFrom;
   WORDS.push(w);
   save(); cands=[]; addSeq=[]; addSp=[]; addMn=''; addFrom='';
@@ -213,7 +220,7 @@ var openHw='', wEdit=null;
    nobody has drawn yet, which is a different thing and not worth a colour. */
 function spOdd(st){
   var l=ltById(st.l);
-  return !!(l && ltFirstUnit(l) && st.u!==ltFirstUnit(l));
+  return st.u!==undefined && st.u!==null;
 }
 /* ---- spelling a word --------------------------------------------------
    The word is a row of letters, each with the sound it makes underneath. Tap
@@ -487,10 +494,9 @@ FORM_OPEN.word=function(hw){ openWord(hw); };
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 function wdLtr(id){
   var l=ltById(id); if(!l) return;
-  var u=ltFirstUnit(l);
   if(!wEdit.sp) wEdit.sp=[];
-  wEdit.sp.push({l:id, u:u});
-  wdSync(); sayPh(uSplit(u)); wdPaint();
+  wEdit.sp.push({l:id});
+  wdSync(); sayPh(uSplit(ltFirstUnit(l))); wdPaint();
 }
 function wdKey(sym){
   var l=ltMain(sym);
@@ -523,7 +529,7 @@ function spPageHTML(sp, setU, drop){
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="spbig">'+ltInk(l, esc(ltName(l)||'\u00b7'))+'</div>'+
     '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===st.u?' on':'')+(o.own?' own':'')+'"' + DO(setU, [i, o.u]) + '>'+
+      return '<button class="phk'+(o.u===spUnit(st)?' on':'')+(o.own?' own':'')+'"' + DO(setU, [i, o.u]) + '>'+
         '<span class="pks">'+esc(o.u)+'</span></button>';
     }).join('')+'</div>'+
     '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO(drop, [i]) + '>'+
@@ -535,7 +541,7 @@ function vSpell(){
 }
 function wdSetU(i, u){
   if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;
-  wEdit.sp[i].u=u; wdSync(); sayPh(uSplit(u)); back(); wdPaint();
+  spSetU(wEdit.sp[i], u); wdSync(); sayPh(uSplit(u)); back(); wdPaint();
 }
 function wdDropAt(i){
   if(!wEdit || !wEdit.sp) return;
@@ -558,13 +564,13 @@ function wdDerive(){
 }
 function saveWord(){
   var w=findWord(openHw); if(!w) return;
-  var hw=wEdit.seq.join('');
-  if(!wEdit.seq.length){ toast(t('toast.hw2')); return; }
+  var hw=spWord(wEdit.sp||[]);
+  if(!(wEdit.sp && wEdit.sp.length) || !hw){ toast(t('toast.hw2')); return; }
   var clash=findWord(hw);
   if(clash && clash!==w){ toast(t('toast.dup')); return; }
   var old=String(w.hw);
-  w.ph=wEdit.seq.slice(); w.hw=hw;
-  if(wEdit.sp && wEdit.sp.length) w.sp=JSON.parse(JSON.stringify(wEdit.sp)); else delete w.sp;
+  w.hw=hw; delete w.ph;
+  w.sp=JSON.parse(JSON.stringify(wEdit.sp));
   w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
   w.pos=wEdit.pos;
   /* An empty note is no note, not an empty one: a key that is always there
@@ -572,11 +578,7 @@ function saveWord(){
   if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
   /* A word that changes is still the same word, so everything pointing at it
      is told its new name rather than left pointing at one that is gone. */
-  if(hw!==old){
-    WORDS.forEach(function(x){ if(x.from===old) x.from=hw; });
-    wRelRename(old, hw);
-    LINES.forEach(function(l){ l.ws=l.ws.map(function(x){ return x===old? hw : x; }); });
-  }
+  if(hw!==old) wRename(old, hw);
   save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.saved', hw));
 }
 function delWord(){

@@ -14,6 +14,7 @@ migrateMarks();
 migrateSndName();
 migrateSnd();
 migratePosts();
+migrateSp();
 /* and a language that still has none gets a set to start from */
 sndStart();
 /* the font built from whatever letters have been drawn */

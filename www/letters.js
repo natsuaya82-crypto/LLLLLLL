@@ -613,10 +613,99 @@ function uSplit(u){
   }
   return out;
 }
+/* ---- a word is its letters ---------------------------------------------
+   You press a and an a goes in. Not the sound a is usually written with, not
+   whatever /a/ this language happens to call it -- the letter.
+   「音がなんでいっつもついてくんの？文字は文字 aはaだろ。入力してんだから」
+
+   It was the other way round for the app's whole life: a word WAS its sounds,
+   `hw` was those sounds run together, and a letter went into a word by
+   handing over the sound it read. So a letter with no sound could not be
+   typed at all, and a letter whose sound changed left every word it was in
+   still saying the old one.
+
+   So: the spelling is the word. What each position sounds like is asked of
+   its letter, and a word only writes a unit of its own where it says
+   something different there -- which is what a sound change is, and the only
+   thing that was ever worth storing. */
+/* What this position reads: what the word says, or what its letter does. */
+function spUnit(st){
+  if(!st) return '';
+  if(st.u !== undefined && st.u !== null) return st.u;
+  var l=ltById(st.l);
+  return l? ltFirstUnit(l) : '';
+}
+/* Saying something else here, or going back to saying what the letter does.
+   Equal to the letter is not an override, it is agreement, and storing
+   agreement is how every word came to hold a copy of a sound. */
+function spSetU(st, u){
+  var l=ltById(st.l);
+  if(l && ltFirstUnit(l)===u) delete st.u; else st.u=u;
+}
+/* The word as it is written: the letters, by the name each of them has. This
+   is what the font draws too, since a letter's name is its code point. */
+function spWord(sp){
+  var out='', i, l;
+  for(i=0;i<sp.length;i++){
+    l=ltById(sp[i].l);
+    out += l? String(ltName(l)||'') : String(sp[i].u||'');
+  }
+  return out;
+}
 function spPh(sp){
   var out=[], i;
-  for(i=0;i<sp.length;i++) out=out.concat(uSplit(sp[i].u));
+  for(i=0;i<sp.length;i++) out=out.concat(uSplit(spUnit(sp[i])));
   return out;
+}
+/* Words from when a word was its sounds. Each of them carries a unit on every
+   position -- a copy of what its letter reads -- and a headword made of those
+   sounds run together. Both were true then and neither is now.
+
+   So: the copies go, except where one genuinely differs, which is the sound
+   change that was worth keeping. And the headword is written out of the
+   letters, which is what it always looked like it was.
+
+   It renames a word only when every position is a letter with a name, and
+   only when the name it comes out with is not already taken. A word that
+   cannot be written out of its letters keeps the headword it has -- there is
+   nothing better to call it, and a rename that collides would merge two
+   words into one, which is not a thing to do to somebody's dictionary. */
+function migrateSp(){
+  var moved=0, i, j, w, sp, l, hw, taken={};
+  for(i=0;i<WORDS.length;i++) taken[String(WORDS[i].hw)]=1;
+  for(i=0;i<WORDS.length;i++){
+    w=WORDS[i];
+    if(!w.sp || !w.sp.length) continue;
+    if(w.spv) continue;                      /* already answered */
+    sp=w.sp;
+    for(j=0;j<sp.length;j++){
+      l=ltById(sp[j].l);
+      if(l && ltFirstUnit(l)===sp[j].u) delete sp[j].u;
+    }
+    hw=spWord(sp);
+    if(hw && hw!==String(w.hw) && !taken[hw]){
+      delete taken[String(w.hw)]; taken[hw]=1;
+      wRename(String(w.hw), hw);
+    }
+    delete w.ph;
+    w.spv=1;
+    moved++;
+  }
+  if(moved) save();
+}
+/* Everything that points at a word by name, told the new one. saveWord has
+   done this since words could be renamed; it is here because a migration
+   renames them too, and two copies of "what points at a word" is how one of
+   them comes to miss the examples. */
+function wRename(old, hw){
+  var i;
+  for(i=0;i<WORDS.length;i++){
+    if(String(WORDS[i].hw)===old) WORDS[i].hw=hw;
+    if(WORDS[i].from===old) WORDS[i].from=hw;
+  }
+  wRelRename(old, hw);
+  for(i=0;i<LINES.length;i++)
+    LINES[i].ws=LINES[i].ws.map(function(x){ return x===old? hw : x; });
 }
 /* The spelling of a word that has none: cut it the way its writing system
    would, and ask which letter writes each piece. */
