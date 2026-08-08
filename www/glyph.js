@@ -570,7 +570,12 @@ function geShape(st){
      wherever the gesture was not straight, and no amount of corner-rounding
      turns a staircase into a curve. Only the two ends go back onto the
      lattice, because that is what lets one stroke meet another. */
-  var raw = (GE.round && GE.raw && GE.rawFor===GE.si && GE.raw.length>3) ? GE.raw : null;
+  /* The raw path, always -- it used to be read only when the curve tool was
+     on, so an ordinary stroke was thinned from the SNAPPED copy, which is a
+     staircase before the thinning ever sees it. Nothing downstream can undo
+     that: the stairs are already the input. It is collected on every stroke
+     either way, so this is the one condition that was keeping it unused. */
+  var raw = (GE.raw && GE.rawFor===GE.si && GE.raw.length>3) ? GE.raw : null;
   var p = raw || st.pts, n = p.length;
   if(n<3){ delete st.k; delete st.closed; return; }
   var step=geStep(), i;
