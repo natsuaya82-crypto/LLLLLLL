@@ -407,7 +407,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
-| `docs/keyboard-extension.md` | the Apple-side setup a *system* keyboard would need, and why it would not make anybody's own letters appear in Messages. Nothing here is built |
+| `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Nothing here is built |
 | `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
