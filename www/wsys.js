@@ -208,7 +208,6 @@ function wsStrokes(unit){
   }
   return null;
 }
-function wsDrawn(unit){ var st=wsStrokes(unit); return !!(st && st.length); }
 /* A word in the letters chosen for it. Used for borrowed characters; drawn
    letters are a font and need no substitution. */
 function wsInScript(hw){

@@ -119,107 +119,109 @@ function glyphKey(r){
    alone, or whole words -- and www/wsys.js is the one place that knows which.
    Everything below simply asks it. */
 function scriptLetters(){ return wsUnits(); }
-function scriptDrawn(L){
-  var n=0;
-  L.forEach(function(r){ if(wsDrawn(r)) n++; });
-  return n;
-}
 
-/* One glyph per unit, plus the single characters a longer unit is spelled
-   with -- a ligature needs its own components to exist as glyphs even when
-   your script never shows them alone. Upper and lower case map to the same
-   drawing, because a script you invented has no case unless you draw one.
+/* ---- what the font is made of ------------------------------------------
+   One list, and it is the letters. A glyph belongs to a letter, and the two
+   ways in to it -- what the letter is called, and what it reads -- are both
+   just code points on that one glyph.
 
-   A unit of more than one character has no code point of its own, so it is
-   reached by an OpenType ligature over the characters it is made of: you type
-   the sounds and the font draws the one letter. That is how "ka" becomes a
-   single syllabary letter, and how a whole word becomes a single logograph.
-   Longer ligatures are offered first, so ka.i does not win over kai. */
-/* A letter you have not drawn gets NO glyph. It used to get GPLACE, the dashed
-   placeholder box the editor draws on an empty canvas -- so a font built from
-   three letters out of eleven put a box where the other eight belonged, and a
-   three-letter word came out as one letter and two boxes. 「なんで、1単語に1文字用
-   の四角が出てくるの？」 That is what it was.
+   It was three lists, grown one at a time. The units the writing system needs
+   (wsUnits, which only ever answers in sounds); the marks, added separately
+   because a letter reading `?` is not a sound and wsUnits could never name
+   one; and the names, which arrived last and as a patch -- scriptNameCodes
+   walked LETTERS to find what the letter behind each unit was called, and
+   took only a name one character long. Three lists is three answers to "what
+   letters do I have", and they did not agree. A letter with no reading at all
+   was in none of them, so somebody drawing their own A B C D with nothing to
+   say about sound got a font with nothing in it.
+   「音をそれぞれ分けて作れるようにしろってずっと言ってるのにこいつ音から作る」
 
-   With no glyph there is no code point, so the browser falls through to the
-   serif underneath and writes that letter in roman. A half-drawn script shows
-   the half that exists and the rest legibly, which is the only useful thing to
-   do while a script is being drawn -- and it is being drawn for a long time.
+   So a letter that has been drawn is a glyph, and that is the list. What is
+   left for the writing system to say is the thing that is genuinely not a
+   letter: a syllable an abugida composes out of a base and a vowel mark,
+   which nobody drew as one shape.
 
-   The one place a placeholder is still unavoidable: a syllabary letter for
-   "ka" is reached by a ligature over k and a, and an OpenType ligature can
-   only fire over glyphs that exist. If "ka" is drawn but "k" alone is not --
-   which is normal in a syllabary, where k alone is not a letter -- k needs a
-   glyph for the rule to be written against. Those get the placeholder, and
-   only those. */
-/* What a letter is CALLED, so the font can be reached by it. A letter named
-   G reads /\u025f/, and the font was keyed on how that sound is normally
-   spelled -- so typing g in a word hit nothing and the browser fell through
-   to the serif underneath. The name and the sound were separated on the
-   letter page and this was the half that did not follow.
-   「文字登録してんのにgでない」
+   A name or a reading longer than one character has no code point of its own,
+   so it is reached by an OpenType ligature over the characters it is spelled
+   with -- you type the parts and the font draws the one letter. That is how
+   "ka" becomes a single syllabary letter and how a whole word becomes a
+   logograph. Longer ligatures are offered first, so ka.i does not beat kai.
 
-   The unit still keys the glyph; the name is an extra way in, added to the
-   code points that glyph answers to. First letter to claim a character keeps
-   it, which is the same rule two letters reading one sound already follow. */
-/* Every code point one glyph answers to: the unit itself in both cases, and
-   the letter's own name in both cases when it has one. A unit longer than a
-   character is reached by a ligature and has no code point of its own. */
-function geCodes(r, up, ab){
-  var out = (r.length===1) ? (up!==r ? r+up : r) : '';
-  /* Both cases of the name, whichever case it was typed in: a script you
-     invented has no case unless you draw one, so G and g are one letter. */
-  if(ab){
-    var forms=[ab, ab.toUpperCase(), ab.toLowerCase()], fi;
-    for(fi=0;fi<forms.length;fi++) if(out.indexOf(forms[fi])<0) out+=forms[fi];
-  }
-  return out || null;
-}
-function scriptNameCodes(){
-  var by={}, i, l, u, ab;
-  for(i=0;i<LETTERS.length;i++){
-    l=LETTERS[i];
-    ab=l.ab? String(l.ab) : '';
-    if(!ab || ab.length!==1) continue;
-    u=ltUnits(l);
-    if(!u.length) continue;
-    if(!by[u[0]]) by[u[0]]=ab;
-  }
-  return by;
-}
+   A letter nobody has drawn gets NO glyph, so the browser falls through to
+   the serif underneath and writes it in roman. A half-drawn script shows the
+   half that exists and the rest legibly, which is the only useful thing to do
+   while a script is being drawn -- and it is being drawn for a long time. It
+   used to get GPLACE instead, and a font built from three letters out of
+   eleven put a dashed box where the other eight belonged. 「なんで、1単語に1文字
+   用の四角が出てくるの？」
+
+   The one placeholder left is a ligature's components: an OpenType rule can
+   only fire over glyphs that exist, so if `ka` is drawn and `k` alone is not
+   -- which is normal in a syllabary, where k alone is not a letter -- k needs
+   a glyph for the rule to be written against. Those get GPLACE, and only
+   those. */
+function glyphName(id){ return 'lt_'+String(id).replace(/[^A-Za-z0-9_]/g, ''); }
 function scriptGlyphDefs(){
-  var L=scriptLetters(), have={}, defs=[], ligs=[], need=[], drawn={};
-  var named=scriptNameCodes();
-  L.forEach(function(r){ have[r]=1; if(wsHasStrokes(r)) drawn[r]=1; });
-  /* components of a drawn multi-character unit, and nothing else */
-  L.forEach(function(r){
-    if(r.length>1 && drawn[r])
-      r.split('').forEach(function(c){ if(!have[c] && !drawn[c]){ have[c]=1; need.push(c); } });
+  var defs=[], ligs=[], holds={}, taken={}, long=[], i;
+  /* One sign: a shape, and every character that types it. Whoever claims a
+     character keeps it -- and the letters are walked in the order they are
+     held in, which is the order ltMain answers in, so the letter the alphabet
+     says owns a reading is the letter the font gives it to and the red line
+     on the letter that lost is telling the truth.
+
+     `holds` is which glyph a character ended up on, which is not knowable
+     until every letter has had its turn -- so the ligatures are only written
+     down here and resolved below. */
+  function sign(key, st, codes){
+    var one='', j, c;
+    for(j=0;j<codes.length;j++){
+      c=codes[j];
+      if(taken[c]) continue;
+      taken[c]=1;
+      if(c.length===1){ one+=c; holds[c]=key; continue; }
+      long.push({txt:c, by:key});
+    }
+    defs.push({name:key, roman:one||null, strokes:st});
+  }
+  for(i=0;i<LETTERS.length;i++)
+    if(LETTERS[i].st && LETTERS[i].st.length)
+      sign(glyphName(LETTERS[i].id), LETTERS[i].st, ltCodes(LETTERS[i]));
+  /* And what the writing system needs that nobody drew as one shape. */
+  scriptLetters().forEach(function(r){
+    if(ltStrokes(r)) return;                  /* somebody drew it: it is above */
+    var st=wsStrokes(r);
+    if(!st || !st.length) return;
+    sign(glyphKey(r), st, ltCodes({ab:'', snd:[r]}));
   });
-  L.filter(function(r){ return drawn[r]; }).concat(need).sort().forEach(function(r){
-    var st=wsStrokes(r), up=r.toUpperCase();
-    defs.push({
-      name: glyphKey(r),
-      /* one code unit, so it has a code point of its own; a script you invented
-         has no case unless you draw one, so both cases point at one glyph */
-      roman: geCodes(r, up, named[r]),
-      strokes: (st && st.length) ? st : GPLACE
+  /* Now the long ones. A ligature fires over glyphs, not over characters, so
+     each character has to be told which glyph carries it -- and one that no
+     letter carries needs a glyph of its own for the rule to be written
+     against, even where the script never shows it alone. */
+  var said={};
+  long.forEach(function(L){
+    var sub=L.txt.split('').map(function(c){
+      if(!holds[c]){
+        /* both cases onto the one box, the same rule a drawn letter follows */
+        var lo=c.toLowerCase(), up=c.toUpperCase(), on='';
+        holds[c]=glyphKey(c);
+        [lo, up].forEach(function(x){
+          if(x && !holds[x] && on.indexOf(x)<0){ holds[x]=holds[c]; on+=x; }
+        });
+        if(on.indexOf(c)<0) on+=c;
+        defs.push({name:holds[c], roman:on, strokes:GPLACE});
+      }
+      return holds[c];
     });
-    if(r.length>1) ligs.push({sub:r.split('').map(glyphKey), by:glyphKey(r), n:r.length});
+    /* ka and KA are two strings and one rule, because one glyph carries both
+       cases of a letter. Saying it twice is saying it twice. */
+    var say=sub.join(',')+'>'+L.by;
+    if(said[say]) return;
+    said[say]=1;
+    ligs.push({sub:sub, by:L.by, n:sub.length});
   });
   ligs.sort(function(a,b){ return b.n-a.n; });
-  /* The marks. A question mark is not derived from anything -- it is a shape
-     somebody drew and a character they said types it -- so it is added here
-     rather than found by wsUnits(), which only ever answers with sounds.
-     A borrowed mark is already a character and needs no glyph. */
-  ltMarks().forEach(function(l){
-    if(!l.st || !l.st.length) return;
-    defs.push({ name:'mk_'+l.id, roman:l.snd.join(''), strokes:l.st });
-  });
-
   return {defs:defs, ligs:ligs};
 }
-function wsHasStrokes(r){ var st=wsStrokes(r); return !!(st && st.length); }
 
 /* Build the font and hand it to the browser as a @font-face. This runs on the
    device, in about a millisecond, and touches no network. */
@@ -229,15 +231,20 @@ var SFONT={built:false, sig:null};
    not built with — this is how the page notices without rebuilding on every
    render. Building costs about a millisecond, so it is cheap to be right. */
 function scriptSig(){
-  var L=scriptLetters(), s=[wsys()];
-  L.forEach(function(r){
+  var s=[wsys()], i, l;
+  /* The letters, which is what the font is made of -- so a shape drawn, a
+     letter renamed and a reading changed each rebuild it, and nothing else
+     does. This used to walk the units instead, and had to walk the marks
+     afterwards because they were never among them. */
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    s.push(l.id+':'+(l.ab||'')+':'+ltUnits(l).join('')+':'+
+           (l.st? JSON.stringify(l.st).length : 0));
+  }
+  /* and what the writing system composes, which is not any letter */
+  scriptLetters().forEach(function(r){
     var g=wsStrokes(r);
     s.push(r+':'+(g? JSON.stringify(g).length : 0));
-  });
-  /* the marks too, or drawing one would never rebuild the font: they are not
-     in scriptLetters(), which is the whole point of them */
-  ltMarks().forEach(function(l){
-    s.push('mk'+l.id+':'+l.snd.join('')+':'+(l.st? JSON.stringify(l.st).length : 0));
   });
   return s.join(',');
 }
@@ -246,10 +253,12 @@ function installScriptFont(){
   if(el) el.parentNode.removeChild(el);
   SFONT.built=false;
   SFONT.sig=scriptSig();
-  var L=scriptLetters();
-  if(!L.length || !scriptDrawn(L)) return;
   try{
     var d=scriptGlyphDefs();
+    /* Nothing drawn is not an empty font, it is no font: an @font-face with
+       no glyphs in it makes every word fall through to the serif anyway, one
+       exception deeper. */
+    if(!d.defs.length) return;
     var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geStep()/2,
                        asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(), ligatures:d.ligs,
                                     family:'LinguaScript', style:'Regular'});

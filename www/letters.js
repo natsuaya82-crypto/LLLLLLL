@@ -576,6 +576,28 @@ function ltShaped(){ return LETTERS.filter(ltHasShape).length; }
    and does not need one: one is worked out from its sounds when it is
    opened, by asking which letter writes each piece. */
 function ltUnits(l){ return (l && l.snd)? l.snd : []; }
+/* Every way this letter can be typed: what it is called, and what it reads.
+   Both, on the one letter, because they are two names for one shape and not
+   two things -- the name is what a person types and the reading is what the
+   spelling engine holds, and the letter has to answer to either.
+
+   Both cases of each, because a script somebody invented has no case unless
+   they draw one, so G and g are the same letter. The name comes first: when
+   two of these collide it is the name that wins, since it is the one that was
+   chosen rather than worked out.
+
+   scriptGlyphDefs turns each of these into a code point when it is one
+   character, and into a ligature over its characters when it is more. */
+function ltCodes(l){
+  var out=[], u=ltUnits(l), i;
+  function add(s){
+    var f=[String(s||''), String(s||'').toUpperCase(), String(s||'').toLowerCase()], j;
+    for(j=0;j<f.length;j++) if(f[j] && out.indexOf(f[j])<0) out.push(f[j]);
+  }
+  add(l && l.ab);
+  for(i=0;i<u.length;i++) add(u[i]);
+  return out;
+}
 function ltFirstUnit(l){ var u=ltUnits(l); return u.length? u[0] : ''; }
 /* A unit is one or more sounds run together. Splitting it back is asking the
    inventory which of its sounds the unit starts with, longest first, so "tʃa"

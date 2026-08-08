@@ -267,6 +267,23 @@ A comment saying "this is the one place" is worth nothing on its own: whoever
 reads it will fix that one and go home. Either a check holds the claim, or do
 not make it.
 
+The thirteenth was **what the font is made of**, and it is the one to read if
+you only read one. `scriptGlyphDefs()` built its glyphs from three lists that
+had each been added on a different day: the units the writing system needs
+(`wsUnits`, which only ever answers in sounds), the marks (a letter reading
+`?` is not a sound, so it could not be among them), and the names, which came
+last and as a patch — `scriptNameCodes` walked `LETTERS` to find what the
+letter behind each unit was called, and took only a name one character long.
+Three lists is three answers to "what letters do I have". They did not agree:
+a letter reading `?` got **two** glyphs both claiming `?`, and a letter with no
+reading at all was in none of the three, so somebody drawing their own A B C D
+with nothing to say about sound got a font with nothing in it.
+
+A glyph belongs to a letter now, and the name and the reading are both just
+code points on it — `ltCodes()`. What is left for the writing system to say is
+the one thing that is genuinely not a letter: a syllable an abugida composes
+out of a base and a vowel mark, which nobody drew as one shape.
+
 Not everything that repeats is duplication. `cffNum` and `csNum` in `otf5.js`
 encode the same integers to different byte forms because that is what CFF
 specifies. Merging them would be inventing a rule, not finding one.
