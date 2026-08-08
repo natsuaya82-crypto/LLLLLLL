@@ -68,7 +68,6 @@ defLang('en', (function(){
       "ob.back"                   : "Back",
       "add.ph"                    : "Sounds of this language",
       "add.ph.none"               : "No sounds yet",
-      "add.ty"               : "Type",
       "ipa.b.back"                : "back",
       "ipa.b.central"             : "central",
       "ipa.b.front"               : "front",

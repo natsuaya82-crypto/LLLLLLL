@@ -82,7 +82,6 @@ defLang('ja', (function(){
       "ob.back"                   : "戻る",
       "add.ph"                    : "この言語の音",
       "add.ph.none"               : "音がまだありません",
-      "add.ty"               : "打つ",
       "ipa.b.back"                : "後舌",
       "ipa.b.central"             : "中舌",
       "ipa.b.front"               : "前舌",

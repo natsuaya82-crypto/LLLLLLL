@@ -126,7 +126,6 @@ defLang('es', (function(){
       "ob.back"                   : "Atrás",
       "add.ph"                    : "Sonidos de esta lengua",
       "add.ph.none"               : "Todavía no hay sonidos",
-      "add.ty"               : "Escribir",
       "ipa.b.back"                : "posterior",
       "ipa.b.central"             : "central",
       "ipa.b.front"               : "anterior",

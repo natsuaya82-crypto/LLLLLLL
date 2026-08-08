@@ -171,7 +171,6 @@ defLang('ru', (function(){
       "ob.back"                   : "Назад",
       "add.ph"                    : "Звуки этого языка",
       "add.ph.none"               : "Звуков пока нет",
-      "add.ty"               : "Ввод",
       "ipa.b.back"                : "задний",
       "ipa.b.central"             : "средний",
       "ipa.b.front"               : "передний",

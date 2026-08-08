@@ -58,14 +58,11 @@ export function seed(){
             who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
             mn:'the sea has gone quiet', ui:'en',
             gl:[{w:'qel', m:'sea', p:'n'}, {w:'dross', m:'quiet', p:'adj'}]}];
-  /* `ab` is what the letter is CALLED, which is what a word is typed with and
-     what the font answers to. A letter without one is not a mistake -- l3 is
-     a shape nobody has named yet, and half the app exists for that state. */
-  LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k'], ab:'k'},
-             {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t'], ab:'t'},
-             {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[], ab:''},
+  LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
+             {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
+             {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
              /* a mark: a letter that reads something with no sound in it */
-             {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?'], ab:'?'},
+             {id:'l4', st:[{pts:[[200,200],[600,300],[400,600]]}], ch:'', nm:'', snd:['?']},
              /* a digit: a letter with a value instead of a reading */
              {id:'l5', st:[{pts:[[300,150],[300,650]]}], ch:'', nm:'', snd:[], val:1}];
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
@@ -175,17 +172,6 @@ export function halfDone(){
        is something to delete, so a form opened empty never shows it. */
     ['a note being edited',    () => { openNote(0); return FORM.html; }],
     /* The new-word sheet has two faces, and the buttons differ on each. */
-    /* The two sheets with the phone's own keyboard. What has been typed is
-       half converted -- k is a letter and could still be the start of a
-       longer one -- so the strip of what it could still become is up. */
-    ['a word being typed', () => { openAdd(''); addTyq='k'; addSetMode('ty');
-                                   const h=FORM.html; addTyq=''; return h; }],
-    ['a word being typed again', () => { openWord('kano'); wdTyq='k'; wdMode='ty';
-                                         const h=wdBodyHTML(); wdTyq=''; wdMode='';
-                                         return h; }],
-    ['a word being respelled, by letter', () => { openWord('kano'); wdMode='lt';
-                                                  const h=wdBodyHTML(); wdMode='';
-                                                  return h; }],
     ['a word being added, by letter', () => { openAdd(''); addSetMode('lt');
                                               return FORM.html; }],
     ['a word being added, by sound',  () => { openAdd(''); addSetMode('ph');

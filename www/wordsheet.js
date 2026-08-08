@@ -100,199 +100,23 @@ function spRowHTML(sp, route, back, id){
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
 }
 function addSpellHTML(){
-  /* named, because typing replaces this row without redrawing the form */
-  return '<div id="f-sprow">'+spRowHTML(addSp, 'aspell', 'addBack', 'f-back')+'</div>';
+  return spRowHTML(addSp, 'aspell', 'addBack', 'f-back');
 }
-/* ---- typing a word ------------------------------------------------------
-   A letter has a name now, so a word can be typed instead of hunted for. The
-   keyboard of tiles is one big key per letter, and at forty letters that is a
-   grid you read rather than a keyboard you type on.
-   「タイルが場所圧縮するんよね」「文字打つのだるい自作文字で」
-
-   So: a keyboard of its own, drawn by the app, converting the way romaji
-   does. What has been typed and can only be one letter becomes that letter at
-   once; what could still grow waits at the head of the strip, and the strip
-   shows what it could still become.
-   「kaって打ったらサジェストに自作文字出てくるみたいな」
-
-   Not the phone's keyboard: that one comes up over the bottom of the screen,
-   which is where the suggestions are, and the page has no say in it.
-
-   A character that names no letter of this language is dropped -- and cannot
-   be typed in the first place, because the key for it is dimmed. */
-/* Every letter that has a name, longest name first, which is what makes the
-   longest match the first one found. */
-function tyNames(){
-  var out=[], i, n;
-  for(i=0;i<LETTERS.length;i++){
-    n=String(LETTERS[i].ab||'').toLowerCase();
-    if(n) out.push({l:LETTERS[i], k:n});
-  }
-  out.sort(function(a,b){ return b.k.length-a.k.length; });
-  return out;
-}
-/* What the typed tail could still be, shortest first -- k before ka, because
-   that is the order a finger expects to find them in. */
-function tySug(q){
-  var all=tyNames(), out=[], i;
-  if(!q) return out;
-  q=String(q).toLowerCase();
-  for(i=0;i<all.length;i++) if(all[i].k.indexOf(q)===0) out.push(all[i]);
-  out.sort(function(a,b){
-    return (a.k.length-b.k.length) || (a.k<b.k? -1 : a.k>b.k? 1 : 0);
-  });
-  return out.map(function(x){ return x.l; });
-}
-/* Eat what is certain, hand each letter to `put`, tell `drop` about anything
-   that named no letter, and give back what is still waiting. Certain means:
-   the typed text begins with a name and there is more text after it, or it IS
-   a name and no longer name begins with it. */
-function tyEat(q, put, drop){
-  var all=tyNames(), s=String(q||''), low, m, grows, i;
-  while(s.length){
-    low=s.toLowerCase(); m=null;
-    for(i=0;i<all.length;i++) if(low.indexOf(all[i].k)===0){ m=all[i]; break; }
-    if(m && low.length>m.k.length){ put(m.l); s=s.slice(m.k.length); continue; }
-    grows=false;
-    for(i=0;i<all.length;i++)
-      if(all[i].k.length>low.length && all[i].k.indexOf(low)===0){ grows=true; break; }
-    if(grows) break;
-    if(m){ put(m.l); s=s.slice(m.k.length); continue; }
-    if(drop) drop(s.charAt(0));      /* no letter of this language begins here */
-    s=s.slice(1);
-  }
-  return s;
-}
-/* Whether this key leads anywhere from here -- asked of tyEat itself rather
-   than worked out again, because "leads anywhere" and "is not dropped" are
-   the same sentence and there is no second way to be right about it.
-
-   A key can be live for two different reasons and the difference does not
-   matter: it continues what is half typed (k then a, making ka), or what is
-   half typed is already a whole letter and this key starts the next one
-   (k then t, making k and then t). Only the second was live at first, so
-   after typing k every key but a and i went grey and pressing t worked
-   anyway. */
-function tyLive(q, c){
-  var ok=true;
-  tyEat(q+c, function(){}, function(){ ok=false; });
-  return ok;
-}
-/* What has been typed and not yet turned into a letter, and what it could
-   still become. The undecided text sits at the head of the strip the way an
-   IME underlines it, because it is not in a field -- there is no field. */
-function tySugHTML(q, pick){
-  return (q? '<span class="typ">'+esc(q)+'</span>' : '')+
-    tySug(q).map(function(l){
-      return '<button class="tyk"' + DO(pick, [l.id]) + '>'+
-        '<span class="tyf">'+ltInk(l, esc(ltName(l)||'·'))+'</span>'+
-        '<span class="tyn">'+esc(ltName(l))+'</span></button>';
-    }).join('');
-}
-/* The keyboard, which the app draws. The phone's own would come up over the
-   bottom of the screen, which is where the suggestions are, and the page has
-   no say in it.
-
-   QWERTY, because that is what a keyboard is. It was four rows of seven in
-   alphabetical order for a while, to keep every key over the 44pt floor
-   press-check holds -- which produced a chart of the alphabet that nobody
-   could type on. Apple's own keyboard is 32pt wide per key. The floor has an
-   exception for these, written into press-check with its reason.
-
-   A key that leads nowhere from here is dimmed, not removed: a keyboard whose
-   keys move is a keyboard nobody can learn. */
-var TY_ROWS=['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
-function tyKbHTML(q, key, del){
-  var out='', row, i, j, c;
-  q=String(q||'').toLowerCase();
-  for(i=0;i<TY_ROWS.length;i++){
-    row='';
-    for(j=0;j<TY_ROWS[i].length;j++){
-      c=TY_ROWS[i].charAt(j);
-      row+='<button class="tyq'+(tyLive(q, c)? '' : ' off')+'"' + DO(key, [c]) + '>'+c+'</button>';
-    }
-    if(i===TY_ROWS.length-1)
-      row+='<button class="tyq del"' + DO(del) + ' aria-label="'+esc(t('glyph.undo'))+'">'+
-        ICON_BACK+'</button>';
-    out+='<div class="tyrow r'+(i+1)+'">'+row+'</div>';
-  }
-  return out;
-}
-function tyPaneHTML(o, q){
-  return '<div id="'+o.sug+'" class="tysug">'+tySugHTML(q, o.pick)+'</div>'+
-    '<div id="'+o.kb+'" class="tykb">'+tyKbHTML(q, o.key, o.del)+'</div>';
-}
-/* What a keypress changed, put on the page directly. Redrawing the form would
-   rebuild the keyboard under the finger and lose where the page was scrolled
-   to, which for something pressed once per letter is every letter. */
-function tyPaint(o, sp, q){
-  var r=document.getElementById(o.row), s=document.getElementById(o.sug),
-      k=document.getElementById(o.kb);
-  if(r) r.innerHTML=spRowHTML(sp, o.route, o.back, o.backId);
-  if(s) s.innerHTML=tySugHTML(q, o.pick);
-  if(k) k.innerHTML=tyKbHTML(q, o.key, o.del);
-  geTiles();
-}
-/* The rail over the keyboard: which way a word is being put in, offered only
-   where there is more than one way. */
-function keyLabel(k){
-  return k==='ty'? t('add.ty') : k==='lt'? t('toc.letters') : t('toc.sound');
-}
-function keyRail(m, act){
-  var segs=[], out;
-  if(tyNames().length) segs.push('ty');
-  if(ltTypable().length) segs.push('lt');
-  if(addedSnd().length) segs.push('ph');
-  /* One way in is not a choice, so it is said rather than offered. */
-  if(segs.length<2) return '<div class="sec">'+keyLabel(m)+'</div>';
-  out=segs.map(function(k){
-    return '<button class="seg'+(m===k?' on':'')+'"' + DO(act, [k]) + '>'+keyLabel(k)+'</button>';
-  }).join('');
-  return '<div class="segs" style="margin-bottom:8px">'+out+'</div>';
-}
-/* Typing is what opens, when there is anything to type. A mode the language
-   no longer has -- every letter renamed to nothing, every sound dropped --
-   falls back rather than showing an empty pane. */
-function keyMode(m){
-  if(m==='ty' && !tyNames().length) m='';
-  if(m==='lt' && !ltTypable().length) m='';
-  if(m==='ph' && !addedSnd().length) m='';
-  if(m) return m;
-  if(tyNames().length) return 'ty';
-  return ltTypable().length? 'lt' : 'ph';
-}
-
 var addMode='';
-var addTyq='';
-var ADD_TY={row:'f-sprow', sug:'f-tysug', kb:'f-tykb', route:'aspell',
-            back:'addBack', backId:'f-back',
-            pick:'addTyPick', key:'addTyKey', del:'addTyDel'};
 function addSetMode(m){ addMode=m; addRedraw(); }
-function addTyGo(v){
-  addTyq=tyEat(v, function(l){ addSp.push({l:l.id, u:ltFirstUnit(l)}); });
-  addSync(); tyPaint(ADD_TY, addSp, addTyq); addPv();
-}
-function addTyKey(c){ addTyGo(addTyq+c); }
-/* Back takes the undecided text apart first and the word after it, which is
-   what a backspace does everywhere: you undo what you last did. */
-function addTyDel(){
-  if(addTyq){ addTyGo(addTyq.slice(0, -1)); return; }
-  addSp.pop(); addSync(); tyPaint(ADD_TY, addSp, addTyq); addPv();
-}
-function addTyPick(id){
-  var l=ltById(id); if(!l) return;
-  addSp.push({l:l.id, u:ltFirstUnit(l)});
-  addTyq=''; addSync(); tyPaint(ADD_TY, addSp, addTyq); addPv();
-}
 function addKeys(){
-  var mine=addedSnd(), ls=ltTypable(), m=keyMode(addMode);
-  if(!mine.length && !ls.length && !tyNames().length){
+  var mine=addedSnd(), ls=ltTypable();
+  var m=addMode || (ls.length? 'lt' : 'ph');
+  if(!mine.length && !ls.length){
     return '<div class="note">'+t('add.ph.none')+'</div>'+
       '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button>';
   }
-  var rail=keyRail(m, 'addSetMode');
-  if(m==='ty') return rail+tyPaneHTML(ADD_TY, addTyq);
+  var rail = (ls.length && mine.length)
+    ? '<div class="segs" style="margin-bottom:8px">'+
+      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('addSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('addSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
+      '</div>' : '';
   if(m==='lt' && ls.length)
     return rail+'<div class="phkeys">'+ls.map(function(l){
       return ltkHTML(l, DO('addLtr',[l.id])); }).join('')+'</div>';
@@ -327,9 +151,7 @@ function openAdd(from){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     addSpellHTML()+
-    /* No heading over the keyboard: the rail under it says which way a word
-       is going in, and "the sounds of this language" over a field you type
-       letter names into was a heading about the wrong one of three. */
+    '<div class="sec">'+t('add.ph')+'</div>'+
     addKeys()+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
     '<button' + DO('sayField') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
@@ -403,7 +225,7 @@ function spOdd(st){
    a word. */
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
-  return '<div id="wd-sprow">'+spRowHTML(sp, 'spell', 'wdBack', '')+'</div>'+
+  return spRowHTML(sp, 'spell', 'wdBack', '')+
     /* No second play. This one and the one at the head of the sheet were both
        sayPh(wEdit.seq) -- the same sound, twice, and this copy sat inside the
        block about which letters spell the word, which is not what a sound is
@@ -412,35 +234,19 @@ function wdSeqHTML(){
     '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span></div>';
 }
 var wdMode='';
-var wdTyq='';
-var WD_TY={row:'wd-sprow', sug:'wd-tysug', kb:'wd-tykb', route:'spell',
-           back:'wdBack', backId:'',
-           pick:'wdTyPick', key:'wdTyKey', del:'wdTyDel'};
+function wdKeyMode(){
+  if(wdMode) return wdMode;
+  return ltTypable().length? 'lt' : 'ph';
+}
 function wdSetMode(m){ wdMode=m; wdPaint(); }
-function wdTyGo(v){
-  if(!wEdit) return;
-  if(!wEdit.sp) wEdit.sp=[];
-  wdTyq=tyEat(v, function(l){ wEdit.sp.push({l:l.id, u:ltFirstUnit(l)}); });
-  wdSync(); tyPaint(WD_TY, wEdit.sp, wdTyq);
-}
-function wdTyKey(c){ wdTyGo(wdTyq+c); }
-function wdTyDel(){
-  if(wdTyq){ wdTyGo(wdTyq.slice(0, -1)); return; }
-  if(!wEdit || !wEdit.sp) return;
-  wEdit.sp.pop(); wdSync(); tyPaint(WD_TY, wEdit.sp, wdTyq);
-}
-function wdTyPick(id){
-  var l=ltById(id); if(!l || !wEdit) return;
-  if(!wEdit.sp) wEdit.sp=[];
-  wEdit.sp.push({l:l.id, u:ltFirstUnit(l)});
-  wdTyq=''; wdSync(); tyPaint(WD_TY, wEdit.sp, wdTyq);
-}
 function wdKeysHTML(){
-  var mine=addedSnd(), ls=ltTypable(), m=keyMode(wdMode);
-  if(!mine.length && !ls.length && !tyNames().length)
-    return '<div class="note">'+t('add.ph.none')+'</div>';
-  var rail=keyRail(m, 'wdSetMode');
-  if(m==='ty') return rail+tyPaneHTML(WD_TY, wdTyq);
+  var mine=addedSnd(), ls=ltTypable(), m=wdKeyMode();
+  if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
+  var rail = (ls.length && mine.length)
+    ? '<div class="segs" style="margin-bottom:8px">'+
+      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('wdSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
+      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('wdSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
+      '</div>' : '';
   if(m==='lt' && ls.length)
     return rail+'<div class="phkeys">'+ls.map(function(l){
       return ltkHTML(l, DO('wdLtr',[l.id])); }).join('')+'</div>';

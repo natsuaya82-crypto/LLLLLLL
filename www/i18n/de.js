@@ -154,7 +154,6 @@ defLang('de', (function(){
       "ob.back"                   : "Zurück",
       "add.ph"                    : "Laute dieser Sprache",
       "add.ph.none"               : "Noch keine Laute",
-      "add.ty"               : "Tippen",
       "ipa.b.back"                : "hinten",
       "ipa.b.central"             : "zentral",
       "ipa.b.front"               : "vorne",
