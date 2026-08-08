@@ -664,8 +664,8 @@ defLang('en', (function(){
       'plan.studio.2'   : "Generate a whole vocabulary from a theme",
       'plan.studio.3'   : "Everything in Plus",
       'plan.price.free' : "$0",
-      'plan.price.plus' : "$9 / month",
-      'plan.price.studio':"$19 / month",
+      'plan.price.plus' : "$9.99 / month",
+      'plan.price.studio':"$19.99 / month",
       'toast.plan.free' : "Back on the free plan",
       'toast.plan.other': "(mock) switched to {0}",
       /* the write / edit sheets */
