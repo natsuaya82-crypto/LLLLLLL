@@ -264,6 +264,12 @@ const R = await pg.evaluate(() => {
     catch (e) { out.threw.push(label + ': ' + e.message); }
   });
 
+  /* The tab bar, which is on every screen and part of none of them: it lives
+     beside #app and render() paints it, so no view's HTML carries it. This is
+     where the five roots get named. */
+  try { harvest('the tab bar', tabBar()); }
+  catch (e) { out.threw.push('the tab bar: ' + e.message); }
+
   /* the three faces of the search tab, which a plain render never reaches */
   try {
     fq = 'a'; harvest('vFind searched', findBodyHTML());

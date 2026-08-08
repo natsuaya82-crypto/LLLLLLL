@@ -346,9 +346,9 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 209`, `screens the mirror
+Both checks print their coverage (`screens walked: 211`, `screens the mirror
 rendered: 318`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 2583` for the same reason — and it is what a
+`press` prints `buttons pressed: 2541` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. Two chapters
 closed on the day those numbers were last written down, which is why they are
 smaller than they were and not a sign that something stopped being walked.

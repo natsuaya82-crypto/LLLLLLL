@@ -233,7 +233,6 @@ function vProfile(){
         cvStat(t('toc.words'), WORDS.length||'—', 'words')+
       '</div>'+
     '</div>'+
-    tabBar()+
   '</div>';
 }
 function cvStat(lab, val, r){
@@ -262,7 +261,7 @@ function vBuild(){
     /* Settings used to hang off the bottom of the contents. It belongs to the
        person, not to the language, and it is already on the profile where
        everything else of theirs is. 「制作のところに設定ボタンはいらない」 */
-    '</div>'+tabBar()+'</div>';
+    '</div></div>';
 }
 /* ---- the search tab ---------------------------------------------------
    「なんで下タブはsns用に作ったのにそれすら存在しないゴミデータなの？」

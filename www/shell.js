@@ -182,8 +182,14 @@ function rootTop(r, right){
   return '<div class="navtop"><span class="navt">'+esc(pageName(r))+'</span>'+
     (right||'')+'</div>';
 }
-/* The three roots. A tab bar belongs on them and nowhere else: on an inner
-   page the thing at the bottom of the screen is that page's own button. */
+/* The bar is on every screen. It used to be on five of them -- "a tab bar
+   belongs on the roots and nowhere else: on an inner page the thing at the
+   bottom of the screen is that page's own button" -- which is a defensible
+   rule and is not what the app felt like. Twenty of twenty-five screens had
+   no way out but back. 「下タブはほとんどの箇所で消える」
+
+   So it is at the bottom of the screen always, and whatever that screen
+   keeps at the bottom sits on top of it. */
 /* Searching your own language used to be one of these. It is not a place in
    the app -- it is a thing you do to the language -- so it moved to the
    contents page it belongs to, and the bar went back to saying only where
@@ -202,6 +208,19 @@ function tabBar(){
       TAB_ICON[r]+'<span class="tabl">'+esc(pageName(r))+'</span></button>';
   }
   return '<div class="tabbar">'+out+'</div>';
+}
+/* And the bar is put on the page here, once, into an element beside #app that
+   render() never rewrites. Writing it into each screen's HTML meant it was
+   thrown away and built again -- blur and all -- on every navigation, which
+   on a phone is the bar blinking out. Nothing is rebuilt unless the answer
+   changes: which tab is lit, and which language it is saying it in. */
+function tabPaint(){
+  var host=document.getElementById('tabs');
+  if(!host) return;
+  var sig = SET.done ? (here().r+'|'+uiLang()) : '';
+  if(host.getAttribute('data-sig')===sig) return;
+  host.setAttribute('data-sig', sig);
+  host.innerHTML = sig ? tabBar() : '';
 }
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;

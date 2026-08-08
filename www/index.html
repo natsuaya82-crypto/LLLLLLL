@@ -45,6 +45,11 @@ html[data-theme="light"]{
   --glassrim:rgba(26,23,18,.10); --glassspec:rgba(255,255,255,.9);
   --glassdrop:rgba(60,50,30,.16);
 }
+/* How much of the bottom of the screen the tab bar has. It is on every screen
+   now, so everything that used to sit at the bottom sits on top of it, and
+   every one of them measures from here rather than carrying its own number:
+   the bar's own offset, its padding, and the 52px a tab is tall. */
+:root{--tabh:calc(env(safe-area-inset-bottom,0) + 72px)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
@@ -177,7 +182,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chap .rn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.3rem}
 .chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
 .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
-.body{padding:10px 24px calc(env(safe-area-inset-bottom,0) + 120px)}
+.body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* ---------- a post ----------
    The row everybody's thumb already knows: face, a bold name with the handle
    and the time in grey beside it, the post, four things spread along the
@@ -249,7 +254,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwfield input:focus{outline:none}
 .pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
-.fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0) + 92px);
+.fab{position:fixed;right:20px;bottom:calc(var(--tabh) + 20px);
      z-index:26;width:56px;height:56px;border-radius:50%;border:0;
      background:var(--gold);color:var(--onGold);
      box-shadow:0 10px 26px var(--glassdrop);
@@ -360,7 +365,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
-       padding:0 30px calc(84px + env(safe-area-inset-bottom,0));text-align:center}
+       padding:0 30px calc(var(--tabh) + 12px);text-align:center}
 /* What the language is for, on the cover, because that is where what a book
    is about belongs. */
 .wldrow{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;
@@ -690,8 +695,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
            border:1px solid var(--purln);border-radius:3px;padding:2px 8px;flex:0 0 auto}
 
 /* ---------- bottom bar, sheet, toast ---------- */
-.barfix{position:fixed;left:0;right:0;bottom:0;z-index:20;max-width:480px;margin:0 auto;
-        padding:12px 24px calc(env(safe-area-inset-bottom,0) + 14px);
+/* On top of the tab bar, not under it. 「下タブを画面1番下に固定して、その上
+   からボタンいくようにしてね」 */
+.barfix{position:fixed;left:0;right:0;bottom:var(--tabh);z-index:20;max-width:480px;margin:0 auto;
+        padding:12px 24px 12px;
         background:linear-gradient(180deg,transparent,var(--bg) 34%);display:flex;gap:10px}
 /* A flex item will not shrink below its content by default, so two long
    labels side by side pushed the bar off a 320px screen in Russian. */
@@ -819,7 +826,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .chk button{display:block;margin-top:9px;background:none;border:1px solid var(--goldln);color:var(--gold);
     border-radius:8px;padding:6px 13px;font-size:.86rem}
 .ipa{font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:.02em}
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0) + 96px);transform:translateX(-50%) translateY(10px);
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 24px);transform:translateX(-50%) translateY(10px);
        background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
        border-radius:10px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%)}
@@ -1347,6 +1354,14 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 <div id="splash"><div class="splbrand">LIN<span class="st">G</span>UA</div>
 <div class="splrule"></div></div>
 <div id="app"></div>
+<!-- The tab bar lives out here, beside the screen rather than inside it.
+     render() replaces #app whole on every navigation, so a bar written into
+     the HTML of each screen was destroyed and rebuilt -- with its blur --
+     every time you moved, and it was only written into five of the
+     twenty-five screens at all. Out here it is built once and never again;
+     render() only moves which tab is lit. The report is in www/shell.js,
+     over tabBar(). -->
+<div id="tabs"></div>
 
 <div class="sbg" id="sbg" onclick="closeSheet(event)">
   <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>

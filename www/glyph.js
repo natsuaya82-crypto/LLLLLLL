@@ -1424,6 +1424,8 @@ function render(){
   /* the document's own language, so the browser picks the right font and
      line-breaking for it — and so the CSS above can drop Latin tracking */
   document.documentElement.setAttribute('lang', uiLang());
+  /* the bar at the foot of the screen, which is not part of any screen */
+  tabPaint();
   /* Onboarding returns before the mount hooks at the foot of this function,
      so the editor it embeds has to be mounted here or its canvas stays blank.
      Every editor action ends in render(), which lands back on this line. */

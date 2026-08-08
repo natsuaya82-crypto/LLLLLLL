@@ -27,7 +27,7 @@ function snsNone(){
 function snsEmpty(r){
   return '<div class="view">'+rootTop(r)+
     '<div class="body">'+snsNone()+'</div>'+
-    tabBar()+'</div>';
+    '</div>';
 }
 /* Everybody's languages, as they are written -- which for the moment is
    yours, because there is no server yet and a post has nowhere else to go.
@@ -50,7 +50,7 @@ function vFeed(){
        thumb of the hand already holding the phone. */
     '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
       ICON_ADD2+'</button>'+
-    tabBar()+'</div>';
+    '</div>';
 }
 /* Posts, not your own language -- that search is in the build tab, on the
    contents page, because it searches what is on that page. 「snsの探すと横断

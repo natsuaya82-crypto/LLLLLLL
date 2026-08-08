@@ -27,5 +27,7 @@ netResume(function(){ render(); }, function(){});
 /* one listener above the screen, since the screen itself is replaced whole on
    every render and nothing can be bound to it */
 actWire(document.getElementById('app'));
+/* and one above the tab bar, which is beside the screen rather than in it */
+actWire(document.getElementById('tabs'));
 render();
 if(window.splashDone) splashDone();

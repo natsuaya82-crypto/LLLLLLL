@@ -213,6 +213,16 @@ const R = await pg.evaluate(() => {
     });
   });
 
+  /* The tab bar. It is on every screen and belongs to none of them -- it
+     lives beside #app and render() paints it -- so it is pressed here, once,
+     as a screen of its own. It goes into #app for the press like everything
+     else does: the point is that each of the five names resolves and runs. */
+  screens.push({
+    label: 'the tab bar',
+    build: () => { window.__seed(); SET.done = true;
+                   window.route = 'feed'; NAV = [{ r: 'feed' }]; show(tabBar()); }
+  });
+
   /* The forms, which are opened rather than routed to. They render into
      FORM.html, so that is what goes on the page. */
   opens.forEach(o => {
