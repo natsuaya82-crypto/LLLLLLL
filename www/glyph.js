@@ -152,8 +152,44 @@ function scriptDrawn(L){
    which is normal in a syllabary, where k alone is not a letter -- k needs a
    glyph for the rule to be written against. Those get the placeholder, and
    only those. */
+/* What a letter is CALLED, so the font can be reached by it. A letter named
+   G reads /\u025f/, and the font was keyed on how that sound is normally
+   spelled -- so typing g in a word hit nothing and the browser fell through
+   to the serif underneath. The name and the sound were separated on the
+   letter page and this was the half that did not follow.
+   「文字登録してんのにgでない」
+
+   The unit still keys the glyph; the name is an extra way in, added to the
+   code points that glyph answers to. First letter to claim a character keeps
+   it, which is the same rule two letters reading one sound already follow. */
+/* Every code point one glyph answers to: the unit itself in both cases, and
+   the letter's own name in both cases when it has one. A unit longer than a
+   character is reached by a ligature and has no code point of its own. */
+function geCodes(r, up, ab){
+  var out = (r.length===1) ? (up!==r ? r+up : r) : '';
+  /* Both cases of the name, whichever case it was typed in: a script you
+     invented has no case unless you draw one, so G and g are one letter. */
+  if(ab){
+    var forms=[ab, ab.toUpperCase(), ab.toLowerCase()], fi;
+    for(fi=0;fi<forms.length;fi++) if(out.indexOf(forms[fi])<0) out+=forms[fi];
+  }
+  return out || null;
+}
+function scriptNameCodes(){
+  var by={}, i, l, u, ab;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    ab=l.ab? String(l.ab) : '';
+    if(!ab || ab.length!==1) continue;
+    u=ltUnits(l);
+    if(!u.length) continue;
+    if(!by[u[0]]) by[u[0]]=ab;
+  }
+  return by;
+}
 function scriptGlyphDefs(){
   var L=scriptLetters(), have={}, defs=[], ligs=[], need=[], drawn={};
+  var named=scriptNameCodes();
   L.forEach(function(r){ have[r]=1; if(wsHasStrokes(r)) drawn[r]=1; });
   /* components of a drawn multi-character unit, and nothing else */
   L.forEach(function(r){
@@ -166,7 +202,7 @@ function scriptGlyphDefs(){
       name: glyphKey(r),
       /* one code unit, so it has a code point of its own; a script you invented
          has no case unless you draw one, so both cases point at one glyph */
-      roman: r.length===1 ? (up!==r ? r+up : r) : null,
+      roman: geCodes(r, up, named[r]),
       strokes: (st && st.length) ? st : GPLACE
     });
     if(r.length>1) ligs.push({sub:r.split('').map(glyphKey), by:glyphKey(r), n:r.length});
