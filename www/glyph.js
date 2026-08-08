@@ -648,6 +648,39 @@ function geLattice(p){
     last = (p[i][2]==='c') ? [x,y,'c'] : [x,y];
     out.push(last);
   }
+  /* A point that was straight before it was snapped, and is a bend only
+     because it got rounded, is the staircase. Thinning first is not enough:
+     three points along one diagonal round to three dots that are not on one
+     line, and every one of those roundings is a step. 「階段になるの腹立つ
+     んよな。斜めに引きたいのに」
+
+     So a point is dropped when it sits within half a step of the line
+     between its neighbours -- half a step being exactly how far rounding can
+     move it. What was straight stays straight, and what was drawn as a bend
+     is further out than that and survives. A point the person marked as a
+     curve is theirs and is never dropped. */
+  var tol=geStep()*0.9, k, a2, b2, c2, vx, vy, L, d, worst, at;
+  /* Drop the flattest point, then look again, until the flattest one left is
+     a real bend. One at a time and always the flattest, because a staircase
+     step deviates by exactly half a lattice step and dropping the wrong one
+     first turns two steps into one big kink. The tolerance is nearly a whole
+     step -- that is how far rounding alone can move a point off a straight
+     line -- and a bend somebody actually drew is further out than that over
+     the same span, so it survives. A point marked as a curve is theirs. */
+  for(;;){
+    worst=tol; at=-1;
+    for(k=1;k<out.length-1;k++){
+      if(out[k][2]==='c') continue;
+      a2=out[k-1]; b2=out[k]; c2=out[k+1];
+      vx=c2[0]-a2[0]; vy=c2[1]-a2[1];
+      L=Math.sqrt(vx*vx+vy*vy);
+      if(L<1e-6) continue;
+      d=Math.abs(vx*(a2[1]-b2[1]) - vy*(a2[0]-b2[0]))/L;
+      if(d<worst){ worst=d; at=k; }
+    }
+    if(at<0) break;
+    out.splice(at,1);
+  }
   /* a shape that collapsed to one dot is not a shape */
   if(out.length<2) return p;
   /* the ends are never rounded: a corner needs something on both sides */
