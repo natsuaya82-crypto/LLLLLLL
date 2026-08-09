@@ -924,6 +924,7 @@ var LinguaFont = (function () {
     glyphContours: glyphContours,
     toPolyline: toPolyline,
     profile: profile,
+    reach: reach,
     signedArea: signedArea,
   };
 })();

@@ -373,7 +373,7 @@ function postLnHTML(p){
   return out;
 }
 function postLines(){
-  inkCanvases('canvas.tcln', 34, 22, function(c){
+  inkLine('canvas.tcln', function(c){
     return PLINE[c.getAttribute('data-p')] || null;
   });
 }

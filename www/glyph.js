@@ -1395,6 +1395,51 @@ function inkCanvases(sel, floor, dflt, stOf){
     inkStrokes(c.getContext('2d'), st, S/800, 0, 0, cssVar('--tx'));
   }
 }
+/* What a letter takes up standing beside the next one, and where its ink sits
+   inside that -- in cell units, for one letter at a time.
+
+   It is the font's rule and nothing else: a letter's width is its own ink
+   plus one step, half a step at each end, so the gap between any two letters
+   is one step whichever two meet.
+   「どこから並んでも1点線分の隙間があるからバランス崩れない」
+   `reach` is otf5's, not a copy of it, and the step is the same geStep()/2
+   that installScriptFont hands the font as `side`.
+
+   A square cell per letter is a DIFFERENT rule and a worse one: there the gap
+   is cell - inkA/2 - inkB/2, so no two pairs are alike and a narrow letter
+   floats in the middle of nothing. A line of ink was drawn that way for one
+   day and it showed. 「文字間おかしくね」
+
+   Null when the strokes ink nothing, which is a letter with no shape. */
+function inkAdv(st){
+  var cs, p, side=geStep()/2;
+  try{ cs=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return null; }
+  p=LinguaFont.profile(cs);
+  if(!(p.xMax>p.xMin)) return null;
+  return {w:LinguaFont.reach(p.xMin, p.xMax, side), dx:Math.round(side-p.xMin)};
+}
+/* A line of ink: letters standing beside each other. Not the same thing as a
+   tile or a key, which are square cells and rightly so -- those go through
+   inkCanvases, and a square is the whole point of them.
+
+   Each canvas is given its letter's advance as the canvas's own width, which
+   is what a canvas's intrinsic ratio means, so CSS hangs the width off the
+   height and the line spaces itself exactly as the font would space it. */
+function inkLine(sel, stOf){
+  var els=document.querySelectorAll(sel), i, c, st, a, dpr, H, k;
+  for(i=0;i<els.length;i++){
+    c=els[i];
+    st=stOf(c);
+    if(!st || !st.length) continue;
+    a=inkAdv(st);
+    if(!a) continue;
+    dpr=window.devicePixelRatio||1;
+    H=Math.max(24, Math.round((c.getBoundingClientRect().height||18)*dpr));
+    k=H/800;
+    c.height=H; c.width=Math.max(1, Math.round(a.w*k));
+    inkStrokes(c.getContext('2d'), st, k, a.dx*k, 0, cssVar('--tx'));
+  }
+}
 function phkMount(){ inkCanvases('canvas.pkc', 40, 34); }
 /* The tiles on the letter grid are the same ink again, scaled down. */
 function geTiles(){ inkCanvases('canvas.tc', 48, 72); }

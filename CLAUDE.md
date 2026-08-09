@@ -212,6 +212,17 @@ to cut with — `ka` is one letter on the writer's phone and two on everybody el
 Anything the writer never drew is text and stays text, which is why a half-drawn alphabet
 gives a half-drawn line. `postRow` takes one argument again.
 
+A shape on a line still has to stand where the font would stand it, and that took a
+second try. Each letter was a canvas of a square cell, which is right for a tile and
+for a key and is a **different rule** from the one the font obeys: there the gap
+between two letters is `cell - inkA/2 - inkB/2`, so no two pairs are alike and a
+narrow letter floats in the middle of nothing. 「文字間おかしくね」 `inkAdv()` is the
+one place — the font's own `reach()` asked of one letter at a time, ink plus one step
+with half a step at each end, so the gap is one step whichever two meet. `inkLine()`
+gives each canvas that advance as its own width and lets CSS hang it off the height;
+`inkCanvases` is still the square one, for the things that are squares. Rendered both
+ways at 20px, six letters of four widths come to 61px either way.
+
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
 siblings. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
