@@ -165,7 +165,11 @@ function obIn(){
     OBM.busy=false;
     if(p){
       ME.name=String(p.display||''); ME.handle=String(p.handle||''); saveMe();
-      OBM.mode='in'; obGo(1); return;
+      OBM.mode='in';
+      /* An account that already has a profile belongs to somebody who has
+         been here. Sending them to step 1 is sending them to draw. */
+      if(obReturn()) return;
+      obGo(1); return;
     }
     OBM.nm=ME.name; OBM.hd=ME.handle; render();
   }, function(d, s){
@@ -191,6 +195,30 @@ function obNo(d, s){
    autocomplete words below are what make iOS offer the Keychain, and they are
    the reason there is nothing here that stores an address either. */
 var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'' };
+/* Where to go when the account screen is done, for somebody who did not
+   arrive here by starting the app.
+
+   The onboarding is what the app IS until SET.done -- that is the whole of
+   how render() decides -- so the only way to show the sign-in screen to
+   somebody already past it is to put SET.done back to false. Settings does
+   exactly that. Without this, signing in then carried on into the onboarding
+   proper: step 1 is drawing an alphabet, and a person who already had one
+   was made to sit through it again. 「ログアウト→ログインでもまた文字書こう
+   みたいな画面が出る」
+
+   Null means the app really did start here and the onboarding is the app. */
+var OB_BACK=null;
+function obBackTo(r, a){ OB_BACK={r:r, a:a}; }
+/* Done with the account, and there was somewhere to go back to. Puts back
+   the SET.done that the door had to take away. */
+function obReturn(){
+  if(!OB_BACK) return false;
+  var b=OB_BACK;
+  OB_BACK=null;
+  SET.done=true; save();
+  go(b.r, b.a);
+  return true;
+}
 function obMailGo(m){ OBM.mode=m; OBM.msg=''; render(); window.scrollTo(0,0); }
 function obMailSet(k, v){ OBM[k]=String(v||''); }
 function obMailAsk(){
@@ -308,7 +336,11 @@ function obWhoGo(){
     if(!free){ OBM.busy=false; OBM.msg=t('net.handle.taken'); render(); return; }
     netMakeProfile(h, nm, function(){
       ME.name=nm; ME.handle=h; saveMe();
-      OBM.busy=false; OBM.mode='in'; obGo(1);
+      OBM.busy=false; OBM.mode='in';
+      /* A brand new account made from Settings is still somebody who has a
+         language -- they signed up late, not early. */
+      if(obReturn()) return;
+      obGo(1);
     }, obNo);
   }, obNo);
 }

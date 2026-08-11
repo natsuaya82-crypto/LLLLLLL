@@ -242,4 +242,10 @@ function setSignOut(){ netOut(); toast(t('set.signout.done')); render(); }
    the same screen -- there is one way to sign in with an address and it is
    written once -- so this only says which face of it to open and puts the app
    back where onboarding shows it. */
-function setMail(){ OBM.mode='in'; OBM.msg=''; SET.done=false; save(); render(); }
+/* The sign-in screen lives inside the onboarding and nowhere else, so
+   opening it from here means saying the onboarding is unfinished. For
+   somebody who already has a language that is a lie, and the app used to
+   make good on it: sign in, and you were walked through drawing an alphabet
+   you already had. obBackTo() is what says the lie is temporary and where to
+   undo it. */
+function setMail(){ obBackTo('set', 'acct'); OBM.mode='in'; OBM.msg=''; SET.done=false; save(); render(); }
