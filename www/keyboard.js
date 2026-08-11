@@ -37,7 +37,7 @@ function kbRead(){
   }catch(e){}
 }
 kbRead();
-function saveKb(){ try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+function saveKb(){ bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all

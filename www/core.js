@@ -145,6 +145,7 @@ function langOpen(id){
 }
 
 function save(){
+  bkTouch();
   try{
     localStorage.setItem(langKey('words'),JSON.stringify(WORDS));
     localStorage.setItem(langKey('lines'),JSON.stringify(LINES));

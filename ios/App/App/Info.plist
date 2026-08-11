@@ -47,5 +47,14 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- A language is written to Documents as a file, and these two are the
+	     whole of what makes it a thing the person owns: the Files app can
+	     show the folder, and a file in it can be opened where it lies rather
+	     than copied somewhere first. Without them the copy still exists and
+	     is still in the device backup, but nobody can reach it. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

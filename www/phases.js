@@ -41,7 +41,7 @@ function stRead(){
   }catch(e){}
 }
 stRead();
-function saveStg(){ try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
+function saveStg(){ bkTouch(); try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
 
 /* The stages, in the order they open each other up. `slots` are the words the
    stage cannot do without; `feats` are the decisions from www/grammar.js it

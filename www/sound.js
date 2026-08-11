@@ -154,7 +154,7 @@ function sndRead(){
        if(s && s.length) SND=s; }catch(e){}
 }
 sndRead();
-function saveSnd(){ try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
+function saveSnd(){ bkTouch(); try{ localStorage.setItem(langKey('snd'), JSON.stringify(SND)); }catch(e){} }
 /* The one sound inventory anything reads. 35 places say addedSnd() meaning
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }

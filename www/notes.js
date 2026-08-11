@@ -19,7 +19,7 @@ function noteRead(){
   try{ var nt=JSON.parse(localStorage.getItem(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
 }
 noteRead();
-function saveNotes(){ try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
+function saveNotes(){ bkTouch(); try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
 
 /* The first line of a note stands in for a title when there is none, the way
    a paper notebook does. Cut short, because a row is a row. */

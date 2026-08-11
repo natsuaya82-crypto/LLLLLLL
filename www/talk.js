@@ -34,6 +34,7 @@ tkRead();
 /* A conversation is not an archive. Keeping the last forty turns is enough to
    scroll back through and small enough never to be a storage question. */
 function saveTalk(){
+  bkTouch();
   try{ if(TALK.length>40) TALK=TALK.slice(TALK.length-40);
        localStorage.setItem(langKey('talk'), JSON.stringify(TALK)); }catch(e){}
 }

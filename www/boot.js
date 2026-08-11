@@ -6,6 +6,26 @@
    app was started by the drawing editor. Nothing was wrong with the lines;
    they were in a file nobody would think to open. */
 
+/* The copy on disk, before anything that reads storage.
+   It only fills in what is missing, so on a phone that is simply working it
+   finds nothing to do and this costs one message to the native side. On one
+   whose storage was reclaimed it is the difference between a language and an
+   empty app. The answer comes back a frame later than the first render --
+   there is no way to ask the native side anything synchronously -- so what
+   it puts back is migrated and drawn when it arrives, not before. */
+bkRestore(function(put){
+  if(!put) return;
+  migratePh(); migrateMn(); migrateLetters(); migrateMarks();
+  migrateSndName(); migrateSnd(); migratePosts(); migratePostInk(); migrateSp();
+  sndStart(); ltStart(); installScriptFont();
+  render();
+});
+/* And the language that is here now is written out on the first render,
+   whether or not anything is changed today: an install that predates this
+   chapter has never called a save, and waiting for one would mean the copy
+   appears only for people who happened to edit something. */
+bkTouch();
+
 /* old shapes of stored things, brought forward */
 migratePh();
 migrateMn();

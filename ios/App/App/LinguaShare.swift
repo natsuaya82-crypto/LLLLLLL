@@ -21,6 +21,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   public let pluginMethods: [CAPPluginMethod] = [
     CAPPluginMethod(name: "write", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "registerFont", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "keep", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -62,6 +64,86 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
         try put(bytes, Self.fontName, dir)
       }
       call.resolve()
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  // ---- the copy that survives the app ------------------------------------
+  //
+  // A different folder and a different argument from everything above. The
+  // App Group is how two programs of this app talk; Documents is where the
+  // person's own work lives. iOS puts Documents in the device backup, and
+  // with UIFileSharingEnabled the Files app can show it -- so a language is
+  // a thing somebody can hold, copy to iCloud Drive, and mail to themselves.
+  //
+  // www/backup.js (chapter 24) decides what goes in it. This writes it down.
+
+  static let keepDir = "Languages"
+
+  private func languages() throws -> URL {
+    let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+                                           appropriateFor: nil, create: true)
+    let dir = docs.appendingPathComponent(Self.keepDir, isDirectory: true)
+    if !FileManager.default.fileExists(atPath: dir.path) {
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+    return dir
+  }
+
+  /// Written whole, and never on top of the last good one.
+  ///
+  /// The previous file is moved to .1 and that to .2 before anything new is
+  /// written, so a write that produces rubbish costs a generation instead of
+  /// the language. Two spares is the whole of the safety net and it is worth
+  /// about 50 KB for a free-sized language -- the price of being able to say
+  /// that a bug in this app cannot take somebody's months of work.
+  @objc func keep(_ call: CAPPluginCall) {
+    let name = (call.getString("name") ?? "language")
+    let json = call.getString("json") ?? ""
+    guard !json.isEmpty else { call.reject("nothing to keep"); return }
+    do {
+      let dir = try languages()
+      let fm = FileManager.default
+      let at: (Int) -> URL = { n in
+        dir.appendingPathComponent(n == 0 ? "\(name).json" : "\(name).\(n).json")
+      }
+      // oldest first, so nothing is overwritten before it has been moved
+      for n in stride(from: 2, to: 0, by: -1) {
+        let from = at(n - 1), to = at(n)
+        if fm.fileExists(atPath: from.path) {
+          if fm.fileExists(atPath: to.path) { try? fm.removeItem(at: to) }
+          try? fm.moveItem(at: from, to: to)
+        }
+      }
+      try Data(json.utf8).write(to: at(0),
+        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+      call.resolve()
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  /// Every language on disk, newest generation only.
+  ///
+  /// The spares are not offered: they exist for a person to find in the Files
+  /// app when something has gone wrong, and handing them to a restore that
+  /// cannot tell them apart would be the restore choosing which of three
+  /// copies is the real one. It is not equipped to choose, so it is not asked.
+  @objc func kept(_ call: CAPPluginCall) {
+    do {
+      let dir = try languages()
+      let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+      var out: [String] = []
+      for n in names.sorted() {
+        guard n.hasSuffix(".json") else { continue }
+        // "<name>.1.json" is a spare; "<name>.json" is the one that counts
+        let stem = String(n.dropLast(5))
+        if let last = stem.split(separator: ".").last, Int(last) != nil { continue }
+        if let d = try? Data(contentsOf: dir.appendingPathComponent(n)),
+           let s = String(data: d, encoding: .utf8) { out.append(s) }
+      }
+      call.resolve(["files": out])
     } catch {
       call.reject(error.localizedDescription)
     }
