@@ -114,12 +114,126 @@ function shareRows(lay){
   if(rows.length) rows[rows.length-1].unshift({k:'next', w:1});
   return rows;
 }
+/* ---- typing one thing and writing another --------------------------------
+   「qwertyでうって変換する中国語のピン音スタイルもあるやん？」
+
+   An alphabet needs no conversion: press a and your a goes in, which is what
+   kbFixed() already is. What needs it is a writing system where the unit you
+   TYPE and the unit you WRITE are different -- a syllabary where `ka` is one
+   letter, an abugida where it is a base and a mark, a logography where it is
+   a word. wsys() already answers which, so nothing new decides it and there
+   is no setting.
+
+   The same table serves the other two. On an alphabet the keys stay the
+   person's own letters and the bar offers the words that begin the way they
+   started, which is a spelling check made of the same parts. One bar, two
+   fillings, and no second thing to keep in step. */
+
+/* Faces with no repeats, and the number each letter sits at.
+
+   The number is the whole point. The same letter is in dozens of words, and
+   a shape written out again in each of them is 4.4 MB where this is 195 KB --
+   measured on a syllabary of 180 letters and a dictionary of 5000. An
+   extension is given a few dozen megabytes and killed for asking for more.
+
+   It does not break the rule that says put it ON rather than point at it.
+   What that forbids is handing over an id only the app can resolve -- a
+   LETTERS id means nothing on the other side. These numbers resolve inside
+   the file, against something the reader was handed in the same breath. */
+function shareTable(){
+  var ink=[], at={};
+  return {ink:ink, of:function(id){
+    if(!Object.prototype.hasOwnProperty.call(at, id)){
+      if(!ltById(id)) return -1;
+      at[id]=ink.length;
+      ink.push(shareFace(id));
+    }
+    return at[id];
+  }};
+}
+/* First in wins, and letters go in before words, so a word can never take a
+   key a letter answers to. */
+function sharePut(map, key, ix){
+  var k=String(key||'').toLowerCase();
+  if(!k || !ix.length) return;
+  if(Object.prototype.hasOwnProperty.call(map, k)) return;
+  map[k]=ix;
+}
+/* Every way a letter can be typed: ltCodes() is the alphabet's own answer to
+   that -- the name somebody chose and everything the letter reads, in both
+   cases -- and asking it here rather than working it out again is the reason
+   a letter renamed is typeable under the new name the same second. */
+function shareMapLts(t, map){
+  var i, cs, j, ix;
+  for(i=0;i<LETTERS.length;i++){
+    ix=t.of(LETTERS[i].id);
+    if(ix<0) continue;
+    cs=ltCodes(LETTERS[i]);
+    for(j=0;j<cs.length;j++) sharePut(map, cs[j], [ix]);
+  }
+}
+/* And every word, under its own spelling -- which is already roman, because
+   a word IS its letters and a letter's name is what it is typed as. spOf()
+   is the spelling and spWord() is that spelling as text; neither is worked
+   out here. */
+function shareMapWords(t, map){
+  var i, sp, ix, j, n;
+  for(i=0;i<WORDS.length;i++){
+    sp=spOf(WORDS[i]);
+    if(!sp.length) continue;
+    ix=[];
+    for(j=0;j<sp.length;j++){
+      n=sp[j].l? t.of(sp[j].l) : -1;
+      if(n<0){ ix=[]; break; }        /* a word one of whose letters is gone */
+      ix.push(n);
+    }
+    sharePut(map, spWord(sp), ix);
+  }
+}
+/* Null when there is nothing to offer, so the keyboard shows no bar at all
+   rather than an empty one. */
+function shareConv(t){
+  var map={}, k, max=0;
+  shareMapLts(t, map);
+  shareMapWords(t, map);
+  for(k in map) if(Object.prototype.hasOwnProperty.call(map, k) && k.length>max) max=k.length;
+  return max? {how:wsys(), max:max, map:map} : null;
+}
+/* Whether the keys are roman. A syllabary is spelled in roman and converted;
+   an alphabet is typed in its own letters and only suggested at. */
+function shareRoman(){
+  var w=wsys();
+  return w==='syll' || w==='abugida' || w==='logo';
+}
+/* The face you spell on. Not the person's letters -- the q of QWERTY, there
+   to spell with, and what it spells is looked up rather than inserted. It is
+   the FIRST face, because somebody who made a syllabary types on this one
+   almost always and should not have to cross to it every time.
+
+   KB_QWERTY is keyboard.js's, so the roman rows and the free plan's rows are
+   one layout rather than two that agree today. */
+function shareRomLay(){
+  var rows=[], i, j, r, row, sp;
+  for(i=0;i<KB_QWERTY.length;i++){
+    r=KB_QWERTY[i]; row=[];
+    for(j=0;j<r.length;j++) row.push({k:'rom', t:r.charAt(j), w:1});
+    if(i===KB_QWERTY.length-1) row.push({k:'del', w:1});
+    rows.push(row);
+  }
+  sp={k:'sp', w:3};
+  rows.push([{k:'lay', to:1, w:1}, sp, {k:'del', w:1}]);
+  return {rows:rows};
+}
+
 /* The whole of it: this language's keyboard, drawn, with nothing in it that
    points at anything back here. */
 function shareKbd(){
-  var b=kbOf(), lay=[], i;
+  var b=kbOf(), lay=[], i, t=shareTable(), conv=shareConv(t), out;
+  if(conv && shareRoman()) lay.push(shareRomLay());
   for(i=0;i<b.lay.length;i++) lay.push({rows:shareRows(b.lay[i])});
-  return {v:1, lang:langId, name:langName, box:SHARE_BOX, lay:lay};
+  out={v:1, lang:langId, name:langName, box:SHARE_BOX, lay:lay};
+  if(conv){ out.ink=t.ink; out.conv=conv; }
+  return out;
 }
 
 /* ---- when ----------------------------------------------------------------

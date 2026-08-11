@@ -25,7 +25,11 @@ struct Face: Decodable {
   let ch: String?
 }
 
-/// One key. `k` says what it does: lt sp del lay next.
+/// One key. `k` says what it does: lt sp del lay next rom.
+///
+/// `rom` is a plain roman letter on the conversion face. It carries no shape
+/// because it is not one of the person's letters -- it is the q of QWERTY,
+/// there to spell with, and what it spells is looked up rather than inserted.
 struct Key: Decodable {
   let k: String
   let w: Double?
@@ -50,6 +54,10 @@ struct Board: Decodable {
   /// canvas's space, not a font's, because that is where they were cut.
   let box: Double
   let lay: [Layer]
+  /// Every face that a candidate can be made of, once each. Absent when the
+  /// writing system needs no conversion and offers no spelling either.
+  let ink: [Face]?
+  let conv: Conv?
 }
 
 enum Shared {
