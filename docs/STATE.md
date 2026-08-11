@@ -138,6 +138,83 @@ be done from a Linux session.
 
 ---
 
+## 7. What is next, as of 2026-08-11
+
+Ordered by what blocks shipping. Nothing here is started. Anything not on this
+list has either been done or was never agreed to — check `git log` before
+assuming a thing is waiting for you.
+
+### Blocks shipping the free version
+
+1. **Posts are not on the server.** The largest single piece of unstarted work
+   in the repository. §3 has the shape of it: `post.js` writes `localStorage`,
+   `net.js` has no post call, `schema.sql` is ready and untouched. Reading and
+   writing `post` is the first half; `quote` and `follow` are the second.
+2. **Explore and Notices are empty screens.** `snsEmpty()` in `www/sns.js`.
+   They cannot be filled before 1.
+3. **The password reset mail does not arrive.** The code is right —
+   `netRecover()` calls `/auth/v1/recover`. The Auth template and the Redirect
+   URLs need checking in the Supabase dashboard, which is the owner's to do.
+4. **The two free ceilings are never explained in words.** A hundred words and
+   three AI calls a day. `capBanner()` warns at twenty words left and nothing
+   says either number before you meet it.
+5. **Signing in from Settings** was fixed but has not been opened on a phone.
+   `obBackTo`/`obReturn` in `www/onboard.js`.
+
+### Found and left alone, deliberately
+
+6. **A letter of a hidden kind is counted and unreachable.** The Letters header
+   says `5 / 30` while the rooms inside come to 29, because `ltKinds()` drops
+   the digits room on the free plan and `LETTERS.length` counts it anyway. It
+   can only happen to somebody who paid and stopped, which is the case the rest
+   of the chapter already worries about.
+7. **`ai` lifts at Plus, `sug` only at Studio, and they are the same ceiling.**
+   A Plus account is shown "3 left" on the word sheet forever and never spends
+   one. `CAN` in `core.js` states it in one place now. Which plan buys the AI is
+   a price and is the owner's to set, so nothing was changed.
+8. **`press` never reaches `kbReset`.** One button of 152, so nothing is
+   claimed about it.
+9. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
+   defined`. It is a font experiment and is not in the gate.
+
+### Offered and not yet answered
+
+10. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
+    line early on 2026-08-11; `es5` and `dead` both passed it because they read
+    with regular expressions, and the browser checks caught it ninety seconds
+    later. Two seconds would have.
+11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
+    as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
+    grep cannot tell. `i18n-check` already renders 324 screens in 10 languages;
+    recording what `t()` was asked for would say it properly. It has to be a
+    report, not a failure: a toast on an error is real and unwalked.
+12. **Two questions about screens, open since before the keyboard work.**
+    Whether the post composer's line needs a visible border, and whether the
+    word sheet's letter grid stays.
+
+### Agreed long ago, never started
+
+13. The onboarding as motion only.
+14. Vertical writing.
+15. A selectable line gap.
+
+### The owner's, in a browser
+
+16. Supabase — the reset mail template and the Redirect URLs (see 3).
+17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
+    **There is no StoreKit code at all**, so the subscriptions cannot be bought
+    yet however they are configured.
+18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
+
+### Waiting on a phone
+
+19. Build **#48** is green and on TestFlight. What it has not had is a person:
+    tapping three dots with round off should give a corner, and saving a letter
+    should land on the letters list.
+20. The free plan's keyboard chapter — the iOS steps, the hand-over state line,
+    and the QWERTY with nothing to press — has only been seen in a browser,
+    where the state line is always the red one because there is no bridge.
+
 ## If you are taking this over
 
 1. Check out the branch in §1. Do not work on `master`.
