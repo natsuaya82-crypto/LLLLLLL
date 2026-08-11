@@ -9,12 +9,13 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + press
+npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv + press
                 # green before a commit (~90s)
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
-`npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run press`.
+`npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
+`npm run press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
@@ -39,7 +40,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The nine rules the gate enforces
+## The ten rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -243,6 +244,46 @@ Also: every `.js` under `www/` must be referenced by `index.html`, and every fil
 `index.html` references must be **tracked by git** (not merely present on disk).
 Adding a script file means adding its tag and `git add`-ing it in the same commit.
 
+`assets-check` holds the same statement on the other side of the wall: every `.swift`
+under `ios/App/` must be in `App.xcodeproj`'s Sources build phase, because Xcode
+compiles what the project file lists and nothing else — a file on disk, tracked by
+git, imported by name, and simply absent from that phase is invisible to the
+compiler, and the error it produces names the missing *type*, not the missing file.
+`Compose.swift` and `CandidateBar.swift` shipped that way once: written, committed,
+pushed, left out of `project.pbxproj`, and the build failed on `cannot find 'Compose'
+in scope` with nothing pointing at why. `index.html` had been held to this rule from
+the beginning; the project file had nobody holding it. Only the Sources *phase*
+counts — a file can have a `PBXBuildFile` line and still be in no target's phase,
+which looks identical to being wired up to a plain grep of the file, and the first
+version of this check made exactly that mistake.
+
+### 10. The conversion table holds the claims made about it
+
+`www/share.js` builds two things for a writing system where the unit you TYPE and
+the unit you WRITE differ — a syllabary, an abugida, a logography: `ink`, every
+shape the extension can draw, written out once, and `conv`, a table from a roman
+spelling to the numbers in `ink`. The comments on `shareTable()`, `shareConv()` and
+section 14 of `docs/keyboard-extension.md` made seven claims about that pair in
+prose, with nothing behind any of them — a number in `map` always resolves inside
+`ink`, `max` is the longest key `map` actually has, nothing sits in `ink` that `map`
+does not point at, a key is already lower case, `ink` has no two entries the same
+shape twice, the roman face exists exactly when `wsys()` needs one and wears
+nothing but its own five kinds of key, and `conv.how` says what `wsys()` said. This
+is CLAUDE.md's own rule turned on the app's newest chapter: "a comment saying 'this
+is the one place' is worth nothing on its own... Either a check holds the claim, or
+do not make it." Nothing held these seven, so `tools/conv-check.mjs` does: it boots
+the real app, seeds the fixture `act-check` and `press` share, sets the paid plan,
+and for every writing system `WSYS` lists — asked of the page, not written out in
+the check, so a sixth kind is walked the day it is added — calls the real
+`shareKbd()` and checks all seven against what came back.
+
+It already found one. `shareTable()`'s own comment claimed a shape was reserved
+only once a key could reach it; the code asked for the ink slot *first*, so a blank
+letter and every digit left a drawing in the table that nothing pointed at — the
+one thing the table exists to avoid. The comment had been claiming the opposite of
+what the code did. `shareMapLts()`/`shareMapWords()` now ask every letter's key
+before asking `t.of()` for its slot, and the comment says so.
+
 ## What the free plan is
 
 One sentence: **your own shapes for a-z.** `ltStart` puts twenty-eight letters
@@ -251,13 +292,26 @@ the free plan adds one, deletes one or renames one. Drawing on them is the
 whole of it.
 
 That is not a restriction bolted onto the app; it is what makes the rest of the
-free plan possible. Because the twenty-eight are exactly a-z and their names
-cannot change, the keyboard can be a **QWERTY with the drawn letters
+free plan possible. Because the twenty-eight are exactly a-z, `!` and `?`, and
+their names cannot change, the keyboard can be a **QWERTY with the drawn letters
 substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
 stored nowhere, with no editor and nothing to set.
 「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
 Rename one letter and the key it answers to is gone, which is why the name
 field is not on the free letter page rather than merely being discouraged.
+
+It carries one more row now: the ten roman digits, above the QWERTY. They are
+not letters — `numbers.js` says a digit is a letter somebody gave a value to,
+and free adds no letters, so there is nothing of the person's to put there, and
+these are the plain roman ten. They sit above the letters rather than behind a
+switch because free is one face and stays one face:
+「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに抑えよう」
+A second face on free would have held only this row and nothing else, which is
+a page for the sake of having a second page. `KB_QWERTY` is `keyboard.js`'s, and
+`shareRomLay()` in `share.js` builds the paid plan's roman-for-conversion face
+from the same array, so the free plan's row and the syllabary/abugida/logo
+conversion row are one layout agreeing with itself rather than two that could
+drift apart.
 
 Four places say it, and they say four different things:
 
@@ -374,6 +428,20 @@ The language itself is the other way round and deliberately so: `WORDS`,
 me", read from 290 places, filed under `langKey()`. One thing seen from many
 places is not the same as one rule written out many times.
 
+Holding the one place is not enough if it can lose. `.sfont` said, correctly and
+in one selector, what a script-font element gets — and a dozen container rules
+in `index.html` each set `font-family:inherit` on the input inside them (`.pwfield
+input`, `.search input`, and so on), and every one of those is *two* selectors
+where `.sfont` is one, so every one of them won on specificity. The post
+composer's line could never show a drawn letter: the class was on the element,
+the font was built, the glyph for `l` was in it — and `l` came out as `l`.
+「これ押してもlになる。lingua内でも」 Beating a dozen container rules one at a
+time is a dozen places agreeing that have to be found and kept found; `.sfont`
+saying `!important` is one place saying so once. `.sfont` means "this is set in
+the letters somebody drew," the whole point of the app, and nothing may quietly
+outrank it. (Not a bug and worth knowing: `SET.myfont` is off until somebody
+turns it on — with it off there is no `.sfont` at all, and roman is correct.)
+
 ## Names
 
 A function's prefix says which part of the app it belongs to, and it must be
@@ -412,7 +480,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/sound.js` | the alphabet's three lists, one letter, and the chart a letter's sound is picked on (ch 8) |
 | `www/settings.js` | settings and plans (ch 11-12) |
 | `www/wordsheet.js` | the sheet for writing one word, and CSV (ch 13) |
-| `www/keyboard.js` | the keyboard, which the language owns and the person builds (ch 22) |
+| `www/keyboard.js` | the keyboard's layout, which the language owns and the person builds — no longer a place to type. The keyboard is chapter VI of the contents now, not a button under the alphabet (ch 22) |
 | `www/share.js` | what the system keyboard is given: the keys with the shapes already cut onto them (ch 23) |
 | `www/card.js` | the card — one line as a picture that can leave the phone (ch 15) |
 | `www/sns.js` | the timeline, the search and the notices (ch 16) |
@@ -429,7 +497,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
-| `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Nothing here is built |
+| `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Built now — `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** — so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
 | `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
@@ -445,12 +513,17 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 224`, `screens the mirror
 rendered: 324`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 5172` for the same reason — and it is what a
-change that is meant to alter nothing has to leave untouched. The pressed
-count jumped from 2952 the day the free plan got its twenty-eight letters:
-every screen holding a keyboard went from a handful of keys to a QWERTY. A
-number moving is only ever a question — what changed — and the answer has to
-be a change somebody made on purpose.
+`press` prints `buttons pressed: 3636` for the same reason — and it is what a
+change that is meant to alter nothing has to leave untouched. The count has
+moved twice, and each move is a change somebody made on purpose: it jumped
+from 2952 to 5172 the day the free plan got its twenty-eight letters, because
+every screen holding a keyboard went from a handful of keys to a QWERTY; it
+fell to 3636 the day the in-app keyboard left for the system extension —
+`kbField`, `kbTap`, `kbFlick` and the rest of what let a screen be typed on
+inside Lingua are gone, and every screen that used to carry a QWERTY for
+typing now carries only what `keyboard.js`'s editor needs. A number moving is
+only ever a question — what changed — and the answer has to be a change
+somebody made on purpose.
 
 ## Working on this repo
 
@@ -458,7 +531,7 @@ be a change somebody made on purpose.
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
   grew to hold five was split along those banners, not along anything new. The
   numbering has gaps where a chapter was closed; it is a shelf, not a count.
-- `www/glyph.js` is 73 KB (the font writer and the drawing surface). Grep for
+- `www/glyph.js` is 79 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
 - Run `npm test` after every change, not once at the end. It is fast and it is the spec.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
