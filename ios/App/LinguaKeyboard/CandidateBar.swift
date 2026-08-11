@@ -15,32 +15,27 @@ protocol CandidateBarDelegate: AnyObject {
 final class CandidateBar: UIView {
   weak var delegate: CandidateBarDelegate?
   private let scroll = UIScrollView()
-  private let typed = UILabel()
   private var picks: [Candidate] = []
   private var box: CGFloat = 800
 
-  /// What is being typed sits at the left, fixed, and the candidates scroll
-  /// past it -- so the thing you are correcting never slides off the screen
-  /// while you are looking for the one you want.
-  private let typedWidth: CGFloat = 74
+  /// There was a label pinned at the left holding what had been typed so far,
+  /// in roman, with the candidates scrolling past it. It is gone: on an
+  /// alphabet the second candidate IS that roman, so the bar was saying one
+  /// thing in two places, and on a conversion face the roman is what every
+  /// candidate is a reading of and the first of them is already at the left
+  /// edge. The seventy-four points it held go to the candidates.
 
   init(box: CGFloat) {
     self.box = box
     super.init(frame: .zero)
     backgroundColor = .clear
-    typed.font = .monospacedSystemFont(ofSize: 15, weight: .regular)
-    typed.textColor = .secondaryLabel
-    typed.textAlignment = .left
-    typed.lineBreakMode = .byTruncatingHead
-    addSubview(typed)
     scroll.showsHorizontalScrollIndicator = false
     scroll.alwaysBounceHorizontal = true
     addSubview(scroll)
   }
   required init?(coder: NSCoder) { fatalError("not from a nib") }
 
-  func show(typed t: String, picks p: [Candidate]) {
-    typed.text = t
+  func show(picks p: [Candidate]) {
     picks = p
     scroll.subviews.forEach { $0.removeFromSuperview() }
     for (i, c) in p.enumerated() {
@@ -59,9 +54,7 @@ final class CandidateBar: UIView {
 
   override func layoutSubviews() {
     super.layoutSubviews()
-    typed.frame = CGRect(x: 8, y: 0, width: typedWidth - 12, height: bounds.height)
-    scroll.frame = CGRect(x: typedWidth, y: 0,
-                          width: bounds.width - typedWidth, height: bounds.height)
+    scroll.frame = CGRect(x: 8, y: 0, width: bounds.width - 8, height: bounds.height)
     var x: CGFloat = 0
     for v in scroll.subviews {
       guard let cell = v as? CandidateCell else { continue }

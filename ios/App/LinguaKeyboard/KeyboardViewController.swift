@@ -102,7 +102,7 @@ final class KeyboardViewController: UIInputViewController,
 
   private func paintBar() {
     guard let bar = bar, let c = compose else { return }
-    bar.show(typed: c.buffer, picks: c.candidates())
+    bar.show(picks: c.candidates())
   }
 
   // ---- the finger ---------------------------------------------------------
