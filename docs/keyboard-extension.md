@@ -1,6 +1,7 @@
 # システムキーボード（Keyboard Extension）— 必要なもの全部
 
-**まだ作っていません。** これは作るための仕様書です。
+**書きました。**この文書は仕様書であり、いまは書いたものの説明でもあります。
+実機で動かしたことはまだありません（J）。
 
 名前は **`Lingua`**。ビルド時に決まり、あとから誰も変えられません（言語ごとにも
 変えられません。拡張は1つ、名前も1つ）。
@@ -292,16 +293,25 @@ needsInputModeSwitchKey が true のときだけ 🌐 を出す
 
 ### GlyphView
 
-`st` の折れ線を `UIBezierPath` で描きます。**本体と同じ描き方**にします:
+**多角形を塗るだけです。**
 
-- 線分ごとに向きに合わせた長方形（`bar()` と同じ）
-- 継ぎ目に凸包（`hull()` と同じ）
-- 端は角のまま（丸めない）
-- 点1つは正方形（`nib()` と同じ）
+ここは元々「`www/otf5.js` の `bar` / `hull` を Swift に写す。同じ規則を
+2回書くことになる」と書いてありました。**書かずに済みました** —
+`st` を線から塗り終わった形に変えたのが F で、その理由がこれです。
 
-`www/otf5.js` の `bar` / `hull` を Swift に写します。ここだけは
-**同じ規則を2回書く**ことになるので、写した所にその旨を書きます
-（言語が違うので共有できません）。
+写していたら、b スプライン・角丸め・ペン先の凸包が Swift 側にもう一組
+できていました。`GPEN` を触った日に、キーの上の文字とアプリの中の文字が
+黙って食い違って、**どちらの側の check にも見えません**。
+
+- `st` の多角形を `CGContext` で `fillPath()`
+- `st` が無ければ `ch` を文字として描く
+- `ch` も無ければ `t`（＝文字の名前）を描く
+
+3つの順番は `ltInk()` と同じです。同じ質問だからです。
+
+**正方形に収めます。** `box` を辺とする正方形をビューの短辺に合わせて中央に
+置きます。タイルとキーは正方形というのが本体の規則で（`inkCanvases`）、
+1行に並べるときの規則はそれとは別（`inkAdv`）。キーはタイル側です。
 
 ---
 
@@ -451,7 +461,8 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 ## 12. 順番と、どこであなたを待つか
 
-`B` `C` `D` `F` `G` は済みました。残っているのは下の3つです。
+`B` `C` `D` `E` `F` `G` `I` は済みました。**ビルド #39 が TestFlight に
+上がっています**（本体のみ、拡張は入っていません）。残っているのは J です。
 
 | | 値 |
 |---|---|
@@ -494,15 +505,15 @@ file's value for the com.apple.security.application-groups entitlement.
 
 | # | 誰 | やること | 状態 |
 |---|---|---|---|
-| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | I まで使いません |
+| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | **CI が読むようになりました** |
 | B | あなた | Identifiers → `com.tokinets.lingua` → App Groups に `group.com.tokinets.lingua` | 済 |
 | C | あなた | `Lingua Distribution` を Generate し直して送る | 済 |
 | D | こちら | C を base64 にして返す | 済 |
-| **E** | **あなた** | **Secret `PROVISIONING_PROFILE_BASE64` を上書き** | **残** |
+| E | あなた | Secret `PROVISIONING_PROFILE_BASE64` を上書き | 済（#39 が `ad97daaf` で署名） |
 | F | こちら | `www/share.js` — 本体が `keyboard.json` を書き出す（§5） | 済 |
 | G | こちら | `LinguaShare.swift` — App Group への書き出しとフォント登録（§9） | 済 |
-| **H** | **あなた** | **ビルドの許可 → TestFlight** | **残** |
-| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | E のあと |
+| H | あなた | ビルドの許可 → TestFlight | 済（#39） |
+| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | 済（未ビルド） |
 | **J** | **あなた** | **ビルドの許可 → 実機でフルアクセス → 確認** | **残** |
 
 ### H で確認できること／できないこと

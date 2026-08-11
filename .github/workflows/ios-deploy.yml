@@ -64,13 +64,29 @@ jobs:
           cd ios/App
           pod install
 
-      - name: Install Provisioning Profile
+      # 2枚。本体と、システムキーボードの拡張。
+      # どちらも group.com.tokinets.lingua を持っていないと Archive が落ちる。
+      # 拡張の分が欠けると落ちるのは「本体は署名できたのに appex で止まる」形で、
+      # エラーが本体の名前で出るので分かりにくい。
+      - name: Install Provisioning Profiles
         env:
           PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          KB_PROFILE_BASE64: ${{ secrets.KEYBOARD_PROVISIONING_PROFILE_BASE64 }}
         run: |
-          echo "$PROFILE_BASE64" | base64 --decode > profile.mobileprovision
+          test -n "$PROFILE_BASE64"    || { echo "::error::PROVISIONING_PROFILE_BASE64 is empty"; exit 1; }
+          test -n "$KB_PROFILE_BASE64" || { echo "::error::KEYBOARD_PROVISIONING_PROFILE_BASE64 is empty"; exit 1; }
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo "$PROFILE_BASE64"    | base64 --decode > app.mobileprovision
+          echo "$KB_PROFILE_BASE64" | base64 --decode > kb.mobileprovision
+          cp app.mobileprovision kb.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+          # 名前と App Group をログに出す。署名が通ったあとに「どっちの
+          # プロファイルで通ったのか」を後から読めるようにするため。
+          for f in app.mobileprovision kb.mobileprovision; do
+            security cms -D -i "$f" > "$f.plist"
+            echo "$f: $(/usr/libexec/PlistBuddy -c 'Print :Name' "$f.plist")"
+            /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$f.plist" \
+              || { echo "::error::$f has no application-groups entitlement"; exit 1; }
+          done
 
       - name: Build & Archive iOS
         run: |
@@ -102,6 +118,8 @@ jobs:
             <dict>
               <key>com.tokinets.lingua</key>
               <string>Lingua Distribution</string>
+              <key>com.tokinets.lingua.keyboard</key>
+              <string>Lingua Keyboard Distribution</string>
             </dict>
           </dict>
           </plist>
