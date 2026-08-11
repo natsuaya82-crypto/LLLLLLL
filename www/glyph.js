@@ -1545,6 +1545,5 @@ function render(){
      and carried to where it belongs */
   ltDragMount();
   /* and a key, wherever the keyboard is, can be flicked off */
-  kbMount();
   if(route==='form') formMount();
 }

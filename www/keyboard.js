@@ -112,6 +112,14 @@ function kbLayer(){ var b=kbOf(); return b.lay[Math.min(kbLay, b.lay.length-1)];
    somebody changes something, and from then on it is theirs and does not
    quietly rearrange itself under them. */
 function kbEdit(){ if(!KB) KB=kbDefault(); return KB; }
+/* How many keys are set out, over every layer -- what the contents page
+   shows beside the chapter, the way it shows a count beside the others. */
+function kbKeys(){
+  var b=kbOf(), n=0, i, j;
+  for(i=0;i<b.lay.length;i++)
+    for(j=0;j<b.lay[i].rows.length;j++) n+=b.lay[i].rows[j].length;
+  return n;
+}
 function kbAt(ri, ki){
   var rows=kbLayer().rows;
   return (rows[ri] && rows[ri][ki])? rows[ri][ki] : null;
@@ -146,10 +154,20 @@ function kbFlicks(key){
   }
   return out;
 }
-/* One layer, as it will be pressed. `act` is what a key press is called --
-   which differs between the keyboard being used and the keyboard being
-   built, and is the only thing that does. */
-function kbHTML(act, sel){
+/* What a letter key types. It is the letter's NAME, because the name is the
+   code point the font draws -- so what lands in a field, or in Messages, is
+   the letter itself and not a transliteration of it. The font unification is
+   what makes this one line instead of a conversion table.
+
+   The only caller left is www/share.js, which puts it ON the key before the
+   key leaves for the extension. Nothing in the app types on this keyboard
+   any more; everything that does is on the other side of the App Group. */
+function kbTyped(id){ return String(ltName(ltById(id))||''); }
+
+/* One layer, as it will be pressed -- which now means pressed to be EDITED.
+   `act` was here because a key meant two things, typing and editing; it
+   means one. */
+function kbHTML(sel){
   var lay=kbLayer(), out='', ri, ki, row, key;
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
@@ -159,7 +177,7 @@ function kbHTML(act, sel){
       out+='<button class="kbk'+(key.k!=='lt'? ' fn':'')+
         ((sel && sel.r===ri && sel.k===ki)? ' on':'')+
         '" style="flex:'+(key.w||1)+'" data-r="'+ri+'" data-k="'+ki+'"'+
-        DO(act, [ri, ki]) + '>'+kbFlicks(key)+
+        DO('kbPick', [ri, ki]) + '>'+kbFlicks(key)+
         '<span class="kbc">'+kbFace(key)+'</span></button>';
     }
     out+='</div>';
@@ -167,110 +185,21 @@ function kbHTML(act, sel){
   return '<div class="kb" id="kb">'+out+'</div>';
 }
 
-/* ---- the flick --------------------------------------------------------
-   A press that leaves the key it started on takes what that corner holds.
-   Under the threshold it is a tap, and a tap is left to the click that
-   follows it, so a key still works with a mouse and under tools/press.mjs.
+/* ---- the keyboard is not typed on in here ------------------------------
+   It used to be. A word's spelling, an example, a post: each had this
+   keyboard under it, with a flick on every key and a tap that put a letter
+   in. All of that is gone, and what took it away is that the keyboard is
+   real now -- ios/App/LinguaKeyboard, on the phone, in Messages and every
+   other app. 「アプリ内キーボードいらないでしょ。アップル拡張だけ。」
 
-   The handlers hang off the keyboard rather than the keys, the same way the
-   whole app has one listener rather than one per button. */
-var KBD=null;
-function kbMount(){
-  var g=document.getElementById('kb');
-  if(!g) return;
-  g.addEventListener('touchstart', kbDown, false);
-  g.addEventListener('touchend', kbUp, false);
-  g.addEventListener('touchcancel', kbOff, false);
-}
-function kbKeyAt(el){
-  while(el && el.classList && !el.classList.contains('kbk')) el=el.parentNode;
-  return (el && el.classList && el.classList.contains('kbk'))? el : null;
-}
-function kbDown(e){
-  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e;
-  if(!b || !p) return;
-  KBD={el:b, x:p.clientX, y:p.clientY};
-}
-function kbOff(){ KBD=null; }
-function kbUp(e){
-  if(!KBD) return;
-  var p=(e.changedTouches && e.changedTouches[0]) || e, d=KBD;
-  KBD=null;
-  if(!p) return;
-  var dx=p.clientX-d.x, dy=p.clientY-d.y;
-  if(dx*dx+dy*dy < 324) return;                  /* a tap: the click has it */
-  /* whichever axis moved further, and which way along it */
-  var i = (Math.abs(dx)>Math.abs(dy)) ? (dx>0? 1 : 3) : (dy>0? 2 : 0);
-  e.preventDefault();                            /* and no click after this */
-  kbFlick(parseInt(d.el.getAttribute('data-r'), 10),
-          parseInt(d.el.getAttribute('data-k'), 10), i);
-}
-/* What a flick does is what a press does, with a different letter -- so it
-   goes through the same door rather than a second one beside it. */
-var KB_TAP=null;
-function kbFlick(ri, ki, dir){
-  var key=kbAt(ri, ki);
-  if(!key || !key.f || !key.f[dir] || !KB_TAP) return;
-  KB_TAP(key.f[dir]);
-}
-/* Who a keypress belongs to. The new-word sheet and the word being edited
-   both type on the same keyboard and put the letter in different places, so
-   the sheet says which before it draws one. */
-function kbUse(fn){ KB_TAP=fn; }
-function kbTap(ri, ki){
-  var key=kbAt(ri, ki);
-  if(!key) return;
-  if(key.k==='lay'){ kbLay=parseInt(key.v, 10)||0; render(); return; }
-  if(key.k==='del'){ if(KB_TAP) KB_TAP(''); return; }
-  /* The gap between two words. It is not a letter -- there is no letter for
-     it and there never will be -- so it cannot travel as an id, and it must
-     not arrive as an empty one either, which is what backspace is. It is the
-     second argument, and every taker that spells a single word ignores it. */
-  if(key.k==='sp'){ if(KB_TAP) KB_TAP('', 'sp'); return; }
-  if(key.v && KB_TAP) KB_TAP(key.v);
-}
+   A second keyboard inside the app was a second answer to a question that
+   has one. It also could not be the right answer: it only ever worked in
+   Lingua, which is the one place a language you invented is least worth
+   writing in.
 
-/* ---- a line of the language, typed into a plain field -------------------
-   Three places hold one: a word's example, a grammar stage's example, and a
-   post. All three are shown in the font somebody drew, and all three were
-   typed on the phone's keyboard, in roman, and only LOOKED like the language
-   afterwards.
-
-   A key puts the letter's NAME into the field, because the name is the code
-   point the font draws -- so what lands in the box is the letter itself. The
-   font unification is what makes this one line instead of a conversion table.
-
-   One function, three callers. It was going to be three. */
-/* What a letter key types. Its own line because there is a fourth caller now
-   that is not a field at all: the system keyboard is a separate program in a
-   separate language, and what it inserts has to be decided here or it is
-   decided twice. www/share.js puts this on the key before the key leaves. */
-function kbTyped(id){ return String(ltName(ltById(id))||''); }
-function kbField(id){
-  return function(v, sp){
-    var e=document.getElementById(id);
-    if(!e) return;
-    if(sp){ e.value=String(e.value||'')+' '; }
-    else if(!v){ e.value=String(e.value||'').slice(0, -1); }
-    else { e.value=String(e.value||'')+kbTyped(v); }
-    if(e.oninput) e.oninput();
-  };
-}
-/* The field, and the keyboard under it. `attrs` is whatever that caller's
-   field already carried -- the name it types into, the Enter it answers. */
-function kbFieldHTML(id, ph, attrs){
-  if(!ltOfKind('alpha').length)
-    return '<input id="'+id+'" placeholder="'+esc(ph)+'" autocomplete="off" '+
-      'autocorrect="off" spellcheck="false"'+(attrs||'')+'>';
-  kbUse(kbField(id));
-  /* Wrapped, because two of the three callers put their field in a flex row
-     beside a gloss and an add button -- and a keyboard is not something that
-     shares a row. */
-  return '<div class="kbwrap"><input id="'+id+'" class="kbin'+(myFontOn()? ' sfont':'')+'" '+
-    'placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
-    'spellcheck="false" readonly'+(attrs||'')+'>'+
-    kbHTML('kbTap', null)+'</div>';
-}
+   So this chapter builds the keyboard and no longer offers it. What is left
+   below is the editor, and kbTyped() above, which is what share.js puts on
+   a key before the key leaves. */
 
 /* ---- building one -----------------------------------------------------
    The keyboard, shown the size it will be, with every key pressable -- and
@@ -296,7 +225,7 @@ function vKb(){
   }
   return '<div class="view">'+navTop('')+'<div class="body">'+
     out+
-    kbHTML('kbPick', kbSel)+
+    kbHTML(kbSel)+
     '<div class="kbadd">'+
       '<button class="btn ghost"' + DO('kbAddRow') + '>'+t('kb.row.add')+'</button>'+
       '<button class="btn ghost"' + DO('kbAddLay') + '>'+t('kb.lay.add')+'</button>'+

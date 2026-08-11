@@ -37,7 +37,7 @@
 
 /* What was last handed over. Everything below is rebuilt from scratch each
    time, so this is the only thing the chapter remembers. */
-var SHARE={sent:null};
+var SHARE={sent:null, how:''};
 
 /* The square the shapes are drawn in. It is otf5's cell and glyph.js's
    lattice — both are 800 — and the extension is told rather than trusting a
@@ -129,19 +129,46 @@ function shareKbd(){
 function shareSig(){
   return scriptSig()+'|'+langId+'|'+(has('plus')? 'p':'f')+'|'+JSON.stringify(KB);
 }
+/* The hand onto the native side. Asked for once and kept, because asking
+   twice is a warning in the console and the same object back.
+
+   It is registerPlugin() and NOT Capacitor.Plugins.LinguaShare. That was the
+   first way this was written and it silently did nothing: since Capacitor 6
+   the Plugins object holds only what registerPlugin has put there, so the
+   native class was registered, the app looked in the wrong drawer, found
+   nothing, and — because it was written to say nothing when there was nobody
+   to tell — said nothing. The keyboard on the phone answered "draw some
+   letters first" while the letters sat drawn on the other side of a wall.
+   That cost a build.
+
+   Undefined means never asked; null means asked and not there, which is
+   every browser this ever runs in outside the app. */
+var SHARE_P;
+function sharePlug(){
+  if(SHARE_P===undefined){
+    SHARE_P=(window.Capacitor && Capacitor.registerPlugin)?
+      Capacitor.registerPlugin('LinguaShare') : null;
+  }
+  return SHARE_P;
+}
 /* The one window onto the App Group, the way net.js is the one window onto
-   the server. The plugin is a Mac's work and is not built yet; until it is,
-   this finds nothing and says nothing, because there is no one to tell —
-   the person did not ask for this and is not waiting on it.
+   the server.
 
    The payload is built whether or not anybody is listening, so that every
    walk of the app builds it and a shape that cannot be cut is a failed check
-   here rather than a blank keyboard on somebody's phone. */
+   here rather than a blank keyboard on somebody's phone.
+
+   What came of the last push is kept rather than dropped. There is nothing to
+   say to somebody standing in the app — they did not ask for this and are not
+   waiting on it — but the one question worth answering later is "did it ever
+   land", and the answer has to survive until something asks. */
 function sharePush(){
-  var sig=shareSig(), out=JSON.stringify(shareKbd()), p;
+  var sig=shareSig(), out=JSON.stringify(shareKbd()), p=sharePlug();
   if(sig===SHARE.sent) return;
   SHARE.sent=sig;
-  p=window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LinguaShare;
-  if(!p) return;
-  p.write({json:out, font:SFONT.b64||''});
+  if(!p){ SHARE.how='no plugin'; return; }
+  SHARE.how='sent';
+  p.write({json:out, font:SFONT.b64||''})['catch'](function(e){
+    SHARE.how='refused: '+(e && e.message? e.message : e);
+  });
 }

@@ -154,11 +154,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A line of the language, typed on the language's own keyboard. `readonly`
    keeps the phone's keyboard from coming up over it -- the keys are on the
    page, and two keyboards at once is one too many. */
-.kbwrap{flex:1 1 100%;min-width:100%}
-.kbin{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);
+.lnin{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);
       border-radius:10px;color:var(--tx);padding:11px 13px;font-family:inherit;
       font-size:.98rem;outline:none;margin-bottom:6px}
-.kbin:focus{border-color:var(--goldln)}
+.lnin:focus{border-color:var(--goldln)}
 /* One slot of a key -- the key itself, or one of its four corners -- and what
    is in it. The same row shape either way, because they hold the same thing. */
 .kbslot{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;
@@ -461,6 +460,21 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .ltcn{display:block;font-family:'Cinzel',Georgia,serif;font-size:.95rem;color:var(--txs);
       max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ltc.dup .ltcn{color:var(--bad)}
+/* The same cell, as something to pick rather than to browse. A word is
+   spelled by pressing letters one after another, so what matters is how many
+   fit on a screen and how far the thumb travels -- not how well each one is
+   presented. 44pt is the floor and this is 52.
+
+   A letter with nothing drawn on it shows only its name here. The pen on the
+   alphabet page means "this one is waiting for you"; in the middle of
+   spelling a word it means nothing, and twenty-eight of them mean less. */
+.ltgrid.ltpick{grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:5px}
+.ltgrid.ltpick .ltc{min-height:52px;padding:5px 2px 4px;gap:2px;border-radius:10px}
+.ltgrid.ltpick .ltcf{height:24px}
+.ltgrid.ltpick .ltc canvas.tc{width:24px;height:24px}
+.ltgrid.ltpick .ltc .bch{font-size:1.05rem}
+.ltgrid.ltpick .ltcn{font-size:.8rem}
+.ltgrid.ltpick .nol{display:none}
 /* Picked up: it rides over the others and follows the finger. */
 .ltc.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
 .sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;

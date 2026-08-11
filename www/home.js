@@ -42,7 +42,18 @@ function tocRows(){
     {n:'IV',  k:'toc.notes',   r:'notes',   v:NOTES.length,
      txt:NOTES.length? tn('count.notes', NOTES.length) : '—'},
     {n:'V',   k:'toc.talk',    r:'talk',    v:TALK.length,
-     txt:TALK.length? tn('count.turns', TALK.length) : '—'}
+     txt:TALK.length? tn('count.turns', TALK.length) : '—'},
+    /* The keyboard is a chapter now rather than a button at the foot of the
+       alphabet. It stopped being a thing the alphabet has when it stopped
+       being something you type on in here: what it is is the layout of the
+       keyboard on the PHONE, which is a made thing of its own beside the
+       letters and the words.
+
+       It is here on the free plan too, saying what it is, because the row is
+       numbered and a numbered row that appears when you pay renumbers the
+       book under somebody who already knew where things were. */
+    {n:'VI',  k:'kb.title',   r:'kb',     v:0,
+     txt:has('plus')? String(kbKeys()) : '—'}
   ];
 }
 

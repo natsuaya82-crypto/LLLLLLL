@@ -175,6 +175,23 @@ function goneBox(){
 function viewGone(){
   return '<div class="view">'+navTop('')+'<div class="body">'+goneBox()+'</div></div>';
 }
+/* A field you write one line of the language into. Three screens hold one:
+   a word's example, a grammar stage's example, and a post.
+
+   It used to be a field with the app's own keyboard bolted under it, and the
+   field was `readonly` because that keyboard was the only way into it. Both
+   are gone. The language has a keyboard on the phone now -- a real one, in
+   Messages and Mail and everywhere else -- and a second one living only
+   inside Lingua was a second answer to a question that has one, in the app
+   that needs it least. 「アプリ内キーボードいらないでしょ。アップル拡張だけ。」
+
+   So it is an ordinary field again, set in the letters somebody drew when
+   the setting says so. */
+function lnField(id, ph, attrs){
+  return '<input id="'+id+'" class="lnin'+(myFontOn()? ' sfont':'')+'" '+
+    'placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
+    'spellcheck="false"'+(attrs||'')+'>';
+}
 /* And the bar a ROOT carries, which is a different bar: there is nothing
    behind a root, so it has no way back -- only its name, and at most one
    control at the far end. It was written out on the contents page and again

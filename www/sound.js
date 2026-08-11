@@ -370,15 +370,6 @@ function vLetters(){
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
     '<div class="toc">'+ltKinds().map(ltKindRow).join('')+'</div>'+
-    /* The keyboard is made of these letters and is set out by hand, so the
-       way to it is from the chapter they are in. On the free plan there is
-       nothing to set out -- it is QWERTY with the drawn letters in it and
-       that is the whole of it -- so there is nowhere to go. */
-    (has('plus')
-      ? '<button class="trow" style="margin-top:10px"' + DO('go', ["kb"]) + '>'+
-          '<span class="rn"></span><span class="rt">'+esc(t('kb.title'))+'</span>'+
-          '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'
-      : '')+
     '</div></div>';
 }
 /* One of the three. The base belongs on the digits page and nowhere else,
@@ -405,7 +396,7 @@ function vLtset(){
     '<div class="body">'+
     (list.length
       ? '<div class="ltgrid" id="ltgrid" data-k="'+esc(k)+'">'+
-          list.map(ltCell).join('')+'</div>'
+          list.map(function(l){ return ltCell(l, ''); }).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
@@ -426,12 +417,31 @@ function vLtset(){
    without being wrong. The sentence saying which reading is taken is on the
    letter's own page: there is no room for a sentence in a cell, and no reason
    to say it in both places. */
-function ltCell(l){
+function ltCell(l, press){
   var nm=ltName(l)||t('lt.reads.none');
   return '<button class="ltc'+(ltTaken(l)? ' dup':'')+'" data-id="'+esc(l.id)+'"'+
-    DO('go', ["letter", l.id]) + ' aria-label="'+esc(nm)+'">'+
+    (press || DO('go', ["letter", l.id])) + ' aria-label="'+esc(nm)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm)+'</span></button>';
+}
+/* The alphabet as something to press for a reason other than opening it:
+   the word sheet spells a word out of letters, and a letter is put in by
+   pressing it. `pressOf` is what one press is called, so the cell stays one
+   cell -- the same shape, the same name under it, the same red on a letter
+   whose reading another letter has already taken.
+
+   No id on the grid: the one on the alphabet page carries a drag to reorder,
+   and the order of the alphabet is not something to change halfway through
+   writing a word.
+
+   This is where the keyboard used to be. A word is spelled out of letters
+   and always was 「音がなんでいっつもついてくんの？文字は文字」 -- what has gone
+   is the LAYOUT, which was a keyboard's business, and a keyboard belongs on
+   the phone rather than in one app. The letters themselves stayed. */
+function ltGrid(list, pressOf){
+  var out='', i;
+  for(i=0;i<list.length;i++) out+=ltCell(list[i], pressOf(list[i]));
+  return '<div class="ltgrid ltpick">'+out+'</div>';
 }
 
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,

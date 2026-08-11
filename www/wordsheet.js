@@ -105,12 +105,6 @@ function addSpellHTML(){
 }
 var addMode='';
 function addSetMode(m){ addMode=m; addRedraw(); }
-/* A key pressed on the language's own keyboard. The blank is the backspace,
-   because typing a letter and taking one back are the same press through the
-   same door -- www/keyboard.js has no idea which sheet it is in. */
-/* A word is one word, so the space key does nothing here -- the same
-   keyboard is under a sentence field, where it does. */
-function addKbTap(v, sp){ if(sp) return; if(v) addLtr(v); else addBack(); }
 function addKeys(){
   var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha'));
   var m=addMode || (ls.length? 'lt' : 'ph');
@@ -124,7 +118,10 @@ function addKeys(){
       '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('addSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
       '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('addSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
-  if(m==='lt' && ls.length){ kbUse(addKbTap); return rail+kbHTML('kbTap', null); }
+  /* The letters, to be pressed one at a time. Taking one back is the
+     backspace already on the spelling above, so there is none here. */
+  if(m==='lt' && ls.length)
+    return rail+ltGrid(ls, function(l){ return DO('addLtr', [l.id]); });
   return rail+'<div class="phkeys">'+mine.map(function(x){
     return phkHTML(x, DO('addPh',[x]));
   }).join('')+'</div>';
@@ -253,7 +250,6 @@ function wdKeyMode(){
   return ltOfKind('alpha').length? 'lt' : 'ph';
 }
 function wdSetMode(m){ wdMode=m; wdPaint(); }
-function wdKbTap(v, sp){ if(sp) return; if(v) wdLtr(v); else wdBack(); }
 function wdKeysHTML(){
   var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha')), m=wdKeyMode();
   if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
@@ -262,7 +258,8 @@ function wdKeysHTML(){
       '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('wdSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
       '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('wdSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
       '</div>' : '';
-  if(m==='lt' && ls.length){ kbUse(wdKbTap); return rail+kbHTML('kbTap', null); }
+  if(m==='lt' && ls.length)
+    return rail+ltGrid(ls, function(l){ return DO('wdLtr', [l.id]); });
   return rail+'<div class="phkeys">'+mine.map(function(x){
     return phkHTML(x, DO('wdKey',[x])); }).join('')+'</div>';
 }
@@ -376,7 +373,7 @@ function wdExHTML(){
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
-      kbFieldHTML('wd-exl', exHint(), '')+
+      lnField('wd-exl', exHint(), '')+
       '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('wdAddEx') + '>'+
       '<button class="btn ghost"' + DO('wdAddEx') + '>'+t('word.mn.add')+'</button>'+
