@@ -241,13 +241,18 @@ function kbTap(ri, ki){
    font unification is what makes this one line instead of a conversion table.
 
    One function, three callers. It was going to be three. */
+/* What a letter key types. Its own line because there is a fourth caller now
+   that is not a field at all: the system keyboard is a separate program in a
+   separate language, and what it inserts has to be decided here or it is
+   decided twice. www/share.js puts this on the key before the key leaves. */
+function kbTyped(id){ return String(ltName(ltById(id))||''); }
 function kbField(id){
   return function(v, sp){
     var e=document.getElementById(id);
     if(!e) return;
     if(sp){ e.value=String(e.value||'')+' '; }
     else if(!v){ e.value=String(e.value||'').slice(0, -1); }
-    else { e.value=String(e.value||'')+String(ltName(ltById(v))||''); }
+    else { e.value=String(e.value||'')+kbTyped(v); }
     if(e.oninput) e.oninput();
   };
 }

@@ -381,6 +381,7 @@ telling the truth. The prefix is how 500-odd globals in one namespace stay
 findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
 `tk*` talk, `lt*` letters, `wd*` the word sheet, `add*` the new-word sheet,
 `wld*` the world, `w*` word data, `words*` the word list, `nt*` the notebook,
+`share*` what leaves for the system keyboard,
 `f*` search, `v*` a view, `open*` a form, `net*` the server.
 
 `set*` is reserved for settings: it writes `SET.x`, or it builds part of the
@@ -412,6 +413,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/settings.js` | settings and plans (ch 11-12) |
 | `www/wordsheet.js` | the sheet for writing one word, and CSV (ch 13) |
 | `www/keyboard.js` | the keyboard, which the language owns and the person builds (ch 22) |
+| `www/share.js` | what the system keyboard is given: the keys with the shapes already cut onto them (ch 23) |
 | `www/card.js` | the card — one line as a picture that can leave the phone (ch 15) |
 | `www/sns.js` | the timeline, the search and the notices (ch 16) |
 | `www/import.js` | bringing somebody's existing list in (ch 17) |
@@ -452,7 +454,7 @@ be a change somebody made on purpose.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js`, chapter 22 closes `keyboard.js`, and
+- The book is numbered: chapter 0 opens `core.js`, chapter 23 closes `share.js`, and
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
   grew to hold five was split along those banners, not along anything new. The
   numbering has gaps where a chapter was closed; it is a shelf, not a count.

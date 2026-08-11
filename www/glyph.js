@@ -225,7 +225,13 @@ function scriptGlyphDefs(){
 
 /* Build the font and hand it to the browser as a @font-face. This runs on the
    device, in about a millisecond, and touches no network. */
-var SFONT={built:false, sig:null};
+/* `b64` is the same font as a file rather than as a @font-face -- the system
+   keyboard is a separate program and cannot be handed a stylesheet, so it is
+   given the bytes. Kept here rather than rebuilt in www/share.js, because
+   rebuilding means writing out the pen, the side and the two heights a second
+   time, and the day one of them changes the keyboard's letters would quietly
+   stop matching the app's. */
+var SFONT={built:false, sig:null, b64:''};
 /* What the font is made of, in one string. The alphabet grows on its own as
    the dictionary does, so a word written today can need a letter the font was
    not built with — this is how the page notices without rebuilding on every
@@ -252,6 +258,7 @@ function installScriptFont(){
   var el=document.getElementById('sfontcss');
   if(el) el.parentNode.removeChild(el);
   SFONT.built=false;
+  SFONT.b64='';
   SFONT.sig=scriptSig();
   try{
     var d=scriptGlyphDefs();
@@ -267,8 +274,9 @@ function installScriptFont(){
     el.appendChild(document.createTextNode(
       "@font-face{font-family:'LinguaScript';src:url("+f.dataUrl()+") format('opentype');}"));
     document.head.appendChild(el);
+    SFONT.b64=f.base64();
     SFONT.built=true;
-  }catch(e){ SFONT.built=false; }
+  }catch(e){ SFONT.built=false; SFONT.b64=''; }
 }
 /* Two ways to see your language in its own writing exist side by side: letters
    you borrowed from an existing script, which change the text itself, and
@@ -1499,6 +1507,9 @@ function render(){
     return; }
   /* a word written since the font was built can need a letter it does not have */
   if(SFONT.sig!==null && SFONT.sig!==scriptSig()) installScriptFont();
+  /* and the system keyboard, which is a second program and holds its own copy
+     of the letters, is told the same way and for the same reason */
+  sharePush();
   /* Which screen this route shows is written on the page itself, in
      www/route-map.js, with the view function rather than its name. This used
      to be twenty-two conditions here -- a second copy of PAGES that nothing
