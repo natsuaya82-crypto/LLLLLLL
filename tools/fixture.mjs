@@ -211,6 +211,14 @@ export function halfDone(){
     ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
                                                    openWord('kano'); const h = FORM.html;
                                                    wdMode = ''; SET.plan = 'free'; return h; }],
+    /* A grammar stage of your own: the door is on the paid plan, because the
+       fifteen are the whole of the free chapter. */
+    ['a grammar stage of your own', () => { SET.plan = 'plus'; openOwnPhase();
+                                            const h = FORM.html;
+                                            SET.plan = 'free'; return h; }],
+    ['the grammar list, paid', () => { SET.plan = 'plus'; window.route='gram';
+                                       NAV=[{r:'gram'}]; const h = vGram();
+                                       SET.plan = 'free'; return h; }],
     ['a stage slot, by sound', () => { SET.plan = 'plus';
                                        openSlot(stAll()[0].id, stAll()[0].slots[0]);
                                        const h = FORM.html;

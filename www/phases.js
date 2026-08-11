@@ -368,8 +368,15 @@ function stListHTML(){
   var a=stAll(), i, rows='';
   for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
   return '<div class="stlist">'+rows+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
-      ICON_PLUS+t('stg.own.add.btn')+'</button>'+
+    /* The fifteen are free and are the whole of the chapter there. They ask
+       for forty-six words between them, which is most of what a free
+       dictionary is for; a stage of your own is the sixteenth and past that
+       is what can('gram') buys. Deleting one is not gated -- a language that
+       came down from a paid plan still owns what it made. */
+    (can('gram')
+      ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
+          ICON_PLUS+t('stg.own.add.btn')+'</button>'
+      : '')+
     '<div class="sec">'+t('gram.seen')+'</div>'+
     (findings().length? findings().map(function(x){
       return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
