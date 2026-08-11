@@ -349,11 +349,23 @@ var LT_KIND={alpha:'lt.all', mark:'lt.marks', num:'num.h'};
    room would be empty forever and there would be no way to put anything in
    it. A room like that is worse than no room. */
 function ltKinds(){ return can('kinds')? LT_KINDS : ['alpha', 'mark']; }
+/* Which of the three a letter is. A kind is not stored on a letter -- it is
+   read off what the letter is -- so this and ltOfKind() below are the one
+   split seen from its two ends, and they sit together so they cannot answer
+   differently. */
+function ltKindOf(l){
+  if(!l) return '';
+  if(numIsDigit(l)) return 'num';
+  if(ltIsMark(l)) return 'mark';
+  return 'alpha';
+}
 function ltOfKind(k){
+  /* Digits and marks keep their own list functions because each has an order
+     of its own -- a digit's is its value. The alphabet is everything else,
+     and says so by asking ltKindOf rather than restating the two tests. */
   if(k==='num') return numDigits();
   if(k==='mark') return ltMarks();
-  return ltOrder(LETTERS.filter(function(l){
-    return !ltIsMark(l) && !numIsDigit(l); }));
+  return ltOrder(LETTERS.filter(function(l){ return ltKindOf(l)==='alpha'; }));
 }
 function ltKindRow(k){
   return '<button class="trow"' + DO('go', ["ltset", k]) + '>'+

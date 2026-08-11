@@ -73,6 +73,16 @@ function back(){
   if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
 }
+/* Is this screen already behind you? go() lands on one that is by cutting the
+   trail back to it rather than pushing, so a screen that wants to finish two
+   steps up can ask first and fall back to plain back() when the answer is no.
+   Without the asking it would push a way forward to a screen you arrived
+   through, and the back button would walk deeper into the app. */
+function navHas(r, a){
+  var i;
+  for(i=0;i<NAV.length-1;i++) if(NAV[i].r===r && NAV[i].a===a) return true;
+  return false;
+}
 /* A tab is not somewhere you came through, it is where you are. Tapping one
    throws the trail away rather than stacking three tabs on top of it. */
 /* Leaving the search tab for a chapter of the build tab: two moves, and the

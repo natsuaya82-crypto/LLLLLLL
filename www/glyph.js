@@ -780,9 +780,19 @@ function geSave(){
   if(keep.length) SET.myfont=true;
   save();
   installScriptFont();
-  var r=GE.r, snd=(ltById(GE.lid)||{}).snd||[];
+  var r=GE.r, l=ltById(GE.lid), snd=(l||{}).snd||[], k=ltKindOf(l);
   GE=null;
-  back();
+  /* Saving a letter finishes the letter, so it puts you back with the others
+     rather than on the page about the one you just drew -- which is where
+     back() landed, one press short of the list you came from.
+     「保存したら勝手にアルファベット一覧のとこに戻って欲しいかも」
+
+     Only when that list is the way you came in. The abugida bench opens this
+     screen too, and from there the letters list is not behind you: going to
+     it would be going somewhere new, with the drawing screen left in front
+     of the back button. */
+  if(k && navHas('ltset', k)) go('ltset', k);
+  else back();
   /* The shape and the sound are the same thing seen twice. Drawing one in
      silence leaves them unconnected, so the letter says itself as it is put
      away -- and only if there is a letter, since deleting one should not. */
@@ -1190,14 +1200,27 @@ function geUp(ev){
      the ends of a circle, so it is always a half circle bowing the same way
      whichever end was tapped first -- measured, both directions, 50% of the
      chord every time. The third tap is what makes it a curve anyone chose. */
-  /* Tapping builds too, and needs no mode. Two dots are a line. A third and
-     any after it bend that line through themselves, in the order they were
-     put. Round is for the finger, not for this. */
+  /* Tapping builds too. Two dots are a line; a third and any after it are
+     places the line has to pass through, and ROUND says whether it passes
+     through them or turns at them.
+
+     It used to bend at every one of them whatever the button said -- the
+     comment above it read "Round is for the finger, not for this", which was
+     a decision, and it was the wrong one: it meant nobody could tap out a
+     corner. Three dots for an L came back as a bow, with the round button
+     sitting there unpressed. 「ラウンドボタン押してない時も丸くなる」
+
+     Off, the flag is taken back off, not merely left unset: round can be
+     turned off part-way through a stroke, and a stroke half bent and half
+     angled is not something anybody asked for. */
   if(!GE.moved && !GE.hit){
     var tst=GE.st[GE.si];
     if(tst && tst.pts.length>=3){
       delete tst.k;
-      for(var ti=1; ti<tst.pts.length-1; ti++) tst.pts[ti][2]='c';
+      for(var ti=1; ti<tst.pts.length-1; ti++){
+        if(GE.round) tst.pts[ti][2]='c';
+        else tst.pts[ti]=[tst.pts[ti][0], tst.pts[ti][1]];
+      }
     }
   }
   /* Tapping the dot just placed says the stroke is finished. It used to
