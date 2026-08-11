@@ -665,6 +665,18 @@ function ltCodes(l){
     for(j=0;j<f.length;j++) if(f[j] && out.indexOf(f[j])<0) out.push(f[j]);
   }
   add(l && l.ab);
+  /* A digit's value, which is the only thing it is called. numbers.js takes a
+     letter's readings away when it gives it a value, and a digit is never
+     given an `ab` -- so without this line ltCodes() answered NOTHING for one,
+     and a digit somebody had drawn got no code point and was therefore not in
+     the font at all. It typed a plain roman 1 and looked like one.
+
+     share.js had already noticed the gap and worked around it for the
+     conversion table, by adding kbTyped() to the keys. The font had nobody
+     doing that for it. It is the same bug scriptGlyphDefs was rebuilt around
+     -- a letter that none of the lists could see -- arriving again through
+     the one kind of letter that had not existed yet. */
+  if(numIsDigit(l)) add(numLabel(l.val));
   for(i=0;i<u.length;i++) add(u[i]);
   return out;
 }
@@ -714,6 +726,39 @@ function spSetU(st, u){
 }
 /* The word as it is written: the letters, by the name each of them has. This
    is what the font draws too, since a letter's name is its code point. */
+/* A typed line, cut into the letters that spell it.
+
+   The free plan is letters and nothing else: a to z with the shapes somebody
+   drew on them, and the sound is a thing a letter HAS rather than a thing you
+   pick from. So a word is typed, and this is what typing means -- each letter
+   matched by the name it answers to, longest name first so a letter called
+   `th` wins over `t` where both could fit.
+   「文字ベースに音が付随だからね？音から選択するのは課金機能」
+
+   No unit is put on a position. spUnit() falls back to what the letter reads
+   when there is none, which is exactly right here: nobody chose a sound, so
+   the letter's own answer stands and keeps standing if the letter changes it.
+   A character that answers to no letter is dropped rather than guessed at --
+   the alphabet is the whole of what can be written. */
+function spType(text){
+  var s=String(text||''), out=[], names=[], i, j, n, l;
+  for(i=0;i<LETTERS.length;i++){
+    n=String(ltName(LETTERS[i])||'').toLowerCase();
+    if(n) names.push({n:n, id:LETTERS[i].id});
+  }
+  names.sort(function(a, b){ return b.n.length-a.n.length; });
+  i=0;
+  while(i<s.length){
+    l=null;
+    for(j=0;j<names.length;j++){
+      if(s.substr(i, names[j].n.length).toLowerCase()===names[j].n){ l=names[j]; break; }
+    }
+    if(!l){ i++; continue; }
+    out.push({l:l.id});
+    i+=l.n.length;
+  }
+  return out;
+}
 function spWord(sp){
   var out='', i, l;
   for(i=0;i<sp.length;i++){

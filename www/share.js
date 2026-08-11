@@ -76,6 +76,12 @@ function shareKey(key){
   if(!key) return null;
   if(key.k==='lt'){
     o=shareFace(key.v);
+    /* What the KEY types, when the key says. Only the fixed keyboard does --
+       kbFix() puts the a-z character that found the letter on it, so a letter
+       an older language calls `O` still types `o` from the `o` key. A
+       keyboard somebody built has no override and types the names they
+       chose. */
+    if(key.t) o.t=key.t;
     o.k='lt';
   }else if(key.k==='lay'){
     /* A layer key wears the first letter of the layer it goes to, the same

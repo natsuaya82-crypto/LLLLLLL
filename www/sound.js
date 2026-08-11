@@ -348,13 +348,15 @@ var LT_KIND={alpha:'lt.all', mark:'lt.marks', num:'num.h'};
    add and give a value to, and the free plan adds nothing -- so on free the
    room would be empty forever and there would be no way to put anything in
    it. A room like that is worse than no room. */
-/* The three rooms, or the ones a plan has anything to put in.
-   Free has digits now -- ltStart gives it as many as the base has, and they
-   are slots to draw on exactly like a to z -- so the room is no longer empty
-   forever and there is something behind the door. What free still cannot do
-   is ADD one, which is can('letters') and is asked separately at the foot of
-   the room. */
-function ltKinds(){ return can('kinds')? LT_KINDS : ['alpha', 'mark', 'num']; }
+/* The three rooms. All three, on every plan.
+   This used to hand the free plan a shorter list, because free could not make
+   a digit and a room you can never put anything in is worse than no room.
+   Free has digits now -- ltStart gives it one for every value the base has --
+   so the two lists became the same list, and a capability whose two answers
+   are identical is a price with nothing behind it. What free still cannot do
+   is ADD a letter, which is can('letters') and is asked at the foot of the
+   room. */
+function ltKinds(){ return LT_KINDS; }
 /* Which of the three a letter is. A kind is not stored on a letter -- it is
    read off what the letter is -- so this and ltOfKind() below are the one
    split seen from its two ends, and they sit together so they cannot answer

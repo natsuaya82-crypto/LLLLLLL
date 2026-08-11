@@ -102,11 +102,40 @@ function spRowHTML(sp, route, back, id){
     '<button class="seqdel"'+(id? ' id="'+id+'"' : '') + DO(back) + (sp.length?'':' disabled')+
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
 }
-function addSpellHTML(){
+function addSpellRow(){
   return spRowHTML(addSp, 'aspell', 'addBack', 'f-back');
+}
+/* Typed on free, pressed on the paid plan.
+
+   The row of letter tiles is the paid half only. It is a way IN to one
+   position of the spelling -- tap a letter, change what it says here -- and
+   changing what a letter says here is the thing free does not do. Under a
+   field you can type into it was an empty box with an undo button beside a
+   backspace key, which is two ways to take back one letter. */
+function addSpellHTML(){
+  return can('snd') ? addSpellRow() : addTypeHTML();
 }
 var addMode='';
 function addSetMode(m){ addMode=m; addRedraw(); }
+/* The field a word is typed into, and the row of letters it comes out as.
+
+   On the free plan this is the whole of the input. There is no rail and there
+   are no sound keys: the alphabet is a to z, each of them already reads
+   something, and being offered a sound to pick was being asked to answer a
+   question the letter had already answered.
+   「音は選択できない。だってアルファベットには既存の音があるんだから」
+
+   The field wears the drawn letters (.sfont), so what you see while typing is
+   the language, not its romanisation. */
+function addTypeHTML(){
+  return lnField('f-ln', t('f.spelling'), IN('addSetLn'), spWord(addSp));
+}
+function addSetLn(v){
+  addSp=spType(v);
+  addSync();
+  lnGrow('f-ln');
+  addPv();
+}
 function addKeys(){
   var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha'));
   var m=addMode || (ls.length? 'lt' : 'ph');
@@ -158,8 +187,8 @@ function openAdd(from){
     /* No heading over the keyboard. It said "the sounds of this language",
        which was true of the only keyboard there used to be and is a heading
        about the wrong one of two now -- and the rail under it already says
-       which. */
-    addKeys()+
+       which. Gone entirely on free, where the word is typed. */
+    (can('snd')? addKeys() : '')+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
     '<button' + DO('sayField') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div>'+
@@ -236,6 +265,24 @@ function spOdd(st){
    not or when you ask for sounds. Nobody spells by phoneme -- but a language
    three days old has no letters yet, and it still has to be possible to make
    a word. */
+/* The same as the new-word sheet's: typed on free, pressed on the paid plan,
+   and the row of letters under it either way. */
+function wdTypeHTML(){
+  return lnField('wd-ln', t('f.spelling'), IN('wdSetLn'), spWord(wEdit.sp||[]));
+}
+function wdSetLn(v){
+  wEdit.sp=spType(v);
+  wdSync();
+  lnGrow('wd-ln');
+  var r=document.getElementById('wd-rd');
+  if(r) r.textContent=phIpa(wEdit.seq);
+}
+/* What the typed word reads, which on free is the only thing the row of
+   tiles was still saying. */
+function wdReadHTML(){
+  return '<div class="pvbox" style="margin-top:8px"><span class="pvn">'+t('f.reading')+'</span>'+
+    '<span class="pvk" id="wd-rd">'+esc(phIpa(wEdit.seq))+'</span></div>';
+}
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
   return spRowHTML(sp, 'spell', 'wdBack', '')+
@@ -375,7 +422,7 @@ function wdExHTML(){
       }).join('')+'</div>'
     : '')+
     '<div class="exadd">'+
-      lnField('wd-exl', exHint(), '')+
+      lnField('wd-exl', exHint(), '', '')+
       '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('wdAddEx') + '>'+
       '<button class="btn ghost"' + DO('wdAddEx') + '>'+t('word.mn.add')+'</button>'+
@@ -450,7 +497,7 @@ function wdBodyHTML(){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
 
     '<div class="sec">'+t('word.sounds')+'</div>'+
-    wdSeqHTML()+wdKeysHTML()+
+    (can('snd') ? wdSeqHTML()+wdKeysHTML() : wdTypeHTML()+wdReadHTML())+
 
     '<div class="sec">'+t('word.means')+'</div>'+
     wdMnsHTML()+

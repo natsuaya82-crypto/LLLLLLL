@@ -138,6 +138,19 @@ var KB_DIGITS='1234567890';
    roman face the conversion needs -- neither is one of the person's letters,
    both are something to press that puts a known character in. */
 function kbRom(c){ return {w:1, k:'rom', v:c, f:['','','','']}; }
+/* A key of the fixed keyboard, carrying what it types.
+
+   kbNamed() finds a letter by its name folded to lower case, so a letter
+   somebody's older language calls `O` answers the `o` key -- and then the key
+   typed `O`, because what a key types is the letter's name and the name is
+   the one with the capital on it. A line came out `hellO`.
+
+   On this keyboard the character that FOUND the letter is the right answer:
+   the free rows are a to z by construction and their names cannot be changed,
+   so `o` is what the key is and what it must put in. `t` here overrides the
+   name for this key only -- share.js reads it, and a keyboard somebody built
+   themselves has no such override and still types the names they chose. */
+function kbFix(c, id){ var k=kbKey('lt', id); k.t=c; return k; }
 function kbNamed(c){
   var i, n;
   for(i=0;i<LETTERS.length;i++){
@@ -150,15 +163,15 @@ function kbFixed(){
   var rows=[], r, i, j, row, id;
   row=[];
   for(i=0;i<KB_DIGITS.length;i++){
-    var dl=numByVal(parseInt(KB_DIGITS.charAt(i), 10));
-    row.push(dl? kbKey('lt', dl.id) : kbRom(KB_DIGITS.charAt(i)));
+    var dc=KB_DIGITS.charAt(i), dl=numByVal(parseInt(dc, 10));
+    row.push(dl? kbFix(dc, dl.id) : kbRom(dc));
   }
   rows.push(row);
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
     for(j=0;j<r.length;j++){
       id=kbNamed(r.charAt(j));
-      if(id) row.push(kbKey('lt', id));
+      if(id) row.push(kbFix(r.charAt(j), id));
     }
     /* Two keys wide. It is the one key you hit without looking, and it was
        the same width as a letter. 「デリートキーは横二つ分欲しいかも」 */
@@ -170,9 +183,9 @@ function kbFixed(){
      way to put a gap between two of them. `!` and `?` stand at its ends. */
   var sp=kbKey('sp'); sp.w=4;
   var bot=[], end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
-  if(end0) bot.push(kbKey('lt', end0));
+  if(end0) bot.push(kbFix(KB_ENDS.charAt(0), end0));
   bot.push(sp);
-  if(end1) bot.push(kbKey('lt', end1));
+  if(end1) bot.push(kbFix(KB_ENDS.charAt(1), end1));
   rows.push(bot);
   return {lay:[{rows:rows}]};
 }

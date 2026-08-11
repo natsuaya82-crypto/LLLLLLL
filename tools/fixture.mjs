@@ -188,6 +188,33 @@ export function halfDone(){
     /* A note that already exists: the delete button only appears once there
        is something to delete, so a form opened empty never shows it. */
     ['a note being edited',    () => { openNote(0); return FORM.html; }],
+    /* The three faces where a word is built out of SOUNDS rather than typed.
+       Free types -- the alphabet is a to z and every one of them already
+       reads something, so there is nothing to pick -- and picking is what
+       can('snd') buys. All three still have to be walked, so all three flip
+       the plan and put it back. */
+    /* Derived from a word that already exists, so the sheet opens with a
+       spelling in it -- the row of letter tiles is the only door to the page
+       for one position of it, and an empty sheet has no tiles. */
+    ['the new word sheet, by sound', () => { SET.plan = 'plus'; openAdd('kano');
+                                             const h = FORM.html; addFrom = '';
+                                             SET.plan = 'free'; return h; }],
+    ['the word being edited, by sound', () => { SET.plan = 'plus'; openWord('kano');
+                                                const h = FORM.html;
+                                                SET.plan = 'free'; return h; }],
+    /* And the OTHER face of each of those two: the rail switches the sheet
+       between the letters and the sounds, and the fixture's language has
+       letters, so the sound half is never the one that opens. */
+    ['the new word sheet, sounds rail', () => { SET.plan = 'plus'; addMode = 'ph';
+                                                openAdd(''); const h = FORM.html;
+                                                addMode = ''; SET.plan = 'free'; return h; }],
+    ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
+                                                   openWord('kano'); const h = FORM.html;
+                                                   wdMode = ''; SET.plan = 'free'; return h; }],
+    ['a stage slot, by sound', () => { SET.plan = 'plus';
+                                       openSlot(stAll()[0].id, stAll()[0].slots[0]);
+                                       const h = FORM.html;
+                                       SET.plan = 'free'; return h; }],
     /* The new-word sheet has two faces, and the buttons differ on each. */
     /* The keyboard the language owns, and the two sheets that build it: one
        key opened, and the alphabet being chosen from for one of its slots.

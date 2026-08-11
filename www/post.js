@@ -114,8 +114,9 @@ function pwHTML(){
     '<div class="pwtop"><div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="pwfield">'+
-      lnField('pw-ln', t('post.ln.ph'), ' value="'+esc(PW.ln)+'"'+IN('pwSetLn'))+
+      lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'), PW.ln)+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
+      '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
@@ -137,7 +138,29 @@ function pwSetLn(v){
   if(g) g.innerHTML=pwGl();
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
+  lnGrow('pw-ln');
+  pwLeftPaint();
   pwFresh();
+}
+/* How long a post may be. There was no answer at all: the field was one row
+   of an input, so a line ran off the side of the phone and kept going for as
+   long as somebody kept typing. 「ツイートの文字数制限決めないと無限になってる」
+
+   Two hundred and eighty, which is the number the shape of this screen was
+   borrowed from. It is a made language and its words are short; nobody has
+   met this yet and the point is that it exists. */
+var POST_MAX=280;
+/* Shown only near the end, the way every composer does it -- a counter on
+   screen from the first letter is a scold. Numbers only, so there is nothing
+   in it to translate. */
+function pwLeftHTML(){
+  var left=POST_MAX-String(PW.ln||'').length;
+  if(left>40) return '';
+  return '<span class="pwleft'+(left<=0? ' bad':'')+'">'+left+'</span>';
+}
+function pwLeftPaint(){
+  var e=document.getElementById('pw-left');
+  if(e) e.innerHTML=pwLeftHTML();
 }
 function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
 /* Posting. The meaning is what was typed, or the gloss run together if

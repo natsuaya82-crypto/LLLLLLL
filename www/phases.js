@@ -167,6 +167,15 @@ function stCount(){
 /* ---- the sheet where a slot's word is made ---------------------------- */
 var stFor=null, stSlot='', stSeq=[], stSug=[];
 function stTap(sym){ sayOne(sym); stSeq.push(sym); stPaint(); }
+/* What was typed, cut into letters and then asked what those letters read --
+   so the word is the letters and the sounds come off them, which is the way
+   round the rest of the app already works. */
+function stSetLn(v){
+  stSp=spType(v);
+  stSeq=spPh(stSp);
+  lnGrow('st-ln');
+  stPaint();
+}
 function stBack(){ stSeq.pop(); stPaint(); }
 /* Nothing to say until something has been typed. This was a condition written
    inside the button's own markup -- the smallest possible example of code in a
@@ -210,6 +219,7 @@ function openSlot(pid, k){
   stFor=p; stSlot=(k===undefined||k===null)? (p.slots[0]||'') : String(k);
   var had=stWordFor(p, stSlot);
   stSeq = had? wPh(had).slice() : [];
+  stSp  = had? JSON.parse(JSON.stringify(spOf(had))) : [];
   stSug=[];
   var mine=addedSnd();
   openForm('slot:'+p.id+'/'+stSlot, stSlotLabel(p, stSlot),
@@ -218,7 +228,13 @@ function openSlot(pid, k){
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="st-ipa"></span>'+
       '<button' + DO('stSay') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
     '<div id="st-sug">'+stSugHTML()+'</div>'+
-    (mine.length
+    /* Typed on free. The word for a meaning is a word, and a word is
+       letters -- being handed the language's sounds to press was the
+       question the alphabet had already answered.
+       「だから、画面表示するのに音で選ぶやついないやろ」 */
+    (!can('snd')
+      ? lnField('st-ln', t('f.spelling'), IN('stSetLn'), stSeq.join(''))
+      : mine.length
       ? '<div class="sec">'+t('add.ph')+'</div><div class="phkeys">'+mine.map(function(x){
           return phkHTML(x, DO('stTap',[x])); }).join('')+'</div>'
       : '<div class="note">'+t('add.ph.none')+'</div>')+
@@ -228,14 +244,32 @@ function openSlot(pid, k){
     function(){ stPaint(); phkMount(); });
 }
 FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i), a.slice(i+1)); };
+/* The letters the typed word came out as, when it was typed. Empty when the
+   word was assembled by pressing sounds, which is what the paid plan still
+   does -- and then the sounds ARE the word, as they always were. */
+var stSp=[];
 function stKeep(){
   if(!stFor || !stSeq.length) return;
-  var hw=stSeq.join(''), key=stFor.id+'.'+stSlot, had=stWordFor(stFor, stSlot);
+  /* The spelling is the word wherever there is one. A letter called `c` that
+     reads /k/ would otherwise be saved as the sound it makes rather than as
+     the letter that was typed. */
+  var hw=stSp.length? spWord(stSp) : stSeq.join('');
+  var key=stFor.id+'.'+stSlot, had=stWordFor(stFor, stSlot);
   var clash=findWord(hw);
+  if(!hw){ return; }
   if(clash && clash!==had){ toast(t('toast.dup')); return; }
-  if(had){ had.hw=hw; had.ph=stSeq.slice(); }
-  else WORDS.push({hw:hw, ph:stSeq.slice(), mn:stSlotLabel(stFor, stSlot),
-                   mns:[stSlotLabel(stFor, stSlot)], pos:stFor.pos, slot:key, at:Date.now()});
+  if(had){
+    had.hw=hw;
+    if(stSp.length){ had.sp=JSON.parse(JSON.stringify(stSp)); delete had.ph; }
+    else had.ph=stSeq.slice();
+  }
+  else {
+    var nw={hw:hw, mn:stSlotLabel(stFor, stSlot),
+            mns:[stSlotLabel(stFor, stSlot)], pos:stFor.pos, slot:key, at:Date.now()};
+    if(stSp.length) nw.sp=JSON.parse(JSON.stringify(stSp));
+    else nw.ph=stSeq.slice();
+    WORDS.push(nw);
+  }
   save(); closeSheet({target:{id:'sbg'}}); cands=[]; render();
   toast(t('toast.saved', hw));
 }
@@ -306,7 +340,7 @@ function stExHTML(id){
     : '')+
     '<div class="exadd">'+
       '<input id="sx-lb" class="exsm" placeholder="'+esc(t('stg.ex.lb.ph'))+'" autocomplete="off">'+
-      lnField('sx-ln', exHint(), '')+
+      lnField('sx-ln', exHint(), '', '')+
       '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('stAddEx', [id]) + '>'+
       '<button class="btn ghost"' + DO('stAddEx', [id]) + '>'+t('word.mn.add')+'</button>'+

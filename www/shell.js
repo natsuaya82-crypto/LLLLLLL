@@ -197,10 +197,39 @@ function viewGone(){
 
    So it is an ordinary field again, set in the letters somebody drew when
    the setting says so. */
-function lnField(id, ph, attrs){
-  return '<input id="'+id+'" class="lnin'+(myFontOn()? ' sfont':'')+'" '+
-    'placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
-    'spellcheck="false"'+(attrs||'')+'>';
+/* A textarea, not an input. A line of a made language is a line of writing --
+   an example under a word, a post -- and an input is one row that scrolls
+   sideways forever: past the width of the phone the text simply left the
+   screen, and there was no length at which it stopped.
+   「改行されないせいで画面が今でいく」
+
+   It grows with what is in it rather than scrolling, so the whole line is
+   always on the screen. `rows="1"` is the floor and lnGrow() raises it; the
+   value goes between the tags because that is where a textarea keeps it. */
+function lnField(id, ph, attrs, val){
+  return '<textarea id="'+id+'" class="lnin'+(myFontOn()? ' sfont':'')+'" '+
+    'rows="1" placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
+    'spellcheck="false"'+(attrs||'')+'>'+esc(val||'')+'</textarea>';
+}
+/* Made as tall as its text, every time that text changes. A textarea has no
+   CSS for "as tall as you need"; the height has to be measured and set, and
+   it has to be reset to nothing first or it can only ever grow. */
+function lnGrow(id){
+  var e=document.getElementById(id);
+  if(!e) return;
+  e.style.height='auto';
+  e.style.height=e.scrollHeight+'px';
+}
+/* Every one on the page, after it has been drawn. Asked of the document
+   rather than given a list of screens, so a field added tomorrow is sized
+   tomorrow -- the same argument geTiles() and postFaces() are already
+   making one line above the call. */
+function lnGrowAll(){
+  var xs=document.getElementsByClassName('lnin'), i;
+  for(i=0;i<xs.length;i++){
+    xs[i].style.height='auto';
+    xs[i].style.height=xs[i].scrollHeight+'px';
+  }
 }
 /* And the bar a ROOT carries, which is a different bar: there is nothing
    behind a root, so it has no way back -- only its name, and at most one

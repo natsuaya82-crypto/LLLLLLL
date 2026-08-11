@@ -199,6 +199,11 @@ actIn('wldSet', wldSet);
 actIn('stNote', stNote);
 actIn('stSetRules', stSetRules);
 actIn('wdSetNt', wdSetNt);
+/* A word is typed on the free plan, in three places: the new-word sheet, the
+   editor, and the word a grammar stage asks for. */
+actIn('addSetLn', addSetLn);
+actIn('wdSetLn', wdSetLn);
+actIn('stSetLn', stSetLn);
 actIn('wdSetPos', wdSetPos);
 
 /* ---- Enter ------------------------------------------------------------- */

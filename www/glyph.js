@@ -1576,6 +1576,9 @@ function render(){
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
   geTiles(); phkMount(); postFaces(); postLines();
+  /* and a line field is made as tall as what is in it, which no markup can
+     say -- the same reason the canvases are sized here */
+  lnGrowAll();
   /* and the alphabet, if that is what is on the page, can have a letter held
      and carried to where it belongs */
   ltDragMount();

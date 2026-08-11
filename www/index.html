@@ -158,9 +158,13 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A line of the language, typed on the language's own keyboard. `readonly`
    keeps the phone's keyboard from coming up over it -- the keys are on the
    page, and two keyboards at once is one too many. */
-.lnin{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);
+/* A textarea now, so a long line wraps instead of leaving the screen. It is
+   never dragged bigger by its corner and never scrolls: lnGrow() sets the
+   height to the text, so overflow has nothing to hide. */
+.lnin{display:block;width:100%;min-height:44px;background:var(--bg);
+      border:1px solid var(--line);resize:none;overflow:hidden;
       border-radius:10px;color:var(--tx);padding:11px 13px;font-family:inherit;
-      font-size:.98rem;outline:none;margin-bottom:6px}
+      font-size:.98rem;line-height:1.5;outline:none;margin-bottom:6px}
 .lnin:focus{border-color:var(--goldln)}
 /* One slot of a key -- the key itself, or one of its four corners -- and what
    is in it. The same row shape either way, because they hold the same thing. */
@@ -306,9 +310,14 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwto{font-size:.86rem;color:var(--txm);margin-bottom:8px}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
-.pwfield input{width:100%;background:none;border:0;color:var(--tx);
-               font-family:inherit;font-size:1.2rem;line-height:1.5;min-height:44px;padding:0}
-.pwfield input:focus{outline:none}
+.pwfield input, .pwfield textarea{width:100%;background:none;border:0;color:var(--tx);
+               font-family:inherit;font-size:1.2rem;line-height:1.5;min-height:44px;padding:0;
+               resize:none;overflow:hidden}
+.pwfield input:focus, .pwfield textarea:focus{outline:none}
+/* How much of the post is left, and only once it is worth knowing. It is a
+   number and nothing else, so there is no sentence in it to translate. */
+.pwleft{font-size:.8rem;color:var(--txm);text-align:right;margin-top:2px}
+.pwleft.bad{color:var(--bad)}
 .pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
 .fab{position:fixed;right:20px;bottom:calc(var(--tabh) + 20px);

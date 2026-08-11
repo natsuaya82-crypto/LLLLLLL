@@ -277,11 +277,26 @@ var CAN={
   data:    'plus',   /* CSV out, and the cloud */
   file:    'plus',   /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
-  kinds:   'plus',   /* letters that are not alpha or mark -- digits, syllables */
   wsys:    'plus',   /* a writing system that is not an alphabet */
   kb:      'plus',   /* a keyboard of your own, instead of the fixed QWERTY */
+  snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   sug:     'studio'  /* the word sheet's suggestions, unmetered */
 };
+/* 'snd' is what free is NOT, said as a capability.
+
+   A word used to be assembled by pressing sounds -- three screens of keys
+   laid out as "the sounds of this language", and no way to type one. That is
+   a true shape for a language whose inventory you chose before you had an
+   alphabet, and it is the wrong way round for the free plan, where the
+   alphabet is a to z and every one of them already reads something. There is
+   nothing to choose, and being asked to choose was being asked to answer a
+   question the letter had already answered.
+   「文字ベースに音が付随だからね？音から選択するのは課金機能」
+   「音は選択できない。だってアルファベットには既存の音があるんだから」
+
+   So free types, and the letter's own reading stands. Picking a sound for a
+   position, or building a word out of sounds instead of letters, is what
+   this buys. */
 /* 'ai' and 'sug' are the same ceiling asked at two different levels, and
    putting them side by side is the first time that has been visible. glyph.js
    stopped counting at plus; wordsheet.js only stops at studio. So a Plus
