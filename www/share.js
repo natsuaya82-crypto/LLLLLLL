@@ -272,27 +272,27 @@ function shareKbd(){
 function shareSig(){
   return scriptSig()+'|'+langId+'|'+(has('plus')? 'p':'f')+'|'+JSON.stringify(KB);
 }
-/* The hand onto the native side. Asked for once and kept, because asking
-   twice is a warning in the console and the same object back.
+/* Whether there is a native side at all, and the one way to reach it.
 
-   It is registerPlugin() and NOT Capacitor.Plugins.LinguaShare. That was the
-   first way this was written and it silently did nothing: since Capacitor 6
-   the Plugins object holds only what registerPlugin has put there, so the
-   native class was registered, the app looked in the wrong drawer, found
-   nothing, and — because it was written to say nothing when there was nobody
-   to tell — said nothing. The keyboard on the phone answered "draw some
-   letters first" while the letters sat drawn on the other side of a wall.
-   That cost a build.
+   NOT Capacitor.Plugins.LinguaShare, and NOT Capacitor.registerPlugin. Both
+   were tried and both were wrong for the same reason, which took four builds
+   to see: those are put on window.Capacitor by @capacitor/core, an npm
+   package that an app with a bundler imports. There is no bundler here.
+   index.html loads plain script tags and has never loaded @capacitor/core,
+   so what window.Capacitor holds is only what the native bridge injects --
+   toNative, nativePromise, nativeCallback, isPluginAvailable, and no way to
+   register or look up a plugin by name.
 
-   Undefined means never asked; null means asked and not there, which is
-   every browser this ever runs in outside the app. */
-var SHARE_P;
+   nativePromise IS that bridge, and asking it is the whole of the protocol:
+   a plugin name, a method name, and the arguments. It resolves and rejects
+   like anything else.
+
+   isPluginAvailable reads cap.Plugins, which @capacitor/core fills and
+   nothing here does, so it answers false for every plugin and cannot be
+   asked. Whether the native side is there is therefore learned the only way
+   left -- by calling it and seeing what comes back. */
 function sharePlug(){
-  if(SHARE_P===undefined){
-    SHARE_P=(window.Capacitor && Capacitor.registerPlugin)?
-      Capacitor.registerPlugin('LinguaShare') : null;
-  }
-  return SHARE_P;
+  return (window.Capacitor && Capacitor.nativePromise)? Capacitor.nativePromise : null;
 }
 /* The one window onto the App Group, the way net.js is the one window onto
    the server.
@@ -309,9 +309,9 @@ function sharePush(){
   var sig=shareSig(), out=JSON.stringify(shareKbd()), p=sharePlug();
   if(sig===SHARE.sent) return;
   SHARE.sent=sig;
-  if(!p){ SHARE.how='no plugin'; return; }
+  if(!p){ SHARE.how='no bridge'; return; }
   SHARE.how='sent';
-  p.write({json:out, font:SFONT.b64||''})['catch'](function(e){
-    SHARE.how='refused: '+(e && e.message? e.message : e);
+  p('LinguaShare', 'write', {json:out, font:SFONT.b64||''})['catch'](function(e){
+    SHARE.how='refused: '+((e && (e.message||e.errorMessage))? (e.message||e.errorMessage) : e);
   });
 }

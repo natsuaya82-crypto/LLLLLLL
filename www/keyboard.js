@@ -328,7 +328,7 @@ function kbSysHTML(){
    nothing was ever handed over, drawing more letters will not help. */
 function kbOutSay(){
   if(SHARE.how==='sent') return t('kb.out.ok');
-  if(SHARE.how==='no plugin') return t('kb.out.no');
+  if(SHARE.how==='no bridge') return t('kb.out.no');
   if(SHARE.how) return t('kb.out.bad', SHARE.how);
   return t('kb.out.none');
 }
