@@ -33,7 +33,14 @@
                   it says it does -- one file per language, with the id on it,
                   so two languages called the same thing cannot collide.
 
-   Exit code is 0 only when all four hold.
+     COUNTED      every file carries a number that goes up and never down,
+                  and a restore drags it forward to whatever the file it read
+                  had reached. This is what a cloud will use to tell two
+                  copies apart, and it exists before the cloud does because a
+                  counter added on the day it is needed starts at zero for
+                  everybody who already has a file.
+
+   Exit code is 0 only when all five hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -102,6 +109,17 @@ const R = await pg.evaluate(() => {
   const before = { words: WORDS.length, letters: LETTERS.length,
                    slices: Object.keys(packed.slice).length };
 
+  /* ---- the number on the file -------------------------------------- */
+  if (typeof packed.n !== 'number' || packed.n < 1)
+    fails.push('the file carries no save number, so nothing can tell two copies apart');
+  const n1 = bkPack().n;
+  if (n1 !== packed.n)
+    fails.push('the save number moved without a file being written: ' + packed.n + ' -> ' + n1);
+  bkNoSet(packed.n);
+  const n2 = bkPack().n;
+  if (n2 !== packed.n + 1)
+    fails.push('the save number did not go up after a write: ' + packed.n + ' -> ' + n2);
+
   /* ---- the name it asks the native side for ------------------------- */
   const name = bkName();
   if (name.indexOf(id) < 0)
@@ -117,9 +135,14 @@ const R = await pg.evaluate(() => {
     fails.push('the wipe did not wipe, so nothing below this is a test of anything');
 
   /* ---- and comes back ---------------------------------------------- */
+  bkNoSet(0);
   bkTake(file);
   langStore(); langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead();
   const back = { words: WORDS.length, letters: LETTERS.length, known: !!LANGS[id] };
+  if (bkNo() < packed.n)
+    fails.push('a restore left the save number behind the file it restored from (' +
+               bkNo() + ' < ' + packed.n + '), so the next save would look older ' +
+               'than the copy it came from');
   if (back.words !== before.words)
     fails.push('words did not come back: ' + before.words + ' -> ' + back.words);
   if (back.letters !== before.letters)
@@ -139,7 +162,8 @@ const R = await pg.evaluate(() => {
     fails.push('a restore OVERWROTE a live language. This is the way a backup ' +
                'destroys somebody’s work, and it is the one thing it may not do.');
 
-  return { fails, before, back, name, missing, kb: +(file.length / 1024).toFixed(1) };
+  return { fails, before, back, name, missing, no: packed.n,
+           kb: +(file.length / 1024).toFixed(1) };
 });
 
 await br.close();
@@ -169,5 +193,7 @@ if (R.fails.length){
 
 console.log('backup: a language of ' + R.before.words + ' words and ' + R.before.letters +
             ' letters packs to ' + R.kb + ' KB in ' + R.before.slices + ' slices,');
-console.log('        comes back whole from a storage wipe, and refuses to overwrite a');
-console.log('        language that is already there.');
+console.log('        comes back whole from a storage wipe, refuses to overwrite a');
+console.log('        language that is already there, and carries save number ' + R.no +
+            ', which');
+console.log('        goes up and never down.');

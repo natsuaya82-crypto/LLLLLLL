@@ -52,8 +52,30 @@ function bkTouch(){ BK.dirty=true; }
    the day it is added. They are copied as text and not parsed: what is in
    storage is what gets written, byte for byte, and nothing here can reshape
    it on the way through. */
+/* How many times this language has been written out, counting up and never
+   down. It is not a clock.
+
+   A clock is what a sync reaches for to decide which copy is newer, and a
+   clock is the wrong instrument: a phone whose date is wrong wins every
+   argument forever, and nobody ever finds out why their work keeps going
+   backwards. A counter cannot be wrong about which of two writes came
+   second, because the second one made it.
+
+   Nothing reads it yet. It is here before the cloud is, because the day the
+   cloud arrives is the day it has to already be on every file written before
+   then -- a counter added at the same time as the thing that needs it starts
+   at zero for everybody. */
+function bkNo(){
+  var n;
+  try{ n=parseInt(localStorage.getItem(langKey('bkn')), 10); }catch(e){ n=0; }
+  return (n>0)? n : 0;
+}
+function bkNoSet(n){
+  try{ localStorage.setItem(langKey('bkn'), String(n)); }catch(e){}
+}
 function bkPack(){
-  var out={v:1, id:langId, name:langName, at:(new Date()).getTime(), slice:{}}, i, k, v;
+  var out={v:1, n:bkNo()+1, id:langId, name:langName,
+           at:(new Date()).getTime(), slice:{}}, i, k, v;
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
     try{ v=localStorage.getItem(langKey(k)); }catch(e){ v=null; }
@@ -80,9 +102,12 @@ function bkPush(){
   p=sharePlug();
   if(!p){ BK.how='no bridge'; return; }
   BK.dirty=false;
-  out=JSON.stringify(bkPack());
+  var pack=bkPack();
+  out=JSON.stringify(pack);
   p('LinguaShare', 'keep', {name:bkName(), json:out})
-    .then(function(){ BK.how='kept'; BK.at=(new Date()).getTime(); })
+    /* counted up only when the file is on the disk, so a refused write does
+       not spend a number and leave a gap that looks like a lost generation */
+    .then(function(){ bkNoSet(pack.n); BK.how='kept'; BK.at=(new Date()).getTime(); })
     ['catch'](function(e){
       BK.dirty=true;
       BK.how='refused: '+((e && (e.message||e.errorMessage))? (e.message||e.errorMessage) : e);
@@ -114,6 +139,12 @@ function bkTake(file){
       put++;
     }catch(e){}
   }
+  /* The counter goes forward to whatever the file reached, never back. A
+     restored language must write its NEXT save with a bigger number than
+     anything already out there, or the copy that was restored from would
+     look newer than the one being used. */
+  langId=d.id;
+  if(typeof d.n==='number' && d.n>bkNo()) bkNoSet(d.n);
   langId=prev;
   if(!LANGS[d.id]){ LANGS[d.id]={name:String(d.name||''), mine:true}; put++; }
   return put;

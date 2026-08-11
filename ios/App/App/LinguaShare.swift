@@ -91,13 +91,22 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     return dir
   }
 
-  /// Written whole, and never on top of the last good one.
+  /// Written to one side, read back, and only then made the one that counts.
   ///
-  /// The previous file is moved to .1 and that to .2 before anything new is
-  /// written, so a write that produces rubbish costs a generation instead of
-  /// the language. Two spares is the whole of the safety net and it is worth
-  /// about 50 KB for a free-sized language -- the price of being able to say
-  /// that a bug in this app cannot take somebody's months of work.
+  /// The order matters and the first version of this had it wrong. It rotated
+  /// the generations FIRST and then wrote -- so a write that failed left no
+  /// <name>.json at all, and kept() below deliberately ignores the numbered
+  /// spares, which means the restore would have answered "there is no file
+  /// for this language" while two good ones sat beside it.
+  ///
+  /// So: the new bytes go to .tmp, .tmp is read back and parsed, and only a
+  /// file that survives being read becomes the language. Nothing that exists
+  /// is touched until then. `.atomic` alone is not this -- it promises you
+  /// never see half a file, not that the whole one means anything.
+  ///
+  /// Two spares behind it, which is about 50 KB for a free-sized language:
+  /// the price of being able to say that a bug in this app cannot take
+  /// somebody's months of work.
   @objc func keep(_ call: CAPPluginCall) {
     let name = (call.getString("name") ?? "language")
     let json = call.getString("json") ?? ""
@@ -108,7 +117,21 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       let at: (Int) -> URL = { n in
         dir.appendingPathComponent(n == 0 ? "\(name).json" : "\(name).\(n).json")
       }
-      // oldest first, so nothing is overwritten before it has been moved
+      let tmp = dir.appendingPathComponent("\(name).tmp")
+
+      try Data(json.utf8).write(to: tmp,
+        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+
+      // Read it back off the disk, not out of memory: what is being checked
+      // is the file, and a file that cannot be parsed is not a save.
+      let back = try Data(contentsOf: tmp)
+      guard (try? JSONSerialization.jsonObject(with: back)) != nil else {
+        try? fm.removeItem(at: tmp)
+        call.reject("what was written could not be read back as JSON; nothing was replaced")
+        return
+      }
+
+      // Everything that exists is still exactly where it was until here.
       for n in stride(from: 2, to: 0, by: -1) {
         let from = at(n - 1), to = at(n)
         if fm.fileExists(atPath: from.path) {
@@ -116,8 +139,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
           try? fm.moveItem(at: from, to: to)
         }
       }
-      try Data(json.utf8).write(to: at(0),
-        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+      if fm.fileExists(atPath: at(0).path) { try? fm.removeItem(at: at(0)) }
+      try fm.moveItem(at: tmp, to: at(0))
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)
