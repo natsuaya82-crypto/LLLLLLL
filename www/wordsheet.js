@@ -127,9 +127,7 @@ function addSetMode(m){ addMode=m; addRedraw(); }
 
    The field wears the drawn letters (.sfont), so what you see while typing is
    the language, not its romanisation. */
-function addTypeHTML(){
-  return lnField('f-ln', t('f.spelling'), IN('addSetLn'), spWord(addSp));
-}
+function addTypeHTML(){ return spTypeField('f-ln', 'addSetLn', addSp); }
 function addSetLn(v){
   addSp=spType(v);
   addSync();
@@ -267,9 +265,7 @@ function spOdd(st){
    a word. */
 /* The same as the new-word sheet's: typed on free, pressed on the paid plan,
    and the row of letters under it either way. */
-function wdTypeHTML(){
-  return lnField('wd-ln', t('f.spelling'), IN('wdSetLn'), spWord(wEdit.sp||[]));
-}
+function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[]); }
 function wdSetLn(v){
   wEdit.sp=spType(v);
   wdSync();

@@ -123,3 +123,46 @@ function ipaFromRoman(sp){
   }
   return out;
 }
+
+/* ---- cutting a written string into the pieces a list says exist ---------
+   Three copies of this walk were in the app, found by sliding a three-line
+   window over www/ -- the thing CLAUDE.md says is worth doing again:
+
+     uSplit()  cut a unit into the sounds the language has
+     impCut()  cut an imported pronunciation into sounds
+     spType()  cut a typed line into the letters that spell it
+
+   The first two were the same function with a different list. The third was
+   written a week later and differed only in folding case and in what it does
+   with a character nothing matches. So: one walk, and the two differences
+   are arguments.
+
+   Longest first, always. That is the whole reason this is not a loop over
+   characters -- "tʃa" comes apart as tʃ + a and not as t + ʃ + a, and a
+   letter called `th` has to beat the letter called `t` where both would fit.
+
+   `fold` compares without case, for lists of names somebody typed.
+   `drop` throws away a character nothing matches, for a list that is the
+   whole of what can be written; the default keeps it, for a list that is
+   only what is known so far.
+
+   It lives here because ipa.js is where a written string meets the units it
+   is made of, and because tools/import-check.mjs evaluates this file -- the
+   reader half of import.js has to run with no globals and no document, so a
+   function it calls cannot be anywhere that needs a browser. */
+function longCut(s, list, opts){
+  var keep=!(opts && opts.drop), fold=!!(opts && opts.fold);
+  var xs=(list||[]).slice(), out=[], t=String(s||''), i, hit, probe, x;
+  xs.sort(function(a, b){ return String(b).length-String(a).length; });
+  while(t.length){
+    hit=null;
+    probe=fold? t.toLowerCase() : t;
+    for(i=0;i<xs.length;i++){
+      x=fold? String(xs[i]).toLowerCase() : String(xs[i]);
+      if(x && probe.indexOf(x)===0){ hit=xs[i]; break; }
+    }
+    if(hit!==null){ out.push(hit); t=t.slice(String(hit).length); }
+    else { if(keep) out.push(t.charAt(0)); t=t.slice(1); }
+  }
+  return out;
+}

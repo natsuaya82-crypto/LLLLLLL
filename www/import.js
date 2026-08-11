@@ -433,15 +433,7 @@ function impClean(v){
     .replace(/^[\/\[]+/, '').replace(/[\/\]]+$/, '').replace(/[ˈˌ.]/g, '').trim();
 }
 function impCut(s, snd){
-  var all=(snd||[]).concat((typeof ipaAll==='function')? ipaAll() : []), out=[], i, hit;
-  all.sort(function(a, b){ return b.length-a.length; });
-  while(s.length){
-    hit=null;
-    for(i=0;i<all.length;i++) if(all[i] && s.indexOf(all[i])===0){ hit=all[i]; break; }
-    if(!hit){ out.push(s.charAt(0)); s=s.slice(1); }
-    else { out.push(hit); s=s.slice(hit.length); }
-  }
-  return out;
+  return longCut(s, (snd||[]).concat((typeof ipaAll==='function')? ipaAll() : []));
 }
 
 /* ==== below this line the app begins ==== */

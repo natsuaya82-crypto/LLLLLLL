@@ -494,19 +494,24 @@ var ICON_CARD='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="
   '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 11h10M7 15h6"/></svg>';
 function geIcon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function geBtn(fn,n,key,en,on){
-  var lb=t(key), cl=on?'on':'', act=DO(fn);
+  var lb=t(key), cl=on?'on':'', act=DO(fn), off;
   /* A button that can demonstrate itself stays tappable when it is unavailable
      — it goes dim and does nothing, but it still answers "what is this". The
-     two history buttons have nothing to show, so those are plainly disabled. */
+     two history buttons have nothing to show, so those are plainly disabled.
+
+     Which is the whole of the difference: how it says it is unavailable, and
+     whether the demonstration is hung off the press. The button itself was
+     written out twice, once on each side of that, and the two copies were
+     identical.  */
   if(GHDEMO[n]){
     if(!en) cl=cl?cl+' off':'off';
     /* the demonstration comes after, because acting redraws the view */
     act=act+AFTER('ghShow',[n]);
-    return '<button data-g="'+n+'"'+act+(en?'':' aria-disabled="true"')+
-           (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
-           geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
+    off=en? '' : ' aria-disabled="true"';
+  }else{
+    off=en? '' : ' disabled';
   }
-  return '<button data-g="'+n+'"'+act+(en?'':' disabled')+
+  return '<button data-g="'+n+'"'+act+off+
          (cl?' class="'+cl+'"':'')+' aria-label="'+esc(lb)+'">'+
          geIcon(n)+'<span class="gcap">'+esc(lb)+'</span></button>';
 }

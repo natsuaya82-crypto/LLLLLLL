@@ -684,17 +684,7 @@ function ltFirstUnit(l){ var u=ltUnits(l); return u.length? u[0] : ''; }
 /* A unit is one or more sounds run together. Splitting it back is asking the
    inventory which of its sounds the unit starts with, longest first, so "tʃa"
    comes apart as tʃ + a and not as t + ʃ + a. */
-function uSplit(u){
-  var out=[], s=String(u||''), snd=addedSnd().slice(), i, hit;
-  snd.sort(function(a,b){ return b.length-a.length; });
-  while(s.length){
-    hit=null;
-    for(i=0;i<snd.length;i++) if(snd[i] && s.indexOf(snd[i])===0){ hit=snd[i]; break; }
-    if(!hit){ out.push(s.charAt(0)); s=s.slice(1); }
-    else { out.push(hit); s=s.slice(hit.length); }
-  }
-  return out;
-}
+function uSplit(u){ return longCut(u, addedSnd()); }
 /* ---- a word is its letters ---------------------------------------------
    You press a and an a goes in. Not the sound a is usually written with, not
    whatever /a/ this language happens to call it -- the letter.
@@ -741,23 +731,27 @@ function spSetU(st, u){
    A character that answers to no letter is dropped rather than guessed at --
    the alphabet is the whole of what can be written. */
 function spType(text){
-  var s=String(text||''), out=[], names=[], i, j, n, l;
+  var names=[], by={}, i, n, cut, out=[];
   for(i=0;i<LETTERS.length;i++){
     n=String(ltName(LETTERS[i])||'').toLowerCase();
-    if(n) names.push({n:n, id:LETTERS[i].id});
+    if(!n) continue;
+    if(!Object.prototype.hasOwnProperty.call(by, n)){ by[n]=LETTERS[i].id; names.push(n); }
   }
-  names.sort(function(a, b){ return b.n.length-a.n.length; });
-  i=0;
-  while(i<s.length){
-    l=null;
-    for(j=0;j<names.length;j++){
-      if(s.substr(i, names[j].n.length).toLowerCase()===names[j].n){ l=names[j]; break; }
-    }
-    if(!l){ i++; continue; }
-    out.push({l:l.id});
-    i+=l.n.length;
-  }
+  /* Case folded, because a to z is what is typed and a letter an older
+     language calls `O` is the same letter. Unmatched characters dropped:
+     the alphabet is the whole of what can be written here, so a character
+     answering to no letter is not a letter and there is nothing to store. */
+  cut=longCut(text, names, {fold:true, drop:true});
+  for(i=0;i<cut.length;i++) out.push({l:by[cut[i]]});
   return out;
+}
+/* The field a word is typed into, wherever one is typed into.
+   Three screens have one -- the new-word sheet, the editor, and the word a
+   grammar stage asks for -- and the third differs only in holding sounds
+   rather than letters, so it builds its own. These two were the same line
+   twice. */
+function spTypeField(id, into, sp){
+  return lnField(id, t('f.spelling'), IN(into), spWord(sp||[]));
 }
 function spWord(sp){
   var out='', i, l;

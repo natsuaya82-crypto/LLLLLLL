@@ -13,18 +13,18 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
 > says the two that are easiest to get backwards: the timeline is
 > `localStorage` and no part of it is on the server yet, and CI runs three of
-> these ten checks, so a green tick on a push is not the gate.
+> these eleven checks, so a green tick on a push is not the gate.
 
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv + press
+npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv + backup + press
                 # green before a commit (~90s)
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
-`npm run press`.
+`npm run backup` / `npm run press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
@@ -49,7 +49,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The ten rules the gate enforces
+## The eleven rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -319,6 +319,44 @@ one thing the table exists to avoid. The comment had been claiming the opposite 
 what the code did. `shareMapLts()`/`shareMapWords()` now ask every letter's key
 before asking `t.of()` for its slot, and the comment says so.
 
+### 11. A language is never lost
+
+`www/backup.js` (chapter 24) writes the open language out as one file, into
+Documents, where iOS puts it in the device backup and the Files app can show
+it. Everything a person makes lived in `localStorage` and nowhere else, which
+is one copy in a place with four ways to lose it: the app is deleted, the
+phone is replaced without a backup, WKWebView's storage is reclaimed, or a
+migration goes wrong. Three of those four are ordinary events.
+「データ消えるのだけはありえない」
+
+It was measured before it was built — thirty-eight drawn letters are 12.1 KB,
+a hundred words 13.2 KB, five thousand words 685 KB — so a free language is
+25 KB and the whole thing is written on every change. There is no partial
+state to reason about.
+
+Two rules, and `backup-check` holds both:
+
+**A write never destroys the last good file.** `keep()` rotates the previous
+one to `.1` and that to `.2` before writing, so a write that produces rubbish
+costs a generation instead of somebody's months.
+
+**A restore never overwrites a slice that is there.** It fills in one that is
+missing and stops — `langMigrate`'s argument, for the same reason. This is
+the one that matters: the way a backup destroys somebody's work is by
+*winning*, and a restore that overwrites is worse than no restore at all.
+
+The check wipes every slice the way iOS reclaiming storage would, reads the
+file back, and asks for the same words, the same letters and the language in
+the index again; then it restores an *older* file over a live language and
+demands that nothing moves. It also walks `SLICES`, so a tenth slice added to
+`core.js` and forgotten in `bkPack()` fails here rather than being quietly
+left out of every backup until somebody needs it.
+
+It cannot press the native side — `keep()` and `kept()` are Swift and there is
+no Swift on a Linux runner — so what it holds is everything on this side of
+that call. All three of its failures were made to happen before it was
+believed.
+
 ## What the free plan is
 
 One sentence: **your own shapes for a-z and 0-9.** `ltStart` puts thirty-eight
@@ -536,6 +574,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/numbers.js` | numbers — a digit is a letter with a value (ch 18) |
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
+| `www/backup.js` | the copy that survives the app — a language as one file in Documents (ch 24) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |

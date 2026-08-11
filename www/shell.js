@@ -214,22 +214,19 @@ function lnField(id, ph, attrs, val){
 /* Made as tall as its text, every time that text changes. A textarea has no
    CSS for "as tall as you need"; the height has to be measured and set, and
    it has to be reset to nothing first or it can only ever grow. */
-function lnGrow(id){
-  var e=document.getElementById(id);
-  if(!e) return;
-  e.style.height='auto';
-  e.style.height=e.scrollHeight+'px';
-}
+function lnGrow(id){ lnFit(document.getElementById(id)); }
 /* Every one on the page, after it has been drawn. Asked of the document
    rather than given a list of screens, so a field added tomorrow is sized
    tomorrow -- the same argument geTiles() and postFaces() are already
    making one line above the call. */
 function lnGrowAll(){
   var xs=document.getElementsByClassName('lnin'), i;
-  for(i=0;i<xs.length;i++){
-    xs[i].style.height='auto';
-    xs[i].style.height=xs[i].scrollHeight+'px';
-  }
+  for(i=0;i<xs.length;i++) lnFit(xs[i]);
+}
+function lnFit(e){
+  if(!e) return;
+  e.style.height='auto';
+  e.style.height=e.scrollHeight+'px';
 }
 /* And the bar a ROOT carries, which is a different bar: there is nothing
    behind a root, so it has no way back -- only its name, and at most one
