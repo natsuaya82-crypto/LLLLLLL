@@ -102,6 +102,24 @@ function kbDefault(){
    because `!` and `?` read themselves and are therefore marks. A name that
    nothing answers to is simply left out rather than made into an empty key. */
 var KB_QWERTY=['qwertyuiop', 'asdfghjkl', 'zxcvbnm!?'];
+/* The row above it. Ten digits, and they are NOT letters: the free plan
+   cannot make a digit -- numbers.js says a digit is a letter you give a value
+   to, and free adds no letters -- so there is nothing of the person's to put
+   here and these are the roman ten.
+
+   They are here rather than behind a switch because free is one face and
+   stays one face. 「2ページ目なしでqwartyの上に1〜0の数字と！？入れてこれで無料版
+   1ページに抑えよう」 A second face on free would have held these and nothing
+   else, which is a key to reach a row.
+
+   `!` and `?` are already the tail of the third row and are left there: with
+   the ten they would make a row of twelve, and twelve across a phone is
+   narrower than a thumb. */
+var KB_DIGITS='1234567890';
+/* A key that types a character rather than a letter. The digits here, and the
+   roman face the conversion needs -- neither is one of the person's letters,
+   both are something to press that puts a known character in. */
+function kbRom(c){ return {w:1, k:'rom', v:c, f:['','','','']}; }
 function kbNamed(c){
   var i, n;
   for(i=0;i<LETTERS.length;i++){
@@ -112,6 +130,9 @@ function kbNamed(c){
 }
 function kbFixed(){
   var rows=[], r, i, j, row, id;
+  row=[];
+  for(i=0;i<KB_DIGITS.length;i++) row.push(kbRom(KB_DIGITS.charAt(i)));
+  rows.push(row);
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
     for(j=0;j<r.length;j++){
@@ -166,6 +187,7 @@ function kbFace(key){
      keyboard already draws it. */
   if(key.k==='sp') return '';
   if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0);
+  if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
   var l=ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
   return ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>');

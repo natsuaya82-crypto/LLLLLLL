@@ -85,6 +85,9 @@ function shareKey(key){
     l=kbLayLetter(i);
     o=l? shareFace(l.id) : {t:String(i+1)};
     o.k='lay'; o.to=i;
+  }else if(key.k==='rom'){
+    /* Not a letter and never one: what it types is the character on it. */
+    o={k:'rom', t:key.v};
   }else{
     o={k:key.k};
   }
@@ -239,7 +242,7 @@ function shareRomLay(){
   var rows=[], i, j, r, row, sp;
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
-    for(j=0;j<r.length;j++) row.push({k:'rom', t:r.charAt(j), w:1});
+    for(j=0;j<r.length;j++) row.push(shareKey(kbRom(r.charAt(j))));
     if(i===KB_QWERTY.length-1) row.push({k:'del', w:1});
     rows.push(row);
   }
