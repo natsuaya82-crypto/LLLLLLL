@@ -383,9 +383,33 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 拡張とは別物で、**Apple 側の設定は要りません。**
 
-- `www/glyph.js` の `installScriptFont()` はすでに OTF のバイト列を
-  作っています（`f.dataUrl()`）。それを App Group に `.otf` として置きます
+書いてあるのは `ios/App/App/LinguaShare.swift` です。Capacitor プラグイン
+1枚で、メソッドは2つしかありません。
+
+| | |
+|---|---|
+| `write({json, font})` | `keyboard.json` と `LinguaScript.otf` を App Group に置く。`www/share.js` が呼ぶ |
+| `registerFont()` | その otf を iOS に登録する。**まだ誰も呼んでいません**（下） |
+
+`write` の細かいところ2つ。どちらも実機でしか出ない類です:
+
+- **`.atomic`** — 拡張が読んでいる最中かもしれないので、丸ごと置き換わるか
+  何も起きないかのどちらかにします。半分書けた JSON はキーの無い
+  キーボードです
+- **`.completeFileProtectionUntilFirstUserAuthentication`** — 既定の保護
+  だとロック中のファイルが読めません。キーボード拡張はアプリが見ない状態で
+  起こされるので、既定のままだと**再起動後に文字が消えます**。誰も再現
+  できないバグになります
+
+`registerFont` はボタンです。**自動では絶対に呼びません** — iOS が毎回
+「Lingua がフォントを追加しようとしています」と確認を出すので、文字を1画
+描くたびにそれが出ることになります。ボタンはまだ作っていません（画面が
+増えるので、見てもらってから）。
+
 - native 側で `CTFontManagerRegisterFontURLs(urls, .persistent, true, ...)`
+  — その前に必ず unregister します。文字を描くたびにフォントは建て直される
+  のに、同じ URL の二度目の登録はエラーで、登録し直さないと**最初に登録した
+  日のアルファベットが出続けます**
 - iOS が「Lingua がフォントを追加しようとしています」と確認を出す →
   許可すると、**フォントを選べるアプリ**でフォント名 `LinguaScript` が
   選べるようになります
@@ -427,7 +451,7 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 ## 12. 順番と、どこであなたを待つか
 
-`1〜5` は済んでいます。プロファイル2枚を読んで確認しました。
+`B` `C` `D` `F` `G` は済みました。残っているのは下の3つです。
 
 | | 値 |
 |---|---|
@@ -437,29 +461,57 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 | App Group | `group.com.tokinets.lingua` |
 | 期限 | 2枚とも 2027-06-26 |
 
-**拡張側のプロファイルには App Group が入っています。**
-**本体側には入っていません。** 1-3 の本体の分だけが残っています。
+両方のプロファイルに `group.com.tokinets.lingua` が入っているのを、
+ファイルを読んで確認済みです。
+
+### TestFlight まで — あなたがやること
+
+**1つだけです。**
+
+> GitHub → Settings → Secrets and variables → Actions
+> → `PROVISIONING_PROFILE_BASE64` → **Update**
+> → 送った `PROVISIONING_PROFILE_BASE64.txt` の中身で**上書き**
+
+新規追加ではありません。既存を差し替えます。
+
+**これは今、必須になりました。** G で本体に
+`CODE_SIGN_ENTITLEMENTS = App/App.entitlements` を付けたので、本体は
+App Group を要求する側になっています。古いプロファイル（App Group が
+空のまま）で Archive を回すとここで落ちます:
+
+```
+Provisioning profile "Lingua Distribution" doesn't match the entitlements
+file's value for the com.apple.security.application-groups entitlement.
+```
+
+そのあと、ビルドを回す許可をください。CI 側は何も変えていません
+（`.github/workflows/ios-deploy.yml` を手動実行、ビルド番号は `run_number`）。
+
+`KEYBOARD_PROVISIONING_PROFILE_BASE64` は入れておいて構いませんが、
+**CI がまだ読んでいません。**読むのは I です。
 
 ### 残っている手順
 
-| # | 誰 | やること | 次を止めるか |
+| # | 誰 | やること | 状態 |
 |---|---|---|---|
-| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | 止めない |
-| B | あなた | Identifiers → `com.tokinets.lingua` → App Groups の **Edit** → `group.com.tokinets.lingua` を選ぶ → Save | 止めない |
-| C | あなた | Profiles → `Lingua Distribution` → Edit → Generate → Download → 送る | 止めない |
-| D | こちら | C を base64 にして返す | |
-| E | あなた | Secret `PROVISIONING_PROFILE_BASE64` を D で**上書き** | **F を止める** |
-| F | こちら | `www/share.js` — 本体が `keyboard.json` を書き出す（§5） | |
-| G | こちら | Capacitor プラグイン — App Group への書き出しとフォント登録（§9） | |
-| H | あなた | ビルドの許可 → TestFlight で G を確認 | |
-| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | E が要ります |
-| J | あなた | ビルドの許可 → 実機で設定 → キーボード → フルアクセス → 確認 | |
+| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | I まで使いません |
+| B | あなた | Identifiers → `com.tokinets.lingua` → App Groups に `group.com.tokinets.lingua` | 済 |
+| C | あなた | `Lingua Distribution` を Generate し直して送る | 済 |
+| D | こちら | C を base64 にして返す | 済 |
+| **E** | **あなた** | **Secret `PROVISIONING_PROFILE_BASE64` を上書き** | **残** |
+| F | こちら | `www/share.js` — 本体が `keyboard.json` を書き出す（§5） | 済 |
+| G | こちら | `LinguaShare.swift` — App Group への書き出しとフォント登録（§9） | 済 |
+| **H** | **あなた** | **ビルドの許可 → TestFlight** | **残** |
+| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | E のあと |
+| **J** | **あなた** | **ビルドの許可 → 実機でフルアクセス → 確認** | **残** |
 
-**F と G は Apple 側を待ちません。** A〜E と並行してこちらで進めます。
+### H で確認できること／できないこと
 
-**E を飛ばすと I の Archive が落ちます** — `provisioning profile doesn't
-include the com.apple.security.application-groups entitlement`。
-本体は App Group に**書く**側なので、拡張と同じだけの権限が要ります。
+H は**拡張の入っていないビルド**です。キーボードはまだ他のアプリに出ません。
+確認できるのは、本体が App Group に書けているかどうかだけで、それは画面には
+出ません。**H は I が落ちないことを先に確かめるための回**です。
+
+キーボードが Messages に出るのは J です。
 
 ビルドは毎回、許可をもらってから回します。
 
