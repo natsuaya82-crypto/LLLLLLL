@@ -6,6 +6,16 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 **There is no build step and no bundler.** `www/index.html` loads every `.js` with a
 `<script src>` tag. What is in the repo is what runs on the phone.
 
+> **New here? Read `docs/STATE.md` first.** This file says how the code has to
+> be written; that one says what has been built and what has not, and it opens
+> with the branch, because **`master` is 144 commits behind and does not have
+> the system keyboard, `share.js`, `conv-check` or the tenth rule below.** A
+> session reading the default branch is reading a different app and will report
+> things as missing that are not. It also says the two that are easiest to get
+> backwards: the timeline is `localStorage` and no part of it is on the server
+> yet, and CI runs three of these ten checks, so a green tick on a push is not
+> the gate.
+
 ## The gate
 
 ```
@@ -520,6 +530,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
 | `www/talk.js`, `assist.js`, `grammar.js` | the AI (Studio) side |
 | `www/voice.js`, `notes.js` | speech, notes |
+| `docs/STATE.md` | where the project stands: which branch is the app, what is built, what only looks built (the timeline is on the phone; the `post`/`follow`/`quote` tables are written and unused), what only a person with a dashboard login can do, and what CI does not run. The one file to hand somebody who has never seen this repo |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
