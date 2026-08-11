@@ -170,6 +170,61 @@ function bkPush(){
     });
 }
 
+/* ---- what is actually on the disk -------------------------------------
+   The settings screen shows this, and the reason it exists is a lesson this
+   repository already paid for once: the system keyboard cost four builds,
+   three of them spent guessing, and the fourth was solved by one screenshot
+   the moment the app was made to say on screen whether the hand-over had
+   gone out. docs/keyboard-extension.md ends with "Build the status line
+   first."
+
+   Nothing about the file rotation can be seen from a Mac either -- it
+   happens in a folder on somebody's phone -- so this is how a person
+   confirms it: the generations, newest first, each with the save number it
+   carries and how big it is. Rotation is `save 7 / save 6 / save 5` going
+   down the list, and a restore from a spare is a gap at the top.
+
+   It reads, and touches nothing. */
+var BKLIST=null;
+function bkList(){
+  var p=sharePlug();
+  if(!p) return;
+  p('LinguaShare', 'kept', {}).then(function(r){
+    var xs=(r && r.langs)||[], out=[], i, j, d;
+    for(i=0;i<xs.length;i++){
+      for(j=0;j<(xs[i]||[]).length;j++){
+        try{ d=JSON.parse(String(xs[i][j]||'')); }catch(e){ d=null; }
+        out.push({gen:j, ok:!!(d && bkOK(d)), no:(d && d.n)||0,
+                  name:(d && d.name)||'', kb:Math.round(String(xs[i][j]||'').length/102.4)/10});
+      }
+    }
+    BKLIST=out; render();
+  })['catch'](function(){ BKLIST=[]; render(); });
+}
+/* One line per file. Numbers and a name -- there is no sentence in it to
+   translate beyond which generation it is. */
+function bkListHTML(){
+  var i, f, out='';
+  if(!BKLIST) return '<div class="note">'+esc(bkSay())+'</div>';
+  if(!BKLIST.length) return '<div class="note">'+t('bk.none')+'</div>';
+  for(i=0;i<BKLIST.length;i++){
+    f=BKLIST[i];
+    out+='<div class="set"><span class="sl'+(f.ok? '':' bad')+'">'+
+      esc(f.name || t('lt.untitled'))+' · '+esc(f.gen? t('bk.gen', f.gen) : t('bk.no', f.no))+
+      '</span><span class="sv">'+f.kb+' KB</span></div>';
+  }
+  return out;
+}
+/* Whether the last hand-over went. BK.how holds what the native side said,
+   which is a sentence nobody wrote for a person to read -- so it goes inside
+   one that was, the way kbOutSay() already does it for the keyboard. */
+function bkSay(){
+  if(BK.how==='kept') return t('bk.no', bkNo());
+  if(BK.how==='no bridge') return t('bk.off');
+  if(BK.how) return t('bk.bad', BK.how);
+  return t('bk.none');
+}
+
 /* ---- coming back ------------------------------------------------------
    Read on the way in, once, before anything is shown. What it does is narrow
    on purpose: it puts back a language the app has no trace of, and it fills

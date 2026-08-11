@@ -38,6 +38,7 @@ function viewReset(){
   ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
+  BKLIST=null;                         /* what is on the disk, asked again */
 }
 
 /* ---- where you are, and what you came through ------------------------

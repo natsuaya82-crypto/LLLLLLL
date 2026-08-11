@@ -127,7 +127,18 @@ function vSet(){
       '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='data'){
-    body=(can('data')
+    /* What is on the disk, for everybody. Keeping a language is not a paid
+       feature -- charging for not losing somebody's work would mean
+       answering, on the day it is lost, whether they had paid -- so this
+       sits above the lock rather than behind it. */
+    /* Asked for once, on the way in. bkList() renders when the answer comes
+       back, and BKLIST stops being null then, so this does not loop.
+       viewReset() puts it back to null, which is what makes leaving the room
+       and returning ask again. */
+    if(BKLIST===null) bkList();
+    body='<div class="sec">'+t('bk.h')+'</div>'+bkListHTML()+
+      '<div class="sec" style="margin-top:18px">'+t('set.data')+'</div>'+
+      (can('data')
       ? '<button class="set"' + DO('exportCSV') + '><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('openImport') + '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
