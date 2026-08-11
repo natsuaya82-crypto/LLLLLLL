@@ -147,26 +147,47 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  /// Every language on disk, newest generation only.
+  /// Every language on disk, and every generation of it, newest first.
   ///
-  /// The spares are not offered: they exist for a person to find in the Files
-  /// app when something has gone wrong, and handing them to a restore that
-  /// cannot tell them apart would be the restore choosing which of three
-  /// copies is the real one. It is not equipped to choose, so it is not asked.
+  ///     [ ["<name>.json", "<name>.1.json", "<name>.2.json"],   one language
+  ///       [ ... ] ]                                            another
+  ///
+  /// The spares used to be withheld, on the argument that a restore which
+  /// cannot tell three copies apart should not be asked to choose. That was
+  /// wrong in the way that costs everything: when the newest file was
+  /// unreadable the restore was handed nothing else and reported that the
+  /// language did not exist, while two good copies of it sat in this folder.
+  /// Keeping spares that the only thing which reads them cannot see is not
+  /// keeping spares.
+  ///
+  /// It still does not choose. It hands them over in age order and
+  /// www/backup.js takes the first that reads back as a language -- which is
+  /// not a judgement, it is the absence of one.
+  ///
+  /// A ".tmp" is never in here: it has the wrong extension, and it is a write
+  /// that did not finish rather than a generation.
   @objc func kept(_ call: CAPPluginCall) {
     do {
       let dir = try languages()
       let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
-      var out: [String] = []
+      // base name -> generation number -> text
+      var byLang: [String: [Int: String]] = [:]
       for n in names.sorted() {
         guard n.hasSuffix(".json") else { continue }
-        // "<name>.1.json" is a spare; "<name>.json" is the one that counts
         let stem = String(n.dropLast(5))
-        if let last = stem.split(separator: ".").last, Int(last) != nil { continue }
-        if let d = try? Data(contentsOf: dir.appendingPathComponent(n)),
-           let s = String(data: d, encoding: .utf8) { out.append(s) }
+        var base = stem, gen = 0
+        if let dot = stem.lastIndex(of: "."),
+           let g = Int(stem[stem.index(after: dot)...]) {
+          base = String(stem[stem.startIndex..<dot]); gen = g
+        }
+        guard let d = try? Data(contentsOf: dir.appendingPathComponent(n)),
+              let s = String(data: d, encoding: .utf8) else { continue }
+        byLang[base, default: [:]][gen] = s
       }
-      call.resolve(["files": out])
+      let out: [[String]] = byLang.keys.sorted().map { base in
+        (byLang[base] ?? [:]).keys.sorted().compactMap { byLang[base]?[$0] }
+      }
+      call.resolve(["langs": out])
     } catch {
       call.reject(error.localizedDescription)
     }

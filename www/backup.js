@@ -46,6 +46,54 @@ var BK={dirty:false, at:0, how:''};
    every render, and at 697 KB that is a copy of the whole language a frame. */
 function bkTouch(){ BK.dirty=true; }
 
+/* What each slice has to BE, read off the functions that read them:
+   langRead, ltRead, noteRead, stRead, tkRead, sndRead. Nothing here is about
+   how much is in one -- an empty language is a language, and `[]` is what a
+   new one looks like. It is about the shape.
+
+   The distinction this whole chapter turns on:
+
+     unreadable  -> not data. Refuse to write it, restore over it.
+     empty       -> data. A new language, a wiped one, a language somebody
+                    just switched away from. Write it, keep it, leave it be.
+
+   Conflating those two is how a save system eats somebody's work while
+   believing it is protecting it. 「データ件数が減った」で判定しない。 */
+var BK_SHAPE={ words:'array', lines:'array', lang:'text', script:'object',
+               letters:'array', notes:'array', phases:'object',
+               talk:'array', snd:'array' };
+/* Is this stored text a slice, or is it wreckage?
+
+   `lang` is the language's name and is stored as a bare string, not as JSON,
+   so it is sound whatever it says -- there is nothing in a name that can be
+   malformed. Everything else has to parse AND be the shape its reader
+   expects, because JSON.parse is happy with `null` and with a number, and a
+   reader handed either of those quietly produces an empty language.
+
+   A slice the app has never written is not unsound. It is absent, and absent
+   is what a restore is for. */
+function bkSound(k, v){
+  var want=BK_SHAPE[k], d;
+  if(v===null || v===undefined) return false;
+  if(want==='text') return true;
+  try{ d=JSON.parse(v); }catch(e){ return false; }
+  if(d===null || typeof d!=='object') return false;
+  if(want==='array') return Object.prototype.toString.call(d)==='[object Array]';
+  return Object.prototype.toString.call(d)!=='[object Array]';
+}
+/* Whether what is in storage for this language can be written out at all.
+   Not whether there is much of it. */
+function bkOK(pack){
+  var i, k;
+  if(!pack || !pack.id || !pack.slice) return false;
+  for(i=0;i<SLICES.length;i++){
+    k=SLICES[i];
+    if(!Object.prototype.hasOwnProperty.call(pack.slice, k)) continue;   /* absent */
+    if(!bkSound(k, pack.slice[k])) return false;
+  }
+  return true;
+}
+
 /* The whole of the open language, as one object.
 
    The slices are SLICES in core.js, so a tenth one added there is written out
@@ -103,6 +151,14 @@ function bkPush(){
   if(!p){ BK.how='no bridge'; return; }
   BK.dirty=false;
   var pack=bkPack();
+  /* Wreckage is not written out. A slice that cannot be read is not a
+     smaller language, it is a broken one, and writing it would push the last
+     readable copy one generation down the pile for nothing.
+
+     This is the safe half of "refuse to save" and the unsafe half is not
+     here: nothing is refused for being SMALL. A wipe, a switch and a brand
+     new language all produce an empty slice and all of them are written. */
+  if(!bkOK(pack)){ BK.how='not written: what is in storage will not read back'; return; }
   out=JSON.stringify(pack);
   p('LinguaShare', 'keep', {name:bkName(), json:out})
     /* counted up only when the file is on the disk, so a refused write does
@@ -127,14 +183,18 @@ function bkPush(){
 function bkTake(file){
   var d, k, i, put=0;
   try{ d=JSON.parse(file); }catch(e){ return 0; }
-  if(!d || !d.id || !d.slice) return 0;
+  if(!bkOK(d)) return 0;
   var prev=langId;
   langId=d.id;
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
-    if(typeof d.slice[k]!=='string') continue;
+    if(!bkSound(k, d.slice[k])) continue;      /* the FILE's copy is no better */
     try{
-      if(localStorage.getItem(langKey(k))!==null) continue;
+      /* "Is there one" was the question and it was the wrong one. A slice
+         holding `[[[not json` is present, so the file was skipped, the
+         wreckage was kept, and the next save wrote the wreckage over the
+         last good copy. Soundness is the question. */
+      if(bkSound(k, localStorage.getItem(langKey(k)))) continue;
       localStorage.setItem(langKey(k), d.slice[k]);
       put++;
     }catch(e){}
@@ -149,13 +209,29 @@ function bkTake(file){
   if(!LANGS[d.id]){ LANGS[d.id]={name:String(d.name||''), mine:true}; put++; }
   return put;
 }
+/* One language, as its generations, newest first. The first that reads back
+   as a language is the one, and the rest are not looked at.
+
+   Not a choice between them -- the absence of one. A generation that cannot
+   be read is not a candidate that lost, it is not a candidate. */
+function bkTakeGen(gens){
+  var i, put;
+  for(i=0;i<gens.length;i++){
+    put=bkTake(String(gens[i]||''));
+    if(put){
+      if(i>0) BK.how='restored from spare '+i;
+      return put;
+    }
+  }
+  return 0;
+}
 function bkRestore(then){
   var p=sharePlug();
   if(!p){ if(then) then(0); return; }
   p('LinguaShare', 'kept', {})
     .then(function(r){
-      var xs=(r && r.files)||[], i, put=0;
-      for(i=0;i<xs.length;i++) put+=bkTake(String(xs[i]||''));
+      var xs=(r && r.langs)||[], i, put=0;
+      for(i=0;i<xs.length;i++) put+=bkTakeGen(xs[i]||[]);
       if(put){
         langStore();
         /* Something was put back, so what the screens are holding is a
@@ -166,6 +242,17 @@ function bkRestore(then){
           langStore();
         }
         langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); kbRead();
+        /* Something came back, so write it out again as soon as anything is
+           drawn. If it came from a spare, the unreadable newest file is
+           still the newest file, and one good save puts a readable one in
+           front of it.
+
+           The broken one is not deleted. It ages down through the
+           generations on the next two saves and falls off the end, which is
+           the app not deleting anything and the shelf simply being three
+           deep. Deleting it on purpose would be this chapter breaking its
+           own rule to tidy up. */
+        bkTouch();
       }
       if(then) then(put);
     })

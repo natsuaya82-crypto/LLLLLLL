@@ -166,6 +166,89 @@ const R = await pg.evaluate(() => {
            kb: +(file.length / 1024).toFixed(1) };
 });
 
+/* ---------------------------------------------------------------------------
+   And the way back in, which is the half a person only ever meets on the
+   worst day they have with this app. sharePlug() is stubbed so kept() can be
+   made to answer with any set of generations; what runs is the real
+   bkRestore, the real bkTakeGen and the real bkTake.
+   --------------------------------------------------------------------------- */
+const back = await pg.evaluate(async () => {
+  const fails = [];
+  let FILES = [];
+  window.Capacitor = { nativePromise: (plug, method) =>
+    method === 'kept' ? Promise.resolve({ langs: FILES }) : Promise.resolve({}) };
+
+  ltStart(); saveLetters(); save();
+  const good = JSON.stringify(bkPack());
+  const id = langId;
+  const words = WORDS.length, letters = LETTERS.length;
+  const junk = '{"v":1,"id":"' + id + '","slice":{"words":"[[[';   /* will not parse */
+  /* Parses, and is still not a language: JSON.parse is happy with a number
+     and a reader handed one quietly produces an empty dictionary. */
+  const shaped = JSON.stringify({ v: 1, n: 9, id: id, name: 'x',
+                                  slice: { words: '7', letters: '[]' } });
+
+  const wipe = () => { SLICES.forEach(k => localStorage.removeItem(langKey(k)));
+                       delete LANGS[id]; langStore(); langRead(); ltRead(); };
+  const now = () => ({ w: WORDS.length, l: LETTERS.length });
+  const run = () => new Promise(r => bkRestore(r));
+
+  /* 1. the newest file is wreckage; a spare is not */
+  wipe(); FILES = [[junk, good]];
+  await run(); langRead(); ltRead();
+  if (now().w !== words || now().l !== letters)
+    fails.push('the newest file was unreadable and the restore did not fall through to ' +
+               'the spare beside it — which is what keeping spares is for');
+
+  /* 1b. two of three gone */
+  wipe(); FILES = [[junk, junk, good]];
+  await run(); langRead(); ltRead();
+  if (now().w !== words)
+    fails.push('two unreadable generations stopped the restore reaching the third');
+
+  /* 1c. readable, and still not a language */
+  wipe(); FILES = [[shaped, good]];
+  await run(); langRead(); ltRead();
+  if (now().w !== words)
+    fails.push('a file that parses but is not shaped like a language was taken as one; ' +
+               'JSON.parse is not the question');
+
+  /* 2. localStorage is PRESENT and is wreckage */
+  wipe();
+  localStorage.setItem(langKey('words'), '[[[not json');
+  LANGS[id] = { name: 'x', mine: true }; langStore();
+  FILES = [[good]];
+  await run(); langRead(); ltRead();
+  if (now().w !== words)
+    fails.push('a slice holding unreadable text counted as "there", so a good file was ' +
+               'ignored and the wreckage was kept');
+
+  /* 3. and that wreckage must never reach the file */
+  wipe();
+  localStorage.setItem(langKey('words'), '[[[not json');
+  let wrote = null;
+  window.Capacitor = { nativePromise: (plug, method, arg) => {
+    if (method === 'keep') { wrote = arg; }
+    return Promise.resolve({ langs: [] });
+  } };
+  BK.dirty = true; bkPush();
+  if (wrote !== null)
+    fails.push('a language whose storage will not read back was written to the file, ' +
+               'pushing the last good copy one generation down for nothing');
+
+  /* 4. empty is NOT broken. A wipe, a switch and a new language all look like this. */
+  SLICES.forEach(k => localStorage.removeItem(langKey(k)));
+  localStorage.setItem(langKey('words'), '[]');
+  localStorage.setItem(langKey('letters'), '[]');
+  wrote = null; BK.dirty = true; bkPush();
+  if (wrote === null)
+    fails.push('an EMPTY language was refused. Empty is what a wipe, a language switch ' +
+               'and a brand new language all look like — refusing it is the failure ' +
+               'this whole design was built to avoid.');
+
+  return { fails };
+});
+
 await br.close();
 srv.close();
 
@@ -183,10 +266,11 @@ if (R.missing.length){
                 'nothing looks wrong until somebody needs it back.\n');
   process.exit(1);
 }
-if (R.fails.length){
-  console.error('\nbackup: ' + R.fails.length + ' thing' + (R.fails.length === 1 ? '' : 's') +
+const ALL = R.fails.concat(back.fails);
+if (ALL.length){
+  console.error('\nbackup: ' + ALL.length + ' thing' + (ALL.length === 1 ? '' : 's') +
                 ' about keeping a language do not hold:\n');
-  R.fails.forEach(m => console.error('  ' + m));
+  ALL.forEach(m => console.error('  ' + m));
   console.error('');
   process.exit(1);
 }
@@ -197,3 +281,6 @@ console.log('        comes back whole from a storage wipe, refuses to overwrite 
 console.log('        language that is already there, and carries save number ' + R.no +
             ', which');
 console.log('        goes up and never down.');
+console.log('        A restore falls through unreadable generations to a good one,');
+console.log('        prefers a good file to wreckage in storage, refuses to write');
+console.log('        wreckage out, and writes an empty language without complaint.');
