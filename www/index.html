@@ -1015,7 +1015,18 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 /* `normal` hands the line box to the font, which is where the rule lives:
    ink plus one lattice step. A number here would be a screen deciding the
    spacing of somebody else's script, and there are four screens. */
-.sfont{font-family:'LinguaScript',serif;line-height:normal}
+/* !important, and it is the one place that gets to say so.
+   .sfont means "this is set in the letters somebody drew" -- it is the whole
+   point of the app, and nothing may quietly outrank it.
+
+   A dozen rules in this file put font-family:inherit on the input inside
+   their own container (.pwfield input, .search input, and so on), and every
+   one of them is two selectors where this is one, so every one of them wins
+   on specificity. The post composer's line was set in the system font for
+   that reason and no other: the class was on the element, the font was built,
+   the glyph was there, and `l` came out as l. 「これ押してもlになる。lingua内
+   でも」 Beating them one at a time is a dozen places agreeing; this is one. */
+.sfont{font-family:'LinguaScript',serif !important;line-height:normal}
 </style>
 <style id="ob-rework">
 .langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
