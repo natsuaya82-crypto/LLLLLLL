@@ -19,7 +19,7 @@ protocol KeyBoardViewDelegate: AnyObject {
 /// there would be louder than the letter.
 final class KeyView: UIView {
   let key: Key
-  private let center = GlyphView()
+  private let faceView = GlyphView()
   private var corners: [GlyphView] = []
 
   init(key: Key, box: CGFloat) {
@@ -30,17 +30,17 @@ final class KeyView: UIView {
     backgroundColor = KeyView.rest(key)
     isUserInteractionEnabled = false
 
-    center.box = box
+    faceView.box = box
     switch key.k {
-    case "del":  center.text = "⌫"
-    case "next": center.text = "🌐"
-    case "sp":   center.text = ""            // the widest key wears nothing
-    case "lay":  center.text = String((key.to ?? 0) + 1)
+    case "del":  faceView.text = "⌫"
+    case "next": faceView.text = "🌐"
+    case "sp":   faceView.text = ""            // the widest key wears nothing
+    case "lay":  faceView.text = String((key.to ?? 0) + 1)
     default:
-      center.poly = key.st
-      center.text = key.ch ?? key.t
+      faceView.poly = key.st
+      faceView.text = key.ch ?? key.t
     }
-    addSubview(center)
+    addSubview(faceView)
 
     for f in (key.f ?? []) {
       let g = GlyphView()
@@ -66,7 +66,7 @@ final class KeyView: UIView {
   override func layoutSubviews() {
     super.layoutSubviews()
     let inset = bounds.height * 0.14
-    center.frame = bounds.insetBy(dx: inset, dy: inset)
+    faceView.frame = bounds.insetBy(dx: inset, dy: inset)
     guard corners.count == 4 else { return }
     // up, right, down, left — KB_DIRS in www/keyboard.js, same order.
     let s = bounds.height * 0.3
@@ -87,7 +87,7 @@ final class KeyBoardView: UIView {
   /// `drop` is the globe when the phone does not need one. It is in the file
   /// because www/share.js always puts it there, and it is taken out here
   /// because only the extension can be asked whether it is wanted.
-  init(layer lay: Layer, box: CGFloat, drop: Set<String>) {
+  init(lay: Layer, box: CGFloat, drop: Set<String>) {
     super.init(frame: .zero)
     for r in lay.rows {
       var row: [KeyView] = []

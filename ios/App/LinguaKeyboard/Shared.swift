@@ -10,6 +10,7 @@
 //  and the shape it wears. This file turns bytes into that and stops.
 
 import Foundation
+import CoreGraphics
 
 /// A key face: what pressing it inserts, and what it looks like.
 /// Three ways to look like something, tried in this order — the same order
@@ -35,7 +36,6 @@ struct Key: Decodable {
   let f: [Face?]?
 
   var width: CGFloat { CGFloat(w ?? 1) }
-  var face: Face { Face(t: t, st: st, ch: ch) }
 }
 
 struct Layer: Decodable {

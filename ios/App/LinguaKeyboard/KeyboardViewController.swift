@@ -10,7 +10,7 @@ import UIKit
 
 final class KeyboardViewController: UIInputViewController, KeyBoardViewDelegate {
   private var board: Board?
-  private var layer = 0
+  private var layerNo = 0
   private var body: UIView?
   private var height: NSLayoutConstraint?
 
@@ -35,13 +35,13 @@ final class KeyboardViewController: UIInputViewController, KeyBoardViewDelegate 
     guard hasFullAccess else { return show(Say.full()) }
     guard let b = Shared.board() else { return show(Say.draw()) }
     board = b
-    let lay = b.lay[min(layer, b.lay.count - 1)]
+    let lay = b.lay[min(layerNo, b.lay.count - 1)]
 
     // The globe is in the file always, because only here can the phone be
     // asked whether it wants one -- an iPad with a hardware keyboard does
     // not, and Apple hides it rather than having it do nothing.
     let drop: Set<String> = needsInputModeSwitchKey ? [] : ["next"]
-    let kb = KeyBoardView(layer: lay, box: CGFloat(b.box), drop: drop)
+    let kb = KeyBoardView(lay: lay, box: CGFloat(b.box), drop: drop)
     kb.delegate = self
     place(kb, rows: lay.rows.count)
   }
@@ -73,7 +73,7 @@ final class KeyboardViewController: UIInputViewController, KeyBoardViewDelegate 
     if let c = height { c.constant = h }
     else {
       let c = view.heightAnchor.constraint(equalToConstant: h)
-      c.priority = .required - 1        // the system relaxes this on rotation
+      c.priority = UILayoutPriority(999)   // the system relaxes this on rotation
       c.isActive = true
       height = c
     }
@@ -91,7 +91,7 @@ final class KeyboardViewController: UIInputViewController, KeyBoardViewDelegate 
     case "del":  textDocumentProxy.deleteBackward()
     case "sp":   textDocumentProxy.insertText(" ")
     case "next": advanceToNextInputMode()
-    case "lay":  layer = key.to ?? 0; build()
+    case "lay":  layerNo = key.to ?? 0; build()
     default:     insert(key.t)
     }
   }
