@@ -7,14 +7,13 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 `<script src>` tag. What is in the repo is what runs on the phone.
 
 > **New here? Read `docs/STATE.md` first.** This file says how the code has to
-> be written; that one says what has been built and what has not, and it opens
-> with the branch, because **`master` is 144 commits behind and does not have
-> the system keyboard, `share.js`, `conv-check` or the tenth rule below.** A
-> session reading the default branch is reading a different app and will report
-> things as missing that are not. It also says the two that are easiest to get
-> backwards: the timeline is `localStorage` and no part of it is on the server
-> yet, and CI runs three of these ten checks, so a green tick on a push is not
-> the gate.
+> be written; that one says what has been built and what has not. It opens with
+> two `git rev-list` lines to run before deciding anything is missing —
+> `master` once sat 144 commits behind, and a session that cloned it reported
+> the system keyboard as unbuilt, correctly, about an app a week old. It also
+> says the two that are easiest to get backwards: the timeline is
+> `localStorage` and no part of it is on the server yet, and CI runs three of
+> these ten checks, so a green tick on a push is not the gate.
 
 ## The gate
 

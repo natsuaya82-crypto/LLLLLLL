@@ -9,32 +9,35 @@ remembered. Where a claim can go stale, it says how to re-check it.
 
 ---
 
-## 1. The branch is the app. `master` is not.
+## 1. `master` is the app again. Keep it that way.
 
-This is the first thing to get right, and it is the reason a fresh session sees
-an app that is missing things somebody else has already built.
+`master` and `claude/cowork-migration-review-wfx1ra` are the same commit. A
+fresh clone is the current app, and nothing needs checking out.
 
-```
-origin/master                              2026-08-04    144 commits behind
-claude/cowork-migration-review-wfx1ra       2026-08-11    every commit is here
-```
+That is worth a paragraph because it was not true, and the way it failed is the
+way it will fail again. `master` sat at 2026-08-04 while 144 commits of work
+went onto the branch, so it had **no** `www/share.js`, **no**
+`ios/App/LinguaKeyboard/`, **no** `tools/conv-check.mjs` and **no**
+`docs/keyboard-extension.md`. A second session cloned the repository, landed on
+the default branch, and reported that the system keyboard was not built and the
+gate was nine checks. It was right about what it was looking at, and there was
+nothing in the repository that could have told it otherwise.
 
-`master` has **no** `www/share.js`, **no** `ios/App/LinguaKeyboard/`, **no**
-`tools/conv-check.mjs` and **no** `docs/keyboard-extension.md`. A session that
-clones the repository and reads the default branch is reading the app as it was
-a week and 144 commits ago, and will conclude — correctly, for what it is
-looking at — that there is no system keyboard, no conversion table, and nine
-checks in the gate rather than ten.
-
-**So: check out the branch first.**
+So, before deciding anything is missing:
 
 ```
-git fetch origin claude/cowork-migration-review-wfx1ra
-git checkout claude/cowork-migration-review-wfx1ra
+git fetch origin master
+git rev-list --count origin/master..HEAD     # commits master has not got
+git rev-list --count HEAD..origin/master     # commits you have not got
 ```
 
-Re-check with `git rev-list --count origin/master..HEAD`. When that is 0, this
-section is out of date and should be deleted.
+Two zeros means what you are reading is the app. Anything else means find out
+why before writing a line, and say so to whoever is running the branch — a
+number here is the difference between "not built" and "not fetched".
+
+The branch has only ever been ahead of `master` in a straight line, never
+beside it, so bringing `master` up is a fast-forward and cannot conflict.
+Pushing to `master` is the owner's call and is asked for each time.
 
 ---
 
