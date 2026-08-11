@@ -276,6 +276,7 @@ function vKb(){
     }).join('')+'</div>';
   }
   return '<div class="view">'+navTop('')+'<div class="body">'+
+    kbSysHTML()+
     out+
     kbHTML(kbSel)+
     '<div class="kbadd">'+
@@ -285,6 +286,51 @@ function vKb(){
     '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('kbReset') + '>'+
       '<span class="sl bad">'+t('kb.reset')+'</span></button>'+
     '</div></div>';
+}
+/* What this chapter IS, which the screen never said.
+   「ここの画面どういうこと？」「Linguaで書いてくださいの画面にどう結びつけるのか
+   がわからんて」
+
+   The editor below is the layout of a keyboard that goes on the PHONE, and
+   nothing anywhere in the app said so -- the steps to install it were written
+   in docs/keyboard-extension.md, which two people have read. Somebody who saw
+   the keyboard say "draw some letters first" had no way at all to find their
+   way back here.
+
+   The app cannot ASK whether the keyboard is installed or has full access:
+   iOS gives a containing app no way to find out. So this tells and does not
+   check, and it does not draw a tick it would have to invent. */
+function kbSysHTML(){
+  /* Not `.sec` for the heading: that class upper-cases, and an upper-cased
+     iPhone is a word Apple does not spell. The steps are numbered rather than
+     bulleted because they are in an order.
+
+     The state goes in a box of its own and last, because it is the only line
+     here anybody can act on -- everything above it is instructions and reads
+     as instructions; a person whose keyboard is empty needs to find, at a
+     glance, whether drawing more letters would help. */
+  return '<div class="kbsys">'+
+    '<div class="kbsysh">'+t('kb.sys.h')+'</div>'+
+    '<ol class="kbsteps"><li>'+t('kb.sys.1')+'</li><li>'+t('kb.sys.2')+'</li></ol>'+
+    '<div class="mini">'+t('kb.sys.full')+'</div>'+
+    '<div class="note kbout'+(SHARE.how==='sent'? '':' bad')+'">'+esc(kbOutSay())+'</div>'+
+    '</div>';
+}
+/* Whether what this chapter builds ever reached the phone.
+   
+   sharePush() has recorded the answer since the day it was written and showed
+   it to nobody, which is how three builds in a row failed with the same
+   symptom and three different causes -- the keyboard saying "draw some
+   letters first" while the letters sat drawn on the other side of a wall.
+   Each time the answer was already in memory and had no way out.
+   
+   This is not a debug line. It is the one question a person can act on: if
+   nothing was ever handed over, drawing more letters will not help. */
+function kbOutSay(){
+  if(SHARE.how==='sent') return t('kb.out.ok');
+  if(SHARE.how==='no plugin') return t('kb.out.no');
+  if(SHARE.how) return t('kb.out.bad', SHARE.how);
+  return t('kb.out.none');
 }
 function kbGoLay(i){ kbLay=i; render(); }
 function kbAddRow(){
