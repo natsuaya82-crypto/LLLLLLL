@@ -425,7 +425,7 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 | # | 誰 | やること | 次を止めるか |
 |---|---|---|---|
 | A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | 止めない |
-| B | あなた | Identifiers → `com.tokinets.lingua` → App Groups にチェック → `group.com.tokinets.lingua` → Save | 止めない |
+| B | あなた | Identifiers → `com.tokinets.lingua` → App Groups の **Edit** → `group.com.tokinets.lingua` を選ぶ → Save | 止めない |
 | C | あなた | Profiles → `Lingua Distribution` → Edit → Generate → Download → 送る | 止めない |
 | D | こちら | C を base64 にして返す | |
 | E | あなた | Secret `PROVISIONING_PROFILE_BASE64` を D で**上書き** | **F を止める** |
