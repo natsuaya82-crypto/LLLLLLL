@@ -150,7 +150,7 @@ function kbFixed(){
   return {lay:[{rows:rows}]};
 }
 function kbOf(){
-  if(!has('plus')) return kbFixed();
+  if(!can('kb')) return kbFixed();
   return KB || kbDefault();
 }
 /* Which layer is showing, and which key is being edited. Both are where you
@@ -284,7 +284,7 @@ function vKb(){
      arrived at from anywhere and a plan can end while somebody is standing
      in it -- so the screen says what it is rather than showing an editor
      over a keyboard that does not read what it writes. */
-  if(!has('plus'))
+  if(!can('kb'))
     return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="note">'+t('kb.locked')+'</div>'+
       '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+

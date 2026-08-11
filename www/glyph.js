@@ -1464,7 +1464,7 @@ function geTiles(){ inkCanvases('canvas.tc', 48, 72); }
 var AI_FREE_DAILY = 3;
 function aiToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function aiUsed(){ if(SET.aiDate!==aiToday()){ SET.aiDate=aiToday(); SET.aiN=0; save(); } return SET.aiN||0; }
-function aiSpend(){ if(has('plus')) return; SET.aiDate=aiToday(); SET.aiN=aiUsed()+1; save(); }
+function aiSpend(){ if(can('ai')) return; SET.aiDate=aiToday(); SET.aiN=aiUsed()+1; save(); }
 
 /* AI_SEAM — where the hosted model plugs in.
    A browser cannot hold an API key, so the request must go through your own

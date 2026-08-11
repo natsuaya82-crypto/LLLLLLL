@@ -46,7 +46,7 @@ function setSummary(id, p){
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
   if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
-  if(id==='data')  return has('plus')? t('set.on') : 'Free';
+  if(id==='data')  return can('data')? t('set.on') : 'Free';
   return '';
 }
 function vSet(){
@@ -92,7 +92,7 @@ function vSet(){
       '<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
-      '<span class="sv">'+WORDS.length+(has('plus')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
+      '<span class="sv">'+WORDS.length+(can('words')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
       /* Answered once, if ever: wsGuess() reads it off the letters, and the
@@ -127,7 +127,7 @@ function vSet(){
       '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='data'){
-    body=(has('plus')
+    body=(can('data')
       ? '<button class="set"' + DO('exportCSV') + '><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('openImport') + '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'

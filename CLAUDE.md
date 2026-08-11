@@ -144,6 +144,32 @@ orphaned function is not in the action table, so `act-check` cannot see it;
 26 of them were sitting in `www/` when this check was written. Deleting one
 often turns up another on the next run — its only caller was the one deleted.
 
+**And what money buys, which is the same sentence a third time.** `CAN` in
+`core.js` names every capability a plan opens — `words` `ai` `data` `file`
+`letters` `kinds` `wsys` `kb` `sug` — and `can('kb')` is the only way to ask.
+`has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
+capability nothing asks for (a price with nothing behind it), a `can('x')` in
+no plan (false on every plan — a locked door nobody can open, and nothing says
+so), a `can()` given anything but a literal, and a `has()` anywhere else.
+
+It replaced twenty-three `has('plus')` calls across nine files. They all
+looked identical and were asking nine different questions: four meant "may
+this dictionary pass a hundred words", five meant "may a letter be added,
+renamed or deleted", two meant "may a keyboard be built", and the rest were
+six more questions again. Which one each site meant lived in a comment or in
+nothing, so opening file import on the free plan, or moving the keyboard to
+Studio, meant reading twenty-three branches and remembering one at a time
+what each had ever been about. The paid tier ships as a diff on top of the
+free one, so that reading was going to happen.
+
+Putting the nine side by side found something on the first day: `ai` lifts at
+Plus and `sug` only at Studio, and they are the same ceiling. A Plus account
+is shown "3 left" on the word sheet forever and never spends one, because
+`sugLeft()` subtracts a counter `aiSpend()` returned early without touching.
+Nothing throws and nothing is refused, which is why it sat there. Both are
+left as they were — which plan buys the AI is a price, and a price is not a
+tool's to decide — but now it is one table apart instead of two files apart.
+
 ### 6. A language somebody already has still opens
 
 Storage is per language. Ten slices — words, lines, name, script, letters,

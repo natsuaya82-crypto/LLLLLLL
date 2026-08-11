@@ -64,7 +64,7 @@ function wMetaHTML(items){
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
-    navTop(WORDS.length+(has('plus')?'':' / '+FREE_LIMIT))+
+    navTop(WORDS.length+(can('words')?'':' / '+FREE_LIMIT))+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+

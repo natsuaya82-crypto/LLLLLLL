@@ -80,7 +80,19 @@
      when this was written and thirteen were the browser's, so the list stays
      short enough to read.
 
-   Exit code is 0 only when nothing is unreachable and every name resolves.
+   And what money buys, which is the same sentence again
+     CAN in www/core.js names every capability a plan opens; can('x') is the
+     only way to ask, and has() is core.js's alone. A capability nothing asks
+     for is a price with nothing behind it, and a can('x') that is in no plan
+     answers false on every plan -- a locked door nobody can open, and nothing
+     says so. Both are exactly rule 5 in a different shape, which is why they
+     are held here rather than in a check of their own.
+
+     They replaced twenty-three has('plus') calls across nine files that all
+     looked identical and were asking nine different questions.
+
+   Exit code is 0 only when nothing is unreachable, every name resolves, and
+   every capability is both declared and asked for.
    --------------------------------------------------------------------------- */
 import fs from 'fs';
 import path from 'path';
@@ -351,6 +363,86 @@ if (deadVars.length){
                 'as it said anything at all.');
   process.exit(1);
 }
+/* ---- the same sentence about what money buys --------------------------
+   CAN in www/core.js names every capability a plan opens, and can('x') is
+   the only way to ask. A capability nothing asks for is a line in a price
+   list nothing charges; a can('x') that is no capability reads as free,
+   which is the quiet way round -- nothing throws on a phone until somebody
+   on Plus finds the door shut.
+
+   Both are read from the source rather than from a running app, because
+   this check has no browser and does not want one. That means the literal
+   has to be a literal: can(someVariable) is refused outright, on the same
+   ground act-map binds the function and not its name.
+
+   has() is core.js's own, now that can() is the question everywhere else.
+   A new has('plus') anywhere else is the twenty-three coming back. */
+const CORE = fs.readFileSync(path.join(WWW, 'core.js'), 'utf8');
+const tbl = CORE.match(/\bvar\s+CAN\s*=\s*\{([\s\S]*?)\n\}/);
+if (!tbl){
+  console.error('www/core.js has no `var CAN={...}` table. It is the one place\n' +
+                'that says what each plan opens, and nothing else may say it.');
+  process.exit(1);
+}
+const caps = [...tbl[1].matchAll(/^\s*([A-Za-z_$][\w$]*)\s*:/gm)].map(m => m[1]);
+const asked = new Map();      /* capability -> where it is asked */
+const loose = [];             /* can(...) with something that is not a literal */
+const stray = [];             /* has(...) outside core.js */
+appFiles.forEach(f => {
+  const rel = path.relative(ROOT, f);
+  /* Comments are dropped, strings are not: the argument IS a string here.
+     bare() would blank exactly the thing being read. */
+  const src = fs.readFileSync(f, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+  /* `function can(what)` is the declaration, not an ask. */
+  [...src.matchAll(/(?<![\w$.])(?<!function\s{1,8})can\s*\(([^)]*)\)/g)].forEach(m => {
+    const a = m[1].trim(), lit = a.match(/^'([\w$]+)'$/);
+    if (!lit){ loose.push(rel + '  can(' + a + ')'); return; }
+    if (!asked.has(lit[1])) asked.set(lit[1], rel);
+  });
+  if (rel !== 'www/core.js' && /(?<![\w$.])has\s*\(/.test(src)) stray.push(rel);
+});
+const unknown = [...asked].filter(([c]) => caps.indexOf(c) < 0);
+const unasked = caps.filter(c => !asked.has(c));
+if (loose.length){
+  console.error(loose.length + ' can() ' + (loose.length === 1 ? 'is' : 'are') +
+                ' asked with something that is not a literal:\n');
+  loose.forEach(l => console.error('  ' + l));
+  console.error('\nNothing can hold a capability read from a variable, and a wrong\n' +
+                'one reads as free rather than throwing. Write the name out.');
+  process.exit(1);
+}
+/* Before the two below, because replacing a can('x') with has('plus') makes
+   all three true at once and only this one names what was actually done. */
+if (stray.length){
+  console.error('has() is called outside www/core.js, in ' + stray.length + ' file' +
+                (stray.length === 1 ? '' : 's') + ':\n');
+  stray.forEach(f => console.error('  ' + f));
+  console.error('\nhas() names a plan; can() names a capability. Twenty-three sites\n' +
+                'asked has(\'plus\') and meant nine different questions, and the\n' +
+                'answer to "which" was in a comment or in nothing. Ask can().');
+  process.exit(1);
+}
+if (unknown.length){
+  console.error(unknown.length + ' capabilit' + (unknown.length === 1 ? 'y is' : 'ies are') +
+                ' asked for and ' + (unknown.length === 1 ? 'is' : 'are') + ' in no plan:\n');
+  unknown.forEach(([c, f]) => console.error('  ' + f + '  can(\'' + c + '\')'));
+  console.error('\nCAN in www/core.js is the whole of what money buys. A name that is\n' +
+                'not in it answers false on every plan, so it is a locked door\n' +
+                'nobody can ever open, and nothing says so.');
+  process.exit(1);
+}
+if (unasked.length){
+  console.error(unasked.length + ' capabilit' + (unasked.length === 1 ? 'y' : 'ies') +
+                ' nothing asks for:\n');
+  unasked.forEach(c => console.error('  CAN.' + c));
+  console.error('\nDelete the line. A plan that charges for something no screen ever\n' +
+                'checks is a promise the app does not keep, and the price list is\n' +
+                'the only place it exists.');
+  process.exit(1);
+}
 console.log('dead code: ' + decls.length + ' functions and ' + varDecls.length +
             ' top-level vars in www/, every one of them reached,');
 console.log('           and every name called is one of them, a binding, or the browser\'s.');
+console.log('what money buys: ' + caps.length + ' capabilities in CAN, every one asked for by ' +
+            'name,\n                 and nothing asked for that is not one of them.');

@@ -280,7 +280,7 @@ function vTalk(){
 
     (TALK.length? '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO('tkWipe') + '>'+
       t('talk.wipe')+'</button>' : '')+
-    (has('plus')? '' :
+    (can('ai')? '' :
       '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
       '<span><span class="lt">'+t('ai.title')+'</span><br><span class="ld">'+t('ai.hint')+'</span></span>'+
       '<span class="tag">PLUS</span></button>')+

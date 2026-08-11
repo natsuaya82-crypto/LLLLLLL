@@ -485,7 +485,7 @@ function impGetHTML(){
    for four thousand, which is the size of list this is for -- so this is
    where the paid plan starts, and the free one still gets the paste. */
 function impFileHTML(){
-  if(!has('plus'))
+  if(!can('file'))
     return '<button class="impfile"' + DO('go', ["plans"]) + '>'+esc(t('imp.file'))+
       '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
   return '<label class="impfile">'+esc(t('imp.file'))+

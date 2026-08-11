@@ -13,7 +13,7 @@
 /* Free accounts hit a ceiling; saying so before they reach it reads as
    information rather than as an interruption. */
 function capBanner(){
-  if(has('plus')) return '';
+  if(can('words')) return '';
   var left=FREE_LIMIT-WORDS.length;
   if(left>20 || left<0) return '';
   return '<button class="capwarn"' + DO('go', ["plans"]) + '>'+t('cap.warn', left)+
@@ -53,7 +53,7 @@ function tocRows(){
        numbered and a numbered row that appears when you pay renumbers the
        book under somebody who already knew where things were. */
     {n:'VI',  k:'kb.title',   r:'kb',     v:0,
-     txt:has('plus')? String(kbKeys()) : '—'}
+     txt:can('kb')? String(kbKeys()) : '—'}
   ];
 }
 

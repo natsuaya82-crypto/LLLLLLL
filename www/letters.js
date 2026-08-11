@@ -361,7 +361,7 @@ function ltNew(o){
    one thing the alphabet chapter is written not to do. */
 var LT_START='abcdefghijklmnopqrstuvwxyz!?';
 function ltStart(){
-  if(has('plus')) return;
+  if(can('letters')) return;
   var have={}, made=0, i, c, l, read;
   for(i=0;i<LETTERS.length;i++) have[String(ltName(LETTERS[i])||'').toLowerCase()]=1;
   for(i=0;i<LT_START.length;i++){

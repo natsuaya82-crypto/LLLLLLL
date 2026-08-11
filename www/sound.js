@@ -27,14 +27,14 @@
    because a row that cannot be pressed is a row that has to explain itself
    every time the screen is opened. */
 function vWsys(){
-  var kinds=has('plus')? WSYS : ['alpha'];
+  var kinds=can('wsys')? WSYS : ['alpha'];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     kinds.map(function(k){
       return '<button class="set"' + DO('setWsys', [k]) + '>'+
         '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
         '<span class="sv">'+(wsys()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
-    (has('plus')? '' :
+    (can('wsys')? '' :
       '<button class="capwarn" style="margin-top:10px"' + DO('goPlans') + '>'+t('ws.locked')+
         '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>')+
     '<div class="note" style="margin-top:12px">'+t('ws.kind.note')+'</div>'+
@@ -348,7 +348,7 @@ var LT_KIND={alpha:'lt.all', mark:'lt.marks', num:'num.h'};
    add and give a value to, and the free plan adds nothing -- so on free the
    room would be empty forever and there would be no way to put anything in
    it. A room like that is worse than no room. */
-function ltKinds(){ return has('plus')? LT_KINDS : ['alpha', 'mark']; }
+function ltKinds(){ return can('kinds')? LT_KINDS : ['alpha', 'mark']; }
 function ltOfKind(k){
   if(k==='num') return numDigits();
   if(k==='mark') return ltMarks();
@@ -404,7 +404,7 @@ function vLtset(){
        to scroll to the end of to add to. The free alphabet does not grow --
        the twenty-eight are there from the first second and drawing on them
        is the whole of it -- so there is nothing at the foot of it. */
-    (has('plus')
+    (can('letters')
       ? '<div class="barfix"><button class="btn ghost"' + DO('newLetter', [k]) + '>'+
           ICON_ADD+t('lt.new')+'</button></div>'
       : '')+
@@ -502,7 +502,7 @@ function vLetter(){
        a, b, c and the two marks, and that is what makes the free keyboard a
        QWERTY that works -- a key is found by the letter's name. Renaming one
        would take the key away and leave a hole nothing could fill. */
-    (has('plus')
+    (can('letters')
       ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
       : '')+
     (numIsDigit(l)? numWordRow(l) : '')+
@@ -523,7 +523,7 @@ function vLetter(){
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
       : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
-    (has('plus')
+    (can('letters')
       ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
           '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+
@@ -535,7 +535,7 @@ function vLetter(){
        It saves the name, so on the free plan, where there is no name to
        type, there is nothing for it to do. The drawing has its own Save on
        the screen it is drawn on. */
-    (has('plus')
+    (can('letters')
       ? '<div class="barfix"><button class="btn"' + DO('ltSave', [lid]) + '>'+
           t('glyph.save')+'</button></div>'
       : '')+

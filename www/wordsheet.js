@@ -10,8 +10,10 @@ var addPos='n';
 /* Suggestions are drawn with the same generator the coinage screen uses, so
    what it offers already obeys the language's own sounds and shape. */
 var SUG=[], sugMn='';
-/* Studio is the tier that advertises this, so Studio is what lifts the ceiling. */
-function sugUnl(){ return has('studio'); }
+/* Studio is the tier that advertises this, so Studio is what lifts the ceiling.
+   CAN in core.js is where that is written down, beside 'ai', which lifts at
+   plus -- see the note there about the two disagreeing. */
+function sugUnl(){ return can('sug'); }
 function sugLeft(){ return sugUnl() ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
 function sugMean(){ var e=document.getElementById('f-mn'); return e? String(e.value||'').trim() : ''; }
 function sugBuild(){

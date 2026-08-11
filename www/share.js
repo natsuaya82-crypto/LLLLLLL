@@ -273,7 +273,7 @@ function shareKbd(){
    same reason — a rule with one place to live. scriptSig() is the letters,
    verbatim, so a shape drawn a second ago is on the key. */
 function shareSig(){
-  return scriptSig()+'|'+langId+'|'+(has('plus')? 'p':'f')+'|'+JSON.stringify(KB);
+  return scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+JSON.stringify(KB);
 }
 /* Whether there is a native side at all, and the one way to reach it.
 
