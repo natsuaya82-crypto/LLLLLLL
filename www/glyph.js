@@ -658,7 +658,19 @@ function geShape(st){
   var s = raw ? geSimplify(p, step*0.18) : geSimplify(p, step*0.45);
   if(!raw && s.length>=4) s=geSimplify(p, step*0.3);
   delete st.k; delete st.closed;
-  if(!GE.round){ st.pts=s; return; }
+  /* Onto the lattice either way. This used to return here with the thinned
+     path exactly where the finger left it, so ROUND was the only thing that
+     put a stroke on the dots -- geLattice() is called in all three branches
+     below and in none of the one that skipped it. A plain line, drawn with
+     nothing pressed, landed wherever the hand was and passed through no dot
+     at all. 「点線通らなくなってる。直線も斜め線も」
+
+     Which is the opposite of what the two are for: the lattice is what makes
+     one stroke meet another, and rounding is about what happens BETWEEN the
+     points, not about where they sit. geLattice is also what drops the
+     staircase -- 「階段になるの腹立つんよな。斜めに引きたいのに」 is written on
+     it -- and that was reaching only half the strokes drawn. */
+  if(!GE.round){ st.pts=geLattice(s); return; }
   /* A ring is the one shape a chain of rounded corners cannot tell: eight
      lattice points with their corners filleted still reads as an octagon,
      because a corner is only ever rounded by a fraction of its shorter arm
