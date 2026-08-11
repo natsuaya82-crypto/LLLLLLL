@@ -135,6 +135,10 @@ canvas.pkc{width:34px;height:34px;display:block}
      border-radius:9px;background:var(--sf);color:var(--tx);font-family:inherit;padding:0;
      display:flex;align-items:center;justify-content:center;overflow:hidden}
 .kbk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* A key on the free plan is a span, not a button: there is no editor behind
+   it. Lighting up under a thumb would promise one. */
+.kbk.ro:active{border-color:var(--line);background:var(--sf);color:var(--tx)}
+.kbk.ro.fn:active{background:var(--pane);color:var(--txs)}
 .kbk.fn{background:var(--pane);color:var(--txs)}
 .kbk.on{border-color:var(--gold);background:var(--goldsf)}
 .kbc{display:flex;align-items:center;justify-content:center;line-height:1}

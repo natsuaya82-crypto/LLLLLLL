@@ -241,18 +241,31 @@ function kbTyped(id){ return String(ltName(ltById(id))||''); }
 /* One layer, as it will be pressed -- which now means pressed to be EDITED.
    `act` was here because a key meant two things, typing and editing; it
    means one. */
-function kbHTML(sel){
-  var lay=kbLayer(), out='', ri, ki, row, key;
+/* `ro` is the same keyboard with nothing to press.
+
+   The free plan has a keyboard -- kbFixed(), a QWERTY wearing the letters
+   somebody drew -- and it is the whole point of the app. What it does not
+   have is an editor. Drawn as buttons it would offer to open a key and then
+   refuse, so the keys are plain spans there: nothing to press, because there
+   is nothing to press it for. It is one function and not two so that a key
+   cannot look like one thing on the paid screen and another on the free
+   one, which is the same argument kbFace() is already making one level
+   down. */
+function kbHTML(sel, ro){
+  var lay=kbLayer(), out='', ri, ki, row, key, cls;
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
     out+='<div class="kbrow">';
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
-      out+='<button class="kbk'+(key.k!=='lt'? ' fn':'')+
-        ((sel && sel.r===ri && sel.k===ki)? ' on':'')+
-        '" style="flex:'+(key.w||1)+'" data-r="'+ri+'" data-k="'+ki+'"'+
-        DO('kbPick', [ri, ki]) + '>'+kbFlicks(key)+
-        '<span class="kbc">'+kbFace(key)+'</span></button>';
+      cls='kbk'+(key.k!=='lt'? ' fn':'')+(ro? ' ro':'')+
+        ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'');
+      out+= ro
+        ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key)+
+          '<span class="kbc">'+kbFace(key)+'</span></span>'
+        : '<button class="'+cls+'" style="flex:'+(key.w||1)+'" data-r="'+ri+'" data-k="'+ki+'"'+
+          DO('kbPick', [ri, ki]) + '>'+kbFlicks(key)+
+          '<span class="kbc">'+kbFace(key)+'</span></button>';
     }
     out+='</div>';
   }
@@ -280,13 +293,31 @@ function kbHTML(sel){
    pressing one opens what that key is rather than typing with it. There is
    no preview beside an editor, because the editor is the preview. */
 function vKb(){
-  /* The chapter shows no door to here on the free plan, but a route can be
-     arrived at from anywhere and a plan can end while somebody is standing
-     in it -- so the screen says what it is rather than showing an editor
-     over a keyboard that does not read what it writes. */
+  /* The free plan has a keyboard. It was shown a wall.
+
+     This chapter used to answer the free plan with kb.locked and an Upgrade
+     button and nothing else -- which said, to somebody who had drawn
+     twenty-eight letters, that they had no keyboard. They have exactly the
+     one the app is for: kbFixed(), their letters on a QWERTY, and it is what
+     goes on the phone. What they do not have is an editor for it, and that
+     is the only thing Upgrade buys here.
+
+     Worse, the two things that MATTER on this screen were behind the wall:
+     how to switch the keyboard on in iOS, and whether the letters have
+     actually been handed over. Those are not a paid feature -- they are the
+     instructions for using what is already yours, and without them a free
+     account draws an alphabet and has nowhere to go with it.
+     「キーボード設定できないならいらんやん」「キーボードの設定方法がわかり
+     にくいんだよ。Linguaで先に文字を書いてくださいの画面にどう結びつけるのか
+     がわからんて」
+
+     So free gets the steps, the state, and the keyboard itself with nothing
+     to press. Upgrade stays, at the foot, saying the one true thing. */
   if(!can('kb'))
-    return '<div class="view">'+navTop('')+'<div class="body">'+
-      '<div class="note">'+t('kb.locked')+'</div>'+
+    return '<div class="view">'+navTop(String(kbKeys()))+'<div class="body">'+
+      kbSysHTML()+
+      kbHTML(null, true)+
+      '<div class="note" style="margin-top:14px">'+t('kb.locked')+'</div>'+
       '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
         t('up.cta')+'</button>'+
       '</div></div>';

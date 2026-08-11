@@ -94,21 +94,21 @@ var PAGES={
   build:   {tab:'build', k:'tab.build'},
   find:    {tab:'build', k:'tab.find'},
   form:    {tab:'build'},
-  letters: {tab:'build', n:'II',  k:'toc.letters'},
+  letters: {tab:'build', k:'toc.letters'},
   kb:      {tab:'build', k:'kb.title'},
-  ltset:   {tab:'build', n:'II',  k:'toc.letters'},
+  ltset:   {tab:'build', k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
   aspell:  {tab:'build', k:'word.sp'},
-  glyph:   {tab:'build', n:'II'},
-  words:   {tab:'build', n:'III', k:'toc.words'},
-  gram:    {tab:'build', n:'IV',  k:'toc.gram'},   /* the numeral is dropped on a single stage */
+  glyph:   {tab:'build'},
+  words:   {tab:'build', k:'toc.words'},
+  gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
-  notes:   {tab:'build', n:'V',   k:'toc.notes'},
-  talk:    {tab:'build', n:'VI',  k:'toc.talk'},
+  notes:   {tab:'build', k:'toc.notes'},
+  talk:    {tab:'build', k:'toc.talk'},
   settings:{tab:'profile',  k:'set.title'},
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
@@ -157,10 +157,10 @@ function pageName(r, a){
    phone puts the thing that finishes what you are doing. It is markup rather
    than a count because the only screen that wants it wants a button. */
 function navTop(count, right){
-  var h=here(), p=PAGES[h.r]||{}, pv=prevPage();
+  var h=here(), pv=prevPage(), n=h.a? '' : tocNum(h.r);
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
   return '<div class="navtop"><button class="back nb"' + DO('back') + '>'+ICON_BACK+esc(lab)+'</button>'+
-    ((p.n && !h.a)? '<span class="navn">'+p.n+'</span>' : '')+
+    (n? '<span class="navn">'+n+'</span>' : '')+
     '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
     (right||'')+

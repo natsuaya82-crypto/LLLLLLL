@@ -21,9 +21,11 @@ function capBanner(){
 }
 
 /* ---- the book's contents, once -----------------------------------------
-   Its numeral, its name, where it goes, how much of it there is, and whether
-   there is any of it at all. The contents page reads this and so does the
-   card on the cover -- which used to be a ladder of four hand-written
+   Its name, where it goes, how much of it there is, and whether there is any
+   of it at all. Its numeral is not on it: that is tocNum() below, counted.
+   The contents page reads this and so does the header of every chapter it
+   names and so does the card on the cover -- which used to be a ladder of
+   four hand-written
    sentences saying the same thing in its own words, including one that told
    people to coin words out of their sounds. 「音から単語生成するやついない
    だろってほんまにゴミみたいなこと書くなよ一本化しろ」
@@ -31,17 +33,37 @@ function capBanner(){
    A chapter's name is what the card says now. It is already written, already
    translated into ten languages, and already the word on the row you land
    on. */
+/* Which chapter this is, counted rather than written down.
+
+   It used to be written down twice: an `n` on every row here, and an `n` on
+   every route in PAGES, because the header of a chapter shows its numeral
+   too. Both were right on the day they were typed. Then the sound chapter
+   was closed and the keyboard became a chapter, and only this list was
+   renumbered -- so the contents said I Letters and the letters page said
+   II Letters, the contents said II Lexicon and the page said III, and so on
+   down all five, with the keyboard showing no numeral at all. Every check
+   passed: both places had a numeral, and nothing in the app compared them.
+
+   A numeral is not a fact about a chapter, it is the chapter's position in
+   this list. Counted from the list it cannot disagree with the list, and
+   there is nothing left for a check to hold. */
+var TOC_N=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+function tocNum(r){
+  var rows=tocRows(), i;
+  for(i=0;i<rows.length;i++) if(rows[i].r===r) return TOC_N[i]||'';
+  return '';
+}
 function tocRows(){
   return [
-    {n:'I',  k:'toc.letters', r:'letters', v:ltShaped(),
+    {k:'toc.letters', r:'letters', v:ltShaped(),
      txt:LETTERS.length? (ltShaped()+' / '+LETTERS.length) : '—'},
-    {n:'II', k:'toc.words',   r:'words',   v:WORDS.length,
+    {k:'toc.words',   r:'words',   v:WORDS.length,
      txt:WORDS.length? tn('count.words', WORDS.length) : '—'},
-    {n:'III', k:'toc.gram',    r:'gram',    v:stCount(),
+    {k:'toc.gram',    r:'gram',    v:stCount(),
      txt:stCount()+' / '+stAll().length},
-    {n:'IV',  k:'toc.notes',   r:'notes',   v:NOTES.length,
+    {k:'toc.notes',   r:'notes',   v:NOTES.length,
      txt:NOTES.length? tn('count.notes', NOTES.length) : '—'},
-    {n:'V',   k:'toc.talk',    r:'talk',    v:TALK.length,
+    {k:'toc.talk',    r:'talk',    v:TALK.length,
      txt:TALK.length? tn('count.turns', TALK.length) : '—'},
     /* The keyboard is a chapter now rather than a button at the foot of the
        alphabet. It stopped being a thing the alphabet has when it stopped
@@ -51,9 +73,14 @@ function tocRows(){
 
        It is here on the free plan too, saying what it is, because the row is
        numbered and a numbered row that appears when you pay renumbers the
-       book under somebody who already knew where things were. */
-    {n:'VI',  k:'kb.title',   r:'kb',     v:0,
-     txt:can('kb')? String(kbKeys()) : '—'}
+       book under somebody who already knew where things were.
+
+       The count is the count on every plan. It said "—" on free, meaning
+       "there is none of this", to somebody holding a thirty-key QWERTY made
+       of letters they drew. kbKeys() reads kbOf(), which is kbFixed() there,
+       so it has always had a true number to give. */
+    {k:'kb.title',   r:'kb',     v:0,
+     txt:String(kbKeys())}
   ];
 }
 
@@ -264,9 +291,9 @@ function vBuild(){
         esc(pageName('find'))+'">'+ICON_LENS+'</button>')+
     '<div class="body" style="padding-top:4px">'+
     capBanner()+
-    '<div class="toc">'+tocRows().map(function(row){
+    '<div class="toc">'+tocRows().map(function(row, i){
       return '<button class="trow"' + DO('go', [row.r]) + '>'+
-        '<span class="rn">'+row.n+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
+        '<span class="rn">'+(TOC_N[i]||'')+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
         '<span class="lead"></span><span class="rv">'+esc(row.txt)+'</span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
     /* Settings used to hang off the bottom of the contents. It belongs to the
