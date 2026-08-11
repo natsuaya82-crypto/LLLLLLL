@@ -44,20 +44,49 @@ function saveKb(){ try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB));
    count on the same order. */
 var KB_DIRS=['up', 'right', 'down', 'left'];
 function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
-/* The first keyboard, so there is something to type on before anybody has
-   built anything: the letters in the order they are already in, five to a
-   row, and a backspace. It is a starting point and it is meant to be pulled
-   apart. Nothing is stored until it is. */
-function kbDefault(){
-  var ls=ltOrder(ltOfKind('alpha')), rows=[], row=[], i;
-  for(i=0;i<ls.length;i++){
-    row.push(kbKey('lt', ls[i].id));
+/* Letters five to a row, with a space and a backspace under them. Used for
+   both faces of the first keyboard, so the two cannot drift in how wide a
+   row is. */
+function kbRows(list){
+  var rows=[], row=[], i, sp;
+  for(i=0;i<list.length;i++){
+    row.push(kbKey('lt', list[i].id));
     if(row.length===5){ rows.push(row); row=[]; }
   }
   if(row.length) rows.push(row);
-  var sp=kbKey('sp'); sp.w=3;
+  sp=kbKey('sp'); sp.w=3;
   rows.push([sp, kbKey('del')]);
-  return {lay:[{rows:rows}]};
+  return rows;
+}
+/* The second face: the digits and the marks.
+   「qwertyでも数字で切り替えたりするやん？そう考えると1画面だけってきついかな」
+
+   Layers were always in the keyboard -- a layer is what ABC and あいう are two
+   of -- and the editor could always add one. Nothing ever did, so nobody had
+   a second face unless they sat down and built it, and the first one had no
+   room for a digit. Which meant the default keyboard could not type `!`.
+
+   What goes on it is the language's own: numbers.js says a digit IS a letter,
+   one with a value instead of a reading, so the second face is drawn from the
+   same LETTERS as the first and needs nothing new to exist. A language with
+   no digits and no marks does not get one -- an empty face is worse than no
+   face, and the key to reach it would be a key that does nothing. */
+function kbSecond(){
+  var xs=ltOfKind('num').concat(ltOfKind('mark'));
+  return xs.length? {rows:kbRows(xs)} : null;
+}
+/* The first keyboard, so there is something to type on before anybody has
+   built anything: the letters in the order they are already in, and the
+   digits and marks behind a switch. It is a starting point and it is meant
+   to be pulled apart. Nothing is stored until it is. */
+function kbDefault(){
+  var rows=kbRows(ltOrder(ltOfKind('alpha'))), more=kbSecond();
+  if(!more) return {lay:[{rows:rows}]};
+  /* The way across, on both faces, at the near end of the bottom row --
+     where every phone keeps its 123. */
+  rows[rows.length-1].unshift(kbKey('lay', '1'));
+  more.rows[more.rows.length-1].unshift(kbKey('lay', '0'));
+  return {lay:[{rows:rows}, more]};
 }
 /* ---- the keyboard the free plan gets ----------------------------------
    QWERTY, with the drawn letters standing in for the roman ones.
@@ -136,12 +165,35 @@ function kbFace(key){
      one whose shape is the whole of what it says, which is how every phone
      keyboard already draws it. */
   if(key.k==='sp') return '';
-  if(key.k==='lay') return '<span class="kbl">'+esc(kbLayName(parseInt(key.v, 10)||0))+'</span>';
+  if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0);
   var l=ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
   return ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>');
 }
 function kbLayName(i){ return String(i+1); }
+/* A layer-switch key wears the FIRST LETTER of the layer it goes to, the way
+   a phone's 123 key wears a 1 and its ABC key wears an A. Which means the key
+   is in the language: press the one showing your 1 and the digits come up.
+
+   No string is invented to do it, which is the other half of why: a name for
+   a face would be a name in ten languages for something the person made and
+   already named. The number is the fallback, for a layer somebody built with
+   no letter on it at all. */
+function kbLayLetter(i){
+  var b=kbOf(), lay=b.lay[i], ri, ki, k;
+  if(!lay) return null;
+  for(ri=0;ri<lay.rows.length;ri++)
+    for(ki=0;ki<lay.rows[ri].length;ki++){
+      k=lay.rows[ri][ki];
+      if(k.k==='lt' && k.v && ltById(k.v)) return ltById(k.v);
+    }
+  return null;
+}
+function kbLayFace(i){
+  var l=kbLayLetter(i);
+  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||kbLayName(i))+'</span>')
+          : '<span class="kbl">'+esc(kbLayName(i))+'</span>';
+}
 /* The letters a key gives on a flick, small, in the corners they come from.
    A key with none shows none: an empty corner is quieter than a dot. */
 function kbFlicks(key){

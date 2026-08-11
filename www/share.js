@@ -72,13 +72,19 @@ function shareFace(id){
 }
 /* One key. `k` is what it does, and the rest is what it takes to draw it. */
 function shareKey(key){
-  var o, i, f, any;
+  var o, i, f, any, l;
   if(!key) return null;
   if(key.k==='lt'){
     o=shareFace(key.v);
     o.k='lt';
   }else if(key.k==='lay'){
-    o={k:'lay', to:parseInt(key.v, 10)||0};
+    /* A layer key wears the first letter of the layer it goes to, the same
+       as it does in here -- so the extension is handed that letter's shape
+       rather than being told to draw a number it would have to invent. */
+    i=parseInt(key.v, 10)||0;
+    l=kbLayLetter(i);
+    o=l? shareFace(l.id) : {t:String(i+1)};
+    o.k='lay'; o.to=i;
   }else{
     o={k:key.k};
   }

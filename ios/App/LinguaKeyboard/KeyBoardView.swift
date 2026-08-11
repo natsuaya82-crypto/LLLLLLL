@@ -35,7 +35,12 @@ final class KeyView: UIView {
     case "del":  faceView.text = "⌫"
     case "next": faceView.text = "🌐"
     case "sp":   faceView.text = ""            // the widest key wears nothing
-    case "lay":  faceView.text = String((key.to ?? 0) + 1)
+    // A layer key is a letter like any other: it wears the first letter of
+    // the layer it goes to, so pressing the one showing your 1 brings up the
+    // digits. The number is what a layer with no letter on it falls back to.
+    case "lay":
+      faceView.poly = key.st
+      faceView.text = key.ch ?? key.t ?? String((key.to ?? 0) + 1)
     default:
       faceView.poly = key.st
       faceView.text = key.ch ?? key.t
