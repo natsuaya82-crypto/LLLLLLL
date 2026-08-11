@@ -102,7 +102,7 @@ variables → Actions で:
 | Secret | 中身 |
 |---|---|
 | `PROVISIONING_PROFILE_BASE64` | **本体用（1-4 で作り直した方）に差し替え** |
-| `KB_PROVISIONING_PROFILE_BASE64` | 拡張用（新規） |
+| `KEYBOARD_PROVISIONING_PROFILE_BASE64` | 拡張用（新規） |
 
 変換:
 ```
@@ -334,7 +334,7 @@ needsInputModeSwitchKey が true のときだけ 🌐 を出す
 - name: Install Provisioning Profiles
   env:
     PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
-    KB_PROFILE_BASE64: ${{ secrets.KB_PROVISIONING_PROFILE_BASE64 }}
+    KB_PROFILE_BASE64: ${{ secrets.KEYBOARD_PROVISIONING_PROFILE_BASE64 }}
   run: |
     mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
     echo "$PROFILE_BASE64"    | base64 --decode > app.mobileprovision
@@ -407,17 +407,41 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 ## 12. 順番と、どこであなたを待つか
 
-| | 誰 | 待ちの有無 |
-|---|---|---|
-| 1. `keyboard.json` を本体が書き出す（`www/share.js`） | こちら | なし |
-| 2. Capacitor プラグイン（書き出し＋フォント登録） | こちら | なし |
-| 3. フォントのシステム登録が動くか TestFlight で確認 | 両方 | ここで一度見てもらう |
-| 4. **Apple 側 1-1〜1-5** | **あなた** | **3 と並行で進めてください** |
-| 5. Secret 2つ | あなた | 4 のあと |
-| 6. 拡張のターゲットと Swift 一式 | こちら | 5 がないと Archive が通りません |
-| 7. TestFlight → 実機でフルアクセスを入れて確認 | 両方 | |
+`1〜5` は済んでいます。プロファイル2枚を読んで確認しました。
 
-**1〜3 は Apple 側を待たずに始められます。** 先にそこからやります。
+| | 値 |
+|---|---|
+| Team ID | `9B2R9YPV5B` |
+| 本体 | `com.tokinets.lingua` / プロファイル `Lingua Distribution` |
+| 拡張 | `com.tokinets.lingua.keyboard` / プロファイル `Lingua Keyboard Distribution` |
+| App Group | `group.com.tokinets.lingua` |
+| 期限 | 2枚とも 2027-06-26 |
+
+**拡張側のプロファイルには App Group が入っています。**
+**本体側には入っていません。** 1-3 の本体の分だけが残っています。
+
+### 残っている手順
+
+| # | 誰 | やること | 次を止めるか |
+|---|---|---|---|
+| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | 止めない |
+| B | あなた | Identifiers → `com.tokinets.lingua` → App Groups にチェック → `group.com.tokinets.lingua` → Save | 止めない |
+| C | あなた | Profiles → `Lingua Distribution` → Edit → Generate → Download → 送る | 止めない |
+| D | こちら | C を base64 にして返す | |
+| E | あなた | Secret `PROVISIONING_PROFILE_BASE64` を D で**上書き** | **F を止める** |
+| F | こちら | `www/share.js` — 本体が `keyboard.json` を書き出す（§5） | |
+| G | こちら | Capacitor プラグイン — App Group への書き出しとフォント登録（§9） | |
+| H | あなた | ビルドの許可 → TestFlight で G を確認 | |
+| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | E が要ります |
+| J | あなた | ビルドの許可 → 実機で設定 → キーボード → フルアクセス → 確認 | |
+
+**F と G は Apple 側を待ちません。** A〜E と並行してこちらで進めます。
+
+**E を飛ばすと I の Archive が落ちます** — `provisioning profile doesn't
+include the com.apple.security.application-groups entitlement`。
+本体は App Group に**書く**側なので、拡張と同じだけの権限が要ります。
+
+ビルドは毎回、許可をもらってから回します。
 
 ---
 
