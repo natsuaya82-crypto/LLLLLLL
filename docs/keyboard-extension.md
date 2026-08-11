@@ -116,29 +116,47 @@ base64 にして値を返します。**Secret に貼るのはあなたです**�
 
 ---
 
-## 3. リポジトリに増えるファイル
+## 3. リポジトリに増えたファイル
 
 ```
 ios/App/
   App/
-    App.entitlements                  ← 新規。本体に App Group を付ける
-  LinguaKeyboard/                     ← 新規。拡張のターゲット
+    App.entitlements                  ← 本体に App Group を付ける
+  LinguaKeyboard/                     ← 拡張のターゲット
     Info.plist
     LinguaKeyboard.entitlements
-    KeyboardViewController.swift      ← 入口。読み込みと組み立て
+    KeyboardViewController.swift      ← 入口。読み込みと組み立て、三つの状態
     KeyBoardView.swift                ← キーの並びと当たり判定・フリック
+    Compose.swift                     ← 打っているが未確定のもの（変換・綴り候補）
+    CandidateBar.swift                ← キーの上の1本のバー。Compose を描くだけ
     GlyphView.swift                   ← 1文字を Core Graphics で描く
-    Shared.swift                      ← App Group から JSON を読む
+    Shared.swift                      ← App Group から JSON を読む。Face/Key/Layer/Board/Conv
 ios/App/App.xcodeproj/project.pbxproj ← 手で編集（後述）
 
 www/
-  share.js                            ← 新規。App Group に書き出す側
-  index.html                          ← script タグ1本追加
+  share.js                            ← App Group に書き出す側（第23章）
+  index.html                          ← share.js の script タグ
 
 （Capacitor プラグイン）
   ios/App/App/LinguaShare.swift       ← www から呼ばれる native 側
                                          書き出し＋フォントのシステム登録
 ```
+
+4つと書いていたのは古い数です。**Swift ファイルは6つ**あります。
+`Compose.swift` と `CandidateBar.swift` は §14 の変換（ピンイン式）のために
+アプリ内キーボードが消えた後で足されました — バーと溜まりは、変換のある
+書き方でもアルファベットでも同じ機械が動くので、1ファイルです（§14参照）。
+
+**この2つと、それに合わせた `KeyboardViewController.swift`／`Shared.swift`
+の変更分は、#41 より後に足されたコードで、まだ一度もコンパイルされて
+いません。** #41 でコンパイルが通って TestFlight に上がったのは、この2ファイル
+が無かった時点の拡張です。今リポジトリにある拡張のコードそのもの
+（変換を含む今の6ファイル一式）は、#41 以降ビルドが一度も回っていないので、
+**まとめて通るかどうかはまだ分かっていません。**（§12参照）
+
+アプリ内キーボード（`www/keyboard.js` の `kbField`/`kbUp`/`kbFlick` ほか）は
+**もう無い**。「アプリ内キーボードいらないでしょ。アップル拡張だけ。」で
+削除済みで、キーボードが打てる場所はこの拡張だけです。
 
 拡張は **Capacitor も CocoaPods も使いません**（純粋な Swift）。
 なので `Podfile` は変わらず、`npx cap sync ios` も拡張のターゲットを
@@ -256,44 +274,115 @@ LinguaScript.otf   その言語のフォント（フォントのシステム登�
 
 ---
 
-## 6. 拡張の中身（Swift）
+## 6. 拡張の中身（Swift）— 書いてあるものを読んだ結果
+
+**状態が2つに分かれています。** #41 でコンパイルが通って TestFlight に
+上がったのは、`KeyboardViewController`・`KeyBoardView`・`GlyphView`・`Shared`
+が変換をまだ知らなかった時点のコードです。そのあとに足された変換
+（`Compose`・`CandidateBar`、そして `KeyboardViewController`/`Shared` の
+変換対応の追加分）は、**まだ一度もコンパイルされていません。** 以下は
+今リポジトリにあるコードそのものの説明で、どちらの状態のコードかは
+その場で書きます。実機で動いたことは、どちらの状態についても
+**まだ一度もありません。**
 
 ### KeyboardViewController
+
+**三つの状態**を持ち、自分がどれにいるかだけを言います。空のキーボードには
+絶対になりません。
 
 ```
 UIInputViewController を継承
 
-viewDidLoad
-  hasFullAccess を見る
-    false → 「設定 → 一般 → キーボード → Lingua → フルアクセスを許可」
-             とだけ出す。空のキーボードにはしない
-    true  → App Group の keyboard.json を読む
-             読めない / 言語に文字が1つも無い → 「Lingua で文字を描いてください」
-  高さを決める（行数 × 1行の高さ + 余白）を NSLayoutConstraint で
-  KeyBoardView を貼る
+build()（毎回、全部作り直す。層の切替もこれ一本）
+  hasFullAccess が false
+    → Say.full()「設定 → 一般 → キーボード → キーボード → Lingua →
+       フルアクセスを許可」を1行出す
 
-needsInputModeSwitchKey が true のときだけ 🌐 を出す
-（iPad の外付けキーボード等では不要になる）
+  hasFullAccess は true だが Shared.board() が nil
+  （App Group が読めない／keyboard.json が無い／lay が空）
+    → Say.draw()「先に Lingua で文字を描いてください」を1行出す
+
+  board が読めた
+    → KeyBoardView を貼る。board.conv があれば Compose を作り、
+       その上に CandidateBar も貼る（無ければバーは無し）
 ```
+
+高さは `rowHeight(54) × 行数 + 8 + (バーがあれば barHeight(44))` を
+`NSLayoutConstraint` 1本で持ち、次の `build()` では作り直さず値だけ書き換えます
+（作り直すと制約が1回ごとに積み上がって iOS が壊し始めるため）。
+
+`needsInputModeSwitchKey` が false の場合だけ 🌐 を落とします
+（iPad の外付けキーボードなど、拡張自身に聞かないと分からないので）。
+
+**キー入力の流れ**は `KeyBoardView` からの delegate 1本 —
+`keyboard(_:didPress:face:)` — を `KeyboardViewController` が受けて、
+`textDocumentProxy` を叩くのはここだけです。`KeyBoardView` 自身は
+文字を挿しません。
+
+**ここから下（`typed`/`back`/`settle`/`drop`/`commit`、`CandidateBarDelegate`、
+`compose`/`bar` フィールド）は変換のために足された分で、#41 には無く、
+まだコンパイルされていません。** #41 で通ったのは `lt`/`sp`/`del`/`next`/`lay`
+を素直に `insertText`/`deleteBackward` に渡すだけの、もっと単純な版です。
+
+- `lt` / `rom`（フリック含む）→ `typed(_:)` → `Compose` があれば
+  `push()`。`holdsText`（= ローマ字面）でなければ**押した瞬間に挿す**。
+  ローマ字面は溜めるだけで挿さない
+- `sp` → `settle()`（先頭候補を確定。無ければ溜まりをそのまま挿す）→
+  スペースを1つ挿す
+- `del` → `back()`。溜まりがあれば1つ減らす。ローマ字面でなければ
+  ドキュメント側も1文字消す
+- `lay` → 溜まりを捨てて層を差し替え、`build()` をもう一度
+- `next` → 溜まりを捨てて `advanceToNextInputMode()`
+- バーの候補をタップ → `commit(_:)`。ローマ字面でなければ挿してある溜まりを
+  `deleteBackward()` で戻してから候補を挿す
+- `viewWillAppear` のたびに `compose` を捨てて `build()` をやり直す —
+  裏にいる間にアプリが文字を描き足しているかもしれないので
+
+`Compose` が無い言語（`board.conv` が無い、= `wsys()` が `alpha`/`abjad`）
+では、キーはそのまま挿すだけで、これは元の仕様どおりです。
 
 ### KeyBoardView
 
-- 行を縦、キーを横に並べる。幅は `w` の比で分ける（UIStackView の
-  `distribution = .fill` + `widthAnchor` の multiplier）
+- **UIStackView ではありません。** `layoutSubviews()` で自前に幅を計算します
+  — 行の中の `w` の合計に対する比で `bounds.width` を割るだけの算数で、
+  StackView の multiplier より短いという判断です
 - **1行10キーで1キー約35pt** になります。iOS 標準と同じで、これが普通です
-- タップ → `textDocumentProxy.insertText(t)`
-- `del` → `deleteBackward()`
-- `sp` → `insertText(" ")`
-- `lay` → 層を差し替えて組み直し
-- `next` → `advanceToNextInputMode()`
+- タップ / フリックの結果は `didPress` 1本で `KeyboardViewController` に渡すだけ
+  — `insertText` はここでは一切呼びません
 - **フリック**: `touchesBegan` で開始点、`touchesEnded` で移動量。
-  **18pt 未満はタップ**、それ以上なら縦横の大きい方の向き。
+  **18pt 未満（2乗で324）はタップ**、それ以上なら縦横の大きい方の向き。
   `www/keyboard.js` の `kbUp()` と同じ数字・同じ判定にします
-- 押している間のハイライトと、フリック中に方向のプレビュー
+- 押している間のハイライト（`KeyView.hold()`）。フリック中の方向プレビューは
+  **まだありません**
+
+`lay` キーが行き先の層の頭文字を自分の顔にする分（第2面のため）は #41 の
+あとに足された小さな変更で、これもまだコンパイルされていません。
+
+### Compose
+
+**新規ファイル。まだコンパイルされていません。**「打っているが、まだ
+文書に確定していないもの」を持ちます。§14 の変換とアルファベットの
+綴り候補は、同じ機械の2つの見え方で、だから1ファイルです。
+
+- `romanKeys`（`conv.how` が `syll`/`abugida`/`logo`）なら、押しても
+  **何も挿さず**溜める側。それ以外（`alpha`/`abjad`）は押した文字が
+  そのまま挿さり、溜まりは「続きの候補」を出すためだけに存在します
+- `candidates()` — 完全一致を先頭に、あとは前方一致を短い順・辞書順。
+  最大24件。押すたびに並びが変わらないのは、狙って押すためです
+- `push`/`back`/`clear`、`first()`（スペース確定用）
+- 値型（struct）です。1回のキー入力が1回の代入で、溜まりを捨てるのが
+  1行で済むのはこのためです
+
+### CandidateBar
+
+**新規ファイル。まだコンパイルされていません。** キーの上の1本のバー。
+**中身は Compose が決め、バー自身は何も判断しません。** 左に固定で今の溜まり、
+右にスクロールする候補（`CandidateCell`、各候補は正方形のグリフを横に
+並べたもの）。候補をタップで `didPick` を発火します。
 
 ### GlyphView
 
-**多角形を塗るだけです。**
+#41 以降、ここは触っていません。**多角形を塗るだけです。**
 
 ここは元々「`www/otf5.js` の `bar` / `hull` を Swift に写す。同じ規則を
 2回書くことになる」と書いてありました。**書かずに済みました** —
@@ -312,6 +401,8 @@ needsInputModeSwitchKey が true のときだけ 🌐 を出す
 **正方形に収めます。** `box` を辺とする正方形をビューの短辺に合わせて中央に
 置きます。タイルとキーは正方形というのが本体の規則で（`inkCanvases`）、
 1行に並べるときの規則はそれとは別（`inkAdv`）。キーはタイル側です。
+`CandidateBar` の1候補の中でも同じ規則で、`inkAdv` 側の詰め方はしていません
+（§14「拡張の中で何が起きるか」の下に理由あり）。
 
 ---
 
@@ -461,8 +552,18 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 
 ## 12. 順番と、どこであなたを待つか
 
-`B` `C` `D` `E` `F` `G` `I` は済みました。**ビルド #39 が TestFlight に
-上がっています**（本体のみ、拡張は入っていません）。残っているのは J です。
+`A` `B` `C` `D` `E` `F` `G` `I` は済みました。ビルドは3回回っています:
+
+| # | 中身 | 結果 |
+|---|---|---|
+| #39 | 本体のみ（拡張は入れていない） | **成功。** TestFlight に上がった |
+| #40 | 拡張を初めて足したビルド | **失敗。** 拡張が Swift のコンパイルで止まった |
+| #41 | #40 のコンパイルエラーを直したもの | **成功。拡張が埋め込まれて** TestFlight に上がっている |
+
+残っているのは **`J` だけ**です。`I` は「書いた」も「コンパイルが通った」も
+済んでいますが、**実機で動かしたことはまだありません。** #41 が意味するのは
+アーカイブが通って TestFlight に上がったということだけで、フルアクセスを
+与えて文字を打ってみたということではありません。それを確かめるのが `J` です。
 
 | | 値 |
 |---|---|
@@ -475,54 +576,55 @@ Archive は `-scheme App` のままで大丈夫です。Embed App Extensions の
 両方のプロファイルに `group.com.tokinets.lingua` が入っているのを、
 ファイルを読んで確認済みです。
 
-### TestFlight まで — あなたがやること
+### #40 で何が起きたか
 
-**1つだけです。**
+Archive は最初のエラーで止まり、その1つ先が見えません。1つ直してはまた回す
+のではなく、ファイルを開いて拾えるだけ拾って一度に直しました:
 
-> GitHub → Settings → Secrets and variables → Actions
-> → `PROVISIONING_PROFILE_BASE64` → **Update**
-> → 送った `PROVISIONING_PROFILE_BASE64.txt` の中身で**上書き**
+- `KeyView` の真ん中の `GlyphView` を `center` という名前にしていた —
+  `UIView` に既にある `CGPoint` の `center` と衝突していた
+- `KeyBoardView.init` の最初の引数ラベルが `layer` だった — 通る名前だが
+  紛らわしいので変更
+- `KeyboardViewController` の `layer`（層番号の `Int`）が、隣に
+  `CALayer` を持つ十数個のビューと同じ名前だった
+- `UILayoutPriority` を算術式のまま使っていた — `UILayoutPriority(999)`
+  と書き直した
+- `Shared.swift` が `import Foundation` だけで `CGFloat` を使っていた
 
-新規追加ではありません。既存を差し替えます。
-
-**これは今、必須になりました。** G で本体に
-`CODE_SIGN_ENTITLEMENTS = App/App.entitlements` を付けたので、本体は
-App Group を要求する側になっています。古いプロファイル（App Group が
-空のまま）で Archive を回すとここで落ちます:
-
-```
-Provisioning profile "Lingua Distribution" doesn't match the entitlements
-file's value for the com.apple.security.application-groups entitlement.
-```
-
-そのあと、ビルドを回す許可をください。CI 側は何も変えていません
-（`.github/workflows/ios-deploy.yml` を手動実行、ビルド番号は `run_number`）。
-
-`KEYBOARD_PROVISIONING_PROFILE_BASE64` は入れておいて構いませんが、
-**CI がまだ読んでいません。**読むのは I です。
+直したのが #41 です。**それ以降、拡張のコンパイルが失敗したことはありません。**
 
 ### 残っている手順
 
 | # | 誰 | やること | 状態 |
 |---|---|---|---|
-| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | **CI が読むようになりました** |
+| A | あなた | Secret `KEYBOARD_PROVISIONING_PROFILE_BASE64` を新規で入れる | 済（#41 で実際に読まれ、署名に使われた） |
 | B | あなた | Identifiers → `com.tokinets.lingua` → App Groups に `group.com.tokinets.lingua` | 済 |
 | C | あなた | `Lingua Distribution` を Generate し直して送る | 済 |
 | D | こちら | C を base64 にして返す | 済 |
 | E | あなた | Secret `PROVISIONING_PROFILE_BASE64` を上書き | 済（#39 が `ad97daaf` で署名） |
 | F | こちら | `www/share.js` — 本体が `keyboard.json` を書き出す（§5） | 済 |
 | G | こちら | `LinguaShare.swift` — App Group への書き出しとフォント登録（§9） | 済 |
-| H | あなた | ビルドの許可 → TestFlight | 済（#39） |
-| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | 済（未ビルド） |
-| **J** | **あなた** | **ビルドの許可 → 実機でフルアクセス → 確認** | **残** |
+| H | あなた | ビルドの許可 → TestFlight（拡張なし） | 済（#39） |
+| I | こちら | 拡張ターゲット・Swift・Info.plist・entitlements・CI（§3,4,6,7,8） | 済（#41 でコンパイルが通り、埋め込まれて TestFlight に上がった。**実機は未確認**） |
+| **J** | **あなた** | **実機でフルアクセスを与え、キーボードを開いて打ってみる** | **残** |
 
-### H で確認できること／できないこと
+### H・I で確認できたこと／できていないこと
 
-H は**拡張の入っていないビルド**です。キーボードはまだ他のアプリに出ません。
-確認できるのは、本体が App Group に書けているかどうかだけで、それは画面には
-出ません。**H は I が落ちないことを先に確かめるための回**です。
+H（#39）は**拡張の入っていないビルド**でした。確認できたのは、本体が
+App Group に書けているかどうかだけで、それは画面には出ません。
 
-キーボードが Messages に出るのは J です。
+I（#41）で拡張は初めてコンパイルを通り、`.appex` として本体に埋め込まれ、
+TestFlight に上がりました。**これでも確認できたのはアーカイブが通ることまでです。**
+拡張はまだ一度も起動していません。フルアクセスの画面も、実際のキーの並びも、
+フリックも、実機の指では一度も触られていません。
+
+**しかも #41 が通したのは、変換を知らない時点のコードです。** §14 の変換
+（`Compose`・`CandidateBar`、`KeyboardViewController`/`Shared` の変換対応
+部分）は #41 のあとに足されたもので、**まだコンパイルすらされていません。**
+（§3・§6参照）候補が正しく出るかも `space` で確定するかも以前に、この分を
+含めた拡張全体がもう一度コンパイルを通るかどうかが、まだ確かめられていません。
+
+キーボードが Messages や設定の一覧に出るかどうかは `J` です。
 
 ビルドは毎回、許可をもらってから回します。
 

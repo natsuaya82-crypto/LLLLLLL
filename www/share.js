@@ -159,17 +159,37 @@ function sharePut(map, key, ix){
   if(Object.prototype.hasOwnProperty.call(map, k)) return;
   map[k]=ix;
 }
-/* Every way a letter can be typed: ltCodes() is the alphabet's own answer to
-   that -- the name somebody chose and everything the letter reads, in both
-   cases -- and asking it here rather than working it out again is the reason
-   a letter renamed is typeable under the new name the same second. */
+/* Every way a letter can be typed. ltCodes() is the alphabet's own answer --
+   the name somebody chose and everything the letter reads, in both cases --
+   and asking it rather than working it out again is why a letter renamed is
+   typeable under the new name the same second.
+
+   Plus what its KEY types, which is not always among them. numbers.js empties
+   a letter's readings when it gives it a value, so ltCodes() has nothing to
+   say about a digit at all, and a digit would have been the one letter on the
+   keyboard that the bar could never offer. kbTyped() is what the key puts in;
+   a person typing that back is asking for that letter.
+
+   The ink slot is asked for LAST. Asking first reserved a shape for every
+   letter whether or not any key could reach it, so a blank letter and every
+   digit left a drawing in the table that nothing pointed at -- which is the
+   one thing the table exists to avoid. tools/conv-check.mjs found this the
+   first time it ran; the comment above shareTable() had been claiming the
+   opposite. */
 function shareMapLts(t, map){
-  var i, cs, j, ix;
+  var i, l, cs, j, c, keys, ix;
   for(i=0;i<LETTERS.length;i++){
-    ix=t.of(LETTERS[i].id);
+    l=LETTERS[i];
+    cs=ltCodes(l).concat([kbTyped(l.id)]);
+    keys=[];
+    for(j=0;j<cs.length;j++){
+      c=String(cs[j]||'').toLowerCase();
+      if(c && keys.indexOf(c)<0) keys.push(c);
+    }
+    if(!keys.length) continue;
+    ix=t.of(l.id);
     if(ix<0) continue;
-    cs=ltCodes(LETTERS[i]);
-    for(j=0;j<cs.length;j++) sharePut(map, cs[j], [ix]);
+    for(j=0;j<keys.length;j++) sharePut(map, keys[j], [ix]);
   }
 }
 /* And every word, under its own spelling -- which is already roman, because
@@ -177,16 +197,19 @@ function shareMapLts(t, map){
    is the spelling and spWord() is that spelling as text; neither is worked
    out here. */
 function shareMapWords(t, map){
-  var i, sp, ix, j, n;
+  var i, sp, j, ok, ix;
   for(i=0;i<WORDS.length;i++){
     sp=spOf(WORDS[i]);
     if(!sp.length) continue;
+    /* Every letter checked before any slot is asked for. Reserving as we went
+       left the shapes of a dropped word's letters behind in the table -- the
+       same mistake as above, and the same reason: t.of() both looks up and
+       creates, so asking it a question is not free. */
+    ok=true;
+    for(j=0;j<sp.length;j++) if(!sp[j].l || !ltById(sp[j].l)) ok=false;
+    if(!ok) continue;
     ix=[];
-    for(j=0;j<sp.length;j++){
-      n=sp[j].l? t.of(sp[j].l) : -1;
-      if(n<0){ ix=[]; break; }        /* a word one of whose letters is gone */
-      ix.push(n);
-    }
+    for(j=0;j<sp.length;j++) ix.push(t.of(sp[j].l));
     sharePut(map, spWord(sp), ix);
   }
 }

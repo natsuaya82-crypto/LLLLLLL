@@ -1,0 +1,247 @@
+/* ---------------------------------------------------------------------------
+   tools/conv-check.mjs — the conversion table holds the claims made about it.
+
+   Run it:   node tools/conv-check.mjs
+
+   www/share.js builds two things for a writing system where the unit you TYPE
+   and the unit you WRITE are different -- a syllabary, an abugida, a logography
+   -- and hands them to the keyboard extension:
+
+     ink   every shape the extension can draw, each written out ONCE
+     conv  { how, max, map }  -- a roman spelling to the numbers in ink
+
+   The comments on shareTable(), shareConv() and section 14 of
+   docs/keyboard-extension.md make several claims about that pair, in prose,
+   with nothing behind any of them:
+
+     - a number in map always resolves inside ink
+     - max is the longest key map actually has, because the extension stops
+       buffering there and a short max is a word that can never be typed
+     - nothing sits in ink that map does not point at -- "an unused shape is
+       weight the extension carries for nothing", and the whole reason ink is
+       a table of numbers rather than shapes repeated inline is 195 KB against
+       4.4 MB
+     - a key is already lower case, because the extension lower-cases before
+       it looks one up
+     - ink has no two entries that are the same shape twice
+     - the roman face -- QWERTY, there to spell with -- exists exactly when
+       wsys() needs one, sits at layer 0, and never wears a person's own
+       letter: rom, del, sp, lay, next, and nothing else
+     - conv.how says what wsys() said
+
+   CLAUDE.md's own rule is the reason this file exists: "A comment saying
+   'this is the one place' is worth nothing on its own... Either a check holds
+   the claim, or do not make it." Nothing held these seven. This does.
+
+   How: boot the real app in a headless browser, seed it the same fixture
+   act-check.mjs and press.mjs use, set the paid plan, and for every writing
+   system WSYS lists -- asked of the page rather than written out here, so a
+   sixth kind is walked the day it is added -- call the real shareKbd() and
+   read what came back.
+
+   What it cannot see, so that nobody mistakes silence for safety:
+     - whether a shape LOOKS right. Only that the numbers pointing at it and
+       the numbers inside it agree with each other
+     - a dictionary bigger than the fixture's six words. The 195 KB / 4.4 MB
+       figures in the doc were measured on 5000 words and are not reproduced
+       here; only the shape of the table is
+
+   Exit code is 0 only when all seven hold, for every writing system.
+   --------------------------------------------------------------------------- */
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
+import { seed } from './fixture.mjs';
+
+async function loadChromium(){
+  const { createRequire } = await import('module');
+  const req = createRequire(import.meta.url);
+  try { return req('playwright').chromium; } catch (e) {}
+  try {
+    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    return req(path.join(g, 'playwright')).chromium;
+  } catch (e) {}
+  console.error('playwright is not installed. npm i -g playwright');
+  process.exit(2);
+}
+const chromium = await loadChromium();
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(HERE, '..', 'www');
+const PORT = 8126;
+const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
+const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
+
+const mime = (f) => f.endsWith('.html') ? 'text/html; charset=utf-8'
+  : f.endsWith('.js') ? 'application/javascript; charset=utf-8'
+  : f.endsWith('.css') ? 'text/css; charset=utf-8'
+  : 'text/plain; charset=utf-8';
+const srv = http.createServer((req, res) => {
+  const f = path.join(ROOT, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
+  let d = null;
+  try { d = fs.readFileSync(f); } catch (e) { d = null; }
+  if (d === null) { res.writeHead(404); res.end('no'); return; }
+  res.writeHead(200, { 'Content-Type': mime(f) });
+  res.end(d);
+});
+await new Promise(r => srv.listen(PORT, r));
+
+const br = await chromium.launch(LAUNCH);
+const pg = await br.newPage();
+const pageErrors = [];
+pg.on('pageerror', e => pageErrors.push(e.message));
+await pg.goto(`http://127.0.0.1:${PORT}/`);
+await pg.waitForTimeout(300);
+
+/* The fixture is shared with act-check.mjs and press.mjs, so this walks the
+   same app they do rather than a fourth arrangement of it. */
+await pg.evaluate(seed);
+
+const R = await pg.evaluate(() => {
+  const fails = [], systems = [];
+  const ROMAN_KEYS = ['rom', 'del', 'sp', 'lay', 'next'];
+
+  SET.plan = 'plus';
+
+  /* Asked of the page, not written out here -- the same reason act-check
+     asks the page for its screens rather than keeping a second list that
+     drifts the day a sixth kind of writing is added. */
+  const list = WSYS.slice();
+
+  list.forEach((w) => {
+    SET.wsys = w;
+    let kbd;
+    try { kbd = shareKbd(); }
+    catch (e) { fails.push(w + ': shareKbd() threw -- ' + e.message); return; }
+
+    const ink = kbd.ink || [];
+    const conv = kbd.conv;
+    const rec = { w: w, ink: ink.length, mapKeys: 0, bytes: 0, roman: false };
+
+    if (!conv) {
+      /* Nothing to offer is a legitimate answer -- shareConv() returns null
+         on purpose so the keyboard shows no bar rather than an empty one --
+         but the fixture seeds words, sounds and drawn letters precisely so
+         this never has to be the answer. If it is, none of the seven claims
+         below has anything to be checked against. */
+      fails.push(w + ': shareKbd().conv came back null -- the fixture' +
+        ' draws letters and has words, so there was nothing to offer a' +
+        ' candidate from, which the other six checks below cannot see past');
+      systems.push(rec);
+      return;
+    }
+
+    const map = conv.map;
+    const keys = Object.keys(map);
+    rec.mapKeys = keys.length;
+    rec.bytes = JSON.stringify({ ink: ink, conv: conv }).length;
+
+    /* 1. every index in map points at a real ink entry */
+    keys.forEach((k) => {
+      (map[k] || []).forEach((ix) => {
+        if (!(ix >= 0 && ix < ink.length))
+          fails.push(w + ': map["' + k + '"] points at ink[' + ix + '],' +
+            ' but ink only has ' + ink.length + ' entries');
+      });
+    });
+
+    /* 2. conv.max is exactly the longest key in map */
+    let longest = 0;
+    keys.forEach((k) => { if (k.length > longest) longest = k.length; });
+    if (conv.max !== longest)
+      fails.push(w + ': conv.max is ' + conv.max + ', but the longest key' +
+        ' actually in map is ' + longest + ' ("' +
+        keys.filter((k) => k.length === longest)[0] + '")');
+
+    /* 3. no ink entry is unreachable from map */
+    const reached = {};
+    keys.forEach((k) => (map[k] || []).forEach((ix) => { reached[ix] = 1; }));
+    for (let i = 0; i < ink.length; i++) {
+      if (!reached[i])
+        fails.push(w + ': ink[' + i + '] (' + JSON.stringify(ink[i]) +
+          ') is never pointed at by any key in map -- a shape the extension' +
+          ' carries and can never draw from a key press');
+    }
+
+    /* 4. keys are lower case and non-empty */
+    keys.forEach((k) => {
+      if (!k) fails.push(w + ': map has an empty key');
+      else if (k !== k.toLowerCase())
+        fails.push(w + ': map key "' + k + '" is not lower case -- the' +
+          ' extension lower-cases what it typed before it looks one up');
+    });
+
+    /* 5. ink has no duplicates, compared by JSON.stringify */
+    const seenShapes = {};
+    ink.forEach((entry, i) => {
+      const sig = JSON.stringify(entry);
+      if (Object.prototype.hasOwnProperty.call(seenShapes, sig))
+        fails.push(w + ': ink[' + i + '] is the same shape as ink[' +
+          seenShapes[sig] + '] -- the whole reason ink is a table of' +
+          ' numbers is that a repeated shape is 4.4 MB where this is 195 KB');
+      else seenShapes[sig] = i;
+    });
+
+    /* 6. a roman layer exists iff wsys() is syll, abugida or logo, and when
+       it exists it is layer 0 and wears only rom/del/sp/lay/next */
+    const needsRoman = (w === 'syll' || w === 'abugida' || w === 'logo');
+    const lay0 = kbd.lay[0];
+    const hasRoman = !!(lay0 && lay0.rows &&
+      lay0.rows.some((row) => row.some((k) => k.k === 'rom')));
+    rec.roman = hasRoman;
+    if (needsRoman && !hasRoman)
+      fails.push(w + ': typed unit and written unit differ, so a roman' +
+        ' layer is needed, but layer 0 carries no rom keys');
+    if (!needsRoman && hasRoman)
+      fails.push(w + ': typed unit and written unit are the same, so' +
+        ' there should be no roman layer, but layer 0 carries rom keys');
+    if (hasRoman) {
+      lay0.rows.forEach((row, ri) => row.forEach((k, ki) => {
+        if (ROMAN_KEYS.indexOf(k.k) < 0)
+          fails.push(w + ': roman layer key [' + ri + '][' + ki + '] has' +
+            ' k="' + k.k + '", not one of ' + ROMAN_KEYS.join('/') +
+            (k.k === 'lt' ? ' -- the roman face is not the person\'s letters' : ''));
+      }));
+    }
+
+    /* 7. conv.how equals wsys() */
+    if (conv.how !== wsys())
+      fails.push(w + ': conv.how is "' + conv.how + '" but wsys() says "' +
+        wsys() + '"');
+
+    systems.push(rec);
+  });
+
+  return { fails: fails, systems: systems, listedCount: list.length };
+});
+
+await br.close();
+srv.close();
+
+if (pageErrors.length) {
+  R.fails.push(...pageErrors.map((m) => 'the page itself: ' + m));
+}
+
+console.log('writing systems walked: ' + R.systems.length +
+  ' (' + R.systems.map((s) => s.w).join(', ') + ')');
+R.systems.forEach((s) => {
+  console.log('  ' + s.w + ':  ink ' + s.ink + '  map ' + s.mapKeys +
+    ' keys  roman layer ' + (s.roman ? 'yes' : 'no') +
+    '  table ' + (s.bytes / 1024).toFixed(1) + ' KB');
+});
+const largest = R.systems.reduce((m, s) => Math.max(m, s.bytes), 0);
+console.log('largest table: ' + (largest / 1024).toFixed(1) + ' KB');
+
+if (R.fails.length) {
+  console.error('\nFAILED (' + R.fails.length + '):');
+  R.fails.slice(0, 40).forEach((m) => console.error('  ' + m));
+  if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
+  process.exit(1);
+}
+console.log('\nall seven claims hold, for every writing system: every map index' +
+  ' resolves, max is the longest key, nothing in ink goes unreached, every' +
+  ' key is lower case and unique, the roman layer appears exactly where' +
+  ' wsys() needs one and wears nothing but its own five kinds of key, and' +
+  ' conv.how says what wsys() says.');
