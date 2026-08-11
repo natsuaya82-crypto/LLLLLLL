@@ -100,21 +100,39 @@ function kbDefault(){
 
    A key is found by name, over every letter and not just the alphabet,
    because `!` and `?` read themselves and are therefore marks. A name that
-   nothing answers to is simply left out rather than made into an empty key. */
-var KB_QWERTY=['qwertyuiop', 'asdfghjkl', 'zxcvbnm!?'];
-/* The row above it. Ten digits, and they are NOT letters: the free plan
-   cannot make a digit -- numbers.js says a digit is a letter you give a value
-   to, and free adds no letters -- so there is nothing of the person's to put
-   here and these are the roman ten.
+   nothing answers to is simply left out rather than made into an empty key.
+
+   `!` and `?` used to be the tail of the third row. They are on the bottom
+   row now, one at each end of the space bar, because the space bar was the
+   whole width of the phone and nothing else was down there.
+   「これスペースデカすぎやね。！スペース？みたいにできない？」 It also evens the
+   rows out: ten, nine, and seven letters with a delete two keys wide. */
+var KB_QWERTY=['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
+/* The two that sit beside the space. Marks, so they are found by name over
+   every letter exactly as the rows above are. */
+var KB_ENDS='!?';
+/* The row above it, in the order a phone puts them: one to nine, then zero.
+   These are the person's OWN digits now, found by value, because ltStart
+   gives a free language a digit for every value its base has and they are
+   slots to be drawn on exactly like a to z.
+   「数字が設定できないわ。そこ文字から設定できるように頼む」
+
+   They used to be the roman ten, on the grounds that free adds no letters so
+   there was nothing of the person's to put here. That was a true sentence
+   about a plan with twenty-eight slots, and the answer was to give it ten
+   more rather than to leave the row borrowed. The roman digit is the
+   fallback and only shows where no letter carries that value -- a language
+   counting in a base that has no such digit, which cannot happen under ten
+   and can under none of the four bases there are.
 
    They are here rather than behind a switch because free is one face and
    stays one face. 「2ページ目なしでqwartyの上に1〜0の数字と！？入れてこれで無料版
    1ページに抑えよう」 A second face on free would have held these and nothing
    else, which is a key to reach a row.
 
-   `!` and `?` are already the tail of the third row and are left there: with
-   the ten they would make a row of twelve, and twelve across a phone is
-   narrower than a thumb. */
+   Ten is already the widest row on the board. `!` and `?` are not up here
+   with them -- twelve across a phone is narrower than a thumb -- they are
+   beside the space, where KB_ENDS puts them. */
 var KB_DIGITS='1234567890';
 /* A key that types a character rather than a letter. The digits here, and the
    roman face the conversion needs -- neither is one of the person's letters,
@@ -131,7 +149,10 @@ function kbNamed(c){
 function kbFixed(){
   var rows=[], r, i, j, row, id;
   row=[];
-  for(i=0;i<KB_DIGITS.length;i++) row.push(kbRom(KB_DIGITS.charAt(i)));
+  for(i=0;i<KB_DIGITS.length;i++){
+    var dl=numByVal(parseInt(KB_DIGITS.charAt(i), 10));
+    row.push(dl? kbKey('lt', dl.id) : kbRom(KB_DIGITS.charAt(i)));
+  }
   rows.push(row);
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
@@ -139,14 +160,20 @@ function kbFixed(){
       id=kbNamed(r.charAt(j));
       if(id) row.push(kbKey('lt', id));
     }
-    if(i===KB_QWERTY.length-1) row.push(kbKey('del'));
+    /* Two keys wide. It is the one key you hit without looking, and it was
+       the same width as a letter. 「デリートキーは横二つ分欲しいかも」 */
+    if(i===KB_QWERTY.length-1){ var d=kbKey('del'); d.w=2; row.push(d); }
     if(row.length) rows.push(row);
   }
   /* And the bar along the bottom. A line of the language is more than one
      word -- an example under a word, a post -- and without this there is no
-     way to put a gap between two of them. */
+     way to put a gap between two of them. `!` and `?` stand at its ends. */
   var sp=kbKey('sp'); sp.w=4;
-  rows.push([sp]);
+  var bot=[], end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
+  if(end0) bot.push(kbKey('lt', end0));
+  bot.push(sp);
+  if(end1) bot.push(kbKey('lt', end1));
+  rows.push(bot);
   return {lay:[{rows:rows}]};
 }
 function kbOf(){

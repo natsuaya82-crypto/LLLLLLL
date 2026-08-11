@@ -321,25 +321,38 @@ before asking `t.of()` for its slot, and the comment says so.
 
 ## What the free plan is
 
-One sentence: **your own shapes for a-z.** `ltStart` puts twenty-eight letters
-there the moment a free language exists — a to z, `!` and `?` — and nothing on
-the free plan adds one, deletes one or renames one. Drawing on them is the
-whole of it.
+One sentence: **your own shapes for a-z and 0-9.** `ltStart` puts thirty-eight
+letters there the moment a free language exists — a to z, `!`, `?`, and a digit
+for every value the base has — and nothing on the free plan adds one, deletes
+one or renames one. Drawing on them is the whole of it.
 
 That is not a restriction bolted onto the app; it is what makes the rest of the
-free plan possible. Because the twenty-eight are exactly a-z, `!` and `?`, and
-their names cannot change, the keyboard can be a **QWERTY with the drawn letters
+free plan possible. Because the letters are exactly a-z, `!` and `?`, and their
+names cannot change, the keyboard can be a **QWERTY with the drawn letters
 substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
 stored nowhere, with no editor and nothing to set.
 「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
 Rename one letter and the key it answers to is gone, which is why the name
 field is not on the free letter page rather than merely being discouraged.
 
-It carries one more row now: the ten roman digits, above the QWERTY. They are
-not letters — `numbers.js` says a digit is a letter somebody gave a value to,
-and free adds no letters, so there is nothing of the person's to put there, and
-these are the plain roman ten. They sit above the letters rather than behind a
-switch because free is one face and stays one face:
+It carries two more things. A row of digits above the QWERTY, and they are the
+person's own — `numbers.js` says a digit IS a letter, one carrying a value
+instead of a reading, so `ltStart` gives a free language one for every value
+its base has and they are slots to draw on exactly like a to z. They were the
+plain roman ten, on the grounds that free adds no letters so there was nothing
+of the person's to put there. That was a true sentence about a plan with
+twenty-eight slots, and the answer was to give it ten more rather than to leave
+the row borrowed. 「数字が設定できないわ。そこ文字から設定できるように頼む」 They are
+found by value, because a digit has no name to match on: its value is the whole
+of what it is, and it is also the order it counts in. `ltKinds()` therefore
+shows the digits room on free — what free still cannot do is ADD one, which is
+`can('letters')` and is asked at the foot of the room.
+
+And `!` and `?` are at the ends of the space bar rather than the tail of the
+third row, with the delete two keys wide, which evens the rows to ten, nine,
+and seven letters. 「これスペースデカすぎやね。！スペース？みたいにできない？」
+「デリートキーは横二つ分欲しいかも」 The digits sit above the letters rather than
+behind a switch because free is one face and stays one face:
 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに抑えよう」
 A second face on free would have held only this row and nothing else, which is
 a page for the sake of having a second page. `KB_QWERTY` is `keyboard.js`'s, and
@@ -352,7 +365,7 @@ Four places say it, and they say four different things:
 
 | where | what it says |
 |---|---|
-| `ltStart` in `letters.js` | free languages get the twenty-eight slots, topped up by name |
+| `ltStart` in `letters.js` | free languages get the twenty-eight slots topped up by name, and a digit per value of the base topped up by value |
 | `kbOf` in `keyboard.js` | free reads `kbFixed()` and never `KB` |
 | `wsys()` in `wsys.js` | free is an alphabet; there is nothing to guess |
 | the screens | `vLtset` `vLetter` `vLetters` `vWsys` `vKb` each drop what free cannot use |

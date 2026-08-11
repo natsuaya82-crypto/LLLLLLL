@@ -383,6 +383,27 @@ function ltStart(){
     l.snd=read.units.length? read.units : [c];
     made++;
   }
+  /* And the digits, which are letters too -- numbers.js says a digit IS a
+     letter, one carrying a value instead of a reading -- so they are slots
+     exactly like the twenty-eight above and are drawn on the same way.
+     「数字が設定できないわ。そこ文字から設定できるように頼む」
+
+     They were the roman ten on the keyboard and nothing of the person's,
+     because free adds no letters and so there was nothing to put there. That
+     was true of a plan that gave twenty-eight slots; it is a reason to give
+     ten more, not a reason to leave the row borrowed.
+
+     By value and not by name: a digit has no name to match on, its value is
+     the whole of what it is, and that is also the order it counts in. As many
+     as the base has, so a language counting in twelve gets twelve. The
+     reading is left alone -- a value takes a reading away, and one of these
+     has nothing to say about sound. */
+  var v, n=numBase();
+  for(v=0;v<n;v++){
+    if(numByVal(v)) continue;
+    ltNew({val:v});
+    made++;
+  }
   if(made) saveLetters();
 }
 /* What this letter reads, spelled the way a person would write it. One word

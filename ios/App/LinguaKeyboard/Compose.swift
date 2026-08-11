@@ -48,6 +48,10 @@ struct Candidate {
 /// makes "throw the buffer away" a single assignment rather than four.
 struct Compose {
   private(set) var buffer = ""
+  /// The face of every key pressed since the buffer was last emptied, in
+  /// order. The buffer is what those keys are CALLED; this is what they look
+  /// like, and an alphabet's bar is made of it.
+  private(set) var typedFaces: [Face] = []
   private let conv: Conv
   private let ink: [Face]
 
@@ -61,16 +65,24 @@ struct Compose {
   /// not, because what was pressed is already the letter that was meant.
   var holdsText: Bool { conv.romanKeys }
 
-  mutating func clear() { buffer = "" }
+  mutating func clear() { buffer = ""; typedFaces = [] }
 
-  /// Take one more roman character, or one more letter's name. Refused past
-  /// `max`, where nothing can match any more.
+  /// Take one more roman character, or one more letter's name, with the face
+  /// of the key it came from.
+  ///
+  /// `max` is the longest key the conversion table has, so it is where a
+  /// roman spelling stops being able to match anything. An alphabet is not
+  /// spelling at anything -- the letters are already in the document and the
+  /// bar is showing them back -- so nothing caps it and a run of any length
+  /// stays whole. 「第一候補で無限」
   ///
   /// Returns false when it was refused, so the caller can decide what to do
   /// with the press rather than having it silently vanish.
-  mutating func push(_ s: String) -> Bool {
-    guard !s.isEmpty, buffer.count + s.count <= conv.max else { return false }
+  mutating func push(_ s: String, face: Face?) -> Bool {
+    guard !s.isEmpty else { return false }
+    if conv.romanKeys, buffer.count + s.count > conv.max { return false }
     buffer += s
+    typedFaces.append(face ?? Face(t: s, st: nil, ch: nil))
     return true
   }
 
@@ -79,6 +91,7 @@ struct Compose {
   mutating func back() -> Bool {
     guard !buffer.isEmpty else { return false }
     buffer.removeLast()
+    if !typedFaces.isEmpty { typedFaces.removeLast() }
     return true
   }
 
@@ -93,6 +106,24 @@ struct Compose {
   /// reshuffles between keystrokes cannot be aimed at.
   func candidates() -> [Candidate] {
     guard !buffer.isEmpty else { return [] }
+    /* An alphabet is not being converted. The letters pressed are already the
+       letters meant and are already in the document, so there is nothing to
+       choose -- and offering to choose was the bug: two letters in, the bar
+       filled with dictionary words that happened to start that way and the
+       run being typed was nowhere on it. 「2文字以上入力すると候補にliとか出て
+       きちゃう」
+
+       So the bar shows what was typed, twice: in the shapes somebody drew,
+       and in the roman they are named by. First their own, because that is
+       what they are writing.
+       「自作文字で第一候補で無限、第二候補がアルファベット」 */
+    if !conv.romanKeys {
+      var out = [Candidate(faces: typedFaces)]
+      if typedFaces.contains(where: { $0.st != nil || $0.ch != nil }) {
+        out.append(Candidate(faces: buffer.map { Face(t: String($0), st: nil, ch: nil) }))
+      }
+      return out
+    }
     var keys: [String] = []
     if conv.map[buffer] != nil { keys.append(buffer) }
     for k in conv.map.keys where k != buffer && k.hasPrefix(buffer) { keys.append(k) }

@@ -111,13 +111,13 @@ final class KeyboardViewController: UIInputViewController,
     // A flick is a press with a different letter, so it goes through the
     // same door rather than a second one beside it -- kbFlick() in
     // www/keyboard.js, same argument.
-    if let f = face { typed(f.t); return }
+    if let f = face { typed(f.t, face: f); return }
     switch key.k {
     case "del":  back()
     case "sp":   settle(); textDocumentProxy.insertText(" "); drop()
     case "next": drop(); advanceToNextInputMode()
     case "lay":  drop(); layerNo = key.to ?? 0; build()
-    default:     typed(key.t)      // lt and rom alike
+    default:     typed(key.t, face: Face(t: key.t, st: key.st, ch: key.ch))
     }
   }
 
@@ -127,11 +127,11 @@ final class KeyboardViewController: UIInputViewController,
   /// it is pressed. A roman key is spelling something that is not itself, so
   /// nothing goes in until it is chosen. A letter key IS what was meant, so
   /// it goes in at once and the bar only offers to finish the word.
-  private func typed(_ s: String?) {
+  private func typed(_ s: String?, face: Face) {
     guard let s = s, !s.isEmpty else { return }
     guard var c = compose else { textDocumentProxy.insertText(s); return }
     if !c.holdsText { textDocumentProxy.insertText(s) }
-    if !c.push(s) {
+    if !c.push(s, face: face) {
       // Past the longest thing anything could match. For roman that is a
       // dead end and the buffer is worth putting in as it stands; for
       // letters the buffer is a mirror of the document's tail, and a mirror
@@ -179,6 +179,12 @@ final class KeyboardViewController: UIInputViewController,
   private func commit(_ hit: Candidate) {
     guard var c = compose else { return }
     if !c.holdsText {
+      // Both of an alphabet's candidates ARE what is already in the
+      // document -- one shows it in the drawn shapes, one in the roman they
+      // are named by, and either way the characters are the same ones. So
+      // taking the text out to put the same text back is a flicker and
+      // nothing else. Only a genuinely different pick is worth the presses.
+      if hit.text == c.buffer { c.clear(); compose = c; paintBar(); return }
       for _ in 0..<c.buffer.count { textDocumentProxy.deleteBackward() }
     }
     textDocumentProxy.insertText(hit.text)
