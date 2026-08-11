@@ -16,6 +16,8 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		7A1C0F5E2B9D41C8A0E33024 /* Compose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33017 /* Compose.swift */; };
+		7A1C0F5E2B9D41C8A0E33025 /* CandidateBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */; };
 		7A1C0F5E2B9D41C8A0E33020 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */; };
 		7A1C0F5E2B9D41C8A0E33021 /* GlyphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33014 /* GlyphView.swift */; };
 		7A1C0F5E2B9D41C8A0E33022 /* KeyBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33015 /* KeyBoardView.swift */; };
@@ -51,6 +53,8 @@
 		7A1C0F5E2B9D41C8A0E33010 /* LinguaKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LinguaKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7A1C0F5E2B9D41C8A0E33011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33012 /* LinguaKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LinguaKeyboard.entitlements; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33017 /* Compose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compose.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateBar.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33014 /* GlyphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphView.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33015 /* KeyBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBoardView.swift; sourceTree = "<group>"; };
@@ -115,6 +119,8 @@
 				7A1C0F5E2B9D41C8A0E33016 /* KeyboardViewController.swift */,
 				7A1C0F5E2B9D41C8A0E33015 /* KeyBoardView.swift */,
 				7A1C0F5E2B9D41C8A0E33014 /* GlyphView.swift */,
+				7A1C0F5E2B9D41C8A0E33017 /* Compose.swift */,
+				7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */,
 				7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */,
 				7A1C0F5E2B9D41C8A0E33011 /* Info.plist */,
 				7A1C0F5E2B9D41C8A0E33012 /* LinguaKeyboard.entitlements */,
@@ -315,6 +321,8 @@
 				7A1C0F5E2B9D41C8A0E33023 /* KeyboardViewController.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33022 /* KeyBoardView.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33021 /* GlyphView.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E33024 /* Compose.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E33025 /* CandidateBar.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33020 /* Shared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

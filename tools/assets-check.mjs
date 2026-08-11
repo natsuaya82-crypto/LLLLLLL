@@ -39,6 +39,7 @@ const WWW = join(ROOT, 'www')
 const INDEX = join(WWW, 'index.html')
 
 const problems = []
+let swiftCount = 0
 const note = (m) => problems.push(m)
 
 // ---------------------------------------------------------------- git index
@@ -171,6 +172,50 @@ if (actjs !== -1 && actmap !== -1 && actjs > actmap) {
   note('act.js loads after act-map.js, which calls the act() it defines.')
 }
 
+// ---------------------------------------------------------------- the Swift
+// Same statement, on the other side of the wall. Every .swift under ios/App/
+// must be in the Xcode project's Sources phase, because Xcode compiles what
+// the project file lists and NOTHING ELSE -- a file that is on disk, tracked
+// by git, imported by name and simply not listed is invisible to the
+// compiler, and the error it produces names the type that could not be found
+// rather than the file that was never built.
+//
+// Compose.swift and CandidateBar.swift shipped that way once. Two files
+// written, committed, pushed, and left out of the pbxproj; the build failed
+// on `cannot find 'Compose' in scope` and said nothing about why. index.html
+// has been held to this rule from the beginning and the project file had
+// nobody holding it.
+
+const IOS = join(ROOT, 'ios', 'App')
+const PBX = join(IOS, 'App.xcodeproj', 'project.pbxproj')
+if (existsSync(PBX)) {
+  // Only the Sources PHASE counts. A file can have a PBXBuildFile line and
+  // still not be in any target's phase, which is a real state and looks
+  // identical to being wired up if you grep the whole file -- the first
+  // version of this check did exactly that and passed while the file was
+  // unbuilt.
+  const all = readFileSync(PBX, 'utf8')
+  const a = all.indexOf('/* Begin PBXSourcesBuildPhase section */')
+  const b = all.indexOf('/* End PBXSourcesBuildPhase section */')
+  const pbx = (a >= 0 && b > a) ? all.slice(a, b) : ''
+  const swift = []
+  const walk = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'Pods' || e.name === 'public' || e.name === 'build') continue
+      const f = join(dir, e.name)
+      if (e.isDirectory()) walk(f)
+      else if (e.name.endsWith('.swift')) swift.push(e.name)
+    }
+  }
+  walk(IOS)
+  for (const f of swift) {
+    if (pbx.indexOf(`${f} in Sources`) === -1) {
+      problems.push(`${f} is not in the Xcode project's Sources phase — Xcode will not compile it, and the error will name a missing type rather than this file.`)
+    }
+  }
+  if (!problems.length) swiftCount = swift.length
+}
+
 // ------------------------------------------------------------------- verdict
 
 if (problems.length) {
@@ -182,4 +227,5 @@ if (problems.length) {
 }
 
 console.log(`assets: ${referenced.length} files loaded by index.html, all present and tracked.`)
+if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js (last)`)
