@@ -15,7 +15,9 @@ var SUG=[], sugMn='';
    plus -- see the note there about the two disagreeing. */
 function sugUnl(){ return can('sug'); }
 function sugLeft(){ return sugUnl() ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
-function sugMean(){ var e=document.getElementById('f-mn'); return e? String(e.value||'').trim() : ''; }
+/* What the word is for, as far as it has been said -- the first meaning
+   written on the sheet, which is where a suggestion gets its sense from. */
+function sugMean(){ return (wEdit && wEdit.mns[0]) || ''; }
 function sugBuild(){
   var A=analyze(), tk=taken(); SUG=[];
   for(var i=0;i<3;i++){ var q=makeWord(addPos||POS[0], A, tk); if(q){ SUG.push(q); tk[q.join('')]=1; } }
@@ -42,64 +44,25 @@ function sugGo(){
   if(!sugUnl()) aiSpend();
   sugMn=sugMean(); sugBuild(); sugPaint();
 }
-/* A suggestion is a sequence, so taking one loads the sequence you are
-   building. There is no spelling to type into a box; there is no box. */
+/* A suggestion is a sequence of sounds, so taking one spells the word out of
+   whichever letters write those sounds -- the same step objects the keys and
+   the typed field build, because there is one spelling and one shape for it. */
 function sugPick(i){
-  if(!SUG[i]) return;
-  addSeq=SUG[i].slice();
-  SUG=[]; sugPaint(); addPaint();
+  if(!SUG[i] || !wEdit) return;
+  wEdit.sp=SUG[i].map(function(u){ var l=ltMain(u); return {l:(l? l.id : ''), u:u}; });
+  wdSync(); SUG=[]; wdPaint();
 }
-
-/* A word is built from the sounds this language has, not typed and then
-   guessed at. The keys are the language's own inventory: what is not in it
-   cannot go in a word, which is the whole point of having chosen it. */
-var addSeq=[];
-/* A key says its own sound. Pressing one used to be silent, which in an app
-   where a word IS its sounds meant you assembled a word you could not hear
-   until you had finished it and found the play button. */
-/* The same spelling a word being edited has: letters, each with what it says
-   here. addSeq is what those readings come out as, kept because everything
-   downstream reads it. */
-var addSp=[];
 /* The word being made, as a word. It is the same shape as one in the
    dictionary and is simply not in WORDS yet -- so what means the same, what
    means the opposite, its examples and its note are written ON it here and
-   go in with it, instead of being four things you can only reach after the
+   go in with it, instead of being four things you can only reach once the
    word exists. 「単語追加の時点で編集できるようにしろよ。編集でも見えるように当たり前だろバカか」
 
-   That is what lets the sections below be written once: wdW() answers the
-   editor with a word out of the dictionary and this sheet with this, and
-   every one of them takes what it is about from there. */
+   That is what lets one sheet do both: wdW() answers the editor with a word
+   out of the dictionary and the new-word sheet with this, and everything on
+   the sheet takes what it is about from there rather than from which screen
+   it is on. */
 var addW=null;
-function addDraft(){
-  if(!addW) addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[], nt:''};
-  return addW;
-}
-function addSync(){ addSeq=spPh(addSp); }
-function addPh(sym){
-  var l=ltMain(sym);
-  addSp.push({l:l? l.id : '', u:sym});
-  addSync(); sayOne(sym); addRedraw();
-}
-/* The letter goes in. Only the letter: what it sounds like is its own to say
-   and is asked of it whenever anybody wants to know. */
-function addLtr(id){
-  var l=ltById(id); if(!l) return;
-  addSp.push({l:id});
-  addSync(); sayPh(uSplit(ltFirstUnit(l))); addRedraw();
-}
-function addBack(){ addSp.pop(); addSync(); addRedraw(); }
-function addPaint(){ addRedraw(); }
-/* The row of letters has to be rebuilt, not just retyped, so the whole form
-   body is redrawn -- the two text fields keep their values because they are
-   read back before it happens. */
-function addRedraw(){
-  var b=document.getElementById('form-body'); if(!b) return;
-  var mn=document.getElementById('f-mn'), pos=document.getElementById('f-pos');
-  if(mn) addMn=mn.value;
-  if(pos) addPos=pos.value;
-  openAdd(addFrom);
-}
 /* The letters a word is spelled with, in order, each one a way back into the
    position it holds. The new-word sheet and the editor show the same row of
    the same thing -- they differ in which list it is, where a tap goes and
@@ -116,143 +79,60 @@ function spRowHTML(sp, route, back, id){
     '<button class="seqdel"'+(id? ' id="'+id+'"' : '') + DO(back) + (sp.length?'':' disabled')+
     ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
 }
-function addSpellRow(){
-  return spRowHTML(addSp, 'aspell', 'addBack', 'f-back');
-}
-/* Typed on free, pressed on the paid plan.
+/* ---- the sheet a word is written on --------------------------------------
+   One sheet, whether the word exists yet or not. 「作成編集それぞれ同じ画面で」
 
-   The row of letter tiles is the paid half only. It is a way IN to one
-   position of the spelling -- tap a letter, change what it says here -- and
-   changing what a letter says here is the thing free does not do. Under a
-   field you can type into it was an empty box with an undo button beside a
-   backspace key, which is two ways to take back one letter. */
-function addSpellHTML(){
-  return can('snd') ? addSpellRow() : addTypeHTML();
-}
-var addMode='';
-function addSetMode(m){ addMode=m; addRedraw(); }
-/* The field a word is typed into, and the row of letters it comes out as.
+   There used to be two. The new-word sheet had its own spelling field, its own
+   row of letters, its own keys, its own rail, its own page for one position of
+   a word, its own meaning box and its own part of speech -- eighteen functions
+   that were the editor's eighteen functions with `add` on the front. They had
+   already drifted: the editor took several meanings and the sheet took one,
+   the editor had a family and the sheet had none, and which of the two you
+   were looking at decided what a word was allowed to have.
 
-   On the free plan this is the whole of the input. There is no rail and there
-   are no sound keys: the alphabet is a to z, each of them already reads
-   something, and being offered a sound to pick was being asked to answer a
-   question the letter had already answered.
-   「音は選択できない。だってアルファベットには既存の音があるんだから」
-
-   The field wears the drawn letters (.sfont), so what you see while typing is
-   the language, not its romanisation. */
-function addTypeHTML(){ return spTypeField('f-ln', 'addSetLn', addSp); }
-function addSetLn(v){
-  addSp=spType(v);
-  addSync();
-  lnGrow('f-ln');
-  addPv();
-}
-function addKeys(){
-  var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha'));
-  var m=addMode || (ls.length? 'lt' : 'ph');
-  if(!mine.length && !ls.length){
-    return '<div class="note">'+t('add.ph.none')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["letters"]) + '>'+
-      esc(t('toc.letters'))+'</button>';
-  }
-  var rail = (ls.length && mine.length)
-    ? '<div class="segs" style="margin-bottom:8px">'+
-      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('addSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
-      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('addSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
-      '</div>' : '';
-  /* The letters, to be pressed one at a time. Taking one back is the
-     backspace already on the spelling above, so there is none here. */
-  if(m==='lt' && ls.length)
-    return rail+ltGrid(ls, function(l){ return DO('addLtr', [l.id]); });
-  return rail+'<div class="phkeys">'+mine.map(function(x){
-    return phkHTML(x, DO('addPh',[x]));
-  }).join('')+'</div>';
-}
-/* One position of the word being made. Same page as the editor's, on the
-   other list -- and it used to say exactly that, in a comment, above a copy
-   of it. */
-function vASpell(){
-  return spPageHTML(addSp, 'addSetU', 'addDropAt');
-}
-function addSetU(i, u){
-  if(!addSp[i]) return;
-  spSetU(addSp[i], u); addSync(); sayPh(uSplit(u)); back(); openAdd(addFrom);
-}
-function addDropAt(i){ addSp.splice(i,1); addSync(); back(); openAdd(addFrom); }
-/* Written from nothing, or derived from a word that already exists -- in
-   which case it opens as that word's sounds, to be changed from there. */
+   So the sheet is the editor, and what it is about is wdW(): a word out of the
+   dictionary, or the draft that is not in it yet. The only differences left
+   are the three that are real -- a draft cannot be deleted, cannot derive from
+   itself, and is added rather than saved. */
 var addFrom='';
-var addMn='';
 function openAdd(from){
-  /* Reopened by its own redraw, so the spelling is only cleared when the form
-     is genuinely new -- otherwise every keypress would empty the word. */
+  /* Reopened by its own redraw and on the way back from the picker, so what
+     has been typed is only cleared when the sheet is genuinely new. */
   var fresh = !(here().r==='form' && here().a==='add:'+(from||''));
-  if(fresh){ SUG=[]; sugMn=''; addSeq=[]; addSp=[]; addMn=''; addW=null; }
-  /* The sheet that is open is the one wdW() answers with, so opening this one
-     says so -- otherwise the last word edited would still be the subject and
-     a synonym chosen here would land on it. */
-  openHw=''; addDraft();
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
-  if(fresh && par){ addSp=JSON.parse(JSON.stringify(spOf(par))); addSync(); }
+  if(fresh){
+    SUG=[]; sugMn=''; openHw='';
+    addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[], nt:''};
+    if(addFrom) addW.from=addFrom;
+    wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
+           mns:[], pos:addPos, nt:''};
+    wdSync();
+  }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
-    addSpellHTML()+
-    /* No heading over the keyboard. It said "the sounds of this language",
-       which was true of the only keyboard there used to be and is a heading
-       about the wrong one of two now -- and the rail under it already says
-       which. Gone entirely on free, where the word is typed. */
-    (can('snd')? addKeys() : '')+
-    '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
-    '<button' + DO('sayField') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    /* Both carry their value, and both write it down as it is typed. The
-       picker for what means the same is a screen and not a sheet, so going
-       to it leaves this one -- and a field that only ever held its value in
-       the DOM came back empty from a trip somebody took on purpose. */
-    '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" value="'+esc(addMn)+'" placeholder="'+esc(t('f.meaning.ph'))+'"' + IN('addSetMn') + '></div>'+
-    '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos"' + CH('addSetPos') + '>'+
-    POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
-    '</select></div></div>'+
-    '<div id="sugwrap">'+sugHTML()+'</div>'+
-    /* The same four sections the editor has, from the same four functions.
-       They are what a word IS beyond its spelling, and asking for them only
-       after the word exists made the sheet that makes one a form with three
-       fields on it. */
-    '<div class="sec">'+t('word.syn')+'</div>'+ wdRelHTML('syn')+
-    '<div class="sec">'+t('word.ant')+'</div>'+ wdRelHTML('ant')+
-    '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+ wdExHTML()+
-    '<div class="sec">'+t('word.note')+'</div>'+ wdNoteHTML()+
-    '<div class="barfix"><button class="btn"' + DO('addOne') + '>'+t('add.btn')+'</button></div>',
-    function(){ phkMount(); geTiles(); addPv(); });
-}
-function addPv(){
-  var r=document.getElementById('f-pv');
-  if(r) r.textContent = addSeq.length? phIpa(addSeq) : '';
+    '<div id="wd-body">'+wdFormHTML()+'</div>',
+    function(){ phkMount(); geTiles(); });
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
-function addSetMn(v){ addMn=v; }
-function addSetPos(v){ addPos=v; }
-function sayField(){ if(addSeq.length) sayPh(addSeq); }
 function addOne(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
-  var hw=spWord(addSp);
-  var e=document.getElementById('f-mn'), p=document.getElementById('f-pos');
-  var mn=String((e? e.value : addMn)||'').trim();
-  var pos=(p? p.value : addPos);
-  if(!addSp.length || !hw){ toast(t('toast.hw2')); return; }
+  var sp=(wEdit && wEdit.sp) || [], hw=spWord(sp), d=addW;
+  var syn, ant, w;
+  if(!d) return;
+  if(!sp.length || !hw){ toast(t('toast.hw2')); return; }
   if(!capOK(1)){ closeSheet(); go('plans'); return; }
-  if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
-  addPos=pos;
+  if(findWord(hw)){ toast(t('toast.dup')); return; }
+  addPos=wEdit.pos;
+  syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
   /* No `ph` on it: the spelling is the word, and what it sounds like is
      asked of the letters every time it is wanted. A stored copy is a copy of
      a sound, and a copy of a sound is what went stale the day the letter's
      sound changed. */
-  var w={hw:hw, mn:mn, mns:(mn?[mn]:[]), pos:pos, at:Date.now()};
-  var d=addDraft(), syn=(d.syn||[]).slice(), ant=(d.ant||[]).slice();
-  w.sp=JSON.parse(JSON.stringify(addSp));
+  w={hw:hw, mns:wEdit.mns.slice(), mn:(wEdit.mns[0]||''), pos:wEdit.pos, at:Date.now()};
+  w.sp=JSON.parse(JSON.stringify(sp));
   if(addFrom && addFrom!==hw) w.from=addFrom;
   /* Everything written on the draft comes with it. An empty note is no note,
      not an empty one -- the same rule saveWord() holds. */
@@ -264,14 +144,12 @@ function addOne(){
   addW=null;
   syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
   ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
-  save(); cands=[]; addSeq=[]; addSp=[]; addMn=''; addFrom='';
-  /* Back to the dictionary, where the word now is. It used to open the word
-     itself, because the sheet that made one held three fields and the word
-     held nine -- it holds them all now, so there is nothing left to go and
-     do there. 「単語追加の時点で編集できるようにしろよ」 */
+  save(); cands=[]; addFrom='';
+  /* Onto the word, read. Everything it holds was written on the way in, so
+     what is wanted now is a look at it, not another form. */
   if(here().r==='form') back();
   toast(t('toast.added.1', hw));
-  render();
+  openWord(hw);
 }
 function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
@@ -392,8 +270,8 @@ function wRelWords(w, k){
 function relDirty(){
   if(!FORM) return;
   if(addW) FORM=null;
-  else if(openHw && FORM.key==='word:'+openHw)
-    FORM.html='<div id="wd-body">'+wdBodyHTML()+'</div>';
+  else if(openHw && FORM.key==='edit:'+openHw)
+    FORM.html='<div id="wd-body">'+wdFormHTML()+'</div>';
 }
 /* An empty headword is the word being made, which is the one case where the
    relation can only be written down one end of: the other end has nothing to
@@ -413,7 +291,7 @@ function wRelToggle(hw, k, other){
 }
 /* Taking one off the word being made, from the chip rather than from the
    picker -- the same list, so the same function decides it. */
-function wRelOff(k, other){ wRelToggle('', k, other); wdRepaint(); }
+function wRelOff(k, other){ wRelToggle('', k, other); wdPaint(); }
 /* Everything pointing at a word is told its new name when the name changes,
    which is why this is a list of headwords and not of objects. */
 function wRelRename(old, hw){
@@ -432,10 +310,9 @@ function wRelRename(old, hw){
    openAdd() and openWord() each say which sheet it is as they open. Every
    section below asks this and none of them asks which screen it is on. */
 function wdW(){ return addW || findWord(openHw); }
-/* A draft is not in WORDS, so there is nothing for save() to write and
-   nothing wdPaint() can repaint -- the add sheet redraws its own body. */
+/* A draft is not in WORDS, so there is nothing for save() to write. The
+   repaint is the same either way: one sheet, one body, one id. */
 function wdStore(){ if(!addW) save(); }
-function wdRepaint(){ if(addW) addRedraw(); else wdPaint(); }
 function wdRelHTML(k){
   var w=wdW(); if(!w) return '';
   var ws=wRelWords(w,k);
@@ -520,11 +397,11 @@ function wdAddEx(){
   if(!ln){ toast(t('word.ex.need')); return; }
   if(!w.ex) w.ex=[];
   w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
-  wdStore(); wdRepaint();
+  wdStore(); wdPaint();
 }
 function wdDelEx(i){
   var w=wdW(); if(!w || !w.ex) return;
-  w.ex.splice(i,1); wdStore(); wdRepaint();
+  w.ex.splice(i,1); wdStore(); wdPaint();
 }
 /* Choosing the other end of a relation: every word, ticked or not. */
 function vRelate(){
@@ -592,38 +469,41 @@ function wdNoteHTML(){
   return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
     '"' + IN('wdSetNt') + '>'+esc((addW? addW.nt : wEdit.nt)||'')+'</textarea></div>';
 }
+/* The family, on the sheet. Written out of wdFamHTML(), which is the family
+   the read page shows -- one answer to "where did this word come from".
+   A word being made can name its parent and cannot derive from itself. */
 function wdKidsHTML(){
-  var w=findWord(openHw); if(!w) return '';
-  var kids=wKids(w), par=wParent(w);
-  return (par? '<button class="ntrow"' + DO('openWord', [par.hw]) + '>'+
-            '<span class="nth">'+t('word.from', esc(par.hw))+'</span>'+
-            (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
-    (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
-        return '<button class="ntrow"' + DO('openWord', [k.hw]) + '>'+
-          '<span class="nth">'+esc(k.hw)+'</span>'+
-          '<span class="ntb">'+esc(wMn(k)||t('sent.nomean'))+'</span></button>';
-      }).join('')+'</div>' : '')+
-    '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('wdDerive') + '>'+t('word.derive')+'</button>';
+  var w=wdW(); if(!w) return '';
+  return wdFamHTML(w)+
+    (addW? '' : '<button class="btn ghost" style="width:100%;margin-top:10px"' +
+      DO('wdDerive') + '>'+t('word.derive')+'</button>');
 }
 function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
-  b.innerHTML=wdBodyHTML(); phkMount(); geTiles();
+  b.innerHTML=wdFormHTML(); phkMount(); geTiles();
 }
-function wdBodyHTML(){
-  var seq=wEdit.seq;
+/* The sheet a word is written on -- the same one whether the word is in the
+   dictionary or is being made. Three things differ, and all three are real:
+   a word that does not exist yet cannot be deleted, cannot be shown as a
+   picture, and is added rather than saved. Everything else is one screen. */
+function wdFormHTML(){
+  var seq=wEdit.seq, mk=!!addW;
   return '<div class="whd"><span class="whw">'+esc(seq.join(''))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) + '>'+
       ICON_PLAY+t('f.listen')+'</button>'+
       /* the one way out of the app: this word as a picture, in the letters
          it is written in, for somewhere that is not Lingua */
-      '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
-        esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
+      (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
+        esc(t('card.title'))+'">'+ICON_CARD+'</button>')+'</div>'+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2">'+esc(phCut(seq).map(function(p){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
 
     '<div class="sec">'+t('word.sounds')+'</div>'+
     (can('snd') ? wdSeqHTML()+wdKeysHTML() : wdTypeHTML()+wdReadHTML())+
+    /* Only where a word is being coined. Asking for a spelling to be made up
+       for a word that already has one is asking to throw it away. */
+    (mk? '<div id="sugwrap">'+sugHTML()+'</div>' : '')+
 
     '<div class="sec">'+t('word.means')+'</div>'+
     wdMnsHTML()+
@@ -645,25 +525,94 @@ function wdBodyHTML(){
     '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+
     wdExHTML()+
 
-
     '<div class="sec">'+t('word.note')+'</div>'+
     wdNoteHTML()+
 
-    '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('delWord') + '>'+
-      '<span class="sl bad">'+t('word.del')+'</span></button>'+
+    (mk? '' : '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('delWord') + '>'+
+      '<span class="sl bad">'+t('word.del')+'</span></button>')+
     /* At the foot of the screen rather than at the foot of the page. It was
        under the meanings, the part of speech, the family, the synonyms, the
        antonyms, the examples and the note -- so saving a word meant scrolling
        past everything the word has. 「保存ボタンつけようもう」 */
-    '<div class="barfix"><button class="btn"' + DO('saveWord') + '>'+t('word.save')+'</button></div>';
+    '<div class="barfix"><button class="btn"' + DO(mk? 'addOne' : 'saveWord') + '>'+
+      t(mk? 'add.btn' : 'word.save')+'</button></div>';
+}
+/* ---- a word, read -------------------------------------------------------
+   Opening a word used to open its editor: every field live, a Save at the
+   foot, the delete button under it. That is the wrong answer to "what does
+   this word mean" -- looking a word up is what a dictionary is for and what
+   you do with it most of the time, and it was the one thing this screen
+   could not do. 「開いた時は閲覧、編集ボタンで編集」
+
+   Nothing empty is drawn. A word with no examples has no examples heading:
+   on the sheet a heading over nothing is where you put one, and here it is
+   just a word about a thing that is not there. */
+function wdSecHTML(head, body){
+  return body? '<div class="sec">'+head+'</div>'+body : '';
+}
+function wdChipsHTML(w, k){
+  var ws=wRelWords(w,k);
+  return ws.length? '<div class="rels">'+ws.map(function(x){
+    return '<button class="rel"' + DO('openWord', [x.hw]) + '>'+
+      '<span class="relw">'+esc(wOut(x.hw))+'</span>'+
+      (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
+  }).join('')+'</div>' : '';
+}
+function wdFamHTML(w){
+  var kids=wKids(w), par=wParent(w);
+  if(!par && !kids.length) return '';
+  return (par? '<button class="ntrow"' + DO('openWord', [par.hw]) + '>'+
+            '<span class="nth">'+t('word.from', esc(par.hw))+'</span>'+
+            (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
+    (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
+        return '<button class="ntrow"' + DO('openWord', [k.hw]) + '>'+
+          '<span class="nth">'+esc(k.hw)+'</span>'+
+          '<span class="ntb">'+esc(wMn(k)||t('sent.nomean'))+'</span></button>';
+      }).join('')+'</div>' : '');
+}
+function wdViewHTML(){
+  var w=findWord(openHw); if(!w) return viewGone();
+  var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
+  return '<div class="whd"><span class="whw'+(myFontOn()?' sfont':'')+'">'+esc(wOut(w.hw))+'</span>'+
+      '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) + '>'+
+      ICON_PLAY+t('f.listen')+'</button>'+
+      '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
+        esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
+    '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
+    '<div class="wsub2">'+esc(posLabel(w.pos))+'</div>'+
+    wdSecHTML(t('word.means'), mns.length
+      ? '<div class="mnlist">'+mns.map(function(m,i){
+          return '<div class="mnrow"><span class="mnv">'+
+            (mns.length>1? '<span class="sn">'+(i+1)+'</span>' : '')+esc(m)+'</span></div>';
+        }).join('')+'</div>'
+      : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
+    wdSecHTML(t('word.family'), wdFamHTML(w))+
+    wdSecHTML(t('word.syn'), wdChipsHTML(w,'syn'))+
+    wdSecHTML(t('word.ant'), wdChipsHTML(w,'ant'))+
+    wdSecHTML(ICON_LINE+t('word.ex'), ex.length
+      ? '<div class="exlist">'+ex.map(function(e,i){
+          return exRowHTML(e, exSeq(e.ln),
+            exBtn('cardOpen', ["x", w.hw+'#'+i], 'card.title', ICON_CARD));
+        }).join('')+'</div>' : '')+
+    wdSecHTML(t('word.note'), w.nt? '<div class="note">'+esc(w.nt)+'</div>' : '')+
+    '<div class="barfix"><button class="btn"' + DO('openEdit', [w.hw]) + '>'+
+      t('word.edit')+'</button></div>';
 }
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
+  openHw=w.hw; addW=null; wEdit=null;
+  openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
+           function(){ geTiles(); });
+}
+/* The same sheet a new word is written on, opened on one that exists. */
+function openEdit(hw){
+  var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
-  openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdBodyHTML()+'</div>',
-           function(){ phkMount(); });
+  openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
+           function(){ phkMount(); geTiles(); });
 }
+FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
 /* Both keyboards write the same thing: a step in the spelling. A sound
    pressed on the sound keyboard is a step whose letter is whichever letter

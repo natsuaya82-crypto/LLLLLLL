@@ -820,6 +820,7 @@ defLang('zh', (function(){
       "glyph.del.ask"    : "取下这个音的字母？这个音仍留在你的语言里。",
       "glyph.deleted"    : "{0} 现在没有字母了",
       "word.mn.ph"       : "添加意思",
+      "word.edit"        : "编辑",
       "word.save"        : "保存",
       "word.del"         : "删除词",
       "confirm.del"      : "删除 {0}？",

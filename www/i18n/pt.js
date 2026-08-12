@@ -822,6 +822,7 @@ defLang('pt', (function(){
       "glyph.del.ask"    : "Tirar a letra deste som? O som continua na sua língua.",
       "glyph.deleted"    : "{0} agora está sem letra",
       "word.mn.ph"       : "Acrescentar um significado",
+      "word.edit"        : "Editar",
       "word.save"        : "Salvar",
       "word.del"         : "Apagar a palavra",
       "confirm.del"      : "Apagar {0}?",

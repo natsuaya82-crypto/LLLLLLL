@@ -31,7 +31,7 @@ function viewReset(){
   fq=''; fpick=null;                   /* the find screen */
   mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
-  addSeq=[]; addMode=''; wdMode='';    /* the two sheets */
+  wdMode='';                           /* the sheet a word is written on */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
@@ -113,7 +113,6 @@ var PAGES={
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   spell:   {tab:'build', k:'word.sp'},
-  aspell:  {tab:'build', k:'word.sp'},
   glyph:   {tab:'build'},
   words:   {tab:'build', k:'toc.words'},
   gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */

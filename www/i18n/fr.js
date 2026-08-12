@@ -863,6 +863,7 @@ defLang('fr', (function(){
       "glyph.del.ask"    : "Retirer la lettre de ce son ? Le son reste dans votre langue.",
       "glyph.deleted"    : "{0} n’a plus de lettre",
       "word.mn.ph"       : "Ajouter un sens",
+      "word.edit"        : "Modifier",
       "word.save"        : "Enregistrer",
       "word.del"         : "Supprimer le mot",
       "confirm.del"      : "Supprimer {0} ?",

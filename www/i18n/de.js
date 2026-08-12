@@ -804,6 +804,7 @@ defLang('de', (function(){
       "glyph.del.ask"    : "Den Buchstaben von diesem Laut nehmen? Der Laut bleibt in deiner Sprache.",
       "glyph.deleted"    : "{0} hat jetzt keinen Buchstaben",
       "word.mn.ph"       : "Bedeutung hinzufügen",
+      "word.edit"        : "Bearbeiten",
       "word.save"        : "Sichern",
       "word.del"         : "Wort löschen",
       "confirm.del"      : "{0} löschen?",

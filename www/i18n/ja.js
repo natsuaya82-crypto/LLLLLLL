@@ -731,6 +731,7 @@ defLang('ja', (function(){
       'glyph.del.ask'   : 'この文字を削除しますか？音は残ります。',
       'glyph.deleted'   : '{0} の字を外しました',
       'word.mn.ph'      : '意味を追加',
+      'word.edit'       : '編集',
       'word.save'       : "保存",
       'word.del'        : "単語の削除",
       'confirm.del'     : '{0} を消しますか？',

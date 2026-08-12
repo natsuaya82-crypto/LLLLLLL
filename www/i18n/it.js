@@ -817,6 +817,7 @@ defLang('it', (function(){
       "glyph.del.ask"    : "Togliere la lettera a questo suono? Il suono resta nella tua lingua.",
       "glyph.deleted"    : "{0} ora è senza lettera",
       "word.mn.ph"       : "Aggiungere un significato",
+      "word.edit"        : "Modifica",
       "word.save"        : "Salva",
       "word.del"         : "Cancellare la parola",
       "confirm.del"      : "Eliminare {0}?",

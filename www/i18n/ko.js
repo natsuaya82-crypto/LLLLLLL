@@ -990,6 +990,7 @@ defLang('ko', (function(){
       "glyph.del.ask"    : "이 소리에서 글자를 뗄까요? 소리는 당신의 언어에 그대로 남아요.",
       "glyph.deleted"    : "{0}에 이제 글자가 없어요",
       "word.mn.ph"       : "뜻 추가",
+      "word.edit"        : "편집",
       "word.save"        : "저장",
       "word.del"         : "단어 삭제",
       "confirm.del"      : "{0}, 지울까요?",

@@ -775,6 +775,7 @@ defLang('es', (function(){
       "glyph.del.ask"    : "¿Quitarle la letra a este sonido? El sonido sigue en tu lengua.",
       "glyph.deleted"    : "{0} ya no tiene letra",
       "word.mn.ph"       : "Añadir un significado",
+      "word.edit"        : "Editar",
       "word.save"        : "Guardar",
       "word.del"         : "Borrar la palabra",
       "confirm.del"      : "¿Eliminar {0}?",

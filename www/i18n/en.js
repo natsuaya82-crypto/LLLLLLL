@@ -729,6 +729,7 @@ defLang('en', (function(){
       'glyph.del.ask'   : "Take the letter off this sound? The sound stays in your language.",
       'glyph.deleted'   : "{0} has no letter now",
       'word.mn.ph'      : "Add a meaning",
+      'word.edit'       : 'Edit',
       'word.save'       : "Save",
       'word.del'        : "Delete word",
       'confirm.del'     : "Delete {0}?",

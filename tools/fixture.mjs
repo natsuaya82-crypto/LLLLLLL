@@ -151,10 +151,18 @@ export function halfDone(){
     ['the account, signed in', () => { SESS = { at:'a', rt:'r', uid:'u' };
                                        window.route = 'set'; NAV = [{ r:'set', a:'acct' }];
                                        const h = vSet(); SESS = null; return h; }],
-    ['the word being edited', () => { openWord('kano'); wEdit.mns = ['mountain','peak'];
-                                      wEdit.ex = [{ln:'kano tir', gl:'sees the mountain'}];
+    ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
                                       return FORM.html; }],
-    ['the word being spelled', () => { openWord('kano'); window.route='spell';
+    /* A word, read. It is what opening one gives you now -- the editor is
+       behind the button at the foot of it. */
+    ['a word, read', () => { const w = findWord('kano');
+                             w.ex = [{ln:'kano tir', gl:'sees the mountain'}];
+                             w.nt = 'the one behind the village';
+                             wRelToggle('kano','syn','mos');
+                             openWord('kano'); const h = FORM.html;
+                             wRelToggle('kano','syn','mos');
+                             delete w.ex; delete w.nt; return h; }],
+    ['the word being spelled', () => { openEdit('kano'); window.route='spell';
                                        NAV=[{r:'spell'}]; return vSpell(); }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
                                        SET.wsys='abugida'; abVow = 'a';
@@ -190,7 +198,12 @@ export function halfDone(){
        relation on a word that does not exist yet can be taken back off, and
        an empty sheet has no chips -- so the sheet opened blank walks a screen
        whose only way to undo is never drawn. */
-    ['the new word sheet, with a synonym', () => { openAdd(''); addW.syn = ['kano'];
+    /* Opened from somewhere that is not itself, so the sheet is a NEW one --
+       openAdd() keeps what is on it when it is reopened by its own redraw or
+       on the way back from the picker, which is the whole point of it, and a
+       fixture that lands on the form twice gets the second of those. */
+    ['the new word sheet, with a synonym', () => { window.route='words'; NAV=[{r:'words'}];
+                                                   openAdd(''); addW.syn = ['kano'];
                                                    addW.ant = ['tir']; addW.ex = [{ln:'kano tir', gl:'sees it'}];
                                                    openAdd('');
                                                    const h = FORM.html; addW = null; return h; }],
@@ -208,17 +221,17 @@ export function halfDone(){
     ['the new word sheet, by sound', () => { SET.plan = 'plus'; openAdd('kano');
                                              const h = FORM.html; addFrom = '';
                                              SET.plan = 'free'; return h; }],
-    ['the word being edited, by sound', () => { SET.plan = 'plus'; openWord('kano');
+    ['the word being edited, by sound', () => { SET.plan = 'plus'; openEdit('kano');
                                                 const h = FORM.html;
                                                 SET.plan = 'free'; return h; }],
     /* And the OTHER face of each of those two: the rail switches the sheet
        between the letters and the sounds, and the fixture's language has
        letters, so the sound half is never the one that opens. */
-    ['the new word sheet, sounds rail', () => { SET.plan = 'plus'; addMode = 'ph';
+    ['the new word sheet, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
                                                 openAdd(''); const h = FORM.html;
-                                                addMode = ''; SET.plan = 'free'; return h; }],
+                                                wdMode = ''; SET.plan = 'free'; return h; }],
     ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
-                                                   openWord('kano'); const h = FORM.html;
+                                                   openEdit('kano'); const h = FORM.html;
                                                    wdMode = ''; SET.plan = 'free'; return h; }],
     /* A grammar stage of your own: the door is on the paid plan, because the
        fifteen are the whole of the free chapter. */
@@ -281,10 +294,10 @@ export function halfDone(){
     ['the five kinds of writing', () => { SET.plan = 'plus';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
-    ['a word being added, by letter', () => { openAdd(''); addSetMode('lt');
-                                              return FORM.html; }],
-    ['a word being added, by sound',  () => { openAdd(''); addSetMode('ph');
-                                              return FORM.html; }],
+    ['a word being added, by letter', () => { SET.plan='plus'; openAdd(''); wdSetMode('lt');
+                                              const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
+    ['a word being added, by sound',  () => { SET.plan='plus'; openAdd(''); wdSetMode('ph');
+                                              const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
@@ -300,17 +313,16 @@ export function halfDone(){
     ['a conversation under way', () => { TALK=[{me:true, w:[['k','a','n','o']], g:['mountain']}];
                                          window.route='talk'; NAV=[{r:'talk'}];
                                          const h=vTalk(); TALK=[]; return h; }],
-    ['a word being written',   () => { openAdd(); addSeq=['k','a','n','o'];
-                                       addSp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                       SUG=[['k','a'],['t','i']];
-                                       return wdBodyHTML? FORM.html+vForm() : FORM.html; }],
-    ['a word being spelled again', () => { openWord('kano'); window.route='spell';
+    ['a word being written',   () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
+                                       wdSync(); SUG=[['k','a'],['t','i']];
+                                       return wdFormHTML()+vForm(); }],
+    ['a word being spelled again', () => { openEdit('kano'); window.route='spell';
                                            NAV=[{r:'spell'}];
                                            wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
                                            return vSpell(); }],
     ['a word with a sentence in it', () => { findWord('kano').ex=[{ln:'kano tir', gl:'sees it'}];
-                                             openWord('kano');
-                                             const h=wdBodyHTML();
+                                             openEdit('kano');
+                                             const h=wdFormHTML();
                                              delete findWord('kano').ex; return h; }],
     ['relatives to choose from', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                          return vRelate('kano'); }],
@@ -334,17 +346,18 @@ export function halfDone(){
     ['words being suggested for a slot', () => { openSlot('greet','yes');
                                                  stSug=[['k','a'],['t','i']];
                                                  return FORM.html.replace(/$/, stSugHTML()); }],
-    ['one position of a word',   () => { openWord('kano');
+    ['one position of a word',   () => { openEdit('kano');
                                           wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
                                           window.route='spell'; NAV=[{r:'spell', a:'0'}];
                                           return vSpell(); }],
-    ['one position of a new word', () => { openAdd(); addSp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           window.route='aspell'; NAV=[{r:'aspell', a:'0'}];
-                                           return vASpell(); }],
-    ['the sound keyboard in a word', () => { openWord('kano'); wdMode='ph';
-                                             return wdBodyHTML(); }],
-    ['the sound keyboard in a new word', () => { openAdd(); addMode='ph';
-                                                 return FORM.html; }],
+    ['one position of a new word', () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
+                                           wdSync();
+                                           window.route='spell'; NAV=[{r:'spell', a:'0'}];
+                                           return vSpell(); }],
+    ['the sound keyboard in a word', () => { SET.plan='plus'; openEdit('kano'); wdMode='ph';
+                                             const h=wdFormHTML(); wdMode=''; SET.plan='free'; return h; }],
+    ['the sound keyboard in a new word', () => { SET.plan='plus'; openAdd(); wdMode='ph';
+                                                 const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
     ['words offered for a meaning', () => { SUG=[['k','a'],['t','i']]; sugMn='mountain';
                                             const h=sugHTML(); SUG=[]; return h; }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
