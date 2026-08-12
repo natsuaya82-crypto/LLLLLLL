@@ -148,6 +148,26 @@ anywhere that sends a language to a server: the app touches `/auth/v1/*` and
 - *deleted*: nothing.
 - *the plan*: free, on every plan.
 
+### A key on the system keyboard says which key it is
+
+**Behaviour, on the phone only. Swift — nothing here can see it.**
+
+A key wearing a shape somebody drew says nothing about *which* key it is.
+QWERTY is muscle memory, not something anybody can read off a keyboard, so a
+person who has not memorised the layout is looking at thirty shapes with no
+way to find `a`.
+
+- The roman letter the key types is now drawn small in the **bottom-right
+  corner**. `Key.t` has been handed to the extension since the beginning; it
+  was simply never drawn.
+- Only on letter keys whose face is a **drawn shape**. A key already showing a
+  letter or a borrowed character would be saying the same thing twice.
+- The four flick faces sit at the middles of the edges, so the corner is free
+  even on a key that has all four.
+- *newly stored*: nothing. *migration*: none. *deleted*: nothing.
+- **Not verifiable here.** There is no Swift on a Linux runner; `npm test` and
+  `assets-check` say nothing about how it looks. It needs a build and a phone.
+
 ### The profile is where your posts are, and three things on a post
 
 **Behaviour. One new field.**

@@ -21,6 +21,17 @@ final class KeyView: UIView {
   let key: Key
   private let faceView = GlyphView()
   private var corners: [GlyphView] = []
+  /// What this key types, in the roman it is named by, small in the corner.
+  ///
+  /// A key wearing a shape somebody drew says nothing about WHICH key it is,
+  /// and QWERTY is muscle memory rather than a thing anybody can read off a
+  /// keyboard -- so a person who has not memorised the layout is looking at
+  /// thirty shapes with no way to tell which one is `a`.
+  /// 「qwarty暗記してない人は自作文字でどのアルファベットかわからなくなるやん？」
+  ///
+  /// Only where the face is a DRAWN shape. A key whose face is already a
+  /// letter or a borrowed character would be saying the same thing twice.
+  private var mark: UILabel?
 
   init(key: Key, box: CGFloat) {
     self.key = key
@@ -47,6 +58,17 @@ final class KeyView: UIView {
     }
     addSubview(faceView)
 
+    if key.k == "lt", key.st != nil, let t = key.t, !t.isEmpty {
+      let l = UILabel()
+      l.text = t
+      l.textColor = UIColor.secondaryLabel
+      l.textAlignment = .right
+      l.adjustsFontSizeToFitWidth = true
+      l.minimumScaleFactor = 0.5
+      addSubview(l)
+      mark = l
+    }
+
     for f in (key.f ?? []) {
       let g = GlyphView()
       g.box = box
@@ -72,6 +94,15 @@ final class KeyView: UIView {
     super.layoutSubviews()
     let inset = bounds.height * 0.14
     faceView.frame = bounds.insetBy(dx: inset, dy: inset)
+    // The bottom-right CORNER. The four flick faces sit at the middles of the
+    // edges rather than at the corners, so this does not land on one even on a
+    // key that has all four.
+    if let m = mark {
+      let h = bounds.height * 0.26
+      m.font = .systemFont(ofSize: h * 0.86, weight: .regular)
+      m.frame = CGRect(x: bounds.maxX - h * 1.9 - 2, y: bounds.maxY - h - 1,
+                       width: h * 1.9, height: h)
+    }
     guard corners.count == 4 else { return }
     // up, right, down, left — KB_DIRS in www/keyboard.js, same order.
     let s = bounds.height * 0.3
