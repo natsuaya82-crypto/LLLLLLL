@@ -788,6 +788,21 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .lock .tag{margin-left:auto;font-size:.82rem;letter-spacing:.14em;color:var(--pur);
            border:1px solid var(--purln);border-radius:3px;padding:2px 8px;flex:0 0 auto}
 
+/* ---------- a post in the reader's own words ----------
+   The button that asks for it, and the line that comes back. A word this
+   language has no word for is left as it was and marked -- pressing it is
+   the shortest way there is from "I cannot say this" to writing the word. */
+.trgo{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:8px 12px;
+      min-height:44px;border:0;background:none;color:var(--gold);font-family:inherit;
+      font-size:.86rem;font-weight:600;border-radius:999px}
+.trgo svg{width:15px;height:15px}
+.trn{color:var(--txm);font-weight:400}
+.ptr{margin:6px 0 2px;padding:10px 12px;border-radius:12px;background:var(--sink);
+     line-height:1.75;font-size:1rem;word-break:break-word}
+.trw{}
+.trmiss{color:var(--bad);text-decoration:underline;text-decoration-style:dotted;
+        text-underline-offset:3px}
+
 /* ---------- bottom bar, sheet, toast ---------- */
 /* On top of the tab bar, not under it. 「下タブを画面1番下に固定して、その上
    からボタンいくようにしてね」 */

@@ -179,6 +179,14 @@ function pwSend(){
             ln:ln, ink:postInk(ln),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), gl:gl, li:0, bo:0, re:0};
+  /* The natural language, translated once, here, and carried. It is asked
+     for and NOT waited on: the post is pushed either way, and a translation
+     that arrives late lands on a post that already exists. A post that
+     cannot be published until a machine answers is a post a machine can
+     lose. */
+  postTr(mine.mn, mine.ui, function(tr){
+    if(tr && typeof tr==='object'){ mine.tr=tr; savePosts(); render(); }
+  });
   if(PW.to){
     mine.to=PW.to;
     var up=postById(PW.to);
@@ -290,6 +298,132 @@ function migratePostInk(){
     n++;
   }
   if(n) savePosts();
+}
+
+/* ---- what a post says, and what it says in YOUR words ------------------
+
+   Three layers, and only the third is new.
+
+     1  the writer's own letters      ln + ink        already on the post
+     2  what it means, in a natural   mn + tr         mn is already on it
+        language
+     3  the same thing in the         built from      here
+        READER's own language          THIS dictionary
+
+   Layer 2 is translated WHEN THE POST IS WRITTEN, not when it is read, and
+   the translations travel on the post. A post written in Japanese reaches an
+   English reader in English without anybody's phone asking anything of the
+   network at read time -- which is the whole point, because a timeline is
+   read far more often than it is written.
+
+   TR_SEAM: the translator is the reader's own device AI, borrowed at the
+   moment of posting. There is no key of ours and no service of ours, so
+   there is nothing to pay per post and nothing that can leak. Until it is
+   wired up, postTr() answers nothing, `tr` is simply absent, and every
+   reader sees the natural language the author typed -- which is what happens
+   today and is not a failure. Same shape as AI_SEAM in www/glyph.js. */
+function postTr(mn, from, done){
+  /* TR_SEAM — hand `mn` to the device's own translator and call done() with
+     { <lang code>: <text>, … }. Nothing here yet; posting does not wait on
+     it and never will, because a post that cannot be published until a
+     machine answers is a post that can be lost by a machine not answering. */
+  done(null);
+}
+/* What a post says to the person reading it: their own language if the post
+   carries it, and otherwise the one the author typed. Never empty -- a line
+   nobody can read is not a post. */
+function postSay(p){
+  if(!p) return '';
+  var u=uiLang();
+  if(p.tr && typeof p.tr==='object' && p.tr[u]) return String(p.tr[u]);
+  return String(p.mn||'');
+}
+
+/* ---- layer three: the post, in words this reader has -------------------
+
+   This is the one place in the app where the reading side is SUPPOSED to
+   reach for the making side, and it is worth being exact about why.
+
+   Rule 8 forbids drawing somebody else's post out of my dictionary, because
+   their line is theirs. This is the opposite errand: it takes a natural
+   sentence THE AUTHOR ALREADY CONFIRMED and says it again in MY language,
+   with MY words. The guessing is about my own vocabulary, and I am the one
+   who can see when it is wrong -- which is exactly the test the note at the
+   head of this file applies to machine translation of an invented language.
+
+   So it lives above the line, it touches `mn`/`tr` and never `ln` or `ink`,
+   and it is deliberately NOT frozen onto the post: a sentence that half
+   renders today renders whole next month, because the dictionary grew. That
+   is the opposite of `ink` and it is correct for the same reason `ink` is --
+   ink is the writer's and this is the reader's.
+
+   Word order is left alone. Rearranging a sentence needs to know which word
+   is the subject and which the object, and nothing here knows; a wrong
+   rearrangement reads as a claim about the language rather than as a gap. */
+function trWord(w){
+  var i, j, mns, q=String(w||'').toLowerCase().replace(/^[^\w']+|[^\w']+$/g, '');
+  if(!q) return null;
+  for(i=0;i<WORDS.length;i++){
+    mns=wMns(WORDS[i]);
+    for(j=0;j<mns.length;j++) if(String(mns[j]).toLowerCase()===q) return WORDS[i];
+  }
+  /* then a meaning that merely contains it, so "a mountain" finds `mountain` */
+  for(i=0;i<WORDS.length;i++){
+    mns=wMns(WORDS[i]);
+    for(j=0;j<mns.length;j++)
+      if((' '+String(mns[j]).toLowerCase()+' ').indexOf(' '+q+' ')>=0) return WORDS[i];
+  }
+  return null;
+}
+/* Each piece of the sentence: a word of mine, or the natural word I have no
+   word for. The second is the point as much as the first -- a red word is a
+   word this language is missing, and it is the shortest door there is to
+   making it. */
+function trUnits(mn){
+  var out=[], a=String(mn||'').split(/(\s+)/), i, w;
+  for(i=0;i<a.length;i++){
+    if(!a[i]) continue;
+    if(/^\s+$/.test(a[i])){ out.push({sp:true}); continue; }
+    w=trWord(a[i]);
+    out.push(w? {w:String(w.hw)} : {miss:a[i]});
+  }
+  return out;
+}
+var TR_FREE_DAILY=3;
+/* Its own day and its own counter. Sharing AI_FREE_DAILY would mean asking
+   the word sheet for a spelling costs you a reading of somebody's post,
+   which is two prices for one purchase. */
+function trToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function trUsed(){ if(SET.trDate!==trToday()){ SET.trDate=trToday(); SET.trN=0; save(); } return SET.trN||0; }
+function trLeft(){ return can('tr')? Infinity : Math.max(0, TR_FREE_DAILY-trUsed()); }
+function trSpend(){ if(can('tr')) return; SET.trDate=trToday(); SET.trN=trUsed()+1; save(); }
+/* Which posts have been turned into this language, this session. It is not
+   stored: it is a way of looking at a post, not a fact about one. */
+var TURNED={};
+function trOpen(id){
+  if(TURNED[id]) return;
+  if(trLeft()<=0){ go('plans'); toast(t('tr.out')); return; }
+  trSpend(); TURNED[id]=1; render();
+}
+function trHTML(p){
+  if(!TURNED[p.id]) return '';
+  var u=trUnits(postSay(p));
+  return '<div class="ptr'+(myFontOn()?' sfont':'')+'">'+u.map(function(x){
+    if(x.sp) return ' ';
+    if(x.w) return '<span class="trw">'+esc(wOut(x.w))+'</span>';
+    /* Red, and not a button. It was one -- press the gap, go and make the
+       word -- which is a nice idea, an unasked-for one, and a 19pt target in
+       the middle of a sentence. What was asked for was that the gap be
+       obvious. 「自然言語のまま残して赤文字とかにする。この単語ないのが
+       わかりやすいように」 */
+    return '<span class="trmiss">'+esc(x.miss)+'</span>';
+  }).join('')+'</div>';
+}
+function trBtnHTML(p){
+  if(TURNED[p.id]) return '';
+  var n=trLeft();
+  return '<button class="trgo"' + DO('trOpen', [p.id]) + '>'+ICON_LINE+t('tr.go')+
+    (n===Infinity? '' : '<span class="trn">'+esc(t('tr.left', n))+'</span>')+'</button>';
 }
 
 /* ==== below this line a post renders from the post ====
@@ -445,8 +579,13 @@ function postRow(p){
          are on the post, so there is no font to put on anything and no
          reason to treat my own post differently from anybody's. */
       '<div class="pline">'+postLnHTML(p)+'</div>'+
-      '<div class="pmn">'+esc(p.mn)+'</div>'+
+      /* The natural language, always. In the reader's own if the post carries
+         it, and in the author's if it does not -- which is every post until
+         the translator is wired up, and is not a failure. */
+      '<div class="pmn">'+esc(postSay(p))+'</div>'+
       '<div class="pgl">'+postGlossHTML(p.gl)+'</div>'+
+      trBtnHTML(p)+
+      trHTML(p)+
       '<div class="pacts">'+
         postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
         postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+

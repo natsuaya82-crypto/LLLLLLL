@@ -307,6 +307,7 @@ var CAN={
   kb:      'plus',   /* a keyboard of your own, instead of the fixed QWERTY */
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   gram:    'plus',   /* a grammar stage of your own, past the fifteen there are */
+  tr:      'plus',   /* a post said again in your own words, unmetered */
   sug:     'studio'  /* the word sheet's suggestions, unmetered */
 };
 /* 'snd' is what free is NOT, said as a capability.

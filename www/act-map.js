@@ -154,6 +154,7 @@ act('stTap', stTap);
 act('sugGo', sugGo);
 act('sugPick', sugPick);
 act('takeOwn', takeOwn);
+act('trOpen', trOpen);
 act('tkAdd', tkAdd);
 act('tkBack', tkBack);
 act('tkClear', tkClear);

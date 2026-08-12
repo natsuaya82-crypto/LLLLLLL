@@ -44,6 +44,27 @@ and the keyboard somebody spent an evening building was not in the file.
 - `backup-check` now names `kb` and `wld` rather than counting slices, and its
   fixture language carries both. Both failures were made to happen first.
 
+### A post can be read in your own language
+
+**Behaviour, and new data on a post.**
+
+A post now shows three things: the writer's own letters, what it means in a
+natural language, and — on a button — the same thing said again in the
+reader's own conlang, with the words the reader has no word for left in the
+natural language and shown in red.
+
+- *newly stored*: `post.tr`, translations of the meaning, written at the
+  moment of posting. **Absent today**: the translator is the reader's own
+  device AI and is not wired up, so `postTr()` answers nothing and every
+  reader sees the language the author typed — which is what happened before.
+- *migration*: none. A post without `tr` behaves exactly as it did.
+- *deleted*: nothing.
+- *the plan*: `tr` is a new capability, Plus. Free gets three a day, on its
+  own counter (`SET.trDate` / `SET.trN`) rather than sharing the AI one —
+  sharing would mean a spelling suggestion spends a reading.
+- *not frozen, on purpose*: the third layer is built from the reader's
+  dictionary every time it is asked for.
+
 ### A card of a post is drawn from the post
 
 **Behaviour, and it only shows once a second person exists.**

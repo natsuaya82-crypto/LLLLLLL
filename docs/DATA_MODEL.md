@@ -103,6 +103,7 @@ writer's language:
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
 | `gl` | the gloss, word by word, as it was at the time |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
+| `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
 
 ### `ink`
 
@@ -144,6 +145,16 @@ post without ink predates the timeline holding anybody else's, so all of them
 are this person's own. The day posts arrive from a server, **they must arrive
 with their ink already on them** — a post from elsewhere with no ink must be
 drawn as text, never re-cut locally.
+
+### The reader's own words
+
+A post said again in the reader's conlang is the one thing here that is
+**current** rather than frozen, and deliberately: it is built from the
+reader's dictionary, now, so a sentence that half renders today renders whole
+next month because the dictionary grew. Freezing it would be the bug — the
+mirror image of `ink`, and correct for the same reason. `trUnits()` in
+`post.js` is above the line and touches `mn`/`tr` and never `ln` or `ink`;
+`sides-check` holds that with a named exception rather than by silence.
 
 ## What money is allowed to touch
 

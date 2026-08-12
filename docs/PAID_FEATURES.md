@@ -45,6 +45,7 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `kb` | plus | a keyboard of your own instead of the fixed QWERTY |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `gram` | plus | a grammar stage of your own, past the fifteen |
+| `tr` | plus | a post said again in your own words, unmetered. Free gets three a day |
 | `sug` | studio | the word sheet's suggestions, unmetered |
 
 Three plans: `free`, `plus`, `studio`. `LANG_MAX` is 1 on every plan and is not

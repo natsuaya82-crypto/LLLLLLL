@@ -189,50 +189,36 @@ instead of appearing here.
 - Area: A post shown three ways — the four details
 - Decision:
   1. The natural-language layer is translated **when the post is written**,
-     not when it is read, and travels with the post. A post written in
-     Japanese reaches an English reader in English. Translating at read time,
-     online, is not acceptable.
+     using **the reader's own device AI, borrowed** — not a service of ours.
+     No key of ours, no server of ours, no cost per post. The translation is
+     attached at the moment of posting and travels with the post.
   2. A word the reader's dictionary has no word for stays in the natural
-     language and is shown **in red**, so it is obvious which words are
-     missing.
-  3. Layer 3 is Plus. Free gets three.
-  4. The natural-language layer is always on screen. Layer 3 appears on a
-     button.
-- Reason: 「日本語で書いてる投稿は英語話者には英語へ。投稿するときに読み込まれて
-  勝手に翻訳されてみんなに届くシステムがいいな。オンライン上で翻訳はきつい」
+     language and is shown **in red**, so the gap is obvious.
+  3. Layer 3 is Plus. Free gets three a day.
+  4. The natural language is always on screen. Layer 3 appears on a button.
+- Reason: 「翻訳はユーザーのaiを拝借します。投稿するタイミングでai翻訳がつくので」
+  「まずオフラインで起動できないやろSNSは」「1日3回やろ」
   「自然言語のまま残して赤文字とかにする。この単語ないのがわかりやすいように」
-  「3はplus 無料版はあくまで読み手の言語への翻訳が3回まで」
   「非人工言語は常に表示。自分の言語への変換はボタンで出現」
 - Affected features: composer, timeline, post, dictionary
-- Affected data: **new, and frozen on the post** — a translation per language.
-  A post gets bigger by however many languages are carried
-- Affected docs: FEATURES.md, DATA_MODEL.md, DATA_SAFETY.md, PAID_FEATURES.md
-- Implementation status: not started, and **blocked** — see the two reports
-  below. Read as: three per DAY, sharing or not sharing the existing
-  `AI_FREE_DAILY` counter is not decided; which languages a post carries is
-  not decided.
+- Affected data: **new, frozen on the post** — `post.tr`, a translation per
+  language code
+- Affected docs: FEATURES.md, DATA_MODEL.md, PAID_FEATURES.md
+- Implementation status: the seam and layer 3 are being built now. The
+  translator behind the seam is not, and is not blocking: posting works with
+  the seam returning nothing, exactly as `AI_SEAM` already works for the
+  generators.
 
-#### Reported, not resolved: there is no hosted model
+#### And the standing instruction that goes with it
 
-`AI_SEAM` in `www/glyph.js` is a marked place for one, and `www/assist.js`
-says so in its own header. Everything the app calls "AI" today is a local
-generator: it works offline and costs nothing. Translating at post time needs
-a real service, and there is none.
+**Build for the online and AI parts now; wire them up later.** An unbuilt
+service is not a reason to stop — it is a reason to put a seam where it will
+attach, and to make everything on this side work with the seam answering
+nothing. `AI_SEAM` in `www/glyph.js` is the pattern and it predates this.
 
-#### Reported, not resolved: a translation key cannot live on the phone
-
-The phone talks to Supabase directly and there is no server of ours in front
-of it. A translation API key shipped in `www/` is a key everybody has —
-`docs/STATE.md` § what is not the repository's to hold. So post-time
-translation needs a server-side function (a Supabase Edge Function or
-equivalent) that holds the key and is called by the app.
-
-That puts it in the same category as cloud sync: **server work, not app
-work**, and it costs money per post. It cannot be built from this side alone.
-Decisions it needs first: which languages a post carries; what happens when
-the translation fails or the phone is offline at post time (**the post must
-still go out** — a failed translation may never block or lose somebody's
-post); and whether a post published without translations can gain them later.
+Reporting "there is no hosted model" as a blocker was wrong. It is a fact
+about today, not about the design, and the design is the part being asked
+for.
 
 ### Decision
 - Date: 2026-08-12

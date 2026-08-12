@@ -73,8 +73,8 @@ Marked separately, because they are not the same question:
 | An image on a post | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid and storage **open** |
 | Drawn letters placed on that image | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid **open** |
 | Vertical / right-to-left posts | **planned** | ? | Plus | new: direction frozen on the post | decided that it happens; per-language or per-post **open** |
-| A post shown three ways | **planned** | layers 1 and 2; layer 3 three times | layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided; **blocked on a server-side translator** |
-| Post translated into other natural languages at write time | **planned** | yes | yes | new, frozen on the post, one per language | decided; **blocked — needs a hosted service and a key that cannot live on the phone** |
+| A post shown three ways | shipped | layers 1 and 2; layer 3 three a day | `tr`: layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided |
+| Post translated into natural languages at write time | **in progress** | yes | yes | `post.tr`, frozen on the post | decided — the seam is in (`postTr`, TR_SEAM); the translator is the reader's own device AI and is not wired up |
 | Posts on the server | **planned** | ? | ? | new: server rows | **open** — the tables exist in `schema.sql` and nothing reads them |
 | Explore | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
 | Notices | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
