@@ -663,7 +663,7 @@ defLang('ja', (function(){
       'langs.reading'   : '読んでいる言語',
       'langs.untitled'  : '無題',
       'langs.open'      : '開いている',
-      'langs.more'      : '無料プランで作れる自分の言語は1つまで。Plusならもっと作れます。',
+      'langs.more'      : '言語は今のところ、どのプランでも1つです。',
       'langs.none'      : 'まだありません',
       'plans.title'     : 'プラン',
       'plans.intro'     : "言語を作ること自体は無料です。これからも変わりません。<br>料金がかかるのは、大量に保存することと、AI と一緒に考えることです。",

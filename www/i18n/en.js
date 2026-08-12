@@ -659,7 +659,7 @@ defLang('en', (function(){
       'langs.reading'   : "Reading",
       'langs.untitled'  : "Untitled",
       'langs.open'      : "Open",
-      'langs.more'      : "The free plan holds one language of your own. Plus adds more.",
+      'langs.more'      : "A language is one, for now, on every plan.",
       'langs.none'      : "Nothing yet",
       /* plans */
       'plans.title'     : "Plans",

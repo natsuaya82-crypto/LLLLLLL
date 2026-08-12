@@ -922,7 +922,7 @@ defLang('ko', (function(){
       "langs.reading"    : "읽는 중",
       "langs.untitled"   : "제목 없음",
       "langs.open"       : "열림",
-      "langs.more"       : "무료 요금제는 자신의 언어를 하나만 담을 수 있어요. Plus는 더 담을 수 있어요.",
+      "langs.more"       : "지금은 모든 요금제에서 언어가 하나예요.",
       "langs.none"       : "아직 없어요",
       "plans.title"      : "요금제",
       "plans.intro"      : "언어를 짓는 일은 무료이고, 앞으로도 무료예요.<br>돈이 드는 쪽은 아주 많이 담아 두는 일과, AI와 나란히 생각하는 일이에요.",

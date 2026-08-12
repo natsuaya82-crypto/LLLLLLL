@@ -242,6 +242,18 @@ var PLANS=[
    lines:['plan.studio.1','plan.studio.2','plan.studio.3']}
 ];
 var FREE_LIMIT=100;
+/* How many languages of your own this app holds, on every plan. One, and it
+   is not a price: there is no way to make a second anywhere in the app, so a
+   plan that promised more would be promising a button that does not exist.
+   The note on the list said the free plan held one and Plus added more, and
+   Plus added nothing -- LANGS gains an entry in three places and all three
+   are the app finding a language that already exists (an install from before
+   the language had an id, the first one ever, and a restore from a backup).
+
+   Written down as a number rather than as the word "one" so that the day a
+   second becomes possible, this is where it is said. Languages somebody else
+   wrote are not counted by it: reading one is not making one. */
+var LANG_MAX=1;
 function plan(){ return SET.plan||'free'; }
 function has(level){ /* level: 'plus' | 'studio' */
   var p=plan();

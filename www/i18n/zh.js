@@ -752,7 +752,7 @@ defLang('zh', (function(){
       "langs.reading"    : "阅读中",
       "langs.untitled"   : "未命名",
       "langs.open"       : "已打开",
-      "langs.more"       : "免费方案只允许拥有一种自己的语言。Plus 可以拥有更多。",
+      "langs.more"       : "目前每个方案都只有一种语言。",
       "langs.none"       : "还没有",
       "plans.title"      : "方案",
       "plans.intro"      : "造一门语言是免费的，而且会一直免费。<br>要花钱的，是把它存得很多，以及与 AI 一同思考。",

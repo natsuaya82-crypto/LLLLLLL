@@ -749,7 +749,7 @@ defLang('it', (function(){
       "langs.reading"    : "Lettura",
       "langs.untitled"   : "Senza titolo",
       "langs.open"       : "Aperta",
-      "langs.more"       : "Il piano gratuito permette una lingua tua. Plus ne permette di più.",
+      "langs.more"       : "Per ora una lingua, in ogni piano.",
       "langs.none"       : "Ancora niente",
       "plans.title"      : "Piani",
       "plans.intro"      : "Fare una lingua è gratis, e resta gratis.<br>Quello che costa è conservarne molta, e pensare insieme a un'AI.",

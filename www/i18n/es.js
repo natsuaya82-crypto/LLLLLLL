@@ -707,7 +707,7 @@ defLang('es', (function(){
       "langs.reading"    : "Lectura",
       "langs.untitled"   : "Sin título",
       "langs.open"       : "Abierto",
-      "langs.more"       : "El plan gratuito permite un idioma propio. Plus permite más.",
+      "langs.more"       : "Por ahora, un idioma en todos los planes.",
       "langs.none"       : "Nada todavía",
       "plans.title"      : "Planes",
       "plans.intro"      : "Crear una lengua es gratis, y seguirá siéndolo.<br>Lo que cuesta dinero es guardar grandes cantidades, y pensar junto a una IA.",

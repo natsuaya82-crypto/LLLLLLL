@@ -558,7 +558,7 @@ function vLangs(){
   }
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
     mine.map(function(id){ return langRow(id); }).join('')+
-    (mine.length && plan()==='free'? '<div class="note">'+esc(t('langs.more'))+'</div>' : '')+
+    (mine.length>=LANG_MAX? '<div class="note">'+esc(t('langs.more'))+'</div>' : '')+
     '<div class="sec">'+esc(t('langs.reading'))+'</div>'+
     /* .empty is the full-screen one: 54px of padding and a serif heading,
        which is right for a screen with nothing on it and far too loud for a

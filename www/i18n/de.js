@@ -736,7 +736,7 @@ defLang('de', (function(){
       "langs.reading"    : "Zum Lesen",
       "langs.untitled"   : "Unbenannt",
       "langs.open"       : "Geöffnet",
-      "langs.more"       : "Der kostenlose Tarif erlaubt eine eigene Sprache. Plus erlaubt mehr.",
+      "langs.more"       : "Vorerst eine Sprache, in jedem Tarif.",
       "langs.none"       : "Noch nichts",
       "plans.title"      : "Tarife",
       "plans.intro"      : "Eine Sprache zu machen ist kostenlos und bleibt es.<br>Geld kostet nur, sehr viel davon aufzubewahren und neben einer KI zu denken.",

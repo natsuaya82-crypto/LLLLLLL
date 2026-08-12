@@ -754,7 +754,7 @@ defLang('pt', (function(){
       "langs.reading"    : "Leitura",
       "langs.untitled"   : "Sem título",
       "langs.open"       : "Aberto",
-      "langs.more"       : "O plano gratuito permite um idioma seu. O Plus permite mais.",
+      "langs.more"       : "Por enquanto, um idioma em todos os planos.",
       "langs.none"       : "Nada ainda",
       "plans.title"      : "Planos",
       "plans.intro"      : "Criar uma língua é de graça, e continua de graça.<br>O que custa dinheiro é guardar muita coisa e pensar ao lado de uma IA.",
