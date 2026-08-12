@@ -122,14 +122,24 @@ function entryHTML(w, kid){
   if(kids.length && !(wSort==='a' && !q && wFil===POS_ALL))
     line+='<span class="ekids">'+esc(tn('words.kids', kids.length))+'</span>';
   return '<div class="entry'+(kid?' kid':'')+'">'+
-    '<button class="ebody"' + DO('sayPh', [wPh(w)]) + ' aria-label="'+esc(t('f.listen'))+'">'+
+    /* The row opens the word. It used to say it aloud, and only the chevron at
+       the right edge opened anything -- so pressing a word in a dictionary
+       played a sound and left the screen where it was, and everything a word
+       has (its meanings, its family, what means the same, what means the
+       opposite, its examples, its note) sat behind a target the width of a
+       fingernail. 「類義語とか書いてあったあのページはどこ言ったの？」 It had
+       gone nowhere; there was no way in that anybody would find.
+
+       Hearing it is the smaller of the two and moves to the button that used
+       to be the chevron, which is where the word's own page puts it too. */
+    '<button class="ebody"' + DO('openWord', [w.hw]) + ' aria-label="'+esc(t('words.open'))+'">'+
     '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
     '<div class="mn">'+mn+'</div>'+
     (line? '<div class="erel">'+line+'</div>' : '')+
     '</button>'+
-    '<button class="eopen"' + DO('openWord', [w.hw]) + ' aria-label="'+esc(t('words.open'))+'">'+ICON_GO+'</button></div>';
+    '<button class="eopen"' + DO('sayPh', [wPh(w)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
 }
 /* Every word on screen, said straight through -- on screen and not in the
    dictionary, so a search narrowed to the verbs says the verbs. */

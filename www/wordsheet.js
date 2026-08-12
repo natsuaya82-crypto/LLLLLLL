@@ -222,9 +222,20 @@ function addOne(){
   if(addFrom && addFrom!==hw) w.from=addFrom;
   WORDS.push(w);
   save(); cands=[]; addSeq=[]; addSp=[]; addMn=''; addFrom='';
+  /* And straight onto the word, because the sheet that makes one holds three
+     things and the word holds nine. What means the same, what means the
+     opposite, what it derives, its examples and its note cannot be asked
+     before the word exists -- a relation goes both ways, so there has to be
+     something on the other end of it -- so "add" is where they become
+     possible rather than where they are missing.
+     「単語追加の時点で編集できるようにしろよ」
+
+     back() first, so the trail is the dictionary and then the word: pressing
+     back from a word just made returns to the list, not to an empty form for
+     making the one that was already made. */
   if(here().r==='form') back();
   toast(t('toast.added.1', hw));
-  render();
+  openWord(hw);
 }
 function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
