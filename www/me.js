@@ -110,16 +110,50 @@ function meSetHandle(v){
 }
 
 /* ---- the block at the top of the profile ------------------------------- */
+/* Who you are, in one block: the face, the name, the handle, the line about
+   yourself, and who follows whom. The two counts used to be a row of their
+   own under this, in the same small grey type as the language's counts under
+   THAT -- three strips of the same thing, none of which was a heading for the
+   others. They are part of who somebody is, so they are in here. */
+/* Beside the face: the name, the handle and the language, which is the same
+   three things a post says about whoever wrote it and in the same order.
+   Under them, at the left margin and across the whole phone, the line
+   somebody writes about themselves.
+
+   All of it used to be one row -- face, a column of words, the button -- so
+   that line read in a column two thirds of the phone wide, indented from both
+   sides. 「なんでそんな中央に寄ってるの？相手のページに飛んだらbioすらまとも
+   に読めないやんけ」 On somebody else's page it is most of what there is to
+   read. 「アイコンの横に名前と@と言語つければいいんじゃない」
+
+   The language wears the same gold tag it wears on a post, and pressing it
+   opens what the language is for -- which is what the tag is asking about.
+   Renaming a language is in the settings, where the rest of naming it is. */
 function meCard(){
   return '<div class="mecard">'+
+    '<div class="metop">'+
     '<div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="mewho">'+
       '<div class="pname">'+esc(meName())+'</div>'+
-      '<div class="phandle">@'+esc(meHandle())+'</div>'+
-      (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
+      '<div class="mehr">'+
+        '<span class="phandle">@'+esc(meHandle())+'</span>'+
+        (langName? '<button class="melang"' + DO('go', ["world"]) + '>'+
+          '<span class="plangtag">'+esc(langName)+'</span></button>' : '')+
+      '</div>'+
     '</div>'+
     '<button class="meedit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
+    '</div>'+
+    (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
+    /* FOLLOW_SEAM: the two numbers are asked for rather than read, so the day
+       they come from somewhere else they come from somewhere else HERE and
+       nowhere else. */
+    '<div class="pfstats">'+
+      '<button class="pfst"' + DO('go', ["follows", "ing"]) + '><b>'+
+        esc(String(meFollowing().length))+'</b> '+esc(t('me.following'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", "ers"]) + '><b>'+
+        esc(String(meFollowers().length))+'</b> '+esc(t('me.followers'))+'</button>'+
+    '</div>'+
     '</div>';
 }
 function openMe(){

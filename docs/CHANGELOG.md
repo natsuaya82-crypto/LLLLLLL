@@ -215,6 +215,48 @@ and 5000 words is about 45,000 tokens every time.
 - *deleted*: nothing. A Studio conversation left on the phone when a
   subscription ends stays in the `talk` slice and in the backup.
 
+### The profile is one block
+
+**Behaviour. Nothing stored changes.**
+
+Under the face there were three strips, each of them small grey type with a
+bold number in it: the language's name on a line of its own, then following
+and followers, then the letters, the words and what the language is for.
+None of the three was a heading for the other two, so the eye had four places
+to start and no reason to pick one. 「プロフィール視認性悪すぎだしごちゃごちゃ
+してる」
+
+Everything above the three lists is `meCard()` now.
+
+- **Beside the face: the name, the handle and the language** — the same three
+  things a post says about whoever wrote it, in the same order.
+  「アイコンの横に名前と@と言語つければいいんじゃない」
+- **The line about yourself runs the full width**, at the left margin, under
+  all of it. It was inside the row, so it read in a column two thirds of the
+  phone wide, indented from both sides — and on somebody else's page that
+  line is most of what there is to read. 「相手のページに飛んだらbioすらまと
+  もに読めないやんけ」 Four lines of it are shown.
+- **Following and followers moved into the block about the person.** They are
+  who somebody is, not a statistic about the language beside them.
+- **The language wears the gold tag it wears on a post**, and pressing it
+  opens what the language is for — which is what the tag is asking about, and
+  the only door in the app to that screen. **Renaming a language is now only
+  in the settings**, where the rest of naming it already was; the pencil on
+  the profile is gone with the line it was on.
+- **The letters and the words came off.** They are chapters I and II of the
+  contents, one tab away, and the number there is the fuller one — `5 / 38`
+  rather than `5`. Saying them again here was the noise.
+- *deleted*: `wldSaid()` and `wldLine()`, which built the "what this language
+  is for" label. The profile was the only thing that called either, so they
+  went with the line — `dead-check` would have failed otherwise. No stored
+  data is touched: `WLD` and the `wld` slice are unchanged and the screen
+  itself is unchanged.
+- *newly stored*: nothing. *migration*: none. *the plan*: unaffected.
+- `.mecard` was written out twice in `index.html`, and the second one set no
+  `display`, so it inherited `flex` from the first. One block now.
+- The three lists start at 254px of 844 — 30% of the phone — measured in a
+  390×844 viewport rather than read off a full-page picture.
+
 ### Smaller
 
 - The dictionary list: the whole row opens the word; a round ⊕ replaces the

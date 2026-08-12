@@ -308,44 +308,22 @@ function vProfile(){
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
     '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
     '<div class="body" style="padding-top:0">'+
-    meCard()+
-    /* The language, as a strip. Four doors and two lines. */
-    /* The language, in two lines. It was a cover -- flex:1, the name set large
-       in the middle, a bordered card each for the letters, the words and what
-       it is for -- and those three cards alone were two hundred pixels. With
-       the me block above them the profile ran to eight tenths of the phone
-       before a single post. 「プロフィールで画面8割終わってる」
+    /* Everything above the three lists is meCard() -- the face, the name, the
+       handle, the language, the line about yourself and who follows whom.
+       「プロフィール視認性悪すぎだしごちゃごちゃしてる」
 
-       Every door is still here: the name renames the language, the counts go
-       to the letters and the words, and what it is for is one press. They are
-       a line of small buttons rather than a page of cards. */
-    '<div class="pflang">'+
-      /* The name, and nothing beside it. There used to be a reading under it,
-         and it was the reading of WORDS[0] -- the first word in the
-         dictionary, printed under the language's name as though it were how
-         the name is said. 「shangoで音がkanoなのは何？」 A language's name is
-         roman text somebody typed; it is not spelled in their letters, so
-         there is no reading to give and there never was. */
-      '<button class="pfname"' + DO('editName') + '>'+esc(langName||t('home.unnamed'))+
-        '<span class="pen">'+ICON_PEN+'</span></button>'+
-    '</div>'+
-    /* Who follows this person, and who they follow. FOLLOW_SEAM: the two
-       numbers are asked for rather than read, so the day they come from
-       somewhere else they come from somewhere else HERE and nowhere else. */
-    '<div class="pfrow">'+
-      '<button class="pfst"' + DO('go', ["follows", "ing"]) + '><b>'+
-        esc(String(meFollowing().length))+'</b> '+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["follows", "ers"]) + '><b>'+
-        esc(String(meFollowers().length))+'</b> '+esc(t('me.followers'))+'</button>'+
-    '</div>'+
-    '<div class="pfrow">'+
-      '<button class="pfst"' + DO('go', ["letters"]) + '><b>'+esc(String(ltShaped()||0))+
-        '</b> '+esc(t('toc.letters'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["words"]) + '><b>'+esc(String(WORDS.length))+
-        '</b> '+esc(t('toc.words'))+'</button>'+
-      '<button class="pfst"' + DO('go', ["world"]) + '>'+
-        esc(wldSaid()? (wldLine()||t('wld.title')) : t('wld.title'))+ICON_GO+'</button>'+
-    '</div>'+
+       There were three strips under the face and every one of them was small
+       grey type with a bold number in it: the language's name on a line of
+       its own, then the follow counts, then the letters, the words and what
+       the language is for. None was a heading for the others, so the eye had
+       four places to start and no reason to pick one.
+
+       The follow counts are who somebody is, so they are in the block about
+       the person. The language is the tag beside the handle, the way a post
+       says what it is written in. The letters and the words are chapters I
+       and II of the contents, one tab away, and the number there is the
+       fuller one -- 5 / 38 rather than 5. */
+    meCard()+
     pfTabs()+
     (list.length? list.map(postRow).join('')
                 : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'
@@ -613,16 +591,6 @@ function wldUse(){ var u=world().use; return WORLDS.indexOf(u)>=0? u : ''; }
 function wldSetUse(u){ world().use=(wldUse()===u? '' : u); saveWld(); render(); }
 function wldSet(k, v){ world()[k]=String(v||''); saveWld(); }
 wldRead();
-function wldSaid(){
-  var w=world();
-  return !!(wldUse() || (w.where||'').length || (w.who||'').length || (w.note||'').length);
-}
-function wldLine(){
-  var w=world(), a=[];
-  if(wldUse()) a.push(t('wld.'+wldUse()));
-  if(w.where) a.push(w.where);
-  return a.join(' · ');
-}
 function vWorld(){
   var w=world();
   return '<div class="view">'+navTop('')+'<div class="body">'+

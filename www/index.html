@@ -259,15 +259,10 @@ canvas.pkc{width:34px;height:34px;display:block}
           border:1px solid var(--goldln);border-radius:5px;padding:1px 6px;
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
 .phandle,.pdot,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
-/* Who you are, at the top of your own page. */
-/* The profile screen does not scroll and has no body padding of its own, so
-   this carries its own margins -- without them the face was cut off by the
-   left edge of the phone. */
-.mecard{display:flex;align-items:center;gap:12px;padding:2px 24px 8px}
-.mecard .pav{width:52px;height:52px}
-.mecard .pav canvas{width:34px;height:34px}
-.mewho{flex:1 1 auto;min-width:0}
-.mewho .pname{font-size:1.1rem}
+/* Who you are, at the top of your own page. The block itself is further down,
+   under "the profile, above the three lists" -- it was written out twice here,
+   and the second one set no `display`, so it inherited `flex` from this one
+   and every word on the page stayed in a column beside the face. */
 .meedit{flex:0 0 auto;min-height:44px;padding:0 18px;border-radius:999px;
         border:1px solid var(--line);background:none;color:var(--tx);
         font-family:inherit;font-size:.88rem}
@@ -794,25 +789,38 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    the name set large in the middle, a bordered card each for the letters, the
    words and what it is for -- which was right when this screen WAS a cover and
    left eight tenths of the phone gone before the first post. */
-.mecard{display:flex;align-items:flex-start;gap:10px;padding:2px 24px 6px}
-.mecard .pav{width:44px;height:44px;flex:none}
-.mecard .pav canvas{width:28px;height:28px}
-.mecard .pbio{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+/* Beside the face, the name and the handle and the language; under all of it,
+   at the left margin and across the whole phone, the line about yourself. As
+   one row -- face, words, button -- that line read in a column two thirds of
+   the phone wide, indented from both sides, and on somebody else's page it is
+   most of what there is to read. */
+.mecard{padding:2px 24px 0}
+.metop{display:flex;align-items:center;gap:12px}
+.mecard .pav{width:56px;height:56px;flex:none}
+.mecard .pav canvas{width:36px;height:36px}
+.mewho{flex:1 1 auto;min-width:0}
+.mecard .pname{font-size:1.15rem}
+/* The handle and the language on one line. The tag is small, so the button
+   around it carries the height a thumb needs and the tag itself stays the
+   size it is on a post. */
+.mehr{display:flex;align-items:center;gap:8px;min-width:0}
+/* The height a thumb needs is taken out of the margins rather than added to
+   the line, so the tag sits beside the handle where it belongs and the hit
+   area reaches above and below it over things nothing else is listening to. */
+.melang{flex:0 1 auto;min-width:0;min-height:44px;margin:-11px 0;padding:0;
+        background:none;border:0;display:inline-flex;align-items:center}
+.melang:active .plangtag{border-color:var(--gold)}
+.mecard .pbio{margin-top:4px;line-height:1.45;word-break:break-word;
+              display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}
-.pflang{display:flex;align-items:center;gap:10px;padding:0 24px}
-.pfname{background:none;border:0;padding:6px 0;min-height:44px;font-family:inherit;
-        color:var(--tx);font-size:1.1rem;font-weight:700;display:inline-flex;
-        align-items:center;gap:6px}
-.pfname .pen{opacity:.5;flex:none}
-.pfrow{display:flex;align-items:center;gap:4px;padding:0 20px 6px;overflow-x:auto;
-       -webkit-overflow-scrolling:touch;scrollbar-width:none}
-.pfrow::-webkit-scrollbar{display:none}
-.pfst{flex:none;min-height:44px;padding:6px 8px;background:none;border:0;
-      font-family:inherit;font-size:.84rem;color:var(--txm);white-space:nowrap;
-      display:inline-flex;align-items:center;gap:4px}
-.pfst b{color:var(--tx);font-weight:700;font-size:.95rem}
+/* Who follows whom, inside the block about the person rather than in a strip
+   of its own under it. */
+.pfstats{display:flex;align-items:center;gap:20px}
+.pfst{min-height:44px;padding:0;background:none;border:0;font-family:inherit;
+      font-size:.86rem;color:var(--txm);white-space:nowrap;
+      display:inline-flex;align-items:center;gap:5px}
+.pfst b{color:var(--tx);font-weight:700;font-size:.92rem}
 .pfst:active{color:var(--gold)}
-.pfst svg{width:13px;height:13px;opacity:.55}
 .pftabs{display:flex;border-bottom:1px solid var(--line)}
 .pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
        font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
