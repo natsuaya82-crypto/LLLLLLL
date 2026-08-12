@@ -67,7 +67,9 @@ Marked separately, because they are not the same question:
 | A card — one line as a picture | shipped | yes | — | none | decided |
 | A card of a post is drawn from the post | shipped | yes | — | none | decided |
 | Accounts — sign up, in, out, verify, reset | shipped | yes | — | `lingua.sess` (tokens only) | decided |
-| Profile — face, name, handle, bio | shipped | yes | — | `lingua.me` | decided |
+| Profile — face, name, handle, bio, **and your posts** | shipped | yes | — | `lingua.me` | decided |
+| Pin a post to your profile | shipped | yes | — | `post.pin`, one at a time | decided |
+| Share a post — the card | shipped | yes | — | none | decided |
 | Cloud storage of a language | **planned** | no | yes, deferred | every slice | decided — deferred until Supabase $25 is worth paying |
 | A photograph on a post | shipped | **yes** | yes | `post.pic`, frozen on the post, 900px q0.72, `POST_BYTES` ceiling | decided |
 | Drawn letters placed on that image | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid **open** |

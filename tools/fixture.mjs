@@ -233,6 +233,28 @@ export function halfDone(){
     ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
                                                    openEdit('kano'); const h = FORM.html;
                                                    wdMode = ''; SET.plan = 'free'; return h; }],
+    /* The two things an author can do to their own post. It is a sheet off the
+       ... , so nothing renders it unless it is opened. */
+    ['what an author can do to a post', () => { postMore('p1'); return FORM.html; }],
+    ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
+                                                postMore('p1'); const h = FORM.html;
+                                                delete p.pin; return h; }],
+    /* A pinned post in the timeline: the mark beside the time only exists on
+       one, and a walk over a timeline where nothing is pinned never draws it. */
+    ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
+                              window.route='feed'; NAV=[{r:'feed'}];
+                              const h = vFeed(); delete p.pin; return h; }],
+    /* The two things an author can do to their own post. It is a sheet off the
+       ... , so nothing renders it unless it is opened. */
+    ['what an author can do to a post', () => { postMore('p1'); return FORM.html; }],
+    ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
+                                                postMore('p1'); const h = FORM.html;
+                                                delete p.pin; return h; }],
+    /* A pinned post in the timeline: the mark beside the time only exists on
+       one, and a walk over a timeline where nothing is pinned never draws it. */
+    ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
+                              window.route='feed'; NAV=[{r:'feed'}];
+                              const h = vFeed(); delete p.pin; return h; }],
     /* A post being written, with a photograph already chosen. The button that
        takes it off and the one that changes it only exist once there is one,
        so a composer opened empty draws neither. The data URL is a real 1x1

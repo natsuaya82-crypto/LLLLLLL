@@ -268,10 +268,21 @@ function chTaken(){
    Two things go, and they are the two that were about the app rather than
    about the person: what to do next, and the most recent word. Neither is
    a profile -- they are a home screen's, and this stopped being one. */
+/* The profile is where somebody's posts are, which is what a profile IS on
+   every timeline there has ever been -- and there was nowhere in this app
+   that listed yours. 「SNSのツイートが並ぶページなくね？それをプロフィールの
+   ページにしようよ」
+
+   It is no longer `fixed`: the cover and the language are still at the top and
+   the posts run under them, so the page scrolls. The pinned one is first and
+   the rest are newest first, which is the only order a timeline has. */
 function vProfile(){
-  return '<div class="view fixed">'+
+  var mine=postAll().filter(function(p){ return p.mine; });
+  mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
+  return '<div class="view">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
     '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
+    '<div class="body" style="padding-top:0">'+
     meCard()+
     '<div class="cover">'+
       '<div class="tkick">'+t('home.kicker')+'</div>'+
@@ -286,7 +297,10 @@ function vProfile(){
         cvStat(t('toc.words'), WORDS.length||'—', 'words')+
       '</div>'+
     '</div>'+
-  '</div>';
+    '<div class="sec">'+esc(t('prof.posts'))+'</div>'+
+    (mine.length? mine.map(postRow).join('')
+                : '<div class="note">'+esc(t('prof.none'))+'</div>')+
+    '</div></div>';
 }
 function cvStat(lab, val, r){
   return '<button class="cvst"' + DO('go', [r]) + '><span class="cvv">'+esc(String(val))+'</span>'+

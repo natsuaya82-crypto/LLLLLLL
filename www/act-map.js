@@ -115,6 +115,8 @@ act('postLike', postLike);
 act('postBoost', postBoost);
 act('postReply', postReply);
 act('postDel', postDel);
+act('postMore', postMore);
+act('postPin', postPin);
 act('pwDropPic', pwDropPic);
 act('pwSend', pwSend);
 act('openSlot', openSlot);

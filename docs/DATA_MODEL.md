@@ -91,7 +91,7 @@ touches the sound inventory.
 The one piece of **frozen** data in the app.
 
 ```js
-{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, ink?, tr?, pic? }
+{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, ink?, tr?, pic?, pin? }
 ```
 
 Everything a reader needs is on it, because the reader does not have the
@@ -102,6 +102,7 @@ writer's language:
 | `who`, `hd`, `av` | the author. `ME` is *me*, and a timeline has no such thing |
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
+| `pin` | this author put it at the top of their own page. One at a time |
 | `pic` | a photograph, squeezed to 900px on the long edge at q0.72 — about 22 KB as text. See below: this is the one field big enough to matter |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
 

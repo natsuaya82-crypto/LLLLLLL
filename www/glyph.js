@@ -492,6 +492,17 @@ var ICON_DOTS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="
 var ICON_CARD='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 11h10M7 15h6"/></svg>';
+/* share: the box a thing leaves by, with the thing going up out of it. What
+   leaves is the card -- the post as one picture -- which is the only way
+   anything in this app gets out of the phone at all. */
+var ICON_SHARE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/>'+
+  '<path d="M20 13v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5V13"/></svg>';
+/* pinned: a post its author put at the top of their own page */
+var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/><path d="M12 14v7"/></svg>';
 function geIcon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function geBtn(fn,n,key,en,on){
   var lb=t(key), cl=on?'on':'', act=DO(fn), off;

@@ -646,8 +646,9 @@ function postRow(p){
         '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
         '<span class="pdot">·</span>'+
         '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
-        (p.mine? '<button class="pmore"' + DO('postDel', [p.id]) + ' aria-label="'+
-          esc(t('post.del'))+'">'+ICON_DOTS+'</button>' : '')+
+        (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
+        (p.mine? '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
+          esc(t('post.more'))+'">'+ICON_DOTS+'</button>' : '')+
       '</div>'+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
@@ -689,9 +690,17 @@ function postRow(p){
         postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
         postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+
         postAct('postLike',  p.id, ICON_HEART, (p.li||0), !!p.lime)+
-        /* A card is drawn out of a dictionary and a set of letters, so it can
-           only be made of a post whose language is here. */
-        (p.mine? postAct('postCard', p.id, ICON_CARD, 0, false) : '')+
+        /* On every post, not only your own. The comment that used to be here
+           said a card is drawn out of a dictionary and a set of letters, so it
+           could only be made of a post whose language is here -- and that
+           stopped being true the day cardPaint() started drawing a post from
+           the post's own ink. A restriction protecting against a bug that is
+           fixed, left standing after the fix.
+
+           The icon says share rather than card because that is what pressing
+           it is for: the card is the one way anything in this app leaves the
+           phone. 「1番右のやつは何？共有ボタンに変えよう」 */
+        postAct('postCard', p.id, ICON_SHARE, 0, false)+
       '</div>'+
     '</div></div>';
 }
@@ -724,9 +733,37 @@ function postCard(id){
   var p=postById(id);
   if(p) cardOpen('p', id);
 }
+/* The two things an author can do to their own post. It was one, and it was
+   on the ... itself -- so the only thing that button could ever be was delete,
+   and a delete reached by pressing something unlabelled is a delete waiting to
+   be pressed by accident. 「ポストを削除、ポストを固定する、にしよう」 */
+function postMore(id){
+  var p=postById(id); if(!p || !p.mine) return;
+  openForm('pmore:'+id, t('post.more'),
+    '<button class="set"' + DO('postPin', [id]) + '><span class="sl">'+
+      esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
+    '<button class="set" style="border-bottom:none"' + DO('postDel', [id]) + '><span class="sl bad">'+
+      esc(t('post.del'))+'</span></button>');
+}
+FORM_OPEN.pmore=function(id){ postMore(id||''); };
+/* One at a time. A page with three things at the top of it has nothing at the
+   top of it, and "which one is pinned" then has no answer. Pressing the one
+   that is pinned takes it off. */
+function postPin(id){
+  var p=postById(id), was, i;
+  if(!p || !p.mine) return;
+  was=!!p.pin;
+  for(i=0;i<POSTS.length;i++) if(POSTS[i].mine) delete POSTS[i].pin;
+  if(!was) p.pin=1;
+  savePosts();
+  if(here().r==='form') back();
+  render();
+}
 function postDel(id){
   if(!confirm(t('post.del.q'))) return;
   var i;
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){ POSTS.splice(i, 1); break; }
-  savePosts(); render();
+  savePosts();
+  if(here().r==='form') back();
+  render();
 }

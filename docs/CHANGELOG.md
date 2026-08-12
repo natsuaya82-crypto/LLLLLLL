@@ -148,6 +148,28 @@ anywhere that sends a language to a server: the app touches `/auth/v1/*` and
 - *deleted*: nothing.
 - *the plan*: free, on every plan.
 
+### The profile is where your posts are, and three things on a post
+
+**Behaviour. One new field.**
+
+- **The profile lists your posts.** There was nowhere in the app that did.
+  The cover and the language stay at the top and the posts run under them, so
+  the page scrolls where it used to be fixed. The pinned one is first.
+- **The fourth icon on a post is share.** It was the card, unlabelled, and only
+  on your own posts — a restriction from before `cardPaint()` drew a post from
+  the post's own ink, left standing after that was fixed. It is on every post
+  now, and pressing it opens the card, which is the one way anything in this
+  app leaves the phone.
+- **The ⋯ is a menu**: pin, and delete. It *was* delete — a delete reached by
+  pressing something unlabelled is a delete waiting to be pressed by accident.
+- *newly stored*: `post.pin`, on one post at a time. A page with three things
+  at the top of it has nothing at the top of it.
+- **The card's foot is `@handle` and the language's name.** It was the
+  language's name and the word LINGUA, so a card of a language somebody had
+  called Lingua read LINGUA on both sides. Both come off the post, so a card of
+  somebody else's post carries their handle and their language.
+- *migration*: none. *deleted*: nothing. *the plan*: free, on every plan.
+
 ### The AI is Studio's, and it is the last chapter
 
 **Behaviour, on every plan.**

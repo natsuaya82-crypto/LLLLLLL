@@ -53,7 +53,10 @@ FORM_OPEN.card=function(rest){
    A card asked for a word that is gone falls back to the newest one, because
    an empty picture is worse than a picture of something else. */
 function cardSrc(){
-  var v=CARD.v, i, w, ex, po, nm=String(langName||'');
+  /* The handle is whose the card is. On a post it is the post's, frozen when
+     it was written; on a word or an example it is this person's, because
+     those are things in the language that is open. */
+  var v=CARD.v, i, w, ex, po, hd=meHandle(), nm=String(langName||'');
   /* A post is already a line with its meaning fixed to it, which is what a
      card is. Nothing to work out. */
   if(CARD.k==='p'){
@@ -64,11 +67,11 @@ function cardSrc(){
     i=String(v).indexOf('#');
     w=findWord(i<0? v : v.slice(0,i));
     ex=(w && w.ex)? w.ex[parseInt(i<0? '0' : v.slice(i+1), 10)] : null;
-    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''), nm:nm};
+    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''), hd:hd, nm:nm};
   }
   w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {line:'', mn:'', nm:nm};
-  return {line:String(w.hw), mn:String(wMns(w)[0]||''), nm:nm};
+  if(!w) return {line:'', mn:'', hd:hd, nm:nm};
+  return {line:String(w.hw), mn:String(wMns(w)[0]||''), hd:hd, nm:nm};
 }
 
 /* The line as things to draw, left to right: a letter's strokes, a character
@@ -292,12 +295,19 @@ function cardPaint(c){
     x.fillText(src.mn, W/2, Math.round(H*0.747));
   }
 
-  /* whose language it is, and what made it. "Lingua" is never translated. */
+  /* Whose it is, and what language it is in. 「@〇〇と言語名にしよう」
+
+     It used to be the language's name on the left and the word LINGUA on the
+     right, so a card of a language somebody had called Lingua read LINGUA on
+     one side and LINGUA on the other. 「カード下がlingua Linguaになってる」
+     A handle cannot collide with a language's name, and between them they say
+     the two things a person looking at a picture on somebody else's timeline
+     wants to know. */
   x.fillStyle=cssVar('--gold');
   x.font=Math.round(H*0.030)+'px '+CARD_CAPS;
-  cardTrack(x, String(src.nm||'').toUpperCase(), W*0.22, Math.round(H*0.852), H*0.0068);
+  cardTrack(x, (src.hd? '@'+String(src.hd) : '').toUpperCase(), W*0.22, Math.round(H*0.852), H*0.0068);
   x.fillStyle=cssVar('--txm');
-  cardTrack(x, 'LINGUA', W*0.78, Math.round(H*0.852), H*0.0068);
+  cardTrack(x, String(src.nm||'').toUpperCase(), W*0.78, Math.round(H*0.852), H*0.0068);
 }
 function cardMount(){
   var c=document.getElementById('cardc');
@@ -322,7 +332,7 @@ function cardSave(){
   if(!c) return;
   /* Named after what is ON the card, which for a post is the language it was
      written in and not the one you happen to have open. */
-  var name=(cardSrc().nm || 'lingua')+'.png';
+  var name=(cardSrc().hd || 'lingua')+'.png';
   if(c.toBlob){ c.toBlob(function(b){ cardDeliver(b, name); }, 'image/png'); return; }
   cardDeliver(null, name);
 }
@@ -365,8 +375,10 @@ function cardOfPost(po){
      has ink and cannot be drawn from it -- and the timeline and the card
      asking that question separately is two answers waiting to disagree. It
      is post.js's to answer, once, for both. */
-  return {line:String(po.ln||''), mn:String(po.mn||''), nm:String(po.lname||''),
-          ink:postInkOK(po.ink)? po.ink : null};
+  /* Both off the post. The language's name is the one it was written in, not
+     whichever one this phone happens to have open. */
+  return {line:String(po.ln||''), mn:String(po.mn||''), hd:String(po.hd||''),
+          nm:String(po.lname||''), ink:postInkOK(po.ink)? po.ink : null};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
    a shape, a character, or the gap between two words. A text run may be
