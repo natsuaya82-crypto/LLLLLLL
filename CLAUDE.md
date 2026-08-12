@@ -13,7 +13,72 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
 > says the two that are easiest to get backwards: the timeline is
 > `localStorage` and no part of it is on the server yet, and CI runs three of
-> these eleven checks, so a green tick on a push is not the gate.
+> these twelve checks, so a green tick on a push is not the gate.
+
+## The rules that come before the code
+
+Everything under this heading is absolute. The detail lives in `docs/`; what is
+here is the part that may not be argued with, and the file that holds the rest.
+
+**Data.** Nothing a person made is removed because the current shape does not
+need it, because it is an old format, to save space, or because something was
+restructured. A migration **copies** and never removes what it read. A restore
+fills in what is **missing** and stops — the way a backup destroys somebody's
+work is by winning. "Empty" and "broken" are different states and must not
+share a branch. Automatic deletion, pruning and cleanup are forbidden unless a
+written spec asks for them; anything that deletes gets a DELETE REVIEW first.
+→ `docs/DATA_SAFETY.md`
+
+**The past.** Do not re-generate past data from the present state. If something
+means what it means because of how things were when it was made, that goes ON
+it at the moment it is made — the value, not an id pointing at the current
+object. `post.ink` is the worked example and `card-check` is what holds it.
+→ `docs/DATA_MODEL.md`
+
+**Money.** A plan decides what a person may DO and decides nothing about what
+exists. No backup, restore or byte of anybody's language may depend on payment,
+and "the plan is unknown" must never take the same branch as "this person has
+no data" — a failed check means fewer buttons, never fewer words.
+→ `docs/PAID_FEATURES.md`
+
+**Tests.** A fix is not done until the check that holds it has been **watched
+failing** with the bug still in place. Saving, past data, plans, deletion,
+migration and sync all require a regression test. "Code confirmed" and "device
+confirmed" are two separate statements and the first never stands in for the
+second. → `docs/TESTING.md`
+
+**Refactoring.** Not a goal. Only for duplication that causes bugs, a spec
+change that would touch several places, something untestable, or a feature
+actually blocked. If pulling something out adds a dependency between files that
+did not need each other, leave it. A behaviour change, a refactor and a rename
+never share a commit. → `docs/FEATURE_RULES.md`
+
+**Deciding.** Prices, the free/paid boundary, deletion, retention, conflict
+resolution, changes to behaviour somebody relies on, wording, and any threshold
+that is a judgement — none of these are decided here. Research it, lay out the
+options and what the code does today, and stop. Do not read a spec off the
+code: the code is what happened, not what was wanted.
+→ `docs/FEATURE_RULES.md`
+
+**Reporting.** "Implemented it" is not a report. Files and why, what behaviour
+changes, what data is affected, what is newly stored, migration, deletion, the
+plan, what was tested, what was not, whether a device is needed, known limits.
+→ `docs/FEATURE_RULES.md`
+
+**Recording.** Anything that changes what is stored, moved or removed goes in
+`docs/CHANGELOG.md` — before the code, not after.
+
+| file | what it holds |
+|---|---|
+| `docs/ARCHITECTURE.md` | the shape of the app, and where each thing is the truth |
+| `docs/DATA_MODEL.md` | every stored thing, its owner, and whether it may change under somebody |
+| `docs/DATA_SAFETY.md` | how a language is not lost; the backup rules; DELETE REVIEW |
+| `docs/FEATURE_RULES.md` | the eleven questions before code; past data; refactoring; what is the owner's |
+| `docs/PAID_FEATURES.md` | `CAN`, the three plans, and what money may never touch |
+| `docs/TESTING.md` | what to run when; how to fix a bug; what needs a device |
+| `docs/CHANGELOG.md` | what a person would notice, and every change to stored data |
+| `docs/BACKLOG.md` | found and deliberately not done, and why |
+| `docs/STATE.md` | where the project stands — read first |
 
 ## The gate
 
@@ -647,6 +712,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `docs/BACKLOG.md` | what was found and deliberately not done, and why: the renames that must not ride along with a feature, the merges waiting on a device, and the question the card bug was actually about |
+| `docs/ARCHITECTURE.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `FEATURE_RULES.md`, `PAID_FEATURES.md`, `TESTING.md`, `CHANGELOG.md` | the rules above, in full. What is at the head of this file is the part that may not be argued with; these are the working detail |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
 | `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Built now — `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** — so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
 | `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
