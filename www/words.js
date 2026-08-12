@@ -79,7 +79,13 @@ function vWords(){
     }).join('')+'</div>'+
     '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+'</div>'+
-    '<div class="barfix"><button class="btn"' + DO('openAdd') + '>'+t('home.write')+'</button></div></div>';
+    /* A round + under the thumb, not a bar across the foot. The bar was as
+       wide as the screen and sat on top of the last two words in the list --
+       and the timeline has had this exact button since it was written, in
+       this exact place, for this exact reason. Same class, same corner.
+       Nothing new was invented for it. */
+    '<button class="fab"' + DO('openAdd') + ' aria-label="'+esc(t('home.write'))+'">'+
+      ICON_ADD2+'</button></div>';
 }
 /* Typing redraws the list and the count and nothing else, because redrawing
    the screen would take the keyboard's focus off the box being typed into. */
