@@ -14,7 +14,11 @@ function rd(word){ return approx().word(word); }        /* reading for this lang
    ("respelling is an approximation") but wants a capital as a button. */
 function capFirst(s){ return String(s).charAt(0).toUpperCase()+String(s).slice(1); }
 /* Search hits on any of spelling, meaning, reading or IPA */
-function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))).toLowerCase(); }
+/* What a search looks in. The fields a word is filed under are in it, so
+   typing `cooking` finds the words about cooking -- which is the only
+   reason to have written them down. */
+function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
+                            ' '+((w.tags||[]).join(' '))).toLowerCase(); }
 
 /* ---- How a word is read out ------------------------------------------
    A word is a sequence of IPA symbols, so its exact reading is that sequence

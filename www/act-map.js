@@ -200,6 +200,9 @@ actIn('wdSetNt', wdSetNt);
 actIn('wdSetLn', wdSetLn);
 actIn('stSetLn', stSetLn);
 actIn('wdSetPos', wdSetPos);
+actIn('wdSetReg', wdSetReg);
+actIn('wdSetTags', wdSetTags);
+actIn('wdSetEty', wdSetEty);
 
 /* ---- Enter ------------------------------------------------------------- */
 actKey('obName', obName);

@@ -103,10 +103,14 @@ function openAdd(from){
   addFrom = par? String(par.hw) : '';
   if(fresh){
     SUG=[]; sugMn=''; openHw='';
-    addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[], nt:''};
+      /* The draft holds only what a relation and an example need a WORD for.
+       Everything staged -- the spelling, the meanings, the part of speech,
+       the register, the fields, the etymology, the note -- is in wEdit, the
+       same as when the word already exists. */
+    addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
-           mns:[], pos:addPos, nt:''};
+           mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
     wdSync();
   }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
@@ -137,7 +141,7 @@ function addOne(){
   /* Everything written on the draft comes with it. An empty note is no note,
      not an empty one -- the same rule saveWord() holds. */
   if(d.ex && d.ex.length) w.ex=d.ex;
-  if(String(d.nt||'').trim()) w.nt=String(d.nt).trim();
+  wdPutExtras(w);
   WORDS.push(w);
   /* The draft is gone before the relations are written, so each of them is
      an ordinary two-ended one between two words that both exist now. */
@@ -463,11 +467,13 @@ function relNew(){
   if(wRel(on, k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
   else { save(); relDirty(); render(); }
 }
-/* The editor stages its note in wEdit until Save; the sheet that makes a word
-   has nothing to stage against, so it writes the draft. Same box either way. */
+/* Staged in wEdit, on both sheets, because both have one now -- and the note
+   went into the draft while wdPutExtras() read it out of wEdit, so a note
+   written before the word existed was silently dropped by Add. Two places
+   staging one field is the bug; there is one place. */
 function wdNoteHTML(){
   return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
-    '"' + IN('wdSetNt') + '>'+esc((addW? addW.nt : wEdit.nt)||'')+'</textarea></div>';
+    '"' + IN('wdSetNt') + '>'+esc(wEdit.nt||'')+'</textarea></div>';
 }
 /* The family, on the sheet. Written out of wdFamHTML(), which is the family
    the read page shows -- one answer to "where did this word come from".
@@ -482,6 +488,52 @@ function wdPaint(){
   var b=document.getElementById('wd-body'); if(!b) return;
   b.innerHTML=wdFormHTML(); phkMount(); geTiles();
 }
+/* ---- four things an entry carries, beyond what it means -----------------
+   A dictionary is not a list of meanings. Which of two words for the same
+   thing you would actually say is its REGISTER; what a word is about is its
+   FIELD, and a language with five hundred words in it is unusable without
+   one; where it came from is not the same question as what it means, so it
+   is not the note; and when it last moved is the difference between a
+   dictionary and a pile.
+
+   Register is one of five and is stored as a code, never as its label, so
+   the interface language can change under a word without changing the word.
+   REG[0] is the empty string on purpose: most words are not marked. */
+var REG=['','sp','wr','sl','po'];
+function regLabel(r){ return t('word.reg.'+(r||'none')); }
+/* Fields are typed as one line and held as a list, because searching wants
+   the list and typing wants the line. Empty pieces are dropped, so a
+   trailing comma is not a field called nothing. */
+function tagCut(v){
+  var out=[], a=String(v||'').split(/[,、]/), i, x;
+  for(i=0;i<a.length;i++){ x=a[i].replace(/^\s+|\s+$/g,''); if(x && out.indexOf(x)<0) out.push(x); }
+  return out;
+}
+/* A day, written the one way that says the same thing in ten languages.
+   It is stamped in milliseconds and shown to the day: a word does not need
+   to know it was changed at 14:25. */
+function wDay(ms){
+  var d=new Date(ms||0), p=function(n){ return (n<10?'0':'')+n; };
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
+function wdRegHTML(){
+  return '<div class="field"><select id="wd-reg"' + CH('wdSetReg') + '>'+
+    REG.map(function(r){
+      return '<option value="'+r+'"'+(r===(wEdit.reg||'')?' selected':'')+'>'+
+        esc(regLabel(r))+'</option>'; }).join('')+
+    '</select></div>';
+}
+function wdTagsHTML(){
+  return '<div class="field"><input id="wd-tags" value="'+esc((wEdit.tags||[]).join(', '))+
+    '" placeholder="'+esc(t('word.tags.ph'))+'"' + IN('wdSetTags') + '></div>';
+}
+function wdEtyHTML(){
+  return '<div class="field"><textarea id="wd-ety" rows="2" placeholder="'+
+    esc(t('word.ety.ph'))+'"' + IN('wdSetEty') + '>'+esc(wEdit.ety||'')+'</textarea></div>';
+}
+function wdSetReg(v){ wEdit.reg=v; }
+function wdSetTags(v){ wEdit.tags=tagCut(v); }
+function wdSetEty(v){ wEdit.ety=v; }
 /* The sheet a word is written on -- the same one whether the word is in the
    dictionary or is being made. Three things differ, and all three are real:
    a word that does not exist yet cannot be deleted, cannot be shown as a
@@ -512,6 +564,15 @@ function wdFormHTML(){
     '<div class="field"><select id="wd-pos"' + CH('wdSetPos') + '>'+
       POS.map(function(p){return '<option value="'+p+'"'+(p===wEdit.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div>'+
+
+    '<div class="sec">'+t('word.reg')+'</div>'+
+    wdRegHTML()+
+
+    '<div class="sec">'+t('word.tags')+'</div>'+
+    wdTagsHTML()+
+
+    '<div class="sec">'+t('word.ety')+'</div>'+
+    wdEtyHTML()+
 
     '<div class="sec">'+t('word.family')+'</div>'+
     wdKidsHTML()+
@@ -579,7 +640,11 @@ function wdViewHTML(){
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
-    '<div class="wsub2">'+esc(posLabel(w.pos))+'</div>'+
+    /* What kind of word it is, and how it is said -- one line, because they
+       are one question. An unmarked word says only its part of speech. */
+    '<div class="wsub2">'+esc(posLabel(w.pos)+(w.reg? ' \u00b7 '+regLabel(w.reg) : ''))+'</div>'+
+    (((w.tags||[]).length)? '<div class="rels">'+w.tags.map(function(x){
+       return '<span class="rel"><span class="relw">'+esc(x)+'</span></span>'; }).join('')+'</div>' : '')+
     wdSecHTML(t('word.means'), mns.length
       ? '<div class="mnlist">'+mns.map(function(m,i){
           return '<div class="mnrow"><span class="mnv">'+
@@ -594,7 +659,13 @@ function wdViewHTML(){
           return exRowHTML(e, exSeq(e.ln),
             exBtn('cardOpen', ["x", w.hw+'#'+i], 'card.title', ICON_CARD));
         }).join('')+'</div>' : '')+
+    wdSecHTML(t('word.ety'), w.ety? '<div class="note">'+esc(w.ety)+'</div>' : '')+
     wdSecHTML(t('word.note'), w.nt? '<div class="note">'+esc(w.nt)+'</div>' : '')+
+    /* When it was made, and when it last moved -- and the second only when it
+       is a different day from the first, because "made today, changed today"
+       is one fact written twice. */
+    '<div class="wsub2" style="margin-top:18px">'+esc(t('word.made', wDay(w.at))+
+      ((w.up && wDay(w.up)!==wDay(w.at))? '  \u00b7  '+t('word.up', wDay(w.up)) : ''))+'</div>'+
     '<div class="barfix"><button class="btn"' + DO('openEdit', [w.hw]) + '>'+
       t('word.edit')+'</button></div>';
 }
@@ -608,7 +679,8 @@ function openWord(hw){
 function openEdit(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null;
-  wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
+  wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
+         pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(), ety:w.ety||'', nt:w.nt||''};
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
            function(){ phkMount(); geTiles(); });
 }
@@ -634,7 +706,7 @@ function wdKey(sym){
    of statements, and two assignments. Each is one line now, in a file a
    checker can read. */
 function goPlans(){ closeSheet(); go('plans'); }
-function wdSetNt(v){ if(addW) addW.nt=v; else wEdit.nt=v; }
+function wdSetNt(v){ wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }
 function wdBack(){
   if(wEdit.sp && wEdit.sp.length) wEdit.sp.pop();
@@ -688,6 +760,18 @@ function wdDerive(){
   closeSheet({target:{id:'sbg'}});
   openAdd(w.hw);
 }
+/* The four, and the note, written onto a word -- by Save and by Add, which
+   is the point: a word made and a word edited end up carrying the same
+   things. An empty one of any of them is NOT stored: a key that is always
+   there and always blank ends up in every export and every backup.
+   `up` is stamped here because here is every time a word changes. */
+function wdPutExtras(w){
+  if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
+  if(String(wEdit.ety||'').trim()) w.ety=String(wEdit.ety).trim(); else delete w.ety;
+  if(wEdit.reg) w.reg=wEdit.reg; else delete w.reg;
+  if((wEdit.tags||[]).length) w.tags=wEdit.tags.slice(); else delete w.tags;
+  w.up=Date.now();
+}
 function saveWord(){
   var w=findWord(openHw); if(!w) return;
   var hw=spWord(wEdit.sp||[]);
@@ -699,9 +783,7 @@ function saveWord(){
   w.sp=JSON.parse(JSON.stringify(wEdit.sp));
   w.mns=wEdit.mns.slice(); w.mn=wEdit.mns.length? wEdit.mns[0] : '';
   w.pos=wEdit.pos;
-  /* An empty note is no note, not an empty one: a key that is always there
-     and always blank ends up in every export and every backup. */
-  if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
+  wdPutExtras(w);
   /* A word that changes is still the same word, so everything pointing at it
      is told its new name rather than left pointing at one that is gone. */
   if(hw!==old) wRename(old, hw);
