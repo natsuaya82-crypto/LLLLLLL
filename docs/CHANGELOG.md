@@ -109,6 +109,24 @@ the shapes frozen on the post when it was written.
 - *migration*: none needed. A word without them behaves as before.
 - *deleted*: nothing.
 
+### Cloud storage is off the Plus screen until it exists
+
+**Behaviour, and a promise withdrawn.**
+
+The plans screen sold "cloud storage (new phone, several devices)" and the
+settings screen told anybody on Plus "Cloud sync — On". There is no code
+anywhere that sends a language to a server: the app touches `/auth/v1/*` and
+`/rest/v1/profile` and nothing else.
+
+- Cloud storage **is still a Plus feature**, deferred until there are enough
+  people to justify paying for the hosting. `docs/FEATURES.md` holds it as
+  planned. It comes back on the screen when the thing behind it exists.
+- A switch reporting a state the app does not have is worse than no switch:
+  somebody trusts it and stops making backups.
+- *deleted*: nothing. Backup to Documents is unchanged and is on every plan.
+- Labels removed with it: `plan.plus.4`, `set.cloud`, `set.lock.cloud.*`,
+  `set.on`, in all ten languages.
+
 ### Smaller
 
 - The dictionary list: the whole row opens the word; a round ⊕ replaces the

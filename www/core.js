@@ -250,7 +250,12 @@ var PLANS=[
   {id:'free',  name:'Free',   price:'plan.price.free',
    lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4','plan.free.5']},
   {id:'plus',  name:'Plus',   price:'plan.price.plus',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4']},
+   /* Three lines and no cloud. Cloud storage IS a Plus feature and is
+      deferred until there are enough people to justify paying for it -- so
+      until it exists it is not on the list, because a paid screen promising
+      something the app cannot do is the app lying to somebody who is about
+      to pay. docs/FEATURES.md holds it as planned. */
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3']},
   {id:'studio',name:'Studio', price:'plan.price.studio',
    lines:['plan.studio.1','plan.studio.2','plan.studio.3']}
 ];

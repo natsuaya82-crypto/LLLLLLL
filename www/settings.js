@@ -46,7 +46,7 @@ function setSummary(id, p){
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
   if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
-  if(id==='data')  return can('data')? t('set.on') : 'Free';
+  if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
 function vSet(){
@@ -139,14 +139,15 @@ function vSet(){
     body='<div class="sec">'+t('bk.h')+'</div>'+bkListHTML()+
       '<div class="sec" style="margin-top:18px">'+t('set.data')+'</div>'+
       (can('data')
+      /* No cloud row. It said "Cloud sync -- On" to anybody on Plus and did
+         nothing at all: there is no code anywhere that sends a language to a
+         server. A switch that reports a state the app does not have is worse
+         than no switch, because somebody will trust it and stop making
+         backups. It comes back when the thing behind it does. */
       ? '<button class="set"' + DO('exportCSV') + '><span class="sl">'+t('set.csv.out')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
-        '<button class="set"' + DO('openImport') + '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'+
-        '<button class="set"><span class="sl">'+t('set.cloud')+'</span><span class="sv">'+t('set.on')+'</span></button>'
+        '<button class="set"' + DO('openImport') + '><span class="sl">'+t('set.csv.in')+'</span><span class="sv">'+ICON_GO+'</span></button>'
       : '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
         '<span><span class="lt">'+t('set.lock.csv.t')+'</span><br><span class="ld">'+t('set.lock.csv.d')+'</span></span>'+
-        '<span class="tag">PLUS</span></button>'+
-        '<button class="lock"' + DO('go', ["plans"]) + '><span class="lk">'+ICON_PLUS+'</span>'+
-        '<span><span class="lt">'+t('set.lock.cloud.t')+'</span><br><span class="ld">'+t('set.lock.cloud.d')+'</span></span>'+
         '<span class="tag">PLUS</span></button>');
   } else {
     body=goneBox();
