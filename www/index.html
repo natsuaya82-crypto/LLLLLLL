@@ -28,7 +28,7 @@ html[data-theme="dark"]{
   /* the two the card is built out of: a surface that sits above --bg, and
      the ground falling away behind it */
   --raise:#191922; --sink:#06060a;
-  --glass:rgba(30,30,41,.58); --glassop:#1a1a24;
+  --glass:rgba(30,30,41,.34); --glassop:#1a1a24;
   --glassrim:rgba(255,255,255,.13); --glassspec:rgba(255,255,255,.22);
   --glassdrop:rgba(0,0,0,.46);
 }
@@ -41,7 +41,7 @@ html[data-theme="light"]{
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
   --raise:#ffffff; --sink:#efeade;
-  --glass:rgba(255,255,255,.62); --glassop:#f6f2ea;
+  --glass:rgba(255,255,255,.40); --glassop:#f6f2ea;
   --glassrim:rgba(26,23,18,.10); --glassspec:rgba(255,255,255,.9);
   --glassdrop:rgba(60,50,30,.16);
 }
@@ -407,9 +407,14 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
         border-radius:999px;background:var(--glassop);border:1px solid var(--glassrim);
         box-shadow:inset 0 1px 0 var(--glassspec), 0 12px 32px var(--glassdrop)}
 @supports ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){
+  /* Thin enough to see the page through, and blurred hard enough that what
+     shows through is a colour rather than a word. It was .58 over a 22px
+     blur, which is a tinted panel: nothing came through it, so it was glass
+     by name only. 「リキッドグラスって下に透ける形なのにそれがなってない」
+     The saturate is what keeps the colour underneath alive at that alpha. */
   .tabbar{background:var(--glass);
-          -webkit-backdrop-filter:blur(22px) saturate(180%);
-          backdrop-filter:blur(22px) saturate(180%)}
+          -webkit-backdrop-filter:blur(30px) saturate(200%);
+          backdrop-filter:blur(30px) saturate(200%)}
 }
 /* An icon over its name, which is what a phone's bottom bar is, and all five
    say their name rather than only the one you are on. 「下タブの横に文字つける
