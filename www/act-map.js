@@ -168,6 +168,7 @@ act('cardSave', cardSave);
 act('tkSend', tkSend);
 act('tkWipe', tkWipe);
 act('wRelToggle', wRelToggle);
+act('relNew', relNew);
 act('wdAddEx', wdAddEx);
 act('wdAddMn', wdAddMn);
 act('wdBack', wdBack);

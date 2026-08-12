@@ -456,6 +456,18 @@ function vRelate(){
   var on=wRel(w,k), list=WORDS.filter(function(x){ return x!==w; })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
   return '<div class="view">'+navTop(on.length)+'<div class="body">'+
+    /* A word that means the same as this one is very often a word that does
+       not exist yet -- that is WHY it is being written -- and the picker
+       offered the dictionary and nothing else, so the answer to "what means
+       the same as this" was "nothing, go and make one first, then come back
+       here and find it". 「その場で類義語とか対義語を作れるようにすればいいやん」
+       So it is made here, and joined here, in one press. */
+    '<div class="sec">'+t('home.write')+'</div>'+
+    '<div class="row2"><div class="field"><input id="rel-hw" placeholder="'+
+      esc(t('f.spelling'))+'" autocapitalize="none" autocorrect="off" spellcheck="false"></div>'+
+    '<div class="field"><input id="rel-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div></div>'+
+    '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') + '>'+
+      t('add.btn')+'</button>'+
     (list.length
       ? list.map(function(x){
           var has=on.indexOf(x.hw)>=0;
@@ -468,6 +480,31 @@ function vRelate(){
         }).join('')
       : '<div class="note">'+t('words.empty')+'</div>')+
     '</div></div>';
+}
+/* Made and joined in one press. A word typed here is spelled by the same
+   spType() the new-word sheet uses, so it is written in this language's
+   letters and not in whatever was on the keyboard; a spelling the dictionary
+   already holds is not made twice, it is simply joined. */
+function relNew(){
+  var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
+  var e=document.getElementById('rel-hw'), m=document.getElementById('rel-mn');
+  var txt=e? String(e.value||'').trim() : '', mn=m? String(m.value||'').trim() : '';
+  var sp, nw, w;
+  if(!findWord(hw) || (k!=='syn' && k!=='ant')) return;
+  if(!txt){ toast(t('toast.hw2')); return; }
+  sp=spType(txt); nw=spWord(sp);
+  if(!nw){ toast(t('toast.hw2')); return; }
+  if(nw.toLowerCase()===String(hw).toLowerCase()){ toast(t('toast.dup')); return; }
+  if(!findWord(nw)){
+    if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+    w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
+    WORDS.push(w);
+    toast(t('toast.added.1', nw));
+  }
+  /* saves and redraws, and does nothing at all if the two are already joined
+     -- so pressing this twice does not take the relation back off again */
+  if(wRel(findWord(hw), k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
+  else { save(); render(); }
 }
 function wdNoteHTML(){
   return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
