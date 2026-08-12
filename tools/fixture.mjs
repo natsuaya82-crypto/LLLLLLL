@@ -185,6 +185,15 @@ export function halfDone(){
                                           openSnd(LETTERS[0].id); return FORM.html; }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
+    /* The new-word sheet with something already chosen on it. The chips for
+       what means the same and what means the opposite are the one place a
+       relation on a word that does not exist yet can be taken back off, and
+       an empty sheet has no chips -- so the sheet opened blank walks a screen
+       whose only way to undo is never drawn. */
+    ['the new word sheet, with a synonym', () => { openAdd(''); addW.syn = ['kano'];
+                                                   addW.ant = ['tir']; addW.ex = [{ln:'kano tir', gl:'sees it'}];
+                                                   openAdd('');
+                                                   const h = FORM.html; addW = null; return h; }],
     /* A note that already exists: the delete button only appears once there
        is something to delete, so a form opened empty never shows it. */
     ['a note being edited',    () => { openNote(0); return FORM.html; }],

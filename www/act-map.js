@@ -169,6 +169,7 @@ act('tkSend', tkSend);
 act('tkWipe', tkWipe);
 act('wRelToggle', wRelToggle);
 act('relNew', relNew);
+act('wRelOff', wRelOff);
 act('wdAddEx', wdAddEx);
 act('wdAddMn', wdAddMn);
 act('wdBack', wdBack);
@@ -199,12 +200,14 @@ actIn('tkSetQ', tkSetQ);
 actIn('wldSet', wldSet);
 actIn('stNote', stNote);
 actIn('stSetRules', stSetRules);
+actIn('addSetMn', addSetMn);
 actIn('wdSetNt', wdSetNt);
 /* A word is typed on the free plan, in three places: the new-word sheet, the
    editor, and the word a grammar stage asks for. */
 actIn('addSetLn', addSetLn);
 actIn('wdSetLn', wdSetLn);
 actIn('stSetLn', stSetLn);
+actIn('addSetPos', addSetPos);
 actIn('wdSetPos', wdSetPos);
 
 /* ---- Enter ------------------------------------------------------------- */

@@ -61,6 +61,20 @@ var addSeq=[];
    here. addSeq is what those readings come out as, kept because everything
    downstream reads it. */
 var addSp=[];
+/* The word being made, as a word. It is the same shape as one in the
+   dictionary and is simply not in WORDS yet -- so what means the same, what
+   means the opposite, its examples and its note are written ON it here and
+   go in with it, instead of being four things you can only reach after the
+   word exists. 「単語追加の時点で編集できるようにしろよ。編集でも見えるように当たり前だろバカか」
+
+   That is what lets the sections below be written once: wdW() answers the
+   editor with a word out of the dictionary and this sheet with this, and
+   every one of them takes what it is about from there. */
+var addW=null;
+function addDraft(){
+  if(!addW) addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[], nt:''};
+  return addW;
+}
 function addSync(){ addSeq=spPh(addSp); }
 function addPh(sym){
   var l=ltMain(sym);
@@ -174,7 +188,11 @@ function openAdd(from){
   /* Reopened by its own redraw, so the spelling is only cleared when the form
      is genuinely new -- otherwise every keypress would empty the word. */
   var fresh = !(here().r==='form' && here().a==='add:'+(from||''));
-  if(fresh){ SUG=[]; sugMn=''; addSeq=[]; addSp=[]; addMn=''; }
+  if(fresh){ SUG=[]; sugMn=''; addSeq=[]; addSp=[]; addMn=''; addW=null; }
+  /* The sheet that is open is the one wdW() answers with, so opening this one
+     says so -- otherwise the last word edited would still be the subject and
+     a synonym chosen here would land on it. */
+  openHw=''; addDraft();
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
   if(fresh && par){ addSp=JSON.parse(JSON.stringify(spOf(par))); addSync(); }
@@ -189,11 +207,23 @@ function openAdd(from){
     (can('snd')? addKeys() : '')+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="f-pv"></span>'+
     '<button' + DO('sayField') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
-    '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div>'+
-    '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos">'+
+    /* Both carry their value, and both write it down as it is typed. The
+       picker for what means the same is a screen and not a sheet, so going
+       to it leaves this one -- and a field that only ever held its value in
+       the DOM came back empty from a trip somebody took on purpose. */
+    '<div class="row2"><div class="field"><label>'+t('f.meaning')+'</label><input id="f-mn" value="'+esc(addMn)+'" placeholder="'+esc(t('f.meaning.ph'))+'"' + IN('addSetMn') + '></div>'+
+    '<div class="field"><label>'+t('f.pos')+'</label><select id="f-pos"' + CH('addSetPos') + '>'+
     POS.map(function(p){return '<option value="'+p+'"'+(p===addPos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div></div>'+
     '<div id="sugwrap">'+sugHTML()+'</div>'+
+    /* The same four sections the editor has, from the same four functions.
+       They are what a word IS beyond its spelling, and asking for them only
+       after the word exists made the sheet that makes one a form with three
+       fields on it. */
+    '<div class="sec">'+t('word.syn')+'</div>'+ wdRelHTML('syn')+
+    '<div class="sec">'+t('word.ant')+'</div>'+ wdRelHTML('ant')+
+    '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+ wdExHTML()+
+    '<div class="sec">'+t('word.note')+'</div>'+ wdNoteHTML()+
     '<div class="barfix"><button class="btn"' + DO('addOne') + '>'+t('add.btn')+'</button></div>',
     function(){ phkMount(); geTiles(); addPv(); });
 }
@@ -202,13 +232,16 @@ function addPv(){
   if(r) r.textContent = addSeq.length? phIpa(addSeq) : '';
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
+function addSetMn(v){ addMn=v; }
+function addSetPos(v){ addPos=v; }
 function sayField(){ if(addSeq.length) sayPh(addSeq); }
 function addOne(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
   var hw=spWord(addSp);
-  var mn=document.getElementById('f-mn').value.trim();
-  var pos=document.getElementById('f-pos').value;
+  var e=document.getElementById('f-mn'), p=document.getElementById('f-pos');
+  var mn=String((e? e.value : addMn)||'').trim();
+  var pos=(p? p.value : addPos);
   if(!addSp.length || !hw){ toast(t('toast.hw2')); return; }
   if(!capOK(1)){ closeSheet(); go('plans'); return; }
   if(WORDS.some(function(w){return String(w.hw).toLowerCase()===hw.toLowerCase();})){ toast(t('toast.dup')); return; }
@@ -218,24 +251,27 @@ function addOne(){
      a sound, and a copy of a sound is what went stale the day the letter's
      sound changed. */
   var w={hw:hw, mn:mn, mns:(mn?[mn]:[]), pos:pos, at:Date.now()};
+  var d=addDraft(), syn=(d.syn||[]).slice(), ant=(d.ant||[]).slice();
   w.sp=JSON.parse(JSON.stringify(addSp));
   if(addFrom && addFrom!==hw) w.from=addFrom;
+  /* Everything written on the draft comes with it. An empty note is no note,
+     not an empty one -- the same rule saveWord() holds. */
+  if(d.ex && d.ex.length) w.ex=d.ex;
+  if(String(d.nt||'').trim()) w.nt=String(d.nt).trim();
   WORDS.push(w);
+  /* The draft is gone before the relations are written, so each of them is
+     an ordinary two-ended one between two words that both exist now. */
+  addW=null;
+  syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
+  ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
   save(); cands=[]; addSeq=[]; addSp=[]; addMn=''; addFrom='';
-  /* And straight onto the word, because the sheet that makes one holds three
-     things and the word holds nine. What means the same, what means the
-     opposite, what it derives, its examples and its note cannot be asked
-     before the word exists -- a relation goes both ways, so there has to be
-     something on the other end of it -- so "add" is where they become
-     possible rather than where they are missing.
-     「単語追加の時点で編集できるようにしろよ」
-
-     back() first, so the trail is the dictionary and then the word: pressing
-     back from a word just made returns to the list, not to an empty form for
-     making the one that was already made. */
+  /* Back to the dictionary, where the word now is. It used to open the word
+     itself, because the sheet that made one held three fields and the word
+     held nine -- it holds them all now, so there is nothing left to go and
+     do there. 「単語追加の時点で編集できるようにしろよ」 */
   if(here().r==='form') back();
   toast(t('toast.added.1', hw));
-  openWord(hw);
+  render();
 }
 function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
@@ -344,14 +380,40 @@ function wRel(w, k){ if(!w[k]) w[k]=[]; return w[k]; }
 function wRelWords(w, k){
   return wRel(w,k).map(findWord).filter(function(x){ return !!x; });
 }
+/* The picker is a screen, not a sheet, so the sheet that opened it is a
+   cached string built before any of this happened -- and returning to it
+   showed the word you had just chosen nowhere on it.
+
+   The two are rebuilt differently on purpose. The editor is rebuilt in
+   place, from wEdit, because reopening it would re-read the word and throw
+   away meanings typed and not yet saved; the sheet that makes a word is
+   dropped, and vForm() builds it again from the draft, which is where
+   everything on it lives. */
+function relDirty(){
+  if(!FORM) return;
+  if(addW) FORM=null;
+  else if(openHw && FORM.key==='word:'+openHw)
+    FORM.html='<div id="wd-body">'+wdBodyHTML()+'</div>';
+}
+/* An empty headword is the word being made, which is the one case where the
+   relation can only be written down one end of: the other end has nothing to
+   point back at until Add exists it. addOne() joins both ends then. */
 function wRelToggle(hw, k, other){
-  var a=findWord(hw), b=findWord(other);
+  var a=hw? findWord(hw) : addW, b=findWord(other);
   if(!a || !b || a===b) return;
-  var A=wRel(a,k), B=wRel(b,k), i=A.indexOf(b.hw), j=B.indexOf(a.hw);
+  var A=wRel(a,k), i=A.indexOf(b.hw), B, j;
+  if(a===addW){
+    if(i>=0) A.splice(i,1); else A.push(b.hw);
+    relDirty(); render(); return;
+  }
+  B=wRel(b,k); j=B.indexOf(a.hw);
   if(i>=0){ A.splice(i,1); if(j>=0) B.splice(j,1); }
   else { A.push(b.hw); if(j<0) B.push(a.hw); }
-  save(); render();
+  save(); relDirty(); render();
 }
+/* Taking one off the word being made, from the chip rather than from the
+   picker -- the same list, so the same function decides it. */
+function wRelOff(k, other){ wRelToggle('', k, other); wdRepaint(); }
 /* Everything pointing at a word is told its new name when the name changes,
    which is why this is a list of headwords and not of objects. */
 function wRelRename(old, hw){
@@ -365,12 +427,26 @@ function wRelRename(old, hw){
     });
   });
 }
+/* The word the open sheet is about: the one being made, or the one out of
+   the dictionary being edited. One of the two is always null, because
+   openAdd() and openWord() each say which sheet it is as they open. Every
+   section below asks this and none of them asks which screen it is on. */
+function wdW(){ return addW || findWord(openHw); }
+/* A draft is not in WORDS, so there is nothing for save() to write and
+   nothing wdPaint() can repaint -- the add sheet redraws its own body. */
+function wdStore(){ if(!addW) save(); }
+function wdRepaint(){ if(addW) addRedraw(); else wdPaint(); }
 function wdRelHTML(k){
-  var w=findWord(openHw); if(!w) return '';
+  var w=wdW(); if(!w) return '';
   var ws=wRelWords(w,k);
   return (ws.length
     ? '<div class="rels">'+ws.map(function(x){
-        return '<button class="rel"' + DO('openWord', [x.hw]) + '>'+
+        /* On a word that exists the chip is a way to it. On the one being
+           made it cannot be -- going there would leave the draft -- so there
+           it takes the word back off, which is the only other thing a chip
+           on a list you are assembling could mean. */
+        return '<button class="rel"' +
+          (addW? DO('wRelOff', [k, x.hw]) : DO('openWord', [x.hw])) + '>'+
           '<span class="relw">'+esc(wOut(x.hw))+'</span>'+
           (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
       }).join('')+'</div>'
@@ -419,12 +495,14 @@ function exHint(){
   return a.length>1? a.join(' ') : (a[0]||'');
 }
 function wdExHTML(){
-  var w=findWord(openHw); if(!w) return '';
+  var w=wdW(); if(!w) return '';
   var ex=w.ex||[];
   return (ex.length
     ? '<div class="exlist">'+ex.map(function(e,i){
+        /* No card off a word that is not in the dictionary yet: a card is
+           made from a headword, and this one has none until Add. */
         return exRowHTML(e, exSeq(e.ln),
-          exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_CARD)+
+          (addW? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_CARD))+
           exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
@@ -436,22 +514,24 @@ function wdExHTML(){
     '</div>';
 }
 function wdAddEx(){
-  var w=findWord(openHw), a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg');
+  var w=wdW(), a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg');
   if(!w || !a) return;
   var ln=String(a.value||'').trim();
   if(!ln){ toast(t('word.ex.need')); return; }
   if(!w.ex) w.ex=[];
   w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
-  save(); wdPaint();
+  wdStore(); wdRepaint();
 }
 function wdDelEx(i){
-  var w=findWord(openHw); if(!w || !w.ex) return;
-  w.ex.splice(i,1); save(); wdPaint();
+  var w=wdW(); if(!w || !w.ex) return;
+  w.ex.splice(i,1); wdStore(); wdRepaint();
 }
 /* Choosing the other end of a relation: every word, ticked or not. */
 function vRelate(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
-  var w=(k==='syn'||k==='ant')? findWord(hw) : null;
+  /* No headword is the word being made: the picker is the same picker, and
+     what it ticks is that draft's list. */
+  var w=(k==='syn'||k==='ant')? (hw? findWord(hw) : addW) : null;
   if(!w) return viewGone();
   var on=wRel(w,k), list=WORDS.filter(function(x){ return x!==w; })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
@@ -489,12 +569,12 @@ function relNew(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
   var e=document.getElementById('rel-hw'), m=document.getElementById('rel-mn');
   var txt=e? String(e.value||'').trim() : '', mn=m? String(m.value||'').trim() : '';
-  var sp, nw, w;
-  if(!findWord(hw) || (k!=='syn' && k!=='ant')) return;
+  var sp, nw, w, on=hw? findWord(hw) : addW;
+  if(!on || (k!=='syn' && k!=='ant')) return;
   if(!txt){ toast(t('toast.hw2')); return; }
   sp=spType(txt); nw=spWord(sp);
   if(!nw){ toast(t('toast.hw2')); return; }
-  if(nw.toLowerCase()===String(hw).toLowerCase()){ toast(t('toast.dup')); return; }
+  if(hw && nw.toLowerCase()===String(hw).toLowerCase()){ toast(t('toast.dup')); return; }
   if(!findWord(nw)){
     if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
     w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
@@ -503,12 +583,14 @@ function relNew(){
   }
   /* saves and redraws, and does nothing at all if the two are already joined
      -- so pressing this twice does not take the relation back off again */
-  if(wRel(findWord(hw), k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
-  else { save(); render(); }
+  if(wRel(on, k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
+  else { save(); relDirty(); render(); }
 }
+/* The editor stages its note in wEdit until Save; the sheet that makes a word
+   has nothing to stage against, so it writes the draft. Same box either way. */
 function wdNoteHTML(){
   return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
-    '"' + IN('wdSetNt') + '>'+esc(wEdit.nt||'')+'</textarea></div>';
+    '"' + IN('wdSetNt') + '>'+esc((addW? addW.nt : wEdit.nt)||'')+'</textarea></div>';
 }
 function wdKidsHTML(){
   var w=findWord(openHw); if(!w) return '';
@@ -577,7 +659,7 @@ function wdBodyHTML(){
 }
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
-  openHw=w.hw;
+  openHw=w.hw; addW=null;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(), pos:w.pos, nt:w.nt||''};
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdBodyHTML()+'</div>',
            function(){ phkMount(); });
@@ -603,7 +685,7 @@ function wdKey(sym){
    of statements, and two assignments. Each is one line now, in a file a
    checker can read. */
 function goPlans(){ closeSheet(); go('plans'); }
-function wdSetNt(v){ wEdit.nt=v; }
+function wdSetNt(v){ if(addW) addW.nt=v; else wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }
 function wdBack(){
   if(wEdit.sp && wEdit.sp.length) wEdit.sp.pop();
