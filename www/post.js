@@ -46,8 +46,17 @@ function postsRead(){
   }catch(e){}
 }
 postsRead();
+/* A failed write used to be swallowed here, and it was survivable while a
+   post was a line of text: a hundred of them are a few kilobytes and storage
+   does not run out. A post can carry a photograph now, so it can, and a
+   timeline that silently stops saving is a timeline that loses whatever was
+   written after it filled up.
+
+   It says so instead. Nothing is deleted to make room -- pruning somebody's
+   own posts to fit one more is exactly what docs/DATA_SAFETY.md forbids. */
 function savePosts(){
-  try{ localStorage.setItem(LS_POSTS, JSON.stringify(POSTS)); }catch(e){}
+  try{ localStorage.setItem(LS_POSTS, JSON.stringify(POSTS)); return true; }
+  catch(e){ toast(t('post.full')); return false; }
 }
 /* Newest first, which is the only order a timeline has. */
 function postAll(){
@@ -86,7 +95,7 @@ function postGlossLine(gl){
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
-function pwBlank(){ return {ln:'', mn:'', to:''}; }
+function pwBlank(){ return {ln:'', mn:'', to:'', pic:''}; }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
@@ -103,6 +112,69 @@ function pwMn(){ return postGlossLine(postGloss(PW.ln)); }
 /* And the row of it, which is drawn once when the screen is built and again
    on every letter typed. */
 function pwGl(){ return postGlossHTML(postGloss(PW.ln)); }
+/* ---- a photograph on a post -------------------------------------------
+
+   The long edge, and how hard it is squeezed. A photograph is stored as text
+   in the same localStorage the LANGUAGE lives in, so these two numbers are a
+   data-safety question before they are a picture-quality one:
+
+     900px, q0.72   about 65 KB, and about 87 KB once it is text
+     a whole free language                              about 25 KB
+
+   One photograph is three and a half languages. That is the reason for the
+   budget below rather than for a smaller number here -- 900px is already the
+   point where a phone screen stops being able to tell. */
+var POST_PIC=900, POST_PICQ=0.72;
+/* What the timeline may take up. localStorage is one allowance shared by the
+   posts and by every slice of the language, so a timeline with no ceiling can
+   make somebody's LANGUAGE unsaveable -- and the language is the thing this
+   app cannot replace. Two megabytes is about twenty photographs and leaves
+   room for a five-thousand-word language several times over.
+
+   When it is full the PHOTOGRAPH is refused, never the post and never
+   anything already written. Nothing is pruned to make room. */
+var POST_BYTES=2*1024*1024;
+function pwPicRoom(url){
+  var n=0;
+  try{ n=String(localStorage.getItem(LS_POSTS)||'').length; }catch(e){}
+  return (n + String(url||'').length) < POST_BYTES;
+}
+function pwSetPic(){
+  var el=document.getElementById('pw-pic'), f=el && el.files && el.files[0];
+  if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){ pwPicKeep(String(r.result||'')); };
+  r.onerror=function(){ toast(t('post.pic.bad')); };
+  r.readAsDataURL(f);
+}
+/* Not cropped. A face is shown in a circle so the sides of a landscape photo
+   were never going to be seen; a post shows the picture, so what was taken is
+   what goes up. Only the long edge is brought down. */
+function pwPicKeep(url){
+  var im=new Image();
+  im.onload=function(){
+    var k=Math.min(1, POST_PIC/Math.max(im.width, im.height));
+    var c=document.createElement('canvas'), x, out;
+    c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    x=c.getContext('2d');
+    x.drawImage(im, 0, 0, c.width, c.height);
+    try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
+    catch(e){ toast(t('post.pic.bad')); return; }
+    if(!pwPicRoom(out)){ toast(t('post.pic.full')); return; }
+    PW.pic=out; openPost();
+  };
+  im.onerror=function(){ toast(t('post.pic.bad')); };
+  im.src=url;
+}
+function pwDropPic(){ PW.pic=''; openPost(); }
+function pwPicHTML(){
+  return '<div class="pwpicrow">'+
+    (PW.pic? '<img class="pwpic" src="'+esc(PW.pic)+'" alt="">' : '')+
+    '<label class="btn ghost picpick">'+esc(t(PW.pic? 'post.pic.again' : 'post.pic'))+
+      '<input type="file" id="pw-pic" accept="image/*"' + CH('pwSetPic') + '></label>'+
+    (PW.pic? '<button class="btn ghost"' + DO('pwDropPic') + '>'+esc(t('post.pic.drop'))+'</button>' : '')+
+    '</div>';
+}
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
@@ -122,6 +194,7 @@ function pwHTML(){
       '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
         'placeholder="'+esc(pwMn() || t('post.mn'))+'"' +
         IN('pwSetMn') + '>'+
+      pwPicHTML()+
       '</div></div>';
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
@@ -181,6 +254,7 @@ function pwSend(){
             ln:ln, ink:postInk(ln),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), li:0, bo:0, re:0};
+  if(PW.pic) mine.pic=PW.pic;
   /* The natural language, translated once, here, and carried. It is asked
      for and NOT waited on: the post is pushed either way, and a translation
      that arrives late lands on a post that already exists. A post that
@@ -581,6 +655,7 @@ function postRow(p){
          are on the post, so there is no font to put on anything and no
          reason to treat my own post differently from anybody's. */
       '<div class="pline">'+postLnHTML(p)+'</div>'+
+      (p.pic? '<img class="ppic" src="'+esc(p.pic)+'" alt="">' : '')+
       /* The natural language, always. In the reader's own if the post carries
          it, and in the author's if it does not -- which is every post until
          the translator is wired up, and is not a failure. */

@@ -127,6 +127,27 @@ anywhere that sends a language to a server: the app touches `/auth/v1/*` and
 - Labels removed with it: `plan.plus.4`, `set.cloud`, `set.lock.cloud.*`,
   `set.on`, in all ten languages.
 
+### A post can carry a photograph
+
+**Behaviour and data, on every plan.**
+
+- *newly stored*: `post.pic`, a data URL. Squeezed to 900px on the long edge at
+  q0.72 — a 2400×1600 photograph comes out about 22 KB as text.
+- *not cropped*: only the long edge is brought down, and the timeline shows the
+  whole picture letterboxed rather than cutting a piece off with nowhere to go
+  and see it.
+- **the ceiling**: `POST_BYTES` is 2 MB, about 95 photographs. `lingua.posts`
+  shares one storage allowance with every slice of the language, so a timeline
+  with no ceiling could make somebody's **language** unsaveable. At the
+  ceiling the photograph is refused; the post is not, and nothing is pruned to
+  make room.
+- **`savePosts()` no longer swallows a failed write.** It was survivable while
+  a post was a line of text; a post can be big enough to fail now, and a
+  timeline that silently stops saving loses whatever is written after it fills.
+- *migration*: none. A post without a photograph is unchanged.
+- *deleted*: nothing.
+- *the plan*: free, on every plan.
+
 ### The AI is Studio's, and it is the last chapter
 
 **Behaviour, on every plan.**

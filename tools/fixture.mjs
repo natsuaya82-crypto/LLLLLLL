@@ -53,7 +53,7 @@ export function seed(){
             who:'Aya', hd:'aya', mine:true,
             av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
             mn:'a tall mountain is seen', ui:'en',
-            },
+            pic:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'},
            /* Somebody else's language, in somebody else's letters. The shapes
               are ON the post -- this phone has never seen the alphabet they
               were drawn in and never will -- which is the whole reason the
@@ -233,6 +233,14 @@ export function halfDone(){
     ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
                                                    openEdit('kano'); const h = FORM.html;
                                                    wdMode = ''; SET.plan = 'free'; return h; }],
+    /* A post being written, with a photograph already chosen. The button that
+       takes it off and the one that changes it only exist once there is one,
+       so a composer opened empty draws neither. The data URL is a real 1x1
+       gif: it goes in an <img src>. */
+    ['a post with a photograph', () => {
+        openPost();
+        PW.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
     /* The contents on Studio. The AI conversation is the last chapter and it
        is Studio's, so on free the contents has no way in to it -- which is
        what act-check reports, correctly, unless the walk is shown the plan

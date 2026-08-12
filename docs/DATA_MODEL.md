@@ -91,7 +91,7 @@ touches the sound inventory.
 The one piece of **frozen** data in the app.
 
 ```js
-{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, ink?, tr? }
+{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, ink?, tr?, pic? }
 ```
 
 Everything a reader needs is on it, because the reader does not have the
@@ -102,6 +102,7 @@ writer's language:
 | `who`, `hd`, `av` | the author. `ME` is *me*, and a timeline has no such thing |
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
+| `pic` | a photograph, squeezed to 900px on the long edge at q0.72 — about 22 KB as text. See below: this is the one field big enough to matter |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
 
 ### `ink`
@@ -144,6 +145,23 @@ post without ink predates the timeline holding anybody else's, so all of them
 are this person's own. The day posts arrive from a server, **they must arrive
 with their ink already on them** — a post from elsewhere with no ink must be
 drawn as text, never re-cut locally.
+
+### A photograph, and why there is a ceiling
+
+`pic` is stored as a data URL in `lingua.posts`, which shares one
+`localStorage` allowance with **every slice of the language**. So the size of
+a photograph is a data-safety question before it is a picture-quality one:
+
+```
+  a whole free language                     about 25 KB
+  one photograph at 900px q0.72             about 22 KB as text
+  POST_BYTES, the ceiling on the timeline    2 MB, about 95 photographs
+```
+
+When the timeline is at the ceiling the **photograph** is refused — never the
+post, never anything already written, and nothing is pruned to make room.
+`savePosts()` says so out loud rather than swallowing the failure, which is
+what it did before a post could be big enough to fail.
 
 ### What a post stopped carrying
 

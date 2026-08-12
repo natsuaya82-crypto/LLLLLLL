@@ -69,7 +69,7 @@ Marked separately, because they are not the same question:
 | Accounts — sign up, in, out, verify, reset | shipped | yes | — | `lingua.sess` (tokens only) | decided |
 | Profile — face, name, handle, bio | shipped | yes | — | `lingua.me` | decided |
 | Cloud storage of a language | **planned** | no | yes, deferred | every slice | decided — deferred until Supabase $25 is worth paying |
-| An image on a post | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid and storage **open** |
+| A photograph on a post | shipped | **yes** | yes | `post.pic`, frozen on the post, 900px q0.72, `POST_BYTES` ceiling | decided |
 | Drawn letters placed on that image | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid **open** |
 | Vertical / right-to-left posts | **planned** | ? | Plus | new: direction frozen on the post | decided that it happens; per-language or per-post **open** |
 | A post shown three ways | shipped | layers 1 and 2; layer 3 three a day | `tr`: layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided |
