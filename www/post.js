@@ -168,6 +168,8 @@ function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
 function pwSend(){
   var ln=String(PW.ln||'').trim();
   if(!ln){ toast(t('post.none')); return; }
+  /* Only to fall back on: the words run together, for somebody who typed a
+     line and no meaning. Not stored -- see postRow. */
   var gl=postGloss(ln);
   /* Everything a reader needs is put ON the post, now, because the reader may
      not be here and may not have this language: who wrote it, what they are
@@ -178,7 +180,7 @@ function pwSend(){
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
             ln:ln, ink:postInk(ln),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
-            ui:uiLang(), gl:gl, li:0, bo:0, re:0};
+            ui:uiLang(), li:0, bo:0, re:0};
   /* The natural language, translated once, here, and carried. It is asked
      for and NOT waited on: the post is pushed either way, and a translation
      that arrives late lands on a post that already exists. A post that
@@ -583,7 +585,29 @@ function postRow(p){
          it, and in the author's if it does not -- which is every post until
          the translator is wired up, and is not a failure. */
       '<div class="pmn">'+esc(postSay(p))+'</div>'+
-      '<div class="pgl">'+postGlossHTML(p.gl)+'</div>'+
+      /* Three layers, and there is no fourth.
+
+           the writer's own letters      ln + ink
+           the language you read in      mn, or tr[yours] if the post has it
+           your own language             on a button
+
+         A word-by-word gloss used to sit here. It said the writer's word ->
+         the writer's meaning; the layer below says the meaning -> MY word.
+         Both are lists of words, so side by side they read as one list that
+         keeps changing its mind.
+         「その人の言語／表示言語／自分の言語／3層でいいやん」
+
+         It is not written onto a post any more either. Nothing read it
+         once the line was gone, and a field written and never read is what
+         makes a codebase hard to read. The composer still shows one, where
+         it is the writer checking their own line before it goes out -- which
+         is the errand it was written for, and where the default meaning
+         comes from.
+
+         Posts made before this keep whatever is on them. Nothing goes and
+         removes it: it is somebody's, and deleting what a person made
+         because the current shape has no use for it is the one thing
+         docs/DATA_SAFETY.md forbids outright. */
       trBtnHTML(p)+
       trHTML(p)+
       '<div class="pacts">'+

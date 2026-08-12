@@ -53,8 +53,7 @@ export function seed(){
             who:'Aya', hd:'aya', mine:true,
             av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
             mn:'a tall mountain is seen', ui:'en',
-            gl:[{w:'kano', m:'mountain', p:'n'}, {w:'mos', m:'tall', p:'adj'},
-                {w:'zzq', m:'', p:''}]},
+            },
            /* Somebody else's language, in somebody else's letters. The shapes
               are ON the post -- this phone has never seen the alphabet they
               were drawn in and never will -- which is the whole reason the
@@ -66,7 +65,7 @@ export function seed(){
                     [{pts:[[200,200],[600,200]]}, {pts:[[400,200],[400,640]]}]],
                  s:[0, 1, 0, ' ', 1, 0, 1, 1, 0]},
             mn:'the sea has gone quiet', ui:'en',
-            gl:[{w:'qel', m:'sea', p:'n'}, {w:'dross', m:'quiet', p:'adj'}]}];
+            }];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},

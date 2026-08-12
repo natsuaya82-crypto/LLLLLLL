@@ -64,6 +64,10 @@ natural language and shown in red.
   sharing would mean a spelling suggestion spends a reading.
 - *not frozen, on purpose*: the third layer is built from the reader's
   dictionary every time it is asked for.
+- *stopped storing*: `post.gl`, the word-by-word gloss. It was read in one
+  place, the line under the meaning, and that line is gone — three layers, not
+  four. **Posts that already carry it keep it**; nothing removes it. The
+  composer still shows a gloss, which is where the default meaning comes from.
 
 ### A card of a post is drawn from the post
 

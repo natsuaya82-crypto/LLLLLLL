@@ -120,7 +120,7 @@ const R = await pg.evaluate(() => {
   const ln = 'kano tir';
   const p = { id: 'pcard', at: 1, lang: langId, lname: langName, ln,
               who: 'Aya', hd: 'aya', mine: true, mn: 'the mountain is seen',
-              ui: 'en', gl: [], ink: postInk(ln) };
+              ui: 'en', ink: postInk(ln) };
   POSTS.push(p);
   if (!p.ink || !p.ink.g.length)
     fails.push('the post carries no ink, so nothing below this is a test of anything');
@@ -215,7 +215,7 @@ const R = await pg.evaluate(() => {
   CASES.forEach((c, i) => {
     const id = 'pink' + i;
     POSTS.push({ id, at: 3, lang: 'x', lname: 'Edge', ln: 'qq ww', who: 'Iri',
-                 hd: 'iri', mine: false, mn: '', ui: 'en', gl: [], ink: c[1] });
+                 hd: 'iri', mine: false, mn: '', ui: 'en', ink: c[1] });
     let got;
     try { got = itemsFor('p', id); }
     catch (e) {
@@ -241,7 +241,7 @@ const R = await pg.evaluate(() => {
 
   /* ---- and a post with no ink is text, which is right --------------- */
   POSTS.push({ id: 'pnoink', at: 2, lang: 'x', lname: 'Borrowed', ln: 'qq ww',
-               who: 'Iri', hd: 'iri', mine: false, mn: '', ui: 'en', gl: [] });
+               who: 'Iri', hd: 'iri', mine: false, mn: '', ui: 'en' });
   const plain = itemsFor('p', 'pnoink');
   if (plain.items.some((u) => u.st))
     fails.push('a post with no ink came out with shapes on it, which can only ' +

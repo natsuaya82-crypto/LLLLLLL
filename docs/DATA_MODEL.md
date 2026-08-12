@@ -91,7 +91,7 @@ touches the sound inventory.
 The one piece of **frozen** data in the app.
 
 ```js
-{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, gl[], ink? }
+{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, ink?, tr? }
 ```
 
 Everything a reader needs is on it, because the reader does not have the
@@ -101,7 +101,6 @@ writer's language:
 |---|---|
 | `who`, `hd`, `av` | the author. `ME` is *me*, and a timeline has no such thing |
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
-| `gl` | the gloss, word by word, as it was at the time |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
 
@@ -145,6 +144,18 @@ post without ink predates the timeline holding anybody else's, so all of them
 are this person's own. The day posts arrive from a server, **they must arrive
 with their ink already on them** — a post from elsewhere with no ink must be
 drawn as text, never re-cut locally.
+
+### What a post stopped carrying
+
+`gl` — the gloss, word by word — was on every post and was read in exactly one
+place, the line under the meaning. That line is gone (three layers, not four),
+so the field was written and never read, which is the thing that makes this
+codebase hard to read. New posts do not carry it.
+
+**Posts that already have it keep it.** Nothing goes and removes it: it is
+somebody's, and removing what a person made because the current shape has no
+use for it is what `docs/DATA_SAFETY.md` forbids outright. It is simply
+ignored.
 
 ### The reader's own words
 
