@@ -54,9 +54,8 @@ Marked separately, because they are not the same question:
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
 | One language per person | shipped | 1 | 1 | `LANG_MAX` | decided |
-| AI word suggestions | shipped | 3/day | see note | none | decided — **the code does not match it yet** |
-| AI chat | shipped | — | a few a day at Plus; unmetered is not a Plus feature | slice `talk` | decided — **how many a day is still open** |
-| AI conversation (Studio side) | shipped | — | `ai` | slice `talk` | decided |
+| AI word suggestions | shipped | 3/day | Plus 3/day; `ai` unmetered at Studio | none | decided |
+| AI conversation — the last chapter | shipped | not shown | Studio only; not shown on Plus | slice `talk` | decided — Studio's daily number **open** |
 
 ## The reading side
 

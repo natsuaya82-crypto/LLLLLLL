@@ -233,6 +233,13 @@ export function halfDone(){
     ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
                                                    openEdit('kano'); const h = FORM.html;
                                                    wdMode = ''; SET.plan = 'free'; return h; }],
+    /* The contents on Studio. The AI conversation is the last chapter and it
+       is Studio's, so on free the contents has no way in to it -- which is
+       what act-check reports, correctly, unless the walk is shown the plan
+       that has the door. */
+    ['the contents on Studio', () => { SET.plan = 'studio';
+                                       window.route = 'build'; NAV = [{r:'build'}];
+                                       const h = vBuild(); SET.plan = 'free'; return h; }],
     /* A grammar stage of your own: the door is on the paid plan, because the
        fifteen are the whole of the free chapter. */
     ['a grammar stage of your own', () => { SET.plan = 'plus'; openOwnPhase();

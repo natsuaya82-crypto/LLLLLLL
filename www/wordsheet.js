@@ -10,10 +10,12 @@ var addPos='n';
 /* Suggestions are drawn with the same generator the coinage screen uses, so
    what it offers already obeys the language's own sounds and shape. */
 var SUG=[], sugMn='';
-/* Studio is the tier that advertises this, so Studio is what lifts the ceiling.
-   CAN in core.js is where that is written down, beside 'ai', which lifts at
-   plus -- see the note there about the two disagreeing. */
-function sugUnl(){ return can('sug'); }
+/* One capability for the AI, and it is Studio's. There were two -- `ai` at
+   plus and `sug` at studio -- and they were the same ceiling said twice, so a
+   Plus account was shown "3 left" forever and never spent one. The AI is not
+   what Plus sells: Plus is the tools for building a language yourself, and
+   every one of them runs on this phone for nothing. */
+function sugUnl(){ return can('ai'); }
 function sugLeft(){ return sugUnl() ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
 /* What the word is for, as far as it has been said -- the first meaning
    written on the sheet, which is where a suggestion gets its sense from. */

@@ -304,7 +304,7 @@ function has(level){ /* level: 'plus' | 'studio' */
    means "counted", not "refused". */
 var CAN={
   words:   'plus',   /* a dictionary past FREE_LIMIT */
-  ai:      'plus',   /* the model, unmetered */
+  ai:      'studio', /* the AI: the conversation, and suggestions unmetered */
   data:    'plus',   /* CSV out, and the cloud */
   file:    'plus',   /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
@@ -312,8 +312,7 @@ var CAN={
   kb:      'plus',   /* a keyboard of your own, instead of the fixed QWERTY */
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   gram:    'plus',   /* a grammar stage of your own, past the fifteen there are */
-  tr:      'plus',   /* a post said again in your own words, unmetered */
-  sug:     'studio'  /* the word sheet's suggestions, unmetered */
+  tr:      'plus'    /* a post said again in your own words, unmetered */
 };
 /* 'snd' is what free is NOT, said as a capability.
 

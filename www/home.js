@@ -63,8 +63,6 @@ function tocRows(){
      txt:stCount()+' / '+stAll().length},
     {k:'toc.notes',   r:'notes',   v:NOTES.length,
      txt:NOTES.length? tn('count.notes', NOTES.length) : '—'},
-    {k:'toc.talk',    r:'talk',    v:TALK.length,
-     txt:TALK.length? tn('count.turns', TALK.length) : '—'},
     /* The keyboard is a chapter now rather than a button at the foot of the
        alphabet. It stopped being a thing the alphabet has when it stopped
        being something you type on in here: what it is is the layout of the
@@ -81,7 +79,24 @@ function tocRows(){
        so it has always had a true number to give. */
     {k:'kb.title',   r:'kb',     v:0,
      txt:String(kbKeys())}
-  ];
+  ].concat(
+    /* The AI conversation is Studio's, and it is the LAST chapter so that not
+       having it takes nothing away from anybody's numbering.
+
+       It used to be chapter V, between the notebook and the keyboard, and
+       hiding it there would have moved the keyboard from VI to V -- under
+       somebody who already knew where things were. The comment above says
+       exactly that about the keyboard row and it is the same argument: a
+       numbered row that appears when you pay renumbers the book.
+
+       Last, it costs nothing to be absent. Free and Plus read I to V and
+       Studio reads I to VI, and every chapter they share has the same number
+       on both. Moving it here changes two numbers once, today, and never
+       again. 「AI会話のタブ自体freeとplusで消していいな」 */
+    can('ai')
+      ? [{k:'toc.talk', r:'talk', v:TALK.length,
+          txt:TALK.length? tn('count.turns', TALK.length) : '—'}]
+      : []);
 }
 
 /* =========================================================================

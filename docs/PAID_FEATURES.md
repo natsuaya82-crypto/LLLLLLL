@@ -37,7 +37,7 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | capability | level | what it opens |
 |---|---|---|
 | `words` | plus | a dictionary past `FREE_LIMIT` (100) |
-| `ai` | plus | the model, unmetered |
+| `ai` | studio | the AI: the conversation chapter, and suggestions unmetered |
 | `data` | plus | CSV out, and the cloud |
 | `file` | plus | a list brought in as a file rather than a paste |
 | `letters` | plus | adding, naming and deleting a letter |
@@ -46,16 +46,31 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `gram` | plus | a grammar stage of your own, past the fifteen |
 | `tr` | plus | a post said again in your own words, unmetered. Free gets three a day |
-| `sug` | studio | the word sheet's suggestions, unmetered |
 
 Three plans: `free`, `plus`, `studio`. `LANG_MAX` is 1 on every plan and is not
 a price — there is no way to make a second language anywhere in the app, so a
 plan promising more would be promising a button that does not exist.
 
-`ai` lifts at Plus and `sug` only at Studio, and they are the same ceiling. A
-Plus account is shown "3 left" on the word sheet forever and never spends one.
-Left as it is on purpose: which plan buys the AI is a price, and a price is not
-a tool's to decide.
+There used to be two names for the AI — `ai` at plus and `sug` at studio — and
+they were the same ceiling said twice, so a Plus account was shown "3 left" on
+the word sheet forever and never spent one. There is one now, and it is
+Studio's.
+
+**The AI is not what Plus sells.** Plus is the tools for building a language
+yourself — unlimited words and letters, the writing systems, the keyboard, CSV,
+a post read in your own words — and every one of them runs on this phone for
+nothing. Studio is the plan where something helps you, and it is the only plan
+whose cost scales with use: a chat turn has to be given the dictionary to read.
+
+```
+  free    draw your own letters. 100 words
+  plus    build it yourself. No ceiling
+  studio  and something helps you
+```
+
+Free and Plus both get `AI_FREE_DAILY` (3) word suggestions a day. Plus is not
+given fewer than Free of anything — "I paid and it got smaller" reads as a bug
+whatever the reason.
 
 ## What the free plan is
 

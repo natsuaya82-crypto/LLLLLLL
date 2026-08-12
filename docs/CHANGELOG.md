@@ -127,6 +127,31 @@ anywhere that sends a language to a server: the app touches `/auth/v1/*` and
 - Labels removed with it: `plan.plus.4`, `set.cloud`, `set.lock.cloud.*`,
   `set.on`, in all ten languages.
 
+### The AI is Studio's, and it is the last chapter
+
+**Behaviour, on every plan.**
+
+The AI conversation is not shown on Free or Plus. Plus is the tools for
+building a language yourself and every one of them runs on the phone for
+nothing; Studio is the plan where something helps you, and it is the only one
+whose cost grows with use — a chat turn has to be given the dictionary to read,
+and 5000 words is about 45,000 tokens every time.
+
+- **It moved to the end of the contents first.** It was chapter V, between the
+  notebook and the keyboard, and hiding it there would have moved the keyboard
+  from VI to V under somebody who already knew where things were — which the
+  keyboard row's own comment forbids. Last, it costs nothing to be absent:
+  Free and Plus read I–V, Studio reads I–VI, and every shared chapter has the
+  same number on both. Two numbers change once, today: the conversation V→VI,
+  the keyboard VI→V.
+- *the plan*: `CAN.sug` is gone. `ai` is one capability at studio, where there
+  were two meaning the same ceiling.
+- **Plus now spends the daily allowance for word suggestions**, three a day,
+  the same as Free. It was unmetered on Plus in the code and advertised as
+  Studio's on the screen; the screen was right.
+- *deleted*: nothing. A Studio conversation left on the phone when a
+  subscription ends stays in the `talk` slice and in the backup.
+
 ### Smaller
 
 - The dictionary list: the whole row opens the word; a round ⊕ replaces the
