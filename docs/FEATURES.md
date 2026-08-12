@@ -73,7 +73,8 @@ Marked separately, because they are not the same question:
 | An image on a post | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid and storage **open** |
 | Drawn letters placed on that image | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid **open** |
 | Vertical / right-to-left posts | **planned** | ? | Plus | new: direction frozen on the post | decided that it happens; per-language or per-post **open** |
-| A post shown three ways | **planned** | ? | ? | layers 1 and 2 already on the post; layer 3 is computed here and now | decided what it is; free/paid and four details **open** |
+| A post shown three ways | **planned** | layers 1 and 2; layer 3 three times | layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided; **blocked on a server-side translator** |
+| Post translated into other natural languages at write time | **planned** | yes | yes | new, frozen on the post, one per language | decided; **blocked — needs a hosted service and a key that cannot live on the phone** |
 | Posts on the server | **planned** | ? | ? | new: server rows | **open** — the tables exist in `schema.sql` and nothing reads them |
 | Explore | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
 | Notices | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
@@ -114,12 +115,36 @@ third goes the opposite way from the other two **on purpose**:
 Missing: a lookup from a meaning to one of my words. Word order (`SET.order`,
 six of them) and the grammar stages already exist.
 
-Open: what layer 2 shows when the writer's interface language is not the
-reader's; what happens to a word the reader's dictionary does not have; whether
-layer 3 is free or Plus; and how the three are shown. **Layer 3 by dictionary
-lookup alone costs nothing, runs offline and is unbounded by nature** — so
-"unlimited translation" as a paid line only means something if a machine is
-filling the gaps, which is a different feature with a different cost.
+Decided since:
+
+```
+  layer 2   translated WHEN WRITTEN, not when read, and carried on the post.
+            Japanese in, English out for an English reader. Always on screen
+  layer 3   Plus. Free gets three. Appears on a button, not by default
+  a word    the reader has no word for stays in the natural language and is
+            shown IN RED, so the gap is obvious — and it is also the door to
+            making that word
+```
+
+Still open, and two of them block the work:
+
+- **there is no hosted model.** `AI_SEAM` is a marked seam; everything the app
+  calls AI today is a local generator that runs offline and costs nothing
+- **the key cannot live on the phone.** Post-time translation needs a
+  server-side function holding it, which is server work in the same category
+  as cloud sync, and it costs money per post
+- which languages a post carries (ten is ten calls and ten copies on the post)
+- what happens when translation fails, or the phone is offline when posting —
+  **the post must still go out**
+- whether a post published without translations can gain them afterwards
+- whether free's three are per day, and whether they share the existing
+  `AI_FREE_DAILY` counter — sharing it means asking for a spelling suggestion
+  spends a translation
+
+Layer 3 itself is dictionary lookup: it costs nothing, runs offline, and its
+limit of three is a product decision rather than a cost one. That is a fine
+thing for it to be; it is only worth writing down so nobody later "fixes" it
+by removing a limit that looks arbitrary.
 
 **Images.** An image and the letters placed on it are past-tense data the
 moment the post exists, so both freeze onto the post exactly as `ink` does.

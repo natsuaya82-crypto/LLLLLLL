@@ -186,6 +186,56 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-12
+- Area: A post shown three ways — the four details
+- Decision:
+  1. The natural-language layer is translated **when the post is written**,
+     not when it is read, and travels with the post. A post written in
+     Japanese reaches an English reader in English. Translating at read time,
+     online, is not acceptable.
+  2. A word the reader's dictionary has no word for stays in the natural
+     language and is shown **in red**, so it is obvious which words are
+     missing.
+  3. Layer 3 is Plus. Free gets three.
+  4. The natural-language layer is always on screen. Layer 3 appears on a
+     button.
+- Reason: 「日本語で書いてる投稿は英語話者には英語へ。投稿するときに読み込まれて
+  勝手に翻訳されてみんなに届くシステムがいいな。オンライン上で翻訳はきつい」
+  「自然言語のまま残して赤文字とかにする。この単語ないのがわかりやすいように」
+  「3はplus 無料版はあくまで読み手の言語への翻訳が3回まで」
+  「非人工言語は常に表示。自分の言語への変換はボタンで出現」
+- Affected features: composer, timeline, post, dictionary
+- Affected data: **new, and frozen on the post** — a translation per language.
+  A post gets bigger by however many languages are carried
+- Affected docs: FEATURES.md, DATA_MODEL.md, DATA_SAFETY.md, PAID_FEATURES.md
+- Implementation status: not started, and **blocked** — see the two reports
+  below. Read as: three per DAY, sharing or not sharing the existing
+  `AI_FREE_DAILY` counter is not decided; which languages a post carries is
+  not decided.
+
+#### Reported, not resolved: there is no hosted model
+
+`AI_SEAM` in `www/glyph.js` is a marked place for one, and `www/assist.js`
+says so in its own header. Everything the app calls "AI" today is a local
+generator: it works offline and costs nothing. Translating at post time needs
+a real service, and there is none.
+
+#### Reported, not resolved: a translation key cannot live on the phone
+
+The phone talks to Supabase directly and there is no server of ours in front
+of it. A translation API key shipped in `www/` is a key everybody has —
+`docs/STATE.md` § what is not the repository's to hold. So post-time
+translation needs a server-side function (a Supabase Edge Function or
+equivalent) that holds the key and is called by the app.
+
+That puts it in the same category as cloud sync: **server work, not app
+work**, and it costs money per post. It cannot be built from this side alone.
+Decisions it needs first: which languages a post carries; what happens when
+the translation fails or the phone is offline at post time (**the post must
+still go out** — a failed translation may never block or lose somebody's
+post); and whether a post published without translations can gain them later.
+
+### Decision
+- Date: 2026-08-12
 - Area: A post shown three ways
 - Decision: A post can be shown as (1) the writer's own drawn letters, (2) what
   it means in a natural language, and (3) that same thing rendered into the
