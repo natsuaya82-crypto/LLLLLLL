@@ -270,42 +270,89 @@ function chTaken(){
    a profile -- they are a home screen's, and this stopped being one. */
 /* The profile is where somebody's posts are, which is what a profile IS on
    every timeline there has ever been -- and there was nowhere in this app
-   that listed yours. 「SNSのツイートが並ぶページなくね？それをプロフィールの
-   ページにしようよ」
+   that listed yours. 「SNSのツイートが並ぶページなくね？」
 
-   It is no longer `fixed`: the cover and the language are still at the top and
-   the posts run under them, so the page scrolls. The pinned one is first and
-   the rest are newest first, which is the only order a timeline has. */
-function vProfile(){
+   The whole of the top is half a screen at most, and the three lists start
+   under it. It used to be the cover -- `flex:1`, the language's name set
+   large in the middle of it, made when this screen was a cover and nothing
+   else -- and with the posts under that it took eight tenths of the phone
+   before a single one of them. 「プロフィールで画面8割終わってる」
+
+   Nothing was dropped in the shrinking. Every door the cover had is still
+   here: the name is still the way to rename the language, the two counts
+   still go to the letters and the words, and what the language is for is
+   still one press. They are a strip rather than a page. */
+var pfTab='posts';
+function pfSetTab(k){ pfTab=k; render(); }
+/* Which posts each list is. Replies are separated from posts the way every
+   timeline does it, because a reply read out of the thread it answers is
+   half a sentence. */
+function pfList(){
   var mine=postAll().filter(function(p){ return p.mine; });
+  if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
+  if(pfTab==='li')   return postAll().filter(function(p){ return !!p.lime; });
+  mine=mine.filter(function(p){ return !p.to; });
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
+  return mine;
+}
+function pfTabs(){
+  var tabs=[['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']];
+  return '<div class="pftabs">'+tabs.map(function(x){
+    return '<button class="pftab'+(pfTab===x[0]?' on':'')+'"' + DO('pfSetTab', [x[0]]) + '>'+
+      esc(t(x[1]))+'</button>';
+  }).join('')+'</div>';
+}
+function vProfile(){
+  var list=pfList();
   return '<div class="view">'+
     '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
     '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
     '<div class="body" style="padding-top:0">'+
     meCard()+
-    '<div class="cover">'+
-      '<div class="tkick">'+t('home.kicker')+'</div>'+
-      '<button class="tname"' + DO('editName') + '>'+esc(langName||t('home.unnamed'))+'<span class="pen">'+ICON_PEN+'</span></button>'+
-      '<div class="tsub">'+(WORDS.length? esc(phIpa(wPh(WORDS[0]))) : '\u3000')+'</div>'+
-      '<div class="rule"></div>'+
-      '<button class="wldrow"' + DO('go', ["world"]) + '>'+
-        (wldSaid()? '<span class="wldl">'+esc(wldLine()||t('wld.title'))+'</span>'
-                  : '<span class="wldl none">'+esc(t('wld.ask'))+'</span>')+ICON_GO+'</button>'+
-      '<div class="cvrow">'+
-        cvStat(t('toc.letters'), ltShaped()||'—', 'letters')+
-        cvStat(t('toc.words'), WORDS.length||'—', 'words')+
-      '</div>'+
+    /* The language, as a strip. Four doors and two lines. */
+    /* The language, in two lines. It was a cover -- flex:1, the name set large
+       in the middle, a bordered card each for the letters, the words and what
+       it is for -- and those three cards alone were two hundred pixels. With
+       the me block above them the profile ran to eight tenths of the phone
+       before a single post. 「プロフィールで画面8割終わってる」
+
+       Every door is still here: the name renames the language, the counts go
+       to the letters and the words, and what it is for is one press. They are
+       a line of small buttons rather than a page of cards. */
+    '<div class="pflang">'+
+      /* The name, and nothing beside it. There used to be a reading under it,
+         and it was the reading of WORDS[0] -- the first word in the
+         dictionary, printed under the language's name as though it were how
+         the name is said. 「shangoで音がkanoなのは何？」 A language's name is
+         roman text somebody typed; it is not spelled in their letters, so
+         there is no reading to give and there never was. */
+      '<button class="pfname"' + DO('editName') + '>'+esc(langName||t('home.unnamed'))+
+        '<span class="pen">'+ICON_PEN+'</span></button>'+
     '</div>'+
-    '<div class="sec">'+esc(t('prof.posts'))+'</div>'+
-    (mine.length? mine.map(postRow).join('')
-                : '<div class="note">'+esc(t('prof.none'))+'</div>')+
+    /* Who follows this person, and who they follow. FOLLOW_SEAM: the two
+       numbers are asked for rather than read, so the day they come from
+       somewhere else they come from somewhere else HERE and nowhere else. */
+    '<div class="pfrow">'+
+      '<button class="pfst"' + DO('go', ["follows", "ing"]) + '><b>'+
+        esc(String(meFollowing().length))+'</b> '+esc(t('me.following'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["follows", "ers"]) + '><b>'+
+        esc(String(meFollowers().length))+'</b> '+esc(t('me.followers'))+'</button>'+
+    '</div>'+
+    '<div class="pfrow">'+
+      '<button class="pfst"' + DO('go', ["letters"]) + '><b>'+esc(String(ltShaped()||0))+
+        '</b> '+esc(t('toc.letters'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["words"]) + '><b>'+esc(String(WORDS.length))+
+        '</b> '+esc(t('toc.words'))+'</button>'+
+      '<button class="pfst"' + DO('go', ["world"]) + '>'+
+        esc(wldSaid()? (wldLine()||t('wld.title')) : t('wld.title'))+ICON_GO+'</button>'+
+    '</div>'+
+    pfTabs()+
+    (list.length? list.map(postRow).join('')
+                : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'
+                                            : pfTab==='re'? 'prof.none.re' : 'prof.none'))+'</div>')+
     '</div></div>';
 }
-function cvStat(lab, val, r){
-  return '<button class="cvst"' + DO('go', [r]) + '><span class="cvv">'+esc(String(val))+'</span>'+
-    '<span class="cvl">'+esc(lab)+'</span></button>';
-}
+
 /* The contents, in the order the work happens: you setPlan sounds, you give
    them letters, and then there is something a word can be made of. */
 function vBuild(){

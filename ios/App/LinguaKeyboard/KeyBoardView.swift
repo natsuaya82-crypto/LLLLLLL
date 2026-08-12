@@ -33,7 +33,7 @@ final class KeyView: UIView {
   /// letter or a borrowed character would be saying the same thing twice.
   private var mark: UILabel?
 
-  init(key: Key, box: CGFloat) {
+  init(key: Key, box: CGFloat, mark wantsMark: Bool) {
     self.key = key
     super.init(frame: .zero)
     layer.cornerRadius = 5
@@ -58,7 +58,7 @@ final class KeyView: UIView {
     }
     addSubview(faceView)
 
-    if key.k == "lt", key.st != nil, let t = key.t, !t.isEmpty {
+    if wantsMark, key.k == "lt", key.st != nil, let t = key.t, !t.isEmpty {
       let l = UILabel()
       l.text = t
       l.textColor = UIColor.secondaryLabel
@@ -123,12 +123,12 @@ final class KeyBoardView: UIView {
   /// `drop` is the globe when the phone does not need one. It is in the file
   /// because www/share.js always puts it there, and it is taken out here
   /// because only the extension can be asked whether it is wanted.
-  init(lay: Layer, box: CGFloat, drop: Set<String>) {
+  init(lay: Layer, box: CGFloat, drop: Set<String>, mark: Bool) {
     super.init(frame: .zero)
     for r in lay.rows {
       var row: [KeyView] = []
       for key in r where !drop.contains(key.k) {
-        let v = KeyView(key: key, box: box)
+        let v = KeyView(key: key, box: box, mark: mark)
         addSubview(v)
         row.append(v)
       }

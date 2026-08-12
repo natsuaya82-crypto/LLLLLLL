@@ -788,6 +788,36 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .lock .tag{margin-left:auto;font-size:.82rem;letter-spacing:.14em;color:var(--pur);
            border:1px solid var(--purln);border-radius:3px;padding:2px 8px;flex:0 0 auto}
 
+/* ---------- the profile, above the three lists ----------
+   The whole of it under a third of the phone, so the posts start on the first
+   screen rather than the second. The language used to be a cover -- flex:1,
+   the name set large in the middle, a bordered card each for the letters, the
+   words and what it is for -- which was right when this screen WAS a cover and
+   left eight tenths of the phone gone before the first post. */
+.mecard{display:flex;align-items:flex-start;gap:10px;padding:2px 24px 6px}
+.mecard .pav{width:44px;height:44px;flex:none}
+.mecard .pav canvas{width:28px;height:28px}
+.mecard .pbio{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+              overflow:hidden}
+.pflang{display:flex;align-items:center;gap:10px;padding:0 24px}
+.pfname{background:none;border:0;padding:6px 0;min-height:44px;font-family:inherit;
+        color:var(--tx);font-size:1.1rem;font-weight:700;display:inline-flex;
+        align-items:center;gap:6px}
+.pfname .pen{opacity:.5;flex:none}
+.pfrow{display:flex;align-items:center;gap:4px;padding:0 20px 6px;overflow-x:auto;
+       -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pfrow::-webkit-scrollbar{display:none}
+.pfst{flex:none;min-height:44px;padding:6px 8px;background:none;border:0;
+      font-family:inherit;font-size:.84rem;color:var(--txm);white-space:nowrap;
+      display:inline-flex;align-items:center;gap:4px}
+.pfst b{color:var(--tx);font-weight:700;font-size:.95rem}
+.pfst:active{color:var(--gold)}
+.pfst svg{width:13px;height:13px;opacity:.55}
+.pftabs{display:flex;border-bottom:1px solid var(--line)}
+.pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
+       font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
+.pftab.on{color:var(--tx);border-bottom-color:var(--gold)}
+
 .ppin{display:inline-flex;align-items:center;color:var(--gold);margin-left:2px}
 .ppin svg{width:13px;height:13px}
 

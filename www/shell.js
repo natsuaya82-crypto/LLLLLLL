@@ -38,6 +38,7 @@ function viewReset(){
   ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
+  pfTab='posts';                       /* which list the profile shows */
   BKLIST=null;                         /* what is on the disk, asked again */
 }
 
@@ -112,6 +113,7 @@ var PAGES={
   wsys:    {tab:'profile',  k:'ws.kind'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
+  follows: {tab:'profile'},
   spell:   {tab:'build', k:'word.sp'},
   glyph:   {tab:'build'},
   words:   {tab:'build', k:'toc.words'},

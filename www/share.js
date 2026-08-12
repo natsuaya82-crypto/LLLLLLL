@@ -264,6 +264,10 @@ function shareKbd(){
   if(conv && shareRoman()) lay.push(shareRomLay());
   for(i=0;i<b.lay.length;i++) lay.push({rows:shareRows(b.lay[i])});
   out={v:1, lang:langId, name:langName, box:SHARE_BOX, lay:lay};
+  /* Whether a key wears the letter it types, small in its corner. The
+     extension has always been handed `t` on every letter key; this says
+     whether to draw it. */
+  out.mark=kbRomOn()? 1 : 0;
   if(conv){ out.ink=t.ink; out.conv=conv; }
   return out;
 }
@@ -279,7 +283,8 @@ function shareKbd(){
    same reason — a rule with one place to live. scriptSig() is the letters,
    verbatim, so a shape drawn a second ago is on the key. */
 function shareSig(){
-  return scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+JSON.stringify(KB);
+  return scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+
+         (kbRomOn()? 'm':'-')+'|'+JSON.stringify(KB);
 }
 /* Whether there is a native side at all, and the one way to reach it.
 

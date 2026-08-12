@@ -393,6 +393,23 @@ function vKb(){
    The app cannot ASK whether the keyboard is installed or has full access:
    iOS gives a containing app no way to find out. So this tells and does not
    check, and it does not draw a tick it would have to invent. */
+/* Whether a key wears, small in its corner, the letter it types.
+
+   A key with a drawn shape on it says nothing about WHICH key it is, and
+   QWERTY is muscle memory rather than something readable off a keyboard --
+   so somebody who has not learnt the layout is looking at thirty shapes.
+   「qwarty暗記してない人は自作文字でどのアルファベットかわからなくなるやん？」
+
+   And it is a crutch you stop wanting: once the layout is in the fingers the
+   mark is thirty small letters printed over thirty drawings somebody made on
+   purpose. So it is a switch rather than a decision.
+   「オンオフできるようにしてね。キーボード設定で」
+
+   The person's, not the language's: it is about reading a keyboard rather
+   than about what the keyboard IS. On by default, because the day it matters
+   is the first one. */
+function kbRomOn(){ return SET.kbrom!==false; }
+function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
 function kbSysHTML(){
   /* Not `.sec` for the heading: that class upper-cases, and an upper-cased
      iPhone is a word Apple does not spell. The steps are numbered rather than
@@ -407,7 +424,14 @@ function kbSysHTML(){
     '<ol class="kbsteps"><li>'+t('kb.sys.1')+'</li><li>'+t('kb.sys.2')+'</li></ol>'+
     '<div class="mini">'+t('kb.sys.full')+'</div>'+
     '<div class="note kbout'+(SHARE.how==='sent'? '':' bad')+'">'+esc(kbOutSay())+'</div>'+
-    '</div>';
+    '</div>'+
+    /* In the chapter, under the steps, because it is a setting about the
+       keyboard on the phone and this is where the keyboard on the phone is
+       explained. Free has one too, and free is exactly the case it is for:
+       a QWERTY of drawn letters and no way to tell which is which. */
+    '<button class="set" style="margin-top:12px"' + DO('setKbRom') + '>'+
+      '<span class="sl">'+esc(t('kb.rom'))+'</span>'+
+      '<span class="sv">'+esc(t(kbRomOn()? 'set.yes' : 'set.no'))+'</span></button>';
 }
 /* Whether what this chapter builds ever reached the phone.
    

@@ -40,6 +40,18 @@ function saveMe(){
    language's name stands in, which is what it did before there were accounts
    at all -- so the screen never shows an empty space or a word invented to
    fill one. */
+/* ---- FOLLOW_SEAM ---------------------------------------------------------
+   Who this person follows, and who follows them. Two lists of handles, and
+   they are asked for through these two rather than read out of ME wherever
+   somebody happens to want them -- so the day they come from somewhere else,
+   they come from somewhere else here and in no other place.
+
+   `fo` is writable from this phone: following somebody is something you do.
+   `fr` is not -- being followed is something that happens to you, and this
+   phone is not where it happens. Both are absent on an account that has
+   neither, and absent is not empty. */
+function meFollowing(){ return (ME.fo && ME.fo.length)? ME.fo : []; }
+function meFollowers(){ return (ME.fr && ME.fr.length)? ME.fr : []; }
 function meName(){ return ME.name || langName || ''; }
 function meHandle(){
   return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -134,3 +146,17 @@ function openMe(){
        '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : ''));
 }
 FORM_OPEN.me=function(){ openMe(); };
+/* The two lists behind the two numbers. One screen, and which one it is is the
+   route's argument -- they differ in the list and in what to say when it is
+   empty, and in nothing else. */
+function vFollows(){
+  var ers=(here().a==='ers'), list=ers? meFollowers() : meFollowing();
+  return '<div class="view">'+navTop(String(list.length))+'<div class="body">'+
+    (list.length
+      ? list.map(function(h){
+          return '<button class="ntrow"' + DO('go', ["find"]) + '>'+
+            '<span class="nth">@'+esc(String(h))+'</span></button>';
+        }).join('')
+      : '<div class="note">'+esc(t(ers? 'me.followers.none' : 'me.following.none'))+'</div>')+
+    '</div></div>';
+}

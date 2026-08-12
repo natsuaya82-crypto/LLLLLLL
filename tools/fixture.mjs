@@ -42,7 +42,8 @@ export function seed(){
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
   TALK = [];
-  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.'};
+  ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
+        fo:['iri','veth'], fr:['iri']};
   /* Two posts, and the second one is the whole reason the timeline is written
      the way it is: it is by somebody else, in a language this phone does not
      have, and every word of it is unknown to the dictionary above. A walk
@@ -233,6 +234,16 @@ export function halfDone(){
     ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
                                                    openEdit('kano'); const h = FORM.html;
                                                    wdMode = ''; SET.plan = 'free'; return h; }],
+    /* The profile's other two lists. Each is empty on a fresh fixture, and an
+       empty list draws neither a row nor anything a row carries. */
+    ['the profile, replies', () => { pfTab='re'; POSTS.push({id:'pre', at:1, lang:langId,
+        lname:'Shango', ln:'ke', who:'Aya', hd:'aya', mine:true, to:'p2',
+        mn:'what?', ui:'en'});
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); pfTab='posts'; return h; }],
+    ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
     /* The two things an author can do to their own post. It is a sheet off the
        ... , so nothing renders it unless it is opened. */
     ['what an author can do to a post', () => { postMore('p1'); return FORM.html; }],

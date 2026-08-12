@@ -53,6 +53,12 @@ struct Board: Decodable {
   /// The side of the square the shapes are drawn in. x right, y DOWN — a
   /// canvas's space, not a font's, because that is where they were cut.
   let box: Double
+  /// Whether a key wears, small in its corner, the letter it types. The
+  /// person's switch, in the keyboard chapter of the app. Absent on a board
+  /// written before the switch existed, and absent means ON -- the mark is
+  /// there for somebody who has not learnt the layout, and somebody upgrading
+  /// from a build that never had it has not been asked.
+  let mark: Int?
   let lay: [Layer]
   /// Every face that a candidate can be made of, once each. Absent when the
   /// writing system needs no conversion and offers no spelling either.

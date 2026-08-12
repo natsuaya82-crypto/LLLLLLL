@@ -46,7 +46,11 @@ final class KeyboardViewController: UIInputViewController,
     // asked whether it wants one -- an iPad with a hardware keyboard does
     // not, and Apple hides it rather than having it do nothing.
     let drop: Set<String> = needsInputModeSwitchKey ? [] : ["next"]
-    let kb = KeyBoardView(lay: lay, box: CGFloat(b.box), drop: drop)
+    /* Absent means ON. A board written by a build that never had the switch
+       has not been asked, and the mark is there for somebody who has not
+       learnt the layout -- which is exactly who an upgrade lands on. */
+    let kb = KeyBoardView(lay: lay, box: CGFloat(b.box), drop: drop,
+                          mark: (b.mark ?? 1) != 0)
     kb.delegate = self
     place(kb, rows: lay.rows.count, bar: compose != nil, box: CGFloat(b.box))
     paintBar()
