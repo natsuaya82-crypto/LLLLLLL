@@ -186,6 +186,59 @@ const R = await pg.evaluate(() => {
     });
   }
 
+  /* ---- every shape ink can arrive in -------------------------------- */
+  /* postInkOK() decides, once, for the timeline and the card both. What is
+     asserted here is the boundary and NOT a repair: a post whose ink is
+     wreckage is drawn as its text, because guessing at what the shapes were
+     meant to be would be inventing somebody else's alphabet. Every one of
+     these must also come back without throwing -- a card that crashes on a
+     malformed post is a timeline that cannot be opened. */
+  const G = [[{ pts: [[0, 0], [500, 500]] }]];
+  const CASES = [
+    ['no ink at all',            undefined,                 'text'],
+    ['ink is null',              null,                      'text'],
+    ['ink is not an object',     'nonsense',                'text'],
+    ['ink is empty',             {},                        'text'],
+    ['g and s both empty',       { g: [], s: [] },          'text'],
+    ['g missing',                { s: [0] },                'text'],
+    ['s missing',                { g: G },                  'text'],
+    ['g is not an array',        { g: {}, s: [0] },         'text'],
+    ['s is not an array',        { g: G, s: {} },           'text'],
+    ['s points past g',          { g: G, s: [5] },          'text'],
+    ['s points at -1',           { g: G, s: [-1] },         'text'],
+    ['s holds a hole',           { g: [null], s: [0] },     'text'],
+    ['s holds an object',        { g: G, s: [{}] },         'text'],
+    ['one shape',                { g: G, s: [0] },          'shapes'],
+    ['a shape and a space',      { g: G, s: [0, ' ', 0] },  'shapes'],
+    ['a text run of several',    { g: G, s: [0, 'ab c'] },  'shapes']
+  ];
+  CASES.forEach((c, i) => {
+    const id = 'pink' + i;
+    POSTS.push({ id, at: 3, lang: 'x', lname: 'Edge', ln: 'qq ww', who: 'Iri',
+                 hd: 'iri', mine: false, mn: '', ui: 'en', gl: [], ink: c[1] });
+    let got;
+    try { got = itemsFor('p', id); }
+    catch (e) {
+      fails.push('ink "' + c[0] + '" threw: ' + e.message);
+      return;
+    }
+    const drew = got.items.filter((u) => u.st).length;
+    if (c[2] === 'text' && drew)
+      fails.push('ink "' + c[0] + '" drew ' + drew + ' shapes. It is not drawable, ' +
+                 'so the post is its text -- anything else is invented.');
+    if (c[2] === 'shapes' && !drew)
+      fails.push('ink "' + c[0] + '" drew nothing, and it is drawable');
+    /* And the one that is easy to get wrong: a text run is several characters
+       and cardInk() draws one thing per item, so it has to be spread out. */
+    if (c[0] === 'a text run of several') {
+      const tx = got.items.filter((u) => u.tx).map((u) => u.tx).join('');
+      const sp = got.items.filter((u) => u.sp).length;
+      if (tx !== 'abc' || sp !== 1)
+        fails.push('a text run of "ab c" came out as ' + JSON.stringify(tx) +
+                   ' with ' + sp + ' gaps, not "abc" with 1');
+    }
+  });
+
   /* ---- and a post with no ink is text, which is right --------------- */
   POSTS.push({ id: 'pnoink', at: 2, lang: 'x', lname: 'Borrowed', ln: 'qq ww',
                who: 'Iri', hd: 'iri', mine: false, mn: '', ui: 'en', gl: [] });
@@ -194,7 +247,7 @@ const R = await pg.evaluate(() => {
     fails.push('a post with no ink came out with shapes on it, which can only ' +
                'have come from the open language');
 
-  return { fails, wrote: JSON.parse(wrote).length,
+  return { fails, wrote: JSON.parse(wrote).length, cases: CASES.length,
            other: other ? other.lname : '', drew: after.items.length };
 });
 
@@ -213,4 +266,6 @@ console.log('card: a post written, the alphabet redrawn and a word deleted under
             "      A post from " + R.other + " -- another language, another person, no\n" +
             '      word of it in this dictionary -- draws its own shapes and wears its\n' +
             '      own name. A card of a WORD still follows the letters, and a post\n' +
-            '      with no ink is still text.');
+            '      with no ink is still text, and every one of ' + R.cases +
+            ' shapes ink\n      can arrive in -- empty, missing, pointing at nothing -- comes ' +
+            'back\n      as text rather than as a guess, without throwing.');

@@ -228,10 +228,22 @@ function cardMark(x, cx, cy, r){
 
 function cardPaint(c){
   var W=CARD_W, H=CARD_H, x=c.getContext('2d');
-  /* A card of a post is drawn from the post. cardUnits() answers out of the
-     open dictionary, the drawn letters and the writing system -- every one of
-     which is mine -- so a card of somebody else's post built that way is that
-     post in MY alphabet. Correct only for as long as every post is mine. */
+  /* Two sources, and which one is not this function's to decide twice:
+     cardSrc() hands back ink or it does not, and it does not exactly when
+     there is nothing drawable on the post.
+
+       ink present   cardInkUnits()  the shapes frozen onto the post. It may
+                                     NOT name the open dictionary, the drawn
+                                     letters or the writing system, and
+                                     sides-check holds that
+       no ink        cardUnits()     a word, an example, or a post written
+                                     before a post carried its ink. These are
+                                     the open language and are supposed to be
+
+     cardUnits() asks findWord() for the spelling, ltById() for the letter and
+     wsStrokes() for a shape the writing system composes -- all three mine --
+     so a card of somebody else's post built that way is that post in MY
+     alphabet. Correct only for as long as every post is mine. */
   var src=cardSrc(), items=src.ink? cardInkUnits(src.ink) : cardUnits(src.line);
   var m=Math.round(H*0.072), pad=m+Math.round(H*0.10), avail=W-pad*2, g;
   c.width=W; c.height=H;
@@ -348,8 +360,13 @@ function cardDeliver(blob, name){
    tools/sides-check.mjs holds that -- over this file and post.js, in one
    loop, because it is one statement. */
 function cardOfPost(po){
+  /* postInkOK() and not "is there ink". A post carrying an ink object that
+     holds nothing, or one whose line points at a shape that is not there,
+     has ink and cannot be drawn from it -- and the timeline and the card
+     asking that question separately is two answers waiting to disagree. It
+     is post.js's to answer, once, for both. */
   return {line:String(po.ln||''), mn:String(po.mn||''), nm:String(po.lname||''),
-          ink:(po.ink && po.ink.s && po.ink.s.length)? po.ink : null};
+          ink:postInkOK(po.ink)? po.ink : null};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
    a shape, a character, or the gap between two words. A text run may be

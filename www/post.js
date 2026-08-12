@@ -383,8 +383,34 @@ function postAct(fn, id, icon, n, on){
    It is one canvas per letter rather than one per line so that a long post
    wraps the way any other line of text wraps. */
 var PLINE={};
+/* Whether a post's ink can be drawn from at all, asked in ONE place.
+
+   "Is there ink" is not the question and was the one being asked, in two
+   places, differently. A post carrying `{}`, or `{g:[],s:[]}`, or an `s`
+   pointing at an index `g` does not have, HAS ink and cannot be drawn from
+   it -- and the two readers would have disagreed about which, the day one of
+   them was wrong.
+
+   Nothing here repairs anything. A post whose ink is wreckage is drawn as
+   its text, which is exactly what a post with no ink has always been, and
+   guessing at what the shapes were meant to be would be inventing somebody
+   else's alphabet. */
+function postInkOK(ink){
+  var i, x;
+  if(!ink || typeof ink!=='object') return false;
+  if(Object.prototype.toString.call(ink.g)!=='[object Array]') return false;
+  if(Object.prototype.toString.call(ink.s)!=='[object Array]') return false;
+  if(!ink.g.length || !ink.s.length) return false;
+  for(i=0;i<ink.s.length;i++){
+    x=ink.s[i];
+    if(typeof x==='string') continue;
+    if(typeof x!=='number') return false;
+    if(!(x>=0 && x<ink.g.length) || !ink.g[x]) return false;
+  }
+  return true;
+}
 function postLnHTML(p){
-  if(!p || !p.ink || !p.ink.s || !p.ink.s.length) return esc(String((p && p.ln)||''));
+  if(!p || !postInkOK(p.ink)) return esc(String((p && p.ln)||''));
   var out='', i, x, k;
   for(i=0;i<p.ink.s.length;i++){
     x=p.ink.s[i];

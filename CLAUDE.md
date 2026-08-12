@@ -364,6 +364,23 @@ read: *somebody else's post draws 0 shapes and carries 8.* Not the wrong
 shapes — none, because not one word of a language this phone has never seen is
 in this dictionary.
 
+**Whether a post's ink can be drawn from is `postInkOK()` in `post.js`, and
+that is the only place that decides it.** "Is there ink" is not the question
+and was the one being asked, in two places, differently: a post carrying `{}`,
+or `{g:[],s:[]}`, or an `s` pointing at an index `g` does not have, HAS ink
+and cannot be drawn from it. Sixteen shapes ink can arrive in are walked, and
+every one that is not drawable comes back as the post's **text** rather than
+as a guess — repairing it would be inventing somebody else's alphabet.
+
+**A post written before a post carried its ink is redrawn from the open
+dictionary, and that is deliberate.** `migratePostInk()` cuts ink onto posts
+one language at a time, as each is opened, because a post can only be cut with
+the alphabet it was written in. Until it is cut, a post has no ink and falls to
+`cardUnits()` — which for the person's own old posts is right, and for a post
+from a language this phone does not have would be wrong. It cannot happen yet:
+every post without ink predates the timeline holding anybody else's. The day
+posts arrive from a server they must arrive with their ink already on them.
+
 ### 11. A language is never lost
 
 `www/backup.js` (chapter 24) writes the open language out as one file, into
@@ -629,6 +646,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `docs/STATE.md` | where the project stands: which branch is the app, what is built, what only looks built (the timeline is on the phone; the `post`/`follow`/`quote` tables are written and unused), what only a person with a dashboard login can do, and what CI does not run. The one file to hand somebody who has never seen this repo |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
+| `docs/BACKLOG.md` | what was found and deliberately not done, and why: the renames that must not ride along with a feature, the merges waiting on a device, and the question the card bug was actually about |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
 | `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Built now — `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** — so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
 | `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
