@@ -186,6 +186,89 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-12
+- Area: A post shown three ways
+- Decision: A post can be shown as (1) the writer's own drawn letters, (2) what
+  it means in a natural language, and (3) that same thing rendered into the
+  READER's own conlang. "Unlimited translation" on the Plus list means this.
+- Reason: 「相手の自作文字の投稿／英語など非人工言語／自分の人工言語へ変換した翻訳
+  ／この3つが出せたらおもろいやん」
+- Affected features: timeline, post, dictionary
+- Affected data: layers 1 and 2 are already frozen on the post (`ink`, `mn`).
+  **Layer 3 must NOT be frozen** — it is the reader's own language read now,
+  and it is supposed to improve as their dictionary grows
+- Affected docs: FEATURES.md, DATA_MODEL.md
+- Implementation status: 1 and 2 are built. 3 is not. Four things are still
+  open: what layer 2 shows when the writer's language is not the reader's; what
+  happens to a word the reader has no word for; whether layer 3 is free or
+  Plus; and how the three are presented.
+- Note: this does not overturn the decision at the head of `www/post.js` (no
+  machine reads an invented language on the author's behalf). Layer 3 runs the
+  other way, from a sentence the author confirmed into the reader's own words.
+
+### Decision
+- Date: 2026-08-12
+- Area: Plus — what it contains
+- Decision: Plus is: unlimited words; unlimited letters of your own; the
+  writing systems that are not an alphabet; choosing a sound; grammar stages
+  of your own; CSV in and out; keyboard customisation, including flick and
+  putting any letter on any key in any position; everything Free has; cloud
+  storage (deferred, see the entry below); vertical and right-to-left posts;
+  and unlimited translation (definition still open — see FEATURES.md).
+- Reason: the owner's list, given in full.
+- Affected features: every `plus` row in FEATURES.md
+- Affected data: none by itself
+- Affected docs: FEATURES.md, PAID_FEATURES.md
+- Implementation status: `words` `letters` `wsys` `snd` `gram` `data` `file`
+  `kb` are implemented, and flick and free placement are already in the
+  keyboard editor. Vertical / RTL and translation are not built.
+
+### Decision
+- Date: 2026-08-12
+- Area: Plus — the AI
+- Decision: The AI is not part of what Plus sells. Plus gets a few AI chats a
+  day; unmetered AI is not a Plus capability.
+- Reason: 「aiはaiチャットが1日数回できるくらいで、基本機能にはついてない」
+- Affected features: AI suggestions, AI conversation
+- Affected data: `SET.aiDate` / `SET.aiN` (the daily counter)
+- Affected docs: PAID_FEATURES.md, FEATURES.md
+- Implementation status: **NOT implemented, and the code contradicts it.**
+  `CAN.ai` is `'plus'` today, which makes the model unmetered at Plus. Exactly
+  how many chats a day Plus gets is a threshold and has not been decided;
+  `AI_FREE_DAILY` is 3 for everybody who is not unmetered.
+
+### Decision
+- Date: 2026-08-12
+- Area: Cloud storage
+- Decision: Cloud storage is a Plus feature, deferred. It will be built once
+  there are enough users to justify the $25/month Supabase tier.
+- Reason: the owner's, on cost.
+- Affected features: cloud sync
+- Affected data: none yet. When built: every slice, and a conflict-resolution
+  rule which is the owner's to decide, not a tool's
+- Affected docs: FEATURES.md (planned), PAID_FEATURES.md
+- Implementation status: not started. **The plans screen and the settings
+  screen currently present it as available**, which is a promise the app
+  cannot keep — awaiting a decision on how to word it until then.
+
+### Decision
+- Date: 2026-08-12
+- Area: Posts — images
+- Decision: A post can carry an image. Letters somebody drew can be placed on
+  that image and posted.
+- Reason: the owner's. 「なんなら画像に自作文字を貼って投稿できるようにすれば
+  勝手に広がるよ」
+- Affected features: composer, timeline, card
+- Affected data: **new** — an image on a post, and where the letters sit on
+  it. Both must be FROZEN onto the post (`docs/DATA_MODEL.md` § the three
+  kinds): a reader does not have the writer's alphabet, so the shapes have to
+  travel exactly as `ink` does
+- Affected docs: FEATURES.md, DATA_MODEL.md, DATA_SAFETY.md (posts grow by the
+  size of an image), CHANGELOG.md
+- Implementation status: not started. Free or Plus is not yet decided; storage
+  (data URL on the post vs. a file) is not yet decided.
+
+### Decision
+- Date: 2026-08-12
 - Area: The word sheet
 - Decision: Making a word and editing one are the same screen. Opening a word
   shows it; editing is behind a button.

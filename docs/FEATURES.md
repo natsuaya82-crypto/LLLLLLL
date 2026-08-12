@@ -46,13 +46,16 @@ Marked separately, because they are not the same question:
 | Numbers — a digit is a letter with a value | shipped | yes | — | slice `letters` | decided |
 | What the language is for (the world) | shipped | yes | — | slice `wld` | decided |
 | Keyboard layout built in the app | shipped | fixed QWERTY, nothing to set | `kb`: your own | slice `kb` | decided |
+| Keyboard: flick, four directions per key | shipped | — | `kb` | slice `kb` | decided |
+| Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
 | Export CSV | shipped | — | `data` | none | decided |
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
 | One language per person | shipped | 1 | 1 | `LANG_MAX` | decided |
-| AI word suggestions | shipped | 3/day | `ai` unmetered at Plus, `sug` at Studio | none | **partial** — the two levels are the same ceiling and disagree; a price, so the owner's |
+| AI word suggestions | shipped | 3/day | see note | none | decided — **the code does not match it yet** |
+| AI chat | shipped | — | a few a day at Plus; unmetered is not a Plus feature | slice `talk` | decided — **how many a day is still open** |
 | AI conversation (Studio side) | shipped | — | `ai` | slice `talk` | decided |
 
 ## The reading side
@@ -66,10 +69,67 @@ Marked separately, because they are not the same question:
 | A card of a post is drawn from the post | shipped | yes | — | none | decided |
 | Accounts — sign up, in, out, verify, reset | shipped | yes | — | `lingua.sess` (tokens only) | decided |
 | Profile — face, name, handle, bio | shipped | yes | — | `lingua.me` | decided |
+| Cloud storage of a language | **planned** | no | yes, deferred | every slice | decided — deferred until Supabase $25 is worth paying |
+| An image on a post | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid and storage **open** |
+| Drawn letters placed on that image | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid **open** |
+| Vertical / right-to-left posts | **planned** | ? | Plus | new: direction frozen on the post | decided that it happens; per-language or per-post **open** |
+| A post shown three ways | **planned** | ? | ? | layers 1 and 2 already on the post; layer 3 is computed here and now | decided what it is; free/paid and four details **open** |
 | Posts on the server | **planned** | ? | ? | new: server rows | **open** — the tables exist in `schema.sql` and nothing reads them |
 | Explore | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
 | Notices | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
 | Following, quoting | **planned** | ? | ? | new: server rows | **open** |
+
+### Notes on the open rows
+
+**A post shown three ways.** This is what "translation" means here:
+
+```
+  1  the writer's own letters      post.ln + post.ink      already on the post
+  2  what it means, in a natural   post.mn                 already on the post
+     language, typed and
+     confirmed by the writer
+  3  the same thing rendered in    computed from MY         NOT BUILT
+     THIS reader's own conlang     dictionary, now
+```
+
+It does not collide with the decision at the head of `www/post.js` — it runs
+the other way. What is forbidden there is a machine *reading* an invented
+language and telling everybody what it says, because the only person who could
+catch it wrong never sees the result. Layer 3 starts from a natural sentence
+the writer already confirmed and re-expresses it in **the reader's own**
+language, with the reader's own dictionary. The guessing is about your own
+words, and you are the one who can see it is wrong.
+
+The three split cleanly along `docs/DATA_MODEL.md` § the three kinds, and the
+third goes the opposite way from the other two **on purpose**:
+
+```
+  1  frozen    the writer's shapes. Must not move
+  2  frozen    the writer's meaning. Must not move
+  3  current   the reader's language. SHOULD move — a sentence that
+               half-rendered yesterday renders fully today, because the
+               dictionary grew. Freezing this one would be the bug
+```
+
+Missing: a lookup from a meaning to one of my words. Word order (`SET.order`,
+six of them) and the grammar stages already exist.
+
+Open: what layer 2 shows when the writer's interface language is not the
+reader's; what happens to a word the reader's dictionary does not have; whether
+layer 3 is free or Plus; and how the three are shown. **Layer 3 by dictionary
+lookup alone costs nothing, runs offline and is unbounded by nature** — so
+"unlimited translation" as a paid line only means something if a machine is
+filling the gaps, which is a different feature with a different cost.
+
+**Images.** An image and the letters placed on it are past-tense data the
+moment the post exists, so both freeze onto the post exactly as `ink` does.
+They also make a post large: `docs/DATA_SAFETY.md` measured a whole free
+language at ~25 KB, and one photo is bigger than that. Where the bytes live is
+part of the decision.
+
+**Direction.** Which way a line runs must travel ON the post for the same
+reason its shapes do — otherwise a vertical language read on a horizontal
+phone comes out horizontal, which is the card bug in another costume.
 
 ## The native side
 
