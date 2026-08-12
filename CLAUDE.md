@@ -18,13 +18,14 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv + backup + press
-                # green before a commit (~90s)
+npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv
+                # + card + backup + press
+                # green before a commit (~100s)
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
-`npm run backup` / `npm run press`.
+`npm run card` / `npm run backup` / `npm run press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
@@ -49,7 +50,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The eleven rules the gate enforces
+## The twelve rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -330,6 +331,38 @@ letter and every digit left a drawing in the table that nothing pointed at — t
 one thing the table exists to avoid. The comment had been claiming the opposite of
 what the code did. `shareMapLts()`/`shareMapWords()` now ask every letter's key
 before asking `t.of()` for its slot, and the comment says so.
+
+### 12. A card of a post is a picture of that post
+
+`www/post.js` has a line across it and rule 8 above holds it. The card is the
+**other** place a post is drawn, and it had none of it: `cardPaint()` called
+`cardUnits(src.line)`, which asks `findWord()` for the spelling, `ltById()`
+for the letter and `wsStrokes()` for a shape the writing system composes.
+Every one of those is the open language, so a card of somebody else's post was
+that post re-spelled out of MY dictionary and drawn in MY letters. It tested
+green, screenshotted right and demoed perfectly, because every post anybody
+has made so far is their own.
+
+`card.js` has the same line now, and `sides-check` walks both files in one
+loop with one list, because it is one statement.
+
+That is the cheap half and it is not enough: a function below the line can be
+perfectly correct and simply never be the one that runs. So `card-check` drives
+the real app — writes a post, freezes its ink, then **redraws every letter and
+deletes the word the post was written with**, and asks what `cardPaint()`
+actually put on the canvas. It watches the real one: `cardInk()` is wrapped and
+`cardPaint()` is called for real, because the first version of this asked
+`cardSrc()` and then chose between `cardInkUnits()` and `cardUnits()` itself —
+a copy of the decision under test, which stayed green with the bug put back.
+
+Redrawing the letters between writing and reading is the whole test. Freezing
+ink and reading it back proves nothing on its own; the old code gives the right
+picture too, for a post whose language has not moved.
+
+With the bug put back it reports three things, and the second is the one to
+read: *somebody else's post draws 0 shapes and carries 8.* Not the wrong
+shapes — none, because not one word of a language this phone has never seen is
+in this dictionary.
 
 ### 11. A language is never lost
 

@@ -58,12 +58,7 @@ function cardSrc(){
      card is. Nothing to work out. */
   if(CARD.k==='p'){
     po=postById(v);
-    /* Named by the post, not by the open language. A card of a post is a
-       picture of what somebody published; stamping the language you happen
-       to have open across the foot of it is the same bug the timeline had
-       three times over. */
-    if(po) return {line:String(po.ln||''), mn:String(po.mn||''),
-                   nm:String(po.lname||'')};
+    if(po) return cardOfPost(po);
   }
   if(CARD.k==='x'){
     i=String(v).indexOf('#');
@@ -233,7 +228,11 @@ function cardMark(x, cx, cy, r){
 
 function cardPaint(c){
   var W=CARD_W, H=CARD_H, x=c.getContext('2d');
-  var src=cardSrc(), items=cardUnits(src.line);
+  /* A card of a post is drawn from the post. cardUnits() answers out of the
+     open dictionary, the drawn letters and the writing system -- every one of
+     which is mine -- so a card of somebody else's post built that way is that
+     post in MY alphabet. Correct only for as long as every post is mine. */
+  var src=cardSrc(), items=src.ink? cardInkUnits(src.ink) : cardUnits(src.line);
   var m=Math.round(H*0.072), pad=m+Math.round(H*0.10), avail=W-pad*2, g;
   c.width=W; c.height=H;
 
@@ -328,4 +327,45 @@ function cardDeliver(blob, name){
   a=document.createElement('a'); a.href=url; a.download=name; a.click();
   if(blob) URL.revokeObjectURL(url);
   toast(t('card.saved'));
+}
+
+/* ==== below this line a card of a post renders from the post ==============
+   www/post.js has this line and this rule, and the card is the other place a
+   post is drawn. It did not have it: cardPaint() called cardUnits(), which
+   asks findWord() for the spelling, ltById()/ltMain() for the letter and
+   wsStrokes() for a shape the writing system composes -- the open language,
+   three times over, for a line somebody else wrote in an alphabet this phone
+   has never seen. It tested green, screenshotted right and demoed perfectly,
+   because the only posts anybody has made so far are their own.
+
+   Named by the post, not by the open language, for the same reason: stamping
+   the language you happen to have open across the foot of somebody else's
+   card is the bug the timeline had three times over.
+
+   So the shapes come off the post, already cut, exactly as postLnHTML() takes
+   them: `g` is the shapes, `s` is the line, a number is an index into `g` and
+   a string is itself. Nothing below here may name the making side, and
+   tools/sides-check.mjs holds that -- over this file and post.js, in one
+   loop, because it is one statement. */
+function cardOfPost(po){
+  return {line:String(po.ln||''), mn:String(po.mn||''), nm:String(po.lname||''),
+          ink:(po.ink && po.ink.s && po.ink.s.length)? po.ink : null};
+}
+/* The post's line as things to draw, in the shapes cardInk() already knows:
+   a shape, a character, or the gap between two words. A text run may be
+   several characters long -- postCut() gathers what was never drawn into one
+   piece -- so it is spread out one at a time, and whitespace inside it is the
+   gap rather than a character that happens to be blank. */
+function cardInkUnits(ink){
+  var out=[], i, j, x, ch;
+  for(i=0;i<ink.s.length;i++){
+    x=ink.s[i];
+    if(typeof x==='number'){ out.push({st:ink.g[x]}); continue; }
+    x=String(x);
+    for(j=0;j<x.length;j++){
+      ch=x.charAt(j);
+      out.push(/\s/.test(ch)? {sp:true} : {tx:ch});
+    }
+  }
+  return out;
 }

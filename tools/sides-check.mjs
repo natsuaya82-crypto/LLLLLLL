@@ -89,27 +89,40 @@ const MINE = [
   'ME', 'meName', 'meHandle', 'postAvatar', 'postGloss', 'postGlossLine'
 ];
 
-const src = fs.readFileSync(path.join(WWW, 'post.js'), 'utf8');
-const at = src.indexOf(MARK);
-if (at < 0) {
-  fail.push('www/post.js has lost the line that separates the two sides:\n' +
-            '  ' + MARK);
-} else {
-  const before = src.slice(0, at);
-  const lineNo = before.split('\n').length;
-  const body = stripped(src).split('\n').slice(lineNo - 1);
-  let n = 0;
-  body.forEach((line, i) => {
+/* ---- rule one again, on the other place a post is drawn -------------------
+   The card is the second renderer of a post and had none of this. cardPaint()
+   called cardUnits(), which asks findWord() for the spelling, ltById() for
+   the letter and wsStrokes() for a shape the writing system composes: the
+   open language, three times over, for a line written by somebody else in an
+   alphabet this phone has never seen.
+
+   Same line, same list, same statement -- so it is the same loop, over both
+   files, rather than a second one written out. */
+
+const CARD_MARK = '==== below this line a card of a post renders from the post ====';
+
+for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
+  const s2 = fs.readFileSync(path.join(WWW, file), 'utf8');
+  const at2 = s2.indexOf(mark);
+  if (at2 < 0) {
+    fail.push('www/' + file + ' has lost the line that separates the two sides:\n' +
+              '  ' + mark);
+    continue;
+  }
+  const lineNo2 = s2.slice(0, at2).split('\n').length;
+  const body2 = stripped(s2).split('\n').slice(lineNo2 - 1);
+  let n2 = 0;
+  body2.forEach((line, i) => {
     for (const name of MINE) {
       if (new RegExp('\\b' + name + '\\b').test(line)) {
-        fail.push('www/post.js line ' + (lineNo + i) + ' renders a post out of ' +
+        fail.push('www/' + file + ' line ' + (lineNo2 + i) + ' renders a post out of ' +
                   name + ', which is the open language and not the post:\n' +
                   '  ' + line.trim());
-        n++;
+        n2++;
       }
     }
   });
-  if (!n) console.log('post.js: ' + body.length + ' lines below the line, none of them yours');
+  if (!n2) console.log(file + ': ' + body2.length + ' lines below the line, none of them yours');
 }
 
 /* ---- rule two: a two-argument function is never a map callback ------------
