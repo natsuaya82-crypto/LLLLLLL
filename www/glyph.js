@@ -619,6 +619,39 @@ function geSmooth(p, passes){
    gets used: a true arc through the middle point rather than a corner
    rounded off. */
 function geShape(st){
+  /* ROUND off: the stroke IS the dots the finger went over, and nothing
+     downstream gets to disagree with them.
+     「点線上にそのまま引いた一筆書きが勝手に補正されるのをやめて欲しい」
+
+     Everything below this line reads the finger's own path instead -- it is
+     smoothed, thinned to four or five points, and only then put on the
+     lattice. That is right for a curve and wrong for a line: smoothing pulls
+     a corner inwards, the thinning then keeps a point NEAR the corner rather
+     than the corner, and the snap lands it on the wrong dot. A U traced down
+     column 2, along row 8 and up column 7 -- twenty dots, every one of them
+     exactly where it was meant to be -- came back as (2,1) (2,7) (6,8)
+     (7,1): both corners moved a dot, so one arm was short and the other
+     leaned. Nothing here needed guessing at; the dots were already right.
+
+     What is still done to them is not a correction and cannot move one: a
+     point is dropped when it lies within one dot of the line it is on, and
+     no point is ever moved. That is what takes the stairs off a diagonal --
+     「階段になるの腹立つんよな。斜めに引きたいのに」 -- because a finger
+     crossing between two dots is snapped to whichever it passed nearer, and
+     those are the ones within a dot of the line. A corner is four dots off
+     the line between its neighbours and survives untouched.
+
+     Both passes are needed and they are not the same statement. geLattice
+     asks of each point in turn whether its own two neighbours have it, which
+     is local and gets stuck: a diagonal that jogs twice ends up with each
+     jog holding the other one out. geSimplify asks it of the whole stroke at
+     once, so it flattens the pair. Run alone it is the one that is not
+     enough either -- it never collapses two names for one dot. */
+  if(!GE.round){
+    delete st.k; delete st.closed;
+    st.pts=geLattice(geSimplify(st.pts, geStep()*0.9));
+    return;
+  }
   /* Prefer what the finger actually did. The snapped copy is a staircase
      wherever the gesture was not straight, and no amount of corner-rounding
      turns a staircase into a curve. Only the two ends go back onto the
@@ -663,19 +696,13 @@ function geShape(st){
   var s = raw ? geSimplify(p, step*0.18) : geSimplify(p, step*0.45);
   if(!raw && s.length>=4) s=geSimplify(p, step*0.3);
   delete st.k; delete st.closed;
-  /* Onto the lattice either way. This used to return here with the thinned
-     path exactly where the finger left it, so ROUND was the only thing that
-     put a stroke on the dots -- geLattice() is called in all three branches
-     below and in none of the one that skipped it. A plain line, drawn with
-     nothing pressed, landed wherever the hand was and passed through no dot
-     at all. 「点線通らなくなってる。直線も斜め線も」
-
-     Which is the opposite of what the two are for: the lattice is what makes
-     one stroke meet another, and rounding is about what happens BETWEEN the
-     points, not about where they sit. geLattice is also what drops the
-     staircase -- 「階段になるの腹立つんよな。斜めに引きたいのに」 is written on
-     it -- and that was reaching only half the strokes drawn. */
-  if(!GE.round){ st.pts=geLattice(s); return; }
+  /* Onto the lattice in all three branches below. It used to be possible to
+     leave here with the thinned path exactly where the finger left it, so
+     ROUND was the only thing that put a stroke on the dots, and a plain line
+     drawn with nothing pressed passed through no dot at all.
+     「点線通らなくなってる。直線も斜め線も」 The lattice is what makes one
+     stroke meet another, and rounding is about what happens BETWEEN the
+     points, not about where they sit. */
   /* A ring is the one shape a chain of rounded corners cannot tell: eight
      lattice points with their corners filleted still reads as an octagon,
      because a corner is only ever rounded by a fraction of its shorter arm
