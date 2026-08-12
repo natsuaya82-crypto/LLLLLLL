@@ -92,6 +92,14 @@ await pg.evaluate(seed);
 const R = await pg.evaluate(() => {
   const fails = [];
   ltStart(); saveLetters(); save();
+  /* The keyboard somebody built, and what the language is FOR. Both are the
+     language's and neither was in SLICES, so both were written by the app,
+     shown on screen, and left out of every backup -- and nothing here would
+     have noticed, because a slice the fixture never writes is absent, and
+     absent is not a failure. So this language has one of each. */
+  KB = { lay: [{ name: 'main', rows: [[{ k: 'a' }]] }] }; saveKb();
+  WLD = { use: 'story', where: 'a valley', who: 'two families',
+          note: 'nobody outside the valley speaks it' }; saveWld();
 
   /* ---- what goes in the file --------------------------------------- */
   const file = JSON.stringify(bkPack());
@@ -108,6 +116,12 @@ const R = await pg.evaluate(() => {
                                      typeof packed.slice[k] !== 'string');
   const before = { words: WORDS.length, letters: LETTERS.length,
                    slices: Object.keys(packed.slice).length };
+  /* Named, not counted. A count says eleven and goes on saying eleven when
+     the eleventh is the wrong one. */
+  ['kb', 'wld'].forEach(k => {
+    if (typeof packed.slice[k] !== 'string')
+      fails.push('slice "' + k + '" is in the language and not in the file');
+  });
 
   /* ---- the number on the file -------------------------------------- */
   if (typeof packed.n !== 'number' || packed.n < 1)
@@ -137,8 +151,14 @@ const R = await pg.evaluate(() => {
   /* ---- and comes back ---------------------------------------------- */
   bkNoSet(0);
   bkTake(file);
-  langStore(); langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead();
+  langStore(); langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
   const back = { words: WORDS.length, letters: LETTERS.length, known: !!LANGS[id] };
+  if (!(KB.lay && KB.lay.length))
+    fails.push('the keyboard did not come back. It is built in the app and it ' +
+               'is the language\'s; a backup without it is a backup of most of ' +
+               'somebody\'s language.');
+  if (world().use !== 'story' || world().where !== 'a valley')
+    fails.push('what the language is for did not come back');
   if (bkNo() < packed.n)
     fails.push('a restore left the save number behind the file it restored from (' +
                bkNo() + ' < ' + packed.n + '), so the next save would look older ' +

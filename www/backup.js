@@ -61,7 +61,7 @@ function bkTouch(){ BK.dirty=true; }
    believing it is protecting it. 「データ件数が減った」で判定しない。 */
 var BK_SHAPE={ words:'array', lines:'array', lang:'text', script:'object',
                letters:'array', notes:'array', phases:'object',
-               talk:'array', snd:'array' };
+               talk:'array', snd:'array', kb:'object', wld:'object' };
 /* Is this stored text a slice, or is it wreckage?
 
    `lang` is the language's name and is stored as a bare string, not as JSON,
@@ -296,7 +296,7 @@ function bkRestore(then){
           for(var id in LANGS){ if(Object.prototype.hasOwnProperty.call(LANGS, id)){ langId=id; break; } }
           langStore();
         }
-        langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); kbRead();
+        langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); kbRead(); wldRead();
         /* Something came back, so write it out again as soon as anything is
            drawn. If it came from a spare, the unreadable newest file is
            still the newest file, and one good save puts a readable one in

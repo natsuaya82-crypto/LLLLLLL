@@ -181,11 +181,23 @@ tool's to decide — but now it is one table apart instead of two files apart.
 
 ### 6. A language somebody already has still opens
 
-Storage is per language. Ten slices — words, lines, name, script, letters,
-notes, phases, talk, sounds, keyboard — live under `lingua.<id>.<slice>`; `lingua.langs` says
-which languages are here and whose; `lingua.set` is the person's settings and
-belongs to no language. `langKey('words')` is the only thing that knows how a
-language is filed.
+Storage is per language. Eleven slices — words, lines, name, script, letters,
+notes, phases, talk, sounds, keyboard, world — live under `lingua.<id>.<slice>`;
+`lingua.langs` says which languages are here and whose; `lingua.set` is the
+person's settings and belongs to no language. `langKey('words')` is the only
+thing that knows how a language is filed.
+
+`SLICES` in `core.js` is that list, and being *in* it is what makes a slice
+real: `bkPack()` walks it, so a slice outside it is in no backup, and
+`wipeAll` walks it, so a slice outside it survives a wipe into the next
+language. Two were outside it. The **keyboard** is the language's — built in
+the app, filed under `langKey('kb')` beside the words — and was in no backup;
+and **what the language is for** sat in `SET`, the person's settings, directly
+under a comment saying it travels with the language. Neither could throw:
+a backup was written, it restored, every check was green, and the keyboard
+somebody built simply was not in the file. `backup-check` now names both
+rather than counting slices — a count says eleven and goes on saying eleven
+when the eleventh is the wrong one.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
 the app shows one language at a time and 290-odd places say `WORDS` meaning

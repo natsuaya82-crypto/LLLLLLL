@@ -494,10 +494,49 @@ function clearFq(){
    that is where what a book is about belongs, and they travel with the
    language, because they are part of it. */
 var WORLDS=['story','people','place','real','play'];
-function world(){ if(!SET.world) SET.world={}; return SET.world; }
+/* It is the language's, filed under langKey('wld') exactly as the letters
+   and the sounds are. It used to be SET.world -- the PERSON's settings --
+   directly under a comment saying it travels with the language, which it did
+   not: it was one answer per phone shown on every language's cover, and it
+   was in no backup, because a backup is SLICES and SET is not a slice.
+
+   The old one is read once and copied in, and it is left exactly where it
+   is. That is langMigrate()'s rule and it is here for langMigrate()'s
+   reason: this runs on a phone, against the only copy. */
+var WLD={};
+function wldRead(){
+  WLD={};
+  try{ var w=JSON.parse(localStorage.getItem(langKey('wld'))||'null');
+       if(w && typeof w==='object' && !(w instanceof Array)) WLD=w; }catch(e){}
+}
+/* An install from before this is holding its answer in SET, which is the
+   person's settings: one answer per phone, shown on every language's cover.
+   It is copied into the language that is open, and the old copy is left
+   exactly where it is -- langMigrate()'s rule, for langMigrate()'s reason.
+
+   ONCE, and into that one language. A copy that ran on every read put the
+   first language's world into the second one the moment it was opened, which
+   is a worse lie than the one being fixed -- and it is what the first version
+   of this did. SET.wldMoved is the mark that it has happened.
+
+   It runs from boot.js beside the other migrations rather than from wldRead()
+   at load, because saving touches the backup and backup.js is loaded after
+   this file: called at load it threw, and the world was never written down
+   at all. */
+function migrateWorld(){
+  var o=SET.world, k, got=false;
+  if(SET.wldMoved || !o || typeof o!=='object') return;
+  for(k in o) if(Object.prototype.hasOwnProperty.call(o,k) && !WLD[k]){ WLD[k]=o[k]; got=true; }
+  SET.wldMoved=1;
+  if(got) saveWld();
+  save();
+}
+function saveWld(){ bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
+function world(){ return WLD; }
 function wldUse(){ var u=world().use; return WORLDS.indexOf(u)>=0? u : ''; }
-function wldSetUse(u){ world().use=(wldUse()===u? '' : u); save(); render(); }
-function wldSet(k, v){ world()[k]=String(v||''); save(); }
+function wldSetUse(u){ world().use=(wldUse()===u? '' : u); saveWld(); render(); }
+function wldSet(k, v){ world()[k]=String(v||''); saveWld(); }
+wldRead();
 function wldSaid(){
   var w=world();
   return !!(wldUse() || (w.where||'').length || (w.who||'').length || (w.note||'').length);

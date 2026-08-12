@@ -36,6 +36,8 @@ migrateSnd();
 migratePosts();
 migratePostInk();
 migrateSp();
+/* and what the language is for, off the phone and into the language */
+migrateWorld();
 /* and a language that still has none gets a set to start from */
 sndStart();
 /* and a free language gets the twenty-eight slots it is allowed */

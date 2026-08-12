@@ -28,10 +28,23 @@
       of me". They still do.
    ========================================================================= */
 var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
-/* The eight slices a language is filed under. One list, because emptying a
-   language and reading one both have to name all eight, and a wipe that named
-   seven would leave a slice of the old language inside the new one. */
-var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd'];
+/* The eleven slices a language is filed under. One list, because emptying a
+   language, reading one and writing one out all have to name every slice, and
+   a wipe that named ten would leave a slice of the old language inside the
+   new one.
+
+   Two were missing from it and had been for as long as they existed, which
+   is the whole reason the list is a list. The KEYBOARD is the language's --
+   it is built in the app, it is filed under langKey('kb') beside the words
+   and the letters -- and it was in no backup and survived a wipe. And what
+   the language is FOR (`wld`) sat in SET, the person's settings, under a
+   comment saying it travels with the language: per device, not per language,
+   and in no backup either.
+
+   Neither was reachable from anything that would have thrown. A backup was
+   written, it restored, every check was green, and the keyboard somebody
+   built was simply not in the file. */
+var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd','kb','wld'];
 /* id -> { name, mine } and nothing more: the index says which languages are
    here, and the language's own keys hold what it is. */
 var LANGS={}, langId='';
@@ -135,9 +148,9 @@ try{
    words end up saved under the language being switched to. */
 function langOpen(id){
   if(!LANGS[id] || id===langId) return;
-  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd(); saveKb();
+  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd(); saveKb(); saveWld();
   langId=id; langStore();
-  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart(); ltStart(); kbRead(); migratePostInk();
+  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart(); ltStart(); kbRead(); wldRead(); migratePostInk();
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
