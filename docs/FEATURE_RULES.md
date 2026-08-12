@@ -88,6 +88,236 @@ the function — which are the same files a feature change touches, and the diff
 stops being readable. Renames go in a commit of their own with `npm test` on
 both sides. `docs/BACKLOG.md` holds the ones known and deliberately not done.
 
+## The order
+
+An idea does not become code by being reasonable. It becomes code by being
+decided, written down, and then built.
+
+```
+  idea
+    ↓
+  OWNER DECISION            the owner says what it is
+    ↓
+  docs/FEATURES.md          the row, and its status
+    ↓
+  docs/PAID_FEATURES.md     if money is involved
+  docs/DATA_MODEL.md        if it stores anything new
+  docs/DATA_SAFETY.md       if it saves, deletes or migrates
+  docs/CHANGELOG.md         if existing data or behaviour moves
+    ↓
+  implementation
+    ↓
+  tests, including a regression watched failing
+    ↓
+  device verification       if docs/TESTING.md § device says so
+    ↓
+  owner confirmation
+    ↓
+  merge
+```
+
+**Writing the code first and the spec afterwards is not allowed.** Reading the
+code first is fine and often necessary — but "this is what the code does" and
+"this is what it should do" are different sentences and must never be written
+as one.
+
+### Five states, and they are not the same
+
+```
+  BACKLOG          might happen                      docs/BACKLOG.md
+  OWNER DECISION   has been decided                  the log below
+  SPEC             this is how it behaves            FEATURES.md + the docs
+  IMPLEMENTED      it is in the code                 git
+  VERIFIED         checks green, and a phone         CHANGELOG.md, marked
+```
+
+**Something in BACKLOG is not decided.** Do not read a backlog entry as
+permission. Do not read the absence of an entry as permission either.
+
+## Owner decisions are specifications
+
+When the owner decides anything about behaviour, a threshold, a limit, the
+free/paid boundary, retention, deletion, migration, how past data behaves,
+timing, what gets selected, or what a screen does — **that is a specification,
+not an instruction for the task in hand.**
+
+Afterwards:
+
+1. record it in the log below, and in whichever `docs/` file it governs
+2. implement exactly that, and nothing adjacent
+3. do not reinterpret it into a more reasonable rule
+4. do not quietly generalise it to a nearby behaviour
+5. if existing code contradicts it, **report the contradiction** — do not go
+   and change unrelated code to match
+6. a later session reads the decision before changing anything in that area
+
+**If a decision conflicts with a rule already written down: STOP.** Report the
+existing rule, the new decision, the code affected, the data affected, and what
+a migration would have to do. Do not resolve it yourself. Neither side of a
+conflict is automatically right, and picking one quietly is how a spec gets
+lost.
+
+And the other direction, which is the same rule: **a decision once made is not
+re-opened by a later session because a different shape seems more natural.** If
+it seems wrong, say so and stop; do not implement the better idea.
+
+## Owner decision log
+
+Newest first. One entry per decision. The **decision itself** matters more than
+the reasoning — a reason can be re-derived, a decision cannot.
+
+```
+### Decision
+- Date:
+- Area:
+- Decision:
+- Reason:
+- Affected features:
+- Affected data:
+- Affected docs:
+- Implementation status:
+```
+
+Entries below are transcribed from decisions the repository already records
+verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
+was inferred: where the wording is the owner's it is quoted, and where a
+decision has never been made the row in `docs/FEATURES.md` says **open**
+instead of appearing here.
+
+### Decision
+- Date: 2026-08-12
+- Area: The word sheet
+- Decision: Making a word and editing one are the same screen. Opening a word
+  shows it; editing is behind a button.
+- Reason: 「単語追加の時点で編集できるようにしろよ。編集でも見えるように当たり前だろバカか」
+  「作成編集それぞれ同じ画面で」「開いた時は閲覧、編集ボタンで編集」
+- Affected features: dictionary, word sheet
+- Affected data: none
+- Affected docs: FEATURES.md, CHANGELOG.md
+- Implementation status: implemented; code confirmed, not device confirmed
+
+### Decision
+- Date: 2026-08-12
+- Area: A word's fields
+- Decision: A word carries register, fields, origin and a changed-on date, in
+  addition to what it had.
+- Reason: asked for as the four things a dictionary needs and this one lacked.
+- Affected features: dictionary
+- Affected data: `words` slice — four optional keys, absent unless filled in
+- Affected docs: DATA_MODEL.md, FEATURES.md, CHANGELOG.md
+- Implementation status: implemented; code confirmed, not device confirmed
+
+### Decision
+- Date: 2026-08-12
+- Area: Cards of posts
+- Decision: A card of a post is drawn from `post.ink`, never re-derived from
+  the open dictionary. This holds even though every post today is the person's
+  own.
+- Reason: the owner's audit: 「現在開いている言語の文字体系で他人の投稿を描画して
+  しまう可能性がある」 — do not stop at "my own posts still look right".
+- Affected features: card, timeline
+- Affected data: none stored; `postInkOK()` decides drawability
+- Affected docs: DATA_MODEL.md, CHANGELOG.md, CLAUDE.md rule 12
+- Implementation status: implemented; code confirmed, not device confirmed
+
+### Decision
+- Date: 2026-08-12
+- Area: Number of languages
+- Decision: One language per person, on every plan. Not a price.
+- Reason: there is no way to make a second anywhere in the app, so a plan
+  promising more would promise a button that does not exist.
+- Affected features: languages
+- Affected data: `LANG_MAX`
+- Affected docs: PAID_FEATURES.md, FEATURES.md
+- Implementation status: implemented
+
+### Decision
+- Date: 2026-08-11
+- Area: Data safety
+- Decision: Losing somebody's language is not acceptable under any
+  circumstance. A backup lives in Documents; a restore fills in what is
+  missing and never overwrites.
+- Reason: 「データ消えるのだけはありえない」
+- Affected features: backup, restore
+- Affected data: all eleven slices
+- Affected docs: DATA_SAFETY.md, CLAUDE.md rule 11
+- Implementation status: implemented; **device verification outstanding**
+  (9 items, `docs/TESTING.md` § device)
+
+### Decision
+- Date: 2026-08-11
+- Area: The free plan
+- Decision: The free plan is your own shapes for a–z, `!`, `?` and the digits —
+  thirty-eight slots, drawing only. Nothing on free adds, renames or deletes a
+  letter. The keyboard is a fixed QWERTY with the drawn letters substituted in,
+  with nothing to set.
+- Reason: 「無料の場合はもう最初からa〜z!?が置いてあってそこから書くだけで追加する
+  自体がない」「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定
+  もできない」
+- Affected features: alphabet, keyboard, letters
+- Affected data: `letters` slice (`ltStart` tops up, never rearranges)
+- Affected docs: PAID_FEATURES.md, CLAUDE.md § what the free plan is
+- Implementation status: implemented
+
+### Decision
+- Date: 2026-08-11
+- Area: The free keyboard's face
+- Decision: One face. Digits above the QWERTY, `!` and `?` at the ends of the
+  space bar, delete two keys wide. No second page.
+- Reason: 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに
+  抑えよう」「これスペースデカすぎやね。！スペース？みたいにできない？」
+  「デリートキーは横二つ分欲しいかも」
+- Affected features: keyboard
+- Affected data: none (`kbFixed()` is built from `LETTERS`, stored nowhere)
+- Affected docs: PAID_FEATURES.md
+- Implementation status: implemented
+
+### Decision
+- Date: 2026-08-11
+- Area: Letters and sounds
+- Decision: A letter comes first and its sound follows from it. Choosing a
+  sound is a paid capability; on free the letter's own reading is used.
+- Reason: 「文字ベースに音が付随だからね？音から選択するのは課金機能」
+  「音は選択できない。だってアルファベットには既存の音があるんだから」
+- Affected features: letters, word sheet, sound
+- Affected data: `snd` slice
+- Affected docs: PAID_FEATURES.md (`snd`), DATA_MODEL.md
+- Implementation status: implemented
+
+### Decision
+- Date: 2026-08-11
+- Area: The in-app keyboard
+- Decision: Typing inside Lingua on a Lingua keyboard is removed. The system
+  keyboard extension is the keyboard. The editor that *builds* a layout stays.
+- Reason: 「アプリ内キーボードいらないでしょ。アップル拡張だけ。」
+- Affected features: keyboard
+- Affected data: `kb` slice kept
+- Affected docs: FEATURES.md § closed on purpose
+- Implementation status: implemented
+
+### Decision
+- Date: earlier
+- Area: The glyph editor
+- Decision: A line drawn straight along the dots is not corrected. Diagonals
+  are corrected to diagonals; Round is for curves.
+- Reason: 「斜めは斜めに補正して欲しいけど、まっすぐ引いた線が勝手に斜めになる補正が
+  やめて欲しい」「点線上にそのまま引いた一筆書きが勝手に補正されるのをやめて欲しい」
+- Affected features: glyph editor
+- Affected data: `letters` slice (stroke points)
+- Affected docs: —
+- Implementation status: implemented
+
+### Decision
+- Date: earlier
+- Area: Navigation
+- Decision: Pages, not sheets sliding up from the bottom. One back button.
+- Reason: 「基本ページ遷移型にしてくれ」「普通に1個前のページに必ず戻る戻るボタン
+  以外いらない」
+- Affected features: shell
+- Affected data: none
+- Affected docs: —
+- Implementation status: implemented
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.
@@ -135,16 +365,122 @@ let the first stand in for the second.
 
 ## Several sessions at once
 
-Before touching anything:
+More than one session may run at a time. Each one opens by reading, in this
+order:
 
 ```
-  which branch, which commit
-  what else is in flight, and where it is
-  the docs for the area
-  is npm test green right now?
+  1  CLAUDE.md
+  2  docs/STATE.md
+  3  the docs/ that cover the area
+  4  git status
+  5  which branch, which commit
+  6  what else is in flight, and where
 ```
+
+and then **declares its scope before touching anything**:
+
+```
+### Scope
+- Goal:
+- May change:            files, by name
+- May NOT change:        files another session holds, or that are simply out of scope
+- Depends on decision:   which entry in the owner decision log
+- Tests to run:
+```
+
+### What is forbidden, by name
+
+Every one of these has a reasonable-sounding form, which is why they are listed
+rather than left to judgement:
+
+```
+  ✗ "while I'm in here, I'll tidy this up"
+  ✗ "this could be cleaner, so I fixed it"
+  ✗ "it's related, so I changed the behaviour too"
+  ✗ "we'll probably need this later, so I added it"
+  ✗ "the existing code looked wrong, so I corrected it"
+```
+
+Each of those is a separate task. Write it into `docs/BACKLOG.md` and carry on
+with the one you were given.
+
+### When two sessions collide
+
+If work turns out to overlap another session's: **STOP.** Report
+
+```
+  my scope
+  their scope
+  files in common
+  functions in common
+  where a conflict is likely
+```
+
+and do not merge the two yourself. Two sessions each half-applying the other's
+intent produces a diff nobody wrote and nobody can review.
 
 Do not guess at what another session meant and write over it. **Do not decide a
 spec from reading the code** — the code is what happened, not what was wanted.
 If it is unclear, stop and collect the questions rather than picking an answer;
 a wrong guess that tests green is the expensive kind.
+
+## What one commit is
+
+These do not share a commit:
+
+```
+  a feature
+  a bug fix
+  a refactor
+  a rename
+  a UI change
+  a data migration
+```
+
+Bad:
+
+```
+  add the feature + tidy the nearby code + rename two functions + delete
+  the old path
+```
+
+Good:
+
+```
+  A  the feature
+  B  the bug fix it turned out to need
+  C  the refactor, on its own
+  D  the renames, on their own
+```
+
+**If a refactor changes behaviour, it is not a refactor.** Say so before doing
+it, and it becomes a decision, not a cleanup.
+
+## Done
+
+"I wrote the code" is not done. Done is:
+
+```
+[ ] the spec is confirmed, and the decision it depends on is in the log
+[ ] the blast radius is known
+[ ] the docs that apply are updated
+[ ] implemented
+[ ] npm test green
+[ ] the regression test for this specific bug is green
+[ ] the bug was PUT BACK and the test was watched going red
+[ ] node --check, and any static check that applies
+[ ] device verification, if docs/TESTING.md § device says so
+[ ] the owner has confirmed
+[ ] docs/CHANGELOG.md updated
+[ ] mergeable
+```
+
+and every report separates these three, always, without exception:
+
+```
+  CODE CONFIRMED      the checks are green here
+  DEVICE CONFIRMED    somebody ran it on a real iPhone
+  OWNER CONFIRMED     the owner looked and said yes
+```
+
+None of the three implies another.

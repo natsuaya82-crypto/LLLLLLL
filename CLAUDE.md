@@ -68,6 +68,47 @@ plan, what was tested, what was not, whether a device is needed, known limits.
 **Recording.** Anything that changes what is stored, moved or removed goes in
 `docs/CHANGELOG.md` — before the code, not after.
 
+**An owner decision is a specification, not an instruction for today.** When
+the owner settles behaviour, a threshold, a limit, the free/paid line,
+retention, deletion, migration, how past data behaves, timing, what is
+selected, or what a screen does: record it in the decision log, implement
+exactly that, and do not reinterpret it into a more reasonable rule or
+generalise it to anything nearby. A later session reads it before changing
+that area, and does not re-open it because a different shape seems more
+natural. If a decision conflicts with a rule already written down — **stop**,
+report both sides with the code and data affected, and do not resolve it
+yourself. → `docs/FEATURE_RULES.md`
+
+**Code is not the specification.** Code says what is happening; `docs/` says
+what should happen; an owner decision settles it. When code and docs disagree,
+the code does not win by being real — report the contradiction and ask. The
+order is: owner decision → spec → tests → code.
+
+**Scope.** More than one session runs at a time. Each opens by reading
+CLAUDE.md, `docs/STATE.md`, the docs for the area, `git status` and what else
+is in flight, then states what it may and may not change. Five things are
+forbidden by name, because each has a reasonable-sounding form: *while I'm in
+here*, *this could be cleaner*, *it's related so I changed it*, *we'll need
+this later*, *the existing code looked wrong*. Each is a separate task —
+`docs/BACKLOG.md`. If two sessions overlap, stop and report; do not merge the
+two intents yourself. → `docs/FEATURE_RULES.md`
+
+**One commit is one kind of thing.** A feature, a bug fix, a refactor, a
+rename, a UI change and a migration do not share a commit. A refactor that
+changes behaviour is not a refactor.
+
+**Done** is not "the code is written". Spec confirmed, blast radius known,
+docs updated, implemented, `npm test` green, the regression green, **the bug
+put back and the test watched going red**, static checks, device if it is on
+the list, owner confirmed, CHANGELOG updated. Every report separates `CODE
+CONFIRMED` / `DEVICE CONFIRMED` / `OWNER CONFIRMED`, and none of the three
+implies another. → `docs/FEATURE_RULES.md`
+
+**Five states, and they are not the same.** `BACKLOG` might happen ·
+`OWNER DECISION` has been decided · `SPEC` this is how it behaves ·
+`IMPLEMENTED` it is in the code · `VERIFIED` checks green and a phone. A
+backlog entry is not permission, and neither is the absence of one.
+
 | file | what it holds |
 |---|---|
 | `docs/ARCHITECTURE.md` | the shape of the app, and where each thing is the truth |
@@ -77,6 +118,7 @@ plan, what was tested, what was not, whether a device is needed, known limits.
 | `docs/PAID_FEATURES.md` | `CAN`, the three plans, and what money may never touch |
 | `docs/TESTING.md` | what to run when; how to fix a bug; what needs a device |
 | `docs/CHANGELOG.md` | what a person would notice, and every change to stored data |
+| `docs/FEATURES.md` | every feature, its plan, its data, and whether the owner has decided it — read before building anything |
 | `docs/BACKLOG.md` | found and deliberately not done, and why |
 | `docs/STATE.md` | where the project stands — read first |
 
@@ -712,6 +754,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `docs/BACKLOG.md` | what was found and deliberately not done, and why: the renames that must not ride along with a feature, the merges waiting on a device, and the question the card bug was actually about |
+| `docs/FEATURES.md` | the registry: every feature, its status, its plan, its data, and whether the owner has decided it. Read before building anything |
 | `docs/ARCHITECTURE.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `FEATURE_RULES.md`, `PAID_FEATURES.md`, `TESTING.md`, `CHANGELOG.md` | the rules above, in full. What is at the head of this file is the part that may not be argued with; these are the working detail |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
 | `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Built now — `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** — so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |

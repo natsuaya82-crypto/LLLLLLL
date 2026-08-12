@@ -71,9 +71,39 @@ every time it is shown, stored nowhere, with nothing to set.
 Four places say it and they say four different things: `ltStart` in
 `letters.js`, `kbOf` in `keyboard.js`, `wsys()` in `wsys.js`, and the screens.
 
+## The four that must never share a branch
+
+```
+  the plan could not be determined
+  the plan is free
+  this person has no data
+  this person's data is damaged
+```
+
+Four different situations with four different right answers. Written as one
+condition — `if (!paid) { … }` — they become one wrong answer, and the wrong
+answer is the one that costs somebody their language. The first means *try
+again later, free plan for now, touch nothing*. The third is a new install.
+The fourth is what a restore is for.
+
 ## Adding a paid feature
 
-Write this down before the code:
+Answer all ten before the code:
+
+```
+ 1  what a free user can do here
+ 2  what a paid user gets in addition
+ 3  can any existing data disappear because of the plan?   (it may not)
+ 4  what happens when the plan check FAILS
+ 5  what happens offline
+ 6  what happens when a purchase cannot be restored
+ 7  is this StoreKit, or the hand-set SET.plan we have today?
+ 8  what existing users see the day it ships
+ 9  is a migration needed?
+10  after a subscription ends, what is kept?               (all of it)
+```
+
+Then write this down:
 
 ```
 Feature:

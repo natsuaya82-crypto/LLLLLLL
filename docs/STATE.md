@@ -12,7 +12,8 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `ARCHITECTURE.md` | the shape of the app, and where each thing is the truth |
 | `DATA_MODEL.md` | every stored thing, its owner, and whether it may change under somebody |
 | `DATA_SAFETY.md` | how a language is not lost; the backup rules; DELETE REVIEW |
-| `FEATURE_RULES.md` | the eleven questions before code; past data; refactoring; what is the owner's |
+| `FEATURES.md` | every feature, its plan, its data, and whether the owner has decided it |
+| `FEATURE_RULES.md` | the order, the owner decision log, scope for parallel sessions, what "done" is |
 | `PAID_FEATURES.md` | `CAN`, the three plans, and what money may never touch |
 | `TESTING.md` | what to run when; how to fix a bug; what needs a device |
 | `CHANGELOG.md` | what a person would notice, and every change to stored data |
