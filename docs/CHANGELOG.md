@@ -215,6 +215,51 @@ and 5000 words is about 45,000 tokens every time.
 - *deleted*: nothing. A Studio conversation left on the phone when a
   subscription ends stays in the `talk` slice and in the backup.
 
+### When a plan ends, the app goes back to free's shape and keeps everything
+
+**Behaviour, across every capability. Nothing stored changes.**
+
+Nobody had decided this, so it had been decided a feature at a time: `wsys`
+and `kb` reverted, `words` and `gram` kept working, and `dir` shipped this
+morning on the second side. One rule now. 「a にしたら最初の1ヶ月で作りきったら
+そのあと課金されねえだろ」
+
+```
+  the dictionary        lists the first 100 words, in the order made
+  the writing system    an alphabet          (already did)
+  the keyboard          the fixed QWERTY     (already did)
+  the direction         left to right        (new)
+  a stage of your own   stays; cannot be added to or deleted  (delete is new)
+  everything else       as it always was on free
+```
+
+- *deleted*: **nothing.** `WORDS` is untouched, `save()` writes every word,
+  `bkPack()` packs every word, and `findWord()` finds every word — a post, a
+  gloss, a spelling and an example all read the whole dictionary. One list on
+  one screen is shorter, and `wordsSeen()` in `words.js` is the only thing
+  that shortens it. The search, the sound and letter lookups and the synonym
+  picker read it too, because a search that returned the other four thousand
+  nine hundred would put back exactly what the list stops showing.
+- **The app says the difference out loud, twice.** Once, on the day the plan
+  changes, in a sheet: nothing has been deleted, it is in the backup, it comes
+  back. 「課金切れたら、ポップ出して、バックアップには保存されてるよーって一回
+  出せばok」 And every time, at the foot of the dictionary: how many are not
+  listed. A list that is quietly short is indistinguishable from data that is
+  gone, and it will be reported as data that is gone.
+- *newly stored*: `SET.planWas`, the plan the app last saw. It is the person's,
+  not a language's, and it is what lets `capLapse()` notice a change however
+  it happens — set by hand today, StoreKit tomorrow, found lapsed at launch.
+- *migration*: none. The first launch after this records the plan and says
+  nothing; there is nothing to announce to somebody who has never been on
+  another plan.
+- *older data*: unaffected in every direction. A free language of forty words
+  behaves exactly as it always has.
+- `backup-check` holds the half that matters — past the ceiling, on the free
+  plan, `findWord()` still finds an unlisted word and `bkPack()` still carries
+  all of them. **Both were watched failing with the bug put back.**
+- New keys in all ten languages: `cap.hid`, `cap.lapse.h`, `cap.lapse.d`,
+  `cap.lapse.ok`.
+
 ### A language has a direction, and a post carries it
 
 **Behaviour and data.** Reading is free; choosing is Plus.

@@ -57,9 +57,44 @@ which is the card bug in another costume. What Plus buys is choosing one.
 Nothing anywhere asks `can('dir')` before drawing — it is asked in
 `setScriptDir()` and on the screen that offers the choice, and nowhere else.
 
-When a subscription ends the language keeps its direction and keeps posting in
-it. The direction is the language's data, in the `script` slice and in the
-backup, and a plan decides what somebody may DO.
+## When a plan ends
+
+**The app goes back to the shape the free plan has. Nothing a person made is
+deleted.** Those are two halves of one sentence and neither may be dropped.
+
+| | on free again |
+|---|---|
+| the dictionary | **lists the first 100 words**, in the order they were made |
+| the writing system | an alphabet |
+| the keyboard | the fixed QWERTY, in the app and on the phone |
+| the direction | left→right |
+| a stage of your own | stays on the list; cannot be added to or deleted |
+| the AI conversation | the chapter is not shown (it is not shown on Plus either) |
+| CSV, file import, unmetered layer 3 | gone, as they always were on free |
+
+Every word, every letter, every keyboard layout, every stage and every
+conversation is still in storage, still packed by `bkPack()`, still in the file
+in Documents, and still there in full the moment the plan comes back. The app
+reads the **whole** dictionary for itself — a post, a gloss, a spelling, an
+example — and only the list on the dictionary screen is short.
+`wordsSeen()` in `www/words.js` is the one place that shortens it.
+
+Because "shorter list" and "my work is gone" look identical from the outside,
+the app says the difference out loud, twice:
+
+- **once, on the day it happens**, in a sheet — `capLapse()` in `core.js`
+  notices the plan has changed since the last launch and `openCapLapse()` says
+  it. 「バックアップには保存されてるよーって一回出せばok」
+- **every time**, at the foot of the dictionary: how many words are not listed.
+
+`backup-check` holds the half that matters: on the free plan, past the ceiling,
+`findWord()` still finds a word that is not listed and `bkPack()` still carries
+every one of them.
+
+Why this and not "keep everything working, lock only the buttons": a language
+is built once. A plan that kept working after the money stopped would be paid
+for a month and then never again. 「a にしたら最初の1ヶ月で作りきったらそのあと
+課金されねえだろ」
 
 Three plans: `free`, `plus`, `studio`. `LANG_MAX` is 1 on every plan and is not
 a price — there is no way to make a second language anywhere in the app, so a

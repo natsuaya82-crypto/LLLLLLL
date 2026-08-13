@@ -222,6 +222,23 @@ function wipeAll(){
 /* =========================================================================
    12. Plans
    ========================================================================= */
+/* What a person is told the day a plan ends, and it is told once -- capLapse()
+   in core.js decides when, and this is only what it says.
+
+   A sheet rather than a toast: a toast is for something you may miss, and the
+   whole reason this exists is that the app is about to look as though work has
+   gone. It is the app's own sheet rather than the browser's alert() because
+   nothing in Lingua has ever used one, and a native dialog in the middle of
+   a launch reads as an error. */
+function openCapLapse(){
+  openForm('lapse:', t('cap.lapse.h'),
+    '<div class="note" style="margin-bottom:18px">'+t('cap.lapse.d')+'</div>'+
+    '<button class="btn" style="width:100%"' + DO('goPlans') + '>'+
+      esc(t('up.cta'))+'</button>'+
+    '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('back') + '>'+
+      esc(t('cap.lapse.ok'))+'</button>');
+}
+FORM_OPEN.lapse=function(){ openCapLapse(); };
 function vPlans(){
   return '<div class="view">'+
     navTop('')+

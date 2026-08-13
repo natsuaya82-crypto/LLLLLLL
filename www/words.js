@@ -19,10 +19,36 @@ function wFilters(){
   out.push({k:'nomn', lab:t('sent.nomean')});
   return out;
 }
+/* ---- the dictionary as a person may browse it -------------------------
+   The free plan holds a hundred words. A language built on a paid plan and
+   then brought back down to free shows the first hundred it was given, in the
+   order they were made, and the rest are not on screen.
+   「無料に戻ったら無料の形に戻る」
+
+   **Nothing is deleted and nothing is unreachable.** `WORDS` is untouched and
+   every word in it is written by `save()`, packed by `bkPack()` and in the
+   file in Documents; a post still spells out of the whole dictionary, the
+   gloss still reads it, and the language comes back whole the moment the plan
+   does. What changes is one list on one screen.
+
+   Because that is a difference between what is stored and what is shown --
+   the kind of difference somebody reads as "my words are gone" -- the app
+   says so twice: a line at the foot of the list, and once, out loud, on the
+   day the plan ends (`capLapse()` in boot.js).
+
+   Everything the app reads FOR ITSELF goes through `WORDS` and must keep
+   doing so. `findWord()` in particular: a post's gloss, a spelling and an
+   example are about words that exist, not about words that are listed, and
+   filtering there would quietly change what somebody's own posts say. */
+function wordsSeen(){
+  if(can('words') || WORDS.length<=FREE_LIMIT) return WORDS;
+  return WORDS.slice(0, FREE_LIMIT);
+}
+function wordsHidden(){ return WORDS.length-wordsSeen().length; }
 /* One place decides what is on screen, so the list, the count and the button
    that says them all can never disagree about it. */
 function wordsList(){
-  var items=WORDS.slice(), qq=String(q||'').trim().toLowerCase();
+  var items=wordsSeen().slice(), qq=String(q||'').trim().toLowerCase();
   if(wFil==='nomn') items=items.filter(function(w){ return !wMns(w).length; });
   else if(wFil!==POS_ALL) items=items.filter(function(w){ return w.pos===wFil; });
   if(qq) items=items.filter(function(w){ return srcKey(w).indexOf(qq)>=0; });
@@ -61,6 +87,19 @@ function wMetaHTML(items){
         (vxRunning()? ICON_CROSS+t('words.stop') : ICON_PLAY+t('words.sayall'))+'</button>'
       : '');
 }
+/* The words that are not on the list, said where they are missing from.
+
+   A list that is quietly a hundred long when the dictionary is five thousand
+   is the app telling somebody their work is gone. It is not gone -- it is in
+   `WORDS`, in `save()`, in the backup and in the file in Documents -- and the
+   place to say so is the foot of the list it is missing from, not only a
+   message they saw once weeks ago. */
+function wordsHidHTML(){
+  var n=wordsHidden();
+  if(!n) return '';
+  return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
+    t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
+}
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
@@ -78,7 +117,7 @@ function vWords(){
       return '<button class="seg'+(wFil===f.k?' on':'')+'"' + DO('wSetFil', [f.k]) + '>'+esc(f.lab)+'</button>';
     }).join('')+'</div>'+
     '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
-    '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+'</div>'+
+    '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+wordsHidHTML()+'</div>'+
     /* A round + under the thumb, not a bar across the foot. The bar was as
        wide as the screen and sat on top of the last two words in the list --
        and the timeline has had this exact button since it was written, in
@@ -92,7 +131,7 @@ function vWords(){
 function wordsPaint(){
   var el=document.getElementById('w-list'); if(!el) return;
   var items=wordsList();
-  el.innerHTML=wordsBodyHTML(items);
+  el.innerHTML=wordsBodyHTML(items)+wordsHidHTML();
   var m=document.getElementById('w-meta'); if(m) m.innerHTML=wMetaHTML(items);
   var x=document.getElementById('w-x'); if(x){ if(q) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }

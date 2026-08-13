@@ -186,6 +186,43 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-13
+- Area: **What happens when a plan ends** — every capability at once
+- Decision: **the app goes back to the shape the free plan has, and nothing a
+  person made is deleted.**
+  1. The dictionary **lists the first 100 words** it was given, in the order
+     they were made. The rest are not on screen. Every one of them is still in
+     `WORDS`, in `save()`, in the backup and in the file in Documents, and the
+     app reads the whole dictionary for itself — a post, a gloss, a spelling,
+     an example. Only the list is short.
+  2. The writing goes back to an alphabet, the keyboard to the fixed QWERTY,
+     the direction to left→right. All three were already true of `wsys` and
+     `kb`; `dir` joins them.
+  3. A stage of somebody's own stays on the list and can no longer be added to
+     or deleted.
+  4. **The day it happens the app says so, once**, in a sheet: nothing has
+     been deleted, it is all in the backup, and it all comes back on
+     resubscribing. `capLapse()` in `core.js` decides when; `openCapLapse()`
+     in `settings.js` is what it says.
+  5. The foot of the dictionary says how many are not listed, every time.
+- Reason: 「a にしたら最初の1ヶ月で作りきったらそのあと課金されねえだろ」
+  「非表示や」「課金切れたら、ポップ出して、バックアップには保存されてるよーって
+  一回出せばok」
+- Affected features: the dictionary, search, the relation picker, the writing
+  system, the keyboard, direction, grammar stages, the plans screen
+- Affected data: **none.** Nothing is written, moved or removed. `SET.planWas`
+  is added — the plan the app last saw, so a change can be noticed however it
+  happens (set by hand today, StoreKit tomorrow, found lapsed at launch)
+- Affected docs: PAID_FEATURES.md, DATA_SAFETY.md, DATA_MODEL.md, CHANGELOG.md
+- Implementation status: implemented; code confirmed, not device confirmed
+- **The rule it is measured against**: `docs/DATA_SAFETY.md` forbids removing
+  what somebody made. It does not forbid a shorter list. The line between the
+  two is the whole of this decision, so `backup-check` now holds it: on the
+  free plan, past the ceiling, `findWord()` still finds a word that is not
+  listed and `bkPack()` still carries every one of them. Both were watched
+  failing with the bug put back.
+
+### Decision
+- Date: 2026-08-13
 - Area: Which way a language is written
 - Decision:
   1. A language has a **direction**, and it is the language's — not the
@@ -207,14 +244,8 @@ instead of appearing here.
   writer's alphabet nor their language's settings
 - Affected docs: FEATURES.md, DATA_MODEL.md, PAID_FEATURES.md, CHANGELOG.md
 - Implementation status: implemented; code confirmed, not device confirmed
-- **One thing was interpreted rather than decided, and it needs the owner's
-  word**: what happens to a language whose direction was set on Plus when the
-  subscription ends. It is implemented as `docs/PAID_FEATURES.md` requires —
-  the direction is the language's data and stays, so the language keeps
-  reading and posting the way it was set, and what is lost is the ability to
-  *change* it. The other reading — new posts revert to left→right — would let
-  a lapsed plan change what somebody's language looks like, which the money
-  rule forbids.
+- What happens when the plan ends is the decision below: the language runs
+  left→right while it is on free, and `SCRIPT.dir` is kept untouched.
 
 ### Decision
 - Date: 2026-08-13

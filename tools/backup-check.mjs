@@ -182,6 +182,38 @@ const R = await pg.evaluate(() => {
     fails.push('a restore OVERWROTE a live language. This is the way a backup ' +
                'destroys somebody’s work, and it is the one thing it may not do.');
 
+  /* ---- a dictionary the free plan does not LIST is still all there ----
+     A language built on a paid plan and brought back down to free shows the
+     first hundred words and no more. That is one list on one screen, and the
+     thing it must never become is a language that gets backed up short --
+     which is exactly what would happen the day somebody writes bkPack() out
+     of what is on screen instead of out of what is stored, and it would look
+     perfectly correct on every phone whose owner is paying.
+
+     So: the free plan, five hundred words, and then all three questions.
+     What the list shows, what a lookup finds, and what goes in the file. */
+  const keepW = WORDS, keepPlan = SET.plan;
+  SET.plan = 'free';
+  WORDS = keepW.concat(Array.apply(null, { length: 500 })
+                            .map((_, i) => ({ hw: 'zz' + i, mns: ['filler'],
+                                              pos: 'n', at: 1 })));
+  save();
+  const far = WORDS[WORDS.length - 1].hw;
+  if (wordsSeen().length !== FREE_LIMIT)
+    fails.push('the free plan lists ' + wordsSeen().length + ' words, not ' +
+               FREE_LIMIT + ', so nothing below this is a test of anything');
+  if (!findWord(far))
+    fails.push('findWord() cannot find a word past the free ceiling. The app ' +
+               'reads the whole dictionary for itself -- a post, a gloss, a ' +
+               'spelling -- and only the LIST is short');
+  const capped = JSON.parse(JSON.parse(JSON.stringify(bkPack())).slice.words);
+  if (capped.length !== WORDS.length)
+    fails.push('the backup of a free language past the ceiling carries ' +
+               capped.length + ' words and the language has ' + WORDS.length +
+               '. A plan decides what somebody may DO, and a dictionary that ' +
+               'is merely not listed must go into the file whole');
+  WORDS = keepW; SET.plan = keepPlan; save();
+
   return { fails, before, back, name, missing, no: packed.n,
            kb: +(file.length / 1024).toFixed(1) };
 });

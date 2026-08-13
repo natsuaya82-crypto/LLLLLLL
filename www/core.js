@@ -368,6 +368,31 @@ function capOK(add){
   if(can('words')) return true;
   return WORDS.length+add<=FREE_LIMIT;
 }
+/* The day a plan ends, said out loud, once.
+
+   A subscription ending puts the app back into the shape the free plan has:
+   the dictionary lists a hundred, the writing is an alphabet, the keyboard is
+   the fixed QWERTY, the line runs left to right. None of that removes
+   anything -- every word, every letter, every layout is where it was, in the
+   backup and in the file in Documents -- but somebody opening the app to find
+   four thousand nine hundred words missing from a list has no way to know
+   that, and the sentence they need is the one this app has the least excuse
+   for not saying. 「バックアップには保存されてるよーって一回出せばok」
+
+   It compares the plan with the plan it last saw, so it does not care HOW the
+   plan changed: set by hand today, told by StoreKit tomorrow, or found to
+   have lapsed at launch. `SET.planWas` is the person's, not a language's --
+   it is a fact about the account.
+
+   The first run of all only records where things stand. There is nothing to
+   announce to somebody who has never been on another plan. */
+function capLapse(){
+  var now=plan(), was=SET.planWas;
+  if(was===undefined || was===null){ SET.planWas=now; save(); return; }
+  if(was===now) return;
+  SET.planWas=now; save();
+  if(now==='free') openCapLapse();
+}
 
 /* =========================================================================
    2. Theme

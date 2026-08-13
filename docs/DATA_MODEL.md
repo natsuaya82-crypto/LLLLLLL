@@ -47,7 +47,9 @@ a slice from wreckage. `langKey(slice)` is the only thing that knows how a
 language is filed.
 
 **Not a slice, and deliberately:** `lingua.set` (`SET`) is the person's
-settings and belongs to no language. `lingua.me` (`ME`) is the person.
+settings and belongs to no language. It carries `planWas` — the plan the app
+last saw — so that a plan ending can be noticed however it happens and said
+once (`docs/PAID_FEATURES.md` § when a plan ends). `lingua.me` (`ME`) is the person.
 `lingua.sess` (`SESS`) is the session — the token pair only; **a password is
 never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline.
 

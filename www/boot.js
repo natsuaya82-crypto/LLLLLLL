@@ -57,4 +57,8 @@ actWire(document.getElementById('app'));
 /* and one above the tab bar, which is beside the screen rather than in it */
 actWire(document.getElementById('tabs'));
 render();
+/* And, if the plan has ended since the last launch, the one thing somebody
+   needs to hear before they look at a list that is suddenly a hundred long.
+   After render(), because it opens a sheet and a sheet is a screen. */
+capLapse();
 if(window.splashDone) splashDone();

@@ -169,6 +169,20 @@ export function halfDone(){
                              openWord('kano'); const h = FORM.html;
                              wRelToggle('kano','syn','mos');
                              delete w.ex; delete w.nt; return h; }],
+    /* A dictionary that came down from a paid plan: past the free ceiling, so
+       the list is the first hundred and the rest are said for at the foot of
+       it. The walk runs on the free plan with six words in it, where
+       wordsSeen() is simply WORDS, so without this the line that tells
+       somebody where the other four thousand nine hundred went is never
+       rendered by anything -- and it is the line they read the day their
+       subscription lapses. */
+    ['the dictionary, past the free ceiling', () => { const keep = WORDS;
+      WORDS = keep.concat(Array.apply(null, {length: FREE_LIMIT})
+                               .map((_, i) => ({hw:'x'+i, mns:['filler'], pos:'n', at:1})));
+      const h = vWords(); WORDS = keep; return h; }],
+    /* And what it says out loud, once, on the day that happens. capLapse()
+       only fires on a plan that changed, and nothing in a walk changes one. */
+    ['the plan has ended', () => { openCapLapse(); return FORM.html; }],
     ['the word being spelled', () => { openEdit('kano'); window.route='spell';
                                        NAV=[{r:'spell'}]; return vSpell(); }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];

@@ -33,7 +33,7 @@ Marked separately, because they are not the same question:
 | Feature | Status | Free | Paid | Data | Owner decision |
 |---|---|---|---|---|---|
 | Custom alphabet — draw a-z, `!`, `?`, digits | shipped | 38 slots, drawing only | `letters`: add / rename / delete | slice `letters` | decided |
-| Dictionary | shipped | to 100 words | `words`: past 100 | slice `words` | decided |
+| Dictionary | shipped | to 100 words; a lapsed plan **lists** the first 100 and keeps every one | `words`: past 100 | slice `words` | decided |
 | A word's meanings, part of speech, family | shipped | yes | — | slice `words` | decided |
 | A word's synonyms, opposites, examples, note | shipped | yes | — | slice `words` | decided |
 | A word's register, fields, origin, changed-on | shipped | yes | — | slice `words` | decided |

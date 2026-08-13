@@ -68,6 +68,30 @@ See `docs/PAID_FEATURES.md`. Keeping somebody's language is not a paid feature,
 because charging for it means answering, on the day it is lost, whether they
 had paid.
 
+## A shorter list is not a deletion, and the difference has to be said out loud
+
+When a plan ends the dictionary screen lists the first hundred words and no
+more (`docs/PAID_FEATURES.md` § when a plan ends). That is allowed and the rule
+above is untouched: `WORDS` is not written, `save()` writes every word,
+`bkPack()` packs every word, `findWord()` finds every word, and the file in
+Documents holds every word. One list on one screen is shorter.
+
+It is in this file because it is the one thing in the app that **looks** like a
+deletion. Somebody opening it to find four thousand nine hundred words gone
+from a list has no way to tell which of the two it is, and the difference is
+the whole of their trust in the app. So:
+
+- the foot of the list says how many are not on it, every time
+- the day the plan changes, the app says it once, in a sheet: nothing has been
+  deleted, it is in the backup, it comes back
+- `backup-check` holds both halves — past the ceiling, on the free plan,
+  `findWord()` still finds an unlisted word and `bkPack()` still carries all of
+  them. Both were watched failing with the bug put back
+
+**Anything else that shortens what is shown gets the same three.** A list that
+is quietly short and says nothing is indistinguishable from data that is gone,
+and it will be reported as data that is gone.
+
 ## The save counter
 
 `bkNo()` counts how many times a language has been written out. It goes up and

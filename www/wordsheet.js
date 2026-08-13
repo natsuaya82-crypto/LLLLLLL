@@ -416,7 +416,9 @@ function vRelate(){
      what it ticks is that draft's list. */
   var w=(k==='syn'||k==='ant')? (hw? findWord(hw) : addW) : null;
   if(!w) return viewGone();
-  var on=wRel(w,k), list=WORDS.filter(function(x){ return x!==w; })
+  /* The dictionary as it is browsed, for the same reason the search is:
+     picking a word is picking one off the list. */
+  var on=wRel(w,k), list=wordsSeen().filter(function(x){ return x!==w; })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
   return '<div class="view">'+navTop(on.length)+'<div class="body">'+
     /* A word that means the same as this one is very often a word that does

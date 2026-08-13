@@ -394,14 +394,18 @@ function vFind(){
 var fq='', fpick=null;
 
 /* ---- reading the dictionary backwards --------------------------------- */
+/* Both of these are the dictionary being browsed backwards -- which words
+   have this sound in them, which have this letter -- so they see what the
+   list sees. Searching past the free ceiling would put back on one screen
+   exactly what the other one stops showing. */
 function fWordsWithSnd(sym){
-  return WORDS.filter(function(w){ return wPh(w).indexOf(sym)>=0; });
+  return wordsSeen().filter(function(w){ return wPh(w).indexOf(sym)>=0; });
 }
 function fWordsWithLtr(id){
   var l=ltById(id);
   if(!l) return [];
   var u=ltUnits(l);
-  return WORDS.filter(function(w){
+  return wordsSeen().filter(function(w){
     var sp=spOf(w), i, j;
     for(i=0;i<sp.length;i++){
       if(sp[i].l===id) return true;

@@ -292,6 +292,9 @@ function openOwnPhase(){
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
 function stAddOwn(){
+  /* The screen only offers this on a paid plan; a form is a route and a route
+     can be arrived at from anywhere. */
+  if(!can('gram')){ goPlans(); return; }
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
   var title=String(a.value||'').trim();
@@ -306,7 +309,15 @@ function stAddOwn(){
                  title:title, slots:slots, labels:labels, what:''});
   saveStg(); closeSheet({target:{id:'sbg'}}); render(); toast(t('stg.own.added', title));
 }
+/* Deleting one is gated too, and that is a change: it used to be open on
+   every plan, on the grounds that a language which came down from a paid plan
+   still owns what it made. It still owns it -- which is exactly why it cannot
+   be thrown away from a plan that cannot make another one.
+   「無料に戻ったら無料の形に戻る」 A stage of somebody's own stays on the
+   list, stays in the backup, and cannot be added to or removed until the plan
+   that made it is back. Gating a delete never costs anybody anything. */
 function stDelOwn(id){
+  if(!can('gram')){ goPlans(); return; }
   if(!confirm(t('stg.own.del.ask'))) return;
   STG.extra=STG.extra.filter(function(x){ return x.id!==id; });
   saveStg(); if(gOpenOf()) back(); else render();
@@ -371,8 +382,9 @@ function stListHTML(){
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free
        dictionary is for; a stage of your own is the sixteenth and past that
-       is what can('gram') buys. Deleting one is not gated -- a language that
-       came down from a paid plan still owns what it made. */
+       is what can('gram') buys. Deleting one is gated as well -- see
+       stDelOwn: a language that came down from a paid plan still owns what it
+       made, and cannot throw it away from a plan that cannot make another. */
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
           ICON_PLUS+t('stg.own.add.btn')+'</button>'

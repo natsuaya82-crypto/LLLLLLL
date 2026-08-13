@@ -249,7 +249,19 @@ function wsInScript(hw){
    in the app asks can('dir') before drawing anything -- see the note on CAN
    in core.js. */
 var DIRS=['ltr', 'rtl', 'ttb-rl', 'ttb-lr'];
+/* Left to right on the free plan, and the stored answer is kept untouched
+   underneath -- exactly as wsys() returns 'alpha' without clearing SET.wsys.
+
+   A language that came down from a paid plan runs the free way while it is
+   there, and runs its own way again the moment the plan comes back. Nothing
+   is rewritten and nothing is lost: SCRIPT.dir is in the `script` slice and
+   in the backup, and it is one string.
+
+   This is the whole plan speaking with one voice -- 「無料に戻ったら無料の形
+   に戻る、作ったものは全部残る」 -- rather than this one capability being
+   the exception that keeps working after the money stops. */
 function scriptDir(){
+  if(!can('dir')) return 'ltr';
   return DIRS.indexOf(SCRIPT.dir)>=0 ? SCRIPT.dir : 'ltr';
 }
 /* What a direction is called in CSS. `writing-mode` is the whole of it for
