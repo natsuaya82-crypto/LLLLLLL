@@ -21,14 +21,6 @@
 function snsNone(){
   return '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>';
 }
-/* One shape for the search and the notices, because both are the same screen
-   until there is something to put in them, and two copies of it would be two
-   places to change when there is. */
-function snsEmpty(r){
-  return '<div class="view">'+rootTop(r)+
-    '<div class="body">'+snsNone()+'</div>'+
-    '</div>';
-}
 /* Everybody's languages, as they are written -- which for the moment is
    yours, because there is no server yet and a post has nowhere else to go.
    It is not a placeholder: a post written here is a real post, kept, and it
@@ -185,10 +177,8 @@ function snsMatchPosts(q){
   }
   return out;
 }
-/* A person, as a row. Your own opens your profile. Somebody else's opens
-   theirs -- PROFILE_SEAM: there is no screen for one yet, so the row is a row
-   until there is, and the day vProfile takes a handle it becomes a button
-   here and nowhere else changes. */
+/* A person, as a row, and every one of them opens a profile: your own has no
+   argument and anybody else's is their handle. */
 function snsWhoRow(p){
   var inner='<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
@@ -198,7 +188,8 @@ function snsWhoRow(p){
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
   return p.mine
     ? '<button class="whrow"' + DO('goTab', ["profile"]) + '>'+inner+ICON_GO+'</button>'
-    : '<div class="whrow">'+inner+'</div>';
+    : '<button class="whrow"' + DO('go', ["profile", String(p.hd||'')]) + '>'+
+        inner+ICON_GO+'</button>';
 }
 function snsHitsHTML(){
   var r=snsHits, out='', i;
@@ -222,5 +213,50 @@ function vExplore(){
     '<div id="sns-hits">'+snsHitsHTML()+'</div>'+
     '</div></div>';
 }
-/* Who read you, who answered, who followed. */
-function vNotif(){ return snsEmpty('notif'); }
+/* ---- who read you, who answered, who followed --------------------------
+   「いいね、返信、リポスト、フォロー、おすすめのツイートとか？」
+
+   Five kinds, and four of them are somebody doing something to a post of
+   yours. The fifth -- a post worth reading -- is not somebody doing anything,
+   it is a choice made somewhere with more than one person's timeline in front
+   of it, and that is the server's.
+
+   NOTIF_SEAM. Same shape as the search and for the same reason: a notice is
+   something that ARRIVES. The screen draws what it has and takes an answer
+   when one comes.
+
+   A notice is {kind, at, hd, who, av, id} -- what happened, when, who did it
+   in the same four fields everything else describes a person with, and which
+   post it was about. */
+var NOTES_HAVE=null, notPulling=false;
+function notPull(){
+  if(notPulling) return;
+  notPulling=true;
+  netNotices(function(ns){
+    notPulling=false;
+    if(!ns) return;
+    NOTES_HAVE=ns;
+    render();
+  }, function(){ notPulling=false; });
+}
+function notRow(n){
+  var k=String(n.kind||''), p=postById(n.id), ic=
+    k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
+    k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
+  return '<div class="ntf">'+
+    '<span class="ntfi '+esc(k)+'">'+ic+'</span>'+
+    '<span class="ntfb">'+
+      '<span class="ntfw">'+esc(t('notif.'+(k||'other'), postWho(n)))+'</span>'+
+      (p? '<span class="ntfp">'+esc(p.mn || p.ln || '')+'</span>' : '')+
+    '</span>'+
+    '<span class="pwhen">'+esc(postWhen(n.at))+'</span>'+
+    '</div>';
+}
+function vNotif(){
+  notPull();
+  var ns=NOTES_HAVE||[];
+  return '<div class="view">'+rootTop('notif')+
+    '<div class="body">'+
+    (ns.length? ns.map(notRow).join('') : snsNone())+
+    '</div></div>';
+}

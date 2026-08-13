@@ -252,3 +252,18 @@ function netDrop(id, ok, bad){
      voice file with it (docs/CHANGELOG.md § DELETE REVIEW). */
   ok();
 }
+/* FOLLOW_SEAM — one row in `follow`, or one row gone. `on` is whether you
+   follow them now. Not waited on: the button has already changed, the same
+   way a like has. */
+function netFollow(handle, on, ok, bad){
+  ok();
+}
+/* NOTIF_SEAM — who liked, answered, boosted or followed, newest first, as
+   { kind, at, hd, who, av, id }. `kind` is 'like' | 'boost' | 'reply' |
+   'follow' | 'pick' -- the last being a post worth reading, which is not
+   somebody doing something and is the only one of the five this phone could
+   never work out on its own. */
+function netNotices(ok, bad){
+  if(!netSignedIn()){ ok(null); return; }
+  ok(null);
+}

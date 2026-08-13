@@ -171,6 +171,55 @@ function meCard(){
     '</div>'+
     '</div>';
 }
+/* ---- somebody else's card ----------------------------------------------
+   Everything on it comes off a post they wrote, which is where their name,
+   their handle, their face and their language's name already are -- the whole
+   reason a post carries them. FOLLOW_SEAM: whether you follow them is the
+   only thing here that is about you.
+
+   No bio and no counts: neither is on a post, and inventing them out of
+   nothing is how a profile starts lying. They arrive with the person when
+   there is a server, and they arrive HERE. */
+function whoOf(h){
+  var i, p;
+  h=String(h||'');
+  for(i=0;i<POSTS.length;i++){
+    p=POSTS[i];
+    if(String(p.hd||'')===h) return {who:p.who||'', hd:h, av:p.av, lname:p.lname||''};
+  }
+  return {who:'', hd:h, av:null, lname:''};
+}
+function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
+/* Following and unfollowing, in one place. The list is what this phone knows
+   and netFollow() is what the server is told -- not waited on, the way a like
+   is not waited on: the button has already changed. */
+function meFollow(h){
+  var fo=meFollowing(), i;
+  h=String(h||'');
+  if(!h || h===meHandle()) return;
+  i=fo.indexOf(h);
+  if(i>=0) fo.splice(i, 1); else fo.push(h);
+  ME.fo=fo;
+  saveMe();
+  render();
+  netFollow(h, i<0, function(){}, function(){});
+}
+function whoCard(h){
+  var p=whoOf(h), on=meFollows(h);
+  return '<div class="mecard">'+
+    '<div class="metop">'+
+    '<div class="pav">'+postFace(p)+'</div>'+
+    '<div class="mewho">'+
+      '<div class="pname">'+esc(postWho(p))+'</div>'+
+      '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
+    '</div>'+
+    '<button class="meedit'+(on?' on':'')+'"' + DO('meFollow', [String(h)]) + '>'+
+      esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
+    '</div>'+
+    (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+
+        '<span class="wldnm">'+esc(p.lname)+'</span>'+ICON_GO+'</button>' : '')+
+    '</div>';
+}
 function openMe(){
   /* Named after the page it is the settings for, through the one function
      that names a page. */

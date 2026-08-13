@@ -287,16 +287,29 @@ function pfSetTab(k){ pfTab=k; render(); }
 /* Which posts each list is. Replies are separated from posts the way every
    timeline does it, because a reply read out of the thread it answers is
    half a sentence. */
+/* Whose profile this is. No argument is your own, and that is the only
+   profile with an account behind it -- a handle is somebody else's. */
+function pfWho(){ return String(here().a||''); }
+function pfMine(){ return !pfWho() || pfWho()===meHandle(); }
 function pfList(){
-  var mine=postAll().filter(function(p){ return p.mine; });
+  var h=pfWho(), of;
+  of=pfMine()
+    ? function(p){ return !!p.mine; }
+    : function(p){ return String(p.hd||'')===h; };
+  var mine=postAll().filter(of);
   if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
-  if(pfTab==='li')   return postAll().filter(function(p){ return !!p.lime; });
+  if(pfTab==='li')   return pfMine()? postAll().filter(function(p){ return !!p.lime; }) : [];
   mine=mine.filter(function(p){ return !p.to; });
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
   return mine;
 }
 function pfTabs(){
-  var tabs=[['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']];
+  /* Likes are a person's own business. On somebody else's page there are two
+     lists, not three -- and it is not that the third is empty, it is that
+     there is no such list to show. */
+  var tabs=pfMine()
+    ? [['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']]
+    : [['posts','prof.posts'], ['re','prof.replies']];
   return '<div class="pftabs">'+tabs.map(function(x){
     return '<button class="pftab'+(pfTab===x[0]?' on':'')+'"' + DO('pfSetTab', [x[0]]) + '>'+
       esc(t(x[1]))+'</button>';
@@ -305,8 +318,13 @@ function pfTabs(){
 function vProfile(){
   var list=pfList();
   return '<div class="view">'+
-    '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
-    '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'+
+    /* The gear is yours and only yours: somebody else's page is arrived at
+       from the search, so it gets a way back instead. */
+    (pfMine()
+      ? '<div class="top"><div class="brand">LIN<span class="st">G</span>UA</div>'+
+        '<button class="iconb"' + DO('go', ["settings"]) + ' aria-label="'+
+        esc(t('set.title'))+'">'+ICON_GEAR+'</button></div>'
+      : navTop(''))+
     '<div class="body" style="padding-top:0">'+
     /* Everything above the three lists is meCard() -- the face, the name, the
        handle, the language, the line about yourself and who follows whom.
@@ -323,7 +341,10 @@ function vProfile(){
        says what it is written in. The letters and the words are chapters I
        and II of the contents, one tab away, and the number there is the
        fuller one -- 5 / 38 rather than 5. */
-    meCard()+
+    /* Your own card, or somebody else's. The card is where a profile differs
+       -- yours has Edit and the way to a badge, theirs has Follow -- and the
+       lists under it are the same lists. */
+    (pfMine()? meCard() : whoCard(pfWho()))+
     pfTabs()+
     (list.length? list.map(postRow).join('')
                 : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'

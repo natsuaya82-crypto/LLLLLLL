@@ -15,6 +15,51 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Somebody else's profile, following, private posts, drafts, and notices
+
+Five things, and four of them are the shape the online half will arrive into.
+
+**Somebody else's profile.** `vProfile` takes a handle now: no argument is
+your own. Their card is what a post they wrote already carries — name, handle,
+face, the language's name — because that is the whole reason a post carries
+them. No bio and no counts: neither is on a post, and inventing them is how a
+profile starts lying. They arrive with the person. Likes are your own business
+so their page has two lists, not an empty third. Reached from the search.
+
+**Follow and unfollow.** One button, `meFollow()`, and `netFollow()` is what
+the server is told. Not waited on: the button has already changed.
+
+**A post can be kept to yourself.** 「非公開の時はポストに🔓マークつけよ」 Hold
+the Post button to turn it private and hold it again to turn it back. It sits
+in the same timeline with a lock beside its time rather than in a list of its
+own — a second list is a second thing to remember to look at.
+
+  - **Data:** `post.pv`. Absent means public, which is the default and what
+    every post written before this is
+  - a private post is **never handed to `netPush()`** — not "sent and hidden",
+    which is a flag somebody else's server has to be trusted with
+
+**Drafts.** 「保存で保存で下書き」 A draft is the composer, kept: the line, the
+meaning, whom it answers, the pictures with their letters still placed on
+them, the recording, and whether it was going to be private. Saving is at the
+foot of the composer and so is the list, because that is where you were when
+you saved one. Opening one takes it out of the list — a draft open in two
+places is a draft about to be duplicated.
+
+  - **Data: new.** `lingua.drafts` (`DRAFTS`). Nothing prunes it, nothing ages
+    it out, and saving one never overwrites another. Not baked: a draft is not
+    a post, and baking is what sending does
+
+**Notices.** 「いいね、返信、リポスト、フォロー、おすすめのツイートとか？」 Five
+kinds, and four of them are somebody doing something to a post of yours. The
+fifth — a post worth reading — is not somebody doing anything; it is a choice
+made somewhere with more than one person's timeline in front of it. NOTIF_SEAM
+in `net.js`, same shape as everything else: the screen draws what it has and
+takes an answer when one comes.
+
+  - a notice is `{kind, at, hd, who, av, id}` — the same four fields
+    everything else in this app describes a person with
+
 ### The timeline's four requests exist, before there is anywhere to send them
 
 `www/net.js` had the account half and nothing else. It has the timeline's half

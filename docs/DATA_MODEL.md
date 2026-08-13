@@ -51,7 +51,11 @@ settings and belongs to no language. It carries `planWas` — the plan the app
 last saw — so that a plan ending can be noticed however it happens and said
 once (`docs/PAID_FEATURES.md` § when a plan ends). `lingua.me` (`ME`) is the person.
 `lingua.sess` (`SESS`) is the session — the token pair only; **a password is
-never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline.
+never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline, and
+`lingua.drafts` (`DRAFTS`) is what was written and not sent — the composer,
+kept: the line, the meaning, whom it answers, the pictures with their letters
+still placed on them, the recording, and whether it was going to be private.
+Nothing prunes it and nothing ages it out.
 
 ## A word
 
@@ -106,6 +110,7 @@ writer's language:
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
 | `ln` | the line, in the writer's own language. **May be empty**: a post can be a photograph on its own or a voice on its own 「文字無しでもポストできるようにできない？」. `pwHas()` decides what counts as something to post; empty is still refused |
+| `pv` | **kept to yourself**. Absent means public, which is the default and what every post written before this is. A private post is never handed to `netPush()` — not "sent and hidden", which is a flag somebody else's server has to be trusted with |
 | `pin` | this author put it at the top of their own page. One at a time |
 | `pics` | **up to four photographs**, each squeezed to 900px on the long edge at q0.72 — about 22 KB as text apiece. See below: this is the one field big enough to matter |
 | `pic` | one photograph, on posts written before `pics` existed. Never rewritten. `postPics()` is the one place that reads either |

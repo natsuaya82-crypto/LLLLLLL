@@ -279,6 +279,36 @@ export function halfDone(){
     ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+    /* Somebody else's profile, the follow button on it, and the same page
+       once you follow them. The only profile a walk sees is this person's
+       own, and the two cards are different screens. */
+    ['somebody else\'s profile', () => { window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+    ['somebody else\'s profile, followed', () => { ME.fo = ['iri'];
+        window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        const h = vProfile(); NAV=[{r:'profile'}]; ME.fo = ['iri','veth']; return h; }],
+    /* A post kept to yourself, which is the lock beside the time, and the
+       composer while it is going to be one -- the button says so. */
+    ['a post kept to yourself', () => { const p = postById('p1'); p.pv = 1;
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); delete p.pv; return h; }],
+    ['a post about to be kept to yourself', () => { PW = pwBlank(); PW.pv = true;
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
+    /* Drafts, which are only drawn once there are some. */
+    ['the composer with drafts saved', () => {
+        DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},
+                  {at:Date.now(), ln:'', mn:'', to:'', pics:[], vo:null, pv:true}];
+        PW = pwBlank(); openPost(); const h = vForm(); DRAFTS = []; return h; }],
+    /* Notices, which arrive and so are never there on a phone with nobody
+       else on it. */
+    ['notices', () => { NOTES_HAVE = [
+        {kind:'like', at:Date.now()-60000, hd:'iri', who:'Iri', av:{ch:'Ж'}, id:'p1'},
+        {kind:'reply', at:Date.now()-120000, hd:'iri', who:'Iri', av:null, id:'p1'},
+        {kind:'boost', at:Date.now()-180000, hd:'veth', who:'', av:null, id:'p1'},
+        {kind:'follow', at:Date.now()-240000, hd:'veth', who:'', av:null, id:''},
+        {kind:'pick', at:Date.now()-300000, hd:'', who:'', av:null, id:'p2'}];
+        window.route='notif'; NAV=[{r:'notif'}];
+        const h = vNotif(); NOTES_HAVE = null; return h; }],
     /* The search, with something in it. An empty field draws no results at
        all, so a walk that never types finds nothing to be wrong. Both
        halves: `@` is looking for a person, anything else for a post. */

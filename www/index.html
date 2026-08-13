@@ -273,6 +273,10 @@ canvas.pkc{width:34px;height:34px;display:block}
         border:1px solid var(--line);background:none;color:var(--tx);
         font-family:inherit;font-size:.88rem}
 .meedit:active{border-color:var(--goldln);color:var(--gold)}
+/* Following somebody, and the same button once you do. Filled while you are
+   not -- it is the thing to press -- and an outline once you are, because
+   then it is a state and the press is the undo. */
+.meedit.on{background:var(--gold);color:var(--onGold);border-color:var(--gold)}
 .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 /* The ... and the menu that hangs off it. The wrapper is what the menu is
    positioned against, so nothing is measured or placed by hand -- it moves
@@ -1220,6 +1224,32 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
       font-family:inherit;font-size:.88rem;
       display:inline-flex;align-items:center;gap:8px}
 .povo.on{border-color:var(--goldln);color:var(--gold)}
+/* A notice: what happened, who did it, and which post it was about. */
+.ntf{display:flex;align-items:flex-start;gap:12px;padding:14px 2px;
+     border-bottom:1px solid var(--line)}
+.ntfi{flex:0 0 auto;width:26px;display:inline-flex;justify-content:center;color:var(--txm)}
+.ntfi.like{color:var(--bad)} .ntfi.follow{color:var(--gold)}
+.ntfb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ntfw{color:var(--tx);font-size:.95rem}
+.ntfp{color:var(--txm);font-size:.88rem;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A post kept to yourself, beside the time. */
+.ppv{display:inline-flex;align-items:center;color:var(--txm)}
+/* The button that sends, while what it sends is private. */
+.navdo.pv{display:inline-flex;align-items:center;gap:6px;
+          background:var(--sf);color:var(--tx)}
+/* Saving a draft, and the ones already saved, at the foot of the composer. */
+.dfsave{width:100%;margin-top:16px}
+.dfrow{display:flex;align-items:center;gap:6px;
+       border-bottom:1px solid var(--line)}
+.dfb{flex:1 1 auto;min-width:0;min-height:48px;display:flex;align-items:center;gap:10px;
+     padding:0 2px;border:0;background:none;color:var(--tx);
+     font-family:inherit;text-align:left}
+.dfl{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dfw{flex:0 0 auto;font-size:.82rem;color:var(--txm)}
+.dfx{flex:0 0 auto;width:44px;height:44px;padding:0;border:0;background:none;
+     color:var(--txs);display:inline-flex;align-items:center;justify-content:center}
+.dfx:active{color:var(--bad)}
 /* A post that was put right says so, beside the time. */
 .ped{color:var(--txs);font-size:.8rem}
 

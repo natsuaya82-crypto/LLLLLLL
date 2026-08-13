@@ -42,6 +42,7 @@ function viewReset(){
   pfTab='posts';                       /* which list the profile shows */
   PMENU='';                            /* the ... open beside a post */
   snsQ=''; snsHits=null;               /* the search, and what came back */
+  NOTES_HAVE=null;                     /* the notices, asked again */
   BKLIST=null;                         /* what is on the disk, asked again */
 }
 

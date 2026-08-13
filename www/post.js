@@ -96,12 +96,124 @@ function postGlossLine(gl){
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
 function pwBlank(){ return {ln:'', mn:'', to:'', pics:[]}; }
+/* ---- who a post is for -------------------------------------------------
+   「自分専用の日記みたいなポストとみんなに公開するポストカード選べるように」
+   「誰に向けて後悔するかでしょ。自分or公開で」「公開（推奨）」
+   「同じ場所に鍵マーク付き（推奨）」「非公開の時はポストに🔓マークつけよ」
+
+   Public is the absence of the field, which is the default the owner chose
+   and the one no migration can get wrong: every post written before this is
+   public because it has no `pv`, which is true.
+
+   A private post is in the same timeline with a lock on it rather than in a
+   place of its own. A second list is a second thing to remember to look at.
+
+   It is held long, not switched: the button that sends a post is the button
+   that sends a post, and a person who wants the other thing holds it. */
+function pwPriv(){ return !!PW.pv; }
+function pwSetPriv(v){
+  PW.pv=!!v;
+  openPost();
+  toast(t(PW.pv? 'post.pv.on' : 'post.pv.off'));
+}
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
-    '<button class="navdo"' + DO('pwSend') + '>'+
-      esc(t(PW.ed? 'post.save' : 'post.send'))+'</button>');
+    /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
+       とみんなに公開するポストカード選べるように」 A long press is a second
+       thing one button can be, and the delegated listener only knows about
+       presses -- so this is the one control in the app with a timer on it,
+       and it is here rather than in act.js because it is one button and not a
+       kind of button. */
+    '<button class="navdo'+(pwPriv()? ' pv':'')+'" id="pw-go"' + DO('pwSend') + '>'+
+      (pwPriv()? ICON_LOCK : '')+
+      esc(t(PW.ed? 'post.save' : (pwPriv()? 'post.send.pv' : 'post.send')))+'</button>');
+}
+/* The timer, wired after the screen is drawn. Holding turns the post private
+   or public again; letting go early does nothing, and the press that follows
+   is swallowed so a hold never also sends. */
+var pwHold=null, pwHeld=false;
+function pwHoldMount(){
+  var e=document.getElementById('pw-go');
+  if(!e) return;
+  e.onpointerdown=function(){
+    pwHeld=false;
+    pwHold=setTimeout(function(){ pwHeld=true; pwSetPriv(!pwPriv()); }, 480);
+  };
+  e.onpointerup=e.onpointercancel=e.onpointerleave=function(){
+    if(pwHold){ clearTimeout(pwHold); pwHold=null; }
+  };
+  e.onclick=function(ev){
+    if(pwHeld){ ev.stopPropagation(); ev.preventDefault(); pwHeld=false; }
+  };
+}
+/* ---- what was written and not sent -------------------------------------
+   「保存で下書き」 A draft is the composer, kept. It is stored beside the
+   posts and it is the person's work: nothing prunes it, nothing ages it out,
+   and saving one never overwrites another.
+
+   Where you get back to one is inside the composer, which is where you were
+   when you saved it. */
+var LS_DRAFTS='lingua.drafts';
+var DRAFTS=[];
+function draftsRead(){
+  try{ DRAFTS=JSON.parse(localStorage.getItem(LS_DRAFTS)||'[]')||[]; }catch(e){ DRAFTS=[]; }
+  if(Object.prototype.toString.call(DRAFTS)!=='[object Array]') DRAFTS=[];
+}
+function draftsSave(){
+  try{ localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS)); }catch(e){}
+}
+draftsRead();
+/* Saved as it stands: the line, the meaning, whom it answers, the pictures
+   with their letters still placed on them, the recording, and whether it was
+   going to be private. Not baked -- a draft is not a post, and baking is what
+   sending does. */
+function draftKeep(){
+  if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.b64)){ toast(t('post.none')); return; }
+  DRAFTS.push({at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to,
+               pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv});
+  draftsSave();
+  PW=pwBlank();
+  toast(t('post.draft.kept'));
+  goTab('feed');
+}
+/* Opening one takes it out of the list: it is the composer again, and a draft
+   that is open in two places at once is a draft about to be duplicated. */
+function draftOpen(i){
+  i=parseInt(i, 10)||0;
+  var d=DRAFTS[i];
+  if(!d) return;
+  DRAFTS.splice(i, 1);
+  draftsSave();
+  PW=pwBlank();
+  PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||'';
+  PW.pics=d.pics||[]; PW.pv=!!d.pv;
+  if(d.vo) PW.vo=d.vo;
+  openPost();
+}
+function draftDrop(i){
+  i=parseInt(i, 10)||0;
+  if(!DRAFTS[i]) return;
+  if(!confirm(t('post.draft.del.q'))) return;
+  DRAFTS.splice(i, 1);
+  draftsSave();
+  openPost();
+}
+function pwDraftsHTML(){
+  if(!DRAFTS.length || PW.ed) return '';
+  var out='', i, d;
+  for(i=DRAFTS.length-1;i>=0;i--){
+    d=DRAFTS[i];
+    out+='<div class="dfrow">'+
+      '<button class="dfb"' + DO('draftOpen', [i]) + '>'+
+        '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
+        '<span class="dfw">'+esc(postWhen(d.at))+'</span></button>'+
+      '<button class="dfx"' + DO('draftDrop', [i]) + ' aria-label="'+
+        esc(t('post.draft.del'))+'">'+ICON_MINUS+'</button>'+
+      '</div>';
+  }
+  return '<div class="sec">'+esc(tn('post.drafts', DRAFTS.length))+'</div>'+out;
 }
 FORM_OPEN.post=function(){ openPost(); };
 /* Word by word, and the row is always there even when it is empty, so the
@@ -413,7 +525,14 @@ function pwHTML(){
          so the row that adds them is not there rather than there and
          refusing. */
       (PW.ed? '' : pwPicHTML())+
-      '</div></div>';
+      '</div></div>'+
+      /* Saving, and what has been saved, at the foot of the screen a post is
+         written on -- which is where you were when you saved one.
+         「postの横に保存で下書き」 */
+      (PW.ed? '' :
+        '<button class="btn ghost dfsave"' + DO('draftKeep') + '>'+
+          esc(t('post.draft.save'))+'</button>')+
+      pwDraftsHTML();
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
    body would put the caret back at the end of the field on every letter.
@@ -537,6 +656,7 @@ function pwSendWith(ln, pics, vo){
   /* The file's name and how long it is, and nothing else. The bytes are in
      Documents; what is in localStorage is this. */
   if(vo && vo.f) mine.vo={f:vo.f, ms:vo.ms||0};
+  if(PW.pv) mine.pv=1;
   /* The natural language, translated once, here, and carried. It is asked
      for and NOT waited on: the post is pushed either way, and a translation
      that arrives late lands on a post that already exists. A post that
@@ -555,7 +675,10 @@ function pwSendWith(ln, pics, vo){
   /* And it is told to the server, which today is told nothing. It is not
      waited on: the post is on this phone the moment it is written, and a
      person in a tunnel is still using this app. */
-  netPush(mine, function(){}, function(){});
+  /* A post kept to yourself is never told to anybody. It is the one post
+     that does not go through this door at all -- not "sent and hidden",
+     which is a flag somebody else's server has to be trusted with. */
+  if(!mine.pv) netPush(mine, function(){}, function(){});
   PW=pwBlank();
   goTab('feed');
 }
@@ -1546,6 +1669,7 @@ function postRow(p){
         /* A post that was put right says so, beside the time. It carries the
            moment it was edited, not a flag: what a person wants to know is
            when, and a flag cannot be asked that later. */
+        (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
         (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         /* The ... and, when it is the one that is open, the menu hanging off
