@@ -33,7 +33,26 @@ function snsEmpty(r){
    yours, because there is no server yet and a post has nowhere else to go.
    It is not a placeholder: a post written here is a real post, kept, and it
    is what the timeline will show when the rest of the world arrives. */
+/* What has arrived, asked for whenever the timeline is looked at. The screen
+   does NOT wait: it draws the posts that are here and takes an answer when
+   one comes, which is what a timeline does and is the only shape that works
+   on a phone in a tunnel. Today the answer is "nothing new".
+
+   `snsPulling` stops a second ask while one is out -- a person flicking
+   between tabs would otherwise have four in the air. */
+var snsPulling=false;
+function snsPull(){
+  if(snsPulling) return;
+  snsPulling=true;
+  netFeed(function(ps){
+    snsPulling=false;
+    if(!ps || !ps.length) return;
+    postTake(ps);
+    render();
+  }, function(){ snsPulling=false; });
+}
 function vFeed(){
+  snsPull();
   var list=postAll();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index

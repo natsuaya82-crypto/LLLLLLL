@@ -294,6 +294,28 @@ function pwPicHTML(){
    Only for a language that runs down the page. For one that runs across, the
    field already IS the preview, and a second copy of the line under it would
    be the same sentence twice. */
+/* Posts that arrived from somewhere else. One place, because "have I already
+   got this one" is a question with exactly one right answer and two copies of
+   it would drift.
+
+   Nothing is overwritten. A post that is already here is left as it is -- it
+   is past-tense data, and the copy on this phone is the one somebody may have
+   already read. Only ones this phone has never seen are added, and then the
+   list is put back in the order a timeline reads in, which is newest first
+   and is postAll()'s to say. */
+function postTake(ps){
+  var have={}, i, p, n=0;
+  for(i=0;i<POSTS.length;i++) have[POSTS[i].id]=1;
+  for(i=0;i<(ps||[]).length;i++){
+    p=ps[i];
+    if(!p || !p.id || have[p.id]) continue;
+    have[p.id]=1;
+    POSTS.push(p);
+    n++;
+  }
+  if(n) savePosts();
+  return n;
+}
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
    「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」
 
@@ -530,6 +552,10 @@ function pwSendWith(ln, pics, vo){
   }
   POSTS.push(mine);
   savePosts();
+  /* And it is told to the server, which today is told nothing. It is not
+     waited on: the post is on this phone the moment it is written, and a
+     person in a tunnel is still using this app. */
+  netPush(mine, function(){}, function(){});
   PW=pwBlank();
   goTab('feed');
 }
@@ -1607,6 +1633,9 @@ function postLike(id){
   p.lime=!p.lime;
   p.li=Math.max(0, (p.li||0)+(p.lime? 1 : -1));
   savePosts(); render();
+  /* Whether it is liked, not what the count is: a count is the server's to
+     add up, and two phones sending counts is how a number goes backwards. */
+  netMark(id, 'like', !!p.lime, function(){}, function(){});
 }
 function postBoost(id){
   var p=postById(id);
@@ -1614,6 +1643,7 @@ function postBoost(id){
   p.bome=!p.bome;
   p.bo=Math.max(0, (p.bo||0)+(p.bome? 1 : -1));
   savePosts(); render();
+  netMark(id, 'boost', !!p.bome, function(){}, function(){});
 }
 /* Replying opens the same screen a post is written on, holding on to what it
    is a reply TO. */
@@ -1721,6 +1751,7 @@ function postDel(id){
   }
   savePosts();
   if(vo && vo.f) voDropFile(vo.f);
+  netDrop(id, function(){}, function(){});
   if(here().r==='form') back();
   render();
 }

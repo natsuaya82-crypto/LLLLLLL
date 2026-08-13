@@ -15,6 +15,39 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The timeline's four requests exist, before there is anywhere to send them
+
+`www/net.js` had the account half and nothing else. It has the timeline's half
+now — written first, in the place it will live, called from where it will be
+called from.
+
+```
+netFeed(ok, bad)               ok(posts | null)   what has arrived
+netPush(post, ok, bad)         ok()               this post is now public
+netMark(id, kind, on, ok, bad) ok()               liked / boosted, or not
+netDrop(id, ok, bad)           ok()               gone from the server too
+```
+
+**A seam cannot be retrofitted.** A screen built around a function that
+RETURNS cannot later be handed one that ANSWERS: every caller has to change,
+and the ones that quietly do not are the bugs. So the timeline already draws
+what it has and takes an answer when one arrives, which is what a timeline
+does — today the answer is "nothing new", which is true and is not a failure.
+
+**Nothing waits.** A post is on this phone the moment it is written, a like is
+counted the moment it is pressed, a post is gone the moment somebody deletes
+it. The server is told afterwards, and told nothing today. A person holding a
+phone in a tunnel is still using this app.
+
+`postTake()` is the one place that takes posts from elsewhere: never
+overwrites, only adds ones this phone has never seen. A post already here is
+past-tense data and the copy on this phone is the one somebody may have read.
+
+`supabase/schema.sql` already holds `post`, `follow` and `quote` with their
+row level security, held by `npm run rls`. What is missing is four bodies.
+
+No data changes.
+
 ### The search tab has a search in it
 
 「検索欄に検索バー作ろう。@でユーザー検索」

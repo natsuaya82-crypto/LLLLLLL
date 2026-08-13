@@ -197,3 +197,58 @@ function netIdToken(provider, token, nonce, ok, bad){
   netPost('/auth/v1/token?grant_type=id_token', b, null,
           function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
 }
+
+/* ---- the timeline, when there is one -----------------------------------
+   Everything below this line is the SHAPE of a request and nothing else. The
+   account half above is real -- it talks to Supabase today -- and this half
+   is the same four functions the timeline will need, written now, in the
+   place they will live, called from where they will be called from.
+
+   They are written first on purpose. A seam cannot be retrofitted: a screen
+   built around a function that RETURNS cannot later be handed one that
+   answers, because every caller has to change and the ones that quietly do
+   not are the bugs. So the timeline already draws what it has and takes an
+   answer when one arrives, which is what a timeline does; today the answer is
+   "nothing new", which is true and is not a failure.
+
+   `supabase/schema.sql` already holds the tables -- post, follow, quote --
+   with the row level security written and held by `npm run rls`. What is
+   missing is these four bodies and nothing else.
+
+   The shape, and it is the same as everything else in this file:
+
+     netFeed(ok, bad)              ok(posts | null)  what has arrived
+     netPush(post, ok, bad)        ok()              this post is now public
+     netMark(id, kind, on, ok, bad) ok()             liked / boosted, or not
+     netDrop(id, ok, bad)          ok()              gone from the server too
+
+   Every one of them is FIRE AND FORGET on the phone's side. A post is on this
+   phone the moment it is written, a like is counted the moment it is pressed,
+   and a post is deleted the moment somebody says so. The server is told
+   afterwards. Nothing a person does waits for a network, because a person
+   holding a phone in a tunnel is still using this app. */
+function netFeed(ok, bad){
+  /* NET_SEAM — ask for what has arrived and call ok() with an array of posts
+     in the shape docs/DATA_MODEL.md § a post describes, each already carrying
+     its ink. A post from elsewhere with no ink cannot be drawn, and inventing
+     one out of this dictionary is the bug the two sides exist to stop. */
+  if(!netSignedIn()){ ok(null); return; }
+  ok(null);
+}
+function netPush(post, ok, bad){
+  /* NET_SEAM — one row in `post`. Everything a reader needs is already ON it
+     (rule 8): who wrote it, what they are called, the language's name, the
+     shapes, which way the line runs. There is nothing to look up. */
+  ok();
+}
+function netMark(id, kind, on, ok, bad){
+  /* NET_SEAM — `kind` is 'like' or 'boost', `on` is whether it now is. Not a
+     count: a count is what the server adds up, and two phones sending counts
+     is how a number goes backwards. */
+  ok();
+}
+function netDrop(id, ok, bad){
+  /* NET_SEAM — the row goes. The phone has already forgotten it, and the
+     voice file with it (docs/CHANGELOG.md § DELETE REVIEW). */
+  ok();
+}
