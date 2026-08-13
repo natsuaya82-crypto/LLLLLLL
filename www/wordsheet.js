@@ -33,7 +33,7 @@ function sugHTML(){
       (unl?'':'<span class="sugn">'+t('sug.left', left)+'</span>')+'</button>';
   }
   return '<div class="sugbox"><div class="sugchips">'+
-    SUG.map(function(q,i){ return '<button class="sugchip"' + DO('sugPick', [i]) + '><span class="sw">'+esc(q.join(''))+'</span><span class="sr">'+esc(readSeq(q))+'</span></button>'; }).join('')+
+    SUG.map(function(q,i){ return '<button class="sugchip"' + DO('sugPick', [i]) + '><span class="slw">'+esc(q.join(''))+'</span><span class="sr">'+esc(readSeq(q))+'</span></button>'; }).join('')+
     '</div><div class="sugfoot"><span class="sughint">'+(sugMn? t('sug.for', esc(sugMn)) : t('sug.hint'))+'</span>'+
     ((unl||left>0)?'<button class="sugmore"' + DO('sugGo') + '>'+t('sug.more')+'</button>':'')+
     '</div>'+

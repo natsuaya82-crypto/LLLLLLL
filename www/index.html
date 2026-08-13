@@ -321,9 +321,23 @@ canvas.pkc{width:34px;height:34px;display:block}
    on the left for vertical-lr. Left to itself the box shrinks to its columns
    and is then placed at the LEFT by the horizontal parent it sits in, so a
    right-to-left language began at the left of the phone -- which is the one
-   thing choosing right-to-left is asking not to happen. */
+   thing choosing right-to-left is asking not to happen.
+
+   And then the padding, because 100% put the first column hard against the
+   edge of the post: a column of letters with the whole width of a phone empty
+   beside it and nothing between it and the screen.
+   「めちゃくちゃ右端すぎませんか」「余白欲しい。横書きのツイートの1番右のところ
+   から始めるイメージ」 -- so it begins where a line of horizontal text would
+   END, which is one gutter in from the edge, on whichever side the language
+   starts from. */
 .dir-ttb-rl,.dir-ttb-lr{-webkit-text-orientation:upright;text-orientation:upright;
                         width:100%;height:auto;max-height:340px}
+/* The preview under the composer's field: the line as it will be, in the
+   direction it will be, because the field it was typed into cannot be a
+   column. 「欄の下に縦のプレビュー」 */
+.pwprev{margin:6px 0 2px;max-height:260px}
+.dir-ttb-rl{padding-right:14px}
+.dir-ttb-lr{padding-left:14px}
 .dir-ttb-rl .tcln,.dir-ttb-lr .tcln{vertical-align:middle}
 /* One letter of somebody's line. Square, because a drawn letter is drawn in a
    square, and sized off the line rather than in pixels so it sits on the same
@@ -1269,9 +1283,14 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .sysep{color:var(--txm);font-size:.88rem}
 /* sentences */
 .sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
-.sw{display:inline-flex;flex-direction:column;align-items:center}
-.sw .sww{font-family:'Cinzel',Georgia,serif;font-size:1.18rem;letter-spacing:.02em}
-.sw .swk{font-size:.82rem;letter-spacing:.14em;color:var(--txm);margin-top:4px}
+/* A word standing in a sentence. It was `.sw`, which is also the switch in the
+   settings -- one class name meaning two things, and the later one wins. So
+   every toggle in the app was `flex-direction:column` with a knob that had a
+   font size and a top margin, which is exactly what a switch with its knob
+   sitting off the pill looks like. 「このトグルもズレてるし」
+   Renamed rather than reordered: two rules that happen to be in the right
+   order is not the same statement as two names that cannot collide. */
+.slw{display:inline-flex;flex-direction:column;align-items:center}
 .rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:5px 12px;font-size:.86rem}
 .rr2:active{opacity:.55}
 .link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}

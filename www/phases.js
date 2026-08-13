@@ -202,7 +202,7 @@ function stSugHTML(){
   if(!stSug.length) return '<button class="btn ghost" style="width:100%"' + DO('stAsk') + '>'+t('stg.help')+'</button>';
   return '<div class="sugbox"><div class="sugchips">'+stSug.map(function(q,i){
       return '<button class="sugchip"' + DO('stTake', [i]) + '>'+
-        '<span class="sw">'+esc(q.join(''))+'</span>'+
+        '<span class="slw">'+esc(q.join(''))+'</span>'+
         '<span class="sr">'+esc(phIpa(q))+'</span></button>';
     }).join('')+'</div>'+
     '<div class="sugfoot"><span class="sughint">'+t('stg.help.d')+'</span>'+
