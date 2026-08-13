@@ -294,6 +294,37 @@ function pwPicHTML(){
    Only for a language that runs down the page. For one that runs across, the
    field already IS the preview, and a second copy of the line under it would
    be the same sentence twice. */
+/* ---- the badge, and the one thing on a post that is NOT frozen ----------
+   「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」
+
+   Everything else a post carries is past tense on purpose: the name, the
+   handle, the face, the language's name, the shapes. Renaming yourself does
+   not rewrite old posts, and that is the whole of rule 8.
+
+   A badge is the opposite and the owner said so: 「バッジは消える」. It says
+   what is true NOW -- this person pays now -- so it cannot be stamped onto a
+   post at the moment of writing, or somebody who cancelled last year would
+   still be wearing it on everything they ever wrote.
+
+   Which means it cannot come off the post, and this phone can only answer it
+   for one person: the one holding the phone. So a post that is not this
+   person's own gets NO badge, whatever plan its author is on. That is not a
+   gap to be filled in with a guess -- it is the honest answer until a server
+   can be asked, and the day it can, the answer arrives with the author and
+   this function is where it lands.
+
+   tools/sides-check.mjs allows postBadge() below the line by name, with this
+   paragraph as the reason. It is the second exception in that file and the
+   first one that is about time rather than about language. */
+function planBadge(id){
+  if(id==='plus') return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
+  if(id==='studio') return '<span class="bdgw studio" aria-hidden="true">'+MARK_STUDIO+'</span>';
+  return '';
+}
+function postBadge(p){
+  if(!p || !p.mine) return '';
+  return planBadge(plan());
+}
 function pwPrevHTML(){
   var d=scriptDir(), ln=String(PW.ln||'');
   if(d.indexOf('ttb')!==0 || !ln) return '';
@@ -1451,7 +1482,7 @@ function postRow(p){
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
       '<div class="phead">'+
-        '<span class="pname">'+esc(postWho(p))+'</span>'+
+        '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
         (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
         '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
         '<span class="pdot">·</span>'+

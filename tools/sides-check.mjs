@@ -147,15 +147,28 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
 
    A builder is a function below the line named *HTML, or postRow itself.
 
-   TR_ALLOW is the exception, and it is two names with one reason. Layer three
-   -- the post said again in the READER's own words -- is the one errand that
-   is supposed to reach for this dictionary: it starts from a natural sentence
-   the author already confirmed and re-expresses it in mine, so the guessing
-   is about my vocabulary and I am the one who can see it is wrong. It touches
-   `mn`/`tr` and never `ln` or `ink`. Anything added here needs that sentence
-   written out, or it does not belong here. */
+   ALLOW is the exception list, and every name in it carries its own sentence.
+   Nothing goes in without one.
 
-const TR_ALLOW = new Set(['trHTML', 'trBtnHTML']);
+   trHTML, trBtnHTML -- layer three, the post said again in the READER's own
+   words. It is the one errand that is SUPPOSED to reach for this dictionary:
+   it starts from a natural sentence the author already confirmed and
+   re-expresses it in mine, so the guessing is about my vocabulary and I am
+   the one who can see it is wrong. It touches `mn`/`tr` and never `ln` or
+   `ink`.
+
+   postBadge -- the one thing on a post that is deliberately NOT frozen. Every
+   other thing a post carries is past tense on purpose; a badge says what is
+   true NOW, because somebody who cancelled must stop wearing it
+   (「バッジは消える」). So it cannot be stamped on at the moment of writing,
+   which means it cannot come off the post, and this phone can answer it for
+   exactly one person. postBadge() therefore returns nothing at all unless
+   `p.mine` -- somebody else's post gets no badge rather than a guessed one,
+   until there is a server to ask. The exception is about TIME rather than
+   about language, which is why it is a second sentence and not an extra name
+   on the first one. */
+
+const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postBadge']);
 
 const bodies = {};
 for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
@@ -240,17 +253,17 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
     built++;
     const end = (i + 1 < marks.length) ? marks[i + 1][1] : below.length;
     for (const c of calls(below.slice(at, end))) {
-      if (c === name || !taints.has(c) || TR_ALLOW.has(c)) continue;
+      if (c === name || !taints.has(c) || ALLOW.has(c)) continue;
       fail.push('www/' + file + ': ' + name + '() builds a post and calls ' + c +
                 '(), which reaches the open language.\n' +
                 '  Either it belongs above the line, or its name belongs in ' +
-                'TR_ALLOW with the reason written out.');
+                'ALLOW with the reason written out.');
     }
   });
 }
 console.log('post builders checked: ' + built +
             ' (reaching the making side by name, allowed: ' +
-            [...TR_ALLOW].join(', ') + ')');
+            [...ALLOW].join(', ') + ')');
 
 /* ---- rule two: a two-argument function is never a map callback ------------
    map and forEach hand their callback (item, index, array). A function that

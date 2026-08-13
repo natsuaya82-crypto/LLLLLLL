@@ -279,6 +279,17 @@ export function halfDone(){
     ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+    /* The badge, which only exists on a paid plan -- so a walk on the free
+       plan never draws one, and free is what these walks run on. Both plans,
+       and both places it shows: beside a name on a profile and beside a name
+       on a post. The row that sells it is the other way round: it is there
+       only while nobody has bought anything. */
+    ['the profile of somebody on Plus', () => { SET.plan = 'plus';
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h = vProfile(); SET.plan = 'free'; return h; }],
+    ['the timeline of somebody on Studio', () => { SET.plan = 'studio';
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); SET.plan = 'free'; return h; }],
     /* A post with no line: a photograph on its own, and a voice on its own.
        A post was a LINE or nothing until 「文字無しでもポストできるように
        できない？」, so every walk before this had a line on every post and

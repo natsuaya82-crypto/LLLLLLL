@@ -135,7 +135,7 @@ function meCard(){
     '<div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="mewho">'+
-      '<div class="pname">'+esc(meName())+'</div>'+
+      '<div class="pname">'+esc(meName())+planBadge(plan())+'</div>'+
       '<div class="mehr">'+
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
@@ -149,6 +149,17 @@ function meCard(){
        the thing this whole app is about.
        「フォローと自己紹介の間に」「linguaパッチの代わり」 */
     wldRow()+
+    /* The way in, and it is on the profile because that is where somebody is
+       looking at the thing they would be buying: the badge goes beside the
+       name three lines up. It was at the bottom of a room inside the settings
+       -- 「今の画面課金させる感が全くないしどこからする？って探さないといけない」
+       -- and something you have to hunt for is something nobody buys.
+       It is not there once it has been bought. */
+    (plan()==='free'
+      ? '<button class="upsell"' + DO('goPlans') + '>'+
+          '<span class="upsm">'+MARK_PLUS+'</span>'+
+          '<span class="upst">'+esc(t('up.badge'))+'</span>'+ICON_GO+'</button>'
+      : '')+
     /* FOLLOW_SEAM: the two numbers are asked for rather than read, so the day
        they come from somewhere else they come from somewhere else HERE and
        nowhere else. */

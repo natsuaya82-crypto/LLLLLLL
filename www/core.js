@@ -260,9 +260,9 @@ var PLANS=[
       until it exists it is not on the list, because a paid screen promising
       something the app cannot do is the app lying to somebody who is about
       to pay. docs/FEATURES.md holds it as planned. */
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3']},
+   lines:['plan.badge','plan.plus.1','plan.plus.2','plan.plus.3']},
   {id:'studio',name:'Studio', price:'plan.price.studio',
-   lines:['plan.studio.1','plan.studio.2','plan.studio.3']}
+   lines:['plan.badge','plan.studio.1','plan.studio.2','plan.studio.3']}
 ];
 var FREE_LIMIT=100;
 /* How many languages of your own this app holds, on every plan. One, and it

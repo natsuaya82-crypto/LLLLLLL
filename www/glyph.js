@@ -533,6 +533,24 @@ var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="9" y="3" width="6" height="11" rx="3"/>'+
   '<path d="M5.5 12a6.5 6.5 0 0 0 13 0"/><path d="M12 18.5V21"/></svg>';
+/* What money buys that anybody can SEE. The four-pointed star is already this
+   app's own mark -- ICON_PLUS above, the avatar on the cover -- so the badge
+   is that star rather than a tick borrowed from a bird.
+
+   Two of them, and they have to be told apart at fourteen pixels beside a
+   name: Plus is the star drawn, Studio is the star filled. Outline and solid
+   is the one difference that survives being small, which a change of colour
+   does not.
+
+   No colour is written here. `currentColor` means the class beside the name
+   says which gold it is, and every colour in this app is a token in
+   index.html -- act-check refuses one written into markup and is right to. */
+var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
+var MARK_STUDIO='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" '+
+  'aria-hidden="true">'+
+  '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
 /* pinned: a post its author put at the top of their own page */
 var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+

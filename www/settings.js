@@ -257,11 +257,18 @@ function vPlans(){
     PLANS.map(function(p){
       var cur = p.id===plan();
       return '<div class="plan'+(cur?' cur':'')+'">'+
-        '<div class="ph2"><span class="pn">'+p.name+'</span>'+
+        /* The badge beside the plan's name, because it is the thing being
+           bought that anybody can see -- and this screen had no picture of
+           anything at all. 「今の画面課金させる感が全くない」 */
+        '<div class="ph2"><span class="pn">'+p.name+'</span>'+planBadge(p.id)+
         (cur?'<span class="badge">'+t('plan.cur')+'</span>':'')+
         '<span class="pp">'+t(p.price)+'</span></div>'+
         '<div class="pl">'+p.lines.map(function(l){return '· '+t(l);}).join('<br>')+'</div>'+
-        (cur?'':'<button' + DO('setPlan', [p.id]) + '>'+(p.id==='free'? t('plan.tofree') : t('plan.choose'))+'</button>')+
+        /* The button says which plan it is, because "choose" on three cards
+           is the same word three times and says nothing about which one your
+           thumb is over. */
+        (cur?'':'<button' + DO('setPlan', [p.id]) + '>'+
+          (p.id==='free'? t('plan.tofree') : t('plan.take', p.name))+'</button>')+
         '</div>';
     }).join('')+
     '<div class="note" style="margin-top:14px">'+t('plans.note')+'</div>'+

@@ -872,6 +872,29 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The height a thumb needs is taken out of the margins rather than added to
    the line, so the tag sits beside the handle where it belongs and the hit
    area reaches above and below it over things nothing else is listening to. */
+/* What money buys that anybody can see, beside a name. Plus is the star
+   drawn, Studio is the star filled -- outline against solid, which is the one
+   difference that survives being fifteen pixels wide.
+   「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」 */
+.bdgw{flex:0 0 auto;display:inline-flex;align-items:center;margin-left:1px;
+      vertical-align:-2px}
+.bdgw.plus{color:var(--gold)}
+.bdgw.studio{color:var(--gold)}
+.bdgw svg{display:block}
+.pname .bdgw{margin-left:5px}
+/* The way in, on the profile, where somebody is looking at the thing they
+   would be buying -- the badge goes beside the name three lines up. It was at
+   the bottom of a room inside the settings, and something you have to hunt
+   for is something nobody buys. */
+.upsell{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;
+        margin-top:8px;padding:12px 14px;border-radius:14px;
+        border:1px solid var(--goldln);background:var(--goldsf, transparent);
+        color:var(--gold);font-family:inherit;text-align:left}
+.upsm{flex:0 0 auto;display:inline-flex}
+.upst{flex:1 1 auto;min-width:0;font-size:.95rem;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upsell svg{flex:0 0 auto}
+.upsell:active{opacity:.6}
 /* The language, as a row of its own between what somebody says about
    themselves and how many people are reading them. It was a small tag beside
    the handle -- which is where a timeline puts an affiliation, and is exactly
