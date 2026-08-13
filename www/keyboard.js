@@ -219,6 +219,31 @@ function kbAt(ri, ki){
    A letter shows the letter -- drawn, borrowed, or its name -- and the same
    ltInk() the alphabet and the tiles use, so a key cannot look like one thing
    here and another there. The keys that are not letters show a mark. */
+/* The letter a key types, small in its corner -- the same thing the system
+   keyboard draws (KeyBoardView.swift, `mark`), under the same switch and the
+   same three conditions: a LETTER key, whose face is a shape or a BORROWED
+   CHARACTER, that has a name to say.
+
+   A borrowed character counts. What the mark answers is "which key is this",
+   and a character taken from another script is no more readable as a position
+   on QWERTY than a drawing is. The one key that must not have it is the one
+   already wearing its own roman name -- ltInk's fallback, when a letter has
+   neither a shape nor a character -- which would then be saying the same
+   thing twice.
+
+   It is here because the keyboard in this chapter is the only picture of that
+   keyboard anybody can see without building the app. The switch sat directly
+   above thirty keys that ignored it, so the one control whose whole job is to
+   change how a key looks changed nothing on screen -- and the Swift that does
+   obey it cannot be run on anything but a phone. */
+function kbMark(key){
+  var l;
+  if(!kbRomOn() || !key || key.k!=='lt') return '';
+  l=ltById(key.v);
+  if(!l || !((l.st && l.st.length) || l.ch)) return '';
+  var t=kbTyped(key.v);
+  return t? '<span class="kbrm">'+esc(t)+'</span>' : '';
+}
 function kbFace(key){
   if(!key) return '';
   if(key.k==='del') return ICON_BACK;
@@ -302,10 +327,10 @@ function kbHTML(sel, ro){
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'');
       out+= ro
         ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key)+
-          '<span class="kbc">'+kbFace(key)+'</span></span>'
+          '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+'" style="flex:'+(key.w||1)+'" data-r="'+ri+'" data-k="'+ki+'"'+
           DO('kbPick', [ri, ki]) + '>'+kbFlicks(key)+
-          '<span class="kbc">'+kbFace(key)+'</span></button>';
+          '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
     }
     out+='</div>';
   }

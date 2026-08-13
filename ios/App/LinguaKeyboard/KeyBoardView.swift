@@ -58,7 +58,14 @@ final class KeyView: UIView {
     }
     addSubview(faceView)
 
-    if wantsMark, key.k == "lt", key.st != nil, let t = key.t, !t.isEmpty {
+    // A borrowed character gets one too. What the mark answers is "which key
+    // is this", and a character somebody took from another script is no more
+    // readable as a position on QWERTY than a shape they drew is. The one key
+    // that must not have it is the one already wearing its own roman name,
+    // which would then be saying the same thing twice -- so: a letter key
+    // whose face is a shape or a borrowed character, and never the fallback.
+    if wantsMark, key.k == "lt", (key.st != nil || key.ch != nil),
+       let t = key.t, !t.isEmpty {
       let l = UILabel()
       l.text = t
       l.textColor = UIColor.secondaryLabel

@@ -135,6 +135,12 @@ canvas.pkc{width:34px;height:34px;display:block}
      border-radius:9px;background:var(--sf);color:var(--tx);font-family:inherit;padding:0;
      display:flex;align-items:center;justify-content:center;overflow:hidden}
 .kbk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+/* The letter a key types, small in its corner, under the switch in the
+   chapter. The four flick faces sit at the middles of the edges, so the corner
+   is free even on a key that has all four -- the same reason the system
+   keyboard puts it there. */
+.kbrm{position:absolute;right:3px;bottom:1px;font-size:.56rem;line-height:1;
+      color:var(--txm);opacity:.65;pointer-events:none}
 /* A key on the free plan is a span, not a button: there is no editor behind
    it. Lighting up under a thumb would promise one. */
 .kbk.ro:active{border-color:var(--line);background:var(--sf);color:var(--tx)}

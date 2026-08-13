@@ -260,6 +260,30 @@ morning on the second side. One rule now. 「a にしたら最初の1ヶ月で�
 - New keys in all ten languages: `cap.hid`, `cap.lapse.h`, `cap.lapse.d`,
   `cap.lapse.ok`.
 
+### The keyboard in the app obeys its own switch
+
+**Behaviour. Nothing stored changes.**
+
+"Show the letter on the key" is a switch in the keyboard chapter, and the
+keyboard drawn directly under it ignored it: only the system keyboard drew the
+corner mark, in Swift, which cannot be run anywhere but a phone. So the one
+control whose whole job is to change how a key looks changed nothing anybody
+could see, and the only way to judge it was to build the app.
+
+- `kbMark()` draws it under the same three conditions as
+  `KeyBoardView.swift`: a letter key, whose face is **a drawn shape or a
+  borrowed character**, that has a name to say. A borrowed character counts —
+  「借り物でも出すでしょ」 — because what the mark answers is *which key is
+  this*, and a character taken from another script is no more readable as a
+  position on QWERTY than a drawing is. The one key that must not have it is
+  the one already wearing its own roman name, which would be saying the same
+  thing twice.
+- **The Swift changed too**, in the same commit and to the same condition. The
+  two are one statement in two languages and nothing can hold them to each
+  other here.
+- *newly stored*: nothing. *migration*: none. *deleted*: nothing.
+- **The system keyboard is still Swift and still unverified here.**
+
 ### Letters can be placed on a photograph
 
 **Behaviour, on every plan. Nothing new is stored on a post.**
