@@ -870,6 +870,7 @@ defLang('it', (function(){
       "post.pic.many"        : "Al massimo {0} foto",
       "post.full"        : "La cronologia è piena e non è stato salvato nulla. Cancella un messaggio vecchio e riprova.",
       'post.cam'              : "Fotocamera",
+      'post.pic.no'         : "Qui non si può scegliere una foto",
       'post.lib'              : "Libreria",
       'post.vo'               : "Voce",
       'post.vo.stop'          : "Ferma",

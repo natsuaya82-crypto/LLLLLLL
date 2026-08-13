@@ -15,6 +15,56 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The camera crashed, the library was three doors, and the ... was a page
+
+Three things build 56 found on a real phone, and one counter that had been
+wrong since replies existed.
+
+**The camera crashed the app.** `NSCameraUsageDescription` was not in
+`ios/App/App/Info.plist`. iOS does not refuse a camera without one, it kills
+the app the instant it is asked for — the same trap the microphone has, walked
+into one build after writing the line that avoids it for the microphone. Both
+it and `NSPhotoLibraryUsageDescription` are in now.
+
+**The library button opened the camera and the Files app.**
+「ライブラリーボタンなのにファイルとかカメラ開く」 A web file field cannot be a
+photo library on iOS: `<input type="file" accept="image/*">` gets Apple's own
+action sheet — Photo Library, Take Photo, Choose File — so one word had three
+doors behind it. It is `PHPickerViewController` now, through a new
+`LinguaShare.pickPhoto`. The picker runs outside this app, so it needs no
+permission and the app is handed only the photograph that was chosen. The long
+edge it comes back at is `POST_PIC`, passed **from the web side**, because
+`www/post.js` owns how big a photograph on a post is and a second number in
+Swift would be a second place saying it.
+
+The camera is still a plain field with `capture` on it. No plugin, and now no
+crash.
+
+**The ... is a menu beside the post, not a page.**
+「画面遷移じゃなくて投稿の横にメニュー出てきて欲しい」 Pressing it left the
+timeline, showed three rows on an empty screen, and came back. It hangs off
+the ... inside the post now, so what you are choosing about stays in front of
+you. Pressing anywhere else closes it and that press is not also delivered.
+`PMENU` is which post has it open, at most one, and `viewReset()` forgets it —
+arriving somewhere with a menu open on a post you have not looked at is the
+filter bug in a smaller costume.
+
+**Data: a deleted reply stops being counted.** 「リプライ消したのに数字1のまま」
+`pwSendWith()` adds one to `re` on the post being answered and nothing ever
+took it back, so a post whose only reply was deleted said `1` forever, pointing
+at a post that is not there. `postDel()` takes it off, floored at zero — a
+count that is already wrong is not put right by being made negative. No other
+post is touched and nothing is recounted from the timeline.
+
+`post-check` grew claim 8 for it, watched failing both ways: with the
+subtraction removed (says 1 replies and its reply was deleted) and with the
+floor removed (took a count below zero).
+
+Also: the whole `.pmenu`/pinned/`what an author can do` block was in
+`tools/fixture.mjs` twice, byte for byte, from a paste that landed twice — the
+same thing that had happened to the photo-editor stylesheet. One copy removed,
+which is why the walks report 373 screens rather than 382.
+
 ### A post can carry your voice, and the composer has three buttons
 
 **Data. New.**

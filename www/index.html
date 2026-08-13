@@ -274,10 +274,27 @@ canvas.pkc{width:34px;height:34px;display:block}
         font-family:inherit;font-size:.88rem}
 .meedit:active{border-color:var(--goldln);color:var(--gold)}
 .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.pmore{margin-left:auto;flex:0 0 auto;min-width:44px;min-height:44px;margin-right:-12px;
+/* The ... and the menu that hangs off it. The wrapper is what the menu is
+   positioned against, so nothing is measured or placed by hand -- it moves
+   with the post it belongs to. 「画面遷移じゃなくて投稿の横にメニュー出てきて欲しい」 */
+.pmw{margin-left:auto;flex:0 0 auto;position:relative;display:inline-flex}
+.pmore{flex:0 0 auto;min-width:44px;min-height:44px;margin-right:-12px;
        background:none;border:0;color:var(--txm);
        display:inline-flex;align-items:center;justify-content:center}
 .pmore:active{color:var(--bad)}
+/* Under the ... and hard against the right edge of the post. Three rows, and
+   the one that cannot be undone is last and red -- where every phone puts it. */
+.pmenu{position:absolute;top:100%;right:-12px;z-index:40;min-width:172px;
+       padding:6px;border-radius:14px;
+       background:var(--bg);border:1px solid var(--line);
+       box-shadow:0 10px 30px var(--glassdrop);
+       display:flex;flex-direction:column}
+.pmi{min-height:44px;padding:0 12px;border:0;border-radius:10px;background:none;
+     color:var(--tx);font-family:inherit;font-size:.92rem;text-align:left;
+     display:flex;align-items:center;gap:10px;white-space:nowrap}
+.pmi svg{flex:0 0 auto;color:var(--txm)}
+.pmi:active{background:var(--sf)}
+.pmi.bad,.pmi.bad svg{color:var(--bad)}
 .pline{font-size:1.06rem;line-height:1.45;color:var(--tx);
        margin-top:2px;word-break:break-word}
 /* ---------- which way a line runs ----------

@@ -1043,6 +1043,7 @@ defLang('ko', (function(){
       "post.pic.many"        : "사진은 {0}장까지",
       "post.full"        : "타임라인이 가득 차 저장되지 않았습니다. 오래된 글을 지우고 다시 시도해 주세요.",
       'post.cam'              : "카메라",
+      'post.pic.no'         : "여기서는 사진을 고를 수 없습니다",
       'post.lib'              : "라이브러리",
       'post.vo'               : "목소리",
       'post.vo.stop'          : "정지",

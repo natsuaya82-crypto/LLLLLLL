@@ -875,6 +875,7 @@ defLang('pt', (function(){
       "post.pic.many"        : "Até {0} fotografias",
       "post.full"        : "A linha do tempo está cheia e nada foi guardado. Apague uma publicação antiga e tente de novo.",
       'post.cam'              : "Câmara",
+      'post.pic.no'         : "Aqui não dá para escolher uma foto",
       'post.lib'              : "Biblioteca",
       'post.vo'               : "Voz",
       'post.vo.stop'          : "Parar",

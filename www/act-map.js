@@ -119,6 +119,7 @@ act('postDel', postDel);
 act('postMore', postMore);
 act('postPin', postPin);
 act('postEdit', postEdit);
+act('pwPickLib', pwPickLib);
 /* the voice on a post -- rec.js */
 act('voStart', voStart);
 act('voStop', voStop);

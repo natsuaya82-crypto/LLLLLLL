@@ -149,18 +149,40 @@ function pwPicRoom(url){
   try{ n=String(localStorage.getItem(LS_POSTS)||'').length; }catch(e){}
   return (n + String(url||'').length) < POST_BYTES;
 }
-/* Two fields, one function: the camera and the library are the same
-   photograph arriving, and only the field it came out of differs. Which one
-   is the argument, because two ids cannot both be `pw-pic` and a function
-   that guesses would read the empty one. */
-function pwSetPic(k){
-  var el=document.getElementById(k==='cam'? 'pw-cam' : 'pw-lib'),
+/* The camera. `capture` on an image field is the whole of it -- iOS opens the
+   camera rather than the picker -- and it needs no plugin. What it does need
+   is NSCameraUsageDescription in Info.plist, without which iOS kills the app
+   the instant the button is pressed rather than refusing it. It shipped
+   without one and did exactly that. */
+function pwSetPic(){
+  var el=document.getElementById('pw-cam'),
       f=el && el.files && el.files[0];
   if(!f) return;
   var r=new FileReader();
   r.onload=function(){ pwPicKeep(String(r.result||'')); };
   r.onerror=function(){ toast(t('post.pic.bad')); };
   r.readAsDataURL(f);
+}
+/* The library, which is the phone's and not the web's. PHPickerViewController
+   runs outside this app, so it needs no permission and this app never sees a
+   photograph it was not given.
+
+   POST_PIC goes ACROSS: how big a photograph on a post is is this file's to
+   say, and a second number in Swift would be a second place saying it. What
+   comes back is already at that size, so pwPicKeep() below has nothing left
+   to shrink and simply squeezes it -- one road in, whichever door it came
+   through.
+
+   An empty answer is somebody changing their mind, and nothing is said about
+   it. Only a refusal is a problem worth a word. */
+function pwPickLib(){
+  var p=sharePlug();
+  if(!p){ toast(t('post.pic.no')); return; }
+  p('LinguaShare', 'pickPhoto', {max:POST_PIC}).then(function(r){
+    var b=(r && r.b64)? String(r.b64) : '';
+    if(!b) return;
+    pwPicKeep('data:image/jpeg;base64,'+b);
+  })['catch'](function(){ toast(t('post.pic.bad')); });
 }
 /* Not cropped. A face is shown in a circle so the sides of a landscape photo
    were never going to be seen; a post shows the picture, so what was taken is
@@ -243,10 +265,15 @@ function pwPicHTML(){
       (ps.length<POST_PICS
         ? '<label class="pwab" aria-label="'+esc(t('post.cam'))+'">'+ICON_CAM+
             '<input type="file" id="pw-cam" accept="image/*" capture="environment"' +
-            CH('pwSetPic', ["cam"]) + '></label>'+
-          '<label class="pwab" aria-label="'+esc(t('post.lib'))+'">'+ICON_LIB+
-            '<input type="file" id="pw-lib" accept="image/*"' +
-            CH('pwSetPic', ["lib"]) + '></label>'
+            CH('pwSetPic') + '></label>'+
+          /* A button, not a field. A file field cannot be a photo library on
+             a phone: iOS answers one with its own action sheet -- Photo
+             Library, Take Photo, Choose File -- so the button that said
+             LIBRARY opened the camera and the Files app as well.
+             「ライブラリーボタンなのにファイルとかカメラ開く」
+             The library is PHPickerViewController, and that is native. */
+          '<button class="pwab"' + DO('pwPickLib') + ' aria-label="'+
+            esc(t('post.lib'))+'">'+ICON_LIB+'</button>'
         : '')+
       pwVoAddHTML()+
     '</div>'+
@@ -1170,6 +1197,7 @@ function pwBakeOne(pc, done){
 function postEdit(id){
   var p=postById(id);
   if(!p || !p.mine) return;
+  PMENU='';
   PW=pwBlank();
   PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
   openPost();
@@ -1384,8 +1412,15 @@ function postRow(p){
            when, and a flag cannot be asked that later. */
         (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
-        (p.mine? '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
-          esc(t('post.more'))+'">'+ICON_DOTS+'</button>' : '')+
+        /* The ... and, when it is the one that is open, the menu hanging off
+           it. It is IN the post rather than a screen you go to, so what you
+           are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
+           横にメニュー出てきて欲しい」 */
+        (p.mine? '<span class="pmw">'+
+          '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
+            esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+          (PMENU===p.id? postMenuHTML(p) : '')+
+          '</span>' : '')+
       '</div>'+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
@@ -1484,17 +1519,55 @@ function postCard(id){
    and a delete reached by pressing something unlabelled is a delete waiting to
    be pressed by accident. 「ポストを削除、ポストを固定する、にしよう」
    「デリートピン留めエディット」 */
+/* Which post has its menu open, and at most one. It is where you are standing
+   and not anything about a post, so viewReset() forgets it -- arriving
+   somewhere with a menu hanging off a post you have not looked at yet is the
+   filter bug in a smaller costume. */
+var PMENU='';
 function postMore(id){
-  var p=postById(id); if(!p || !p.mine) return;
-  openForm('pmore:'+id, t('post.more'),
-    '<button class="set"' + DO('postPin', [id]) + '><span class="sl">'+
-      esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
-    '<button class="set"' + DO('postEdit', [id]) + '><span class="sl">'+
-      esc(t('post.edit'))+'</span></button>'+
-    '<button class="set" style="border-bottom:none"' + DO('postDel', [id]) + '><span class="sl bad">'+
-      esc(t('post.del'))+'</span></button>');
+  var p=postById(id);
+  if(!p || !p.mine) return;
+  PMENU=(PMENU===id)? '' : id;
+  render();
 }
-FORM_OPEN.pmore=function(id){ postMore(id||''); };
+/* The three things, beside the post rather than instead of it. It was a page:
+   pressing ... left the timeline, showed three rows on an empty screen, and
+   came back. For three words about the post you are looking at, going
+   somewhere else to say them is the wrong size of answer.
+   「画面遷移じゃなくて投稿の横にメニュー出てきて欲しい」
+
+   Delete is last and red, which is where every phone puts the one that cannot
+   be undone.
+
+   The card is rendered inside the post, so it moves with it and needs nothing
+   measured or positioned by hand. What is closed is `PMENU`, in one place. */
+function postMenuHTML(p){
+  return '<span class="pmenu" data-pm="1">'+
+    '<button class="pmi"' + DO('postPin', [p.id]) + '>'+ICON_PIN+
+      '<span>'+esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
+    '<button class="pmi"' + DO('postEdit', [p.id]) + '>'+ICON_PEN+
+      '<span>'+esc(t('post.edit'))+'</span></button>'+
+    '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_CROSS+
+      '<span>'+esc(t('post.del'))+'</span></button>'+
+    '</span>';
+}
+/* act.js asks this before it delivers a press, and it is the whole of the
+   rule: with a menu open, a press that is not part of that menu closes it and
+   goes no further. Two things go through -- the menu's own rows, and the ...
+   itself, which is the button that opens and closes it.
+
+   `data-pm` is what "part of the menu" means, so a row added to the menu is
+   covered by being in it rather than by being listed here as well. */
+function postMenuTook(target){
+  var el;
+  if(!PMENU) return false;
+  if(actOf(target, 'data-pm')) return false;
+  el=actOf(target, 'data-do');
+  if(el && el.getAttribute('data-do')==='postMore') return false;
+  PMENU='';
+  render();
+  return true;
+}
 /* One at a time. A page with three things at the top of it has nothing at the
    top of it, and "which one is pinned" then has no answer. Pressing the one
    that is pinned takes it off. */
@@ -1504,6 +1577,7 @@ function postPin(id){
   was=!!p.pin;
   for(i=0;i<POSTS.length;i++) if(POSTS[i].mine) delete POSTS[i].pin;
   if(!was) p.pin=1;
+  PMENU='';
   savePosts();
   if(here().r==='form') back();
   render();
@@ -1515,9 +1589,21 @@ function postPin(id){
    Only the file this post names, and only from this post. */
 function postDel(id){
   if(!confirm(t('post.del.q'))) return;
-  var i, vo=null;
+  var i, vo=null, to='', up;
+  PMENU='';
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
-    vo=POSTS[i].vo; POSTS.splice(i, 1); break;
+    vo=POSTS[i].vo; to=POSTS[i].to||''; POSTS.splice(i, 1); break;
+  }
+  /* A reply counted one on the post it answered, and deleting it never took
+     that one back -- so a post somebody replied to and then deleted the reply
+     from said "1" forever, pointing at nothing.
+     「リプライ消したのに数字1のまま」
+     pwSendWith() is the one place that adds it, and this is the one place
+     that takes it away. Floored at zero: a count that has already been wrong
+     must not be made negative by putting it right. */
+  if(to){
+    up=postById(to);
+    if(up) up.re=Math.max(0, (up.re||0)-1);
   }
   savePosts();
   if(vo && vo.f) voDropFile(vo.f);

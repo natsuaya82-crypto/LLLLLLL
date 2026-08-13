@@ -63,5 +63,14 @@
 	     in the log about a microphone. -->
 	<key>NSMicrophoneUsageDescription</key>
 	<string>To record your own voice on a post, so other people can hear how your language sounds.</string>
+	<!-- The camera button on the composer. Same trap as the microphone and it
+	     was walked straight into: without this line iOS does not refuse the
+	     camera, it kills the app the instant one is asked for. The button
+	     shipped in build 56 and crashed on the first press. -->
+	<key>NSCameraUsageDescription</key>
+	<string>To take a photograph for a post.</string>
+	<!-- And the library, which is a picker of the person's own photographs. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>To put one of your photographs on a post.</string>
 </dict>
 </plist>

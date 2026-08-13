@@ -782,6 +782,7 @@ defLang('en', (function(){
       'post.pic.many'       : 'Up to {0} photographs',
       'post.full'       : "The timeline is full, so nothing was saved. Delete an older post and try again.",
       'post.cam'              : "Camera",
+      'post.pic.no'         : "Cannot choose a photo here",
       'post.lib'              : "Library",
       'post.vo'               : "Voice",
       'post.vo.stop'          : "Stop",

@@ -604,6 +604,32 @@ for.
 - Affected docs: DATA_MODEL, CHANGELOG
 - Implementation status: implemented
 
+### Decision
+- Date: 2026-08-13
+- Area: A post's ... menu
+- Decision: The menu opens **beside the post**, not as a page you go to.
+- Reason: 「・・・ひらいたら画面遷移じゃなくて投稿の横にメニュー出てきて欲しい」
+- **This narrows an earlier decision in this log** ("Pages, not sheets sliding
+  up from the bottom. One back button.") and does not overturn it: navigation
+  is still pages, and this is three words about the post already in front of
+  you rather than somewhere to go. Nothing else in the app changes.
+- Affected features: timeline
+- Affected data: none. `PMENU` is where you are standing, and `viewReset()`
+  forgets it
+- Affected docs: —
+- Implementation status: implemented
+
+### Decision
+- Date: 2026-08-13
+- Area: A deleted reply
+- Decision: Deleting a reply takes its one back off the post it answered.
+- Reason: 「リプライ消したのに数字1のまま」
+- Affected features: timeline
+- Affected data: `post.re` on the post that was replied to. Floored at zero —
+  a count that is already wrong is not put right by being made negative
+- Affected docs: CHANGELOG
+- Implementation status: implemented
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

@@ -857,6 +857,7 @@ defLang('de', (function(){
       "post.pic.many"        : "Höchstens {0} Fotos",
       "post.full"        : "Die Chronik ist voll, es wurde nichts gespeichert. Lösche einen älteren Beitrag und versuche es erneut.",
       'post.cam'              : "Kamera",
+      'post.pic.no'         : "Hier kann kein Foto gewählt werden",
       'post.lib'              : "Mediathek",
       'post.vo'               : "Stimme",
       'post.vo.stop'          : "Stopp",

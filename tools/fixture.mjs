@@ -269,23 +269,16 @@ export function halfDone(){
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
-    /* The two things an author can do to their own post. It is a sheet off the
-       ... , so nothing renders it unless it is opened. */
-    ['what an author can do to a post', () => { postMore('p1'); return FORM.html; }],
-    ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
-                                                postMore('p1'); const h = FORM.html;
-                                                delete p.pin; return h; }],
-    /* A pinned post in the timeline: the mark beside the time only exists on
-       one, and a walk over a timeline where nothing is pinned never draws it. */
-    ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
+    /* The three things an author can do to their own post. The menu hangs off
+       the ... , inside the post, so nothing renders it unless one is open --
+       and what opens it is PMENU, which is where you are standing rather than
+       anything about a post. */
+    ['what an author can do to a post', () => { PMENU = 'p1';
                               window.route='feed'; NAV=[{r:'feed'}];
-                              const h = vFeed(); delete p.pin; return h; }],
-    /* The two things an author can do to their own post. It is a sheet off the
-       ... , so nothing renders it unless it is opened. */
-    ['what an author can do to a post', () => { postMore('p1'); return FORM.html; }],
+                              const h = vFeed(); PMENU = ''; return h; }],
     ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
-                                                postMore('p1'); const h = FORM.html;
-                                                delete p.pin; return h; }],
+                              PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
+                              const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;

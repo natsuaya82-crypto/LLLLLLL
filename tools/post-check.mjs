@@ -30,11 +30,13 @@
         other. 「投稿消した声も消していいよ」 -- and the DELETE REVIEW that
         allows it says one file, named by the post, nothing walked and
         nothing tidied
+     8  a reply that is deleted stops being counted on the post it answered.
+        The count is added in one place and taken away in one place
 
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
-   Exit code is 0 only when all seven hold.
+   Exit code is 0 only when all eight hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -285,6 +287,41 @@ const R = await pg.evaluate(async () => {
                  'to drop one');
   }
 
+  /* ---- 8. a reply that is deleted stops being counted ---------------- */
+  /* 「リプライ消したのに数字1のまま」 -- pwSendWith() adds one to the post
+     being answered and nothing ever took it back, so a post whose only reply
+     was deleted said 1 forever, pointing at nothing. */
+  const host = POSTS.filter(x => !x.to)[0];
+  const wasRe = (host && host.re) || 0;
+  PW = pwBlank(); PW.to = host.id; PW.ln = 'sar';
+  pwSend();
+  await new Promise(r => setTimeout(r, 200));
+  if (((host.re) || 0) !== wasRe + 1)
+    fails.push('a reply did not count on the post it answered, so nothing ' +
+               'below this is a test of taking it back');
+  const reply = POSTS.filter(x => x.to === host.id).pop();
+  const wasConfirm2 = window.confirm;
+  window.confirm = () => true;
+  postDel(reply ? reply.id : '');
+  window.confirm = wasConfirm2;
+  if (((host.re) || 0) !== wasRe)
+    fails.push('the post says ' + host.re + ' replies and its reply was ' +
+               'deleted. A count of something that is gone points at nothing, ' +
+               'and there is no way to press it and find out');
+  /* And it must not go under: a count that was already wrong is not put right
+     by being made negative. */
+  window.confirm = () => true;
+  host.re = 0;
+  PW = pwBlank(); PW.to = host.id; PW.ln = 'mos';
+  pwSend();
+  await new Promise(r => setTimeout(r, 200));
+  const r2 = POSTS.filter(x => x.to === host.id).pop();
+  host.re = 0;
+  postDel(r2 ? r2.id : '');
+  window.confirm = wasConfirm2;
+  if (((host.re) || 0) < 0)
+    fails.push('deleting a reply took a count below zero');
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            vof: (v && v.vo && v.vo.f) || '' };
@@ -309,4 +346,5 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      A voice goes out as a file and comes back as a name (' + R.vof + ')\n' +
             '      with none of its bytes on the post; deleting that post drops\n' +
             '      that one file and no other, and a post with no voice asks for\n' +
-            '      nothing to be dropped at all.');
+            '      nothing to be dropped at all. A deleted reply stops being\n' +
+            '      counted on the post it answered, and never counts below zero.');

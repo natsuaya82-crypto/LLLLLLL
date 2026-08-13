@@ -13,6 +13,8 @@
 import Foundation
 import Capacitor
 import CoreText
+import UIKit
+import PhotosUI
 
 @objc(LinguaSharePlugin)
 public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
@@ -26,6 +28,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -320,5 +323,90 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     } catch {
       call.reject(error.localizedDescription)
     }
+  }
+
+  // ---- the person's own photographs --------------------------------------
+  //
+  // A web file field cannot be a photo library. On iOS an
+  // `<input type="file" accept="image/*">` opens Apple's own action sheet —
+  // Photo Library, Take Photo or Video, Choose File — so the button that said
+  // LIBRARY opened the camera and the Files app as well. Three doors behind
+  // one word. 「ライブラリーボタンなのにファイルとかカメラ開く」
+  //
+  // PHPickerViewController is the library and nothing else. It runs outside
+  // this app's process, which is why it needs no permission of its own: the
+  // app is handed the one photograph that was chosen and never sees the rest.
+  //
+  // The scaling happens here and the number comes from the WEB side, because
+  // www/post.js owns how big a photograph on a post is (POST_PIC) and a second
+  // number in Swift would be a second place deciding it. Handing over full
+  // resolution is about 5 MB of base64 for one 12-megapixel photograph, across
+  // a bridge that is a string.
+
+  private var picking: PhotoPicker?
+
+  @objc func pickPhoto(_ call: CAPPluginCall) {
+    let edge = CGFloat(call.getInt("max") ?? 1200)
+    DispatchQueue.main.async {
+      guard let host = self.bridge?.viewController else {
+        call.reject("no view controller"); return
+      }
+      var cfg = PHPickerConfiguration()
+      cfg.filter = .images
+      cfg.selectionLimit = 1
+      let vc = PHPickerViewController(configuration: cfg)
+      // Cancelled is an empty answer, not a rejection: somebody changing their
+      // mind is not an error and must not put a message on their screen.
+      let p = PhotoPicker(edge: edge) { [weak self] b64 in
+        self?.picking = nil
+        call.resolve(["b64": b64 ?? ""])
+      }
+      self.picking = p
+      vc.delegate = p
+      host.present(vc, animated: true)
+    }
+  }
+}
+
+/// The delegate has to outlive the call that made it, so the plugin holds it.
+/// It answers exactly once — cancelled, failed and chosen all land in the same
+/// place, and a call that is never answered is a button that never comes back.
+final class PhotoPicker: NSObject, PHPickerViewControllerDelegate {
+  private let edge: CGFloat
+  private let done: (String?) -> Void
+  private var answered = false
+
+  init(edge: CGFloat, done: @escaping (String?) -> Void) {
+    self.edge = edge
+    self.done = done
+  }
+
+  private func answer(_ s: String?) {
+    guard !answered else { return }
+    answered = true
+    DispatchQueue.main.async { self.done(s) }
+  }
+
+  func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+    picker.dismiss(animated: true)
+    guard let item = results.first?.itemProvider,
+          item.canLoadObject(ofClass: UIImage.self) else { answer(nil); return }
+    item.loadObject(ofClass: UIImage.self) { [weak self] obj, _ in
+      guard let self = self, let im = obj as? UIImage else { self?.answer(nil); return }
+      self.answer(PhotoPicker.jpeg(im, self.edge))
+    }
+  }
+
+  /// Down to the long edge the web side asked for, and never up: a small
+  /// photograph is left as it is rather than blown up to fill a number.
+  static func jpeg(_ im: UIImage, _ edge: CGFloat) -> String? {
+    let w = im.size.width, h = im.size.height
+    guard w > 0, h > 0 else { return nil }
+    let k = min(1, edge / max(w, h))
+    let size = CGSize(width: (w * k).rounded(), height: (h * k).rounded())
+    let out = UIGraphicsImageRenderer(size: size).image { _ in
+      im.draw(in: CGRect(origin: .zero, size: size))
+    }
+    return out.jpegData(compressionQuality: 0.9)?.base64EncodedString()
   }
 }

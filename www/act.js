@@ -94,6 +94,16 @@ function actWire(root){
   if(!root) return;
   root.addEventListener('click', function(e){
     var el=actOf(e.target, 'data-do');
+    /* A menu hanging off a post closes when anything else is pressed, which
+       is what a menu over a page has always done -- and the press that closes
+       it is not also delivered, exactly as tapping away from an open menu does
+       not press what is underneath.
+
+       Here rather than on a backdrop element: a backdrop is a thing
+       press-check has to press, a thumb can miss it, and it would sit over
+       the very post the menu is about. One question, asked of post.js, which
+       is where the answer lives. */
+    if(typeof postMenuTook==='function' && postMenuTook(e.target)) return;
     if(!el) return;
     if(el.getAttribute('data-stop')) e.stopPropagation();
     actRun(ACT, el, 'data-do');

@@ -916,6 +916,7 @@ defLang('fr', (function(){
       "post.pic.many"        : "{0} photos au maximum",
       "post.full"        : "Le fil est plein, rien n’a été enregistré. Supprimez un ancien message et réessayez.",
       'post.cam'              : "Appareil photo",
+      'post.pic.no'         : "Impossible de choisir une photo ici",
       'post.lib'              : "Bibliothèque",
       'post.vo'               : "Voix",
       'post.vo.stop'          : "Arrêter",

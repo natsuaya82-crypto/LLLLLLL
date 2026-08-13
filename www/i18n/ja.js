@@ -784,6 +784,7 @@ defLang('ja', (function(){
       'post.pic.many'       : '画像は{0}枚までです',
       'post.full'       : "タイムラインがいっぱいで保存できませんでした。古い投稿を消してからもう一度お試しください。",
       'post.cam'              : "カメラ",
+      'post.pic.no'         : "写真を選べません",
       'post.lib'              : "ライブラリ",
       'post.vo'               : "声",
       'post.vo.stop'          : "止める",

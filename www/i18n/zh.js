@@ -873,6 +873,7 @@ defLang('zh', (function(){
       "post.pic.many"        : "最多 {0} 张图片",
       "post.full"        : "时间线已满，没有保存。请删除较旧的帖子后再试。",
       'post.cam'              : "相机",
+      'post.pic.no'         : "这里无法选择照片",
       'post.lib'              : "图库",
       'post.vo'               : "声音",
       'post.vo.stop'          : "停止",
