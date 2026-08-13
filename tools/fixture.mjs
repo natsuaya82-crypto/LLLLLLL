@@ -72,7 +72,12 @@ export function seed(){
                and a timeline that asked the open language which way to set a
                line would set this one wrongly and look perfectly fine doing
                it. Somebody else's post is the only place that shows. */
-            dir:'ttb-rl'}];
+            dir:'ttb-rl',
+            /* And it has a voice on it. The bytes are a file in Documents,
+               which is a place no check has -- what is walked is the row a
+               post carrying one shows, which is the whole of the reading
+               side of it. */
+            vo:{f:'v1.m4a', ms:7000}}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
@@ -489,6 +494,23 @@ export function halfDone(){
       const h = pwMarkHTML(); PW = pwBlank(); pwPicAt = -1; return h; }],
     ['a reply being written', () => { PW = pwBlank(); PW.to = POSTS[0].id;
         openPost(); pwSetLn('sar'); return vForm(); }],
+    /* The three moments the microphone has. A recorder is a thing the runner
+       has none of -- there is no microphone on a Linux box and getUserMedia
+       is never going to answer -- so what is walked is the row, in each of
+       the states it can be in, which is what a thumb meets. */
+    ['a voice being recorded', () => { PW = pwBlank(); PW.ln = 'kano';
+        REC = {}; RECAT = (new Date()).getTime() - 7000;
+        openPost(); const h = vForm(); REC = null; RECAT = 0;
+        PW = pwBlank(); return h; }],
+    ['a voice recorded and not yet posted', () => { PW = pwBlank(); PW.ln = 'kano';
+        PW.vo = {b64:'AA', mime:'audio/mp4', ms:7000};
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
+    /* Editing your own post, which is the line and the meaning and neither
+       the photographs nor the voice -- so it is the one face of the composer
+       with no row of buttons under it at all. */
+    ['a post being edited', () => { PW = pwBlank();
+        PW.ed = POSTS[0].id; PW.ln = POSTS[0].ln; PW.mn = POSTS[0].mn;
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],
     ['a list waiting to be understood', () => { IMP = impBlank();
         impTake('Word,Meaning,Part of Speech,Made\n' +

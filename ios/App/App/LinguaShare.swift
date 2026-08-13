@@ -23,6 +23,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "registerFont", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keep", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -226,6 +228,73 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
         else { call.resolve() }
       }
       return true
+    }
+  }
+
+  // ---- the voice on a post ------------------------------------------------
+  //
+  // Documents again, and the same argument as the language backups: thirty
+  // seconds of AAC is about 240 KB, which is ten free-sized languages, and
+  // localStorage is where the languages live. So a recording is a file and
+  // the post carries its name. www/rec.js (chapter 25) is the other half.
+  //
+  // Nothing here deletes. A voice whose post is gone is a file nobody asks
+  // for any more, and this app does not tidy up after somebody by removing
+  // things they made — see docs/DATA_SAFETY.md.
+
+  static let voiceDir = "Voices"
+
+  private func voices() throws -> URL {
+    let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+                                           appropriateFor: nil, create: true)
+    let dir = docs.appendingPathComponent(Self.voiceDir, isDirectory: true)
+    if !FileManager.default.fileExists(atPath: dir.path) {
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+    return dir
+  }
+
+  /// The name comes from the web side, so that what the post carries and what
+  /// is on the disk are one string decided in one place. Anything with a
+  /// slash or a dot-dot in it is refused rather than cleaned up: a name this
+  /// app did not make is a name this app should not be writing.
+  private func voiceAt(_ name: String) throws -> URL? {
+    guard !name.isEmpty, !name.contains("/"), !name.contains(".."),
+          name.count < 80 else { return nil }
+    return try voices().appendingPathComponent(name)
+  }
+
+  @objc func keepVoice(_ call: CAPPluginCall) {
+    let name = call.getString("name") ?? ""
+    let b64 = call.getString("b64") ?? ""
+    guard !b64.isEmpty else { call.reject("nothing to keep"); return }
+    do {
+      guard let url = try voiceAt(name) else { call.reject("bad name"); return }
+      guard let bytes = Data(base64Encoded: b64) else { call.reject("not base64"); return }
+      // Never over one that is there: a name is made fresh for every
+      // recording, so a collision is a bug and the answer to a bug is not to
+      // write over somebody's voice.
+      guard !FileManager.default.fileExists(atPath: url.path) else {
+        call.reject("a voice by that name is already here"); return
+      }
+      try bytes.write(to: url,
+        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+      call.resolve()
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  @objc func voice(_ call: CAPPluginCall) {
+    let name = call.getString("name") ?? ""
+    do {
+      guard let url = try voiceAt(name) else { call.reject("bad name"); return }
+      guard let d = try? Data(contentsOf: url) else {
+        call.reject("no voice by that name"); return
+      }
+      call.resolve(["b64": d.base64EncodedString()])
+    } catch {
+      call.reject(error.localizedDescription)
     }
   }
 }

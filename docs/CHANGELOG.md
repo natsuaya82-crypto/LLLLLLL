@@ -15,6 +15,68 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A post can carry your voice, and the composer has three buttons
+
+**Data. New.**
+
+The one plus that added a photograph is now three buttons: the camera, the
+photo library, and the microphone.
+「投稿の時にphotoボタンやめて。📷 ライブラリ マイクボタンにして」 The camera is a
+plain image field carrying `capture` — there is no plugin and no Swift behind
+it, and the photograph that arrives is the same photograph either way.
+
+The microphone records **up to thirty seconds**, and where it goes is the whole
+of the design. Thirty seconds of AAC is about 240 KB — three photographs, or
+ten free-sized languages — and `localStorage` is where the dictionary, the
+alphabet, the notes and every post already live. So a voice is a **file**, in
+`Documents/Voices/`, in the folder iOS puts in the device backup, and what goes
+into `localStorage` is the post carrying the file's **name**.
+
+  - new on a post: `vo = {f, ms}`, the name and how long
+  - new on the phone: `Documents/Voices/`
+  - new in Swift: `LinguaShare.keepVoice` and `LinguaShare.voice`
+  - new in `ios/App/App/Info.plist`: `NSMicrophoneUsageDescription`. Without it
+    iOS does not refuse the microphone, it kills the app the moment one is
+    asked for
+  - nothing existing changes shape; a post with no voice has no `vo`
+
+The file is written **before** the post is stored, because a name pointing at
+nothing is a post claiming a voice it does not have. If the write is refused
+the post is made without one and says so — what somebody typed is never lost
+because a microphone was. Nothing is ever written over: `keepVoice` refuses a
+name that already exists.
+
+**No deletion.** Deleting a post does **not** delete its voice file. That is
+this app's rule (`docs/DATA_SAFETY.md`) and not an oversight — automatic
+cleanup is forbidden without a written spec. No DELETE REVIEW is needed because
+nothing here deletes.
+
+`www/rec.js` is chapter 25 and holds all of it. It has the same line through it
+that `post.js` has: recording is the making side, and playing one back is given
+the post's `vo` and nothing else.
+
+Not device confirmed. Nothing in this — the microphone, the two Swift calls,
+the Info.plist line — has ever run on a phone.
+
+### A post you wrote can be put right
+
+The `...` on your own post now offers three things rather than two: pin, edit,
+delete. 「デリートピン留めエディットにして」
+
+Editing reaches the **line and the meaning**, and those two only 「文と意味だけ」.
+The photographs and the voice stay exactly as they were: those are files, baked
+and written when the post was made, and swapping one for another is not
+correcting a sentence.
+
+**Data.** On the post being edited, `ln`, `mn` and `ink` are overwritten,
+`tr` is dropped and asked for again, and `ed` — the moment of the edit — is
+new. The `ink` is re-cut with the alphabet as it stands **at that moment**,
+which is the one place in this app where a post's shapes are not the shapes it
+was born with; a changed line wearing the old shapes is the old line. An edited
+post says `Edited` beside its time 「出す」.
+
+No other post is touched. Nothing is deleted.
+
 ### The keyboard and what a language is for are now in the backup
 
 **Data. Read this one.**

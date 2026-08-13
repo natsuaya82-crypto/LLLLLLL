@@ -92,6 +92,29 @@ the whole of their trust in the app. So:
 is quietly short and says nothing is indistinguishable from data that is gone,
 and it will be reported as data that is gone.
 
+## A voice is a file, and nothing tidies files away
+
+A post can carry thirty seconds of somebody's own voice. The bytes are a file
+in `Documents/Voices/`, and the post carries only its name — `post.vo = {f,
+ms}`. Three things follow, and none of them is optional:
+
+- **The file is written before the post is stored.** A name on a post that
+  points at nothing is a post claiming a voice it does not have. If the write
+  is refused — no bridge, no room — the post is made **without** one and says
+  so. What somebody typed is never lost because a microphone was.
+- **A name is never written over.** `keepVoice` refuses a file that already
+  exists rather than replacing it. Every recording is given a fresh name, so a
+  collision is a bug, and the answer to a bug is not to overwrite a voice.
+- **Deleting a post does not delete its voice.** That is deliberate and it is
+  this file's rule, not an oversight: automatic cleanup is forbidden without a
+  written spec. The file is left where it is. If reclaiming them is ever
+  wanted, it is a DELETE REVIEW and a decision, not a tidy-up.
+
+They are in Documents, which is what iOS puts in the device backup — the same
+folder the language files are in, and the same argument. What `bkPack()` writes
+does **not** contain them: a language file would be megabytes, and the voices
+are already backed up by being where they are.
+
 ## The save counter
 
 `bkNo()` counts how many times a language has been written out. It goes up and

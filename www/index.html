@@ -1037,7 +1037,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    a thumbnail of it would be a downgrade. Several become a strip of equal
    boxes -- a row of mixed heights is what a page of pasted images looks
    like, not what a phone shows. */
-.pwpics{display:flex;align-items:center;gap:10px;margin-top:10px}
+/* The pictures, and under them the row that adds things. A column, not a row:
+   there are three buttons now rather than one plus, and a strip of four
+   photographs beside three buttons leaves neither of them room. */
+.pwpics{display:block;margin-top:10px}
 .pwstrip{flex:1 1 auto;min-width:0;display:flex;gap:8px;padding:11px 0;
          overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .pwstrip::-webkit-scrollbar{display:none}
@@ -1066,13 +1069,41 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .pwpicn{position:absolute;left:8px;bottom:8px;min-width:22px;height:22px;padding:0 6px;
         border-radius:11px;background:rgba(0,0,0,.55);color:#fff;font-size:.74rem;
         display:inline-flex;align-items:center;justify-content:center}
+/* With nothing in it the strip is 22px of nothing above the buttons. */
+.pwstrip:empty{padding:0}
+/* What a post can be given: the camera, the pictures already on the phone,
+   and the microphone. One plus stood for all three and only ever meant the
+   second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
+.pwadd{display:flex;align-items:center;gap:10px}
 /* 46 across, not 44: the box is border-box and the file input inside it fills
    the CONTENT, so a 44 square with a 1px border gives a 42 target. */
-.picadd{flex:0 0 auto;position:relative;width:46px;height:46px;border-radius:12px;
-        border:1px solid var(--line);color:var(--txs);overflow:hidden;
-        display:inline-flex;align-items:center;justify-content:center}
-.picadd input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
-.picadd:active{border-color:var(--goldln);color:var(--gold)}
+.pwab{flex:0 0 auto;position:relative;min-width:46px;height:46px;padding:0;
+      border-radius:12px;border:1px solid var(--line);background:none;
+      color:var(--txs);overflow:hidden;font-family:inherit;font-size:.88rem;
+      display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.pwab input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+.pwab:active{border-color:var(--goldln);color:var(--gold)}
+/* Recording. The dot is the one place in this app where something blinks, and
+   it is the one place where something is happening that cannot be seen. */
+.pwab.rec{padding:0 14px;border-color:var(--bad);color:var(--bad)}
+.vodot{width:9px;height:9px;border-radius:50%;background:var(--bad);
+       animation:vopulse 1s ease-in-out infinite}
+@keyframes vopulse{0%,100%{opacity:1}50%{opacity:.25}}
+.vot{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.pwvo{display:inline-flex;align-items:center;gap:6px}
+.pwvox{position:relative;width:44px;height:44px;flex:0 0 auto;padding:0;border:0;
+       background:none;color:var(--txs);
+       display:inline-flex;align-items:center;justify-content:center}
+.pwvox:active{color:var(--bad)}
+/* And on a post: a pill under the line, because a voice is a thing to press
+   and not a thing to read. */
+.povo{min-height:44px;margin:8px 0 0;padding:0 14px;border-radius:999px;
+      border:1px solid var(--line);background:none;color:var(--tx);
+      font-family:inherit;font-size:.88rem;
+      display:inline-flex;align-items:center;gap:8px}
+.povo.on{border-color:var(--goldln);color:var(--gold)}
+/* A post that was put right says so, beside the time. */
+.ped{color:var(--txs);font-size:.8rem}
 
 /* ---------- a post in the reader's own words ----------
    The button that asks for it, and the line that comes back. A word this
@@ -1853,6 +1884,7 @@ textarea.ntbody:focus{border-color:var(--goldln)}
 <script src="card.js"></script>
 <script src="sns.js"></script>
 <script src="post.js"></script>
+<script src="rec.js"></script>
 <script src="me.js"></script>
 <script src="backup.js"></script>
 <script src="route-map.js"></script>

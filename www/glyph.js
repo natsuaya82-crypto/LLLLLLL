@@ -390,12 +390,10 @@ var ICON_PEN='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="n
 var ICON_PLUS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
-/* A plus and a minus, plain, for the two things you do to a photograph. The
-   star-shaped ICON_PLUS above is the app's own mark for making something new
-   and would read as a decoration here. */
-var ICON_ADDP='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
-  'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'+
-  '<path d="M12 5v14M5 12h14"/></svg>';
+/* A minus, plain, for taking a photograph or a recording off a post. The
+   plus that used to be beside it was the one button that stood for the
+   camera, the library and the microphone all at once, and there are three
+   buttons now. */
 var ICON_MINUS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" '+
   'stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>';
 /* The two tools the photograph editor has, as marks rather than words: a
@@ -519,6 +517,22 @@ var ICON_SHARE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill=
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/>'+
   '<path d="M20 13v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5V13"/></svg>';
+/* What a post can be given: the camera, the pictures already on the phone,
+   and the microphone. One plus used to stand for all three and only ever
+   meant the second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
+var ICON_CAM='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>'+
+  '<circle cx="12" cy="13" r="3.4"/></svg>';
+var ICON_LIB='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="7" y="3" width="14" height="14" rx="2"/>'+
+  '<path d="m10 12 2.5-3 3 3.5 2-2L21 14"/>'+
+  '<path d="M17 21H5a2 2 0 0 1-2-2V7"/></svg>';
+var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="9" y="3" width="6" height="11" rx="3"/>'+
+  '<path d="M5.5 12a6.5 6.5 0 0 0 13 0"/><path d="M12 18.5V21"/></svg>';
 /* pinned: a post its author put at the top of their own page */
 var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+

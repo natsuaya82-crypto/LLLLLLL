@@ -99,8 +99,9 @@ function pwBlank(){ return {ln:'', mn:'', to:'', pics:[]}; }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
-  openForm('post:', t('post.new'), pwHTML(), null,
-    '<button class="navdo"' + DO('pwSend') + '>'+esc(t('post.send'))+'</button>');
+  openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
+    '<button class="navdo"' + DO('pwSend') + '>'+
+      esc(t(PW.ed? 'post.save' : 'post.send'))+'</button>');
 }
 FORM_OPEN.post=function(){ openPost(); };
 /* Word by word, and the row is always there even when it is empty, so the
@@ -148,8 +149,13 @@ function pwPicRoom(url){
   try{ n=String(localStorage.getItem(LS_POSTS)||'').length; }catch(e){}
   return (n + String(url||'').length) < POST_BYTES;
 }
-function pwSetPic(){
-  var el=document.getElementById('pw-pic'), f=el && el.files && el.files[0];
+/* Two fields, one function: the camera and the library are the same
+   photograph arriving, and only the field it came out of differs. Which one
+   is the argument, because two ids cannot both be `pw-pic` and a function
+   that guesses would read the empty one. */
+function pwSetPic(k){
+  var el=document.getElementById(k==='cam'? 'pw-cam' : 'pw-lib'),
+      f=el && el.files && el.files[0];
   if(!f) return;
   var r=new FileReader();
   r.onload=function(){ pwPicKeep(String(r.result||'')); };
@@ -223,13 +229,27 @@ function pwPicHTML(){
         '</span>';
     }).join('')+
     '</div>'+
-    /* Outside the strip, so it stays where a thumb can reach it however many
-       pictures have to be pushed past. Gone at four rather than refusing at
-       four: a button that is there and says no is a button you press twice. */
-    (ps.length<POST_PICS
-      ? '<label class="picadd" aria-label="'+esc(t('post.pic'))+'">'+ICON_ADDP+
-          '<input type="file" id="pw-pic" accept="image/*"' + CH('pwSetPic') + '></label>'
-      : '')+
+    /* Under the strip, so it stays where a thumb can reach it however many
+       pictures have to be pushed past. The camera and the library go at four
+       rather than refusing at four: a button that is there and says no is a
+       button you press twice. The microphone does not -- a voice is not a
+       fifth picture. 「📷 ライブラリ マイクボタンにして」
+
+       `capture` is the whole of the camera. There is no plugin and no Swift
+       behind it: an image field carrying that word is what tells iOS to open
+       the camera instead of the picker, and it is the same photograph either
+       way once it arrives. */
+    '<div class="pwadd">'+
+      (ps.length<POST_PICS
+        ? '<label class="pwab" aria-label="'+esc(t('post.cam'))+'">'+ICON_CAM+
+            '<input type="file" id="pw-cam" accept="image/*" capture="environment"' +
+            CH('pwSetPic', ["cam"]) + '></label>'+
+          '<label class="pwab" aria-label="'+esc(t('post.lib'))+'">'+ICON_LIB+
+            '<input type="file" id="pw-lib" accept="image/*"' +
+            CH('pwSetPic', ["lib"]) + '></label>'
+        : '')+
+      pwVoAddHTML()+
+    '</div>'+
     '</div>';
 }
 function pwHTML(){
@@ -256,7 +276,11 @@ function pwHTML(){
       '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
         'placeholder="'+esc(pwMn() || t('post.mn'))+'"' +
         IN('pwSetMn') + '>'+
-      pwPicHTML()+
+      /* Editing is the line and the meaning. There is nothing to add a
+         photograph or a voice to -- the post already has whatever it has --
+         so the row that adds them is not there rather than there and
+         refusing. */
+      (PW.ed? '' : pwPicHTML())+
       '</div></div>';
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
@@ -307,9 +331,26 @@ function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
 function pwSend(){
   var ln=String(PW.ln||'').trim();
   if(!ln){ toast(t('post.none')); return; }
-  pwBake(function(pics){ pwSendWith(ln, pics); });
+  /* A recording still running is a recording somebody meant to make -- the
+     press that sends the post is not the press that throws it away. */
+  if(REC){ toast(t('post.vo.busy')); return; }
+  /* Editing does not bake, does not write a file and does not make a post:
+     it is one that exists, with two of its fields put right. */
+  if(PW.ed){ pwSaveEdit(ln); return; }
+  /* The voice is written to the disk BEFORE the post is stored, because the
+     post carries the file's name and a name pointing at nothing is a post
+     that says it has a voice and has not. If the write does not happen --
+     no bridge, no room, a refusal -- the post goes without one and says so,
+     rather than being refused itself. What somebody typed is not lost
+     because a microphone was. */
+  pwBake(function(pics){
+    voKeep(PW.vo, function(vo){
+      if(PW.vo && !vo) toast(t('post.vo.lost'));
+      pwSendWith(ln, pics, vo);
+    });
+  });
 }
-function pwSendWith(ln, pics){
+function pwSendWith(ln, pics, vo){
   /* Only to fall back on: the words run together, for somebody who typed a
      line and no meaning. Not stored -- see postRow. */
   var gl=postGloss(ln);
@@ -334,6 +375,9 @@ function pwSendWith(ln, pics){
   }
   if(keep.length) mine.pics=keep;
   if(keep.length<((pics||[]).length)) toast(t('post.pic.full'));
+  /* The file's name and how long it is, and nothing else. The bytes are in
+     Documents; what is in localStorage is this. */
+  if(vo && vo.f) mine.vo={f:vo.f, ms:vo.ms||0};
   /* The natural language, translated once, here, and carried. It is asked
      for and NOT waited on: the post is pushed either way, and a translation
      that arrives late lands on a post that already exists. A post that
@@ -1113,6 +1157,42 @@ function pwBakeOne(pc, done){
   im.src=pc.u;
 }
 
+/* Editing your own post, which is the line and the meaning and nothing else.
+   The photographs and the voice stay exactly as they were: those are files,
+   they were baked and written when the post was made, and swapping one for
+   another is not correcting a sentence.
+
+   The ink is re-cut, and that is not a choice. A post's shapes are the line
+   already cut into letters -- change the line and the old shapes are the old
+   line. So an edited post is drawn in the alphabet as it stands at the moment
+   of the edit, which is the one place in this app where a post's shapes are
+   not the shapes it was born with. */
+function postEdit(id){
+  var p=postById(id);
+  if(!p || !p.mine) return;
+  PW=pwBlank();
+  PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
+  openPost();
+}
+function pwSaveEdit(ln){
+  var p=postById(PW.ed), mn;
+  if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
+  mn=String(PW.mn||'').trim() || postGlossLine(postGloss(ln));
+  p.ln=ln; p.ink=postInk(ln); p.mn=mn;
+  /* The translations were of the old sentence. They are dropped rather than
+     left to be shown under a line they are no longer about, and asked for
+     again -- which lands late, on a post that already exists, exactly as it
+     does when one is written. */
+  delete p.tr;
+  p.ui=uiLang();
+  p.ed=Date.now();
+  postTr(p.mn, p.ui, function(tr){
+    if(tr && typeof tr==='object'){ p.tr=tr; savePosts(); render(); }
+  });
+  savePosts();
+  PW=pwBlank();
+  goTab('feed');
+}
 /* ==== below this line a post renders from the post ====
    Nothing here may ask the open language, the open dictionary, the drawn
    letters or the account anything. A post is read by people who do not have
@@ -1278,6 +1358,17 @@ function postLines(){
     return PLINE[c.getAttribute('data-p')] || null;
   });
 }
+/* The voice on a post, and it renders from the post: `vo` is `{f, ms}` -- the
+   name of a file in Documents and how long it is -- and there is nothing else
+   to know. A post with none has no row, not an empty one. rec.js (chapter 25)
+   is the other half, and the file is written there. */
+function postVoHTML(p){
+  var vo=p && p.vo;
+  if(!vo || !vo.f) return '';
+  return '<button class="povo'+((VOAT===vo.f)? ' on':'')+'" data-f="'+esc(vo.f)+'"' +
+    DO('voPlay', [String(vo.f)]) + ' aria-label="'+esc(t('post.vo.play'))+'">'+
+    ICON_PLAY+'<span class="vot">'+esc(voLen(vo.ms))+'</span></button>';
+}
 function postRow(p){
   return '<div class="post">'+
     '<div class="pav">'+postFace(p)+'</div>'+
@@ -1288,6 +1379,10 @@ function postRow(p){
         '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
         '<span class="pdot">·</span>'+
         '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+        /* A post that was put right says so, beside the time. It carries the
+           moment it was edited, not a flag: what a person wants to know is
+           when, and a flag cannot be asked that later. */
+        (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         (p.mine? '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
           esc(t('post.more'))+'">'+ICON_DOTS+'</button>' : '')+
@@ -1307,6 +1402,7 @@ function postRow(p){
               return '<img class="ppic" src="'+esc(u)+'" alt="">';
             }).join('')+'</div>'
         : '')+
+      postVoHTML(p)+
       /* The natural language, always. In the reader's own if the post carries
          it, and in the author's if it does not -- which is every post until
          the translator is wired up, and is not a failure. */
@@ -1383,15 +1479,18 @@ function postCard(id){
   var p=postById(id);
   if(p) cardOpen('p', id);
 }
-/* The two things an author can do to their own post. It was one, and it was
+/* The three things an author can do to their own post. It was one, and it was
    on the ... itself -- so the only thing that button could ever be was delete,
    and a delete reached by pressing something unlabelled is a delete waiting to
-   be pressed by accident. 「ポストを削除、ポストを固定する、にしよう」 */
+   be pressed by accident. 「ポストを削除、ポストを固定する、にしよう」
+   「デリートピン留めエディット」 */
 function postMore(id){
   var p=postById(id); if(!p || !p.mine) return;
   openForm('pmore:'+id, t('post.more'),
     '<button class="set"' + DO('postPin', [id]) + '><span class="sl">'+
       esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
+    '<button class="set"' + DO('postEdit', [id]) + '><span class="sl">'+
+      esc(t('post.edit'))+'</span></button>'+
     '<button class="set" style="border-bottom:none"' + DO('postDel', [id]) + '><span class="sl bad">'+
       esc(t('post.del'))+'</span></button>');
 }

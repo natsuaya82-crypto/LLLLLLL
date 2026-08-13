@@ -559,6 +559,51 @@ for.
 - Affected docs: —
 - Implementation status: implemented
 
+### Decision
+- Date: 2026-08-13
+- Area: The composer
+- Decision: The one plus that added a photograph becomes **three buttons**:
+  the camera, the library, and the microphone.
+- Reason: 「投稿の時にphotoボタンやめて。📷 ライブラリ マイクボタンにして」
+- Affected features: post composer
+- Affected data: none by itself
+- Affected docs: DATA_MODEL (with the voice, below)
+- Implementation status: implemented
+
+### Decision
+- Date: 2026-08-13
+- Area: The voice on a post
+- Decision: Up to **thirty seconds** of the person's own voice on a post.
+  It is written as a **file in Documents**, never into `localStorage`, and
+  the post carries the file's name. Built **to the end** — the recorder, the
+  file, and playing one back — rather than a button with nothing behind it.
+- Reason: 「あとポストに声入れれるようにしたい30秒くらい。発音とかやれるやん？」
+  「ファイルに出す」 and, asked how far to build it now, 「録音まで作る」.
+- Affected features: post composer, timeline
+- Affected data: **new** — `post.vo = {f, ms}`, and `Documents/Voices/` on the
+  phone. Nothing existing changes shape
+- Affected docs: DATA_MODEL, DATA_SAFETY, CHANGELOG, CLAUDE.md
+- Implementation status: implemented in the app; **not device confirmed** —
+  the microphone, `NSMicrophoneUsageDescription` and the two new Swift calls
+  have never run on a phone
+
+### Decision
+- Date: 2026-08-13
+- Area: A post's ... menu
+- Decision: Three things — delete, pin, **edit**. Editing puts right the
+  **line and the meaning**, and those two only: the photographs and the voice
+  stay as they were. An edited post **says so**, beside the time.
+- Reason: 「あとツイートの点点々、デリートピン留めエディットにして」, and asked
+  what edit reaches, 「文と意味だけ」; asked whether to show it, 「出す」.
+- Affected features: timeline
+- Affected data: `post.ln`, `post.ink`, `post.mn`, `post.tr` are overwritten
+  on the post being edited; `post.ed` is new. The `ink` is re-cut with the
+  alphabet as it stands at that moment, which is the one place a post's
+  shapes are not the shapes it was born with — a changed line wearing the old
+  shapes is the old line
+- Affected docs: DATA_MODEL, CHANGELOG
+- Implementation status: implemented
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

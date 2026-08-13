@@ -764,6 +764,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the copy that survives the app — a language as one file in Documents (ch 24) |
+| `www/rec.js` | the voice on a post — thirty seconds, as a file in Documents, never in `localStorage` (ch 25) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
@@ -807,7 +808,7 @@ somebody made on purpose.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js`, chapter 23 closes `share.js`, and
+- The book is numbered: chapter 0 opens `core.js`, chapter 25 closes `rec.js`, and
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
   grew to hold five was split along those banners, not along anything new. The
   numbering has gaps where a chapter was closed; it is a shelf, not a count.

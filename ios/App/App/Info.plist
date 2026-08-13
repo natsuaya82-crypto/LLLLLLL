@@ -56,5 +56,12 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<!-- A post can carry thirty seconds of the person's own voice, which is
+	     the only way anybody hears what a made-up language sounds like.
+	     Without this line iOS does not refuse the microphone: it kills the
+	     app the moment it is asked for, with nothing on screen and nothing
+	     in the log about a microphone. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>To record your own voice on a post, so other people can hear how your language sounds.</string>
 </dict>
 </plist>

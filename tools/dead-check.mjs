@@ -264,6 +264,10 @@ const BROWSER = ['Date','String','Number','Boolean','Object','Array','Math','JSO
   /* The one way anything leaves this phone. fetch is newer and returns a
      Promise, which es5-check bans and an old WKWebView may not have. */
   'XMLHttpRequest',
+  /* The voice on a post (rec.js). MediaRecorder is what records it and Audio
+     is what plays one back -- and both are asked for by name before they are
+     used, because an old WKWebView has neither. */
+  'MediaRecorder','Audio',
   'getComputedStyle','confirm','alert','prompt','eval'];
 
 const bindings = new Set(decls.map(d => d.name));

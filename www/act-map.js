@@ -118,6 +118,13 @@ act('postReply', postReply);
 act('postDel', postDel);
 act('postMore', postMore);
 act('postPin', postPin);
+act('postEdit', postEdit);
+/* the voice on a post -- rec.js */
+act('voStart', voStart);
+act('voStop', voStop);
+act('voDrop', voDrop);
+act('voPlay', voPlay);
+act('voPlayPW', voPlayPW);
 act('pwDropPic', pwDropPic);
 act('pwMarkOpen', pwMarkOpen);
 act('pwMarkDel', pwMarkDel);
