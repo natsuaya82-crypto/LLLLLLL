@@ -126,13 +126,13 @@ backlog entry is not permission, and neither is the absence of one.
 
 ```
 npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv
-                # + card + backup + press
-                # green before a commit (~100s)
+                # + card + post + backup + press
+                # green before a commit (~110s)
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
-`npm run card` / `npm run backup` / `npm run press`.
+`npm run card` / `npm run post` / `npm run backup` / `npm run press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
@@ -157,7 +157,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The twelve rules the gate enforces
+## The thirteen rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -487,6 +487,26 @@ the alphabet it was written in. Until it is cut, a post has no ink and falls to
 from a language this phone does not have would be wrong. It cannot happen yet:
 every post without ink predates the timeline holding anybody else's. The day
 posts arrive from a server they must arrive with their ink already on them.
+
+### 13. What a post carries is put on it when it is written
+
+`post.js` has a line across it and rules 8 and 12 hold what happens BELOW it.
+Nothing held the moment the line is crossed. `pwSend()` is where the making
+side becomes past-tense data, and a post that leaves the composer missing
+something looks perfectly correct for as long as the only person reading it is
+the person who wrote it — which is every post so far.
+
+`post-check` drives the real `pwSend()`. A photograph that is black everywhere,
+a letter placed in the middle of it, and then the pixels of what came out are
+counted: the letters somebody put on a picture are drawn INTO the file, because
+a reader has no alphabet to compose them with. "The string is different" would
+also be true of a bake that drew nothing, which is why it is a count and not a
+comparison. It also holds that the positions do **not** travel (a coordinate
+without the shape beside it is unusable to anybody else), that `dir` does, and
+that the composer is empty behind it — otherwise the next post starts with the
+last one's letters on it.
+
+All four were made to fail before any of them was believed.
 
 ### 11. A language is never lost
 

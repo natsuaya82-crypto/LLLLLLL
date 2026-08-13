@@ -459,6 +459,16 @@ export function halfDone(){
        top bar now, and a face that returns only FORM.html cannot see it. */
     ['a post being written', () => { PW = pwBlank(); openPost();
         pwSetLn('kano mos tir'); return vForm(); }],
+    /* Letters placed on a photograph. Reached only from a composer that
+       already HAS a picture, so the walk never sees it without this -- and
+       once a letter is on it, the selected face with its slider and its two
+       buttons is a second screen again. */
+    ['letters on a photograph', () => { PW = pwBlank(); PW.pic = POSTS[0].pic;
+      PW.marks = [{l:LETTERS[0].id, x:0.5, y:0.4, s:0.18, w:1}];
+      pwMarkAt = 0; const h = pwMarkHTML(); PW = pwBlank(); pwMarkAt = -1; return h; }],
+    ['a photograph with no letters on it yet', () => { PW = pwBlank();
+      PW.pic = POSTS[0].pic; pwMarkAt = -1;
+      const h = pwMarkHTML(); PW = pwBlank(); return h; }],
     ['a reply being written', () => { PW = pwBlank(); PW.to = POSTS[0].id;
         openPost(); pwSetLn('sar'); return vForm(); }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],

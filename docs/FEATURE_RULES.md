@@ -265,7 +265,10 @@ instead of appearing here.
   reader does not have, which is the same guarantee `ink` gives by a different
   route
 - Affected docs: FEATURES.md, DATA_MODEL.md, CHANGELOG.md
-- Implementation status: not started
+- Implementation status: implemented; code confirmed, not device confirmed.
+  Dragging is a pointer gesture and a pointer gesture is the one thing a
+  headless browser cannot vouch for — `post-check` holds what the bake puts in
+  the file, and a finger on a photograph needs a phone
 
 ### Decision
 - Date: 2026-08-12

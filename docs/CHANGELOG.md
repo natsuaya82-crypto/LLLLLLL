@@ -260,6 +260,47 @@ morning on the second side. One rule now. 「a にしたら最初の1ヶ月で�
 - New keys in all ten languages: `cap.hid`, `cap.lapse.h`, `cap.lapse.d`,
   `cap.lapse.ok`.
 
+### Letters can be placed on a photograph
+
+**Behaviour, on every plan. Nothing new is stored on a post.**
+
+Pick a letter you drew, put it anywhere on the picture, drag it with a finger,
+size it with the slider. 「なんなら画像に自作文字を貼って投稿できるようにすれば
+勝手に広がるよ」
+
+- **The picture is the screen.** Full bleed, black behind it, the controls
+  floating on it and the alphabet along the foot — the way a phone does a
+  photograph, not the way a form does one.
+  「インスタみたいにしろよ なんでそんなパソコンと同じような配置なんや」
+- *newly stored*: **nothing.** The letters are drawn INTO the picture when the
+  post is sent, so `post.pic` is the only thing that changes. A reader has
+  neither the alphabet nor a way to compose it, and a picture with the letters
+  already in it is past-tense the way `ink` is, by a shorter route.
+- *while writing*: `PW.marks` — a letter's id and where it sits as a fraction
+  of the picture. It is where you are standing, not something stored, and
+  `pwBlank()` clears it.
+- **white or black**, one button. A letter nobody can see is not placed on
+  anything, and a photograph can be either.
+- *the plan*: free, on every plan. 「画像と自作文字貼るのは無料」
+- *migration*: none. *deleted*: nothing.
+- **New check, thirteenth in `npm test`: `post-check`.** It drives the real
+  `pwSend()` against a photograph that is black everywhere and counts the light
+  pixels in what came out — "the string is different" would also be true of a
+  bake that drew nothing. It also holds that the positions do NOT travel on the
+  post, that the direction does, and that the composer is empty afterwards. All
+  four were watched failing with the bug put back.
+
+### The onboarding's ghost buttons stopped being everybody's
+
+**A bug, everywhere in the app.**
+
+`index.html` carries a second `<style>` block for the onboarding, and it set
+`.btn.ghost` without scoping it. Being later, it won on order: every ghost
+button in Lingua had a white border at 22% opacity, which is invisible on a
+page whose background is paper. It looked right on the onboarding because the
+onboarding is the one screen that is dark. Same shape as the `.sfont` bug —
+one rule in one place, quietly outranked by another written for one screen.
+
 ### A language has a direction, and a post carries it
 
 **Behaviour and data.** Reading is free; choosing is Plus.

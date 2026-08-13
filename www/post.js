@@ -95,7 +95,7 @@ function postGlossLine(gl){
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
-function pwBlank(){ return {ln:'', mn:'', to:'', pic:''}; }
+function pwBlank(){ return {ln:'', mn:'', to:'', pic:'', marks:[]}; }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
@@ -166,12 +166,16 @@ function pwPicKeep(url){
   im.onerror=function(){ toast(t('post.pic.bad')); };
   im.src=url;
 }
-function pwDropPic(){ PW.pic=''; openPost(); }
+/* The letters go with the picture. They are placed ON it -- a mark with no
+   photograph under it is a position on nothing. */
+function pwDropPic(){ PW.pic=''; PW.marks=[]; pwMarkAt=-1; openPost(); }
 function pwPicHTML(){
   return '<div class="pwpicrow">'+
     (PW.pic? '<img class="pwpic" src="'+esc(PW.pic)+'" alt="">' : '')+
     '<label class="btn ghost picpick">'+esc(t(PW.pic? 'post.pic.again' : 'post.pic'))+
       '<input type="file" id="pw-pic" accept="image/*"' + CH('pwSetPic') + '></label>'+
+    (PW.pic? '<button class="btn ghost"' + DO('pwMarkOpen') + '>'+
+       esc(t('post.mark'))+(pwMarks().length? ' '+pwMarks().length : '')+'</button>' : '')+
     (PW.pic? '<button class="btn ghost"' + DO('pwDropPic') + '>'+esc(t('post.pic.drop'))+'</button>' : '')+
     '</div>';
 }
@@ -243,9 +247,16 @@ function pwLeftPaint(){
 function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
 /* Posting. The meaning is what was typed, or the gloss run together if
    nothing was -- never empty, because a line nobody can read is not a post. */
+/* The letters placed on the photograph are drawn INTO it first, and after
+   that there is a picture and nothing else. It is the one thing here that
+   cannot happen synchronously -- an image loads -- so the rest of posting is
+   below, and a bake that fails sends the photograph as it was. */
 function pwSend(){
   var ln=String(PW.ln||'').trim();
   if(!ln){ toast(t('post.none')); return; }
+  pwBake(function(pic){ pwSendWith(ln, pic); });
+}
+function pwSendWith(ln, pic){
   /* Only to fall back on: the words run together, for somebody who typed a
      line and no meaning. Not stored -- see postRow. */
   var gl=postGloss(ln);
@@ -259,7 +270,11 @@ function pwSend(){
             ln:ln, ink:postInk(ln), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), li:0, bo:0, re:0};
-  if(PW.pic) mine.pic=PW.pic;
+  /* If the letters made the file too big for what is left, the PHOTOGRAPH is
+     what is refused -- never the post, and nothing already written is pruned
+     to make room. Same sentence pwPicKeep() makes when the picture arrives. */
+  if(pic && pwPicRoom(pic)) mine.pic=pic;
+  else if(pic) toast(t('post.pic.full'));
   /* The natural language, translated once, here, and carried. It is asked
      for and NOT waited on: the post is pushed either way, and a translation
      that arrives late lands on a post that already exists. A post that
@@ -505,6 +520,257 @@ function trBtnHTML(p){
   var n=trLeft();
   return '<button class="trgo"' + DO('trOpen', [p.id]) + '>'+ICON_LINE+t('tr.go')+
     (n===Infinity? '' : '<span class="trn">'+esc(t('tr.left', n))+'</span>')+'</button>';
+}
+
+/* ---- letters placed on the photograph ---------------------------------
+   「なんなら画像に自作文字を貼って投稿できるようにすれば勝手に広がるよ」
+
+   A letter somebody drew, put anywhere on the picture, moved with a finger
+   and sized with a slider. Free, on every plan.
+   「画像と自作文字貼るのは無料 投稿に貼るに決まってるでしょ」
+
+   They are BAKED into the picture when the post is sent, and that is the
+   whole of why this needs no new field on a post. A reader has neither the
+   alphabet nor a way to compose it; a picture with the letters already in it
+   is past-tense the way `ink` is past-tense, by a shorter route. `post.pic`
+   is the only thing that changes.
+
+   While the post is being written they are `PW.marks`, which is where you are
+   standing rather than anything that is stored: a letter's id, and where it
+   sits as a FRACTION of the picture -- so the same numbers place it on the
+   screen at 340px wide and in the bake at 900. */
+var PW_MARK=0.18;              /* a new one is this much of the picture wide */
+function pwMarks(){ if(!PW.marks) PW.marks=[]; return PW.marks; }
+var pwMarkAt=-1;               /* which one is being worked on */
+function pwMarkOpen(){
+  openForm('marks:', t('post.mark'), pwMarkHTML(), pwMarkMount);
+}
+FORM_OPEN.marks=function(){ pwMarkOpen(); };
+/* The letters there are to place: the ones with a shape drawn on them. A
+   letter that is a borrowed character is not somebody's own drawing and is
+   not what this is for. */
+function pwMarkLts(){
+  var out=[], i;
+  for(i=0;i<LETTERS.length;i++)
+    if(LETTERS[i].st && LETTERS[i].st.length) out.push(LETTERS[i]);
+  return out;
+}
+/* The picture fills the phone and everything else floats on it: the way you
+   drop a sticker on a photograph, not the way you fill in a form.
+   「インスタみたいにしろよ なんでそんなパソコンと同じような配置なんや」
+
+   It was a page -- the picture in a box, a row of controls under it, a grid of
+   letters under that -- which reads as a settings screen about a photograph
+   rather than as the photograph. There is nothing on this screen except the
+   picture and the letters you are putting on it, so the picture is the screen.
+
+   The stage is the PICTURE's box and not the phone's: a letter is placed as a
+   fraction of the picture, and those fractions have to mean the same thing
+   here and in the bake at 900px. So the stage shrink-wraps the image and the
+   image is the thing that is centred. */
+function pwMarkHTML(){
+  var ms=pwMarks(), sel=ms[pwMarkAt], lts=pwMarkLts();
+  return '<div class="mkfull">'+
+    '<div class="mkstage" id="mk-box">'+
+      '<img class="mkpic" src="'+esc(PW.pic||'')+'" alt="">'+
+      ms.map(function(m, i){
+        return '<canvas class="mkc'+(i===pwMarkAt?' on':'')+'" data-i="'+i+'" '+
+          'style="left:'+(m.x*100)+'%;top:'+(m.y*100)+'%;width:'+(m.s*100)+'%"></canvas>';
+      }).join('')+
+    '</div>'+
+    '<button class="mkx"' + DO('back') + ' aria-label="'+esc(t('post.mark.done'))+'">'+
+      ICON_CROSS+'</button>'+
+    '<button class="mkdone"' + DO('back') + '>'+esc(t('post.mark.done'))+'</button>'+
+    (sel
+      ? '<div class="mkslide"><input type="range" class="mkrng" id="mk-size" '+
+          'min="4" max="60" value="'+Math.round(sel.s*100)+'"' + IN('pwMarkSize') + '>'+
+        '</div>'+
+        '<div class="mktools">'+
+          '<button class="mkt"' + DO('pwMarkInk') + '>'+
+            '<span class="mkdot'+(sel.w?' w':'')+'"></span>'+
+            '<span class="mktl">'+esc(t(sel.w? 'post.mark.dark' : 'post.mark.light'))+'</span>'+
+          '</button>'+
+          '<button class="mkt"' + DO('pwMarkDel') + '>'+
+            '<span class="mktl">'+esc(t('post.mark.del'))+'</span></button>'+
+        '</div>'
+      : '')+
+    '<div class="mktray">'+
+      (lts.length
+        ? lts.map(function(l){
+            return '<button class="mkl"' + DO('pwMarkAdd', [l.id]) + '>'+
+              '<canvas class="mklc" data-l="'+esc(l.id)+'"></canvas></button>';
+          }).join('')
+        : '<span class="mkhow">'+esc(t('post.mark.none'))+'</span>')+
+    '</div>'+
+    '</div>';
+}
+/* Redrawn in place rather than through render(): the picture is a big image
+   and rebuilding the screen on every drag would reload it. */
+function pwMarkPaint(){
+  var e=document.getElementById('form-body');
+  if(!e) return;
+  e.innerHTML=pwMarkHTML();
+  pwMarkMount();
+}
+function pwMarkAdd(id){
+  var ms=pwMarks();
+  ms.push({l:String(id), x:0.5, y:0.5, s:PW_MARK, w:1});
+  pwMarkAt=ms.length-1;
+  pwFresh(); pwMarkPaint();
+}
+function pwMarkDel(){
+  var ms=pwMarks();
+  if(!ms[pwMarkAt]) return;
+  ms.splice(pwMarkAt, 1);
+  pwMarkAt=-1;
+  pwFresh(); pwMarkPaint();
+}
+/* Light on a dark photograph, dark on a light one. Two values and one button:
+   a letter nobody can see is not placed on anything. */
+function pwMarkInk(){
+  var m=pwMarks()[pwMarkAt];
+  if(!m) return;
+  m.w=m.w? 0 : 1;
+  pwFresh(); pwMarkPaint();
+}
+function pwMarkSize(v){
+  var m=pwMarks()[pwMarkAt];
+  if(!m) return;
+  m.s=Math.max(0.04, Math.min(0.6, (parseInt(v, 10)||18)/100));
+  pwFresh(); pwMarkDraw();
+}
+/* Where a letter's shape comes from while the post is being written: the open
+   alphabet, which is right, because this is the making side and it is MY
+   picture and MY letters. What travels is the baked picture. */
+function pwMarkSt(m){
+  var l=m && ltById(m.l);
+  return (l && l.st && l.st.length)? l.st : null;
+}
+/* Not inkCanvases(): that draws every square cell in --tx, which is the
+   theme's ink and is right for a tile, a key and the alphabet. A letter on a
+   photograph is white or black and nothing else -- the two colours a caption
+   has ever been -- so the strokes go through inkStrokes directly, which is
+   still the one place that turns strokes into a shape. */
+function pwMarkDraw(){
+  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, c, m, st, S,
+      dpr=window.devicePixelRatio||1;
+  for(i=0;i<els.length;i++){
+    c=els[i];
+    m=ms[parseInt(c.getAttribute('data-i'), 10)];
+    if(!m) continue;
+    c.style.width=(m.s*100)+'%';
+    c.style.left=(m.x*100)+'%';
+    c.style.top=(m.y*100)+'%';
+    st=pwMarkSt(m);
+    if(!st) continue;
+    S=Math.max(40, Math.round((c.getBoundingClientRect().width||60)*dpr));
+    c.width=S; c.height=S;
+    inkStrokes(c.getContext('2d'), st, S/800, 0, 0, m.w? '#fff' : '#000');
+  }
+}
+/* One pointer, on the box rather than on each letter: a finger that leaves a
+   small canvas mid-drag would otherwise drop it. */
+function pwMarkMount(){
+  /* The tray's letters are drawn white here rather than left to geTiles(),
+     which fills every `tc` canvas in --tx. This screen is black whatever the
+     theme is, so --tx is the right ink on a light phone and invisible on a
+     dark one -- and an inversion on top would only move which of the two was
+     wrong. */
+  var els=document.querySelectorAll('canvas.mklc'), i, c, st, S,
+      dpr=window.devicePixelRatio||1;
+  for(i=0;i<els.length;i++){
+    c=els[i];
+    var l=ltById(c.getAttribute('data-l'));
+    st=(l && l.st && l.st.length)? l.st : null;
+    if(!st || !st.length) continue;
+    S=Math.max(40, Math.round((c.getBoundingClientRect().width||34)*dpr));
+    c.width=S; c.height=S;
+    inkStrokes(c.getContext('2d'), st, S/800, 0, 0, '#fff');
+  }
+  pwMarkDraw();
+  var box=document.getElementById('mk-box');
+  if(!box) return;
+  box.style.touchAction='none';
+  box.onpointerdown=pwMarkDown;
+  box.onpointermove=pwMarkMove;
+  box.onpointerup=pwMarkUp;
+  box.onpointercancel=pwMarkUp;
+}
+var pwMarkGrab=false;
+function pwMarkWhere(ev){
+  var box=document.getElementById('mk-box');
+  if(!box) return null;
+  var b=box.getBoundingClientRect();
+  if(!b.width || !b.height) return null;
+  return [Math.max(0, Math.min(1, (ev.clientX-b.left)/b.width)),
+          Math.max(0, Math.min(1, (ev.clientY-b.top)/b.height))];
+}
+/* The topmost one the finger is inside, so a letter placed over another is the
+   one that moves. */
+function pwMarkHit(p){
+  var ms=pwMarks(), i, m, half;
+  for(i=ms.length-1;i>=0;i--){
+    m=ms[i]; half=m.s/2;
+    if(p[0]>=m.x-half && p[0]<=m.x+half && p[1]>=m.y-half && p[1]<=m.y+half) return i;
+  }
+  return -1;
+}
+function pwMarkDown(ev){
+  var p=pwMarkWhere(ev);
+  if(!p) return;
+  var i=pwMarkHit(p);
+  if(i<0) return;
+  pwMarkGrab=true;
+  if(i!==pwMarkAt){ pwMarkAt=i; pwMarkPaint(); }
+  if(ev.preventDefault) ev.preventDefault();
+}
+function pwMarkMove(ev){
+  if(!pwMarkGrab) return;
+  var p=pwMarkWhere(ev), m=pwMarks()[pwMarkAt];
+  if(!p || !m) return;
+  m.x=p[0]; m.y=p[1];
+  pwMarkDraw();
+  if(ev.preventDefault) ev.preventDefault();
+}
+function pwMarkUp(){
+  if(!pwMarkGrab) return;
+  pwMarkGrab=false;
+  pwFresh();
+}
+/* ---- and into the picture ----------------------------------------------
+   The letters are drawn INTO the photograph at the moment the post is sent,
+   and after that there is a picture and nothing else. Nothing on the post
+   has to be composed by a reader who does not have this alphabet, which is
+   the same guarantee `ink` gives by the longer route.
+
+   It is asynchronous because an image is, so pwSend hands it a function
+   rather than waiting: a post is not held up by a picture, and a bake that
+   fails sends the photograph as it was rather than sending nothing. */
+function pwBake(done){
+  var ms=pwMarks();
+  if(!PW.pic || !ms.length){ done(PW.pic||''); return; }
+  var im=new Image();
+  im.onload=function(){
+    var c=document.createElement('canvas'), x, i, m, st, k, out;
+    c.width=im.width; c.height=im.height;
+    x=c.getContext('2d');
+    x.drawImage(im, 0, 0, c.width, c.height);
+    for(i=0;i<ms.length;i++){
+      m=ms[i];
+      st=pwMarkSt(m);
+      if(!st) continue;
+      /* The same numbers the screen used: a fraction of the picture's width,
+         in a square cell centred on the point it was dropped at. */
+      k=(m.s*c.width)/800;
+      inkStrokes(x, st, k, m.x*c.width-(m.s*c.width)/2,
+                 m.y*c.height-(m.s*c.width)/2, m.w? '#fff' : '#000');
+    }
+    try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
+    catch(e){ done(PW.pic); return; }
+    done(out);
+  };
+  im.onerror=function(){ done(PW.pic); };
+  im.src=PW.pic;
 }
 
 /* ==== below this line a post renders from the post ====
