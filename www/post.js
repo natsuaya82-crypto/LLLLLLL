@@ -279,6 +279,27 @@ function pwPicHTML(){
     '</div>'+
     '</div>';
 }
+/* The line as it will actually look, under the field.
+
+   The field cannot BE vertical: a column is not something this webview lets
+   anybody type into, which is what dirFlat() exists for. So a language that
+   runs down the page was typed across and posted downward, and the first time
+   somebody saw the shape of their own sentence was after it had gone.
+   「縦書きにしたのに投稿プレビューだと見えない」
+
+   It renders through postLnHTML() -- the timeline's own function, handed a
+   post-shaped thing -- so the preview and the post cannot disagree about
+   anything, because they are one renderer rather than two that look alike.
+
+   Only for a language that runs down the page. For one that runs across, the
+   field already IS the preview, and a second copy of the line under it would
+   be the same sentence twice. */
+function pwPrevHTML(){
+  var d=scriptDir(), ln=String(PW.ln||'');
+  if(d.indexOf('ttb')!==0 || !ln) return '';
+  return '<div class="pwprev '+dirClass(d)+'">'+
+    postLnHTML({id:'pw', ln:ln, ink:postInk(ln)})+'</div>';
+}
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
@@ -296,6 +317,7 @@ function pwHTML(){
          post itself is set in columns. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
         PW.ln, dirClass(dirFlat(scriptDir())))+
+      '<div id="pw-prev">'+pwPrevHTML()+'</div>'+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
@@ -322,6 +344,11 @@ function pwSetLn(v){
   PW.ln=String(v||'');
   var g=document.getElementById('pw-gl');
   if(g) g.innerHTML=pwGl();
+  /* The preview is patched with the gloss and the canvases painted again:
+     postLines() asks the document what is on it, so the new ones are found
+     without anything here knowing how many there are. */
+  var pv=document.getElementById('pw-prev');
+  if(pv){ pv.innerHTML=pwPrevHTML(); postLines(); }
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');
