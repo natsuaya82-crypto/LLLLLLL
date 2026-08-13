@@ -60,6 +60,11 @@ function vpKbWire(){
   var set=function(){
     var h=Math.max(0, Math.round(window.innerHeight-vv.height-vv.offsetTop));
     document.documentElement.style.setProperty('--kb', h+'px');
+    /* The photograph is one of the things that gets out of the way, so it is
+       narrower with a keyboard up than without one -- and every letter on it
+       is a fraction of its width. They are drawn again at the width it now
+       is, or the line is the size it was on the bigger picture. */
+    if(document.getElementById('mk-box')){ pwMarkDraw(); pwMarkFit(); }
   };
   vv.addEventListener('resize', set);
   vv.addEventListener('scroll', set);

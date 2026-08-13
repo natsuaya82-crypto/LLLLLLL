@@ -899,9 +899,12 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
         display:flex;align-items:center;justify-content:center;
         -webkit-user-select:none;user-select:none}
 .mkstage{position:relative;line-height:0;touch-action:none}
-/* The picture keeps out of the keyboard's way as well: with one up, the room
-   left is the screen minus the controls minus the keyboard, and a photograph
-   that ran under it would be a photograph you cannot see while typing on it. */
+/* The picture does NOT get out of the keyboard's way, and that is on purpose:
+   subtracting the keyboard from its height leaves a postage stamp in the
+   middle of a black screen, and it is the picture somebody is working on. It
+   stays where it is and the keyboard covers its foot, which is what every
+   phone's own photo editor does. The controls are what moves -- the colours
+   and the size, below. */
 .mkpic{display:block;max-width:100vw;
        max-height:calc(100dvh - 190px);width:auto;height:auto}
 .mkc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
@@ -924,7 +927,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The letter's colour, along the foot above the alphabet, where a phone puts
    a colour picker. */
 .mkcols{position:absolute;left:0;right:0;
-        bottom:calc(env(safe-area-inset-bottom,0) + 68px + var(--kb));
+        bottom:calc(env(safe-area-inset-bottom,0) + 12px + var(--kb));
         display:flex;align-items:center;gap:6px;padding:0 12px;
         overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .mkcols::-webkit-scrollbar{display:none}
@@ -952,7 +955,8 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    way to say otherwise that every webview this has to run in agrees about, so
    it is a horizontal one turned on its side -- which is what the width being
    the height means. */
-.mkslide{position:absolute;left:0;top:50%;width:44px;height:200px;
+.mkslide{position:absolute;left:0;top:calc(50% - var(--kb) / 2);
+         width:44px;height:200px;
          transform:translateY(-50%);display:flex;align-items:center;
          justify-content:center}
 /* 180 long and 44 across, and then turned -- so the thing a thumb has to hit
@@ -974,14 +978,33 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mkdot{width:15px;height:15px;border-radius:50%;background:#111;
        border:1px solid rgba(255,255,255,.65);flex:none}
 .mkdot.w{background:#fff}
-/* The field the line is typed into, along the foot. It sits above the
-   keyboard the phone puts up, which is the whole point of it. */
-.mkfield{position:absolute;left:0;right:0;
-         bottom:calc(env(safe-area-inset-bottom,0) + 8px + var(--kb));
-         padding:0 12px}
-.mkfield .lnin{width:100%;background:rgba(0,0,0,.5);color:#fff;
-               border:1px solid rgba(255,255,255,.25);border-radius:12px;
-               min-height:48px;padding:12px 14px}
+/* The field the line is typed into, and it IS the line: it sits on the
+   picture, in the letters and the colour the line will be in, at the size it
+   will be. There was a grey box at the foot of the screen as well, which said
+   the same thing twice and only one of the two looked like the answer.
+
+   No background and no border: the dotted outline is the only frame, and it
+   is the same outline a mark that is not being typed into wears.
+
+   44 in both directions even when the line is one small letter -- the frame
+   is what a thumb presses to get back into a line, and a 40x16 target on a
+   photograph is one somebody has to aim at. The text of a one-line input is
+   centred in its box, so the line still sits where its canvas drew it. */
+.mktx{position:absolute;transform:translate(-50%,-50%);
+      min-width:44px;min-height:44px;
+      background:none;border:0;padding:0;outline:1px dashed rgba(255,255,255,.7);
+      outline-offset:3px;line-height:1;font-family:inherit;
+      -webkit-appearance:none;appearance:none}
+.mktx::placeholder{color:rgba(255,255,255,.5)}
+.mktx:focus{outline:1px dashed rgba(255,255,255,.9)}
+/* The eight again, on the field the line is typed into, so what is being
+   typed is the colour it is about to be on the picture. One class per colour rather than a style
+   attribute: a colour in the markup is what act-check refuses. */
+.mkink.c0{color:var(--mk0)} .mkink.c1{color:var(--mk1)}
+.mkink.c2{color:var(--mk2)} .mkink.c3{color:var(--mk3)}
+.mkink.c4{color:var(--mk4)} .mkink.c5{color:var(--mk5)}
+.mkink.c6{color:var(--mk6)} .mkink.c7{color:var(--mk7)}
+
 /* The crop. Everything outside it goes dark, which is one enormous shadow
    rather than four rectangles to keep in step with the box. The corners are
    drawn, not pressed: pwCutHit() decides what the finger has, because a

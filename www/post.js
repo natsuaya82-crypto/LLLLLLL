@@ -636,8 +636,21 @@ function pwMarkHTML(){
       '<img class="mkpic" src="'+esc((pwPic()&&pwPic().u)||'')+'" alt="">'+
       ms.map(function(m, i){
         return '<canvas class="mkc'+((!cr && i===pwMarkAt)?' on':'')+'" data-i="'+i+'" '+
-          'style="left:'+(m.x*100)+'%;top:'+(m.y*100)+'%;width:'+(m.s*100)+'%"></canvas>';
+          'style="left:'+(m.x*100)+'%;top:'+(m.y*100)+'%"></canvas>';
       }).join('')+
+      /* The line is typed where it is going to be, in the letters and the
+         colour it is going to be in. There was a grey box at the foot of the
+         screen as well, which is the same thing said twice and the second one
+         did not look like the answer.
+         「薄灰色のやつ消して天仙のやつが実質その役割」 */
+      ((!cr && sel)
+        ? '<input class="mktx sfont mkink c'+
+            Math.max(0, PW_COLS.indexOf(pwMarkCol(sel)))+'" id="mk-tx" '+
+            'value="'+esc(sel.tx||'')+'" placeholder="'+esc(t('post.mark.ph'))+'" '+
+            'autocomplete="off" autocorrect="off" spellcheck="false" '+
+            'style="top:'+(sel.y*100)+'%;left:'+(sel.x*100)+'%"' +
+            IN('pwMarkText') + '>'
+        : '')+
       (cr? pwCutHTML() : '')+
     '</div>'+
     /* The row across the top: the way out, then the tools, then done. Round
@@ -676,17 +689,6 @@ function pwMarkHTML(){
               esc(t('post.mark.del'))+'">'+ICON_CROSS+'</button>'+
           '</div>'
         : ''))+
-    /* A field, not a tray of tiles. The letters are typed -- with the Lingua
-       keyboard on the phone, or any other -- because that is what a keyboard
-       is for and there is one. 「だからなんでキーボードあるのに勝手に文字の
-       タイル準備すんの？」
-
-       A tray was also a list of thirty-eight tiles for an alphabet, which is
-       a way of writing a word one letter at a time with no space bar. */
-    (cr? '' :
-      '<div class="mkfield">'+
-        lnField('mk-tx', t('post.mark.ph'), IN('pwMarkText'), sel? (sel.tx||'') : '')+
-      '</div>')+
     '</div>';
 }
 /* ---- cropping ----------------------------------------------------------
@@ -704,9 +706,26 @@ var pwTool='mark';
 var pwCut={x:0.06, y:0.06, w:0.88, h:0.88};
 function pwToolSet(k){
   pwTool=(k==='crop')? 'crop' : 'mark';
-  if(pwTool==='crop') pwCut={x:0.06, y:0.06, w:0.88, h:0.88};
-  pwMarkAt=-1;
+  pwMarkTrim();
+  if(pwTool==='crop'){ pwCut={x:0.06, y:0.06, w:0.88, h:0.88}; pwMarkAt=-1; }
+  else {
+    /* Pressing the letters tool starts a line, which is what pressing a text
+       tool does on every phone. An empty one is thrown away the moment
+       anything else is touched, so nothing is left behind by changing your
+       mind. */
+    var ms=pwMarks();
+    ms.push({tx:'', x:0.5, y:0.5, s:PW_MARK, c:PW_COLS[0]});
+    pwMarkAt=ms.length-1;
+  }
   pwMarkPaint();
+  var e=document.getElementById('mk-tx');
+  if(e) e.focus();
+}
+/* A line nobody typed anything into is not a line. */
+function pwMarkTrim(){
+  var ms=pwMarks(), i;
+  for(i=ms.length-1;i>=0;i--) if(!String(ms[i].tx||'').length) ms.splice(i, 1);
+  pwMarkAt=-1;
 }
 function pwCutHTML(){
   var c=pwCut;
@@ -779,8 +798,7 @@ function pwMarkText(v){
   }
   m.tx=v;
   pwFresh();
-  if(!v){ ms.splice(pwMarkAt, 1); pwMarkAt=-1; pwMarkPaint(); return; }
-  pwMarkDraw();
+  pwMarkDraw(); pwMarkFit();
 }
 function pwMarkDel(){
   var ms=pwMarks();
@@ -819,7 +837,7 @@ function pwMarkSize(v){
   var m=pwMarks()[pwMarkAt];
   if(!m) return;
   m.s=Math.max(0.04, Math.min(0.6, (parseInt(v, 10)||18)/100));
-  pwFresh(); pwMarkDraw();
+  pwFresh(); pwMarkDraw(); pwMarkFit();
 }
 /* What a mark is made of: the line somebody typed, cut into the shapes it is
    written with. postCut() is the one place that cuts a line, and it is the
@@ -882,6 +900,9 @@ function pwMarkDraw(){
     c.style.width=(pwMarkWide(m)*100)+'%';
     c.style.left=(m.x*100)+'%';
     c.style.top=(m.y*100)+'%';
+    /* The one being typed is drawn by the field itself -- it is the field --
+       so its canvas would be the same line twice, half a pixel apart. */
+    c.style.display=(parseInt(c.getAttribute('data-i'), 10)===pwMarkAt)? 'none' : '';
     u=pwMarkCut(m);
     if(!u.length) continue;
     H=Math.max(40, Math.round(m.s*bw*dpr));
@@ -890,11 +911,45 @@ function pwMarkDraw(){
     pwMarkRun(c.getContext('2d'), u, H/800, 0, 0, cssVar(pwMarkCol(m)));
   }
 }
+/* The field is set at the size the line will be on the picture, which is a
+   fraction of the picture's width and therefore something only the stage can
+   answer. otf5's cell is 800 of a 1000 em, so the em is the cell and a
+   quarter. */
+function pwMarkFit(){
+  var e=document.getElementById('mk-tx'), m=pwMarks()[pwMarkAt],
+      box=document.getElementById('mk-box');
+  if(!e || !m || !box) return;
+  var bw=box.getBoundingClientRect().width||300;
+  /* The size is not calculated, it is measured against the canvas. The field
+     is the font drawing the line and the canvas is inkStrokes drawing it, and
+     the two do not agree on their own: the advance the font gives a letter is
+     built with its own side bearing and its own pen, and inkAdv's is not the
+     same number. A line typed at the cell's own size therefore came out a
+     third narrower than the one it turned into the moment you tapped away.
+     So: rendered once at a hundred, and set to whatever size makes it as wide
+     as pwMarkWide() -- the one place that says how wide a mark is -- says the
+     line is. Whatever the two renderers disagree about, they agree here. */
+  var want=pwMarkWide(m)*bw, fs=m.s*bw*1.25, at100;
+  e.style.width='0px';
+  e.style.fontSize='100px';
+  at100=e.scrollWidth;
+  if(at100>0 && want>0) fs=100*want/at100;
+  e.style.fontSize=Math.max(11, Math.round(fs))+'px';
+  /* And a field has no width that follows what is typed into it -- left and
+     right do not stretch one the way they stretch a box, so the line ran out
+     of its own frame. Narrowed to nothing, asked how wide what is in it came
+     out, set to that. Narrowing first is what makes it come back in on a
+     delete. */
+  e.style.width='0px';
+  e.style.width=Math.max(44, e.scrollWidth+4)+'px';
+  e.style.left=(m.x*100)+'%';
+  e.style.top=(m.y*100)+'%';
+}
 /* One pointer, on the box rather than on each letter: a finger that leaves a
    small canvas mid-drag would otherwise drop it. */
 function pwMarkMount(){
-  lnGrowAll();
   pwMarkDraw();
+  pwMarkFit();
   var box=document.getElementById('mk-box');
   if(!box) return;
   box.style.touchAction='none';
@@ -954,7 +1009,13 @@ function pwMarkDown(ev){
   var i=pwMarkHit(p);
   if(i<0) return;
   pwMarkGrab=true;
-  if(i!==pwMarkAt){ pwMarkAt=i; pwMarkPaint(); }
+  if(i!==pwMarkAt){
+    var m=pwMarks()[i], keep=m && m.tx;
+    pwMarkTrim();
+    pwMarkAt=pwMarks().indexOf(m);
+    if(!keep) pwMarkAt=-1;
+    pwMarkPaint();
+  }
   if(ev.preventDefault) ev.preventDefault();
 }
 /* The smallest a crop may be, as a share of the picture. Below this a corner
@@ -995,7 +1056,7 @@ function pwMarkMove(ev){
   var m=pwMarks()[pwMarkAt];
   if(!m) return;
   m.x=p[0]; m.y=p[1];
-  pwMarkDraw();
+  pwMarkDraw(); pwMarkFit();
   if(ev.preventDefault) ev.preventDefault();
 }
 function pwMarkUp(){
