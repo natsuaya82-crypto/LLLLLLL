@@ -379,6 +379,8 @@ defLang('de', (function(){
       "when.h"          : "{0} Std.",
       "when.d"          : "{0} T.",
       "sns.none"        : "Noch nichts hier",
+      'sns.search'            : "Suchen — @ für Leute",
+      'sns.nohit'             : "Nichts gefunden",
       "tab.find"         : "Suchen",
       "tab.home"         : "Start",
       "form.gone"        : "Das ist nicht mehr da.",

@@ -279,6 +279,18 @@ export function halfDone(){
     ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+    /* The search, with something in it. An empty field draws no results at
+       all, so a walk that never types finds nothing to be wrong. Both
+       halves: `@` is looking for a person, anything else for a post. */
+    ['people found by searching', () => { snsQ = '@a'; snsHits = null;
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    ['posts found by searching', () => { snsQ = 'kano'; snsHits = null;
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    ['a search that found nothing', () => { snsQ = 'zzzzzz'; snsHits = null;
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
     /* The badge, which only exists on a paid plan -- so a walk on the free
        plan never draws one, and free is what these walks run on. Both plans,
        and both places it shows: beside a name on a profile and beside a name

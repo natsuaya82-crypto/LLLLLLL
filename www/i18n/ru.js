@@ -394,6 +394,8 @@ defLang('ru', (function(){
       "when.h"          : "{0} ч",
       "when.d"          : "{0} д",
       "sns.none"        : "Пока ничего нет",
+      'sns.search'            : "Поиск — @ для людей",
+      'sns.nohit'             : "Ничего не найдено",
       "tab.find"          : "Поиск",
       "tab.home"          : "Главная",
       "form.gone"         : "Этого здесь больше нет.",

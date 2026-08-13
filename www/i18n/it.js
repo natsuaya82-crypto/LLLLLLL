@@ -391,6 +391,8 @@ defLang('it', (function(){
       "when.h"          : "{0} h",
       "when.d"          : "{0} g",
       "sns.none"        : "Ancora niente",
+      'sns.search'            : "Cerca — @ per le persone",
+      'sns.nohit'             : "Non trovato",
       "tab.find"         : "Cercare",
       "tab.home"         : "Home",
       "form.gone"        : "Questo non c'è più.",

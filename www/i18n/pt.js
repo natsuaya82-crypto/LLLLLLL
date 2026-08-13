@@ -398,6 +398,8 @@ defLang('pt', (function(){
       "when.h"          : "{0} h",
       "when.d"          : "{0} d",
       "sns.none"        : "Ainda não há nada",
+      'sns.search'            : "Procurar — @ para pessoas",
+      'sns.nohit'             : "Nada encontrado",
       "tab.find"         : "Buscar",
       "tab.home"         : "Início",
       "form.gone"        : "Isto já não está aqui.",

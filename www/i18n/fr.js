@@ -439,6 +439,8 @@ defLang('fr', (function(){
       "when.h"          : "{0} h",
       "when.d"          : "{0} j",
       "sns.none"        : "Rien pour l'instant",
+      'sns.search'            : "Chercher — @ pour les gens",
+      'sns.nohit'             : "Rien trouvé",
       "tab.find"         : "Chercher",
       "tab.home"         : "Accueil",
       "form.gone"        : "Ce n'est plus là.",

@@ -41,6 +41,7 @@ function viewReset(){
   pwPicAt=-1; pwMarkAt=-1; pwTool='mark';  /* and which picture, letter and tool */
   pfTab='posts';                       /* which list the profile shows */
   PMENU='';                            /* the ... open beside a post */
+  snsQ=''; snsHits=null;               /* the search, and what came back */
   BKLIST=null;                         /* what is on the disk, asked again */
 }
 

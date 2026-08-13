@@ -307,6 +307,8 @@ defLang('ja', (function(){
       'when.h'          : '{0}時間',
       'when.d'          : '{0}日',
       'sns.none'        : 'まだ何もない',
+      'sns.search'            : "さがす　@で人",
+      'sns.nohit'             : "見つかりません",
       'tab.find'        : 'さがす',
       'tab.home'        : 'ホーム',
       'form.gone'       : 'これはもうありません。',

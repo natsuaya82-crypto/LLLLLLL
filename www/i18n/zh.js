@@ -399,6 +399,8 @@ defLang('zh', (function(){
       "when.h"          : "{0}小时",
       "when.d"          : "{0}天",
       "sns.none"        : "这里还什么都没有",
+      'sns.search'            : "搜索 — @ 找人",
+      'sns.nohit'             : "没有找到",
       "tab.find"         : "查找",
       "tab.home"         : "主页",
       "form.gone"        : "这个已经不在了。",

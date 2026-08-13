@@ -15,6 +15,39 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The search tab has a search in it
+
+「検索欄に検索バー作ろう。@でユーザー検索」
+
+One field on the search tab. `@` is the switch: a query starting with it is
+looking for a person, anything else for a post.
+
+**SNS_SEAM.** A search is a question asked of somewhere else, and it is built
+as one: `snsFind(q, done)` hands back an answer through a callback, the way
+`postTr()` and the AI already do, because that is the shape a request has and
+a shape cannot be retrofitted onto a function that returns. The answer carries
+the query it answers, so a late one for something already typed past is thrown
+away. Nothing at the call site knows where the answer came from — it types, an
+answer arrives, the rows are drawn. Wiring the server replaces the body of one
+function.
+
+**A person is `{who, hd, av, lname}`** — the same four fields a post already
+carries about its author, and the same four a server row will have. There is
+no second shape for a person anywhere in this app and there must not be: a
+post is signed with exactly these.
+
+**PROFILE_SEAM.** Somebody else's row is a row until there is a screen for
+somebody else's profile; the day `vProfile` takes a handle it becomes a button
+in `snsWhoRow()` and nowhere else changes.
+
+No data changes.
+
+**Also, and it is older than this:** the clear button on a search bar has been
+40 across since it was written, and nothing caught it — the button only exists
+when there is something to clear, and every walk typed nothing, so it was
+hidden on every screen it is on. The search on the timeline is walked with a
+query in it and press-check named it on the first run. 44 now, everywhere.
+
 ### A field is in ordinary letters, and three things about writing a post
 
 **A field you type a line into is no longer in your own alphabet.**

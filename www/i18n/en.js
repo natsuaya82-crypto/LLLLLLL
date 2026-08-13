@@ -294,6 +294,8 @@ defLang('en', (function(){
       'when.h'          : '{0}h',
       'when.d'          : '{0}d',
       'sns.none'        : 'Nothing here yet',
+      'sns.search'            : "Search — @ for people",
+      'sns.nohit'             : "Nothing found",
       'tab.find'        : 'Find',
       'tab.home'        : 'Home',
       'form.gone'       : 'That is no longer here.',
