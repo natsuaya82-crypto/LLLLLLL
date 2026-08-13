@@ -911,7 +911,6 @@ defLang('pt', (function(){
       'post.pv'               : "Privado",
       'post.pv.on'            : "Só você vai ver",
       'post.pv.off'           : "Todos vão ver",
-      'post.send.pv'          : "Publicar só para si",
       'post.draft.save'       : "Guardar rascunho",
       'post.draft.kept'       : "Guardado como rascunho",
       'post.drafts'           : "{0} rascunhos",

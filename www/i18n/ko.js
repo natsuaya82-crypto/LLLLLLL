@@ -1079,7 +1079,6 @@ defLang('ko', (function(){
       'post.pv'               : "나만 보기",
       'post.pv.on'            : "나만 볼 수 있습니다",
       'post.pv.off'           : "모두가 볼 수 있습니다",
-      'post.send.pv'          : "나에게만 올리기",
       'post.draft.save'       : "임시저장",
       'post.draft.kept'       : "임시저장했습니다",
       'post.drafts'           : "임시저장 {0}",

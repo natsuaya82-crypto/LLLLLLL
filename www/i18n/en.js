@@ -818,7 +818,6 @@ defLang('en', (function(){
       'post.pv'               : "Private",
       'post.pv.on'            : "Only you will see this",
       'post.pv.off'           : "Everybody will see this",
-      'post.send.pv'          : "Post to yourself",
       'post.draft.save'       : "Save a draft",
       'post.draft.kept'       : "Saved as a draft",
       'post.drafts'           : "{0} drafts",

@@ -820,7 +820,6 @@ defLang('ja', (function(){
       'post.pv'               : "自分だけ",
       'post.pv.on'            : "自分だけの投稿になります",
       'post.pv.off'           : "公開の投稿になります",
-      'post.send.pv'          : "自分だけに投稿",
       'post.draft.save'       : "下書きに保存",
       'post.draft.kept'       : "下書きに保存しました",
       'post.drafts'           : "下書き {0}",

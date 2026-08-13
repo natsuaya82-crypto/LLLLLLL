@@ -909,7 +909,6 @@ defLang('zh', (function(){
       'post.pv'               : "仅自己",
       'post.pv.on'            : "只有你能看到",
       'post.pv.off'           : "所有人都能看到",
-      'post.send.pv'          : "只发给自己",
       'post.draft.save'       : "存为草稿",
       'post.draft.kept'       : "已存为草稿",
       'post.drafts'           : "草稿 {0}",

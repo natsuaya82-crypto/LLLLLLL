@@ -952,7 +952,6 @@ defLang('fr', (function(){
       'post.pv'               : "Privé",
       'post.pv.on'            : "Vous seul le verrez",
       'post.pv.off'           : "Tout le monde le verra",
-      'post.send.pv'          : "Publier pour vous",
       'post.draft.save'       : "Garder un brouillon",
       'post.draft.kept'       : "Gardé comme brouillon",
       'post.drafts'           : "{0} brouillons",

@@ -906,7 +906,6 @@ defLang('it', (function(){
       'post.pv'               : "Privato",
       'post.pv.on'            : "Lo vedrai solo tu",
       'post.pv.off'           : "Lo vedranno tutti",
-      'post.send.pv'          : "Pubblicare solo per te",
       'post.draft.save'       : "Salvare una bozza",
       'post.draft.kept'       : "Salvato come bozza",
       'post.drafts'           : "{0} bozze",

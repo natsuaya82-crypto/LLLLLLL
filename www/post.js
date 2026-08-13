@@ -128,7 +128,10 @@ function openPost(){
        kind of button. */
     '<button class="navdo'+(pwPriv()? ' pv':'')+'" id="pw-go"' + DO('pwSend') + '>'+
       (pwPriv()? ICON_LOCK : '')+
-      esc(t(PW.ed? 'post.save' : (pwPriv()? 'post.send.pv' : 'post.send')))+'</button>');
+      /* The lock says which it is. "Post to yourself" as a WORD pushed the
+         screen's own name off the top of it, and a mark beside a verb is what
+         a bar that narrow has room for. */
+      esc(t(PW.ed? 'post.save' : 'post.send'))+'</button>');
 }
 /* The timer, wired after the screen is drawn. Holding turns the post private
    or public again; letting go early does nothing, and the press that follows

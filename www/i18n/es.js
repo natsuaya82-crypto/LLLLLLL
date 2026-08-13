@@ -864,7 +864,6 @@ defLang('es', (function(){
       'post.pv'               : "Privado",
       'post.pv.on'            : "Solo tú lo verás",
       'post.pv.off'           : "Todos lo verán",
-      'post.send.pv'          : "Publicar para ti",
       'post.draft.save'       : "Guardar borrador",
       'post.draft.kept'       : "Guardado como borrador",
       'post.drafts'           : "{0} borradores",

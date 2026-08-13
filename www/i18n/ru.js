@@ -927,7 +927,6 @@ defLang('ru', (function(){
       'post.pv'               : "Только для вас",
       'post.pv.on'            : "Это увидите только вы",
       'post.pv.off'           : "Это увидят все",
-      'post.send.pv'          : "Записать для себя",
       'post.draft.save'       : "Сохранить черновик",
       'post.draft.kept'       : "Сохранено как черновик",
       'post.drafts'           : "Черновиков: {0}",

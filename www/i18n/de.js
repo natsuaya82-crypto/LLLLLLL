@@ -893,7 +893,6 @@ defLang('de', (function(){
       'post.pv'               : "Privat",
       'post.pv.on'            : "Nur du siehst das",
       'post.pv.off'           : "Alle sehen das",
-      'post.send.pv'          : "Nur für dich posten",
       'post.draft.save'       : "Entwurf sichern",
       'post.draft.kept'       : "Als Entwurf gesichert",
       'post.drafts'           : "{0} Entwürfe",
