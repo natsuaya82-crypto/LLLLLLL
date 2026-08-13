@@ -40,7 +40,7 @@ the keyboard and the world — and neither could throw.
 | `talk` | `TALK` | the AI conversation | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboard this language's owner built | object |
-| `wld` | `WLD` | what the language is for | object |
+| `wld` | `WLD` | what the language is for — and `hide`, which is whether it has a page anybody else may open. **Absent means public**, which is the default and the one no migration can get wrong | object |
 
 `BK_SHAPE` in `www/backup.js` carries those shapes; `bkSound()` uses it to tell
 a slice from wreckage. `langKey(slice)` is the only thing that knows how a

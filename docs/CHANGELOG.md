@@ -15,6 +15,37 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A language has a page, and the profile points at it
+
+「その言語について簡単にまとめてあるページ欲しいな」「Lingua > みたいになってて
+そこでその人が作ってるの見れる」
+
+The small `Lingua` tag beside the handle is gone. In its place, between the
+bio and the follow counts, is a row with the language's name and a chevron —
+because a tag beside a handle is where a timeline puts an affiliation, and
+that is exactly the wrong size for the thing this whole app is about.
+
+The page it opens is new and it only **reads**: what the language is for and
+the sentence under it, three numbers (words, drawn letters, kind of writing),
+where it is spoken, who speaks it, the note, and the letters somebody has
+actually drawn. Only the drawn ones — the free plan puts thirty-eight slots
+there the moment a language exists, and all of them would be a summary saying
+every language has thirty-eight letters.
+
+The World screen was the editor and had no counterpart: somewhere to fill a
+language in, and nowhere to look at one. Its door used to be that tag; it is
+now `Edit` on this page, which is where you are standing when you notice
+something is wrong.
+
+**Data:** `world().hide` in the `wld` slice — the language's, not the
+person's, because whether this language has a page is about this language.
+Absent means public, which is the default the owner chose and a default no
+migration can get wrong. The switch is in Settings → your language.
+
+Nothing off this phone can read the flag yet: there is one profile here and it
+is this person's. What the switch does today is take the row off their own
+profile and say so.
+
 ### A post does not have to have a line
 
 「文字無しでもポストできるようにできない？」 A post was a line, or nothing. So a

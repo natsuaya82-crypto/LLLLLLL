@@ -615,6 +615,75 @@ function vWorld(){
       '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
     '</div></div>';
 }
+/* ---- the page a language has ------------------------------------------
+   「その言語について簡単にまとめてあるページ欲しいな」「そこでその人が作ってるの
+   見れる」
+
+   The World screen above is the EDITOR -- five kinds, three fields, and every
+   one of them a thing to fill in. This is the other half and it was missing:
+   somewhere to LOOK at a language, which is what a profile points at and what
+   anybody but its author would ever want.
+
+   It reads and touches nothing. Everything on it is the open language --
+   which is correct today, because the only profile this phone can show is
+   this person's own, and the day somebody else's arrives it arrives with
+   their language's summary on it the way a post arrives with its ink.
+
+   What is on it, and the owner chose it: what the language is for, where, who
+   and the note; the letters somebody has actually drawn; and the three
+   numbers. Not the words -- a dictionary is a chapter, not a summary. */
+function wldHidden(){ return !!world().hide; }
+/* From the settings, and it writes the LANGUAGE rather than SET: whether this
+   language has a page is about this language, and SET is the person's. The
+   flag is `hide`, so absent is public -- which is the default the owner chose,
+   and a default that is the absence of a field is one no migration can get
+   wrong. */
+function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
+/* The row on the profile, in place of the small tag that used to sit beside
+   the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
+function wldRow(){
+  if(!langName) return '';
+  return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
+    '<span class="wldnm">'+esc(langName)+'</span>'+
+    (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
+    ICON_GO+'</button>';
+}
+function vAbout(){
+  var w=world(), drawn=LETTERS.filter(ltHasShape), body='';
+  if(wldUse()) body+='<div class="abtuse">'+
+    '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
+    '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
+  body+='<div class="abtnums">'+
+    '<span class="abtn"><b>'+WORDS.length+'</b>'+esc(t('toc.words'))+'</span>'+
+    '<span class="abtn"><b>'+ltShaped()+'</b>'+esc(t('toc.letters'))+'</span>'+
+    /* The writing system is a word rather than a number, and `Alphabet` in
+       a third of a phone came out as `Alphab...`. Its own class: the value
+       wraps and is set at the size of a word instead of the size of a
+       count. */
+    '<span class="abtn wd"><b>'+esc(t('ws.k.'+wsys()))+'</b>'+esc(t('ws.kind'))+'</span>'+
+    '</div>';
+  if(w.where) body+='<div class="sec">'+esc(t('wld.where'))+'</div>'+
+    '<div class="abtl">'+esc(w.where)+'</div>';
+  if(w.who) body+='<div class="sec">'+esc(t('wld.who'))+'</div>'+
+    '<div class="abtl">'+esc(w.who)+'</div>';
+  if(w.note) body+='<div class="sec">'+esc(t('wld.note'))+'</div>'+
+    '<div class="abtl">'+esc(w.note)+'</div>';
+  /* The alphabet, and only what has a shape on it: the free plan puts
+     thirty-eight slots there the moment a language exists, so all of them
+     would be a summary saying every language has thirty-eight letters. */
+  if(drawn.length) body+='<div class="sec">'+esc(t('toc.letters'))+'</div>'+
+    '<div class="ltgrid">'+drawn.map(function(l){ return ltCell(l, ''); }).join('')+'</div>';
+  /* An empty language is a language somebody started this morning, not a
+     broken one. */
+  if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
+  /* And the way to the editor, which is where the chip beside the handle used
+     to go. It is here rather than in the settings because this is the page you
+     are looking at when you notice it is wrong -- the same place, and the same
+     shape, as Edit on a profile. */
+  return '<div class="view">'+
+    navTop('', '<button class="navdo"' + DO('go', ["world"]) + '>'+esc(t('wld.edit'))+'</button>')+
+    '<div class="body">'+body+'</div></div>';
+}
 function editName(){
   var v=prompt(t('home.name.prompt'), langName);
   if(v!==null && v.trim()){ langName=v.trim(); save(); render(); }

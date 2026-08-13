@@ -642,6 +642,31 @@ for.
 - Affected docs: DATA_MODEL, CHANGELOG
 - Implementation status: implemented
 
+### Decision
+- Date: 2026-08-13
+- Area: The profile, and a language's own page
+- Decision: The small `Lingua` tag beside the handle becomes a **row** between
+  the bio and the follow counts — the language's name and a chevron — and it
+  opens a page **about that language**. On it: what the language is for, where
+  it is spoken, who speaks it, the note, the letters that have actually been
+  drawn, and three numbers (words, letters, kind of writing). Not the words —
+  a dictionary is a chapter, not a summary. A setting makes it public or
+  private, and **public is the default**.
+- Reason: 「フォローと自己紹介の間にその言語について簡単にまとめてあるページ欲しい
+  な。linguaパッチの代わり。Lingua > みたいになっててそこでその人が作ってるの
+  見れる」「これは設定から公開非公開もかのう」, and asked what goes on it,
+  「世界＋文字＋数」; asked for the default, 「公開」.
+- Affected features: profile, the World editor (which keeps its door, now on
+  the new page rather than on the tag)
+- Affected data: `world().hide` in the `wld` slice — the LANGUAGE's, not the
+  person's, because whether this language has a page is about this language.
+  Absent means public, so the default is the absence of a field and no
+  migration can get it wrong
+- Affected docs: DATA_MODEL, CHANGELOG
+- Implementation status: implemented. Nothing off this phone can read the flag
+  yet — there is one profile here and it is this person's — so what the switch
+  does today is take the row off their own profile and say so
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

@@ -858,9 +858,33 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The height a thumb needs is taken out of the margins rather than added to
    the line, so the tag sits beside the handle where it belongs and the hit
    area reaches above and below it over things nothing else is listening to. */
-.melang{flex:0 1 auto;min-width:0;min-height:44px;margin:-11px 0;padding:0;
-        background:none;border:0;display:inline-flex;align-items:center}
-.melang:active .plangtag{border-color:var(--gold)}
+/* The language, as a row of its own between what somebody says about
+   themselves and how many people are reading them. It was a small tag beside
+   the handle -- which is where a timeline puts an affiliation, and is exactly
+   the wrong size for the thing this whole app is about.
+   「フォローと自己紹介の間に」「linguaパッチの代わり。Lingua > みたいに」 */
+.wldrow{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;
+        margin-top:10px;padding:0 14px;border-radius:14px;
+        border:1px solid var(--goldln);background:none;color:var(--gold);
+        font-family:inherit;text-align:left}
+.wldnm{flex:1 1 auto;min-width:0;font-size:1rem;letter-spacing:.06em;
+       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wldoff{flex:0 0 auto;font-size:.76rem;color:var(--txs)}
+.wldrow svg{flex:0 0 auto}
+.wldrow:active{background:var(--sf)}
+/* The page itself. What the language is for, then the three numbers, then
+   whatever was written about it, then the letters somebody drew. */
+.abtuse{display:flex;flex-direction:column;gap:3px;padding:14px 0 4px}
+.abtun{font-size:1.15rem;color:var(--tx)}
+.abtud{font-size:.88rem;color:var(--txm);line-height:1.45}
+.abtnums{display:flex;gap:10px;margin:12px 0 4px}
+.abtn{flex:1 1 0;min-width:0;padding:12px 8px;border-radius:14px;
+      background:var(--sf);text-align:center;font-size:.76rem;color:var(--txm);
+      display:flex;flex-direction:column;gap:3px;justify-content:center}
+.abtn b{font-size:1.15rem;color:var(--tx);font-weight:600;
+        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.abtn.wd b{font-size:.95rem;white-space:normal;overflow:visible;line-height:1.25}
+.abtl{line-height:1.55;color:var(--tx);word-break:break-word}
 .mecard .pbio{margin-top:4px;line-height:1.45;word-break:break-word;
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}

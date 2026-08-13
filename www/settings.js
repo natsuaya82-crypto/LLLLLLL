@@ -102,6 +102,16 @@ function vSet(){
          which is the sort of thing that looks wrong before it is read. */
       '<button class="set"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
+      /* Whether this language has a page anybody else can open. Public is the
+         absence of the flag, which is the default the owner chose and the one
+         no migration can get wrong. Nothing reads it off this phone yet --
+         there is one profile here and it is this person's -- so what this
+         switch does today is take the row off their own profile and say so.
+         「これは設定から公開非公開もかのう」 */
+      '<button class="set" style="border-bottom:none"' + DO('setWldHide', [!wldHidden()]) + '>'+
+      '<span class="sl">'+t('wld.public')+'</span>'+
+      '<span class="sv"><span class="sw'+(wldHidden()?'':' on')+'">'+
+      '<span class="swk"></span></span></span></button>'+
       '';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two

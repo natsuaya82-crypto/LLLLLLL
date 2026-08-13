@@ -138,13 +138,17 @@ function meCard(){
       '<div class="pname">'+esc(meName())+'</div>'+
       '<div class="mehr">'+
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
-        (langName? '<button class="melang"' + DO('go', ["world"]) + '>'+
-          '<span class="plangtag">'+esc(langName)+'</span></button>' : '')+
       '</div>'+
     '</div>'+
     '<button class="meedit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
+    /* The language, between what somebody says about themselves and how many
+       people are reading them. It was a small tag beside the handle, which is
+       where a timeline puts an affiliation and is exactly the wrong size for
+       the thing this whole app is about.
+       「フォローと自己紹介の間に」「linguaパッチの代わり」 */
+    wldRow()+
     /* FOLLOW_SEAM: the two numbers are asked for rather than read, so the day
        they come from somewhere else they come from somewhere else HERE and
        nowhere else. */

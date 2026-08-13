@@ -154,6 +154,7 @@ var PAGES={
   settings:{tab:'profile',  k:'set.title'},
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
+  about:   {tab:'profile', k:'wld.about'},
   langs:   {tab:'profile', k:'langs.title'},
   plans:   {tab:'profile',  k:'plans.title'}
 };
