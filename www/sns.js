@@ -43,6 +43,16 @@ function vFeed(){
   return '<div class="view">'+
     rootTop('feed')+
     '<div class="body">'+
+    /* A row to write in, at the top of the timeline, because the round button
+       is one floating thing over the corner of a screen and somebody who does
+       not see it has no way to post at all. 「ホームからもツイートできるように」
+       It is not a field: pressing it opens the screen a post is written on,
+       which is where the letters, the photographs and the voice are. */
+    '<button class="wrow"' + DO('openPost') + '>'+
+      '<span class="pav">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
+    '</button>'+
     (list.length
       ? list.map(postRow).join('')
       : snsNone())+

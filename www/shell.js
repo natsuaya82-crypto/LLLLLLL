@@ -244,8 +244,22 @@ function viewGone(){
    It goes through here rather than being set on the element afterwards
    because the class list is built in one place and a second place setting it
    would win or lose by accident. */
+/* A field you write one line of the language into, and it is written in
+   ORDINARY LETTERS.
+
+   It used to wear the person's own alphabet, and that is the wrong way round:
+   a field is the one place where the point is to know what you are typing.
+   「普通に全部自作文字にされるの意味わからん。自分が打ちたい時にこれなんて読むん
+   だになったら本末転倒やろ」 Somebody drawing their first eight letters cannot
+   read them yet -- that is what drawing them is for -- so a field in them is a
+   field you cannot proofread.
+
+   What is DISPLAYED stays in the drawn letters: the timeline, the word list, a
+   saved example, the card. And the composer shows the line under the field, in
+   the letters, at every direction rather than only the vertical ones -- so
+   nothing was lost, it moved to the half of the screen that is for looking. */
 function lnField(id, ph, attrs, val, cls){
-  return '<textarea id="'+id+'" class="lnin'+(myFontOn()? ' sfont':'')+
+  return '<textarea id="'+id+'" class="lnin'+
     (cls? ' '+cls : '')+'" '+
     'rows="1" placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
     'spellcheck="false"'+(attrs||'')+'>'+esc(val||'')+'</textarea>';

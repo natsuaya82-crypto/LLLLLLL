@@ -327,16 +327,46 @@ function postBadge(p){
 }
 function pwPrevHTML(){
   var d=scriptDir(), ln=String(PW.ln||'');
-  if(d.indexOf('ttb')!==0 || !ln) return '';
+  if(!ln) return '';
   return '<div class="pwprev '+dirClass(d)+'">'+
     postLnHTML({id:'pw', ln:ln, ink:postInk(ln)})+'</div>';
+}
+/* What you are answering, above what you are writing. It was a line of text
+   saying whose handle it was, which tells you the one thing you already knew
+   and not the thing you are replying TO. 「リプライする時は前のツイートが何か
+   見れるように」
+
+   Every field of it comes off the post: the face, the name, the shapes, which
+   way the line runs, what it means. This is the composer -- the one place
+   above the line that draws something belonging to somebody else, and the
+   reason there is a rule about it is that it once said meName() and announced
+   you were replying to yourself.
+
+   No buttons on it. It is what you are looking at, not something to act on;
+   the four things a post can be given are on the post itself, in the
+   timeline. */
+function pwToHTML(to){
+  if(!to) return '';
+  return '<div class="pwq">'+
+    '<div class="pav">'+postFace(to)+'</div>'+
+    '<div class="pbody">'+
+      '<div class="phead">'+
+        '<span class="pname">'+esc(postWho(to))+'</span>'+
+        (to.lname? '<span class="plangtag">'+esc(to.lname)+'</span>' : '')+
+        '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
+      '</div>'+
+      (to.ln? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
+      (postSay(to)? '<div class="pmn">'+esc(postSay(to))+'</div>' : '')+
+    '</div>'+
+    '</div>';
 }
 function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
      account here, so every reply said you were replying to yourself. */
   return (to? '<div class="pwto">'+
-      esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>' : '')+
+      esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
+      pwToHTML(to) : '')+
     /* The face you are about to post under, which is the one this post will
        carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwtop"><div class="pav">'+

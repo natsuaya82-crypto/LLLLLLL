@@ -667,6 +667,37 @@ for.
   yet — there is one profile here and it is this person's — so what the switch
   does today is take the row off their own profile and say so
 
+### Decision
+- Date: 2026-08-13
+- Area: Fields you type a line into
+- Decision: A field is in **ordinary letters**, never the person's own
+  alphabet. What is displayed stays in the drawn letters.
+- Reason: 「普通に全部自作文字にされるの意味わからん。自分が打ちたい時にこれなんて
+  読むんだになったら本末転倒やろ」 — somebody drawing their first eight letters
+  cannot read them yet; that is what drawing them is for.
+- Affected features: the grammar stage's example, a word's example, spelling,
+  the post composer
+- Affected data: none
+- Affected docs: CHANGELOG
+- Implementation status: implemented in `lnField()`, which is the one place a
+  line is typed. The composer's preview now runs at every direction rather
+  than only the vertical ones, so nothing was lost — it moved to the half of
+  the screen that is for looking
+
+### Decision
+- Date: 2026-08-13
+- Area: The timeline and replies
+- Decision: A row to write in at the top of the timeline, and a reply shows
+  the post it is answering.
+- Reason: 「ホームからもツイートできるように」「リプライする時は前のツイートが何か
+  見れるように」
+- Affected features: timeline, composer
+- Affected data: none
+- Affected docs: CHANGELOG
+- Implementation status: implemented. The round `+` stays — it is reported as
+  invisible on build 57 and could not be reproduced here, so the row is a
+  second entrance rather than a replacement
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

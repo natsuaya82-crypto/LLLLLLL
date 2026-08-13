@@ -15,6 +15,36 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A field is in ordinary letters, and three things about writing a post
+
+**A field you type a line into is no longer in your own alphabet.**
+「普通に全部自作文字にされるの意味わからん。自分が打ちたい時にこれなんて読むんだに
+なったら本末転倒やろ」 Somebody drawing their first eight letters cannot read
+them yet — that is what drawing them is for — so a field in them is a field
+you cannot proofread. `lnField()` is the one place a line is typed and it
+drops `.sfont`: the grammar stage's example, a word's example, spelling, and
+the post.
+
+What is **displayed** is unchanged and still in the drawn letters: the
+timeline, the word list, a saved example, the card. And the composer's preview
+now runs at every direction rather than only the vertical ones, so nothing was
+lost — it moved to the half of the screen that is for looking.
+
+**A row to write in, at the top of the timeline.**
+「ホームからもツイートできるように」 The round `+` is one floating thing over a
+corner, and it is reported as invisible on build 57 — which could not be
+reproduced here. So the row is a second entrance and the `+` stays.
+
+**A reply shows the post it is answering.**
+「リプライする時は前のツイートが何か見れるように」 It said "Replying to @x",
+which is the one thing you already knew. Every field of the quoted post comes
+off that post — the face, the name, the shapes, the direction, the meaning.
+The composer is the one place above post.js's line that draws somebody else's
+thing, and the reason there is a rule about it is that it once said `meName()`
+and announced you were replying to yourself.
+
+No data changes.
+
 ### A language has a page, and the profile points at it
 
 「その言語について簡単にまとめてあるページ欲しいな」「Lingua > みたいになってて

@@ -872,6 +872,24 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The height a thumb needs is taken out of the margins rather than added to
    the line, so the tag sits beside the handle where it belongs and the hit
    area reaches above and below it over things nothing else is listening to. */
+/* A row to write in, at the top of the timeline. Not a field: pressing it
+   opens the screen a post is written on, where the letters, the photographs
+   and the voice are. 「ホームからもツイートできるように」 */
+.wrow{display:flex;align-items:center;gap:12px;width:100%;
+      margin:0 -24px 0;width:calc(100% + 48px);padding:14px 16px;
+      border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
+.wrow .pav{width:40px;height:40px}
+.wrt{flex:1 1 auto;min-width:0;color:var(--txm);font-size:1rem;
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow:active{opacity:.6}
+/* What a reply is answering, above what you are writing. The same row a
+   timeline draws, quieter and with nothing on it to press. */
+.pwq{display:flex;gap:12px;margin:2px 0 14px;padding:12px 14px;
+     border-radius:14px;background:var(--sf)}
+.pwq .pav{width:34px;height:34px}
+.pwq .pname{font-size:.9rem}
+.pwq .pline{font-size:.98rem}
+.pwq .pmn{margin-top:2px;font-size:.9rem;color:var(--txm)}
 /* What money buys that anybody can see, beside a name. Plus is the star
    drawn, Studio is the star filled -- outline against solid, which is the one
    difference that survives being fifteen pixels wide.
