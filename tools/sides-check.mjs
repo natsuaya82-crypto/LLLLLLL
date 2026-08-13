@@ -168,10 +168,23 @@ for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
     bodies[name] = src2.slice(at, end);
   });
 }
-/* a call, and not a method: `.push(` is the language's, not this app's */
+/* a call, and not a method: `.push(` is the language's, not this app's.
+
+   A LOOKBEHIND, and that is the whole of this comment. It used to consume the
+   character before the name -- `(^|[^.\w$])` -- and a consumed character is
+   one the next match cannot look at. So in
+
+     esc(postSay(p))
+
+   the match for `esc(` ate the `(` that `postSay` needed to be found by, and
+   `postSay` was invisible to every caller that wrapped it in anything. That
+   is the ordinary shape of half this file: `esc(f(x))`, `String(g(y))`. This
+   check has been reporting on the calls it could see rather than on the calls
+   there are, and postRow() has been calling postSay() past it since the day
+   layer two was written. */
 const calls = (body) => {
-  const out = new Set(); const re = /(^|[^.\w$])([A-Za-z0-9_$]+)\s*\(/g;
-  let m; while ((m = re.exec(body))) out.add(m[2]);
+  const out = new Set(); const re = /(?<![.\w$])([A-Za-z0-9_$]+)\s*\(/g;
+  let m; while ((m = re.exec(body))) out.add(m[1]);
   return out;
 };
 const taints = new Set();
@@ -181,10 +194,29 @@ for (const [name, body] of Object.entries(bodies))
 /* render() reaches every screen in the app, so it taints everything and says
    nothing. It is not a way of drawing a post. */
 taints.delete('render');
+/* And these two are the READER's own settings, which is not the writer's
+   language and never was. `uiLang()` is one field -- SET.ui, which interface
+   language THIS PERSON reads in -- and `t()` is that plus the ten string
+   tables. Neither can reach a word, a letter, a writing system or a name.
+   They are in here only because SET is in MINE, and SET is in MINE for
+   SET.wsys and SET.myfont, which are a different half of the same object.
+
+   Every screen in this app calls t(), a post row included: "2h", "More",
+   "3 left today". A post that could not say those in the reader's language
+   would be a post in MINE, which is the bug this file exists to stop, the
+   other way round.
+
+   Stopping here rather than naming the six functions that reach them: those
+   six would become nine, and each new one would be found by this check
+   failing on somebody who then adds a seventh name to a list. What is true is
+   said once. */
+taints.delete('uiLang');
+taints.delete('t');
+const READER = new Set(['render', 'uiLang', 't']);
 for (let moved = true; moved;) {
   moved = false;
   for (const [name, body] of Object.entries(bodies)) {
-    if (taints.has(name) || name === 'render') continue;
+    if (taints.has(name) || READER.has(name)) continue;
     for (const c of calls(body))
       if (c !== name && taints.has(c)) { taints.add(name); moved = true; break; }
   }
