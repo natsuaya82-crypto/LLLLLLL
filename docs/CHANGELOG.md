@@ -279,6 +279,10 @@ and **切り抜き**. 「画像タップして画像編集切り抜きとか文�
 - The corners are drawn, not pressed: one pointer listener on the picture
   decides what the finger has. A finger that leaves a small box mid-drag would
   be dropped by a listener on that box.
+- **Round buttons over the picture**, the way a phone does a photograph — the
+  way out, the two tools and Done across the top, and what can be done to the
+  letter you are holding down the right edge. It was a pill with a word in it,
+  which is what a settings screen puts *under* a picture.
 - *newly stored*: nothing. The picture in the draft is replaced by the cut one
   and the room for it is asked for again before it is kept.
 - `viewReset()` gained the three things this screen remembers — which picture,

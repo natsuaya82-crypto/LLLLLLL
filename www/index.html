@@ -903,14 +903,25 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
        max-height:calc(100dvh - 190px);width:auto;height:auto}
 .mkc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
 .mkc.on{outline:1px dashed rgba(255,255,255,.7);outline-offset:3px}
-/* The two at the top, on the picture, where a phone puts them. */
-.mkx,.mkdone{position:absolute;top:calc(env(safe-area-inset-top,0) + 8px);
-        min-width:44px;min-height:44px;padding:0 14px;border:0;border-radius:999px;
-        background:rgba(0,0,0,.42);color:#fff;font-family:inherit;font-size:.95rem;
-        font-weight:600;display:inline-flex;align-items:center;justify-content:center}
-.mkx{left:12px}
-.mkdone{right:12px}
-.mkx svg{width:15px;height:15px}
+/* The row across the top of the picture: the way out, the two tools, and
+   done. Round buttons, because that is what every phone puts over a
+   photograph -- a pill with a word in it belongs under one, on a settings
+   screen. */
+.mkbar{position:absolute;top:calc(env(safe-area-inset-top,0) + 8px);left:10px;right:10px;
+       display:flex;align-items:center;gap:8px}
+.mkr{width:44px;height:44px;flex:none;padding:0;border:0;border-radius:50%;
+     background:rgba(0,0,0,.45);color:#fff;
+     display:inline-flex;align-items:center;justify-content:center}
+.mkr.on{background:rgba(255,255,255,.94);color:#111}
+.mkr svg{width:19px;height:19px}
+.mkdone{margin-left:auto;min-width:44px;min-height:44px;padding:0 16px;border:0;
+        border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font-family:inherit;
+        font-size:.95rem;font-weight:600;
+        display:inline-flex;align-items:center;justify-content:center}
+/* What can be done to the letter you are holding, down the right edge, which
+   is where a phone keeps it. */
+.mkside{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+        display:flex;flex-direction:column;gap:10px}
 /* The size, down the left edge. A range input is horizontal and there is no
    way to say otherwise that every webview this has to run in agrees about, so
    it is a horizontal one turned on its side -- which is what the width being
@@ -949,13 +960,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mkl:active{background:rgba(255,255,255,.24)}
 .mkl canvas{width:34px;height:34px;display:block;margin:0 auto}
 .mkhow{color:rgba(255,255,255,.7);font-size:.86rem;padding:14px 4px}
-/* Which of the two things the editor is doing. */
-.mkseg{position:absolute;top:calc(env(safe-area-inset-top,0) + 4px);left:50%;
-       transform:translateX(-50%);display:flex;gap:2px;padding:3px;border-radius:999px;
-       background:rgba(0,0,0,.42)}
-.mksg{min-height:44px;padding:0 14px;border:0;border-radius:999px;background:none;
-      color:rgba(255,255,255,.66);font-family:inherit;font-size:.84rem}
-.mksg.on{background:rgba(255,255,255,.92);color:#111;font-weight:600}
 /* The crop. Everything outside it goes dark, which is one enormous shadow
    rather than four rectangles to keep in step with the box. The corners are
    drawn, not pressed: pwCutHit() decides what the finger has, because a

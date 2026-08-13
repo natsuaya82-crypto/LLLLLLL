@@ -649,17 +649,17 @@ function pwMarkHTML(){
       }).join('')+
       (cr? pwCutHTML() : '')+
     '</div>'+
-    '<button class="mkx"' + DO('back') + ' aria-label="'+esc(t('post.mark.done'))+'">'+
-      ICON_CROSS+'</button>'+
-    '<button class="mkdone"' + DO('back') + '>'+esc(t('post.mark.done'))+'</button>'+
-    /* Which of the two things this screen does. Cropping and placing letters
-       are both "the picture, with a finger on it", so they are one screen with
-       a switch rather than two screens with the same photograph on them. */
-    '<div class="mkseg">'+
-      '<button class="mksg'+(cr?'':' on')+'"' + DO('pwTool', ["mark"]) + '>'+
-        esc(t('post.mark.tool'))+'</button>'+
-      '<button class="mksg'+(cr?' on':'')+'"' + DO('pwTool', ["crop"]) + '>'+
-        esc(t('post.cut'))+'</button>'+
+    /* The row across the top: the way out, then the tools, then done. Round
+       buttons over the picture, which is what a phone puts over a picture --
+       a pill with a word in it is what a settings screen puts under one. */
+    '<div class="mkbar">'+
+      '<button class="mkr"' + DO('back') + ' aria-label="'+esc(t('post.mark.done'))+'">'+
+        ICON_BACK+'</button>'+
+      '<button class="mkr'+(cr?' on':'')+'"' + DO('pwTool', ["crop"]) + ' aria-label="'+
+        esc(t('post.cut'))+'">'+ICON_CROP+'</button>'+
+      '<button class="mkr'+(cr?'':' on')+'"' + DO('pwTool', ["mark"]) + ' aria-label="'+
+        esc(t('post.mark.tool'))+'">'+ICON_LTR+'</button>'+
+      '<button class="mkdone"' + DO('back') + '>'+esc(t('post.mark.done'))+'</button>'+
     '</div>'+
     (cr
       ? '<div class="mktools">'+
@@ -672,13 +672,14 @@ function pwMarkHTML(){
         ? '<div class="mkslide"><input type="range" class="mkrng" id="mk-size" '+
             'min="4" max="60" value="'+Math.round(sel.s*100)+'"' + IN('pwMarkSize') + '>'+
           '</div>'+
-          '<div class="mktools">'+
-            '<button class="mkt"' + DO('pwMarkInk') + '>'+
-              '<span class="mkdot'+(sel.w?' w':'')+'"></span>'+
-              '<span class="mktl">'+esc(t(sel.w? 'post.mark.dark' : 'post.mark.light'))+'</span>'+
-            '</button>'+
-            '<button class="mkt"' + DO('pwMarkDel') + '>'+
-              '<span class="mktl">'+esc(t('post.mark.del'))+'</span></button>'+
+          /* Down the right edge, which is where a phone keeps what can be
+             done to the thing you are holding. */
+          '<div class="mkside">'+
+            '<button class="mkr"' + DO('pwMarkInk') + ' aria-label="'+
+              esc(t(sel.w? 'post.mark.dark' : 'post.mark.light'))+'">'+
+              '<span class="mkdot'+(sel.w?' w':'')+'"></span></button>'+
+            '<button class="mkr"' + DO('pwMarkDel') + ' aria-label="'+
+              esc(t('post.mark.del'))+'">'+ICON_CROSS+'</button>'+
           '</div>'
         : ''))+
     (cr? '' :

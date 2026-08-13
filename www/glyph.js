@@ -398,6 +398,18 @@ var ICON_ADDP='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="
   '<path d="M12 5v14M5 12h14"/></svg>';
 var ICON_MINUS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" '+
   'stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>';
+/* The two tools the photograph editor has, as marks rather than words: a
+   round button with an icon in it is what every phone puts over a picture,
+   and a pill with a word in it is what a settings screen puts under one. */
+var ICON_CROP='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M6.5 2v13.5H20"/><path d="M2 6.5h13.5V20"/></svg>';
+/* A letter of somebody's own, as a shape on a tile -- not an A, because the
+   whole point of the tool is that the letters are not roman. */
+var ICON_LTR='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 16 12 7l4 9"/>'+
+  '<path d="M9.6 13h4.8"/></svg>';
 var ICON_GEAR='<svg class="ic" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/>'+
