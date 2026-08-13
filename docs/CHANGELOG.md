@@ -15,6 +15,26 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The lock closes, and somebody else's profile is the whole card
+
+**The lock closes.** It was opened on the emoji in 「🔓ポストにしたら？」, and an
+open padlock is the mark for a thing that is *not* locked — the opposite of
+what the post says. The 🔓 there was the word "lock".
+
+**Somebody else's profile is the whole card, not the card minus two rows.**
+「他人のプロフィールはどこが自分と同じなの？Editをフォローに変えるだけやん」 —
+correct. The bio and the follow counts were left out on the argument that a
+post does not carry them and this phone has nowhere to read them from. That
+argument produced a different page, which is the thing that was asked not to
+happen: the same rows in the same order, and the numbers read zero until
+somebody arrives carrying them.
+
+`whoOf()` returns `bio`, `fo` and `fr` on the person now, so FOLLOW_SEAM has
+somewhere to land — and the counts are text rather than buttons, because the
+two lists behind your own are yours.
+
+No data changes.
+
 ### Five things looked at on a phone
 
 - **The lock is open.** 「🔓ポストにしたら？」 The shackle is up, which is the

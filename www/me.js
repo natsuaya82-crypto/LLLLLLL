@@ -185,9 +185,11 @@ function whoOf(h){
   h=String(h||'');
   for(i=0;i<POSTS.length;i++){
     p=POSTS[i];
-    if(String(p.hd||'')===h) return {who:p.who||'', hd:h, av:p.av, lname:p.lname||''};
+    if(String(p.hd||'')===h)
+      return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'',
+              bio:p.bio||'', fo:p.fo||0, fr:p.fr||0};
   }
-  return {who:'', hd:h, av:null, lname:''};
+  return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
 /* Following and unfollowing, in one place. The list is what this phone knows
@@ -225,6 +227,14 @@ function whoCard(h){
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+
         '<span class="wldnm">'+esc(p.lname)+'</span>'+ICON_GO+'</button>' : '')+
+    /* The counts, in the same place and the same shape as your own. They come
+       off the person -- FOLLOW_SEAM -- and a person who arrived on a post
+       carries none, so they read zero until somebody arrives carrying them.
+       Not pressable: the two lists behind your own are yours. */
+    '<div class="pfstats">'+
+      '<span class="pfst"><b>'+esc(String(p.fo||0))+'</b> '+esc(t('me.following'))+'</span>'+
+      '<span class="pfst"><b>'+esc(String(p.fr||0))+'</b> '+esc(t('me.followers'))+'</span>'+
+    '</div>'+
     '</div>';
 }
 function openMe(){

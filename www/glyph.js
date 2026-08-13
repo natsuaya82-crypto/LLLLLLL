@@ -551,12 +551,15 @@ var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill=
 var MARK_STUDIO='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" '+
   'aria-hidden="true">'+
   '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
-/* A post kept to yourself. 「非公開の時はポストに🔓マークつけよ」 */
+/* A post kept to yourself. 「非公開の時はポストに🔓マークつけよ」
+   The shackle is DOWN. It was opened once, on the emoji in that sentence, and
+   an open padlock is the mark for a thing that is not locked -- which is the
+   opposite of what this says. 🔓 there was the word "lock". */
 var ICON_LOCK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
   'stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/>'+
-  '<path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0"/></svg>';
+  '<path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></svg>';
 /* pinned: a post its author put at the top of their own page */
 var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
