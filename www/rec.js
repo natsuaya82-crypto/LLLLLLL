@@ -195,6 +195,19 @@ function voKeep(vo, done){
     .then(function(){ done({f:name, ms:vo.ms}); })
     ['catch'](function(){ done(null); });
 }
+/* The one file a post being deleted names. 「投稿消した声も消していいよ」
+   Given a name and never asked to find one: "which voices does nothing point
+   at" is the question that turns a delete into a cleanup, and this cannot be
+   asked it. The DELETE REVIEW is in docs/CHANGELOG.md.
+
+   It is not waited on and it cannot fail loudly. The post is already gone by
+   the time this runs, which is the right order: a file that will not go must
+   not leave the post standing. */
+function voDropFile(f){
+  var p=sharePlug();
+  if(!p || !f) return;
+  p('LinguaShare', 'dropVoice', {name:String(f)})['catch'](function(){});
+}
 function voRead(f, done){
   var p=sharePlug();
   if(!p || !f){ done(''); return; }

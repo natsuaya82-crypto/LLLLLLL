@@ -1508,11 +1508,19 @@ function postPin(id){
   if(here().r==='form') back();
   render();
 }
+/* The post first, its voice second. 「投稿消した声も消していいよ」
+   The order is the whole of it: the person pressed delete on a POST, so the
+   post goes whatever happens to the file. The other way round leaves a post
+   whose voice is silently missing, which is worse than a file nobody hears.
+   Only the file this post names, and only from this post. */
 function postDel(id){
   if(!confirm(t('post.del.q'))) return;
-  var i;
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){ POSTS.splice(i, 1); break; }
+  var i, vo=null;
+  for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
+    vo=POSTS[i].vo; POSTS.splice(i, 1); break;
+  }
   savePosts();
+  if(vo && vo.f) voDropFile(vo.f);
   if(here().r==='form') back();
   render();
 }

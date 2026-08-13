@@ -46,10 +46,40 @@ the post is made without one and says so — what somebody typed is never lost
 because a microphone was. Nothing is ever written over: `keepVoice` refuses a
 name that already exists.
 
-**No deletion.** Deleting a post does **not** delete its voice file. That is
-this app's rule (`docs/DATA_SAFETY.md`) and not an oversight — automatic
-cleanup is forbidden without a written spec. No DELETE REVIEW is needed because
-nothing here deletes.
+**Deleting a post deletes its voice.** 「投稿消した声も消していいよ」 — the
+owner's decision, and it is the written spec that this rule requires. It is a
+user action with a confirm in front of it and nothing automatic: no pruning, no
+tidying of files nobody points at, no cleanup on launch.
+
+```
+DELETE REVIEW
+  who deletes       user action — postDel(), behind the existing confirm
+  when              only when somebody deletes their own post
+  what exactly      Documents/Voices/<post.vo.f>, the one file that post
+                    named. Nothing else in that folder is looked at, let
+                    alone removed — the name comes off the post being
+                    deleted and nowhere else
+  why               a recording nothing points at is 240 KB of somebody's
+                    phone that they can neither hear nor find. The owner
+                    asked for it 「投稿消した声も消していいよ」
+  recoverable?      NO. The post is gone from localStorage and the file is
+                    gone from Documents. If iCloud or a Finder backup of the
+                    phone predates the delete, it is in there; the app cannot
+                    put it back. Same answer the post itself has always had
+  does the backup survive it?
+                    the LANGUAGE backup is untouched — bkPack() never held a
+                    voice, so no generation of any language file changes,
+                    and no word, letter or setting is touched by this
+  anything to do with the plan?    no. It is the same on every plan
+  migration / rollback
+                    none. Old posts have no `vo` and nothing happens for
+                    them. A post whose file is already missing deletes
+                    cleanly — dropVoice() treats "not there" as done
+```
+
+The post goes first and the file second, deliberately: if the file cannot be
+removed the post is still deleted, because the person pressed delete on a post.
+The reverse order would leave a post whose voice is silently gone.
 
 `www/rec.js` is chapter 25 and holds all of it. It has the same line through it
 that `post.js` has: recording is the making side, and playing one back is given

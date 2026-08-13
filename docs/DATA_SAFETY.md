@@ -105,10 +105,14 @@ ms}`. Three things follow, and none of them is optional:
 - **A name is never written over.** `keepVoice` refuses a file that already
   exists rather than replacing it. Every recording is given a fresh name, so a
   collision is a bug, and the answer to a bug is not to overwrite a voice.
-- **Deleting a post does not delete its voice.** That is deliberate and it is
-  this file's rule, not an oversight: automatic cleanup is forbidden without a
-  written spec. The file is left where it is. If reclaiming them is ever
-  wanted, it is a DELETE REVIEW and a decision, not a tidy-up.
+- **Deleting a post deletes its voice, and nothing else ever does.**
+  「投稿消した声も消していいよ」 is the written spec this rule asks for, and the
+  DELETE REVIEW is in `docs/CHANGELOG.md`. It is a user action behind a
+  confirm: the file's name comes off the post being deleted and from nowhere
+  else. Nothing walks that folder, nothing removes a file because nothing
+  points at it, and nothing tidies up on launch. The post is removed first and
+  the file second — a file that cannot be removed must not leave the post
+  standing.
 
 They are in Documents, which is what iOS puts in the device backup — the same
 folder the language files are in, and the same argument. What `bkPack()` writes

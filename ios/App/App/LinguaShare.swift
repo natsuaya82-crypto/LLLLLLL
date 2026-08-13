@@ -25,6 +25,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -238,9 +239,10 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   // localStorage is where the languages live. So a recording is a file and
   // the post carries its name. www/rec.js (chapter 25) is the other half.
   //
-  // Nothing here deletes. A voice whose post is gone is a file nobody asks
-  // for any more, and this app does not tidy up after somebody by removing
-  // things they made — see docs/DATA_SAFETY.md.
+  // One of these three deletes, and it deletes exactly one file: the one a
+  // post being deleted names. 「投稿消した声も消していいよ」 Nothing walks this
+  // folder, nothing removes a file for being unreferenced, and nothing runs
+  // on launch — see the DELETE REVIEW in docs/CHANGELOG.md.
 
   static let voiceDir = "Voices"
 
@@ -279,6 +281,28 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       }
       try bytes.write(to: url,
         options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+      call.resolve()
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  /// The one file a deleted post named, and nothing else. It takes a name
+  /// rather than looking for anything: this method cannot be asked "which
+  /// voices are unused", because that is the question that turns a delete
+  /// into a cleanup.
+  ///
+  /// A file that is already gone is a success, not a failure. Somebody
+  /// deleting a post twice, or deleting one whose file never got written,
+  /// must not be told that something went wrong — there is nothing left to
+  /// do and it is done.
+  @objc func dropVoice(_ call: CAPPluginCall) {
+    let name = call.getString("name") ?? ""
+    do {
+      guard let url = try voiceAt(name) else { call.reject("bad name"); return }
+      if FileManager.default.fileExists(atPath: url.path) {
+        try FileManager.default.removeItem(at: url)
+      }
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)

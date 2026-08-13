@@ -23,11 +23,18 @@
         of writing
      5  the composer is empty afterwards, marks and all, so the next post does
         not inherit the last one's letters
+     6  a recording goes out as a FILE and comes back as a NAME. None of its
+        bytes are on the post -- 240 KB of audio in the localStorage the whole
+        language lives in is how somebody loses a language to a microphone
+     7  deleting that post deletes that ONE file, the one it named, and no
+        other. 「投稿消した声も消していいよ」 -- and the DELETE REVIEW that
+        allows it says one file, named by the post, nothing walked and
+        nothing tidied
 
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
-   Exit code is 0 only when all five hold.
+   Exit code is 0 only when all seven hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -182,8 +189,105 @@ const R = await pg.evaluate(async () => {
     fails.push('the composer still holds the post that was just sent, so the ' +
                'next one starts with the last one\'s letters on it');
 
+  /* ---- 6. the voice: the file goes out, its NAME comes back ---------- */
+  /* There is no native side on a runner, so one is stood up here and asked
+     what it was told to do. That is the whole of what can be held from this
+     side of the bridge -- and it is the half that decides.
+
+     A recording is not made either: getUserMedia is never going to answer on
+     a Linux box. What is driven is everything downstream of it, which is
+     where the design lives. */
+  const said = [];
+  const files = {};
+  window.Capacitor = { nativePromise: (plug, method, arg) => {
+    said.push({ m: method, a: arg });
+    if (method === 'keepVoice') {
+      if (files[arg.name]) return Promise.reject(new Error('already here'));
+      files[arg.name] = arg.b64;
+      return Promise.resolve({});
+    }
+    if (method === 'dropVoice') { delete files[arg.name]; return Promise.resolve({}); }
+    if (method === 'voice') {
+      return files[arg.name] ? Promise.resolve({ b64: files[arg.name] })
+                             : Promise.reject(new Error('no voice'));
+    }
+    return Promise.resolve({});
+  } };
+
+  PW = pwBlank();
+  PW.ln = 'kano';
+  PW.vo = { b64: 'AAECAwQF', mime: 'audio/mp4', ms: 7200 };
+  pwSend();
+  await new Promise(r => setTimeout(r, 300));
+  const v = POSTS[POSTS.length - 1];
+
+  const kept = said.filter(x => x.m === 'keepVoice');
+  if (kept.length !== 1)
+    fails.push('sending a post with a recording on it asked the phone to keep a ' +
+               'voice ' + kept.length + ' times, and once is what it should be');
+  if (kept[0] && kept[0].a.b64 !== 'AAECAwQF')
+    fails.push('the bytes that went to the file are not the bytes that were ' +
+               'recorded');
+  if (!v || !v.vo || !v.vo.f)
+    fails.push('the post carries no voice at all, so the recording went to a ' +
+               'file and nothing points at it');
+  else {
+    if (kept[0] && v.vo.f !== kept[0].a.name)
+      fails.push('the post names ' + JSON.stringify(v.vo.f) + ' and the file that ' +
+                 'was written is ' + JSON.stringify(kept[0].a.name) + '. A name ' +
+                 'pointing at nothing is a post claiming a voice it does not have');
+    if (v.vo.ms !== 7200)
+      fails.push('the post says the recording is ' + v.vo.ms + 'ms and it is 7200');
+    if (v.vo.b64 !== undefined || String(JSON.stringify(v)).indexOf('AAECAwQF') >= 0)
+      fails.push('the BYTES of the recording are on the post, which is 240 KB of ' +
+                 'audio in the localStorage the whole language lives in. The post ' +
+                 'carries a name; the bytes are a file');
+  }
+
+  /* ---- 7. deleting the post deletes that one file ------------------- */
+  /* 「投稿消した声も消していいよ」 -- and the DELETE REVIEW in
+     docs/CHANGELOG.md says exactly one file, named by the post being
+     deleted, and nothing else touched. Both halves are asked. */
+  const other = POSTS.filter(x => x.vo && x !== v).map(x => x.vo.f);
+  const wasConfirm = window.confirm;
+  window.confirm = () => true;
+  said.length = 0;
+  postDel(v ? v.id : '');
+  window.confirm = wasConfirm;
+
+  const dropped = said.filter(x => x.m === 'dropVoice').map(x => x.a.name);
+  if (v && v.vo) {
+    if (dropped.length !== 1 || dropped[0] !== v.vo.f)
+      fails.push('deleting a post asked the phone to drop ' +
+                 JSON.stringify(dropped) + ' and the post named ' +
+                 JSON.stringify(v.vo.f) + '. One file, the one this post named');
+    if (files[v.vo.f] !== undefined)
+      fails.push("the voice file of a deleted post is still on the disk");
+  }
+  for (const f of other)
+    if (dropped.indexOf(f) >= 0)
+      fails.push('deleting one post dropped ' + JSON.stringify(f) + ' as well, ' +
+                 'which belongs to a post nobody deleted. That is a cleanup, and ' +
+                 'a cleanup is what docs/DATA_SAFETY.md forbids');
+  if (POSTS.some(x => v && x.id === v.id))
+    fails.push('the post itself is still on the timeline after postDel()');
+
+  /* And a post with no voice must not ask for a file to be dropped at all --
+     a name of '' or undefined reaching the phone is a delete with no target. */
+  const plain = POSTS.filter(x => !x.vo)[0];
+  said.length = 0;
+  if (plain) {
+    window.confirm = () => true;
+    postDel(plain.id);
+    window.confirm = wasConfirm;
+    if (said.some(x => x.m === 'dropVoice'))
+      fails.push('deleting a post that never had a voice still asked the phone ' +
+                 'to drop one');
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
-           bytes: Math.round(String(out[0] || '').length / 1024) };
+           bytes: Math.round(String(out[0] || '').length / 1024),
+           vof: (v && v.vo && v.vo.f) || '' };
 });
 
 await br.close();
@@ -201,4 +305,8 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             R.corner + '%, ' + R.bytes + ' KB.\n' +
             '      The post carries a picture and nothing about where the letter\n' +
             '      sat, it carries the direction its language ran in, and the\n' +
-            '      composer is empty behind it.');
+            '      composer is empty behind it.\n' +
+            '      A voice goes out as a file and comes back as a name (' + R.vof + ')\n' +
+            '      with none of its bytes on the post; deleting that post drops\n' +
+            '      that one file and no other, and a post with no voice asks for\n' +
+            '      nothing to be dropped at all.');
