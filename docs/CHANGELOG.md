@@ -346,6 +346,28 @@ could see, and the only way to judge it was to build the app.
 - *newly stored*: nothing. *migration*: none. *deleted*: nothing.
 - **The system keyboard is still Swift and still unverified here.**
 
+### Letters on a photograph are typed, not picked
+
+**Behaviour. Nothing stored changes.**
+
+The editor offered a tray of thirty-eight tiles and you tapped them one at a
+time. There is a keyboard — the person's own, on the phone — and writing a
+word one tile at a time with no space bar is not what it is for.
+「だからなんでキーボードあるのに勝手に文字のタイル準備すんの？」
+
+- A **line is typed into a field** and lands on the picture as one thing that
+  can be dragged, sized and coloured. `postCut()` cuts it — the same cut a
+  post's ink gets, so `ka` is one letter here exactly as it is there, and
+  anything never drawn stays as its characters.
+- The letters stand at the font's own advance (`inkAdv`), so a line on a
+  photograph is spaced the way a line is spaced everywhere else in the app.
+- **Eight colours** rather than white-or-black. 「あと文字の色変えたり」 They
+  are tokens in `index.html` — `--mk0`…`--mk7` — and drawing asks `cssVar()`
+  for the value, because a colour written into the markup is what `act-check`
+  refuses and it is right to.
+- *newly stored*: nothing. A mark is `{tx, x, y, s, c}` while the post is
+  being written and is baked into the picture when it is sent.
+
 ### Letters can be placed on a photograph
 
 **Behaviour, on every plan. Nothing new is stored on a post.**

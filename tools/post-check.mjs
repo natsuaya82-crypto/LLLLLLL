@@ -125,7 +125,7 @@ const R = await pg.evaluate(async () => {
   PW.ln = 'kano tir';
   PW.mn = 'the mountain is seen';
   PW.pics = [{ u: blackPic,
-               marks: [{ l: drawn ? drawn.id : '', x: 0.5, y: 0.5, s: 0.5, w: 1 }] }];
+               marks: [{ tx: 'kano', x: 0.5, y: 0.5, s: 0.5, c: PW_COLS[0] }] }];
   pwSend();
   /* pwSend bakes, and a bake is an image loading. */
   await new Promise(r => setTimeout(r, 300));

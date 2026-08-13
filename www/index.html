@@ -918,10 +918,29 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
         border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font-family:inherit;
         font-size:.95rem;font-weight:600;
         display:inline-flex;align-items:center;justify-content:center}
-/* What can be done to the letter you are holding, down the right edge, which
-   is where a phone keeps it. */
-.mkside{position:absolute;right:10px;top:50%;transform:translateY(-50%);
-        display:flex;flex-direction:column;gap:10px}
+/* The letter's colour, along the foot above the alphabet, where a phone puts
+   a colour picker. */
+.mkcols{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0) + 68px);
+        display:flex;align-items:center;gap:6px;padding:0 12px;
+        overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.mkcols::-webkit-scrollbar{display:none}
+.mkcol{flex:none;width:44px;height:44px;padding:0;border:0;background:none;color:#fff;
+       display:inline-flex;align-items:center;justify-content:center}
+/* The eight a letter on a photograph may be, and the only place they are
+   written. White and black first: those are what a caption on a photograph
+   has always been, and one of the two works on almost any picture. They do
+   not follow the theme -- a letter drawn into a JPEG keeps its colour on
+   somebody else's phone whatever their theme is. */
+:root{--mk0:#ffffff;--mk1:#000000;--mk2:#e5484d;--mk3:#f5a524;
+      --mk4:#30a46c;--mk5:#3b82f6;--mk6:#a855f7;--mk7:#c9a86a}
+.mksw{width:26px;height:26px;border-radius:50%;
+      box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55)}
+.mksw.c0{background:var(--mk0)} .mksw.c1{background:var(--mk1)}
+.mksw.c2{background:var(--mk2)} .mksw.c3{background:var(--mk3)}
+.mksw.c4{background:var(--mk4)} .mksw.c5{background:var(--mk5)}
+.mksw.c6{background:var(--mk6)} .mksw.c7{background:var(--mk7)}
+.mkcol.on .mksw{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55), 0 0 0 3px #fff}
+.mkcol svg{width:17px;height:17px}
 /* The size, down the left edge. A range input is horizontal and there is no
    way to say otherwise that every webview this has to run in agrees about, so
    it is a horizontal one turned on its side -- which is what the width being
@@ -948,18 +967,13 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mkdot{width:15px;height:15px;border-radius:50%;background:#111;
        border:1px solid rgba(255,255,255,.65);flex:none}
 .mkdot.w{background:#fff}
-/* The letters to choose from, along the foot, scrolling sideways. An alphabet
-   is thirty-eight things and a grid of them would be the page again. */
-.mktray{position:absolute;left:0;right:0;
-        bottom:calc(env(safe-area-inset-bottom,0) + 8px);
-        display:flex;align-items:center;gap:8px;padding:8px 12px;
-        overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.mktray::-webkit-scrollbar{display:none}
-.mkl{flex:none;min-width:52px;min-height:52px;padding:6px;border-radius:12px;
-     background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18)}
-.mkl:active{background:rgba(255,255,255,.24)}
-.mkl canvas{width:34px;height:34px;display:block;margin:0 auto}
-.mkhow{color:rgba(255,255,255,.7);font-size:.86rem;padding:14px 4px}
+/* The field the line is typed into, along the foot. It sits above the
+   keyboard the phone puts up, which is the whole point of it. */
+.mkfield{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0) + 8px);
+         padding:0 12px}
+.mkfield .lnin{width:100%;background:rgba(0,0,0,.5);color:#fff;
+               border:1px solid rgba(255,255,255,.25);border-radius:12px;
+               min-height:48px;padding:12px 14px}
 /* The crop. Everything outside it goes dark, which is one enormous shadow
    rather than four rectangles to keep in step with the box. The corners are
    drawn, not pressed: pwCutHit() decides what the finger has, because a

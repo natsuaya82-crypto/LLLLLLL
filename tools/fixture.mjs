@@ -474,14 +474,14 @@ export function halfDone(){
        once a letter is on it, the selected face with its slider and its two
        buttons is a second screen again. */
     ['letters on a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{l:LETTERS[0].id, x:0.5, y:0.4, s:0.18, w:1}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwPicAt = 0; pwMarkAt = 0; pwTool = 'mark'; const h = pwMarkHTML();
       PW = pwBlank(); pwPicAt = -1; pwMarkAt = -1; return h; }],
     /* And the other half of the editor: the crop, with its rectangle over the
        picture. It is a mode of the same screen, so nothing renders it unless
        the walk is put into it. */
     ['cropping a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{l:LETTERS[0].id, x:0.5, y:0.4, s:0.18, w:1}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwPicAt = 0; pwTool = 'crop'; const h = pwMarkHTML();
       PW = pwBlank(); pwPicAt = -1; pwTool = 'mark'; return h; }],
     ['a photograph with no letters on it yet', () => { PW = pwBlank();

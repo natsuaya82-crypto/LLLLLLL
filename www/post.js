@@ -616,15 +616,6 @@ function pwMarkOpen(i){
   openForm('marks:'+pwPicAt, t('post.mark'), pwMarkHTML(), pwMarkMount);
 }
 FORM_OPEN.marks=function(i){ pwMarkOpen(i); };
-/* The letters there are to place: the ones with a shape drawn on them. A
-   letter that is a borrowed character is not somebody's own drawing and is
-   not what this is for. */
-function pwMarkLts(){
-  var out=[], i;
-  for(i=0;i<LETTERS.length;i++)
-    if(LETTERS[i].st && LETTERS[i].st.length) out.push(LETTERS[i]);
-  return out;
-}
 /* The picture fills the phone and everything else floats on it: the way you
    drop a sticker on a photograph, not the way you fill in a form.
    「インスタみたいにしろよ なんでそんなパソコンと同じような配置なんや」
@@ -639,7 +630,7 @@ function pwMarkLts(){
    here and in the bake at 900px. So the stage shrink-wraps the image and the
    image is the thing that is centred. */
 function pwMarkHTML(){
-  var ms=pwMarks(), sel=ms[pwMarkAt], lts=pwMarkLts(), cr=(pwTool==='crop');
+  var ms=pwMarks(), sel=ms[pwMarkAt], cr=(pwTool==='crop');
   return '<div class="mkfull">'+
     '<div class="mkstage'+(cr?' cut':'')+'" id="mk-box">'+
       '<img class="mkpic" src="'+esc((pwPic()&&pwPic().u)||'')+'" alt="">'+
@@ -672,24 +663,29 @@ function pwMarkHTML(){
         ? '<div class="mkslide"><input type="range" class="mkrng" id="mk-size" '+
             'min="4" max="60" value="'+Math.round(sel.s*100)+'"' + IN('pwMarkSize') + '>'+
           '</div>'+
-          /* Down the right edge, which is where a phone keeps what can be
-             done to the thing you are holding. */
-          '<div class="mkside">'+
-            '<button class="mkr"' + DO('pwMarkInk') + ' aria-label="'+
-              esc(t(sel.w? 'post.mark.dark' : 'post.mark.light'))+'">'+
-              '<span class="mkdot'+(sel.w?' w':'')+'"></span></button>'+
-            '<button class="mkr"' + DO('pwMarkDel') + ' aria-label="'+
+          /* What colour the letter is, along the foot above the alphabet --
+             where a phone puts a colour picker. It was a white/black switch,
+             which is two of the colours a letter on a photograph could be.
+             「あと文字の色変えたり」 */
+          '<div class="mkcols">'+PW_COLS.map(function(c, i){
+            return '<button class="mkcol'+(pwMarkCol(sel)===c?' on':'')+'"' +
+              DO('pwMarkInk', [c]) + ' aria-label="'+esc(t('post.mark.col'))+'">'+
+              '<span class="mksw c'+i+'"></span></button>';
+          }).join('')+
+            '<button class="mkcol"' + DO('pwMarkDel') + ' aria-label="'+
               esc(t('post.mark.del'))+'">'+ICON_CROSS+'</button>'+
           '</div>'
         : ''))+
+    /* A field, not a tray of tiles. The letters are typed -- with the Lingua
+       keyboard on the phone, or any other -- because that is what a keyboard
+       is for and there is one. 「だからなんでキーボードあるのに勝手に文字の
+       タイル準備すんの？」
+
+       A tray was also a list of thirty-eight tiles for an alphabet, which is
+       a way of writing a word one letter at a time with no space bar. */
     (cr? '' :
-      '<div class="mktray">'+
-        (lts.length
-          ? lts.map(function(l){
-              return '<button class="mkl"' + DO('pwMarkAdd', [l.id]) + '>'+
-                '<canvas class="mklc" data-l="'+esc(l.id)+'"></canvas></button>';
-            }).join('')
-          : '<span class="mkhow">'+esc(t('post.mark.none'))+'</span>')+
+      '<div class="mkfield">'+
+        lnField('mk-tx', t('post.mark.ph'), IN('pwMarkText'), sel? (sel.tx||'') : '')+
       '</div>')+
     '</div>';
 }
@@ -767,11 +763,24 @@ function pwMarkPaint(){
   e.innerHTML=pwMarkHTML();
   pwMarkMount();
 }
-function pwMarkAdd(id){
-  var ms=pwMarks();
-  ms.push({l:String(id), x:0.5, y:0.5, s:PW_MARK, w:1});
-  pwMarkAt=ms.length-1;
-  pwFresh(); pwMarkPaint();
+/* Typing into the field. An empty field with nothing selected makes a line;
+   an empty line is removed rather than left as an invisible thing to press. */
+function pwMarkText(v){
+  var ms=pwMarks(), m=ms[pwMarkAt];
+  v=String(v||'');
+  if(!m){
+    if(!v) return;
+    ms.push({tx:v, x:0.5, y:0.5, s:PW_MARK, c:PW_COLS[0]});
+    pwMarkAt=ms.length-1;
+    pwFresh(); pwMarkPaint();
+    var e=document.getElementById('mk-tx');
+    if(e) e.focus();
+    return;
+  }
+  m.tx=v;
+  pwFresh();
+  if(!v){ ms.splice(pwMarkAt, 1); pwMarkAt=-1; pwMarkPaint(); return; }
+  pwMarkDraw();
 }
 function pwMarkDel(){
   var ms=pwMarks();
@@ -780,12 +789,30 @@ function pwMarkDel(){
   pwMarkAt=-1;
   pwFresh(); pwMarkPaint();
 }
-/* Light on a dark photograph, dark on a light one. Two values and one button:
-   a letter nobody can see is not placed on anything. */
-function pwMarkInk(){
+/* What colour a letter on a photograph may be. White and black first, because
+   those are what a caption on a photograph has always been and one of the two
+   works on almost any picture; the rest are there because somebody drawing
+   their own alphabet did not do it to write in grey.
+   「あと文字の色変えたり」 */
+/* Named, not written out: a colour in the markup is what act-check refuses
+   and it is right to -- every colour in this app is a token in index.html and
+   there is one place they are set. So this is the list of NAMES, the swatch
+   wears its own class, and drawing asks cssVar() for the value. */
+var PW_COLS=['--mk0', '--mk1', '--mk2', '--mk3', '--mk4', '--mk5', '--mk6', '--mk7'];
+/* A letter's colour, asked in one place, so a mark made before there were
+   colours -- while a post was being written and the app reloaded -- still
+   answers something drawable. `w` was the white/black switch that came
+   before. */
+function pwMarkCol(m){
+  if(!m) return PW_COLS[0];
+  if(typeof m.c==='string' && m.c) return m.c;
+  return m.w? PW_COLS[0] : PW_COLS[1];
+}
+function pwMarkInk(c){
   var m=pwMarks()[pwMarkAt];
   if(!m) return;
-  m.w=m.w? 0 : 1;
+  m.c=String(c||PW_COLS[0]);
+  delete m.w;
   pwFresh(); pwMarkPaint();
 }
 function pwMarkSize(v){
@@ -794,54 +821,79 @@ function pwMarkSize(v){
   m.s=Math.max(0.04, Math.min(0.6, (parseInt(v, 10)||18)/100));
   pwFresh(); pwMarkDraw();
 }
-/* Where a letter's shape comes from while the post is being written: the open
-   alphabet, which is right, because this is the making side and it is MY
-   picture and MY letters. What travels is the baked picture. */
-function pwMarkSt(m){
-  var l=m && ltById(m.l);
-  return (l && l.st && l.st.length)? l.st : null;
+/* What a mark is made of: the line somebody typed, cut into the shapes it is
+   written with. postCut() is the one place that cuts a line, and it is the
+   same cut a post's ink gets -- so `ka` is one letter here exactly as it is
+   there, and anything never drawn stays as its characters.
+
+   The open alphabet, which is right: this is the making side, and it is MY
+   picture and MY letters. What travels is the baked photograph. */
+function pwMarkCut(m){
+  return (m && m.tx)? postCut(m.tx) : [];
+}
+/* How wide that line is, in cells of its own height. The font's own rule --
+   inkAdv() is reach(), ink plus one step with half a step at each end -- so
+   the letters stand here the way they stand everywhere else in the app. A
+   piece that was never drawn is text and takes a cell. */
+function pwMarkAdv(units){
+  var w=0, i, a;
+  for(i=0;i<units.length;i++){
+    if(units[i].st){ a=inkAdv(units[i].st); w+=a? a.w : 800; }
+    else w+=String(units[i].t||'').length*440;
+  }
+  return w;
+}
+/* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
+function pwMarkRun(x, units, k, ox, oy, col){
+  var i, a, cur=ox;
+  x.fillStyle=col; x.textAlign='left'; x.textBaseline='alphabetic';
+  for(i=0;i<units.length;i++){
+    if(units[i].st){
+      a=inkAdv(units[i].st);
+      if(a){ inkStrokes(x, units[i].st, k, cur+a.dx*k, oy, col); cur+=a.w*k; }
+      else cur+=800*k;
+    } else {
+      x.font=Math.round(640*k)+'px '+CARD_CAPS;
+      x.fillStyle=col;
+      x.fillText(String(units[i].t||''), cur, oy+640*k);
+      cur+=String(units[i].t||'').length*440*k;
+    }
+  }
 }
 /* Not inkCanvases(): that draws every square cell in --tx, which is the
    theme's ink and is right for a tile, a key and the alphabet. A letter on a
    photograph is white or black and nothing else -- the two colours a caption
    has ever been -- so the strokes go through inkStrokes directly, which is
    still the one place that turns strokes into a shape. */
+/* How wide a mark is on the picture, as a fraction of it: its height times
+   the line's own advance. Asked in one place because the drawing, the hit box
+   and the bake all need the same answer. */
+function pwMarkWide(m){
+  return m.s*(pwMarkAdv(pwMarkCut(m))/800);
+}
 function pwMarkDraw(){
-  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, c, m, st, S,
-      dpr=window.devicePixelRatio||1;
+  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, c, m, u, H, W,
+      dpr=window.devicePixelRatio||1, box=document.getElementById('mk-box');
+  var bw=box? (box.getBoundingClientRect().width||300) : 300;
   for(i=0;i<els.length;i++){
     c=els[i];
     m=ms[parseInt(c.getAttribute('data-i'), 10)];
     if(!m) continue;
-    c.style.width=(m.s*100)+'%';
+    c.style.width=(pwMarkWide(m)*100)+'%';
     c.style.left=(m.x*100)+'%';
     c.style.top=(m.y*100)+'%';
-    st=pwMarkSt(m);
-    if(!st) continue;
-    S=Math.max(40, Math.round((c.getBoundingClientRect().width||60)*dpr));
-    c.width=S; c.height=S;
-    inkStrokes(c.getContext('2d'), st, S/800, 0, 0, m.w? '#fff' : '#000');
+    u=pwMarkCut(m);
+    if(!u.length) continue;
+    H=Math.max(40, Math.round(m.s*bw*dpr));
+    W=Math.max(1, Math.round(H*(pwMarkAdv(u)/800)));
+    c.width=W; c.height=H;
+    pwMarkRun(c.getContext('2d'), u, H/800, 0, 0, cssVar(pwMarkCol(m)));
   }
 }
 /* One pointer, on the box rather than on each letter: a finger that leaves a
    small canvas mid-drag would otherwise drop it. */
 function pwMarkMount(){
-  /* The tray's letters are drawn white here rather than left to geTiles(),
-     which fills every `tc` canvas in --tx. This screen is black whatever the
-     theme is, so --tx is the right ink on a light phone and invisible on a
-     dark one -- and an inversion on top would only move which of the two was
-     wrong. */
-  var els=document.querySelectorAll('canvas.mklc'), i, c, st, S,
-      dpr=window.devicePixelRatio||1;
-  for(i=0;i<els.length;i++){
-    c=els[i];
-    var l=ltById(c.getAttribute('data-l'));
-    st=(l && l.st && l.st.length)? l.st : null;
-    if(!st || !st.length) continue;
-    S=Math.max(40, Math.round((c.getBoundingClientRect().width||34)*dpr));
-    c.width=S; c.height=S;
-    inkStrokes(c.getContext('2d'), st, S/800, 0, 0, '#fff');
-  }
+  lnGrowAll();
   pwMarkDraw();
   var box=document.getElementById('mk-box');
   if(!box) return;
@@ -866,10 +918,10 @@ function pwMarkWhere(ev){
 /* The topmost one the finger is inside, so a letter placed over another is the
    one that moves. */
 function pwMarkHit(p){
-  var ms=pwMarks(), i, m, half;
+  var ms=pwMarks(), i, m, hw, hh;
   for(i=ms.length-1;i>=0;i--){
-    m=ms[i]; half=m.s/2;
-    if(p[0]>=m.x-half && p[0]<=m.x+half && p[1]>=m.y-half && p[1]<=m.y+half) return i;
+    m=ms[i]; hw=pwMarkWide(m)/2; hh=m.s/2;
+    if(p[0]>=m.x-hw && p[0]<=m.x+hw && p[1]>=m.y-hh && p[1]<=m.y+hh) return i;
   }
   return -1;
 }
@@ -984,13 +1036,13 @@ function pwBakeOne(pc, done){
     x.drawImage(im, 0, 0, c.width, c.height);
     for(i=0;i<ms.length;i++){
       m=ms[i];
-      st=pwMarkSt(m);
-      if(!st) continue;
-      /* The same numbers the screen used: a fraction of the picture's width,
-         in a square cell centred on the point it was dropped at. */
+      st=pwMarkCut(m);
+      if(!st.length) continue;
+      /* The same numbers the screen used: the height is a fraction of the
+         picture's width, and the line is centred on the point it was left at. */
       k=(m.s*c.width)/800;
-      inkStrokes(x, st, k, m.x*c.width-(m.s*c.width)/2,
-                 m.y*c.height-(m.s*c.width)/2, m.w? '#fff' : '#000');
+      pwMarkRun(x, st, k, m.x*c.width-(pwMarkWide(m)*c.width)/2,
+                m.y*c.height-(m.s*c.width)/2, cssVar(pwMarkCol(m)));
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ done(pc.u); return; }
