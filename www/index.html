@@ -1154,7 +1154,14 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .btn.signin{width:100%;justify-content:center;display:inline-flex;align-items:center;gap:10px;margin-bottom:10px}
 .btn.google{background:#fff;color:#1f1f1f;border:1px solid #e2e2e2}
 .btn.apple{background:#000;color:#fff;border:1px solid #000}
-.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:inherit}
+/* The onboarding's, and ONLY the onboarding's. This block is a second
+   stylesheet loaded after the first, so an unscoped `.btn.ghost` here beat the
+   app's own by order and gave every ghost button in Lingua a white border at
+   22% -- invisible on a page whose background is paper. The onboarding is the
+   one screen that is dark, which is why it looked right there and nowhere
+   else, and why nothing said so. Same shape as the `.sfont` bug: one rule in
+   one place, quietly outranked by another that was written for one screen. */
+.ob .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:inherit}
 .btn.obauto{margin-top:10px}
 .obhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 /* --- onboarding: the letter, the escape row, the borrowed scripts ------- */
