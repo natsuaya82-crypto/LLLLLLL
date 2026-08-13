@@ -899,6 +899,9 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
         display:flex;align-items:center;justify-content:center;
         -webkit-user-select:none;user-select:none}
 .mkstage{position:relative;line-height:0;touch-action:none}
+/* The picture keeps out of the keyboard's way as well: with one up, the room
+   left is the screen minus the controls minus the keyboard, and a photograph
+   that ran under it would be a photograph you cannot see while typing on it. */
 .mkpic{display:block;max-width:100vw;
        max-height:calc(100dvh - 190px);width:auto;height:auto}
 .mkc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
@@ -920,7 +923,8 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
         display:inline-flex;align-items:center;justify-content:center}
 /* The letter's colour, along the foot above the alphabet, where a phone puts
    a colour picker. */
-.mkcols{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0) + 68px);
+.mkcols{position:absolute;left:0;right:0;
+        bottom:calc(env(safe-area-inset-bottom,0) + 68px + var(--kb));
         display:flex;align-items:center;gap:6px;padding:0 12px;
         overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .mkcols::-webkit-scrollbar{display:none}
@@ -931,6 +935,9 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    has always been, and one of the two works on almost any picture. They do
    not follow the theme -- a letter drawn into a JPEG keeps its colour on
    somebody else's phone whatever their theme is. */
+/* How much of the screen the phone's keyboard is covering. vpKbWire() in
+   shell.js writes it; anything pinned to the bottom of the screen adds it. */
+:root{--kb:0px}
 :root{--mk0:#ffffff;--mk1:#000000;--mk2:#e5484d;--mk3:#f5a524;
       --mk4:#30a46c;--mk5:#3b82f6;--mk6:#a855f7;--mk7:#c9a86a}
 .mksw{width:26px;height:26px;border-radius:50%;
@@ -969,7 +976,8 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mkdot.w{background:#fff}
 /* The field the line is typed into, along the foot. It sits above the
    keyboard the phone puts up, which is the whole point of it. */
-.mkfield{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0) + 8px);
+.mkfield{position:absolute;left:0;right:0;
+         bottom:calc(env(safe-area-inset-bottom,0) + 8px + var(--kb));
          padding:0 12px}
 .mkfield .lnin{width:100%;background:rgba(0,0,0,.5);color:#fff;
                border:1px solid rgba(255,255,255,.25);border-radius:12px;

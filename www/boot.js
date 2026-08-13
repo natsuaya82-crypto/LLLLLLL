@@ -56,6 +56,9 @@ netResume(function(){ render(); }, function(){});
 actWire(document.getElementById('app'));
 /* and one above the tab bar, which is beside the screen rather than in it */
 actWire(document.getElementById('tabs'));
+/* and how much of the screen the phone's keyboard is covering, so a field
+   pinned to the bottom is above it rather than behind it */
+vpKbWire();
 render();
 /* And, if the plan has ended since the last launch, the one thing somebody
    needs to hear before they look at a list that is suddenly a hundred long.

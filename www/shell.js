@@ -43,6 +43,29 @@ function viewReset(){
   BKLIST=null;                         /* what is on the disk, asked again */
 }
 
+/* ---- how much of the screen the phone's own keyboard is covering ------
+   This app has no Capacitor keyboard plugin, so WKWebView does not resize
+   when the keyboard comes up: it lays a keyboard over the page and leaves
+   `position:fixed` exactly where it was. Anything pinned to the bottom of the
+   screen is then behind it -- which is every field on the photograph editor,
+   and the field is the whole point of that screen.
+
+   `visualViewport` is what the browser knows about it, and the difference
+   between the window and the visible part of it IS the keyboard. It goes into
+   one custom property, and the screens that pin something to the bottom add
+   it to their offset. One listener, one number, and nothing native. */
+function vpKbWire(){
+  var vv=window.visualViewport;
+  if(!vv || !vv.addEventListener) return;
+  var set=function(){
+    var h=Math.max(0, Math.round(window.innerHeight-vv.height-vv.offsetTop));
+    document.documentElement.style.setProperty('--kb', h+'px');
+  };
+  vv.addEventListener('resize', set);
+  vv.addEventListener('scroll', set);
+  set();
+}
+
 /* ---- where you are, and what you came through ------------------------
    Every screen used to be reached by setting one global to a string, and
    every back button was hard-wired to a particular screen. So the word

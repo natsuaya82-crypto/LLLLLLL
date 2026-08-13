@@ -367,6 +367,14 @@ word one tile at a time with no space bar is not what it is for.
   refuses and it is right to.
 - *newly stored*: nothing. A mark is `{tx, x, y, s, c}` while the post is
   being written and is baked into the picture when it is sent.
+- **The field stays above the phone's keyboard.** This app has no Capacitor
+  keyboard plugin, so WKWebView does not resize when a keyboard comes up — it
+  lays one over the page and leaves `position:fixed` where it was, which would
+  have put the field behind it. `vpKbWire()` in `shell.js` writes the
+  difference between the window and `visualViewport` into `--kb`, and the
+  field and the colours add it. One listener, one number, nothing native.
+- The photograph stays where it is behind them, which is what Instagram does
+  with a picture you are typing on. 「インスタだともはや隠してる」
 
 ### Letters can be placed on a photograph
 
