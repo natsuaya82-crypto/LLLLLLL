@@ -864,6 +864,7 @@ defLang('it', (function(){
       "post.mark.how"        : "Aggiungi una lettera e trascinala.",
       "post.pic.bad"        : "Non è stato possibile usare questa immagine.",
       "post.pic.full"        : "La cronologia è piena. Non è stato cancellato nulla: togli la foto da questo messaggio, o cancella tu un messaggio vecchio.",
+      "post.pic.many"        : "Al massimo {0} foto",
       "post.full"        : "La cronologia è piena e non è stato salvato nulla. Cancella un messaggio vecchio e riprova.",
       "tr.go"        : "Leggerlo nella mia lingua",
       "tr.left"        : "{0} rimaste oggi",

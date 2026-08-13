@@ -867,6 +867,7 @@ defLang('zh', (function(){
       "post.mark.how"        : "加一个字，然后拖动。",
       "post.pic.bad"        : "这张图片无法使用。",
       "post.pic.full"        : "时间线已满。没有删除任何内容——请去掉这条帖子的照片，或自行删除较旧的帖子。",
+      "post.pic.many"        : "最多 {0} 张图片",
       "post.full"        : "时间线已满，没有保存。请删除较旧的帖子后再试。",
       "tr.go"        : "用我的语言读",
       "tr.left"        : "今天还剩 {0} 次",

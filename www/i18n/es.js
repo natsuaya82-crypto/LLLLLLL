@@ -822,6 +822,7 @@ defLang('es', (function(){
       "post.mark.how"        : "Añade una letra y arrástrala.",
       "post.pic.bad"        : "No se pudo usar esa imagen.",
       "post.pic.full"        : "La línea de tiempo está llena. No se ha borrado nada: quita la foto de esta publicación o borra tú una antigua.",
+      "post.pic.many"        : "Hasta {0} fotos",
       "post.full"        : "La línea de tiempo está llena y no se guardó nada. Borra una publicación antigua e inténtalo de nuevo.",
       "tr.go"        : "Leerlo en mi lengua",
       "tr.left"        : "{0} restantes hoy",

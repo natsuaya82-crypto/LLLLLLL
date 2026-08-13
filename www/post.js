@@ -95,7 +95,7 @@ function postGlossLine(gl){
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
-function pwBlank(){ return {ln:'', mn:'', to:'', pic:'', marks:[]}; }
+function pwBlank(){ return {ln:'', mn:'', to:'', pics:[]}; }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
@@ -134,6 +134,15 @@ var POST_PIC=900, POST_PICQ=0.72;
    When it is full the PHOTOGRAPH is refused, never the post and never
    anything already written. Nothing is pruned to make room. */
 var POST_BYTES=2*1024*1024;
+/* How many a post may carry. 「画像は4枚まで載せられる」
+   Four is also four times easier to reach POST_BYTES with, which is why the
+   room is asked for EACH one as it arrives rather than once at the end. */
+var POST_PICS=4;
+/* The pictures being written, each with the letters placed on it. A picture is
+   {u: the photograph, marks: [...]} -- one object rather than two lists,
+   because a picture and the letters on it are removed together and reordered
+   together, and two lists are two chances to disagree about which is which. */
+function pwPics(){ if(!PW.pics) PW.pics=[]; return PW.pics; }
 function pwPicRoom(url){
   var n=0;
   try{ n=String(localStorage.getItem(LS_POSTS)||'').length; }catch(e){}
@@ -161,22 +170,66 @@ function pwPicKeep(url){
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ toast(t('post.pic.bad')); return; }
     if(!pwPicRoom(out)){ toast(t('post.pic.full')); return; }
-    PW.pic=out; openPost();
+    if(pwPics().length>=POST_PICS){ toast(t('post.pic.many', POST_PICS)); return; }
+    pwPics().push({u:out, marks:[]});
+    openPost();
   };
   im.onerror=function(){ toast(t('post.pic.bad')); };
   im.src=url;
 }
 /* The letters go with the picture. They are placed ON it -- a mark with no
-   photograph under it is a position on nothing. */
-function pwDropPic(){ PW.pic=''; PW.marks=[]; pwMarkAt=-1; openPost(); }
+   photograph under it is a position on nothing -- so they are on the same
+   object and one splice takes both. */
+function pwDropPic(i){
+  var ps=pwPics();
+  i=parseInt(i, 10)||0;
+  if(!ps[i]) return;
+  ps.splice(i, 1);
+  pwPicAt=-1; pwMarkAt=-1;
+  openPost();
+}
+/* A photograph, and the two things you do to one.
+
+   It was three buttons in a row -- Change photo, Letters, Remove photo -- and
+   on a phone `.btn` is flex:1 with word-break:break-word, so three of them
+   came out as "Rem / ove / phot / o". 「下の文字終わってるだろw」
+
+   What is there now is what a phone does with a picture: a red minus at its
+   top corner takes it away, a plus beside it adds one, and pressing the
+   picture opens it. 「右上に赤い⚪︎に-で消すで画像横に+ボタンでadd」
+   「編集ボタンはいらん。画像タップして画像編集」 */
+/* The photographs, sliding sideways, with the plus beside them.
+   「画像は4枚まで載せられる。画像だけ横スライドできる感じ」「+が真ん中に来ると最高」
+
+   There were three buttons under one picture -- Change photo, Letters, Remove
+   photo -- and `.btn` is flex:1 with word-break:break-word, so the third came
+   out as "Rem / ove / phot / o" on a phone. 「下の文字終わってるだろw」
+
+   There is no button now. A red minus at a picture's corner takes it away, the
+   plus adds one, and pressing a picture opens it.
+   「編集ボタンはいらん。画像タップして画像編集」 */
 function pwPicHTML(){
-  return '<div class="pwpicrow">'+
-    (PW.pic? '<img class="pwpic" src="'+esc(PW.pic)+'" alt="">' : '')+
-    '<label class="btn ghost picpick">'+esc(t(PW.pic? 'post.pic.again' : 'post.pic'))+
-      '<input type="file" id="pw-pic" accept="image/*"' + CH('pwSetPic') + '></label>'+
-    (PW.pic? '<button class="btn ghost"' + DO('pwMarkOpen') + '>'+
-       esc(t('post.mark'))+(pwMarks().length? ' '+pwMarks().length : '')+'</button>' : '')+
-    (PW.pic? '<button class="btn ghost"' + DO('pwDropPic') + '>'+esc(t('post.pic.drop'))+'</button>' : '')+
+  var ps=pwPics();
+  return '<div class="pwpics">'+
+    '<div class="pwstrip'+(ps.length>1? ' many':'')+'">'+
+    ps.map(function(pc, i){
+      return '<span class="pwpicw">'+
+        '<button class="pwpicb"' + DO('pwMarkOpen', [i]) + ' aria-label="'+
+          esc(t('post.mark'))+'"><img class="pwpic" src="'+esc(pc.u||'')+'" alt=""></button>'+
+        '<button class="pwpicx"' + DO('pwDropPic', [i]) + ' aria-label="'+
+          esc(t('post.pic.drop'))+'">'+ICON_MINUS+'</button>'+
+        ((pc.marks && pc.marks.length)
+          ? '<span class="pwpicn">'+pc.marks.length+'</span>' : '')+
+        '</span>';
+    }).join('')+
+    '</div>'+
+    /* Outside the strip, so it stays where a thumb can reach it however many
+       pictures have to be pushed past. Gone at four rather than refusing at
+       four: a button that is there and says no is a button you press twice. */
+    (ps.length<POST_PICS
+      ? '<label class="picadd" aria-label="'+esc(t('post.pic'))+'">'+ICON_ADDP+
+          '<input type="file" id="pw-pic" accept="image/*"' + CH('pwSetPic') + '></label>'
+      : '')+
     '</div>';
 }
 function pwHTML(){
@@ -254,9 +307,9 @@ function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
 function pwSend(){
   var ln=String(PW.ln||'').trim();
   if(!ln){ toast(t('post.none')); return; }
-  pwBake(function(pic){ pwSendWith(ln, pic); });
+  pwBake(function(pics){ pwSendWith(ln, pics); });
 }
-function pwSendWith(ln, pic){
+function pwSendWith(ln, pics){
   /* Only to fall back on: the words run together, for somebody who typed a
      line and no meaning. Not stored -- see postRow. */
   var gl=postGloss(ln);
@@ -270,11 +323,17 @@ function pwSendWith(ln, pic){
             ln:ln, ink:postInk(ln), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), li:0, bo:0, re:0};
-  /* If the letters made the file too big for what is left, the PHOTOGRAPH is
-     what is refused -- never the post, and nothing already written is pruned
-     to make room. Same sentence pwPicKeep() makes when the picture arrives. */
-  if(pic && pwPicRoom(pic)) mine.pic=pic;
-  else if(pic) toast(t('post.pic.full'));
+  /* If the letters made the files too big for what is left, the PHOTOGRAPHS
+     are what is refused -- never the post, and nothing already written is
+     pruned to make room. Same sentence pwPicKeep() makes when a picture
+     arrives; it is said again here because baking changes the size. */
+  var keep=[], i, tot=0;
+  for(i=0;i<(pics||[]).length;i++){
+    tot+=String(pics[i]).length;
+    if(pwPicRoom(String(tot))) keep.push(pics[i]);
+  }
+  if(keep.length) mine.pics=keep;
+  if(keep.length<((pics||[]).length)) toast(t('post.pic.full'));
   /* The natural language, translated once, here, and carried. It is asked
      for and NOT waited on: the post is pushed either way, and a translation
      that arrives late lands on a post that already exists. A post that
@@ -540,12 +599,23 @@ function trBtnHTML(p){
    sits as a FRACTION of the picture -- so the same numbers place it on the
    screen at 340px wide and in the bake at 900. */
 var PW_MARK=0.18;              /* a new one is this much of the picture wide */
-function pwMarks(){ if(!PW.marks) PW.marks=[]; return PW.marks; }
-var pwMarkAt=-1;               /* which one is being worked on */
-function pwMarkOpen(){
-  openForm('marks:', t('post.mark'), pwMarkHTML(), pwMarkMount);
+/* Which picture is open, and which letter on it is being worked on. Both are
+   where you are standing rather than anything stored. */
+var pwPicAt=-1, pwMarkAt=-1;
+function pwPic(){ return pwPics()[pwPicAt] || null; }
+function pwMarks(){
+  var pc=pwPic();
+  if(!pc) return [];
+  if(!pc.marks) pc.marks=[];
+  return pc.marks;
 }
-FORM_OPEN.marks=function(){ pwMarkOpen(); };
+function pwMarkOpen(i){
+  pwPicAt=parseInt(i, 10)||0;
+  pwMarkAt=-1;
+  if(!pwPic()) return;
+  openForm('marks:'+pwPicAt, t('post.mark'), pwMarkHTML(), pwMarkMount);
+}
+FORM_OPEN.marks=function(i){ pwMarkOpen(i); };
 /* The letters there are to place: the ones with a shape drawn on them. A
    letter that is a borrowed character is not somebody's own drawing and is
    not what this is for. */
@@ -572,7 +642,7 @@ function pwMarkHTML(){
   var ms=pwMarks(), sel=ms[pwMarkAt], lts=pwMarkLts();
   return '<div class="mkfull">'+
     '<div class="mkstage" id="mk-box">'+
-      '<img class="mkpic" src="'+esc(PW.pic||'')+'" alt="">'+
+      '<img class="mkpic" src="'+esc((pwPic()&&pwPic().u)||'')+'" alt="">'+
       ms.map(function(m, i){
         return '<canvas class="mkc'+(i===pwMarkAt?' on':'')+'" data-i="'+i+'" '+
           'style="left:'+(m.x*100)+'%;top:'+(m.y*100)+'%;width:'+(m.s*100)+'%"></canvas>';
@@ -747,8 +817,20 @@ function pwMarkUp(){
    rather than waiting: a post is not held up by a picture, and a bake that
    fails sends the photograph as it was rather than sending nothing. */
 function pwBake(done){
-  var ms=pwMarks();
-  if(!PW.pic || !ms.length){ done(PW.pic||''); return; }
+  var ps=pwPics(), out=[], i=0;
+  function next(){
+    if(i>=ps.length){ done(out); return; }
+    pwBakeOne(ps[i], function(u){ if(u) out.push(u); i++; next(); });
+  }
+  next();
+}
+/* One picture, with its letters drawn into it. A picture with nothing on it is
+   handed straight back rather than re-encoded: a second pass through JPEG
+   costs quality and buys nothing. */
+function pwBakeOne(pc, done){
+  var ms=(pc && pc.marks) || [];
+  if(!pc || !pc.u){ done(''); return; }
+  if(!ms.length){ done(pc.u); return; }
   var im=new Image();
   im.onload=function(){
     var c=document.createElement('canvas'), x, i, m, st, k, out;
@@ -766,11 +848,11 @@ function pwBake(done){
                  m.y*c.height-(m.s*c.width)/2, m.w? '#fff' : '#000');
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
-    catch(e){ done(PW.pic); return; }
+    catch(e){ done(pc.u); return; }
     done(out);
   };
-  im.onerror=function(){ done(PW.pic); };
-  im.src=PW.pic;
+  im.onerror=function(){ done(pc.u); };
+  im.src=pc.u;
 }
 
 /* ==== below this line a post renders from the post ====
@@ -903,6 +985,20 @@ function postInkOK(ink){
    A post written before posts carried a direction runs left to right, which
    is how it was written and how it has been shown until now. Nothing is
    guessed and nothing is back-filled. */
+/* What pictures a post has, asked in ONE place.
+
+   A post used to carry `pic`, one photograph. It carries `pics` now, up to
+   four. Posts written before this keep the field they were written with --
+   nothing goes and rewrites somebody's timeline into a newer shape, and a
+   photograph is the largest thing on a post, so a migration that copied one
+   would double it. So: `pics` if it has one, otherwise `pic` as a list of
+   one, otherwise nothing. */
+function postPics(p){
+  if(!p) return [];
+  if(Object.prototype.toString.call(p.pics)==='[object Array]' && p.pics.length)
+    return p.pics;
+  return p.pic? [p.pic] : [];
+}
 function postDir(p){
   var d=p && p.dir;
   return DIRS.indexOf(d)>=0 ? d : 'ltr';
@@ -944,7 +1040,15 @@ function postRow(p){
          are on the post, so there is no font to put on anything and no
          reason to treat my own post differently from anybody's. */
       '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>'+
-      (p.pic? '<img class="ppic" src="'+esc(p.pic)+'" alt="">' : '')+
+      /* The pictures, and they are the one thing on a post that slides
+         sideways. 「画像だけ横スライドできる感じ」 One is a picture; several
+         are a strip, and the strip scrolls rather than the post. */
+      (postPics(p).length
+        ? '<div class="ppics'+(postPics(p).length>1? ' many':'')+'">'+
+            postPics(p).map(function(u){
+              return '<img class="ppic" src="'+esc(u)+'" alt="">';
+            }).join('')+'</div>'
+        : '')+
       /* The natural language, always. In the reader's own if the post carries
          it, and in the author's if it does not -- which is every post until
          the translator is wired up, and is not a failure. */

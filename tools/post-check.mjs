@@ -124,8 +124,8 @@ const R = await pg.evaluate(async () => {
   PW = pwBlank();
   PW.ln = 'kano tir';
   PW.mn = 'the mountain is seen';
-  PW.pic = blackPic;
-  PW.marks = [{ l: drawn ? drawn.id : '', x: 0.5, y: 0.5, s: 0.5, w: 1 }];
+  PW.pics = [{ u: blackPic,
+               marks: [{ l: drawn ? drawn.id : '', x: 0.5, y: 0.5, s: 0.5, w: 1 }] }];
   pwSend();
   /* pwSend bakes, and a bake is an image loading. */
   await new Promise(r => setTimeout(r, 300));
@@ -141,7 +141,12 @@ const R = await pg.evaluate(async () => {
   /* The photograph first, so a bake that drew nothing cannot pass by the
      picture having been light all along. */
   const wasLight = await lightShare(blackPic);
-  const nowLight = await lightShare(p.pic);
+  /* Through postPics(), which is the one place that answers what pictures a
+     post has -- `pics` now, `pic` on everything written before. */
+  const out = postPics(p);
+  if (out.length !== 1)
+    fails.push('the post carries ' + out.length + ' pictures and one was sent');
+  const nowLight = await lightShare(out[0] || '');
   if (wasLight > 0.002)
     fails.push('the photograph this test puts in is not black (' +
                (wasLight * 100).toFixed(1) + '% light), so nothing below it ' +
@@ -155,12 +160,12 @@ const R = await pg.evaluate(async () => {
                'the file it does not exist');
 
   /* ---- 2. and it is not the picture that went in -------------------- */
-  if (p.pic === blackPic)
+  if (out[0] === blackPic)
     fails.push('the posted picture is byte-for-byte the one that was chosen, ' +
                'so pwBake() did not run');
 
   /* ---- 3. the marks themselves do not travel ------------------------ */
-  if (p.marks !== undefined)
+  if (p.marks !== undefined || (p.pics && p.pics.some((x) => typeof x !== 'string')))
     fails.push('the post carries `marks`. Letters on a picture are baked in, ' +
                'so nothing about where they sat is a reader\'s business -- and ' +
                'a position without the shape beside it is unusable to somebody ' +
@@ -173,12 +178,12 @@ const R = await pg.evaluate(async () => {
                'is a direction the reader takes from THEIR language');
 
   /* ---- 5. and the composer is empty ---------------------------------- */
-  if (PW.ln || PW.pic || (PW.marks && PW.marks.length))
+  if (PW.ln || (PW.pics && PW.pics.length))
     fails.push('the composer still holds the post that was just sent, so the ' +
                'next one starts with the last one\'s letters on it');
 
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
-           bytes: Math.round(String(p.pic || '').length / 1024) };
+           bytes: Math.round(String(out[0] || '').length / 1024) };
 });
 
 await br.close();

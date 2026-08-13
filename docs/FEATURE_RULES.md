@@ -186,6 +186,43 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-13
+- Area: Posts — how many photographs, and how they are shown
+- Decision:
+  1. A post can carry **up to four** photographs.
+  2. They **slide sideways**; the picture area scrolls and nothing else does.
+  3. On the composer the **＋ sits beside them, centred**, and goes when there
+     are four.
+  4. Each picture has its own letters placed on it, and each is baked
+     separately when the post is sent.
+- Reason: 「画像は4枚まで載せられる。画像だけ横スライドできる感じ」
+  「+が真ん中に来ると最高」
+- Affected features: composer, timeline
+- Affected data: **new** — `post.pics`, an array of data URLs. `post.pic` is
+  **not removed and not rewritten**: posts that carry one keep it, and every
+  reader goes through one function that answers `pics` or falls back to `pic`.
+  `POST_BYTES` is unchanged and is now four times easier to reach, so a
+  picture that will not fit is refused and the post is not
+- Affected docs: FEATURES.md, DATA_MODEL.md, DATA_SAFETY.md, CHANGELOG.md
+- Implementation status: implemented; code confirmed, not device confirmed
+
+### Decision
+- Date: 2026-08-13
+- Area: Posts — the photograph on the composer
+- Decision: no buttons under it. A **red minus at the picture's top corner**
+  removes it, a **＋ beside it** adds one, and **pressing the picture opens the
+  editor** — cropping, letters, whatever the editor grows.
+- Reason: 「右上に赤い⚪︎に-で消すで画像横に+ボタンでadd」「編集ボタンはいらん。
+  画像タップして画像編集切り抜きとか文字入れとかできるように」
+- Affected features: composer
+- Affected data: none
+- Affected docs: CHANGELOG.md
+- Implementation status: the layout and the letters are implemented.
+  **Cropping is not built.** It is the other half of what the editor was asked
+  to do and it is not in the app; `docs/BACKLOG.md` holds it rather than a
+  screen pretending to offer it
+
+### Decision
+- Date: 2026-08-13
 - Area: **What happens when a plan ends** — every capability at once
 - Decision: **the app goes back to the shape the free plan has, and nothing a
   person made is deleted.**

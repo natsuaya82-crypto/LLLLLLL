@@ -870,6 +870,15 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    screens tall at full width, and cropping it to fit would take a piece of
    somebody's picture away with nowhere to go and see it. Letterboxed, the
    whole photograph is there and the row stays a row. */
+/* The pictures on a post. One fills the row; several are a strip that slides
+   sideways, and it is the strip that scrolls, not the post.
+   「画像だけ横スライドできる感じ」 */
+.ppics{margin-top:8px}
+.ppics.many{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+            scrollbar-width:none}
+.ppics.many::-webkit-scrollbar{display:none}
+.ppics.many .ppic{flex:0 0 auto;width:78%;height:58vw;max-height:340px;
+                  object-fit:cover;margin-top:0}
 .ppic{display:block;width:100%;max-width:100%;max-height:60vh;height:auto;
       object-fit:contain;background:var(--sink);margin:8px 0 2px;
       border-radius:14px;border:1px solid var(--glassrim)}
@@ -940,9 +949,61 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mkl:active{background:rgba(255,255,255,.24)}
 .mkl canvas{width:34px;height:34px;display:block;margin:0 auto}
 .mkhow{color:rgba(255,255,255,.7);font-size:.86rem;padding:14px 4px}
-.pwpicrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
-.pwpic{width:100%;max-height:40vh;height:auto;object-fit:contain;background:var(--sink);
-       border-radius:14px;border:1px solid var(--glassrim)}
+/* A photograph on the composer: the picture, a red minus hung over its corner,
+   and a plus beside it.
+
+   It was three buttons in a row -- Change photo, Letters, Remove photo -- and
+   `.btn` is flex:1 with word-break:break-word, which is right for two buttons
+   filling a sheet and is what turned the third into "Rem / ove / phot / o" on
+   a phone. 「下の文字終わってるだろw」 There is no button now: the picture is
+   what you press. */
+/* The pictures slide sideways and the plus stands beside them, centred
+   against their height. 「画像だけ横スライドできる感じ」「+が真ん中に来ると最高」
+
+   The plus is OUTSIDE the strip: inside it, four pictures push it off the
+   edge and adding a fifth means scrolling to a button that is not there.
+   `align-items:center` on the row is the whole of the centring.
+
+   One picture fills the row, because one picture is what most posts have and
+   a thumbnail of it would be a downgrade. Several become a strip of equal
+   boxes -- a row of mixed heights is what a page of pasted images looks
+   like, not what a phone shows. */
+.pwpics{display:flex;align-items:center;gap:10px;margin-top:10px}
+.pwstrip{flex:1 1 auto;min-width:0;display:flex;gap:8px;padding:11px 0;
+         overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.pwstrip::-webkit-scrollbar{display:none}
+.pwpicw{position:relative;flex:0 0 auto;width:100%;display:block}
+.pwstrip.many .pwpicw{width:150px}
+.pwstrip.many .pwpic{height:190px;min-height:0;object-fit:cover}
+.pwpicb{display:block;width:100%;padding:0;border:0;background:none}
+/* A floor under the picture, because the picture is the button now: a photo
+   one pixel tall would otherwise be a two-pixel target, and object-fit letter-
+   boxes a small one rather than stretching it. */
+.pwpic{display:block;width:100%;min-height:120px;max-height:40vh;height:auto;
+       object-fit:contain;background:var(--sink);border-radius:14px;
+       border:1px solid var(--glassrim)}
+/* The hit area is 44 and the red circle inside it is 26. Inside the picture's
+   corner rather than hung over it: the strip scrolls, and anything sticking
+   out of a scrolling box is cut off by it -- which took the minus off every
+   picture but the first. */
+.pwpicx{position:absolute;top:0;right:0;width:44px;height:44px;padding:0;
+        border:0;background:none;display:inline-flex;align-items:center;
+        justify-content:center}
+.pwpicx::before{content:'';position:absolute;width:26px;height:26px;border-radius:50%;
+        background:var(--bad);box-shadow:0 1px 4px var(--glassdrop)}
+.pwpicx svg{position:relative;width:15px;height:15px;color:#fff}
+/* How many letters are on it, so the picture says it has some without being
+   opened. */
+.pwpicn{position:absolute;left:8px;bottom:8px;min-width:22px;height:22px;padding:0 6px;
+        border-radius:11px;background:rgba(0,0,0,.55);color:#fff;font-size:.74rem;
+        display:inline-flex;align-items:center;justify-content:center}
+/* 46 across, not 44: the box is border-box and the file input inside it fills
+   the CONTENT, so a 44 square with a 1px border gives a 42 target. */
+.picadd{flex:0 0 auto;position:relative;width:46px;height:46px;border-radius:12px;
+        border:1px solid var(--line);color:var(--txs);overflow:hidden;
+        display:inline-flex;align-items:center;justify-content:center}
+.picadd input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+.picadd:active{border-color:var(--goldln);color:var(--gold)}
 
 /* ---------- a post in the reader's own words ----------
    The button that asks for it, and the line that comes back. A word this

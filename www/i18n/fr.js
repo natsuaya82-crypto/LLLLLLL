@@ -910,6 +910,7 @@ defLang('fr', (function(){
       "post.mark.how"        : "Ajoutez une lettre, puis faites-la glisser.",
       "post.pic.bad"        : "Cette image n’a pas pu être utilisée.",
       "post.pic.full"        : "Le fil est plein. Rien n’a été supprimé — retirez la photo de ce message, ou supprimez vous-même un ancien message.",
+      "post.pic.many"        : "{0} photos au maximum",
       "post.full"        : "Le fil est plein, rien n’a été enregistré. Supprimez un ancien message et réessayez.",
       "tr.go"        : "Le lire dans ma langue",
       "tr.left"        : "{0} restantes aujourd’hui",

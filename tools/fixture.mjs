@@ -292,7 +292,17 @@ export function halfDone(){
        gif: it goes in an <img src>. */
     ['a post with a photograph', () => {
         openPost();
-        PW.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+                    marks:[]}];
+        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* And a post carrying the most it may. The plus is gone at four and the
+       strip slides, so the composer with four pictures on it is a different
+       screen from the composer with one. */
+    ['a post with four photographs', () => {
+        openPost();
+        PW.pics = Array.apply(null, {length: POST_PICS}).map(() =>
+          ({u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+            marks:[]}));
         openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
     /* The contents on Studio. The AI conversation is the last chapter and it
        is Studio's, so on free the contents has no way in to it -- which is
@@ -463,12 +473,13 @@ export function halfDone(){
        already HAS a picture, so the walk never sees it without this -- and
        once a letter is on it, the selected face with its slider and its two
        buttons is a second screen again. */
-    ['letters on a photograph', () => { PW = pwBlank(); PW.pic = POSTS[0].pic;
-      PW.marks = [{l:LETTERS[0].id, x:0.5, y:0.4, s:0.18, w:1}];
-      pwMarkAt = 0; const h = pwMarkHTML(); PW = pwBlank(); pwMarkAt = -1; return h; }],
+    ['letters on a photograph', () => { PW = pwBlank();
+      PW.pics = [{u:POSTS[0].pic, marks:[{l:LETTERS[0].id, x:0.5, y:0.4, s:0.18, w:1}]}];
+      pwPicAt = 0; pwMarkAt = 0; const h = pwMarkHTML();
+      PW = pwBlank(); pwPicAt = -1; pwMarkAt = -1; return h; }],
     ['a photograph with no letters on it yet', () => { PW = pwBlank();
-      PW.pic = POSTS[0].pic; pwMarkAt = -1;
-      const h = pwMarkHTML(); PW = pwBlank(); return h; }],
+      PW.pics = [{u:POSTS[0].pic, marks:[]}]; pwPicAt = 0; pwMarkAt = -1;
+      const h = pwMarkHTML(); PW = pwBlank(); pwPicAt = -1; return h; }],
     ['a reply being written', () => { PW = pwBlank(); PW.to = POSTS[0].id;
         openPost(); pwSetLn('sar'); return vForm(); }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],

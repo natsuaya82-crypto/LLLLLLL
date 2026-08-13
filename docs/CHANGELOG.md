@@ -260,6 +260,40 @@ morning on the second side. One rule now. 「a にしたら最初の1ヶ月で�
 - New keys in all ten languages: `cap.hid`, `cap.lapse.h`, `cap.lapse.d`,
   `cap.lapse.ok`.
 
+### A post can carry four photographs, and they slide
+
+**Behaviour and data.** 「画像は4枚まで載せられる。画像だけ横スライドできる感じ」
+
+- *newly stored*: `post.pics`, an array of data URLs, up to `POST_PICS` (4).
+- **`post.pic` is not removed and not rewritten.** Posts that carry one keep
+  it exactly as it is; `postPics()` is the one place that answers what
+  pictures a post has, and it answers `pics`, or `pic` as a list of one, or
+  nothing. A photograph is the largest thing on a post, so a migration that
+  copied one would double the biggest field in storage for no gain.
+- *the ceiling*: `POST_BYTES` is unchanged and is now four times easier to
+  reach, so the room is asked for **each** picture as it arrives and again
+  after baking. A picture that will not fit is refused; the post is not, and
+  nothing is pruned to make room.
+- **Each picture has its own letters** and each is baked separately.
+- *migration*: none. *deleted*: nothing. *the plan*: free, on every plan.
+
+### The composer's photographs have no buttons under them
+
+**Behaviour. Nothing stored changes.**
+
+There were three — Change photo, Letters, Remove photo — and `.btn` is
+`flex:1` with `word-break:break-word`, which is right for two buttons filling
+a sheet and turned the third into "Rem / ove / phot / o" on a phone.
+「下の文字終わってるだろw」
+
+- **A red minus at a picture's corner** takes it away. **A plus beside the
+  strip** adds one, centred against their height and outside the scroller, so
+  four pictures cannot push it off the edge. 「+が真ん中に来ると最高」
+- **Pressing a picture opens it.** 「編集ボタンはいらん。画像タップして画像編集」
+- **Cropping is not built.** The editor does letters. Cropping is the other
+  half of what it was asked for and `docs/BACKLOG.md` holds it — a screen that
+  offered it and did nothing would be worse than one that does not offer it.
+
 ### The keyboard in the app obeys its own switch
 
 **Behaviour. Nothing stored changes.**

@@ -93,7 +93,7 @@ touches the sound inventory.
 The one piece of **frozen** data in the app.
 
 ```js
-{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, dir, ink?, tr?, pic?, pin? }
+{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, dir, ink?, tr?, pics?, pic?, pin? }
 ```
 
 Everything a reader needs is on it, because the reader does not have the
@@ -105,7 +105,8 @@ writer's language:
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
 | `pin` | this author put it at the top of their own page. One at a time |
-| `pic` | a photograph, squeezed to 900px on the long edge at q0.72 — about 22 KB as text. See below: this is the one field big enough to matter |
+| `pics` | **up to four photographs**, each squeezed to 900px on the long edge at q0.72 — about 22 KB as text apiece. See below: this is the one field big enough to matter |
+| `pic` | one photograph, on posts written before `pics` existed. Never rewritten. `postPics()` is the one place that reads either |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
 | `dir` | **which way the line runs** — `ltr`, `rtl`, `ttb-rl`, `ttb-lr`. The language's, frozen at the moment of writing. A timeline that asked the open language would set every post the way MY language runs, which is `ink` all over again. Absent means `ltr`, which is how every post before this was written |
 

@@ -851,6 +851,7 @@ defLang('de', (function(){
       "post.mark.how"        : "Buchstaben hinzufügen und ziehen.",
       "post.pic.bad"        : "Dieses Bild konnte nicht verwendet werden.",
       "post.pic.full"        : "Die Chronik ist voll. Es wurde nichts gelöscht — nimm das Foto von diesem Beitrag, oder lösche selbst einen älteren.",
+      "post.pic.many"        : "Höchstens {0} Fotos",
       "post.full"        : "Die Chronik ist voll, es wurde nichts gespeichert. Lösche einen älteren Beitrag und versuche es erneut.",
       "tr.go"        : "In meiner Sprache lesen",
       "tr.left"        : "heute noch {0}",

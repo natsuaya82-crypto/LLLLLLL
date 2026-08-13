@@ -776,6 +776,7 @@ defLang('en', (function(){
       'post.mark.how'       : 'Add a letter, then drag it.',
       'post.pic.bad'       : "That picture could not be used.",
       'post.pic.full'       : "The timeline is full. Nothing was removed — take the photo off this post, or delete an older post yourself.",
+      'post.pic.many'       : 'Up to {0} photographs',
       'post.full'       : "The timeline is full, so nothing was saved. Delete an older post and try again.",
       'tr.go'       : "Say it in my language",
       'tr.left'       : "{0} left today",

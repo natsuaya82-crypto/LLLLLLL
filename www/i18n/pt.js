@@ -869,6 +869,7 @@ defLang('pt', (function(){
       "post.mark.how"        : "Junte uma letra e arraste-a.",
       "post.pic.bad"        : "Não foi possível usar essa imagem.",
       "post.pic.full"        : "A linha do tempo está cheia. Nada foi apagado — retire a foto desta publicação ou apague você uma antiga.",
+      "post.pic.many"        : "Até {0} fotografias",
       "post.full"        : "A linha do tempo está cheia e nada foi guardado. Apague uma publicação antiga e tente de novo.",
       "tr.go"        : "Ler na minha língua",
       "tr.left"        : "{0} restantes hoje",

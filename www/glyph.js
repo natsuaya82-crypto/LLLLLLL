@@ -390,6 +390,14 @@ var ICON_PEN='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="n
 var ICON_PLUS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
+/* A plus and a minus, plain, for the two things you do to a photograph. The
+   star-shaped ICON_PLUS above is the app's own mark for making something new
+   and would read as a decoration here. */
+var ICON_ADDP='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M12 5v14M5 12h14"/></svg>';
+var ICON_MINUS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" '+
+  'stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>';
 var ICON_GEAR='<svg class="ic" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/>'+
