@@ -172,11 +172,21 @@ const R = await pg.evaluate(() => {
     if (drew !== want)
       fails.push("somebody else's post draws " + drew + ' shapes and carries ' +
                  want + ': the card is not reading its ink');
+    /* In the order the POST's direction says, not the open language's. A
+       right-to-left line is the same list from the other end -- cardPaint()
+       reverses it -- and the fixture's other post is written in columns
+       running right to left, which the card sets across the page for the
+       reason dirFlat() gives. */
+    let wantSt = other.ink.s.filter((x) => typeof x === 'number')
+                            .map((x) => other.ink.g[x]);
+    if (dirFlat(postDir(other)) === 'rtl') wantSt = wantSt.slice().reverse();
     if (JSON.stringify(it.items.filter((u) => u.st).map((u) => u.st)) !==
-        JSON.stringify(other.ink.s.filter((x) => typeof x === 'number')
-                                  .map((x) => other.ink.g[x])))
+        JSON.stringify(wantSt))
       fails.push("somebody else's post is drawn in shapes that are not the ones " +
-                 'on it');
+                 'on it, or not in the order its direction says');
+    if (postDir(other) === 'ltr')
+      fails.push('the fixture post by somebody else runs left to right, so ' +
+                 'nothing below is a test of a direction travelling on a post');
     if (it.src.nm !== other.lname)
       fails.push("somebody else's card is signed with the open language's name");
     other.ln.split(/\s+/).forEach((w) => {
@@ -185,6 +195,21 @@ const R = await pg.evaluate(() => {
                    'meant to be in an unknown language is not one');
     });
   }
+
+  /* ---- 6. and the direction is the post's, not the open language's ---
+     The same test as redrawing the letters, on the other thing that travels:
+     turn the OPEN language round underneath a post that says left to right,
+     and the card must not turn with it. Without this, a card that simply
+     asked scriptDir() would be green on every line above -- the fixture
+     language runs left to right and so does that post. */
+  const wasDir = SCRIPT.dir;
+  SCRIPT.dir = 'rtl';
+  const mineNow = itemsFor('p', 'pcard');
+  SCRIPT.dir = wasDir;
+  if (shapes(mineNow.items) !== read)
+    fails.push('a card of a post turned round when the OPEN language did. The ' +
+               "post says " + postDir(p) + ' and the card is drawing it the ' +
+               "way this phone's language runs");
 
   /* ---- every shape ink can arrive in -------------------------------- */
   /* postInkOK() decides, once, for the timeline and the card both. What is

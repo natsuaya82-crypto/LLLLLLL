@@ -227,3 +227,67 @@ function wsInScript(hw){
   for(i=0;i<u.length;i++){ c=ltChar(u[i]); out.push(c || u[i]); }
   return out.join('');
 }
+
+/* ---- which way the language is written --------------------------------
+   「縦書き、右→左 左→右の投稿」「言語の設定でしょ右左とかは」
+
+   Four, and the two vertical ones differ only in which side the first column
+   is on: 「右から左と左から右の両方」.
+
+     ltr      left to right
+     rtl      right to left
+     ttb-rl   in columns, top to bottom, the first column at the right
+     ttb-lr   in columns, top to bottom, the first column at the left
+
+   It belongs to the LANGUAGE, not to the person and not to the post, so it is
+   in the `script` slice beside the glyphs -- which means it is in the backup,
+   it travels when a language is opened, and there is one answer per language
+   rather than one per phone. SET.wsys is the other way round and is the older
+   mistake; what the language is for was in SET too, until it was moved out.
+
+   Reading one is free, on every plan. Setting one is `dir`, at Plus. Nothing
+   in the app asks can('dir') before drawing anything -- see the note on CAN
+   in core.js. */
+var DIRS=['ltr', 'rtl', 'ttb-rl', 'ttb-lr'];
+function scriptDir(){
+  return DIRS.indexOf(SCRIPT.dir)>=0 ? SCRIPT.dir : 'ltr';
+}
+/* What a direction is called in CSS. `writing-mode` is the whole of it for
+   the two vertical ones -- vertical-rl and vertical-lr say which side the
+   first column is on -- and `direction` is the whole of it for the two
+   horizontal ones. The class carries it rather than a style attribute so
+   there is one place it is written down. */
+function dirClass(d){
+  return 'dir-'+(DIRS.indexOf(d)>=0 ? d : 'ltr');
+}
+/* The horizontal direction a vertical one falls back to, for the two places a
+   column cannot go, said once rather than at both of them:
+
+     the composer's field   a textarea in a column is not something this
+                            webview does. lnFit() measures scrollHeight to
+                            size it, the caret goes where the browser feels
+                            like putting it, and a person who cannot type
+                            cannot post
+     the card               a landscape composition, 1920 by 1080, with the
+                            letters in a band across the middle. A column has
+                            nowhere to go in it
+
+   Falling back to the direction the COLUMNS run is not a guess: a vertically
+   written language set across the page runs that way, which is what a
+   horizontal banner of Japanese is. It is a compromise and it is written down
+   in docs/BACKLOG.md rather than left to be found. */
+function dirFlat(d){
+  if(d==='ttb-rl') return 'rtl';
+  if(d==='ttb-lr') return 'ltr';
+  return DIRS.indexOf(d)>=0 ? d : 'ltr';
+}
+function setScriptDir(k){
+  if(DIRS.indexOf(k)<0) return;
+  /* The screen only offers this on a paid plan; this is the same sentence
+     said where it can be relied on, since a route can be arrived at from
+     anywhere and a plan can end while one of the four is set. Exactly as
+     setWsys() does it. */
+  if(!can('dir')){ goPlans(); return; }
+  SCRIPT.dir=k; save();
+  render();
+}

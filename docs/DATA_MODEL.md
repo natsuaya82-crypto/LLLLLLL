@@ -33,7 +33,7 @@ the keyboard and the world — and neither could throw.
 | `words` | `WORDS` | the dictionary | array |
 | `lines` | `LINES` | saved lines | array |
 | `lang` | `langName` | the language's name | text |
-| `script` | `SCRIPT` | roman → strokes, plus letters no word uses yet | object |
+| `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
 | `phases` | `STG` | grammar stages | object |
@@ -91,7 +91,7 @@ touches the sound inventory.
 The one piece of **frozen** data in the app.
 
 ```js
-{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, ink?, tr?, pic?, pin? }
+{ id, at, lang, lname, ln, who, hd, mine, av, mn, ui, dir, ink?, tr?, pic?, pin? }
 ```
 
 Everything a reader needs is on it, because the reader does not have the
@@ -105,6 +105,7 @@ writer's language:
 | `pin` | this author put it at the top of their own page. One at a time |
 | `pic` | a photograph, squeezed to 900px on the long edge at q0.72 — about 22 KB as text. See below: this is the one field big enough to matter |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
+| `dir` | **which way the line runs** — `ltr`, `rtl`, `ttb-rl`, `ttb-lr`. The language's, frozen at the moment of writing. A timeline that asked the open language would set every post the way MY language runs, which is `ink` all over again. Absent means `ltr`, which is how every post before this was written |
 
 ### `ink`
 

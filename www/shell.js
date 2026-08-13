@@ -208,8 +208,14 @@ function viewGone(){
    It grows with what is in it rather than scrolling, so the whole line is
    always on the screen. `rows="1"` is the floor and lnGrow() raises it; the
    value goes between the tags because that is where a textarea keeps it. */
-function lnField(id, ph, attrs, val){
-  return '<textarea id="'+id+'" class="lnin'+(myFontOn()? ' sfont':'')+'" '+
+/* `cls` is for a field that has to say something more about itself than that
+   it is a line of the language -- which today is which way the language runs.
+   It goes through here rather than being set on the element afterwards
+   because the class list is built in one place and a second place setting it
+   would win or lose by accident. */
+function lnField(id, ph, attrs, val, cls){
+  return '<textarea id="'+id+'" class="lnin'+(myFontOn()? ' sfont':'')+
+    (cls? ' '+cls : '')+'" '+
     'rows="1" placeholder="'+esc(ph)+'" autocomplete="off" autocorrect="off" '+
     'spellcheck="false"'+(attrs||'')+'>'+esc(val||'')+'</textarea>';
 }

@@ -46,6 +46,20 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `gram` | plus | a grammar stage of your own, past the fifteen |
 | `tr` | plus | a post said again in your own words, unmetered. Free gets three a day |
+| `dir` | plus | choosing which way the language is written. **Reading one is free** |
+
+`dir` is the one that gates half a thing, and the half it does not gate is the
+important one. A language can run left→right, right→left, or down the page
+with its columns going either way; a post carries the direction it was
+written in, and **every plan is shown it**. A free account that could not read
+a right-to-left post would be reading a lie about somebody else's language,
+which is the card bug in another costume. What Plus buys is choosing one.
+Nothing anywhere asks `can('dir')` before drawing — it is asked in
+`setScriptDir()` and on the screen that offers the choice, and nowhere else.
+
+When a subscription ends the language keeps its direction and keeps posting in
+it. The direction is the language's data, in the `script` slice and in the
+backup, and a plan decides what somebody may DO.
 
 Three plans: `free`, `plus`, `studio`. `LANG_MAX` is 1 on every plan and is not
 a price — there is no way to make a second language anywhere in the app, so a

@@ -144,6 +144,7 @@ act('wdLtr', wdLtr);
 act('wdSetMode', wdSetMode);
 act('wldSetUse', wldSetUse);
 act('setWsys', setWsys);
+act('setScriptDir', setScriptDir);
 act('stAddEx', stAddEx);
 act('stAddOwn', stAddOwn);
 act('stAsk', stAsk);

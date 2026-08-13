@@ -185,6 +185,58 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-13
+- Area: Which way a language is written
+- Decision:
+  1. A language has a **direction**, and it is the language's — not the
+     person's and not the post's to choose. Four of them: left→right,
+     right→left, and vertical with the columns running right→left or
+     left→right.
+  2. **Reading is free.** A post written in any of the four is shown that way
+     to everybody, on every plan.
+  3. **Setting it is Plus.** Choosing a direction, and posting in one, is a
+     paid capability.
+- Reason: 「縦書き、右→左 左→右の投稿」「言語の設定でしょ右左とかは」
+  「無料でも言語の向きは見ることはできる。でも設定してsnsとかに登校するのは
+  有料会員のみ」 The vertical column order: 「右から左と左から右の両方」
+- Affected features: the writing system screen, the composer, the timeline,
+  the card
+- Affected data: `SCRIPT.dir` in the **`script` slice** — the language's, so
+  it is in the backup and travels with the language. **Frozen onto the post**
+  as `post.dir`, for the same reason `ink` is: a reader has neither the
+  writer's alphabet nor their language's settings
+- Affected docs: FEATURES.md, DATA_MODEL.md, PAID_FEATURES.md, CHANGELOG.md
+- Implementation status: implemented; code confirmed, not device confirmed
+- **One thing was interpreted rather than decided, and it needs the owner's
+  word**: what happens to a language whose direction was set on Plus when the
+  subscription ends. It is implemented as `docs/PAID_FEATURES.md` requires —
+  the direction is the language's data and stays, so the language keeps
+  reading and posting the way it was set, and what is lost is the ability to
+  *change* it. The other reading — new posts revert to left→right — would let
+  a lapsed plan change what somebody's language looks like, which the money
+  rule forbids.
+
+### Decision
+- Date: 2026-08-13
+- Area: Posts — letters on an image, the three details
+- Decision:
+  1. Letters are placed **freely**: pick a letter, put it anywhere on the
+     picture, drag it with a finger, size it with a slider. No rotation.
+  2. They are **baked into the picture** when the post is sent. The post
+     carries one image and nothing else.
+  3. Free, on every plan.
+- Reason: 「なんなら画像に自作文字を貼って投稿できるようにすれば勝手に広がるよ」
+  「画像と自作文字貼るのは無料 投稿に貼るに決まってるでしょ」 Placement:
+  「自由配置」 Storage: 「画像に焼き込む」
+- Affected features: composer, timeline, card
+- Affected data: `post.pic` only. Baking means the picture IS the past tense —
+  there is nothing on the post that has to be re-rendered with an alphabet the
+  reader does not have, which is the same guarantee `ink` gives by a different
+  route
+- Affected docs: FEATURES.md, DATA_MODEL.md, CHANGELOG.md
+- Implementation status: not started
+
+### Decision
 - Date: 2026-08-12
 - Area: A post shown three ways — the four details
 - Decision:

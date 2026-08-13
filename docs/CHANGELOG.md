@@ -215,6 +215,42 @@ and 5000 words is about 45,000 tokens every time.
 - *deleted*: nothing. A Studio conversation left on the phone when a
   subscription ends stays in the `talk` slice and in the backup.
 
+### A language has a direction, and a post carries it
+
+**Behaviour and data.** Reading is free; choosing is Plus.
+
+Four of them: left→right, right→left, and down the page with the columns
+running right→left or left→right. 「縦書き、右→左 左→右の投稿」
+
+- *newly stored*: `SCRIPT.dir`, in the **`script` slice** — the language's, so
+  it is in the backup already and travels when the language is opened. Absent
+  means left→right. It is deliberately **not** in `SET`: `SET.wsys` is there
+  and is the older mistake, and what the language is for had to be moved out
+  of `SET` for exactly this reason.
+- *newly stored on a post*: `post.dir`, frozen when it is written, for the
+  same reason `ink` is frozen. A post is set the way its writer's language
+  runs, on anybody's phone. `postDir()` is the one place that reads it and it
+  reads the **post** — `sides-check` now refuses `SCRIPT` and `scriptDir`
+  below the line in `post.js` and `card.js`.
+- *the plan*: `dir` is a new capability, Plus. **Nothing asks it before
+  drawing.** A free account reads every direction — otherwise the timeline
+  would be lying about somebody else's language — and what Plus buys is
+  choosing one. 「無料でも言語の向きは見ることはできる。でも設定してsnsとかに
+  登校するのは有料会員のみ」
+- *when a plan ends*: the language keeps its direction and keeps posting in
+  it. What is lost is the ability to change it. `docs/PAID_FEATURES.md`: a
+  failed check means fewer buttons, never fewer words. **This one was
+  interpreted rather than decided** — it is in the decision log as such.
+- *migration*: none. A post written before this runs left→right, which is how
+  it was written and how it has been shown. Nothing is back-filled.
+- *deleted*: nothing.
+- **Two places set a column across the page instead**: the composer's field (a
+  textarea cannot be typed in a column in this webview) and the card (a
+  landscape composition with no room for a column). `dirFlat()` is the one
+  place that says so and `docs/BACKLOG.md` says why.
+- New keys in all ten languages: `dir.title`, `dir.ltr`, `dir.rtl`,
+  `dir.ttb-rl`, `dir.ttb-lr`, `dir.locked`.
+
 ### The profile is one block
 
 **Behaviour. Nothing stored changes.**

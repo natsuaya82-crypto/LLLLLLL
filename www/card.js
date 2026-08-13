@@ -67,11 +67,15 @@ function cardSrc(){
     i=String(v).indexOf('#');
     w=findWord(i<0? v : v.slice(0,i));
     ex=(w && w.ex)? w.ex[parseInt(i<0? '0' : v.slice(i+1), 10)] : null;
-    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''), hd:hd, nm:nm};
+    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
+                   hd:hd, nm:nm, dir:dirFlat(scriptDir())};
   }
   w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {line:'', mn:'', hd:hd, nm:nm};
-  return {line:String(w.hw), mn:String(wMns(w)[0]||''), hd:hd, nm:nm};
+  if(!w) return {line:'', mn:'', hd:hd, nm:nm, dir:dirFlat(scriptDir())};
+  /* A word and an example are things in the language that is OPEN, so they
+     run the way it runs. Only a post carries a direction of its own. */
+  return {line:String(w.hw), mn:String(wMns(w)[0]||''), hd:hd, nm:nm,
+          dir:dirFlat(scriptDir())};
 }
 
 /* The line as things to draw, left to right: a letter's strokes, a character
@@ -248,6 +252,11 @@ function cardPaint(c){
      so a card of somebody else's post built that way is that post in MY
      alphabet. Correct only for as long as every post is mine. */
   var src=cardSrc(), items=src.ink? cardInkUnits(src.ink) : cardUnits(src.line);
+  /* Right to left is the same line laid out from the other end, so it is the
+     same list read backwards -- not a second layout function. cardWidth()
+     does not care about order and neither does the centring, so this is the
+     whole of it. */
+  if(src.dir==='rtl') items=items.slice().reverse();
   var m=Math.round(H*0.072), pad=m+Math.round(H*0.10), avail=W-pad*2, g;
   c.width=W; c.height=H;
 
@@ -377,8 +386,15 @@ function cardOfPost(po){
      is post.js's to answer, once, for both. */
   /* Both off the post. The language's name is the one it was written in, not
      whichever one this phone happens to have open. */
+  /* Which way it runs comes off the post too, and for the same reason
+     everything else here does: the card must not ask the open language which
+     way to set somebody else's line. postDir() is the one place that reads
+     it, and dirFlat() is why a vertical post is set across the card -- there
+     is a band of letters across the middle of 1920 by 1080 and a column has
+     nowhere to go in it. */
   return {line:String(po.ln||''), mn:String(po.mn||''), hd:String(po.hd||''),
-          nm:String(po.lname||''), ink:postInkOK(po.ink)? po.ink : null};
+          nm:String(po.lname||''), ink:postInkOK(po.ink)? po.ink : null,
+          dir:dirFlat(postDir(po))};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
    a shape, a character, or the gap between two words. A text run may be

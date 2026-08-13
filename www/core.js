@@ -132,6 +132,11 @@ function langRead(){
   try{
     var gg=JSON.parse(localStorage.getItem(langKey('script'))||'null');
     if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
+    /* Which way the language is written. Read on its own rather than inside
+       the `gg.g` branch above: a language can have a direction and no glyphs
+       drawn yet, and reading it only when there are glyphs would lose it for
+       exactly the person who set it first and drew second. */
+    if(gg && gg.dir) SCRIPT.dir=gg.dir;
   }catch(e){}
 }
 langRead();
@@ -312,8 +317,21 @@ var CAN={
   kb:      'plus',   /* a keyboard of your own, instead of the fixed QWERTY */
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   gram:    'plus',   /* a grammar stage of your own, past the fifteen there are */
-  tr:      'plus'    /* a post said again in your own words, unmetered */
+  tr:      'plus',   /* a post said again in your own words, unmetered */
+  dir:     'plus'    /* choosing which way the language is written */
 };
+/* 'dir' is the one capability that gates only half of a thing, and the half it
+   does not gate is the important one.
+
+   READING a language written right to left, or in columns, is free and is on
+   every plan. A post carries the direction it was written in and is shown that
+   way to everybody -- otherwise a timeline would be lying about somebody
+   else's language, which is the same bug as drawing their line in my letters.
+   CHOOSING one is what this buys. 「無料でも言語の向きは見ることはできる。でも
+   設定してsnsとかに登校するのは有料会員のみ」
+
+   So nothing anywhere asks can('dir') before DRAWING. It is asked in exactly
+   one place, setScriptDir(), and on the screen that offers the choice. */
 /* 'snd' is what free is NOT, said as a capability.
 
    A word used to be assembled by pressing sounds -- three screens of keys

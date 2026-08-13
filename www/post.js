@@ -186,7 +186,12 @@ function pwHTML(){
     '<div class="pwtop"><div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="pwfield">'+
-      lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'), PW.ln)+
+      /* The field runs the way the language does. A column cannot be typed
+         into in this webview -- see dirFlat() -- so a vertical language
+         types across the page, in the direction its columns run, and the
+         post itself is set in columns. */
+      lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
+        PW.ln, dirClass(dirFlat(scriptDir())))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
@@ -251,7 +256,7 @@ function pwSend(){
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
-            ln:ln, ink:postInk(ln),
+            ln:ln, ink:postInk(ln), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), li:0, bo:0, re:0};
   if(PW.pic) mine.pic=PW.pic;
@@ -619,6 +624,23 @@ function postInkOK(ink){
   }
   return true;
 }
+/* Which way this post's line runs, asked of the POST.
+
+   It is frozen on at the moment of writing, exactly as the shapes are, and
+   for exactly the same reason: the reader has neither the writer's alphabet
+   nor the writer's language settings, so a timeline that asked the open
+   language which way to set a line would set every post the way MY language
+   runs. That is the card bug in another costume, and this is below the line
+   where rule 8 holds -- `scriptDir()` is the making side's and may not be
+   named here.
+
+   A post written before posts carried a direction runs left to right, which
+   is how it was written and how it has been shown until now. Nothing is
+   guessed and nothing is back-filled. */
+function postDir(p){
+  var d=p && p.dir;
+  return DIRS.indexOf(d)>=0 ? d : 'ltr';
+}
 function postLnHTML(p){
   if(!p || !postInkOK(p.ink)) return esc(String((p && p.ln)||''));
   var out='', i, x, k;
@@ -655,7 +677,7 @@ function postRow(p){
          somebody else's line drew their words in my shapes. Now the shapes
          are on the post, so there is no font to put on anything and no
          reason to treat my own post differently from anybody's. */
-      '<div class="pline">'+postLnHTML(p)+'</div>'+
+      '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>'+
       (p.pic? '<img class="ppic" src="'+esc(p.pic)+'" alt="">' : '')+
       /* The natural language, always. In the reader's own if the post carries
          it, and in the author's if it does not -- which is every post until

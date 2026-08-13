@@ -83,6 +83,12 @@ const MARK = '==== below this line a post renders from the post ====';
    "mine", and a timeline has no such thing. */
 const MINE = [
   'WORDS', 'LETTERS', 'SND', 'STG', 'SET', 'NOTES', 'TALK',
+  /* The open language's writing, and which way it runs. A post carries its
+     own direction, frozen when it was written, for the same reason it carries
+     its own shapes -- so a line set the way MY language runs is the card bug
+     in another costume. postDir() reads the post; scriptDir() is the making
+     side's and belongs above the line. */
+  'SCRIPT', 'scriptDir',
   'langName', 'langId', 'langKey',
   'findWord', 'spOf', 'wMns', 'wPh', 'addedSnd', 'exGloss',
   'myFontOn', 'ltById', 'ltMain', 'ltHasShape', 'wsStrokes', 'chOf', 'inkOf',

@@ -32,6 +32,29 @@ bisected against instead of one.
   repeats is duplication — `cffNum` and `csNum` in `otf5.js` are the standing
   example.
 
+## A column has two places it cannot go, and both are deliberate
+
+A language can be written in columns — `ttb-rl` and `ttb-lr` — and the
+timeline sets one that way. Two places set it **across** instead, in the
+direction the columns run. `dirFlat()` in `www/wsys.js` is the one place that
+says so, and both read it from there.
+
+**The composer's field** is a `<textarea>`. A textarea in a vertical writing
+mode is not something this webview does: `lnFit()` sizes it by `scrollHeight`,
+which is the wrong axis there, and the caret goes wherever the browser
+feels like. Somebody who cannot type cannot post, which is worse than a field
+that runs the other way from the post it makes. Fixing it means a composer
+that is not a textarea.
+
+**The card** is 1920×1080 with a band of letters across the middle of it. A
+column has nowhere to go in that. Making a card of a vertical post honest
+means a second composition — portrait, with the run down the middle and the
+spelling and the meaning somewhere else — which is a design decision and not a
+mechanical one. Worth doing; not worth guessing at.
+
+Neither is a lie: a vertically written language set across the page runs the
+way its columns run, which is what a horizontal banner of Japanese is.
+
 ## Not now, because a rename is not a fix
 
 These are real breaches of the naming rule in CLAUDE.md and none of them is a

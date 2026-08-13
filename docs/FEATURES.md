@@ -72,8 +72,8 @@ Marked separately, because they are not the same question:
 | Share a post — the card | shipped | yes | — | none | decided |
 | Cloud storage of a language | **planned** | no | yes, deferred | every slice | decided — deferred until Supabase $25 is worth paying |
 | A photograph on a post | shipped | **yes** | yes | `post.pic`, frozen on the post, 900px q0.72, `POST_BYTES` ceiling | decided |
-| Drawn letters placed on that image | **planned** | ? | ? | new, frozen on the post | decided that it happens; free/paid **open** |
-| Vertical / right-to-left posts | **planned** | ? | Plus | new: direction frozen on the post | decided that it happens; per-language or per-post **open** |
+| Drawn letters placed on that image | **planned** | **yes** | yes | none new — baked into `post.pic` when it is sent | decided |
+| Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
 | A post shown three ways | shipped | layers 1 and 2; layer 3 three a day | `tr`: layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided |
 | Post translated into natural languages at write time | **in progress** | yes | yes | `post.tr`, frozen on the post | decided — the seam is in (`postTr`, TR_SEAM); the translator is the reader's own device AI and is not wired up |
 | Posts on the server | **planned** | ? | ? | new: server rows | **open** — the tables exist in `schema.sql` and nothing reads them |
@@ -153,9 +153,18 @@ They also make a post large: `docs/DATA_SAFETY.md` measured a whole free
 language at ~25 KB, and one photo is bigger than that. Where the bytes live is
 part of the decision.
 
-**Direction.** Which way a line runs must travel ON the post for the same
-reason its shapes do — otherwise a vertical language read on a horizontal
-phone comes out horizontal, which is the card bug in another costume.
+**Direction.** Which way a line runs travels ON the post for the same reason
+its shapes do — otherwise a vertical language read on a horizontal phone comes
+out horizontal, which is the card bug in another costume. Four directions:
+`ltr`, `rtl`, `ttb-rl`, `ttb-lr`. Reading one is free on every plan; choosing
+one is `dir`, at Plus.
+
+The card is the one place that does not do all four. It is a landscape
+composition — a band of letters across the middle of 1920×1080 — so a column
+of them has nowhere to go. A card of a vertical post sets the line **across**,
+in the direction the columns run, which is what a horizontal banner of a
+vertically-written language is. It is a compromise and it is written down in
+`docs/BACKLOG.md` rather than left to be discovered.
 
 ## The native side
 
