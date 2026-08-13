@@ -216,10 +216,9 @@ instead of appearing here.
 - Affected features: composer
 - Affected data: none
 - Affected docs: CHANGELOG.md
-- Implementation status: the layout and the letters are implemented.
-  **Cropping is not built.** It is the other half of what the editor was asked
-  to do and it is not in the app; `docs/BACKLOG.md` holds it rather than a
-  screen pretending to offer it
+- Implementation status: implemented; code confirmed, not device confirmed.
+  The editor does both — letters and cropping — and the letters already placed
+  move with the picture when it is cut
 
 ### Decision
 - Date: 2026-08-13

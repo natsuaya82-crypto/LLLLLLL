@@ -949,6 +949,26 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mkl:active{background:rgba(255,255,255,.24)}
 .mkl canvas{width:34px;height:34px;display:block;margin:0 auto}
 .mkhow{color:rgba(255,255,255,.7);font-size:.86rem;padding:14px 4px}
+/* Which of the two things the editor is doing. */
+.mkseg{position:absolute;top:calc(env(safe-area-inset-top,0) + 4px);left:50%;
+       transform:translateX(-50%);display:flex;gap:2px;padding:3px;border-radius:999px;
+       background:rgba(0,0,0,.42)}
+.mksg{min-height:44px;padding:0 14px;border:0;border-radius:999px;background:none;
+      color:rgba(255,255,255,.66);font-family:inherit;font-size:.84rem}
+.mksg.on{background:rgba(255,255,255,.92);color:#111;font-weight:600}
+/* The crop. Everything outside it goes dark, which is one enormous shadow
+   rather than four rectangles to keep in step with the box. The corners are
+   drawn, not pressed: pwCutHit() decides what the finger has, because a
+   finger that leaves a small box mid-drag would be dropped by a listener on
+   that box. */
+.mkstage.cut .mkc{opacity:.45}
+.mkcut{position:absolute;box-shadow:0 0 0 9999px rgba(0,0,0,.55);
+       outline:1px solid rgba(255,255,255,.9);pointer-events:none}
+.mkh{position:absolute;width:22px;height:22px;border:3px solid #fff}
+.mkh.tl{left:-3px;top:-3px;border-right:0;border-bottom:0}
+.mkh.tr{right:-3px;top:-3px;border-left:0;border-bottom:0}
+.mkh.bl{left:-3px;bottom:-3px;border-right:0;border-top:0}
+.mkh.br{right:-3px;bottom:-3px;border-left:0;border-top:0}
 /* A photograph on the composer: the picture, a red minus hung over its corner,
    and a plus beside it.
 

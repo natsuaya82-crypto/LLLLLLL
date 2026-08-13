@@ -38,6 +38,7 @@ function viewReset(){
   ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
+  pwPicAt=-1; pwMarkAt=-1; pwTool='mark';  /* and which picture, letter and tool */
   pfTab='posts';                       /* which list the profile shows */
   BKLIST=null;                         /* what is on the disk, asked again */
 }

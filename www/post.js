@@ -639,40 +639,124 @@ function pwMarkLts(){
    here and in the bake at 900px. So the stage shrink-wraps the image and the
    image is the thing that is centred. */
 function pwMarkHTML(){
-  var ms=pwMarks(), sel=ms[pwMarkAt], lts=pwMarkLts();
+  var ms=pwMarks(), sel=ms[pwMarkAt], lts=pwMarkLts(), cr=(pwTool==='crop');
   return '<div class="mkfull">'+
-    '<div class="mkstage" id="mk-box">'+
+    '<div class="mkstage'+(cr?' cut':'')+'" id="mk-box">'+
       '<img class="mkpic" src="'+esc((pwPic()&&pwPic().u)||'')+'" alt="">'+
       ms.map(function(m, i){
-        return '<canvas class="mkc'+(i===pwMarkAt?' on':'')+'" data-i="'+i+'" '+
+        return '<canvas class="mkc'+((!cr && i===pwMarkAt)?' on':'')+'" data-i="'+i+'" '+
           'style="left:'+(m.x*100)+'%;top:'+(m.y*100)+'%;width:'+(m.s*100)+'%"></canvas>';
       }).join('')+
+      (cr? pwCutHTML() : '')+
     '</div>'+
     '<button class="mkx"' + DO('back') + ' aria-label="'+esc(t('post.mark.done'))+'">'+
       ICON_CROSS+'</button>'+
     '<button class="mkdone"' + DO('back') + '>'+esc(t('post.mark.done'))+'</button>'+
-    (sel
-      ? '<div class="mkslide"><input type="range" class="mkrng" id="mk-size" '+
-          'min="4" max="60" value="'+Math.round(sel.s*100)+'"' + IN('pwMarkSize') + '>'+
-        '</div>'+
-        '<div class="mktools">'+
-          '<button class="mkt"' + DO('pwMarkInk') + '>'+
-            '<span class="mkdot'+(sel.w?' w':'')+'"></span>'+
-            '<span class="mktl">'+esc(t(sel.w? 'post.mark.dark' : 'post.mark.light'))+'</span>'+
-          '</button>'+
-          '<button class="mkt"' + DO('pwMarkDel') + '>'+
-            '<span class="mktl">'+esc(t('post.mark.del'))+'</span></button>'+
-        '</div>'
-      : '')+
-    '<div class="mktray">'+
-      (lts.length
-        ? lts.map(function(l){
-            return '<button class="mkl"' + DO('pwMarkAdd', [l.id]) + '>'+
-              '<canvas class="mklc" data-l="'+esc(l.id)+'"></canvas></button>';
-          }).join('')
-        : '<span class="mkhow">'+esc(t('post.mark.none'))+'</span>')+
+    /* Which of the two things this screen does. Cropping and placing letters
+       are both "the picture, with a finger on it", so they are one screen with
+       a switch rather than two screens with the same photograph on them. */
+    '<div class="mkseg">'+
+      '<button class="mksg'+(cr?'':' on')+'"' + DO('pwTool', ["mark"]) + '>'+
+        esc(t('post.mark.tool'))+'</button>'+
+      '<button class="mksg'+(cr?' on':'')+'"' + DO('pwTool', ["crop"]) + '>'+
+        esc(t('post.cut'))+'</button>'+
     '</div>'+
+    (cr
+      ? '<div class="mktools">'+
+          '<button class="mkt"' + DO('pwCutDo') + '>'+
+            '<span class="mktl">'+esc(t('post.cut.do'))+'</span></button>'+
+          '<button class="mkt"' + DO('pwCutAll') + '>'+
+            '<span class="mktl">'+esc(t('post.cut.all'))+'</span></button>'+
+        '</div>'
+      : (sel
+        ? '<div class="mkslide"><input type="range" class="mkrng" id="mk-size" '+
+            'min="4" max="60" value="'+Math.round(sel.s*100)+'"' + IN('pwMarkSize') + '>'+
+          '</div>'+
+          '<div class="mktools">'+
+            '<button class="mkt"' + DO('pwMarkInk') + '>'+
+              '<span class="mkdot'+(sel.w?' w':'')+'"></span>'+
+              '<span class="mktl">'+esc(t(sel.w? 'post.mark.dark' : 'post.mark.light'))+'</span>'+
+            '</button>'+
+            '<button class="mkt"' + DO('pwMarkDel') + '>'+
+              '<span class="mktl">'+esc(t('post.mark.del'))+'</span></button>'+
+          '</div>'
+        : ''))+
+    (cr? '' :
+      '<div class="mktray">'+
+        (lts.length
+          ? lts.map(function(l){
+              return '<button class="mkl"' + DO('pwMarkAdd', [l.id]) + '>'+
+                '<canvas class="mklc" data-l="'+esc(l.id)+'"></canvas></button>';
+            }).join('')
+          : '<span class="mkhow">'+esc(t('post.mark.none'))+'</span>')+
+      '</div>')+
     '</div>';
+}
+/* ---- cropping ----------------------------------------------------------
+   「画像タップして画像編集切り抜きとか文字入れとか」
+
+   The rectangle is kept as fractions of the picture, exactly as a letter's
+   position is, so nothing here needs to know how big the photograph is or how
+   big the screen is. Applying it is the only place that touches pixels.
+
+   The corners are not buttons. They are drawn boxes that the one pointer
+   listener on the stage decides it has grabbed -- a button would be four more
+   things press-check has to measure and press, for a control that means
+   nothing to press. */
+var pwTool='mark';
+var pwCut={x:0.06, y:0.06, w:0.88, h:0.88};
+function pwToolSet(k){
+  pwTool=(k==='crop')? 'crop' : 'mark';
+  if(pwTool==='crop') pwCut={x:0.06, y:0.06, w:0.88, h:0.88};
+  pwMarkAt=-1;
+  pwMarkPaint();
+}
+function pwCutHTML(){
+  var c=pwCut;
+  return '<div class="mkcut" style="left:'+(c.x*100)+'%;top:'+(c.y*100)+'%;'+
+    'width:'+(c.w*100)+'%;height:'+(c.h*100)+'%">'+
+    '<i class="mkh tl"></i><i class="mkh tr"></i>'+
+    '<i class="mkh bl"></i><i class="mkh br"></i></div>';
+}
+/* The whole picture again, without applying anything. */
+function pwCutAll(){ pwCut={x:0, y:0, w:1, h:1}; pwMarkPaint(); }
+/* Cut, for real. The picture becomes the rectangle, and every letter on it
+   moves with the picture -- a letter is a fraction of the photograph and the
+   photograph is about to be a different one, so leaving the fractions alone
+   would slide every letter somewhere it was never put.
+
+   A letter that ends up outside the new edges is held at the edge rather than
+   dropped. Dropping it would be deleting something somebody made because the
+   picture got smaller. */
+function pwCutDo(){
+  var pc=pwPic(), c=pwCut;
+  if(!pc || !pc.u) return;
+  if(c.w>=0.999 && c.h>=0.999){ pwTool='mark'; pwMarkPaint(); return; }
+  var im=new Image();
+  im.onload=function(){
+    var W=Math.max(1, Math.round(im.width*c.w)), H=Math.max(1, Math.round(im.height*c.h));
+    var cv=document.createElement('canvas'), x, out, i, m;
+    cv.width=W; cv.height=H;
+    x=cv.getContext('2d');
+    x.drawImage(im, Math.round(im.width*c.x), Math.round(im.height*c.y),
+                W, H, 0, 0, W, H);
+    try{ out=cv.toDataURL('image/jpeg', POST_PICQ); }
+    catch(e){ toast(t('post.pic.bad')); return; }
+    if(!pwPicRoom(out)){ toast(t('post.pic.full')); return; }
+    for(i=0;i<(pc.marks||[]).length;i++){
+      m=pc.marks[i];
+      m.x=Math.max(0, Math.min(1, (m.x-c.x)/c.w));
+      m.y=Math.max(0, Math.min(1, (m.y-c.y)/c.h));
+      /* The size is a fraction of the WIDTH, so it grows by the same factor
+         the width shrank by. */
+      m.s=Math.max(0.04, Math.min(0.6, m.s/c.w));
+    }
+    pc.u=out;
+    pwTool='mark';
+    pwFresh(); pwMarkPaint();
+  };
+  im.onerror=function(){ toast(t('post.pic.bad')); };
+  im.src=pc.u;
 }
 /* Redrawn in place rather than through render(): the picture is a big image
    and rebuilding the screen on every drag would reload it. */
@@ -766,7 +850,10 @@ function pwMarkMount(){
   box.onpointerup=pwMarkUp;
   box.onpointercancel=pwMarkUp;
 }
-var pwMarkGrab=false;
+/* What the finger has hold of: a letter, a corner of the crop, or the crop
+   itself. One listener on the stage decides, because a finger that leaves a
+   small box mid-drag would be dropped by a listener on that box. */
+var pwMarkGrab=false, pwCutGrab='';
 function pwMarkWhere(ev){
   var box=document.getElementById('mk-box');
   if(!box) return null;
@@ -785,24 +872,81 @@ function pwMarkHit(p){
   }
   return -1;
 }
+/* Which corner of the crop the finger is on, or the middle of it, or nothing.
+   The corners are given a share of the picture rather than a number of pixels
+   so the reach is the same on any screen; 0.09 of a phone is about 35px, and
+   the corner is the only thing there to grab. */
+function pwCutHit(p){
+  var c=pwCut, r=0.09, near=function(a, b){ return Math.abs(a-b)<r; };
+  var L=near(p[0], c.x), R=near(p[0], c.x+c.w);
+  var T=near(p[1], c.y), B=near(p[1], c.y+c.h);
+  if(T && L) return 'tl';
+  if(T && R) return 'tr';
+  if(B && L) return 'bl';
+  if(B && R) return 'br';
+  if(p[0]>c.x && p[0]<c.x+c.w && p[1]>c.y && p[1]<c.y+c.h) return 'in';
+  return '';
+}
+var pwCutFrom=null;
 function pwMarkDown(ev){
   var p=pwMarkWhere(ev);
   if(!p) return;
+  if(pwTool==='crop'){
+    pwCutGrab=pwCutHit(p);
+    if(!pwCutGrab) return;
+    pwCutFrom={p:p, c:{x:pwCut.x, y:pwCut.y, w:pwCut.w, h:pwCut.h}};
+    if(ev.preventDefault) ev.preventDefault();
+    return;
+  }
   var i=pwMarkHit(p);
   if(i<0) return;
   pwMarkGrab=true;
   if(i!==pwMarkAt){ pwMarkAt=i; pwMarkPaint(); }
   if(ev.preventDefault) ev.preventDefault();
 }
+/* The smallest a crop may be, as a share of the picture. Below this a corner
+   is on top of the opposite corner and there is nothing left to grab. */
+var PW_CUTMIN=0.12;
+function pwCutMove(p){
+  var f=pwCutFrom, c=f.c, dx=p[0]-f.p[0], dy=p[1]-f.p[1], g=pwCutGrab;
+  var x=c.x, y=c.y, w=c.w, h=c.h;
+  if(g==='in'){
+    x=Math.max(0, Math.min(1-w, c.x+dx));
+    y=Math.max(0, Math.min(1-h, c.y+dy));
+  } else {
+    if(g==='tl' || g==='bl'){
+      x=Math.max(0, Math.min(c.x+c.w-PW_CUTMIN, c.x+dx));
+      w=c.x+c.w-x;
+    } else {
+      w=Math.max(PW_CUTMIN, Math.min(1-c.x, c.w+dx));
+    }
+    if(g==='tl' || g==='tr'){
+      y=Math.max(0, Math.min(c.y+c.h-PW_CUTMIN, c.y+dy));
+      h=c.y+c.h-y;
+    } else {
+      h=Math.max(PW_CUTMIN, Math.min(1-c.y, c.h+dy));
+    }
+  }
+  pwCut={x:x, y:y, w:w, h:h};
+  var e=document.querySelector('.mkcut');
+  if(e){
+    e.style.left=(x*100)+'%'; e.style.top=(y*100)+'%';
+    e.style.width=(w*100)+'%'; e.style.height=(h*100)+'%';
+  }
+}
 function pwMarkMove(ev){
+  var p=pwMarkWhere(ev);
+  if(!p) return;
+  if(pwCutGrab && pwCutFrom){ pwCutMove(p); if(ev.preventDefault) ev.preventDefault(); return; }
   if(!pwMarkGrab) return;
-  var p=pwMarkWhere(ev), m=pwMarks()[pwMarkAt];
-  if(!p || !m) return;
+  var m=pwMarks()[pwMarkAt];
+  if(!m) return;
   m.x=p[0]; m.y=p[1];
   pwMarkDraw();
   if(ev.preventDefault) ev.preventDefault();
 }
 function pwMarkUp(){
+  if(pwCutGrab){ pwCutGrab=''; pwCutFrom=null; return; }
   if(!pwMarkGrab) return;
   pwMarkGrab=false;
   pwFresh();

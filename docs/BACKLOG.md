@@ -32,21 +32,6 @@ bisected against instead of one.
   repeats is duplication — `cffNum` and `csNum` in `otf5.js` are the standing
   example.
 
-## Cropping a photograph
-
-Pressing a picture on the composer opens the editor, and the editor does
-letters. It was asked to do cropping too — 「画像タップして画像編集切り抜きとか
-文字入れとかできるように」 — and cropping is not built.
-
-It is not a line of CSS: a crop is a rectangle dragged and pinched over the
-picture, held to the picture's bounds, and then applied to the file — and the
-letters already placed have to move with it, because they are fractions of the
-picture and the picture is about to become a different one. That last part is
-the reason it is not being squeezed in beside something else.
-
-Nothing on the screen offers it. A button that opened a crop and did nothing
-would be worse than no button.
-
 ## A column has two places it cannot go, and both are deliberate
 
 A language can be written in columns — `ttb-rl` and `ttb-lr` — and the

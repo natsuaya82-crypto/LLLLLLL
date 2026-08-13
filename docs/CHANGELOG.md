@@ -260,6 +260,30 @@ morning on the second side. One rule now. 「a にしたら最初の1ヶ月で�
 - New keys in all ten languages: `cap.hid`, `cap.lapse.h`, `cap.lapse.d`,
   `cap.lapse.ok`.
 
+### A photograph can be cropped
+
+**Behaviour. Nothing new is stored.**
+
+Pressing a picture on the composer opens an editor with two tools — **文字**
+and **切り抜き**. 「画像タップして画像編集切り抜きとか文字入れとか」
+
+- The rectangle is dragged by its middle and resized by its corners, and it is
+  held as **fractions of the picture**, exactly as a letter's position is, so
+  nothing about it needs to know the size of the photograph or of the screen.
+- **The letters move with the picture.** A letter is a fraction of the
+  photograph and the photograph is about to be a different one, so leaving the
+  fractions alone would slide every letter somewhere it was never put. A
+  letter that lands outside the new edges is held at the edge rather than
+  dropped — dropping it would be deleting something somebody made because the
+  picture got smaller.
+- The corners are drawn, not pressed: one pointer listener on the picture
+  decides what the finger has. A finger that leaves a small box mid-drag would
+  be dropped by a listener on that box.
+- *newly stored*: nothing. The picture in the draft is replaced by the cut one
+  and the room for it is asked for again before it is kept.
+- `viewReset()` gained the three things this screen remembers — which picture,
+  which letter, which tool.
+
 ### A post can carry four photographs, and they slide
 
 **Behaviour and data.** 「画像は4枚まで載せられる。画像だけ横スライドできる感じ」
