@@ -279,6 +279,22 @@ export function halfDone(){
     ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+    /* A post with no line: a photograph on its own, and a voice on its own.
+       A post was a LINE or nothing until 「文字無しでもポストできるように
+       できない？」, so every walk before this had a line on every post and
+       the empty case had never been drawn. */
+    ['a post that is only a photograph', () => {
+        POSTS.push({id:'pz', at:Date.now(), lang:langId, lname:'Shango', ln:'',
+                    who:'Aya', hd:'aya', mine:true, mn:'', ui:'en',
+                    pics:[POSTS[0].pic]});
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.pop(); return h; }],
+    ['a post that is only a voice', () => {
+        POSTS.push({id:'pz', at:Date.now(), lang:langId, lname:'Shango', ln:'',
+                    who:'Aya', hd:'aya', mine:true, mn:'', ui:'en',
+                    vo:{f:'v9.m4a', ms:12000}});
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.pop(); return h; }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;

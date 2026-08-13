@@ -351,13 +351,35 @@ function pwLeftPaint(){
 function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
 /* Posting. The meaning is what was typed, or the gloss run together if
    nothing was -- never empty, because a line nobody can read is not a post. */
+/* Whether there is anything to post. It was: a line, or nothing. So a
+   photograph with somebody's own letters drawn onto it -- which is most of
+   what this app is for -- could not be posted on its own, and neither could
+   thirty seconds of a language being spoken.
+   「文字無しでもポストできるようにできない？」
+
+   A post is a line, or a photograph, or a voice, or any of them together.
+   Empty is still empty and still refused.
+
+   Editing asks the POST, not the composer: an edit carries the line and the
+   meaning and nothing else (the photographs and the voice were baked and
+   written when the post was made), so a post being edited down to no line at
+   all is fine as long as the post itself still has something on it. */
+function pwHas(ln){
+  var p;
+  if(ln) return true;
+  if(PW.ed){
+    p=postById(PW.ed);
+    return !!(p && (postPics(p).length || (p.vo && p.vo.f)));
+  }
+  return !!(pwPics().length || (PW.vo && PW.vo.b64));
+}
 /* The letters placed on the photograph are drawn INTO it first, and after
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
    below, and a bake that fails sends the photograph as it was. */
 function pwSend(){
   var ln=String(PW.ln||'').trim();
-  if(!ln){ toast(t('post.none')); return; }
+  if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */
   if(REC){ toast(t('post.vo.busy')); return; }
@@ -1427,7 +1449,10 @@ function postRow(p){
          somebody else's line drew their words in my shapes. Now the shapes
          are on the post, so there is no font to put on anything and no
          reason to treat my own post differently from anybody's. */
-      '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>'+
+      /* A post may have no line at all -- a photograph on its own, or a
+         voice. An empty div here is a gap above the picture that nothing
+         explains. 「文字無しでもポストできるようにできない？」 */
+      (p.ln? '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>' : '')+
       /* The pictures, and they are the one thing on a post that slides
          sideways. 「画像だけ横スライドできる感じ」 One is a picture; several
          are a strip, and the strip scrolls rather than the post. */
@@ -1438,10 +1463,11 @@ function postRow(p){
             }).join('')+'</div>'
         : '')+
       postVoHTML(p)+
-      /* The natural language, always. In the reader's own if the post carries
-         it, and in the author's if it does not -- which is every post until
-         the translator is wired up, and is not a failure. */
-      '<div class="pmn">'+esc(postSay(p))+'</div>'+
+      /* The natural language, in the reader's own if the post carries it and
+         in the author's if it does not -- which is every post until the
+         translator is wired up, and is not a failure. Not "always" any more:
+         a post with no line has nothing to mean. */
+      (postSay(p)? '<div class="pmn">'+esc(postSay(p))+'</div>' : '')+
       /* Three layers, and there is no fourth.
 
            the writer's own letters      ln + ink

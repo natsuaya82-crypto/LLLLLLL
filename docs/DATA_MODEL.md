@@ -105,6 +105,7 @@ writer's language:
 | `who`, `hd`, `av` | the author. `ME` is *me*, and a timeline has no such thing |
 | `lname` | the language's name. Stamping the open language across somebody else's card is the same bug three times over |
 | `ink` | **the shapes**, already cut. `ka` is one letter on the writer's phone and two on everybody else's, so the cut has to travel too |
+| `ln` | the line, in the writer's own language. **May be empty**: a post can be a photograph on its own or a voice on its own 「文字無しでもポストできるようにできない？」. `pwHas()` decides what counts as something to post; empty is still refused |
 | `pin` | this author put it at the top of their own page. One at a time |
 | `pics` | **up to four photographs**, each squeezed to 900px on the long edge at q0.72 — about 22 KB as text apiece. See below: this is the one field big enough to matter |
 | `pic` | one photograph, on posts written before `pics` existed. Never rewritten. `postPics()` is the one place that reads either |

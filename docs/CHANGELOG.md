@@ -15,6 +15,29 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A post does not have to have a line
+
+「文字無しでもポストできるようにできない？」 A post was a line, or nothing. So a
+photograph with somebody's own letters drawn onto it — which is most of what
+this app is for — could not be posted on its own, and neither could thirty
+seconds of a language being spoken.
+
+A post is a line, or a photograph, or a voice, or any of them together. Empty
+is still empty and still refused.
+
+`pwHas()` is the one place that decides it, and editing asks the **post**
+rather than the composer: an edit carries the line and the meaning and nothing
+else, so a post edited down to no line is fine as long as the post still has
+something on it.
+
+**Data:** `post.ln` may now be `''`. Nothing changes shape and no post is
+rewritten — every post written before this has a line. A post with no line
+draws no line row and no meaning row rather than empty ones.
+
+`post-check` grew claim 9, watched failing three ways: a line-or-nothing rule
+(a photograph and a voice both refused), anything-at-all (an empty composer
+made a post), and the empty row left in.
+
 ### The camera crashed, the library was three doors, and the ... was a page
 
 Three things build 56 found on a real phone, and one counter that had been

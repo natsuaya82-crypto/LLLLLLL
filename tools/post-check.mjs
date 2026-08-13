@@ -32,11 +32,13 @@
         nothing tidied
      8  a reply that is deleted stops being counted on the post it answered.
         The count is added in one place and taken away in one place
+     9  a post does not have to have a line. A photograph on its own is a
+        post and so is a voice; nothing at all still is not
 
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
-   Exit code is 0 only when all eight hold.
+   Exit code is 0 only when all nine hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -322,6 +324,45 @@ const R = await pg.evaluate(async () => {
   if (((host.re) || 0) < 0)
     fails.push('deleting a reply took a count below zero');
 
+  /* ---- 9. a post does not have to have a line ----------------------- */
+  /* 「文字無しでもポストできるようにできない？」 A photograph with somebody's
+     own letters drawn onto it is most of what this app is for, and it could
+     not be posted on its own. Empty is still empty. */
+  const wasN = POSTS.length;
+  PW = pwBlank();
+  PW.pics = [{ u: blackPic, marks: [] }];
+  pwSend();
+  await new Promise(r => setTimeout(r, 300));
+  if (POSTS.length !== wasN + 1)
+    fails.push('a photograph with no line was refused, and a picture with '
+             + 'somebody\'s own letters on it is most of what a post is for');
+  else {
+    const only = POSTS[POSTS.length - 1];
+    if (only.ln !== '') fails.push('a post sent with no line carries ' +
+      JSON.stringify(only.ln));
+    if (postRow(only).indexOf('class="pline') >= 0)
+      fails.push('a post with no line still draws the row its line goes in, ' +
+                 'which is a gap above the picture that nothing explains');
+  }
+
+  const wasN2 = POSTS.length;
+  PW = pwBlank();
+  PW.vo = { b64: 'AAECAwQF', mime: 'audio/mp4', ms: 3000 };
+  pwSend();
+  await new Promise(r => setTimeout(r, 300));
+  if (POSTS.length !== wasN2 + 1)
+    fails.push('a voice with no line was refused, and thirty seconds of a '
+             + 'language being spoken is a post');
+
+  /* And nothing at all is still nothing at all. */
+  const wasN3 = POSTS.length;
+  PW = pwBlank();
+  pwSend();
+  await new Promise(r => setTimeout(r, 200));
+  if (POSTS.length !== wasN3)
+    fails.push('an empty composer made a post. No line, no photograph, no '
+             + 'voice -- there is nothing there to put on a timeline');
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            vof: (v && v.vo && v.vo.f) || '' };
@@ -347,4 +388,6 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      with none of its bytes on the post; deleting that post drops\n' +
             '      that one file and no other, and a post with no voice asks for\n' +
             '      nothing to be dropped at all. A deleted reply stops being\n' +
-            '      counted on the post it answered, and never counts below zero.');
+            '      counted on the post it answered, and never counts below zero.\n' +
+            '      A photograph on its own and a voice on its own are both posts,\n' +
+            '      neither draws an empty line, and an empty composer still is not.');

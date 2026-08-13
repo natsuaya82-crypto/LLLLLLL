@@ -630,6 +630,18 @@ for.
 - Affected docs: CHANGELOG
 - Implementation status: implemented
 
+### Decision
+- Date: 2026-08-13
+- Area: What a post has to have
+- Decision: A post does not need a line. A **photograph on its own** is a
+  post, and so is a **voice on its own**. Nothing at all is still nothing.
+- Reason: 「文字無しでもポストできるようにできない？」
+- Affected features: post composer, timeline
+- Affected data: `post.ln` may be `''`. Nothing changes shape; every post
+  written before this has a line
+- Affected docs: DATA_MODEL, CHANGELOG
+- Implementation status: implemented
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.
