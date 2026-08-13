@@ -863,15 +863,22 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    the handle -- which is where a timeline puts an affiliation, and is exactly
    the wrong size for the thing this whole app is about.
    「フォローと自己紹介の間に」「linguaパッチの代わり。Lingua > みたいに」 */
-.wldrow{display:flex;align-items:center;gap:8px;width:100%;min-height:48px;
-        margin-top:10px;padding:0 14px;border-radius:14px;
-        border:1px solid var(--goldln);background:none;color:var(--gold);
-        font-family:inherit;text-align:left}
+/* A row, not a box. It was a gold-outlined rounded button sitting on a page
+   whose every other line is flat text, and a bordered box among flat text
+   floats. 「ボタンが浮いててダサい」 So it is what a row is everywhere else in
+   this app: full width, a hairline under it, nothing around it. .set is that
+   shape and this is that shape -- said again rather than borrowed, because
+   .set lives on a settings screen and this lives on a profile, and the day
+   one of them changes it must not drag the other with it. */
+.wldrow{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;
+        margin-top:6px;padding:13px 2px;background:none;
+        border:0;border-bottom:1px solid var(--line);
+        color:var(--gold);font-family:inherit;text-align:left}
 .wldnm{flex:1 1 auto;min-width:0;font-size:1rem;letter-spacing:.06em;
        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wldoff{flex:0 0 auto;font-size:.76rem;color:var(--txs)}
-.wldrow svg{flex:0 0 auto}
-.wldrow:active{background:var(--sf)}
+.wldoff{flex:0 0 auto;font-size:.78rem;color:var(--txm)}
+.wldrow svg{flex:0 0 auto;color:var(--txm)}
+.wldrow:active{opacity:.6}
 /* The page itself. What the language is for, then the three numbers, then
    whatever was written about it, then the letters somebody drew. */
 .abtuse{display:flex;flex-direction:column;gap:3px;padding:14px 0 4px}
