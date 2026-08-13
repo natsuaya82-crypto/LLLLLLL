@@ -821,6 +821,8 @@ defLang('en', (function(){
       'post.draft.save'       : "Save a draft",
       'post.draft.kept'       : "Saved as a draft",
       'post.drafts'           : "{0} drafts",
+      'post.drafts.t'         : "Drafts",
+      'post.draft.none'       : "No drafts",
       'post.draft.empty'      : "(empty)",
       'post.draft.del'        : "Delete this draft",
       'post.draft.del.q'      : "Delete this draft?",

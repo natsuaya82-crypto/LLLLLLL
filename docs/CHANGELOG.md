@@ -15,6 +15,29 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Five things looked at on a phone
+
+- **The lock is open.** 「🔓ポストにしたら？」 The shackle is up, which is the
+  mark that was asked for both times it was written.
+- **Somebody else's profile is your own profile.**
+  「基本自分が見えてるのと同じ感じ」 The same card in the same order with
+  Follow where Edit is, and the same three lists. What is not known is absent
+  rather than filled in with a zero — no bio and no counts until they arrive
+  with the person.
+- **The back button is an arrow.** 「戻るボタンにhomeとかつけなくていいんじゃない」
+  It said where it goes next to the name of where you are, which is two place
+  names side by side and the smaller of them is the one you are leaving. The
+  word is still its `aria-label`.
+- **A post older than a day says the date.** 「ツイートに時刻ある？」 Under a
+  day it is how long ago; past that, `9d` is not a time, it is arithmetic
+  somebody has to do. The date comes from the phone in the interface language,
+  and drops the year inside this one.
+- **Drafts are a page.** 「そこに入れないで。別ページに飛ぶ感じで」 A list at
+  the foot of the screen you are writing on is read as part of it. The
+  composer carries the way there and nothing else; the count is on the button.
+
+No data changes.
+
 ### Somebody else's profile, following, private posts, drafts, and notices
 
 Five things, and four of them are the shape the online half will arrive into.

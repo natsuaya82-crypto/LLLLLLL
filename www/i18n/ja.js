@@ -823,6 +823,8 @@ defLang('ja', (function(){
       'post.draft.save'       : "下書きに保存",
       'post.draft.kept'       : "下書きに保存しました",
       'post.drafts'           : "下書き {0}",
+      'post.drafts.t'         : "下書き",
+      'post.draft.none'       : "下書きはありません",
       'post.draft.empty'      : "（空）",
       'post.draft.del'        : "下書きを消す",
       'post.draft.del.q'      : "この下書きを消しますか？",

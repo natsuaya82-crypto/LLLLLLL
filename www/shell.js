@@ -157,6 +157,7 @@ var PAGES={
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
   about:   {tab:'profile', k:'wld.about'},
+  drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
   plans:   {tab:'profile',  k:'plans.title'}
 };
@@ -204,7 +205,13 @@ function pageName(r, a){
 function navTop(count, right){
   var h=here(), pv=prevPage(), n=h.a? '' : tocNum(h.r);
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
-  return '<div class="navtop"><button class="back nb"' + DO('back') + '>'+ICON_BACK+esc(lab)+'</button>'+
+  /* An arrow and nothing else. It said where it goes -- Home, Build, Profile
+     -- next to the name of where you ARE, which is two place names side by
+     side and the smaller of them is the one you are leaving.
+     「戻るボタンにhomeとかつけなくていいんじゃない？そうしたら矢印だけで済む」
+     The word is still there for anybody who cannot see the arrow. */
+  return '<div class="navtop"><button class="back nb"' + DO('back') +
+    ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button>'+
     (n? '<span class="navn">'+n+'</span>' : '')+
     '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+

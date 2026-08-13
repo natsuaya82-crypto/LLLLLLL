@@ -1082,6 +1082,8 @@ defLang('ko', (function(){
       'post.draft.save'       : "임시저장",
       'post.draft.kept'       : "임시저장했습니다",
       'post.drafts'           : "임시저장 {0}",
+      'post.drafts.t'         : "임시저장",
+      'post.draft.none'       : "임시저장이 없습니다",
       'post.draft.empty'      : "(비어 있음)",
       'post.draft.del'        : "임시저장 지우기",
       'post.draft.del.q'      : "이 임시저장을 지울까요?",

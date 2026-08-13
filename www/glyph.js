@@ -556,7 +556,7 @@ var ICON_LOCK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
   'stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/>'+
-  '<path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></svg>';
+  '<path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0"/></svg>';
 /* pinned: a post its author put at the top of their own page */
 var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+

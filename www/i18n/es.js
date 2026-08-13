@@ -867,6 +867,8 @@ defLang('es', (function(){
       'post.draft.save'       : "Guardar borrador",
       'post.draft.kept'       : "Guardado como borrador",
       'post.drafts'           : "{0} borradores",
+      'post.drafts.t'         : "Borradores",
+      'post.draft.none'       : "No hay borradores",
       'post.draft.empty'      : "(vacío)",
       'post.draft.del'        : "Borrar el borrador",
       'post.draft.del.q'      : "¿Borrar este borrador?",

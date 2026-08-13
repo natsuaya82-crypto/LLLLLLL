@@ -912,6 +912,8 @@ defLang('zh', (function(){
       'post.draft.save'       : "存为草稿",
       'post.draft.kept'       : "已存为草稿",
       'post.drafts'           : "草稿 {0}",
+      'post.drafts.t'         : "草稿",
+      'post.draft.none'       : "没有草稿",
       'post.draft.empty'      : "（空）",
       'post.draft.del'        : "删除草稿",
       'post.draft.del.q'      : "要删除这份草稿吗？",

@@ -955,6 +955,8 @@ defLang('fr', (function(){
       'post.draft.save'       : "Garder un brouillon",
       'post.draft.kept'       : "Gardé comme brouillon",
       'post.drafts'           : "{0} brouillons",
+      'post.drafts.t'         : "Brouillons",
+      'post.draft.none'       : "Aucun brouillon",
       'post.draft.empty'      : "(vide)",
       'post.draft.del'        : "Supprimer le brouillon",
       'post.draft.del.q'      : "Supprimer ce brouillon ?",

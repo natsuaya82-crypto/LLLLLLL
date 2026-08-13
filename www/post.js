@@ -189,6 +189,7 @@ function draftOpen(i){
   if(!d) return;
   DRAFTS.splice(i, 1);
   draftsSave();
+  if(here().r==='drafts') back();
   PW=pwBlank();
   PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||'';
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
@@ -201,22 +202,28 @@ function draftDrop(i){
   if(!confirm(t('post.draft.del.q'))) return;
   DRAFTS.splice(i, 1);
   draftsSave();
-  openPost();
+  render();
 }
-function pwDraftsHTML(){
-  if(!DRAFTS.length || PW.ed) return '';
+/* A page of its own. 「下書きはそこに入れないで。別ページに飛ぶ感じで」 A list
+   at the foot of the screen you are writing on is a list under the thing it
+   is about, and the two are read as one screen -- so the drafts are somewhere
+   you go, and the composer carries only the way there. */
+function vDrafts(){
   var out='', i, d;
   for(i=DRAFTS.length-1;i>=0;i--){
     d=DRAFTS[i];
     out+='<div class="dfrow">'+
       '<button class="dfb"' + DO('draftOpen', [i]) + '>'+
+        (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
         '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
         '<span class="dfw">'+esc(postWhen(d.at))+'</span></button>'+
       '<button class="dfx"' + DO('draftDrop', [i]) + ' aria-label="'+
         esc(t('post.draft.del'))+'">'+ICON_MINUS+'</button>'+
       '</div>';
   }
-  return '<div class="sec">'+esc(tn('post.drafts', DRAFTS.length))+'</div>'+out;
+  return '<div class="view">'+navTop(String(DRAFTS.length))+'<div class="body">'+
+    (out || '<div class="note">'+esc(t('post.draft.none'))+'</div>')+
+    '</div></div>';
 }
 FORM_OPEN.post=function(){ openPost(); };
 /* Word by word, and the row is always there even when it is empty, so the
@@ -533,9 +540,14 @@ function pwHTML(){
          written on -- which is where you were when you saved one.
          「postの横に保存で下書き」 */
       (PW.ed? '' :
-        '<button class="btn ghost dfsave"' + DO('draftKeep') + '>'+
-          esc(t('post.draft.save'))+'</button>')+
-      pwDraftsHTML();
+        '<div class="dfbar">'+
+          '<button class="btn ghost"' + DO('draftKeep') + '>'+
+            esc(t('post.draft.save'))+'</button>'+
+          (DRAFTS.length
+            ? '<button class="btn ghost"' + DO('go', ["drafts"]) + '>'+
+                esc(tn('post.drafts', DRAFTS.length))+'</button>'
+            : '')+
+        '</div>')+'';
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
    body would put the caret back at the end of the field on every letter.
@@ -1513,12 +1525,27 @@ function pwSaveEdit(ln){
    this phone -- kept, counted, and the first thing that syncs when there is
    one. A row of buttons that do nothing is what this app already got wrong
    once at the bottom of a screen. */
+/* How long ago, and then WHEN. Under a day it is how long ago, because that
+   is what anybody wants of something from this morning. Past a day it is the
+   date, because "9d" is not a time -- it is arithmetic somebody has to do,
+   and the answer they wanted was a day of the year. 「ツイートに時刻ある？」
+
+   The date is the phone's own: toLocaleDateString with the interface language,
+   so it comes out the way that language writes a date and this file does not
+   have to know how ten of them do. The year is dropped inside this one, the
+   way every timeline drops it. */
 function postWhen(at){
-  var s=Math.floor((Date.now()-(at||0))/1000);
+  var s=Math.floor((Date.now()-(at||0))/1000), d, now;
   if(s<60) return t('when.now');
   if(s<3600) return t('when.m', Math.floor(s/60));
   if(s<86400) return t('when.h', Math.floor(s/3600));
-  return t('when.d', Math.floor(s/86400));
+  d=new Date(at||0); now=new Date();
+  try{
+    return d.toLocaleDateString(uiLang(),
+      (d.getFullYear()===now.getFullYear())
+        ? {month:'short', day:'numeric'}
+        : {year:'numeric', month:'short', day:'numeric'});
+  }catch(e){ return t('when.d', Math.floor(s/86400)); }
 }
 /* All of it comes off the post. Renaming yourself does not rewrite old posts,
    which is the price of a timeline that can hold anybody else's. */

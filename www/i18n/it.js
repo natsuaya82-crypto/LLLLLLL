@@ -909,6 +909,8 @@ defLang('it', (function(){
       'post.draft.save'       : "Salvare una bozza",
       'post.draft.kept'       : "Salvato come bozza",
       'post.drafts'           : "{0} bozze",
+      'post.drafts.t'         : "Bozze",
+      'post.draft.none'       : "Nessuna bozza",
       'post.draft.empty'      : "(vuoto)",
       'post.draft.del'        : "Cancellare la bozza",
       'post.draft.del.q'      : "Cancellare questa bozza?",

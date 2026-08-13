@@ -204,6 +204,12 @@ function meFollow(h){
   render();
   netFollow(h, i<0, function(){}, function(){});
 }
+/* The same card as your own, in the same order, with Follow where Edit is.
+   「他人のプロフィールは基本自分が見えてるのと同じ感じ」
+
+   What is not known is simply absent -- no bio and no counts until they
+   arrive with the person. Neither is on a post, and a profile that fills them
+   in with a zero is a profile saying something it was never told. */
 function whoCard(h){
   var p=whoOf(h), on=meFollows(h);
   return '<div class="mecard">'+
@@ -216,6 +222,7 @@ function whoCard(h){
     '<button class="meedit'+(on?' on':'')+'"' + DO('meFollow', [String(h)]) + '>'+
       esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
     '</div>'+
+    (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+
         '<span class="wldnm">'+esc(p.lname)+'</span>'+ICON_GO+'</button>' : '')+
     '</div>';

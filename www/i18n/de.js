@@ -896,6 +896,8 @@ defLang('de', (function(){
       'post.draft.save'       : "Entwurf sichern",
       'post.draft.kept'       : "Als Entwurf gesichert",
       'post.drafts'           : "{0} Entwürfe",
+      'post.drafts.t'         : "Entwürfe",
+      'post.draft.none'       : "Keine Entwürfe",
       'post.draft.empty'      : "(leer)",
       'post.draft.del'        : "Entwurf löschen",
       'post.draft.del.q'      : "Diesen Entwurf löschen?",

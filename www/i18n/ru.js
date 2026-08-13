@@ -930,6 +930,8 @@ defLang('ru', (function(){
       'post.draft.save'       : "Сохранить черновик",
       'post.draft.kept'       : "Сохранено как черновик",
       'post.drafts'           : "Черновиков: {0}",
+      'post.drafts.t'         : "Черновики",
+      'post.draft.none'       : "Черновиков нет",
       'post.draft.empty'      : "(пусто)",
       'post.draft.del'        : "Удалить черновик",
       'post.draft.del.q'      : "Удалить этот черновик?",

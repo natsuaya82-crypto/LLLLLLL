@@ -914,6 +914,8 @@ defLang('pt', (function(){
       'post.draft.save'       : "Guardar rascunho",
       'post.draft.kept'       : "Guardado como rascunho",
       'post.drafts'           : "{0} rascunhos",
+      'post.drafts.t'         : "Rascunhos",
+      'post.draft.none'       : "Não há rascunhos",
       'post.draft.empty'      : "(vazio)",
       'post.draft.del'        : "Apagar o rascunho",
       'post.draft.del.q'      : "Apagar este rascunho?",

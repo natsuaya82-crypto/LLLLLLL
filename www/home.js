@@ -298,18 +298,17 @@ function pfList(){
     : function(p){ return String(p.hd||'')===h; };
   var mine=postAll().filter(of);
   if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
+  /* What THIS person has liked. Your own is what you pressed; somebody
+     else's arrives with them, and until it does the list is empty rather than
+     absent -- the same three lists on everybody's page.
+     「他人のプロフィールは基本自分が見えてるのと同じ感じ」 */
   if(pfTab==='li')   return pfMine()? postAll().filter(function(p){ return !!p.lime; }) : [];
   mine=mine.filter(function(p){ return !p.to; });
   mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
   return mine;
 }
 function pfTabs(){
-  /* Likes are a person's own business. On somebody else's page there are two
-     lists, not three -- and it is not that the third is empty, it is that
-     there is no such list to show. */
-  var tabs=pfMine()
-    ? [['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']]
-    : [['posts','prof.posts'], ['re','prof.replies']];
+  var tabs=[['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']];
   return '<div class="pftabs">'+tabs.map(function(x){
     return '<button class="pftab'+(pfTab===x[0]?' on':'')+'"' + DO('pfSetTab', [x[0]]) + '>'+
       esc(t(x[1]))+'</button>';

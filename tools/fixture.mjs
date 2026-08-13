@@ -299,6 +299,14 @@ export function halfDone(){
         DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},
                   {at:Date.now(), ln:'', mn:'', to:'', pics:[], vo:null, pv:true}];
         PW = pwBlank(); openPost(); const h = vForm(); DRAFTS = []; return h; }],
+    ['the drafts, on their own page', () => {
+        DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},
+                  {at:Date.now()-90000, ln:'', mn:'', to:'', pics:[], vo:null, pv:true}];
+        window.route='drafts'; NAV=[{r:'feed'},{r:'drafts'}];
+        const h = vDrafts(); DRAFTS = []; NAV=[{r:'feed'}]; return h; }],
+    ['the drafts page with none', () => {
+        window.route='drafts'; NAV=[{r:'feed'},{r:'drafts'}];
+        const h = vDrafts(); NAV=[{r:'feed'}]; return h; }],
     /* Notices, which arrive and so are never there on a phone with nobody
        else on it. */
     ['notices', () => { NOTES_HAVE = [
