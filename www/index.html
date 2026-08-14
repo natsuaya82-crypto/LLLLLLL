@@ -161,6 +161,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbfleft{left:3px;top:50%;transform:translateY(-50%)}
 .kbfright{right:3px;top:50%;transform:translateY(-50%)}
 .kbadd{display:flex;gap:8px;margin-top:12px}
+/* A row is added where a row would be. It is drawn as the empty row it is
+   about to become, not as a button somewhere else on the screen. */
+.kbk.addrow{flex:1 1 auto;color:var(--txm);background:none;
+            border:1px dashed var(--line);opacity:.8}
 /* A line of the language, typed on the language's own keyboard. `readonly`
    keeps the phone's keyboard from coming up over it -- the keys are on the
    page, and two keyboards at once is one too many. */
@@ -234,6 +238,15 @@ canvas.pkc{width:34px;height:34px;display:block}
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .navc{margin-left:auto;flex:0 0 auto;font-family:'Cormorant Garamond',Georgia,serif;
       font-style:italic;color:var(--txm);font-size:.98rem}
+/* Where an explanation lives: a mark, not a paragraph on the screen it is
+   about. Same weight as the back arrow, at the other end of the same bar. */
+.navq{margin-left:auto;flex:0 0 auto;align-self:center;min-height:44px;min-width:44px;
+      border:0;background:none;color:var(--txm);font-family:'Cinzel',Georgia,serif;
+      font-size:1.05rem;font-weight:600}
+.navq:active{opacity:.55}
+/* Two auto margins would split the free space and stand the count in the
+   middle of the bar. The one in front does the pushing. */
+.navc + .navq{margin-left:6px}
 .navtop:after{content:"";position:absolute;left:0;right:0;top:100%;height:8px;
               background:linear-gradient(180deg,var(--bg),transparent)}
 .chead{padding:0 24px 6px}
@@ -672,9 +685,8 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .fcard.soon{border-style:dashed;opacity:.62}
 .fch{font-family:'Cinzel',Georgia,serif;font-size:1rem;margin-bottom:6px}
 .note{color:var(--txm);font-size:.86rem;line-height:1.75}
-/* The keyboard chapter's head: what this chapter is for, which the screen
-   never said, and whether what it builds ever reached the phone. */
-.kbsysh{font-size:1rem;color:var(--tx);margin:2px 0 10px}
+/* Whether what this chapter builds ever reached the phone. In the `?` sheet
+   now, with the steps it belongs to. */
 .kbout{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;
        background:var(--pane)}
 .kbout.bad{border-color:var(--bad);color:var(--bad)}
@@ -824,6 +836,12 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .seg{min-height:44px;min-width:44px;background:none;border:0;border-bottom:2px solid transparent;
      color:var(--txs);padding:9px 14px;font-size:.84rem;margin-bottom:-1px}
 .seg.on{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
+/* The way to add one, at the end of the row of the ones there are -- the same
+   shape the row of keyboards uses, because it is the same sentence. */
+.seg.add{color:var(--txm);padding:0}
+/* The faces of one keyboard, under the row of keyboards. No rule under it:
+   the keyboard itself is directly below and two lines is a box. */
+.kbsegs{border-bottom:0;margin-bottom:4px}
 .cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
 .cand .ck{width:44px;height:44px;margin-left:-11px;border:0;background:none;flex:0 0 auto;
           display:flex;align-items:center;justify-content:center}
@@ -850,6 +868,15 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    copies of one colour, none of which changed when the dark theme did. */
 .bad{color:var(--bad)}
 .set .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
+/* A setting that is a yes or a no wears a switch, not the word ON in ten
+   languages. 51x31 and a 27 knob is iOS's own, so it reads as the thing it
+   is on the phone this app runs on. */
+.swt{margin-left:auto;flex:0 0 auto;width:51px;height:31px;border-radius:999px;
+     background:var(--line);position:relative;transition:background .18s ease}
+.swk{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;
+     background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .18s ease}
+.swt.on{background:var(--gold)}
+.swt.on .swk{left:22px}
 .pick{display:flex;background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:3px;margin:10px 0 4px}
 .pick button{min-height:44px;flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}
 .pick button.on{background:var(--pane);color:var(--tx);font-weight:600;box-shadow:var(--shadow)}
@@ -1033,6 +1060,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
        display:inline-flex;align-items:center;gap:6px}
 .kbtab.on{color:var(--tx);border-color:var(--goldln);background:var(--goldsf)}
 .kbtab.add{min-width:44px;padding:0;justify-content:center;color:var(--gold)}
+/* The two that undo things live behind this. At the far end, no outline: it
+   is a way out of the row rather than one more thing in it. */
+.kbtab.more{margin-left:auto;min-width:44px;padding:0;justify-content:center;
+            border:0;color:var(--txm)}
 .kbon{display:inline-flex;color:var(--gold)}
 .kbon svg{width:14px;height:14px}
 /* ---------- choosing what shape a keyboard is ----------

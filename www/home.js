@@ -183,6 +183,35 @@ function vForm(){
   return '<div class="view">'+navTop('', FORM.right)+
     '<div class="body" id="form-body">'+FORM.html+'</div></div>';
 }
+/* ---- where an explanation goes -----------------------------------------
+   「これから説明が必要なときは？マークつけて表示でちゃんと説明させるように
+   して」
+
+   A screen that has to be explained was explaining itself in place: a
+   heading, two numbered steps and a sentence about Full Access, sitting
+   above the thing they were about. Prose on a screen is read once by the
+   person who did not need it and never again by the person who did, and it
+   is in the way of the screen for everybody else.
+
+   So the explanation is a mark. `?` in the bar, and pressing it opens the
+   whole of it -- as long as somebody wants it and no longer.
+
+   A screen registers what it has to say the way it registers a form:
+   `HELP.kb = function(){ ... }`, in the file the screen lives in, returning
+   the title and the body. Nothing here knows what a keyboard is. */
+var HELP={};
+function helpQ(k){
+  if(!HELP[k]) return '';
+  return '<button class="navq"' + DO('openHelp', [k]) +
+    ' aria-label="'+esc(t('help.q'))+'">?</button>';
+}
+function openHelp(k){
+  var f=HELP[k], o;
+  if(!f) return;
+  o=f();
+  openForm('help:'+k, o.t, o.h);
+}
+FORM_OPEN.help=function(a){ openHelp(String(a||'')); };
 function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
 /* Kept because a dozen save buttons call it. Closing a form is leaving a page. */
 function closeSheet(e){

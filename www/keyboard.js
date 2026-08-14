@@ -197,13 +197,44 @@ function kbPatLay(pat){
   if(pat==='abc')    return kbAbcLay();
   return kbTapLay();
 }
+/* The shape without the letters.
+   「それ以外2つ目作るときは形だけ」
+
+   A pattern is an ARRANGEMENT -- how many keys, how wide, which carry a
+   flick, where the space and the delete sit. Which letter goes on which key
+   is the other half and it is the person's; filling it in from the alphabet
+   in order was the app writing the keyboard and leaving them to correct it,
+   which is most of a keyboard's work done wrong.
+
+   The first board is the exception and is not made here: it is the QWERTY
+   they already had, letters and all, because that one they HAVE been typing
+   on. Everything after it starts empty.
+
+   The layer keys keep what they do, and the space and the delete keep being
+   themselves -- those are not letters and there is nothing to choose. Safe
+   to write into: every kbPatLay() builds its rows fresh on each call. */
+function kbBlank(lay){
+  var i, j, k, key, d;
+  for(i=0;i<lay.length;i++)
+    for(j=0;j<lay[i].rows.length;j++)
+      for(k=0;k<lay[i].rows[j].length;k++){
+        key=lay[i].rows[j][k];
+        if(key.k!=='lt') continue;
+        key.v='';
+        key.t='';
+        if(key.f) for(d=0;d<key.f.length;d++) key.f[d]='';
+      }
+  return lay;
+}
 /* Made, kept, and shown -- but not applied. Building a keyboard must not take
    the one under somebody's thumb away from them mid-sentence. */
 function kbAdd(pat){
   if(KB_PATS.indexOf(pat)<0) return;
-  if(!KB || !KB.kbs) KB={kbs:[], at:0};
+  /* Starting from nothing stored still keeps the first one: it is the
+     keyboard on the phone, and the new one is the SECOND. */
+  if(!kbStored().length) KB={kbs:[kbFree()], at:0};
   if(KB.kbs.length>=KB_MAX){ toast(t('kb.full', KB_MAX)); return; }
-  KB.kbs.push({nm:'', pat:pat, lay:kbPatLay(pat)});
+  KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=KB.kbs.length-1; kbLay=0; kbSel=null;
   saveKb(); render();
 }
@@ -339,7 +370,33 @@ function kbFixed(){
   rows.push(bot);
   return {lay:[{rows:rows}]};
 }
-function kbBoards(){ return (KB && KB.kbs)? KB.kbs : []; }
+/* What is actually on the disk. Nothing else asks this: the screen, the
+   count and the editor all want kbBoards(), which is this plus the one
+   everybody already has. */
+function kbStored(){ return (KB && KB.kbs)? KB.kbs : []; }
+/* The keyboard somebody already had, as a board. kbFixed() is the free
+   plan's QWERTY wearing their drawn letters, built from LETTERS every time
+   it is shown -- so this is not a copy that can go stale, it is that. */
+function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
+/* The keyboards there are, and the first one is not nothing.
+   「qwertyは無料版で組んだやつが1としてもう保存されてる状況だって」
+
+   The chapter used to answer "nothing built yet" with the five patterns and
+   no list, no apply and no tick -- so somebody who had just paid was shown a
+   blank chooser for a keyboard they had been typing on for a week, and
+   nowhere on the screen said that keyboard existed. It did: kbOf() has
+   answered kbFixed() all along. What was missing was it being ON the list.
+
+   Not written to storage. A board appears here from the moment the plan
+   opens the chapter, and it is written the first time somebody changes
+   something -- kbEdit(), which is where owning it begins. A screen that
+   writes on being looked at is a screen that changes the language by being
+   visited. */
+function kbBoards(){
+  var s=kbStored();
+  if(s.length) return s;
+  return can('kb')? [kbFree()] : [];
+}
 function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 /* THE ONE ON THE PHONE. share.js reads this and nothing else, so what this
    answers is what somebody types with.
@@ -355,10 +412,14 @@ function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
    Which is the money rule said one more way. A plan decides what a person may
    DO. Buying one may add a keyboard; it may not take away the one they were
    typing on. */
+/* Which of them is applied. KB is null until something is written, and
+   kbBoards() answers with the free QWERTY before then -- so there is nothing
+   to read it off and the answer is 0, which is that one. */
+function kbApplied(n){ return kbClamp(KB? KB.at : 0, n); }
 function kbOf(){
   var b=kbBoards();
   if(!can('kb') || !b.length) return kbFixed();
-  return b[kbClamp(KB.at, b.length)];
+  return b[kbApplied(b.length)];
 }
 /* And the one on the SCREEN, which is a different question the moment there
    is more than one. The editor works on this; Apply is what makes it the
@@ -383,7 +444,7 @@ function kbLayer(){ var b=kbBoard(); return b.lay[Math.min(kbLay, b.lay.length-1
 function kbEdit(){
   /* And what it starts from is what was on the phone a moment ago, for the
      same reason: the first edit must not move thirty keys. */
-  if(!kbBoards().length) KB={kbs:[{nm:'', pat:'qwerty', lay:kbFixed().lay}], at:0};
+  if(!kbStored().length) KB={kbs:[kbFree()], at:0};
   kbShow=kbClamp(kbShow, KB.kbs.length);
   return KB.kbs[kbShow];
 }
@@ -526,6 +587,12 @@ function kbHTML(sel, ro){
     }
     out+='</div>';
   }
+  /* A row is added where a row would go: under the last one, the width of
+     one, looking like the empty row it is about to be. It was a button at the
+     foot of the screen. 「行を出す層を足すも使いづらすぎる」 */
+  if(!ro)
+    out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRow') +
+      ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
   return '<div class="kb" id="kb">'+out+'</div>';
 }
 
@@ -571,45 +638,44 @@ function vKb(){
      So free gets the steps, the state, and the keyboard itself with nothing
      to press. Upgrade stays, at the foot, saying the one true thing. */
   if(!can('kb'))
-    return '<div class="view">'+navTop(String(kbKeys()))+'<div class="body">'+
-      kbSysHTML()+
+    return '<div class="view">'+navTop(String(kbKeys()), helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
+      kbSysHTML()+
       '<div class="note" style="margin-top:14px">'+t('kb.locked')+'</div>'+
       '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
         t('up.cta')+'</button>'+
       '</div></div>';
-  /* Nothing built yet: the screen is the five patterns and nothing else.
-     「キーボードにまずはどれにするか」 There is no editor to show, because
-     there is nothing to edit, and offering one over a default nobody chose is
-     how the default became the only layout anybody ever had. */
-  if(!kbBoards().length)
-    /* The steps for putting it on the phone go UNDER the choosing here, and
-       nowhere else in the chapter do they move: with nothing built there is
-       nothing to install, so instructions at the top of this screen are a
-       page of prose in front of the one thing to do. */
-    return '<div class="view">'+navTop('')+'<div class="body">'+
-      '<div class="sec">'+t('kb.pat')+'</div>'+kbPatsHTML()+
-      kbSysHTML()+'</div></div>';
-  var b=kbBoard(), out='';
-  if(b.lay.length>1){
-    out+='<div class="segs" style="margin-bottom:8px">'+b.lay.map(function(x, i){
-      return '<button class="seg'+(i===Math.min(kbLay, b.lay.length-1)?' on':'')+'"' +
-        DO('kbGoLay', [i]) + '>'+esc(kbLayName(i))+'</button>';
-    }).join('')+'</div>';
-  }
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    kbSysHTML()+
+  /* The keyboard, and the row of the ones there are above it. There is no
+     "nothing built yet" face any more: kbBoards() answers with the one
+     already on the phone, so the first thing on this screen is always a
+     keyboard rather than a chooser for one.
+     「しかもキーボード保存もないし、保存先から選べるとこもないし」 */
+  return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
     kbBarHTML()+
-    out+
+    kbLaysHTML()+
     kbHTML(kbSel)+
-    '<div class="kbadd">'+
-      '<button class="btn ghost"' + DO('kbAddRow') + '>'+t('kb.row.add')+'</button>'+
-      '<button class="btn ghost"' + DO('kbAddLay') + '>'+t('kb.lay.add')+'</button>'+
-    '</div>'+
+    kbSysHTML()+
     kbApplyHTML()+
-    '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('kbReset') + '>'+
-      '<span class="sl bad">'+t('kb.reset')+'</span></button>'+
     '</div></div>';
+}
+/* The faces of THIS keyboard, and the way to add one. A layer is a face --
+   ABC and あいう -- so it reads as a row of faces with a `+` on the end,
+   which is what the row of keyboards above it already does. It was a button
+   at the foot of the screen saying "Add a layer", a sentence away from the
+   thing it added to. 「行を出す層を足すも使いづらすぎる」
+
+   One face means no row: there is nothing to switch between, and a segmented
+   control of one is a label. */
+function kbLaysHTML(){
+  var b=kbBoard(), n=b.lay.length;
+  return '<div class="segs kbsegs">'+
+    (n>1? b.lay.map(function(x, i){
+      return '<button class="seg'+(i===Math.min(kbLay, n-1)? ' on':'')+'"' +
+        DO('kbGoLay', [i]) + '>'+esc(kbLayName(i))+'</button>';
+    }).join('') : '')+
+    '<button class="seg add"' + DO('kbAddLay') + ' aria-label="'+esc(t('kb.lay.add'))+'">'+
+      ICON_ADD+'</button>'+
+    '</div>';
 }
 /* The five, offered as SHAPES. 「説明ちっくすぎて嫌だ。かっこよさも何もない」
 
@@ -651,7 +717,7 @@ function kbMiniHTML(lay){
    that is APPLIED wears the mark, not the one you are looking at -- they are
    different questions and this row is where somebody finds that out. */
 function kbBarHTML(){
-  var bs=kbBoards(), at=kbClamp(KB.at, bs.length), now=kbClamp(kbShow, bs.length);
+  var bs=kbBoards(), at=kbApplied(bs.length), now=kbClamp(kbShow, bs.length);
   return '<div class="kbbar">'+
     bs.map(function(x, i){
       return '<button class="kbtab'+(i===now? ' on':'')+'"' + DO('kbGoBoard', [i]) + '>'+
@@ -661,22 +727,20 @@ function kbBarHTML(){
       ? '<button class="kbtab add"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
         ICON_ADD+'</button>'
       : '')+
+    '<button class="kbtab more"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
+      ICON_DOTS+'</button>'+
     '</div>';
 }
 /* Apply, and it is the only control on this screen that changes what somebody
    types with. On the one already applied it says so instead, because a button
    that does nothing is worse than a line that explains. */
 function kbApplyHTML(){
-  var bs=kbBoards(), at=kbClamp(KB.at, bs.length), now=kbClamp(kbShow, bs.length);
+  var bs=kbBoards(), at=kbApplied(bs.length), now=kbClamp(kbShow, bs.length);
   return '<div class="kbapply">'+
     (now===at
       ? '<div class="note">'+esc(t('kb.on.now'))+'</div>'
       : '<button class="btn" style="width:100%"' + DO('kbApply', [now]) + '>'+
         esc(t('kb.apply'))+'</button>')+
-    (bs.length>1
-      ? '<button class="set" style="margin-top:10px;border-bottom:none"' +
-        DO('kbDrop', [now]) + '><span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
-      : '')+
     '</div>';
 }
 /* ---- holding a key and moving it ---------------------------------------
@@ -816,37 +880,59 @@ FORM_OPEN.kbnew=function(){ kbNew(); };
    is the first one. */
 function kbRomOn(){ return SET.kbrom!==false; }
 function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
-function kbSysHTML(){
-  /* Not `.sec` for the heading: that class upper-cases, and an upper-cased
-     iPhone is a word Apple does not spell. The steps are numbered rather than
-     bulleted because they are in an order.
+/* How the keyboard gets onto the phone, behind the `?` in the bar.
+   「ここの説明とボタンも嫌だ」
 
-     The state goes in a box of its own and last, because it is the only line
-     here anybody can act on -- everything above it is instructions and reads
-     as instructions; a person whose keyboard is empty needs to find, at a
-     glance, whether drawing more letters would help. */
-  return '<div class="kbsys">'+
-    '<div class="kbsysh">'+t('kb.sys.h')+'</div>'+
+   All of this was on the chapter itself: a heading, a filled gold button, two
+   grey sentences and a state line, above the keyboard they were about. It is
+   four fifths of the screen and it is read once. Here it is the whole of the
+   sheet, which is what it is -- and the Open Settings button finally sits
+   beside the sentence that says what Settings is for, instead of alone under
+   a heading with nothing to explain it.
+   「設定を開くボタン意味わからんから」
+
+   Not `.sec` for the heading: that class upper-cases, and an upper-cased
+   iPhone is a word Apple does not spell. */
+HELP.kb=function(){
+  return {t:t('kb.sys.h'), h:
+    '<div class="mini">'+t('kb.sys.add')+'</div>'+
+    '<div class="mini">'+t('kb.sys.full')+'</div>'+
     /* A button rather than a path to read off the screen and retype into
        Settings. 「ボタン押したら追加する画面まで進められないの？」 It lands on
        Settings → Lingua, which is where Full Access is -- the switch without
-       which the keyboard cannot read a letter. What is left under it is the
-       one step Apple gives no public door to, and it is one sentence rather
-       than the numbered list of two this used to be. */
-    '<button class="btn" style="width:100%"' + DO('kbSettings') + '>'+
+       which the keyboard cannot read a letter. */
+    '<button class="btn" style="width:100%;margin-top:14px"' + DO('kbSettings') + '>'+
       esc(t('kb.sys.go'))+'</button>'+
-    '<div class="mini">'+t('kb.sys.add')+'</div>'+
-    '<div class="mini">'+t('kb.sys.full')+'</div>'+
-    '<div class="note kbout'+(SHARE.how==='sent'? '':' bad')+'">'+esc(kbOutSay())+'</div>'+
-    '</div>'+
-    /* In the chapter, under the steps, because it is a setting about the
-       keyboard on the phone and this is where the keyboard on the phone is
-       explained. Free has one too, and free is exactly the case it is for:
-       a QWERTY of drawn letters and no way to tell which is which. */
-    '<button class="set" style="margin-top:12px"' + DO('setKbRom') + '>'+
-      '<span class="sl">'+esc(t('kb.rom'))+'</span>'+
-      '<span class="sv">'+esc(t(kbRomOn()? 'set.yes' : 'set.no'))+'</span></button>';
+    '<div class="note kbout'+(SHARE.how==='sent'? '':' bad')+'">'+esc(kbOutSay())+'</div>'};
+};
+/* What is left on the screen: the one line that is a setting rather than an
+   explanation. Free has it too, and free is exactly the case it is for -- a
+   QWERTY of drawn letters and no way to tell which is which. */
+function kbSysHTML(){
+  return '<button class="set" aria-pressed="'+(kbRomOn()? 'true':'false')+'"' +
+    DO('setKbRom') + '>'+
+    '<span class="sl">'+esc(t('kb.rom'))+'</span>'+
+    swtHTML(kbRomOn())+'</button>';
 }
+/* The two that undo things, off the screen and behind the ⋯ at the end of
+   the row of keyboards -- the same place a post keeps its three.
+   「文字だけで縦に4つ並んでるのも嫌」
+
+   A chapter whose foot is four lines of text, two of them red, is a list of
+   words where a keyboard should be. What is left on the screen is the
+   keyboard, one switch and one button; deleting and starting over are things
+   you go looking for. */
+function kbMore(){
+  var bs=kbBoards(), now=kbClamp(kbShow, bs.length);
+  openForm('kbmore', t('kb.more'),
+    (bs.length>1
+      ? '<button class="set"' + DO('kbDrop', [now]) + '>'+
+        '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
+      : '')+
+    '<button class="set" style="border-bottom:none"' + DO('kbReset') + '>'+
+      '<span class="sl bad">'+esc(t('kb.reset'))+'</span></button>');
+}
+FORM_OPEN.kbmore=function(){ kbMore(); };
 /* Whether what this chapter builds ever reached the phone.
    
    sharePush() has recorded the answer since the day it was written and showed

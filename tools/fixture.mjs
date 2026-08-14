@@ -530,9 +530,11 @@ export function halfDone(){
                                          SET.plan = 'free'; return h; }],
     /* A language holding more than one keyboard, which is where the row of
        them, the Apply button and the way to delete one all live. Every one of
-       the five patterns is built here rather than described, so a pattern
-       that cannot be laid out is a red check rather than an empty keyboard on
-       somebody's phone.
+       the five patterns is built across these three faces rather than
+       described, so a pattern that cannot be laid out is a red check rather
+       than an empty keyboard on somebody's phone -- qwerty is the first board
+       and is there whether or not anything was built, then flick, chart, tap
+       and abc. kbAdd() twice is three keyboards now, which is KB_MAX.
 
        The one APPLIED is deliberately not the one shown: that is the whole
        distinction the screen exists to make, and a face where they are the
@@ -540,22 +542,37 @@ export function halfDone(){
        it. */
     ['three keyboards, looking at one that is not applied', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
-        kbAdd('qwerty'); kbAdd('flick'); kbAdd('chart');
+        kbAdd('flick'); kbAdd('chart');
         KB.at = 0; kbShow = 2;
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the keyboard that is already applied', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
-        kbAdd('tap'); kbAdd('abc');
+        kbAdd('tap');
         KB.at = 1; kbShow = 1;
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
-    /* And the five offered again, on the sheet that makes another. The plain
-       walk renders them on the empty screen; this is the other door to the
-       same row. */
+    /* The `?` sheet: how the keyboard gets onto the phone. It is a form and
+       nothing walks to it -- and the button that opens iOS Settings is on it
+       and nowhere else, so without this face that button belongs to no
+       screen. Free reaches the same sheet, so the plan is not touched. */
+    ['how the keyboard gets onto the phone', () => {
+        openHelp('kb'); return FORM.html; }],
+    /* The ⋯ at the end of the row of keyboards: deleting this one, and
+       starting the whole chapter over. Both are off the screen now, and
+       deleting only exists when there is more than one to delete. */
+    ['the two that undo a keyboard', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('tap'); kbShow = 1; kbMore();
+        const h = FORM.html;
+        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+    /* And the five offered, on the sheet that makes another -- which is the
+       only door to them now. The chapter itself no longer has an empty face:
+       the first keyboard is the one already on the phone, so what the screen
+       opens with is a keyboard rather than a chooser for one. */
     ['choosing another keyboard', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
-        kbAdd('tap'); kbNew();
+        kbAdd('abc'); kbNew();
         const h = FORM.html;
         KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
     /* ---- the paid faces of the making side ----------------------------

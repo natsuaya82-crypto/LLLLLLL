@@ -15,6 +15,57 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The keyboard chapter is a keyboard
+
+「このページは最悪です。pcみたいな使い方本当に無理」「ここの説明とボタンも嫌だ」
+「行を出す層を足すも使いづらすぎる」「しかもキーボード保存もないし、保存先から
+選べるとこもないし」「文字だけで縦に4つ並んでるのも嫌」
+
+Six things, and they were one screen.
+
+**The first keyboard is the one you already have.** With nothing built, the
+chapter answered with the five patterns and nothing else — no list, no tick, no
+Apply — so somebody who had just paid was shown a blank chooser for a keyboard
+they had been typing on for a week. It existed the whole time: `kbOf()` has
+answered `kbFixed()` all along. `kbBoards()` now says so, and the screen opens
+with a keyboard rather than a chooser for one.
+「qwertyは無料版で組んだやつが1としてもう保存されてる状況だって」
+
+Not written to storage. The board appears the moment a paid plan opens the
+chapter and is written the first time something is changed — `kbEdit()`, which
+is where owning it begins. A screen that writes on being looked at is a screen
+that changes the language by being visited.
+
+**A second keyboard is a shape, not a filled-in one.** A pattern gave every key
+a letter, in alphabetical order — the app writing the keyboard and leaving
+somebody to correct it, which is most of a keyboard's work done wrong.
+`kbBlank()` empties the letter keys and their flicks; the layer keys, the space
+and the delete keep being themselves. 「それ以外2つ目作るときは形だけ」
+
+**An explanation is a `?`, not a paragraph.** `HELP` in `home.js` is where a
+screen registers what it has to say — `HELP.kb = function(){…}` — and `helpQ()`
+puts the mark in the bar. The keyboard chapter's heading, its two steps, the
+Full Access sentence, the Open Settings button and the handover state all moved
+into that sheet. Nothing was reworded; where it is shown changed.
+「これから説明が必要なときは？マークつけて表示でちゃんと説明させるようにして」
+
+**A switch, not the word ON.** `swtHTML()` — 51×31 with a 27 knob, iOS's own —
+replaces `set.yes`/`set.no` on "A letter on each key". It is the first switch in
+the app; the other settings rows are unchanged.
+「トグルをつけろって言ってんだろオンオフのカタカナやめろよ」
+
+**A row is added where a row goes.** The dashed `+` under the last row adds one;
+the `+` above the keyboard adds a face. The two buttons at the foot of the
+screen are gone.
+
+**Deleting is behind the ⋯.** "Delete this keyboard" and "Start over" were two
+red lines in a stack of four at the foot of the chapter. They are in a sheet off
+the end of the row of keyboards now, the same place a post keeps its three. What
+is left on the screen is the keyboard, one switch and one button.
+
+No data changes. `lingua.<id>.kb` holds exactly what it held, is read exactly as
+it was read, and nothing is written that was not written before.
+
 ### The draft is beside Post, not at the foot of the screen
 
 「だから save a draft を底に置くのやめろって」 It was a row at the bottom of the

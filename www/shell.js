@@ -344,6 +344,20 @@ function tabPaint(){
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';
 }
+/* A switch, where a setting is a yes or a no and nothing else.
+   「トグルをつけろって言ってんだろオンオフのカタカナやめろよ」
+
+   The value used to be the word ON, translated ten ways -- so a row of
+   settings was a column of nouns, and which of them were switches and which
+   opened onto something was a thing you found out by pressing. A switch is
+   the shape of its own answer and reads at a glance in any language.
+
+   `aria-hidden`: the row it sits in is the button, and that button already
+   says both the setting's name and its state. */
+function swtHTML(on){
+  return '<span class="swt'+(on? ' on':'')+'" aria-hidden="true">'+
+    '<span class="swk"></span></span>';
+}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 var tt;
 function toast(m){
