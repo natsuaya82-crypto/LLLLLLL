@@ -192,9 +192,18 @@ function netHandleFree(h, ok, bad){
   netGet('/rest/v1/profile?select=handle&limit=1&handle=eq.'+encodeURIComponent(h),
          function(d){ ok(!(d && d.length)); }, bad);
 }
+/* And the face, which is what a notice draws when there is no post to take
+   one off -- a follow has none at all. It is the same shape a post carries,
+   cut loose from the language so somebody who does not have that language can
+   still see it.
+
+   Written here and not kept in step afterwards: drawing a new letter does not
+   yet update it. That is docs/BACKLOG.md's, not a silent gap -- a notice with
+   no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
   if(!netSignedIn()){ bad(null, 0); return; }
-  netPost('/rest/v1/profile', {id:SESS.uid, handle:h, display:name},
+  netPost('/rest/v1/profile',
+          {id:SESS.uid, handle:h, display:name, av:postAvatar()},
           SESS.at, ok, bad);
 }
 function netIdToken(provider, token, nonce, ok, bad){
@@ -458,22 +467,72 @@ function netUpVoice(uid, pid, post, ok){
       function(path){ ok(path); }, function(){ ok(''); });
   });
 }
+/* `kind` is 'like' or 'boost', `on` is whether it now is. NOT a count: a count
+   is what the server adds up, and two phones sending counts is how a number
+   goes backwards. One row that exists, or one row that does not.
+
+   `id` is this phone's name for the post, so the row it points at has to be
+   looked up -- a post that never went up cannot be liked on a server that has
+   never heard of it, and that is not an error worth showing anybody. */
 function netMark(id, kind, on, ok, bad){
-  /* NET_SEAM — `kind` is 'like' or 'boost', `on` is whether it now is. Not a
-     count: a count is what the server adds up, and two phones sending counts
-     is how a number goes backwards. */
-  ok();
+  var p=postById(id), sid=p && p.sid;
+  if(!netSignedIn() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
+  if(on){
+    netSend('POST', '/rest/v1/react', {post:sid, actor:SESS.uid, kind:kind},
+            SESS.at, function(){ ok(); }, bad);
+    return;
+  }
+  netSend('DELETE', '/rest/v1/react?post=eq.'+encodeURIComponent(sid)+
+          '&actor=eq.'+encodeURIComponent(SESS.uid)+
+          '&kind=eq.'+encodeURIComponent(kind),
+          null, SESS.at, function(){ ok(); }, bad);
 }
+/* The row goes. The phone has already forgotten it, and the voice file with it
+   (docs/CHANGELOG.md § DELETE REVIEW).
+
+   The pictures and the voice in Storage go too, and they go FIRST -- a row
+   deleted before its files leaves files nothing points at, and "which files
+   does nothing point at" is a question with no cheap answer. If the files will
+   not go the row still does: a post somebody asked to be gone must go. */
 function netDrop(id, ok, bad){
-  /* NET_SEAM — the row goes. The phone has already forgotten it, and the
-     voice file with it (docs/CHANGELOG.md § DELETE REVIEW). */
-  ok();
+  var p=postById(id), sid=p && p.sid;
+  if(!netSignedIn() || !sid){ ok(); return; }
+  netDropFiles(p, function(){
+    netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
+            null, SESS.at, function(){ ok(); }, bad);
+  });
 }
-/* FOLLOW_SEAM — one row in `follow`, or one row gone. `on` is whether you
-   follow them now. Not waited on: the button has already changed, the same
-   way a like has. */
+/* Everything of this post's that is in the bucket. Named rather than searched
+   for: the paths are on the post, and asking the bucket what is under a folder
+   is a listing this does not need and a permission it does not have. */
+function netDropFiles(p, done){
+  var paths=[], i;
+  for(i=0;i<((p && p.pu) || []).length;i++) paths.push(p.pu[i]);
+  if(p && p.vu) paths.push(p.vu);
+  if(!paths.length){ done(); return; }
+  netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,
+          function(){ done(); }, function(){ done(); });
+}
+/* One row in `follow`, or one row gone. `on` is whether you follow them now.
+   Not waited on: the button has already changed, the same way a like has.
+
+   A handle and not an id, because a handle is what one person knows another
+   by. The id is looked up here, once, in the one place that has to. */
 function netFollow(handle, on, ok, bad){
-  ok();
+  if(!netSignedIn() || !handle){ ok(); return; }
+  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
+    function(d){
+      var who=(d && d.length)? d[0].id : '';
+      if(!who){ ok(); return; }
+      if(on){
+        netSend('POST', '/rest/v1/follow', {follower:SESS.uid, followed:who},
+                SESS.at, function(){ ok(); }, bad);
+        return;
+      }
+      netSend('DELETE', '/rest/v1/follow?follower=eq.'+encodeURIComponent(SESS.uid)+
+              '&followed=eq.'+encodeURIComponent(who),
+              null, SESS.at, function(){ ok(); }, bad);
+    }, bad);
 }
 /* NOTIF_SEAM — who liked, answered, boosted or followed, newest first, as
    { kind, at, hd, who, av, id }. `kind` is 'like' | 'boost' | 'reply' |
@@ -482,5 +541,18 @@ function netFollow(handle, on, ok, bad){
    never work out on its own. */
 function netNotices(ok, bad){
   if(!netSignedIn()){ ok(null); return; }
-  ok(null);
+  /* One request and not four. A notice list is ONE list in time order, and a
+     phone asking separately about likes, boosts, replies and follows would be
+     sorting a page it does not have all of. supabase/schema.sql's notices()
+     is the four, merged and ordered, and it runs as whoever calls it. */
+  netSend('POST', '/rest/v1/rpc/notices', {lim:NET_PAGE}, SESS.at,
+    function(d){
+      var out=[], i, r;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i];
+        out.push({kind:r.kind, at:Date.parse(r.at)||0, hd:r.hd||'',
+                  who:r.who||r.hd||'', av:r.av||null, id:r.post||''});
+      }
+      ok(out);
+    }, bad);
 }

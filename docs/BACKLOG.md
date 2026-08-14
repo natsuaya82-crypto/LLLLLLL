@@ -7,6 +7,24 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## The face on `profile` does not follow the face on the phone
+
+`netMakeProfile()` writes `profile.av` once, when the account is made. Drawing
+a new letter, or setting a photograph, changes what `postAvatar()` answers and
+does not change the row — so a notice can draw a face somebody has not worn for
+a month.
+
+Not a silent gap: a notice with no face draws no face and nothing throws, and a
+post's own face is frozen onto the post anyway (rule 8), so nothing about the
+timeline is wrong. What is wrong is only the little face beside "somebody liked
+this".
+
+The fix is one call in the place ME is saved, and the reason it is not here is
+that it is a second write on a path that has none — every letter drawn would
+otherwise be a request. It wants a "changed since last time" test, which is a
+decision about how often, which is not this task's.
+
+
 ## Not now, because wordsheet.js has just moved
 
 The new-word sheet and the word editor became one screen, and a word gained a

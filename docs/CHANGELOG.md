@@ -15,6 +15,43 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The last four: liking, deleting, following, and what happened to you
+
+`www/net.js` has no empty seam left.
+
+**`netMark`** writes one row in `react` or takes it away. Not a count — a count
+is what the server adds up, and two phones sending counts is how a number goes
+backwards. A post that never went up cannot be liked on a server that has never
+heard of it, and that is not an error worth showing anybody.
+
+**`netDrop`** deletes the pictures and the voice **first**, then the row. A row
+deleted before its files leaves files nothing points at, and "which files does
+nothing point at" is a question with no cheap answer. If the files will not go
+the row still does: a post somebody asked to be gone must go. The paths are
+named off the post rather than searched for.
+
+**`netFollow`** takes a handle, because a handle is what one person knows
+another by, and looks the id up in the one place that has to.
+
+**`netNotices`** is one request and not four. A notice list is one list in time
+order, and a phone asking separately about likes, boosts, replies and follows
+would be sorting a page it does not have all of.
+
+**Newly on the server: `profile.av`, and a `notices()` function.** The face is
+what a notice draws when there is no post to take one off — a follow has none
+at all. It is not what a post wears: a post's face is frozen onto it when it is
+written and does not change when this does.
+
+`notices()` merges the four in time order and **runs as whoever calls it** — no
+`security definer`, so every row it can see is one the policies already allow.
+Your own doing is not news: `actor <> auth.uid()` on each of the four.
+`npm run rls` holds that it is not `security definer`; that is the ninth shape
+check.
+
+Written down and not done: `profile.av` is set when the account is made and
+does not follow the face afterwards. `docs/BACKLOG.md` says why.
+
+
 ### The photographs and the voice go to Storage
 
 A picture is not a field of a post. Half a megabyte each, and a timeline of

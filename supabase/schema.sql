@@ -52,6 +52,18 @@ create table if not exists profile (
   created_at  timestamptz not null default now()
 );
 
+-- The face somebody wears where there is no post to take one off. A notice
+-- says "this person liked it" and has to draw them; a follow has no post at
+-- all. It is the same shape a post carries (postAvatar() in www/post.js): a
+-- drawn letter, a borrowed character, or a photograph, cut loose from the
+-- language so it survives being read by somebody who does not have it.
+--
+-- It is NOT what a post wears. A post's face is frozen onto the post when it
+-- is written (rule 8) and does not change when this does. This is what the
+-- person looks like NOW, which is the right answer for a notice and the wrong
+-- one for a post.
+alter table profile add column if not exists av jsonb;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
@@ -387,6 +399,54 @@ create policy media_drop on storage.objects for delete using (
 -- No update policy. A picture is not edited; a different picture is a
 -- different path, and an overwrite is how somebody else's post quietly
 -- changes under them.
+
+-- ---------------------------------------------------------------------------
+-- What happened to you
+--
+-- Four questions with one answer, and it is a function rather than four
+-- requests because a notice list is ONE list in time order -- a phone asking
+-- four times and merging them would be sorting a page it does not have all of.
+--
+-- It runs as whoever calls it (no `security definer`), so every row it can see
+-- is a row the policies above already let them see: react, post, profile and
+-- follow are all world-readable. Nothing here opens a door; it walks through
+-- the ones that are open and puts the results in order.
+--
+-- Your own doing is not news. `actor <> auth.uid()` on each of the four, so
+-- liking your own post, or answering yourself, does not arrive as a notice.
+--
+-- 'pick' is in www/net.js's list and not here: a post worth reading is not
+-- somebody doing something to you, and it is the one of the five this phone
+-- could never work out on its own. It comes from us, later, or not at all.
+create or replace function notices(lim int default 50)
+returns table (kind text, at timestamptz, hd text, who text, av jsonb, post uuid)
+language sql stable as $$
+  select 'like', r.created_at, p.handle, p.display, p.av, r.post
+    from react r
+    join post ps on ps.id = r.post
+    join profile p on p.id = r.actor
+   where ps.author = auth.uid() and r.actor <> auth.uid() and r.kind = 'like'
+  union all
+  select 'boost', r.created_at, p.handle, p.display, p.av, r.post
+    from react r
+    join post ps on ps.id = r.post
+    join profile p on p.id = r.actor
+   where ps.author = auth.uid() and r.actor <> auth.uid() and r.kind = 'boost'
+  union all
+  select 'reply', q.created_at, p.handle, p.display, p.av, q.id
+    from post q
+    join post ps on ps.id = q.reply_to
+    join profile p on p.id = q.author
+   where ps.author = auth.uid() and q.author <> auth.uid()
+  union all
+  select 'follow', f.created_at, p.handle, p.display, p.av, null::uuid
+    from follow f
+    join profile p on p.id = f.follower
+   where f.followed = auth.uid()
+  order by 2 desc
+  limit lim
+$$;
+grant execute on function notices(int) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Leaving

@@ -242,6 +242,11 @@ const SHAPE = [
      select count(*) from pg_policies where tablename='objects' and cmd='UPDATE'`, '0'],
   /* Every one of these is a count that must come back zero, so "the bucket is
      there" has to be asked as "there is no world in which it is missing". */
+  /* notices() runs as whoever calls it. `security definer` would make it run
+     as its owner, which is past every policy above -- and the one thing it
+     does is read four tables about one person. */
+  ['what happened to you is read as you', `
+     select count(*) from pg_proc where proname='notices' and prosecdef`, '0'],
   ['the media bucket is there and is public', `
      select count(*) from (select 1) x
       where not exists (select 1 from storage.buckets
