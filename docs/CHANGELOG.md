@@ -15,6 +15,29 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The draft is beside Post, not at the foot of the screen
+
+「だから save a draft を底に置くのやめろって」 It was a row at the bottom of the
+composer — two outlined buttons across the width, under a screen that is mostly
+empty, so the thing you press after writing was the furthest thing from where
+you were writing.
+
+It is in the top bar now, next to Post.
+
+**One control, never two.** The bar is 390 points wide and already carries a
+back arrow, the screen's name and a filled button, so there is no room for both
+"Save a draft" and "3 drafts" — and there is no need: with something typed there
+is a draft to save, and with nothing typed there is no draft to save and the
+only thing worth offering is the ones already there. Which of the two it is
+follows `pwHas()`, the same question Post asks, and is repainted as you type.
+Editing a post that already exists offers neither: an edit is not a draft.
+
+`buttons pressed` falls 6288 → 6257. Two buttons became one, on every face of
+the composer the walk renders.
+
+No data changes. Nothing about what a draft holds, or when one is written,
+has moved.
+
 ### A letter on the candidate bar stands where the font would stand it
 
 「キーボード内のプレビューのアルファベットいちいち全角のスペース開くのうざい」

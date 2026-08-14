@@ -1342,8 +1342,17 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .navdo.pv{display:inline-flex;align-items:center;gap:6px;
           background:var(--sf);color:var(--tx)}
 /* Saving a draft, and the ones already saved, at the foot of the composer. */
-.dfbar{display:flex;gap:10px;margin-top:16px}
-.dfbar .btn{flex:1 1 0;min-width:0}
+/* Beside the filled button, not under the screen. It takes the auto margin so
+   the pair sits at the end of the bar together; .navdo keeps its own, which
+   does nothing once something before it has already pushed. */
+.navside-w{margin-left:auto;flex:0 0 auto;align-self:center;display:flex}
+/* Two auto margins would split the free space between them and stand the
+   pair in the middle of the bar. The one in front does the pushing. */
+.navside-w + .navdo{margin-left:0}
+.navside{min-height:44px;padding:0 10px;border:0;background:none;
+         color:var(--gold);font-family:inherit;font-size:.86rem;font-weight:600;
+         white-space:nowrap}
+.navside:active{opacity:.6}
 .dfrow{display:flex;align-items:center;gap:6px;
        border-bottom:1px solid var(--line)}
 .dfb{flex:1 1 auto;min-width:0;min-height:48px;display:flex;align-items:center;gap:10px;

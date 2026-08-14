@@ -116,10 +116,36 @@ function pwSetPriv(v){
   openPost();
   toast(t(PW.pv? 'post.pv.on' : 'post.pv.off'));
 }
+/* The draft, beside the thing that finishes it.
+   「だから save a draft を底に置くのやめろって」
+
+   One control, never two, because the bar is 390 points wide and already
+   holds a back arrow, the screen's name and a filled button. Which one it is
+   is not a choice: with something typed there is a draft to save, and with
+   nothing typed there is no draft to save and the only thing worth offering
+   is the ones already saved. Editing a post that exists offers neither -- an
+   edit is not a draft. */
+function pwSideHTML(){
+  if(PW.ed) return '';
+  if(pwHas(String(PW.ln||'').trim()))
+    return '<button class="navside"' + DO('draftKeep') + '>'+
+      esc(t('post.draft.save'))+'</button>';
+  if(!DRAFTS.length) return '';
+  return '<button class="navside"' + DO('go', ["drafts"]) + '>'+
+    esc(tn('post.drafts', DRAFTS.length))+'</button>';
+}
+/* The bar is FORM.right and openPost() is the only thing that builds it, so
+   typing would not change it -- and what it says depends on whether anything
+   has been typed. Patched by id, the way the counter beside the field is. */
+function pwSidePaint(){
+  var e=document.getElementById('pw-side');
+  if(e) e.innerHTML=pwSideHTML();
+}
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
+    '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
        thing one button can be, and the delegated listener only knows about
@@ -534,19 +560,7 @@ function pwHTML(){
          so the row that adds them is not there rather than there and
          refusing. */
       (PW.ed? '' : pwPicHTML())+
-      '</div></div>'+
-      /* Saving, and what has been saved, at the foot of the screen a post is
-         written on -- which is where you were when you saved one.
-         「postの横に保存で下書き」 */
-      (PW.ed? '' :
-        '<div class="dfbar">'+
-          '<button class="btn ghost"' + DO('draftKeep') + '>'+
-            esc(t('post.draft.save'))+'</button>'+
-          (DRAFTS.length
-            ? '<button class="btn ghost"' + DO('go', ["drafts"]) + '>'+
-                esc(tn('post.drafts', DRAFTS.length))+'</button>'
-            : '')+
-        '</div>')+'';
+      '</div></div>';
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
    body would put the caret back at the end of the field on every letter.
@@ -564,6 +578,7 @@ function pwSetLn(v){
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');
   pwLeftPaint();
+  pwSidePaint();
   pwFresh();
 }
 /* How long a post may be. There was no answer at all: the field was one row
