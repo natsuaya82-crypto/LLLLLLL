@@ -31,6 +31,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -346,6 +347,31 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   // a bridge that is a string.
 
   private var picking: PhotoPicker?
+
+  /// Settings, opened at this app's own page.
+  ///
+  /// 「そのiPhoneに入れられますって設定じゃ無くてボタン押したら追加する画面まで
+  /// 進められないの？」 Half of it, and the half that is possible is the half
+  /// that matters. `openSettingsURLString` is Apple's one public door and it
+  /// lands on Settings → Lingua, which is where **Full Access** is granted —
+  /// the switch without which the keyboard cannot read a single letter
+  /// somebody drew.
+  ///
+  /// What it cannot do is ADD the keyboard. Settings → General → Keyboard →
+  /// Keyboards → Add New Keyboard has no public URL; the `App-prefs:` scheme
+  /// that reaches it is private API and an app that ships it is rejected. So
+  /// that one step stays a sentence on the screen, and it is one sentence
+  /// rather than the two-step list it used to be.
+  @objc func settings(_ call: CAPPluginCall) {
+    guard let url = URL(string: UIApplication.openSettingsURLString) else {
+      call.reject("no settings url"); return
+    }
+    DispatchQueue.main.async {
+      UIApplication.shared.open(url, options: [:]) { ok in
+        if ok { call.resolve() } else { call.reject("settings would not open") }
+      }
+    }
+  }
 
   /// What this app's audio IS, said again around a recording.
   ///

@@ -15,6 +15,28 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A button opens Settings, instead of a path to retype
+
+「そのiPhoneに入れられますって設定じゃ無くてボタン押したら追加する画面まで進め
+られないの？」 Half of it, and the half that is possible is the half that
+matters.
+
+The chapter opened with two numbered lines of `Settings → General → Keyboard →
+…` to read off the screen and retype. One of them is now a button.
+`LinguaShare.settings()` opens `UIApplication.openSettingsURLString`, which is
+Apple's one public door and lands on **Settings → Lingua** — the page with
+Full Access on it, the switch without which the keyboard cannot read a single
+letter somebody drew.
+
+**Adding the keyboard cannot be linked to.** Settings → General → Keyboard →
+Keyboards → Add New Keyboard has no public URL; the `App-prefs:` scheme that
+reaches it is private API and an app that ships it is rejected. So that one
+step stays a sentence — one, under the button, marked as the first time only.
+
+No data changes. Swift, so nothing in `npm test` can press it; what the checks
+hold is that the button resolves and that a browser, which has no bridge, says
+nothing rather than throwing. **Device confirmation required.**
+
 ### A language holds three keyboards, and one of them is the one on the phone
 
 「まずはqwartyかフリックかタップとかキーボードのパターンを選べて」

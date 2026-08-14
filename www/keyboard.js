@@ -806,7 +806,15 @@ function kbSysHTML(){
      glance, whether drawing more letters would help. */
   return '<div class="kbsys">'+
     '<div class="kbsysh">'+t('kb.sys.h')+'</div>'+
-    '<ol class="kbsteps"><li>'+t('kb.sys.1')+'</li><li>'+t('kb.sys.2')+'</li></ol>'+
+    /* A button rather than a path to read off the screen and retype into
+       Settings. 「ボタン押したら追加する画面まで進められないの？」 It lands on
+       Settings → Lingua, which is where Full Access is -- the switch without
+       which the keyboard cannot read a letter. What is left under it is the
+       one step Apple gives no public door to, and it is one sentence rather
+       than the numbered list of two this used to be. */
+    '<button class="btn" style="width:100%"' + DO('kbSettings') + '>'+
+      esc(t('kb.sys.go'))+'</button>'+
+    '<div class="mini">'+t('kb.sys.add')+'</div>'+
     '<div class="mini">'+t('kb.sys.full')+'</div>'+
     '<div class="note kbout'+(SHARE.how==='sent'? '':' bad')+'">'+esc(kbOutSay())+'</div>'+
     '</div>'+
@@ -828,6 +836,13 @@ function kbSysHTML(){
    
    This is not a debug line. It is the one question a person can act on: if
    nothing was ever handed over, drawing more letters will not help. */
+/* No bridge means a browser, which is every check and no phone: there is no
+   Settings to open and nothing to say about it. */
+function kbSettings(){
+  var p=sharePlug();
+  if(!p) return;
+  p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
+}
 function kbOutSay(){
   if(SHARE.how==='sent') return t('kb.out.ok');
   if(SHARE.how==='no bridge') return t('kb.out.no');
