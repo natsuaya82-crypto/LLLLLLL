@@ -1005,6 +1005,10 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .pfst b{color:var(--tx);font-weight:700;font-size:.92rem}
 .pfst:active{color:var(--gold)}
 .pftabs{display:flex;border-bottom:1px solid var(--line)}
+/* The timeline's two are the same strip, out to both edges of the screen
+   the way the rows under them go. Inside the body's padding the rule
+   under them stopped 24px short at each end and read as a box. */
+.snstabs{margin:0 -24px}
 .pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
        font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
 .pftab.on{color:var(--tx);border-bottom-color:var(--gold)}

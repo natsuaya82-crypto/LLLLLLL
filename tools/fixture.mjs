@@ -407,6 +407,18 @@ export function halfDone(){
     ['a thread that is gone', () => {
         window.route='thread'; NAV=[{r:'feed'},{r:'thread', a:'no-such-post'}];
         return vThread(); }],
+    /* The other timeline. The fixture follows @iri and @veth, so the plain
+       walk sees a Following tab with posts in it; the tab is only interesting
+       twice, and the second time is when it is EMPTY -- somebody who has not
+       followed anybody yet, which is everybody on their first day and is a
+       different sentence from "nothing has been written". */
+    ['the timeline, following', () => { snsTab = 'fo';
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); snsTab = 'rec'; return h; }],
+    ['the timeline, following nobody', () => { snsTab = 'fo';
+        const keep = ME.fo; ME.fo = [];
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); ME.fo = keep; snsTab = 'rec'; return h; }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;

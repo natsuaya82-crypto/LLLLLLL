@@ -15,6 +15,7 @@ import Capacitor
 import CoreText
 import UIKit
 import PhotosUI
+import AVFoundation
 
 @objc(LinguaSharePlugin)
 public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
@@ -29,6 +30,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -344,6 +346,36 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   // a bridge that is a string.
 
   private var picking: PhotoPicker?
+
+  /// What this app's audio IS, said again around a recording.
+  ///
+  /// 「音楽はいつのタイミングでもとめないでほしい」 The session is `.playback`
+  /// with `.mixWithOthers` from launch and never activated by hand, so nothing
+  /// this app plays takes anybody's music away. A microphone is the one thing
+  /// that needs a different category — `.playAndRecord` — and switching to it
+  /// is exactly where the music would go, so the mixing option is carried
+  /// across rather than dropped, and `.defaultToSpeaker` is there because
+  /// `.playAndRecord` otherwise sends everything to the earpiece.
+  ///
+  /// www/rec.js says `record` before it opens the microphone and `play` when
+  /// the recorder stops. Nothing is ever made active here: iOS does that on
+  /// its own the moment something plays, and doing it by hand is what stopped
+  /// somebody's music by opening the app.
+  @objc func audio(_ call: CAPPluginCall) {
+    let mode = call.getString("mode") ?? "play"
+    let session = AVAudioSession.sharedInstance()
+    do {
+      if mode == "record" {
+        try session.setCategory(.playAndRecord, mode: .default,
+                                options: [.mixWithOthers, .defaultToSpeaker, .allowBluetooth])
+      } else {
+        try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+      }
+      call.resolve()
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
 
   @objc func pickPhoto(_ call: CAPPluginCall) {
     let edge = CGFloat(call.getInt("max") ?? 1200)

@@ -40,6 +40,7 @@ function viewReset(){
   PW=pwBlank();                        /* a post being written */
   pwPicAt=-1; pwMarkAt=-1; pwTool='mark';  /* and which picture, letter and tool */
   pfTab='posts';                       /* which list the profile shows */
+  snsTab='rec';                        /* and which timeline the feed shows */
   PMENU='';                            /* the ... open beside a post */
   snsQ=''; snsHits=null;               /* the search, and what came back */
   NOTES_HAVE=null;                     /* the notices, asked again */

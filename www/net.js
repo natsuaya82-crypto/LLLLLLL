@@ -217,7 +217,7 @@ function netIdToken(provider, token, nonce, ok, bad){
 
    The shape, and it is the same as everything else in this file:
 
-     netFeed(ok, bad)              ok(posts | null)  what has arrived
+     netFeed(which, ok, bad)       ok(posts | null)  'rec' or 'fo'
      netPush(post, ok, bad)        ok()              this post is now public
      netMark(id, kind, on, ok, bad) ok()             liked / boosted, or not
      netDrop(id, ok, bad)          ok()              gone from the server too
@@ -227,11 +227,17 @@ function netIdToken(provider, token, nonce, ok, bad){
    and a post is deleted the moment somebody says so. The server is told
    afterwards. Nothing a person does waits for a network, because a person
    holding a phone in a tunnel is still using this app. */
-function netFeed(ok, bad){
+function netFeed(which, ok, bad){
   /* NET_SEAM — ask for what has arrived and call ok() with an array of posts
      in the shape docs/DATA_MODEL.md § a post describes, each already carrying
      its ink. A post from elsewhere with no ink cannot be drawn, and inventing
-     one out of this dictionary is the bug the two sides exist to stop. */
+     one out of this dictionary is the bug the two sides exist to stop.
+
+     `which` is 'rec' or 'fo' — everything, or the people this account follows.
+     Two questions and not one list filtered twice: a phone that asked for
+     everything and then hid most of it would be downloading a timeline in
+     order to throw it away, and the follow list is the server's to join on
+     anyway. 「ツイートはフォロー中とおススメみたいに分けたいよね」 */
   if(!netSignedIn()){ ok(null); return; }
   ok(null);
 }

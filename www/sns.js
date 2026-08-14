@@ -21,6 +21,40 @@
 function snsNone(){
   return '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>';
 }
+function snsNoneFo(){
+  return '<div class="empty"><div class="eb">'+esc(t('sns.none.fo'))+'</div></div>';
+}
+/* ---- the two timelines -------------------------------------------------
+   「ツイートはフォロー中とおススメみたいに分けたいよね」 One timeline is
+   everything there is, which is the right screen for arriving and the wrong
+   one for keeping up with the four people you actually read.
+
+   They are two different QUESTIONS, not one list filtered twice, and that is
+   why `netFeed` takes which one it is being asked for: on a server "everything"
+   and "the people I follow" are two queries with two answers, and a phone that
+   asked for everything and then threw most of it away would be downloading a
+   timeline to hide it. Until there is a server the answer to both is what is
+   already here, and `snsMine()` is the sieve — which is the seam being filled
+   in, not the design.
+
+   Following is by HANDLE, off the post, the way everything on the reading side
+   is: `p.hd` is who wrote it, frozen when it was written. Your own are in it,
+   because a timeline of people you follow that leaves you out is a timeline
+   you cannot see yourself having spoken in. */
+var snsTab='rec';
+function snsSetTab(k){ snsTab=(k==='fo')? 'fo' : 'rec'; render(); }
+function snsMine(p){ return !!p.mine || meFollows(p.hd); }
+function snsList(){
+  var all=postAll();
+  return (snsTab==='fo')? all.filter(snsMine) : all;
+}
+function snsTabs(){
+  var tabs=[['rec','feed.rec'], ['fo','feed.fo']];
+  return '<div class="pftabs snstabs">'+tabs.map(function(x){
+    return '<button class="pftab'+(snsTab===x[0]?' on':'')+'"' + DO('snsSetTab', [x[0]]) + '>'+
+      esc(t(x[1]))+'</button>';
+  }).join('')+'</div>';
+}
 /* Everybody's languages, as they are written -- which for the moment is
    yours, because there is no server yet and a post has nowhere else to go.
    It is not a placeholder: a post written here is a real post, kept, and it
@@ -36,7 +70,7 @@ var snsPulling=false;
 function snsPull(){
   if(snsPulling) return;
   snsPulling=true;
-  netFeed(function(ps){
+  netFeed(snsTab, function(ps){
     snsPulling=false;
     if(!ps || !ps.length) return;
     postTake(ps);
@@ -45,7 +79,7 @@ function snsPull(){
 }
 function vFeed(){
   snsPull();
-  var list=postAll();
+  var list=snsList();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
      as that argument, so post 0 was right and every post after it wore my
@@ -64,9 +98,16 @@ function vFeed(){
         postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
       '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
     '</button>'+
+    /* Under the row you write in and directly on top of the list they choose
+       between, because that is what they are about. */
+    snsTabs()+
     (list.length
       ? list.map(postRow).join('')
-      : snsNone())+
+      /* Two different emptinesses. Nothing at all is a timeline that has not
+         started; nothing HERE, with posts on the other tab, is a person who
+         has not followed anybody yet, and telling them "nothing has been
+         written" would be the app being wrong about its own contents. */
+      : (snsTab==='fo'? snsNoneFo() : snsNone()))+
     '</div>'+
     /* Where every timeline puts it: over the feed, above the bar, under the
        thumb of the hand already holding the phone. */

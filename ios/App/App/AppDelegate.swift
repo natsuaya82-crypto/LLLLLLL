@@ -37,9 +37,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // podcast away for it and not giving it back is not what pressing a
         // letter asks for. It plays OVER what is already playing.
         //
-        // Recording is the one thing that still interrupts, and there is no
-        // way around it: a microphone needs the session to itself, and iOS
-        // gives it back when the recording stops.
+        // A microphone needs a different category, and switching categories is
+        // the other place the music would go. LinguaShare.audio(mode) is where
+        // that is said, and it carries the mixing option across; this is the
+        // standing state it goes back to.
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default,
                                                             options: [.mixWithOthers])

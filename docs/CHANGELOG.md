@@ -15,6 +15,55 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The timeline is two: For you, and Following
+
+「ツイートはフォロー中とおススメみたいに分けたいよね」 One timeline was
+everything there is, which is the right screen for arriving and the wrong one
+for keeping up with the four people you actually read.
+
+Two tabs at the top of the feed, the same strip the profile already uses. **For
+you** is everything; **Following** is the people this account follows, and your
+own posts are in it — a timeline of people you follow that leaves you out is one
+you cannot see yourself having spoken in. Following is matched on `p.hd`, the
+handle frozen on the post when it was written, not on anything read back out of
+the present.
+
+They are two **questions**, not one list filtered twice, so `netFeed` takes
+which one it is being asked for: `netFeed(which, ok, bad)`. On a server these
+are two queries with two answers, and a phone that asked for everything and
+then hid most of it would be downloading a timeline in order to throw it away.
+Until there is a server the answer to both is what is already here.
+
+No data changes. Which tab you are on is where you are standing, so it is in
+`viewReset()` with the profile's.
+
+### Nothing stops the music, including a recording
+
+「音楽はいつのタイミングでもとめないでほしい」「これだけでストレス」 The launch
+fix below left one interruption standing, and it was not called out clearly
+enough: a microphone needs a different audio category from a speaker, and
+switching categories is exactly where somebody's music goes if the mixing
+option is not carried across.
+
+`LinguaShare.audio(mode)` is new and is the only place either category is
+written down. `www/rec.js` says `record` before it opens the microphone and
+`play` from `voStreamOff()` — which is every path out of a recording: the
+recorder stopping, a recorder that would not start, one that could not be
+built, and the microphone being refused. The record category carries
+`.mixWithOthers` across, with `.defaultToSpeaker` because `.playAndRecord`
+otherwise sends everything to the earpiece.
+
+**What is not promised.** The recording itself is `MediaRecorder` in the web
+layer, so WKWebView configures the session for capture as well, and it may
+overrule what is set here. If music still cuts while recording on the device,
+the fix is to record natively — `AVAudioRecorder` in `LinguaShare`, writing
+straight into `Documents/Voices/` where the file ends up anyway, which would
+also drop a 240 KB base64 trip across the bridge. That is a rewrite of chapter
+25 and is not being done unasked.
+
+No data changes. Swift, so nothing in `npm test` can see it. **Device
+confirmation required.**
+
 ### Opening Lingua no longer stops what you were listening to
 
 「アプリ開くと音楽止まるのはなぜ？」 Because `AppDelegate.swift` activated the

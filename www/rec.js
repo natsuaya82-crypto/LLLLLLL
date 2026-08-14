@@ -82,10 +82,26 @@ function voCan(){
    only asks if ios/App/App/Info.plist says why -- NSMicrophoneUsageDescription.
    Without that line the app is killed rather than refused, which is a crash
    with no message and nothing in it about a microphone. */
+/* What the phone's audio is while this is going on.
+   「音楽はいつのタイミングでもとめないでほしい」 A microphone needs a different
+   category from a speaker, and switching categories is where somebody's music
+   goes if the mixing option is not carried across. It is said before the
+   microphone is opened and said back the moment the recorder stops -- not when
+   the post is sent, because the recorder stopping is when the microphone is
+   let go. LinguaShare.swift is the one place either category is written down.
+
+   No bridge -- a browser, which is every check -- and there is nothing to say
+   and nothing to fail. */
+function voSession(mode){
+  var p=sharePlug();
+  if(!p) return;
+  p('LinguaShare', 'audio', {mode:String(mode)})['catch'](function(){});
+}
 function voStart(){
   if(REC) return;
   if(!voCan()){ toast(t('post.vo.no')); return; }
   var mime=voMime();
+  voSession('record');
   navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
     var r;
     try{ r=mime? new MediaRecorder(stream, {mimeType:mime}) : new MediaRecorder(stream); }
@@ -100,11 +116,18 @@ function voStart(){
     catch(e){ REC=null; voStreamOff(stream); toast(t('post.vo.no')); return; }
     RECTIC=setInterval(voTick, 200);
     voPaint();
-  })['catch'](function(){ toast(t('post.vo.deny')); });
+  /* Refused, so there is no stream and voStreamOff() will never run. The
+     category was changed before the asking and has to go back anyway. */
+  })['catch'](function(){ voSession('play'); toast(t('post.vo.deny')); });
 }
+/* Letting the microphone go, which every path out of a recording goes
+   through -- the recorder stopping, a recorder that would not start, one
+   that would not be built. The category goes back here for that reason:
+   it is the one place the microphone stops being needed. */
 function voStreamOff(stream){
   var ts=(stream && stream.getTracks)? stream.getTracks() : [], i;
   for(i=0;i<ts.length;i++){ try{ ts[i].stop(); }catch(e){} }
+  voSession('play');
 }
 function voStop(){
   if(RECTIC){ clearInterval(RECTIC); RECTIC=null; }
