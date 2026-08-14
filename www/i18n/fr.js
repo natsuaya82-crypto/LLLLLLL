@@ -961,6 +961,8 @@ defLang('fr', (function(){
       'post.draft.del'        : "Supprimer le brouillon",
       'post.draft.del.q'      : "Supprimer ce brouillon ?",
       'post.gone'             : "Ce post n’existe plus",
+      'post.thread'           : "Fil",
+      'post.re.to'            : "En réponse à {0}",
       "tr.go"        : "Le lire dans ma langue",
       "tr.left"        : "{0} restantes aujourd’hui",
       "tr.out"        : "Les trois du jour sont faites. Plus les lit toutes.",

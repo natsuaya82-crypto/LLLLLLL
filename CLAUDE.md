@@ -236,7 +236,7 @@ of them.
 under. `www/route-map.js` says what it *shows* — `page('build', vBuild)`, the
 function itself, never its name, exactly as `act-map.js` does. `render()` looks
 it up; it used to be a chain of conditions, a second copy of `PAGES` that
-nothing could check against the first. There are 26 routes.
+nothing could check against the first. There are 29 routes.
 
 Adding a screen means a `PAGES` entry and a `page(...)` line. `act-check`
 proves both directions: a route with no view silently became the home screen
@@ -792,19 +792,23 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 224`, `screens the mirror
-rendered: 324`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 3636` for the same reason — and it is what a
+Both checks print their coverage (`screens walked: 285`, `screens the mirror
+rendered: 344`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 5718` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
-moved twice, and each move is a change somebody made on purpose: it jumped
-from 2952 to 5172 the day the free plan got its twenty-eight letters, because
-every screen holding a keyboard went from a handful of keys to a QWERTY; it
-fell to 3636 the day the in-app keyboard left for the system extension —
-`kbField`, `kbTap`, `kbFlick` and the rest of what let a screen be typed on
-inside Lingua are gone, and every screen that used to carry a QWERTY for
-typing now carries only what `keyboard.js`'s editor needs. A number moving is
-only ever a question — what changed — and the answer has to be a change
-somebody made on purpose.
+moved three times, and each move is a change somebody made on purpose: it
+jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
+because every screen holding a keyboard went from a handful of keys to a
+QWERTY; it fell to 3636 the day the in-app keyboard left for the system
+extension — `kbField`, `kbTap`, `kbFlick` and the rest of what let a screen be
+typed on inside Lingua are gone, and every screen that used to carry a QWERTY
+for typing now carries only what `keyboard.js`'s editor needs. It rose to 5718
+the day a post opened onto its thread, and that one is two changes at once: the
+row itself became a thing you press, so every post on every screen is a press
+where it used to be scenery, and the fixture's timeline went from two posts to
+four, because a timeline with no reply in it cannot draw a reply. A number
+moving is only ever a question — what changed — and the answer has to be a
+change somebody made on purpose.
 
 ## Working on this repo
 

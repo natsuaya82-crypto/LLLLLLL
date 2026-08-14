@@ -918,6 +918,8 @@ defLang('zh', (function(){
       'post.draft.del'        : "删除草稿",
       'post.draft.del.q'      : "要删除这份草稿吗？",
       'post.gone'             : "这条动态已经没有了",
+      'post.thread'           : "对话",
+      'post.re.to'            : "回复 {0}",
       "tr.go"        : "用我的语言读",
       "tr.left"        : "今天还剩 {0} 次",
       "tr.out"        : "今天的三次用完了。Plus 可以全部阅读。",

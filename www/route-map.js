@@ -66,6 +66,7 @@ page('settings', vSettings);
 page('set',      vSet);
 page('world',    vWorld);
 page('about',    vAbout);
+page('thread',   vThread);
 page('drafts',   vDrafts);
 page('langs',    vLangs);
 page('plans',    vPlans);

@@ -226,6 +226,10 @@ const R = await pg.evaluate(() => {
      only the digits page carries the base, only the alphabet counts the
      ones with no reading. */
   walkArg('ltset', vLtset, LT_KINDS, 'vLtset');
+  /* A conversation, one per post there is. The thread of a post nobody has
+     answered is still a screen -- it is what every post's thread is on the
+     day it is written -- and the answered one is in halfDone above. */
+  walkArg('thread', vThread, postAll().map(p => p.id), 'vThread');
 
   /* the forms, which are pages reached by opening rather than by routing */
   const forms = [

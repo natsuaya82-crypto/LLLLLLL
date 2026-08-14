@@ -74,6 +74,42 @@ function vFeed(){
       ICON_ADD2+'</button>'+
     '</div>';
 }
+/* ---- one conversation --------------------------------------------------
+   The timeline is every post there is, newest first, which is the right shape
+   for arriving and the wrong one for following an argument: a reply and the
+   thing it replies to are an hour apart in it and nothing between them says
+   they belong together. 「リプライ含めツリーが見れないのちょっと厄介」
+
+   So a post opens onto the conversation it is in, and there are three parts
+   to that and they are not the same thing:
+
+     above   everything this post is an answer to, oldest first
+     here    the post itself, which is not a way anywhere
+     below   everything answering it, indented by how deep it is
+
+   The rows are `postRow` and only `postRow` -- the same one the timeline
+   draws, so a post reads the same here as it does there and there is no
+   second place a post is rendered.
+
+   What the top counts is how many replies are IN FRONT OF YOU, not `re`.
+   They agree today, because every post anybody has made is on this phone;
+   after a server they will not, and the number on the screen has to be the
+   number of rows under it or it is the app arguing with itself. */
+function vThread(){
+  var id=String(here().a||''), p=postById(id), ups, down, out='', i, d;
+  if(!p) return viewGone();
+  ups=postUps(p);
+  down=postDown(id, 0, [], [id]);
+  for(i=0;i<ups.length;i++) out+=postRow(ups[i]);
+  out+=postRow(p);
+  for(i=0;i<down.length;i++){
+    d=Math.min(down[i].d, THREAD_IN);
+    out+='<div class="pind pind'+d+'">'+postRow(down[i].p)+'</div>';
+  }
+  return '<div class="view">'+navTop(String(down.length))+'<div class="body">'+
+    out+
+    '</div></div>';
+}
 /* ---- searching ---------------------------------------------------------
    Posts and people, not your own language -- THAT search is in the build tab,
    on the contents page, because it searches what is on that page.

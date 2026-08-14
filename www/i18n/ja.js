@@ -829,6 +829,8 @@ defLang('ja', (function(){
       'post.draft.del'        : "下書きを消す",
       'post.draft.del.q'      : "この下書きを消しますか？",
       'post.gone'             : "この投稿はもうありません",
+      'post.thread'           : "スレッド",
+      'post.re.to'            : "{0} への返信",
       'tr.go'       : "自分の言語で読む",
       'tr.left'       : "今日はあと{0}回",
       'tr.out'       : "今日の3回を使いました。Plusなら全部読めます。",

@@ -915,6 +915,8 @@ defLang('it', (function(){
       'post.draft.del'        : "Cancellare la bozza",
       'post.draft.del.q'      : "Cancellare questa bozza?",
       'post.gone'             : "Quel post non c’è più",
+      'post.thread'           : "Conversazione",
+      'post.re.to'            : "In risposta a {0}",
       "tr.go"        : "Leggerlo nella mia lingua",
       "tr.left"        : "{0} rimaste oggi",
       "tr.out"        : "Le tre di oggi sono finite. Plus le legge tutte.",

@@ -64,6 +64,7 @@ Marked separately, because they are not the same question:
 | Writing a post | shipped | yes | — | `lingua.posts`, ink frozen on write | decided |
 | Timeline, on this phone | shipped | yes | — | `lingua.posts` | decided |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
+| Replying, and the thread of a conversation | shipped, **not device confirmed** | yes | — | `post.to` (the id, already there), `post.toh` **new** — the handle it answers, frozen on write | decided — replies stay in the timeline carrying 「@xx への返信」; a post opens onto its thread; the indent stops at three |
 | A card — one line as a picture | shipped | yes | — | none | decided |
 | A card of a post is drawn from the post | shipped | yes | — | none | decided |
 | Accounts — sign up, in, out, verify, reset | shipped | yes | — | `lingua.sess` (tokens only) | decided |

@@ -920,6 +920,8 @@ defLang('pt', (function(){
       'post.draft.del'        : "Apagar o rascunho",
       'post.draft.del.q'      : "Apagar este rascunho?",
       'post.gone'             : "Essa publicação já não existe",
+      'post.thread'           : "Tópico",
+      'post.re.to'            : "Respondendo a {0}",
       "tr.go"        : "Ler na minha língua",
       "tr.left"        : "{0} restantes hoje",
       "tr.out"        : "Acabaram as três de hoje. O Plus lê todas.",

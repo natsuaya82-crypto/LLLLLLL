@@ -827,6 +827,8 @@ defLang('en', (function(){
       'post.draft.del'        : "Delete this draft",
       'post.draft.del.q'      : "Delete this draft?",
       'post.gone'             : "That post is gone",
+      'post.thread'           : "Thread",
+      'post.re.to'            : "Replying to {0}",
       'tr.go'       : "Say it in my language",
       'tr.left'       : "{0} left today",
       'tr.out'       : "That is today's three. Plus reads every post.",

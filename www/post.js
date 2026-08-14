@@ -683,7 +683,13 @@ function pwSendWith(ln, pics, vo){
   if(PW.to){
     mine.to=PW.to;
     var up=postById(PW.to);
-    if(up){ up.re=(up.re||0)+1; }
+    /* And WHO it answers, not only which post. The id is a way to find the
+       post on a phone that has it; the handle is what a reader is shown, and
+       a reply can perfectly well outlive the thing it answers -- deleted, or
+       never arrived here at all. Same sentence as the name, the shapes and
+       the language's name already on every post: what a reader needs goes ON
+       it while the side that knows still exists. */
+    if(up){ up.re=(up.re||0)+1; mine.toh=up.hd||''; }
   }
   POSTS.push(mine);
   savePosts();
@@ -1686,8 +1692,79 @@ function postVoHTML(p){
     DO('voPlay', [String(vo.f)]) + ' aria-label="'+esc(t('post.vo.play'))+'">'+
     ICON_PLAY+'<span class="vot">'+esc(voLen(vo.ms))+'</span></button>';
 }
+/* ---- the conversation a post is in -------------------------------------
+   A reply carries `to`, the id of what it answers, and `toh`, the handle of
+   whoever wrote that. Both, and for different readers: the id is how the two
+   are put back together on a phone that has them both, and the handle is what
+   is shown -- which has to be on the reply itself, because the post it
+   answers may not be here.
+
+   Everything in this block is read-side: it asks POSTS what points at what,
+   and nothing else. */
+function postToWho(p){
+  var up;
+  if(!p || !p.to) return '';
+  if(p.toh) return String(p.toh);
+  /* A reply written before a reply carried the handle. The parent is asked
+     when the parent is here, and the line is left off when it is not --
+     which is the truth about it. Nothing is invented and nothing is
+     back-filled onto somebody's post. */
+  up=postById(p.to);
+  return (up && up.hd)? String(up.hd) : '';
+}
+/* The answers to one post, oldest first, because a conversation reads down. */
+function postKids(id){
+  var out=[], i;
+  if(!id) return out;
+  for(i=0;i<POSTS.length;i++) if(POSTS[i].to===id) out.push(POSTS[i]);
+  return out.sort(function(a, b){ return (a.at||0)-(b.at||0); });
+}
+/* What is above a post: everything it is an answer to, oldest first. Bounded
+   by how many posts there are, because `to` is a number that arrived on a
+   post and a chain that points back at itself is a phone that stops. */
+function postUps(p){
+  var out=[], n=0, up=p;
+  while(up && up.to && n<POSTS.length){
+    up=postById(up.to);
+    if(!up) break;
+    out.unshift(up);
+    n++;
+  }
+  return out;
+}
+/* And everything below it, flattened depth-first, each one carrying how deep
+   it is. `seen` is the same guard as the walk above: an answer that answers
+   itself is a page that never finishes drawing. */
+var THREAD_IN=3;
+function postDown(id, d, out, seen){
+  var ks=postKids(id), i;
+  for(i=0;i<ks.length;i++){
+    if(seen.indexOf(ks[i].id)>=0) continue;
+    seen.push(ks[i].id);
+    out.push({p:ks[i], d:d});
+    postDown(ks[i].id, d+1, out, seen);
+  }
+  return out;
+}
+/* The post a thread is opened ON. It is the one row on that screen that is
+   not a way somewhere else, and it does not need remembering anywhere:
+   which post a thread is about is the route's argument, which is where the
+   answer already is. */
+function postFocus(){
+  var h=here();
+  return (h && h.r==='thread')? String(h.a||'') : '';
+}
+/* Tapping a post opens the conversation it is in.
+   「リプライ含めツリーが見れないのちょっと厄介」 A button inside the row wins
+   over this, because act.js delivers a press to the nearest name above the
+   thumb -- so reply, like, boost, share and the ... all still do their own
+   thing and the rest of the row is the way in. */
+function postOpen(id){
+  if(postById(id)) go('thread', id);
+}
 function postRow(p){
-  return '<div class="post">'+
+  var foc=(postFocus()===p.id), to=postToWho(p);
+  return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
       '<div class="phead">'+
@@ -1712,6 +1789,12 @@ function postRow(p){
           (PMENU===p.id? postMenuHTML(p) : '')+
           '</span>' : '')+
       '</div>'+
+      /* Who this answers, under the head and above the line. It is here
+         rather than only on the thread page because the timeline keeps
+         replies in it -- a reply sitting between two posts that have nothing
+         to do with it has to say what it is, and the id it carries says
+         nothing to anybody's eye. */
+      (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
          somebody else's line drew their words in my shapes. Now the shapes

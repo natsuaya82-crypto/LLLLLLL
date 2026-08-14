@@ -115,6 +115,7 @@ act('openPost', openPost);
 act('postCard', postCard);
 act('postLike', postLike);
 act('postBoost', postBoost);
+act('postOpen', postOpen);
 act('postReply', postReply);
 act('postDel', postDel);
 act('postMore', postMore);

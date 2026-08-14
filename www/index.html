@@ -301,6 +301,31 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pmi svg{flex:0 0 auto;color:var(--txm)}
 .pmi:active{background:var(--sf)}
 .pmi.bad,.pmi.bad svg{color:var(--bad)}
+/* Who a reply answers. Grey, small, above the line -- it is a label on the
+   post, not part of what was said. */
+.pto{font-size:.84rem;color:var(--txm);margin-top:1px;
+     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---------- one conversation ----------
+   The post a thread was opened on. It does not go anywhere, so it does not
+   look pressable; what marks it is a hairline down its left edge, which is
+   the same mark the indent below it uses. Nothing is coloured in: a filled
+   row would read as selected, and there is nothing to select here. */
+.pfoc{background:var(--sf)}
+/* And how deep an answer is. Three steps and then it stops -- past that a
+   phone is drawing a column of margin and no room for the words.
+   THREAD_IN in post.js is the same number and is the one that decides.
+
+   The wrapper takes over the post's bleed to the edge of the screen, so the
+   indent is one number in one place: the post no longer pushes itself left,
+   the wrapper does, and what is left is how far in this row starts. */
+.pind{margin:0 -24px}
+.pind .post{margin:0}
+/* Not pind0: a direct answer is the next row down, not a row inside
+   anything, and a rail beside it would be a rail beside every reply. */
+.pind1 .post,.pind2 .post,.pind3 .post{border-left:1px solid var(--line)}
+.pind1{padding-left:14px}
+.pind2{padding-left:28px}
+.pind3{padding-left:42px}
 .pline{font-size:1.06rem;line-height:1.45;color:var(--tx);
        margin-top:2px;word-break:break-word}
 /* ---------- which way a line runs ----------

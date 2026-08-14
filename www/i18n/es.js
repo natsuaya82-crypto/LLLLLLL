@@ -873,6 +873,8 @@ defLang('es', (function(){
       'post.draft.del'        : "Borrar el borrador",
       'post.draft.del.q'      : "¿Borrar este borrador?",
       'post.gone'             : "Esa publicación ya no está",
+      'post.thread'           : "Hilo",
+      'post.re.to'            : "Respondiendo a {0}",
       "tr.go"        : "Leerlo en mi lengua",
       "tr.left"        : "{0} restantes hoy",
       "tr.out"        : "Se acabaron las tres de hoy. Plus las lee todas.",

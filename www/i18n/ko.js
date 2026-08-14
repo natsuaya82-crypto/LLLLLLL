@@ -1088,6 +1088,8 @@ defLang('ko', (function(){
       'post.draft.del'        : "임시저장 지우기",
       'post.draft.del.q'      : "이 임시저장을 지울까요?",
       'post.gone'             : "이 글은 이제 없습니다",
+      'post.thread'           : "스레드",
+      'post.re.to'            : "{0}에게 보내는 답글",
       "tr.go"        : "내 언어로 읽기",
       "tr.left"        : "오늘 {0}회 남음",
       "tr.out"        : "오늘의 3회를 다 썼습니다. Plus는 전부 읽습니다.",

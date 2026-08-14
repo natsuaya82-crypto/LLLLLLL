@@ -34,11 +34,14 @@
         The count is added in one place and taken away in one place
      9  a post does not have to have a line. A photograph on its own is a
         post and so is a voice; nothing at all still is not
+    10  a reply carries the HANDLE of whoever it answers, not only the id.
+        The id finds the post on a phone that has it; the handle is what a
+        reader is shown, and a reply can outlive the thing it answers
 
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
-   Exit code is 0 only when all nine hold.
+   Exit code is 0 only when all ten hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -354,6 +357,42 @@ const R = await pg.evaluate(async () => {
     fails.push('a voice with no line was refused, and thirty seconds of a '
              + 'language being spoken is a post');
 
+  /* ---- 10. a reply carries who it answers ---------------------------- */
+  /* Rule 13: what a post carries is put on it when it is written. A reply had
+     `to` and nothing else -- an id, which is a way to FIND the post on a
+     phone that has it and says nothing at all to a reader who does not. The
+     handle goes on at the moment of writing, the same as the author's name,
+     the language's name and the shapes of the letters, and for the same
+     reason: the making side is where it is known and the reading side is
+     where it is needed. */
+  const par = POSTS.filter(x => !x.to)[0];
+  par.hd = 'iri';
+  PW = pwBlank(); PW.to = par.id; PW.ln = 'tir';
+  pwSend();
+  await new Promise(r => setTimeout(r, 200));
+  const rep = POSTS.filter(x => x.to === par.id).pop();
+  if (!rep) fails.push('a reply was not written at all, so nothing below this ' +
+                       'is a test of what one carries');
+  else {
+    if (rep.toh !== 'iri')
+      fails.push('a reply carries ' + JSON.stringify(rep.toh) + ' as the handle ' +
+                 'it answers, and the post it answers is @iri. An id on its own ' +
+                 'is unreadable to anybody who does not have that post');
+    /* And it is READ off the reply, not off the post it answers -- which is
+       the whole difference. Deleting the parent must not take the line with
+       it: this is the same statement the ink makes, one field along. */
+    const wasConfirm3 = window.confirm;
+    window.confirm = () => true;
+    postDel(par.id);
+    window.confirm = wasConfirm3;
+    if (postToWho(rep) !== 'iri')
+      fails.push('the reply stopped saying who it answers the moment that post ' +
+                 'was gone, which is exactly the reader who needed it said');
+    if (postRow(rep).indexOf('@iri') < 0)
+      fails.push('the row of a reply whose parent is gone does not say who it ' +
+                 'answers, though the reply carries the handle');
+  }
+
   /* And nothing at all is still nothing at all. */
   const wasN3 = POSTS.length;
   PW = pwBlank();
@@ -390,4 +429,6 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      nothing to be dropped at all. A deleted reply stops being\n' +
             '      counted on the post it answered, and never counts below zero.\n' +
             '      A photograph on its own and a voice on its own are both posts,\n' +
-            '      neither draws an empty line, and an empty composer still is not.');
+            '      neither draws an empty line, and an empty composer still is not.\n' +
+            '      A reply carries the handle of whoever it answers, and goes on\n' +
+            '      saying so after that post has been deleted.');

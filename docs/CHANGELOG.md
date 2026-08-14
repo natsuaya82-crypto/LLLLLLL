@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A post opens the conversation it is in
+
+「リプライ含めツリーが見れないのちょっと厄介」 A reply carried the id of what it
+answered and nothing was ever drawn from it: the timeline was a flat list where
+an answer and the thing it answered sat next to each other saying nothing about
+each other, and there was no screen anywhere that showed the two together.
+
+**Tapping a post opens it.** A new route, `thread`, and it holds one
+conversation: everything the post is an answer to above it, the post itself,
+and everything below it indented by how deep it is. The indent stops at three —
+past that a phone is drawing a column of margin.
+
+**A reply says who it is replying to**, in the timeline as well as in the
+thread. The owner's decision: replies stay in the timeline rather than being
+folded away into their threads, and the reply carries the line instead.
+
+**Stored data: a reply now carries `toh`.** The handle of whoever wrote the post
+it answers, put on at the moment it is written, for the same reason a post
+already carries its author's name and the shapes of its letters — the post it
+answers may not be on this phone at all. Nothing is back-filled and nothing is
+removed: a reply written before this has only `to`, and the handle is read off
+the parent when the parent is here and the line is left off when it is not. No
+handle is ever invented.
+
+`re` is untouched — it is still the counter `pwSendWith` raises and `postDel`
+lowers. What the thread page counts at the top is how many replies are actually
+in front of you, which on this phone is the same number and after a server may
+not be.
+
 ### The lock closes, and somebody else's profile is the whole card
 
 **The lock closes.** It was opened on the emoji in 「🔓ポストにしたら？」, and an

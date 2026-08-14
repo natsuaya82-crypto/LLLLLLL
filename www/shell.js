@@ -157,6 +157,7 @@ var PAGES={
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
   about:   {tab:'profile', k:'wld.about'},
+  thread:  {tab:'feed', k:'post.thread'},
   drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
   plans:   {tab:'profile',  k:'plans.title'}

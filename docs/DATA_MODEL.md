@@ -98,7 +98,7 @@ The one piece of **frozen** data in the app.
 
 ```js
 { id, at, lang, lname, ln, who, hd, mine, av, mn, ui, dir,
-  ink?, tr?, pics?, pic?, pin?, vo?, ed? }
+  ink?, tr?, pics?, pic?, pin?, vo?, ed?, to?, toh? }
 ```
 
 Everything a reader needs is on it, because the reader does not have the
@@ -117,6 +117,7 @@ writer's language:
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
 | `vo` | **the voice**, as `{f, ms}` — the name of a file in `Documents/Voices/` and how long it is. The bytes are NOT here: thirty seconds of AAC is about 240 KB, which is ten free-sized languages, and `lingua.posts` shares its quota with everything a person has made. `www/rec.js` writes the file before the post is stored, so a name on a post is a file on the disk |
 | `ed` | when it was edited, if it ever was. An author may put the **line and the meaning** right; the photographs and the voice stay as they were. The `ink` is re-cut at that moment, which is the one place in this app where a post's shapes are not the shapes it was born with — a changed line with the old shapes is the old line |
+| `to`, `toh` | **what it answers, and who wrote that.** Both, and for two different readers: `to` is the id, which is how a reply and its parent are put back together on a phone that has them both, and `toh` is the handle, which is what is SHOWN — so it is on the reply, because the post it answers may not be here at all. `postToWho()` in `www/post.js` is the one place either is read for display: it takes `toh`, falls back to asking the parent when the parent is here, and shows nothing when it is not. A reply written before `toh` existed has only `to` and is not back-filled |
 | `dir` | **which way the line runs** — `ltr`, `rtl`, `ttb-rl`, `ttb-lr`. The language's, frozen at the moment of writing. A timeline that asked the open language would set every post the way MY language runs, which is `ink` all over again. Absent means `ltr`, which is how every post before this was written |
 
 ### `ink`

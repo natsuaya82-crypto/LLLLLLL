@@ -902,6 +902,8 @@ defLang('de', (function(){
       'post.draft.del'        : "Entwurf löschen",
       'post.draft.del.q'      : "Diesen Entwurf löschen?",
       'post.gone'             : "Diesen Beitrag gibt es nicht mehr",
+      'post.thread'           : "Thread",
+      'post.re.to'            : "Antwort an {0}",
       "tr.go"        : "In meiner Sprache lesen",
       "tr.left"        : "heute noch {0}",
       "tr.out"        : "Die drei von heute sind aufgebraucht. Plus liest alle.",

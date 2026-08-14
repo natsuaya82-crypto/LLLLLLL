@@ -53,7 +53,7 @@ export function seed(){
   POSTS = [{id:'p1', at:Date.now()-3600000, lang:langId, lname:'Shango', ln:'kano mos tir',
             who:'Aya', hd:'aya', mine:true,
             av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
-            mn:'a tall mountain is seen', ui:'en',
+            mn:'a tall mountain is seen', ui:'en', re:1,
             pic:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'},
            /* Somebody else's language, in somebody else's letters. The shapes
               are ON the post -- this phone has never seen the alphabet they
@@ -77,7 +77,30 @@ export function seed(){
                which is a place no check has -- what is walked is the row a
                post carrying one shows, which is the whole of the reading
                side of it. */
-            vo:{f:'v1.m4a', ms:7000}}];
+            vo:{f:'v1.m4a', ms:7000}},
+           /* And an answer to the first one, which is the third thing this
+              list is here to hold. Every post in the fixture was a post
+              nobody had replied to, so the line saying who a reply answers
+              had never been drawn by anything and the thread page had only
+              its own empty case to be walked in -- and a timeline where no
+              two posts have anything to do with each other is exactly the
+              state in which a conversation looks perfectly fine flattened.
+
+              It carries `toh` as well as `to`: the handle is what a reader
+              is shown, and it is on the reply because the post it answers
+              may not be on the phone reading it. */
+           {id:'p3', at:Date.now()-1800000, lang:'other', lname:'Vethi',
+            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}]], s:[0]},
+            mn:'yes, that is the one', ui:'en',
+            to:'p1', toh:'aya', re:1},
+           /* and an answer to the answer, because one reply is a list of two
+              and two is the first thing that has to be drawn as a tree */
+           {id:'p4', at:Date.now()-900000, lang:langId, lname:'Shango',
+            ln:'mos', who:'Aya', hd:'aya', mine:true,
+            av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+            mn:'the one behind the village', ui:'en',
+            to:'p3', toh:'iri'}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
              {id:'l2', st:null, ch:'Ϙ', nm:'', snd:['t']},
              {id:'l3', st:[{pts:[[112,688],[400,112],[688,688]]}], ch:'', nm:'', snd:[]},
@@ -356,6 +379,34 @@ export function halfDone(){
                     vo:{f:'v9.m4a', ms:12000}});
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); POSTS.pop(); return h; }],
+    /* The fixture's conversation is two deep, which draws one step of indent.
+       Past THREAD_IN the indent stops and the rows keep going, and that is
+       the branch nothing else reaches -- a thread four deep is the shortest
+       one that has a row the app refuses to move any further right. */
+    ['a thread past the indent', () => {
+        POSTS.push({id:'pr5', at:Date.now()-500000, lang:'other', lname:'Vethi',
+                    ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+                    mn:'the village', ui:'en', to:'p4', toh:'aya'},
+                   {id:'pr6', at:Date.now()-400000, lang:langId, lname:'Shango',
+                    ln:'tir', who:'Aya', hd:'aya', mine:true,
+                    mn:'seen from there', ui:'en', to:'pr5', toh:'iri'});
+        window.route='thread'; NAV=[{r:'feed'},{r:'thread', a:'p1'}];
+        const h = vThread(); POSTS.pop(); POSTS.pop(); return h; }],
+    /* A reply whose parent is not here: only `to`, nothing to read a handle
+       off, and the line that says who it answers is correctly left off rather
+       than guessed at. It is what every reply looks like the moment somebody
+       deletes what they were answering. */
+    ['a reply whose parent is gone', () => {
+        POSTS.push({id:'pr3', at:Date.now()-600000, lang:langId, lname:'Shango',
+                    ln:'kano', who:'Aya', hd:'aya', mine:true,
+                    mn:'the mountain', ui:'en', to:'gone-post'});
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.pop(); return h; }],
+    /* And the thread of a post that is not here any more, which is what the
+       back button lands on the moment somebody deletes what they opened. */
+    ['a thread that is gone', () => {
+        window.route='thread'; NAV=[{r:'feed'},{r:'thread', a:'no-such-post'}];
+        return vThread(); }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
