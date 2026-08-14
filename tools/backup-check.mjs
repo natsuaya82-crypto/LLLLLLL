@@ -153,10 +153,40 @@ const R = await pg.evaluate(() => {
   bkTake(file);
   langStore(); langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
   const back = { words: WORDS.length, letters: LETTERS.length, known: !!LANGS[id] };
-  if (!(KB.lay && KB.lay.length))
+  /* Asked of kbBoards() rather than of a field, and the field is the point:
+     what was written into the file above is the shape the keyboard had when a
+     language held exactly one -- `{lay:[...]}` -- and it holds three now. So
+     this is two claims in one line. The keyboard comes back, AND a file
+     written before a language could hold three restores into one of the
+     three rather than into nothing.
+
+     kbOf() would be the wrong thing to ask: on the free plan it answers with
+     kbFixed(), which is built from the letters and always has rows, so it
+     would come back true over a language that restored no keyboard at all. */
+  if (!(kbBoards().length && kbBoards()[0].lay && kbBoards()[0].lay.length))
     fails.push('the keyboard did not come back. It is built in the app and it ' +
                'is the language\'s; a backup without it is a backup of most of ' +
                'somebody\'s language.');
+  /* And the shape it has NOW, which is the other half: three keyboards and
+     which one of them is applied. The applied one is not the first, because
+     an index that came back as 0 whatever it was would pass a check that
+     asked for a number and be the wrong keyboard on somebody's phone. */
+  KB = { kbs: [{ nm: '', pat: 'qwerty', lay: [{ rows: [[{ k: 'lt', v: 'a' }]] }] },
+               { nm: '', pat: 'flick',  lay: [{ rows: [[{ k: 'lt', v: 'b' }]] }] },
+               { nm: '', pat: 'tap',    lay: [{ rows: [[{ k: 'lt', v: 'c' }]] }] }],
+         at: 2 };
+  saveKb();
+  const three = JSON.stringify(bkPack());
+  KB = null; saveKb();
+  bkNoSet(0); bkTake(three); kbRead();
+  if (kbBoards().length !== 3)
+    fails.push('three keyboards went into the file and ' + kbBoards().length +
+               ' came back');
+  else if ((KB.at || 0) !== 2)
+    fails.push('the keyboards came back but the applied one did not: ' +
+               (KB.at || 0) + ' rather than 2, which is a different keyboard ' +
+               'on the phone from the one that was there');
+
   if (world().use !== 'story' || world().where !== 'a valley')
     fails.push('what the language is for did not come back');
   if (bkNo() < packed.n)

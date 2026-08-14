@@ -35,6 +35,7 @@ function viewReset(){
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
+  kbShow=0;                            /* and which of the three is on screen */
   ltDraft=null;                        /* a letter's name, typed and unsaved */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */

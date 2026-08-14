@@ -1689,6 +1689,10 @@ function render(){
   /* and the alphabet, if that is what is on the page, can have a letter held
      and carried to where it belongs */
   ltDragMount();
+  /* and a key of the keyboard being built can be held and carried the same
+     way -- the same gesture, on the other thing in this app that is a grid
+     somebody arranges */
+  kbDragMount();
   /* and a key, wherever the keyboard is, can be flicked off */
   if(route==='form') formMount();
 }

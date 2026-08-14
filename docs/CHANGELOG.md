@@ -15,7 +15,47 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
-### The glass shows the page through it
+### A language holds three keyboards, and one of them is the one on the phone
+
+「まずはqwartyかフリックかタップとかキーボードのパターンを選べて」
+「キーボード3つくらいまで作れるようにして適応推したらlinguaのキーボードが
+入れ替わるとかできるの？ページじゃない」
+
+The editor had everything except a place to start. A key already opened onto
+what it types, its four flick directions, its width, and where it sits in the
+row — but the only layout to start from was "the letters, five to a row", so
+anybody who wanted a QWERTY was moving thirty keys by hand.
+
+**A keyboard is made from a pattern.** Five, and each is built out of the
+language's own letters rather than out of roman ones:
+
+| | |
+|---|---|
+| QWERTY | 10 / 9 / 7 and a row of digits — the free plan's layout, editable |
+| Flick | twelve keys, four directions on each: sixty letters on one face |
+| Tap | one letter per key, five to a row — what the only starting point used to be |
+| Chart | consonants down, vowels across — a syllabary writes syllables, and this is the shape of that |
+| ABC | in name order, ten to a row |
+
+**And a language holds up to three of them.** They are not layers: a layer is a
+face of one keyboard, switched by a key on it. These are separate keyboards,
+and **one of them is applied** — that is the one `kbOf()` answers with, so it is
+the one `share.js` hands to the extension and the one on the phone. Editing does
+not move it. You can build the next keyboard without disturbing the one you are
+typing on, and press Apply when it is ready.
+
+**Stored data: `lingua.<id>.kb` holds `{kbs:[…], at}` where it held `{lay:[…]}`.**
+A keyboard that was saved before this becomes the first of the three, by
+**copying** its `lay` across — nothing is rewritten and nothing is dropped. A
+file written before this restores the same way, because the reader takes either
+shape.
+
+**Nothing here is removed when a plan lapses.** The free plan reads `kbFixed()`,
+which is built from `LETTERS` every time it is shown and stored nowhere, so the
+three sit untouched through a lapse and are there again on the day it resumes.
+Fewer buttons, never fewer words.
+
+
 
 「リキッドグラスはちゃんと後ろの画面透けさせるようにしてよ」 The tab bar is the
 one thing in this app made of glass, and it was a tinted panel: at .40 over a

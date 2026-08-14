@@ -28,13 +28,36 @@
 
    That last one is the flick, and it is why one key can hold five letters. */
 
-var KB=null;
+/* A language holds up to three keyboards, and one of them is the one on the
+   phone. 「キーボード3つくらいまで作れるようにして適応推したらlinguaのキーボード
+   が入れ替わるとかできるの？ページじゃない」
+
+   They are not layers, and the distinction is the whole of it: a LAYER is a
+   face of one keyboard, reached by a key on that keyboard, the way ABC and
+   あいう are two faces of one. A KEYBOARD is a different keyboard. Three of
+   them sit side by side and exactly one is APPLIED -- which is the one kbOf()
+   answers with, so it is the one share.js hands over and the one under
+   somebody's thumb in Messages.
+
+   Editing does not move that. You can build the next keyboard without
+   disturbing the one you are typing on, and press Apply when it is ready. */
+var KB=null, KB_MAX=3;
 function kbRead(){
   KB=null;
-  try{
-    var k=JSON.parse(localStorage.getItem(langKey('kb'))||'null');
-    if(k && k.lay && k.lay.length) KB=k;
-  }catch(e){}
+  try{ KB=kbBoardsOf(JSON.parse(localStorage.getItem(langKey('kb'))||'null')); }
+  catch(e){}
+}
+/* What is on the disk, whichever shape it is in. It was one keyboard --
+   `{lay:[...]}` -- and it is now several, so the one becomes the first of the
+   several by having its layers COPIED across. Nothing is rewritten and
+   nothing is dropped: a backup file written before this restores through the
+   same two lines, because the reader takes either shape rather than the
+   newer one only. */
+function kbBoardsOf(k){
+  if(!k) return null;
+  if(k.kbs && k.kbs.length) return k;
+  if(k.lay && k.lay.length) return {kbs:[{nm:'', pat:'', lay:k.lay}], at:0};
+  return null;
 }
 kbRead();
 function saveKb(){ bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
@@ -88,6 +111,133 @@ function kbDefault(){
   more.rows[more.rows.length-1].unshift(kbKey('lay', '0'));
   return {lay:[{rows:rows}, more]};
 }
+/* ---- the five a keyboard can be made from ------------------------------
+   「まずはqwartyかフリックかタップとかキーボードのパターンを選べて」
+
+   The editor had everything except a place to start: a key already opened
+   onto what it types, its four flick directions, its width and where it sits,
+   and the only layout to start FROM was the letters five to a row. Anybody
+   who wanted a QWERTY was moving thirty keys by hand.
+
+   Each of these is built out of THIS language's letters. None of them is a
+   picture of a roman keyboard with the letters poured in afterwards -- the
+   chart asks the language what consonants and vowels it has, the flick asks
+   how many letters there are, and a language with nine letters gets a keyboard
+   with nine letters on it.
+
+   A pattern is a starting point and it is meant to be pulled apart, which is
+   why the board remembers which one it was made from and nothing reads that
+   back except the screen, to say so. */
+var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc'];
+/* Ten to a row, which is what a row of a phone keyboard holds. */
+function kbRowsOf(list, per){
+  var rows=[], row=[], i, sp;
+  for(i=0;i<list.length;i++){
+    row.push(kbKey('lt', list[i].id));
+    if(row.length===per){ rows.push(row); row=[]; }
+  }
+  if(row.length) rows.push(row);
+  sp=kbKey('sp'); sp.w=3;
+  rows.push([sp, kbKey('del')]);
+  return rows;
+}
+/* Twelve keys, four directions on each. One key holds five letters, so a
+   language of sixty is one face -- which is the whole argument for a flick
+   keyboard and the reason Japanese phones have one. The letters go on in the
+   order the alphabet is in: the fifth of every group is the key itself and
+   the four around it are the flicks, so the groups read across. */
+function kbFlickLay(){
+  var ls=ltOrder(ltOfKind('alpha')), rows=[], row=[], i, j, k, sp;
+  for(i=0;i<ls.length;i+=5){
+    k=kbKey('lt', ls[i].id);
+    for(j=1;j<5;j++) if(ls[i+j]) k.f[j-1]=ls[i+j].id;
+    row.push(k);
+    if(row.length===3){ rows.push(row); row=[]; }
+  }
+  if(row.length) rows.push(row);
+  if(!rows.length) rows.push([kbKey('lt', '')]);
+  sp=kbKey('sp'); sp.w=2;
+  rows.push([sp, kbKey('del')]);
+  return [{rows:rows}];
+}
+/* Consonants down the page and vowels across it, which is the shape a
+   syllabary is taught in and the reason a kana chart looks like a chart. The
+   language is asked what it has rather than told: a row per consonant, a
+   column per vowel, and the letter that writes that syllable if one has been
+   made. A cell nothing writes yet is an empty key, because the row it is in
+   is what says which syllable it is for.
+
+   With no sounds taken up at all there is nothing to lay out, and the answer
+   is the plain grid rather than a chart of nothing. */
+function kbChartLay(){
+  var cs=wsCons(), vs=wsVows(), rows=[], row, i, j, l, sp;
+  if(!cs.length || !vs.length) return kbTapLay();
+  for(i=0;i<cs.length;i++){
+    row=[];
+    for(j=0;j<vs.length;j++){
+      l=ltMain(wsKey([cs[i], vs[j]]));
+      row.push(kbKey('lt', l? l.id : ''));
+    }
+    rows.push(row);
+  }
+  sp=kbKey('sp'); sp.w=Math.max(2, vs.length-1);
+  rows.push([sp, kbKey('del')]);
+  return [{rows:rows}];
+}
+function kbTapLay(){ return kbDefault().lay; }
+function kbAbcLay(){ return [{rows:kbRowsOf(ltOrder(ltOfKind('alpha')), 10)}]; }
+/* The free plan's layout, editable. kbFixed() is where it is written down and
+   this asks it rather than saying it again -- so the QWERTY somebody starts
+   from is the same QWERTY they were typing on, key for key. */
+function kbQwertyLay(){ return kbFixed().lay; }
+function kbPatLay(pat){
+  if(pat==='qwerty') return kbQwertyLay();
+  if(pat==='flick')  return kbFlickLay();
+  if(pat==='chart')  return kbChartLay();
+  if(pat==='abc')    return kbAbcLay();
+  return kbTapLay();
+}
+/* Made, kept, and shown -- but not applied. Building a keyboard must not take
+   the one under somebody's thumb away from them mid-sentence. */
+function kbAdd(pat){
+  if(KB_PATS.indexOf(pat)<0) return;
+  if(!KB || !KB.kbs) KB={kbs:[], at:0};
+  if(KB.kbs.length>=KB_MAX){ toast(t('kb.full', KB_MAX)); return; }
+  KB.kbs.push({nm:'', pat:pat, lay:kbPatLay(pat)});
+  kbShow=KB.kbs.length-1; kbLay=0; kbSel=null;
+  saveKb(); render();
+}
+/* Which one goes to the phone. The only thing on this screen that changes
+   what somebody types with. */
+function kbApply(i){
+  if(!kbBoards().length) return;
+  KB.at=kbClamp(i, KB.kbs.length);
+  saveKb(); render();
+}
+function kbGoBoard(i){
+  kbShow=kbClamp(i, Math.max(1, kbBoards().length));
+  kbLay=0; kbSel=null; render();
+}
+/* A keyboard goes only when somebody says so, and never the last one: with
+   none left there is nothing to apply, and the app would be quietly back to
+   the default while the screen said three. */
+function kbDrop(i){
+  var b=kbBoards();
+  if(b.length<2) return;
+  i=kbClamp(i, b.length);
+  if(!confirm(t('kb.rm.q'))) return;
+  b.splice(i, 1);
+  KB.at=kbClamp(KB.at>i? KB.at-1 : KB.at, b.length);
+  kbShow=kbClamp(kbShow>=b.length? b.length-1 : kbShow, b.length);
+  kbLay=0; kbSel=null;
+  saveKb(); render();
+}
+function kbName(i){
+  var b=kbBoards();
+  if(!b.length) return String(i+1);
+  return b[kbClamp(i, b.length)].nm || String(i+1);
+}
+
 /* ---- the keyboard the free plan gets ----------------------------------
    QWERTY, with the drawn letters standing in for the roman ones.
    「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
@@ -189,19 +339,40 @@ function kbFixed(){
   rows.push(bot);
   return {lay:[{rows:rows}]};
 }
+function kbBoards(){ return (KB && KB.kbs)? KB.kbs : []; }
+function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
+/* THE ONE ON THE PHONE. share.js reads this and nothing else, so what this
+   answers is what somebody types with. */
 function kbOf(){
   if(!can('kb')) return kbFixed();
-  return KB || kbDefault();
+  var b=kbBoards();
+  return b.length? b[kbClamp(KB.at, b.length)] : kbDefault();
 }
-/* Which layer is showing, and which key is being edited. Both are where you
-   are standing rather than anything the language has, so viewReset() drops
-   them. */
-var kbLay=0, kbSel=null;
-function kbLayer(){ var b=kbOf(); return b.lay[Math.min(kbLay, b.lay.length-1)]; }
+/* And the one on the SCREEN, which is a different question the moment there
+   is more than one. The editor works on this; Apply is what makes it the
+   other. */
+function kbBoard(){
+  if(!can('kb')) return kbFixed();
+  var b=kbBoards();
+  return b.length? b[kbClamp(kbShow, b.length)] : kbDefault();
+}
+/* Which layer is showing, which keyboard is showing, and which key is being
+   edited. All three are where you are standing rather than anything the
+   language has, so viewReset() drops them -- and which keyboard is APPLIED is
+   not among them, because that one is the language's. */
+var kbLay=0, kbSel=null, kbShow=0;
+function kbLayer(){ var b=kbBoard(); return b.lay[Math.min(kbLay, b.lay.length-1)]; }
 /* Writing means owning it: the default is a suggestion until the moment
    somebody changes something, and from then on it is theirs and does not
-   quietly rearrange itself under them. */
-function kbEdit(){ if(!KB) KB=kbDefault(); return KB; }
+   quietly rearrange itself under them.
+
+   It returns the board being SHOWN, because that is the one every mutator
+   below is about. */
+function kbEdit(){
+  if(!kbBoards().length) KB={kbs:[{nm:'', pat:'', lay:kbDefault().lay}], at:0};
+  kbShow=kbClamp(kbShow, KB.kbs.length);
+  return KB.kbs[kbShow];
+}
 /* How many keys are set out, over every layer -- what the contents page
    shows beside the chapter, the way it shows a count beside the others. */
 function kbKeys(){
@@ -386,7 +557,19 @@ function vKb(){
       '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
         t('up.cta')+'</button>'+
       '</div></div>';
-  var b=kbOf(), out='';
+  /* Nothing built yet: the screen is the five patterns and nothing else.
+     「キーボードにまずはどれにするか」 There is no editor to show, because
+     there is nothing to edit, and offering one over a default nobody chose is
+     how the default became the only layout anybody ever had. */
+  if(!kbBoards().length)
+    /* The steps for putting it on the phone go UNDER the choosing here, and
+       nowhere else in the chapter do they move: with nothing built there is
+       nothing to install, so instructions at the top of this screen are a
+       page of prose in front of the one thing to do. */
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      '<div class="sec">'+t('kb.pat')+'</div>'+kbPatsHTML()+
+      kbSysHTML()+'</div></div>';
+  var b=kbBoard(), out='';
   if(b.lay.length>1){
     out+='<div class="segs" style="margin-bottom:8px">'+b.lay.map(function(x, i){
       return '<button class="seg'+(i===Math.min(kbLay, b.lay.length-1)?' on':'')+'"' +
@@ -395,16 +578,193 @@ function vKb(){
   }
   return '<div class="view">'+navTop('')+'<div class="body">'+
     kbSysHTML()+
+    kbBarHTML()+
     out+
     kbHTML(kbSel)+
     '<div class="kbadd">'+
       '<button class="btn ghost"' + DO('kbAddRow') + '>'+t('kb.row.add')+'</button>'+
       '<button class="btn ghost"' + DO('kbAddLay') + '>'+t('kb.lay.add')+'</button>'+
     '</div>'+
+    kbApplyHTML()+
     '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('kbReset') + '>'+
       '<span class="sl bad">'+t('kb.reset')+'</span></button>'+
     '</div></div>';
 }
+/* The five, offered as SHAPES. 「説明ちっくすぎて嫌だ。かっこよさも何もない」
+
+   They were five rows of prose -- "twelve keys, four directions on each" --
+   which is a manual page, and a manual page is the one thing this screen must
+   not be: the difference between these five is entirely a difference of
+   shape, and a shape is the thing a sentence is worst at. So each one draws
+   itself, out of its own real layout, and the only words left are its name.
+
+   Keys and not letters. At this size a drawn glyph is a smudge, and a smudge
+   of somebody's alphabet is worse than an honest block -- what is being
+   chosen here is the arrangement, and the arrangement is what is shown. A key
+   that carries a flick wears the four marks, because that is the whole of
+   what makes a flick keyboard one. */
+function kbPatsHTML(){
+  return '<div class="kbpats">'+KB_PATS.map(function(p){
+    return '<button class="kbpat"' + DO('kbAdd', [p]) + '>'+
+      kbMiniHTML(kbPatLay(p))+
+      '<span class="kbpn">'+esc(t('kb.pat.'+p))+'</span>'+
+      '</button>';
+  }).join('')+'</div>';
+}
+/* A keyboard at a glance: its first face, as blocks. Width is the key's own,
+   so a space bar reads as a space bar and a delete two wide reads as one. */
+function kbMiniHTML(lay){
+  var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k, fl;
+  for(i=0;i<rows.length;i++){
+    out+='<span class="kbmr">';
+    for(j=0;j<rows[i].length;j++){
+      k=rows[i][j];
+      fl=(k.f && (k.f[0]||k.f[1]||k.f[2]||k.f[3]))? ' fl' : '';
+      out+='<span class="kbmk'+(k.k==='lt'? '' : ' fn')+fl+'" style="flex:'+(k.w||1)+'"></span>';
+    }
+    out+='</span>';
+  }
+  return '<span class="kbmini">'+out+'</span>';
+}
+/* Which keyboard you are looking at, and the way to make another. The one
+   that is APPLIED wears the mark, not the one you are looking at -- they are
+   different questions and this row is where somebody finds that out. */
+function kbBarHTML(){
+  var bs=kbBoards(), at=kbClamp(KB.at, bs.length), now=kbClamp(kbShow, bs.length);
+  return '<div class="kbbar">'+
+    bs.map(function(x, i){
+      return '<button class="kbtab'+(i===now? ' on':'')+'"' + DO('kbGoBoard', [i]) + '>'+
+        esc(kbName(i))+(i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+'</button>';
+    }).join('')+
+    (bs.length<KB_MAX
+      ? '<button class="kbtab add"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
+        ICON_ADD+'</button>'
+      : '')+
+    '</div>';
+}
+/* Apply, and it is the only control on this screen that changes what somebody
+   types with. On the one already applied it says so instead, because a button
+   that does nothing is worse than a line that explains. */
+function kbApplyHTML(){
+  var bs=kbBoards(), at=kbClamp(KB.at, bs.length), now=kbClamp(kbShow, bs.length);
+  return '<div class="kbapply">'+
+    (now===at
+      ? '<div class="note">'+esc(t('kb.on.now'))+'</div>'
+      : '<button class="btn" style="width:100%"' + DO('kbApply', [now]) + '>'+
+        esc(t('kb.apply'))+'</button>')+
+    (bs.length>1
+      ? '<button class="set" style="margin-top:10px;border-bottom:none"' +
+        DO('kbDrop', [now]) + '><span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
+      : '')+
+    '</div>';
+}
+/* ---- holding a key and moving it ---------------------------------------
+   「pcみたいなuiも嫌だ長押しで編集とかスマホの編集にしてくれよ」
+
+   A key used to be moved with a ◀ and a ▶ at the bottom of a sheet, which is
+   a PC's answer: pick the thing, then find the control that acts on it. On a
+   phone the thing IS the control. Hold a key and it lifts; carry it and the
+   others move aside; let go and it is where you left it.
+
+   The gesture is the alphabet's, key for key -- 380ms to lift, twelve pixels
+   of travel to be a scroll instead, the order written on the way up and not
+   on every swap. What differs is only where a thing can land: a letter lives
+   in one grid and a key lives in a row among rows, so this carries across
+   rows as well as along them.
+
+   Tapping still opens the key. The hold is the second thing a press can be,
+   which is the whole reason a delay is there. */
+var KBD=null;
+function kbDragMount(){
+  var g=document.getElementById('kb');
+  if(!g) return;
+  g.addEventListener('touchstart', kbDown, false);
+  g.addEventListener('touchmove', kbDragTo, false);
+  g.addEventListener('touchend', kbUp, false);
+  g.addEventListener('touchcancel', kbUp, false);
+}
+/* The key a touch landed on. What is under a finger is the canvas or one of
+   the four flick marks as often as it is the button. */
+function kbKeyAt(el){
+  while(el && el.classList && !el.classList.contains('kbk')) el=el.parentNode;
+  return (el && el.classList && el.classList.contains('kbk'))? el : null;
+}
+function kbDown(e){
+  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e;
+  if(!b || !p || b.getAttribute('data-r')===null) return;
+  KBD={el:b, x:p.clientX, y:p.clientY, on:false, timer:0};
+  KBD.timer=setTimeout(kbLift, 380);
+}
+function kbLift(){
+  if(!KBD) return;
+  KBD.on=true;
+  KBD.el.classList.add('lift');
+  var g=document.getElementById('kb');
+  if(g) g.classList.add('moving');
+}
+function kbDragTo(e){
+  if(!KBD) return;
+  var p=e.touches? e.touches[0] : e;
+  if(!p) return;
+  var dx=p.clientX-KBD.x, dy=p.clientY-KBD.y;
+  if(!KBD.on){
+    if(dx*dx+dy*dy>144){ clearTimeout(KBD.timer); KBD=null; }
+    return;
+  }
+  e.preventDefault();
+  KBD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  var over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
+  if(!over || over===KBD.el) return;
+  /* Into the row the finger is over, beside the key it is over -- which is
+     what moving across rows means and is the half a one-dimensional grid
+     never has to answer. */
+  var row=over.parentNode, mine=KBD.el.parentNode, kids=row.children, a=-1, b=-1, i;
+  for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
+  row.insertBefore(KBD.el, (a>=0 && b>a)? over.nextSibling : over);
+  /* A row emptied by the last key leaving it is a row of nothing, which is a
+     gap in the keyboard that nothing can be put back into. */
+  if(mine!==row && !mine.children.length) mine.parentNode.removeChild(mine);
+  KBD.x=p.clientX; KBD.y=p.clientY;
+  KBD.el.style.transform='';
+}
+function kbUp(e){
+  if(!KBD) return;
+  clearTimeout(KBD.timer);
+  var d=KBD, g=document.getElementById('kb');
+  KBD=null;
+  d.el.style.transform='';
+  d.el.classList.remove('lift');
+  if(g) g.classList.remove('moving');
+  if(!d.on) return;
+  /* and the press does not also open the key it was moving */
+  if(e && e.preventDefault) e.preventDefault();
+  kbReadRows();
+}
+/* The layout, read back off the screen. The keys moved in the page while the
+   finger was down and the language is told once, here -- the same way the
+   alphabet is told its order once, on the way up. */
+function kbReadRows(){
+  var g=document.getElementById('kb'), lay=kbEdit(), rows=[], i, j, r, ks, row, k;
+  if(!g) return;
+  for(i=0;i<g.children.length;i++){
+    r=g.children[i]; ks=r.children; row=[];
+    for(j=0;j<ks.length;j++){
+      k=kbAt(parseInt(ks[j].getAttribute('data-r'), 10), parseInt(ks[j].getAttribute('data-k'), 10));
+      if(k) row.push(k);
+    }
+    if(row.length) rows.push(row);
+  }
+  if(!rows.length) return;
+  lay.lay[Math.min(kbLay, lay.lay.length-1)].rows=rows;
+  kbSel=null;
+  saveKb(); render();
+}
+/* Making another is choosing a pattern again, on a screen of its own rather
+   than a row that pushes the keyboard off the page. */
+function kbNew(){
+  openForm('kbnew', t('kb.new'), kbPatsHTML(), function(){ geTiles(); });
+}
+FORM_OPEN.kbnew=function(){ kbNew(); };
 /* What this chapter IS, which the screen never said.
    「ここの画面どういうこと？」「Linguaで書いてくださいの画面にどう結びつけるのか
    がわからんて」
@@ -526,10 +886,12 @@ function kbKeyHTML(ri, ki){
       return '<button class="seg'+((key.w||1)===w?' on':'')+'"' +
         DO('kbSetW', [ri, ki, w]) + '>'+w+'</button>';
     }).join('')+'</div>'+
+    /* The ◀ and ▶ that used to be here are gone: a key is moved by holding it
+       on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」 What
+       is left is the thing a sheet is for -- what this key IS -- and the one
+       thing a hold cannot do, which is make a key that is not there yet. */
     '<div class="kbadd" style="margin-top:12px">'+
-      '<button class="btn ghost"' + DO('kbMove', [ri, ki, -1]) + '>'+ICON_BACK+'</button>'+
       '<button class="btn ghost"' + DO('kbAddKey', [ri, ki]) + '>'+ICON_ADD+t('kb.key')+'</button>'+
-      '<button class="btn ghost"' + DO('kbMove', [ri, ki, 1]) + '>'+ICON_GO+'</button>'+
     '</div>'+
     '<button class="set" style="margin-top:12px;border-bottom:none"' + DO('kbDelKey', [ri, ki]) + '>'+
       '<span class="sl bad">'+t('kb.key.del')+'</span></button>';
@@ -604,13 +966,6 @@ function kbAddKey(ri, ki){
   if(!rows[ri]) return;
   rows[ri].splice(ki+1, 0, kbKey('lt', ''));
   saveKb(); back(); kbPick(ri, ki+1);
-}
-function kbMove(ri, ki, by){
-  kbEdit();
-  var rows=kbLayer().rows, to=ki+by;
-  if(!rows[ri] || to<0 || to>=rows[ri].length) return;
-  rows[ri].splice(to, 0, rows[ri].splice(ki, 1)[0]);
-  saveKb(); kbPick(ri, to);
 }
 /* A row with nothing left in it is not a row. */
 function kbDelKey(ri, ki){

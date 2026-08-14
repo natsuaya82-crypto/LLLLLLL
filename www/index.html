@@ -1026,6 +1026,48 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The pictures on a post. One fills the row; several are a strip that slides
    sideways, and it is the strip that scrolls, not the post.
    「画像だけ横スライドできる感じ」 */
+/* ---------- which keyboard, and which one is on the phone ----------
+   A row of up to three, and the tick is on the one that is APPLIED rather
+   than the one you are looking at. They are different questions -- editing
+   does not change what is under somebody's thumb in Messages -- and this row
+   is where a person finds that out. */
+.kbbar{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
+.kbbar::-webkit-scrollbar{display:none}
+.kbtab{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 16px;border-radius:999px;
+       border:1px solid var(--line);background:none;color:var(--txm);
+       font-family:inherit;font-size:.9rem;
+       display:inline-flex;align-items:center;gap:6px}
+.kbtab.on{color:var(--tx);border-color:var(--goldln);background:var(--goldsf)}
+.kbtab.add{min-width:44px;padding:0;justify-content:center;color:var(--gold)}
+.kbon{display:inline-flex;color:var(--gold)}
+.kbon svg{width:14px;height:14px}
+/* ---------- choosing what shape a keyboard is ----------
+   Two to a row, each drawing its own layout. The card is the picture and the
+   name is a caption under it -- the other way round is a list with a
+   decoration, which is what this screen was. */
+.kbpats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kbpat{display:flex;flex-direction:column;gap:8px;padding:12px 10px 10px;
+       min-height:44px;border-radius:16px;border:1px solid var(--line);
+       background:var(--sf);font-family:inherit;justify-content:space-between}
+.kbpat:active{border-color:var(--goldln);background:var(--goldsf)}
+.kbpn{font-size:.86rem;color:var(--tx);text-align:left;margin-top:auto}
+.kbmini{display:flex;flex-direction:column;gap:3px;width:100%}
+.kbmr{display:flex;gap:3px;height:13px}
+.kbmk{flex:1;border-radius:3px;background:var(--tx);opacity:.22}
+.kbmk.fn{opacity:.10}
+/* A key that carries a flick has more than one letter on it, and one dot is
+   all that reads at thirteen pixels. Four marks round the edge was tried and
+   is what the first version of this card had: at this size they meet in the
+   middle and the key comes out looking like a bracket. */
+.kbmk.fl{opacity:.30;
+         background:radial-gradient(circle at 50% 50%, var(--bg) 20%, transparent 21%),
+                    var(--tx)}
+.kbapply{margin-top:14px}
+/* A key being carried, and the keyboard it is being carried around. The same
+   two classes the alphabet uses, said again here because the elements are
+   different -- `.ltc.lift` cannot reach a `.kbk`. */
+.kb.moving{touch-action:none}
+.kbk.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
 /* ---------- a photograph in the timeline ----------
    One box, the same for every photograph on every post, filled.
    「xと同じって言ってるやんずっと」

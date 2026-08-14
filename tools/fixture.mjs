@@ -528,6 +528,36 @@ export function halfDone(){
     ['a keyboard of two layers', () => { SET.plan = 'plus'; kbAddLay(); const h = vKb();
                                          KB = null; kbLay = 0;
                                          SET.plan = 'free'; return h; }],
+    /* A language holding more than one keyboard, which is where the row of
+       them, the Apply button and the way to delete one all live. Every one of
+       the five patterns is built here rather than described, so a pattern
+       that cannot be laid out is a red check rather than an empty keyboard on
+       somebody's phone.
+
+       The one APPLIED is deliberately not the one shown: that is the whole
+       distinction the screen exists to make, and a face where they are the
+       same would render neither the Apply button nor the line that replaces
+       it. */
+    ['three keyboards, looking at one that is not applied', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('qwerty'); kbAdd('flick'); kbAdd('chart');
+        KB.at = 0; kbShow = 2;
+        const h = vKb();
+        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+    ['the keyboard that is already applied', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('tap'); kbAdd('abc');
+        KB.at = 1; kbShow = 1;
+        const h = vKb();
+        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+    /* And the five offered again, on the sheet that makes another. The plain
+       walk renders them on the empty screen; this is the other door to the
+       same row. */
+    ['choosing another keyboard', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('tap'); kbNew();
+        const h = FORM.html;
+        KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
     /* ---- the paid faces of the making side ----------------------------
        Four screens the free plan does not show, because on free the
        alphabet is twenty-eight slots that cannot be added to, renamed or

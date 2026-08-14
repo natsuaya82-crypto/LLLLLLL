@@ -91,3 +91,36 @@ export of something older than the app's current shape. Today the app has
 none of these — posts are the only past-tense data it holds, and post.js and
 card.js are the only two files that render one, which is why the sweep after
 the card bug found nothing else.
+
+## A renamed letter loses its key on the free plan
+
+Found while settling the keyboard. Not fixed, because the fix is a decision
+about letters and the work in front of it is about keyboards.
+
+`kbFixed()` — the keyboard the free plan gets — finds its keys **by name**:
+`kbNamed('a')` walks `LETTERS` for one called `a`. That is the whole reason
+free is a QWERTY at all, and it is why the free plan may not rename a letter.
+
+A paid plan may. So:
+
+1. paid, rename `a` to something else
+2. the plan lapses
+3. `ltStart()` runs, sees no letter called `a`, and **adds a new empty one**
+4. the QWERTY's `a` key is that new empty letter
+
+Nothing is lost — the renamed letter is still in `LETTERS` with whatever was
+drawn on it — but it is not on the keyboard any more, and the key that took
+its place is blank. Somebody whose plan ended would find a hole where a letter
+they drew used to be, and nothing anywhere would say why.
+
+Three ways out, and choosing between them is the owner's:
+
+- keep `ab` as the key rather than the name (a letter already carries `ab`,
+  the roman it stands for; a rename does not touch it)
+- refuse the rename at the point it would orphan a key, which is a paid screen
+  being restricted by a plan the person is not on
+- say it out loud on the day the plan ends, in `capLapse()`, which already
+  exists for exactly this kind of sentence
+
+The first is the smallest and probably right, but `ab` is not shown anywhere
+and somebody who renames a letter has no idea it is there.
