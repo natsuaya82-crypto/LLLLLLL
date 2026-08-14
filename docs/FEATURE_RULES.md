@@ -185,6 +185,43 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-14
+- Area: Money — the four subscription products, their ids and their prices
+- Decision:
+  1. Two plans, **Plus** and **Studio**, each sold **monthly and yearly**.
+  2. The product ids are, and these can never be changed once the products
+     exist in App Store Connect:
+
+     | | monthly | yearly |
+     |---|---|---|
+     | Plus | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.plus.yearly` |
+     | Studio | `com.tokinets.lingua.studio.monthly` | `com.tokinets.lingua.studio.yearly` |
+
+  3. Prices, in US dollars. Every other country is Apple's automatic
+     conversion unless somebody sets it by hand:
+
+     | | monthly | yearly |
+     |---|---|---|
+     | Plus | 9.99 | 99.99 |
+     | Studio | 19.99 | 199.99 |
+
+  4. All four sit in **one subscription group** named `Lingua`, Plus at level
+     1 and Studio at level 2 — so somebody can move between them and cannot
+     hold both at once.
+- Reason: 「年額　plus 99.99 / studio 199.99」. The monthly pair and the group
+  were settled earlier and are written in `docs/apple.md`.
+- Affected features: the plans screen, everything `CAN` gates
+- Affected data: none yet. **`SET.plan` is a flag in `localStorage` and stays
+  one until receipts are verified server-side** — see the note below.
+- Affected docs: `docs/apple.md`, `docs/PAID_FEATURES.md`, `docs/FEATURES.md`
+- Implementation status: **the products are the owner's to create in App Store
+  Connect. There is no StoreKit code in the app, and it is not to be written
+  yet** — 「今まだプラスとかは俺が自由に行き来して確認したいからstorekit入れない
+  で欲しいかも」. The plans screen stays a switch anybody can press, so a paid
+  face can be walked without buying anything. Nothing can be bought however
+  the products are configured, and that is the current intent.
+
+### Decision
 - Date: 2026-08-13
 - Area: Posts — how many photographs, and how they are shown
 - Decision:
