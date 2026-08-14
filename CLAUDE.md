@@ -773,6 +773,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/voice.js`, `notes.js` | speech, notes |
 | `docs/STATE.md` | where the project stands: which branch is the app, what is built, what only looks built (the timeline is on the phone; the `post`/`follow`/`quote` tables are written and unused), what only a person with a dashboard login can do, and what CI does not run. The one file to hand somebody who has never seen this repo |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |
+| `supabase/setup.md` | every click in the Supabase dashboard, in the order they have to happen, and what to look at afterwards to know it worked |
 | `supabase/mail.md` | how the confirmation mail gets sent. Dashboard fields and DNS records, so there is nowhere else it can live |
 | `docs/BACKLOG.md` | what was found and deliberately not done, and why: the renames that must not ride along with a feature, the merges waiting on a device, and the question the card bug was actually about |
 | `docs/FEATURES.md` | the registry: every feature, its status, its plan, its data, and whether the owner has decided it. Read before building anything |
