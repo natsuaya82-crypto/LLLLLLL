@@ -129,9 +129,14 @@ canvas.pkc{width:34px;height:34px;display:block}
    many keys or how big: that is the whole point of the screen that builds it.
    Full width of the screen rather than of the page, because a keyboard that
    stops short of the edge is a picture of a keyboard. */
-.kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0}
-.kbrow{display:flex;gap:5px}
-.kbk{position:relative;min-height:52px;min-width:0;border:1px solid var(--line);
+/* How tall a key is, in one place and in two halves: the whole keyboard's
+   height, and this row's share of it. 「マス目の大きさもカスタマイズできる
+   ように」 52px is what every key was, so a keyboard nobody has touched is
+   the keyboard it was. */
+.kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0;--kh:52px}
+.kbrow{display:flex;gap:5px;--rh:1}
+.kbk{position:relative;min-height:calc(var(--kh) * var(--rh));min-width:0;
+     border:1px solid var(--line);
      border-radius:9px;background:var(--sf);color:var(--tx);font-family:inherit;padding:0;
      display:flex;align-items:center;justify-content:center;overflow:hidden}
 .kbk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
@@ -161,6 +166,38 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbfleft{left:3px;top:50%;transform:translateY(-50%)}
 .kbfright{right:3px;top:50%;transform:translateY(-50%)}
 .kbadd{display:flex;gap:8px;margin-top:12px}
+/* THE KEY, on the sheet that edits it: the middle is what it types and the
+   four edges are what it flicks to, which is where they are on the key
+   itself. A form of five labelled rows said the same five things and showed
+   none of them. */
+.kbedit{display:grid;grid-template-columns:1fr 1.5fr 1fr;grid-template-rows:1fr 1.5fr 1fr;
+        gap:6px;width:100%;max-width:300px;aspect-ratio:1;margin:6px auto 18px}
+.kbe{border:1px solid var(--line);border-radius:12px;background:var(--sf);color:var(--tx);
+     font-family:inherit;padding:0;display:flex;align-items:center;justify-content:center;
+     overflow:hidden}
+.kbe:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+.kbeu{grid-area:1/2}
+.kbel{grid-area:2/1}
+.kbec{grid-area:2/2;border-color:var(--goldln);background:var(--goldsf)}
+.kber{grid-area:2/3}
+.kbed{grid-area:3/2}
+/* A slot with nothing in it is a place, not a thing: dashed and unfilled, so
+   the four that are empty do not read as four keys somebody has made. */
+.kbsx{color:var(--txm);display:flex;opacity:.65}
+.kbe.non{background:none;border-style:dashed}
+/* A key that is not a letter has nothing to choose and nothing to flick, so
+   it is one square rather than five. */
+.kbedit.fn{grid-template-columns:1fr;grid-template-rows:1fr;max-width:150px;aspect-ratio:1}
+.kbedit.fn .kbec{grid-area:1/1}
+/* How tall the keys are, directly under them. No number and no label: the
+   keyboard above is the readout, and it moves as the thumb moves. */
+.kbh{padding:10px 0 2px;display:flex}
+.kbrng{flex:1 1 auto;min-height:44px;background:none;-webkit-appearance:none;appearance:none}
+.kbrng::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:var(--line)}
+.kbrng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+     width:26px;height:26px;margin-top:-11px;border-radius:50%;background:var(--gold)}
+.kbrng::-moz-range-track{height:3px;border-radius:3px;background:var(--line)}
+.kbrng::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:var(--gold)}
 /* A row is added where a row would be. It is drawn as the empty row it is
    about to become, not as a button somewhere else on the screen. */
 .kbk.addrow{flex:1 1 auto;color:var(--txm);background:none;

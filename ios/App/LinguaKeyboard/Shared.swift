@@ -69,6 +69,11 @@ struct Key: Decodable {
 
 struct Layer: Decodable {
   let rows: [[Key]]
+  /// One number per row: its share of the keyboard's height, relative to the
+  /// others. Absent when nobody has moved one, and then every row is 1 --
+  /// which divides the height evenly, the way it was divided before there
+  /// was a number at all.
+  let rh: [Double]?
 }
 
 struct Board: Decodable {
@@ -84,6 +89,10 @@ struct Board: Decodable {
   /// there for somebody who has not learnt the layout, and somebody upgrading
   /// from a build that never had it has not been asked.
   let mark: Int?
+  /// How tall the keys are, as a multiplier of the extension's own row
+  /// height. A point is a different size on an SE and a Pro Max, and what
+  /// somebody chose in the app is how big a key FEELS. Absent means 1.
+  let h: Double?
   let lay: [Layer]
   /// Every face that a candidate can be made of, once each. Absent when the
   /// writing system needs no conversion and offers no spelling either.

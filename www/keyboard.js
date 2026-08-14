@@ -67,6 +67,57 @@ function saveKb(){ bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stri
    count on the same order. */
 var KB_DIRS=['up', 'right', 'down', 'left'];
 function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
+
+/* ---- how tall a key is -------------------------------------------------
+   「マス目の大きさもカスタマイズできるように」
+
+   A key's WIDTH is already the person's, per key, and has been since the
+   editor existed. Its height was 52 points and nothing could touch it, so a
+   keyboard of four rows of big flick keys and a keyboard of six thin rows
+   were the same keyboard with different letters on it.
+
+   Two numbers, because they are two questions and were answered as two:
+   the whole keyboard's height, and one row's share of it. Both are
+   multipliers of KB_H rather than points -- a point is a different size on
+   an iPhone SE and an iPhone Pro Max, and what somebody is choosing is how
+   big a key FEELS, not how many pixels it is.
+
+   Absent means 1, everywhere. A keyboard built before this, a backup written
+   before this and a payload handed over before this all say nothing about
+   height and all come out exactly as they were. */
+var KB_H=52, KB_H_MIN=0.7, KB_H_MAX=1.5;
+/* What a row can be, as a percentage of the keyboard's own height. Numbers
+   rather than words: 70 · 100 · 130 · 160 says the sizes ARE sizes, and
+   there is nothing in them to translate. */
+var KB_ROW_H=[0.7, 1, 1.3, 1.5];
+function kbHOf(h){
+  h=parseFloat(h);
+  if(!(h>0)) return 1;
+  return Math.max(KB_H_MIN, Math.min(KB_H_MAX, h));
+}
+/* The keyboard being SHOWN, which is the one the editor is about. */
+function kbH(){ return kbHOf(kbBoard().h); }
+function kbRowH(lay, ri){ return kbHOf(lay && lay.rh? lay.rh[ri] : 1); }
+function kbSetH(v){
+  var b=kbEdit();
+  b.h=kbHOf(v);
+  saveKb();
+  /* The keyboard is one custom property, so the slider moves it without the
+     screen being rebuilt under the finger that is dragging. */
+  var e=document.getElementById('kb');
+  if(e) e.style.setProperty('--kh', (KB_H*b.h).toFixed(1)+'px');
+}
+/* One row's share, from the sheet that opens on a key -- the row is the
+   key's row, and there is nowhere else a row can be pressed without taking
+   the tap that opens a key away from it. */
+function kbSetRowH(ri, v){
+  var b=kbEdit(), lay=b.lay[Math.min(kbLay, b.lay.length-1)], i;
+  if(!lay) return;
+  if(!lay.rh){ lay.rh=[]; for(i=0;i<lay.rows.length;i++) lay.rh.push(1); }
+  while(lay.rh.length<lay.rows.length) lay.rh.push(1);
+  lay.rh[ri]=kbHOf(v);
+  saveKb(); render();
+}
 /* Letters five to a row, with a space and a backspace under them. Used for
    both faces of the first keyboard, so the two cannot drift in how wide a
    row is. */
@@ -493,6 +544,11 @@ function kbMark(key){
 function kbFace(key){
   if(!key) return '';
   if(key.k==='del') return ICON_BACK;
+  /* 「改行もいるだろ」 A keyboard that cannot start a new line is a keyboard
+     nobody can write a message on. It was not among the kinds a key could be
+     -- letter, space, delete, layer -- and the omission was invisible,
+     because none of the five patterns puts one there either. */
+  if(key.k==='ret') return ICON_RET;
   /* A space wears nothing. It is the widest key on the board and the only
      one whose shape is the whole of what it says, which is how every phone
      keyboard already draws it. */
@@ -573,7 +629,7 @@ function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls;
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
-    out+='<div class="kbrow">';
+    out+='<div class="kbrow" style="--rh:'+kbRowH(lay, ri)+'">';
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(ro? ' ro':'')+
@@ -593,7 +649,7 @@ function kbHTML(sel, ro){
   if(!ro)
     out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRow') +
       ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
-  return '<div class="kb" id="kb">'+out+'</div>';
+  return '<div class="kb" id="kb" style="--kh:'+(KB_H*kbH()).toFixed(1)+'px">'+out+'</div>';
 }
 
 /* ---- the keyboard is not typed on in here ------------------------------
@@ -654,9 +710,19 @@ function vKb(){
     kbBarHTML()+
     kbLaysHTML()+
     kbHTML(kbSel)+
+    kbHBarHTML()+
     kbSysHTML()+
     kbApplyHTML()+
     '</div></div>';
+}
+/* How tall the keys are, directly under them, as the one thing a size ought
+   to be: something you drag while looking at what it does. No number beside
+   it and no words -- the keyboard above IS the readout, and it moves under
+   the finger rather than after it. */
+function kbHBarHTML(){
+  return '<div class="kbh"><input type="range" class="kbrng" id="kb-h" '+
+    'min="'+KB_H_MIN+'" max="'+KB_H_MAX+'" step="0.05" value="'+kbH()+'"' +
+    ' aria-label="'+esc(t('kb.h'))+'"' + IN('kbSetH') + '></div>';
 }
 /* The faces of THIS keyboard, and the way to add one. A layer is a face --
    ABC and あいう -- so it reads as a row of faces with a `+` on the end,
@@ -736,11 +802,13 @@ function kbBarHTML(){
    that does nothing is worse than a line that explains. */
 function kbApplyHTML(){
   var bs=kbBoards(), at=kbApplied(bs.length), now=kbClamp(kbShow, bs.length);
+  /* Nothing at all when this IS the one on the phone. It said so in a line of
+     grey text, which is a sentence to read where the tick on its tab has
+     already answered. 「今これが端末に入ってますとかいらねえって言ってんだろ」 */
+  if(now===at) return '';
   return '<div class="kbapply">'+
-    (now===at
-      ? '<div class="note">'+esc(t('kb.on.now'))+'</div>'
-      : '<button class="btn" style="width:100%"' + DO('kbApply', [now]) + '>'+
-        esc(t('kb.apply'))+'</button>')+
+    '<button class="btn" style="width:100%"' + DO('kbApply', [now]) + '>'+
+      esc(t('kb.apply'))+'</button>'+
     '</div>';
 }
 /* ---- holding a key and moving it ---------------------------------------
@@ -985,28 +1053,34 @@ FORM_OPEN.kbkey=function(a){
 function kbKeyHTML(ri, ki){
   var key=kbAt(ri, ki), i, out;
   if(!key) return '<div class="note">'+t('form.gone')+'</div>';
-  out='<div class="sec">'+t('kb.what')+'</div>'+
+  out=(key.k==='lt'? kbEditHTML(ri, ki, key) : kbEditFnHTML(key))+
+    '<div class="sec">'+t('kb.what')+'</div>'+
     '<div class="segs">'+
       '<button class="seg'+(key.k==='lt'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lt"]) + '>'+t('toc.letters')+'</button>'+
       '<button class="seg'+(key.k==='sp'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "sp"]) + '>'+t('kb.sp')+'</button>'+
       '<button class="seg'+(key.k==='del'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "del"]) + '>'+t('kb.del')+'</button>'+
+      '<button class="seg'+(key.k==='ret'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "ret"]) + '>'+t('kb.ret')+'</button>'+
       '<button class="seg'+(key.k==='lay'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lay"]) + '>'+t('kb.lay')+'</button>'+
     '</div>';
-  if(key.k==='lt')
-    out+=kbSlotHTML(t('kb.on'), key.v, ri, ki, -1);
   if(key.k==='lay')
     out+='<div class="segs" style="margin-top:8px">'+kbOf().lay.map(function(x, i){
       return '<button class="seg'+((parseInt(key.v,10)||0)===i?' on':'')+'"' +
         DO('kbSetLay', [ri, ki, i]) + '>'+esc(kbLayName(i))+'</button>';
     }).join('')+'</div>';
-  if(key.k==='lt'){
-    out+='<div class="sec">'+t('kb.flick')+'</div>';
-    for(i=0;i<4;i++) out+=kbSlotHTML(t('kb.dir.'+KB_DIRS[i]), key.f[i], ri, ki, i);
-  }
   out+='<div class="sec">'+t('kb.w')+'</div><div class="segs">'+
     [1,2,3,4].map(function(w){
       return '<button class="seg'+((key.w||1)===w?' on':'')+'"' +
         DO('kbSetW', [ri, ki, w]) + '>'+w+'</button>';
+    }).join('')+'</div>'+
+    /* And how tall the ROW it sits in is. A row is not a thing you can press
+       -- pressing one opens a key -- so its one number lives on the sheet of
+       any key in it, next to the key's own width. The two read as a pair,
+       which is what they are: how big this square is.
+       「マス目の大きさもカスタマイズできるように」 */
+    '<div class="sec">'+t('kb.h.row')+'</div><div class="segs">'+
+    KB_ROW_H.map(function(h){
+      return '<button class="seg'+(kbRowH(kbLayer(), ri)===h?' on':'')+'"' +
+        DO('kbSetRowH', [ri, h]) + '>'+Math.round(h*100)+'</button>';
     }).join('')+'</div>'+
     /* The ◀ and ▶ that used to be here are gone: a key is moved by holding it
        on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」 What
@@ -1022,12 +1096,43 @@ function kbKeyHTML(ri, ki){
 /* One slot -- the key itself or one of its corners -- and the letter in it.
    Pressing it opens the alphabet to choose from, which is why both are the
    same row: they hold the same kind of thing. */
-function kbSlotHTML(label, lid, ri, ki, dir){
+/* THE KEY, drawn the size of a hand, with its five slots where they actually
+   are on it. 「だからキーボードをカスタマイズする画面がゴミだって言ってんだろ」
+
+   It was a form: a row saying "Press", then four rows saying Up, Right, Down,
+   Left, each with the word "none" beside it. Five lines of text about a
+   square with five places on it -- so the one thing a person has to hold in
+   their head, WHERE each letter is, was the one thing the screen would not
+   show them. The words Up and Right are not needed once the up slot is up.
+
+   The middle is what the key types; the four edges are what it gives when a
+   finger slides off it. Which is exactly how the key is drawn on the
+   keyboard itself, one screen back -- kbFlicks() puts the four at the
+   middles of the edges, and this is that, big enough to press. */
+function kbSlotFace(lid){
   var l=lid? ltById(lid) : null;
-  return '<button class="kbslot"' + DO('kbSlot', [ri, ki, dir]) + '>'+
-    '<span class="sl">'+esc(label)+'</span>'+
-    '<span class="kbsv">'+(l? ltInk(l, esc(ltName(l)||'·')) : esc(t('kb.empty')))+'</span>'+
-    ICON_GO+'</button>';
+  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>')
+          : '<span class="kbsx">'+ICON_ADD+'</span>';
+}
+function kbSlotBtn(cls, lid, ri, ki, dir, label){
+  return '<button class="kbe '+cls+(lid && ltById(lid)? '' : ' non')+'"' +
+    DO('kbSlot', [ri, ki, dir]) +
+    ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
+}
+function kbEditHTML(ri, ki, key){
+  return '<div class="kbedit">'+
+    kbSlotBtn('kbeu', key.f[0], ri, ki, 0, t('kb.dir.up'))+
+    kbSlotBtn('kbel', key.f[3], ri, ki, 3, t('kb.dir.left'))+
+    kbSlotBtn('kbec', key.v,    ri, ki, -1, t('kb.on'))+
+    kbSlotBtn('kber', key.f[1], ri, ki, 1, t('kb.dir.right'))+
+    kbSlotBtn('kbed', key.f[2], ri, ki, 2, t('kb.dir.down'))+
+    '</div>';
+}
+/* A key that is not a letter has nothing to choose and nothing to flick, so
+   it is drawn once, in the middle, wearing what it will wear on the
+   keyboard. */
+function kbEditFnHTML(key){
+  return '<div class="kbedit fn"><span class="kbe kbec">'+kbFace(key)+'</span></div>';
 }
 /* Which slot the alphabet is being opened for. */
 var kbSlotFor=null;
@@ -1069,7 +1174,7 @@ function kbSetKind(ri, ki, kind){
   key.k=kind;
   if(kind!=='lt') key.f=['','','',''];
   if(kind==='lay' && !/^[0-9]+$/.test(String(key.v))) key.v='0';
-  if(kind==='del' || kind==='sp') key.v='';
+  if(kind==='del' || kind==='sp' || kind==='ret') key.v='';
   saveKb(); kbPick(ri, ki);
 }
 function kbSetLay(ri, ki, i){

@@ -15,6 +15,45 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A key is a square with five places on it
+
+「だからキーボードをカスタマイズする画面がゴミだって言ってんだろ」
+
+The sheet that opens on a key was a form: a row saying "Press", then four rows
+saying Up, Right, Down, Left, each with the word "none" beside it. Five lines of
+text about a square with five places on it — so the one thing a person has to
+hold in their head, WHERE each letter is, was the one thing the screen would not
+show them.
+
+It is the key now, drawn the size of a hand: the middle is what it types, the
+four edges are what it gives when a finger slides off. Which is where they are
+on the key itself, one screen back. The words Up and Right are gone; the up slot
+is up. An empty slot is dashed rather than filled, so four empty ones do not read
+as four keys somebody made. A key that is not a letter — space, delete, new line,
+layer — is one square rather than five, because it has nothing to flick to.
+
+### A key can be a new line
+
+「改行もいるだろ」 The kinds a key could be were letter, space, delete and layer.
+A keyboard that cannot start a new line is a keyboard nobody can write a message
+on, and the omission was invisible because none of the five patterns puts one
+there either.
+
+`ret` is the fifth kind. It wears the return arrow, and on the phone it commits
+whatever is being spelled first — the same as space, because a buffer left
+standing would be matched against the next line's text.
+
+**Not added to the free plan's QWERTY.** 10 / 9 / 7 with `!` space `?` along the
+bottom is an owner decision and stays as it is until it is decided again.
+
+### The line saying which keyboard is on the phone is gone
+
+「今これが端末に入ってますとかいらねえって言ってんだろ」 When the keyboard being
+looked at was the applied one, the screen said so in a line of grey text — under
+a row of tabs where that keyboard already wears a tick. Now it says nothing: the
+Apply button is there when there is something to apply and absent when there is
+not. `kb.on.now` is out of all ten languages.
+
 ### The keyboard chapter is a keyboard
 
 「このページは最悪です。pcみたいな使い方本当に無理」「ここの説明とボタンも嫌だ」
@@ -65,6 +104,30 @@ is left on the screen is the keyboard, one switch and one button.
 
 No data changes. `lingua.<id>.kb` holds exactly what it held, is read exactly as
 it was read, and nothing is written that was not written before.
+
+### A key has a height, and so does a row
+
+「マス目の大きさもカスタマイズできるように」 A key's width has been the person's
+since the editor existed. Its height was 52 points and nothing could touch it, so
+a keyboard of four rows of big flick keys and one of six thin rows were the same
+keyboard with different letters on it.
+
+Two numbers, because they are two questions: the whole keyboard's height — a
+slider directly under it, which moves the keyboard as the thumb moves rather than
+after — and one row's share of it, on the sheet of any key in that row, beside
+that key's own width. Both are multipliers rather than points: a point is a
+different size on an SE and a Pro Max, and what is being chosen is how big a key
+feels.
+
+**Newly stored:** `h` on a keyboard and `rh` on a layer, both optional. Absent
+means 1 everywhere — a keyboard built before this, a backup written before this
+and a payload handed over before this all say nothing about height and come out
+exactly as they were. **Newly handed over:** the same two, under the same names,
+and the extension falls back to an even share when either is missing.
+
+Swift: `Board.h`, `Layer.rh`, `KeyBoardView` shares the height out the way it
+already shared the width, and `place()` takes a measure rather than a count.
+**Not device confirmed** — Swift does not compile here.
 
 ### The draft is beside Post, not at the foot of the screen
 

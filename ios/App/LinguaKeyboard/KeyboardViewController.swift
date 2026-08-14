@@ -52,7 +52,12 @@ final class KeyboardViewController: UIInputViewController,
     let kb = KeyBoardView(lay: lay, box: CGFloat(b.box), drop: drop,
                           mark: (b.mark ?? 1) != 0)
     kb.delegate = self
-    place(kb, rows: lay.rows.count, bar: compose != nil, box: CGFloat(b.box))
+    /* The rows are shared out INSIDE the keyboard, so what the total height
+       needs is their sum rather than their count -- three rows at 1.3 is
+       taller than three rows, and the view would otherwise squeeze them back
+       into the height of three. `h` scales the lot. */
+    place(kb, rows: layRows(lay), bar: compose != nil, box: CGFloat(b.box),
+          scale: CGFloat(b.h ?? 1))
     paintBar()
   }
 
@@ -66,11 +71,26 @@ final class KeyboardViewController: UIInputViewController,
     place(l, rows: 2, bar: false, box: 800)
   }
 
+  /// A layer's height in rows: every row's share added up, which is its count
+  /// when nobody has changed one.
+  private func layRows(_ lay: Layer) -> CGFloat {
+    guard let rh = lay.rh, rh.count == lay.rows.count else {
+      return CGFloat(lay.rows.count)
+    }
+    return rh.reduce(0) { $0 + CGFloat($1 > 0 ? $1 : 1) }
+  }
+
   /// The system gives an input view no height of its own, so it has to be
   /// said. Said once, and changed rather than re-added, or the constraints
   /// pile up and iOS starts breaking them one per rebuild.
-  private func place(_ v: UIView, rows: Int, bar wantsBar: Bool, box: CGFloat) {
-    let h = rowHeight * CGFloat(rows) + 8 + (wantsBar ? barHeight : 0)
+  ///
+  /// `rows` is a measure and not a count, because a row is no longer always
+  /// one row tall. `scale` is the whole keyboard's, clamped to the range the
+  /// app's own slider has -- a file is a file and can say anything.
+  private func place(_ v: UIView, rows: CGFloat, bar wantsBar: Bool, box: CGFloat,
+                     scale: CGFloat = 1) {
+    let k = max(0.7, min(1.5, scale))
+    let h = rowHeight * k * rows + 8 + (wantsBar ? barHeight : 0)
     v.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(v)
     var top = view.topAnchor
@@ -119,6 +139,9 @@ final class KeyboardViewController: UIInputViewController,
     switch key.k {
     case "del":  back()
     case "sp":   settle(); textDocumentProxy.insertText(" "); drop()
+    // A new line commits what is being spelled first, the same as a space --
+    // a buffer left standing would be picked against the next line's text.
+    case "ret":  settle(); textDocumentProxy.insertText("\n"); drop()
     case "next": drop(); advanceToNextInputMode()
     case "lay":  drop(); layerNo = key.to ?? 0; build()
     default:     typed(key.t, face: key.face)
