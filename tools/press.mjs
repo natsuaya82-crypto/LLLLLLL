@@ -97,9 +97,9 @@ await pg.evaluate('window.__seed = ' + seed.toString());
 await pg.evaluate('window.__obStates = ' + obStates.toString());
 await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
-const R = await pg.evaluate(() => {
+const R = await pg.evaluate(async () => {
   const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
-                small: [] };
+                small: [], big: [], bent: [], picsSeen: 0 };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
      already standing in front of every screen with a phone-sized viewport, so
      it measures while it is here.
@@ -129,6 +129,59 @@ const R = await pg.evaluate(() => {
       if (seenSmall[k]) continue;
       seenSmall[k] = 1;
       out.small.push(where + ': ' + k + ' -- under ' + TAP);
+    }
+  }
+  /* And the other way round, for the one thing on a screen that is not a
+     target: a photograph. It was drawn at `width:100%` and up to 60vh, so a
+     landscape picture was BLOWN UP past the 900 pixels that are stored and one
+     post could be most of the phone. Nothing said so, and nothing could have
+     -- the fixture's photograph was a single transparent pixel, which looks
+     exactly the same stretched as it does left alone.
+     「画質が下がったり、比率変わるのはありえない」
+
+     Two claims, and the second is the one that was being broken quietly:
+     nothing is drawn taller than --picmax, and nothing is drawn at a shape
+     that is not its own. A crop does not change an <img> element's box, so
+     the shape is asked of the RENDERED size against the natural one. */
+  /* And the other way round, for the one thing on a screen that is not a
+     target: a photograph. It was drawn at `width:100%` and up to 60vh, so a
+     landscape picture was BLOWN UP past the 900 pixels that are stored and one
+     post could be most of the phone. Nothing said so, and nothing could have
+     -- the fixture's photograph was a single transparent pixel, which looks
+     exactly the same stretched as it does left alone.
+
+     Two claims, and they are the two that may not be given up:
+
+       every photograph is drawn at the SAME size, and that size is the tile
+       「画像サイズが違うのが嫌なの表示上の」
+       and the picture inside it is not cut and not squashed, which is what
+       `contain` means and is the only value that means it
+       「画質が下がったり、比率変わるのはありえない」
+
+     The second is asked of the computed style rather than of the box, because
+     with a tile the box is the tile: `cover` and `contain` give identical
+     rectangles and only one of them is showing you the whole photograph. */
+  function measurePics(where){
+    /* The same number index.html sets, read rather than repeated -- and a
+       plain 33 rather than `33vw` for exactly that reason: a custom property
+       holding a length comes back as the token, not as pixels. */
+    const pct = parseFloat(getComputedStyle(document.documentElement)
+                  .getPropertyValue('--picpct')) || 0;
+    const tile = window.innerWidth * pct / 100;
+    const els = document.querySelectorAll('#app img.ppic');
+    for (let i = 0; i < els.length; i++) {
+      const e = els[i], r = e.getBoundingClientRect();
+      if (!r.width || !r.height || !e.naturalWidth) continue;
+      out.picsSeen++;
+      if (pct && (Math.abs(r.width - tile) > 1 || Math.abs(r.height - tile) > 1))
+        out.big.push(where + ': a photograph drawn ' + Math.round(r.width) + 'x' +
+                     Math.round(r.height) + ', and every one of them is ' +
+                     Math.round(tile) + 'x' + Math.round(tile));
+      const fit = getComputedStyle(e).objectFit;
+      if (fit !== 'contain')
+        out.bent.push(where + ': a photograph drawn with object-fit:' + fit +
+                      ' -- cover cuts it and fill squashes it, and either way ' +
+                      'what is on the screen is not the photograph');
     }
   }
 
@@ -272,6 +325,21 @@ const R = await pg.evaluate(() => {
   });
   out.names = Object.keys(hit).sort();
   out.never = Object.keys(ACT).filter(k => !hit[k]).sort();
+  /* A second pass, and it has to be its own: an <img> has no size until it has
+     loaded, and the walk above is synchronous from first screen to last. So
+     the screens that carry a photograph are built again and waited for. Only
+     those -- everything else falls out on the first line. */
+  for (const sc of screens) {
+    try { sc.build(); } catch (e) { continue; }
+    const pics = document.querySelectorAll('#app img.ppic');
+    if (!pics.length) continue;
+    for (let i = 0; i < pics.length; i++) {
+      try { await pics[i].decode(); } catch (e) {}
+    }
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    measurePics(sc.label);
+  }
+
   return out;
 });
 
@@ -282,9 +350,15 @@ const fails = [];
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
 R.small.forEach(m => fails.push('too small to hit: ' + m));
+R.big.forEach(m => fails.push('drawn too big: ' + m));
+R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
 
 console.log('screens built: ' + R.screens);
 console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
+console.log('photographs all one tile, none cut or squashed: ' +
+            ((R.big.length || R.bent.length)
+              ? (R.big.length + R.bent.length) + ' FOUND'
+              : R.picsSeen + ' measured'));
 console.log('buttons pressed: ' + R.pressed +
             '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
 /* Printed, not silently tolerated. A name nothing here presses is a button

@@ -390,6 +390,7 @@ const R = await pg.evaluate(() => {
     r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
     r === 'ltset' ? [null].concat(LT_KINDS) :
     r === 'thread' ? [null].concat(postAll().map(x => x.id)) :
+    r === 'photo' ? [null].concat(postAll().filter(x => postPics(x).length).map(x => x.id + ':0')) :
     [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */

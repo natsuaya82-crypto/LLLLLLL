@@ -794,7 +794,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 285`, `screens the mirror
 rendered: 344`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 5899` for the same reason — and it is what a
+`press` prints `buttons pressed: 6064` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -808,7 +808,9 @@ row itself became a thing you press, so every post on every screen is a press
 where it used to be scenery, and the fixture's timeline went from two posts to
 four, because a timeline with no reply in it cannot draw a reply. It rose
 again to 5899 the day the timeline became two, which is a tab row on every
-render of the feed plus the two faces of it the fixture holds. A number
+render of the feed plus the two faces of it the fixture holds, and to 6064
+when a photograph became a thing you press and the fixture grew a post
+carrying four of them. A number
 moving is only ever a question — what changed — and the answer has to be a
 change somebody made on purpose.
 

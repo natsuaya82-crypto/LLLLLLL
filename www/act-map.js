@@ -117,6 +117,7 @@ act('postLike', postLike);
 act('postBoost', postBoost);
 act('snsSetTab', snsSetTab);
 act('postOpen', postOpen);
+act('postPic', postPic);
 act('postReply', postReply);
 act('postDel', postDel);
 act('postMore', postMore);

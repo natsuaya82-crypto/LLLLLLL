@@ -151,6 +151,28 @@ function vThread(){
     out+
     '</div></div>';
 }
+/* ---- one photograph ----------------------------------------------------
+   The timeline shows a picture inside a maximum, because a row as tall as
+   whatever somebody posted is a timeline one post long. This is where the
+   rest of it is: the whole picture, as big as the phone will show it, at its
+   own shape. Nothing is cropped here either — `contain` is doing what it is
+   for, the box being the screen.
+
+   The route's argument is the post and which of its pictures, because a post
+   carries up to four and "the photograph" is not a thing a post has. A post
+   that is gone, or an index it does not have, is the same answer the rest of
+   the app gives: the thing you came back for is gone. */
+function vPhoto(){
+  var a=String(here().a||''), i=a.indexOf(':'),
+      p=postById(i<0? a : a.slice(0, i)),
+      n=parseInt(i<0? '0' : a.slice(i+1), 10)||0,
+      pics=postPics(p);
+  if(!p || !pics[n]) return viewGone();
+  return '<div class="view">'+navTop(pics.length>1? String(n+1)+'/'+pics.length : '')+
+    '<div class="body">'+
+      '<div class="pview"><img class="pvimg" src="'+esc(pics[n])+'" alt=""></div>'+
+    '</div></div>';
+}
 /* ---- searching ---------------------------------------------------------
    Posts and people, not your own language -- THAT search is in the build tab,
    on the contents page, because it searches what is on that page.

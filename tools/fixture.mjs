@@ -22,6 +22,31 @@
 
 /* eslint-disable no-undef */
 export function seed(){
+  /* A photograph with a SHAPE, and it is declared IN here because seed() is
+     sent to the page as source and cannot reach a thing in this file.
+
+     It was a one-pixel transparent GIF, which is the right fixture for "is
+     there a picture on this post" and the wrong one for every question about
+     how big one is drawn: a 1x1 image blown up to fill a column looks
+     identical, in a walk, to one shown at its own size. No check and no
+     screenshot could tell a picture in a box from a picture stretched across
+     the screen, which is why nothing said the timeline was doing the second.
+
+     Made rather than pasted in as kilobytes of base64, at the size and the
+     quality a real post carries -- POST_PIC and POST_PICQ in www/post.js. */
+  const fixPic = (w, h) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d');
+    x.fillStyle = '#c9d3de'; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#8fa68a'; x.fillRect(0, Math.round(h * 0.62), w, h);
+    x.fillStyle = '#5b6b74'; x.fillRect(Math.round(w * 0.12), Math.round(h * 0.3),
+                                        Math.round(w * 0.2), Math.round(h * 0.42));
+    return c.toDataURL('image/jpeg', POST_PICQ);
+  };
+  /* halfDone() below is sent to the page as source too, so it cannot reach
+     this either. One maker, left where both can find it. */
+  window.__fixPic = fixPic;
   WORDS = [
     {hw:'kano', ph:['k','a','n','o'], mn:'mountain', mns:['mountain'], pos:'n', at:1,
      reg:'wr', tags:['land'], ety:'from the word for head', up:2},
@@ -54,7 +79,7 @@ export function seed(){
             who:'Aya', hd:'aya', mine:true,
             av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
             mn:'a tall mountain is seen', ui:'en', re:1,
-            pic:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'},
+            pic:fixPic(900, 600)},
            /* Somebody else's language, in somebody else's letters. The shapes
               are ON the post -- this phone has never seen the alphabet they
               were drawn in and never will -- which is the whole reason the
@@ -419,6 +444,23 @@ export function halfDone(){
         const keep = ME.fo; ME.fo = [];
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); ME.fo = keep; snsTab = 'rec'; return h; }],
+    /* More than one photograph, which is a different thing from one: a strip
+       that scrolls sideways. Nothing in the fixture carried two, so `.ppics.many`
+       had never been rendered by anything -- and it was the rule doing the
+       cropping. Two shapes, because a strip of one shape says nothing about
+       what a strip does to a portrait. */
+    ['a post carrying four photographs', () => {
+        POSTS.push({id:'pm', at:Date.now(), lang:langId, lname:'Shango', ln:'kano',
+                    who:'Aya', hd:'aya', mine:true, mn:'four of them', ui:'en',
+                    pics:[POSTS[0].pic, window.__fixPic(600, 900),
+                          window.__fixPic(900, 900), window.__fixPic(1200, 500)]});
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.pop(); return h; }],
+    /* And one of them opened, which is the whole picture rather than the box
+       it is shown in. */
+    ['one photograph, opened', () => {
+        window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'p1:0'}];
+        return vPhoto(); }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;

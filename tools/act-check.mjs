@@ -230,6 +230,10 @@ const R = await pg.evaluate(() => {
      answered is still a screen -- it is what every post's thread is on the
      day it is written -- and the answered one is in halfDone above. */
   walkArg('thread', vThread, postAll().map(p => p.id), 'vThread');
+  /* One photograph of one post. Only a post that HAS one is a screen;
+     asked of the fixture rather than written out, so a picture added
+     to it tomorrow is walked tomorrow. */
+  walkArg('photo', vPhoto, postAll().filter(x => postPics(x).length).map(x => x.id + ':0'), 'vPhoto');
 
   /* the forms, which are pages reached by opening rather than by routing */
   const forms = [

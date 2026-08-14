@@ -1809,8 +1809,13 @@ function postRow(p){
          are a strip, and the strip scrolls rather than the post. */
       (postPics(p).length
         ? '<div class="ppics'+(postPics(p).length>1? ' many':'')+'">'+
-            postPics(p).map(function(u){
-              return '<img class="ppic" src="'+esc(u)+'" alt="">';
+            postPics(p).map(function(u, i){
+              /* The picture is a way in, and it wins over the row it sits in
+                 because act.js delivers a press to the nearest name above the
+                 thumb. Tapping the picture opens the picture; tapping beside
+                 it opens the conversation. */
+              return '<img class="ppic" src="'+esc(u)+'" alt=""' +
+                DO('postPic', [p.id, i]) + '>';
             }).join('')+'</div>'
         : '')+
       postVoHTML(p)+
@@ -1889,6 +1894,12 @@ function postReply(id){
   if(!p) return;
   PW=pwBlank(); PW.to=id;
   openPost();
+}
+/* One photograph, whole, on a screen of its own. The timeline shows it inside
+   a maximum -- `--picmax` in index.html -- so a post is a post and not a wall,
+   and this is where the rest of it is. 「タップしたら開くXと同じ仕様にして」 */
+function postPic(id, i){
+  if(postById(id)) go('photo', String(id)+':'+String(i));
 }
 /* A post as a picture, which is the one way any of this leaves the app. */
 function postCard(id){
