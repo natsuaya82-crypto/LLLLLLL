@@ -140,42 +140,36 @@ const R = await pg.evaluate(async () => {
 
      Two claims:
 
-       every photograph is drawn the same HEIGHT, and that height is the one
+       every photograph is drawn in the SAME box, and that box is the one
        index.html sets 「画像サイズが違うのが嫌なの表示上の」
-       and every photograph is drawn at ITS OWN SHAPE -- not cut, not squashed,
-       and not fitted into a box of a shape it does not have
-       「画質が下がったり、比率変わるのはありえない」「中の比率とかも変えないで」
+       and it is filled with `cover`, which is the only value that fills a box
+       without stretching what is in it 「xと同じって言ってるやんずっと」
 
-     The second is measured off the element's own box, which is only meaningful
-     because there is no `object-fit` here: the element IS the picture's shape.
-     A tile with `contain` would pass a box check and still be showing a wide
-     photograph in a square, so the box is the thing to hold. */
+     `fill` would pass a box check and be a squashed photograph; `contain`
+     would pass it and be a wide photograph sitting in a square. The box and
+     the fit are two different questions and both have to be asked. */
   function measurePics(where){
     /* The same number index.html sets, read rather than repeated -- and a
        plain 33 rather than `33vw` for exactly that reason: a custom property
        holding a length comes back as the token, not as pixels. */
     const pct = parseFloat(getComputedStyle(document.documentElement)
                   .getPropertyValue('--picpct')) || 0;
-    const tall = window.innerWidth * pct / 100;
+    const box = window.innerWidth * pct / 100;
     const els = document.querySelectorAll('#app img.ppic');
     for (let i = 0; i < els.length; i++) {
       const e = els[i], r = e.getBoundingClientRect();
       if (!r.width || !r.height || !e.naturalWidth) continue;
       out.picsSeen++;
-      if (pct && Math.abs(r.height - tall) > 1)
-        out.big.push(where + ': a photograph ' + Math.round(r.height) +
-                     'px tall, and every one of them is ' + Math.round(tall));
+      if (pct && (Math.abs(r.width - box) > 1 || Math.abs(r.height - box) > 1))
+        out.big.push(where + ': a photograph drawn ' + Math.round(r.width) + 'x' +
+                     Math.round(r.height) + ', and every one of them is ' +
+                     Math.round(box) + 'x' + Math.round(box));
       const fit = getComputedStyle(e).objectFit;
-      if (fit !== 'fill')
+      if (fit !== 'cover')
         out.bent.push(where + ': a photograph drawn with object-fit:' + fit +
-                      ' -- there is nothing to fit it into, the element is its ' +
-                      'own shape, and a box it has to be fitted into is a shape ' +
-                      'it does not have');
-      const was = e.naturalWidth / e.naturalHeight, now = r.width / r.height;
-      if (Math.abs(was - now) / was > 0.02)
-        out.bent.push(where + ': a photograph of ' + e.naturalWidth + 'x' +
-                      e.naturalHeight + ' drawn ' + Math.round(r.width) + 'x' +
-                      Math.round(r.height) + ' -- that is not its shape');
+                      ' -- fill squashes it and contain leaves the box showing ' +
+                      'round it, and only cover fills the box with the picture ' +
+                      'still the shape it is');
     }
   }
 
@@ -349,7 +343,7 @@ R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
 
 console.log('screens built: ' + R.screens);
 console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
-console.log('photographs all one height, each at its own shape: ' +
+console.log('photographs all one box, filled, none stretched: ' +
             ((R.big.length || R.bent.length)
               ? (R.big.length + R.bent.length) + ' FOUND'
               : R.picsSeen + ' measured'));

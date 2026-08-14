@@ -15,62 +15,56 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
-### A photograph is shown as itself, at one height, and tapping it opens it
+### A photograph is one box, filled, and tapping it opens the whole thing
 
-「投稿のサイズ感も気になる。写真の画質が下がったり、比率変わるのはありえない、表示
-サイズの最大値決めて、画像がある場合画像サイズじゃ無くて画像の見た目を小さくして
-タップしたら開くXと同じ仕様にして」「何があっても画面の33パーに収めたい」
-「画像サイズが違うのが嫌なの表示上の」「中の比率とかも変えないで」
+「投稿のサイズ感も気になる」「写真の画質が下がったり、比率変わるのはありえない」
+「何があっても画面の33パーに収めたい」「画像サイズが違うのが嫌なの表示上の」
+「xと同じって言ってるやんずっと」
 
-Four bugs, all in how a photograph was DRAWN. Nothing here does anything to the
+All of it is how a photograph is DRAWN. Nothing here does anything to the
 stored picture.
 
-- **A single one was `width:100%`.** A phone column is about 1000 device pixels
-  and a stored photograph is 900 across, so every landscape picture was being
-  blown up past its own size. That is what "the quality dropped" looks like —
-  nothing was thrown away at that moment, it was drawn bigger than it is.
-- **Several were `object-fit:cover`, which crops.** A picture in a strip was
-  shown with its sides or its top cut off and nothing said so.
-- **The row was as tall as whatever was posted**, up to 60vh — most of a phone
-  for one post.
-- **And every picture was a different size**, once those three were fixed,
-  because every picture is a different shape.
+What was wrong: **`width:100%`** blew a 900-pixel photograph up to the 1000
+pixels of a phone column, which is what "the quality dropped" looks like —
+nothing was thrown away at that moment, it was drawn bigger than it is.
+**`max-height:60vh`** let one post fill a phone. And the several-photograph
+case had a box while a single one did not, so one picture and four were two
+different rules and only the first was ever rendered by anything.
 
-**A photograph is shown as itself, at one height.** `--picpct`, a third of the
-screen's width, is the height every photograph on every post is drawn at, and
-its width is whatever its own shape gives it. That is what "the same size" can
-mean without lying about any of them.
+**One box, the same for every photograph on every post, filled.** A third of
+the screen's width, square. The picture is never stretched and never squeezed —
+`object-fit:cover` scales it and shows the middle — and what does not fit is
+off the edges. **Tapping it opens the whole thing**, on a route of its own:
+`photo`, argument `<post>:<index>`, because a post carries up to four and "the
+photograph" is not a thing a post has.
 
-A square tile with `object-fit:contain` was tried and is wrong, which is worth
-writing down because it looks right: the picture inside keeps its ratio, but a
-wide photograph in a square frame with the frame showing above and below it is
-a wide photograph presented as a square one. **Putting a picture in a box of a
-shape it does not have is changing its shape.** There is no `object-fit` here
-at all now — the element IS the picture's shape, so there is nothing to fit it
-into — and no background, because there is never anything behind it to show.
+Three shapes were possible and the owner picked this one by name. Written down
+because the other two are what a session would reach for: a box every picture
+fits *inside* leaves the box showing around anything not square, which is a
+wide photograph presented as a square one; and no box at all — one height,
+width from the picture's own shape — keeps every pixel and makes every
+photograph a different size on the screen.
 
-The row scrolls sideways whether there is one photograph or four, so a panorama
-runs off the edge and is pushed rather than squeezed. **Tapping any of them
-opens it** on a route of its own, whole — `photo`, argument `<post>:<index>`,
-because a post carries up to four and "the photograph" is not a thing a post
-has. That is where a tall picture goes, rather than into a tall row.
+`--picpct` is the one number and it is a plain `33` rather than `33vw`, so
+`press` can read the same number the CSS does. A size written twice is a size
+that will disagree with itself.
 
 **What still reduces quality, and it is not new: the stored picture is 900px on
 the long edge at q0.72.** The ratio is untouched — the same factor goes on both
 edges — but the pixels are thrown away when the photograph is chosen and cannot
 come back. That number is a **data-safety** number rather than a picture one: a
 photograph lives in the same `localStorage` the language does, one is about
-87 KB as text, and a whole free language is 25 KB. Raising it is not this
-session's to decide (`docs/FEATURE_RULES.md` § what is the owner's), and it is
-written up in `docs/FEATURES.md` for a decision rather than changed.
+87 KB as text, and a whole free language is 25 KB. It is written up in
+`docs/FEATURES.md` for a decision rather than changed.
 
-`press` measures both claims now — one height, and each at its own shape — and
-it could not have before: the fixture's photograph was a single transparent
-pixel, which looks exactly the same stretched as it does left alone. It is a
-real 900×600 picture, made in the page at the size and quality a real post
-carries, and a face carrying four of different shapes is walked; nothing had
-ever rendered more than one, and the multi-picture rule was the one doing the
-cropping. The bug was put back and 24 rows went red.
+`press` holds two claims — every photograph in the same box, and the box filled
+with `cover` — and they are two questions because `fill` would pass a box check
+and be a squashed photograph, and `contain` would pass it and be a wide
+photograph sitting in a square. It could hold neither before: the fixture's
+photograph was a single transparent pixel, which looks exactly the same
+stretched as it does left alone. It is a real 900×600 picture now, made in the
+page at the size and quality a real post carries, and a face carrying four of
+different shapes is walked. The bug was put back and 24 rows went red.
 
 Two more were caught by that check rather than by looking: a flex row stretches
 its items, so an `<img>` with `height:auto` was pulled tall and squashed

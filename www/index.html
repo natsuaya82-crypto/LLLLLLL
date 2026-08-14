@@ -1027,43 +1027,41 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    sideways, and it is the strip that scrolls, not the post.
    「画像だけ横スライドできる感じ」 */
 /* ---------- a photograph in the timeline ----------
-   A photograph is shown AS ITSELF. Nothing here may change its shape, and
-   putting it inside a box of a shape it does not have is changing its shape --
-   a square tile with a wide picture in it and the tile showing above and below
-   is a wide picture presented as a square one. 「中の比率とかも変えないで」
+   One box, the same for every photograph on every post, filled.
+   「xと同じって言ってるやんずっと」
 
-   So there is one number and it is the HEIGHT. Every photograph on every post
-   is drawn that tall -- which is what "the same size" can mean without lying
-   about any of them -- and its width is whatever its own shape gives it.
-   「画像サイズが違うのが嫌なの表示上の」「何があっても画面の33パーに収めたい」
+   Three shapes were possible and only one of them is X's. A box that every
+   picture fits INSIDE leaves the box showing around anything that is not
+   square, which is a wide photograph presented as a square one. No box at all
+   -- one height, width from the picture's own shape -- keeps every pixel and
+   makes every photograph a different size on the screen. The third is this:
+   the box is the same, the picture fills it, and what does not fit is off the
+   edges. The picture is never stretched and never squeezed; it is the same
+   picture, and you are looking at the middle of it. Tapping it opens the whole
+   thing, which is where the edges are.
 
-   No `object-fit` at all: the element is the picture's own shape, so there is
-   nothing to fit it into. No background either -- there is never anything
-   behind it to show. A wide one is wider than a tall one, because it is.
-
-   The row scrolls sideways whether there is one photograph or four, so a
-   panorama runs off the edge and is pushed rather than squeezed. Tapping any
-   of them opens it whole, which is where a picture goes to be looked at.
+   A third of the screen's width, square. 「何があっても画面の33パーに収めたい」
+   `--picpct` is the one number, and it is a plain 33 rather than `33vw` so
+   that tools/press.mjs can read the same number this does. A size written
+   twice is a size that will disagree with itself.
 
    What was here before, and each was its own bug: `width:100%`, which blew a
    900-pixel photograph up to the 1000 pixels of a phone column and is what
-   "the quality dropped" looks like; `object-fit:cover`, which cropped;
-   `max-height:60vh`, which let one post fill a phone; and then a square tile,
-   which was three fixed and a fourth introduced.
-
-   `--picpct` is the one number, a plain 33 rather than `33vw` so that
-   tools/press.mjs can read the same number this does. A size written twice is
-   a size that will disagree with itself. */
+   "the quality dropped" looks like; `max-height:60vh`, which let one post fill
+   a phone; and a strip where only the several-photograph case had a box, so
+   one picture and four were two different rules. */
 :root{--picpct:33}
 /* One row, always, whether there is one photograph or four. `align-items` has
-   to be said: a flex row STRETCHES its items by default, and an <img> pulled
-   to a height it did not ask for is a photograph squashed sideways -- which
-   looks like a photograph, which is why the check measures the shape. */
+   to be said even with the box fixed: a flex row stretches its items by
+   default, and an <img> pulled to a height it did not ask for is a photograph
+   squashed sideways -- which looks like a photograph, which is why the check
+   measures the box rather than trusting the rule above it. */
 .ppics{margin-top:8px;display:flex;gap:8px;align-items:flex-start;
        overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .ppics::-webkit-scrollbar{display:none}
 .ppic{flex:0 0 auto;display:block;
-      height:calc(var(--picpct) * 1vw);width:auto;
+      width:calc(var(--picpct) * 1vw);height:calc(var(--picpct) * 1vw);
+      object-fit:cover;
       margin:0;border-radius:14px;border:1px solid var(--glassrim)}
 /* ---------- and the whole of it ----------
    Opened from the timeline, on its own screen, as big as the phone will show
