@@ -231,6 +231,11 @@ function voDropFile(f){
   if(!p || !f) return;
   p('LinguaShare', 'dropVoice', {name:String(f)})['catch'](function(){});
 }
+/* Whether this voice is on the disk or on the server. A name made by voName()
+   is `v` and digits and an extension and never holds a slash; a path in
+   Storage is `<author>/<post>/vo.m4a` and always does. One character tells
+   them apart, which is why the name was made in one place. */
+function voRemote(f){ return String(f||'').indexOf('/')>=0; }
 function voRead(f, done){
   var p=sharePlug();
   if(!p || !f){ done(''); return; }
@@ -258,6 +263,18 @@ function voPlay(f){
   f=String(f||'');
   if(!f) return;
   if(VOAT===f){ voPlayOff(); return; }
+  /* Somebody else's voice is a URL and is played from it -- there is nothing
+     to read off this disk, and downloading it whole before starting would be
+     a wait where every other app starts playing. */
+  if(voRemote(f)){
+    var ra=voAudio();
+    ra.src=netMediaURL(f);
+    ra.onended=function(){ voPlayOff(); };
+    VOAT=f;
+    voPaintRows();
+    try{ ra.play(); }catch(e){ voPlayOff(); }
+    return;
+  }
   voRead(f, function(b64){
     if(!b64){ toast(t('post.vo.gone')); return; }
     var a=voAudio();

@@ -303,6 +303,115 @@ function netFeed(which, ok, bad){
       netGet(sel+'&author=in.('+ids.join(',')+')', got, bad);
     }, bad);
 }
+/* ---- the bytes ---------------------------------------------------------
+   A photograph is not a field of a post. It is half a megabyte, and a
+   timeline of fifty posts carrying their own pictures is forty megabytes
+   downloaded to draw six of them -- which is not a timeline, it is a wait.
+   「Xとかインスタとかと同じ動きにしてね」
+
+   So the picture goes to Storage and the post carries its PATH. The reader
+   gets the text at once and the pictures fill in as they arrive, which is
+   what X does and is the whole of why it feels like X.
+
+   The path is the write rule: `<author uuid>/<post uuid>/0.jpg`, and
+   supabase/schema.sql lets somebody write under their own uuid and nowhere
+   else. Nothing here decides that; it obeys it.
+
+   A path and not a URL, because the URL is where the bucket happens to live
+   and the path is what the post is about. netMediaURL() is the one place the
+   two are joined. */
+function netMediaURL(path){
+  return SB_URL+'/storage/v1/object/public/post-media/'+String(path||'');
+}
+/* A post's name before the post exists. The row's id is made HERE rather than
+   by the server, because the pictures have to be uploaded under it and an id
+   that arrives after the upload would mean uploading twice or moving files.
+   One insert, one path, no second thought.
+
+   crypto.getRandomValues where there is one, which is every WKWebView this
+   app runs in. The fallback is not a security decision -- nothing is guarded
+   by this number; it is a name that must not collide with another name made
+   on another phone in the same second. */
+function netUUID(){
+  var b, i, h='', c=window.crypto || window.msCrypto;
+  b=new Uint8Array(16);
+  if(c && c.getRandomValues) c.getRandomValues(b);
+  else for(i=0;i<16;i++) b[i]=Math.floor(Math.random()*256);
+  b[6]=(b[6] & 0x0f) | 0x40;      /* version 4 */
+  b[8]=(b[8] & 0x3f) | 0x80;      /* variant   */
+  for(i=0;i<16;i++){
+    h+=(b[i]<16? '0':'')+b[i].toString(16);
+    if(i===3 || i===5 || i===7 || i===9) h+='-';
+  }
+  return h;
+}
+/* A data URL, taken apart. Everything the phone holds a picture as is one of
+   these; what goes on the wire is the bytes. */
+function netData(u){
+  u=String(u||'');
+  var c=u.indexOf(','), sc=u.indexOf(';');
+  if(u.indexOf('data:')!==0 || c<0 || sc<0 || u.indexOf('base64')<0) return null;
+  return {mime:u.slice(5, sc), b64:u.slice(c+1)};
+}
+function netBytes(b64){
+  var bin, n, a, i;
+  try{ bin=atob(String(b64||'')); }catch(e){ return null; }
+  n=bin.length;
+  a=new Uint8Array(n);
+  for(i=0;i<n;i++) a[i]=bin.charCodeAt(i);
+  return a;
+}
+/* One file up. Not netSend(): this is a different service on the same host,
+   the body is bytes rather than JSON, and the one header that matters is the
+   content type -- a jpeg uploaded as octet-stream comes back as a download
+   rather than as a picture. */
+function netUp(path, b64, mime, ok, bad){
+  var x, a=netBytes(b64);
+  if(!netSignedIn() || !a){ bad(null, 0); return; }
+  x=new XMLHttpRequest();
+  x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
+  x.setRequestHeader('apikey', SB_KEY);
+  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
+  x.setRequestHeader('Content-Type', mime || 'application/octet-stream');
+  x.onreadystatechange=function(){
+    if(x.readyState!==4) return;
+    if(x.status>=200 && x.status<300) ok(path);
+    else bad(null, x.status);
+  };
+  x.onerror=function(){ bad(null, 0); };
+  x.send(a);
+}
+/* Every picture on a post, one after the other, and then the caller.
+   One at a time and not all at once: a phone on a train has one usable
+   connection, and four uploads racing each other is four that are slow.
+
+   A picture that will not go is DROPPED FROM THIS POST'S LIST and does not
+   stop the post. It is still on the phone -- nothing here removes anything --
+   and the post goes up carrying the pictures that made it. A post that
+   refused to exist because a photograph failed would be a post lost to a
+   tunnel. */
+function netUpPics(uid, pid, pics, ok){
+  var out=[], i=0;
+  function step(){
+    var d;
+    if(i>=pics.length){ ok(out); return; }
+    d=netData(pics[i]);
+    if(!d){ i++; step(); return; }
+    netUp(uid+'/'+pid+'/'+i+netExt(d.mime), d.b64, d.mime,
+      function(path){ out.push(path); i++; step(); },
+      function(){ i++; step(); });
+  }
+  step();
+}
+/* What a file is called at the end. The mime is what the phone said it made,
+   and these three are what it can make. */
+function netExt(mime){
+  mime=String(mime||'');
+  if(mime.indexOf('png')>=0) return '.png';
+  if(mime.indexOf('webp')>=0) return '.webp';
+  if(mime.indexOf('mp4')>=0 || mime.indexOf('m4a')>=0) return '.m4a';
+  return '.jpg';
+}
 /* One row in `post`. Everything a reader needs is already ON it (rule 8): who
    wrote it, what they are called, the language's name, the shapes, which way
    the line runs. There is nothing to look up.
@@ -312,19 +421,42 @@ function netFeed(which, ok, bad){
    as somebody else's. A push that fails leaves no `sid`, and a post with no
    `sid` is one that has not gone up yet, which is the whole of the retry. */
 function netPush(post, ok, bad){
-  var row;
+  var row, pid, up;
   if(!netSignedIn() || !post){ bad(null, 0); return; }
-  row={author:SESS.uid, body:netBody(post)};
+  pid=netUUID();
+  row={id:pid, author:SESS.uid, body:netBody(post)};
   /* What it answers, by the name the SERVER knows -- the local id means
      nothing there. A reply to a post that never went up carries no reply_to
      and is still a post: it already holds the handle it answered (rule 13),
      so it goes on saying who it was for. */
   if(post.to){
-    var up=postById(post.to);
+    up=postById(post.to);
     if(up && up.sid) row.reply_to=up.sid;
   }
-  netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
-    function(d){ ok(d && d.length? d[0].id : ''); }, bad);
+  /* The bytes first, the row after, because the row carries where the bytes
+     went. The other order is a post that exists with pictures it cannot name
+     until a second request lands -- and a second request is a second thing
+     that can fail. */
+  netUpPics(SESS.uid, pid, postPics(post), function(paths){
+    if(paths.length) row.body.pu=paths;
+    netUpVoice(SESS.uid, pid, post, function(vpath){
+      if(vpath) row.body.vu=vpath;
+      netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
+        function(d){ ok((d && d.length? d[0].id : pid)); }, bad);
+    });
+  });
+}
+/* And the voice, which is a file on the disk rather than a string in hand --
+   so it is read back out before it can go. A post with no voice, or one whose
+   file has gone, is a post: ok('') and on. */
+function netUpVoice(uid, pid, post, ok){
+  var vo=post && post.vo;
+  if(!vo || !vo.f){ ok(''); return; }
+  voRead(vo.f, function(b64){
+    if(!b64){ ok(''); return; }
+    netUp(uid+'/'+pid+'/vo.m4a', b64, 'audio/mp4',
+      function(path){ ok(path); }, function(){ ok(''); });
+  });
 }
 function netMark(id, kind, on, ok, bad){
   /* NET_SEAM — `kind` is 'like' or 'boost', `on` is whether it now is. Not a

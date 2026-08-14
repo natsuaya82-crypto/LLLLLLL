@@ -666,7 +666,7 @@ function pwHas(ln){
   if(ln) return true;
   if(PW.ed){
     p=postById(PW.ed);
-    return !!(p && (postPics(p).length || (p.vo && p.vo.f)));
+    return !!(p && (postPics(p).length || postVoAt(p)));
   }
   return !!(pwPics().length || (PW.vo && PW.vo.b64));
 }
@@ -1707,10 +1707,26 @@ function postInkOK(ink){
    photograph is the largest thing on a post, so a migration that copied one
    would double it. So: `pics` if it has one, otherwise `pic` as a list of
    one, otherwise nothing. */
+/* Every picture on a post, as something an <img> can be given.
+
+   Three shapes, and the order is the point. What is ON THIS PHONE comes
+   first: a post somebody just wrote has its pictures in hand and draws them
+   at once, with no network and no wait -- which is what makes your own
+   timeline instant. Only a post that arrived from somewhere else falls to
+   `pu`, the paths in Storage, and those load as they arrive. 「Xとかインスタ
+   とかと同じ動きにしてね」
+
+   `p.pic` is the single picture a post carried before it could carry four,
+   and it is read and never written. A post from that week still draws. */
 function postPics(p){
+  var out=[], i;
   if(!p) return [];
   if(Object.prototype.toString.call(p.pics)==='[object Array]' && p.pics.length)
     return p.pics;
+  if(Object.prototype.toString.call(p.pu)==='[object Array]' && p.pu.length){
+    for(i=0;i<p.pu.length;i++) out.push(netMediaURL(p.pu[i]));
+    return out;
+  }
   return p.pic? [p.pic] : [];
 }
 function postDir(p){
@@ -1734,16 +1750,25 @@ function postLines(){
     return PLINE[c.getAttribute('data-p')] || null;
   });
 }
-/* The voice on a post, and it renders from the post: `vo` is `{f, ms}` -- the
-   name of a file in Documents and how long it is -- and there is nothing else
-   to know. A post with none has no row, not an empty one. rec.js (chapter 25)
-   is the other half, and the file is written there. */
+/* Where this post's voice is, as one string, and the one place that decides
+   between the two answers. On this phone it is `vo.f`, a name in Documents;
+   from anywhere else it is `vu`, a path in Storage. voPlay() takes either and
+   tells them apart by the slash -- and it can only do that because both are
+   asked for here rather than in each of the four places that want one. */
+function postVoAt(p){
+  if(!p) return '';
+  if(p.vo && p.vo.f) return String(p.vo.f);
+  return p.vu? String(p.vu) : '';
+}
+function postVoMs(p){ return (p && p.vo && p.vo.ms) || 0; }
+/* The voice on a post, and it renders from the post. A post with none has no
+   row, not an empty one. rec.js (chapter 25) is the other half. */
 function postVoHTML(p){
-  var vo=p && p.vo;
-  if(!vo || !vo.f) return '';
-  return '<button class="povo'+((VOAT===vo.f)? ' on':'')+'" data-f="'+esc(vo.f)+'"' +
-    DO('voPlay', [String(vo.f)]) + ' aria-label="'+esc(t('post.vo.play'))+'">'+
-    ICON_PLAY+'<span class="vot">'+esc(voLen(vo.ms))+'</span></button>';
+  var at=postVoAt(p);
+  if(!at) return '';
+  return '<button class="povo'+((VOAT===at)? ' on':'')+'" data-f="'+esc(at)+'"' +
+    DO('voPlay', [at]) + ' aria-label="'+esc(t('post.vo.play'))+'">'+
+    ICON_PLAY+'<span class="vot">'+esc(voLen(postVoMs(p)))+'</span></button>';
 }
 /* ---- the conversation a post is in -------------------------------------
    A reply carries `to`, the id of what it answers, and `toh`, the handle of

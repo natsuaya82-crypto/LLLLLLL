@@ -268,6 +268,10 @@ const BROWSER = ['Date','String','Number','Boolean','Object','Array','Math','JSO
      is what plays one back -- and both are asked for by name before they are
      used, because an old WKWebView has neither. */
   'MediaRecorder','Audio',
+  /* base64 to bytes, and back. Everything the phone holds a picture or a
+     voice as is base64 -- a canvas gives a data URL and the recorder gives
+     one -- and what goes to Storage is the bytes. */
+  'atob','btoa',
   'getComputedStyle','confirm','alert','prompt','eval'];
 
 const bindings = new Set(decls.map(d => d.name));

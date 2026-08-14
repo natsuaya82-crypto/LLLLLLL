@@ -15,6 +15,44 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The photographs and the voice go to Storage
+
+A picture is not a field of a post. Half a megabyte each, and a timeline of
+fifty posts carrying their own is forty megabytes downloaded to draw six —
+which is not a timeline, it is a wait. So a post carries the **path** and the
+bytes live in the `post-media` bucket. 「Xとかインスタとかと同じ動きにしてね」
+
+`<author uuid>/<post uuid>/0.jpg`, which is the write rule in
+`supabase/schema.sql` — you may write under your own uuid and nowhere else.
+
+**The row's id is made on the phone.** `netUUID()` — v4, from
+`crypto.getRandomValues` where there is one. The pictures have to be uploaded
+under the post's name, and a name that arrives after the upload means
+uploading twice or moving files. Bytes first, row after, one insert.
+
+**Newly stored on a post: `pu`, the paths of its pictures, and `vu`, the path
+of its voice.** Both only on a post that has gone up. `pics` and `vo` are
+untouched and are still what this phone draws from.
+
+**Order is the feature.** `postPics()` answers with what is on THIS PHONE
+first, so a post somebody just wrote draws instantly with no network; only a
+post that arrived from elsewhere falls to `pu` and fills in as it loads. That
+is what X does and is the whole of why it feels like X.
+
+`postVoAt()` is the one place that decides where a voice is — `vo.f` on this
+phone, `vu` from anywhere else — and `voPlay()` tells them apart by the slash,
+which it can do because `voName()` has always made the name in one place. A
+voice from the server is played from its URL rather than downloaded whole
+first.
+
+A picture that will not upload is dropped from **that post's list** and does
+not stop the post. It is still on the phone; nothing here removes anything. A
+post that refused to exist because a photograph failed would be a post lost to
+a tunnel.
+
+`tools/dead-check.mjs` learns `atob` and `btoa`.
+
+
 ### A post goes up, and a timeline comes down
 
 The first two of the six empty seam functions in `www/net.js` have bodies.
