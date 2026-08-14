@@ -479,9 +479,16 @@ function kbFlicks(key){
   return out;
 }
 /* What a letter key types. It is the letter's NAME, because the name is the
-   code point the font draws -- so what lands in a field, or in Messages, is
-   the letter itself and not a transliteration of it. The font unification is
-   what makes this one line instead of a conversion table.
+   code point Lingua's own font draws -- so inside Lingua, in a field wearing
+   .sfont, what lands there is the letter as it was drawn.
+
+   OUTSIDE Lingua it is the name and nothing more. Messages has no font of
+   anybody's alphabet and cannot be given one from a keyboard extension, so a
+   letter called `a` arrives in a message as the system's `a`, at both ends.
+   This comment used to say the opposite -- "so what lands in a field, or in
+   Messages, is the letter itself" -- and that half was never true. What
+   crosses is the shape ON A KEY and on the bar; what crosses in the message
+   is the name.
 
    The only caller left is www/share.js, which puts it ON the key before the
    key leaves for the extension. Nothing in the app types on this keyboard
