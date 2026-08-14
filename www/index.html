@@ -1027,46 +1027,44 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    sideways, and it is the strip that scrolls, not the post.
    「画像だけ横スライドできる感じ」 */
 /* ---------- a photograph in the timeline ----------
-   How big a photograph is ON THE SCREEN, which is not how big it is, and is
-   not how big the NEXT one is either.
+   A photograph is shown AS ITSELF. Nothing here may change its shape, and
+   putting it inside a box of a shape it does not have is changing its shape --
+   a square tile with a wide picture in it and the tile showing above and below
+   is a wide picture presented as a square one. 「中の比率とかも変えないで」
 
-   Four things were wrong and they are four different bugs. A single one was
-   `width:100%` -- the column is about 1000 device pixels and a stored
-   photograph is 900 across, so every landscape picture was being blown up past
-   its own size, which is what "the quality dropped" looks like. Several were
-   `object-fit:cover`, which crops, and nothing said so. The row was as tall as
-   whatever was posted, up to 60vh. And once the first three were fixed, every
-   picture was a different size on the screen, because every picture is a
-   different shape. 「画像サイズが違うのが嫌なの表示上の」
+   So there is one number and it is the HEIGHT. Every photograph on every post
+   is drawn that tall -- which is what "the same size" can mean without lying
+   about any of them -- and its width is whatever its own shape gives it.
+   「画像サイズが違うのが嫌なの表示上の」「何があっても画面の33パーに収めたい」
 
-   So a photograph is a TILE. One size, always, whatever is in it: a third of
-   the screen's width, square. 「何があっても画面の33パーに収めたい」 Two rules
-   and neither may be given up:
+   No `object-fit` at all: the element is the picture's own shape, so there is
+   nothing to fit it into. No background either -- there is never anything
+   behind it to show. A wide one is wider than a tall one, because it is.
 
-     the tile is the same size for every picture on every post
-     the picture inside it is whole and at its own shape
+   The row scrolls sideways whether there is one photograph or four, so a
+   panorama runs off the edge and is pushed rather than squeezed. Tapping any
+   of them opens it whole, which is where a picture goes to be looked at.
 
-   Which is `object-fit:contain`, and contain is the only value that does both.
-   `cover` fills the tile by cutting the picture; `fill` fills it by squashing
-   it. What is left over is the tile showing through around a photograph that
-   is not square, and that is the honest answer -- a wide picture is wide.
-   Tapping it opens it, which is where a tall picture goes rather than into a
-   tall row.
+   What was here before, and each was its own bug: `width:100%`, which blew a
+   900-pixel photograph up to the 1000 pixels of a phone column and is what
+   "the quality dropped" looks like; `object-fit:cover`, which cropped;
+   `max-height:60vh`, which let one post fill a phone; and then a square tile,
+   which was three fixed and a fourth introduced.
 
-   `--picpct` is the one number, and it is a plain 33 rather than `33vw` so
-   that tools/press.mjs can read the same number this does. A cap written twice
-   is a cap that will disagree with itself. */
+   `--picpct` is the one number, a plain 33 rather than `33vw` so that
+   tools/press.mjs can read the same number this does. A size written twice is
+   a size that will disagree with itself. */
 :root{--picpct:33}
-.ppics{margin-top:8px}
-.ppics.many{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-            scrollbar-width:none;align-items:flex-start}
-.ppics.many::-webkit-scrollbar{display:none}
-.ppics.many .ppic{flex:0 0 auto;margin:0}
-.ppic{display:block;
-      width:calc(var(--picpct) * 1vw);height:calc(var(--picpct) * 1vw);
-      object-fit:contain;background:var(--sink);
-      margin:8px 0 2px;
-      border-radius:14px;border:1px solid var(--glassrim)}
+/* One row, always, whether there is one photograph or four. `align-items` has
+   to be said: a flex row STRETCHES its items by default, and an <img> pulled
+   to a height it did not ask for is a photograph squashed sideways -- which
+   looks like a photograph, which is why the check measures the shape. */
+.ppics{margin-top:8px;display:flex;gap:8px;align-items:flex-start;
+       overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.ppics::-webkit-scrollbar{display:none}
+.ppic{flex:0 0 auto;display:block;
+      height:calc(var(--picpct) * 1vw);width:auto;
+      margin:0;border-radius:14px;border:1px solid var(--glassrim)}
 /* ---------- and the whole of it ----------
    Opened from the timeline, on its own screen, as big as the phone will show
    it and not one pixel bigger. `contain` here is doing what it is for: the box

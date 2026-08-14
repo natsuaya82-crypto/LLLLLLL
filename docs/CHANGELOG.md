@@ -15,61 +15,67 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
-### A photograph is shown at a size, and tapping it opens it
+### A photograph is shown as itself, at one height, and tapping it opens it
 
 「投稿のサイズ感も気になる。写真の画質が下がったり、比率変わるのはありえない、表示
 サイズの最大値決めて、画像がある場合画像サイズじゃ無くて画像の見た目を小さくして
-タップしたら開くXと同じ仕様にして」
+タップしたら開くXと同じ仕様にして」「何があっても画面の33パーに収めたい」
+「画像サイズが違うのが嫌なの表示上の」「中の比率とかも変えないで」
 
-Three separate bugs, all in how a photograph was DRAWN. Nothing was ever done
-to the stored picture by any of this.
+Four bugs, all in how a photograph was DRAWN. Nothing here does anything to the
+stored picture.
 
-- **A single photograph was `width:100%`.** A phone column is about 1000 device
-  pixels and a stored photograph is 900 across, so every landscape picture in
-  the timeline was being blown up past its own size. That is what "the quality
-  dropped" looks like — nothing was thrown away at that moment, it was drawn
-  bigger than it is.
+- **A single one was `width:100%`.** A phone column is about 1000 device pixels
+  and a stored photograph is 900 across, so every landscape picture was being
+  blown up past its own size. That is what "the quality dropped" looks like —
+  nothing was thrown away at that moment, it was drawn bigger than it is.
 - **Several were `object-fit:cover`, which crops.** A picture in a strip was
-  shown with its sides or its top cut off and nothing said so. That is the
-  changed ratio, and it was the only place one was being changed.
+  shown with its sides or its top cut off and nothing said so.
 - **The row was as tall as whatever was posted**, up to 60vh — most of a phone
   for one post.
+- **And every picture was a different size**, once those three were fixed,
+  because every picture is a different shape.
 
-Now: **a third of the screen and never more, whichever way the photograph
-happens to be.** 「何があっても画面の33パーに収めたい」「画像が縦長でもタップして
-開く形にしたいんだって」 A tall one is capped by the height and a wide one by the
-width, so neither shape is the one that gets away with it, and a picture
-smaller than that is left alone. Nothing is cropped — the whole photograph is
-in the thumbnail. **Tapping it opens it** on a route of its own, whole, as big
-as the phone will show it — `photo`, argument `<post>:<index>`, because a post
-carries up to four and "the photograph" is not a thing a post has. That is the
-answer for a tall picture rather than a tall row.
+**A photograph is shown as itself, at one height.** `--picpct`, a third of the
+screen's width, is the height every photograph on every post is drawn at, and
+its width is whatever its own shape gives it. That is what "the same size" can
+mean without lying about any of them.
 
-`--picpct` is the one number and it is a plain `33` rather than `33vw`, so
-`press` can read the same number the CSS does. A cap written twice is a cap
-that will disagree with itself.
+A square tile with `object-fit:contain` was tried and is wrong, which is worth
+writing down because it looks right: the picture inside keeps its ratio, but a
+wide photograph in a square frame with the frame showing above and below it is
+a wide photograph presented as a square one. **Putting a picture in a box of a
+shape it does not have is changing its shape.** There is no `object-fit` here
+at all now — the element IS the picture's shape, so there is nothing to fit it
+into — and no background, because there is never anything behind it to show.
 
-Several are the same thumbnail in a row, so two, three and four all fit across
-the screen with nothing cut off. That row needed `align-items` said out loud: a
-flex row stretches its items by default, an `<img>` pulled to a height it did
-not ask for computes its width from that height and then runs into `max-width`,
-and the result is a photograph squashed sideways that looks like a photograph.
+The row scrolls sideways whether there is one photograph or four, so a panorama
+runs off the edge and is pushed rather than squeezed. **Tapping any of them
+opens it** on a route of its own, whole — `photo`, argument `<post>:<index>`,
+because a post carries up to four and "the photograph" is not a thing a post
+has. That is where a tall picture goes, rather than into a tall row.
 
 **What still reduces quality, and it is not new: the stored picture is 900px on
 the long edge at q0.72.** The ratio is untouched — the same factor goes on both
-edges — but the pixels are thrown away at the moment the photograph is chosen,
-and they cannot come back. That number is a **data-safety** number rather than
-a picture one: a photograph lives in the same `localStorage` the language does,
-one is about 87 KB as text, and a whole free language is 25 KB. Raising it is
-not this session's to decide (`docs/FEATURE_RULES.md` § what is the owner's),
-and it is written up for a decision rather than changed.
+edges — but the pixels are thrown away when the photograph is chosen and cannot
+come back. That number is a **data-safety** number rather than a picture one: a
+photograph lives in the same `localStorage` the language does, one is about
+87 KB as text, and a whole free language is 25 KB. Raising it is not this
+session's to decide (`docs/FEATURE_RULES.md` § what is the owner's), and it is
+written up in `docs/FEATURES.md` for a decision rather than changed.
 
-`press` measures both new claims now, and it could not have before: the
-fixture's photograph was a single transparent pixel, which looks exactly the
-same stretched as it does left alone. It is a real 900×600 picture, made in the
-page at the size and quality a real post carries, and a face carrying four of
-different shapes is walked — `.ppics.many` had never been rendered by anything,
-and it was the rule doing the cropping.
+`press` measures both claims now — one height, and each at its own shape — and
+it could not have before: the fixture's photograph was a single transparent
+pixel, which looks exactly the same stretched as it does left alone. It is a
+real 900×600 picture, made in the page at the size and quality a real post
+carries, and a face carrying four of different shapes is walked; nothing had
+ever rendered more than one, and the multi-picture rule was the one doing the
+cropping. The bug was put back and 24 rows went red.
+
+Two more were caught by that check rather than by looking: a flex row stretches
+its items, so an `<img>` with `height:auto` was pulled tall and squashed
+sideways to obey its `max-width`; and a strip set by height alone put the first
+picture half off the screen.
 
 No data changes.
 

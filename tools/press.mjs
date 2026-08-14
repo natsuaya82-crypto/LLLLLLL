@@ -137,51 +137,45 @@ const R = await pg.evaluate(async () => {
      post could be most of the phone. Nothing said so, and nothing could have
      -- the fixture's photograph was a single transparent pixel, which looks
      exactly the same stretched as it does left alone.
-     「画質が下がったり、比率変わるのはありえない」
 
-     Two claims, and the second is the one that was being broken quietly:
-     nothing is drawn taller than --picmax, and nothing is drawn at a shape
-     that is not its own. A crop does not change an <img> element's box, so
-     the shape is asked of the RENDERED size against the natural one. */
-  /* And the other way round, for the one thing on a screen that is not a
-     target: a photograph. It was drawn at `width:100%` and up to 60vh, so a
-     landscape picture was BLOWN UP past the 900 pixels that are stored and one
-     post could be most of the phone. Nothing said so, and nothing could have
-     -- the fixture's photograph was a single transparent pixel, which looks
-     exactly the same stretched as it does left alone.
+     Two claims:
 
-     Two claims, and they are the two that may not be given up:
+       every photograph is drawn the same HEIGHT, and that height is the one
+       index.html sets 「画像サイズが違うのが嫌なの表示上の」
+       and every photograph is drawn at ITS OWN SHAPE -- not cut, not squashed,
+       and not fitted into a box of a shape it does not have
+       「画質が下がったり、比率変わるのはありえない」「中の比率とかも変えないで」
 
-       every photograph is drawn at the SAME size, and that size is the tile
-       「画像サイズが違うのが嫌なの表示上の」
-       and the picture inside it is not cut and not squashed, which is what
-       `contain` means and is the only value that means it
-       「画質が下がったり、比率変わるのはありえない」
-
-     The second is asked of the computed style rather than of the box, because
-     with a tile the box is the tile: `cover` and `contain` give identical
-     rectangles and only one of them is showing you the whole photograph. */
+     The second is measured off the element's own box, which is only meaningful
+     because there is no `object-fit` here: the element IS the picture's shape.
+     A tile with `contain` would pass a box check and still be showing a wide
+     photograph in a square, so the box is the thing to hold. */
   function measurePics(where){
     /* The same number index.html sets, read rather than repeated -- and a
        plain 33 rather than `33vw` for exactly that reason: a custom property
        holding a length comes back as the token, not as pixels. */
     const pct = parseFloat(getComputedStyle(document.documentElement)
                   .getPropertyValue('--picpct')) || 0;
-    const tile = window.innerWidth * pct / 100;
+    const tall = window.innerWidth * pct / 100;
     const els = document.querySelectorAll('#app img.ppic');
     for (let i = 0; i < els.length; i++) {
       const e = els[i], r = e.getBoundingClientRect();
       if (!r.width || !r.height || !e.naturalWidth) continue;
       out.picsSeen++;
-      if (pct && (Math.abs(r.width - tile) > 1 || Math.abs(r.height - tile) > 1))
-        out.big.push(where + ': a photograph drawn ' + Math.round(r.width) + 'x' +
-                     Math.round(r.height) + ', and every one of them is ' +
-                     Math.round(tile) + 'x' + Math.round(tile));
+      if (pct && Math.abs(r.height - tall) > 1)
+        out.big.push(where + ': a photograph ' + Math.round(r.height) +
+                     'px tall, and every one of them is ' + Math.round(tall));
       const fit = getComputedStyle(e).objectFit;
-      if (fit !== 'contain')
+      if (fit !== 'fill')
         out.bent.push(where + ': a photograph drawn with object-fit:' + fit +
-                      ' -- cover cuts it and fill squashes it, and either way ' +
-                      'what is on the screen is not the photograph');
+                      ' -- there is nothing to fit it into, the element is its ' +
+                      'own shape, and a box it has to be fitted into is a shape ' +
+                      'it does not have');
+      const was = e.naturalWidth / e.naturalHeight, now = r.width / r.height;
+      if (Math.abs(was - now) / was > 0.02)
+        out.bent.push(where + ': a photograph of ' + e.naturalWidth + 'x' +
+                      e.naturalHeight + ' drawn ' + Math.round(r.width) + 'x' +
+                      Math.round(r.height) + ' -- that is not its shape');
     }
   }
 
@@ -355,7 +349,7 @@ R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
 
 console.log('screens built: ' + R.screens);
 console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
-console.log('photographs all one tile, none cut or squashed: ' +
+console.log('photographs all one height, each at its own shape: ' +
             ((R.big.length || R.bent.length)
               ? (R.big.length + R.bent.length) + ' FOUND'
               : R.picsSeen + ' measured'));
