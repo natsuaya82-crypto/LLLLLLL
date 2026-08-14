@@ -343,9 +343,16 @@ const run = CASES.map(([name, want, who, anon, sql]) =>
   `select chk(${q(name)}, ${q(want)}, ${q(sql)}, ${q(who)}, ${anon ? 'true' : 'false'});`
 ).join('\n');
 
+/* TWICE. The file says at its head that the whole of it can be run again, any
+   number of times, and that claim is the reason it is safe to paste into a
+   SQL editor without remembering what was pasted last time. A `create table`
+   without `if not exists`, or a policy made without being dropped first,
+   turns the second pass red here rather than in somebody's project. */
+const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
 const sql = [
   GROUND,
-  fs.readFileSync(SCHEMA, 'utf8'),
+  SCHEMA_SQL,
+  SCHEMA_SQL,
   HARNESS,
   'begin;',
   /* The only seeding there is. Everything else below is done BY somebody,

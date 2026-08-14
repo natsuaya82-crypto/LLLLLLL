@@ -1,9 +1,27 @@
 -- ---------------------------------------------------------------------------
 -- Lingua — what the server holds, and who may touch it.
 --
--- NOT APPLIED. This is for reading before it is run once against an empty
--- project. Locked accounts come later, and the note on the post policy says
--- what they will cost.
+-- RUN THE WHOLE FILE, EVERY TIME. 「一回で全部のsql流せる形でまとめて。
+-- じゃないと何流して何をしたかわからなくなる」
+--
+-- Every statement below is written so that running it a second time changes
+-- nothing: tables are `if not exists`, indexes are `if not exists`, a policy
+-- is dropped before it is made, a bucket is `on conflict do nothing`, and a
+-- function is `create or replace`. So there is never a question of which half
+-- has been applied — paste the file into the SQL editor and run it, and the
+-- database is what this file says whatever state it was in.
+--
+-- Columns added after the first run get an `alter table ... add column if not
+-- exists` of their own, below the table, for the same reason: a table that
+-- already exists skips its own definition, so a new column has to be said
+-- twice or it only reaches an empty project.
+--
+-- tools/rls-check.mjs applies this file TWICE against an empty PostgreSQL
+-- before it tries anything, so "it can be run again" is held rather than
+-- claimed.
+--
+-- Locked accounts come later, and the note on the post policy says what they
+-- will cost.
 --
 -- The rule this file exists to enforce is the one that ends a small app if it
 -- is wrong: row level security. Every table below denies everything by default
@@ -27,7 +45,7 @@
 -- ---- who ------------------------------------------------------------------
 -- One row per account. auth.users is Supabase's; nothing outside this file
 -- should read it, so everything the app needs about a person is here.
-create table profile (
+create table if not exists profile (
   id          uuid primary key references auth.users on delete cascade,
   handle      text unique not null check (handle ~ '^[a-z0-9_]{2,24}$'),
   display     text,
@@ -48,7 +66,7 @@ create table profile (
 -- is published by being copied, and a reader who downloaded yours has it. The
 -- promise a person can be given is that it goes from here, which is the only
 -- promise that is true.
-create table language (
+create table if not exists language (
   id           uuid primary key default gen_random_uuid(),
   owner        uuid not null references profile(id) on delete cascade,
   name         text not null default '',
@@ -59,14 +77,14 @@ create table language (
   published_at timestamptz,
   created_at   timestamptz not null default now()
 );
-create index language_owner_idx on language(owner);
-create index language_published_idx on language(published_at) where published_at is not null;
+create index if not exists language_owner_idx on language(owner);
+create index if not exists language_published_idx on language(published_at) where published_at is not null;
 
 -- The record that settles arguments without anybody having to judge one.
 -- Append only: no update policy and no delete policy exist for this table, so
 -- a row cannot be altered by anyone through the API, including its author.
 -- Nine tenths of "he took my script" is answered by a timestamp.
-create table publication (
+create table if not exists publication (
   id        bigint generated always as identity primary key,
   language  uuid not null references language(id) on delete cascade,
   actor     uuid references profile(id) on delete set null,
@@ -74,7 +92,7 @@ create table publication (
   digest    text not null,          -- sha-256 of exactly what was published
   at        timestamptz not null default now()
 );
-create index publication_language_idx on publication(language, at desc);
+create index if not exists publication_language_idx on publication(language, at desc);
 
 -- ---- asked --------------------------------------------------------------
 -- One sentence a day, put up by us, that anybody may answer in their own
@@ -94,7 +112,7 @@ create index publication_language_idx on publication(language, at desc);
 -- has a foreign key to this table, and a foreign key cannot point at a table
 -- that does not exist yet. This file had it the other way round and had never
 -- been run, so nobody had found out.
-create table prompt (
+create table if not exists prompt (
   id      bigint generated always as identity primary key,
   on_day  date not null unique,        -- one a day, and the unique says so
   text    text not null,               -- English, and translated on the device
@@ -107,7 +125,7 @@ create table prompt (
 -- a record of an utterance and the author of the language may redraw a letter
 -- tomorrow. The outlines are stored once per post and referenced per letter,
 -- so a long post in a 30-letter alphabet carries 30 shapes, not 300.
-create table post (
+create table if not exists post (
   id         uuid primary key default gen_random_uuid(),
   author     uuid not null references profile(id) on delete cascade,
   language   uuid references language(id) on delete set null,
@@ -127,22 +145,25 @@ create table post (
   reply_to   uuid references post(id) on delete set null,
   created_at timestamptz not null default now()
 );
-create index post_prompt_idx on post(prompt, created_at desc);
-create index post_author_idx on post(author, created_at desc);
-create index post_language_idx on post(language, created_at desc);
-create index post_reply_idx on post(reply_to, created_at) where reply_to is not null;
+create index if not exists post_prompt_idx on post(prompt, created_at desc);
+create index if not exists post_author_idx on post(author, created_at desc);
+create index if not exists post_language_idx on post(language, created_at desc);
+-- Said twice, so a project that already has `post` gets the column too. See
+-- the note at the head of the file.
+alter table post add column if not exists reply_to uuid references post(id) on delete set null;
+create index if not exists post_reply_idx on post(reply_to, created_at) where reply_to is not null;
 
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
 -- thing being counted: how often a language is spoken by people who did not
 -- make it is the one number that says whether any of this worked.
-create table quote (
+create table if not exists quote (
   post      uuid not null references post(id) on delete cascade,
   language  uuid not null references language(id) on delete cascade,
   word      text not null,
   primary key (post, language, word)
 );
-create index quote_language_idx on quote(language);
+create index if not exists quote_language_idx on quote(language);
 
 -- ---- answered ------------------------------------------------------------
 -- A like or a boost. One row per person per post per kind, which is what the
@@ -157,7 +178,7 @@ create index quote_language_idx on quote(language);
 -- There is no update policy below, and that is not an oversight: a reaction is
 -- on or off. Changing a like into a boost is deleting one and inserting the
 -- other, which is also what it is on the screen.
-create table react (
+create table if not exists react (
   post       uuid not null references post(id) on delete cascade,
   actor      uuid not null references profile(id) on delete cascade,
   kind       text not null check (kind in ('like', 'boost')),
@@ -165,11 +186,11 @@ create table react (
   primary key (post, actor, kind)
 );
 -- counting a post's likes, and drawing somebody's notices
-create index react_post_idx on react(post, kind);
-create index react_actor_idx on react(actor, created_at desc);
+create index if not exists react_post_idx on react(post, kind);
+create index if not exists react_actor_idx on react(actor, created_at desc);
 
 -- ---- followed ------------------------------------------------------------
-create table follow (
+create table if not exists follow (
   follower   uuid not null references profile(id) on delete cascade,
   followed   uuid not null references profile(id) on delete cascade,
   created_at timestamptz not null default now(),
@@ -207,26 +228,35 @@ language sql stable as $$
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
+drop policy if exists profile_read on profile;
 create policy profile_read on profile for select using (true);
+drop policy if exists profile_make on profile;
 create policy profile_make on profile for insert with check (is_member() and id = auth.uid());
+drop policy if exists profile_edit on profile;
 create policy profile_edit on profile for update using (is_member() and id = auth.uid())
                                               with check (id = auth.uid());
 
 -- language: a published one is readable by anyone; an unpublished one only by
 -- the person who owns it. Only the owner ever writes.
+drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid());
+drop policy if exists language_make on language;
 create policy language_make on language for insert
   with check (is_member() and owner = auth.uid());
+drop policy if exists language_edit on language;
 create policy language_edit on language for update
   using (is_member() and owner = auth.uid()) with check (owner = auth.uid());
+drop policy if exists language_drop on language;
 create policy language_drop on language for delete
   using (is_member() and owner = auth.uid());
 
 -- publication: everyone reads the record. Anyone may add to it about their own
 -- language. NOBODY updates or deletes it -- those policies do not exist, which
 -- is what makes it a record rather than a claim.
+drop policy if exists publication_read on publication;
 create policy publication_read on publication for select using (true);
+drop policy if exists publication_make on publication;
 create policy publication_make on publication for insert with check (
   is_member() and actor = auth.uid()
   and exists (select 1 from language l where l.id = language and l.owner = auth.uid())
@@ -240,20 +270,27 @@ create policy publication_make on publication for insert with check (
 -- be a request rather than an act, so follow grows an accepted column and its
 -- insert policy stops being "you may follow anyone". That is the real cost of
 -- the feature, and it is a column and a policy rather than a redesign.
+drop policy if exists post_read on post;
 create policy post_read on post for select using (true);
+drop policy if exists post_make on post;
 create policy post_make on post for insert with check (is_member() and author = auth.uid());
+drop policy if exists post_edit on post;
 create policy post_edit on post for update
   using (is_member() and author = auth.uid()) with check (author = auth.uid());
+drop policy if exists post_drop on post;
 create policy post_drop on post for delete using (is_member() and author = auth.uid());
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's
 -- citations, or their own by writing rows against a post that is not theirs.
+drop policy if exists quote_read on quote;
 create policy quote_read on quote for select using (true);
+drop policy if exists quote_make on quote;
 create policy quote_make on quote for insert with check (
   is_member()
   and exists (select 1 from post p where p.id = post and p.author = auth.uid())
 );
+drop policy if exists quote_drop on quote;
 create policy quote_drop on quote for delete using (
   is_member()
   and exists (select 1 from post p where p.id = post and p.author = auth.uid())
@@ -263,19 +300,26 @@ create policy quote_drop on quote for delete using (
 -- and remove your OWN reaction and nobody else's -- so a like cannot be put in
 -- somebody else's name and cannot be taken out of it either. No update policy,
 -- so a row cannot be turned into a different kind under a different name.
+drop policy if exists react_read on react;
 create policy react_read on react for select using (true);
+drop policy if exists react_make on react;
 create policy react_make on react for insert
   with check (is_member() and actor = auth.uid());
+drop policy if exists react_drop on react;
 create policy react_drop on react for delete using (is_member() and actor = auth.uid());
 
 -- prompt: everyone reads. Nothing else -- no insert, no update, no delete
 -- policy exists, so the day's sentence can only come from the service role.
+drop policy if exists prompt_read on prompt;
 create policy prompt_read on prompt for select using (true);
 
 -- follow: everyone sees who follows whom; you add and remove your own following
+drop policy if exists follow_read on follow;
 create policy follow_read on follow for select using (true);
+drop policy if exists follow_make on follow;
 create policy follow_make on follow for insert
   with check (is_member() and follower = auth.uid());
+drop policy if exists follow_drop on follow;
 create policy follow_drop on follow for delete using (is_member() and follower = auth.uid());
 
 
@@ -322,9 +366,11 @@ alter table storage.objects enable row level security;
 alter table storage.buckets enable row level security;
 
 -- Anybody reads what is in this bucket, and only this bucket.
+drop policy if exists media_read on storage.objects;
 create policy media_read on storage.objects for select
   using (bucket_id = 'post-media');
 -- You write under your own uuid and nowhere else.
+drop policy if exists media_make on storage.objects;
 create policy media_make on storage.objects for insert with check (
   is_member() and bucket_id = 'post-media'
   and name like auth.uid()::text || '/%'
@@ -333,6 +379,7 @@ create policy media_make on storage.objects for insert with check (
 -- the row goes by cascade and the bytes go by this, from the phone, in the
 -- same breath. Nothing here removes anybody's file on a schedule:
 -- docs/DATA_SAFETY.md forbids automatic deletion and there is no job.
+drop policy if exists media_drop on storage.objects;
 create policy media_drop on storage.objects for delete using (
   is_member() and bucket_id = 'post-media'
   and name like auth.uid()::text || '/%'
