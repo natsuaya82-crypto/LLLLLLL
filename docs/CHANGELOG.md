@@ -15,6 +15,25 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The glass shows the page through it
+
+「リキッドグラスはちゃんと後ろの画面透けさせるようにしてよ」 The tab bar is the
+one thing in this app made of glass, and it was a tinted panel: at .40 over a
+30px blur what came through was a colour, not a shape. Somebody scrolling a
+photograph under the bar could not tell there was a photograph under the bar.
+
+The surface is thinner — .20 in the light theme, .16 in the dark — and the blur
+is 16px rather than 30. The blur is the part that matters: past about 20px
+everything behind resolves to an average, so a bar can be genuinely transparent
+and still show nothing. `saturate` stays, because it is what keeps the colour
+underneath alive at that alpha.
+
+The `@supports` fallback is untouched: a webview that cannot blur still gets
+`--glassop`, a solid surface, rather than a transparent bar with the page
+legible through it.
+
+No data changes.
+
 ### A photograph is one box, filled, and tapping it opens the whole thing
 
 「投稿のサイズ感も気になる」「写真の画質が下がったり、比率変わるのはありえない」
