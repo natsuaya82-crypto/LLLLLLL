@@ -453,7 +453,14 @@ function pwPicHTML(){
    and is postAll()'s to say. */
 function postTake(ps){
   var have={}, i, p, n=0;
-  for(i=0;i<POSTS.length;i++) have[POSTS[i].id]=1;
+  /* By BOTH names. A post this phone wrote has a local id and, once it has
+     gone up, the server's -- and it comes back down the timeline wearing the
+     server's. Without the second line every post somebody wrote would appear
+     twice the first time they pulled the feed after writing it. */
+  for(i=0;i<POSTS.length;i++){
+    have[POSTS[i].id]=1;
+    if(POSTS[i].sid) have[POSTS[i].sid]=1;
+  }
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
     if(!p || !p.id || have[p.id]) continue;
@@ -463,6 +470,43 @@ function postTake(ps){
   }
   if(n) savePosts();
   return n;
+}
+/* Where the server keeps it. Written when a push comes back and read for two
+   things: whether this post has gone up at all, and what to point a reply at.
+
+   It is not the post's id. Rewriting an id would move it out from under
+   every reply that already points at it, and the phone is allowed to have
+   posted something the server has never heard of -- a post written in a
+   tunnel is a post. */
+function postSid(p, sid){
+  if(!p || !sid || p.sid===sid) return;
+  p.sid=String(sid);
+  savePosts();
+}
+/* Everything already on this phone that the server has never seen.
+   「あげよう」
+
+   It walks oldest first, so a thread goes up in the order it was written and
+   a reply finds its parent's `sid` already there. A few at a time: this runs
+   off the back of a timeline pull, and forty posts in one breath is a phone
+   that appears to have frozen.
+
+   Nothing is removed, nothing is rewritten, and a post that fails is simply
+   one that still has no `sid` -- so the next pull tries it again. A post kept
+   to yourself never goes, which is the same door pwSendWith() uses. */
+var POST_CATCH=4;
+function postCatchUp(){
+  var i, n=0, ps;
+  if(!netSignedIn()) return;
+  ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
+  for(i=0;i<ps.length && n<POST_CATCH;i++){
+    if(ps[i].sid || ps[i].pv || !ps[i].mine) continue;
+    n++;
+    /* The closure is the post, so a slow answer lands on the right one. */
+    (function(p){
+      netPush(p, function(sid){ postSid(p, sid); }, function(){});
+    })(ps[i]);
+  }
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
    「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」
@@ -708,7 +752,7 @@ function pwSendWith(ln, pics, vo){
   /* A post kept to yourself is never told to anybody. It is the one post
      that does not go through this door at all -- not "sent and hidden",
      which is a flag somebody else's server has to be trusted with. */
-  if(!mine.pv) netPush(mine, function(){}, function(){});
+  if(!mine.pv) netPush(mine, function(sid){ postSid(mine, sid); }, function(){});
   PW=pwBlank();
   goTab('feed');
 }

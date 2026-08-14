@@ -72,6 +72,10 @@ function snsPull(){
   snsPulling=true;
   netFeed(snsTab, function(ps){
     snsPulling=false;
+    /* And what this phone has that the server has not. It goes off the back
+       of a pull rather than on a timer: the moment somebody is looking at a
+       timeline is the moment the network is known to be working. */
+    postCatchUp();
     if(!ps || !ps.length) return;
     postTake(ps);
     render();

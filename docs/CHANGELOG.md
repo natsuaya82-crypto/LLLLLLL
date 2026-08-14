@@ -15,6 +15,46 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A post goes up, and a timeline comes down
+
+The first two of the six empty seam functions in `www/net.js` have bodies.
+Text only: the photographs and the voice are bytes and go to Storage next.
+
+`netPush` writes one row in `post` and answers with the server's id for it.
+`netFeed` reads the newest fifty back, and for the followed timeline asks for
+the follow list first — two requests and not a join, because there is no
+foreign key from a post to a follow and the follow list is people rather than
+posts. **Reading needs no account**: `post_read` is `using (true)`, so the
+recommended timeline works with the publishable key alone.
+
+**Newly stored on a post: `sid`, the server's uuid for it.** Not its id —
+rewriting an id would move a post out from under every reply pointing at it,
+and the phone is allowed to have posted something the server has never heard
+of. A post with no `sid` is one that has not gone up, which is the whole of
+the retry.
+
+`postTake()` now recognises a post by **both** names. A post this phone wrote
+comes back down the timeline wearing the server's id; without the second line
+every post would appear twice the first time somebody pulled the feed after
+writing one.
+
+**`postCatchUp()` sends up what is already here.** 「あげよう」 Oldest first, so
+a thread goes up in the order it was written and a reply finds its parent's
+`sid` already there; four at a time, off the back of a timeline pull rather
+than on a timer — the moment somebody is looking at a timeline is the moment
+the network is known to be working. Nothing is removed and nothing is
+rewritten. A post kept to yourself never goes, which is the same door
+`pwSendWith()` uses.
+
+`netSend` now sets `Prefer: return=representation` on every write to a table,
+in one place, rather than at the one call site that needs the new row's id
+today and the second one that is forgotten tomorrow.
+
+**Nothing works until `supabase/schema.sql` has been run once**, which is the
+owner's, in the SQL editor. Until then every push is a 404 and every pull is
+empty — which is what the screens already draw.
+
+
 ### The server learns about replies, likes and the bytes
 
 `supabase/schema.sql` had `post`, `quote` and `follow` and has never been run.

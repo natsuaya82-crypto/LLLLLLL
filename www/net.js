@@ -69,6 +69,12 @@ function netSend(method, path, body, tok, ok, bad){
   /* Signed in, this is the person; signed out, it is the key again, which is
      what PostgREST expects and how the anon role is reached. */
   x.setRequestHeader('Authorization', 'Bearer '+(tok || SB_KEY));
+  /* PostgREST answers an insert with 201 and an empty body unless it is asked
+     not to. Asked here, once, for every write to a table -- rather than at the
+     one call site that needs the new row's id today and forgotten at the
+     second one tomorrow. The auth endpoints are not PostgREST and ignore it. */
+  if(method==='POST' && path.indexOf('/rest/v1/')===0)
+    x.setRequestHeader('Prefer', 'return=representation');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
     var d=null;
@@ -227,25 +233,98 @@ function netIdToken(provider, token, nonce, ok, bad){
    and a post is deleted the moment somebody says so. The server is told
    afterwards. Nothing a person does waits for a network, because a person
    holding a phone in a tunnel is still using this app. */
-function netFeed(which, ok, bad){
-  /* NET_SEAM — ask for what has arrived and call ok() with an array of posts
-     in the shape docs/DATA_MODEL.md § a post describes, each already carrying
-     its ink. A post from elsewhere with no ink cannot be drawn, and inventing
-     one out of this dictionary is the bug the two sides exist to stop.
+/* How many come back at once. A timeline is read from the top and stops when
+   somebody stops scrolling, so this is "enough to fill a screen and then
+   some" rather than a number anybody has to be right about. */
+var NET_PAGE=50;
+/* What a row is, on the way out. `body` holds everything a reader needs and
+   nothing this phone knows about itself: `mine` is a fact about the READER,
+   `sid` is where the row lives, and `id` is this phone's name for it. A row
+   that carried them would be answering questions on the other phone's behalf.
 
-     `which` is 'rec' or 'fo' — everything, or the people this account follows.
-     Two questions and not one list filtered twice: a phone that asked for
-     everything and then hid most of it would be downloading a timeline in
-     order to throw it away, and the follow list is the server's to join on
-     anyway. 「ツイートはフォロー中とおススメみたいに分けたいよね」 */
-  if(!netSignedIn()){ ok(null); return; }
-  ok(null);
+   The photographs and the voice are not here yet. They are bytes and they go
+   to Storage, which is the next thing; until they do, a post with a
+   photograph goes up as the post without it rather than as most of a megabyte
+   of base64 in a jsonb column. */
+function netBody(p){
+  var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1};
+  for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
+  return o;
 }
+/* And what a row is on the way back. The server's uuid becomes the post's id,
+   because that is the name every phone knows it by; `sid` carries it too, so
+   a post this phone WROTE can be recognised when it comes home and postTake()
+   does not add a second copy of it.
+
+   `at` comes off created_at, which is the server's clock. The phone's own
+   clock wrote the local copy; a timeline sorted by two clocks is a timeline
+   that jumps, so the row's time wins for anything that arrived. */
+function netRow(r){
+  var p={}, k, b=(r && r.body) || {};
+  for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) p[k]=b[k];
+  p.id=r.id;
+  p.sid=r.id;
+  p.at=Date.parse(r.created_at) || Date.now();
+  if(r.reply_to) p.to=r.reply_to;
+  p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
+  return p;
+}
+function netFeed(which, ok, bad){
+  /* `which` is 'rec' or 'fo' — everything, or the people this account
+     follows. Two questions and not one list filtered twice: a phone that
+     asked for everything and then hid most of it would be downloading a
+     timeline in order to throw it away.
+     「ツイートはフォロー中とおススメみたいに分けたいよね」
+
+     Reading needs no account. post_read in schema.sql is `using (true)`, so
+     the recommended timeline works with the publishable key alone and
+     somebody who has not decided yet is not asked to decide. The FOLLOWED one
+     cannot: there is nobody to have followed anybody. */
+  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body'+
+          '&order=created_at.desc&limit='+NET_PAGE;
+  function got(d){
+    var out=[], i;
+    if(!d || !d.length){ ok([]); return; }
+    for(i=0;i<d.length;i++) out.push(netRow(d[i]));
+    ok(out);
+  }
+  if(which!=='fo'){ netGet(sel, got, bad); return; }
+  if(!netSignedIn()){ ok(null); return; }
+  /* Two requests and not a join, because there is no foreign key from a post
+     to a follow and PostgREST will not invent one. The follow list is small
+     -- it is people, not posts -- and it is asked for first. */
+  netGet('/rest/v1/follow?select=followed&follower=eq.'+encodeURIComponent(SESS.uid),
+    function(d){
+      var ids=[], i;
+      for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].followed) ids.push(d[i].followed);
+      /* Following nobody is an answer, not a failure: an empty timeline is
+         what "you follow nobody" looks like, and snsNoneFo() says so. */
+      if(!ids.length){ ok([]); return; }
+      netGet(sel+'&author=in.('+ids.join(',')+')', got, bad);
+    }, bad);
+}
+/* One row in `post`. Everything a reader needs is already ON it (rule 8): who
+   wrote it, what they are called, the language's name, the shapes, which way
+   the line runs. There is nothing to look up.
+
+   ok() is called with the server's id for it, and the caller writes that onto
+   the post -- which is what stops the same post coming back down the timeline
+   as somebody else's. A push that fails leaves no `sid`, and a post with no
+   `sid` is one that has not gone up yet, which is the whole of the retry. */
 function netPush(post, ok, bad){
-  /* NET_SEAM — one row in `post`. Everything a reader needs is already ON it
-     (rule 8): who wrote it, what they are called, the language's name, the
-     shapes, which way the line runs. There is nothing to look up. */
-  ok();
+  var row;
+  if(!netSignedIn() || !post){ bad(null, 0); return; }
+  row={author:SESS.uid, body:netBody(post)};
+  /* What it answers, by the name the SERVER knows -- the local id means
+     nothing there. A reply to a post that never went up carries no reply_to
+     and is still a post: it already holds the handle it answered (rule 13),
+     so it goes on saying who it was for. */
+  if(post.to){
+    var up=postById(post.to);
+    if(up && up.sid) row.reply_to=up.sid;
+  }
+  netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
+    function(d){ ok(d && d.length? d[0].id : ''); }, bad);
 }
 function netMark(id, kind, on, ok, bad){
   /* NET_SEAM — `kind` is 'like' or 'boost', `on` is whether it now is. Not a
