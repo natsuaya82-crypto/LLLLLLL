@@ -17,12 +17,32 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         //
         // This is a language app whose whole point is hearing the sounds you
         // chose, so its audio is playback, not ambience: it plays whether the
-        // switch is on or off, the way a music or a video app does. It does
-        // not mix itself over anything else, because it never plays on its own
-        // -- every sound here is the answer to a tap.
+        // switch is on or off, the way a music or a video app does.
+        //
+        // Two things about that were wrong, and they are separate.
+        //
+        // It ACTIVATED the session here, at launch. A non-mixing session that
+        // is made active takes the audio away from whatever else is playing --
+        // so opening Lingua stopped somebody's music, before the app had made
+        // a single sound and whether or not it ever would.
+        // 「アプリ開くと音楽止まるのはなぜ？」 Nothing is activated here now.
+        // The category is a standing statement about what this app's audio IS;
+        // iOS activates the session by itself the moment something actually
+        // plays, which is the only moment it is anybody's business.
+        //
+        // And it did not mix. The comment here used to argue that it need not,
+        // "because it never plays on its own -- every sound here is the answer
+        // to a tap". That is the argument for mixing, not against it: a sound
+        // that answers a tap is a sound half a second long, and taking a
+        // podcast away for it and not giving it back is not what pressing a
+        // letter asks for. It plays OVER what is already playing.
+        //
+        // Recording is the one thing that still interrupts, and there is no
+        // way around it: a microphone needs the session to itself, and iOS
+        // gives it back when the recording stops.
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-            try AVAudioSession.sharedInstance().setActive(true)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default,
+                                                            options: [.mixWithOthers])
         } catch {
             // A phone that refuses the category still runs the app; it just
             // goes back to obeying the silent switch.

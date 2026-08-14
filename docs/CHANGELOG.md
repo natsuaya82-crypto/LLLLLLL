@@ -15,6 +15,33 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Opening Lingua no longer stops what you were listening to
+
+「アプリ開くと音楽止まるのはなぜ？」 Because `AppDelegate.swift` activated the
+audio session at launch — `setCategory(.playback)` followed immediately by
+`setActive(true)`, with no mixing option. `.playback` is a category that does
+not share, and making it active is what takes the audio away from whatever else
+is playing. So opening the app stopped somebody's music, before it had made a
+sound, and whether or not it was ever going to make one.
+
+Two changes, and they are separate:
+
+- **Nothing is activated at launch.** The category stays — it is what makes the
+  letters audible with the ring/silent switch flipped, which is the whole
+  reason it was set — but iOS activates the session by itself the moment
+  something actually plays. That is the only moment it is any of this app's
+  business.
+- **It mixes.** The comment that used to sit there argued the app need not
+  share "because it never plays on its own — every sound here is the answer to
+  a tap." That is the argument *for* mixing: a sound half a second long is not
+  worth a podcast. A letter's sound now plays over what is already playing.
+
+**Recording still interrupts, and there is no way around it.** A microphone
+needs the session to itself; iOS hands it back when the recording stops.
+
+No data changes. This is Swift, so no check on this side of the wall can hold
+it — `npm test` cannot see a line of it. **Device confirmation required.**
+
 ### A post opens the conversation it is in
 
 「リプライ含めツリーが見れないのちょっと厄介」 A reply carried the id of what it
