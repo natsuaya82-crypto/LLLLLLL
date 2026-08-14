@@ -342,19 +342,31 @@ function kbFixed(){
 function kbBoards(){ return (KB && KB.kbs)? KB.kbs : []; }
 function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 /* THE ONE ON THE PHONE. share.js reads this and nothing else, so what this
-   answers is what somebody types with. */
+   answers is what somebody types with.
+
+   Nothing built yet means the keyboard they already had -- kbFixed(), the
+   QWERTY wearing their drawn letters. It used to mean kbDefault(), the
+   letters five to a row, which is a DIFFERENT layout: paying changed the
+   keyboard on the phone out from under somebody who had not asked for
+   anything and had not touched this chapter.
+   「plusにした瞬間にこれだわ。何も設定してないならqwartyの作ったやつ引き継いで、
+   設定したらそれになるようにしてよ！」
+
+   Which is the money rule said one more way. A plan decides what a person may
+   DO. Buying one may add a keyboard; it may not take away the one they were
+   typing on. */
 function kbOf(){
-  if(!can('kb')) return kbFixed();
   var b=kbBoards();
-  return b.length? b[kbClamp(KB.at, b.length)] : kbDefault();
+  if(!can('kb') || !b.length) return kbFixed();
+  return b[kbClamp(KB.at, b.length)];
 }
 /* And the one on the SCREEN, which is a different question the moment there
    is more than one. The editor works on this; Apply is what makes it the
    other. */
 function kbBoard(){
-  if(!can('kb')) return kbFixed();
   var b=kbBoards();
-  return b.length? b[kbClamp(kbShow, b.length)] : kbDefault();
+  if(!can('kb') || !b.length) return kbFixed();
+  return b[kbClamp(kbShow, b.length)];
 }
 /* Which layer is showing, which keyboard is showing, and which key is being
    edited. All three are where you are standing rather than anything the
@@ -369,7 +381,9 @@ function kbLayer(){ var b=kbBoard(); return b.lay[Math.min(kbLay, b.lay.length-1
    It returns the board being SHOWN, because that is the one every mutator
    below is about. */
 function kbEdit(){
-  if(!kbBoards().length) KB={kbs:[{nm:'', pat:'', lay:kbDefault().lay}], at:0};
+  /* And what it starts from is what was on the phone a moment ago, for the
+     same reason: the first edit must not move thirty keys. */
+  if(!kbBoards().length) KB={kbs:[{nm:'', pat:'qwerty', lay:kbFixed().lay}], at:0};
   kbShow=kbClamp(kbShow, KB.kbs.length);
   return KB.kbs[kbShow];
 }

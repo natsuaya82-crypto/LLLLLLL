@@ -15,6 +15,30 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Paying does not change the keyboard you were typing on
+
+「plusにした瞬間にこれだわ。何も設定してないならqwartyの作ったやつ引き継いで、
+設定したらそれになるようにしてよ！」 Correct, and it was a real one: on a paid
+plan with nothing built, `kbOf()` answered with `kbDefault()` — the letters five
+to a row, with a layer key — while the free plan answers with `kbFixed()`, the
+QWERTY wearing the drawn letters.
+
+They are different layouts. So the moment somebody paid, the keyboard handed to
+the extension was swapped for one they had never asked for and had never opened
+this chapter to build. Nothing was lost, but the keyboard under their thumb in
+Messages was a different keyboard.
+
+`kbOf()` and `kbBoard()` now answer with `kbFixed()` whenever nothing has been
+built, on any plan, and `kbEdit()` starts from it too — so the first edit does
+not begin by moving thirty keys. What a paid plan adds is the editor and the
+other four patterns; what it may not do is take away the keyboard that was
+already there.
+
+Which is `docs/PAID_FEATURES.md` said one more way: a plan decides what a person
+may DO. Fewer buttons, never fewer words — and never a different keyboard.
+
+No data changes.
+
 ### A button opens Settings, instead of a path to retype
 
 「そのiPhoneに入れられますって設定じゃ無くてボタン押したら追加する画面まで進め
