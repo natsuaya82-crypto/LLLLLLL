@@ -15,6 +15,39 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A letter on the candidate bar stands where the font would stand it
+
+「キーボード内のプレビューのアルファベットいちいち全角のスペース開くのうざい」
+The bar was laying every letter out in a square cell — right for a key, right
+for a tile, and wrong for a line, so two narrow letters sat a whole cell apart
+and a word looked spaced out.
+
+The rule already exists in one place: `inkAdv()` in `glyph.js` — ink plus one
+step, half a step at each end, so the gap is one step whichever two letters
+meet. Rather than write that arithmetic a second time in Swift, `shareFace()`
+asks `inkAdv()` and carries the answer.
+
+**Newly handed over:** each face in the App Group file gains `aw` (what the
+letter takes up standing beside the next one) and `dx` (where its ink sits
+inside that), both in box units, both optional. A face with no shape carries
+neither, and a payload written by an older build has neither — Swift falls back
+to the square in that case, which is what every face got until now: worse
+spacing, never a crash. Nothing in `localStorage` changes and no existing field
+moves.
+
+`aw` and not `w`: a key already has a `w` — how wide it is in its row — and
+`shareKey()` writes that over whatever the face put there, because in this file
+a key and the face it wears are one object. Two different widths cannot share a
+name.
+
+Swift side: `Face` gains `aw`/`dx` and `Key` carries them too (pressing a key
+makes a face, and that face goes on the bar, which is a line — an alphabet's bar
+is made of nothing else); `GlyphView` gains an optional `dx` and draws a line
+when it has one and a square when it does not; `CandidateBar` steps by each
+face's own advance instead of by the cell.
+
+**Not device confirmed** — the four Swift files cannot be compiled here.
+
 ### The composer draws the line once
 
 「キーボード内にプレビューあるからいらないやろ普通に」 Under the field was a

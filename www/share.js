@@ -63,10 +63,30 @@ function shareInk(l){
    else nothing and the key wears its own name. Absent rather than null, so
    the file is a keyboard rather than a column of nulls. */
 function shareFace(id){
-  var l=ltById(id), o={t:kbTyped(id)}, ink;
+  var l=ltById(id), o={t:kbTyped(id)}, ink, a;
   if(!l) return o;
   ink=shareInk(l);
-  if(ink) o.st=ink;
+  if(ink){
+    o.st=ink;
+    /* And what it takes up standing beside the next one. A key is a square
+       cell and the extension is right to draw one that way; a LINE of letters
+       is the other rule -- ink plus one step, half a step at each end -- and
+       the candidate bar is a line. It was laying every letter out in a square,
+       so two narrow letters sat a whole cell apart.
+       「キーボード内のプレビューのアルファベットいちいち全角のスペース開くのうざい」
+
+       The number is worked out HERE, by inkAdv(), which is the one place that
+       knows the rule, and carried. Swift doing the same arithmetic would be a
+       second copy of a rule that already exists in one place, and the two
+       would drift the first time the pen changed.
+
+       `aw` and not `w`: a KEY already has a `w`, which is how wide it is in
+       its row, and shareKey() writes it over whatever the face put there.
+       Two different widths cannot share a name in a file where the key and
+       the face it wears are one object. */
+    a=inkAdv(l.st);
+    if(a){ o.aw=a.w; o.dx=a.dx; }
+  }
   else if(l.ch) o.ch=l.ch;
   return o;
 }

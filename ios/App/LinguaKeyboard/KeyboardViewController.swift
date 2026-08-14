@@ -121,7 +121,7 @@ final class KeyboardViewController: UIInputViewController,
     case "sp":   settle(); textDocumentProxy.insertText(" "); drop()
     case "next": drop(); advanceToNextInputMode()
     case "lay":  drop(); layerNo = key.to ?? 0; build()
-    default:     typed(key.t, face: Face(t: key.t, st: key.st, ch: key.ch))
+    default:     typed(key.t, face: key.face)
     }
   }
 

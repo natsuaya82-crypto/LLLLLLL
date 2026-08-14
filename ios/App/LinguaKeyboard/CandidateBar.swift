@@ -89,15 +89,30 @@ private final class CandidateCell: UIControl {
       g.box = box
       g.poly = f.st
       g.text = f.ch ?? f.t
+      /* A shape that came with its advance is one letter of a LINE and is
+         laid out as one. A face with no `aw` -- text, or a payload written by
+         a build before the app carried it -- falls back to the square, which
+         is what every face did until now: worse spacing, never a crash. */
+      if f.st != nil, let d = f.dx { g.dx = CGFloat(d) }
       views.append(g)
       addSubview(g)
     }
   }
   required init?(coder: NSCoder) { fatalError("not from a nib") }
 
+  /// How wide this candidate is at a given height. Each letter takes its own
+  /// advance, so a word of narrow letters is a narrow word -- which is the
+  /// whole difference between a line and a row of cells.
+  private func step(_ f: Face, _ side: CGFloat) -> CGFloat {
+    guard f.st != nil, let w = f.aw, w > 0 else { return side }
+    return CGFloat(w) * side / box
+  }
+
   func width(forHeight h: CGFloat) -> CGFloat {
     let side = h - pad * 2
-    return CGFloat(max(1, faces.count)) * side + pad * 3
+    var w: CGFloat = 0
+    for f in faces { w += step(f, side) }
+    return max(side, w) + pad * 3
   }
 
   override var isHighlighted: Bool {
@@ -108,9 +123,10 @@ private final class CandidateCell: UIControl {
     super.layoutSubviews()
     let side = bounds.height - pad * 2
     var x = pad * 1.5
-    for g in views {
-      g.frame = CGRect(x: x, y: pad, width: side, height: side)
-      x += side
+    for (i, g) in views.enumerated() {
+      let w = step(faces[i], side)
+      g.frame = CGRect(x: x, y: pad, width: w, height: side)
+      x += w
     }
   }
 }

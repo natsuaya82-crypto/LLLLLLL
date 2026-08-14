@@ -19,6 +19,11 @@ final class GlyphView: UIView {
   /// letter's own name.
   var text: String?
   var box: CGFloat = 800
+  /// Where the ink sits inside the advance, in box units, when this view is
+  /// one letter of a LINE rather than one letter on a key. Nil is a key: the
+  /// box is square and the ink is centred in it, which is right for a tile
+  /// and right for a key and wrong for a line.
+  var dx: CGFloat?
 
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -50,13 +55,24 @@ final class GlyphView: UIView {
       return
     }
 
-    // The box is square and so is the space a letter stands in on a key --
-    // the same square www/glyph.js's inkCanvases uses for a tile and a key.
-    // A LINE of letters is the other rule and is not this file's business.
-    let side = min(bounds.width, bounds.height)
-    let k = side / box
-    let ox = bounds.midX - side / 2
-    let oy = bounds.midY - side / 2
+    // Two rules, and which one this is depends on what it was given.
+    //
+    // A KEY is a square cell with the letter centred in it -- the same square
+    // www/glyph.js's inkCanvases uses for a tile and a key.
+    //
+    // A LINE is not. There a letter's width is its own ink plus one step,
+    // half a step at each end, so the gap between any two letters is one step
+    // whichever two meet -- and `dx` is where the ink starts inside that. It
+    // comes from the app's inkAdv(), the one place that knows the rule, so
+    // this file does no arithmetic and cannot drift from it. Without it the
+    // bar drew every letter in a square and two narrow ones sat a whole cell
+    // apart. 「キーボード内のプレビューのアルファベットいちいち全角のスペース開く
+    // のうざい」
+    let k = bounds.height / box
+    let ox: CGFloat
+    if let d = dx { ox = CGFloat(d) * k }
+    else { ox = bounds.midX - min(bounds.width, bounds.height) / 2 }
+    let oy = bounds.midY - bounds.height / 2
 
     ctx.setFillColor(ink.cgColor)
     for p in polys {

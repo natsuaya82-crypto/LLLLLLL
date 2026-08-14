@@ -82,7 +82,7 @@ struct Compose {
     guard !s.isEmpty else { return false }
     if conv.romanKeys, buffer.count + s.count > conv.max { return false }
     buffer += s
-    typedFaces.append(face ?? Face(t: s, st: nil, ch: nil))
+    typedFaces.append(face ?? Face(t: s, st: nil, ch: nil, aw: nil, dx: nil))
     return true
   }
 
@@ -120,7 +120,8 @@ struct Compose {
     if !conv.romanKeys {
       var out = [Candidate(faces: typedFaces)]
       if typedFaces.contains(where: { $0.st != nil || $0.ch != nil }) {
-        out.append(Candidate(faces: buffer.map { Face(t: String($0), st: nil, ch: nil) }))
+        out.append(Candidate(faces: buffer.map {
+          Face(t: String($0), st: nil, ch: nil, aw: nil, dx: nil) }))
       }
       return out
     }

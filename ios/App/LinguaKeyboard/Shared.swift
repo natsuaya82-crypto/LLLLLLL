@@ -23,6 +23,23 @@ struct Face: Decodable {
   /// app cut them with LinguaFont.glyphContours before writing this file.
   let st: [[[Double]]]?
   let ch: String?
+  /// What this letter takes up standing beside the next one, and where its
+  /// ink sits inside that -- both in box units, both worked out by the app's
+  /// inkAdv(), which is the one place that knows the rule.
+  ///
+  /// A KEY is a square cell and is drawn as one. A LINE is not: a letter's
+  /// width is its own ink plus one step, half a step at each end, so the gap
+  /// between any two letters is one step whichever two meet. The candidate
+  /// bar is a line and was drawing squares, which put two narrow letters a
+  /// whole cell apart.
+  ///
+  /// `aw` and not `w`, because a Key already has a `w` and it is a different
+  /// width -- how wide the key is in its row. The key and the face it wears
+  /// are one object in the file.
+  ///
+  /// Absent on a face from a build before this, and on one with no shape.
+  let aw: Double?
+  let dx: Double?
 }
 
 /// One key. `k` says what it does: lt sp del lay next rom.
@@ -38,8 +55,16 @@ struct Key: Decodable {
   let st: [[[Double]]]?
   let ch: String?
   let f: [Face?]?
+  /// The face's own two numbers, carried on the key as well because pressing
+  /// a key makes a Face out of it and that face goes on the bar, which is a
+  /// line. Without them the run somebody is typing -- which is the whole of
+  /// what an alphabet's bar shows -- would be the one thing still laid out in
+  /// squares.
+  let aw: Double?
+  let dx: Double?
 
   var width: CGFloat { CGFloat(w ?? 1) }
+  var face: Face { Face(t: t, st: st, ch: ch, aw: aw, dx: dx) }
 }
 
 struct Layer: Decodable {
