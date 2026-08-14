@@ -121,7 +121,6 @@ act('kbApply', kbApply);
 act('kbGoBoard', kbGoBoard);
 act('kbDrop', kbDrop);
 act('kbMore', kbMore);
-act('kbSetRowH', kbSetRowH);
 act('kbNew', kbNew);
 act('snsSetTab', snsSetTab);
 act('postOpen', postOpen);

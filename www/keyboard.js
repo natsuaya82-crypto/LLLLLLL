@@ -76,20 +76,20 @@ function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
    keyboard of four rows of big flick keys and a keyboard of six thin rows
    were the same keyboard with different letters on it.
 
-   Two numbers, because they are two questions and were answered as two:
-   the whole keyboard's height, and one row's share of it. Both are
-   multipliers of KB_H rather than points -- a point is a different size on
+   ONE number, for the whole keyboard. A row's own share of it was built and
+   taken back out the same day: rows are the same height as each other on
+   every keyboard anybody has ever used, and a number per row is four more
+   things to set for a keyboard that will look like every other keyboard
+   afterwards. 「行の高さは固定でいいのでは？」
+
+   A multiplier of KB_H rather than points -- a point is a different size on
    an iPhone SE and an iPhone Pro Max, and what somebody is choosing is how
    big a key FEELS, not how many pixels it is.
 
-   Absent means 1, everywhere. A keyboard built before this, a backup written
-   before this and a payload handed over before this all say nothing about
-   height and all come out exactly as they were. */
+   Absent means 1. A keyboard built before this, a backup written before this
+   and a payload handed over before this all say nothing about height and all
+   come out exactly as they were. */
 var KB_H=52, KB_H_MIN=0.7, KB_H_MAX=1.5;
-/* What a row can be, as a percentage of the keyboard's own height. Numbers
-   rather than words: 70 · 100 · 130 · 160 says the sizes ARE sizes, and
-   there is nothing in them to translate. */
-var KB_ROW_H=[0.7, 1, 1.3, 1.5];
 function kbHOf(h){
   h=parseFloat(h);
   if(!(h>0)) return 1;
@@ -97,7 +97,6 @@ function kbHOf(h){
 }
 /* The keyboard being SHOWN, which is the one the editor is about. */
 function kbH(){ return kbHOf(kbBoard().h); }
-function kbRowH(lay, ri){ return kbHOf(lay && lay.rh? lay.rh[ri] : 1); }
 function kbSetH(v){
   var b=kbEdit();
   b.h=kbHOf(v);
@@ -106,17 +105,6 @@ function kbSetH(v){
      screen being rebuilt under the finger that is dragging. */
   var e=document.getElementById('kb');
   if(e) e.style.setProperty('--kh', (KB_H*b.h).toFixed(1)+'px');
-}
-/* One row's share, from the sheet that opens on a key -- the row is the
-   key's row, and there is nowhere else a row can be pressed without taking
-   the tap that opens a key away from it. */
-function kbSetRowH(ri, v){
-  var b=kbEdit(), lay=b.lay[Math.min(kbLay, b.lay.length-1)], i;
-  if(!lay) return;
-  if(!lay.rh){ lay.rh=[]; for(i=0;i<lay.rows.length;i++) lay.rh.push(1); }
-  while(lay.rh.length<lay.rows.length) lay.rh.push(1);
-  lay.rh[ri]=kbHOf(v);
-  saveKb(); render();
 }
 /* Letters five to a row, with a space and a backspace under them. Used for
    both faces of the first keyboard, so the two cannot drift in how wide a
@@ -412,12 +400,20 @@ function kbFixed(){
   }
   /* And the bar along the bottom. A line of the language is more than one
      word -- an example under a word, a post -- and without this there is no
-     way to put a gap between two of them. `!` and `?` stand at its ends. */
-  var sp=kbKey('sp'); sp.w=4;
-  var bot=[], end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
+     way to put a gap between two of them.
+
+     `! ? space return`. It was `! space ?`, the two marks standing at the
+     ends of the bar, and it had no return at all: a keyboard that cannot
+     start a new line is a keyboard nobody can send a message on, and free is
+     the plan most people will ever have. The marks moved together to the
+     near end to make room. 「！？スペース　改行」 */
+  var sp=kbKey('sp'), ret=kbKey('ret'), bot=[];
+  var end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
+  sp.w=3; ret.w=2;
   if(end0) bot.push(kbFix(KB_ENDS.charAt(0), end0));
-  bot.push(sp);
   if(end1) bot.push(kbFix(KB_ENDS.charAt(1), end1));
+  bot.push(sp);
+  bot.push(ret);
   rows.push(bot);
   return {lay:[{rows:rows}]};
 }
@@ -629,7 +625,7 @@ function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls;
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
-    out+='<div class="kbrow" style="--rh:'+kbRowH(lay, ri)+'">';
+    out+='<div class="kbrow">';
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(ro? ' ro':'')+
@@ -1071,16 +1067,6 @@ function kbKeyHTML(ri, ki){
     [1,2,3,4].map(function(w){
       return '<button class="seg'+((key.w||1)===w?' on':'')+'"' +
         DO('kbSetW', [ri, ki, w]) + '>'+w+'</button>';
-    }).join('')+'</div>'+
-    /* And how tall the ROW it sits in is. A row is not a thing you can press
-       -- pressing one opens a key -- so its one number lives on the sheet of
-       any key in it, next to the key's own width. The two read as a pair,
-       which is what they are: how big this square is.
-       「マス目の大きさもカスタマイズできるように」 */
-    '<div class="sec">'+t('kb.h.row')+'</div><div class="segs">'+
-    KB_ROW_H.map(function(h){
-      return '<button class="seg'+(kbRowH(kbLayer(), ri)===h?' on':'')+'"' +
-        DO('kbSetRowH', [ri, h]) + '>'+Math.round(h*100)+'</button>';
     }).join('')+'</div>'+
     /* The ◀ and ▶ that used to be here are gone: a key is moved by holding it
        on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」 What

@@ -90,17 +90,6 @@ function shareFace(id){
   else if(l.ch) o.ch=l.ch;
   return o;
 }
-/* One face. Its rows, and -- only when somebody has moved one -- how tall
-   each row is relative to the others. `rh` is as long as `rows` or absent
-   entirely; a half-filled array would be a row whose height is a guess. */
-function shareLay(lay){
-  var rh=[], any=false, i;
-  for(i=0;i<lay.rows.length;i++){
-    rh.push(kbRowH(lay, i));
-    if(rh[i]!==1) any=true;
-  }
-  return any? {rows:shareRows(lay), rh:rh} : {rows:shareRows(lay)};
-}
 /* One key. `k` is what it does, and the rest is what it takes to draw it. */
 function shareKey(key){
   var o, i, f, any, l;
@@ -293,7 +282,7 @@ function shareRomLay(){
 function shareKbd(){
   var b=kbOf(), lay=[], i, t=shareTable(), conv=shareConv(t), out;
   if(conv && shareRoman()) lay.push(shareRomLay());
-  for(i=0;i<b.lay.length;i++) lay.push(shareLay(b.lay[i]));
+  for(i=0;i<b.lay.length;i++) lay.push({rows:shareRows(b.lay[i])});
   out={v:1, lang:langId, name:langName, box:SHARE_BOX, lay:lay};
   /* How tall the keys are, as a multiplier of whatever the extension's own
      row height is. A point is a different size on an SE and a Pro Max, and

@@ -181,7 +181,6 @@ defLang('it', (function(){
       "kb.lay"               : "Livello",
       "kb.lay.add"               : "Aggiungi un livello",
       "kb.h"               : "Altezza dei tasti",
-      "kb.h.row"           : "Altezza di questa riga",
       "kb.ret"             : "A capo",
       "kb.w"               : "Larghezza",
       "kb.flick"               : "Scorrimento",

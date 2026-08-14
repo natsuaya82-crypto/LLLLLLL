@@ -97,7 +97,6 @@ defLang('ja', (function(){
       "kb.lay"               : "層",
       "kb.lay.add"               : "層を足す",
       "kb.h"               : "キーの高さ",
-      "kb.h.row"           : "この行の高さ",
       "kb.ret"             : "改行",
       "kb.w"               : "幅",
       "kb.flick"               : "フリック",

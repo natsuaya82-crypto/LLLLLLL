@@ -360,7 +360,6 @@ defLang('ko', (function(){
       "kb.lay"               : "층",
       "kb.lay.add"               : "층 추가",
       "kb.h"               : "키 높이",
-      "kb.h.row"           : "이 줄의 높이",
       "kb.ret"             : "줄바꿈",
       "kb.w"               : "너비",
       "kb.flick"               : "플릭",

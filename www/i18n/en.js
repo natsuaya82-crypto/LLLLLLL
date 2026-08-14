@@ -83,7 +83,6 @@ defLang('en', (function(){
       "kb.lay"               : "Layer",
       "kb.lay.add"               : "Add a layer",
       "kb.h"               : "Key height",
-      "kb.h.row"           : "Row height",
       "kb.ret"             : "New line",
       "kb.w"               : "Width",
       "kb.flick"               : "Flick",

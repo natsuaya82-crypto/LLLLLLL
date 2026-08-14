@@ -189,7 +189,6 @@ defLang('zh', (function(){
       "kb.lay"               : "层",
       "kb.lay.add"               : "添加一层",
       "kb.h"               : "按键高度",
-      "kb.h.row"           : "这一行的高度",
       "kb.ret"             : "换行",
       "kb.w"               : "宽度",
       "kb.flick"               : "滑动",

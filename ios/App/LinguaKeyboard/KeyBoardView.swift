@@ -126,11 +126,6 @@ final class KeyView: UIView {
 final class KeyBoardView: UIView {
   weak var delegate: KeyBoardViewDelegate?
   private var rows: [[KeyView]] = []
-  /// One number per row: its share of the keyboard's height, relative to the
-  /// others. `rh` in the file, absent when nobody has moved one -- and then
-  /// every row is 1, which divides the height evenly and is what this did
-  /// before there was a number at all.
-  private var shares: [CGFloat] = []
   private var down: (view: KeyView, at: CGPoint)?
 
   /// `drop` is the globe when the phone does not need one. It is in the file
@@ -138,20 +133,14 @@ final class KeyBoardView: UIView {
   /// because only the extension can be asked whether it is wanted.
   init(lay: Layer, box: CGFloat, drop: Set<String>, mark: Bool) {
     super.init(frame: .zero)
-    for (i, r) in lay.rows.enumerated() {
+    for r in lay.rows {
       var row: [KeyView] = []
       for key in r where !drop.contains(key.k) {
         let v = KeyView(key: key, box: box, mark: mark)
         addSubview(v)
         row.append(v)
       }
-      if !row.isEmpty {
-        rows.append(row)
-        // A row dropped for being empty drops its share with it, so the two
-        // arrays stay the same length and index the same rows.
-        let s = (lay.rh.map { i < $0.count ? CGFloat($0[i]) : 1 }) ?? 1
-        shares.append(s > 0 ? s : 1)
-      }
+      if !row.isEmpty { rows.append(row) }
     }
     isMultipleTouchEnabled = false
   }
@@ -161,19 +150,14 @@ final class KeyBoardView: UIView {
     super.layoutSubviews()
     guard !rows.isEmpty else { return }
     let gap: CGFloat = 3
-    // The height is shared out in the same way the width already was: each
-    // row takes its share of what is left after the gaps, rather than every
-    // row taking the same.
-    let sum = shares.reduce(0, +)
-    let free = bounds.height - gap * CGFloat(rows.count + 1)
+    let rowH = (bounds.height - gap * CGFloat(rows.count + 1)) / CGFloat(rows.count)
     var y = gap
-    for (i, row) in rows.enumerated() {
-      let rowH = sum > 0 ? free * (shares[i] / sum) : free / CGFloat(rows.count)
+    for row in rows {
       let total = row.reduce(CGFloat(0)) { $0 + $1.key.width }
-      let wide = bounds.width - gap * CGFloat(row.count + 1)
+      let free = bounds.width - gap * CGFloat(row.count + 1)
       var x = gap
       for v in row {
-        let w = wide * (v.key.width / total)
+        let w = free * (v.key.width / total)
         v.frame = CGRect(x: x, y: y, width: w, height: rowH)
         x += w + gap
       }

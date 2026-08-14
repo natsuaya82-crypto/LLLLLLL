@@ -43,8 +43,15 @@ there either.
 whatever is being spelled first — the same as space, because a buffer left
 standing would be matched against the next line's text.
 
-**Not added to the free plan's QWERTY.** 10 / 9 / 7 with `!` space `?` along the
-bottom is an owner decision and stays as it is until it is decided again.
+**And the free plan's QWERTY has one.** The bottom row was `!` space `?`, with
+the two marks standing at the ends of the bar and no return anywhere on the
+keyboard. It is `! ? space return` now — the marks moved together to the near end
+to make room. 「改行入れるか無料も。！？スペース　改行」
+
+That row is what the free plan IS, so it is worth saying exactly what moved: the
+ten / nine / seven above it are untouched, the delete is still two wide, the
+digits are still the person's own, and nothing was added to or taken from the
+twenty-eight slots.
 
 ### The line saying which keyboard is on the phone is gone
 
@@ -112,22 +119,24 @@ since the editor existed. Its height was 52 points and nothing could touch it, s
 a keyboard of four rows of big flick keys and one of six thin rows were the same
 keyboard with different letters on it.
 
-Two numbers, because they are two questions: the whole keyboard's height — a
-slider directly under it, which moves the keyboard as the thumb moves rather than
-after — and one row's share of it, on the sheet of any key in that row, beside
-that key's own width. Both are multipliers rather than points: a point is a
-different size on an SE and a Pro Max, and what is being chosen is how big a key
-feels.
+One number, for the whole keyboard: a slider directly under it, which moves the
+keyboard as the thumb moves rather than after. A multiplier rather than points —
+a point is a different size on an SE and a Pro Max, and what is being chosen is
+how big a key feels.
 
-**Newly stored:** `h` on a keyboard and `rh` on a layer, both optional. Absent
-means 1 everywhere — a keyboard built before this, a backup written before this
-and a payload handed over before this all say nothing about height and come out
-exactly as they were. **Newly handed over:** the same two, under the same names,
-and the extension falls back to an even share when either is missing.
+A number per ROW was built and taken back out the same day. 「行の高さは固定で
+いいのでは？」 Rows are the same height as each other on every keyboard anybody
+has ever used, and four more things to set per row buys a keyboard that will look
+like every other keyboard afterwards. It never shipped, so nothing has an `rh` to
+read.
 
-Swift: `Board.h`, `Layer.rh`, `KeyBoardView` shares the height out the way it
-already shared the width, and `place()` takes a measure rather than a count.
-**Not device confirmed** — Swift does not compile here.
+**Newly stored:** `h` on a keyboard, optional. Absent means 1 — a keyboard built
+before this, a backup written before this and a payload handed over before this
+all say nothing about height and come out exactly as they were. **Newly handed
+over:** the same `h`, and the extension clamps it to the range the slider has.
+
+Swift: `Board.h`, and `place()` scales by it. **Not device confirmed** — Swift
+does not compile here.
 
 ### The draft is beside Post, not at the foot of the screen
 

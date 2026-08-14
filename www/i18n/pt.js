@@ -188,7 +188,6 @@ defLang('pt', (function(){
       "kb.lay"               : "Camada",
       "kb.lay.add"               : "Adicionar uma camada",
       "kb.h"               : "Altura das teclas",
-      "kb.h.row"           : "Altura desta linha",
       "kb.ret"             : "Nova linha",
       "kb.w"               : "Largura",
       "kb.flick"               : "Deslizar",

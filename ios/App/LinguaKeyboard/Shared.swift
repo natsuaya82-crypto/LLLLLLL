@@ -69,11 +69,6 @@ struct Key: Decodable {
 
 struct Layer: Decodable {
   let rows: [[Key]]
-  /// One number per row: its share of the keyboard's height, relative to the
-  /// others. Absent when nobody has moved one, and then every row is 1 --
-  /// which divides the height evenly, the way it was divided before there
-  /// was a number at all.
-  let rh: [Double]?
 }
 
 struct Board: Decodable {

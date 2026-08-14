@@ -169,7 +169,6 @@ defLang('de', (function(){
       "kb.lay"               : "Ebene",
       "kb.lay.add"               : "Ebene hinzufügen",
       "kb.h"               : "Tastenhöhe",
-      "kb.h.row"           : "Höhe dieser Reihe",
       "kb.ret"             : "Zeilenumbruch",
       "kb.w"               : "Breite",
       "kb.flick"               : "Wischen",

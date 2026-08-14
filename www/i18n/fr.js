@@ -229,7 +229,6 @@ defLang('fr', (function(){
       "kb.lay"               : "Couche",
       "kb.lay.add"               : "Ajouter une couche",
       "kb.h"               : "Hauteur des touches",
-      "kb.h.row"           : "Hauteur de cette rangée",
       "kb.ret"             : "Retour à la ligne",
       "kb.w"               : "Largeur",
       "kb.flick"               : "Glissement",

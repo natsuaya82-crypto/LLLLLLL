@@ -141,7 +141,6 @@ defLang('es', (function(){
       "kb.lay"               : "Capa",
       "kb.lay.add"               : "Añadir una capa",
       "kb.h"               : "Alto de las teclas",
-      "kb.h.row"           : "Alto de esta fila",
       "kb.ret"             : "Salto de línea",
       "kb.w"               : "Ancho",
       "kb.flick"               : "Deslizar",
