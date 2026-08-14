@@ -469,12 +469,12 @@ function postBadge(p){
   if(!p || !p.mine) return '';
   return planBadge(plan());
 }
-function pwPrevHTML(){
-  var d=scriptDir(), ln=String(PW.ln||'');
-  if(!ln) return '';
-  return '<div class="pwprev '+dirClass(d)+'">'+
-    postLnHTML({id:'pw', ln:ln, ink:postInk(ln)})+'</div>';
-}
+/* There was a preview under the field: the line you were typing, drawn again
+   in the letters you drew. It was written before the keyboard was, and the
+   keyboard has one -- the candidate bar shows the run in your own shapes as
+   you press, which is the same picture one row closer to your thumb. Two of
+   them is the composer saying the same thing twice and eating the screen the
+   post is written on. 「キーボード内にプレビューあるからいらないやろ普通に」 */
 /* What you are answering, above what you are writing. It was a line of text
    saying whose handle it was, which tells you the one thing you already knew
    and not the thing you are replying TO. 「リプライする時は前のツイートが何か
@@ -522,7 +522,6 @@ function pwHTML(){
          post itself is set in columns. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
         PW.ln, dirClass(dirFlat(scriptDir())))+
-      '<div id="pw-prev">'+pwPrevHTML()+'</div>'+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
@@ -561,11 +560,6 @@ function pwSetLn(v){
   PW.ln=String(v||'');
   var g=document.getElementById('pw-gl');
   if(g) g.innerHTML=pwGl();
-  /* The preview is patched with the gloss and the canvases painted again:
-     postLines() asks the document what is on it, so the new ones are found
-     without anything here knowing how many there are. */
-  var pv=document.getElementById('pw-prev');
-  if(pv){ pv.innerHTML=pwPrevHTML(); postLines(); }
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');

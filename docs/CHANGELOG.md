@@ -15,6 +15,21 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The composer draws the line once
+
+「キーボード内にプレビューあるからいらないやろ普通に」 Under the field was a
+second copy of the line being typed, drawn again in the letters somebody drew.
+It was written before the system keyboard was, and the keyboard has one now —
+the candidate bar shows the run in your own shapes as you press, one row closer
+to the thumb than the preview was. Two of them is the composer saying the same
+thing twice and taking a screen's worth of room to do it.
+
+`pwPrevHTML()`, the `#pw-prev` element, the patch `pwSetLn()` made to it, and
+the `.pwprev` rule are gone. The field, the gloss row, the counter and the
+meaning are untouched, and so is what `pwSend()` writes.
+
+No data changes.
+
 ### The second kind of button is not a box
 
 「文字書いて四角で囲ったみたいなボタン全部やめてくれ。ダサすぎる」 There are
