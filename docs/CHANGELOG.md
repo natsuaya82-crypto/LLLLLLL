@@ -15,6 +15,52 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The server learns about replies, likes and the bytes
+
+`supabase/schema.sql` had `post`, `quote` and `follow` and has never been run.
+Four things were missing before it could be, and running it twice means hand-
+patching the difference, so they go in first.
+
+**`post.reply_to`** — a column and an index, not a field of `body`, because a
+thread is read by asking for one. `on delete set null` and not cascade: deleting
+a post must not delete the answers to it, and a reply already carries the handle
+of whoever it answered (rule 13), so it goes on saying who it was for.
+
+**`react`** — one row per person per post per kind (`like` / `boost`), which is
+what the primary key says, so pressing twice cannot count twice. **No count is
+stored**: the number under a post is `count(*)`. Two phones sending counts is how
+a number goes backwards. No update policy — a reaction is on or off.
+
+**Storage, and this is the one that changes what a post IS.** A post's pictures
+are data URLs on the phone. They may not go into `post.body`: a four-photograph
+post is most of a megabyte of base64, and a timeline of fifty is forty megabytes
+downloaded to draw six. 「Xとかインスタとかと同じ動きにしてね」 is a sentence
+about how it feels and a sentence about where the bytes are, and they are the
+same sentence — X fills the pictures in as they arrive because a picture is a
+URL.
+
+So: a bucket `post-media`, public to read, and the write rule is the first
+folder — `post-media/<author>/<post>/0.jpg`, and you may write under your own
+uuid and nowhere else. Checked with a `like` rather than with
+`storage.foldername()`, because that is Supabase's own function and this file
+has to be runnable, and testable, against a plain PostgreSQL. No update policy:
+an overwrite is how somebody else's post quietly changes under them.
+
+The letters drawn on a photograph are inside the jpeg before it is uploaded, and
+nothing about that changes.
+
+**`npm run rls` grew from 34 attempts to 50, and from 5 shape checks to 8.** The
+harness now stands up a `storage` schema — two columns and a name, which is all
+schema.sql says about it — and a second bucket, so "you may not write into
+another bucket" is refused by the policy rather than by a foreign key. Every new
+policy was watched failing: taking the uuid out of `media_make` turns *A cannot
+put one under B* red.
+
+**Nothing is applied yet and no data has moved.** `www/` is untouched: the six
+seam functions in `net.js` are still empty, and every post is still
+`localStorage`. This is the shape being made ready, not the feature.
+
+
 ### A key is a square with five places on it
 
 「だからキーボードをカスタマイズする画面がゴミだって言ってんだろ」

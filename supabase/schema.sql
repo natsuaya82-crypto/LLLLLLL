@@ -115,11 +115,22 @@ create table post (
   -- the day's sentence this answers, when it answers one. Most posts do not:
   -- a post is whatever somebody felt like saying.
   prompt     bigint references prompt(id) on delete set null,
+  -- What this answers. A column and not a field of body, because a thread is
+  -- read by asking for it -- "every post whose reply_to is this one" -- and a
+  -- jsonb field cannot be indexed for that without saying so anyway.
+  --
+  -- set null and not cascade: deleting a post must not delete the answers to
+  -- it. A reply already carries the handle of whoever it answered, put on it
+  -- when it was written (post.toh, rule 13), so it goes on saying who it was
+  -- for after the post itself is gone -- which is exactly what tools/post-check
+  -- holds on the phone. The thread loses its head and keeps its body.
+  reply_to   uuid references post(id) on delete set null,
   created_at timestamptz not null default now()
 );
 create index post_prompt_idx on post(prompt, created_at desc);
 create index post_author_idx on post(author, created_at desc);
 create index post_language_idx on post(language, created_at desc);
+create index post_reply_idx on post(reply_to, created_at) where reply_to is not null;
 
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
@@ -132,6 +143,30 @@ create table quote (
   primary key (post, language, word)
 );
 create index quote_language_idx on quote(language);
+
+-- ---- answered ------------------------------------------------------------
+-- A like or a boost. One row per person per post per kind, which is what the
+-- primary key says, so pressing twice cannot count twice from one account and
+-- the app does not have to be careful about it.
+--
+-- A COUNT IS NOT STORED. The number under a post is `select count(*)`, and
+-- the reason is the one www/net.js already gives: two phones sending counts is
+-- how a number goes backwards. A phone says "I liked this" or "I no longer
+-- do"; adding up is the server's, and a row that exists is not an opinion.
+--
+-- There is no update policy below, and that is not an oversight: a reaction is
+-- on or off. Changing a like into a boost is deleting one and inserting the
+-- other, which is also what it is on the screen.
+create table react (
+  post       uuid not null references post(id) on delete cascade,
+  actor      uuid not null references profile(id) on delete cascade,
+  kind       text not null check (kind in ('like', 'boost')),
+  created_at timestamptz not null default now(),
+  primary key (post, actor, kind)
+);
+-- counting a post's likes, and drawing somebody's notices
+create index react_post_idx on react(post, kind);
+create index react_actor_idx on react(actor, created_at desc);
 
 -- ---- followed ------------------------------------------------------------
 create table follow (
@@ -160,6 +195,7 @@ alter table language    enable row level security;
 alter table publication enable row level security;
 alter table post        enable row level security;
 alter table quote       enable row level security;
+alter table react       enable row level security;
 alter table prompt      enable row level security;
 alter table follow      enable row level security;
 
@@ -223,6 +259,15 @@ create policy quote_drop on quote for delete using (
   and exists (select 1 from post p where p.id = post and p.author = auth.uid())
 );
 
+-- react: everyone reads, because the count under a post is the point. You add
+-- and remove your OWN reaction and nobody else's -- so a like cannot be put in
+-- somebody else's name and cannot be taken out of it either. No update policy,
+-- so a row cannot be turned into a different kind under a different name.
+create policy react_read on react for select using (true);
+create policy react_make on react for insert
+  with check (is_member() and actor = auth.uid());
+create policy react_drop on react for delete using (is_member() and actor = auth.uid());
+
 -- prompt: everyone reads. Nothing else -- no insert, no update, no delete
 -- policy exists, so the day's sentence can only come from the service role.
 create policy prompt_read on prompt for select using (true);
@@ -233,6 +278,68 @@ create policy follow_make on follow for insert
   with check (is_member() and follower = auth.uid());
 create policy follow_drop on follow for delete using (is_member() and follower = auth.uid());
 
+
+-- ---------------------------------------------------------------------------
+-- The bytes: photographs and the voice
+--
+-- A post's pictures are data URLs on the phone and a voice is a file in
+-- Documents. Neither may go into `post.body`. A four-photograph post is most
+-- of a megabyte of base64, and a timeline of fifty of them is a phone
+-- downloading forty megabytes in order to draw six of them -- which is not a
+-- timeline, it is a wait. 「Xとかインスタとかと同じ動きにしてね」 is one
+-- sentence about how it feels and one about where the bytes are, and they are
+-- the same sentence: X shows you the text at once and fills the pictures in
+-- as they arrive, and it can do that because the picture is a URL.
+--
+-- So the post carries paths, and the bytes live in Storage.
+--
+--   post-media/<author uuid>/<post uuid>/0.jpg   the photographs, in order
+--   post-media/<author uuid>/<post uuid>/vo.m4a  the voice
+--
+-- The FIRST folder is the author's uuid and that is the whole of the write
+-- rule: you may put a file under your own uuid and nowhere else. It is checked
+-- with a `like`, not with storage.foldername(), because foldername() is
+-- Supabase's own function and this file has to be runnable -- and testable --
+-- against a plain PostgreSQL. A rule that can only be checked in production is
+-- a rule nobody has checked.
+--
+-- Public to read. A post is world-readable (post_read above) and a picture on
+-- one is part of the post; a signed URL per picture would be a round trip per
+-- picture for something anybody can already fetch by reading the post.
+--
+-- The letters somebody drew on a photograph are INSIDE the jpeg before it ever
+-- gets here (tools/post-check counts the pixels). Nothing about that changes:
+-- what is uploaded is the baked picture.
+insert into storage.buckets (id, name, public)
+values ('post-media', 'post-media', true)
+on conflict (id) do nothing;
+
+alter table storage.objects enable row level security;
+-- And the list of buckets, which nothing in the app reads. Supabase switches
+-- this on itself; saying so here means the file is true on its own, and means
+-- a plain PostgreSQL running it ends up in the same place. No policy follows,
+-- so it is closed -- which is what it should be.
+alter table storage.buckets enable row level security;
+
+-- Anybody reads what is in this bucket, and only this bucket.
+create policy media_read on storage.objects for select
+  using (bucket_id = 'post-media');
+-- You write under your own uuid and nowhere else.
+create policy media_make on storage.objects for insert with check (
+  is_member() and bucket_id = 'post-media'
+  and name like auth.uid()::text || '/%'
+);
+-- And you delete your own. Deleting a post deletes its pictures with it --
+-- the row goes by cascade and the bytes go by this, from the phone, in the
+-- same breath. Nothing here removes anybody's file on a schedule:
+-- docs/DATA_SAFETY.md forbids automatic deletion and there is no job.
+create policy media_drop on storage.objects for delete using (
+  is_member() and bucket_id = 'post-media'
+  and name like auth.uid()::text || '/%'
+);
+-- No update policy. A picture is not edited; a different picture is a
+-- different path, and an overwrite is how somebody else's post quietly
+-- changes under them.
 
 -- ---------------------------------------------------------------------------
 -- Leaving

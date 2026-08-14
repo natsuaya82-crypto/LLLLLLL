@@ -69,6 +69,26 @@ grant execute on function auth.uid(), auth.jwt() to anon, authenticated, service
 alter default privileges in schema public grant all on tables    to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+
+-- Storage, as much of it as the policies touch. Supabase's own storage schema
+-- is a dozen tables and a REST service; what schema.sql says about it is two
+-- columns and a name, and those are what somebody would attack. A file put
+-- under another person's uuid is the whole of the threat, and it needs a
+-- bucket_id and a name to be tried.
+create schema if not exists storage;
+create table storage.buckets (
+  id text primary key, name text not null, public boolean not null default false);
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(),
+  bucket_id text references storage.buckets(id),
+  name text not null,
+  owner uuid);
+grant usage on schema storage to anon, authenticated, service_role;
+grant all on all tables in schema storage to anon, authenticated, service_role;
+-- A second bucket, so "you may not write into another bucket" is refused by
+-- the POLICY rather than by a foreign key. A missing row and a closed door
+-- look identical from the outside and only one of them is the claim.
+insert into storage.buckets (id, name, public) values ('other', 'other', true);
 `;
 
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
@@ -153,7 +173,45 @@ const CASES = [
   ['B cannot unfollow on A\u2019s behalf',    'denied', B, 0,
     `delete from follow where follower='${A}'`],
   ['nobody signed in follows',                'denied', B, 1,
-    `insert into follow(follower,followed) values ('${B}','${A}')`]
+    `insert into follow(follower,followed) values ('${B}','${A}')`],
+
+  /* --- a like is yours to give and yours to take back, and nobody else's --- */
+  ['B likes A\u2019s post',                    'ok',     B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','like')`],
+  ['B boosts it too',                         'ok',     B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`],
+  ['A cannot like it in B\u2019s name',        'denied', A, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','like')`],
+  ['A cannot take B\u2019s like away',         'denied', A, 0,
+    `delete from react where actor='${B}' and kind='like'`],
+  ['anyone counts the likes',                 'ok',     A, 0,
+    `select count(*) from react where post='${P}'`],
+  ['nobody signed in likes',                  'denied', B, 1,
+    `insert into react(post,actor,kind) values ('${P}','${B}','like')`],
+  ['B takes B\u2019s own boost back',          'ok',     B, 0,
+    `delete from react where actor='${B}' and kind='boost'`],
+
+  /* --- a reply points at what it answers, and only its author writes it --- */
+  ['B answers A\u2019s post',                  'ok',     B, 0,
+    `insert into post(author,body,reply_to) values ('${B}','{}'::jsonb,'${P}')`],
+  ['B cannot answer as A',                    'denied', B, 0,
+    `insert into post(author,body,reply_to) values ('${A}','{}'::jsonb,'${P}')`],
+
+  /* --- the bytes: a file goes under your own uuid and nowhere else --- */
+  ['A puts a picture under A',                'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${P}/0.jpg')`],
+  ['A cannot put one under B',                'denied', A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/${P}/0.jpg')`],
+  ['A cannot put one in a bucket that is not this one', 'denied', A, 0,
+    `insert into storage.objects(bucket_id,name) values ('other','${A}/x.jpg')`],
+  ['B cannot delete A\u2019s picture',         'denied', B, 0,
+    `delete from storage.objects where name='${A}/${P}/0.jpg'`],
+  ['anyone reads a picture',                  'ok',     B, 0,
+    `select 1 from storage.objects where bucket_id='post-media'`],
+  ['nobody signed in uploads',                'denied', B, 1,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
+  ['A deletes A\u2019s own picture',           'ok',     A, 0,
+    `delete from storage.objects where name='${A}/${P}/0.jpg'`]
 ];
 
 /* The shape of the file itself, which the prose in schema.sql promises and
@@ -165,7 +223,8 @@ const SHAPE = [
      that is not the schema's, so it is the one thing excluded. */
   ['row level security is on for every table', `
      select count(*) from pg_tables
-      where schemaname='public' and tablename not like '\\_%' and not rowsecurity`, '0'],
+      where schemaname in ('public','storage')
+        and tablename not like '\\_%' and not rowsecurity`, '0'],
   ['publication can never be updated',   `
      select count(*) from pg_policies where tablename='publication' and cmd='UPDATE'`, '0'],
   ['publication can never be deleted',   `
@@ -173,7 +232,20 @@ const SHAPE = [
   ['the day\u2019s sentence is read-only', `
      select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT'`, '0'],
   ['a profile is never deleted, only the account', `
-     select count(*) from pg_policies where tablename='profile' and cmd='DELETE'`, '0']
+     select count(*) from pg_policies where tablename='profile' and cmd='DELETE'`, '0'],
+  /* A reaction is on or off. An update policy would let a row be turned into
+     a different kind, and the primary key would not notice. */
+  ['a reaction is never edited', `
+     select count(*) from pg_policies where tablename='react' and cmd='UPDATE'`, '0'],
+  /* An overwrite is how somebody else's post quietly changes under them. */
+  ['a file is never overwritten', `
+     select count(*) from pg_policies where tablename='objects' and cmd='UPDATE'`, '0'],
+  /* Every one of these is a count that must come back zero, so "the bucket is
+     there" has to be asked as "there is no world in which it is missing". */
+  ['the media bucket is there and is public', `
+     select count(*) from (select 1) x
+      where not exists (select 1 from storage.buckets
+                         where id='post-media' and public)`, '0']
 ];
 
 /* ---- a PostgreSQL to throw away ----------------------------------------- */
