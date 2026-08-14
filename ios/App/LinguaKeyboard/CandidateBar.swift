@@ -70,19 +70,26 @@ final class CandidateBar: UIView {
 /// One candidate. A word is more than one letter, so it is more than one
 /// shape, side by side.
 ///
-/// Each shape gets a square of its own here, which is inkCanvases' rule and
-/// not inkAdv's -- the app spaces a LINE of letters by the font's own advance
-/// so the gap between any two is one step, and this bar has no way to ask
-/// what that advance is. It is a bar of two or three letters at a time and a
-/// square each reads straight; if a long candidate ever looks loose, the fix
-/// is to put the advance on the face rather than to work one out here.
+/// Each shape takes its own advance, which is a LINE's rule (inkAdv) and not
+/// a key's (inkCanvases). A bar of letters is a line, and it was a row of
+/// squares -- two narrow letters sat a whole cell apart.
+/// 「キーボード内のプレビューのアルファベットいちいち全角のスペース開くのうざい」
+///
+/// Nothing is worked out here. The app puts `aw` and `dx` on the face, from
+/// inkAdv(), which is the one place that knows the rule; a face without them
+/// falls back to the square.
 private final class CandidateCell: UIControl {
   private let faces: [Face]
   private var views: [GlyphView] = []
   private let pad: CGFloat = 6
+  /// The square the shapes are drawn in. Kept, not just used and dropped:
+  /// step() needs it every time the bar lays out, and reading the init's
+  /// argument from a method is the one mistake that does not look like one.
+  private let box: CGFloat
 
   init(_ c: Candidate, box: CGFloat) {
     faces = c.faces
+    self.box = box
     super.init(frame: .zero)
     for f in faces {
       let g = GlyphView()
