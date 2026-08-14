@@ -1388,7 +1388,16 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
      color:var(--onGold);font-weight:700;font-size:.98rem;line-height:1.3;word-break:break-word}
 .btn:active{opacity:.82}
 .btn:disabled{opacity:.3}
-.btn.ghost{background:none;border:1px solid var(--line);color:var(--txs);font-weight:500}
+/* The second kind of button, and it is not a box. It was a rectangle with a
+   hairline round it and grey text inside -- 「文字書いて四角で囲ったみたいな
+   ボタン全部やめてくれ。ダサすぎる」 -- which is a shape a phone stopped drawing
+   about ten years ago, and there are twenty of them in this app.
+
+   One class, so one change. What is left is the thing itself: the words, in
+   the colour everything pressable is. The padding stays, because 44pt under a
+   thumb is not a matter of taste and press measures it. */
+.btn.ghost{background:none;border:none;color:var(--gold);font-weight:600}
+.btn.ghost:active{opacity:.55}
 .sbg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.24s}
 .sbg.on{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:480px;margin:0 auto;background:var(--pane);

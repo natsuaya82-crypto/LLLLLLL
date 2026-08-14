@@ -15,6 +15,20 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The second kind of button is not a box
+
+「文字書いて四角で囲ったみたいなボタン全部やめてくれ。ダサすぎる」 There are
+twenty of them — add a row, add a meaning, choose a photograph, clear the
+conversation, save a draft — and they were all one class, so they are all one
+change.
+
+`.btn.ghost` was a rectangle with a hairline around it and grey text inside.
+It is the words now, in the colour everything pressable in this app is. The
+padding stays: 44pt under a thumb is not a matter of taste, and `press`
+measures it.
+
+No data changes.
+
 ### Paying does not change the keyboard you were typing on
 
 「plusにした瞬間にこれだわ。何も設定してないならqwartyの作ったやつ引き継いで、
