@@ -370,6 +370,8 @@ defLang('de', (function(){
       "when.h"          : "{0} Std.",
       "when.d"          : "{0} T.",
       "sns.none"        : "Noch nichts hier",
+      "sns.lock.h"      : "Melde dich an, um die Timeline zu sehen",
+      "sns.lock.cta"    : "Anmelden",
       "tab.find"         : "Suchen",
       "tab.home"         : "Start",
       "form.gone"        : "Das ist nicht mehr da.",

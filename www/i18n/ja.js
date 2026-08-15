@@ -298,6 +298,8 @@ defLang('ja', (function(){
       'when.h'          : '{0}時間',
       'when.d'          : '{0}日',
       'sns.none'        : 'まだ何もない',
+      'sns.lock.h'      : 'タイムラインを見るにはサインインしてください',
+      'sns.lock.cta'    : 'サインイン',
       'tab.find'        : 'さがす',
       'tab.home'        : 'ホーム',
       'form.gone'       : 'これはもうありません。',

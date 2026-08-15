@@ -389,6 +389,8 @@ defLang('pt', (function(){
       "when.h"          : "{0} h",
       "when.d"          : "{0} d",
       "sns.none"        : "Ainda não há nada",
+      "sns.lock.h"      : "Entre para ver a linha do tempo",
+      "sns.lock.cta"    : "Entrar",
       "tab.find"         : "Buscar",
       "tab.home"         : "Início",
       "form.gone"        : "Isto já não está aqui.",

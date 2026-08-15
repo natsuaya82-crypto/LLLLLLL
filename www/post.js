@@ -90,6 +90,7 @@ function pwBlank(){ return {ln:'', mn:'', to:''}; }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
+  if(!netSignedIn()){ snsSignIn(); return; }
   openForm('post:', t('post.new'), pwHTML(), null,
     '<button class="navdo"' + DO('pwSend') + '>'+esc(t('post.send'))+'</button>');
 }

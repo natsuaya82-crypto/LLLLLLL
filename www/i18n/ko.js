@@ -561,6 +561,8 @@ defLang('ko', (function(){
       "when.h"          : "{0}시간",
       "when.d"          : "{0}일",
       "sns.none"        : "아직 아무것도 없습니다",
+      "sns.lock.h"      : "타임라인을 보려면 로그인하세요",
+      "sns.lock.cta"    : "로그인",
       "tab.find"         : "찾기",
       "tab.home"         : "홈",
       "form.gone"        : "이건 이제 없습니다.",

@@ -29,11 +29,29 @@ function snsEmpty(r){
     '<div class="body">'+snsNone()+'</div>'+
     '</div>';
 }
+/* A post has a writer, so the timeline is the one part of the app that
+   needs to know who you are -- everything else here works with nobody
+   signed in at all. Shown instead of the feed/explore/notices rather than
+   letting somebody in to read and only refusing at the post button, so the
+   one thing that requires an account says so before the tap that would
+   have failed. */
+function snsLocked(r){
+  return '<div class="view">'+rootTop(r)+
+    '<div class="body"><div class="empty"><div class="eb">'+esc(t('sns.lock.h'))+'</div>'+
+      '<button class="btn" style="margin-top:14px"' + DO('snsSignIn') + '>'+
+        esc(t('sns.lock.cta'))+'</button>'+
+    '</div></div></div>';
+}
+/* Sending somebody to sign in from the middle of the timeline rather than
+   settings -- obBackTo() is the same door setMail() already uses to land
+   back where a person actually was, not step 1 as if they were new. */
+function snsSignIn(){ obBackTo(here().r, here().a); go('set', 'acct'); }
 /* Everybody's languages, as they are written -- which for the moment is
    yours, because there is no server yet and a post has nowhere else to go.
    It is not a placeholder: a post written here is a real post, kept, and it
    is what the timeline will show when the rest of the world arrives. */
 function vFeed(){
+  if(!netSignedIn()) return snsLocked('feed');
   var list=postAll();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
@@ -56,6 +74,6 @@ function vFeed(){
 /* Posts, not your own language -- that search is in the build tab, on the
    contents page, because it searches what is on that page. 「snsの探すと横断
    検索は別物ね」 */
-function vExplore(){ return snsEmpty('explore'); }
+function vExplore(){ return netSignedIn()? snsEmpty('explore') : snsLocked('explore'); }
 /* Who read you, who answered, who followed. */
-function vNotif(){ return snsEmpty('notif'); }
+function vNotif(){ return netSignedIn()? snsEmpty('notif') : snsLocked('notif'); }

@@ -285,6 +285,8 @@ defLang('en', (function(){
       'when.h'          : '{0}h',
       'when.d'          : '{0}d',
       'sns.none'        : 'Nothing here yet',
+      'sns.lock.h'      : 'Sign in to see the timeline',
+      'sns.lock.cta'    : 'Sign in',
       'tab.find'        : 'Find',
       'tab.home'        : 'Home',
       'form.gone'       : 'That is no longer here.',
