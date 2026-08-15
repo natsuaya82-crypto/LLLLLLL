@@ -390,8 +390,6 @@ defLang('zh', (function(){
       "when.h"          : "{0}小时",
       "when.d"          : "{0}天",
       "sns.none"        : "这里还什么都没有",
-      "sns.lock.h"      : "登录后即可查看时间线",
-      "sns.lock.cta"    : "登录",
       "tab.find"         : "查找",
       "tab.home"         : "主页",
       "form.gone"        : "这个已经不在了。",

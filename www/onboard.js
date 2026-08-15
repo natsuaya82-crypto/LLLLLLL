@@ -277,7 +277,11 @@ function obCrestHTML(){
    the bar across the foot offers instead of itself. On one screen all of
    that would be written twice in conditionals anyway, and the person would
    not be able to tell which of the two they were looking at. */
-function obFormHTML(up){
+/* skip is whether "continue without an account" belongs here at all --
+   true on the real door, false wherever the door is reused after
+   SET.done, where obSkip() would mean "go draw a letter" to somebody
+   already mid-language. */
+function obFormHTML(up, skip){
   return '<div class="mid obform">'+
     obCrestHTML()+
     obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
@@ -291,7 +295,7 @@ function obFormHTML(up){
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-         '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>')+
+         (skip? '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>' : ''))+
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
@@ -367,11 +371,11 @@ function obAskHTML(code){
    language nobody can prove is theirs is a language nobody can get back. */
 function obSkip(){ SET.anon=true; save(); obGo(1); }
 
-function obDoorHTML(){
+function obDoorHTML(skip){
   var m=OBM.mode;
   if(m==='who') return obWhoHTML();
   if(m==='code' || m==='forgot') return obAskHTML(m==='code');
-  return obFormHTML(m==='up');
+  return obFormHTML(m==='up', skip!==false);
 }
 
 /* ---- step 1, its name -------------------------------------------------

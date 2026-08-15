@@ -928,6 +928,17 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .ob h2.obh{font-size:clamp(1.02rem,4.2vw,1.24rem)}
 .ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
 .ob .obfoot{margin-top:auto;padding-top:12px;flex:0 0 auto}
+/* the door, reused as a popup over a tab that needs signing in for,
+   rather than a full screen of its own -- the same crest and the same
+   Apple/Google/email buttons, framed as a card that fades in over
+   whatever the tab already shows instead of sliding up from an edge. */
+.obpopbg{position:fixed;inset:0;z-index:45;background:rgba(0,0,0,.55);
+         display:flex;align-items:center;justify-content:center;padding:24px;
+         opacity:0;pointer-events:none;transition:.24s}
+.obpopbg.on{opacity:1;pointer-events:auto}
+.obpop{width:100%;max-width:400px;max-height:88vh;overflow:auto;
+       background:var(--bg);border:1px solid var(--line);border-radius:20px}
+.obpop .ob{height:auto;overflow:visible;padding:30px 22px 24px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
 .chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:8px 15px;font-size:.88rem}
 .chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}

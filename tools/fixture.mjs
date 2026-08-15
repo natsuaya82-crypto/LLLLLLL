@@ -339,19 +339,15 @@ export function halfDone(){
        is a line, and the meaning is filled from it. */
     /* The whole form, not just its body: the button that posts it sits in the
        top bar now, and a face that returns only FORM.html cannot see it. */
-    /* Writing at all needs a writer now: openPost() sends an anonymous
-       tap to sign in instead of opening the sheet, same as vFeed(). */
+    /* Writing needs a writer: openPost() sends an anonymous tap to sign in
+       instead of opening the sheet, even though the feed itself reads with
+       nobody signed in (the server already allows anyone to read). */
     ['a post being written', () => { SESS = { at:'a', rt:'r', uid:'u' };
         PW = pwBlank(); openPost(); pwSetLn('kano mos tir');
         const h = vForm(); SESS = null; return h; }],
     ['a reply being written', () => { SESS = { at:'a', rt:'r', uid:'u' };
         PW = pwBlank(); PW.to = POSTS[0].id; openPost(); pwSetLn('sar');
         const h = vForm(); SESS = null; return h; }],
-    /* The feed itself, signed in: the per-post row buttons (card, like,
-       boost, reply, delete) only exist once there is something to press
-       them on, and the row itself only renders past the sign-in wall. */
-    ['the feed, signed in', () => { SESS = { at:'a', rt:'r', uid:'u' };
-        const h = vFeed(); SESS = null; return h; }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],
     ['a list waiting to be understood', () => { IMP = impBlank();
         impTake('Word,Meaning,Part of Speech,Made\n' +

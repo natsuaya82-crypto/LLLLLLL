@@ -385,8 +385,6 @@ defLang('ru', (function(){
       "when.h"          : "{0} ч",
       "when.d"          : "{0} д",
       "sns.none"        : "Пока ничего нет",
-      "sns.lock.h"      : "Войдите, чтобы увидеть ленту",
-      "sns.lock.cta"    : "Войти",
       "tab.find"          : "Поиск",
       "tab.home"          : "Главная",
       "form.gone"         : "Этого здесь больше нет.",

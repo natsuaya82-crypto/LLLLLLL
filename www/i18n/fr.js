@@ -430,8 +430,6 @@ defLang('fr', (function(){
       "when.h"          : "{0} h",
       "when.d"          : "{0} j",
       "sns.none"        : "Rien pour l'instant",
-      "sns.lock.h"      : "Connectez-vous pour voir la chronologie",
-      "sns.lock.cta"    : "Se connecter",
       "tab.find"         : "Chercher",
       "tab.home"         : "Accueil",
       "form.gone"        : "Ce n'est plus là.",

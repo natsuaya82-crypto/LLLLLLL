@@ -21,26 +21,30 @@
 function snsNone(){
   return '<div class="empty"><div class="eb">'+esc(t('sns.none'))+'</div></div>';
 }
+/* A post has a writer, so the timeline is the one part of the app that
+   needs to know who you are -- everything else here works with nobody
+   signed in at all. The tab itself is not replaced: the feed still reads,
+   still scrolls, the way the server already allows anybody to read it
+   (every select in supabase/schema.sql is open). What is refused floats
+   over whatever the tab already shows, as the door onboarding opens
+   with -- the same crest, the same Apple/Google/email buttons, so
+   signing in from the feed and signing in on day one are one screen, not
+   two that could drift apart. "Continue without an account" is left off:
+   obSkip() means "go draw a letter", and nobody here needs to. */
+function snsGateHTML(){
+  OBM.mode='in'; OBM.msg='';
+  return '<div class="obpopbg on"><div class="obpop"><div class="ob center">'+
+    obDoorHTML(false)+
+    '</div></div></div>';
+}
 /* One shape for the search and the notices, because both are the same screen
    until there is something to put in them, and two copies of it would be two
    places to change when there is. */
 function snsEmpty(r){
   return '<div class="view">'+rootTop(r)+
     '<div class="body">'+snsNone()+'</div>'+
+    (netSignedIn()? '' : snsGateHTML())+
     '</div>';
-}
-/* A post has a writer, so the timeline is the one part of the app that
-   needs to know who you are -- everything else here works with nobody
-   signed in at all. Shown instead of the feed/explore/notices rather than
-   letting somebody in to read and only refusing at the post button, so the
-   one thing that requires an account says so before the tap that would
-   have failed. */
-function snsLocked(r){
-  return '<div class="view">'+rootTop(r)+
-    '<div class="body"><div class="empty"><div class="eb">'+esc(t('sns.lock.h'))+'</div>'+
-      '<button class="btn" style="margin-top:14px"' + DO('snsSignIn') + '>'+
-        esc(t('sns.lock.cta'))+'</button>'+
-    '</div></div></div>';
 }
 /* Sending somebody to sign in from the middle of the timeline rather than
    settings -- obBackTo() is the same door setMail() already uses to land
@@ -51,7 +55,6 @@ function snsSignIn(){ obBackTo(here().r, here().a); go('set', 'acct'); }
    It is not a placeholder: a post written here is a real post, kept, and it
    is what the timeline will show when the rest of the world arrives. */
 function vFeed(){
-  if(!netSignedIn()) return snsLocked('feed');
   var list=postAll();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
@@ -66,14 +69,16 @@ function vFeed(){
       : snsNone())+
     '</div>'+
     /* Where every timeline puts it: over the feed, above the bar, under the
-       thumb of the hand already holding the phone. */
+       thumb of the hand already holding the phone. The sheet's own backdrop
+       sits above this and takes the tap when nobody is signed in. */
     '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
       ICON_ADD2+'</button>'+
+    (netSignedIn()? '' : snsGateHTML())+
     '</div>';
 }
 /* Posts, not your own language -- that search is in the build tab, on the
    contents page, because it searches what is on that page. 「snsの探すと横断
    検索は別物ね」 */
-function vExplore(){ return netSignedIn()? snsEmpty('explore') : snsLocked('explore'); }
+function vExplore(){ return snsEmpty('explore'); }
 /* Who read you, who answered, who followed. */
-function vNotif(){ return netSignedIn()? snsEmpty('notif') : snsLocked('notif'); }
+function vNotif(){ return snsEmpty('notif'); }

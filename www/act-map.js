@@ -102,7 +102,6 @@ act('setSignOut', setSignOut);
 act('setMail', setMail);
 act('obSkip', obSkip);
 act('obSkipDraw', obSkipDraw);
-act('snsSignIn', snsSignIn);
 act('sndFeel', sndFeel);
 act('openSnd', openSnd);
 act('ltTakeSnd', ltTakeSnd);

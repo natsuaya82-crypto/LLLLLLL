@@ -342,8 +342,6 @@ defLang('es', (function(){
       "when.h"          : "{0} h",
       "when.d"          : "{0} d",
       "sns.none"        : "Aún no hay nada",
-      "sns.lock.h"      : "Inicia sesión para ver la línea de tiempo",
-      "sns.lock.cta"    : "Iniciar sesión",
       "tab.find"         : "Buscar",
       "tab.home"         : "Inicio",
       "form.gone"        : "Esto ya no está aquí.",
