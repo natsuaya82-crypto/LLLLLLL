@@ -28,16 +28,44 @@
 
    That last one is the flick, and it is why one key can hold five letters. */
 
-var KB=null;
+/* Up to three keyboards, only one of them on the phone at a time -- the
+   extension reads one keyboard.json and nothing asks it to hold a second.
+   KBS is the three slots' content and KBI which one is active, same as a
+   single keyboard always worked. KBE is a different question: whether a
+   slot EXISTS, which content alone cannot answer -- kbReset() empties a
+   slot's content back to the live default without deleting the slot, the
+   same way it always emptied the one keyboard there used to be. Slot zero
+   exists from the first read; a language starts with one keyboard, not
+   zero. KB stays what every other function already calls it: the active
+   slot's content, kept in sync by saveKb(). An old install's single
+   keyboard was the object itself with no wrapper, so that shape is read
+   as slot zero rather than lost. */
+var KBS=[null, null, null], KBE=[true, false, false], KBI=0, KB=null;
 function kbRead(){
-  KB=null;
+  KBS=[null, null, null]; KBE=[true, false, false]; KBI=0;
   try{
-    var k=JSON.parse(localStorage.getItem(langKey('kb'))||'null');
-    if(k && k.lay && k.lay.length) KB=k;
+    var k=JSON.parse(localStorage.getItem(langKey('kb'))||'null'), i, b;
+    if(k && k.lay && k.lay.length) k={list:[k], ix:0, have:[true, false, false]};
+    if(k && k.list && k.list.length){
+      for(i=0;i<3 && i<k.list.length;i++){
+        b=k.list[i];
+        if(b && b.lay && b.lay.length) KBS[i]=b;
+        if(k.have && k.have[i]) KBE[i]=true;
+      }
+      KBI=Math.min(Math.max(parseInt(k.ix, 10)||0, 0), 2);
+    }
   }catch(e){}
+  if(!KBE[KBI]) KBI=0;
+  KB=KBS[KBI];
 }
 kbRead();
-function saveKb(){ try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+function saveKb(){
+  KBS[KBI]=KB;
+  try{ localStorage.setItem(langKey('kb'), JSON.stringify({list:KBS, ix:KBI, have:KBE})); }catch(e){}
+}
+/* How many of the three slots exist -- what the tabs on vKb() are, and
+   whether Add or Delete has anything left to do. */
+function kbCount(){ var n=0, i; for(i=0;i<3;i++) if(KBE[i]) n++; return n; }
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
@@ -214,6 +242,10 @@ function kbFace(key){
   return ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>');
 }
 function kbLayName(i){ return String(i+1); }
+/* A keyboard's own number, not a layer's -- the two counters are unrelated
+   (a keyboard can have three layers of its own) and kbLayName() answering
+   both would say so when it does not. */
+function kbKbName(i){ return String(i+1); }
 /* A layer-switch key wears the FIRST LETTER of the layer it goes to, the way
    a phone's 123 key wears a 1 and its ABC key wears an A. Which means the key
    is in the language: press the one showing your 1 and the digits come up.
@@ -342,7 +374,15 @@ function vKb(){
       '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
         t('up.cta')+'</button>'+
       '</div></div>';
-  var b=kbOf(), out='';
+  var b=kbOf(), out='', kbs='', i;
+  /* Which of the three is on the phone -- shown only once there is a
+     second one to choose between, the same reasoning kbadd's row of ghost
+     buttons already uses for kb.lay.add. */
+  if(kbCount()>1){
+    for(i=0;i<3;i++) if(KBE[i]) kbs+=
+      '<button class="seg'+(i===KBI?' on':'')+'"'+DO('kbGoKb', [i])+'>'+esc(kbKbName(i))+'</button>';
+    kbs='<div class="segs" style="margin-bottom:8px">'+kbs+'</div>';
+  }
   if(b.lay.length>1){
     out+='<div class="segs" style="margin-bottom:8px">'+b.lay.map(function(x, i){
       return '<button class="seg'+(i===Math.min(kbLay, b.lay.length-1)?' on':'')+'"' +
@@ -351,12 +391,16 @@ function vKb(){
   }
   return '<div class="view">'+navTop('')+'<div class="body">'+
     kbSysHTML()+
+    kbs+
     out+
     kbHTML(kbSel)+
     '<div class="kbadd">'+
       '<button class="btn ghost"' + DO('kbAddRow') + '>'+t('kb.row.add')+'</button>'+
       '<button class="btn ghost"' + DO('kbAddLay') + '>'+t('kb.lay.add')+'</button>'+
+      (kbCount()<3? '<button class="btn ghost"' + DO('kbAddKb') + '>'+t('kb.kb.add')+'</button>' : '')+
     '</div>'+
+    (kbCount()>1? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('kbDelKb') + '>'+
+      '<span class="sl bad">'+t('kb.kb.del')+'</span></button>' : '')+
     '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('kbReset') + '>'+
       '<span class="sl bad">'+t('kb.reset')+'</span></button>'+
     '</div></div>';
@@ -405,6 +449,37 @@ function kbOutSay(){
   if(SHARE.how==='no bridge') return t('kb.out.no');
   if(SHARE.how) return t('kb.out.bad', SHARE.how);
   return t('kb.out.none');
+}
+/* Switching which of the three is active is not a view position -- it is
+   which keyboard goes on the phone, so it is saved rather than dropped by
+   viewReset() the way kbLay is. A slot that is not built yet cannot be
+   switched to; kbAddKb() is how one gets built. */
+function kbGoKb(i){
+  if(i<0 || i>2 || !KBE[i]) return;
+  KBI=i; KB=KBS[KBI]; kbLay=0; kbSel=null;
+  saveKb(); render();
+}
+function kbAddKb(){
+  var i;
+  for(i=0;i<3;i++) if(!KBE[i]) break;
+  if(i>=3) return;
+  KBE[i]=true; KBI=i; KB=null; kbEdit();
+  kbLay=0; kbSel=null;
+  saveKb(); render();
+}
+/* Deleting a whole keyboard, not clearing it back to a fresh one -- for
+   somebody who tried flicks, decided against them, and would otherwise
+   have to open every key and take the flick off by hand. At least one
+   keyboard always stays; kbReset() below is how the last one starts over. */
+function kbDelKb(){
+  if(kbCount()<=1) return;
+  if(!confirm(t('kb.del.ask'))) return;
+  var i;
+  KBE[KBI]=false; KBS[KBI]=null;
+  for(i=0;i<3;i++) if(KBE[i]){ KBI=i; break; }
+  KB=KBS[KBI]; kbLay=0; kbSel=null;
+  saveKb(); render();
+  toast(t('kb.del.done'));
 }
 function kbGoLay(i){ kbLay=i; render(); }
 function kbAddRow(){

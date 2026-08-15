@@ -213,6 +213,13 @@ export function halfDone(){
     ['a keyboard of two layers', () => { SET.plan = 'plus'; kbAddLay(); const h = vKb();
                                          KB = null; kbLay = 0;
                                          SET.plan = 'free'; return h; }],
+    /* A second keyboard: the tab that switches which of the three is on the
+       phone, and the button that deletes one, only exist once there is more
+       than one. kbAddKb() is the only way a second slot comes to be. */
+    ['a second keyboard', () => { SET.plan = 'plus'; kbAddKb(); const h = vKb();
+                                  KBS = [null, null, null]; KBE = [true, false, false];
+                                  KBI = 0; KB = null; kbLay = 0;
+                                  SET.plan = 'free'; return h; }],
     /* ---- the paid faces of the making side ----------------------------
        Four screens the free plan does not show, because on free the
        alphabet is twenty-eight slots that cannot be added to, renamed or
