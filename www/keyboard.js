@@ -76,11 +76,24 @@ function kbSecond(){
   return xs.length? {rows:kbRows(xs)} : null;
 }
 /* The first keyboard, so there is something to type on before anybody has
-   built anything: the letters in the order they are already in, and the
-   digits and marks behind a switch. It is a starting point and it is meant
-   to be pulled apart. Nothing is stored until it is. */
+   built anything: a starting point, meant to be pulled apart. Nothing is
+   stored until it is.
+
+   An alphabet's starting point is QWERTY -- kbQwertyRows() below, the same
+   shape free gets, because it is the layout every thumb already knows and
+   there is nothing about typing your own a-z that paid changes. Anything
+   else (a syllabary, an abjad, a logography) has no roman name to hang a
+   QWERTY position on, so it keeps the plain grid, one row of five at a
+   time, in whatever order the letters are already in. */
 function kbDefault(){
-  var rows=kbRows(ltOrder(ltOfKind('alpha'))), more=kbSecond();
+  var rows, more=kbSecond(), sp;
+  if(wsys()==='alpha'){
+    rows=kbQwertyRows();
+    sp=kbKey('sp'); sp.w=3;
+    rows.push([sp, kbKey('del')]);
+  }else{
+    rows=kbRows(ltOrder(ltOfKind('alpha')));
+  }
   if(!more) return {lay:[{rows:rows}]};
   /* The way across, on both faces, at the near end of the bottom row --
      where every phone keeps its 123. */
@@ -128,20 +141,28 @@ function kbNamed(c){
   }
   return '';
 }
-function kbFixed(){
+/* The three QWERTY rows, letters found by name rather than laid out by
+   hand -- kbFixed() and kbDefault()'s alpha starting point are the same
+   three rows, asked for once rather than written out twice. A name
+   nothing answers to is simply left out, same as kbFixed() always did. */
+function kbQwertyRows(){
   var rows=[], r, i, j, row, id;
-  row=[];
-  for(i=0;i<KB_DIGITS.length;i++) row.push(kbRom(KB_DIGITS.charAt(i)));
-  rows.push(row);
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
     for(j=0;j<r.length;j++){
       id=kbNamed(r.charAt(j));
       if(id) row.push(kbKey('lt', id));
     }
-    if(i===KB_QWERTY.length-1) row.push(kbKey('del'));
     if(row.length) rows.push(row);
   }
+  return rows;
+}
+function kbFixed(){
+  var rows=[], row=[], i;
+  for(i=0;i<KB_DIGITS.length;i++) row.push(kbRom(KB_DIGITS.charAt(i)));
+  rows.push(row);
+  rows=rows.concat(kbQwertyRows());
+  rows[rows.length-1].push(kbKey('del'));
   /* And the bar along the bottom. A line of the language is more than one
      word -- an example under a word, a post -- and without this there is no
      way to put a gap between two of them. */
