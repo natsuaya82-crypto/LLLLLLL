@@ -46,6 +46,12 @@ final class KeyView: UIView {
     case "del":  faceView.text = "⌫"
     case "next": faceView.text = "🌐"
     case "ret":  faceView.text = "⏎"
+    // The half key that insets a row. It is in the file so the row still
+    // comes to ten units here -- take it out and the columns stop lining up
+    // on the phone, which is the thing it exists to fix.
+    case "gap":
+      faceView.text = ""
+      backgroundColor = .clear
     case "sp":   faceView.text = ""            // the widest key wears nothing
     // A layer key is a letter like any other: it wears the first letter of
     // the layer it goes to, so pressing the one showing your 1 brings up the

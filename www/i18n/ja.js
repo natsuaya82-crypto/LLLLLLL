@@ -95,6 +95,8 @@ defLang('ja', (function(){
       "kb.del"               : "削除",
       "kb.sp"               : "スペース",
       "kb.lay"               : "層",
+      "kb.lay.rm"          : "この面を消す",
+      "kb.lay.rm.q"        : "この面を消しますか？この面へ行くキーは1面目を指すようになります。",
       "kb.lay.add"               : "層を足す",
       "kb.h"               : "キーの高さ",
       "kb.ret"             : "改行",

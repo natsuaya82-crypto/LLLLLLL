@@ -73,12 +73,12 @@ function tocRows(){
        numbered and a numbered row that appears when you pay renumbers the
        book under somebody who already knew where things were.
 
-       The count is the count on every plan. It said "—" on free, meaning
-       "there is none of this", to somebody holding a thirty-key QWERTY made
-       of letters they drew. kbKeys() reads kbOf(), which is kbFixed() there,
-       so it has always had a true number to give. */
-    {k:'kb.title',   r:'kb',     v:0,
-     txt:String(kbKeys())}
+       The keyboard has no number. It carried the count of its KEYS, which is
+       a true number and answers a question nobody asked -- "9" beside the
+       chapter says nothing anybody can act on, where "5 / 30" beside the
+       letters says how much of an alphabet is drawn. 「キーボードの数字9って
+       なに？意味がわからないから」 */
+    {k:'kb.title',   r:'kb',     v:0, txt:''}
   ].concat(
     /* The AI conversation is Studio's, and it is the LAST chapter so that not
        having it takes nothing away from anybody's numbering.

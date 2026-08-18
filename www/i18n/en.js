@@ -81,6 +81,8 @@ defLang('en', (function(){
       "kb.del"               : "Backspace",
       "kb.sp"               : "Space",
       "kb.lay"               : "Layer",
+      "kb.lay.rm"          : "Remove this layer",
+      "kb.lay.rm.q"        : "Remove this layer? Keys that went to it will point at the first one.",
       "kb.lay.add"               : "Add a layer",
       "kb.h"               : "Key height",
       "kb.ret"             : "New line",

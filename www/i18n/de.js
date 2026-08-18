@@ -167,6 +167,8 @@ defLang('de', (function(){
       "kb.del"               : "Rücktaste",
       "kb.sp"               : "Leertaste",
       "kb.lay"               : "Ebene",
+      "kb.lay.rm"          : "Diese Ebene entfernen",
+      "kb.lay.rm.q"        : "Diese Ebene entfernen? Tasten, die dorthin führten, zeigen auf die erste.",
       "kb.lay.add"               : "Ebene hinzufügen",
       "kb.h"               : "Tastenhöhe",
       "kb.ret"             : "Zeilenumbruch",

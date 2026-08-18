@@ -15,6 +15,47 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Six things wrong with the keyboard, four of them mine
+
+**A flick keyboard had no flicks.** `kbBlank()` emptied a key's letter and
+emptied its four directions with it, so choosing Flick produced twelve keys
+with nothing to flick to — a tap keyboard wearing another name.
+「フリックにしたのにフリックできない」 The slots are part of the ARRANGEMENT,
+which is the half a pattern is for. They stay, and they stay empty.
+
+**And an empty flick slot now shows.** A faint dot at each of the four edges,
+on a board that flicks and nowhere else. Twelve blank keys looked identical to
+a tap keyboard, so choosing Flick appeared to have done nothing at all.
+
+**The rows did not line up.** Every row divides the whole width among its own
+keys, so a row adding up to nine has keys a ninth wider than one adding up to
+ten. 「キーボードずれた。文字サイズとか小さくしていいからずらさないで」 Every row
+of the fixed QWERTY comes to **ten** now: the nine-letter row is inset half a
+key at each end and the seven-letter row a whole key, which is where a phone
+puts them. `! ? space return` is 1 + 1 + 6 + 2.
+
+That needed a key that is not a key. `kbGap()` — it holds width, draws
+nothing, does nothing pressed, and travels to the extension, because taking it
+out on the way would put the columns back out of line on the phone.
+
+**A QWERTY key was offered four flick squares.** The key sheet drew the
+five-slot cross for every letter key. It draws one square on a board that does
+not flick, and five on one that does — or on a key that already holds a flick,
+because that key has one whatever the rest of the board does.
+
+**Adding or deleting a keyboard left you on the sheet.** Both were pressed on
+a sheet and both called `render()`, which redrew the sheet. `kbGo()` lands on
+the chapter.
+
+**A layer could be added and never removed.** `kbDropLay()`, beside the row of
+faces, never the last one. A key that WENT to the face being removed is pointed
+back at the first — silently renumbering it to whatever is now in that slot is
+how somebody presses 2 and gets 3.
+
+**And the contents page had a "9" beside the keyboard.** It was the number of
+keys. 「意味がわからないから」 `kbKeys()` is deleted.
+
+
 ### The last four: liking, deleting, following, and what happened to you
 
 `www/net.js` has no empty seam left.

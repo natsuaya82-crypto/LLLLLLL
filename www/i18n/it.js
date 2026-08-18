@@ -179,6 +179,8 @@ defLang('it', (function(){
       "kb.del"               : "Backspace",
       "kb.sp"               : "Spazio",
       "kb.lay"               : "Livello",
+      "kb.lay.rm"          : "Rimuovi questo livello",
+      "kb.lay.rm.q"        : "Rimuovere questo livello? I tasti che vi portavano punteranno al primo.",
       "kb.lay.add"               : "Aggiungi un livello",
       "kb.h"               : "Altezza dei tasti",
       "kb.ret"             : "A capo",

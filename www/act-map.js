@@ -62,6 +62,7 @@ act('goPlans', goPlans);
 act('goTab', goTab);
 act('kbAddKey', kbAddKey);
 act('kbAddLay', kbAddLay);
+act('kbDropLay', kbDropLay);
 act('kbAddRow', kbAddRow);
 act('kbDelKey', kbDelKey);
 act('kbGoLay', kbGoLay);

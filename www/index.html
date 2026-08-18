@@ -151,6 +151,14 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbk.ro:active{border-color:var(--line);background:var(--sf);color:var(--tx)}
 .kbk.ro.fn:active{background:var(--pane);color:var(--txs)}
 .kbk.fn{background:var(--pane);color:var(--txs)}
+/* The half key that insets a row. It holds space and shows nothing -- every
+   row of the fixed QWERTY comes to ten units so the columns line up, and the
+   only way to inset a row is a key that is not one. */
+.kbk.gap{background:none;border-color:transparent}
+/* A flick direction with nothing on it yet, while the keyboard is being
+   built. It is a place, not a letter, so it is a dot rather than a shape. */
+.kbf.kbfx{color:var(--txm);opacity:.45}
+.kbk.gap:active{background:none;border-color:transparent}
 .kbk.on{border-color:var(--gold);background:var(--goldsf)}
 .kbc{display:flex;align-items:center;justify-content:center;line-height:1}
 .kbc canvas.tc{width:28px;height:28px;display:block}

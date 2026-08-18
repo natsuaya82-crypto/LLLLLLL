@@ -67,6 +67,12 @@ function saveKb(){ bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stri
    count on the same order. */
 var KB_DIRS=['up', 'right', 'down', 'left'];
 function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
+/* Nothing, taking up room. A row is laid out by dividing the width among the
+   keys in it, so the only way to inset a row -- which is what the third row
+   of every phone keyboard is -- is a key that is not a key. It draws nothing
+   and does nothing when pressed, and share.js drops it on the way out rather
+   than handing the extension a key with no job. */
+function kbGap(w){ var k=kbKey('gap'); k.w=w; return k; }
 
 /* ---- how tall a key is -------------------------------------------------
    「マス目の大きさもカスタマイズできるように」
@@ -239,19 +245,21 @@ function kbPatLay(pat){
 /* The shape without the letters.
    「それ以外2つ目作るときは形だけ」
 
-   A pattern is an ARRANGEMENT -- how many keys, how wide, which carry a
-   flick, where the space and the delete sit. Which letter goes on which key
-   is the other half and it is the person's; filling it in from the alphabet
-   in order was the app writing the keyboard and leaving them to correct it,
-   which is most of a keyboard's work done wrong.
+   A pattern is an ARRANGEMENT -- how many keys, how wide, WHICH CARRY A
+   FLICK, where the space and the delete sit. Which letter goes on which key
+   is the other half and it is the person's.
+
+   The flick slots are part of the arrangement and this emptied them, which
+   made choosing Flick produce twelve keys with nothing to flick to -- a tap
+   keyboard wearing another name. 「フリックにしたのにフリックできない」 A
+   slot that the pattern put there stays there and stays EMPTY, which is a
+   slot waiting for a letter and is what the editor draws as a dashed square.
 
    The first board is the exception and is not made here: it is the QWERTY
-   they already had, letters and all, because that one they HAVE been typing
-   on. Everything after it starts empty.
+   they already had, letters and all. Everything after it starts empty.
 
    The layer keys keep what they do, and the space and the delete keep being
-   themselves -- those are not letters and there is nothing to choose. Safe
-   to write into: every kbPatLay() builds its rows fresh on each call. */
+   themselves. Safe to write into: every kbPatLay() builds its rows fresh. */
 function kbBlank(lay){
   var i, j, k, key, d;
   for(i=0;i<lay.length;i++)
@@ -261,9 +269,34 @@ function kbBlank(lay){
         if(key.k!=='lt') continue;
         key.v='';
         key.t='';
+        /* Emptied, never removed. `''` is a slot with no letter in it yet;
+           taking the array away is a key that can never have one. */
         if(key.f) for(d=0;d<key.f.length;d++) key.f[d]='';
       }
   return lay;
+}
+/* Whether this board's keys flick at all. A pattern that laid four
+   directions on a key means them, and one that did not means that too -- a
+   QWERTY has no flick and the editor must not offer four empty squares
+   around every one of its thirty keys.
+   「qwartyで追加してるのに、行追加後に設定しようとしたらフリックになるのなに？」
+
+   Both what it WAS made from and what it holds NOW. The layout alone cannot
+   answer it: a flick board that nobody has put a letter on yet has four empty
+   slots on every key, which is indistinguishable from a QWERTY -- and that is
+   exactly the board somebody has just made and is looking at. `pat` is the
+   intent and the keys are the fact, and either is enough. */
+function kbHasFlick(){
+  var b=kbBoard(), i, j, k, key, d;
+  if(b.pat==='flick') return true;
+  for(i=0;i<b.lay.length;i++)
+    for(j=0;j<b.lay[i].rows.length;j++)
+      for(k=0;k<b.lay[i].rows[j].length;k++){
+        key=b.lay[i].rows[j][k];
+        if(key.k!=='lt' || !key.f) continue;
+        for(d=0;d<4;d++) if(key.f[d]) return true;
+      }
+  return false;
 }
 /* Made, kept, and shown -- but not applied. Building a keyboard must not take
    the one under somebody's thumb away from them mid-sentence. */
@@ -275,7 +308,19 @@ function kbAdd(pat){
   if(KB.kbs.length>=KB_MAX){ toast(t('kb.full', KB_MAX)); return; }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=KB.kbs.length-1; kbLay=0; kbSel=null;
-  saveKb(); render();
+  saveKb();
+  /* And onto it. This is pressed on the sheet that offers the five patterns,
+     so render() alone redrew the sheet -- somebody chose a keyboard and was
+     left looking at the chooser. 「追加した時に画面動かないまま追加される
+     のやめてくれ」 */
+  kbGo();
+}
+/* The keyboard chapter, from wherever this was pressed. go() lands on a
+   screen already behind you by cutting the trail back to it, so pressing
+   Apply from a sheet does not push a second copy of the chapter. */
+function kbGo(){
+  if(here().r==='kb') render();
+  else go('kb');
 }
 /* Which one goes to the phone. The only thing on this screen that changes
    what somebody types with. */
@@ -300,7 +345,10 @@ function kbDrop(i){
   KB.at=kbClamp(KB.at>i? KB.at-1 : KB.at, b.length);
   kbShow=kbClamp(kbShow>=b.length? b.length-1 : kbShow, b.length);
   kbLay=0; kbSel=null;
-  saveKb(); render();
+  saveKb();
+  /* Deleting is pressed on the ⋯ sheet, so the same thing was true of it:
+     the keyboard was gone and the screen was still the sheet about it. */
+  kbGo();
 }
 function kbName(i){
   var b=kbBoards();
@@ -394,8 +442,19 @@ function kbFixed(){
       if(id) row.push(kbFix(r.charAt(j), id));
     }
     /* Two keys wide. It is the one key you hit without looking, and it was
-       the same width as a letter. 「デリートキーは横二つ分欲しいかも」 */
-    if(i===KB_QWERTY.length-1){ var d=kbKey('del'); d.w=2; row.push(d); }
+       the same width as a letter. 「デリートキーは横二つ分欲しいかも」
+
+       And a gap before it, so the row comes to TEN like the two above it.
+       Every row divides the whole width among its own keys, so a row that
+       adds up to nine has keys a ninth wider than a row that adds up to ten
+       -- and the columns stop lining up. 「キーボードずれた。文字サイズとか
+       小さくしていいからずらさないで」 The nine-letter row does the same
+       thing with half a key at each end, which is where a phone puts it. */
+    if(i===KB_QWERTY.length-1){
+      var d=kbKey('del'); d.w=2;
+      row.unshift(kbGap(1)); row.push(d);
+    }
+    if(row.length===9) row.unshift(kbGap(0.5)), row.push(kbGap(0.5));
     if(row.length) rows.push(row);
   }
   /* And the bar along the bottom. A line of the language is more than one
@@ -409,7 +468,8 @@ function kbFixed(){
      near end to make room. 「！？スペース　改行」 */
   var sp=kbKey('sp'), ret=kbKey('ret'), bot=[];
   var end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
-  sp.w=3; ret.w=2;
+  /* 1 + 1 + 6 + 2 = ten, the same as every row above. */
+  sp.w=6; ret.w=2;
   if(end0) bot.push(kbFix(KB_ENDS.charAt(0), end0));
   if(end1) bot.push(kbFix(KB_ENDS.charAt(1), end1));
   bot.push(sp);
@@ -495,14 +555,6 @@ function kbEdit(){
   kbShow=kbClamp(kbShow, KB.kbs.length);
   return KB.kbs[kbShow];
 }
-/* How many keys are set out, over every layer -- what the contents page
-   shows beside the chapter, the way it shows a count beside the others. */
-function kbKeys(){
-  var b=kbOf(), n=0, i, j;
-  for(i=0;i<b.lay.length;i++)
-    for(j=0;j<b.lay[i].rows.length;j++) n+=b.lay[i].rows[j].length;
-  return n;
-}
 function kbAt(ri, ki){
   var rows=kbLayer().rows;
   return (rows[ri] && rows[ri][ki])? rows[ri][ki] : null;
@@ -549,6 +601,9 @@ function kbFace(key){
      one whose shape is the whole of what it says, which is how every phone
      keyboard already draws it. */
   if(key.k==='sp') return '';
+  /* Nothing at all, and it is not a mistake: kbGap() is the half key that
+     insets a row so the columns line up. */
+  if(key.k==='gap') return '';
   if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0);
   if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
   var l=ltById(key.v);
@@ -579,15 +634,23 @@ function kbLayFace(i){
   return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||kbLayName(i))+'</span>')
           : '<span class="kbl">'+esc(kbLayName(i))+'</span>';
 }
-/* The letters a key gives on a flick, small, in the corners they come from.
-   A key with none shows none: an empty corner is quieter than a dot. */
-function kbFlicks(key){
+/* The letters a key gives on a flick, small, at the edges they come from.
+
+   An empty direction shows a faint dot ON A BOARD THAT FLICKS, and nothing at
+   all on one that does not. A flick keyboard nobody has filled in yet looked
+   exactly like a tap keyboard -- twelve blank keys -- so choosing Flick
+   appeared to have done nothing. 「フリックにしたのにフリックできない」
+
+   `slots` is false where a key is being SHOWN rather than built: the free
+   keyboard has no flicks and the four dots would be four promises it does not
+   keep. */
+function kbFlicks(key, slots){
   var out='', i, l;
-  if(!key || !key.f) return '';
+  if(!key || !key.f || key.k!=='lt') return '';
   for(i=0;i<4;i++){
     l=key.f[i]? ltById(key.f[i]) : null;
-    if(!l) continue;
-    out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'))+'</span>';
+    if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'))+'</span>';
+    else if(slots) out+='<span class="kbf kbfx kbf'+KB_DIRS[i]+'">·</span>';
   }
   return out;
 }
@@ -622,19 +685,19 @@ function kbTyped(id){ return String(ltName(ltById(id))||''); }
    one, which is the same argument kbFace() is already making one level
    down. */
 function kbHTML(sel, ro){
-  var lay=kbLayer(), out='', ri, ki, row, key, cls;
+  var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick();
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
     out+='<div class="kbrow">';
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
-      cls='kbk'+(key.k!=='lt'? ' fn':'')+(ro? ' ro':'')+
+      cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'');
       out+= ro
-        ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key)+
+        ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key, false)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+'" style="flex:'+(key.w||1)+'" data-r="'+ri+'" data-k="'+ki+'"'+
-          DO('kbPick', [ri, ki]) + '>'+kbFlicks(key)+
+          DO('kbPick', [ri, ki]) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
     }
     out+='</div>';
@@ -690,7 +753,7 @@ function vKb(){
      So free gets the steps, the state, and the keyboard itself with nothing
      to press. Upgrade stays, at the foot, saying the one true thing. */
   if(!can('kb'))
-    return '<div class="view">'+navTop(String(kbKeys()), helpQ('kb'))+'<div class="body">'+
+    return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
       '<div class="note" style="margin-top:14px">'+t('kb.locked')+'</div>'+
@@ -729,14 +792,21 @@ function kbHBarHTML(){
    One face means no row: there is nothing to switch between, and a segmented
    control of one is a label. */
 function kbLaysHTML(){
-  var b=kbBoard(), n=b.lay.length;
+  var b=kbBoard(), n=b.lay.length, at=Math.min(kbLay, n-1);
   return '<div class="segs kbsegs">'+
     (n>1? b.lay.map(function(x, i){
-      return '<button class="seg'+(i===Math.min(kbLay, n-1)? ' on':'')+'"' +
+      return '<button class="seg'+(i===at? ' on':'')+'"' +
         DO('kbGoLay', [i]) + '>'+esc(kbLayName(i))+'</button>';
     }).join('') : '')+
     '<button class="seg add"' + DO('kbAddLay') + ' aria-label="'+esc(t('kb.lay.add'))+'">'+
       ICON_ADD+'</button>'+
+    /* Beside the faces, and only when there is more than one -- the way to be
+       rid of the only face is to delete the keyboard. It takes the face being
+       SHOWN, which is the one the rest of this screen is about. */
+    (n>1
+      ? '<button class="seg drop"' + DO('kbDropLay', [at]) +
+        ' aria-label="'+esc(t('kb.lay.rm'))+'">'+ICON_CROSS+'</button>'
+      : '')+
     '</div>';
 }
 /* The five, offered as SHAPES. 「説明ちっくすぎて嫌だ。かっこよさも何もない」
@@ -1031,6 +1101,36 @@ function kbAddLay(){
   kbLay=b.lay.length-1;
   saveKb(); render();
 }
+/* And taking one away, which could be added and never removed -- a face built
+   by accident stayed for the life of the keyboard.
+   「キーボードの2層目作ったあといらなくなっても消せない」
+
+   Never the last one: a keyboard with no face is not a keyboard, and the way
+   to be rid of the only one is to delete the keyboard.
+
+   A key that WENT to the face being removed is left pointing at a number that
+   is now something else, so every one of them is walked and pointed back at
+   the first face. Silently rewriting them to the wrong face is how somebody
+   presses 2 and gets 3; there is no such thing as "the face it meant" once
+   the face is gone. */
+function kbDropLay(i){
+  var b=kbEdit(), j, k, r, key, n;
+  if(b.lay.length<2) return;
+  i=kbClamp(i, b.lay.length);
+  if(!confirm(t('kb.lay.rm.q'))) return;
+  b.lay.splice(i, 1);
+  for(j=0;j<b.lay.length;j++)
+    for(r=0;r<b.lay[j].rows.length;r++)
+      for(k=0;k<b.lay[j].rows[r].length;k++){
+        key=b.lay[j].rows[r][k];
+        if(key.k!=='lay') continue;
+        n=parseInt(key.v, 10)||0;
+        key.v=(n===i)? '0' : String(n>i? n-1 : n);
+      }
+  kbLay=kbClamp(kbLay>=b.lay.length? b.lay.length-1 : kbLay, b.lay.length);
+  kbSel=null;
+  saveKb(); render();
+}
 function kbReset(){
   if(!confirm(t('kb.reset.ask'))) return;
   KB=null; saveKb(); kbLay=0; kbSel=null; render();
@@ -1106,6 +1206,15 @@ function kbSlotBtn(cls, lid, ri, ki, dir, label){
     ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
 }
 function kbEditHTML(ri, ki, key){
+  /* A keyboard with no flick anywhere gets one square. Four empty squares
+     around every key of a QWERTY is the editor telling somebody they have
+     built something they have not. A key that ALREADY holds a flick keeps
+     its four whatever the rest of the board does -- it has one, so it is
+     one. 「qwartyで追加してるのに行追加後にフリックになるのなに？」 */
+  var four=kbHasFlick() || !!(key.f && (key.f[0]||key.f[1]||key.f[2]||key.f[3]));
+  if(!four)
+    return '<div class="kbedit fn">'+
+      kbSlotBtn('kbec', key.v, ri, ki, -1, t('kb.on'))+'</div>';
   return '<div class="kbedit">'+
     kbSlotBtn('kbeu', key.f[0], ri, ki, 0, t('kb.dir.up'))+
     kbSlotBtn('kbel', key.f[3], ri, ki, 3, t('kb.dir.left'))+

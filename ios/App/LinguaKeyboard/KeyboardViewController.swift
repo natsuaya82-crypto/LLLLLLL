@@ -128,6 +128,7 @@ final class KeyboardViewController: UIInputViewController,
     // A new line commits what is being spelled first, the same as a space --
     // a buffer left standing would be picked against the next line's text.
     case "ret":  settle(); textDocumentProxy.insertText("\n"); drop()
+    case "gap":  break                       // it is a space in the row, not a key
     case "next": drop(); advanceToNextInputMode()
     case "lay":  drop(); layerNo = key.to ?? 0; build()
     default:     typed(key.t, face: key.face)

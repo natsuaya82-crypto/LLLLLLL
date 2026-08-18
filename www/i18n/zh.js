@@ -187,6 +187,8 @@ defLang('zh', (function(){
       "kb.del"               : "删除",
       "kb.sp"               : "空格",
       "kb.lay"               : "层",
+      "kb.lay.rm"          : "删除这一层",
+      "kb.lay.rm.q"        : "删除这一层？原本跳到这里的键会指向第一层。",
       "kb.lay.add"               : "添加一层",
       "kb.h"               : "按键高度",
       "kb.ret"             : "换行",

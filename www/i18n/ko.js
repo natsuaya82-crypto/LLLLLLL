@@ -358,6 +358,8 @@ defLang('ko', (function(){
       "kb.del"               : "지우기",
       "kb.sp"               : "스페이스",
       "kb.lay"               : "층",
+      "kb.lay.rm"          : "이 층 삭제",
+      "kb.lay.rm.q"        : "이 층을 삭제할까요? 이 층으로 가던 키는 첫 번째 층을 가리킵니다.",
       "kb.lay.add"               : "층 추가",
       "kb.h"               : "키 높이",
       "kb.ret"             : "줄바꿈",

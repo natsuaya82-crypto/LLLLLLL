@@ -139,6 +139,8 @@ defLang('es', (function(){
       "kb.del"               : "Retroceso",
       "kb.sp"               : "Espacio",
       "kb.lay"               : "Capa",
+      "kb.lay.rm"          : "Eliminar esta capa",
+      "kb.lay.rm.q"        : "¿Eliminar esta capa? Las teclas que iban a ella apuntarán a la primera.",
       "kb.lay.add"               : "Añadir una capa",
       "kb.h"               : "Alto de las teclas",
       "kb.ret"             : "Salto de línea",

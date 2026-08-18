@@ -186,6 +186,8 @@ defLang('pt', (function(){
       "kb.del"               : "Retrocesso",
       "kb.sp"               : "Espaço",
       "kb.lay"               : "Camada",
+      "kb.lay.rm"          : "Remover esta camada",
+      "kb.lay.rm.q"        : "Remover esta camada? As teclas que iam para ela passarão a apontar para a primeira.",
       "kb.lay.add"               : "Adicionar uma camada",
       "kb.h"               : "Altura das teclas",
       "kb.ret"             : "Nova linha",

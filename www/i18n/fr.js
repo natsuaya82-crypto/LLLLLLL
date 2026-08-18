@@ -227,6 +227,8 @@ defLang('fr', (function(){
       "kb.del"               : "Retour arrière",
       "kb.sp"               : "Espace",
       "kb.lay"               : "Couche",
+      "kb.lay.rm"          : "Supprimer cette couche",
+      "kb.lay.rm.q"        : "Supprimer cette couche ? Les touches qui y menaient pointeront vers la première.",
       "kb.lay.add"               : "Ajouter une couche",
       "kb.h"               : "Hauteur des touches",
       "kb.ret"             : "Retour à la ligne",
