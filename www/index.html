@@ -216,11 +216,11 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A textarea now, so a long line wraps instead of leaving the screen. It is
    never dragged bigger by its corner and never scrolls: lnGrow() sets the
    height to the text, so overflow has nothing to hide. */
-.lnin{display:block;width:100%;min-height:44px;background:var(--bg);
-      border:1px solid var(--line);resize:none;overflow:hidden;
-      border-radius:10px;color:var(--tx);padding:11px 13px;font-family:inherit;
+.lnin{display:block;width:100%;min-height:44px;background:none;
+      border:0;border-bottom:1px solid var(--line);resize:none;overflow:hidden;
+      border-radius:0;color:var(--tx);padding:11px 2px;font-family:inherit;
       font-size:.98rem;line-height:1.5;outline:none;margin-bottom:6px}
-.lnin:focus{border-color:var(--goldln)}
+.lnin:focus{border-bottom-color:var(--goldln)}
 /* One slot of a key -- the key itself, or one of its four corners -- and what
    is in it. The same row shape either way, because they hold the same thing. */
 .kbslot{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;
@@ -700,9 +700,11 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .exg{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
      font-size:.88rem;color:var(--txs);margin-top:2px}
 .exadd{display:flex;flex-wrap:wrap;gap:7px}
-.exadd input{flex:1 1 100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);
-             border-radius:10px;padding:11px 13px;color:var(--tx);font-family:inherit;
+.exadd input{flex:1 1 100%;min-width:0;min-height:44px;background:none;border:0;
+             border-bottom:1px solid var(--line);
+             border-radius:0;padding:11px 2px;color:var(--tx);font-family:inherit;
              font-size:.92rem;outline:none}
+.exadd input:focus{border-bottom-color:var(--goldln)}
 .exadd .btn{flex:0 0 auto}
 .entry.on{background:var(--goldsf)}
 /* ---------- the abugida bench ----------
@@ -819,7 +821,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The box is as tall as the field inside it and no taller. It carried ten
    pixels of padding above and below a 44px input, which made a 66px bar
    across the top of two screens. 「検索バー縦長すぎる」 */
-.search{display:flex;align-items:center;gap:9px;background:var(--pane);border:1px solid var(--line);border-radius:12px;padding:0 13px;margin:8px 0 2px}
+.search{display:flex;align-items:center;gap:9px;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 2px;margin:8px 0 2px}
 .search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
 .gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
 /* An entry is two controls now -- the word, which says itself, and the
@@ -1530,13 +1532,23 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .sheet h3{font-size:1.05rem;margin:0 2px 6px;font-weight:700}
 .field{margin-bottom:11px}
 .field label{font-size:.84rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
-.field input,.field select,.field textarea{width:100%;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:10px;
-       color:var(--tx);padding:12px 13px;font-family:inherit;font-size:.95rem;outline:none}
+/* A field is a LINE, not a box. 「かくまるみたいなのでくくるのやめて欲しい。
+   基本下線だけ」 Every place text is typed says it the same way: no fill, no
+   frame, no corner radius, one rule under it, gold while it has the cursor.
+   Eight rules say it because eight kinds of field grew up in different
+   chapters -- .lnin, .field, .field.at, .exadd, .mnadd, .ntbody, .search and
+   the one name typed in the onboarding -- and a ninth added later has to say
+   it too. What a field is NOT is decided here; a button is still a button and
+   keeps its shape, because a thing you press has to look pressable. */
+.field input,.field select,.field textarea{width:100%;min-height:44px;background:none;border:0;
+       border-bottom:1px solid var(--line);border-radius:0;
+       color:var(--tx);padding:12px 2px;font-family:inherit;font-size:.95rem;outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-bottom-color:var(--goldln)}
 /* The @ belongs to the field, not to the placeholder: it is the one
    character of a handle nobody types and everybody has. */
-.field.at{display:flex;align-items:center;background:var(--bg);
-          border:1px solid var(--line);border-radius:10px}
-.field.at>span{padding-left:13px;color:var(--txm);font-size:.95rem}
+.field.at{display:flex;align-items:center;background:none;
+          border:0;border-bottom:1px solid var(--line);border-radius:0}
+.field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
 .field input.hwf{font-family:'Cinzel',Georgia,serif;font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
@@ -1854,10 +1866,10 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
               align-self:stretch}
 /* the name, which is the only thing typed in the whole of onboarding */
 .obnamebox{width:100%;margin-top:20px}
-.obnamebox input{width:100%;background:var(--sf);border:1px solid var(--line);border-radius:12px;
-  padding:16px 16px;color:var(--tx);font-family:'Cinzel',Georgia,serif;font-size:1.25rem;
+.obnamebox input{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
+  padding:16px 6px;color:var(--tx);font-family:'Cinzel',Georgia,serif;font-size:1.25rem;
   text-align:center;outline:none}
-.obnamebox input:focus{border-color:var(--goldln)}
+.obnamebox input:focus{border-bottom-color:var(--goldln)}
 /* a letter the app worked out rather than one anybody drew */
 .gtile.made{border-style:dashed}
 .obchars{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
@@ -2086,8 +2098,9 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .mnrow .mnx{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
 .mnadd{display:flex;gap:8px;align-items:stretch}
-.mnadd input{flex:1;min-width:0;background:var(--sf);border:1px solid var(--line);border-radius:9px;
-  padding:12px 13px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
+.mnadd input{flex:1;min-width:0;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
+  padding:12px 2px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
+.mnadd input:focus{border-bottom-color:var(--goldln)}
 .mnadd .btn{flex:0 0 auto}
 /* the letter a sound wears, when it was borrowed rather than drawn */
 .gborrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);
@@ -2108,9 +2121,9 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .ntbody{min-height:180px;line-height:1.8}
 /* A textarea outside a .field had no styling of its own, so a rule written
    straight onto a page came out as a white box on a dark screen. */
-textarea.ntbody{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;
-   padding:12px 14px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
-textarea.ntbody:focus{border-color:var(--goldln)}
+textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
+   padding:12px 2px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
+textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 
 /* ---------- the conversation ----------
    Its turns sit against the left margin, yours against the right, and every

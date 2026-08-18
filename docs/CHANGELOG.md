@@ -15,6 +15,23 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A field is a line, not a box
+
+「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」
+
+Every place text is typed says it the same way now: no fill, no frame, no
+corner radius, one rule underneath, gold while it has the cursor. Eight rules
+carry it, because eight kinds of field grew up in different chapters — the
+spelling line (`.lnin`), `.field` (input, select and textarea), the `@` handle,
+the example row, the meaning row, the note body, the search bar, and the one
+name typed in the onboarding.
+
+Buttons keep their shape. A thing you press has to look pressable, so the rule
+is about what a field is, not about every rounded corner in the app.
+
+**Data.** CSS only.
+
+
 ### A word is typed at the head of its own sheet
 
 **The field is the head of the sheet, beside the play button.** 「再生の横から
