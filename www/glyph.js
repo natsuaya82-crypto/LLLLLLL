@@ -457,9 +457,6 @@ var TAB_ICON={
     'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
     '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5"/></svg>'
 };
-var ICON_NOTE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
-  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
-  '<path d="M6 3.5h12v17l-6-3.4-6 3.4Z"/><path d="M9 8h6M9 11.5h4"/></svg>';
 /* Two links of a chain: joining a letter to a sound, or a sound to a letter.
    The same mark from both ends, because it is the same join. */
 /* Four arrows, for nudging a vowel mark one lattice step at a time. */

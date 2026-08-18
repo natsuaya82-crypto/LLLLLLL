@@ -121,6 +121,9 @@ function vNotes(){
         : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
           '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
-    '<div class="barfix"><button class="btn"' + DO('openNote') + '>'+ICON_NOTE+t('notes.new')+'</button></div>'+
+    /* A ＋ and the word, the way every other "make one" in the app reads.
+       It was a notepad glyph, which says what the page is about rather than
+       what the button does. 「メモの追加も＋〇にしてくれ」 */
+    '<div class="barfix"><button class="btn"' + DO('openNote') + '>'+ICON_ADD+t('notes.new')+'</button></div>'+
     '</div>';
 }

@@ -611,6 +611,11 @@ function impDoneHTML(){
   var d=IMP.done;
   return '<div class="impbig">'+esc(t('imp.done', d.n))+'</div>'+
     (d.full? '<div class="note">'+esc(t('csv.full', d.n, 0))+'</div>' : '')+
+    /* How many came in without a reading. It is not a failure and they are
+       not missing -- they are in the dictionary and can be given a reading
+       one at a time. It is said because the alternative was saying nothing,
+       and saying nothing is what made a list arrive as nothing at all. */
+    (d.mute? '<div class="note">'+esc(tn('imp.mute', d.mute))+'</div>' : '')+
     '<button class="btn" style="width:100%;margin-top:16px"' + DO('back') + '>'+
       esc(t('imp.ok'))+'</button>'+
     '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impUndo') + '>'+
@@ -669,7 +674,7 @@ function impSenses(mn){
    own sounds, which is the commonest thing anybody imports: a list of what
    the words are for, with no words yet. */
 function impPut(rows){
-  var added=[], was=[], lts=[], wasL=[], full=false, i, r, seq, hw, w, l, u, guard;
+  var added=[], was=[], lts=[], wasL=[], full=false, mute=0, i, r, seq, hw, w, l, u, guard;
   for(i=0;i<rows.length;i++){
     r=rows[i];
     /* A letter, not a word. It costs no room on the free plan: the ceiling is
@@ -704,8 +709,20 @@ function impPut(rows){
         if(r.ph.length) w.ph=r.ph;
         continue;
       }
+      /* A word with no sounds is still a word. phGuess() works from the
+         roman spelling -- it throws away everything that is not a-z -- so a
+         list written in the person's own letters, in kana, or in anything
+         with a mark in it came out empty, and the row was DROPPED. Silently:
+         no message, no count, nothing to notice except that the dictionary
+         was still empty afterwards. 「単語入ってないけど。全く。」
+
+         Sounds are the app's guess at how a spelling is said. Somebody's list
+         of words is the thing they came here with. If the guess comes out
+         empty the word goes in without one, and `mute` says how many, so the
+         screen afterwards can say so rather than the number quietly being
+         smaller than the file. */
       seq = r.ph.length? r.ph : phGuess(hw);
-      if(!seq.length) continue;
+      if(!seq.length) mute++;
     } else {
       if(!r.mn) continue;
       if(!addedSnd().length) continue;
@@ -733,6 +750,6 @@ function impPut(rows){
   if(lts.length || wasL.length){ saveLetters(); installScriptFont(); }
   cands=[];
   IMP.done={n:added.length+was.length+lts.length+wasL.length,
-            hws:added, was:was, lts:lts, wasL:wasL, full:full};
+            hws:added, was:was, lts:lts, wasL:wasL, full:full, mute:mute};
   openImport();
 }

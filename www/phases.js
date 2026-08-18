@@ -86,11 +86,33 @@ var STAGES=[
      list, so they are the one set of labels that needs no translating. */
   {id:'count', slots:['1','2','3','4','5','6','7','8','9','10'], pos:'num', feats:[]},
   {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
-  {id:'part',  slots:[], pos:'part', feats:[]},
   {id:'polite',slots:[], pos:'x',  feats:[]},
   {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:['adp']},
   {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]}
 ];
+/* Stages that are not every language's, and are not offered until somebody's
+   language turns out to have one.
+   「助詞がない言語もあるんだから、助詞が最初からあるのおかしいだろ」
+
+   Particles are the case that made the point: English has none, and a list
+   that opens with a page for them is the app telling somebody their language
+   has something it may well not.
+
+   They are not deleted. A stage here appears the moment there is an answer in
+   it -- notes, rules, an example, a word, or merely having been opened -- so a
+   language that used one keeps it and nothing anybody wrote goes anywhere.
+   docs/DATA_SAFETY.md: nothing a person made is removed because the current
+   shape does not need it.
+
+   Adding one back by hand is what `stAddOwn` has always been for. */
+var STAGES_IF=[
+  {id:'part',  slots:[], pos:'part', feats:[]}
+];
+function stUsed(id){
+  return !!(stTouched(id) || (STG.notes && STG.notes[id]) ||
+            (STG.rules && STG.rules[id]) ||
+            (STG.ex && STG.ex[id] && STG.ex[id].length));
+}
 function stAll(){
   var out=[], i;
   /* The counting stage's slots are the base's, not a fixed ten: twelve words
@@ -100,6 +122,8 @@ function stAll(){
     out.push(STAGES[i].id==='count'
       ? {id:'count', slots:numWordSlots(), pos:STAGES[i].pos, feats:STAGES[i].feats}
       : STAGES[i]);
+  for(i=0;i<STAGES_IF.length;i++)
+    if(stUsed(STAGES_IF[i].id)) out.push(STAGES_IF[i]);
   for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
                                            pos:'x', feats:[], own:STG.extra[i]});
   return out;

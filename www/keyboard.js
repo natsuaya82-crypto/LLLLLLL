@@ -1029,15 +1029,20 @@ function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
    iPhone is a word Apple does not spell. */
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
-    '<div class="mini">'+t('kb.sys.add')+'</div>'+
-    '<div class="mini">'+t('kb.sys.full')+'</div>'+
-    /* A button rather than a path to read off the screen and retype into
-       Settings. 「ボタン押したら追加する画面まで進められないの？」 It lands on
-       Settings → Lingua, which is where Full Access is -- the switch without
-       which the keyboard cannot read a letter. */
-    '<button class="btn" style="width:100%;margin-top:14px"' + DO('kbSettings') + '>'+
-      esc(t('kb.sys.go'))+'</button>'+
-    '<div class="note kbout'+(SHARE.how==='sent'? '':' bad')+'">'+esc(kbOutSay())+'</div>'};
+    /* Two steps, and the button sits on the one it can reach. It used to sit
+       under a heading with a path to Settings printed beside it, which is a
+       button and a set of directions to the same place -- except that they
+       were directions to a DIFFERENT place, the one Apple gives no public
+       door to. 「端末の設定を開くボタンあるのになんで設定→一般みたいな順序で
+       説明すんの？」 So: the step with no button carries the path, the step
+       with a button carries the button, and neither carries the other. */
+    '<div class="kbstep"><div class="kbstepn">1</div>'+
+      '<div class="kbstept">'+esc(t('kb.step1'))+'</div>'+
+      '<div class="mini">'+t('kb.step1.d')+'</div></div>'+
+    '<div class="kbstep"><div class="kbstepn">2</div>'+
+      '<div class="kbstept">'+esc(t('kb.step2'))+'</div>'+
+      '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
+        esc(t('kb.sys.go'))+'</button></div>'};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a
@@ -1083,12 +1088,6 @@ function kbSettings(){
   var p=sharePlug();
   if(!p) return;
   p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
-}
-function kbOutSay(){
-  if(SHARE.how==='sent') return t('kb.out.ok');
-  if(SHARE.how==='no bridge') return t('kb.out.no');
-  if(SHARE.how) return t('kb.out.bad', SHARE.how);
-  return t('kb.out.none');
 }
 function kbGoLay(i){ kbLay=i; render(); }
 function kbAddRow(){

@@ -15,6 +15,44 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A list that arrives comes in, and the words on the screen say what they mean
+
+**A word with no reading is still a word.** `impPut()` guessed a word's sounds
+from its spelling with `phGuess()`, which throws away everything that is not
+a–z — so a list written in the person's own letters, in kana, or with a mark in
+it came out with no sounds, and the row was **dropped**. Silently: no message,
+no count, nothing to notice except that the dictionary was still empty
+afterwards. 「単語入ってないけど。全く。」
+
+The word goes in without a reading now, and the screen afterwards says how many
+came in that way. Watched failing: with the old line back, a list of `kano` /
+`あお` / `ké-ru` brings in one word instead of two.
+
+**The keyboard's `?` is two steps.** 「キーボードの設定方法」 for a title, one
+step with the path Apple gives no button for, one step with the button. The
+heading that ran off the screen, `初回だけ`, `フルアクセスが無いと、あなたの文字を
+読めません`, `文字を渡しました` and `もう1枚` are gone — with them `kb.out.*` and
+`kbOutSay()`, which said whether the letters had been handed over and said it in
+four ways nobody asked for.
+
+**Settings**: 見た目 → 画面表示, 読みの表示 → 発音表記. **Search**: 「つづり・意味・
+読みで検索」 and 「つづり・意味で探す」 are both 「検索」. A field with a magnifying
+glass in it does not need to list what it searches.
+
+**The memo button is a ＋** like every other "make one" in the app. It was a
+notepad glyph, which says what the page is about rather than what the button
+does. `ICON_NOTE` is deleted.
+
+**Grammar**: 名詞 → **複数**, 動詞 → **時制**, つなぐ → **接続詞**, and their
+descriptions with them. All ten languages.
+
+**Particles are not every language's.** 「助詞がない言語もあるんだから、助詞が最初
+からあるのおかしいだろ」 The stage is out of the default fifteen and into
+`STAGES_IF`, which appears the moment there is an answer in it — a note, a rule,
+an example, or merely having been opened. **A language that used it keeps it and
+nothing anybody wrote goes anywhere.**
+
+
 ### Six things wrong with the keyboard, four of them mine
 
 **A flick keyboard had no flicks.** `kbBlank()` emptied a key's letter and
