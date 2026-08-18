@@ -41,36 +41,6 @@ side and is dropped. `imp.into` is a new key in all ten languages;
 lands: a file that today would put some rows in the alphabet and the rest in
 the dictionary now puts all of them where the person said. Undo is unchanged.
 
-### A letter on a key is the letter, not a block of ink
-
-`.kbe canvas.tc` had no size, and it was the one place in the app a `.tc` was
-shown without one. A canvas with no CSS size lays out at its own default
-width, `inkCanvases()` makes the bitmap that big, and a glyph drawn to fill a
-900px square inside an 82px button that hides its overflow is a solid block.
-「文字設定したらこうなるけど？」 Watched failing: with the rule removed, the same
-letter on the same screen does not draw.
-
-### A field is a line
-
-「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」 Every place text is
-typed: no fill, no frame, no corner radius, one rule under it, gold while it
-has the cursor. Nine rules say it — `.lnin`, `.field` (input / select /
-textarea), `.field.at`, `.exadd`, `.mnadd`, `.ntbody`, `.search`, the name
-typed in the onboarding, and the column role on the import screen. Buttons
-keep their shape: a thing you press has to look pressable.
-
-### Nothing is written inside a box
-
-「文体のふつうってなんだよ」 The register's empty code was labelled ふつう /
-Neutral — the app naming the state of nobody having said anything and then
-offering that name as one of the answers. It is an empty row now.
-
-The rest of the word sheet with it: 分野 said 料理、親族, 語源 said an example,
-メモ said メモ, an example's meaning said 意味. Each has a heading directly
-above it. All moved to `aria-label`. `word.reg.none`, `word.tags.ph`,
-`word.ety.ph` and `word.note.ph` are removed from all ten languages.
-
-
 ### A letter on a key slot is the letter, not a block of ink
 
 「文字設定したらこうなるけど？」 Choosing a letter for a slot on the key editor
