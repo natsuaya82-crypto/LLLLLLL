@@ -49,7 +49,14 @@ language is filed.
 **Not a slice, and deliberately:** `lingua.set` (`SET`) is the person's
 settings and belongs to no language. It carries `planWas` — the plan the app
 last saw — so that a plan ending can be noticed however it happens and said
-once (`docs/PAID_FEATURES.md` § when a plan ends). `lingua.me` (`ME`) is the person.
+once (`docs/PAID_FEATURES.md` § when a plan ends). It also carries `obback`,
+which is where to go when the door is done: the sign-in screen lives inside
+the onboarding, so Settings has to write `done:false` to show it, and the note
+saying that flag is temporary has to be written to the same place at the same
+moment. It was a variable, and a reload between the two left a phone claiming
+the onboarding was unfinished with nothing left saying otherwise. Cleared by
+`obReturn()`; it is a pending move, not a preference, and it is the one thing
+in `SET` that is meant to be short-lived. `lingua.me` (`ME`) is the person.
 `lingua.sess` (`SESS`) is the session — the token pair only; **a password is
 never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline, and
 `lingua.drafts` (`DRAFTS`) is what was written and not sent — the composer,

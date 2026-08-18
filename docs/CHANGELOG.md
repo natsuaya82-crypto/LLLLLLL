@@ -15,6 +15,36 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Signing in does not walk you through the onboarding you already did
+
+「普通にログインしてるのに言語の名前とidきめさせられた」「あるのに出てきた」
+
+The sign-in screen lives inside the onboarding and nowhere else, so opening it
+from Settings means saying the onboarding is unfinished — `SET.done=false`,
+written to storage. What said that was temporary, and where to go back to, was
+`OB_BACK`, a variable in memory.
+
+So anything that reloads the page between opening the door and finishing with
+it — the app killed, WKWebView reclaiming its storage, coming back an hour
+later — left the phone carrying the lie and nothing carrying the note. Signing
+in then found no way back and did what the onboarding does next: step 1, draw a
+letter, name the language. To somebody with a whole language already on the
+phone.
+
+It is `SET.obback` now, written by `obBackTo()` in the same `save()` as the
+`SET.done` it undoes, cleared by `obReturn()`. The lie and the note saying it
+is a lie live or die together.
+
+**And the door has a way out.** The chevron appears at the sign-in screen when
+there is somewhere to be out to, and takes it. Without it, opening the door
+from Settings and changing your mind left the app you already had as an
+onboarding you could not leave.
+
+**Data.** `SET.obback` is new and is the one thing in `SET` meant to be
+short-lived — a pending move, not a preference. `docs/DATA_MODEL.md` says so.
+Nothing else stored changes.
+
+
 ### A forgotten password can actually be replaced
 
 Asking for a reset ENDED at a line saying 「送りました」. The mail arrived and

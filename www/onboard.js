@@ -90,8 +90,12 @@ function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
 /* There is no way back out of 'who': the account exists by then, and the
    screen behind it would offer to sign in as somebody else. */
 function obCanBack(){
+  /* And out of the door itself, when the door was opened from somewhere.
+     Without this there was no way back out of signing in except through it:
+     open it from Settings, change your mind, and the app you already had was
+     an onboarding you could not leave. */
   return ob.step>0 || ob.mode==='borrow' ||
-         (OBM.mode!=='in' && OBM.mode!=='who');
+         (OBM.mode!=='in' && OBM.mode!=='who') || !!obPending();
 }
 function obBack(){
   /* The chevron in the corner is the only way back in the onboarding, so the
@@ -103,6 +107,10 @@ function obBack(){
     /* Out of the reset back to the address it was sent to, so a mistyped
        address is one press from being retyped rather than two. */
     if(OBM.mode==='reset'){ obMailGo('forgot'); return; }
+    /* The chevron at the door is a way out only when there is somewhere to be
+       out to -- and there is exactly when the door was opened from inside the
+       app rather than being the app. */
+    if(OBM.mode==='in' && obReturn()) return;
     obMailGo('in'); return;
   }
   if(ob.step===1 && ob.mode==='borrow'){
@@ -210,15 +218,24 @@ var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'' };
    みたいな画面が出る」
 
    Null means the app really did start here and the onboarding is the app. */
-var OB_BACK=null;
-function obBackTo(r, a){ OB_BACK={r:r, a:a}; }
+/* It is in SET, beside the SET.done it undoes, and NOT in a variable.
+   Settings takes the onboarding's own flag away in order to show the door and
+   writes that to storage; the note saying the flag is a lie lived in memory.
+   So anything that reloads the page between opening the sign-in screen and
+   finishing with it -- the app killed, WKWebView reclaimed, coming back an
+   hour later -- left a phone claiming the onboarding was unfinished with
+   nothing at all left saying otherwise. Signing in then walked somebody who
+   has a whole language through drawing their first letter.
+   「普通にログインしてるのに言語の名前とidきめさせられた」「あるのに出てきた」
+   The lie and the note saying it is a lie now live or die together. */
+function obBackTo(r, a){ SET.obback={r:r, a:a}; save(); }
+function obPending(){ return (SET.obback && SET.obback.r)? SET.obback : null; }
 /* Done with the account, and there was somewhere to go back to. Puts back
    the SET.done that the door had to take away. */
 function obReturn(){
-  if(!OB_BACK) return false;
-  var b=OB_BACK;
-  OB_BACK=null;
-  SET.done=true; save();
+  var b=obPending();
+  if(!b) return false;
+  SET.obback=null; SET.done=true; save();
   go(b.r, b.a);
   return true;
 }
