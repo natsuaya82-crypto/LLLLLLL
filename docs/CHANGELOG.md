@@ -15,6 +15,28 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Nothing is written inside a box on the word sheet
+
+「文体のふつうってなんだよ」 The register's empty code was labelled ふつう /
+Neutral and offered as one of the five answers — the app naming the state of
+nobody having said anything, and then putting that name where the answer goes.
+It is an empty row now; `regLabel('')` returns nothing and `word.reg.none` is
+gone from all ten languages.
+
+The rest of the sheet went the same way, which is the same instruction as the
+one before it and should have been done then: 分野 held an example of a field,
+語源 an example of an etymology, メモ said メモ, and an example's meaning said
+意味. Each has a heading directly above it saying what it is. All four move to
+`aria-label`, so the box is empty and a screen reader still says what it is.
+`word.tags.ph`, `word.ety.ph` and `word.note.ph` are gone from all ten.
+
+The first field of an example still shows two of the person's own words. That
+is their data showing the shape, not the app writing in their box.
+
+**Data.** Markup and interface strings. `reg` is stored as a code and always
+was; nothing about a word changes.
+
+
 ### A field is a line, not a box
 
 「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」

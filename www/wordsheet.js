@@ -370,7 +370,7 @@ function wdExHTML(){
     : '')+
     '<div class="exadd">'+
       lnField('wd-exl', exHint(), '', '')+
-      '<input id="wd-exg" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
+      '<input id="wd-exg" aria-label="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('wdAddEx') + '>'+
       '<button class="btn ghost"' + DO('wdAddEx') + '>'+t('word.mn.add')+'</button>'+
     '</div>';
@@ -455,7 +455,7 @@ function relNew(){
    written before the word existed was silently dropped by Add. Two places
    staging one field is the bug; there is one place. */
 function wdNoteHTML(){
-  return '<div class="field"><textarea id="wd-nt" rows="2" placeholder="'+esc(t('word.note.ph'))+
+  return '<div class="field"><textarea id="wd-nt" rows="2" aria-label="'+esc(t('word.note'))+
     '"' + IN('wdSetNt') + '>'+esc(wEdit.nt||'')+'</textarea></div>';
 }
 /* The family, on the sheet. Written out of wdFamHTML(), which is the family
@@ -481,9 +481,12 @@ function wdPaint(){
 
    Register is one of five and is stored as a code, never as its label, so
    the interface language can change under a word without changing the word.
-   REG[0] is the empty string on purpose: most words are not marked. */
+   REG[0] is the empty string on purpose: most words are not marked, and it
+   shows as an empty row. It used to be called ふつう / Neutral, which is the
+   app naming the state of nobody having said anything and then offering that
+   name as one of the answers. 「文体のふつうってなんだよ」 */
 var REG=['','sp','wr','sl','po'];
-function regLabel(r){ return t('word.reg.'+(r||'none')); }
+function regLabel(r){ return r? t('word.reg.'+r) : ''; }
 /* Fields are typed as one line and held as a list, because searching wants
    the list and typing wants the line. Empty pieces are dropped, so a
    trailing comma is not a field called nothing. */
@@ -506,13 +509,18 @@ function wdRegHTML(){
         esc(regLabel(r))+'</option>'; }).join('')+
     '</select></div>';
 }
+/* Nothing written inside the box. The heading directly above it already says
+   what the box is, and what was in it -- an example of a field, an example of
+   an etymology -- was the app filling somebody's answer in for them.
+   「四角のなかにつづりとか読みとか書くの消して」 The name stays as aria-label,
+   for anybody not looking at the screen. */
 function wdTagsHTML(){
   return '<div class="field"><input id="wd-tags" value="'+esc((wEdit.tags||[]).join(', '))+
-    '" placeholder="'+esc(t('word.tags.ph'))+'"' + IN('wdSetTags') + '></div>';
+    '" aria-label="'+esc(t('word.tags'))+'"' + IN('wdSetTags') + '></div>';
 }
 function wdEtyHTML(){
-  return '<div class="field"><textarea id="wd-ety" rows="2" placeholder="'+
-    esc(t('word.ety.ph'))+'"' + IN('wdSetEty') + '>'+esc(wEdit.ety||'')+'</textarea></div>';
+  return '<div class="field"><textarea id="wd-ety" rows="2" aria-label="'+
+    esc(t('word.ety'))+'"' + IN('wdSetEty') + '>'+esc(wEdit.ety||'')+'</textarea></div>';
 }
 function wdSetReg(v){ wEdit.reg=v; }
 function wdSetTags(v){ wEdit.tags=tagCut(v); }
