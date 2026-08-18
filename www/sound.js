@@ -400,15 +400,23 @@ function sndLetters(sym){
 }
 /* One sound, and who says it. A sound no letter reads is not an error -- it
    is a phonology somebody is partway through writing, and the whole reason
-   this page is separate from the letters. */
+   this page is separate from the letters.
+
+   THE LETTERS ARE NOT BUTTONS. This page can put a sound into the language
+   and take one out, and it cannot join a sound to a letter -- that is the
+   letter's, in one place, and it is the reason the old sound chapter was
+   closed. Two directions for one fact is exactly the mess that was.
+   「音に文字つけて文字にも音つけられたら訳わからなくなるだろ」
+
+   So they are shown, because "which letters say this" is the question a
+   phonology asks, and they are not pressed. */
 function sndRowHTML(sym){
   var ls=sndLetters(sym);
   return '<div class="sndrow">'+
     '<button class="sndsym"' + DO('sayPh', [sym]) + '>'+esc(sym)+'</button>'+
     '<div class="sndlts">'+(ls.length
       ? ls.map(function(l){
-          return '<button class="sndlt"' + DO('editLetter', [l.id]) + '>'+
-            ltInk(l, esc(ltName(l)||'·'))+'</button>'; }).join('')
+          return '<span class="sndlt">'+ltInk(l, esc(ltName(l)||'·'))+'</span>'; }).join('')
       : '<span class="sndnone">'+esc(t('snd.nolt'))+'</span>')+'</div>'+
     '<button class="sndx"' + DO('sndDrop', [sym]) + ' aria-label="'+
       esc(t('snd.drop'))+'">'+ICON_CROSS+'</button>'+

@@ -1031,14 +1031,18 @@ function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
    is the one kind of instruction that cannot go stale in translation and
    cannot be read wrong -- somebody looks at it and looks at their phone.
 
-   KB_SHOTS is the list of files that are actually in www/img/. A name that is
-   not on it draws nothing, so a step whose picture has not been taken yet is
-   a step with no picture rather than a broken image. Adding one is a file and
-   a word here. */
-var KB_SHOTS=[];
+   KB_SHOTS is the list of files that are actually in www/img/, with their
+   extension, so a name that is not on it draws nothing -- a step whose
+   picture has not been taken is a step with no picture rather than a broken
+   image. Adding one is a file and a word here.
+
+   Both of these belong to the second step. Pressing the button lands on
+   Lingua's own page in Settings, and Full Access is one tap further in, under
+   Keyboards -- which is a sentence, and is two photographs. */
+var KB_SHOTS=['kb-app.jpg', 'kb-full.jpg'];
 function kbShot(name){
   if(KB_SHOTS.indexOf(name)<0) return '';
-  return '<img class="kbshot" src="img/'+name+'.png" alt="">';
+  return '<img class="kbshot" src="img/'+name+'" alt="">';
 }
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
@@ -1051,11 +1055,12 @@ HELP.kb=function(){
        with a button carries the button, and neither carries the other. */
     '<div class="kbstep"><div class="kbstepn">1</div>'+
       '<div class="kbstept">'+esc(t('kb.step1'))+'</div>'+
-      '<div class="mini">'+t('kb.step1.d')+'</div>'+kbShot('kb-add')+'</div>'+
+      '<div class="mini">'+t('kb.step1.d')+'</div></div>'+
     '<div class="kbstep"><div class="kbstepn">2</div>'+
       '<div class="kbstept">'+esc(t('kb.step2'))+'</div>'+
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
-        esc(t('kb.sys.go'))+'</button>'+kbShot('kb-full')+'</div>'};
+        esc(t('kb.sys.go'))+'</button>'+
+      kbShot('kb-app.jpg')+kbShot('kb-full.jpg')+'</div>'};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a

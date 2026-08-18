@@ -15,6 +15,29 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A sound does not join a letter, and the ? sheet has photographs
+
+**The phonology page shows the letters that say a sound and does not press
+them.** It had them as buttons onto the letter, which is a second direction for
+one fact — and one direction for that fact is the whole reason the old sound
+chapter was closed. 「音に文字つけて文字にも音つけられたら訳わからなくなるだろ」
+
+What the page does is put a sound into the language and take one out. Joining a
+sound to a letter is the letter's, in one place. "Which letters say this" is the
+question a phonology asks, so they are shown.
+
+**The two photographs are in.** `www/img/kb-app.jpg` and `kb-full.jpg`, both
+under the second step: the button lands on Lingua's own page in Settings and
+Full Access is one tap further in, under Keyboards — which is a sentence, and is
+two pictures.
+
+`assets-check` learned that **a `.js` may name an asset.** Only index.html can
+load a script, which is why that file alone is the list for scripts; a
+photograph is named by the code that shows it. Still one rule — a file in `www/`
+that nothing anywhere names is a file nobody can see — and what changed is where
+the naming may be. Watched failing with a file nothing names.
+
+
 ### The first page of somebody's keyboard is their keyboard
 
 `shareRomLay()` put the roman conversion face **first**, on the argument that

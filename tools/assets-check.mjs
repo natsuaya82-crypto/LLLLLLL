@@ -109,13 +109,29 @@ const walk = (dir) => {
 }
 
 const refSet = new Set(referenced)
+/* A script is loaded by index.html and nothing else can load one, which is
+   why the list above is that file alone. Everything ELSE -- a photograph in
+   the keyboard's help sheet -- is named by the code that shows it, so the
+   text of every .js counts as a reference too.
+
+   Still one rule and not two: a file in www/ that nothing anywhere names is a
+   file nobody can see, and that is the thing being checked. What changed is
+   where the naming may be. */
+const src = referenced
+  .filter((r) => r.endsWith('.js'))
+  .map((r) => { try { return readFileSync(join(WWW, r), 'utf8') } catch (e) { return '' } })
+  .join('\n')
+const named = (rel) => {
+  const leaf = rel.split('/').pop()
+  return src.indexOf(rel) >= 0 || src.indexOf(leaf) >= 0
+}
 for (const abs of walk(WWW)) {
   const rel = relative(WWW, abs).split('\\').join('/')
   if (rel === 'index.html') continue
-  if (!refSet.has(rel)) {
+  if (!refSet.has(rel) && !named(rel)) {
     note(
-      `www/${rel} exists but index.html never references it. Either\n` +
-        `      reference it, or delete the file.`
+      `www/${rel} exists but nothing in index.html or www/*.js names it.\n` +
+        `      Either reference it, or delete the file.`
     )
   }
 }
