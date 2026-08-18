@@ -917,6 +917,7 @@ defLang('es', (function(){
       "imp.role.ch"       : "Carácter",
       "imp.role.nm"       : "Nombre",
       "imp.ltr"           : "letras",
+      "imp.into"          : "Importar a",
       "imp.role.skip"     : "Sin usar",
       "imp.new"           : "nuevas",
       "imp.have"          : "ya están",

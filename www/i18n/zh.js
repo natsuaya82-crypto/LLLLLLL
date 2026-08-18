@@ -962,6 +962,7 @@ defLang('zh', (function(){
       "imp.role.ch"       : "字符",
       "imp.role.nm"       : "名称",
       "imp.ltr"           : "个字",
+      "imp.into"          : "导入到",
       "imp.role.skip"     : "不使用",
       "imp.new"           : "新增",
       "imp.have"          : "已有",

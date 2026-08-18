@@ -871,6 +871,7 @@ defLang('en', (function(){
       'imp.role.ch'       : 'Character',
       'imp.role.nm'       : 'Name',
       'imp.ltr'           : 'letters',
+      'imp.into'          : 'Import into',
       'imp.role.skip'     : 'Not used',
       'imp.new'           : 'new',
       'imp.have'          : 'already here',

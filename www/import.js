@@ -449,7 +449,7 @@ function impCut(s, snd){
    forgets, because arriving at somebody else's language holding half of a
    spreadsheet you were reading into your own is the worst kind of bug. */
 var IMP=impBlank();
-function impBlank(){ return {read:null, roles:[], dup:'skip', done:null}; }
+function impBlank(){ return {read:null, roles:[], into:'w', dup:'skip', done:null}; }
 
 /* Three faces, and which one you see is what has happened so far: nothing
    yet, a file read and waiting to be understood, or a dictionary that just
@@ -508,21 +508,71 @@ function impScan(){
 function impTake(src){
   var r=impRead(src);
   if(!r.rows.length){ toast(t('imp.empty')); return; }
-  IMP.read=r; IMP.roles=impGuess(r); IMP.done=null;
+  IMP.read=r; IMP.roles=impGuess(r); IMP.into=impInto(IMP.roles); IMP.done=null;
+  /* The guess may have named a role the chosen side does not have -- it is
+     read whole, then read as one side. */
+  IMP.roles=impMove(IMP.roles, IMP.into);
   openImport();
 }
 
-/* ---- 2. what each column is --------------------------------------------- */
+/* ---- 2. which side of the language, and what each column is -------------
+   A file goes into the dictionary or into the alphabet, and the person says
+   which. 「文字に入れるか単語に入れるかきめさせたら？」
+
+   It used to be decided per ROW: a row carrying a character was a letter and
+   every other row was a word, so one file could quietly be both. That is a
+   guess about what somebody's file IS, made from what the columns look like,
+   and it is the one guess in this whole reader that cannot be seen being
+   wrong -- a dictionary of one- and two-letter words reads as an alphabet,
+   and nothing on the screen says the words went somewhere else.
+
+   So the side is chosen first, and the column roles are only the ones that
+   side has. Nothing goes into both. The guess still runs and still picks the
+   side, but now it picks a thing that is sitting there being switchable. */
+var IMP_SIDE={w:['hw','mn','pos','ph','skip'], l:['ch','ph','nm','skip']};
+function impRolesFor(into){ return IMP_SIDE[into] || IMP_SIDE.w; }
+/* Which side the guess landed on: a column called a character means the file
+   is an alphabet, because nothing else in a word list is one. */
+function impInto(roles){ return roles.indexOf('ch')>=0 ? 'l' : 'w'; }
+/* The same guess, read as the other side. A spelling and a character are the
+   same column asked a different question, and so are a meaning and a name;
+   a part of speech has no answer on the letter side and is dropped rather
+   than turned into something it is not. Only `mn` may repeat -- a second
+   spelling or a second character is one column too many, so it is skipped. */
+function impMove(roles, into){
+  var swap = into==='l' ? {hw:'ch', mn:'nm', pos:'skip'} : {ch:'hw', nm:'mn'};
+  var ok=impRolesFor(into), out=[], seen={}, i, r;
+  for(i=0;i<roles.length;i++){
+    r=swap[roles[i]] || roles[i];
+    if(ok.indexOf(r)<0) r='skip';
+    if(r!=='skip' && r!=='mn' && seen[r]) r='skip';
+    if(r!=='skip') seen[r]=1;
+    out.push(r);
+  }
+  return out;
+}
+function impSetInto(v){
+  if(v!==IMP.into){ IMP.roles=impMove(IMP.roles, v); IMP.into=v; }
+  openImport();
+}
+
 /* The guess is already made and already chosen; this is where it gets
    corrected. Three rows are enough to recognise your own spreadsheet and
    few enough to fit on a phone. */
 function impMapHTML(){
   var rows=IMP.read.rows, head=IMP.read.head, n=Math.min(3, rows.length);
   var p=impPlan(), i, j, out='';
+  var side=impRolesFor(IMP.into);
+  out+='<div class="sec">'+t('imp.into')+'</div>'+
+    '<div class="segs" style="margin-bottom:12px">'+
+      '<button class="seg'+(IMP.into==='w'? ' on':'')+'"' + DO('impSetInto', ["w"]) + '>'+
+        esc(t('toc.words'))+'</button>'+
+      '<button class="seg'+(IMP.into==='l'? ' on':'')+'"' + DO('impSetInto', ["l"]) + '>'+
+        esc(t('toc.letters'))+'</button></div>';
   out+='<div class="imptab"><table><tr>';
   for(j=0;j<IMP.roles.length;j++){
     out+='<th><select' + CH('impSetRole', [j]) + '>'+
-      IMP_ROLES.map(function(r){
+      side.map(function(r){
         return '<option value="'+r+'"'+(IMP.roles[j]===r? ' selected':'')+'>'+
           esc(t('imp.role.'+r))+'</option>';
       }).join('')+'</select>'+
@@ -559,15 +609,18 @@ function impMapHTML(){
 }
 function impSetRole(j, v){ IMP.roles[j]=v; openImport(); }
 function impSetDup(v){ IMP.dup=v; openImport(); }
-/* What pressing it would do, said before it is pressed. A row carrying a
-   character is a letter and everything else is a word, so one file can be
-   both and the counts say which. */
+/* What pressing it would do, said before it is pressed. It follows the side
+   that was chosen and not what the rows look like, which is the whole point
+   of choosing: the counts under the table are what will happen. */
 function impPlan(){
   var rows=impRows(IMP.read, IMP.roles, addedSnd());
   var p={add:0, ltr:0, coin:0, have:0}, i, r;
   for(i=0;i<rows.length;i++){
     r=rows[i];
-    if(r.ch){ if(impLtrBy(r.ch)) p.have++; else p.ltr++; }
+    if(IMP.into==='l'){
+      if(!r.ch) continue;
+      if(impLtrBy(r.ch)) p.have++; else p.ltr++;
+    }
     else if(r.hw){ if(findWord(r.hw)) p.have++; else p.add++; }
     else if(r.mn) p.coin++;
   }
@@ -681,9 +734,12 @@ function impPut(rows){
   var added=[], was=[], lts=[], wasL=[], full=false, mute=0, i, r, seq, hw, w, l, u, guard;
   for(i=0;i<rows.length;i++){
     r=rows[i];
-    /* A letter, not a word. It costs no room on the free plan: the ceiling is
-       on the dictionary, and an alphabet is not one. */
-    if(r.ch){
+    /* A letter, not a word -- because the person said the file is an
+       alphabet, not because this row happens to look like one. It costs no
+       room on the free plan: the ceiling is on the dictionary, and an
+       alphabet is not one. */
+    if(IMP.into==='l'){
+      if(!r.ch) continue;
       u=impLtrSnd(r);
       l=impLtrBy(r.ch);
       if(l){

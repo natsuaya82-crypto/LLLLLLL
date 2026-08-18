@@ -15,6 +15,62 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A list says which side of the language it goes into
+
+**OWNER DECISION.** 「文字に入れるか単語に入れるかきめさせたら？」 → 選んだ方だけ
+に入れる. The import screen carries a two-way choice at the top — 単語 / 文字 —
+and a file goes into the dictionary **or** into the alphabet, never both. The
+column roles are the ones that side has: つづり・意味・品詞・音 for a word list,
+文字・音・名前 for an alphabet.
+
+It used to be decided per ROW: a row carrying a character was a letter and
+every other row was a word. That is a guess about what somebody's file *is*,
+made from what the columns look like, and it is the one guess in the reader
+that cannot be seen being wrong — a dictionary of one- and two-letter words
+reads as an alphabet, and nothing on the screen said the words had gone
+somewhere else.
+
+The guess still runs and still picks the side; it now picks a thing sitting
+there being switchable. Switching translates the roles rather than re-guessing
+— a spelling and a character are the same column asked a different question,
+and so are a meaning and a name; a part of speech has no answer on the letter
+side and is dropped. `imp.into` is a new key in all ten languages;
+`impSetInto` is in `act-map.js`.
+
+**Data.** Nothing already stored changes. What changes is where a NEW import
+lands: a file that today would put some rows in the alphabet and the rest in
+the dictionary now puts all of them where the person said. Undo is unchanged.
+
+### A letter on a key is the letter, not a block of ink
+
+`.kbe canvas.tc` had no size, and it was the one place in the app a `.tc` was
+shown without one. A canvas with no CSS size lays out at its own default
+width, `inkCanvases()` makes the bitmap that big, and a glyph drawn to fill a
+900px square inside an 82px button that hides its overflow is a solid block.
+「文字設定したらこうなるけど？」 Watched failing: with the rule removed, the same
+letter on the same screen does not draw.
+
+### A field is a line
+
+「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」 Every place text is
+typed: no fill, no frame, no corner radius, one rule under it, gold while it
+has the cursor. Nine rules say it — `.lnin`, `.field` (input / select /
+textarea), `.field.at`, `.exadd`, `.mnadd`, `.ntbody`, `.search`, the name
+typed in the onboarding, and the column role on the import screen. Buttons
+keep their shape: a thing you press has to look pressable.
+
+### Nothing is written inside a box
+
+「文体のふつうってなんだよ」 The register's empty code was labelled ふつう /
+Neutral — the app naming the state of nobody having said anything and then
+offering that name as one of the answers. It is an empty row now.
+
+The rest of the word sheet with it: 分野 said 料理、親族, 語源 said an example,
+メモ said メモ, an example's meaning said 意味. Each has a heading directly
+above it. All moved to `aria-label`. `word.reg.none`, `word.tags.ph`,
+`word.ety.ph` and `word.note.ph` are removed from all ten languages.
+
+
 ### A letter on a key slot is the letter, not a block of ink
 
 「文字設定したらこうなるけど？」 Choosing a letter for a slot on the key editor

@@ -873,6 +873,7 @@ defLang('ja', (function(){
       'imp.role.ch'       : '文字',
       'imp.role.nm'       : '名前',
       'imp.ltr'           : '文字',
+      'imp.into'          : '入れる先',
       'imp.role.skip'     : '使わない',
       'imp.new'           : '新規',
       'imp.have'          : '既存',

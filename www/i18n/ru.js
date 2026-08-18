@@ -980,6 +980,7 @@ defLang('ru', (function(){
       "imp.role.ch"       : "Знак",
       "imp.role.nm"       : "Название",
       "imp.ltr"           : "букв",
+      "imp.into"          : "Куда добавить",
       "imp.role.skip"     : "Не нужен",
       "imp.new"           : "новых",
       "imp.have"          : "уже есть",

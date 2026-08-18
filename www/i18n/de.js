@@ -946,6 +946,7 @@ defLang('de', (function(){
       "imp.role.ch"       : "Zeichen",
       "imp.role.nm"       : "Name",
       "imp.ltr"           : "Buchstaben",
+      "imp.into"          : "Importieren nach",
       "imp.role.skip"     : "Ungenutzt",
       "imp.new"           : "neu",
       "imp.have"          : "schon da",

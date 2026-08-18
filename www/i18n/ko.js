@@ -1132,6 +1132,7 @@ defLang('ko', (function(){
       "imp.role.ch"       : "문자",
       "imp.role.nm"       : "이름",
       "imp.ltr"           : "글자",
+      "imp.into"          : "넣을 곳",
       "imp.role.skip"     : "사용 안 함",
       "imp.new"           : "새로 들어옴",
       "imp.have"          : "이미 있음",

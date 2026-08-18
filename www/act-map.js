@@ -40,6 +40,7 @@ act('delWord', delWord);
 act('doImport', doImport);
 act('impScan', impScan);
 act('impSetDup', impSetDup);
+act('impSetInto', impSetInto);
 act('impAgain', impAgain);
 act('impUndo', impUndo);
 act('dropSnd', dropSnd);

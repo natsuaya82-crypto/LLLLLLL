@@ -1005,6 +1005,7 @@ defLang('fr', (function(){
       "imp.role.ch"       : "Caractère",
       "imp.role.nm"       : "Nom",
       "imp.ltr"           : "lettres",
+      "imp.into"          : "Importer vers",
       "imp.role.skip"     : "Inutilisé",
       "imp.new"           : "nouveaux",
       "imp.have"          : "déjà là",
