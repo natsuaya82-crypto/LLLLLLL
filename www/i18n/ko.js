@@ -1147,6 +1147,7 @@ defLang('ko', (function(){
       "imp.file"          : "파일 선택",
       "imp.mute"          : "그중 {0}개는 아직 읽기가 없습니다",
       "imp.done"          : "{0}개 들어왔습니다",
+      "imp.donelt"        : "{0}자 알파벳에 들어왔습니다",
       "imp.undo"          : "되돌리기",
       "imp.undone"        : "되돌렸습니다",
       "imp.again"         : "다시 시작",

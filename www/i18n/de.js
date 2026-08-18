@@ -961,6 +961,7 @@ defLang('de', (function(){
       "imp.file"          : "Datei wählen",
       "imp.mute"          : "{0} davon haben noch keine Aussprache",
       "imp.done"          : "{0} Wörter drin",
+      "imp.donelt"        : "{0} Buchstaben ins Alphabet",
       "imp.undo"          : "Rückgängig",
       "imp.undone"        : "Zurückgesetzt",
       "imp.again"         : "Neu anfangen",

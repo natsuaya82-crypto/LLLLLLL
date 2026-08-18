@@ -886,6 +886,7 @@ defLang('en', (function(){
       'imp.file'          : 'Choose a file',
       "imp.mute"          : "{0} of them have no reading yet",
       'imp.done'          : '{0} words in',
+      'imp.donelt'        : '{0} letters into the alphabet',
       'imp.undo'          : 'Undo',
       'imp.undone'        : 'Put back',
       'imp.again'         : 'Start over',

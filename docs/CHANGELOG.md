@@ -15,6 +15,44 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A roman letter reads what the IPA says it reads
+
+**`IPA_WAS` in `www/ipa.js` is the roman letter → IPA symbol table, and five of
+its answers were wrong.** 「cはcとは読まんやろ。だからipa基準って言ってんの」
+
+`c` `q` `x` `y` fell through to the letter itself, which in the IPA is a
+palatal plosive, a uvular plosive, a velar fricative and a close front rounded
+vowel — four sounds nobody naming a letter means. They are `k` `k` `k` `j` now.
+
+`g` is the one that could not work at all: the IPA's g is U+0261 and a plain
+ASCII `g` is in no chart, so a letter named g carried a "sound" that is in no
+inventory, that `ipaRoman()` spells as nothing and that `voice.js` cannot say.
+
+`ch` was the same defect one step along. The chart has no affricate row, so
+`tʃ` was a single symbol that is not on it — `chi` came out as `i`. Every
+value in `IPA_WAS` is a **list** of chart symbols now, and `ch` is `t` then
+`ʃ`; `phGuess()` concats rather than pushes. Checked both ways: with the
+bug back, `chi` gives `tʃ` off the chart and `gogo` gives two off-chart
+`g`s; with it fixed, no roman letter a–z lands anywhere but on a real symbol.
+
+**Data.** Nothing stored changes. `phGuess()` is only asked for a word that
+carries neither a spelling nor a saved `ph` — a word from before the chart, or
+one imported without sounds — and it is asked live, so those words read
+correctly from now on instead of carrying a symbol nothing could use. No word,
+letter or sound is written, moved or removed.
+
+### An imported letter says it went into the alphabet
+
+`IMP.done` counted words and letters as one number, so a file carrying letters
+said "{n} words in" and somebody who imported one character went looking for it
+in the word list. 「1文字登録したのにどこに入ってるかわからない」
+
+It is `nw` and `nl` now, and the screen says each: 「{0}語 入りました」 for the
+dictionary and 「{0}文字 アルファベットに入りました」 for the alphabet. `imp.donelt`
+is a new key in all ten languages. Undo is unchanged — it already put letters
+and words back separately.
+
+
 ### A sound does not join a letter, and the ? sheet has photographs
 
 **The phonology page shows the letters that say a sound and does not press

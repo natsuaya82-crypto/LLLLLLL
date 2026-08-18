@@ -888,6 +888,7 @@ defLang('ja', (function(){
       'imp.file'          : 'ファイルを選ぶ',
       "imp.mute"          : "うち{0}語は読みが付いていません",
       'imp.done'          : '{0}語 入りました',
+      'imp.donelt'        : '{0}文字 アルファベットに入りました',
       'imp.undo'          : '取り消す',
       'imp.undone'        : '取り消しました',
       'imp.again'         : '選び直す',

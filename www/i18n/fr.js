@@ -1020,6 +1020,7 @@ defLang('fr', (function(){
       "imp.file"          : "Choisir un fichier",
       "imp.mute"          : "{0} d’entre eux n’ont pas encore de prononciation",
       "imp.done"          : "{0} mots entrés",
+      "imp.donelt"        : "{0} lettres dans l'alphabet",
       "imp.undo"          : "Annuler",
       "imp.undone"        : "Remis",
       "imp.again"         : "Recommencer",

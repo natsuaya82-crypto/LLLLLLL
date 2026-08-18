@@ -63,9 +63,38 @@ function ipaHasManner(m){
   return false;
 }
 
-/* What the twenty-six used to be, in the symbols they actually stood for.
-   Only three of them differ: everything else was already an IPA symbol. */
-var IPA_WAS={"sh":"\u0283","ch":"t\u0283","th":"\u03b8","y":"j"};
+/* A roman letter, and the IPA symbol somebody naming a letter that means.
+   「cはcとは読まんやろ。だからipa基準って言ってんの」
+
+   Most of the alphabet says itself: p b d t k m n s z f v l w h j r and the
+   five vowels are the same character in the IPA with the value anybody would
+   expect, so they are not here -- a table that restated them would be a
+   second place for a fact that needs none.
+
+   These are the ones that do NOT say themselves, and every one of them was
+   falling through to the letter itself:
+
+     c   the IPA c is a voiceless palatal plosive. Nobody naming a letter c
+         means one; they mean k, which is what IPA_ROMAN already says in the
+         other direction.
+     g   THE BUG. The IPA's g is U+0261, and a plain ASCII g is not in the
+         chart at all -- so a letter named g was given a "sound" that is in no
+         inventory, cannot be said, and cannot be found in the table.
+     q   uvular in the IPA, k to somebody writing an alphabet.
+     x   velar fricative in the IPA. k is the nearest thing that is not a
+         guess about two sounds at once.
+     y   the IPA y is a close front rounded vowel; the letter is a j.
+
+   A digraph is two letters, and the reader takes the longest match, which is
+   why they are here rather than being spelt out. Each is a LIST of chart
+   symbols, because ch is not one of them: the chart has no affricate row, so
+   ch was reading t\u0283, a single "sound" that is in no inventory, that
+   ipaRoman() spells as nothing and that voice.js cannot say -- chi came out
+   as i. It is t then \u0283, which is two sounds the chart does have and is
+   what the word is. The others are one symbol each and say so. */
+var IPA_WAS={
+  "sh":["\u0283"], "ch":["t","\u0283"], "th":["\u03b8"], "ng":["\u014b"],
+  "c":["k"], "g":["\u0261"], "q":["k"], "x":["k"], "y":["j"]};
 
 /* A rough Latin spelling for each symbol, and nothing more than that.
    The IPA is exact and is what a word actually is; this is the ladder up to

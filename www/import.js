@@ -609,8 +609,12 @@ function impGrow(units){
 /* ---- 3. what happened, and putting it back ------------------------------ */
 function impDoneHTML(){
   var d=IMP.done;
-  return '<div class="impbig">'+esc(t('imp.done', d.n))+'</div>'+
-    (d.full? '<div class="note">'+esc(t('csv.full', d.n, 0))+'</div>' : '')+
+  return ((d.nw || !d.nl)? '<div class="impbig">'+esc(t('imp.done', d.nw))+'</div>' : '')+
+    /* Where a letter went. The dictionary is not the alphabet, and somebody
+       who imported one character and was told "1 word in" went looking for it
+       in the word list. */
+    (d.nl? '<div class="impbig">'+esc(t('imp.donelt', d.nl))+'</div>' : '')+
+    (d.full? '<div class="note">'+esc(t('csv.full', d.nw, 0))+'</div>' : '')+
     /* How many came in without a reading. It is not a failure and they are
        not missing -- they are in the dictionary and can be given a reading
        one at a time. It is said because the alternative was saying nothing,
@@ -749,7 +753,11 @@ function impPut(rows){
   save();
   if(lts.length || wasL.length){ saveLetters(); installScriptFont(); }
   cands=[];
-  IMP.done={n:added.length+was.length+lts.length+wasL.length,
+  /* Words and letters are counted apart. They were one number, and a file
+     that carried three letters and no words said "3 words in" -- so the
+     letters were in the alphabet, correctly, and the one sentence the screen
+     said about them named the wrong room. */
+  IMP.done={nw:added.length+was.length, nl:lts.length+wasL.length,
             hws:added, was:was, lts:lts, wasL:wasL, full:full, mute:mute};
   openImport();
 }

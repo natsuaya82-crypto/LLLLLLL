@@ -932,6 +932,7 @@ defLang('es', (function(){
       "imp.file"          : "Elegir un archivo",
       "imp.mute"          : "{0} de ellas aún no tienen lectura",
       "imp.done"          : "{0} palabras dentro",
+      "imp.donelt"        : "{0} letras en el alfabeto",
       "imp.undo"          : "Deshacer",
       "imp.undone"        : "Restaurado",
       "imp.again"         : "Empezar de nuevo",

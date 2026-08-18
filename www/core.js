@@ -500,8 +500,12 @@ function phGuess(hw){
   var s=String(hw||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0, two;
   while(i<s.length){
     two=s.substr(i,2);
-    if(IPA_WAS[two]){ out.push(IPA_WAS[two]); i+=2; }
-    else { out.push(IPA_WAS[s.charAt(i)] || s.charAt(i)); i++; }
+    /* Every value in IPA_WAS is a LIST, because a digraph is not always one
+       sound -- ch is t then \u0283. concat and not push: a sequence is a list
+       of symbols the chart has, and a list inside it is not a symbol. */
+    if(IPA_WAS[two]){ out=out.concat(IPA_WAS[two]); i+=2; }
+    else if(IPA_WAS[s.charAt(i)]){ out=out.concat(IPA_WAS[s.charAt(i)]); i++; }
+    else { out.push(s.charAt(i)); i++; }
   }
   return out;
 }

@@ -977,6 +977,7 @@ defLang('zh', (function(){
       "imp.file"          : "选择文件",
       "imp.mute"          : "其中 {0} 个还没有读音",
       "imp.done"          : "已导入 {0} 个词",
+      "imp.donelt"        : "已导入 {0} 个字母",
       "imp.undo"          : "撤销",
       "imp.undone"        : "已还原",
       "imp.again"         : "重新开始",

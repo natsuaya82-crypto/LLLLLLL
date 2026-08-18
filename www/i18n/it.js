@@ -974,6 +974,7 @@ defLang('it', (function(){
       "imp.file"          : "Scegli un file",
       "imp.mute"          : "{0} di esse non hanno ancora una lettura",
       "imp.done"          : "{0} parole dentro",
+      "imp.donelt"        : "{0} lettere nell'alfabeto",
       "imp.undo"          : "Annulla",
       "imp.undone"        : "Ripristinato",
       "imp.again"         : "Ricomincia",
