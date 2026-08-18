@@ -212,6 +212,10 @@ function wdReadHTML(){
 }
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
+  /* Nothing typed is nothing to show. The row of tiles was drawn empty --
+     a box with a backspace in it and no word -- which is a control for a
+     thing that does not exist yet. */
+  if(!sp.length) return wdReadHTML();
   return spRowHTML(sp, 'spell', 'wdBack', '')+
     /* No second play. This one and the one at the head of the sheet were both
        sayPh(wEdit.seq) -- the same sound, twice, and this copy sat inside the
@@ -221,24 +225,7 @@ function wdSeqHTML(){
     '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span></div>';
 }
 var wdMode='';
-function wdKeyMode(){
-  if(wdMode) return wdMode;
-  return ltOfKind('alpha').length? 'lt' : 'ph';
-}
 function wdSetMode(m){ wdMode=m; wdPaint(); }
-function wdKeysHTML(){
-  var mine=addedSnd(), ls=ltOrder(ltOfKind('alpha')), m=wdKeyMode();
-  if(!mine.length && !ls.length) return '<div class="note">'+t('add.ph.none')+'</div>';
-  var rail = (ls.length && mine.length)
-    ? '<div class="segs" style="margin-bottom:8px">'+
-      '<button class="seg'+(m==='lt'?' on':'')+'"' + DO('wdSetMode', ["lt"]) + '>'+t('toc.letters')+'</button>'+
-      '<button class="seg'+(m==='ph'?' on':'')+'"' + DO('wdSetMode', ["ph"]) + '>'+t('toc.sound')+'</button>'+
-      '</div>' : '';
-  if(m==='lt' && ls.length)
-    return rail+ltGrid(ls, function(l){ return DO('wdLtr', [l.id]); });
-  return rail+'<div class="phkeys">'+mine.map(function(x){
-    return phkHTML(x, DO('wdKey',[x])); }).join('')+'</div>';
-}
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
     return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
@@ -555,8 +542,23 @@ function wdFormHTML(){
     '<div class="wsub2">'+esc(phCut(seq).map(function(p){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
 
+    /* A word is TYPED, on both plans. Under this heading were two grids --
+       the alphabet, and the sounds -- with a rail to switch between them, so
+       the one screen where somebody writes a word offered three ways to write
+       it and no reason to prefer any. 「なんで単語のところに変なタップするやつ
+       ついてんの？キーボードだけでいいだろ。音と文字二つあるの意味がわからない」
+
+       The keyboard is the way in. A letter's name is what a key types, so the
+       field takes a-z from any keyboard on the phone and shows the shapes
+       somebody drew; the Lingua keyboard puts the same letters in with the
+       shapes on the keys.
+
+       What is left under the field is not input. Free sees what it reads; a
+       paid plan sees the word as its letters, and pressing one opens that
+       letter's sound in this word -- which is the only thing on this screen
+       the keyboard cannot do. */
     '<div class="sec">'+t('word.sounds')+'</div>'+
-    (can('snd') ? wdSeqHTML()+wdKeysHTML() : wdTypeHTML()+wdReadHTML())+
+    wdTypeHTML()+(can('snd')? wdSeqHTML() : wdReadHTML())+
     /* Only where a word is being coined. Asking for a spelling to be made up
        for a word that already has one is asking to throw it away. */
     (mk? '<div id="sugwrap">'+sugHTML()+'</div>' : '')+
@@ -694,18 +696,6 @@ FORM_OPEN.word=function(hw){ openWord(hw); };
    pressed on the sound keyboard is a step whose letter is whichever letter
    writes it, or none at all if nothing does yet. */
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
-function wdLtr(id){
-  var l=ltById(id); if(!l) return;
-  if(!wEdit.sp) wEdit.sp=[];
-  wEdit.sp.push({l:id});
-  wdSync(); sayPh(uSplit(ltFirstUnit(l))); wdPaint();
-}
-function wdKey(sym){
-  var l=ltMain(sym);
-  if(!wEdit.sp) wEdit.sp=[];
-  wEdit.sp.push({l:l? l.id : '', u:sym});
-  wdSync(); sayOne(sym); wdPaint();
-}
 /* Four things that were written as code inside a button: a condition, a pair
    of statements, and two assignments. Each is one line now, in a file a
    checker can read. */

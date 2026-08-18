@@ -80,6 +80,23 @@ function tocRows(){
        なに？意味がわからないから」 */
     {k:'kb.title',   r:'kb',     v:0, txt:''}
   ].concat(
+    /* The sounds a language is built from, and it is Plus's. On free the
+       inventory is filled in by the app -- a letter named `k` reads /k/ and
+       nobody was asked -- so a page of it would be a page of the app's own
+       guesses with nothing to do on it. Somebody who wants to settle a
+       phonology properly is exactly somebody who has paid.
+       「音韻を細かく決めたい人だっているだろ。plusで復活」
+       「plus以外はもう音も文字も決まってる状態」
+
+       LAST but for the AI, for the reason the comment below gives about the
+       AI: a numbered row that appears when you pay renumbers the book under
+       somebody who already knows where things are. Free and Plus differ by
+       this row and it is at the end. */
+    can('snd')
+      ? [{k:'toc.sound', r:'snd', v:SND.length,
+          txt:SND.length? String(SND.length) : '—'}]
+      : []
+  ).concat(
     /* The AI conversation is Studio's, and it is the LAST chapter so that not
        having it takes nothing away from anybody's numbering.
 

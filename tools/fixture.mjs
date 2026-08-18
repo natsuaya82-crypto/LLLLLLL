@@ -552,6 +552,14 @@ export function halfDone(){
         KB.at = 1; kbShow = 1;
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
+    /* The phonology, which is Plus's -- the walk runs on free, so without
+       this its rows and the chart that adds to them belong to no screen. */
+    ['the sounds a language is built from', () => {
+        SET.plan = 'plus'; go('snd');
+        const h = vSnd(); SET.plan = 'free'; return h; }],
+    ['the chart, for the language rather than a letter', () => {
+        SET.plan = 'plus'; openSndAdd();
+        const h = FORM.html; SET.plan = 'free'; return h; }],
     /* The `?` sheet: how the keyboard gets onto the phone. It is a form and
        nothing walks to it -- and the button that opens iOS Settings is on it
        and nowhere else, so without this face that button belongs to no

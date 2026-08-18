@@ -1027,6 +1027,19 @@ function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
 
    Not `.sec` for the heading: that class upper-cases, and an upper-cased
    iPhone is a word Apple does not spell. */
+/* A photograph of the screen a step lands on. A picture of iOS's own settings
+   is the one kind of instruction that cannot go stale in translation and
+   cannot be read wrong -- somebody looks at it and looks at their phone.
+
+   KB_SHOTS is the list of files that are actually in www/img/. A name that is
+   not on it draws nothing, so a step whose picture has not been taken yet is
+   a step with no picture rather than a broken image. Adding one is a file and
+   a word here. */
+var KB_SHOTS=[];
+function kbShot(name){
+  if(KB_SHOTS.indexOf(name)<0) return '';
+  return '<img class="kbshot" src="img/'+name+'.png" alt="">';
+}
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
     /* Two steps, and the button sits on the one it can reach. It used to sit
@@ -1038,11 +1051,11 @@ HELP.kb=function(){
        with a button carries the button, and neither carries the other. */
     '<div class="kbstep"><div class="kbstepn">1</div>'+
       '<div class="kbstept">'+esc(t('kb.step1'))+'</div>'+
-      '<div class="mini">'+t('kb.step1.d')+'</div></div>'+
+      '<div class="mini">'+t('kb.step1.d')+'</div>'+kbShot('kb-add')+'</div>'+
     '<div class="kbstep"><div class="kbstepn">2</div>'+
       '<div class="kbstept">'+esc(t('kb.step2'))+'</div>'+
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
-        esc(t('kb.sys.go'))+'</button></div>'};
+        esc(t('kb.sys.go'))+'</button>'+kbShot('kb-full')+'</div>'};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a

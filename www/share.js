@@ -258,13 +258,24 @@ function shareRoman(){
   return w==='syll' || w==='abugida' || w==='logo';
 }
 /* The face you spell on. Not the person's letters -- the q of QWERTY, there
-   to spell with, and what it spells is looked up rather than inserted. It is
-   the FIRST face, because somebody who made a syllabary types on this one
-   almost always and should not have to cross to it every time.
+   to spell with, and what it spells is looked up rather than inserted.
+
+   It is the LAST face. It used to be the first, on the argument that somebody
+   who made a syllabary types on it almost always -- and what that produced,
+   on the phone, was a keyboard whose first page was a plain roman QWERTY.
+   Somebody who has drawn an alphabet and switched their keyboard to it opens
+   Messages and finds q w e r t y. 「1ページ目これになるのやめてくれない？
+   1ページ目が自作のキーボードなんだから」
+
+   The argument was about keystrokes and the answer is about what the thing
+   IS. The first page of somebody's keyboard is their keyboard.
+
+   `to` on the key that reaches it is worked out by shareKbd(), because where
+   this face lands depends on how many the person built.
 
    KB_QWERTY is keyboard.js's, so the roman rows and the free plan's rows are
    one layout rather than two that agree today. */
-function shareRomLay(){
+function shareRomLay(back){
   var rows=[], i, j, r, row, sp;
   for(i=0;i<KB_QWERTY.length;i++){
     r=KB_QWERTY[i]; row=[];
@@ -273,7 +284,7 @@ function shareRomLay(){
     rows.push(row);
   }
   sp={k:'sp', w:3};
-  rows.push([{k:'lay', to:1, w:1}, sp, {k:'del', w:1}]);
+  rows.push([{k:'lay', to:back, w:1}, sp, {k:'del', w:1}]);
   return {rows:rows};
 }
 
@@ -281,8 +292,16 @@ function shareRomLay(){
    points at anything back here. */
 function shareKbd(){
   var b=kbOf(), lay=[], i, t=shareTable(), conv=shareConv(t), out;
-  if(conv && shareRoman()) lay.push(shareRomLay());
   for(i=0;i<b.lay.length;i++) lay.push({rows:shareRows(b.lay[i])});
+  /* And the roman face after them, with a key on the person's FIRST face to
+     reach it -- otherwise a writing system that needs conversion would have a
+     face nothing goes to. The key wears the number, because a roman face is
+     not one of the person's letters and has none to wear. */
+  if(conv && shareRoman()){
+    lay.push(shareRomLay(0));
+    if(lay[0] && lay[0].rows.length)
+      lay[0].rows[lay[0].rows.length-1].unshift({k:'lay', to:lay.length-1, w:1});
+  }
   out={v:1, lang:langId, name:langName, box:SHARE_BOX, lay:lay};
   /* How tall the keys are, as a multiplier of whatever the extension's own
      row height is. A point is a different size on an SE and a Pro Max, and

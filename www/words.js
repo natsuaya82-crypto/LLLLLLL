@@ -113,9 +113,13 @@ function vWords(){
     '<button class="sx" id="w-x"' + DO('clearQ') + ''+(q?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+
-    '<div class="segs scrollx">'+wFilters().map(function(f){
-      return '<button class="seg'+(wFil===f.k?' on':'')+'"' + DO('wSetFil', [f.k]) + '>'+esc(f.lab)+'</button>';
-    }).join('')+'</div>'+
+    /* One button, not a row of twelve. A part of speech is a CHOICE and a
+       row of them is a scroll: the one you want is off the side about half
+       the time, and adding a thirteenth made it worse.
+       「品詞スロットも横に並べるのじゃなくてタップしたら品詞を開いて選べるタイプ
+       にして」 It says which one is on and opens the list. */
+    '<button class="wfil"' + DO('openFil') + '>'+
+      '<span class="wfilv">'+esc(wFilLab())+'</span>'+ICON_GO+'</button>'+
     '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+wordsHidHTML()+'</div>'+
     /* A round + under the thumb, not a bar across the foot. The bar was as
@@ -143,7 +147,29 @@ function clearQ(){
   q=''; if(e){ e.value=''; e.focus(); }
   wordsPaint();
 }
-function wSetFil(k){ wFil=k; render(); }
+/* What the list is filtered to, as a word. */
+function wFilLab(){
+  var fs=wFilters(), i;
+  for(i=0;i<fs.length;i++) if(fs[i].k===wFil) return fs[i].lab;
+  return posLabel(POS_ALL);
+}
+/* The list, on a sheet. Every kind that has a word in it, and the count
+   beside each -- which the row of tabs could not show and is most of what
+   somebody is choosing on. */
+function openFil(){
+  var fs=wFilters();
+  openForm('wfil', t('f.pos'), fs.map(function(f){
+    return '<button class="set"' + DO('wSetFil', [f.k]) + '>'+
+      '<span class="sl'+(wFil===f.k? ' on':'')+'">'+esc(f.lab)+'</span>'+
+      (wFil===f.k? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
+  }).join(''));
+}
+FORM_OPEN.wfil=function(){ openFil(); };
+function wSetFil(k){
+  wFil=k;
+  /* Chosen on a sheet, so the sheet goes and the list is what you land on. */
+  if(here().r==='form') back(); else render();
+}
 function wSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and

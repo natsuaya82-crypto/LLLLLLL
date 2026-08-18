@@ -276,9 +276,27 @@ function sndFeelHTML(){
 /* The chart is also how a letter is told what it reads, and that is a
    different thing to do with the same button, so the name it says is passed
    in rather than assumed. Nothing else about the chart changes. */
+/* One symbol on the chart. The same chart serves two questions and the answer
+   to "is it on" is different for each: opened FROM A LETTER it means this
+   letter reads it, and opened from the phonology it means the language has
+   it. `sndFor` is which, and it is the only thing that differs -- one chart,
+   two things a press can mean, rather than a second copy of 111 symbols. */
 function ipaBtn(sym){
-  var l=ltById(sndFor), has=!!(l && (l.snd||[]).indexOf(sym)>=0);
+  var l=sndFor? ltById(sndFor) : null, has;
+  if(!sndFor){
+    has=addedSnd().indexOf(sym)>=0;
+    return '<button class="ph2'+(has?' on':'')+'"' + DO('sndTake', [sym]) + '>'+
+      esc(sym)+'</button>';
+  }
+  has=!!(l && (l.snd||[]).indexOf(sym)>=0);
   return '<button class="ph2'+(has?' on':'')+'"' + DO('ltTakeSnd', [sym]) + '>'+esc(sym)+'</button>';
+}
+/* Into the language, or out of it, with no letter involved. Taking one out
+   goes through sndDrop() so the refusal is in one place. */
+function sndTake(sym){
+  if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
+  SND=asOrder(addedSnd().concat([sym]));
+  saveSnd(); sayOne(sym); openSndAdd();
 }
 function ipaConsTable(){
   var rows='', mi, pi, m, cell;
@@ -354,6 +372,85 @@ function ltTakeSnd(sym){
   l.chose=1;
   saveLetters(); installScriptFont(); sayOne(sym);
   openSnd(sndFor);
+}
+/* ---- the sounds a language is built from --------------------------------
+   「音韻を細かく決めたい人だっているだろ。plusで復活」
+
+   There was a chapter here and it was closed, because a sound belonged to a
+   letter and two pages for one fact is one page too many. That is still true
+   and this is not that page: what was closed was a place to give a LETTER its
+   sound, which is done on the letter. This is the inventory as a thing in
+   itself -- every sound the language has, and which letters say it -- which
+   is the question a phonology is, and which no letter can answer alone.
+
+   Plus's. On free the inventory is filled in as letters are named and nobody
+   is asked, so a page of it would be a page of the app's own guesses with
+   nothing to do on it. 「plus以外はもう音も文字も決まってる状態」
+
+   Nothing here is new data. SND has been the ninth slice since the chapter
+   closed, because the spelling engine reads it; it stopped being a place you
+   go, and this is that place again. */
+function sndLetters(sym){
+  var out=[], i, l;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(l.snd && l.snd.indexOf(sym)>=0) out.push(l);
+  }
+  return out;
+}
+/* One sound, and who says it. A sound no letter reads is not an error -- it
+   is a phonology somebody is partway through writing, and the whole reason
+   this page is separate from the letters. */
+function sndRowHTML(sym){
+  var ls=sndLetters(sym);
+  return '<div class="sndrow">'+
+    '<button class="sndsym"' + DO('sayPh', [sym]) + '>'+esc(sym)+'</button>'+
+    '<div class="sndlts">'+(ls.length
+      ? ls.map(function(l){
+          return '<button class="sndlt"' + DO('editLetter', [l.id]) + '>'+
+            ltInk(l, esc(ltName(l)||'·'))+'</button>'; }).join('')
+      : '<span class="sndnone">'+esc(t('snd.nolt'))+'</span>')+'</div>'+
+    '<button class="sndx"' + DO('sndDrop', [sym]) + ' aria-label="'+
+      esc(t('snd.drop'))+'">'+ICON_CROSS+'</button>'+
+    '</div>';
+}
+function vSnd(){
+  var ss=addedSnd();
+  return '<div class="view">'+navTop(String(ss.length))+'<div class="body">'+
+    (ss.length
+      ? ss.map(sndRowHTML).join('')
+      : '<div class="empty"><div class="eb">'+t('snd.empty')+'</div></div>')+
+    '<button class="btn ghost" style="width:100%;margin-top:16px"' +
+      DO('openSndAdd') + '>'+ICON_ADD+t('snd.add')+'</button>'+'<div style="height:80px"></div>'+
+    '</div></div>';
+}
+/* The whole chart, to put a sound into the language before any letter says
+   it. The same chart a letter opens; what differs is what a press does. */
+function openSndAdd(){
+  sndFor='';
+  openForm('sndadd', t('snd.add'),
+    '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
+    '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
+    '<div class="sec">'+t('ipa.other')+'</div>'+
+    '<div class="ipafree">'+IPA_OTHER.map(function(o){
+      return ipaBtn(o.s); }).join('')+'</div>');
+}
+FORM_OPEN.sndadd=function(){ openSndAdd(); };
+/* Taking one out of the inventory. It refuses while a letter still reads it:
+   a letter reading a sound the inventory has never heard of is the one state
+   the spelling engine cannot hold, and this is the door that would make one.
+   The letters that say it are named, so there is something to do about it
+   rather than a refusal to argue with. */
+function sndDrop(sym){
+  var ls=sndLetters(sym), i;
+  if(ls.length){
+    toast(t('snd.inuse', ls.map(function(l){ return ltName(l)||'·'; }).join(' ')));
+    return;
+  }
+  i=SND.indexOf(sym);
+  if(i<0) return;
+  SND.splice(i, 1);
+  saveSnd(); render();
 }
 /* ---- II. letters ------------------------------------------------------
    The alphabet, as a thing in itself. Every letter you have, what it reads,
@@ -464,25 +561,6 @@ function ltCell(l, press){
     (press || DO('go', ["letter", l.id])) + ' aria-label="'+esc(nm)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm)+'</span></button>';
-}
-/* The alphabet as something to press for a reason other than opening it:
-   the word sheet spells a word out of letters, and a letter is put in by
-   pressing it. `pressOf` is what one press is called, so the cell stays one
-   cell -- the same shape, the same name under it, the same red on a letter
-   whose reading another letter has already taken.
-
-   No id on the grid: the one on the alphabet page carries a drag to reorder,
-   and the order of the alphabet is not something to change halfway through
-   writing a word.
-
-   This is where the keyboard used to be. A word is spelled out of letters
-   and always was 「音がなんでいっつもついてくんの？文字は文字」 -- what has gone
-   is the LAYOUT, which was a keyboard's business, and a keyboard belongs on
-   the phone rather than in one app. The letters themselves stayed. */
-function ltGrid(list, pressOf){
-  var out='', i;
-  for(i=0;i<list.length;i++) out+=ltCell(list[i], pressOf(list[i]));
-  return '<div class="ltgrid ltpick">'+out+'</div>';
 }
 
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,

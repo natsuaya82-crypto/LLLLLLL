@@ -26,6 +26,10 @@ var SETS=[
   {id:'ui',    k:'set.display'},
   {id:'lang',  k:'set.lang'},
   {id:'acct',  k:'set.account'},
+  /* A room of its own, out of the account. An account is who you are and a
+     plan is what you may do, and the two are settled by different things.
+     「アカウント内にプラン入れるのやめてくんね？」 */
+  {id:'plan',  k:'set.plan'},
   {id:'data',  k:'set.data'}
 ];
 function vSettings(){
@@ -46,6 +50,7 @@ function setSummary(id, p){
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
   if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
+  if(id==='plan')  return p? p.name : 'Free';
   if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
@@ -127,15 +132,22 @@ function vSet(){
         '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('setMail') + '><span class="sl">'+t('ob.signin.mail')+'</span>'+
         '<span class="sv">'+ICON_GO+'</span></button>')+
-      '<div class="sec">'+t('set.plan')+'</div>'+
-      '<button class="set"' + DO('go', ["plans"]) + '><span class="sl">'+t('set.plan.cur')+'</span>'+
-      '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>'+
+      /* The plan is not in here. An account is who you are; a plan is what
+         you may do, and they are answered by different things -- the account
+         by a server, the plan by whatever settles it. It is a room of its
+         own on the settings list. 「アカウント内にプラン入れるのやめてくんね？」 */
       /* Erasing what is on this phone is the person's, beside signing out --
          it sat at the foot of the language room, which is the one place it
          is not about. Signing out leaves everything where it is; this does
          not, so it says so and asks. */
       '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
+  } else if(id==='plan'){
+    /* One row, and it is the door to the plans. What a plan IS belongs on the
+       plans page; this says which one and goes there. */
+    return '<button class="set" style="border-bottom:none"' + DO('go', ["plans"]) + '>'+
+      '<span class="sl">'+t('set.plan.cur')+'</span>'+
+      '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
   } else if(id==='data'){
     /* What is on the disk, for everybody. Keeping a language is not a paid
        feature -- charging for not losing somebody's work would mean

@@ -142,6 +142,7 @@ var PAGES={
   form:    {tab:'build'},
   letters: {tab:'build', k:'toc.letters'},
   kb:      {tab:'build', k:'kb.title'},
+  snd:     {tab:'build', k:'toc.sound'},
   ltset:   {tab:'build', k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},
@@ -382,7 +383,14 @@ function toast(m){
    of the ten interface languages is on screen, so an old dictionary keeps
    working and a translated one is not frozen in the language it was written
    in. Nothing is renamed here, so nothing already saved moves. */
-var POS=['n','v','adj','adv','pro','num','part','conj','intj','aff','nm','x'];
+/* `idm` is an idiom -- a thing a language has that is not one word doing one
+   job, and the one entry here that is a KIND of entry rather than a part of
+   speech. It is on this list because it is chosen in the same place and
+   filtered in the same place, and a second list beside this one would be a
+   second thing every screen has to know about.
+   「単語ページにイディオムを追加できるようにしよう。品詞のところにイディオムって
+   入れたり」 It goes last but one, before "other". */
+var POS=['n','v','adj','adv','pro','num','part','conj','intj','aff','nm','idm','x'];
 var POS_ALL='*';                       /* the key for "all" */
 function posLabel(k){
   if(k===POS_ALL) return langDef().all;

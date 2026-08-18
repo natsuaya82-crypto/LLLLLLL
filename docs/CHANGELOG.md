@@ -15,6 +15,66 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The first page of somebody's keyboard is their keyboard
+
+`shareRomLay()` put the roman conversion face **first**, on the argument that
+somebody who made a syllabary types on it almost always. What that produced on
+the phone: an alphabet somebody had drawn, switched on in Messages, opening as a
+plain roman QWERTY. 「1ページ目これになるのやめてくれない？1ページ目が自作の
+キーボードなんだから」
+
+It is the last face now, reached by a key on the person's own first face. The
+argument was about keystrokes; the answer is about what the thing is.
+
+`conv-check`'s sixth claim is rewritten to match and gained a half it did not
+have: **something must reach it.** A face at the end that nothing points at
+cannot be used. Watched failing — take the key away and all three writing
+systems that need a roman face go red.
+
+### A word is typed, a part of speech is chosen, and the sounds have a page
+
+**The word sheet has one way in.** Under 音 were two grids — the alphabet and
+the sounds — with a rail between them, so the screen where somebody writes a
+word offered three ways to write it. 「キーボードだけでいいだろ。音と文字二つ
+あるの意味がわからない」 The field is the way in, on both plans; the keyboard puts
+the letters in it. What is left under the field is not input — free sees what it
+reads, a paid plan sees the word as its letters and can open one to change its
+sound in this word, which is the only thing there the keyboard cannot do. An
+empty word shows no tiles.
+
+**A part of speech is a choice, not a row.** Twelve tabs scrolling sideways
+became one button that says which and opens the list, with a count beside each
+kind. 「品詞スロットも横に並べるのじゃなくてタップしたら品詞を開いて選べるタイプに」
+
+**イディオム is one of them**, last but for "other". It is a kind of entry rather
+than a part of speech, and it is on that list because it is chosen and filtered
+in the same places — a second list beside it would be a second thing every screen
+has to know about.
+
+**The plan is out of the account.** An account is who you are; a plan is what you
+may do, and they are settled by different things. It is a room of its own on the
+settings list. 「アカウント内にプラン入れるのやめてくんね？」
+
+**The sounds a language is built from are a chapter again, and it is Plus's.**
+「音韻を細かく決めたい人だっているだろ。plusで復活」 What was closed was a second
+place to give a LETTER its sound; that is still done on the letter. This is the
+inventory as a thing in itself — every sound, and which letters say it — which is
+the question a phonology is and which no letter can answer alone. A sound nothing
+reads is not an error; it is a phonology partway written. Taking one out is
+refused while a letter still reads it, and names the letters.
+
+On free the inventory is filled in as letters are named and nobody is asked, so
+the chapter is not there. 「plus以外はもう音も文字も決まってる状態」 It is the last
+chapter but for the AI, so paying does not renumber the book.
+
+**No new data.** `SND` has been the ninth slice since the chapter closed, because
+the spelling engine reads it. It stopped being a place you go, and this is that
+place again.
+
+`buttons pressed` falls 6307 → 5991: two grids gone from the word sheet, and
+twelve filter tabs gone from the dictionary, on every render of each.
+
+
 ### A list that arrives comes in, and the words on the screen say what they mean
 
 **A word with no reading is still a word.** `impPut()` guessed a word's sounds

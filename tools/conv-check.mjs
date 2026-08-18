@@ -25,8 +25,9 @@
        it looks one up
      - ink has no two entries that are the same shape twice
      - the roman face -- QWERTY, there to spell with -- exists exactly when
-       wsys() needs one, sits at layer 0, and never wears a person's own
-       letter: rom, del, sp, lay, next, and nothing else
+       wsys() needs one, sits LAST, is reached by a key on the person's own
+       first face, and never wears a person's own letter: rom, del, sp, lay,
+       next, and nothing else
      - conv.how says what wsys() said
 
    CLAUDE.md's own rule is the reason this file exists: "A comment saying
@@ -184,21 +185,45 @@ const R = await pg.evaluate(() => {
       else seenShapes[sig] = i;
     });
 
-    /* 6. a roman layer exists iff wsys() is syll, abugida or logo, and when
-       it exists it is layer 0 and wears only rom/del/sp/lay/next */
+    /* 6. a roman layer exists iff wsys() is syll, abugida or logo; it is the
+       LAST face and not the first, wears only rom/del/sp/lay/next, and
+       something on the person's first face reaches it.
+
+       Last, because the first page of somebody's keyboard is their keyboard.
+       It used to be first, and what that produced on the phone was an
+       alphabet somebody had drawn opening in Messages as a plain roman
+       QWERTY. 「1ページ目これになるのやめてくれない？1ページ目が自作のキーボード
+       なんだから」 The reachability half is the cost of moving it: a face at
+       the end that nothing goes to is a face nobody can use. */
     const needsRoman = (w === 'syll' || w === 'abugida' || w === 'logo');
-    const lay0 = kbd.lay[0];
-    const hasRoman = !!(lay0 && lay0.rows &&
-      lay0.rows.some((row) => row.some((k) => k.k === 'rom')));
+    const isRoman = (l) => !!(l && l.rows &&
+      l.rows.some((row) => row.some((k) => k.k === 'rom')));
+    const romAt = kbd.lay.map((l, i) => (isRoman(l) ? i : -1)).filter((i) => i >= 0);
+    const hasRoman = romAt.length > 0;
     rec.roman = hasRoman;
     if (needsRoman && !hasRoman)
       fails.push(w + ': typed unit and written unit differ, so a roman' +
-        ' layer is needed, but layer 0 carries no rom keys');
+        ' layer is needed, and no face carries rom keys');
     if (!needsRoman && hasRoman)
       fails.push(w + ': typed unit and written unit are the same, so' +
-        ' there should be no roman layer, but layer 0 carries rom keys');
+        ' there should be no roman layer, but face ' + romAt[0] + ' carries rom keys');
+    if (romAt.length > 1)
+      fails.push(w + ': ' + romAt.length + ' roman faces, and there is one');
     if (hasRoman) {
-      lay0.rows.forEach((row, ri) => row.forEach((k, ki) => {
+      const at = romAt[0];
+      if (at !== kbd.lay.length - 1)
+        fails.push(w + ': the roman face is at ' + at + ' of ' +
+          kbd.lay.length + ' -- it goes last, so the first page is the' +
+          " person's own keyboard");
+      if (at === 0)
+        fails.push(w + ': the roman face is the FIRST page, which is the one' +
+          ' thing it must never be');
+      const goes = kbd.lay.some((l, i) => i !== at && l.rows &&
+        l.rows.some((row) => row.some((k) => k.k === 'lay' && k.to === at)));
+      if (!goes)
+        fails.push(w + ': nothing goes to the roman face -- a face at the end' +
+          ' with no key pointing at it cannot be reached');
+      kbd.lay[at].rows.forEach((row, ri) => row.forEach((k, ki) => {
         if (ROMAN_KEYS.indexOf(k.k) < 0)
           fails.push(w + ': roman layer key [' + ri + '][' + ki + '] has' +
             ' k="' + k.k + '", not one of ' + ROMAN_KEYS.join('/') +
