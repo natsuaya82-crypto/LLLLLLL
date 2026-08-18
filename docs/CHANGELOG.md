@@ -15,6 +15,25 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The keyboard's setup steps point at the thing to press
+
+「なんで写真も渡したのに並べるだけなの？」
+
+The `?` sheet had two steps with **both** photographs stacked under the
+second — so the step reading "turn on Full Access" carried a picture of a
+different page, the one you have to go through to reach it, and neither
+picture said which of its rows was the one.
+
+Three steps now, each with its own picture, and the row to press **ringed on
+the photograph**. The mark travels with the photograph: `KB_SHOTS` is a table
+of file → where that row sits in that file, so a photograph taken again is one
+entry to change rather than a mark baked into a JPEG.
+
+New strings `kb.step3` in all ten languages; `kb.step2` now names the step the
+button actually lands on.
+
+**Stored data.** None.
+
 ### The first keyboard is the free QWERTY, and it cannot be edited
 
 「1つ目の無料のqwartyは編集できないようにしてくれ。plusから無料に戻った時に

@@ -772,8 +772,14 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .wfilv{font-size:.95rem}
 .wfil .ic{margin-left:auto;color:var(--txm)}
 .set .sl.on{color:var(--gold);font-weight:600}
-.kbshot{display:block;width:100%;height:auto;margin-top:12px;border-radius:12px;
-        border:1px solid var(--line)}
+/* A photograph of iOS's own screen with the row to press ringed on it. The
+   ring is the whole of what makes it an instruction rather than a picture,
+   so it is drawn over the image rather than baked into the file -- the
+   numbers are kbShot()'s and a photograph taken again is one line to move. */
+.kbshot{position:relative;display:block;margin-top:10px;line-height:0}
+.kbshot img{display:block;width:100%;height:auto}
+.kbring{position:absolute;left:3.5%;right:3.5%;border:2px solid var(--gold);
+        border-radius:12px;pointer-events:none}
 /* One step of putting the keyboard on the phone: a number, what to do, and
    either the path or the button that gets there. */
 .kbstep{margin:0 0 22px}
