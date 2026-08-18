@@ -15,6 +15,33 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A word is what the bar offers, in the letters it was written in
+
+「単語は必要でしょ。アルファベットじゃなくて自作文字が欲しい。順序は単語ファースト」
+— OWNER DECISION.
+
+`shareConv()` has always written the word table into the file the extension
+reads — every word under its own spelling, pointing at its letters' shapes.
+`Compose` only ever read it **on the roman face**, and an alphabet has no
+roman face. So for every alphabet and every abjad the table was written,
+handed over, and never once looked at.
+
+On a face of the person's own letters the bar now shows the words that
+spelling begins, in the drawn letters, **first** — and the run being typed
+last, so it is always reachable. The roman candidate is gone.
+
+**One consequence, and it is not cosmetic.** Space no longer commits the first
+candidate on the letter face. The run is already in the document there, and
+the first pick is now a word it might be completed to — committing it would
+turn every `li ` into `lingua`, which is the keyboard rewriting text somebody
+had already finished. On the roman face space commits exactly as before.
+
+**Stored data.** None. The payload does not change; what changed is which
+faces read a table that was already in it.
+
+**Tested.** `npm test` green, `conv-check` unchanged and still green.
+**Not tested.** Nothing on a device — this is Swift and needs a build.
+
 ### Which face holds its text back is the face's to say, not the language's
 
 「キーボード押しても自作文字でないキーあるし、出ても2文字目打ったら変換全部消える」

@@ -121,35 +121,21 @@ struct Compose {
 
   /// What the bar shows.
   ///
-  /// The exact match first, because it is what was asked for, then everything
-  /// the buffer begins, which is what makes a long word one press instead of
-  /// eight. Both are the roman face's; a face of the person's own letters
-  /// shows the run back and offers nothing to choose.
-  ///
-  /// Sorted by length so the shortest, most likely completion leads, and then
-  /// by the key itself so the order is the same twice running. A bar that
-  /// reshuffles between keystrokes cannot be aimed at.
+  /// Both faces ask the same table the same question -- lookup() -- and
+  /// differ only in what they do with the answer.
   func candidates() -> [Candidate] {
     guard !buffer.isEmpty else { return [] }
-    /* A face of the person's own letters is not being converted. The letters
-       pressed are already the letters meant and are already in the document,
-       so there is nothing to choose -- and offering to choose was the bug:
-       two letters in, the bar filled with dictionary words that happened to
-       start that way and the run being typed was nowhere on it.
-       「2文字以上入力すると候補にliとか出てきちゃう」
+    return onRoman ? lookup() : ownPicks()
+  }
 
-       So the bar shows what was typed, twice: in the shapes somebody drew,
-       and in the roman they are named by. First their own, because that is
-       what they are writing.
-       「自作文字で第一候補で無限、第二候補がアルファベット」 */
-    if !onRoman {
-      var out = [Candidate(faces: typedFaces)]
-      if typedFaces.contains(where: { $0.st != nil || $0.ch != nil }) {
-        out.append(Candidate(faces: buffer.map {
-          Face(t: String($0), st: nil, ch: nil, aw: nil, dx: nil) }))
-      }
-      return out
-    }
+  /// Everything the table has under what is being typed: the exact key
+  /// first, because it is what was asked for, then every key the buffer
+  /// begins, which is what makes a long word one press instead of eight.
+  ///
+  /// Sorted by length so the shortest, most likely completion leads, and
+  /// then by the key itself so the order is the same twice running. A bar
+  /// that reshuffles between keystrokes cannot be aimed at.
+  private func lookup() -> [Candidate] {
     var keys: [String] = []
     if conv.map[buffer] != nil { keys.append(buffer) }
     for k in conv.map.keys where k != buffer && k.hasPrefix(buffer) { keys.append(k) }
@@ -164,8 +150,35 @@ struct Compose {
     }
   }
 
+  /// A face of the person's own letters is not being converted: what was
+  /// pressed is already the letter that was meant and is already in the
+  /// document. So the bar is not offering to decide what those keys were --
+  /// it is offering the WORDS they begin, in the letters they were written
+  /// in. 「単語は必要でしょ。アルファベットじゃなくて自作文字が欲しい。順序は
+  /// 単語ファースト」
+  ///
+  /// Words first, and the run itself last so it is always reachable. It was
+  /// the other way round -- the run, then the same run spelled in roman --
+  /// which offered nothing to convert TO and put the alphabet on the bar of
+  /// an app whose whole point is not being the alphabet. The roman one is
+  /// gone.
+  ///
+  /// The run is never listed twice: a single letter is in the table under
+  /// its own name, so `l` would otherwise come back as a candidate that is
+  /// letter-for-letter what is already showing.
+  private func ownPicks() -> [Candidate] {
+    let run = Candidate(faces: typedFaces)
+    var out = lookup().filter { $0.text != run.text }
+    out.append(run)
+    return out
+  }
+
   /// What space commits: the first candidate, the way pinyin does it. Nil
   /// when nothing matched, and then the buffer is worth inserting as it
   /// stands rather than being thrown away — somebody typed those letters.
+  ///
+  /// The roman face's only. On a face of the person's own letters the first
+  /// candidate is a WORD the run might be completed to, and committing that
+  /// on a space would turn every `li ` into `lingua`.
   func first() -> Candidate? { candidates().first }
 }

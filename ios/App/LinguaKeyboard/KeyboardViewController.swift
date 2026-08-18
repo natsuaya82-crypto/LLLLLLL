@@ -179,10 +179,17 @@ final class KeyboardViewController: UIInputViewController,
   /// Space commits the first candidate, the way pinyin does. Nothing matched
   /// means the roman goes in as it stands -- somebody typed those letters and
   /// throwing them away would be the keyboard deciding they were a mistake.
+  ///
+  /// The roman face's only. On a face of the person's own letters the run is
+  /// already in the document and the bar's first pick is a word it MIGHT be
+  /// completed to, offered because words are what a bar is for -- so a space
+  /// there ends the word rather than replacing it. Committing the first pick
+  /// would turn every `li ` into `lingua`, which is the keyboard rewriting
+  /// text somebody had already finished typing.
   private func settle() {
-    guard let c = compose, !c.isEmpty else { return }
+    guard let c = compose, !c.isEmpty, c.holdsText else { return }
     if let hit = c.first() { commit(hit) }
-    else if c.holdsText { textDocumentProxy.insertText(c.buffer) }
+    else { textDocumentProxy.insertText(c.buffer) }
   }
 
   private func drop() {
