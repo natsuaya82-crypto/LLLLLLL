@@ -189,6 +189,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbec{grid-area:2/2;border-color:var(--goldln);background:var(--goldsf)}
 .kber{grid-area:2/3}
 .kbed{grid-area:3/2}
+/* A slot's shape needs a size, and this was the one place a .tc was shown
+   without one. A canvas with no CSS size lays out at its own default width,
+   inkCanvases() then makes the bitmap that big, and a glyph drawn to fill a
+   900px square inside an 82px button that hides its overflow is a solid block
+   of ink. 「文字設定したらこうなるけど？」 */
+.kbe canvas.tc{width:42px;height:42px;display:block}
+.kbec canvas.tc{width:62px;height:62px}
+.kbe .bch{font-size:1.7rem;line-height:1}
+.kbec .bch{font-size:2.4rem}
 /* A slot with nothing in it is a place, not a thing: dashed and unfilled, so
    the four that are empty do not read as four keys somebody has made. */
 .kbsx{color:var(--txm);display:flex;opacity:.65}

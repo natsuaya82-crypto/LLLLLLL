@@ -15,6 +15,25 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A letter on a key slot is the letter, not a block of ink
+
+「文字設定したらこうなるけど？」 Choosing a letter for a slot on the key editor
+drew a solid white rectangle.
+
+The slot's canvas was the one place in the app a `.tc` is shown without a CSS
+size. A canvas with no size lays out at its own default width, `inkCanvases()`
+sizes the bitmap to whatever it measures, and a glyph drawn to fill a 900px
+square inside an 82px button with `overflow:hidden` is the middle of a stroke —
+a block. Nine other places show a `.tc` and every one of them says how big it
+is.
+
+`.kbe canvas.tc` is 42px, `.kbec` (the middle, which is 1.5fr) is 62px, and a
+borrowed character gets a size too. Watched with the bug put back: the same
+letter on the same screen does not appear.
+
+**Data.** CSS only.
+
+
 ### Nothing is written inside a box on the word sheet
 
 「文体のふつうってなんだよ」 The register's empty code was labelled ふつう /
