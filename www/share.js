@@ -297,12 +297,26 @@ function shareKbd(){
      reach it -- otherwise a writing system that needs conversion would have a
      face nothing goes to. The key wears the number, because a roman face is
      not one of the person's letters and has none to wear. */
+  var rom=-1;
   if(conv && shareRoman()){
     lay.push(shareRomLay(0));
+    rom=lay.length-1;
     if(lay[0] && lay[0].rows.length)
-      lay[0].rows[lay[0].rows.length-1].unshift({k:'lay', to:lay.length-1, w:1});
+      lay[0].rows[lay[0].rows.length-1].unshift({k:'lay', to:rom, w:1});
   }
   out={v:1, lang:langId, name:langName, box:SHARE_BOX, lay:lay};
+  /* WHICH face is the roman one, and it has to be said rather than worked
+     out on the other side. The extension asked `how` -- what the writing
+     system is -- and a writing system does not type: a FACE does. So every
+     face of a syllabary, an abugida or a logography held its text back and
+     looked its keys up as if they were a roman spelling. Pressing one of the
+     person's own letters put nothing in the document and offered the one word
+     it begins; pressing a second put nothing in either and offered nothing at
+     all, because two letter names in a row are not a spelling of anything.
+     「キーボード押しても自作文字でないキーあるし、出ても2文字目打ったら変換
+     全部消える」 Where the roman face lands depends on how many faces the
+     person built, so this is the only place that knows. */
+  if(rom>=0) out.rom=rom;
   /* How tall the keys are, as a multiplier of whatever the extension's own
      row height is. A point is a different size on an SE and a Pro Max, and
      what somebody chose here is how big a key FEELS. Absent means 1, which is

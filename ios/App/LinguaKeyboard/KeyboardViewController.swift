@@ -40,6 +40,12 @@ final class KeyboardViewController: UIInputViewController,
     guard let b = Shared.board() else { return show(Say.draw()) }
     board = b
     if compose == nil, let c = b.conv { compose = Compose(conv: c, ink: b.ink ?? []) }
+    /* Which face is being typed on, said here because here is where a layer
+       changes. Whether a key holds its text back belongs to the FACE: the
+       roman one spells at something, the person's own letters ARE what was
+       meant. Asking the writing system instead made every face of a
+       syllabary, an abugida or a logography hold everything back. */
+    compose?.onRoman = (b.rom != nil && layerNo == b.rom!)
     let lay = b.lay[min(layerNo, b.lay.count - 1)]
 
     // The globe is in the file always, because only here can the phone be

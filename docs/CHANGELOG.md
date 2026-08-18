@@ -15,6 +15,40 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Which face holds its text back is the face's to say, not the language's
+
+「キーボード押しても自作文字でないキーあるし、出ても2文字目打ったら変換全部消える」
+
+`Conv.romanKeys` in the extension answered "are these keys roman?" from
+`conv.how` — what the writing system is. **A writing system does not type; a
+face does.** A syllabary's board carries the person's own letters on face 0
+AND a roman face at the end, and only the second of the two spells at
+something. So on a syllabary, an abugida or a logography every face held its
+text back and looked its keys up as a roman spelling:
+
+- press one of your own letters → **nothing goes in the document**, and the
+  bar offers the one word that letter begins
+- press a second → nothing goes in either, and the bar **empties**, because
+  two letter names in a row are not a spelling of anything
+
+Both halves of what was reported, one cause.
+
+`shareKbd()` writes **`rom`**, the index of the roman face, because where it
+lands depends on how many faces the person built and the app is the only thing
+that knows. `Board.rom` carries it, the controller sets `compose.onRoman` on
+every build — which is every layer change — and `Compose` asks that instead of
+`how`. An alphabet and an abjad have no roman face and no `rom`, and nothing
+about them changes.
+
+`conv-check` claim 6 gained the pair: `rom` names the face that carries the
+`rom` keys, and is absent when no face does. Watched failing — point `rom` at
+face 0 and all three writing systems that need a roman face go red.
+
+**Data.** One number added to the file handed across the App Group. Nothing
+stored on the phone changes. **A build is needed** — this is Swift as well as
+`www/`, so the fix is not in anybody's hands until the extension is rebuilt.
+
+
 ### Signing in does not walk you through the onboarding you already did
 
 「普通にログインしてるのに言語の名前とidきめさせられた」「あるのに出てきた」

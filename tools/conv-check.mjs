@@ -194,7 +194,17 @@ const R = await pg.evaluate(() => {
        alphabet somebody had drawn opening in Messages as a plain roman
        QWERTY. 「1ページ目これになるのやめてくれない？1ページ目が自作のキーボード
        なんだから」 The reachability half is the cost of moving it: a face at
-       the end that nothing goes to is a face nobody can use. */
+       the end that nothing goes to is a face nobody can use.
+
+       And `rom` NAMES it. The extension has to know which face holds text
+       back, and it asked `how` -- what the writing system is. A writing
+       system does not type; a face does, and a syllabary's board carries the
+       person's own letters as well as the roman face. So every face of a
+       syllabary held everything back: pressing your own letter put nothing
+       in the document, and pressing a second offered nothing at all, because
+       two letter names in a row are not a spelling of anything. That is a
+       claim about the pair -- a number in the file and a face in the file --
+       which is exactly the kind this check exists for. */
     const needsRoman = (w === 'syll' || w === 'abugida' || w === 'logo');
     const isRoman = (l) => !!(l && l.rows &&
       l.rows.some((row) => row.some((k) => k.k === 'rom')));
@@ -209,8 +219,16 @@ const R = await pg.evaluate(() => {
         ' there should be no roman layer, but face ' + romAt[0] + ' carries rom keys');
     if (romAt.length > 1)
       fails.push(w + ': ' + romAt.length + ' roman faces, and there is one');
+    if (!hasRoman && kbd.rom !== undefined)
+      fails.push(w + ': rom says face ' + kbd.rom + ' is roman and no face' +
+        ' carries rom keys, so the extension would hold text back on one of' +
+        " the person's own");
     if (hasRoman) {
       const at = romAt[0];
+      if (kbd.rom !== at)
+        fails.push(w + ': the roman face is ' + at + ' and rom says ' +
+          kbd.rom + ' -- the extension reads rom to decide which face holds' +
+          ' its text back, so a wrong one is every letter typing nothing');
       if (at !== kbd.lay.length - 1)
         fails.push(w + ': the roman face is at ' + at + ' of ' +
           kbd.lay.length + ' -- it goes last, so the first page is the' +

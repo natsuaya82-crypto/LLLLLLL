@@ -93,6 +93,14 @@ struct Board: Decodable {
   /// writing system needs no conversion and offers no spelling either.
   let ink: [Face]?
   let conv: Conv?
+  /// Which face is the roman one you spell on. Absent when there is none,
+  /// which is every writing system that needs no conversion.
+  ///
+  /// It has to be said rather than worked out. `how` says what the writing
+  /// system is and a writing system does not type -- a face does, and a
+  /// syllabary's board carries the person's own letters AND a roman face.
+  /// shareKbd() puts it last and is the only thing that knows where that is.
+  let rom: Int?
 }
 
 enum Shared {

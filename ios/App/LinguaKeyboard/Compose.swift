@@ -3,10 +3,16 @@
 //
 //  Two ways in, and they are the same machine seen from two sides:
 //
-//    a syllabary   you press ROMAN keys, nothing goes in, and the bar offers
-//                  the letters that write what you have spelled
-//    an alphabet   you press YOUR OWN letters, they go in as you press them,
-//                  and the bar offers the words that begin that way
+//    the roman face   you press ROMAN keys, nothing goes in, and the bar
+//                     offers the letters that write what you have spelled
+//    your own face    you press YOUR OWN letters, they go in as you press
+//                     them, and the bar shows the run back
+//
+//  Which of the two is a property of the FACE and not of the language. A
+//  syllabary has both: the person's letters on face 0 and a roman face at the
+//  end to spell with. Asking the writing system instead made every face of a
+//  syllabary hold its text back, which is most of this file being wrong at
+//  once.
 //
 //  The difference is only whether the keys insert as they are pressed. The
 //  buffer, the lookup and the bar are one thing either way, which is why they
@@ -31,9 +37,22 @@ struct Conv: Decodable {
   /// kilobytes, measured.
   let map: [String: [Int]]
 
-  /// Whether the keys are roman. A syllabary is typed in roman and converted;
-  /// an alphabet is typed in its own letters and only suggested at.
-  var romanKeys: Bool { how == "syll" || how == "abugida" || how == "logo" }
+  /// NOT whether the keys are roman. `how` says what the writing system is,
+  /// and a writing system does not type -- a FACE does. A syllabary's board
+  /// has the person's own letters on face 0 and a roman face at the end, and
+  /// only the second of the two spells at something.
+  ///
+  /// This used to answer "are the keys roman" from `how` alone, so on a
+  /// syllabary, an abugida or a logography EVERY face held its text back and
+  /// looked its keys up as if they were roman. Pressing your own letter put
+  /// nothing in the document and offered the one word that letter begins;
+  /// pressing a second put nothing in either and offered nothing at all,
+  /// because two letter names in a row are not a spelling of anything.
+  /// 「キーボード押しても自作文字でないキーあるし、出ても2文字目打ったら変換
+  /// 全部消える」
+  ///
+  /// Which face is the roman one is `Board.rom`, written by shareKbd(),
+  /// because the app is the only thing that knows where it put it.
 }
 
 /// One thing the bar is offering: what it looks like, and what pressing it
@@ -50,7 +69,7 @@ struct Compose {
   private(set) var buffer = ""
   /// The face of every key pressed since the buffer was last emptied, in
   /// order. The buffer is what those keys are CALLED; this is what they look
-  /// like, and an alphabet's bar is made of it.
+  /// like, and the bar of somebody's own face is made of it.
   private(set) var typedFaces: [Face] = []
   private let conv: Conv
   private let ink: [Face]
@@ -60,10 +79,15 @@ struct Compose {
     self.ink = ink
   }
 
+  /// Whether the face being typed on is the roman one. Set by the controller
+  /// every time the board is built, which is every time a layer changes.
+  var onRoman = false
+
   var isEmpty: Bool { buffer.isEmpty }
-  /// Roman keys hold the text back until something is chosen; letter keys do
-  /// not, because what was pressed is already the letter that was meant.
-  var holdsText: Bool { conv.romanKeys }
+  /// The roman face holds its text back until something is chosen; a face of
+  /// the person's own letters does not, because what was pressed is already
+  /// the letter that was meant.
+  var holdsText: Bool { onRoman }
 
   mutating func clear() { buffer = ""; typedFaces = [] }
 
@@ -71,16 +95,16 @@ struct Compose {
   /// of the key it came from.
   ///
   /// `max` is the longest key the conversion table has, so it is where a
-  /// roman spelling stops being able to match anything. An alphabet is not
-  /// spelling at anything -- the letters are already in the document and the
-  /// bar is showing them back -- so nothing caps it and a run of any length
-  /// stays whole. 「第一候補で無限」
+  /// roman spelling stops being able to match anything. A face of the
+  /// person's own letters is not spelling at anything -- the letters are
+  /// already in the document and the bar is showing them back -- so nothing
+  /// caps it and a run of any length stays whole. 「第一候補で無限」
   ///
   /// Returns false when it was refused, so the caller can decide what to do
   /// with the press rather than having it silently vanish.
   mutating func push(_ s: String, face: Face?) -> Bool {
     guard !s.isEmpty else { return false }
-    if conv.romanKeys, buffer.count + s.count > conv.max { return false }
+    if onRoman, buffer.count + s.count > conv.max { return false }
     buffer += s
     typedFaces.append(face ?? Face(t: s, st: nil, ch: nil, aw: nil, dx: nil))
     return true
@@ -98,26 +122,27 @@ struct Compose {
   /// What the bar shows.
   ///
   /// The exact match first, because it is what was asked for, then everything
-  /// the buffer begins -- which is the whole of what an alphabet gets, and is
-  /// what makes a long word one press instead of eight.
+  /// the buffer begins, which is what makes a long word one press instead of
+  /// eight. Both are the roman face's; a face of the person's own letters
+  /// shows the run back and offers nothing to choose.
   ///
   /// Sorted by length so the shortest, most likely completion leads, and then
   /// by the key itself so the order is the same twice running. A bar that
   /// reshuffles between keystrokes cannot be aimed at.
   func candidates() -> [Candidate] {
     guard !buffer.isEmpty else { return [] }
-    /* An alphabet is not being converted. The letters pressed are already the
-       letters meant and are already in the document, so there is nothing to
-       choose -- and offering to choose was the bug: two letters in, the bar
-       filled with dictionary words that happened to start that way and the
-       run being typed was nowhere on it. 「2文字以上入力すると候補にliとか出て
-       きちゃう」
+    /* A face of the person's own letters is not being converted. The letters
+       pressed are already the letters meant and are already in the document,
+       so there is nothing to choose -- and offering to choose was the bug:
+       two letters in, the bar filled with dictionary words that happened to
+       start that way and the run being typed was nowhere on it.
+       「2文字以上入力すると候補にliとか出てきちゃう」
 
        So the bar shows what was typed, twice: in the shapes somebody drew,
        and in the roman they are named by. First their own, because that is
        what they are writing.
        「自作文字で第一候補で無限、第二候補がアルファベット」 */
-    if !conv.romanKeys {
+    if !onRoman {
       var out = [Candidate(faces: typedFaces)]
       if typedFaces.contains(where: { $0.st != nil || $0.ch != nil }) {
         out.append(Candidate(faces: buffer.map {
