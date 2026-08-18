@@ -795,7 +795,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 297`, `screens the mirror
 rendered: 350`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 5954` for the same reason — and it is what a
+`press` prints `buttons pressed: 5956` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -822,7 +822,9 @@ said by are shown there, and joining a sound to a letter is the letter's, in
 one place. It rose to 5954 the day a list says which side of the language it
 goes into — a word list or an alphabet, chosen rather than guessed at per
 row — which is two buttons on the mapping screen and the several faces of it
-the fixture holds. A number
+the fixture holds, and to 5956 the day a forgotten password could actually be
+replaced: the code and the new one are a face of the door, and a face of the
+door is a screen. A number
 moving is only ever a question — what changed — and the answer has to be a
 change somebody made on purpose.
 

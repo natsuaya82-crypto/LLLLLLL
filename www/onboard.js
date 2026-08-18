@@ -100,6 +100,9 @@ function obBack(){
      signing in -- which is the door itself, so there is nothing behind it. */
   if(ob.step===0){
     if(OBM.mode==='code'){ obMailGo('up'); return; }
+    /* Out of the reset back to the address it was sent to, so a mistyped
+       address is one press from being retyped rather than two. */
+    if(OBM.mode==='reset'){ obMailGo('forgot'); return; }
     obMailGo('in'); return;
   }
   if(ob.step===1 && ob.mode==='borrow'){
@@ -246,11 +249,34 @@ function obMailCode(){
   OBM.busy=true; OBM.msg=''; render();
   netVerify(OBM.em, OBM.code, obIn, obNo);
 }
+/* Asking for a reset used to END here: the request went, the screen said
+   "sent", and there was nowhere to go with what arrived. The mail carried a
+   link, because that is what Supabase's Reset Password template says, and a
+   link has nowhere to land in a Capacitor app -- the same wall the signup
+   mail hit and was answered with six digits. So this goes on to the screen
+   that takes them. */
 function obMailForgot(){
   if(OBM.busy || !obMailAsk()) return;
   OBM.busy=true; OBM.msg=''; render();
   netRecover(OBM.em, function(){
-    OBM.busy=false; OBM.msg=t('net.sent'); render();
+    OBM.busy=false; OBM.code=''; OBM.pw=''; obMailGo('reset');
+  }, obNo);
+}
+/* The code, and the password to put in place of the forgotten one. Two calls
+   and one press: the code buys a session, and somebody holding a session may
+   change their own password. Nothing here asks what the old one was, which is
+   the point -- they forgot it.
+
+   Signed in at the end, and not sent back to the door to type the password
+   they have just this second chosen. */
+function obResetGo(){
+  if(OBM.busy) return;
+  if(!OBM.code){ OBM.msg=t('net.needcode'); render(); return; }
+  if(!OBM.pw){ OBM.msg=t('net.needpass'); render(); return; }
+  OBM.busy=true; OBM.msg=''; render();
+  var pw=OBM.pw;
+  netRecoverCode(OBM.em, OBM.code, function(){
+    netSetPass(pw, function(){ OBM.pw=''; OBM.code=''; obIn(); }, obNo);
   }, obNo);
 }
 function obMailField(id, k, type, auto, ph){
@@ -360,6 +386,21 @@ function obAskHTML(code){
       t(OBM.busy? 'ob.mail.wait' : (code? 'ob.mail.verify' : 'ob.mail.send'))+'</button>'+
     '</div>';
 }
+/* The reset, which is the code and the new password on one screen. Not two
+   screens: they arrive in the same minute out of the same mail, and a code
+   typed on one screen and a password on the next is a second place for the
+   code to expire in. */
+function obResetHTML(){
+  return '<div class="mid obform">'+
+    '<h2 class="obh">'+t('ob.mail.h.reset')+'</h2>'+
+    '<p class="obsub">'+esc(t('ob.mail.code.sub', OBM.em))+'</p>'+
+    obMailField('ob-code', 'code', 'text', 'one-time-code', 'ob.mail.code.ph')+
+    obMailField('ob-pw', 'pw', 'password', 'new-password', 'ob.mail.newpw.ph')+
+    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
+    '<button class="btn"' + DO('obResetGo') + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : 'ob.mail.reset')+'</button>'+
+    '</div>';
+}
 
 /* A way past the door without an account: the timeline is world-readable, so
    somebody who has not decided yet can read it without being asked for
@@ -370,6 +411,7 @@ function obSkip(){ SET.anon=true; save(); obGo(1); }
 function obDoorHTML(){
   var m=OBM.mode;
   if(m==='who') return obWhoHTML();
+  if(m==='reset') return obResetHTML();
   if(m==='code' || m==='forgot') return obAskHTML(m==='code');
   return obFormHTML(m==='up');
 }

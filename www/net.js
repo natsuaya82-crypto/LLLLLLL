@@ -161,6 +161,28 @@ function netVerify(email, code, ok, bad){
 function netRecover(email, ok, bad){
   netPost('/auth/v1/recover', {email:email}, null, ok, bad);
 }
+/* The six digits out of the reset mail, and then the new password.
+   Two calls and not one, because Supabase has no "here is a code and a new
+   password" endpoint: the code buys a SESSION, and a signed-in person is
+   allowed to change their own password. So the second call is the ordinary
+   one and needs no special case anywhere.
+
+   Same shape as the signup code and for the same reason: the default mail
+   carries a link, and there is nowhere for a link to land -- this is a
+   Capacitor app with no web page behind it, so tapping it opens nothing.
+   The Reset Password template says {{ .Token }} for that reason. */
+function netRecoverCode(email, code, ok, bad){
+  netPost('/auth/v1/verify', {type:'recovery', email:email, token:code}, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+}
+/* Changing the password of whoever is signed in. It is only ever reached
+   holding a session the code above bought a moment ago, so nothing here
+   knows or asks what the OLD password was -- which is the whole point: the
+   person forgot it. */
+function netSetPass(pass, ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netSend('PUT', '/auth/v1/user', {password:pass}, SESS.at, ok, bad);
+}
 /* A native sign-in hands back an identity token and Supabase gives a session
    for it. Apple and Google are the same call with a different word, and
    neither opens a browser: the app is never left.

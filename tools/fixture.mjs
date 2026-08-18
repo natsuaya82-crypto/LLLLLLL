@@ -190,6 +190,11 @@ export function obStates(){
                                          return vOb(); }],
     ['the six digits out of the mail', () => { ob.step = 0; OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
+    /* The code and the new password, which is where asking for a reset now
+       lands. It used to end at a line saying "sent". */
+    ['choosing a new password',  () => { ob.step = 0; OBM.mode = 'reset';
+                                         OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
+                                         OBM.busy = false; return vOb(); }],
     ['having forgotten the password',  () => { ob.step = 0; OBM.mode = 'forgot';
                                          return vOb(); }],
     /* Through the door and not yet anybody. Only a signed-in person reaches

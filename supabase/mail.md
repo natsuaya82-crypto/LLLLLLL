@@ -95,10 +95,25 @@ is on a server nobody here can read.
 
 `Authentication → Providers → Email → Confirm email` on.
 
-**Reset password is still a link.** `netRecover` asks for one and nothing in the
-app receives it, so that flow ends on the web. Leave the Reset template alone
-and point `URL Configuration → Site URL` at a page that exists. When somebody
-builds a reset screen, it becomes `{{ .Token }}` like the other one.
+**Reset password is a code too, now.** Same wall, same answer: the link in the
+default template opens nothing on the phone, so the app takes six digits and
+sets the new password itself.
+
+`Authentication → Emails → Templates → Reset Password`. Replace
+`{{ .ConfirmationURL }}` with `{{ .Token }}`:
+
+```html
+<p>Lingua のパスワード再設定コードです。</p>
+<p style="font-size:28px;letter-spacing:4px"><b>{{ .Token }}</b></p>
+<p>アプリに戻って入力してください。</p>
+```
+
+Until this is changed the mail carries a link and the screen behind it has
+nothing to be given — `netRecoverCode` in `www/net.js` posts the token to
+`/auth/v1/verify` with `type: recovery`, and `netSetPass` changes the password
+with the session that comes back. The template is the other half of that pair,
+and there is no check that can hold the two together, because one of them is on
+a server nobody here can read.
 
 ## Checking it
 

@@ -15,6 +15,37 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A forgotten password can actually be replaced
+
+Asking for a reset ENDED at a line saying 「送りました」. The mail arrived and
+carried a **link**, because that is what Supabase's Reset Password template
+says — and a link has nowhere to land: this is a Capacitor app with no web page
+behind it, so tapping it opens nothing. The signup mail hit the same wall and
+was answered with six digits; this one had not been.
+
+The door has a face for it now: the code and the new password on one screen,
+one press. Two calls behind it — `netRecoverCode()` verifies with
+`type:'recovery'`, which buys a **session**, and `netSetPass()` changes the
+password of whoever holds one. Nothing asks what the old password was, which is
+the point: they forgot it. It ends signed in rather than back at the door
+typing the password chosen a second ago.
+
+One screen and not two: the code and the password arrive in the same minute out
+of the same mail, and a code typed on one screen with a password on the next is
+a second place for the code to expire in.
+
+**The dashboard has to change with it.** Authentication → Emails → Reset
+Password must say `{{ .Token }}` instead of `{{ .ConfirmationURL }}`, exactly
+as the signup template already does. Until it does, the mail carries a link and
+the screen has nothing to be given. `supabase/mail.md` carries the text.
+
+`ob.mail.send` said "Send the link" in English. It sends a code.
+
+**Data.** The password is not held, stored or logged here, the same as
+everywhere else in `net.js`. What is kept is the token pair, in
+`lingua.sess`.
+
+
 ### schema.sql is one thing to run, and stays one thing
 
 `ERROR: 42501: must be owner of table objects`. Two statements in the file need
