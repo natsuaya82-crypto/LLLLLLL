@@ -1117,6 +1117,10 @@ function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
    is not here draws nothing -- a step whose picture has not been taken is a
    step with no picture rather than a broken image. */
 var KB_SHOTS={
+  /* Add New Keyboard, at the foot of iOS's own list of keyboards */
+  'kb-list.jpg': {t:87.0, h:10.2},
+  /* Lingua, under Third-Party Keyboards and below everything Apple suggests */
+  'kb-add.jpg':  {t:91.0, h:8.6},
   /* the Keyboards row, at the foot of Lingua's own page in Settings */
   'kb-app.jpg':  {t:88.6, h:11.0},
   /* Allow Full Access, one page further in */
@@ -1137,23 +1141,26 @@ function kbStepHTML(n, title, body){
 }
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
-    /* Three steps, each with its own picture under it. They were two, with
-       both photographs stacked under the second -- so the step that said
+    /* One step is one tap, and one tap is one photograph. It was two steps
+       with both photographs stacked under the second -- so the step reading
        "turn on Full Access" carried a picture of a DIFFERENT page, the one
        you have to go through to reach it, and neither picture said which of
        its rows was the one to press.
 
-       The button sits on the step it can reach and on no other. Step 1 is the
-       page Apple gives no public door to, so it carries the path and no
-       button; a path and a button printed together were directions to two
+       Step 1 carries the path and no button. It is the only one of the four
+       that has to be walked to, because Apple gives no public door to that
+       page -- a path and a button printed together were directions to two
        different screens. 「端末の設定を開くボタンあるのになんで設定→一般
-       みたいな順序で説明すんの？」 */
-    kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>')+
-    kbStepHTML(2, t('kb.step2'),
+       みたいな順序で説明すんの？」 The button is on step 3, which is the page
+       it actually lands on. */
+    kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
+      kbShot('kb-list.jpg'))+
+    kbStepHTML(2, t('kb.step2'), kbShot('kb-add.jpg'))+
+    kbStepHTML(3, t('kb.step3'),
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-app.jpg'))+
-    kbStepHTML(3, t('kb.step3'), kbShot('kb-full.jpg'))};
+    kbStepHTML(4, t('kb.step4'), kbShot('kb-full.jpg'))};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a

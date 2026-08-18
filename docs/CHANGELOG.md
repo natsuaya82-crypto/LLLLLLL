@@ -24,13 +24,21 @@ second — so the step reading "turn on Full Access" carried a picture of a
 different page, the one you have to go through to reach it, and neither
 picture said which of its rows was the one.
 
-Three steps now, each with its own picture, and the row to press **ringed on
-the photograph**. The mark travels with the photograph: `KB_SHOTS` is a table
-of file → where that row sits in that file, so a photograph taken again is one
+**One step is one tap, and one tap is one photograph.** Four steps now — tap
+Add New Keyboard, choose Lingua, tap Keyboards on Lingua's page, turn on Allow
+Full Access — each with its own picture, and the row to press **ringed on the
+photograph**. The mark travels with the photograph: `KB_SHOTS` is a table of
+file → where that row sits in that file, so a photograph taken again is one
 entry to change rather than a mark baked into a JPEG.
 
-New strings `kb.step3` in all ten languages; `kb.step2` now names the step the
-button actually lands on.
+Two new photographs, `www/img/kb-list.jpg` and `kb-add.jpg`. Step 1 is still
+the only one that carries a path rather than a button, because Apple gives no
+public door to that page; the button is on step 3, which is the page it
+actually lands on.
+
+New strings `kb.step3` and `kb.step4` in all ten languages; `kb.step1` and
+`kb.step1.d` name the tap and the path to it rather than the whole journey,
+and `kb.step2` is choosing Lingua.
 
 **Stored data.** None.
 
