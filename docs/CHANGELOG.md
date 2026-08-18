@@ -15,33 +15,30 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
-### The storage half of schema.sql is allowed to be refused
+### schema.sql is one thing to run, and stays one thing
 
-`ERROR: 42501: must be owner of table objects` — `storage.objects` and
-`storage.buckets` belong to `supabase_storage_admin`, and Supabase no longer
-grants that role to the one the SQL editor runs as. Every storage statement in
-the file came back refused, and because the error landed in the middle, the
-half of the file after it never ran either. A file whose first line says "run
-the whole thing, every time" cannot contain a statement that stops on a hosted
-project.
+`ERROR: 42501: must be owner of table objects`. Two statements in the file need
+to OWN `storage.objects` / `storage.buckets` — the `enable row level security`
+lines — and Supabase no longer grants that role to the one the SQL editor runs
+as. Landing in the middle, the error took the whole half of the file after it
+with it, so `notices()` and `account_delete()` were never made.
 
-The bucket, the two `enable row level security` lines and the three policies
-are inside `do $storage$ … exception when insufficient_privilege` now. On a
-plain PostgreSQL — `tools/rls-check.mjs` — the role owns those tables, every
-statement runs, and all 50 attempts by a second person are still tried. On a
-hosted project it prints a notice naming the dashboard and the rest of the file
-runs to the end.
+Those two are the only statements in the file that need ownership, and on a
+hosted project they are not needed at all: Supabase switches row level security
+on for storage before anybody runs anything. They are attempted inside
+`do $storage$ … exception when insufficient_privilege` and a refusal is
+swallowed with a notice. Everything else — the bucket and the three policies —
+is an ordinary statement that runs on both.
 
-**It fails closed.** A refusal leaves either no bucket or no policies, and RLS
-is on either way, so nothing can be read, written or deleted through it. What
-breaks is uploading, which is noticed in a minute. Nothing is left open.
-
-`supabase/setup.md` carries the dashboard route — the bucket, and the three
-policies with their expressions, and why there is no UPDATE policy.
+A first attempt at this put the bucket and the policies inside the block too,
+which made the answer two procedures: run the file, and if it says so, do the
+storage part again by hand in the dashboard. That is the thing this file exists
+not to be. 「なんで二個あんねん一本化しろ」 One file, one run, on a hosted
+project and on the plain PostgreSQL `tools/rls-check.mjs` stands up — where the
+role owns those tables, the two lines run, and all 50 attempts by a second
+person are tried as before.
 
 **Data.** Nothing stored changes; this is the shape of one file.
-
-
 ### A list says which side of the language it goes into
 
 **OWNER DECISION.** 「文字に入れるか単語に入れるかきめさせたら？」 → 選んだ方だけ

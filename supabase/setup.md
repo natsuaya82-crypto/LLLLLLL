@@ -59,50 +59,14 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/claude/save/supabase
 | Storage | `post-media` があり、**Public** になっている |
 | Database → Functions | `notices` と `account_delete` と `is_member` |
 
-### Storage だけは通らないことがある
+### エラーが出たら
 
-`storage.objects` と `storage.buckets` の持ち主は `supabase_storage_admin` で、
-SQL Editor が動いている役割ではありません。以前は `postgres` にその役割が渡されて
-いましたが、いまは渡されていないので、
+そのままこちらに貼ってください。直します。
 
-```
-ERROR: 42501: must be owner of table objects
-```
-
-になります。`schema.sql` はこの部分だけを、失敗してよいブロックに入れてあります
-（`do $storage$ ... exception when insufficient_privilege`）。断られたら止まらずに
-NOTICE を出して先へ進むので、**ファイルの残りは全部通ります**。
-
-閉じる方に倒れます。断られた場合はバケットが無いかポリシーが無いかのどちらかで、
-RLS はどちらにせよ有効なので、読むことも書くことも消すこともできません。開いたまま
-にはなりません。困るのはアップロードができないことだけで、それはすぐ分かります。
-
-**NOTICE が出たら、ダッシュボードで作ってください。**
-
-1. **Storage → New bucket** — 名前 `post-media`、**Public bucket をオン**、Save。
-2. **Storage → Policies → `objects` → New policy → For full customization**。
-   3つ作ります。バケットは全部 `post-media` です。
-
-| 名前 | 操作 | 式 |
-|---|---|---|
-| `media_read` | SELECT | `bucket_id = 'post-media'` |
-| `media_make` | INSERT | `bucket_id = 'post-media' and name like auth.uid()::text \|\| '/%'` |
-| `media_drop` | DELETE | `bucket_id = 'post-media' and name like auth.uid()::text \|\| '/%'` |
-
-UPDATE のポリシーは**作らないでください**。写真は書き換えるものではなく、別の写真は
-別のパスです。上書きができると、人の投稿が本人の知らないうちに変わります。
-
-`is_member()` は `schema.sql` が作った関数なので、式にそのまま書けます
-（`is_member() and bucket_id = 'post-media' and ...`）。ダッシュボードの画面で
-書きにくければ上の式のままで構いません — ログインしていない相手は Supabase 側で
-既に弾かれます。
-
-**バケットを手で作るのはこの場合だけです。** SQL が通ったなら手で作らないで
-ください。名前や public の設定が食い違って、写真が表示されない原因になります。
-
-### ほかのエラー
-
-- `permission denied for schema storage` — そのまま貼ってください、こちらで直します。
+`schema.sql` の中で「持ち主でないと通らない」statement は2つだけで、それは
+`storage.objects` と `storage.buckets` の RLS 有効化です。Supabase は Storage の
+RLS を最初から有効にしているので、この2行はホストされたプロジェクトでは要りません。
+断られても止まらないように囲ってあり、NOTICE を出して先へ進みます。
 
 ---
 

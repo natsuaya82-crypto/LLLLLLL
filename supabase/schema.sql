@@ -366,70 +366,60 @@ create policy follow_drop on follow for delete using (is_member() and follower =
 -- The letters somebody drew on a photograph are INSIDE the jpeg before it ever
 -- gets here (tools/post-check counts the pixels). Nothing about that changes:
 -- what is uploaded is the baked picture.
--- WHOSE TABLES THESE ARE, and why this whole section is inside a block that
--- is allowed to fail.
+-- The bucket, and who may touch what is in it.
 --
--- `storage.objects` and `storage.buckets` belong to `supabase_storage_admin`,
--- not to the role the SQL editor runs as. Since Supabase stopped granting
--- that role to `postgres`, every statement below comes back as
+-- One thing to run. `storage.objects` belongs to `supabase_storage_admin` and
+-- not to the role the SQL editor runs as, so the two lines that need to OWN
+-- that table -- `enable row level security` -- come back as
 --
 --     ERROR: 42501: must be owner of table objects
 --
--- and the error lands in the middle of the file, so the half after it never
--- runs either. A file that says "run the whole thing, every time" cannot have
--- a statement in it that stops on a hosted project.
+-- and, landing in the middle of the file, took the whole half after them with
+-- them. They are the only two statements in this file that need ownership,
+-- and on a hosted project they are not needed at all: Supabase switches row
+-- level security on for storage itself, before anybody runs anything.
 --
--- So: it is attempted, and a refusal is caught and said out loud rather than
--- thrown. On a plain PostgreSQL -- tools/rls-check.mjs -- the role owns these
--- tables, every statement runs, and the 34 things the file says cannot be
--- done are still tried by a second person. On a hosted project it prints the
--- notice and the bucket and its three policies are made in the dashboard
--- instead: Storage -> New bucket, and Storage -> Policies. supabase/setup.md
--- has the clicks.
---
--- It fails CLOSED. If the block is refused, either the bucket does not exist
--- or it has no policies, and RLS is on either way -- so nothing can be read,
--- written or deleted. What breaks is uploading, which somebody notices in a
--- minute. Nothing is left open.
+-- So they are attempted and a refusal is swallowed. A plain PostgreSQL --
+-- tools/rls-check.mjs -- owns these tables, runs them, and is therefore
+-- testing the same thing a hosted project is already in. Everything else
+-- below is an ordinary statement that runs on both.
 do $storage$
 begin
-  insert into storage.buckets (id, name, public)
-  values ('post-media', 'post-media', true)
-  on conflict (id) do nothing;
-
   alter table storage.objects enable row level security;
-  -- And the list of buckets, which nothing in the app reads. Supabase
-  -- switches this on itself; saying so here means the file is true on its
-  -- own, and means a plain PostgreSQL running it ends up in the same place.
-  -- No policy follows, so it is closed -- which is what it should be.
+  -- And the list of buckets, which nothing in the app reads. No policy
+  -- follows, so it is closed -- which is what it should be.
   alter table storage.buckets enable row level security;
-
-  -- Anybody reads what is in this bucket, and only this bucket.
-  drop policy if exists media_read on storage.objects;
-  create policy media_read on storage.objects for select
-    using (bucket_id = 'post-media');
-  -- You write under your own uuid and nowhere else.
-  drop policy if exists media_make on storage.objects;
-  create policy media_make on storage.objects for insert with check (
-    is_member() and bucket_id = 'post-media'
-    and name like auth.uid()::text || '/%'
-  );
-  -- And you delete your own. Deleting a post deletes its pictures with it --
-  -- the row goes by cascade and the bytes go by this, from the phone, in the
-  -- same breath. Nothing here removes anybody's file on a schedule:
-  -- docs/DATA_SAFETY.md forbids automatic deletion and there is no job.
-  drop policy if exists media_drop on storage.objects;
-  create policy media_drop on storage.objects for delete using (
-    is_member() and bucket_id = 'post-media'
-    and name like auth.uid()::text || '/%'
-  );
-  -- No update policy. A picture is not edited; a different picture is a
-  -- different path, and an overwrite is how somebody else's post quietly
-  -- changes under them.
 exception when insufficient_privilege then
-  raise notice 'storage: this role does not own storage.objects, so the bucket and its policies were NOT made here. Make them in the dashboard -- supabase/setup.md. Everything else in this file ran.';
+  raise notice 'storage row level security is already on; this role does not own the table and does not need to.';
 end
 $storage$;
+
+insert into storage.buckets (id, name, public)
+values ('post-media', 'post-media', true)
+on conflict (id) do nothing;
+
+-- Anybody reads what is in this bucket, and only this bucket.
+drop policy if exists media_read on storage.objects;
+create policy media_read on storage.objects for select
+  using (bucket_id = 'post-media');
+-- You write under your own uuid and nowhere else.
+drop policy if exists media_make on storage.objects;
+create policy media_make on storage.objects for insert with check (
+  is_member() and bucket_id = 'post-media'
+  and name like auth.uid()::text || '/%'
+);
+-- And you delete your own. Deleting a post deletes its pictures with it --
+-- the row goes by cascade and the bytes go by this, from the phone, in the
+-- same breath. Nothing here removes anybody's file on a schedule:
+-- docs/DATA_SAFETY.md forbids automatic deletion and there is no job.
+drop policy if exists media_drop on storage.objects;
+create policy media_drop on storage.objects for delete using (
+  is_member() and bucket_id = 'post-media'
+  and name like auth.uid()::text || '/%'
+);
+-- No update policy. A picture is not edited; a different picture is a
+-- different path, and an overwrite is how somebody else's post quietly
+-- changes under them.
 
 -- ---------------------------------------------------------------------------
 -- What happened to you
