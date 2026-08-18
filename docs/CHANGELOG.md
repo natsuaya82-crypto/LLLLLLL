@@ -15,6 +15,55 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The first keyboard is the free QWERTY, and it cannot be edited
+
+「1つ目の無料のqwartyは編集できないようにしてくれ。plusから無料に戻った時に
+キーボードなくなるやろ」 — OWNER DECISION.
+
+Board 0 used to be a **copy** of the free QWERTY, written into `KB.kbs` the
+first time anything on the keyboard screen changed, and that copy was
+editable. Editing it is how the keyboard somebody types on disappears: the
+edited board 0 is what goes to the phone on Plus, and the day the plan lapses
+`kbOf()` answers `kbFixed()` again — a different keyboard, under the thumb of
+somebody who changed nothing.
+
+So board 0 is now the free QWERTY itself: `kbBoards()` puts `kbFree()` in
+front, storage holds only the boards the person **built**, and `kbEdit()`
+returns null for board 0 — one place saying no, which every mutator asks
+rather than thirty places each remembering to. Coming back down to free now
+changes nothing at all.
+
+**What changes on screen.** On Plus, board 0 shows the same face the free plan
+gets: the keyboard with nothing to press, no layer rail, no height slider, no
+key sheet, and no Delete behind the ⋯. What stays is the row of keyboards, `+`
+and Apply — choosing it is the one thing anybody does to it. `KB_MAX` still
+means three keyboards in total, so two can be built rather than three.
+
+**Stored data.** `lingua.<id>.kb` no longer holds the free QWERTY at index 0,
+and carries `v:2` to say the change has been made.
+
+**Migration — `migrateKbFree()`, and it copies.** The old array's first entry
+is looked at rather than assumed:
+
+- still the free QWERTY (`kbSameLay` against `kbFixed()`) → it is regenerable
+  and board 0 **is** it, so the redundant copy comes out. Nothing is lost.
+- edited → it is a keyboard somebody made. It **stays**, as an ordinary board,
+  and `KB.at` moves by one with it, or the keyboard on the phone would
+  silently become its neighbour.
+
+Runs from `boot.js` (both on launch and after a restore) and from
+`langOpen()`. `v:2` is what stops it running a second time and taking the
+person's own first board out as though it were the copy.
+
+**Tested.** `npm test` green. `backup-check` now asks `kbStored()` rather than
+`kbBoards()` — what came out of the FILE is what was built; `kbBoards()` is
+what the screen shows, which puts the free QWERTY in front and answers nothing
+at all on the free plan. `tools/fixture.mjs` gained a face for board 0 on a
+paid plan, and its three editor faces now build a board first, because opening
+a key of board 0 is now correctly nothing. Buttons 5956 → 5938.
+
+**Not tested.** Nothing on a device.
+
 ### A word is what the bar offers, in the letters it was written in
 
 「単語は必要でしょ。アルファベットじゃなくて自作文字が欲しい。順序は単語ファースト」

@@ -17,6 +17,7 @@ bkRestore(function(put){
   if(!put) return;
   migratePh(); migrateMn(); migrateLetters(); migrateMarks();
   migrateSndName(); migrateSnd(); migratePosts(); migratePostInk(); migrateSp();
+  migrateKbFree();
   sndStart(); ltStart(); installScriptFont();
   render();
 });
@@ -38,6 +39,8 @@ migratePostInk();
 migrateSp();
 /* and what the language is for, off the phone and into the language */
 migrateWorld();
+/* and the free QWERTY out of the keyboard list, keeping an edited one */
+migrateKbFree();
 /* and a language that still has none gets a set to start from */
 sndStart();
 /* and a free language gets the twenty-eight slots it is allowed */

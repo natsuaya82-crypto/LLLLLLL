@@ -155,7 +155,7 @@ function langOpen(id){
   if(!LANGS[id] || id===langId) return;
   save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd(); saveKb(); saveWld();
   langId=id; langStore();
-  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart(); ltStart(); kbRead(); wldRead(); migratePostInk();
+  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart(); ltStart(); kbRead(); migrateKbFree(); wldRead(); migratePostInk();
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();

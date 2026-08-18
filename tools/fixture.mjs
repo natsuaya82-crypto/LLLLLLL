@@ -514,25 +514,45 @@ export function halfDone(){
        Neither is a route -- they are forms, so nothing reaches them by
        walking. Every one of them is on the paid plan, because the editor is: the free
        keyboard is a QWERTY built from the letters every time it is shown and
-       there is nothing on it to open. */
-    ['a key of the keyboard, opened', () => { SET.plan = 'plus'; kbLay = 0; kbPick(0, 0);
-                                              const h = FORM.html; KB = null;
+       there is nothing on it to open.
+
+       And every one of them is on a BUILT keyboard rather than on board 0.
+       Board 0 is the free QWERTY, it is not in storage, and kbEdit() refuses
+       it -- so opening one of its keys gives an empty sheet, which is the
+       whole point of it and would render nothing here. kbAdd() makes board 1
+       and leaves kbShow on it. */
+    ['a key of the keyboard, opened', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                              kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
+                                              const h = FORM.html; KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
-    ['a key that switches layers', () => { SET.plan = 'plus'; kbLay = 0; kbSetKind(0, 0, 'lay');
-                                           const h = FORM.html; KB = null;
+    ['a key that switches layers', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                           kbAdd('qwerty'); kbLay = 0; kbSetKind(0, 0, 'lay');
+                                           const h = FORM.html; KB = null; kbShow = 0;
                                            SET.plan = 'free'; return h; }],
-    ['the alphabet, for one slot of a key', () => { SET.plan = 'plus'; kbLay = 0; kbSlot(0, 0, -1);
-                                                    const h = FORM.html; KB = null;
+    ['the alphabet, for one slot of a key', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                                    kbAdd('qwerty'); kbLay = 0; kbSlot(0, 0, -1);
+                                                    const h = FORM.html; KB = null; kbShow = 0;
                                                     kbSlotFor = null;
                                                     SET.plan = 'free'; return h; }],
     /* A keyboard with more than one layer: the rail that switches between
        them only exists then -- and so does the rest of the editor: the way
        to add a row, to add a layer, and to put the whole thing back. */
-    ['a keyboard of two layers', () => { SET.plan = 'plus'; kbAddLay(); const h = vKb();
-                                         KB = null; kbLay = 0;
+    ['a keyboard of two layers', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                         kbAdd('qwerty'); kbAddLay(); const h = vKb();
+                                         KB = null; kbShow = 0; kbLay = 0;
                                          SET.plan = 'free'; return h; }],
+    /* Board 0 on the PAID screen, which is the free QWERTY with no editor on
+       it -- the same keyboard, the same face, on both plans. It is a screen
+       of its own and not the free branch of vKb(): the row of keyboards, the
+       `+`, the ⋯ and Apply are all above it, and none of them exists on
+       free. 「1つ目の無料のqwartyは編集できないようにしてくれ」 */
+    ['the free QWERTY, on a plan that can build others', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('tap'); kbShow = 0; KB.at = 1;
+        const h = vKb();
+        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     /* A language holding more than one keyboard, which is where the row of
        them, the Apply button and the way to delete one all live. Every one of
        the five patterns is built across these three faces rather than

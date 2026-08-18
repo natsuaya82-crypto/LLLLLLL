@@ -153,7 +153,7 @@ const R = await pg.evaluate(() => {
   bkTake(file);
   langStore(); langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
   const back = { words: WORDS.length, letters: LETTERS.length, known: !!LANGS[id] };
-  /* Asked of kbBoards() rather than of a field, and the field is the point:
+  /* Asked of kbStored() rather than of a field, and the field is the point:
      what was written into the file above is the shape the keyboard had when a
      language held exactly one -- `{lay:[...]}` -- and it holds three now. So
      this is two claims in one line. The keyboard comes back, AND a file
@@ -162,8 +162,11 @@ const R = await pg.evaluate(() => {
 
      kbOf() would be the wrong thing to ask: on the free plan it answers with
      kbFixed(), which is built from the letters and always has rows, so it
-     would come back true over a language that restored no keyboard at all. */
-  if (!(kbBoards().length && kbBoards()[0].lay && kbBoards()[0].lay.length))
+     would come back true over a language that restored no keyboard at all.
+     kbBoards() would be wrong the other way: it is what the SCREEN shows, so
+     it puts the free QWERTY in front and answers nothing at all on the free
+     plan. What came out of the file is what was built, which is kbStored(). */
+  if (!(kbStored().length && kbStored()[0].lay && kbStored()[0].lay.length))
     fails.push('the keyboard did not come back. It is built in the app and it ' +
                'is the language\'s; a backup without it is a backup of most of ' +
                'somebody\'s language.');
@@ -179,8 +182,8 @@ const R = await pg.evaluate(() => {
   const three = JSON.stringify(bkPack());
   KB = null; saveKb();
   bkNoSet(0); bkTake(three); kbRead();
-  if (kbBoards().length !== 3)
-    fails.push('three keyboards went into the file and ' + kbBoards().length +
+  if (kbStored().length !== 3)
+    fails.push('three keyboards went into the file and ' + kbStored().length +
                ' came back');
   else if ((KB.at || 0) !== 2)
     fails.push('the keyboards came back but the applied one did not: ' +

@@ -60,6 +60,42 @@ function kbBoardsOf(k){
   return null;
 }
 kbRead();
+/* Two layouts, the same or not. JSON, because both sides are built by the
+   same functions out of the same key objects -- so a copy nobody touched is
+   character for character what kbFixed() makes today, and anything else is a
+   difference somebody made on purpose. */
+function kbSameLay(a, b){
+  try{ return JSON.stringify(a)===JSON.stringify(b); }catch(e){ return false; }
+}
+/* ---- the free QWERTY comes out of storage ------------------------------
+   Board 0 used to be a COPY of the free QWERTY, written into KB.kbs the
+   first time anything on this screen was changed, and that copy was
+   editable. It is neither now: kbBoards() puts kbFree() in front and storage
+   holds only what somebody built.
+
+   So the copy has to leave the array, and the one thing that must not happen
+   is that an EDITED board 0 leaves with it. Two cases, told apart by looking
+   rather than assumed:
+
+     still the free QWERTY   regenerable, and board 0 is now exactly that, so
+                             the copy is redundant. It comes out and nothing
+                             is lost.
+     edited                  a keyboard somebody made. It stays, as an
+                             ordinary board, and every index after it moves
+                             by one -- KB.at included, or the keyboard on the
+                             phone silently becomes its neighbour.
+
+   `v` says this has run. Without it the next launch would run it again and
+   take the person's own first board out of the array as though it were the
+   copy. */
+function migrateKbFree(){
+  if(!KB || (parseInt(KB.v, 10)||0)>=2) return;
+  var kbs=KB.kbs||[], at=parseInt(KB.at, 10)||0;
+  if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)) kbs.shift();
+  else if(kbs.length) at=at+1;
+  KB.kbs=kbs; KB.at=at; KB.v=2;
+  saveKb();
+}
 function saveKb(){ bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
 
 /* The four directions a finger can leave a key by, in the order they are
@@ -105,6 +141,7 @@ function kbHOf(h){
 function kbH(){ return kbHOf(kbBoard().h); }
 function kbSetH(v){
   var b=kbEdit();
+  if(!b) return;
   b.h=kbHOf(v);
   saveKb();
   /* The keyboard is one custom property, so the slider moves it without the
@@ -302,12 +339,12 @@ function kbHasFlick(){
    the one under somebody's thumb away from them mid-sentence. */
 function kbAdd(pat){
   if(KB_PATS.indexOf(pat)<0) return;
-  /* Starting from nothing stored still keeps the first one: it is the
-     keyboard on the phone, and the new one is the SECOND. */
-  if(!kbStored().length) KB={kbs:[kbFree()], at:0};
-  if(KB.kbs.length>=KB_MAX){ toast(t('kb.full', KB_MAX)); return; }
+  /* Storage holds only the ones the person built. The free QWERTY is board 0
+     and is not among them, so the first one made here is the SECOND board. */
+  if(!KB) KB={kbs:[], at:0};
+  if(kbBoards().length>=KB_MAX){ toast(t('kb.full', KB_MAX)); return; }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
-  kbShow=KB.kbs.length-1; kbLay=0; kbSel=null;
+  kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   saveKb();
   /* And onto it. This is pressed on the sheet that offers the five patterns,
      so render() alone redrew the sheet -- somebody chose a keyboard and was
@@ -325,8 +362,12 @@ function kbGo(){
 /* Which one goes to the phone. The only thing on this screen that changes
    what somebody types with. */
 function kbApply(i){
-  if(!kbBoards().length) return;
-  KB.at=kbClamp(i, KB.kbs.length);
+  var bs=kbBoards();
+  if(!bs.length) return;
+  /* KB is null until something is built, and board 0 is appliable before
+     then -- it is the keyboard already on the phone. */
+  if(!KB) KB={kbs:[], at:0};
+  KB.at=kbClamp(i, bs.length);
   saveKb(); render();
 }
 function kbGoBoard(i){
@@ -338,10 +379,14 @@ function kbGoBoard(i){
    the default while the screen said three. */
 function kbDrop(i){
   var b=kbBoards();
-  if(b.length<2) return;
+  if(!b.length) return;
   i=kbClamp(i, b.length);
+  /* Board 0 is not one of these. There is no "never the last one" test any
+     more, because it is always there and there is always one to apply. */
+  if(kbIsFree(i)) return;
   if(!confirm(t('kb.rm.q'))) return;
-  b.splice(i, 1);
+  KB.kbs.splice(i-1, 1);
+  b=kbBoards();
   KB.at=kbClamp(KB.at>i? KB.at-1 : KB.at, b.length);
   kbShow=kbClamp(kbShow>=b.length? b.length-1 : kbShow, b.length);
   kbLay=0; kbSel=null;
@@ -477,9 +522,10 @@ function kbFixed(){
   rows.push(bot);
   return {lay:[{rows:rows}]};
 }
-/* What is actually on the disk. Nothing else asks this: the screen, the
-   count and the editor all want kbBoards(), which is this plus the one
-   everybody already has. */
+/* The keyboards the person BUILT, which is what is on the disk. The free
+   QWERTY is not among them and never was written there. Nothing else asks
+   this: the screen, the count and the editor all want kbBoards(), which is
+   this with that one in front. */
 function kbStored(){ return (KB && KB.kbs)? KB.kbs : []; }
 /* The keyboard somebody already had, as a board. kbFixed() is the free
    plan's QWERTY wearing their drawn letters, built from LETTERS every time
@@ -494,16 +540,26 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    nowhere on the screen said that keyboard existed. It did: kbOf() has
    answered kbFixed() all along. What was missing was it being ON the list.
 
-   Not written to storage. A board appears here from the moment the plan
-   opens the chapter, and it is written the first time somebody changes
-   something -- kbEdit(), which is where owning it begins. A screen that
-   writes on being looked at is a screen that changes the language by being
-   visited. */
+   The free QWERTY is ALWAYS the first of them, and it is not in storage --
+   kbFree() rebuilds it from kbFixed() every time it is asked for, so it
+   cannot go stale and cannot be edited into something else.
+
+   It used to be a copy written into KB.kbs the first time anybody changed
+   anything, and that copy was editable. Editing it is how the keyboard
+   somebody types on disappears: the edited board 0 is what is applied on
+   Plus, and the day the plan lapses kbOf() answers kbFixed() again -- a
+   different keyboard, under the thumb of somebody who changed nothing.
+   「1つ目の無料のqwartyは編集できないようにしてくれ。plusから無料に戻った時に
+   キーボードなくなるやろ」
+
+   So board 0 is the one thing on this screen that is the same on both plans,
+   and coming back down to free changes nothing at all. */
 function kbBoards(){
-  var s=kbStored();
-  if(s.length) return s;
-  return can('kb')? [kbFree()] : [];
+  if(!can('kb')) return [];
+  return [kbFree()].concat(kbStored());
 }
+/* Board 0 and no other. Everything that writes asks this first. */
+function kbIsFree(i){ return (parseInt(i, 10)||0)===0; }
 function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 /* THE ONE ON THE PHONE. share.js reads this and nothing else, so what this
    answers is what somebody types with.
@@ -549,11 +605,15 @@ function kbLayer(){ var b=kbBoard(); return b.lay[Math.min(kbLay, b.lay.length-1
    It returns the board being SHOWN, because that is the one every mutator
    below is about. */
 function kbEdit(){
-  /* And what it starts from is what was on the phone a moment ago, for the
-     same reason: the first edit must not move thirty keys. */
-  if(!kbStored().length) KB={kbs:[kbFree()], at:0};
-  kbShow=kbClamp(kbShow, KB.kbs.length);
-  return KB.kbs[kbShow];
+  /* Nothing on board 0. It is the free QWERTY, it belongs to both plans, and
+     the whole of why it is not stored is that it may not be changed. Every
+     mutator below asks here and stops on null -- one place saying no, rather
+     than thirty places each remembering to. */
+  if(kbIsFree(kbShow)) return null;
+  if(!KB) KB={kbs:[], at:0};
+  kbShow=kbClamp(kbShow, kbBoards().length);
+  if(kbIsFree(kbShow)) return null;
+  return KB.kbs[kbShow-1] || null;
 }
 function kbAt(ri, ki){
   var rows=kbLayer().rows;
@@ -765,6 +825,20 @@ function vKb(){
      already on the phone, so the first thing on this screen is always a
      keyboard rather than a chooser for one.
      「しかもキーボード保存もないし、保存先から選べるとこもないし」 */
+  /* Board 0 is the free QWERTY and has no editor -- the same face the free
+     plan gets, on the paid screen, because it is the same keyboard. What
+     goes with the editor goes with it: the row of faces (it has one), the
+     height (it is the height free types at), and the row of keys as
+     buttons. What stays is the row of keyboards above it and Apply, because
+     choosing it is the one thing anybody does to it. */
+  var bs=kbBoards(), now=kbClamp(kbShow, bs.length);
+  if(kbIsFree(now))
+    return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
+      kbBarHTML()+
+      kbHTML(null, true)+
+      kbSysHTML()+
+      kbApplyHTML()+
+      '</div></div>';
   return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
     kbBarHTML()+
     kbLaysHTML()+
@@ -964,7 +1038,7 @@ function kbUp(e){
    alphabet is told its order once, on the way up. */
 function kbReadRows(){
   var g=document.getElementById('kb'), lay=kbEdit(), rows=[], i, j, r, ks, row, k;
-  if(!g) return;
+  if(!g || !lay) return;
   for(i=0;i<g.children.length;i++){
     r=g.children[i]; ks=r.children; row=[];
     for(j=0;j<ks.length;j++){
@@ -1027,40 +1101,59 @@ function setKbRom(){ SET.kbrom=!kbRomOn(); save(); render(); }
 
    Not `.sec` for the heading: that class upper-cases, and an upper-cased
    iPhone is a word Apple does not spell. */
-/* A photograph of the screen a step lands on. A picture of iOS's own settings
-   is the one kind of instruction that cannot go stale in translation and
-   cannot be read wrong -- somebody looks at it and looks at their phone.
+/* A photograph of the screen a step lands on, with the row to press ringed
+   ON it. A picture of iOS's own settings is the one kind of instruction that
+   cannot go stale in translation and cannot be read wrong -- somebody looks
+   at it and looks at their phone.
 
-   KB_SHOTS is the list of files that are actually in www/img/, with their
-   extension, so a name that is not on it draws nothing -- a step whose
-   picture has not been taken is a step with no picture rather than a broken
-   image. Adding one is a file and a word here.
+   A picture on its own is not an instruction, and both of these were in a
+   pile under one step: a page of seven rows with nothing saying which of the
+   seven, then a second page nothing said you had to be on.
+   「なんで写真も渡したのに並べるだけなの？」
 
-   Both of these belong to the second step. Pressing the button lands on
-   Lingua's own page in Settings, and Full Access is one tap further in, under
-   Keyboards -- which is a sentence, and is two photographs. */
-var KB_SHOTS=['kb-app.jpg', 'kb-full.jpg'];
+   So the mark travels WITH the photograph rather than living somewhere else:
+   `t` and `h` are where that row sits in that file, as a percentage of its
+   height, and a photograph taken again is one entry to change. A name that
+   is not here draws nothing -- a step whose picture has not been taken is a
+   step with no picture rather than a broken image. */
+var KB_SHOTS={
+  /* the Keyboards row, at the foot of Lingua's own page in Settings */
+  'kb-app.jpg':  {t:88.6, h:11.0},
+  /* Allow Full Access, one page further in */
+  'kb-full.jpg': {t:50.2, h:18.4}
+};
 function kbShot(name){
-  if(KB_SHOTS.indexOf(name)<0) return '';
-  return '<img class="kbshot" src="img/'+name+'" alt="">';
+  if(!Object.prototype.hasOwnProperty.call(KB_SHOTS, name)) return '';
+  var m=KB_SHOTS[name];
+  return '<div class="kbshot"><img src="img/'+name+'" alt="">'+
+    '<span class="kbring" style="top:'+m.t+'%;height:'+m.h+'%"></span></div>';
+}
+/* One step: its number, what to do, and the one thing that gets it done --
+   the path, the button, or the photograph. Written once because the three
+   steps differ only in that last part. */
+function kbStepHTML(n, title, body){
+  return '<div class="kbstep"><div class="kbstepn">'+n+'</div>'+
+    '<div class="kbstept">'+esc(title)+'</div>'+body+'</div>';
 }
 HELP.kb=function(){
   return {t:t('kb.sys.h'), h:
-    /* Two steps, and the button sits on the one it can reach. It used to sit
-       under a heading with a path to Settings printed beside it, which is a
-       button and a set of directions to the same place -- except that they
-       were directions to a DIFFERENT place, the one Apple gives no public
-       door to. 「端末の設定を開くボタンあるのになんで設定→一般みたいな順序で
-       説明すんの？」 So: the step with no button carries the path, the step
-       with a button carries the button, and neither carries the other. */
-    '<div class="kbstep"><div class="kbstepn">1</div>'+
-      '<div class="kbstept">'+esc(t('kb.step1'))+'</div>'+
-      '<div class="mini">'+t('kb.step1.d')+'</div></div>'+
-    '<div class="kbstep"><div class="kbstepn">2</div>'+
-      '<div class="kbstept">'+esc(t('kb.step2'))+'</div>'+
+    /* Three steps, each with its own picture under it. They were two, with
+       both photographs stacked under the second -- so the step that said
+       "turn on Full Access" carried a picture of a DIFFERENT page, the one
+       you have to go through to reach it, and neither picture said which of
+       its rows was the one to press.
+
+       The button sits on the step it can reach and on no other. Step 1 is the
+       page Apple gives no public door to, so it carries the path and no
+       button; a path and a button printed together were directions to two
+       different screens. 「端末の設定を開くボタンあるのになんで設定→一般
+       みたいな順序で説明すんの？」 */
+    kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>')+
+    kbStepHTML(2, t('kb.step2'),
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
-      kbShot('kb-app.jpg')+kbShot('kb-full.jpg')+'</div>'};
+      kbShot('kb-app.jpg'))+
+    kbStepHTML(3, t('kb.step3'), kbShot('kb-full.jpg'))};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a
@@ -1082,7 +1175,9 @@ function kbSysHTML(){
 function kbMore(){
   var bs=kbBoards(), now=kbClamp(kbShow, bs.length);
   openForm('kbmore', t('kb.more'),
-    (bs.length>1
+    /* Not board 0. It is the free QWERTY, it is not in storage, and there is
+       nothing there to delete. */
+    (!kbIsFree(now)
       ? '<button class="set"' + DO('kbDrop', [now]) + '>'+
         '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
       : '')+
@@ -1109,11 +1204,13 @@ function kbSettings(){
 }
 function kbGoLay(i){ kbLay=i; render(); }
 function kbAddRow(){
-  kbEdit(); kbLayer().rows.push([kbKey('lt', '')]);
+  if(!kbEdit()) return;
+  kbLayer().rows.push([kbKey('lt', '')]);
   saveKb(); render();
 }
 function kbAddLay(){
   var b=kbEdit();
+  if(!b) return;
   b.lay.push({rows:[[kbKey('lt', '')]]});
   kbLay=b.lay.length-1;
   saveKb(); render();
@@ -1132,6 +1229,7 @@ function kbAddLay(){
    the face is gone. */
 function kbDropLay(i){
   var b=kbEdit(), j, k, r, key, n;
+  if(!b) return;
   if(b.lay.length<2) return;
   i=kbClamp(i, b.lay.length);
   if(!confirm(t('kb.lay.rm.q'))) return;
@@ -1156,6 +1254,10 @@ function kbReset(){
 /* One key, opened. What it does, how wide it is, what each corner holds, and
    where it sits in its row. */
 function kbPick(ri, ki){
+  /* The free QWERTY has no editor, so it has no key sheet either. Its keys
+     are drawn as plain spans and nothing on the screen opens this -- but a
+     route can be come back to, and `form:kbkey:0:0` is a route. */
+  if(kbIsFree(kbShow)) return;
   kbSel={r:ri, k:ki};
   openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
 }
@@ -1272,7 +1374,7 @@ function kbLtHTML(){
 function kbTake(lid){
   var s=kbSlotFor;
   if(!s) return;
-  kbEdit();
+  if(!kbEdit()) return;
   var key=kbAt(s.r, s.k);
   if(!key) return;
   if(s.d<0) key.v=lid; else key.f[s.d]=lid;
@@ -1281,7 +1383,7 @@ function kbTake(lid){
   kbPick(s.r, s.k);
 }
 function kbSetKind(ri, ki, kind){
-  kbEdit();
+  if(!kbEdit()) return;
   var key=kbAt(ri, ki); if(!key) return;
   key.k=kind;
   if(kind!=='lt') key.f=['','','',''];
@@ -1290,17 +1392,17 @@ function kbSetKind(ri, ki, kind){
   saveKb(); kbPick(ri, ki);
 }
 function kbSetLay(ri, ki, i){
-  kbEdit();
+  if(!kbEdit()) return;
   var key=kbAt(ri, ki); if(!key) return;
   key.v=String(i); saveKb(); kbPick(ri, ki);
 }
 function kbSetW(ri, ki, w){
-  kbEdit();
+  if(!kbEdit()) return;
   var key=kbAt(ri, ki); if(!key) return;
   key.w=w; saveKb(); kbPick(ri, ki);
 }
 function kbAddKey(ri, ki){
-  kbEdit();
+  if(!kbEdit()) return;
   var rows=kbLayer().rows;
   if(!rows[ri]) return;
   rows[ri].splice(ki+1, 0, kbKey('lt', ''));
@@ -1308,7 +1410,7 @@ function kbAddKey(ri, ki){
 }
 /* A row with nothing left in it is not a row. */
 function kbDelKey(ri, ki){
-  kbEdit();
+  if(!kbEdit()) return;
   var rows=kbLayer().rows;
   if(!rows[ri]) return;
   rows[ri].splice(ki, 1);
