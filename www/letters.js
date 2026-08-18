@@ -750,8 +750,12 @@ function spType(text){
    grammar stage asks for -- and the third differs only in holding sounds
    rather than letters, so it builds its own. These two were the same line
    twice. */
-function spTypeField(id, into, sp){
-  return lnField(id, t('f.spelling'), IN(into), spWord(sp||[]));
+function spTypeField(id, into, sp, cls){
+  /* No placeholder. The box said つづり inside itself with a heading
+     saying the same thing directly above it, which is one fact written twice
+     and the second copy sitting where the answer goes.
+     「四角のなかにつづりとか読みとか書くの消して」 */
+  return lnField(id, '', IN(into), spWord(sp||[]), cls);
 }
 function spWord(sp){
   var out='', i, l;

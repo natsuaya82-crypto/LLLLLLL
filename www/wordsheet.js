@@ -196,7 +196,7 @@ function spOdd(st){
    a word. */
 /* The same as the new-word sheet's: typed on free, pressed on the paid plan,
    and the row of letters under it either way. */
-function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[]); }
+function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[], 'whin'); }
 function wdSetLn(v){
   wEdit.sp=spType(v);
   wdSync();
@@ -204,25 +204,17 @@ function wdSetLn(v){
   var r=document.getElementById('wd-rd');
   if(r) r.textContent=phIpa(wEdit.seq);
 }
-/* What the typed word reads, which on free is the only thing the row of
-   tiles was still saying. */
-function wdReadHTML(){
-  return '<div class="pvbox" style="margin-top:8px"><span class="pvn">'+t('f.reading')+'</span>'+
-    '<span class="pvk" id="wd-rd">'+esc(phIpa(wEdit.seq))+'</span></div>';
-}
+/* The row of tiles: the word as its letters, one press to the sound that
+   letter has in this word. Paid only, and only once something is typed --
+   an empty row is a control for a thing that does not exist yet.
+
+   No reading under it any more. It said 読み and then the IPA, which is
+   what the head of the sheet already says directly under the field: the
+   same value, twice, four lines apart. */
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
-  /* Nothing typed is nothing to show. The row of tiles was drawn empty --
-     a box with a backspace in it and no word -- which is a control for a
-     thing that does not exist yet. */
-  if(!sp.length) return wdReadHTML();
-  return spRowHTML(sp, 'spell', 'wdBack', '')+
-    /* No second play. This one and the one at the head of the sheet were both
-       sayPh(wEdit.seq) -- the same sound, twice, and this copy sat inside the
-       block about which letters spell the word, which is not what a sound is
-       for. */
-    '<div class="pvbox" style="margin-top:8px"><span class="pvn">'+t('f.reading')+'</span>'+
-    '<span class="pvk">'+esc(phIpa(wEdit.seq))+'</span></div>';
+  if(!sp.length) return '';
+  return spRowHTML(sp, 'spell', 'wdBack', '');
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }
@@ -232,7 +224,7 @@ function wdMnsHTML(){
       '<button class="mnx"' + DO('wdDelMn', [i]) + ' aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
   }).join('');
   return '<div class="mnlist">'+rows+'</div>'+
-    '<div class="mnadd"><input id="wd-mn" placeholder="'+esc(t('word.mn.ph'))+'" '+
+    '<div class="mnadd"><input id="wd-mn" aria-label="'+esc(t('word.means'))+'" '+
       '' + KD('wdAddMn') + '>'+
     '<button class="btn ghost"' + DO('wdAddMn') + '>'+t('word.mn.add')+'</button></div>';
 }
@@ -531,14 +523,23 @@ function wdSetEty(v){ wEdit.ety=v; }
    picture, and is added rather than saved. Everything else is one screen. */
 function wdFormHTML(){
   var seq=wEdit.seq, mk=!!addW;
-  return '<div class="whd"><span class="whw">'+esc(seq.join(''))+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) + '>'+
-      ICON_PLAY+t('f.listen')+'</button>'+
+  /* The field IS the head of the sheet. It used to sit four rows down under
+     a heading, with the word repeated above it as text you could not touch,
+     so writing a word meant reading it at the top and typing it in the
+     middle. 「再生の横から入力できるようにしろ」
+
+     The play button is the icon and nothing else. It said the word for
+     "play" beside a triangle, in a row where every other control is a shape.
+     「再生って日本語で書くのやめろ」 The name is still there, on the button,
+     for anybody not looking at it. */
+  return '<div class="whd">'+wdTypeHTML()+
+      '<button class="play"' + DO('sayPh', [seq]) + ' aria-label="'+
+        esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
       /* the one way out of the app: this word as a picture, in the letters
          it is written in, for somewhere that is not Lingua */
       (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_CARD+'</button>')+'</div>'+
-    '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
+    '<div class="wsub" id="wd-rd">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2">'+esc(phCut(seq).map(function(p){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
 
@@ -557,8 +558,7 @@ function wdFormHTML(){
        paid plan sees the word as its letters, and pressing one opens that
        letter's sound in this word -- which is the only thing on this screen
        the keyboard cannot do. */
-    '<div class="sec">'+t('word.sounds')+'</div>'+
-    wdTypeHTML()+(can('snd')? wdSeqHTML() : wdReadHTML())+
+    (can('snd')? wdSeqHTML() : '')+
     /* Only where a word is being coined. Asking for a spelling to be made up
        for a word that already has one is asking to throw it away. */
     (mk? '<div id="sugwrap">'+sugHTML()+'</div>' : '')+
@@ -641,8 +641,8 @@ function wdViewHTML(){
   var w=findWord(openHw); if(!w) return viewGone();
   var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
   return '<div class="whd"><span class="whw'+(myFontOn()?' sfont':'')+'">'+esc(wOut(w.hw))+'</span>'+
-      '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) + '>'+
-      ICON_PLAY+t('f.listen')+'</button>'+
+      '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) +
+        ' aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+

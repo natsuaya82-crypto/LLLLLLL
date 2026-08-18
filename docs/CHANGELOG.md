@@ -15,6 +15,34 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A word is typed at the head of its own sheet
+
+**The field is the head of the sheet, beside the play button.** 「再生の横から
+入力できるようにしろ」 It sat four rows down, under a heading, with the word
+repeated above it as text nothing could touch — so writing a word meant reading
+it at the top and typing it in the middle.
+
+**The play button is the icon and nothing else.** 「再生って日本語で書くのやめろ」
+It said the word for "play" beside a triangle, in a row where every other
+control is a shape. The name is on the button as `aria-label` for anybody not
+looking at it. Both faces of the sheet: the one a word is written on and the
+one it is read on.
+
+**Nothing is written inside the boxes.** 「四角のなかにつづりとか読みとか書くの
+消して」 The spelling box said つづり under a heading saying the same thing, and
+the meaning box said 意味を追加 under 意味.
+
+**The 読み row is gone.** It said 読み and then the IPA, which is the value the
+head of the sheet already shows directly under the field — the same thing twice,
+four lines apart. `wdReadHTML()` is deleted and `wdSeqHTML()` (the paid plan's
+row of letters) no longer ends with a copy of it.
+
+The 音 heading goes with the field it was over. `word.sounds` and `word.mn.ph`
+are removed from all ten languages; no screen asked for either any more.
+
+**Data.** Nothing stored changes — this is one screen's markup.
+
+
 ### A roman letter reads what the IPA says it reads
 
 **`IPA_WAS` in `www/ipa.js` is the roman letter → IPA symbol table, and five of
