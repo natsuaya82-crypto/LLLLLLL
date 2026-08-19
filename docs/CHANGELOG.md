@@ -15,6 +15,34 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Blocked means nothing of them is seen — OWNER DECISION
+
+「ブロックは何も見えなくなるでいいんじゃない」
+
+The feed already asked the server to leave them out, which is the only way a
+block is a block. This is the other half — a post of theirs already on this
+phone: `postAll()` drops them, so the timeline, a profile and a thread all
+lose them at once; a thread reached by an old route answers "gone" rather than
+showing it; the notices drop them; and the search drops them on both sides, the
+person and what they wrote.
+
+Never your own posts: a handle can be your own on a phone whose account
+changed, and a block that hid your own writing would be the worst possible
+reading of it.
+
+**Stored data.** None new. **Tested.** `npm test` green, buttons 6241.
+
+### Publishing and downloading, decided — OWNER DECISION, not started
+
+The author decides what is public, per thing: the keyboard, the letters, the
+words. **Downloading a keyboard or an alphabet is free; downloading a
+dictionary is Plus.** Making and publishing stays Plus. A downloaded keyboard
+goes on its own shelf, up to three, beside the three somebody built. **A
+downloaded dictionary is never merged into your own language** — it is one you
+can read, and `FREE_LIMIT` counts your own words and nothing else.
+
+Written up in `docs/FEATURE_RULES.md` and `docs/FEATURES.md`. Nothing is built.
+
 ### Blocked means you see nothing of them — OWNER DECISION
 
 「ブロックは何も見えなくなるでいいんじゃない」
