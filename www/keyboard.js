@@ -372,7 +372,8 @@ function kbApply(i){
 }
 function kbGoBoard(i){
   kbShow=kbClamp(i, Math.max(1, kbBoards().length));
-  kbLay=0; kbSel=null; render();
+  kbLay=0; kbSel=null;
+  go('kb', String(kbShow));
 }
 /* A keyboard goes only when somebody says so, and never the last one: with
    none left there is nothing to apply, and the app would be quietly back to
@@ -395,10 +396,20 @@ function kbDrop(i){
      the keyboard was gone and the screen was still the sheet about it. */
   kbGo();
 }
+/* What a keyboard is called. Its own name if it has one, and otherwise the
+   ARRANGEMENT it was made from -- QWERTY, flick, tap -- which is a name that
+   says something. It was the number, which says which one is second and
+   nothing else. 「キーボード1,2,3とかの示し方ui変えてね」
+
+   The number is still the last resort, for a board from before patterns were
+   recorded. */
 function kbName(i){
-  var b=kbBoards();
+  var b=kbBoards(), x;
   if(!b.length) return String(i+1);
-  return b[kbClamp(i, b.length)].nm || String(i+1);
+  x=b[kbClamp(i, b.length)];
+  if(x.nm) return x.nm;
+  if(x.pat && KB_PATS.indexOf(x.pat)>=0) return t('kb.pat.'+x.pat);
+  return String(i+1);
 }
 
 /* ---- the keyboard the free plan gets ----------------------------------
@@ -801,6 +812,30 @@ function kbHTML(sel, ro){
    The keyboard, shown the size it will be, with every key pressable -- and
    pressing one opens what that key is rather than typing with it. There is
    no preview beside an editor, because the editor is the preview. */
+/* One keyboard, as a row on the list: the thing itself, shrunk, and the tick
+   if it is the one on the phone. Pressing it opens that keyboard.
+
+   A LIST and not a row of tabs above an editor. The tabs sat at the top of
+   the screen the editor was already filling, so the thing you were choosing
+   and the thing you were changing were both on the page at once and neither
+   had room. 「キーボード一覧→編集の形のほうがいい。上にあるとすんごい見にくい」 */
+function kbRowHTML(x, i, at){
+  return '<button class="kbrow"' + DO('kbGoBoard', [i]) + '>'+
+    '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
+    '<span class="kbrown">'+esc(kbName(i))+'</span>'+
+    (i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+
+    ICON_GO+'</button>';
+}
+function kbListHTML(){
+  var bs=kbBoards(), at=kbApplied(bs.length);
+  return '<div class="kblist">'+
+    bs.map(function(x, i){ return kbRowHTML(x, i, at); }).join('')+
+    (bs.length<KB_MAX
+      ? '<button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
+        '<span>'+esc(t('kb.new'))+'</span></button>'
+      : '')+
+    '</div>';
+}
 function vKb(){
   /* The free plan has a keyboard. It was shown a wall.
 
@@ -834,28 +869,40 @@ function vKb(){
      already on the phone, so the first thing on this screen is always a
      keyboard rather than a chooser for one.
      「しかもキーボード保存もないし、保存先から選べるとこもないし」 */
-  /* Board 0 is the free QWERTY and has no editor -- the same face the free
-     plan gets, on the paid screen, because it is the same keyboard. What
-     goes with the editor goes with it: the row of faces (it has one), the
-     height (it is the height free types at), and the row of keys as
-     buttons. What stays is the row of keyboards above it and Apply, because
-     choosing it is the one thing anybody does to it. */
-  var bs=kbBoards(), now=kbClamp(kbShow, bs.length);
-  if(kbIsFree(now))
+  /* The chapter is a LIST. One keyboard is a page of its own, reached by
+     pressing it -- so the screen you are choosing on and the screen you are
+     changing on are two screens. */
+  var bs=kbBoards(), a=here().a;
+  if(a===null || a===undefined || a==='')
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
-      kbBarHTML()+
-      kbHTML(null, true)+
+      kbListHTML()+
       kbSysHTML()+
+      '</div></div>';
+  var now=kbClamp(a, bs.length);
+  kbShow=now;
+  /* Board 0 is the free QWERTY and has no editor -- the same face the free
+     plan gets, on the paid screen, because it is the same keyboard. What goes
+     with the editor goes with it: the row of faces (it has one), the height
+     (it is the height free types at), and the row of keys as buttons. What
+     stays is Apply, because choosing it is the one thing anybody does to it. */
+  if(kbIsFree(now))
+    return '<div class="view">'+navTop(kbName(now), kbMoreQ())+'<div class="body">'+
+      kbHTML(null, true)+
       kbApplyHTML()+
       '</div></div>';
-  return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
-    kbBarHTML()+
+  return '<div class="view">'+navTop(kbName(now), kbMoreQ())+'<div class="body">'+
     kbLaysHTML()+
     kbHTML(kbSel)+
     kbHBarHTML()+
-    kbSysHTML()+
     kbApplyHTML()+
     '</div></div>';
+}
+/* The ⋯ in the bar of one keyboard's page: deleting it, and starting the
+   chapter over. It was at the end of the row of tabs, which is a row that no
+   longer exists. */
+function kbMoreQ(){
+  return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
+    ICON_DOTS+'</button>';
 }
 /* How tall the keys are, directly under them, as the one thing a size ought
    to be: something you drag while looking at what it does. No number beside
@@ -954,34 +1001,6 @@ function kbShotHTML(lay){
     out+='</span>';
   }
   return '<span class="kbshot2">'+out+'</span>';
-}
-/* Which keyboard you are looking at, and the way to make another. The one
-   that is APPLIED wears the mark, not the one you are looking at -- they are
-   different questions and this row is where somebody finds that out. */
-function kbBarHTML(){
-  var bs=kbBoards(), at=kbApplied(bs.length), now=kbClamp(kbShow, bs.length);
-  return '<div class="kbbar">'+
-    bs.map(function(x, i){
-      /* The keyboard, drawn, and not the number 1. A row of round patches
-         reading 1 2 3 says which one is second and nothing about which one is
-         the flick board -- and what somebody is choosing here is a shape.
-         「マルパッチ禁止だからキーボード1,2,3とかの示し方ui変えてね」
-
-         kbMiniHTML() already draws one, out of its own real layout, for the
-         five patterns on the sheet that makes another. The same picture,
-         because it is the same question asked twice. */
-      return '<button class="kbtab'+(i===now? ' on':'')+'"' + DO('kbGoBoard', [i]) +
-        ' aria-label="'+esc(kbName(i))+'">'+
-        kbShotHTML(x.lay)+
-        (i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+'</button>';
-    }).join('')+
-    (bs.length<KB_MAX
-      ? '<button class="kbtab add"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
-        ICON_ADD+'</button>'
-      : '')+
-    '<button class="kbtab more"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
-      ICON_DOTS+'</button>'+
-    '</div>';
 }
 /* Apply, and it is the only control on this screen that changes what somebody
    types with. On the one already applied it says so instead, because a button

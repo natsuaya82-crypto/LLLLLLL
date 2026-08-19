@@ -186,6 +186,33 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-19
+- Area: How a screen is built — four shapes that are banned
+- Decision: 「君あるあるの丸パッチ無限横並び、同じページに情報量詰め込み、ページ
+  遷移型にせず下からひょいって出すやつ、無駄に説明をするやつ。この辺禁止で ux を
+  意識して作ってほしい」
+  1. **No endless row of round chips.** A row of pills you scroll sideways is
+     a list pretending to be a control. If there are more than a few, it is a
+     LIST.
+  2. **One screen, one job.** Do not stack the thing being chosen and the
+     thing being changed on one page. Choosing is a screen; changing is the
+     screen you arrive at.
+  3. **Go to a page; do not slide something up from the bottom.** A thing you
+     can act on is a place you went to, with a way back. A sheet that appears
+     over the screen you were on is not one.
+  4. **No explanatory text** — already its own decision, above.
+- Reason: the keyboard chapter had all four at once: a row of numbered chips
+  above the editor they chose between, on the same screen, with a line of
+  prose under it. 「上にあるとすんごい見にくい」
+- Affected features: every screen. Done so far: the keyboard chapter is a list
+  and one keyboard is a page.
+- Affected data: none.
+- Affected docs: `CLAUDE.md`
+- Implementation status: the rule is in force from now. **The screens that
+  still break it have not been swept** — this decision is not a licence to go
+  and rewrite them all in one commit; each is its own task.
+
+### Decision
+- Date: 2026-08-19
 - Area: Publishing and downloading — a keyboard, an alphabet, a dictionary
 - Decision:
   1. **The author decides.** Public or private, per thing, for all three: the

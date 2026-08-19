@@ -52,6 +52,15 @@ it both need an account now. The MAKING side is the other half of the same
 sentence and needs none: a language is made on this phone, with or without one.
 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
+**Shape.** Four things are banned outright: a row of round chips you scroll
+sideways (if there are more than a few, it is a **list**); the thing being
+chosen and the thing being changed on one screen (choosing is a screen,
+changing is the screen you arrive at); a sheet that slides up over where you
+were instead of a page you went to; and explaining. The keyboard chapter had
+all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、ページ遷移型に
+せず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
+→ `docs/FEATURE_RULES.md`
+
 **Explaining.** No explanatory text in the app. A screen shows what it is and
 what can be done on it; it does not explain itself, does not say what a paid
 plan would give, does not tell somebody what to tap, and does not describe what

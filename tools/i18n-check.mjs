@@ -389,6 +389,7 @@ const R = await pg.evaluate(() => {
     r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
     r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
     r === 'ltset' ? [null].concat(LT_KINDS) :
+    r === 'kb' ? [null].concat(kbBoards().map((x, i) => String(i))) :
     r === 'thread' ? [null].concat(postAll().map(x => x.id)) :
     r === 'photo' ? [null].concat(postAll().filter(x => postPics(x).length).map(x => x.id + ':0')) :
     [null];

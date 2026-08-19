@@ -15,6 +15,38 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Four shapes are banned, and the keyboard chapter is the first to lose them
+— OWNER DECISION
+
+「丸パッチ無限横並び、同じページに情報量詰め込み、ページ遷移型にせず下からひょい
+って出すやつ、無駄に説明をするやつ。この辺禁止で ux を意識して作ってほしい」
+
+1. No row of round chips you scroll sideways — if there are more than a few,
+   it is a **list**.
+2. The thing being chosen and the thing being changed are **two screens**.
+3. Go to a page; do not slide something up over where you were.
+4. No explanatory text (already its own decision).
+
+The keyboard chapter had all four at once, so it is the first to lose them.
+**It is a list**: one row per keyboard, each drawn as itself, the tick on the
+one that is on the phone, and pressing it opens **that keyboard's own page** —
+`kb` is the list and `kb:<n>` is one of them. The ⋯ moved to the page it is
+about. `kbBarHTML()` is gone.
+
+And a keyboard is **called** something now: its own name, or the arrangement
+it was made from — QWERTY, flick, tap. The number is the last resort, for a
+board from before patterns were recorded.
+
+Every preview is the same box: the rows divide its height rather than each
+being a fixed number of pixels, so three rows and seven rows are the same
+rectangle. 「幅が違うの気になる」
+
+**The other screens have not been swept.** The rule is in force from now;
+each screen that still breaks it is its own task, not a licence to rewrite
+them all in one commit.
+
+**Stored data.** None.
+
 ### A keyboard is chosen by its shape
 
 「マルパッチ禁止だからキーボード1,2,3とかの示し方ui変えてね」

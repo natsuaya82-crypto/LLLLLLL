@@ -595,7 +595,9 @@ export function halfDone(){
        them only exists then -- and so does the rest of the editor: the way
        to add a row, to add a layer, and to put the whole thing back. */
     ['a keyboard of two layers', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
-                                         kbAdd('qwerty'); kbAddLay(); const h = vKb();
+                                         kbAdd('qwerty'); kbAddLay();
+                                         window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                         const h = vKb();
                                          KB = null; kbShow = 0; kbLay = 0;
                                          SET.plan = 'free'; return h; }],
     /* Board 0 on the PAID screen, which is the free QWERTY with no editor on
@@ -606,6 +608,7 @@ export function halfDone(){
     ['the free QWERTY, on a plan that can build others', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 0; KB.at = 1;
+        window.route='kb'; NAV=[{r:'kb', a:'0'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     /* A language holding more than one keyboard, which is where the row of
@@ -624,12 +627,14 @@ export function halfDone(){
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('flick'); kbAdd('chart');
         KB.at = 0; kbShow = 2;
+        window.route='kb'; NAV=[{r:'kb', a:'2'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the keyboard that is already applied', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap');
         KB.at = 1; kbShow = 1;
+        window.route='kb'; NAV=[{r:'kb', a:'1'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     /* The phonology, which is Plus's -- the walk runs on free, so without

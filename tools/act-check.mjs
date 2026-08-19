@@ -222,6 +222,13 @@ const R = await pg.evaluate(() => {
   });
   SET.plan = 'free';
   walkArg('gram', vGram, stAll().map(p => p.id), 'vGram');
+  /* The keyboard chapter is a list and each keyboard is a page. Board 0 is
+     the free QWERTY and has no editor; the others have one, and the two are
+     different screens. */
+  SET.plan = 'plus';
+  KB = { kbs: [{ nm: '', pat: 'qwerty', lay: kbFixed().lay }], at: 0, v: 2 };
+  walkArg('kb', vKb, ['0', '1'], 'vKb');
+  KB = null; kbShow = 0; SET.plan = 'free';
   /* The letters chapter is three lists now and they share no buttons:
      only the digits page carries the base, only the alphabet counts the
      ones with no reading. */
