@@ -69,7 +69,7 @@ function vSet(){
         '<span class="sl">'+t('theme.system')+'</span>'+
         '<span class="sv"><span class="sw'+(SET.theme==='system'?' on':'')+'">'+
         '<span class="swk"></span></span></span></button>'+
-      '<div class="note">'+t('set.theme.note')+'</div>';
+      '';
   } else if(id==='read'){
     /* Down the page, one to a row, ticked -- not three words sharing the
        width of the screen. 「読みの表示も横に切り替えるやつじゃなくて縦に並ぶ
@@ -298,7 +298,6 @@ function vPlans(){
   return '<div class="view">'+
     navTop('')+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:16px">'+t('plans.intro')+'</div>'+
     /* Monthly or yearly, above both cards, because it is one choice about
        both of them and not a choice inside each. */
     '<div class="segs plseg">'+
@@ -318,7 +317,6 @@ function vPlans(){
       (on? '' : '<button class="btn ghost"' + DO('setPlan', ["free"]) + '>'+
         esc(t('plan.tofree'))+'</button>')+
     '</div>'+
-    '<div class="note" style="margin-top:14px">'+t('plans.note')+'</div>'+
     '</div></div>';
 }
 function setPlan(id){

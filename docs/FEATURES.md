@@ -62,6 +62,7 @@ Marked separately, because they are not the same question:
 | Feature | Status | Free | Paid | Data | Owner decision |
 |---|---|---|---|---|---|
 | Writing a post | shipped | yes | — | `lingua.posts`, ink frozen on write | decided |
+| One language, on every plan | shipped | yes | — | `lingua.langs` | decided — there is no way to make a second anywhere in the app, so it is not a price. `LANG_MAX` used to say so in `core.js` and fed a line of text on the language list; the line went with the ban on explaining things on a screen, and the constant went with it. Languages somebody else wrote are not counted: reading one is not making one |
 | Timeline, on this phone | shipped, **not device confirmed** | yes | — | `lingua.posts` | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needs none |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |

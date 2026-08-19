@@ -52,6 +52,14 @@ it both need an account now. The MAKING side is the other half of the same
 sentence and needs none: a language is made on this phone, with or without one.
 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
+**Explaining.** No explanatory text in the app. A screen shows what it is and
+what can be done on it; it does not explain itself, does not say what a paid
+plan would give, does not tell somebody what to tap, and does not describe what
+a setting means. An empty state, a count, a state, an error — none of those is
+an explanation. Where one is genuinely needed it goes behind the `?` in the
+bar, which is what the `?` is for. 「アプリ内に説明書くの禁止」
+→ `docs/FEATURE_RULES.md`
+
 **Tests.** A fix is not done until the check that holds it has been **watched
 failing** with the bug still in place. Saving, past data, plans, deletion,
 migration and sync all require a regression test. "Code confirmed" and "device

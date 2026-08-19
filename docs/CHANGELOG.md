@@ -15,6 +15,23 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### No explanatory text in the app — OWNER DECISION
+
+「お前もうアプリ内に説明書くの禁止な」
+
+Gone: `plans.intro`, `plans.note`, `set.theme.note`, `ws.kind.note`,
+`ab.cell`, `langs.more`, `kb.locked`. And `LANG_MAX`, whose only reader was
+one of them — the fact it carried is in `docs/FEATURES.md`.
+
+Not touched: empty states, counts, states, errors, and the `?` sheets.
+
+**One left in, and it needs settling.** `cap.lapse.d` is the line that says a
+dictionary dropping back to a hundred words has had **nothing deleted**.
+Taking it out leaves the app silently truncating a list with no word about the
+data, which `docs/DATA_SAFETY.md` is written against.
+
+**Stored data.** None.
+
 ### The plans screen says what the difference is
 
 「設定のプランはもっとちゃんと出そうよ。全部同じように並んでてどうやってうるんや」

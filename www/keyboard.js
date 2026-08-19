@@ -826,7 +826,6 @@ function vKb(){
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-      '<div class="note" style="margin-top:14px">'+t('kb.locked')+'</div>'+
       '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
         t('up.cta')+'</button>'+
       '</div></div>';

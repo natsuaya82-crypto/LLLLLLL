@@ -185,6 +185,30 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-19
+- Area: What may be written on a screen
+- Decision: **No explanatory text in the app.** A screen shows what it is and
+  what can be done on it. It does not explain itself, does not say what a
+  paid plan would give, does not tell somebody what to tap, and does not
+  describe what a setting means. Where an explanation is genuinely needed it
+  goes behind the `?` in the bar, which is what the `?` was added for.
+- Reason: 「お前もうアプリ内に説明書くの禁止な」, and before that 「その説明ちっく
+  な日本語やめて欲しい。小さい文字で書くやつ」「説明ちっくすぎて嫌だ」
+- Not covered by this: an EMPTY state ("nothing here yet"), a count, a state
+  ("only for an abugida"), an error, and the `?` sheets. None of those is the
+  screen explaining itself.
+- Affected features: every screen. Removed with the decision: `plans.intro`,
+  `plans.note`, `set.theme.note`, `ws.kind.note`, `ab.cell`, `langs.more`,
+  `kb.locked` — and `LANG_MAX`, whose only reader was one of them.
+- Affected data: none.
+- Affected docs: `CLAUDE.md`, `docs/FEATURES.md`
+- Implementation status: implemented. **`cap.lapse.d` is left in and is the
+  one thing to settle**: it is the line that says a dictionary dropping back
+  to a hundred words has had NOTHING deleted. Taking it out would leave the
+  app silently truncating a list with no word about the data, which
+  `docs/DATA_SAFETY.md` is written against. Reported rather than resolved.
+
+### Decision
 - Date: 2026-08-18
 - Area: Anything that is the server's — and the timeline first
 - Decision:

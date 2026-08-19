@@ -37,7 +37,6 @@ function vWsys(){
     (can('wsys')? '' :
       '<button class="capwarn" style="margin-top:10px"' + DO('goPlans') + '>'+t('ws.locked')+
         '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>')+
-    '<div class="note" style="margin-top:12px">'+t('ws.kind.note')+'</div>'+
     /* Which way it is written. Here rather than in the person's settings
        because it is the language's -- one language, one answer, and it goes
        in the backup with the rest of the language.
@@ -154,7 +153,7 @@ function vAbugida(){
                 '<canvas class="tc" data-r="'+esc(u)+'"></canvas>'+
                 '<span class="abu">'+esc(u)+'</span></button>';
             }).join('')+'</div>'+
-            '<div class="mini" style="margin-top:8px">'+t('ab.cell')+'</div>'
+            ''
           : '<div class="note">'+t('ab.nocons')+'</div>')
       : '<div class="note">'+t('ab.novow')+'</div>')+
     '</div></div>';
