@@ -798,7 +798,7 @@ function kbHTML(sel, ro){
      one, looking like the empty row it is about to be. It was a button at the
      foot of the screen. 「行を出す層を足すも使いづらすぎる」 */
   if(!ro)
-    out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRow') +
+    out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRowNew') +
       ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
   return '<div class="kb" id="kb" style="--kh:'+(KB_H*kbH()).toFixed(1)+'px">'+out+'</div>';
 }
@@ -897,14 +897,15 @@ function vKb(){
      (it is the height free types at), and the row of keys as buttons. What
      stays is Apply, because choosing it is the one thing anybody does to it. */
   if(kbIsFree(now))
-    return '<div class="view">'+navTop(kbName(now), kbMoreQ())+'<div class="body">'+
+    return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
       kbHTML(null, true)+
       kbApplyHTML()+
       '</div></div>';
-  return '<div class="view">'+navTop(kbName(now), kbMoreQ())+'<div class="body">'+
+  return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbLaysHTML()+
     kbHTML(kbSel)+
+    kbNewHTML()+
     kbHBarHTML()+
     kbApplyHTML()+
     '</div></div>';
@@ -1287,11 +1288,6 @@ function kbSettings(){
   p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
 }
 function kbGoLay(i){ kbLay=i; render(); }
-function kbAddRow(){
-  if(!kbEdit()) return;
-  kbLayer().rows.push([kbKey('lt', '')]);
-  saveKb(); render();
-}
 function kbAddLay(){
   var b=kbEdit();
   if(!b) return;
@@ -1342,6 +1338,8 @@ function kbPick(ri, ki){
      are drawn as plain spans and nothing on the screen opens this -- but a
      route can be come back to, and `form:kbkey:0:0` is a route. */
   if(kbIsFree(kbShow)) return;
+  /* A width is waiting to be placed, so this press is where it goes. */
+  if(kbNew1){ kbAddKey(ri, ki, kbNew1); return; }
   kbSel={r:ri, k:ki};
   openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
 }
@@ -1353,6 +1351,14 @@ function kbKeyHTML(ri, ki){
   var key=kbAt(ri, ki), i, out;
   if(!key) return '<div class="note">'+t('form.gone')+'</div>';
   out=(key.k==='lt'? kbEditHTML(ri, ki, key) : kbEditFnHTML(key))+
+    /* And the alphabet, HERE, when there is one slot to fill. Choosing which
+       letter goes on a key is what somebody is doing nearly every time they
+       open this, and it was three screens down: press the key, press the
+       middle square, then the letters. On a board that flicks the five slots
+       have to be chosen between first, so there it stays where it was.
+       「キーボード設定まじでやりにくい」 */
+    ((key.k==='lt' && !kbSlotsShown(key))
+      ? '<div class="kbltin">'+kbLtGrid(ri, ki, -1)+'</div>' : '')+
     '<div class="sec">'+t('kb.what')+'</div>'+
     '<div class="segs">'+
       '<button class="seg'+(key.k==='lt'?' on':'')+'"' + DO('kbSetKind', [ri, ki, "lt"]) + '>'+t('toc.letters')+'</button>'+
@@ -1375,9 +1381,6 @@ function kbKeyHTML(ri, ki){
        on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」 What
        is left is the thing a sheet is for -- what this key IS -- and the one
        thing a hold cannot do, which is make a key that is not there yet. */
-    '<div class="kbadd" style="margin-top:12px">'+
-      '<button class="btn ghost"' + DO('kbAddKey', [ri, ki]) + '>'+ICON_ADD+t('kb.key')+'</button>'+
-    '</div>'+
     '<button class="set" style="margin-top:12px;border-bottom:none"' + DO('kbDelKey', [ri, ki]) + '>'+
       '<span class="sl bad">'+t('kb.key.del')+'</span></button>';
   return out;
@@ -1414,7 +1417,7 @@ function kbEditHTML(ri, ki, key){
      built something they have not. A key that ALREADY holds a flick keeps
      its four whatever the rest of the board does -- it has one, so it is
      one. 「qwartyで追加してるのに行追加後にフリックになるのなに？」 */
-  var four=kbHasFlick() || !!(key.f && (key.f[0]||key.f[1]||key.f[2]||key.f[3]));
+  var four=kbSlotsShown(key);
   if(!four)
     return '<div class="kbedit fn">'+
       kbSlotBtn('kbec', key.v, ri, ki, -1, t('kb.on'))+'</div>';
@@ -1432,6 +1435,24 @@ function kbEditHTML(ri, ki, key){
 function kbEditFnHTML(key){
   return '<div class="kbedit fn"><span class="kbe kbec">'+kbFace(key)+'</span></div>';
 }
+/* ---- putting a key where you want it ----------------------------------
+   A width, chosen, and then the place it goes. It was: add a key (one, at the
+   end, one wide), then open it, then choose a width in a row of numbers --
+   three screens for one tile. 「1×1,1×2,1×3とかでいいんちゃう」
+
+   `kbNew1` is the width waiting to be placed, or 0. It is where you are
+   standing rather than anything the language has, so viewReset() drops it.
+   While it is set, pressing a key puts the new one after that key rather than
+   opening it -- one mode, one press to leave it. */
+var kbNew1=0;
+function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
+function kbNewHTML(){
+  return '<div class="kbnew">'+[1,2,3].map(function(w){
+    return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
+      ' aria-label="'+esc(t('kb.w'))+' '+w+'"><span class="kbnewb" style="flex:'+w+'"></span>'+
+      '</button>';
+  }).join('')+'</div>';
+}
 /* Which slot the alphabet is being opened for. */
 var kbSlotFor=null;
 function kbSlot(ri, ki, dir){
@@ -1442,29 +1463,47 @@ FORM_OPEN.kbslot=function(a){
   var p=String(a||'').split(':');
   kbSlot(parseInt(p[0],10)||0, parseInt(p[1],10)||0, parseInt(p[2],10));
 };
-function kbLtHTML(){
+/* Whether this key is drawn with its four corners, which is the question of
+   whether there is one slot to fill or five. Said once because two screens
+   ask it now -- kbEditHTML draws them and kbKeyHTML decides whether it can
+   put the alphabet underneath. */
+function kbSlotsShown(key){
+  return kbHasFlick() || !!(key && key.f && (key.f[0]||key.f[1]||key.f[2]||key.f[3]));
+}
+/* The alphabet, as a grid, for one slot. `dir` is -1 for the key itself and
+   0..3 for a corner -- the same numbering kbSlot() uses, because it is the
+   same slot. */
+function kbLtGrid(ri, ki, dir){
   var ls=ltOrder(ltOfKind('alpha'));
-  return '<button class="btn ghost" style="width:100%;margin-bottom:10px"' + DO('kbTake', [""]) + '>'+
-      t('kb.empty')+'</button>'+
+  return '<button class="btn ghost" style="width:100%;margin-bottom:10px"' +
+      DO('kbPut', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
     (ls.length
       ? '<div class="ltgrid">'+ls.map(function(l){
-          return '<button class="ltc"' + DO('kbTake', [l.id]) + ' aria-label="'+
+          return '<button class="ltc"' + DO('kbPut', [ri, ki, dir, l.id]) + ' aria-label="'+
             esc(ltName(l)||t('lt.reads.none'))+'">'+
             '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
             '<span class="ltcn">'+esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
         }).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>');
 }
-function kbTake(lid){
+function kbLtHTML(){
   var s=kbSlotFor;
-  if(!s) return;
+  if(!s) return '<div class="note">'+t('form.gone')+'</div>';
+  return kbLtGrid(s.r, s.k, s.d);
+}
+/* One letter into one slot, from either screen: the sheet that only holds the
+   alphabet, and the key's own screen where it sits under the key. kbTake()
+   was the first and read kbSlotFor to know where it was going; this is told,
+   because the key's screen knows and has no reason to leave a note first. */
+function kbPut(ri, ki, dir, lid){
   if(!kbEdit()) return;
-  var key=kbAt(s.r, s.k);
+  var key=kbAt(ri, ki);
   if(!key) return;
-  if(s.d<0) key.v=lid; else key.f[s.d]=lid;
+  if(dir<0) key.v=lid; else key.f[dir]=lid;
   saveKb();
-  back();
-  kbPick(s.r, s.k);
+  /* From the sheet, back to the key; from the key's own screen, stay on it. */
+  if(kbSlotFor){ kbSlotFor=null; back(); kbPick(ri, ki); return; }
+  kbPick(ri, ki);
 }
 function kbSetKind(ri, ki, kind){
   if(!kbEdit()) return;
@@ -1485,12 +1524,30 @@ function kbSetW(ri, ki, w){
   var key=kbAt(ri, ki); if(!key) return;
   key.w=w; saveKb(); kbPick(ri, ki);
 }
-function kbAddKey(ri, ki){
+function kbAddKey(ri, ki, w){
   if(!kbEdit()) return;
-  var rows=kbLayer().rows;
+  var rows=kbLayer().rows, k;
   if(!rows[ri]) return;
-  rows[ri].splice(ki+1, 0, kbKey('lt', ''));
-  saveKb(); back(); kbPick(ri, ki+1);
+  k=kbKey('lt', '');
+  if(w>1) k.w=w;
+  rows[ri].splice(ki+1, 0, k);
+  kbNew1=0;
+  saveKb();
+  /* Placed from the keyboard, the key is opened so the letter can go on it --
+     which is the next thing anybody does. Placed from the key's own sheet,
+     that sheet is closed first. */
+  if(here().r==='form') back();
+  kbPick(ri, ki+1);
+}
+/* The row that is not there yet. Pressing it with a width chosen puts that
+   key in a new row; pressing it with none adds the empty row it always did. */
+function kbAddRowNew(){
+  if(!kbEdit()) return;
+  var w=kbNew1, k=kbKey('lt', '');
+  if(w>1) k.w=w;
+  kbLayer().rows.push([k]);
+  kbNew1=0;
+  saveKb(); render();
 }
 /* A row with nothing left in it is not a row. */
 function kbDelKey(ri, ki){

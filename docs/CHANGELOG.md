@@ -15,6 +15,38 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Building a keyboard is choosing a letter and placing a tile
+
+「キーボード設定まじでやりにくい」「1×1,1×2,1×3とかでいいんちゃう」
+
+Two things, and both were three screens deep.
+
+**Choosing the letter.** Press a key → the key's sheet → press the middle
+square → the alphabet. That is the thing somebody does nearly every time they
+open this, and it was the longest path on the screen. **The alphabet is on the
+key's own sheet now**, first, under the key it is about. A board that flicks
+still shows its five slots first — there the slot has to be chosen before the
+letter, and that is a different question.
+
+**Placing a key.** Add a key (one, at the end, one wide) → open it → choose a
+width from a row of numbers `1 2 3 4`. **Three widths sit under the keyboard
+now**: press one, then press where it goes. The tile is the width — a row of
+numbers says how wide in a unit nobody has been told. Pressing the empty row
+at the foot puts it in a new row.
+
+`kbTake()` became `kbPut()` and is told where the letter goes instead of
+reading a note left by whoever opened the sheet. `kbAddRow()` and `kbAddKey()`
+are one path now — `kbAddKey` is no longer a name any screen says, so it is
+out of `act-map.js`.
+
+**Not done, and deliberately: height.** 2×1 needs a grid where a keyboard is
+rows, which is a change to how one is stored, how it is handed to the
+extension, and how the extension lays it out — plus a migration for every
+keyboard that exists. The one real case is a return key spanning two rows.
+「2の高さはめんどいから」
+
+**Stored data.** None new. `w` on a key has existed since keyboards did.
+
 ### A keyboard has a name
 
 「キーボード名変更できるようにして。キーボード1、キーボード2、キーボード3って名前

@@ -1256,6 +1256,18 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    keyboard's own page. It was a row of tabs above the editor, so the thing
    being chosen and the thing being changed were on the same screen and
    neither had room. 「キーボード一覧→編集の形のほうがいい」 */
+/* Three widths to put on the keyboard: press one, then press where it goes.
+   The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
+   nobody has been told. */
+.kbnew{display:flex;gap:8px;margin-top:12px;align-items:center}
+.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;border-radius:10px;
+        border:1px solid var(--line);background:none;display:flex;align-items:center}
+.kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
+.kbnewb{display:block;height:22px;border-radius:4px;background:var(--tx);opacity:.28}
+.kbnewt:nth-child(1) .kbnewb{width:22px}
+.kbnewt:nth-child(2) .kbnewb{width:48px}
+.kbnewt:nth-child(3) .kbnewb{width:74px}
+.kbnewt.on .kbnewb{background:var(--gold);opacity:.75}
 /* The keyboard's name, at the head of its own page: a line, like every other
    field. */
 .kbnm{font-size:1.05rem;margin-bottom:14px}
