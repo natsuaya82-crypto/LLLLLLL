@@ -185,6 +185,35 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-18
+- Area: Anything that is the server's — and the timeline first
+- Decision:
+  1. **Anything that needs the server is built assuming the server is
+     there.** A screen that half-works without one is not a step on the way
+     to being online; it is a bug that will be found by somebody using it,
+     not by a check.
+  2. The timeline is the server's. **Reading it and posting to it both
+     require an account.** The feed, the search and the notices show the
+     app's own door when there is no session, and the composer does not open
+     at all.
+  3. **The making side is untouched.** A language is made on this phone with
+     or without an account, and 「アカウントなしで続ける」 stays on the door
+     and keeps meaning exactly that. What it does not buy is a timeline.
+- Reason: 「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあん
+  の？」「だからなんで最初からオンライン前提で作れっつってんだろ、そういう中途
+  半端なバグを出すんだって何回言えばわかるの？」 — said more than once before
+  this, and never written down, which is why it kept being lost.
+- Affected features: the timeline, the search, the notices, the composer, the
+  onboarding door (it takes a `skip` argument now, so the same door can be
+  shown without "continue without an account")
+- Affected data: **none.** `SET.anon` still means what it meant. No post is
+  touched, moved or removed; posts already written while signed out stay
+  where they are and go up when there is a session, exactly as before.
+- Affected docs: `docs/FEATURES.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`
+- Implementation status: implemented, held by `post-check` (all three
+  assertions watched failing), **not device confirmed**
+
+### Decision
 - Date: 2026-08-14
 - Area: Money — the four subscription products, their ids and their prices
 - Decision:

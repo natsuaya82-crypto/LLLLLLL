@@ -24,6 +24,37 @@ function snsNone(){
 function snsNoneFo(){
   return '<div class="empty"><div class="eb">'+esc(t('sns.none.fo'))+'</div></div>';
 }
+/* ---- the timeline is online -------------------------------------------
+   A post has a writer. So the timeline is the one part of this app that has
+   to know who you are -- reading it and writing to it both -- and it did not
+   ask at all. The three tabs and the composer were built when there was no
+   server: a post was an object in localStorage, it had nowhere to go, and
+   nothing ever asked whose it was. The server has asked from the first day
+   -- every write in supabase/schema.sql goes through is_member() -- and the
+   app simply never did.
+
+   That is not a stage on the way to being online. It is a half-online state,
+   and a half-online state is a bug: signed out, somebody could write a post
+   that went nowhere, to a timeline nobody else was on.
+   「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあんの？」
+   「最初からオンライン前提で作れ」
+
+   The making side is untouched and stays untouched. A language is made on
+   this phone, with or without an account -- 「アカウントなしで続ける」 is a
+   line on the door and it means exactly that. What it does not buy is a
+   timeline.
+
+   One door and not a second one: obDoorHTML() is what the app opens with, so
+   signing in on day one and signing in from the feed are the same screen
+   rather than two that could drift. Without the skip line -- obSkip() means
+   "go and draw a letter", and somebody standing in the timeline has a
+   language already. */
+function snsLocked(r){
+  OBM.mode='in'; OBM.msg='';
+  return '<div class="view">'+rootTop(r)+
+    '<div class="body"><div class="ob center">'+obDoorHTML(false)+'</div></div>'+
+    '</div>';
+}
 /* ---- the two timelines -------------------------------------------------
    「ツイートはフォロー中とおススメみたいに分けたいよね」 One timeline is
    everything there is, which is the right screen for arriving and the wrong
@@ -82,6 +113,7 @@ function snsPull(){
   }, function(){ snsPulling=false; });
 }
 function vFeed(){
+  if(!netSignedIn()) return snsLocked('feed');
   snsPull();
   var list=snsList();
   /* A row takes one argument again. It used to take a second -- whether YOUR
@@ -302,6 +334,7 @@ function snsHitsHTML(){
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
 function vExplore(){
+  if(!netSignedIn()) return snsLocked('explore');
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);
@@ -356,6 +389,7 @@ function notRow(n){
     '</div>';
 }
 function vNotif(){
+  if(!netSignedIn()) return snsLocked('notif');
   notPull();
   var ns=NOTES_HAVE||[];
   return '<div class="view">'+rootTop('notif')+

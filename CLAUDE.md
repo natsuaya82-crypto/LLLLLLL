@@ -41,6 +41,17 @@ and "the plan is unknown" must never take the same branch as "this person has
 no data" — a failed check means fewer buttons, never fewer words.
 → `docs/PAID_FEATURES.md`
 
+**Online.** Anything that needs the server is built assuming the server is
+there. A screen that half-works without one is not a step on the way to being
+online — it is a bug, and it is found by somebody using the app rather than by
+a check, because nothing throws. The timeline is the worked example: the three
+sns tabs and the composer never asked who you were, while every write in
+`schema.sql` had gone through `is_member()` from the first day, so signed out
+you could write a post that went nowhere. Reading the timeline and posting to
+it both need an account now. The MAKING side is the other half of the same
+sentence and needs none: a language is made on this phone, with or without one.
+「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
+
 **Tests.** A fix is not done until the check that holds it has been **watched
 failing** with the bug still in place. Saving, past data, plans, deletion,
 migration and sync all require a regression test. "Code confirmed" and "device
@@ -795,7 +806,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 297`, `screens the mirror
 rendered: 350`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 5938` for the same reason — and it is what a
+`press` prints `buttons pressed: 5955` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -828,7 +839,11 @@ door is a screen. It fell to 5938 the day the first keyboard stopped being
 editable — board 0 is the free QWERTY itself now rather than a copy of it, so
 the paid screen opens on a keyboard with nothing to press: the editor's forty
 keys, its layer rail and its height went, and the fixture grew a face for that
-board and a keyboard under the two-layer one. A number
+board and a keyboard under the two-layer one. It rose to 5955 the day the
+timeline asked who you were: the feed, the search and the notices answer with
+the app's own door signed out, which is a screen the walk had never rendered,
+and the account room's signed-out face swapped places with its signed-in one
+because the fixture arrives with a session now. A number
 moving is only ever a question — what changed — and the answer has to be a
 change somebody made on purpose.
 

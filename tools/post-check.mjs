@@ -402,6 +402,36 @@ const R = await pg.evaluate(async () => {
     fails.push('an empty composer made a post. No line, no photograph, no '
              + 'voice -- there is nothing there to put on a timeline');
 
+  /* ---- and none of it happens without an account --------------------
+     A post has a writer. The three sns tabs and the composer were built when
+     there was no server -- a post was an object in localStorage with nowhere
+     to go -- so nothing ever asked whose it was, while every write in
+     supabase/schema.sql went through is_member() from the first day. Signed
+     out, somebody could write a post that went nowhere, to a timeline nobody
+     else was on. 「なんでログインしてないアカウントで投稿できんの？」
+
+     Driven rather than read: the session is taken away and the real vFeed()
+     and the real openPost() are asked what they do. A grep for netSignedIn()
+     would pass over a guard that runs after the composer is already open. */
+  const rows = (html) => (String(html).match(/class="post[ "]/g) || []).length;
+  const wasSess = SESS;
+  SESS = null;
+  const shut = vFeed();
+  if (rows(shut))
+    fails.push('the timeline draws ' + rows(shut) + ' posts with nobody signed ' +
+               'in. A post has a writer, and a timeline read by nobody is the ' +
+               'app being half-online');
+  if (shut.indexOf('obform') < 0 && shut.indexOf('obcrest') < 0)
+    fails.push('the timeline signed out is neither the timeline nor the door -- ' +
+               'it shows something else, which is a screen nobody can act on');
+  const wasForm = (typeof FORM !== 'undefined' && FORM) ? FORM.html : '';
+  openPost();
+  const nowForm = (typeof FORM !== 'undefined' && FORM) ? FORM.html : '';
+  if (nowForm !== wasForm)
+    fails.push('the composer opened with nobody signed in, so a post could be ' +
+               'written by nobody');
+  SESS = wasSess;
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            vof: (v && v.vo && v.vo.f) || '' };
@@ -431,4 +461,6 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      A photograph on its own and a voice on its own are both posts,\n' +
             '      neither draws an empty line, and an empty composer still is not.\n' +
             '      A reply carries the handle of whoever it answers, and goes on\n' +
-            '      saying so after that post has been deleted.');
+            '      saying so after that post has been deleted.\n' +
+            '      With nobody signed in the timeline is the door and nothing\n' +
+            '      else, and the composer will not open at all.');

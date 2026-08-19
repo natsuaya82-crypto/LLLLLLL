@@ -15,6 +15,50 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The timeline asks who you are — OWNER DECISION
+
+「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあんの？」
+「だからなんで最初からオンライン前提で作れっつってんだろ」
+
+**A post has a writer.** The three sns tabs and the composer were built when
+there was no server: a post was an object in `localStorage`, it had nowhere to
+go, and nothing ever asked whose it was. The server has asked from the first
+day — every write in `supabase/schema.sql` goes through `is_member()` — and
+only the app never did. Signed out you could write a post that went nowhere,
+to a timeline nobody else was on. Nothing threw, so nothing said.
+
+**What changes.** `vFeed()`, `vExplore()` and `vNotif()` answer with
+`snsLocked()` when there is no session — the app's **own door**, `obDoorHTML()`,
+so signing in on day one and signing in from the feed are one screen rather
+than two that could drift. Without "continue without an account": `obSkip()`
+means "go and draw a letter", and somebody standing in the timeline has a
+language already. `openPost()` refuses and sends you to the feed, because a
+form is a route and a route can be come back to.
+
+`obFormHTML()`/`obDoorHTML()` take a `skip` argument for that. `obIn()` no
+longer sends somebody who is already inside (`SET.done`) to onboarding step 1
+when there is no recorded place to go back to — the timeline's door is the
+screen itself, so signing in leaves you standing on the tab you were on, which
+now has a timeline in it.
+
+**The making side is untouched.** A language is made on this phone with or
+without an account. `SET.anon` still means exactly what it meant; the line on
+the door stays and its comment now says what it buys and what it does not.
+
+**Stored data.** None. No post is touched, moved or removed. Posts written
+while signed out stay where they are and go up when there is a session, the
+same as before — `postCatchUp()` is unchanged.
+
+**Tested.** `post-check` drives the real `vFeed()` and the real `openPost()`
+with the session taken away: no post rows, the door is there, the composer does
+not open. **All three watched failing with the guards removed** (6 posts drawn,
+the wrong screen, the composer open). `npm test` green; screens 477 → 480,
+buttons 5938 → 5955. `tools/fixture.mjs` signs in — the timeline does not exist
+without a session, so the DOOR is the face that now needs saying out loud, and
+the account room's two faces swapped which one is the entry.
+
+**Not tested.** Nothing on a device.
+
 ### The keyboard's setup steps point at the thing to press
 
 「なんで写真も渡したのに並べるだけなの？」

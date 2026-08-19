@@ -47,6 +47,13 @@ export function seed(){
   /* halfDone() below is sent to the page as source too, so it cannot reach
      this either. One maker, left where both can find it. */
   window.__fixPic = fixPic;
+  /* Signed in, because the timeline is online: the three sns tabs and the
+     composer answer with the door when there is no session, so a walk that
+     arrived signed out would render four screens and never see the timeline
+     at all. The DOOR is the face that needs saying out loud now, and it is
+     one entry in halfDone() rather than the state everything else is walked
+     in. */
+  SESS = { at:'a', rt:'r', uid:'u' };
   WORDS = [
     {hw:'kano', ph:['k','a','n','o'], mn:'mountain', mns:['mountain'], pos:'n', at:1,
      reg:'wr', tags:['land'], ety:'from the word for head', up:2},
@@ -211,11 +218,20 @@ export function obStates(){
    needs the same list act-check walks or the two drift apart silently. */
 export function halfDone(){
   return [
-    /* The account screen has two faces and the walk arrives with no session,
-       so the way back out -- signing out -- was on neither of them. */
-    ['the account, signed in', () => { SESS = { at:'a', rt:'r', uid:'u' };
-                                       window.route = 'set'; NAV = [{ r:'set', a:'acct' }];
-                                       const h = vSet(); SESS = null; return h; }],
+    /* The account screen has two faces and the walk arrives signed IN, so the
+       way in -- the three sign-in buttons and the mail door -- is on neither
+       of them without this. It used to be the other way round; seed() signs
+       in now, because the timeline does not exist without a session. */
+    ['the account, signed out', () => { const was = SESS; SESS = null;
+                                        window.route = 'set'; NAV = [{ r:'set', a:'acct' }];
+                                        const h = vSet(); SESS = was; return h; }],
+    /* And the timeline before there is anybody: one door, the app's own, with
+       "continue without an account" left off -- it means "go and draw a
+       letter", and somebody standing here has a language already.
+       「なんでログインしてないアカウントで投稿できんの？」 */
+    ['the timeline, signed out', () => { const was = SESS; SESS = null;
+                                         window.route = 'feed'; NAV = [{ r:'feed' }];
+                                         const h = vFeed(); SESS = was; return h; }],
     ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
                                       return FORM.html; }],
     /* A word, read. It is what opening one gives you now -- the editor is

@@ -144,6 +144,12 @@ function pwSidePaint(){
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
+  /* A post has a writer. Nothing on the timeline is reachable signed out --
+     snsLocked() is what the three tabs answer with -- but a form is a route
+     and a route can be come back to, so the composer says so itself rather
+     than trusting that nobody arrived here another way. The feed is where
+     the door is. */
+  if(!netSignedIn()){ go('feed'); return; }
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
     '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト

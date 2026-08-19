@@ -180,6 +180,13 @@ function obIn(){
       /* An account that already has a profile belongs to somebody who has
          been here. Sending them to step 1 is sending them to draw. */
       if(obReturn()) return;
+      /* And so is sending anybody who is already inside. obReturn() answers
+         for the doors that were opened from somewhere and remembered where
+         -- Settings does that. The timeline's door is the screen itself, so
+         there is nowhere recorded to go back to and nothing to go back to:
+         signing in leaves you standing on the tab you were already on, which
+         now has a timeline in it. */
+      if(SET.done){ render(); return; }
       obGo(1); return;
     }
     OBM.nm=ME.name; OBM.hd=ME.handle; render();
@@ -320,7 +327,11 @@ function obCrestHTML(){
    the bar across the foot offers instead of itself. On one screen all of
    that would be written twice in conditionals anyway, and the person would
    not be able to tell which of the two they were looking at. */
-function obFormHTML(up){
+/* `skip` is whether "continue without an account" belongs on this door at
+   all. True on the real one; false wherever the door is shown again after
+   SET.done, where obSkip() would be offering to go and draw a letter to
+   somebody who has a language already. */
+function obFormHTML(up, skip){
   return '<div class="mid obform">'+
     obCrestHTML()+
     obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
@@ -334,7 +345,7 @@ function obFormHTML(up){
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-         '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>')+
+         (skip? '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>' : ''))+
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
@@ -419,18 +430,24 @@ function obResetHTML(){
     '</div>';
 }
 
-/* A way past the door without an account: the timeline is world-readable, so
-   somebody who has not decided yet can read it without being asked for
-   anything. Making a language is where the question comes back, because a
-   language nobody can prove is theirs is a language nobody can get back. */
+/* A way past the door without an account, and what it is worth: the MAKING
+   side. A language is made on this phone and stays on it, which is what the
+   line under the two providers says.
+
+   What it is not worth is the timeline. That used to be the argument for
+   this line -- the timeline is world-readable, so come in and read it -- and
+   it was the app being half-online: a post has a writer, and somebody with
+   no account could write one that went nowhere. The three tabs ask for a
+   session now (snsLocked), and this line buys exactly what it says.
+   「なんでログインしてないアカウントで投稿できんの？」 */
 function obSkip(){ SET.anon=true; save(); obGo(1); }
 
-function obDoorHTML(){
+function obDoorHTML(skip){
   var m=OBM.mode;
   if(m==='who') return obWhoHTML();
   if(m==='reset') return obResetHTML();
   if(m==='code' || m==='forgot') return obAskHTML(m==='code');
-  return obFormHTML(m==='up');
+  return obFormHTML(m==='up', skip!==false);
 }
 
 /* ---- step 1, its name -------------------------------------------------
