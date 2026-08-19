@@ -19,8 +19,10 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `CHANGELOG.md` | what a person would notice, and every change to stored data |
 | `BACKLOG.md` | found and deliberately not done, and why |
 
-Everything below was checked against the repository on **2026-08-11**, not
-remembered. Where a claim can go stale, it says how to re-check it.
+Everything below was checked against the repository on **2026-08-11**, and §3
+and §5 again on **2026-08-19**, not remembered. Where a claim can go stale, it
+says how to re-check it — and §3 is the proof that it does: it went on saying
+the timeline was not on the server for a week after it was.
 
 ---
 
@@ -75,23 +77,30 @@ Pushing to `master` is the owner's call and is asked for each time.
 
 ## 3. What is NOT built, however much it looks like it is
 
-**The timeline is on the phone and nowhere else.** This is the one to know
-before doing anything with the SNS.
+**The timeline IS on the server now, and this section used to say the
+opposite.** It said so correctly on 2026-08-11 and went on saying it after the
+work was done, which is the exact failure §1 is about — a file that is trusted
+and is out of date is worse than no file. Re-check rather than believe:
 
-- `www/post.js` keeps every post in `localStorage` under `lingua.posts`.
-- The app talks to exactly two things on the server: `/auth/v1/*` and
-  `/rest/v1/profile`. That is the whole list — check it with
-  `grep -n "rest/v1\|auth/v1" www/*.js`.
-- `supabase/schema.sql` **does** have `post`, `quote`, `follow`, `publication`,
-  `language` and `prompt` tables, each with row level security written and held
-  by `npm run rls`. **Nothing in the app reads or writes any of them.** The
-  schema is ready and unused.
-- `vExplore` and `vNotif` in `www/sns.js` are `snsEmpty(...)` — a placeholder
-  screen with a line of text. The Explore and Notices tabs have no contents.
+```
+grep -n "rest/v1" www/net.js          # what the app actually asks the server for
+```
 
-So a post written on one phone cannot be seen on another, and there is no
-server-side feed to moderate, count, or operate. Putting posts on the server is
-work that has not been started, not work that has been done and turned off.
+Today that is `post`, `react`, `follow`, `profile` and the `notices` RPC.
+`netPush()` sends a post, `netFeed()` reads the two timelines, `netNotices()`
+reads the notices, and `postCatchUp()` sends whatever this phone has that the
+server has not. `localStorage` is still where a post is kept — the phone is the
+copy that survives a bad network — but it is no longer the only place one
+exists.
+
+**An account is required to read the timeline or post to it**, decided
+2026-08-18 and held by `post-check`. `vFeed`/`vExplore`/`vNotif` answer with the
+app's own door when there is no session. The MAKING side needs no account and
+that has not changed.
+
+Still unused in `supabase/schema.sql`: `quote`, `publication`, `language` and
+`prompt`. Each has row level security written and held by `npm run rls`, and
+nothing in the app touches any of them.
 
 **No StoreKit.** The plans screen exists and `SET.plan` can be set, but nothing
 charges anybody. `docs/apple.md`.
@@ -162,15 +171,12 @@ assuming a thing is waiting for you.
 
 ### Blocks shipping the free version
 
-1. **Posts are not on the server.** The largest single piece of unstarted work
-   in the repository. §3 has the shape of it: `post.js` writes `localStorage`,
-   `net.js` has no post call, `schema.sql` is ready and untouched. Reading and
-   writing `post` is the first half; `quote` and `follow` are the second.
-2. **Explore and Notices are empty screens.** `snsEmpty()` in `www/sns.js`.
-   They cannot be filled before 1.
-3. **The password reset mail does not arrive.** The code is right —
-   `netRecover()` calls `/auth/v1/recover`. The Auth template and the Redirect
-   URLs need checking in the Supabase dashboard, which is the owner's to do.
+1. ~~**Posts are not on the server.**~~ Done — `netPush`, `netFeed`,
+   `netNotices` and `postCatchUp`. `quote` and `publication` are still unused.
+2. ~~**Explore and Notices are empty screens.**~~ Done — both read the server.
+3. ~~**The password reset mail does not arrive.**~~ Done — the template is
+   `{{ .Token }}` (`supabase/mail.md`) and the app has a six-digit reset
+   screen, because a link has nowhere to land in a Capacitor app.
 4. **The two free ceilings are never explained in words.** A hundred words and
    three AI calls a day. `capBanner()` warns at twenty words left and nothing
    says either number before you meet it.
