@@ -102,6 +102,12 @@ Still unused in `supabase/schema.sql`: `quote`, `publication`, `language` and
 `prompt`. Each has row level security written and held by `npm run rls`, and
 nothing in the app touches any of them.
 
+**Everything still to do that needs the server is one list**, in
+`docs/FEATURES.md` → "What is left to do online": the plan (the one with money
+on it), cloud storage, publishing a language, quoting, the day's sentence,
+blocking and reporting, deleting an account server-side, and push. Read that
+before starting anything online.
+
 **No StoreKit.** The plans screen exists and `SET.plan` can be set, but nothing
 charges anybody. `docs/apple.md`.
 

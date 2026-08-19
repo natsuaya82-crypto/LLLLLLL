@@ -83,10 +83,11 @@ Marked separately, because they are not the same question:
 | Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
 | A post shown three ways | shipped | layers 1 and 2; layer 3 three a day | `tr`: layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided |
 | Post translated into natural languages at write time | **in progress** | yes | yes | `post.tr`, frozen on the post | decided — the seam is in (`postTr`, TR_SEAM); the translator is the reader's own device AI and is not wired up |
-| Posts on the server | **planned** | ? | ? | new: server rows | **open** — the tables exist in `schema.sql` and nothing reads them |
-| Explore | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
-| Notices | **planned** | ? | ? | ? | **open** — the tab is a placeholder |
-| Following, quoting | **planned** | ? | ? | new: server rows | **open** |
+| Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/`postCatchUp`. An account is required to read the timeline or post to it (decision 2026-08-18) |
+| Explore | shipped, **not device confirmed** | yes | — | — | done — people while you type, posts when you press Search; both ask the server (`netFindWho`/`netFindPosts`) |
+| Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
+| Following | shipped, **not device confirmed** | yes | — | `follow` rows, `ME.fo` | done — `netFollow`, and Follow is on a person's row in the search |
+| Quoting | **planned** | ? | ? | `quote` rows | **open** — the table exists in `schema.sql` and nothing reads it |
 
 ### Notes on the open rows
 
@@ -181,6 +182,80 @@ vertically-written language is. It is a compromise and it is written down in
 | Hand-over app → keyboard | shipped | yes | — | App Group | decided |
 | Purchases (StoreKit) | **planned** | — | — | none | **open** — no code exists; `SET.plan` is set by hand |
 | Android | **planned** | — | — | — | **open** — one repo with `android/` beside `ios/`, nothing started |
+
+## What is left to do online
+
+Everything on this list needs the server. Nothing on it is started unless it
+says so. It is one list because 「必要なものは全部オンラインまとめてやる」 and
+because the way a server feature gets lost is by being half-written down.
+
+**Already online, so that this list is read against something:** accounts and
+the profile, posts (write, read, reply, delete), likes and boosts, following,
+notices, photographs and voice in Storage, and search — people and posts.
+
+### 1. The plan, on the server — the one with money on it
+
+`SET.plan` is a string in `localStorage` and the app is unbundled JavaScript
+on the phone. **Anybody can set themselves to Studio**, and the server would
+not know: `schema.sql` has no plan column and no plan check; `is_member()`
+asks whether somebody is signed in and nothing else.
+
+Today that costs nothing but the sale — the AI runs on the phone (`talk.js`,
+`assist.js`, `grammar.js` make no network call), and there is no cloud
+storage. **The day money is taken that stops being true**, so:
+
+1. the StoreKit receipt is verified **server-side**, not by the app
+2. the plan lives on the account, in `profile` or beside it
+3. anything that costs us money is refused **by the server**
+4. `CAN` stays what it is: which buttons to show. It is not a security check
+   and must never be relied on as one
+
+Decided so far: the four products and their prices (2026-08-14), and that
+StoreKit is not to be written yet.
+
+### 2. Cloud storage of a language — Plus
+
+Every slice, for a person who is paying. Decided and deferred: the Supabase
+tier it needs is not worth paying for yet. `bkPack()` already produces exactly
+the thing that would be uploaded.
+
+### 3. Publishing a language — `language`, `publication`
+
+Both tables exist with row level security written and held by `npm run rls`,
+and **nothing in the app reads or writes either**. The profile has a language
+page with a public/private switch and it is local. This is what makes the
+switch mean anything, and what puts a language name on somebody found by
+searching.
+
+### 4. Quoting — `quote`
+
+A word of somebody else's post taken into your own language. The table exists
+and nothing reads it.
+
+### 5. The day's sentence — `prompt`
+
+One a day, and `post.prompt` already points at it. The table exists and
+nothing reads it.
+
+### 6. Blocking, reporting, and taking a post down
+
+**Nothing exists — no table, no policy, no screen.** This is not a feature
+among features: an app with user-generated content is rejected by App Store
+review without a way to report and block. It has to be on the server, because
+a block one phone knows about is not a block.
+
+### 7. Deleting an account, on the server
+
+Signing out and wiping this phone both work. **What is on the server is not
+touched by either.** `profile` cascades from `auth.users`, so the delete has
+to happen at the auth level, and nothing in the app asks for it.
+
+### 8. Push notifications
+
+Nothing exists. The notices tab is pulled when it is looked at.
+
+**Not on this list and deliberately: the making side.** A language is made on
+this phone with or without an account, and that does not change.
 
 ## Closed on purpose
 
