@@ -15,6 +15,40 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The plans screen says what the difference is
+
+「設定のプランはもっとちゃんと出そうよ。全部同じように並んでてどうやってうるんや」
+
+Three identical cards — same box, same weight, same button, one price each —
+is the screen answering "here are three things" where somebody is asking
+"which one, and why".
+
+- **Monthly or yearly.** The four prices were decided on 2026-08-14 and only
+  two of them were on the screen. A year is on it now, with what it comes to a
+  month beside it, because that is the number somebody actually compares
+  against. Two months free is arithmetic, not a claim: 99.99 ÷ 9.99 is a
+  little over ten.
+- **Free is not one of the cards.** It is what everybody already has, so it is
+  a line at the foot. Beside two things that cost money it made "nothing" look
+  like an option being sold.
+- **Plus carries the weight**, because Plus is where the making side opens —
+  and Studio is written as what it ADDS rather than as a second full list.
+- **The lines are what `CAN` opens**, and they were not. They said "mass-
+  produce words", "linking shown and read aloud", "CSV in and out" and did not
+  mention letters, writing systems, keyboards, sounds, grammar stages or the
+  direction — which is six of the ten things Plus actually buys. Cloud storage
+  is still not on the list: it is a Plus feature in `docs/FEATURES.md` and it
+  is not built, and a paid screen promising something the app cannot do is the
+  app lying to somebody who is about to pay.
+- `.ph2` is a button everywhere else, so a plan's name arrived wearing a
+  border, a fill and a radius. A heading is not a thing to press.
+
+**The wording is not settled by me.** The lines say what each plan opens and
+nothing more; how it should SOUND is the owner's.
+
+**Stored data.** None. Nothing can still be bought — there is no StoreKit code
+and the note at the foot says so.
+
 ### Searching finds people, and posts when you ask for them
 
 「人だけにして」「⭕️ @〇〇 lingua マーク　フォローする」

@@ -33,6 +33,7 @@ act('addOne', addOne);
 act('asSay', asSay);
 act('back', back);
 act('setPlan', setPlan);
+act('setPlansTerm', setPlansTerm);
 act('clearFq', clearFq);
 act('clearQ', clearQ);
 act('delNote', delNote);

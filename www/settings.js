@@ -261,28 +261,63 @@ function openCapLapse(){
       esc(t('cap.lapse.ok'))+'</button>');
 }
 FORM_OPEN.lapse=function(){ openCapLapse(); };
+/* Monthly or yearly, which is where you are standing on this screen rather
+   than anything the account has -- viewReset() drops it. */
+var plansYr=false;
+function setPlansTerm(yr){ plansYr=!!yr; render(); }
+/* One plan, drawn.
+
+   The three were one shape repeated three times: same box, same weight, same
+   button, one price each and no year. Three identical cards do not say what
+   the difference between them IS, which is the whole of what somebody is
+   deciding. 「全部同じように並んでてどうやってうるんや」
+
+   Free is not one of the cards now. It is what everybody already has, so it
+   is a line at the top saying what it is -- putting it beside the two that
+   cost money made "nothing" look like an option being sold.
+
+   What is left is two, and they are not the same either: Plus is where the
+   making side opens, so it is the one with the weight, and Studio is written
+   as what it ADDS to Plus rather than as a second complete list. */
+function planCard(p){
+  var cur=(p.id===plan()), yr=plansYr;
+  return '<div class="plan'+(cur? ' cur':'')+(p.id==='plus'? ' lead':'')+'">'+
+    '<div class="ph2"><span class="pn">'+p.name+'</span>'+planBadge(p.id)+
+      (cur? '<span class="badge">'+t('plan.cur')+'</span>' : '')+'</div>'+
+    '<div class="pprice"><span class="pp">'+t(yr? p.yr : p.mo)+'</span>'+
+      '<span class="pper">'+t(yr? 'plan.per.yr' : 'plan.per.mo')+'</span></div>'+
+    (yr && p.each? '<div class="peach">'+esc(t('plan.each', t(p.each)))+'</div>' : '')+
+    '<div class="pl">'+p.lines.map(function(l){
+      return '<span class="pli">'+ICON_TICK+'<span>'+t(l)+'</span></span>';
+    }).join('')+'</div>'+
+    (cur? '' : '<button' + DO('setPlan', [p.id]) + '>'+t('plan.take', p.name)+'</button>')+
+    '</div>';
+}
 function vPlans(){
+  var free=PLANS[0], paid=PLANS.slice(1), on=(plan()==='free');
   return '<div class="view">'+
     navTop('')+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:16px">'+t('plans.intro')+'</div>'+
-    PLANS.map(function(p){
-      var cur = p.id===plan();
-      return '<div class="plan'+(cur?' cur':'')+'">'+
-        /* The badge beside the plan's name, because it is the thing being
-           bought that anybody can see -- and this screen had no picture of
-           anything at all. 「今の画面課金させる感が全くない」 */
-        '<div class="ph2"><span class="pn">'+p.name+'</span>'+planBadge(p.id)+
-        (cur?'<span class="badge">'+t('plan.cur')+'</span>':'')+
-        '<span class="pp">'+t(p.price)+'</span></div>'+
-        '<div class="pl">'+p.lines.map(function(l){return '· '+t(l);}).join('<br>')+'</div>'+
-        /* The button says which plan it is, because "choose" on three cards
-           is the same word three times and says nothing about which one your
-           thumb is over. */
-        (cur?'':'<button' + DO('setPlan', [p.id]) + '>'+
-          (p.id==='free'? t('plan.tofree') : t('plan.take', p.name))+'</button>')+
-        '</div>';
-    }).join('')+
+    /* Monthly or yearly, above both cards, because it is one choice about
+       both of them and not a choice inside each. */
+    '<div class="segs plseg">'+
+      '<button class="seg'+(plansYr? '':' on')+'"' + DO('setPlansTerm', [false]) + '>'+
+        esc(t('plan.term.mo'))+'</button>'+
+      '<button class="seg'+(plansYr? ' on':'')+'"' + DO('setPlansTerm', [true]) + '>'+
+        esc(t('plan.term.yr'))+'<span class="plsave">'+esc(t('plan.save'))+'</span></button>'+
+    '</div>'+
+    paid.map(planCard).join('')+
+    /* Free, at the foot: what you already have, and the way back to it. */
+    '<div class="plfree'+(on? ' cur':'')+'">'+
+      '<div class="ph2"><span class="pn">'+free.name+'</span>'+
+        (on? '<span class="badge">'+t('plan.cur')+'</span>' : '')+'</div>'+
+      '<div class="pl">'+free.lines.map(function(l){
+        return '<span class="pli">'+ICON_TICK+'<span>'+t(l)+'</span></span>';
+      }).join('')+'</div>'+
+      (on? '' : '<button class="btn ghost"' + DO('setPlan', ["free"]) + '>'+
+        esc(t('plan.tofree'))+'</button>')+
+    '</div>'+
     '<div class="note" style="margin-top:14px">'+t('plans.note')+'</div>'+
     '</div></div>';
 }

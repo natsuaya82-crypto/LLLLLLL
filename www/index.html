@@ -1035,15 +1035,51 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .lrow .lsam{margin-left:auto;font-size:.88rem;color:var(--gold);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lrow .lchk{flex:0 0 14px;text-align:right;color:var(--gold)}
 .lrow.on .sl{font-weight:600}
-.plan{border:1px solid var(--line);border-radius:16px;padding:17px 18px;margin-bottom:11px;background:var(--pane)}
+/* A plan, and the two of them are not the same weight. Three identical cards
+   is the screen saying "here are three things" where somebody is asking "what
+   is the difference" -- so the price is the size of a price, the lines are
+   ticks rather than a paragraph with dots in it, and Plus, where the making
+   side opens, carries the gold. 「全部同じように並んでてどうやってうるんや」 */
+.plan{border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:12px;
+      background:var(--pane)}
+.plan.lead{border-color:var(--goldln);box-shadow:0 0 0 1px var(--goldln)}
 .plan.cur{border-color:var(--goldln);background:var(--goldsf)}
-.plan .ph2{display:flex;align-items:baseline;gap:9px}
-.plan .pn{font-family:'Cinzel',Georgia,serif;font-size:1.05rem}
-.plan .pp{margin-left:auto;color:var(--gold);font-size:.95rem;font-weight:600}
-.plan .pl{color:var(--txs);font-size:.82rem;margin-top:9px;line-height:1.95}
-.plan .badge{font-size:.82rem;letter-spacing:.16em;color:var(--gold);border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
-.plan button{min-height:44px;width:100%;margin-top:13px;padding:11px;border-radius:11px;border:1px solid var(--goldln);
-             background:var(--goldsf);color:var(--gold);font-weight:600;font-size:.88rem}
+/* `.ph2` is a BUTTON everywhere else -- the IPA chips -- so it arrives here
+   wearing a border, a fill and a radius. A plan's name is a heading and not a
+   thing to press. 「かくまるみたいなのでくくるのやめて欲しい」 */
+.plan .ph2,.plfree .ph2{border:0;background:none;border-radius:0;padding:0;
+   min-height:0;margin-bottom:0;width:auto;display:flex;align-items:center;gap:9px}
+.plan .pn{font-family:'Cinzel',Georgia,serif;font-size:1.15rem}
+/* The number, at the size a number is read at, with its unit beside it rather
+   than glued on -- a price and a period are two facts. */
+.pprice{display:flex;align-items:baseline;gap:6px;margin-top:10px}
+.pprice .pp{color:var(--tx);font-size:1.9rem;font-weight:600;letter-spacing:-.01em}
+.pprice .pper{color:var(--txm);font-size:.86rem}
+.peach{color:var(--txm);font-size:.78rem;margin-top:2px}
+.plan .pl,.plfree .pl{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.pli{display:flex;align-items:flex-start;gap:8px;color:var(--txs);font-size:.85rem;
+     line-height:1.45}
+.pli svg{flex:0 0 auto;margin-top:3px;color:var(--gold)}
+.plan .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);
+             border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
+.plan button{min-height:48px;width:100%;margin-top:16px;padding:12px;border-radius:12px;
+             border:1px solid var(--goldln);background:var(--goldsf);color:var(--gold);
+             font-weight:600;font-size:.92rem;font-family:inherit}
+.plan.lead button{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+/* Monthly or yearly, one choice about both cards, above both of them. */
+.plseg{margin:0 0 16px}
+.plsave{margin-left:6px;font-size:.7rem;letter-spacing:.06em;color:var(--gold)}
+.seg.on .plsave{color:inherit;opacity:.85}
+/* Free is not one of the cards. It is what everybody already has, so it is a
+   line at the foot saying what that is -- beside the two that cost money it
+   made "nothing" look like an option being sold. */
+.plfree{border-top:1px solid var(--line);padding:16px 2px 0;margin-top:6px}
+.plfree .pn{font-family:'Cinzel',Georgia,serif;font-size:1rem;color:var(--txs)}
+.plfree .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);
+               border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
+.plfree .pli{color:var(--txm)}
+.plfree .pli svg{color:var(--txm)}
+.plfree button{margin-top:14px;width:100%}
 
 /* ---------- locked behind a paid plan ---------- */
 .lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;

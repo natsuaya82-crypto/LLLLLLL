@@ -251,18 +251,29 @@ function tn(k,n){
       No network, no model. So all of it is free.
       Money buys storage (cloud, CSV, unlimited) and working with an AI.
    ========================================================================= */
+/* The three, and what each of them is. `mo` and `yr` are the two ways to buy
+   one -- the product ids and the four prices are the owner's decision of
+   2026-08-14 and are written out in docs/apple.md; these are the same four
+   numbers said where a person can see them. Free has neither, because it is
+   not bought.
+
+   `each` is what a year comes to a month, which is the number somebody
+   actually compares against the monthly one.
+
+   The lines are what CAN opens, and nothing else. A paid screen that promises
+   something the app cannot do is the app lying to somebody who is about to
+   pay -- cloud storage is a Plus feature in docs/FEATURES.md, is not built,
+   and is therefore not on this list. */
 var PLANS=[
-  {id:'free',  name:'Free',   price:'plan.price.free',
-   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4','plan.free.5']},
-  {id:'plus',  name:'Plus',   price:'plan.price.plus',
-   /* Three lines and no cloud. Cloud storage IS a Plus feature and is
-      deferred until there are enough people to justify paying for it -- so
-      until it exists it is not on the list, because a paid screen promising
-      something the app cannot do is the app lying to somebody who is about
-      to pay. docs/FEATURES.md holds it as planned. */
-   lines:['plan.badge','plan.plus.1','plan.plus.2','plan.plus.3']},
-  {id:'studio',name:'Studio', price:'plan.price.studio',
-   lines:['plan.badge','plan.studio.1','plan.studio.2','plan.studio.3']}
+  {id:'free',  name:'Free',   mo:'plan.price.free', yr:'plan.price.free', each:'',
+   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},
+  {id:'plus',  name:'Plus',   mo:'plan.price.plus', yr:'plan.price.plus.yr',
+   each:'plan.each.plus',
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
+          'plan.plus.6','plan.badge']},
+  {id:'studio',name:'Studio', mo:'plan.price.studio', yr:'plan.price.studio.yr',
+   each:'plan.each.studio',
+   lines:['plan.studio.1','plan.studio.2','plan.studio.3']}
 ];
 var FREE_LIMIT=100;
 /* How many languages of your own this app holds, on every plan. One, and it
