@@ -43,6 +43,9 @@ final class GlyphView: UIView {
       // A borrowed character or a name. Sized off the box the shapes would
       // have filled, so a drawn letter and an undrawn one are the same
       // weight on the same row.
+      // The smaller side, which is the same side a drawn shape is scaled
+      // to below -- a drawn letter and an undrawn one are the same weight on
+      // the same row because both are measured from the same edge.
       let side = min(bounds.width, bounds.height)
       let attrs: [NSAttributedString.Key: Any] = [
         .font: UIFont.systemFont(ofSize: side * 0.62),
@@ -68,11 +71,24 @@ final class GlyphView: UIView {
     // bar drew every letter in a square and two narrow ones sat a whole cell
     // apart. 「キーボード内のプレビューのアルファベットいちいち全角のスペース開く
     // のうざい」
-    let k = bounds.height / box
+    // A key is scaled to the SMALLER side, and that is the whole of the
+    // difference between a letter on a key and a letter spilling over three.
+    //
+    // It was scaled to the height and then centred on a square of the width,
+    // which are two different numbers on every phone made: a key is about 35
+    // points across and 54 tall, so a shape was drawn 54 wide inside a 20
+    // wide box -- seventeen points over each edge, into its neighbours, and
+    // off the end of the row at both ends. 「文字がずれてる」
+    //
+    // A LINE is the other rule and is unchanged: there the height IS the em
+    // and the width is the letter's own advance, so the height is what the
+    // shape is scaled to and `dx` says where the ink starts inside it.
+    let side = (dx != nil) ? bounds.height : min(bounds.width, bounds.height)
+    let k = side / box
     let ox: CGFloat
     if let d = dx { ox = CGFloat(d) * k }
-    else { ox = bounds.midX - min(bounds.width, bounds.height) / 2 }
-    let oy = bounds.midY - bounds.height / 2
+    else { ox = bounds.midX - side / 2 }
+    let oy = bounds.midY - side / 2
 
     ctx.setFillColor(ink.cgColor)
     for p in polys {

@@ -15,6 +15,31 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A letter on a key stays on its key
+
+「文字がずれてる」 — reported more than once.
+
+`GlyphView` scaled a shape to the view's **height** and then centred it on a
+square of the view's **width**. Those are two different numbers on every phone
+ever made: a key is about 35 points across and 54 tall, so a letter was drawn
+54 wide inside a 20-wide box — about seventeen points over each edge, into
+its neighbours, and off the end of the row at both ends.
+
+A key is scaled to `min(width, height)` now and centred on both axes. A LINE —
+the candidate bar — is unchanged and must be: there the height IS the em, the
+width is the letter's own advance, and `dx` says where the ink starts inside
+it. One expression covers both, because for a line the two are the same
+number.
+
+`KeyBoardView` took its inset off the height too, which left the shape a strip
+of the width to stand in. Off the smaller side now.
+
+**Nothing holds this.** It is Swift, there is no Swift on a Linux runner, and
+`assets-check` only knows whether the file is in the build. **The phone is the
+only thing that can say it is fixed.**
+
+**Stored data.** None.
+
 ### Nothing adds a page to the free QWERTY
 
 「無料で作ったキーボードは動かせなくしろって言ってんだろ？」

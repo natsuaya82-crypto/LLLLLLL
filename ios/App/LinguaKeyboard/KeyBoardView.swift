@@ -106,7 +106,11 @@ final class KeyView: UIView {
 
   override func layoutSubviews() {
     super.layoutSubviews()
-    let inset = bounds.height * 0.14
+    /* Off the SMALLER side. A key is taller than it is wide, so an inset
+       taken from the height ate most of the width and left the shape a strip
+       to stand in. The face is square either way now -- GlyphView scales a
+       key to min(width, height) -- and this decides how much room it gets. */
+    let inset = min(bounds.width, bounds.height) * 0.14
     faceView.frame = bounds.insetBy(dx: inset, dy: inset)
     // The bottom-right CORNER. The four flick faces sit at the middles of the
     // edges rather than at the corners, so this does not land on one even on a
