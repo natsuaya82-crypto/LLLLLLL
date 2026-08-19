@@ -241,7 +241,9 @@ cut onto its keys, needing no alphabet and no dictionary on the other side.
 That is what a download has to be, and it is the same argument rule 8 makes
 about a post.
 
-Still open: whether a downloaded keyboard is edited in place or copied first.
+A downloaded keyboard is edited as it stands — the download is the copy. What
+cannot be mixed is the alphabet: the letters that go on its keys are the
+downloader's own.
 
 ### 5. Quoting — `quote`
 

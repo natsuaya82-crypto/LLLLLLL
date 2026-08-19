@@ -935,8 +935,18 @@ function kbBarHTML(){
   var bs=kbBoards(), at=kbApplied(bs.length), now=kbClamp(kbShow, bs.length);
   return '<div class="kbbar">'+
     bs.map(function(x, i){
-      return '<button class="kbtab'+(i===now? ' on':'')+'"' + DO('kbGoBoard', [i]) + '>'+
-        esc(kbName(i))+(i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+'</button>';
+      /* The keyboard, drawn, and not the number 1. A row of round patches
+         reading 1 2 3 says which one is second and nothing about which one is
+         the flick board -- and what somebody is choosing here is a shape.
+         「マルパッチ禁止だからキーボード1,2,3とかの示し方ui変えてね」
+
+         kbMiniHTML() already draws one, out of its own real layout, for the
+         five patterns on the sheet that makes another. The same picture,
+         because it is the same question asked twice. */
+      return '<button class="kbtab'+(i===now? ' on':'')+'"' + DO('kbGoBoard', [i]) +
+        ' aria-label="'+esc(kbName(i))+'">'+
+        kbMiniHTML(x.lay)+
+        (i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+'</button>';
     }).join('')+
     (bs.length<KB_MAX
       ? '<button class="kbtab add"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+

@@ -15,6 +15,21 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A keyboard is chosen by its shape
+
+「マルパッチ禁止だからキーボード1,2,3とかの示し方ui変えてね」
+
+The row was round patches reading 1, 2, 3 — which say which one is second and
+nothing about which one is the flick board. What somebody is choosing here is
+a shape, so the row draws it: `kbMiniHTML()`, the same picture the sheet that
+makes another already uses for the five patterns. Same question asked twice,
+one answer.
+
+The tick still says which one is on the phone, and it sits **on** the picture —
+beside it the tile would have to grow to hold a mark that is about the tile.
+
+**Stored data.** None.
+
 ### Blocked means nothing of them is seen — OWNER DECISION
 
 「ブロックは何も見えなくなるでいいんじゃない」

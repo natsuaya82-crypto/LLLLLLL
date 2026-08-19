@@ -1252,16 +1252,27 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    is where a person finds that out. */
 .kbbar{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
 .kbbar::-webkit-scrollbar{display:none}
-.kbtab{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 16px;border-radius:999px;
+/* A keyboard is chosen by its SHAPE. The row was round patches reading 1 2 3,
+   which say which one is second and nothing about which one is the flick
+   board. 「マルパッチ禁止」 The tick still says which one is on the phone. */
+.kbtab{flex:0 0 auto;width:74px;min-height:52px;padding:7px 8px 6px;border-radius:10px;
        border:1px solid var(--line);background:none;color:var(--txm);
-       font-family:inherit;font-size:.9rem;
-       display:inline-flex;align-items:center;gap:6px}
-.kbtab.on{color:var(--tx);border-color:var(--goldln);background:var(--goldsf)}
-.kbtab.add{min-width:44px;padding:0;justify-content:center;color:var(--gold)}
+       font-family:inherit;font-size:.9rem;position:relative;
+       display:inline-flex;flex-direction:column;align-items:stretch;justify-content:center}
+.kbtab .kbmini{gap:2px}
+.kbtab .kbmr{height:6px;gap:2px}
+.kbtab .kbmk{border-radius:1.5px}
+.kbtab.on{border-color:var(--goldln);background:var(--goldsf)}
+.kbtab.on .kbmk{opacity:.42}
+/* The tick sits ON the picture rather than beside it: beside it the tile has
+   to grow to hold a mark that is about the tile. */
+.kbtab .kbon{position:absolute;top:3px;right:4px}
+.kbtab.add{width:44px;min-width:44px;padding:0;align-items:center;justify-content:center;
+           color:var(--gold);border-style:dashed}
 /* The two that undo things live behind this. At the far end, no outline: it
    is a way out of the row rather than one more thing in it. */
-.kbtab.more{margin-left:auto;min-width:44px;padding:0;justify-content:center;
-            border:0;color:var(--txm)}
+.kbtab.more{margin-left:auto;width:44px;min-width:44px;padding:0;
+            align-items:center;justify-content:center;border:0;color:var(--txm)}
 .kbon{display:inline-flex;color:var(--gold)}
 .kbon svg{width:14px;height:14px}
 /* ---------- choosing what shape a keyboard is ----------

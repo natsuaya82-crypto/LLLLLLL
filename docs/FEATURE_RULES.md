@@ -209,9 +209,12 @@ instead of appearing here.
 - Affected data: new server tables; on the phone, a downloaded keyboard and a
   downloaded language are new slices and are **not** the person's own
 - Affected docs: `docs/FEATURES.md`, `docs/PAID_FEATURES.md`, `CLAUDE.md`
-- **Still open:** whether a downloaded keyboard can be edited as it stands, or
-  has to be copied first. Recommended: copied — editing in place means the
-  thing labelled ヨタ語 stops being ヨタ語.
+  6. **A downloaded keyboard is edited as it stands** — the download IS the
+     copy, so there is nothing to copy again. But **the letters that can be
+     put on its keys are the downloader's own**: it is somebody else's
+     keyboard and this is somebody else's alphabet, and the two do not mix.
+     「dl自体が複製なんだからそのままで良くね？でも人の言語だから当てられる文字は
+     dlした人の言語だけ」
 - Implementation status: **not started.** The payload half already exists:
   `shareKbd()` produces a keyboard with the shapes cut onto its keys, needing
   no alphabet and no dictionary on the other side, which is exactly what a
