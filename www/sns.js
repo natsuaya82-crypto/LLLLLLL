@@ -174,7 +174,9 @@ function vFeed(){
    number of rows under it or it is the app arguing with itself. */
 function vThread(){
   var id=String(here().a||''), p=postById(id), ups, down, out='', i, d;
-  if(!p) return viewGone();
+  /* Blocked is gone, not merely absent from the list: a thread reached by an
+     old route is the one way a post could still be looked at. */
+  if(!p || postBlocked(p)) return viewGone();
   ups=postUps(p);
   down=postDown(id, 0, [], [id]);
   for(i=0;i<ups.length;i++) out+=postRow(ups[i]);
@@ -329,8 +331,12 @@ function snsHitsHTML(){
   if(!snsQ.trim() || !r) return '';
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
-  for(i=0;i<(r.who||[]).length;i++) out+=snsWhoRow(r.who[i]);
-  for(i=0;i<(r.posts||[]).length;i++) out+=postRow(r.posts[i]);
+  /* And out of the search too, on both sides: a person you have blocked is
+     not somebody you are looking for, and neither is what they wrote. */
+  for(i=0;i<(r.who||[]).length;i++)
+    if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
+  for(i=0;i<(r.posts||[]).length;i++)
+    if(!postBlocked(r.posts[i])) out+=postRow(r.posts[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
 function vExplore(){
@@ -396,7 +402,7 @@ function notRow(n){
 function vNotif(){
   if(!netSignedIn()) return snsLocked('notif');
   notPull();
-  var ns=NOTES_HAVE||[];
+  var ns=(NOTES_HAVE||[]).filter(function(n){ return !meBlocks(n.hd); });
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+
     (ns.length? ns.map(notRow).join('') : snsNone())+

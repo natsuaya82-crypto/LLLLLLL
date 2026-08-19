@@ -59,8 +59,18 @@ function savePosts(){
   catch(e){ toast(t('post.full')); return false; }
 }
 /* Newest first, which is the only order a timeline has. */
+/* Whoever you have blocked is not in any list. 「ブロックは何も見えなくなる」
+   netFeed() leaves them out on the SERVER, which is the only way a block is a
+   block at all -- their posts never arrive. This is the other half: a post of
+   theirs already on this phone, in a thread, on a profile, in a search.
+
+   Never your own: `mine` is checked because a handle can be your own on a
+   phone whose account changed, and a block that hid your own writing would be
+   the worst possible reading of it. */
+function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
 function postAll(){
-  return POSTS.slice().sort(function(a, b){ return (b.at||0)-(a.at||0); });
+  return POSTS.slice().filter(function(p){ return !postBlocked(p); })
+    .sort(function(a, b){ return (b.at||0)-(a.at||0); });
 }
 function postById(id){
   var i;

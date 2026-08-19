@@ -15,6 +15,38 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Blocked means you see nothing of them — OWNER DECISION
+
+「ブロックは何も見えなくなるでいいんじゃない」
+
+The feed was the only place it reached. Now: `postAll()` — which every list of
+posts comes from — leaves them out, a thread reached by an old route answers
+"gone" rather than showing the post, the notices drop them, and the search
+drops them on both sides, the person and what they wrote. The server half is
+unchanged and is the important one: `netFeed()` asks for the block list first,
+so their posts never arrive at all.
+
+Never your own. `postBlocked()` checks `mine`, because a handle can be your
+own on a phone whose account changed, and a block that hid your own writing
+would be the worst possible reading of it.
+
+**Stored data.** None new. **Tested.** `npm test` green; buttons 6286 → 6241,
+which is Iri's posts leaving the two faces where the fixture has blocked her.
+
+### Publishing and downloading, decided — OWNER DECISION
+
+「キーボードdl、文字dl、単語のdl」「ファン層にdlして使ってもらえるように」
+
+**Not started.** Written down in the decision log and in `docs/FEATURES.md` →
+"What is left to do online": the author decides what is public, per thing;
+downloading a keyboard or an alphabet is **free** and a dictionary is
+**Plus**; making and publishing stays Plus; a downloaded keyboard gets its own
+shelf of three and does not eat a built one; **a downloaded dictionary is
+never merged into your own language** — it is a language you can read, and
+`FREE_LIMIT` goes on counting your own words only.
+
+Still open: whether a downloaded keyboard is edited in place or copied first.
+
 ### Blocking and reporting
 
 「ブロック通報はつくって」 — and an app carrying other people's writing is

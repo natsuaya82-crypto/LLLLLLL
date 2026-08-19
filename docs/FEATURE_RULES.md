@@ -186,6 +186,51 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-19
+- Area: Publishing and downloading — a keyboard, an alphabet, a dictionary
+- Decision:
+  1. **The author decides.** Public or private, per thing, for all three: the
+     keyboard, the letters, the words. Nothing is downloadable unless its
+     author said so.
+  2. **Downloading a KEYBOARD or an ALPHABET is free.** Downloading a
+     DICTIONARY is **Plus**. 「freeは文字とキーボードのみ」「最悪知ってる人は
+     それで会話できるし、本気で知りたい人は課金するっしょ」
+  3. **Making and publishing stays Plus**, as it is now. Free still cannot
+     build a keyboard or add a letter, and that does not change.
+  4. **A downloaded keyboard goes on its own shelf, up to three**, beside the
+     three somebody built. It does not take one of their slots.
+  5. **A downloaded dictionary is a separate possession and is never merged
+     into your own language.** It is a language you can READ. `FREE_LIMIT`
+     counts your own words, so five thousand of somebody else's do not touch
+     it — and if they were merged, the limit would have no answer and the two
+     could never be told apart again.
+- Reason: 「ヨタ語ってのがあって、そのファンの人がキーボードdlできたら、そのまま
+  使える！みたいな」 The fan side is what spreads it, so the fan side is free.
+- Affected features: keyboards, letters, words, the profile, the language page
+- Affected data: new server tables; on the phone, a downloaded keyboard and a
+  downloaded language are new slices and are **not** the person's own
+- Affected docs: `docs/FEATURES.md`, `docs/PAID_FEATURES.md`, `CLAUDE.md`
+- **Still open:** whether a downloaded keyboard can be edited as it stands, or
+  has to be copied first. Recommended: copied — editing in place means the
+  thing labelled ヨタ語 stops being ヨタ語.
+- Implementation status: **not started.** The payload half already exists:
+  `shareKbd()` produces a keyboard with the shapes cut onto its keys, needing
+  no alphabet and no dictionary on the other side, which is exactly what a
+  download has to be.
+
+### Decision
+- Date: 2026-08-19
+- Area: Blocking
+- Decision: **Blocked means you see nothing of them.** Not a quieter timeline
+  — gone: the feed (left out by the server), threads, profiles, search on both
+  sides, and the notices. 「ブロックは何も見えなくなるでいいんじゃない」
+- Reason: a block that only thins a feed is a block somebody keeps meeting.
+- Affected features: the timeline, search, notices, threads
+- Affected data: `ME.bl` on the phone, `block` on the server
+- Affected docs: `docs/FEATURES.md`
+- Implementation status: implemented, **not device confirmed**
+
+### Decision
+- Date: 2026-08-19
 - Area: What may be written on a screen
 - Decision: **No explanatory text in the app.** A screen shows what it is and
   what can be done on it. It does not explain itself, does not say what a

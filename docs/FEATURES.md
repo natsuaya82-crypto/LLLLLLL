@@ -227,17 +227,33 @@ page with a public/private switch and it is local. This is what makes the
 switch mean anything, and what puts a language name on somebody found by
 searching.
 
-### 4. Quoting — `quote`
+### 4. Publishing and downloading — a keyboard, an alphabet, a dictionary
+
+Decided 2026-08-19 and **not started**. The author decides what is public, per
+thing. Downloading a keyboard or an alphabet is **free**; downloading a
+dictionary is **Plus**. Making and publishing stays Plus. A downloaded
+keyboard goes on its own shelf, up to three, beside the three somebody built.
+A downloaded dictionary is a language you can READ and is never merged into
+your own — `FREE_LIMIT` counts your own words and nothing else.
+
+Half of it exists: `shareKbd()` already produces a keyboard with the shapes
+cut onto its keys, needing no alphabet and no dictionary on the other side.
+That is what a download has to be, and it is the same argument rule 8 makes
+about a post.
+
+Still open: whether a downloaded keyboard is edited in place or copied first.
+
+### 5. Quoting — `quote`
 
 A word of somebody else's post taken into your own language. The table exists
 and nothing reads it.
 
-### 5. The day's sentence — `prompt`
+### 6. The day's sentence — `prompt`
 
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 6. Taking a post down
+### 7. Taking a post down
 
 Blocking and reporting are **done** (2026-08-19): `block` and `report` in
 `schema.sql`, the ⋯ on every post, and the timeline asking the server to leave
@@ -249,13 +265,13 @@ somebody else's post; `post_drop` is the author's alone. Until that exists a
 report is written and nobody looks at it, which App Store review will ask
 about.
 
-### 7. Deleting an account, on the server
+### 8. Deleting an account, on the server
 
 Signing out and wiping this phone both work. **What is on the server is not
 touched by either.** `profile` cascades from `auth.users`, so the delete has
 to happen at the auth level, and nothing in the app asks for it.
 
-### 8. Push notifications
+### 9. Push notifications
 
 Nothing exists. The notices tab is pulled when it is looked at.
 
