@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Searching finds people, and posts when you ask for them
+
+「人だけにして」「⭕️ @〇〇 lingua マーク　フォローする」
+「ツイートの検索は検索ボタン押したら出てくる。それまでは人」 — OWNER DECISION.
+
+Typing searched POSTS unless the query began with `@`, so looking for a person
+meant knowing to type a character first — and what a search on a timeline is
+for, before you know anybody, is finding people.
+
+- **People while you type.** `snsMode` starts at `who` and goes back to `who`
+  the moment anybody types.
+- **Posts when you press Search.** The field carries `enterkeyhint="search"`,
+  so the phone's own return key says Search, and pressing it is what asks.
+- **A person's row is two controls.** Pressing the person opens their page;
+  pressing Follow follows them and leaves you where you are. It was one button
+  with a chevron, so the only thing you could do with somebody you had just
+  found was go and look at them. Your own row has neither.
+
+**Stored data.** None. `ME.fo` is the follow list and already existed;
+`meFollow()` is unchanged and is still the one place that writes it.
+
+**What the search actually reaches — and it is not everything.** `snsFind()` is
+`SNS_SEAM`: it answers out of **this phone**. `snsMatchPosts()` walks `POSTS`
+in `localStorage`, and `snsWho()` reads people off the posts this phone has.
+So "past posts" means the posts this phone holds — your own, and whatever the
+timeline has pulled down — not everything on the server. A real search is a
+query against `post` and it has not been written; what it matches on is a
+decision nobody has made.
+
 ### The composer is one screen — with the keyboard up
 
 「この中に1画面収めてうごかないようにしてほしい」「キーボード込みでに決まってるやん」

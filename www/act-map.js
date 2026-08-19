@@ -252,6 +252,7 @@ actIn('wdSetEty', wdSetEty);
 
 /* ---- Enter ------------------------------------------------------------- */
 actKey('obName', obName);
+actKey('snsGo', snsGo);
 actKey('stAddEx', stAddEx);
 actKey('takeOwn', takeOwn);
 actKey('wdAddEx', wdAddEx);

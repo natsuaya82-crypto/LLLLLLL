@@ -389,15 +389,25 @@ export function halfDone(){
     /* The search, with something in it. An empty field draws no results at
        all, so a walk that never types finds nothing to be wrong. Both
        halves: `@` is looking for a person, anything else for a post. */
-    ['people found by searching', () => { snsQ = '@a'; snsHits = null;
+    /* Searching is about PEOPLE until somebody presses the phone's own
+       Search key, so the two answers are two faces and `snsMode` is what
+       tells them apart. The people face carries the Follow button, which is
+       on no other screen. */
+    ['people found by searching', () => { snsQ = 'a'; snsHits = null; snsMode = 'who';
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
-    ['posts found by searching', () => { snsQ = 'kano'; snsHits = null;
+        const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
+    /* Somebody already followed: Follow and Following are two states of one
+       button and only one of them is drawn at a time. */
+    ['a person already followed', () => { snsQ = 'a'; snsHits = null; snsMode = 'who';
+        const was = ME.fo; ME.fo = POSTS.map((p) => p.hd).filter(Boolean);
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
-    ['a search that found nothing', () => { snsQ = 'zzzzzz'; snsHits = null;
+        const h = vExplore(); ME.fo = was; snsQ = ''; snsHits = null; return h; }],
+    ['posts found by searching', () => { snsQ = 'kano'; snsHits = null; snsMode = 'posts';
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+        const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
+    ['a search that found nothing', () => { snsQ = 'zzzzzz'; snsHits = null; snsMode = 'who';
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
     /* The badge, which only exists on a paid plan -- so a walk on the free
        plan never draws one, and free is what these walks run on. Both plans,
        and both places it shows: beside a name on a profile and beside a name

@@ -234,9 +234,16 @@ function vPhoto(){
    is no second shape for a person anywhere in this app, and there must not
    be: a post is signed with exactly these, so the search and the timeline are
    describing the same thing. */
-var snsQ='', snsHits=null;
+/* `snsMode` is which of the two the search is about -- people, or posts. It
+   starts on people and goes back to people the moment anybody types.
+   「それまでは人」 */
+var snsQ='', snsHits=null, snsMode='who';
 function snsSetQ(v){
   snsQ=String(v||'');
+  /* Typing is looking for somebody again. A query that answered with posts
+     and then went on answering with posts as the next name was typed would
+     be a screen that changed what it was about and never changed back. */
+  snsMode='who';
   snsFind(snsQ, snsGot);
   var x=document.getElementById('sns-x');
   if(x){ if(snsQ) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
@@ -251,7 +258,7 @@ function snsGot(r){
   if(e) e.innerHTML=snsHitsHTML();
   postFaces(); postLines();
 }
-function snsClearQ(){ snsQ=''; snsHits=null; render(); }
+function snsClearQ(){ snsQ=''; snsHits=null; snsMode='who'; render(); }
 /* SNS_SEAM — ask for what matches `q` and call done() with
    { q: <the query it answers>, who: [person, …], posts: [post, …] }.
    `q` comes back on the answer so a late one can be thrown away.
@@ -262,8 +269,21 @@ function snsClearQ(){ snsQ=''; snsHits=null; render(); }
 function snsFind(q, done){
   q=String(q||'').trim();
   if(!q){ done({q:q, who:[], posts:[]}); return; }
-  if(q.charAt(0)==='@'){ done({q:q, who:snsMatchWho(q), posts:[]}); return; }
-  done({q:q, posts:snsMatchPosts(q), who:[]});
+  /* People until somebody asks for posts. Typing was searching POSTS unless
+     the query began with `@`, so looking for a person meant knowing to type a
+     character first -- and what a search on a timeline is for, before you
+     know anybody, is finding people. 「人だけにして」「ツイートの検索は検索
+     ボタン押したら出てくる。それまでは人」 */
+  if(snsMode==='posts'){ done({q:q, who:[], posts:snsMatchPosts(q)}); return; }
+  done({q:q, who:snsMatchWho(q), posts:[]});
+}
+/* Which of the two the answer is about. Where you are standing rather than
+   anything the language has, so viewReset() drops it. */
+function snsGo(){
+  if(!snsQ.trim()) return;
+  snsMode='posts'; snsHits=null;
+  snsFind(snsQ, snsGot);
+  render();
 }
 /* What the seam is filled with until there is a server: the people who have
    already arrived. A post is signed with its author, which is the whole
@@ -312,19 +332,33 @@ function snsMatchPosts(q){
   }
   return out;
 }
-/* A person, as a row, and every one of them opens a profile: your own has no
-   argument and anybody else's is their handle. */
+/* A person, as a row: the face, the name and the handle, the language they
+   write, and the one thing you came here to do about them.
+   「⭕️ @〇〇 lingua マーク　フォローする」
+
+   Two controls and not one, so the row is a container: pressing the person
+   opens their page, pressing Follow follows them and stays where it is. It
+   was one button with a chevron on the end -- which meant the only thing you
+   could do with somebody you had just found was go and look at them.
+
+   Your own row has neither: you cannot follow yourself, and the chevron is
+   not needed to say where your own name goes. */
 function snsWhoRow(p){
+  var h=String(p.hd||''), on=meFollows(h);
   var inner='<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
       '<span class="pname">'+esc(postWho(p))+'</span>'+
-      '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
+      '<span class="phandle">@'+esc(h)+'</span>'+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
-  return p.mine
-    ? '<button class="whrow"' + DO('goTab', ["profile"]) + '>'+inner+ICON_GO+'</button>'
-    : '<button class="whrow"' + DO('go', ["profile", String(p.hd||'')]) + '>'+
-        inner+ICON_GO+'</button>';
+  return '<div class="whrow">'+
+    (p.mine
+      ? '<button class="whgo"' + DO('goTab', ["profile"]) + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('go', ["profile", h]) + '>'+inner+'</button>')+
+    (p.mine? ''
+      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
+          esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
+    '</div>';
 }
 function snsHitsHTML(){
   var r=snsHits, out='', i;
@@ -341,8 +375,13 @@ function vExplore(){
   return '<div class="view">'+rootTop('explore')+
     '<div class="body">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+      /* `enterkeyhint` is what makes the phone's own return key say Search,
+         and pressing it is what asks for posts. 「ツイートの検索は検索ボタン
+         押したら出てくる」 */
       '<input id="sns-q" placeholder="'+esc(t('sns.search'))+'" value="'+esc(snsQ)+'" '+
-      'autocomplete="off" autocorrect="off" spellcheck="false"' + IN('snsSetQ') + '>'+
+      'enterkeyhint="search" '+
+      'autocomplete="off" autocorrect="off" spellcheck="false"' +
+      IN('snsSetQ') + KD('snsGo') + '>'+
       '<button class="sx" id="sns-x"' + DO('snsClearQ') + (snsQ?'':' hidden')+
         ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+

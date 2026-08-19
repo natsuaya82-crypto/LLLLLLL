@@ -1082,9 +1082,21 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    profile, which is the one profile this phone has. Anybody else's is a row,
    because there is nowhere for it to go and a button that goes nowhere is
    worse than no button. */
-.whrow{display:flex;align-items:center;gap:12px;width:100%;
-       padding:12px 2px;border:0;border-bottom:1px solid var(--line);
-       background:none;color:var(--tx);text-align:left}
+/* A person, found. Two controls in one row: the person, which opens their
+   page, and Follow, which does the thing you came here to do and leaves you
+   where you are. The row is the container and the rule underneath is its. */
+.whrow{display:flex;align-items:center;gap:10px;width:100%;
+       border-bottom:1px solid var(--line)}
+.whgo{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:12px;
+      padding:12px 2px;border:0;background:none;color:var(--tx);
+      text-align:left;font-family:inherit}
+/* Outline, and filled with nothing until it is on -- Follow is the thing to
+   press and Following is a state, which is the same shape the profile's own
+   button already uses. */
+.whfo{flex:0 0 auto;min-height:44px;padding:0 14px;border-radius:999px;
+      border:1px solid var(--goldln);background:none;color:var(--gold);
+      font-family:inherit;font-size:.86rem;white-space:nowrap}
+.whfo.on{background:var(--goldsf);color:var(--txm);border-color:var(--line)}
 .whrow .pav{width:40px;height:40px;flex:0 0 auto}
 .whb{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
 .whb .pname,.whb .phandle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -43,7 +43,8 @@ function viewReset(){
   pfTab='posts';                       /* which list the profile shows */
   snsTab='rec';                        /* and which timeline the feed shows */
   PMENU='';                            /* the ... open beside a post */
-  snsQ=''; snsHits=null;               /* the search, and what came back */
+  snsQ=''; snsHits=null; snsMode='who'; /* the search, what came back, and
+                                          which of the two it is about */
   NOTES_HAVE=null;                     /* the notices, asked again */
   BKLIST=null;                         /* what is on the disk, asked again */
 }
