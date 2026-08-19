@@ -953,6 +953,7 @@ defLang('ru', (function(){
       'post.save'             : "Сохранить",
       'post.edited'           : "Изменено",
       'post.pv'               : "Только для вас",
+      'post.unsent'               : "Ещё не отправлено",
       'post.pv.on'            : "Это увидите только вы",
       'post.pv.off'           : "Это увидят все",
       'post.draft.save'       : "Сохранить черновик",

@@ -935,6 +935,7 @@ defLang('zh', (function(){
       'post.save'             : "保存",
       'post.edited'           : "已编辑",
       'post.pv'               : "仅自己",
+      'post.unsent'               : "尚未发送",
       'post.pv.on'            : "只有你能看到",
       'post.pv.off'           : "所有人都能看到",
       'post.draft.save'       : "存为草稿",

@@ -562,6 +562,16 @@ var ICON_LOCK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="
   'stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="5" y="10.5" width="14" height="9.5" rx="2"/>'+
   '<path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></svg>';
+/* A post of yours that has not reached the server. An arrow up with a line
+   under it: the way out, and the thing in the way.
+
+   It is drawn rather than left to a word because it sits in a row of marks
+   beside the time, with the lock and the pin, and a word among marks is a
+   word that has to be read. What it MEANS is on the button as its label. */
+var ICON_UNSENT='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
+  'stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 16V5"/><path d="M7.5 9.5 12 5l4.5 4.5"/><path d="M5 20h14"/></svg>';
 /* pinned: a post its author put at the top of their own page */
 var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+

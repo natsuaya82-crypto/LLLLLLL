@@ -758,7 +758,24 @@ function pwSendWith(ln, pics, vo){
   /* A post kept to yourself is never told to anybody. It is the one post
      that does not go through this door at all -- not "sent and hidden",
      which is a flag somebody else's server has to be trusted with. */
-  if(!mine.pv) netPush(mine, function(sid){ postSid(mine, sid); }, function(){});
+  /* And the failure is SAID. It was `function(){}` -- so a post the server
+     refused was a post that looked sent, on a screen that looked right, and
+     nothing anywhere could tell you otherwise. That is the app being
+     half-online, which is the one thing it may not be. The post itself is
+     never lost either way: it is already in POSTS and postCatchUp() keeps
+     trying. 「spl流したのにまだ投稿載らんの？」
+
+     Here and not in postCatchUp(): this is the moment somebody pressed the
+     button, so this is the moment they are owed an answer. The retries
+     happen behind a timeline being read and must stay quiet. */
+  if(!mine.pv)
+    netPush(mine, function(sid){ postSid(mine, sid); },
+            /* The toast and nothing else. Nothing on the screen changed: the
+               post has been drawn as not-sent since the moment it was
+               written, and it still is. A render() here would be the answer
+               to a request redrawing a screen somebody has since moved on
+               from. */
+            function(d, s){ toast(netWhy(d, s)); });
   PW=pwBlank();
   goTab('feed');
 }
@@ -1861,6 +1878,18 @@ function postRow(p){
            moment it was edited, not a flag: what a person wants to know is
            when, and a flag cannot be asked that later. */
         (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
+        /* Yours, public, and not on the server yet. It was nothing at all:
+           netPush() was handed an empty failure function in both places that
+           call it, so a post the server refused looked exactly like one it
+           took, and the only way to find out was somebody's dashboard.
+           「spl流したのにまだ投稿載らんの？」
+
+           `sid` is the server's name for this post and postSid() writes it,
+           so having none is the whole of the question. A post kept to
+           yourself never goes anywhere and is not waiting for anything. */
+        ((p.mine && !p.pv && !p.sid)
+          ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
+          : '')+
         (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         /* The ... and, when it is the one that is open, the menu hanging off

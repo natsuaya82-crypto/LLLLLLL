@@ -15,6 +15,42 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A post that has not reached the server says so
+
+「spl流したのにまだ投稿載らんの？」 — and nobody could answer it, which is the
+bug. `netPush()` was handed an **empty failure function** in both places that
+call it, so a post the server refused looked exactly like one it took: the
+timeline drew it, nothing was said, and the only place the truth was written
+was somebody's dashboard.
+
+Two things now:
+
+- **The row says it.** A post of yours that is public and has no `sid` — the
+  server's name for it, which `postSid()` is the only thing that writes —
+  wears a mark beside the time, next to the lock and the pin. `ICON_UNSENT`,
+  drawn like everything else.
+- **The send says why.** `pwSendWith()` passes the failure to `toast(netWhy())`
+  instead of throwing it away. Here and not in `postCatchUp()`: this is the
+  moment somebody pressed the button, and the retries happen behind a timeline
+  being read and must stay quiet.
+
+**Nothing is lost either way.** The post is in `POSTS` before any of this and
+`postCatchUp()` goes on trying. Nothing is deleted, and no post is held back.
+
+**Stored data.** None. `sid` already existed and already meant this.
+
+**Tested.** `post-check` writes posts with no server to reach — which is the
+honest case, not a contrived one — and asks whether the row says so. Watched
+failing with the mark removed. `npm test` green.
+
+**Not tested.** Nothing on a device, and the actual cause of the reported
+symptom is still unknown: the app will now name it.
+
+**The likeliest cause, for whoever reads this next.** `post.author` references
+`profile(id)` (`supabase/schema.sql`), so an account with no `profile` row has
+every post refused on a foreign key. `is_member()` only asks whether somebody
+is signed in, so it does not catch it.
+
 ### The bottom bar is five marks and no words
 
 「下タブにホームとかつけるのやめない？絵文字だけ」

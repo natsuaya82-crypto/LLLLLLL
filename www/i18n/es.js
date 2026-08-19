@@ -890,6 +890,7 @@ defLang('es', (function(){
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",
       'post.pv'               : "Privado",
+      'post.unsent'               : "Aún no enviado",
       'post.pv.on'            : "Solo tú lo verás",
       'post.pv.off'           : "Todos lo verán",
       'post.draft.save'       : "Guardar borrador",
