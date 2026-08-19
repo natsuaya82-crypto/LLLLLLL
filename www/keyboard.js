@@ -495,9 +495,19 @@ function kbFixed(){
        -- and the columns stop lining up. 「キーボードずれた。文字サイズとか
        小さくしていいからずらさないで」 The nine-letter row does the same
        thing with half a key at each end, which is where a phone puts it. */
+    /* The delete takes the slack instead of an empty slot taking it. The row
+       was [nothing(1), z..m(7), delete(2)] -- ten across, so the columns
+       lined up with the two rows above, at the price of a key-wide hole at
+       the left of the third row. With the layer key gone from the bottom row
+       that hole is the only empty space on the keyboard and it reads as a
+       mistake. 「2があった分謎に隙間できたから無くして」
+
+       Three wide and hard against the right edge: still ten across, still
+       lined up, and the one key you hit without looking is now the easiest
+       one to hit. 「デリートキーは横二つ分欲しいかも」 */
     if(i===KB_QWERTY.length-1){
-      var d=kbKey('del'); d.w=2;
-      row.unshift(kbGap(1)); row.push(d);
+      var d=kbKey('del'); d.w=3;
+      row.push(d);
     }
     if(row.length===9) row.unshift(kbGap(0.5)), row.push(kbGap(0.5));
     if(row.length) rows.push(row);

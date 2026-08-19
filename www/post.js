@@ -164,6 +164,10 @@ function openPost(){
          screen's own name off the top of it, and a mark beside a verb is what
          a bar that narrow has room for. */
       esc(t(PW.ed? 'post.save' : 'post.send'))+'</button>');
+  /* One screen, and it does not scroll. The field takes whatever is left
+     between the bar and the rows under it, and the rows under it are always
+     there to be pressed. */
+  if(FORM) FORM.fit=true;
 }
 /* The timer, wired after the screen is drawn. Holding turns the post private
    or public again; letting go early does nothing, and the press that follows
@@ -603,7 +607,7 @@ function pwHTML(){
          now, and lnFit() measures the width when the writing-mode is
          vertical, because that is the way a column grows. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
-        PW.ln, dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
+        PW.ln, 'fitin '+dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same

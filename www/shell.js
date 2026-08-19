@@ -304,6 +304,11 @@ function lnFit(e){
     e.style.width=e.scrollWidth+'px';
     return;
   }
+  /* `fitin` is a field whose HEIGHT the layout is giving it -- a screen that
+     does not scroll has to end somewhere, and a field that grows with its
+     text is a screen that does not. It scrolls inside itself instead, the
+     way every composer does. */
+  if(String(e.className||'').indexOf('fitin')>=0){ e.style.width=''; e.style.height=''; return; }
   e.style.width='';
   e.style.height='auto';
   e.style.height=e.scrollHeight+'px';
@@ -348,6 +353,38 @@ function tabBar(){
       ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+'</button>';
   }
   return '<div class="tabbar">'+out+'</div>';
+}
+/* ---- how much of the screen the page can actually see ------------------
+   The software keyboard does not shrink `100dvh`. It slides OVER the page, so
+   a screen sized to the viewport is a screen whose foot is behind the
+   keyboard from the moment somebody starts typing -- which is the only moment
+   the composer is being looked at. 「キーボード込みでに決まってるやん」
+
+   `visualViewport` is the only thing that knows, and it is the one place that
+   asks: everything else reads `--vvh`. Where there is no visualViewport there
+   is no software keyboard sliding over anything either, and the fallback is
+   what this was.
+
+   `--tabgap` is the room the bar at the foot needs. It is fixed to the LAYOUT
+   viewport, so with the keyboard up it is behind the keyboard and there is
+   nothing to leave room for -- leaving it anyway costs sixty points of a
+   screen that has just lost half its height. */
+function vvFit(){
+  var v=window.visualViewport, h=v? v.height : window.innerHeight;
+  /* 120 rather than 0: a phone's address bar sliding away is also a change of
+     height and is not a keyboard. */
+  var up=(window.innerHeight-h)>120;
+  var d=document.documentElement.style;
+  d.setProperty('--vvh', h+'px');
+  d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
+}
+function vvMount(){
+  vvFit();
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', vvFit, false);
+    window.visualViewport.addEventListener('scroll', vvFit, false);
+  }
+  window.addEventListener('resize', vvFit, false);
 }
 /* And the bar is put on the page here, once, into an element beside #app that
    render() never rewrites. Writing it into each screen's HTML meant it was

@@ -433,8 +433,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A field somebody types a column into. The height is the page's to give --
    a column has to be told how long it is, the way a horizontal one is told
    how wide -- and lnFit() measures the width, which is the way it grows. */
-.lnin.dir-ttb-rl,.lnin.dir-ttb-lr{display:block;height:38vh;min-width:1.6em;
-   resize:none;border-bottom:0;padding:2px 12px}
+/* A FIELD is not a post's line, and the two rules above are the line's: a
+   width of 100% and a max-height of 340 are how a column of somebody else's
+   post wraps and where it sits. On a field they are wrong in both directions
+   -- the height is the layout's to give, and 340 is a cap the flex line then
+   could not grow past, which is why the meaning and the pictures sat below
+   the fold with empty space above them. */
+.lnin.dir-ttb-rl,.lnin.dir-ttb-lr{display:block;min-width:1.6em;max-width:100%;
+   width:auto;height:auto;max-height:none;
+   resize:none;border-bottom:0;padding:2px 12px;overflow:auto}
 /* The rule goes on the side the columns come FROM, and the field is pushed to
    that side -- a right-to-left column starts at the right edge of the page,
    which is where somebody writing one looks first. */
@@ -599,6 +606,32 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* the lens: the one tab you are on is a solid pill inside the glass */
 .tab.on{color:var(--gold);background:var(--goldsf);
         box-shadow:inset 0 0 0 1px var(--goldln), inset 0 1px 0 var(--glassspec)}
+/* A form that is one screen. The composer asks for it: a column of text was
+   pushing the meaning and the row of pictures off the bottom, so the button
+   you were about to press was somewhere you had to go and find.
+   「この中に1画面収めてうごかないようにしてほしい」
+
+   The field takes what is left after everything under it has had its height,
+   and scrolls inside itself rather than growing -- which is why lnFit()
+   leaves a `fitin` field alone. Same shape as .view.fixed below; it is not
+   the same rule, because that one is about a page and this one is about
+   which child gets the slack. */
+.view.fit{height:100vh;height:100dvh;height:var(--vvh,100dvh);
+   display:flex;flex-direction:column;overflow:hidden}
+/* The bar at the foot is fixed and floats over the page, so the room it
+   takes has to be left for it here as every other screen leaves it -- one
+   screen means everything on it is visible, and the row of pictures was
+   sitting underneath the tabs. */
+.view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
+   padding-bottom:var(--tabgap,calc(var(--tabh) + 10px));overflow:hidden}
+.view.fit .pwtop{flex:1;min-height:0}
+.view.fit .pwfield{display:flex;flex-direction:column;min-height:0}
+/* `height:0` and not just `flex:1`. A textarea's own height comes from its
+   `rows`/`cols`, and in a vertical writing mode it is `cols` that sets it --
+   twenty characters, which is a base size big enough that the flex line had
+   almost no free space left to grow into. Zeroing the base is what makes
+   "take what is left" mean it. */
+.view.fit .pwfield .lnin{flex:1 1 0;height:0;min-height:0;overflow:auto}
 /* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;

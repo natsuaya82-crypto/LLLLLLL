@@ -47,6 +47,8 @@ sndStart();
 ltStart();
 /* the font built from whatever letters have been drawn */
 installScriptFont();
+/* and how much of the screen there is, which the keyboard changes */
+vvMount();
 /* The session, resumed. The token in hand lasts an hour, so a launch the next
    morning has one that is already dead; this trades the refresh token for a
    fresh pair before anything asks the server for something. It is fired and

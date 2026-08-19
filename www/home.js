@@ -197,7 +197,12 @@ function vForm(){
     if(!FORM || FORM.key!==a)
       return viewGone();
   }
-  return '<div class="view">'+navTop('', FORM.right)+
+  /* `fit` is a form that is one screen and does not scroll -- the composer,
+     where a column of text pushed the meaning and the picture row off the
+     bottom, so the thing you were about to press was somewhere you had to go
+     and find. 「この中に1画面収めてうごかないようにしてほしい」 The form says
+     so when it opens; nothing here decides it. */
+  return '<div class="view'+(FORM.fit? ' fit' : '')+'">'+navTop('', FORM.right)+
     '<div class="body" id="form-body">'+FORM.html+'</div></div>';
 }
 /* ---- where an explanation goes -----------------------------------------

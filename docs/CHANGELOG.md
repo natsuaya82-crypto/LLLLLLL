@@ -15,6 +15,46 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The composer is one screen — with the keyboard up
+
+「この中に1画面収めてうごかないようにしてほしい」「キーボード込みでに決まってるやん」
+
+The line, the gloss, the meaning and the row that adds a photograph all have
+to be on screen **while somebody is typing**, which is the only time the
+composer is looked at. Three things were in the way:
+
+- **`100dvh` does not shrink for the software keyboard.** It slides over the
+  page. `vvFit()` reads `visualViewport` — the one thing that knows — into
+  `--vvh`, and re-reads it whenever that changes. `--tabgap` goes with it: the
+  bar at the foot is fixed to the *layout* viewport, so with the keyboard up
+  it is behind the keyboard and there is nothing to leave room for.
+- **The field grew with its text.** `.view.fit` is a form that is one screen:
+  the field takes what is left after everything under it has had its height,
+  and scrolls inside itself. `lnFit()` leaves a `fitin` field alone.
+- **A field was wearing a post's rules.** `.dir-ttb-*` sets `width:100%` and
+  `max-height:340px` — that is how a column of somebody else's post wraps and
+  where it sits. On a field the cap meant the flex line could not grow past
+  340, which is why the meaning and the pictures sat below the fold with empty
+  space above them.
+
+Both directions, vertical and horizontal.
+
+### The third row has no hole in it
+
+「2があった分謎に隙間できたから無くして」
+
+The row was `[nothing(1), z…m(7), delete(2)]` — ten across, so the columns line
+up with the rows above, at the price of a key-wide hole at the left. With the
+layer key gone from the bottom row that hole was the only empty space on the
+keyboard. The delete takes it instead: three wide, hard against the right
+edge, still ten across, and the one key you hit without looking is now the
+easiest one to hit.
+
+**Stored data.** None, in either.
+**Not tested.** `visualViewport` behaves differently in WKWebView than in the
+walk. **The phone is what settles it** — open the composer, start typing, and
+see whether the picture row is still there.
+
 ### A letter on a key stays on its key
 
 「文字がずれてる」 — reported more than once.
