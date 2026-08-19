@@ -327,8 +327,12 @@ function tabBar(){
   var cur=here().r, i, r, out='';
   for(i=0;i<TABS.length;i++){
     r=TABS[i];
-    out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) + '>'+
-      TAB_ICON[r]+'<span class="tabl">'+esc(pageName(r))+'</span></button>';
+    /* The mark and nothing else. 「下タブにホームとかつけるのやめない？」
+       The name is still said -- as the button's aria-label, because a button
+       whose whole content is an aria-hidden drawing has nothing to be called
+       by otherwise, and pageName() stays the one place that names a tab. */
+    out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) +
+      ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+'</button>';
   }
   return '<div class="tabbar">'+out+'</div>';
 }

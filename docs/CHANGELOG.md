@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The bottom bar is five marks and no words
+
+「下タブにホームとかつけるのやめない？絵文字だけ」
+
+The label went beside the icon first, then under it. It is gone: five
+drawings, and the name is on each button as its `aria-label`, so nothing is
+lost to somebody who cannot see the drawing. `pageName()` is still the one
+place a tab is named.
+
+The pill comes down with the words — 52 to 46, which is still clear of the
+44pt floor `press` holds every target to — and `--tabh` with it, 72 to 66,
+because every screen's foot is measured from that. The bar is 58px tall
+where it was 64.
+
+**Stored data.** None.
+
 ### The timeline asks who you are — OWNER DECISION
 
 「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあんの？」
