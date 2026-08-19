@@ -192,6 +192,30 @@ function whoOf(h){
   return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
+/* Who you have blocked, as handles, beside who you follow -- both are the
+   account's and neither is a language's. The uuids the timeline needs are the
+   server's answer (netBlocked); this is what a screen asks so a button can
+   say which state it is in without a request. */
+function meBlocking(){ return (ME.bl && ME.bl.length)? ME.bl : []; }
+function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
+/* Blocking somebody stops following them. Keeping a follow to somebody you
+   have blocked is a list that says two opposite things, and the one the
+   timeline reads would decide which is true. */
+function meBlock(h){
+  var bl=meBlocking(), i;
+  h=String(h||'');
+  if(!h || h===meHandle()) return;
+  i=bl.indexOf(h);
+  if(i>=0) bl.splice(i, 1);
+  else {
+    bl.push(h);
+    if(meFollows(h)) meFollow(h);
+  }
+  ME.bl=bl;
+  saveMe();
+  render();
+  netBlock(h, i<0, function(){}, function(){});
+}
 /* Following and unfollowing, in one place. The list is what this phone knows
    and netFollow() is what the server is told -- not waited on, the way a like
    is not waited on: the button has already changed. */

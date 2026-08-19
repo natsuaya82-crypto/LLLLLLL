@@ -15,6 +15,58 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Blocking and reporting
+
+「ブロック通報はつくって」 — OWNER DECISION.
+
+An app carrying other people's writing owes anybody two things: stop seeing
+them, and say something is wrong. Neither existed — no table, no policy, no
+screen.
+
+**Server.** Two new tables in `supabase/schema.sql`.
+
+- `block` — one-directional, and **`block_read` answers with your own rows
+  only.** Not `using (true)` like every other read here: who has blocked whom
+  is the one thing on this server that is nobody's business but the person who
+  did it, and a policy that let the blocked party read it would make being
+  blocked something they find out.
+- `report` — **no select policy at all.** Nobody using the app can read one,
+  not the person who wrote it and not the person it is about; it is for
+  whoever is looking at the dashboard, and a person who could read reports
+  could work out who reported them. No update and no delete either: a report
+  that can be withdrawn by the person it is about is not a report. `why` is a
+  closed set of five, checked by the schema.
+
+**The timeline asks the server.** `netFeed()` fetches the block list first and
+hands the server `author=not.in.(…)`. A timeline that downloaded their posts
+and then hid them would be a block the phone knows about and the server does
+not, which is not a block.
+
+**The ⋯ is on every post now**, and it is not the same menu: yours holds pin,
+edit and delete; somebody else's holds Block and Report. It was on your own
+posts only — so the one post you might need to do something about had nothing
+on it.
+
+**Blocking somebody stops following them.** A list that says both is a list
+where whichever one the timeline reads decides which is true.
+
+**Stored data.** `ME.bl`, the handles you have blocked, beside `ME.fo`. The
+account's, not a language's.
+
+**Tested.** `npm run rls` — 50 attempts became 66. B cannot see that A blocked
+them, cannot block in A's name, cannot lift A's block; nobody can read a
+report, not even its author; a reason outside the five is refused, and so is a
+report about neither a post nor a person. `npm test` green — screens 486 → 496,
+buttons 5992 → 6286.
+
+`sides-check` gained two names in ALLOW with the reason written out: the menu
+is not part of the post. Everything else below that line answers "what does
+this post say"; the menu answers "what may I do about it", and that answer is
+about me.
+
+**Not tested.** Nothing on a device, and **the report goes nowhere anybody
+looks yet** — reading them is a dashboard job.
+
 ### No explanatory text in the app — OWNER DECISION
 
 「お前もうアプリ内に説明書くの禁止な」

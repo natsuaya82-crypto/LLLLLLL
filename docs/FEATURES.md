@@ -237,12 +237,17 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 6. Blocking, reporting, and taking a post down
+### 6. Taking a post down
 
-**Nothing exists — no table, no policy, no screen.** This is not a feature
-among features: an app with user-generated content is rejected by App Store
-review without a way to report and block. It has to be on the server, because
-a block one phone knows about is not a block.
+Blocking and reporting are **done** (2026-08-19): `block` and `report` in
+`schema.sql`, the ⋯ on every post, and the timeline asking the server to leave
+blocked authors out.
+
+What is left is the other half — **somebody has to read the reports and be
+able to take a post down.** There is no dashboard view and no way to remove
+somebody else's post; `post_drop` is the author's alone. Until that exists a
+report is written and nobody looks at it, which App Store review will ask
+about.
 
 ### 7. Deleting an account, on the server
 

@@ -319,7 +319,16 @@ function netFeed(which, ok, bad){
     for(i=0;i<d.length;i++) out.push(netRow(d[i]));
     ok(out);
   }
-  if(which!=='fo'){ netGet(sel, got, bad); return; }
+  /* Whoever you have blocked is asked for FIRST and left out by the server. A
+     timeline that downloaded their posts and then hid them would be a block
+     the phone knows about and the server does not, which is not a block. */
+  function pull(more){
+    var q=sel+(more||'');
+    netBlocked(function(bl){
+      netGet(bl.length? q+'&author=not.in.('+bl.join(',')+')' : q, got, bad);
+    });
+  }
+  if(which!=='fo'){ pull(''); return; }
   if(!netSignedIn()){ ok(null); return; }
   /* Two requests and not a join, because there is no foreign key from a post
      to a follow and PostgREST will not invent one. The follow list is small
@@ -331,8 +340,70 @@ function netFeed(which, ok, bad){
       /* Following nobody is an answer, not a failure: an empty timeline is
          what "you follow nobody" looks like, and snsNoneFo() says so. */
       if(!ids.length){ ok([]); return; }
-      netGet(sel+'&author=in.('+ids.join(',')+')', got, bad);
+      pull('&author=in.('+ids.join(',')+')');
     }, bad);
+}
+/* ---- keeping somebody away from you ------------------------------------
+   A block one phone knows about is not a block: the other person's posts have
+   to stop arriving, so it is a row on the server and the timeline asks about
+   it. `block_read` in schema.sql answers with YOUR rows only -- being blocked
+   is not something a person is told.
+
+   By handle, because a handle is what one person knows another by; the uuid
+   is looked up here exactly as netFollow() does. */
+function netBlock(handle, on, ok, bad){
+  if(!netSignedIn() || !handle){ ok(); return; }
+  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
+    function(d){
+      var who=(d && d.length)? d[0].id : '';
+      if(!who){ ok(); return; }
+      if(on){
+        netSend('POST', '/rest/v1/block', {actor:SESS.uid, blocked:who},
+                SESS.at, function(){ ok(); }, bad);
+        return;
+      }
+      netSend('DELETE', '/rest/v1/block?actor=eq.'+encodeURIComponent(SESS.uid)+
+              '&blocked=eq.'+encodeURIComponent(who), null, SESS.at,
+              function(){ ok(); }, bad);
+    }, bad);
+}
+/* The uuids you have blocked, for the one thing that needs uuids: keeping
+   their posts out of a timeline. Signed out there is nobody to have blocked
+   and the answer is none, which is not a failure. */
+function netBlocked(ok){
+  if(!netSignedIn()){ ok([]); return; }
+  netGet('/rest/v1/block?select=blocked&actor=eq.'+encodeURIComponent(SESS.uid),
+    function(d){
+      var out=[], i;
+      for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].blocked) out.push(d[i].blocked);
+      ok(out);
+    }, function(){ ok([]); });
+}
+/* Something is wrong with this post, or with this person. Written and never
+   read back: there is no select policy on `report` at all, so nobody using
+   the app can read one -- not the person who wrote it and not the person it
+   is about. It goes to whoever is looking at the dashboard.
+
+   `why` is one of the five the schema allows. A reason invented here would be
+   refused by the check constraint, which is the right way round: the list of
+   reasons is the server's. */
+function netReport(what, why, note, ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  var row={actor:SESS.uid, why:String(why||'other')};
+  if(note) row.note=String(note);
+  if(what && what.post){ row.post=what.post; }
+  if(what && what.handle){
+    netGet('/rest/v1/profile?select=id&limit=1&handle='+
+           'eq.'+encodeURIComponent(what.handle),
+      function(d){
+        if(d && d.length) row.who=d[0].id;
+        if(!row.post && !row.who){ bad(null, 0); return; }
+        netSend('POST', '/rest/v1/report', row, SESS.at, function(){ ok(); }, bad);
+      }, bad);
+    return;
+  }
+  if(!row.post){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/report', row, SESS.at, function(){ ok(); }, bad);
 }
 /* ---- searching, which is the server's ----------------------------------
    A search over what is on THIS phone is a search of the people you already

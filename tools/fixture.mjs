@@ -348,6 +348,17 @@ export function halfDone(){
     ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+    /* And the OTHER menu, which is a different menu: on somebody else's post
+       what you can do is about them, not about it. `p2` is Iri's. */
+    ['what you can do about somebody else', () => { PMENU = 'p2';
+                              window.route='feed'; NAV=[{r:'feed'}];
+                              const h = vFeed(); PMENU = ''; return h; }],
+    ['and the same, already blocked', () => { const was = ME.bl; ME.bl = ['iri'];
+                              PMENU = 'p2'; window.route='feed'; NAV=[{r:'feed'}];
+                              const h = vFeed(); ME.bl = was; PMENU = ''; return h; }],
+    /* The five reasons. It is a form and nothing walks to it. */
+    ['saying what is wrong with a post', () => { openReport('p2', 'iri');
+                              const h = FORM.html; rpFor = null; return h; }],
     /* Somebody else's profile, the follow button on it, and the same page
        once you follow them. The only profile a walk sees is this person's
        own, and the two cards are different screens. */

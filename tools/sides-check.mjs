@@ -168,7 +168,20 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
    about language, which is why it is a second sentence and not an extra name
    on the first one. */
 
-const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postBadge']);
+/* postMenuHTML -- the ... menu, which is not part of the post. Everything else
+   below this line answers "what does this post say"; the menu answers "what
+   may I do about it", and the answer is about ME. On somebody else's post it
+   is Block and Report, and whether Block already says Unblock is a fact about
+   my account and can come from nowhere else. It draws nothing INTO the post:
+   the post's own words, shapes, name and handle are untouched by it, which is
+   what the line is protecting.
+
+   meBlocks -- the one thing that menu asks, and the only reason it is on this
+   list. It reads whether I have blocked this handle. Both names are here
+   because the check names the callee: postMenuHTML for the row that opens the
+   menu, meBlocks for the menu that asks. */
+
+const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postBadge', 'postMenuHTML', 'meBlocks']);
 
 const bodies = {};
 for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {

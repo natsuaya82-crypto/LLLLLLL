@@ -210,6 +210,45 @@ create table if not exists follow (
   check (follower <> followed)
 );
 
+-- ---- keeping somebody away from you ----------------------------------------
+-- Who you will not see. A block one phone knows about is not a block: the
+-- other person's posts have to stop arriving, and that is a question the
+-- timeline asks the server.
+--
+-- It is one-directional and it is nobody's business but yours. `block_read`
+-- below answers with YOUR rows only -- being blocked is not something a
+-- person is told, because telling them is how a block becomes an argument.
+create table if not exists block (
+  actor      uuid not null references profile(id) on delete cascade,
+  blocked    uuid not null references profile(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (actor, blocked),
+  check (actor <> blocked)
+);
+create index if not exists block_actor_idx on block(actor);
+
+-- ---- saying that something is wrong ----------------------------------------
+-- A report is written and never read back by anybody using the app. It goes to
+-- whoever is looking at the dashboard, which is the whole point: a person who
+-- could read reports could find out who reported them.
+--
+-- A post OR a person, and at least one of the two. Reporting a post is the
+-- common case; reporting an account with no particular post is the other one.
+--
+-- `why` is a closed set, because a free-text-only report is a report nobody
+-- can count. `note` is optional and is the person's own words.
+create table if not exists report (
+  id         bigint generated always as identity primary key,
+  actor      uuid not null references profile(id) on delete cascade,
+  post       uuid references post(id) on delete cascade,
+  who        uuid references profile(id) on delete cascade,
+  why        text not null check (why in ('spam','abuse','hate','sexual','other')),
+  note       text,
+  created_at timestamptz not null default now(),
+  check (post is not null or who is not null)
+);
+create index if not exists report_made_idx on report(created_at desc);
+
 -- ---------------------------------------------------------------------------
 -- Row level security
 --
@@ -231,6 +270,8 @@ alter table quote       enable row level security;
 alter table react       enable row level security;
 alter table prompt      enable row level security;
 alter table follow      enable row level security;
+alter table block       enable row level security;
+alter table report      enable row level security;
 
 -- A signed-in account that is not an anonymous one.
 create or replace function is_member() returns boolean
@@ -324,6 +365,29 @@ create policy react_drop on react for delete using (is_member() and actor = auth
 -- policy exists, so the day's sentence can only come from the service role.
 drop policy if exists prompt_read on prompt;
 create policy prompt_read on prompt for select using (true);
+
+-- block: YOURS and nobody else's, in every direction. Not `using (true)` like
+-- every other read here: who has blocked whom is the one thing on this server
+-- that is nobody's business but the person who did it. A policy that let the
+-- blocked party read it would make being blocked something they find out.
+drop policy if exists block_read on block;
+create policy block_read on block for select using (actor = auth.uid());
+drop policy if exists block_make on block;
+create policy block_make on block for insert
+  with check (is_member() and actor = auth.uid());
+drop policy if exists block_drop on block;
+create policy block_drop on block for delete using (is_member() and actor = auth.uid());
+
+-- report: written and never read. There is no select policy at all, so nobody
+-- using the app can read one -- not the person who wrote it and not the person
+-- it is about. It is for whoever is looking at the dashboard, and a person who
+-- could read reports could work out who reported them.
+--
+-- No update and no delete either: a report that can be withdrawn by the person
+-- it is about is not a report.
+drop policy if exists report_make on report;
+create policy report_make on report for insert
+  with check (is_member() and actor = auth.uid());
 
 -- follow: everyone sees who follows whom; you add and remove your own following
 drop policy if exists follow_read on follow;

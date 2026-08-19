@@ -1906,11 +1906,14 @@ function postRow(p){
            it. It is IN the post rather than a screen you go to, so what you
            are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
            横にメニュー出てきて欲しい」 */
-        (p.mine? '<span class="pmw">'+
+        /* On every post, not only your own. It was yours only, which meant
+           the one post you might need to do something about -- somebody
+           else's -- was the one with nothing on it. */
+        '<span class="pmw">'+
           '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
             esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
           (PMENU===p.id? postMenuHTML(p) : '')+
-          '</span>' : '')+
+          '</span>'+
       '</div>'+
       /* Who this answers, under the head and above the line. It is here
          rather than only on the thread page because the timeline keeps
@@ -2056,7 +2059,19 @@ function postMore(id){
 
    The card is rendered inside the post, so it moves with it and needs nothing
    measured or positioned by hand. What is closed is `PMENU`, in one place. */
+/* The menu, and it is not the same menu on somebody else's post. Yours holds
+   what you can do TO it -- pin, edit, delete. Theirs holds what you can do
+   about THEM, which is the whole of what an app carrying other people's
+   writing owes anybody: stop seeing them, and say something is wrong. */
 function postMenuHTML(p){
+  var h=String(p.hd||'');
+  if(!p.mine)
+    return '<span class="pmenu" data-pm="1">'+
+      '<button class="pmi"' + DO('meBlock', [h]) + '>'+ICON_BLOCK+
+        '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
+      '<button class="pmi bad"' + DO('openReport', [p.id, h]) + '>'+ICON_FLAG+
+        '<span>'+esc(t('post.report'))+'</span></button>'+
+      '</span>';
   return '<span class="pmenu" data-pm="1">'+
     '<button class="pmi"' + DO('postPin', [p.id]) + '>'+ICON_PIN+
       '<span>'+esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
@@ -2065,6 +2080,28 @@ function postMenuHTML(p){
     '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_CROSS+
       '<span>'+esc(t('post.del'))+'</span></button>'+
     '</span>';
+}
+/* The five reasons are the server's -- `report.why` is a check constraint, so
+   a sixth invented here would be refused, which is the right way round. */
+var REPORT_WHY=['spam','abuse','hate','sexual','other'];
+var rpFor=null;
+function openReport(id, handle){
+  PMENU='';
+  rpFor={post:String(id||''), handle:String(handle||'')};
+  openForm('report:'+id, t('post.report'),
+    REPORT_WHY.map(function(w){
+      return '<button class="set"' + DO('reportGo', [w]) + '>'+
+        '<span class="sl">'+esc(t('report.'+w))+'</span>'+ICON_GO+'</button>';
+    }).join(''));
+}
+FORM_OPEN.report=function(x){ openReport(x, ''); };
+function reportGo(why){
+  var r=rpFor;
+  if(!r) return;
+  rpFor=null;
+  back();
+  netReport(r, why, '', function(){ toast(t('report.done')); },
+            function(d, s){ toast(netWhy(d, s)); });
 }
 /* act.js asks this before it delivers a press, and it is the whole of the
    rule: with a menu open, a press that is not part of that menu closes it and

@@ -572,6 +572,16 @@ var ICON_UNSENT='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
   'stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 16V5"/><path d="M7.5 9.5 12 5l4.5 4.5"/><path d="M5 20h14"/></svg>';
+/* Not seeing somebody: a circle with a line through it, which is the mark
+   every phone already uses for "no". */
+var ICON_BLOCK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
+  '<circle cx="12" cy="12" r="8"/><path d="M6.3 6.3l11.4 11.4"/></svg>';
+/* Saying something is wrong: a flag on a pole. */
+var ICON_FLAG='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
+  'stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M6 21V4"/><path d="M6 4h11l-2.2 3.6L17 11H6"/></svg>';
 /* pinned: a post its author put at the top of their own page */
 var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
