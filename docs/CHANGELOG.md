@@ -15,6 +15,21 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A keyboard has a name
+
+「キーボード名変更できるようにして。キーボード1、キーボード2、キーボード3って名前
+が初期」
+
+A field at the head of its own page, and **Keyboard 1 / 2 / 3** where nobody
+has typed one. It was a bare number, and a number is not a name — it is a
+position, and it changes when one in front of it is deleted.
+
+Board 0 is the free QWERTY, is not in storage and has nothing to write a name
+on, so it has no field. `kbEdit()` says so and `kbSetNm()` obeys it.
+
+**Stored data.** `nm` on a keyboard — the field has existed in the shape since
+keyboards did and was never written to.
+
 ### Four shapes are banned, and the keyboard chapter is the first to lose them
 — OWNER DECISION
 

@@ -223,6 +223,7 @@ act('wordsSay', wordsSay);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('impSetRole', impSetRole);
+actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
 actIn('meSetBio', meSetBio);
 actIn('meSetPic', meSetPic);

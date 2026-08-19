@@ -223,6 +223,7 @@ defLang('pt', (function(){
       "kb.pat.abc.d" : "Por nome, dez por linha",
       "kb.apply" : "Aplicar ao telefone",
       "kb.new" : "Adicionar um teclado",
+      "kb.n" : "Teclado {0}",
       "kb.rm" : "Excluir este teclado",
       "kb.rm.q" : "Excluir este teclado? Os outros ficam como estão.",
       "kb.full" : "{0} teclados é o máximo por idioma",

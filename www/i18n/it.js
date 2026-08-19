@@ -216,6 +216,7 @@ defLang('it', (function(){
       "kb.pat.abc.d" : "Per nome, dieci per riga",
       "kb.apply" : "Applica al telefono",
       "kb.new" : "Aggiungi una tastiera",
+      "kb.n" : "Tastiera {0}",
       "kb.rm" : "Elimina questa tastiera",
       "kb.rm.q" : "Eliminare questa tastiera? Le altre restano.",
       "kb.full" : "{0} tastiere è il massimo per lingua",

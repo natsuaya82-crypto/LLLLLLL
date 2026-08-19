@@ -264,6 +264,7 @@ defLang('fr', (function(){
       "kb.pat.abc.d" : "Par nom, dix par rangée",
       "kb.apply" : "Appliquer au téléphone",
       "kb.new" : "Ajouter un clavier",
+      "kb.n" : "Clavier {0}",
       "kb.rm" : "Supprimer ce clavier",
       "kb.rm.q" : "Supprimer ce clavier ? Les autres ne bougent pas.",
       "kb.full" : "{0} claviers au maximum par langue",

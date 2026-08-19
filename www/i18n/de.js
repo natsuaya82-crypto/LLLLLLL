@@ -204,6 +204,7 @@ defLang('de', (function(){
       "kb.pat.abc.d" : "Nach Namen, zehn pro Reihe",
       "kb.apply" : "Auf das Telefon anwenden",
       "kb.new" : "Tastatur hinzufügen",
+      "kb.n" : "Tastatur {0}",
       "kb.rm" : "Diese Tastatur löschen",
       "kb.rm.q" : "Diese Tastatur löschen? Die anderen bleiben.",
       "kb.full" : "{0} Tastaturen sind das Höchste pro Sprache",

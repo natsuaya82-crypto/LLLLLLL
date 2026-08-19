@@ -396,20 +396,31 @@ function kbDrop(i){
      the keyboard was gone and the screen was still the sheet about it. */
   kbGo();
 }
-/* What a keyboard is called. Its own name if it has one, and otherwise the
-   ARRANGEMENT it was made from -- QWERTY, flick, tap -- which is a name that
-   says something. It was the number, which says which one is second and
-   nothing else. 「キーボード1,2,3とかの示し方ui変えてね」
+/* What a keyboard is called: whatever somebody called it, and otherwise
+   Keyboard 1, 2, 3. 「キーボード1、キーボード2、キーボード3って名前が初期」
 
-   The number is still the last resort, for a board from before patterns were
-   recorded. */
+   A bare number was what this used to be, and a number is not a name -- it is
+   a position, and it changes when one in front of it is deleted. */
 function kbName(i){
   var b=kbBoards(), x;
-  if(!b.length) return String(i+1);
+  if(!b.length) return t('kb.n', i+1);
   x=b[kbClamp(i, b.length)];
-  if(x.nm) return x.nm;
-  if(x.pat && KB_PATS.indexOf(x.pat)>=0) return t('kb.pat.'+x.pat);
-  return String(i+1);
+  return x.nm || t('kb.n', i+1);
+}
+/* Renaming one. Board 0 is the free QWERTY, is not in storage and has nothing
+   to write a name on -- kbEdit() says so and this obeys it. */
+function kbSetNm(v){
+  var b=kbEdit();
+  if(!b) return;
+  b.nm=String(v||'').slice(0, 24);
+  saveKb();
+}
+function kbNameHTML(i){
+  if(kbIsFree(i)) return '';
+  var b=kbBoards()[kbClamp(i, kbBoards().length)];
+  return '<input class="lnin kbnm" value="'+esc((b && b.nm)||'')+'" '+
+    'placeholder="'+esc(t('kb.n', i+1))+'" maxlength="24" autocomplete="off"'+
+    IN('kbSetNm') + ' aria-label="'+esc(t('kb.n', i+1))+'">';
 }
 
 /* ---- the keyboard the free plan gets ----------------------------------
@@ -891,6 +902,7 @@ function vKb(){
       kbApplyHTML()+
       '</div></div>';
   return '<div class="view">'+navTop(kbName(now), kbMoreQ())+'<div class="body">'+
+    kbNameHTML(now)+
     kbLaysHTML()+
     kbHTML(kbSel)+
     kbHBarHTML()+

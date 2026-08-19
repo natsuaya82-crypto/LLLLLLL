@@ -176,6 +176,7 @@ defLang('es', (function(){
       "kb.pat.abc.d" : "Por nombre, diez por fila",
       "kb.apply" : "Aplicar al teléfono",
       "kb.new" : "Añadir un teclado",
+      "kb.n" : "Teclado {0}",
       "kb.rm" : "Eliminar este teclado",
       "kb.rm.q" : "¿Eliminar este teclado? Los demás no se tocan.",
       "kb.full" : "{0} teclados es el máximo por idioma",

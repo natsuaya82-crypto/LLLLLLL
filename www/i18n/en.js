@@ -118,6 +118,7 @@ defLang('en', (function(){
       "kb.pat.abc.d" : "In name order, ten to a row",
       "kb.apply" : "Apply to the phone",
       "kb.new" : "Another keyboard",
+      "kb.n" : "Keyboard {0}",
       "kb.rm" : "Delete this keyboard",
       "kb.rm.q" : "Delete this keyboard? The others are untouched.",
       "kb.full" : "{0} keyboards is the most a language holds",
