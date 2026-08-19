@@ -66,6 +66,7 @@ act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);
 act('kbAddRowNew', kbAddRowNew);
 act('kbSetNew', kbSetNew);
+act('kbWobEnd', kbWobEnd);
 act('kbDelKey', kbDelKey);
 act('kbGoLay', kbGoLay);
 act('kbPick', kbPick);

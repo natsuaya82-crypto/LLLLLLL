@@ -594,6 +594,14 @@ export function halfDone(){
     /* A keyboard with more than one layer: the rail that switches between
        them only exists then -- and so does the rest of the editor: the way
        to add a row, to add a layer, and to put the whole thing back. */
+    /* Held, the way a home screen is held: every key wobbling with a ⊖ on it
+       and Done in the bar. Neither the ⊖ nor Done is on the screen at rest. */
+    ['a keyboard being held', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                      kbAdd('qwerty'); kbWob = true;
+                                      window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                      const h = vKb();
+                                      kbWob = false; KB = null; kbShow = 0;
+                                      SET.plan = 'free'; return h; }],
     ['a keyboard of two layers', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
                                          kbAdd('qwerty'); kbAddLay();
                                          window.route='kb'; NAV=[{r:'kb', a:'1'}];

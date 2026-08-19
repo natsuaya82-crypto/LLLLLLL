@@ -788,9 +788,14 @@ function kbHTML(sel, ro){
       out+= ro
         ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key, false)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
-        : '<button class="'+cls+'" style="flex:'+(key.w||1)+'" data-r="'+ri+'" data-k="'+ki+'"'+
-          DO('kbPick', [ri, ki]) + '>'+kbFlicks(key, slots)+
-          '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
+        : '<button class="'+cls+(kbWob? ' wob':'')+'" style="flex:'+(key.w||1)+'" '+
+          'data-r="'+ri+'" data-k="'+ki+'"'+
+          (kbWob? '' : DO('kbPick', [ri, ki])) + '>'+kbFlicks(key, slots)+
+          '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+
+          (kbWob && key.k!=='gap'
+            ? '<span class="kbx"' + DO('kbDelKey', [ri, ki]) + ' role="button" '+
+              'aria-label="'+esc(t('kb.key.del'))+'">'+ICON_MINUS+'</span>'
+            : '')+'</button>';
     }
     out+='</div>';
   }
@@ -914,6 +919,8 @@ function vKb(){
    chapter over. It was at the end of the row of tabs, which is a row that no
    longer exists. */
 function kbMoreQ(){
+  if(kbWob)
+    return '<button class="navq navdone"' + DO('kbWobEnd') + '>'+esc(t('kb.done'))+'</button>';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }
@@ -1072,6 +1079,12 @@ function kbLift(){
   KBD.el.classList.add('lift');
   var g=document.getElementById('kb');
   if(g) g.classList.add('moving');
+  /* And the keyboard goes into the state a phone's home screen goes into
+     when an icon is held: every key wobbling with a ⊖ on its corner. It is
+     not drawn until the finger comes up -- a render() in the middle of a drag
+     takes the element being dragged out from under it.
+     「長押ししたら右上に➖出てきて消える。iPhoneのホーム画面と同じ挙動」 */
+  kbWob=true;
 }
 function kbDragTo(e){
   if(!KBD) return;
@@ -1106,11 +1119,25 @@ function kbUp(e){
   d.el.style.transform='';
   d.el.classList.remove('lift');
   if(g) g.classList.remove('moving');
-  if(!d.on) return;
+  if(!d.on){
+    /* Held long enough to wobble but let go without moving anything: still a
+       hold, so the ⊖ appear. */
+    if(kbWob) render();
+    return;
+  }
   /* and the press does not also open the key it was moving */
   if(e && e.preventDefault) e.preventDefault();
   kbReadRows();
 }
+/* ---- the state a home screen is in while an icon is held ---------------
+   Every key wobbling, a ⊖ on each one, and Done in the bar. Pressing a key
+   does nothing while it lasts -- what a press is FOR in this state is the ⊖,
+   and a key that opened its own sheet from under a wobble would be two
+   answers to one press.
+
+   Where you are standing, so viewReset() drops it. */
+var kbWob=false;
+function kbWobEnd(){ kbWob=false; kbSel=null; render(); }
 /* The layout, read back off the screen. The keys moved in the page while the
    finger was down and the language is told once, here -- the same way the
    alphabet is told its order once, on the way up. */
@@ -1557,5 +1584,10 @@ function kbDelKey(ri, ki){
   rows[ri].splice(ki, 1);
   if(!rows[ri].length) rows.splice(ri, 1);
   if(!rows.length) rows.push([kbKey('lt', '')]);
-  saveKb(); kbSel=null; back();
+  saveKb(); kbSel=null;
+  /* From the ⊖ the keyboard is already on screen and the wobble stays on --
+     somebody taking one key off is usually taking two. From the key's own
+     sheet there is a sheet to close. */
+  if(here().r==='form'){ back(); return; }
+  render();
 }

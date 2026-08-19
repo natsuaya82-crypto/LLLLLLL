@@ -15,6 +15,26 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Holding a key puts the keyboard in the state a home screen goes into
+
+「長押ししたら右上に➖出てきて消えるようにしよう。iPhoneのホーム画面のアプリ移動さ
+せる時と同じ挙動」
+
+Holding already lifted a key to carry it. It puts the whole keyboard into that
+state now: every key wobbling with a ⊖ on its corner, **Done** in the bar where
+the ⋯ was, and a press that does nothing but the ⊖ — a key that opened its own
+sheet from under a wobble would be two answers to one press.
+
+Deleting from the ⊖ leaves the wobble on: somebody taking one key off is
+usually taking two. From the key's own sheet there is still a sheet to close.
+
+`kbWob` is not drawn until the finger comes up — a `render()` in the middle of
+a drag takes the element being dragged out from under it. The ⊖ sits *inside*
+the key: `.kb` runs to both edges of the phone so a key is the size it will
+really be, and a mark hanging off the last key of a row hangs off the screen.
+
+**Stored data.** None.
+
 ### Building a keyboard is choosing a letter and placing a tile
 
 「キーボード設定まじでやりにくい」「1×1,1×2,1×3とかでいいんちゃう」

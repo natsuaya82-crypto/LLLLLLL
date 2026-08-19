@@ -1256,6 +1256,23 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    keyboard's own page. It was a row of tabs above the editor, so the thing
    being chosen and the thing being changed were on the same screen and
    neither had room. 「キーボード一覧→編集の形のほうがいい」 */
+/* Held, the way a phone's home screen is held: every key wobbling with a ⊖ on
+   its corner. The wobble is what says the keyboard is in a state it can be
+   left, and Done in the bar is how it is left. */
+@keyframes kbwob{0%{transform:rotate(-.7deg)}50%{transform:rotate(.7deg)}100%{transform:rotate(-.7deg)}}
+.kbk.wob{animation:kbwob .28s linear infinite}
+.kbk.wob:nth-child(2n){animation-delay:.09s}
+.kbk.wob:nth-child(3n){animation-delay:.05s}
+/* Inside the key rather than hanging off its corner. The keyboard runs to
+   both edges of the phone -- `.kb` has a negative margin so a key is the size
+   it will really be -- so a mark hanging off the last key of a row hangs off
+   the screen. */
+.kbx{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:999px;
+     background:var(--tx);color:var(--bg);display:flex;align-items:center;
+     justify-content:center;z-index:3}
+.kbx svg{width:13px;height:13px}
+.navdone{font-family:inherit;font-size:.9rem;color:var(--gold);padding:0 6px}
+@media (prefers-reduced-motion:reduce){.kbk.wob{animation:none}}
 /* Three widths to put on the keyboard: press one, then press where it goes.
    The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
    nobody has been told. */

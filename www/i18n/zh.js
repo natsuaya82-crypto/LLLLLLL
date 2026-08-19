@@ -225,6 +225,7 @@ defLang('zh', (function(){
       "kb.apply" : "应用到手机",
       "kb.new" : "添加键盘",
       "kb.n" : "键盘{0}",
+      "kb.done" : "完成",
       "kb.rm" : "删除这个键盘",
       "kb.rm.q" : "删除这个键盘？其他的不动。",
       "kb.full" : "一个语言最多 {0} 个键盘",
