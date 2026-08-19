@@ -17,6 +17,45 @@ where it starts.
 
 ### Blocking and reporting
 
+「ブロック通報はつくって」 — and an app carrying other people's writing is
+refused by App Store review without them.
+
+**Server.** Two new tables in `supabase/schema.sql`.
+
+- `block` — one-directional, and `block_read` answers with **your** rows only.
+  Every other read on this server is `using (true)`; this one is not, because
+  being blocked is not something a person is told, and telling them is how a
+  block becomes an argument.
+- `report` — a post **or** a person, at least one of the two, and a reason from
+  a closed set. There is **no select policy at all**: nobody using the app can
+  read a report, not the person who wrote it and not the person it is about.
+  No update and no delete either — a report the subject can withdraw is not a
+  report.
+
+**A block the phone knows about is not a block.** `netFeed()` asks for the
+block list first and the server leaves those authors out, rather than
+downloading their posts and hiding them.
+
+**App.** The ⋯ is on **every** post now, not only your own — the one post you
+might need to do something about was the one with nothing on it. On somebody
+else's it holds Block and Report; on your own it is the same three it was.
+Blocking somebody stops following them: a list that says both is a list where
+whichever one the timeline reads decides which is true.
+
+`sides-check` gained two names in `ALLOW`, each with its reason: a menu is not
+part of the post — it answers "what may I do about this", and that is about
+me.
+
+**Stored data.** `ME.bl`, the handles you have blocked, beside `ME.fo`.
+
+**Tested.** `npm run rls` — 66 attempts by somebody who is not the owner, up
+from 50: B cannot see that B is blocked, cannot read the report B wrote,
+cannot block or report in somebody else's name, cannot edit or delete a
+report, and a reason outside the five is refused. `npm test` green; screens
+496, buttons 6286.
+
+### Blocking and reporting
+
 「ブロック通報はつくって」 — OWNER DECISION.
 
 An app carrying other people's writing owes anybody two things: stop seeing
