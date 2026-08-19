@@ -334,6 +334,60 @@ function netFeed(which, ok, bad){
       netGet(sel+'&author=in.('+ids.join(',')+')', got, bad);
     }, bad);
 }
+/* ---- searching, which is the server's ----------------------------------
+   A search over what is on THIS phone is a search of the people you already
+   know and the posts you already have, which is the one search nobody needs.
+   Both of these ask the server. 「必要なものは全部オンラインまとめてやる」
+
+   Reading needs no account -- `profile_read` and `post_read` in schema.sql
+   are both `using (true)` -- so nothing here is gated, and the timeline's own
+   door is what decides whether somebody gets this far.
+
+   `*` either side is PostgREST's `ilike`, which is case-insensitive and is
+   the only kind of matching a person typing a name expects. The three
+   characters PostgREST reads as syntax inside `or=(...)` are taken out rather
+   than escaped: a comma or a bracket in a query is somebody looking for a
+   comma, and there is nothing on the other side to find. */
+function netLike(q){
+  return encodeURIComponent('*'+String(q||'').replace(/[*,()]/g, ' ')+'*');
+}
+/* People. The language's NAME comes with them where there is one: the embed
+   reads `language`, whose policy answers with what has been published and
+   with your own, so an unpublished language is nobody's business and simply
+   does not arrive. 「lingua マーク」 */
+function netFindWho(q, ok, bad){
+  var like=netLike(q);
+  netGet('/rest/v1/profile?select=id,handle,display,av,language(name)'+
+         '&or=(handle.ilike.'+like+',display.ilike.'+like+')'+
+         '&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r, ls;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{};
+        ls=r.language||[];
+        out.push({who:String(r.display||''), hd:String(r.handle||''),
+                  av:r.av||null, lname:(ls.length? String(ls[0].name||'') : ''),
+                  mine:!!(SESS && SESS.uid && r.id===SESS.uid)});
+      }
+      ok(out);
+    }, bad);
+}
+/* Posts, matched on the line as it is spelled, on what it means, and on the
+   name of the language it is written in. Not on the shapes: a shape is not
+   something anybody can type. `body` is jsonb and `->>` is how PostgREST is
+   asked for one of its fields as text. */
+function netFindPosts(q, ok, bad){
+  var like=netLike(q);
+  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body'+
+         '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
+         ',body->>lname.ilike.'+like+')'+
+         '&order=created_at.desc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i;
+      for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+      ok(out);
+    }, bad);
+}
 /* ---- the bytes ---------------------------------------------------------
    A photograph is not a field of a post. It is half a megabyte, and a
    timeline of fifty posts carrying their own pictures is forty megabytes

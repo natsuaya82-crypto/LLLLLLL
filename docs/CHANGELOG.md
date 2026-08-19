@@ -36,13 +36,30 @@ for, before you know anybody, is finding people.
 **Stored data.** None. `ME.fo` is the follow list and already existed;
 `meFollow()` is unchanged and is still the one place that writes it.
 
-**What the search actually reaches — and it is not everything.** `snsFind()` is
-`SNS_SEAM`: it answers out of **this phone**. `snsMatchPosts()` walks `POSTS`
-in `localStorage`, and `snsWho()` reads people off the posts this phone has.
-So "past posts" means the posts this phone holds — your own, and whatever the
-timeline has pulled down — not everything on the server. A real search is a
-query against `post` and it has not been written; what it matches on is a
-decision nobody has made.
+**And it asks the server.** 「必要なものは全部オンラインまとめてやる」 The seam
+is gone: `snsMatchWho()`, `snsMatchPosts()` and `snsWho()` are deleted, and
+`netFindWho()` / `netFindPosts()` are what answer.
+
+- **People**: `profile`, matched on the handle and the display name, with the
+  language's name embedded — `language_read` answers with what has been
+  published and with your own, so an unpublished language is nobody's business
+  and simply does not arrive.
+- **Posts**: `post`, matched on `body->>ln` (the line as it is spelled),
+  `body->>mn` (what it means) and `body->>lname` (the language it is written
+  in). Not on the shapes: a shape is not something anybody can type. **This is
+  every post on the server, not the ones this phone happens to hold** — which
+  is what "search past posts" has to mean.
+
+`ilike` either side, because case is not something a person typing a name
+thinks about. The three characters PostgREST reads as syntax inside `or=(…)`
+are taken out of the query rather than escaped.
+
+**Nothing found and could not ask are two different answers.** The result
+carries `bad` when the request failed and the screen says what it says, rather
+than showing the same empty page either way.
+
+**Stored data.** None. **Server.** No schema change: `profile_read` and
+`post_read` are already `using (true)`.
 
 ### The composer is one screen — with the keyboard up
 

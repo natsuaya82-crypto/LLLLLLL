@@ -273,9 +273,20 @@ function snsFind(q, done){
      the query began with `@`, so looking for a person meant knowing to type a
      character first -- and what a search on a timeline is for, before you
      know anybody, is finding people. 「人だけにして」「ツイートの検索は検索
-     ボタン押したら出てくる。それまでは人」 */
-  if(snsMode==='posts'){ done({q:q, who:[], posts:snsMatchPosts(q)}); return; }
-  done({q:q, who:snsMatchWho(q), posts:[]});
+     ボタン押したら出てくる。それまでは人」
+
+     Both ask the SERVER. They used to walk this phone's own POSTS, which
+     answers with the people you already know and the posts you already have
+     -- the one search nobody needs.
+
+     `bad` and not an empty list: nothing found and could not ask are two
+     different answers and must not share a branch. */
+  function no(d, st){ done({q:q, who:[], posts:[], bad:netWhy(d, st)}); }
+  if(snsMode==='posts'){
+    netFindPosts(q, function(ps){ done({q:q, who:[], posts:ps}); }, no);
+    return;
+  }
+  netFindWho(q, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */
@@ -284,53 +295,6 @@ function snsGo(){
   snsMode='posts'; snsHits=null;
   snsFind(snsQ, snsGot);
   render();
-}
-/* What the seam is filled with until there is a server: the people who have
-   already arrived. A post is signed with its author, which is the whole
-   reason it is signed, so they are read off the posts rather than kept as a
-   second list that could disagree with them. */
-function snsWho(){
-  var out=[], seen={}, i, p, h;
-  h=meHandle();
-  if(h){ seen[h]=1; out.push({who:meName(), hd:h, av:postAvatar(), lname:langName, mine:true}); }
-  for(i=0;i<POSTS.length;i++){
-    p=POSTS[i];
-    h=String(p.hd||'');
-    if(!h || seen[h]) continue;
-    seen[h]=1;
-    out.push({who:p.who||'', hd:h, av:p.av, lname:p.lname||''});
-  }
-  var fs=meFollowing().concat(meFollowers());
-  for(i=0;i<fs.length;i++){
-    h=String(fs[i]||'');
-    if(!h || seen[h]) continue;
-    seen[h]=1;
-    out.push({who:'', hd:h, av:null, lname:''});
-  }
-  return out;
-}
-function snsMatchWho(q){
-  var s=String(q||'').replace(/^@/, '').toLowerCase(), all=snsWho(), out=[], i, p;
-  if(!s) return all;
-  for(i=0;i<all.length;i++){
-    p=all[i];
-    if(String(p.hd||'').toLowerCase().indexOf(s)>=0 ||
-       String(p.who||'').toLowerCase().indexOf(s)>=0) out.push(p);
-  }
-  return out;
-}
-/* A post matches on the line as it is spelled and on what it means. Not on
-   the shapes: a shape is not something anybody can type. */
-function snsMatchPosts(q){
-  var s=String(q||'').toLowerCase(), out=[], i, p;
-  if(!s) return [];
-  for(i=0;i<POSTS.length;i++){
-    p=POSTS[i];
-    if(String(p.ln||'').toLowerCase().indexOf(s)>=0 ||
-       String(p.mn||'').toLowerCase().indexOf(s)>=0 ||
-       String(p.lname||'').toLowerCase().indexOf(s)>=0) out.push(p);
-  }
-  return out;
 }
 /* A person, as a row: the face, the name and the handle, the language they
    write, and the one thing you came here to do about them.
@@ -363,6 +327,8 @@ function snsWhoRow(p){
 function snsHitsHTML(){
   var r=snsHits, out='', i;
   if(!snsQ.trim() || !r) return '';
+  /* Could not ask, which is not the same as found nothing. */
+  if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
   for(i=0;i<(r.who||[]).length;i++) out+=snsWhoRow(r.who[i]);
   for(i=0;i<(r.posts||[]).length;i++) out+=postRow(r.posts[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';

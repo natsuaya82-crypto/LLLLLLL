@@ -392,22 +392,40 @@ export function halfDone(){
     /* Searching is about PEOPLE until somebody presses the phone's own
        Search key, so the two answers are two faces and `snsMode` is what
        tells them apart. The people face carries the Follow button, which is
-       on no other screen. */
-    ['people found by searching', () => { snsQ = 'a'; snsHits = null; snsMode = 'who';
+       on no other screen.
+
+       The answer is put in by hand. snsFind() asks the SERVER now, and there
+       is no server in a walk -- so a face that let it ask would render the
+       empty page that is showing while the request is out, which is a
+       different screen from the one being walked. What is put in is the shape
+       netFindWho() returns. */
+    ['people found by searching', () => { snsQ = 'ir'; snsMode = 'who';
+        snsHits = { q:'ir', who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
+                                   lname:'Vethi', mine:false }], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
     /* Somebody already followed: Follow and Following are two states of one
        button and only one of them is drawn at a time. */
-    ['a person already followed', () => { snsQ = 'a'; snsHits = null; snsMode = 'who';
-        const was = ME.fo; ME.fo = POSTS.map((p) => p.hd).filter(Boolean);
+    ['a person already followed', () => { snsQ = 'ir'; snsMode = 'who';
+        const was = ME.fo; ME.fo = ['iri'];
+        snsHits = { q:'ir', who:[{ who:'Iri', hd:'iri', av:{ch:'\u0416'},
+                                   lname:'Vethi', mine:false }], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); ME.fo = was; snsQ = ''; snsHits = null; return h; }],
-    ['posts found by searching', () => { snsQ = 'kano'; snsHits = null; snsMode = 'posts';
+    ['posts found by searching', () => { snsQ = 'kano'; snsMode = 'posts';
+        snsHits = { q:'kano', who:[], posts:POSTS.slice(0, 2) };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
-    ['a search that found nothing', () => { snsQ = 'zzzzzz'; snsHits = null; snsMode = 'who';
+    ['a search that found nothing', () => { snsQ = 'zzzzzz'; snsMode = 'who';
+        snsHits = { q:'zzzzzz', who:[], posts:[] };
         window.route='explore'; NAV=[{r:'explore'}];
-        const h = vExplore(); snsQ = ''; snsHits = null; snsMode = 'who'; return h; }],
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
+    /* And a search that could not be made at all, which is a different answer
+       from one that found nothing and must not look like it. */
+    ['a search that could not be asked', () => { snsQ = 'iri'; snsMode = 'who';
+        snsHits = { q:'iri', who:[], posts:[], bad:t('net.offline') };
+        window.route='explore'; NAV=[{r:'explore'}];
+        const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
     /* The badge, which only exists on a paid plan -- so a walk on the free
        plan never draws one, and free is what these walks run on. Both plans,
        and both places it shows: beside a name on a profile and beside a name
