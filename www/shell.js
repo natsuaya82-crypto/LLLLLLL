@@ -292,6 +292,19 @@ function lnGrowAll(){
 }
 function lnFit(e){
   if(!e) return;
+  /* A column grows the other way. The height of a vertical field is the
+     page's to give; what has to be measured is how far across the columns
+     have got. Asked of the computed style rather than of the class list,
+     because the class that sets it is the language's direction and there are
+     two of them. */
+  var wm=(window.getComputedStyle? String(getComputedStyle(e).writingMode||'') : '');
+  if(wm.indexOf('vertical')===0){
+    e.style.height='';
+    e.style.width='auto';
+    e.style.width=e.scrollWidth+'px';
+    return;
+  }
+  e.style.width='';
   e.style.height='auto';
   e.style.height=e.scrollHeight+'px';
 }

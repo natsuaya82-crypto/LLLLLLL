@@ -592,12 +592,18 @@ function pwHTML(){
     '<div class="pwtop"><div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="pwfield">'+
-      /* The field runs the way the language does. A column cannot be typed
-         into in this webview -- see dirFlat() -- so a vertical language
-         types across the page, in the direction its columns run, and the
-         post itself is set in columns. */
+      /* The field runs the way the language does, and is set in the letters
+         somebody drew. It was neither: flat, in roman, above a post that
+         came out in columns of drawn shapes -- so what you were writing and
+         what you had written were two different-looking things.
+         「自作文字で出せ、向きも縦向きになってないけど」
+
+         `.sfont` is what puts the drawn letters in a field and it was on
+         every other one. dirFlat() is gone from here: a column IS typed into
+         now, and lnFit() measures the width when the writing-mode is
+         vertical, because that is the way a column grows. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
-        PW.ln, dirClass(dirFlat(scriptDir())))+
+        PW.ln, dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same

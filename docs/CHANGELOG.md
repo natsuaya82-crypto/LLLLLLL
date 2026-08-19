@@ -15,6 +15,50 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Nothing adds a page to the free QWERTY
+
+「無料で作ったキーボードは動かせなくしろって言ってんだろ？」
+「2ページ目設定してねえのに2が出てくんだよ」 — OWNER DECISION.
+
+Board 0 was made uneditable and `shareKbd()` went on editing it: on a
+syllabary, an abugida or a logography it appended a roman conversion face and
+**pushed a key to it into the free QWERTY's bottom row**. So a keyboard with
+no editor grew a second page out of a setting on another screen, and the key
+wore `2` because a roman face has none of the person's letters to wear.
+
+The conversion face is now added only to a keyboard somebody **built**.
+Applying the free QWERTY means typing on the free QWERTY.
+
+**Tested.** `conv-check` walks every writing system on **both** boards now —
+ten combinations where there were five — and holds two new claims about the
+free one: it goes out with exactly one face, and it carries no key to another
+page. Watched failing with the guard removed (syll, abugida and logo all went
+red on the free QWERTY, three ways each).
+
+### The composer is written in the language's own letters, and its own direction
+
+「自分の言語で出せ、向きも縦向きになってないけど」
+
+The field was flat and roman above a post that came out in columns of drawn
+shapes — so what you were writing and what you had written were two
+different-looking things. `.sfont` is what puts the drawn letters in a field
+and it was on every other one; `dirFlat()` was collapsing the language's
+direction to a horizontal one before the field ever saw it.
+
+A column is typed into now. `lnFit()` measures the **width** when the
+writing-mode is vertical, because that is the way a column grows, and the
+field is pushed to the side its columns come from with the rule on that side.
+`dirFlat()` still stands for the card, which is a landscape composition and
+has nowhere to put a column.
+
+**Not tested.** This is a `textarea` in `writing-mode: vertical-rl`, and the
+reason it was not one before is that the caret and the sizing were judged not
+to work in WKWebView. It works in the walk and in Chromium. **The phone is
+what settles it** — type a line, delete from the middle, and watch where the
+caret goes.
+
+**Stored data.** None, in either.
+
 ### A post that has not reached the server says so
 
 「spl流したのにまだ投稿載らんの？」 — and nobody could answer it, which is the

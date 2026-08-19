@@ -111,8 +111,31 @@ const R = await pg.evaluate(() => {
      drifts the day a sixth kind of writing is added. */
   const list = WSYS.slice();
 
-  list.forEach((w) => {
-    SET.wsys = w;
+  /* Every writing system on BOTH keyboards, because the answer differs and
+     the difference is the point. Board 0 is the free QWERTY -- the keyboard
+     both plans type on, the one with no editor -- and the conversion face is
+     never added to it: it was reaching into its bottom row and putting a key
+     to a second page on a keyboard the person cannot open.
+     「2ページ目設定してねえのに2が出てくんだよ」
+     A keyboard they built takes the face as before.
+
+     The built one is kbFixed()'s own layout rather than kbAdd()'s, which
+     blanks every key -- a board with no letters on it has no map and no ink,
+     and would make the five claims above vacuous instead of true. */
+  const boards = [
+    ['the free QWERTY',       () => { KB = null; kbShow = 0; }],
+    ['a keyboard they built', () => { KB = { kbs: [{ nm: '', pat: 'qwerty', lay: kbFixed().lay }],
+                                             at: 1, v: 2 }; kbShow = 1; }]
+  ];
+
+  const pairs = [];
+  boards.forEach(([bn, stand]) => list.forEach((w) => pairs.push([w, bn, stand])));
+
+  pairs.forEach(([w0, bn, stand]) => {
+    SET.wsys = w0;
+    stand();
+    const w = w0 + ' on ' + bn;
+    const onFree = (bn === 'the free QWERTY');
     let kbd;
     try { kbd = shareKbd(); }
     catch (e) { fails.push(w + ': shareKbd() threw -- ' + e.message); return; }
@@ -205,7 +228,15 @@ const R = await pg.evaluate(() => {
        two letter names in a row are not a spelling of anything. That is a
        claim about the pair -- a number in the file and a face in the file --
        which is exactly the kind this check exists for. */
-    const needsRoman = (w === 'syll' || w === 'abugida' || w === 'logo');
+    /* The writing system says a roman face is NEEDED; the keyboard says
+       whether it may be added. Both, and they are two different sentences. */
+    const needsRoman = (w0 === 'syll' || w0 === 'abugida' || w0 === 'logo') && !onFree;
+    if (onFree && kbd.lay.length !== 1)
+      fails.push(w + ': the free QWERTY went out with ' + kbd.lay.length +
+        ' faces. It has one, it has no editor, and nothing may add a page to it');
+    if (onFree && kbd.lay[0].rows.some((r) => r.some((k) => k.k === 'lay')))
+      fails.push(w + ': the free QWERTY went out carrying a key to another' +
+        ' page. There is no other page, and the person never made one');
     const isRoman = (l) => !!(l && l.rows &&
       l.rows.some((row) => row.some((k) => k.k === 'rom')));
     const romAt = kbd.lay.map((l, i) => (isRoman(l) ? i : -1)).filter((i) => i >= 0);

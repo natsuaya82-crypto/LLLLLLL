@@ -296,9 +296,20 @@ function shareKbd(){
   /* And the roman face after them, with a key on the person's FIRST face to
      reach it -- otherwise a writing system that needs conversion would have a
      face nothing goes to. The key wears the number, because a roman face is
-     not one of the person's letters and has none to wear. */
+     not one of the person's letters and has none to wear.
+
+     NOT ON THE FREE QWERTY. Board 0 is kbFixed() itself -- the keyboard both
+     plans type on, the one nobody may edit -- and this was reaching into its
+     bottom row and adding a key to a page the person never made. A keyboard
+     with no editor grew a second face out of a setting somewhere else.
+     「無料で作ったキーボードは動かせなくしろって言ってんだろ？」
+     「2ページ目設定してねえのに2が出てくんだよ」
+
+     So the conversion face is only ever added to a keyboard somebody BUILT.
+     Applying the free QWERTY on a syllabary means typing on the free QWERTY,
+     which is what applying it says. */
   var rom=-1;
-  if(conv && shareRoman()){
+  if(conv && shareRoman() && !kbIsFree(kbApplied(kbBoards().length))){
     lay.push(shareRomLay(0));
     rom=lay.length-1;
     if(lay[0] && lay[0].rows.length)

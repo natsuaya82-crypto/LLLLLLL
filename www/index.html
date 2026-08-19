@@ -430,6 +430,18 @@ canvas.pkc{width:34px;height:34px;display:block}
    starts from. */
 .dir-ttb-rl,.dir-ttb-lr{-webkit-text-orientation:upright;text-orientation:upright;
                         width:100%;height:auto;max-height:340px}
+/* A field somebody types a column into. The height is the page's to give --
+   a column has to be told how long it is, the way a horizontal one is told
+   how wide -- and lnFit() measures the width, which is the way it grows. */
+.lnin.dir-ttb-rl,.lnin.dir-ttb-lr{display:block;height:38vh;min-width:1.6em;
+   resize:none;border-bottom:0;padding:2px 12px}
+/* The rule goes on the side the columns come FROM, and the field is pushed to
+   that side -- a right-to-left column starts at the right edge of the page,
+   which is where somebody writing one looks first. */
+.lnin.dir-ttb-rl{margin-left:auto;border-right:1px solid var(--line)}
+.lnin.dir-ttb-lr{margin-right:auto;border-left:1px solid var(--line)}
+.lnin.dir-ttb-rl:focus{border-right-color:var(--gold)}
+.lnin.dir-ttb-lr:focus{border-left-color:var(--gold)}
 .dir-ttb-rl{padding-right:14px}
 .dir-ttb-lr{padding-left:14px}
 .dir-ttb-rl .tcln,.dir-ttb-lr .tcln{vertical-align:middle}
