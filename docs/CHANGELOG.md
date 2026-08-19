@@ -20,10 +20,14 @@ where it starts.
 「マルパッチ禁止だからキーボード1,2,3とかの示し方ui変えてね」
 
 The row was round patches reading 1, 2, 3 — which say which one is second and
-nothing about which one is the flick board. What somebody is choosing here is
-a shape, so the row draws it: `kbMiniHTML()`, the same picture the sheet that
-makes another already uses for the five patterns. Same question asked twice,
-one answer.
+nothing about which one is the flick board. It draws **the keyboard itself,
+shrunk**: the real keys wearing the real letters, through the same `kbFace()`
+the keyboard below is drawn by. 「リアルなキーボードを縮小して見せれないの？」
+So what is being chosen between is what will be typed on.
+
+`kbMiniHTML()` stays as it is and is still blocks, because it answers a
+different question: on the sheet that makes another, what is being chosen is
+the *arrangement* and there are no letters on any of them yet.
 
 The tick still says which one is on the phone, and it sits **on** the picture —
 beside it the tile would have to grow to hold a mark that is about the tile.

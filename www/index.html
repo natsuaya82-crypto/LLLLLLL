@@ -1255,15 +1255,26 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* A keyboard is chosen by its SHAPE. The row was round patches reading 1 2 3,
    which say which one is second and nothing about which one is the flick
    board. 「マルパッチ禁止」 The tick still says which one is on the phone. */
-.kbtab{flex:0 0 auto;width:74px;min-height:52px;padding:7px 8px 6px;border-radius:10px;
+.kbtab{flex:0 0 auto;width:96px;min-height:52px;padding:7px 8px 6px;border-radius:10px;
        border:1px solid var(--line);background:none;color:var(--txm);
        font-family:inherit;font-size:.9rem;position:relative;
        display:inline-flex;flex-direction:column;align-items:stretch;justify-content:center}
-.kbtab .kbmini{gap:2px}
-.kbtab .kbmr{height:6px;gap:2px}
-.kbtab .kbmk{border-radius:1.5px}
+/* The keyboard itself, shrunk: the real keys with the real letters on them,
+   so what is being chosen between is what will be typed on. The glyphs are
+   canvases and scale down with the box; `overflow:hidden` on the key is what
+   stops a wide letter from spilling into its neighbour at this size. */
+.kbshot2{display:flex;flex-direction:column;gap:1.5px;width:100%}
+.kbsr{display:flex;gap:1.5px;height:11px}
+.kbsk{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
+      border-radius:2px;background:var(--sf);overflow:hidden}
+.kbsk.fn{background:var(--line)}
+.kbsk.gap{background:none}
+.kbsk canvas{width:100%;height:100%;object-fit:contain}
+.kbsk .kbl{font-size:5px;line-height:1;color:var(--txm)}
+.kbsk .bch{font-size:6px;line-height:1}
+.kbsk svg{width:6px;height:6px}
+.kbsk .kbrm,.kbsk .kbf{display:none}
 .kbtab.on{border-color:var(--goldln);background:var(--goldsf)}
-.kbtab.on .kbmk{opacity:.42}
 /* The tick sits ON the picture rather than beside it: beside it the tile has
    to grow to hold a mark that is about the tile. */
 .kbtab .kbon{position:absolute;top:3px;right:4px}

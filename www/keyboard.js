@@ -914,7 +914,13 @@ function kbPatsHTML(){
   }).join('')+'</div>';
 }
 /* A keyboard at a glance: its first face, as blocks. Width is the key's own,
-   so a space bar reads as a space bar and a delete two wide reads as one. */
+   so a space bar reads as a space bar and a delete two wide reads as one.
+
+   BLOCKS and not the letters, and that is the point rather than a shortcut.
+   This is what the five patterns are chosen by on the sheet that makes
+   another, and what is being chosen there is the arrangement -- twelve big
+   keys or thirty small ones. At that size a drawn glyph is a smudge, and a
+   smudge of somebody's alphabet is worse than an honest block. */
 function kbMiniHTML(lay){
   var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k, fl;
   for(i=0;i<rows.length;i++){
@@ -927,6 +933,27 @@ function kbMiniHTML(lay){
     out+='</span>';
   }
   return '<span class="kbmini">'+out+'</span>';
+}
+/* The keyboard itself, small. 「リアルなキーボードを縮小して見せれないの？」
+
+   Not blocks: the real keys, wearing the real letters, drawn by the same
+   kbFace() the keyboard below is drawn by -- so what you are choosing between
+   is what you will be typing on rather than a diagram of it. One face, the
+   first, because that is the one a keyboard opens on.
+
+   It is a picture and nothing in it is pressable: the tile is the button. */
+function kbShotHTML(lay){
+  var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k;
+  for(i=0;i<rows.length;i++){
+    out+='<span class="kbsr">';
+    for(j=0;j<rows[i].length;j++){
+      k=rows[i][j];
+      out+='<span class="kbsk'+(k.k==='lt'? '' : ' fn')+(k.k==='gap'? ' gap':'')+
+        '" style="flex:'+(k.w||1)+'">'+kbFace(k)+'</span>';
+    }
+    out+='</span>';
+  }
+  return '<span class="kbshot2">'+out+'</span>';
 }
 /* Which keyboard you are looking at, and the way to make another. The one
    that is APPLIED wears the mark, not the one you are looking at -- they are
@@ -945,7 +972,7 @@ function kbBarHTML(){
          because it is the same question asked twice. */
       return '<button class="kbtab'+(i===now? ' on':'')+'"' + DO('kbGoBoard', [i]) +
         ' aria-label="'+esc(kbName(i))+'">'+
-        kbMiniHTML(x.lay)+
+        kbShotHTML(x.lay)+
         (i===at? '<span class="kbon">'+ICON_TICK+'</span>' : '')+'</button>';
     }).join('')+
     (bs.length<KB_MAX
