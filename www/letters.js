@@ -755,7 +755,10 @@ function spTypeField(id, into, sp, cls){
      saying the same thing directly above it, which is one fact written twice
      and the second copy sitting where the answer goes.
      「四角のなかにつづりとか読みとか書くの消して」 */
-  return lnField(id, '', IN(into), spWord(sp||[]), cls);
+  /* In the person's own letters, because that is what the word IS. The box
+     holds the letters' names -- a to z -- and roman is what those names look
+     like, not what the word looks like. 「単語の文字のところが英語なのはなぜ？」 */
+  return lnField(id, '', IN(into), spWord(sp||[]), cls+(myFontOn()? ' sfont' : ''));
 }
 function spWord(sp){
   var out='', i, l;
