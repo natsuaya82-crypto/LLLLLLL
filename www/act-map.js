@@ -250,11 +250,11 @@ actIn('wdSetNt', wdSetNt);
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
 actIn('stSetLn', stSetLn);
-actIn('wdSetPos', wdSetPos);
-actIn('wdSetReg', wdSetReg);
 act('fmPick', fmPick);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
+act('posPick', posPick);
+act('regPick', regPick);
 act('wdMnOpen', wdMnOpen);
 act('wdExOpen', wdExOpen);
 act('stExOpen', stExOpen);

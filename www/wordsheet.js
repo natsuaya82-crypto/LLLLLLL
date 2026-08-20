@@ -566,10 +566,8 @@ function wdFrom(){
    something a <select> can be. The row says what it is now. */
 function wdFmHTML(){
   var w=addW||findWord(openHw), f=(w && w.fm)||'';
-  return (f? '<div class="rels"><span class="rel"><span class="relw">'+
-              esc(fmLabel(f))+'</span></span></div>' : '')+
-    '<button class="btn ghost" style="width:100%;margin-top:8px"' +
-      DO('go', ["fm", (addW? '' : String(openHw||''))]) + '>'+ICON_LINK+t('word.fm.add')+'</button>';
+  return wdPickRow(t('word.fm'), fmLabel(f)||t('word.none'),
+    DO('go', ["fm", (addW? '' : String(openHw||''))]));
 }
 /* Written onto the word as it is chosen, the way a synonym is -- what a word
    is of its parent is a fact about the word, not a draft of it. The word
@@ -618,7 +616,7 @@ function fmRowHTML(hw, f, on){
      thumb has to land on. */
   return '<div class="entry one'+(on?' on':'')+'">'+
     '<button class="ebody"' + DO('fmPick', [hw, f]) + '>'+
-    '<div class="hwrow"><span class="hw">'+esc(fmLabel(f)||t('word.fm.non'))+'</span></div>'+
+    '<div class="hwrow"><span class="hw">'+esc(fmLabel(f)||t('word.none'))+'</span></div>'+
     '</button>'+fmQ(f)+'<span class="ltck" style="margin-left:auto">'+
     (on? ICON_TICK : '')+'</span></div>';
 }
@@ -657,13 +655,46 @@ function wDay(ms){
   var d=new Date(ms||0), p=function(n){ return (n<10?'0':'')+n; };
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
 }
-function wdRegHTML(){
-  return '<div class="field"><select id="wd-reg"' + CH('wdSetReg') + '>'+
-    REG.map(function(r){
-      return '<option value="'+r+'"'+(r===(wEdit.reg||'')?' selected':'')+'>'+
-        esc(regLabel(r))+'</option>'; }).join('')+
-    '</select></div>';
+/* Part of speech, register, form: three things chosen off a list, and all
+   three were a `<select>`, which on a phone is a wheel that slides up from the
+   bottom of the screen. 「↓だと蛇腹みたいに広がる感じしない？別ページから選べる
+   なら違うマークの方が良くない？」 A `∨` says this box is about to unfold where
+   it stands; `›` says you are going somewhere. They go somewhere, so it is the
+   settings row the rest of the app already uses -- what it is, what it says
+   now, and the mark for a page. */
+function wdPickRow(label, val, doAttr){
+  return '<button class="set"'+doAttr+'>'+
+    '<span class="sl">'+esc(label)+'</span>'+
+    '<span class="sv">'+esc(val)+ICON_GO+'</span></button>';
 }
+function wdRegHTML(){
+  return wdPickRow(t('word.reg'), regLabel(wEdit.reg||'')||t('word.none'), DO('go', ["reg"]));
+}
+/* Choosing one of a short list, ticked, and back. Both lists are the app's own
+   -- a part of speech and a register are stored as codes and the label is
+   whatever the interface language calls them today. */
+function wdOneHTML(label, on, doName, val){
+  return '<div class="entry one'+(on?' on':'')+'">'+
+    '<button class="ebody"' + DO(doName, [val]) + '>'+
+    '<div class="hwrow"><span class="hw">'+esc(label)+'</span></div>'+
+    '</button><span class="ltck" style="margin-left:auto">'+(on? ICON_TICK : '')+'</span></div>';
+}
+function vPos(){
+  if(!wEdit) return viewGone();
+  return '<div class="view">'+navTop()+'<div class="body">'+
+    POS.map(function(k){
+      return wdOneHTML(posLabel(k), k===wEdit.pos, 'posPick', k);
+    }).join('')+'</div></div>';
+}
+function posPick(k){ wdSetPos(k); relDirty(); back(); }
+function vReg(){
+  if(!wEdit) return viewGone();
+  return '<div class="view">'+navTop()+'<div class="body">'+
+    REG.map(function(r){
+      return wdOneHTML(regLabel(r)||t('word.none'), r===(wEdit.reg||''), 'regPick', r);
+    }).join('')+'</div></div>';
+}
+function regPick(r){ wdSetReg(r); relDirty(); back(); }
 /* Nothing written inside the box. The heading directly above it already says
    what the box is, and what was in it -- an example of a field, an example of
    an etymology -- was the app filling somebody's answer in for them.
@@ -729,15 +760,14 @@ function wdFormHTML(){
     secAdd(t('word.means'), DO('wdMnOpen'), t('word.mn.add'))+
     wdMnsHTML()+
 
-    '<div class="sec">'+t('f.pos')+'</div>'+
-    '<div class="field"><select id="wd-pos"' + CH('wdSetPos') + '>'+
-      POS.map(function(p){return '<option value="'+p+'"'+(p===wEdit.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
-    '</select></div>'+
-
-    (wdFrom()? '<div class="sec">'+t('word.fm')+'</div>'+wdFmHTML() : '')+
-
-    '<div class="sec">'+t('word.reg')+'</div>'+
-    wdRegHTML()+
+    /* What kind of word it is, what it is of the word it came from, and how
+       it is said: three lists, one after another, each saying what it is set
+       to. They had a heading each over a box each. */
+    '<div style="margin-top:22px">'+
+      wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
+      (wdFrom()? wdFmHTML() : '')+
+      wdRegHTML()+
+    '</div>'+
 
     '<div class="sec">'+t('word.tags')+'</div>'+
     wdTagsHTML()+

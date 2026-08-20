@@ -980,7 +980,7 @@ defLang('fr', (function(){
       "word.fm.adv.e"        : "heureux → heureusement",
       "word.fm.inf"        : "Flexion",
       "word.fm.der"        : "Dérivation",
-      "word.fm.non"        : "Aucune",
+      "word.none"        : "Aucune",
       "word.fm.own"        : "Votre étiquette",
       "word.fm.add"        : "Choisir une forme",
       "word.fromf"        : "{1} de {0}",

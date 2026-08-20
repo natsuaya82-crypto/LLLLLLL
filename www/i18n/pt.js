@@ -939,7 +939,7 @@ defLang('pt', (function(){
       "word.fm.adv.e"        : "rápido → rapidamente",
       "word.fm.inf"        : "Flexão",
       "word.fm.der"        : "Derivação",
-      "word.fm.non"        : "Nenhuma",
+      "word.none"        : "Nenhuma",
       "word.fm.own"        : "A sua etiqueta",
       "word.fm.add"        : "Escolher forma",
       "word.fromf"        : "{1} de {0}",

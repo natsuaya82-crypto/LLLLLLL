@@ -955,7 +955,7 @@ defLang('ru', (function(){
       "word.fm.adv.e"         : "быстрый → быстро",
       "word.fm.inf"         : "Словоизменение",
       "word.fm.der"         : "Словообразование",
-      "word.fm.non"         : "Нет",
+      "word.none"         : "Нет",
       "word.fm.own"         : "Своя пометка",
       "word.fm.add"         : "Выбрать форму",
       "word.fromf"         : "{1} от {0}",

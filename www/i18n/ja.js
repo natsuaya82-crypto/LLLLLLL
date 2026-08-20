@@ -848,7 +848,7 @@ defLang('ja', (function(){
       'word.fm.adv.e'       : "速い → 速く",
       'word.fm.inf'       : "活用",
       'word.fm.der'       : "派生",
-      'word.fm.non'       : "なし",
+      'word.none'       : "なし",
       'word.fm.own'       : "自分のラベル",
       'word.fm.add'       : "語形を選ぶ",
       'word.fromf'       : "{0} の{1}",

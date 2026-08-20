@@ -153,6 +153,8 @@ var PAGES={
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   fm:      {tab:'build', k:'word.fm'},
+  pos:     {tab:'build', k:'f.pos'},
+  reg:     {tab:'build', k:'word.reg'},
   follows: {tab:'profile'},
   spell:   {tab:'build', k:'word.sp'},
   glyph:   {tab:'build'},

@@ -57,6 +57,8 @@ page('wsys',     vWsys);
 page('abugida',  vAbugida);
 page('relate',   vRelate);
 page('fm',       vFm);
+page('pos',      vPos);
+page('reg',      vReg);
 page('follows',  vFollows);
 page('spell',    vSpell);
 page('glyph',    vGlyph);

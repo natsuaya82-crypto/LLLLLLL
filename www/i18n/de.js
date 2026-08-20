@@ -921,7 +921,7 @@ defLang('de', (function(){
       "word.fm.adv.e"        : "glücklich → glücklicherweise",
       "word.fm.inf"        : "Flexion",
       "word.fm.der"        : "Ableitung",
-      "word.fm.non"        : "Keine",
+      "word.none"        : "Keine",
       "word.fm.own"        : "Eigene Bezeichnung",
       "word.fm.add"        : "Form wählen",
       "word.fromf"        : "{1} von {0}",

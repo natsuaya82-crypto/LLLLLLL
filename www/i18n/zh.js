@@ -937,7 +937,7 @@ defLang('zh', (function(){
       "word.fm.adv.e"        : "快 → 快地",
       "word.fm.inf"        : "屈折",
       "word.fm.der"        : "派生",
-      "word.fm.non"        : "无",
+      "word.none"        : "无",
       "word.fm.own"        : "自己的标签",
       "word.fm.add"        : "选择词形",
       "word.fromf"        : "{0} 的{1}",

@@ -892,7 +892,7 @@ defLang('es', (function(){
       "word.fm.adv.e"        : "rápido → rápidamente",
       "word.fm.inf"        : "Flexión",
       "word.fm.der"        : "Derivación",
-      "word.fm.non"        : "Ninguna",
+      "word.none"        : "Ninguna",
       "word.fm.own"        : "Tu etiqueta",
       "word.fm.add"        : "Elegir forma",
       "word.fromf"        : "{1} de {0}",

@@ -1107,7 +1107,7 @@ defLang('ko', (function(){
       "word.fm.adv.e"        : "빠르다 → 빠르게",
       "word.fm.inf"        : "활용",
       "word.fm.der"        : "파생",
-      "word.fm.non"        : "없음",
+      "word.none"        : "없음",
       "word.fm.own"        : "자신의 라벨",
       "word.fm.add"        : "어형 선택",
       "word.fromf"        : "{0}의 {1}",

@@ -250,6 +250,12 @@ export function halfDone(){
     /* The field for one more of something is not on the sheet until the `+`
        on the heading is pressed, so without these the only way to write a
        second meaning is a screen nothing walks. */
+    /* The three lists the sheet sends you to. All three are about the word
+       being written, so none of them is a screen without one open. */
+    ['what kind of word it is', () => { openEdit('kano');
+       window.route = 'pos'; NAV = [{ r:'pos' }]; return vPos(); }],
+    ['how it is said', () => { openEdit('kano');
+       window.route = 'reg'; NAV = [{ r:'reg' }]; return vReg(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true; return wdFormHTML(); }],
     ['one more example', () => { openEdit('kano'); wdExNew = true; return wdFormHTML(); }],
     ['one more example of a stage', () => {

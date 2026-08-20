@@ -846,7 +846,7 @@ defLang('en', (function(){
       'word.fm.adv.e'       : "quick → quickly",
       'word.fm.inf'       : "Inflection",
       'word.fm.der'       : "Derivation",
-      'word.fm.non'       : "None",
+      'word.none'       : "None",
       'word.fm.own'       : "Your own label",
       'word.fm.add'       : "Choose a form",
       'word.fromf'       : "{1} of {0}",

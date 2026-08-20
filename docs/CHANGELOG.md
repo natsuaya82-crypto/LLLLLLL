@@ -15,6 +15,23 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### 品詞, 語形 and 文体 are rows that go somewhere, and say so
+
+「↓だと蛇腹みたいに広がる感じしない？別ページから選べるなら違うマークの方が良く
+ない？」
+
+All three were a `<select>`, which on a phone is a wheel sliding up from the
+bottom — the shape this app does not use — and the `∨` on it says the box is
+about to unfold where it stands. They go to a page, so they are the settings
+row the rest of the app already uses: what it is, what it is set to now, and
+`›`. Three headings and three boxes became three rows.
+
+Two screens for the two lists (`pos`, `reg`), the same shape the form picker
+already had. The value is still staged on the sheet until Save, exactly as it
+was — only where it is chosen has moved.
+
+529 screens, 7102 buttons, 198/198 names.
+
 ### The `+` is on the heading, and the field it opens is not there until it is
 
 「追加とかそういう日本語はなるべく消したいのよ。+とか編集は仕方ないにしても」

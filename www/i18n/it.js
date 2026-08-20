@@ -934,7 +934,7 @@ defLang('it', (function(){
       "word.fm.adv.e"        : "rapido → rapidamente",
       "word.fm.inf"        : "Flessione",
       "word.fm.der"        : "Derivazione",
-      "word.fm.non"        : "Nessuna",
+      "word.none"        : "Nessuna",
       "word.fm.own"        : "La tua etichetta",
       "word.fm.add"        : "Scegli la forma",
       "word.fromf"        : "{1} di {0}",
