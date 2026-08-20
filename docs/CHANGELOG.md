@@ -15,6 +15,24 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The dictionary is one row per word
+
+「派生語もそれだけで単独のページ欲しくない？蛇腹で出るなら↓みたいなのほしいし、
+単独があるならそこに出す必要ない」
+
+A derived word was indented inside a frame under its parent in alphabetical
+order and listed flat in every other order — two shapes for one list, and the
+nesting only ever told the truth in the order where the parent happens to be
+next to it. Sorted by when they were made, or narrowed to the verbs, the
+parent may not be on the screen at all.
+
+It is a page of its own now, carrying its whole family, so the list is one row
+per word. Each derived row says what it is of the word it came from — 「tir の
+過去形」, 「tir の見張り」 — and the parent says how many have come from it,
+which it used to leave to the indent in that one order.
+
+`.entry.kid` is gone.
+
 ### 品詞, 語形 and 文体 are rows that go somewhere, and say so
 
 「↓だと蛇腹みたいに広がる感じしない？別ページから選べるなら違うマークの方が良く

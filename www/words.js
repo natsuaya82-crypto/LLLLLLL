@@ -56,28 +56,33 @@ function wordsList(){
   else items.sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
   return items;
 }
-/* Nesting a derived word under its parent only tells the truth in the order
-   where the parent is next to it. Sorted by when they were made, or narrowed
-   to the verbs, the parent may not be on screen at all -- so that order lists
-   every word flat, and each one says where it came from itself. */
+/* Every word is a row of its own. A derived word used to be indented under
+   its parent in alphabetical order and listed flat in every other, which is
+   two shapes for one list -- and the nesting only ever told the truth in the
+   order where the parent happens to be next to it: sorted by when they were
+   made, or narrowed to the verbs, the parent may not be on screen at all.
+
+   It is a page now, the same as any other word, and it carries its whole
+   family on it. 「派生語もそれだけで単独のページ欲しくない？単独があるならそこに
+   出す必要ない」 So the list is one row per word and each one says what it is
+   of the word it came from. */
 function wordsBodyHTML(items){
   if(!items.length)
     return '<div class="empty"><div class="eb">'+
       ((q||wFil!==POS_ALL)? t('words.nomatch') : t('words.empty'))+'</div></div>';
-  if(wSort!=='a'){
-    return items.map(function(w){ return entryHTML(w, false); }).join('');
-  }
-  var out='', cur='', shown={};
-  items.forEach(function(w){ shown[String(w.hw)]=1; });
+  if(wSort!=='a') return items.map(entryOneHTML).join('');
+  var out='', cur='';
   items.forEach(function(w){
-    if(w.from && shown[w.from]) return;      /* listed under its parent, not twice */
     var L=String(w.hw).charAt(0).toUpperCase();
     if(L!==cur){ cur=L; out+='<div class="gl">'+esc(cur)+'</div>'; }
-    out+=entryHTML(w, false);
-    wKids(w).forEach(function(k){ if(shown[String(k.hw)]) out+=entryHTML(k, true); });
+    out+=entryHTML(w);
   });
   return out;
 }
+/* map() hands its callback the index as a second argument, which is how a
+   two-argument entryHTML() used to give every row after the first the wrong
+   one. */
+function entryOneHTML(w){ return entryHTML(w); }
 function wMetaHTML(items){
   return '<span class="wct">'+tn('words.n', items.length)+'</span>'+
     '<button class="wsrt"' + DO('wSetSort') + '>'+ICON_SORT+
@@ -179,7 +184,7 @@ function wSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
    that shows one is lying about the word. Where it came from is written on
    it, and how many words have come from it, because that is the shape of a
    dictionary and an indent alone cannot say it. */
-function entryHTML(w, kid){
+function entryHTML(w){
   var mns=wMns(w), kids=wKids(w), par=wParent(w), mn;
   /* A missing meaning in a dictionary row is something to do, not a fact to
      report -- 「意味のところにまだ決めてないって書くのやめてくんない？」. As the name
@@ -189,10 +194,10 @@ function entryHTML(w, kid){
   else mn=mns.map(function(m,i){
     return '<span class="sn">'+(i+1)+'</span>'+esc(m); }).join(' ');
   var line='';
-  if(par) line+='<span class="efrom">'+esc(t('word.from', par.hw))+'</span>';
-  if(kids.length && !(wSort==='a' && !q && wFil===POS_ALL))
-    line+='<span class="ekids">'+esc(tn('words.kids', kids.length))+'</span>';
-  return '<div class="entry'+(kid?' kid':'')+'">'+
+  if(par) line+='<span class="efrom">'+esc(w.fm? t('word.fromf', par.hw, fmLabel(w.fm))
+                                                : t('word.from', par.hw))+'</span>';
+  if(kids.length) line+='<span class="ekids">'+esc(tn('words.kids', kids.length))+'</span>';
+  return '<div class="entry">'+
     /* The row opens the word, and it is the whole row. It used to say the word
        aloud, and the only way into the word itself was a chevron at the right
        edge the width of a fingernail -- so everything a word has (its
