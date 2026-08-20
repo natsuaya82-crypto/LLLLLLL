@@ -163,16 +163,6 @@ function findWord(hw){
    right that remember where they came from. */
 var openHw='', wEdit=null;
 
-/* A position is marked only when its letter exists and says something else
-   here. A sound with no letter at all is not a sound change -- it is a sound
-   nobody has drawn yet, which is a different thing and not worth a colour. */
-function spOdd(st){
-  var l=ltById(st.l), own=l? ltUnits(l) : [];
-  /* Said something else HERE -- not merely carrying a unit. Every position of
-     a word made before a word was letters carries one, a copy of what its
-     letter reads, so "has a unit" marked all of them and marked nothing. */
-  return !!l && st.u!==undefined && st.u!==null && st.u!==own[0];
-}
 /* ---- spelling a word --------------------------------------------------
    The word is a row of letters, each with the sound it makes underneath. Tap
    a letter in the row and you change what it says HERE and nowhere else --
@@ -954,57 +944,18 @@ function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 function goPlans(){ closeSheet(); go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }
-/* One position of one word, and what it says there. The letter's own
-   readings first, then every sound the language has, because a sound change
-   is exactly the case where the letter's own readings are not enough.
-
-   Which position is the route's argument; which LIST is the caller's, and
-   that is the whole of the difference between the two screens that use this. */
-function spPageHTML(sp, setU, drop){
-  var i=parseInt(here().a,10), st=sp[i];
-  if(!st) return viewGone();
-  var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
-  for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
-  for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    /* The sound this position says, not the letter that writes it. A sound is
-       what somebody is heard saying and a letter is a shape; showing the shape
-       on the page where a sound is chosen put both directions of one table in
-       front of somebody at once. 「音を選ぶなのに文字を選ぶのも意味わからない」 */
-    '<div class="spbig">'+esc(phIpa(uSplit(spUnit(st))))+'</div>'+
-    '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===spUnit(st)?' on':'')+(o.own?' own':'')+'"' + DO(setU, [i, o.u]) + '>'+
-        '<span class="pks">'+esc(o.u)+'</span></button>';
-    }).join('')+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO(drop, [i]) + '>'+
-      t('word.sp.del')+'</button>'+
-    '</div></div>';
-}
-/* The reading, one sound to a row. Not the letters: the row is what this
-   position is HEARD as, which is the whole of what a reading is. */
-function spSndRowsHTML(sp, route){
-  var i, out='';
-  for(i=0;i<sp.length;i++)
-    out+='<button class="wdrow'+(spOdd(sp[i])? ' odd':'')+'"' + DO('go', [route, i]) + '>'+
-      '<span class="wdroww">'+esc(phIpa(uSplit(spUnit(sp[i]))))+'</span></button>';
-  return '<div class="wdrows">'+out+'</div>';
-}
-/* Two faces, and which one is the route's argument. With none, the reading
-   of the whole word and every position of it; with one, that position. */
+/* The reading of a word, changed as a reading. */
 function vSpell(){
   var sp=(wEdit&&wEdit.sp)||[];
-  if(here().a===undefined || here().a===null || here().a==='')
-    return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
         esc(spWord(sp))+'</span></div>'+
-      '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
-      /* The whole reading, in one field. Changing tira to tiraa one position
-         at a time is four screens to say one thing.
+      /* The reading, and nothing else on the page. It was the word, then the
+         reading, then a field holding the reading, then a row for each sound
+         in it -- the same fact four times, three of them not editable.
          「tiraって文字なら全部一気に変えれるようにしようよ」 */
       lnField('wd-rdln', '', IN('wdSetRd'), spPh(sp).join(''), 'whin')+
-      spSndRowsHTML(sp, 'spell')+
       '</div></div>';
-  return spPageHTML(sp, 'wdSetU', 'wdDropAt');
 }
 /* A reading typed whole, given back to the positions that make it up.
 
@@ -1022,14 +973,6 @@ function wdSetRd(v){
   for(i=0;i<sp.length;i++)
     spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
   wdSync(); wdPaint();
-}
-function wdSetU(i, u){
-  if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;
-  spSetU(wEdit.sp[i], u); wdSync(); sayPh(uSplit(u)); back(); wdPaint();
-}
-function wdDropAt(i){
-  if(!wEdit || !wEdit.sp) return;
-  wEdit.sp.splice(i,1); wdSync(); back(); wdPaint();
 }
 function wdAddMn(){
   var e=document.getElementById('wd-mn'); if(!e) return;

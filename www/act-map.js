@@ -216,8 +216,6 @@ act('stExOpen', stExOpen);
 act('wdDelEx', wdDelEx);
 act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
-act('wdDropAt', wdDropAt);
-act('wdSetU', wdSetU);
 act('wipeAll', wipeAll);
 act('wordsSay', wordsSay);
 
