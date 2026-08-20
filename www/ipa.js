@@ -25,6 +25,78 @@ var IPA_VOWS=[{"s": "i", "h": "close", "b": "front", "r": 0}, {"s": "y", "h": "c
    clicks, and the implosives. */
 var IPA_OTHER=[{"s": "ʍ", "g": "other"}, {"s": "w", "g": "other"}, {"s": "ɥ", "g": "other"}, {"s": "ʜ", "g": "other"}, {"s": "ʢ", "g": "other"}, {"s": "ɕ", "g": "other"}, {"s": "ʑ", "g": "other"}, {"s": "ɺ", "g": "other"}, {"s": "ɧ", "g": "other"}, {"s": "ʘ", "g": "click"}, {"s": "ǀ", "g": "click"}, {"s": "ǃ", "g": "click"}, {"s": "ǂ", "g": "click"}, {"s": "ǁ", "g": "click"}, {"s": "ɓ", "g": "implosive"}, {"s": "ɗ", "g": "implosive"}, {"s": "ʄ", "g": "implosive"}, {"s": "ɠ", "g": "implosive"}, {"s": "ʛ", "g": "implosive"}];
 
+/* ---- what a sound is, in words anybody has ------------------------------
+   「無声両唇破裂音って聞いて普通の人一発で理解できんの？」 No. So the page does
+   not say that. It says what to do with your mouth, in pieces: where it is
+   made, how it is made, and whether the voice is on. Thirty-three fragments
+   in each of the ten languages, joined, rather than a hundred and sixty
+   sentences written out -- which would be a hundred and sixty chances to be
+   wrong about somebody else's language, ten times over.
+
+   And where it is heard. That one cannot be composed, so it is a table, and
+   it is short on purpose: the languages this app already speaks, and only
+   the sounds one of them genuinely has. A symbol with nothing here says
+   nothing rather than guessing. */
+var IPA_IN={
+  "p":[["en","pen"],["ja","パン"],["es","padre"]],
+  "b":[["en","bed"],["ja","バス"],["es","bien"]],
+  "t":[["en","ten"],["ru","тот"]],
+  "d":[["en","dog"],["ru","дом"]],
+  "t̪":[["es","todo"],["it","tutto"],["fr","tout"]],
+  "d̪":[["es","donde"],["it","dove"],["fr","doux"]],
+  "k":[["en","cat"],["ja","カメ"],["de","kalt"]],
+  "\u0261":[["en","go"],["ja","ガム"],["de","gut"]],
+  "m":[["en","man"],["ja","ミミ"],["fr","mer"]],
+  "n":[["en","no"],["ja","ナス"],["ru","нос"]],
+  "\u0272":[["es","año"],["fr","agneau"],["it","gnocchi"]],
+  "\u014b":[["en","sing"],["zh","方"],["ko","방"]],
+  "f":[["en","fish"],["de","Fuß"],["it","fare"]],
+  "v":[["en","voice"],["de","Wasser"],["ru","вода"]],
+  "\u03b8":[["en","think"],["es","cielo"]],
+  "\u00f0":[["en","this"],["es","nada"]],
+  "s":[["en","sun"],["ja","サル"],["fr","sec"]],
+  "z":[["en","zoo"],["fr","zéro"],["pt","casa"]],
+  "\u0283":[["en","she"],["pt","chave"],["fr","chat"]],
+  "\u0292":[["fr","je"],["pt","gente"],["en","measure"]],
+  "\u0255":[["ja","シ"],["zh","西"]],
+  "\u0291":[["zh","日"]],
+  "\u00e7":[["de","ich"],["ja","ヒト"]],
+  "x":[["es","jefe"],["de","Bach"],["ru","хлеб"]],
+  "\u03c7":[["fr","rue"],["de","Buch"]],
+  "h":[["en","hat"],["ja","ハト"],["ko","하늘"]],
+  "j":[["en","yes"],["ja","ヤマ"],["de","ja"]],
+  "l":[["en","love"],["it","luna"],["ru","лето"]],
+  "\u028e":[["it","figlio"],["es","llave"],["pt","filho"]],
+  "r":[["es","perro"],["it","carro"],["ru","река"]],
+  "\u027e":[["ja","ラ"],["es","pero"],["en","better"]],
+  "\u0281":[["fr","rouge"],["de","rot"],["pt","carro"]],
+  "\u0279":[["en","red"]],
+  "w":[["en","water"],["ja","ワ"],["fr","oui"]],
+  "\u0265":[["fr","huit"],["zh","月"]],
+  "\u028b":[["ko","우유"]],
+  "\u0294":[["de","Beamte"],["zh","啊"]],
+  "i":[["en","see"],["ja","イ"],["es","sí"]],
+  "y":[["fr","tu"],["de","über"],["zh","雨"]],
+  "\u0268":[["ru","мы"]],
+  "\u026f":[["ja","ウ"],["ko","으"]],
+  "u":[["es","tú"],["it","uno"],["ru","ум"]],
+  "\u026a":[["en","sit"],["de","Bitte"],["ru","ты"]],
+  "\u028a":[["en","book"],["de","Mutter"]],
+  "e":[["ja","エ"],["es","mesa"],["it","vero"]],
+  "\u00f8":[["fr","peu"],["de","schön"]],
+  "\u0259":[["en","about"],["de","bitte"],["ko","어"]],
+  "\u0264":[["ko","으"],["zh","de"]],
+  "o":[["ja","オ"],["es","como"],["it","sole"]],
+  "\u025b":[["fr","père"],["it","bello"],["pt","pé"]],
+  "\u0153":[["fr","peur"],["de","können"]],
+  "\u028c":[["en","cup"],["ru","голова"]],
+  "\u0254":[["en","law"],["it","cosa"],["pt","avó"]],
+  "\u00e6":[["en","cat"]],
+  "a":[["ja","ア"],["es","casa"],["it","pane"]],
+  "\u0251":[["en","father"],["fr","pâte"]],
+  "\u0252":[["en","hot"]]
+};
+function ipaIn(sym){ return IPA_IN[sym] || []; }
 /* Everything, once, for lookups. */
 var IPA_ALL=null;
 function ipaAll(){

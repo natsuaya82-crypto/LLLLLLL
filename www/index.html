@@ -106,21 +106,34 @@ button{font-family:inherit;cursor:pointer}
 .seqdel:disabled{opacity:.25}
 .phkeys{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 /* A group of the chart, and whether it is open. */
-.ipah{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;
-  padding:11px 2px;background:none;border:0;border-bottom:1px solid var(--line);
+.ipah{display:flex;align-items:center;flex:0 1 auto;min-height:44px;
+  padding:11px 2px;background:none;border:0;
   text-align:left;color:var(--txm);font-size:.86rem;letter-spacing:.06em}
 .ipah:active{color:var(--gold)}
-.ipah.on{color:var(--tx);border-bottom-color:transparent}
+.ipah.on{color:var(--tx)}
 .ipah::before{content:'\203a';margin-right:.5em;display:inline-block;transition:transform .12s}
 .ipah.on::before{transform:rotate(90deg)}
-.ipah>span:first-of-type{flex:1 1 auto}
-.ipan{flex:0 0 auto;font-size:.76rem;color:var(--txm);opacity:.7}
+.ipan{margin-left:auto;padding-right:2px;font-size:.76rem;color:var(--txm);opacity:.7}
 /* The way to hear one, at the corner of the tile. The BUTTON is 44pt because
    a thumb is; the circle drawn inside it is not, which is the whole point of
    putting it in a corner. */
 .phkp{position:relative;display:inline-block}
 .phks{position:absolute;top:-11px;right:-11px;width:44px;height:44px;padding:0;
   background:none;border:0;display:flex;align-items:flex-start;justify-content:flex-end}
+/* A group's heading, and the way to ask what that group IS. The ? is the
+   same badge as the speaker on a tile -- `.phks` again, not a second shape --
+   put back in the flow instead of at a tile's corner. */
+.ipahr{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.ipaq{position:static;width:34px;height:44px;justify-content:flex-start;align-items:center}
+/* One sound, said in words. */
+.ipads{flex:0 0 auto;width:44px;height:44px;background:none;border:0;color:var(--tx);
+  font-size:1.2rem;display:flex;align-items:center;justify-content:center}
+.ipadw{font-size:1.02rem;line-height:1.7;color:var(--tx);margin:6px 2px 22px}
+.ipadl{margin-top:2px}
+.ipadr{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 2px;
+  border-bottom:1px solid var(--line)}
+.ipadn{flex:0 0 auto;font-size:.86rem;color:var(--txm)}
+.ipadx{flex:1 1 auto;text-align:right;font-size:1.05rem;color:var(--tx)}
 .phkd{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);
   background:var(--bg);color:var(--txm);display:flex;align-items:center;justify-content:center}
 .phkd .ic{width:11px;height:11px}

@@ -277,8 +277,53 @@ function ipaTiles(sym, act, on){
     '<button class="phk'+(on.indexOf(sym)>=0? ' on':'')+'"' +
       DO(act, [sym]) + '><span class="pks">'+esc(sym)+'</span></button>'+
     '<button class="phks"' + DO('sayPh', [[sym]]) + ' aria-label="'+
-      esc(t('f.listen'))+'"><span class="phkd">'+ICON_SPK+'</span></button></span>';
+      esc(t('f.listen'))+'"><span class="phkd">'+ICON_SPK+'</span></button>'+
+    '</span>';
 }
+/* What a GROUP of sounds is -- 破裂音, 鼻音 -- said as a thing the mouth does,
+   with a few of them heard in a language somebody knows. Not the name:
+   「無声両唇破裂音って聞いて普通の人一発で理解できんの？」 And not one of these per
+   symbol either: the question was about the heading.
+
+   The examples are drawn from IPA_IN, so a group whose sounds no language
+   here has says only what the mouth does, and nothing is invented to fill
+   the gap. */
+function ipaGroupOf(key){
+  if(key.indexOf('m.')===0) return ipaOfManner(key.slice(2));
+  if(key==='v') return IPA_VOWS.map(function(v){ return v.s; });
+  if(key==='o') return IPA_OTHER.map(function(o){ return o.s; });
+  return addedSnd();
+}
+function ipaGroupWords(key){
+  if(key.indexOf('m.')===0) return t('ipa.d.m.'+key.slice(2));
+  if(key==='v') return t('ipa.d.vows');
+  if(key==='o') return t('ipa.d.other');
+  return t('ipa.d.mine');
+}
+function ipaGroupName(key){
+  if(key.indexOf('m.')===0) return t('ipa.m.'+key.slice(2));
+  if(key==='v') return t('ipa.vows');
+  if(key==='o') return t('ipa.other');
+  return t('ipa.mine');
+}
+function openIpaG(key){
+  var rows=[], syms=ipaGroupOf(key), i, j, heard;
+  for(i=0;i<syms.length && rows.length<6;i++){
+    heard=ipaIn(syms[i]);
+    for(j=0;j<heard.length && j<2 && rows.length<6;j++)
+      rows.push([syms[i], heard[j][0], heard[j][1]]);
+  }
+  openForm('ipad:'+key, ipaGroupName(key),
+    '<div class="ipadw">'+esc(ipaGroupWords(key))+'</div>'+
+    (rows.length? '<div class="ipadl">'+rows.map(function(r){
+      return '<div class="ipadr">'+
+        '<button class="ipads"' + DO('sayPh', [[r[0]]]) + ' aria-label="'+
+          esc(t('f.listen'))+'">'+esc(r[0])+'</button>'+
+        '<span class="ipadn">'+esc(LANG[r[1]]? LANG[r[1]].label : r[1])+'</span>'+
+        '<span class="ipadx">'+esc(r[2])+'</span></div>';
+    }).join('')+'</div>' : ''));
+}
+FORM_OPEN.ipad=function(a){ openIpaG(String(a||'')); };
 /* Shut, and opened one at a time. Ten headings and a hundred and sixty tiles
    were one screen you scrolled past to reach anything.
    「全部開かないで最初>とかで蛇腹にして開いたら見えるように」
@@ -297,8 +342,16 @@ function ipaToggle(key){
 function ipaGroupHTML(key, head, list, act, on){
   var hit=list.filter(ipaHit);
   if(!hit.length) return '';
-  return '<button class="ipah'+(ipaShut(key)?'':' on')+'"' + DO('ipaToggle', [key]) + '>'+
-    '<span>'+esc(head)+'</span><span class="ipan">'+hit.length+'</span></button>'+
+  return '<div class="ipahr">'+
+    '<button class="ipah'+(ipaShut(key)?'':' on')+'"' + DO('ipaToggle', [key]) + '>'+
+      esc(head)+'</button>'+
+    /* The same badge as the speaker on a tile: one circle, 22px of ink in a
+       44pt target, and it sits beside the thing it is about rather than
+       floated to the far edge. Two shapes for two questions in one app is
+       what this is not. 「⚪︎？で統一しろ」 */
+    '<button class="phks ipaq"' + DO('openIpaG', [key]) + ' aria-label="'+
+      esc(t('help.q'))+'"><span class="phkd">?</span></button>'+
+    '<span class="ipan">'+hit.length+'</span></div>'+
     (ipaShut(key)? '' :
      '<div class="phkeys">'+hit.map(function(sym){
        return ipaTiles(sym, act, on); }).join('')+'</div>');

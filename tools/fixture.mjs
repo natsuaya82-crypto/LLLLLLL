@@ -338,6 +338,11 @@ export function halfDone(){
     ['the sounds, for the language', () => { openSndAdd(); return FORM.html; }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
                                      const h = FORM.html; ipaQ = ''; return h; }],
+    /* What one sound IS, which is a page of its own behind the ? on a tile.
+       Twice: a sound one of the ten languages has, and one that none of them
+       does, because the second says only how it is made. */
+    ['what a group of sounds is', () => { openIpaG('m.plosive'); return FORM.html; }],
+    ['what a group with no examples is', () => { openIpaG('o'); return FORM.html; }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
     /* The new-word sheet with something already chosen on it. The chips for

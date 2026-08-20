@@ -189,9 +189,20 @@ function checkSource(){
        allowed to say these out loud. */
     const NAMES = /\bt\(\s*[\'"]tab\.[A-Za-z0-9.]*[\'"]/g;
 
+    /* One table is words in other people's languages ON PURPOSE, and it is
+       the one thing on this page that must NOT be translated: IPA_IN says
+       where a sound is heard, and pen is pen in all ten. Translating "パン"
+       would be answering a different question -- what a Japanese word means
+       -- instead of the one asked, which is what that sound sounds like in
+       the mouth of somebody who has it. Named, and bounded by the table's
+       own braces, so a foreign string anywhere else in ipa.js still fails. */
+    let inTable = false;
+
     lines.forEach((l, i) => {
       const where = rel + ' line ' + (i + 1);
-      if (FOREIGN.test(l)) {
+      if (rel === 'ipa.js' && /^var IPA_IN\s*=/.test(l)) inTable = true;
+      else if (inTable && /^\};/.test(l)) inTable = false;
+      if (FOREIGN.test(l) && !inTable) {
         fail('source', where + ' carries text in another script: ' + raw[i].trim().slice(0, 70));
       }
       let m;
@@ -556,6 +567,11 @@ const R = await pg.evaluate(() => {
   learn(langName);
   cands.forEach(c => { try { learnSeq(c.q); } catch (e) {} });
   UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });
+  /* Where a sound is heard, which is words in other people's languages ON
+     PURPOSE: pen is pen in all ten, and translating it would answer a
+     different question. Learned from the table rather than exempted by name,
+     so an example added there is covered the day it is added. */
+  Object.keys(IPA_IN).forEach(k => IPA_IN[k].forEach(x => learn(x[1])));
 
   const seen = {};
   function words(where, s, how){

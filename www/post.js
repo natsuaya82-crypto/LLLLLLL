@@ -2151,10 +2151,10 @@ function postPin(id){
    Only the file this post names, and only from this post. */
 function postDel(id){
   if(!confirm(t('post.del.q'))) return;
-  var i, vo=null, to='', up;
+  var i, gone=null, vo=null, to='', up;
   PMENU='';
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
-    vo=POSTS[i].vo; to=POSTS[i].to||''; POSTS.splice(i, 1); break;
+    gone=POSTS[i]; vo=gone.vo; to=gone.to||''; POSTS.splice(i, 1); break;
   }
   /* A reply counted one on the post it answered, and deleting it never took
      that one back -- so a post somebody replied to and then deleted the reply
@@ -2169,7 +2169,7 @@ function postDel(id){
   }
   savePosts();
   if(vo && vo.f) voDropFile(vo.f);
-  netDrop(id, function(){}, function(){});
+  netDrop(gone, function(){}, function(){});
   if(here().r==='form') back();
   render();
 }
