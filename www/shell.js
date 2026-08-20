@@ -123,6 +123,14 @@ function navHas(r, a){
   for(i=0;i<NAV.length-1;i++) if(NAV[i].r===r && NAV[i].a===a) return true;
   return false;
 }
+/* A form's argument is a name, and a name can change under it. Renaming a
+   word tells everything pointing at that word its new name; the trail is one
+   of the things pointing at it. Nothing else is touched -- this is a rename,
+   not a jump. */
+function navRename(a, to){
+  var i;
+  for(i=0;i<NAV.length;i++) if(NAV[i].r==='form' && NAV[i].a===a) NAV[i].a=to;
+}
 /* A tab is not somewhere you came through, it is where you are. Tapping one
    throws the trail away rather than stacking three tabs on top of it. */
 /* Leaving the search tab for a chapter of the build tab: two moves, and the

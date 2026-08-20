@@ -15,6 +15,33 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Renaming a word no longer strands you on "that is no longer here"
+
+Open a word, press 編集, change one letter of the spelling, Save — and the
+screen you were taken back to said the word was gone. It was not: it had been
+saved perfectly, under its new name. A word page is a route carrying the
+spelling, the spelling is the only name a word has, and editing a word is
+mostly editing that, so the trail behind you was still asking for the name the
+word had a moment ago.
+
+`wRename()` already went round telling everything that points at a word its
+new name — the words derived from it, what means the same, what means the
+opposite, the lines it appears in. The trail is one more thing pointing at it,
+and now it is told too (`navRename()` in `shell.js`).
+
+Nothing stored changes.
+
+### A fourteenth check: `npm run word`
+
+`tools/word-check.mjs`. press-check builds a screen, presses one thing and
+rebuilds — it never presses two in a row, so nothing in the gate could reach
+"open a word, edit it, save it", which is three. This drives the real
+functions in the real app against the shared fixture and holds what happens
+to where you are standing when the word under you changes.
+
+It was watched failing with the rename bug in place: `renamed to tirara, and
+the screen behind is {"r":"form","a":"word:tira"}`.
+
 ### One row shape on a word page
 
 The class is `wdrow`, not `wrow`: `.wrow` is already the person row in the

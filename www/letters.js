@@ -819,6 +819,13 @@ function wRename(old, hw){
   wRelRename(old, hw);
   for(i=0;i<LINES.length;i++)
     LINES[i].ws=LINES[i].ws.map(function(x){ return x===old? hw : x; });
+  /* The trail points at it too. A word page is a route carrying the spelling,
+     the spelling is the only name a word has, and editing a word is mostly
+     editing that -- so a rename left every screen behind you asking for a
+     word that no longer exists, and Save landed you on "that is no longer
+     here" with the word saved perfectly under its new name. */
+  navRename('word:'+old, 'word:'+hw);
+  navRename('edit:'+old, 'edit:'+hw);
 }
 /* The spelling of a word that has none: cut it the way its writing system
    would, and ask which letter writes each piece. */
