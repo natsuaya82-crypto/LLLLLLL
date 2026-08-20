@@ -2046,20 +2046,29 @@ html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
    serif underneath, which is what a font stack is for -- so a half-drawn
    script shows the half that exists instead of nothing at all. */
 html[data-script="on"] .hw,
-html[data-script="on"] .line,
-html[data-script="on"] .tname,
-html[data-script="on"] .wcw,
-html[data-script="on"] .sww,
 html[data-script="on"] .psw,
-html[data-script="on"] .usew,
-html[data-script="on"] .lcs,
 html[data-script="on"] .whw,
-html[data-script="on"] .cw,
 html[data-script="on"] .gsw,
-html[data-script="on"] .gor,
 html[data-script="on"] .seq,
-html[data-script="on"] .st-seq,
-html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacing:0}
+html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0}
+/* Eight selectors came off this list. Seven of them -- .line .tname .wcw
+   .sww .usew .lcs .cw .link .src -- are on no element anywhere in www/ any
+   more, so they were a list of places the font USED to reach, and a reader
+   checking whether something wears the script would have believed them.
+   The eighth, .gor, is on an element that still exists and should never have
+   been here: it holds t('gram.role.x') -- Subject, Object, Verb -- which is
+   the app's own word for a thing, not a word of anybody's language.
+   「自作文字になるのは自分が打った文字だけにしてくれない？」 */
+/* A placeholder is never in the drawn letters. It is the app saying what the
+   box is for, in the app's own language, and .sfont carries !important so it
+   was winning against every font rule on every empty field: the composer,
+   signed in and with a font of one's own, showed a column of shapes where it
+   meant to say "a line in your language". Empty, that is the whole screen.
+   Both spellings, because this webview knows one of them and other WebKits
+   know the other. */
+.sfont::placeholder,.sfont::-webkit-input-placeholder,
+.sfont::-moz-placeholder{font-family:'Cormorant Garamond',Georgia,serif !important;
+  letter-spacing:normal}
 /* `normal` hands the line box to the font, which is where the rule lives:
    ink plus one lattice step. A number here would be a screen deciding the
    spacing of somebody else's script, and there are four screens. */
