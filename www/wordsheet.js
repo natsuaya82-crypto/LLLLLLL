@@ -998,9 +998,30 @@ function vSpell(){
       '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
         esc(spWord(sp))+'</span></div>'+
       '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
+      /* The whole reading, in one field. Changing tira to tiraa one position
+         at a time is four screens to say one thing.
+         「tiraって文字なら全部一気に変えれるようにしようよ」 */
+      lnField('wd-rdln', '', IN('wdSetRd'), spPh(sp).join(''), 'whin')+
       spSndRowsHTML(sp, 'spell')+
       '</div></div>';
   return spPageHTML(sp, 'wdSetU', 'wdDropAt');
+}
+/* A reading typed whole, given back to the positions that make it up.
+
+   The sounds are cut out of what was typed and handed along in order, one to
+   a position. A word has as many positions as it has letters and a reading
+   can be any length, so the two ends are said rather than guessed at: sounds
+   left over after the last position join it -- one letter reading two sounds
+   is ordinary -- and positions left over after the last sound say nothing,
+   which is a silent letter and is also ordinary. Neither adds a position or
+   drops one: the letters of the word are the word, and they are changed by
+   typing the word and not by typing its reading. */
+function wdSetRd(v){
+  var sp=(wEdit&&wEdit.sp)||[], us=uSplit(String(v||'')), i;
+  if(!sp.length) return;
+  for(i=0;i<sp.length;i++)
+    spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
+  wdSync(); wdPaint();
 }
 function wdSetU(i, u){
   if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;
