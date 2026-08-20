@@ -104,7 +104,27 @@ button{font-family:inherit;cursor:pointer}
 .seqdel{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
         display:inline-flex;align-items:center;justify-content:center}
 .seqdel:disabled{opacity:.25}
-.phkeys{display:flex;flex-wrap:wrap;gap:6px}
+.phkeys{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+/* A group of the chart, and whether it is open. */
+.ipah{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;
+  padding:11px 2px;background:none;border:0;border-bottom:1px solid var(--line);
+  text-align:left;color:var(--txm);font-size:.86rem;letter-spacing:.06em}
+.ipah:active{color:var(--gold)}
+.ipah.on{color:var(--tx);border-bottom-color:transparent}
+.ipah::before{content:'\203a';margin-right:.5em;display:inline-block;transition:transform .12s}
+.ipah.on::before{transform:rotate(90deg)}
+.ipah>span:first-of-type{flex:1 1 auto}
+.ipan{flex:0 0 auto;font-size:.76rem;color:var(--txm);opacity:.7}
+/* The way to hear one, at the corner of the tile. The BUTTON is 44pt because
+   a thumb is; the circle drawn inside it is not, which is the whole point of
+   putting it in a corner. */
+.phkp{position:relative;display:inline-block}
+.phks{position:absolute;top:-11px;right:-11px;width:44px;height:44px;padding:0;
+  background:none;border:0;display:flex;align-items:flex-start;justify-content:flex-end}
+.phkd{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg);color:var(--txm);display:flex;align-items:center;justify-content:center}
+.phkd .ic{width:11px;height:11px}
+.phks:active .phkd{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 .phk{min-width:56px;min-height:62px;border:1px solid var(--line);background:var(--sf);
      border-radius:9px;color:var(--tx);font-size:1.05rem;padding:8px 10px}
 .phk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}

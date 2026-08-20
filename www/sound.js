@@ -239,8 +239,11 @@ function sndTake(sym){
    typing in the search can repaint the tiles without knowing which of the
    three screens it is standing on. */
 var ipaQ='';
-function ipaSetQ(v){
-  ipaQ=String(v||'');
+function ipaSetQ(v){ ipaQ=String(v||''); ipaPaint(); }
+/* The list again, without the page around it: what a press calls and what is
+   already on travel on the element, so nothing here has to know which of the
+   three screens it is standing on. */
+function ipaPaint(){
   var e=document.getElementById('ipa-list');
   if(!e) return;
   e.innerHTML=ipaGroupsHTML(e.getAttribute('data-act'),
@@ -260,13 +263,45 @@ function ipaWords(sym){
 function ipaHit(sym){
   return !ipaQ || ipaWords(sym).toLowerCase().indexOf(ipaQ.toLowerCase())!==-1;
 }
-function ipaTiles(head, list, act, on){
-  var out=list.filter(ipaHit).map(function(sym){
-    return '<button class="phk'+(on.indexOf(sym)>=0? ' on':'')+'"' +
-      DO(act, [sym]) + '><span class="pks">'+esc(sym)+'</span></button>';
-  }).join('');
-  return out? (head? '<div class="sec">'+esc(head)+'</div>' : '')+
-    '<div class="phkeys">'+out+'</div>' : '';
+/* Two things to do with one sound, and they are two buttons. Pressing the
+   symbol takes it -- into the language, onto the letter, onto the reading --
+   and pressing the speaker only says it. They were one button that did both,
+   so the only way to hear a sound was to choose it first and take it back out
+   afterwards. 「そのタイルの右上に音声マークつけて音聞けるようにして」「分けたいね」
+
+   The speaker is a small circle at the corner and a 44pt target: the button
+   is the size a thumb needs and the ink inside it is not. Drawing it small
+   AND making it small is what press-check refuses, and it is right to. */
+function ipaTiles(sym, act, on){
+  return '<span class="phkp">'+
+    '<button class="phk'+(on.indexOf(sym)>=0? ' on':'')+'"' +
+      DO(act, [sym]) + '><span class="pks">'+esc(sym)+'</span></button>'+
+    '<button class="phks"' + DO('sayPh', [[sym]]) + ' aria-label="'+
+      esc(t('f.listen'))+'"><span class="phkd">'+ICON_SPK+'</span></button></span>';
+}
+/* Shut, and opened one at a time. Ten headings and a hundred and sixty tiles
+   were one screen you scrolled past to reach anything.
+   「全部開かないで最初>とかで蛇腹にして開いたら見えるように」
+
+   The language's own is the one that starts open: it is short, and on the
+   page a letter opens it is where that letter's sound already is.
+
+   A search opens whatever matched. Otherwise typing into it would answer with
+   a column of headings, which is the one thing it must not do. */
+var ipaOpen={mine:1};
+function ipaShut(key){ return !ipaQ && !ipaOpen[key]; }
+function ipaToggle(key){
+  if(ipaOpen[key]) delete ipaOpen[key]; else ipaOpen[key]=1;
+  ipaPaint();
+}
+function ipaGroupHTML(key, head, list, act, on){
+  var hit=list.filter(ipaHit);
+  if(!hit.length) return '';
+  return '<button class="ipah'+(ipaShut(key)?'':' on')+'"' + DO('ipaToggle', [key]) + '>'+
+    '<span>'+esc(head)+'</span><span class="ipan">'+hit.length+'</span></button>'+
+    (ipaShut(key)? '' :
+     '<div class="phkeys">'+hit.map(function(sym){
+       return ipaTiles(sym, act, on); }).join('')+'</div>');
 }
 /* The manners are read off IPA_CONS rather than written out here, so a manner
    added to the chart is a heading on this page the same day. */
@@ -280,12 +315,12 @@ function ipaOfManner(m){
   return IPA_CONS.filter(function(c){ return c.m===m; }).map(function(c){ return c.s; });
 }
 function ipaGroupsHTML(act, on){
-  return ipaTiles(t('ipa.mine'), addedSnd(), act, on)+
+  return ipaGroupHTML('mine', t('ipa.mine'), addedSnd(), act, on)+
     ipaManners().map(function(m){
-      return ipaTiles(t('ipa.m.'+m), ipaOfManner(m), act, on);
+      return ipaGroupHTML('m.'+m, t('ipa.m.'+m), ipaOfManner(m), act, on);
     }).join('')+
-    ipaTiles(t('ipa.vows'), IPA_VOWS.map(function(v){ return v.s; }), act, on)+
-    ipaTiles(t('ipa.other'), IPA_OTHER.map(function(o){ return o.s; }), act, on);
+    ipaGroupHTML('v', t('ipa.vows'), IPA_VOWS.map(function(v){ return v.s; }), act, on)+
+    ipaGroupHTML('o', t('ipa.other'), IPA_OTHER.map(function(o){ return o.s; }), act, on);
 }
 function ipaPickHTML(act, on){
   on=on||[];

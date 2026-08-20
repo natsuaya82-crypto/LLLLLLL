@@ -32,7 +32,7 @@ function viewReset(){
   mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
   wdMode='';                           /* the sheet a word is written on */
-  ipaQ='';                             /* the search on the IPA page */
+  ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
