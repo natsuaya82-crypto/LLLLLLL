@@ -518,13 +518,12 @@ var ICON_ADD2='<svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="
 var ICON_DOTS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '+
   'aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/>'+
   '<circle cx="19" cy="12" r="1.7"/></svg>';
-/* the card: a framed picture with a line written across it */
-var ICON_CARD='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
-  'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
-  '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 11h10M7 15h6"/></svg>';
 /* share: the box a thing leaves by, with the thing going up out of it. What
-   leaves is the card -- the post as one picture -- which is the only way
-   anything in this app gets out of the phone at all. */
+   leaves is the card -- a post, a word or an example as one picture -- which
+   is the only way anything in this app gets out of the phone at all.
+   A framed rectangle stood on the word page and the example rows, and it said
+   nothing: 「その、謎の四角の右上のマーク何？」「それは共有マークにしてよわかりに
+   くい」. A card is not a thing anybody wants; getting the thing out is. */
 var ICON_SHARE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/>'+

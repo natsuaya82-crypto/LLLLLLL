@@ -15,6 +15,18 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The card is reached by the share mark
+
+「その、謎の四角の右上のマーク何？」「それは共有マークにしてよわかりにくい」
+
+A framed rectangle stood at the top right of a word and on every example row.
+It was a picture of a card, and a card is not a thing anybody is looking for —
+getting the thing off the phone is. A post already used the share mark for the
+same button; the word page and the example rows did not. One mark now, on all
+four.
+
+Nothing stored changes.
+
 ### A word says three things at the top, not two
 
 「自作文字 / 読み / ipaもしくは音 じゃないの？」

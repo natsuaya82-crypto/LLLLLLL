@@ -372,7 +372,7 @@ function wdExHTML(){
         /* No card off a word that is not in the dictionary yet: a card is
            made from a headword, and this one has none until Add. */
         return exRowHTML(e, exSeq(e.ln),
-          (addW? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_CARD))+
+          (addW? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_SHARE))+
           exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
@@ -732,7 +732,7 @@ function wdFormHTML(){
       /* the one way out of the app: this word as a picture, in the letters
          it is written in, for somewhere that is not Lingua */
       (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
-        esc(t('card.title'))+'">'+ICON_CARD+'</button>')+'</div>'+
+        esc(t('card.title'))+'">'+ICON_SHARE+'</button>')+'</div>'+
     '<div class="wsub" id="wd-rd">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2">'+esc(phCut(seq).map(function(p){
         return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
@@ -871,7 +871,7 @@ function wdViewHTML(){
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) +
         ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
-        esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
+        esc(t('card.title'))+'">'+ICON_SHARE+'</button></div>'+
     /* Three lines, and they are three different questions:
        the word in the letters somebody drew, how it is read, and how it
        sounds. 「自作文字 / 読み / ipaもしくは音 じゃないの？」 The middle one is
@@ -897,7 +897,7 @@ function wdViewHTML(){
     wdSecHTML(ICON_LINE+t('word.ex'), ex.length
       ? '<div class="exlist">'+ex.map(function(e,i){
           return exRowHTML(e, exSeq(e.ln),
-            exBtn('cardOpen', ["x", w.hw+'#'+i], 'card.title', ICON_CARD));
+            exBtn('cardOpen', ["x", w.hw+'#'+i], 'card.title', ICON_SHARE));
         }).join('')+'</div>' : '')+
     wdSecHTML(t('word.ety'), w.ety? '<div class="note">'+esc(w.ety)+'</div>' : '')+
     wdSecHTML(t('word.note'), w.nt? '<div class="note">'+esc(w.nt)+'</div>' : '')+
