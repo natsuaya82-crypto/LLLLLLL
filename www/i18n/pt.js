@@ -211,6 +211,8 @@ defLang('pt', (function(){
       "set.no"               : "Não",
       "kb.reset"               : "Recomeçar",
       "kb.pat" : "Qual teclado",
+      "kb.pat.set" : "Disposição",
+      "kb.pat.q" : "Mudar a disposição esvazia este teclado: tudo o que está nas teclas se perde. Suas letras e os outros teclados ficam.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 e uma linha de dígitos",
       "kb.pat.flick" : "Deslize",

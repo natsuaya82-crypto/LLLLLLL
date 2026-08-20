@@ -669,6 +669,14 @@ export function halfDone(){
        of its own and not the free branch of vKb(): the row of keyboards, the
        `+`, the ⋯ and Apply are all above it, and none of them exists on
        free. 「1つ目の無料のqwartyは編集できないようにしてくれ」 */
+    /* The five patterns again, offered to a keyboard that already exists.
+       Same list, same drawing, a different name on the press -- so this face
+       is what proves the second name is reachable at all. */
+    ['the arrangement of a keyboard that already exists', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('qwerty'); kbRepat(1);
+        const h = FORM.html;
+        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the free QWERTY, on a plan that can build others', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 0; KB.at = 1;

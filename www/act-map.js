@@ -68,6 +68,8 @@ act('kbWobEnd', kbWobEnd);
 act('kbDelKey', kbDelKey);
 act('kbGoLay', kbGoLay);
 act('kbPick', kbPick);
+act('kbRepat', kbRepat);
+act('kbSetPat', kbSetPat);
 act('kbReset', kbReset);
 act('kbSettings', kbSettings);
 act('setKbRom', setKbRom);
