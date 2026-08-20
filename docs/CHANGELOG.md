@@ -15,6 +15,31 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### One row shape on a word page
+
+The class is `wdrow`, not `wrow`: `.wrow` is already the person row in the
+timeline, which carries a negative margin so it can run the full width of the
+screen. A second rule of the same name took that margin — the word page's rows
+started 24px left of every heading above them — and gave the timeline's person
+rows the word page's padding and press colour in exchange. Same mistake as
+`.ntf` before it: a class named for what it holds, in a namespace with no
+scoping.
+
+The family stopped being framed cards, and that left three other kinds of
+boxed thing on the same page: the fields the word belongs to, what means the
+same, and what means the opposite, all drawn as bordered chips wrapping across
+the column. A word with everything filled in was four different box shapes
+stacked.
+
+What means the same and what means the opposite are rows now, the same rows
+the family uses — `wdRowHTML`, one builder for all of it. The fields are a
+line under the part of speech and the register, because nothing there is
+pressable and nothing there is a list being assembled.
+
+The chips stay on the editing sheet, where a box is a thing you take back off.
+
+Nothing stored changes.
+
 ### A sense number has a gap after it on the word page too
 
 A word with more than one meaning numbers them. On a dictionary row the number

@@ -818,12 +818,16 @@ function wdFormHTML(){
 function wdSecHTML(head, body){
   return body? '<div class="sec">'+head+'</div>'+body : '';
 }
-function wdChipsHTML(w, k){
+/* What means the same and what means the opposite, on the read page. They
+   were chips -- a bordered box each, wrapping across the column -- and so was
+   the family above them, so a word page was four kinds of boxed thing in a
+   row. One row shape for all of it: `wdRowHTML`. The chips stay on the sheet
+   where the two lists are assembled, because there a box is a thing you take
+   back off. */
+function wdRelsHTML(w, k){
   var ws=wRelWords(w,k);
-  return ws.length? '<div class="rels">'+ws.map(function(x){
-    return '<button class="rel"' + DO('openWord', [x.hw]) + '>'+
-      '<span class="relw">'+esc(wOut(x.hw))+'</span>'+
-      (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
+  return ws.length? '<div class="wdrows">'+ws.map(function(x){
+    return wdRowHTML(x, '');
   }).join('')+'</div>' : '';
 }
 /* The family, from wherever in it you are standing. 「保存した瞬間そっちの
@@ -850,11 +854,11 @@ function wdFamSort(kids){
    made the middle of a word page look like something to be worked on rather
    than something to read. 「その四角で加工系やめない？」 Pressing it opens that
    word, which is the whole reason the family is here. */
-function wdFamRowHTML(x, fm){
-  return '<button class="famrow"' + DO('openWord', [x.hw]) + '>'+
-    (fm? '<span class="famf">'+esc(fmLabel(fm))+'</span>' : '')+
-    '<span class="famw">'+esc(wOut(x.hw))+'</span>'+
-    '<span class="famm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
+function wdRowHTML(x, fm){
+  return '<button class="wdrow"' + DO('openWord', [x.hw]) + '>'+
+    (fm? '<span class="wdrowf">'+esc(fmLabel(fm))+'</span>' : '')+
+    '<span class="wdroww">'+esc(wOut(x.hw))+'</span>'+
+    '<span class="wdrowm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
 }
 /* Those of a family that are inflections, those that are derivations, and
    those wearing no label at all -- which are neither, because a word with a
@@ -865,14 +869,14 @@ function wdFamOf(kids, g){
 }
 function wdFamGroupHTML(label, list, labelled){
   if(!list.length) return '';
-  return (label? '<div class="famg">'+esc(label)+'</div>' : '')+
-    list.map(function(x){ return wdFamRowHTML(x, labelled? (x.fm||'') : ''); }).join('');
+  return (label? '<div class="wdrowg">'+esc(label)+'</div>' : '')+
+    list.map(function(x){ return wdRowHTML(x, labelled? (x.fm||'') : ''); }).join('');
 }
 function wdFamHTML(w){
   var par=wParent(w), root=par||w, kids;
   kids=wdFamSort(wKids(root).filter(function(x){ return x!==w; }));
   if(!par && !kids.length) return '';
-  return '<div class="famlist">'+
+  return '<div class="wdrows">'+
     (par? wdFamGroupHTML(t('word.root'), [par], false) : '')+
     wdFamGroupHTML(t('word.fm.inf'), wdFamOf(kids,'i'), true)+
     wdFamGroupHTML(t('word.fm.der'), wdFamOf(kids,'d'), true)+
@@ -901,8 +905,10 @@ function wdViewHTML(){
     /* What kind of word it is, and how it is said -- one line, because they
        are one question. An unmarked word says only its part of speech. */
     '<div class="wsub2">'+esc(posLabel(w.pos)+(w.reg? ' \u00b7 '+regLabel(w.reg) : ''))+'</div>'+
-    (((w.tags||[]).length)? '<div class="rels">'+w.tags.map(function(x){
-       return '<span class="rel"><span class="relw">'+esc(x)+'</span></span>'; }).join('')+'</div>' : '')+
+    /* What field the word belongs to. Nothing here is pressable and nothing
+       here is a list you are working on, so it is a line under the other two
+       small facts rather than a row of boxes. */
+    (((w.tags||[]).length)? '<div class="wsub2">'+esc(w.tags.join(' \u00b7 '))+'</div>' : '')+
     wdSecHTML(t('word.means'), mns.length
       ? '<div class="mnlist">'+mns.map(function(m,i){
           return '<div class="mnrow"><span class="mnv">'+
@@ -910,8 +916,8 @@ function wdViewHTML(){
         }).join('')+'</div>'
       : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
     wdSecHTML(t('word.family'), wdFamHTML(w))+
-    wdSecHTML(t('word.syn'), wdChipsHTML(w,'syn'))+
-    wdSecHTML(t('word.ant'), wdChipsHTML(w,'ant'))+
+    wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+
+    wdSecHTML(t('word.ant'), wdRelsHTML(w,'ant'))+
     wdSecHTML(ICON_LINE+t('word.ex'), ex.length
       ? '<div class="exlist">'+ex.map(function(e,i){
           return exRowHTML(e, exSeq(e.ln),
