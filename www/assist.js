@@ -69,13 +69,6 @@ function asSounds(id, n){
   out.sort(function(a,b){ return all.indexOf(a)-all.indexOf(b); });
   return out;
 }
-/* Every proposed sound, said one after another, so the character can be
-   heard rather than read. */
-function asSay(list){
-  var seq=[], i;
-  for(i=0;i<list.length;i++) seq.push(list[i]);
-  sayPh(seq);
-}
 
 /* ---- words, proposed --------------------------------------------------
    Built out of the sounds this language already has, in the shapes it
@@ -114,43 +107,6 @@ function asWords(pos, n){
   return out;
 }
 
-/* ---- growing the inventory --------------------------------------------
-   Take it, ask for another, or go and do the whole thing yourself on a chart
-   of a hundred and eleven symbols: those were the only three answers, and
-   the middle one throws away the eleven sounds you were happy with to change
-   the one you were not. An inventory is grown. One more consonant, one more
-   vowel, and the ones you do not want taken back out.
-
-   The sound comes from the same character you chose, so what is added still
-   belongs. When that runs out -- and it does, these lists are short -- the
-   pool widens to every sound any of the five characters uses, which is still
-   a set of ordinary, sayable sounds rather than the whole chart. */
-function asPool(kind){
-  var out=[], i, j, L;
-  for(i=0;i<AS_CHARS.length;i++){
-    L=(kind==='v')? AS_CHARS[i].v : AS_CHARS[i].c;
-    for(j=0;j<L.length;j++) if(out.indexOf(L[j])<0) out.push(L[j]);
-  }
-  return asReal(out);
-}
-function asLeft(pool, have){
-  var out=[], i;
-  for(i=0;i<pool.length;i++) if(have.indexOf(pool[i])<0) out.push(pool[i]);
-  return out;
-}
-function asMore(id, kind, have){
-  var ch=asChar(id), left=asLeft(asReal(kind==='v'? ch.v : ch.c), have), i, all;
-  if(!left.length) left=asLeft(asPool(kind), have);
-  if(!left.length){
-    /* the chart itself, last. Somebody who has taken all thirty ordinary
-       sounds is not going to be surprised by a rarer one. */
-    all=[]; var src=(kind==='v')? IPA_VOWS : IPA_CONS;
-    for(i=0;i<src.length;i++) all.push(src[i].s);
-    left=asLeft(all, have);
-  }
-  if(!left.length) return null;
-  return left[Math.floor(Math.random()*left.length)];
-}
 /* The chart's own order, so adding a sound does not shuffle the keyboard. */
 function asOrder(list){
   var all=ipaAll();

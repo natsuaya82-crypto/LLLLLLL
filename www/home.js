@@ -129,21 +129,6 @@ function tocRows(){
 function chOf(p){ return ltChar(p); }
 /* A sound belongs to the language either because a word already uses it or
    because you said so; before this, only the first way existed. */
-/* Dropping a sound unhooks the letters that read it. It does not delete them:
-   a letter is a thing you drew and it survives a sound being reconsidered --
-   which is the whole point of them being separate.
-
-   There were two of these. This one, on the × of a row in the chapter, and
-   sndDrop() on the × of the same sound in the proposal panel a few hundred
-   pixels above it -- which spliced the inventory and stopped, leaving every
-   letter that read the sound still reading a sound the language no longer
-   had. The same act, twice, agreeing about the easy half. */
-function dropSnd(p){
-  var a=addedSnd(), i=a.indexOf(p);
-  if(i>=0){ a.splice(i,1); saveSnd(); }
-  ltFor(p).forEach(function(l){ ltUnlink(l.id, p); });
-  render();
-}
 function invAll(){ return wsUnits(); }
 function scriptHave(){ return invAll().filter(function(p){ return !!ltChar(p); }).length; }
 /* A word written in the characters borrowed for it. What a character is

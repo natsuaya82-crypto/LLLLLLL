@@ -593,12 +593,6 @@ function ltSetChar(id, ch){
   if(ch){ l.ch=ch; l.st=null; } else l.ch='';
   saveLetters(); return l;
 }
-function ltUnlink(id, unit){
-  var l=ltById(id); if(!l || !l.snd) return null;
-  var i=l.snd.indexOf(unit);
-  if(i>=0) l.snd.splice(i,1);
-  saveLetters(); return l;
-}
 /* Deleting a letter: asked for, confirmed, and left behind. ltDel() below is
    the storage half and says nothing to anybody. This was geDelete() on the
    drawing screen, which is why it read the editor's state instead of an id --

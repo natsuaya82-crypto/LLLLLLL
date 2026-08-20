@@ -329,12 +329,15 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* The chart, opened from the letter it is about. It is a sheet now
-       rather than a chapter, so nothing reaches it by walking the routes --
-       and the proposal inside it, with its row of sounds and its way to ask
-       for one more, only exists once a character has been picked. */
-    ['the chart, for one letter', () => { sndFeelPick = AS_CHARS[0].id;
-                                          openSnd(LETTERS[0].id); return FORM.html; }],
+    /* The IPA, opened from the letter it is about, and again from the
+       inventory -- one page, two things a press means, so both are walked.
+       Nothing reaches either by walking the routes. And once with something
+       in the search, because a search that matches nothing leaves the page
+       with no tiles at all. */
+    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return FORM.html; }],
+    ['the sounds, for the language', () => { openSndAdd(); return FORM.html; }],
+    ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
+                                     const h = FORM.html; ipaQ = ''; return h; }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
     /* The new-word sheet with something already chosen on it. The chips for

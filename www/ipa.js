@@ -13,10 +13,6 @@
    headings -- and those are the names of places and manners of articulation,
    which are the same twenty-odd words in any of the ten. */
 
-var IPA_PLACES=["bilabial", "labiodental", "dental", "alveolar", "postalveolar", "retroflex", "palatal", "velar", "uvular", "pharyngeal", "glottal"];
-var IPA_MANNERS=["plosive", "nasal", "trill", "tap", "fricative", "latfric", "approx", "latapprox"];
-var IPA_HEIGHTS=["close", "nearclose", "closemid", "mid", "openmid", "nearopen", "open"];
-var IPA_BACKS=["front","central","back"];
 
 /* Each consonant: the symbol, its manner, its place, and whether it is
    voiced. Voiceless and voiced sit in the same cell, in that order. */
@@ -46,21 +42,6 @@ function ipaIsVowel(s){
     for(var i=0;i<IPA_VOWS.length;i++) IPA_ISV[IPA_VOWS[i].s]=1;
   }
   return !!IPA_ISV[s];
-}
-function ipaCell(m,p){
-  var out=[], i;
-  for(i=0;i<IPA_CONS.length;i++) if(IPA_CONS[i].m===m && IPA_CONS[i].p===p) out.push(IPA_CONS[i]);
-  return out;
-}
-function ipaVCell(h,b){
-  var out=[], i;
-  for(i=0;i<IPA_VOWS.length;i++) if(IPA_VOWS[i].h===h && IPA_VOWS[i].b===b) out.push(IPA_VOWS[i]);
-  return out;
-}
-/* A manner with nothing in it anywhere is not given a row. */
-function ipaHasManner(m){
-  for(var i=0;i<IPA_CONS.length;i++) if(IPA_CONS[i].m===m) return true;
-  return false;
 }
 
 /* A roman letter, and the IPA symbol somebody naming a letter that means.
