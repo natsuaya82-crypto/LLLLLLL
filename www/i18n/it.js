@@ -856,7 +856,7 @@ defLang('it', (function(){
       "word.mn.add"      : "Metti",
       "word.mn.del"      : "Togliere",
       "word.family"      : "Correlate",
-      "word.root"        : "Radice",
+      "word.root"        : "Forma base",
       "word.fm"        : "Forma",
       "word.fm.pst"        : "Passato",
       "word.fm.prs"        : "Presente",

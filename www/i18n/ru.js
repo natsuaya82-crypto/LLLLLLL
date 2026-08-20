@@ -877,7 +877,7 @@ defLang('ru', (function(){
       "word.mn.add"       : "Ещё",
       "word.mn.del"       : "Убрать",
       "word.family"       : "Связанные",
-      "word.root"         : "Корень",
+      "word.root"         : "Основная форма",
       "word.fm"         : "Форма",
       "word.fm.pst"         : "Прошедшее",
       "word.fm.prs"         : "Настоящее",

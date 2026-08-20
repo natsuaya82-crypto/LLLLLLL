@@ -1029,7 +1029,7 @@ defLang('ko', (function(){
       "word.mn.add"      : "추가",
       "word.mn.del"      : "제거",
       "word.family"      : "관련어",
-      "word.root"        : "어근",
+      "word.root"        : "기본형",
       "word.fm"        : "어형",
       "word.fm.pst"        : "과거형",
       "word.fm.prs"        : "현재형",

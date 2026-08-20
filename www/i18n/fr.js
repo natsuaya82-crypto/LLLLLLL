@@ -902,7 +902,7 @@ defLang('fr', (function(){
       "word.mn.add"      : "Ajouter",
       "word.mn.del"      : "Retirer",
       "word.family"      : "Mots liés",
-      "word.root"        : "Racine",
+      "word.root"        : "Forme de base",
       "word.fm"        : "Forme",
       "word.fm.pst"        : "Passé",
       "word.fm.prs"        : "Présent",

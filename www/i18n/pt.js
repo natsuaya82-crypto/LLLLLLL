@@ -861,7 +861,7 @@ defLang('pt', (function(){
       "word.mn.add"      : "Pôr",
       "word.mn.del"      : "Tirar",
       "word.family"      : "Relacionadas",
-      "word.root"        : "Raiz",
+      "word.root"        : "Forma base",
       "word.fm"        : "Forma",
       "word.fm.pst"        : "Passado",
       "word.fm.prs"        : "Presente",

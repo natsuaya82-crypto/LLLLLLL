@@ -859,7 +859,7 @@ defLang('zh', (function(){
       "word.mn.add"      : "添加",
       "word.mn.del"      : "移除",
       "word.family"      : "相关词",
-      "word.root"        : "词根",
+      "word.root"        : "基本形",
       "word.fm"        : "词形",
       "word.fm.pst"        : "过去式",
       "word.fm.prs"        : "现在式",

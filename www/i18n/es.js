@@ -814,7 +814,7 @@ defLang('es', (function(){
       "word.mn.add"      : "Añadir",
       "word.mn.del"      : "Quitar",
       "word.family"      : "Relacionadas",
-      "word.root"        : "Raíz",
+      "word.root"        : "Forma base",
       "word.fm"        : "Forma",
       "word.fm.pst"        : "Pasado",
       "word.fm.prs"        : "Presente",

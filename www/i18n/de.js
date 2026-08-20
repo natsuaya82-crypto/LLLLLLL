@@ -843,7 +843,7 @@ defLang('de', (function(){
       "word.mn.add"      : "Neu",
       "word.mn.del"      : "Entfernen",
       "word.family"      : "Verwandte",
-      "word.root"        : "Stamm",
+      "word.root"        : "Grundform",
       "word.fm"        : "Form",
       "word.fm.pst"        : "Vergangenheit",
       "word.fm.prs"        : "Gegenwart",

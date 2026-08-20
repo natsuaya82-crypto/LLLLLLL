@@ -770,7 +770,7 @@ defLang('ja', (function(){
       'word.mn.add'     : "追加",
       'word.mn.del'     : "削除",
       'word.family'     : "関連語",
-      'word.root'       : "元の語",
+      'word.root'       : "基本形",
       'word.fm'       : "語形",
       'word.fm.pst'       : "過去形",
       'word.fm.prs'       : "現在形",

@@ -768,7 +768,7 @@ defLang('en', (function(){
       'word.mn.add'     : "Add",
       'word.mn.del'     : "Remove",
       'word.family'     : "Related",
-      'word.root'       : "Root",
+      'word.root'       : "Base form",
       'word.fm'       : "Form",
       'word.fm.pst'       : "Past",
       'word.fm.prs'       : "Present",
