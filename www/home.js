@@ -165,8 +165,13 @@ var pkScript = '';
    the ids are the same. */
 var FORM=null;      /* {key, title, html, mount} — the one being shown */
 var FORM_OPEN={};   /* what rebuilds it when you arrive by the back button */
-function openForm(key, title, html, mount, right){
-  FORM={key:key, title:title, html:html, mount:mount||null, right:right||''};
+/* `fit` is the sixth: a form that is one screen and does not scroll. It was
+   read off FORM in vForm() and set by nobody, so the composer scrolled, kept
+   its bar of tabs, and let the keyboard carry its own header off the top of
+   the phone -- while a comment two files away said otherwise. */
+function openForm(key, title, html, mount, right, fit){
+  FORM={key:key, title:title, html:html, mount:mount||null, right:right||'',
+        fit:!!fit};
   if(here().r==='form' && here().a===key){ render(); window.scrollTo(0,0); }
   else go('form', key);
 }

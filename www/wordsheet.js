@@ -630,7 +630,7 @@ function fmRowHTML(hw, f, on){
      thumb has to land on. */
   return '<div class="entry one'+(on?' on':'')+'">'+
     '<button class="ebody"' + DO('fmPick', [hw, f]) + '>'+
-    '<div class="hwrow"><span class="hw">'+esc(fmLabel(f)||t('word.none'))+'</span></div>'+
+    '<div class="hwrow"><span class="hwl">'+esc(fmLabel(f)||t('word.none'))+'</span></div>'+
     '</button>'+fmQ(f)+'<span class="ltck" style="margin-left:auto">'+
     (on? ICON_TICK : '')+'</span></div>';
 }
@@ -691,7 +691,12 @@ function wdRegHTML(){
 function wdOneHTML(label, on, doName, val){
   return '<div class="entry one'+(on?' on':'')+'">'+
     '<button class="ebody"' + DO(doName, [val]) + '>'+
-    '<div class="hwrow"><span class="hw">'+esc(label)+'</span></div>'+
+    /* `hwl` and not `hw`. A headword is a word of the person's LANGUAGE and
+       wears the letters they drew; what is on this row is the app's own word
+       for a part of speech or a register. Wearing the same class meant the
+       list of parts of speech came out in a script nobody can read.
+       「自作文字になるのは自分が打った文字だけにしてくれない？」 */
+    '<div class="hwrow"><span class="hwl">'+esc(label)+'</span></div>'+
     '</button><span class="ltck" style="margin-left:auto">'+(on? ICON_TICK : '')+'</span></div>';
 }
 function vPos(){
