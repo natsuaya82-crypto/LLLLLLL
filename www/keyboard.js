@@ -1212,7 +1212,10 @@ var KB_SHOTS={
   /* Add New Keyboard, at the foot of iOS's own list of keyboards */
   'kb-list.jpg': {t:87.0, h:10.2},
   /* Lingua, under Third-Party Keyboards and below everything Apple suggests */
-  'kb-add.jpg':  {t:91.0, h:8.6},
+  /* Measured off the file rather than eyeballed: the Lingua card runs from
+     89.9% to 98.1% of its height, and the ring was set 1.1% below it.
+     「キーボード設定の黄色い囲むやつLinguaのやつだけずれてる」 */
+  'kb-add.jpg':  {t:89.6, h:8.8},
   /* the Keyboards row, at the foot of Lingua's own page in Settings */
   'kb-app.jpg':  {t:88.6, h:11.0},
   /* Allow Full Access, one page further in */

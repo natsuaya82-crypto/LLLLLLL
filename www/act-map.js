@@ -172,6 +172,9 @@ act('wSetFil', wSetFil);
 act('setGPos', setGPos);
 act('setMyFont', setMyFont);
 act('setOrder', setOrder);
+act('openLtView', openLtView);
+act('nextLtSort', nextLtSort);
+act('setLtFil', setLtFil);
 act('setRead', setRead);
 act('wSetSort', wSetSort);
 act('setTheme', setTheme);
@@ -218,7 +221,6 @@ act('spDrop', spDrop);
 act('ipaToggle', ipaToggle);
 act('openIpaG', openIpaG);
 act('wipeAll', wipeAll);
-act('wordsSay', wordsSay);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('impSetRole', impSetRole);

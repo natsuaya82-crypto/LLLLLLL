@@ -83,14 +83,14 @@ function wordsBodyHTML(items){
    two-argument entryHTML() used to give every row after the first the wrong
    one. */
 function entryOneHTML(w){ return entryHTML(w); }
-function wMetaHTML(items){
-  return '<span class="wct">'+tn('words.n', items.length)+'</span>'+
-    '<button class="wsrt"' + DO('wSetSort') + '>'+ICON_SORT+
-      esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>'+
-    (items.length>1
-      ? '<button class="wsay'+(vxRunning()?' on':'')+'"' + DO('wordsSay') + '>'+
-        (vxRunning()? ICON_CROSS+t('words.stop') : ICON_SPK+t('words.sayall'))+'</button>'
-      : '');
+/* Which of them, and in what order -- one row, beside each other, because
+   they are two halves of the same question. It was a strip under the filter
+   holding the count, the order and Play all, and the count is already at the
+   top of the screen. 「allの横に⇆並べ替えつけて〇パッチは廃止」
+   Play all is gone: a word says itself on its own row now. */
+function wSortRow(){
+  return '<button class="wsrt"' + DO('wSetSort') + '>'+ICON_SORT+
+    esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>';
 }
 /* The words that are not on the list, said where they are missing from.
 
@@ -123,9 +123,11 @@ function vWords(){
        the time, and adding a thirteenth made it worse.
        「品詞スロットも横に並べるのじゃなくてタップしたら品詞を開いて選べるタイプ
        にして」 It says which one is on and opens the list. */
-    '<button class="wfil"' + DO('openFil') + '>'+
-      '<span class="wfilv">'+esc(wFilLab())+'</span>'+ICON_GO+'</button>'+
-    '<div class="wmeta" id="w-meta">'+wMetaHTML(items)+'</div>'+
+    '<div class="wfilrow">'+
+      '<button class="wfil"' + DO('openFil') + '>'+
+        '<span class="wfilv">'+esc(wFilLab())+'</span>'+ICON_GO+'</button>'+
+      wSortRow()+
+    '</div>'+
     '</div><div class="body" id="w-list">'+wordsBodyHTML(items)+wordsHidHTML()+'</div>'+
     /* A round + under the thumb, not a bar across the foot. The bar was as
        wide as the screen and sat on top of the last two words in the list --
@@ -141,7 +143,6 @@ function wordsPaint(){
   var el=document.getElementById('w-list'); if(!el) return;
   var items=wordsList();
   el.innerHTML=wordsBodyHTML(items)+wordsHidHTML();
-  var m=document.getElementById('w-meta'); if(m) m.innerHTML=wMetaHTML(items);
   var x=document.getElementById('w-x'); if(x){ if(q) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
 function wordsSetQ(v){ q=v; wordsPaint(); }
@@ -213,11 +214,11 @@ function entryHTML(w){
     '<div class="mn">'+mn+'</div>'+
 
     '</button>'+
+    /* Beside the row rather than at the head of the list. Hearing one word is
+       a thing you do to that word, and Play all answered a question nobody
+       asked while burying the one they did. */
+    '<button class="esay"' + DO('sayPh', [wPh(w)]) + ' aria-label="'+
+      esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
     '</div>';
-}
-/* Every word on screen, said straight through -- on screen and not in the
-   dictionary, so a search narrowed to the verbs says the verbs. */
-function wordsSay(){
-  saySeqs(wordsList().map(function(w){ return wPh(w); }));
 }
 

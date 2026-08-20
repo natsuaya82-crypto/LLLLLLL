@@ -865,6 +865,13 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .sndx{flex:0 0 auto;min-width:44px;min-height:44px;border:0;background:none;color:var(--txm)}
 /* Which part of speech the dictionary is filtered to: one row that says the
    answer and opens the list, where twelve tabs used to scroll sideways. */
+/* The filter and the order, side by side. */
+.wfilrow{display:flex;align-items:stretch;gap:10px}
+.wfilrow .wfil{flex:1 1 auto;min-width:0}
+.wsrt{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:44px;
+  padding:0 14px;background:none;border:0;border-bottom:1px solid var(--line);
+  color:var(--txm);font-size:.9rem;font-family:inherit}
+.wsrt:active{color:var(--gold)}
 .wfil{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;
       padding:8px 2px;border:0;border-bottom:1px solid var(--line);
       background:none;color:var(--tx);font-family:inherit;text-align:left}
@@ -958,6 +965,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The label does not stretch: the mark belongs next to the word it is about,
    not at the far side of the row. */
 .entry.one .ebody{flex:0 0 auto;min-width:44px}
+/* A word says itself, on its own row -- 44 down as well as across, because a
+   row is as tall as its text and its text is two lines of small type. */
+.esay{flex:0 0 44px;width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+  display:flex;align-items:center;justify-content:center}
+.esay:active{color:var(--gold)}
 .eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
        display:inline-flex;align-items:center;justify-content:center}
 .eopen:active{color:var(--gold)}

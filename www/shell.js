@@ -31,6 +31,7 @@ function viewReset(){
   fq=''; fpick=null;                   /* the find screen */
   mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
+  ltSort='own'; ltFil='all';           /* the alphabet's order and filter */
   wdMode='';                           /* the sheet a word is written on */
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */

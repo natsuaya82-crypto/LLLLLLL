@@ -590,15 +590,87 @@ function vLetters(){
 
    Holding a letter picks it up and moving it sets the alphabet's order --
    ltDragMount, in www/letters.js, over ltOrder. */
+/* Which order the cells are in, and which of them are shown. An alphabet of
+   seven is a glance and an alphabet of two hundred is a search, and until now
+   there was one order -- the one somebody dragged them into -- and no way to
+   ask "which of these have I not drawn yet".
+   「これ並び替え、絞り込み追加しよう。アルファベット順、作成順とか」
+
+   Where you are standing in the alphabet, not something the language holds:
+   viewReset() drops both, so arriving in another language does not arrive
+   with a filter on. */
+var LT_SORTS=['own','abc','new'], LT_FILS=['all','drawn','blank','nosnd'];
+var ltSort='own', ltFil='all';
+function setLtFil(k){ if(LT_FILS.indexOf(k)>=0){ ltFil=k; openLtView(); render(); } }
+/* `new` is the order they were made in, which is the order they are IN --
+   LETTERS is appended to and never re-sorted, so its own index is the answer
+   and no letter needs a date written on it to say so. */
+function ltSortList(list){
+  if(ltSort==='abc') return list.slice().sort(function(a, b){
+    var ka=ltAbcKey(a), kb=ltAbcKey(b);
+    return ka<kb? -1 : ka>kb? 1 : 0;
+  });
+  if(ltSort==='new') return list.slice().sort(function(a, b){
+    return LETTERS.indexOf(a)-LETTERS.indexOf(b);
+  });
+  return list;
+}
+function ltDrawn(l){ return !!((l.st && l.st.length) || l.ch); }
+function ltFilList(list){
+  if(ltFil==='drawn') return list.filter(ltDrawn);
+  if(ltFil==='blank') return list.filter(function(l){ return !ltDrawn(l); });
+  if(ltFil==='nosnd') return list.filter(function(l){ return !ltUnits(l).length; });
+  return list;
+}
+/* One row, and it opens a screen. It was two rows of round chips -- the shape
+   CLAUDE.md forbids by name, written by the one thing that had read it.
+   Choosing is a screen and changing is the screen you arrive at. */
+/* The same row the dictionary has, because it is the same question asked of
+   a different list: which of them, and in what order. One shape, both places.
+   「並び替えは単語画面と同じようにして」 */
+function ltViewRow(){
+  return '<div class="wfilrow">'+
+    '<button class="wfil"' + DO('openLtView') + '>'+
+      '<span class="wfilv">'+esc(t('lt.fil.'+ltFil))+'</span>'+ICON_GO+'</button>'+
+    '<button class="wsrt"' + DO('nextLtSort') + '>'+ICON_SORT+
+      esc(t('lt.sort.'+ltSort))+'</button>'+
+    '</div>';
+}
+/* The order steps to the next one. Three of them and a button that says which
+   it is on -- the dictionary's has two and works the same way. */
+function nextLtSort(){
+  ltSort=LT_SORTS[(LT_SORTS.indexOf(ltSort)+1) % LT_SORTS.length];
+  render();
+}
+function ltViewPick(names, now, act, pre){
+  return names.map(function(x){
+    return '<button class="set"' + DO(act, [x]) + '>'+
+      '<span class="sl">'+esc(t(pre+x))+'</span>'+
+      '<span class="sv">'+(x===now? ICON_TICK : '')+'</span></button>';
+  }).join('');
+}
+function openLtView(){
+  openForm('ltview', t('lt.fil'), ltViewPick(LT_FILS, ltFil, 'setLtFil', 'lt.fil.'));
+}
+FORM_OPEN.ltview=function(){ openLtView(); };
 function vLtset(){
   var k=here().a;
   if(LT_KINDS.indexOf(k)<0) k='alpha';
-  var list=ltOfKind(k), loose=ltLoose();
+  var all=ltOfKind(k), loose=ltLoose();
+  /* A digit's place is its value and a mark's is its own; only the alphabet
+     is a thing somebody arranges, so only the alphabet is asked about. */
+  var pick=(k==='alpha'), list=pick? ltFilList(ltSortList(all)) : all;
+  /* Dragging writes the order down, so it is offered only while the order
+     shown IS that order: dropping a letter into place under a different sort
+     would write a number nothing on screen agrees with. ltDragMount looks for
+     this id and finds nothing under any other sort. */
+  var gid=(pick && ltSort==='own' && ltFil==='all')? 'ltgrid' : 'ltgrid-ro';
   return '<div class="view">'+
-    navTop(list.length)+
+    navTop(list.length===all.length? all.length : (list.length+' / '+all.length))+
     '<div class="body">'+
+    (pick? ltViewRow() : '')+
     (list.length
-      ? '<div class="ltgrid" id="ltgrid" data-k="'+esc(k)+'">'+
+      ? '<div class="ltgrid" id="'+gid+'" data-k="'+esc(k)+'">'+
           list.map(function(l){ return ltCell(l, ''); }).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
     ((k==='alpha' && loose.length)
