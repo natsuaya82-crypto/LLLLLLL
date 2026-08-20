@@ -1811,7 +1811,7 @@ function postVoHTML(p){
   if(!at) return '';
   return '<button class="povo'+((VOAT===at)? ' on':'')+'" data-f="'+esc(at)+'"' +
     DO('voPlay', [at]) + ' aria-label="'+esc(t('post.vo.play'))+'">'+
-    ICON_PLAY+'<span class="vot">'+esc(voLen(postVoMs(p)))+'</span></button>';
+    ICON_SPK+'<span class="vot">'+esc(voLen(postVoMs(p)))+'</span></button>';
 }
 /* ---- the conversation a post is in -------------------------------------
    A reply carries `to`, the id of what it answers, and `toh`, the handle of

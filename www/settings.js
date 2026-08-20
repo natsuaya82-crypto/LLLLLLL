@@ -81,7 +81,7 @@ function vSet(){
       }).join('')+
       '<div class="pvbox" style="margin-top:10px"><span class="pvn">'+t('set.sample')+'</span>'+
         '<span class="pvk">'+esc(readSeq(S.seq))+'</span>'+
-        '<button' + DO('sayPh', [S.seq]) + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
+        '<button' + DO('sayPh', [S.seq]) + '>'+ICON_SPK+t('f.listen')+'</button></div>'+
       '';
   } else if(id==='ui'){
     body=UI_LANGS.map(function(k){

@@ -194,7 +194,7 @@ function pwVoRowHTML(){
   }
   if(PW && PW.vo){
     return '<button class="pwab"' + DO('voPlayPW') + ' aria-label="'+
-        esc(t('post.vo.play'))+'">'+ICON_PLAY+
+        esc(t('post.vo.play'))+'">'+ICON_SPK+
         '<span class="vot">'+esc(voLen(PW.vo.ms))+'</span></button>'+
       '<button class="pwvox"' + DO('voDrop') + ' aria-label="'+
         esc(t('post.vo.drop'))+'">'+ICON_MINUS+'</button>';

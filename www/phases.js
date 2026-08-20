@@ -250,7 +250,7 @@ function openSlot(pid, k){
     '<div class="seqbox"><span class="seq" id="st-seq"></span>'+
       '<button class="seqdel" id="st-back"' + DO('stBack') + ' disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
     '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="st-ipa"></span>'+
-      '<button' + DO('stSay') + '>'+ICON_PLAY+t('f.listen')+'</button></div>'+
+      '<button' + DO('stSay') + '>'+ICON_SPK+t('f.listen')+'</button></div>'+
     '<div id="st-sug">'+stSugHTML()+'</div>'+
     /* Typed on free. The word for a meaning is a word, and a word is
        letters -- being handed the language's sounds to press was the

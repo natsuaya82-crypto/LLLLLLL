@@ -92,7 +92,7 @@ function gSide(lab, ws, gloss){
     '<span class="gsw">'+esc(gTxt(ws))+'</span>'+
     '<span class="gsi">'+esc(gIpaOf(ws))+'</span>'+
     (gloss? '<span class="gsg">'+esc(gloss)+'</span>' : '')+
-    '<button class="gsp"' + DO('sayPh', [gFlat(ws)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button></div>';
+    '<button class="gsp"' + DO('sayPh', [gFlat(ws)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>';
 }
 function gNeedWords(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
 function gPair(a, b){

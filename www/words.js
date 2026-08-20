@@ -89,7 +89,7 @@ function wMetaHTML(items){
       esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>'+
     (items.length>1
       ? '<button class="wsay'+(vxRunning()?' on':'')+'"' + DO('wordsSay') + '>'+
-        (vxRunning()? ICON_CROSS+t('words.stop') : ICON_PLAY+t('words.sayall'))+'</button>'
+        (vxRunning()? ICON_CROSS+t('words.stop') : ICON_SPK+t('words.sayall'))+'</button>'
       : '');
 }
 /* The words that are not on the list, said where they are missing from.

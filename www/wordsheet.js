@@ -357,7 +357,7 @@ function exRowHTML(e, seq, tail){
       (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
       '<span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
       '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
-    (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_PLAY) : '')+
+    (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_SPK) : '')+
     tail+'</div>';
 }
 function exHint(){
@@ -728,7 +728,7 @@ function wdFormHTML(){
      for anybody not looking at it. */
   return '<div class="whd">'+wdTypeHTML()+
       '<button class="play"' + DO('sayPh', [seq]) + ' aria-label="'+
-        esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
+        esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       /* the one way out of the app: this word as a picture, in the letters
          it is written in, for somewhere that is not Lingua */
       (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
@@ -866,7 +866,7 @@ function wdViewHTML(){
   var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
   return '<div class="whd"><span class="whw'+(myFontOn()?' sfont':'')+'">'+esc(wOut(w.hw))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) +
-        ' aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
+        ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+

@@ -267,7 +267,7 @@ function sndFeelHTML(){
     ((have.length || sndFeelPick)
       ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
         sndFeelRow(t('ipa.cons'), cs, 'c')+sndFeelRow(t('ipa.vows'), vs, 'v')+
-        '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_PLAY+t('as.hear')+'</button>'+
+        '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_SPK+t('as.hear')+'</button>'+
         (sndFeelPick? '<button' + DO('sndFeelAgain') + '>'+t('as.again')+'</button>':'')+'</div></div>'
       : '');
 }

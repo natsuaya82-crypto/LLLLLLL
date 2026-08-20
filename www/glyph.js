@@ -387,7 +387,7 @@ var GICON={
    ボタンに統一しよ」 The voice on a post is the twelfth and is sound too, so
    it wears the same mark rather than being the one exception nobody would
    read as an exception. */
-var ICON_PLAY='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" '+
+var ICON_SPK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4Z"/>'+
   '<path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg>';

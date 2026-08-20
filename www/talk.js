@@ -172,7 +172,7 @@ function tkBubble(msg){
     '<div class="tkw">'+esc(tkText(msg))+'</div>'+
     '<div class="tki">'+esc(tkIpa(msg))+'</div>'+
     '<div class="tkg">'+esc(msg.g.join(' · '))+'</div>'+
-    '<button class="tkp"' + DO('sayPh', [tkFlat(msg)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_PLAY+'</button>'+
+    '<button class="tkp"' + DO('sayPh', [tkFlat(msg)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
     '</div>';
 }
 
