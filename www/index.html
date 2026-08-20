@@ -106,7 +106,7 @@ button{font-family:inherit;cursor:pointer}
 .seqdel:disabled{opacity:.25}
 .phkeys{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 /* A group of the chart, and whether it is open. */
-.ipah{display:flex;align-items:center;flex:0 1 auto;min-height:44px;
+.ipah{display:flex;align-items:center;flex:0 1 auto;min-height:44px;min-width:96px;
   padding:11px 2px;background:none;border:0;
   text-align:left;color:var(--txm);font-size:.86rem;letter-spacing:.06em}
 .ipah:active{color:var(--gold)}
@@ -124,7 +124,10 @@ button{font-family:inherit;cursor:pointer}
    same badge as the speaker on a tile -- `.phks` again, not a second shape --
    put back in the flow instead of at a tile's corner. */
 .ipahr{display:flex;align-items:center;border-bottom:1px solid var(--line)}
-.ipaq{position:static;width:34px;height:44px;justify-content:flex-start;align-items:center}
+/* 44 across and 44 down, whatever the circle inside it looks like: the
+   target is what a thumb needs and the ink is not. */
+.ipaq{position:static;flex:0 0 44px;width:44px;height:44px;
+  justify-content:center;align-items:center}
 /* One sound, said in words. */
 .ipads{flex:0 0 auto;width:44px;height:44px;background:none;border:0;color:var(--tx);
   font-size:1.2rem;display:flex;align-items:center;justify-content:center}
