@@ -284,6 +284,39 @@ want('and its name', A2.name, 'Vaska');
 want('and its drawn script', A2.script, 't');
 want('and its sounds', A2.snd, 't,u,f');
 
+/* ---- the twenty-eight slots a free language is given ---------------------
+   ltStart names them a to z, ! and ?, and gives each one what its name reads.
+   Every one of those readings has to be a sound the chart actually has: a
+   letter carrying the character "c" as its sound is in no inventory, cannot
+   be said by voice.js, and cannot be found on the page where a sound is
+   picked -- and nothing throws, so it sat there. 「無料版のa-zの音もipa準拠に
+   なってるの？ただa-z当てただけになってない？」
+
+   Asked of the app, not written out here, so a twenty-ninth slot is checked
+   the day it is added. */
+const AZ = await pg.evaluate(() => {
+  const chart = ipaAll(), bad = [], seen = {};
+  LT_START.split('').forEach((c) => {
+    if (!/^[a-z]$/.test(c)) return;              /* ! and ? are not sounds */
+    const l = LETTERS.filter((x) => (x.ab || '') === c)[0];
+    if (!l) { bad.push(c + ': no letter'); return; }
+    const snd = l.snd || [];
+    if (!snd.length) { bad.push(c + ': no sound'); return; }
+    snd.forEach((u) => { if (chart.indexOf(u) < 0) bad.push(c + ' reads ' + u); });
+    seen[c] = snd.join('');
+  });
+  return { bad: bad, g: seen.g || '', c: seen.c || '', q: seen.q || '',
+           x: seen.x || '', y: seen.y || '' };
+});
+want('every letter of a free alphabet reads a sound the chart has', AZ.bad.join(' / '), '');
+/* The five that do not say themselves, by name, because "all of them are on
+   the chart" is also true of the wrong sound. */
+want('g is the velar and not the palatal', AZ.g, '\u0261');
+want('c is k', AZ.c, 'k');
+want('q is k', AZ.q, 'k');
+want('x is k', AZ.x, 'k');
+want('y is j', AZ.y, 'j');
+
 await br.close();
 srv.close();
 

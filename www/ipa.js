@@ -134,21 +134,58 @@ function ipaRoman(sym){
    Returns null when some of what was typed is not a sound at all, because a
    letter reading half of what somebody wrote is worse than a letter telling
    them so. */
+/* The longest of `list` that the string starts with, by the roman each symbol
+   is spelled with. Null when none of them fits. */
+function ipaLongest(list, s){
+  var best='', bestR='', i, r;
+  for(i=0;i<list.length;i++){
+    r=ipaRoman(list[i]);
+    if(!r || s.indexOf(r)!==0) continue;
+    if(r.length>bestR.length ||
+       (r.length===bestR.length && best!==bestR && list[i]===r)){
+      best=list[i]; bestR=r;
+    }
+  }
+  return best? {u:[best], n:bestR.length} : null;
+}
+/* What IPA_WAS says the front of this string is: the digraph if there is one,
+   otherwise the single letter, otherwise nothing. Its values are LISTS,
+   because ch is t then ʃ. */
+function ipaWasAt(s){
+  var two=s.substr(0,2), one=s.charAt(0);
+  if(IPA_WAS[two]) return {u:IPA_WAS[two], n:2};
+  if(IPA_WAS[one]) return {u:IPA_WAS[one], n:1};
+  return null;
+}
 function ipaFromRoman(sp){
   var s=String(sp||'').toLowerCase().replace(/[^a-z]/g,'');
-  var cand=addedSnd().concat(ipaAll()), out=[], i, best, bestR, r;
+  var mine=addedSnd(), all=ipaAll(), out=[], a, b, c, got;
   while(s.length){
-    best=''; bestR='';
-    for(i=0;i<cand.length;i++){
-      r=ipaRoman(cand[i]);
-      if(!r || s.indexOf(r)!==0) continue;
-      if(r.length>bestR.length ||
-         (r.length===bestR.length && best!==bestR && cand[i]===r)){
-        best=cand[i]; bestR=r;
-      }
-    }
-    if(!best) return null;
-    out.push(best); s=s.slice(bestR.length);
+    /* Three answers to the same question, and the longest of them wins.
+       Tied, they are preferred in this order, which is the order of how much
+       each of them knows about THIS language:
+
+         1  a sound the language already has, spelled that way
+         2  what a roman letter is agreed to mean -- IPA_WAS
+         3  the chart
+
+       Two was missing, and the five letters it is for are exactly the five
+       that were falling through to the letter itself. c q x y matched nothing
+       at all and came back as null, so a free language's C carried the
+       character "c" as a sound, which is in no inventory and cannot be said.
+       And g was worse than nothing: the IPA's g is U+0261, no candidate
+       equals the ASCII g, so the tie went to whichever came first on the
+       chart -- ɟ, a palatal plosive, which is not what anybody naming a
+       letter g means. 「無料版のa-zの音もipa準拠になってるの？」
+
+       One is still first, so a language whose only hushing sound is ɕ still
+       reads sh as that one rather than growing a second. */
+    a=ipaLongest(mine, s); b=ipaWasAt(s); c=ipaLongest(all, s);
+    got=a;
+    if(!got || (b && b.n>got.n)) got=b||got;
+    if(!got || (c && c.n>got.n)) got=c||got;
+    if(!got) return null;
+    out=out.concat(got.u); s=s.slice(got.n);
   }
   return out;
 }
