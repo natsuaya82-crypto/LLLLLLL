@@ -581,8 +581,6 @@ defLang('en', (function(){
       'words.n.1'       : 'One word',
       'words.sort.a'    : 'By sound',
       'words.sort.new'  : 'Newest first',
-      'words.kids'      : '{0} derived',
-      'words.kids.1'    : 'One derived',
       'words.open'      : 'Open',
       'words.sayall'    : 'Play all',
       'words.stop'      : 'Stop',

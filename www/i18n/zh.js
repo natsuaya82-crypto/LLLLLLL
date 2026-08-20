@@ -681,8 +681,6 @@ defLang('zh', (function(){
       "words.n.1"        : "1 个词",
       "words.sort.a"     : "按音序",
       "words.sort.new"   : "最近的在前",
-      "words.kids"       : "派生 {0} 个",
-      "words.kids.1"     : "派生 1 个",
       "words.open"       : "打开",
       "words.sayall"     : "全部播放",
       "words.stop"       : "停止",

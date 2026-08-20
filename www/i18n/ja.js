@@ -591,8 +591,6 @@ defLang('ja', (function(){
       'words.n.1'       : '1語',
       'words.sort.a'    : '音順',
       'words.sort.new'  : '新着順',
-      'words.kids'      : '派生 {0}語',
-      'words.kids.1'    : '派生 1語',
       'words.open'      : '詳細',
       'words.sayall'    : '全単語の再生',
       'words.stop'      : '停止',

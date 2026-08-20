@@ -723,8 +723,6 @@ defLang('fr', (function(){
       "words.n.1"        : "Un mot",
       "words.sort.a"     : "Par le son",
       "words.sort.new"   : "Les plus récents d'abord",
-      "words.kids"       : "{0} dérivés",
-      "words.kids.1"     : "Un dérivé",
       "words.open"       : "Ouvrir",
       "words.sayall"     : "Tout écouter",
       "words.stop"       : "Arrêter",

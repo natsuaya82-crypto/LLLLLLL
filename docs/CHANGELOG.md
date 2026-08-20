@@ -27,11 +27,12 @@ next to it. Sorted by when they were made, or narrowed to the verbs, the
 parent may not be on the screen at all.
 
 It is a page of its own now, carrying its whole family, so the list is one row
-per word. Each derived row says what it is of the word it came from — 「tir の
-過去形」, 「tir の見張り」 — and the parent says how many have come from it,
-which it used to leave to the indent in that one order.
+per word and a word on it is just a word: the headword, the reading, the part
+of speech, the meanings. Nothing about the family — not where it came from,
+not how many came from it. 「派生とか書かなくていいって、普通にそのままの単語と
+してみれて、詳細で派生がどうなってるか確認できるって話」
 
-`.entry.kid` is gone.
+`.entry.kid`, `.erel`, `.efrom`, `.ekids` and `words.kids` are gone.
 
 ### 品詞, 語形 and 文体 are rows that go somewhere, and say so
 

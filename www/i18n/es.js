@@ -635,8 +635,6 @@ defLang('es', (function(){
       "words.n.1"        : "Una palabra",
       "words.sort.a"     : "Por sonido",
       "words.sort.new"   : "Más recientes primero",
-      "words.kids"       : "{0} derivadas",
-      "words.kids.1"     : "Una derivada",
       "words.open"       : "Abrir",
       "words.sayall"     : "Escuchar todo",
       "words.stop"       : "Parar",

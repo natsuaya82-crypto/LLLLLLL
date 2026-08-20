@@ -852,8 +852,6 @@ defLang('ko', (function(){
       "words.n.1"        : "1개",
       "words.sort.a"     : "소리순",
       "words.sort.new"   : "최근 것부터",
-      "words.kids"       : "파생 {0}개",
-      "words.kids.1"     : "파생 1개",
       "words.open"       : "열기",
       "words.sayall"     : "전부 재생",
       "words.stop"       : "멈추기",

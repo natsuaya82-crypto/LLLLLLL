@@ -684,8 +684,6 @@ defLang('ru', (function(){
       "words.n.1"         : "Одно слово",
       "words.sort.a"      : "По звучанию",
       "words.sort.new"    : "Сначала новые",
-      "words.kids"        : "Производных: {0}",
-      "words.kids.1"      : "Одно производное",
       "words.open"        : "Открыть",
       "words.sayall"      : "Прослушать всё",
       "words.stop"        : "Остановить",

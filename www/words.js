@@ -181,11 +181,12 @@ function wSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
    editing is what you do once.
 
    Every sense, numbered, and not only the first: a word with three meanings
-   that shows one is lying about the word. Where it came from is written on
-   it, and how many words have come from it, because that is the shape of a
-   dictionary and an indent alone cannot say it. */
+   that shows one is lying about the word.
+
+   Nothing about the family. A word is a word on this list; what it is of the
+   word it came from, and what has come from it, is on its page. */
 function entryHTML(w){
-  var mns=wMns(w), kids=wKids(w), par=wParent(w), mn;
+  var mns=wMns(w), mn;
   /* A missing meaning in a dictionary row is something to do, not a fact to
      report -- 「意味のところにまだ決めてないって書くのやめてくんない？」. As the name
      of a filter it stays "no meaning", because there it does describe a set. */
@@ -193,10 +194,6 @@ function entryHTML(w){
   else if(mns.length===1) mn=esc(mns[0]);
   else mn=mns.map(function(m,i){
     return '<span class="sn">'+(i+1)+'</span>'+esc(m); }).join(' ');
-  var line='';
-  if(par) line+='<span class="efrom">'+esc(w.fm? t('word.fromf', par.hw, fmLabel(w.fm))
-                                                : t('word.from', par.hw))+'</span>';
-  if(kids.length) line+='<span class="ekids">'+esc(tn('words.kids', kids.length))+'</span>';
   return '<div class="entry">'+
     /* The row opens the word, and it is the whole row. It used to say the word
        aloud, and the only way into the word itself was a chevron at the right
@@ -214,7 +211,7 @@ function entryHTML(w){
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     '<span class="pos">'+esc(posLabel(w.pos))+'</span></div>'+
     '<div class="mn">'+mn+'</div>'+
-    (line? '<div class="erel">'+line+'</div>' : '')+
+
     '</button>'+
     '</div>';
 }

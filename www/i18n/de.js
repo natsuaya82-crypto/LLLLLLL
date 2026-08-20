@@ -663,8 +663,6 @@ defLang('de', (function(){
       "words.n.1"        : "Ein Wort",
       "words.sort.a"     : "Nach Laut",
       "words.sort.new"   : "Neueste zuerst",
-      "words.kids"       : "{0} abgeleitet",
-      "words.kids.1"     : "Eins abgeleitet",
       "words.open"       : "Öffnen",
       "words.sayall"     : "Alle abspielen",
       "words.stop"       : "Anhalten",
