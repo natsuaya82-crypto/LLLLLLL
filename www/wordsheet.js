@@ -65,21 +65,6 @@ function sugPick(i){
    the sheet takes what it is about from there rather than from which screen
    it is on. */
 var addW=null;
-/* The letters a word is spelled with, in order, each one a way back into the
-   position it holds. The new-word sheet and the editor show the same row of
-   the same thing -- they differ in which list it is, where a tap goes and
-   what undo is called, and in nothing else. */
-function spRowHTML(sp, route){
-  var i, l, out='';
-  for(i=0;i<sp.length;i++){
-    l=ltById(sp[i].l);
-    out+='<button class="spc'+(spOdd(sp[i])?' odd':'')+'"' + DO('go', [route, i]) + '>'+
-      '<span class="spf">'+ltInk(l, esc(ltName(l)||'\u00b7'))+'</span>'+
-      '<span class="spu">'+esc(spUnit(sp[i]))+'</span></button>';
-  }
-  return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
-    '</div>';
-}
 /* ---- the sheet a word is written on --------------------------------------
    One sheet, whether the word exists yet or not. 「作成編集それぞれ同じ画面で」
 
@@ -182,8 +167,11 @@ var openHw='', wEdit=null;
    here. A sound with no letter at all is not a sound change -- it is a sound
    nobody has drawn yet, which is a different thing and not worth a colour. */
 function spOdd(st){
-  var l=ltById(st.l);
-  return st.u!==undefined && st.u!==null;
+  var l=ltById(st.l), own=l? ltUnits(l) : [];
+  /* Said something else HERE -- not merely carrying a unit. Every position of
+     a word made before a word was letters carries one, a copy of what its
+     letter reads, so "has a unit" marked all of them and marked nothing. */
+  return !!l && st.u!==undefined && st.u!==null && st.u!==own[0];
 }
 /* ---- spelling a word --------------------------------------------------
    The word is a row of letters, each with the sound it makes underneath. Tap
@@ -979,7 +967,11 @@ function spPageHTML(sp, setU, drop){
   for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
   for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="spbig">'+ltInk(l, esc(ltName(l)||'\u00b7'))+'</div>'+
+    /* The sound this position says, not the letter that writes it. A sound is
+       what somebody is heard saying and a letter is a shape; showing the shape
+       on the page where a sound is chosen put both directions of one table in
+       front of somebody at once. 「音を選ぶなのに文字を選ぶのも意味わからない」 */
+    '<div class="spbig">'+esc(phIpa(uSplit(spUnit(st))))+'</div>'+
     '<div class="phkeys">'+opts.map(function(o){
       return '<button class="phk'+(o.u===spUnit(st)?' on':'')+(o.own?' own':'')+'"' + DO(setU, [i, o.u]) + '>'+
         '<span class="pks">'+esc(o.u)+'</span></button>';
@@ -987,6 +979,15 @@ function spPageHTML(sp, setU, drop){
     '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO(drop, [i]) + '>'+
       t('word.sp.del')+'</button>'+
     '</div></div>';
+}
+/* The reading, one sound to a row. Not the letters: the row is what this
+   position is HEARD as, which is the whole of what a reading is. */
+function spSndRowsHTML(sp, route){
+  var i, out='';
+  for(i=0;i<sp.length;i++)
+    out+='<button class="wdrow'+(spOdd(sp[i])? ' odd':'')+'"' + DO('go', [route, i]) + '>'+
+      '<span class="wdroww">'+esc(phIpa(uSplit(spUnit(sp[i]))))+'</span></button>';
+  return '<div class="wdrows">'+out+'</div>';
 }
 /* Two faces, and which one is the route's argument. With none, the reading
    of the whole word and every position of it; with one, that position. */
@@ -997,7 +998,7 @@ function vSpell(){
       '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
         esc(spWord(sp))+'</span></div>'+
       '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
-      spRowHTML(sp, 'spell')+
+      spSndRowsHTML(sp, 'spell')+
       '</div></div>';
   return spPageHTML(sp, 'wdSetU', 'wdDropAt');
 }
