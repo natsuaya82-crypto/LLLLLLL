@@ -15,6 +15,21 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### One mark for sound, and it is a speaker
+
+「再生ボタンやめて全部スピーカーボタンに統一しよ」
+
+The triangle is the mark for a recording — press it and something starts.
+Eleven of the twelve places it was drawn are not a recording: they are the app
+saying a word out loud from the sounds its letters carry. The voice on a post
+is the twelfth and is sound too, so it wears the same mark rather than being
+an exception nobody would read as one.
+
+The word's own is a plain mark now instead of a bordered box the size of a key
+— it was the only sound button in the app wearing a frame, and a box beside a
+word reads as something to press for a reason you have not been told.
+「謎の四角も要らないマークとしてわからん」
+
 ### The dictionary is one row per word
 
 「派生語もそれだけで単独のページ欲しくない？蛇腹で出るなら↓みたいなのほしいし、

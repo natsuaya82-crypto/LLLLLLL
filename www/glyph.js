@@ -379,8 +379,18 @@ var GICON={
    whatever font happens to answer, at whatever weight that font draws it.
    The arrow is part of the button, not part of the sentence, so it moved out
    of the ten translations and into one mark drawn like every other. */
-var ICON_PLAY='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" '+
-  'aria-hidden="true"><path d="M7.5 5.2 19 12 7.5 18.8Z"/></svg>';
+/* A speaker, and it is the only mark in the app for sound. It was a
+   triangle, which is the mark for a RECORDING -- press it and something
+   starts, press it again and it stops -- and eleven of the twelve places it
+   was drawn are not a recording at all: they are the app saying a word out
+   loud from the sounds its letters carry. 「再生ボタンやめて全部スピーカー
+   ボタンに統一しよ」 The voice on a post is the twelfth and is sound too, so
+   it wears the same mark rather than being the one exception nobody would
+   read as an exception. */
+var ICON_PLAY='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4Z"/>'+
+  '<path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg>';
 var ICON_BACK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M20 12H4.6"/><path d="M10.5 5.5 4 12l6.5 6.5"/></svg>';

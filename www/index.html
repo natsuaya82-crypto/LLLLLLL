@@ -976,9 +976,13 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .link .src{font-family:'Cinzel',Georgia,serif;font-size:1.16rem;letter-spacing:.03em}
 .link .arw{color:var(--txm);font-size:.86rem;margin:9px 0 7px}
 .link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
-.play{margin-top:14px;background:var(--goldsf);border:1px solid var(--goldln);color:var(--gold);
-      border-radius:9px;padding:9px 18px;font-size:.86rem;font-weight:600}
-.whd .play{margin-top:0;flex:0 0 auto}
+/* The mark and nothing round it. It was a bordered box the size of a key
+   sitting beside the word, which reads as something to press for a reason
+   you have not been told 「謎の四角も要らないマークとしてわからん」 -- and it
+   was the only sound button in the app wearing one. */
+.play{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+      display:inline-flex;align-items:center;justify-content:center}
+.play:active{color:var(--gold)}
 .play:active{opacity:.6}
 
 /* ---------- rules ---------- */
