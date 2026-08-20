@@ -651,14 +651,22 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    leaves a `fitin` field alone. Same shape as .view.fixed below; it is not
    the same rule, because that one is about a page and this one is about
    which child gets the slack. */
-.view.fit{height:100vh;height:100dvh;height:var(--vvh,100dvh);
+/* Pinned to the part of the page that can actually be SEEN, not to the
+   document. iOS does not shrink the page for the keyboard -- it slides the
+   keyboard over it and then scrolls the layout viewport up to put the focused
+   field above it, which carries the bar with Post on it off the top of the
+   screen. --vvtop is visualViewport.offsetTop, so the screen stays where it
+   is whether the keyboard is up or down, and the bar does not move when it
+   goes down. 「上のポストと戻るボタンは画面上部に固定で動かない」 */
+.view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
+   height:var(--vvh,100dvh);
    display:flex;flex-direction:column;overflow:hidden}
-/* The bar at the foot is fixed and floats over the page, so the room it
-   takes has to be left for it here as every other screen leaves it -- one
-   screen means everything on it is visible, and the row of pictures was
-   sitting underneath the tabs. */
+/* No room left at the foot for the bar of tabs, because there is no bar of
+   tabs: a screen that is one screen has nowhere else to be, and where you
+   are is not a question anybody is asking while they write a post.
+   「投稿画面にはホーム画面とかの下タブは要らない」 */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:var(--tabgap,calc(var(--tabh) + 10px));overflow:hidden}
+   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);overflow:hidden}
 .view.fit .pwtop{flex:1;min-height:0}
 .view.fit .pwfield{display:flex;flex-direction:column;min-height:0}
 /* `height:0` and not just `flex:1`. A textarea's own height comes from its

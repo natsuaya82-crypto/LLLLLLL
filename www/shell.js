@@ -413,6 +413,11 @@ function vvFit(){
   var up=(window.innerHeight-h)>120;
   var d=document.documentElement.style;
   d.setProperty('--vvh', h+'px');
+  /* Where the visible part STARTS. iOS scrolls the layout viewport to lift a
+     focused field clear of the keyboard, and a screen pinned to the document
+     goes up with it -- so the bar carrying Post left the top of the phone.
+     A one-screen form is pinned to this instead. */
+  d.setProperty('--vvtop', (v? v.offsetTop : 0)+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
 }
 function vvMount(){
@@ -431,7 +436,11 @@ function vvMount(){
 function tabPaint(){
   var host=document.getElementById('tabs');
   if(!host) return;
-  var sig = SET.done ? (here().r+'|'+uiLang()) : '';
+  /* A one-screen form has no bar of tabs. It is not a place in the app while
+     it is open -- it is a thing being written -- and the room the bar takes
+     is room the picture row needs. 「投稿画面にはホーム画面とかの下タブは要らない」 */
+  var one = here().r==='form' && FORM && FORM.fit;
+  var sig = (SET.done && !one) ? (here().r+'|'+uiLang()) : '';
   if(host.getAttribute('data-sig')===sig) return;
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';
