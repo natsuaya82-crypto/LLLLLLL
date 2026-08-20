@@ -15,21 +15,30 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
-### The button beside a field is a `+`
+### The `+` is on the heading, and the field it opens is not there until it is
 
 「追加とかそういう日本語はなるべく消したいのよ。+とか編集は仕方ないにしても」
+「+は下じゃなくて 意味　　　　+ とかじゃない？普通」
 
-Six buttons that sat next to a field and said 追加 are the `+` mark now: a
-meaning, an example, an example on a grammar stage, a stage of somebody's own,
-a word made inside the synonym picker, and a form label of your own. The word
-survives as the `aria-label`, so nothing is lost to anybody who cannot see it.
+The buttons that said 追加 next to a field are gone, and so are the fields
+they sat beside. What names the list carries the mark that adds to it —
+`意味　　+`, `例文　　+`, `活用　　+` — and the field for one more appears when
+that is pressed, then stays for the rest of the sheet, so a word with five
+meanings is five presses of Enter and nothing else. `secAdd()` in `shell.js`
+is the one place that draws such a heading.
+
+Five lists: a word's meanings, its examples, a grammar stage's examples, and
+both groups of form labels. The word survives as the `aria-label`.
+
+A button that COMMITS a form still says what it does — the new-word sheet's
+Add, and 項目の追加 on a stage of your own, which was briefly a `+` and is a
+word again. That is the line: a `+` adds one row to a list already on the
+screen; anything else keeps its verb.
 
 `.btn` is 44 across at its narrowest now. A button whose whole word became a
 `+` is as wide as the `+`, which on the narrower of two columns came to 38.
 
-Still words, and not touched: the new-word sheet's own Add at the foot, and
-the ones that name what is being added — 文字の追加, メモの追加, 子音の追加,
-キーボードを追加, 項目の追加.
+Still words, and untouched: 文字の追加, メモの追加, 子音の追加, キーボードを追加.
 
 ### 活用 and 派生 are two different things, and a language may add its own — OWNER DECISION
 

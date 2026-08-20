@@ -247,6 +247,18 @@ export function halfDone(){
                                          const h = vFeed(); SESS = was; return h; }],
     ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
                                       return FORM.html; }],
+    /* The field for one more of something is not on the sheet until the `+`
+       on the heading is pressed, so without these the only way to write a
+       second meaning is a screen nothing walks. */
+    ['one more meaning', () => { openEdit('kano'); wdMnNew = true; return wdFormHTML(); }],
+    ['one more example', () => { openEdit('kano'); wdExNew = true; return wdFormHTML(); }],
+    ['one more example of a stage', () => {
+       const id = stAll()[0].id;
+       window.route = 'gram'; NAV = [{ r:'gram', a:id }]; stExNew = id;
+       const h = vGram(); stExNew = ''; return h; }],
+    ['a label of your own', () => {
+       window.route = 'fm'; NAV = [{ r:'fm', a:'tira' }]; fmNewG = 'i';
+       const h = vFm(); fmNewG = ''; return h; }],
     /* What a word is of the word it came from, asked only of a word that HAS
        a parent
        -- so the sheet kano is edited on never carries it, and the row would

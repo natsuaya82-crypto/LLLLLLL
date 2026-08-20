@@ -110,6 +110,7 @@ function openAdd(from){
        the register, the fields, the etymology, the note -- is in wEdit, the
        same as when the word already exists. */
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
+    wdMnNew=false; wdExNew=false;
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
            mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
@@ -219,16 +220,21 @@ function wdSeqHTML(){
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }
+/* A field for one more of something appears when the `+` on the heading is
+   pressed and stays for the rest of the sheet, so a word with five meanings
+   is five presses of Enter and not five of anything else. Nothing is typed
+   into until somebody says there is one more. */
+var wdMnNew=false, wdExNew=false;
+function wdMnOpen(){ wdMnNew=true; wdPaint(); }
+function wdExOpen(){ wdExNew=true; wdPaint(); }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
     return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
       '<button class="mnx"' + DO('wdDelMn', [i]) + ' aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
   }).join('');
   return '<div class="mnlist">'+rows+'</div>'+
-    '<div class="mnadd"><input id="wd-mn" aria-label="'+esc(t('word.means'))+'" '+
-      '' + KD('wdAddMn') + '>'+
-    '<button class="btn ghost"' + DO('wdAddMn') + ' aria-label="'+esc(t('word.mn.add'))+
-      '">'+ICON_ADD+'</button></div>';
+    (wdMnNew? '<div class="mnadd"><input id="wd-mn" aria-label="'+esc(t('word.means'))+'" '+
+      '' + KD('wdAddMn') + '></div>' : '');
 }
 /* ---- what a dictionary entry still had not got ------------------------
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
@@ -370,13 +376,11 @@ function wdExHTML(){
           exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
-    '<div class="exadd">'+
-      lnField('wd-exl', exHint(), '', '')+
+    (wdExNew? '<div class="exadd">'+
+      lnField('wd-exl', exHint(), KD('wdAddEx'), '')+
       '<input id="wd-exg" aria-label="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('wdAddEx') + '>'+
-      '<button class="btn ghost"' + DO('wdAddEx') + ' aria-label="'+esc(t('word.mn.add'))+
-        '">'+ICON_ADD+'</button>'+
-    '</div>';
+    '</div>' : '');
 }
 function wdAddEx(){
   var w=wdW(), a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg');
@@ -618,15 +622,15 @@ function fmRowHTML(hw, f, on){
     '</button>'+fmQ(f)+'<span class="ltck" style="margin-left:auto">'+
     (on? ICON_TICK : '')+'</span></div>';
 }
+var fmNewG='';
+function fmOpen(g){ fmNewG=g; render(); }
 function fmGroupHTML(hw, g, now){
   var list=(g==='i'? FM_INF : FM_DER).concat(fmMine(g));
-  return '<div class="sec">'+t('word.fm.'+(g==='i'? 'inf' : 'der'))+'</div>'+
+  return secAdd(t('word.fm.'+(g==='i'? 'inf' : 'der')), DO('fmOpen', [g]), t('word.fm.own'))+
     list.map(function(f){ return fmRowHTML(hw, f, f===now); }).join('')+
-    '<div class="row2" style="margin-top:8px"><div class="field">'+
+    (fmNewG===g? '<div class="field" style="margin-top:8px">'+
       '<input id="fm-'+g+'" aria-label="'+esc(t('word.fm.own'))+
-      '" autocapitalize="none" autocorrect="off"></div>'+
-    '<button class="btn ghost"' + DO('fmNew', [hw, g]) + ' aria-label="'+esc(t('add.btn'))+
-      '">'+ICON_ADD+'</button></div>';
+      '" autocapitalize="none" autocorrect="off"' + KD('fmNew', [hw, g]) + '></div>' : '');
 }
 function vFm(){
   var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;
@@ -722,7 +726,7 @@ function wdFormHTML(){
        for a word that already has one is asking to throw it away. */
     (mk? '<div id="sugwrap">'+sugHTML()+'</div>' : '')+
 
-    '<div class="sec">'+t('word.means')+'</div>'+
+    secAdd(t('word.means'), DO('wdMnOpen'), t('word.mn.add'))+
     wdMnsHTML()+
 
     '<div class="sec">'+t('f.pos')+'</div>'+
@@ -750,7 +754,7 @@ function wdFormHTML(){
     '<div class="sec">'+t('word.ant')+'</div>'+
     wdRelHTML('ant')+
 
-    '<div class="sec">'+ICON_LINE+t('word.ex')+'</div>'+
+    secAdd(ICON_LINE+t('word.ex'), DO('wdExOpen'), t('word.mn.add'))+
     wdExHTML()+
 
     '<div class="sec">'+t('word.note')+'</div>'+
@@ -873,7 +877,7 @@ function openWord(hw){
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
   var w=findWord(hw); if(!w) return;
-  openHw=w.hw; addW=null;
+  openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};

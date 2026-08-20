@@ -212,6 +212,17 @@ function pageName(r, a){
 /* `right` is one control pinned to the far end of the bar -- the place every
    phone puts the thing that finishes what you are doing. It is markup rather
    than a count because the only screen that wants it wants a button. */
+/* A heading with a `+` at the end of it. 「+は下じゃなくて 意味　　　　+ とか
+   じゃない？普通」 -- the mark that adds a row belongs on the row that names
+   the list, not under the list where you have to go past everything already
+   in it to reach the way to add one more.
+
+   A button that COMMITS a form still says what it does. This is the other
+   thing: one more row of a list that is already on the screen. */
+function secAdd(label, doAttr, aria){
+  return '<div class="sec secadd">'+label+
+    '<button class="secplus"'+doAttr+' aria-label="'+esc(aria)+'">'+ICON_ADD+'</button></div>';
+}
 function navTop(count, right){
   var h=here(), pv=prevPage(), n=h.a? '' : tocNum(h.r);
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');

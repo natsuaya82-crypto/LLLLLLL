@@ -312,8 +312,10 @@ function openOwnPhase(){
       '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
-    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') +
-      ' aria-label="'+esc(t('stg.own.add'))+'">'+ICON_ADD+'</button>');
+    /* This one still says what it does: it is the button that makes the
+       thing the form is for, not one more row of a list. */
+    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') + '>'+
+      t('stg.own.add')+'</button>');
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
 function stAddOwn(){
@@ -366,6 +368,10 @@ function stAddEx(id){
 function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); render(); }
 /* Two lines side by side is the whole of comparing: a label on each says what
    the pair is a pair of -- 肯定 / 否定 -- and the two read as one thought. */
+/* The same as the word sheet's: the field for one more appears when the `+`
+   on the heading is pressed. */
+var stExNew='';
+function stExOpen(id){ stExNew=id; render(); }
 function stExHTML(id){
   var a=stEx(id);
   return (a.length
@@ -374,14 +380,12 @@ function stExHTML(id){
           exBtn('stDelEx', [id, i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
-    '<div class="exadd">'+
+    (stExNew===id? '<div class="exadd">'+
       '<input id="sx-lb" class="exsm" placeholder="'+esc(t('stg.ex.lb.ph'))+'" autocomplete="off">'+
-      lnField('sx-ln', exHint(), '', '')+
+      lnField('sx-ln', exHint(), KD('stAddEx', [id]), '')+
       '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('stAddEx', [id]) + '>'+
-      '<button class="btn ghost"' + DO('stAddEx', [id]) + ' aria-label="'+esc(t('word.mn.add'))+
-        '">'+ICON_ADD+'</button>'+
-    '</div>';
+    '</div>' : '');
 }
 
 /* Which stage is open comes from the trail, so leaving the page and coming
@@ -451,7 +455,7 @@ function stDetailHTML(p){
     '<textarea class="ntbody" style="min-height:130px" placeholder="'+esc(t('stg.rules.ph'))+'" '+
     '' + CH('stSetRules', [p.id]) + '>'+esc(stRules(p.id))+'</textarea>';
 
-  out+='<div class="sec">'+ICON_LINE+t('stg.ex')+'</div>'+stExHTML(p.id);
+  out+=secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [p.id]), t('word.mn.add'))+stExHTML(p.id);
 
   out+='<div class="sec">'+t('stg.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
