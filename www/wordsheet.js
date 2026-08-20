@@ -112,7 +112,7 @@ function openAdd(from){
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
-           mns:[], pos:addPos, reg:'', fm:'', tags:[], ety:'', nt:''};
+           mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
     wdSync();
   }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
@@ -140,6 +140,7 @@ function addOne(){
   w={hw:hw, mns:wEdit.mns.slice(), mn:(wEdit.mns[0]||''), pos:wEdit.pos, at:Date.now()};
   w.sp=JSON.parse(JSON.stringify(sp));
   if(addFrom && addFrom!==hw) w.from=addFrom;
+  if(w.from && d.fm) w.fm=d.fm;
   /* Everything written on the draft comes with it. An empty note is no note,
      not an empty one -- the same rule saveWord() holds. */
   if(d.ex && d.ex.length) w.ex=d.ex;
@@ -487,23 +488,64 @@ function wdPaint(){
    name as one of the answers. 「文体のふつうってなんだよ」 */
 var REG=['','sp','wr','sl','po'];
 function regLabel(r){ return r? t('word.reg.'+r) : ''; }
-/* ---- what form of its parent a word is ---------------------------------
+/* ---- what a word is of the word it came from ---------------------------
    「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほうが
    良くない？」
 
-   A derived word already sat under its parent -- what was missing is which
-   form it IS, so 歩く→歩いた and 歩く→歩く人 stood in one undifferentiated
-   pile. The label is on the LINK, not a paradigm the language declares:
-   「型決めても英語みたいに変わってる可能性もあるやん」 -- a form that is not
-   built out of its parent at all is still just a word with a label on it,
-   and nothing obliges a word to have every form or any of them.
+   A derived word already sat under its parent -- what was missing is what it
+   IS of it, so 歩く→歩いた and 歩く→歩く人 stood in one undifferentiated pile.
 
-   Codes, never labels, for the same reason a register is a code: the
-   interface language changes under a word without changing the word. FM[0]
-   is the empty string -- a derived word that is not a form of anything is
-   most of them. The order here is the order the family is read in. */
-var FM=['','pst','fut','prg','prf','pl','neg','imp','pas'];
-function fmLabel(f){ return f? t('word.fm.'+f) : ''; }
+   Two lists, because they are two different things and the second one was
+   the question that found them: 「tirorがウォッチャーになるのって何系？」 An
+   INFLECTION is the same word in another shape -- a past tense is still the
+   verb. A DERIVATION is a different word built out of it -- the one who
+   watches is a noun, and no amount of conjugating gets you there.
+
+   The label is on the LINK and no language declares a paradigm:
+   「型決めても英語みたいに変わってる可能性もあるやん」 -- nothing obliges a word
+   to have every form or any of them, and a form built out of nothing like its
+   parent, go / went, is still just a word with a label on it.
+
+   Codes, never labels, the same rule a register follows: the interface
+   language changes under a word without changing the word. What somebody
+   writes themselves is the exception and is kept AS the words they typed,
+   prefixed with the group it belongs to -- it is their language, so it is
+   not ours to translate, and it is stored on the word rather than in a list
+   of its own: the labels a language has are the ones its words are wearing.
+   Nothing to migrate, nothing to keep in step, nothing to delete. */
+var FM_INF=['pst','prs','fut','prg','prf','neg','imp','que','cnd','cau','pas','pl'];
+var FM_DER=['agt','ins','loc','act','qua','dim','aug','col','opp','adj','vrb','adv'];
+function fmOwn(f){ return String(f||'').slice(0,2)==='i~' || String(f||'').slice(0,2)==='d~'; }
+function fmGroup(f){
+  if(fmOwn(f)) return String(f).charAt(0);
+  return (FM_INF.indexOf(f)>=0)? 'i' : ((FM_DER.indexOf(f)>=0)? 'd' : '');
+}
+function fmLabel(f){
+  if(!f) return '';
+  return fmOwn(f)? String(f).slice(2) : t('word.fm.'+f);
+}
+/* The order the family is read in: the inflections in their order, then the
+   derivations in theirs, with anything somebody wrote themselves after the
+   ones we supplied in its own group, and a word that is a form of nothing
+   last. */
+function fmRank(f){
+  var g=fmGroup(f), i;
+  if(!f) return 900;
+  if(g==='i'){ i=FM_INF.indexOf(f); return (i<0)? 200 : i; }
+  if(g==='d'){ i=FM_DER.indexOf(f); return (i<0)? 500 : 300+i; }
+  return 800;
+}
+/* Every label of a group this language is already using, which is where the
+   ones somebody wrote come back from. Read off the words themselves, in the
+   order they were made, each one once. */
+function fmMine(g){
+  var out=[], i, f;
+  for(i=0;i<WORDS.length;i++){
+    f=WORDS[i].fm;
+    if(fmOwn(f) && String(f).charAt(0)===g && out.indexOf(f)<0) out.push(f);
+  }
+  return out;
+}
 /* The form is a fact about a word's parent, so it is asked only of a word
    that has one -- on the sheet a word is coined on, that is the parent it
    was derived from; on the sheet it is edited on, the one it carries. */
@@ -513,14 +555,89 @@ function wdFrom(){
   w=findWord(openHw);
   return (w && w.from)? String(w.from) : '';
 }
+/* Chosen on a screen rather than out of a wheel, because there are two
+   groups and one of them a person can add to, and neither of those is
+   something a <select> can be. The row says what it is now. */
 function wdFmHTML(){
-  return '<div class="field"><select id="wd-fm"' + CH('wdSetFm') + '>'+
-    FM.map(function(f){
-      return '<option value="'+f+'"'+(f===(wEdit.fm||'')?' selected':'')+'>'+
-        esc(fmLabel(f))+'</option>'; }).join('')+
-    '</select></div>';
+  var w=addW||findWord(openHw), f=(w && w.fm)||'';
+  return (f? '<div class="rels"><span class="rel"><span class="relw">'+
+              esc(fmLabel(f))+'</span></span></div>' : '')+
+    '<button class="btn ghost" style="width:100%;margin-top:8px"' +
+      DO('go', ["fm", (addW? '' : String(openHw||''))]) + '>'+ICON_LINK+t('word.fm.add')+'</button>';
 }
-function wdSetFm(v){ wEdit.fm=v; }
+/* Written onto the word as it is chosen, the way a synonym is -- what a word
+   is of its parent is a fact about the word, not a draft of it. The word
+   being coined has nowhere to save to yet, so it goes on the draft and
+   addOne() carries it over. */
+function fmPick(hw, f){
+  var w=hw? findWord(hw) : addW;
+  if(!w) return;
+  if(f) w.fm=f; else delete w.fm;
+  if(hw) save();
+  relDirty(); back();
+}
+/* A label of somebody's own. It is the words they typed and it is not
+   translated; what makes it theirs is the group it was written under. */
+function fmNew(hw, g){
+  var e=document.getElementById('fm-'+g), txt=e? String(e.value||'').replace(/^\s+|\s+$/g,'') : '';
+  if(!txt){ toast(t('toast.hw2')); return; }
+  fmPick(hw, g+'~'+txt);
+}
+/* What a label is FOR, behind the mark that is what the mark is for.
+   「これ全部横に？つけてどういう役割なのかたとえば英語とか言語で説明できるように
+   して」 -- a row of grammar words is a row of grammar words, and the person
+   drawing an alphabet for a language they invented is not obliged to know
+   what a causative is. One line and one example, in the interface language,
+   where nobody has to read it to use the screen.
+
+   Only on the ones we supply. A label somebody wrote themselves is theirs,
+   and the app has nothing to say about what it means. */
+function fmHelpOf(f){
+  return function(){
+    return {t:fmLabel(f), h:
+      '<div class="note">'+esc(t('word.fm.'+f+'.d'))+'</div>'+
+      '<div class="sec">'+t('word.fm.ex')+'</div>'+
+      '<div class="note">'+esc(t('word.fm.'+f+'.e'))+'</div>'};
+  };
+}
+function fmHelpAll(){
+  var all=FM_INF.concat(FM_DER), i;
+  for(i=0;i<all.length;i++) HELP['fm.'+all[i]]=fmHelpOf(all[i]);
+}
+fmHelpAll();
+function fmQ(f){
+  if(!f || fmOwn(f)) return '';
+  return '<button class="rowq"' + DO('openHelp', ['fm.'+f]) +
+    ' aria-label="'+esc(t('help.q'))+'">?</button>';
+}
+function fmRowHTML(hw, f, on){
+  /* `one` because a label is one line where a word is two: an entry sized by
+     its contents is 23 points tall here, and a row of a list is something a
+     thumb has to land on. */
+  return '<div class="entry one'+(on?' on':'')+'">'+
+    '<button class="ebody"' + DO('fmPick', [hw, f]) + '>'+
+    '<div class="hwrow"><span class="hw">'+esc(fmLabel(f)||t('word.fm.non'))+'</span></div>'+
+    '</button>'+fmQ(f)+'<span class="ltck">'+(on? ICON_TICK : '')+'</span></div>';
+}
+function fmGroupHTML(hw, g, now){
+  var list=(g==='i'? FM_INF : FM_DER).concat(fmMine(g));
+  return '<div class="sec">'+t('word.fm.'+(g==='i'? 'inf' : 'der'))+'</div>'+
+    list.map(function(f){ return fmRowHTML(hw, f, f===now); }).join('')+
+    '<div class="row2" style="margin-top:8px"><div class="field">'+
+      '<input id="fm-'+g+'" aria-label="'+esc(t('word.fm.own'))+
+      '" autocapitalize="none" autocorrect="off"></div>'+
+    '<button class="btn ghost"' + DO('fmNew', [hw, g]) + '>'+t('add.btn')+'</button></div>';
+}
+function vFm(){
+  var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;
+  if(!w) return viewGone();
+  now=w.fm||'';
+  return '<div class="view">'+navTop()+'<div class="body">'+
+    fmRowHTML(hw, '', !now)+
+    fmGroupHTML(hw, 'i', now)+
+    fmGroupHTML(hw, 'd', now)+
+    '</div></div>';
+}
 /* Fields are typed as one line and held as a list, because searching wants
    the list and typing wants the line. Empty pieces are dropped, so a
    trailing comma is not a field called nothing. */
@@ -674,30 +791,40 @@ function wdChipsHTML(w, k){
       (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
   }).join('')+'</div>' : '';
 }
-/* The family reads in the order the forms are listed, with everything that
-   is a form of nothing after them -- so the tenses of a verb are together
-   and in one order on every word, rather than in the order somebody happened
-   to coin them. Stable: two words of the same form keep the order they are
-   in, which is the order they were made. */
+/* The family, from wherever in it you are standing. 「保存した瞬間そっちの
+   単語でも活用とか見れる」 -- a word derived from another used to show its
+   parent and nothing else, so from 歩いた you could not see 歩いている. The
+   set is the parent's, and it reads the same whichever of its words you
+   opened: the parent first, then everything else derived from it, in FM
+   order, with the word you are on left out because it is the page.
+
+   Stable within a rank: two words wearing the same label keep the order they
+   were made in. */
 function wdFamSort(kids){
-  var out=[], i, j;
-  for(i=0;i<FM.length;i++) for(j=0;j<kids.length;j++)
-    if(String(kids[j].fm||'')===FM[i] && FM[i]) out.push(kids[j]);
-  for(j=0;j<kids.length;j++) if(out.indexOf(kids[j])<0) out.push(kids[j]);
+  var out=kids.slice(), i, j, x;
+  for(i=1;i<out.length;i++){
+    x=out[i]; j=i-1;
+    while(j>=0 && fmRank(out[j].fm||'')>fmRank(x.fm||'')){ out[j+1]=out[j]; j--; }
+    out[j+1]=x;
+  }
   return out;
 }
+function wdFamRowHTML(x, fm){
+  return '<button class="ntrow"' + DO('openWord', [x.hw]) + '>'+
+    '<span class="nth">'+(fm? '<span class="wfm">'+esc(fmLabel(fm))+'</span>' : '')+
+      esc(wOut(x.hw))+'</span>'+
+    '<span class="ntb">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
+}
 function wdFamHTML(w){
-  var kids=wdFamSort(wKids(w)), par=wParent(w);
+  var par=wParent(w), root=par||w, kids;
+  kids=wdFamSort(wKids(root).filter(function(x){ return x!==w; }));
   if(!par && !kids.length) return '';
   return (par? '<button class="ntrow"' + DO('openWord', [par.hw]) + '>'+
-            '<span class="nth">'+(w.fm? t('word.fromf', esc(par.hw), esc(fmLabel(w.fm)))
-                                     : t('word.from', esc(par.hw)))+'</span>'+
+            '<span class="nth">'+(w.fm? t('word.fromf', esc(wOut(par.hw)), esc(fmLabel(w.fm)))
+                                     : t('word.from', esc(wOut(par.hw))))+'</span>'+
             (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
     (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
-        return '<button class="ntrow"' + DO('openWord', [k.hw]) + '>'+
-          '<span class="nth">'+(k.fm? '<span class="wfm">'+esc(fmLabel(k.fm))+'</span>' : '')+
-            esc(k.hw)+'</span>'+
-          '<span class="ntb">'+esc(wMn(k)||t('sent.nomean'))+'</span></button>';
+        return wdFamRowHTML(k, k.fm||'');
       }).join('')+'</div>' : '');
 }
 function wdViewHTML(){
@@ -748,7 +875,7 @@ function openEdit(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
-         pos:w.pos, reg:w.reg||'', fm:w.fm||'', tags:(w.tags||[]).slice(),
+         pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
            function(){ phkMount(); geTiles(); });
@@ -826,9 +953,10 @@ function wdPutExtras(w){
   if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
   if(String(wEdit.ety||'').trim()) w.ety=String(wEdit.ety).trim(); else delete w.ety;
   if(wEdit.reg) w.reg=wEdit.reg; else delete w.reg;
-  /* A form of nothing is not a form: a word with no parent cannot carry one,
-     and one that stops being derived stops being a past tense of anything. */
-  if(w.from && wEdit.fm) w.fm=wEdit.fm; else delete w.fm;
+  /* `fm` is written where it is chosen, not here. What is here is the one
+     thing Save has to hold: a form of nothing is not a form, so a word with
+     no parent cannot carry one. */
+  if(!w.from) delete w.fm;
   if((wEdit.tags||[]).length) w.tags=wEdit.tags.slice(); else delete w.tags;
   w.up=Date.now();
 }

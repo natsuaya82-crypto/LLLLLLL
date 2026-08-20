@@ -882,6 +882,26 @@ for.
 - Implementation status: implemented. `FM` and `fmLabel()` in
   `www/wordsheet.js`; written by `wdPutExtras()`, which Save and Add both call
 
+### Decision
+- Date: 2026-08-20
+- Area: A word's related words
+- Decision: The labels are two groups — **活用** (an inflection: the same word
+  in another shape) and **派生** (a derivation: a different word built out of
+  it), twelve each — and **a language may write its own in either group**. A
+  label somebody writes is kept as typed and never translated. The whole family
+  is shown from every word in it, not only from the parent. Every label we
+  supply carries a `?` with one line and one example.
+- Reason: 「tirorがウォッチャーになるのって何系の派生？」「活用と派生も好きに保存
+  できたらいいよね」「保存した瞬間そっちの単語でも活用とか見れる」「これ全部横に？
+  つけてどういう役割なのかたとえば英語とか言語で説明できるようにして」
+- Affected features: the dictionary, the word sheet, the word read
+- Affected data: `fm` on a word — a code, or `i~`/`d~` and the person's own
+  words, stored on the word and in no list of its own
+- Affected docs: CHANGELOG, DATA_MODEL, FEATURES
+- Implementation status: implemented. `FM_INF` / `FM_DER` / `fmLabel()` /
+  `fmMine()` and the `fm` screen in `www/wordsheet.js`
+- Free: yes. It is text somebody typed, not a capability
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

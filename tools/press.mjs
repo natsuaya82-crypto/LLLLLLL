@@ -198,6 +198,8 @@ const R = await pg.evaluate(async () => {
   const argsOf = (r) =>
     r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
     r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
+    /* The form picker is about a word, and with no word it is the gone box. */
+    r === 'fm'   ? ['tira'] :
     [null];
 
   /* A screen is a label and the way back to it. Rebuilding rather than

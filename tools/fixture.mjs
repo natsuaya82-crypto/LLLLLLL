@@ -69,7 +69,12 @@ export function seed(){
        nothing. A family of unlabelled words proves neither half. */
     {hw:'tira', ph:['t','i','r','a'],     mn:'saw',     mns:['saw'],     pos:'v', from:'tir', fm:'pst', at:7},
     {hw:'tiran',ph:['t','i','r','a','n'], mn:'seeing',  mns:['seeing'],  pos:'v', from:'tir', fm:'prg', at:8},
-    {hw:'tiror',ph:['t','i','r','o','r'], mn:'watcher', mns:['watcher'], pos:'n', from:'tir', at:9}
+    {hw:'tiror',ph:['t','i','r','o','r'], mn:'watcher', mns:['watcher'], pos:'n', from:'tir', at:9},
+    /* And one wearing a label nobody supplied. What a language calls a thing
+       is its own -- the label is the words somebody typed, kept as typed and
+       never translated -- and it is stored on the word, so the labels this
+       language has are the ones its words are wearing. */
+    {hw:'tirok',ph:['t','i','r','o','k'], mn:'lookout', mns:['lookout'], pos:'n', from:'tir', fm:'d~見張り', at:10}
   ];
   langName = 'Shango';
   /* The person's settings, back to what a fresh install has. A press that
@@ -242,10 +247,14 @@ export function halfDone(){
                                          const h = vFeed(); SESS = was; return h; }],
     ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
                                       return FORM.html; }],
-    /* Which form of its parent a word is, asked only of a word that HAS one
+    /* What a word is of the word it came from, asked only of a word that HAS
+       a parent
        -- so the sheet kano is edited on never carries it, and the row would
        be walked by nothing. */
     ['a form being edited', () => { openEdit('tira'); return FORM.html; }],
+    /* One label explained. openHelp is walked with a stub key, which is no
+       page at all, so the mark beside a form is on nothing without this. */
+    ['what a form is for', () => { openHelp('fm.cau'); return FORM.html; }],
     /* And the other end: a word read with its forms under it. kano has no
        family, so the labelled rows are on no screen either without this. */
     ['a word and its forms', () => { openWord('tir'); return FORM.html; }],

@@ -152,6 +152,7 @@ var PAGES={
   wsys:    {tab:'profile',  k:'ws.kind'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
+  fm:      {tab:'build', k:'word.fm'},
   follows: {tab:'profile'},
   spell:   {tab:'build', k:'word.sp'},
   glyph:   {tab:'build'},

@@ -15,6 +15,49 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### 活用 and 派生 are two different things, and a language may add its own — OWNER DECISION
+
+「tirorがウォッチャーになるのって何系の派生？」 It is not a form of `tir` at all
+— it is a different word built out of it. An inflection is the same word in
+another shape; a derivation is a new word. The list was one pile of both.
+
+Two groups now, twelve each:
+
+**活用** 過去 · 現在 · 未来 · 進行 · 完了 · 否定 · 命令 · 疑問 · 条件 · 使役 ·
+受身 · 複数
+**派生** 動作主 · 道具 · 場所 · 行為 · 性質 · 指小 · 指大 · 集合 · 反対 ·
+形容詞化 · 動詞化 · 副詞化
+
+**And a language may write its own, in either group.**
+「活用と派生も好きに保存できたらいいよね」 What somebody types is kept as they
+typed it and is never translated — it is their language. It is stored **on the
+word**, prefixed with its group (`i~` / `d~`), and the labels a language has
+are read back off the words wearing them. No list to keep in step, nothing to
+migrate, nothing to delete.
+
+**The whole set from wherever you are standing.** 「保存した瞬間そっちの単語でも
+活用とか見れる」 A derived word used to show its parent and nothing else — from
+歩いた you could not reach 歩いている. The section is the parent's whole family
+now, on every word in it, and every row is a press. The heading is 関連語.
+
+**A `?` beside every label.** 「これ全部横に？つけてどういう役割なのか説明できる
+ようにして」 One line and one example, in the interface language, behind the
+mark — 使役形 / 誰かにやらせる形 / 見る → 見させる. On the ones we supply only:
+a label somebody wrote is theirs and the app has nothing to say about it.
+
+Choosing is a screen (`fm`), not a wheel: two groups and a field to write your
+own is not something a `<select>` can be. The label is written onto the word as
+it is chosen, the way a synonym is, so nothing about it is a draft.
+
+**Stored:** `fm` is now a code out of `FM_INF` / `FM_DER`, **or** `i~`/`d~` and
+the person's own words. Still deleted when empty and when the parent goes.
+**Migration: none** — the eight codes that shipped this morning are all still
+codes.
+
+Free. It is text somebody typed, not a capability.
+
+510 screens, 6650 buttons, 195/195 names.
+
 ### A derived word says which form of its parent it is — OWNER DECISION
 
 「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほうが良くない？」

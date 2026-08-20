@@ -233,6 +233,9 @@ const R = await pg.evaluate(() => {
      only the digits page carries the base, only the alphabet counts the
      ones with no reading. */
   walkArg('ltset', vLtset, LT_KINDS, 'vLtset');
+  /* What a word is of the word it came from, chosen on a screen. It is about
+     a word, so it is walked on one -- with no word it is the gone box. */
+  walkArg('fm', vFm, ['tira'], 'vFm');
   /* A conversation, one per post there is. The thread of a post nobody has
      answered is still a screen -- it is what every post's thread is on the
      day it is written -- and the answered one is in halfDone above. */

@@ -81,9 +81,15 @@ always blank ends up in every export and every backup. `wdPutExtras()` in
 `www/wordsheet.js` is the one place that writes `nt` / `ety` / `reg` / `fm` /
 `tags` / `up`, called by both Save and Add.
 
-`from` is the word this one is derived from and `fm` is **which form of it** —
-a code out of `FM` in `www/wordsheet.js`, never a label, so the interface
-language changes under a word without changing the word. It is on the LINK and
+`from` is the word this one is derived from and `fm` is **what it is of it** —
+a code out of `FM_INF` (an inflection: the same word in another shape) or
+`FM_DER` (a derivation: a different word built out of it) in
+`www/wordsheet.js`, never a label, so the interface language changes under a
+word without changing the word. Or `i~` / `d~` and the words somebody typed
+themselves, which are kept as typed and never translated: what a language calls
+a thing is its own. Those live on the word and nowhere else — the labels a
+language has are the ones its words are wearing, so there is no second list to
+keep in step, nothing to migrate and nothing to delete. It is on the LINK and
 not a paradigm the language declares: a language does not say which forms it
 has, and a form built out of nothing like its parent is still just a word with
 a label on it. `fm` without `from` is not a state — `wdPutExtras()` deletes it
