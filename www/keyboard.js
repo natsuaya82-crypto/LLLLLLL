@@ -110,45 +110,6 @@ function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
    than handing the extension a key with no job. */
 function kbGap(w){ var k=kbKey('gap'); k.w=w; return k; }
 
-/* ---- how tall a key is -------------------------------------------------
-   「マス目の大きさもカスタマイズできるように」
-
-   A key's WIDTH is already the person's, per key, and has been since the
-   editor existed. Its height was 52 points and nothing could touch it, so a
-   keyboard of four rows of big flick keys and a keyboard of six thin rows
-   were the same keyboard with different letters on it.
-
-   ONE number, for the whole keyboard. A row's own share of it was built and
-   taken back out the same day: rows are the same height as each other on
-   every keyboard anybody has ever used, and a number per row is four more
-   things to set for a keyboard that will look like every other keyboard
-   afterwards. 「行の高さは固定でいいのでは？」
-
-   A multiplier of KB_H rather than points -- a point is a different size on
-   an iPhone SE and an iPhone Pro Max, and what somebody is choosing is how
-   big a key FEELS, not how many pixels it is.
-
-   Absent means 1. A keyboard built before this, a backup written before this
-   and a payload handed over before this all say nothing about height and all
-   come out exactly as they were. */
-var KB_H=52, KB_H_MIN=0.7, KB_H_MAX=1.5;
-function kbHOf(h){
-  h=parseFloat(h);
-  if(!(h>0)) return 1;
-  return Math.max(KB_H_MIN, Math.min(KB_H_MAX, h));
-}
-/* The keyboard being SHOWN, which is the one the editor is about. */
-function kbH(){ return kbHOf(kbBoard().h); }
-function kbSetH(v){
-  var b=kbEdit();
-  if(!b) return;
-  b.h=kbHOf(v);
-  saveKb();
-  /* The keyboard is one custom property, so the slider moves it without the
-     screen being rebuilt under the finger that is dragging. */
-  var e=document.getElementById('kb');
-  if(e) e.style.setProperty('--kh', (KB_H*b.h).toFixed(1)+'px');
-}
 /* Letters five to a row, with a space and a backspace under them. Used for
    both faces of the first keyboard, so the two cannot drift in how wide a
    row is. */
@@ -805,7 +766,7 @@ function kbHTML(sel, ro){
   if(!ro)
     out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRowNew') +
       ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
-  return '<div class="kb" id="kb" style="--kh:'+(KB_H*kbH()).toFixed(1)+'px">'+out+'</div>';
+  return '<div class="kb" id="kb">'+out+'</div>';
 }
 
 /* ---- the keyboard is not typed on in here ------------------------------
@@ -911,7 +872,6 @@ function vKb(){
     kbLaysHTML()+
     kbHTML(kbSel)+
     kbNewHTML()+
-    kbHBarHTML()+
     kbApplyHTML()+
     '</div></div>';
 }
@@ -923,15 +883,6 @@ function kbMoreQ(){
     return '<button class="navq navdone"' + DO('kbWobEnd') + '>'+esc(t('kb.done'))+'</button>';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
-}
-/* How tall the keys are, directly under them, as the one thing a size ought
-   to be: something you drag while looking at what it does. No number beside
-   it and no words -- the keyboard above IS the readout, and it moves under
-   the finger rather than after it. */
-function kbHBarHTML(){
-  return '<div class="kbh"><input type="range" class="kbrng" id="kb-h" '+
-    'min="'+KB_H_MIN+'" max="'+KB_H_MAX+'" step="0.05" value="'+kbH()+'"' +
-    ' aria-label="'+esc(t('kb.h'))+'"' + IN('kbSetH') + '></div>';
 }
 /* The faces of THIS keyboard, and the way to add one. A layer is a face --
    ABC and あいう -- so it reads as a row of faces with a `+` on the end,

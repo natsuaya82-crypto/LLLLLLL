@@ -134,6 +134,8 @@ canvas.pkc{width:34px;height:34px;display:block}
    ように」 52px is what every key was, so a keyboard nobody has touched is
    the keyboard it was. */
 .kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0;--kh:52px}
+/* --kh is this screen's own drawing of a key and is not what goes to the
+   phone: the extension decides that, and nothing in the app sets it now. */
 .kbrow{display:flex;gap:5px;--rh:1}
 .kbk{position:relative;min-height:calc(var(--kh) * var(--rh));min-width:0;
      border:1px solid var(--line);

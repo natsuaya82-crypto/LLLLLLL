@@ -328,11 +328,18 @@ function shareKbd(){
      全部消える」 Where the roman face lands depends on how many faces the
      person built, so this is the only place that knows. */
   if(rom>=0) out.rom=rom;
-  /* How tall the keys are, as a multiplier of whatever the extension's own
-     row height is. A point is a different size on an SE and a Pro Max, and
-     what somebody chose here is how big a key FEELS. Absent means 1, which is
-     the keyboard every board written before this had. */
-  if(kbHOf(b.h)!==1) out.h=kbHOf(b.h);
+  /* How tall a key is is NOT sent, and there is no setting for it any more.
+     It was a multiplier on the extension's own row height, and nothing capped
+     what the two of them came to: ten rows at 1.5 is 810 points of keyboard
+     on a phone 852 points tall, so the app being typed into is pushed off the
+     screen. 「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズ
+     くらいまでにしないとキツくない？」
+
+     A row is one height now -- the height the free QWERTY and a Japanese kana
+     keyboard are both already drawn at -- and the extension caps the total
+     against the screen, so a keyboard somebody built ten rows deep is squeezed
+     rather than swallowing the phone. `h` stays on the stored board, unread:
+     nothing anybody set is thrown away. */
   /* Whether a key wears the letter it types, small in its corner. The
      extension has always been handed `t` on every letter key; this says
      whether to draw it. */

@@ -233,7 +233,6 @@ actIn('meSetHandle', meSetHandle);
 actIn('pwSetLn', pwSetLn);
 actIn('pwSetMn', pwSetMn);
 actIn('pwSetPic', pwSetPic);
-actIn('kbSetH', kbSetH);
 actIn('pwMarkSize', pwMarkSize);
 actIn('pwMarkText', pwMarkText);
 actIn('ltDraftName', ltDraftName);

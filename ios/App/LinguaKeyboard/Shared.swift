@@ -84,9 +84,11 @@ struct Board: Decodable {
   /// there for somebody who has not learnt the layout, and somebody upgrading
   /// from a build that never had it has not been asked.
   let mark: Int?
-  /// How tall the keys are, as a multiplier of the extension's own row
-  /// height. A point is a different size on an SE and a Pro Max, and what
-  /// somebody chose in the app is how big a key FEELS. Absent means 1.
+  /// Was how tall the keys are, as a multiplier. Nothing sends it and nothing
+  /// reads it: a row is one height and the total is capped against the screen
+  /// (KeyboardViewController.place). It stays decodable because a file written
+  /// before this still carries it, and a Board that refused to decode is a
+  /// keyboard that does not appear at all.
   let h: Double?
   let lay: [Layer]
   /// Every face that a candidate can be made of, once each. Absent when the

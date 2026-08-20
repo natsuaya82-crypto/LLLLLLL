@@ -15,6 +15,27 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A keyboard cannot swallow the phone — OWNER DECISION
+
+「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズくらいまでにしな
+いとキツくない？」
+
+The height slider was a multiplier on the extension's own row height and
+**nothing capped what the two of them came to**. Ten rows at 1.5 is 810 points
+of keyboard on a phone 852 points tall, and iOS gives an input view whatever
+height it asks for — so the app being typed into was pushed off the screen by
+its own keyboard. Nobody had built ten rows yet; the app let them.
+
+The slider is gone. **A row is one height** — the one the free QWERTY and a
+Japanese kana keyboard are both already drawn at — and the extension caps the
+total at 55% of the screen, so a keyboard built ten rows deep is squeezed
+rather than swallowing the phone. Apple's own is about four tenths and a kana
+keyboard about half; the cap is a ceiling, not an aim.
+
+**Stored data.** `h` stays on the stored board and in the payload's shape,
+unread. Nothing anybody set is thrown away, and a `Board` that refused to
+decode an old file would be a keyboard that does not appear at all.
+
 ### Holding a key puts the keyboard in the state a home screen goes into
 
 「長押ししたら右上に➖出てきて消えるようにしよう。iPhoneのホーム画面のアプリ移動さ

@@ -22,6 +22,10 @@ final class KeyboardViewController: UIInputViewController,
   /// height is what carries the touch.
   private let rowHeight: CGFloat = 54
   private let barHeight: CGFloat = 44
+  /// The most of the screen a keyboard may take. Apple's own is about four
+  /// tenths and a kana keyboard about half; this is the ceiling, not the aim,
+  /// and only a keyboard with many rows ever meets it.
+  private static let mostOfScreen: CGFloat = 0.55
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -59,7 +63,7 @@ final class KeyboardViewController: UIInputViewController,
                           mark: (b.mark ?? 1) != 0)
     kb.delegate = self
     place(kb, rows: CGFloat(lay.rows.count), bar: compose != nil,
-          box: CGFloat(b.box), scale: CGFloat(b.h ?? 1))
+          box: CGFloat(b.box))
     paintBar()
   }
 
@@ -76,13 +80,24 @@ final class KeyboardViewController: UIInputViewController,
   /// The system gives an input view no height of its own, so it has to be
   /// said. Said once, and changed rather than re-added, or the constraints
   /// pile up and iOS starts breaking them one per rebuild.
-  ///
-  /// `scale` is the whole keyboard's height, clamped to the range the app's
-  /// own slider has -- a file is a file and can say anything.
-  private func place(_ v: UIView, rows: CGFloat, bar wantsBar: Bool, box: CGFloat,
-                     scale: CGFloat = 1) {
-    let k = max(0.7, min(1.5, scale))
-    let h = rowHeight * k * rows + 8 + (wantsBar ? barHeight : 0)
+  private func place(_ v: UIView, rows: CGFloat, bar wantsBar: Bool, box: CGFloat) {
+    /* One row is one height -- the height the free QWERTY and a Japanese kana
+       keyboard are both already drawn at -- and the total is capped against
+       the screen.
+
+       It was a multiplier the app let somebody set, with nothing capping what
+       the two of them came to: ten rows at 1.5 is 810 points of keyboard on a
+       phone 852 points tall, and iOS gives an input view whatever height it
+       asks for. The app being typed into was pushed off the screen by its own
+       keyboard. 「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版の
+       サイズくらいまでにしないとキツくない？」
+
+       So a keyboard somebody built ten rows deep is SQUEEZED rather than
+       swallowing the phone: the rows share what is left of the cap. */
+    let bars = 8 + (wantsBar ? barHeight : 0)
+    let want = rowHeight * rows + bars
+    let cap = UIScreen.main.bounds.height * KeyboardViewController.mostOfScreen
+    let h = min(want, max(cap, rowHeight + bars))
     v.translatesAutoresizingMaskIntoConstraints = false
     view.addSubview(v)
     var top = view.topAnchor
