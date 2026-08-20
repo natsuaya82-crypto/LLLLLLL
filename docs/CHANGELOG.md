@@ -15,6 +15,17 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A sense number has a gap after it on the word page too
+
+A word with more than one meaning numbers them. On a dictionary row the number
+had a gap after it; on the word page it had none — `1to see`, the number
+against the word. The rule was `.mn .sn`, scoped to the row, and the word page
+does not have a `.mn` round it: one rule, two places, and only one of them was
+being told. It is `.sn` now, and the gap is in `em` so it holds at both sizes
+rather than being three pixels against two different fonts.
+
+Nothing stored changes.
+
 ### The family is rows under a heading, not a stack of cards
 
 「その四角で加工系やめない？」

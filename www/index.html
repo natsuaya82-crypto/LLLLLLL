@@ -942,9 +942,12 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
       display:inline-flex;align-items:center;justify-content:center}
 .search .sx:active{color:var(--gold)}
 .search .sx[hidden]{display:none}
-/* A sense number, and a word with no sense yet. */
-.mn .sn{font-family:'Cinzel',Georgia,serif;font-style:normal;font-size:.82rem;
-      color:var(--gold);margin-right:3px;vertical-align:.15em}
+/* A sense number, wherever one is drawn -- the dictionary row and the word
+   page both. It was scoped to the row, so on the word page the number sat
+   against the meaning with no gap at all: `1to see`. The gap is in `em` so it
+   holds at both sizes rather than being 3px against two different fonts. */
+.sn{font-family:'Cinzel',Georgia,serif;font-style:normal;font-size:.82rem;
+      color:var(--gold);margin-right:.34em;vertical-align:.15em}
 .mn .sn + span{margin-right:0}
 .mn .nomn{opacity:.42}
 /* Where a word came from, and how many have come from it. */
