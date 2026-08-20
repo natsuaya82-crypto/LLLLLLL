@@ -704,8 +704,8 @@ defLang('en', (function(){
       'set.csv.in'      : "Import from CSV",
       'set.lock.csv.t'  : "CSV import and export",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
-      'set.wipe'        : "Erase everything",
-      'confirm.wipe'    : "Erase every word you have made and start again?",
+      'set.wipe'        : "Delete account",
+      'confirm.wipe'    : "Delete everything on this phone and sign out? The language, the letters and the settings all go, and it cannot be undone.",
       /* languages */
       'langs.title'     : "Languages",
       'langs.mine'      : "Your languages",
