@@ -296,6 +296,18 @@ export function halfDone(){
     /* And what it says out loud, once, on the day that happens. capLapse()
        only fires on a plan that changed, and nothing in a walk changes one. */
     ['the plan has ended', () => { openCapLapse(); return FORM.html; }],
+    /* The reading of a word, which is the paid plan's and is reached from a
+       sheet that has a word open on it. Once with the search empty and once
+       with something in it: the tiles are the screen, and a search that
+       matches nothing leaves it with none. */
+    ['the reading of a word', () => { SET.plan='plus'; openEdit('kano');
+                                      window.route='spell'; NAV=[{r:'spell'}];
+                                      const h=vSpell(); SET.plan='free'; return h; }],
+    ['the reading of a word, searched', () => { SET.plan='plus'; openEdit('kano');
+                                                window.route='spell'; NAV=[{r:'spell'}];
+                                                spQ='a';
+                                                const h=vSpell(); spQ='';
+                                                SET.plan='free'; return h; }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
                                        SET.wsys='abugida'; abVow = 'a';
                                        const h = vAbugida(); SET.wsys=''; return h; }],

@@ -195,8 +195,69 @@ function wdSetLn(v){
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
   if(!sp.length) return '';
-  return '<div class="sec">'+esc(t('word.sp'))+'</div>'+
-    lnField('wd-rdln', '', IN('wdSetRd'), spPh(sp).join(''), 'whin');
+  return '<button class="set"' + DO('go', ["spell"]) + '>'+
+    '<span class="sl">'+esc(t('word.sp'))+'</span>'+
+    '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
+}
+/* ---- the reading of one word ---------------------------------------------
+   A letter has a sound and a word is normally read by running those sounds
+   together, which is what the sheet already shows. This page is for the times
+   it is not: 「たとえば漣音化とか音が変わる時用」.
+
+   So it is sounds and only sounds. No letter appears on it -- the alphabet
+   joins a sound to a letter and this is the other direction, and having both
+   in front of somebody at once is the thing that made no sense
+   「音から文字と文字から音で二重になるから困る」. A reading cannot be typed either:
+   theta is not on anybody's keyboard, and a sound nobody can hear is not a
+   sound. It is chosen, off tiles, and every press says it out loud. */
+var spQ='';
+function spSetQ(v){ spQ=String(v||''); render(); }
+/* What a symbol can be looked up by: itself, and the words for how it is
+   made. Somebody hunting for theta knows "摩擦" or "fricative" long before
+   they know where it sits in a chart of a hundred and sixty. */
+function spWords(sym){
+  var i, c=IPA_CONS, w=IPA_VOWS;
+  for(i=0;i<c.length;i++) if(c[i].s===sym)
+    return sym+' '+t('ipa.m.'+c[i].m)+' '+t('ipa.p.'+c[i].p);
+  for(i=0;i<w.length;i++) if(w[i].s===sym)
+    return sym+' '+t('ipa.h.'+w[i].h)+' '+t('ipa.b.'+w[i].b);
+  return sym+' '+t('ipa.other');
+}
+function spHit(sym){
+  return !spQ || spWords(sym).toLowerCase().indexOf(spQ.toLowerCase())!==-1;
+}
+function spTilesHTML(list, own){
+  var out=list.filter(spHit).map(function(sym){
+    return '<button class="phk'+(own?' own':'')+'"' + DO('spAdd', [sym]) + '>'+
+      '<span class="pks">'+esc(sym)+'</span></button>';
+  }).join('');
+  return out? '<div class="phkeys">'+out+'</div>' : '';
+}
+/* Appended to the reading, and said. The positions of the word do not move:
+   wdSetRd hands the sounds back to them in order. */
+function spAdd(sym){
+  wdSetRd(spPh((wEdit&&wEdit.sp)||[]).join('')+sym); sayOne(sym);
+}
+function spDrop(){
+  var us=spPh((wEdit&&wEdit.sp)||[]);
+  us.pop(); wdSetRd(us.join(''));
+}
+function vSpell(){
+  var sp=(wEdit&&wEdit.sp)||[], mine=addedSnd(), rest=ipaAll().filter(function(x){
+    return mine.indexOf(x)<0; });
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
+      esc(spWord(sp))+'</span>'+
+      '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
+        esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
+    '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
+    '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+      '<input id="sp-q" value="'+esc(spQ)+'"' + IN('spSetQ') + '>'+
+      '<button class="sx"' + DO('spDrop') + (sp.length?'':' hidden')+
+      ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
+    spTilesHTML(mine, true)+
+    spTilesHTML(rest, false)+
+    '</div></div>';
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }

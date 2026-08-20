@@ -50,6 +50,7 @@ page('find',     vFind);
 page('form',     vForm);
 page('letters',  vLetters);
 page('kb',       vKb);
+page('spell',    vSpell);
 page('snd',      vSnd);
 page('ltset',    vLtset);
 page('letter',   vLetter);

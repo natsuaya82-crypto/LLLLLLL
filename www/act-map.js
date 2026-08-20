@@ -216,6 +216,8 @@ act('stExOpen', stExOpen);
 act('wdDelEx', wdDelEx);
 act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
+act('spAdd', spAdd);
+act('spDrop', spDrop);
 act('wipeAll', wipeAll);
 act('wordsSay', wordsSay);
 
@@ -246,7 +248,7 @@ actIn('wdSetNt', wdSetNt);
 /* A word is typed on the free plan, in three places: the new-word sheet, the
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
-actIn('wdSetRd', wdSetRd);
+actIn('spSetQ', spSetQ);
 actIn('stSetLn', stSetLn);
 act('fmPick', fmPick);
 act('fmSay', fmSay);
