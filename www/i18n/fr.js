@@ -1094,6 +1094,7 @@ defLang('fr', (function(){
       "toast.deleted"    : "{0} supprimé",
       "card.title"        : "Carte",
       "card.save"         : "Partager",
+      "card.shape"         : "Format",
       "card.saved"        : "Enregistrée",
       "imp.next"          : "Suivant",
       "imp.role.hw"       : "Graphie",

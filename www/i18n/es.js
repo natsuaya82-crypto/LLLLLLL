@@ -1006,6 +1006,7 @@ defLang('es', (function(){
       "toast.deleted"    : "{0} eliminada",
       "card.title"        : "Tarjeta",
       "card.save"         : "Compartir",
+      "card.shape"         : "Forma",
       "card.saved"        : "Guardada",
       "imp.next"          : "Siguiente",
       "imp.role.hw"       : "Grafía",

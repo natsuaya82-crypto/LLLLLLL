@@ -1221,6 +1221,7 @@ defLang('ko', (function(){
       "toast.deleted"    : "{0} 지웠어요",
       "card.title"        : "카드",
       "card.save"         : "공유",
+      "card.shape"         : "모양",
       "card.saved"        : "저장됨",
       "imp.next"          : "다음",
       "imp.role.hw"       : "철자",

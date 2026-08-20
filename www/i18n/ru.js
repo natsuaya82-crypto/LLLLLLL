@@ -1069,6 +1069,7 @@ defLang('ru', (function(){
       "toast.deleted"     : "{0} удалено",
       "card.title"        : "Карточка",
       "card.save"         : "Поделиться",
+      "card.shape"         : "Формат",
       "card.saved"        : "Сохранено",
       "imp.next"          : "Далее",
       "imp.role.hw"       : "Написание",

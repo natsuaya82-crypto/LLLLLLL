@@ -1048,6 +1048,7 @@ defLang('it', (function(){
       "toast.deleted"    : "{0} eliminata",
       "card.title"        : "Scheda",
       "card.save"         : "Condividi",
+      "card.shape"         : "Formato",
       "card.saved"        : "Salvata",
       "imp.next"          : "Avanti",
       "imp.role.hw"       : "Grafia",

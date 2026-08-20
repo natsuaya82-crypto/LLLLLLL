@@ -960,6 +960,7 @@ defLang('en', (function(){
       'toast.deleted'   : "{0} deleted",
       'card.title'      : 'Card',
       'card.save'       : 'Share',
+      'card.shape'       : 'Shape',
       'card.saved'      : 'Saved',
       'imp.next'          : 'Next',
       'imp.role.hw'       : 'Spelling',

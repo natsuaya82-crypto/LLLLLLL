@@ -1588,13 +1588,25 @@ function inkCanvases(sel, floor, dflt, stOf){
    floats in the middle of nothing. A line of ink was drawn that way for one
    day and it showed. 「文字間おかしくね」
 
+   `h` and `dy` are the same answer asked downward, which is what a script
+   that runs down the page needs and what a vmtx would be written from. otf5
+   says so itself: one formula, whichever axis it is asked about. The card
+   asks for both; a line of ink only ever asks for the first two.
+
+   `x0`/`x1`/`y0`/`y1` are the ink's own corners, for a caller placing several
+   letters against one shared edge rather than each against its own.
+
    Null when the strokes ink nothing, which is a letter with no shape. */
 function inkAdv(st){
-  var cs, p, side=geStep()/2;
-  try{ cs=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return null; }
+  var cs, p, e, side=geStep()/2;
+  try{ cs=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(err){ return null; }
   p=LinguaFont.profile(cs);
   if(!(p.xMax>p.xMin)) return null;
-  return {w:LinguaFont.reach(p.xMin, p.xMax, side), dx:Math.round(side-p.xMin)};
+  e=LinguaFont.extent(cs);
+  return {w:LinguaFont.reach(p.xMin, p.xMax, side), dx:Math.round(side-p.xMin),
+          x0:p.xMin, x1:p.xMax,
+          h:LinguaFont.reach(e[0], e[1], side), dy:Math.round(side-e[0]),
+          y0:e[0], y1:e[1]};
 }
 /* A line of ink: letters standing beside each other. Not the same thing as a
    tile or a key, which are square cells and rightly so -- those go through

@@ -1051,6 +1051,7 @@ defLang('zh', (function(){
       "toast.deleted"    : "{0} 已删除",
       "card.title"        : "卡片",
       "card.save"         : "分享",
+      "card.shape"         : "尺寸",
       "card.saved"        : "已保存",
       "imp.next"          : "下一步",
       "imp.role.hw"       : "拼写",

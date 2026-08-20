@@ -1053,6 +1053,7 @@ defLang('pt', (function(){
       "toast.deleted"    : "{0} apagada",
       "card.title"        : "Cartão",
       "card.save"         : "Partilhar",
+      "card.shape"         : "Formato",
       "card.saved"        : "Guardado",
       "imp.next"          : "Seguinte",
       "imp.role.hw"       : "Grafia",

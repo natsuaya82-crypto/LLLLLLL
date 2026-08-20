@@ -205,6 +205,7 @@ act('tkBack', tkBack);
 act('tkClear', tkClear);
 act('cardOpen', cardOpen);
 act('cardSave', cardSave);
+act('cardSetShape', cardSetShape);
 act('tkSend', tkSend);
 act('tkWipe', tkWipe);
 act('wRelToggle', wRelToggle);

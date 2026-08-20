@@ -962,6 +962,7 @@ defLang('ja', (function(){
       'toast.deleted'   : '{0} を消しました',
       'card.title'      : 'カード',
       'card.save'       : '共有',
+      'card.shape'       : 'かたち',
       'card.saved'      : '保存',
       'imp.next'          : '次へ',
       'imp.role.hw'       : 'つづり',
