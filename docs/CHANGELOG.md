@@ -15,6 +15,57 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A reading is chosen off sounds, and no letter appears where one is chosen
+
+The word sheet carried a row of tiles under the box a word is typed into: one
+tile per letter, and pressing one opened a page that drew that letter big and
+offered the sounds it could read here. Two things were wrong with it and they
+are the same thing. A tile is a LETTER, and the alphabet already joins a sound
+to a letter — having both directions of that table in the app at once is what
+made it unreadable 「音から文字と文字から音で二重になるから困る」. And a reading
+cannot be typed: θ is on nobody's keyboard, and a sound you cannot hear is not
+a sound.
+
+So the sheet has one row — 読みの変更, with the reading on it — and it opens a
+page that is sounds and nothing else: the language's own first, then the whole
+of the IPA grouped by how each sound is made, with a search that matches those
+words (「摩擦」 finds θ) and a back arrow that drops the last one. Every press
+says the sound out loud.
+
+**Data.** Nothing new is stored and nothing is dropped. A word still carries
+`sp` — which letter is in each position and what it says there — and what is
+typed on the page is cut into sounds and handed to those positions in order:
+sounds left over after the last position join it (one letter reading two
+sounds is ordinary), positions left over after the last sound fall silent (a
+silent letter is ordinary too). The letters of a word are still changed only
+by typing the word.
+
+`spPageHTML`, `spRowHTML`, `spOdd`, `wdSetU`, `wdDropAt` and `wdBack` are
+gone. `tools/shot.mjs` takes `--paid`, because this page is the paid plan's
+and every picture until now was of the free one.
+
+`buttons pressed` rises 7102 → 7884: a hundred and sixty tiles on a page the
+fixture holds two faces of. The tiles that came off — the letter row on the
+sheet, and the page for one position of a word — are in that number too, as a
+fall the rise swallowed.
+
+### The plans are the first row of settings
+
+Settings → プラン opened a room holding a single row, which said the plan's
+name and went to the plans page. On a dark phone that is a black screen with
+one line at the top of it. The room is gone; the row is the first thing in
+settings and goes straight to the plans. 「プランを設定の中に入れると課金導線が
+カスだから一番上置くとか」 `set.plan.cur` is dropped from all ten languages.
+
+### 基本形, not 元の語
+
+Wording only, in all ten interface languages. The key does not move.
+
+### The spelling box is in the person's own letters
+
+It held the letters' names — a to z — and drew them in roman, which is what
+those names look like and not what the word looks like.
+
 ### Deleting a word puts you back where you were, not on its page
 
 Delete a word and the screen behind you was the word's own page, which then

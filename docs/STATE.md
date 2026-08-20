@@ -140,12 +140,14 @@ under `lingua.sess`.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is ten checks and is the specification. `CLAUDE.md` → "The ten rules
-the gate enforces".
+`npm test` is fourteen checks and is the specification. `CLAUDE.md` → "The
+fourteen rules the gate enforces". It is minutes, not seconds: about two on a
+laptop, six to ten in a slow container.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv` and `press` run only
+passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`, `post`,
+`backup` and `press` run only
 where somebody runs them, which means locally, which means you.
 
 `npm run rls` is not in `npm test` at all: it stands up a real PostgreSQL.
@@ -213,7 +215,7 @@ assuming a thing is waiting for you.
     later. Two seconds would have.
 11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
-    grep cannot tell. `i18n-check` already renders 324 screens in 10 languages;
+    grep cannot tell. `i18n-check` already renders 377 screens in 10 languages;
     recording what `t()` was asked for would say it properly. It has to be a
     report, not a failure: a toast on an error is real and unwalked.
 12. **Two questions about screens, open since before the keyboard work.**
@@ -249,7 +251,7 @@ assuming a thing is waiting for you.
 2. Read `CLAUDE.md` end to end. It is the specification, not an overview, and
    every rule in it is a bug that already shipped once.
 3. Run `npm test` before touching anything, so you know what green looks like
-   here. It prints counts — `screens walked: 224`, `screens the mirror
-   rendered: 324`, `buttons pressed: 3636` — and a change meant to alter
+   here. It prints counts — `screens walked: 338`, `screens the mirror
+   rendered: 377`, `buttons pressed: 7884` — and a change meant to alter
    nothing has to leave them where they are.
 4. If what you are about to do is in §3, you are starting it, not continuing it.

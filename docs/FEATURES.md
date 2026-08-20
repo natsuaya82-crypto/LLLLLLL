@@ -41,6 +41,7 @@ Marked separately, because they are not the same question:
 | One screen for making and editing a word | shipped | yes | — | none | decided |
 | A word is read before it is edited | shipped | yes | — | none | decided |
 | Sound inventory, per letter | shipped | letter's own reading only | `snd`: choose a different one | slice `snd` | decided |
+| A word read as something other than its letters (連音化 and the like) | shipped | no | `snd`: the reading page — the language's sounds and the whole IPA, grouped by how each is made, searched by those words, said out loud on every press | slice `words` (`sp[i].u`) | decided — it is sounds and only sounds; a letter never appears on it 「音から文字と文字から音で二重になるから困る」 |
 | Writing system | shipped | alphabet only | `wsys`: syllabary, abjad, abugida, logography | `SET.wsys`, slice `script` | decided |
 | Grammar stages | shipped | the fifteen there are | `gram`: your own | slice `phases` | decided |
 | Notebook | shipped | yes | — | slice `notes` | decided |
