@@ -205,17 +205,21 @@ function wdSetLn(v){
   var r=document.getElementById('wd-rd');
   if(r) r.textContent=phIpa(wEdit.seq);
 }
-/* The row of tiles: the word as its letters, one press to the sound that
-   letter has in this word. Paid only, and only once something is typed --
-   an empty row is a control for a thing that does not exist yet.
+/* The reading, and the way to change it. It is proposed -- the letters of
+   the word say what it reads, and that is the answer until somebody says
+   otherwise -- so this screen states it and goes somewhere else to change it.
 
-   No reading under it any more. It said 読み and then the IPA, which is
-   what the head of the sheet already says directly under the field: the
-   same value, twice, four lines apart. */
+   The tiles used to be here. A tile is a LETTER, and picking a letter in
+   order to pick a sound is the two directions of the same table on one
+   screen: the alphabet already joins a sound to a letter, and this joined a
+   letter to a sound four lines under the box the word is typed into.
+   「音から文字と文字から音で二重になるから困る」 */
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
   if(!sp.length) return '';
-  return spRowHTML(sp, 'spell');
+  return '<button class="set"' + DO('go', ["spell"]) + '>'+
+    '<span class="sl">'+esc(t('word.sp'))+'</span>'+
+    '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }
@@ -984,8 +988,18 @@ function spPageHTML(sp, setU, drop){
       t('word.sp.del')+'</button>'+
     '</div></div>';
 }
+/* Two faces, and which one is the route's argument. With none, the reading
+   of the whole word and every position of it; with one, that position. */
 function vSpell(){
-  return spPageHTML((wEdit&&wEdit.sp)||[], 'wdSetU', 'wdDropAt');
+  var sp=(wEdit&&wEdit.sp)||[];
+  if(here().a===undefined || here().a===null || here().a==='')
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
+        esc(spWord(sp))+'</span></div>'+
+      '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
+      spRowHTML(sp, 'spell')+
+      '</div></div>';
+  return spPageHTML(sp, 'wdSetU', 'wdDropAt');
 }
 function wdSetU(i, u){
   if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;
