@@ -108,6 +108,25 @@ const R = await pg.evaluate(() => {
     out.fails.push('renamed to ' + now + ', and its page does not say so: ' +
                    JSON.stringify(seen.slice(0, 80)));
 
+  /* ---- a word deleted from its own page ---------------------------------
+     Same three steps, ending in Delete. The word is gone, so its page cannot
+     be where you are put back down -- the trail has to lose it as well. */
+  start();
+  openWord('tira');
+  openEdit('tira');
+  window.confirm = function(){ return true; };
+  delWord();
+  out.said.push('a word deleted from its own page leaves you on ' +
+                JSON.stringify(here()));
+  if (here().r === 'form' && String(here().a).indexOf('tira') >= 0)
+    out.fails.push('deleted tira, and the screen behind is ' +
+                   JSON.stringify(here()) + ' -- the trail still names it');
+  /* Not "the screen does not say tira" -- tiran and tirara both contain it.
+     What must not be there is the screen that says the thing you asked for
+     has gone, which is what you got by being put back down on its page. */
+  if (screen().indexOf(t('form.gone')) >= 0)
+    out.fails.push('deleted tira, and you were put down on "that is no longer here"');
+
   return out;
 });
 

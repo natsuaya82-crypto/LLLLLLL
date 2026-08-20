@@ -131,6 +131,16 @@ function navRename(a, to){
   var i;
   for(i=0;i<NAV.length;i++) if(NAV[i].r==='form' && NAV[i].a===a) NAV[i].a=to;
 }
+/* And a name can stop being anything at all. A form whose argument names a
+   thing that has been deleted is not a screen to be put back down on, so it
+   comes out of the trail entirely -- every occurrence, because you can reach
+   one word from another and be standing on it twice. */
+function navDrop(a){
+  var out=[], i;
+  for(i=0;i<NAV.length;i++) if(!(NAV[i].r==='form' && NAV[i].a===a)) out.push(NAV[i]);
+  NAV=out.length? out : [{r:'words'}];
+  route=here().r;
+}
 /* A tab is not somewhere you came through, it is where you are. Tapping one
    throws the trail away rather than stacking three tabs on top of it. */
 /* Leaving the search tab for a chapter of the build tab: two moves, and the

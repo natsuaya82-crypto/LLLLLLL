@@ -1063,7 +1063,13 @@ function delWord(){
     });
   });
   LINES=LINES.filter(function(l){ return l.ws.indexOf(gone)<0; });
-  save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.deleted', gone));
+  save();
+  /* Not closeSheet(): that steps back one, onto the deleted word's own page,
+     which then has nothing to show. Both of its screens come off the trail,
+     so you are put back down wherever you were before you opened it -- the
+     dictionary, or the word you reached it from. */
+  navDrop('edit:'+gone); navDrop('word:'+gone);
+  cands=[]; render(); toast(t('toast.deleted', gone));
 }
 
 /* The CSV header stays English in every locale, so a file written on one

@@ -15,6 +15,24 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Deleting a word puts you back where you were, not on its page
+
+Delete a word and the screen behind you was the word's own page, which then
+had nothing to show: "that is no longer here". True, and not a place to be
+put down on. Both of the deleted word's screens come off the trail now, so you
+land wherever you were before you opened it — the dictionary, or the word you
+reached it from.
+
+`navDrop()` in `shell.js`, beside `navRename()`. `delWord()` no longer calls
+`closeSheet()`, which steps back exactly one and so stepped onto the page that
+had just been emptied.
+
+Nothing stored changes: the word was already being deleted correctly, along
+with everything pointing at it.
+
+`word-check` holds it, and was watched failing both ways with the old
+`closeSheet()` put back.
+
 ### Renaming a word no longer strands you on "that is no longer here"
 
 Open a word, press 編集, change one letter of the spelling, Save — and the
