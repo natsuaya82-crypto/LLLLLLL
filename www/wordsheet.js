@@ -648,12 +648,13 @@ function tagCut(v){
   for(i=0;i<a.length;i++){ x=a[i].replace(/^\s+|\s+$/g,''); if(x && out.indexOf(x)<0) out.push(x); }
   return out;
 }
-/* A day, written the one way that says the same thing in ten languages.
-   It is stamped in milliseconds and shown to the day: a word does not need
-   to know it was changed at 14:25. */
-function wDay(ms){
+/* When, written the one way that says the same thing in ten languages.
+   To the minute: a dictionary is built over months and the order two words
+   were made in on the same afternoon is part of how it grew. */
+function wWhen(ms){
   var d=new Date(ms||0), p=function(n){ return (n<10?'0':'')+n; };
-  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+
+         ' '+p(d.getHours())+':'+p(d.getMinutes());
 }
 /* Part of speech, register, form: three things chosen off a list, and all
    three were a `<select>`, which on a phone is a wheel that slides up from the
@@ -904,8 +905,11 @@ function wdViewHTML(){
     /* When it was made, and when it last moved -- and the second only when it
        is a different day from the first, because "made today, changed today"
        is one fact written twice. */
-    '<div class="wsub2" style="margin-top:18px">'+esc(t('word.made', wDay(w.at))+
-      ((w.up && wDay(w.up)!==wDay(w.at))? '  \u00b7  '+t('word.up', wDay(w.up)) : ''))+'</div>';
+    /* Made, and last changed. Both, always -- the second used to be dropped
+       on the day the word was made, on the grounds that "made today, changed
+       today" is one fact written twice. To the minute it is two. */
+    '<div class="wsub2" style="margin-top:18px">'+esc(t('word.made', wWhen(w.at)))+'</div>'+
+    '<div class="wsub2">'+esc(t('word.up', wWhen(w.up||w.at)))+'</div>';
 }
 function openWord(hw){
   var w=findWord(hw); if(!w) return;

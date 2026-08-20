@@ -15,6 +15,21 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A word says when it was made and when it last changed, to the minute
+
+「作成日時間は残す、編集日、時間も」
+
+Two changes to the foot of a word page. It was stamped to the day, and the
+changed line was dropped whenever the word had been changed on the day it was
+made — "made today, changed today" being one fact written twice. To the minute
+it is two facts, and a dictionary is built over months where the order two
+words were made in on the same afternoon is part of how it grew. Both lines
+are drawn now, always.
+
+Nothing stored changes: `at` and `up` were already milliseconds, and `up` is
+already stamped by `wdPutExtras()` on every save. A word made before this and
+never edited shows the two the same, which is what happened.
+
 ### The card is reached by the share mark
 
 「その、謎の四角の右上のマーク何？」「それは共有マークにしてよわかりにくい」
