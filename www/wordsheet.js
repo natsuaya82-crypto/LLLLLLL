@@ -844,23 +844,40 @@ function wdFamSort(kids){
   }
   return out;
 }
+/* One word of the family: what it is called, the word, what it means. A row
+   and not a card -- these were the notices row, which is a framed box with
+   the word on one line and the meaning under it, and four of them stacked
+   made the middle of a word page look like something to be worked on rather
+   than something to read. 「その四角で加工系やめない？」 Pressing it opens that
+   word, which is the whole reason the family is here. */
 function wdFamRowHTML(x, fm){
-  return '<button class="ntrow"' + DO('openWord', [x.hw]) + '>'+
-    '<span class="nth">'+(fm? '<span class="wfm">'+esc(fmLabel(fm))+'</span>' : '')+
-      esc(wOut(x.hw))+'</span>'+
-    '<span class="ntb">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
+  return '<button class="famrow"' + DO('openWord', [x.hw]) + '>'+
+    (fm? '<span class="famf">'+esc(fmLabel(fm))+'</span>' : '')+
+    '<span class="famw">'+esc(wOut(x.hw))+'</span>'+
+    '<span class="famm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
+}
+/* Those of a family that are inflections, those that are derivations, and
+   those wearing no label at all -- which are neither, because a word with a
+   parent and nothing said about it has not been told which it is, and saying
+   so here would be the app deciding. */
+function wdFamOf(kids, g){
+  return kids.filter(function(k){ return fmGroup(k.fm||'')===g; });
+}
+function wdFamGroupHTML(label, list, labelled){
+  if(!list.length) return '';
+  return (label? '<div class="famg">'+esc(label)+'</div>' : '')+
+    list.map(function(x){ return wdFamRowHTML(x, labelled? (x.fm||'') : ''); }).join('');
 }
 function wdFamHTML(w){
   var par=wParent(w), root=par||w, kids;
   kids=wdFamSort(wKids(root).filter(function(x){ return x!==w; }));
   if(!par && !kids.length) return '';
-  return (par? '<button class="ntrow"' + DO('openWord', [par.hw]) + '>'+
-            '<span class="nth">'+(w.fm? t('word.fromf', esc(wOut(par.hw)), esc(fmLabel(w.fm)))
-                                     : t('word.from', esc(wOut(par.hw))))+'</span>'+
-            (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
-    (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
-        return wdFamRowHTML(k, k.fm||'');
-      }).join('')+'</div>' : '');
+  return '<div class="famlist">'+
+    (par? wdFamGroupHTML(t('word.root'), [par], false) : '')+
+    wdFamGroupHTML(t('word.fm.inf'), wdFamOf(kids,'i'), true)+
+    wdFamGroupHTML(t('word.fm.der'), wdFamOf(kids,'d'), true)+
+    wdFamGroupHTML('',               wdFamOf(kids,''),  true)+
+    '</div>';
 }
 /* Whether the head of the word page is showing something other than the
    spelling -- a font of the person's own, or a script standing in for one. */

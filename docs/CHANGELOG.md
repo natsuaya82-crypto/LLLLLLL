@@ -15,6 +15,24 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The family is rows under a heading, not a stack of cards
+
+「その四角で加工系やめない？」
+
+The related words on a word page were the notices row — a framed box with the
+word on one line and its meaning under it. Four of them stacked made the middle
+of a word page look like a pile of things to be worked on rather than a thing
+to read. They are plain rows now, one line each: what the form is called, the
+word, what it means, with the whole row pressable and opening that word.
+
+They are grouped: the parent under 元の語, then 活用, then 派生, then anything
+carrying no label at all — which gets no heading, because a word with a parent
+and nothing said about it has not been told which of the two it is, and
+sorting it into one would be the app deciding.
+
+`word.from` becomes `word.root` (a heading now, not a sentence) and
+`word.fromf` is gone with the row that said it. Nothing stored changes.
+
 ### A word says when it was made and when it last changed, to the minute
 
 「作成日時間は残す、編集日、時間も」
