@@ -213,7 +213,7 @@ defLang('zh', (function(){
       "kb.reset"               : "重新开始",
       "kb.pat" : "哪个键盘",
       "kb.pat.set" : "排列",
-      "kb.pat.q" : "更改排列会清空这个键盘：键上的内容全部消失。你的文字和其他键盘不受影响。",
+      "kb.pat.q" : "键上的内容全部消失。",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 加一行数字",
       "kb.pat.flick" : "滑动",

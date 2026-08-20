@@ -205,7 +205,7 @@ defLang('it', (function(){
       "kb.reset"               : "Ricomincia",
       "kb.pat" : "Quale tastiera",
       "kb.pat.set" : "Disposizione",
-      "kb.pat.q" : "Cambiare la disposizione svuota questa tastiera: tutto ciò che è sui tasti va perso. Le tue lettere e le altre tastiere restano.",
+      "kb.pat.q" : "Tutto ciò che è sui tasti va perso.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 e una riga di cifre",
       "kb.pat.flick" : "Scorrimento",

@@ -384,7 +384,7 @@ defLang('ko', (function(){
       "kb.reset"               : "처음부터 다시",
       "kb.pat" : "어떤 키보드",
       "kb.pat.set" : "배열",
-      "kb.pat.q" : "배열을 바꾸면 이 키보드는 비워집니다: 키에 넣은 것이 모두 사라집니다. 문자와 다른 키보드는 그대로입니다.",
+      "kb.pat.q" : "키에 넣은 것이 모두 사라집니다.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 과 숫자 줄",
       "kb.pat.flick" : "플릭",

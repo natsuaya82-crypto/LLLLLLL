@@ -193,7 +193,7 @@ defLang('de', (function(){
       "kb.reset"               : "Neu anfangen",
       "kb.pat" : "Welche Tastatur",
       "kb.pat.set" : "Anordnung",
-      "kb.pat.q" : "Die Anordnung zu ändern leert diese Tastatur: alles auf ihren Tasten geht verloren. Deine Zeichen und die anderen Tastaturen bleiben.",
+      "kb.pat.q" : "Alles auf den Tasten geht verloren.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 und eine Ziffernreihe",
       "kb.pat.flick" : "Wischen",

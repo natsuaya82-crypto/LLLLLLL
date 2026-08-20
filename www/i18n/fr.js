@@ -253,7 +253,7 @@ defLang('fr', (function(){
       "kb.reset"               : "Recommencer",
       "kb.pat" : "Quel clavier",
       "kb.pat.set" : "Disposition",
-      "kb.pat.q" : "Changer la disposition vide ce clavier : tout ce qui est sur ses touches disparaît. Vos lettres et les autres claviers restent.",
+      "kb.pat.q" : "Tout ce qui est sur ses touches disparaît.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 et une rangée de chiffres",
       "kb.pat.flick" : "Glissé",

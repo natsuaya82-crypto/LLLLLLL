@@ -165,7 +165,7 @@ defLang('es', (function(){
       "kb.reset"               : "Empezar de nuevo",
       "kb.pat" : "Qué teclado",
       "kb.pat.set" : "Disposición",
-      "kb.pat.q" : "Cambiar la disposición vacía este teclado: se pierde todo lo que hay en sus teclas. Tus letras y los demás teclados se quedan.",
+      "kb.pat.q" : "Se pierde todo lo que hay en sus teclas.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 y una fila de dígitos",
       "kb.pat.flick" : "Deslizamiento",
