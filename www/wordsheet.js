@@ -226,12 +226,35 @@ function spWords(sym){
 function spHit(sym){
   return !spQ || spWords(sym).toLowerCase().indexOf(spQ.toLowerCase())!==-1;
 }
-function spTilesHTML(list, own){
+function spTilesHTML(head, list){
+  var mine=addedSnd();
   var out=list.filter(spHit).map(function(sym){
-    return '<button class="phk'+(own?' own':'')+'"' + DO('spAdd', [sym]) + '>'+
-      '<span class="pks">'+esc(sym)+'</span></button>';
+    return '<button class="phk'+(mine.indexOf(sym)>=0? ' own':'')+'"' +
+      DO('spAdd', [sym]) + '><span class="pks">'+esc(sym)+'</span></button>';
   }).join('');
-  return out? '<div class="phkeys">'+out+'</div>' : '';
+  return out? (head? '<div class="sec">'+esc(head)+'</div>' : '')+
+    '<div class="phkeys">'+out+'</div>' : '';
+}
+/* A hundred and sixty tiles in one field is a chart with the chart taken out
+   of it. They are grouped the way the symbols themselves are grouped: how the
+   consonant is made, then the vowels, then what fits neither -- and the list
+   of manners is read off IPA_CONS rather than written out here, so a manner
+   added to the chart is a heading on this page the same day. */
+function spManners(){
+  var out=[], i;
+  for(i=0;i<IPA_CONS.length;i++)
+    if(out.indexOf(IPA_CONS[i].m)<0) out.push(IPA_CONS[i].m);
+  return out;
+}
+function spOfManner(m){
+  return IPA_CONS.filter(function(c){ return c.m===m; }).map(function(c){ return c.s; });
+}
+function spAllHTML(){
+  return spManners().map(function(m){
+    return spTilesHTML(t('ipa.m.'+m), spOfManner(m));
+  }).join('')+
+  spTilesHTML(t('ipa.vows'), IPA_VOWS.map(function(v){ return v.s; }))+
+  spTilesHTML(t('ipa.other'), IPA_OTHER.map(function(o){ return o.s; }));
 }
 /* Appended to the reading, and said. The positions of the word do not move:
    wdSetRd hands the sounds back to them in order. */
@@ -243,8 +266,7 @@ function spDrop(){
   us.pop(); wdSetRd(us.join(''));
 }
 function vSpell(){
-  var sp=(wEdit&&wEdit.sp)||[], mine=addedSnd(), rest=ipaAll().filter(function(x){
-    return mine.indexOf(x)<0; });
+  var sp=(wEdit&&wEdit.sp)||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
       esc(spWord(sp))+'</span>'+
@@ -255,8 +277,8 @@ function vSpell(){
       '<input id="sp-q" value="'+esc(spQ)+'"' + IN('spSetQ') + '>'+
       '<button class="sx"' + DO('spDrop') + (sp.length?'':' hidden')+
       ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
-    spTilesHTML(mine, true)+
-    spTilesHTML(rest, false)+
+    spTilesHTML(t('ipa.mine'), addedSnd())+
+    spAllHTML()+
     '</div></div>';
 }
 var wdMode='';
