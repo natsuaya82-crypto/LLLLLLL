@@ -428,6 +428,52 @@ function vvMount(){
   }
   window.addEventListener('resize', vvFit, false);
 }
+/* ---- going back without reaching for the corner -------------------------
+   The way back is a button in the top-left corner, which on a phone held in
+   one hand is the one place a thumb cannot get to. Every screen keeps it --
+   this is a second way to the same thing, not a replacement.
+   「全部戻るボタンじゃなくて携帯の右からスライドして戻るのも追加してほしい。両方」
+
+   From the RIGHT edge, dragged left. Which edge is the phone's own habit and
+   not ours to argue with, and the one that was asked for is this one.
+
+   Three things it must not do. It must not fire on a drawing: the glyph
+   editor is a canvas that goes to the edge of the screen and a stroke ending
+   there is a stroke, not a gesture. It must not fire while a key is being
+   carried, which is a drag of its own. And it must not fire on something that
+   scrolls sideways -- a row of tabs, a grid being reordered -- so the gesture
+   has to be mostly horizontal AND start within a thumb's width of the edge.
+
+   pointer* and not touch*: this app is one webview and pointer events are
+   what it has. Passive, because it never prevents the default -- a gesture
+   that cancels a scroll it has decided against is worse than no gesture. */
+var swX=0, swY=0, swOn=false;
+function swStart(e){
+  swOn=false;
+  if(!e.isPrimary) return;
+  if(here().r==='glyph' || kbWob) return;
+  var t=e.target;
+  while(t && t!==document.body){
+    var n=t.nodeName;
+    if(n==='CANVAS' || n==='INPUT' || n==='TEXTAREA') return;
+    t=t.parentNode;
+  }
+  if(e.clientX < window.innerWidth-30) return;
+  swX=e.clientX; swY=e.clientY; swOn=true;
+}
+function swEnd(e){
+  if(!swOn) return;
+  swOn=false;
+  var dx=e.clientX-swX, dy=e.clientY-swY;
+  if(dx > -70) return;
+  if(Math.abs(dy) > Math.abs(dx)*0.6) return;
+  back();
+}
+function swMount(){
+  document.addEventListener('pointerdown', swStart, {passive:true});
+  document.addEventListener('pointerup', swEnd, {passive:true});
+  document.addEventListener('pointercancel', function(){ swOn=false; }, {passive:true});
+}
 /* And the bar is put on the page here, once, into an element beside #app that
    render() never rewrites. Writing it into each screen's HTML meant it was
    thrown away and built again -- blur and all -- on every navigation, which

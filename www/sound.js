@@ -202,10 +202,34 @@ function sndStart(){
    in rather than assumed. Nothing else about the chart changes. */
 /* Into the language, or out of it, with no letter involved. Taking one out
    goes through sndDrop() so the refusal is in one place. */
+/* A sound joins the language, and a letter to write it with joins the
+   alphabet in the same breath. 「音を増やしたら必然的に文字も増やすわけでしょ？」
+
+   The letter arrives with the sound on it and nothing else -- no name, no
+   shape -- so the alphabet gains a cell that says what it reads and is
+   waiting to be drawn. That is the state the alphabet page already draws: a
+   pencil where the shape goes, a dot where the name goes, and the reading
+   under it.
+
+   Paid only, because adding a letter is `letters` and the free plan's
+   alphabet is exactly a to z, the two marks and the digits -- a twenty-ninth
+   slot there would be a letter with no key on a keyboard that cannot change.
+   Nothing on this path is reachable on free: the inventory is Plus's page.
+
+   Dropping a sound does NOT drop the letter. A letter is a thing somebody
+   may have drawn on, and sndDrop already refuses while any letter reads the
+   sound -- so the way out is to say what that letter reads instead, on the
+   letter, which is where that has always been said. */
 function sndTake(sym){
   if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
   SND=asOrder(addedSnd().concat([sym]));
-  saveSnd(); sayOne(sym); openSndAdd();
+  saveSnd();
+  if(can('letters') && !sndLetters(sym).length){
+    var l=ltNew({});
+    l.snd=[sym]; l.chose=1;
+    saveLetters(); installScriptFont();
+  }
+  sayOne(sym); openSndAdd();
 }
 /* ---- what a letter reads ----------------------------------------------
    There was a chapter here: the language's inventory on one page, its
@@ -596,12 +620,20 @@ function vLtset(){
    without being wrong. The sentence saying which reading is taken is on the
    letter's own page: there is no room for a sentence in a cell, and no reason
    to say it in both places. */
+/* A cell says three things and used to say two: the shape, the name, and what
+   the letter READS. The reading was a page away, so an alphabet was a wall of
+   names with no way to see which sound each of them was for -- and on a
+   language that has taken a sound nobody has drawn yet, the cell for it is a
+   reading with no name and no shape at all. 「この文字のページにzとかの横に
+   読み方書いといて」 */
 function ltCell(l, press){
-  var nm=ltName(l)||t('lt.reads.none');
+  var nm=ltName(l)||'', rd=ltUnits(l), sa;
+  sa=nm || (rd.length? phIpa(rd) : t('lt.reads.none'));
   return '<button class="ltc'+(ltTaken(l)? ' dup':'')+'" data-id="'+esc(l.id)+'"'+
-    (press || DO('go', ["letter", l.id])) + ' aria-label="'+esc(nm)+'">'+
+    (press || DO('go', ["letter", l.id])) + ' aria-label="'+esc(sa)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
-    '<span class="ltcn">'+esc(nm)+'</span></button>';
+    '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
+    '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span></button>';
 }
 
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,
@@ -677,6 +709,14 @@ function vLetter(){
         : ltUnits(l).length
           ? (ltHasSound(l)? '/'+esc(l.snd.join('/'))+'/' : esc(l.snd.join(' ')))
           : esc(t('lt.reads.none')))+'</span>'+ICON_GO+'</button>'+
+    /* What the letter MEANS, for the writing systems where it means something.
+       A logography's letter is a word, and a word has a sense that no sound
+       and no name can carry; a syllabary's letter may be a name somebody
+       wants to remember. It is free text and the app never reads it -- it is
+       the person's note about their own letter.
+       「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
+    '<div class="sec">'+t('lt.note')+'</div>'+
+    lnField('lt-nt', '', IN('ltSetNote', [lid]), l.nt||'', 'ntin')+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+

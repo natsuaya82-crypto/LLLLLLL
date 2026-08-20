@@ -496,6 +496,7 @@ defLang('zh', (function(){
       "lt.addsnd"        : "读音",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "字母",
+      "lt.note" : "备注",
       "lt.snd.h"       : "读音",
       "lt.title"     : "字母",
       "lt.reads.ph"     : "k, sh, ng, ka",

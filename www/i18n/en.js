@@ -391,6 +391,7 @@ defLang('en', (function(){
       'lt.addsnd'       : 'Reading',
       'lt.reads.none'   : '—',
       'lt.ab.h' : "Letter",
+      'lt.note' : "Note",
       'lt.snd.h'      : 'Sound',
       'lt.title'     : 'Letter',
       'lt.reads.ph'     : 'k, sh, ng, ka',

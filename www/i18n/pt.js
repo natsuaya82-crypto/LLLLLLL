@@ -495,6 +495,7 @@ defLang('pt', (function(){
       "lt.addsnd"        : "Leitura",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "Letra",
+      "lt.note" : "Nota",
       "lt.snd.h"       : "Som",
       "lt.title"     : "Letra",
       "lt.reads.ph"     : "k, sh, ng, ka",

@@ -488,6 +488,7 @@ defLang('it', (function(){
       "lt.addsnd"        : "Lettura",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "Lettera",
+      "lt.note" : "Nota",
       "lt.snd.h"       : "Suono",
       "lt.title"     : "Lettera",
       "lt.reads.ph"     : "k, sh, ng, ka",

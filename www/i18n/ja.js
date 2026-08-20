@@ -404,6 +404,7 @@ defLang('ja', (function(){
       'lt.addsnd'       : '読みの設定',
       'lt.reads.none'   : '—',
       'lt.ab.h' : "アルファベット",
+      'lt.note' : "メモ",
       'lt.snd.h'      : '音',
       'lt.title'     : '文字',
       'lt.reads.ph'     : 'k, sh, ng, ka',

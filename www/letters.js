@@ -534,6 +534,13 @@ function migrateSndName(){
   }
   if(moved) saveLetters();
 }
+/* A person's note about one of their own letters. Written down as it is
+   typed, like every other field on the sheet; the app never reads it. */
+function ltSetNote(id, v){
+  var l=ltById(id); if(!l) return;
+  if(String(v||'').length) l.nt=String(v); else delete l.nt;
+  saveLetters();
+}
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
   if(/^[0-9]+$/.test(String(sp||'').trim())){

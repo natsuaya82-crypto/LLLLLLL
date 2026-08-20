@@ -234,6 +234,7 @@ actIn('pwSetPic', pwSetPic);
 actIn('pwMarkSize', pwMarkSize);
 actIn('pwMarkText', pwMarkText);
 actIn('ltDraftName', ltDraftName);
+actIn('ltSetNote', ltSetNote);
 actIn('obLang', obLang);
 actIn('obMailSet', obMailSet);
 actIn('fSetQ', fSetQ);

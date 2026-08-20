@@ -715,7 +715,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the finger does not scroll away from it. */
 .ltgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-top:2px}
 .ltgrid.moving{touch-action:none}
-.ltc{min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+.ltc{min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;
      gap:6px;padding:10px 4px 8px;background:var(--pane);border:1px solid var(--line);
      border-radius:14px;color:var(--tx);font-family:inherit}
 .ltc:active{border-color:var(--goldln)}
@@ -726,6 +726,11 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .ltcn{display:block;font-family:'Cinzel',Georgia,serif;font-size:.95rem;color:var(--txs);
       max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ltc.dup .ltcn{color:var(--bad)}
+/* What it reads, under what it is called. Empty for a letter that reads
+   nothing, and it keeps its line either way so a grid of cells does not go
+   ragged as sounds are given out. */
+.ltcr{display:block;min-height:1em;font-size:.72rem;color:var(--txm);
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* The same cell, as something to pick rather than to browse. A word is
    spelled by pressing letters one after another, so what matters is how many
    fit on a screen and how far the thumb travels -- not how well each one is
