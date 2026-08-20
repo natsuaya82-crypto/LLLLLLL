@@ -15,6 +15,25 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### 編集 is where a bar puts a button
+
+「単語ページはタップしたら、詳細情報がまとまってる綺麗なページ。右上の編集押したら
+今の編集画面に飛べるスタイルにしたい」
+
+The word page was already the read page — it has been since 「開いた時は閲覧、編集
+ボタンで編集」 — but its 編集 was a bar fixed across the FOOT of the screen, which
+is what a screen you WRITE on does with its Save. Reading a word and writing one
+looked the same from the thumb up. 編集 is now `openForm()`'s fifth argument, so
+it sits in the top bar beside the word's name, and the read page ends where the
+word ends.
+
+Nothing else on the page moved, and nothing about a word changed.
+
+Both walks were harvesting `FORM.html` and not the bar, so `act-check` reported
+`openEdit` as an entry no screen names and `press` never pressed it — the
+composer's Post button had been in the same blind spot since the day it was put
+there. Both take `FORM.right` now: 193/193 names pressed, 6430 buttons.
+
 ### A keyboard cannot swallow the phone — OWNER DECISION
 
 「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズくらいまでにしな

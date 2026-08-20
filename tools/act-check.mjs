@@ -254,10 +254,15 @@ const R = await pg.evaluate(() => {
     ['openPick',      () => openPick('m')],
     ['openImport',    () => openImport()]
   ];
+  /* A form's bar is part of the form. openForm()'s fifth argument is what
+     navTop() draws in the corner, so a button that lives there -- the
+     composer's Post, the word page's Edit -- is named by that screen and by
+     nothing else, and harvesting FORM.html alone reported it as an entry no
+     screen names. */
   forms.forEach(([label, run]) => {
     try {
       run();
-      if (FORM && FORM.html) harvest(label, FORM.html);
+      if (FORM && FORM.html) harvest(label, FORM.html + (FORM.right || ''));
     } catch (e) { out.threw.push(label + ': ' + e.message); }
   });
   try { closeSheet(); } catch (e) {}
@@ -266,7 +271,7 @@ const R = await pg.evaluate(() => {
     if (forms.some(f => f[0].split(' ')[0] === o)) return;
     try {
       window[o].length ? window[o]('kano') : window[o]();
-      if (FORM && FORM.html) harvest(o, FORM.html);
+      if (FORM && FORM.html) harvest(o, FORM.html + (FORM.right || ''));
     } catch (e) { out.threw.push(o + ': ' + e.message); }
   });
   try { closeSheet(); } catch (e) {}

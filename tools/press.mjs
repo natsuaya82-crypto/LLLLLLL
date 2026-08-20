@@ -274,14 +274,17 @@ const R = await pg.evaluate(async () => {
   });
 
   /* The forms, which are opened rather than routed to. They render into
-     FORM.html, so that is what goes on the page. */
+     FORM.html, and openForm()'s fifth argument into the bar -- the composer's
+     Post, the word page's Edit. A button in the bar is a button of that form
+     and of no other screen, so both halves go on the page. */
   opens.forEach(o => {
     screens.push({
       label: o,
       build: () => { window.__seed(); SET.done = true; SET.plan = 'plus';
                      window.route = 'words'; NAV = [{ r: 'words' }];
                      window[o].length ? window[o]('kano') : window[o]();
-                     show((typeof FORM !== 'undefined' && FORM && FORM.html) ? FORM.html : ''); }
+                     show((typeof FORM !== 'undefined' && FORM && FORM.html)
+                            ? FORM.html + (FORM.right || '') : ''); }
     });
   });
 

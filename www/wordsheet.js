@@ -619,6 +619,11 @@ function wdFormHTML(){
    you do with it most of the time, and it was the one thing this screen
    could not do. 「開いた時は閲覧、編集ボタンで編集」
 
+   The button is in the bar, top right, where openForm() puts one -- it was a
+   fixed bar across the foot, which is where a screen you WRITE on puts its
+   Save and is not what this screen is. 「右上の編集押したら今の編集
+   画面に飛べるスタイルにしたい」
+
    Nothing empty is drawn. A word with no examples has no examples heading:
    on the sheet a heading over nothing is where you put one, and here it is
    just a word about a thing that is not there. */
@@ -679,15 +684,14 @@ function wdViewHTML(){
        is a different day from the first, because "made today, changed today"
        is one fact written twice. */
     '<div class="wsub2" style="margin-top:18px">'+esc(t('word.made', wDay(w.at))+
-      ((w.up && wDay(w.up)!==wDay(w.at))? '  \u00b7  '+t('word.up', wDay(w.up)) : ''))+'</div>'+
-    '<div class="barfix"><button class="btn"' + DO('openEdit', [w.hw]) + '>'+
-      t('word.edit')+'</button></div>';
+      ((w.up && wDay(w.up)!==wDay(w.at))? '  \u00b7  '+t('word.up', wDay(w.up)) : ''))+'</div>';
 }
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
-           function(){ geTiles(); });
+           function(){ geTiles(); },
+           '<button class="navdo"' + DO('openEdit', [w.hw]) + '>'+t('word.edit')+'</button>');
 }
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
