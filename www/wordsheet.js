@@ -583,32 +583,28 @@ function fmNew(hw, g){
   if(!txt){ toast(t('toast.hw2')); return; }
   fmPick(hw, g+'~'+txt);
 }
-/* What a label is FOR, behind the mark that is what the mark is for.
+/* What a label is FOR, said as a pop rather than as a page.
    「これ全部横に？つけてどういう役割なのかたとえば英語とか言語で説明できるように
-   して」 -- a row of grammar words is a row of grammar words, and the person
-   drawing an alphabet for a language they invented is not obliged to know
-   what a causative is. One line and one example, in the interface language,
-   where nobody has to read it to use the screen.
+   して」「⭕️？にして少し小さめでポップとして出してほしい。で、文字の横に置いて」
+
+   A row of grammar words is a row of grammar words, and somebody drawing an
+   alphabet for a language they invented is not obliged to know what a
+   causative is. One line and one example -- 誰かにやらせる形 · 見る → 見させる
+   -- and it is gone again, because nobody chose to read a page.
+
+   The mark is beside the word it is about rather than off at the edge, which
+   is why the label does not stretch to fill the row.
 
    Only on the ones we supply. A label somebody wrote themselves is theirs,
    and the app has nothing to say about what it means. */
-function fmHelpOf(f){
-  return function(){
-    return {t:fmLabel(f), h:
-      '<div class="note">'+esc(t('word.fm.'+f+'.d'))+'</div>'+
-      '<div class="sec">'+t('word.fm.ex')+'</div>'+
-      '<div class="note">'+esc(t('word.fm.'+f+'.e'))+'</div>'};
-  };
+function fmSay(f){
+  if(!f || fmOwn(f)) return;
+  toast(t('word.fm.'+f+'.d')+' \u00b7 '+t('word.fm.'+f+'.e'));
 }
-function fmHelpAll(){
-  var all=FM_INF.concat(FM_DER), i;
-  for(i=0;i<all.length;i++) HELP['fm.'+all[i]]=fmHelpOf(all[i]);
-}
-fmHelpAll();
 function fmQ(f){
   if(!f || fmOwn(f)) return '';
-  return '<button class="rowq"' + DO('openHelp', ['fm.'+f]) +
-    ' aria-label="'+esc(t('help.q'))+'">?</button>';
+  return '<button class="rowq"' + DO('fmSay', [f]) +
+    ' aria-label="'+esc(t('help.q'))+'"><span class="qo">?</span></button>';
 }
 function fmRowHTML(hw, f, on){
   /* `one` because a label is one line where a word is two: an entry sized by
@@ -617,7 +613,8 @@ function fmRowHTML(hw, f, on){
   return '<div class="entry one'+(on?' on':'')+'">'+
     '<button class="ebody"' + DO('fmPick', [hw, f]) + '>'+
     '<div class="hwrow"><span class="hw">'+esc(fmLabel(f)||t('word.fm.non'))+'</span></div>'+
-    '</button>'+fmQ(f)+'<span class="ltck">'+(on? ICON_TICK : '')+'</span></div>';
+    '</button>'+fmQ(f)+'<span class="ltck" style="margin-left:auto">'+
+    (on? ICON_TICK : '')+'</span></div>';
 }
 function fmGroupHTML(hw, g, now){
   var list=(g==='i'? FM_INF : FM_DER).concat(fmMine(g));

@@ -978,7 +978,6 @@ defLang('fr', (function(){
       "word.fm.vrb.e"        : "noir → noircir",
       "word.fm.adv.d"        : "Devenu un mot de manière",
       "word.fm.adv.e"        : "heureux → heureusement",
-      "word.fm.ex"        : "Exemple",
       "word.fm.inf"        : "Flexion",
       "word.fm.der"        : "Dérivation",
       "word.fm.non"        : "Aucune",

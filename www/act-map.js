@@ -254,6 +254,7 @@ actIn('wdSetPos', wdSetPos);
 actIn('wdSetReg', wdSetReg);
 act('fmPick', fmPick);
 act('fmNew', fmNew);
+act('fmSay', fmSay);
 actIn('wdSetTags', wdSetTags);
 actIn('wdSetEty', wdSetEty);
 

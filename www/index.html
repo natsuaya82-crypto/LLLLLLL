@@ -897,9 +897,14 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .ebody{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;color:inherit;font-family:inherit}
 .ebody:active{opacity:.55}
 .entry.one .ebody{min-height:44px;display:flex;align-items:center}
-.rowq{flex:0 0 auto;width:44px;height:44px;background:none;border:0;color:var(--txm);
-  font-size:.95rem;font-family:inherit}
+.rowq{flex:0 0 auto;width:44px;height:44px;background:none;border:0;padding:0;
+  display:flex;align-items:center;justify-content:center;font-family:inherit}
+.rowq .qo{width:19px;height:19px;border-radius:50%;border:1px solid var(--goldln);
+  display:flex;align-items:center;justify-content:center;color:var(--txm);font-size:.68rem}
 .rowq:active{opacity:.55}
+/* The label does not stretch: the mark belongs next to the word it is about,
+   not at the far side of the row. */
+.entry.one .ebody{flex:0 0 auto;min-width:44px}
 .eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
        display:inline-flex;align-items:center;justify-content:center}
 .eopen:active{color:var(--gold)}

@@ -1105,7 +1105,6 @@ defLang('ko', (function(){
       "word.fm.vrb.e"        : "검다 → 검어지다",
       "word.fm.adv.d"        : "어떻게를 나타내는 말로",
       "word.fm.adv.e"        : "빠르다 → 빠르게",
-      "word.fm.ex"        : "예",
       "word.fm.inf"        : "활용",
       "word.fm.der"        : "파생",
       "word.fm.non"        : "없음",

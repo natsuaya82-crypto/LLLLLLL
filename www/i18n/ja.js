@@ -846,7 +846,6 @@ defLang('ja', (function(){
       'word.fm.vrb.e'       : "黒 → 黒くする",
       'word.fm.adv.d'       : "どのようにを表す語にする",
       'word.fm.adv.e'       : "速い → 速く",
-      'word.fm.ex'       : "例",
       'word.fm.inf'       : "活用",
       'word.fm.der'       : "派生",
       'word.fm.non'       : "なし",

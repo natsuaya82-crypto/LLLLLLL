@@ -932,7 +932,6 @@ defLang('it', (function(){
       "word.fm.vrb.e"        : "nero → annerire",
       "word.fm.adv.d"        : "Reso parola di modo",
       "word.fm.adv.e"        : "rapido → rapidamente",
-      "word.fm.ex"        : "Esempio",
       "word.fm.inf"        : "Flessione",
       "word.fm.der"        : "Derivazione",
       "word.fm.non"        : "Nessuna",

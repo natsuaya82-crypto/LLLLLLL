@@ -890,10 +890,12 @@ for.
   it), twelve each — and **a language may write its own in either group**. A
   label somebody writes is kept as typed and never translated. The whole family
   is shown from every word in it, not only from the parent. Every label we
-  supply carries a `?` with one line and one example.
+  supply carries a small circled `?` beside the word itself, and it says one
+  line and one example as a pop rather than opening a page.
 - Reason: 「tirorがウォッチャーになるのって何系の派生？」「活用と派生も好きに保存
   できたらいいよね」「保存した瞬間そっちの単語でも活用とか見れる」「これ全部横に？
-  つけてどういう役割なのかたとえば英語とか言語で説明できるようにして」
+  つけてどういう役割なのかたとえば英語とか言語で説明できるようにして」「⭕️？にして
+  少し小さめでポップとして出してほしい。で、文字の横に置いて」
 - Affected features: the dictionary, the word sheet, the word read
 - Affected data: `fm` on a word — a code, or `i~`/`d~` and the person's own
   words, stored on the word and in no list of its own

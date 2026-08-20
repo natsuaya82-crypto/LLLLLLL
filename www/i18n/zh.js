@@ -935,7 +935,6 @@ defLang('zh', (function(){
       "word.fm.vrb.e"        : "黑 → 变黑",
       "word.fm.adv.d"        : "变成表方式的词",
       "word.fm.adv.e"        : "快 → 快地",
-      "word.fm.ex"        : "例子",
       "word.fm.inf"        : "屈折",
       "word.fm.der"        : "派生",
       "word.fm.non"        : "无",

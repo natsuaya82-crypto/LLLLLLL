@@ -40,10 +40,13 @@ migrate, nothing to delete.
 歩いた you could not reach 歩いている. The section is the parent's whole family
 now, on every word in it, and every row is a press. The heading is 関連語.
 
-**A `?` beside every label.** 「これ全部横に？つけてどういう役割なのか説明できる
-ようにして」 One line and one example, in the interface language, behind the
-mark — 使役形 / 誰かにやらせる形 / 見る → 見させる. On the ones we supply only:
-a label somebody wrote is theirs and the app has nothing to say about it.
+**A circled `?` beside every label.** 「これ全部横に？つけてどういう役割なのか説明
+できるようにして」「⭕️？にして少し小さめでポップとして出してほしい。で、文字の横に
+置いて」 One line and one example as a pop — 誰かにやらせる形 · 見る → 見させる —
+and gone again, rather than a page nobody chose to read. The mark sits beside
+the word it is about, not off at the edge of the row, so the label does not
+stretch. On the ones we supply only: a label somebody wrote is theirs and the
+app has nothing to say about it.
 
 Choosing is a screen (`fm`), not a wheel: two groups and a field to write your
 own is not something a `<select>` can be. The label is written onto the word as
@@ -56,7 +59,7 @@ codes.
 
 Free. It is text somebody typed, not a capability.
 
-510 screens, 6650 buttons, 195/195 names.
+507 screens, 6650 buttons, 196/196 names.
 
 ### A derived word says which form of its parent it is — OWNER DECISION
 

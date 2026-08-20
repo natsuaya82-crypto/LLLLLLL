@@ -844,7 +844,6 @@ defLang('en', (function(){
       'word.fm.vrb.e'       : "black → blacken",
       'word.fm.adv.d'       : "Turned into a how word",
       'word.fm.adv.e'       : "quick → quickly",
-      'word.fm.ex'       : "Example",
       'word.fm.inf'       : "Inflection",
       'word.fm.der'       : "Derivation",
       'word.fm.non'       : "None",

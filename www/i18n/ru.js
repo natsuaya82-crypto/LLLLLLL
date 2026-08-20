@@ -953,7 +953,6 @@ defLang('ru', (function(){
       "word.fm.vrb.e"         : "чёрный → чернеть",
       "word.fm.adv.d"         : "Превращено в слово-образ действия",
       "word.fm.adv.e"         : "быстрый → быстро",
-      "word.fm.ex"         : "Пример",
       "word.fm.inf"         : "Словоизменение",
       "word.fm.der"         : "Словообразование",
       "word.fm.non"         : "Нет",

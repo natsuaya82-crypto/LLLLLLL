@@ -919,7 +919,6 @@ defLang('de', (function(){
       "word.fm.vrb.e"        : "schwarz → schwärzen",
       "word.fm.adv.d"        : "Zu einem Wie-Wort gemacht",
       "word.fm.adv.e"        : "glücklich → glücklicherweise",
-      "word.fm.ex"        : "Beispiel",
       "word.fm.inf"        : "Flexion",
       "word.fm.der"        : "Ableitung",
       "word.fm.non"        : "Keine",

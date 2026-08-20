@@ -252,9 +252,6 @@ export function halfDone(){
        -- so the sheet kano is edited on never carries it, and the row would
        be walked by nothing. */
     ['a form being edited', () => { openEdit('tira'); return FORM.html; }],
-    /* One label explained. openHelp is walked with a stub key, which is no
-       page at all, so the mark beside a form is on nothing without this. */
-    ['what a form is for', () => { openHelp('fm.cau'); return FORM.html; }],
     /* And the other end: a word read with its forms under it. kano has no
        family, so the labelled rows are on no screen either without this. */
     ['a word and its forms', () => { openWord('tir'); return FORM.html; }],

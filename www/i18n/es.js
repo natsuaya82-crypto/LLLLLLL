@@ -890,7 +890,6 @@ defLang('es', (function(){
       "word.fm.vrb.e"        : "negro → ennegrecer",
       "word.fm.adv.d"        : "Convertido en palabra de modo",
       "word.fm.adv.e"        : "rápido → rápidamente",
-      "word.fm.ex"        : "Ejemplo",
       "word.fm.inf"        : "Flexión",
       "word.fm.der"        : "Derivación",
       "word.fm.non"        : "Ninguna",
