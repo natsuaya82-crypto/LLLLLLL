@@ -195,9 +195,8 @@ function wdSetLn(v){
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
   if(!sp.length) return '';
-  return '<button class="set"' + DO('go', ["spell"]) + '>'+
-    '<span class="sl">'+esc(t('word.sp'))+'</span>'+
-    '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
+  return '<div class="sec">'+esc(t('word.sp'))+'</div>'+
+    lnField('wd-rdln', '', IN('wdSetRd'), spPh(sp).join(''), 'whin');
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }
@@ -944,19 +943,6 @@ function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 function goPlans(){ closeSheet(); go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }
-/* The reading of a word, changed as a reading. */
-function vSpell(){
-  var sp=(wEdit&&wEdit.sp)||[];
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-      '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
-        esc(spWord(sp))+'</span></div>'+
-      /* The reading, and nothing else on the page. It was the word, then the
-         reading, then a field holding the reading, then a row for each sound
-         in it -- the same fact four times, three of them not editable.
-         「tiraって文字なら全部一気に変えれるようにしようよ」 */
-      lnField('wd-rdln', '', IN('wdSetRd'), spPh(sp).join(''), 'whin')+
-      '</div></div>';
-}
 /* A reading typed whole, given back to the positions that make it up.
 
    The sounds are cut out of what was typed and handed along in order, one to

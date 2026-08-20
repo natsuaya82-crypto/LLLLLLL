@@ -296,8 +296,6 @@ export function halfDone(){
     /* And what it says out loud, once, on the day that happens. capLapse()
        only fires on a plan that changed, and nothing in a walk changes one. */
     ['the plan has ended', () => { openCapLapse(); return FORM.html; }],
-    ['the word being spelled', () => { openEdit('kano'); window.route='spell';
-                                       NAV=[{r:'spell'}]; return vSpell(); }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
                                        SET.wsys='abugida'; abVow = 'a';
                                        const h = vAbugida(); SET.wsys=''; return h; }],
@@ -350,8 +348,7 @@ export function halfDone(){
        can('snd') buys. All three still have to be walked, so all three flip
        the plan and put it back. */
     /* Derived from a word that already exists, so the sheet opens with a
-       spelling in it -- the row of letter tiles is the only door to the page
-       for one position of it, and an empty sheet has no tiles. */
+       spelling in it -- an empty sheet has no reading to change. */
     ['the new word sheet, by sound', () => { SET.plan = 'plus'; openAdd('kano');
                                              const h = FORM.html; addFrom = '';
                                              SET.plan = 'free'; return h; }],
@@ -761,10 +758,6 @@ export function halfDone(){
     ['a word being written',   () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
                                        wdSync(); SUG=[['k','a'],['t','i']];
                                        return wdFormHTML()+vForm(); }],
-    ['a word being spelled again', () => { openEdit('kano'); window.route='spell';
-                                           NAV=[{r:'spell'}];
-                                           wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           return vSpell(); }],
     ['a word with a sentence in it', () => { findWord('kano').ex=[{ln:'kano tir', gl:'sees it'}];
                                              openEdit('kano');
                                              const h=wdFormHTML();
@@ -791,14 +784,6 @@ export function halfDone(){
     ['words being suggested for a slot', () => { openSlot('greet','yes');
                                                  stSug=[['k','a'],['t','i']];
                                                  return FORM.html.replace(/$/, stSugHTML()); }],
-    ['one position of a word',   () => { openEdit('kano');
-                                          wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                          window.route='spell'; NAV=[{r:'spell', a:'0'}];
-                                          return vSpell(); }],
-    ['one position of a new word', () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           wdSync();
-                                           window.route='spell'; NAV=[{r:'spell', a:'0'}];
-                                           return vSpell(); }],
     ['the sound keyboard in a word', () => { SET.plan='plus'; openEdit('kano'); wdMode='ph';
                                              const h=wdFormHTML(); wdMode=''; SET.plan='free'; return h; }],
     ['the sound keyboard in a new word', () => { SET.plan='plus'; openAdd(); wdMode='ph';

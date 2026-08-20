@@ -174,7 +174,6 @@ var PAGES={
   pos:     {tab:'build', k:'f.pos'},
   reg:     {tab:'build', k:'word.reg'},
   follows: {tab:'profile'},
-  spell:   {tab:'build', k:'word.sp'},
   glyph:   {tab:'build'},
   words:   {tab:'build', k:'toc.words'},
   gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */

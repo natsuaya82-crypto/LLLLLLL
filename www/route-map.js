@@ -60,7 +60,6 @@ page('fm',       vFm);
 page('pos',      vPos);
 page('reg',      vReg);
 page('follows',  vFollows);
-page('spell',    vSpell);
 page('glyph',    vGlyph);
 page('words',    vWords);
 page('gram',     vGram);

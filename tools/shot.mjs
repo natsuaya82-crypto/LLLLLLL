@@ -61,6 +61,7 @@ const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
 const argv = process.argv.slice(2);
 const all = argv.indexOf('--all') >= 0;
 const dark = argv.indexOf('--dark') >= 0;
+const paid = argv.indexOf('--paid') >= 0;
 const li = argv.indexOf('--lang');
 const uiLang = li >= 0 ? argv[li + 1] : 'en';
 /* everything that is not a flag, and not the word after --lang. li is -1 when
@@ -99,9 +100,10 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
    property on a string and the faces silently never happened. act-check and
    press already did it this way. */
 await pg.evaluate('window.OB_STATES = (' + obStates.toString() + ')()');
-await pg.evaluate(({ s, ui, dk }) => {
+await pg.evaluate(({ s, ui, dk, pd }) => {
   eval('(' + s + ')()');           /* the fixture, run inside the page */
   SET.done = true;                 /* past the onboarding, unless it is what was asked for */
+  if (pd) SET.plan = 'plus';       /* --paid: the faces the free plan does not show */
   SET.ui = ui;
   SET.theme = dk ? 'dark' : 'light';
   /* SET.theme is what is stored; applyTheme() is what puts data-theme on the
@@ -109,7 +111,7 @@ await pg.evaluate(({ s, ui, dk }) => {
      light theme with --dark on the command line, and the picture looked
      perfectly fine -- which is how it would have gone unnoticed. */
   if (typeof applyTheme === 'function') applyTheme();
-}, { s: seed.toString(), ui: uiLang, dk: dark });
+}, { s: seed.toString(), ui: uiLang, dk: dark, pd: paid });
 
 /* Every route the app has, and every argument each one takes, asked of the
    page rather than listed here -- so a screen added tomorrow can be
