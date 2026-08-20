@@ -693,7 +693,6 @@ defLang('en', (function(){
       'set.name'        : "Name",
       'set.count'       : "Words",
       'set.plan'        : "Plan",
-      'set.plan.cur'    : "Current plan",
       'bk.off'            : "The app cannot reach the file store.",
       'bk.bad'            : "Not written: {0}",
       'bk.h'              : "On this phone",

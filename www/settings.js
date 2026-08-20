@@ -26,15 +26,23 @@ var SETS=[
   {id:'ui',    k:'set.display'},
   {id:'lang',  k:'set.lang'},
   {id:'acct',  k:'set.account'},
-  /* A room of its own, out of the account. An account is who you are and a
-     plan is what you may do, and the two are settled by different things.
-     「アカウント内にプラン入れるのやめてくんね？」 */
-  {id:'plan',  k:'set.plan'},
   {id:'data',  k:'set.data'}
 ];
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   return '<div class="view">'+navTop('')+'<div class="body">'+
+    /* The plans, first, and with no room in between. A plan is not one of
+       the questions this list asks -- it is the one page in the app that has
+       something to sell, and it sat behind a room of its own holding a single
+       row that said the plan's name and went to the plans page, so reaching
+       it meant crossing a page that was empty apart from the way out of it.
+       An account is who you are and a plan is what you may do, which is why
+       it is not in the account room 「アカウント内にプラン入れるのやめてくんね？」
+       -- that is an argument for it being its own thing, not for it being its
+       own room. 「プランを設定の中に入れると課金導線がカスだから一番上置くとか」 */
+    '<button class="set"' + DO('go', ["plans"]) + '>'+
+      '<span class="sl">'+esc(t('set.plan'))+'</span>'+
+      '<span class="sv">'+esc(p? p.name : 'Free')+ICON_GO+'</span></button>'+
     SETS.map(function(x){
       return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
@@ -50,7 +58,6 @@ function setSummary(id, p){
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
   if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
-  if(id==='plan')  return p? p.name : 'Free';
   if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
@@ -142,12 +149,6 @@ function vSet(){
          not, so it says so and asks. */
       '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
-  } else if(id==='plan'){
-    /* One row, and it is the door to the plans. What a plan IS belongs on the
-       plans page; this says which one and goes there. */
-    return '<button class="set" style="border-bottom:none"' + DO('go', ["plans"]) + '>'+
-      '<span class="sl">'+t('set.plan.cur')+'</span>'+
-      '<span class="sv">'+esc(p?p.name:'Free')+ICON_GO+'</span></button>';
   } else if(id==='data'){
     /* What is on the disk, for everybody. Keeping a language is not a paid
        feature -- charging for not losing somebody's work would mean

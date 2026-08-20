@@ -784,7 +784,6 @@ defLang('it', (function(){
       "set.name"         : "Nome",
       "set.count"        : "Parole",
       "set.plan"         : "Piano",
-      "set.plan.cur"     : "Piano attuale",
       "bk.off"           : "L'app non raggiunge l'archivio file.",
       "bk.bad"           : "Non scritto: {0}",
       "bk.h"             : "Su questo telefono",

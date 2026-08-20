@@ -830,7 +830,6 @@ defLang('fr', (function(){
       "set.name"         : "Nom",
       "set.count"        : "Mots",
       "set.plan"         : "Formule",
-      "set.plan.cur"     : "Formule actuelle",
       "bk.off"           : "L'app n'atteint pas le stockage de fichiers.",
       "bk.bad"           : "Non écrit : {0}",
       "bk.h"             : "Sur ce téléphone",

@@ -789,7 +789,6 @@ defLang('pt', (function(){
       "set.name"         : "Nome",
       "set.count"        : "Palavras",
       "set.plan"         : "Plano",
-      "set.plan.cur"     : "Plano atual",
       "bk.off"           : "O app não consegue acessar o armazenamento.",
       "bk.bad"           : "Não gravado: {0}",
       "bk.h"             : "Neste telefone",

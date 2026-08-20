@@ -742,7 +742,6 @@ defLang('es', (function(){
       "set.name"         : "Nombre",
       "set.count"        : "Palabras",
       "set.plan"         : "Plan",
-      "set.plan.cur"     : "Plan actual",
       "bk.off"           : "La app no puede acceder al almacén de archivos.",
       "bk.bad"           : "No escrito: {0}",
       "bk.h"             : "En este teléfono",

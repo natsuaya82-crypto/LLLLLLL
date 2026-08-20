@@ -957,7 +957,6 @@ defLang('ko', (function(){
       "set.name"         : "이름",
       "set.count"        : "낱말 수",
       "set.plan"         : "요금제",
-      "set.plan.cur"     : "현재 요금제",
       "bk.off"           : "앱이 파일 저장소에 접근하지 못했습니다.",
       "bk.bad"           : "기록되지 않음: {0}",
       "bk.h"             : "이 기기 안",

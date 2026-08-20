@@ -771,7 +771,6 @@ defLang('de', (function(){
       "set.name"         : "Name",
       "set.count"        : "Wörter",
       "set.plan"         : "Tarif",
-      "set.plan.cur"     : "Aktueller Tarif",
       "bk.off"           : "Die App erreicht den Dateispeicher nicht.",
       "bk.bad"           : "Nicht geschrieben: {0}",
       "bk.h"             : "Auf diesem Telefon",

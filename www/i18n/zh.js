@@ -787,7 +787,6 @@ defLang('zh', (function(){
       "set.name"         : "名字",
       "set.count"        : "词数",
       "set.plan"         : "方案",
-      "set.plan.cur"     : "当前方案",
       "bk.off"           : "应用无法访问文件存储。",
       "bk.bad"           : "未写入：{0}",
       "bk.h"             : "在这台手机上",

@@ -698,7 +698,6 @@ defLang('ja', (function(){
       'set.name'        : '言語名',
       'set.count'       : '単語数',
       'set.plan'        : 'プラン',
-      'set.plan.cur'    : '現在のプラン',
       'bk.off'            : "ファイルの保存先に届いていません。",
       'bk.bad'            : "書けていません：{0}",
       'bk.h'              : "この端末の中",
