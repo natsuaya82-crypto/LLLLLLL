@@ -227,7 +227,8 @@ function wdMnsHTML(){
   return '<div class="mnlist">'+rows+'</div>'+
     '<div class="mnadd"><input id="wd-mn" aria-label="'+esc(t('word.means'))+'" '+
       '' + KD('wdAddMn') + '>'+
-    '<button class="btn ghost"' + DO('wdAddMn') + '>'+t('word.mn.add')+'</button></div>';
+    '<button class="btn ghost"' + DO('wdAddMn') + ' aria-label="'+esc(t('word.mn.add'))+
+      '">'+ICON_ADD+'</button></div>';
 }
 /* ---- what a dictionary entry still had not got ------------------------
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
@@ -373,7 +374,8 @@ function wdExHTML(){
       lnField('wd-exl', exHint(), '', '')+
       '<input id="wd-exg" aria-label="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('wdAddEx') + '>'+
-      '<button class="btn ghost"' + DO('wdAddEx') + '>'+t('word.mn.add')+'</button>'+
+      '<button class="btn ghost"' + DO('wdAddEx') + ' aria-label="'+esc(t('word.mn.add'))+
+        '">'+ICON_ADD+'</button>'+
     '</div>';
 }
 function wdAddEx(){
@@ -411,8 +413,8 @@ function vRelate(){
     '<div class="row2"><div class="field"><input id="rel-hw" placeholder="'+
       esc(t('f.spelling'))+'" autocapitalize="none" autocorrect="off" spellcheck="false"></div>'+
     '<div class="field"><input id="rel-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div></div>'+
-    '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') + '>'+
-      t('add.btn')+'</button>'+
+    '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') +
+      ' aria-label="'+esc(t('add.btn'))+'">'+ICON_ADD+'</button>'+
     (list.length
       ? list.map(function(x){
           var has=on.indexOf(x.hw)>=0;
@@ -623,7 +625,8 @@ function fmGroupHTML(hw, g, now){
     '<div class="row2" style="margin-top:8px"><div class="field">'+
       '<input id="fm-'+g+'" aria-label="'+esc(t('word.fm.own'))+
       '" autocapitalize="none" autocorrect="off"></div>'+
-    '<button class="btn ghost"' + DO('fmNew', [hw, g]) + '>'+t('add.btn')+'</button></div>';
+    '<button class="btn ghost"' + DO('fmNew', [hw, g]) + ' aria-label="'+esc(t('add.btn'))+
+      '">'+ICON_ADD+'</button></div>';
 }
 function vFm(){
   var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;

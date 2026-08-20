@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The button beside a field is a `+`
+
+「追加とかそういう日本語はなるべく消したいのよ。+とか編集は仕方ないにしても」
+
+Six buttons that sat next to a field and said 追加 are the `+` mark now: a
+meaning, an example, an example on a grammar stage, a stage of somebody's own,
+a word made inside the synonym picker, and a form label of your own. The word
+survives as the `aria-label`, so nothing is lost to anybody who cannot see it.
+
+`.btn` is 44 across at its narrowest now. A button whose whole word became a
+`+` is as wide as the `+`, which on the narrower of two columns came to 38.
+
+Still words, and not touched: the new-word sheet's own Add at the foot, and
+the ones that name what is being added — 文字の追加, メモの追加, 子音の追加,
+キーボードを追加, 項目の追加.
+
 ### 活用 and 派生 are two different things, and a language may add its own — OWNER DECISION
 
 「tirorがウォッチャーになるのって何系の派生？」 It is not a form of `tir` at all

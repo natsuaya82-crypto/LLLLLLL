@@ -312,7 +312,8 @@ function openOwnPhase(){
       '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
-    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') + '>'+t('stg.own.add')+'</button>');
+    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') +
+      ' aria-label="'+esc(t('stg.own.add'))+'">'+ICON_ADD+'</button>');
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
 function stAddOwn(){
@@ -378,7 +379,8 @@ function stExHTML(id){
       lnField('sx-ln', exHint(), '', '')+
       '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
         '' + KD('stAddEx', [id]) + '>'+
-      '<button class="btn ghost"' + DO('stAddEx', [id]) + '>'+t('word.mn.add')+'</button>'+
+      '<button class="btn ghost"' + DO('stAddEx', [id]) + ' aria-label="'+esc(t('word.mn.add'))+
+        '">'+ICON_ADD+'</button>'+
     '</div>';
 }
 
