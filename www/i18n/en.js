@@ -107,7 +107,7 @@ defLang('en', (function(){
       "kb.reset"               : "Start over",
       "kb.pat" : "Which keyboard",
       'kb.pat.set' : "Arrangement",
-      'kb.pat.q' : "Everything on its keys goes.",
+      'kb.pat.q' : "Changing the arrangement deletes the letters and keys set on this keyboard.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 and a row of digits",
       "kb.pat.flick" : "Flick",

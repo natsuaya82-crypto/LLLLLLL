@@ -121,7 +121,7 @@ defLang('ja', (function(){
       "kb.reset"               : "最初から組み直す",
       "kb.pat" : "どのキーボード",
       'kb.pat.set' : "配列",
-      'kb.pat.q' : "キーに入れたものは全部消えます。",
+      'kb.pat.q' : "配列を変えると、現在のキーボードで設定した文字やキーは削除されます。",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 と数字の段",
       "kb.pat.flick" : "フリック",

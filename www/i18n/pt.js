@@ -212,7 +212,7 @@ defLang('pt', (function(){
       "kb.reset"               : "Recomeçar",
       "kb.pat" : "Qual teclado",
       "kb.pat.set" : "Disposição",
-      "kb.pat.q" : "Tudo o que está nas teclas se perde.",
+      "kb.pat.q" : "Mudar a disposição apaga as letras e teclas definidas neste teclado.",
       "kb.pat.qwerty" : "QWERTY",
       "kb.pat.qwerty.d" : "10 / 9 / 7 e uma linha de dígitos",
       "kb.pat.flick" : "Deslize",
