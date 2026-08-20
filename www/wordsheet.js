@@ -69,7 +69,7 @@ var addW=null;
    position it holds. The new-word sheet and the editor show the same row of
    the same thing -- they differ in which list it is, where a tap goes and
    what undo is called, and in nothing else. */
-function spRowHTML(sp, route, back, id){
+function spRowHTML(sp, route){
   var i, l, out='';
   for(i=0;i<sp.length;i++){
     l=ltById(sp[i].l);
@@ -78,8 +78,7 @@ function spRowHTML(sp, route, back, id){
       '<span class="spu">'+esc(spUnit(sp[i]))+'</span></button>';
   }
   return '<div class="spellrow">'+(out||'<span class="spnone">'+esc(t('word.sp.none'))+'</span>')+
-    '<button class="seqdel"'+(id? ' id="'+id+'"' : '') + DO(back) + (sp.length?'':' disabled')+
-    ' aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>';
+    '</div>';
 }
 /* ---- the sheet a word is written on --------------------------------------
    One sheet, whether the word exists yet or not. 「作成編集それぞれ同じ画面で」
@@ -216,7 +215,7 @@ function wdSetLn(v){
 function wdSeqHTML(){
   var sp=wEdit.sp||[];
   if(!sp.length) return '';
-  return spRowHTML(sp, 'spell', 'wdBack', '');
+  return spRowHTML(sp, 'spell');
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }
@@ -963,10 +962,6 @@ function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 function goPlans(){ closeSheet(); go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }
-function wdBack(){
-  if(wEdit.sp && wEdit.sp.length) wEdit.sp.pop();
-  wdSync(); wdPaint();
-}
 /* One position of one word, and what it says there. The letter's own
    readings first, then every sound the language has, because a sound change
    is exactly the case where the letter's own readings are not enough.

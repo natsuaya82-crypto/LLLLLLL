@@ -213,7 +213,6 @@ act('wRelOff', wRelOff);
 act('wdMnOpen', wdMnOpen);
 act('wdExOpen', wdExOpen);
 act('stExOpen', stExOpen);
-act('wdBack', wdBack);
 act('wdDelEx', wdDelEx);
 act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
