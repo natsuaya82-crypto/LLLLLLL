@@ -863,6 +863,25 @@ for.
   invisible on build 57 and could not be reproduced here, so the row is a
   second entrance rather than a replacement
 
+### Decision
+- Date: 2026-08-20
+- Area: A word's derived words
+- Decision: A derived word carries **which form of its parent it is**, chosen
+  from a fixed list of labels the app supplies. The language does not declare
+  a paradigm, nothing obliges a word to have every form or any of them, and a
+  form built out of nothing like its parent is still just a word with a label.
+  The nine: 過去形 · 未来形 · 進行形 · 完了形 · 複数形 · 否定形 · 命令形 ·
+  受身形, and no label.
+- Reason: 「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほう
+  が良くない？」「ラベルはこっちで用意すればいいのでは」「型決めても英語みたいに
+  変わってる可能性もあるやん」
+- Affected features: the dictionary, the word sheet, the word read
+- Affected data: `fm` on a word — a code, never a label, deleted when empty and
+  when the parent goes
+- Affected docs: CHANGELOG, DATA_MODEL, FEATURES
+- Implementation status: implemented. `FM` and `fmLabel()` in
+  `www/wordsheet.js`; written by `wdPutExtras()`, which Save and Add both call
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

@@ -7,6 +7,22 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## `form:add:<parent>` arrived at cold shows "this is gone"
+
+`openAdd()` decides whether the draft is new by asking whether the route is
+already the one it is about to open, so arriving AT that route with no draft --
+`FORM_OPEN.add` rebuilding it after a reload -- takes the not-fresh branch,
+leaves `addW` and `wEdit` null, and `wdFormHTML()` throws into `vForm`'s catch.
+The screen says the form is gone.
+
+Nobody can reach it on a phone: the route is not persisted across a launch, and
+every way in from inside the app arrives with the draft already made. It is
+reachable from `tools/shot.mjs`, which is how it was found -- the add sheet
+cannot be photographed by name.
+
+Left alone because the fix is a behaviour change to how a draft is decided to
+be new, and that is its own commit rather than a passenger on the word forms.
+
 ## The face on `profile` does not follow the face on the phone
 
 `netMakeProfile()` writes `profile.av` once, when the account is made. Drawing

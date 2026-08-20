@@ -37,6 +37,7 @@ Marked separately, because they are not the same question:
 | A word's meanings, part of speech, family | shipped | yes | — | slice `words` | decided |
 | A word's synonyms, opposites, examples, note | shipped | yes | — | slice `words` | decided |
 | A word's register, fields, origin, changed-on | shipped | yes | — | slice `words` | decided |
+| Which form of its parent a derived word is | shipped | yes | — | slice `words` (`fm`) | decided |
 | One screen for making and editing a word | shipped | yes | — | none | decided |
 | A word is read before it is edited | shipped | yes | — | none | decided |
 | Sound inventory, per letter | shipped | letter's own reading only | `snd`: choose a different one | slice `snd` | decided |

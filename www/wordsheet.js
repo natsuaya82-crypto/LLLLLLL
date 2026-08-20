@@ -112,7 +112,7 @@ function openAdd(from){
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
-           mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
+           mns:[], pos:addPos, reg:'', fm:'', tags:[], ety:'', nt:''};
     wdSync();
   }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
@@ -487,6 +487,40 @@ function wdPaint(){
    name as one of the answers. 「文体のふつうってなんだよ」 */
 var REG=['','sp','wr','sl','po'];
 function regLabel(r){ return r? t('word.reg.'+r) : ''; }
+/* ---- what form of its parent a word is ---------------------------------
+   「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほうが
+   良くない？」
+
+   A derived word already sat under its parent -- what was missing is which
+   form it IS, so 歩く→歩いた and 歩く→歩く人 stood in one undifferentiated
+   pile. The label is on the LINK, not a paradigm the language declares:
+   「型決めても英語みたいに変わってる可能性もあるやん」 -- a form that is not
+   built out of its parent at all is still just a word with a label on it,
+   and nothing obliges a word to have every form or any of them.
+
+   Codes, never labels, for the same reason a register is a code: the
+   interface language changes under a word without changing the word. FM[0]
+   is the empty string -- a derived word that is not a form of anything is
+   most of them. The order here is the order the family is read in. */
+var FM=['','pst','fut','prg','prf','pl','neg','imp','pas'];
+function fmLabel(f){ return f? t('word.fm.'+f) : ''; }
+/* The form is a fact about a word's parent, so it is asked only of a word
+   that has one -- on the sheet a word is coined on, that is the parent it
+   was derived from; on the sheet it is edited on, the one it carries. */
+function wdFrom(){
+  var w;
+  if(addW) return addFrom||'';
+  w=findWord(openHw);
+  return (w && w.from)? String(w.from) : '';
+}
+function wdFmHTML(){
+  return '<div class="field"><select id="wd-fm"' + CH('wdSetFm') + '>'+
+    FM.map(function(f){
+      return '<option value="'+f+'"'+(f===(wEdit.fm||'')?' selected':'')+'>'+
+        esc(fmLabel(f))+'</option>'; }).join('')+
+    '</select></div>';
+}
+function wdSetFm(v){ wEdit.fm=v; }
 /* Fields are typed as one line and held as a list, because searching wants
    the list and typing wants the line. Empty pieces are dropped, so a
    trailing comma is not a field called nothing. */
@@ -579,6 +613,8 @@ function wdFormHTML(){
       POS.map(function(p){return '<option value="'+p+'"'+(p===wEdit.pos?' selected':'')+'>'+esc(posLabel(p))+'</option>';}).join('')+
     '</select></div>'+
 
+    (wdFrom()? '<div class="sec">'+t('word.fm')+'</div>'+wdFmHTML() : '')+
+
     '<div class="sec">'+t('word.reg')+'</div>'+
     wdRegHTML()+
 
@@ -638,15 +674,29 @@ function wdChipsHTML(w, k){
       (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
   }).join('')+'</div>' : '';
 }
+/* The family reads in the order the forms are listed, with everything that
+   is a form of nothing after them -- so the tenses of a verb are together
+   and in one order on every word, rather than in the order somebody happened
+   to coin them. Stable: two words of the same form keep the order they are
+   in, which is the order they were made. */
+function wdFamSort(kids){
+  var out=[], i, j;
+  for(i=0;i<FM.length;i++) for(j=0;j<kids.length;j++)
+    if(String(kids[j].fm||'')===FM[i] && FM[i]) out.push(kids[j]);
+  for(j=0;j<kids.length;j++) if(out.indexOf(kids[j])<0) out.push(kids[j]);
+  return out;
+}
 function wdFamHTML(w){
-  var kids=wKids(w), par=wParent(w);
+  var kids=wdFamSort(wKids(w)), par=wParent(w);
   if(!par && !kids.length) return '';
   return (par? '<button class="ntrow"' + DO('openWord', [par.hw]) + '>'+
-            '<span class="nth">'+t('word.from', esc(par.hw))+'</span>'+
+            '<span class="nth">'+(w.fm? t('word.fromf', esc(par.hw), esc(fmLabel(w.fm)))
+                                     : t('word.from', esc(par.hw)))+'</span>'+
             (wMn(par)? '<span class="ntb">'+esc(wMn(par))+'</span>':'')+'</button>' : '')+
     (kids.length? '<div class="ntlist" style="margin-top:8px">'+kids.map(function(k){
         return '<button class="ntrow"' + DO('openWord', [k.hw]) + '>'+
-          '<span class="nth">'+esc(k.hw)+'</span>'+
+          '<span class="nth">'+(k.fm? '<span class="wfm">'+esc(fmLabel(k.fm))+'</span>' : '')+
+            esc(k.hw)+'</span>'+
           '<span class="ntb">'+esc(wMn(k)||t('sent.nomean'))+'</span></button>';
       }).join('')+'</div>' : '');
 }
@@ -698,7 +748,8 @@ function openEdit(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
-         pos:w.pos, reg:w.reg||'', tags:(w.tags||[]).slice(), ety:w.ety||'', nt:w.nt||''};
+         pos:w.pos, reg:w.reg||'', fm:w.fm||'', tags:(w.tags||[]).slice(),
+         ety:w.ety||'', nt:w.nt||''};
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
            function(){ phkMount(); geTiles(); });
 }
@@ -775,6 +826,9 @@ function wdPutExtras(w){
   if(String(wEdit.nt||'').trim()) w.nt=String(wEdit.nt).trim(); else delete w.nt;
   if(String(wEdit.ety||'').trim()) w.ety=String(wEdit.ety).trim(); else delete w.ety;
   if(wEdit.reg) w.reg=wEdit.reg; else delete w.reg;
+  /* A form of nothing is not a form: a word with no parent cannot carry one,
+     and one that stops being derived stops being a past tense of anything. */
+  if(w.from && wEdit.fm) w.fm=wEdit.fm; else delete w.fm;
   if((wEdit.tags||[]).length) w.tags=wEdit.tags.slice(); else delete w.tags;
   w.up=Date.now();
 }

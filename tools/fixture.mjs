@@ -61,7 +61,15 @@ export function seed(){
     {hw:'mos',  ph:['m','o','s'],     mn:'tall',     mns:['tall'],     pos:'adj', at:3},
     {hw:'sar',  ph:['s','a','r'],     mn:'river',    mns:['river'],    pos:'n', at:4},
     {hw:'nak',  ph:['n','a','k'],     mn:'not',      mns:['not'],      pos:'part', slot:'neg.not', at:5},
-    {hw:'ke',   ph:['k','e'],         mn:'what',     mns:['what'],     pos:'pro',  slot:'ask.what', at:6}
+    {hw:'ke',   ph:['k','e'],         mn:'what',     mns:['what'],     pos:'pro',  slot:'ask.what', at:6},
+    /* Three words derived from `tir`, two of them a FORM of it and one of
+       them not, because that is the distinction the family list draws: a
+       past tense and a progressive read under their labels and in the order
+       FM lists, and the word for somebody who watches reads after them under
+       nothing. A family of unlabelled words proves neither half. */
+    {hw:'tira', ph:['t','i','r','a'],     mn:'saw',     mns:['saw'],     pos:'v', from:'tir', fm:'pst', at:7},
+    {hw:'tiran',ph:['t','i','r','a','n'], mn:'seeing',  mns:['seeing'],  pos:'v', from:'tir', fm:'prg', at:8},
+    {hw:'tiror',ph:['t','i','r','o','r'], mn:'watcher', mns:['watcher'], pos:'n', from:'tir', at:9}
   ];
   langName = 'Shango';
   /* The person's settings, back to what a fresh install has. A press that
@@ -234,6 +242,13 @@ export function halfDone(){
                                          const h = vFeed(); SESS = was; return h; }],
     ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
                                       return FORM.html; }],
+    /* Which form of its parent a word is, asked only of a word that HAS one
+       -- so the sheet kano is edited on never carries it, and the row would
+       be walked by nothing. */
+    ['a form being edited', () => { openEdit('tira'); return FORM.html; }],
+    /* And the other end: a word read with its forms under it. kano has no
+       family, so the labelled rows are on no screen either without this. */
+    ['a word and its forms', () => { openWord('tir'); return FORM.html; }],
     /* A word, read. It is what opening one gives you now -- the editor is
        behind the button at the foot of it. */
     ['a word, read', () => { const w = findWord('kano');

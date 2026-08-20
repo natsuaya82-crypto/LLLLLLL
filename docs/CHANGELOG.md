@@ -15,6 +15,45 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A derived word says which form of its parent it is — OWNER DECISION
+
+「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほうが良くない？」
+
+A word derived from another already sat under it. What was missing is WHICH
+form it is, so 歩く→歩いた and 歩く→歩く人 stood in one undifferentiated pile
+under 派生.
+
+**The label is on the link, not on the language.** The owner settled two things
+and they are the whole design: the labels are ours to supply
+（「ラベルはこっちで用意すればいいのでは」）, and no language declares a paradigm
+（「型決めても英語みたいに変わってる可能性もあるやん」）. So nothing obliges a
+word to have every form or any of them, and a form that looks nothing like its
+parent — go / went — is just a word with a label on it.
+
+Nine of them: 過去形 · 未来形 · 進行形 · 完了形 · 複数形 · 否定形 · 命令形 ·
+受身形, and no label at all, which is what most derived words are.
+
+**Newly stored:** `fm` on a word — a code out of `FM` in `www/wordsheet.js`,
+never a label, the same rule `reg` follows, so the interface language changes
+under a word without changing the word. Written by `wdPutExtras()`, which both
+Save and Add call, and deleted rather than stored empty. A word with no `from`
+cannot carry one: `fm` is a fact about a parent.
+
+**Migration: none.** The key is new and optional; every word that exists reads
+as a derived word with no label, which is what it is.
+
+**On screen.** The word page's 派生 reads in `FM` order with the labels at the
+head of each row and the unlabelled ones after them, and a derived word's own
+top row says 「tir の過去形」 instead of 「tir から派生」. The sheet asks for the
+form under 品詞, and only on a word that HAS a parent.
+
+`.wfm`, not `.ntf` — `.ntf` is the notices row and the label came out on its
+own line under a rule.
+
+The fixture grew three words derived from `tir` (two of them forms, one not,
+because that is the distinction the list draws) and two faces: a form being
+edited, and a word read with its forms under it. Counts moved with them.
+
 ### 編集 is where a bar puts a button
 
 「単語ページはタップしたら、詳細情報がまとまってる綺麗なページ。右上の編集押したら

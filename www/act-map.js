@@ -252,6 +252,7 @@ actIn('wdSetLn', wdSetLn);
 actIn('stSetLn', stSetLn);
 actIn('wdSetPos', wdSetPos);
 actIn('wdSetReg', wdSetReg);
+actIn('wdSetFm', wdSetFm);
 actIn('wdSetTags', wdSetTags);
 actIn('wdSetEty', wdSetEty);
 

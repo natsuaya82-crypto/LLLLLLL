@@ -68,7 +68,7 @@ Nothing prunes it and nothing ages it out.
 
 ```js
 { hw, sp[], mns[], mn, pos, at,
-  from?, syn[]?, ant[]?, ex[]?, nt?, reg?, tags[]?, ety?, up? }
+  from?, fm?, syn[]?, ant[]?, ex[]?, nt?, reg?, tags[]?, ety?, up? }
 ```
 
 `hw` is the headword and `sp` is the spelling as letters — **the spelling is
@@ -78,8 +78,16 @@ stale the day the letter's sound changed.
 
 An empty field is deleted rather than stored: a key that is always there and
 always blank ends up in every export and every backup. `wdPutExtras()` in
-`www/wordsheet.js` is the one place that writes `nt` / `ety` / `reg` / `tags` /
-`up`, called by both Save and Add.
+`www/wordsheet.js` is the one place that writes `nt` / `ety` / `reg` / `fm` /
+`tags` / `up`, called by both Save and Add.
+
+`from` is the word this one is derived from and `fm` is **which form of it** —
+a code out of `FM` in `www/wordsheet.js`, never a label, so the interface
+language changes under a word without changing the word. It is on the LINK and
+not a paradigm the language declares: a language does not say which forms it
+has, and a form built out of nothing like its parent is still just a word with
+a label on it. `fm` without `from` is not a state — `wdPutExtras()` deletes it
+when the parent goes.
 
 A word is **current data**. A card of a word follows the letters being redrawn,
 and that is correct.
