@@ -861,6 +861,9 @@ function wdFamHTML(w){
         return wdFamRowHTML(k, k.fm||'');
       }).join('')+'</div>' : '');
 }
+/* Whether the head of the word page is showing something other than the
+   spelling -- a font of the person's own, or a script standing in for one. */
+function wdRdShown(w){ return myFontOn() || wOut(w.hw)!==String(w.hw); }
 function wdViewHTML(){
   var w=findWord(openHw); if(!w) return viewGone();
   var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
@@ -869,6 +872,13 @@ function wdViewHTML(){
         ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_CARD+'</button></div>'+
+    /* Three lines, and they are three different questions:
+       the word in the letters somebody drew, how it is read, and how it
+       sounds. 「自作文字 / 読み / ipaもしくは音 じゃないの？」 The middle one is
+       drawn only when the top is not already it -- with no font of one's own
+       and no script on, `wOut` gives back the spelling itself, and printing it
+       twice says nothing. */
+    (wdRdShown(w)? '<div class="wrd">'+esc(w.hw)+'</div>' : '')+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
     /* What kind of word it is, and how it is said -- one line, because they
        are one question. An unmarked word says only its part of speech. */

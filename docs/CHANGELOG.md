@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A word says three things at the top, not two
+
+「自作文字 / 読み / ipaもしくは音 じゃないの？」
+
+The head of a word page showed the word and then its IPA, and the word itself
+was drawn in the letters somebody made — so the spelling, which is what a
+person actually types and what the whole dictionary is filed under, was
+nowhere on the page. Three lines now: the word in the drawn letters, the
+spelling under it, then the IPA and the speaker.
+
+The middle line is drawn only when the top line is not already it. With no
+font of one's own and no script standing in, `wOut()` gives the spelling back
+unchanged, and printing the same string twice says nothing.
+
+Nothing stored changes.
+
 ### One mark for sound, and it is a speaker
 
 「再生ボタンやめて全部スピーカーボタンに統一しよ」
