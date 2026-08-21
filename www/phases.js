@@ -421,7 +421,7 @@ function stListHTML(){
        made, and cannot throw it away from a plan that cannot make another. */
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
-          ICON_PLUS+t('stg.own.add.btn')+'</button>'
+          ICON_ADD+t('stg.own.add.btn')+'</button>'
       : '')+
     '';
 }

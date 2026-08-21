@@ -772,7 +772,7 @@ function fmrTodoHTML(w){
   var todo=fmrTodo(w);
   if(!todo.length) return '';
   return '<button class="btn ghost" style="width:100%;margin-top:10px"' +
-    DO('fmrAdd', [String(w.hw)]) + '>'+ICON_PLUS+
+    DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
     esc(tn('fmr.todo', todo.length))+'</button>';
 }
 
@@ -806,14 +806,14 @@ function vForms(){
           '<span class="wdrowm">'+esc(r.pos? posLabel(r.pos) : t('fmr.any'))+'</span></button>';
       }).join('')+'</div>' : '')+
     '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('fmrNew') + '>'+
-      ICON_PLUS+esc(t('fmr.new'))+'</button>'+
+      ICON_ADD+esc(t('fmr.new'))+'</button>'+
     /* And the whole point of writing them: the words they make. Only when
        there are some to make -- a button that does nothing when pressed is
        worse than no button, which is what the row on a word's page already
        says. */
     (fmrTodoAll().length
-      ? '<button class="btn" style="width:100%;margin-top:10px"' + DO('fmrAddAll') + '>'+
-          esc(tn('fmr.all', fmrTodoAll().length))+'</button>'
+      ? '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('fmrAddAll') + '>'+
+          ICON_ADD+esc(tn('fmr.all', fmrTodoAll().length))+'</button>'
       : '')+
     '</div></div>';
 }

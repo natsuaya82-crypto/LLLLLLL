@@ -695,7 +695,7 @@ defLang('zh', (function(){
       "fmr.ends" : "结尾是",
       "fmr.cons"         : "辅音",
       "fmr.del"          : "删除这条规则",
-      "fmr.all"          : "按这些规则造出 {0} 个词",
+      "fmr.all"           : "{0} 個の語",
       "fmr.todo"         : "补上还没有的 {0} 个形式",
       "fmr.made"         : "造了 {0} 个词",
       "count.words"      : "{0} 个词",

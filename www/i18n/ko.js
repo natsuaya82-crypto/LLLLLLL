@@ -866,7 +866,7 @@ defLang('ko', (function(){
       "fmr.ends" : "이것으로 끝날 때",
       "fmr.cons"         : "자음",
       "fmr.del"          : "이 규칙 지우기",
-      "fmr.all"          : "이 규칙으로 만들 수 있는 {0}개의 단어 만들기",
+      "fmr.all"           : "{0}개의 단어",
       "fmr.todo"         : "아직 없는 {0}개의 형태 만들기",
       "fmr.made"         : "{0}개의 낱말을 만들었습니다",
       "count.words"      : "낱말 {0}개",

@@ -493,9 +493,11 @@ var ICON_LINK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="
   'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M10 13.8a3.6 3.6 0 0 0 5.1 0l2.9-2.9a3.6 3.6 0 0 0-5.1-5.1l-1.3 1.3"/>'+
   '<path d="M14 10.2a3.6 3.6 0 0 0-5.1 0L6 13.1a3.6 3.6 0 0 0 5.1 5.1l1.3-1.3"/></svg>';
-/* An actual plus. ICON_PLUS above is a four-pointed star and always was: it
-   marks what the paid plan adds. Putting it on "one more consonant" would say
-   the sound costs money. */
+/* An actual plus, and it is what every button that ADDS one of something
+   wears. ICON_PLUS above is a four-pointed star: it marks what the paid plan
+   adds, and putting it on "one more consonant" would say the sound costs
+   money. The rules chapter wore the star on three buttons that only ever made
+   a word out of a word. 「基本追加は＋じゃないの？」「プラス統一したい」 */
 var ICON_ADD='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M12 5v14M5 12h14"/></svg>';
