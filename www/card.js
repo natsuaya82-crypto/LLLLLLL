@@ -44,8 +44,37 @@ var CARD={k:'w', v:'', sh:''};
 var CARD_SHAPES=[{k:'16:9', w:1920, h:1080},
                  {k:'1:1',  w:1440, h:1440},
                  {k:'9:16', w:1080, h:1920}];
+/* A word and an example are pages, and a page has one shape. Only a post is
+   offered the three: a post is a picture somebody puts on a timeline, and
+   which timeline decides what it is cropped to. A dictionary page asked
+   "sixteen by nine or square?" is a dictionary page that does not know what
+   it is. 1080 by 1350 is the tallest a picture goes in the body of a post on
+   the two timelines this will be put on. */
+var CARD_PAGE={w:1080, h:1350};
 /* The font's cell, in the units strokes are drawn in. */
 var CARD_CELL=800;
+
+/* Three things carry a share mark and they are not the same thing, so they do
+   not come out as the same picture.
+
+     w  a word          a specimen. The script as large as the card allows,
+                        and under it what a dictionary entry carries: the
+                        spelling, the reading, the part of speech, the meaning
+     x  an example      a LINE, not a letterform. Set smaller, because a
+                        sentence is read rather than looked at, and headed by
+                        the word it is an example of -- which is the word
+                        whose page the share mark was pressed on
+     p  a post          somebody's published line. It already says whose and
+                        in what, in the foot, and it needs nothing else
+
+   `cap` is how big one cell may get, as a fraction of the short side. It is
+   the only number that separates a word from a sentence, and it is the whole
+   of why they stop looking alike. */
+var CARD_KINDS={
+  w:{cap:0.60, of:false, sub:true},
+  x:{cap:0.40, of:true,  sub:false},
+  p:{cap:0.58, of:false, sub:false}
+};
 
 function cardOpen(kind, key){
   CARD={k:String(kind), v:String(key), sh:CARD.sh};
@@ -57,6 +86,7 @@ function cardOpen(kind, key){
     cardMount);
 }
 function cardShapesHTML(){
+  if(cardSrc().kind!=='p') return '';
   var cur=cardShape(), out='', i, sh;
   for(i=0;i<CARD_SHAPES.length;i++){
     sh=CARD_SHAPES[i];
@@ -75,7 +105,9 @@ function cardShape(){
   return cardSrc().dir.indexOf('ttb')===0? '9:16' : '16:9';
 }
 function cardSize(){
-  var k=cardShape(), i;
+  var k, i;
+  if(cardSrc().kind!=='p') return CARD_PAGE;
+  k=cardShape();
   for(i=0;i<CARD_SHAPES.length;i++) if(CARD_SHAPES[i].k===k) return CARD_SHAPES[i];
   return CARD_SHAPES[0];
 }
@@ -106,15 +138,48 @@ function cardSrc(){
     i=String(v).indexOf('#');
     w=findWord(i<0? v : v.slice(0,i));
     ex=(w && w.ex)? w.ex[parseInt(i<0? '0' : v.slice(i+1), 10)] : null;
-    if(ex) return {line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
+    /* `of` is the word this is an example OF, and it is the whole difference
+       between a sentence card and a word card. The share mark on an example
+       sits on a word's page, under that word, and what came out of it was a
+       short line with nothing on it to say what it was an example of -- the
+       one thing the person pressing it was looking at. */
+    if(ex) return {kind:'x', of:String(w.hw||''),
+                   line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
                    hd:hd, nm:nm, dir:scriptDir()};
   }
   w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {line:'', mn:'', hd:hd, nm:nm, dir:scriptDir()};
+  if(!w) return {kind:'w', line:'', mn:'', hd:hd, nm:nm, dir:scriptDir()};
   /* A word and an example are things in the language that is OPEN, so they
-     run the way it runs. Only a post carries a direction of its own. */
-  return {line:String(w.hw), mn:String(wMns(w)[0]||''), hd:hd, nm:nm,
-          dir:scriptDir()};
+     run the way it runs. Only a post carries a direction of its own.
+
+     A word card carries what a dictionary entry carries. The reading and the
+     part of speech are on the word's own page and were not on the picture of
+     it, so a card of a word said less about that word than the screen it was
+     shared from. */
+  return {kind:'w', line:String(w.hw), mn:String(wMns(w)[0]||''),
+          mns:wMns(w), ex:(w.ex||[])[0]||null, from:String(w.from||''),
+          rd:phIpa(wPh(w)), pos:posLabel(w.pos), posk:String(w.pos||''),
+          ety:String(w.ety||''), fam:cardFam(w),
+          hd:hd, nm:nm, dir:scriptDir()};
+}
+
+/* The words this one is family to, for the page: what each is called, what it
+   is, and what it means. A word that has a past tense and a progressive has
+   them in the dictionary as words of their own, and a picture of the entry
+   that left them off would be a picture of the smaller half of it.
+
+   Four at most. A page is a page and a verb with nine forms on it is a table.
+   The root first when this word has one, because that is where the family
+   starts and it is the row a stranger needs to be told about. */
+function cardFam(w){
+  var par=wParent(w), root=par||w, out=[], kids, i, x;
+  if(par) out.push({lb:t('word.root'), hw:String(par.hw), mn:String(wMn(par)||'')});
+  kids=wdFamSort(wKids(root).filter(function(k){ return k!==w; }));
+  for(i=0;i<kids.length && out.length<4;i++){
+    x=kids[i];
+    out.push({lb:fmLabel(x.fm||''), hw:String(x.hw), mn:String(wMn(x)||'')});
+  }
+  return out;
 }
 
 /* The line as things to draw, left to right: a letter's strokes, a character
@@ -481,8 +546,267 @@ function cardMark(x, cx, cy, r){
   x.closePath(); x.fill();
 }
 
+/* ---- a word is a page out of a dictionary ------------------------------
+   Not a poster. A word card used to be the specimen the head of this file
+   describes -- the script as large as the card allows, the spelling under it,
+   the meaning under that -- which is the right picture for a LINE and the
+   wrong one for an entry. A word has more than one meaning, it has a sentence
+   under it, it came from somewhere, and none of that fits under a letterform
+   blown up to fill a square. 「単語は単語専門のかっこいい辞書ページみたいなの」
+
+   So this is a page: a rule at the head with the language on one side and the
+   part of speech on the other, the word in its own letters at the margin, the
+   spelling and the reading beside each other, a gold rule, the senses
+   numbered, an example set smaller with its gloss under it, where the word
+   came from, and a rule at the foot. Everything hangs off ONE left margin,
+   which is what makes a page read as a page.
+
+   The head runs left to right even for a language that runs down the page. A
+   headword is not a quotation: it is the entry's name, and a dictionary sets
+   its names the way the dictionary is set. 「流石に横書きでいいでしょ辞書は」 */
+
+/* One block of the language's own letters, laid from the TOP-LEFT of the box
+   rather than centred in it, because every other thing on the page starts at
+   the margin. The strokes are handed back rather than drawn: cardInk is
+   called once for the whole page, so what went onto the picture can be read
+   off in one place -- which is the thing tools/card-check.mjs watches. */
+function cardBlock(x, line, bx, by, bw, bh, cap){
+  var items=cardUnits(line), lay, i, u, minx=null, miny=null, maxy=null, maxx=null, dx, dy;
+  cardMeasure(x, items);
+  lay=items.length? cardPlace(items, bw, bh, cap, false) : null;
+  if(!lay) return {items:[], bot:by};
+  cardLayout(items, lay, 'ltr', false, bx, by, bw, bh);
+  for(i=0;i<items.length;i++){
+    u=items[i];
+    if(u.ax===null || u.ax===undefined) continue;
+    if(minx===null || u.ax+u.x0*u.k<minx) minx=u.ax+u.x0*u.k;
+    if(miny===null || u.ay+u.y0*u.k<miny) miny=u.ay+u.y0*u.k;
+    if(maxy===null || u.ay+u.y1*u.k>maxy) maxy=u.ay+u.y1*u.k;
+    if(maxx===null || u.ax+u.x1*u.k>maxx) maxx=u.ax+u.x1*u.k;
+  }
+  if(minx===null) return {items:items, bot:by, right:bx};
+  dx=bx-minx; dy=by-miny;
+  for(i=0;i<items.length;i++){
+    u=items[i];
+    if(u.ax===null || u.ax===undefined) continue;
+    u.ax+=dx; u.ay+=dy;
+  }
+  return {items:items, bot:maxy+dy, right:maxx+dx};
+}
+/* Wrapping for a column whose width is fixed and whose height is not: the
+   page grows downward and the foot is drawn from the bottom up, so a long
+   sense does not have to be squeezed into a line count the way a card's
+   meaning does. */
+function cardWrap(x, s, max){
+  var words=String(s||'').split(/\s+/), out=[], cur='', i, join;
+  for(i=0;i<words.length;i++){
+    if(!words[i]) continue;
+    join = cur? cur+' '+words[i] : words[i];
+    if(x.measureText(join).width<=max){ cur=join; continue; }
+    if(cur) out.push(cur);
+    cur=words[i];
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+function cardRule(x, y, x0, x1, col, lw){
+  x.beginPath(); x.moveTo(x0, y); x.lineTo(x1, y);
+  x.strokeStyle=col; x.lineWidth=lw||1; x.stroke();
+}
+/* A tracked string set FROM a left margin, and how wide it came out -- the
+   reading has to start where the spelling stopped. cardTrack centres, which
+   is what a card wants and what a page does not. */
+function cardTrackL(x, s, x0, y, tr){
+  var w=cardTrackW(x, s, tr);
+  cardTrack(x, s, x0+w/2, y, tr);
+  return w;
+}
+/* The page itself. `extra` is the air put into every gap, which is how a word
+   with one sense fills the sheet: the entry is not stretched, the spacing is.
+   Drawn twice -- once against a scratch canvas to find out where it ends, and
+   again for real with the leftover room shared out. */
+function cardWordPage(x, W, H, S, src, extra, drop, ink){
+  var M=Math.round(S*0.090), RIGHT=W-M, COL=RIGHT-M, IND=Math.round(S*0.040);
+  var mns=src.mns && src.mns.length? src.mns : (src.mn? [src.mn] : []);
+  var ex=src.ex, org=src.ety || (src.from? src.from : ''), y, b, i, j, ln, g;
+  var fam=(src.fam && src.fam.length)? src.fam.slice(0,4) : [], FIND;
+  g=x.createLinearGradient(0, 0, W*0.9, H);
+  g.addColorStop(0, cssVar('--bg'));
+  g.addColorStop(1, cssVar('--sink'));
+  x.fillStyle=g; x.fillRect(0, 0, W, H);
+
+  /* The head. The language on the left because the page is a page OF it, the
+     part of speech on the right because that is the one fact about the entry
+     that is not the entry. */
+  x.textBaseline='alphabetic'; x.textAlign='left';
+  x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.016)+'px '+CARD_CAPS;
+  cardTrackL(x, String(src.nm||'').toUpperCase(), M, M, S*0.016*0.46);
+  /* The part of speech, when there is one. `x` is the entry for "none of
+     these", and OTHER printed across the head of a page says nothing about
+     the word and takes the place of the thing that would. */
+  if(src.pos && src.posk && src.posk!=='x'){
+    x.font=Math.round(S*0.016)+'px '+CARD_CAPS;
+    x.fillStyle=cssVar('--txm');
+    cardTrackL(x, String(src.pos).toUpperCase(),
+      RIGHT-cardTrackW(x, String(src.pos).toUpperCase(), S*0.016*0.46), M, S*0.016*0.46);
+  }
+  cardRule(x, M+Math.round(S*0.017), M, RIGHT, cssVar('--line'), 1);
+
+  /* The word, in the letters somebody drew. Its size is fixed: a short entry
+     leaves the foot of the page empty, and a headword grown to fill it stops
+     being a headword and becomes a sign. */
+  y=M+Math.round(S*0.105)+drop;
+  b=cardBlock(x, src.line, M, y, COL, Math.round(S*0.115), Math.round(S*0.150));
+  for(i=0;i<b.items.length;i++) ink.push(b.items[i]);
+  y=b.bot+Math.round(S*0.052)+extra;
+
+  /* The spelling and the reading, on one line: what it is written as, and
+     what it sounds like. */
+  x.textAlign='left'; x.fillStyle=cssVar('--txs');
+  x.font=Math.round(S*0.024)+'px '+CARD_CAPS;
+  i=cardTrackL(x, String(src.line||'').toUpperCase(), M, y, S*0.024*0.34);
+  if(src.rd){
+    x.fillStyle=cssVar('--txm');
+    x.font='italic '+Math.round(S*0.026)+'px '+CARD_ITAL;
+    x.fillText(src.rd, M+i+Math.round(S*0.030), y);
+  }
+  y+=Math.round(S*0.026)+extra*0.45;
+  cardRule(x, y, M, M+Math.round(S*0.048), cssVar('--gold'), 2);
+
+  /* The senses, numbered. A word that means two things says so here and
+     nowhere else on the picture. */
+  y+=Math.round(S*0.052)+extra;
+  for(i=0;i<mns.length;i++){
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.019)+'px '+CARD_CAPS;
+    x.textAlign='left'; x.fillText(String(i+1), M, y);
+    x.fillStyle=cssVar('--tx'); x.font=Math.round(S*0.042)+'px '+CARD_ITAL;
+    ln=cardWrap(x, mns[i], COL-IND);
+    for(j=0;j<ln.length;j++){ x.fillText(ln[j], M+IND, y); y+=Math.round(S*0.050); }
+    y+=Math.round(S*0.008)+extra*0.55;
+  }
+
+  /* The family. Each row is what the form is called, the word itself in the
+     letters it is written in, and what it means -- one line each, because a
+     row that wraps stops being a row. 「過去形とか登録すると辞書にも追加される」 */
+  if(fam.length){
+    y+=Math.round(S*0.030)+extra;
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.014)+'px '+CARD_CAPS;
+    x.textAlign='left';
+    cardTrackL(x, String(t('word.family')).toUpperCase(), M, y, S*0.014*0.46);
+    y+=Math.round(S*0.040);
+    /* The label has a column of its own. It was set at the margin and the
+       word at the senses' indent, which is 43px wide -- PROGRESSIVE runs
+       straight under the word and comes out through it. */
+    FIND=Math.round(S*0.165);
+    for(i=0;i<fam.length;i++){
+      b=cardBlock(x, fam[i].hw, M+FIND, y, COL-FIND, Math.round(S*0.036),
+                  Math.round(S*0.048));
+      for(j=0;j<b.items.length;j++) ink.push(b.items[j]);
+      if(fam[i].lb){
+        /* Set to the column, not merely started at the margin: PROGRESSIVE is
+           three times the width of PAST, and a label that runs on until it
+           meets the word is a label written over one. */
+        ln=String(fam[i].lb).toUpperCase();
+        g=Math.round(S*0.015);
+        x.fillStyle=cssVar('--txs');
+        while(g>8){
+          x.font=g+'px '+CARD_CAPS;
+          if(cardTrackW(x, ln, g*0.40) <= FIND-Math.round(S*0.030)) break;
+          g-=1;
+        }
+        cardTrackL(x, ln, M, b.bot, g*0.40);
+      }
+      if(fam[i].mn){
+        x.fillStyle=cssVar('--txm');
+        x.font='italic '+Math.round(S*0.026)+'px '+CARD_ITAL;
+        x.textAlign='left';
+        x.fillText(fam[i].mn, Math.max(b.right, M+FIND)+Math.round(S*0.034), b.bot);
+      }
+      y=b.bot+Math.round(S*0.032);
+    }
+    y+=extra*0.4;
+  }
+
+  /* The sentence written under the word, indented under the senses it belongs
+     to, and set small: an example is read, not looked at. */
+  if(ex && ex.ln){
+    y+=Math.round(S*0.026)+extra;
+    b=cardBlock(x, ex.ln, M+IND, y, COL-IND, Math.round(S*0.070), Math.round(S*0.090));
+    for(i=0;i<b.items.length;i++) ink.push(b.items[i]);
+    y=b.bot+Math.round(S*0.036);
+    if(ex.gl){
+      x.fillStyle=cssVar('--txm');
+      x.font='italic '+Math.round(S*0.029)+'px '+CARD_ITAL;
+      ln=cardWrap(x, ex.gl, COL-IND);
+      for(j=0;j<ln.length;j++){ x.fillText(ln[j], M+IND, y); y+=Math.round(S*0.036); }
+    }
+  }
+
+  /* Where it came from -- what the person typed, or the word it was made out
+     of when they typed nothing. */
+  if(org){
+    y+=Math.round(S*0.034)+extra;
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.014)+'px '+CARD_CAPS;
+    cardTrackL(x, String(t('word.ety')).toUpperCase(), M, y, S*0.014*0.46);
+    y+=Math.round(S*0.030);
+    x.fillStyle=cssVar('--txm');
+    x.font='italic '+Math.round(S*0.027)+'px '+CARD_ITAL;
+    ln=cardWrap(x, org, COL);
+    for(j=0;j<ln.length;j++){ x.fillText(ln[j], M, y); y+=Math.round(S*0.034); }
+  }
+
+  /* The foot: the same rule as the head, whose page it is on the left, and
+     the app's mark on the right.
+
+     It said LINGUA there, in words, and the head says the language's name --
+     so a language somebody has called Lingua came out with LINGUA written
+     across the top and the bottom of every page of it. 「カード下がlingua
+     Linguaになってる」 A mark cannot collide with a name. */
+  b=H-M;
+  cardRule(x, b-Math.round(S*0.026), M, RIGHT, cssVar('--line'), 1);
+  if(src.hd){
+    ln='@'+String(src.hd).toUpperCase();
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.016)+'px '+CARD_CAPS;
+    cardTrackL(x, ln, M, b, S*0.016*0.46);
+  }
+  cardMark(x, RIGHT-Math.round(S*0.010), b-Math.round(S*0.005), Math.round(S*0.010));
+  return y;
+}
+/* Twice: once to a scratch canvas to learn where the entry ends, and once for
+   real with the room that was left shared out between the gaps. */
+function cardWord(x, W, H, S, src){
+  var M=Math.round(S*0.090), probe, pc, end, gaps, room, extra, drop, ink=[];
+  probe=document.createElement('canvas'); probe.width=W; probe.height=H;
+  pc=probe.getContext('2d');
+  end=cardWordPage(pc, W, H, S, src, 0, 0, []);
+  gaps=2.45
+    + Math.max(0, ((src.mns && src.mns.length? src.mns.length : 1)-1))*0.55
+    + ((src.fam && src.fam.length)? 1.4 : 0)
+    + ((src.ex && src.ex.ln)? 1 : 0)
+    + ((src.ety || src.from)? 1 : 0);
+  room=H-M-Math.round(S*0.075)-end;
+  extra=Math.max(0, Math.min(room/gaps, Math.round(S*0.075)));
+  /* A word with one sense, no sentence under it and nothing said about where
+     it came from is three lines long, and three lines at the top of a page
+     1350 tall is not a page, it is a receipt. The gaps take what they can
+     hold and the block rides down on what is left, so a short entry comes out
+     as a page set generously rather than as a page with a hole in it. */
+  end=cardWordPage(pc, W, H, S, src, extra, 0, []);
+  drop=Math.max(0, Math.min((H-M-Math.round(S*0.075)-end)*0.42, Math.round(S*0.150)));
+  cardWordPage(x, W, H, S, src, extra, drop, ink);
+  x.save();
+  x.shadowColor=cssVar('--glassdrop');
+  x.shadowBlur=Math.round(S*0.020);
+  x.shadowOffsetY=Math.round(S*0.008);
+  cardInk(x, ink);
+  x.restore();
+}
+
 function cardPaint(c){
   var sz=cardSize(), W=sz.w, H=sz.h, S=Math.min(W, H), x=c.getContext('2d');
+  /* A word is a page and everything else is a card, and they have almost
+     nothing in common but the ground they are drawn on. */
+  if(cardSrc().kind==='w'){ c.width=W; c.height=H; cardWord(x, W, H, S, cardSrc()); return; }
   /* Two sources, and which one is not this function's to decide twice:
      cardSrc() hands back ink or it does not, and it does not exactly when
      there is nothing drawable on the post.
@@ -500,6 +824,7 @@ function cardPaint(c){
      so a card of somebody else's post built that way is that post in MY
      alphabet. Correct only for as long as every post is mine. */
   var src=cardSrc(), items=src.ink? cardInkUnits(src.ink) : cardUnits(src.line);
+  var kind=CARD_KINDS[src.kind] || CARD_KINDS.w;
   var dir=src.dir, vert=dir.indexOf('ttb')===0, lay, g, i;
   c.width=W; c.height=H;
   cardMeasure(x, items);
@@ -513,7 +838,13 @@ function cardPaint(c){
   var mnY=footY-Math.round(S*0.105);
   var rsY=footY-Math.round(S*0.213);
   var mkY=footY-Math.round(S*0.290);
-  var top=m+Math.round(S*0.072), bot=mkY-Math.round(S*0.045), ah=bot-top;
+  var top=m+Math.round(S*0.072), bot=mkY-Math.round(S*0.045);
+  /* The word an example belongs to, over the line, in the room the line gives
+     up for it. Small and tracked, the way the app says a heading -- it is a
+     label on the picture and not part of what the picture is of. */
+  var ofY=0;
+  if(kind.of && src.of){ ofY=top+Math.round(S*0.026); top+=Math.round(S*0.062); }
+  var ah=bot-top;
 
   /* The ground: --bg, lifted toward the upper left the way a surface under a
      light is, and falling away at the far corner. A card that was one flat
@@ -524,8 +855,15 @@ function cardPaint(c){
   x.fillStyle=g; x.fillRect(0,0,W,H);
   cardPlate(x, W, H, S, m);
 
+  if(ofY){
+    x.textBaseline='alphabetic';
+    x.fillStyle=cssVar('--txm');
+    x.font=Math.round(S*0.026)+'px '+CARD_CAPS;
+    cardTrack(x, String(src.of).toUpperCase(), W/2, ofY, S*0.026*0.30);
+  }
+
   /* the script, as large as it can be and still stand inside the rules */
-  lay=items.length? cardPlace(items, aw, ah, Math.round(S*0.60), vert) : null;
+  lay=items.length? cardPlace(items, aw, ah, Math.round(S*kind.cap), vert) : null;
   if(lay) cardLayout(items, lay, dir, vert, pad, top, aw, ah);
   /* The writing sits on the plate rather than in it: a soft shadow under the
      ink is the whole difference between a letter and a hole. */
@@ -546,13 +884,28 @@ function cardPaint(c){
   var rs=cardFit(x, up, aw*0.86, Math.round(S*0.050), CARD_CAPS, 0.24);
   cardTrack(x, up, W/2, rsY, rs*0.24);
 
+  /* How it is said and what part of speech it is -- one line, between the
+     spelling and the meaning. A word's own page says both and the picture of
+     it said neither. Only a word: a sentence has no part of speech, and a
+     post is somebody else's and carries neither. */
+  var subY=0;
+  if(kind.sub && (src.rd || src.pos)){
+    subY=rsY+Math.round(S*0.046);
+    x.fillStyle=cssVar('--txm');
+    x.font='italic '+Math.round(S*0.030)+'px '+CARD_ITAL;
+    x.textAlign='center';
+    x.fillText([src.rd? '/'+src.rd+'/' : '', src.pos].filter(Boolean).join('  \u00b7  '),
+               W/2, subY);
+  }
+
   /* what it means, in the italic every meaning in this app is set in, in the
      room there is between the spelling and the foot */
   if(src.mn){
     x.fillStyle=cssVar('--tx');
-    var high=(footY-Math.round(S*0.030))-(rsY+Math.round(S*0.022));
+    var high=(footY-Math.round(S*0.030))-((subY||rsY)+Math.round(S*0.022));
     var mn=cardLines(x, src.mn, aw, high, Math.round(S*0.082), CARD_ITAL, 'italic', 2);
-    var lh=cardLead(mn.sz), y0=mnY-(mn.ln.length-1)*lh/2;
+    var lh=cardLead(mn.sz);
+    var y0=(subY? Math.max(mnY, subY+Math.round(S*0.058)) : mnY)-(mn.ln.length-1)*lh/2;
     x.textAlign='center';
     for(i=0;i<mn.ln.length;i++) x.fillText(mn.ln[i], W/2, Math.round(y0+i*lh));
   }
@@ -659,9 +1012,9 @@ function cardOfPost(po){
      the only shape a card had was 1920 by 1080 and a column has nowhere to go
      in a band that wide. The card has three shapes now, so it no longer has
      to misspell somebody's writing to fit one of them. */
-  return {line:String(po.ln||''), mn:String(po.mn||''), hd:String(po.hd||''),
-          nm:String(po.lname||''), ink:postInkOK(po.ink)? po.ink : null,
-          dir:postDir(po)};
+  return {kind:'p', line:String(po.ln||''), mn:String(po.mn||''),
+          hd:String(po.hd||''), nm:String(po.lname||''),
+          ink:postInkOK(po.ink)? po.ink : null, dir:postDir(po)};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
    a shape, a character, or the gap between two words. A text run may be

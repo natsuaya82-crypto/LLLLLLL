@@ -898,13 +898,16 @@ export function halfDone(){
     ['a file being chosen', () => { SET.plan = 'plus'; IMP = impBlank();
         openImport();
         const h = FORM.html; SET.plan = 'free'; return h; }],
-    /* The card, which is the only screen whose output leaves the app. Both
-       faces: a word, and one of the sentences written under a word -- they
-       compose the picture differently (one spelling, or several with the
-       gaps between them) and only the second can overflow the width. */
+    /* The card, which is the only screen whose output leaves the app. All
+       three faces: a word, one of the sentences written under a word, and a
+       post. They compose the picture differently -- a word is a page out of a
+       dictionary, a sentence is a line, a post is somebody's published one --
+       and only the post is offered a choice of shape, so the shape picker is
+       on no screen but the third. */
     ['a word as a card',       () => { cardOpen('w', 'kano'); return FORM.html; }],
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
                                        cardOpen('x', 'kano#0');
-                                       const h=FORM.html; delete findWord('kano').ex; return h; }]
+                                       const h=FORM.html; delete findWord('kano').ex; return h; }],
+    ['a post as a card',       () => { cardOpen('p', 'p1'); return FORM.html; }]
   ];
 }
