@@ -621,6 +621,241 @@ function fmGroupHTML(hw, g, now){
       '<input id="fm-'+g+'" aria-label="'+esc(t('word.fm.own'))+
       '" autocapitalize="none" autocorrect="off"' + KD('fmNew', [hw, g]) + '></div>' : '');
 }
+/* ---- forms made by a rule ------------------------------------------------
+   Registering a past tense makes it a word, which is right and which is also
+   why a dictionary of any size could not be built here: a verb with four
+   forms is four trips through the sheet, and a language with six cases and
+   two numbers is twelve. That is the work Lexurgy and PolyGlot do for people
+   and this did not, and it is the whole of the reason a serious dictionary
+   went somewhere else.
+
+   A rule says: for words of this part of speech, the PAST is the word with
+   these letters on the end. Write it once, and any word can be asked for the
+   forms it has not got.
+
+   It is deliberately NOT a paradigm, for the reason the note above this
+   section already gives: 「型決めても英語みたいに変わってる可能性もあるやん」.
+   A rule does not declare that every verb HAS a past tense, it does not go
+   and make them, and it does not own the words it made. What it does is
+   offer: press the button on a word and the forms appear as ordinary words,
+   each editable and deletable like any other. go/went is still typed by hand,
+   and typing it by hand is not working around the rule -- it is the rule not
+   applying, which is what an irregular is. */
+function fmRules(){ if(!STG.fm) STG.fm=[]; return STG.fm; }
+function fmrById(id){
+  var a=fmRules(), i;
+  for(i=0;i<a.length;i++) if(a[i].id===String(id)) return a[i];
+  return null;
+}
+/* The word the rule works on: its spelling, less however many letters the
+   rule takes off the end first. Never all of them -- a rule that ate the word
+   would make every verb the same form of itself. */
+function fmrStem(w, r){
+  var sp=spOf(w).slice(), n=Math.max(0, Math.min(sp.length-1, (r && r.drop)||0));
+  return n? sp.slice(0, sp.length-n) : sp;
+}
+/* Whether this rule has anything to say about this word. `when` is the one
+   piece of phonology in it: an ending that only goes on after a vowel is the
+   commonest thing a language does to keep two consonants apart. */
+function fmrFits(w, r){
+  var ph, last;
+  if(!w || !r || !(r.add||[]).length) return false;
+  if(r.pos && r.pos!==w.pos) return false;
+  if(!r.when) return true;
+  ph=spPh(fmrStem(w, r));
+  if(!ph.length) return false;
+  last=ph[ph.length-1];
+  return (r.when==='v')? ipaIsVowel(last) : !ipaIsVowel(last);
+}
+/* What the rule would make: a spelling, and the word that spelling is. */
+function fmrMake(w, r){
+  var stem, add, sp, hw;
+  if(!fmrFits(w, r)) return null;
+  stem=fmrStem(w, r); add=(r.add||[]).slice();
+  sp=(r.at==='start')? add.concat(stem) : stem.concat(add);
+  hw=spWord(sp);
+  if(!hw || hw===String(w.hw)) return null;
+  return {id:r.id, fm:r.fm, sp:sp, hw:hw};
+}
+/* The forms this word has not got. A rule is skipped when the word already
+   wears that label -- an irregular past that was typed by hand is the past,
+   and offering to make a second one beside it would be the app arguing with
+   the person about their own language. */
+function fmrTodo(w){
+  var a=fmRules(), kids=w? wKids(w) : [], out=[], i, j, m, has;
+  for(i=0;i<a.length;i++){
+    m=fmrMake(w, a[i]);
+    if(!m || findWord(m.hw)) continue;
+    has=false;
+    for(j=0;j<kids.length;j++) if((kids[j].fm||'')===String(m.fm||'')) has=true;
+    if(has) continue;
+    out.push(m);
+  }
+  return out;
+}
+/* Making them. Each one goes in as an ordinary word: it has a spelling, it
+   remembers what it came from and what it is of that, and nothing marks it as
+   having been made by a rule, because nothing about it is different.
+
+   An inflection takes the meanings of the word it is a form of -- a past
+   tense is still the verb, which is the distinction the two lists above draw.
+   A derivation takes none: "one who wakes early" is a different word that
+   happens to be built out of this one, and filling in the parent's meaning
+   there would be the app claiming to know what somebody's word means. It
+   comes out with no meaning, and the half-done list on the search tab is
+   already the screen that says so. */
+function fmrAdd(hw){
+  var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
+  if(!w || !todo.length) return;
+  if(!capOK(todo.length)){ closeSheet(); go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+  for(i=0;i<todo.length;i++){
+    m=todo[i];
+    if(findWord(m.hw)) continue;
+    nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
+        sp:JSON.parse(JSON.stringify(m.sp)),
+        mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
+    nw.mn=nw.mns[0]||'';
+    WORDS.push(nw); made.push(m.hw);
+  }
+  if(!made.length) return;
+  save();
+  /* The word's page again, not merely a redraw. It is a form, and a form
+     holds the html it was opened with -- so what the button did would have
+     stayed invisible under the button, which would go on offering to do it.
+     Opening it again is what addOne() does after writing a word, for the
+     same reason. */
+  toast(tn('fmr.made', made.length));
+  openWord(String(w.hw));
+}
+/* The row on a word's page. Only when there is something to make: a button
+   that does nothing when pressed is worse than no button. */
+function fmrTodoHTML(w){
+  var todo=fmrTodo(w);
+  if(!todo.length) return '';
+  return '<button class="btn ghost" style="width:100%;margin-top:10px"' +
+    DO('fmrAdd', [String(w.hw)]) + '>'+ICON_PLUS+
+    esc(tn('fmr.todo', todo.length))+'</button>';
+}
+
+/* ---- writing one -------------------------------------------------------- */
+var fmrOpen='';
+function fmrSay(r){
+  var s=spWord((r && r.add)||[]);
+  if(!s) return '';
+  return (r.at==='start')? (s+'‑') : ('‑'+s);
+}
+function fmrNew(){
+  var r={id:'fr'+Date.now()+String(fmRules().length), pos:'v', fm:'pst',
+         at:'end', drop:0, add:[], when:''};
+  fmRules().push(r); saveStg(); openFmr(r.id);
+}
+function fmrDel(id){
+  var a=fmRules(), i;
+  for(i=0;i<a.length;i++) if(a[i].id===String(id)){ a.splice(i,1); break; }
+  saveStg();
+  if(here().r==='form') back(); else render();
+}
+function vForms(){
+  var a=fmRules();
+  return '<div class="view">'+navTop(a.length? String(a.length) : '')+
+    '<div class="body">'+
+    '<div class="note">'+esc(t('fmr.what'))+'</div>'+
+    (a.length? '<div class="wdrows">'+a.map(function(r){
+        return '<button class="wdrow"' + DO('openFmr', [r.id]) + '>'+
+          '<span class="wdrowf">'+esc(fmLabel(r.fm)||t('word.none'))+'</span>'+
+          '<span class="wdroww'+(myFontOn()?' sfont':'')+'">'+esc(fmrSay(r))+'</span>'+
+          '<span class="wdrowm">'+esc(r.pos? posLabel(r.pos) : t('fmr.any'))+'</span></button>';
+      }).join('')+'</div>' : '')+
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('fmrNew') + '>'+
+      ICON_PLUS+esc(t('fmr.new'))+'</button>'+
+    '</div></div>';
+}
+function fmrPickRow(label, val, r2){
+  return '<button class="set"' + DO('go', [r2]) + '>'+
+    '<span class="sl">'+esc(label)+'</span>'+
+    '<span class="sv">'+esc(val)+ICON_GO+'</span></button>';
+}
+function fmrSegs(now, list, fn){
+  var i, out='<div class="pick">';
+  for(i=0;i<list.length;i++)
+    out+='<button class="'+(String(list[i][0])===String(now)? 'on':'')+'"' +
+      DO(fn, [list[i][0]]) + '>'+esc(list[i][1])+'</button>';
+  return out+'</div>';
+}
+function fmrFormHTML(){
+  var r=fmrById(fmrOpen);
+  if(!r) return '';
+  return '<div id="fmr-body">'+
+    fmrPickRow(t('fmr.pos'), r.pos? posLabel(r.pos) : t('fmr.any'), 'fmrpos')+
+    fmrPickRow(t('fmr.fm'),  fmLabel(r.fm)||t('word.none'), 'fmrfm')+
+    '<div class="sec">'+esc(t('fmr.add'))+'</div>'+
+    spTypeField('fmr-add', 'fmrSetAdd', r.add||[], 'whin')+
+    fmrSegs(r.at||'end', [['end', t('fmr.end')], ['start', t('fmr.start')]], 'fmrSetAt')+
+    '<div class="sec">'+esc(t('fmr.drop'))+'</div>'+
+    fmrSegs(String(r.drop||0), [['0','0'],['1','1'],['2','2']], 'fmrSetDrop')+
+    '<div class="sec">'+esc(t('fmr.when'))+'</div>'+
+    fmrSegs(r.when||'', [['', t('fmr.always')], ['v', t('fmr.vowel')], ['c', t('fmr.cons')]],
+            'fmrSetWhen')+
+    /* The same row the word sheet says it with. A destructive thing is not
+       the brightest button on its own screen. */
+    '<button class="set" style="margin-top:22px;border-bottom:none"' +
+      DO('fmrDel', [r.id]) + '>'+
+      '<span class="sl bad">'+esc(t('fmr.del'))+'</span></button>'+
+    '</div>';
+}
+function fmrPaint(){
+  var e=document.getElementById('fmr-body');
+  if(e) e.outerHTML=fmrFormHTML();
+}
+function openFmr(id){
+  var r=fmrById(id);
+  if(!r) return;
+  fmrOpen=String(id);
+  openForm('fmr:'+fmrOpen, t('fmr.title'), fmrFormHTML());
+}
+FORM_OPEN.fmr=function(id){ openFmr(id||''); };
+function fmrKeep(fn){
+  var r=fmrById(fmrOpen);
+  if(!r) return;
+  fn(r); saveStg();
+}
+function fmrSetAdd(v){ fmrKeep(function(r){ r.add=spType(v); }); lnGrow('fmr-add'); }
+function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; }); fmrPaint(); }
+function fmrSetDrop(v){ fmrKeep(function(r){ r.drop=parseInt(v,10)||0; }); fmrPaint(); }
+function fmrSetWhen(v){ fmrKeep(function(r){ r.when=(v==='v'||v==='c')? v : ''; }); fmrPaint(); }
+/* Which rule the two chooser screens are about. Arriving on one with nothing
+   open is arriving back on a screen the app has forgotten the subject of -- a
+   stale route, a reload. The first rule is a better answer than an empty
+   page, and there is nowhere else those screens could be about. */
+function fmrHere(){
+  var r=fmrById(fmrOpen);
+  if(!r){ r=fmRules()[0]; if(r) fmrOpen=r.id; }
+  return r;
+}
+/* Two screens rather than one screen with a mode on it. They ask the same
+   kind of question of two tables, which is an argument for one screen right
+   up until the mode is a variable nothing sets on the way in: the second
+   list then belongs to no route, and a route is the only thing that can be
+   walked. */
+function vFmrPos(){
+  var r=fmrHere(), out='', i;
+  if(!r) return viewGone();
+  out+=wdOneHTML(t('fmr.any'), !r.pos, 'fmrPickPos', '');
+  for(i=0;i<POS.length;i++)
+    out+=wdOneHTML(posLabel(POS[i]), POS[i]===r.pos, 'fmrPickPos', POS[i]);
+  return '<div class="view">'+navTop()+'<div class="body">'+out+'</div></div>';
+}
+function vFmrFm(){
+  var r=fmrHere(), out='', i, list;
+  if(!r) return viewGone();
+  list=FM_INF.concat(FM_DER).concat(fmMine('i')).concat(fmMine('d'));
+  for(i=0;i<list.length;i++)
+    out+=wdOneHTML(fmLabel(list[i]), list[i]===r.fm, 'fmrPickFm', list[i]);
+  return '<div class="view">'+navTop()+'<div class="body">'+out+'</div></div>';
+}
+function fmrPickPos(k){ fmrKeep(function(r){ r.pos=String(k||''); }); back(); }
+function fmrPickFm(k){ fmrKeep(function(r){ r.fm=String(k||''); }); back(); }
+
 function vFm(){
   var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;
   if(!w) return viewGone();
@@ -911,7 +1146,7 @@ function wdViewHTML(){
             (mns.length>1? '<span class="sn">'+(i+1)+'</span>' : '')+esc(m)+'</span></div>';
         }).join('')+'</div>'
       : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
-    wdSecHTML(t('word.family'), wdFamHTML(w))+
+    wdSecHTML(t('word.family'), wdFamHTML(w)+fmrTodoHTML(w))+
     wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+
     wdSecHTML(t('word.ant'), wdRelsHTML(w,'ant'))+
     wdSecHTML(ICON_LINE+t('word.ex'), ex.length

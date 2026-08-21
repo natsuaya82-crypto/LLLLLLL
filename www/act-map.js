@@ -249,12 +249,24 @@ actIn('wdSetNt', wdSetNt);
 /* A word is typed on the free plan, in three places: the new-word sheet, the
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
+actIn('fmrSetAdd', fmrSetAdd);
 actIn('wdSetRd', wdSetRd);
 actIn('stSetLn', stSetLn);
 act('fmPick', fmPick);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
 act('posPick', posPick);
+/* Forms made by a rule: writing one, and asking a word for the ones it has
+   not got. */
+act('fmrNew', fmrNew);
+act('openFmr', openFmr);
+act('fmrDel', fmrDel);
+act('fmrAdd', fmrAdd);
+act('fmrSetAt', fmrSetAt);
+act('fmrSetDrop', fmrSetDrop);
+act('fmrSetWhen', fmrSetWhen);
+act('fmrPickPos', fmrPickPos);
+act('fmrPickFm', fmrPickFm);
 act('regPick', regPick);
 act('wdMnOpen', wdMnOpen);
 act('wdExOpen', wdExOpen);

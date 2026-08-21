@@ -163,7 +163,18 @@ export function seed(){
      boot.js cut what it could before this file put these posts here. */
   migratePostInk();
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
-         rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
+         rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]},
+         /* One rule for making a form, because the screen it is written on
+            renders nothing at all without one -- so a walk over an empty list
+            pressed the button that opens the editor and came back with a
+            blank sheet, and every control on that sheet counted as a name no
+            screen ever says.
+            A plural for nouns rather than a past for verbs: every verb in
+            here already wears the label its parent gave it, so a rule making
+            a past would have nothing left to offer and the button that
+            offers it would never be drawn. */
+         fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
+              add:[{l:'l1', u:'k'}]}]};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
@@ -908,6 +919,9 @@ export function halfDone(){
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
                                        cardOpen('x', 'kano#0');
                                        const h=FORM.html; delete findWord('kano').ex; return h; }],
-    ['a post as a card',       () => { cardOpen('p', 'p1'); return FORM.html; }]
+    ['a post as a card',       () => { cardOpen('p', 'p1'); return FORM.html; }],
+    /* The rule a form is made by. It takes an id, and the id is the one the
+       fixture put in STG above. */
+    ['a rule for making a form', () => { openFmr('fr1'); return FORM.html; }]
   ];
 }
