@@ -559,9 +559,6 @@ var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
 var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
-var MARK_STUDIO='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" '+
-  'aria-hidden="true">'+
-  '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
 /* A post kept to yourself. 「非公開の時はポストに🔓マークつけよ」
    The shackle is DOWN. It was opened once, on the emoji in that sentence, and
    an open padlock is the mark for a thing that is not locked -- which is the
@@ -1637,16 +1634,6 @@ function geTiles(){ inkCanvases('canvas.tc', 48, 72); }
 /* =========================================================================
    14. Drawing
    ========================================================================= */
-
-/* =========================================================================
-   Advisor — the companion that walks alongside the language.
-   Free accounts get a small daily allowance; Plus removes the ceiling, which
-   is what makes the advisor the main reason to upgrade.
-   ========================================================================= */
-var AI_FREE_DAILY = 3;
-function aiToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
-function aiUsed(){ if(SET.aiDate!==aiToday()){ SET.aiDate=aiToday(); SET.aiN=0; save(); } return SET.aiN||0; }
-function aiSpend(){ if(can('ai')) return; SET.aiDate=aiToday(); SET.aiN=aiUsed()+1; save(); }
 
 /* AI_SEAM — where the hosted model plugs in.
    A browser cannot hold an API key, so the request must go through your own

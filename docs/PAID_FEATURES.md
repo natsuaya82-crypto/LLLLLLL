@@ -37,7 +37,6 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | capability | level | what it opens |
 |---|---|---|
 | `words` | plus | a dictionary past `FREE_LIMIT` (100) |
-| `ai` | studio | the AI: the conversation chapter, and suggestions unmetered |
 | `data` | plus | CSV out, and the cloud |
 | `file` | plus | a list brought in as a file rather than a paste |
 | `letters` | plus | adding, naming and deleting a letter |
@@ -96,7 +95,7 @@ is built once. A plan that kept working after the money stopped would be paid
 for a month and then never again. 「a にしたら最初の1ヶ月で作りきったらそのあと
 課金されねえだろ」
 
-Three plans: `free`, `plus`, `studio`. `LANG_MAX` is 1 on every plan and is not
+Two plans: `free` and `plus`. Studio comes back with the hosted model. `LANG_MAX` is 1 on every plan and is not
 a price — there is no way to make a second language anywhere in the app, so a
 plan promising more would be promising a button that does not exist.
 

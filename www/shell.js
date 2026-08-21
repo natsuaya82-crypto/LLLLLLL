@@ -185,7 +185,6 @@ var PAGES={
   gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
   notes:   {tab:'build', k:'toc.notes'},
-  talk:    {tab:'build', k:'toc.talk'},
   settings:{tab:'profile',  k:'set.title'},
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},

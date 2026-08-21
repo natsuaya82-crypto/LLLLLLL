@@ -68,7 +68,6 @@ page('glyph',    vGlyph);
 page('words',    vWords);
 page('gram',     vGram);
 page('notes',    vNotes);
-page('talk',     vTalk);
 page('settings', vSettings);
 page('set',      vSet);
 page('world',    vWorld);
