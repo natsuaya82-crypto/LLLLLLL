@@ -43,7 +43,7 @@
    (tools/pen-pick.mjs), pen 36 inks 10% of the cell where the real font inks 19%,
    and pen 60 inks exactly the real font's 19%. A third of the ink is a visibly
    paler page; two strokes welding is one dot's worth of redrawing. */
-var GPEN={width:60, angleDeg:0, contrast:1.0, curve:72};
+var GPEN={width:32, angleDeg:0, contrast:1.0, curve:36};
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of
@@ -63,7 +63,7 @@ var GPEN={width:60, angleDeg:0, contrast:1.0, curve:72};
    keeps every stroke inside the 800 cell with 10 units to spare at pen 60, and
    800-2*40 = 720 divides evenly by 4, 6, 9 and 10, so the dots stay integers at
    5, 7, 10 and 11. */
-var GGRID={n:11, inset:40};
+var GGRID={n:21, inset:40};
 /* A stroke drawn in one go can be long, but not unbounded. It used to stop
    at 24, and past that the drag stopped adding points and only dragged the
    last one about -- which is why a long stroke cut off halfway through. The
