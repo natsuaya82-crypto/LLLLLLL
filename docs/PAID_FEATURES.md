@@ -195,22 +195,3 @@ When receipts do arrive, the rule above is the first thing to hold: a receipt
 that fails to validate, a network that is down, a sandbox that answers wrong —
 each of those makes the app the free plan for the moment, and none of them
 touches a single slice.
-
-## どこで課金を判定するか — 2026-08-21 の決定
-
-三行で足りる。
-
-1. **課金は Apple ID に紐づく。** 復元も家族共有も機種変更も Apple の仕事で、
-   こちらが持つものではない。
-2. **ログインとは別。** Lingua のアカウントは他人から見た自分 — 投稿、フォロー、
-   通報 — であって、プランの持ち主ではない。辞書も文字もキーボードも
-   サインインせずに使えるのだから、Plus にアカウントは要らない。
-3. **サーバー側に金がかかるものは、サーバーで判断する。** AI とクラウド保存が
-   それで、そこだけは端末の言い分を聞かない。
-
-端末の中のフラグは、何をやっても書き換えられる。守るのではなく、守る価値の
-あるものをフラグの向こう側に置かない、というのがこの三行の意味。
-
-`CAN` の十個は全部が端末の中の計算なので、割られてもこちらの支払いは増えない。
-`can()` はどのボタンを出すかであって、鍵ではない。上の「1. The plan, on the
-server」（docs/FEATURES.md）の 4 番と同じことを、別の側から言っている。
