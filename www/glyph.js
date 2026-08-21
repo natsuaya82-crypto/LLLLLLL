@@ -43,7 +43,13 @@
    (tools/pen-pick.mjs), pen 36 inks 10% of the cell where the real font inks 19%,
    and pen 60 inks exactly the real font's 19%. A third of the ink is a visibly
    paler page; two strokes welding is one dot's worth of redrawing. */
-var GPEN={width:32, angleDeg:0, contrast:1.0, curve:36};
+/* And then thinner again. 32 against a step of 36 is a pen very nearly as wide
+   as the gap between two dots: a letter drawn carefully on the lattice comes
+   out as one welded mass with the dots it was built on invisible under it.
+   「ペン太すぎて細かい今の点に合わないでズレる」 24 is two thirds of a step --
+   two dots apart still reads as two strokes, and the page is paler than a real
+   font's, which is the price and is the thing to look at on a phone. */
+var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of
