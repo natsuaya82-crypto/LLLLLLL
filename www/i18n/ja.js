@@ -396,6 +396,7 @@ defLang('ja', (function(){
       'lt.addsnd'       : '読みの設定',
       'lt.reads.none'   : '—',
       'lt.ab.h' : "アルファベット",
+      'lt.copy' : "複製する",
       'lt.note' : "メモ",
       'lt.view' : "表示",
       'lt.sort' : "並び替え",

@@ -396,6 +396,46 @@ function ltNew(o){
    made would be the app deciding what somebody's writing is -- which is the
    one thing the alphabet chapter is written not to do. */
 var LT_START='abcdefghijklmnopqrstuvwxyz!?';
+/* One of the letters every language starts with -- a to z, ! and ?, and a
+   digit for every value of the base. Its NAME is not the person's to change,
+   on any plan.
+
+   kbFixed() finds the free keyboard's keys by name: kbNamed('a') walks
+   LETTERS for one called `a`. So a renamed `a` is a key that answers to
+   nothing -- and ltStart(), which tops a free language up by name, then makes
+   a NEW empty letter called `a` and puts that on the key. Somebody who paid,
+   renamed a letter, drew on it, and let the plan lapse would find a blank
+   where their letter used to be, and nothing anywhere saying why.
+
+   Refusing the rename is the whole fix, and it costs nothing: a letter that
+   is to be called something else is a DIFFERENT letter, and the way to have
+   one is ltCopy(). 「無料で作ったやつを改名できなければ良くない？コピーできる
+   ようにして分けるとかは？」 */
+function ltIsBase(l){
+  if(!l) return false;
+  if(numIsDigit(l)) return true;
+  var ab=String(l.ab||'').toLowerCase();
+  return ab.length===1 && LT_START.indexOf(ab)>=0;
+}
+/* A letter of one's own, made from one that is not. Everything drawn on it
+   comes across -- the strokes or the character it borrows, what it reads and
+   the note -- and the name does not, because a name is the one thing the copy
+   exists to be able to change. It goes in beside the one it came from, which
+   is where somebody looking at that one expects it. */
+function ltCopy(id){
+  var l=ltById(id), n, i;
+  if(!l || !can('letters')) return;
+  n=ltNew({});
+  if(l.st && l.st.length) n.st=JSON.parse(JSON.stringify(l.st));
+  if(l.ch) n.ch=l.ch;
+  if(l.snd && l.snd.length) n.snd=l.snd.slice();
+  if(l.nt) n.nt=l.nt;
+  if(l.chose) n.chose=l.chose;
+  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===n.id){ LETTERS.splice(i, 1); break; }
+  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id){ LETTERS.splice(i+1, 0, n); break; }
+  saveLetters(); installScriptFont();
+  go('letter', n.id);
+}
 function ltStart(){
   if(can('letters')) return;
   var have={}, made=0, i, c, l, read;

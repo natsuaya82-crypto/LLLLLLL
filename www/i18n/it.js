@@ -480,6 +480,7 @@ defLang('it', (function(){
       "lt.addsnd"        : "Lettura",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "Lettera",
+      "lt.copy" : "Fai una copia",
       "lt.note" : "Nota",
       "lt.view" : "Vista",
       "lt.sort" : "Ordine",

@@ -832,7 +832,12 @@ function vLetter(){
        a, b, c and the two marks, and that is what makes the free keyboard a
        QWERTY that works -- a key is found by the letter's name. Renaming one
        would take the key away and leave a hole nothing could fill. */
-    (can('letters')
+    /* The name, and not on a letter every language starts with: the free
+       keyboard finds its keys by name, so renaming one takes the key away.
+       ltIsBase() in letters.js is the one place that says which those are,
+       and ltCopy below is what somebody wanting a differently-named letter
+       does instead. */
+    ((can('letters') && !ltIsBase(l))
       ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
       : '')+
     (numIsDigit(l)? numWordRow(l) : '')+
@@ -861,8 +866,15 @@ function vLetter(){
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
       : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
+    /* Making one of one's own from this one -- the way to have a letter
+       called something else when this one may not be renamed, and the way to
+       have two letters of one shape at all. */
     (can('letters')
-      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+      ? '<button class="set" style="margin-top:14px"' + DO('ltCopy', [lid]) + '>'+
+          '<span class="sl">'+t('lt.copy')+'</span>'+ICON_GO+'</button>'
+      : '')+
+    (can('letters')
+      ? '<button class="set" style="border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
           '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+
     '</div>'+

@@ -488,6 +488,7 @@ defLang('zh', (function(){
       "lt.addsnd"        : "读音",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "字母",
+      "lt.copy" : "复制一个",
       "lt.note" : "备注",
       "lt.view" : "显示",
       "lt.sort" : "排序",

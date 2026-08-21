@@ -1113,9 +1113,18 @@ function wdViewHTML(){
        twice says nothing. */
     (wdRdShown(w)? '<div class="wrd">'+esc(w.hw)+'</div>' : '')+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
-    /* What kind of word it is, and how it is said -- one line, because they
-       are one question. An unmarked word says only its part of speech. */
-    '<div class="wsub2">'+esc(posLabel(w.pos)+(w.reg? ' \u00b7 '+regLabel(w.reg) : ''))+'</div>'+
+    /* What kind of word it is, how it is said, and -- if it was made from
+       another word -- which form of it this is. One line, because they are
+       one question about the word in front of you. An unmarked word says only
+       its part of speech.
+
+       The form was on the dictionary row and came off with the rest of the
+       family when a row became just a word (1f4d059). It belongs here rather
+       than there: on the parent's page the label distinguishes one child from
+       its siblings, and on the child's own page it is what the word IS. */
+    '<div class="wsub2">'+esc(posLabel(w.pos)+
+      ((w.from && w.fm)? ' \u00b7 '+fmLabel(w.fm) : '')+
+      (w.reg? ' \u00b7 '+regLabel(w.reg) : ''))+'</div>'+
     /* What field the word belongs to. Nothing here is pressable and nothing
        here is a list you are working on, so it is a line under the other two
        small facts rather than a row of boxes. */

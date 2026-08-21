@@ -659,6 +659,7 @@ defLang('ko', (function(){
       "lt.addsnd"        : "읽기",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "글자",
+      "lt.copy" : "복제하기",
       "lt.note" : "메모",
       "lt.view" : "표시",
       "lt.sort" : "정렬",

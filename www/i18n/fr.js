@@ -528,6 +528,7 @@ defLang('fr', (function(){
       "lt.addsnd"        : "Lecture",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "Lettre",
+      "lt.copy" : "Faire une copie",
       "lt.note" : "Note",
       "lt.view" : "Affichage",
       "lt.sort" : "Ordre",

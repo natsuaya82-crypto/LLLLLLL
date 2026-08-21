@@ -51,6 +51,7 @@ act('fPick', fPick);
 act('geCircle', geCircle);
 act('geClear', geClear);
 act('ltDelete', ltDelete);
+act('ltCopy', ltCopy);
 act('ltWobEnd', ltWobEnd);
 act('ltForUnitGo', ltForUnitGo);
 act('ltSave', ltSave);

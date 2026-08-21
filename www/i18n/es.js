@@ -440,6 +440,7 @@ defLang('es', (function(){
       "lt.addsnd"        : "Lectura",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "Letra",
+      "lt.copy" : "Hacer una copia",
       "lt.note" : "Nota",
       "lt.view" : "Vista",
       "lt.sort" : "Orden",

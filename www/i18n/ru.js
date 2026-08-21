@@ -483,6 +483,7 @@ defLang('ru', (function(){
       "lt.addsnd"         : "Чтение",
       "lt.reads.none"     : "—",
       'lt.ab.h' : "Буква",
+      "lt.copy" : "Сделать копию",
       "lt.note" : "Заметка",
       "lt.view" : "Вид",
       "lt.sort" : "Порядок",

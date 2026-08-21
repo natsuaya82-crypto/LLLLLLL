@@ -383,6 +383,7 @@ defLang('en', (function(){
       'lt.addsnd'       : 'Reading',
       'lt.reads.none'   : '—',
       'lt.ab.h' : "Letter",
+      'lt.copy' : "Make a copy",
       'lt.note' : "Note",
       'lt.view' : "View",
       'lt.sort' : "Order",

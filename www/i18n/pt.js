@@ -487,6 +487,7 @@ defLang('pt', (function(){
       "lt.addsnd"        : "Leitura",
       "lt.reads.none"    : "—",
       'lt.ab.h' : "Letra",
+      "lt.copy" : "Fazer uma cópia",
       "lt.note" : "Nota",
       "lt.view" : "Exibição",
       "lt.sort" : "Ordem",
