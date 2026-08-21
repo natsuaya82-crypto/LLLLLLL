@@ -325,6 +325,10 @@ instead of appearing here.
      | Plus | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.plus.yearly` |
      | Studio | `com.tokinets.lingua.studio.monthly` | `com.tokinets.lingua.studio.yearly` |
 
+     Studio's two are **not created yet** — see the status line at the foot of
+     this decision. The ids stay written down because they can never change
+     once they exist, and the day Studio ships it has to use these.
+
   3. Prices, in US dollars. Every other country is Apple's automatic
      conversion unless somebody sets it by hand:
 
@@ -541,9 +545,11 @@ for.
 - Affected features: every `plus` row in FEATURES.md
 - Affected data: none by itself
 - Affected docs: FEATURES.md, PAID_FEATURES.md
-- Implementation status: `words` `letters` `wsys` `snd` `gram` `data` `file`
-  `kb` are implemented, and flick and free placement are already in the
-  keyboard editor. Vertical / RTL and translation are not built.
+- Implementation status (2026-08-21): `words` `letters` `wsys` `snd` `gram`
+  `data` `file` `kb` are implemented, and flick and free placement are already
+  in the keyboard editor. Vertical / RTL is built — `dir` in `CAN`, and a post
+  carries the direction it was written in. Translation is built as layer three
+  — `tr` in `CAN`, `TR_FREE_DAILY` three a day on free.
 
 ### Decision
 - Date: 2026-08-12
@@ -554,10 +560,12 @@ for.
 - Affected features: AI suggestions, AI conversation
 - Affected data: `SET.aiDate` / `SET.aiN` (the daily counter)
 - Affected docs: PAID_FEATURES.md, FEATURES.md
-- Implementation status: **NOT implemented, and the code contradicts it.**
-  `CAN.ai` is `'plus'` today, which makes the model unmetered at Plus. Exactly
-  how many chats a day Plus gets is a threshold and has not been decided;
-  `AI_FREE_DAILY` is 3 for everybody who is not unmetered.
+- Implementation status (2026-08-21): **moot.** There is no AI. `AI_SEAM` in
+  `www/glyph.js` marks where a hosted model would join and nothing joins it, so
+  Studio — the tier that sold it — is out, and with it went `CAN.ai`,
+  `AI_FREE_DAILY`, `SET.aiDate`/`SET.aiN`, the suggestion chips and the
+  conversation chapter. The question this decision answers comes back the day
+  the seam has something behind it.
 
 ### Decision
 - Date: 2026-08-12

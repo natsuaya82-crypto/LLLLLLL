@@ -55,8 +55,10 @@ Marked separately, because they are not the same question:
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
 | One language per person | shipped | 1 | 1 | `LANG_MAX` | decided |
-| AI word suggestions | shipped | 3/day | Plus 3/day; `ai` unmetered at Studio | none | decided |
-| AI conversation — the last chapter | shipped | not shown | Studio only; not shown on Plus | slice `talk` | decided — Studio's daily number **open** |
+| Word suggestions | **lifted** | — | — | none | the chips and their daily three went out with Studio; `makeWord()` in `www/reading.js` stays and is used everywhere else |
+| The conversation — the last chapter | **lifted** | — | — | slice `talk` kept | out until the hosted model is in. See the note on `PLANS` in `www/core.js` |
+| Forms made by a rule | shipped | yes | yes | `STG.fm` | decided — a rule offers, it does not declare. Nothing is made until asked, and what comes out is an ordinary word |
+| A word shares as a page from a dictionary | shipped | yes | yes | none | decided — 1080×1350, senses numbered, the family, an example, the origin |
 
 ## The reading side
 
@@ -147,9 +149,9 @@ Still open, and two of them block the work:
 - what happens when translation fails, or the phone is offline when posting —
   **the post must still go out**
 - whether a post published without translations can gain them afterwards
-- whether free's three are per day, and whether they share the existing
-  `AI_FREE_DAILY` counter — sharing it means asking for a spelling suggestion
-  spends a translation
+- whether free's three are per day. There is no counter to share any more:
+  `AI_FREE_DAILY` went out with Studio, and `TR_FREE_DAILY` in `www/post.js`
+  is layer three's own
 
 Layer 3 itself is dictionary lookup: it costs nothing, runs offline, and its
 limit of three is a product decision rather than a cost one. That is a fine
@@ -197,13 +199,13 @@ notices, photographs and voice in Storage, and search — people and posts.
 ### 1. The plan, on the server — the one with money on it
 
 `SET.plan` is a string in `localStorage` and the app is unbundled JavaScript
-on the phone. **Anybody can set themselves to Studio**, and the server would
+on the phone. **Anybody can set themselves to Plus**, and the server would
 not know: `schema.sql` has no plan column and no plan check; `is_member()`
 asks whether somebody is signed in and nothing else.
 
-Today that costs nothing but the sale — the AI runs on the phone (`talk.js`,
-`assist.js`, `grammar.js` make no network call), and there is no cloud
-storage. **The day money is taken that stops being true**, so:
+Today that costs nothing but the sale — everything a plan opens runs on the
+phone (`assist.js`, `grammar.js`, `reading.js` make no network call), and there
+is no cloud storage. **The day money is taken that stops being true**, so:
 
 1. the StoreKit receipt is verified **server-side**, not by the app
 2. the plan lives on the account, in `profile` or beside it

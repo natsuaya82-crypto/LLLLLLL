@@ -19,8 +19,9 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `CHANGELOG.md` | what a person would notice, and every change to stored data |
 | `BACKLOG.md` | found and deliberately not done, and why |
 
-Everything below was checked against the repository on **2026-08-11**, and §3
-and §5 again on **2026-08-19**, not remembered. Where a claim can go stale, it
+Everything below was checked against the repository on **2026-08-11**, §3 and
+§5 again on **2026-08-19**, and the whole file again on **2026-08-21**, not
+remembered. Where a claim can go stale, it
 says how to re-check it — and §3 is the proof that it does: it went on saying
 the timeline was not on the server for a week after it was.
 
@@ -183,9 +184,10 @@ assuming a thing is waiting for you.
 3. ~~**The password reset mail does not arrive.**~~ Done — the template is
    `{{ .Token }}` (`supabase/mail.md`) and the app has a six-digit reset
    screen, because a link has nowhere to land in a Capacitor app.
-4. **The two free ceilings are never explained in words.** A hundred words and
-   three AI calls a day. `capBanner()` warns at twenty words left and nothing
-   says either number before you meet it.
+4. **The free ceilings are never explained in words.** A hundred words, and
+   three of layer three a day (`TR_FREE_DAILY`). `capBanner()` warns at twenty
+   words left and nothing says either number before you meet it. The third
+   ceiling — three word suggestions a day — went out with Studio.
 5. **Signing in from Settings** was fixed but has not been opened on a phone.
    `obBackTo`/`obReturn` in `www/onboard.js`.
 

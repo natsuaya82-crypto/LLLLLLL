@@ -290,8 +290,9 @@ orphaned function is not in the action table, so `act-check` cannot see it;
 often turns up another on the next run — its only caller was the one deleted.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
-`core.js` names every capability a plan opens — `words` `ai` `data` `file`
-`letters` `kinds` `wsys` `kb` `sug` — and `can('kb')` is the only way to ask.
+`core.js` names every capability a plan opens — `words` `data` `file`
+`letters` `wsys` `kb` `snd` `gram` `tr` `dir` — and `can('kb')` is the only way
+to ask.
 `has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
 no plan (false on every plan — a locked door nobody can open, and nothing says
@@ -303,16 +304,18 @@ this dictionary pass a hundred words", five meant "may a letter be added,
 renamed or deleted", two meant "may a keyboard be built", and the rest were
 six more questions again. Which one each site meant lived in a comment or in
 nothing, so opening file import on the free plan, or moving the keyboard to
-Studio, meant reading twenty-three branches and remembering one at a time
+another tier, meant reading twenty-three branches and remembering one at a time
 what each had ever been about. The paid tier ships as a diff on top of the
 free one, so that reading was going to happen.
 
-Putting the nine side by side found something on the first day: `ai` lifts at
-Plus and `sug` only at Studio, and they are the same ceiling. A Plus account
-is shown "3 left" on the word sheet forever and never spends one, because
-`sugLeft()` subtracts a counter `aiSpend()` returned early without touching.
-Nothing throws and nothing is refused, which is why it sat there. Both are
-left as they were — which plan buys the AI is a price, and a price is not a
+Putting them side by side found something on the first day: `ai` lifted at
+Plus and `sug` only at Studio, and they were the same ceiling. A Plus account
+was shown "3 left" on the word sheet forever and never spent one, because
+`sugLeft()` subtracted a counter `aiSpend()` returned early without touching.
+Nothing threw and nothing was refused, which is why it sat there. Both are
+gone now — they were Studio's, Studio sold a hosted model that does not exist,
+and the tier went out with what it sold. Which plan buys it is a price, and a
+price is not a
 tool's to decide — but now it is one table apart instead of two files apart.
 
 ### 6. A language somebody already has still opens
@@ -750,7 +753,7 @@ turns it on — with it off there is no `.sfont` at all, and roman is correct.)
 A function's prefix says which part of the app it belongs to, and it must be
 telling the truth. The prefix is how 500-odd globals in one namespace stay
 findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
-`tk*` talk, `lt*` letters, `wd*` the word sheet, `add*` the new-word sheet,
+`lt*` letters, `wd*` the word sheet, `fmr*` the rules a form is made by, `add*` the new-word sheet,
 `wld*` the world, `w*` word data, `words*` the word list, `nt*` the notebook,
 `share*` what leaves for the system keyboard,
 `f*` search, `v*` a view, `open*` a form, `net*` the server.
@@ -797,7 +800,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
 | `www/otf5.js`, `glyph.js` | on-device OTF font writer and glyph rendering |
-| `www/talk.js`, `assist.js`, `grammar.js` | the AI (Studio) side |
+| `www/assist.js`, `grammar.js` | what the app proposes: sounds, letters, words. Local arithmetic, on every plan |
 | `www/voice.js`, `notes.js` | speech, notes |
 | `docs/STATE.md` | where the project stands: which branch is the app, what is built, what only looks built (the timeline is on the phone; the `post`/`follow`/`quote` tables are written and unused), what only a person with a dashboard login can do, and what CI does not run. The one file to hand somebody who has never seen this repo |
 | `supabase/schema.sql` | what the server holds and who may touch it — held by `npm run rls` |

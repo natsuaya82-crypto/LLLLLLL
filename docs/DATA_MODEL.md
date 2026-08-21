@@ -36,8 +36,8 @@ the keyboard and the world — and neither could throw.
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
-| `phases` | `STG` | grammar stages | object |
-| `talk` | `TALK` | the AI conversation | array |
+| `phases` | `STG` | grammar stages, and `fm` — the rules a form is made by (`docs/FEATURES.md`) | object |
+| `talk` | `TALK` | the conversation. **Its screen is lifted** — see the note on `PLANS` in `www/core.js` — so nothing in the app reads or writes this today. The slice stays in `SLICES`, `bkPack()` still copies it out of storage, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
 | `wld` | `WLD` | what the language is for — and `hide`, which is whether it has a page anybody else may open. **Absent means public**, which is the default and the one no migration can get wrong | object |

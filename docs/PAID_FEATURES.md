@@ -68,7 +68,6 @@ deleted.** Those are two halves of one sentence and neither may be dropped.
 | the keyboard | the fixed QWERTY, in the app and on the phone |
 | the direction | left→right |
 | a stage of your own | stays on the list; cannot be added to or deleted |
-| the AI conversation | the chapter is not shown (it is not shown on Plus either) |
 | CSV, file import, unmetered layer 3 | gone, as they always were on free |
 
 Every word, every letter, every keyboard layout, every stage and every
@@ -99,25 +98,24 @@ Two plans: `free` and `plus`. Studio comes back with the hosted model. `LANG_MAX
 a price — there is no way to make a second language anywhere in the app, so a
 plan promising more would be promising a button that does not exist.
 
-There used to be two names for the AI — `ai` at plus and `sug` at studio — and
-they were the same ceiling said twice, so a Plus account was shown "3 left" on
-the word sheet forever and never spent one. There is one now, and it is
-Studio's.
+There used to be a third plan and it sold the hosted model — the conversation,
+and word suggestions with no daily limit. There is no hosted model: `AI_SEAM`
+in `www/glyph.js` marks where one would join and nothing joins it. A tier whose
+headline is a thing the app cannot do is the app lying to somebody who is about
+to pay, so Studio is out until the seam has something behind it, and what it
+opened went with it.
 
-**The AI is not what Plus sells.** Plus is the tools for building a language
-yourself — unlimited words and letters, the writing systems, the keyboard, CSV,
-a post read in your own words — and every one of them runs on this phone for
-nothing. Studio is the plan where something helps you, and it is the only plan
-whose cost scales with use: a chat turn has to be given the dictionary to read.
+**Plus is the tools for building a language yourself** — unlimited words and
+letters, the writing systems, the keyboard, CSV, a post read in your own words
+— and every one of them runs on this phone for nothing.
 
 ```
   free    draw your own letters. 100 words
   plus    build it yourself. No ceiling
-  studio  and something helps you
 ```
 
-Free and Plus both get `AI_FREE_DAILY` (3) word suggestions a day. Plus is not
-given fewer than Free of anything — "I paid and it got smaller" reads as a bug
+Plus is not given fewer than Free of anything — "I paid and it got smaller"
+reads as a bug
 whatever the reason.
 
 ## What the free plan is
