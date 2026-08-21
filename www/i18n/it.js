@@ -688,6 +688,8 @@ defLang('it', (function(){
       "fmr.ends" : "Finisce in",
       "fmr.cons"         : "Una consonante",
       "fmr.del"          : "Cancella questa regola",
+      "fmr.all"          : "Crea le {0} parole che queste regole possono formare",
+      "fmr.all.1"          : "Crea la parola che queste regole possono formare",
       "fmr.todo"         : "Fare le {0} forme che mancano",
       "fmr.todo.1"       : "Fare la forma che manca",
       "fmr.made"         : "{0} parole create",

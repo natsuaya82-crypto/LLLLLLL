@@ -725,6 +725,47 @@ function fmrAdd(hw){
   toast(tn('fmr.made', made.length));
   openWord(String(w.hw));
 }
+/* Every form the rules can make, across the whole dictionary. A rule is
+   written once and is meant to answer for the language, not for the word you
+   happen to be standing on -- making them one word at a time is the same
+   press repeated as many times as there are words.
+
+   A snapshot of WORDS at the moment it is asked, so a word a rule makes is
+   not immediately fed back into the rules: making the past of a past is not
+   what anybody wrote a rule for, and it would not stop. */
+function fmrTodoAll(){
+  var out=[], seen={}, list=WORDS.slice(), i, j, todo;
+  for(i=0;i<list.length;i++){
+    todo=fmrTodo(list[i]);
+    for(j=0;j<todo.length;j++){
+      if(seen[todo[j].hw]) continue;
+      seen[todo[j].hw]=1;
+      out.push({w:list[i], m:todo[j]});
+    }
+  }
+  return out;
+}
+/* Making all of them. The same word that fmrAdd writes -- one function would
+   be better and is not possible without changing what fmrAdd does, which is
+   open the word's page afterwards; this one has no word to go back to. */
+function fmrAddAll(){
+  var all=fmrTodoAll(), i, w, m, nw, made=0;
+  if(!all.length) return;
+  if(!capOK(all.length)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+  for(i=0;i<all.length;i++){
+    w=all[i].w; m=all[i].m;
+    if(findWord(m.hw)) continue;
+    nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
+        sp:JSON.parse(JSON.stringify(m.sp)),
+        mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
+    nw.mn=nw.mns[0]||'';
+    WORDS.push(nw); made++;
+  }
+  if(!made) return;
+  save();
+  toast(tn('fmr.made', made));
+  render();
+}
 /* The row on a word's page. Only when there is something to make: a button
    that does nothing when pressed is worse than no button. */
 function fmrTodoHTML(w){
@@ -766,6 +807,14 @@ function vForms(){
       }).join('')+'</div>' : '')+
     '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('fmrNew') + '>'+
       ICON_PLUS+esc(t('fmr.new'))+'</button>'+
+    /* And the whole point of writing them: the words they make. Only when
+       there are some to make -- a button that does nothing when pressed is
+       worse than no button, which is what the row on a word's page already
+       says. */
+    (fmrTodoAll().length
+      ? '<button class="btn" style="width:100%;margin-top:10px"' + DO('fmrAddAll') + '>'+
+          esc(tn('fmr.all', fmrTodoAll().length))+'</button>'
+      : '')+
     '</div></div>';
 }
 function fmrPickRow(label, val, r2){

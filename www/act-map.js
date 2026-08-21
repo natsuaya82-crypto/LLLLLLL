@@ -256,6 +256,7 @@ act('posPick', posPick);
 /* Forms made by a rule: writing one, and asking a word for the ones it has
    not got. */
 act('fmrNew', fmrNew);
+act('fmrAddAll', fmrAddAll);
 act('openFmr', openFmr);
 act('wordsMore', wordsMore);
 act('fmrDel', fmrDel);
