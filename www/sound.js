@@ -666,11 +666,14 @@ function vLtset(){
      this id and finds nothing under any other sort. */
   var gid=(pick && ltSort==='own' && ltFil==='all')? 'ltgrid' : 'ltgrid-ro';
   return '<div class="view">'+
-    navTop(list.length===all.length? all.length : (list.length+' / '+all.length))+
+    navTop(list.length===all.length? all.length : (list.length+' / '+all.length),
+           ltWob
+             ? '<button class="navq navdone"' + DO('ltWobEnd') + '>'+esc(t('kb.done'))+'</button>'
+             : '')+
     '<div class="body">'+
     (pick? ltViewRow() : '')+
     (list.length
-      ? '<div class="ltgrid" id="'+gid+'" data-k="'+esc(k)+'">'+
+      ? '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
           list.map(function(l){ return ltCell(l, ''); }).join('')+'</div>'
       : '<div class="note">'+t('lt.none')+'</div>')+
     ((k==='alpha' && loose.length)
@@ -699,13 +702,29 @@ function vLtset(){
    reading with no name and no shape at all. 「この文字のページにzとかの横に
    読み方書いといて」 */
 function ltCell(l, press){
-  var nm=ltName(l)||'', rd=ltUnits(l), sa;
+  var nm=ltName(l)||'', rd=ltUnits(l), sa, wob=ltWob && !press;
   sa=nm || (rd.length? phIpa(rd) : t('lt.reads.none'));
-  return '<button class="ltc'+(ltTaken(l)? ' dup':'')+'" data-id="'+esc(l.id)+'"'+
-    (press || DO('go', ["letter", l.id])) + ' aria-label="'+esc(sa)+'">'+
+  /* While the alphabet is held, a cell does not open: what a press is FOR in
+     this state is the corner mark, and a letter that opened its own page from
+     under a wobble would be two answers to one press. The same sentence
+     kbHTML makes about a key.
+
+     The mark is only there where a letter can actually go. The free
+     twenty-eight ARE the alphabet -- a, b, c and the two marks -- and taking
+     one away would leave the free keyboard with a key that answers to
+     nothing, which is why can('letters') guards the letter's own page too.
+     Free still wobbles, because the ORDER is theirs. */
+  return '<button class="ltc'+(ltTaken(l)? ' dup':'')+(wob? ' wob':'')+
+    '" data-id="'+esc(l.id)+'"'+
+    (press || (wob? '' : DO('go', ["letter", l.id]))) + ' aria-label="'+esc(sa)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
-    '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span></button>';
+    '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span>'+
+    ((wob && can('letters'))
+      ? '<span class="ltx"' + DO('ltDelete', [l.id]) + ' role="button" '+
+        'aria-label="'+esc(t('glyph.del'))+'">'+ICON_MINUS+'</span>'
+      : '')+
+    '</button>';
 }
 
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,

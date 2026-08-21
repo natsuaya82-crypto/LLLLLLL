@@ -232,7 +232,19 @@ function ltLift(){
   LTD.on=true;
   LTD.el.classList.add('lift');
   LTD.g.classList.add('moving');
+  /* And the alphabet goes into the state a phone's home screen goes into when
+     an icon is held: every letter wobbling with a mark on its corner. The same
+     state the keyboard being built has had, on the other grid in this app that
+     somebody arranges. 「ここ長押しで右上に⚪︎-つけて欲しい。編集モードになる感じ。
+     それで消せるし、移動もできる。iPhoneのホーム画面と同じ動き」
+
+     Not drawn until the finger comes up: a render() in the middle of a drag
+     takes the cell being dragged out from under it. */
+  ltWob=true;
 }
+/* Where you are standing in the alphabet, so viewReset() drops it. */
+var ltWob=false;
+function ltWobEnd(){ ltWob=false; render(); }
 function ltDrag(e){
   if(!LTD) return;
   var p=e.touches? e.touches[0] : e;
@@ -268,7 +280,12 @@ function ltUp(e){
   d.el.style.transform='';
   d.el.classList.remove('lift');
   d.g.classList.remove('moving');
-  if(!d.on) return;
+  if(!d.on){
+    /* Held long enough to wobble but let go without moving anything: still a
+       hold, so the marks appear. */
+    if(ltWob) render();
+    return;
+  }
   /* and the press does not also open the letter it was moving */
   if(e && e.preventDefault) e.preventDefault();
   kids=d.g.children;
@@ -617,7 +634,11 @@ function ltDelete(id){
   ltDel(id);
   if(GE && GE.lid===id) GE=null;
   save(); installScriptFont();
-  back();
+  /* From the corner mark the alphabet is already on screen and the wobble
+     stays on -- somebody taking one letter off is usually taking two. From
+     the letter's own page there is a page to leave. The same sentence
+     kbDelKey makes. */
+  if(here().r==='letter') back(); else render();
   toast(t('glyph.deleted', nm));
 }
 function ltDel(id){

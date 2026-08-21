@@ -32,6 +32,7 @@ function viewReset(){
   mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all';           /* the alphabet's order and filter */
+  ltWob=false;                         /* and whether its letters are wobbling */
   wdMode='';                           /* the sheet a word is written on */
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */

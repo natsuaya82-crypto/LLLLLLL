@@ -727,6 +727,8 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    `moving` is on the grid while a letter is being carried, so the page under
    the finger does not scroll away from it. */
 .ltgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-top:2px}
+/* Room for the corner marks while the alphabet is held, and only then. */
+.ltgrid.held{margin-top:10px;overflow:visible}
 .ltgrid.moving{touch-action:none}
 .ltc{min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;
      gap:6px;padding:10px 4px 8px;background:var(--pane);border:1px solid var(--line);
@@ -761,6 +763,24 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .ltgrid.ltpick .nol{display:none}
 /* Picked up: it rides over the others and follows the finger. */
 .ltc.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
+/* Held, the way a phone's home screen is held. The keyframes are the
+   keyboard's -- one wobble, both grids -- and only the selector is new,
+   because a `.kbk` rule cannot reach a `.ltc`. */
+.ltc.wob{animation:kbwob .28s linear infinite}
+.ltc.wob:nth-child(2n){animation-delay:.09s}
+.ltc.wob:nth-child(3n){animation-delay:.05s}
+@media (prefers-reduced-motion:reduce){.ltc.wob{animation:none}}
+/* A little outside the corner, the way a home screen's is. 「内側じゃなくて
+   ちょい外側がいい」 The keyboard's sits INSIDE its key and that is not the
+   same choice made twice: the keyboard runs to both edges of the phone, so a
+   mark hanging off the last key of a row hangs off the screen. This grid has
+   a gutter on every side, so there is somewhere for it to hang. Six points
+   out, and the grid is given the same six at the top so the first row's marks
+   do not sit on the row above them. */
+.ltx{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:999px;
+     background:var(--tx);color:var(--bg);display:flex;align-items:center;
+     justify-content:center;z-index:4}
+.ltx svg{width:13px;height:13px}
 .sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;
         background:none;color:var(--txm);
         display:inline-flex;align-items:center;justify-content:center}

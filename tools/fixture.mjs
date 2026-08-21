@@ -657,6 +657,18 @@ export function halfDone(){
                                                     const h = FORM.html; KB = null; kbShow = 0;
                                                     kbSlotFor = null;
                                                     SET.plan = 'free'; return h; }],
+    /* The alphabet held, the same way. Two faces, because the corner mark is
+       the paid plan's -- the free twenty-eight are the alphabet and taking one
+       away would leave the keyboard a key that answers to nothing -- while the
+       wobble and Done are on both, since the ORDER is everybody's. */
+    ['the alphabet being held (paid)', () => { SET.plan = 'plus'; ltWob = true;
+                                       window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+                                       const h = vLtset();
+                                       ltWob = false; SET.plan = 'free'; return h; }],
+    ['the alphabet being held (free)', () => { ltWob = true;
+                                       window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+                                       const h = vLtset();
+                                       ltWob = false; return h; }],
     /* A keyboard with more than one layer: the rail that switches between
        them only exists then -- and so does the rest of the editor: the way
        to add a row, to add a layer, and to put the whole thing back. */
