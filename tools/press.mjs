@@ -336,10 +336,63 @@ const R = await pg.evaluate(async () => {
   return out;
 });
 
+/* ---- and what a thumb does when it does not let go ----------------------
+   Everything above is a press. Holding something and carrying it is the other
+   gesture this app has, it is in two places -- the alphabet and the keyboard
+   being built -- and nothing was watching either. Both were broken, in the
+   same line, from the day they were written: the thing being carried is under
+   the finger and lifted above its neighbours, so elementFromPoint answered
+   with IT, `over === the one being dragged` sent the drag home, and a letter
+   or a key could be held and walked across the whole screen without ever
+   swapping with anything. Nothing threw. Every screen looked right.
+
+   So this holds the gesture and not the code: touchstart, wait past the lift,
+   touchmove onto something else, and the order afterwards has to be a
+   different order. */
+const HELD = await pg.evaluate(async () => {
+  const out = [];
+  const sp = document.getElementById('splash');
+  if (sp && sp.parentNode) sp.parentNode.removeChild(sp);
+  const T = (el, type, x, y) => {
+    const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+    el.dispatchEvent(new TouchEvent(type, {
+      touches: type === 'touchend' ? [] : [t],
+      targetTouches: type === 'touchend' ? [] : [t],
+      changedTouches: [t], bubbles: true, cancelable: true }));
+  };
+  /* One hold, one carry, one let go -- and what the order was either side. */
+  const carry = async (what, gridSel, cellSel, from, to) => {
+    const g = document.querySelector(gridSel);
+    if (!g) return out.push(what + ': no ' + gridSel);
+    const cs = [].slice.call(g.querySelectorAll(cellSel));
+    if (cs.length <= to) return out.push(what + ': only ' + cs.length + ' to carry');
+    const a = cs[from], b = cs[to];
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    const order = () => [].slice.call(g.querySelectorAll(cellSel)).indexOf(a);
+    const was = order();
+    T(a, 'touchstart', ra.left + ra.width / 2, ra.top + ra.height / 2);
+    /* past the 380ms the lift waits, because the lift IS the gesture */
+    await new Promise(r => setTimeout(r, 460));
+    T(a, 'touchmove', rb.left + rb.width / 2, rb.top + rb.height / 2);
+    const now = order();
+    T(a, 'touchend', rb.left + rb.width / 2, rb.top + rb.height / 2);
+    if (now === was) out.push(what + ': held and carried and it did not move');
+  };
+  window.__seed(); SET.done = true; SET.plan = 'plus';
+  go('ltset', 'alpha');
+  await carry('a letter of the alphabet', '#ltgrid', '.ltc', 0, 2);
+  go('kb');
+  if (kbBoards().length < 2) kbAdd(KB_PATS[0]);
+  kbGoBoard(1);
+  await carry('a key of a keyboard', '#kb', '.kbk[data-r]', 0, 3);
+  return out;
+});
+
 await br.close();
 srv.close();
 
 const fails = [];
+HELD.forEach(m => fails.push('held: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
 R.small.forEach(m => fails.push('too small to hit: ' + m));
@@ -352,6 +405,7 @@ console.log('photographs all one box, filled, none stretched: ' +
             ((R.big.length || R.bent.length)
               ? (R.big.length + R.bent.length) + ' FOUND'
               : R.picsSeen + ' measured'));
+console.log('held and carried: ' + (HELD.length ? HELD.length + ' FOUND' : 'the alphabet and a keyboard both moved'));
 console.log('buttons pressed: ' + R.pressed +
             '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
 /* Printed, not silently tolerated. A name nothing here presses is a button

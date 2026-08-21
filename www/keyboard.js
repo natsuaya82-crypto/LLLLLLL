@@ -1048,7 +1048,19 @@ function kbDragTo(e){
   }
   e.preventDefault();
   KBD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  /* The key being carried is directly under the finger -- that is what
+     carrying it means -- and it is lifted above the others, so it is the
+     topmost thing at that point and elementFromPoint answered with IT every
+     single time. `over===KBD.el` then sent the drag home, and a key held and
+     dragged across the whole keyboard never swapped with anything.
+     「長押しして持っていきたいのに動かない」
+
+     So it is taken out of the hit test for the length of the question and put
+     straight back. Nothing else can be asked instead: what is wanted is the
+     key UNDER the one being carried. */
+  KBD.el.style.pointerEvents='none';
   var over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
+  KBD.el.style.pointerEvents='';
   if(!over || over===KBD.el) return;
   /* Into the row the finger is over, beside the key it is over -- which is
      what moving across rows means and is the half a one-dimensional grid

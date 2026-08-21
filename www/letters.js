@@ -245,7 +245,13 @@ function ltDrag(e){
   /* the page does not scroll while a letter is being carried */
   e.preventDefault();
   LTD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  /* Out of the hit test for the length of the question. The cell being
+     carried is under the finger and lifted above the others, so it was the
+     answer every time and the drag went home without swapping anything --
+     the same one line, in the other place this gesture lives. */
+  LTD.el.style.pointerEvents='none';
   var over=ltCellAt(document.elementFromPoint(p.clientX, p.clientY));
+  LTD.el.style.pointerEvents='';
   if(!over || over===LTD.el) return;
   var kids=LTD.g.children, a=-1, b=-1, i;
   for(i=0;i<kids.length;i++){ if(kids[i]===LTD.el) a=i; if(kids[i]===over) b=i; }
