@@ -46,10 +46,11 @@
 /* And then thinner again. 32 against a step of 36 is a pen very nearly as wide
    as the gap between two dots: a letter drawn carefully on the lattice comes
    out as one welded mass with the dots it was built on invisible under it.
-   「ペン太すぎて細かい今の点に合わないでズレる」 24 is two thirds of a step --
-   two dots apart still reads as two strokes, and the page is paler than a real
-   font's, which is the price and is the thing to look at on a phone. */
-var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
+   「ペン太すぎて細かい今の点に合わないでズレる」 18 is half a step: two dots
+   apart reads as two strokes with daylight between them, and the page is
+   paler than a real font's, which is the price and is what to look at on a
+   phone rather than in a picture. */
+var GPEN={width:18, angleDeg:0, contrast:1.0, curve:36};
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of
@@ -1506,11 +1507,14 @@ function geDraw(){
   GE.st.forEach(function(s,si){
     s.pts.forEach(function(p,pi){
       var sel=(si===GE.si && pi===GE.pi);
-      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?24:16),0,Math.PI*2);
+      /* Smaller than the step, or the handle covers the lattice dot it is
+         sitting on and the thing you are aiming at is under the thing you
+         placed. 「⚪︎がでかいのもあるわ。そのせいで点がわからん」 */
+      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?16:11),0,Math.PI*2);
       x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold');
       x.fill();
       if(sel){
-        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*40,0,Math.PI*2);
+        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*32,0,Math.PI*2);
         x.strokeStyle=cssVar('--gold'); x.lineWidth=k*4; x.stroke();
       }
     });
