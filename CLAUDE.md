@@ -88,6 +88,18 @@ options and what the code does today, and stop. Do not read a spec off the
 code: the code is what happened, not what was wanted.
 → `docs/FEATURE_RULES.md`
 
+**Saying what you are doing, while you are doing it.** Work is reported as it
+happens, not at the end. Before a step that takes more than a moment -- a
+check, a measurement, a build, a file being rewritten -- say in one line what
+it is and why; after it, say what came back. Silence for ten minutes is not
+work being done quietly, it is a session that cannot be steered: by the time
+the report arrives the wrong thing has already been built. One line each, in
+the order they happen. 「せめてやってる作業を細かくここにログで残せや」
+「死ぬほど長い作業をやめてやってる作業を毎回報告する」
+
+This is the opposite of a long reply. Short lines, often. Not a long one at
+the end.
+
 **Reporting.** "Implemented it" is not a report. Files and why, what behaviour
 changes, what data is affected, what is newly stored, migration, deletion, the
 plan, what was tested, what was not, whether a device is needed, known limits.

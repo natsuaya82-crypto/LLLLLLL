@@ -407,12 +407,32 @@ function tabBar(){
    viewport, so with the keyboard up it is behind the keyboard and there is
    nothing to leave room for -- leaving it anyway costs sixty points of a
    screen that has just lost half its height. */
+/* The smallest the visible part has been on this phone, this launch -- which
+   is what it is with the keyboard up. A form that is one screen is laid out
+   to THIS and not to --vvh, because a layout that follows --vvh is a layout
+   that moves every time the keyboard goes down: the field stretches, and the
+   meaning and the row of pictures under it slide to the foot of the phone.
+   「キーボードをおろしても位置は動かない」「キーボード開いてない時に写真とかが
+   下の位置にある」
+
+   Until a keyboard has actually been up there is nothing to measure, so it
+   starts as a guess -- 55% of the phone, which is about what is left over an
+   iPhone's kana keyboard and its accessory bar. The first time one opens, the
+   guess is replaced by the truth and the composer settles; it does not move
+   again. */
+var vvMin=0, vvWas=0;
 function vvFit(){
   var v=window.visualViewport, h=v? v.height : window.innerHeight;
   /* 120 rather than 0: a phone's address bar sliding away is also a change of
      height and is not a keyboard. */
   var up=(window.innerHeight-h)>120;
   var d=document.documentElement.style;
+  /* A phone that turned, or a window somebody dragged, is a different screen
+     and the old smallest means nothing on it. */
+  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvMin=0; }
+  if(!vvMin) vvMin=Math.round(window.innerHeight*0.55);
+  if(h<vvMin) vvMin=h;
+  d.setProperty('--vvmin', vvMin+'px');
   d.setProperty('--vvh', h+'px');
   /* Where the visible part STARTS. iOS scrolls the layout viewport to lift a
      focused field clear of the keyboard, and a screen pinned to the document
