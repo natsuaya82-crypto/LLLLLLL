@@ -472,28 +472,10 @@ function sndLetters(sym){
 
    So they are shown, because "which letters say this" is the question a
    phonology asks, and they are not pressed. */
-function sndRowHTML(sym){
-  var ls=sndLetters(sym);
-  return '<div class="sndrow">'+
-    '<button class="sndsym"' + DO('sayPh', [sym]) + '>'+esc(sym)+'</button>'+
-    '<div class="sndlts">'+(ls.length
-      ? ls.map(function(l){
-          return '<span class="sndlt">'+ltInk(l, esc(ltName(l)||'·'))+'</span>'; }).join('')
-      : '<span class="sndnone">'+esc(t('snd.nolt'))+'</span>')+'</div>'+
-    '<button class="sndx"' + DO('sndDrop', [sym]) + ' aria-label="'+
-      esc(t('snd.drop'))+'">'+ICON_CROSS+'</button>'+
-    '</div>';
-}
-function vSnd(){
-  var ss=addedSnd();
-  return '<div class="view">'+navTop(String(ss.length))+'<div class="body">'+
-    (ss.length
-      ? ss.map(sndRowHTML).join('')
-      : '<div class="empty"><div class="eb">'+t('snd.empty')+'</div></div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:16px"' +
-      DO('openSndAdd') + '>'+ICON_ADD+t('snd.add')+'</button>'+'<div style="height:80px"></div>'+
-    '</div></div>';
-}
+/* The alphabet is where a sound is now seen and taken out -- sndCell above.
+   What was here was a row per sound with the letters that say it beside it,
+   on a chapter of its own, which is the same pair the letters page already
+   shows from the other end. 「音から文字と文字から音の二重をどうにかしろ」 */
 /* The whole chart, to put a sound into the language before any letter says
    it. The same chart a letter opens; what differs is what a press does. */
 function openSndAdd(){
@@ -672,19 +654,39 @@ function vLtset(){
              : '')+
     '<div class="body">'+
     (pick? ltViewRow() : '')+
-    (list.length
-      ? '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
-          list.map(function(l){ return ltCell(l, ''); }).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>')+
+    /* The letters, and after them a cell for every sound of the language that
+       no letter says yet. One page for the pair, rather than a chapter for
+       each end of it. Only on the alphabet, and only where the filter is not
+       narrowing the page to something else. */
+    (function(){
+      var free=(pick && ltFil==='all')? sndLoose() : [];
+      if(!list.length && !free.length) return '<div class="note">'+t('lt.none')+'</div>';
+      return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
+        list.map(function(l){ return ltCell(l, ''); }).join('')+
+        free.map(function(sym){ return sndCell(sym, ltWob && can('snd')); }).join('')+
+        '</div>';
+    }())+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
     /* At the foot of the screen: a grid that grows is a grid you would have
        to scroll to the end of to add to. The free alphabet does not grow --
        the twenty-eight are there from the first second and drawing on them
        is the whole of it -- so there is nothing at the foot of it. */
-    (can('letters')
-      ? '<div class="barfix"><button class="btn ghost"' + DO('newLetter', [k]) + '>'+
-          ICON_ADD+t('lt.new')+'</button></div>'
+    /* Two ways to add, and they are two different things: a letter, which is
+       a shape to draw, and a sound, which is a thing the language says and
+       may not have a shape yet. The sound is the phonology chapter's only
+       remaining door, moved here with it. */
+    ((can('letters') || (k==='alpha' && can('snd')))
+      ? '<div class="barfix">'+
+          (can('letters')
+            ? '<button class="btn ghost"' + DO('newLetter', [k]) + '>'+
+                ICON_ADD+t('lt.new')+'</button>'
+            : '')+
+          ((k==='alpha' && can('snd'))
+            ? '<button class="btn ghost"' + DO('openSndAdd') + '>'+
+                ICON_ADD+t('snd.add')+'</button>'
+            : '')+
+        '</div>'
       : '')+
     '</div></div>';
 }
@@ -724,9 +726,54 @@ function ltCell(l, press){
       ? '<span class="ltx"' + DO('ltDelete', [l.id]) + ' role="button" '+
         'aria-label="'+esc(t('glyph.del'))+'">'+ICON_MINUS+'</span>'
       : '')+
+    /* And the way to hear it, at the other corner of the same press. Only
+       while the alphabet is at rest -- held, that corner is the mark that
+       takes the letter away, and two things at one corner is one of them
+       being pressed by mistake. A letter that reads nothing has nothing to
+       play. 「この画面も音聞けたら最高やね」 */
+    ((!wob && !press && rd.length && ltHasSound(l))
+      ? '<span class="ltsay"' + DO('sayPh', [rd]) + ' role="button" '+
+        'aria-label="'+esc(t('f.listen'))+'">'+
+        '<span class="phkd">'+ICON_SPK+'</span></span>'
+      : '')+
     '</button>';
 }
 
+/* Sounds of the language that no letter says yet. The alphabet and the
+   inventory were two chapters showing the same pair from opposite ends --
+   the letter's page said what it reads, and the phonology page said what
+   reads it. 「音から文字と文字から音の二重をどうにかしろ」「文字+音のページに
+   すればいいやん」 So there is one page: the letters, and beside them a cell
+   for each sound still waiting for one. Pressing it draws the letter that
+   says it; held, its mark takes the sound out of the language.
+
+   It is a cell in the same grid rather than a list below, because it is the
+   same thing at an earlier moment. It carries no `data-id`, which is what
+   ltDown and ltOrderKids read to know it is not in the alphabet. */
+function sndCell(sym, wob){
+  return '<button class="ltc lt0'+(wob? ' wob':'')+'" data-snd="'+esc(sym)+'"'+
+    (wob? '' : DO('ltForUnitGo', [sym])) + ' aria-label="'+esc(sym)+'">'+
+    '<span class="ltcf"><span class="nol">'+ICON_PEN+'</span></span>'+
+    '<span class="ltcn">\u00b7</span>'+
+    '<span class="ltcr">'+esc(phIpa([sym]))+'</span>'+
+    (wob
+      ? '<span class="ltx"' + DO('sndDrop', [sym]) + ' role="button" '+
+        'aria-label="'+esc(t('snd.drop'))+'">'+ICON_MINUS+'</span>'
+      : '<span class="ltsay"' + DO('sayPh', [[sym]]) + ' role="button" '+
+        'aria-label="'+esc(t('f.listen'))+'">'+
+        '<span class="phkd">'+ICON_SPK+'</span></span>')+
+    '</button>';
+}
+/* Which sounds those are: in the language, and on no letter. */
+function sndLoose(){
+  return addedSnd().filter(function(sym){ return !sndLetters(sym).length; });
+}
+/* Pressing one makes the letter that says it and opens it to be drawn --
+   which is what a cell with a pen on it says it will do. */
+function ltForUnitGo(sym){
+  var l=ltForUnit(sym);
+  if(l) go('letter', l.id);
+}
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,
    the character it borrows instead of a drawing, and a way to be rid of it.
 

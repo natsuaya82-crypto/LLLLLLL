@@ -222,7 +222,10 @@ function ltCellAt(el){
 }
 function ltDown(e){
   var b=ltCellAt(e.target), p=e.touches? e.touches[0] : e;
-  if(!b || !p) return;
+  /* A sound with no letter yet is a cell in the same grid and is not a letter:
+     there is nothing to put in an order. It cannot be carried, and it is not
+     counted when the order is written -- ltOrderKids below. */
+  if(!b || !p || !b.getAttribute('data-id')) return;
   LTD={el:b, g:b.parentNode, id:b.getAttribute('data-id'),
        x:p.clientX, y:p.clientY, on:false, timer:0};
   LTD.timer=setTimeout(ltLift, 380);
@@ -265,12 +268,22 @@ function ltDrag(e){
   var over=ltCellAt(document.elementFromPoint(p.clientX, p.clientY));
   LTD.el.style.pointerEvents='';
   if(!over || over===LTD.el) return;
+  if(!over.getAttribute('data-id')) return;
   var kids=LTD.g.children, a=-1, b=-1, i;
   for(i=0;i<kids.length;i++){ if(kids[i]===LTD.el) a=i; if(kids[i]===over) b=i; }
   LTD.g.insertBefore(LTD.el, b>a? over.nextSibling : over);
   /* it is in a different slot now, so the finger's offset from it starts over */
   LTD.x=p.clientX; LTD.y=p.clientY;
   LTD.el.style.transform='';
+}
+/* The cells of the grid that ARE letters, in the order they are on screen.
+   The grid also holds a cell for every sound of the language no letter says
+   yet, and those are not in the alphabet -- counting them would write a
+   position nothing agrees with. */
+function ltOrderKids(g){
+  var out=[], kids=g.children, i;
+  for(i=0;i<kids.length;i++) if(kids[i].getAttribute('data-id')) out.push(kids[i]);
+  return out;
 }
 function ltUp(e){
   if(!LTD) return;
@@ -288,7 +301,7 @@ function ltUp(e){
   }
   /* and the press does not also open the letter it was moving */
   if(e && e.preventDefault) e.preventDefault();
-  kids=d.g.children;
+  kids=ltOrderKids(d.g);
   for(i=0;i<kids.length;i++) if(kids[i]===d.el) to=i;
   ltMove(d.g.getAttribute('data-k'), d.id, to);
 }

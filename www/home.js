@@ -92,10 +92,7 @@ function tocRows(){
        AI: a numbered row that appears when you pay renumbers the book under
        somebody who already knows where things are. Free and Plus differ by
        this row and it is at the end. */
-    can('snd')
-      ? [{k:'toc.sound', r:'snd', v:SND.length,
-          txt:SND.length? String(SND.length) : '—'}]
-      : []
+    []
   ).concat(
     /* The AI conversation is Studio's, and it is the LAST chapter so that not
        having it takes nothing away from anybody's numbering.

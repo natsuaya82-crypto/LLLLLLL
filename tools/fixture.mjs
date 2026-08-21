@@ -731,11 +731,22 @@ export function halfDone(){
         window.route='kb'; NAV=[{r:'kb', a:'1'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
-    /* The phonology, which is Plus's -- the walk runs on free, so without
-       this its rows and the chart that adds to them belong to no screen. */
-    ['the sounds a language is built from', () => {
-        SET.plan = 'plus'; go('snd');
-        const h = vSnd(); SET.plan = 'free'; return h; }],
+    /* A sound the language has that no letter says yet. It is a cell in the
+       alphabet now rather than a row on a chapter of its own, and it only
+       exists on Plus -- free cannot add a sound. Two faces, because held it
+       carries the mark that takes the sound away and at rest the speaker.
+       The seeded language has a letter for every sound it has, so one is
+       taken off a letter here to make one. */
+    ['a sound with no letter yet', () => {
+        SET.plan = 'plus'; SND.push('\u0283');
+        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+        const h = vLtset();
+        SND.pop(); SET.plan = 'free'; return h; }],
+    ['a sound with no letter yet, held', () => {
+        SET.plan = 'plus'; ltWob = true; SND.push('\u0283');
+        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+        const h = vLtset();
+        SND.pop(); ltWob = false; SET.plan = 'free'; return h; }],
     ['the chart, for the language rather than a letter', () => {
         SET.plan = 'plus'; openSndAdd();
         const h = FORM.html; SET.plan = 'free'; return h; }],

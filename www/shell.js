@@ -167,7 +167,6 @@ var PAGES={
   form:    {tab:'build'},
   letters: {tab:'build', k:'toc.letters'},
   kb:      {tab:'build', k:'kb.title'},
-  snd:     {tab:'build', k:'toc.sound'},
   ltset:   {tab:'build', k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},

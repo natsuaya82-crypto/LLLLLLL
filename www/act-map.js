@@ -52,6 +52,7 @@ act('geCircle', geCircle);
 act('geClear', geClear);
 act('ltDelete', ltDelete);
 act('ltWobEnd', ltWobEnd);
+act('ltForUnitGo', ltForUnitGo);
 act('ltSave', ltSave);
 act('geUndo', geUndo);
 act('geSave', geSave);
