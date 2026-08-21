@@ -30,14 +30,15 @@
    choice. */
 /* rules: what you decided, written by you. ex: the lines that show it.
    notes stays for what is neither. */
-var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}};
+var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[]};
 /* How far the open language has got. Empty first: see langRead() in core.js. */
 function stRead(){
-  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}};
+  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[]};
   try{
     var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
     if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
-              STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{}; }
+              STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
+              STG.fm=stgs.fm||[]; }
   }catch(e){}
 }
 stRead();
@@ -408,7 +409,10 @@ function stRow(p, n){
 function stListHTML(){
   var a=stAll(), i, rows='';
   for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
-  return '<div class="stlist">'+rows+'</div>'+
+  return '<button class="set"' + DO('go', ["forms"]) + '>'+
+      '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
+      '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+ICON_GO+'</span></button>'+
+    '<div class="stlist">'+rows+'</div>'+
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free
        dictionary is for; a stage of your own is the sixteenth and past that

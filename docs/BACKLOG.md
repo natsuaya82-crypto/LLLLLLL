@@ -66,28 +66,27 @@ bisected against instead of one.
   repeats is duplication — `cffNum` and `csNum` in `otf5.js` are the standing
   example.
 
-## A column has two places it cannot go, and both are deliberate
+## A column no longer has anywhere it cannot go
 
-A language can be written in columns — `ttb-rl` and `ttb-lr` — and the
-timeline sets one that way. Two places set it **across** instead, in the
-direction the columns run. `dirFlat()` in `www/wsys.js` is the one place that
-says so, and both read it from there.
+*Both halves of this are done. Kept as the record of why it was not, because
+the reasoning is the reason the fix took the shape it did.*
 
-**The composer's field** is a `<textarea>`. A textarea in a vertical writing
-mode is not something this webview does: `lnFit()` sizes it by `scrollHeight`,
-which is the wrong axis there, and the caret goes wherever the browser
-feels like. Somebody who cannot type cannot post, which is worse than a field
-that runs the other way from the post it makes. Fixing it means a composer
-that is not a textarea.
+A language can be written in columns — `ttb-rl` and `ttb-lr` — and two places
+used to set it **across** instead, in the direction the columns run, through a flattening
+step that no longer exists.
 
-**The card** is 1920×1080 with a band of letters across the middle of it. A
-column has nowhere to go in that. Making a card of a vertical post honest
-means a second composition — portrait, with the run down the middle and the
-spelling and the meaning somewhere else — which is a design decision and not a
-mechanical one. Worth doing; not worth guessing at.
+**The composer's field** is a `<textarea>`, and a textarea in a vertical
+writing mode was not something this webview would do: `lnFit()` sized it by
+`scrollHeight`, which is the wrong axis there. It is typed into as a column
+now, and `lnFit()` measures the width when the writing-mode is vertical.
 
-Neither is a lie: a vertically written language set across the page runs the
-way its columns run, which is what a horizontal banner of Japanese is.
+**The card** was 1920×1080 with a band of letters across the middle of it, and
+a column had nowhere to go in that. The answer written here was "a second
+composition — portrait, with the run down the middle", and that is what it
+got: `CARD_SHAPES` offers 16:9, 1:1 and 9:16, a language that runs down the
+page opens on the tall one, and `cardPlace()` lays the line into whichever
+shape is chosen rather than one fixed band. So the card sets a vertical script
+vertically, and nothing is flattened on the way.
 
 ## Not now, because a rename is not a fix
 

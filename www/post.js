@@ -445,10 +445,10 @@ function pwPicHTML(){
 }
 /* The line as it will actually look, under the field.
 
-   The field cannot BE vertical: a column is not something this webview lets
-   anybody type into, which is what dirFlat() exists for. So a language that
-   runs down the page was typed across and posted downward, and the first time
-   somebody saw the shape of their own sentence was after it had gone.
+   The field could not BE vertical -- a column was not something this webview
+   would let anybody type into -- so a language that runs down the page was
+   typed across and posted downward, and the first time somebody saw the shape
+   of their own sentence was after it had gone.
    「縦書きにしたのに投稿プレビューだと見えない」
 
    It renders through postLnHTML() -- the timeline's own function, handed a
@@ -609,9 +609,9 @@ function pwHTML(){
          「自作文字で出せ、向きも縦向きになってないけど」
 
          `.sfont` is what puts the drawn letters in a field and it was on
-         every other one. dirFlat() is gone from here: a column IS typed into
-         now, and lnFit() measures the width when the writing-mode is
-         vertical, because that is the way a column grows. */
+         every other one. Nothing is flattened here any more: a column IS
+         typed into now, and lnFit() measures the width when the writing-mode
+         is vertical, because that is the way a column grows. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
         PW.ln, 'fitin '+dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+

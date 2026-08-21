@@ -272,27 +272,6 @@ function scriptDir(){
 function dirClass(d){
   return 'dir-'+(DIRS.indexOf(d)>=0 ? d : 'ltr');
 }
-/* The horizontal direction a vertical one falls back to, for the two places a
-   column cannot go, said once rather than at both of them:
-
-     the composer's field   a textarea in a column is not something this
-                            webview does. lnFit() measures scrollHeight to
-                            size it, the caret goes where the browser feels
-                            like putting it, and a person who cannot type
-                            cannot post
-     the card               a landscape composition, 1920 by 1080, with the
-                            letters in a band across the middle. A column has
-                            nowhere to go in it
-
-   Falling back to the direction the COLUMNS run is not a guess: a vertically
-   written language set across the page runs that way, which is what a
-   horizontal banner of Japanese is. It is a compromise and it is written down
-   in docs/BACKLOG.md rather than left to be found. */
-function dirFlat(d){
-  if(d==='ttb-rl') return 'rtl';
-  if(d==='ttb-lr') return 'ltr';
-  return DIRS.indexOf(d)>=0 ? d : 'ltr';
-}
 function setScriptDir(k){
   if(DIRS.indexOf(k)<0) return;
   /* The screen only offers this on a paid plan; this is the same sentence

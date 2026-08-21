@@ -205,6 +205,7 @@ act('tkBack', tkBack);
 act('tkClear', tkClear);
 act('cardOpen', cardOpen);
 act('cardSave', cardSave);
+act('cardSetShape', cardSetShape);
 act('tkSend', tkSend);
 act('tkWipe', tkWipe);
 act('wRelToggle', wRelToggle);
@@ -251,11 +252,23 @@ actIn('wdSetNt', wdSetNt);
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
 actIn('ipaSetQ', ipaSetQ);
+actIn('fmrSetAdd', fmrSetAdd);
 actIn('stSetLn', stSetLn);
 act('fmPick', fmPick);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
 act('posPick', posPick);
+/* Forms made by a rule: writing one, and asking a word for the ones it has
+   not got. */
+act('fmrNew', fmrNew);
+act('openFmr', openFmr);
+act('fmrDel', fmrDel);
+act('fmrAdd', fmrAdd);
+act('fmrSetAt', fmrSetAt);
+act('fmrSetDrop', fmrSetDrop);
+act('fmrSetWhen', fmrSetWhen);
+act('fmrPickPos', fmrPickPos);
+act('fmrPickFm', fmrPickFm);
 act('regPick', regPick);
 act('wdMnOpen', wdMnOpen);
 act('wdExOpen', wdExOpen);

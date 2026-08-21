@@ -163,7 +163,18 @@ export function seed(){
      boot.js cut what it could before this file put these posts here. */
   migratePostInk();
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
-         rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]}};
+         rules:{neg:'a rule'}, ex:{neg:[{lb:'a', ln:'kano tir', gl:'b'}]},
+         /* One rule for making a form, because the screen it is written on
+            renders nothing at all without one -- so a walk over an empty list
+            pressed the button that opens the editor and came back with a
+            blank sheet, and every control on that sheet counted as a name no
+            screen ever says.
+            A plural for nouns rather than a past for verbs: every verb in
+            here already wears the label its parent gave it, so a rule making
+            a past would have nothing left to offer and the button that
+            offers it would never be drawn. */
+         fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
+              add:[{l:'l1', u:'k'}]}]};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
@@ -911,13 +922,19 @@ export function halfDone(){
     ['a file being chosen', () => { SET.plan = 'plus'; IMP = impBlank();
         openImport();
         const h = FORM.html; SET.plan = 'free'; return h; }],
-    /* The card, which is the only screen whose output leaves the app. Both
-       faces: a word, and one of the sentences written under a word -- they
-       compose the picture differently (one spelling, or several with the
-       gaps between them) and only the second can overflow the width. */
+    /* The card, which is the only screen whose output leaves the app. All
+       three faces: a word, one of the sentences written under a word, and a
+       post. They compose the picture differently -- a word is a page out of a
+       dictionary, a sentence is a line, a post is somebody's published one --
+       and only the post is offered a choice of shape, so the shape picker is
+       on no screen but the third. */
     ['a word as a card',       () => { cardOpen('w', 'kano'); return FORM.html; }],
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
                                        cardOpen('x', 'kano#0');
-                                       const h=FORM.html; delete findWord('kano').ex; return h; }]
+                                       const h=FORM.html; delete findWord('kano').ex; return h; }],
+    ['a post as a card',       () => { cardOpen('p', 'p1'); return FORM.html; }],
+    /* The rule a form is made by. It takes an id, and the id is the one the
+       fixture put in STG above. */
+    ['a rule for making a form', () => { openFmr('fr1'); return FORM.html; }]
   ];
 }

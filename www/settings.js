@@ -146,7 +146,15 @@ function vSet(){
       /* Erasing what is on this phone is the person's, beside signing out --
          it sat at the foot of the language room, which is the one place it
          is not about. Signing out leaves everything where it is; this does
-         not, so it says so and asks. */
+         not, so it says so and asks.
+
+         It said "erase everything", which is a sentence with no object in it:
+         everything of what? Standing in the account room under a sign-out
+         button, the only reading left was the account, so that is what it is
+         called now -- and what it does was made to match, because a button
+         called "delete account" that leaves you signed in afterwards is the
+         same lie the other way round. What it cannot reach is the row on the
+         server; the confirm says "on this phone" rather than pretending. */
       '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='data'){
@@ -202,13 +210,21 @@ function setAuto(on){
 }
 function setRead(m){ SET.read=m; save(); render(); }
 function setUi(l){ SET.ui=l; save(); render(); }
-/* Erase everything means everything. It used to empty the words, the
-   sentences and the name and stop there, so the sounds you had chosen, the
-   letters you had drawn, the characters you had borrowed and every grammar
-   decision survived a wipeAll and turned up inside the next language you
-   started -- which is not a language you made, it is two of them mixed.
-   The storage keys are removed rather than overwritten, so nothing can be
-   left behind by a shape this version does not know about. */
+/* Delete account: everything this phone holds, and the tokens with it.
+
+   It used to empty the words, the sentences and the name and stop there, so
+   the sounds you had chosen, the letters you had drawn, the characters you
+   had borrowed and every grammar decision survived a wipeAll and turned up
+   inside the next language you started -- which is not a language you made,
+   it is two of them mixed. The storage keys are removed rather than
+   overwritten, so nothing can be left behind by a shape this version does
+   not know about.
+
+   The tokens go too. They did not, and "delete everything" that left you
+   signed in was the one thing on the screen the sentence did not cover --
+   you erased the phone and the app still greeted you by name. netOut() is
+   the same two lines signing out uses; nothing is asked of the server,
+   which is what it was already true of. */
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
   /* Throw the stored slices away and read the language back. What an empty
@@ -228,6 +244,7 @@ function wipeAll(){
      that are about them rather than about the language */
   var theme=SET.theme, ui=SET.ui;
   SET=setDefaults(); SET.theme=theme; SET.ui=ui;
+  netOut();
   /* after the plan is back to free, because that is what decides whether the
      language gets the twenty-eight slots at all */
   ltStart();

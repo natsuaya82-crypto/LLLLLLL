@@ -172,14 +172,22 @@ const R = await pg.evaluate(() => {
     if (drew !== want)
       fails.push("somebody else's post draws " + drew + ' shapes and carries ' +
                  want + ': the card is not reading its ink');
-    /* In the order the POST's direction says, not the open language's. A
-       right-to-left line is the same list from the other end -- cardPaint()
-       reverses it -- and the fixture's other post is written in columns
-       running right to left, which the card sets across the page for the
-       reason dirFlat() gives. */
+    /* In the order the POST's direction says, not the open language's.
+
+       Reading order and drawing order are the same thing for everything
+       except a line that runs right to left across the page: that one is the
+       same list handed over from the other end, and cardPaint() reverses it
+       before anything is placed.
+
+       A line in COLUMNS is not reversed. It used to be -- the card flattened
+       ttb-rl to rtl, because the only shape a card had was a band 1920 wide
+       and a column had nowhere to go in it. The card has three shapes now and
+       sets a column as a column, so the letters come through in the order
+       they are read and it is the COLUMNS that run right to left. The fixture
+       post is ttb-rl, so this is the case that changed. */
     let wantSt = other.ink.s.filter((x) => typeof x === 'number')
                             .map((x) => other.ink.g[x]);
-    if (dirFlat(postDir(other)) === 'rtl') wantSt = wantSt.slice().reverse();
+    if (postDir(other) === 'rtl') wantSt = wantSt.slice().reverse();
     if (JSON.stringify(it.items.filter((u) => u.st).map((u) => u.st)) !==
         JSON.stringify(wantSt))
       fails.push("somebody else's post is drawn in shapes that are not the ones " +
