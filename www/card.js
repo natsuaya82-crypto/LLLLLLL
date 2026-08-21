@@ -625,11 +625,12 @@ function cardTrackL(x, s, x0, y, tr){
    with one sense fills the sheet: the entry is not stretched, the spacing is.
    Drawn twice -- once against a scratch canvas to find out where it ends, and
    again for real with the leftover room shared out. */
-function cardWordPage(x, W, H, S, src, extra, drop, ink){
+function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   var M=Math.round(S*0.090), RIGHT=W-M, COL=RIGHT-M, IND=Math.round(S*0.040);
   var mns=src.mns && src.mns.length? src.mns : (src.mn? [src.mn] : []);
-  var ex=src.ex, org=src.ety || (src.from? src.from : ''), y, b, i, j, ln, g;
-  var fam=(src.fam && src.fam.length)? src.fam.slice(0,4) : [], FIND;
+  var ex=lim.ex? src.ex : null, org=lim.org? (src.ety || (src.from? src.from : '')) : '';
+  var y, b, i, j, ln, g;
+  var fam=(src.fam && src.fam.length)? src.fam.slice(0, lim.fam) : [], FIND;
   g=x.createLinearGradient(0, 0, W*0.9, H);
   g.addColorStop(0, cssVar('--bg'));
   g.addColorStop(1, cssVar('--sink'));
@@ -774,16 +775,40 @@ function cardWordPage(x, W, H, S, src, extra, drop, ink){
 }
 /* Twice: once to a scratch canvas to learn where the entry ends, and once for
    real with the room that was left shared out between the gaps. */
+/* What the page will carry. A verb with four relatives, a sentence under it
+   and a line about where it came from does not fit on one sheet, and the
+   first version of this drew all of it anyway -- straight through the rule at
+   the foot and out the bottom of the picture.
+
+   So the page is fitted before it is drawn. What goes first is the row that
+   says least about the word: the last of the family, then the next, then
+   where it came from, then the sentence. The senses never go: a dictionary
+   entry with the meanings left off is not a shorter entry, it is a different
+   thing. */
+function cardWordFit(pc, W, H, S, src){
+  var n=(src.fam && src.fam.length)? Math.min(4, src.fam.length) : 0;
+  var has=!!(src.ety || src.from), hasEx=!!(src.ex && src.ex.ln);
+  var floor=H-Math.round(S*0.090)-Math.round(S*0.075), tries=[], i, lim;
+  for(i=n;i>=0;i--) tries.push({fam:i, ex:hasEx, org:has});
+  for(i=n;i>=0;i--) tries.push({fam:i, ex:hasEx, org:false});
+  for(i=n;i>=0;i--) tries.push({fam:i, ex:false, org:false});
+  for(i=0;i<tries.length;i++){
+    lim=tries[i];
+    if(cardWordPage(pc, W, H, S, src, 0, 0, lim, []) <= floor) return lim;
+  }
+  return tries[tries.length-1];
+}
 function cardWord(x, W, H, S, src){
-  var M=Math.round(S*0.090), probe, pc, end, gaps, room, extra, drop, ink=[];
+  var M=Math.round(S*0.090), probe, pc, end, gaps, room, extra, drop, lim, ink=[];
   probe=document.createElement('canvas'); probe.width=W; probe.height=H;
   pc=probe.getContext('2d');
-  end=cardWordPage(pc, W, H, S, src, 0, 0, []);
+  lim=cardWordFit(pc, W, H, S, src);
+  end=cardWordPage(pc, W, H, S, src, 0, 0, lim, []);
   gaps=2.45
     + Math.max(0, ((src.mns && src.mns.length? src.mns.length : 1)-1))*0.55
-    + ((src.fam && src.fam.length)? 1.4 : 0)
-    + ((src.ex && src.ex.ln)? 1 : 0)
-    + ((src.ety || src.from)? 1 : 0);
+    + (lim.fam? 1.4 : 0)
+    + (lim.ex? 1 : 0)
+    + (lim.org? 1 : 0);
   room=H-M-Math.round(S*0.075)-end;
   extra=Math.max(0, Math.min(room/gaps, Math.round(S*0.075)));
   /* A word with one sense, no sentence under it and nothing said about where
@@ -791,9 +816,9 @@ function cardWord(x, W, H, S, src){
      1350 tall is not a page, it is a receipt. The gaps take what they can
      hold and the block rides down on what is left, so a short entry comes out
      as a page set generously rather than as a page with a hole in it. */
-  end=cardWordPage(pc, W, H, S, src, extra, 0, []);
+  end=cardWordPage(pc, W, H, S, src, extra, 0, lim, []);
   drop=Math.max(0, Math.min((H-M-Math.round(S*0.075)-end)*0.42, Math.round(S*0.150)));
-  cardWordPage(x, W, H, S, src, extra, drop, ink);
+  cardWordPage(x, W, H, S, src, extra, drop, lim, ink);
   x.save();
   x.shadowColor=cssVar('--glassdrop');
   x.shadowBlur=Math.round(S*0.020);

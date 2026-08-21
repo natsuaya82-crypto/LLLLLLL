@@ -846,9 +846,14 @@ function wdFamSort(kids){
    than something to read. 「その四角で加工系やめない？」 Pressing it opens that
    word, which is the whole reason the family is here. */
 function wdRowHTML(x, fm){
+  /* The word is set in the letters it is written in, like every other place
+     the app shows a word of this language. It was not, so a word drawn in
+     somebody's own letters at the head of its own page came out in Georgia
+     three lines above, on the page of the word it was made from -- the same
+     word, in two alphabets, on one screen. */
   return '<button class="wdrow"' + DO('openWord', [x.hw]) + '>'+
     (fm? '<span class="wdrowf">'+esc(fmLabel(fm))+'</span>' : '')+
-    '<span class="wdroww">'+esc(wOut(x.hw))+'</span>'+
+    '<span class="wdroww'+(myFontOn()? ' sfont' : '')+'">'+esc(wOut(x.hw))+'</span>'+
     '<span class="wdrowm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
 }
 /* Those of a family that are inflections, those that are derivations, and
