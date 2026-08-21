@@ -552,7 +552,6 @@ function postCatchUp(){
    first one that is about time rather than about language. */
 function planBadge(id){
   if(id==='plus') return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
-  if(id==='studio') return '<span class="bdgw studio" aria-hidden="true">'+MARK_STUDIO+'</span>';
   return '';
 }
 function postBadge(p){

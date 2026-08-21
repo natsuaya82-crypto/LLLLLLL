@@ -47,7 +47,7 @@ var BK={dirty:false, at:0, how:''};
 function bkTouch(){ BK.dirty=true; }
 
 /* What each slice has to BE, read off the functions that read them:
-   langRead, ltRead, noteRead, stRead, tkRead, sndRead. Nothing here is about
+   langRead, ltRead, noteRead, stRead, sndRead. Nothing here is about
    how much is in one -- an empty language is a language, and `[]` is what a
    new one looks like. It is about the shape.
 
@@ -296,7 +296,7 @@ function bkRestore(then){
           for(var id in LANGS){ if(Object.prototype.hasOwnProperty.call(LANGS, id)){ langId=id; break; } }
           langStore();
         }
-        langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); kbRead(); wldRead();
+        langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
         /* Something came back, so write it out again as soon as anything is
            drawn. If it came from a spare, the unreadable newest file is
            still the newest file, and one good save puts a readable one in

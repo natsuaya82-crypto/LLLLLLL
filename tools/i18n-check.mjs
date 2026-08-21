@@ -420,7 +420,7 @@ const R = await pg.evaluate(() => {
     SET.done = true;
 
     /* every screen, under every plan and every reading mode, empty and full */
-    ['free','plus','studio'].forEach(p => {
+    ['free','plus'].forEach(p => {
       SET.plan = p;
       ['ipa','kana','both'].forEach(rm => {
         SET.read = rm;
@@ -519,7 +519,7 @@ const R = await pg.evaluate(() => {
      that number the chapters, and the two halves of the wordmark. Everything
      here is a proper noun or a symbol — none of it is a sentence. */
   const PLAIN = {};
-  'lingua free plus studio sov svo vso osv ovs vos ipa csv i ii iii iv v vi vii viii ix x lin ua g'
+  'lingua free plus sov svo vso osv ovs vos ipa csv i ii iii iv v vi vii viii ix x lin ua g'
     .split(' ').forEach(w => { PLAIN[w] = 1; });
   /* and everything that is data: the words themselves, their meanings, their
      readings in every language, their sounds and their syllables */
@@ -588,7 +588,7 @@ const R = await pg.evaluate(() => {
   });
   ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in';
   SET.done = true;
-  ['free','plus','studio'].forEach(p => {
+  ['free','plus'].forEach(p => {
     SET.plan = p;
     [false, true].forEach(empty => {
       const keep = WORDS, keepL = LINES;

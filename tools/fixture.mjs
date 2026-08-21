@@ -86,7 +86,6 @@ export function seed(){
   SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   NOTES = [{t:'note', b:'body'}];
-  TALK = [];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};
   /* Two posts, and the second one is the whole reason the timeline is written
@@ -495,7 +494,7 @@ export function halfDone(){
     ['the profile of somebody on Plus', () => { SET.plan = 'plus';
         window.route='profile'; NAV=[{r:'profile'}];
         const h = vProfile(); SET.plan = 'free'; return h; }],
-    ['the timeline of somebody on Studio', () => { SET.plan = 'studio';
+    ['the timeline of somebody on Plus', () => { SET.plan = 'plus';
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); SET.plan = 'free'; return h; }],
     /* A post with no line: a photograph on its own, and a voice on its own.
@@ -598,7 +597,7 @@ export function halfDone(){
        is Studio's, so on free the contents has no way in to it -- which is
        what act-check reports, correctly, unless the walk is shown the plan
        that has the door. */
-    ['the contents on Studio', () => { SET.plan = 'studio';
+    ['the contents on Plus', () => { SET.plan = 'plus';
                                        window.route = 'build'; NAV = [{r:'build'}];
                                        const h = vBuild(); SET.plan = 'free'; return h; }],
     /* A grammar stage of your own: the door is on the paid plan, because the
@@ -766,11 +765,8 @@ export function halfDone(){
        give the character back only exists once there is one. */
     ['a borrowed letter, opened', () => { window.route='letter'; NAV=[{r:'letter', a:'l2'}];
                                           return vLetter(); }],
-    ['a conversation under way', () => { TALK=[{me:true, w:[['k','a','n','o']], g:['mountain']}];
-                                         window.route='talk'; NAV=[{r:'talk'}];
-                                         const h=vTalk(); TALK=[]; return h; }],
     ['a word being written',   () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                       wdSync(); SUG=[['k','a'],['t','i']];
+                                       wdSync();
                                        return wdFormHTML()+vForm(); }],
     ['a word being spelled again', () => { openEdit('kano'); window.route='spell';
                                            NAV=[{r:'spell'}];
@@ -814,8 +810,6 @@ export function halfDone(){
                                              const h=wdFormHTML(); wdMode=''; SET.plan='free'; return h; }],
     ['the sound keyboard in a new word', () => { SET.plan='plus'; openAdd(); wdMode='ph';
                                                  const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
-    ['words offered for a meaning', () => { SUG=[['k','a'],['t','i']]; sugMn='mountain';
-                                            const h=sugHTML(); SUG=[]; return h; }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;

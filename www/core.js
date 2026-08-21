@@ -153,9 +153,9 @@ try{
    words end up saved under the language being switched to. */
 function langOpen(id){
   if(!LANGS[id] || id===langId) return;
-  save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); saveSnd(); saveKb(); saveWld();
+  save(); saveLetters(); saveNotes(); saveStg(); saveSnd(); saveKb(); saveWld();
   langId=id; langStore();
-  langRead(); ltRead(); noteRead(); stRead(); tkRead(); sndRead(); sndStart(); ltStart(); kbRead(); migrateKbFree(); wldRead(); migratePostInk();
+  langRead(); ltRead(); noteRead(); stRead(); sndRead(); sndStart(); ltStart(); kbRead(); migrateKbFree(); wldRead(); migratePostInk();
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
@@ -271,17 +271,20 @@ var PLANS=[
    each:'plan.each.plus',
    lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
           'plan.plus.6','plan.badge']},
-  {id:'studio',name:'Studio', mo:'plan.price.studio', yr:'plan.price.studio.yr',
-   each:'plan.each.studio',
-   lines:['plan.studio.1','plan.studio.2','plan.studio.3']}
 ];
+/* Studio is not here. What it sold was the hosted model -- the conversation
+   and the suggestions -- and the model is the last thing going in. A tier
+   whose lines describe a thing the app cannot do yet is the app lying to
+   somebody who is about to pay, which the paragraph above forbids, and a
+   free allowance of three a day is that same lie with a meter on it.
+
+   It comes back when the seam in www/glyph.js has something behind it, and
+   what comes back with it is the chapter and the chips that were lifted out
+   with it. Nothing was thrown away: it is in the history under this commit. */
 var FREE_LIMIT=100;
 function plan(){ return SET.plan||'free'; }
-function has(level){ /* level: 'plus' | 'studio' */
-  var p=plan();
-  if(level==='plus')   return p==='plus'||p==='studio';
-  if(level==='studio') return p==='studio';
-  return true;
+function has(level){ /* level: 'plus' */
+  return (level==='plus')? plan()==='plus' : true;
 }
 /* What money buys, one capability at a time, and the only place that says so.
    Nine names, each the level it needs.
@@ -308,7 +311,6 @@ function has(level){ /* level: 'plus' | 'studio' */
    means "counted", not "refused". */
 var CAN={
   words:   'plus',   /* a dictionary past FREE_LIMIT */
-  ai:      'studio', /* the AI: the conversation, and suggestions unmetered */
   data:    'plus',   /* CSV out, and the cloud */
   file:    'plus',   /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */

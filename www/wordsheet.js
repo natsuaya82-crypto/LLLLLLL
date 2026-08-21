@@ -7,63 +7,16 @@
    ========================================================================= */
 var addPos='n';
 
-/* Suggestions are drawn with the same generator the coinage screen uses, so
-   what it offers already obeys the language's own sounds and shape. */
-var SUG=[], sugMn='';
-/* One capability for the AI, and it is Studio's. There were two -- `ai` at
-   plus and `sug` at studio -- and they were the same ceiling said twice, so a
-   Plus account was shown "3 left" forever and never spent one. The AI is not
-   what Plus sells: Plus is the tools for building a language yourself, and
-   every one of them runs on this phone for nothing. */
-function sugUnl(){ return can('ai'); }
-function sugLeft(){ return sugUnl() ? Infinity : Math.max(0, AI_FREE_DAILY-aiUsed()); }
-/* What the word is for, as far as it has been said -- the first meaning
-   written on the sheet, which is where a suggestion gets its sense from. */
-function sugMean(){ return (wEdit && wEdit.mns[0]) || ''; }
-function sugBuild(){
-  var A=analyze(), tk=taken(); SUG=[];
-  for(var i=0;i<3;i++){ var q=makeWord(addPos||POS[0], A, tk); if(q){ SUG.push(q); tk[q.join('')]=1; } }
-}
-function sugHTML(){
-  var left=sugLeft(), unl=(left===Infinity);
-  if(!SUG.length){
-    if(!unl && left<=0) return '<button class="sugout"' + DO('goPlans') + '>'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>';
-    return '<button class="sugask"' + DO('sugGo') + '>'+
-      '<span class="sual"><span class="sut">'+t('add.lock.t')+'</span><span class="sud">'+t('add.lock.d')+'</span></span>'+
-      (unl?'':'<span class="sugn">'+t('sug.left', left)+'</span>')+'</button>';
-  }
-  return '<div class="sugbox"><div class="sugchips">'+
-    SUG.map(function(q,i){ return '<button class="sugchip"' + DO('sugPick', [i]) + '><span class="slw">'+esc(q.join(''))+'</span><span class="sr">'+esc(readSeq(q))+'</span></button>'; }).join('')+
-    '</div><div class="sugfoot"><span class="sughint">'+(sugMn? t('sug.for', esc(sugMn)) : t('sug.hint'))+'</span>'+
-    ((unl||left>0)?'<button class="sugmore"' + DO('sugGo') + '>'+t('sug.more')+'</button>':'')+
-    '</div>'+
-    ((!unl&&left<=0)?'<button class="sugout" style="margin:9px 0 0"' + DO('goPlans') + '>'+t('sug.out')+' <b>'+t('up.cta')+ICON_GO+'</b></button>':'')+
-    '</div>';
-}
-function sugPaint(){ var e=document.getElementById('sugwrap'); if(e) e.innerHTML=sugHTML(); }
-function sugGo(){
-  if(sugLeft()<=0){ closeSheet(); go('plans'); toast(t('sug.out')); return; }
-  if(!sugUnl()) aiSpend();
-  sugMn=sugMean(); sugBuild(); sugPaint();
-}
-/* A suggestion is a sequence of sounds, so taking one spells the word out of
-   whichever letters write those sounds -- the same step objects the keys and
-   the typed field build, because there is one spelling and one shape for it. */
-function sugPick(i){
-  if(!SUG[i] || !wEdit) return;
-  wEdit.sp=SUG[i].map(function(u){ var l=ltMain(u); return {l:(l? l.id : ''), u:u}; });
-  wdSync(); SUG=[]; wdPaint();
-}
-/* The word being made, as a word. It is the same shape as one in the
-   dictionary and is simply not in WORDS yet -- so what means the same, what
-   means the opposite, its examples and its note are written ON it here and
-   go in with it, instead of being four things you can only reach once the
-   word exists. 「単語追加の時点で編集できるようにしろよ。編集でも見えるように当たり前だろバカか」
+/* The word suggestions were here, and the conversation was a chapter, and
+   both were Studio's under the name `ai`. They are out until Studio is,
+   because what Studio sells is the hosted model and the hosted model is the
+   last thing going in: a tier that charges for three of something a day and
+   then asks for money is a price on an unfinished thing.
 
-   That is what lets one sheet do both: wdW() answers the editor with a word
-   out of the dictionary and the new-word sheet with this, and everything on
-   the sheet takes what it is about from there rather than from which screen
-   it is on. */
+   Nothing is deleted, it is lifted -- www/reading.js still has makeWord() and
+   www/assist.js still proposes sounds, letters and words everywhere else in
+   the app, because those are the app being usable and were never Studio's.
+   What went is the metered surface and the tier behind it. */
 var addW=null;
 /* ---- the sheet a word is written on --------------------------------------
    One sheet, whether the word exists yet or not. 「作成編集それぞれ同じ画面で」
@@ -88,7 +41,7 @@ function openAdd(from){
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
   if(fresh){
-    SUG=[]; sugMn=''; openHw='';
+    openHw='';
       /* The draft holds only what a relation and an example need a WORD for.
        Everything staged -- the spelling, the meanings, the part of speech,
        the register, the fields, the etymology, the note -- is in wEdit, the
@@ -982,7 +935,6 @@ function wdFormHTML(){
     (can('snd')? wdSeqHTML() : '')+
     /* Only where a word is being coined. Asking for a spelling to be made up
        for a word that already has one is asking to throw it away. */
-    (mk? '<div id="sugwrap">'+sugHTML()+'</div>' : '')+
 
     secAdd(t('word.means'), DO('wdMnOpen'), t('word.mn.add'))+
     wdMnsHTML()+

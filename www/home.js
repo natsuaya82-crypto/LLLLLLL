@@ -110,10 +110,7 @@ function tocRows(){
        Studio reads I to VI, and every chapter they share has the same number
        on both. Moving it here changes two numbers once, today, and never
        again. 「AI会話のタブ自体freeとplusで消していいな」 */
-    can('ai')
-      ? [{k:'toc.talk', r:'talk', v:TALK.length,
-          txt:TALK.length? tn('count.turns', TALK.length) : '—'}]
-      : []);
+    []);
 }
 
 /* =========================================================================

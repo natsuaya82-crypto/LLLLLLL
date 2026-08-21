@@ -64,12 +64,6 @@ function gSlotAny(pid){
   for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) return w; }
   return null;
 }
-function gSlotAll(pid){
-  var p=(typeof stBy==='function')? stBy(pid) : null, out=[], i, w;
-  if(!p) return out;
-  for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) out.push(w); }
-  return out;
-}
 
 function gTxt(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return o.join(' '); }
 function gIpaOf(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return '/'+o.join(' ')+'/'; }

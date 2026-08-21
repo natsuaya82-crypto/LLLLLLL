@@ -107,7 +107,16 @@ const REPORT = () => ({
             return String(ltName(l)||'').toLowerCase() === c; }).length;
         }).join(''),
   notes: NOTES.length, note0: NOTES[0] && NOTES[0].t,
-  talk: TALK.length, talk0: TALK[0] && TALK[0].q, sound: !!STG.done.sound,
+  /* Read out of the storage rather than off a global. The conversation's
+     screen was lifted out with Studio -- see the note on PLANS in
+     www/core.js -- so there is no TALK to ask, and asking one would have
+     turned "the screen is not loaded" into "the conversation is gone". What
+     has to survive a migration is the bytes, and the bytes are here. */
+  talk: (function(){ try{ var a=JSON.parse(localStorage.getItem(langKey('talk'))||'[]');
+                          return a.length; }catch(e){ return 0; } })(),
+  talk0: (function(){ try{ var a=JSON.parse(localStorage.getItem(langKey('talk'))||'[]');
+                           return a[0] && a[0].q; }catch(e){ return undefined; } })(),
+  sound: !!STG.done.sound,
   snd: addedSnd().join(','), sndInSet: SET.snd === undefined,
   sndFiled: localStorage.getItem('lingua.' + langId + '.snd') !== null,
   script: Object.keys(SCRIPT.g).join(','),
@@ -266,7 +275,7 @@ want('nor A\'s drawn script', B1.script, '');
 want('nor A\'s sounds', B1.snd.indexOf('t,u,f'), -1);
 
 /* saving B is what makes a leak permanent, so do it before going back */
-await pg.evaluate(() => { save(); saveLetters(); saveNotes(); saveStg(); saveTalk(); });
+await pg.evaluate(() => { save(); saveLetters(); saveNotes(); saveStg(); });
 const leaked = await pg.evaluate(() =>
   (localStorage.getItem('lingua.LB.words') || '').indexOf('tuf') >= 0);
 want('and B did not save them under its own id', leaked, false);
