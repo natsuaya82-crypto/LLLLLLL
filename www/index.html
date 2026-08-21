@@ -1039,11 +1039,14 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    all. One row, because they are all answers to "what am I looking at". */
 .wmeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
 .wct{font-size:.86rem;color:var(--txm);letter-spacing:.04em;margin-right:auto}
-.wsrt,.wsay{display:inline-flex;align-items:center;gap:7px;min-height:44px;
-      padding:8px 13px;border:1px solid var(--line);border-radius:10px;
-      background:none;color:var(--txs);font-family:inherit;font-size:.88rem}
-.wsay.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-.wsrt:active{border-color:var(--goldln);color:var(--gold)}
+/* This said .wsrt a second time, three hundred lines under the first, as a
+   bordered pill with a 10pt radius -- and being second it won. So the sort
+   button was a rounded box beside a control that is a line, which is the one
+   shape this app does not have: everything a thumb chooses from sits on a
+   rule. 「基本的に下直線なんだから角丸禁止」 The rule that means it is the
+   one beside the filter, and there is only one of it now.
+   `.wsay` went with it: nothing in www/ has carried that class since the
+   dictionary stopped playing a whole list. */
 /* Six ways to narrow the list will not fit across 320px, so the rail slides
    sideways rather than wrapping into a second row that pushes the words off
    the screen. */
