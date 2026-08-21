@@ -88,7 +88,64 @@ RLS を最初から有効にしているので、この2行はホストされた
 
 ---
 
-## 4. 動いているかの確かめ方
+## 4. Apple と Google のログインを ON にする
+
+アプリにボタンは出ています。**ここを ON にするまで、押しても「ログインでき
+ません」で終わります。** メールのログインは 3 で終わっているので、この節を
+飛ばしても出せます。飛ばすなら、Apple も Google も両方飛ばしてください
+（片方だけ出すのは Apple の審査規約 4.8 に引っかかります）。
+
+### 4-1. Apple
+
+**Authentication → Providers → Apple → 有効化**
+
+`Client IDs` に **`com.tokinets.lingua`** と入れて保存。それだけです。
+
+`Secret Key` の欄は空のままで構いません。あれは Web と Android の、ブラウザを
+開くログイン用です。iPhone のログインは iOS が自分でシートを出して身分証
+（id_token）を渡してくるので、Supabase 側は「その身分証がこのアプリ宛か」を
+`Client IDs` と突き合わせるだけで済みます。
+
+Apple 側（developer.apple.com）でやることは `docs/apple.md` の 2 節です。
+**そちらが先**です。ここだけ ON にしてもビルドが通りません。
+
+### 4-2. Google — まず Google Cloud で ID を作る
+
+Supabase ではなく **console.cloud.google.com** です。
+
+1. プロジェクトを作る（名前は何でもいい）
+2. **APIs & Services → OAuth consent screen**。External を選び、アプリ名と
+   連絡先メールだけ埋めて保存。審査に出す必要はありません
+3. **APIs & Services → Credentials → Create credentials → OAuth client ID**
+4. Application type に **iOS**、Bundle ID に **`com.tokinets.lingua`**
+5. できあがった Client ID
+   （`123456-abcdefg.apps.googleusercontent.com` の形）をコピー
+
+コピーしたら、リポジトリで一度だけこれを実行します。
+
+```
+node tools/google-id.mjs 123456-abcdefg.apps.googleusercontent.com
+```
+
+`www/net.js` と `ios/App/App/Info.plist` の両方が書き変わります。**片方だけ
+手で直さないでください** — 食い違うと、Google のシートは開くのに戻ってこない、
+という一番分かりにくい壊れ方をします。何が入っているかは引数なしで実行すると
+出ます。
+
+### 4-3. Google — Supabase 側
+
+**Authentication → Providers → Google → 有効化**
+
+`Client IDs` に 4-2 でコピーした iOS のクライアント ID を入れて保存。
+
+`Client Secret` は空で構いません。Apple と同じ理由で、iPhone のログインは
+ブラウザを開かないからです。空だと保存できないと言われた場合は、Google Cloud
+で **Web application** のクライアントも作って、その ID と Secret を入れ、
+`Client IDs` の欄は **iOS の ID をカンマで足して両方**にしてください。
+
+---
+
+## 5. 動いているかの確かめ方
 
 実機で1件投稿してから、ダッシュボードで見ます。
 
@@ -121,7 +178,7 @@ RLS を最初から有効にしているので、この2行はホストされた
 
 ---
 
-## 5. まだ無いもの
+## 6. まだ無いもの
 
 - **投稿の編集はサーバーに反映されません。** `post_edit` ポリシーはありますが
   アプリが `PATCH` を投げていません

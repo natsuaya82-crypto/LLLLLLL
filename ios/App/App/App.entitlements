@@ -2,6 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Sign in with Apple. The string is Apple's own and is spelt "Default"
+	     with a capital D; anything else is accepted by Xcode and refused at
+	     Archive time with a message about the profile rather than the word.
+
+	     THIS LINE BREAKS THE BUILD until two things are done in a browser,
+	     both the account owner's and neither doable from a Linux session:
+	       1. the App ID com.tokinets.lingua has the Sign in with Apple
+	          capability switched on, in the Apple developer site
+	       2. the distribution provisioning profile is REGENERATED after that
+	          and the new one put in the PROVISIONING_PROFILE_BASE64 secret
+	     An old profile does not gain a capability by the app claiming one:
+	     the Archive fails saying the entitlement is not in the profile.
+	     docs/apple.md says it again in order. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.tokinets.lingua</string>

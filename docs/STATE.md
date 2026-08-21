@@ -109,6 +109,19 @@ on it), cloud storage, publishing a language, quoting, the day's sentence,
 blocking and reporting, deleting an account server-side, and push. Read that
 before starting anything online.
 
+**Apple and Google sign-in are wired and cannot work yet.** The buttons went
+from "not in this build" to a real plugin —
+`@capgo/capacitor-social-login`, both providers, Facebook and X switched off in
+`capacitor.config.json` so their SDKs are never linked. What is missing is
+nobody's to write:
+
+- Apple needs the capability on the App ID and the provisioning profile
+  regenerated, or **the next build fails** — `docs/apple.md` § 2
+- Google needs a client id made in the Google Cloud console;
+  `node tools/google-id.mjs <id>` writes it to the two places that have to
+  agree, and until then `GOOGLE_IOS_ID` is empty and the button says so
+- Supabase has to be told to accept both — `supabase/setup.md` § 4
+
 **No StoreKit.** The plans screen exists and `SET.plan` can be set, but nothing
 charges anybody. `docs/apple.md`.
 
@@ -230,7 +243,12 @@ assuming a thing is waiting for you.
 
 ### The owner's, in a browser
 
-16. Supabase — the reset mail template and the Redirect URLs (see 3).
+16. Supabase — the reset mail template and the Redirect URLs (see 3), and the
+    Apple and Google providers (`supabase/setup.md` § 4).
+16a. The Apple developer site — Sign in with Apple on the App ID, and the
+    profile regenerated after it. **Nothing builds until this is done**, so it
+    is not one to leave. `docs/apple.md` § 2.
+16b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
 17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.

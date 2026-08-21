@@ -2,5 +2,10 @@
   "appId": "com.tokinets.lingua",
   "appName": "Lingua",
   "webDir": "www",
-  "server": { "iosScheme": "capacitor" }
+  "server": { "iosScheme": "capacitor" },
+  "plugins": {
+    "SocialLogin": {
+      "providers": { "apple": true, "google": true, "facebook": false, "twitter": false }
+    }
+  }
 }

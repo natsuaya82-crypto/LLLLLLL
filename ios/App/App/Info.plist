@@ -45,6 +45,27 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Google's sign-in comes back to the app through a URL scheme, and the
+	     scheme is the client id with its two halves swapped: a client id of
+	     123-abc.apps.googleusercontent.com is the scheme
+	     com.googleusercontent.apps.123-abc. Google's SDK reads it from here
+	     and refuses to start if it is missing or does not match.
+
+	     The placeholder below is not a value. Replace it, and GOOGLE_IOS_ID
+	     in www/net.js, with the client made for this app in the Google Cloud
+	     console. Both, or neither: one without the other is a button that
+	     opens a sheet and cannot come back. Neither of them is a secret.
+	     Until then the Google button says it is not in this build, which is
+	     true, and Apple's sign-in is unaffected. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>__GOOGLE_REVERSED_CLIENT_ID__</string>
+			</array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- A language is written to Documents as a file, and these two are the

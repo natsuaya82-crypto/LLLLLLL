@@ -132,36 +132,69 @@ function obLang(v){ SET.ui=v; save(); render(); }
    question nobody should be asked on their first day -- you drew a letter
    here, and the account you just signed into already has a language: which
    one survives. Asking first means that question never exists.
-   The provider handshakes are wired in at packaging. Until then these open
-   the door, so the app can be walked end to end. */
+   Apple and Google are the plugin's; the mail door below is this file's. */
 /* Signing in with Apple, and with Google. Both hand the app an identity
    token without ever opening a browser, and net.js exchanges it for a
    session -- one call, one word different.
 
-   Neither works until the Capacitor plugins are installed and the capability
-   is set in Xcode, which is a Mac's work and cannot be done from a Linux
-   session. Until then the plugin is simply absent and the button says so
-   rather than appearing to do nothing. */
+   ONE plugin does both: @capgo/capacitor-social-login, which is the only one
+   of the three written against Capacitor 8, and which also covers Android on
+   the day there is an Android. Facebook and X are switched off in
+   capacitor.config.json so their SDKs are never linked -- an app that ships
+   Facebook's SDK owes App Review an explanation, and this one would have
+   nothing to say.
+
+   Nothing here runs in a browser: `Capacitor.Plugins` is a phone's word and
+   obNative() says so rather than letting the button appear to do nothing. */
 function obNative(name, call){
   var P=window.Capacitor && Capacitor.Plugins, p=P && P[name];
   if(!p){ toast(t('net.nonative')); return null; }
   return call(p);
 }
-function obSignInApple(){
-  obNative('SignInWithApple', function(p){
-    p.authorize({ clientId:'com.tokinets.lingua', redirectURI:'',
-                  scopes:'name email' })
-     .then(function(r){
-       netIdToken('apple', r.response.identityToken, '', obIn, obNo);
-     })['catch'](obShrug);
+/* The plugin is told who we are once per launch and not once per press. It is
+   a separate step from logging in because Google's SDK wants its client id
+   before it is asked for anything, and because a failure here is a failure to
+   CONFIGURE -- a different thing from somebody closing the sheet. */
+var OB_SL=false;
+function obReady(p, go){
+  if(OB_SL){ go(); return; }
+  /* Apple takes an empty redirect on iOS: the sheet is the system's own and
+     there is nowhere to come back from. Google is named only when there is a
+     name -- see GOOGLE_IOS_ID in net.js. */
+  var o={ apple:{ redirectUrl:'' } };
+  if(GOOGLE_IOS_ID) o.google={ iOSClientId:GOOGLE_IOS_ID };
+  p.initialize(o).then(function(){ OB_SL=true; go(); })['catch'](obShrug);
+}
+/* No nonce is asked for or sent. Apple only puts one in the token when the
+   request carried one, and Supabase only checks one when the token has one,
+   so the two agree by both staying quiet. Sending one would mean hashing it
+   the way Apple hashes it and handing the raw one to Supabase, which is three
+   places to get wrong for a token that never leaves the phone's own request. */
+function obSocial(who, opts){
+  obNative('SocialLogin', function(p){
+    /* Busy is set HERE and not by the two callers, because obNative() answers
+       for a plugin that is not in this build by saying so and returning --
+       and a spinner started before that check is a spinner nothing stops. */
+    OBM.busy=true; render();
+    obReady(p, function(){
+      p.login({ provider:who, options:opts }).then(function(r){
+        var tok=r && r.result && r.result.idToken;
+        /* A sign-in that came back without a token is not a session and must
+           not be treated as one. It is also not an error anybody can act on,
+           so it closes the way closing the sheet does. */
+        if(!tok){ obShrug(); return; }
+        netIdToken(who, tok, '', obIn, obNo);
+      })['catch'](obShrug);
+    });
   });
 }
+function obSignInApple(){ obSocial('apple', { scopes:['name','email'] }); }
 function obSignInGoogle(){
-  obNative('GoogleAuth', function(p){
-    p.signIn().then(function(r){
-      netIdToken('google', r.authentication.idToken, '', obIn, obNo);
-    })['catch'](obShrug);
-  });
+  /* Without a client id there is no Google to sign in to, and the same words
+     are said as when the plugin itself is missing -- because from where
+     somebody is standing it is the same fact: not in this build. */
+  if(!GOOGLE_IOS_ID){ toast(t('net.nonative')); return; }
+  obSocial('google', {});
 }
 /* Closing the sheet is not a failure and is not told about. */
 function obShrug(){ OBM.busy=false; render(); }

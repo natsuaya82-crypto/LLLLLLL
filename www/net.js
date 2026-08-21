@@ -37,6 +37,21 @@
 var SB_URL='https://iimwukyyasbybfrirhsf.supabase.co';
 var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
 
+/* The Google client made for THIS iOS app, in the Google Cloud console. It is
+   public in the same way SB_KEY is -- it names the app and proves nothing --
+   so it sits here rather than in a secret, and an empty string is a real
+   answer: it means nobody has made one yet, and the Google button says so
+   instead of opening a sheet that cannot finish.
+
+   Two places have to agree, and both are the owner's:
+     1. this string, which is `<number>-<hash>.apps.googleusercontent.com`
+     2. ios/App/App/Info.plist, whose URL scheme is that string REVERSED
+   Supabase also has to be told to accept it -- supabase/setup.md.
+
+   Apple needs nothing here. On iOS the sign-in is the system's own sheet and
+   the app is named by its bundle id, which Xcode already knows. */
+var GOOGLE_IOS_ID='';
+
 /* The session belongs to this phone and to no language, so it is filed beside
    lingua.set and lingua.me rather than under langKey(). */
 var LS_SESS='lingua.sess';
