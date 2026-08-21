@@ -46,11 +46,11 @@
 /* And then thinner again. 32 against a step of 36 is a pen very nearly as wide
    as the gap between two dots: a letter drawn carefully on the lattice comes
    out as one welded mass with the dots it was built on invisible under it.
-   「ペン太すぎて細かい今の点に合わないでズレる」 18 is half a step: two dots
-   apart reads as two strokes with daylight between them, and the page is
-   paler than a real font's, which is the price and is what to look at on a
-   phone rather than in a picture. */
-var GPEN={width:18, angleDeg:0, contrast:1.0, curve:36};
+   「ペン太すぎて細かい今の点に合わないでズレる」 24 is two thirds of a step:
+   two dots apart still reads as two strokes, and the page is darker than half
+   a step would leave it. Half a step was tried and looked right in a picture;
+   what a phone shows is the thing to look at. 「24にしよう」 */
+var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of
