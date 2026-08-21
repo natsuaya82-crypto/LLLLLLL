@@ -590,6 +590,7 @@ defLang('en', (function(){
       'fmr.when'         : "Only when the word ends in",
       'fmr.always'       : "Anything",
       'fmr.vowel'        : "A vowel",
+      'fmr.ends' : "Ends in",
       'fmr.cons'         : "A consonant",
       'fmr.del'          : "Delete this rule",
       'fmr.todo'         : "Make the {0} forms this word has not got",

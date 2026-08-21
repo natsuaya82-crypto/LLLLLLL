@@ -633,11 +633,33 @@ function fmrStem(w, r){
 /* Whether this rule has anything to say about this word. `when` is the one
    piece of phonology in it: an ending that only goes on after a vowel is the
    commonest thing a language does to keep two consonants apart. */
+/* Whether the WORD ends in the letters this rule is about -- which is what
+   somebody means by "y becomes i and then ed". Asked of the word and not of
+   the stem: `drop` is what happens NEXT, and the y being tested for is the y
+   about to be dropped.
+
+   Compared as written rather than unit by unit, because two spellings that
+   come out the same word ARE the same ending however they were typed. */
+function fmrEndsWith(w, r){
+  var e=(r && r.wend)||[], s, hw;
+  if(!e.length) return false;
+  s=spWord(e);
+  hw=String((w && w.hw)||'');
+  if(!s.length || hw.length<s.length) return false;
+  return hw.slice(hw.length-s.length)===s;
+}
+/* Whether this rule has anything to say about this word. `when` is the one
+   piece of phonology in it: an ending that only goes on after a vowel is the
+   commonest thing a language does to keep two consonants apart. And `x` is
+   the other kind of condition, which is not phonology at all -- these exact
+   letters at the end. 「英語みたいにyで終わるのはiに変えてedみたいな細かいルール
+   設定はできないの？」 carry: ends in y, drop 1, add ied. */
 function fmrFits(w, r){
   var ph, last;
   if(!w || !r || !(r.add||[]).length) return false;
   if(r.pos && r.pos!==w.pos) return false;
   if(!r.when) return true;
+  if(r.when==='x') return fmrEndsWith(w, r);
   ph=spPh(fmrStem(w, r));
   if(!ph.length) return false;
   last=ph[ph.length-1];
@@ -770,8 +792,15 @@ function fmrFormHTML(){
     '<div class="sec">'+esc(t('fmr.drop'))+'</div>'+
     fmrSegs(String(r.drop||0), [['0','0'],['1','1'],['2','2']], 'fmrSetDrop')+
     '<div class="sec">'+esc(t('fmr.when'))+'</div>'+
-    fmrSegs(r.when||'', [['', t('fmr.always')], ['v', t('fmr.vowel')], ['c', t('fmr.cons')]],
+    fmrSegs(r.when||'', [['', t('fmr.always')], ['v', t('fmr.vowel')],
+                         ['c', t('fmr.cons')], ['x', t('fmr.ends')]],
             'fmrSetWhen')+
+    /* The letters themselves, and only while that is the condition chosen:
+       a field for an answer to a question nobody asked is a field that will
+       be filled in and then not used. */
+    ((r.when==='x')
+      ? spTypeField('fmr-end', 'fmrSetWend', r.wend||[], 'whin')
+      : '')+
     /* The same row the word sheet says it with. A destructive thing is not
        the brightest button on its own screen. */
     '<button class="set" style="margin-top:22px;border-bottom:none"' +
@@ -798,7 +827,16 @@ function fmrKeep(fn){
 function fmrSetAdd(v){ fmrKeep(function(r){ r.add=spType(v); }); lnGrow('fmr-add'); }
 function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; }); fmrPaint(); }
 function fmrSetDrop(v){ fmrKeep(function(r){ r.drop=parseInt(v,10)||0; }); fmrPaint(); }
-function fmrSetWhen(v){ fmrKeep(function(r){ r.when=(v==='v'||v==='c')? v : ''; }); fmrPaint(); }
+function fmrSetWhen(v){
+  fmrKeep(function(r){
+    r.when=(v==='v'||v==='c'||v==='x')? v : '';
+    /* The letters belong to the condition. Leaving them behind under another
+       condition is a value nothing reads, waiting to come back wrong. */
+    if(r.when!=='x') delete r.wend;
+  });
+  fmrPaint();
+}
+function fmrSetWend(v){ fmrKeep(function(r){ r.wend=spType(v); }); lnGrow('fmr-end'); }
 /* Which rule the two chooser screens are about. Arriving on one with nothing
    open is arriving back on a screen the app has forgotten the subject of -- a
    stale route, a reload. The first rule is a better answer than an empty

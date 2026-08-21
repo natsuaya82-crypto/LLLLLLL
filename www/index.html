@@ -1179,9 +1179,16 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
      background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .18s ease}
 .swt.on{background:var(--gold)}
 .swt.on .swk{left:22px}
-.pick{display:flex;background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:3px;margin:10px 0 4px}
-.pick button{min-height:44px;flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}
-.pick button.on{background:var(--pane);color:var(--tx);font-weight:600;box-shadow:var(--shadow)}
+/* One of a few, chosen. It was a rounded box with a rounded box sliding
+   inside it, which is the one shape this app does not have -- everything a
+   thumb chooses from sits on a rule and the chosen one is marked under it.
+   The same look .seg already has, on the row of a keyboard's faces, because
+   it is the same sentence. 「基本的に下直線なんだから角丸禁止」 */
+.pick{display:flex;border-bottom:1px solid var(--line);margin:10px 0 4px}
+.pick button{min-height:44px;flex:1;background:none;border:0;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  color:var(--txs);font-size:.85rem;padding:9px 0;font-family:inherit}
+.pick button.on{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
 .lrow{justify-content:space-between;gap:10px}
 .lrow .sl{flex:0 0 auto}
 .lrow .lsam{margin-left:auto;font-size:.88rem;color:var(--gold);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

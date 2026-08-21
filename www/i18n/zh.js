@@ -692,6 +692,7 @@ defLang('zh', (function(){
       "fmr.when"         : "仅当词尾是",
       "fmr.always"       : "任何",
       "fmr.vowel"        : "元音",
+      "fmr.ends" : "结尾是",
       "fmr.cons"         : "辅音",
       "fmr.del"          : "删除这条规则",
       "fmr.todo"         : "补上还没有的 {0} 个形式",

@@ -764,6 +764,22 @@ export function halfDone(){
        face the walk sees a screen nothing goes to, which is exactly what it
        would be if the button were deleted. */
     ['the dictionary\'s ...', () => { wordsMore(); return FORM.html; }],
+    /* A rule whose condition is the letters a word ends in. The field for
+       those letters is on the screen only while that is the condition
+       chosen -- a field for a question nobody asked gets filled in and then
+       not used -- so without this face nothing names fmrSetWend. */
+    ['a rule that fires on an ending', () => {
+        /* Left in place rather than put back: press-check rebuilds the screen
+           and then presses it, so a rule that only exists while the HTML is
+           being made is a rule fmrKeep cannot find -- every press emptied the
+           screen. One rule is what a language with a rule looks like. */
+        STG.fm = [];
+        fmrNew();
+        const r = fmRules()[0];
+        r.pos = 'v'; r.fm = 'pst'; r.add = spType('ied');
+        r.drop = 1; r.when = 'x'; r.wend = spType('y');
+        saveStg();
+        return fmrFormHTML(); }],
     ['the two that undo a keyboard', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 1; kbMore();

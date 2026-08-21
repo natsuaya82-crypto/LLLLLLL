@@ -673,6 +673,7 @@ defLang('de', (function(){
       "fmr.when"         : "Nur wenn das Wort endet auf",
       "fmr.always"       : "Beliebig",
       "fmr.vowel"        : "Einen Vokal",
+      "fmr.ends" : "Endet auf",
       "fmr.cons"         : "Einen Konsonanten",
       "fmr.del"          : "Diese Regel löschen",
       "fmr.todo"         : "Die {0} fehlenden Formen bilden",

@@ -601,6 +601,7 @@ defLang('ja', (function(){
       'fmr.when'         : "語の終わりが",
       'fmr.always'       : "何でも",
       'fmr.vowel'        : "母音",
+      'fmr.ends' : "この文字で終わる",
       'fmr.cons'         : "子音",
       'fmr.del'          : "この規則を消す",
       'fmr.todo'         : "まだ無い{0}つの形を作る",

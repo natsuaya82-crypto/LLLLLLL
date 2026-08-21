@@ -733,6 +733,7 @@ defLang('fr', (function(){
       "fmr.when"         : "Seulement si le mot finit par",
       "fmr.always"       : "N'importe quoi",
       "fmr.vowel"        : "Une voyelle",
+      "fmr.ends" : "Se termine par",
       "fmr.cons"         : "Une consonne",
       "fmr.del"          : "Supprimer cette règle",
       "fmr.todo"         : "Faire les {0} formes qui manquent",

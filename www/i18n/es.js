@@ -645,6 +645,7 @@ defLang('es', (function(){
       "fmr.when"         : "Solo cuando la palabra acaba en",
       "fmr.always"       : "Cualquier cosa",
       "fmr.vowel"        : "Una vocal",
+      "fmr.ends" : "Termina en",
       "fmr.cons"         : "Una consonante",
       "fmr.del"          : "Borrar esta regla",
       "fmr.todo"         : "Hacer las {0} formas que faltan",

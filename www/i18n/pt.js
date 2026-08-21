@@ -692,6 +692,7 @@ defLang('pt', (function(){
       "fmr.when"         : "Só quando a palavra acaba em",
       "fmr.always"       : "Qualquer coisa",
       "fmr.vowel"        : "Uma vogal",
+      "fmr.ends" : "Termina em",
       "fmr.cons"         : "Uma consoante",
       "fmr.del"          : "Apagar esta regra",
       "fmr.todo"         : "Fazer as {0} formas que faltam",
