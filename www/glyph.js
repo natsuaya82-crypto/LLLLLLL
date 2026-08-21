@@ -71,6 +71,17 @@ var GGRID={n:21, inset:40};
    so this only has to be higher than any real stroke. */
 var GE_MAXPTS=160;
 function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
+/* What stands at each end of a letter, so the gap between any two of them is
+   twice this whatever the two are.
+
+   It was half a step, and a step used to be 72. Then the lattice doubled --
+   twenty-one dots instead of eleven, so a curve has somewhere to bend -- and
+   the gap came down with it: words closed up and became hard to read for a
+   reason that had nothing to do with what anybody had drawn. A whole step of
+   the finer lattice is the gap the coarse one had, and the letters stand
+   apart the way they did before.
+   「一点開けてるのを2にできる？つまりすぎて見づらい」 */
+function geSide(){ return geStep(); }
 /* Where the ink can reach, in font space, which is y-up from the baseline.
    A stroke on the top row of dots puts ink half a pen above that row; one on
    the bottom row half a pen below. Nothing goes further, because nothing can
@@ -266,7 +277,7 @@ function installScriptFont(){
        no glyphs in it makes every word fall through to the serif anyway, one
        exception deeper. */
     if(!d.defs.length) return;
-    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geStep()/2,
+    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geSide(),
                        asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(), ligatures:d.ligs,
                                     family:'LinguaScript', style:'Regular'});
     el=document.createElement('style');
@@ -1577,7 +1588,7 @@ function inkCanvases(sel, floor, dflt, stOf){
    plus one step, half a step at each end, so the gap between any two letters
    is one step whichever two meet.
    「どこから並んでも1点線分の隙間があるからバランス崩れない」
-   `reach` is otf5's, not a copy of it, and the step is the same geStep()/2
+   `reach` is otf5's, not a copy of it, and the step is the same geSide()
    that installScriptFont hands the font as `side`.
 
    A square cell per letter is a DIFFERENT rule and a worse one: there the gap
@@ -1595,7 +1606,7 @@ function inkCanvases(sel, floor, dflt, stOf){
 
    Null when the strokes ink nothing, which is a letter with no shape. */
 function inkAdv(st){
-  var cs, p, e, side=geStep()/2;
+  var cs, p, e, side=geSide();
   try{ cs=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(err){ return null; }
   p=LinguaFont.profile(cs);
   if(!(p.xMax>p.xMin)) return null;

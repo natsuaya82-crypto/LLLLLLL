@@ -233,7 +233,7 @@ function cardUnit(lid, u){
    ink is called from 0.185 to 0.85 of the cell so that its capitals stand
    where the drawn letters stand rather than floating above them. */
 function cardMeasure(x, items){
-  var i, u, a, side=geStep()/2, sz=Math.round(CARD_CELL*0.95);
+  var i, u, a, side=geSide(), sz=Math.round(CARD_CELL*0.95);
   for(i=0;i<items.length;i++){
     u=items[i];
     u.ax=null;
@@ -320,7 +320,7 @@ function cardBreak(items, n, vert){
    small to read and the space above and below them empty. Two lines of a
    sentence, or five columns of one, is the same ink at twice the size. */
 function cardPlace(items, aw, ah, cap, vert){
-  var ext=cardExtent(items), side=geStep()/2, best=null;
+  var ext=cardExtent(items), side=geSide(), best=null;
   var across=vert? LinguaFont.reach(ext.x0, ext.x1, side)
                  : LinguaFont.reach(ext.y0, ext.y1, side);
   var along=vert? ah : aw, cross=vert? aw : ah;
@@ -357,7 +357,7 @@ function cardPlace(items, aw, ah, cap, vert){
    Right to left is the same run walked with the units handed over backwards,
    which puts the first letter of the line at the right-hand end of it. */
 function cardLayout(items, lay, dir, vert, pad, top, aw, ah){
-  var side=geStep()/2, k=lay.k, i, j, run, list, cur, off, at, u, len;
+  var side=geSide(), k=lay.k, i, j, run, list, cur, off, at, u, len;
   var block=lay.runs.length*lay.across*k;
   var c0=vert? (pad+(aw-block)/2) : (top+(ah-block)/2);
   /* Lines are centred the way a title on a card is. Columns are not: they
