@@ -239,7 +239,14 @@ create index if not exists block_actor_idx on block(actor);
 -- can count. `note` is optional and is the person's own words.
 create table if not exists report (
   id         bigint generated always as identity primary key,
-  actor      uuid not null references profile(id) on delete cascade,
+  -- Nullable, and `set null` rather than `cascade`, and both for one reason:
+  -- a report is about somebody ELSE. Cascading it off the reporter meant that
+  -- deleting your own account quietly withdrew every report you had ever
+  -- made, which is a way of clearing the record about a third party that
+  -- nobody chose and nobody would see happen. It survives its author leaving.
+  -- (`who` still cascades: a report about an account that no longer exists is
+  -- about nothing.)
+  actor      uuid references profile(id) on delete set null,
   post       uuid references post(id) on delete cascade,
   who        uuid references profile(id) on delete cascade,
   why        text not null check (why in ('spam','abuse','hate','sexual','other')),
@@ -248,6 +255,13 @@ create table if not exists report (
   check (post is not null or who is not null)
 );
 create index if not exists report_made_idx on report(created_at desc);
+-- Said again for a project that already has the table, the way the head of
+-- this file explains. It was `not null ... on delete cascade` until account
+-- deletion existed to fire it.
+alter table report alter column actor drop not null;
+alter table report drop constraint if exists report_actor_fkey;
+alter table report add constraint report_actor_fkey
+  foreign key (actor) references profile(id) on delete set null;
 
 -- ---------------------------------------------------------------------------
 -- Row level security

@@ -675,6 +675,74 @@ function netDropFiles(p, done){
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,
           function(){ done(); }, function(){ done(); });
 }
+/* ---- being deleted -----------------------------------------------------
+   The one thing signing out is not. `account_delete()` in supabase/schema.sql
+   reaches auth.users, which no policy in that file can, and everything of
+   this person's cascades off the profile behind it: the languages, the posts,
+   the follows, the blocks, the publication records.
+
+   What does NOT cascade is Storage. A photograph is bytes in a bucket and a
+   bucket has no foreign keys, so a deletion that only called the function
+   would leave every picture anybody had ever posted sitting in a PUBLIC
+   bucket with nothing pointing at it and nobody able to find it to remove it.
+   So the files go first and they go from here.
+
+   Which files is asked of the SERVER and not of this phone. The phone holds
+   the posts it has seen, and "the posts it has seen" stops being "the posts I
+   wrote" the moment there has been a second phone or a storage wipe -- and
+   the whole point of a deletion is that there is no second chance to notice.
+
+   Nothing about the language on this phone is touched. Somebody deleting an
+   account has not asked to lose four months of their own writing, and
+   docs/DATA_SAFETY.md says that in general terms. Erasing the phone is the
+   other button, and it says which it is. */
+function netDropMe(ok, bad){
+  if(!netSignedIn()){ ok(); return; }
+  netGet('/rest/v1/post?select=body&author=eq.'+encodeURIComponent(SESS.uid),
+    function(d){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); },
+    /* The listing failed, and the account still goes. Somebody who asked to
+       be deleted must be deleted; a photograph left behind is a smaller wrong
+       than an account that would not die because the network was bad. */
+    function(){ netEndMe(ok, bad); });
+}
+/* Every path a post of mine put in the bucket. The paths are ON the post --
+   netBody() sends them up with it -- so this reads them back rather than
+   asking the bucket what is under a folder, which is a listing that does not
+   recurse and would have to be walked a level at a time. */
+function netMyFiles(rows){
+  var out=[], i, j, b, pu;
+  for(i=0;i<((rows||[]).length);i++){
+    b=(rows[i] && rows[i].body) || {};
+    pu=b.pu || [];
+    for(j=0;j<pu.length;j++) if(pu[j]) out.push(String(pu[j]));
+    if(b.vu) out.push(String(b.vu));
+  }
+  return out;
+}
+/* A hundred at a time, and a refusal is not a stop. Storage takes a list, and
+   a person with three hundred pictures is one request in this shape and three
+   in the other. Whichever lot fails is left behind and the rest still go: the
+   next line is the account itself and it must be reached. */
+function netDropMine(paths, done){
+  var i=0;
+  function step(){
+    var lot;
+    if(i>=paths.length){ done(); return; }
+    lot=paths.slice(i, i+100); i+=100;
+    netSend('DELETE', '/storage/v1/object/post-media', {prefixes:lot}, SESS.at,
+            step, step);
+  }
+  step();
+}
+/* And the account. netOut() after it and not before: the token is what proves
+   who is being deleted, and throwing it away first would be asking the server
+   to delete nobody. A failure here leaves the person signed in, which is the
+   honest state -- the account is still there. */
+function netEndMe(ok, bad){
+  netSend('POST', '/rest/v1/rpc/account_delete', {}, SESS.at,
+          function(){ netOut(); ok(); }, bad);
+}
+
 /* One row in `follow`, or one row gone. `on` is whether you follow them now.
    Not waited on: the button has already changed, the same way a like has.
 

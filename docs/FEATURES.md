@@ -194,7 +194,8 @@ because the way a server feature gets lost is by being half-written down.
 
 **Already online, so that this list is read against something:** accounts and
 the profile, posts (write, read, reply, delete), likes and boosts, following,
-notices, photographs and voice in Storage, and search — people and posts.
+notices, photographs and voice in Storage, search — people and posts — and
+deleting an account.
 
 ### 1. The plan, on the server — the one with money on it
 
@@ -270,11 +271,23 @@ somebody else's post; `post_drop` is the author's alone. Until that exists a
 report is written and nobody looks at it, which App Store review will ask
 about.
 
-### 8. Deleting an account, on the server
+### 8. Deleting an account, on the server — **done** (2026-08-21)
 
-Signing out and wiping this phone both work. **What is on the server is not
-touched by either.** `profile` cascades from `auth.users`, so the delete has
-to happen at the auth level, and nothing in the app asks for it.
+`netDropMe()` in `www/net.js`, from a button in Settings under signing out.
+It asks the server which posts are mine, deletes their pictures and voice from
+Storage **first** — bytes in a bucket have no foreign key and no cascade
+reaches them — and then calls `account_delete()`, which was already in
+`schema.sql` and reaches `auth.users`. Everything else goes behind it by
+cascade: the profile, the languages, the posts, the follows, the blocks.
+
+**Reports do not go.** `report.actor` was `not null ... on delete cascade`
+until there was a deletion to fire it, which meant deleting your own account
+withdrew every report you had ever made — somebody else's record, cleared by
+your leaving. It is `on delete set null` now, and `npm run rls` holds it.
+
+**The language on the phone is not touched.** Erasing the phone is the other
+button and now says which it is; it used to be called "delete account" because
+nothing in the app could reach the server, and that reason is gone.
 
 ### 9. Push notifications
 

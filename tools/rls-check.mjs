@@ -269,6 +269,22 @@ const SHAPE = [
      select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT'`, '0'],
   ['a profile is never deleted, only the account', `
      select count(*) from pg_policies where tablename='profile' and cmd='DELETE'`, '0'],
+  /* A report is about somebody else, so it has to outlive the person who
+     wrote it. `actor` cascaded off the profile until account deletion existed
+     to fire it, and deleting your own account withdrew every report you had
+     ever made -- a third party's record cleared by somebody else leaving.
+     Asked of the constraint and not by deleting an account, because what has
+     to hold is that the FOREIGN KEY says so; a passing delete with no reports
+     in the table would prove nothing. One, and not "none that cascade": a
+     table with no foreign key at all would answer none. */
+  ['a report outlives whoever wrote it', `
+     select count(*) from (select 1 where not exists (
+       select 1 from pg_constraint c
+         join pg_class t on t.oid = c.conrelid
+        where t.relname='report' and c.contype='f' and c.confdeltype='n'
+          and c.conkey = array[(select attnum from pg_attribute
+                                 where attrelid=t.oid and attname='actor')]
+     )) q`, '0'],
   /* A reaction is on or off. An update policy would let a row be turned into
      a different kind, and the primary key would not notice. */
   ['a reaction is never edited', `

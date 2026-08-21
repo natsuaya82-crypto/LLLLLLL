@@ -132,7 +132,15 @@ function vSet(){
       ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
         '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
         '<button class="set"' + DO('setSignOut') + '>'+
-        '<span class="sl bad">'+t('set.signout')+'</span></button>'
+        '<span class="sl bad">'+t('set.signout')+'</span></button>'+
+        /* And the account itself, which is a different thing from the phone
+           and now says so. This button used to be the one at the foot of the
+           room, which erased the phone and called itself a deletion because
+           there was nothing else it could have been called: nothing in the
+           app could reach the row on the server. Now something can, so the
+           two are two, and each is named after what it does. */
+        '<button class="set"' + DO('dropAccount') + '>'+
+        '<span class="sl bad">'+t('set.drop')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
         '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set signin google"' + DO('obSignInGoogle') + '><span class="sl">'+MARK_GOOGLE+
@@ -225,6 +233,18 @@ function setUi(l){ SET.ui=l; save(); render(); }
    you erased the phone and the app still greeted you by name. netOut() is
    the same two lines signing out uses; nothing is asked of the server,
    which is what it was already true of. */
+/* The account, on the server. Asked once and not twice: a second "are you
+   sure" is how a person learns to press through them.
+
+   The language on this phone is NOT touched. Somebody deleting an account has
+   not asked to lose their own writing, and the confirm says which is which so
+   that nobody finds out afterwards. */
+function dropAccount(){
+  if(!netSignedIn()) return;
+  if(!confirm(t('confirm.drop'))) return;
+  netDropMe(function(){ toast(t('set.drop.done')); render(); },
+            function(d, st){ toast(netWhy(d, st)); });
+}
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
   /* Throw the stored slices away and read the language back. What an empty

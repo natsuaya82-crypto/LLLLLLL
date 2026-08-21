@@ -105,9 +105,11 @@ nothing in the app touches any of them.
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
-on it), cloud storage, publishing a language, quoting, the day's sentence,
-blocking and reporting, deleting an account server-side, and push. Read that
-before starting anything online.
+on it), cloud storage, publishing a language, quoting, the day's sentence, and
+push. Read that before starting anything online. Blocking, reporting and
+deleting an account are done; what is left of reporting is the other half —
+**nobody can read a report or take a post down**, and App Store review asks
+about that.
 
 **Apple and Google sign-in are wired and cannot work yet.** The buttons went
 from "not in this build" to a real plugin —

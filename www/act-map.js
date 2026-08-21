@@ -211,6 +211,7 @@ act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
 act('wdDropAt', wdDropAt);
 act('wdSetU', wdSetU);
+act('dropAccount', dropAccount);
 act('wipeAll', wipeAll);
 act('wordsSay', wordsSay);
 
