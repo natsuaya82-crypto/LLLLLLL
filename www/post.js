@@ -340,18 +340,37 @@ function pwSetPic(){
    An empty answer is somebody changing their mind, and nothing is said about
    it. Only a refusal is a problem worth a word. */
 function pwPickLib(){
-  var p=sharePlug();
+  var p=sharePlug(), room=POST_PICS-pwPics().length;
   if(!p){ toast(t('post.pic.no')); return; }
-  p('LinguaShare', 'pickPhoto', {max:POST_PIC}).then(function(r){
-    var b=(r && r.b64)? String(r.b64) : '';
-    if(!b) return;
-    pwPicKeep('data:image/jpeg;base64,'+b);
+  if(room<1){ toast(t('post.pic.many', POST_PICS)); return; }
+  /* How many more this post has room for. It asked for one every time, so a
+     post that holds four took four trips through the picker -- and the picker
+     would not let a second be selected anyway. 「投稿画面画像最大4枚なのに1枚
+     しか選択できない」 */
+  p('LinguaShare', 'pickPhoto', {max:POST_PIC, limit:room}).then(function(r){
+    /* `b64s` is every one that was chosen. `b64` is the first, and is what a
+       phone with the older native side answers with -- so it is the fallback
+       and not a second way of asking. */
+    var many=(r && r.b64s && r.b64s.length)? r.b64s
+             : ((r && r.b64)? [r.b64] : []);
+    if(!many.length) return;
+    pwPicKeepAll(many, 0);
   })['catch'](function(){ toast(t('post.pic.bad')); });
+}
+/* One at a time and in order: each has to be drawn onto a canvas to be
+   squeezed, which is a load away, and pwPicKeep() ends by rebuilding the
+   screen. Rebuilding it four times in a row would put the caret back to the
+   end of the line four times, so the screen is built once, at the end. */
+function pwPicKeepAll(list, i){
+  if(i>=list.length){ openPost(); return; }
+  pwPicKeep('data:image/jpeg;base64,'+String(list[i]), function(){
+    pwPicKeepAll(list, i+1);
+  });
 }
 /* Not cropped. A face is shown in a circle so the sides of a landscape photo
    were never going to be seen; a post shows the picture, so what was taken is
    what goes up. Only the long edge is brought down. */
-function pwPicKeep(url){
+function pwPicKeep(url, then){
   var im=new Image();
   im.onload=function(){
     var k=Math.min(1, POST_PIC/Math.max(im.width, im.height));
@@ -364,9 +383,9 @@ function pwPicKeep(url){
     if(!pwPicRoom(out)){ toast(t('post.pic.full')); return; }
     if(pwPics().length>=POST_PICS){ toast(t('post.pic.many', POST_PICS)); return; }
     pwPics().push({u:out, marks:[]});
-    openPost();
+    if(then) then(); else openPost();
   };
-  im.onerror=function(){ toast(t('post.pic.bad')); };
+  im.onerror=function(){ if(then) then(); else toast(t('post.pic.bad')); };
   im.src=url;
 }
 /* The letters go with the picture. They are placed ON it -- a mark with no
@@ -400,8 +419,15 @@ function pwDropPic(i){
    There is no button now. A red minus at a picture's corner takes it away, the
    plus adds one, and pressing a picture opens it.
    「編集ボタンはいらん。画像タップして画像編集」 */
-function pwPicHTML(){
+/* Two things, and they no longer live together. The strip of photographs
+   belongs with what is being written -- it moves down the page as the line
+   grows, the way it does on Twitter 「文字が増えたら画像が下にいく仕様にして」 --
+   and the row that ADDS one belongs on the bar above the keyboard, where a
+   thumb is already resting. 「写真と音声とかのボタンはTwitterと同じようにキー
+   ボード上に固定して」 */
+function pwStripHTML(){
   var ps=pwPics();
+  if(!ps.length) return '';
   return '<div class="pwpics">'+
     '<div class="pwstrip'+(ps.length>1? ' many':'')+'">'+
     ps.map(function(pc, i){
@@ -414,18 +440,20 @@ function pwPicHTML(){
           ? '<span class="pwpicn">'+pc.marks.length+'</span>' : '')+
         '</span>';
     }).join('')+
-    '</div>'+
-    /* Under the strip, so it stays where a thumb can reach it however many
-       pictures have to be pushed past. The camera and the library go at four
-       rather than refusing at four: a button that is there and says no is a
-       button you press twice. The microphone does not -- a voice is not a
-       fifth picture. 「📷 ライブラリ マイクボタンにして」
+    '</div></div>';
+}
+function pwAddHTML(){
+  var ps=pwPics();
+  return ''+
+    /* The camera and the library go at four rather than refusing at four: a
+       button that is there and says no is a button you press twice. The
+       microphone does not -- a voice is not a fifth picture.
+       「📷 ライブラリ マイクボタンにして」
 
        `capture` is the whole of the camera. There is no plugin and no Swift
        behind it: an image field carrying that word is what tells iOS to open
        the camera instead of the picker, and it is the same photograph either
        way once it arrives. */
-    '<div class="pwadd">'+
       (ps.length<POST_PICS
         ? '<label class="pwab" aria-label="'+esc(t('post.cam'))+'">'+ICON_CAM+
             '<input type="file" id="pw-cam" accept="image/*" capture="environment"' +
@@ -439,9 +467,7 @@ function pwPicHTML(){
           '<button class="pwab"' + DO('pwPickLib') + ' aria-label="'+
             esc(t('post.lib'))+'">'+ICON_LIB+'</button>'
         : '')+
-      pwVoAddHTML()+
-    '</div>'+
-    '</div>';
+      pwVoAddHTML();
 }
 /* The line as it will actually look, under the field.
 
@@ -598,6 +624,7 @@ function pwHTML(){
       pwToHTML(to) : '')+
     /* The face you are about to post under, which is the one this post will
        carry -- worked out here, on the making side, where the letters are. */
+    '<div class="pwscroll">'+
     '<div class="pwtop"><div class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</div>'+
     '<div class="pwfield">'+
@@ -611,10 +638,14 @@ function pwHTML(){
          every other one. Nothing is flattened here any more: a column IS
          typed into now, and lnFit() measures the width when the writing-mode
          is vertical, because that is the way a column grows. */
+      /* Not `fitin` any more. That said "the layout gives this field its
+         height", which is what a field takes when it is the only thing that
+         can stretch -- and it was, so a photograph sat under the fold and the
+         line never grew. The page scrolls now, so the field is as tall as
+         what is in it and everything under it moves down. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
-        PW.ln, 'fitin '+dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
+        PW.ln, dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
-      '<div id="pw-left">'+pwLeftHTML()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
@@ -624,8 +655,16 @@ function pwHTML(){
          photograph or a voice to -- the post already has whatever it has --
          so the row that adds them is not there rather than there and
          refusing. */
-      (PW.ed? '' : pwPicHTML())+
-      '</div></div>';
+      (PW.ed? '' : pwStripHTML())+
+      '</div></div>'+
+    '</div>'+
+    /* The bar. It is the last thing in the form and the only thing that does
+       not scroll, so it sits on the keyboard whatever is above it. The count
+       is on it rather than in the column, because it is about the whole line
+       and not about a place in it. */
+    (PW.ed? '' :
+      '<div class="pwbar">'+pwAddHTML()+
+        '<span class="pwbleft" id="pw-left">'+pwLeftHTML()+'</span></div>');
 }
 /* Typing patches the one thing that changed and nothing else: rebuilding the
    body would put the caret back at the end of the field on every letter.

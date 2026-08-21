@@ -675,22 +675,36 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    tabs: a screen that is one screen has nowhere else to be, and where you
    are is not a question anybody is asking while they write a post.
    「投稿画面にはホーム画面とかの下タブは要らない」 */
-/* `auto` and not `hidden`. A reply carries the post it is replying to at the
-   top of the composer, and on a short screen -- which is what a screen with a
-   keyboard on it is -- that quoted post can leave the field with nothing: it
-   collapsed to 29pt, which is under the floor for anything a thumb has to
-   hit, and press-check said so. The field has a floor of its own below, and
-   when even that does not fit, this is what gives. */
+/* The body holds two children and gives all the slack to the first: what is
+   being written scrolls, and the bar under it does not. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);overflow:auto}
-.view.fit .pwtop{flex:1;min-height:0}
-.view.fit .pwfield{display:flex;flex-direction:column;min-height:0}
-/* `height:0` and not just `flex:1`. A textarea's own height comes from its
-   `rows`/`cols`, and in a vertical writing mode it is `cols` that sets it --
-   twenty characters, which is a base size big enough that the flex line had
-   almost no free space left to grow into. Zeroing the base is what makes
-   "take what is left" mean it. */
-.view.fit .pwfield .lnin{flex:1 1 0;height:0;min-height:44px;overflow:auto}
+   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);overflow:hidden}
+/* Everything you are writing, and it is the part that scrolls -- so the line
+   can be as long as it likes and the photographs under it move down with it,
+   the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
+   Before this the field was the only thing that could stretch, so it took the
+   whole screen and the strip of photographs sat under the fold. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:0;overflow:auto}
+.view.fit .pwtop{min-height:0}
+.view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
+/* As tall as its text -- lnFit says how tall; this only stops it widening
+   past the column it is in. */
+.view.fit .pwfield .lnin{max-width:100%;min-height:44px}
+/* A column grows the other way: its height is the page's to give and its
+   WIDTH is what runs out. Capped at the column and scrolling inside itself --
+   without the cap a long line walked off the side of the phone.
+   「縦書きの時文字数突破したら画面外にいくけどありえないから」 */
+.view.fit .pwfield .lnin.dir-ttb-rl,
+.view.fit .pwfield .lnin.dir-ttb-lr{
+   height:calc(var(--vvmin,55vh) - 230px);min-height:150px;
+   max-width:100%;overflow:auto}
+/* The one thing that does not scroll: the row that adds a photograph or a
+   voice, and how much of the line is left. It is the last child of the form,
+   so it sits on the keyboard whatever is above it.
+   「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」 */
+.pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+   padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
+.pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
 /* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
