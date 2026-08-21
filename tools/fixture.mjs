@@ -759,6 +759,11 @@ export function halfDone(){
     /* The ⋯ at the end of the row of keyboards: deleting this one, and
        starting the whole chapter over. Both are off the screen now, and
        deleting only exists when there is more than one to delete. */
+    /* The ... in the dictionary's bar. The rules that make a form out of a
+       word are behind it, and that is the only door to them -- without this
+       face the walk sees a screen nothing goes to, which is exactly what it
+       would be if the button were deleted. */
+    ['the dictionary\'s ...', () => { wordsMore(); return FORM.html; }],
     ['the two that undo a keyboard', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 1; kbMore();

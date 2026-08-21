@@ -735,7 +735,7 @@ function vForms(){
   var a=fmRules();
   return '<div class="view">'+navTop(a.length? String(a.length) : '')+
     '<div class="body">'+
-    '<div class="note">'+esc(t('fmr.what'))+'</div>'+
+
     (a.length? '<div class="wdrows">'+a.map(function(r){
         return '<button class="wdrow"' + DO('openFmr', [r.id]) + '>'+
           '<span class="wdrowf">'+esc(fmLabel(r.fm)||t('word.none'))+'</span>'+

@@ -105,10 +105,30 @@ function wordsHidHTML(){
   return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
+/* The ... in the dictionary's bar. What is behind it is about the WORDS of
+   this language rather than about one of them -- the rules that make a form
+   out of a word, which sat at the head of the grammar chapter above the
+   fifteen stages and is not a stage. 「規則で作る形はあってもいいけど、ここに
+   載せるのは反対」
+
+   It is where a downloaded word list will go too, when there is one to go
+   there: both are the dictionary seen from outside a single word. Nothing is
+   put here before it exists -- a row that opens nothing is a button that used
+   to work. */
+function wordsMore(){
+  openForm('wmore', t('words.more'),
+    '<button class="set" style="border-bottom:none"' + DO('go', ["forms"]) + '>'+
+      '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
+      '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+
+      ICON_GO+'</span></button>');
+}
+FORM_OPEN.wmore=function(){ wordsMore(); };
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
-    navTop(WORDS.length+(can('words')?'':' / '+FREE_LIMIT))+
+    navTop(WORDS.length+(can('words')?'':' / '+FREE_LIMIT),
+           '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
+             esc(t('words.more'))+'">'+ICON_DOTS+'</button>')+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+

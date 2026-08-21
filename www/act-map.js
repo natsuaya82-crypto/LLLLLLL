@@ -256,6 +256,7 @@ act('posPick', posPick);
    not got. */
 act('fmrNew', fmrNew);
 act('openFmr', openFmr);
+act('wordsMore', wordsMore);
 act('fmrDel', fmrDel);
 act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);
