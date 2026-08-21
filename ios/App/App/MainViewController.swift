@@ -24,5 +24,10 @@ import Capacitor
 class MainViewController: CAPBridgeViewController {
   override func capacitorDidLoad() {
     bridge?.registerPluginInstance(LinguaSharePlugin())
+    bridge?.registerPluginInstance(LinguaPlanPlugin())
+    // And the plan itself, as a script rather than as an answer to a call:
+    // what a free plan looks like is decided on the first frame, and a call
+    // comes back after it. See the head of LinguaPlan.swift.
+    LinguaPlanPlugin.inject(into: bridge?.webView)
   }
 }

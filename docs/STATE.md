@@ -124,8 +124,10 @@ nobody's to write:
   agree, and until then `GOOGLE_IOS_ID` is empty and the button says so
 - Supabase has to be told to accept both — `supabase/setup.md` § 4
 
-**No StoreKit.** The plans screen exists and `SET.plan` can be set, but nothing
-charges anybody. `docs/apple.md`.
+**No StoreKit.** The plans screen exists and the plan can be set by pressing a
+card, but nothing charges anybody. `docs/apple.md`. The plan itself lives in the
+Keychain rather than in the settings file — `ios/App/App/LinguaPlan.swift` says
+why, and what it does not stop.
 
 **No landing page in this repository.** `vercel.json` copies `www/` into
 `public/` and serves the app itself as a static site. There is no marketing

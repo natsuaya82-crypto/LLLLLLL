@@ -260,13 +260,20 @@ function wipeAll(){
     for(si=0; si<SLICES.length; si++) localStorage.removeItem(langKey(SLICES[si]));
   }catch(e){}
   langRead(); ltRead(); noteRead(); stRead(); sndRead(); sndStart();
-  /* the person's settings, back to what a fresh install has -- keeping the two
-     that are about them rather than about the language */
-  var theme=SET.theme, ui=SET.ui;
-  SET=setDefaults(); SET.theme=theme; SET.ui=ui;
+  /* the person's settings, back to what a fresh install has -- keeping the
+     three that are about them rather than about the language.
+
+     The plan is the third, and it was not always. Erasing what is on this
+     phone is not cancelling a subscription, and once the plan moved to the
+     Keychain a wipe that set it to free was free for this session and paid
+     again at the next launch -- the file it used to be reset in no longer
+     holds it. Somebody who is paying stays paid, which is also the only
+     answer that does not depend on which of the two copies is read first. */
+  var theme=SET.theme, ui=SET.ui, pl=SET.plan;
+  SET=setDefaults(); SET.theme=theme; SET.ui=ui; SET.plan=pl;
   netOut();
-  /* after the plan is back to free, because that is what decides whether the
-     language gets the twenty-eight slots at all */
+  /* and the twenty-eight slots, for a language that is empty now and on a
+     plan that adds no letters of its own */
   ltStart();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
@@ -358,7 +365,7 @@ function vPlans(){
     '</div></div>';
 }
 function setPlan(id){
-  SET.plan=id; save(); render();
+  SET.plan=id; planKeep(id); save(); render();
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
 

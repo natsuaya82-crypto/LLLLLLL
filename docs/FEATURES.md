@@ -183,7 +183,7 @@ vertically-written language is. It is a compromise and it is written down in
 |---|---|---|---|---|---|
 | System keyboard extension (iOS) | shipped | yes | — | App Group | decided |
 | Hand-over app → keyboard | shipped | yes | — | App Group | decided |
-| Purchases (StoreKit) | **planned** | — | — | none | **open** — no code exists; `SET.plan` is set by hand |
+| Purchases (StoreKit) | **planned** | — | — | Keychain | **open** — no code exists; the plan is set by hand |
 | Android | **planned** | — | — | — | **open** — one repo with `android/` beside `ios/`, nothing started |
 
 ## What is left to do online
@@ -199,10 +199,15 @@ deleting an account.
 
 ### 1. The plan, on the server — the one with money on it
 
-`SET.plan` is a string in `localStorage` and the app is unbundled JavaScript
-on the phone. **Anybody can set themselves to Plus**, and the server would
-not know: `schema.sql` has no plan column and no plan check; `is_member()`
-asks whether somebody is signed in and nothing else.
+The plan is in the Keychain now — `ios/App/App/LinguaPlan.swift`, read before
+the web view loads and injected as `window.__plan` — because `localStorage` is
+a file inside the app and that file is in the backup a phone makes onto a PC,
+where free tools and no jailbreak turn `free` into `plus`. That door is shut.
+The one behind it is not: on a jailbroken phone the app's own JavaScript can be
+edited and the question never gets asked. **So anybody determined enough can
+still set themselves to Plus**, and the server would not know: `schema.sql` has
+no plan column and no plan check; `is_member()` asks whether somebody is signed
+in and nothing else.
 
 Today that costs nothing but the sale — everything a plan opens runs on the
 phone (`assist.js`, `grammar.js`, `reading.js` make no network call), and there

@@ -187,9 +187,13 @@ is true and is not what you meant.
 
 ## Not built yet
 
-**No StoreKit code exists.** `SET.plan` is set by hand in the settings and by
+**No StoreKit code exists.** The plan is set by hand on the plans screen and by
 nothing else. The two subscriptions are configured in App Store Connect and are
 described in `docs/apple.md`; nothing in the repo talks to them.
+
+Where it is kept is settled, though: the Keychain, not the settings file. See
+`ios/App/App/LinguaPlan.swift` for what that closes and what it leaves open, and
+case 6 of `tools/migrate-check.mjs` for the two things it has to keep meaning.
 
 When receipts do arrive, the rule above is the first thing to hold: a receipt
 that fails to validate, a network that is down, a sandbox that answers wrong —

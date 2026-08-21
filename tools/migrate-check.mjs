@@ -30,6 +30,10 @@
                            time they open the app after the update
      4. a fresh install    nothing to migrate, so one empty language of their
                            own, not zero and not a broken half-language
+     6. the plan moved     it leaves the settings file for the Keychain, and
+                           the file stops deciding. This is the one case where
+                           the migration is the point rather than the risk:
+                           the file is what a PC backup lets somebody edit
      5. switching          opening a second language puts the first one away
                            and brings the second one out -- all of it, and
                            nothing of the first. This is the one that can lose
@@ -39,7 +43,7 @@
                            next time A is saved. Nothing on screen would look
                            wrong at any point
 
-   Exit code is 0 only when all four hold.
+   Exit code is 0 only when all six hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -161,6 +165,29 @@ const lacks = (label, got, unwanted) => {
 
 const br = await chromium.launch(fs.existsSync(CHROME) ? { executablePath: CHROME } : {});
 const pg = await br.newPage();
+/* The phone, when a case asks for one. ios/App/App/LinguaPlan.swift reads the
+   Keychain and injects the plan as a script before anything else runs, so
+   there is nothing to await and nothing to stub except the value itself --
+   and the one call that writes it back. Asleep unless `__test.keychain` is
+   there, so the five cases above run in the browser they always ran in. */
+await pg.addInitScript(() => {
+  let box = null;
+  try { box = JSON.parse(localStorage.getItem('__test.keychain') || 'null'); } catch (e) {}
+  if (!box) return;
+  window.__plan = box.plan;
+  window.__wrote = [];
+  window.Capacitor = window.Capacitor || {};
+  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+  window.Capacitor.Plugins.LinguaPlan = {
+    write: (o) => {
+      window.__wrote.push(o.plan);
+      try {
+        localStorage.setItem('__test.keychain', JSON.stringify({ plan: o.plan }));
+      } catch (e) {}
+      return Promise.resolve();
+    },
+  };
+});
 await pg.goto(`http://localhost:${PORT}/`);
 
 /* ---- 1 and 2: an old install ------------------------------------------- */
@@ -293,6 +320,53 @@ want('and its name', A2.name, 'Vaska');
 want('and its drawn script', A2.script, 't');
 want('and its sounds', A2.snd, 't,u,f');
 
+/* ---- 6: the plan leaves the file ---------------------------------------
+   `lingua.set` is inside the app, and the app is inside the backup a phone
+   makes onto a PC. Opening that backup, changing one word and restoring it
+   needs no jailbreak, which made it the lowest door in the building. So the
+   plan is in the Keychain now, and these are the two things that has to mean:
+   what was already bought comes across by itself, and the file stops being
+   listened to afterwards. */
+/* Asked of the parsed file rather than of its text: lacks() above splits on
+   commas, which is right for a list of letter ids and finds nothing at all in
+   a line of JSON. */
+const planInFile = () => pg.evaluate(() => {
+  try {
+    const f = JSON.parse(localStorage.getItem('lingua.set') || 'null');
+    return !!(f && Object.prototype.hasOwnProperty.call(f, 'plan'));
+  } catch (e) { return false; }
+});
+const nativeIs = (plan, settings) => pg.evaluate(([p, st]) => {
+  localStorage.setItem('__test.keychain', JSON.stringify({ plan: p }));
+  if (st !== null) localStorage.setItem('lingua.set', st);
+}, [plan, settings === undefined ? null : settings]);
+
+/* 6a. somebody who is already paying, on the launch after the update: the
+   Keychain has never been written, and the settings still hold the plan. */
+await pg.evaluate(() => localStorage.clear());
+await nativeIs('', '{"theme":"dark","plan":"plus"}');
+await pg.reload();
+want('a plan already bought comes across',
+     await pg.evaluate(() => plan()), 'plus');
+want('and is written where it now lives',
+     await pg.evaluate(() => (window.__wrote || []).join(',')), 'plus');
+want('and is taken out of the file it came from', await planInFile(), false);
+
+/* 6b. the same phone, with the file edited the way a restored backup would
+   edit it. This is the whole reason for the move: the answer is the Keychain's
+   'free', not the file's 'plus'. */
+await nativeIs('free', '{"theme":"dark","plan":"plus"}');
+await pg.reload();
+want('the file no longer decides what the plan is',
+     await pg.evaluate(() => plan()), 'free');
+
+/* 6c. and nothing puts it back. A save writes the settings whole, and a save
+   that carried the plan would hand the file its say again on the next load. */
+await pg.evaluate(() => { SET.theme = 'light'; save(); });
+want('and a save does not write it back into the file', await planInFile(), false);
+want('while the app still knows what it is',
+     await pg.evaluate(() => plan()), 'free');
+
 await br.close();
 srv.close();
 
@@ -304,4 +378,6 @@ if (fails.length) {
   process.exit(1);
 }
 console.log('migration: an old install opens with everything in it, twice over, ' +
-            'and a new one starts with a language of its own.');
+            'and a new one starts with a language of its own.\n' +
+            '           A plan already bought moves itself out of the settings file ' +
+            'and into\n           the Keychain, and the file stops being listened to.');
