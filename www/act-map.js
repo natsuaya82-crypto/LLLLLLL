@@ -30,6 +30,7 @@
 act('abNudge', abNudge);
 act('abScale', abScale);
 act('addOne', addOne);
+act('addFmDrop', addFmDrop);
 act('back', back);
 act('setPlan', setPlan);
 act('setPlansTerm', setPlansTerm);
@@ -245,6 +246,7 @@ actIn('wdSetNt', wdSetNt);
 /* A word is typed on the free plan, in three places: the new-word sheet, the
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
+actIn('addFmSet', addFmSet);
 actIn('ipaSetQ', ipaSetQ);
 actIn('fmrSetAdd', fmrSetAdd);
 actIn('fmrSetWend', fmrSetWend);

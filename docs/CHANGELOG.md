@@ -15,6 +15,43 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A word made brings its forms with it
+
+Rules that make a form (`docs/` chapter 13, `STG.fm`) could only be spent one
+press at a time: a word's own page carried a row saying "make the 2 forms this
+word has not got", and the rules screen a button making every one of them
+across the whole dictionary. Both are after the fact — the word is already in,
+and you go back for its forms.
+
+So the forms are on the sheet the word is coined on. Type a spelling and every
+rule that fits the draft's part of speech shows its form under 規則で作る形,
+already spelled. Each row can be typed over, and each row has a minus. Saving
+the word writes the rows that are left, as ordinary words.
+「保存したら出る。消してたら消す。」
+
+- **A form typed over wins.** Changing the head spelling re-spells only the
+  rows nobody has touched. 「あくまで規則は作るのを楽にするためのツール」
+- **A row taken off stays off** for as long as the sheet is open, even if the
+  spelling is retyped into something the rule fits again.
+- **Only where a word is being coined.** Editing a word that already exists
+  shows none of this and changes none of its forms. 「あくまで追加したとき」
+
+**Data.** Each form goes in as an ordinary word — `hw`, `sp`, `pos`, `at`,
+`from` (the word it was made from) and `fm` (which form it is), which is
+exactly what the row on the word page already wrote. An inflection takes the
+parent's meanings and a derivation takes none, unchanged. Nothing is stored
+about the sheet itself: the rows live only while it is open.
+
+**Deletion.** Nothing here deletes. The minus is on a form that does not exist
+yet, so there is nothing to remove. What was already true stays true and is
+worth writing down, because it is what a person would fear: deleting a word
+that has forms leaves every form alive as a word of its own, with the pointer
+at the parent dropped and nothing else touched (`delWord`). A form deleted on
+its own page deletes that word and nothing else.
+
+**Plan.** No change. The forms count against the free 100 like any other word,
+and the sheet refuses to add more than there is room for.
+
 ### A reading is chosen off sounds, and no letter appears where one is chosen
 
 The word sheet carried a row of tiles under the box a word is typed into: one

@@ -764,6 +764,16 @@ export function halfDone(){
        face the walk sees a screen nothing goes to, which is exactly what it
        would be if the button were deleted. */
     ['the dictionary\'s ...', () => { wordsMore(); return FORM.html; }],
+    /* The sheet a word is coined on, with something typed into it. The forms
+       the rules make of it are on that sheet, and they are on it only once
+       there is a spelling to make them out of -- so an empty sheet names
+       neither the field one is typed over in nor the minus that takes one
+       off. The rule the fixture seeds is a plural for nouns, and a noun is
+       what the sheet opens on. */
+    ['a word being coined, with its forms', () => {
+        openAdd('');
+        wdSetLn('tirek');
+        return wdFormHTML(); }],
     /* A rule whose condition is the letters a word ends in. The field for
        those letters is on the screen only while that is the condition
        chosen -- a field for a question nobody asked gets filled in and then

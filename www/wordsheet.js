@@ -51,6 +51,7 @@ function openAdd(from){
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
            mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
+    addFmClear();
     wdSync();
   }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
@@ -64,10 +65,13 @@ function addOne(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
   var sp=(wEdit && wEdit.sp) || [], hw=spWord(sp), d=addW;
-  var syn, ant, w;
+  var syn, ant, w, made;
   if(!d) return;
   if(!sp.length || !hw){ toast(t('toast.hw2')); return; }
-  if(!capOK(1)){ closeSheet(); go('plans'); return; }
+  /* The word AND the forms going in with it. Asking for room for one and then
+     writing four is how a free language ends up over its own limit. */
+  addFmSync();
+  if(!capOK(1+addFms.length)){ closeSheet(); go('plans'); return; }
   if(findWord(hw)){ toast(t('toast.dup')); return; }
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
@@ -89,11 +93,15 @@ function addOne(){
   addW=null;
   syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
   ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
+  /* And the forms, after the word they are of is in the dictionary: each of
+     them points at it by name. */
+  made=addFmWrite(hw);
+  addFmClear();
   save(); cands=[]; addFrom='';
   /* Onto the word, read. Everything it holds was written on the way in, so
      what is wanted now is a look at it, not another form. */
   if(here().r==='form') back();
-  toast(t('toast.added.1', hw));
+  toast(made? tn('fmr.with', made) : t('toast.added.1', hw));
   openWord(hw);
 }
 function findWord(hw){
@@ -135,6 +143,7 @@ function wdSetLn(v){
   lnGrow('wd-ln');
   var r=document.getElementById('wd-rd');
   if(r) r.textContent=phIpa(wEdit.seq);
+  addFmPaint();
 }
 /* The reading, and the way to change it. It is proposed -- the letters of
    the word say what it reads, and that is the answer until somebody says
@@ -776,6 +785,105 @@ function fmrTodoHTML(w){
     esc(tn('fmr.todo', todo.length))+'</button>';
 }
 
+/* ---- the forms on the sheet the word is coined on ------------------------
+   A rule was only ever spent after the fact. The word went in, and then its
+   page offered to make the forms it had not got, or the rules screen offered
+   to make every one of them across the whole dictionary -- both of which are
+   going back for something you were holding a moment ago.
+
+   So the rules are spent where the word is written. Type a spelling and every
+   rule that fits shows what it makes, spelled out; the row can be typed over
+   or taken off; Add writes what is left. 「保存したら出る。消してたら消す。」
+
+   Three things this remembers, and they are all about the sheet rather than
+   about the language, so all three go when the sheet closes:
+
+   `addFmEd` -- a form somebody typed over. It wins from then on: changing the
+   head re-spells only the rows nobody has touched, because a rule is a way of
+   saving typing and not an opinion about the word.
+   「あくまで規則は作るのを楽にするためのツール」
+
+   `addFmOff` -- a row taken off. It stays off even if the head is retyped
+   into something the rule fits again: it was answered once.
+
+   Nothing here deletes. The minus is on a word that does not exist yet. */
+var addFms=[], addFmEd={}, addFmOff={};
+function addFmClear(){ addFms=[]; addFmEd={}; addFmOff={}; }
+/* The draft as a word, which is all fmrMake() ever wanted of one. */
+function addFmDraft(){
+  var sp=(wEdit && wEdit.sp) || [];
+  return {hw:spWord(sp), sp:sp, pos:(wEdit && wEdit.pos) || ''};
+}
+function addFmSync(){
+  var a=fmRules(), w=addFmDraft(), i, m;
+  addFms=[];
+  if(!addW || !w.hw || !w.sp.length) return;
+  for(i=0;i<a.length;i++){
+    if(addFmOff[a[i].id]) continue;
+    m=fmrMake(w, a[i]);
+    if(!m) continue;
+    /* Typed over: the letters are the person's, and the headword is those
+       letters rather than the ones the rule would have put there. */
+    if(addFmEd[a[i].id]){
+      m.sp=addFmEd[a[i].id];
+      m.hw=spWord(m.sp);
+    }
+    if(!m.hw) continue;
+    addFms.push(m);
+  }
+}
+/* Its own node, so the head field can be typed into without the sheet being
+   rebuilt under the thumb: what changes as somebody types is this block and
+   nothing else. */
+function addFmBoxHTML(){ return '<div id="wd-fms">'+addFmHTML()+'</div>'; }
+function addFmPaint(){
+  var e=document.getElementById('wd-fms');
+  if(!e) return;
+  e.outerHTML=addFmBoxHTML();
+  lnGrowAll();
+}
+function addFmHTML(){
+  addFmSync();
+  if(!addFms.length) return '';
+  return '<div class="sec">'+esc(t('fmr.title'))+'</div>'+
+    '<div class="fmmks">'+addFms.map(function(m){
+      return '<div class="fmmk"><span class="fmmkf">'+esc(fmLabel(m.fm))+'</span>'+
+        lnField('fmmk-'+m.id, '', IN('addFmSet', [m.id]), m.hw,
+                'whin'+(myFontOn()? ' sfont' : ''))+
+        '<button class="mnx"' + DO('addFmDrop', [m.id]) + ' aria-label="'+
+          esc(t('fmr.off'))+'">'+ICON_MINUS+'</button></div>';
+    }).join('')+'</div>';
+}
+function addFmSet(id, v){
+  addFmEd[String(id)]=spType(v);
+  lnGrow('fmmk-'+id);
+}
+function addFmDrop(id){
+  addFmOff[String(id)]=1;
+  delete addFmEd[String(id)];
+  addFmPaint();
+}
+/* Written when the word is. Each is an ordinary word, made the way fmrAdd()
+   makes one -- what it is a form OF and what form it is, the parent's
+   meanings if it is an inflection and none if it is a derivation. A form
+   whose spelling is already a word in the dictionary is skipped rather than
+   overwriting it: two words cannot share a headword, and the one already
+   there is the one somebody wrote. */
+function addFmWrite(hw){
+  var par=findWord(hw), i, m, nw, made=0;
+  if(!par) return 0;
+  for(i=0;i<addFms.length;i++){
+    m=addFms[i];
+    if(!m.hw || findWord(m.hw)) continue;
+    nw={hw:m.hw, pos:par.pos, at:Date.now(), from:String(par.hw), fm:m.fm,
+        sp:JSON.parse(JSON.stringify(m.sp)),
+        mns:(fmGroup(m.fm)==='i')? wMns(par).slice() : []};
+    nw.mn=nw.mns[0]||'';
+    WORDS.push(nw); made++;
+  }
+  return made;
+}
+
 /* ---- writing one -------------------------------------------------------- */
 var fmrOpen='';
 function fmrSay(r){
@@ -1062,6 +1170,12 @@ function wdFormHTML(){
       (wdFrom()? wdFmHTML() : '')+
       wdRegHTML()+
     '</div>'+
+
+    /* The forms the rules make of it, where a word is coined and nowhere
+       else. A word that already exists has its forms already, and re-spelling
+       them under it would be the app arguing about a language it did not
+       write. 「あくまで追加したとき」 */
+    (mk? addFmBoxHTML() : '')+
 
     '<div class="sec">'+t('word.tags')+'</div>'+
     wdTagsHTML()+

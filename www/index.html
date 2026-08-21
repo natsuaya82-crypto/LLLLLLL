@@ -2474,6 +2474,14 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 .mnrow .mnv{flex:1;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--tx)}
 .mnrow .mnx{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
+/* the forms a rule makes, on the sheet a word is coined on: what it is
+   called, what it is spelled, and the way to say it is not wanted */
+.fmmks{display:flex;flex-direction:column;gap:0}
+.fmmk{display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid var(--line)}
+.fmmk .fmmkf{flex:0 0 auto;min-width:88px;font-size:.78rem;color:var(--txm);letter-spacing:.04em}
+.fmmk .lnin{flex:1;min-width:0;border-bottom:0}
+.fmmk .mnx{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;
+  color:var(--txm);display:flex;align-items:center;justify-content:center}
 .mnadd{display:flex;gap:8px;align-items:stretch}
 .mnadd input{flex:1;min-width:0;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
   padding:12px 2px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
