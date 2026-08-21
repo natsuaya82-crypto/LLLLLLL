@@ -934,9 +934,17 @@ function geUndo(){
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
 function geSave(){
-  /* A single dot is a stroke half-placed, not a shape. It does not get
-     saved, and it does not get left behind for the next press to trip on. */
-  var keep=GE.st.filter(function(s){ return s.pts.length>1; });
+  /* A dot is a mark. It used to be thrown away here on the grounds that a
+     stroke with one point is a line half-drawn -- which is true of a line and
+     is the app deciding that a language cannot have a dot in it. A letter that
+     IS a dot, or a line with a dot beside it, could not be saved: the dot came
+     back as nothing every time. 「点一つで点で。だって線にするには2で繋ぐ
+     必要あるでしょ」 What is still dropped is a stroke with NO points, which
+     is the empty one geCur() opens and nobody drew on.
+
+     The pen already lays a dot down -- one point gives one square of ink, the
+     nib itself -- so nothing else had to change for this to be drawable. */
+  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
   ltSetStrokes(GE.lid, keep);
   /* Drawing a letter is asking for your own writing. Only onboarding ever set
      this, so every letter drawn in the letters chapter went into a font that

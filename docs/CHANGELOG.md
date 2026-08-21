@@ -15,6 +15,26 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A dot is a mark
+
+Saving a letter dropped every stroke with only one point in it, on the
+grounds that a line with one end is a line half-drawn. That is true of a
+line, and it also meant a language could not have a dot in it: a letter that
+IS a dot, and a dot placed beside a line, both came back as nothing every
+time they were saved. 「点一つで点で。だって線にするには2で繋ぐ必要あるでしょ」
+
+The pen already lays a dot down — one point is one square of ink, the nib
+itself — so nothing about drawing had to change. What is still dropped is a
+stroke with no points at all, which is the empty one the canvas opens and
+nobody drew on.
+
+**Data.** A letter's `st` can now hold a stroke whose `pts` has one point.
+Nothing already stored changes, nothing is removed, and a letter saved before
+today is unaffected — what it lost, it lost then.
+
+**Deletion.** Nothing is deleted. This is the opposite: one thing that was
+being thrown away is kept.
+
 ### A word made brings its forms with it
 
 Rules that make a form (`docs/` chapter 13, `STG.fm`) could only be spent one
