@@ -474,6 +474,8 @@ defLang('pt', (function(){
       "num.base"        : "Base",
       "cal.months"      : "Meses num ano",
       "cal.week"        : "Dias numa semana",
+      "num.wid"         : "No ecrã principal",
+      "num.wid.how"     : "Mantém premido o ecrã principal → + → Lingua",
       "lt.marks"         : "Sinais",
       "toc.gram"         : "Gramática",
       /* what the app proposes */

@@ -646,6 +646,8 @@ defLang('ko', (function(){
       "num.base"        : "진법",
       "cal.months"      : "한 해의 달 수",
       "cal.week"        : "한 주의 날 수",
+      "num.wid"         : "홈 화면에서는",
+      "num.wid.how"     : "홈 화면 길게 누르기 → + → Lingua",
       "lt.marks"         : "기호",
       "toc.gram"         : "문법",
       /* what the app proposes */

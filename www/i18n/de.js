@@ -455,6 +455,8 @@ defLang('de', (function(){
       "num.base"        : "Basis",
       "cal.months"      : "Monate im Jahr",
       "cal.week"        : "Tage in der Woche",
+      "num.wid"         : "Auf dem Home-Bildschirm",
+      "num.wid.how"     : "Home-Bildschirm halten → + → Lingua",
       "lt.marks"         : "Zeichen",
       "toc.gram"         : "Grammatik",
       /* what the app proposes */

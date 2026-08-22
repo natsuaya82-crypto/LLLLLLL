@@ -213,3 +213,129 @@ function numWordRow(l){
       '<span class="lead"></span>'+
       '<span class="rv">'+esc(w? phIpa(wPh(w)) : '')+'</span>'+ICON_GO+'</button>';
 }
+
+/* ---- what these look like outside the app -------------------------------
+   The digits drawn in this room are the only thing of a language that leaves
+   it without anybody typing: they are the clock and the date on the home
+   screen (ios/App/LinguaWidget/). Nothing in the app said so, and there is no
+   way to find out — a widget nobody knows about is a widget nobody adds.
+
+   So the room that makes them shows them, in the person's own signs, at about
+   the size they come out. Then one line saying how to put it there.
+
+   One line and not four. Holding the home screen and pressing + is how every
+   widget on the phone is added and is not this app's to teach; which of them
+   to look for is.
+
+   The app cannot add it. There is no public API and no URL for placing a
+   widget, exactly as there is none for adding a keyboard — LinguaShare.swift
+   § settings() has that paragraph. So a sentence is the whole of what is
+   possible. */
+
+/* One sign: the shape if there is one, the character it borrows, or the roman
+   digit that stands in for one nobody drew. The canvas is `tcln`, which is
+   what a LINE of letters is drawn on — width from the ink's own advance,
+   height from the type — so two signs beside each other sit one step apart
+   and not one cell. */
+function numSignHTML(v){
+  var l=numByVal(v);
+  if(l && l.st && l.st.length)
+    return '<canvas class="tcln" data-l="'+esc(l.id)+'"></canvas>';
+  if(l && l.ch) return '<span class="numrm">'+esc(l.ch)+'</span>';
+  return '<span class="numrm">'+esc(v.toString(36))+'</span>';
+}
+/* A whole number, in this language's base. */
+function numLineHTML(n){
+  var b=numBase(), left=(n>0? n : 0), out=[], i;
+  if(!left) out.push(0);
+  while(left>0){ out.unshift(left%b); left=Math.floor(left/b); }
+  for(i=0;i<out.length;i++) out[i]=numSignHTML(out[i]);
+  return out.join('');
+}
+/* How many signs a number takes in this language's base. */
+function numSigns(n){
+  var b=numBase(), left=(n>0? n : 0), c=0;
+  if(!left) return 1;
+  while(left>0){ c++; left=Math.floor(left/b); }
+  return c;
+}
+/* How wide the widest hour is decides whether a face wears twelve numerals or
+   four. Same rule as ClockWidget.swift: more than two signs is a smudge
+   however narrow they are. */
+function numWidHours(){
+  var most=1, h, c;
+  for(h=1;h<=12;h++){ c=numSigns(h); if(c>most) most=c; }
+  return (most<=2)? [1,2,3,4,5,6,7,8,9,10,11,12] : [12,3,6,9];
+}
+/* The side of one preview, in px. Both are the same square, because on a home
+   screen they are the same square. */
+var NUM_WID=118;
+/* A sign is about 0.55 of the em across. An estimate, and an estimate is all
+   this needs: it is choosing a size, not placing anything -- the placing is
+   inkLine's, off the ink's own advance. The Swift asks the real widths
+   because it has them; here the shapes are canvases the browser has not laid
+   out yet when this runs. */
+function numEm(n, room, cap){
+  var w=numSigns(n)*0.55;
+  return Math.min(cap, room/w);
+}
+/* The face. No frame around it: iOS draws the widget's own ground, and a box
+   with rounded corners is the one shape this app does not make. */
+function numClockHTML(){
+  var hrs=numWidHours(), out='', dots='', i, a, x, y,
+      W=NUM_WID, R=W/2,
+      /* how much of the ring one numeral has, the way ClockWidget.swift
+         works it out -- and then the em that fits the widest one in it */
+      room=2*(R*0.78)*Math.sin(Math.PI/hrs.length)*0.82,
+      em=Math.min(W*0.19, room/(numSigns(hrs[hrs.length-1])*0.55)),
+      /* 0.85, the same as ClockWidget.swift's. 0.62 pushed the numerals
+         further out than the widget puts them and left the hands looking
+         short in the middle of an empty face. */
+      ring=R-em*0.85;
+  for(i=1;i<=12;i++){
+    a=(i/12)*2*Math.PI-Math.PI/2;
+    x=R+ring*Math.cos(a); y=R+ring*Math.sin(a);
+    /* The ticks are circles in the SVG below and not divs with a radius on
+       them. A round div is a border-radius, box-check cannot tell a circle
+       from a rounded box, and it is right not to try: the rule is that this
+       app does not draw one. An <svg><circle> is a circle and nothing else. */
+    if(hrs.indexOf(i)>=0)
+      out+='<span class="numwn" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;'+
+           'font-size:'+em.toFixed(1)+'px">'+numLineHTML(i)+'</span>';
+    else
+      dots+='<circle class="numwt" cx="'+(x/W*100).toFixed(1)+'" cy="'+(y/W*100).toFixed(1)+
+            '" r="1.3"/>';
+  }
+  /* Ten past ten, which is where every clock in every photograph of a clock
+     is: the hands are apart, they point up, and they cover nothing. */
+  return '<div class="numwf">'+out+
+    '<svg class="numwh" viewBox="0 0 100 100" aria-hidden="true">'+dots+
+      '<line x1="50" y1="50" x2="61.2" y2="30.6" stroke-width="3.2"/>'+
+      '<line x1="50" y1="50" x2="21.5" y2="33.5" stroke-width="2.1"/>'+
+      '<circle class="numwc" cx="50" cy="50" r="2.4"/></svg></div>';
+}
+/* And the date: the day large, the month under it. Same square as the face,
+   and the same rule about a number that takes more signs than it has room
+   for -- 23 counted in two is five signs, and five at 0.44 of the square is
+   three times its width. */
+function numDateHTML(){
+  var d=new Date(), W=NUM_WID, dv=d.getDate(), mv=d.getMonth()+1;
+  return '<div class="numwd">'+
+    '<span class="numwbig" style="font-size:'+numEm(dv, W*0.86, W*0.44).toFixed(1)+'px">'+
+      numLineHTML(dv)+'</span>'+
+    '<span class="numwsm" style="font-size:'+numEm(mv, W*0.50, W*0.17).toFixed(1)+'px">'+
+      numLineHTML(mv)+'</span></div>';
+}
+function numWidHTML(){
+  return '<div class="sec">'+esc(t('num.wid'))+'</div>'+
+    '<div class="numwrow">'+numClockHTML()+numDateHTML()+'</div>'+
+    '<div class="mini numwhow">'+esc(t('num.wid.how'))+'</div>';
+}
+/* The canvases, once the HTML they are in exists. inkLine gives each one the
+   width its own ink asks for, which is what makes this a line. */
+function numWidMount(){
+  inkLine('canvas.tcln', function(c){
+    var l=ltById(c.getAttribute('data-l'));
+    return (l && l.st && l.st.length)? l.st : null;
+  });
+}

@@ -515,6 +515,8 @@ defLang('fr', (function(){
       "num.base"        : "Base",
       "cal.months"      : "Mois dans une année",
       "cal.week"        : "Jours dans une semaine",
+      "num.wid"         : "Sur l'écran d'accueil",
+      "num.wid.how"     : "Maintiens l'écran d'accueil → + → Lingua",
       "lt.marks"         : "Signes",
       "toc.gram"         : "Grammaire",
       /* what the app proposes */

@@ -467,6 +467,8 @@ defLang('it', (function(){
       "num.base"        : "Base",
       "cal.months"      : "Mesi in un anno",
       "cal.week"        : "Giorni in una settimana",
+      "num.wid"         : "Sulla schermata Home",
+      "num.wid.how"     : "Tieni premuta la schermata Home → + → Lingua",
       "lt.marks"         : "Segni",
       "toc.gram"         : "Grammatica",
       /* what the app proposes */

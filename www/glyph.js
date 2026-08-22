@@ -1989,7 +1989,7 @@ function render(){
      on them was an empty box. Both of these ask the document what is on it
      instead, which is the same fix the onboarding's canvas got above: they
      find nothing and do nothing on a screen that has none. */
-  geTiles(); phkMount(); postFaces(); postLines(); pwHoldMount();
+  geTiles(); phkMount(); postFaces(); postLines(); pwHoldMount(); numWidMount();
   /* and a line field is made as tall as what is in it, which no markup can
      say -- the same reason the canvases are sized here */
   lnGrowAll();

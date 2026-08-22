@@ -475,6 +475,8 @@ defLang('zh', (function(){
       "num.base"        : "进制",
       "cal.months"      : "一年幾個月",
       "cal.week"        : "一週幾天",
+      "num.wid"         : "在主畫面上",
+      "num.wid.how"     : "長按主畫面 → + → Lingua",
       "lt.marks"         : "符号",
       "toc.gram"         : "语法",
       /* what the app proposes */

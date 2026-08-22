@@ -455,6 +455,17 @@ Two of them were about capabilities that had been deleted.
 19. Build **#82** is green and on TestFlight. What it has not had is a person:
     tapping three dots with round off should give a corner, and saving a letter
     should land on the letters list.
+20d. **The widgets' layout is written down three times** and two of them are
+    doubles: `ios/App/LinguaWidget/` is the real one, `www/numbers.js`
+    § numClockHTML() is the preview the digits room shows, and
+    `tools/widget-shot.mjs` is the picture that stood in for a simulator. The
+    first two are genuinely separate programs — one is SwiftUI on a home
+    screen, one is HTML in the app — and neither can call the other. The
+    third is a test double and exists because there is no Swift here. Nothing
+    holds the three together; if the Swift's em changes and the preview's does
+    not, the app shows a clock the phone will not draw. Worth collapsing the
+    third into the second when somebody can build the first.
+
 20c. `ios/App/LinguaWidget/` — a whole new app-extension target, added to
     `project.pbxproj` by hand. That it opens in Xcode and builds is the first
     thing to find out; then the clock on a home screen, and a language whose
