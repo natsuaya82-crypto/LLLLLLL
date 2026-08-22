@@ -149,6 +149,8 @@ is another session above this one -- it names the territory, integrates the
 branches and runs the whole gate; a session does none of those three. `www/index.html`
 is the known hazard -- every screen's CSS is in it -- so one session at a time
 owns it until that file is split by chapter.
+The top of `docs/SESSIONS.md` is a block to copy whole into a session's first
+instruction, with three blanks to fill in.
 → `docs/SESSIONS.md`, and `docs/FEATURE_RULES.md` § several sessions at once
 
 **One commit is one kind of thing.** A feature, a bug fix, a refactor, a
