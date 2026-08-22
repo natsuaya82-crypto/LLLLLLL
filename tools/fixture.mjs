@@ -102,6 +102,15 @@ export function seed(){
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
   SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
+  /* What the language is FOR. Seeded because it is a slice like the others,
+     and because NOT seeding it made one button unreachable: `setWldHide`
+     writes WLD.hide and press rebuilds the screen before every press, so the
+     first press of it hid the row under it -- setWldDl -- for the rest of the
+     run. press then reported that button as never pressed, which was true and
+     was not what it meant. The walk was narrowing the app as it went, which is
+     the one thing seed() exists to stop. Public, so the row below is there. */
+  WLD = {use:'story', where:'a valley', who:'two families',
+         note:'nobody outside the valley speaks it'};
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};
