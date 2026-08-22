@@ -196,61 +196,56 @@ none of these — posts are the only past-tense data it holds, and post.js and
 card.js are the only two files that render one, which is why the sweep after
 the card bug found nothing else.
 
-## A renamed letter loses its key on the free plan
+## ~~A renamed letter loses its key on the free plan~~ — closed by a decision
 
-Found while settling the keyboard. Not fixed, because the fix is a decision
-about letters and the work in front of it is about keyboards.
+*Closed 2026-08-22 by the owner:*
+「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで。
+無料分のキーボードはもういじらない」
 
-`kbFixed()` — the keyboard the free plan gets — finds its keys **by name**:
-`kbNamed('a')` walks `LETTERS` for one called `a`. That is the whole reason
-free is a QWERTY at all, and it is why the free plan may not rename a letter.
+**The twenty-eight slots and the digits may not be renamed, on any plan.**
+Paid buys ADDING letters — `can('letters')` — and that is a different
+sentence. A name that cannot move cannot be lost, so the whole path this entry
+described stops existing. Decision log, `docs/FEATURE_RULES.md`.
 
-A paid plan may. So:
+What this entry cost, kept because it is the lesson: it listed three ways out
+and priced the first as the smallest, on a claim about `ab` that had stopped
+being true — and a later reading of it re-priced the *decision* as "restricting
+a paid screen by a plan the person is not on", which made it read as expensive.
+It is not a restriction. **A slot's name was never something anybody was
+offered.**
 
-1. paid, rename `a` to something else
-2. the plan lapses
-3. `ltStart()` runs, sees no letter called `a`, and **adds a new empty one**
-4. the QWERTY's `a` key is that new empty letter
+The letter page had held it since 「無料で作ったやつを改名できなければ良く
+ない？」 — `ltIsBase()` and `sound.js`'s `can('letters') && !ltIsBase(l)`. What
+was missing was the rule: `ltSetRoman()` did not refuse, so a screen was the
+only thing holding it. It refuses now and `base-check` holds both halves —
+a slot keeps its name, and a letter somebody ADDED is still theirs to name.
 
-Nothing is lost — the renamed letter is still in `LETTERS` with whatever was
-drawn on it — but it is not on the keyboard any more, and the key that took
-its place is blank. Somebody whose plan ended would find a hole where a letter
-they drew used to be, and nothing anywhere would say why.
+## Is `numSetVal()` reachable at all?
 
-**The first version of this entry named a fix that does not exist, and the
-correction is the useful half.** It said: keep `ab` as the key rather than the
-name, because a letter already carries `ab` -- the roman it stands for -- and a
-rename does not touch it. Every clause of that is wrong now. `ltName()` answers
-`nm`, then a digit's value, then `ab`; `l.nm` is written in one place in the
-whole app and it is `import.js` reading a column out of somebody's spreadsheet.
-So the rename on the letter page is `ltSetRoman()`, and `ltSetRoman()` writes
-**`ab`**. Keying off `ab` is keying off the field the rename overwrites: the
-same bug, spelled differently.
+Found while placing that refusal, not looked for, and **not** answered here.
 
-There is no field that survives the rename. `ltNew()` makes `id`, `st`, `ch`,
-`nm`, `snd`, `chose` and sometimes `val`, and `ltStart()` puts the roman it
-assigned into `ab` -- the only place that roman is ever recorded. So "key off
-something the rename cannot reach" is not a smaller fix hiding behind the other
-two; it is a new field on every letter, which is the data model, which is a
-decision and not a tidy-up.
+`numSetVal()` is called from one place — `ltSetRoman()`, when what was typed is
+all digits. Two things sit in front of it:
 
-Three ways out, and choosing between them is the owner's:
+- it refuses a value another digit already has, and `ltStart()` fills every
+  value below the base, so inside a base **every value is taken by
+  construction**; and
+- the field that reaches `ltSetRoman()` is `ltAbField()`, which `sound.js`
+  shows only when `can('letters') && !ltIsBase(l)` — and `ltIsBase()` is true
+  for every digit.
 
-- **remember the slot.** Give a letter the roman `ltStart()` created it for, in
-  a field of its own that nothing but `ltStart()` writes, and let `kbFixed()`
-  find keys by that instead of by the name. A letter made by hand has no slot
-  and is on no key, which is already true. Costs a field on the eleven-slice
-  `letters` store and therefore a migration -- an old letter has no slot, so
-  either it is filled in by matching `ab` once (which is right for everybody
-  who never renamed anything, and wrong in exactly the case this entry is
-  about) or it is left empty and those keys stay blank until redrawn.
-- **refuse the rename** at the point it would orphan a key -- a paid screen
-  restricted by a plan the person is not on.
-- **say it out loud** on the day the plan ends, in `capLapse()`, which already
-  exists for exactly this kind of sentence.
+So a digit appears to have no road to its own value. That may be exactly
+right — 「数字が設定できないわ。そこ文字から設定できるように頼む」 was asked
+about DRAWING on a digit, which works, and a digit's value is arguably what
+the slot IS rather than something to edit. It may also be a door that closed
+when the letter page learned about `ltIsBase`.
 
-None of the three is small. The first is the only one that keeps the letter on
-the key, and it is the one that touches stored data.
+Not resolved because the answer is a spec question, not a code question, and
+because a check was written for it and had to be deleted: no assertion about
+moving a value can be satisfied in a normal state, which is itself the
+evidence. **A check that cannot be made true is not a weak check, it is a
+statement about the app** — and the statement here is "this cannot happen",
+which somebody should confirm is intended before anything is built on it.
 
 ## `tools/verify-script.mjs` runs now, and says nineteen things
 
