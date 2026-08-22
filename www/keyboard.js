@@ -441,12 +441,16 @@ function kbRom(c){ return {w:1, k:'rom', v:c, f:['','','','']}; }
    typed `O`, because what a key types is the letter's name and the name is
    the one with the capital on it. A line came out `hellO`.
 
-   On this keyboard the character that FOUND the letter is the right answer:
-   the free rows are a to z by construction and their names cannot be changed,
-   so `o` is what the key is and what it must put in. `t` here overrides the
-   name for this key only -- share.js reads it, and a keyboard somebody built
-   themselves has no such override and still types the names they chose. */
-function kbFix(c, id){ var k=kbKey('lt', id); k.t=c; return k; }
+   On this keyboard the character that FOUND the letter is the right answer
+   for WHICH letter the key is: the free rows are a to z by construction and
+   their names cannot be changed, so `o` finds the letter the `o` key wears.
+
+   What it PUTS IN is a different question and used to have the same answer.
+   `c` is roman, so the free QWERTY typed roman while a keyboard somebody
+   built typed the private use area -- one feature working on one plan and
+   not on the other, split by nothing. sharePua() answers both now. `c` is
+   still what finds the letter; it is no longer what the key types. */
+function kbFix(c, id){ var k=kbKey('lt', id); k.t=sharePua(id)||c; return k; }
 function kbNamed(c){
   var i, n;
   for(i=0;i<LETTERS.length;i++){
