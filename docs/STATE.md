@@ -298,6 +298,11 @@ assuming a thing is waiting for you.
 16c. Supabase — one SQL line making yourself staff, or the reports are on
     nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
     updates a row that has to exist.
+16d. Supabase — **Spend Cap ON**, `supabase/setup.md` § 6. Pro is not a price
+    that stops at $25: 250 GB of egress is included and $0.09/GB is added
+    after it, with no ceiling until this is switched on. What runs out first
+    is the timeline's photographs, and the way it goes wrong is a month that
+    is already spent by the time anybody looks.
 17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.
