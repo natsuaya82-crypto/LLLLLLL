@@ -62,67 +62,6 @@ const r = await pg.evaluate(({s}) => {
   out.freeRow = numBaseRows();
   SET.plan = 'plus';
 
-  /* ---- and the calendar, whose two numbers work the same way -----------
-     The one thing that must NOT work the same way is lowering. Lowering the
-     base can take an untouched digit slot with it, because a digit is a
-     letter and an empty letter is the app's own. A month is a WORD -- it is
-     in the dictionary, it is used in sentences, and nothing here may remove
-     it. Twelve months down to ten leaves both words exactly where they are
-     and the stage simply stops asking. docs/DATA_SAFETY.md. */
-  out.calMo0 = calMonths();
-  out.calWk0 = calWeek();
-  calSetMonths(13); calSetWeek(5);
-  out.calMo = calMonths();
-  out.calWk = calWeek();
-  out.calSlots = [stBy('month').slots.length, stBy('wday').slots.length];
-  /* a word in the twelfth month, and then a year of ten */
-  WORDS.push({hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.12'});
-  calSetMonths(10);
-  out.calKept = !!stWordFor(stBy('month'), '12');
-  out.calAsks = stBy('month').slots.length;
-  /* out of range is the default, not a stored number nothing can draw */
-  calSetMonths(99); out.calBad = calMonths();
-  /* Both back, because what follows asks what goes out to the widget and a
-     week still on five from the case above would be answering a question
-     nobody down there asked. */
-  calSetMonths(12); calSetWeek(7);
-
-  /* ---- and what goes out to the clock on the home screen ----------------
-     The widget cannot ask the app anything: it reads one file in the App
-     Group and draws whatever is in it. So the two things worth holding are
-     the base it will count in, and that a slot with nothing in it is ABSENT
-     rather than an empty shape -- a hole means "put a roman one here", and a
-     present-but-empty entry means a blank space where a numeral should be. */
-  /* A month with a word on it, and one without: the widget says the name
-     when there is one and the number when there is not, so both have to
-     leave here in the shape it expects.
-
-     `all` is whether the font in the App Group will have every letter of it.
-     That font is LinguaScript and LinguaScript maps the ROMAN characters, so
-     the spelling IS what gets set in the person's letters -- there is nothing
-     else to send. One undrawn letter and `all` is false, and the widget sets
-     the word plainly rather than with one character in the system serif. */
-  var mw = {hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.3',
-            sp:[{l:numByVal(10).id}, {l:'l5'}]};
-  WORDS.push(mw);
-
-  var w = shareWidget();
-  out.wMo     = w.mo;
-  out.wWk     = w.wk;
-  out.wMonKey = Object.keys(w.mon).sort().join(' ');
-  out.wMonR   = w.mon['3'] && w.mon['3'].r;
-  out.wMonAll = !!(w.mon['3'] && w.mon['3'].all);
-  /* the same word with one letter that was never drawn */
-  mw.sp = [{l:numByVal(10).id}, {l:numByVal(11).id}];
-  out.wMonHole = !!(shareWidget().mon['3'] || {}).all;
-  mw.sp = [{l:numByVal(10).id}, {l:'l5'}];
-  out.wBase   = w.base;
-  out.wDrawn  = !!(w.dg['10'] && w.dg['10'].st && w.dg['10'].st.length);
-  out.wNamed  = Object.prototype.hasOwnProperty.call(w.dg, '11');
-  out.wBlank  = Object.prototype.hasOwnProperty.call(w.dg, '13');
-  out.wFresh  = Object.prototype.hasOwnProperty.call(w.dg, '0');
-  out.wKeys   = Object.keys(w.dg).sort().join(' ');
-
   /* ---- a slot's name does not change, on any plan ------------------------
      「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
      Decision log, 2026-08-22.
@@ -150,6 +89,66 @@ const r = await pg.evaluate(({s}) => {
   ltSetRoman(mine.id, 'qeq');
   out.mineNow = String(ltName(mine));
 
+  /* ---- and what goes out to the clock on the home screen ----------------
+     The widget cannot ask the app anything: it reads one file in the App
+     Group and draws whatever is in it. So the two things worth holding are
+     the base it will count in, and that a slot with nothing in it is ABSENT
+     rather than an empty shape -- a hole means "put a roman one here", and a
+     present-but-empty entry means a blank space where a numeral should be. */
+  /* ---- and the calendar, whose two numbers work the same way -----------
+     The one thing that must NOT work the same way is lowering. Lowering the
+     base can take an untouched digit slot with it, because a digit is a
+     letter and an empty letter is the app's own. A month is a WORD -- it is
+     in the dictionary, it is used in sentences, and nothing here may remove
+     it. Twelve months down to ten leaves both words exactly where they are
+     and the stage simply stops asking. docs/DATA_SAFETY.md. */
+  out.calMo0 = calMonths();
+  out.calWk0 = calWeek();
+  calSetMonths(13); calSetWeek(5);
+  out.calMo = calMonths();
+  out.calWk = calWeek();
+  out.calSlots = [stBy('month').slots.length, stBy('wday').slots.length];
+  /* a word in the twelfth month, and then a year of ten */
+  WORDS.push({hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.12'});
+  calSetMonths(10);
+  out.calKept = !!stWordFor(stBy('month'), '12');
+  out.calAsks = stBy('month').slots.length;
+  /* out of range is the default, not a stored number nothing can draw */
+  calSetMonths(99); out.calBad = calMonths();
+  /* Both back, because what follows asks what goes out to the widget and a
+     week still on five from the case above would be answering a question
+     nobody down there asked. */
+  calSetMonths(12); calSetWeek(7);
+
+  /* A month with a word on it: the widget says the name when there is one
+     and the number when there is not, so both have to leave here in the
+     shape it expects.
+
+     `all` is whether the font in the App Group will have every letter of it.
+     That font is LinguaScript and LinguaScript maps the ROMAN characters, so
+     the spelling IS what gets set in the person's letters -- there is nothing
+     else to send. One undrawn letter and `all` is false, and the widget sets
+     the word plainly rather than with one character in the system serif. */
+  var mw = {hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.3',
+            sp:[{l:numByVal(10).id}, {l:'l5'}]};
+  WORDS.push(mw);
+
+  var w = shareWidget();
+  out.wMo     = w.mo;
+  out.wWk     = w.wk;
+  out.wMonKey = Object.keys(w.mon).sort().join(' ');
+  out.wMonR   = w.mon['3'] && w.mon['3'].r;
+  out.wMonAll = !!(w.mon['3'] && w.mon['3'].all);
+  /* the same word with one letter that was never drawn */
+  mw.sp = [{l:numByVal(10).id}, {l:numByVal(11).id}];
+  out.wMonHole = !!(shareWidget().mon['3'] || {}).all;
+  mw.sp = [{l:numByVal(10).id}, {l:'l5'}];
+  out.wBase   = w.base;
+  out.wDrawn  = !!(w.dg['10'] && w.dg['10'].st && w.dg['10'].st.length);
+  out.wNamed  = Object.prototype.hasOwnProperty.call(w.dg, '11');
+  out.wBlank  = Object.prototype.hasOwnProperty.call(w.dg, '13');
+  out.wFresh  = Object.prototype.hasOwnProperty.call(w.dg, '0');
+  out.wKeys   = Object.keys(w.dg).sort().join(' ');
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -167,34 +166,6 @@ say(r.slotBack, 'raising it again makes the empty slot over');
 say(r.noDouble === 1, 'and makes exactly one of it (' + r.noDouble + ')');
 say(r.freeRow === '', 'free counts in ten and has no row to press');
 
-say(r.wBase === 14, 'the widget is told the base, not a fixed ten (' + r.wBase + ')');
-say(r.wDrawn, 'a drawn digit goes out with its ink on it');
-say(!r.wNamed, 'a digit that was named but never drawn does not, so the clock uses a roman one');
-say(!r.wBlank, 'nor does an untouched slot');
-say(!r.wFresh, 'nor do the ten a fresh language starts with, which nobody has drawn');
-/* Two, and naming both is the point: the fixture's own 1 and the 10 this
-   check drew above. A count alone would go on passing if the wrong one of
-   them dropped out. */
-say(r.wKeys === '1 10', 'exactly the digits with ink on them go out (' + r.wKeys + ')');
-
-say(r.calMo0 === 12 && r.calWk0 === 7,
-    'a language starts with twelve months and a week of seven (' + r.calMo0 + ', ' + r.calWk0 + ')');
-say(r.calMo === 13 && r.calWk === 5, 'both are the language\'s to change');
-say(String(r.calSlots) === '13,5', 'and the stages ask for exactly that many words (' + r.calSlots + ')');
-say(r.calKept, 'a word made for the twelfth month SURVIVES the year going down to ten');
-say(r.calAsks === 10, 'the stage simply stops asking for it (' + r.calAsks + ')');
-say(r.calBad === 12, 'a number out of range is the default, not a year nothing can draw');
-
-say(r.wMo === 12 && r.wWk === 7, 'the widget is told how the year and the week divide (' + r.wMo + ', ' + r.wWk + ')');
-/* Twelve and three: the word the calendar case above made for the twelfth
-   month, which survived the year going down to ten and is still somebody's,
-   and the third made here. Naming both is the point -- a count would go on
-   passing if the wrong one dropped out. */
-say(r.wMonKey === '12 3', 'only the months somebody named go out (' + r.wMonKey + ')');
-say(r.wMonR === 'Tuvel', 'with the roman spelling, always (' + r.wMonR + ')');
-say(r.wMonAll, 'and that the font will have every letter of it');
-say(!r.wMonHole, 'one undrawn letter and it says so, so the widget sets the word plainly');
-
 /* 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
    Decision log, 2026-08-22. The free QWERTY finds its keys BY NAME, so a
    renamed slot is a key that cannot be found and ltStart() fills the hole
@@ -211,6 +182,34 @@ say(r.digNow === r.digWas,
 say(r.mineNow === 'qeq',
     'a letter somebody ADDED is still theirs to name (' + r.mineNow + ') -- ' +
     'paid buys adding letters, and refusing to name one refuses what was bought');
+
+say(r.wBase === 14, 'the widget is told the base, not a fixed ten (' + r.wBase + ')');
+say(r.wDrawn, 'a drawn digit goes out with its ink on it');
+say(!r.wNamed, 'a digit that was named but never drawn does not, so the clock uses a roman one');
+say(!r.wBlank, 'nor does an untouched slot');
+say(!r.wFresh, 'nor do the ten a fresh language starts with, which nobody has drawn');
+/* Two, and naming both is the point: the fixture's own 1 and the 10 this
+   check drew above. A count alone would go on passing if the wrong one of
+   them dropped out. */
+say(r.wKeys === '1 10', 'exactly the digits with ink on them go out (' + r.wKeys + ')');
+
+say(r.wMo === 12 && r.wWk === 7, 'the widget is told how the year and the week divide (' + r.wMo + ', ' + r.wWk + ')');
+/* Twelve and three: the word the calendar case above made for the twelfth
+   month, which survived the year going down to ten and is still somebody's,
+   and the third made here. Naming both is the point -- a count would go on
+   passing if the wrong one dropped out. */
+say(r.wMonKey === '12 3', 'only the months somebody named go out (' + r.wMonKey + ')');
+say(r.wMonR === 'Tuvel', 'with the roman spelling, always (' + r.wMonR + ')');
+say(r.wMonAll, 'and that the font will have every letter of it');
+say(!r.wMonHole, 'one undrawn letter and it says so, so the widget sets the word plainly');
+
+say(r.calMo0 === 12 && r.calWk0 === 7,
+    'a language starts with twelve months and a week of seven (' + r.calMo0 + ', ' + r.calWk0 + ')');
+say(r.calMo === 13 && r.calWk === 5, 'both are the language\'s to change');
+say(String(r.calSlots) === '13,5', 'and the stages ask for exactly that many words (' + r.calSlots + ')');
+say(r.calKept, 'a word made for the twelfth month SURVIVES the year going down to ten');
+say(r.calAsks === 10, 'the stage simply stops asking for it (' + r.calAsks + ')');
+say(r.calBad === 12, 'a number out of range is the default, not a year nothing can draw');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
