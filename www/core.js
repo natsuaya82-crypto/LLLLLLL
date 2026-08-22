@@ -351,9 +351,8 @@ function has(level){ /* level: 'plus' */
    plan. dead-check holds both directions, exactly as act-map's names are
    held: no capability nothing asks for, no name that is no capability.
 
-   'words' and 'tr' are metered rather than shut: free gets FREE_LIMIT of the
-   one and TR_FREE_DAILY of the other, so can() answering false there means
-   "counted", not "refused". */
+   'words' is metered rather than shut: free gets FREE_LIMIT of them, so can()
+   answering false there means "counted", not "refused". */
 var CAN={
   words:   'plus',   /* a dictionary past FREE_LIMIT */
   data:    'plus',   /* CSV out, and the cloud */
@@ -404,6 +403,27 @@ function capOK(add){
   add=add||1;
   if(can('words')) return true;
   return WORDS.length+add<=FREE_LIMIT;
+}
+/* The ceiling, met. True means the caller must stop.
+
+   This used to be `go('plans'); toast(...)` written out at each of the four
+   places that add a word, and the go() was the problem: somebody halfway
+   through typing a word had the screen taken off them and was put on a price
+   list. The ceiling is the app taking something away, so it is one of the
+   places that has to say so in words -- but it can say so without moving
+   anybody.
+
+   confirm() and not a box of our own: the plans screen is one tap away and
+   this has to be answerable with "no". It is the same dialog wipeAll() asks
+   with, it is drawn by iOS, and it is therefore not a shape this app chose.
+
+   Two strings that already exist, in all ten languages, rather than an
+   eleventh: the sentence the toast said, and the word on the upgrade button.
+   A new key here would have been one sentence in English and nine holes. */
+function capStop(add){
+  if(capOK(add)) return false;
+  if(confirm(t('toast.cap', FREE_LIMIT)+'\n\n'+t('up.cta'))) go('plans');
+  return true;
 }
 /* The day a plan ends, said out loud, once.
 

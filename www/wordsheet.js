@@ -54,7 +54,7 @@ function openAdd(from){
     addFmClear();
     wdSync();
   }
-  if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+  if(capStop(1)) return;
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
@@ -71,7 +71,7 @@ function addOne(){
   /* The word AND the forms going in with it. Asking for room for one and then
      writing four is how a free language ends up over its own limit. */
   addFmSync();
-  if(!capOK(1+addFms.length)){ closeSheet(); go('plans'); return; }
+  if(!capOK(1+addFms.length)){ closeSheet(); capStop(1+addFms.length); return; }
   if(findWord(hw)){ toast(t('toast.dup')); return; }
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
@@ -421,7 +421,7 @@ function relNew(){
   if(!nw){ toast(t('toast.hw2')); return; }
   if(hw && nw.toLowerCase()===String(hw).toLowerCase()){ toast(t('toast.dup')); return; }
   if(!findWord(nw)){
-    if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+    if(capStop(1)) return;
     w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
     WORDS.push(w);
     toast(t('toast.added.1', nw));
@@ -712,7 +712,7 @@ function fmrTodo(w){
 function fmrAdd(hw){
   var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
   if(!w || !todo.length) return;
-  if(!capOK(todo.length)){ closeSheet(); go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+  if(!capOK(todo.length)){ closeSheet(); capStop(todo.length); return; }
   for(i=0;i<todo.length;i++){
     m=todo[i];
     if(findWord(m.hw)) continue;
@@ -758,7 +758,7 @@ function fmrTodoAll(){
 function fmrAddAll(){
   var all=fmrTodoAll(), i, w, m, nw, made=0;
   if(!all.length) return;
-  if(!capOK(all.length)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+  if(capStop(all.length)) return;
   for(i=0;i<all.length;i++){
     w=all[i].w; m=all[i].m;
     if(findWord(m.hw)) continue;
