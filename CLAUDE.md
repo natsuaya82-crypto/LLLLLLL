@@ -142,7 +142,12 @@ Push the scope declaration as the FIRST commit, before any code: a branch
 nobody can see is a branch nobody can avoid. Push after every commit. **Never
 merge, rebase or cherry-pick another branch** — the owner integrates, because
 the owner is the only one who knows which intent wins where two disagree.
-→ `docs/FEATURE_RULES.md` § several sessions at once
+**The one page to hand a session is `docs/SESSIONS.md`.** It carries the rule
+that actually prevents a collision rather than finding one: **the owner names
+the files a session owns, and a session edits nothing else.** `www/index.html`
+is the known hazard -- every screen's CSS is in it -- so one session at a time
+owns it until that file is split by chapter.
+→ `docs/SESSIONS.md`, and `docs/FEATURE_RULES.md` § several sessions at once
 
 **One commit is one kind of thing.** A feature, a bug fix, a refactor, a
 rename, a UI change and a migration do not share a commit. A refactor that

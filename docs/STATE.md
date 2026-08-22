@@ -140,6 +140,11 @@ under `lingua.sess`.
 
 ## 4b. More than one session at a time
 
+**The page to hand a session is `docs/SESSIONS.md`.** The rule that prevents a
+collision rather than finding one is in it: the owner names the files a session
+owns, and a session edits nothing else. `www/index.html` holds every screen's
+CSS and is where sessions collide first — one session at a time owns it.
+
 Sessions run in separate containers and share exactly one thing: the remote.
 Everything below is about making work visible there early enough to be avoided.
 The body is in `docs/FEATURE_RULES.md` § several sessions at once.
