@@ -138,6 +138,25 @@ sit in a phone. Passwords are never held, stored or logged by the app: the field
 goes to Supabase over TLS and only the token pair is kept, in `localStorage`
 under `lingua.sess`.
 
+## 4b. More than one session at a time
+
+Sessions run in separate containers and share exactly one thing: the remote.
+Everything below is about making work visible there early enough to be avoided.
+The body is in `docs/FEATURE_RULES.md` § several sessions at once.
+
+```
+  one session, one branch          claude/<area>, never anybody else's
+  fetch before deciding            git fetch --all --prune
+  read before changing a file      git log --oneline --all -- <file>
+  push the scope FIRST             before the first line of code
+  push after every commit          a branch nobody can see cannot be avoided
+  never integrate                  no merge, no rebase, no cherry-pick of
+                                   another branch -- the owner does that
+```
+
+A commit on a file from a branch that is not yours means another session is in
+that file. Stop and report there, not when a merge fails.
+
 ## 5. The gate, and what CI does not run
 
 `npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The

@@ -130,8 +130,19 @@ is in flight, then states what it may and may not change. Five things are
 forbidden by name, because each has a reasonable-sounding form: *while I'm in
 here*, *this could be cleaner*, *it's related so I changed it*, *we'll need
 this later*, *the existing code looked wrong*. Each is a separate task —
-`docs/BACKLOG.md`. If two sessions overlap, stop and report; do not merge the
-two intents yourself. → `docs/FEATURE_RULES.md`
+`docs/BACKLOG.md`.
+
+**And how the work moves, so that separate containers can be put back
+together.** One session, one branch (`claude/<area>`), and never anybody
+else's. `git fetch --all --prune` before deciding anything; the remote is the
+only thing sessions share. `git log --oneline --all -- <file>` before changing
+a file — a commit there on a branch that is not yours is another session in
+that file, and that is the moment to stop and report, not when a merge fails.
+Push the scope declaration as the FIRST commit, before any code: a branch
+nobody can see is a branch nobody can avoid. Push after every commit. **Never
+merge, rebase or cherry-pick another branch** — the owner integrates, because
+the owner is the only one who knows which intent wins where two disagree.
+→ `docs/FEATURE_RULES.md` § several sessions at once
 
 **One commit is one kind of thing.** A feature, a bug fix, a refactor, a
 rename, a UI change and a migration do not share a commit. A refactor that

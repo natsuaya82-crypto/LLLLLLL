@@ -974,6 +974,43 @@ and then **declares its scope before touching anything**:
 - Tests to run:
 ```
 
+### How the work moves
+
+The declaration above says what a session may touch. This says how what it
+wrote reaches everybody else. Sessions run in separate containers and share
+exactly one thing — the remote — so every rule here is about making the work
+visible there early enough to be avoided.
+
+```
+  1  one session, one branch          claude/<area>, and never anybody else's
+  2  fetch before deciding anything   git fetch --all --prune
+  3  read what is already there       git log --oneline --all -40
+                                      git log --oneline --all -- <file you mean to change>
+  4  push the scope FIRST             an empty commit carrying the declaration,
+                                      pushed, before the first line of code
+  5  push after every commit          a branch nobody can see is a branch
+                                      nobody can avoid
+  6  never integrate                  no merge, no rebase, no cherry-pick of
+                                      another branch. The owner integrates
+  7  the gate is the owner's          see docs/TESTING.md § the gate, rule 2
+```
+
+**Step 3 is the collision test and it is mechanical.** If
+`git log --all -- <file>` shows a commit on a branch that is not yours and not
+the base, another session is in that file. That is the moment to stop and
+report — not when the merge fails, which is hours later and after both of you
+have written on top of each other.
+
+**Step 4 is what makes step 3 work.** A session that codes for an hour before
+pushing is invisible for an hour, and every other session is deciding against
+stale information for that hour. The scope declaration is cheap to push and
+it is the thing others read.
+
+**Step 6 is absolute.** A session that merges another branch into its own has
+produced a diff neither session wrote, and the owner is the only person who
+knows which of the two intents wins where they disagree. Report the conflict
+and stop; do not resolve it.
+
 ### What is forbidden, by name
 
 Every one of these has a reasonable-sounding form, which is why they are listed
