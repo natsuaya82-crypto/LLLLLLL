@@ -58,12 +58,38 @@ function shareInk(l){
   try{ cs=LinguaFont.glyphContours({strokes:l.st}, GPEN); }catch(e){ return null; }
   return (cs && cs.length)? cs : null;
 }
+/* WHAT A KEY PUTS IN THE DOCUMENT.
+   ------------------------------------------------------------------
+   A private use code point, and not the letter's name.
+
+   The name was what went out, so the Lingua keyboard typed `a` -- the same
+   character the phone's own QWERTY types. Nothing downstream could tell the
+   two apart, and `.tfont` (LinguaType, which carries only the private use
+   area) has no glyph at `a`, so the letter fell through to the ordinary font
+   and came out roman. The second face was built, installed, and never once
+   used through the keyboard it was built for. 「システムキーボードで打った
+   ものが勝手に自作文字になるのはおかしい」 is the rule it exists to keep,
+   and typing the name is that rule not working at all.
+
+   The code point is glyph.js's to say -- ltPua(i) over the drawn letters in
+   the alphabet's order, which is the order installTypeFont() mapped them in.
+   Reading the same list is the whole of the correctness here: an index off by
+   one types a letter and draws a different one, and nothing throws.
+
+   ⚠ That list expression is now written out in four places (installTypeFont,
+   puaRoman, postCutTyped, and here). It belongs in glyph.js as one function.
+   Not done here because glyph.js is another session's file. */
+function sharePua(id){
+  var lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; })), i;
+  for(i=0;i<lts.length;i++) if(lts[i].id===id) return ltPua(i);
+  return '';
+}
 /* What the extension puts on a key face, by the same three-way rule ltInk()
    follows here: the shape if there is one, else the character it borrows,
    else nothing and the key wears its own name. Absent rather than null, so
    the file is a keyboard rather than a column of nulls. */
 function shareFace(id){
-  var l=ltById(id), o={t:kbTyped(id)}, ink, a;
+  var l=ltById(id), o={t:sharePua(id)||kbTyped(id)}, ink, a;
   if(!l) return o;
   ink=shareInk(l);
   if(ink){
@@ -96,11 +122,12 @@ function shareKey(key){
   if(!key) return null;
   if(key.k==='lt'){
     o=shareFace(key.v);
-    /* What the KEY types, when the key says. Only the fixed keyboard does --
-       kbFix() puts the a-z character that found the letter on it, so a letter
-       an older language calls `O` still types `o` from the `o` key. A
-       keyboard somebody built has no override and types the names they
-       chose. */
+    /* What the KEY types, when the key says. kbFix() used to put the a-z
+       character that found the letter here, which meant the free QWERTY typed
+       roman while a keyboard somebody built typed the private use area --
+       the same feature working on one plan and not the other, split by
+       nothing. It puts the code point there now, so this override and the
+       line above answer the same way. */
     if(key.t) o.t=key.t;
     o.k='lt';
   }else if(key.k==='lay'){
