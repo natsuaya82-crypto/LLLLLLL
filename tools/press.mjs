@@ -99,7 +99,7 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(async () => {
   const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
-                small: [], big: [], bent: [], picsSeen: 0, tall: [], rowsSeen: 0 };
+                small: [], big: [], bent: [], picsSeen: 0, tall: [], rowsSeen: 0, classes: [] };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
      already standing in front of every screen with a phone-sized viewport, so
      it measures while it is here.
@@ -228,6 +228,36 @@ const R = await pg.evaluate(async () => {
           say.join('  vs  ') + '. One list, one height: set font-size and ' +
           'line-height on the row class rather than letting the tag decide.');
       }
+    }
+  }
+  /* Which class is actually WORN by something.
+     ------------------------------------------------------------------
+     A screen can be deleted and its CSS stay. `a.set{text-decoration:none}`
+     is still in index.html under a comment naming "the two documents at the
+     foot of the settings list", and there is no <a class="set"> anywhere in
+     www/ any more. `.weave` is the sentence-weaving chapter and the word
+     `weave` does not appear in a single .js file. Both were found by accident
+     in one afternoon, which is how many there are likely to be.
+
+     dead-check asks this of every FUNCTION. Nothing has ever asked it of a
+     selector, and a grep cannot: a class is worn from a string built by
+     concatenation ('set' + (on ? ' on' : '')), from classList.add, and from
+     index.html's own markup. Reading the source would call live rules dead
+     and delete somebody's screen.
+
+     So it is asked of the PAGE, from here, because this file is the one that
+     builds every screen AND presses every button -- a render-only walk would
+     never reach `.on`, and a rule that only a pressed state wears would be
+     reported as dead. It is collected after each build and after each press
+     for exactly that reason. */
+  const seenClass = {};
+  function collectClasses(){
+    const all = document.querySelectorAll('*');
+    for (let i = 0; i < all.length; i++) {
+      const c = all[i].getAttribute && all[i].getAttribute('class');
+      if (!c) continue;
+      const parts = String(c).split(/\s+/);
+      for (let j = 0; j < parts.length; j++) if (parts[j]) seenClass[parts[j]] = 1;
     }
   }
   /* And the other way round, for the one thing on a screen that is not a
@@ -400,6 +430,7 @@ const R = await pg.evaluate(async () => {
     out.screens++;
     measure(sc.label);
     measureRows(sc.label);
+    collectClasses();
     for (let i = 0; i < n; i++) {
       try { sc.build(); } catch (e) { out.skipped.push(sc.label + ' #' + i + ': ' + e.message); continue; }
       const els = buttons();
@@ -415,6 +446,7 @@ const R = await pg.evaluate(async () => {
       errs = [];
       els[i].click();
       out.pressed++;
+      collectClasses();               /* `.on` is only worn after a press */
       errs.forEach(m => out.threw.push(sc.label + ' -> ' + name + ': ' + m));
       const left = app() ? app().innerHTML.trim().length : 0;
       if (left < 20) out.blank.push(sc.label + ' -> ' + name + ' left the screen empty');
@@ -437,6 +469,33 @@ const R = await pg.evaluate(async () => {
     measurePics(sc.label);
   }
 
+  /* And one more pass, through the REAL render(), purely to collect classes.
+     Everything above puts a view's HTML straight into #app, which is what
+     lets a press be repeated from a known screen -- but it means the SHELL
+     never exists: the root bar, the tabs, the splash. The first version of
+     the class collector reported `.bar` as worn by nothing, which is not a
+     dead rule, it is this blind spot. A baseline frozen then would have been
+     a record of the check's own gap.
+
+     Kept separate from the walk above rather than folded into it: measure()
+     and measureRows() are calibrated on what show() builds, and moving them
+     onto render() would change what 44pt and the row heights are measured
+     against. This loop touches nothing but seenClass. */
+  ['free','plus'].forEach(function(plan){
+    Object.keys(PAGES).forEach(function(id){
+      argsOf(id).forEach(function(a){
+        try {
+          window.__seed(); SET.done = true; SET.plan = plan;
+          window.route = id; NAV = [{ r: id, a: a }];
+          render();
+          collectClasses();
+        } catch (e) { /* a route that will not render is act-check's to report */ }
+      });
+    });
+  });
+  try { window.__seed(); SET.done = false; render(); collectClasses(); } catch (e) {}
+
+  out.classes = Object.keys(seenClass).sort();
   return out;
 });
 
@@ -495,7 +554,60 @@ const HELD = await pg.evaluate(async () => {
 await br.close();
 srv.close();
 
+/* ---- a class in the stylesheet that nothing wears -------------------------
+   The other half of what the page just collected. Every class NAMED in
+   index.html's stylesheet is compared with every class actually worn on any
+   element of any screen, before and after every press.
+
+   It is a ratchet, the same shape as box-check, and for the same reason: this
+   found selectors that have been dead for months, and deleting all of them is
+   a change to the stylesheet rather than a check. `tools/css-baseline.txt` is
+   what was unworn the day this was written; a NEW one fails, and a line that
+   no longer describes anything must be deleted or the list rots.
+
+   What it cannot see, said out loud: a class only worn in a state the walk
+   never reaches -- an error, a plan the fixture is not on, a screen behind a
+   half-done state nobody seeded. That is why a find is not a deletion. The
+   check says "nothing here wore it"; whether it is dead is read by a person.
+   Adding the seed that reaches it is the other way to clear a line, and the
+   better one. */
+const CSS_BASE = path.join(HERE, 'css-baseline.txt');
+const cssTxt = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+const styleBlocks = (cssTxt.match(/<style[^>]*>[\s\S]*?<\/style>/g) || []).join('\n');
+const named = new Set();
+for (const m of styleBlocks.matchAll(/\.(-?[A-Za-z_][\w-]*)/g)) named.add(m[1]);
+const worn = new Set(R.classes || []);
+const unworn = [...named].filter(c => !worn.has(c)).sort();
+
+let cssAllowed = new Set();
+if (fs.existsSync(CSS_BASE))
+  cssAllowed = new Set(fs.readFileSync(CSS_BASE, 'utf8').split('\n')
+    .map(l => l.trim()).filter(l => l && l.charAt(0) !== '#'));
+else if (process.env.CSS_BASELINE_WRITE) {
+  fs.writeFileSync(CSS_BASE,
+    '# Classes index.html styles that nothing wore on any screen, before or\n' +
+    '# after any press, the day tools/press.mjs learned to ask.\n' +
+    '# A NEW one fails. Taking a line OUT is progress and needs nobody --\n' +
+    '# either the rule went, or a seed was added that reaches the state that\n' +
+    '# wears it, which is the better way.\n' + unworn.join('\n') + '\n');
+  console.log('css baseline written: ' + unworn.length);
+}
+
 const fails = [];
+if (fs.existsSync(CSS_BASE)) {
+  unworn.filter(c => !cssAllowed.has(c)).forEach(c =>
+    fails.push('nothing wears .' + c + ' — index.html styles it and no screen ' +
+      'put it on any element, before or after any press. Either the screen it ' +
+      'dressed is gone, or the state that wears it is one nothing here reaches ' +
+      '(add the seed; that is the better fix). Not a deletion on its own.'));
+  [...cssAllowed].filter(c => !named.has(c)).sort().forEach(c =>
+    fails.push('tools/css-baseline.txt names .' + c + ' and the stylesheet no ' +
+      'longer does — delete the line.'));
+  [...cssAllowed].filter(c => named.has(c) && worn.has(c)).sort().forEach(c =>
+    fails.push('tools/css-baseline.txt says nothing wears .' + c + ' and ' +
+      'something does now — delete the line.'));
+}
 HELD.forEach(m => fails.push('held: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
@@ -505,6 +617,9 @@ R.big.forEach(m => fails.push('drawn too big: ' + m));
 R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
 
 console.log('screens built: ' + R.screens);
+console.log('classes worn: ' + (R.classes || []).length +
+            ', styled and unworn: ' + unworn.length +
+            (fs.existsSync(CSS_BASE) ? ' (baseline ' + cssAllowed.size + ')' : ' (no baseline yet)'));
 console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
 console.log('rows in one list are one height: ' +
             (R.tall.length ? R.tall.length + ' FOUND' : R.rowsSeen + ' lists measured'));
