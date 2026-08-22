@@ -18,13 +18,35 @@
    turned its mode off and left the stroke bent.
 
    Run: node tools/round-check.mjs                                       */
-import { chromium } from 'playwright';
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 const dir = path.dirname(fileURLToPath(import.meta.url));
+/* playwright the way the other browser checks load it. A bare
+   `import { chromium } from 'playwright'` fails at module load on a machine
+   where playwright is installed globally rather than into node_modules, and
+   because npm test is an && chain, everything after this check stops running
+   too -- this file and round-check were the only two not doing it, and they
+   took press down with them. */
+import { execSync } from 'child_process';
+import fs from 'fs';
+async function loadChromium(){
+  const { createRequire } = await import('module');
+  const req = createRequire(import.meta.url);
+  try { return req('playwright').chromium; } catch (e) {}
+  try {
+    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    return req(path.join(g, 'playwright')).chromium;
+  } catch (e) {}
+  console.error('playwright is not installed. npm i -g playwright');
+  process.exit(2);
+}
+const chromium = await loadChromium();
+/* and the browser itself, which may not be at the container's path either */
+const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
+const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
-const br = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{width:390,height:844} });
 await pg.goto('file://' + path.join(dir,'..','www','index.html'));
 await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
