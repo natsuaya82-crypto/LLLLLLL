@@ -399,7 +399,7 @@ function wipeHere(){
   try{
     for(si=0; si<SLICES.length; si++) localStorage.removeItem(langKey(SLICES[si]));
   }catch(e){}
-  langRead(); ltRead(); noteRead(); stRead(); sndRead(); sndStart();
+  langRead(); ltRead(); ntRead(); stRead(); sndRead(); sndStart();
   /* the person's settings, back to what a fresh install has -- keeping the
      three that are about them rather than about the language.
 

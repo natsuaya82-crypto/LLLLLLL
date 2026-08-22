@@ -14,11 +14,11 @@
 
 var NOTES=[];
 /* The open language's notes. Empty first: see langRead() in core.js. */
-function noteRead(){
+function ntRead(){
   NOTES=[];
   try{ var nt=JSON.parse(localStorage.getItem(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
 }
-noteRead();
+ntRead();
 function saveNotes(){ bkTouch(); try{ localStorage.setItem(langKey('notes'), JSON.stringify(NOTES)); }catch(e){} }
 
 /* The first line of a note stands in for a title when there is none, the way
