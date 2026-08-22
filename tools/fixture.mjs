@@ -408,6 +408,37 @@ export function halfDone(){
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
                               const h = FORM.html; rpFor = null; return h; }],
+    /* And the other end of that form, which is one account's and is drawn for
+       nobody else. The row at the foot of the settings list is the only way
+       in, and NET_STAFF is false everywhere else -- so both the door and the
+       room behind it are on no screen at all without these two. */
+    ['the settings list, for whoever answers the reports', () => {
+        NET_STAFF = true; window.route='settings'; NAV=[{r:'settings'}];
+        const h = vSettings(); NET_STAFF = false; return h; }],
+    /* Three reports, because they are three different rows: a post still up,
+       a post already taken down -- which offers to put it back rather than to
+       take it down again -- and a report about an ACCOUNT, which has no post
+       under it and nothing to press. */
+    ['the reports', () => { const keep = MODS;
+        MODS = [{ id:1, why:'spam',  note:'', at:Date.now()-600000,
+                  who:'', pid:'ps1', ln:'kano mos tir', down:false },
+                { id:2, why:'abuse', note:'and again this morning',
+                  at:Date.now()-7200000, who:'', pid:'ps2', ln:'qel dross',
+                  down:true },
+                { id:3, why:'other', note:'', at:Date.now()-86400000,
+                  who:'iri', pid:'', ln:'', down:false }];
+        window.route='mod'; NAV=[{r:'mod'}];
+        const h = vMod(); MODS = keep; return h; }],
+    /* The reports before the server has answered, and the reports when there
+       are none. Two sentences, and they are not the same sentence. */
+    ['the reports, and there are none', () => { const keep = MODS; MODS = [];
+        window.route='mod'; NAV=[{r:'mod'}];
+        const h = vMod(); MODS = keep; return h; }],
+    /* Your own post, taken down. Only its author is ever handed one, so this
+       is the only screen the line is ever on. */
+    ['your own post, taken down', () => { const p = postById('p1'); p.down = true;
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); delete p.down; return h; }],
     /* Somebody else's profile, the follow button on it, and the same page
        once you follow them. The only profile a walk sees is this person's
        own, and the two cards are different screens. */

@@ -472,7 +472,7 @@ function pwPicHTML(){
    list is put back in the order a timeline reads in, which is newest first
    and is postAll()'s to say. */
 function postTake(ps){
-  var have={}, i, p, n=0;
+  var have={}, i, p, n=0, chg=false;
   /* By BOTH names. A post this phone wrote has a local id and, once it has
      gone up, the server's -- and it comes back down the timeline wearing the
      server's. Without the second line every post somebody wrote would appear
@@ -483,13 +483,32 @@ function postTake(ps){
   }
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
-    if(!p || !p.id || have[p.id]) continue;
+    if(!p || !p.id) continue;
+    /* A post already here comes down the timeline again every time the feed
+       is pulled, and one thing about it can have changed since: whether it
+       was taken down. That reaches its author and nobody else -- post_read in
+       schema.sql -- so this is the only place they are ever told. */
+    if(have[p.id]){ if(postMarkDown(p.id, !!p.down)) chg=true; continue; }
     have[p.id]=1;
     POSTS.push(p);
     n++;
   }
-  if(n) savePosts();
+  if(n || chg) savePosts();
   return n;
+}
+/* By either name, because a post this phone wrote has a local id and the
+   server's. Answers whether anything changed, so a feed pull that found
+   nothing new does not write the whole list back to storage. */
+function postMarkDown(id, down){
+  var i, q;
+  for(i=0;i<POSTS.length;i++){
+    q=POSTS[i];
+    if(q.id!==id && q.sid!==id) continue;
+    if(!!q.down===down) return false;
+    if(down) q.down=true; else delete q.down;
+    return true;
+  }
+  return false;
 }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
@@ -1930,6 +1949,11 @@ function postRow(p){
          to do with it has to say what it is, and the id it carries says
          nothing to anybody's eye. */
       (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
+      /* Taken down. Only its author is ever handed one of these, so the line
+         is addressed to them: the post is still here, it is not anywhere
+         else, and the app says which rather than letting them work it out
+         from a reply count that stopped moving. */
+      (p.down? '<div class="pdown">'+esc(t('post.down'))+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
          somebody else's line drew their words in my shapes. Now the shapes

@@ -49,6 +49,7 @@ const A = 'a0000000-0000-4000-8000-000000000001';   /* whose language it is */
 const B = 'b0000000-0000-4000-8000-000000000002';   /* somebody else */
 const L = 'c0000000-0000-4000-8000-000000000003';   /* the language */
 const P = 'd0000000-0000-4000-8000-000000000004';   /* the post */
+const C = 'e0000000-0000-4000-8000-000000000005';   /* whoever reads the reports */
 
 /* What Supabase already has when schema.sql is pasted into it. None of this is
    ours -- it is the ground the file is poured onto, and it is here so that the
@@ -247,7 +248,40 @@ const CASES = [
   ['nobody signed in uploads',                'denied', B, 1,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
   ['A deletes A\u2019s own picture',           'ok',     A, 0,
-    `delete from storage.objects where name='${A}/${P}/0.jpg'`]
+    `delete from storage.objects where name='${A}/${P}/0.jpg'`],
+
+  /* --- answering a report ------------------------------------------------
+     Last, because taking a post down changes what everything above can see,
+     and it is put back at the foot of this block so that the order of the
+     file stays something anybody can add to. */
+  ['staff reads the reports',                 'ok',     C, 0,
+    `select 1 from report`],
+  ['B cannot make B staff',                   'denied', B, 0,
+    `update profile set staff=true where id='${B}'`],
+  ['B cannot make A staff either',            'denied', B, 0,
+    `update profile set staff=true where id='${A}'`],
+  ['B cannot take a post down',               'denied', B, 0,
+    `select post_hide('${P}','spam')`],
+  ['A cannot take A\u2019s own post down',     'denied', A, 0,
+    `select post_hide('${P}','spam')`],
+  ['staff takes A\u2019s post down',           'ok',     C, 0,
+    `select post_hide('${P}','spam')`],
+  ['and B cannot see it any more',            'denied', B, 0,
+    `select 1 from post where id='${P}'`],
+  ['nor can somebody who is not signed in',   'denied', B, 1,
+    `select 1 from post where id='${P}'`],
+  ['A is still shown A\u2019s own post',       'ok',     A, 0,
+    `select 1 from post where id='${P}'`],
+  ['and staff can still look at it',          'ok',     C, 0,
+    `select 1 from post where id='${P}'`],
+  ['A cannot put A\u2019s own post back up',   'denied', A, 0,
+    `update post set hidden_at=null where id='${P}'`],
+  ['nor by asking for it to be shown',        'denied', A, 0,
+    `select post_show('${P}')`],
+  ['staff puts it back',                      'ok',     C, 0,
+    `select post_show('${P}')`],
+  ['and B sees it again',                     'ok',     B, 0,
+    `select 1 from post where id='${P}'`]
 ];
 
 /* The shape of the file itself, which the prose in schema.sql promises and
@@ -299,6 +333,29 @@ const SHAPE = [
      does is read four tables about one person. */
   ['what happened to you is read as you', `
      select count(*) from pg_proc where proname='notices' and prosecdef`, '0'],
+  /* Row level security says which ROWS may change and has nothing to say
+     about which COLUMNS. "You may edit yourself" was also "you may make
+     yourself staff" until these two were revoked, and neither a policy nor
+     an attempt above can see the difference: the UPDATE is allowed either
+     way, and only the column list decides what it carries. */
+  ['staff is not something an account gives itself', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','profile','staff','UPDATE')
+       or has_column_privilege('anon','profile','staff','UPDATE')) q`, '0'],
+  ['nor is putting your own post back up', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','post','hidden_at','UPDATE')
+       or has_column_privilege('anon','post','hidden_at','UPDATE')) q`, '0'],
+  /* Both halves, together: a definer function that forgot to ask is_staff()
+     is every account holding the moderator's rights, and it would pass every
+     attempt above that expects a refusal only because nobody had called it. */
+  ['taking a post down asks who is asking', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname in ('post_hide','post_show')
+          and prosecdef and prosrc like '%is_staff()%') <> 2) q`, '0'],
+  ['a report is never edited or withdrawn', `
+     select count(*) from pg_policies
+      where tablename='report' and cmd in ('UPDATE','DELETE')`, '0'],
   ['the media bucket is there and is public', `
      select count(*) from (select 1) x
       where not exists (select 1 from storage.buckets
@@ -416,7 +473,13 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)});`,
+  /* And one row that IS put here by the owner of the table, which the
+     paragraph above says nothing else is. That is the claim being tested: no
+     policy in schema.sql makes anybody staff, and the column is revoked from
+     every role the app signs in as, so there is no other way to arrive at one.
+     A staff account that could be made through a policy would be the bug. */
+  `insert into profile(id,handle,staff) values (${q(C)},'mod',true);`,
   run,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,

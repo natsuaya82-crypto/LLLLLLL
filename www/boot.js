@@ -55,7 +55,14 @@ vvMount();
    not waited for -- the app opens on what is on the phone, which is all of
    the making side, and the timeline reads with the publishable key whether
    this comes back or not. */
-netResume(function(){ render(); }, function(){});
+netResume(function(){
+  render();
+  /* And whether this account is the one that answers the reports, which is
+     one column on one profile and decides whether a row exists at the foot of
+     the settings list. Asked after the session is resumed because it is asked
+     AS somebody, and not waited for: the row appears when the answer does. */
+  netStaff(function(yes){ if(yes) render(); });
+}, function(){});
 /* one listener above the screen, since the screen itself is replaced whole on
    every render and nothing can be bound to it */
 actWire(document.getElementById('app'));

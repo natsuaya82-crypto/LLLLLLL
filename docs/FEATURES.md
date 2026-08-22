@@ -264,17 +264,42 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 7. Taking a post down
+### 7. Taking a post down — **done** (2026-08-21)
 
-Blocking and reporting are **done** (2026-08-19): `block` and `report` in
+Blocking and reporting were done on 2026-08-19: `block` and `report` in
 `schema.sql`, the ⋯ on every post, and the timeline asking the server to leave
-blocked authors out.
+blocked authors out. Nothing read the reports. They went into a table with no
+select policy on it, so the only way to see one was the Supabase dashboard.
 
-What is left is the other half — **somebody has to read the reports and be
-able to take a post down.** There is no dashboard view and no way to remove
-somebody else's post; `post_drop` is the author's alone. Until that exists a
-report is written and nobody looks at it, which App Store review will ask
-about.
+Now: `profile.staff`, one boolean set by hand in the dashboard and revoked
+from every role the app signs in as — there is no screen that grants it. For
+that one account a row appears at the foot of the settings list, and behind it
+`www/mod.js`: the reports newest first, each carrying the post it is about,
+with a button that takes it down.
+
+**Down, not deleted.** `post.hidden_at` and `post.hidden_why`, set by
+`post_hide()` and cleared by `post_show()` — two `security definer` functions
+rather than an update policy, so whoever answers a report cannot rewrite what
+somebody said. A deletion could not be undone when the report turns out to be
+wrong, and the reports pointing at the post need it to still be there.
+
+**`post_read` is the part that matters.** `hidden_at is null or author =
+auth.uid() or is_staff()`. The author still gets their own post, with a line on
+it saying it was taken down — a post that goes silently missing is the app
+lying by omission. `npm run rls` attacks all of it: B cannot make B staff, B
+cannot take a post down, A cannot put A's own post back up.
+
+**Two column privileges, and they are the reason any of the above holds.** Row
+level security says which ROWS may change and has nothing at all to say about
+which COLUMNS, so "you may edit yourself" was also "you may make yourself
+staff", and "you may edit your own post" was also "you may put it back up".
+Both are one UPDATE with one extra field in it. The table-level grant is
+revoked at the foot of `schema.sql` and what may be written is named.
+
+**Still missing: ejecting somebody.** App Store guideline 1.2 asks for the
+offending content to go *and* for the account behind it to be ejected. Taking
+posts down one at a time is the first half. A ban would be one more column and
+one more line in `is_member()`; it is not written.
 
 ### 8. Deleting an account, on the server — **done** (2026-08-21)
 

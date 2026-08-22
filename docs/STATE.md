@@ -106,10 +106,15 @@ nothing in the app touches any of them.
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
 on it), cloud storage, publishing a language, quoting, the day's sentence, and
-push. Read that before starting anything online. Blocking, reporting and
-deleting an account are done; what is left of reporting is the other half —
-**nobody can read a report or take a post down**, and App Store review asks
-about that.
+push. Read that before starting anything online. Blocking, reporting, reading
+the reports, taking a post down and deleting an account are all done. What is
+left of moderation is **ejecting somebody** — App Store guideline 1.2 asks for
+the content to go and the account behind it to go with it, and only the first
+half is written.
+
+**Somebody has to be made staff before any of it is reachable.** One SQL line
+in the Supabase dashboard, `supabase/setup.md` § 5. Nothing in the app grants
+it and nothing is meant to.
 
 **Apple and Google sign-in are wired and cannot work yet.** The buttons went
 from "not in this build" to a real plugin —
@@ -253,6 +258,9 @@ assuming a thing is waiting for you.
     profile regenerated after it. **Nothing builds until this is done**, so it
     is not one to leave. `docs/apple.md` § 2.
 16b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
+16c. Supabase — one SQL line making yourself staff, or the reports are on
+    nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
+    updates a row that has to exist.
 17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.

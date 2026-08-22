@@ -293,7 +293,8 @@ var NET_PAGE=50;
    photograph goes up as the post without it rather than as most of a megabyte
    of base64 in a jsonb column. */
 function netBody(p){
-  var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1};
+  var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
+                     down:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   return o;
 }
@@ -312,6 +313,10 @@ function netRow(r){
   p.sid=r.id;
   p.at=Date.parse(r.created_at) || Date.now();
   if(r.reply_to) p.to=r.reply_to;
+  /* Taken down. Only the author and staff are ever handed one -- post_read in
+     schema.sql -- so this arrives on nobody else's phone, and the author is
+     told by the post rather than by the post quietly not being anywhere. */
+  if(r.hidden_at) p.down=true;
   p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
   return p;
 }
@@ -326,7 +331,7 @@ function netFeed(which, ok, bad){
      the recommended timeline works with the publishable key alone and
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
-  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body'+
+  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
           '&order=created_at.desc&limit='+NET_PAGE;
   function got(d){
     var out=[], i;
@@ -420,6 +425,70 @@ function netReport(what, why, note, ok, bad){
   if(!row.post){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/report', row, SESS.at, function(){ ok(); }, bad);
 }
+/* ---- the other side of a report ----------------------------------------
+   Somebody has to read them, and until now nobody could: `report` had no
+   select policy at all, so the only way to see one was the Supabase dashboard.
+   Acting on a report within a day is a condition of being in the App Store,
+   and it is not a condition anybody meets from a laptop they are not sitting
+   at.
+
+   Who may is one column, `profile.staff`, set by hand in the dashboard and
+   revoked from every role the app signs in as. There is no screen that grants
+   it and there is not meant to be one. */
+var NET_STAFF=false;
+/* Asked once, at launch, and remembered. A screen that asked every time it
+   was drawn would put a request behind every render. */
+function netStaff(ok){
+  ok=ok||function(){};
+  if(!netSignedIn()){ NET_STAFF=false; ok(false); return; }
+  netGet('/rest/v1/profile?select=staff&limit=1&id=eq.'+encodeURIComponent(SESS.uid),
+    function(d){ NET_STAFF=!!(d && d.length && d[0].staff); ok(NET_STAFF); },
+    function(){ NET_STAFF=false; ok(false); });
+}
+/* The reports, newest first, each carrying the thing it is about -- because a
+   list of reasons with no posts under them is a list nobody can act on, and
+   asking for the posts one at a time is one request per row.
+
+   `post(...)` is the row the report points at and not the column of the same
+   name; PostgREST reads the brackets as "follow the foreign key". A report
+   about an account carries no post at all, and `who(handle)` is what it is
+   about instead. */
+function netReports(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netGet('/rest/v1/report?select=id,why,note,created_at,'+
+         'post(id,author,body,hidden_at),who(handle)'+
+         '&order=created_at.desc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r, po;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{}; po=r.post||null;
+        out.push({ id:r.id,
+                   why:String(r.why||'other'),
+                   note:String(r.note||''),
+                   at:Date.parse(r.created_at) || 0,
+                   who:(r.who && r.who.handle) || '',
+                   pid:po? po.id : '',
+                   ln:(po && po.body && po.body.ln) || '',
+                   down:!!(po && po.hidden_at) });
+      }
+      ok(out);
+    }, bad);
+}
+/* Down, and back up. Two functions on the server and not an update, so that
+   whoever answers the reports cannot rewrite what somebody said -- see the
+   foot of supabase/schema.sql. The reason is kept beside the post: a decision
+   with no reason on it is one nobody can look at again, including whoever
+   made it. */
+function netHide(pid, why, ok, bad){
+  if(!netSignedIn() || !pid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/post_hide', {p:pid, reason:String(why||'')},
+          SESS.at, function(){ ok(); }, bad);
+}
+function netShow(pid, ok, bad){
+  if(!netSignedIn() || !pid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/post_show', {p:pid},
+          SESS.at, function(){ ok(); }, bad);
+}
 /* ---- searching, which is the server's ----------------------------------
    A search over what is on THIS phone is a search of the people you already
    know and the posts you already have, which is the one search nobody needs.
@@ -464,7 +533,7 @@ function netFindWho(q, ok, bad){
    asked for one of its fields as text. */
 function netFindPosts(q, ok, bad){
   var like=netLike(q);
-  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body'+
+  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+')'+
          '&order=created_at.desc&limit='+NET_PAGE,

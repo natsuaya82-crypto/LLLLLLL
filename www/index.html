@@ -374,6 +374,26 @@ canvas.pkc{width:34px;height:34px;display:block}
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A post its author can see and nobody else can. Bordered rather than filled:
+   it is a state the post is in, not a warning about the post. */
+.pdown{font-size:.84rem;color:var(--bad);margin-top:2px}
+/* ---------- a report, read ----------
+   One card per report, and the reason is the small grey line: what a person
+   reading these is looking at is what was SAID, not the five words the app
+   offered whoever pressed the button. A post already taken down keeps its
+   card and loses its weight. */
+.mrep{border:1px solid var(--line);border-radius:12px;padding:12px;
+      margin-bottom:10px;background:var(--pane)}
+.mrep.mdown{opacity:.55}
+.mhead{display:flex;justify-content:space-between;gap:8px;
+       font-size:.8rem;color:var(--txm);margin-bottom:6px}
+.mline{font-size:1.02rem;line-height:1.45;color:var(--tx);
+       overflow-wrap:anywhere}
+.mnote{font-size:.88rem;color:var(--txs);margin-top:6px;
+       overflow-wrap:anywhere}
+.mrep .btn{margin-top:10px}
+.mnone{color:var(--txm);text-align:center;padding:24px 0}
+.mnone.bad{color:var(--bad)}
 /* ---------- one conversation ----------
    The post a thread was opened on. It does not go anywhere, so it does not
    look pressable; what marks it is a hairline down its left edge, which is
@@ -2516,6 +2536,7 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 <script src="card.js"></script>
 <script src="sns.js"></script>
 <script src="post.js"></script>
+<script src="mod.js"></script>
 <script src="rec.js"></script>
 <script src="me.js"></script>
 <script src="backup.js"></script>

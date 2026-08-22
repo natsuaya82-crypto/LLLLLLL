@@ -64,6 +64,17 @@ create table if not exists profile (
 -- one for a post.
 alter table profile add column if not exists av jsonb;
 
+-- Whoever answers the reports. It is set by hand in the Supabase dashboard and
+-- by nothing else: no policy below writes it, and the column is taken out of
+-- what an account may update at the foot of this file. An app that could make
+-- somebody staff would be an app where being reported is a thing you can vote
+-- your way out of.
+--
+-- It is not a role, a tier or a badge. It answers one question -- may this
+-- account read reports and take a post down -- and the day it has to answer a
+-- second one it should become a table of its own rather than a second boolean.
+alter table profile add column if not exists staff boolean not null default false;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
@@ -164,6 +175,19 @@ create index if not exists post_language_idx on post(language, created_at desc);
 -- the note at the head of the file.
 alter table post add column if not exists reply_to uuid references post(id) on delete set null;
 create index if not exists post_reply_idx on post(reply_to, created_at) where reply_to is not null;
+
+-- Taken down, rather than deleted. Three reasons, and the third is the one
+-- that decided it: a deletion cannot be undone when the report turns out to be
+-- wrong; the reports about it point at a row that has to still be there; and
+-- the person who wrote it is told what happened by the post still being in
+-- their own timeline with a line on it, instead of by silence.
+--
+-- Nobody may set these but the two functions at the foot of this file. The
+-- author can update their own post -- post_edit below -- and an author who
+-- could clear this could put their own post back up.
+alter table post add column if not exists hidden_at timestamptz;
+alter table post add column if not exists hidden_why text;
+create index if not exists post_hidden_idx on post(hidden_at) where hidden_at is not null;
 
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
@@ -294,6 +318,13 @@ language sql stable as $$
      and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
 $$;
 
+-- And the one account that answers the reports. Written the same way and read
+-- the same way: a sentence that is true or false about whoever is asking.
+create or replace function is_staff() returns boolean
+language sql stable as $$
+  select exists (select 1 from profile where id = auth.uid() and staff)
+$$;
+
 -- profile: everyone reads, you write yourself into existence and edit yourself
 drop policy if exists profile_read on profile;
 create policy profile_read on profile for select using (true);
@@ -337,8 +368,15 @@ create policy publication_make on publication for insert with check (
 -- be a request rather than an act, so follow grows an accepted column and its
 -- insert policy stops being "you may follow anyone". That is the real cost of
 -- the feature, and it is a column and a policy rather than a redesign.
+-- Everyone reads, except what has been taken down -- which its own author
+-- still reads, and staff still reads. The author keeps it so that a post going
+-- quiet is something they can see rather than something they have to notice:
+-- www/post.js puts a line on it saying so. Staff keeps it because a decision
+-- that cannot be looked at again cannot be undone.
 drop policy if exists post_read on post;
-create policy post_read on post for select using (true);
+create policy post_read on post for select using (
+  hidden_at is null or author = auth.uid() or is_staff()
+);
 drop policy if exists post_make on post;
 create policy post_make on post for insert with check (is_member() and author = auth.uid());
 drop policy if exists post_edit on post;
@@ -392,13 +430,21 @@ create policy block_make on block for insert
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
 
--- report: written and never read. There is no select policy at all, so nobody
--- using the app can read one -- not the person who wrote it and not the person
--- it is about. It is for whoever is looking at the dashboard, and a person who
--- could read reports could work out who reported them.
+-- report: written by anybody, read by staff. Not by the person who wrote it and
+-- not by the person it is about -- somebody who could read reports could work
+-- out who reported them, and that is true of the reporter too, who would learn
+-- which of their reports had been answered and which had not.
 --
--- No update and no delete either: a report that can be withdrawn by the person
--- it is about is not a report.
+-- It used to have no select policy at all, which meant the only way to see a
+-- report was the Supabase dashboard. Acting on one within a day is a condition
+-- of being in the App Store, and a condition nobody can meet from a laptop
+-- they are not sitting at.
+--
+-- No update and no delete either, for anybody: a report that can be withdrawn
+-- by the person it is about is not a report, and one that staff can delete is
+-- a record of what was decided that does not survive the deciding.
+drop policy if exists report_read on report;
+create policy report_read on report for select using (is_staff());
 drop policy if exists report_make on report;
 create policy report_make on report for insert
   with check (is_member() and actor = auth.uid());
@@ -570,3 +616,63 @@ begin
 end $$;
 revoke all on function account_delete() from public;
 grant execute on function account_delete() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Answering a report
+--
+-- Two functions rather than an update policy, because a policy that let staff
+-- update a post would let staff rewrite what somebody said. These reach one
+-- pair of columns and nothing else.
+--
+-- `security definer` for the same reason account_delete() is: the caller is a
+-- normal account whose own policies do not let it touch somebody else's row.
+-- is_staff() is asked inside, so the definer rights are not a way in.
+-- ---------------------------------------------------------------------------
+create or replace function post_hide(p uuid, reason text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  update post set hidden_at = now(), hidden_why = reason where id = p;
+end $$;
+revoke all on function post_hide(uuid, text) from public;
+grant execute on function post_hide(uuid, text) to authenticated;
+
+-- The other direction, which is why hiding is not deleting.
+create or replace function post_show(p uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  update post set hidden_at = null, hidden_why = null where id = p;
+end $$;
+revoke all on function post_show(uuid) from public;
+grant execute on function post_show(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Three columns nobody may write
+--
+-- Row level security says which ROWS an account may change. It has nothing to
+-- say about which columns, so `profile_edit` -- "you may edit yourself" -- was
+-- also "you may make yourself staff", and `post_edit` -- "you may edit your own
+-- post" -- was also "you may put your own post back up". Both are one UPDATE
+-- with one extra field in it.
+--
+-- Column privileges are the tool for that, and they have to be said this way
+-- round: revoking one column from a role that holds UPDATE on the whole table
+-- does nothing at all (PostgreSQL warns and carries on), because the
+-- table-level grant covers every column there is and every column there will
+-- be. So the table-level grant goes, and what may be updated is named.
+--
+-- Which means a column added later is not updatable until it is added to one
+-- of these lines. That is the right way round -- a new column is not writable
+-- by accident -- and it is why the lines list what the policies above are
+-- ABOUT rather than "everything except the two".
+--
+-- service_role is not touched. The dashboard is where staff is set.
+-- Said after the tables and the policies because the columns have to exist.
+-- ---------------------------------------------------------------------------
+revoke update on profile from anon, authenticated;
+grant  update (handle, display, av) on profile to anon, authenticated;
+revoke update on post from anon, authenticated;
+grant  update (body, language, prompt, reply_to) on post to anon, authenticated;

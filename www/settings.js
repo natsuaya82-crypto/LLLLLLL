@@ -48,6 +48,16 @@ function vSettings(){
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
+    /* And, for the one account that answers them, the reports. It is not one
+       of the six questions this list asks and it is not everybody's row, so
+       it sits under them rather than among them. NET_STAFF is false until the
+       server has said otherwise, which is the right way round: the row that
+       is missing is the row nobody could have used anyway. */
+    (NET_STAFF
+      ? '<button class="set"' + DO('goMod') + '>'+
+          '<span class="sl">'+esc(t('mod.title'))+'</span>'+
+          '<span class="sv">'+ICON_GO+'</span></button>'
+      : '')+
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered

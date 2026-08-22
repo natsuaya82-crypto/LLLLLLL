@@ -76,4 +76,5 @@ page('thread',   vThread);
 page('photo',    vPhoto);
 page('drafts',   vDrafts);
 page('langs',    vLangs);
+page('mod',      vMod);
 page('plans',    vPlans);
