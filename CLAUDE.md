@@ -342,6 +342,18 @@ Adding a button means adding its `act(...)` line in the same commit. `act-check`
 proves both directions: no name without a function, and no entry no screen names
 (a dead entry is a button that used to exist).
 
+**And that no name is written down twice**, which is neither direction and was
+what neither of them could see. `act('x', x)` twice throws nothing, leaves
+nothing unreached, and the second call simply writes the same function over the
+first — so four names sat registered twice with every check in the gate green,
+because everything the gate said about `act-map.js` was about names it does NOT
+have. It matters because that file is the one place a screen's vocabulary is
+written down: two entries means two people each believed they were adding it,
+and the next one to change the first will be overwritten by an entry they never
+saw. Read off the source, not the page — at run time the duplicate is already
+gone — and with the comments stripped first, or the file's own worked example
+in its opening comment is reported as a duplicate of the line it documents.
+
 `press-check` is the other half and not the same statement: it dispatches a real
 click on every button of every screen and fails if one throws or empties `#app`.
 It also measures: 44pt on both sides of anything a thumb has to hit. A key of a
