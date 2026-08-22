@@ -50,6 +50,7 @@ act('editName', editName);
 act('exportCSV', exportCSV);
 act('fPick', fPick);
 act('geCircle', geCircle);
+act('geFill', geFill);
 act('geClear', geClear);
 act('ltDelete', ltDelete);
 act('ltCopy', ltCopy);

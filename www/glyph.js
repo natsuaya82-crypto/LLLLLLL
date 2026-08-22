@@ -347,7 +347,7 @@ function newGE(lid, label){
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
-           free:false, round:false, raw:null, rawFor:-1,
+           free:false, round:false, fill:false, raw:null, rawFor:-1,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
@@ -400,6 +400,9 @@ var GICON={
      one arrow turning back on itself; a ring drawn in dots, which is the shape
      of something that is no longer there. */
   'circle': '<path d="M4.5 17.5Q12 3.5 19.5 17.5"/><circle cx="12" cy="10.5" r="1.6"/>',
+  /* The inside of a shape being blackened, which is the whole of what it
+     does. Stroked like the rest of them, so it goes gold with its caption. */
+  'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
   'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
@@ -937,6 +940,21 @@ function geCircle(){
   }
   GE.pi=-1; render();
 }
+/* Blacken the inside of what was drawn round. A mode, like ROUND: while it
+   is on the stroke being drawn is a filled one and shows green on the canvas,
+   so which of your strokes are areas is visible while you work. Pressing it
+   also settles the stroke you have just drawn, which is the only way it could
+   be used on a line already finished.
+
+   Three points is the least that has an inside; below that the flag sits on
+   the stroke and does nothing, because a filled line is still a line. */
+function geFill(){
+  geMark();
+  GE.fill=!GE.fill;
+  var st=GE.st[GE.st.length-1];
+  if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
+  GE.pi=-1; render();
+}
 function geUndo(){
   if(!GE.undo.length) return;
   GE.st=JSON.parse(GE.undo.pop());
@@ -1079,6 +1097,8 @@ var GHDCYC=3.4;
 var GHDEMO={
   'circle': { a:[{pts:[[184,616],[400,184],[616,616]]}],
               b:[{pts:[[184,616],[400,184],[616,616]], k:'o'}], m:[400,184] },
+  'fill'  : { a:[{pts:[[184,616],[400,184],[616,616],[184,616]]}],
+              b:[{pts:[[184,616],[400,184],[616,616],[184,616]], fill:true}], m:[400,400] },
   'new'   : { a:[{pts:[[256,256],[256,544]]}],
               b:[{pts:[[256,256],[256,544]]},{pts:[[472,256],[616,256],[616,544]]}], m:[472,256] }
   /* 'new' is kept only so the hint reel still has its demonstration; no
@@ -1294,6 +1314,9 @@ function geDown(ev){
       GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false;
     }
     st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1;
+    /* The stroke under the finger follows the mode both ways, so turning the
+       fill off while building one takes it back off that stroke. */
+    if(GE.fill) st.fill=true; else if(st.fill) delete st.fill;
     GE.again=false; GE.hit=false;
     /* A point placed on empty lattice is the start of a line if the finger
        keeps going. geMove turns it into one. Before this, pressing and
@@ -1438,6 +1461,7 @@ function geUp(ev){
 function geRail(st, pts){
   return '<div class="gtools">'+
     geBtn('geCircle','circle','glyph.circle', true, !!GE.round)+
+    geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
     geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     geBtn('geClear','clear','glyph.clear', !!pts, false)+
   '</div>';
@@ -1451,6 +1475,7 @@ function geTools(){
   /* Keyed by name, not by position: the row can be reordered or added to
      without this quietly disabling the wrong button. */
   var S={ 'circle':[true, !!GE.round],
+          'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
           'clear' :[!!pts, false] };
   var b=box.getElementsByTagName('button'), i, s, g, cl;
@@ -1518,7 +1543,14 @@ function geDraw(){
      are drawing is drawn by the same code as the letter on the key, the tile
      and the card. It was not, and a letter could have looked like one thing
      under your finger and another everywhere else. */
-  inkStrokes(x, GE.st, k, pad, pad, cssVar('--tx'));
+  /* Two passes, one colour each: an area shows green while it is being built
+     so it can be told from a line at a glance. Green is the editor's alone --
+     on a key, a tile, a card and in the font a filled stroke is the letter's
+     own colour like every other stroke. */
+  var plain=[], area=[];
+  GE.st.forEach(function(s0){ (s0.fill? area : plain).push(s0); });
+  inkStrokes(x, plain, k, pad, pad, cssVar('--tx'));
+  if(area.length) inkStrokes(x, area, k, pad, pad, cssVar('--fill'));
 
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2);
   GE.st.forEach(function(s){

@@ -583,6 +583,7 @@ defLang('ja', (function(){
       'script.show.own'   : "自分の字",
       /* the letter editor */
       'glyph.circle'      : "曲線",
+      'glyph.fill'     : "塗り",
       'glyph.new'         : "新しい線",
       'glyph.undo'        : "一画戻す",
       'glyph.clear'       : "すべて消去",

@@ -272,6 +272,67 @@ var LinguaFont = (function () {
     return a / 2;
   }
 
+  // ------------------------------------------------------------------- fill
+  // A filled stroke is the one shape here that is not a swept nib: the inside
+  // of what somebody drew round. Everything else is convex and the profile
+  // below is allowed to say so, so the inside is cut into triangles rather
+  // than handed down as one concave outline -- overlapping triangles are a
+  // union under non-zero fill, which the swept nibs already rely on.
+  function cross3(o, a, b) {
+    return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  }
+  function inTri(p, a, b, c) {
+    var d1 = cross3(a, b, p), d2 = cross3(b, c, p), d3 = cross3(c, a, p);
+    return !(((d1 < 0) || (d2 < 0) || (d3 < 0)) &&
+             ((d1 > 0) || (d2 > 0) || (d3 > 0)));
+  }
+  // Ear clipping. A scribble that crosses itself has no ear left at some
+  // point and the loop stops there rather than spinning: what has been cut is
+  // kept, so a shape nobody could name still inks most of itself instead of
+  // throwing the letter away.
+  function earCut(poly) {
+    var v = [], out = [], i, j, a, b;
+    for (i = 0; i < poly.length; i++) {
+      a = poly[i]; b = poly[(i + 1) % poly.length];
+      if (a[0] !== b[0] || a[1] !== b[1]) v.push([a[0], a[1]]);
+    }
+    var n = v.length;
+    if (n < 3) return out;
+    var ccw = signedArea(v) > 0, idx = [], guard = n * n + 20;
+    for (i = 0; i < n; i++) idx.push(i);
+    while (idx.length > 3 && guard-- > 0) {
+      var cut = false;
+      for (i = 0; i < idx.length; i++) {
+        var i0 = idx[(i + idx.length - 1) % idx.length],
+            i1 = idx[i],
+            i2 = idx[(i + 1) % idx.length],
+            p0 = v[i0], p1 = v[i1], p2 = v[i2],
+            turn = cross3(p0, p1, p2), ear = true;
+        if (ccw ? turn <= 0 : turn >= 0) continue;   // a reflex corner is no ear
+        for (j = 0; j < idx.length; j++) {
+          var q = idx[j];
+          if (q === i0 || q === i1 || q === i2) continue;
+          if (inTri(v[q], p0, p1, p2)) { ear = false; break; }
+        }
+        if (!ear) continue;
+        out.push([p0, p1, p2]);
+        idx.splice(i, 1);
+        cut = true;
+        break;
+      }
+      if (!cut) break;
+    }
+    if (idx.length === 3) out.push([v[idx[0]], v[idx[1]], v[idx[2]]]);
+    return out;
+  }
+  // The closed ring of a stroke's own polyline, with the repeated end point
+  // dropped: what the finger went round, whether or not it was told to close.
+  function fillRing(line) {
+    var r = line.slice(), e = r.length - 1;
+    if (e > 1 && r[0][0] === r[e][0] && r[0][1] === r[e][1]) r.pop();
+    return r;
+  }
+
   // A segment is its own bar; a turn is the hull of the two ends that meet at
   // it, which fills the notch the outside of a corner leaves and nothing more.
   // Result is authoring space, y-DOWN, every contour convex, all the same
@@ -284,6 +345,13 @@ var LinguaFont = (function () {
     var add = function (c) { if (c.length > 2) out.push(c); };
     g.strokes.forEach(function (st) {
       var line = toPolyline(st, pen && pen.curve);
+      if (st.fill) {
+        earCut(fillRing(line)).forEach(function (tri) {
+          add(tri.map(function (p) {
+            return [Math.round(p[0]), Math.round(p[1])];
+          }));
+        });
+      }
       if (line.length === 1) {
         add(hull(N.map(function (d) {
           return [line[0][0] + d[0], line[0][1] + d[1]];
@@ -747,7 +815,7 @@ var LinguaFont = (function () {
         sx = Math.max(0.35, Math.min(2.2, (inner - PEN.width) / skel));
         cs = glyphContours({
           strokes: q0.g.strokes.map(function (st) {
-            return { closed: st.closed, pts: st.pts.map(function (p) {
+            return { closed: st.closed, fill: st.fill, pts: st.pts.map(function (p) {
               return [(p[0] - pre.xMin) * sx + pre.xMin, p[1], p[2]]; }) };
           }),
         }, PEN);

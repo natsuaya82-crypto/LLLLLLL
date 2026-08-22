@@ -667,6 +667,7 @@ defLang('it', (function(){
       "script.show.own"   : "Le tue lettere",
       /* the letter editor */
       "glyph.circle"      : "Curvare",
+      "glyph.fill"     : "Riempi",
       "glyph.new"         : "Nuovo",
       "glyph.undo"        : "Indietro",
       "glyph.clear"       : "Svuota",

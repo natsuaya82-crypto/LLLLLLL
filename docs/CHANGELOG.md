@@ -15,6 +15,46 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A stroke can blacken what it goes round — OWNER DECISION
+
+The editor's rail has a fourth button. With the fill on, the stroke being
+drawn shows green on the canvas and the inside of what it goes round is
+black; three points is the least that has an inside, and below that the flag
+sits on the stroke and does nothing. Nothing else happens.
+「塗りボタンオン。緑色の線が出現。三点以上の囲われた部分が塗られる。それ以上は
+なにも起きない」
+
+Green belongs to the editor and nowhere else. On a key, a tile, a card, in a
+post and in the exported font, a filled stroke is the letter's own colour like
+every other stroke — it is a shape somebody drew, not a marked-up one.
+
+**Data.** A stroke may now carry `fill: true`, beside the `closed` and `k`
+flags it could already carry. `docs/DATA_MODEL.md` writes the whole stroke out
+for the first time. Nothing already stored changes: a stroke without the flag
+is a plain line, which is what it has always been, and no migration runs. It
+travels with the letter, so it is in the backup and in a post's ink without
+anything being added to either.
+
+**The font.** Every shape in this app has been a nib swept along a line, and
+this is the one that is not. `glyphContours()` cuts the inside into triangles
+and adds them to the sweep, rather than handing down one concave outline —
+everything below it is allowed to assume its contours are convex and all wound
+the same way, and that assumption stays true. A stroke that crosses itself has
+no ear left at some point; the cut stops there and keeps what it has, so a
+scribble inks most of itself instead of throwing the letter away.
+
+**Deletion.** Nothing is deleted.
+
+**Tested.** `tools/fill-check.mjs`, new, in `npm test`. It counts the pixels
+the real drawing code blackens: a triangle inks 1393px drawn and 6544px
+filled; two points have no inside and ink 648px either way; a self-crossing
+stroke still inks; and after `geSave()` the flag is still there and the letter
+draws the same 6544px. Three of those were watched failing — with the fill
+dropped from `glyphContours`, and with `geSave` rebuilding its strokes without
+the flag.
+
+**Not verified on a device.**
+
 ### The pen is 24, and 24 is the ceiling — OWNER DECISION
 
 The pen had been walked up to 40 to see what a page of somebody's writing

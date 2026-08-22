@@ -673,6 +673,7 @@ defLang('ru', (function(){
       "script.show.own"   : "Своими буквами",
       /* the letter editor */
       "glyph.circle"      : "Дуга",
+      "glyph.fill"     : "Заливка",
       "glyph.new"         : "Новая",
       "glyph.undo"        : "Назад",
       "glyph.clear"       : "Очистить",
