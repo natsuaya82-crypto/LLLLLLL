@@ -7,10 +7,10 @@
 //  exist at build time — so it registers it at run time, into this process
 //  only, and then asks for it by family name like any other font.
 //
-//  Once per process, and quietly. A widget with no font falls back to the
-//  roman spelling, which every word carries beside its private-use one
-//  (www/share.js § shareSlotWords), so failing here costs a look and not a
-//  blank.
+//  Once per process, and quietly. Failing here costs a look and not a blank:
+//  the word is set in the system face instead, and it is the same string
+//  either way — LinguaScript maps the ROMAN characters, so setting somebody's
+//  spelling in it is what draws their letters.
 
 import CoreText
 import SwiftUI
@@ -48,8 +48,8 @@ struct WordView: View {
   let size: CGFloat
 
   var body: some View {
-    if let pua = word.t, !pua.isEmpty, let f = ScriptFont.at(size) {
-      Text(pua).font(f)
+    if word.all, let f = ScriptFont.at(size) {
+      Text(word.r).font(f)
     } else {
       Text(word.r).font(.system(size: size * 0.86, weight: .medium))
     }

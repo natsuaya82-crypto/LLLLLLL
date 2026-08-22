@@ -95,9 +95,13 @@ const r = await pg.evaluate(({s}) => {
      present-but-empty entry means a blank space where a numeral should be. */
   /* A month with a word on it, and one without: the widget says the name
      when there is one and the number when there is not, so both have to
-     leave here in the shape it expects. `t` is the private use area the
-     font maps and is ABSENT when a letter of the word has no shape -- one
-     hole in a run reads worse than not trying. */
+     leave here in the shape it expects.
+
+     `all` is whether the font in the App Group will have every letter of it.
+     That font is LinguaScript and LinguaScript maps the ROMAN characters, so
+     the spelling IS what gets set in the person's letters -- there is nothing
+     else to send. One undrawn letter and `all` is false, and the widget sets
+     the word plainly rather than with one character in the system serif. */
   var mw = {hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.3',
             sp:[{l:numByVal(10).id}, {l:'l5'}]};
   WORDS.push(mw);
@@ -107,10 +111,10 @@ const r = await pg.evaluate(({s}) => {
   out.wWk     = w.wk;
   out.wMonKey = Object.keys(w.mon).sort().join(' ');
   out.wMonR   = w.mon['3'] && w.mon['3'].r;
-  out.wMonT   = !!(w.mon['3'] && w.mon['3'].t);
-  /* the same word with one letter that was never drawn: no private use run */
+  out.wMonAll = !!(w.mon['3'] && w.mon['3'].all);
+  /* the same word with one letter that was never drawn */
   mw.sp = [{l:numByVal(10).id}, {l:numByVal(11).id}];
-  out.wMonHole = !!(shareWidget().mon['3'] || {}).t;
+  out.wMonHole = !!(shareWidget().mon['3'] || {}).all;
   mw.sp = [{l:numByVal(10).id}, {l:'l5'}];
   out.wBase   = w.base;
   out.wDrawn  = !!(w.dg['10'] && w.dg['10'].st && w.dg['10'].st.length);
@@ -188,8 +192,8 @@ say(r.wMo === 12 && r.wWk === 7, 'the widget is told how the year and the week d
    passing if the wrong one dropped out. */
 say(r.wMonKey === '12 3', 'only the months somebody named go out (' + r.wMonKey + ')');
 say(r.wMonR === 'Tuvel', 'with the roman spelling, always (' + r.wMonR + ')');
-say(r.wMonT, 'and the private use run the font draws, when every letter of it has a shape');
-say(!r.wMonHole, 'one undrawn letter and the run is left out entirely, so the widget says the roman one');
+say(r.wMonAll, 'and that the font will have every letter of it');
+say(!r.wMonHole, 'one undrawn letter and it says so, so the widget sets the word plainly');
 
 /* 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
    Decision log, 2026-08-22. The free QWERTY finds its keys BY NAME, so a

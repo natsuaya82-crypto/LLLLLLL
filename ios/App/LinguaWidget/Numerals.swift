@@ -30,14 +30,15 @@ struct Face: Decodable {
 
 /// A word somebody made for a month or a day of the week.
 struct Named: Decodable {
-  /// The private use area, which is what the font in the App Group maps.
-  /// Absent when a letter of the word has no shape: one hole in a run reads
-  /// worse than not trying, so www/share.js sends nothing rather than a
-  /// word with a gap in it.
-  let t: String?
-  /// The roman spelling, always. What a widget shows before the font is
-  /// there, and what it shows for a language written in borrowed characters.
+  /// The spelling, in roman letters. That is all there is to send: the font
+  /// in the App Group is LinguaScript, and LinguaScript maps the roman
+  /// characters -- setting this string in it IS setting it in the person's
+  /// own letters.
   let r: String
+  /// Whether the font will have every letter of it. One undrawn letter is one
+  /// character falling through to the system serif in the middle of a word,
+  /// so it is all or nothing and this says which.
+  let all: Bool
 }
 
 struct Numerals: Decodable {
