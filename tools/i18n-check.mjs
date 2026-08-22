@@ -57,23 +57,8 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { execSync } from 'child_process';
 import { obStates } from './fixture.mjs';
-
-/* Playwright is a developer tool, not a dependency of the app, so it may be
-   installed globally rather than beside this file. Look in both places. */
-async function loadChromium(){
-  const { createRequire } = await import('module');
-  const req = createRequire(import.meta.url);
-  try { return req('playwright').chromium; } catch (e) {}
-  try {
-    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    return req(path.join(g, 'playwright')).chromium;
-  } catch (e) {}
-  console.error('playwright is not installed. npm i -g playwright');
-  process.exit(2);
-}
-const chromium = await loadChromium();
+import { chromium, LAUNCH } from './browser.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
@@ -94,8 +79,6 @@ const APP_SRC = ['index.html'].concat(
 const PORT = 8121;
 /* Use the browser this machine already has if there is one; on a CI runner
    there is not, and Playwright's own copy is the right answer. */
-const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
-const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
 const fails = [];
 const notes = [];

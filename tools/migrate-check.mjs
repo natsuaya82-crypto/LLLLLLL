@@ -55,27 +55,14 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
-
-const req = createRequire(import.meta.url);
-function loadChromium(){
-  try { return req('playwright').chromium; } catch (e) {}
-  try {
-    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    return req(path.join(g, 'playwright')).chromium;
-  } catch (e) {}
-  console.error('playwright is not installed. npm i -g playwright');
-  process.exit(2);
-}
-const chromium = loadChromium();
+import { chromium, LAUNCH } from './browser.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WWW = path.join(HERE, '..', 'www');
 const PORT = 8123;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
-const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
 
 const srv = http.createServer((q, r) => {
   const f = path.join(WWW, q.url === '/' ? 'index.html' : q.url.split('?')[0]);
@@ -170,7 +157,7 @@ const lacks = (label, got, unwanted) => {
     fails.push(`${label}: got ${JSON.stringify(got)}, which still has ${bad.join(',')}`);
 };
 
-const br = await chromium.launch(fs.existsSync(CHROME) ? { executablePath: CHROME } : {});
+const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage();
 /* The phone, when a case asks for one. ios/App/App/LinguaPlan.swift reads the
    Keychain and injects the plan as a script before anything else runs, so

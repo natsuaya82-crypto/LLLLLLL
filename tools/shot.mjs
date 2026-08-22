@@ -33,22 +33,10 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { seed, obStates } from './fixture.mjs';
-
-const req = createRequire(import.meta.url);
-function loadChromium(){
-  try { return req('playwright').chromium; } catch (e) {}
-  try {
-    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    return req(path.join(g, 'playwright')).chromium;
-  } catch (e) {}
-  console.error('playwright is not installed. npm i -g playwright');
-  process.exit(2);
-}
-const chromium = loadChromium();
+import { chromium, LAUNCH } from './browser.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..');
@@ -56,7 +44,6 @@ const WWW = path.join(ROOT, 'www');
 const OUT = path.join(ROOT, 'shots');
 const PORT = 8124;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
-const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
 
 const argv = process.argv.slice(2);
 const all = argv.indexOf('--all') >= 0;
@@ -83,7 +70,7 @@ fs.mkdirSync(OUT, { recursive: true });
 
 /* A phone, not a desktop window: this is a Capacitor app and a screen that
    only holds together at 1200 px wide is not a screen anyone will see. */
-const br = await chromium.launch(fs.existsSync(CHROME) ? { executablePath: CHROME } : {});
+const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport: { width: 390, height: 844 },
                               deviceScaleFactor: 2 });
 await pg.goto(`http://localhost:${PORT}/`);

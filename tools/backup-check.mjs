@@ -45,28 +45,14 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { seed } from './fixture.mjs';
-
-const require_ = createRequire(import.meta.url);
-function loadChromium(){
-  try { return require_('playwright').chromium; } catch (e) {}
-  try {
-    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    return require_(path.join(g, 'playwright')).chromium;
-  } catch (e) {}
-  console.error('playwright is not installed. npm i -g playwright');
-  process.exit(2);
-}
-const chromium = await loadChromium();
+import { chromium, LAUNCH } from './browser.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
 const PORT = 8127;
-const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
-const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
 const mime = (f) => f.endsWith('.html') ? 'text/html; charset=utf-8'
   : f.endsWith('.js') ? 'application/javascript; charset=utf-8'
