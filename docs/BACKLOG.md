@@ -7,33 +7,37 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## CSS outlives the screen it dressed, and nothing says so
+## ~~CSS outlives the screen it dressed, and nothing says so~~ — the check is in
 
-Found while writing the row-height measurement, not looked for.
+*2026-08-22, owner:*「CSSの死骸は削除ではなく、検査を作る。className /
+classList / 動的生成を考慮せず『grepで使われてないから削除』は危険。
+やるなら先に『生きているCSS selectorか』を判定できる検査を作る」
 
-`index.html` carries `a.set{text-decoration:none}` under a comment that says
-*"Two of these are `<a>` rather than `<button>` — the two documents at the foot
-of the settings list."* There is no `<a class="set">` anywhere in `www/` any
-more. The two documents are still there (`settings.js:41,44`) and are plain
-anchors now. So the rule dresses nothing and the comment describes a screen
-that stopped existing.
+`press` asks it now. A class is compared against every class actually WORN on
+any element of any screen, collected after every build and after every press —
+because a render-only walk never reaches `.on`, and a rule that only a pressed
+state wears would be reported as dead.
 
-`.weave` is the same, one step worse: it is the class of the sentence-weaving
-chapter, and the word `weave` does not appear in a single `.js` file. The
-chapter went; its class stayed.
+**202 classes were styled and worn by nothing** on the day it was written, and
+they are frozen in `tools/css-baseline.txt` as a ratchet: a new one fails,
+taking a line out needs nobody. `a.set` and `.weave` are both on it.
 
-**This is `dead-check`'s statement, on the other side of the wall.** Every
-function in `www/` must be named somewhere other than its own declaration, and
-26 orphans were found the day that check was written. Nothing has ever asked
-the same question of a selector, and the answer looks to be of the same order:
-these two were both found by accident in one afternoon.
+**The check says "nothing here wore it", not "it is dead", and the difference
+is the whole design.** A class worn only in a state the walk never reaches — an
+error, a plan the fixture is not on, a screen behind a half-done state nobody
+seeded — is on that list too. Clearing a line by adding the seed that reaches
+it is the better fix, and the list cannot tell you which kind you are looking
+at. **A person reads it. Deleting on the strength of the list alone is the
+thing the owner said not to do, one level up.**
 
-Not done here because it is not the row-height task and because the check is
-the work, not the deletion — a selector is "named" from a string built by
-concatenation (`'set' + (on ? ' on' : '')`), from `classList.add`, and from
-`index.html` itself, so a naive scan would call live rules dead and delete
-somebody's screen. The `i18n` version of exactly this problem needed a
-prefix rule to be usable; this one will need at least that.
+It nearly froze its own blind spot: the first version reported `.bar` as worn
+by nothing, which is not a dead rule — `press` puts a view straight into `#app`
+so the shell never exists. A pass through the real `render()` was added, kept
+separate from the walk because `measure()` and `measureRows()` are calibrated
+on what `show()` builds.
+
+**Still open: deleting any of the 202.** That is a change to the stylesheet,
+one selector at a time, each one read by somebody first.
 
 ## A private account — asked for, and deliberately not now
 
