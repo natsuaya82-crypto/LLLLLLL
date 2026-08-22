@@ -160,6 +160,33 @@ const CASES = [
     `insert into language(owner,name) values ('${A}','forged')`],
   ['and nobody else sees it',                 'denied', B, 0,
     `select 1 from language where id='${LD}'`],
+  /* And what the language is MADE of. A slice is the dictionary, the
+     alphabet, the keyboard -- the whole of what somebody spends months on --
+     and it is the one thing in this file that nobody but its owner may read.
+     Not even for a published language: publishing is a copy somebody is
+     given, not a door into the phone. */
+  ['and puts its dictionary in it',           'ok',     D, 1,
+    `insert into slice(language,kind,body) values ('${LD}','words','[1]')`],
+  ['and reads it back',                       'ok',     D, 1,
+    `select 1 from slice where language='${LD}' and kind='words'`],
+  ['and writes over it',                      'ok',     D, 1,
+    `update slice set body='[1,2]', no=2 where language='${LD}' and kind='words'`],
+  ['B cannot read it',                        'denied', B, 0,
+    `select 1 from slice where language='${LD}'`],
+  ['B cannot write into it',                  'denied', B, 0,
+    `insert into slice(language,kind,body) values ('${LD}','letters','[]')`],
+  ['B cannot rewrite it',                     'denied', B, 0,
+    `update slice set body='[]' where language='${LD}' and kind='words'`],
+  ['B cannot delete it',                      'denied', B, 0,
+    `delete from slice where language='${LD}'`],
+  ['nor can somebody with no account at all',  'denied', B, 1,
+    `select 1 from slice where language='${LD}'`],
+  /* L is A's and it is PUBLISHED by this point in the file. A published
+     language is a copy somebody is given; what it is made of stays A's. */
+  ['B cannot read a published language\u2019s slices', 'denied', B, 0,
+    `select 1 from slice where language='${L}'`],
+  ['B cannot put a slice on A\u2019s language', 'denied', B, 0,
+    `insert into slice(language,kind,body) values ('${L}','words','[]')`],
 
   /* --- the record that settles arguments without anybody judging one --- */
   ['A records publishing A\u2019s language',  'ok',     A, 0,
@@ -446,6 +473,14 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename='language' and cmd in ('INSERT','UPDATE','DELETE')
         and (coalesce(qual,'')||coalesce(with_check,'')) like '%is_member%'`, '0'],
+  /* What a language is made of is the one thing in this file with no public
+     face at all. Every other table has a select policy somebody else passes;
+     this one must not, and "nobody has tried the right query yet" is not the
+     same statement. */
+  ['what a language is made of is nobody else\u2019s', `
+     select count(*) from pg_policies
+      where tablename='slice' and cmd='SELECT'
+        and coalesce(qual,'') not like '%owner = auth.uid()%'`, '0'],
   /* A language belongs to the ACCOUNT. Pointed at profile it could not be
      made until somebody had a handle, which is the one thing the first launch
      does not ask for. */

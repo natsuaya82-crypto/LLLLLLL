@@ -131,6 +131,37 @@ alter table language add  constraint language_owner_fkey
 create index if not exists language_owner_idx on language(owner);
 create index if not exists language_published_idx on language(published_at) where published_at is not null;
 
+-- ---- what a language is made of ---------------------------------------
+-- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
+-- snd, kb, wld -- and they are SLICES here for the same reason they are
+-- slices in www/core.js: one row per slice and not one row per language.
+--
+-- The reason is what happens with two phones. One number for a whole language
+-- means adding a word on one phone and drawing a letter on the other is a
+-- collision, and one of the two has to lose something nobody was arguing
+-- about. Per slice they do not touch each other at all.
+--
+-- Inside one slice the phone merges rather than overwriting -- a word added
+-- here and a word added there are both added -- so what is stored is the
+-- result and not a claim about who was first. `no` goes up by one on every
+-- write and is what says a phone is holding something older than the server:
+-- the phone reads, merges what it has into what came back, and writes with
+-- the number it read.
+--
+-- `body` is text and not jsonb on purpose: it is exactly the string
+-- localStorage holds, which is what bkPack() already writes out to a file,
+-- so there is one shape for a slice and not two that could disagree. The
+-- server never looks inside it.
+create table if not exists slice (
+  language   uuid not null references language(id) on delete cascade,
+  kind       text not null,
+  body       text not null default '',
+  no         bigint not null default 1,
+  at         timestamptz not null default now(),
+  primary key (language, kind)
+);
+create index if not exists slice_language_idx on slice(language);
+
 -- The record that settles arguments without anybody having to judge one.
 -- Append only: no update policy and no delete policy exist for this table, so
 -- a row cannot be altered by anyone through the API, including its author.
@@ -407,6 +438,31 @@ create policy language_edit on language for update
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
   using (has_account() and owner = auth.uid());
+
+-- slice: nobody else's business. Read and written by whoever owns the
+-- language and by nobody else -- not even for a language that is PUBLISHED,
+-- because publishing is a copy somebody is given and not a door into the
+-- phone. has_account() rather than is_member(), the same as language above:
+-- this is what a first launch writes.
+alter table slice enable row level security;
+drop policy if exists slice_read on slice;
+create policy slice_read on slice for select
+  using (exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
+drop policy if exists slice_make on slice;
+create policy slice_make on slice for insert
+  with check (has_account() and exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
+drop policy if exists slice_edit on slice;
+create policy slice_edit on slice for update
+  using (has_account() and exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()))
+  with check (exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
+drop policy if exists slice_drop on slice;
+create policy slice_drop on slice for delete
+  using (has_account() and exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
 
 -- publication: everyone reads the record. Anyone may add to it about their own
 -- language. NOBODY updates or deletes it -- those policies do not exist, which
