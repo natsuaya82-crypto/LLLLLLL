@@ -131,7 +131,11 @@ for (const n of FACES.keys()) if (!used.has(n)) fails.push(`:root declares ${n} 
    standalone library the fourth place naming this app's face. */
 const familyNames = new Set();
 for (const v of FACES.values()) {
-  for (const part of v.split(',')) {
+  /* A face may fall back to another face rather than writing its stack out
+     again: --face-type is 'LinguaType' and then whatever --face-ui is. That
+     is the DRY form and the point of the file, so var(--face-x) inside a
+     face is a reference, not a family called "var(--face-x)". */
+  for (const part of v.replace(/var\(\s*--[\w-]+\s*\)/g, ' ').split(',')) {
     const w = part.trim().replace(/^['"]|['"]$/g, '');
     if (w && GENERIC.indexOf(w.toLowerCase()) < 0) familyNames.add(w);
   }
