@@ -616,10 +616,16 @@ function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
      account here, so every reply said you were replying to yourself. */
-  /* Said at the top of the composer and again if the button is pressed. The
-     reason is not on it: the five words the report offered are ours to sort
-     by and are not an explanation anybody was given, and showing one here
-     would read as one. */
+  /* A state, at the top of the composer, and said again if the button is
+     pressed anyway. Three words and no sentence after them: what is banned in
+     this app is the app EXPLAINING itself, and the line that used to follow
+     this one -- "you can read, but nothing you write will go up" -- was the
+     app describing its own rules to somebody looking at a screen that already
+     showed them. 「アプリ内に説明書くの禁止」
+
+     The reason is not on it either. The five words the report offered are
+     ours to sort by; they were never given to anybody as an explanation, and
+     putting one here would make them one. */
   return (NET_BANNED? '<div class="pwout">'+esc(t('post.out'))+'</div>' : '')+
     (to? '<div class="pwto">'+
       esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
@@ -1959,10 +1965,11 @@ function postRow(p){
          to do with it has to say what it is, and the id it carries says
          nothing to anybody's eye. */
       (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
-      /* Taken down. Only its author is ever handed one of these, so the line
-         is addressed to them: the post is still here, it is not anywhere
-         else, and the app says which rather than letting them work it out
-         from a reply count that stopped moving. */
+      /* Taken down. Only its author is ever handed one of these -- post_read
+         in schema.sql -- so the line is for them. A state and not a sentence
+         about it: the post being here with this on it is the whole of what
+         they need, and working it out from a reply count that stopped moving
+         is what the alternative was. */
       (p.down? '<div class="pdown">'+esc(t('post.down'))+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on

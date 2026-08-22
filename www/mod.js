@@ -58,9 +58,10 @@ function modUp(pid){
           function(d, st){ toast(netWhy(d, st)); });
 }
 /* Ejecting somebody is the one thing on this screen that is about a person
-   rather than about a post, so it is the one thing that asks first. Taking a
-   post down can be undone by pressing the same row again; this can too, but
-   it is not the same size of mistake. */
+   rather than about a post, so it is the one thing that asks first. The
+   question is the question and nothing else -- that it can be undone is said
+   by the button turning into the one that undoes it, which is where a person
+   will look for it. */
 function modOut(uid){
   if(!confirm(t('mod.out.sure'))) return;
   netBan(uid, modWhyOf(uid), function(){ modMarkOut(uid, true); render(); },
