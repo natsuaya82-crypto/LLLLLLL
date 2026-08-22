@@ -214,13 +214,14 @@ backlog entry is not permission, and neither is the absence of one.
 ## The gate
 
 ```
-npm test        # tools/gate.mjs -- six with no browser in a row (assets, es5,
-                # dead, import, sides, face, ~2s), then the other twelve four
-                # at a time. Six minutes. NOT run by a session -- see rule 2.
+npm test        # tools/gate.mjs -- seven with no browser in a row (assets, es5,
+                # dead, import, sides, face, box, ~2s), then the other twelve
+                # four at a time. Six minutes. NOT run by a session -- rule 2.
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
-`npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run act` /
+`npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run box` /
+`npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
 `npm run fill` / `npm run round` / `npm run press`.
 `tools/gate.mjs` is what `npm test` runs. The six that need no browser go first, one
@@ -281,7 +282,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The seventeen rules the gate enforces
+## The eighteen rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -849,6 +850,54 @@ container rules in the same file set `font-family:inherit` on the input inside
 them, and every one of those is *two* selectors where `.sfont` is one. Beating
 them one at a time is a great many places that have to be found and kept found.
 They all say `var(--face-ui)` now and there is one place to change.
+
+### 18. NO ROUNDED BOX, and it does not grow back
+
+「角丸やめろ」「文字書いて四角で囲ったみたいなボタン全部やめてくれ。ダサすぎる」
+
+The rule is at the head of this file, the class comment on `.btn.ghost` has
+carried it since the day it was written, and it was still broken three times in
+one afternoon after being pointed out twice — a gold pill on the frozen screen,
+a bordered strip across Home, a gold pill on the password screen. **Prose does
+not hold a rule.** This file says so about everything else: *either a check
+holds the claim, or do not make it.* Nothing held this one, and it is the rule
+that has been broken most.
+
+It is **not** "no corner in this stylesheet". There are 240 corners and borders
+in `index.html` and `.btn` is on about thirty older screens; deleting all of it
+is a redesign, not a check. The rule as written is about what is **added**.
+
+So `tools/box-baseline.txt` is what the stylesheet looked like the day the rule
+was written, listed by selector, and `box-check` fails on a pair that is not on
+it. Same shape as `buttons pressed: 8683` — a number nobody may move by
+accident. **Taking a line OUT is progress and needs nobody**; putting one in is
+a diff on that file, in a commit of its own, and it is the owner's. It fails the
+other way too: a baseline line matching nothing any more must be deleted, or the
+list rots into permission for a corner somebody removed years ago.
+
+**One side is a LINE, and a line is what was asked for.** `border-bottom` and
+its three siblings are not counted, deliberately: `index.html` carries the
+sentence over its field rules — 「かくまるみたいなのでくくるのやめて欲しい。
+基本下線だけ」. A single side is the shape the owner asked **for**, and a check
+that failed the alternative it exists to push people towards would be read as
+"the rule is unworkable" and then ignored. What makes a box is four sides
+(`border`) or a corner (`border-radius`). Those two.
+
+**And JavaScript may not do it at all** — zero, not a baseline. A style set from
+`www/*.js` is in no stylesheet, so nothing above could ever see it; zero is the
+only number that closes that hole.
+
+**What it does not hold, said out loud so silence is not read as approval:**
+"a filled panel" is the third thing the rule names. A background colour is not a
+panel — the bar, the sheet and the body all have one and always did — and no
+mechanical reading tells a panel from a surface. Inventing a rule the owner did
+not write is worse than holding two of the three.
+
+Five failures were watched before any of it was believed, and the fourth found a
+defect in the check itself: it reported `shell.js:8`, which is not where the
+corner was, because `decomment` collapsed each comment to one space and slid
+every line after it. **A check that names the wrong line is worse than one that
+names none — it is believed.** The newlines are kept now.
 
 ## What the free plan is
 
