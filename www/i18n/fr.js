@@ -616,7 +616,7 @@ defLang('fr', (function(){
       "stg.desc.d"       : "Où se place l'adjectif",
       "stg.have.t"       : "Appartenance",
       "stg.have.d"       : "Comment on dit l'appartenance",
-      "stg.count.t"      : "Compter",
+      "stg.count.t"      : "Numéraux",
       "stg.count.d"      : "De un à {0}",
       "stg.month.t"      : "Mois",
       "stg.month.d"      : "Les {0} parties de ton année",

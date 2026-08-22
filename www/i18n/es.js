@@ -528,7 +528,7 @@ defLang('es', (function(){
       "stg.desc.d"       : "Dónde va el adjetivo",
       "stg.have.t"       : "Pertenecer",
       "stg.have.d"       : "Cómo se dice la posesión",
-      "stg.count.t"      : "Contar",
+      "stg.count.t"      : "Numerales",
       "stg.count.d"      : "Del uno al {0}",
       "stg.month.t"      : "Meses",
       "stg.month.d"      : "Las {0} partes de tu año",

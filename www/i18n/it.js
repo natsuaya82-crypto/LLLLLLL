@@ -568,7 +568,7 @@ defLang('it', (function(){
       "stg.desc.d"       : "Dove sta l'aggettivo",
       "stg.have.t"       : "Appartenere",
       "stg.have.d"       : "Come si dice il possesso",
-      "stg.count.t"      : "Contare",
+      "stg.count.t"      : "Numerali",
       "stg.count.d"      : "Da uno a {0}",
       "stg.month.t"      : "Mesi",
       "stg.month.d"      : "Le {0} parti del tuo anno",

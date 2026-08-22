@@ -747,7 +747,7 @@ defLang('ko', (function(){
       "stg.desc.d"       : "꾸미는 말의 자리",
       "stg.have.t"       : "누구의 것",
       "stg.have.d"       : "소유는 어떻게 말하는지",
-      "stg.count.t"      : "세기",
+      "stg.count.t"      : "수사",
       "stg.count.d"      : "1부터 {0}까지",
       "stg.month.t"      : "달",
       "stg.month.d"      : "한 해를 나눈 {0}개",

@@ -575,7 +575,7 @@ defLang('pt', (function(){
       "stg.desc.d"       : "Onde fica o adjetivo",
       "stg.have.t"       : "Pertencer",
       "stg.have.d"       : "Como se diz a posse",
-      "stg.count.t"      : "Contar",
+      "stg.count.t"      : "Numerais",
       "stg.count.d"      : "De um a {0}",
       "stg.month.t"      : "Meses",
       "stg.month.d"      : "As {0} partes do teu ano",

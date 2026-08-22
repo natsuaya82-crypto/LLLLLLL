@@ -576,7 +576,7 @@ defLang('zh', (function(){
       "stg.desc.d"       : "修饰语的位置",
       "stg.have.t"       : "属于谁",
       "stg.have.d"       : "怎么说所属",
-      "stg.count.t"      : "数数",
+      "stg.count.t"      : "数词",
       "stg.count.d"      : "1 到 {0}",
       "stg.month.t"      : "月份",
       "stg.month.d"      : "一年分成的 {0} 段",

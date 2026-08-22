@@ -571,7 +571,7 @@ defLang('ru', (function(){
       "stg.desc.d"         : "Где стоит определение",
       "stg.have.t"         : "Чьё это",
       "stg.have.d"         : "Как говорится принадлежность",
-      "stg.count.t"        : "Считать",
+      "stg.count.t"        : "Числительные",
       "stg.count.d"        : "От одного до {0}",
       "stg.month.t"        : "Месяцы",
       "stg.month.d"        : "{0} частей вашего года",

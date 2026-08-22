@@ -556,7 +556,7 @@ defLang('de', (function(){
       "stg.desc.d"       : "Wo das Adjektiv steht",
       "stg.have.t"       : "Gehören",
       "stg.have.d"       : "Wie Besitz gesagt wird",
-      "stg.count.t"      : "Zählen",
+      "stg.count.t"      : "Zahlwörter",
       "stg.count.d"      : "Eins bis {0}",
       "stg.month.t"      : "Monate",
       "stg.month.d"      : "Die {0} Teile deines Jahres",
