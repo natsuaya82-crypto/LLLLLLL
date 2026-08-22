@@ -36,8 +36,17 @@ var addW=null;
 var addFrom='';
 function openAdd(from){
   /* Reopened by its own redraw and on the way back from the picker, so what
-     has been typed is only cleared when the sheet is genuinely new. */
-  var fresh = !(here().r==='form' && here().a==='add:'+(from||''));
+     has been typed is only cleared when the sheet is genuinely new.
+
+     `|| !addW || !wEdit` is the third road and it is not a special case: what
+     the route test is FOR is not throwing away what somebody typed, and there
+     is nothing to throw away when there is no draft. Arriving AT this route
+     with none -- a reload, a deep link, anything that puts the trail back
+     before the sheet -- made `here()` say `form:add:<parent>` already, so
+     this took the not-fresh branch, left both null, and wdFormHTML() threw
+     into vForm's catch: "that is no longer here", about a sheet nobody had
+     opened. Empty and broken were sharing a branch. */
+  var fresh = !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
   if(fresh){
