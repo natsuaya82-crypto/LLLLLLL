@@ -14,12 +14,18 @@
    is several files now and there is no copying left to do, so the gate moved
    here and widened to cover all of them.
 
+   Two passes. First `node --check` over every file, which is a real parser and
+   catches the thing regular expressions cannot -- a comment that closed one
+   line early, a brace that never shut. Then the rules below, which are what
+   ES5 means and which a parser has no opinion about.
+
    What it cannot see: anything that is ES5 syntax but a modern *runtime*
    feature reached through a string, e.g. el.closest(...) or Promise via a
    library. Syntax and the named builtins below are all this reads.
    --------------------------------------------------------------------------- */
 import fs from 'fs';
 import path from 'path';
+import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -109,6 +115,39 @@ const RULES = [
 ];
 
 const files = jsFiles(WWW);
+
+/* Does it parse at all, before asking whether it is ES5.
+
+   Everything below reads with regular expressions, and a regular expression
+   cannot see a comment that closed one line early -- so on 2026-08-11 a file
+   that was not JavaScript at all passed this check and passed dead-check, and
+   the first thing to notice was a browser check ninety seconds later, by which
+   point the failure was a blank screen with no line number on it.
+
+   `node --check` is a real parser and costs about two seconds for all of them.
+   It parses as a script rather than a module, which is what these are.
+
+   It answers a different question from the rules below and does not replace
+   them: it is happy with an arrow function, because an arrow function is
+   perfectly good JavaScript and is only wrong on a six-year-old iPhone. */
+let broke = 0;
+for (const f of files) {
+  try {
+    execFileSync(process.execPath, ['--check', f], { stdio: ['ignore', 'ignore', 'pipe'] });
+  } catch (e) {
+    broke++;
+    const said = String((e && e.stderr) || '').split('\n')
+      .filter((l) => l.trim() && !/^\s*at /.test(l) && !/^Node\.js v/.test(l))
+      .slice(0, 4).join('\n      ');
+    console.error(path.relative(path.join(HERE, '..'), f) + '  does not parse\n      ' + said);
+  }
+}
+if (broke) {
+  console.error('\n' + broke + ' file' + (broke === 1 ? '' : 's') + ' under www/ is not JavaScript.');
+  console.error('Nothing below was read: a file that does not parse makes every other answer noise.');
+  process.exit(1);
+}
+
 let bad = 0;
 for (const f of files) {
   const src = fs.readFileSync(f, 'utf8');

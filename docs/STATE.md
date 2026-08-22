@@ -356,10 +356,11 @@ Two of them were about capabilities that had been deleted.
 
 ### Offered and not yet answered
 
-10. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
-    line early on 2026-08-11; `es5` and `dead` both passed it because they read
-    with regular expressions, and the browser checks caught it ninety seconds
-    later. Two seconds would have.
+10. ~~**`node --check` over `www/*.js` inside `es5-check`.**~~ Done — 46 files
+    in 1.5 s, ahead of the rules, and nothing below runs if one of them does
+    not parse. Proved by putting the 2026-08-11 bug back: the comment on
+    `www/sync.js` closed one line early, and the check named the file and the
+    line and exited 1.
 11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
     grep cannot tell. `i18n-check` already renders 271 screens in 10 languages;
