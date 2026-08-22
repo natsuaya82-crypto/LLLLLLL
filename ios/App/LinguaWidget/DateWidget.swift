@@ -46,13 +46,29 @@ struct DayProvider: TimelineProvider {
 struct DayFace: View {
   let entry: DayEntry
 
+  /// How wide a number is when set as a line, in box units -- its signs'
+  /// advances added up. Not their count: a line of letters is each letter's
+  /// own width, and "11" is narrow where "88" is not.
+  private func boxWidth(_ n: Int) -> Double {
+    guard let num = entry.num else { return Double(decimalPlaces(n).count) * 800 }
+    return num.width(n)
+  }
+
   var body: some View {
     GeometryReader { geo in
       let side = min(geo.size.width, geo.size.height)
       let c = Calendar.current.dateComponents([.day, .month], from: entry.date)
+      /* Divided by how many signs the number takes, and capped.
+         Without it a day of the month is one size whatever base it is written
+         in, and 23 in base two is 10111 -- five signs at 0.44 of the widget is
+         three times its width, drawn straight off both edges. A picture is the
+         only thing that says so; nothing throws. */
+      let dv = c.day ?? 1, mv = c.month ?? 1
+      let dEm = min(side * 0.44, side * 0.86 * 800 / CGFloat(boxWidth(dv)))
+      let mEm = min(side * 0.17, side * 0.50 * 800 / CGFloat(boxWidth(mv)))
       VStack(spacing: side * 0.04) {
-        NumberView(n: c.day ?? 1, num: entry.num, em: side * 0.44)
-        NumberView(n: c.month ?? 1, num: entry.num, em: side * 0.17)
+        NumberView(n: dv, num: entry.num, em: dEm)
+        NumberView(n: mv, num: entry.num, em: mEm)
           .opacity(0.55)
       }
       .frame(width: geo.size.width, height: geo.size.height)

@@ -66,17 +66,25 @@ struct ClockFace: View {
   /// two signs it falls back to the quarters, which is the ordinary minimal
   /// watch face and survives any base.
   private var hours: [Int] {
-    let widest = (1...12).map { places($0).count }.max() ?? 1
-    return widest <= 2 ? Array(1...12) : [12, 3, 6, 9]
+    /* Two signs, and two signs' worth of room. BOTH, because either alone
+       lets the wrong face through: counting in two makes 12 into "1100",
+       four signs of which two are a bare stroke, so it slips under a width
+       test and comes out as twelve unreadable smudges. Many signs is
+       unreadable however narrow they are. */
+    let most = (1...12).map { places($0).count }.max() ?? 1
+    let widest = (1...12).map { boxWidth($0) }.max() ?? 800
+    return (most <= 2 && widest <= 1700) ? Array(1...12) : [12, 3, 6, 9]
   }
 
   private func places(_ n: Int) -> [Int] {
-    guard let num = entry.num else {
-      var left = n, out: [Int] = []
-      while left > 0 { out.append(left % 10); left /= 10 }
-      return out.isEmpty ? [0] : out
-    }
+    guard let num = entry.num else { return decimalPlaces(n) }
     return num.places(n)
+  }
+  /// How wide this number is when set as a line, in box units. With no file
+  /// every sign is a roman one and a roman one takes a square.
+  private func boxWidth(_ n: Int) -> Double {
+    guard let num = entry.num else { return Double(decimalPlaces(n).count) * 800 }
+    return num.width(n)
   }
 
   var body: some View {
@@ -84,11 +92,28 @@ struct ClockFace: View {
       let side = min(geo.size.width, geo.size.height)
       let r = side / 2
       let centre = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
-      /* One em for a numeral. Narrower when there are twelve of them and the
-         base makes each two signs wide, because two-wide numerals at twelve
-         positions is the case that touches. */
-      let wide = hours.map { places($0).count }.max() ?? 1
-      let em = side * (hours.count > 4 ? (wide > 1 ? 0.115 : 0.145) : 0.19)
+      /* How big one sign is, and it is decided by the WIDEST numeral on the
+         face rather than by how many numerals there are.
+         The first version of this scaled by the count alone -- twelve small,
+         four large -- and it was wrong in a way only a picture showed: in base
+         two the face falls back to four numerals and every one of them is
+         still four signs long, so "1100" was drawn 108 points wide on a face
+         142 points across. Fewer numerals is not narrower numerals.
+         And it is the numeral's WIDTH in box units, not its number of signs:
+         a line of letters is each letter's own advance, so "11" of two narrow
+         strokes is nowhere near as wide as "88" of two full ones. Asking
+         width() is asking the app's inkAdv(), through the file.
+         So: work out how much room one numeral has on the ring, divide by the
+         widest numeral's width, and cap it so a face of narrow signs does not
+         grow silly. Every numeral is then the same size as every
+         other, which is what a clock face is.
+         The ring is estimated at 0.78r for the spacing sum and then set
+         properly below -- em and ring each want the other, and this is the
+         cheaper way round. */
+      let n = hours.count
+      let widest = hours.map { boxWidth($0) }.max() ?? 800
+      let room = 2 * (r * 0.78) * sin(.pi / Double(n))
+      let em = min(side * 0.19, room * 0.82 * 800 / CGFloat(widest))
       let ring = r - em * 0.85
 
       ZStack {
