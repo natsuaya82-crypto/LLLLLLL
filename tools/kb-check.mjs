@@ -64,7 +64,7 @@ const r = await pg.evaluate(({ s }) => {
   });
 
   /* ---- 1. the number takes its row and leaves the others alone --------- */
-  kbDelRow(1);
+  kbHeadRow(1); kbCut();
   var now = rows();
   out.rowWent = now.length === was.length - 1;
   out.rowOnly = now.join('|') === was.slice(0, 1).concat(was.slice(2)).join('|');
@@ -80,9 +80,9 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 3. several deletes walk back through them, in order ------------- */
   fresh();
   var s0 = rows();
-  kbDelRow(0); var s1 = rows();
-  kbDelRow(0); var s2 = rows();
-  kbDelRow(0);
+  kbHeadRow(0); kbCut(); var s1 = rows();
+  kbHeadRow(0); kbCut(); var s2 = rows();
+  kbHeadRow(0); kbCut();
   kbUndo(); out.back1 = rows().join('|') === s2.join('|');
   kbUndo(); out.back2 = rows().join('|') === s1.join('|');
   kbUndo(); out.back3 = rows().join('|') === s0.join('|');
@@ -90,7 +90,7 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 4. the letter takes ONE key out of every row that reaches it ---- */
   fresh();
   var w0 = widths();
-  kbDelCol(0);
+  kbHeadCol(0); kbCut();
   var w1 = widths();
   out.colEvery = w0.length === w1.length;
   out.colOne = w0.length === w1.length && w0.every(function (w, n){
@@ -107,7 +107,7 @@ const r = await pg.evaluate(({ s }) => {
   if (ri >= 0){
     for (i = 0; i < ki; i++) at += (rr[ri][i].w || 1);
     var wasW = rr[ri][ki].w, n = rr[ri].length;
-    kbDelCol(Math.floor(at));
+    kbHeadCol(Math.floor(at)); kbCut();
     var row = kbLayer().rows[ri];
     out.stillThere = row.length === n;
     out.narrowed = row.length === n && row[ki].k === 'sp' && row[ki].w === wasW - 1;
@@ -119,7 +119,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var lts = LETTERS.length, wds = WORDS.length, brds = kbBoards().length,
       faces = KB.kbs[kbShow - 1].lay.length;
-  kbDelRow(0); kbDelCol(1); kbUndo();
+  kbHeadRow(0); kbCut(); kbHeadCol(1); kbCut(); kbUndo();
   out.letters = LETTERS.length === lts;
   out.words = WORDS.length === wds;
   out.boards = kbBoards().length === brds;
@@ -258,6 +258,68 @@ const r = await pg.evaluate(({ s }) => {
   NAV = [{ r: 'kb', a: '' }]; render();
   out.romOnList = vKb().indexOf('data-do="setKbRom"') >= 0;
 
+  /* ---- 6f. selecting, and the buttons that act on what is selected -----
+     「今即削除なの危なすぎだろ…行とか列選択したらそこが光ってそこを作業して
+     るってわかるようになってる削除は削除ボタン寄せは寄せボタンでしょ」 */
+  fresh();
+  var rowsBefore = kbLayer().rows.length;
+  kbHeadRow(1);
+  var lit = vKb();
+  out.selKeeps = kbLayer().rows.length === rowsBefore;   /* pressing it does NOT delete */
+  out.selLit = /class="kbrow sel"/.test(lit);
+  out.selHead = /class="kbn on"/.test(lit);
+  out.cutUp = !/kbCut[^>]*disabled/.test(lit);
+  out.alUp = !/kbAlign[^>]*disabled/.test(lit);
+  /* pressing the same head again puts it down */
+  kbHeadRow(1);
+  var down = vKb();
+  out.selOff = !/class="kbrow sel"/.test(down);
+  out.cutDown = /kbCut[^>]*disabled/.test(down);
+  out.alDown = /kbAlign[^>]*disabled/.test(down);
+  /* a COLUMN lights up and can be cut, but has no slack to align */
+  kbHeadCol(2);
+  var colLit = vKb();
+  out.colLit = /class="kbcl on"/.test(colLit) && /kbk[^"]*sel/.test(colLit);
+  out.colCut = !/kbCut[^>]*disabled/.test(colLit);
+  out.colNoAl = /kbAlign[^>]*disabled/.test(colLit);
+
+  /* ---- 6g. where a row's slack goes, in gap keys ----------------------- */
+  fresh();
+  kbEdit().lay[0].rows[0] = [kbKey('lt','a'), kbKey('lt','b'), kbKey('lt','c')];
+  kbLay = 0; saveKb(); render();
+  function ends(){
+    var rw = kbLayer().rows[0];
+    return [rw[0].k === 'gap' ? kbU(rw[0].w) : 0,
+            rw[rw.length-1].k === 'gap' ? kbU(rw[rw.length-1].w) : 0,
+            rw.filter(function (k){ return k.k !== 'gap'; }).length,
+            kbUsed(rw)];
+  }
+  kbHeadRow(0);
+  kbAlign('l'); var L = ends();
+  kbAlign('c'); var C = ends();
+  kbAlign('r'); var R = ends();
+  out.alLeft  = L[0] === 0 && L[1] > 0;
+  out.alRight = R[0] > 0 && R[1] === 0;
+  out.alCentre = C[0] > 0 && C[1] > 0 && Math.abs(C[0] - C[1]) <= 1;
+  /* the keys themselves never move, and the row comes to the full width --
+     which is what makes the phone agree with this drawing */
+  out.alKeys = L[2] === 3 && C[2] === 3 && R[2] === 3;
+  out.alFull = L[3] === KB_COLS && C[3] === KB_COLS && R[3] === KB_COLS;
+  /* aligning twice does not stack up gaps */
+  kbAlign('c'); kbAlign('c');
+  out.alOnce = kbUsed(kbLayer().rows[0]) === KB_COLS;
+  /* and it can be taken back */
+  var nowA = JSON.stringify(kbLayer().rows[0]);
+  kbUndo();
+  out.alBack = JSON.stringify(kbLayer().rows[0]) !== nowA;
+  /* a gap somebody put in the MIDDLE of a row is not this button's business */
+  fresh();
+  kbEdit().lay[0].rows[0] = [kbKey('lt','a'), kbGap(2), kbKey('lt','b')];
+  kbLay = 0; saveKb(); render();
+  kbHeadRow(0); kbAlign('l');
+  out.midGap = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; })
+    .some(function (k){ return (k.w || 1) === 2; });
+
   /* ---- 7. a width can be CARRIED onto the sheet ------------------------
      The tap-then-tap way is kbSetNew()/kbPick() and is walked by press. This
      is the other way and it is touches: a tile picked up and put down on a
@@ -319,7 +381,7 @@ const r = await pg.evaluate(({ s }) => {
   var first = vKb();
   out.hasUndo = first.indexOf('data-do="kbUndo"') >= 0;
   out.undoOffAtFirst = /kbUndo[^>]*disabled/.test(first);
-  kbDelRow(0);
+  kbHeadRow(0); kbCut();
   out.undoOnAfter = !/kbUndo[^>]*disabled/.test(vKb());
   kbUndo();
   out.redoOnAfterUndo = !/kbRedo[^>]*disabled/.test(vKb());
@@ -330,7 +392,7 @@ await br.close();
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
-console.log('a row, a column, and the step back\n');
+console.log('what is selected, what acts on it, and the step back\n');
 say(r.rows > 3, 'the board has ' + r.rows + ' rows to work on');
 say(r.cols === 20, 'the sheet is ' + r.cols + ' columns wide, which is ten keys -- a column is half a key');
 say(r.halves, 'and one row is inset by half a key, which is what the columns count in');
@@ -372,6 +434,21 @@ say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at al
 say(r.plusLayNoop, 'and asking for one anyway does nothing');
 say(r.romOnEditor && r.romOnFree && r.romOnList,
     'the letter-on-each-key switch is on the editor, the free face and the list');
+say(r.selKeeps, 'pressing a row number does NOT delete the row any more');
+say(r.selLit && r.selHead, 'it lights the row up and its number with it');
+say(r.cutUp && r.alUp, 'and the bin and the three alignments come up');
+say(r.selOff && r.cutDown && r.alDown, 'pressing it again puts the selection and the buttons down');
+say(r.colLit, 'a column lights up too, header and the keys standing in it');
+say(r.colCut, 'and can be taken away');
+say(r.colNoAl, 'but has no slack across it, so the alignments stay down');
+say(r.alLeft, 'aligning left puts the whole slack after the keys');
+say(r.alRight, 'aligning right puts it before them');
+say(r.alCentre, 'and centring splits it, ' + r.alCentre + ' -- evenly, to the half column');
+say(r.alKeys, 'no key moves, whichever of the three is pressed');
+say(r.alFull, 'and the row comes to the full width, so the phone draws what this does');
+say(r.alOnce, 'aligning twice does not stack a second pair of gaps on the first');
+say(r.alBack, 'and the step back undoes it');
+say(r.midGap, 'a gap somebody put between two keys is left alone');
 say(r.sawKey, 'the sheet has a key to carry a width onto');
 say(r.carried, 'carrying a width onto a key puts one more key in that row');
 say(r.carriedAfter, 'and it is the width that was carried, in after the key it was dropped on');
@@ -386,6 +463,9 @@ say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
-console.log('\nkb: a row goes when its number is pressed, a column when its letter is,\n' +
-  'a key wider than the column is narrowed rather than removed, and every one of\n' +
-  'those can be taken back and put again -- with nothing outside the layout moving.');
+console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
+  'the bin takes it away and the three alignments say where a row is short from,\n' +
+  'written in gap keys so the phone draws what this drawing does. A key wider than\n' +
+  'the column is narrowed rather than removed, a page arrives with the way there and\n' +
+  'the way back on it, and every one of those can be taken back and put again --\n' +
+  'with nothing outside the layout moving.');

@@ -273,7 +273,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbcl{font-size:.55rem;line-height:1;color:var(--txm);opacity:.5;text-align:center;
       min-height:44px;background:none;border:0;padding:0;font-family:inherit;
       display:flex;align-items:center;justify-content:center}
-.kbcl:active{color:var(--gold);opacity:1}
+.kbcl:active, .kbcl.on{color:var(--gold);opacity:1;font-weight:700}
 /* The row's number, in the margin to the left of the keys -- absolute, so it
    is not a cell: kbReadRows() walks the row's children and this one carries no
    data-r, and it must not take a column from the grid. */
@@ -281,7 +281,13 @@ canvas.pkc{width:34px;height:34px;display:block}
      align-items:center;justify-content:flex-end;font-size:.6rem;line-height:1;
      color:var(--txm);opacity:.55;background:none;border:0;padding:0;
      font-family:inherit}
-.kbn:active{color:var(--gold);opacity:1}
+.kbn:active, .kbn.on{color:var(--gold);opacity:1;font-weight:700}
+/* What is being worked on, lit so it is clear which row or which column the
+   buttons above are about. 「行とか列選択したらそこが光ってそこを作業してる
+   ってわかるようになってる」 */
+.kb.kbsheet .kbrow.sel .kbk{border-color:var(--goldln);background:var(--goldsf)}
+.kb.kbsheet .kbrow.sel .kbk.cell{background:var(--goldsf)}
+.kb.kbsheet .kbk.sel{border-color:var(--goldln);background:var(--goldsf)}
 /* A cell of the sheet with no key on it. Not a key and not pressable -- it is
    the part of the row that is not filled, drawn so it can be seen to be
    there. It is a .kbk so that a key being carried can be dropped on it. */
@@ -334,10 +340,14 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* Back a step and forward again, over the sheet. No box round either of them
    -- what is there is the mark, in the colour everything pressable is.
    「角丸きんし」 Down when there is nowhere to go. */
-.kbtool{display:flex;gap:4px;justify-content:flex-end;margin:2px 0 2px}
+.kbtool{display:flex;gap:2px;align-items:center;margin:2px 0 2px}
+/* the two steps at one end, what acts on the selection at the other */
+.kbtgap{flex:1 1 auto}
 .kbtb{min-width:44px;min-height:44px;background:none;border:0;padding:0;
       color:var(--gold);display:flex;align-items:center;justify-content:center}
-.kbtb[disabled]{color:var(--txm);opacity:.35}
+.kbtb[disabled]{color:var(--txm);opacity:.28}
+.kbtb.bad{color:var(--bad)}
+.kbtb.bad[disabled]{color:var(--txm)}
 .kbadd{display:flex;gap:8px;margin-top:12px}
 /* THE KEY, on the sheet that edits it: the middle is what it types and the
    four edges are what it flicks to, which is where they are on the key

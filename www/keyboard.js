@@ -817,8 +817,9 @@ function kbCols(rows){
 function kbHdrHTML(cols){
   var out='', i=0, n=0;
   while(i<cols){
-    out+='<button class="kbcl" style="grid-column:span '+Math.min(2, cols-i)+'"'+
-      DO('kbDelCol', [n]) + ' aria-label="'+esc(t('kb.col.del'))+'">'+
+    out+='<button class="kbcl'+(kbHeadIs('c', n)? ' on':'')+'" '+
+      'style="grid-column:span '+Math.min(2, cols-i)+'"'+
+      DO('kbHeadCol', [n]) + ' aria-label="'+esc(t('kb.col.sel'))+'">'+
       kbCol(n)+'</button>';
     i+=2; n++;
   }
@@ -832,8 +833,78 @@ function kbHdrHTML(cols){
    step back, not a dialog. A dialog on every row would make building a
    keyboard a conversation. */
 function kbNHTML(ri){
-  return '<button class="kbn"' + DO('kbDelRow', [ri]) +
-    ' aria-label="'+esc(t('kb.row.del'))+'">'+(ri+1)+'</button>';
+  return '<button class="kbn'+(kbHeadIs('r', ri)? ' on':'')+'"' + DO('kbHeadRow', [ri]) +
+    ' aria-label="'+esc(t('kb.row.sel'))+'">'+(ri+1)+'</button>';
+}
+/* ---- what is being worked on ------------------------------------------
+   Pressing a row's number or a column's letter used to take that row or that
+   column away on the spot. 「今即削除なの危なすぎだろ」 It does what the same
+   press does on a spreadsheet now: it SELECTS, the thing selected lights up
+   so it is clear what is being worked on, and the buttons over the sheet act
+   on it. 「削除は削除ボタン寄せは寄せボタンでしょ」
+
+   Where you are standing rather than anything the language has, so
+   viewReset() drops it. Pressing the same head again puts it down. */
+var KBH=null;
+function kbHeadIs(k, i){ return !!KBH && KBH.k===k && KBH.i===i; }
+function kbHeadRow(ri){
+  ri=parseInt(ri, 10)||0;
+  KBH=kbHeadIs('r', ri)? null : {k:'r', i:ri};
+  kbSel=null; render();
+}
+function kbHeadCol(ci){
+  ci=parseInt(ci, 10)||0;
+  KBH=kbHeadIs('c', ci)? null : {k:'c', i:ci};
+  kbSel=null; render();
+}
+/* And the one button that takes it away, whichever of the two it is. */
+function kbCut(){
+  if(!KBH) return;
+  var h=KBH;
+  KBH=null;
+  if(h.k==='r') kbDelRow(h.i); else kbDelCol(h.i);
+}
+/* ---- where the slack in a row goes -------------------------------------
+   「エクセルみたいに中央寄せとかのボタン置けば？行とか列選択して中央寄せ
+   すればそこだけ中央寄せになるとか。」
+
+   It is written in gap keys, which this keyboard has had since it had a
+   QWERTY: the third row is inset by a gap of half a key at each end. A row
+   that comes to less than the sheet is short by a whole number of half
+   columns, and putting that number into gaps at one end, both ends or the
+   other end IS left, centre and right.
+
+   Nothing new is stored for it, and that is not only tidiness. A row is an
+   ARRAY of keys, and JSON.stringify drops anything on an array that is not an
+   index -- so an 'al' property would vanish on the way into localStorage and
+   out of the undo stack, silently, and the row would come back the way it
+   was. And gaps already travel to the phone: the extension divides a row's
+   width by the keys w and a gap is a key, so a row aligned here is a row
+   aligned there, which the drawing alone would not have been.
+
+   Only the gaps at the ENDS are touched. A gap in the middle of a row is a
+   space somebody put between two keys and is none of this function's
+   business. */
+function kbGapW(half){ return half/2; }
+function kbAlign(how){
+  var b=kbEdit(), rows, row, i, tot, rem, lead, tail;
+  if(!b || !KBH || KBH.k!=='r') return;
+  rows=kbLayer().rows;
+  row=rows[KBH.i];
+  if(!row) return;
+  /* off with the old ends */
+  while(row.length && row[0].k==='gap') row.shift();
+  while(row.length && row[row.length-1].k==='gap') row.pop();
+  if(!row.length) return;
+  tot=kbUsed(row);
+  rem=kbCols(rows)-tot;
+  if(rem>0){
+    lead = how==='r'? rem : (how==='c'? Math.floor(rem/2) : 0);
+    tail = rem-lead;
+    if(tail>0) row.push(kbGap(kbGapW(tail)));
+    if(lead>0) row.unshift(kbGap(kbGapW(lead)));
+  }
+  saveKb(); render();
 }
 /* The empty part of a short row, split so the keys sit in the middle of the
    sheet rather than piled at its left. 「揃えて欲しい」
@@ -857,7 +928,8 @@ function kbHTML(sel, ro){
        somebody says about the key they are looking at. The read-only board is
        the keyboard itself and wears neither number nor letter -- a row number
        down the side of the thing on your phone is the editor leaking into it. */
-    out+='<div class="kbrow">'+(ro? '' : kbNHTML(ri));
+    out+='<div class="kbrow'+((!ro && kbHeadIs('r', ri))? ' sel':'')+'">'+
+      (ro? '' : kbNHTML(ri));
     at=0;
     /* the empty half of a short row, before the keys */
     if(!ro){
@@ -874,7 +946,9 @@ function kbHTML(sel, ro){
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
-        ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'');
+        ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
+        /* a key standing in the column being worked on */
+        ((!ro && KBH && KBH.k==='c' && at<KBH.i*2+2 && at+kbU(key.w)>KBH.i*2)? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
       at+=kbU(key.w);
@@ -1420,7 +1494,7 @@ function kbDelRow(ri){
   ri=parseInt(ri, 10)||0;
   if(ri<0 || ri>=rows.length) return;
   rows.splice(ri, 1);
-  kbSel=null; saveKb(); render();
+  kbSel=null; KBH=null; saveKb(); render();
 }
 /* A column, in whole keys, taken out of every row -- and a key that is wider
    than one column loses a column and stays. That is the half of this the word
@@ -1446,7 +1520,7 @@ function kbDelCol(ci){
     }
     rows[i]=out;
   }
-  kbSel=null; saveKb(); render();
+  kbSel=null; KBH=null; saveKb(); render();
 }
 /* ---- the step back, and the step forward again -------------------------
    Where the editor has been, as whole layouts. It is in memory and in memory
@@ -1508,15 +1582,32 @@ function kbStep(fwd){
 }
 function kbUndo(){ kbStep(false); }
 function kbRedo(){ kbStep(true); }
-/* And the two of them, over the sheet, where the toolbar of anything that has
-   an undo puts them. Down when there is nowhere to go: a button that can be
-   pressed and does nothing is the app saying it did something. */
+/* The buttons over the sheet. The two steps are always there and are down
+   when there is nowhere to go; the three that say where a row's slack goes
+   and the one that takes a thing away are down until something is selected,
+   because that is what they act ON. A button that can be pressed and does
+   nothing is the app saying it did something.
+
+   Aligning is a ROW's question and only a row's: a column has no slack across
+   it to put anywhere. Selecting a column leaves those three down and the bin
+   up, which is the whole of what a column selection is for. */
+function kbTb(name, icon, label, off){
+  return '<button class="kbtb'+(name==='kbCut'? ' bad':'')+'"' + DO(name) +
+    (off? ' disabled' : '') + ' aria-label="'+esc(label)+'">'+icon+'</button>';
+}
 function kbToolHTML(){
+  var row=!!KBH && KBH.k==='r';
   return '<div class="kbtool">'+
-    '<button class="kbtb"' + DO('kbUndo') + (KBU.u.length? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.undo'))+'">'+ICON_UNDO+'</button>'+
-    '<button class="kbtb"' + DO('kbRedo') + (KBU.r.length? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.redo'))+'">'+ICON_REDO+'</button>'+
+    kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
+    kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
+    '<span class="kbtgap"></span>'+
+    '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
+      ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
+    '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
+      ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
+    '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
+      ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>'+
+    kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH)+
     '</div>';
 }
 /* Making another is choosing a pattern again, on a screen of its own rather

@@ -552,6 +552,26 @@ var ICON_UNDO='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="
 var ICON_REDO='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M20 8h-9a6 6 0 0 0 0 12h5"/><path d="M16 4l4 4-4 4"/></svg>';
+/* Where the slack in a row goes: to the right of the keys, to both sides of
+   them, or to their left. Three bars in a box, the way every program that has
+   ever had these three has drawn them. */
+var ICON_ALL='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M4 6h16"/><path d="M4 12h9"/><path d="M4 18h13"/></svg>';
+var ICON_ALC='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M4 6h16"/><path d="M7.5 12h9"/><path d="M5.5 18h13"/></svg>';
+var ICON_ALR='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'+
+  '<path d="M4 6h16"/><path d="M11 12h9"/><path d="M7 18h13"/></svg>';
+/* And taking the selected row or column away. A bin rather than a ⊖: this one
+   is not a mark on the thing it removes, it is a button in a row of buttons,
+   and it needs to say which of them is the dangerous one. */
+var ICON_BIN='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 7h16"/><path d="M9 7V4.6h6V7"/>'+
+  '<path d="M6.5 7l.9 12.2a1.4 1.4 0 0 0 1.4 1.2h6.4a1.4 1.4 0 0 0 1.4-1.2L17.5 7"/>'+
+  '<path d="M10 11v6"/><path d="M14 11v6"/></svg>';
 /* The two tools the photograph editor has, as marks rather than words: a
    round button with an icon in it is what every phone puts over a picture,
    and a pill with a word in it is what a settings screen puts under one. */
