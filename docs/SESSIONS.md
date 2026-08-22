@@ -19,7 +19,10 @@
 2. www/index.html は今 <誰> が持っている。持っていないなら
    CSS を一行も足さない。
 
-3. 最初にやること:
+3. 最初にやること（**自動でやられる**。`.claude/hooks/session-start.sh` が
+   セッション開始時に走って、fetch と、他のブランチの状況と、いま
+   `www/index.html` を誰が触っているかを画面に出す。出ていなければ
+   フックが動いていないので、そう言うこと）:
      git fetch --all --prune
      CLAUDE.md と docs/STATE.md と担当領域の docs/ を読む
      git log --oneline --all -40
@@ -67,6 +70,29 @@ Hand this to every session, whole. It is all a session needs in order not to
 collide with the others, and it is short on purpose.
 
 「だからこうなるから最初から決めろって言ってんのに」
+
+## セッション開始で自動的に起きること
+
+`.claude/hooks/session-start.sh`。まっさらなクローンで始まるセッションが
+「最初にやること」を、人の記憶に頼らずやる。三つ:
+
+1. **`git config core.hooksPath tools`** ── `tools/pre-commit` を入れる。
+   これはローカルの git 設定なのでクローンに付いてこない。打たないセッ
+   ションは速い検査を一度も走らせない。長いあいだ誰も打っていなかった。
+2. **`npm install`** ── 落ちてもセッションは止まらない。検査はグローバルの
+   playwright に落ちる。
+3. **誰が木の中に居るか** ── `origin/master` の SHA、master より進んでいる
+   ブランチ、そして **`www/index.html` を触っているブランチ**。規則4を
+   人が思い出す前に画面に出す。
+
+書いた直後にこれが11コミット拾った。解散を伝えた二つのセッションが、その
+あとも進めていた。数秒。
+
+**画面にこれが出ていなければ、フックが動いていない。** そう報告すること。
+黙って自分で `git fetch` して続けるのは、次のセッションが同じ穴に落ちる
+という意味なので。
+
+---
 
 ## Who is who
 

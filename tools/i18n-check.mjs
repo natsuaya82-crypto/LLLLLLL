@@ -281,6 +281,7 @@ const R = await pg.evaluate(() => {
                 langs: UI_LANGS.slice(), walked: [], mirrored: 0 };
   const en = LANG.en.str;
   const enK = Object.keys(en);
+  out.enKeys = enK.slice();
   const VARIANT = /\.(1|few)$/;
 
   UI_LANGS.forEach(c => {
@@ -622,6 +623,68 @@ const R = await pg.evaluate(() => {
 await br.close();
 srv.close();
 
+/* ---- 10. a key nothing asks for ------------------------------------------
+   The other direction, and until now there was only one. Check 1 says the ten
+   languages answer the same key set -- en is the source of truth and the other
+   nine must match it exactly. Nothing said anything about a key en itself has
+   that no screen ever asks for. That is the same shape act-check holds on
+   act-map.js ("an entry no screen ever names"), and i18n had half of it.
+
+   It matters because a dead key is not one string, it is ten: it was written
+   once and then translated nine times, and it goes on being carried through
+   every rebuild of the key set looking exactly like a live one. `ai.*` was
+   six keys and sixty strings -- the advisor went out with Studio and its
+   translations stayed.
+
+   Read off the source, not off the page: a key is asked for by a screen, and
+   the page cannot see which of its strings were never reached.
+
+   A key can be asked for two ways and both count:
+     t('word.x')            -- named outright, anywhere in a source file
+     t('word.' + kind)      -- built, so every key under that prefix is live
+   The second is why this cannot be a plain "is the literal there" scan:
+   ipa.p.bilabial is never written down anywhere and is asked for on every
+   render of the IPA chart. */
+function checkUnused(enKeys){
+  if (!enKeys || !enKeys.length) return;
+  const files = ['index.html'].concat(
+    fs.readdirSync(ROOT).filter((f) => f.endsWith('.js')).map((f) => path.join(ROOT, f)));
+  let src = '';
+  for (const f of files) src += fs.readFileSync(path.isAbsolute(f) ? f : path.join(ROOT, f), 'utf8');
+
+  /* every prefix that is BUILT rather than written: t('ipa.p.' + place) */
+  const prefixes = [];
+  for (const m of src.matchAll(/\bt\s*\(\s*['"]([A-Za-z][\w.]*\.)['"]\s*\+/g)) prefixes.push(m[1]);
+
+  const named = new Set();
+  for (const m of src.matchAll(/['"]([A-Za-z][\w.]*)['"]/g)) named.add(m[1]);
+
+  /* A key ending .1 or .few is a plural form, and nothing names it: tn('x', n)
+     picks the form at run time off the number. So it is alive exactly when its
+     base is. Check 1 above already knows this shape; the first version of THIS
+     one did not, and called fmr.with.1 dead while wordsheet.js:104 was saying
+     tn('fmr.with', made) two lines from where the toast appears. Ten of the
+     ninety-eight were that. */
+  const VAR = /\.(1|few)$/;
+  const asked = (k) => {
+    if (named.has(k)) return true;
+    for (const p of prefixes) if (k.indexOf(p) === 0) return true;
+    return false;
+  };
+  const dead = enKeys.filter((k) => {
+    if (asked(k)) return false;
+    if (VAR.test(k) && asked(k.replace(VAR, ''))) return false;
+    return true;
+  }).sort();
+
+  for (const k of dead)
+    fail('unused', 'en defines ' + k + ' and no screen asks for it — ' +
+      'it was translated into all ' + R.langs.length + ' languages and every ' +
+      'one of those is dead too. Delete it from all of them, or say who says it.');
+  return dead.length;
+}
+const deadKeys = checkUnused(R.enKeys);
+
 /* ---- report -------------------------------------------------------------- */
 checkSource();
 
@@ -653,4 +716,5 @@ if (fails.length){
   if (fails.length > 60) console.log('  ... and ' + (fails.length - 60) + ' more');
   process.exit(1);
 }
-console.log('\nall nine checks pass in all ' + R.langs.length + ' languages.');
+console.log('\nall ten checks pass in all ' + R.langs.length + ' languages: and every key\n' +
+  'en defines is one a screen asks for, outright or by a prefix it builds.');
