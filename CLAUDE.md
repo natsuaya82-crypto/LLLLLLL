@@ -79,7 +79,9 @@ for again.
 row class rather than letting the tag decide -- a `<button>` takes the
 browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
 out 49px as one and 57px as the other. No `margin-top` on a row to make a
-group either: that is one row taller than its neighbours.
+group either: that is one row taller than its neighbours. **`press` holds the
+first half** -- siblings of one class rendering at two type sizes -- and 1484
+lists are measured on every run. The `margin-top` half is prose still.
 → `docs/FEATURE_RULES.md`
 
 **Explaining.** No explanatory text in the app. A screen shows what it is and
@@ -357,11 +359,22 @@ in its opening comment is reported as a duplicate of the line it documents.
 
 `press-check` is the other half and not the same statement: it dispatches a real
 click on every button of every screen and fails if one throws or empties `#app`.
-It also measures: 44pt on both sides of anything a thumb has to hit. A key of a
+It also measures two things while it is there, both for the same reason --
+the viewport is phone-sized and every screen is already standing in front of
+it. **44pt** on both sides of anything a thumb has to hit. A key of a
 keyboard is the one exception and is measured on its height alone — ten letters
 in a row is what QWERTY *is*, and ten of anything across a phone is 35pt on
 every phone ever made, Apple's own keyboard included. Widening that floor to 44
 would not make a keyboard safer to type on; it would forbid a keyboard.
+**And that rows in one list are one height** -- siblings under one parent,
+wearing one class, coming out at two heights AND two computed type sizes.
+That last clause is the check: the first version asked "different tag"
+instead, and watching it fail showed the tag was never the cause. A different
+tag is a thing that is often true when the cause is present, which is what a
+proxy is, and a check built on one gives the right answer for the wrong reason
+until the day it does not. What it asks now is the sentence the rule itself
+writes down. 1484 lists measured, none of them two heights.
+
 A name can resolve to a function that throws the moment it runs — `act-check`
 calls that button fine. Both fixtures and the half-done screen list live in
 `tools/fixture.mjs` so the two walk the same app; add a screen there, not to one
