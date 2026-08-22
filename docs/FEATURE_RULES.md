@@ -186,6 +186,56 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-22
+- Area: Names — a verb is allowed to be a family, and a chapter may not be
+  spelled two ways
+- Decision: Three rulings, made together because they are one question asked
+  three times.
+
+  **(1) A consistent verb family is a legitimate prefix and is not to be
+  broken up.** `save*` is exactly ten functions — `saveKb` `saveLetters`
+  `saveMe` `saveNote` `saveNotes` `savePosts` `saveSnd` `saveStg` `saveWld`
+  `saveWord` — and every one of them names what it saves. It stays as it is.
+  `del*` (`delNote`, `delWord`) stays for the same reason. Nobody is to
+  "fix" two members of a family into a chapter prefix and leave the other
+  eight; that is the tangle, not the untangling. **`docs/BACKLOG.md` was
+  wrong to list `savePosts` and `saveMe` beside `postsRead`** — those two are
+  not a `posts*`/`post*` collision, they are `save*`, and only `postsRead` is
+  the thing the entry was actually about. `postsRead` → `postRead`.
+
+  **(2) `gh*` in `glyph.js` is `ge*`'s and is renamed `geHint*`.** The ten
+  functions are the silent demo canvas inside the glyph editor — an arrow
+  replaying three points closing into a shape, and a before/after of the ○ /
+  fill / new-stroke buttons. It draws no text at all, which is why it is
+  right in ten languages. It is not grammar (`g*`) and it is not the editor
+  itself, so: `ghDemo` `ghDraw` `ghEase` `ghField` `ghInk` `ghMount` `ghPos`
+  `ghSeg` `ghShow` `ghTick` → `geHint*`. Its uppercase globals take `GE_`,
+  which `GE_MAXPTS` already established in the same file: `GHINT` `GHP`
+  `GHTAP` `GHCYC` `GHDCYC` `GHDEMO` → `GE_HINT` `GE_HINT_P` `GE_HINT_TAP`
+  `GE_HINT_CYC` `GE_HINT_DCYC` `GE_HINT_DEMO`.
+
+  **(3) `note*` in `notes.js` is the chapter spelled long, and goes to
+  `nt*`.** `noteRead` `noteCut` `noteHead` `noteBody` `noteAt` → `nt*`, and
+  `notesFound` → `ntFound`. `openNote` and `vNotes` are untouched — `open*`
+  and `v*` are named in CLAUDE.md — and `saveNote` `saveNotes` `delNote` are
+  untouched by (1).
+- Reason: the Names rule exists so that 500-odd globals in one namespace stay
+  findable, and a ten-member verb family is findable. CLAUDE.md's own prefix
+  list already admits one: `open*` is twenty functions and is a verb, not a
+  chapter. So a verb family is not an exception being invented here — it is
+  the rule as already written, said out loud. What the rule is actually
+  against is **one chapter under two names**, which is what `posts*`/`post*`
+  and `note*`/`nt*` are, and what `gh*` is a third form of: a prefix that
+  names no chapter at all.
+- Affected features: none. All three are renames; behaviour does not change,
+  and a rename that changes behaviour is not a rename.
+- Affected data: none. Nothing stored is named by any of these.
+- Affected docs: `docs/BACKLOG.md` — the "a rename is not a fix" entry is
+  corrected on the `savePosts`/`saveMe` half and struck as each part lands.
+- Implementation status: `wSetFil`/`wSetSort` → `wordsSetFil`/`wordsSetSort`
+  landed (yoo). The three above are assigned and not yet in.
+
+### Decision
+- Date: 2026-08-22
 - Area: Shape — a fifth banned thing, and row height
 - Decision: **No rounded box.** 「角丸やめろ」 Nothing new carries a corner
   radius, a border, or a filled panel — button, banner or notice. `.btn.ghost`
