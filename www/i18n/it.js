@@ -663,7 +663,6 @@ defLang('it', (function(){
       "ob.draw.later"    : "Disegnala più tardi",
       /* the writing system */
       "script.show"     : "Mostra",
-      "script.show.roman" : "Alfabeto latino",
       "script.show.own"   : "Le tue lettere",
       /* the letter editor */
       "glyph.circle"      : "Curvare",

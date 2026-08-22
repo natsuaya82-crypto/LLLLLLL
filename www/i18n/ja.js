@@ -579,7 +579,6 @@ defLang('ja', (function(){
       'ob.draw.later'   : "あとで描く",
       /* the writing system */
       'script.show'     : '表示',
-      'script.show.roman' : "ローマ字",
       'script.show.own'   : "自分の字",
       /* the letter editor */
       'glyph.circle'      : "曲線",

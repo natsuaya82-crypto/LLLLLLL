@@ -670,7 +670,6 @@ defLang('pt', (function(){
       "ob.draw.later"     : "Desenhar depois",
       /* the writing system */
       "script.show"     : "Mostrar",
-      "script.show.roman" : "Alfabeto latino",
       "script.show.own"   : "As suas letras",
       /* the letter editor */
       "glyph.circle"      : "Curvar",

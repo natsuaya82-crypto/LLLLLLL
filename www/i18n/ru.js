@@ -669,7 +669,6 @@ defLang('ru', (function(){
       "ob.draw.later"     : "Нарисовать позже",
       /* the writing system */
       "script.show"     : "Показывать",
-      "script.show.roman" : "Латиницей",
       "script.show.own"   : "Своими буквами",
       /* the letter editor */
       "glyph.circle"      : "Дуга",

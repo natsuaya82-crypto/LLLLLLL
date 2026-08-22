@@ -841,7 +841,6 @@ defLang('ko', (function(){
       "ob.draw.later"   : "나중에 그리기",
       /* the writing system */
       "script.show"     : "표시",
-      "script.show.roman" : "로마자",
       "script.show.own"   : "내 글자",
       /* the letter editor */
       "glyph.circle"      : "원",

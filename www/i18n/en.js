@@ -568,7 +568,6 @@ defLang('en', (function(){
       'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.show'     : 'Show',
-      'script.show.roman' : "Roman",
       'script.show.own'   : "Your letters",
       /* the letter editor */
       'glyph.circle'      : "Round",

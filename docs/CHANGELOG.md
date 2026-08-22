@@ -15,6 +15,34 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The base moves to the stage that asks for it, and the display is a switch — OWNER DECISION
+
+Two things off the writing screen.
+
+**The base.** 10 / 12 / 16 / 20 sat under the kind of writing and the
+direction, and it is neither of those. What it decides is how many words the
+counting stage asks for and how many digits the alphabet holds — so it is at
+the head of the counting stage now, above the words it decides the number of.
+「文法の数え方のページに進数入れればいいのでは？」
+
+**Roman or your own letters** was two buttons sharing a rule, which is the
+shape this app uses for choosing one of several. There are not several: it is
+one thing that is on or off, so it is a switch. Off is roman, which needs no
+button of its own to say so. `script.show.roman` is gone from all ten
+languages with the button that showed it.
+
+**Data.** Nothing changes. `STG.base` is read and written exactly as before,
+from a different screen; `SET.myfont` likewise.
+
+**Deletion.** Nothing is deleted.
+
+**Tested.** `npm test` green. Buttons pressed fell from 8486 to 8469, which is
+this change and nothing else: every render of the writing screen loses the
+four base rows and one of the two display buttons, and the counting stage
+gains the four.
+
+**Not verified on a device.**
+
 ### ROUND is done to a stroke, not armed before one — OWNER DECISION
 
 The button used to turn a mode on: press it, then draw, and what came out was
