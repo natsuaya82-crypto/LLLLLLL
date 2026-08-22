@@ -408,7 +408,7 @@ Two of them were about capabilities that had been deleted.
 2. Read `CLAUDE.md` end to end. It is the specification, not an overview, and
    every rule in it is a bug that already shipped once.
 3. Run `npm test` before touching anything, so you know what green looks like
-   here. It prints counts — `screens walked: 357`, `screens the mirror
-   rendered: 271`, `buttons pressed: 8453` — and a change meant to alter
+   here. It prints counts — `screens walked: 366`, `screens the mirror
+   rendered: 275`, `buttons pressed: 8683` — and a change meant to alter
    nothing has to leave them where they are. All three measured 2026-08-22.
 4. If what you are about to do is in §3, you are starting it, not continuing it.

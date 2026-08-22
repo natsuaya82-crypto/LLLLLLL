@@ -1051,9 +1051,10 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 357`, `screens the mirror
-rendered: 271`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 8453` for the same reason — and it is what a
+Both checks print their coverage (`screens walked: 366`, `screens the mirror
+rendered: 275`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 8683  (214/214 distinct names)` for the same
+reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -1124,11 +1125,22 @@ merge of two branches that had diverged, so two rows next to each other in
 one way on one branch and the other way on the other, and the merge put them
 together. Nothing lost 1292 buttons.
 
-It is 8453 now: `wdMode` and the six faces in `tools/fixture.mjs` that set it
-came out, and those six were being walked in a state the app could no longer
-be in. Coverage did not move — 213 of 213 names, still.
+It fell to 8453 when `wdMode` and the six faces in `tools/fixture.mjs` that set
+it came out — those six were being walked in a state the app could no longer be
+in — and coverage did not move: 213 of 213 names, still.
 
-`screens the mirror rendered` fell from 377 to 271 in the same stretch, and
+**It is 8683 now, and that is three sessions' work integrated in one day.**
+Two of the moves inside it are worth keeping. `setWldDl` was reported by
+`press` as never pressed, and the reason was not that it sits behind a plan:
+the fixture did not seed `WLD`, so the first press of `setWldHide` hid the row
+under it for the rest of the run and the walk narrowed as it went. And
+`postThumbs` and the `pdown` chip came back — their definitions survived a
+merge and their call sites did not, so the timeline drew the full photograph
+and said nothing about a post being taken down, with `dead-check` green
+because nothing called them. **A definition arriving is not the same as it
+being called**, and `post-check` is what said so.
+
+`screens the mirror rendered` fell from 377 to 275 in the same stretch, and
 that one IS attributed: `i18n-check` renders every screen once per plan, and
 `['free','plus','studio']` became `['free','plus']` when Studio was deleted.
 A third of the renders went with the tier. Coverage did not fall — the walk

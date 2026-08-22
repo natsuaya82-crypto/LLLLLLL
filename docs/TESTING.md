@@ -144,9 +144,9 @@ Mandatory regression tests, no exceptions:
 Three checks print a count so that nothing shrinks silently:
 
 ```
-screens walked: 357
-screens the mirror rendered: 271
-buttons pressed: 8453
+screens walked: 366
+screens the mirror rendered: 275
+buttons pressed: 8683
 ```
 
 All three measured 2026-08-22. `CLAUDE.md` carries the full history of the
@@ -160,12 +160,13 @@ looks like a fault:
   screen once per plan, and `['free','plus','studio']` became `['free','plus']`
   when Studio was deleted. A third of the renders went with the tier; coverage
   did not fall, the walk went 51 faces → 56.
-- **`buttons pressed` went 7884 → 8627 → 8453**, and not in one step: it was
+- **`buttons pressed` went 7884 → 8627 → 8453 → 8683**, and not in one step: it was
   measured back over the seventy-four commits between `cd712dd` and `dbd73d4`
   and moved ten times, down as often as up. `CLAUDE.md` has the table. The two
   largest swings are a merge of two diverged branches showing up as a fall and
   a rise in `rev-list` order, not as anything the app did. The last 174 are
-  `wdMode`'s six fixture faces coming out.
+  `wdMode`'s six fixture faces coming out; the last rise is three sessions
+  integrated in one day, plus two buttons the walk had been hiding from itself.
 
 ## Screenshots
 
