@@ -69,6 +69,14 @@ pg.on('pageerror', e => errs.push('pageerror: ' + e.message));
 pg.on('requestfailed', r => net.push(r.url() + ' — ' + (r.failure() || {}).errorText));
 pg.on('response', r => { if (r.status() >= 400) net.push(r.status() + ' ' + r.url()); });
 await pg.goto('http://127.0.0.1:' + PORT + '/');
+/* index.html holds #splash over everything for the later of 900 ms and boot,
+   and it is a real element with real hit-testing. A quarter of a second was
+   not enough for it and had not been for a long time: every mouse click below
+   was landing on the splash, so the point editor was never touched and the
+   first thing it asked about -- did a tap place a point -- read as no. Every
+   other check in tools/ waits for this exact selector; this one was written
+   before it existed. */
+await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 await pg.waitForTimeout(250);
 
 let fail = 0;
@@ -107,7 +115,7 @@ const at = (x, y) => ({ x: box.x + box.width * x / 800, y: box.y + box.height * 
    test rather than testing it. Nearest-dot is recomputed independently below, so
    this checks the app's snap against a second implementation, not against itself. */
 const lattice = await pg.evaluate(() => {
-  const s = gstep(), out = [];
+  const s = geStep(), out = [];
   for (let i = 0; i < GGRID.n; i++) out.push(Math.round(GGRID.inset + i * s));
   return out;
 });
@@ -497,7 +505,11 @@ const built = await pg.evaluate(() => {
   });
   save(); installScriptFont(); render();
   const back = JSON.parse(localStorage.getItem('lingua.script') || '{}');
-  return { letters: scriptLetters(), drawn: scriptDrawn(scriptLetters()), font: SFONT.built,
+  /* scriptDrawn() counted the units with ink in them and went out in
+     9226dd6, when the font stopped being built from anything but the
+     letters. What the font is made of is now the one list, so ask that
+     list how long it is. */
+  return { letters: scriptLetters(), drawn: scriptGlyphDefs().defs.length, font: SFONT.built,
            kept: back && back.g && back.g.i && back.g.i[1] && back.g.i[1].k };
 });
 ok('the font was built on the device', built.font,

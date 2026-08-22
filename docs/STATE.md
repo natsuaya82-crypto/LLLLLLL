@@ -346,8 +346,13 @@ Two of them were about capabilities that had been deleted.
    `www/core.js`; all three are gone.
 8. ~~**`press` never reaches `kbReset`.**~~ Done — measured 2026-08-22,
    **213 of 213** distinct names pressed, `kbReset` among them.
-9. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
-   defined`. It is a font experiment and is not in the gate.
+9. **`tools/verify-script.mjs` runs again** — three breakages, not one:
+   `gstep`→`geStep`, `scriptDrawn` gone since `9226dd6`, and every click was
+   landing on `#splash` because it waited 250 ms where every other check waits
+   for the selector. It is not a font experiment: it is the only end-to-end
+   proof of the PUA font path. It now reports 13 ok / 19 FAIL, and each of the
+   nineteen has to be triaged as app-wrong or test-old before it can go in the
+   gate. `docs/BACKLOG.md`.
 
 ### Offered and not yet answered
 
