@@ -177,6 +177,7 @@ defLang('de', (function(){
       "kb.dir.left"               : "Links",
       "kb.empty"               : "Leer",
       "kb.row.add"               : "Zeile hinzufügen",
+      "kb.add.k" : "Taste hinzufügen",
       "kb.row.ins" : "Hier eine Zeile einfügen",
       "kb.row.up" : "Über dieser Zeile",
       "kb.row.down" : "Unter dieser Zeile",

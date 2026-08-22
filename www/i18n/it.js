@@ -189,6 +189,7 @@ defLang('it', (function(){
       "kb.dir.left"               : "Sinistra",
       "kb.empty"               : "Vuoto",
       "kb.row.add"               : "Aggiungi una riga",
+      "kb.add.k" : "Aggiungi un tasto",
       "kb.row.ins" : "Aggiungi una riga qui",
       "kb.row.up" : "Sopra questa riga",
       "kb.row.down" : "Sotto questa riga",

@@ -197,6 +197,7 @@ defLang('zh', (function(){
       "kb.dir.left"               : "左",
       "kb.empty"               : "空",
       "kb.row.add"               : "添加一行",
+      "kb.add.k" : "添加按键",
       "kb.row.ins" : "在此添加一行",
       "kb.row.up" : "在此行上方",
       "kb.row.down" : "在此行下方",

@@ -280,7 +280,8 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbcl{font-size:.55rem;line-height:1;color:var(--txm);opacity:.5;text-align:center;
       min-height:44px;background:none;border:0;padding:0;font-family:inherit;
       display:flex;align-items:center;justify-content:center}
-.kbcl:active, .kbcl.on{color:var(--gold);opacity:1;font-weight:700}
+.kbcl:active{color:var(--gold);opacity:1}
+.kbcl.on{color:var(--pur);opacity:1;font-weight:700}
 /* The row's number, in the margin to the left of the keys -- absolute, so it
    is not a cell: kbReadRows() walks the row's children and this one carries no
    data-r, and it must not take a column from the grid. */
@@ -288,13 +289,31 @@ canvas.pkc{width:34px;height:34px;display:block}
      align-items:center;justify-content:flex-end;font-size:.6rem;line-height:1;
      color:var(--txm);opacity:.55;background:none;border:0;padding:0;
      font-family:inherit}
-.kbn:active, .kbn.on{color:var(--gold);opacity:1;font-weight:700}
-/* What is being worked on, lit so it is clear which row or which column the
-   buttons above are about. 「行とか列選択したらそこが光ってそこを作業してる
-   ってわかるようになってる」 */
-.kb.kbsheet .kbrow.sel .kbk{border-color:var(--goldln);background:var(--goldsf)}
-.kb.kbsheet .kbrow.sel .kbk.cell{background:var(--goldsf)}
-.kb.kbsheet .kbk.sel{border-color:var(--goldln);background:var(--goldsf)}
+.kbn:active{color:var(--gold);opacity:1}
+.kbn.on{color:var(--pur);opacity:1;font-weight:700}
+/* What is being worked on, lit BEHIND the keys rather than on them.
+   「行とか列選択したらそこが光ってそこを作業してるってわかるようになってる」
+   「行とか列選択してるときに後ろ側違う色で光らせないと選択がわかりにくい」
+
+   A band, and a different colour from the gold, because the two mean
+   different things and were saying the same one: gold is what is pressable
+   and which key you have OPEN, and this is what the buttons above are about.
+   The band runs out past the keys on both sides so the row's number stands on
+   it -- the number is what was pressed, so it has to be inside what lit up. */
+.kb.kbsheet{position:relative}
+.kb.kbsheet .kbrow.sel::before{content:"";position:absolute;
+     top:-3px;bottom:-3px;left:-32px;right:-6px;background:var(--pursf);
+     border-top:1px solid var(--purln);border-bottom:1px solid var(--purln);
+     pointer-events:none}
+/* A column cannot be a band on one row, so it is one band down the whole
+   sheet, put where the column is by kbHTML() -- the columns are 1fr each, so
+   where that is is arithmetic and not a measurement. */
+.kbband{position:absolute;top:0;bottom:0;background:var(--pursf);
+     border-left:1px solid var(--purln);border-right:1px solid var(--purln);
+     pointer-events:none;z-index:0}
+/* and the keys standing in it are outlined, so a key spanning three columns
+   says which of the three it is being counted in */
+.kb.kbsheet .kbk.sel{border-color:var(--purln)}
 /* A cell of the sheet with no key on it. Not a key and not pressable -- it is
    the part of the row that is not filled, drawn so it can be seen to be
    there. It is a .kbk so that a key being carried can be dropped on it. */
@@ -1646,8 +1665,17 @@ a.set{text-decoration:none}
    「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
    kbNewHTML() gives each its width in calc() over --kbw, because how many
    columns the sheet has is the layout's answer and changes with it. */
-.kbnew{display:flex;gap:var(--kbgap);margin-top:12px;align-items:center;
-       width:var(--kbw);margin-left:auto;margin-right:auto}
+/* The three widths, ACROSS the sheet rather than piled at its left corner --
+   they are the size of the cells they make and were sitting shoulder to
+   shoulder with 4 between them, which reads as one lump rather than three
+   things. 「つまりすぎだから幅いっぱいに使ってすきまあっちいから」 */
+.kbnew{display:block;width:var(--kbw);margin:12px auto 0}
+.kbnewr{display:flex;justify-content:space-between;align-items:center}
+/* One word OVER them, on a line of its own. Three blank keys under a keyboard
+   are three blank keys until something says they are the ones you add.
+   「add⚪︎⚪︎みたいに軽くかいといて」「addは上においてくれキーの」
+   Light: it is a name, not a sentence about how to use them. */
+.kbnewl{display:block;font-size:.72rem;color:var(--txm);margin:0 0 5px 2px}
 .kbnewt{flex:0 0 auto;min-height:44px;height:44px;padding:0;border-radius:9px;
         border:1px solid var(--line);background:var(--sf);
         display:flex;align-items:center;justify-content:center}

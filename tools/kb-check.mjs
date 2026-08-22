@@ -270,6 +270,15 @@ const r = await pg.evaluate(({ s }) => {
   out.selHead = /class="kbn on"/.test(lit);
   out.cutUp = !/kbCut[^>]*disabled/.test(lit);
   out.alUp = !/kbAlign[^>]*disabled/.test(lit);
+  /* the band is BEHIND the keys and is not the gold the keys wear when one is
+     open. 「後ろ側違う色で光らせないと」 */
+  var band = document.querySelector('#kb .kbrow.sel');
+  out.bandBack = !!band && !!getComputedStyle(band, '::before').backgroundColor &&
+    getComputedStyle(band, '::before').backgroundColor !== 'rgba(0, 0, 0, 0)';
+  var kAny = document.querySelector('#kb .kbrow.sel .kbk');
+  var kOther = document.querySelector('#kb .kbrow:not(.sel) .kbk');
+  out.keysPlain = !!kAny && !!kOther &&
+    getComputedStyle(kAny).backgroundColor === getComputedStyle(kOther).backgroundColor;
   /* pressing the same head again puts it down */
   kbHeadRow(1);
   var down = vKb();
@@ -280,6 +289,14 @@ const r = await pg.evaluate(({ s }) => {
   kbHeadCol(2);
   var colLit = vKb();
   out.colLit = /class="kbcl on"/.test(colLit) && /kbk[^"]*sel/.test(colLit);
+  render();
+  var cb = document.querySelector('#kb .kbband');
+  out.colBand = !!cb && cb.getBoundingClientRect().width > 4 &&
+    cb.getBoundingClientRect().height > 40;
+  /* it stands over the column it names: the third letter, so two columns in */
+  var c2 = document.querySelector('#kb .kbhdr .kbcl.on');
+  out.colBandAt = !!cb && !!c2 &&
+    Math.abs(cb.getBoundingClientRect().left - c2.getBoundingClientRect().left) < 2;
   out.colCut = !/kbCut[^>]*disabled/.test(colLit);
   out.colNoAl = /kbAlign[^>]*disabled/.test(colLit);
 
@@ -300,11 +317,56 @@ const r = await pg.evaluate(({ s }) => {
   kbAlign('r'); var R = ends();
   out.alLeft  = L[0] === 0 && L[1] > 0;
   out.alRight = R[0] > 0 && R[1] === 0;
-  out.alCentre = C[0] > 0 && C[1] > 0 && Math.abs(C[0] - C[1]) <= 1;
+  out.alCentre = C[0] > 0 && C[1] > 0 && Math.abs(C[0] - C[1]) <= 2;
   /* the keys themselves never move, and the row comes to the full width --
      which is what makes the phone agree with this drawing */
   out.alKeys = L[2] === 3 && C[2] === 3 && R[2] === 3;
   out.alFull = L[3] === KB_COLS && C[3] === KB_COLS && R[3] === KB_COLS;
+  /* EVERY key of an aligned row starts on a whole column, whichever of the
+     three was pressed -- otherwise the letters across the top stop naming
+     anything on that row. 「行の中央寄せした後列がずれてるのはどうなる？」
+     Three keys on a sheet of ten is the case that catches it: fourteen
+     columns left over, and half of fourteen is seven, which is three keys and
+     a half. */
+  /* Pressing a head TOGGLES it, so asking for a row that is already selected
+     puts it down -- which silently turns the next kbAlign() into a no-op and
+     leaves a claim reading the state before it. The toggle is asserted above;
+     here what is wanted is "row n is selected", so say that. */
+  function selRow(n){
+    if (!(KBH && KBH.k === 'r' && KBH.i === n)) kbHeadRow(n);
+  }
+  function onCols(){
+    var rw = kbLayer().rows[0], at = 0, ok = true, x;
+    for (x = 0; x < rw.length; x++){
+      if (rw[x].k !== 'gap' && at % 2) ok = false;
+      at += kbU(rw[x].w);
+    }
+    return ok;
+  }
+  selRow(0);
+  kbAlign('l'); out.colsL = onCols();
+  kbAlign('c'); out.colsC = onCols();
+  kbAlign('r'); out.colsR = onCols();
+  /* and so does a short row nobody has aligned, which is drawn by the same
+     arithmetic */
+  fresh();
+  kbEdit().lay[0].rows = [[kbKey('lt','a'), kbKey('lt','b'), kbKey('lt','c'),
+                           kbKey('lt','d'), kbKey('lt','e'), kbKey('lt','f'),
+                           kbKey('lt','g'), kbKey('lt','h'), kbKey('lt','i'),
+                           kbKey('lt','j')],
+                          [kbKey('lt','k'), kbKey('lt','l'), kbKey('lt','m')]];
+  kbLay = 0; saveKb(); render();
+  var lead2 = 0, cells2 = document.querySelectorAll('#kb .kbrow')[1].children;
+  for (i = 0; i < cells2.length; i++){
+    var c2b = cells2[i];
+    if (c2b.className.indexOf('kbn') >= 0) continue;
+    if (c2b.getAttribute('data-k') !== null) break;
+    lead2 += parseInt((c2b.getAttribute('style') || '').replace(/\D+/g, ''), 10) || 0;
+  }
+  out.drawnLead = lead2;
+  out.drawnOnCols = lead2 % 2 === 0;
+
+  selRow(0);
   /* aligning twice does not stack up gaps */
   kbAlign('c'); kbAlign('c');
   out.alOnce = kbUsed(kbLayer().rows[0]) === KB_COLS;
@@ -367,6 +429,8 @@ const r = await pg.evaluate(({ s }) => {
   var tiles = document.querySelectorAll('#kbnew .kbnewt');
   var kcell = document.querySelector('#kb .kbrow .kbk[data-r="0"][data-k="0"]');
   out.tileCount = tiles.length;
+  var lab = document.querySelector('#kbnew .kbnewl');
+  out.tileSaid = !!lab && !!lab.textContent.trim();
   if (tiles.length && kcell){
     var kw = kcell.getBoundingClientRect().width, kh = kcell.getBoundingClientRect().height;
     var t1 = tiles[0].getBoundingClientRect(), t3 = tiles[2].getBoundingClientRect();
@@ -496,15 +560,22 @@ say(r.romOnEditor && r.romOnFree && r.romOnList,
 say(r.selKeeps, 'pressing a row number does NOT delete the row any more');
 say(r.selLit && r.selHead, 'it lights the row up and its number with it');
 say(r.cutUp && r.alUp, 'and the bin and the three alignments come up');
+say(r.bandBack, 'the selection is a band BEHIND the keys');
+say(r.keysPlain, 'and the keys themselves are the colour they always were');
 say(r.selOff && r.cutDown && r.alDown, 'pressing it again puts the selection and the buttons down');
 say(r.colLit, 'a column lights up too, header and the keys standing in it');
+say(r.colBand, 'a band runs down the whole sheet where that column is');
+say(r.colBandAt, 'and it stands under the letter that names it');
 say(r.colCut, 'and can be taken away');
 say(r.colNoAl, 'but has no slack across it, so the alignments stay down');
 say(r.alLeft, 'aligning left puts the whole slack after the keys');
 say(r.alRight, 'aligning right puts it before them');
-say(r.alCentre, 'and centring splits it, ' + r.alCentre + ' -- evenly, to the half column');
+say(r.alCentre, 'and centring splits it evenly, to within the one key it gives up to stay on a column');
 say(r.alKeys, 'no key moves, whichever of the three is pressed');
 say(r.alFull, 'and the row comes to the full width, so the phone draws what this does');
+say(r.colsL && r.colsC && r.colsR,
+    'every key of an aligned row starts on a whole column, all three ways');
+say(r.drawnOnCols, 'and a short row nobody aligned is drawn the same way (' + r.drawnLead + ' columns in front)');
 say(r.alOnce, 'aligning twice does not stack a second pair of gaps on the first');
 say(r.alBack, 'and the step back undoes it');
 say(r.midGap, 'a gap somebody put between two keys is left alone');
@@ -520,6 +591,7 @@ say(r.insFullDown, 'the + is down on a board that is already as tall as it may g
 say(r.insFullNoop, 'and asking anyway adds nothing');
 say(r.selForgot, 'a keyboard made while a row was selected does not arrive with it lit');
 say(r.tileCount === 3, 'there are ' + r.tileCount + ' widths under the sheet');
+say(r.tileSaid, 'and a word in front of them saying what they are');
 say(r.tileOne, 'and a width of one is exactly one cell of the sheet wide');
 say(r.tileTall, 'and exactly as tall as a key');
 say(r.tileThree, 'and a width of three is three of them');

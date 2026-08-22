@@ -855,6 +855,17 @@ conversation — so the delete and the undo are one statement and have to be hel
 as one. **A delete with a broken undo behind it is worse than a delete that
 asks**, because the app has told somebody it is safe to try things.
 
+**Where a row is short from is rounded to a whole key**, and that is the half
+of it that is easy to get wrong. A column is half a key, so half of what is
+left over is very often an odd number of columns — three keys on a sheet of
+ten leave fourteen, and seven of those is three keys and a half. Put that in
+front and every key on the row straddles two columns, and the letters across
+the top, which are the reason this is a sheet at all, stop naming anything on
+the row somebody has just worked on. 「行の中央寄せした後列がずれてるのはどう
+なる？」 The odd half goes to the other end instead: off centre by half a key,
+which nobody can see, and on a column, which is what the sheet is for. The
+drawing of a short row and the button that aligns one ask the same function.
+
 Where a row is short from — left, centre, right — is written in **gap keys**,
 which this keyboard has had since it had a QWERTY. Nothing new is stored, and
 that is not tidiness: a row is an ARRAY, so `JSON.stringify` drops any property
@@ -868,7 +879,7 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds sixty things: the row that goes is the one pressed
+`tools/kb-check.mjs` holds seventy things: the row that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not
 removed** (a cell spanning b–d, with c taken out, spans b–c); the half key that
@@ -903,7 +914,12 @@ own digits face from the beginning. Nothing is overwritten: the key goes IN at
 the front of the last row, or into a row of its own, and a face with room for
 neither is not offered a + at all.
 
-Twenty bugs were put back and watched going red before any of it was believed.
+Twenty-five bugs were put back and watched going red before any of it was
+believed. One of the last is worth keeping because it is about the CHECK: a
+head TOGGLES, so a claim that asks for a row already selected puts it down,
+and the kbAlign() after it silently does nothing while the claim reads the
+state from before. It cost two false greens. What is wanted there is "row n is
+selected", so the check says that instead of pressing.
 The two the check found on its first run were real and are worth keeping: the
 history was recorded only from the editor's **render**, so a change made by any
 other road had nothing behind it — it is recorded from `saveKb()` as well now,
