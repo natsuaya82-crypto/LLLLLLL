@@ -116,10 +116,96 @@ const R = await pg.evaluate(() => {
   const pairs = [];
   boards.forEach(([bn, stand]) => list.forEach((w) => pairs.push([w, bn, stand])));
 
+  /* 8. what a key PUTS IN is the code point the typing face draws.
+     ------------------------------------------------------------------
+     A letter key carries a private use code point -- U+E000 upward, one per
+     drawn letter -- because that is the only thing on a phone that tells the
+     Lingua keyboard's `a` from the system QWERTY's. `.tfont` is set in
+     LinguaType, which carries nothing BUT that range, so a key that puts the
+     letter's NAME in falls through to the ordinary font and comes out roman:
+     the second face is built, installed, and never once used.
+
+     The code point has to be the one installTypeFont() gave that letter. An
+     index off by one types a letter and draws a different one, and nothing
+     throws -- the font renders, the key looks right, and the document holds
+     somebody else's letter. So this is asked per LETTER and not as a count:
+     the counts agreeing while the pairing is shifted is the only way this
+     breaks.
+
+     Both plans, because the two got there by different roads -- kbFix()
+     overrides `t` on the free QWERTY and shareFace() answers on a keyboard
+     somebody built -- and a rule that holds on one plan and not the other is
+     the feature existing on one plan.
+
+     A letter with no shape is not in the typing face at all, so its key
+     keeps the name. That is the fallback working, not a hole in it. */
+  /* What the TYPING FACE was actually built with, read off the font writer's
+     own input rather than worked out again here. Recomputing the list would
+     make this a copy of the thing under test: shifting installTypeFont()'s
+     assignment by one would move the keys and the copy together and the
+     check would stay green -- which is exactly how a wrong answer gets a
+     tick. LinguaFont.build is wrapped instead, the same way card-check
+     wraps cardInk() rather than asking cardSrc(). */
+  const faceMap = () => {
+    const real = LinguaFont.build;
+    let got = null;
+    LinguaFont.build = function (defs, opt) {
+      if (opt && opt.family === 'LinguaType') got = defs.slice();
+      return real.apply(this, arguments);
+    };
+    try { installScriptFont(); } finally { LinguaFont.build = real; }
+    const by = {};
+    (got || []).forEach((d) => { by[d.name] = String(d.roman || ''); });
+    const want = {};
+    LETTERS.forEach((l) => {
+      const t = by[glyphName(l.id)];
+      if (t) want[l.id] = t;
+    });
+    return want;
+  };
+  const puaClaim = (w) => {
+    let kbd;
+    try { kbd = shareKbd(); } catch (e) { return; }
+    const want = faceMap();
+    const named = {};
+    let drawn = 0, plain = 0;
+    (kbd.lay || []).forEach((face) => (face.rows || []).forEach((row) => row.forEach((k) => {
+      if (k.k !== 'lt') return;
+      const t = String(k.t || '');
+      /* which letter this key is is not on the key -- it is what the face
+         was built from -- so it is found by the code point it claims */
+      const mine = Object.keys(want).filter((id) => want[id] === t);
+      if (mine.length) { named[mine[0]] = 1; drawn++; return; }
+      const code = t.charCodeAt(0);
+      if (code >= 0xE000 && code <= 0xF8FF)
+        fails.push(w + ': a key puts in U+' + code.toString(16).toUpperCase() +
+          ', which installTypeFont() gave to no letter -- so it types one' +
+          ' shape and draws another, or draws nothing');
+      else plain++;
+    })));
+    if (!drawn)
+      fails.push(w + ': not one letter key puts in a private use code point,' +
+        ' so every one of them types what the system keyboard types and comes' +
+        ' out roman -- LinguaType is built and never used');
+    /* and the fallback: a letter with no shape keeps its name */
+    const noShape = LETTERS.filter((l) => !(l.st && l.st.length));
+    if (noShape.length && !plain)
+      fails.push(w + ': ' + noShape.length + ' letters have no shape, so their' +
+        ' keys have nothing in the typing face to draw and must keep their' +
+        ' name -- none of them did');
+  };
+
   pairs.forEach(([w0, bn, stand]) => {
     SET.wsys = w0;
     stand();
     const w = w0 + ' on ' + bn;
+    /* Claim 8 on both plans. The free QWERTY is what BOTH type on, so it is
+       walked twice on purpose -- kbFix()'s override is the same code either
+       way and the two must answer alike. */
+    ['free', 'plus'].forEach((pl) => {
+      SET.plan = pl; puaClaim(w + ' (' + pl + ')');
+    });
+    SET.plan = 'plus';
     const onFree = (bn === 'the free QWERTY');
     let kbd;
     try { kbd = shareKbd(); }
@@ -299,8 +385,11 @@ if (R.fails.length) {
   if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
   process.exit(1);
 }
-console.log('\nall seven claims hold, for every writing system: every map index' +
+console.log('\nall eight claims hold, for every writing system: every map index' +
   ' resolves, max is the longest key, nothing in ink goes unreached, every' +
   ' key is lower case and unique, the roman layer appears exactly where' +
   ' wsys() needs one and wears nothing but its own five kinds of key, and' +
-  ' conv.how says what wsys() says.');
+  ' conv.how says what wsys() says. And a letter key puts in the code point' +
+  ' installTypeFont() gave that letter, on both plans -- so what the Lingua' +
+  ' keyboard types is drawn in the letters somebody drew, and what any other' +
+  ' keyboard types is not.');
