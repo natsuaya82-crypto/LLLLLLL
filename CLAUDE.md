@@ -586,6 +586,42 @@ one thing the table exists to avoid. The comment had been claiming the opposite 
 what the code did. `shareMapLts()`/`shareMapWords()` now ask every letter's key
 before asking `t.of()` for its slot, and the comment says so.
 
+**And an eighth, which is about the other end of the same file: what a key
+PUTS IN.** A letter key carries a private use code point — U+E000 upward, one
+per drawn letter — because that is the only thing on a phone that tells the
+Lingua keyboard's `a` from the system QWERTY's. `.tfont` is set in
+`LinguaType`, which carries nothing BUT that range, so a key that put the
+letter's **name** in fell through to the ordinary font and came out roman: the
+second face was built, installed, and never once used through the keyboard it
+was built for. Both roads have to arrive at the same answer — `shareFace()` on
+a keyboard somebody built, and `kbFix()`'s override on the free QWERTY — because
+a rule that holds on one plan and not the other is the feature existing on one
+plan. A letter with no shape is in no font and keeps its name, which is the
+fallback working rather than a hole in it.
+
+Nothing about a wrong assignment throws. The font renders, the key looks right,
+and the document holds somebody else's letter — so it is asked **per letter**
+and never as a count: the counts agreeing while the pairing is shifted is the
+only way this breaks.
+
+**And the assignment is read off what the font writer was actually handed.**
+The first version of this check worked the mapping out again inside itself, and
+it was green with the bug in: shifting `installTypeFont()` moved the keys and
+the check's own copy together. **A check that recomputes the thing under test
+is a copy of it, and a copy always agrees.** `LinguaFont.build` is wrapped
+instead — the same reason `card-check` wraps `cardInk()` rather than asking
+`cardSrc()`, and the same shape as the fault rule 12 was written after.
+
+**Decided and not in yet, so read this as the decision and not as the code:**
+the mapping is worked out in four places — `installTypeFont()`, `puaRoman()`,
+`postCutTyped()` and `shareFace()` — each writing `ltOrder(LETTERS.filter(has
+strokes))` out again. It becomes `ltPuaOrder()` in `glyph.js`, beside `ltPua()`,
+and those four ask it. When it lands, its name goes in `sides-check`'s forbidden
+list beside `LETTERS` itself — it reads the making side, and **a function that
+reads the making side is a way to reach the making side; giving it a new name is
+not a way to stop being one.** Landing it without that line open the hole in the
+same commit that closes the duplication.
+
 ### 11. A language is never lost
 
 `www/backup.js` (chapter 24) writes the open language out as one file, into
