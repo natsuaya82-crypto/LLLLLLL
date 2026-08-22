@@ -1966,10 +1966,13 @@ function postRow(p){
          nothing to anybody's eye. */
       (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
       /* Taken down. Only its author is ever handed one of these -- post_read
-         in schema.sql -- so the line is for them. A state and not a sentence
-         about it: the post being here with this on it is the whole of what
-         they need, and working it out from a reply count that stopped moving
-         is what the alternative was. */
+         in schema.sql -- so the line is for them, and it is a state rather
+         than a sentence about one.
+
+         It said "hidden" first, on a post the person reading it can see. A
+         word that contradicts the screen it is written on is worse than no
+         word: what happened is that it stopped being public, not that it
+         stopped being here, and the copy in front of them is the proof. */
       (p.down? '<div class="pdown">'+esc(t('post.down'))+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
