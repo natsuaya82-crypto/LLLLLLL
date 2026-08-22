@@ -1858,7 +1858,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
      background:var(--sink);line-height:2.3;font-size:1rem;word-break:break-word}
 /* Every piece of the sentence is pressable, not only the ones this language
    has no word for. 44 high, which a word inside a running line cannot be. */
-.trpc{min-height:44px;padding:0 4px;background:none;border:0;font:inherit;
+.trpc{min-width:44px;min-height:44px;padding:0 6px;background:none;border:0;font:inherit;
       color:var(--tx);cursor:pointer;-webkit-tap-highlight-color:transparent}
 .trpc.miss{color:var(--bad);text-decoration:underline;text-decoration-style:dotted;
            text-underline-offset:5px}
@@ -1875,7 +1875,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .trbw{flex:0 0 auto;font-size:1.1rem;color:var(--tx)}
 .trbm{flex:1 1 auto;min-width:0;font-size:.9rem;color:var(--txm);
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.trbdo{flex:0 0 auto;min-height:44px;padding:0 2px;background:none;border:0;
+.trbdo{flex:0 0 auto;min-width:44px;min-height:44px;padding:0 2px;background:none;border:0;
        color:var(--gold);font:inherit;font-size:.88rem;font-weight:600;
        cursor:pointer;-webkit-tap-highlight-color:transparent}
 /* The one that is open, marked the way this app marks a chosen thing: under
