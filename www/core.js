@@ -323,10 +323,27 @@ function setOnDisk(){
    plan is the free side of wrong on an upgrade -- which is the side the rule
    in docs/PAID_FEATURES.md asks for, and which StoreKit corrects the moment
    it is asked again. */
+/* Capacitor.nativePromise, and not Capacitor.Plugins.
+
+   This asked Capacitor.Plugins for LinguaPlan and returned quietly when it
+   was not there, and it was never there: Plugins is filled by @capacitor/core,
+   which is an npm package an app with a bundler imports, and there is no
+   bundler here. www/share.js says the same thing at length and cost four
+   builds to learn. So every write was the `if(!p) return` and the Keychain
+   was never written.
+
+   That was not a quiet failure. setOnDisk() takes the plan OUT of the
+   settings file on a phone, precisely because the Keychain is meant to be
+   holding it -- so on a real device nothing held it at all and Plus came back
+   as free at the next launch. In a browser PLAN_NATIVE is false, the plan
+   stays in the file, and none of this is visible, which is why every check
+   passed.
+
+   Not waited for, as before: what this session uses is the value in memory. */
 function planKeep(id){
-  var P=window.Capacitor && Capacitor.Plugins, p=P && P.LinguaPlan;
-  if(!p) return;
-  try{ p.write({plan:String(id||'free')})['catch'](function(){}); }catch(e){}
+  var np=window.Capacitor && Capacitor.nativePromise;
+  if(!np) return;
+  try{ np('LinguaPlan', 'write', {plan:String(id||'free')})['catch'](function(){}); }catch(e){}
 }
 function has(level){ /* level: 'plus' */
   return (level==='plus')? plan()==='plus' : true;
