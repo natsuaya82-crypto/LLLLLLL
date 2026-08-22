@@ -169,17 +169,40 @@ drawn on it — but it is not on the keyboard any more, and the key that took
 its place is blank. Somebody whose plan ended would find a hole where a letter
 they drew used to be, and nothing anywhere would say why.
 
+**The first version of this entry named a fix that does not exist, and the
+correction is the useful half.** It said: keep `ab` as the key rather than the
+name, because a letter already carries `ab` -- the roman it stands for -- and a
+rename does not touch it. Every clause of that is wrong now. `ltName()` answers
+`nm`, then a digit's value, then `ab`; `l.nm` is written in one place in the
+whole app and it is `import.js` reading a column out of somebody's spreadsheet.
+So the rename on the letter page is `ltSetRoman()`, and `ltSetRoman()` writes
+**`ab`**. Keying off `ab` is keying off the field the rename overwrites: the
+same bug, spelled differently.
+
+There is no field that survives the rename. `ltNew()` makes `id`, `st`, `ch`,
+`nm`, `snd`, `chose` and sometimes `val`, and `ltStart()` puts the roman it
+assigned into `ab` -- the only place that roman is ever recorded. So "key off
+something the rename cannot reach" is not a smaller fix hiding behind the other
+two; it is a new field on every letter, which is the data model, which is a
+decision and not a tidy-up.
+
 Three ways out, and choosing between them is the owner's:
 
-- keep `ab` as the key rather than the name (a letter already carries `ab`,
-  the roman it stands for; a rename does not touch it)
-- refuse the rename at the point it would orphan a key, which is a paid screen
-  being restricted by a plan the person is not on
-- say it out loud on the day the plan ends, in `capLapse()`, which already
-  exists for exactly this kind of sentence
+- **remember the slot.** Give a letter the roman `ltStart()` created it for, in
+  a field of its own that nothing but `ltStart()` writes, and let `kbFixed()`
+  find keys by that instead of by the name. A letter made by hand has no slot
+  and is on no key, which is already true. Costs a field on the eleven-slice
+  `letters` store and therefore a migration -- an old letter has no slot, so
+  either it is filled in by matching `ab` once (which is right for everybody
+  who never renamed anything, and wrong in exactly the case this entry is
+  about) or it is left empty and those keys stay blank until redrawn.
+- **refuse the rename** at the point it would orphan a key -- a paid screen
+  restricted by a plan the person is not on.
+- **say it out loud** on the day the plan ends, in `capLapse()`, which already
+  exists for exactly this kind of sentence.
 
-The first is the smallest and probably right, but `ab` is not shown anywhere
-and somebody who renames a letter has no idea it is there.
+None of the three is small. The first is the only one that keeps the letter on
+the key, and it is the one that touches stored data.
 
 ## A font for the letters somebody drew — held
 
