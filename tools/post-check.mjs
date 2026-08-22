@@ -521,6 +521,47 @@ const R = await pg.evaluate(async () => {
                  'difference is the bytes');
   }
 
+  /* ---- 13. a post taken down leaves a tombstone, and only where it was ---
+     The post somebody came to read went. A gap there reads as "never
+     existed", which is the opposite of what happened, so the thread says so.
+     Everything ELSE in the conversation is somebody else's line and is not a
+     hole to be marked -- 「スレッドは本ツイートだけね？それ以外の会話は本
+     ツイートとは関係ないものとする」 -- so vThread() draws the tombstone for
+     the ONE post and drops the rest.
+
+     post_seen in supabase/schema.sql is the other half: the body is emptied
+     on the server, so what arrives here has nothing in it to leak. */
+  const gone = { id: 'gone1', at: 2, hd: 'iri', who: 'Iri', ln: '', down: true, mine: false };
+  const own  = { id: 'gone2', at: 3, hd: 'aya', who: 'Aya', ln: 'mine', down: true, mine: true };
+  POSTS.push(gone, own);
+  const tomb = String(postTomb() || '');
+  if (tomb.indexOf('ptomb') < 0)
+    fails.push('there is no tombstone to draw');
+  if (tomb.indexOf('iri') >= 0 || tomb.indexOf('postOpen') >= 0)
+    fails.push('a tombstone names somebody or is a thing you can press. Nothing is ' +
+               'left of the post, which is the point of taking it down');
+  /* And a ROW is still a row. postRow() draws the rest of the conversation
+     and must not have become a tombstone factory. */
+  if (String(postRow(gone) || '').indexOf('ptomb') >= 0)
+    fails.push('every taken-down post in a thread draws a tombstone, so a ' +
+               'conversation is a column of them');
+  const feed = postAll().map((x) => x.id);
+  if (feed.indexOf('gone1') >= 0)
+    fails.push('a post taken down is back in the timeline, in front of everybody ' +
+               'it was taken from');
+  /* And your own stays where it was. The person it happened to is told by
+     their own post -- the chip beside "edited" -- and there is no notice.
+     「通知はいらんてホーム画面にバンでいいやん」 */
+  if (feed.indexOf('gone2') < 0)
+    fails.push('your own post taken down vanished from your own timeline, so the ' +
+               'one person who has to be told is the one who is not');
+  const mineRow = String(postRow(own) || '');
+  if (mineRow.indexOf('ptomb') >= 0)
+    fails.push('your own post taken down is drawn to you as a stranger\u2019s tombstone');
+  if (mineRow.indexOf('pdown') < 0)
+    fails.push('your own post taken down says nothing about being taken down');
+  POSTS.pop(); POSTS.pop();
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
@@ -559,4 +600,7 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             R.full + ' KB --\n' +
             '      and pressing it still opens the photograph. A picture whose\n' +
             '      small copy never went up is drawn full size in its own place,\n' +
-            '      not wearing the next one\u2019s.');
+            '      not wearing the next one\u2019s.\n' +
+            '      A post taken down leaves a tombstone where the post somebody\n' +
+            '      came to read was, and nowhere else; it is out of the timeline,\n' +
+            '      and your own stays, wearing the word for it.');

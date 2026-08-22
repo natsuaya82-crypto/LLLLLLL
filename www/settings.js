@@ -20,14 +20,101 @@ function setSample(){
    ten rows of interface languages -- so the way to reach "erase everything"
    was to scroll past every language the app speaks. Six pages now, and the
    first one is a list of six rows. Each of them is one question. */
+/* The two documents, in the account room and under everything else in it --
+   not on the settings list itself, and not in the onboarding.
+
+   Small, side by side, and NOT rows. They were rows the same height as
+   "Sign out" and "Erase everything", which put a thing you read in the
+   column of things you press. 「プライバシーポリシーとか同じ高さ同じ行で
+   並ぶのキモいな」「小さく並べよ」 Apple asks only
+   that they be reachable from inside the app, and nobody has ever read one on
+   their first day: a contract in front of somebody who has not seen the app
+   yet is a door with a contract on it.
+   「Xとかインスタもオンボーディングには出してなくね？ふつうに設定とかの
+   見えづらいとこに追いとけばいいよ」「もっと見えにくいとこに入れてくれ」
+
+   Links and not buttons, pointing at the published pages: one copy of a
+   contract, so a change to either is one edit, and the version somebody
+   agreed to is the version that is up. */
+function docRows(){
+  return '<div class="docs">'+
+    '<a href="'+esc(DOC_TERMS)+'" target="_blank" rel="noopener">'+
+      esc(t('set.terms'))+'</a>'+
+    '<span class="docdot">\u00b7</span>'+
+    '<a href="'+esc(DOC_PRIVACY)+'" target="_blank" rel="noopener">'+
+      esc(t('set.privacy'))+'</a>'+
+    '</div>';
+}
+/* Where they are, and it is the site rather than in here. One copy, published,
+   and a change to either is one edit -- a copy inside the app would be a
+   second version of a contract, which is the one kind of duplicate that
+   cannot be allowed to drift. */
+var DOC_TERMS='https://tokinets.com/lingua/terms.html';
+var DOC_PRIVACY='https://tokinets.com/lingua/privacy.html';
+/* The order, and one thing about it is deliberate rather than tidy.
+   「Your language」 and 「Display language」 are one word apart and are two
+   completely different questions -- the language you are BUILDING, and the
+   language the app SPEAKS. Side by side they were a coin toss.
+   「二つ似てるから間違えないように」
+
+   So the language somebody is building is directly under the plan, at the
+   top, where the work is; and the interface's language is at the foot of the
+   list, on its own, where a thing you set once belongs. */
+/* `off` means the room exists and is not a row on this list. There is one:
+   changing a password, which is reached from inside the account room and only
+   by somebody who HAS one. It is in this list rather than beside it because
+   this list is what says a room exists -- the checks walk it, and a room that
+   is not in it is a room nothing ever renders. */
 var SETS=[
+  {id:'pw',    k:'set.pw', off:true},
+  {id:'lang',  k:'set.lang'},
   {id:'look',  k:'set.look'},
   {id:'read',  k:'set.reading'},
-  {id:'ui',    k:'set.display'},
-  {id:'lang',  k:'set.lang'},
   {id:'acct',  k:'set.account'},
-  {id:'data',  k:'set.data'}
+  {id:'data',  k:'set.data'},
+  {id:'ui',    k:'set.display'}
 ];
+/* Which account this is, in one row. Apple and Google are names and are not
+   translated, and there is no address of ours to show for either -- what
+   Apple hands over may be a relay address, and neither is something somebody
+   signs in WITH here.
+
+   An email account is the row the other way round: the address IS the
+   answer, so the row is called Email and the address is what it says. Two
+   rows -- one saying "Email" and one saying "Email: the address" -- was the
+   same word twice, which was the first way this was written.
+
+   A token this phone could not read falls through to the plain word, which
+   is a state and not a failure. */
+function setWhoRow(){
+  var h=netHow(), m=netMail(), lab=t('set.account'), val=t('set.account.on');
+  if(h==='apple')  val='Apple';
+  else if(h==='google') val='Google';
+  else if(m){ lab=t('set.mail'); val=m; }
+  return '<button class="set"><span class="sl">'+esc(lab)+'</span>'+
+    '<span class="sv">'+esc(val)+'</span></button>';
+}
+/* Changing a password, which is two calls and not one. Supabase will set a
+   new password for anybody holding a session -- so a phone somebody picked up
+   off a table would be enough. The old one is asked for and CHECKED first, by
+   signing in with it, which is the only way to check it: there is no endpoint
+   that answers "is this the password".
+
+   `now` is not confirmed twice. A field typed twice is how a form apologises
+   for hiding what was typed, and this one does not hide it. */
+var PWF={old:'', now:'', busy:false, msg:''};
+function setPwSet(k, v){ PWF[k]=String(v||''); }
+function setPwGo(){
+  if(PWF.busy) return;
+  if(!PWF.old || !PWF.now){ PWF.msg=t('net.needpw'); render(); return; }
+  PWF.busy=true; PWF.msg=''; render();
+  netSignIn(netMail(), PWF.old, function(){
+    netSetPass(PWF.now, function(){
+      PWF={old:'', now:'', busy:false, msg:''};
+      back(); toast(t('set.pw.done'));
+    }, function(d, st){ PWF.busy=false; PWF.msg=netWhy(d, st); render(); });
+  }, function(d, st){ PWF.busy=false; PWF.msg=netWhy(d, st); render(); });
+}
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   return '<div class="view">'+navTop('')+'<div class="body">'+
@@ -43,7 +130,7 @@ function vSettings(){
     '<button class="set"' + DO('go', ["plans"]) + '>'+
       '<span class="sl">'+esc(t('set.plan'))+'</span>'+
       '<span class="sv">'+esc(p? p.name : 'Free')+ICON_GO+'</span></button>'+
-    SETS.map(function(x){
+    SETS.filter(function(x){ return !x.off; }).map(function(x){
       return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
@@ -133,28 +220,45 @@ function vSet(){
       '<span class="sl">'+t('wld.public')+'</span>'+
       swtHTML(!wldHidden())+'</button>'+
       '';
+  } else if(id==='pw'){
+    /* Two fields and a button. The same shape as the door's, because it is
+       the same act -- and it is a page you went to rather than a sheet over
+       where you were, which is what every other room here is. */
+    body='<div class="field"><input id="set-pwo" type="password" '+
+        'value="'+esc(PWF.old)+'" placeholder="'+esc(t('set.pw.old'))+'" '+
+        'autocomplete="current-password" autocapitalize="none" autocorrect="off" '+
+        'spellcheck="false"' + IN('setPwSet', ['old']) + '></div>'+
+      '<div class="field"><input id="set-pwn" type="password" '+
+        'value="'+esc(PWF.now)+'" placeholder="'+esc(t('ob.mail.newpw.ph'))+'" '+
+        'autocomplete="new-password" autocapitalize="none" autocorrect="off" '+
+        'spellcheck="false"' + IN('setPwSet', ['now']) + '></div>'+
+      (PWF.msg? '<div class="obmsg">'+esc(PWF.msg)+'</div>' : '')+
+      '<button class="btn ghost" style="margin-top:18px"' + DO('setPwGo') +
+        (PWF.busy? ' disabled':'') + '>'+
+        t(PWF.busy? 'ob.mail.wait' : 'set.pw.go')+'</button>';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
     body=(netMember()
-      ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
-        '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
+      ? setWhoRow()+
+        /* Only an account that HAS a password. Apple and Google keep theirs;
+           there is nothing on our side to change, and a row that opened a
+           screen saying so would be the app explaining itself. */
+        (netHow()==='email'
+          ? '<button class="set"' + DO('go', ["set", "pw"]) + '>'+
+            '<span class="sl">'+t('set.pw')+'</span>'+
+            '<span class="sv">'+ICON_GO+'</span></button>'
+          : '')+
         '<button class="set"' + DO('setSignOut') + '>'+
-        '<span class="sl bad">'+t('set.signout')+'</span></button>'+
-        /* And the account itself, which is a different thing from the phone
-           and now says so. This button used to be the one at the foot of the
-           room, which erased the phone and called itself a deletion because
-           there was nothing else it could have been called: nothing in the
-           app could reach the row on the server. Now something can, so the
-           two are two, and each is named after what it does. */
-        '<button class="set"' + DO('dropAccount') + '>'+
-        '<span class="sl bad">'+t('set.drop')+'</span></button>'
+        '<span class="sl bad">'+t('set.signout')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
         '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set signin google"' + DO('obSignInGoogle') + '><span class="sl">'+MARK_GOOGLE+
         '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('setMail') + '><span class="sl">'+t('ob.signin.mail')+'</span>'+
         '<span class="sv">'+ICON_GO+'</span></button>')+
+      /* Under both faces of the room, because somebody who has never signed
+         in has to be able to read them too. */
       /* The plan is not in here. An account is who you are; a plan is what
          you may do, and they are answered by different things -- the account
          by a server, the plan by whatever settles it. It is a room of its
@@ -164,15 +268,28 @@ function vSet(){
          is not about. Signing out leaves everything where it is; this does
          not, so it says so and asks.
 
-         It said "erase everything", which is a sentence with no object in it:
-         everything of what? Standing in the account room under a sign-out
-         button, the only reading left was the account, so that is what it is
-         called now -- and what it does was made to match, because a button
-         called "delete account" that leaves you signed in afterwards is the
-         same lie the other way round. What it cannot reach is the row on the
-         server; the confirm says "on this phone" rather than pretending. */
-      '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
-      '<span class="sl bad">'+t('set.wipe')+'</span></button>';
+         There were two of these and nobody could tell them apart: "delete
+         account" reached the server and left the phone, "erase this phone"
+         did the opposite, and the two sat either side of a row about
+         something else. 「サインアウト、スイッチアカウントはまあそのまま
+         使える。データを消去するで全部消えるでいいんじゃない」
+
+         One now, and it means what it says: the account, everything of yours
+         on the server, every language on this phone, and the backup files.
+         Signing out is the other button and is the one that changes nothing.
+         Alone at the foot with a gap above it, which is where a phone puts
+         the thing that cannot be undone. */
+      '<button class="set"' + DO('wipeAll') + '>'+
+      '<span class="sl bad">'+t('set.wipe')+'</span></button>'+
+      /* The two documents, at the very foot of this room and nowhere else in
+         the app. Apple asks only that they be reachable from inside it, and
+         nobody reads one on their first day. 「アカウントの一番下やな」
+
+         Under both faces of the room, because somebody who has never signed
+         in has to be able to read them too. Links and not buttons: they are
+         the published pages, so a change to either is one edit and the
+         version somebody agreed to is the version that is up. */
+      docRows();
   } else if(id==='data'){
     /* What is on the disk, for everybody. Keeping a language is not a paid
        feature -- charging for not losing somebody's work would mean
@@ -199,7 +316,11 @@ function vSet(){
   } else {
     body=goneBox();
   }
-  return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
+  /* The account room is the one that has something pinned to the FOOT of it,
+     so its body is the one that is as tall as the screen. Everywhere else a
+     body is exactly as tall as what is in it. */
+  return '<div class="view">'+navTop('')+
+    '<div class="body'+(id==='acct'? ' tall' : '')+'">'+body+'</div></div>';
 }
 /* One card: a small Lingua in that theme, its name, and a tick. The colours
    are written out rather than taken from the variables, because the light
@@ -241,20 +362,24 @@ function setUi(l){ SET.ui=l; save(); render(); }
    you erased the phone and the app still greeted you by name. netOut() is
    the same two lines signing out uses; nothing is asked of the server,
    which is what it was already true of. */
-/* The account, on the server. Asked once and not twice: a second "are you
-   sure" is how a person learns to press through them.
+/* Everything, and it is the only thing in this app that means that. The
+   account on the server with every post, photograph and recording on it; the
+   languages on this phone; the backup files in Documents that outlive the app
+   itself. Asked once and not twice -- a second "are you sure" is how a person
+   learns to press through them -- and the one question is the whole sentence.
 
-   The language on this phone is NOT touched. Somebody deleting an account has
-   not asked to lose their own writing, and the confirm says which is which so
-   that nobody finds out afterwards. */
-function dropAccount(){
-  if(!netSignedIn()) return;
-  if(!confirm(t('confirm.drop'))) return;
-  netDropMe(function(){ toast(t('set.drop.done')); render(); },
-            function(d, st){ toast(netWhy(d, st)); });
-}
+   The order matters and it is the safe one. The server is told FIRST and the
+   phone is emptied whatever it answers: somebody who asked to be deleted must
+   be deleted, and a phone that kept its languages because the network was bad
+   would be the button lying in the direction that cannot be corrected later.
+   The other order leaves an account nobody can reach and nothing to reach it
+   from. */
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
+  if(netSignedIn()) netDropMe(wipeHere, wipeHere);
+  else wipeHere();
+}
+function wipeHere(){
   /* Throw the stored slices away and read the language back. What an empty
      language IS is langRead() and its four siblings, the same five langOpen()
      calls to bring a different one out -- so this does not describe emptiness
@@ -287,6 +412,10 @@ function wipeAll(){
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
   save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  /* And the copies in Documents, which are the ones that outlive the app.
+     Last, and after the save above rather than before it: a save writes a
+     fresh backup out, so dropping the files first would leave one behind. */
+  bkDropAll();
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};

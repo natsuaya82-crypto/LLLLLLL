@@ -98,18 +98,44 @@ function netSignedIn(){ return !!(SESS && SESS.rt); }
    drift. An unreadable token is not anonymous: the server is what decides,
    and a phone guessing "anonymous" would close doors on somebody who has an
    account. */
-function netAnonTok(at){
+function netClaims(at){
   var p=String(at||'').split('.')[1], c;
-  if(!p) return false;
+  if(!p) return null;
   p=p.replace(/-/g, '+').replace(/_/g, '/');
   while(p.length % 4) p+='=';
-  try{ c=JSON.parse(atob(p)); }catch(e){ return false; }
+  try{ c=JSON.parse(atob(p)); }catch(e){ return null; }
+  return (c && typeof c==='object')? c : null;
+}
+function netAnonTok(at){
+  var c=netClaims(at);
   return !!(c && c.is_anonymous);
 }
 /* A session with somebody's name on it. Everything other people would see
    asks this and not netSignedIn(): a post, a like, a boost, a follow, a
    block, a report. */
 function netMember(){ return !!(SESS && SESS.rt && !SESS.anon); }
+/* Which of the three doors somebody came in by, and the address they came in
+   with. Both are on the token, which is the only place they are: nothing in
+   `profile` holds an address, on purpose -- profile is what other people see
+   and an address is not.
+
+     netHow()   'apple' | 'google' | 'email' | ''
+     netMail()  the address, or '' -- which is what an Apple account that
+                chose to hide it still has, because Apple gives a relay
+                address rather than nothing
+
+   `app_metadata.provider` is the door that was used. Somebody who has signed
+   in with two of them has `providers` as well; the one asked for here is the
+   one this session came through, which is what a screen saying "you are
+   signed in with" means. */
+function netHow(){
+  var c=SESS && netClaims(SESS.at);
+  return (c && c.app_metadata && String(c.app_metadata.provider||'')) || '';
+}
+function netMail(){
+  var c=SESS && netClaims(SESS.at);
+  return (c && String(c.email||'')) || '';
+}
 
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
@@ -454,7 +480,7 @@ var NET_PAGE=50;
    of base64 in a jsonb column. */
 function netBody(p){
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
-                     down:1};
+                     down:1, out:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   return o;
 }
@@ -477,6 +503,11 @@ function netRow(r){
      schema.sql -- so this arrives on nobody else's phone, and the author is
      told by the post rather than by the post quietly not being anywhere. */
   if(r.hidden_at) p.down=true;
+  /* And whether the account that wrote it is frozen. It comes off the ROW --
+     post_seen in schema.sql -- rather than being asked about every author a
+     timeline shows, and it is what takes the post off the timeline while
+     leaving it on that account's own page. */
+  if(r.author_out) p.out=true;
   p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
   return p;
 }
@@ -491,7 +522,7 @@ function netFeed(which, ok, bad){
      the recommended timeline works with the publishable key alone and
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
-  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
+  var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
           '&order=created_at.desc&limit='+NET_PAGE;
   function got(d){
     var out=[], i;
@@ -729,7 +760,7 @@ function netFindWho(q, ok, bad){
    asked for one of its fields as text. */
 function netFindPosts(q, ok, bad){
   var like=netLike(q);
-  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+')'+
          '&order=created_at.desc&limit='+NET_PAGE,

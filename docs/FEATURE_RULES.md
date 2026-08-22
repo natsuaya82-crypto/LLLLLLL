@@ -186,6 +186,83 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-22
+- Area: Shape — a fifth banned thing, and row height
+- Decision: **No rounded box.** 「角丸やめろ」 Nothing new carries a corner
+  radius, a border, or a filled panel — button, banner or notice. `.btn.ghost`
+  where a button is wanted; a plain row where one is not. And **every row in
+  one list is the same height**: the row class sets `font-size` and
+  `line-height` itself, and no row gets a `margin-top` to make a group.
+- Reason: it was broken three times in one afternoon after being pointed out
+  twice — a gold pill on the frozen screen, a bordered strip across Home, a
+  gold pill on the password screen. The class comment on `.btn.ghost` has
+  said it since it was written: 「文字書いて四角で囲ったみたいなボタン全部やめて
+  くれ。ダサすぎる」. The height half is the same afternoon: `.set` left the
+  type to the tag, so a `<button>` row was 49px and an `<a>` row 57px in the
+  same list.
+- Affected features: every screen from here on. `.btn` is still on about
+  thirty older ones and is not being swept; it is simply not reached for
+  again.
+- Affected data: none.
+- Affected docs: `CLAUDE.md` § Shape.
+- Implementation status: **done** for everything added on 2026-08-22.
+
+### Decision
+- Date: 2026-08-22
+- Area: Explaining — the rule, narrowed rather than lifted
+- Decision: **Necessary explanation is written, and kept to the minimum.**
+  「必要な説明は書いてね。みてわからないのが一番ダメ。最低限ね」 The ban
+  stands everywhere it stood: a screen still does not describe what a setting
+  means, does not sell a paid plan, and does not tell somebody what to tap.
+  What is now allowed is the sentence a screen needs in order not to be a
+  mystery — where the app has DONE something to somebody and the screen would
+  otherwise be a state with no cause and no way out.
+- Reason: the frozen screen is the case that settled it. The buttons are
+  gone, the timeline is gone, and a heading saying "Account suspended" leaves
+  somebody unable to tell a suspension from a broken app — and with nowhere
+  to say it is wrong. Not knowing is the worse failure.
+- Affected features: the frozen screen (`vFeed`), and any screen after it
+  that takes something away.
+- Affected data: none.
+- Affected docs: `CLAUDE.md` § Explaining, `FEATURE_RULES.md`.
+- Implementation status: **done for the frozen screen** — a heading, one line
+  saying what is off, and the way to appeal. Nowhere else has been touched,
+  and nowhere else may be without this test: has the app taken something
+  away, and would the screen otherwise be a mystery.
+
+### Decision
+- Date: 2026-08-22
+- Area: A frozen account, seen by everybody else
+- Decision: **Their posts come off the timeline and stay on their own page**,
+  and their page says the account is frozen instead of showing them. Nothing
+  is deleted or hidden on the server. 「タイムラインから外す、プロフィールから
+  は凍結してますの表示。ツイートは自己責任で見れるようにするのは？」
+- Reason: a freeze can be lifted, so nothing may be destroyed — everything
+  comes back by itself the next time the server is asked. Taking the posts
+  off the timeline is what stops a frozen account going on being read by
+  people who did not go looking; leaving them on the page is what stops a
+  freeze being a deletion.
+- Affected features: `postAll()` / `postKept()`, `whoCard()`, `post_seen`.
+- Affected data: `post_seen` gains `author_out`. No row moves.
+- Affected docs: `FEATURES.md`, `DATA_MODEL.md`.
+- Implementation status: **done.**
+
+### Decision
+- Date: 2026-08-22
+- Area: Appealing a freeze
+- Decision: **An address, not a form.** `Lingua@tokinets.com`, opened from the
+  frozen screen.
+- Reason: a frozen account cannot write a row anywhere — every write policy in
+  `schema.sql` goes through `is_member()`, which is the whole of what being
+  frozen means — so a form would need a table with the door open, and that
+  door is the thing being closed. Mail is a channel that already exists.
+- Affected features: `vFeed` while frozen.
+- Affected data: none.
+- Affected docs: `supabase/setup.md`.
+- Implementation status: **done in the app.** The alias itself is the owner's
+  to create.
+
+### Decision
+- Date: 2026-08-22
 - Area: What a thing belongs to
 - Decision: **Everything belongs to the account** — language, dictionary,
   letters, keyboard, plan. The server is true, the phone keeps a copy so it

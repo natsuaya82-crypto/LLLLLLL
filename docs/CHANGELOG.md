@@ -15,6 +15,282 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The account room says which account, and an email account can change its password
+
+It said "Signed in" and nothing else — not which of the three doors you came
+in by, not the address, and there was no way to change a password from inside
+the app at all.
+
+All of it is on the token and none of it is anywhere else: `profile` holds no
+address on purpose, because a profile is what other people see. `netClaims()`
+in `net.js` is the one place that opens a JWT — `netAnonTok()` was already
+doing it and now shares it — and `netHow()` and `netMail()` are the two
+questions asked of it.
+
+One row, not two. Apple and Google are names and there is no address of ours
+to show for either; an email account is the row the other way round, called
+Email with the address as its answer. Writing it as "Account: Email" above
+"Email: the address" was the same word twice and was the first attempt.
+
+**Changing a password** is a room of its own (`set:pw`), reached from the
+account room and only by an account that has one — Apple and Google keep
+theirs and there is nothing on our side to change. Two calls and not one:
+Supabase will set a new password for anybody holding a session, so a phone
+picked up off a table would be enough. The current password is asked for and
+**checked** by signing in with it, which is the only way to check it.
+
+`SETS` gained an `off` flag for it: the room is in that list because that
+list is what says a room exists — the walks read it — and it is not a row on
+the settings screen.
+
+The fixture's session now carries a **real-shaped JWT** instead of `at:'a'`.
+Three things are read off it, so a token that could not be read walked the
+account room in a state almost nobody is in.
+
+Six strings in all ten languages: `set.pw`, `set.pw.old`, `set.pw.go`,
+`set.pw.done`, `set.mail`, `net.needpw`.
+
+### The terms and the privacy policy, small, at the foot of the account room
+
+They were rows the same height as Sign out and Erase everything, which put a
+thing you **read** in the column of things you **press**.
+「プライバシーポリシーとか同じ高さ同じ行で並ぶのキモいな」「小さく並べよ」
+They are one small quiet line now, centred and side by side, pinned to the
+bottom of the screen above the tab bar. `.body.tall` is the account room's
+only — every other body is exactly as tall as what is in it.
+
+### Every row in a list is the same height, and nothing new is a rounded box
+
+`.set` left the type to the tag, so a `<button>` row took the browser's
+13.3px/normal and an `<a>` row took the body's 16px/1.7: **49px against
+57px**, in the same list. It sets `font-size` and `line-height` itself now.
+The gap above Erase everything went too — a `margin-top` on one row is one
+row taller than its neighbours.
+
+And the rounded gold box came back three times in one afternoon after being
+pointed out twice. `.btn.ghost` is what a button is; `.btn` stays on about
+thirty older screens and is not reached for again. Both are written into
+`CLAUDE.md` § Shape as a fifth banned thing, and into the decision log.
+
+
+### Three rows nobody could tell apart become two
+
+The account room had **Sign out**, **Delete account** and **Erase this
+phone**, with a row about something else between the last two. Delete account
+reached the server and left the phone; erase this phone did the opposite;
+neither name said so, and reading the screen could not tell you.
+「サインアウト、スイッチアカウントはまあそのまま使える。データを消去するで全部
+消えるでいいんじゃない」
+
+Two now, and they are opposite ends of one question:
+
+- **Sign out** — the tokens go and nothing else. The account stays, the
+  languages stay. Signing in as somebody else is what it is for.
+- **Erase everything** — the account and every post, photograph and recording
+  on the server; every language, letter and setting on this phone; **and the
+  backup files in Documents**. One confirm, and the confirm is the whole
+  sentence.
+
+`dropAccount()` is gone and `wipeAll()` does both halves. The server is told
+**first** and the phone is emptied whatever it answers: somebody who asked to
+be deleted must be deleted, and a phone that kept its languages because the
+network was bad would be the button lying in the direction that cannot be
+corrected afterwards.
+
+The backup files could not be deleted at all before — nothing in the app could
+reach them — so `dropKept` is new in `ios/App/App/LinguaShare.swift`, and
+`bkDropAll()` in `backup.js` is the one caller. **Swift, so it is not built
+here**: on a phone that has not been rebuilt the files stay and everything
+else goes.
+
+```
+DELETE REVIEW
+  who deletes       user action — wipeAll(), behind one confirm that names
+                    every one of the four things
+  when              only when somebody presses it. Nothing automatic, no
+                    pruning, nothing on launch
+  what exactly      1. the account row and everything cascading off it on the
+                       server (account_delete() in schema.sql), and the
+                       photographs and voice in Storage, which are listed and
+                       removed first because a bucket has no foreign keys
+                    2. every slice of every language in localStorage
+                    3. the settings, back to a fresh install — keeping the
+                       theme, the interface language and the plan
+                    4. every *.json under Documents/Languages — ours, by
+                       suffix, in that one directory. Nothing else in
+                       Documents is looked at
+  why               there were two buttons and neither did what its name
+                    suggested to the person reading it. 「アカウント消したら
+                    全部消えるけど」
+  recoverable?      NO, and there is nowhere left that has it. This is the
+                    first delete in the app that also removes the backup —
+                    which is exactly what makes the sentence on the button
+                    true, and why the confirm says so before the press
+  does the backup survive it?
+                    no, deliberately, and this is the one place that is so.
+                    Every other delete in this app leaves the backup alone
+  anything to do with the plan?
+                    the plan is KEPT. Erasing your work is not cancelling a
+                    subscription, and it lives in the Keychain, which this
+                    does not reach
+  migration / rollback
+                    none. An account that was never signed in skips step 1
+```
+
+`set.drop`, `set.drop.done` and `confirm.drop` are gone from all ten
+languages; `set.wipe` and `confirm.wipe` say what the one button now does.
+`press` counts one button name fewer: **213**.
+
+Three more things about that room were wrong and are fixed with it. Its first
+row was a **button that did nothing**, saying "Account: signed in" on a screen
+whose heading is Account — a row you can press that answers nothing is worse
+than no row, so it says WHICH account instead (`@handle`) and is not a button.
+**Sign out was red**; red is for the press that cannot be taken back, there is
+exactly one of those here, and a red one that changes nothing teaches people
+that red means nothing. And the two documents sat **between** the two account
+actions, a contract in the middle of a sentence about leaving. The order is
+now: who you are, the way out, a gap, the two documents, a gap, the one thing
+that cannot be undone, alone at the foot.
+
+
+### The terms and the privacy policy, and two rows at the foot of Settings
+
+Both documents are written and live on the site —
+`tokinets.com/lingua/terms.html` and `/lingua/privacy.html`, in the other
+repository. Written for Lingua rather than copied from the two TOKINETS
+already had: the anonymous account made at first launch, identity asked at
+posting and buying only, a language belonging to the account and kept on the
+server whether or not anybody has paid, what taking a post down and freezing
+an account each do and do not do, the fact that re-encoding a photograph
+drops the location the camera put on it, and the appeal address.
+
+They carry what App Store guideline 1.2 asks of an app with user posts: a
+no-tolerance clause, report and block, a stated 24-hour response, and a way
+to reach us. English, because that is the app's default, the audience, and
+what review reads.
+
+In the app they are **inside the account room**, under everything else in
+it, and not on the settings list itself and not in the onboarding —
+「ふつうに設定とかの見えづらいとこに追いとけばいいよ」「もっと見えにくいとこに
+入れてくれ」. Under both faces of that room, because somebody who has never
+signed in has to be able to read them too. They are `<a href>` rather than
+buttons, pointing at the published pages: one copy of a contract, and a change
+to either is one edit. `a.set{text-decoration:none}` is the only new CSS.
+
+### Your language moves to the top of Settings and Display language to the foot
+
+They were next to each other and are one word apart — 「二つ似てるから間違え
+ないように」. They are also two completely different questions: the language
+you are BUILDING, and the language the app SPEAKS. So the language somebody
+is building sits directly under the plan, where the work is, and the
+interface's language sits at the foot of the list on its own, where a thing
+you set once belongs. `SETS` in `settings.js` is the one place that says the
+order. Nothing else changes.
+
+Two strings in all ten languages, `set.terms` and `set.privacy`.
+
+
+### A frozen account, from the other side — and a way to say it is wrong
+
+**Their posts come off the timeline and stay on their own page.** Nothing is
+deleted and nothing is hidden on the server: a freeze can be lifted, and
+everything comes back by itself the next time the server is asked.
+「タイムラインから外す、プロフィールからは凍結してますの表示。ツイートは自己
+責任で見れるようにするのは？」
+
+**Stored, on the server:** `post_seen` gains `author_out` — whether the
+account that wrote the post is frozen. It is on the ROW, the way everything
+the reading side needs is, rather than the phone asking about every author a
+timeline shows. `postKept()` is the new list (blocked and taken-down
+removed) and `postAll()` is that list with frozen accounts taken off as
+well; a profile uses the first and the timeline the second.
+
+**Their page says so and shows nothing else about them** — no face, no name,
+no follow button, since following an account that cannot post is a button
+with nothing behind it. Their posts are under it.
+
+**And a way to appeal.** `Lingua@tokinets.com`, opened from the frozen
+screen. An address and not a form: a frozen account cannot write a row
+anywhere — every write policy goes through `is_member()`, which is the whole
+of what being frozen means — so a form would need a table with the door open,
+and that door is the thing being closed. **The alias is the owner's to
+create**, and the link is the app's one `<a href>`: what opens Mail is the
+href, so it cannot be a `<button>`. **Not device confirmed** — whether iOS
+hands a `mailto:` to Mail from inside this WKWebView has not been tried on a
+phone.
+
+**The rule about explaining is narrowed, and only this far.** 「必要な説明は
+書いてね。みてわからないのが一番ダメ。最低限ね」 Where the app has taken
+something away and the screen would otherwise be a state with no cause and no
+way out, the sentence it needs is written. The frozen screen is the case that
+settled it and the only one that has it: a heading, one line saying what is
+off, and the appeal. Everything else in the ban still stands everywhere else.
+`CLAUDE.md` § Explaining and three entries in `docs/FEATURE_RULES.md` say so.
+
+Four strings in all ten languages: `post.rules`, `who.out`, `out.what`,
+`out.appeal`. `npm run rls`: **122 attempts** — a frozen account's post says
+so on the row and an unfrozen one does not.
+
+
+### A post taken down says so where it was, and a frozen account is told on the page the app opens on
+
+Three things, and all three are the owner narrowing what was proposed.
+
+**A tombstone, on the one post and not on the conversation.** A post that was
+taken down used to be missing from everybody else's answer, so a thread had a
+hole in it and a reader could not tell "taken down" from "never existed".
+Now the post somebody came to read says that it went — one line, no name, not
+a thing you can press. Everything **else** in the conversation is somebody
+else's line and is simply not shown: 「スレッドは本ツイートだけね？それ以外の
+会話は本ツイートとは関係ないものとする」. It is out of the timeline entirely.
+Your own stays where it was, wearing the chip that says what state it is in.
+
+**Stored, on the server:** a view, `post_seen`, which the app now reads
+instead of `post` (`netFeed`, `netFindPosts`). It hands back the row and
+replaces the body with `{}` unless you wrote it or answer the reports, so the
+words somebody was reported for are not on the wire at all. `post.body` is
+untouched and `post_show()` still puts the post back whole. `post_read` is
+unchanged and still refuses a hidden row through the table — a view is only a
+wall if there is no door beside it, and opening the table instead was the
+first shape of this and put the body in front of anybody with the publishable
+key. `post_seen` is a definer view for that reason: a caller-rights view could
+not see a hidden row and would have nothing to blank.
+
+**Block and report, on a person's page.** They were on a post's `⋯` and
+nowhere else, so blocking somebody meant finding something of theirs to block
+them from. 「ブロックも通報はその人の画面でもよろしい」 `whoMore()` in `me.js`,
+the same menu in the same shape, closed by the same one rule in
+`postMenuTook()` — `WMENU` beside `PMENU`, a boolean because a page holds one
+person. A report with no post on it is about the account, which `report` has
+always allowed (`check (post is not null or who is not null)`).
+
+**Frozen is said on Home, and nowhere else.** No notice, and no notice for a
+post being taken down either: 「通知はいらんてホーム画面にバンでいいやん」
+「下ろされた初打ちいらんし」. The three sns tabs stay open — 「3タブを閉じる
+必要もないし。ホームに出ればいいやん」 — and every door being frozen shuts is
+shut by `is_member()` on the server whether or not anything on screen says so.
+This is the saying so.
+
+Home is the **feed**, not the profile tab, and it took two goes. It went on
+`vProfile` first, which is a different screen. Then it was a coloured strip
+with a corner radius and a border across the top of the feed — a chip, and a
+chip is a thing you scroll past. It takes the timeline's PLACE now, as the
+app's own empty state (`.empty`, the serif heading every other nothing-here
+screen uses), and the two ways to write — the row at the top and the round
+button over the corner — are not drawn at all: a button that cannot do its
+one thing is worse than no button. That shape is X's and the owner supplied
+it as the reference.
+
+One new string in all ten languages, `post.rules` (`post.gone` was taken and
+means something else). `npm run rls`: **120 attempts, 21 shapes** — the row
+comes back, it says nothing, the words cannot be read out of the view or out
+of the table under it, the author still sees their own, and the view carries
+no `hidden_why`. Watched failing with the blanking removed (3 red) and with
+the table left open (2 red). `post-check` § 13 holds the phone half, watched
+failing both ways: a tombstone back in the timeline, and every post in a
+thread drawing one.
+
+
 ### A language is kept on the server, and two copies are put together rather than one winning
 
 Everything somebody makes belongs to the account — 「全部アカウントごとでしょ」

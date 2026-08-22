@@ -280,6 +280,22 @@ function bkTakeGen(gens){
   }
   return 0;
 }
+/* Every backup file, gone. Called by one thing -- wipeAll() -- and it is the
+   only place in this app that destroys a copy on purpose. The rule it looks
+   like it breaks is docs/DATA_SAFETY.md's "no automatic deletion", and it
+   does not: this is not automatic, it is somebody pressing the one button
+   that says everything goes. Leaving the files would make that button a lie,
+   because they are the copy that survives the app itself.
+
+   No native side means nothing to remove, which is a browser and every check
+   under tools/. */
+function bkDropAll(then){
+  var p=sharePlug();
+  if(!p){ if(then) then(); return; }
+  p('LinguaShare', 'dropKept', {})
+    .then(function(){ if(then) then(); })
+    ['catch'](function(){ if(then) then(); });
+}
 function bkRestore(then){
   var p=sharePlug();
   if(!p){ if(then) then(0); return; }

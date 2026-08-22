@@ -187,9 +187,9 @@ function whoOf(h){
     p=POSTS[i];
     if(String(p.hd||'')===h)
       return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'',
-              bio:p.bio||'', fo:p.fo||0, fr:p.fr||0};
+              bio:p.bio||'', fo:p.fo||0, fr:p.fr||0, out:!!p.out};
   }
-  return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0};
+  return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0, out:false};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
 /* Who you have blocked, as handles, beside who you follow -- both are the
@@ -243,8 +243,28 @@ function meFollow(h){
    What is not known is simply absent -- no bio and no counts until they
    arrive with the person. Neither is on a post, and a profile that fills them
    in with a zero is a profile saying something it was never told. */
+/* Whether the ... on a person's page is open. A boolean and not an id: a
+   page is about one person, so there is nothing to tell two of them apart
+   with. It is closed by the same press-anywhere rule PMENU is, and by
+   leaving the page. */
+var WMENU=false;
+function whoMore(h){
+  if(!h || h===meHandle()) return;
+  WMENU=!WMENU;
+  render();
+}
 function whoCard(h){
   var p=whoOf(h), on=meFollows(h);
+  /* Frozen, and then nothing else about them. No face, no name, no follow
+     button -- following an account that cannot post is a button with nothing
+     behind it. What is still under this is their posts, which stay readable
+     on their own page and come off the timeline.
+     「タイムラインから外す、プロフィールからは凍結してますの表示」
+
+     A freeze can be lifted, so nothing here is destroyed and the page comes
+     back by itself. */
+  if(p.out)
+    return '<div class="empty"><div class="eb">'+esc(t('who.out'))+'</div></div>';
   return '<div class="mecard">'+
     '<div class="metop">'+
     '<div class="pav">'+postFace(p)+'</div>'+
@@ -254,6 +274,25 @@ function whoCard(h){
     '</div>'+
     '<button class="meedit'+(on?' on':'')+'"' + DO('meFollow', [String(h)]) + '>'+
       esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
+    /* The two things you can do about a PERSON rather than about one line
+       they wrote. They were on a post's ... and nowhere else, so blocking
+       somebody meant finding something of theirs to block them from, and
+       reporting an account that had said the same thing forty times meant
+       picking one of the forty. 「ブロックも通報はその人の画面でもよろしい」
+
+       The same menu as a post's, in the same shape and closed the same way --
+       WMENU beside PMENU, because a page holds one person and a timeline
+       holds many posts, and one of them needs an id. */
+    '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
+      esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+    (WMENU
+      ? '<span class="pmenu" data-pm="1">'+
+        '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
+          '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
+        '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
+          '<span>'+esc(t('post.report'))+'</span></button>'+
+        '</span>'
+      : '')+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+

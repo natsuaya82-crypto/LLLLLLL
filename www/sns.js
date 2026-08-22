@@ -118,6 +118,12 @@ function snsPull(){
     render();
   }, function(){ snsPulling=false; });
 }
+/* Where an appeal goes. An address and not a form: a frozen account cannot
+   write a row anywhere -- every write policy in supabase/schema.sql goes
+   through is_member() and that is the whole of what being frozen means -- so
+   a form here would need a table with the door open, which is a door. Mail
+   is a channel that already exists and is not ours to break. */
+var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
 function vFeed(){
   if(!netSignedIn()) return snsLocked('feed');
   snsPull();
@@ -130,20 +136,46 @@ function vFeed(){
   return '<div class="view">'+
     rootTop('feed')+
     '<div class="body">'+
+
     /* A row to write in, at the top of the timeline, because the round button
        is one floating thing over the corner of a screen and somebody who does
        not see it has no way to post at all. 「ホームからもツイートできるように」
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
-    '<button class="wrow"' + DO('openPost') + '>'+
+    (NET_BANNED? '' :
+      '<button class="wrow"' + DO('openPost') + '>'+
       '<span class="pav">'+
         postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
       '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
-    '</button>'+
+    '</button>')+
     /* Under the row you write in and directly on top of the list they choose
        between, because that is what they are about. */
     snsTabs()+
-    (list.length
+    /* Frozen, said here and nowhere else. Not a notice -- 「通知はいらんて
+       ホーム画面にバンでいいやん」 -- and not a coloured strip over a
+       timeline that goes on scrolling underneath it: it takes the timeline's
+       place, which is what every app that does this does and is the only
+       shape that cannot be scrolled past.
+
+       The three tabs stay open and the making side goes on working
+       「3タブを閉じる必要もないし。ホームに出ればいいやん」. Every door being
+       frozen shuts is shut by is_member() in supabase/schema.sql whether or
+       not anything on screen says so; this is the saying so. */
+    (NET_BANNED
+      ? '<div class="empty"><div class="eb">'+esc(t('post.out'))+'</div>'+
+          /* The one place in this app that explains itself, and it is here
+             because not knowing is worse than being told: somebody who finds
+             the buttons gone and no sentence anywhere has to guess whether
+             the app is broken. 「必要な説明は書いてね。見てわからないのが
+             一番ダメ。最低限ね」
+
+             Two lines. What is off, and the way to say it is wrong -- a
+             freeze can be lifted, so there has to be somewhere to write. */
+          '<div class="es">'+esc(t('out.what'))+'</div>'+
+          '<a class="btn ghost outapp" href="'+esc(APPEAL)+'">'+
+            esc(t('out.appeal'))+'</a>'+
+        '</div>'
+      : list.length
       ? list.map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
          started; nothing HERE, with posts on the other tab, is a person who
@@ -153,8 +185,12 @@ function vFeed(){
     '</div>'+
     /* Where every timeline puts it: over the feed, above the bar, under the
        thumb of the hand already holding the phone. */
-    '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
-      ICON_ADD2+'</button>'+
+    /* And neither way in. Both open a composer that will refuse, and a
+       button that cannot do its one thing is worse than no button: it is the
+       app asking somebody to find out. */
+    (NET_BANNED? '' :
+      '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
+      ICON_ADD2+'</button>')+
     '</div>';
 }
 /* ---- one conversation --------------------------------------------------
@@ -185,9 +221,18 @@ function vThread(){
   if(!p || postBlocked(p)) return viewGone();
   ups=postUps(p);
   down=postDown(id, 0, [], [id]);
-  for(i=0;i<ups.length;i++) out+=postRow(ups[i]);
-  out+=postRow(p);
+  /* Whatever was above it and whatever answers it, less anything that has
+     been taken down -- 「それ以外の会話は本ツイートとは関係ないものとする」.
+     A reply that went is not a hole to be marked; it is a line somebody else
+     wrote, and the conversation does not stand or fall with it. */
+  for(i=0;i<ups.length;i++) if(!postGone(ups[i])) out+=postRow(ups[i]);
+  /* The one post somebody came here to read is the exception. It went, and
+     saying so is the whole point of it having gone -- a gap here reads as
+     "never existed", which is the opposite of what happened.
+     「スレッドは本ツイートだけね？」 */
+  out+=postGone(p)? postTomb() : postRow(p);
   for(i=0;i<down.length;i++){
+    if(postGone(down[i].p)) continue;
     d=Math.min(down[i].d, THREAD_IN);
     out+='<div class="pind pind'+d+'">'+postRow(down[i].p)+'</div>';
   }

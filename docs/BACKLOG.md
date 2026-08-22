@@ -7,6 +7,29 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## A private account — asked for, and deliberately not now
+
+There is no such thing today: every profile and every post is readable by
+anybody. What exists is the public/private switch on a LANGUAGE page
+(`wldHidden()` in the language room), which is a different thing.
+
+Three pieces are missing and the middle one is the reason this is here:
+
+1. a column on `profile`;
+2. **following becomes a request.** It is one-sided and instant today, so an
+   account that could be locked would need a pending state, a screen to
+   accept or refuse on, and every place that counts or lists followers would
+   have to say which kind it is holding;
+3. `post_read` gated on "public, or mine, or an accepted follower of mine",
+   where it is `true` today.
+
+Owner asked, then said not yet 「いやめんどいから今はいいや」. Not started,
+and nothing has been laid in for it — no column, no flag, no dead branch.
+When it is picked up, two things are already decided by the shape of the
+data: existing follows all count as accepted, so nobody loses a follower on
+the day it ships; and whether locking an account keeps the followers it
+already has is open.
+
 ## `form:add:<parent>` arrived at cold shows "this is gone"
 
 `openAdd()` decides whether the draft is new by asking whether the route is

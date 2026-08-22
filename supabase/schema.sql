@@ -475,6 +475,47 @@ create policy publication_make on publication for insert with check (
   and exists (select 1 from language l where l.id = language and l.owner = auth.uid())
 );
 
+-- What a post says, to whoever is asking, and the app reads THIS rather than
+-- `post`. A post taken down comes back as a row with an EMPTY body -- so a
+-- thread can say that something was removed without saying what it was.
+--
+-- Hiding the row was the first shape of it. That is right for a timeline and
+-- wrong inside a conversation: the replies to it are still there, answering
+-- something that is not, and a reader cannot tell "taken down" from "never
+-- existed". A thread with a hole in it is the app losing an argument it
+-- should be winning -- something was removed, and saying so is the point of
+-- removing it.
+--
+-- This view is a DEFINER view, which is the one kind this file has, and it is
+-- deliberate. post_read above will not hand a hidden row to anybody, so a
+-- view that asked as the caller could not see one either and would have
+-- nothing to blank. Running as the owner it sees every row and does the
+-- blanking itself -- and the blanking is the whole of what post_read says, so
+-- the two agree by saying the same sentence rather than by one of them being
+-- skipped. Nothing else about a post is restricted anywhere in this file, so
+-- there is nothing else for this to have gone around. `hidden_why` is not a
+-- column of it: why a post went is the reports screen's and the notice's.
+--
+-- The author and the staff are handed the post itself. The author has to be
+-- told by their own post rather than by it turning into a stranger's
+-- tombstone, and staff have to be able to read what they are deciding about.
+--
+-- `author_out` is the one thing on here that is not the post's: whether the
+-- account that wrote it is frozen. It is on the ROW because that is how the
+-- reading side works everywhere in this app -- what a reader needs is put on
+-- the post -- and because the alternative is the phone asking about every
+-- author it sees. A frozen account's posts come off the timeline and stay
+-- readable on the account's own page; the app decides which, and this is
+-- what it decides with.
+create or replace view post_seen as
+  select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
+         p.hidden_at,
+         (a.banned_at is not null) as author_out,
+         case when p.hidden_at is null or p.author = auth.uid() or is_staff()
+              then p.body else '{}'::jsonb end as body
+    from post p left join profile a on a.id = p.author;
+grant select on post_seen to anon, authenticated;
+
 -- post: everyone reads, you write as yourself.
 --
 -- Everything is world-readable for now; locked accounts come later. When they
@@ -488,6 +529,11 @@ create policy publication_make on publication for insert with check (
 -- quiet is something they can see rather than something they have to notice:
 -- www/post.js puts a line on it saying so. Staff keeps it because a decision
 -- that cannot be looked at again cannot be undone.
+-- A post taken down is not handed to anybody through THIS table, and that is
+-- what makes post_seen below safe to grant. Opening this instead was the
+-- first shape of it and was wrong twice over: the words somebody was
+-- reported for went out on the wire to anybody with the publishable key, and
+-- a view is only a wall if there is no door beside it.
 drop policy if exists post_read on post;
 create policy post_read on post for select using (
   hidden_at is null or author = auth.uid() or is_staff()
