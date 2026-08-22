@@ -722,6 +722,12 @@ defLang('en', (function(){
       'set.lock.csv.t'  : "CSV import and export",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
       'set.wipe'        : 'Erase everything',
+      'set.pw'        : 'Change password',
+      'set.pw.old'        : 'Current password',
+      'set.mail'        : 'Email',
+      'set.pw.go'        : 'Change password',
+      'set.pw.done'        : 'Password changed',
+      'net.needpw'        : 'Fill both.',
       'confirm.wipe'    : "Erase everything? Your account and every post, photograph and recording on it go from the server; every language, letter and setting goes from this phone; the backup files go with them. Nothing can be brought back.",
       /* languages */
       'langs.title'     : "Languages",

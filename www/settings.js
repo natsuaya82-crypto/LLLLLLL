@@ -21,7 +21,12 @@ function setSample(){
    was to scroll past every language the app speaks. Six pages now, and the
    first one is a list of six rows. Each of them is one question. */
 /* The two documents, in the account room and under everything else in it --
-   not on the settings list itself, and not in the onboarding. Apple asks only
+   not on the settings list itself, and not in the onboarding.
+
+   Small, side by side, and NOT rows. They were rows the same height as
+   "Sign out" and "Erase everything", which put a thing you read in the
+   column of things you press. 「プライバシーポリシーとか同じ高さ同じ行で
+   並ぶのキモいな」「小さく並べよ」 Apple asks only
    that they be reachable from inside the app, and nobody has ever read one on
    their first day: a contract in front of somebody who has not seen the app
    yet is a door with a contract on it.
@@ -32,12 +37,13 @@ function setSample(){
    contract, so a change to either is one edit, and the version somebody
    agreed to is the version that is up. */
 function docRows(){
-  return '<a class="set" href="'+esc(DOC_TERMS)+'" target="_blank" rel="noopener">'+
-      '<span class="sl">'+esc(t('set.terms'))+'</span>'+
-      '<span class="sv">'+ICON_GO+'</span></a>'+
-    '<a class="set" href="'+esc(DOC_PRIVACY)+'" target="_blank" rel="noopener">'+
-      '<span class="sl">'+esc(t('set.privacy'))+'</span>'+
-      '<span class="sv">'+ICON_GO+'</span></a>';
+  return '<div class="docs">'+
+    '<a href="'+esc(DOC_TERMS)+'" target="_blank" rel="noopener">'+
+      esc(t('set.terms'))+'</a>'+
+    '<span class="docdot">\u00b7</span>'+
+    '<a href="'+esc(DOC_PRIVACY)+'" target="_blank" rel="noopener">'+
+      esc(t('set.privacy'))+'</a>'+
+    '</div>';
 }
 /* Where they are, and it is the site rather than in here. One copy, published,
    and a change to either is one edit -- a copy inside the app would be a
@@ -54,7 +60,13 @@ var DOC_PRIVACY='https://tokinets.com/lingua/privacy.html';
    So the language somebody is building is directly under the plan, at the
    top, where the work is; and the interface's language is at the foot of the
    list, on its own, where a thing you set once belongs. */
+/* `off` means the room exists and is not a row on this list. There is one:
+   changing a password, which is reached from inside the account room and only
+   by somebody who HAS one. It is in this list rather than beside it because
+   this list is what says a room exists -- the checks walk it, and a room that
+   is not in it is a room nothing ever renders. */
 var SETS=[
+  {id:'pw',    k:'set.pw', off:true},
   {id:'lang',  k:'set.lang'},
   {id:'look',  k:'set.look'},
   {id:'read',  k:'set.reading'},
@@ -62,6 +74,47 @@ var SETS=[
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
 ];
+/* Which account this is, in one row. Apple and Google are names and are not
+   translated, and there is no address of ours to show for either -- what
+   Apple hands over may be a relay address, and neither is something somebody
+   signs in WITH here.
+
+   An email account is the row the other way round: the address IS the
+   answer, so the row is called Email and the address is what it says. Two
+   rows -- one saying "Email" and one saying "Email: the address" -- was the
+   same word twice, which was the first way this was written.
+
+   A token this phone could not read falls through to the plain word, which
+   is a state and not a failure. */
+function setWhoRow(){
+  var h=netHow(), m=netMail(), lab=t('set.account'), val=t('set.account.on');
+  if(h==='apple')  val='Apple';
+  else if(h==='google') val='Google';
+  else if(m){ lab=t('set.mail'); val=m; }
+  return '<button class="set"><span class="sl">'+esc(lab)+'</span>'+
+    '<span class="sv">'+esc(val)+'</span></button>';
+}
+/* Changing a password, which is two calls and not one. Supabase will set a
+   new password for anybody holding a session -- so a phone somebody picked up
+   off a table would be enough. The old one is asked for and CHECKED first, by
+   signing in with it, which is the only way to check it: there is no endpoint
+   that answers "is this the password".
+
+   `now` is not confirmed twice. A field typed twice is how a form apologises
+   for hiding what was typed, and this one does not hide it. */
+var PWF={old:'', now:'', busy:false, msg:''};
+function setPwSet(k, v){ PWF[k]=String(v||''); }
+function setPwGo(){
+  if(PWF.busy) return;
+  if(!PWF.old || !PWF.now){ PWF.msg=t('net.needpw'); render(); return; }
+  PWF.busy=true; PWF.msg=''; render();
+  netSignIn(netMail(), PWF.old, function(){
+    netSetPass(PWF.now, function(){
+      PWF={old:'', now:'', busy:false, msg:''};
+      back(); toast(t('set.pw.done'));
+    }, function(d, st){ PWF.busy=false; PWF.msg=netWhy(d, st); render(); });
+  }, function(d, st){ PWF.busy=false; PWF.msg=netWhy(d, st); render(); });
+}
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   return '<div class="view">'+navTop('')+'<div class="body">'+
@@ -77,7 +130,7 @@ function vSettings(){
     '<button class="set"' + DO('go', ["plans"]) + '>'+
       '<span class="sl">'+esc(t('set.plan'))+'</span>'+
       '<span class="sv">'+esc(p? p.name : 'Free')+ICON_GO+'</span></button>'+
-    SETS.map(function(x){
+    SETS.filter(function(x){ return !x.off; }).map(function(x){
       return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
@@ -167,12 +220,35 @@ function vSet(){
       '<span class="sl">'+t('wld.public')+'</span>'+
       swtHTML(!wldHidden())+'</button>'+
       '';
+  } else if(id==='pw'){
+    /* Two fields and a button. The same shape as the door's, because it is
+       the same act -- and it is a page you went to rather than a sheet over
+       where you were, which is what every other room here is. */
+    body='<div class="field"><input id="set-pwo" type="password" '+
+        'value="'+esc(PWF.old)+'" placeholder="'+esc(t('set.pw.old'))+'" '+
+        'autocomplete="current-password" autocapitalize="none" autocorrect="off" '+
+        'spellcheck="false"' + IN('setPwSet', ['old']) + '></div>'+
+      '<div class="field"><input id="set-pwn" type="password" '+
+        'value="'+esc(PWF.now)+'" placeholder="'+esc(t('ob.mail.newpw.ph'))+'" '+
+        'autocomplete="new-password" autocapitalize="none" autocorrect="off" '+
+        'spellcheck="false"' + IN('setPwSet', ['now']) + '></div>'+
+      (PWF.msg? '<div class="obmsg">'+esc(PWF.msg)+'</div>' : '')+
+      '<button class="btn ghost" style="margin-top:18px"' + DO('setPwGo') +
+        (PWF.busy? ' disabled':'') + '>'+
+        t(PWF.busy? 'ob.mail.wait' : 'set.pw.go')+'</button>';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
     body=(netMember()
-      ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
-        '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
+      ? setWhoRow()+
+        /* Only an account that HAS a password. Apple and Google keep theirs;
+           there is nothing on our side to change, and a row that opened a
+           screen saying so would be the app explaining itself. */
+        (netHow()==='email'
+          ? '<button class="set"' + DO('go', ["set", "pw"]) + '>'+
+            '<span class="sl">'+t('set.pw')+'</span>'+
+            '<span class="sv">'+ICON_GO+'</span></button>'
+          : '')+
         '<button class="set"' + DO('setSignOut') + '>'+
         '<span class="sl bad">'+t('set.signout')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
@@ -203,8 +279,17 @@ function vSet(){
          Signing out is the other button and is the one that changes nothing.
          Alone at the foot with a gap above it, which is where a phone puts
          the thing that cannot be undone. */
-      '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
-      '<span class="sl bad">'+t('set.wipe')+'</span></button>';
+      '<button class="set"' + DO('wipeAll') + '>'+
+      '<span class="sl bad">'+t('set.wipe')+'</span></button>'+
+      /* The two documents, at the very foot of this room and nowhere else in
+         the app. Apple asks only that they be reachable from inside it, and
+         nobody reads one on their first day. 「アカウントの一番下やな」
+
+         Under both faces of the room, because somebody who has never signed
+         in has to be able to read them too. Links and not buttons: they are
+         the published pages, so a change to either is one edit and the
+         version somebody agreed to is the version that is up. */
+      docRows();
   } else if(id==='data'){
     /* What is on the disk, for everybody. Keeping a language is not a paid
        feature -- charging for not losing somebody's work would mean
@@ -231,7 +316,11 @@ function vSet(){
   } else {
     body=goneBox();
   }
-  return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
+  /* The account room is the one that has something pinned to the FOOT of it,
+     so its body is the one that is as tall as the screen. Everywhere else a
+     body is exactly as tall as what is in it. */
+  return '<div class="view">'+navTop('')+
+    '<div class="body'+(id==='acct'? ' tall' : '')+'">'+body+'</div></div>';
 }
 /* One card: a small Lingua in that theme, its name, and a tick. The colours
    are written out rather than taken from the variables, because the light

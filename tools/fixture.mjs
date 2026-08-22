@@ -53,7 +53,19 @@ export function seed(){
      at all. The DOOR is the face that needs saying out loud now, and it is
      one entry in halfDone() rather than the state everything else is walked
      in. */
-  SESS = { at:'a', rt:'r', uid:'u', anon:false };
+  /* A token shaped like a real one, because three things are read OFF it:
+     whether the session is anonymous, which door it came in by, and the
+     address. `at:'a'` answered none of them, so the account room walked as a
+     session whose token could not be read -- which is a real state and is not
+     the one everybody is in. Signed in by mail here, so the row that changes
+     a password is rendered; the two that have no password of ours are a
+     halfDone entry. */
+  const jwt = (o) => 'h.' + btoa(JSON.stringify(o))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') + '.s';
+  window.__jwt = jwt;
+  SESS = { at: jwt({ sub:'u', email:'aya@example.com',
+                     app_metadata:{ provider:'email' } }),
+           rt:'r', uid:'u', anon:false };
   /* anon:false is the half that matters. There is a session from the first
      launch now whether or not anybody has said who they are, so a fixture
      that only set `rt` would be walking the app as somebody with no name --
@@ -453,6 +465,17 @@ export function halfDone(){
                                  () => { NET_BANNED = 'spam';
                                          window.route = 'feed'; NAV = [{ r: 'feed' }];
                                          return vFeed(); }],
+    /* The same room for an account that came in by Apple or Google: no
+       address of ours to show and no password of ours to change. */
+    ['the account, signed in with Google',
+                                 () => { const was = SESS;
+                                         SESS = { at: window.__jwt({ sub:'u',
+                                             email:'aya@gmail.com',
+                                             app_metadata:{ provider:'google' } }),
+                                           rt:'r', uid:'u', anon:false };
+                                         window.route='set'; NAV=[{r:'set', a:'acct'}];
+                                         const h = vSet(); SESS = was;
+                                         NAV=[{r:'settings'}]; return h; }],
     ['the settings list, for whoever answers the reports', () => {
         NET_STAFF = true; window.route='settings'; NAV=[{r:'settings'}];
         const h = vSettings(); NET_STAFF = false; return h; }],

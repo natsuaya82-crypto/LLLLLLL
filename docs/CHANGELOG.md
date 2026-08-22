@@ -15,6 +15,64 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The account room says which account, and an email account can change its password
+
+It said "Signed in" and nothing else — not which of the three doors you came
+in by, not the address, and there was no way to change a password from inside
+the app at all.
+
+All of it is on the token and none of it is anywhere else: `profile` holds no
+address on purpose, because a profile is what other people see. `netClaims()`
+in `net.js` is the one place that opens a JWT — `netAnonTok()` was already
+doing it and now shares it — and `netHow()` and `netMail()` are the two
+questions asked of it.
+
+One row, not two. Apple and Google are names and there is no address of ours
+to show for either; an email account is the row the other way round, called
+Email with the address as its answer. Writing it as "Account: Email" above
+"Email: the address" was the same word twice and was the first attempt.
+
+**Changing a password** is a room of its own (`set:pw`), reached from the
+account room and only by an account that has one — Apple and Google keep
+theirs and there is nothing on our side to change. Two calls and not one:
+Supabase will set a new password for anybody holding a session, so a phone
+picked up off a table would be enough. The current password is asked for and
+**checked** by signing in with it, which is the only way to check it.
+
+`SETS` gained an `off` flag for it: the room is in that list because that
+list is what says a room exists — the walks read it — and it is not a row on
+the settings screen.
+
+The fixture's session now carries a **real-shaped JWT** instead of `at:'a'`.
+Three things are read off it, so a token that could not be read walked the
+account room in a state almost nobody is in.
+
+Six strings in all ten languages: `set.pw`, `set.pw.old`, `set.pw.go`,
+`set.pw.done`, `set.mail`, `net.needpw`.
+
+### The terms and the privacy policy, small, at the foot of the account room
+
+They were rows the same height as Sign out and Erase everything, which put a
+thing you **read** in the column of things you **press**.
+「プライバシーポリシーとか同じ高さ同じ行で並ぶのキモいな」「小さく並べよ」
+They are one small quiet line now, centred and side by side, pinned to the
+bottom of the screen above the tab bar. `.body.tall` is the account room's
+only — every other body is exactly as tall as what is in it.
+
+### Every row in a list is the same height, and nothing new is a rounded box
+
+`.set` left the type to the tag, so a `<button>` row took the browser's
+13.3px/normal and an `<a>` row took the body's 16px/1.7: **49px against
+57px**, in the same list. It sets `font-size` and `line-height` itself now.
+The gap above Erase everything went too — a `margin-top` on one row is one
+row taller than its neighbours.
+
+And the rounded gold box came back three times in one afternoon after being
+pointed out twice. `.btn.ghost` is what a button is; `.btn` stays on about
+thirty older screens and is not reached for again. Both are written into
+`CLAUDE.md` § Shape as a fifth banned thing, and into the decision log.
+
+
 ### Three rows nobody could tell apart become two
 
 The account room had **Sign out**, **Delete account** and **Erase this

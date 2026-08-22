@@ -186,6 +186,28 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-22
+- Area: Shape — a fifth banned thing, and row height
+- Decision: **No rounded box.** 「角丸やめろ」 Nothing new carries a corner
+  radius, a border, or a filled panel — button, banner or notice. `.btn.ghost`
+  where a button is wanted; a plain row where one is not. And **every row in
+  one list is the same height**: the row class sets `font-size` and
+  `line-height` itself, and no row gets a `margin-top` to make a group.
+- Reason: it was broken three times in one afternoon after being pointed out
+  twice — a gold pill on the frozen screen, a bordered strip across Home, a
+  gold pill on the password screen. The class comment on `.btn.ghost` has
+  said it since it was written: 「文字書いて四角で囲ったみたいなボタン全部やめて
+  くれ。ダサすぎる」. The height half is the same afternoon: `.set` left the
+  type to the tag, so a `<button>` row was 49px and an `<a>` row 57px in the
+  same list.
+- Affected features: every screen from here on. `.btn` is still on about
+  thirty older ones and is not being swept; it is simply not reached for
+  again.
+- Affected data: none.
+- Affected docs: `CLAUDE.md` § Shape.
+- Implementation status: **done** for everything added on 2026-08-22.
+
+### Decision
+- Date: 2026-08-22
 - Area: Explaining — the rule, narrowed rather than lifted
 - Decision: **Necessary explanation is written, and kept to the minimum.**
   「必要な説明は書いてね。みてわからないのが一番ダメ。最低限ね」 The ban

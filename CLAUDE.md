@@ -59,6 +59,23 @@ changing is the screen you arrive at); a sheet that slides up over where you
 were instead of a page you went to; and explaining. The keyboard chapter had
 all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、ページ遷移型に
 せず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
+
+**And a fifth: NO ROUNDED BOX.** 「角丸やめろ」 Nothing new gets a corner
+radius, a border, or a filled panel — not a button, not a banner, not a
+notice. What is left is the words, in the colour everything pressable is:
+`.btn.ghost` where a button is wanted and a plain row where one is not. The
+class comment on `.btn.ghost` has said so since it was written —
+「文字書いて四角で囲ったみたいなボタン全部やめてくれ。ダサすぎる」 — and it was
+broken three times in one afternoon: a gold pill on the frozen screen, a
+bordered strip across Home, and a gold pill on the password screen. `.btn`
+still exists and is on about thirty older screens; it is not to be reached
+for again.
+
+**Rows in one list are one height.** Set `font-size` and `line-height` on the
+row class rather than letting the tag decide -- a `<button>` takes the
+browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
+out 49px as one and 57px as the other. No `margin-top` on a row to make a
+group either: that is one row taller than its neighbours.
 → `docs/FEATURE_RULES.md`
 
 **Explaining.** No explanatory text in the app. A screen shows what it is and

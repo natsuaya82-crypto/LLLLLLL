@@ -98,18 +98,44 @@ function netSignedIn(){ return !!(SESS && SESS.rt); }
    drift. An unreadable token is not anonymous: the server is what decides,
    and a phone guessing "anonymous" would close doors on somebody who has an
    account. */
-function netAnonTok(at){
+function netClaims(at){
   var p=String(at||'').split('.')[1], c;
-  if(!p) return false;
+  if(!p) return null;
   p=p.replace(/-/g, '+').replace(/_/g, '/');
   while(p.length % 4) p+='=';
-  try{ c=JSON.parse(atob(p)); }catch(e){ return false; }
+  try{ c=JSON.parse(atob(p)); }catch(e){ return null; }
+  return (c && typeof c==='object')? c : null;
+}
+function netAnonTok(at){
+  var c=netClaims(at);
   return !!(c && c.is_anonymous);
 }
 /* A session with somebody's name on it. Everything other people would see
    asks this and not netSignedIn(): a post, a like, a boost, a follow, a
    block, a report. */
 function netMember(){ return !!(SESS && SESS.rt && !SESS.anon); }
+/* Which of the three doors somebody came in by, and the address they came in
+   with. Both are on the token, which is the only place they are: nothing in
+   `profile` holds an address, on purpose -- profile is what other people see
+   and an address is not.
+
+     netHow()   'apple' | 'google' | 'email' | ''
+     netMail()  the address, or '' -- which is what an Apple account that
+                chose to hide it still has, because Apple gives a relay
+                address rather than nothing
+
+   `app_metadata.provider` is the door that was used. Somebody who has signed
+   in with two of them has `providers` as well; the one asked for here is the
+   one this session came through, which is what a screen saying "you are
+   signed in with" means. */
+function netHow(){
+  var c=SESS && netClaims(SESS.at);
+  return (c && c.app_metadata && String(c.app_metadata.provider||'')) || '';
+}
+function netMail(){
+  var c=SESS && netClaims(SESS.at);
+  return (c && String(c.email||'')) || '';
+}
 
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
