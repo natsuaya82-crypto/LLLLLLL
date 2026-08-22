@@ -455,6 +455,14 @@ Two of them were about capabilities that had been deleted.
 19. Build **#82** is green and on TestFlight. What it has not had is a person:
     tapping three dots with round off should give a corner, and saving a letter
     should land on the letters list.
+20c. `ios/App/LinguaWidget/` — a whole new app-extension target, added to
+    `project.pbxproj` by hand. That it opens in Xcode and builds is the first
+    thing to find out; then the clock on a home screen, and a language whose
+    digits are drawn against one whose are not.
+    **`docs/apple.md` § the widget: it needs its own provisioning profile**
+    (`Lingua Widget Distribution`, bundle id `com.tokinets.lingua.widget`) the
+    same way the keyboard does, and nothing signs until that exists.
+
 20b. `ios/App/App/LinguaStore.swift` — that it compiles at all, and then:
     buying in the sandbox, `restore` after deleting and reinstalling, and a
     renewal arriving while the app is closed. None of it can be seen here;
