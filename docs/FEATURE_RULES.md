@@ -186,6 +186,43 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-22
+- Area: The free slots' names, and what paid buys
+- Decision: 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できると
+  いうだけで。無料分のキーボードはもういじらない」
+
+  **The twenty-eight slots and the digits may not be renamed, on any plan.**
+  a–z, `!`, `?` and one digit per value of the base are what a free language
+  starts with, and their names are what they are. Paid does not buy the right
+  to change one; **paid buys ADDING letters**, which is `can('letters')` and
+  is a different sentence.
+
+  And: **the free keyboard is finished.** No further work on it.
+- Reason: the free QWERTY finds its keys BY NAME — `kbNamed('a')` walks
+  `LETTERS` for one called `a` — so a renamed slot is a key that cannot be
+  found, and `ltStart()` then fills the hole with a new empty letter. The
+  letter somebody drew is still in the alphabet and is no longer on the
+  keyboard, with nothing anywhere saying why. Making the name unchangeable
+  dissolves that: a name that cannot move cannot be lost.
+
+  This is **not** "the paid screen is restricted by a plan the person is not
+  on", which is how `docs/BACKLOG.md` framed the same option and why it read
+  as expensive. A slot's name is not something anybody was ever offered.
+- Affected features: the letter page's name field, the free QWERTY, import.
+- Affected data: none. Nothing stored changes; a name that was already
+  changed on a letter stays as it is — this decides what may happen from now,
+  and CLAUDE.md's data rule says the past is not rewritten to match a new
+  rule.
+- Affected docs: `docs/BACKLOG.md` — the "A renamed letter loses its key on
+  the free plan" entry closes on this.
+- Implementation status: the letter page already hides the field —
+  `ltIsBase()` in `letters.js` and `can('letters') && !ltIsBase(l)` in
+  `sound.js`, with the owner's earlier words on it quoted there
+  (「無料で作ったやつを改名できなければ良くない？」). What was NOT in was the
+  rule itself: `ltSetRoman()` did not refuse, so the screen was the only thing
+  holding it. Now guarded at the function, and `base-check` holds it.
+
+### Decision
+- Date: 2026-08-22
 - Area: Names — a verb is allowed to be a family, and a chapter may not be
   spelled two ways
 - Decision: Three rulings, made together because they are one question asked
