@@ -294,6 +294,40 @@ function pwGl(){ return postGlossHTML(postGloss(pwLn())); }
    budget below rather than for a smaller number here -- 900px is already the
    point where a phone screen stops being able to tell. */
 var POST_PIC=900, POST_PICQ=0.72;
+/* And how big the one in the TIMELINE is, which is a different question and
+   was being answered with the same number. A row shows a picture a few
+   hundred pixels across and was being sent one nine hundred across, so nine
+   tenths of every byte a timeline costs was pixels nobody could see -- and
+   the timeline is the only thing in this app that anybody scrolls. Pressing
+   it still opens the photograph itself, at POST_PIC.
+
+   It is measured, not guessed: at 300 across a picture is 6-10 KB where the
+   same one at 900 is 60-100. Fifty pictures scrolled past is 400 KB instead
+   of 4 MB.
+
+   Resized here rather than in net.js because it is a canvas, and net.js is
+   the window onto the server rather than a place that draws. */
+var POST_THUMB=300;
+/* Nothing is stored on the phone for this: the small copy is made at the
+   moment the picture goes up and exists only in Storage. A picture already
+   smaller than POST_THUMB has no small copy -- '' rather than a second file
+   of the same bytes -- and postThumbs() draws the photograph for it. */
+function postThumb(u, ok){
+  var im=new Image();
+  im.onload=function(){
+    var k=Math.min(1, POST_THUMB/Math.max(im.width, im.height)), c, x, out='';
+    if(k>=1){ ok(''); return; }
+    c=document.createElement('canvas');
+    c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    x=c.getContext('2d');
+    x.drawImage(im, 0, 0, c.width, c.height);
+    try{ out=c.toDataURL('image/jpeg', POST_PICQ); }catch(e){ out=''; }
+    ok(out);
+  };
+  im.onerror=function(){ ok(''); };
+  im.src=String(u||'');
+}
+/* What the timeline may take up. localStorage is one allowance shared by the
 /* What the timeline may take up. localStorage is one allowance shared by the
    posts and by every slice of the language, so a timeline with no ceiling can
    make somebody's LANGUAGE unsaveable -- and the language is the thing this
