@@ -755,6 +755,41 @@ function kbCol(i){
     if(n<0) return s;
   }
 }
+/* ---- how big a keyboard is allowed to get ------------------------------
+   「キーボード縦横って最大を決めてそれ以上は列も行も追加できないようにしよう」
+
+   TEN ACROSS is the phone's number rather than a taste. The narrowest iPhone
+   is 320 across, so ten keys are 32 each, which is what every phone keyboard
+   on earth is; eleven would be 29. Every pattern this app builds already
+   comes to ten or fewer, and the free QWERTY is exactly ten -- so this
+   forbids nothing that exists.
+
+   EIGHT DOWN is not the phone's number, because nothing on the phone sets it:
+   the extension decides its own height and the app says nothing about it. It
+   is a ceiling on how tall a thing somebody can build by adding one row at a
+   time, and eight clears every pattern measured (QWERTY 5, ABC 4, flick 3,
+   tap 7, chart 7 on a 27-letter alphabet) with one to spare.
+
+   Both are held on ADDING only. A layout that is already over -- a pattern
+   built from a very large alphabet, a keyboard made before this existed --
+   is left exactly as it is and simply cannot be added to. Nothing is ever cut
+   down to fit: that would be the app deleting somebody's keys to satisfy a
+   number it invented. */
+var KB_ROWS=8, KB_COLS=20;      /* columns are half keys -- kbU() below */
+/* Is there room for another row, and is there room in this one for a key of
+   that width. Asked in one place each so a way in that forgets cannot exist:
+   the dashed row at the foot, a width dropped on a cell, a width tapped into
+   place, and a key made wider all come through these two. */
+function kbRoomRow(){ return kbLayer().rows.length<KB_ROWS; }
+function kbUsed(row){
+  var n=0, i;
+  for(i=0;i<row.length;i++) n+=kbU(row[i].w);
+  return n;
+}
+function kbRoomIn(ri, w){
+  var row=kbLayer().rows[ri];
+  return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
+}
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
    of w 0.5 at each end, and "grid-column: span 0.5" is not a thing: the
@@ -782,8 +817,9 @@ function kbCols(rows){
 function kbHdrHTML(cols){
   var out='', i=0, n=0;
   while(i<cols){
-    out+='<button class="kbcl" style="grid-column:span '+Math.min(2, cols-i)+'"'+
-      DO('kbDelCol', [n]) + ' aria-label="'+esc(t('kb.col.del'))+'">'+
+    out+='<button class="kbcl'+(kbHeadIs('c', n)? ' on':'')+'" '+
+      'style="grid-column:span '+Math.min(2, cols-i)+'"'+
+      DO('kbHeadCol', [n]) + ' aria-label="'+esc(t('kb.col.sel'))+'">'+
       kbCol(n)+'</button>';
     i+=2; n++;
   }
@@ -797,12 +833,121 @@ function kbHdrHTML(cols){
    step back, not a dialog. A dialog on every row would make building a
    keyboard a conversation. */
 function kbNHTML(ri){
-  return '<button class="kbn"' + DO('kbDelRow', [ri]) +
-    ' aria-label="'+esc(t('kb.row.del'))+'">'+(ri+1)+'</button>';
+  return '<button class="kbn'+(kbHeadIs('r', ri)? ' on':'')+'"' + DO('kbHeadRow', [ri]) +
+    ' aria-label="'+esc(t('kb.row.sel'))+'">'+(ri+1)+'</button>';
 }
+/* ---- what is being worked on ------------------------------------------
+   Pressing a row's number or a column's letter used to take that row or that
+   column away on the spot. 「今即削除なの危なすぎだろ」 It does what the same
+   press does on a spreadsheet now: it SELECTS, the thing selected lights up
+   so it is clear what is being worked on, and the buttons over the sheet act
+   on it. 「削除は削除ボタン寄せは寄せボタンでしょ」
+
+   Where you are standing rather than anything the language has, so
+   viewReset() drops it. Pressing the same head again puts it down. */
+var KBH=null;
+function kbHeadIs(k, i){ return !!KBH && KBH.k===k && KBH.i===i; }
+function kbHeadRow(ri){
+  ri=parseInt(ri, 10)||0;
+  KBH=kbHeadIs('r', ri)? null : {k:'r', i:ri, ins:false};
+  kbSel=null; render();
+}
+function kbHeadCol(ci){
+  ci=parseInt(ci, 10)||0;
+  KBH=kbHeadIs('c', ci)? null : {k:'c', i:ci};
+  kbSel=null; render();
+}
+/* ---- a row going in where you are, rather than at the foot -------------
+   The dashed row at the bottom adds one AFTER the last. There was no way to
+   put one in the middle, which on a sheet is the ordinary thing to want.
+   「行を選択して+ボタン押したら上か下に追加するが出て押したら追加される
+   とかは？」
+
+   The + does not add. It ASKS -- and the two answers take the place of the
+   three alignments and the bin while it is asking, because those are about
+   the row that is there and this is about one that is not. Pressing the +
+   again puts the question away. */
+function kbInsAsk(){
+  if(!KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  KBH.ins=!KBH.ins;
+  render();
+}
+function kbIns(down){
+  var b=kbEdit(), rows, at;
+  if(!b || !KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  rows=kbLayer().rows;
+  at=Math.max(0, Math.min(KBH.i+(down? 1 : 0), rows.length));
+  rows.splice(at, 0, [kbKey('lt', '')]);
+  /* and the selection follows the row it was on, which has moved down by one
+     if the new one went in above it */
+  KBH={k:'r', i:down? KBH.i : KBH.i+1};
+  kbSel=null;
+  saveKb(); render();
+}
+/* And the one button that takes it away, whichever of the two it is. */
+function kbCut(){
+  if(!KBH) return;
+  var h=KBH;
+  KBH=null;
+  if(h.k==='r') kbDelRow(h.i); else kbDelCol(h.i);
+}
+/* ---- where the slack in a row goes -------------------------------------
+   「エクセルみたいに中央寄せとかのボタン置けば？行とか列選択して中央寄せ
+   すればそこだけ中央寄せになるとか。」
+
+   It is written in gap keys, which this keyboard has had since it had a
+   QWERTY: the third row is inset by a gap of half a key at each end. A row
+   that comes to less than the sheet is short by a whole number of half
+   columns, and putting that number into gaps at one end, both ends or the
+   other end IS left, centre and right.
+
+   Nothing new is stored for it, and that is not only tidiness. A row is an
+   ARRAY of keys, and JSON.stringify drops anything on an array that is not an
+   index -- so an 'al' property would vanish on the way into localStorage and
+   out of the undo stack, silently, and the row would come back the way it
+   was. And gaps already travel to the phone: the extension divides a row's
+   width by the keys w and a gap is a key, so a row aligned here is a row
+   aligned there, which the drawing alone would not have been.
+
+   Only the gaps at the ENDS are touched. A gap in the middle of a row is a
+   space somebody put between two keys and is none of this function's
+   business. */
+function kbGapW(half){ return half/2; }
+function kbAlign(how){
+  var b=kbEdit(), rows, row, i, tot, rem, lead, tail;
+  if(!b || !KBH || KBH.k!=='r') return;
+  rows=kbLayer().rows;
+  row=rows[KBH.i];
+  if(!row) return;
+  /* off with the old ends */
+  while(row.length && row[0].k==='gap') row.shift();
+  while(row.length && row[row.length-1].k==='gap') row.pop();
+  if(!row.length) return;
+  tot=kbUsed(row);
+  rem=kbCols(rows)-tot;
+  if(rem>0){
+    lead = how==='r'? rem : (how==='c'? Math.floor(rem/2) : 0);
+    tail = rem-lead;
+    if(tail>0) row.push(kbGap(kbGapW(tail)));
+    if(lead>0) row.unshift(kbGap(kbGapW(lead)));
+  }
+  saveKb(); render();
+}
+/* The empty part of a short row, split so the keys sit in the middle of the
+   sheet rather than piled at its left. 「揃えて欲しい」
+
+     ・・・・・
+     　・・・
+
+   A column is half a key, so a row is always short by a whole number of
+   halves and this always divides -- three keys in a board of five leave two,
+   which is one key each side and lands the row on the columns rather than
+   between them. What is left over when it does not divide is a half, and the
+   half goes on the right, which is where the QWERTY's own inset puts it. */
+function kbLead(cols, tot){ return Math.floor((cols-tot)/2); }
 function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick(),
-      cols=ro? 0 : kbCols(lay.rows), at, b;
+      cols=ro? 0 : kbCols(lay.rows), at, b, lead, tot;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
@@ -810,12 +955,27 @@ function kbHTML(sel, ro){
        somebody says about the key they are looking at. The read-only board is
        the keyboard itself and wears neither number nor letter -- a row number
        down the side of the thing on your phone is the editor leaking into it. */
-    out+='<div class="kbrow">'+(ro? '' : kbNHTML(ri));
+    out+='<div class="kbrow'+((!ro && kbHeadIs('r', ri))? ' sel':'')+'">'+
+      (ro? '' : kbNHTML(ri));
     at=0;
+    /* the empty half of a short row, before the keys */
+    if(!ro){
+      tot=0;
+      for(ki=0;ki<row.length;ki++) tot+=kbU(row[ki].w);
+      lead=kbLead(cols, tot);
+      while(at<lead){
+        b=Math.min(2, lead-at);
+        out+='<span class="kbk cell" style="grid-column:span '+b+'"></span>';
+        at+=b;
+      }
+
+    }
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
-        ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'');
+        ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
+        /* a key standing in the column being worked on */
+        ((!ro && KBH && KBH.k==='c' && at<KBH.i*2+2 && at+kbU(key.w)>KBH.i*2)? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
       at+=kbU(key.w);
@@ -828,9 +988,8 @@ function kbHTML(sel, ro){
           (kbWob? '' : DO('kbPick', [ri, ki])) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
     }
-    /* The rest of the row, as empty cells, a key wide each. A row that comes
-       to less than the widest one has them; every row of a keyboard built from
-       a pattern comes to the same total and has none. */
+    /* and the other half, after them. A row of a keyboard built from a
+       pattern comes to the same total as the widest and has neither. */
     if(!ro) while(at<cols){
       b=Math.min(2, cols-at);
       out+='<span class="kbk cell" style="grid-column:span '+b+'"></span>';
@@ -840,8 +999,11 @@ function kbHTML(sel, ro){
   }
   /* A row is added where a row would go: under the last one, the width of
      one, looking like the empty row it is about to be. It was a button at the
-     foot of the screen. 「行を出す層を足すも使いづらすぎる」 */
-  if(!ro)
+     foot of the screen. 「行を出す層を足すも使いづらすぎる」
+
+     It is not there at all once the board is as tall as it may get. A button
+     that can be pressed and does nothing is the app saying it did something. */
+  if(!ro && kbRoomRow())
     out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRowNew') +
       ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
   return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
@@ -917,7 +1079,8 @@ function vKb(){
     return '<div class="view">'+navTop('', helpQ('kb'))+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
-      '<button class="btn" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
+      /* the same, on the free plan's face of this screen */
+      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
         t('up.cta')+'</button>'+
       '</div></div>';
   /* The keyboard, and the row of the ones there are above it. There is no
@@ -944,6 +1107,7 @@ function vKb(){
   if(kbIsFree(now))
     return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
       kbHTML(null, true)+
+      kbSysHTML()+
       kbApplyHTML()+
       '</div></div>';
   return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
@@ -952,6 +1116,13 @@ function vKb(){
     kbHTML(kbSel)+
     kbLaysHTML()+
     kbNewHTML()+
+    /* The one control whose whole job is to change how a key LOOKS, on the
+       screen the keys are on. It was on the free plan's face and on the list
+       and nowhere else, so the board somebody was actually building was the
+       one board you could not turn it off over -- and kbMark() draws that
+       small letter on the editor's keys exactly as it draws it on the
+       others. 「a lettar on each keyが2個目のキーボード作るときにないよ？」 */
+    kbSysHTML()+
     kbApplyHTML()+
     '</div></div>';
 }
@@ -981,8 +1152,13 @@ function kbLaysHTML(){
       return '<button class="seg'+(i===at? ' on':'')+'"' +
         DO('kbGoLay', [i]) + '>'+esc(kbLayName(i))+'</button>';
     }).join('')+
-    '<button class="seg add"' + DO('kbAddLay') + ' aria-label="'+esc(t('kb.lay.add'))+'">'+
-      ICON_ADD+'</button>'+
+    /* and no + when there is nowhere on this face to put the key that would
+       reach the new one. A page nothing can get to is a page that does
+       nothing, which is the same thing as a button that does nothing. */
+    (kbLayRoom(b.lay[Math.min(kbLay, n-1)])
+      ? '<button class="seg add"' + DO('kbAddLay') + ' aria-label="'+esc(t('kb.lay.add'))+'">'+
+        ICON_ADD+'</button>'
+      : '')+
     /* Beside the faces, and only when there is more than one -- the way to be
        rid of the only face is to delete the keyboard. It takes the face being
        SHOWN, which is the one the rest of this screen is about. */
@@ -1064,8 +1240,14 @@ function kbApplyHTML(){
      grey text, which is a sentence to read where the tick on its tab has
      already answered. 「今これが端末に入ってますとかいらねえって言ってんだろ」 */
   if(now===at) return '';
+  /* A word in the colour everything pressable is, not a gold pill. It is a
+     button drawn round a word, which is the shape the rule is about -- the
+     KEYS keep their corners, because a key is the shape of the thing itself.
+     「角丸とってって言ったけどキーボードは角丸でしょ？そこはいいのよ。下の
+     updateとかの話。」 CLAUDE.md § NO ROUNDED BOX: what is left is the words,
+     in .btn.ghost where a button is wanted. */
   return '<div class="kbapply">'+
-    '<button class="btn" style="width:100%"' + DO('kbApply', [now]) + '>'+
+    '<button class="btn ghost" style="width:100%"' + DO('kbApply', [now]) + '>'+
       esc(t('kb.apply'))+'</button>'+
     '</div>';
 }
@@ -1137,17 +1319,36 @@ function kbTileTo(e){
     KBT.on=true;
     KBT.ghost=document.createElement('div');
     KBT.ghost.className='kbghost';
-    KBT.ghost.style.width=(KBT.w*26)+'px';
+    KBT.ghost.style.width=kbCellW(KBT.w, kbCols(kbLayer().rows));
     document.body.appendChild(KBT.ghost);
   }
   e.preventDefault();
   KBT.ghost.style.left=p.clientX+'px';
   KBT.ghost.style.top=p.clientY+'px';
   over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
+  if(over && !kbTakes(over, KBT.w)) over=null;
   if(KBT.over===over) return;
   if(KBT.over) KBT.over.classList.remove('drop');
   KBT.over=over;
   if(over) over.classList.add('drop');
+}
+/* Whether the cell under the finger would take this width. The answer has to
+   be the same one the drop gives, so the drop asks it too -- a cell that
+   lights up and then does nothing is worse than one that never lit. */
+function kbTakes(cell, w){
+  var ri;
+  if(cell.classList.contains('addrow')) return kbRoomRow();
+  ri=kbRowOf(cell);
+  return ri>=0 && kbRoomIn(ri, w);
+}
+/* Which row of the layout a cell is in. The cells are drawn from the row, so
+   the row is the DOM's answer rather than something to count out again -- and
+   the header is #kb's first child and is not a row. */
+function kbRowOf(cell){
+  var g=document.getElementById('kb'), row=cell.parentNode, i;
+  if(!g || !row) return -1;
+  for(i=1;i<g.children.length;i++) if(g.children[i]===row) return i-1;
+  return -1;
 }
 function kbTileUp(e){
   var d=KBT, over, ri, ki;
@@ -1162,24 +1363,34 @@ function kbTileUp(e){
   if(over.classList.contains('addrow')){ kbNew1=d.w; kbAddRowNew(); return; }
   ri=parseInt(over.getAttribute('data-r'), 10);
   ki=parseInt(over.getAttribute('data-k'), 10);
-  /* An empty cell carries neither, and it is the end of its row. */
-  if(isNaN(ri)) return kbDropAtEnd(over, d.w);
+  /* An empty cell carries neither, and it is an END of its row. */
+  if(isNaN(ri)) return kbDropAtEdge(over, d.w);
   kbAddKey(ri, ki, d.w);
 }
 /* An empty cell is not a key and has no place of its own to be after, so what
-   it means is "the end of this row" -- which is the only thing an empty cell
-   at the end of a row can mean. The row is found by asking the cell which row
-   it is in, rather than by counting: the cells are drawn from the row and the
-   row is the DOM's answer. */
-function kbDropAtEnd(cell, w){
-  var g=document.getElementById('kb'), row=cell.parentNode, i, ri=-1, n;
-  if(!g || !row) return;
-  for(i=0;i<g.children.length;i++) if(g.children[i]===row) ri=i;
-  if(ri<0) return;
-  /* the header is #kb's first child and is not a row */
-  n=kbLayer().rows[ri-1];
-  if(!n || !n.length) return;
-  kbAddKey(ri-1, n.length-1, w);
+   it means is an end of the row -- and WHICH end is the half that is easy to
+   get wrong now that a short row is centred. There are empty cells on both
+   sides of it. So: the keys that come before this cell in the row are counted,
+   and the new one goes in after the last of them. None before it means the
+   front of the row, which is the left-hand half saying what it should. */
+function kbDropAtEdge(cell, w){
+  var row=cell.parentNode, ri=kbRowOf(cell), i, n=0;
+  if(ri<0 || !row) return;
+  for(i=0;i<row.children.length;i++){
+    if(row.children[i]===cell) break;
+    if(row.children[i].getAttribute && row.children[i].getAttribute('data-k')!==null) n++;
+  }
+  if(!kbRoomIn(ri, w)) return;
+  if(!n){
+    var rows=kbLayer().rows, k=kbKey('lt', '');
+    if(w>1) k.w=w;
+    rows[ri].unshift(k);
+    kbNew1=0;
+    saveKb();
+    kbPick(ri, 0);
+    return;
+  }
+  kbAddKey(ri, n-1, w);
 }
 /* The key a touch landed on. What is under a finger is the canvas or one of
    the four flick marks as often as it is the button. */
@@ -1310,7 +1521,7 @@ function kbDelRow(ri){
   ri=parseInt(ri, 10)||0;
   if(ri<0 || ri>=rows.length) return;
   rows.splice(ri, 1);
-  kbSel=null; saveKb(); render();
+  kbSel=null; KBH=null; saveKb(); render();
 }
 /* A column, in whole keys, taken out of every row -- and a key that is wider
    than one column loses a column and stays. That is the half of this the word
@@ -1336,7 +1547,7 @@ function kbDelCol(ci){
     }
     rows[i]=out;
   }
-  kbSel=null; saveKb(); render();
+  kbSel=null; KBH=null; saveKb(); render();
 }
 /* ---- the step back, and the step forward again -------------------------
    Where the editor has been, as whole layouts. It is in memory and in memory
@@ -1379,8 +1590,14 @@ function kbNoted(){
    another, and the new one is board 1 too, wearing the old one's history:
    the step back would put a layout that belongs to a deleted keyboard onto a
    keyboard that never had it. That is not a step back, it is a different
-   keyboard arriving. So making one and deleting one both forget. */
-function kbForget(){ KBU={id:'', cur:'', u:[], r:[]}; }
+   keyboard arriving. So making one and deleting one both forget.
+
+   The SELECTION goes with it for the same reason and it is the same sentence:
+   "row 3" means row 3 of a board, and the board is gone. Leaving it behind
+   lights up a row of the new keyboard that nobody pressed, with the bin above
+   it up and ready. viewReset() clears it on the way to another screen; this
+   is the other way to arrive somewhere else without leaving the screen. */
+function kbForget(){ KBU={id:'', cur:'', u:[], r:[]}; KBH=null; }
 /* Both steps are the same move in opposite directions, so they are one
    function told which way. What comes off one stack goes onto the other, and
    the layout put back is a copy -- JSON out and JSON in -- so nothing on
@@ -1398,15 +1615,40 @@ function kbStep(fwd){
 }
 function kbUndo(){ kbStep(false); }
 function kbRedo(){ kbStep(true); }
-/* And the two of them, over the sheet, where the toolbar of anything that has
-   an undo puts them. Down when there is nowhere to go: a button that can be
-   pressed and does nothing is the app saying it did something. */
+/* The buttons over the sheet. The two steps are always there and are down
+   when there is nowhere to go; the three that say where a row's slack goes
+   and the one that takes a thing away are down until something is selected,
+   because that is what they act ON. A button that can be pressed and does
+   nothing is the app saying it did something.
+
+   Aligning is a ROW's question and only a row's: a column has no slack across
+   it to put anywhere. Selecting a column leaves those three down and the bin
+   up, which is the whole of what a column selection is for. */
+function kbTb(name, icon, label, off){
+  return '<button class="kbtb'+(name==='kbCut'? ' bad':'')+'"' + DO(name) +
+    (off? ' disabled' : '') + ' aria-label="'+esc(label)+'">'+icon+'</button>';
+}
 function kbToolHTML(){
+  var row=!!KBH && KBH.k==='r', ask=row && !!KBH.ins;
   return '<div class="kbtool">'+
-    '<button class="kbtb"' + DO('kbUndo') + (KBU.u.length? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.undo'))+'">'+ICON_UNDO+'</button>'+
-    '<button class="kbtb"' + DO('kbRedo') + (KBU.r.length? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.redo'))+'">'+ICON_REDO+'</button>'+
+    kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
+    kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
+    '<span class="kbtgap"></span>'+
+    (ask
+      ? '<button class="kbtb"' + DO('kbIns', [false]) +
+          ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
+        '<button class="kbtb"' + DO('kbIns', [true]) +
+          ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>'
+      : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
+          ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
+        '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
+          ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
+        '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
+          ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
+    '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
+      ((row && kbRoomRow())? '' : ' disabled') +
+      ' aria-label="'+esc(t('kb.row.ins'))+'">'+ICON_ADD+'</button>'+
+    (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH))+
     '</div>';
 }
 /* Making another is choosing a pattern again, on a screen of its own rather
@@ -1609,11 +1851,47 @@ function kbSettings(){
   p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
 }
 function kbGoLay(i){ kbLay=i; render(); }
+/* Is there anywhere on this face to put a key that goes to another one, and
+   putting it there. At the front of the last row, which is where every phone
+   keeps its 123 and where kbDefault() has always put it; failing that, a row
+   of its own. Failing both, the face is as big as a face may get and the
+   answer is no -- which is why the + is not drawn.  */
+function kbLayRoom(face){
+  var rows=face && face.rows;
+  if(!rows || !rows.length) return true;
+  if(kbUsed(rows[rows.length-1])+2<=KB_COLS) return true;
+  return rows.length<KB_ROWS;
+}
+function kbLayPut(face, v){
+  var rows=face.rows, k=kbKey('lay', String(v));
+  if(!rows.length){ rows.push([k]); return true; }
+  if(kbUsed(rows[rows.length-1])+2<=KB_COLS){ rows[rows.length-1].unshift(k); return true; }
+  if(rows.length<KB_ROWS){ rows.push([k]); return true; }
+  return false;
+}
+/* A page arrives with the way THERE and the way BACK already on it.
+   「2ページ目作ったときの切り替えボタンは？」「ページを作るなら切り替えボタン
+   は必須ね？」
+
+   It used to arrive as one empty key and nothing else, and the keys that
+   reach a face have always had to be placed by hand -- so the ordinary way to
+   use this was to add a face, put letters on it, and find there was no way to
+   it and no way off it. docs/keyboard.md said so in four steps, which is a
+   manual page standing in for the thing working.
+
+   kbDefault() has done this from the beginning for the digits face it builds:
+   a key to 1 on the first, a key to 0 on the second. This is that, for a face
+   somebody adds. Nothing is overwritten -- the key goes IN at the front of a
+   row, or into a row of its own. */
 function kbAddLay(){
-  var b=kbEdit();
+  var b=kbEdit(), from;
   if(!b) return;
-  b.lay.push({rows:[[kbKey('lt', '')]]});
+  from=kbClamp(kbLay, b.lay.length);
+  if(!kbLayRoom(b.lay[from])) return;
+  b.lay.push({rows:[[kbKey('lay', String(from)), kbKey('lt', '')]]});
+  kbLayPut(b.lay[from], b.lay.length-1);
   kbLay=b.lay.length-1;
+  kbSel=null;
   saveKb(); render();
 }
 /* And taking one away, which could be added and never removed -- a face built
@@ -1694,7 +1972,9 @@ function kbKeyHTML(ri, ki){
         DO('kbSetLay', [ri, ki, i]) + '>'+esc(kbLayName(i))+'</button>';
     }).join('')+'</div>';
   out+='<div class="sec">'+t('kb.w')+'</div><div class="segs">'+
-    [1,2,3,4].map(function(w){
+    [1,2,3,4].filter(function(w){
+      return (key.w||1)===w || kbFitsW(ri, ki, w);
+    }).map(function(w){
       return '<button class="seg'+((key.w||1)===w?' on':'')+'"' +
         DO('kbSetW', [ri, ki, w]) + '>'+w+'</button>';
     }).join('')+'</div>'+
@@ -1767,11 +2047,18 @@ function kbEditFnHTML(key){
    opening it -- one mode, one press to leave it. */
 var kbNew1=0;
 function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
+/* How wide a key of w is ON THIS SHEET, as a calc the stylesheet owns the
+   numbers in. The sheet is --kbw across and kbCols() columns wide, a column is
+   half a key, and a key gives back --kbgap of that to the space beside it. */
+function kbCellW(w, cols){
+  return 'calc(var(--kbw) / '+cols+' * '+(kbU(w))+' - var(--kbgap))';
+}
 function kbNewHTML(){
+  var cols=kbCols(kbLayer().rows);
   return '<div class="kbnew" id="kbnew">'+[1,2,3].map(function(w){
     return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
-      ' data-w="'+w+'" aria-label="'+esc(t('kb.w'))+' '+w+'">'+
-      '<span class="kbnewb" style="flex:'+w+'"></span></button>';
+      ' data-w="'+w+'" style="width:'+kbCellW(w, cols)+'"'+
+      ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
   }).join('')+'</div>';
 }
 /* Which slot the alphabet is being opened for. */
@@ -1840,15 +2127,26 @@ function kbSetLay(ri, ki, i){
   var key=kbAt(ri, ki); if(!key) return;
   key.v=String(i); saveKb(); kbPick(ri, ki);
 }
+/* Making a key wider is adding columns to its row, so it is the same
+   question. A width that will not fit is not offered -- kbKeyHTML() takes the
+   four buttons from here -- and this refuses it as well, because a route can
+   be come back to. */
+function kbFitsW(ri, ki, w){
+  var row=kbLayer().rows[ri], key=kbAt(ri, ki);
+  if(!row || !key) return false;
+  return kbUsed(row)-kbU(key.w)+kbU(w)<=KB_COLS;
+}
 function kbSetW(ri, ki, w){
   if(!kbEdit()) return;
   var key=kbAt(ri, ki); if(!key) return;
+  if(!kbFitsW(ri, ki, w)) return;
   key.w=w; saveKb(); kbPick(ri, ki);
 }
 function kbAddKey(ri, ki, w){
   if(!kbEdit()) return;
   var rows=kbLayer().rows, k;
   if(!rows[ri]) return;
+  if(!kbRoomIn(ri, w)){ kbNew1=0; render(); return; }
   k=kbKey('lt', '');
   if(w>1) k.w=w;
   rows[ri].splice(ki+1, 0, k);
@@ -1864,6 +2162,7 @@ function kbAddKey(ri, ki, w){
    key in a new row; pressing it with none adds the empty row it always did. */
 function kbAddRowNew(){
   if(!kbEdit()) return;
+  if(!kbRoomRow()){ kbNew1=0; render(); return; }
   var w=kbNew1, k=kbKey('lt', '');
   if(w>1) k.w=w;
   kbLayer().rows.push([k]);
