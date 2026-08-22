@@ -99,7 +99,7 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(async () => {
   const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
-                small: [], big: [], bent: [], picsSeen: 0 };
+                small: [], big: [], bent: [], picsSeen: 0, tall: [], rowsSeen: 0 };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
      already standing in front of every screen with a phone-sized viewport, so
      it measures while it is here.
@@ -129,6 +129,94 @@ const R = await pg.evaluate(async () => {
       if (seenSmall[k]) continue;
       seenSmall[k] = 1;
       out.small.push(where + ': ' + k + ' -- under ' + TAP);
+    }
+  }
+  /* Rows in one list are one height.
+     ------------------------------------------------------------------
+     The fault it is written after: `.set` set no type of its own, so the row
+     took whatever the TAG gives -- a <button> takes the browser's
+     13.3px/normal and an <a> takes the body's -- and the same row came out
+     49px as one and 57px as the other, in one list, on one screen. Nothing
+     threw. It looked like a list with one slightly wrong row in it, which is
+     what it was.
+
+     ── what is asked, and why it is asked this way ────────────────────
+     Siblings, under one parent, wearing the SAME class, differing in height,
+     AND differing in the computed font-size or line-height. All four.
+
+     The first version asked the first three plus "different TAG", on the
+     reasoning that a two-line row is taller than a one-line row and that is a
+     row doing its job, while the same class coming out two heights across two
+     tags is the fault. Watching it fail is what showed that reasoning up: the
+     synthetic <a> it caught was still 50px against 62px with `.set`'s
+     font-size and line-height PUT BACK, because the difference was never the
+     type -- it was that the anchor carried one span where the buttons carry
+     two. A different tag is not a cause. It is a thing that is often true
+     when the cause is present, which is exactly what a proxy is, and a check
+     built on one reports the right answer for the wrong reason until the day
+     it does not.
+
+     So it asks the cause the rule itself names: 「Set font-size and
+     line-height on the row class rather than letting the tag decide」. Two
+     rows of one class rendering at two type sizes is that sentence being
+     broken, whatever tags they are, and content differences -- one line
+     against two -- are left alone because they share their type. */
+  const ROW_SLACK = 1;                              /* sub-pixel layout, not a difference */
+  const seenTall = {};
+  function measureRows(where){
+    const parents = document.querySelectorAll('#app *');
+    for (let i = 0; i < parents.length; i++) {
+      const kids = parents[i].children;
+      if (kids.length < 2) continue;
+      const byClass = {};
+      for (let j = 0; j < kids.length; j++) {
+        const e = kids[j], cls = (e.getAttribute('class') || '').trim();
+        if (!cls) continue;
+        const r = e.getBoundingClientRect();
+        if (!r.height) continue;                    /* hidden is not a row */
+        const cs = getComputedStyle(e);
+        (byClass[cls] = byClass[cls] || []).push({
+          tag: e.tagName, h: r.height,
+          type: cs.fontSize + '/' + cs.lineHeight
+        });
+      }
+      for (const cls in byClass) {
+        const g = byClass[cls];
+        if (g.length < 2) continue;
+        out.rowsSeen++;
+        let lo = g[0], hi = g[0];
+        const types = {};
+        for (let j = 0; j < g.length; j++) {
+          if (g[j].h < lo.h) lo = g[j];
+          if (g[j].h > hi.h) hi = g[j];
+          types[g[j].type] = g[j].tag;
+        }
+        if (hi.h - lo.h <= ROW_SLACK) continue;
+        const kinds = [];
+        for (const t in types) kinds.push(t);
+        if (kinds.length < 2) continue;             /* one type: a taller row, not this fault */
+        /* Name the rows that DEMONSTRATE it, not the tallest and the shortest.
+           The first version printed lo and hi, and they were 49px and 62px at
+           the same 13.3333px/normal -- two rows that agree, offered as proof
+           that something disagreed. What differs is the TYPE, so what is
+           printed is one row per type. */
+        const say = kinds.sort().map((t) => {
+          let low = null, high = null;
+          for (let j = 0; j < g.length; j++) {
+            if (g[j].type !== t) continue;
+            if (low === null || g[j].h < low) low = g[j].h;
+            if (high === null || g[j].h > high) high = g[j].h;
+          }
+          return types[t] + ' ' + (low === high ? Math.round(low) + 'px'
+                 : Math.round(low) + '-' + Math.round(high) + 'px') + ' at ' + t;
+        });
+        const k = cls + ' ' + say.join(' ');
+        if (seenTall[k]) continue;
+        seenTall[k] = 1;
+        out.tall.push(where + ': .' + cls.replace(/\s+/g, '.') + ' -- ' +
+          say.join('  vs  ') + '. One list, one height: set font-size and ' +
+          'line-height on the row class rather than letting the tag decide.');
+      }
     }
   }
   /* And the other way round, for the one thing on a screen that is not a
@@ -300,6 +388,7 @@ const R = await pg.evaluate(async () => {
     catch (e) { out.skipped.push(sc.label + ' would not build: ' + e.message); return; }
     out.screens++;
     measure(sc.label);
+    measureRows(sc.label);
     for (let i = 0; i < n; i++) {
       try { sc.build(); } catch (e) { out.skipped.push(sc.label + ' #' + i + ': ' + e.message); continue; }
       const els = buttons();
@@ -400,11 +489,14 @@ HELD.forEach(m => fails.push('held: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
 R.small.forEach(m => fails.push('too small to hit: ' + m));
+R.tall.forEach(m => fails.push('one list, two row heights: ' + m));
 R.big.forEach(m => fails.push('drawn too big: ' + m));
 R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
 
 console.log('screens built: ' + R.screens);
 console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
+console.log('rows in one list are one height: ' +
+            (R.tall.length ? R.tall.length + ' FOUND' : R.rowsSeen + ' lists measured'));
 console.log('photographs all one box, filled, none stretched: ' +
             ((R.big.length || R.bent.length)
               ? (R.big.length + R.bent.length) + ' FOUND'
