@@ -83,6 +83,17 @@ DELETE REVIEW
 languages; `set.wipe` and `confirm.wipe` say what the one button now does.
 `press` counts one button name fewer: **213**.
 
+Three more things about that room were wrong and are fixed with it. Its first
+row was a **button that did nothing**, saying "Account: signed in" on a screen
+whose heading is Account — a row you can press that answers nothing is worse
+than no row, so it says WHICH account instead (`@handle`) and is not a button.
+**Sign out was red**; red is for the press that cannot be taken back, there is
+exactly one of those here, and a red one that changes nothing teaches people
+that red means nothing. And the two documents sat **between** the two account
+actions, a contract in the middle of a sentence about leaving. The order is
+now: who you are, the way out, a gap, the two documents, a gap, the one thing
+that cannot be undone, alone at the foot.
+
 
 ### The terms and the privacy policy, and two rows at the foot of Settings
 
