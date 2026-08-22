@@ -306,6 +306,110 @@ function netIdToken(provider, token, nonce, ok, bad){
           function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
 }
 
+/* ---- a language, which belongs to the account --------------------------
+   Everything somebody makes belongs to the account and the server is where
+   it is kept -- 「全部アカウントごとでしょ」「クラウドは全員で」. The phone
+   goes on being the place it is MADE: nothing here waits for a network, and
+   the whole making side works with no signal, because a language is edited
+   on a phone that may be in a tunnel.
+
+   Two rows and eleven. `language` is the language -- its name, its licence,
+   whether it is published -- and `slice` is what it is made of, one row per
+   slice of SLICES, holding exactly the string localStorage holds.
+
+   Per slice and not per language, because of what happens with two phones: a
+   word added on one and a letter drawn on the other are two different rows
+   and do not touch. Inside one row they are put together by sync.js, which
+   adds both rather than choosing. Nothing here decides a winner; the only
+   thing this file does is carry the strings.
+
+   `LANGS[id].sid` is the server's name for the language, the same way a post
+   carries `sid`. A language with none has never been up. */
+function netLangRow(ok, bad){
+  var L=LANGS[langId];
+  if(!netSignedIn() || !L){ bad(null, 0); return; }
+  if(L.sid){ ok(L.sid); return; }
+  netPost('/rest/v1/language', {owner:SESS.uid, name:langName||''}, SESS.at,
+    function(d){
+      var sid=(d && d.length)? d[0].id : '';
+      if(!sid){ bad(d, 0); return; }
+      L.sid=sid; langStore();
+      ok(sid);
+    }, bad);
+}
+/* Every slice of one language, as {kind: {body, no}}. */
+function netSlices(sid, ok, bad){
+  netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid),
+    function(d){
+      var out={}, i;
+      for(i=0;i<(d||[]).length;i++) out[d[i].kind]={body:String(d[i].body||''), no:d[i].no||0};
+      ok(out);
+    }, bad);
+}
+/* One slice, written. `Prefer: resolution=merge-duplicates` is what makes an
+   insert into a table with a two-column primary key an upsert -- the phone
+   does not have to know whether this slice has ever been up. */
+function netSlicePut(sid, kind, body, no, ok, bad){
+  var x=new XMLHttpRequest();
+  x.open('POST', SB_URL+'/rest/v1/slice', true);
+  x.setRequestHeader('apikey', SB_KEY);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
+  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
+  x.onreadystatechange=function(){
+    if(x.readyState!==4) return;
+    if(x.status>=200 && x.status<300) ok();
+    else bad(null, x.status);
+  };
+  x.onerror=function(){ bad(null, 0); };
+  x.send(JSON.stringify({language:sid, kind:kind, body:String(body||''),
+                         no:(no||0)+1, at:(new Date()).toISOString()}));
+}
+/* The open language and its copy, put together. Read, merge, write back
+   whatever moved -- in that order, so a phone that has been offline for a
+   week arrives holding the week rather than replacing it.
+
+   Fired and never waited for. Nothing on screen depends on it: the language
+   is already on the phone and already drawn, and what this does is make the
+   two copies the same. A failure is silence, because a phone with no signal
+   is a phone somebody is still writing a language on. */
+var NET_SYNCING=false;
+function netLangSync(then){
+  var done=then || function(){};
+  if(NET_SYNCING || !netSignedIn() || !langId){ done(false); return; }
+  NET_SYNCING=true;
+  function stop(moved){ NET_SYNCING=false; done(!!moved); }
+  netLangRow(function(sid){
+    netSlices(sid, function(there){
+      var i=0, moved=false;
+      function step(){
+        var kind, mine, got, put;
+        if(i>=SLICES.length){
+          if(moved){
+            /* Something came back, so what the screens are holding is older
+               than what is in storage. Read it in the way langOpen() does
+               rather than patching each global by hand. */
+            langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
+            render();
+          }
+          stop(moved); return;
+        }
+        kind=SLICES[i]; i++;
+        try{ mine=localStorage.getItem(langKey(kind)); }catch(e){ mine=null; }
+        got=there[kind];
+        put=syMerge(kind, mine===null? '' : mine, got? got.body : '');
+        if(put!=='' && put!==mine){
+          try{ localStorage.setItem(langKey(kind), put); moved=true; }catch(e){}
+        }
+        if(put==='' || (got && put===got.body)){ step(); return; }
+        netSlicePut(sid, kind, put, got? got.no : 0,
+                    function(){ step(); }, function(){ step(); });
+      }
+      step();
+    }, function(){ stop(false); });
+  }, function(){ stop(false); });
+}
+
 /* ---- the timeline, when there is one -----------------------------------
    Everything below this line is the SHAPE of a request and nothing else. The
    account half above is real -- it talks to Supabase today -- and this half
@@ -722,16 +826,34 @@ function netUp(path, b64, mime, ok, bad){
    and the post goes up carrying the pictures that made it. A post that
    refused to exist because a photograph failed would be a post lost to a
    tunnel. */
+/* Two files per picture: the photograph, and a small copy of it for the
+   timeline. `th` is indexed to match `out` rather than pushed onto, because a
+   small copy that fails to go leaves a HOLE and a list that closed the hole
+   would put picture two's thumbnail under picture one. A hole is read by
+   postThumbs() as "draw the photograph for this one", which is what every
+   post written before this does anyway -- so a thumbnail that does not go up
+   costs bytes and never correctness. */
 function netUpPics(uid, pid, pics, ok){
-  var out=[], i=0;
+  var out=[], th=[], i=0;
+  function next(){ i++; step(); }
   function step(){
     var d;
-    if(i>=pics.length){ ok(out); return; }
+    if(i>=pics.length){ ok(out, th); return; }
     d=netData(pics[i]);
-    if(!d){ i++; step(); return; }
+    if(!d){ next(); return; }
     netUp(uid+'/'+pid+'/'+i+netExt(d.mime), d.b64, d.mime,
-      function(path){ out.push(path); i++; step(); },
-      function(){ i++; step(); });
+      function(path){
+        var k=out.length;
+        out.push(path);
+        postThumb(pics[i], function(small){
+          var td=small && netData(small);
+          if(!td){ next(); return; }
+          netUp(uid+'/'+pid+'/'+k+'.t'+netExt(td.mime), td.b64, td.mime,
+            function(tp){ th[k]=tp; next(); },
+            function(){ next(); });
+        });
+      },
+      function(){ next(); });
   }
   step();
 }
@@ -769,8 +891,12 @@ function netPush(post, ok, bad){
      went. The other order is a post that exists with pictures it cannot name
      until a second request lands -- and a second request is a second thing
      that can fail. */
-  netUpPics(SESS.uid, pid, postPics(post), function(paths){
+  netUpPics(SESS.uid, pid, postPics(post), function(paths, small){
     if(paths.length) row.body.pu=paths;
+    /* The small copies, and only when there are any. A post whose pictures
+       were all smaller than POST_THUMB already carries no `pt` at all rather
+       than a list of empty strings. */
+    if(small.length) row.body.pt=small;
     netUpVoice(SESS.uid, pid, post, function(vpath){
       if(vpath) row.body.vu=vpath;
       netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
@@ -838,6 +964,11 @@ function netDrop(p, ok, bad){
 function netDropFiles(p, done){
   var paths=[], i;
   for(i=0;i<((p && p.pu) || []).length;i++) paths.push(p.pu[i]);
+  /* The small copies too. A picture is two files now, and a deletion that
+     took one of them would leave the other in a public bucket with nothing
+     pointing at it -- which is the exact thing the paragraph above is about.
+     Walked with a hole in it, because `pt` is allowed to have one. */
+  for(i=0;i<((p && p.pt) || []).length;i++) if(p.pt[i]) paths.push(p.pt[i]);
   if(p && p.vu) paths.push(p.vu);
   if(!paths.length){ done(); return; }
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,

@@ -45,19 +45,27 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 import { seed, obStates, halfDone } from './fixture.mjs';
-import { chromium, LAUNCH } from './browser.mjs';
+
+async function loadChromium(){
+  const { createRequire } = await import('module');
+  const req = createRequire(import.meta.url);
+  try { return req('playwright').chromium; } catch (e) {}
+  try {
+    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
+    return req(path.join(g, 'playwright')).chromium;
+  } catch (e) {}
+  console.error('playwright is not installed. npm i -g playwright');
+  process.exit(2);
+}
+const chromium = await loadChromium();
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
-/* Its own port. This was 8123, which is migrate-check's, and the two could
-   never run at the same time -- harmless while the gate was one && chain and
-   fatal the moment it was not. Every browser check owns a distinct port and
-   that is now load-bearing: tools/gate.mjs runs eleven of them four at a
-   time. 8121 i18n, 8122 act, 8123 migrate, 8124 shot, 8126 conv, 8127 backup,
-   8128 card, 8129 post, 8130 press, 8144 word; fill and round use file:// and
-   need none. */
 const PORT = 8130;
+const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
+const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
 const mime = (f) => f.endsWith('.html') ? 'text/html; charset=utf-8'
   : f.endsWith('.js') ? 'application/javascript; charset=utf-8'

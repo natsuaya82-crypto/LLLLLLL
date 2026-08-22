@@ -216,13 +216,13 @@ under `lingua.sess`.
 ## 5. The gate, and what CI does not run
 
 `npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
-seventeen rules the gate enforces".
+seventeen rules the gate enforces". `tools/gate.mjs` runs the six that need no
+browser first, in about two seconds, then the eleven browser ones four at a
+time. Run one after another they were ten minutes in this container.
 
-It is `tools/gate.mjs`: the six that need no browser first, in order, about two
-seconds; then the other eleven four at a time. **Run the whole thing once, for
-a commit.** While you are working, run the one check that covers what you
-touched, by name — and putting a bug back to watch a check go red is one check
-too, not seventeen. `docs/TESTING.md` § The gate has the table.
+**It is run once before pushing**, not once per commit — the owner's rule, and
+`docs/TESTING.md` has all three. While working, run the one check that holds
+what you are changing, by name, plus the six fast ones.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
@@ -355,6 +355,11 @@ Two of them were about capabilities that had been deleted.
 16c. Supabase — one SQL line making yourself staff, or the reports are on
     nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
     updates a row that has to exist.
+16d. Supabase — **Spend Cap ON**, `supabase/setup.md` § 6. Pro is not a price
+    that stops at $25: 250 GB of egress is included and $0.09/GB is added
+    after it, with no ceiling until this is switched on. What runs out first
+    is the timeline's photographs, and the way it goes wrong is a month that
+    is already spent by the time anybody looks.
 17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.

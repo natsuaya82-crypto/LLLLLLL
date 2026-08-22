@@ -58,6 +58,14 @@ swMount();
    this comes back or not. */
 function bootSession(){
   render();
+  /* And the language, which belongs to this account and exists twice. Read,
+     merged and written back -- both ways, so a phone that has been offline
+     for a week arrives holding the week rather than replacing it.
+
+     After the session and not before: it is done AS somebody, and there is
+     always somebody now. Not waited for either -- the app has already opened
+     on what is on the phone, which is all of the making side. */
+  netLangSync();
   /* And whether this account is the one that answers the reports, which is
      one column on one profile and decides whether a row exists at the foot of
      the settings list. Asked after the session is resumed because it is asked

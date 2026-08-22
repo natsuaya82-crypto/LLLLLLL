@@ -1,120 +1,107 @@
 /* ---------------------------------------------------------------------------
-   tools/gate.mjs — the gate, run the way it is meant to be run.
+   tools/gate.mjs — the gate, run the way a laptop can stand.
 
    Run it:   npm test
 
-   Seventeen checks used to be one `&&` chain. Two things were wrong with that
-   and only one of them is speed.
+   Sixteen checks, and fifteen of them start a headless browser, serve www/
+   over a port of their own and walk the app. Run one after another that is
+   ten minutes, and ten minutes is long enough that a check stops being run
+   after every change and starts being run at the end — which is the one way
+   a gate fails: not by being wrong, by being skipped.
 
-   The one that is not speed: an `&&` chain STOPS at the first failure, so a
-   check that dies at module load takes every check after it with it and
-   prints nothing to say so. fill-check and round-check did exactly that for
-   as long as anybody had playwright installed globally, and round and press
-   never ran at all -- not "failed", never ran, with the output above the stop
-   looking perfectly green. This file runs every check whatever the others do
-   and reports all of them, so a gate that is red is red in a countable number
-   of places.
+   So the ones that need no browser go first, all of them, in about two
+   seconds. A missing script tag or an arrow function fails there and nothing
+   heavy is started at all. Then the browser ones go WIDE, four at a time,
+   because each is a separate process holding its own port and its own
+   Chromium and they have nothing to say to each other.
 
-   And the speed. Six of the seventeen need no browser and take about two
-   seconds between them, so they go first, in order, and a failure there stops
-   the run before a browser is ever started -- there is no point launching
-   eleven Chromiums to be told a comment closed a line early. The other eleven
-   each open their own Chromium and spend most of their time waiting for it,
-   so they run four at a time.
+   Four and not sixteen: a headless Chromium is a real browser and this runs
+   on whatever is to hand. More than the machine has cores turns a parallel
+   run back into a serial one with more memory in it.
 
-   FOUR, not eleven. Each of these drives a real browser rendering a real app;
-   eleven at once on a laptop makes them slower than four and makes press --
-   which measures 44pt tap targets on a laid-out page -- measure a page that
-   was laid out while the CPU was somewhere else. Four is the number that
-   fits.
-
-   Each browser check binds its own port, and that is load-bearing now rather
-   than a coincidence. press and migrate-check both used 8123, which could
-   never matter while they ran one after another; run them together and one of
-   them dies on EADDRINUSE. Adding a browser check means giving it a port
-   nothing else has -- the list is in press.mjs, beside its own.
+   What it does not change is what is checked or what is printed. Every
+   check's own output is put out whole, in the order the list below has them
+   rather than the order they happen to finish in, so a green run reads the
+   same as it always did and a number that moved is still a number that
+   moved.
    --------------------------------------------------------------------------- */
 import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import os from 'os';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-
-/* No browser: about two seconds between them, so a broken comment or a
-   hard-coded family is known before anything heavy starts. */
-const QUICK = ['assets-check', 'es5-check', 'dead-check', 'import-check',
-               'sides-check', 'face-check'];
-/* A browser each. i18n and press are the long two, so they start first --
-   with four lanes, the finish is whenever the longest one finishes, and a
-   long check started last is the whole run's length added to the end. */
-const HEAVY = ['i18n-check', 'press', 'act-check', 'migrate-check',
-               'conv-check', 'card-check', 'word-check', 'post-check',
-               'backup-check', 'fill-check', 'round-check'];
-const LANES = 4;
+/* No browser: two seconds for all of them, and a failure here means nothing
+   heavy was started for nothing. */
+const FAST = ['assets-check', 'es5-check', 'dead-check', 'import-check', 'sides-check',
+              'face-check'];
+/* A browser each. The order is the order they are PRINTED in; which one runs
+   when is up to the pool. */
+const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
+              'word-check', 'post-check', 'backup-check', 'fill-check', 'round-check',
+              'press'];
+const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){
-  return new Promise((done) => {
-    const t0 = Date.now();
-    const p = spawn(process.execPath, [path.join(HERE, name + '.mjs')], { stdio: ['ignore', 'pipe', 'pipe'] });
+  return new Promise((res) => {
+    const p = spawn(process.execPath, ['tools/' + name + '.mjs'], { stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '', err = '';
-    p.stdout.on('data', d => { out += d; });
-    p.stderr.on('data', d => { err += d; });
-    p.on('close', code => done({ name, code, out, err, ms: Date.now() - t0 }));
-    p.on('error', e => done({ name, code: 1, out, err: String(e && e.message || e), ms: Date.now() - t0 }));
+    p.stdout.on('data', (b) => { out += b; });
+    p.stderr.on('data', (b) => { err += b; });
+    p.on('close', (code) => res({ name, code, out, err }));
+    p.on('error', (e) => res({ name, code: 1, out: '', err: String(e && e.message || e) }));
   });
 }
-
 function show(r){
-  const secs = (r.ms / 1000).toFixed(1) + 's';
-  if (r.code === 0){
-    process.stdout.write(r.out);
-    if (r.err.trim()) process.stdout.write(r.err);
-  } else {
-    console.log('\n===== ' + r.name + ' FAILED (' + secs + ') =====');
-    process.stdout.write(r.out);
-    process.stdout.write(r.err);
-  }
+  if (r.out) process.stdout.write(r.out);
+  if (r.err) process.stderr.write(r.err);
+  /* Say which one, because eleven are running at once now and a check that
+     died before printing anything leaves a stack trace nowhere near its own
+     heading. */
+  if (r.code !== 0) console.error('\n' + r.name + ' FAILED (exit ' + r.code + ')');
 }
 
-const results = [];
+/* A run that was interrupted leaves its little web server holding its port,
+   and the next run's check dies on EADDRINUSE with a trace about `listen`
+   and nothing about which check it was. Anything still alive from one of the
+   checks is from a run that is over -- this one has not started one yet.
 
-/* ---- the quick ones, in order, and stop on the first red ---------------- */
-for (const name of QUICK){
-  const r = await run(name);
-  results.push(r);
+   The pattern names the checks rather than tools/*.mjs. `pkill -f` matches
+   whole command lines, and the first version of this matched THIS file's:
+   the gate killed itself before running anything and said nothing on the way
+   out. */
+try {
+  const { execSync } = await import('child_process');
+  execSync("pkill -f 'tools/press[.]mjs' ; pkill -f 'tools/[a-z-]*-check[.]mjs' ; true",
+           { stdio: 'ignore' });
+} catch (e) {}
+
+let bad = 0;
+/* One at a time and stop at the first, because these are cheap and the later
+   ones read the same files the earlier ones would have refused. */
+for (const n of FAST){
+  const r = await run(n);
   show(r);
-  if (r.code !== 0){
-    console.error('\ngate: ' + name + ' is red, and it needs no browser. The other ' +
-                  (QUICK.length + HEAVY.length - results.length) + ' were not run —\n' +
-                  'there is nothing to learn from eleven browsers about a file that\n' +
-                  'does not parse. Fix this one and run `npm test` again.\n');
-    process.exit(1);
-  }
+  if (r.code !== 0){ console.error('\n' + n + ' failed. Nothing heavy was started.'); process.exit(1); }
 }
 
-/* ---- the eleven, four at a time ---------------------------------------- */
-const queue = HEAVY.slice();
-const heavy = [];
-await Promise.all(Array.from({ length: LANES }, async () => {
-  for (;;){
-    const name = queue.shift();
-    if (!name) return;
-    const r = await run(name);
-    heavy.push(r);
-    results.push(r);
+/* And the rest, four at a time. Every one is run even when one has already
+   failed: a gate that stopped at the first would hand back one thing to fix
+   per ten minutes, and the whole point of running them at once is to be told
+   everything in one go. */
+const done = {};
+let at = 0;
+async function worker(){
+  while (at < SLOW.length){
+    const n = SLOW[at++];
+    done[n] = await run(n);
   }
-}));
-/* Printed in the order they are listed, not the order they happened to
-   finish, so two runs of a green gate read the same. */
-HEAVY.forEach(n => show(heavy.find(r => r.name === n)));
+}
+await Promise.all(Array.apply(null, { length: WIDE }).map(() => worker()));
 
-const bad = results.filter(r => r.code !== 0);
-console.log('');
-if (bad.length){
-  console.error('gate: ' + bad.length + ' of ' + results.length + ' checks are red — ' +
-                bad.map(r => r.name.replace('-check', '')).join(', '));
-  console.error('Every check was run. An && chain would have shown you the first one only.\n');
+for (const n of SLOW){
+  const r = done[n];
+  show(r);
+  if (r.code !== 0) bad++;
+}
+if (bad){
+  console.error('\n' + bad + ' of ' + (FAST.length + SLOW.length) + ' checks failed.');
   process.exit(1);
 }
-console.log('gate: all ' + results.length + ' checks green (' + QUICK.length +
-            ' without a browser, then ' + HEAVY.length + ' in ' + LANES + ' lanes)');

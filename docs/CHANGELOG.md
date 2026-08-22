@@ -15,6 +15,102 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A language is kept on the server, and two copies are put together rather than one winning
+
+Everything somebody makes belongs to the account — 「全部アカウントごとでしょ」
+「クラウドは全員で」 — so a language exists twice now: on the phone, where it is
+made, and on the server, where it is kept. The making side is untouched and
+stays untouched: nothing waits for a network, and a language is written on a
+phone in a tunnel exactly as it was.
+
+**Stored, on the server:** a new table, `slice` — `(language, kind)` as its
+key, plus `body`, `no` and `at`. One row per slice of `SLICES`, holding
+exactly the string `localStorage` holds, which is the same string `bkPack()`
+writes into a backup file, so a slice has one shape and not two that could
+disagree. The server never looks inside it. Its policies ask
+`has_account()`, so a first launch can write one, and its **select** policy is
+the owner's alone — the one table in `schema.sql` with no public face, not
+even for a published language, because publishing is a copy somebody is given
+and not a door into the phone.
+
+**Stored, on the phone:** `LANGS[id].sid`, the server's name for the language,
+the same way a post carries one. A language with no `sid` has never been up.
+
+**A row per slice and not per language, and that is the point.** One number
+for a whole language means adding a word on one phone and drawing a letter on
+the other is a collision, and one of the two has to lose something nobody was
+arguing about. Per slice they never touch.
+
+**Inside one slice, both are added.** 「そりゃあ両方足すだろ」 `www/sync.js`
+(chapter 26) is the new file and the whole of what decides: a word added here
+and a word added there are both there afterwards, in this phone's order first.
+A word is its headword and a letter is its id, so redrawing a letter leaves
+one letter rather than two under the same name; a slice with no id of its own
+— a note, a line — is its own content, so two different notes are two and the
+same note twice is one. `SCRIPT` and `STG` are nested and are gone into rather
+than replaced whole, or a letter drawn on one phone would take the other
+phone's entire script with it. Where the two genuinely disagree about the same
+thing the phone keeps its own.
+
+What that costs is a duplicate rather than a deletion: edit the same note on
+two phones and there are two notes afterwards, one to throw away. That is the
+trade, made on purpose — a duplicate is on the screen and a deletion is not
+there to be noticed. `docs/DATA_SAFETY.md`: the way a copy destroys somebody's
+work is by winning.
+
+`netLangSync()` in `net.js` is fired from `boot.js` after the session and
+never waited for. Read, merge, write back whatever moved — in that order, so
+a phone that has been offline for a week arrives holding the week rather than
+replacing it. A failure is silence.
+
+`backup-check` holds the merge — eleven shapes, each one an afternoon somebody
+would lose — and `npm run rls` holds the table: **116 attempts, 20 shapes**,
+ten of them new against `slice`. All watched failing: the merge with the
+server's copy winning outright (6 red) and with the nesting taken out (3 red),
+and the read policy opened to everybody (3 red).
+
+
+### The timeline is sent a small copy of a photograph, not the photograph
+
+A row shows a picture a few hundred pixels across and was being sent one nine
+hundred across. Nothing looked wrong and nothing could: the browser scales it
+down on arrival, so the only difference is the bytes — and bytes are the one
+thing a screenshot cannot show. The timeline is also the only thing in this
+app that anybody scrolls.
+
+A picture now goes up as **two files**: the photograph at `POST_PIC` (900) and
+a small copy at `POST_THUMB` (300), made by `postThumb()` in `post.js` at the
+moment it is uploaded. Measured on the check's own picture: **2 KB against
+7 KB**; on a real photograph it is nearer 8 KB against 80. Pressing a picture
+still opens the photograph.
+
+**Stored:** a post gains `pt`, the small copies' paths in Storage, beside
+`pu`. Nothing is stored on the phone for it — the small copy exists only in
+Storage, so `POST_BYTES` is untouched. `pt` is allowed to have a **hole** in
+it: a small copy that failed to upload leaves its slot empty and
+`postThumbs()` draws the photograph in that slot. It is indexed rather than
+pushed for exactly that reason — a list that closed the hole would put picture
+two's thumbnail under picture one, which is the wrong picture shown with
+nothing throwing. Deleting a post deletes the small copies too
+(`netDropFiles`), or they would sit in a public bucket with nothing pointing
+at them.
+
+Why it was worth doing before anything else online: egress is what runs out
+first on a $25 Supabase — 250 GB included, $0.09/GB after — and at full size
+that is about 800 people opening the app daily. At a tenth of the bytes it is
+about eight thousand.
+
+`post-check` § 12 holds it, in two places on purpose. `postThumbs()` is asked
+directly — the size of the small copy, that a picture already smaller than
+`POST_THUMB` gets no second file at all, that a hole falls back **in its own
+place** at either end of the list, and that the viewer still gets the
+photograph — and then the **row a timeline actually draws** is asked, with the
+photograph's own URL forbidden in it. The second is not the first: the first
+version of this check passed with the row still drawing full-size pictures,
+because a function can be perfectly correct and simply never be the one that
+runs. Both were watched failing.
+
+
 ### The server has two questions about an account, not one
 
 `is_member()` was the only door in `supabase/schema.sql` and every write stood

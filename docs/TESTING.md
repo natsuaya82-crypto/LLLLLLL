@@ -3,58 +3,41 @@
 ## The gate
 
 ```
-npm test        # tools/gate.mjs — seventeen checks
+npm test        # seventeen checks
 ```
 
-**Green before a commit.** Once, at the end, on what you are about to commit.
-Not after every experiment, and not a second time to be sure.
+`tools/gate.mjs` runs them. The six that need no browser go first, one after
+another, and take about two seconds between them — a missing script tag or an
+arrow function fails there and nothing heavy is started at all. The eleven
+that each start a headless Chromium then go **four at a time**, because they
+are separate processes holding separate ports with nothing to say to each
+other. Run one after another they were about ten minutes.
 
-`tools/pre-commit` runs the six that need no browser (assets, es5, dead,
-import, sides, face — about two seconds) plus i18n on any change under `www/`
-that is not one of the ten language files or the font writer. **It is not the
-gate.** CI runs three of the seventeen, so a green tick on a push is not the
-gate either. Run `npm test` yourself.
+Each check's own output is printed whole, in the order the list below has
+them rather than the order they finished in, so a green run reads the same as
+it always did and a counter that moved is still visible.
 
-### How it runs, and why not as one chain
+### Three rules about running it, and they are the owner's
 
-`tools/gate.mjs`. Six checks need no browser, so they go **first and in
-order** — about two seconds between them — and a failure there stops the run
-before a Chromium is started. There is nothing to learn from eleven browsers
-about a file that does not parse.
+**Once before pushing, not once per commit.** A session that makes five
+commits and gates each one has spent half an hour proving the same thing five
+times. Make the whole batch, gate it once, push. 「全部やって完成！じゃあ全部
+のチェックを回す」 If it goes red the fast five and the by-name check have
+already caught most of what could have caused it, and `git log -p` is there
+for the rest.
 
-The other eleven each drive a browser and spend most of their time waiting for
-it, so they run **four at a time**. Four, not eleven: they render a real app,
-and eleven at once on a laptop is slower than four *and* makes `press` measure
-44pt tap targets on a page that was laid out while the CPU was elsewhere.
+**While working, run the check that holds what you are changing** — one, by
+name, plus the five fast ones. `npm run backup`, `npm run post`. That is the
+loop; `npm test` is the gate at the end of it.
 
-Every browser check binds its own port, and that is load-bearing now rather
-than a coincidence. `press` and `migrate-check` both used 8123, which could
-never matter while they ran one after another and kills one of them the moment
-they run together. Adding a browser check means giving it a port nothing else
-has; the list is in `press.mjs` beside its own.
+**Watching a check fail is one run, not a suite.** Put the bug back, run
+**that check alone**, watch it go red, take the bug out. The other fifteen
+have nothing to say about it.
 
-It was an `&&` chain, and the speed was the smaller of the two problems. A
-chain **stops** at the first failure, so a check that dies at module load takes
-every check after it with it and prints nothing to say so — which is exactly
-what `fill-check` and `round-check` did, and `round` and `press` never ran at
-all, with everything above the stop looking green. `gate.mjs` runs all
-seventeen whatever any of them does, so a red gate is red in a countable number
-of places.
-
-### The whole gate is for a commit. While you work, run one check.
-
-Three rules, and they are about how long a day takes:
-
-1. **The whole gate: once per commit.** Not per experiment, and not "once more
-   to be sure". A second green run of unchanged code tells you nothing that the
-   first one did not.
-2. **While you are working, run the one check that covers what you touched, by
-   name.** The table below says which. Changing `www/index.html`'s faces and
-   running seventeen checks is sixteen checks answering a question nobody
-   asked.
-3. **Watching a check go red is also one check.** Put the bug back, run *that*
-   check, watch it fail, take the bug out again. The other sixteen have nothing
-   to do with it and running them is the same waste twice.
+`tools/pre-commit` runs the six that need no browser plus i18n when a screen
+file changed. **It is not the gate.** CI runs three of the seventeen, so a green
+tick on a push is not the gate either. Run `npm test` yourself, once, before
+the commit.
 
 | check | holds |
 |---|---|
@@ -65,6 +48,7 @@ Three rules, and they are about how long a day takes:
 | `i18n` | every visible string went through `t()`, in all ten languages, with fallback armed |
 | `import` | eleven real shapes of somebody's word list come in whole |
 | `sides` | below the line in `post.js` and `card.js`, nothing names the open language |
+| `face` | a font family is named on `:root` and nowhere else, and the drawn font under one name |
 | `act` | every name a screen says is bound, and every binding is said |
 | `conv` | the seven claims made about the conversion table |
 | `card` | a card of a post is a picture of *that* post |
