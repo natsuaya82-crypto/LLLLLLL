@@ -61,6 +61,20 @@ const r = await pg.evaluate(({s}) => {
   SET.plan = 'free';
   out.freeRow = numBaseRows();
   SET.plan = 'plus';
+
+  /* ---- and what goes out to the clock on the home screen ----------------
+     The widget cannot ask the app anything: it reads one file in the App
+     Group and draws whatever is in it. So the two things worth holding are
+     the base it will count in, and that a slot with nothing in it is ABSENT
+     rather than an empty shape -- a hole means "put a roman one here", and a
+     present-but-empty entry means a blank space where a numeral should be. */
+  var w = shareWidget();
+  out.wBase   = w.base;
+  out.wDrawn  = !!(w.dg['10'] && w.dg['10'].st && w.dg['10'].st.length);
+  out.wNamed  = Object.prototype.hasOwnProperty.call(w.dg, '11');
+  out.wBlank  = Object.prototype.hasOwnProperty.call(w.dg, '13');
+  out.wFresh  = Object.prototype.hasOwnProperty.call(w.dg, '0');
+  out.wKeys   = Object.keys(w.dg).sort().join(' ');
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -77,6 +91,16 @@ say(r.red === 3, 'three digits are above the base and the room paints them red (
 say(r.slotBack, 'raising it again makes the empty slot over');
 say(r.noDouble === 1, 'and makes exactly one of it (' + r.noDouble + ')');
 say(r.freeRow === '', 'free counts in ten and has no row to press');
+
+say(r.wBase === 14, 'the widget is told the base, not a fixed ten (' + r.wBase + ')');
+say(r.wDrawn, 'a drawn digit goes out with its ink on it');
+say(!r.wNamed, 'a digit that was named but never drawn does not, so the clock uses a roman one');
+say(!r.wBlank, 'nor does an untouched slot');
+say(!r.wFresh, 'nor do the ten a fresh language starts with, which nobody has drawn');
+/* Two, and naming both is the point: the fixture's own 1 and the 10 this
+   check drew above. A count alone would go on passing if the wrong one of
+   them dropped out. */
+say(r.wKeys === '1 10', 'exactly the digits with ink on them go out (' + r.wKeys + ')');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

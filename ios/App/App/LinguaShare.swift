@@ -41,6 +41,10 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   static let group = "group.com.tokinets.lingua"
   static let jsonName = "keyboard.json"
   static let fontName = "LinguaScript.otf"
+  /// The widgets' own file. Ten shapes and a base, and none of the keyboard:
+  /// a clock has no layout, no conversion table and no candidate bar, and a
+  /// keyboard has no idea what a 3 is worth. www/share.js § shareWidget().
+  static let numName = "widget.json"
 
   private func container() -> URL? {
     FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.group)
@@ -65,8 +69,14 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     }
     let json = call.getString("json") ?? ""
     let font = call.getString("font") ?? ""
+    let num = call.getString("num") ?? ""
     do {
       try put(Data(json.utf8), Self.jsonName, dir)
+      /* Absent leaves what is there, the way the font does: an app built
+         before the widgets existed sends nothing, and a widget already on
+         somebody's home screen goes on showing the digits it has rather
+         than emptying itself. */
+      if !num.isEmpty { try put(Data(num.utf8), Self.numName, dir) }
       // Nothing drawn is no font rather than an empty one, exactly as
       // installScriptFont() decides it — so an absent font leaves whatever
       // was there rather than replacing it with zero bytes.
