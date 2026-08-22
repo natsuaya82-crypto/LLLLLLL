@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these sixteen checks, so a green tick on a push is not the gate. This
+> these seventeen checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -169,19 +169,36 @@ backlog entry is not permission, and neither is the absence of one.
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv
-                # + card + word + post + backup + fill + round + press
+npm test        # tools/gate.mjs — the six that need no browser, in order and
+                # about two seconds; then the other eleven, four at a time
                 # green before a commit. It is minutes, not seconds -- on a
                 # laptop it is about two, and on a slow container six to ten.
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
-`npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
+`npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run act` /
+`npm run conv` /
 `npm run card` / `npm run word` / `npm run post` / `npm run backup` / `npm run fill` /
 `npm run round` / `npm run press`.
-`tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
+`tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides,
+face —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
+
+**Three rules about running it, and they are about how long a day takes:**
+
+- **The whole gate is for a commit — once.** Not per experiment, not a second
+  time to be sure. A green run of unchanged code says nothing the first did not.
+- **While you work, run the one check that covers what you touched, by name.**
+  `docs/TESTING.md` § What to run when has the table.
+- **Watching a check go red is one check too.** Put the bug back, run *that*
+  check, watch it fail, take it out. The other sixteen are not about it.
+
+It is `tools/gate.mjs` rather than an `&&` chain, and speed was the smaller
+reason. A chain **stops** at the first failure and prints nothing to say what
+never ran — which is how `fill` and `round` dying at module load took `round`
+and `press` with them, silently, with everything above the stop looking green.
+Every browser check owns a distinct port; that is load-bearing now.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
@@ -203,7 +220,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The sixteen rules the gate enforces
+## The seventeen rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -306,6 +323,26 @@ This is `act-check`'s "no entry no screen names", one step further out. An
 orphaned function is not in the action table, so `act-check` cannot see it;
 26 of them were sitting in `www/` when this check was written. Deleting one
 often turns up another on the next run — its only caller was the one deleted.
+
+**Written and never read is not the same statement**, and the gap between them
+held three deleted chapters' worth of residue. An assignment is a mention, so a
+var written in six places and read in none passed "named somewhere other than
+its own declaration" without trouble. **A write-only global is usually not dead
+code; it is a wire with one end unattached, and the missing end is the half
+somebody would have noticed.** `wdMode` was the worked example: the sheet's
+letters/sounds rail was taken out in `ae4576d` — "four screens say less" — and
+what was left behind was the variable, its setter, and **six faces in
+`tools/fixture.mjs` that set it**, so six screens were being walked in a state
+the app could no longer be in.
+
+**And assigned but never declared**, which is the same sentence with no row to
+put it in. `mkPos='n'` and `cands=[]` sat in `viewReset()` with no `var`
+anywhere and nothing reading them — what was left of the make screen after the
+screen went — and `tq`, `tkPos` and `tcomp` were the talk chapter, which has no
+file and no route. Assigning to an undeclared name makes a global silently, so
+nothing throws, and with no declaration there was nothing for either check
+above to be about. It catches a typo the same way: `wSrot='a'` would make a
+second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
 `core.js` names every capability a plan opens — `words` `data` `file`
@@ -652,6 +689,58 @@ Two things it may never do, and neither throws:
 that the letter still renders and the font still installs — it is simply not
 the letter somebody drew.
 
+### 17. A face is named in one place
+
+Every colour in this app has lived in the two theme blocks at the top of
+`www/index.html` for as long as there have been two themes, and the comment
+over them says so: *"Every colour lives in these two blocks and nowhere else;
+the views only ever touch the variables."* Type was never held to the same
+sentence, and the count is the argument — `'Cinzel',Georgia,serif` was written
+out **37** times in that stylesheet, `'Cormorant Garamond',Georgia,serif` **33**
+times, and both again in `card.js`, because a canvas cannot inherit a font.
+Seventy-nine places restating five facts.
+
+That is not tidiness. The faces here have been rebuilt more than once, and the
+way a rebuild goes wrong is that 78 of the 79 get found: every screen somebody
+thinks to open is right, and the one that was missed is the card — the only
+thing in this app meant to be seen by people who do not have it. Three of the
+four faults this rule was written after were that shape exactly:
+
+- `onboard.js` measured whether a script's characters exist against
+  `'24px -apple-system, system-ui, sans-serif'` — a **shorter** list than the
+  body actually uses, with no `'Noto Sans JP'` on it. A script was measured in
+  one font and shown in another.
+- `card.js` held its own copies of both display faces, so changing one in the
+  stylesheet would have moved every screen except the picture that leaves the
+  phone.
+- `otf5.js` — a standalone font writer that knows nothing about this app —
+  defaulted its family to `'LinguaScript'`, making it a fourth place naming
+  this app's face.
+
+So the faces are variables on `:root`, and `tools/face-check.mjs` holds four
+things:
+
+1. **Only `:root` may name a family.** Every other `font-family` in the
+   stylesheet resolves to `var(--face-*)`, `inherit`, or a generic keyword.
+2. **Both directions on the variables**, as `act-map`'s names are held: no
+   `var(--face-x)` that `:root` does not declare, and no face declared that no
+   rule wears. A face nothing wears is one that was replaced and left behind.
+3. **No family is named in `www/*.js` at all** — with one exception, which is
+   the font the person drew: JavaScript builds it, so JavaScript has to name it.
+   `SFONT_FAMILY` in `glyph.js` must be exactly the family in `--face-script`.
+   When those two disagree nothing throws: the font builds, the `@font-face`
+   installs, and every `.sfont` element quietly falls back to roman.
+4. **A canvas font asks the page.** A canvas has no inheritance, so a literal
+   there is the one kind of face the stylesheet cannot reach. `cssVar(n, fb)`
+   takes a fallback for exactly this — a face degrades to `serif` where a
+   colour degrades to `#888`.
+
+`.sfont` is the other half of this: it says `!important` because a great many
+container rules in the same file set `font-family:inherit` on the input inside
+them, and every one of those is *two* selectors where `.sfont` is one. Beating
+them one at a time is a great many places that have to be found and kept found.
+They all say `var(--face-ui)` now and there is one place to change.
+
 ## What the free plan is
 
 One sentence: **your own shapes for a-z and 0-9.** `ltStart` puts thirty-eight
@@ -901,9 +990,9 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 363`, `screens the mirror
+Both checks print their coverage (`screens walked: 357`, `screens the mirror
 rendered: 271`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 8627` for the same reason — and it is what a
+`press` prints `buttons pressed: 8453` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -946,13 +1035,37 @@ language's own sounds and the whole of the IPA, which is a hundred and sixty
 tiles, and the fixture holds two faces of it. Two things came off in the same
 stretch and neither shows in that number as a fall, because the same change
 put them back several times over: the row of letter tiles under the box a
-word is typed into, and the page for one position of a word. It rose to 8627
-over the seventy-four commits between `cd712dd` and `dbd73d4`, which is the
-only entry in this list not attributed to one change: four routes landed in
-that stretch — `forms`, `fmrpos`, `fmrfm` and `mod`, the word-forms chapter
-and the moderation screens — and nobody wrote the number down as it moved.
-**Attributing it is the one thing here still owed**; every other line was
-written by whoever caused it.
+word is typed into, and the page for one position of a word.
+
+Then seventy-four commits went past between `cd712dd` and `dbd73d4` with
+nobody writing the number down, and it came out the other side at 8627. It was
+measured back afterwards rather than guessed at, one checkpoint at a time, and
+the shape is the thing worth keeping: **it did not rise by 743, it moved ten
+times.**
+
+| | | |
+|---|---|---|
+| 7884 | — | `cd712dd`, where the number was written |
+| 7076 | −808 | 「すべて削除」をアカウント削除にする |
+| 7583 | +507 | a keyboard can change its arrangement |
+| 7928 | +345 | a one-screen form laid out to the keyboard |
+| 8007 | +79 | the composer scrolls under one bar |
+| 8396 | +389 | the rules that make a form belong to the dictionary |
+| 8473 | +77 | ペンをもう一段細く |
+| 7181 | −1292 | 起動時に匿名アカウントを作る |
+| 7177 | −4 | オンボーディングの先頭からサインインを外す |
+| 8644 | +1467 | `claude/save` を取り込む |
+| 8627 | −17 | `master` を最新へ |
+
+**The −1292 and the +1467 are one thing, not two.** That stretch contains the
+merge of two branches that had diverged, so two rows next to each other in
+`git rev-list` order are not two consecutive states of one app — the app went
+one way on one branch and the other way on the other, and the merge put them
+together. Nothing lost 1292 buttons.
+
+It is 8453 now: `wdMode` and the six faces in `tools/fixture.mjs` that set it
+came out, and those six were being walked in a state the app could no longer
+be in. Coverage did not move — 213 of 213 names, still.
 
 `screens the mirror rendered` fell from 377 to 271 in the same stretch, and
 that one IS attributed: `i18n-check` renders every screen once per plan, and

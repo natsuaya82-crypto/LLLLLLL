@@ -215,15 +215,21 @@ under `lingua.sess`.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is sixteen checks and is the specification. `CLAUDE.md` → "The
-sixteen rules the gate enforces". It is minutes, not seconds: about two on a
-laptop, six to ten in a slow container.
+`npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
+seventeen rules the gate enforces".
+
+It is `tools/gate.mjs`: the six that need no browser first, in order, about two
+seconds; then the other eleven four at a time. **Run the whole thing once, for
+a commit.** While you are working, run the one check that covers what you
+touched, by name — and putting a bug back to watch a check go red is one check
+too, not seventeen. `docs/TESTING.md` § The gate has the table.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
 passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`,
-`post`, `backup`, `fill`, `round` and `press` — thirteen of the sixteen — run
-only where somebody runs them, which means locally, which means you.
+`post`, `backup`, `fill`, `round`, `face` and `press` — fourteen of the
+seventeen — run only where somebody runs them, which means locally, which
+means you.
 
 `fill` and `round` were missing from that list and from `CLAUDE.md`, and it was
 not only a list. Both loaded playwright as `import { chromium } from
@@ -248,8 +254,15 @@ the owner of the repository, not a suggestion, and it has been said more than
 once.
 
 Build numbers are the workflow's run numbers. #43 was the first that a person
-typed on; #47 was green; #48 is the run for the head of this branch as of
-writing. iOS work beyond triggering that workflow — opening the project,
+typed on; #47 was green. **The latest is #82** — 2026-08-21, green, on
+`claude/save` at `eef389a` (checked against the Actions API on 2026-08-22, not
+remembered). Of the last thirty runs, every one was on `claude/save` and none
+on `master`, and #61 is the only failure among them.
+
+**Nothing has been built at the head of `master`.** `eef389a` is an ancestor
+of it, but `master` is **40 commits ahead** of the last thing that compiled —
+the forms chapter, the moderation screens and the anonymous account are all in
+that gap. A green #82 is not a statement about what is on `master` now. iOS work beyond triggering that workflow — opening the project,
 running on a simulator, `npx cap sync ios` — needs a Mac with Xcode and cannot
 be done from a Linux session.
 
@@ -282,74 +295,77 @@ Each of these was a claim this file made that the code no longer supported.
 Two of them were about capabilities that had been deleted.
 
 - **The gate was fourteen checks and could not finish.** §5 above.
-- **"A letter of a hidden kind is counted and unreachable"** — removed.
-  `LT_KINDS` is unconditional and `ltKindOf()` answers `num`, `mark` or
-  `alpha` for every letter, so the rooms sum to `LETTERS.length` on any plan.
-  Measured: a fresh free language is `0 / 38` with rooms 26 + 2 + 10; one that
-  paid and stopped is `0 / 40` with 27 + 2 + 11. `5 / 30` was never a total
-  this plan could produce — a-z, `!?` and the digits is 38.
-- **"`ai` lifts at Plus, `sug` only at Studio"** — removed. Neither capability
-  exists: `CAN` is ten names and `ai` and `sug` are not among them, and
-  `AI_FREE_DAILY`, `sugLeft` and `aiSpend` have no declaration anywhere. It
-  also contradicted item 4 three lines above it, which says the suggestion
-  ceiling went out with Studio. The same claim was still live in
-  `docs/FEATURE_RULES.md` § "What to report" and in two comments in
-  `www/core.js`; all three are gone.
+- **Two claims in § 7 that the code no longer supported** — items 6 and 7,
+  struck through in place rather than deleted, with what was measured on each.
 - **The counts.** All three were right when written at `cd712dd` and none had
   been touched in the seventy-four commits since.
 
 ### Found and left alone, deliberately
 
-6. **Nothing is out of `press`'s reach any more.** This said `kbReset` was
-   never pressed, one button of 152. Measured 2026-08-22: **213 of 213**
-   distinct names pressed, `kbReset` among them.
-7. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
+6. ~~**A letter of a hidden kind is counted and unreachable.**~~ Not
+   reproducible — this said the Letters header showed `5 / 30` while the rooms
+   inside came to 29. `LT_KINDS` is unconditional and `ltKindOf()` answers
+   `num`, `mark` or `alpha` for every letter, so the rooms sum to
+   `LETTERS.length` on any plan. Measured 2026-08-22: a fresh free language is
+   `0 / 38`, rooms 26 + 2 + 10; one that paid and stopped is `0 / 40`, rooms
+   27 + 2 + 11. `5 / 30` is not a total this plan can produce — a–z, `!?` and
+   the digits is 38.
+7. ~~**`ai` lifts at Plus, `sug` only at Studio, and they are the same
+   ceiling.**~~ Moot — neither capability exists. `CAN` is ten names and
+   neither is among them; `AI_FREE_DAILY`, `sugLeft` and `aiSpend` have no
+   declaration anywhere in `www/`. It also contradicted item 4 above, which
+   says the suggestion ceiling went out with Studio. The same claim was still
+   live in `docs/FEATURE_RULES.md` § "What to report" and in two comments in
+   `www/core.js`; all three are gone.
+8. ~~**`press` never reaches `kbReset`.**~~ Done — measured 2026-08-22,
+   **213 of 213** distinct names pressed, `kbReset` among them.
+9. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
    defined`. It is a font experiment and is not in the gate.
 
 ### Offered and not yet answered
 
-8. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
+10. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
     line early on 2026-08-11; `es5` and `dead` both passed it because they read
     with regular expressions, and the browser checks caught it ninety seconds
     later. Two seconds would have.
-9. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
+11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
     grep cannot tell. `i18n-check` already renders 271 screens in 10 languages;
     recording what `t()` was asked for would say it properly. It has to be a
     report, not a failure: a toast on an error is real and unwalked.
-10. **Two questions about screens, open since before the keyboard work.**
+12. **Two questions about screens, open since before the keyboard work.**
     Whether the post composer's line needs a visible border, and whether the
     word sheet's letter grid stays.
 
 ### Agreed long ago, never started
 
-11. The onboarding as motion only.
-12. Vertical writing — **written.** `DIRS` in `www/wsys.js`, bought with
+13. The onboarding as motion only.
+14. Vertical writing — **written.** `DIRS` in `www/wsys.js`, bought with
     `can('dir')`. This line was stale.
-13. A selectable line gap.
+15. A selectable line gap.
 
 ### The owner's, in a browser
 
-14. Supabase — the reset mail template and the Redirect URLs (see 3), and the
+16. Supabase — the reset mail template and the Redirect URLs (see 3), and the
     Apple and Google providers (`supabase/setup.md` § 4).
-14a. The Apple developer site — Sign in with Apple on the App ID, and the
+16a. The Apple developer site — Sign in with Apple on the App ID, and the
     profile regenerated after it. **Nothing builds until this is done**, so it
     is not one to leave. `docs/apple.md` § 2.
-14b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
-14c. Supabase — one SQL line making yourself staff, or the reports are on
+16b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
+16c. Supabase — one SQL line making yourself staff, or the reports are on
     nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
     updates a row that has to exist.
-15. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
+17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.
-16. GitHub Secrets, if a build ever needs a new one. No agent can write one.
+18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 
 ### Waiting on a phone
 
-17. Build **#48** is green and on TestFlight. What it has not had is a person:
+19. Build **#82** is green and on TestFlight. What it has not had is a person:
     tapping three dots with round off should give a corner, and saving a letter
     should land on the letters list.
-18. The free plan's keyboard chapter — the iOS steps, the hand-over state line,
+20. The free plan's keyboard chapter — the iOS steps, the hand-over state line,
     and the QWERTY with nothing to press — has only been seen in a browser,
     where the state line is always the red one because there is no bridge.
 
@@ -363,7 +379,7 @@ Two of them were about capabilities that had been deleted.
 2. Read `CLAUDE.md` end to end. It is the specification, not an overview, and
    every rule in it is a bug that already shipped once.
 3. Run `npm test` before touching anything, so you know what green looks like
-   here. It prints counts — `screens walked: 363`, `screens the mirror
-   rendered: 271`, `buttons pressed: 8627` — and a change meant to alter
+   here. It prints counts — `screens walked: 357`, `screens the mirror
+   rendered: 271`, `buttons pressed: 8453` — and a change meant to alter
    nothing has to leave them where they are. All three measured 2026-08-22.
 4. If what you are about to do is in §3, you are starting it, not continuing it.
