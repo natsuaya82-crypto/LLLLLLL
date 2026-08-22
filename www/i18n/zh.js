@@ -376,6 +376,7 @@ defLang('zh', (function(){
       'wld.about'             : "关于这门语言",
       'wld.edit'            : "编辑",
       'wld.public'            : "把这门语言展示给别人",
+      'wld.public.d'          : "公开之后，其他人可以下载并使用你的文字和词语。",
       'wld.hidden'            : "不公开",
       'wld.empty'             : "这里还什么都没有。",
       "wld.ask"      : "这门语言的用途",

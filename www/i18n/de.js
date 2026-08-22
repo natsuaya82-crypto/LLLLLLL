@@ -356,6 +356,7 @@ defLang('de', (function(){
       'wld.about'             : "Über diese Sprache",
       'wld.edit'            : "Bearbeiten",
       'wld.public'            : "Diese Sprache anderen zeigen",
+      'wld.public.d'          : "Wenn du sie veröffentlichst, können andere deine Zeichen und Wörter herunterladen und verwenden.",
       'wld.hidden'            : "Privat",
       'wld.empty'             : "Hier ist noch nichts.",
       "wld.ask"      : "Wozu diese Sprache da ist",

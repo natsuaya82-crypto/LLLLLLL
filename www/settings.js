@@ -122,6 +122,8 @@ function vSet(){
       '<button class="set" style="border-bottom:none"' + DO('setWldHide', [!wldHidden()]) + '>'+
       '<span class="sl">'+t('wld.public')+'</span>'+
       swtHTML(!wldHidden())+'</button>'+
+      /* What it means is behind the `?` in the bar, which is where an
+         explanation goes. */
       '';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
@@ -181,7 +183,8 @@ function vSet(){
   } else {
     body=goneBox();
   }
-  return '<div class="view">'+navTop('')+'<div class="body">'+body+'</div></div>';
+  return '<div class="view">'+navTop('', (id==='lang'? helpQ('pub') : ''))+
+    '<div class="body">'+body+'</div></div>';
 }
 /* One card: a small Lingua in that theme, its name, and a tick. The colours
    are written out rather than taken from the variables, because the light

@@ -547,6 +547,7 @@ defLang('ko', (function(){
       'wld.about'             : "이 언어에 대하여",
       'wld.edit'            : "편집",
       'wld.public'            : "이 언어를 다른 사람에게 보여주기",
+      'wld.public.d'          : "공개하면 다른 사람이 당신의 문자와 단어를 내려받아 사용할 수 있습니다.",
       'wld.hidden'            : "비공개",
       'wld.empty'             : "아직 아무것도 없습니다.",
       "wld.ask"      : "이 언어의 쓰임",

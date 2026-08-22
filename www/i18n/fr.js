@@ -416,6 +416,7 @@ defLang('fr', (function(){
       'wld.about'             : "À propos de cette langue",
       'wld.edit'            : "Modifier",
       'wld.public'            : "Montrer cette langue aux autres",
+      'wld.public.d'          : "En la rendant publique, d'autres personnes peuvent télécharger vos lettres et vos mots et s'en servir.",
       'wld.hidden'            : "Privée",
       'wld.empty'             : "Il n’y a encore rien ici.",
       "wld.ask"      : "À quoi sert cette langue",

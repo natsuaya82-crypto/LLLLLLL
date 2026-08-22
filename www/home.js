@@ -708,9 +708,14 @@ function vAbout(){
   if(wldUse()) body+='<div class="abtuse">'+
     '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
     '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
+  /* The two counts are the way in to the two lists. The dictionary was
+     written out here for a moment and taken back off: a language with ten
+     thousand words in it is a page nobody reaches the bottom of, and the
+     dictionary already has a screen that searches and sorts.
+     「lpみたいにしたら1万時ある時どうするつもりなの？」 */
   body+='<div class="abtnums">'+
-    '<span class="abtn"><b>'+WORDS.length+'</b>'+esc(t('toc.words'))+'</span>'+
-    '<span class="abtn"><b>'+ltShaped()+'</b>'+esc(t('toc.letters'))+'</span>'+
+    '<button class="abtn"' + DO('go', ["words"]) + '><b>'+WORDS.length+'</b>'+esc(t('toc.words'))+'</button>'+
+    '<button class="abtn"' + DO('go', ["letters"]) + '><b>'+ltShaped()+'</b>'+esc(t('toc.letters'))+'</button>'+
     /* The writing system is a word rather than a number, and `Alphabet` in
        a third of a phone came out as `Alphab...`. Its own class: the value
        wraps and is set at the size of a word instead of the size of a
@@ -739,6 +744,11 @@ function vAbout(){
     navTop('', '<button class="navdo"' + DO('go', ["world"]) + '>'+esc(t('wld.edit'))+'</button>')+
     '<div class="body">'+body+'</div></div>';
 }
+/* What making this language public means, behind the `?` in the bar rather
+   than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
+HELP.pub=function(){
+  return {t:t('wld.public'), h:'<div class="note">'+t('wld.public.d')+'</div>'};
+};
 function editName(){
   var v=prompt(t('home.name.prompt'), langName);
   if(v!==null && v.trim()){ langName=v.trim(); save(); render(); }

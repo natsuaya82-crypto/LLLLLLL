@@ -328,6 +328,7 @@ defLang('es', (function(){
       'wld.about'             : "Sobre esta lengua",
       'wld.edit'            : "Editar",
       'wld.public'            : "Mostrar esta lengua a otras personas",
+      'wld.public.d'          : "Al hacerla pública, otras personas pueden descargar tus letras y palabras y usarlas.",
       'wld.hidden'            : "Privada",
       'wld.empty'             : "Aquí no hay nada todavía.",
       "wld.ask"      : "Para qué es esta lengua",

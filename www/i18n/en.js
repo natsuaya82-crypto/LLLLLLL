@@ -271,6 +271,7 @@ defLang('en', (function(){
       'wld.about'             : "About this language",
       'wld.edit'            : "Edit",
       'wld.public'            : "Show this language to other people",
+      'wld.public.d'          : "Making this public lets other people download your letters and words and use them.",
       'wld.hidden'            : "Private",
       'wld.empty'             : "Nothing here yet.",
       'wld.ask'      : 'What this language is for',

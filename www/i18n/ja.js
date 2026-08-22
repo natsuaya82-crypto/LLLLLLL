@@ -284,6 +284,7 @@ defLang('ja', (function(){
       'wld.about'             : "この言語について",
       'wld.edit'            : "編集",
       'wld.public'            : "言語のページを公開する",
+      'wld.public.d'          : "これを公開すると、他のユーザーがあなたの文字や単語をダウンロードして利用することが可能になります。",
       'wld.hidden'            : "非公開",
       'wld.empty'             : "まだ何もありません。",
       'wld.ask'      : 'この言語の用途',
