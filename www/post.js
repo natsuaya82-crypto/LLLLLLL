@@ -1389,7 +1389,7 @@ function pwMarkRun(x, units, k, ox, oy, col){
       if(a){ inkStrokes(x, units[i].st, k, cur+a.dx*k, oy, col); cur+=a.w*k; }
       else cur+=800*k;
     } else {
-      x.font=Math.round(640*k)+'px '+CARD_CAPS;
+      x.font=Math.round(640*k)+'px '+cardCaps();
       x.fillStyle=col;
       x.fillText(String(units[i].t||''), cur, oy+640*k);
       cur+=String(units[i].t||'').length*440*k;

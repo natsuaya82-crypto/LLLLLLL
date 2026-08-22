@@ -53,10 +53,37 @@ html[data-theme="light"]{
    now, so everything that used to sit at the bottom sits on top of it, and
    every one of them measures from here rather than carrying its own number:
    the bar's own offset, its padding, and the 52px a tab is tall. */
+/* =========================================================================
+   The faces. Same rule as the two theme blocks above, for type instead of
+   colour: every face lives here and nowhere else, and everything that sets one
+   names a variable.
+
+   It was not that way, and the count is the argument. 'Cinzel',Georgia,serif
+   was written out 37 times in this stylesheet and 'Cormorant
+   Garamond',Georgia,serif 33 times, with both again in card.js because a
+   canvas cannot inherit a font. Seventy-nine places restating five facts.
+   Changing a face meant finding all of them, and finding 78 of 79 looks
+   exactly like finding 79 until somebody opens the screen that was missed.
+
+   --face-script is the one the person drew. It is set on .sfont with
+   !important, because a great many container rules in this file say
+   font-family:inherit on the input inside them and every one of those is two
+   selectors where .sfont is one. See the .sfont rule itself.
+
+   tools/face-check.mjs holds this: a family may be named on :root and in no
+   other rule, and never in www/*.js at all.
+   ========================================================================= */
+:root{
+  --face-caps:'Cinzel',Georgia,serif;
+  --face-ital:'Cormorant Garamond',Georgia,serif;
+  --face-mono:ui-monospace,Menlo,monospace;
+  --face-ui:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
+  --face-script:'LinguaScript',serif;
+}
 :root{--tabh:calc(env(safe-area-inset-bottom,0) + 66px)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
+body{background:var(--bg);color:var(--tx);font-family:var(--face-ui);
      line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
 /* iOS treats a page as a document until told otherwise: press and hold and it
    selects a word and raises the magnifier; tap twice quickly and it takes the
@@ -70,8 +97,8 @@ input,textarea,[contenteditable],.mn,.rd,.wordmean,.sentline{
 /* manipulation keeps scroll and pinch but drops the double-tap-to-zoom that
    was eating every second tap. */
 button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obsnd,.obescb{touch-action:manipulation}
-.cz{font-family:'Cinzel',Georgia,serif}
-.cor{font-family:'Cormorant Garamond',Georgia,serif}
+.cz{font-family:var(--face-caps)}
+.cor{font-family:var(--face-ital)}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
 /* A screen slides in when you arrive at it. It must NOT slide in again every
    time something on it is tapped -- but every tap redraws the whole view, so
@@ -94,7 +121,7 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- shared parts ---------- */
 .top{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0) + 16px) 24px 0}
-.brand{font-family:'Cinzel',Georgia,serif;letter-spacing:.22em;font-size:.86rem;color:var(--txs)}
+.brand{font-family:var(--face-caps);letter-spacing:.22em;font-size:.86rem;color:var(--txs)}
 .brand .st{color:var(--gold)}
 .iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
@@ -334,15 +361,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 .navtop{position:sticky;top:0;z-index:30;background:var(--bg);display:flex;align-items:baseline;
         gap:9px;padding:calc(env(safe-area-inset-top,0) + 8px) 24px 8px}
 .navtop .back{flex:0 0 auto;margin-right:3px}
-.navn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.06rem}
-.navt{font-family:'Cinzel',Georgia,serif;font-size:1.12rem;font-weight:600;
+.navn{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.06rem}
+.navt{font-family:var(--face-caps);font-size:1.12rem;font-weight:600;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.navc{margin-left:auto;flex:0 0 auto;font-family:'Cormorant Garamond',Georgia,serif;
+.navc{margin-left:auto;flex:0 0 auto;font-family:var(--face-ital);
       font-style:italic;color:var(--txm);font-size:.98rem}
 /* Where an explanation lives: a mark, not a paragraph on the screen it is
    about. Same weight as the back arrow, at the other end of the same bar. */
 .navq{margin-left:auto;flex:0 0 auto;align-self:center;min-height:44px;min-width:44px;
-      border:0;background:none;color:var(--txm);font-family:'Cinzel',Georgia,serif;
+      border:0;background:none;color:var(--txm);font-family:var(--face-caps);
       font-size:1.05rem;font-weight:600}
 .navq:active{opacity:.55}
 /* Two auto margins would split the free space and stand the count in the
@@ -352,9 +379,9 @@ canvas.pkc{width:34px;height:34px;display:block}
               background:linear-gradient(180deg,var(--bg),transparent)}
 .chead{padding:0 24px 6px}
 .chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
-.chap .rn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.3rem}
-.chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
-.chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
+.chap .rn{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.3rem}
+.chap .ct{font-family:var(--face-caps);font-size:1.6rem;font-weight:600}
+.chap .cn{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* ---------- a post ----------
    The row everybody's thumb already knows: face, a bold name with the handle
@@ -602,7 +629,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .impdup .impn{flex:0 0 auto;font-size:.92rem;color:var(--txs)}
 .impdup .segs{margin:0;flex:1 1 auto;justify-content:flex-end}
 .impsum span{font-size:.92rem;color:var(--txs)}
-.impsum b, .impdup b{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;
+.impsum b, .impdup b{font-family:var(--face-ital);font-size:1.3rem;
           color:var(--gold);font-weight:600;margin-right:6px}
 /* The file button holds the input on top of itself, invisible and the whole
    size of it, because a native file control cannot be styled and a hidden one
@@ -611,7 +638,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
          width:100%;min-height:52px;margin-top:10px;border:1px solid var(--goldln);
          border-radius:11px;background:var(--goldsf);color:var(--gold);font-size:.94rem}
 .impfile input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
-.impbig{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.6rem;text-align:center;
+.impbig{font-family:var(--face-ital);font-size:1.6rem;text-align:center;
         padding:26px 0 4px;color:var(--tx)}
 /* ---------- the card ----------
    The picture is 1080 square whatever the phone is; the preview is however
@@ -629,7 +656,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
         display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
         transition:opacity .38s ease}
 #splash.off{opacity:0;pointer-events:none}
-.splbrand{font-family:'Cinzel',Georgia,serif;font-size:1.5rem;letter-spacing:.42em;
+.splbrand{font-family:var(--face-caps);font-size:1.5rem;letter-spacing:.42em;
           text-indent:.42em;color:var(--tx)}
 .splbrand .st{color:var(--gold)}
 .splrule{width:0;height:1px;background:var(--goldln);animation:splr .85s ease-out forwards}
@@ -752,7 +779,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
       padding:9px 4px;color:var(--tx);font-family:inherit;
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .cvst:active{border-color:var(--goldln);color:var(--gold)}
-.cvv{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.14rem}
+.cvv{font-family:var(--face-ital);font-style:italic;font-size:1.14rem}
 .cvl{font-size:.82rem;color:var(--txm);letter-spacing:.06em}
 /* ---------- I. sounds, II. letters ----------
    A sound is a row: the sound itself, the letters that write it, and the two
@@ -792,7 +819,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .ltc canvas.tc{width:38px;height:38px;display:block}
 .ltc .bch{font-size:1.6rem;line-height:1}
 .ltc .nol{color:var(--txm);display:inline-flex}
-.ltcn{display:block;font-family:'Cinzel',Georgia,serif;font-size:.95rem;color:var(--txs);
+.ltcn{display:block;font-family:var(--face-caps);font-size:.95rem;color:var(--txs);
       max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ltc.dup .ltcn{color:var(--bad)}
 /* What it reads, under what it is called. Empty for a letter that reads
@@ -885,14 +912,14 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .rel{border:1px solid var(--line);border-radius:9px;background:var(--pane);
      padding:8px 11px;min-height:44px;color:var(--tx);text-align:left;font-family:inherit}
 .rel:active{border-color:var(--goldln)}
-.relw{display:block;font-family:'Cinzel',Georgia,serif;font-size:.96rem}
-.relm{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
+.relw{display:block;font-family:var(--face-caps);font-size:.96rem}
+.relm{display:block;font-family:var(--face-ital);font-style:italic;
       font-size:.88rem;color:var(--txm);margin-top:1px}
 .exlist{border-top:1px solid var(--line);margin-bottom:10px}
 .exrow{display:flex;align-items:center;gap:6px;padding:9px 0;border-bottom:1px solid var(--line)}
 .exb{flex:1;min-width:0}
-.exl{display:block;font-family:'Cinzel',Georgia,serif;font-size:1rem}
-.exg{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
+.exl{display:block;font-family:var(--face-caps);font-size:1rem}
+.exg{display:block;font-family:var(--face-ital);font-style:italic;
      font-size:.88rem;color:var(--txs);margin-top:2px}
 .exadd{display:flex;flex-wrap:wrap;gap:7px}
 .exadd input{flex:1 1 100%;min-width:0;min-height:44px;background:none;border:0;
@@ -925,7 +952,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* ---------- search, the tab ---------- */
 .fcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .fcard.soon{border-style:dashed;opacity:.62}
-.fch{font-family:'Cinzel',Georgia,serif;font-size:1rem;margin-bottom:6px}
+.fch{font-family:var(--face-caps);font-size:1rem;margin-bottom:6px}
 .note{color:var(--txm);font-size:.86rem;line-height:1.75}
 /* A photograph of the settings screen a step lands on, at the width of the
    page, with the corners of a screenshot. */
@@ -936,7 +963,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .sndrow{display:flex;align-items:center;gap:12px;padding:10px 2px;
         border-bottom:1px solid var(--line)}
 .sndsym{min-width:44px;min-height:44px;border:0;background:none;color:var(--tx);
-        font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem}
+        font-family:var(--face-ital);font-size:1.3rem}
 .sndlts{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
 /* Shown, not pressed. Joining a sound to a letter is the letter's, in one
    place -- two directions for one fact is what closed the old sound chapter. */
@@ -976,7 +1003,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* One step of putting the keyboard on the phone: a number, what to do, and
    either the path or the button that gets there. */
 .kbstep{margin:0 0 22px}
-.kbstepn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
+.kbstepn{font-family:var(--face-ital);font-style:italic;
          color:var(--gold);font-size:1.1rem}
 .kbstept{font-size:1rem;color:var(--tx);margin:2px 0 6px}
 /* Whether what this chapter builds ever reached the phone. In the `?` sheet
@@ -1003,7 +1030,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* An inline-flex button inside a centred column is only as wide as its own
    text and sits at the left edge of it. 「作成中の言語（左寄せになってるから真ん中
    寄せに。）」 -- it is the one thing on this screen the eye lands on first. */
-.tname{font-family:'Cinzel',Georgia,serif;font-weight:600;font-size:2.2rem;line-height:1.15;
+.tname{font-family:var(--face-caps);font-weight:600;font-size:2.2rem;line-height:1.15;
        display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
        background:none;border:none;color:var(--tx);min-height:44px}
 .tname .pen{font-size:.84rem;color:var(--txm);display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px}
@@ -1011,22 +1038,22 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    other things here -- the PLUS tag, and a sound that changed in one word.
    It means neither on the cover, so it was a colour saying something untrue
    on the first screen you see. */
-.tsub{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.1rem;color:var(--txs);margin-top:6px}
+.tsub{font-family:var(--face-ital);font-style:italic;font-size:1.1rem;color:var(--txs);margin-top:6px}
 .toc{margin-top:14px}
 .trow{display:flex;align-items:baseline;gap:12px;padding:16px 2px;width:100%;background:none;border:none;color:var(--tx);text-align:left}
 .trow:active{opacity:.55}
-.trow .rn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1rem;width:26px;flex:0 0 auto}
+.trow .rn{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1rem;width:26px;flex:0 0 auto}
 .trow .rt{font-size:1.1rem;font-weight:500}
 .trow .lead{flex:1;border-bottom:1px dotted var(--dot);transform:translateY(-3px)}
-.trow .rv{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.02rem;color:var(--txs);flex:0 0 auto}
+.trow .rv{font-family:var(--face-ital);font-size:1.02rem;color:var(--txs);flex:0 0 auto}
 .recent{margin-top:24px;background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;width:100%;text-align:left;color:var(--tx)}
 .recent .rh{font-size:.82rem;letter-spacing:.24em;color:var(--txm);text-transform:uppercase;margin-bottom:10px}
-.recent .line{font-family:'Cinzel',Georgia,serif;font-size:1.25rem;letter-spacing:.02em}
-.recent .tr{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--txs);margin-top:2px}
+.recent .line{font-family:var(--face-caps);font-size:1.25rem;letter-spacing:.02em}
+.recent .tr{font-family:var(--face-ital);font-style:italic;font-size:1.02rem;color:var(--txs);margin-top:2px}
 
 /* ---------- the empty state ---------- */
 .empty{padding:54px 30px;text-align:center}
-.empty .eb{font-family:'Cinzel',Georgia,serif;font-size:1.3rem;margin-bottom:8px}
+.empty .eb{font-family:var(--face-caps);font-size:1.3rem;margin-bottom:8px}
 .empty .es{color:var(--txm);font-size:.86rem;line-height:1.9}
 
 /* ---------- the dictionary ---------- */
@@ -1035,7 +1062,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    across the top of two screens. 「検索バー縦長すぎる」 */
 .search{display:flex;align-items:center;gap:9px;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 2px;margin:8px 0 2px}
 .search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
-.gl{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
+.gl{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
 /* An entry is two controls now -- the word, which says itself, and the
    chevron, which opens it -- so the row is a container and the padding and
    the rule under it stay on the row while the touch targets sit inside. */
@@ -1097,7 +1124,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    page both. It was scoped to the row, so on the word page the number sat
    against the meaning with no gap at all: `1to see`. The gap is in `em` so it
    holds at both sizes rather than being 3px against two different fonts. */
-.sn{font-family:'Cinzel',Georgia,serif;font-style:normal;font-size:.82rem;
+.sn{font-family:var(--face-caps);font-style:normal;font-size:.82rem;
       color:var(--gold);margin-right:.34em;vertical-align:.15em}
 .mn .sn + span{margin-right:0}
 .mn .nomn{opacity:.42}
@@ -1105,36 +1132,36 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* A sentence this word is used in. */
 .useln{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .useln:last-child{border-bottom:0}
-.usew{font-family:'Cinzel',Georgia,serif;font-size:.95rem;flex:0 0 auto;max-width:45%;
+.usew{font-family:var(--face-caps);font-size:.95rem;flex:0 0 auto;max-width:45%;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.usem{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
+.usem{font-family:var(--face-ital);font-style:italic;
       font-size:.9rem;color:var(--txs);flex:1;min-width:0;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .usep{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
       display:inline-flex;align-items:center;justify-content:center}
 .usep:active{color:var(--gold)}
 .hwrow{display:flex;align-items:baseline;gap:10px}
-.hw{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
+.hw{font-family:var(--face-caps);font-size:1.26rem;letter-spacing:.02em}
 /* The same size and weight, and never the drawn script: this one is the
    app's own text on a row shaped like a word's. */
-.hwl{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
+.hwl{font-family:var(--face-caps);font-size:1.26rem;letter-spacing:.02em}
 .rd{font-size:.86rem;color:var(--txm)}
 /* What kind of word it is, and it is a fact about the word rather than
    something to press: it was a bordered pill on the end of every row, which
    is the shape a control has. A word and its part of speech are one line of
    reading. 「そのチップも変えて欲しいかも」 */
 .pos{margin-left:auto;font-size:.82rem;color:var(--txm);letter-spacing:.04em}
-.mn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.08rem;color:var(--txs);margin-top:1px}
+.mn{font-family:var(--face-ital);font-style:italic;font-size:1.08rem;color:var(--txs);margin-top:1px}
 
 /* ---------- sound ---------- */
-.ph{display:inline-flex;flex-direction:column;align-items:center;font-family:'Cinzel',Georgia,serif;
+.ph{display:inline-flex;flex-direction:column;align-items:center;font-family:var(--face-caps);
     font-size:.92rem;border:1px solid var(--line);line-height:1.15;
     border-radius:9px;padding:5px 10px;margin:0 6px 8px 0;color:var(--tx);background:var(--sf);min-width:34px}
-.ph i{font-style:normal;font-family:'Cormorant Garamond',Georgia,serif;font-size:.84rem;color:var(--gold);margin-top:2px}
+.ph i{font-style:normal;font-family:var(--face-ital);font-size:.84rem;color:var(--gold);margin-top:2px}
 .ph.off{color:var(--txm);border-style:dashed;background:none;opacity:.6}
 .ph.off i{color:var(--txm)}
 .link{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:center}
-.link .src{font-family:'Cinzel',Georgia,serif;font-size:1.16rem;letter-spacing:.03em}
+.link .src{font-family:var(--face-caps);font-size:1.16rem;letter-spacing:.03em}
 .link .arw{color:var(--txm);font-size:.86rem;margin:9px 0 7px}
 .link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
 /* The mark and nothing round it. It was a bordered box the size of a key
@@ -1149,7 +1176,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* ---------- rules ---------- */
 .find{padding:16px 0;border-bottom:1px solid var(--line)}
 .ft{font-size:1rem;font-weight:500;line-height:1.6}
-.ft em{font-style:normal;color:var(--gold);font-family:'Cinzel',Georgia,serif}
+.ft em{font-style:normal;color:var(--gold);font-family:var(--face-caps)}
 .fd{color:var(--txm);font-size:.88rem;margin-top:5px;line-height:1.8}
 .bar{height:2px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--gold)}
@@ -1175,9 +1202,9 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .cand .ck .ckb{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
           display:flex;align-items:center;justify-content:center;color:var(--onGold)}
 .cand .ck.on .ckb{background:var(--gold);border-color:var(--gold)}
-.cand .cw{font-family:'Cinzel',Georgia,serif;font-size:1.1rem}
+.cand .cw{font-family:var(--face-caps);font-size:1.1rem}
 .cand .crd{font-size:.86rem;color:var(--txm);margin-left:2px}
-.cand .cm{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txs);font-size:1rem}
+.cand .cm{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txs);font-size:1rem}
 /* 44 is Apple's floor for anything a thumb has to hit, and this said so --
    then a second .cand .rr three hundred lines further down, in a batch of
    fixes made when characters became drawings, repeated three of these four
@@ -1240,7 +1267,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    thing to press. 「かくまるみたいなのでくくるのやめて欲しい」 */
 .plan .ph2,.plfree .ph2{border:0;background:none;border-radius:0;padding:0;
    min-height:0;margin-bottom:0;width:auto;display:flex;align-items:center;gap:9px}
-.plan .pn{font-family:'Cinzel',Georgia,serif;font-size:1.15rem}
+.plan .pn{font-family:var(--face-caps);font-size:1.15rem}
 /* The number, at the size a number is read at, with its unit beside it rather
    than glued on -- a price and a period are two facts. */
 .pprice{display:flex;align-items:baseline;gap:6px;margin-top:10px}
@@ -1265,7 +1292,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    line at the foot saying what that is -- beside the two that cost money it
    made "nothing" look like an option being sold. */
 .plfree{border-top:1px solid var(--line);padding:16px 2px 0;margin-top:6px}
-.plfree .pn{font-family:'Cinzel',Georgia,serif;font-size:1rem;color:var(--txs)}
+.plfree .pn{font-family:var(--face-caps);font-size:1rem;color:var(--txs)}
 .plfree .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);
                border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
 .plfree .pli{color:var(--txm)}
@@ -1933,7 +1960,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
           border:0;border-bottom:1px solid var(--line);border-radius:0}
 .field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
-.field input.hwf{font-family:'Cinzel',Georgia,serif;font-size:1.14rem;letter-spacing:.03em}
+.field input.hwf{font-family:var(--face-caps);font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
 /* A note on a word is a line or two, not a page. */
 .field textarea#wd-nt{height:76px}
@@ -1980,7 +2007,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
               border-radius:8px;padding:5px 13px;font-size:.88rem}
 /* one word, opened */
 .whd{display:flex;align-items:center;gap:12px;margin:0 2px}
-.whw{font-family:'Cinzel',Georgia,serif;font-size:1.7rem;letter-spacing:.03em}
+.whw{font-family:var(--face-caps);font-size:1.7rem;letter-spacing:.03em}
 /* The word being written sits in this row rather than under a heading further
    down, so the field has to give up being a block of its own width. Not
    font-family: .sfont is the one place that says what letters a field is
@@ -2004,14 +2031,14 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wdroww{flex:0 0 auto;font-size:1.02rem}
 .wdrowm{flex:1 1 auto;min-width:0;font-size:.9rem;color:var(--txm);text-align:right;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wrd{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.14rem;color:var(--tx);margin:6px 2px 0;letter-spacing:.03em}
-.wsub{font-family:'Cormorant Garamond',Georgia,serif;font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
+.wrd{font-family:var(--face-ital);font-size:1.14rem;color:var(--tx);margin:6px 2px 0;letter-spacing:.03em}
+.wsub{font-family:var(--face-ital);font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
 .wsub2{font-size:.88rem;color:var(--txm);margin:2px 2px 0}
 .sylrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .sy{display:inline-flex;flex-direction:column;align-items:center;background:var(--sf);border:1px solid var(--line);
     border-radius:10px;padding:7px 13px;min-width:52px}
-.sy .sya{font-family:'Cinzel',Georgia,serif;font-size:1.02rem}
-.sy .syi{font-family:'Cormorant Garamond',Georgia,serif;font-size:.88rem;color:var(--gold);margin-top:3px}
+.sy .sya{font-family:var(--face-caps);font-size:1.02rem}
+.sy .syi{font-family:var(--face-ital);font-size:.88rem;color:var(--gold);margin-top:3px}
 .sy .syk{font-size:.84rem;color:var(--txm);margin-top:1px}
 .sysep{color:var(--txm);font-size:.88rem}
 /* sentences */
@@ -2032,7 +2059,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wc{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);
     border:1px solid var(--line);border-radius:11px;padding:8px 13px;color:var(--tx)}
 .wc.on{background:var(--goldsf);border-color:var(--goldln)}
-.wc .wcw{font-family:'Cinzel',Georgia,serif;font-size:1.04rem}
+.wc .wcw{font-family:var(--face-caps);font-size:1.04rem}
 .wc .wcm{font-size:.82rem;color:var(--txm)}
 .wctl,.wctl2{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .wctl button,.wctl2 button{background:none;border:1px solid var(--line);color:var(--txs);
@@ -2042,16 +2069,16 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
     border:1px solid var(--line);border-radius:11px;padding:7px 12px;color:var(--tx)}
 .pw:active{opacity:.55}
-.pw .pww{font-family:'Cinzel',Georgia,serif;font-size:.98rem}
+.pw .pww{font-family:var(--face-caps);font-size:.98rem}
 .pw .pwm{font-size:.84rem;color:var(--txs)}
 .pw .pwm.dim{color:var(--txm);opacity:.6}
 .chk{margin-top:12px;font-size:.88rem;line-height:1.8;border-radius:12px;padding:11px 14px;border:1px solid var(--line)}
 .chk.ok{color:var(--txs);background:var(--goldsf);border-color:var(--goldln)}
 .chk.ng{color:var(--txs);background:var(--sf)}
-.chk b{color:var(--gold);font-family:'Cinzel',Georgia,serif}
+.chk b{color:var(--gold);font-family:var(--face-caps)}
 .chk button{display:block;margin-top:9px;background:none;border:1px solid var(--goldln);color:var(--gold);
     border-radius:8px;padding:6px 13px;font-size:.86rem}
-.ipa{font-family:'Cormorant Garamond',Georgia,serif;letter-spacing:.02em}
+.ipa{font-family:var(--face-ital);letter-spacing:.02em}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 24px);transform:translateX(-50%) translateY(10px);
        background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
        border-radius:10px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
@@ -2069,7 +2096,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .ob .mid.obleft{justify-content:flex-start;align-items:stretch;text-align:left}
 .ob.center .mid{margin:0}
 .ob .obfoot .btn{width:100%}
-.ob h1{font-family:'Cinzel',Georgia,serif;font-size:2.5rem;letter-spacing:.06em;line-height:1.15}
+.ob h1{font-family:var(--face-caps);font-size:2.5rem;letter-spacing:.06em;line-height:1.15}
 .ob h2{font-size:clamp(1.12rem,4.6vw,1.42rem);font-weight:500;line-height:1.45;letter-spacing:.01em}
 .ob h2.obh{font-size:clamp(1.02rem,4.2vw,1.24rem)}
 .ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
@@ -2090,7 +2117,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .gtile.empty{background:none;border-style:dashed;color:var(--txm)}
 .gtile:active{opacity:.6}
 .gtile canvas{width:100%;height:100%;display:block;border-radius:12px}
-.gtile .rl{position:absolute;left:7px;bottom:4px;font-family:'Cormorant Garamond',Georgia,serif;
+.gtile .rl{position:absolute;left:7px;bottom:4px;font-family:var(--face-ital);
            font-style:italic;font-size:.88rem;color:var(--gold);opacity:.85;line-height:1}
 .gtile.add{font-size:1.3rem;color:var(--gold);border-style:dashed}
 .gcanvwrap{margin:6px 0 2px;display:flex;justify-content:center}
@@ -2132,7 +2159,7 @@ html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
 .spv{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
 .spv .big{font-size:2.4rem;line-height:1.5;word-break:break-word}
 .spv .sm{font-size:17px;line-height:1.9;margin-top:6px;color:var(--txs);word-break:break-word}
-.spv .rom{font-family:'Cinzel',Georgia,serif;font-size:.86rem;color:var(--txm);
+.spv .rom{font-family:var(--face-caps);font-size:.86rem;color:var(--txm);
           letter-spacing:.06em;margin-top:10px}
 /* The one switch the whole feature turns on. Everything it changes is a
    font-family: the stored text stays roman letters, always. */
@@ -2152,7 +2179,7 @@ html[data-script="on"] .psw,
 html[data-script="on"] .whw,
 html[data-script="on"] .gsw,
 html[data-script="on"] .seq,
-html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0}
+html[data-script="on"] .st-seq{font-family:var(--face-script);letter-spacing:0}
 /* Eight selectors came off this list. Seven of them -- .line .tname .wcw
    .sww .usew .lcs .cw .link .src -- are on no element anywhere in www/ any
    more, so they were a list of places the font USED to reach, and a reader
@@ -2171,9 +2198,9 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
    is Firefox's -- so on the phone, where the bug is, the whole rule was
    dropped and .sfont went on winning. Written apart, each browser keeps the
    one it knows. */
-.sfont::placeholder{font-family:'Cormorant Garamond',Georgia,serif !important;
+.sfont::placeholder{font-family:var(--face-ital) !important;
   letter-spacing:normal}
-.sfont::-webkit-input-placeholder{font-family:'Cormorant Garamond',Georgia,serif !important;
+.sfont::-webkit-input-placeholder{font-family:var(--face-ital) !important;
   letter-spacing:normal}
 /* `normal` hands the line box to the font, which is where the rule lives:
    ink plus one lattice step. A number here would be a screen deciding the
@@ -2189,7 +2216,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
    that reason and no other: the class was on the element, the font was built,
    the glyph was there, and `l` came out as l. 「これ押してもlになる。lingua内
    でも」 Beating them one at a time is a dozen places agreeing; this is one. */
-.sfont{font-family:'LinguaScript',serif !important;line-height:normal}
+.sfont{font-family:var(--face-script) !important;line-height:normal}
 </style>
 <style id="ob-rework">
 .langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
@@ -2218,7 +2245,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
         /* the names of ten languages at 13px, in a bar that also holds a back
            arrow and five progress dashes, on a 320px screen */
         min-width:0;flex:0 1 auto;text-overflow:ellipsis;overflow:hidden}
-.ob .obsub{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;
+.ob .obsub{font-family:var(--face-ital);font-style:italic;
            font-size:clamp(.86rem,3.4vw,1.02rem);color:var(--txs);margin-top:6px;flex:0 0 auto}
 .ob .obleft{text-align:left}
 .ob .obq{margin-top:16px}
@@ -2272,7 +2299,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 /* the name, which is the only thing typed in the whole of onboarding */
 .obnamebox{width:100%;margin-top:20px}
 .obnamebox input{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
-  padding:16px 6px;color:var(--tx);font-family:'Cinzel',Georgia,serif;font-size:1.25rem;
+  padding:16px 6px;color:var(--tx);font-family:var(--face-caps);font-size:1.25rem;
   text-align:center;outline:none}
 .obnamebox input:focus{border-bottom-color:var(--goldln)}
 /* a letter the app worked out rather than one anybody drew */
@@ -2303,7 +2330,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 .obdoor svg{height:100%;width:auto;max-width:min(40vw,148px);display:block}
 .obrule{width:56px;height:1px;margin:clamp(12px,2.4vh,20px) auto 0;flex:0 0 auto;
         background:linear-gradient(90deg,transparent,var(--gold),transparent)}
-.ob .obh1{font-family:'Cinzel',Georgia,serif;font-size:clamp(1.35rem,5.6vw,1.8rem);
+.ob .obh1{font-family:var(--face-caps);font-size:clamp(1.35rem,5.6vw,1.8rem);
           letter-spacing:.2em;margin-top:clamp(10px,2vh,16px);font-weight:600;flex:0 0 auto}
 .ob .obtag{margin-top:clamp(6px,1.4vh,10px);font-size:clamp(.9rem,3.6vw,1.05rem);flex:0 0 auto}
 .ob .obfoot .btn.signin{margin-bottom:10px}
@@ -2356,7 +2383,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 .ptile:active{transform:scale(.96)}
 .pch{font-size:1.4rem;line-height:1.1}
 .ptile:not(.has) .pch{font-size:.95rem;color:var(--txm)}
-.psn{font-family:ui-monospace,Menlo,monospace;font-size:.82rem;color:var(--txm)}
+.psn{font-family:var(--face-mono);font-size:.82rem;color:var(--txm)}
 .pdel{position:absolute;top:0;right:3px;font-size:.88rem;color:var(--txm);line-height:1}
 .pkown{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 /* .btn is flex:1 so a row of them shares the width; one beside a field is
@@ -2379,11 +2406,11 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 .sndgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;max-height:46dvh;overflow-y:auto}
 .sndchip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:52px;
   border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--tx);font:inherit;cursor:pointer}
-.sc1{font-family:ui-monospace,Menlo,monospace;font-size:.86rem}
+.sc1{font-family:var(--face-mono);font-size:.86rem}
 .sc2{font-size:.82rem;color:var(--txm)}
 .scrpv{display:flex;flex-direction:column;gap:4px;padding:13px;border:1px solid var(--line);border-radius:11px;margin-bottom:10px}
 .scrpvw{font-size:1.5rem;line-height:1.4;word-break:break-all}
-.scrpvr{font-size:.86rem;color:var(--txm);font-family:ui-monospace,Menlo,monospace}
+.scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
 .scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
   color:var(--tx);font:inherit;font-size:1rem;outline:none}
 .scin:focus{border-color:var(--gold)}
@@ -2393,7 +2420,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 .scin:focus{border-color:var(--gold)}
 .scrpv{display:flex;flex-direction:column;gap:5px;padding:15px;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
 .scrpvw{font-size:1.7rem;line-height:1.4;word-break:break-all}
-.scrpvr{font-size:.86rem;color:var(--txm);font-family:ui-monospace,Menlo,monospace}
+.scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
 .sugask{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 12px;
   padding:11px 13px;border:1px dashed var(--line);border-radius:11px;background:transparent;color:var(--txm);
   font:inherit;font-size:.88rem;cursor:pointer;text-align:left}
@@ -2439,7 +2466,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 /* The title takes the room that is left and wraps if it has to; the number,
    the count and the chevron never shrink. Fixed-width titles pushed the count
    off a 320px screen in the languages with longer words. */
-.strow .stn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--gold);
+.strow .stn{font-family:var(--face-ital);font-style:italic;color:var(--gold);
   font-size:1.05rem;min-width:20px;flex:0 0 auto}
 .strow .stt{font-size:.98rem;flex:1 1 auto;min-width:0;line-height:1.4}
 .strow .lead{display:none}
@@ -2447,14 +2474,14 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 .strow .go{color:var(--txm);flex:0 0 auto}
 .strow.done .stt{color:var(--txs)}
 .strow.done .stv{color:var(--gold)}
-.sth{font-family:'Cinzel',Georgia,serif;font-size:1.35rem;margin:6px 0 8px}
+.sth{font-family:var(--face-caps);font-size:1.35rem;margin:6px 0 8px}
 .stslots{display:flex;flex-direction:column;gap:0}
 .stslot{display:flex;align-items:baseline;gap:10px;width:100%;min-height:56px;padding:13px 2px;
   border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;
   text-align:left;cursor:pointer;flex-wrap:wrap}
 .stslot .psm{font-size:.95rem;flex:0 0 auto;min-width:78px}
-.stslot .psw{font-family:'Cinzel',Georgia,serif;font-size:1.06rem;color:var(--gold)}
-.stslot .psi{font-family:ui-monospace,Menlo,monospace;font-size:.84rem;color:var(--txm)}
+.stslot .psw{font-family:var(--face-caps);font-size:1.06rem;color:var(--gold)}
+.stslot .psi{font-family:var(--face-mono);font-size:.84rem;color:var(--txm)}
 .stslot .psn{font-size:.88rem;color:var(--txm)}
 .stslot .go{margin-left:auto;color:var(--txm);flex:0 0 auto;align-self:center}
 .stslot.has .psn{display:none}
@@ -2496,7 +2523,7 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
 /* a derived word, set in from the margin under the one it came from */
 .mnlist{display:flex;flex-direction:column;gap:0;margin-bottom:10px}
 .mnrow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
-.mnrow .mnv{flex:1;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--tx)}
+.mnrow .mnv{flex:1;font-family:var(--face-ital);font-style:italic;font-size:1.02rem;color:var(--tx)}
 .mnrow .mnx{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
 /* the forms a rule makes, on the sheet a word is coined on: what it is
@@ -2544,9 +2571,9 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
   border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--pane)}
 .tk.me{align-self:flex-end;border-radius:14px 14px 4px 14px;
   border-color:var(--goldln);background:var(--goldsf)}
-.tk .tkw{font-family:'Cinzel',Georgia,serif;font-size:1.06rem;color:var(--tx);word-break:break-word}
-.tk .tki{font-family:ui-monospace,Menlo,monospace;font-size:.84rem;color:var(--gold);margin-top:3px}
-.tk .tkg{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:.9rem;
+.tk .tkw{font-family:var(--face-caps);font-size:1.06rem;color:var(--tx);word-break:break-word}
+.tk .tki{font-family:var(--face-mono);font-size:.84rem;color:var(--gold);margin-top:3px}
+.tk .tkg{font-family:var(--face-ital);font-style:italic;font-size:.9rem;
   color:var(--txs);margin-top:4px;line-height:1.5}
 .tk .tkp{position:absolute;top:8px;right:6px;min-width:44px;min-height:44px;background:none;border:0;
   color:var(--txm);display:flex;align-items:center;justify-content:center}
@@ -2569,15 +2596,15 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
   text-align:left;cursor:pointer;min-height:48px}
 .gpiece.has{border-color:var(--goldln)}
 .gpiece .gpl{font-size:.88rem;color:var(--txs)}
-.gpiece .gpv{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:.9rem;color:var(--gold)}
+.gpiece .gpv{margin-left:auto;font-family:var(--face-mono);font-size:.9rem;color:var(--gold)}
 .gpiece:not(.has) .gpv{color:var(--txm);font-family:inherit;font-size:.88rem}
 .gdemo{margin:12px 0 2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--pane)}
 .gside{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
 .gside:first-child{border-top:0}
 .gside .gsl{flex:0 0 auto;font-size:.82rem;letter-spacing:.13em;text-transform:uppercase;color:var(--txm);min-width:50px}
-.gside .gsw{font-family:'Cinzel',Georgia,serif;font-size:1.04rem;color:var(--tx);word-break:break-word}
-.gside .gsi{font-family:ui-monospace,Menlo,monospace;font-size:.84rem;color:var(--gold)}
-.gside .gsg{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:.88rem;color:var(--txs)}
+.gside .gsw{font-family:var(--face-caps);font-size:1.04rem;color:var(--tx);word-break:break-word}
+.gside .gsi{font-family:var(--face-mono);font-size:.84rem;color:var(--gold)}
+.gside .gsg{font-family:var(--face-ital);font-style:italic;font-size:.88rem;color:var(--txs)}
 .gside .gsp{margin-left:auto;flex:0 0 auto;min-width:38px;min-height:38px;background:none;border:0;
   color:var(--txs);display:flex;align-items:center;justify-content:center;align-self:center}
 .gside .gsp:active{opacity:.5}

@@ -265,6 +265,14 @@ function scriptGlyphDefs(){
    rebuilding means writing out the pen, the side and the two heights a second
    time, and the day one of them changes the keyboard's letters would quietly
    stop matching the app's. */
+/* What the font somebody drew is called. Said once here because it is said
+   twice below -- to the OTF writer, which stamps it into the file, and to the
+   @font-face rule that installs it -- and a third time in index.html, as
+   --face-script, which is what every .sfont element actually asks for. Those
+   three have to be the same string or the drawn letters silently stop
+   appearing: the font builds, the rule installs, and nothing matches it.
+   tools/face-check.mjs holds this one against the stylesheet. */
+var SFONT_FAMILY='LinguaScript';
 var SFONT={built:false, sig:null, b64:''};
 /* What the font is made of, in one string. The alphabet grows on its own as
    the dictionary does, so a word written today can need a letter the font was
@@ -302,11 +310,11 @@ function installScriptFont(){
     if(!d.defs.length) return;
     var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geSide(),
                        asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(), ligatures:d.ligs,
-                                    family:'LinguaScript', style:'Regular'});
+                                    family:SFONT_FAMILY, style:'Regular'});
     el=document.createElement('style');
     el.id='sfontcss';
     el.appendChild(document.createTextNode(
-      "@font-face{font-family:'LinguaScript';src:url("+f.dataUrl()+") format('opentype');}"));
+      "@font-face{font-family:'"+SFONT_FAMILY+"';src:url("+f.dataUrl()+") format('opentype');}"));
     document.head.appendChild(el);
     SFONT.b64=f.base64();
     SFONT.built=true;
@@ -1088,8 +1096,14 @@ function geSave(){
 /* Deleting the letter, shape and sounds and all. The sounds it read stay in
    the language -- they are not the letter's to take with it. */
 /* ---- canvas ------------------------------------------------------------- */
-function cssVar(n){
-  return (getComputedStyle(document.documentElement).getPropertyValue(n)||'').trim()||'#888';
+/* A variable off the page, with what to use when there is none. The fallback
+   is a colour by default because every caller but the card and the onboarding
+   preview wants one; those two ask for a face and pass a generic family, so a
+   missing variable degrades to serif instead of to the string "#888" inside a
+   ctx.font. */
+function cssVar(n, fb){
+  return (getComputedStyle(document.documentElement).getPropertyValue(n)||'').trim()||
+         (fb===undefined? '#888' : fb);
 }
 /* The canvas is sized in device pixels, which is something no markup can say,
    so it has to be measured after the layout exists. If it is measured before

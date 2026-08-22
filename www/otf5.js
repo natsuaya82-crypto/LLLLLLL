@@ -778,7 +778,12 @@ var LinguaFont = (function () {
     cell: 800, fitMargin: 0.06,
     mode: 'center',                                   // 'asdrawn' | 'center' | 'fit'
     pen: { width: 60, angleDeg: 0, contrast: 1.0 },
-    family: 'LinguaScript', style: 'Regular',
+    /* A name only so that a font built without one is still a valid file.
+       This is a font writer, not this app's font: it said 'LinguaScript',
+       which made it a fourth place naming a face that glyph.js already names
+       and index.html has to agree with. glyph.js passes `family` on every
+       call, so nothing here ever reached the app. */
+    family: 'Untitled', style: 'Regular',
     ligatures: [],                                    // [{ sub: ['s','h'], by: 's_h' }]
   };
 

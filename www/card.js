@@ -247,7 +247,7 @@ function cardMeasure(x, items){
       }
       u.st=null; u.tx=u.tx||'';      /* strokes that ink nothing */
     }
-    x.font=sz+'px '+CARD_CAPS;
+    x.font=sz+'px '+cardCaps();
     u.sz=sz;
     u.x0=0; u.x1=x.measureText(String(u.tx).toUpperCase()).width;
     u.y1=Math.round(CARD_CELL*0.85); u.y0=Math.round(u.y1-sz*0.70);
@@ -401,7 +401,7 @@ function cardInk(x, items){
        beside it, which reads as a small letter rather than as a gap. */
     x.fillStyle=cssVar('--tx');
     x.textAlign='left'; x.textBaseline='alphabetic';
-    x.font=Math.round(u.sz*u.k)+'px '+CARD_CAPS;
+    x.font=Math.round(u.sz*u.k)+'px '+cardCaps();
     x.fillText(String(u.tx).toUpperCase(), u.ax+u.x0*u.k, u.ay+u.y1*u.k);
   }
 }
@@ -455,12 +455,18 @@ function cardSplit(x, s, max, lines){
   return out.length? out : null;
 }
 
-/* The card is set in the app's own two faces: the capitals in Cinzel, the
-   meaning in Cormorant italic, both already loaded by index.html. Georgia is
-   behind each of them for the moment before a webfont arrives, and a fallback
-   nobody sees is still the difference between a card and a blank square. */
-var CARD_CAPS="'Cinzel', Georgia, serif";
-var CARD_ITAL="'Cormorant Garamond', Georgia, serif";
+/* The card is set in the app's own two faces: the capitals in the display
+   face, the meaning in the italic one.
+
+   Both used to be written out here as family lists, which made this file the
+   one place a face was named outside the stylesheet -- and a canvas cannot
+   inherit, so nothing would have looked wrong until somebody changed a face in
+   index.html and every screen except the card followed. They are asked of the
+   page now, exactly as every colour on this card already is. `serif` is the
+   fallback rather than a family, because naming one here is the thing this
+   stopped doing. */
+function cardCaps(){ return cssVar('--face-caps', 'serif'); }
+function cardItal(){ return cssVar('--face-ital', 'serif'); }
 
 /* Letterspaced, centred on cx. Canvas has no tracking on the webviews this
    has to run in, and every small capital in the app is tracked, so without
@@ -640,13 +646,13 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
      part of speech on the right because that is the one fact about the entry
      that is not the entry. */
   x.textBaseline='alphabetic'; x.textAlign='left';
-  x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.016)+'px '+CARD_CAPS;
+  x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.016)+'px '+cardCaps();
   cardTrackL(x, String(src.nm||'').toUpperCase(), M, M, S*0.016*0.46);
   /* The part of speech, when there is one. `x` is the entry for "none of
      these", and OTHER printed across the head of a page says nothing about
      the word and takes the place of the thing that would. */
   if(src.pos && src.posk && src.posk!=='x'){
-    x.font=Math.round(S*0.016)+'px '+CARD_CAPS;
+    x.font=Math.round(S*0.016)+'px '+cardCaps();
     x.fillStyle=cssVar('--txm');
     cardTrackL(x, String(src.pos).toUpperCase(),
       RIGHT-cardTrackW(x, String(src.pos).toUpperCase(), S*0.016*0.46), M, S*0.016*0.46);
@@ -664,11 +670,11 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   /* The spelling and the reading, on one line: what it is written as, and
      what it sounds like. */
   x.textAlign='left'; x.fillStyle=cssVar('--txs');
-  x.font=Math.round(S*0.024)+'px '+CARD_CAPS;
+  x.font=Math.round(S*0.024)+'px '+cardCaps();
   i=cardTrackL(x, String(src.line||'').toUpperCase(), M, y, S*0.024*0.34);
   if(src.rd){
     x.fillStyle=cssVar('--txm');
-    x.font='italic '+Math.round(S*0.026)+'px '+CARD_ITAL;
+    x.font='italic '+Math.round(S*0.026)+'px '+cardItal();
     x.fillText(src.rd, M+i+Math.round(S*0.030), y);
   }
   y+=Math.round(S*0.026)+extra*0.45;
@@ -678,9 +684,9 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
      nowhere else on the picture. */
   y+=Math.round(S*0.052)+extra;
   for(i=0;i<mns.length;i++){
-    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.019)+'px '+CARD_CAPS;
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.019)+'px '+cardCaps();
     x.textAlign='left'; x.fillText(String(i+1), M, y);
-    x.fillStyle=cssVar('--tx'); x.font=Math.round(S*0.042)+'px '+CARD_ITAL;
+    x.fillStyle=cssVar('--tx'); x.font=Math.round(S*0.042)+'px '+cardItal();
     ln=cardWrap(x, mns[i], COL-IND);
     for(j=0;j<ln.length;j++){ x.fillText(ln[j], M+IND, y); y+=Math.round(S*0.050); }
     y+=Math.round(S*0.008)+extra*0.55;
@@ -691,7 +697,7 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
      row that wraps stops being a row. 「過去形とか登録すると辞書にも追加される」 */
   if(fam.length){
     y+=Math.round(S*0.030)+extra;
-    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.014)+'px '+CARD_CAPS;
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.014)+'px '+cardCaps();
     x.textAlign='left';
     cardTrackL(x, String(t('word.family')).toUpperCase(), M, y, S*0.014*0.46);
     y+=Math.round(S*0.040);
@@ -711,7 +717,7 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
         g=Math.round(S*0.015);
         x.fillStyle=cssVar('--txs');
         while(g>8){
-          x.font=g+'px '+CARD_CAPS;
+          x.font=g+'px '+cardCaps();
           if(cardTrackW(x, ln, g*0.40) <= FIND-Math.round(S*0.030)) break;
           g-=1;
         }
@@ -719,7 +725,7 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
       }
       if(fam[i].mn){
         x.fillStyle=cssVar('--txm');
-        x.font='italic '+Math.round(S*0.026)+'px '+CARD_ITAL;
+        x.font='italic '+Math.round(S*0.026)+'px '+cardItal();
         x.textAlign='left';
         x.fillText(fam[i].mn, Math.max(b.right, M+FIND)+Math.round(S*0.034), b.bot);
       }
@@ -737,7 +743,7 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
     y=b.bot+Math.round(S*0.036);
     if(ex.gl){
       x.fillStyle=cssVar('--txm');
-      x.font='italic '+Math.round(S*0.029)+'px '+CARD_ITAL;
+      x.font='italic '+Math.round(S*0.029)+'px '+cardItal();
       ln=cardWrap(x, ex.gl, COL-IND);
       for(j=0;j<ln.length;j++){ x.fillText(ln[j], M+IND, y); y+=Math.round(S*0.036); }
     }
@@ -747,11 +753,11 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
      of when they typed nothing. */
   if(org){
     y+=Math.round(S*0.034)+extra;
-    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.014)+'px '+CARD_CAPS;
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.014)+'px '+cardCaps();
     cardTrackL(x, String(t('word.ety')).toUpperCase(), M, y, S*0.014*0.46);
     y+=Math.round(S*0.030);
     x.fillStyle=cssVar('--txm');
-    x.font='italic '+Math.round(S*0.027)+'px '+CARD_ITAL;
+    x.font='italic '+Math.round(S*0.027)+'px '+cardItal();
     ln=cardWrap(x, org, COL);
     for(j=0;j<ln.length;j++){ x.fillText(ln[j], M, y); y+=Math.round(S*0.034); }
   }
@@ -767,7 +773,7 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   cardRule(x, b-Math.round(S*0.026), M, RIGHT, cssVar('--line'), 1);
   if(src.hd){
     ln='@'+String(src.hd).toUpperCase();
-    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.016)+'px '+CARD_CAPS;
+    x.fillStyle=cssVar('--gold'); x.font=Math.round(S*0.016)+'px '+cardCaps();
     cardTrackL(x, ln, M, b, S*0.016*0.46);
   }
   cardMark(x, RIGHT-Math.round(S*0.010), b-Math.round(S*0.005), Math.round(S*0.010));
@@ -883,7 +889,7 @@ function cardPaint(c){
   if(ofY){
     x.textBaseline='alphabetic';
     x.fillStyle=cssVar('--txm');
-    x.font=Math.round(S*0.026)+'px '+CARD_CAPS;
+    x.font=Math.round(S*0.026)+'px '+cardCaps();
     cardTrack(x, String(src.of).toUpperCase(), W/2, ofY, S*0.026*0.30);
   }
 
@@ -906,7 +912,7 @@ function cardPaint(c){
   x.textBaseline='alphabetic';
   x.fillStyle=cssVar('--txs');
   var up=String(src.line||'').toUpperCase();
-  var rs=cardFit(x, up, aw*0.86, Math.round(S*0.050), CARD_CAPS, 0.24);
+  var rs=cardFit(x, up, aw*0.86, Math.round(S*0.050), cardCaps(), 0.24);
   cardTrack(x, up, W/2, rsY, rs*0.24);
 
   /* How it is said and what part of speech it is -- one line, between the
@@ -917,7 +923,7 @@ function cardPaint(c){
   if(kind.sub && (src.rd || src.pos)){
     subY=rsY+Math.round(S*0.046);
     x.fillStyle=cssVar('--txm');
-    x.font='italic '+Math.round(S*0.030)+'px '+CARD_ITAL;
+    x.font='italic '+Math.round(S*0.030)+'px '+cardItal();
     x.textAlign='center';
     x.fillText([src.rd? '/'+src.rd+'/' : '', src.pos].filter(Boolean).join('  \u00b7  '),
                W/2, subY);
@@ -928,7 +934,7 @@ function cardPaint(c){
   if(src.mn){
     x.fillStyle=cssVar('--tx');
     var high=(footY-Math.round(S*0.030))-((subY||rsY)+Math.round(S*0.022));
-    var mn=cardLines(x, src.mn, aw, high, Math.round(S*0.082), CARD_ITAL, 'italic', 2);
+    var mn=cardLines(x, src.mn, aw, high, Math.round(S*0.082), cardItal(), 'italic', 2);
     var lh=cardLead(mn.sz);
     var y0=(subY? Math.max(mnY, subY+Math.round(S*0.058)) : mnY)-(mn.ln.length-1)*lh/2;
     x.textAlign='center';
@@ -950,13 +956,13 @@ function cardPaint(c){
   var fs=Math.round(S*0.030), tr=0.227;
   var hd=(src.hd? '@'+String(src.hd) : '').toUpperCase();
   var nm=String(src.nm||'').toUpperCase(), hs;
-  x.font=fs+'px '+CARD_CAPS;
+  x.font=fs+'px '+cardCaps();
   var nw=cardTrackW(x, nm, fs*tr);
   if(hd){
     x.fillStyle=cssVar('--gold');
-    hs=cardFit(x, hd, aw-nw-S*0.08, fs, CARD_CAPS, tr);
+    hs=cardFit(x, hd, aw-nw-S*0.08, fs, cardCaps(), tr);
     cardTrack(x, hd, pad+cardTrackW(x, hd, hs*tr)/2, footY, hs*tr);
-    x.font=fs+'px '+CARD_CAPS;
+    x.font=fs+'px '+cardCaps();
   }
   x.fillStyle=cssVar('--txm');
   cardTrack(x, nm, W-pad-nw/2, footY, fs*tr);

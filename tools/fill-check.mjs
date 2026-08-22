@@ -23,23 +23,9 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
    because npm test is an && chain, everything after this check stops running
    too -- this file and round-check were the only two not doing it, and they
    took press down with them. */
-import { execSync } from 'child_process';
 import fs from 'fs';
-async function loadChromium(){
-  const { createRequire } = await import('module');
-  const req = createRequire(import.meta.url);
-  try { return req('playwright').chromium; } catch (e) {}
-  try {
-    const g = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    return req(path.join(g, 'playwright')).chromium;
-  } catch (e) {}
-  console.error('playwright is not installed. npm i -g playwright');
-  process.exit(2);
-}
-const chromium = await loadChromium();
+import { chromium, LAUNCH } from './browser.mjs';
 /* and the browser itself, which may not be at the container's path either */
-const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
-const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{width:390,height:844} });

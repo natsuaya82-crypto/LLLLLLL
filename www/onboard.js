@@ -640,7 +640,11 @@ function obPv(w){
   var out='';
   try{
     var c=document.createElement('canvas'), x=c.getContext('2d');
-    x.font='24px -apple-system, system-ui, sans-serif';
+    /* The face the preview will actually be drawn in, which is the body's.
+       It was written out here as a SHORTER list than --face-ui, with no
+       'Noto Sans JP' on it, so a script was measured in one font and shown
+       in another. */
+    x.font='24px '+cssVar('--face-ui', 'sans-serif');
     var miss=x.measureText('￿￿').width/2, chars=w.ch.split(' '), got=[];
     for(var i=0;i<chars.length && got.length<3;i++){
       var ch=chars[i], wd=x.measureText(ch).width;
