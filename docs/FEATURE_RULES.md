@@ -186,6 +186,54 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-22
+- Area: Two keyboards. The free one is frozen, the paid one is free
+- Decision: 「だから無料は凍結、有料は自由にだろ。キーボード設定で入れ替えも
+  できるんだから。有料は有料キーボードでしかいじれない。無料の文字も
+  入れれる。これだけじゃないの？」
+
+  There are two keyboards and they are different things.
+
+  **The free QWERTY is frozen.** The slots are on it, in the order QWERTY puts
+  them, and there is no editor. Nothing on the paid side reaches it. A slot's
+  name never changes — wanting a different `a` means **redrawing it**, because
+  the drawing is what a letter is.
+
+  **The paid keyboard is free.** Keys are arranged and swapped in its editor,
+  and it takes **any letter — one somebody added, or one of the free slots.**
+  Nothing about a letter's name restricts it.
+- Reason: they are not one feature with a plan gate across it. The free QWERTY
+  exists because the free alphabet is exactly a–z, `!`, `?` and the digits, so
+  a keyboard can be had with no editor and nothing to set. The paid keyboard
+  is a thing somebody builds. Rules that hold one do not belong on the other.
+- **Two wrong turns are written down so they are not taken again.**
+  1. *"Decide what a slot IS by its name."* That made a letter somebody ADDED
+     and typed as `a` into a slot, permanently unrenameable — measured:
+     `ltSetRoman(added,'a')` took it and `ltSetRoman(added,'q')` afterwards did
+     nothing. 「+したら変えられないのはおかしい」
+  2. *"Reserve the slot names, so nothing else may be called `a`."* Proposed
+     and refused: 「足した文字もキーボードに設定はできるやん」. The code agrees
+     — a paid key binds a letter's **id** (`key.v = lid`), never its name, so
+     an added letter goes on a paid keyboard whatever it is called. Reserving
+     would have restricted the paid side for the free side's convenience,
+     which is the opposite of 有料は自由.
+- The case that kept being reported as a defect, and is not one: a paid
+  language where somebody drew a letter, called it `a`, and then dropped to
+  free. `ltStart()` sees the name taken, makes no slot, and that letter is the
+  free `a` key. **That is the letter they drew and named, on the key they
+  named it for.** The defect the backlog entry was actually about is the
+  opposite — a slot RENAMED away, leaving a key nothing could find and an
+  empty letter filling the hole — and a slot cannot be renamed now.
+- Affected features: the letter page's name field; the free QWERTY; the paid
+  keyboard editor.
+- Affected data: none. No field is added and nothing stored changes.
+- Affected docs: `docs/BACKLOG.md`.
+- Implementation status: **in, and nothing further is owed.** `ltSetRoman()`
+  refuses to rename a slot; nothing restricts a letter somebody added.
+  `base-check` holds both: a slot keeps its name on the paid plan, and a
+  letter somebody added is still theirs to name.
+
+### Decision
+- Date: 2026-08-22
 - Area: The free slots' names, and what paid buys
 - Decision: 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できると
   いうだけで。無料分のキーボードはもういじらない」
