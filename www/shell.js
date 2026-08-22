@@ -8,11 +8,15 @@
 var app=document.getElementById('app');
 
 /* ---- what a screen forgets when you leave it -------------------------
-   Fifteen things across eight files are remembered between renders: which
+   Two dozen things across a dozen files are remembered between renders: which
    words the list is filtered to, what was typed into a search, which face a
-   sheet is showing, what the make screen has produced but not committed.
-   None of that belongs to the language -- it is where you happen to be
-   standing in it.
+   sheet is showing, which picture on a post is open. None of that belongs to
+   the language -- it is where you happen to be standing in it.
+
+   This list said "what the make screen has produced but not committed" long
+   after the make screen was deleted, and cleared two globals -- mkPos and
+   cands -- that nothing in www/ has read since. Neither had a `var` anywhere,
+   so both were globals made by assignment, which is silent.
 
    There was no one place that said so, and things were added to it one at a
    time over the app's life. tools/fixture.mjs put two of the fifteen back
@@ -29,13 +33,10 @@ var app=document.getElementById('app');
 function viewReset(){
   q=''; wFil='*'; wSort='a';           /* the word list */
   fq=''; fpick=null;                   /* the find screen */
-  mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all';           /* the alphabet's order and filter */
   ltWob=false;                         /* and whether its letters are wobbling */
-  wdMode='';                           /* the sheet a word is written on */
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
-  tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
   kbShow=0;                            /* and which of the three is on screen */

@@ -698,7 +698,7 @@ function impUndo(){
     k=impLtrAt(d.wasL[i].id);
     if(k>=0) LETTERS[k]=d.wasL[i].l;
   }
-  save(); saveLetters(); installScriptFont(); cands=[];
+  save(); saveLetters(); installScriptFont();
   IMP=impBlank(); openImport();
   toast(t('imp.undone'));
 }
@@ -808,7 +808,6 @@ function impPut(rows){
   }
   save();
   if(lts.length || wasL.length){ saveLetters(); installScriptFont(); }
-  cands=[];
   /* Words and letters are counted apart. They were one number, and a file
      that carried three letters and no words said "3 words in" -- so the
      letters were in the alphabet, correctly, and the one sentence the screen

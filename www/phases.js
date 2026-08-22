@@ -295,7 +295,7 @@ function stKeep(){
     else nw.ph=stSeq.slice();
     WORDS.push(nw);
   }
-  save(); closeSheet({target:{id:'sbg'}}); cands=[]; render();
+  save(); closeSheet({target:{id:'sbg'}}); render();
   toast(t('toast.saved', hw));
 }
 function stDrop(){
@@ -303,7 +303,7 @@ function stDrop(){
   if(!w) return;
   if(!confirm(t('confirm.del', w.hw))) return;
   WORDS=WORDS.filter(function(x){ return x!==w; });
-  save(); closeSheet({target:{id:'sbg'}}); cands=[]; render();
+  save(); closeSheet({target:{id:'sbg'}}); render();
 }
 
 /* ---- a stage of your own ---------------------------------------------- */

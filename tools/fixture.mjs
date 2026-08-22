@@ -395,15 +395,6 @@ export function halfDone(){
     ['the word being edited, by sound', () => { SET.plan = 'plus'; openEdit('kano');
                                                 const h = FORM.html;
                                                 SET.plan = 'free'; return h; }],
-    /* And the OTHER face of each of those two: the rail switches the sheet
-       between the letters and the sounds, and the fixture's language has
-       letters, so the sound half is never the one that opens. */
-    ['the new word sheet, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
-                                                openAdd(''); const h = FORM.html;
-                                                wdMode = ''; SET.plan = 'free'; return h; }],
-    ['the word being edited, sounds rail', () => { SET.plan = 'plus'; wdMode = 'ph';
-                                                   openEdit('kano'); const h = FORM.html;
-                                                   wdMode = ''; SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
     ['the profile, replies', () => { pfTab='re'; POSTS.push({id:'pre', at:1, lang:langId,
@@ -878,10 +869,6 @@ export function halfDone(){
     ['the five kinds of writing', () => { SET.plan = 'plus';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
-    ['a word being added, by letter', () => { SET.plan='plus'; openAdd(''); wdSetMode('lt');
-                                              const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
-    ['a word being added, by sound',  () => { SET.plan='plus'; openAdd(''); wdSetMode('ph');
-                                              const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
                                        return vLetter(); }],
     ['a mark, opened',          () => { window.route='letter'; NAV=[{r:'letter', a:'l4'}];
@@ -923,10 +910,6 @@ export function halfDone(){
     ['words being suggested for a slot', () => { openSlot('greet','yes');
                                                  stSug=[['k','a'],['t','i']];
                                                  return FORM.html.replace(/$/, stSugHTML()); }],
-    ['the sound keyboard in a word', () => { SET.plan='plus'; openEdit('kano'); wdMode='ph';
-                                             const h=wdFormHTML(); wdMode=''; SET.plan='free'; return h; }],
-    ['the sound keyboard in a new word', () => { SET.plan='plus'; openAdd(); wdMode='ph';
-                                                 const h=FORM.html; wdMode=''; SET.plan='free'; return h; }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;

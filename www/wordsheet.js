@@ -97,7 +97,7 @@ function addOne(){
      them points at it by name. */
   made=addFmWrite(hw);
   addFmClear();
-  save(); cands=[]; addFrom='';
+  save(); addFrom='';
   /* Onto the word, read. Everything it holds was written on the way in, so
      what is wanted now is a look at it, not another form. */
   if(here().r==='form') back();
@@ -194,8 +194,6 @@ function vSpell(){
     ipaPickHTML('spAdd', [])+
     '</div></div>';
 }
-var wdMode='';
-function wdSetMode(m){ wdMode=m; wdPaint(); }
 /* A field for one more of something appears when the `+` on the heading is
    pressed and stays for the rest of the sheet, so a word with five meanings
    is five presses of Enter and not five of anything else. Nothing is typed
@@ -1447,7 +1445,7 @@ function saveWord(){
   /* A word that changes is still the same word, so everything pointing at it
      is told its new name rather than left pointing at one that is gone. */
   if(hw!==old) wRename(old, hw);
-  save(); closeSheet({target:{id:'sbg'}}); cands=[]; render(); toast(t('toast.saved', hw));
+  save(); closeSheet({target:{id:'sbg'}}); render(); toast(t('toast.saved', hw));
 }
 function delWord(){
   var w=findWord(openHw); if(!w) return;
@@ -1470,7 +1468,7 @@ function delWord(){
      so you are put back down wherever you were before you opened it -- the
      dictionary, or the word you reached it from. */
   navDrop('edit:'+gone); navDrop('word:'+gone);
-  cands=[]; render(); toast(t('toast.deleted', gone));
+  render(); toast(t('toast.deleted', gone));
 }
 
 /* The CSV header stays English in every locale, so a file written on one

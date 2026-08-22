@@ -346,6 +346,71 @@ const deadVars = varDecls.filter(d => {
   return n <= 1;   /* its own declaration */
 });
 
+/* ---- and a var that is only ever written -------------------------------
+   The check above asks whether a name is MENTIONED anywhere but its own
+   declaration. An assignment is a mention, so a var written in six places and
+   read in none passes it. A write-only global is usually not spare code -- it
+   is a wire with one end unattached, and the missing end is the half a person
+   would have noticed.
+
+   A read is any mention that is not a write. `x.f=1` and `x[i]=1` are writes
+   to something x holds and so are reads of x; `x+=1` reads it too, and none of
+   the three look like `x =` with nothing between. A declaration carrying no
+   value (`var tt;`) is neither, and is discounted. Shadowing is the same rule
+   the two checks above answer to. */
+const writeOnly = [];
+varDecls.forEach(d => {
+  if (deadVars.some(x => x.name === d.name && x.file === d.file)) return;   /* already reported */
+  const esc = d.name.replace(/\$/g, '\\$');
+  const use   = new RegExp('(?<![\\w$.])' + esc + '(?![\\w$])', 'g');
+  const write = new RegExp('(?<![\\w$.])' + esc + '\\s*=(?!=)', 'g');
+  const empty = new RegExp('\\bvar\\s+' + esc + '\\s*[;,]', 'g');
+  const own = new RegExp('(?<![\\w$.])' + esc + '\\s*=(?!=)');
+  const arg = new RegExp('function\\s*[\\w$]*\\s*\\([^)]*(?<![\\w$.])' + esc + '(?![\\w$])[^)]*\\)');
+  let mentions = 0, writes = 0, bareDecls = 0;
+  bared.forEach((src, rel) => {
+    if (rel !== d.file && (own.test(src) || arg.test(src))) return;   /* shadowed there */
+    mentions  += (src.match(use)   || []).length;
+    writes    += (src.match(write) || []).length;
+    bareDecls += (src.match(empty) || []).length;
+  });
+  if (mentions - writes - bareDecls <= 0) writeOnly.push(d);
+});
+
+/* ---- and a name that is assigned and was never declared ----------------
+   The same sentence again, for the case where there is no declaration to
+   find. `mkPos='n'` sat in viewReset() in www/shell.js with no `var` anywhere
+   and nothing reading it: what was left of the make screen after the screen
+   was deleted. Assigning to an undeclared name makes a global, silently, so
+   nothing throws -- and with no declaration there was no row for either check
+   above to be about. It catches a typo the same way: `wSrot='a'` would make a
+   second global and leave the sort where it was.
+
+   `bindings` above is built for resolving calls and is not enough to say a
+   name was never declared: it reads a var statement as `\bvar\s+([^;]+)`, so a
+   statement whose own line carries no semicolon runs into the next and
+   swallows it -- `var setBlobs = firsts.map(function (f) {` reaches the `;` at
+   the end of a `var set = ...` inside it, and `set` is never counted. Harmless
+   for a call; a false accusation here. So the name after every `var` is
+   collected too. */
+const declared = new Set(bindings);
+appFiles.concat([path.join(WWW, 'index.html')]).forEach(f => {
+  const src = bare(fs.readFileSync(f, 'utf8'));
+  [...src.matchAll(/\bvar\s+([A-Za-z_$][\w$]*)/g)].forEach(m => declared.add(m[1]));
+  [...src.matchAll(/\bfor\s*\(\s*var\s+([A-Za-z_$][\w$]*)/g)].forEach(m => declared.add(m[1]));
+});
+const assigned = new Map();
+appFiles.forEach(f => {
+  const src = bare(fs.readFileSync(f, 'utf8'));
+  const rel = path.relative(ROOT, f);
+  [...src.matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)\s*=(?!=)/g)].forEach(m => {
+    if (assigned.has(m[1])) return;
+    assigned.set(m[1], rel + ':' + src.slice(0, m.index).split('\n').length);
+  });
+});
+const undeclared = [...assigned].filter(([n]) =>
+  !declared.has(n) && !KEYWORD.has(n) && BROWSER.indexOf(n) < 0);
+
 if (unresolved.length){
   console.error(unresolved.length + ' name' + (unresolved.length === 1 ? ' is' : 's are') +
                 ' called and never defined:\n');
@@ -369,6 +434,25 @@ if (deadVars.length){
   console.error('\nDelete them. Whatever they currently say cannot be checked against\n' +
                 'anything nothing reads -- that is how OB_STEPS said five for as long\n' +
                 'as it said anything at all.');
+  process.exit(1);
+}
+if (undeclared.length){
+  console.error(undeclared.length + ' name' + (undeclared.length === 1 ? ' is' : 's are') +
+                ' assigned and never declared:\n');
+  undeclared.forEach(([n, where]) => console.error('  ' + where + '  ' + n));
+  console.error('\nAssigning to a name nothing declares makes a global, silently. It is\n' +
+                'either a typo -- in which case the thing you meant to set is still\n' +
+                'sitting at its old value -- or what is left of something that was\n' +
+                'deleted, which is how mkPos outlived the screen it belonged to.');
+  process.exit(1);
+}
+if (writeOnly.length){
+  console.error(writeOnly.length + ' top-level var' + (writeOnly.length === 1 ? ' is' : 's are') +
+                ' written and never read:\n');
+  writeOnly.forEach(d => console.error('  ' + d.file + ':' + d.line + '  ' + d.name));
+  console.error('\nA write-only global is usually not spare code -- it is a wire with one\n' +
+                'end unattached, and the missing half is the half somebody would have\n' +
+                'noticed. Attach the other end, or delete it; git remembers.');
   process.exit(1);
 }
 /* ---- the same sentence about what money buys --------------------------
