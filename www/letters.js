@@ -614,10 +614,37 @@ function ltSetNote(id, v){
 }
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
+  /* A slot's name does not change, on any plan.
+     「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
+     Decision log, 2026-08-22.
+
+     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks LETTERS for
+     one called `a` -- so a renamed slot is a key nothing can find, and
+     ltStart() then fills the hole with a new EMPTY letter: what somebody drew
+     stays in the alphabet and leaves the keyboard, with nothing anywhere
+     saying why.
+
+     The letter page already hides the field (ltIsBase, and sound.js asks it).
+     That is a SCREEN holding a rule, and this function is reachable from
+     anywhere -- the import, the onboarding, a road added later. The refusal
+     belongs here. `base-check` holds it, and holds the other half too: a
+     letter somebody ADDED is still theirs to name, because adding letters is
+     what paid buys. */
+  /* A digit's VALUE goes through here and is not a name -- 「数字が設定でき
+     ないわ。そこ文字から設定できるように頼む」 -- so it is answered before the
+     refusal below. numSetVal() is called from nowhere else, so putting the
+     refusal above this line killed setting a digit at all, silently: the name
+     is still written down, so dead-check is green, and nothing throws. That
+     was done here and caught by asking for it in base-check rather than by
+     reading the code. */
   if(/^[0-9]+$/.test(String(sp||'').trim())){
     numSetVal(id, parseInt(String(sp).trim(), 10));
     return;
   }
+  /* And now the refusal. A digit reaching this line is one being given a
+     NAME, and a digit has no name -- its value is the whole of what it is,
+     and the keyboard finds it by that. */
+  if(ltIsBase(l)) return;
   var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to

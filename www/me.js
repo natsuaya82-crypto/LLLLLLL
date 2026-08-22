@@ -23,13 +23,20 @@
    ========================================================================= */
 
 var LS_ME='lingua.me';
-var ME={name:'', handle:'', bio:'', pic:''};
+/* `avSent` is not part of who somebody is. It is the copy of the face that
+   the profile row on the server was last given, kept so netAvSync() can tell
+   "the face has moved" from "the face has never been sent" without asking the
+   server every launch. It is written by netAvSync() and read by nothing else.
+   It is here rather than in SET because it belongs to the account, and SET is
+   the person's settings and travels between them. */
+var ME={name:'', handle:'', bio:'', pic:'', avSent:''};
 function meRead(){
-  ME={name:'', handle:'', bio:'', pic:''};
+  ME={name:'', handle:'', bio:'', pic:'', avSent:''};
   try{
     var m=JSON.parse(localStorage.getItem(LS_ME)||'null');
     if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||'');
-           ME.bio=String(m.bio||''); ME.pic=String(m.pic||''); }
+           ME.bio=String(m.bio||''); ME.pic=String(m.pic||'');
+           ME.avSent=String(m.avSent||''); }
   }catch(e){}
 }
 meRead();

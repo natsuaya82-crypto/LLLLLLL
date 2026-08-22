@@ -62,12 +62,6 @@ const r = await pg.evaluate(({s}) => {
   out.freeRow = numBaseRows();
   SET.plan = 'plus';
 
-  /* ---- and what goes out to the clock on the home screen ----------------
-     The widget cannot ask the app anything: it reads one file in the App
-     Group and draws whatever is in it. So the two things worth holding are
-     the base it will count in, and that a slot with nothing in it is ABSENT
-     rather than an empty shape -- a hole means "put a roman one here", and a
-     present-but-empty entry means a blank space where a numeral should be. */
   /* ---- and the calendar, whose two numbers work the same way -----------
      The one thing that must NOT work the same way is lowering. Lowering the
      base can take an untouched digit slot with it, because a digit is a
@@ -90,6 +84,12 @@ const r = await pg.evaluate(({s}) => {
   calSetMonths(99); out.calBad = calMonths();
   calSetMonths(12);
 
+  /* ---- and what goes out to the clock on the home screen ----------------
+     The widget cannot ask the app anything: it reads one file in the App
+     Group and draws whatever is in it. So the two things worth holding are
+     the base it will count in, and that a slot with nothing in it is ABSENT
+     rather than an empty shape -- a hole means "put a roman one here", and a
+     present-but-empty entry means a blank space where a numeral should be. */
   var w = shareWidget();
   out.wBase   = w.base;
   out.wDrawn  = !!(w.dg['10'] && w.dg['10'].st && w.dg['10'].st.length);
@@ -97,6 +97,34 @@ const r = await pg.evaluate(({s}) => {
   out.wBlank  = Object.prototype.hasOwnProperty.call(w.dg, '13');
   out.wFresh  = Object.prototype.hasOwnProperty.call(w.dg, '0');
   out.wKeys   = Object.keys(w.dg).sort().join(' ');
+
+  /* ---- a slot's name does not change, on any plan ------------------------
+     「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
+     Decision log, 2026-08-22.
+
+     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks LETTERS for
+     one called `a` -- so a renamed slot is a key that cannot be found, and
+     ltStart() then fills the hole with a new empty letter. What somebody drew
+     is still in the alphabet and no longer on the keyboard, with nothing
+     saying why.
+
+     The letter page already hides the field. That is the screen holding it,
+     and a screen is not a rule: ltSetRoman() is reachable from anywhere and
+     did not refuse. So it is asked of the FUNCTION, on the paid plan, which
+     is the only plan where the question can even be put. */
+  var slot = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
+  var dig  = numByVal(3);
+  out.slotWas = slot ? String(ltName(slot)) : '(no a slot)';
+  if (slot) { ltSetRoman(slot.id, 'zzq'); out.slotNow = String(ltName(slot)); }
+  out.digWas = dig ? String(ltName(dig)) : '(no digit 3)';
+  if (dig) { ltSetRoman(dig.id, 'zzq'); out.digNow = String(ltName(dig)); }
+
+  /* and a letter that is NOT a slot still renames -- what paid buys is
+     adding letters, and a letter somebody added is theirs to name. */
+  var mine = ltNew({});
+  ltSetRoman(mine.id, 'qeq');
+  out.mineNow = String(ltName(mine));
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -131,6 +159,23 @@ say(String(r.calSlots) === '13,5', 'and the stages ask for exactly that many wor
 say(r.calKept, 'a word made for the twelfth month SURVIVES the year going down to ten');
 say(r.calAsks === 10, 'the stage simply stops asking for it (' + r.calAsks + ')');
 say(r.calBad === 12, 'a number out of range is the default, not a year nothing can draw');
+
+/* 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
+   Decision log, 2026-08-22. The free QWERTY finds its keys BY NAME, so a
+   renamed slot is a key that cannot be found and ltStart() fills the hole
+   with a new empty letter -- what somebody drew stays in the alphabet and
+   leaves the keyboard, with nothing saying why.
+
+   The letter page already hides the field. A screen is not a rule:
+   ltSetRoman() is reachable from anywhere. So it is asked of the FUNCTION,
+   on the PAID plan, which is the only plan where the question arises. */
+say(r.slotNow === r.slotWas,
+    'the a slot keeps its name on the paid plan (' + r.slotWas + ' -> ' + r.slotNow + ')');
+say(r.digNow === r.digWas,
+    'and so does a digit (' + r.digWas + ' -> ' + r.digNow + ')');
+say(r.mineNow === 'qeq',
+    'a letter somebody ADDED is still theirs to name (' + r.mineNow + ') -- ' +
+    'paid buys adding letters, and refusing to name one refuses what was bought');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

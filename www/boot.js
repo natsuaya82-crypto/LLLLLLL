@@ -71,6 +71,11 @@ function bootSession(){
      the settings list. Asked after the session is resumed because it is asked
      AS somebody, and not waited for: the row appears when the answer does. */
   netStaff(function(yes){ if(yes) render(); });
+  /* And the face on the profile row, which nothing updated after the account
+     was made: a notice could draw a face somebody had not worn for a month.
+     It asks the server nothing on a launch where the face has not moved --
+     the comparison is against ME.avSent, which is local. */
+  netAvSync();
 }
 netResume(bootSession, function(){
   /* No session, so make one, and make it without asking anybody anything.
