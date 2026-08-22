@@ -36,7 +36,7 @@ const FAST = ['assets-check', 'es5-check', 'dead-check', 'import-check', 'sides-
    when is up to the pool. */
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
               'word-check', 'post-check', 'backup-check', 'fill-check', 'round-check',
-              'base-check', 'press'];
+              'base-check', 'kb-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){

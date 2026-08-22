@@ -543,6 +543,15 @@ var ICON_PLUS='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="
    buttons now. */
 var ICON_MINUS='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" '+
   'stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 12h12"/></svg>';
+/* Back one step and forward one again, on the sheet that builds a keyboard.
+   A curve with an arrow on it, which is what every program that has ever had
+   these two has drawn. 「巻き戻しボタンと進むボタンも入れよう」 */
+var ICON_UNDO='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 8h9a6 6 0 0 1 0 12H8"/><path d="M8 4 4 8l4 4"/></svg>';
+var ICON_REDO='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M20 8h-9a6 6 0 0 0 0 12h5"/><path d="M16 4l4 4-4 4"/></svg>';
 /* The two tools the photograph editor has, as marks rather than words: a
    round button with an icon in it is what every phone puts over a picture,
    and a pill with a word in it is what a settings screen puts under one. */
