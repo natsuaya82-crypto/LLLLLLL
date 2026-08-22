@@ -347,7 +347,8 @@ function newGE(lid, label){
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
-           free:false, round:false, fill:false, raw:null, rawFor:-1,
+           free:false, round:false, fill:false, flat:null, flatBy:'',
+           raw:null, rawFor:-1,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
@@ -757,6 +758,23 @@ function geSmooth(p, passes){
    a single clean bow -- and that is what the round primitive is for, so it
    gets used: a true arc through the middle point rather than a corner
    rounded off. */
+/* Every point on one line, within half a lattice step of it. A stroke like
+   that has nothing to bend: ROUND leaves it exactly as it was drawn.
+   「縦線はラウンド押してもラウンドになるわけがない」 Without this the ring
+   guess below could take a straight stroke, keep three of its points and
+   close them into a true circle -- a line drawn straight down coming back as
+   a ring. 「縦線引いただけで円になるんだって」 */
+function geStraight(p){
+  if(p.length<3) return true;
+  var a=p[0], b=p[p.length-1], vx=b[0]-a[0], vy=b[1]-a[1];
+  var L=Math.sqrt(vx*vx+vy*vy), tol=geStep()*0.5, i, d;
+  if(L<1e-6) return false;
+  for(i=1;i<p.length-1;i++){
+    d=Math.abs(vx*(a[1]-p[i][1]) - vy*(a[0]-p[i][0]))/L;
+    if(d>tol) return false;
+  }
+  return true;
+}
 function geShape(st){
   /* ROUND off: the stroke IS the dots the finger went over, and nothing
      downstream gets to disagree with them.
@@ -803,6 +821,8 @@ function geShape(st){
   var raw = (GE.raw && GE.rawFor===GE.si && GE.raw.length>3) ? GE.raw : null;
   var p = raw || st.pts, n = p.length;
   if(n<3){ delete st.k; delete st.closed; return; }
+  /* Straight is straight, whichever button is pressed. */
+  if(geStraight(p)){ delete st.k; delete st.closed; return; }
   var step=geStep(), i;
   var a=p[0], b=p[n-1];
   var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
@@ -931,20 +951,71 @@ function geLattice(p){
   if(out[out.length-1][2]) out[out.length-1]=[out[out.length-1][0], out[out.length-1][1]];
   return out;
 }
+/* Bend the stroke you have just drawn, or straighten it again.
+   ROUND used to be armed BEFORE drawing: the button turned a mode on and the
+   next stroke came out bent. 「線は先に引いてその後にそれをラウンドにするか
+   どうか選べる仕様にしない？」 So it is a thing done to a stroke now -- draw
+   it, look at it, then decide -- and a new stroke always starts straight.
+
+   Both ways, and from the same starting point every time: the stroke as it
+   was drawn is kept in GE.flat, so bending is always applied to the straight
+   one rather than to whatever the last press left behind. Pressing twice
+   gives back exactly what was drawn, which the old one could not do -- it
+   turned the mode off and left the stroke bent.
+
+   How it bends depends on how it was made, because those are not the same
+   drawing. A dragged stroke goes back through geShape, which reads the
+   finger's own path where it still has it. A tapped one only has its interior
+   points marked as bends: geShape would thin it, and thinning something
+   somebody placed dot by dot is dropping what they placed.
+   A stroke restored by undo has no straight copy behind it and no raw path
+   either, so it is taken as it stands and treated as a tapped one -- that
+   never drops a point. */
+/* Bend the stroke you have just drawn, or straighten it again.
+   ROUND used to be armed BEFORE drawing: the button turned a mode on and the
+   next stroke came out bent. 「線は先に引いてその後にそれをラウンドにするか
+   どうか選べる仕様にしない？」 So it is a thing done to a stroke now -- draw
+   it, look at it, then decide -- and a new stroke always starts straight.
+   Until one has been drawn there is nothing for it to be done to, which is
+   what geBendable() puts the button down for.
+
+   Both ways, and from the same starting point every time: the stroke as it
+   was drawn is kept in GE.flat, so bending is always applied to the straight
+   one rather than to whatever the last press left behind. Pressing twice
+   gives back exactly what was drawn, which the old one could not do -- it
+   turned the mode off and left the stroke bent.
+
+   How it bends depends on how it was made, because those are not the same
+   drawing. A dragged stroke goes back through geShape, which reads the
+   finger's own path where it still has it. A tapped one only has its interior
+   points marked as bends: geShape would thin it, and thinning something
+   somebody placed dot by dot is dropping what they placed. A stroke restored
+   by undo has neither a straight copy behind it nor a raw path, so it is
+   taken as it stands and treated as a tapped one -- that never drops a point.
+
+   A straight stroke is left alone either way. 「縦線はラウンド押してもラウンド
+   になるわけがない」 */
 function geCircle(){
+  var i=GE.st.length-1, st=GE.st[i];
+  if(!st || !st.pts.length) return;
   geMark();
+  if(!GE.flat){ GE.flat=JSON.stringify(st); GE.flatBy='tap'; }
   GE.round=!GE.round;
+  GE.st[i]=JSON.parse(GE.flat); st=GE.st[i];
   if(GE.round){
-    var st=GE.st[GE.st.length-1];
-    if(st && st.pts.length>=2) geShape(st);
+    if(GE.flatBy==='drag' && st.pts.length>=2) geShape(st);
+    else if(st.pts.length>=3 && !geStraight(st.pts)){
+      delete st.k;
+      for(var j=1; j<st.pts.length-1; j++) st.pts[j][2]='c';
+    }
   }
   GE.pi=-1; render();
 }
-/* Blacken the inside of what was drawn round. A mode, like ROUND: while it
-   is on the stroke being drawn is a filled one and shows green on the canvas,
-   so which of your strokes are areas is visible while you work. Pressing it
-   also settles the stroke you have just drawn, which is the only way it could
-   be used on a line already finished.
+/* Blacken the inside of what was drawn round. A mode, like ROUND was: while
+   it is on the stroke being drawn is a filled one and shows green on the
+   canvas, so which of your strokes are areas is visible while you work.
+   Pressing it also settles the stroke you have just drawn, which is the only
+   way it could be used on a line already finished.
 
    Three points is the least that has an inside; below that the flag sits on
    the stroke and does nothing, because a filled line is still a line. */
@@ -964,9 +1035,15 @@ function geUndo(){
      stayed live and the next press -- meant to begin a new line -- landed on
      one of them and dragged the old line out of shape instead. */
   GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
+  /* What came back is a drawing, not the stroke the rail was pointing at:
+     the straight copy behind it belonged to a stroke that may no longer be
+     the last one. 「一つ戻るボタン押したらそれを丸められなくなるって話？」
+     It can still be bent -- it is taken as it stands from here. */
+  GE.round=false; GE.flat=null; GE.flatBy='';
   render();
 }
-function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
+function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
+  GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
 function geSave(){
   /* A dot is a mark. It used to be thrown away here on the grounds that a
      stroke with one point is a line half-drawn -- which is true of a line and
@@ -1312,6 +1389,9 @@ function geDown(ev){
        same curve for as long as they are wanted. */
     if(GE.seal || (st && (st.closed || st.k==='o'))){
       GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false;
+      /* ROUND is not armed for what comes next -- it is a thing done to the
+         stroke you have just drawn. A new one starts straight. */
+      GE.round=false; GE.flat=null; GE.flatBy='';
     }
     st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1;
     /* The stroke under the finger follows the mode both ways, so turning the
@@ -1384,7 +1464,14 @@ function geUp(ev){
      wants to be exact rather than quick. */
   if(GE.free && GE.moved){
     GE.seal=true;
-    var rst=GE.st[GE.si]; if(rst) geShape(rst);
+    var rst=GE.st[GE.si];
+    if(rst){
+      geShape(rst);
+      /* The stroke as drawn, kept so that pressing ROUND a second time gives
+         it back exactly. Only while it is straight: once bent, the straight
+         one behind it is the thing being kept. */
+      if(!GE.round){ GE.flat=JSON.stringify(rst); GE.flatBy='drag'; }
+    }
   }
   GE.free=false;
   /* A dot that was pressed and let go without travelling is a tap, and a tap
@@ -1428,10 +1515,14 @@ function geUp(ev){
     var tst=GE.st[GE.si];
     if(tst && tst.pts.length>=3){
       delete tst.k;
+      var bend=GE.round && !geStraight(tst.pts);
       for(var ti=1; ti<tst.pts.length-1; ti++){
-        if(GE.round) tst.pts[ti][2]='c';
+        if(bend) tst.pts[ti][2]='c';
         else tst.pts[ti]=[tst.pts[ti][0], tst.pts[ti][1]];
       }
+    }
+    if(tst && tst.pts.length && !GE.round){
+      GE.flat=JSON.stringify(tst); GE.flatBy='tap';
     }
   }
   /* Tapping the dot just placed says the stroke is finished. It used to
@@ -1458,9 +1549,15 @@ function geUp(ev){
    the finger lifts, so there was nothing left for it to start. Undo and clear
    were words in a corner underneath; they are marks on the rail now, at the
    same size as everything else a thumb has to hit. */
+/* ROUND is done TO a stroke, so until one has been drawn there is nothing
+   for it to be done to and the button is down. */
+function geBendable(){
+  var st=GE && GE.st[GE.st.length-1];
+  return !!(st && st.pts.length>=3);
+}
 function geRail(st, pts){
   return '<div class="gtools">'+
-    geBtn('geCircle','circle','glyph.circle', true, !!GE.round)+
+    geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
     geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
     geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     geBtn('geClear','clear','glyph.clear', !!pts, false)+
@@ -1474,7 +1571,7 @@ function geTools(){
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   /* Keyed by name, not by position: the row can be reordered or added to
      without this quietly disabling the wrong button. */
-  var S={ 'circle':[true, !!GE.round],
+  var S={ 'circle':[geBendable(), !!GE.round],
           'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
           'clear' :[!!pts, false] };

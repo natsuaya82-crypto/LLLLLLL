@@ -11,7 +11,7 @@
     "act": "node tools/act-check.mjs",
     "conv": "node tools/conv-check.mjs",
     "verify": "node tools/verify-script.mjs",
-    "test": "node tools/assets-check.mjs && node tools/es5-check.mjs && node tools/dead-check.mjs && node tools/migrate-check.mjs && node tools/i18n-check.mjs && node tools/import-check.mjs && node tools/sides-check.mjs && node tools/act-check.mjs && node tools/conv-check.mjs && node tools/card-check.mjs && node tools/word-check.mjs && node tools/post-check.mjs && node tools/backup-check.mjs && node tools/fill-check.mjs && node tools/press.mjs",
+    "test": "node tools/assets-check.mjs && node tools/es5-check.mjs && node tools/dead-check.mjs && node tools/migrate-check.mjs && node tools/i18n-check.mjs && node tools/import-check.mjs && node tools/sides-check.mjs && node tools/act-check.mjs && node tools/conv-check.mjs && node tools/card-check.mjs && node tools/word-check.mjs && node tools/post-check.mjs && node tools/backup-check.mjs && node tools/fill-check.mjs && node tools/round-check.mjs && node tools/press.mjs",
     "assets": "node tools/assets-check.mjs",
     "press": "node tools/press.mjs",
     "dead": "node tools/dead-check.mjs",
@@ -21,6 +21,7 @@
     "card": "node tools/card-check.mjs",
     "post": "node tools/post-check.mjs",
     "fill": "node tools/fill-check.mjs",
+    "round": "node tools/round-check.mjs",
     "word": "node tools/word-check.mjs"
   },
   "keywords": [],

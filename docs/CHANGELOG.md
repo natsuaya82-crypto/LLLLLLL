@@ -15,6 +15,49 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### ROUND is done to a stroke, not armed before one — OWNER DECISION
+
+The button used to turn a mode on: press it, then draw, and what came out was
+bent. It is the other way round now — draw the stroke, look at it, then decide.
+「線は先に引いてその後にそれをラウンドにするかどうか選べる仕様にしない？」
+
+Three things follow, and all three are the owner's:
+
+**With nothing drawn the button is down.** ROUND is done to a stroke, so until
+there is one there is nothing for it to be done to.
+
+**A straight stroke stays straight.** 「縦線はラウンド押してもラウンドになる
+わけがない」 It could not before: the ring guess keeps three points of a stroke
+and closes them, and a closed arc is a full circle, so a line drawn straight
+down could come back a ring. 「縦線引いただけで円になるんだって」 It never
+threw and never blanked a screen — the letter simply was not the one drawn.
+
+**Pressing again gives back exactly what was drawn.** The stroke as drawn is
+kept while the editor is open, and every press bends that one rather than
+whatever the last press left behind. The old button only turned its mode off
+and left the stroke bent.
+
+How a stroke bends still depends on how it was made: a dragged one from the
+finger's own path, a tapped one by marking its interior points, because
+thinning what somebody placed dot by dot is dropping what they placed. A
+stroke brought back by undo has neither behind it, so it is taken as it stands
+and treated as tapped — which never drops a point.
+
+**Data.** Nothing new is stored. What ROUND leaves behind is the same `k`,
+`closed` and `'c'` marks it always left; the straight copy lives in the editor
+and goes when the screen does. Nothing already stored changes.
+
+**Deletion.** Nothing is deleted.
+
+**Tested.** `tools/round-check.mjs`, new, in `npm test`: a line of seven points
+drawn straight down is untouched and its ink is still 24 wide, not a ring; a
+stroke with a corner does bend; pressing twice gives back exactly the drawn
+stroke; the button is down with nothing drawn and up with something. Both
+failures were watched — with the straightness guard removed, and with the old
+mode-style button put back.
+
+**Not verified on a device.**
+
 ### A stroke can blacken what it goes round — OWNER DECISION
 
 The editor's rail has a fourth button. With the fill on, the stroke being
