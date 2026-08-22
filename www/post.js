@@ -38,14 +38,14 @@
 
 var LS_POSTS='lingua.posts';
 var POSTS=[];
-function postsRead(){
+function postRead(){
   POSTS=[];
   try{
     var p=JSON.parse(localStorage.getItem(LS_POSTS)||'null');
     if(p && p.length) POSTS=p;
   }catch(e){}
 }
-postsRead();
+postRead();
 /* A failed write used to be swallowed here, and it was survivable while a
    post was a line of text: a hundred of them are a few kilobytes and storage
    does not run out. A post can carry a photograph now, so it can, and a
