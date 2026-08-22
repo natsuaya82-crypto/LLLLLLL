@@ -101,15 +101,43 @@ that has not changed.
 
 Still unused in `supabase/schema.sql`: `quote`, `publication`, `language` and
 `prompt`. Each has row level security written and held by `npm run rls`, and
-nothing in the app touches any of them.
+nothing in the app touches any of them. `language` is the one to watch: its
+policies changed on 2026-08-22 so that an account with no name can own one,
+and the app still does not write a row.
 
-**The online half was redesigned on 2026-08-22 and none of it is written.**
-Everything belongs to the account, cloud storage is for everybody, and an
-anonymous account is made at first launch. The three entries at the head of
-`docs/FEATURE_RULES.md` § Owner decision log say it; read them first, because
-the list below was written for an app whose languages lived on the phone.
-Order: anonymous sign-in and the language → `is_member()` in two → the plan on
-`profile` → the rest of moderation → terms and privacy → StoreKit.
+**The online half was redesigned on 2026-08-22.** Everything belongs to the
+account, cloud storage is for everybody, and an anonymous account is made at
+first launch. The three entries at the head of `docs/FEATURE_RULES.md` § Owner
+decision log say it; read them first, because most of the list below was
+written for an app whose languages lived on the phone.
+
+Order, and where it stands:
+
+1. **Anonymous sign-in — done.** The first launch signs in with no address and
+   no password (`netAnon` in `net.js`, called from `boot.js`), so there is a
+   uid before the first frame. "Signed in" split in two on the phone as well:
+   `netSignedIn()` is a session, `netMember()` is a session with a name, and
+   `obNeed()` asks the second at the six things other people would see — a
+   post, a like, a boost, a report, a follow, a block. The door left the
+   onboarding: the app opens on the square you draw a letter on, and the door
+   is a screen `obDoor()` goes to. Held by `migrate-check` case 7.
+2. **`is_member()` split in two — done.** `has_account()` in `schema.sql` is
+   "there is an account", anonymous and frozen included, and guards the three
+   `language` write policies; `is_member()` is unchanged and guards everything
+   other people see. `language.owner` points at `auth.users` rather than
+   `profile`, because an account exists before a person does. Held by
+   `npm run rls` — 106 attempts, 19 shapes.
+3. **The language actually living on the server — not started, and it is the
+   rest of item 1.** There is nowhere to put a slice yet: `language` holds a
+   name, a licence and a date, and the eleven slices are still `localStorage`
+   only. This is the next thing.
+4. The plan on `profile`, its value still set by hand. Not started.
+5. The rest of moderation — the tombstone in a thread, the ⋯ menu on a
+   profile, the notices, the frozen state on Home. Not started.
+6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
+   from the onboarding. Not started.
+7. StoreKit, and what a purchase opens. Not started; the plans screen has not
+   been touched and must not be until then.
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money

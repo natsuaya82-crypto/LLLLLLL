@@ -196,7 +196,10 @@ because the way a server feature gets lost is by being half-written down.
 **Already online, so that this list is read against something:** accounts and
 the profile, posts (write, read, reply, delete), likes and boosts, following,
 notices, photographs and voice in Storage, search — people and posts — and
-deleting an account.
+deleting an account. And, since 2026-08-22, the account itself: the first
+launch signs in anonymously, so every phone has a uid before the first frame,
+and the server tells "there is an account" (`has_account()`) from "there is
+somebody" (`is_member()`).
 
 ### 1. The plan, on the server — the one with money on it
 
@@ -223,11 +226,24 @@ is no cloud storage. **The day money is taken that stops being true**, so:
 Decided so far: the four products and their prices (2026-08-14), and that
 StoreKit is not to be written yet.
 
-### 2. Cloud storage of a language — Plus
+### 2. Cloud storage of a language — **everybody**, not Plus
 
-Every slice, for a person who is paying. Decided and deferred: the Supabase
-tier it needs is not worth paying for yet. `bkPack()` already produces exactly
-the thing that would be uploaded.
+**OWNER DECISION 2026-08-22** — 「クラウドは全員で」. It is not what Plus sells
+any more, and it is not deferred: everything belongs to the account, the
+server is true and the phone keeps a copy that works with no signal.
+`CAN.data` has to be redefined when this lands.
+
+What is done: an account exists from the first launch, and `language`'s write
+policies ask `has_account()` rather than `is_member()`, so an account with no
+name on it can own a row. What is missing is **the row and somewhere to put a
+slice**: `language` holds a name, a licence and a date, and the eleven slices
+of `SLICES` are `localStorage` only. `bkPack()` already produces exactly the
+thing that would be uploaded — 5.4 KB for a small language, about a megabyte
+for a large one.
+
+Open, and the reason nothing is written yet: whether a slice is a column, a
+row per slice, or a file in Storage; and what happens when the same account
+has edited a language on two phones. Neither is decided.
 
 ### 3. Publishing a language — `language`, `publication`
 
