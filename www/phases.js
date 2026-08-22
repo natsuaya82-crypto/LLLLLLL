@@ -445,12 +445,6 @@ function stDetailHTML(p){
     out+='<div class="sec">'+t('stg.decide')+'</div>';
     for(i=0;i<p.feats.length;i++) out+=stFeatHTML(p.feats[i]);
   }
-  /* The base is a decision of the counting stage, and it sat on the writing
-     screen -- which is where the KIND of writing and the direction are, and
-     it is neither. What it decides is how many words this stage asks for and
-     how many digits the alphabet holds, so it belongs to the stage that asks.
-     「文法の数え方のページに進数入れればいいのでは？」 */
-  if(p.id==='count') out+=numBaseRows();
   if(p.slots.length){
     out+='<div class="sec">'+t('stg.words')+'</div>';
     out+='<div class="stslots">';

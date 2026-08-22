@@ -15,6 +15,67 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The base is the digits room's, and it is nudged — OWNER DECISION
+
+The base (10, 12, 16, 20) was a list of rows on the writing screen, beside the
+kind of writing and the direction — and it is neither of those. What it
+decides is how many digits the alphabet holds, so it is in the digits room
+now, which is where those digits are drawn. 「文法の数え方のページに進数入れれば
+いいのでは？」 was tried first and put back: the counting stage would have been
+a second place saying the same thing about the same letters.
+
+**The range is 2 to 20**, not four values. The old list had nothing under ten
+in it, which is the app deciding a language cannot count in six or eight.
+「2〜20で」
+
+**It is one number, stepped.** Nineteen values laid out to be tapped is a wall
+of numbers to say one number. 「そんな並べるバカはどこにいんの？」
+
+**Raising it makes the slots at once.** `numTopUp()` is the one place a digit
+comes into being; `ltStart` calls it when a free language opens and
+`numSetBase` calls it the moment somebody counts higher, so the slots are
+there to draw on rather than at the next launch. 「数字は増やしなさい」
+
+**Free does not have the row at all.** What the base decides is how many
+letters there are, and adding a letter is `can('letters')`.
+「無料は0〜9しか書けないんだから±はなし」
+
+**Lowering it keeps what somebody drew, and shows it in red.** A digit above
+the base cannot be written in that base; the room says so by the cell being
+red, not by a sentence. An empty slot nobody touched is removed.
+「あげた時に文字や音とか設定してたら赤くなって、なにも書いてなかったら勝手に
+減らしていいよ」
+
+```
+DELETE REVIEW
+  who deletes       automatic, on the owner's written spec above
+  when              the base is lowered, and only then -- never on open,
+                    never on save, never on a timer
+  what exactly      a digit whose value is at or above the NEW base AND which
+                    is empty: no strokes, no sound, no name. Anything drawn,
+                    named or given a sound is kept and goes red instead
+  why               a lower base leaves slots the base cannot reach. An empty
+                    one is a slot this app made and nobody touched; a drawn
+                    one is somebody's work and is never removed
+  recoverable?      an empty digit has nothing in it to recover -- the slot
+                    itself comes back the moment the base goes up again, by
+                    the same numTopUp() that made it. A drawn one is not
+                    deleted at all, so there is nothing to recover
+  backup?           unaffected. A backup written before holds the empty slots
+                    and a restore fills in what is MISSING, so restoring an
+                    older file into a language at a lower base puts the empty
+                    slots back rather than being refused
+  the plan?         no. It is the same on every plan. Free cannot lower the
+                    base at all, because free has no row to press
+  migration         none. Nothing stored changes shape; `val` is what it was
+  rollback          none needed -- see recoverable
+```
+
+**Data.** Nothing new is stored. `STG.base` may now hold 2 to 20 where it held
+one of four; anything off the list still reads as ten, so a file written by
+an older build opens unchanged.
+
+
 ### The base moves to the stage that asks for it, and the display is a switch — OWNER DECISION
 
 Two things off the writing screen.

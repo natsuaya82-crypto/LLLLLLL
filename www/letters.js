@@ -474,12 +474,7 @@ function ltStart(){
      as the base has, so a language counting in twelve gets twelve. The
      reading is left alone -- a value takes a reading away, and one of these
      has nothing to say about sound. */
-  var v, n=numBase();
-  for(v=0;v<n;v++){
-    if(numByVal(v)) continue;
-    ltNew({val:v});
-    made++;
-  }
+  made+=numTopUp();
   if(made) saveLetters();
 }
 /* What this letter reads, spelled the way a person would write it. One word

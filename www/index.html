@@ -1932,6 +1932,19 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .thtick{width:25px;height:25px;border-radius:999px;border:1.5px solid var(--line);
         display:flex;align-items:center;justify-content:center;color:transparent}
 .thcard.on .thtick{background:var(--gold);border-color:var(--gold);color:#fff}
+/* One number on a line, nudged either way. The value is the wide part, so
+   the two buttons do not move as it goes from 9 to 10. */
+/* A digit above the base. Drawn, kept, and unusable: the language counts in
+   ten and this is an eleven. Red is the whole of what the room says about it. */
+.ltc.over{border-color:var(--bad)}
+.ltc.over .ltcn{color:var(--bad)}
+.numbase{border-bottom:none}
+.nbstep{margin-left:auto;display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.nbb{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+     background:none;border:0;color:var(--gold);cursor:pointer}
+.nbb[disabled]{color:var(--txm);opacity:.4}
+.nbv{min-width:2.4em;text-align:center;font-size:1.05rem;color:var(--tx);
+     font-variant-numeric:tabular-nums}
 .bpic{width:100%;height:100%;border-radius:999px;object-fit:cover;display:block}
 .picrow{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .picrow .pav{width:64px;height:64px;flex:0 0 auto}

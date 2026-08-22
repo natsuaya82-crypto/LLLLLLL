@@ -657,6 +657,12 @@ function vLtset(){
              : '')+
     '<div class="body">'+
     (pick? ltViewRow() : '')+
+    /* How many digits there are is what the base IS, and this is the room
+       that holds them -- so it is decided here rather than on the writing
+       screen, where the kind of writing and the direction live and this is
+       neither, and rather than on the counting stage, where it would be a
+       second place saying the same thing about the same letters. */
+    (k==='num'? numBaseRows() : '')+
     /* The letters, and after them a cell for every sound of the language that
        no letter says yet. One page for the pair, rather than a chapter for
        each end of it. Only on the alphabet, and only where the filter is not
@@ -720,6 +726,7 @@ function ltCell(l, press){
      nothing, which is why can('letters') guards the letter's own page too.
      Free still wobbles, because the ORDER is theirs. */
   return '<button class="ltc'+(ltTaken(l)? ' dup':'')+(wob? ' wob':'')+
+    (numOver(l)? ' over':'')+
     '" data-id="'+esc(l.id)+'"'+
     (press || (wob? '' : DO('go', ["letter", l.id]))) + ' aria-label="'+esc(sa)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+

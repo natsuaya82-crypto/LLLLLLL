@@ -86,7 +86,7 @@ act('kbPut', kbPut);
 act('langOpen', langOpen);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
-act('numSetBase', numSetBase);
+act('numStepBase', numStepBase);
 act('obBack', obBack);
 act('obBorrow', obBorrow);
 act('obDone', obDone);
