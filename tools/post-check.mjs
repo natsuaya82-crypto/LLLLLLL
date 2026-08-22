@@ -605,6 +605,72 @@ const R = await pg.evaluate(async () => {
                  'is what was typed.');
   }());
 
+  /* ---- the face on the profile row follows the face on the phone --------
+     netMakeProfile() wrote `av` once, the day the account was made, and
+     nothing ever wrote it again. So drawing a new first letter or setting a
+     photograph changed what postAvatar() answers everywhere in the app except
+     the little face beside "somebody liked this", which is the one place that
+     reads the profile row. A notice could draw a face somebody had not worn
+     for a month.
+
+     Nothing about the timeline was wrong -- a post freezes its own face when
+     it is written -- so this is not visible anywhere a check was looking.
+
+     Three things, and the middle one is the reason it sat in the backlog
+     rather than being fixed: sending on every change would be a request per
+     letter drawn. It is not -- postAvatar() answers the photograph, else the
+     FIRST drawn letter -- but "it only sends when it moved" has to be held or
+     the cheap version silently becomes the expensive one.
+
+     The requests are counted rather than the state read: what is being held
+     is what goes OUT. netSend is wrapped and answers success without a
+     server, the same way conv-check wraps LinguaFont.build. */
+  const realSend = netSend;
+  let sent = [];
+  netSend = function (method, path, body, tok, ok, bad) {
+    if (String(path).indexOf('/rest/v1/profile') === 0) {
+      sent.push({ method, av: JSON.stringify((body && body.av) || null) });
+      if (ok) ok(null);
+      return;
+    }
+    return realSend.apply(this, arguments);
+  };
+  try {
+    ME.avSent = '';
+    ME.pic = '';
+    sent = [];
+    netAvSync();
+    const first = sent.length;
+
+    netAvSync();                                  /* nothing moved */
+    const again = sent.length;
+
+    ME.pic = 'data:image/jpeg;base64,AAAA';       /* the face moves */
+    netAvSync();
+    const moved = sent.length;
+
+    netAvSync();                                  /* and settles again */
+    const settled = sent.length;
+
+    if (first !== 1)
+      fails.push('the face was never sent: netAvSync() made ' + first +
+                 ' requests for a profile that has never had one');
+    if (again !== first)
+      fails.push('the face was sent again with nothing changed (' + again +
+                 ' requests) -- that is a request every launch for a face ' +
+                 'that has not moved');
+    if (moved !== first + 1)
+      fails.push('the face changed and ' + (moved - again) + ' requests went ' +
+                 'out: a notice goes on drawing a face somebody has stopped ' +
+                 'wearing');
+    if (settled !== moved)
+      fails.push('after the change it kept sending (' + settled + ')');
+    if (moved > first && sent[sent.length - 1].method !== 'PATCH')
+      fails.push('the face was updated with ' + sent[sent.length - 1].method +
+                 ' rather than PATCH -- schema.sql grants update(handle, ' +
+                 'display, av), and an insert on a row that exists is a 409');
+  } finally { netSend = realSend; }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
