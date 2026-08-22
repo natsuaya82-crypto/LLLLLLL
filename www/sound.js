@@ -58,15 +58,18 @@ function vWsys(){
     (can('dir')? '' :
       '<button class="capwarn" style="margin-top:10px"' + DO('goPlans') + '>'+t('dir.locked')+
         '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>')+
-    numBaseRows()+
     /* Roman or your own letters is the same kind of decision -- it changes
        every screen in the app and nobody flips it twice a day -- so it sits
        with the others rather than under a specimen box on a chapter. */
+    /* A switch, because it is a yes or a no. It was two buttons sharing a
+       rule, which is the shape this app uses for choosing one of several --
+       and there are not several here, there is one thing that is on or off.
+       Off is roman, which is what the app shows when somebody's own letters
+       are not being shown, and does not need a button of its own to say so. */
     '<div class="sec">'+t('script.show')+'</div>'+
-    '<div class="pick">'+
-      '<button class="'+(SET.myfont?'':'on')+'"' + DO('setMyFont', [false]) + '>'+t('script.show.roman')+'</button>'+
-      '<button class="'+(SET.myfont?'on':'')+'"' + DO('setMyFont', [true]) + '>'+t('script.show.own')+'</button>'+
-    '</div>'+
+    '<button class="set" style="border-bottom:none"' + DO('setMyFont', [!SET.myfont]) + '>'+
+      '<span class="sl">'+esc(t('script.show.own'))+'</span>'+
+      swtHTML(!!SET.myfont)+'</button>'+
     '</div></div>';
 }
 /* ---- the abugida bench ------------------------------------------------

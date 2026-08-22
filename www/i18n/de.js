@@ -650,7 +650,6 @@ defLang('de', (function(){
       "ob.draw.later"    : "Später zeichnen",
       /* the writing system */
       "script.show"     : "Anzeigen",
-      "script.show.roman" : "Lateinisch",
       "script.show.own"   : "Deinen Buchstaben",
       /* the letter editor */
       "glyph.circle"      : "Runden",

@@ -710,7 +710,6 @@ defLang('fr', (function(){
       "ob.draw.later"     : "La dessiner plus tard",
       /* the writing system */
       "script.show"     : "Afficher",
-      "script.show.roman" : "Alphabet latin",
       "script.show.own"   : "Vos lettres",
       /* the letter editor */
       "glyph.circle"      : "Arrondir",

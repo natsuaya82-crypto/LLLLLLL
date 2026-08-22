@@ -622,7 +622,6 @@ defLang('es', (function(){
       "ob.draw.later"     : "Dibujarla más tarde",
       /* the writing system */
       "script.show"     : "Mostrar",
-      "script.show.roman" : "Alfabeto latino",
       "script.show.own"   : "Tus letras",
       /* the letter editor */
       "glyph.circle"      : "Curvar",

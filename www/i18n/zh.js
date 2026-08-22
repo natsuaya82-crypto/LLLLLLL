@@ -669,7 +669,6 @@ defLang('zh', (function(){
       "ob.draw.later"    : "以后再画",
       /* the writing system */
       "script.show"     : "显示",
-      "script.show.roman" : "拉丁字母",
       "script.show.own"   : "自造文字",
       /* the letter editor */
       "glyph.circle"      : "圆",
