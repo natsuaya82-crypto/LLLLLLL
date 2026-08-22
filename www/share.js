@@ -76,11 +76,11 @@ function shareInk(l){
    Reading the same list is the whole of the correctness here: an index off by
    one types a letter and draws a different one, and nothing throws.
 
-   ⚠ That list expression is now written out in four places (installTypeFont,
-   puaRoman, postCutTyped, and here). It belongs in glyph.js as one function.
-   Not done here because glyph.js is another session's file. */
+   The list is ltPuaOrder(), in glyph.js, and it is the only one: this asked
+   it separately once, which is one more answer than a question with one
+   answer should have. */
 function sharePua(id){
-  var lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; })), i;
+  var lts=ltPuaOrder(), i;
   for(i=0;i<lts.length;i++) if(lts[i].id===id) return ltPua(i);
   return '';
 }

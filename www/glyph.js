@@ -320,6 +320,24 @@ function scriptSig(){
    them in this plane and it is not a shared register -- every language starts
    at E000 in its own font -- so nobody's letters take anybody else's room. */
 var PUA0=0xE000;
+/* WHICH letters are in the typing face, and in what order.
+   ------------------------------------------------------------------
+   The one place that answers it. Four places were asking it separately --
+   installTypeFont built the face from this list, puaRoman read a code point
+   back out of it, postCutTyped cut a post's ink with it, and sharePua told
+   the keyboard what to type -- and all four had the expression written out.
+
+   Four copies of a rule is four chances for one of them to drift, and the
+   drift here is silent in the worst way: the index IS the code point, so a
+   list that answers differently by one makes a key type one letter and the
+   font draw another. The font renders, the key looks right, and the document
+   holds somebody else's letter. Nothing throws.
+
+   conv-check's eighth claim holds this: it reads what the font writer was
+   actually handed and asks, per letter, that the key agrees. */
+function ltPuaOrder(){
+  return ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; }));
+}
 function ltPua(i){ return String.fromCharCode(PUA0+i); }
 /* Back to roman. The private use area is what the Lingua keyboard types INTO
    a field and it goes no further: everything downstream of the field -- the
@@ -332,7 +350,7 @@ function ltPua(i){ return String.fromCharCode(PUA0+i); }
    them in, so the two cannot disagree: they read the same list. */
 function puaRoman(txt){
   var s=String(txt||''), out='', i, c, at,
-      lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; }));
+      lts=ltPuaOrder();
   for(i=0;i<s.length;i++){
     c=s.charCodeAt(i);
     at=c-PUA0;
@@ -346,7 +364,7 @@ function installTypeFont(){
   if(el) el.parentNode.removeChild(el);
   TFONT.built=false;
   try{
-    var lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; })), defs=[], i;
+    var lts=ltPuaOrder(), defs=[], i;
     for(i=0;i<lts.length;i++)
       defs.push({name:glyphName(lts[i].id), roman:ltPua(i), strokes:lts[i].st});
     if(!defs.length) return;

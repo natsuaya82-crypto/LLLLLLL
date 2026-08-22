@@ -92,7 +92,16 @@ const MINE = [
   'langName', 'langId', 'langKey',
   'findWord', 'spOf', 'wMns', 'wPh', 'addedSnd', 'exGloss',
   'myFontOn', 'ltById', 'ltMain', 'ltHasShape', 'wsStrokes', 'chOf', 'inkOf',
-  'ME', 'meName', 'meHandle', 'postAvatar', 'postGloss', 'postGlossLine'
+  'ME', 'meName', 'meHandle', 'postAvatar', 'postGloss', 'postGlossLine',
+  /* The letters of the OPEN language, in the order the typing face maps
+     them. It reads LETTERS, so it is the making side wearing one name
+     instead of the four expressions it replaced -- and a name is exactly
+     what this list is written in. Without it, a function that reads LETTERS
+     could be called from below the line and this check would stay green,
+     which is the hole the four-into-one opened the moment it closed.
+     postCutTyped() calls it and is ABOVE the line, where the writer still
+     exists; that is why the line is where it is. */
+  'ltPuaOrder'
 ];
 
 /* ---- rule one again, on the other place a post is drawn -------------------
