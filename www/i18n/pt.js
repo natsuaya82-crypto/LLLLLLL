@@ -811,6 +811,8 @@ defLang('pt', (function(){
       "bk.no"            : "gravação {0}",
       "bk.gen"           : "cópia {0}",
       "set.data"         : "Dados",
+      "set.terms"         : "Termos de uso",
+      "set.privacy"         : "Política de privacidade",
       "set.csv.out"      : "Exportar como CSV",
       "set.csv.in"       : "Importar de CSV",
       "set.lock.csv.t"   : "Importação e exportação CSV",

@@ -821,6 +821,8 @@ defLang('ru', (function(){
       "bk.no"            : "сохранение {0}",
       "bk.gen"           : "запасная {0}",
       "set.data"          : "Данные",
+      "set.terms"          : "Условия использования",
+      "set.privacy"          : "Политика конфиденциальности",
       "set.csv.out"       : "Экспорт в CSV",
       "set.csv.in"        : "Импорт из CSV",
       "set.lock.csv.t"    : "Импорт и экспорт CSV",

@@ -720,6 +720,8 @@ defLang('ja', (function(){
       'bk.no'             : "保存 {0}",
       'bk.gen'            : "予備 {0}",
       'set.data'        : 'データ',
+      'set.terms'        : '利用規約',
+      'set.privacy'        : 'プライバシーポリシー',
       'set.csv.out'     : 'CSVの書き出し',
       'set.csv.in'      : 'リストの取り込み',
       'set.lock.csv.t'  : 'CSVの取り込みと書き出し',

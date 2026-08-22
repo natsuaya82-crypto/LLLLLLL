@@ -807,6 +807,8 @@ defLang('zh', (function(){
       "bk.no"            : "保存 {0}",
       "bk.gen"           : "备份 {0}",
       "set.data"         : "数据",
+      "set.terms"         : "使用条款",
+      "set.privacy"         : "隐私政策",
       "set.csv.out"      : "导出为 CSV",
       "set.csv.in"       : "从 CSV 导入",
       "set.lock.csv.t"   : "CSV 导入与导出",

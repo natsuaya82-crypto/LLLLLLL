@@ -15,6 +15,31 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The terms and the privacy policy, and two rows at the foot of Settings
+
+Both documents are written and live on the site —
+`tokinets.com/lingua/terms.html` and `/lingua/privacy.html`, in the other
+repository. Written for Lingua rather than copied from the two TOKINETS
+already had: the anonymous account made at first launch, identity asked at
+posting and buying only, a language belonging to the account and kept on the
+server whether or not anybody has paid, what taking a post down and freezing
+an account each do and do not do, the fact that re-encoding a photograph
+drops the location the camera put on it, and the appeal address.
+
+They carry what App Store guideline 1.2 asks of an app with user posts: a
+no-tolerance clause, report and block, a stated 24-hour response, and a way
+to reach us. English, because that is the app's default, the audience, and
+what review reads.
+
+In the app they are **two rows at the foot of Settings** and are not in the
+onboarding — 「Xとかインスタもオンボーディングには出してなくね？ふつうに設定
+とかの見えづらいとこに追いとけばいいよ」. They are `<a href>` rather than
+buttons, pointing at the published pages: one copy of a contract, and a change
+to either is one edit. `a.set{text-decoration:none}` is the only new CSS.
+
+Two strings in all ten languages, `set.terms` and `set.privacy`.
+
+
 ### A frozen account, from the other side — and a way to say it is wrong
 
 **Their posts come off the timeline and stay on their own page.** Nothing is

@@ -793,6 +793,8 @@ defLang('de', (function(){
       "bk.no"            : "Speicherung {0}",
       "bk.gen"           : "Reserve {0}",
       "set.data"         : "Daten",
+      "set.terms"         : "Nutzungsbedingungen",
+      "set.privacy"         : "Datenschutzerklärung",
       "set.csv.out"      : "Als CSV exportieren",
       "set.csv.in"       : "Aus CSV importieren",
       "set.lock.csv.t"   : "CSV-Import und -Export",

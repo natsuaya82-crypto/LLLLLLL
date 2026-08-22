@@ -715,6 +715,8 @@ defLang('en', (function(){
       'bk.no'             : "save {0}",
       'bk.gen'            : "spare {0}",
       'set.data'        : "Data",
+      'set.terms'        : 'Terms of Use',
+      'set.privacy'        : 'Privacy Policy',
       'set.csv.out'     : "Export as CSV",
       'set.csv.in'      : "Import from CSV",
       'set.lock.csv.t'  : "CSV import and export",

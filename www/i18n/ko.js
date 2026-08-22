@@ -977,6 +977,8 @@ defLang('ko', (function(){
       "bk.no"            : "저장 {0}",
       "bk.gen"           : "예비 {0}",
       "set.data"         : "데이터",
+      "set.terms"         : "이용약관",
+      "set.privacy"         : "개인정보처리방침",
       "set.csv.out"      : "CSV로 내보내기",
       "set.csv.in"       : "CSV에서 가져오기",
       "set.lock.csv.t"   : "CSV 가져오기와 내보내기",

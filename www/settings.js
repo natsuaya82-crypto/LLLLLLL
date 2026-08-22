@@ -20,6 +20,12 @@ function setSample(){
    ten rows of interface languages -- so the way to reach "erase everything"
    was to scroll past every language the app speaks. Six pages now, and the
    first one is a list of six rows. Each of them is one question. */
+/* The two documents, on the site rather than in here. One copy, published,
+   and a change to either is one edit -- a copy inside the app would be a
+   second version of a contract, which is the one kind of duplicate that
+   cannot be allowed to drift. */
+var DOC_TERMS='https://tokinets.com/lingua/terms.html';
+var DOC_PRIVACY='https://tokinets.com/lingua/privacy.html';
 var SETS=[
   {id:'look',  k:'set.look'},
   {id:'read',  k:'set.reading'},
@@ -58,6 +64,23 @@ function vSettings(){
           '<span class="sl">'+esc(t('mod.title'))+'</span>'+
           '<span class="sv">'+ICON_GO+'</span></button>'
       : '')+
+    /* The two documents, at the foot of the list and not in the onboarding.
+       Apple asks that they be reachable from inside the app; nobody has ever
+       read one on their first day, and putting them in front of somebody who
+       has not seen the app yet is a door with a contract on it.
+       「Xとかインスタもオンボーディングには出してなくね？ふつうに設定とかの
+       見えづらいとこに追いとけばいいよ」
+
+       Links and not buttons: they are pages on the site, kept there rather
+       than copied in here, so that a change to them is one edit and not two
+       -- and so that the version somebody agreed to is the one that is
+       published. */
+    '<a class="set" href="'+esc(DOC_TERMS)+'" target="_blank" rel="noopener">'+
+      '<span class="sl">'+esc(t('set.terms'))+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></a>'+
+    '<a class="set" href="'+esc(DOC_PRIVACY)+'" target="_blank" rel="noopener">'+
+      '<span class="sl">'+esc(t('set.privacy'))+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></a>'+
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered
