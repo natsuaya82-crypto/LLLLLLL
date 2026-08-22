@@ -25,6 +25,11 @@ class MainViewController: CAPBridgeViewController {
   override func capacitorDidLoad() {
     bridge?.registerPluginInstance(LinguaSharePlugin())
     bridge?.registerPluginInstance(LinguaPlanPlugin())
+    /* Registered rather than called: nothing in www/ asks it anything yet.
+       It is here because load() is where its Transaction.updates listener
+       starts, and a renewal that arrives while nothing is listening is a day
+       the app is wrong about. See the head of LinguaStore.swift. */
+    bridge?.registerPluginInstance(LinguaStorePlugin())
     // And the plan itself, as a script rather than as an answer to a call:
     // what a free plan looks like is decided on the first frame, and a call
     // comes back after it. See the head of LinguaPlan.swift.

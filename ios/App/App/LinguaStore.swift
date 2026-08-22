@@ -1,0 +1,242 @@
+//  LinguaStore.swift
+//  What the App Store says about this person's subscription.
+//
+//  StoreKit 2, and no receipt validation of our own. The deployment target is
+//  iOS 15.0 and StoreKit 2 is exactly iOS 15, so there is no fallback path to
+//  write and no `if #available` to get wrong. `Transaction.currentEntitlements`
+//  is signed by Apple and checked on the device before it is handed over;
+//  everything below refuses `.unverified` outright rather than "warning and
+//  carrying on", because carrying on is what makes a check decorative.
+//
+//  This file does NOT decide what a plan is worth or when it lapses. It
+//  answers one question -- is there a live Plus entitlement right now -- and
+//  writes the answer where LinguaPlan.swift already keeps it. The rules about
+//  what a lapsed plan may and may not remove are in docs/DATA_SAFETY.md and
+//  live in www/, where they have always been.
+//
+//  Two things it deliberately does not do:
+//
+//    It does not sync on launch. `AppStore.sync()` makes iOS ask for a
+//    password, and doing that to somebody who just opened an app they have
+//    already paid for is how "Restore" became a button on every paid app
+//    rather than something done automatically. `restore` is that button.
+//
+//    It does not tell the web view. There is no @capacitor/core in this app
+//    -- www/share.js says why, at length -- so there is no addListener on the
+//    JavaScript side to notify. The durable channel is the Keychain: a
+//    renewal that arrives with nobody in the app is written down, and
+//    LinguaPlan.inject() hands it to the first line of JavaScript at the next
+//    launch. Inside a session, JavaScript asks `current` when it wants to
+//    know.
+
+import Foundation
+import Capacitor
+import StoreKit
+
+@objc(LinguaStorePlugin)
+public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
+  public let identifier = "LinguaStorePlugin"
+  public let jsName = "LinguaStore"
+  public let pluginMethods: [CAPPluginMethod] = [
+    CAPPluginMethod(name: "products", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "buy", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "current", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "manage", returnType: CAPPluginReturnPromise),
+  ]
+
+  /// The product ids, and the only place they are written down.
+  ///
+  /// `docs/apple.md` § 4 fixes the monthly one and says a product id cannot be
+  /// changed afterwards. The yearly one is here because www/core.js offers a
+  /// yearly price and App Store Connect has not been given one yet; StoreKit
+  /// simply does not return a product that does not exist, so asking for both
+  /// is how this file finds out which exist rather than being told.
+  static let ids = ["com.tokinets.lingua.plus.monthly",
+                    "com.tokinets.lingua.plus.yearly"]
+
+  /// Every id above buys the same thing. When a second tier exists this stops
+  /// being a set and becomes a map, and the plan it names stops being a
+  /// constant -- which is the moment to come back here and not before.
+  static let plusPlan = "plus"
+
+  /// The listener for transactions that arrive with nobody in the app: a
+  /// renewal, a refund, a purchase made on another device, a family member's
+  /// share. Apple's own guidance is to start this at launch and to keep it
+  /// for the life of the process, because a transaction delivered while
+  /// nothing is listening is delivered again at the next launch and the
+  /// intervening days are days the app was wrong about.
+  private var watch: Task<Void, Never>?
+
+  override public func load() {
+    watch = Task.detached { [weak self] in
+      for await result in Transaction.updates {
+        guard let t = Self.verified(result) else { continue }
+        /* finish() is what tells the App Store to stop redelivering this.
+           Not finishing is the classic StoreKit bug: everything works, and
+           the same transaction arrives at every launch forever. */
+        await t.finish()
+        _ = await self?.writeDown()
+      }
+    }
+  }
+
+  deinit { watch?.cancel() }
+
+  /// `.unverified` is not "probably fine". It is the one signal that the
+  /// signature did not check out on this device, and the answer to it is no.
+  private static func verified<T>(_ r: VerificationResult<T>) -> T? {
+    switch r {
+    case .verified(let v): return v
+    case .unverified: return nil
+    }
+  }
+
+  /// Is there a live Plus entitlement right now.
+  ///
+  /// `currentEntitlements` already leaves out what has expired and what was
+  /// refunded, so there is no date arithmetic here. `revocationDate` is
+  /// checked anyway: a refund can be reflected in the transaction before it
+  /// is reflected in the list, and the free side is the side to be wrong on.
+  static func entitled() async -> Bool {
+    for await result in Transaction.currentEntitlements {
+      guard let t = verified(result) else { continue }
+      if t.revocationDate != nil { continue }
+      if ids.contains(t.productID) { return true }
+    }
+    return false
+  }
+
+  /// Ask the App Store, then write the answer where the next launch will find
+  /// it. Returns what it wrote so a call can answer with the same thing.
+  @discardableResult
+  private func writeDown() async -> String {
+    let plan = (await Self.entitled()) ? Self.plusPlan : "free"
+    LinguaPlanPlugin.set(plan)
+    return plan
+  }
+
+  /// The plan as it stands, without writing anything: the three outcomes of
+  /// `buy` that are not a purchase have not changed anything, and a Keychain
+  /// write on a cancelled purchase is a write that says nothing.
+  private func standing() async -> String {
+    return (await Self.entitled()) ? Self.plusPlan : "free"
+  }
+
+  /// What is for sale, with prices as the App Store gives them.
+  ///
+  /// `displayPrice` and not a number: it is already in the person's currency,
+  /// already formatted the way their region formats money, and already the
+  /// string Apple requires be shown. Building "$" + a number is how an app
+  /// ends up showing dollars to somebody being charged yen.
+  @objc func products(_ call: CAPPluginCall) {
+    Task {
+      do {
+        let found = try await Product.products(for: Self.ids)
+        let out: [[String: Any]] = found.map { p in
+          var row: [String: Any] = [
+            "id": p.id,
+            "name": p.displayName,
+            "text": p.description,
+            "price": p.displayPrice,
+          ]
+          /* A subscription's period is what tells the two apart on screen,
+             and it is the App Store's answer rather than ours -- a product
+             renamed "yearly" that is configured monthly should read monthly. */
+          if let s = p.subscription {
+            row["unit"] = String(describing: s.subscriptionPeriod.unit).lowercased()
+            row["count"] = s.subscriptionPeriod.value
+          }
+          return row
+        }
+        call.resolve(["products": out])
+      } catch {
+        call.reject("products: \(error.localizedDescription)")
+      }
+    }
+  }
+
+  /// Buy one.
+  ///
+  /// The four outcomes are told apart rather than collapsed into
+  /// success/failure, because they need four different things said to a
+  /// person: it worked; you cancelled; the bank or a parent has to approve
+  /// this and you will hear later; and something failed. Only the first
+  /// writes anything down.
+  @objc func buy(_ call: CAPPluginCall) {
+    guard let id = call.getString("id"), Self.ids.contains(id) else {
+      call.reject("no such product"); return
+    }
+    Task {
+      do {
+        guard let product = try await Product.products(for: [id]).first else {
+          call.reject("no such product"); return
+        }
+        let result = try await product.purchase()
+        switch result {
+        case .success(let v):
+          guard let t = Self.verified(v) else {
+            call.reject("could not be verified"); return
+          }
+          await t.finish()
+          let plan = await writeDown()
+          call.resolve(["how": "bought", "plan": plan])
+        case .userCancelled:
+          call.resolve(["how": "cancelled", "plan": await standing()])
+        case .pending:
+          /* Ask To Buy, or a bank that wants a second step. There is nothing
+             to wait for here: it arrives at Transaction.updates whenever it
+             arrives, which may be after the app has been closed. */
+          call.resolve(["how": "pending", "plan": await standing()])
+        @unknown default:
+          call.resolve(["how": "unknown", "plan": await standing()])
+        }
+      } catch {
+        call.reject("buy: \(error.localizedDescription)")
+      }
+    }
+  }
+
+  /// The Restore button, and the only thing that calls AppStore.sync().
+  ///
+  /// It asks for an App Store password, which is why it is a button somebody
+  /// presses and not something done on launch. A sync that fails is not
+  /// necessarily a person with nothing: the entitlements already on the
+  /// device are still worth reading, so the answer is given either way.
+  @objc func restore(_ call: CAPPluginCall) {
+    Task {
+      var said = ""
+      do { try await AppStore.sync() }
+      catch { said = error.localizedDescription }
+      let plan = await writeDown()
+      var out: [String: Any] = ["plan": plan]
+      if !said.isEmpty { out["trouble"] = said }
+      call.resolve(out)
+    }
+  }
+
+  /// What the App Store says right now. Also writes it down: a session that
+  /// asks is a session that can be told, and the Keychain is how the next
+  /// launch is told.
+  @objc func current(_ call: CAPPluginCall) {
+    Task { call.resolve(["plan": await writeDown()]) }
+  }
+
+  /// Cancelling, changing the tier, seeing the next charge -- all of it is
+  /// Apple's sheet and none of it is ours to draw. An app that builds its own
+  /// cancel screen is an app that will be wrong about a subscription bought
+  /// on a different device.
+  @objc func manage(_ call: CAPPluginCall) {
+    Task { @MainActor in
+      guard let scene = self.bridge?.viewController?.view?.window?.windowScene else {
+        call.reject("no window"); return
+      }
+      do {
+        try await AppStore.showManageSubscriptions(in: scene)
+        call.resolve(["plan": await self.writeDown()])
+      } catch {
+        call.reject("manage: \(error.localizedDescription)")
+      }
+    }
+  }
+}
