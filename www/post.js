@@ -2027,6 +2027,16 @@ function postRow(p){
           ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
           : '')+
         (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
+        /* Taken down. Only its author is ever handed one of these -- post_read
+           in schema.sql -- so it is for them, and it belongs up here beside
+           the lock and "edited": a word for what state the post is in.
+
+           Two goes at this were wrong. It said "hidden", on a post the person
+           reading it can SEE, which is a word contradicting the screen it is
+           written on. Then it said WHO did it, in a line of its own under the
+           head -- which is the app explaining itself, and is the notice's job
+           rather than this one's. 「アプリ内に説明書くの禁止」 */
+        (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         /* The ... and, when it is the one that is open, the menu hanging off
            it. It is IN the post rather than a screen you go to, so what you
@@ -2059,9 +2069,9 @@ function postRow(p){
       /* The pictures, and they are the one thing on a post that slides
          sideways. 「画像だけ横スライドできる感じ」 One is a picture; several
          are a strip, and the strip scrolls rather than the post. */
-      (postPics(p).length
-        ? '<div class="ppics'+(postPics(p).length>1? ' many':'')+'">'+
-            postPics(p).map(function(u, i){
+      (postThumbs(p).length
+        ? '<div class="ppics'+(postThumbs(p).length>1? ' many':'')+'">'+
+            postThumbs(p).map(function(u, i){
               /* The picture is a way in, and it wins over the row it sits in
                  because act.js delivers a press to the nearest name above the
                  thumb. Tapping the picture opens the picture; tapping beside
