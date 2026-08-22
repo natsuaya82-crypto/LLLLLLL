@@ -197,9 +197,15 @@ under `lingua.sess`.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is fourteen checks and is the specification. `CLAUDE.md` → "The
-fourteen rules the gate enforces". It is minutes, not seconds: about two on a
-laptop, six to ten in a slow container.
+`npm test` is sixteen checks and is the specification. `CLAUDE.md` → "The
+fourteen rules the gate enforces" (fourteen rules, sixteen checks — some rules
+are held by more than one). `tools/gate.mjs` runs the five that need no
+browser first, in about two seconds, then the eleven browser ones four at a
+time. Run one after another they were ten minutes in this container.
+
+**It is run once before pushing**, not once per commit — the owner's rule, and
+`docs/TESTING.md` has all three. While working, run the one check that holds
+what you are changing, by name, plus the five fast ones.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate

@@ -13,7 +13,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
 > says the two that are easiest to get backwards: the timeline is
 > `localStorage` and no part of it is on the server yet, and CI runs three of
-> these twelve checks, so a green tick on a push is not the gate.
+> these sixteen checks, so a green tick on a push is not the gate.
 
 ## The rules that come before the code
 
@@ -174,9 +174,22 @@ npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
 `npm run card` / `npm run word` / `npm run post` / `npm run backup` / `npm run press`.
-`tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
-about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
-`npm test` yourself.
+`tools/gate.mjs` is what `npm test` runs. The five that need no browser go first, one
+after another, in about two seconds — a missing script tag or an arrow function fails
+there and nothing heavy is started at all — and the eleven that each start a headless
+Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
+output is printed whole and in list order, so a counter that moved is still visible.
+
+**Three rules about running it, and they are the owner's.** *Once before pushing, not
+once per commit* — make the whole batch, gate it once, push; a session that gates five
+commits separately has spent half an hour proving the same thing five times.
+「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the one check that
+holds what you are changing*, by name, plus the five fast ones — that is the loop.
+*Watching a check fail is one run, not a suite* — put the bug back, run that check
+alone, watch it go red, take the bug out.
+
+`tools/pre-commit` runs the ones that need no browser plus i18n when a screen file
+changed. It is not the whole gate: run `npm test` yourself, once, before the commit.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.

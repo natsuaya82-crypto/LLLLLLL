@@ -63,7 +63,7 @@ const chromium = await loadChromium();
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, '..', 'www');
-const PORT = 8123;
+const PORT = 8130;
 const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
 const LAUNCH = fs.existsSync(CHROME) ? { executablePath: CHROME } : {};
 
