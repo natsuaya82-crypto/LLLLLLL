@@ -321,9 +321,48 @@ function netHandleFree(h, ok, bad){
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
   if(!netMember()){ bad(null, 0); return; }
+  var av=postAvatar();
   netPost('/rest/v1/profile',
-          {id:SESS.uid, handle:h, display:name, av:postAvatar()},
-          SESS.at, ok, bad);
+          {id:SESS.uid, handle:h, display:name, av:av},
+          SESS.at,
+          /* what was sent, so netAvSync() does not send it again on the
+             next launch for a face that has not moved */
+          function(d){ ME.avSent=JSON.stringify(av||null); saveMe(); ok(d); },
+          bad);
+}
+/* The face on the profile row, kept level with the face on the phone.
+   ------------------------------------------------------------------
+   netMakeProfile() wrote `av` once, the day the account was made, and nothing
+   ever wrote it again -- so drawing a new letter or setting a photograph
+   changed what postAvatar() answers everywhere in the app EXCEPT the little
+   face beside "somebody liked this". A notice could draw a face somebody had
+   not worn for a month.
+
+   Nothing about the timeline was wrong: a post freezes its own face when it
+   is written (rule 8), so what a reader sees on a post is right. The notice
+   is the one place that reads the profile row.
+
+   Why this is cheap, which was the reason it sat in the backlog: postAvatar()
+   answers the photograph if there is one and otherwise the FIRST letter that
+   has been drawn. It does not change when a letter is drawn -- it changes
+   when the first one is redrawn, or a photograph is set. Twice in a language's
+   life, not once per stroke. So "send it when it differs" costs one request
+   on the launches where it actually moved and none on the others.
+
+   ME.avSent is the copy that was sent, so the comparison is local. A launch
+   where nothing moved asks the server nothing at all.
+
+   Fired and not waited for, like everything else in bootSession(): the little
+   face being a launch behind is not worth making the app open slower, and
+   there is nothing on screen that depends on the answer. */
+function netAvSync(){
+  if(!netMember() || !SESS || !SESS.uid) return;
+  var av=postAvatar(), now=JSON.stringify(av||null);
+  if(now===ME.avSent) return;
+  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
+          {av:av}, SESS.at,
+          function(){ ME.avSent=now; saveMe(); },
+          function(){});
 }
 function netIdToken(provider, token, nonce, ok, bad){
   var b={ provider:provider, id_token:token };
