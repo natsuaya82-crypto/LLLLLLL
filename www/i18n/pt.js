@@ -674,7 +674,6 @@ defLang('pt', (function(){
       /* the letter editor */
       "glyph.circle"      : "Curvar",
       "glyph.fill"     : "Preencher",
-      "glyph.new"         : "Novo",
       "glyph.undo"        : "Desfazer",
       "glyph.clear"       : "Limpar",
       "glyph.cancel"      : "Cancelar",

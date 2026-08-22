@@ -572,7 +572,6 @@ defLang('en', (function(){
       /* the letter editor */
       'glyph.circle'      : "Round",
       'glyph.fill'     : "Fill",
-      'glyph.new'         : "New",
       'glyph.undo'        : "Undo",
       'glyph.clear'       : "Clear",
       'glyph.cancel'      : "Cancel",

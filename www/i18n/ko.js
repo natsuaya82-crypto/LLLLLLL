@@ -845,7 +845,6 @@ defLang('ko', (function(){
       /* the letter editor */
       "glyph.circle"      : "원",
       "glyph.fill"     : "칠하기",
-      "glyph.new"         : "새 획",
       "glyph.undo"        : "되돌리기",
       "glyph.clear"       : "모두 지우기",
       "glyph.cancel"      : "취소",

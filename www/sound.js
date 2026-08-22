@@ -41,16 +41,11 @@ function vWsys(){
        because it is the language's -- one language, one answer, and it goes
        in the backup with the rest of the language.
 
-       Shown on the free plan, unlike the four writing systems above, and the
-       reason they differ is worth being exact about. Hiding a syllabary from
-       somebody who cannot have one costs them nothing: an alphabet is what
-       they have and the row would only explain itself. A direction is
-       different -- posts written in all four are on the timeline in front of
-       them, on every plan, so the thing exists whether or not they can buy
-       it, and a screen that pretends otherwise is a screen that cannot
-       answer "why is that post sideways". */
+       Free shows the one direction a free language has and nothing else, the
+       same as the writing systems above show only `alpha`. Three rows nothing
+       can press is the app explaining itself. 「隠すでしょ」 */
     '<div class="sec">'+t('dir.title')+'</div>'+
-    DIRS.map(function(k){
+    (can('dir')? DIRS : [scriptDir()]).map(function(k){
       return '<button class="set"' + DO('setScriptDir', [k]) + '>'+
         '<span class="sl">'+esc(t('dir.'+k))+'</span>'+
         '<span class="sv">'+(scriptDir()===k? ICON_TICK : '')+'</span></button>';

@@ -673,7 +673,6 @@ defLang('ru', (function(){
       /* the letter editor */
       "glyph.circle"      : "Дуга",
       "glyph.fill"     : "Заливка",
-      "glyph.new"         : "Новая",
       "glyph.undo"        : "Назад",
       "glyph.clear"       : "Очистить",
       "glyph.cancel"      : "Отмена",

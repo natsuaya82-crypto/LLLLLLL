@@ -715,7 +715,6 @@ defLang('fr', (function(){
       /* the letter editor */
       "glyph.circle"      : "Arrondir",
       "glyph.fill"     : "Remplir",
-      "glyph.new"         : "Nouveau",
       "glyph.undo"        : "Annuler",
       "glyph.clear"       : "Tout effacer",
       "glyph.cancel"      : "Abandonner",

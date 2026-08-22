@@ -583,7 +583,6 @@ defLang('ja', (function(){
       /* the letter editor */
       'glyph.circle'      : "曲線",
       'glyph.fill'     : "塗り",
-      'glyph.new'         : "新しい線",
       'glyph.undo'        : "一画戻す",
       'glyph.clear'       : "すべて消去",
       'glyph.cancel'      : "キャンセル",

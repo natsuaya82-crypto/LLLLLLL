@@ -674,7 +674,6 @@ defLang('zh', (function(){
       /* the letter editor */
       "glyph.circle"      : "圆",
       "glyph.fill"     : "填充",
-      "glyph.new"         : "新笔画",
       "glyph.undo"        : "撤销",
       "glyph.clear"       : "清空",
       "glyph.cancel"      : "取消",

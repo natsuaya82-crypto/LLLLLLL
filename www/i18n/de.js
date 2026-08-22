@@ -655,7 +655,6 @@ defLang('de', (function(){
       /* the letter editor */
       "glyph.circle"      : "Runden",
       "glyph.fill"     : "Füllen",
-      "glyph.new"         : "Neu",
       "glyph.undo"        : "Zurück",
       "glyph.clear"       : "Leeren",
       "glyph.cancel"      : "Abbrechen",
