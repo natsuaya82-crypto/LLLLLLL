@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these seventeen checks, so a green tick on a push is not the gate. This
+> these eighteen checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -225,10 +225,10 @@ Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run box` /
 `npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
-`npm run fill` / `npm run round` / `npm run press`.
+`npm run fill` / `npm run round` / `npm run kb` / `npm run press`.
 `tools/gate.mjs` is what `npm test` runs. The six that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
-there and nothing heavy is started at all — and the eleven that each start a headless
+there and nothing heavy is started at all — and the twelve that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
 output is printed whole and in list order, so a counter that moved is still visible.
 
@@ -284,7 +284,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The eighteen rules the gate enforces
+## The nineteen rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -912,6 +912,43 @@ corner was, because `decomment` collapsed each comment to one space and slid
 every line after it. **A check that names the wrong line is worse than one that
 names none — it is believed.** The newlines are kept now.
 
+### 19. A row goes, a column goes, and either can be taken back
+
+The keyboard editor is a sheet, and a sheet is worked from its edges: the row's
+number takes the row, the column's letter takes the column.
+「1触ったら1が全部消える a触ったらa列全部消える」
+
+Neither asks first. What stands behind them is the step back rather than a
+dialog — a confirmation on every row would make building a keyboard a
+conversation — so the delete and the undo are one statement and have to be held
+as one. **A delete with a broken undo behind it is worse than a delete that
+asks**, because the app has told somebody it is safe to try things.
+
+Nothing here can throw. A column taken out of the wrong rows, a key of three
+removed where it should have been narrowed to two, an undo that puts back the
+state *after* the change rather than the one before — every one of those is a
+keyboard that still renders, still installs, and is not the one somebody built.
+
+`tools/kb-check.mjs` holds nine things: the row that goes is the one pressed
+and every other row is untouched and in order; a column comes out of every row,
+one key's worth from each; **a key wider than the column is NARROWED and not
+removed** (a cell spanning b–d, with c taken out, spans b–c); the half key that
+insets the QWERTY's third row survives all of it; the step back is exact and
+three of them walk back through three deletes in order; the step forward undoes
+the step back; nothing outside the layout moves — not a letter, not a word, not
+another keyboard, not another face; and the two buttons are down when there is
+nowhere to go.
+
+Four bugs were put back and watched going red before any of it was believed.
+The two the check found on its first run were real and are worth keeping: the
+history was recorded only from the editor's **render**, so a change made by any
+other road had nothing behind it — it is recorded from `saveKb()` as well now,
+which is what every change to a keyboard ends in; and a board is identified by
+**where it is in the list**, so deleting board 1 and making another gave the new
+one the old one's history, and the step back would have put a deleted
+keyboard's layout onto a keyboard that never had it. Making one and deleting
+one both forget.
+
 ## What the free plan is
 
 One sentence: **your own shapes for a-z and 0-9.** `ltStart` puts thirty-eight
@@ -1163,7 +1200,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 366`, `screens the mirror
 rendered: 275`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 8683  (214/214 distinct names)` for the same
+`press` prints `buttons pressed: 8713  (218/218 distinct names)` for the same
 reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
@@ -1239,7 +1276,7 @@ It fell to 8453 when `wdMode` and the six faces in `tools/fixture.mjs` that set
 it came out — those six were being walked in a state the app could no longer be
 in — and coverage did not move: 213 of 213 names, still.
 
-**It is 8683 now, and that is three sessions' work integrated in one day.**
+**It was 8683 for three sessions' work integrated in one day, and is 8713 now.**
 Two of the moves inside it are worth keeping. `setWldDl` was reported by
 `press` as never pressed, and the reason was not that it sits behind a plan:
 the fixture did not seed `WLD`, so the first press of `setWldHide` hid the row
@@ -1249,6 +1286,13 @@ merge and their call sites did not, so the timeline drew the full photograph
 and said nothing about a post being taken down, with `dead-check` green
 because nothing called them. **A definition arriving is not the same as it
 being called**, and `post-check` is what said so.
+
+The last move is +30 and 214 → 218 names: the keyboard editor became a sheet,
+so every render of it carries a letter over each column and a number beside
+each row — and both are buttons, because pressing one is how that column or
+that row goes. The two on the end are the step back and the step forward. The
+⊖ on a held key came off in the same change and does not show as a fall: it
+was drawn on one face of the fixture and the fifteen are drawn on every one.
 
 `screens the mirror rendered` fell from 377 to 275 in the same stretch, and
 that one IS attributed: `i18n-check` renders every screen once per plan, and

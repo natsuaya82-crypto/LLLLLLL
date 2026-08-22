@@ -25,7 +25,8 @@
     "fill": "node tools/fill-check.mjs",
     "round": "node tools/round-check.mjs",
     "base": "node tools/base-check.mjs",
-    "word": "node tools/word-check.mjs"
+    "word": "node tools/word-check.mjs",
+    "kb": "node tools/kb-check.mjs"
   },
   "keywords": [],
   "author": "",

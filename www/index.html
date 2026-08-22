@@ -210,6 +210,85 @@ canvas.pkc{width:34px;height:34px;display:block}
    ように」 52px is what every key was, so a keyboard nobody has touched is
    the keyboard it was. */
 .kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0;--kh:52px}
+/* THE EDITOR'S board, which is a different thing from the one above and is
+   why this is a second class rather than a change to the first. The one
+   above is the keyboard AS IT WILL BE -- free's face, board 0's, the row on
+   the list -- and it runs to both edges because a keyboard that stops short
+   of the edge is a picture of a keyboard.
+
+   The editor is not that picture. It is a sheet you point AT: rows numbered
+   down the side, keys lettered across, a key held with a mark hanging off
+   its corner. All three of those need room outside the keys, and at full
+   bleed there is none -- the ⊖ on the last key of a row hung off the screen,
+   which is why it used to sit inside the key.
+   「この画面全体に広がるのやめない？8割くらいの大きさで」
+
+   80vw of the phone, centred, so the 10 down each side is where the row's
+   number and the ⊖ live. 「エクセルと同じ仕様で作るのよ」
+
+   And the rows are a GRID rather than a row of things that stretch. That is
+   the whole of what makes the letters across the top true: every row has the
+   same columns, a key one unit wide is one cell, and a key three wide is
+   three cells joined -- which is what a wide key already was in the data and
+   had no way of looking like. 「別に隣のセルともくっつけるでしょ？」
+
+   The column count is the widest row's, asked of the layout each time and
+   stored nowhere. A row that comes to less than that ends in empty cells, and
+   that is the one place this drawing and the phone differ: the extension
+   divides a row's width by the keys' w (KeyBoardView.swift), so a short row
+   stretches there and is short here. Short here is the more useful of the
+   two -- it is the row saying it is not full. */
+/* Smaller, and ONLY smaller: blow this up and it is the keyboard, which it
+   stops being the moment a key is 80% as wide and 100% as tall.
+   「比率を変えるだけだって。拡大すれば本物と同じ見た目になればいいんだよ」
+
+   The scale is set by the height and the width follows, rather than the other
+   way round, because 44 is the floor for anything a thumb has to hit and a key
+   is measured on its height (tools/press.mjs). So: 44/52 of the real key, and
+   a width that keeps the shape.
+
+   That comes out at 83vw and it comes out there on every phone, which is the
+   only reason a bare vw is honest here. The real key is (100vw - 9 gaps)/10
+   wide and 52 tall; this one is 44 tall, so it wants 44/52 of that width, and
+   both sides of the sum carry the same vw -- the ratio cancels the screen out.
+   The gap goes with it: 5 * 44/52 is 4.2, which is 2.1 of margin on each key.
+
+   8割くらい, asked for; 83 is where the shape lands. */
+.kb.kbsheet{width:83vw;margin:2px auto 0;--kh:44px;gap:5px}
+/* No gap between COLUMNS -- a column is half a key, so a gap there would be
+   counted twice on a whole key and twelve times on a space bar. The space
+   between two keys is the keys' own margin, which is the same 4 whatever they
+   span. */
+.kb.kbsheet .kbrow, .kbhdr{display:grid;gap:0;position:relative;
+     grid-template-columns:repeat(var(--kc, 20), 1fr)}
+/* Square. A cell of a sheet is a cell of a sheet, and the corner radius on a
+   key is the key being a picture of a key -- which the read-only board still
+   is and this one is not. 「角丸きんし」 */
+.kb.kbsheet .kbk{min-width:0;border-radius:0;margin:0 2.1px}
+.kb.kbsheet .kbk.addrow{grid-column:1/-1}
+/* The letters across the top and the numbers down the side, and both of them
+   are how a whole column and a whole row go. They are 44 tall for that
+   reason -- they are targets now, not labels. Neither can be 44 WIDE: a
+   column's letter is the width of the column it names, and the row's number
+   sits in the margin the board leaves. tools/press.mjs measures both on their
+   height for that reason, the same sentence it already says about a key. */
+.kbhdr{margin-bottom:1px}
+.kbcl{font-size:.55rem;line-height:1;color:var(--txm);opacity:.5;text-align:center;
+      min-height:44px;background:none;border:0;padding:0;font-family:inherit;
+      display:flex;align-items:center;justify-content:center}
+.kbcl:active{color:var(--gold);opacity:1}
+/* The row's number, in the margin to the left of the keys -- absolute, so it
+   is not a cell: kbReadRows() walks the row's children and this one carries no
+   data-r, and it must not take a column from the grid. */
+.kbn{position:absolute;left:-28px;top:0;bottom:0;width:26px;display:flex;
+     align-items:center;justify-content:flex-end;font-size:.6rem;line-height:1;
+     color:var(--txm);opacity:.55;background:none;border:0;padding:0;
+     font-family:inherit}
+.kbn:active{color:var(--gold);opacity:1}
+/* A cell of the sheet with no key on it. Not a key and not pressable -- it is
+   the part of the row that is not filled, drawn so it can be seen to be
+   there. It is a .kbk so that a key being carried can be dropped on it. */
+.kbk.cell{background:none;opacity:.35;border-radius:0}
 /* --kh is this screen's own drawing of a key and is not what goes to the
    phone: the extension decides that, and nothing in the app sets it now. */
 .kbrow{display:flex;gap:5px;--rh:1}
@@ -251,6 +330,13 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbfdown{bottom:3px;left:50%;transform:translateX(-50%)}
 .kbfleft{left:3px;top:50%;transform:translateY(-50%)}
 .kbfright{right:3px;top:50%;transform:translateY(-50%)}
+/* Back a step and forward again, over the sheet. No box round either of them
+   -- what is there is the mark, in the colour everything pressable is.
+   「角丸きんし」 Down when there is nowhere to go. */
+.kbtool{display:flex;gap:4px;justify-content:flex-end;margin:2px 0 2px}
+.kbtb{min-width:44px;min-height:44px;background:none;border:0;padding:0;
+      color:var(--gold);display:flex;align-items:center;justify-content:center}
+.kbtb[disabled]{color:var(--txm);opacity:.35}
 .kbadd{display:flex;gap:8px;margin-top:12px}
 /* THE KEY, on the sheet that edits it: the middle is what it types and the
    four edges are what it flicks to, which is where they are on the key
@@ -1524,40 +1610,56 @@ a.set{text-decoration:none}
 .kbk.wob{animation:kbwob .28s linear infinite}
 .kbk.wob:nth-child(2n){animation-delay:.09s}
 .kbk.wob:nth-child(3n){animation-delay:.05s}
-/* Inside the key rather than hanging off its corner. The keyboard runs to
-   both edges of the phone -- `.kb` has a negative margin so a key is the size
-   it will really be -- so a mark hanging off the last key of a row hangs off
-   the screen. */
-.kbx{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:999px;
-     background:var(--tx);color:var(--bg);display:flex;align-items:center;
-     justify-content:center;z-index:3}
-.kbx svg{width:13px;height:13px}
+/* There is no mark on a held key any more. It was a ⊖ on the corner, the way
+   a home screen marks an icon, and it was one of two ways to take a key away
+   -- the other being the key's own page, which is still there. What takes
+   things away on a sheet is the edge: the row's number and the column's
+   letter. 「マイナスボタンもなくそう」 */
 .navdone{font-family:inherit;font-size:.9rem;color:var(--gold);padding:0 6px}
 @media (prefers-reduced-motion:reduce){.kbk.wob{animation:none}}
 /* Three widths to put on the keyboard: press one, then press where it goes.
    The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
    nobody has been told. */
 .kbnew{display:flex;gap:8px;margin-top:12px;align-items:center}
-.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;border-radius:10px;
+/* Square, like the cells they go into. 「角丸きんし」 */
+.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;
         border:1px solid var(--line);background:none;display:flex;align-items:center}
 .kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
-.kbnewb{display:block;height:22px;border-radius:4px;background:var(--tx);opacity:.28}
+.kbnewb{display:block;height:22px;background:var(--tx);opacity:.28}
 .kbnewt:nth-child(1) .kbnewb{width:22px}
 .kbnewt:nth-child(2) .kbnewb{width:48px}
 .kbnewt:nth-child(3) .kbnewb{width:74px}
 .kbnewt.on .kbnewb{background:var(--gold);opacity:.75}
+/* A width being carried onto the sheet: the tile stays where it is -- a
+   palette does not empty when you take from it -- and this is what follows
+   the finger. It is under the finger rather than beside it, because that is
+   where the thing being carried is. */
+.kbghost{position:fixed;height:30px;margin:-15px 0 0 0;transform:translateX(-50%);
+         background:var(--gold);opacity:.5;pointer-events:none;z-index:60}
+/* and the cell it would land on says so */
+.kbk.drop{border-color:var(--gold);background:var(--goldsf)}
 /* The keyboard's name, at the head of its own page: a line, like every other
    field. */
 .kbnm{font-size:1.05rem;margin-bottom:14px}
 .kblist{display:flex;flex-direction:column;margin-top:4px}
-.kbrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;
+/* Under .kblist, because a row of the LIST and a row of the KEYBOARD are two
+   different things wearing one class name, and this rule comes later in the
+   file. Unscoped, every row of every keyboard drawn anywhere in the app was
+   64 tall with a line under it and 10 of padding -- the free plan's board,
+   the editor's, the one on this list. Nothing threw and nothing looked
+   broken; the keyboard was simply a keyboard with rules ruled across it.
+
+   Renaming one of the two is the other fix and is a bigger one: .kbrow is
+   what kbHTML() writes for every row and what kbDragTo() moves keys between.
+   Scoping the newer of the two is the whole of what was wrong. */
+.kblist .kbrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;
        padding:10px 2px;border:0;border-bottom:1px solid var(--line);
        background:none;color:var(--tx);font-family:inherit;text-align:left}
 .kbrowk{flex:0 0 96px;width:96px}
 .kbrown{flex:1 1 auto;min-width:0;font-size:.95rem;overflow:hidden;
         text-overflow:ellipsis;white-space:nowrap}
-.kbrow .kbon{flex:0 0 auto}
-.kbrow svg.go{flex:0 0 auto;color:var(--txm)}
+.kblist .kbrow .kbon{flex:0 0 auto}
+.kblist .kbrow svg.go{flex:0 0 auto;color:var(--txm)}
 .kbadd{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
        padding:10px 2px;border:0;background:none;color:var(--gold);
        font-family:inherit;font-size:.92rem;text-align:left}
