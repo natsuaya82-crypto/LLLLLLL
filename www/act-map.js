@@ -81,6 +81,8 @@ act('kbHeadRow', kbHeadRow);
 act('kbHeadCol', kbHeadCol);
 act('kbCut', kbCut);
 act('kbAlign', kbAlign);
+act('kbInsAsk', kbInsAsk);
+act('kbIns', kbIns);
 act('kbUndo', kbUndo);
 act('kbRedo', kbRedo);
 act('kbGoLay', kbGoLay);

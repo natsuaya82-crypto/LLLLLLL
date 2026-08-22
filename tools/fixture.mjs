@@ -807,6 +807,15 @@ export function halfDone(){
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
+    /* the + asking which side of the selected row a new one goes on. The two
+       answers replace the alignments and the bin while it asks, so this is
+       the only face they can be pressed from. */
+    ['a row selected, asking where a new one goes', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                               kbAdd('qwerty'); kbLay = 0; kbHeadRow(1); kbInsAsk();
+                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                               const h = vKb();
+                                               KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                               SET.plan = 'free'; return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
     ['a column of the keyboard selected', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);

@@ -849,13 +849,40 @@ var KBH=null;
 function kbHeadIs(k, i){ return !!KBH && KBH.k===k && KBH.i===i; }
 function kbHeadRow(ri){
   ri=parseInt(ri, 10)||0;
-  KBH=kbHeadIs('r', ri)? null : {k:'r', i:ri};
+  KBH=kbHeadIs('r', ri)? null : {k:'r', i:ri, ins:false};
   kbSel=null; render();
 }
 function kbHeadCol(ci){
   ci=parseInt(ci, 10)||0;
   KBH=kbHeadIs('c', ci)? null : {k:'c', i:ci};
   kbSel=null; render();
+}
+/* ---- a row going in where you are, rather than at the foot -------------
+   The dashed row at the bottom adds one AFTER the last. There was no way to
+   put one in the middle, which on a sheet is the ordinary thing to want.
+   「行を選択して+ボタン押したら上か下に追加するが出て押したら追加される
+   とかは？」
+
+   The + does not add. It ASKS -- and the two answers take the place of the
+   three alignments and the bin while it is asking, because those are about
+   the row that is there and this is about one that is not. Pressing the +
+   again puts the question away. */
+function kbInsAsk(){
+  if(!KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  KBH.ins=!KBH.ins;
+  render();
+}
+function kbIns(down){
+  var b=kbEdit(), rows, at;
+  if(!b || !KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  rows=kbLayer().rows;
+  at=Math.max(0, Math.min(KBH.i+(down? 1 : 0), rows.length));
+  rows.splice(at, 0, [kbKey('lt', '')]);
+  /* and the selection follows the row it was on, which has moved down by one
+     if the new one went in above it */
+  KBH={k:'r', i:down? KBH.i : KBH.i+1};
+  kbSel=null;
+  saveKb(); render();
 }
 /* And the one button that takes it away, whichever of the two it is. */
 function kbCut(){
@@ -1292,7 +1319,7 @@ function kbTileTo(e){
     KBT.on=true;
     KBT.ghost=document.createElement('div');
     KBT.ghost.className='kbghost';
-    KBT.ghost.style.width=(KBT.w*26)+'px';
+    KBT.ghost.style.width=kbCellW(KBT.w, kbCols(kbLayer().rows));
     document.body.appendChild(KBT.ghost);
   }
   e.preventDefault();
@@ -1563,8 +1590,14 @@ function kbNoted(){
    another, and the new one is board 1 too, wearing the old one's history:
    the step back would put a layout that belongs to a deleted keyboard onto a
    keyboard that never had it. That is not a step back, it is a different
-   keyboard arriving. So making one and deleting one both forget. */
-function kbForget(){ KBU={id:'', cur:'', u:[], r:[]}; }
+   keyboard arriving. So making one and deleting one both forget.
+
+   The SELECTION goes with it for the same reason and it is the same sentence:
+   "row 3" means row 3 of a board, and the board is gone. Leaving it behind
+   lights up a row of the new keyboard that nobody pressed, with the bin above
+   it up and ready. viewReset() clears it on the way to another screen; this
+   is the other way to arrive somewhere else without leaving the screen. */
+function kbForget(){ KBU={id:'', cur:'', u:[], r:[]}; KBH=null; }
 /* Both steps are the same move in opposite directions, so they are one
    function told which way. What comes off one stack goes onto the other, and
    the layout put back is a copy -- JSON out and JSON in -- so nothing on
@@ -1596,18 +1629,26 @@ function kbTb(name, icon, label, off){
     (off? ' disabled' : '') + ' aria-label="'+esc(label)+'">'+icon+'</button>';
 }
 function kbToolHTML(){
-  var row=!!KBH && KBH.k==='r';
+  var row=!!KBH && KBH.k==='r', ask=row && !!KBH.ins;
   return '<div class="kbtool">'+
     kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
     kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
     '<span class="kbtgap"></span>'+
-    '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
-    '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
-    '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>'+
-    kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH)+
+    (ask
+      ? '<button class="kbtb"' + DO('kbIns', [false]) +
+          ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
+        '<button class="kbtb"' + DO('kbIns', [true]) +
+          ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>'
+      : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
+          ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
+        '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
+          ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
+        '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
+          ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
+    '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
+      ((row && kbRoomRow())? '' : ' disabled') +
+      ' aria-label="'+esc(t('kb.row.ins'))+'">'+ICON_ADD+'</button>'+
+    (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH))+
     '</div>';
 }
 /* Making another is choosing a pattern again, on a screen of its own rather
@@ -2006,11 +2047,18 @@ function kbEditFnHTML(key){
    opening it -- one mode, one press to leave it. */
 var kbNew1=0;
 function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
+/* How wide a key of w is ON THIS SHEET, as a calc the stylesheet owns the
+   numbers in. The sheet is --kbw across and kbCols() columns wide, a column is
+   half a key, and a key gives back --kbgap of that to the space beside it. */
+function kbCellW(w, cols){
+  return 'calc(var(--kbw) / '+cols+' * '+(kbU(w))+' - var(--kbgap))';
+}
 function kbNewHTML(){
+  var cols=kbCols(kbLayer().rows);
   return '<div class="kbnew" id="kbnew">'+[1,2,3].map(function(w){
     return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
-      ' data-w="'+w+'" aria-label="'+esc(t('kb.w'))+' '+w+'">'+
-      '<span class="kbnewb" style="flex:'+w+'"></span></button>';
+      ' data-w="'+w+'" style="width:'+kbCellW(w, cols)+'"'+
+      ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
   }).join('')+'</div>';
 }
 /* Which slot the alphabet is being opened for. */

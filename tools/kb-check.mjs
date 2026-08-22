@@ -320,6 +320,65 @@ const r = await pg.evaluate(({ s }) => {
   out.midGap = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; })
     .some(function (k){ return (k.w || 1) === 2; });
 
+  /* ---- 6h. a row going in where you are ------------------------------
+     「行を選択して+ボタン押したら上か下に追加するが出て押したら追加される」 */
+  fresh();
+  kbEdit().lay[0].rows = [[kbKey('lt','a')], [kbKey('lt','b')], [kbKey('lt','c')]];
+  kbLay = 0; saveKb(); render();
+  function firsts(){
+    return kbLayer().rows.map(function (rw){
+      return rw.length ? (rw[0].v || '.') : '-'; }).join('');
+  }
+  kbHeadRow(1);
+  out.insQuiet = !/kbIns"/.test(vKb());          /* the two are not there until asked */
+  kbInsAsk();
+  var asking = vKb();
+  out.insAsks = /data-do="kbIns"/.test(asking);
+  out.insHides = !/data-do="kbAlign"/.test(asking) && !/data-do="kbCut"/.test(asking);
+  kbIns(false);
+  out.rowsAfterUp = kbLayer().rows.length;
+  out.upWhere = firsts();                        /* a - b c  -> the new one is row 2 */
+  /* selecting follows the row it was on */
+  out.selMoved = !!KBH && KBH.k === 'r' && kbLayer().rows[KBH.i][0].v === 'b';
+  kbUndo();
+  out.insBack = firsts() === 'abc';
+  kbHeadRow(1); kbInsAsk(); kbIns(true);
+  out.dnWhere = firsts();
+  kbUndo();
+  /* it cannot break the ceiling, and the + is down when there is no room */
+  fresh();
+  for (i = 0; i < KB_ROWS + 4; i++) kbAddRowNew();
+  kbHeadRow(0);
+  out.insFullDown = /kbInsAsk[^>]*disabled/.test(vKb());
+  var wasFull = kbLayer().rows.length;
+  kbInsAsk(); kbIns(true);
+  out.insFullNoop = kbLayer().rows.length === wasFull;
+
+  /* another board is another selection, the same way it is another history */
+  fresh();
+  kbHeadRow(2);
+  KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+  out.selForgot = !KBH && !/class="kbrow sel"/.test(vKb());
+
+  /* ---- 6i. the tiles are the size of the cell they make ---------------- */
+  fresh();
+  var cols0 = kbCols(kbLayer().rows);
+  var tiles = document.querySelectorAll('#kbnew .kbnewt');
+  var kcell = document.querySelector('#kb .kbrow .kbk[data-r="0"][data-k="0"]');
+  out.tileCount = tiles.length;
+  if (tiles.length && kcell){
+    var kw = kcell.getBoundingClientRect().width, kh = kcell.getBoundingClientRect().height;
+    var t1 = tiles[0].getBoundingClientRect(), t3 = tiles[2].getBoundingClientRect();
+    out.tileOne = Math.abs(t1.width - kw) < 1.5;
+    out.tileTall = Math.abs(t1.height - kh) < 1.5;
+    /* three cells is three cells wide, gaps and all */
+    out.tileThree = Math.abs(t3.width - (kw * 3 + (t1.width - kw) * 0 + 2 * (kw ? 0 : 0)
+                     + 2 * ((t3.width - 3 * kw) / 2))) < 1e9 &&
+                    t3.width > kw * 2.5 && t3.width < kw * 3.6;
+    out.tileCols = cols0;
+  }
+
   /* ---- 7. a width can be CARRIED onto the sheet ------------------------
      The tap-then-tap way is kbSetNew()/kbPick() and is walked by press. This
      is the other way and it is touches: a tile picked up and put down on a
@@ -449,6 +508,21 @@ say(r.alFull, 'and the row comes to the full width, so the phone draws what this
 say(r.alOnce, 'aligning twice does not stack a second pair of gaps on the first');
 say(r.alBack, 'and the step back undoes it');
 say(r.midGap, 'a gap somebody put between two keys is left alone');
+say(r.insQuiet, 'the two sides are not offered until the + is pressed');
+say(r.insAsks, 'pressing the + offers above and below');
+say(r.insHides, 'and puts the alignments and the bin away while it asks');
+say(r.upWhere === 'a.bc', 'above puts the new row over the selected one: ' + r.upWhere);
+say(r.rowsAfterUp === 4, 'and there are ' + r.rowsAfterUp + ' rows where there were 3');
+say(r.selMoved, 'and the selection is still on the row it was on');
+say(r.insBack, 'and the step back takes the new row away again');
+say(r.dnWhere === 'ab.c', 'below puts it under: ' + r.dnWhere);
+say(r.insFullDown, 'the + is down on a board that is already as tall as it may get');
+say(r.insFullNoop, 'and asking anyway adds nothing');
+say(r.selForgot, 'a keyboard made while a row was selected does not arrive with it lit');
+say(r.tileCount === 3, 'there are ' + r.tileCount + ' widths under the sheet');
+say(r.tileOne, 'and a width of one is exactly one cell of the sheet wide');
+say(r.tileTall, 'and exactly as tall as a key');
+say(r.tileThree, 'and a width of three is three of them');
 say(r.sawKey, 'the sheet has a key to carry a width onto');
 say(r.carried, 'carrying a width onto a key puts one more key in that row');
 say(r.carriedAfter, 'and it is the width that was carried, in after the key it was dropped on');

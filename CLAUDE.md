@@ -868,7 +868,7 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds forty-five things: the row that goes is the one pressed
+`tools/kb-check.mjs` holds sixty things: the row that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not
 removed** (a cell spanning b–d, with c taken out, spans b–c); the half key that
@@ -903,7 +903,7 @@ own digits face from the beginning. Nothing is overwritten: the key goes IN at
 the front of the last row, or into a row of its own, and a face with room for
 neither is not offered a + at all.
 
-Fifteen bugs were put back and watched going red before any of it was believed.
+Twenty bugs were put back and watched going red before any of it was believed.
 The two the check found on its first run were real and are worth keeping: the
 history was recorded only from the editor's **render**, so a change made by any
 other road had nothing behind it — it is recorded from `saveKb()` as well now,
@@ -1164,7 +1164,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 366`, `screens the mirror
 rendered: 275`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 9208  (220/220 distinct names)` for the same
+`press` prints `buttons pressed: 9445  (222/222 distinct names)` for the same
 reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
@@ -1240,7 +1240,7 @@ It fell to 8453 when `wdMode` and the six faces in `tools/fixture.mjs` that set
 it came out — those six were being walked in a state the app could no longer be
 in — and coverage did not move: 213 of 213 names, still.
 
-**It was 8683 for three sessions' work integrated in one day, and is 9208 now.**
+**It was 8683 for three sessions' work integrated in one day, and is 9445 now.**
 Two of the moves inside it are worth keeping. `setWldDl` was reported by
 `press` as never pressed, and the reason was not that it sits behind a plan:
 the fixture did not seed `WLD`, so the first press of `setWldHide` hid the row
@@ -1262,7 +1262,9 @@ faces of this chapter that did not have it. The +492 after THAT is the head of
 a row and of a column becoming a selection rather than a delete: two faces of
 the fixture where something is selected, each carrying the whole sheet plus
 four buttons that are only up while it is, and `screens walked` moved 366 → 368
-with them.
+with them, and +237 again for the + that puts a row in where you are standing
+rather than at the foot — one more button on every render of the editor, and
+one more face of the fixture, the one where it is asking which side.
 
 `screens the mirror rendered` fell from 377 to 275 in the same stretch, and
 that one IS attributed: `i18n-check` renders every screen once per plan, and

@@ -564,6 +564,15 @@ var ICON_ALC='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="n
 var ICON_ALR='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
   'stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M4 6h16"/><path d="M11 12h9"/><path d="M7 18h13"/></svg>';
+/* A row going in above the one selected, and below it: an arrow into a line.
+   Not a plain arrow -- what these two answer is WHICH SIDE of the line the new
+   row lands on, so the line is the half that has to be drawn. */
+var ICON_INUP='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 19h16"/><path d="M12 15V5"/><path d="M8 9l4-4 4 4"/></svg>';
+var ICON_INDN='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 5h16"/><path d="M12 9v10"/><path d="M8 15l4 4 4-4"/></svg>';
 /* And taking the selected row or column away. A bin rather than a ⊖: this one
    is not a mark on the thing it removes, it is a button in a row of buttons,
    and it needs to say which of them is the dangerous one. */

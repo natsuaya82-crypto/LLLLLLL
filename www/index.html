@@ -251,17 +251,24 @@ canvas.pkc{width:34px;height:34px;display:block}
    only reason a bare vw is honest here. The real key is (100vw - 9 gaps)/10
    wide and 52 tall; this one is 44 tall, so it wants 44/52 of that width, and
    both sides of the sum carry the same vw -- the ratio cancels the screen out.
-   The gap goes with it: 5 * 44/52 is 4.2, which is 2.1 of margin on each key.
+   The gap goes with it: 5 * 44/52 is 4.2, which is --kbgap, half on each key.
 
-   8割くらい, asked for; 83 is where the shape lands. */
-.kb.kbsheet{width:83vw;margin:2px auto 0;--kh:44px;gap:5px}
+   8割くらい, asked for; 83 is where the shape lands.
+
+   The two numbers are variables because the row of widths UNDER the sheet has
+   to be drawn to the same cell as the sheet itself -- a tile that is not the
+   size of the thing it makes says nothing about what it makes.
+   「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
+   kbNewHTML() writes calc() over these two, so the number lives here only. */
+:root{--kbw:83vw;--kbgap:4.2px}
+.kb.kbsheet{width:var(--kbw);margin:2px auto 0;--kh:44px;gap:5px}
 /* No gap between COLUMNS -- a column is half a key, so a gap there would be
    counted twice on a whole key and twelve times on a space bar. The space
    between two keys is the keys' own margin, which is the same 4 whatever they
    span. */
 .kb.kbsheet .kbrow, .kbhdr{display:grid;gap:0;position:relative;
      grid-template-columns:repeat(var(--kc, 20), 1fr)}
-.kb.kbsheet .kbk{min-width:0;margin:0 2.1px}
+.kb.kbsheet .kbk{min-width:0;margin:0 calc(var(--kbgap) / 2)}
 .kb.kbsheet .kbk.addrow{grid-column:1/-1}
 /* The letters across the top and the numbers down the side, and both of them
    are how a whole column and a whole row go. They are 44 tall for that
@@ -346,6 +353,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbtb{min-width:44px;min-height:44px;background:none;border:0;padding:0;
       color:var(--gold);display:flex;align-items:center;justify-content:center}
 .kbtb[disabled]{color:var(--txm);opacity:.28}
+.kbtb.on{color:var(--gold);background:var(--goldsf);border-radius:9px}
 .kbtb.bad{color:var(--bad)}
 .kbtb.bad[disabled]{color:var(--txm)}
 .kbadd{display:flex;gap:8px;margin-top:12px}
@@ -1631,21 +1639,26 @@ a.set{text-decoration:none}
 /* Three widths to put on the keyboard: press one, then press where it goes.
    The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
    nobody has been told. */
-.kbnew{display:flex;gap:8px;margin-top:12px;align-items:center}
-.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;border-radius:10px;
-        border:1px solid var(--line);background:none;display:flex;align-items:center}
+/* Three widths to put on the keyboard, drawn as the KEYS they make: a tile is
+   one cell of the sheet, or two, or three, at the sheet's own cell and the
+   sheet's own height. It used to be a fixed 22/48/74 pill with a grey bar in
+   it, which is a picture of a width rather than the width.
+   「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
+   kbNewHTML() gives each its width in calc() over --kbw, because how many
+   columns the sheet has is the layout's answer and changes with it. */
+.kbnew{display:flex;gap:var(--kbgap);margin-top:12px;align-items:center;
+       width:var(--kbw);margin-left:auto;margin-right:auto}
+.kbnewt{flex:0 0 auto;min-height:44px;height:44px;padding:0;border-radius:9px;
+        border:1px solid var(--line);background:var(--sf);
+        display:flex;align-items:center;justify-content:center}
 .kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
-.kbnewb{display:block;height:22px;border-radius:4px;background:var(--tx);opacity:.28}
-.kbnewt:nth-child(1) .kbnewb{width:22px}
-.kbnewt:nth-child(2) .kbnewb{width:48px}
-.kbnewt:nth-child(3) .kbnewb{width:74px}
-.kbnewt.on .kbnewb{background:var(--gold);opacity:.75}
 /* A width being carried onto the sheet: the tile stays where it is -- a
    palette does not empty when you take from it -- and this is what follows
    the finger. It is under the finger rather than beside it, because that is
    where the thing being carried is. */
-.kbghost{position:fixed;height:30px;margin:-15px 0 0 0;transform:translateX(-50%);
-         background:var(--gold);opacity:.5;pointer-events:none;z-index:60}
+.kbghost{position:fixed;height:44px;margin:-22px 0 0 0;transform:translateX(-50%);
+         border-radius:9px;background:var(--gold);opacity:.45;
+         pointer-events:none;z-index:60}
 /* and the cell it would land on says so */
 .kbk.drop{border-color:var(--gold);background:var(--goldsf)}
 /* The keyboard's name, at the head of its own page: a line, like every other
