@@ -738,12 +738,21 @@ function pwHas(ln){
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
    below, and a bake that fails sends the photograph as it was. */
+/* The line exactly as it was typed, private use code points and all. Not
+   stored on anything: it lives from the press that sends to the ink being
+   cut. */
+var PWRAW='';
 function pwSend(){
   /* Back to roman before anything is kept. What the Lingua keyboard typed is
      private use code points and they go no further than the field: a post
      carries the roman spelling and its ink, and a code point nobody else's
      font has would be a square box on somebody else's phone. */
   var ln=puaRoman(String(PW.ln||'')).trim();
+  /* The line as typed, kept for the ink cut below: what the Lingua keyboard
+     put there is the language, and what any other keyboard put there is not.
+     It is read again inside the callbacks the bake and the voice run through,
+     by which time PW may already be the next post. */
+  PWRAW=String(PW.ln||'').trim();
   if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */
@@ -775,7 +784,7 @@ function pwSendWith(ln, pics, vo){
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
-            ln:ln, ink:postInk(ln), dir:scriptDir(),
+            ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
@@ -902,8 +911,37 @@ function postCut(ln){
 /* The same cut, filed so a letter used twelve times travels once. `g` is the
    shapes, `s` is the line: a number is an index into `g`, a string is itself
    -- a space, a full stop, a character somebody borrowed rather than drew. */
-function postInk(ln){
-  var cut=postCut(ln), g=[], s=[], seen=[], i, k, key;
+/* The line as it was TYPED, cut into shapes and text.
+   ------------------------------------------------------------------
+   postInk() below cuts the roman line with the alphabet, so every letter this
+   language has a shape for becomes a shape -- whichever keyboard typed it.
+   That is right for a post written before this existed and wrong for one
+   written now: a sentence typed on the phone's own QWERTY is not this
+   language and must not arrive as it.
+   「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
+
+   What the Lingua keyboard typed is a private use code point and nothing else
+   on a phone types one, so the cut is the character itself: a code point in
+   the range is that letter's strokes, and everything else -- roman, kana,
+   punctuation -- is text and stays text. A post already renders a run of text
+   as text, which is what a half-drawn alphabet has always given. */
+function postCutTyped(raw){
+  var s=String(raw||''), lts=ltOrder(LETTERS.filter(function(l){
+        return l.st && l.st.length; })), cut=[], txt='', i, at;
+  for(i=0;i<s.length;i++){
+    at=s.charCodeAt(i)-PUA0;
+    if(at>=0 && at<lts.length){
+      if(txt){ cut.push({t:txt}); txt=''; }
+      cut.push({st:lts[at].st});
+    } else txt+=s.charAt(i);
+  }
+  if(txt) cut.push({t:txt});
+  return cut;
+}
+function postInkTyped(raw){ return inkOfCut(postCutTyped(raw)); }
+function postInk(ln){ return inkOfCut(postCut(ln)); }
+function inkOfCut(cut){
+  var g=[], s=[], seen=[], i, k, key;
   for(i=0;i<cut.length;i++){
     if(cut[i].t!==undefined){ s.push(cut[i].t); continue; }
     key=JSON.stringify(cut[i].st);
@@ -1559,7 +1597,7 @@ function pwSaveEdit(ln){
   var p=postById(PW.ed), mn;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   mn=String(PW.mn||'').trim() || postGlossLine(postGloss(ln));
-  p.ln=ln; p.ink=postInk(ln); p.mn=mn;
+  p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
   /* The translations were of the old sentence. They are dropped rather than
      left to be shown under a line they are no longer about, and asked for
      again -- which lands late, on a post that already exists, exactly as it
