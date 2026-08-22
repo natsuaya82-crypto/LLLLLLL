@@ -1,0 +1,244 @@
+# What the stylesheet looked like when NO ROUNDED BOX was written down.
+# tools/box-check.mjs fails on anything here that is not on this list.
+# Taking a line OUT is progress and needs nobody. Putting one IN is the
+# owner's, in its own commit. 「角丸やめろ」
+.abcell | border
+.abcell | border-radius
+.abctl button | border
+.abctl button | border-radius
+.abmark | border
+.abmark | border-radius
+.abtn | border-radius
+.bar | border-radius
+.bpic | border-radius
+.btn | border-radius
+.btn.apple | border
+.btn.google | border
+.cand .ck .ckb | border
+.cand .ck .ckb | border-radius
+.capwarn | border
+.capwarn | border-radius
+.card | border
+.card | border-radius
+.cardbox | border-radius
+.chip | border
+.chip | border-radius
+.chk button | border
+.chk button | border-radius
+.chk | border
+.chk | border-radius
+.cvst | border
+.cvst | border-radius
+.exlb | border
+.exlb | border-radius
+.fab | border-radius
+.fcard | border
+.fcard | border-radius
+.gborrow .gbx | border
+.gborrow .gbx | border-radius
+.gborrow | border
+.gborrow | border-radius
+.gcanv | border
+.gcanv | border-radius
+.gdemo | border
+.gdemo | border-radius
+.gpiece | border
+.gpiece | border-radius
+.grip | border-radius
+.gtile canvas | border-radius
+.gtile | border
+.gtile | border-radius
+.impfile | border
+.impfile | border-radius
+.imptab | border
+.imptab | border-radius
+.ipamine b | border
+.ipamine b | border-radius
+.kbe | border
+.kbe | border-radius
+.kbk | border
+.kbk | border-radius
+.kbk.addrow | border
+.kbmk | border-radius
+.kbnewb | border-radius
+.kbnewt | border
+.kbnewt | border-radius
+.kbout | border
+.kbout | border-radius
+.kbpat | border
+.kbpat | border-radius
+.kbring | border
+.kbring | border-radius
+.kbrng::-moz-range-thumb | border-radius
+.kbrng::-moz-range-track | border-radius
+.kbrng::-webkit-slider-runnable-track | border-radius
+.kbrng::-webkit-slider-thumb | border-radius
+.kbsk | border-radius
+.kbtab | border
+.kbtab | border-radius
+.kbx | border-radius
+.link | border
+.link | border-radius
+.lock .tag | border
+.lock .tag | border-radius
+.lock | border
+.lock | border-radius
+.lpo | border
+.lpo | border-radius
+.ltc | border
+.ltc | border-radius
+.ltgrid.ltpick .ltc | border-radius
+.ltx | border-radius
+.meedit | border
+.meedit | border-radius
+.mkdone | border-radius
+.mkdot | border
+.mkdot | border-radius
+.mkh | border
+.mkr | border-radius
+.mkrng::-webkit-slider-runnable-track | border-radius
+.mkrng::-webkit-slider-thumb | border-radius
+.mksw | border-radius
+.mkt | border-radius
+.mrep | border
+.mrep | border-radius
+.navdo | border-radius
+.nextcard | border
+.nextcard | border-radius
+.ntrow | border
+.ntrow | border-radius
+.ob .btn.ghost | border
+.ob .dot | border-radius
+.obchb | border
+.obchb | border-radius
+.obhadd | border
+.obhadd | border-radius
+.obheard | border
+.obheard | border-radius
+.obhp | border
+.obhp | border-radius
+.oblang | border
+.oblang | border-radius
+.obsnd | border
+.obsnd | border-radius
+.obsrow | border
+.obsrow | border-radius
+.pav | border-radius
+.ph | border
+.ph | border-radius
+.ph2 | border
+.ph2 | border-radius
+.phk | border
+.phk | border-radius
+.phkd | border
+.phkd | border-radius
+.picpick | border
+.picpick | border-radius
+.pkch | border
+.pkch | border-radius
+.pkclear | border
+.pkclear | border-radius
+.pktab | border
+.pktab | border-radius
+.plan .badge | border
+.plan .badge | border-radius
+.plan button | border
+.plan button | border-radius
+.plan | border
+.plan | border-radius
+.plangtag | border
+.plangtag | border-radius
+.plfree .badge | border
+.plfree .badge | border-radius
+.pmenu | border
+.pmenu | border-radius
+.pmi | border-radius
+.povo | border
+.povo | border-radius
+.ppic | border
+.ppic | border-radius
+.ptile | border
+.ptile | border-radius
+.pvbox button | border
+.pvbox button | border-radius
+.pw | border
+.pw | border-radius
+.pwab | border
+.pwab | border-radius
+.pwout | border
+.pwout | border-radius
+.pwpic | border
+.pwpic | border-radius
+.pwpicn | border-radius
+.pwpicx::before | border-radius
+.pwq | border-radius
+.recent | border
+.recent | border-radius
+.rel | border
+.rel | border-radius
+.rowq .qo | border
+.rowq .qo | border-radius
+.rr2 | border
+.rr2 | border-radius
+.scin | border
+.scin | border-radius
+.scrpv | border
+.scrpv | border-radius
+.seqbox | border
+.seqbox | border-radius
+.sheet | border-radius
+.sndadd | border
+.sndadd | border-radius
+.sndchip | border
+.sndchip | border-radius
+.sndlt | border
+.sndlt | border-radius
+.sndp | border
+.sndp | border-radius
+.spc | border
+.spc | border-radius
+.spellrow | border
+.spellrow | border-radius
+.spv | border
+.spv | border-radius
+.sugask | border
+.sugask | border-radius
+.sugbox | border
+.sugbox | border-radius
+.sugchip | border
+.sugchip | border-radius
+.sugout | border
+.sugout | border-radius
+.swk | border-radius
+.swt | border-radius
+.sy | border
+.sy | border-radius
+.tab | border-radius
+.tabbar | border
+.tabbar | border-radius
+.thbar | border-radius
+.thl | border-radius
+.thmini | border
+.thmini | border-radius
+.thtick | border
+.thtick | border-radius
+.tk | border
+.tk | border-radius
+.tk.me | border-radius
+.tmk | border
+.tmk | border-radius
+.toast | border
+.toast | border-radius
+.upsell | border
+.upsell | border-radius
+.vodot | border-radius
+.wc | border
+.wc | border-radius
+.wctl button,.wctl2 button | border
+.wctl button,.wctl2 button | border-radius
+.weave | border
+.weave | border-radius
+.whfo | border
+.whfo | border-radius
+.wldrow | border
+.wldrow | border-radius

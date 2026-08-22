@@ -14,6 +14,7 @@
     "test": "node tools/gate.mjs",
     "assets": "node tools/assets-check.mjs",
     "face": "node tools/face-check.mjs",
+    "box": "node tools/box-check.mjs",
     "press": "node tools/press.mjs",
     "dead": "node tools/dead-check.mjs",
     "migrate": "node tools/migrate-check.mjs",
