@@ -1050,26 +1050,6 @@ function geLattice(p){
    next stroke came out bent. 「線は先に引いてその後にそれをラウンドにするか
    どうか選べる仕様にしない？」 So it is a thing done to a stroke now -- draw
    it, look at it, then decide -- and a new stroke always starts straight.
-
-   Both ways, and from the same starting point every time: the stroke as it
-   was drawn is kept in GE.flat, so bending is always applied to the straight
-   one rather than to whatever the last press left behind. Pressing twice
-   gives back exactly what was drawn, which the old one could not do -- it
-   turned the mode off and left the stroke bent.
-
-   How it bends depends on how it was made, because those are not the same
-   drawing. A dragged stroke goes back through geShape, which reads the
-   finger's own path where it still has it. A tapped one only has its interior
-   points marked as bends: geShape would thin it, and thinning something
-   somebody placed dot by dot is dropping what they placed.
-   A stroke restored by undo has no straight copy behind it and no raw path
-   either, so it is taken as it stands and treated as a tapped one -- that
-   never drops a point. */
-/* Bend the stroke you have just drawn, or straighten it again.
-   ROUND used to be armed BEFORE drawing: the button turned a mode on and the
-   next stroke came out bent. 「線は先に引いてその後にそれをラウンドにするか
-   どうか選べる仕様にしない？」 So it is a thing done to a stroke now -- draw
-   it, look at it, then decide -- and a new stroke always starts straight.
    Until one has been drawn there is nothing for it to be done to, which is
    what geBendable() puts the button down for.
 
