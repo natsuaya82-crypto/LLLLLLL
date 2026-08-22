@@ -125,6 +125,57 @@ const r = await pg.evaluate(({ s }) => {
   out.boards = kbBoards().length === brds;
   out.faces = KB.kbs[kbShow - 1].lay.length === faces;
 
+  /* ---- 7. a width can be CARRIED onto the sheet ------------------------
+     The tap-then-tap way is kbSetNew()/kbPick() and is walked by press. This
+     is the other way and it is touches: a tile picked up and put down on a
+     cell. 「あれ持っていけないの？」 It is dispatched for real rather than by
+     calling kbTileUp() with a made-up state, because what is under the finger
+     is the half that can be wrong. */
+  fresh();
+  function touch(el, type, x, y){
+    var t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
+    el.dispatchEvent(new TouchEvent(type, {
+      touches: type === 'touchend' ? [] : [t],
+      targetTouches: type === 'touchend' ? [] : [t],
+      changedTouches: [t], bubbles: true, cancelable: true }));
+  }
+  function mid(el){
+    var b = el.getBoundingClientRect();
+    return [b.left + b.width / 2, b.top + b.height / 2];
+  }
+  function carry(w, to){
+    var tile = document.querySelectorAll('#kbnew .kbnewt')[w - 1];
+    tile.scrollIntoView();
+    var a = mid(tile), b = mid(to);
+    touch(tile, 'touchstart', a[0], a[1]);
+    touch(tile, 'touchmove', a[0] + 30, a[1] - 30);   /* past the 12px it takes to start */
+    touch(tile, 'touchmove', b[0], b[1]);
+    touch(tile, 'touchend', b[0], b[1]);
+  }
+  var before = kbLayer().rows[0].length;
+  var k00 = document.querySelector('#kb .kbrow .kbk[data-r="0"][data-k="0"]');
+  out.sawKey = !!k00;
+  if (k00){
+    carry(2, k00);
+    var row0 = kbLayer().rows[0];
+    out.carried = row0.length === before + 1;
+    out.carriedAfter = row0.length === before + 1 && row0[1].w === 2;
+    out.carriedBack = (kbUndo(), kbLayer().rows[0].length === before);
+  }
+  /* and onto the dashed row at the foot, which is a row of its own */
+  fresh();
+  var rowsWas = kbLayer().rows.length;
+  var plus = document.querySelector('#kb .kbk.addrow');
+  out.sawPlus = !!plus;
+  if (plus){
+    carry(3, plus);
+    out.carriedRow = kbLayer().rows.length === rowsWas + 1;
+    out.carriedRowW = out.carriedRow &&
+      kbLayer().rows[rowsWas][0].w === 3;
+  }
+  /* nothing left behind on the page */
+  out.noGhost = !document.querySelector('.kbghost');
+
   /* ---- 7. and the two buttons say whether there is anywhere to go ------ */
   fresh();
   var first = vKb();
@@ -161,6 +212,14 @@ say(r.letters, 'no letter moved');
 say(r.words, 'no word moved');
 say(r.boards, 'no other keyboard moved');
 say(r.faces, 'no other face of this keyboard moved');
+say(r.sawKey, 'the sheet has a key to carry a width onto');
+say(r.carried, 'carrying a width onto a key puts one more key in that row');
+say(r.carriedAfter, 'and it is the width that was carried, in after the key it was dropped on');
+say(r.carriedBack, 'and the step back takes it away again');
+say(r.sawPlus, 'the sheet has the dashed row at its foot');
+say(r.carriedRow, 'carrying a width onto that makes a row of its own');
+say(r.carriedRowW, 'and the key in it is the width that was carried');
+say(r.noGhost, 'and nothing is left following the finger afterwards');
 say(r.hasUndo, 'the screen has a step back on it');
 say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');

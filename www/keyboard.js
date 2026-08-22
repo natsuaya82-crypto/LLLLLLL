@@ -1087,12 +1087,99 @@ function kbApplyHTML(){
    which is the whole reason a delay is there. */
 var KBD=null;
 function kbDragMount(){
-  var g=document.getElementById('kb');
-  if(!g) return;
-  g.addEventListener('touchstart', kbDown, false);
-  g.addEventListener('touchmove', kbDragTo, false);
-  g.addEventListener('touchend', kbUp, false);
-  g.addEventListener('touchcancel', kbUp, false);
+  var g=document.getElementById('kb'), n=document.getElementById('kbnew');
+  if(g){
+    g.addEventListener('touchstart', kbDown, false);
+    g.addEventListener('touchmove', kbDragTo, false);
+    g.addEventListener('touchend', kbUp, false);
+    g.addEventListener('touchcancel', kbUp, false);
+  }
+  if(n){
+    n.addEventListener('touchstart', kbTileDown, false);
+    n.addEventListener('touchmove', kbTileTo, false);
+    n.addEventListener('touchend', kbTileUp, false);
+    n.addEventListener('touchcancel', kbTileUp, false);
+  }
+}
+/* ---- carrying a width onto the sheet -----------------------------------
+   The three tiles under the sheet are the widths a new key can be, and they
+   were placed by pressing one and then pressing where it goes. That still
+   works, and it is what a tap does. This is the other way: pick the tile up
+   and put it down on the sheet. 「あれ持っていけないの？」
+
+   It is not the same gesture as moving a key and must not be: a key is HELD
+   first, because a key is also a thing you press to open, and a press and a
+   drag have to be told apart. A tile does one thing, so it comes away at
+   once -- which is what a palette is, in every program that has one.
+
+   Where it lands: on a key, the new one goes in after that key; on an empty
+   cell, at the end of that row; on the dashed row at the foot, in a row of
+   its own. Anywhere else, nothing happens and the tile goes back. */
+var KBT=null;
+function kbTileOf(el){
+  while(el && el.classList && !el.classList.contains('kbnewt')) el=el.parentNode;
+  return (el && el.classList && el.classList.contains('kbnewt'))? el : null;
+}
+function kbTileDown(e){
+  var b=kbTileOf(e.target), p=e.touches? e.touches[0] : e, w;
+  if(!b || !p) return;
+  w=parseInt(b.getAttribute('data-w'), 10)||1;
+  KBT={w:w, x:p.clientX, y:p.clientY, on:false, ghost:null, over:null};
+}
+/* The tile follows the finger as a copy of itself: the tile stays where it
+   is, because a palette does not empty when you take from it. */
+function kbTileTo(e){
+  var p=e.touches? e.touches[0] : e, dx, dy, over;
+  if(!KBT || !p) return;
+  dx=p.clientX-KBT.x; dy=p.clientY-KBT.y;
+  if(!KBT.on){
+    if(dx*dx+dy*dy<=144) return;
+    KBT.on=true;
+    KBT.ghost=document.createElement('div');
+    KBT.ghost.className='kbghost';
+    KBT.ghost.style.width=(KBT.w*26)+'px';
+    document.body.appendChild(KBT.ghost);
+  }
+  e.preventDefault();
+  KBT.ghost.style.left=p.clientX+'px';
+  KBT.ghost.style.top=p.clientY+'px';
+  over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
+  if(KBT.over===over) return;
+  if(KBT.over) KBT.over.classList.remove('drop');
+  KBT.over=over;
+  if(over) over.classList.add('drop');
+}
+function kbTileUp(e){
+  var d=KBT, over, ri, ki;
+  if(!d) return;
+  KBT=null;
+  if(d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+  if(d.over) d.over.classList.remove('drop');
+  if(!d.on) return;                       /* a tap: kbSetNew has it */
+  if(e && e.preventDefault) e.preventDefault();
+  over=d.over;
+  if(!over) return;
+  if(over.classList.contains('addrow')){ kbNew1=d.w; kbAddRowNew(); return; }
+  ri=parseInt(over.getAttribute('data-r'), 10);
+  ki=parseInt(over.getAttribute('data-k'), 10);
+  /* An empty cell carries neither, and it is the end of its row. */
+  if(isNaN(ri)) return kbDropAtEnd(over, d.w);
+  kbAddKey(ri, ki, d.w);
+}
+/* An empty cell is not a key and has no place of its own to be after, so what
+   it means is "the end of this row" -- which is the only thing an empty cell
+   at the end of a row can mean. The row is found by asking the cell which row
+   it is in, rather than by counting: the cells are drawn from the row and the
+   row is the DOM's answer. */
+function kbDropAtEnd(cell, w){
+  var g=document.getElementById('kb'), row=cell.parentNode, i, ri=-1, n;
+  if(!g || !row) return;
+  for(i=0;i<g.children.length;i++) if(g.children[i]===row) ri=i;
+  if(ri<0) return;
+  /* the header is #kb's first child and is not a row */
+  n=kbLayer().rows[ri-1];
+  if(!n || !n.length) return;
+  kbAddKey(ri-1, n.length-1, w);
 }
 /* The key a touch landed on. What is under a finger is the canvas or one of
    the four flick marks as often as it is the button. */
@@ -1681,10 +1768,10 @@ function kbEditFnHTML(key){
 var kbNew1=0;
 function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
 function kbNewHTML(){
-  return '<div class="kbnew">'+[1,2,3].map(function(w){
+  return '<div class="kbnew" id="kbnew">'+[1,2,3].map(function(w){
     return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
-      ' aria-label="'+esc(t('kb.w'))+' '+w+'"><span class="kbnewb" style="flex:'+w+'"></span>'+
-      '</button>';
+      ' data-w="'+w+'" aria-label="'+esc(t('kb.w'))+' '+w+'">'+
+      '<span class="kbnewb" style="flex:'+w+'"></span></button>';
   }).join('')+'</div>';
 }
 /* Which slot the alphabet is being opened for. */

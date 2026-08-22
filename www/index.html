@@ -1621,14 +1621,23 @@ a.set{text-decoration:none}
    The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
    nobody has been told. */
 .kbnew{display:flex;gap:8px;margin-top:12px;align-items:center}
-.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;border-radius:10px;
+/* Square, like the cells they go into. 「角丸きんし」 */
+.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;
         border:1px solid var(--line);background:none;display:flex;align-items:center}
 .kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
-.kbnewb{display:block;height:22px;border-radius:4px;background:var(--tx);opacity:.28}
+.kbnewb{display:block;height:22px;background:var(--tx);opacity:.28}
 .kbnewt:nth-child(1) .kbnewb{width:22px}
 .kbnewt:nth-child(2) .kbnewb{width:48px}
 .kbnewt:nth-child(3) .kbnewb{width:74px}
 .kbnewt.on .kbnewb{background:var(--gold);opacity:.75}
+/* A width being carried onto the sheet: the tile stays where it is -- a
+   palette does not empty when you take from it -- and this is what follows
+   the finger. It is under the finger rather than beside it, because that is
+   where the thing being carried is. */
+.kbghost{position:fixed;height:30px;margin:-15px 0 0 0;transform:translateX(-50%);
+         background:var(--gold);opacity:.5;pointer-events:none;z-index:60}
+/* and the cell it would land on says so */
+.kbk.drop{border-color:var(--gold);background:var(--goldsf)}
 /* The keyboard's name, at the head of its own page: a line, like every other
    field. */
 .kbnm{font-size:1.05rem;margin-bottom:14px}
