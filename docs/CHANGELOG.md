@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The pen is 24, and 24 is the ceiling — OWNER DECISION
+
+The pen had been walked up to 40 to see what a page of somebody's writing
+weighs, with a second thinner pen given to the editor's canvas so the lattice
+stayed visible under a finger. Both are out. 「24が限界やね」
+
+The reason is not weight. The lattice step is 36, so two strokes on adjacent
+dots are one step apart, and a pen wider than the step welds them: two strokes
+go in and one comes out, which is the app producing a letter that is not the
+one somebody drew. Measured through the real drawing code at the size a post
+is read at — 44px on a 3× phone, `tools/pen-gap.mjs` — pen 24 leaves white
+between them; 28, 32 and 40 leave none. The answer "then draw them two dots
+apart" was considered and rejected by the owner in the same breath, because a
+letter with two dots between its strokes is a different letter.
+「2あけだとだって書いた文字と別のもんができちゃうくない？」
+
+That also settles the second pen. A wide pen buries the dots under your
+finger, and a thinner editor pen was tried for exactly that — but a canvas
+drawn with a different pen from the font is the same bug backwards: what is
+under your finger stops being what comes out. One pen, everywhere.
+
+**Behaviour.** None. `GPEN.width` was already 24; what is new is that 24 is
+written down as a limit rather than a number somebody picked, with the
+measurement beside it. Nothing may raise it without a decision.
+
+**Data.** Nothing stored changes. Letters hold strokes, never ink — the pen is
+applied when a glyph is drawn, so a change to it would have redrawn every
+letter ever made, and this one changes nothing.
+
 ### A dot is a mark
 
 Saving a letter dropped every stroke with only one point in it, on the

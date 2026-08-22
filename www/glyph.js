@@ -46,10 +46,26 @@
 /* And then thinner again. 32 against a step of 36 is a pen very nearly as wide
    as the gap between two dots: a letter drawn carefully on the lattice comes
    out as one welded mass with the dots it was built on invisible under it.
-   「ペン太すぎて細かい今の点に合わないでズレる」 24 is two thirds of a step:
-   two dots apart still reads as two strokes, and the page is darker than half
-   a step would leave it. Half a step was tried and looked right in a picture;
-   what a phone shows is the thing to look at. 「24にしよう」 */
+   「ペン太すぎて細かい今の点に合わないでズレる」 24 is two thirds of a step,
+   and the page is darker than half a step would leave it. Half a step was
+   tried and looked right in a picture; what a phone shows is the thing to
+   look at. 「24にしよう」
+
+   24 is also the CEILING, and that is a limit rather than a preference. Two
+   strokes on ADJACENT dots are one step apart, and what a wider pen does to
+   them is not weight -- it is a different letter: two strokes go in and one
+   comes out. Measured through the real drawing code at the size a post is
+   read at, 44px on a 3x phone (tools/pen-gap.mjs), 24 leaves white between
+   them and 28, 32 and 40 leave none. "Then draw them two dots apart" is not
+   an answer, because a letter with two dots between its strokes is a
+   different letter.
+   「2あけだとだって書いた文字と別のもんができちゃうくない？」「24が限界やね」
+
+   The same sentence is why there is no second, thinner pen for the editor's
+   canvas. A wide pen buries the lattice under your finger, and a thinner one
+   there was tried for exactly that; but a canvas drawn with a different pen
+   from the font is this bug said backwards -- what is under your finger is
+   then not what comes out. One pen, everywhere. */
 var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
 
 /* Points land on a lattice, never wherever the finger stopped.
