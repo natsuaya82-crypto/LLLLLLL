@@ -171,15 +171,23 @@ await pg.addInitScript(() => {
   window.__plan = box.plan;
   window.__wrote = [];
   window.Capacitor = window.Capacitor || {};
-  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
-  window.Capacitor.Plugins.LinguaPlan = {
-    write: (o) => {
-      window.__wrote.push(o.plan);
-      try {
-        localStorage.setItem('__test.keychain', JSON.stringify({ plan: o.plan }));
-      } catch (e) {}
-      return Promise.resolve();
-    },
+  /* nativePromise, and NOT Capacitor.Plugins.
+     This faked Plugins.LinguaPlan.write, which is the door the app used to
+     knock on and which does not exist on a phone: Plugins is filled by
+     @capacitor/core and there is no bundler here. So the check and the code
+     shared one wrong assumption, agreed with each other, and went green while
+     the plan was written nowhere at all -- on a real device Plus came back as
+     free at the next launch and nothing here could see it.
+     What the bridge actually injects is nativePromise(plugin, method, args),
+     so that is what is faked. Going back to Plugins now turns this red. */
+  window.Capacitor.nativePromise = (plugin, method, args) => {
+    if (plugin !== 'LinguaPlan' || method !== 'write') {
+      return Promise.reject(new Error('no such method ' + plugin + '.' + method));
+    }
+    const p = (args || {}).plan;
+    window.__wrote.push(p);
+    try { localStorage.setItem('__test.keychain', JSON.stringify({ plan: p })); } catch (e) {}
+    return Promise.resolve();
   };
 });
 /* And the server, when a case asks for one. There is no Supabase on a Linux
