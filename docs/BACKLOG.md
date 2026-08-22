@@ -81,23 +81,31 @@ widened it onto the case the test exists for. Two reds were watched: without
 the clause, arriving cold says "that is no longer here"; with `fresh` forced
 true, reopening the sheet throws away what was typed and every meaning.
 
-## The face on `profile` does not follow the face on the phone
+## ~~The face on `profile` does not follow the face on the phone~~ — fixed
 
-`netMakeProfile()` writes `profile.av` once, when the account is made. Drawing
-a new letter, or setting a photograph, changes what `postAvatar()` answers and
-does not change the row — so a notice can draw a face somebody has not worn for
-a month.
+*Fixed 2026-08-22, owner confirmed:*「アイコンは全部更新したら更新したの
+表示でしょ」
 
-Not a silent gap: a notice with no face draws no face and nothing throws, and a
-post's own face is frozen onto the post anyway (rule 8), so nothing about the
-timeline is wrong. What is wrong is only the little face beside "somebody liked
-this".
+`netMakeProfile()` wrote `profile.av` once and nothing wrote it again, so the
+little face beside "somebody liked this" could be one somebody had not worn
+for a month. `netAvSync()` in `net.js` sends it now, from `bootSession()`.
 
-The fix is one call in the place ME is saved, and the reason it is not here is
-that it is a second write on a path that has none — every letter drawn would
-otherwise be a request. It wants a "changed since last time" test, which is a
-decision about how often, which is not this task's.
+**The entry said the reason not to do it was "a second write on a path that
+has none — every letter drawn would otherwise be a request", and that this
+wanted a decision about how often. Both were wrong, and the second followed
+from the first.** `postAvatar()` answers the photograph if there is one and
+otherwise the FIRST drawn letter, so it does not move when a letter is drawn
+— it moves when the first one is redrawn, or a photograph is set. Twice in a
+language's life. There was no frequency to decide: **send it when it differs**
+was always the whole answer, and `ME.avSent` makes the comparison local, so a
+launch where nothing moved asks the server nothing.
 
+The server was already ready and nobody had noticed: `schema.sql`'s
+`profile_edit` allows the update and `grant update (handle, display, av)`
+names the column.
+
+`post-check` holds three — it is sent when it has never been sent, it is NOT
+sent when nothing moved, and it goes as `PATCH`. All three reds were watched.
 
 ## Not now, because wordsheet.js has just moved
 

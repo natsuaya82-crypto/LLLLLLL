@@ -15,6 +15,33 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The face on a notice is the face you are wearing now
+
+The little face beside "somebody liked this" was the one your account was made
+with. Drawing a new first letter, or setting a photograph, changed your face
+everywhere in the app except there — `profile.av` was written once and never
+again, so a notice could draw a face you had not worn for a month.
+
+Nothing on the timeline was wrong: a post freezes its own face when it is
+written, so what anybody reads on a post is right. The notice is the one place
+that reads the profile row.
+
+`netAvSync()` sends it when it differs, from `bootSession()`. **It costs a
+request only on a launch where the face actually moved** — the comparison is
+against a local copy (`ME.avSent`), and what the face is made of does not
+change when a letter is drawn: it is the photograph if there is one, else the
+first drawn letter.
+
+**Newly stored:** `ME.avSent` on `lingua.me` — the copy of the face that was
+last sent. It is not part of who somebody is and is read by nothing else.
+
+`DEVICE CONFIRMED` — **no.** The `PATCH` reaching a real server cannot be
+checked here; `post-check` holds what goes out, not what arrives.
+
+---
+
+## Unreleased — code confirmed, **not yet confirmed on a device**
+
 ### キーボードを作る画面が表計算のシートになった
 
 これまで編集画面の盤は実機の盤そのもので、行は中身が何であれ幅を埋めていた。
