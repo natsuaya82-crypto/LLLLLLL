@@ -210,8 +210,19 @@ const R = await pg.evaluate(() => {
     SET.plan = pl;
     walkArg('set', vSet, SETS.map(x => x.id), 'vSet ' + pl);
   });
+  /* Both plans here too, for the same reason the settings rooms need both:
+     a grammar stage is not one screen any more. The calendar's two stages
+     carry a stepper -- how many months, how many days in a week -- and it is
+     paid, exactly as the base's is, so a free-only walk renders the stage
+     without it and calls the two buttons dead.
+     The stage LIST is asked for on the paid plan, because stAll() is where a
+     stage of somebody's own comes from and a walk that could not see one
+     would be walking a shorter app than exists. */
+  ['free', 'plus'].forEach(pl => {
+    SET.plan = pl;
+    walkArg('gram', vGram, stAll().map(p => p.id), 'vGram ' + pl);
+  });
   SET.plan = 'free';
-  walkArg('gram', vGram, stAll().map(p => p.id), 'vGram');
   /* The keyboard chapter is a list and each keyboard is a page. Board 0 is
      the free QWERTY and has no editor; the others have one, and the two are
      different screens. */

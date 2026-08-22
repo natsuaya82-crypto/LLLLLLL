@@ -425,6 +425,10 @@ defLang('es', (function(){
       "num.h"           : "Cifras",
       "num.big"         : "Hasta {0}",
       "num.base"        : "Base",
+      "cal.months"      : "Meses en un año",
+      "cal.week"        : "Días en una semana",
+      "num.wid"         : "En la pantalla de inicio",
+      "num.wid.how"     : "Mantén pulsada la pantalla de inicio → + → Lingua",
       "lt.marks"         : "Signos",
       "toc.gram"         : "Gramática",
       /* what the app proposes */
@@ -526,6 +530,10 @@ defLang('es', (function(){
       "stg.have.d"       : "Cómo se dice la posesión",
       "stg.count.t"      : "Contar",
       "stg.count.d"      : "Del uno al {0}",
+      "stg.month.t"      : "Meses",
+      "stg.month.d"      : "Las {0} partes de tu año",
+      "stg.wday.t"       : "Días de la semana",
+      "stg.wday.d"       : "Los {0} días de tu semana",
       /* the kinds of writing */
       "ws.kind"           : "Tipo de escritura",
       "ws.k.alpha"        : "Alfabeto",

@@ -381,6 +381,10 @@ defLang('ja', (function(){
       'num.h'           : '数字',
       'num.big'         : '{0}までです',
       'num.base'        : '進法',
+      'cal.months'      : '1年の月数',
+      'cal.week'        : '1週の日数',
+      'num.wid'         : 'ホーム画面では',
+      'num.wid.how'     : 'ホーム画面を長押し → + → Lingua',
       'lt.marks'        : '記号',
       'toc.gram'        : '文法',
       /* what the app proposes */
@@ -482,6 +486,10 @@ defLang('ja', (function(){
       'stg.have.d'       : '所有の表し方',
       'stg.count.t'      : '数詞',
       'stg.count.d'      : '1から{0}まで',
+      'stg.month.t'      : '月',
+      'stg.month.d'      : '1年を分ける{0}つ',
+      'stg.wday.t'       : '曜日',
+      'stg.wday.d'       : '1週の{0}日',
       /* the kinds of writing */
       'ws.kind'         : "文字の種類",
       'ws.k.alpha'      : "音素文字",

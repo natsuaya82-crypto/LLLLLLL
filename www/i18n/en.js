@@ -368,6 +368,10 @@ defLang('en', (function(){
       'num.h'           : 'Digits',
       'num.big'         : 'Up to {0}',
       'num.base'        : 'Base',
+      'cal.months'      : 'Months in a year',
+      'cal.week'        : 'Days in a week',
+      'num.wid'         : 'On the home screen',
+      'num.wid.how'     : 'Hold the Home Screen → + → Lingua',
       'lt.marks'        : 'Marks',
       'toc.gram'        : "Grammar",
       /* what the app proposes */
@@ -469,6 +473,10 @@ defLang('en', (function(){
       'stg.have.d'       : "How belonging is said",
       'stg.count.t'      : "Counting",
       'stg.count.d'      : "One to {0}",
+      'stg.month.t'      : 'Months',
+      'stg.month.d'      : 'The {0} parts of your year',
+      'stg.wday.t'       : 'Days of the week',
+      'stg.wday.d'       : 'The {0} days of your week',
       /* the kinds of writing */
       'ws.kind'         : "Kind of writing",
       'ws.k.alpha'      : "Alphabet",

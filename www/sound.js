@@ -672,6 +672,11 @@ function vLtset(){
     }())+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
+    /* And what these signs look like off the phone's home screen, which is
+       the one place a language goes without anybody typing. numbers.js says
+       why it is here and not a chapter of its own: there is nothing to make
+       in it. */
+    (k==='num'? numWidHTML() : '')+
     /* At the foot of the screen: a grid that grows is a grid you would have
        to scroll to the end of to add to. The free alphabet does not grow --
        the twenty-eight are there from the first second and drawing on them

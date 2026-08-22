@@ -386,8 +386,48 @@ function shareKbd(){
    same reason — a rule with one place to live. scriptSig() is the letters,
    verbatim, so a shape drawn a second ago is on the key. */
 function shareSig(){
+  /* The base is in here and the digits are not, because a digit IS a letter
+     and scriptSig() already walks every one of them -- drawing one, naming
+     one or giving one a value all move it. What it cannot see is the base
+     going 12 -> 10 with every digit already drawn: no letter changes, and
+     the widget would go on counting in twelve. */
   return scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+
-         (kbRomOn()? 'm':'-')+'|'+JSON.stringify(KB);
+         (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+JSON.stringify(KB);
+}
+/* ---- what the widgets read ---------------------------------------------
+   A second file in the same App Group, and a second program after the
+   keyboard: a clock and a date, on the home screen, in the person's own
+   digits.
+
+   Its own file rather than a corner of keyboard.json. The keyboard's file is
+   a keyboard -- a layout, faces, a conversion table -- and none of that is
+   what a clock needs; it needs ten shapes and a base. Putting the two in one
+   file would mean a widget that has to decode a keyboard to find out what a
+   3 looks like, and a name on disk that stops being true the day somebody
+   reads it.
+
+   Keyed by value and not a list, so a language missing a digit has a hole
+   rather than a shift: no zero means no "0" key, and the widget falls back
+   to a roman 0 in that one position instead of drawing every number wrong.
+   The comment on shareFace() asks for absent rather than null and this is
+   the same rule one level up. */
+function shareNums(){
+  var out={}, b=numBase(), v, l;
+  for(v=0;v<b;v++){
+    l=numByVal(v);
+    /* ltHasShape and not numBlank. Blank asks "has anybody touched this
+       slot", which is the right question for the base taking a digit away
+       and the wrong one here: a digit somebody NAMED but never drew has been
+       touched and still has nothing to put on a clock face. The widget wants
+       the same answer numFace() wants -- is there a sign to show -- so it
+       asks with the same predicate. */
+    if(ltHasShape(l)) out[String(v)]=shareFace(l.id);
+  }
+  return out;
+}
+function shareWidget(){
+  return {v:1, box:SHARE_BOX, base:numBase(), lang:langId, name:langName,
+          dg:shareNums()};
 }
 /* Whether there is a native side at all, and the one way to reach it.
 
@@ -423,12 +463,13 @@ function sharePlug(){
    waiting on it — but the one question worth answering later is "did it ever
    land", and the answer has to survive until something asks. */
 function sharePush(){
-  var sig=shareSig(), out=JSON.stringify(shareKbd()), p=sharePlug();
+  var sig=shareSig(), out=JSON.stringify(shareKbd()), p=sharePlug(),
+      num=JSON.stringify(shareWidget());
   if(sig===SHARE.sent) return;
   SHARE.sent=sig;
   if(!p){ SHARE.how='no bridge'; return; }
   SHARE.how='sent';
-  p('LinguaShare', 'write', {json:out, font:SFONT.b64||''})['catch'](function(e){
+  p('LinguaShare', 'write', {json:out, font:SFONT.b64||'', num:num})['catch'](function(e){
     SHARE.how='refused: '+((e && (e.message||e.errorMessage))? (e.message||e.errorMessage) : e);
   });
 }

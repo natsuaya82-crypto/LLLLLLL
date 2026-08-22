@@ -110,6 +110,26 @@ App Store Connect → Lingua → **収益化** → **サブスクリプション
 アップグレード・ダウングレードできます**。あとで Studio を出すときも同じ
 グループに入れてください。別グループにすると両方同時に契約できてしまいます。
 
+### ウィジェットのプロビジョニングプロファイル
+
+キーボードと同じことが、ウィジェットにもう一つ要ります。
+
+| | |
+|---|---|
+| バンドル ID | `com.tokinets.lingua.widget` |
+| プロファイル名 | `Lingua Widget Distribution` |
+| App Group | `group.com.tokinets.lingua`（キーボードと同じもの） |
+
+Identifiers に `com.tokinets.lingua.widget` を作り、App Groups を有効にして
+上のグループを選び、配布用プロファイルを `Lingua Widget Distribution` の名前で
+作ります。**これが無いと署名が通らず、ビルドが止まります。**
+
+拡張の中身は `ios/App/LinguaWidget/`。ホーム画面に置く時計と日付で、
+どちらも自作文字の数字で描きます。読むのは App Group の `widget.json` だけで、
+アプリには何も訊きません。
+
+---
+
 ### 商品 1 つ
 
 出すのは Plus だけです。Studio が売っていたのは通したモデルで、それは

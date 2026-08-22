@@ -656,6 +656,22 @@ canvas.pkc{width:34px;height:34px;display:block}
    gives each one its own advance, and a canvas with a height and no width is
    as wide as its own ratio says. */
 .tcln{display:inline-block;vertical-align:baseline;width:auto;height:1em}
+/* The widgets, as they come out, in the room that makes the signs they are
+   made of. No frame and no corner: iOS draws a widget's own ground, and this
+   is not the app drawing a box. */
+.numwrow{display:flex;gap:22px;align-items:center;margin:10px 0 2px}
+.numwf,.numwd{position:relative;width:118px;height:118px;flex:0 0 auto}
+.numwn{position:absolute;transform:translate(-50%,-50%);line-height:1;
+       white-space:nowrap;color:var(--tx)}
+.numwh{position:absolute;inset:0;width:100%;height:100%}
+.numwh line{stroke:var(--tx);stroke-linecap:butt}
+.numwc{fill:var(--tx)}
+.numwt{fill:var(--tx);opacity:.28}
+.numwd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.numwbig{line-height:1;white-space:nowrap;color:var(--tx)}
+.numwsm{line-height:1;white-space:nowrap;color:var(--tx);opacity:.55}
+.numrm{display:inline-block;font-size:.62em;line-height:1}
+.numwhow{margin-top:2px}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
 .pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
 .pwg{font-size:.76rem;color:var(--txm)}
@@ -2883,6 +2899,7 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 <script src="share.js"></script>
 <script src="import.js"></script>
 <script src="numbers.js"></script>
+<script src="cal.js"></script>
 <script src="otf5.js"></script>
 <script src="glyph.js"></script>
 <script src="card.js"></script>

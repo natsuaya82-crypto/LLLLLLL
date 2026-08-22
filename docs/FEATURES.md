@@ -85,6 +85,7 @@ Marked separately, because they are not the same question:
 | Your voice on a post — 30 seconds | shipped, **not device confirmed** | **yes** | yes | `post.vo = {f, ms}`; the bytes are a file in `Documents/Voices/`, never in `localStorage` | decided — 「30秒くらい」「ファイルに出す」「録音まで作る」 |
 | Editing your own post | shipped | yes | — | overwrites `ln`, `ink`, `mn`, `tr` on that post; `post.ed` is new | decided — the line and the meaning only 「文と意味だけ」, and it says `Edited` |
 | Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
+| A calendar of your own | shipped | **month and weekday names** | `gram`: choosing how many of each | `STG.months`, `STG.week`; the names are words with `slot` on them | decided — names and numerals only, no arithmetic of anybody's own (`www/cal.js`) |
 | A post shown three ways | shipped | **all three layers** | — | layers 1 and 2 frozen on the post; layer 3 computed now | decided — the daily three went out with the AI (2026-08-22) |
 | Post translated into natural languages at write time | **in progress** | yes | yes | `post.tr`, frozen on the post | decided — the seam is in (`postTr`, TR_SEAM); the translator is the reader's own device AI and is not wired up |
 | Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/`postCatchUp`. An account is required to read the timeline or post to it (decision 2026-08-18) |
