@@ -325,6 +325,17 @@ var LinguaFont = (function () {
     if (idx.length === 3) out.push([v[idx[0]], v[idx[1]], v[idx[2]]]);
     return out;
   }
+  // Whichever way hull() winds, a fill triangle winds the same. Two contours
+  // of opposite winding cancel where they overlap under non-zero fill, and
+  // the seam between two triangles is exactly such an overlap once a canvas
+  // draws the whole letter as one path -- which is what it must do, because
+  // filling each triangle on its own leaves a pale hairline along every cut
+  // where the two edges antialias against each other. In the font it never
+  // showed: the charstring writer sets each contour's winding itself.
+  var HULLCW = signedArea(hull([[0, 0], [10, 0], [0, 10]])) < 0;
+  function wound(tri) {
+    return (signedArea(tri) < 0) === HULLCW ? tri : [tri[2], tri[1], tri[0]];
+  }
   // The closed ring of a stroke's own polyline, with the repeated end point
   // dropped: what the finger went round, whether or not it was told to close.
   function fillRing(line) {
@@ -347,7 +358,7 @@ var LinguaFont = (function () {
       var line = toPolyline(st, pen && pen.curve);
       if (st.fill) {
         earCut(fillRing(line)).forEach(function (tri) {
-          add(tri.map(function (p) {
+          add(wound(tri).map(function (p) {
             return [Math.round(p[0]), Math.round(p[1])];
           }));
         });

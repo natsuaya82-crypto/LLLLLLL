@@ -55,6 +55,24 @@ const r = await pg.evaluate(({s}) => {
   out.bow     = ink([{ pts: bow }]);
   out.bowFill = ink([{ pts: bow, fill: true }]);
 
+  /* No seam. The inside is cut into triangles, and a canvas that fills each
+     contour on its own leaves a pale hairline along every cut -- two edges
+     antialiasing against each other never reach the coverage of one solid
+     area. Read the middle row of a filled square: every pixel between the
+     edges has to be the full ink, not 3/4 of it. */
+  var sq = [P(4,4), P(16,4), P(16,16), P(4,16)];
+  (function(){
+    var c = document.createElement('canvas'); c.width = 200; c.height = 200;
+    var x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, 200, 200);
+    inkStrokes(x, [{ pts: sq, closed: true, fill: true }], 200/800, 0, 0, '#000');
+    var d = x.getImageData(0, 100, 200, 1).data, i, lo = 999, hi = -1, pale = 0;
+    for (i = 0; i < 200; i++) if (d[i*4] < 250) { if (i < lo) lo = i; hi = i; }
+    for (i = lo + 3; i <= hi - 3; i++) if (d[i*4] > 8) pale++;
+    out.seam = pale;
+    out.span = hi - lo;
+  })();
+
   /* saved, read back, and drawn again -- a flag dropped on the way to
      storage looks exactly like a fill that was never asked for */
   var l = LETTERS[0];
@@ -80,6 +98,8 @@ say(r.lineFill === r.line,
     'two points have no inside: ' + r.line + 'px either way');
 say(r.bowFill > r.bow,
     'a stroke that crosses itself still inks: ' + r.bow + ' -> ' + r.bowFill + 'px');
+say(r.seam === 0,
+    'a filled square is solid across all ' + r.span + 'px of it, no seam at a cut');
 say(r.kept, 'the flag is still on the stroke after geSave()');
 say(r.reopened === r.filled,
     'saved and read back it draws the same ' + r.reopened + 'px');

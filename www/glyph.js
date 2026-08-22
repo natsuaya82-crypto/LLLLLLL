@@ -1543,13 +1543,17 @@ function geDraw(){
      are drawing is drawn by the same code as the letter on the key, the tile
      and the card. It was not, and a letter could have looked like one thing
      under your finger and another everywhere else. */
-  /* Two passes, one colour each: an area shows green while it is being built
-     so it can be told from a line at a glance. Green is the editor's alone --
-     on a key, a tile, a card and in the font a filled stroke is the letter's
-     own colour like every other stroke. */
-  var plain=[], area=[];
-  GE.st.forEach(function(s0){ (s0.fill? area : plain).push(s0); });
-  inkStrokes(x, plain, k, pad, pad, cssVar('--tx'));
+  /* Everything in the letter's own colour first, areas included -- what is
+     on the canvas is what the letter will look like, not a marked-up copy of
+     it. Then the outline of each area again in green, over its own ink.
+
+     The green is the LINE and only the line. Painting the inside green too
+     made the area and its edge one colour and the whole shape one green mass,
+     which is the difference this is here to draw. 「緑は線で塗りつぶしは線と
+     同じ色でしょ。差をつけないといけないやん」 */
+  var area=[];
+  GE.st.forEach(function(s0){ if(s0.fill) area.push({pts:s0.pts, closed:s0.closed, k:s0.k}); });
+  inkStrokes(x, GE.st, k, pad, pad, cssVar('--tx'));
   if(area.length) inkStrokes(x, area, k, pad, pad, cssVar('--fill'));
 
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2);
@@ -1606,15 +1610,23 @@ function phkHTML(sym, call){
 function inkStrokes(x, st, k, ox, oy, col){
   var cont=[];
   try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return; }
+  /* One path, filled once. Each contour used to be its own fill, which is
+     invisible while every contour is a nib laid along a line and overlapping
+     its neighbour squarely -- and not invisible at all once a filled area
+     arrives, because that is cut into triangles and every cut came back as a
+     pale hairline where two edges antialiased against each other. Non-zero
+     winding joins them into one shape instead, which is what glyphContours
+     winds them all the same way for. */
   x.fillStyle=col;
+  x.beginPath();
   cont.forEach(function(poly){
     if(poly.length<3) return;
-    x.beginPath();
     poly.forEach(function(p,j){
       if(j) x.lineTo(ox+p[0]*k, oy+p[1]*k); else x.moveTo(ox+p[0]*k, oy+p[1]*k);
     });
-    x.closePath(); x.fill();
+    x.closePath();
   });
+  x.fill();
 }
 /* What a canvas is a picture of: a letter named by its id in data-l, or
    whatever writes the sound named in data-r. Null when there is nothing
