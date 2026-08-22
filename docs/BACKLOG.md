@@ -111,20 +111,33 @@ page opens on the tall one, and `cardPlace()` lays the line into whichever
 shape is chosen rather than one fixed band. So the card sets a vertical script
 vertically, and nothing is flattened on the way.
 
-## Not now, because a rename is not a fix
+## ~~Not now, because a rename is not a fix~~ — done, and one of the four was
+## wrong
 
-These are real breaches of the naming rule in CLAUDE.md and none of them is a
-functional bug. Renaming an acted function means editing `act-map.js` twice —
-the string and the function — so a rename lands in exactly the files a feature
-change also lands in, and the diff stops being readable. Do them on their own,
-in one commit, with `npm test` either side.
+*Done on 2026-08-22, one commit each, and kept as the record of what the entry
+got wrong about itself.*
 
-- `postsRead` / `savePosts` / `saveMe` — the prefix says which chapter owns a
-  function, and `posts*` and `post*` are the same chapter under two names.
-- `wSetFil` / `wSetSort` — `w*` is word data and `words*` is the word list;
-  these two are the list's.
-- `gh*` — `g*` is grammar and `ge*` is the glyph editor. `gh*` is neither.
-- `notes.js` prefix mixing — `nt*` is the notebook; some of the file is not.
+- ~~`postsRead`~~ → `postRead`.
+- ~~`wSetFil` / `wSetSort`~~ → `wordsSetFil` / `wordsSetSort`.
+- ~~`gh*`~~ → `geHint*`, and `GH*` → `GE_HINT*`. It turned out to be the silent
+  demo canvas inside the glyph editor — ten functions that draw no text at all,
+  which is why it is right in ten languages. `ge*`'s child, so it says so.
+- ~~`notes.js` prefix mixing~~ → `note*` was `nt*` spelled long, so it went to
+  `nt*`. `openNote` and `vNotes` stayed; `open*` and `v*` are in CLAUDE.md.
+
+**`savePosts` and `saveMe` were listed here and should not have been.** The
+entry put them beside `postsRead` as if all three were a `posts*`/`post*`
+collision. They are not: they are `save*`, and `save*` is a family of exactly
+ten — `saveKb` `saveLetters` `saveMe` `saveNote` `saveNotes` `savePosts`
+`saveSnd` `saveStg` `saveWld` `saveWord` — every one of which names what it
+saves. Renaming two of the ten would have left eight, which is the tangle
+rather than the untangling.
+
+The reason it is worth writing down: **the rule already allowed this and the
+entry did not notice.** CLAUDE.md's own prefix list carries `open*`, which is
+twenty functions and is a verb, not a chapter. So a verb family was never an
+exception — what the rule is against is one chapter under two names, which is
+what the other four were. Settled in the decision log, 2026-08-22.
 
 ## The question the card bug was actually about
 
