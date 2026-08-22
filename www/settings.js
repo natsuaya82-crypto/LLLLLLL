@@ -74,8 +74,7 @@ function vSet(){
       '<button class="set" style="margin-top:14px;border-bottom:none"' +
         DO('setAuto', [SET.theme!=='system']) + '>'+
         '<span class="sl">'+t('theme.system')+'</span>'+
-        '<span class="sv"><span class="sw'+(SET.theme==='system'?' on':'')+'">'+
-        '<span class="swk"></span></span></span></button>'+
+        swtHTML(SET.theme==='system')+'</button>'+
       '';
   } else if(id==='read'){
     /* Down the page, one to a row, ticked -- not three words sharing the
@@ -122,8 +121,7 @@ function vSet(){
          「これは設定から公開非公開もかのう」 */
       '<button class="set" style="border-bottom:none"' + DO('setWldHide', [!wldHidden()]) + '>'+
       '<span class="sl">'+t('wld.public')+'</span>'+
-      '<span class="sv"><span class="sw'+(wldHidden()?'':' on')+'">'+
-      '<span class="swk"></span></span></span></button>'+
+      swtHTML(!wldHidden())+'</button>'+
       '';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
