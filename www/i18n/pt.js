@@ -1051,6 +1051,8 @@ defLang('pt', (function(){
       'post.thread'           : "Tópico",
       'post.re.to'            : "Respondendo a {0}",
       "tr.go"        : "Ler na minha língua",
+      "tr.edit"      : "Editar",
+      "tr.make"      : "Criar",
       "tr.left"        : "{0} restantes hoje",
       "tr.out"        : "Acabaram as três de hoje. O Plus lê todas.",
       "word.edit"        : "Editar",

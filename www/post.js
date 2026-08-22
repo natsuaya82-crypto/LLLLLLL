@@ -263,7 +263,7 @@ function vDrafts(){
         esc(t('post.draft.del'))+'">'+ICON_MINUS+'</button>'+
       '</div>';
   }
-  return '<div class="view">'+navTop(String(DRAFTS.length))+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     (out || '<div class="note">'+esc(t('post.draft.none'))+'</div>')+
     '</div></div>';
 }
@@ -1041,19 +1041,53 @@ function trOpen(id){
   if(trLeft()<=0){ go('plans'); toast(t('tr.out')); return; }
   trSpend(); TURNED[id]=1; render();
 }
+/* Which piece is open, and on which post. Not stored: it is a thing being
+   looked at, the same as TURNED. */
+var TRNEW=null;
+/* The sentence stays a sentence. Press any piece of it -- not only the red
+   ones -- and a bubble comes up under the panel saying what this language
+   says it with, what it means, and the one thing to do about it: a word that
+   is here can be opened, a word that is not can be made.
+   「赤関係なくまず 言語 いみ あるならedit ないなら make でいいでしょ」 */
+function trGap(id, key){
+  TRNEW=(TRNEW && TRNEW.id===id && TRNEW.k===key)? null : {id:id, k:key};
+  render();
+}
+function trEdit(hw){ TRNEW=null; openWord(hw); }
+function trNew(mn){
+  TRNEW=null;
+  openAdd('');
+  wEdit.mns=[String(mn||'')];
+  if(addW) addW.mns=[String(mn||'')];
+  wdSync();
+  render();
+  /* The sheet's body is built once, when openAdd hands it to openForm, so a
+     meaning put on wEdit after that is on the draft and on no screen. This is
+     the one place that redraws it. */
+  wdPaint();
+}
+function trBubbleHTML(x){
+  var w=x.w? findWord(x.w) : null;
+  return '<span class="trbub">'+
+    '<span class="trbw'+(myFontOn()?' sfont':'')+'">'+(x.w? esc(wOut(x.w)) : '')+'</span>'+
+    '<span class="trbm">'+esc(w? wMn(w) : x.miss)+'</span>'+
+    (x.w
+      ? '<button class="trbdo"' + DO('trEdit', [x.w]) + '>'+t('tr.edit')+'</button>'
+      : '<button class="trbdo"' + DO('trNew', [x.miss]) + '>'+t('tr.make')+'</button>')+
+  '</span>';
+}
 function trHTML(p){
   if(!TURNED[p.id]) return '';
-  var u=trUnits(postSay(p));
-  return '<div class="ptr'+(myFontOn()?' sfont':'')+'">'+u.map(function(x){
+  var u=trUnits(postSay(p)), open=(TRNEW && TRNEW.id===p.id)? TRNEW.k : '', n=-1, bub='';
+  var line=u.map(function(x){
     if(x.sp) return ' ';
-    if(x.w) return '<span class="trw">'+esc(wOut(x.w))+'</span>';
-    /* Red, and not a button. It was one -- press the gap, go and make the
-       word -- which is a nice idea, an unasked-for one, and a 19pt target in
-       the middle of a sentence. What was asked for was that the gap be
-       obvious. 「自然言語のまま残して赤文字とかにする。この単語ないのが
-       わかりやすいように」 */
-    return '<span class="trmiss">'+esc(x.miss)+'</span>';
-  }).join('')+'</div>';
+    n++;
+    var key=String(n), on=(open===key);
+    if(on) bub=trBubbleHTML(x);
+    return '<button class="trpc'+(x.miss? ' miss':'')+(on? ' on':'')+'"' +
+      DO('trGap', [p.id, key]) + '>'+esc(x.w? wOut(x.w) : x.miss)+'</button>';
+  }).join('');
+  return '<div class="ptr'+(myFontOn()?' sfont':'')+'">'+line+bub+'</div>';
 }
 function trBtnHTML(p){
   if(TURNED[p.id]) return '';

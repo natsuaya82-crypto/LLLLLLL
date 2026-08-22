@@ -1004,6 +1004,8 @@ defLang('es', (function(){
       'post.thread'           : "Hilo",
       'post.re.to'            : "Respondiendo a {0}",
       "tr.go"        : "Leerlo en mi lengua",
+      "tr.edit"      : "Editar",
+      "tr.make"      : "Crear",
       "tr.left"        : "{0} restantes hoy",
       "tr.out"        : "Se acabaron las tres de hoy. Plus las lee todas.",
       "word.edit"        : "Editar",

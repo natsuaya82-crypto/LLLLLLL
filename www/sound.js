@@ -132,7 +132,7 @@ function vAbugida(){
       '<div class="note">'+t('ab.notabugida')+'</div>'+
       '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button></div></div>';
-  return '<div class="view">'+navTop(cs.length+' × '+vs.length)+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
       return '<button class="seg'+(x===v?' on':'')+'"' + DO('abSetVow', [x]) + '>'+esc(x)+'</button>';
     }).join('')+'</div>'+
@@ -550,7 +550,7 @@ function ltKindRow(k){
 }
 function vLetters(){
   return '<div class="view">'+
-    navTop(ltShaped()+' / '+LETTERS.length)+
+    navTop()+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
@@ -651,7 +651,7 @@ function vLtset(){
      this id and finds nothing under any other sort. */
   var gid=(pick && ltSort==='own' && ltFil==='all')? 'ltgrid' : 'ltgrid-ro';
   return '<div class="view">'+
-    navTop(list.length===all.length? all.length : (list.length+' / '+all.length),
+    navTop('',
            ltWob
              ? '<button class="navq navdone"' + DO('ltWobEnd') + '>'+esc(t('kb.done'))+'</button>'
              : '')+

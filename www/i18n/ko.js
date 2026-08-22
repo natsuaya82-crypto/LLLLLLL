@@ -1217,6 +1217,8 @@ defLang('ko', (function(){
       'post.thread'           : "스레드",
       'post.re.to'            : "{0}에게 보내는 답글",
       "tr.go"        : "내 언어로 읽기",
+      "tr.edit"      : "편집",
+      "tr.make"      : "만들기",
       "tr.left"        : "오늘 {0}회 남음",
       "tr.out"        : "오늘의 3회를 다 썼습니다. Plus는 전부 읽습니다.",
       "word.edit"        : "편집",

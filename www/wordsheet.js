@@ -382,7 +382,7 @@ function vRelate(){
      picking a word is picking one off the list. */
   var on=wRel(w,k), list=wordsSeen().filter(function(x){ return x!==w; })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
-  return '<div class="view">'+navTop(on.length)+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     /* A word that means the same as this one is very often a word that does
        not exist yet -- that is WHY it is being written -- and the picker
        offered the dictionary and nothing else, so the answer to "what means
@@ -904,7 +904,7 @@ function fmrDel(id){
 }
 function vForms(){
   var a=fmRules();
-  return '<div class="view">'+navTop(a.length? String(a.length) : '')+
+  return '<div class="view">'+navTop()+
     '<div class="body">'+
 
     (a.length? '<div class="wdrows">'+a.map(function(r){

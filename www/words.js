@@ -126,7 +126,7 @@ FORM_OPEN.wmore=function(){ wordsMore(); };
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
-    navTop(WORDS.length+(can('words')?'':' / '+FREE_LIMIT),
+    navTop('',
            '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
              esc(t('words.more'))+'">'+ICON_DOTS+'</button>')+
     '<div class="chead">'+

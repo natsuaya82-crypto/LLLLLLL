@@ -1092,6 +1092,8 @@ defLang('fr', (function(){
       'post.thread'           : "Fil",
       'post.re.to'            : "En réponse à {0}",
       "tr.go"        : "Le lire dans ma langue",
+      "tr.edit"      : "Modifier",
+      "tr.make"      : "Créer",
       "tr.left"        : "{0} restantes aujourd’hui",
       "tr.out"        : "Les trois du jour sont faites. Plus les lit toutes.",
       "word.edit"        : "Modifier",

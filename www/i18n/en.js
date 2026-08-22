@@ -958,6 +958,8 @@ defLang('en', (function(){
       'post.thread'           : "Thread",
       'post.re.to'            : "Replying to {0}",
       'tr.go'       : "Say it in my language",
+      'tr.edit'     : "Edit",
+      'tr.make'     : "Make",
       'tr.left'       : "{0} left today",
       'tr.out'       : "That is today's three. Plus reads every post.",
       'word.edit'       : 'Edit',

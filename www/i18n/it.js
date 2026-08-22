@@ -1045,6 +1045,8 @@ defLang('it', (function(){
       'post.thread'           : "Conversazione",
       'post.re.to'            : "In risposta a {0}",
       "tr.go"        : "Leggerlo nella mia lingua",
+      "tr.edit"      : "Modifica",
+      "tr.make"      : "Crea",
       "tr.left"        : "{0} rimaste oggi",
       "tr.out"        : "Le tre di oggi sono finite. Plus le legge tutte.",
       "word.edit"        : "Modifica",

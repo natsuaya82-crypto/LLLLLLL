@@ -671,7 +671,7 @@ function vGlyph(){
      drawn, and vLetter is the screen about that. The canvas, the rail and the
      preview come to 844 exactly. */
   return '<div class="view">'+
-    navTop(pts)+
+    navTop()+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+

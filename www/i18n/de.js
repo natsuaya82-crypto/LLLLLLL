@@ -1033,6 +1033,8 @@ defLang('de', (function(){
       'post.thread'           : "Thread",
       'post.re.to'            : "Antwort an {0}",
       "tr.go"        : "In meiner Sprache lesen",
+      "tr.edit"      : "Ändern",
+      "tr.make"      : "Anlegen",
       "tr.left"        : "heute noch {0}",
       "tr.out"        : "Die drei von heute sind aufgebraucht. Plus liest alle.",
       "word.edit"        : "Bearbeiten",

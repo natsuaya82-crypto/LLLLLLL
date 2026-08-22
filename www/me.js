@@ -290,7 +290,7 @@ FORM_OPEN.me=function(){ openMe(); };
    empty, and in nothing else. */
 function vFollows(){
   var ers=(here().a==='ers'), list=ers? meFollowers() : meFollowing();
-  return '<div class="view">'+navTop(String(list.length))+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     (list.length
       ? list.map(function(h){
           return '<button class="ntrow"' + DO('go', ["find"]) + '>'+

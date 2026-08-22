@@ -1047,6 +1047,8 @@ defLang('zh', (function(){
       'post.thread'           : "对话",
       'post.re.to'            : "回复 {0}",
       "tr.go"        : "用我的语言读",
+      "tr.edit"      : "编辑",
+      "tr.make"      : "创建",
       "tr.left"        : "今天还剩 {0} 次",
       "tr.out"        : "今天的三次用完了。Plus 可以全部阅读。",
       "word.edit"        : "编辑",

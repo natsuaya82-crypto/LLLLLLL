@@ -484,7 +484,7 @@ function vGram(){
   var gOpen=gOpenOf();
   var p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
-    navTop(gOpen? '' : (stCount()+' / '+stAll().length))+
+    navTop()+
     '<div class="body">'+
     (p? stDetailHTML(p) : stListHTML())+
     '</div></div>';
