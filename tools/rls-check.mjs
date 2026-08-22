@@ -281,7 +281,51 @@ const CASES = [
   ['staff puts it back',                      'ok',     C, 0,
     `select post_show('${P}')`],
   ['and B sees it again',                     'ok',     B, 0,
-    `select 1 from post where id='${P}'`]
+    `select 1 from post where id='${P}'`],
+
+  /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
+     Taking the post down leaves whoever wrote it free to write it again. What
+     a ban IS, here, is one line in is_member() -- so the thing to attack is
+     not the column but every door is_member() stands in. */
+  ['B cannot ban A',                          'denied', B, 0,
+    `select account_ban('${A}','spam')`],
+  ['staff cannot ban staff',                  'denied', C, 0,
+    `select account_ban('${C}','spam')`],
+  ['staff bans B',                            'ok',     C, 0,
+    `select account_ban('${B}','spam')`],
+  ['and B cannot post',                       'denied', B, 0,
+    `insert into post(author,body) values ('${B}','{}'::jsonb)`],
+  ['nor like anything',                       'denied', B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','like')`],
+  ['nor follow anybody',                      'denied', B, 0,
+    `insert into follow(follower,followed) values ('${B}','${A}')`],
+  ['nor report anybody',                      'denied', B, 0,
+    `insert into report(actor,post,why) values ('${B}','${P}','spam')`],
+  ['nor rename themselves',                   'denied', B, 0,
+    `update profile set display='new' where id='${B}'`],
+  ['nor upload anything',                     'denied', B, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
+  ['nor lift it by hand',                     'denied', B, 0,
+    `update profile set banned_at=null where id='${B}'`],
+  ['nor by asking',                           'denied', B, 0,
+    `select account_unban('${B}')`],
+  /* Two things a ban must NOT do. Reading is the one that keeps somebody from
+     being told nothing at all, and the door marked exit is the one that being
+     thrown out of a place is never a reason to lock. */
+  ['B can still read the timeline',           'ok',     B, 0,
+    `select 1 from post where hidden_at is null`],
+  ['B can still leave',                       'ok',     B, 0,
+    `select 1 where (select count(*) from pg_proc p
+                       join pg_namespace n on n.oid=p.pronamespace
+                      where n.nspname='public' and p.proname='account_delete'
+                        and p.prosrc not like '%is_member%') = 1`],
+  ['staff lifts it',                          'ok',     C, 0,
+    `select account_unban('${B}')`],
+  /* A boost and not a like: B liked this post earlier in the file and took
+     only the boost back, so a second like is refused by the primary key and
+     would read as a ban that never lifted. */
+  ['and B writes again',                      'ok',     B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`]
 ];
 
 /* The shape of the file itself, which the prose in schema.sql promises and
@@ -342,6 +386,18 @@ const SHAPE = [
      select count(*) from (select 1 where
        has_column_privilege('authenticated','profile','staff','UPDATE')
        or has_column_privilege('anon','profile','staff','UPDATE')) q`, '0'],
+  ['nor lifting your own ban', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','profile','banned_at','UPDATE')
+       or has_column_privilege('anon','profile','banned_at','UPDATE')) q`, '0'],
+  /* A ban that only the app enforces is a ban that lasts until somebody uses
+     something that is not the app. is_member() is the one door every writing
+     policy in the file already stands behind, which is why it is where this
+     goes -- and why the line has to actually be in it. */
+  ['a ban is enforced by the server', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname='is_member'
+          and prosrc like '%banned_at%') <> 1) q`, '0'],
   ['nor is putting your own post back up', `
      select count(*) from (select 1 where
        has_column_privilege('authenticated','post','hidden_at','UPDATE')

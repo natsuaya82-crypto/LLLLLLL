@@ -421,12 +421,15 @@ export function halfDone(){
        under it and nothing to press. */
     ['the reports', () => { const keep = MODS;
         MODS = [{ id:1, why:'spam',  note:'', at:Date.now()-600000,
-                  who:'', pid:'ps1', ln:'kano mos tir', down:false },
+                  who:'veth', uid:'u1', out:false,
+                  pid:'ps1', ln:'kano mos tir', down:false },
                 { id:2, why:'abuse', note:'and again this morning',
-                  at:Date.now()-7200000, who:'', pid:'ps2', ln:'qel dross',
-                  down:true },
+                  at:Date.now()-7200000, who:'iri', uid:'u2', out:true,
+                  pid:'ps2', ln:'qel dross', down:true },
+                /* About an account and not a post: nothing to take down, and
+                   the only button on it is the one that matters. */
                 { id:3, why:'other', note:'', at:Date.now()-86400000,
-                  who:'iri', pid:'', ln:'', down:false }];
+                  who:'iri', uid:'u2', out:true, pid:'', ln:'', down:false }];
         window.route='mod'; NAV=[{r:'mod'}];
         const h = vMod(); MODS = keep; return h; }],
     /* The reports before the server has answered, and the reports when there
@@ -434,6 +437,12 @@ export function halfDone(){
     ['the reports, and there are none', () => { const keep = MODS; MODS = [];
         window.route='mod'; NAV=[{r:'mod'}];
         const h = vMod(); MODS = keep; return h; }],
+    /* The composer, for somebody who has been ejected. Every write they make
+       is refused by the server, and the line saying so is on no screen
+       otherwise -- NET_BANNED is empty for everybody else. */
+    ['the composer, for somebody stopped', () => { NET_BANNED = 'spam';
+        PW = pwBlank(); openPost(); const h = vForm();
+        NET_BANNED = ''; PW = pwBlank(); return h; }],
     /* Your own post, taken down. Only its author is ever handed one, so this
        is the only screen the line is ever on. */
     ['your own post, taken down', () => { const p = postById('p1'); p.down = true;

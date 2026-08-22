@@ -37,6 +37,8 @@ act('goMod', goMod);
 act('modLoad', modLoad);
 act('modDown', modDown);
 act('modUp', modUp);
+act('modOut', modOut);
+act('modIn', modIn);
 act('setPlansTerm', setPlansTerm);
 act('clearFq', clearFq);
 act('clearQ', clearQ);

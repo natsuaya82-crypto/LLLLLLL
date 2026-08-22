@@ -39,6 +39,11 @@ function modMark(pid, down){
   var i;
   for(i=0;i<((MODS||[]).length);i++) if(MODS[i].pid===pid) MODS[i].down=down;
 }
+/* And the same for the person, who can be behind any number of the rows. */
+function modMarkOut(uid, out){
+  var i;
+  for(i=0;i<((MODS||[]).length);i++) if(MODS[i].uid===uid) MODS[i].out=out;
+}
 function modWhy(pid){
   var i;
   for(i=0;i<((MODS||[]).length);i++) if(MODS[i].pid===pid) return MODS[i].why;
@@ -51,6 +56,24 @@ function modDown(pid){
 function modUp(pid){
   netShow(pid, function(){ modMark(pid, false); render(); },
           function(d, st){ toast(netWhy(d, st)); });
+}
+/* Ejecting somebody is the one thing on this screen that is about a person
+   rather than about a post, so it is the one thing that asks first. Taking a
+   post down can be undone by pressing the same row again; this can too, but
+   it is not the same size of mistake. */
+function modOut(uid){
+  if(!confirm(t('mod.out.sure'))) return;
+  netBan(uid, modWhyOf(uid), function(){ modMarkOut(uid, true); render(); },
+         function(d, st){ toast(netWhy(d, st)); });
+}
+function modIn(uid){
+  netUnban(uid, function(){ modMarkOut(uid, false); render(); },
+           function(d, st){ toast(netWhy(d, st)); });
+}
+function modWhyOf(uid){
+  var i;
+  for(i=0;i<((MODS||[]).length);i++) if(MODS[i].uid===uid) return MODS[i].why;
+  return 'other';
 }
 
 /* One report. The reason is the heading because it is what the list is sorted
@@ -71,6 +94,14 @@ function modRow(r){
       ? '<button class="btn'+(r.down? ' ghost' : ' bad')+'"' +
           DO(r.down? 'modUp' : 'modDown', [r.pid]) + '>'+
           esc(t(r.down? 'mod.up' : 'mod.down'))+'</button>'
+      : '')+
+    /* And the person behind it, which every report has -- a report about an
+       account has no post to take down and is often the one that needs this.
+       A report whose author has left carries no uid and offers nothing. */
+    (r.uid
+      ? '<button class="btn'+(r.out? ' ghost' : ' bad')+'"' +
+          DO(r.out? 'modIn' : 'modOut', [r.uid]) + '>'+
+          esc(t(r.out? 'mod.in' : 'mod.out', '@'+r.who))+'</button>'
       : '')+
     '</div>';
 }

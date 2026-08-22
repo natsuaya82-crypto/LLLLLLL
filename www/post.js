@@ -616,7 +616,12 @@ function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
      account here, so every reply said you were replying to yourself. */
-  return (to? '<div class="pwto">'+
+  /* Said at the top of the composer and again if the button is pressed. The
+     reason is not on it: the five words the report offered are ours to sort
+     by and are not an explanation anybody was given, and showing one here
+     would read as one. */
+  return (NET_BANNED? '<div class="pwout">'+esc(t('post.out'))+'</div>' : '')+
+    (to? '<div class="pwto">'+
       esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
       pwToHTML(to) : '')+
     /* The face you are about to post under, which is the one this post will
@@ -720,6 +725,11 @@ function pwHas(ln){
    below, and a bake that fails sends the photograph as it was. */
 function pwSend(){
   var ln=String(PW.ln||'').trim();
+  /* Every write this account makes is refused by the server -- is_member() in
+     schema.sql -- and a refusal from a policy arrives as a number. Said here
+     instead, before anything is baked or uploaded, because what somebody typed
+     should not be spent finding this out. */
+  if(NET_BANNED){ toast(t('post.out')); return; }
   if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */

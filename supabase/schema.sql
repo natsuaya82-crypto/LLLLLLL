@@ -75,6 +75,19 @@ alter table profile add column if not exists av jsonb;
 -- second one it should become a table of its own rather than a second boolean.
 alter table profile add column if not exists staff boolean not null default false;
 
+-- And whoever has been ejected. A timestamp rather than a boolean beside a
+-- date, for the same reason post.hidden_at is one: two columns that have to
+-- agree about whether something happened are two columns that can disagree.
+--
+-- What it does is one line in is_member() below, which every writing policy in
+-- this file already asks. So being banned is "nothing you do is written down"
+-- and not "you are logged out": somebody ejected can still read, and can still
+-- delete their account, because account_delete() does not ask is_member() and
+-- must not -- being thrown out of a place is not a reason to be locked out of
+-- the door marked exit.
+alter table profile add column if not exists banned_at timestamptz;
+alter table profile add column if not exists banned_why text;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
@@ -316,6 +329,8 @@ create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
      and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+     and not exists (select 1 from profile
+                      where id = auth.uid() and banned_at is not null)
 $$;
 
 -- And the one account that answers the reports. Written the same way and read
@@ -649,14 +664,45 @@ end $$;
 revoke all on function post_show(uuid) from public;
 grant execute on function post_show(uuid) to authenticated;
 
+-- Ejecting somebody, which is the other half of answering a report and is the
+-- half App Store guideline 1.2 asks for by name. Taking the post down leaves
+-- whoever wrote it free to write it again.
+--
+-- It is not a deletion and it is not a sign-out. is_member() above stops
+-- everything they would WRITE and nothing they can read, and account_delete()
+-- goes on working: being thrown out is not a reason to be trapped inside.
+create or replace function account_ban(p uuid, reason text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  -- Which would be a mistake and not an intention. Unbanning yourself would
+  -- still work -- is_staff() is a different question from is_member() -- so
+  -- this is a guard against a slip, not against being locked out.
+  if p = auth.uid() then raise exception 'not yourself'; end if;
+  update profile set banned_at = now(), banned_why = reason where id = p;
+end $$;
+revoke all on function account_ban(uuid, text) from public;
+grant execute on function account_ban(uuid, text) to authenticated;
+
+create or replace function account_unban(p uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  update profile set banned_at = null, banned_why = null where id = p;
+end $$;
+revoke all on function account_unban(uuid) from public;
+grant execute on function account_unban(uuid) to authenticated;
+
 -- ---------------------------------------------------------------------------
--- Three columns nobody may write
+-- The columns nobody may write
 --
 -- Row level security says which ROWS an account may change. It has nothing to
 -- say about which columns, so `profile_edit` -- "you may edit yourself" -- was
--- also "you may make yourself staff", and `post_edit` -- "you may edit your own
--- post" -- was also "you may put your own post back up". Both are one UPDATE
--- with one extra field in it.
+-- also "you may make yourself staff" and "you may lift your own ban", and
+-- `post_edit` -- "you may edit your own post" -- was also "you may put your own
+-- post back up". Each is one UPDATE with one extra field in it.
 --
 -- Column privileges are the tool for that, and they have to be said this way
 -- round: revoking one column from a role that holds UPDATE on the whole table

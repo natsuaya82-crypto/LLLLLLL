@@ -107,10 +107,8 @@ nothing in the app touches any of them.
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
 on it), cloud storage, publishing a language, quoting, the day's sentence, and
 push. Read that before starting anything online. Blocking, reporting, reading
-the reports, taking a post down and deleting an account are all done. What is
-left of moderation is **ejecting somebody** — App Store guideline 1.2 asks for
-the content to go and the account behind it to go with it, and only the first
-half is written.
+the reports, taking a post down, ejecting somebody and deleting an account are
+all done — both halves of what App Store guideline 1.2 asks for.
 
 **Somebody has to be made staff before any of it is reachable.** One SQL line
 in the Supabase dashboard, `supabase/setup.md` § 5. Nothing in the app grants

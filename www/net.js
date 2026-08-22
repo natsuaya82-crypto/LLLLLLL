@@ -435,15 +435,29 @@ function netReport(what, why, note, ok, bad){
    Who may is one column, `profile.staff`, set by hand in the dashboard and
    revoked from every role the app signs in as. There is no screen that grants
    it and there is not meant to be one. */
-var NET_STAFF=false;
+var NET_STAFF=false, NET_BANNED='';
 /* Asked once, at launch, and remembered. A screen that asked every time it
    was drawn would put a request behind every render. */
+/* One request, because it is one row and the app wants two things off it:
+   whether this account answers the reports, and whether it has been ejected.
+   The second is not something the app could work out otherwise -- every write
+   would simply be refused, and "the server said no" is not a sentence anybody
+   can act on. */
 function netStaff(ok){
   ok=ok||function(){};
-  if(!netSignedIn()){ NET_STAFF=false; ok(false); return; }
-  netGet('/rest/v1/profile?select=staff&limit=1&id=eq.'+encodeURIComponent(SESS.uid),
-    function(d){ NET_STAFF=!!(d && d.length && d[0].staff); ok(NET_STAFF); },
-    function(){ NET_STAFF=false; ok(false); });
+  if(!netSignedIn()){ NET_STAFF=false; NET_BANNED=''; ok(false); return; }
+  netGet('/rest/v1/profile?select=staff,banned_at,banned_why&limit=1&id=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var r=(d && d.length)? d[0] : null;
+      NET_STAFF=!!(r && r.staff);
+      /* The reason if there is one, and a space if there is not, so that the
+         string is true-y whenever the account is banned and the screens can
+         ask one question instead of two. */
+      NET_BANNED=(r && r.banned_at)? (String(r.banned_why||'') || ' ') : '';
+      ok(NET_STAFF);
+    },
+    function(){ NET_STAFF=false; NET_BANNED=''; ok(false); });
 }
 /* The reports, newest first, each carrying the thing it is about -- because a
    list of reasons with no posts under them is a list nobody can act on, and
@@ -456,17 +470,25 @@ function netStaff(ok){
 function netReports(ok, bad){
   if(!netSignedIn()){ bad(null, 0); return; }
   netGet('/rest/v1/report?select=id,why,note,created_at,'+
-         'post(id,author,body,hidden_at),who(handle)'+
+         'post(id,body,hidden_at,author(id,handle,banned_at)),'+
+         'who(id,handle,banned_at)'+
          '&order=created_at.desc&limit='+NET_PAGE,
     function(d){
-      var out=[], i, r, po;
+      var out=[], i, r, po, au;
       for(i=0;i<(d||[]).length;i++){
         r=d[i]||{}; po=r.post||null;
+        /* Whoever it is about: the author of the post, or -- when the report
+           is about an account and carries no post -- the account itself. Both
+           are the same embed of the same table, so both answer the same two
+           questions and the screen does not care which kind it is holding. */
+        au=(po && po.author) || r.who || null;
         out.push({ id:r.id,
                    why:String(r.why||'other'),
                    note:String(r.note||''),
                    at:Date.parse(r.created_at) || 0,
-                   who:(r.who && r.who.handle) || '',
+                   who:(au && au.handle) || '',
+                   uid:(au && au.id) || '',
+                   out:!!(au && au.banned_at),
                    pid:po? po.id : '',
                    ln:(po && po.body && po.body.ln) || '',
                    down:!!(po && po.hidden_at) });
@@ -487,6 +509,20 @@ function netHide(pid, why, ok, bad){
 function netShow(pid, ok, bad){
   if(!netSignedIn() || !pid){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/rpc/post_show', {p:pid},
+          SESS.at, function(){ ok(); }, bad);
+}
+/* And the person, which is the other half of answering a report: taking the
+   post down leaves whoever wrote it free to write it again. Nothing of theirs
+   is deleted and they are not signed out -- is_member() in schema.sql stops
+   what they would write and nothing they can read. */
+function netBan(uid, why, ok, bad){
+  if(!netSignedIn() || !uid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/account_ban', {p:uid, reason:String(why||'')},
+          SESS.at, function(){ ok(); }, bad);
+}
+function netUnban(uid, ok, bad){
+  if(!netSignedIn() || !uid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/account_unban', {p:uid},
           SESS.at, function(){ ok(); }, bad);
 }
 /* ---- searching, which is the server's ----------------------------------

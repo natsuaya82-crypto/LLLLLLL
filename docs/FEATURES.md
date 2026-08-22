@@ -296,10 +296,24 @@ staff", and "you may edit your own post" was also "you may put it back up".
 Both are one UPDATE with one extra field in it. The table-level grant is
 revoked at the foot of `schema.sql` and what may be written is named.
 
-**Still missing: ejecting somebody.** App Store guideline 1.2 asks for the
-offending content to go *and* for the account behind it to be ejected. Taking
-posts down one at a time is the first half. A ban would be one more column and
-one more line in `is_member()`; it is not written.
+**And ejecting somebody**, which is the other half guideline 1.2 asks for by
+name — taking the post down leaves whoever wrote it free to write it again.
+`profile.banned_at`, set by `account_ban()` and cleared by `account_unban()`,
+from a second button on the same report.
+
+What a ban IS, is one line in `is_member()`. Every writing policy in the file
+already stands behind that function, so there is one place to put it and no
+list of doors to keep in step. Three things it deliberately does not do: it
+does not delete anything, it does not sign anybody out, and it does not touch
+`account_delete()` — being thrown out of a place is not a reason to lock the
+door marked exit. `npm run rls` holds all three, and holds that a banned
+account can still read.
+
+**The person is told.** `NET_BANNED` comes off the same request that asks
+whether this account is staff, and the composer says so at the top and again
+if the button is pressed. Without it every write is refused by a policy, which
+arrives as a number. The reason is not shown: the five words the report offered
+are ours to sort by, not an explanation anybody was given.
 
 ### 8. Deleting an account, on the server — **done** (2026-08-21)
 
