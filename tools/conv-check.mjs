@@ -169,18 +169,48 @@ const R = await pg.evaluate(() => {
     const want = faceMap();
     const named = {};
     let drawn = 0, plain = 0;
+    /* A key does not say which letter it is -- that is what the face was
+       built FROM -- but it does carry the letter's shape when there is one.
+       `st` is shareInk(), the contours, and it is present exactly when the
+       letter is in the typing face. So the two directions can be said
+       without knowing the id:
+
+           a key that draws a shape types a code point
+           a key that draws no shape does not
+
+       The first is the one that was missing. The check used to say only
+       "a code point that appears must be the right one", so a key that
+       fell back to the letter's NAME -- a letter with a shape, typing
+       roman -- went past on the third branch and said nothing. That is
+       one letter out of thirty typing what the system keyboard types,
+       which is the whole bug in miniature and the shape it takes when
+       sharePua() answers '' for one letter instead of all of them. */
     (kbd.lay || []).forEach((face) => (face.rows || []).forEach((row) => row.forEach((k) => {
       if (k.k !== 'lt') return;
       const t = String(k.t || '');
-      /* which letter this key is is not on the key -- it is what the face
-         was built from -- so it is found by the code point it claims */
-      const mine = Object.keys(want).filter((id) => want[id] === t);
-      if (mine.length) { named[mine[0]] = 1; drawn++; return; }
       const code = t.charCodeAt(0);
-      if (code >= 0xE000 && code <= 0xF8FF)
+      const isPua = code >= 0xE000 && code <= 0xF8FF;
+      const hasShape = !!(k.st && k.st.length);
+      /* which letter this key is is found by the code point it claims */
+      const mine = Object.keys(want).filter((id) => want[id] === t);
+      if (mine.length) {
+        named[mine[0]] = 1; drawn++;
+        if (!hasShape)
+          fails.push(w + ': a key puts in U+' + code.toString(16).toUpperCase() +
+            ' and draws no shape -- the typing face has that code point, so' +
+            ' the key types a letter it does not show');
+        return;
+      }
+      if (isPua) {
         fails.push(w + ': a key puts in U+' + code.toString(16).toUpperCase() +
           ', which installTypeFont() gave to no letter -- so it types one' +
           ' shape and draws another, or draws nothing');
+        return;
+      }
+      if (hasShape)
+        fails.push(w + ': a key draws a shape and puts in ' + JSON.stringify(t) +
+          ' -- the letter is in the typing face and the key types its name,' +
+          ' so it comes out roman while every other key comes out drawn');
       else plain++;
     })));
     if (!drawn)
