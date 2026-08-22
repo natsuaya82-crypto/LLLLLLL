@@ -1550,14 +1550,24 @@ a.set{text-decoration:none}
    field. */
 .kbnm{font-size:1.05rem;margin-bottom:14px}
 .kblist{display:flex;flex-direction:column;margin-top:4px}
-.kbrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;
+/* Under .kblist, because a row of the LIST and a row of the KEYBOARD are two
+   different things wearing one class name, and this rule comes later in the
+   file. Unscoped, every row of every keyboard drawn anywhere in the app was
+   64 tall with a line under it and 10 of padding -- the free plan's board,
+   the editor's, the one on this list. Nothing threw and nothing looked
+   broken; the keyboard was simply a keyboard with rules ruled across it.
+
+   Renaming one of the two is the other fix and is a bigger one: .kbrow is
+   what kbHTML() writes for every row and what kbDragTo() moves keys between.
+   Scoping the newer of the two is the whole of what was wrong. */
+.kblist .kbrow{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;
        padding:10px 2px;border:0;border-bottom:1px solid var(--line);
        background:none;color:var(--tx);font-family:inherit;text-align:left}
 .kbrowk{flex:0 0 96px;width:96px}
 .kbrown{flex:1 1 auto;min-width:0;font-size:.95rem;overflow:hidden;
         text-overflow:ellipsis;white-space:nowrap}
-.kbrow .kbon{flex:0 0 auto}
-.kbrow svg.go{flex:0 0 auto;color:var(--txm)}
+.kblist .kbrow .kbon{flex:0 0 auto}
+.kblist .kbrow svg.go{flex:0 0 auto;color:var(--txm)}
 .kbadd{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
        padding:10px 2px;border:0;background:none;color:var(--gold);
        font-family:inherit;font-size:.92rem;text-align:left}
