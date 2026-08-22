@@ -415,7 +415,7 @@ function netLangSync(then){
             /* Something came back, so what the screens are holding is older
                than what is in storage. Read it in the way langOpen() does
                rather than patching each global by hand. */
-            langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
+            langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
             render();
           }
           stop(moved); return;

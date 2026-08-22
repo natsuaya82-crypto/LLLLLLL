@@ -137,7 +137,7 @@ const R = await pg.evaluate(() => {
   /* ---- and comes back ---------------------------------------------- */
   bkNoSet(0);
   bkTake(file);
-  langStore(); langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
+  langStore(); langRead(); ltRead(); ntRead(); stRead(); sndRead(); kbRead(); wldRead();
   const back = { words: WORDS.length, letters: LETTERS.length, known: !!LANGS[id] };
   /* Asked of kbStored() rather than of a field, and the field is the point:
      what was written into the file above is the shape the keyboard had when a
