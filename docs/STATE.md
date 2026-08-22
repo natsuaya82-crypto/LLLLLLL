@@ -29,8 +29,14 @@ the timeline was not on the server for a week after it was.
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` and `claude/cowork-migration-review-wfx1ra` are the same commit. A
-fresh clone is the current app, and nothing needs checking out.
+`master` is at `dbd73d4` (2026-08-22) and every other branch on the remote is
+behind it. A fresh clone is the current app, and nothing needs checking out.
+
+Do not name a branch here again. This paragraph has said "master and
+`<branch>` are the same commit" three times and been wrong twice, because a
+branch name is a fact with a shelf life of about a day.
+`claude/cowork-migration-review-wfx1ra`, which it named until 2026-08-22, is
+**233 commits behind**.
 
 That is worth a paragraph because it was not true, and the way it failed is the
 way it will fail again. `master` sat at 2026-08-04 while 144 commits of work
@@ -44,14 +50,24 @@ nothing in the repository that could have told it otherwise.
 So, before deciding anything is missing:
 
 ```
-git fetch origin master
-git rev-list --count origin/master..HEAD     # commits master has not got
-git rev-list --count HEAD..origin/master     # commits you have not got
+git fetch --all --prune                      # ALL of it, not just master
+git branch -r                                # what actually exists
+for b in $(git branch -r | grep -v HEAD); do \
+  echo "$b +$(git rev-list --count origin/master..$b)"; done
 ```
 
-Two zeros means what you are reading is the app. Anything else means find out
-why before writing a line, and say so to whoever is running the branch — a
-number here is the difference between "not built" and "not fetched".
+**`--all`, and `git branch -r`, are the point.** The two lines that used to be
+here compared HEAD against `origin/master` and nothing else, so they cannot see
+the case that has now happened twice: `master` itself being the stale thing. On
+2026-08-22 a session ran them, got two zeros, believed it, and spent a day
+refactoring a copy of the app that was **208 commits behind** — `claude/save`
+and `claude/yoo-kwdg28` were on the remote the whole time and a fresh clone had
+fetched neither. Two zeros against `master` proves you match `master`. It
+proves nothing about whether `master` is the app.
+
+If a branch is ahead of `master`, find out why before writing a line, and say
+so to whoever is running it — a number here is the difference between "not
+built" and "not fetched".
 
 The branch has only ever been ahead of `master` in a straight line, never
 beside it, so bringing `master` up is a fast-forward and cannot conflict.
@@ -61,8 +77,10 @@ Pushing to `master` is the owner's call and is asked for each time.
 
 ## 2. What is built and works
 
-- **The free plan, whole.** Twenty-eight letters (`a`–`z`, `!`, `?`), your own
-  shapes on them, the dictionary, the grammar stages, the notebook. `CLAUDE.md`
+- **The free plan, whole.** Thirty-eight letters — `a`–`z`, `!`, `?` and a
+  digit for every value of the base — your own shapes on them, the dictionary,
+  the grammar stages, the notebook. (Twenty-eight is what it was before the
+  free plan got its own digits; measured on a fresh free language it is 38.) `CLAUDE.md`
   → "What the free plan is" is the specification and is current.
 - **The system keyboard**, `ios/App/LinguaKeyboard/` — six Swift files. It is
   built, it is on TestFlight, and a person has typed their own letters on it on
@@ -197,15 +215,24 @@ under `lingua.sess`.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is fourteen checks and is the specification. `CLAUDE.md` → "The
-fourteen rules the gate enforces". It is minutes, not seconds: about two on a
+`npm test` is sixteen checks and is the specification. `CLAUDE.md` → "The
+sixteen rules the gate enforces". It is minutes, not seconds: about two on a
 laptop, six to ten in a slow container.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`, `post`,
-`backup` and `press` run only
-where somebody runs them, which means locally, which means you.
+passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`,
+`post`, `backup`, `fill`, `round` and `press` — thirteen of the sixteen — run
+only where somebody runs them, which means locally, which means you.
+
+`fill` and `round` were missing from that list and from `CLAUDE.md`, and it was
+not only a list. Both loaded playwright as `import { chromium } from
+'playwright'`, where the other eight browser checks call a `loadChromium()`
+that falls back to the global install. On a machine with playwright installed
+globally rather than into `node_modules`, both died at module load — and
+because `npm test` is an `&&` chain, **`round` and `press` never ran at all**.
+Fixed 2026-08-22 by making the two match the eight. A check nobody can run is
+a check that is not in the gate.
 
 `npm run rls` is not in `npm test` at all: it stands up a real PostgreSQL.
 Run it whenever `supabase/schema.sql` changes, which is the only time it can
@@ -228,7 +255,7 @@ be done from a Linux session.
 
 ---
 
-## 7. What is next, as of 2026-08-11
+## 7. What is next, as of 2026-08-22
 
 Ordered by what blocks shipping. Nothing here is started. Anything not on this
 list has either been done or was never agreed to — check `git log` before
@@ -249,76 +276,94 @@ assuming a thing is waiting for you.
 5. **Signing in from Settings** was fixed but has not been opened on a phone.
    `obBackTo`/`obReturn` in `www/onboard.js`.
 
+### Corrected on 2026-08-22, with what was measured
+
+Each of these was a claim this file made that the code no longer supported.
+Two of them were about capabilities that had been deleted.
+
+- **The gate was fourteen checks and could not finish.** §5 above.
+- **"A letter of a hidden kind is counted and unreachable"** — removed.
+  `LT_KINDS` is unconditional and `ltKindOf()` answers `num`, `mark` or
+  `alpha` for every letter, so the rooms sum to `LETTERS.length` on any plan.
+  Measured: a fresh free language is `0 / 38` with rooms 26 + 2 + 10; one that
+  paid and stopped is `0 / 40` with 27 + 2 + 11. `5 / 30` was never a total
+  this plan could produce — a-z, `!?` and the digits is 38.
+- **"`ai` lifts at Plus, `sug` only at Studio"** — removed. Neither capability
+  exists: `CAN` is ten names and `ai` and `sug` are not among them, and
+  `AI_FREE_DAILY`, `sugLeft` and `aiSpend` have no declaration anywhere. It
+  also contradicted item 4 three lines above it, which says the suggestion
+  ceiling went out with Studio. The same claim was still live in
+  `docs/FEATURE_RULES.md` § "What to report" and in two comments in
+  `www/core.js`; all three are gone.
+- **The counts.** All three were right when written at `cd712dd` and none had
+  been touched in the seventy-four commits since.
+
 ### Found and left alone, deliberately
 
-6. **A letter of a hidden kind is counted and unreachable.** The Letters header
-   says `5 / 30` while the rooms inside come to 29, because `ltKinds()` drops
-   the digits room on the free plan and `LETTERS.length` counts it anyway. It
-   can only happen to somebody who paid and stopped, which is the case the rest
-   of the chapter already worries about.
-7. **`ai` lifts at Plus, `sug` only at Studio, and they are the same ceiling.**
-   A Plus account is shown "3 left" on the word sheet forever and never spends
-   one. `CAN` in `core.js` states it in one place now. Which plan buys the AI is
-   a price and is the owner's to set, so nothing was changed.
-8. **`press` never reaches `kbReset`.** One button of 152, so nothing is
-   claimed about it.
-9. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
+6. **Nothing is out of `press`'s reach any more.** This said `kbReset` was
+   never pressed, one button of 152. Measured 2026-08-22: **213 of 213**
+   distinct names pressed, `kbReset` among them.
+7. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
    defined`. It is a font experiment and is not in the gate.
 
 ### Offered and not yet answered
 
-10. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
+8. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
     line early on 2026-08-11; `es5` and `dead` both passed it because they read
     with regular expressions, and the browser checks caught it ninety seconds
     later. Two seconds would have.
-11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
+9. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
-    grep cannot tell. `i18n-check` already renders 377 screens in 10 languages;
+    grep cannot tell. `i18n-check` already renders 271 screens in 10 languages;
     recording what `t()` was asked for would say it properly. It has to be a
     report, not a failure: a toast on an error is real and unwalked.
-12. **Two questions about screens, open since before the keyboard work.**
+10. **Two questions about screens, open since before the keyboard work.**
     Whether the post composer's line needs a visible border, and whether the
     word sheet's letter grid stays.
 
 ### Agreed long ago, never started
 
-13. The onboarding as motion only.
-14. Vertical writing — **written.** `DIRS` in `www/wsys.js`, bought with
+11. The onboarding as motion only.
+12. Vertical writing — **written.** `DIRS` in `www/wsys.js`, bought with
     `can('dir')`. This line was stale.
-15. A selectable line gap.
+13. A selectable line gap.
 
 ### The owner's, in a browser
 
-16. Supabase — the reset mail template and the Redirect URLs (see 3), and the
+14. Supabase — the reset mail template and the Redirect URLs (see 3), and the
     Apple and Google providers (`supabase/setup.md` § 4).
-16a. The Apple developer site — Sign in with Apple on the App ID, and the
+14a. The Apple developer site — Sign in with Apple on the App ID, and the
     profile regenerated after it. **Nothing builds until this is done**, so it
     is not one to leave. `docs/apple.md` § 2.
-16b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
-16c. Supabase — one SQL line making yourself staff, or the reports are on
+14b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
+14c. Supabase — one SQL line making yourself staff, or the reports are on
     nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
     updates a row that has to exist.
-17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
+15. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.
-18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
+16. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 
 ### Waiting on a phone
 
-19. Build **#48** is green and on TestFlight. What it has not had is a person:
+17. Build **#48** is green and on TestFlight. What it has not had is a person:
     tapping three dots with round off should give a corner, and saving a letter
     should land on the letters list.
-20. The free plan's keyboard chapter — the iOS steps, the hand-over state line,
+18. The free plan's keyboard chapter — the iOS steps, the hand-over state line,
     and the QWERTY with nothing to press — has only been seen in a browser,
     where the state line is always the red one because there is no bridge.
 
 ## If you are taking this over
 
-1. Check out the branch in §1. Do not work on `master`.
+1. Do what §1 says, in full — `git fetch --all` and `git branch -r`, not the
+   two `rev-list` lines alone. This line used to read "check out the branch in
+   §1, do not work on `master`" while §1 said `master` **was** the app and
+   nothing needed checking out. The two were read together exactly once, by a
+   session that then worked on the wrong copy for a day.
 2. Read `CLAUDE.md` end to end. It is the specification, not an overview, and
    every rule in it is a bug that already shipped once.
 3. Run `npm test` before touching anything, so you know what green looks like
-   here. It prints counts — `screens walked: 338`, `screens the mirror
-   rendered: 377`, `buttons pressed: 7884` — and a change meant to alter
-   nothing has to leave them where they are.
+   here. It prints counts — `screens walked: 363`, `screens the mirror
+   rendered: 271`, `buttons pressed: 8627` — and a change meant to alter
+   nothing has to leave them where they are. All three measured 2026-08-22.
 4. If what you are about to do is in §3, you are starting it, not continuing it.

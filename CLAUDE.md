@@ -11,9 +11,13 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > two `git rev-list` lines to run before deciding anything is missing —
 > `master` once sat 144 commits behind, and a session that cloned it reported
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
-> says the two that are easiest to get backwards: the timeline is
-> `localStorage` and no part of it is on the server yet, and CI runs three of
-> these twelve checks, so a green tick on a push is not the gate.
+> says the two that are easiest to get backwards: the timeline **is** on the
+> server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
+> `localStorage` as the copy that survives a bad network — and CI runs three of
+> these sixteen checks, so a green tick on a push is not the gate. This
+> paragraph said the opposite of the first of those for a week after it stopped
+> being true, which is the whole reason that file says how to re-check rather
+> than what to believe: `grep -n "rest/v1" www/net.js`.
 
 ## The rules that come before the code
 
@@ -166,14 +170,15 @@ backlog entry is not permission, and neither is the absence of one.
 
 ```
 npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv
-                # + card + word + post + backup + press
+                # + card + word + post + backup + fill + round + press
                 # green before a commit. It is minutes, not seconds -- on a
                 # laptop it is about two, and on a slow container six to ten.
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
-`npm run card` / `npm run word` / `npm run post` / `npm run backup` / `npm run press`.
+`npm run card` / `npm run word` / `npm run post` / `npm run backup` / `npm run fill` /
+`npm run round` / `npm run press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
@@ -198,7 +203,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The fourteen rules the gate enforces
+## The sixteen rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -483,6 +488,44 @@ one thing the table exists to avoid. The comment had been claiming the opposite 
 what the code did. `shareMapLts()`/`shareMapWords()` now ask every letter's key
 before asking `t.of()` for its slot, and the comment says so.
 
+### 11. A language is never lost
+
+`www/backup.js` (chapter 24) writes the open language out as one file, into
+Documents, where iOS puts it in the device backup and the Files app can show
+it. Everything a person makes lived in `localStorage` and nowhere else, which
+is one copy in a place with four ways to lose it: the app is deleted, the
+phone is replaced without a backup, WKWebView's storage is reclaimed, or a
+migration goes wrong. Three of those four are ordinary events.
+「データ消えるのだけはありえない」
+
+It was measured before it was built — thirty-eight drawn letters are 12.1 KB,
+a hundred words 13.2 KB, five thousand words 685 KB — so a free language is
+25 KB and the whole thing is written on every change. There is no partial
+state to reason about.
+
+Two rules, and `backup-check` holds both:
+
+**A write never destroys the last good file.** `keep()` rotates the previous
+one to `.1` and that to `.2` before writing, so a write that produces rubbish
+costs a generation instead of somebody's months.
+
+**A restore never overwrites a slice that is there.** It fills in one that is
+missing and stops — `langMigrate`'s argument, for the same reason. This is
+the one that matters: the way a backup destroys somebody's work is by
+*winning*, and a restore that overwrites is worse than no restore at all.
+
+The check wipes every slice the way iOS reclaiming storage would, reads the
+file back, and asks for the same words, the same letters and the language in
+the index again; then it restores an *older* file over a live language and
+demands that nothing moves. It also walks `SLICES`, so a tenth slice added to
+`core.js` and forgotten in `bkPack()` fails here rather than being quietly
+left out of every backup until somebody needs it.
+
+It cannot press the native side — `keep()` and `kept()` are Swift and there is
+no Swift on a Linux runner — so what it holds is everything on this side of
+that call. All three of its failures were made to happen before it was
+believed.
+
 ### 12. A card of a post is a picture of that post
 
 `www/post.js` has a line across it and rule 8 above holds it. The card is the
@@ -552,44 +595,6 @@ last one's letters on it.
 
 All four were made to fail before any of them was believed.
 
-### 11. A language is never lost
-
-`www/backup.js` (chapter 24) writes the open language out as one file, into
-Documents, where iOS puts it in the device backup and the Files app can show
-it. Everything a person makes lived in `localStorage` and nowhere else, which
-is one copy in a place with four ways to lose it: the app is deleted, the
-phone is replaced without a backup, WKWebView's storage is reclaimed, or a
-migration goes wrong. Three of those four are ordinary events.
-「データ消えるのだけはありえない」
-
-It was measured before it was built — thirty-eight drawn letters are 12.1 KB,
-a hundred words 13.2 KB, five thousand words 685 KB — so a free language is
-25 KB and the whole thing is written on every change. There is no partial
-state to reason about.
-
-Two rules, and `backup-check` holds both:
-
-**A write never destroys the last good file.** `keep()` rotates the previous
-one to `.1` and that to `.2` before writing, so a write that produces rubbish
-costs a generation instead of somebody's months.
-
-**A restore never overwrites a slice that is there.** It fills in one that is
-missing and stops — `langMigrate`'s argument, for the same reason. This is
-the one that matters: the way a backup destroys somebody's work is by
-*winning*, and a restore that overwrites is worse than no restore at all.
-
-The check wipes every slice the way iOS reclaiming storage would, reads the
-file back, and asks for the same words, the same letters and the language in
-the index again; then it restores an *older* file over a live language and
-demands that nothing moves. It also walks `SLICES`, so a tenth slice added to
-`core.js` and forgotten in `bkPack()` fails here rather than being quietly
-left out of every backup until somebody needs it.
-
-It cannot press the native side — `keep()` and `kept()` are Swift and there is
-no Swift on a Linux runner — so what it holds is everything on this side of
-that call. All three of its failures were made to happen before it was
-believed.
-
 ### 14. What happens after the second press
 
 `press-check` rebuilds the screen before every press, which is what lets it
@@ -610,6 +615,42 @@ what it holds -- the trail is told when a word is renamed and when one is
 deleted, because the trail names words and words move.
 
 Both of its failures were watched happening before either fix was believed.
+
+### 15. A filled area survives being put away
+
+Every other shape in this app is a nib swept along a line. A filled stroke is
+the one that is not: `glyphContours` cuts the inside of what was drawn round
+into triangles and adds them to the sweep.
+「塗りボタンオン。緑色の線が出現。三点以上の囲われた部分が塗られる」
+
+Nothing about that can throw, which is the problem. A fill that is silently
+dropped gives a letter that is merely **thinner** — on a canvas that renders,
+in a font that installs, with every other check green. There is no error state
+to catch; there is only a different shape.
+
+So `tools/fill-check.mjs` counts it in pixels, through the real drawing code,
+and asks for it again after the letter has been saved and read back. A fill
+that survives drawing and not storage is the same bug arriving later.
+
+### 16. ROUND is done to a stroke that exists, and never invents one
+
+「線は先に引いてその後にそれをラウンドにするかどうか選べる仕様にしない？」 It
+used to be armed before drawing — press the button, then draw, and what came
+out was bent. A new stroke starts straight now and the button acts on the last
+one.
+
+Two things it may never do, and neither throws:
+
+- **A straight stroke stays straight.** 「縦線はラウンド押してもラウンドになる
+  わけがない」 The ring guess keeps three points of a stroke and closes them,
+  and closing an arc is a full circle — so a line drawn straight down came
+  back a ring. 「縦線引いただけで円になるんだって」
+- **Pressing twice gives back exactly what was drawn.** The old button only
+  turned its mode off and left the stroke bent.
+
+`tools/round-check.mjs` holds both. Like rule 15, what makes them dangerous is
+that the letter still renders and the font still installs — it is simply not
+the letter somebody drew.
 
 ## What the free plan is
 
@@ -860,9 +901,9 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 338`, `screens the mirror
-rendered: 377`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 7884` for the same reason — and it is what a
+Both checks print their coverage (`screens walked: 363`, `screens the mirror
+rendered: 271`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 8627` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -905,9 +946,22 @@ language's own sounds and the whole of the IPA, which is a hundred and sixty
 tiles, and the fixture holds two faces of it. Two things came off in the same
 stretch and neither shows in that number as a fall, because the same change
 put them back several times over: the row of letter tiles under the box a
-word is typed into, and the page for one position of a word. A number
-moving is only ever a question — what changed — and the answer has to be a
-change somebody made on purpose.
+word is typed into, and the page for one position of a word. It rose to 8627
+over the seventy-four commits between `cd712dd` and `dbd73d4`, which is the
+only entry in this list not attributed to one change: four routes landed in
+that stretch — `forms`, `fmrpos`, `fmrfm` and `mod`, the word-forms chapter
+and the moderation screens — and nobody wrote the number down as it moved.
+**Attributing it is the one thing here still owed**; every other line was
+written by whoever caused it.
+
+`screens the mirror rendered` fell from 377 to 271 in the same stretch, and
+that one IS attributed: `i18n-check` renders every screen once per plan, and
+`['free','plus','studio']` became `['free','plus']` when Studio was deleted.
+A third of the renders went with the tier. Coverage did not fall — the walk
+went the other way, from 51 faces to 56.
+
+A number moving is only ever a question — what changed — and the answer has to
+be a change somebody made on purpose.
 
 ## Working on this repo
 
@@ -915,7 +969,7 @@ change somebody made on purpose.
   a `/* ==== n. title ==== */` banner opens each. One chapter per file — a file that
   grew to hold five was split along those banners, not along anything new. The
   numbering has gaps where a chapter was closed; it is a shelf, not a count.
-- `www/glyph.js` is 79 KB (the font writer and the drawing surface). Grep for
+- `www/glyph.js` is 104 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
 - Run `npm test` after every change, not once at the end. It is fast and it is the spec.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.

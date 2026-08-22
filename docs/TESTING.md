@@ -3,16 +3,17 @@
 ## The gate
 
 ```
-npm test        # twelve checks, ~100 seconds
+npm test        # sixteen checks, minutes rather than seconds
 ```
 
 Green before a commit. Not "green at the end of the day" — after every change,
 because it is fast and it is the spec.
 
 `tools/pre-commit` runs the five that need no browser (assets, es5, dead,
-import, sides — about two seconds) plus i18n when a screen file changed. **It
-is not the gate.** CI runs three of the twelve, so a green tick on a push is
-not the gate either. Run `npm test` yourself.
+import, sides — about two seconds) plus i18n on any change under `www/` that is
+not one of the ten language files or the font writer. **It is not the gate.**
+CI runs three of the sixteen, so a green tick on a push is not the gate either.
+Run `npm test` yourself.
 
 | check | holds |
 |---|---|
@@ -26,7 +27,11 @@ not the gate either. Run `npm test` yourself.
 | `act` | every name a screen says is bound, and every binding is said |
 | `conv` | the seven claims made about the conversion table |
 | `card` | a card of a post is a picture of *that* post |
+| `word` | what screen you are standing on after a word is renamed or deleted |
+| `post` | what a post carries is put on it when it is written |
 | `backup` | a language survives a wipe, and a restore never wins |
+| `fill` | the inside of what was drawn round survives being saved and read back |
+| `round` | ROUND bends a stroke that exists, never invents one, and undoes exactly |
 | `press` | every button of every screen, pressed for real; 44pt floor |
 
 ```
@@ -88,16 +93,26 @@ Mandatory regression tests, no exceptions:
 Three checks print a count so that nothing shrinks silently:
 
 ```
-screens walked: 338
-screens the mirror rendered: 377
-buttons pressed: 7884
+screens walked: 363
+screens the mirror rendered: 271
+buttons pressed: 8627
 ```
 
+All three measured 2026-08-22. `CLAUDE.md` carries the full history of the
+button count, move by move.
+
 **A number moving is only ever a question: what changed?** And the answer has
-to be a change somebody made on purpose. It has moved three times and each was
-deliberate: 2952 → 5172 the day the free plan got its twenty-eight letters;
-5172 → 3636 the day the in-app keyboard left for the system extension; and the
-recent moves as the word sheet became one screen.
+to be a change somebody made on purpose. Two recent ones, so that neither
+looks like a fault:
+
+- **`screens the mirror rendered` FELL, 377 → 271.** `i18n-check` renders every
+  screen once per plan, and `['free','plus','studio']` became `['free','plus']`
+  when Studio was deleted. A third of the renders went with the tier; coverage
+  did not fall, the walk went 51 faces → 56.
+- **`buttons pressed` rose 7884 → 8627** over the seventy-four commits between
+  `cd712dd` and `dbd73d4`, in which four routes landed — `forms`, `fmrpos`,
+  `fmrfm`, `mod`. That one is **not attributed commit by commit**, which is the
+  thing this section exists to prevent; it is the only entry that is not.
 
 ## Screenshots
 
