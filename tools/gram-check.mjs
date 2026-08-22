@@ -65,6 +65,17 @@ const r = await pg.evaluate(({s}) => {
   out.oneWord = line('mountain');
   /* and a word this language has not got keeps its place */
   out.gapStays = line('mountain see luna');
+
+  /* The grammar answers before the meanings do, and it answers whoever
+     wrote the sentence: `I` and `わたし` are both pron.i. */
+  WORDS.push({ hw:'mi',  mns:['me'],   pos:'pro',  slot:'pron.i',   at:7 });
+  WORDS.push({ hw:'ke',  mns:['plus'], pos:'conj', slot:'conj.and', at:8 });
+  out.slotEn = line('I and');
+  out.slotJa = line('わたし と');
+  /* a slot nobody has filled in is still a gap, and it knows which slot */
+  var u = trUnits('you');
+  out.slotGap = !!(u[0] && u[0].miss && u[0].mslot === 'pron.you');
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -86,6 +97,9 @@ say(r.adpBefore === 'kano pei sar tir', 'and before it when that is the answer: 
 say(r.noVerb  === 'kano sar', 'with no verb nothing is reordered: "' + r.noVerb + '"');
 say(r.oneWord === 'kano',     'and one word is one word: "' + r.oneWord + '"');
 say(r.gapStays.indexOf('[luna]') >= 0, 'a word this language has not got is still there: "' + r.gapStays + '"');
+say(r.slotEn === 'mi ke', 'a slot the grammar names answers in English: "' + r.slotEn + '"');
+say(r.slotJa === 'mi ke', 'and the same slot answers in Japanese: "' + r.slotJa + '"');
+say(r.slotGap, 'a slot nobody has filled in is a gap that knows which slot it is');
 
 if (bad.length) { console.error('\ngram: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\ngram: the four things the grammar holds, and nothing invented.');

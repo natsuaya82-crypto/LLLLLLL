@@ -347,6 +347,17 @@ export function halfDone(){
        TRNEW = { id:p.id, k:String(at) };
        window.route='feed'; NAV=[{r:'feed'}];
        const h = vFeed(); TRNEW = null; TURNED = {}; return h; }],
+    /* A gap the GRAMMAR has a name for. `and` is conj.and and this language
+       has not made it, so the way on is the slot on the grammar page rather
+       than a blank word sheet. */
+    ['a gap the grammar names, pressed', () => { const p = POSTS[0];
+       const was = p.mn; p.mn = 'mountain and river';
+       TURNED[p.id] = 1;
+       const u = trUnits(postSay(p)).filter(x => !x.sp);
+       let at = 0; u.forEach((x, i) => { if (x.mslot && !at) at = i; });
+       TRNEW = { id:p.id, k:String(at) };
+       window.route='feed'; NAV=[{r:'feed'}];
+       const h = vFeed(); TRNEW = null; TURNED = {}; p.mn = was; return h; }],
     ['the reading of a word', () => { SET.plan='plus'; openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
                                       const h=vSpell(); SET.plan='free'; return h; }],

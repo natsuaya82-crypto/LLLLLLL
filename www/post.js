@@ -997,8 +997,13 @@ function postSay(p){
    is the subject and which the object, and nothing here knows; a wrong
    rearrangement reads as a claim about the language rather than as a gap. */
 function trWord(w){
-  var i, j, mns, q=String(w||'').toLowerCase().replace(/^[^\w']+|[^\w']+$/g, '');
+  var i, j, mns, q=trNorm(w);
   if(!q) return null;
+  /* The grammar first. A word the stages name is the same word whoever wrote
+     the sentence, and filling the grammar page in is what makes it answer --
+     which is the whole reason that page is a page. */
+  var key=trSlotMap()[q];
+  if(key){ var sw=trBySlot(key); if(sw) return sw; }
   for(i=0;i<WORDS.length;i++){
     mns=wMns(WORDS[i]);
     for(j=0;j<mns.length;j++) if(String(mns[j]).toLowerCase()===q) return WORDS[i];
@@ -1015,14 +1020,72 @@ function trWord(w){
    word for. The second is the point as much as the first -- a red word is a
    word this language is missing, and it is the shortest door there is to
    making it. */
+/* Every slot the grammar has, under every name the ten interfaces give it.
+   ------------------------------------------------------------------
+   The stages hold SLOTS -- pron.i, neg.not, where.in, conj.and, ask.what --
+   and a word made in one carries `slot:'pron.i'`. That is a role, not a
+   string, and it is the only thing in this app that is the same whoever
+   wrote it. The meaning match beneath it is text: `my` and `私の` are two
+   strings and will never meet, and a line written in Japanese does not even
+   split into words. 「myと私のとか言語が違う場合どうなんの？」
+
+   The names are already there. Every slot label is a translated key --
+   stg.pron.i is "I" in en and "わたし" in ja -- so the ten of them together
+   are a table from any interface language's word to the role it names. Both
+   land on pron.i, and pron.i is what this person's dictionary answers.
+
+   Built once, off LANG, and rebuilt when a language file could not have been
+   loaded yet: this runs before the ten <script> tags on nothing. */
+var TR_SLOTS=null;
+function trSlotMap(){
+  if(TR_SLOTS) return TR_SLOTS;
+  var m={}, i, j, k, code, str, p, key, lab;
+  var st=(typeof stAll==='function')? stAll() : [];
+  for(i=0;i<UI_LANGS.length;i++){
+    code=UI_LANGS[i]; str=strOf(code);
+    for(j=0;j<st.length;j++){
+      p=st[j];
+      if(p.own) continue;           /* a stage of somebody's own is theirs, in their words */
+      if(p.id==='count') continue;  /* numerals read the same everywhere */
+      for(k=0;k<p.slots.length;k++){
+        key=p.id+'.'+p.slots[k];
+        lab=str['stg.'+key];
+        if(!lab) continue;
+        lab=trNorm(lab);
+        if(lab && !m[lab]) m[lab]=key;
+      }
+    }
+  }
+  TR_SLOTS=m;
+  return m;
+}
+/* One word, stripped of what surrounds it. Not a lower-casing of the whole
+   string: a language that does not case is unaffected, and one that does
+   should not care whether the sentence began. */
+function trNorm(w){
+  return String(w||'').toLowerCase().replace(/^[^\w'\u3000-\u9fff\uff66-\uff9f]+|[^\w'\u3000-\u9fff\uff66-\uff9f]+$/g, '');
+}
+/* The word this language uses for that role, if somebody has made it. */
+function trBySlot(key){
+  var i;
+  for(i=0;i<WORDS.length;i++) if(WORDS[i].slot===key) return WORDS[i];
+  return null;
+}
 function trUnits(mn){
   var out=[], a=String(mn||'').split(/(\s+)/), i, w;
   for(i=0;i<a.length;i++){
     if(!a[i]) continue;
     if(/^\s+$/.test(a[i])){ out.push({sp:true}); continue; }
     w=trWord(a[i]);
-    out.push(w? {w:String(w.hw), pos:String(w.pos||''), slot:String(w.slot||'')}
-              : {miss:a[i]});
+    if(w){ out.push({w:String(w.hw), pos:String(w.pos||''), slot:String(w.slot||'')}); }
+    else {
+      /* A gap the grammar has a name for is not a word to invent -- it is a
+         slot on the grammar page nobody has filled in. So it leads there,
+         which is what makes filling that page the thing that makes this
+         work. 「文法ページを埋めることによって翻訳が機能するならそれが
+         正解では？」 */
+      out.push({miss:a[i], mslot:trSlotMap()[trNorm(a[i])]||''});
+    }
   }
   return trArrange(out);
 }
@@ -1135,6 +1198,14 @@ function trGap(id, key){
   render();
 }
 function trEdit(hw){ TRNEW=null; openWord(hw); }
+/* Straight to the slot on the grammar page, which is where a word like this
+   is made. `pron.i` is the stage and the slot with a dot between them. */
+function trSlot(key){
+  TRNEW=null;
+  var at=String(key||'').indexOf('.');
+  if(at<0) return;
+  openSlot(key.slice(0,at), key.slice(at+1));
+}
 function trNew(mn){
   TRNEW=null;
   openAdd('');
@@ -1154,7 +1225,9 @@ function trBubbleHTML(x){
     '<span class="trbm">'+esc(w? wMn(w) : x.miss)+'</span>'+
     (x.w
       ? '<button class="trbdo"' + DO('trEdit', [x.w]) + '>'+t('tr.edit')+'</button>'
-      : '<button class="trbdo"' + DO('trNew', [x.miss]) + '>'+t('tr.make')+'</button>')+
+      : (x.mslot
+          ? '<button class="trbdo"' + DO('trSlot', [x.mslot]) + '>'+t('tr.make')+'</button>'
+          : '<button class="trbdo"' + DO('trNew', [x.miss]) + '>'+t('tr.make')+'</button>'))+
   '</span>';
 }
 function trHTML(p){

@@ -204,6 +204,7 @@ act('takeOwn', takeOwn);
 act('trOpen', trOpen);
 act('trGap', trGap);
 act('trEdit', trEdit);
+act('trSlot', trSlot);
 act('trNew', trNew);
 act('cardOpen', cardOpen);
 act('cardSave', cardSave);
