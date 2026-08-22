@@ -39,12 +39,13 @@
         no var(--face-x) that :root does not declare, and no face declared
         that no rule uses. A face nothing wears is one that was replaced and
         left behind.
-     3  No family named on :root appears as a literal anywhere in www/*.js.
-        The one exception is the font the person drew, which JavaScript builds
-        and therefore has to name: glyph.js's SFONT_FAMILY must be exactly the
-        family in --face-script. Those two are what make a drawn letter
-        appear, and when they disagree nothing throws -- the font builds, the
-        rule installs, and every .sfont element quietly falls back to roman.
+     3  A family in www/*.js is one that file BUILDS, and :root asks for it by
+        that name. A file that builds a font has to name it -- JavaScript makes
+        it -- but a font installed under a name no rule wants is a font nothing
+        wears, and nothing throws: it builds, it installs, and every element
+        falls back to roman. A file that does NOT build it may not name it;
+        that is a copy of a face the stylesheet owns, going stale on the next
+        rebuild. It counts to N, not to one: there are two drawn fonts now.
      4  Anything that sets a canvas font asks the page for the family. A
         canvas has no inheritance, so a literal there is the one kind of face
         the stylesheet cannot reach.
@@ -99,7 +100,35 @@ const used = new Set([...css.matchAll(/var\(\s*(--face-[\w-]+)\s*\)/g)].map(m =>
 for (const n of used) if (!FACES.has(n)) fails.push(`a rule wears var(${n}) and :root does not declare it`);
 for (const n of FACES.keys()) if (!used.has(n)) fails.push(`:root declares ${n} and no rule wears it`);
 
-/* ---- 3. no family named in JavaScript ---------------------------------- */
+/* ---- 3. a family in JavaScript is one JavaScript BUILDS, and the page asks
+        for it by that name ------------------------------------------------
+
+   This used to say "no family in www/*.js at all, except SFONT_FAMILY, which
+   must equal --face-script" -- one drawn font, one name. That held while
+   there was one. claude/save is adding a second, LinguaType, for the fields
+   you type into: the drawn letters are unreadable to somebody who has just
+   drawn their first eight, so a field is set in a face that holds only the
+   private use area. A rule that can only count to one would have to be
+   rewritten the day it lands, which is the day nobody has time.
+
+   So it counts to N. Two questions instead of one name:
+
+     a  a file that BUILDS a font (@font-face, or family: passed to the OTF
+        writer) may name it -- JavaScript makes it, so JavaScript has to say
+        what it is called. But :root must declare that same family under some
+        --face-*, or the font is built and installed under a name no rule ever
+        asks for. Nothing throws; every element quietly falls back to roman.
+
+     b  a file that does NOT build it may not name it. That is card.js's old
+        bug: a copy of a face the stylesheet owns, in a file the stylesheet
+        cannot reach, going stale the first time the face is rebuilt. Ask the
+        page: cssVar('--face-x', 'serif').
+
+   otf5.js is exempt from (a) and only from (a). It is a font writer that
+   knows nothing about this app, and its DEFAULTS.family is a name so that a
+   font built without one is still a valid file. What it may NOT do is default
+   to a face this app declares -- it said 'LinguaScript' once, which made a
+   standalone library the fourth place naming this app's face. */
 const familyNames = new Set();
 for (const v of FACES.values()) {
   for (const part of v.split(',')) {
@@ -107,28 +136,69 @@ for (const v of FACES.values()) {
     if (w && GENERIC.indexOf(w.toLowerCase()) < 0) familyNames.add(w);
   }
 }
-const scriptFamily = (FACES.get('--face-script') || '').split(',')[0].trim().replace(/^['"]|['"]$/g, '');
 const jsFiles = fs.readdirSync(ROOT).filter(f => f.endsWith('.js'));
-let declared = null;
+const built = new Map();        /* family -> the file that builds it */
+
 for (const f of jsFiles) {
   const src = decomment(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-  const d = /var\s+SFONT_FAMILY\s*=\s*'([^']*)'/.exec(src);
-  if (d) declared = { f, name: d[1] };
-  for (const name of familyNames) {
-    const re = new RegExp("['\"]" + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "['\"]", 'g');
-    if (re.test(src)) {
-      if (d && name === scriptFamily) continue;        /* SFONT_FAMILY itself, held below */
-      fails.push(`${f} names the family "${name}" — it is index.html's to say, and a canvas ` +
-                 `should ask the page for it through cssVar()`);
+
+  /* What this file builds. A name reached through a variable is followed:
+     family:SFONT_FAMILY with var SFONT_FAMILY='X' builds X. */
+  const vars = new Map();
+  for (const m of src.matchAll(/var\s+([A-Z_][A-Z0-9_]*)\s*=\s*'([^']+)'/g)) vars.set(m[1], m[2]);
+  const mine = new Set();
+  for (const m of src.matchAll(/@font-face\{font-family:'(?:"\s*\+\s*)?([A-Za-z_][\w$]*)/g)) {
+    mine.add(vars.get(m[1]) || m[1]);
+  }
+  /* A plain literal only. `font-family:'"+SFONT_FAMILY+"'` is a concatenation
+     and its name came from the variable above, not from these characters. */
+  const plain = (n) => n && !/["+$\\]/.test(n);
+  for (const m of src.matchAll(/@font-face\{font-family:'([^']+)'/g)) if (plain(m[1])) mine.add(m[1]);
+  for (const m of src.matchAll(/\bfamily\s*:\s*'([^']+)'/g)) if (plain(m[1])) mine.add(m[1]);
+  for (const m of src.matchAll(/\bfamily\s*:\s*([A-Z_][A-Z0-9_]*)/g)) {
+    if (vars.has(m[1])) mine.add(vars.get(m[1]));
+  }
+
+  if (f === 'otf5.js') {
+    /* exempt from (a); held to the one thing that matters */
+    for (const n of mine) {
+      if (familyNames.has(n))
+        fails.push(`otf5.js defaults its family to "${n}", which is a face index.html ` +
+                   `declares. It is a font writer and knows nothing about this app; ` +
+                   `naming this app's face makes it one more place to keep in step.`);
     }
+    continue;
+  }
+
+  for (const n of mine) {
+    built.set(n, f);
+    if (!familyNames.has(n))
+      fails.push(`${f} builds a font called "${n}" and :root declares no --face-* that ` +
+                 `asks for it. Nothing throws when these disagree: the font builds, the ` +
+                 `@font-face installs, and every element wanting it falls back to roman.`);
+  }
+
+  /* (b) naming a face this file does not build */
+  for (const name of familyNames) {
+    if (mine.has(name)) continue;
+    const re = new RegExp("['\"]" + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "['\"]");
+    if (re.test(src))
+      fails.push(`${f} names the family "${name}" and does not build it — it is ` +
+                 `index.html's to say. Ask the page: cssVar('--face-x', 'serif').`);
   }
 }
-if (!scriptFamily) fails.push(':root declares no --face-script, so nothing says what the drawn font is called');
-else if (!declared) fails.push(`no file declares SFONT_FAMILY, so nothing builds a font called "${scriptFamily}"`);
-else if (declared.name !== scriptFamily)
-  fails.push(`${declared.f} builds a font called "${declared.name}" and index.html asks for ` +
-             `"${scriptFamily}". Nothing throws when these disagree: the font builds, the ` +
-             `@font-face installs, and every drawn letter falls back to roman.`);
+
+/* Every face the stylesheet declares is either a webfont index.html loads, or
+   one this app builds. A --face-* naming a family nobody builds and no <link>
+   fetches would install nothing and say nothing about it. */
+const linked = HTML.slice(0, HTML.indexOf('<style')).replace(/\+/g, ' ');
+for (const n of familyNames) {
+  if (built.has(n)) continue;
+  if (linked.indexOf(n) >= 0) continue;                 /* a webfont, fetched */
+  if (/^(-apple-system|BlinkMacSystemFont|Menlo|Georgia)$/i.test(n)) continue;  /* the platform's */
+  fails.push(`:root declares the family "${n}" and nothing builds it or fetches it — ` +
+             `no @font-face in www/*.js and no <link> in the head.`);
+}
 
 /* ---- 4. a canvas font comes off the page ------------------------------- */
 for (const f of jsFiles) {
@@ -154,4 +224,7 @@ if (fails.length) {
 console.log('faces: ' + FACES.size + ' declared on :root, ' +
             [...css.matchAll(/font-family\s*:/g)].length + ' rules wearing them, none named twice');
 console.log('       ' + [...FACES.keys()].sort().join('  '));
-console.log('       the drawn font is "' + scriptFamily + '", built and asked for under one name');
+const drawn = [...built.entries()].map(([n, f]) => n + ' (' + f + ')').sort();
+console.log('       ' + (drawn.length
+  ? 'built here and asked for by name: ' + drawn.join(', ')
+  : 'nothing here builds a font'));
