@@ -56,7 +56,15 @@ fi
 # The screen files are the ones that can carry untranslated text; the ten
 # language files and the font writer cannot, so a commit that only touches
 # those does not need the two-minute walk.
-if git diff --cached --name-only | grep -qE '^www/(index\.html|core\.js|reading\.js|screens\.js|sentences\.js|settings\.js|glyph\.js)$'; then
+#
+# This named the seven files it thought were screens, and two of them --
+# screens.js and sentences.js -- have not existed since that list was written,
+# while the screens themselves moved into home.js, words.js, letters.js, post.js
+# and a dozen others. So a commit that added a hard-coded string to any of those
+# skipped the walk, quietly, which is the one thing this hook is for. It asks
+# the other way round now: everything under www/ except the files that cannot
+# carry a string.
+if git diff --cached --name-only | grep -E '^www/' | grep -qvE '^www/(i18n/[a-z]{2}\.js|otf5\.js)$'; then
   echo 'i18n: checking every screen in every language...'
   node tools/i18n-check.mjs || {
     echo ''
