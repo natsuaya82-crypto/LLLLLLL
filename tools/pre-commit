@@ -42,14 +42,16 @@ fi
 # catches -- the making side reaching into the timeline -- is invisible while
 # every post is yours, which is to say invisible to whoever is committing.
 if git diff --cached --name-only | grep -q '^www/'; then
-  echo 'dead + import + sides + face: the fast four...'
+  echo 'dead + import + sides + face + box: the fast five...'
   node tools/dead-check.mjs >/dev/null && node tools/import-check.mjs >/dev/null \
-    && node tools/sides-check.mjs >/dev/null && node tools/face-check.mjs >/dev/null || {
+    && node tools/sides-check.mjs >/dev/null && node tools/face-check.mjs >/dev/null \
+    && node tools/box-check.mjs >/dev/null || {
     echo ''
     node tools/dead-check.mjs >/dev/null || node tools/dead-check.mjs
     node tools/import-check.mjs >/dev/null || node tools/import-check.mjs
     node tools/sides-check.mjs >/dev/null || node tools/sides-check.mjs
     node tools/face-check.mjs >/dev/null || node tools/face-check.mjs
+    node tools/box-check.mjs >/dev/null || node tools/box-check.mjs
     exit 1
   }
 fi
