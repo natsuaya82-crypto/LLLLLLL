@@ -149,9 +149,9 @@ Three rules about running it — the body is in `docs/TESTING.md` § the gate:
 
 1. **Parallel, and safe only because every check that listens has its own
    port.** A new check that stands up a server takes one nothing else has.
-2. **The whole gate is once per commit** — not per experiment, not a second
-   time to be sure. While working, run the one check that holds what you are
-   changing, by name.
+2. **A session does not run the whole gate.** The owner runs it, once, over
+   everything that was built. A session runs the one check that holds what it
+   is changing, by name, and says so in its report.
 3. **Watching it go red is one check too.** Put the bug back and run that
    check, not the other seventeen.
 

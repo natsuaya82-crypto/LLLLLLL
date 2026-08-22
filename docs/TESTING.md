@@ -6,7 +6,7 @@
 npm test        # eighteen checks: five in a row, then thirteen four at a time
 ```
 
-Green before a commit.
+**A session does not run it.** See rule 2.
 
 ### 1. It runs in parallel
 
@@ -26,12 +26,22 @@ port.** `migrate` and `press` were both on 8123; press moved to 8130. Two on
 one port is one of them failing with `EADDRINUSE`, which says nothing about
 the code. A new check that listens takes a port nothing else has.
 
-### 2. The whole gate runs once per commit
+### 2. A session does not run the whole gate
 
-Not once per experiment, and not a second time to be sure. While you are
-working, run **the one check that holds what you are changing**, by name —
-`npm run card`, `npm run word`, `npm run gram`. The table under *What to run
-when* says which. The whole gate is what you run before the commit, once.
+`npm test` is six minutes even in parallel, and a session that runs it once
+per change spends most of its time watching a progress log instead of talking
+to whoever asked for the work. **The owner runs it, once, over everything
+that was built.** 「ゲートチェックは全部作って最後に確認するから各個人の
+セッションではやらないようにして欲しい 長くて話にならん」
+
+What a session runs is **the one check that holds what it is changing**, by
+name — `npm run card`, `npm run word`, `npm run gram`. The table under *What
+to run when* says which. That is seconds, not minutes.
+
+This is a change to what "green before a commit" means, and it is deliberate:
+a commit on a working branch is a place to put work down, and the gate is what
+stands between that branch and being finished. Say in the commit and in the
+report which check was run and that the gate was not.
 
 ### 3. Watching it go red is one check too
 
@@ -79,9 +89,10 @@ shipped once.
 
 ## What to run when
 
+One check, by name, for what you changed. Not `npm test` — see rule 2.
+
 | changed | run |
 |---|---|
-| anything | `npm test` |
 | `supabase/schema.sql` | `npm run rls`, and somebody who is not you |
 | how anything is saved | `npm run backup` + `npm run migrate`, and see `docs/DATA_SAFETY.md` § changing anything that saves |
 | a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |

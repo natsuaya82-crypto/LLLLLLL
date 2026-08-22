@@ -138,9 +138,10 @@ rename, a UI change and a migration do not share a commit. A refactor that
 changes behaviour is not a refactor.
 
 **Done** is not "the code is written". Spec confirmed, blast radius known,
-docs updated, implemented, `npm test` green, the regression green, **the bug
-put back and the test watched going red**, static checks, device if it is on
-the list, owner confirmed, CHANGELOG updated. Every report separates `CODE
+docs updated, implemented, the check that holds it green, **the bug put back
+and that check watched going red**, static checks, device if it is on the
+list, the whole gate green (the OWNER's run, not the session's), owner
+confirmed, CHANGELOG updated. Every report separates `CODE
 CONFIRMED` / `DEVICE CONFIRMED` / `OWNER CONFIRMED`, and none of the three
 implies another. → `docs/FEATURE_RULES.md`
 
@@ -167,18 +168,20 @@ backlog entry is not permission, and neither is the absence of one.
 ```
 npm test        # tools/gate.mjs -- five with no browser in a row (assets, es5,
                 # dead, import, sides, ~2s), then the other thirteen four at a
-                # time. Green before a commit.
+                # time. Six minutes. NOT run by a session -- see rule 2.
 ```
 
-Three rules about running it, and they are the difference between a gate that
-gets run and one that gets skipped:
+Three rules about running it:
 
 1. **It runs in parallel.** Safe only because every check that stands up a
    server has its own port. A new check that listens takes one nothing else
    has.
-2. **The whole gate is once per commit.** Not per experiment, and not a second
-   time to be sure. While working, run the ONE check that holds what you are
-   changing, by name -- `npm run card`, `npm run gram`.
+2. **A session does not run the whole gate.** The owner runs it, once, over
+   everything that was built. What a session runs is the ONE check that holds
+   what it is changing, by name -- `npm run card`, `npm run gram`. Say in the
+   report which check was run and that the gate was not.
+   「ゲートチェックは全部作って最後に確認するから各個人のセッションでは
+   やらないようにして欲しい 長くて話にならん」
 3. **Watching it go red is one check too.** Put the bug back and run THAT
    check. The other seventeen have nothing to do with it.
 
@@ -188,8 +191,8 @@ Individual: `npm run assets` / `es5` / `dead` / `migrate` / `i18n` / `import` /
 `sides` / `act` / `conv` / `card` / `word` / `post` / `backup` / `fill` / `round` /
 `base` / `gram` / `press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
-about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
-`npm test` yourself.
+about two seconds) plus i18n when a screen file changed. It is not the whole gate, and
+neither is what a session runs: the whole gate is the owner's, at the end.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
@@ -927,7 +930,8 @@ change somebody made on purpose.
   numbering has gaps where a chapter was closed; it is a shelf, not a count.
 - `www/glyph.js` is 79 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
-- Run `npm test` after every change, not once at the end. It is fast and it is the spec.
+- After a change, run the ONE check that holds it (`npm run gram`, `npm run card`) --
+  seconds. Not `npm test`: six minutes, and it is the owner's run, at the end.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
   Not a gate — it is how a change to a screen gets looked at instead of read as a
   diff of string concatenation. A refactor that is meant to change nothing can be

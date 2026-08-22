@@ -1091,8 +1091,6 @@ function trArrange(u){
     rest.push(g);
   }
   if(neg) V = (gPos('negp')==='before')? [neg, groups[vAt]] : [groups[vAt], neg];
-  /* Nothing to put in an order is nothing to reorder. */
-  if(!S.length && !O.length) return u;
   var slot={S:S, V:V, O:O}, seq=orderDef().seq, outG=[];
   for(i=0;i<seq.length;i++) outG=outG.concat(slot[seq[i]]||[]);
   /* Everything that is not one of the three keeps the place it was written
