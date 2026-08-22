@@ -3,7 +3,7 @@
 ## The gate
 
 ```
-npm test        # eighteen checks: five in a row, then thirteen four at a time
+npm test        # seventeen checks: five in a row, then twelve four at a time
 ```
 
 **A session does not run it.** See rule 2.
@@ -13,7 +13,7 @@ npm test        # eighteen checks: five in a row, then thirteen four at a time
 `tools/gate.mjs` is `npm test`. Five checks need no browser — `assets`, `es5`,
 `dead`, `import`, `sides` — and they run first, one after another, in about
 two seconds. They are also the ones that catch a typo, so a failure there
-means the thirteen browsers were never started. The rest run **four at a
+means the twelve browsers were never started. The rest run **four at a
 time**: four because each is a browser and a Node process, and past four they
 queue on memory rather than on cores.
 
@@ -47,7 +47,7 @@ report which check was run and that the gate was not.
 
 `docs/FEATURE_RULES.md` says a fix is not done until the check that holds it
 has been watched failing with the bug still in place. That is **that check**,
-run on its own. The other seventeen have nothing to do with the bug you just
+run on its own. The other sixteen have nothing to do with the bug you just
 put back, and running them proves nothing about it.
 
 `tools/pre-commit` runs the five that need no browser (assets, es5, dead,
@@ -74,7 +74,6 @@ not the gate either. Run `npm test` yourself.
 | `fill` | a stroke drawn with the fill on inks the inside of what it went round |
 | `round` | ROUND is done to a stroke already drawn, is reversible, and never bends a straight one |
 | `base` | raising the base makes the digits at once; lowering it never takes away one somebody drew |
-| `gram` | a post read in this language comes out in this language's order |
 
 ```
 npm run rls     # supabase/schema.sql, and a second person (~15s)
@@ -98,7 +97,6 @@ One check, by name, for what you changed. Not `npm test` — see rule 2.
 | a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |
 | how a post is rendered | `npm run sides` + `npm run card` |
 | what a word does after two presses in a row — rename, delete, save | `npm run word` |
-| how a post is read in this language — word order, where an adjective stands | `npm run gram` |
 | a screen | `node tools/shot.mjs <screen>` and look at it |
 | `www/i18n/*` | `npm run i18n` |
 | anything a plan gates | add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |

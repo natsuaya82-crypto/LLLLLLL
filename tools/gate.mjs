@@ -30,7 +30,7 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const QUICK = ['assets', 'es5', 'dead', 'import', 'sides'];
 /* A browser each. */
 const SLOW = ['migrate', 'i18n', 'act', 'conv', 'card', 'word', 'post',
-              'backup', 'fill', 'round', 'base', 'gram', 'press'];
+              'backup', 'fill', 'round', 'base', 'press'];
 const LANES = 4;
 
 /* press is `press.mjs`; every other one is `<name>-check.mjs`. */

@@ -975,280 +975,27 @@ function postSay(p){
   return String(p.mn||'');
 }
 
-/* ---- layer three: the post, in words this reader has -------------------
-
-   This is the one place in the app where the reading side is SUPPOSED to
-   reach for the making side, and it is worth being exact about why.
-
-   Rule 8 forbids drawing somebody else's post out of my dictionary, because
-   their line is theirs. This is the opposite errand: it takes a natural
-   sentence THE AUTHOR ALREADY CONFIRMED and says it again in MY language,
-   with MY words. The guessing is about my own vocabulary, and I am the one
-   who can see when it is wrong -- which is exactly the test the note at the
-   head of this file applies to machine translation of an invented language.
-
-   So it lives above the line, it touches `mn`/`tr` and never `ln` or `ink`,
-   and it is deliberately NOT frozen onto the post: a sentence that half
-   renders today renders whole next month, because the dictionary grew. That
-   is the opposite of `ink` and it is correct for the same reason `ink` is --
-   ink is the writer's and this is the reader's.
-
-   Word order is left alone. Rearranging a sentence needs to know which word
-   is the subject and which the object, and nothing here knows; a wrong
-   rearrangement reads as a claim about the language rather than as a gap. */
-function trWord(w){
-  var i, j, mns, q=trNorm(w);
-  if(!q) return null;
-  /* The grammar first. A word the stages name is the same word whoever wrote
-     the sentence, and filling the grammar page in is what makes it answer --
-     which is the whole reason that page is a page. */
-  var key=trSlotMap()[q];
-  if(key){ var sw=trBySlot(key); if(sw) return sw; }
-  for(i=0;i<WORDS.length;i++){
-    mns=wMns(WORDS[i]);
-    for(j=0;j<mns.length;j++) if(String(mns[j]).toLowerCase()===q) return WORDS[i];
-  }
-  /* then a meaning that merely contains it, so "a mountain" finds `mountain` */
-  for(i=0;i<WORDS.length;i++){
-    mns=wMns(WORDS[i]);
-    for(j=0;j<mns.length;j++)
-      if((' '+String(mns[j]).toLowerCase()+' ').indexOf(' '+q+' ')>=0) return WORDS[i];
-  }
-  return null;
-}
-/* Each piece of the sentence: a word of mine, or the natural word I have no
-   word for. The second is the point as much as the first -- a red word is a
-   word this language is missing, and it is the shortest door there is to
-   making it. */
-/* Every slot the grammar has, under every name the ten interfaces give it.
+/* Layer three -- a post said again in this reader's own words -- is gone.
    ------------------------------------------------------------------
-   The stages hold SLOTS -- pron.i, neg.not, where.in, conj.and, ask.what --
-   and a word made in one carries `slot:'pron.i'`. That is a role, not a
-   string, and it is the only thing in this app that is the same whoever
-   wrote it. The meaning match beneath it is text: `my` and `私の` are two
-   strings and will never meet, and a line written in Japanese does not even
-   split into words. 「myと私のとか言語が違う場合どうなんの？」
+   It swapped each word of the meaning line for a word this dictionary had,
+   and that is not a translation: whether `Mama seja luna` is a sentence
+   depends on whether the language has a copula, how it marks possession, and
+   what it does with a topic -- and none of that was anywhere the app could
+   read it. Written into the grammar page's notes it is free text, which a
+   machine cannot use. 「単語を並べるだけじゃ文法はできない」
 
-   The names are already there. Every slot label is a translated key --
-   stg.pron.i is "I" in en and "わたし" in ja -- so the ten of them together
-   are a table from any interface language's word to the role it names. Both
-   land on pron.i, and pron.i is what this person's dictionary answers.
+   The one thing that could have read those notes is an AI, and this feature
+   was built for one: `CAN.tr` said "unmetered" and the free plan got three a
+   day, which is a price per call and makes no sense for a word swap done on
+   the phone. There is no AI. 「AI入れないって言ってるでしょ？」
 
-   Built once, off LANG, and rebuilt when a language file could not have been
-   loaded yet: this runs before the ten <script> tags on nothing. */
-var TR_SLOTS=null;
-function trSlotMap(){
-  if(TR_SLOTS) return TR_SLOTS;
-  var m={}, i, j, k, code, str, p, key, lab;
-  var st=(typeof stAll==='function')? stAll() : [];
-  for(i=0;i<UI_LANGS.length;i++){
-    code=UI_LANGS[i]; str=strOf(code);
-    for(j=0;j<st.length;j++){
-      p=st[j];
-      if(p.own) continue;           /* a stage of somebody's own is theirs, in their words */
-      if(p.id==='count') continue;  /* numerals read the same everywhere */
-      for(k=0;k<p.slots.length;k++){
-        key=p.id+'.'+p.slots[k];
-        lab=str['stg.'+key];
-        if(!lab) continue;
-        lab=trNorm(lab);
-        if(lab && !m[lab]) m[lab]=key;
-      }
-    }
-  }
-  TR_SLOTS=m;
-  return m;
-}
-/* One word, stripped of what surrounds it. Not a lower-casing of the whole
-   string: a language that does not case is unaffected, and one that does
-   should not care whether the sentence began. */
-function trNorm(w){
-  return String(w||'').toLowerCase().replace(/^[^\w'\u3000-\u9fff\uff66-\uff9f]+|[^\w'\u3000-\u9fff\uff66-\uff9f]+$/g, '');
-}
-/* The word this language uses for that role, if somebody has made it. */
-function trBySlot(key){
-  var i;
-  for(i=0;i<WORDS.length;i++) if(WORDS[i].slot===key) return WORDS[i];
-  return null;
-}
-function trUnits(mn){
-  var out=[], a=String(mn||'').split(/(\s+)/), i, w;
-  for(i=0;i<a.length;i++){
-    if(!a[i]) continue;
-    if(/^\s+$/.test(a[i])){ out.push({sp:true}); continue; }
-    w=trWord(a[i]);
-    if(w){ out.push({w:String(w.hw), pos:String(w.pos||''), slot:String(w.slot||'')}); }
-    else {
-      /* A gap the grammar has a name for is not a word to invent -- it is a
-         slot on the grammar page nobody has filled in. So it leads there,
-         which is what makes filling that page the thing that makes this
-         work. 「文法ページを埋めることによって翻訳が機能するならそれが
-         正解では？」 */
-      out.push({miss:a[i], mslot:trSlotMap()[trNorm(a[i])]||''});
-    }
-  }
-  return trArrange(out);
-}
-/* The sentence put into this language's order.
-   ------------------------------------------------------------------
-   What the grammar actually holds is four things and no more: the order of
-   subject, verb and object (`SET.order`, one of the six), and which side of
-   its noun or verb an adjective, a negation and an adposition stands
-   (`gPos`). Everything else about a sentence -- tense, agreement, articles,
-   what a preposition governs -- the grammar has not been asked and this must
-   not invent. 「自分の言語に翻訳が文法通りにならない」
+   So it is out rather than half-true. What is left is a post said in the
+   letters its writer drew, which is what the timeline is for.
+   「なら自分の言語でどう言うか翻訳いらなくない？元々ai前提やったし」
 
-   The roles are read off the words themselves. A word this dictionary has
-   carries its part of speech, so the verb is the verb; the nouns before it
-   are the subject and the ones after it are the object. That is a guess about
-   ENGLISH and it is the only guess here -- it is what the sentence being read
-   is written in, and the app has no parser. A word this language has no word
-   for has no part of speech at all and is left exactly where it was: moving
-   something whose role is unknown would be rearranging somebody's sentence on
-   no evidence.
-
-   With no verb, nothing moves. A list of nouns has no S and no O to put in an
-   order, and SOV against a sentence with one word in it is the app shuffling
-   for the sake of it. */
-function trArrange(u){
-  var i, x, at=-1;
-  var pcs=[];
-  for(i=0;i<u.length;i++) if(!u[i].sp) pcs.push(u[i]);
-  if(pcs.length<2) return u;
-  /* the verb, and there is only one role that can be found without one */
-  for(i=0;i<pcs.length;i++) if(pcs[i].pos==='v'){ at=i; break; }
-  if(at<0) return u;
-  /* An adjective goes with the noun it is nearest, on the side this language
-     puts it. It is bound to that noun before anything is reordered, so it
-     travels with it. */
-  var groups=[], g;
-  for(i=0;i<pcs.length;i++){
-    x=pcs[i];
-    if(x.pos==='adj' && i+1<pcs.length && pcs[i+1].pos==='n') continue;
-    if(x.slot && x.slot.indexOf('where.')===0 && i+1<pcs.length && pcs[i+1].pos==='n') continue;
-    g=[x];
-    if(i>0 && pcs[i-1].pos==='adj' && x.pos==='n'){
-      g = (gPos('adj')==='before')? [pcs[i-1], {sp:true}, x] : [x, {sp:true}, pcs[i-1]];
-    }
-    /* An adposition is the word the `where` stage made, and it stands on the
-       side this language puts it -- which is the whole of what "postposition"
-       means and is the fourth thing the grammar holds. It goes with its noun
-       for the same reason an adjective does. */
-    else if(i>0 && pcs[i-1].slot && pcs[i-1].slot.indexOf('where.')===0 && x.pos==='n'){
-      g = (gPos('adp')==='before')? [pcs[i-1], {sp:true}, x] : [x, {sp:true}, pcs[i-1]];
-    }
-    groups.push({ pcs:g, pos:x.pos, slot:x.slot, at:i });
-  }
-  /* where the verb ended up after the adjectives were folded in */
-  var vAt=-1;
-  for(i=0;i<groups.length;i++) if(groups[i].pos==='v'){ vAt=i; break; }
-  if(vAt<0) return u;
-  var S=[], V=[groups[vAt]], O=[], rest=[], neg=null;
-  for(i=0;i<groups.length;i++){
-    if(i===vAt) continue;
-    g=groups[i];
-    /* The negation is the word the `neg` stage made, and where it stands is
-       one of the four answers the grammar has. It travels with the verb. */
-    if(g.slot && g.slot.indexOf('neg.')===0){ neg=g; continue; }
-    if(g.pos==='n' || g.pos==='pro'){ (i<vAt? S : O).push(g); continue; }
-    rest.push(g);
-  }
-  if(neg) V = (gPos('negp')==='before')? [neg, groups[vAt]] : [groups[vAt], neg];
-  var slot={S:S, V:V, O:O}, seq=orderDef().seq, outG=[];
-  for(i=0;i<seq.length;i++) outG=outG.concat(slot[seq[i]]||[]);
-  /* Everything that is not one of the three keeps the place it was written
-     in, measured against the pieces that moved. */
-  rest.sort(function(a2,b2){ return a2.at-b2.at; });
-  for(i=0;i<rest.length;i++){
-    if(rest[i].at < vAt) outG.unshift(rest[i]); else outG.push(rest[i]);
-  }
-  var out=[];
-  for(i=0;i<outG.length;i++){
-    if(i) out.push({sp:true});
-    out=out.concat(outG[i].pcs);
-  }
-  return out;
-}
-var TR_FREE_DAILY=3;
-/* Its own day and its own counter. Sharing AI_FREE_DAILY would mean asking
-   the word sheet for a spelling costs you a reading of somebody's post,
-   which is two prices for one purchase. */
-function trToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
-function trUsed(){ if(SET.trDate!==trToday()){ SET.trDate=trToday(); SET.trN=0; save(); } return SET.trN||0; }
-function trLeft(){ return can('tr')? Infinity : Math.max(0, TR_FREE_DAILY-trUsed()); }
-function trSpend(){ if(can('tr')) return; SET.trDate=trToday(); SET.trN=trUsed()+1; save(); }
-/* Which posts have been turned into this language, this session. It is not
-   stored: it is a way of looking at a post, not a fact about one. */
-var TURNED={};
-function trOpen(id){
-  if(TURNED[id]) return;
-  if(trLeft()<=0){ go('plans'); toast(t('tr.out')); return; }
-  trSpend(); TURNED[id]=1; render();
-}
-/* Which piece is open, and on which post. Not stored: it is a thing being
-   looked at, the same as TURNED. */
-var TRNEW=null;
-/* The sentence stays a sentence. Press any piece of it -- not only the red
-   ones -- and a bubble comes up under the panel saying what this language
-   says it with, what it means, and the one thing to do about it: a word that
-   is here can be opened, a word that is not can be made.
-   「赤関係なくまず 言語 いみ あるならedit ないなら make でいいでしょ」 */
-function trGap(id, key){
-  TRNEW=(TRNEW && TRNEW.id===id && TRNEW.k===key)? null : {id:id, k:key};
-  render();
-}
-function trEdit(hw){ TRNEW=null; openWord(hw); }
-/* Straight to the slot on the grammar page, which is where a word like this
-   is made. `pron.i` is the stage and the slot with a dot between them. */
-function trSlot(key){
-  TRNEW=null;
-  var at=String(key||'').indexOf('.');
-  if(at<0) return;
-  openSlot(key.slice(0,at), key.slice(at+1));
-}
-function trNew(mn){
-  TRNEW=null;
-  openAdd('');
-  wEdit.mns=[String(mn||'')];
-  if(addW) addW.mns=[String(mn||'')];
-  wdSync();
-  render();
-  /* The sheet's body is built once, when openAdd hands it to openForm, so a
-     meaning put on wEdit after that is on the draft and on no screen. This is
-     the one place that redraws it. */
-  wdPaint();
-}
-function trBubbleHTML(x){
-  var w=x.w? findWord(x.w) : null;
-  return '<span class="trbub">'+
-    '<span class="trbw'+(myFontOn()?' sfont':'')+'">'+(x.w? esc(wOut(x.w)) : '')+'</span>'+
-    '<span class="trbm">'+esc(w? wMn(w) : x.miss)+'</span>'+
-    (x.w
-      ? '<button class="trbdo"' + DO('trEdit', [x.w]) + '>'+t('tr.edit')+'</button>'
-      : (x.mslot
-          ? '<button class="trbdo"' + DO('trSlot', [x.mslot]) + '>'+t('tr.make')+'</button>'
-          : '<button class="trbdo"' + DO('trNew', [x.miss]) + '>'+t('tr.make')+'</button>'))+
-  '</span>';
-}
-function trHTML(p){
-  if(!TURNED[p.id]) return '';
-  var u=trUnits(postSay(p)), open=(TRNEW && TRNEW.id===p.id)? TRNEW.k : '', n=-1, bub='';
-  var line=u.map(function(x){
-    if(x.sp) return ' ';
-    n++;
-    var key=String(n), on=(open===key);
-    if(on) bub=trBubbleHTML(x);
-    return '<button class="trpc'+(x.miss? ' miss':'')+(on? ' on':'')+'"' +
-      DO('trGap', [p.id, key]) + '>'+esc(x.w? wOut(x.w) : x.miss)+'</button>';
-  }).join('');
-  return '<div class="ptr'+(myFontOn()?' sfont':'')+'">'+line+bub+'</div>';
-}
-function trBtnHTML(p){
-  if(TURNED[p.id]) return '';
-  var n=trLeft();
-  return '<button class="trgo"' + DO('trOpen', [p.id]) + '>'+ICON_LINE+t('tr.go')+
-    (n===Infinity? '' : '<span class="trn">'+esc(t('tr.left', n))+'</span>')+'</button>';
-}
+   `SET.trDate` and `SET.trN` are left where they are. Nothing reads them and
+   nothing removes them: they are two numbers in somebody's settings and this
+   app does not delete what it stopped needing. */
 
 /* ---- letters placed on the photograph ---------------------------------
    「なんなら画像に自作文字を貼って投稿できるようにすれば勝手に広がるよ」
@@ -2205,8 +1952,6 @@ function postRow(p){
          removes it: it is somebody's, and deleting what a person made
          because the current shape has no use for it is the one thing
          docs/DATA_SAFETY.md forbids outright. */
-      trBtnHTML(p)+
-      trHTML(p)+
       '<div class="pacts">'+
         postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
         postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+

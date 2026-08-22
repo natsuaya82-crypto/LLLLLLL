@@ -140,9 +140,9 @@ under `lingua.sess`.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is eighteen checks and is the specification. `CLAUDE.md` → "The
+`npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
 fourteen rules the gate enforces". It is `tools/gate.mjs`: the five that need
-no browser run in a row (about two seconds), then the other thirteen four at a
+no browser run in a row (about two seconds), then the other twelve four at a
 time.
 
 Three rules about running it — the body is in `docs/TESTING.md` § the gate:
@@ -157,7 +157,7 @@ Three rules about running it — the body is in `docs/TESTING.md` § the gate:
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. The other fifteen run only where somebody runs them, which means
+passed. The other fourteen run only where somebody runs them, which means
 locally, which means you.
 
 `npm run rls` is not in `npm test` at all: it stands up a real PostgreSQL.

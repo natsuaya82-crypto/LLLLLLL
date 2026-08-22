@@ -167,7 +167,7 @@ backlog entry is not permission, and neither is the absence of one.
 
 ```
 npm test        # tools/gate.mjs -- five with no browser in a row (assets, es5,
-                # dead, import, sides, ~2s), then the other thirteen four at a
+                # dead, import, sides, ~2s), then the other twelve four at a
                 # time. Six minutes. NOT run by a session -- see rule 2.
 ```
 
@@ -178,18 +178,18 @@ Three rules about running it:
    has.
 2. **A session does not run the whole gate.** The owner runs it, once, over
    everything that was built. What a session runs is the ONE check that holds
-   what it is changing, by name -- `npm run card`, `npm run gram`. Say in the
+   what it is changing, by name -- `npm run card`, `npm run base`. Say in the
    report which check was run and that the gate was not.
    「ゲートチェックは全部作って最後に確認するから各個人のセッションでは
    やらないようにして欲しい 長くて話にならん」
 3. **Watching it go red is one check too.** Put the bug back and run THAT
-   check. The other seventeen have nothing to do with it.
+   check. The other sixteen have nothing to do with it.
 
 → `docs/TESTING.md` § the gate
 
 Individual: `npm run assets` / `es5` / `dead` / `migrate` / `i18n` / `import` /
 `sides` / `act` / `conv` / `card` / `word` / `post` / `backup` / `fill` / `round` /
-`base` / `gram` / `press`.
+`base` / `press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate, and
 neither is what a session runs: the whole gate is the owner's, at the end.
@@ -930,7 +930,7 @@ change somebody made on purpose.
   numbering has gaps where a chapter was closed; it is a shelf, not a count.
 - `www/glyph.js` is 79 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
-- After a change, run the ONE check that holds it (`npm run gram`, `npm run card`) --
+- After a change, run the ONE check that holds it (`npm run base`, `npm run card`) --
   seconds. Not `npm test`: six minutes, and it is the owner's run, at the end.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
   Not a gate — it is how a change to a screen gets looked at instead of read as a

@@ -323,41 +323,6 @@ export function halfDone(){
        const h=vLtset('num');
        LETTERS = LETTERS.filter(l => l.val !== 11); STG.base=was; SET.plan='free';
        return h; }],
-    /* A post turned into this language, and one of its gaps opened. The
-       panel is a way of LOOKING at a post -- TURNED is not stored -- so no
-       screen the walk renders has it, and the bubble is one press further in
-       again. */
-    ['a post said in my language', () => { const p = POSTS[0];
-       TURNED[p.id] = 1; window.route='feed'; NAV=[{r:'feed'}];
-       const h = vFeed(); TURNED = {}; return h; }],
-    /* And a piece of it pressed, which is the bubble. TRNEW is a way of
-       looking at the panel, not a fact about it, so no screen the walk
-       renders has it. Once on a word this language has, once on a gap. */
-    ['a word of it, pressed', () => { const p = POSTS[0];
-       TURNED[p.id] = 1;
-       const u = trUnits(postSay(p)).filter(x => !x.sp);
-       let at = -1; u.forEach((x, i) => { if (x.w && at < 0) at = i; });
-       TRNEW = { id:p.id, k:String(at < 0 ? 0 : at) };
-       window.route='feed'; NAV=[{r:'feed'}];
-       const h = vFeed(); TRNEW = null; TURNED = {}; return h; }],
-    ['a gap in it, pressed', () => { const p = POSTS[0];
-       TURNED[p.id] = 1;
-       const u = trUnits(postSay(p)).filter(x => !x.sp);
-       let at = 0; u.forEach((x, i) => { if (x.miss && !at) at = i; });
-       TRNEW = { id:p.id, k:String(at) };
-       window.route='feed'; NAV=[{r:'feed'}];
-       const h = vFeed(); TRNEW = null; TURNED = {}; return h; }],
-    /* A gap the GRAMMAR has a name for. `and` is conj.and and this language
-       has not made it, so the way on is the slot on the grammar page rather
-       than a blank word sheet. */
-    ['a gap the grammar names, pressed', () => { const p = POSTS[0];
-       const was = p.mn; p.mn = 'mountain and river';
-       TURNED[p.id] = 1;
-       const u = trUnits(postSay(p)).filter(x => !x.sp);
-       let at = 0; u.forEach((x, i) => { if (x.mslot && !at) at = i; });
-       TRNEW = { id:p.id, k:String(at) };
-       window.route='feed'; NAV=[{r:'feed'}];
-       const h = vFeed(); TRNEW = null; TURNED = {}; p.mn = was; return h; }],
     ['the reading of a word', () => { SET.plan='plus'; openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
                                       const h=vSpell(); SET.plan='free'; return h; }],
