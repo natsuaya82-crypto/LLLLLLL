@@ -332,6 +332,19 @@ export function halfDone(){
        sheet that has a word open on it. Once with the search empty and once
        with something in it: the tiles are the screen, and a search that
        matches nothing leaves it with none. */
+    /* The digits room on a paid plan, which is where the base is nudged: free
+       counts in ten and has no say in it, so the row is on no screen the walk
+       renders otherwise. And once more with a digit the base can no longer
+       reach, which is the red cell. */
+    ['the digits, where the base is set', () => { SET.plan='plus';
+       window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
+       const h=vLtset('num'); SET.plan='free'; return h; }],
+    ['a digit above the base', () => { SET.plan='plus';
+       const was=STG.base; STG.base=10; ltNew({val:11});
+       window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
+       const h=vLtset('num');
+       LETTERS = LETTERS.filter(l => l.val !== 11); STG.base=was; SET.plan='free';
+       return h; }],
     ['the reading of a word', () => { SET.plan='plus'; openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
                                       const h=vSpell(); SET.plan='free'; return h; }],

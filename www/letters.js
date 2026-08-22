@@ -474,12 +474,7 @@ function ltStart(){
      as the base has, so a language counting in twelve gets twelve. The
      reading is left alone -- a value takes a reading away, and one of these
      has nothing to say about sound. */
-  var v, n=numBase();
-  for(v=0;v<n;v++){
-    if(numByVal(v)) continue;
-    ltNew({val:v});
-    made++;
-  }
+  made+=numTopUp();
   if(made) saveLetters();
 }
 /* What this letter reads, spelled the way a person would write it. One word
@@ -812,6 +807,11 @@ function spSetU(st, u){
    A character that answers to no letter is dropped rather than guessed at --
    the alphabet is the whole of what can be written. */
 function spType(text){
+  /* Whatever the Lingua keyboard put in the field comes back to roman first.
+     This is the one place a typed spelling becomes the language's letters, so
+     it is the one place that has to know the private use area exists --
+     everything past here is the alphabet's own names, as it always was. */
+  text=puaRoman(text);
   var names=[], by={}, i, n, cut, out=[];
   for(i=0;i<LETTERS.length;i++){
     n=String(ltName(LETTERS[i])||'').toLowerCase();
@@ -839,7 +839,7 @@ function spTypeField(id, into, sp, cls){
   /* In the person's own letters, because that is what the word IS. The box
      holds the letters' names -- a to z -- and roman is what those names look
      like, not what the word looks like. 「単語の文字のところが英語なのはなぜ？」 */
-  return lnField(id, '', IN(into), spWord(sp||[]), cls+(myFontOn()? ' sfont' : ''));
+  return lnField(id, '', IN(into), spWord(sp||[]), cls+(myFontOn()? ' tfont' : ''));
 }
 function spWord(sp){
   var out='', i, l;

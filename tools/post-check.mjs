@@ -562,6 +562,49 @@ const R = await pg.evaluate(async () => {
     fails.push('your own post taken down says nothing about being taken down');
   POSTS.pop(); POSTS.pop();
 
+  /* Only what the Lingua keyboard typed becomes this language's letters.
+     That keyboard inserts private use code points and nothing else on a phone
+     does, so the ink is cut on the character: a code point in the range is a
+     shape, and roman typed on the phone's own QWERTY is text and stays text.
+     Before this the ink was cut from the ROMAN line with the alphabet, so a
+     sentence typed on any keyboard came out in the drawn letters.
+     「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
+
+     Nothing throws when it is wrong: the post renders, in somebody's own
+     letters, saying something they never said in that language. */
+  (function(){
+    const o = GGRID.inset, D = geStep();
+    /* EVERY letter gets a shape, including the ones ` hello` is spelled with.
+       With only the first three drawn, the old cut and the new one give the
+       same answer -- h, e, l and o have no shape either way -- and the check
+       could not tell them apart. */
+    ltOrder(LETTERS).forEach((l, i) => {
+      l.st = [{ pts: [[o + (2 + (i % 16)) * D, o + 4 * D],
+                      [o + (2 + (i % 16)) * D, o + 16 * D]] }];
+    });
+    saveLetters(); installScriptFont();
+    const lts = ltOrder(LETTERS.filter(l => l.st && l.st.length));
+    let pua = '', names = '';
+    for (let i = 0; i < 3; i++) { pua += String.fromCharCode(0xE000 + i); names += ltName(lts[i]); }
+    go('feed'); openPost();
+    PW.ln = pua + ' hello'; PW.mn = 'a line';
+    pwSend();
+    const p = POSTS.slice().sort((a, b) => (b.at || 0) - (a.at || 0))[0];
+    if (String(p.ln) !== names + ' hello')
+      fails.push('a post keeps the roman spelling, not what the keyboard typed: ' +
+                 JSON.stringify(p.ln) + ' where ' + JSON.stringify(names + ' hello') +
+                 ' was typed. A private use code point is a square box on ' +
+                 "somebody else's phone.");
+    if (/[\uE000-\uF8FF]/.test(String(p.ln)))
+      fails.push('a private use code point reached what is stored: ' + JSON.stringify(p.ln));
+    const sk = (p.ink && p.ink.s) || [];
+    if (sk.length !== 4 || typeof sk[0] !== 'number' || typeof sk[1] !== 'number' ||
+        typeof sk[2] !== 'number' || sk[3] !== ' hello')
+      fails.push('the ink covers more than the Lingua keyboard typed: ' +
+                 JSON.stringify(sk) + ' -- three shapes and then " hello" as text ' +
+                 'is what was typed.');
+  }());
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),

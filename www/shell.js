@@ -250,6 +250,12 @@ function secAdd(label, doAttr, aria){
   return '<div class="sec secadd">'+label+
     '<button class="secplus"'+doAttr+' aria-label="'+esc(aria)+'">'+ICON_ADD+'</button></div>';
 }
+/* `count` is a POSITION, not a total. Every screen used to put how many
+   there were up here -- words, letters, notes, drafts, points, followers, the
+   stages done out of fifteen -- and none of it was anything anybody came to
+   the screen to find out. 「総数系いらないやろ全部」 The one left is which
+   photograph of four you are looking at, which is where you are standing
+   rather than how much you have. */
 function navTop(count, right){
   var h=here(), pv=prevPage(), n=h.a? '' : tocNum(h.r);
   var lab = pv? pageName(pv.r, pv.a) : t('tab.build');

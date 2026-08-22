@@ -216,9 +216,16 @@ function vSet(){
          there is one profile here and it is this person's -- so what this
          switch does today is take the row off their own profile and say so.
          「これは設定から公開非公開もかのう」 */
-      '<button class="set" style="border-bottom:none"' + DO('setWldHide', [!wldHidden()]) + '>'+
+      '<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
       '<span class="sl">'+t('wld.public')+'</span>'+
       swtHTML(!wldHidden())+'</button>'+
+      /* And whether it can be taken away, which is a different question and
+         only asked of a page anybody can open. What both of them mean is
+         behind the `?` in the bar, which is where an explanation goes. */
+      (wldHidden()? '' :
+        '<button class="set" style="border-bottom:none"' + DO('setWldDl', [!wldDl()]) + '>'+
+        '<span class="sl">'+t('wld.dl')+'</span>'+
+        swtHTML(wldDl())+'</button>')+
       '';
   } else if(id==='pw'){
     /* Two fields and a button. The same shape as the door's, because it is
@@ -319,7 +326,7 @@ function vSet(){
   /* The account room is the one that has something pinned to the FOOT of it,
      so its body is the one that is as tall as the screen. Everywhere else a
      body is exactly as tall as what is in it. */
-  return '<div class="view">'+navTop('')+
+  return '<div class="view">'+navTop('', (id==='lang'? helpQ('pub') : ''))+
     '<div class="body'+(id==='acct'? ' tall' : '')+'">'+body+'</div></div>';
 }
 /* One card: a small Lingua in that theme, its name, and a tick. The colours

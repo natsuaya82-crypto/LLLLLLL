@@ -274,6 +274,9 @@ function scriptGlyphDefs(){
    tools/face-check.mjs holds this one against the stylesheet. */
 var SFONT_FAMILY='LinguaScript';
 var SFONT={built:false, sig:null, b64:''};
+/* The typing face. No `b64`: it never leaves this phone -- what the system
+   keyboard is handed is the shapes, not a font file. */
+var TFONT={built:false};
 /* What the font is made of, in one string. The alphabet grows on its own as
    the dictionary does, so a word written today can need a letter the font was
    not built with — this is how the page notices without rebuilding on every
@@ -295,6 +298,68 @@ function scriptSig(){
     s.push(r+':'+(g? JSON.stringify(g).length : 0));
   });
   return s.join(',');
+}
+/* The same shapes, mapped somewhere nobody types by accident.
+   ------------------------------------------------------------------
+   `LinguaScript` puts a drawn letter at its own roman code point, so a
+   letter called `a` IS the character `a`. That is right for a headword --
+   the word is stored in roman and has to come out in the letters somebody
+   drew -- and wrong for a field: a sentence typed on the phone's own QWERTY
+   came out in the drawn letters too, because the app cannot tell one
+   keyboard's `a` from another's. 「Linguaキーボードで打ったやつだけ自作
+   文字に、それ以外はその言語の文字表示にして欲しいんだけど」
+
+   So there is a second face over the same glyphs, mapped into the private
+   use area instead. The Lingua keyboard inserts those code points; nothing
+   else on a phone does. A field set in it draws what that keyboard typed and
+   falls through to the ordinary font for everything else -- roman, kana,
+   anything -- because this face simply has no glyph there. No conversion, no
+   remembering which keyboard was up: the characters are different characters.
+
+   U+E000 upward, one per drawn letter, in the alphabet's own order. 6,400 of
+   them in this plane and it is not a shared register -- every language starts
+   at E000 in its own font -- so nobody's letters take anybody else's room. */
+var PUA0=0xE000;
+function ltPua(i){ return String.fromCharCode(PUA0+i); }
+/* Back to roman. The private use area is what the Lingua keyboard types INTO
+   a field and it goes no further: everything downstream of the field -- the
+   gloss under the composer, findWord, the spelling engine, what is stored,
+   what a post carries -- works on the roman spelling and always has. A code
+   point nobody else's font has would be a square box on somebody else's
+   phone; the roman is readable there.
+
+   The order is the alphabet's, which is the order installTypeFont mapped
+   them in, so the two cannot disagree: they read the same list. */
+function puaRoman(txt){
+  var s=String(txt||''), out='', i, c, at,
+      lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; }));
+  for(i=0;i<s.length;i++){
+    c=s.charCodeAt(i);
+    at=c-PUA0;
+    if(at>=0 && at<lts.length) out+=(ltName(lts[at])||'');
+    else out+=s.charAt(i);
+  }
+  return out;
+}
+function installTypeFont(){
+  var el=document.getElementById('tfontcss');
+  if(el) el.parentNode.removeChild(el);
+  TFONT.built=false;
+  try{
+    var lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; })), defs=[], i;
+    for(i=0;i<lts.length;i++)
+      defs.push({name:glyphName(lts[i].id), roman:ltPua(i), strokes:lts[i].st});
+    if(!defs.length) return;
+    var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:geSide(),
+                       asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(),
+                                   family:'LinguaType', style:'Regular'});
+    el=document.createElement('style');
+    el.id='tfontcss';
+    el.appendChild(document.createTextNode(
+      "@font-face{font-family:'LinguaType';src:url("+f.dataUrl()+") format('opentype');}"));
+    document.head.appendChild(el);
+    TFONT.built=true;
+  }catch(e){ TFONT.built=false; }
 }
 function installScriptFont(){
   var el=document.getElementById('sfontcss');
@@ -319,6 +384,9 @@ function installScriptFont(){
     SFONT.b64=f.base64();
     SFONT.built=true;
   }catch(e){ SFONT.built=false; SFONT.b64=''; }
+  /* The typing face is built from the same letters and at the same time, so
+     the two can never be out of step with each other. */
+  installTypeFont();
 }
 /* Two ways to see your language in its own writing exist side by side: letters
    you borrowed from an existing script, which change the text itself, and
@@ -679,7 +747,7 @@ function vGlyph(){
      drawn, and vLetter is the screen about that. The canvas, the rail and the
      preview come to 844 exactly. */
   return '<div class="view">'+
-    navTop(pts)+
+    navTop()+
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+

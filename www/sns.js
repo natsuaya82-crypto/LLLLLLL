@@ -236,7 +236,7 @@ function vThread(){
     d=Math.min(down[i].d, THREAD_IN);
     out+='<div class="pind pind'+d+'">'+postRow(down[i].p)+'</div>';
   }
-  return '<div class="view">'+navTop(String(down.length))+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     out+
     '</div></div>';
 }

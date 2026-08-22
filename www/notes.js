@@ -105,7 +105,7 @@ function vNotes(){
       '</button>';
   });
   return '<div class="view">'+
-    navTop(NOTES.length,
+    navTop('',
       '<button class="iconb'+(ntFind?' on':'')+'"' + DO('ntSearch') + ' aria-label="'+
         esc(t('notes.search'))+'">'+ICON_LENS+'</button>')+
     '<div class="body">'+

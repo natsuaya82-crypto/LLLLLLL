@@ -74,6 +74,11 @@ tick on a push is not the gate either.
 | `fill` | the inside of what was drawn round survives being saved and read back |
 | `round` | ROUND bends a stroke that exists, never invents one, and undoes exactly |
 | `press` | every button of every screen, pressed for real; 44pt floor |
+| `word` | what a word does after two presses in a row — rename, delete, save |
+| `post` | what a post carries is put on it when it is written |
+| `fill` | a stroke drawn with the fill on inks the inside of what it went round |
+| `round` | ROUND is done to a stroke already drawn, is reversible, and never bends a straight one |
+| `base` | raising the base makes the digits at once; lowering it never takes away one somebody drew |
 
 ```
 npm run rls     # supabase/schema.sql, and a second person (~15s)
@@ -88,11 +93,14 @@ shipped once.
 
 ## What to run when
 
+One check, by name, for what you changed. Not `npm test` — see rule 2.
+
 | changed | run |
 |---|---|
 | anything, **when you are about to commit** | `npm test` |
 | a face, or anything in `index.html`'s CSS | `npm run face` |
 | a global that a screen remembers | `npm run dead` |
+| the base a language counts in | `npm run base` |
 | `supabase/schema.sql` | `npm run rls`, and somebody who is not you |
 | how anything is saved | `npm run backup` + `npm run migrate`, and see `docs/DATA_SAFETY.md` § changing anything that saves |
 | a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |

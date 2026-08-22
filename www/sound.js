@@ -41,16 +41,11 @@ function vWsys(){
        because it is the language's -- one language, one answer, and it goes
        in the backup with the rest of the language.
 
-       Shown on the free plan, unlike the four writing systems above, and the
-       reason they differ is worth being exact about. Hiding a syllabary from
-       somebody who cannot have one costs them nothing: an alphabet is what
-       they have and the row would only explain itself. A direction is
-       different -- posts written in all four are on the timeline in front of
-       them, on every plan, so the thing exists whether or not they can buy
-       it, and a screen that pretends otherwise is a screen that cannot
-       answer "why is that post sideways". */
+       Free shows the one direction a free language has and nothing else, the
+       same as the writing systems above show only `alpha`. Three rows nothing
+       can press is the app explaining itself. 「隠すでしょ」 */
     '<div class="sec">'+t('dir.title')+'</div>'+
-    DIRS.map(function(k){
+    (can('dir')? DIRS : [scriptDir()]).map(function(k){
       return '<button class="set"' + DO('setScriptDir', [k]) + '>'+
         '<span class="sl">'+esc(t('dir.'+k))+'</span>'+
         '<span class="sv">'+(scriptDir()===k? ICON_TICK : '')+'</span></button>';
@@ -132,7 +127,7 @@ function vAbugida(){
       '<div class="note">'+t('ab.notabugida')+'</div>'+
       '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button></div></div>';
-  return '<div class="view">'+navTop(cs.length+' × '+vs.length)+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
       return '<button class="seg'+(x===v?' on':'')+'"' + DO('abSetVow', [x]) + '>'+esc(x)+'</button>';
     }).join('')+'</div>'+
@@ -550,7 +545,7 @@ function ltKindRow(k){
 }
 function vLetters(){
   return '<div class="view">'+
-    navTop(ltShaped()+' / '+LETTERS.length)+
+    navTop()+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
@@ -651,12 +646,18 @@ function vLtset(){
      this id and finds nothing under any other sort. */
   var gid=(pick && ltSort==='own' && ltFil==='all')? 'ltgrid' : 'ltgrid-ro';
   return '<div class="view">'+
-    navTop(list.length===all.length? all.length : (list.length+' / '+all.length),
+    navTop('',
            ltWob
              ? '<button class="navq navdone"' + DO('ltWobEnd') + '>'+esc(t('kb.done'))+'</button>'
              : '')+
     '<div class="body">'+
     (pick? ltViewRow() : '')+
+    /* How many digits there are is what the base IS, and this is the room
+       that holds them -- so it is decided here rather than on the writing
+       screen, where the kind of writing and the direction live and this is
+       neither, and rather than on the counting stage, where it would be a
+       second place saying the same thing about the same letters. */
+    (k==='num'? numBaseRows() : '')+
     /* The letters, and after them a cell for every sound of the language that
        no letter says yet. One page for the pair, rather than a chapter for
        each end of it. Only on the alphabet, and only where the filter is not
@@ -720,6 +721,7 @@ function ltCell(l, press){
      nothing, which is why can('letters') guards the letter's own page too.
      Free still wobbles, because the ORDER is theirs. */
   return '<button class="ltc'+(ltTaken(l)? ' dup':'')+(wob? ' wob':'')+
+    (numOver(l)? ' over':'')+
     '" data-id="'+esc(l.id)+'"'+
     (press || (wob? '' : DO('go', ["letter", l.id]))) + ' aria-label="'+esc(sa)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+

@@ -40,7 +40,7 @@ the keyboard and the world — and neither could throw.
 | `talk` | `TALK` | the conversation. **Its screen is lifted** — see the note on `PLANS` in `www/core.js` — so nothing in the app reads or writes this today. The slice stays in `SLICES`, `bkPack()` still copies it out of storage, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
-| `wld` | `WLD` | what the language is for — and `hide`, which is whether it has a page anybody else may open. **Absent means public**, which is the default and the one no migration can get wrong | object |
+| `wld` | `WLD` | what the language is for — and two flags. `hide`: whether it has a page anybody else may open; **absent means public**. `dl`: whether the letters and the words may be taken away and used; **absent means no**, and the two defaults point opposite ways on purpose — a page is a thing to be looked at, and handing over months of somebody's drawing is not a thing to decide for them | object |
 
 `BK_SHAPE` in `www/backup.js` carries those shapes; `bkSound()` uses it to tell
 a slice from wreckage. `langKey(slice)` is the only thing that knows how a

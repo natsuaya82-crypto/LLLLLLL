@@ -158,17 +158,38 @@ is in flight, then states what it may and may not change. Five things are
 forbidden by name, because each has a reasonable-sounding form: *while I'm in
 here*, *this could be cleaner*, *it's related so I changed it*, *we'll need
 this later*, *the existing code looked wrong*. Each is a separate task —
-`docs/BACKLOG.md`. If two sessions overlap, stop and report; do not merge the
-two intents yourself. → `docs/FEATURE_RULES.md`
+`docs/BACKLOG.md`.
+
+**And how the work moves, so that separate containers can be put back
+together.** One session, one branch (`claude/<area>`), and never anybody
+else's. `git fetch --all --prune` before deciding anything; the remote is the
+only thing sessions share. `git log --oneline --all -- <file>` before changing
+a file — a commit there on a branch that is not yours is another session in
+that file, and that is the moment to stop and report, not when a merge fails.
+Push the scope declaration as the FIRST commit, before any code: a branch
+nobody can see is a branch nobody can avoid. Push after every commit. **Never
+merge, rebase or cherry-pick another branch** — the leader integrates, and
+asks the owner where the answer is a decision rather than a merge.
+**The one page to hand a session is `docs/SESSIONS.md`.** It carries the rule
+that actually prevents a collision rather than finding one: **the leader
+names the files a session owns, and a session edits nothing else.** The leader
+is another session above this one -- it names the territory, integrates the
+branches and runs the whole gate; a session does none of those three. `www/index.html`
+is the known hazard -- every screen's CSS is in it -- so one session at a time
+owns it until that file is split by chapter.
+The top of `docs/SESSIONS.md` is a block to copy whole into a session's first
+instruction, with three blanks to fill in.
+→ `docs/SESSIONS.md`, and `docs/FEATURE_RULES.md` § several sessions at once
 
 **One commit is one kind of thing.** A feature, a bug fix, a refactor, a
 rename, a UI change and a migration do not share a commit. A refactor that
 changes behaviour is not a refactor.
 
 **Done** is not "the code is written". Spec confirmed, blast radius known,
-docs updated, implemented, `npm test` green, the regression green, **the bug
-put back and the test watched going red**, static checks, device if it is on
-the list, owner confirmed, CHANGELOG updated. Every report separates `CODE
+docs updated, implemented, the check that holds it green, **the bug put back
+and that check watched going red**, static checks, device if it is on the
+list, the whole gate green (the LEADER's run, not the session's), owner
+confirmed, CHANGELOG updated. Every report separates `CODE
 CONFIRMED` / `DEVICE CONFIRMED` / `OWNER CONFIRMED`, and none of the three
 implies another. → `docs/FEATURE_RULES.md`
 
@@ -193,10 +214,9 @@ backlog entry is not permission, and neither is the absence of one.
 ## The gate
 
 ```
-npm test        # tools/gate.mjs — the six that need no browser, in order and
-                # about two seconds; then the other eleven, four at a time
-                # green before a commit. It is minutes, not seconds -- on a
-                # laptop it is about two, and on a slow container six to ten.
+npm test        # tools/gate.mjs -- six with no browser in a row (assets, es5,
+                # dead, import, sides, face, ~2s), then the other twelve four
+                # at a time. Six minutes. NOT run by a session -- see rule 2.
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
@@ -1017,7 +1037,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `docs/FEATURES.md` | the registry: every feature, its status, its plan, its data, and whether the owner has decided it. Read before building anything |
 | `docs/ARCHITECTURE.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `FEATURE_RULES.md`, `PAID_FEATURES.md`, `TESTING.md`, `CHANGELOG.md` | the rules above, in full. What is at the head of this file is the part that may not be argued with; these are the working detail |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
-| `docs/keyboard-extension.md` | the whole spec for a *system* keyboard: what a person clicks in Apple's site, what the App Group carries, what the extension may not do, and why none of it makes anybody's own letters appear in Messages. Built now — `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** — so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
+| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
 | `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
@@ -1125,7 +1145,8 @@ be a change somebody made on purpose.
   numbering has gaps where a chapter was closed; it is a shelf, not a count.
 - `www/glyph.js` is 104 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
-- Run `npm test` after every change, not once at the end. It is fast and it is the spec.
+- After a change, run the ONE check that holds it (`npm run base`, `npm run card`) --
+  seconds. Not `npm test`: six minutes, and it is the leader's run.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
   Not a gate — it is how a change to a screen gets looked at instead of read as a
   diff of string concatenation. A refactor that is meant to change nothing can be

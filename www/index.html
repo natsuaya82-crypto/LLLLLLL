@@ -79,6 +79,10 @@ html[data-theme="light"]{
   --face-mono:ui-monospace,Menlo,monospace;
   --face-ui:-apple-system,BlinkMacSystemFont,system-ui,'Noto Sans JP',sans-serif;
   --face-script:'LinguaScript',serif;
+  /* A field you type into. LinguaType holds only the private use area, so
+     what the Lingua keyboard inserted is drawn and everything else falls
+     through to the ordinary face below it. */
+  --face-type:'LinguaType',var(--face-ui);
 }
 :root{--tabh:calc(env(safe-area-inset-bottom,0) + 66px)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -495,8 +499,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pind1{padding-left:14px}
 .pind2{padding-left:28px}
 .pind3{padding-left:42px}
-.pline{font-size:1.3rem;line-height:1.45;color:var(--tx);
-       margin-top:2px;word-break:break-word}
+/* Drawn letters stand at their full height on this line, so 1.45 put the
+   rows of a two-line post against each other. 「ここつまりすぎてる」 */
+.pline{font-size:1.3rem;line-height:1.7;color:var(--tx);
+       margin-top:6px;word-break:break-word}
 /* ---------- which way a line runs ----------
    Four of them, and the class is the only place any of it is written down --
    dirClass() in wsys.js names one and nothing else sets `direction` or
@@ -564,7 +570,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    gives each one its own advance, and a canvas with a height and no width is
    as wide as its own ratio says. */
 .tcln{display:inline-block;vertical-align:baseline;width:auto;height:1em}
-.pmn{font-size:1.0rem;line-height:1.45;color:var(--txs);margin-top:2px}
+.pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
 .pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
 .pwg{font-size:.76rem;color:var(--txm)}
 .pwg.none{color:var(--bad)}
@@ -1456,7 +1462,11 @@ a.set{text-decoration:none}
 .abtun{font-size:1.15rem;color:var(--tx)}
 .abtud{font-size:.88rem;color:var(--txm);line-height:1.45}
 .abtnums{display:flex;gap:10px;margin:12px 0 4px}
-.abtn{flex:1 1 0;min-width:0;padding:12px 8px;border-radius:14px;
+/* Two of the three are buttons now, so they carry what a button needs and
+   nothing they did not already look like. */
+.abtn{flex:1 1 0;min-width:0;min-height:44px;padding:12px 8px;border-radius:14px;
+      border:0;font:inherit;text-align:center;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
       background:var(--sf);text-align:center;font-size:.76rem;color:var(--txm);
       display:flex;flex-direction:column;gap:3px;justify-content:center}
 .abtn b{font-size:1.15rem;color:var(--tx);font-weight:600;
@@ -1929,20 +1939,6 @@ a.set{text-decoration:none}
 .ptomb{padding:14px 16px;color:var(--txm);font-size:.9rem;
        border-bottom:1px solid var(--line)}
 
-/* ---------- a post in the reader's own words ----------
-   The button that asks for it, and the line that comes back. A word this
-   language has no word for is left as it was and marked -- pressing it is
-   the shortest way there is from "I cannot say this" to writing the word. */
-.trgo{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;padding:8px 12px;
-      min-height:44px;border:0;background:none;color:var(--gold);font-family:inherit;
-      font-size:.86rem;font-weight:600;border-radius:999px}
-.trgo svg{width:15px;height:15px}
-.trn{color:var(--txm);font-weight:400}
-.ptr{margin:6px 0 2px;padding:10px 12px;border-radius:12px;background:var(--sink);
-     line-height:1.75;font-size:1rem;word-break:break-word}
-.trw{}
-.trmiss{color:var(--bad);text-decoration:underline;text-decoration-style:dotted;
-        text-underline-offset:3px}
 
 /* ---------- bottom bar, sheet, toast ---------- */
 /* On top of the tab bar, not under it. 「下タブを画面1番下に固定して、その上
@@ -2022,6 +2018,19 @@ a.set{text-decoration:none}
 .thtick{width:25px;height:25px;border-radius:999px;border:1.5px solid var(--line);
         display:flex;align-items:center;justify-content:center;color:transparent}
 .thcard.on .thtick{background:var(--gold);border-color:var(--gold);color:#fff}
+/* One number on a line, nudged either way. The value is the wide part, so
+   the two buttons do not move as it goes from 9 to 10. */
+/* A digit above the base. Drawn, kept, and unusable: the language counts in
+   ten and this is an eleven. Red is the whole of what the room says about it. */
+.ltc.over{border-color:var(--bad)}
+.ltc.over .ltcn{color:var(--bad)}
+.numbase{border-bottom:none}
+.nbstep{margin-left:auto;display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.nbb{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;
+     background:none;border:0;color:var(--gold);cursor:pointer}
+.nbb[disabled]{color:var(--txm);opacity:.4}
+.nbv{min-width:2.4em;text-align:center;font-size:1.05rem;color:var(--tx);
+     font-variant-numeric:tabular-nums}
 .bpic{width:100%;height:100%;border-radius:999px;object-fit:cover;display:block}
 .picrow{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .picrow .pav{width:64px;height:64px;flex:0 0 auto}
@@ -2255,6 +2264,16 @@ html[data-script="on"] .st-seq{font-family:var(--face-script);letter-spacing:0}
    the glyph was there, and `l` came out as l. 「これ押してもlになる。lingua内
    でも」 Beating them one at a time is a dozen places agreeing; this is one. */
 .sfont{font-family:var(--face-script) !important;line-height:normal}
+/* A field you type into. `LinguaType` carries only the private use area, so
+   what the Lingua keyboard inserted is drawn and everything else -- roman,
+   kana, anything -- falls through to the ordinary font because this face has
+   no glyph there. `.sfont` cannot do it: it maps the drawn letters onto roman
+   and so draws whatever any keyboard typed.
+   「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
+   !important for the same reason .sfont says it: a dozen container rules set
+   font-family:inherit on the input inside them, and every one of those is two
+   selectors where this is one. */
+.tfont{font-family:var(--face-type) !important}
 </style>
 <style id="ob-rework">
 .langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}

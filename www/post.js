@@ -184,14 +184,12 @@ function pwSidePaint(){
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
-  /* A post has a writer, and the account the app made at first launch is
-     not anybody yet. So this is where somebody is asked who they are -- one
-     of the two places, the other being a purchase.
-     「課金とツイートにはログイン必須。それ以外は流さない」
-
-     A form is a route and a route can be come back to, so the composer asks
-     itself rather than trusting that nothing else does. */
-  if(!obNeed()) return;
+  /* A post has a writer. Nothing on the timeline is reachable signed out --
+     snsLocked() is what the three tabs answer with -- but a form is a route
+     and a route can be come back to, so the composer says so itself rather
+     than trusting that nobody arrived here another way. The feed is where
+     the door is. */
+  if(!netSignedIn()){ go('feed'); return; }
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
     '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
@@ -295,7 +293,7 @@ function vDrafts(){
         esc(t('post.draft.del'))+'">'+ICON_MINUS+'</button>'+
       '</div>';
   }
-  return '<div class="view">'+navTop(String(DRAFTS.length))+'<div class="body">'+
+  return '<div class="view">'+navTop()+'<div class="body">'+
     (out || '<div class="note">'+esc(t('post.draft.none'))+'</div>')+
     '</div></div>';
 }
@@ -305,10 +303,14 @@ FORM_OPEN.post=function(){ openPost(); };
 /* What the meaning field starts as, and what its placeholder says: the gloss
    run together. It was worked out in three places and they have to agree --
    what you are offered has to be what you get if you type nothing. */
-function pwMn(){ return postGlossLine(postGloss(PW.ln)); }
+/* The line as the rest of the app reads it. What is in the field may be what
+   the Lingua keyboard typed, which is the private use area; everything below
+   the field works on the roman spelling. */
+function pwLn(){ return puaRoman(PW.ln); }
+function pwMn(){ return postGlossLine(postGloss(pwLn())); }
 /* And the row of it, which is drawn once when the screen is built and again
    on every letter typed. */
-function pwGl(){ return postGlossHTML(postGloss(PW.ln)); }
+function pwGl(){ return postGlossHTML(postGloss(pwLn())); }
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -355,6 +357,7 @@ function postThumb(u, ok){
   im.onerror=function(){ ok(''); };
   im.src=String(u||'');
 }
+/* What the timeline may take up. localStorage is one allowance shared by the
 /* What the timeline may take up. localStorage is one allowance shared by the
    posts and by every slice of the language, so a timeline with no ceiling can
    make somebody's LANGUAGE unsaveable -- and the language is the thing this
@@ -559,7 +562,7 @@ function pwAddHTML(){
    list is put back in the order a timeline reads in, which is newest first
    and is postAll()'s to say. */
 function postTake(ps){
-  var have={}, i, p, n=0, chg=false;
+  var have={}, i, p, n=0;
   /* By BOTH names. A post this phone wrote has a local id and, once it has
      gone up, the server's -- and it comes back down the timeline wearing the
      server's. Without the second line every post somebody wrote would appear
@@ -570,32 +573,13 @@ function postTake(ps){
   }
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
-    if(!p || !p.id) continue;
-    /* A post already here comes down the timeline again every time the feed
-       is pulled, and one thing about it can have changed since: whether it
-       was taken down. That reaches its author and nobody else -- post_read in
-       schema.sql -- so this is the only place they are ever told. */
-    if(have[p.id]){ if(postMarkDown(p.id, !!p.down)) chg=true; continue; }
+    if(!p || !p.id || have[p.id]) continue;
     have[p.id]=1;
     POSTS.push(p);
     n++;
   }
-  if(n || chg) savePosts();
+  if(n) savePosts();
   return n;
-}
-/* By either name, because a post this phone wrote has a local id and the
-   server's. Answers whether anything changed, so a feed pull that found
-   nothing new does not write the whole list back to storage. */
-function postMarkDown(id, down){
-  var i, q;
-  for(i=0;i<POSTS.length;i++){
-    q=POSTS[i];
-    if(q.id!==id && q.sid!==id) continue;
-    if(!!q.down===down) return false;
-    if(down) q.down=true; else delete q.down;
-    return true;
-  }
-  return false;
 }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
@@ -703,18 +687,7 @@ function pwHTML(){
   var to=PW.to? postById(PW.to) : null;
   /* Whom you are replying to is on the post you pressed reply on. It read the
      account here, so every reply said you were replying to yourself. */
-  /* A state, at the top of the composer, and said again if the button is
-     pressed anyway. Three words and no sentence after them: what is banned in
-     this app is the app EXPLAINING itself, and the line that used to follow
-     this one -- "you can read, but nothing you write will go up" -- was the
-     app describing its own rules to somebody looking at a screen that already
-     showed them. 「アプリ内に説明書くの禁止」
-
-     The reason is not on it either. The five words the report offered are
-     ours to sort by; they were never given to anybody as an explanation, and
-     putting one here would make them one. */
-  return (NET_BANNED? '<div class="pwout">'+esc(t('post.out'))+'</div>' : '')+
-    (to? '<div class="pwto">'+
+  return (to? '<div class="pwto">'+
       esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
       pwToHTML(to) : '')+
     /* The face you are about to post under, which is the one this post will
@@ -739,7 +712,7 @@ function pwHTML(){
          line never grew. The page scrolls now, so the field is as tall as
          what is in it and everything under it moves down. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
-        PW.ln, dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
+        PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
@@ -829,13 +802,21 @@ function pwHas(ln){
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
    below, and a bake that fails sends the photograph as it was. */
+/* The line exactly as it was typed, private use code points and all. Not
+   stored on anything: it lives from the press that sends to the ink being
+   cut. */
+var PWRAW='';
 function pwSend(){
-  var ln=String(PW.ln||'').trim();
-  /* Every write this account makes is refused by the server -- is_member() in
-     schema.sql -- and a refusal from a policy arrives as a number. Said here
-     instead, before anything is baked or uploaded, because what somebody typed
-     should not be spent finding this out. */
-  if(NET_BANNED){ toast(t('post.out')); return; }
+  /* Back to roman before anything is kept. What the Lingua keyboard typed is
+     private use code points and they go no further than the field: a post
+     carries the roman spelling and its ink, and a code point nobody else's
+     font has would be a square box on somebody else's phone. */
+  var ln=puaRoman(String(PW.ln||'')).trim();
+  /* The line as typed, kept for the ink cut below: what the Lingua keyboard
+     put there is the language, and what any other keyboard put there is not.
+     It is read again inside the callbacks the bake and the voice run through,
+     by which time PW may already be the next post. */
+  PWRAW=String(PW.ln||'').trim();
   if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */
@@ -867,7 +848,7 @@ function pwSendWith(ln, pics, vo){
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
-            ln:ln, ink:postInk(ln), dir:scriptDir(),
+            ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
@@ -994,8 +975,37 @@ function postCut(ln){
 /* The same cut, filed so a letter used twelve times travels once. `g` is the
    shapes, `s` is the line: a number is an index into `g`, a string is itself
    -- a space, a full stop, a character somebody borrowed rather than drew. */
-function postInk(ln){
-  var cut=postCut(ln), g=[], s=[], seen=[], i, k, key;
+/* The line as it was TYPED, cut into shapes and text.
+   ------------------------------------------------------------------
+   postInk() below cuts the roman line with the alphabet, so every letter this
+   language has a shape for becomes a shape -- whichever keyboard typed it.
+   That is right for a post written before this existed and wrong for one
+   written now: a sentence typed on the phone's own QWERTY is not this
+   language and must not arrive as it.
+   「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
+
+   What the Lingua keyboard typed is a private use code point and nothing else
+   on a phone types one, so the cut is the character itself: a code point in
+   the range is that letter's strokes, and everything else -- roman, kana,
+   punctuation -- is text and stays text. A post already renders a run of text
+   as text, which is what a half-drawn alphabet has always given. */
+function postCutTyped(raw){
+  var s=String(raw||''), lts=ltOrder(LETTERS.filter(function(l){
+        return l.st && l.st.length; })), cut=[], txt='', i, at;
+  for(i=0;i<s.length;i++){
+    at=s.charCodeAt(i)-PUA0;
+    if(at>=0 && at<lts.length){
+      if(txt){ cut.push({t:txt}); txt=''; }
+      cut.push({st:lts[at].st});
+    } else txt+=s.charAt(i);
+  }
+  if(txt) cut.push({t:txt});
+  return cut;
+}
+function postInkTyped(raw){ return inkOfCut(postCutTyped(raw)); }
+function postInk(ln){ return inkOfCut(postCut(ln)); }
+function inkOfCut(cut){
+  var g=[], s=[], seen=[], i, k, key;
   for(i=0;i<cut.length;i++){
     if(cut[i].t!==undefined){ s.push(cut[i].t); continue; }
     key=JSON.stringify(cut[i].st);
@@ -1075,92 +1085,27 @@ function postSay(p){
   return String(p.mn||'');
 }
 
-/* ---- layer three: the post, in words this reader has -------------------
+/* Layer three -- a post said again in this reader's own words -- is gone.
+   ------------------------------------------------------------------
+   It swapped each word of the meaning line for a word this dictionary had,
+   and that is not a translation: whether `Mama seja luna` is a sentence
+   depends on whether the language has a copula, how it marks possession, and
+   what it does with a topic -- and none of that was anywhere the app could
+   read it. Written into the grammar page's notes it is free text, which a
+   machine cannot use. 「単語を並べるだけじゃ文法はできない」
 
-   This is the one place in the app where the reading side is SUPPOSED to
-   reach for the making side, and it is worth being exact about why.
+   The one thing that could have read those notes is an AI, and this feature
+   was built for one: `CAN.tr` said "unmetered" and the free plan got three a
+   day, which is a price per call and makes no sense for a word swap done on
+   the phone. There is no AI. 「AI入れないって言ってるでしょ？」
 
-   Rule 8 forbids drawing somebody else's post out of my dictionary, because
-   their line is theirs. This is the opposite errand: it takes a natural
-   sentence THE AUTHOR ALREADY CONFIRMED and says it again in MY language,
-   with MY words. The guessing is about my own vocabulary, and I am the one
-   who can see when it is wrong -- which is exactly the test the note at the
-   head of this file applies to machine translation of an invented language.
+   So it is out rather than half-true. What is left is a post said in the
+   letters its writer drew, which is what the timeline is for.
+   「なら自分の言語でどう言うか翻訳いらなくない？元々ai前提やったし」
 
-   So it lives above the line, it touches `mn`/`tr` and never `ln` or `ink`,
-   and it is deliberately NOT frozen onto the post: a sentence that half
-   renders today renders whole next month, because the dictionary grew. That
-   is the opposite of `ink` and it is correct for the same reason `ink` is --
-   ink is the writer's and this is the reader's.
-
-   Word order is left alone. Rearranging a sentence needs to know which word
-   is the subject and which the object, and nothing here knows; a wrong
-   rearrangement reads as a claim about the language rather than as a gap. */
-function trWord(w){
-  var i, j, mns, q=String(w||'').toLowerCase().replace(/^[^\w']+|[^\w']+$/g, '');
-  if(!q) return null;
-  for(i=0;i<WORDS.length;i++){
-    mns=wMns(WORDS[i]);
-    for(j=0;j<mns.length;j++) if(String(mns[j]).toLowerCase()===q) return WORDS[i];
-  }
-  /* then a meaning that merely contains it, so "a mountain" finds `mountain` */
-  for(i=0;i<WORDS.length;i++){
-    mns=wMns(WORDS[i]);
-    for(j=0;j<mns.length;j++)
-      if((' '+String(mns[j]).toLowerCase()+' ').indexOf(' '+q+' ')>=0) return WORDS[i];
-  }
-  return null;
-}
-/* Each piece of the sentence: a word of mine, or the natural word I have no
-   word for. The second is the point as much as the first -- a red word is a
-   word this language is missing, and it is the shortest door there is to
-   making it. */
-function trUnits(mn){
-  var out=[], a=String(mn||'').split(/(\s+)/), i, w;
-  for(i=0;i<a.length;i++){
-    if(!a[i]) continue;
-    if(/^\s+$/.test(a[i])){ out.push({sp:true}); continue; }
-    w=trWord(a[i]);
-    out.push(w? {w:String(w.hw)} : {miss:a[i]});
-  }
-  return out;
-}
-var TR_FREE_DAILY=3;
-/* Its own day and its own counter. Sharing AI_FREE_DAILY would mean asking
-   the word sheet for a spelling costs you a reading of somebody's post,
-   which is two prices for one purchase. */
-function trToday(){ var d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
-function trUsed(){ if(SET.trDate!==trToday()){ SET.trDate=trToday(); SET.trN=0; save(); } return SET.trN||0; }
-function trLeft(){ return can('tr')? Infinity : Math.max(0, TR_FREE_DAILY-trUsed()); }
-function trSpend(){ if(can('tr')) return; SET.trDate=trToday(); SET.trN=trUsed()+1; save(); }
-/* Which posts have been turned into this language, this session. It is not
-   stored: it is a way of looking at a post, not a fact about one. */
-var TURNED={};
-function trOpen(id){
-  if(TURNED[id]) return;
-  if(trLeft()<=0){ go('plans'); toast(t('tr.out')); return; }
-  trSpend(); TURNED[id]=1; render();
-}
-function trHTML(p){
-  if(!TURNED[p.id]) return '';
-  var u=trUnits(postSay(p));
-  return '<div class="ptr'+(myFontOn()?' sfont':'')+'">'+u.map(function(x){
-    if(x.sp) return ' ';
-    if(x.w) return '<span class="trw">'+esc(wOut(x.w))+'</span>';
-    /* Red, and not a button. It was one -- press the gap, go and make the
-       word -- which is a nice idea, an unasked-for one, and a 19pt target in
-       the middle of a sentence. What was asked for was that the gap be
-       obvious. 「自然言語のまま残して赤文字とかにする。この単語ないのが
-       わかりやすいように」 */
-    return '<span class="trmiss">'+esc(x.miss)+'</span>';
-  }).join('')+'</div>';
-}
-function trBtnHTML(p){
-  if(TURNED[p.id]) return '';
-  var n=trLeft();
-  return '<button class="trgo"' + DO('trOpen', [p.id]) + '>'+ICON_LINE+t('tr.go')+
-    (n===Infinity? '' : '<span class="trn">'+esc(t('tr.left', n))+'</span>')+'</button>';
-}
+   `SET.trDate` and `SET.trN` are left where they are. Nothing reads them and
+   nothing removes them: they are two numbers in somebody's settings and this
+   app does not delete what it stopped needing. */
 
 /* ---- letters placed on the photograph ---------------------------------
    「なんなら画像に自作文字を貼って投稿できるようにすれば勝手に広がるよ」
@@ -1716,7 +1661,7 @@ function pwSaveEdit(ln){
   var p=postById(PW.ed), mn;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   mn=String(PW.mn||'').trim() || postGlossLine(postGloss(ln));
-  p.ln=ln; p.ink=postInk(ln); p.mn=mn;
+  p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
   /* The translations were of the old sentence. They are dropped rather than
      left to be shown under a line they are no longer about, and asked for
      again -- which lands late, on a post that already exists, exactly as it
@@ -2082,16 +2027,6 @@ function postRow(p){
           ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
           : '')+
         (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
-        /* Taken down. Only its author is ever handed one of these -- post_read
-           in schema.sql -- so it is for them, and it belongs up here beside
-           the lock and "edited": a word for what state the post is in.
-
-           Two goes at this were wrong. It said "hidden", on a post the person
-           reading it can SEE, which is a word contradicting the screen it is
-           written on. Then it said WHO did it, in a line of its own under the
-           head -- which is the app explaining itself, and is the notice's job
-           rather than this one's. 「アプリ内に説明書くの禁止」 */
-        (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         /* The ... and, when it is the one that is open, the menu hanging off
            it. It is IN the post rather than a screen you go to, so what you
@@ -2124,9 +2059,9 @@ function postRow(p){
       /* The pictures, and they are the one thing on a post that slides
          sideways. 「画像だけ横スライドできる感じ」 One is a picture; several
          are a strip, and the strip scrolls rather than the post. */
-      (postThumbs(p).length
-        ? '<div class="ppics'+(postThumbs(p).length>1? ' many':'')+'">'+
-            postThumbs(p).map(function(u, i){
+      (postPics(p).length
+        ? '<div class="ppics'+(postPics(p).length>1? ' many':'')+'">'+
+            postPics(p).map(function(u, i){
               /* The picture is a way in, and it wins over the row it sits in
                  because act.js delivers a press to the nearest name above the
                  thumb. Tapping the picture opens the picture; tapping beside
@@ -2164,8 +2099,6 @@ function postRow(p){
          removes it: it is somebody's, and deleting what a person made
          because the current shape has no use for it is the one thing
          docs/DATA_SAFETY.md forbids outright. */
-      trBtnHTML(p)+
-      trHTML(p)+
       '<div class="pacts">'+
         postAct('postReply', p.id, ICON_REPLY, (p.re||0), false)+
         postAct('postBoost', p.id, ICON_BOOST, (p.bo||0), !!p.bome)+
@@ -2189,10 +2122,6 @@ function postRow(p){
 function postLike(id){
   var p=postById(id);
   if(!p) return;
-  /* A like is something other people see, so it asks for a name before it
-     changes anything. Before, and not after: a like counted on this phone
-     and refused by the server is a number that goes backwards. */
-  if(!obNeed()) return;
   p.lime=!p.lime;
   p.li=Math.max(0, (p.li||0)+(p.lime? 1 : -1));
   savePosts(); render();
@@ -2203,7 +2132,6 @@ function postLike(id){
 function postBoost(id){
   var p=postById(id);
   if(!p) return;
-  if(!obNeed()) return;
   p.bome=!p.bome;
   p.bo=Math.max(0, (p.bo||0)+(p.bome? 1 : -1));
   savePosts(); render();
@@ -2283,10 +2211,6 @@ var REPORT_WHY=['spam','abuse','hate','sexual','other'];
 var rpFor=null;
 function openReport(id, handle){
   PMENU='';
-  /* A report has somebody making it -- report.who is not null in the schema
-     -- and it is answered by a person, who has to be able to come back with
-     a question. */
-  if(!obNeed()) return;
   rpFor={post:String(id||''), handle:String(handle||'')};
   openForm('report:'+id, t('post.report'),
     REPORT_WHY.map(function(w){

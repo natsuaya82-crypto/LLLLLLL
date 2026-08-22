@@ -213,6 +213,30 @@ sit in a phone. Passwords are never held, stored or logged by the app: the field
 goes to Supabase over TLS and only the token pair is kept, in `localStorage`
 under `lingua.sess`.
 
+## 4b. More than one session at a time
+
+**The page to hand a session is `docs/SESSIONS.md`.** The rule that prevents a
+collision rather than finding one is in it: the leader — another session above
+this one — names the files a session owns, and a session edits nothing else. `www/index.html` holds every screen's
+CSS and is where sessions collide first — one session at a time owns it.
+
+Sessions run in separate containers and share exactly one thing: the remote.
+Everything below is about making work visible there early enough to be avoided.
+The body is in `docs/FEATURE_RULES.md` § several sessions at once.
+
+```
+  one session, one branch          claude/<area>, never anybody else's
+  fetch before deciding            git fetch --all --prune
+  read before changing a file      git log --oneline --all -- <file>
+  push the scope FIRST             before the first line of code
+  push after every commit          a branch nobody can see cannot be avoided
+  never integrate                  no merge, no rebase, no cherry-pick of
+                                   another branch -- the leader does that
+```
+
+A commit on a file from a branch that is not yours means another session is in
+that file. Stop and report there, not when a merge fails.
+
 ## 5. The gate, and what CI does not run
 
 `npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
@@ -227,8 +251,8 @@ what you are changing, by name, plus the six fast ones.
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
 passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`,
-`post`, `backup`, `fill`, `round`, `face` and `press` — fourteen of the
-seventeen — run only where somebody runs them, which means locally, which
+`post`, `backup`, `fill`, `round`, `face`, `base` and `press` — fifteen of the
+eighteen — run only where somebody runs them, which means locally, which
 means you.
 
 `fill` and `round` were missing from that list and from `CLAUDE.md`, and it was

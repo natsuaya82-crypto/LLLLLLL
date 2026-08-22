@@ -496,6 +496,128 @@ an anonymous session it did not have, that session is signed in and is not a
 member, an old stored session is still a member, and signing in over the
 anonymous one leaves it a member. Watched failing with the boot call taken
 out.
+
+### 公開と、持ち出してよいかは別 — OWNER DECISION
+
+言語のページを人が開けるかどうかと、その文字と単語を人がダウンロードして
+自分の言語で使ってよいかは、別の質問。読めることと渡すことは違う。
+「言語ページ公開と単語や文字のdl可能は別だし」
+
+**データ。** `wld` に `dl` が増えた。**無いことが「不可」**で、これは
+`hide` と逆向き（無いことが「公開」）。逆なのは意図で、ページは見られる
+ためのものだが、こちらは誰かが何ヶ月も描いたものを渡す話なので、アプリが
+既定で決めてよいことではない。既にある言語は `dl` を持たないので不可のまま
+開く。何も消えず、何も書き換わらない。
+
+**画面。** 設定 → 自分の言語に二行目のスイッチ。ページを非公開にすると、
+この行は消える — 開けない言語から持ち出す道は無いので。
+
+**説明。** 画面に文は置かず、バーの `?` に二つ並べた。
+「これを公開すると、他のユーザーがあなたの文字や単語をダウンロードして
+利用することが可能になります」
+
+**まだ動かない。** 他人の言語がこの端末に無いので、どちらの旗も今は自分の
+プロフィールの見え方を変えるだけ。`supabase/schema.sql` に言語のテーブルは
+まだ無い。
+
+
+### 「自分の言語で読む」は無くなった — OWNER DECISION
+
+投稿の意味の一行を語ごとに切って、こちらの辞書にある語と入れ替えて出す機能。
+消した。
+
+入れ替えは翻訳ではない。`Mama seja luna` が文になっているかどうかは、その
+言語がコピュラを持つか、所有をどう示すか、主題に何を付けるかで決まる。その
+答えを持っている場所がアプリのどこにも無い。文法ページの十四章のうち、機械
+が読める答えを持っているのは四つだけ（語順と、形容詞・否定・後置詞の側）で、
+残りは自由文のメモで、機械は読めない。
+「単語を並べるだけじゃ文法はできないのよわかる？」
+
+そのメモを読める唯一のものは AI で、この機能は AI 向けに作られていた —
+`CAN.tr` は「unmetered」と書いてあり、無料は一日三回だった。回数制限は一回
+ごとの代金の形で、端末の中で語を入れ替えるだけの処理には意味がない。AI は
+入れない。「AI入れないって言ってるでしょ？」
+
+なので半分本当のまま置くのではなく、外した。残るのは、書いた人が描いた文字
+で書かれた一行 — タイムラインはそのためにある。
+「なら自分の言語でどう言うか翻訳いらなくない？元々ai前提やったし」
+
+**消えたもの。** 投稿の下の「自分の言語で読む」ボタンとその読み下しパネル、
+押した語の吹き出し、`CAN.tr`、辞書の `tr.*` 五語、`tools/gram-check.mjs`、
+語順を組み替える `trArrange`（同じセッションで書いて同じセッションで消した）。
+
+**残したもの。** `postSay` と `postTr`（端末側の翻訳の縫い目。投稿が読める
+ために要る）、`postGloss`（作る側の下書き画面のもの）。
+
+**データ。** 何も消していない。`SET.trDate` と `SET.trN` は誰も読まなく
+なったが、そのまま置いてある — 誰かの設定に入っている二つの数で、このアプリ
+は要らなくなったものを消さない。
+
+**プラン。** `CAN` は十から九に。`tr` を買っていた人に何かが減ることはない
+（買えるものが一つ減る）。
+
+
+### The base is the digits room's, and it is nudged — OWNER DECISION
+
+The base (10, 12, 16, 20) was a list of rows on the writing screen, beside the
+kind of writing and the direction — and it is neither of those. What it
+decides is how many digits the alphabet holds, so it is in the digits room
+now, which is where those digits are drawn. 「文法の数え方のページに進数入れれば
+いいのでは？」 was tried first and put back: the counting stage would have been
+a second place saying the same thing about the same letters.
+
+**The range is 2 to 20**, not four values. The old list had nothing under ten
+in it, which is the app deciding a language cannot count in six or eight.
+「2〜20で」
+
+**It is one number, stepped.** Nineteen values laid out to be tapped is a wall
+of numbers to say one number. 「そんな並べるバカはどこにいんの？」
+
+**Raising it makes the slots at once.** `numTopUp()` is the one place a digit
+comes into being; `ltStart` calls it when a free language opens and
+`numSetBase` calls it the moment somebody counts higher, so the slots are
+there to draw on rather than at the next launch. 「数字は増やしなさい」
+
+**Free does not have the row at all.** What the base decides is how many
+letters there are, and adding a letter is `can('letters')`.
+「無料は0〜9しか書けないんだから±はなし」
+
+**Lowering it keeps what somebody drew, and shows it in red.** A digit above
+the base cannot be written in that base; the room says so by the cell being
+red, not by a sentence. An empty slot nobody touched is removed.
+「あげた時に文字や音とか設定してたら赤くなって、なにも書いてなかったら勝手に
+減らしていいよ」
+
+```
+DELETE REVIEW
+  who deletes       automatic, on the owner's written spec above
+  when              the base is lowered, and only then -- never on open,
+                    never on save, never on a timer
+  what exactly      a digit whose value is at or above the NEW base AND which
+                    is empty: no strokes, no sound, no name. Anything drawn,
+                    named or given a sound is kept and goes red instead
+  why               a lower base leaves slots the base cannot reach. An empty
+                    one is a slot this app made and nobody touched; a drawn
+                    one is somebody's work and is never removed
+  recoverable?      an empty digit has nothing in it to recover -- the slot
+                    itself comes back the moment the base goes up again, by
+                    the same numTopUp() that made it. A drawn one is not
+                    deleted at all, so there is nothing to recover
+  backup?           unaffected. A backup written before holds the empty slots
+                    and a restore fills in what is MISSING, so restoring an
+                    older file into a language at a lower base puts the empty
+                    slots back rather than being refused
+  the plan?         no. It is the same on every plan. Free cannot lower the
+                    base at all, because free has no row to press
+  migration         none. Nothing stored changes shape; `val` is what it was
+  rollback          none needed -- see recoverable
+```
+
+**Data.** Nothing new is stored. `STG.base` may now hold 2 to 20 where it held
+one of four; anything off the list still reads as ten, so a file written by
+an older build opens unchanged.
+
+
 ### The base moves to the stage that asks for it, and the display is a switch — OWNER DECISION
 
 Two things off the writing screen.
