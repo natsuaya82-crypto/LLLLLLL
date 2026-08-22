@@ -389,6 +389,40 @@ Two of them were about capabilities that had been deleted.
     yet however they are configured.
 18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 
+### Landed on 2026-08-22, and what it still needs
+
+21. **The Lingua keyboard types the letters somebody drew.** It did not
+    before, and nothing said so: a letter key put the letter's NAME in — the
+    same character the phone's own QWERTY puts there — and `LinguaType` (the
+    face `.tfont` wears) carries only the private use area, so it fell through
+    to the ordinary font and came out roman. **The second font was built,
+    installed, and never once used through the keyboard it exists for.** It is
+    a private use code point now, `sharePua()` in `share.js`, on both plans —
+    `shareFace()` for a keyboard somebody built and `kbFix()`'s override for
+    the free QWERTY, which were one feature working on one plan and not the
+    other, split by nothing. Held by `conv-check`'s **eighth** claim, per
+    letter and not as a count. Nothing stored changes; the private use area
+    exists in the input field and inside the extension and nowhere else.
+    **Decided, not a defect:** used in Messages this keyboard sends tofu —
+    `967333c`, 「Lingua キーボードは Lingua の中で使うもの」.
+    **`DEVICE CONFIRMED` — no.** Whether the extension actually inserts
+    U+E000 upward, and whether what it inserts is drawn in `LinguaType`,
+    cannot be checked anywhere in this repo. That is item 20's phone.
+
+22. **Five renames, and one of them was the entry being wrong.**
+    `postsRead`→`postRead`, `wSetFil`/`wSetSort`→`words*`, `gh*`→`geHint*`
+    (with `GH*`→`GE_HINT*`), `note*`→`nt*` and `noteRead`→`ntRead`.
+    `savePosts` and `saveMe` were listed in the backlog beside them and are
+    **deliberately not renamed**: `save*` is a family of exactly ten, every one
+    naming what it saves, and CLAUDE.md's own prefix list already carries
+    `open*`, which is twenty functions and a verb rather than a chapter. A verb
+    family was never the thing the rule is against; one chapter under two names
+    is. Decision log, 2026-08-22. Behaviour unchanged, and the argument for
+    that is that no number moved: `buttons pressed 8683 (214/214)`,
+    `screens walked 366`, `mirror 275`, `routes 36/36` — all four the same
+    either side. `dead` went 1208 → 1209 functions, which is `sharePua` from
+    item 21 and not a rename.
+
 ### Waiting on a phone
 
 19. Build **#82** is green and on TestFlight. What it has not had is a person:
