@@ -60,9 +60,7 @@
 .kbk | border-radius
 .kbk.addrow | border
 .kbmk | border-radius
-.kbnewb | border-radius
 .kbnewt | border
-.kbnewt | border-radius
 .kbout | border
 .kbout | border-radius
 .kbpat | border
@@ -76,7 +74,6 @@
 .kbsk | border-radius
 .kbtab | border
 .kbtab | border-radius
-.kbx | border-radius
 .link | border
 .link | border-radius
 .lock .tag | border

@@ -120,8 +120,19 @@ const R = await pg.evaluate(async () => {
          every phone ever made -- Apple's own keyboard included. The floor
          that means something for a key is how tall it is, and that one still
          holds here. Widening it to 44 would not make a keyboard safer to
-         type on; it would forbid a keyboard. */
-      if ((' ' + e.className + ' ').indexOf(' kbk ') >= 0) {
+         type on; it would forbid a keyboard.
+
+         The editor's sheet has two more of exactly that shape, and they are
+         here for the same reason rather than for convenience. A column's
+         letter takes that column away, so it is the width of the column it
+         names -- widen it and it names a different column, or none. The row's
+         number takes that row away, and sits in the margin the board leaves
+         beside itself. Both are as WIDE as the thing they point at, which is
+         not a number this file gets to choose; both are as TALL as they like,
+         and both are held to 44 there. */
+      const cn = ' ' + e.className + ' ';
+      if (cn.indexOf(' kbk ') >= 0 || cn.indexOf(' kbcl ') >= 0 ||
+          cn.indexOf(' kbn ') >= 0) {
         if (r.height >= TAP) continue;
       } else
       if (r.width >= TAP && r.height >= TAP) continue;

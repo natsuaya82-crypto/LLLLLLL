@@ -101,6 +101,7 @@ One check, by name, for what you changed. Not `npm test` — see rule 2.
 | a face, or anything in `index.html`'s CSS | `npm run face` |
 | a global that a screen remembers | `npm run dead` |
 | the base a language counts in | `npm run base` |
+| a row or a column of the keyboard editor, or the step back behind them | `npm run kb` |
 | `supabase/schema.sql` | `npm run rls`, and somebody who is not you |
 | how anything is saved | `npm run backup` + `npm run migrate`, and see `docs/DATA_SAFETY.md` § changing anything that saves |
 | a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |

@@ -113,6 +113,61 @@ const R = await pg.evaluate(() => {
   if (screen().indexOf(t('form.gone')) >= 0)
     out.fails.push('deleted tira, and you were put down on "that is no longer here"');
 
+  /* ---- the add sheet arrived at cold ------------------------------------
+     `openAdd()` decides whether the sheet is NEW by asking whether the route
+     is already the one it is about to open. That is right on the two roads it
+     was written for -- the sheet reopening by its own redraw, and coming back
+     from the picker -- because on both of those the draft exists and what has
+     been typed must survive.
+
+     It is wrong on the third road, which is arriving AT that route with no
+     draft: a reload, a deep link, anything that puts the route back before
+     the draft. `here()` already says `form:add:<parent>`, so `fresh` is
+     false, so `addW` and `wEdit` are left null, and `wdFormHTML()` throws
+     into vForm's catch. The screen says the form is gone -- about a form
+     nobody has opened yet.
+
+     "Empty" and "broken" sharing a branch, which is the rule at the head of
+     CLAUDE.md. There is nothing to preserve when there is no draft, so the
+     absence of one is what makes a sheet new -- not where the trail happens
+     to be pointing. */
+  start();
+  NAV = [{ r: 'words' }, { r: 'form', a: 'add:tira' }];
+  window.route = 'form';
+  FORM = null; addW = null; wEdit = null;
+  let threw = '';
+  let cold = '';
+  try { cold = screen(); } catch (e) { threw = String(e && e.message || e); }
+  out.said.push('the add sheet arrived at cold ' +
+    (threw ? 'THREW ' + threw : 'built ' + (addW ? 'a draft' : 'NO draft')));
+  if (threw)
+    out.fails.push('arriving at form:add:tira with no draft threw: ' + threw);
+  else if (cold.indexOf(t('form.gone')) >= 0)
+    out.fails.push('arriving at form:add:tira with no draft says "that is no ' +
+      'longer here" -- about a sheet nobody has opened. Empty is not broken.');
+  else if (!addW || !wEdit)
+    out.fails.push('arriving at form:add:tira left addW/wEdit null, so the ' +
+      'next thing to read either is what actually breaks');
+
+  /* ---- and the road the route test was written FOR still works ----------
+     The fix above widens `fresh`, so the thing to prove is that it did not
+     widen it onto the case the test exists for: the sheet reopening by its
+     own redraw must not throw away what has been typed. Reasoning that
+     `!addW || !wEdit` is false when a draft exists is not proof -- the whole
+     bug being fixed here was a branch that looked obviously right. */
+  start();
+  openAdd('');
+  wEdit.nt = 'typed and not saved';
+  wEdit.mns = [{ mn: 'a meaning somebody wrote' }];
+  openAdd('');                                   /* the redraw road */
+  out.said.push('the add sheet reopened by its own redraw keeps what was ' +
+    'typed: ' + ((wEdit && wEdit.nt === 'typed and not saved') ? 'yes' : 'NO'));
+  if (!wEdit || wEdit.nt !== 'typed and not saved')
+    out.fails.push('reopening the add sheet threw away what was typed -- the ' +
+      'route test exists to stop exactly this');
+  if (!wEdit || !wEdit.mns.length)
+    out.fails.push('reopening the add sheet threw away the meanings');
+
   return out;
 });
 
