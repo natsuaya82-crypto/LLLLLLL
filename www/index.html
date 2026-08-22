@@ -210,6 +210,75 @@ canvas.pkc{width:34px;height:34px;display:block}
    ように」 52px is what every key was, so a keyboard nobody has touched is
    the keyboard it was. */
 .kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0;--kh:52px}
+/* THE EDITOR'S board, which is a different thing from the one above and is
+   why this is a second class rather than a change to the first. The one
+   above is the keyboard AS IT WILL BE -- free's face, board 0's, the row on
+   the list -- and it runs to both edges because a keyboard that stops short
+   of the edge is a picture of a keyboard.
+
+   The editor is not that picture. It is a sheet you point AT: rows numbered
+   down the side, keys lettered across, a key held with a mark hanging off
+   its corner. All three of those need room outside the keys, and at full
+   bleed there is none -- the ⊖ on the last key of a row hung off the screen,
+   which is why it used to sit inside the key.
+   「この画面全体に広がるのやめない？8割くらいの大きさで」
+
+   80vw of the phone, centred, so the 10 down each side is where the row's
+   number and the ⊖ live. 「エクセルと同じ仕様で作るのよ」
+
+   And the rows are a GRID rather than a row of things that stretch. That is
+   the whole of what makes the letters across the top true: every row has the
+   same columns, a key one unit wide is one cell, and a key three wide is
+   three cells joined -- which is what a wide key already was in the data and
+   had no way of looking like. 「別に隣のセルともくっつけるでしょ？」
+
+   The column count is the widest row's, asked of the layout each time and
+   stored nowhere. A row that comes to less than that ends in empty cells, and
+   that is the one place this drawing and the phone differ: the extension
+   divides a row's width by the keys' w (KeyBoardView.swift), so a short row
+   stretches there and is short here. Short here is the more useful of the
+   two -- it is the row saying it is not full. */
+/* Smaller, and ONLY smaller: blow this up and it is the keyboard, which it
+   stops being the moment a key is 80% as wide and 100% as tall.
+   「比率を変えるだけだって。拡大すれば本物と同じ見た目になればいいんだよ」
+
+   The scale is set by the height and the width follows, rather than the other
+   way round, because 44 is the floor for anything a thumb has to hit and a key
+   is measured on its height (tools/press.mjs). So: 44/52 of the real key, and
+   a width that keeps the shape.
+
+   That comes out at 83vw and it comes out there on every phone, which is the
+   only reason a bare vw is honest here. The real key is (100vw - 9 gaps)/10
+   wide and 52 tall; this one is 44 tall, so it wants 44/52 of that width, and
+   both sides of the sum carry the same vw -- the ratio cancels the screen out.
+   The gap goes with it: 5 * 44/52 is 4.2, which is 2.1 of margin on each key.
+
+   8割くらい, asked for; 83 is where the shape lands. */
+.kb.kbsheet{width:83vw;margin:2px auto 0;--kh:44px;gap:5px}
+/* No gap between COLUMNS -- a column is half a key, so a gap there would be
+   counted twice on a whole key and twelve times on a space bar. The space
+   between two keys is the keys' own margin, which is the same 4 whatever they
+   span. */
+.kb.kbsheet .kbrow, .kbhdr{display:grid;gap:0;position:relative;
+     grid-template-columns:repeat(var(--kc, 20), 1fr)}
+/* Square. A cell of a sheet is a cell of a sheet, and the corner radius on a
+   key is the key being a picture of a key -- which the read-only board still
+   is and this one is not. 「角丸きんし」 */
+.kb.kbsheet .kbk{min-width:0;border-radius:0;margin:0 2.1px}
+.kb.kbsheet .kbk.addrow{grid-column:1/-1}
+/* The letters, across the top, and the numbers down the side. */
+.kbhdr{margin-bottom:1px}
+.kbcl{font-size:.55rem;line-height:1;color:var(--txm);opacity:.5;text-align:center}
+/* The row's number, in the margin to the left of the keys -- absolute, so it
+   is not a cell: kbReadRows() walks the row's children and this one carries no
+   data-r, and it must not take a column from the grid. */
+.kbn{position:absolute;left:-20px;top:0;bottom:0;width:15px;display:flex;
+     align-items:center;justify-content:flex-end;font-size:.6rem;line-height:1;
+     color:var(--txm);opacity:.55;pointer-events:none}
+/* A cell of the sheet with no key on it. Not a key and not pressable -- it is
+   the part of the row that is not filled, drawn so it can be seen to be
+   there. It is a .kbk so that a key being carried can be dropped on it. */
+.kbk.cell{background:none;opacity:.35;border-radius:0}
 /* --kh is this screen's own drawing of a key and is not what goes to the
    phone: the extension decides that, and nothing in the app sets it now. */
 .kbrow{display:flex;gap:5px;--rh:1}
@@ -1524,11 +1593,22 @@ a.set{text-decoration:none}
 .kbk.wob{animation:kbwob .28s linear infinite}
 .kbk.wob:nth-child(2n){animation-delay:.09s}
 .kbk.wob:nth-child(3n){animation-delay:.05s}
-/* Inside the key rather than hanging off its corner. The keyboard runs to
-   both edges of the phone -- `.kb` has a negative margin so a key is the size
-   it will really be -- so a mark hanging off the last key of a row hangs off
-   the screen. */
-.kbx{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:999px;
+/* Hanging off the corner, which is where a thing you take off something goes
+   and is where iOS puts it. It used to be INSIDE the key, and the reason was
+   the width: the board ran to both edges of the phone, so a mark hanging off
+   the last key of a row hung off the screen. The editor's board is 80vw now
+   and the margin it left is exactly the room this needs.
+   「マイナスさ中に入り込みすぎてるからマイナスボタンは右上にはみ出すように」
+
+   The key has to stop clipping for it to show at all -- .kbk is overflow
+   hidden so the face cannot spill -- and it has to come forward, or the next
+   key in the row, being later in the row, paints over the half that overhangs. */
+.kbk.wob{overflow:visible;z-index:2}
+.kbk.wob .kbx{z-index:4}
+/* and the mark is at the scale of the board it is on, for the same reason */
+.kb.kbsheet .kbx{width:16px;height:16px;top:-7px;right:-7px}
+.kb.kbsheet .kbx svg{width:10px;height:10px}
+.kbx{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:999px;
      background:var(--tx);color:var(--bg);display:flex;align-items:center;
      justify-content:center;z-index:3}
 .kbx svg{width:13px;height:13px}

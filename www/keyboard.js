@@ -741,19 +741,75 @@ function kbTyped(id){ return String(ltName(ltById(id))||''); }
    cannot look like one thing on the paid screen and another on the free
    one, which is the same argument kbFace() is already making one level
    down. */
+/* A column, as a letter: a, b, ... z, aa. The other half of the address, and
+   it means the same thing on every row because the editor's rows are a grid.
+   「エクセルみたいに123abcみたいに振ればどこのどこをいじってるか分かりやすく
+   ならない？」 */
+function kbCol(i){
+  var s='', n=parseInt(i, 10)||0;
+  for(;;){
+    s=String.fromCharCode(97+(n%26))+s;
+    n=Math.floor(n/26)-1;
+    if(n<0) return s;
+  }
+}
+/* A key's width in COLUMNS, and a column is half a key -- because half a key
+   is a thing this keyboard has. kbFixed() insets its third row with a gap key
+   of w 0.5 at each end, and "grid-column: span 0.5" is not a thing: the
+   browser drops the declaration, auto-places the item, and the row quietly
+   grows a second line. That is a row twice as tall with two keys sitting off
+   the end of it, and nothing throws. Counting in halves says exactly the same
+   layout in whole numbers. */
+function kbU(w){ return Math.max(1, Math.round((w||1)*2)); }
+/* How wide the sheet is, in those columns: the widest row. Derived every time
+   and stored nowhere -- a keyboard made before this existed has the same
+   answer as one made after, because the answer was always in the widths. */
+function kbCols(rows){
+  var n=0, w, i, j;
+  for(i=0;i<rows.length;i++){
+    w=0;
+    for(j=0;j<rows[i].length;j++) w+=kbU(rows[i][j].w);
+    if(w>n) n=w;
+  }
+  return n||2;
+}
+/* The letters across the top, one to a whole key and not one to a column --
+   nobody insets a row by half a letter. Inside #kb so it shares the grid's
+   width and its columns; it holds no key, so kbReadRows() walks straight past
+   it and a key being dragged cannot land in it. */
+function kbHdrHTML(cols){
+  var out='', i=0, n=0;
+  while(i<cols){
+    out+='<span class="kbcl" style="grid-column:span '+Math.min(2, cols-i)+'">'+
+      kbCol(n)+'</span>';
+    i+=2; n++;
+  }
+  return '<div class="kbhdr">'+out+'</div>';
+}
 function kbHTML(sel, ro){
-  var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick();
+  var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick(),
+      cols=ro? 0 : kbCols(lay.rows), at, b;
+  if(!ro) out+=kbHdrHTML(cols);
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
-    out+='<div class="kbrow">';
+    /* The row's number: the editor is a sheet you point at, and 3b is what
+       somebody says about the key they are looking at. The read-only board is
+       the keyboard itself and wears neither number nor letter -- a row number
+       down the side of the thing on your phone is the editor leaking into it. */
+    out+='<div class="kbrow">'+(ro? '' : '<span class="kbn">'+(ri+1)+'</span>');
+    at=0;
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'');
+      /* Two columns wide, or as many as it is: a key of three IS six columns
+         joined, which is where a wide key comes from on a sheet. */
+      at+=kbU(key.w);
       out+= ro
         ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key, false)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
-        : '<button class="'+cls+(kbWob? ' wob':'')+'" style="flex:'+(key.w||1)+'" '+
+        : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
+          'style="grid-column:span '+kbU(key.w)+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
           (kbWob? '' : DO('kbPick', [ri, ki])) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+
@@ -761,6 +817,14 @@ function kbHTML(sel, ro){
             ? '<span class="kbx"' + DO('kbDelKey', [ri, ki]) + ' role="button" '+
               'aria-label="'+esc(t('kb.key.del'))+'">'+ICON_MINUS+'</span>'
             : '')+'</button>';
+    }
+    /* The rest of the row, as empty cells, a key wide each. A row that comes
+       to less than the widest one has them; every row of a keyboard built from
+       a pattern comes to the same total and has none. */
+    if(!ro) while(at<cols){
+      b=Math.min(2, cols-at);
+      out+='<span class="kbk cell" style="grid-column:span '+b+'"></span>';
+      at+=b;
     }
     out+='</div>';
   }
@@ -770,7 +834,8 @@ function kbHTML(sel, ro){
   if(!ro)
     out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRowNew') +
       ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
-  return '<div class="kb" id="kb">'+out+'</div>';
+  return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
+    (ro? '' : ' style="--kc:'+cols+'"')+'>'+out+'</div>';
 }
 
 /* ---- the keyboard is not typed on in here ------------------------------
