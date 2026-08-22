@@ -31,11 +31,23 @@ no-tolerance clause, report and block, a stated 24-hour response, and a way
 to reach us. English, because that is the app's default, the audience, and
 what review reads.
 
-In the app they are **two rows at the foot of Settings** and are not in the
-onboarding — 「Xとかインスタもオンボーディングには出してなくね？ふつうに設定
-とかの見えづらいとこに追いとけばいいよ」. They are `<a href>` rather than
+In the app they are **inside the account room**, under everything else in
+it, and not on the settings list itself and not in the onboarding —
+「ふつうに設定とかの見えづらいとこに追いとけばいいよ」「もっと見えにくいとこに
+入れてくれ」. Under both faces of that room, because somebody who has never
+signed in has to be able to read them too. They are `<a href>` rather than
 buttons, pointing at the published pages: one copy of a contract, and a change
 to either is one edit. `a.set{text-decoration:none}` is the only new CSS.
+
+### Your language moves to the top of Settings and Display language to the foot
+
+They were next to each other and are one word apart — 「二つ似てるから間違え
+ないように」. They are also two completely different questions: the language
+you are BUILDING, and the language the app SPEAKS. So the language somebody
+is building sits directly under the plan, where the work is, and the
+interface's language sits at the foot of the list on its own, where a thing
+you set once belongs. `SETS` in `settings.js` is the one place that says the
+order. Nothing else changes.
 
 Two strings in all ten languages, `set.terms` and `set.privacy`.
 

@@ -20,19 +20,47 @@ function setSample(){
    ten rows of interface languages -- so the way to reach "erase everything"
    was to scroll past every language the app speaks. Six pages now, and the
    first one is a list of six rows. Each of them is one question. */
-/* The two documents, on the site rather than in here. One copy, published,
+/* The two documents, in the account room and under everything else in it --
+   not on the settings list itself, and not in the onboarding. Apple asks only
+   that they be reachable from inside the app, and nobody has ever read one on
+   their first day: a contract in front of somebody who has not seen the app
+   yet is a door with a contract on it.
+   「Xとかインスタもオンボーディングには出してなくね？ふつうに設定とかの
+   見えづらいとこに追いとけばいいよ」「もっと見えにくいとこに入れてくれ」
+
+   Links and not buttons, pointing at the published pages: one copy of a
+   contract, so a change to either is one edit, and the version somebody
+   agreed to is the version that is up. */
+function docRows(){
+  return '<a class="set" href="'+esc(DOC_TERMS)+'" target="_blank" rel="noopener">'+
+      '<span class="sl">'+esc(t('set.terms'))+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></a>'+
+    '<a class="set" href="'+esc(DOC_PRIVACY)+'" target="_blank" rel="noopener">'+
+      '<span class="sl">'+esc(t('set.privacy'))+'</span>'+
+      '<span class="sv">'+ICON_GO+'</span></a>';
+}
+/* Where they are, and it is the site rather than in here. One copy, published,
    and a change to either is one edit -- a copy inside the app would be a
    second version of a contract, which is the one kind of duplicate that
    cannot be allowed to drift. */
 var DOC_TERMS='https://tokinets.com/lingua/terms.html';
 var DOC_PRIVACY='https://tokinets.com/lingua/privacy.html';
+/* The order, and one thing about it is deliberate rather than tidy.
+   「Your language」 and 「Display language」 are one word apart and are two
+   completely different questions -- the language you are BUILDING, and the
+   language the app SPEAKS. Side by side they were a coin toss.
+   「二つ似てるから間違えないように」
+
+   So the language somebody is building is directly under the plan, at the
+   top, where the work is; and the interface's language is at the foot of the
+   list, on its own, where a thing you set once belongs. */
 var SETS=[
+  {id:'lang',  k:'set.lang'},
   {id:'look',  k:'set.look'},
   {id:'read',  k:'set.reading'},
-  {id:'ui',    k:'set.display'},
-  {id:'lang',  k:'set.lang'},
   {id:'acct',  k:'set.account'},
-  {id:'data',  k:'set.data'}
+  {id:'data',  k:'set.data'},
+  {id:'ui',    k:'set.display'}
 ];
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
@@ -64,23 +92,6 @@ function vSettings(){
           '<span class="sl">'+esc(t('mod.title'))+'</span>'+
           '<span class="sv">'+ICON_GO+'</span></button>'
       : '')+
-    /* The two documents, at the foot of the list and not in the onboarding.
-       Apple asks that they be reachable from inside the app; nobody has ever
-       read one on their first day, and putting them in front of somebody who
-       has not seen the app yet is a door with a contract on it.
-       「Xとかインスタもオンボーディングには出してなくね？ふつうに設定とかの
-       見えづらいとこに追いとけばいいよ」
-
-       Links and not buttons: they are pages on the site, kept there rather
-       than copied in here, so that a change to them is one edit and not two
-       -- and so that the version somebody agreed to is the one that is
-       published. */
-    '<a class="set" href="'+esc(DOC_TERMS)+'" target="_blank" rel="noopener">'+
-      '<span class="sl">'+esc(t('set.terms'))+'</span>'+
-      '<span class="sv">'+ICON_GO+'</span></a>'+
-    '<a class="set" href="'+esc(DOC_PRIVACY)+'" target="_blank" rel="noopener">'+
-      '<span class="sl">'+esc(t('set.privacy'))+'</span>'+
-      '<span class="sv">'+ICON_GO+'</span></a>'+
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered
@@ -178,6 +189,9 @@ function vSet(){
         '<span>'+t('ob.signin.google')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('setMail') + '><span class="sl">'+t('ob.signin.mail')+'</span>'+
         '<span class="sv">'+ICON_GO+'</span></button>')+
+      /* Under both faces of the room, because somebody who has never signed
+         in has to be able to read them too. */
+      docRows()+
       /* The plan is not in here. An account is who you are; a plan is what
          you may do, and they are answered by different things -- the account
          by a server, the plan by whatever settles it. It is a room of its
