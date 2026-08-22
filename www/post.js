@@ -739,7 +739,11 @@ function pwHas(ln){
    cannot happen synchronously -- an image loads -- so the rest of posting is
    below, and a bake that fails sends the photograph as it was. */
 function pwSend(){
-  var ln=String(PW.ln||'').trim();
+  /* Back to roman before anything is kept. What the Lingua keyboard typed is
+     private use code points and they go no further than the field: a post
+     carries the roman spelling and its ink, and a code point nobody else's
+     font has would be a square box on somebody else's phone. */
+  var ln=puaRoman(String(PW.ln||'')).trim();
   if(!pwHas(ln)){ toast(t('post.none')); return; }
   /* A recording still running is a recording somebody meant to make -- the
      press that sends the post is not the press that throws it away. */
