@@ -36,7 +36,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
-import { seed, obStates } from './fixture.mjs';
+import { seed, obStates, halfDone } from './fixture.mjs';
 
 const req = createRequire(import.meta.url);
 function loadChromium(){
@@ -60,6 +60,9 @@ const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
 
 const argv = process.argv.slice(2);
 const all = argv.indexOf('--all') >= 0;
+/* --half: every screen that only exists once something is half-done. They are
+   not routes, so --all does not reach them. */
+const half = argv.indexOf('--half') >= 0;
 const dark = argv.indexOf('--dark') >= 0;
 const paid = argv.indexOf('--paid') >= 0;
 const mine = argv.indexOf('--myfont') >= 0;
@@ -100,7 +103,13 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
    the app's onboarding state, so every `ob.step = 1` inside them set a
    property on a string and the faces silently never happened. act-check and
    press already did it this way. */
+await pg.evaluate('window.__seed = ' + seed.toString());
 await pg.evaluate('window.OB_STATES = (' + obStates.toString() + ')()');
+/* And the screens that only exist once something is half-done -- a menu open,
+   an account frozen, a post taken down. They are not routes and nothing at
+   rest shows them, so `--all` never photographed one; `hd@N`, or `--half`
+   for the lot. Same list act-check and press walk. */
+await pg.evaluate('window.HALF = (' + halfDone.toString() + ')()');
 await pg.evaluate(({ s, ui, dk, pd, mf }) => {
   eval('(' + s + ')()');           /* the fixture, run inside the page */
   SET.done = true;                 /* past the onboarding, unless it is what was asked for */
@@ -146,14 +155,19 @@ const obShots = await pg.evaluate(() =>
    nothing and "saying what a letter reads" is the whole point of looking. */
 const obLabel = await pg.evaluate(() =>
   OB_STATES.map((s) => s[0].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')));
-const expand = (s) => (s === 'ob' ? obShots : [s]);
+const hdShots = await pg.evaluate(() => HALF.map((_, i) => 'hd@' + i));
+const hdLabel = await pg.evaluate(() =>
+  HALF.map((s) => s[0].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')));
+const expand = (s) => (s === 'ob' ? obShots : s === 'half' ? hdShots : [s]);
 const shots = (all
-  ? withArgs.concat(obShots)
+  ? withArgs.concat(obShots).concat(hdShots)
+  : half ? hdShots
   : named.length ? named : ['profile']).reduce((a, s) => a.concat(expand(s)), []);
 
 const made = [];
 for (const spec of shots) {
   const ob = /^ob[:@](\d+)$/.exec(spec);
+  const hd = /^hd@(\d+)$/.exec(spec);
   /* Only the first colon separates the route from its argument. A form's
      argument has colons of its own -- `form:card:w/kano` is the card of the
      word kano -- and splitting on all of them handed vForm the word "card",
@@ -162,8 +176,22 @@ for (const spec of shots) {
   const ci = spec.indexOf(':');
   const r = ci < 0 ? spec : spec.slice(0, ci);
   const a = ci < 0 ? undefined : spec.slice(ci + 1);
-  if (!ob && routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
-  const err = ob
+  if (!ob && !hd && routes.indexOf(r) < 0) { console.error(`  no route called ${r}`); continue; }
+  const err = hd
+    ? await pg.evaluate((n) => {
+        try {
+          /* The entry sets the app up and RETURNS the html. render() is what
+             puts it on the screen, and it rebuilds from the state the entry
+             just set -- which is why an entry that tidied up after itself
+             photographs the screen it tidied back to. */
+          SET.done = true;
+          window.__seed();
+          HALF[n][1]();
+          render();
+          return null;
+        } catch (e) { return String(e && e.message || e); }
+      }, Number(hd[1]))
+    : ob
     ? await pg.evaluate(({ n, face }) => {
         try {
           /* The onboarding is not somewhere you go: it is what render() shows
@@ -188,8 +216,9 @@ for (const spec of shots) {
   if (covered) { console.error(`  ${spec}: the splash is still up, or #app is empty`); continue; }
   /* Every separator a route may carry becomes a dash: a form key with a
      slash in it wrote the picture into a directory named after half of it. */
-  const name = (spec.charAt(2) === '@' ? 'ob-' + obLabel[Number(ob[1])]
-                                       : spec.replace(/[:/#]+/g, '-')) +
+  const name = (hd ? 'half-' + hdLabel[Number(hd[1])]
+                   : spec.charAt(2) === '@' ? 'ob-' + obLabel[Number(ob[1])]
+                                            : spec.replace(/[:/#]+/g, '-')) +
                (dark ? '-dark' : '') +
                (uiLang === 'en' ? '' : '-' + uiLang) + '.png';
   const file = path.join(OUT, name);

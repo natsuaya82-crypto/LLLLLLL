@@ -54,6 +54,16 @@ post being taken down either: 「通知はいらんてホーム画面にバン�
 shut by `is_member()` on the server whether or not anything on screen says so.
 This is the saying so.
 
+Home is the **feed**, not the profile tab, and it took two goes. It went on
+`vProfile` first, which is a different screen. Then it was a coloured strip
+with a corner radius and a border across the top of the feed — a chip, and a
+chip is a thing you scroll past. It takes the timeline's PLACE now, as the
+app's own empty state (`.empty`, the serif heading every other nothing-here
+screen uses), and the two ways to write — the row at the top and the round
+button over the corner — are not drawn at all: a button that cannot do its
+one thing is worse than no button. That shape is X's and the owner supplied
+it as the reference.
+
 One new string in all ten languages, `post.rules` (`post.gone` was taken and
 means something else). `npm run rls`: **120 attempts, 21 shapes** — the row
 comes back, it says nothing, the words cannot be read out of the view or out

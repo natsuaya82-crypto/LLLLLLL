@@ -127,20 +127,34 @@ function vFeed(){
   return '<div class="view">'+
     rootTop('feed')+
     '<div class="body">'+
+
     /* A row to write in, at the top of the timeline, because the round button
        is one floating thing over the corner of a screen and somebody who does
        not see it has no way to post at all. 「ホームからもツイートできるように」
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
-    '<button class="wrow"' + DO('openPost') + '>'+
+    (NET_BANNED? '' :
+      '<button class="wrow"' + DO('openPost') + '>'+
       '<span class="pav">'+
         postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
       '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
-    '</button>'+
+    '</button>')+
     /* Under the row you write in and directly on top of the list they choose
        between, because that is what they are about. */
     snsTabs()+
-    (list.length
+    /* Frozen, said here and nowhere else. Not a notice -- 「通知はいらんて
+       ホーム画面にバンでいいやん」 -- and not a coloured strip over a
+       timeline that goes on scrolling underneath it: it takes the timeline's
+       place, which is what every app that does this does and is the only
+       shape that cannot be scrolled past.
+
+       The three tabs stay open and the making side goes on working
+       「3タブを閉じる必要もないし。ホームに出ればいいやん」. Every door being
+       frozen shuts is shut by is_member() in supabase/schema.sql whether or
+       not anything on screen says so; this is the saying so. */
+    (NET_BANNED
+      ? '<div class="empty"><div class="eb">'+esc(t('post.out'))+'</div></div>'
+      : list.length
       ? list.map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
          started; nothing HERE, with posts on the other tab, is a person who
@@ -150,8 +164,12 @@ function vFeed(){
     '</div>'+
     /* Where every timeline puts it: over the feed, above the bar, under the
        thumb of the hand already holding the phone. */
-    '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
-      ICON_ADD2+'</button>'+
+    /* And neither way in. Both open a composer that will refuse, and a
+       button that cannot do its one thing is worse than no button: it is the
+       app asking somebody to find out. */
+    (NET_BANNED? '' :
+      '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
+      ICON_ADD2+'</button>')+
     '</div>';
 }
 /* ---- one conversation --------------------------------------------------

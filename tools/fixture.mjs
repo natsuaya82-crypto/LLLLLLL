@@ -444,16 +444,15 @@ export function halfDone(){
        either of them. */
     ["somebody else's page, with the menu open",
                                  () => { WMENU = true;
+                                         window.route = 'profile';
                                          NAV = [{ r: 'profile', a: 'iri' }];
-                                         const h = vProfile();
-                                         WMENU = false; NAV = [{ r: 'profile' }];
-                                         return h; }],
+                                         return vProfile(); }],
     /* Frozen, which is said on the page the app opens on and nowhere else --
        no notice, and the three sns tabs stay open. */
     ['home, for an account that has been frozen',
-                                 () => { const was = NET_BANNED; NET_BANNED = 'spam';
-                                         const h = vProfile(); NET_BANNED = was;
-                                         return h; }],
+                                 () => { NET_BANNED = 'spam';
+                                         window.route = 'feed'; NAV = [{ r: 'feed' }];
+                                         return vFeed(); }],
     ['the settings list, for whoever answers the reports', () => {
         NET_STAFF = true; window.route='settings'; NAV=[{r:'settings'}];
         const h = vSettings(); NET_STAFF = false; return h; }],
@@ -490,6 +489,16 @@ export function halfDone(){
     ['your own post, taken down', () => { const p = postById('p1'); p.down = true;
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); delete p.down; return h; }],
+    /* The post somebody came to read, gone. What is left is the tombstone and
+       the replies to it -- and the replies are somebody else's lines, so they
+       are still there, whole. 「スレッドは本ツイートだけね？」 */
+    /* Left where it puts it, like the door's faces above and for the same
+       reason: shot.mjs calls render() afterwards, so an entry that tidied up
+       photographs the screen it tidied back to. */
+    ["a thread whose post was taken down", () => { const p = postById('p1');
+        p.down = true; p.mine = false;
+        window.route='thread'; NAV=[{r:'thread', a:'p1'}];
+        return vThread(); }],
     /* Somebody else's profile, the follow button on it, and the same page
        once you follow them. The only profile a walk sees is this person's
        own, and the two cards are different screens. */
