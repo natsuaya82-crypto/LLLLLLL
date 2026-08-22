@@ -50,7 +50,7 @@ const B = 'b0000000-0000-4000-8000-000000000002';   /* somebody else */
 const L = 'c0000000-0000-4000-8000-000000000003';   /* the language */
 const P = 'd0000000-0000-4000-8000-000000000004';   /* the post */
 const C = 'e0000000-0000-4000-8000-000000000005';   /* whoever reads the reports */
-const D = 'd0000000-0000-4000-8000-000000000004';   /* an account with no name on it */
+const D = 'd0000000-0000-4000-8000-000000000044';   /* an account with no name on it */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
@@ -200,7 +200,8 @@ const CASES = [
 
   /* --- what somebody said, once --- */
   ['A posts',                                 'ok',     A, 0,
-    `insert into post(id,author,language,body) values ('${P}','${A}','${L}','{}'::jsonb)`],
+    `insert into post(id,author,language,body)
+       values ('${P}','${A}','${L}','{"ln":"the words somebody was reported for"}'::jsonb)`],
   ['B cannot post as A',                      'denied', B, 0,
     `insert into post(author,body) values ('${A}','{}'::jsonb)`],
   ['B cannot edit A\u2019s post',             'denied', B, 0,
@@ -325,12 +326,26 @@ const CASES = [
     `select post_hide('${P}','spam')`],
   ['staff takes A\u2019s post down',           'ok',     C, 0,
     `select post_hide('${P}','spam')`],
-  ['and B cannot see it any more',            'denied', B, 0,
-    `select 1 from post where id='${P}'`],
-  ['nor can somebody who is not signed in',   'denied', B, 1,
-    `select 1 from post where id='${P}'`],
+  /* The ROW still comes back and its BODY does not. Hiding the row was the
+     first shape of this and it left a hole in every thread the post was in:
+     the replies are still there, answering something that is not, and a
+     reader cannot tell "taken down" from "never existed". post_seen is what
+     empties it, and `select 1` would pass either way -- so what is asked for
+     here is the body. */
+  ['B is still handed the row',               'ok',     B, 0,
+    `select 1 from post_seen where id='${P}'`],
+  ['and it says nothing',                     'ok',     B, 0,
+    `select 1 from post_seen where id='${P}' and body = '{}'::jsonb`],
+  ['B cannot read the words out of it',       'denied', B, 0,
+    `select 1 from post_seen where id='${P}' and body ->> 'ln' is not null`],
+  ['nor out of the table under it',           'denied', B, 0,
+    `select 1 from post where id='${P}' and body ->> 'ln' is not null`],
+  ['somebody not signed in is handed the row too', 'ok', B, 1,
+    `select 1 from post_seen where id='${P}'`],
+  ['and it says nothing to them either',      'denied', B, 1,
+    `select 1 from post_seen where id='${P}' and body ->> 'ln' is not null`],
   ['A is still shown A\u2019s own post',       'ok',     A, 0,
-    `select 1 from post where id='${P}'`],
+    `select 1 from post_seen where id='${P}' and body ->> 'ln' is not null`],
   ['and staff can still look at it',          'ok',     C, 0,
     `select 1 from post where id='${P}'`],
   ['A cannot put A\u2019s own post back up',   'denied', A, 0,
@@ -387,6 +402,15 @@ const CASES = [
                        join pg_namespace n on n.oid=p.pronamespace
                       where n.nspname='public' and p.proname='account_delete'
                         and p.prosrc not like '%is_member%') = 1`],
+  /* And what everybody else is handed about a frozen account's posts. Not
+     hidden -- the posts stay readable, and the phone takes them off the
+     timeline and leaves them on the account's own page. 「ツイートは自己責任
+     で見れるようにする」 A reader has to be able to tell, so it is on the row
+     rather than being asked about every author a timeline shows. */
+  ['a frozen account\u2019s post says so on the row', 'ok', A, 0,
+    `select 1 from post_seen where author='${B}' and author_out`],
+  ['and A\u2019s does not',                    'ok',     A, 0,
+    `select 1 from post_seen where author='${A}' and not author_out`],
   ['staff lifts it',                          'ok',     C, 0,
     `select account_unban('${B}')`],
   /* A boost and not a like: B liked this post earlier in the file and took
@@ -473,6 +497,21 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename='language' and cmd in ('INSERT','UPDATE','DELETE')
         and (coalesce(qual,'')||coalesce(with_check,'')) like '%is_member%'`, '0'],
+  /* post_seen runs as its owner and sees every row -- that is what lets it
+     hand back a taken-down post with nothing in it. Two things have to hold
+     for that to be a wall rather than a door. It must not carry the column
+     that says WHY a post went, which is the reports screen's; and the table
+     under it must still refuse a hidden row, or the view is beside a door
+     rather than in one. The attempts above try that door; this is the shape
+     of it. */
+  ['a tombstone does not carry the reason', `
+     select count(*) from information_schema.columns
+      where table_schema='public' and table_name='post_seen'
+        and column_name in ('hidden_why')`, '0'],
+  ['and the table under it still refuses a hidden post', `
+     select count(*) from pg_policies
+      where tablename='post' and cmd='SELECT'
+        and coalesce(qual,'') not like '%hidden_at%'`, '0'],
   /* What a language is made of is the one thing in this file with no public
      face at all. Every other table has a select policy somebody else passes;
      this one must not, and "nobody has tried the right query yet" is not the

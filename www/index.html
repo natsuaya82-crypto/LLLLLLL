@@ -356,6 +356,13 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chap .ct{font-family:'Cinzel',Georgia,serif;font-size:1.6rem;font-weight:600}
 .chap .cn{margin-left:auto;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
+/* As tall as what is left of the screen, so something can be put at the FOOT
+   of it -- against the tab bar, not under the last row and not floating in
+   the middle of the space between. The bottom padding goes with it: what is
+   pinned down there IS the padding. One screen asks for this. */
+.body.tall{display:flex;flex-direction:column;
+           padding-bottom:calc(var(--tabh) + 22px);
+           min-height:calc(100vh - var(--tabh) - 22px)}
 /* ---------- a post ----------
    The row everybody's thumb already knows: face, a bold name with the handle
    and the time in grey beside it, the post, four things spread along the
@@ -1030,6 +1037,9 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .empty{padding:54px 30px;text-align:center}
 .empty .eb{font-family:'Cinzel',Georgia,serif;font-size:1.3rem;margin-bottom:8px}
 .empty .es{color:var(--txm);font-size:.86rem;line-height:1.9}
+/* The one link in the app that leaves it. A button in every way but the tag:
+   a mailto cannot be a <button>, because what opens Mail is the href. */
+.outapp{display:inline-block;margin-top:18px;text-decoration:none}
 
 /* ---------- the dictionary ---------- */
 /* The box is as tall as the field inside it and no taller. It carried ten
@@ -1190,8 +1200,27 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
           display:flex;align-items:center;justify-content:center}
 
 /* ---------- settings ---------- */
-.set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx)}
+/* font-size and line-height are set HERE and not left to the tag. A <button>
+   takes the browser's own 13.3px/normal and an <a> takes the body's 16px/1.7,
+   so the same row was 49px as one and 57px as the other -- and two of these
+   are anchors, because a link to a page off the phone cannot be a button. */
+.set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx);font-size:.95rem;line-height:1.25}
 .set .sl{font-size:.95rem}
+/* Two of these are <a> rather than <button> -- the two documents at the foot
+   of the settings list, which are pages on the site. An anchor is not a
+   button and carries an underline nothing else in this app has. */
+a.set{text-decoration:none}
+/* The two documents at the foot of the account room. Not rows: a thing you
+   read does not belong in the column of things you press, and at row size it
+   sat there looking like one. Small, side by side, quiet. */
+.docs{display:flex;align-items:center;justify-content:center;gap:10px;
+      margin-top:auto;padding-top:34px;font-size:.78rem;color:var(--txm)}
+.docs a{color:var(--txm);text-decoration:none}
+.docs a:active{color:var(--gold)}
+.docdot{opacity:.5}
+/* Air between two groups of rows that are about different things. A heading
+   over each would be two headings on a screen with six rows on it. */
+.setgap{height:26px}
 /* Deleting something, wherever it is offered. It was written out as
    style="color:#c9553f" on six screens and once more in this file -- seven
    copies of one colour, none of which changed when the dark theme did. */
@@ -1295,7 +1324,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    the phone wide, indented from both sides, and on somebody else's page it is
    most of what there is to read. */
 .mecard{padding:2px 24px 0}
-.metop{display:flex;align-items:center;gap:12px}
+/* position: the ... menu inside it hangs off `top:100%` and needs something
+   to be 100% OF. Without this it took the page as its ancestor and opened at
+   the bottom of the screen, over the tab bar. A post row is positioned for
+   the same reason. */
+.metop{display:flex;align-items:center;gap:12px;position:relative}
 .mecard .pav{width:56px;height:56px;flex:none}
 .mecard .pav canvas{width:36px;height:36px}
 .mewho{flex:1 1 auto;min-width:0}
@@ -1869,6 +1902,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    line as "edited", because it is the same kind of thing: what state the post
    is in, in as few words as the state can be said in. */
 .pdown{color:var(--bad);font-size:.8rem}
+/* A post that is not there any more, in a conversation that is. It sits
+   where the post sat and is quieter than one -- there is nothing in it to
+   read, and it is not a thing to press. */
+.ptomb{padding:14px 16px;color:var(--txm);font-size:.9rem;
+       border-bottom:1px solid var(--line)}
 
 
 /* ---------- bottom bar, sheet, toast ---------- */

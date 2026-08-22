@@ -68,10 +68,40 @@ function savePosts(){
    phone whose account changed, and a block that hid your own writing would be
    the worst possible reading of it. */
 function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
-function postAll(){
-  return POSTS.slice().filter(function(p){ return !postBlocked(p); })
+/* Somebody else's post that has been taken down is not a row in a timeline.
+   It is kept -- a thread that had one in it has to be able to say so -- and
+   postTomb() is what a thread draws for it. Your OWN stays where it is,
+   wearing the chip that says what state it is in: the person it happened to
+   is told by their own post. */
+/* Everything this phone holds that there is anything left to draw, newest
+   first. Blocked is gone and so is a post that was taken down -- neither has
+   a page it is still shown on.
+
+   A frozen account's posts are NOT dropped here. They come off the timeline
+   and stay on that account's own page, so the sieve for that is one line
+   further down and this list is what the page uses. */
+function postKept(){
+  return POSTS.slice().filter(function(p){
+      return !postBlocked(p) && !postGone(p);
+    })
     .sort(function(a, b){ return (b.at||0)-(a.at||0); });
 }
+function postAll(){
+  return postKept().filter(function(p){ return !postOut(p); });
+}
+/* Written by an account that has been frozen. Off the timeline and NOT gone:
+   the post is still there, on that account's own page, for whoever goes
+   looking. 「タイムラインから外す、プロフィールからは凍結してますの表示。
+   ツイートは自己責任で見れるようにするのは？」
+
+   A freeze can be lifted, which is the other half of why nothing is
+   destroyed here -- the posts come back to the timeline by themselves the
+   next time the server is asked. */
+function postOut(p){ return !!(p && p.out && !p.mine); }
+/* A post that was taken down and is not yours. It arrives with nothing in it
+   -- post_seen in supabase/schema.sql empties the body, so the words are not
+   on the wire at all -- and there is nothing to draw but the fact of it. */
+function postGone(p){ return !!(p && p.down && !p.mine); }
 function postById(id){
   var i;
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id) return POSTS[i];
@@ -1821,6 +1851,43 @@ function postPics(p){
   }
   return p.pic? [p.pic] : [];
 }
+/* What the TIMELINE draws, which is postPics() only when there is nothing
+   smaller. Three answers again and the order is the same one:
+
+     on this phone   the picture is in hand and already decoded. Drawing a
+                     smaller copy of it would cost a frame to save nothing --
+                     nothing is downloaded either way
+     `pt`            the small copies in Storage, one per picture
+     anything else   the photograph, which is what every post written before
+                     this carries and is not a failure
+
+   Per picture and not per post: a small copy that failed to go up leaves a
+   gap in `pt`, and a list that closed the gap would put picture two's
+   thumbnail under picture one. */
+function postThumbs(p){
+  var full=postPics(p), out=[], i, t;
+  if(!p) return full;
+  if(Object.prototype.toString.call(p.pics)==='[object Array]' && p.pics.length)
+    return p.pics;
+  if(Object.prototype.toString.call(p.pt)!=='[object Array]' || !p.pt.length)
+    return full;
+  for(i=0;i<full.length;i++){
+    t=p.pt[i];
+    out.push(t? netMediaURL(t) : full[i]);
+  }
+  return out;
+}
+/* A post that is not there any more, where the post somebody came to read
+   was. Only there: 「スレッドは本ツイートだけね？それ以外の会話は本ツイート
+   とは関係ないものとする」 -- a reply that went simply is not in the list,
+   because a conversation is not one thing and the rest of it does not stand
+   or fall with any one line in it.
+
+   A state and not an explanation -- 「アプリ内に説明書くの禁止」 -- so it is
+   one line, and it says nothing about who did it or why. */
+function postTomb(){
+  return '<div class="ptomb">'+esc(t('post.rules'))+'</div>';
+}
 function postDir(p){
   var d=p && p.dir;
   return DIRS.indexOf(d)>=0 ? d : 'ltr';
@@ -2168,12 +2235,17 @@ function reportGo(why){
    `data-pm` is what "part of the menu" means, so a row added to the menu is
    covered by being in it rather than by being listed here as well. */
 function postMenuTook(target){
-  var el;
-  if(!PMENU) return false;
+  var el, d;
+  /* Two menus and one rule. A post's is open on a timeline and a person's is
+     open on their page, never both -- but this is the one place that closes
+     either, because "a press that is not part of the menu closes it" is one
+     sentence and a second copy of it is a second thing to keep in step. */
+  if(!PMENU && !WMENU) return false;
   if(actOf(target, 'data-pm')) return false;
   el=actOf(target, 'data-do');
-  if(el && el.getAttribute('data-do')==='postMore') return false;
-  PMENU='';
+  d=el && el.getAttribute('data-do');
+  if(d==='postMore' || d==='whoMore') return false;
+  PMENU=''; WMENU=false;
   render();
   return true;
 }

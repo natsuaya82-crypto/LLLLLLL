@@ -331,7 +331,10 @@ function pfList(){
   of=pfMine()
     ? function(p){ return !!p.mine; }
     : function(p){ return String(p.hd||'')===h; };
-  var mine=postAll().filter(of);
+  /* postKept() and not postAll(): a frozen account's posts are off the
+     timeline and still here, which is the whole of what a page is for.
+     「ツイートは自己責任で見れるようにする」 */
+  var mine=postKept().filter(of);
   if(pfTab==='re')   return mine.filter(function(p){ return !!p.to; });
   /* What THIS person has liked. Your own is what you pressed; somebody
      else's arrives with them, and until it does the list is empty rather than
