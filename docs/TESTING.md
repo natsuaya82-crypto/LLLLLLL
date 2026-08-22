@@ -167,6 +167,27 @@ coming back empty. The check proves the app still holds together; the grep
 proves the rename finished. They are two statements and neither stands in for
 the other.
 
+**And the wrong red is how the right one was found, so the order is part of
+the procedure.** Putting the declaration back came first; it produced one
+complaint where five were predicted, and it was chasing *that* mismatch that
+turned up the break worth watching. Nobody reasons their way to "break the
+call site instead" from a blank page. So the step is not "pick the right bug"
+— it is:
+
+```
+predict what the red will say, before you run it
+put the bug back
+if what came out does not match the prediction, you have learned
+  something about the CHECK. Do not move on. Break it the other way
+  until you have a red you predicted.
+```
+
+A red that matches your prediction means you understand what the check is
+watching. A red that does not means you do not, and the gap is where the next
+hole is — twice in one day, that gap was the hole: `dead-check` counting names
+rather than sites, and `conv-check`'s eighth claim saying nothing at all about
+a single key falling back to roman.
+
 Mandatory regression tests, no exceptions:
 
 ```
