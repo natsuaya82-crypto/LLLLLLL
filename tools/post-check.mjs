@@ -451,8 +451,94 @@ const R = await pg.evaluate(async () => {
                'written by nobody');
   SESS = wasSess;
 
+  /* ---- 12. the timeline is sent the small copy, not the photograph ----
+     A row shows a picture a few hundred pixels across and was being sent one
+     nine hundred across. Nothing looked wrong and nothing could: the browser
+     scales it down on arrival, so the only difference is the bytes, and bytes
+     are the one thing a screenshot cannot show. What runs out first on a $25
+     Supabase is egress, and the timeline is the only thing anybody scrolls. */
+  const sizeOf = (u) => new Promise((res) => {
+    const im = new Image();
+    im.onload = () => res(im.width + 'x' + im.height);
+    im.onerror = () => res('');
+    im.src = String(u || '');
+  });
+  const big = window.__fixPic(900, 600);
+  const small = await new Promise((res) => postThumb(big, res));
+  const smallWH = await sizeOf(small);
+  if (smallWH !== '300x200')
+    fails.push('the small copy of a 900x600 photograph is ' +
+               JSON.stringify(smallWH) + ' and POST_THUMB is ' + POST_THUMB);
+  /* Not "different bytes": a copy that re-encoded at the same size would also
+     be different bytes and would save nothing at all. */
+  if (!(small.length < big.length / 2))
+    fails.push('the small copy is ' + Math.round(small.length / 1024) + ' KB ' +
+               'against the photograph\u2019s ' + Math.round(big.length / 1024) +
+               ' KB, which is not a saving worth a second file');
+  /* A picture already smaller than POST_THUMB gets no second file rather than
+     a second copy of the same bytes. */
+  const none = await new Promise((res) => postThumb(window.__fixPic(200, 120), res));
+  if (none !== '')
+    fails.push('a picture already smaller than POST_THUMB was given a small ' +
+               'copy of itself, which is a second file for nothing');
+
+  /* And what each of the two screens is handed. Per picture, because `pt` is
+     allowed to have a hole in it: a small copy that failed to go up must fall
+     back to the photograph IN ITS OWN PLACE. A list that closed the hole
+     would put picture two’s thumbnail under picture one, which is the
+     wrong picture shown with nothing throwing. */
+  const A = 'u/p/0.jpg', B = 'u/p/1.jpg', TA = 'u/p/0.t.jpg', TB = 'u/p/1.t.jpg';
+  const tail = postThumbs({ pu: [A, B], pt: [TA] });
+  if (tail[0] !== netMediaURL(TA) || tail[1] !== netMediaURL(B))
+    fails.push('with a small copy for the first picture only, the timeline ' +
+               'draws ' + JSON.stringify(tail) + ' -- it has to be the small ' +
+               'copy then the photograph');
+  const lead = []; lead[1] = TB;
+  const holed = postThumbs({ pu: [A, B], pt: lead });
+  if (holed[0] !== netMediaURL(A) || holed[1] !== netMediaURL(TB))
+    fails.push('with a small copy for the SECOND picture only, the timeline ' +
+               'draws ' + JSON.stringify(holed) + ' -- picture one is wearing ' +
+               'picture two\u2019s thumbnail');
+  const opened = postPics({ pu: [A, B], pt: [TA, TB] });
+  if (opened[0] !== netMediaURL(A))
+    fails.push('opening a photograph shows the small copy, so there is no way ' +
+               'to see the photograph at all');
+  /* On this phone the picture is in hand. Nothing is downloaded either way,
+     so a smaller copy would cost a frame to save nothing. */
+  if (postThumbs({ pics: [big] })[0] !== big)
+    fails.push('a post written on this phone does not draw its own picture');
+  /* A post from before any of this has no `pt` and draws the photograph. */
+  if (postThumbs({ pu: [A] })[0] !== netMediaURL(A))
+    fails.push('a post written before there were small copies draws nothing');
+
+  /* And the row itself, which is the half that matters and the half a check
+     of postThumbs() alone cannot see: a function can be perfectly correct and
+     simply never be the one that runs. Asked of the HTML a timeline actually
+     draws, with the photograph's own URL forbidden in it -- "the small copy
+     appears" is also true of a row that asks for both. */
+  const seen = POSTS.filter((x) => !x.to)[0];
+  if (!seen) fails.push('there is no post to draw');
+  else {
+    const wasP = seen.pics, wasU = seen.pu, wasT = seen.pt;
+    delete seen.pics;
+    seen.pu = [A]; seen.pt = [TA];
+    const drawn = String(postRow(seen) || '');
+    seen.pics = wasP; seen.pu = wasU; seen.pt = wasT;
+    if (wasP === undefined) delete seen.pics;
+    if (wasU === undefined) delete seen.pu;
+    if (wasT === undefined) delete seen.pt;
+    if (drawn.indexOf(netMediaURL(TA)) < 0)
+      fails.push('the row a timeline draws does not ask for the small copy at all');
+    if (drawn.indexOf(netMediaURL(A)) >= 0)
+      fails.push('the row a timeline draws still asks for the photograph, so ' +
+                 'every picture scrolled past costs its full size. Nothing looks ' +
+                 'wrong -- the browser scales it down on arrival -- and the only ' +
+                 'difference is the bytes');
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
+           thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
            vof: (v && v.vo && v.vo.f) || '' };
 });
 
@@ -483,4 +569,9 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      saying so after that post has been deleted.\n' +
             '      With nobody signed in the timeline is the door and nothing\n' +
             '      else, and the composer will not open at all. A post that has\n' +
-            '      not reached the server says so on its own row.');
+            '      not reached the server says so on its own row.\n' +
+            '      The timeline is sent a small copy -- ' + R.thumb + ' KB against ' +
+            R.full + ' KB --\n' +
+            '      and pressing it still opens the photograph. A picture whose\n' +
+            '      small copy never went up is drawn full size in its own place,\n' +
+            '      not wearing the next one\u2019s.');

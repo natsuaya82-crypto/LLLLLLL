@@ -722,16 +722,34 @@ function netUp(path, b64, mime, ok, bad){
    and the post goes up carrying the pictures that made it. A post that
    refused to exist because a photograph failed would be a post lost to a
    tunnel. */
+/* Two files per picture: the photograph, and a small copy of it for the
+   timeline. `th` is indexed to match `out` rather than pushed onto, because a
+   small copy that fails to go leaves a HOLE and a list that closed the hole
+   would put picture two's thumbnail under picture one. A hole is read by
+   postThumbs() as "draw the photograph for this one", which is what every
+   post written before this does anyway -- so a thumbnail that does not go up
+   costs bytes and never correctness. */
 function netUpPics(uid, pid, pics, ok){
-  var out=[], i=0;
+  var out=[], th=[], i=0;
+  function next(){ i++; step(); }
   function step(){
     var d;
-    if(i>=pics.length){ ok(out); return; }
+    if(i>=pics.length){ ok(out, th); return; }
     d=netData(pics[i]);
-    if(!d){ i++; step(); return; }
+    if(!d){ next(); return; }
     netUp(uid+'/'+pid+'/'+i+netExt(d.mime), d.b64, d.mime,
-      function(path){ out.push(path); i++; step(); },
-      function(){ i++; step(); });
+      function(path){
+        var k=out.length;
+        out.push(path);
+        postThumb(pics[i], function(small){
+          var td=small && netData(small);
+          if(!td){ next(); return; }
+          netUp(uid+'/'+pid+'/'+k+'.t'+netExt(td.mime), td.b64, td.mime,
+            function(tp){ th[k]=tp; next(); },
+            function(){ next(); });
+        });
+      },
+      function(){ next(); });
   }
   step();
 }
@@ -769,8 +787,12 @@ function netPush(post, ok, bad){
      went. The other order is a post that exists with pictures it cannot name
      until a second request lands -- and a second request is a second thing
      that can fail. */
-  netUpPics(SESS.uid, pid, postPics(post), function(paths){
+  netUpPics(SESS.uid, pid, postPics(post), function(paths, small){
     if(paths.length) row.body.pu=paths;
+    /* The small copies, and only when there are any. A post whose pictures
+       were all smaller than POST_THUMB already carries no `pt` at all rather
+       than a list of empty strings. */
+    if(small.length) row.body.pt=small;
     netUpVoice(SESS.uid, pid, post, function(vpath){
       if(vpath) row.body.vu=vpath;
       netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
@@ -838,6 +860,11 @@ function netDrop(p, ok, bad){
 function netDropFiles(p, done){
   var paths=[], i;
   for(i=0;i<((p && p.pu) || []).length;i++) paths.push(p.pu[i]);
+  /* The small copies too. A picture is two files now, and a deletion that
+     took one of them would leave the other in a public bucket with nothing
+     pointing at it -- which is the exact thing the paragraph above is about.
+     Walked with a hole in it, because `pt` is allowed to have one. */
+  for(i=0;i<((p && p.pt) || []).length;i++) if(p.pt[i]) paths.push(p.pt[i]);
   if(p && p.vu) paths.push(p.vu);
   if(!paths.length){ done(); return; }
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,

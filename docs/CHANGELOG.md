@@ -15,6 +15,47 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The timeline is sent a small copy of a photograph, not the photograph
+
+A row shows a picture a few hundred pixels across and was being sent one nine
+hundred across. Nothing looked wrong and nothing could: the browser scales it
+down on arrival, so the only difference is the bytes — and bytes are the one
+thing a screenshot cannot show. The timeline is also the only thing in this
+app that anybody scrolls.
+
+A picture now goes up as **two files**: the photograph at `POST_PIC` (900) and
+a small copy at `POST_THUMB` (300), made by `postThumb()` in `post.js` at the
+moment it is uploaded. Measured on the check's own picture: **2 KB against
+7 KB**; on a real photograph it is nearer 8 KB against 80. Pressing a picture
+still opens the photograph.
+
+**Stored:** a post gains `pt`, the small copies' paths in Storage, beside
+`pu`. Nothing is stored on the phone for it — the small copy exists only in
+Storage, so `POST_BYTES` is untouched. `pt` is allowed to have a **hole** in
+it: a small copy that failed to upload leaves its slot empty and
+`postThumbs()` draws the photograph in that slot. It is indexed rather than
+pushed for exactly that reason — a list that closed the hole would put picture
+two's thumbnail under picture one, which is the wrong picture shown with
+nothing throwing. Deleting a post deletes the small copies too
+(`netDropFiles`), or they would sit in a public bucket with nothing pointing
+at them.
+
+Why it was worth doing before anything else online: egress is what runs out
+first on a $25 Supabase — 250 GB included, $0.09/GB after — and at full size
+that is about 800 people opening the app daily. At a tenth of the bytes it is
+about eight thousand.
+
+`post-check` § 12 holds it, in two places on purpose. `postThumbs()` is asked
+directly — the size of the small copy, that a picture already smaller than
+`POST_THUMB` gets no second file at all, that a hole falls back **in its own
+place** at either end of the list, and that the viewer still gets the
+photograph — and then the **row a timeline actually draws** is asked, with the
+photograph's own URL forbidden in it. The second is not the first: the first
+version of this check passed with the row still drawing full-size pictures,
+because a function can be perfectly correct and simply never be the one that
+runs. Both were watched failing.
+
+
 ### The server has two questions about an account, not one
 
 `is_member()` was the only door in `supabase/schema.sql` and every write stood
