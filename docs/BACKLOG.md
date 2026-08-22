@@ -58,21 +58,28 @@ data: existing follows all count as accepted, so nobody loses a follower on
 the day it ships; and whether locking an account keeps the followers it
 already has is open.
 
-## `form:add:<parent>` arrived at cold shows "this is gone"
+## ~~`form:add:<parent>` arrived at cold shows "this is gone"~~ — fixed
 
-`openAdd()` decides whether the draft is new by asking whether the route is
-already the one it is about to open, so arriving AT that route with no draft --
-`FORM_OPEN.add` rebuilding it after a reload -- takes the not-fresh branch,
-leaves `addW` and `wEdit` null, and `wdFormHTML()` throws into `vForm`'s catch.
-The screen says the form is gone.
+*Fixed 2026-08-22. Kept as the record of what the entry got right and what it
+got wrong about its own cost.*
 
-Nobody can reach it on a phone: the route is not persisted across a launch, and
-every way in from inside the app arrives with the draft already made. It is
-reachable from `tools/shot.mjs`, which is how it was found -- the add sheet
-cannot be photographed by name.
+`openAdd()` decided whether the draft was new by asking whether the route was
+already the one it was about to open, so arriving AT that route with no draft
+took the not-fresh branch, left `addW` and `wEdit` null, and `wdFormHTML()`
+threw into `vForm`'s catch. The screen said the form was gone, about a form
+nobody had opened.
 
-Left alone because the fix is a behaviour change to how a draft is decided to
-be new, and that is its own commit rather than a passenger on the word forms.
+**The entry said the fix was "a behaviour change to how a draft is decided to
+be new, and that is its own commit". Half right.** It is its own commit, and it
+is one clause: `|| !addW || !wEdit`. It is not a behaviour change in the sense
+the entry meant — what the route test is FOR is not throwing away what somebody
+typed, and there is nothing to throw away when there is no draft. The absence
+of a draft is what makes a sheet new; where the trail is pointing never was.
+
+`word-check` holds both halves now, because widening `fresh` could have
+widened it onto the case the test exists for. Two reds were watched: without
+the clause, arriving cold says "that is no longer here"; with `fresh` forced
+true, reopening the sheet throws away what was typed and every meaning.
 
 ## The face on `profile` does not follow the face on the phone
 
