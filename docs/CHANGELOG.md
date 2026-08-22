@@ -13,6 +13,49 @@ where it starts.
 
 ---
 
+## Unreleased — code confirmed, **not yet confirmed on a device**
+
+### The Lingua keyboard types the letters somebody drew
+
+Before this, pressing `a` on the Lingua keyboard put the character `a` in the
+field — the same character the phone's own QWERTY puts there. Nothing after
+that point could tell the two apart, and `LinguaType` (the face `.tfont`
+wears, which carries only the private use area) has no glyph at `a`, so the
+letter fell through to the ordinary font and came out roman. **The second font
+was built, installed, and never once used through the keyboard it exists for.**
+
+A letter key now puts in a private use code point — U+E000 upward, one per
+drawn letter, in the order `installTypeFont()` mapped them. `sharePua()` in
+`share.js` answers it, and both roads go through it: `shareFace()` for a
+keyboard somebody built, and `kbFix()`'s override for the free QWERTY. It was
+one feature working on the paid plan and not the free one, split by nothing.
+
+A letter with **no shape** is in no font, so its key keeps its name and comes
+out roman. That is the fallback working. Measured: a digit key with nothing
+drawn on it still puts in `"2"` (U+0032); a drawn letter key puts in U+E006.
+
+**Nothing stored changes.** The private use area exists in the input field and
+inside the extension and nowhere else — `puaRoman()`, `spType()` and
+`pwSend()` turn it back into roman before anything is saved. A post carries
+what it always carried: roman and its ink.
+
+**Known and decided, not a defect:** this keyboard used in Messages sends tofu
+to whoever receives it. The Lingua keyboard is an iOS keyboard extension by
+mechanism and a Lingua-only keyboard by purpose — 967333c,
+「Lingua キーボードは Lingua の中で使うもの」 — and where somebody writes in
+their own letters is a field inside this app.
+
+Held by `conv-check`'s eighth claim: the code point a key puts in equals the
+one `installTypeFont()` gave that letter, asked per letter and on both plans.
+Per letter and not as a count, because the counts agreeing while the pairing is
+shifted is the only way this breaks, and nothing about it throws.
+
+`DEVICE CONFIRMED` — **no.** Whether the extension actually inserts U+E000
+upward on a real phone, and whether what it inserts is drawn in `LinguaType`,
+cannot be checked anywhere in this repo.
+
+---
+
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
 ### The account room says which account, and an email account can change its password
