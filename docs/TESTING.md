@@ -198,6 +198,54 @@ Mandatory regression tests, no exceptions:
   anything that syncs
 ```
 
+## Which prose rules a check holds, and which are prose on purpose
+
+CLAUDE.md's opening section is the part that may not be argued with. Most of it
+is process and cannot be mechanised. Some of it is about the app and can. This
+table says which is which, so that **a rule with no check is a deliberate state
+and not an oversight waiting to be fixed** — the last audit found people about
+to build the two that must not be built.
+
+Audited 2026-08-22, by measuring rather than by remembering.
+
+| rule | held by | measured |
+|---|---|---|
+| **NO ROUNDED BOX** | `box` (rule 18) | 240 corners and borders, baseline frozen; 0 set from JS |
+| **Rows in one list are one height** | `press` (first half) | 1484 lists, none at two type sizes |
+| **The past is put on the thing when it is made** | `card`, `post` | ink cut at write time, redrawn under a changed alphabet |
+| **Data: a migration copies, a restore fills** | `migrate`, `backup` | old keys seeded; an older file restored over a live language |
+| **Money: a plan opens capabilities, not existence** | `dead` (`CAN`/`can`) | no capability nothing asks for, no `can()` in no plan |
+| **A key nothing asks for** | `i18n` (tenth) | 127 dead keys × 10 languages found and removed |
+| **No explanatory text in the app** | — **prose, and kept** | 194 strings; one over 100 chars, and it is the frozen screen, which CLAUDE.md names as the only exception |
+| **No `margin-top` on a row to make a group** | — prose | not measured yet; the other half of the row rule |
+| **Online: a screen that half-works without a server** | — prose | no way to ask it mechanically found |
+| **Automatic deletion, pruning and cleanup** | — prose + DELETE REVIEW | a process gate, not a check |
+
+### The three that must NOT become checks
+
+Said out loud because each is a reasonable thing to want to build, and building
+any of them means **drawing a line the owner did not draw**.
+
+- **"A row of round chips you scroll sideways."** Mechanically this is
+  `overflow-x:auto` with rounded children, and there are eight horizontal
+  scrollers in `index.html`. Which of them is the banned shape and which is a
+  legitimate rail is a judgement about a screen.
+- **"The thing being chosen and the thing being changed on one screen"**, and
+  **"a sheet that slides up instead of a page you went to."** `.sheet` is still
+  in the app by design — the sound chart is a sheet opened from the letter it
+  is about, and CLAUDE.md says so approvingly in the same file that bans
+  sheets. The rule is about a *kind* of sheet, and no parser can tell them
+  apart.
+- **"A filled panel"**, the third thing NO ROUNDED BOX names. A background
+  colour is not a panel: the bar, the sheet and the body all have one and
+  always did. `box-check` holds two of the three and says which one it does not.
+
+The principle underneath all three is one sentence, and it is worth more than
+the table: **inventing a rule the owner did not write is worse than holding two
+thirds of the one they did.** A check that fires on a screen the owner is happy
+with does not get fixed; it gets ignored, and then so does the rule it was
+protecting.
+
 ## Numbers that move
 
 Three checks print a count so that nothing shrinks silently:
