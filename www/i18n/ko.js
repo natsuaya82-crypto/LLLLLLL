@@ -1177,6 +1177,7 @@ defLang('ko', (function(){
       "mod.out.sure"       : "이 계정을 정지할까요?",
       "post.out"           : "계정 정지 중",
       "post.down"          : "공개 중지",
+      "post.rules"          : "규정 위반으로 삭제되었습니다",
       "post.pin"        : "이 글을 고정",
       "post.unpin"        : "고정 해제",
       "post.pinned"        : "고정됨",

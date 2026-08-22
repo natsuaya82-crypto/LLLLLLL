@@ -1011,6 +1011,7 @@ defLang('pt', (function(){
       "mod.out.sure"       : "Suspender esta conta?",
       "post.out"           : "Conta suspensa",
       "post.down"          : "Retirado",
+      "post.rules"          : "Removido por violar as regras",
       "post.pin"        : "Fixar esta publicação",
       "post.unpin"        : "Desafixar",
       "post.pinned"        : "Fixada",

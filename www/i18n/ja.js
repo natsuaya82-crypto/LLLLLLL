@@ -920,6 +920,7 @@ defLang('ja', (function(){
       'mod.out.sure'      : "このアカウントを凍結しますか？",
       'post.out'          : "アカウントは凍結中",
       'post.down'         : "公開停止",
+      'post.rules'         : 'ポリシー違反により削除されました',
       'post.pin'       : "この投稿を固定する",
       'post.unpin'       : "固定を外す",
       'post.pinned'       : "固定",

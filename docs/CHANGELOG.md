@@ -15,6 +15,55 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A post taken down says so where it was, and a frozen account is told on the page the app opens on
+
+Three things, and all three are the owner narrowing what was proposed.
+
+**A tombstone, on the one post and not on the conversation.** A post that was
+taken down used to be missing from everybody else's answer, so a thread had a
+hole in it and a reader could not tell "taken down" from "never existed".
+Now the post somebody came to read says that it went — one line, no name, not
+a thing you can press. Everything **else** in the conversation is somebody
+else's line and is simply not shown: 「スレッドは本ツイートだけね？それ以外の
+会話は本ツイートとは関係ないものとする」. It is out of the timeline entirely.
+Your own stays where it was, wearing the chip that says what state it is in.
+
+**Stored, on the server:** a view, `post_seen`, which the app now reads
+instead of `post` (`netFeed`, `netFindPosts`). It hands back the row and
+replaces the body with `{}` unless you wrote it or answer the reports, so the
+words somebody was reported for are not on the wire at all. `post.body` is
+untouched and `post_show()` still puts the post back whole. `post_read` is
+unchanged and still refuses a hidden row through the table — a view is only a
+wall if there is no door beside it, and opening the table instead was the
+first shape of this and put the body in front of anybody with the publishable
+key. `post_seen` is a definer view for that reason: a caller-rights view could
+not see a hidden row and would have nothing to blank.
+
+**Block and report, on a person's page.** They were on a post's `⋯` and
+nowhere else, so blocking somebody meant finding something of theirs to block
+them from. 「ブロックも通報はその人の画面でもよろしい」 `whoMore()` in `me.js`,
+the same menu in the same shape, closed by the same one rule in
+`postMenuTook()` — `WMENU` beside `PMENU`, a boolean because a page holds one
+person. A report with no post on it is about the account, which `report` has
+always allowed (`check (post is not null or who is not null)`).
+
+**Frozen is said on Home, and nowhere else.** No notice, and no notice for a
+post being taken down either: 「通知はいらんてホーム画面にバンでいいやん」
+「下ろされた初打ちいらんし」. The three sns tabs stay open — 「3タブを閉じる
+必要もないし。ホームに出ればいいやん」 — and every door being frozen shuts is
+shut by `is_member()` on the server whether or not anything on screen says so.
+This is the saying so.
+
+One new string in all ten languages, `post.rules` (`post.gone` was taken and
+means something else). `npm run rls`: **120 attempts, 21 shapes** — the row
+comes back, it says nothing, the words cannot be read out of the view or out
+of the table under it, the author still sees their own, and the view carries
+no `hidden_why`. Watched failing with the blanking removed (3 red) and with
+the table left open (2 red). `post-check` § 13 holds the phone half, watched
+failing both ways: a tombstone back in the timeline, and every post in a
+thread drawing one.
+
+
 ### A language is kept on the server, and two copies are put together rather than one winning
 
 Everything somebody makes belongs to the account — 「全部アカウントごとでしょ」

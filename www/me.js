@@ -243,6 +243,16 @@ function meFollow(h){
    What is not known is simply absent -- no bio and no counts until they
    arrive with the person. Neither is on a post, and a profile that fills them
    in with a zero is a profile saying something it was never told. */
+/* Whether the ... on a person's page is open. A boolean and not an id: a
+   page is about one person, so there is nothing to tell two of them apart
+   with. It is closed by the same press-anywhere rule PMENU is, and by
+   leaving the page. */
+var WMENU=false;
+function whoMore(h){
+  if(!h || h===meHandle()) return;
+  WMENU=!WMENU;
+  render();
+}
 function whoCard(h){
   var p=whoOf(h), on=meFollows(h);
   return '<div class="mecard">'+
@@ -254,6 +264,25 @@ function whoCard(h){
     '</div>'+
     '<button class="meedit'+(on?' on':'')+'"' + DO('meFollow', [String(h)]) + '>'+
       esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
+    /* The two things you can do about a PERSON rather than about one line
+       they wrote. They were on a post's ... and nowhere else, so blocking
+       somebody meant finding something of theirs to block them from, and
+       reporting an account that had said the same thing forty times meant
+       picking one of the forty. 「ブロックも通報はその人の画面でもよろしい」
+
+       The same menu as a post's, in the same shape and closed the same way --
+       WMENU beside PMENU, because a page holds one person and a timeline
+       holds many posts, and one of them needs an id. */
+    '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
+      esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+    (WMENU
+      ? '<span class="pmenu" data-pm="1">'+
+        '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
+          '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
+        '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
+          '<span>'+esc(t('post.report'))+'</span></button>'+
+        '</span>'
+      : '')+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+
     (p.lname? '<button class="wldrow"' + DO('go', ["about"]) + '>'+

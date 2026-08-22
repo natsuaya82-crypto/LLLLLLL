@@ -1052,6 +1052,7 @@ defLang('fr', (function(){
       "mod.out.sure"       : "Suspendre ce compte ?",
       "post.out"           : "Compte suspendu",
       "post.down"          : "Retiré",
+      "post.rules"          : "Supprimé pour non-respect des règles",
       "post.pin"        : "Épingler ce message",
       "post.unpin"        : "Ne plus épingler",
       "post.pinned"        : "Épinglé",

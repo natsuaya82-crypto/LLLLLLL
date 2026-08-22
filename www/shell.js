@@ -46,6 +46,7 @@ function viewReset(){
   pfTab='posts';                       /* which list the profile shows */
   snsTab='rec';                        /* and which timeline the feed shows */
   PMENU='';                            /* the ... open beside a post */
+  WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   kbNew1=0;                            /* the width waiting to be put on a keyboard */
   plansYr=false;                       /* and whether plans are shown by the year */

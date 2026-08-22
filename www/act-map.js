@@ -146,6 +146,7 @@ act('postPic', postPic);
 act('postReply', postReply);
 act('postDel', postDel);
 act('postMore', postMore);
+act('whoMore', whoMore);
 act('postPin', postPin);
 act('postEdit', postEdit);
 act('pwPickLib', pwPickLib);

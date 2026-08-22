@@ -182,9 +182,18 @@ function vThread(){
   if(!p || postBlocked(p)) return viewGone();
   ups=postUps(p);
   down=postDown(id, 0, [], [id]);
-  for(i=0;i<ups.length;i++) out+=postRow(ups[i]);
-  out+=postRow(p);
+  /* Whatever was above it and whatever answers it, less anything that has
+     been taken down -- 「それ以外の会話は本ツイートとは関係ないものとする」.
+     A reply that went is not a hole to be marked; it is a line somebody else
+     wrote, and the conversation does not stand or fall with it. */
+  for(i=0;i<ups.length;i++) if(!postGone(ups[i])) out+=postRow(ups[i]);
+  /* The one post somebody came here to read is the exception. It went, and
+     saying so is the whole point of it having gone -- a gap here reads as
+     "never existed", which is the opposite of what happened.
+     「スレッドは本ツイートだけね？」 */
+  out+=postGone(p)? postTomb() : postRow(p);
   for(i=0;i<down.length;i++){
+    if(postGone(down[i].p)) continue;
     d=Math.min(down[i].d, THREAD_IN);
     out+='<div class="pind pind'+d+'">'+postRow(down[i].p)+'</div>';
   }

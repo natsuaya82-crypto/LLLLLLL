@@ -378,6 +378,16 @@ function vProfile(){
     /* Your own card, or somebody else's. The card is where a profile differs
        -- yours has Edit and the way to a badge, theirs has Follow -- and the
        lists under it are the same lists. */
+    /* Frozen, and said where somebody will see it rather than in a notice
+       they may never open. 「通知はいらんてホーム画面にバンでいいやん」
+       This is the page the app opens on.
+
+       The three sns tabs stay open and the making side goes on working --
+       「3タブを閉じる必要もないし。ホームに出ればいいやん」. What being
+       frozen stops is writing where other people are, and every one of those
+       doors is shut by is_member() in supabase/schema.sql whether or not
+       anything on screen says so. This is the saying so. */
+    (pfMine() && NET_BANNED? '<div class="banout">'+esc(t('post.out'))+'</div>' : '')+
     (pfMine()? meCard() : whoCard(pfWho()))+
     pfTabs()+
     (list.length? list.map(postRow).join('')

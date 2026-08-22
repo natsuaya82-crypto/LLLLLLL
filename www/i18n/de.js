@@ -993,6 +993,7 @@ defLang('de', (function(){
       "mod.out.sure"       : "Dieses Konto sperren?",
       "post.out"           : "Konto gesperrt",
       "post.down"          : "Zurückgezogen",
+      "post.rules"          : "Wegen Regelverstoßes entfernt",
       "post.pin"        : "Diesen Beitrag anheften",
       "post.unpin"        : "Nicht mehr anheften",
       "post.pinned"        : "Angeheftet",

@@ -918,6 +918,7 @@ defLang('en', (function(){
       'mod.out.sure'      : "Suspend this account?",
       'post.out'          : "Account suspended",
       'post.down'         : "Taken down",
+      'post.rules'         : 'Removed for breaking the rules',
       'post.pin'       : "Pin this post",
       'post.unpin'       : "Unpin",
       'post.pinned'       : "Pinned",

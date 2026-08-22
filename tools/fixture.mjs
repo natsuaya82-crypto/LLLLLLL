@@ -439,6 +439,21 @@ export function halfDone(){
        nobody else. The row at the foot of the settings list is the only way
        in, and NET_STAFF is false everywhere else -- so both the door and the
        room behind it are on no screen at all without these two. */
+    /* The two things you can do about a PERSON, which live behind the ... on
+       their page. Nothing at rest opens it, so nothing had ever pressed
+       either of them. */
+    ["somebody else's page, with the menu open",
+                                 () => { WMENU = true;
+                                         NAV = [{ r: 'profile', a: 'iri' }];
+                                         const h = vProfile();
+                                         WMENU = false; NAV = [{ r: 'profile' }];
+                                         return h; }],
+    /* Frozen, which is said on the page the app opens on and nowhere else --
+       no notice, and the three sns tabs stay open. */
+    ['home, for an account that has been frozen',
+                                 () => { const was = NET_BANNED; NET_BANNED = 'spam';
+                                         const h = vProfile(); NET_BANNED = was;
+                                         return h; }],
     ['the settings list, for whoever answers the reports', () => {
         NET_STAFF = true; window.route='settings'; NAV=[{r:'settings'}];
         const h = vSettings(); NET_STAFF = false; return h; }],

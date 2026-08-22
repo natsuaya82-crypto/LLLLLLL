@@ -1863,6 +1863,14 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    line as "edited", because it is the same kind of thing: what state the post
    is in, in as few words as the state can be said in. */
 .pdown{color:var(--bad);font-size:.8rem}
+/* A post that is not there any more, in a conversation that is. It sits
+   where the post sat and is quieter than one -- there is nothing in it to
+   read, and it is not a thing to press. */
+.banout{margin:0 16px 12px;padding:14px 16px;border-radius:12px;
+        background:rgba(217,112,92,.12);border:1px solid var(--bad);
+        color:var(--bad);font-size:1rem;text-align:center}
+.ptomb{padding:14px 16px;color:var(--txm);font-size:.9rem;
+       border-bottom:1px solid var(--line)}
 
 /* ---------- a post in the reader's own words ----------
    The button that asks for it, and the line that comes back. A word this

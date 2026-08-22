@@ -1005,6 +1005,7 @@ defLang('it', (function(){
       "mod.out.sure"       : "Sospendere questo account?",
       "post.out"           : "Account sospeso",
       "post.down"          : "Ritirato",
+      "post.rules"          : "Rimosso per violazione delle regole",
       "post.pin"        : "Fissare questo messaggio",
       "post.unpin"        : "Non fissare più",
       "post.pinned"        : "Fissato",

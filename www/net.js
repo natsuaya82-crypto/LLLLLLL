@@ -491,7 +491,7 @@ function netFeed(which, ok, bad){
      the recommended timeline works with the publishable key alone and
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
-  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
+  var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at'+
           '&order=created_at.desc&limit='+NET_PAGE;
   function got(d){
     var out=[], i;
@@ -729,7 +729,7 @@ function netFindWho(q, ok, bad){
    asked for one of its fields as text. */
 function netFindPosts(q, ok, bad){
   var like=netLike(q);
-  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+')'+
          '&order=created_at.desc&limit='+NET_PAGE,
