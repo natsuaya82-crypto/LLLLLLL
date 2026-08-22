@@ -165,15 +165,28 @@ backlog entry is not permission, and neither is the absence of one.
 ## The gate
 
 ```
-npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv
-                # + card + word + post + backup + press
-                # green before a commit. It is minutes, not seconds -- on a
-                # laptop it is about two, and on a slow container six to ten.
+npm test        # tools/gate.mjs -- five with no browser in a row (assets, es5,
+                # dead, import, sides, ~2s), then the other thirteen four at a
+                # time. Green before a commit.
 ```
 
-Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
-`npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
-`npm run card` / `npm run word` / `npm run post` / `npm run backup` / `npm run press`.
+Three rules about running it, and they are the difference between a gate that
+gets run and one that gets skipped:
+
+1. **It runs in parallel.** Safe only because every check that stands up a
+   server has its own port. A new check that listens takes one nothing else
+   has.
+2. **The whole gate is once per commit.** Not per experiment, and not a second
+   time to be sure. While working, run the ONE check that holds what you are
+   changing, by name -- `npm run card`, `npm run gram`.
+3. **Watching it go red is one check too.** Put the bug back and run THAT
+   check. The other seventeen have nothing to do with it.
+
+→ `docs/TESTING.md` § the gate
+
+Individual: `npm run assets` / `es5` / `dead` / `migrate` / `i18n` / `import` /
+`sides` / `act` / `conv` / `card` / `word` / `post` / `backup` / `fill` / `round` /
+`base` / `gram` / `press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.

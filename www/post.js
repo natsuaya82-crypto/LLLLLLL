@@ -1021,7 +1021,90 @@ function trUnits(mn){
     if(!a[i]) continue;
     if(/^\s+$/.test(a[i])){ out.push({sp:true}); continue; }
     w=trWord(a[i]);
-    out.push(w? {w:String(w.hw)} : {miss:a[i]});
+    out.push(w? {w:String(w.hw), pos:String(w.pos||''), slot:String(w.slot||'')}
+              : {miss:a[i]});
+  }
+  return trArrange(out);
+}
+/* The sentence put into this language's order.
+   ------------------------------------------------------------------
+   What the grammar actually holds is four things and no more: the order of
+   subject, verb and object (`SET.order`, one of the six), and which side of
+   its noun or verb an adjective, a negation and an adposition stands
+   (`gPos`). Everything else about a sentence -- tense, agreement, articles,
+   what a preposition governs -- the grammar has not been asked and this must
+   not invent. 「自分の言語に翻訳が文法通りにならない」
+
+   The roles are read off the words themselves. A word this dictionary has
+   carries its part of speech, so the verb is the verb; the nouns before it
+   are the subject and the ones after it are the object. That is a guess about
+   ENGLISH and it is the only guess here -- it is what the sentence being read
+   is written in, and the app has no parser. A word this language has no word
+   for has no part of speech at all and is left exactly where it was: moving
+   something whose role is unknown would be rearranging somebody's sentence on
+   no evidence.
+
+   With no verb, nothing moves. A list of nouns has no S and no O to put in an
+   order, and SOV against a sentence with one word in it is the app shuffling
+   for the sake of it. */
+function trArrange(u){
+  var i, x, at=-1;
+  var pcs=[];
+  for(i=0;i<u.length;i++) if(!u[i].sp) pcs.push(u[i]);
+  if(pcs.length<2) return u;
+  /* the verb, and there is only one role that can be found without one */
+  for(i=0;i<pcs.length;i++) if(pcs[i].pos==='v'){ at=i; break; }
+  if(at<0) return u;
+  /* An adjective goes with the noun it is nearest, on the side this language
+     puts it. It is bound to that noun before anything is reordered, so it
+     travels with it. */
+  var groups=[], g;
+  for(i=0;i<pcs.length;i++){
+    x=pcs[i];
+    if(x.pos==='adj' && i+1<pcs.length && pcs[i+1].pos==='n') continue;
+    if(x.slot && x.slot.indexOf('where.')===0 && i+1<pcs.length && pcs[i+1].pos==='n') continue;
+    g=[x];
+    if(i>0 && pcs[i-1].pos==='adj' && x.pos==='n'){
+      g = (gPos('adj')==='before')? [pcs[i-1], {sp:true}, x] : [x, {sp:true}, pcs[i-1]];
+    }
+    /* An adposition is the word the `where` stage made, and it stands on the
+       side this language puts it -- which is the whole of what "postposition"
+       means and is the fourth thing the grammar holds. It goes with its noun
+       for the same reason an adjective does. */
+    else if(i>0 && pcs[i-1].slot && pcs[i-1].slot.indexOf('where.')===0 && x.pos==='n'){
+      g = (gPos('adp')==='before')? [pcs[i-1], {sp:true}, x] : [x, {sp:true}, pcs[i-1]];
+    }
+    groups.push({ pcs:g, pos:x.pos, slot:x.slot, at:i });
+  }
+  /* where the verb ended up after the adjectives were folded in */
+  var vAt=-1;
+  for(i=0;i<groups.length;i++) if(groups[i].pos==='v'){ vAt=i; break; }
+  if(vAt<0) return u;
+  var S=[], V=[groups[vAt]], O=[], rest=[], neg=null;
+  for(i=0;i<groups.length;i++){
+    if(i===vAt) continue;
+    g=groups[i];
+    /* The negation is the word the `neg` stage made, and where it stands is
+       one of the four answers the grammar has. It travels with the verb. */
+    if(g.slot && g.slot.indexOf('neg.')===0){ neg=g; continue; }
+    if(g.pos==='n' || g.pos==='pro'){ (i<vAt? S : O).push(g); continue; }
+    rest.push(g);
+  }
+  if(neg) V = (gPos('negp')==='before')? [neg, groups[vAt]] : [groups[vAt], neg];
+  /* Nothing to put in an order is nothing to reorder. */
+  if(!S.length && !O.length) return u;
+  var slot={S:S, V:V, O:O}, seq=orderDef().seq, outG=[];
+  for(i=0;i<seq.length;i++) outG=outG.concat(slot[seq[i]]||[]);
+  /* Everything that is not one of the three keeps the place it was written
+     in, measured against the pieces that moved. */
+  rest.sort(function(a2,b2){ return a2.at-b2.at; });
+  for(i=0;i<rest.length;i++){
+    if(rest[i].at < vAt) outG.unshift(rest[i]); else outG.push(rest[i]);
+  }
+  var out=[];
+  for(i=0;i<outG.length;i++){
+    if(i) out.push({sp:true});
+    out=out.concat(outG[i].pcs);
   }
   return out;
 }

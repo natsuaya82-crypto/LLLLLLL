@@ -140,15 +140,25 @@ under `lingua.sess`.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is fourteen checks and is the specification. `CLAUDE.md` → "The
-fourteen rules the gate enforces". It is minutes, not seconds: about two on a
-laptop, six to ten in a slow container.
+`npm test` is eighteen checks and is the specification. `CLAUDE.md` → "The
+fourteen rules the gate enforces". It is `tools/gate.mjs`: the five that need
+no browser run in a row (about two seconds), then the other thirteen four at a
+time.
+
+Three rules about running it — the body is in `docs/TESTING.md` § the gate:
+
+1. **Parallel, and safe only because every check that listens has its own
+   port.** A new check that stands up a server takes one nothing else has.
+2. **The whole gate is once per commit** — not per experiment, not a second
+   time to be sure. While working, run the one check that holds what you are
+   changing, by name.
+3. **Watching it go red is one check too.** Put the bug back and run that
+   check, not the other seventeen.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
-passed. `dead`, `migrate`, `import`, `sides`, `act`, `conv`, `card`, `word`, `post`,
-`backup` and `press` run only
-where somebody runs them, which means locally, which means you.
+passed. The other fifteen run only where somebody runs them, which means
+locally, which means you.
 
 `npm run rls` is not in `npm test` at all: it stands up a real PostgreSQL.
 Run it whenever `supabase/schema.sql` changes, which is the only time it can

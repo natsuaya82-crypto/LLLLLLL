@@ -3,11 +3,42 @@
 ## The gate
 
 ```
-npm test        # twelve checks, ~100 seconds
+npm test        # eighteen checks: five in a row, then thirteen four at a time
 ```
 
-Green before a commit. Not "green at the end of the day" — after every change,
-because it is fast and it is the spec.
+Green before a commit.
+
+### 1. It runs in parallel
+
+`tools/gate.mjs` is `npm test`. Five checks need no browser — `assets`, `es5`,
+`dead`, `import`, `sides` — and they run first, one after another, in about
+two seconds. They are also the ones that catch a typo, so a failure there
+means the thirteen browsers were never started. The rest run **four at a
+time**: four because each is a browser and a Node process, and past four they
+queue on memory rather than on cores.
+
+Output stays whole. A check prints its lines when it finishes, in the order
+the list has them, so a green run reads exactly as it did when they ran one
+after another.
+
+This is safe only because **every check that stands up a server has its own
+port.** `migrate` and `press` were both on 8123; press moved to 8130. Two on
+one port is one of them failing with `EADDRINUSE`, which says nothing about
+the code. A new check that listens takes a port nothing else has.
+
+### 2. The whole gate runs once per commit
+
+Not once per experiment, and not a second time to be sure. While you are
+working, run **the one check that holds what you are changing**, by name —
+`npm run card`, `npm run word`, `npm run gram`. The table under *What to run
+when* says which. The whole gate is what you run before the commit, once.
+
+### 3. Watching it go red is one check too
+
+`docs/FEATURE_RULES.md` says a fix is not done until the check that holds it
+has been watched failing with the bug still in place. That is **that check**,
+run on its own. The other seventeen have nothing to do with the bug you just
+put back, and running them proves nothing about it.
 
 `tools/pre-commit` runs the five that need no browser (assets, es5, dead,
 import, sides — about two seconds) plus i18n when a screen file changed. **It
@@ -28,6 +59,12 @@ not the gate either. Run `npm test` yourself.
 | `card` | a card of a post is a picture of *that* post |
 | `backup` | a language survives a wipe, and a restore never wins |
 | `press` | every button of every screen, pressed for real; 44pt floor |
+| `word` | what a word does after two presses in a row — rename, delete, save |
+| `post` | what a post carries is put on it when it is written |
+| `fill` | a stroke drawn with the fill on inks the inside of what it went round |
+| `round` | ROUND is done to a stroke already drawn, is reversible, and never bends a straight one |
+| `base` | raising the base makes the digits at once; lowering it never takes away one somebody drew |
+| `gram` | a post read in this language comes out in this language's order |
 
 ```
 npm run rls     # supabase/schema.sql, and a second person (~15s)
@@ -50,6 +87,7 @@ shipped once.
 | a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |
 | how a post is rendered | `npm run sides` + `npm run card` |
 | what a word does after two presses in a row — rename, delete, save | `npm run word` |
+| how a post is read in this language — word order, where an adjective stands | `npm run gram` |
 | a screen | `node tools/shot.mjs <screen>` and look at it |
 | `www/i18n/*` | `npm run i18n` |
 | anything a plan gates | add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |
