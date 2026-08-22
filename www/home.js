@@ -694,6 +694,17 @@ function wldHidden(){ return !!world().hide; }
    and a default that is the absence of a field is one no migration can get
    wrong. */
 function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
+/* Whether anybody may take the letters and the words away and use them.
+   A different question from whether the page can be OPENED: somebody can
+   read a language without being handed it. 「言語ページ公開と単語や文字の
+   dl可能は別だし」
+
+   `dl` is absent by default and absent means no. The page's own flag is the
+   other way round -- absent is public -- because a page is a thing to be
+   looked at; this hands over months of somebody's drawing, and the app does
+   not decide that for them. */
+function wldDl(){ return !!world().dl; }
+function setWldDl(v){ world().dl=!!v; saveWld(); render(); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
@@ -747,7 +758,11 @@ function vAbout(){
 /* What making this language public means, behind the `?` in the bar rather
    than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
 HELP.pub=function(){
-  return {t:t('wld.public'), h:'<div class="note">'+t('wld.public.d')+'</div>'};
+  return {t:t('wld.public'), h:
+    '<div class="sec">'+esc(t('wld.public'))+'</div>'+
+    '<div class="note">'+t('wld.public.d')+'</div>'+
+    '<div class="sec">'+esc(t('wld.dl'))+'</div>'+
+    '<div class="note">'+t('wld.dl.d')+'</div>'};
 };
 function editName(){
   var v=prompt(t('home.name.prompt'), langName);

@@ -119,11 +119,16 @@ function vSet(){
          there is one profile here and it is this person's -- so what this
          switch does today is take the row off their own profile and say so.
          「これは設定から公開非公開もかのう」 */
-      '<button class="set" style="border-bottom:none"' + DO('setWldHide', [!wldHidden()]) + '>'+
+      '<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
       '<span class="sl">'+t('wld.public')+'</span>'+
       swtHTML(!wldHidden())+'</button>'+
-      /* What it means is behind the `?` in the bar, which is where an
-         explanation goes. */
+      /* And whether it can be taken away, which is a different question and
+         only asked of a page anybody can open. What both of them mean is
+         behind the `?` in the bar, which is where an explanation goes. */
+      (wldHidden()? '' :
+        '<button class="set" style="border-bottom:none"' + DO('setWldDl', [!wldDl()]) + '>'+
+        '<span class="sl">'+t('wld.dl')+'</span>'+
+        swtHTML(wldDl())+'</button>')+
       '';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two

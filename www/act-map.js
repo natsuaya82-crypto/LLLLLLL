@@ -187,6 +187,7 @@ act('setAuto', setAuto);
 act('setUi', setUi);
 act('wldSetUse', wldSetUse);
 act('setWldHide', setWldHide);
+act('setWldDl', setWldDl);
 act('setWsys', setWsys);
 act('setScriptDir', setScriptDir);
 act('stAddOwn', stAddOwn);
