@@ -834,7 +834,7 @@ function spTypeField(id, into, sp, cls){
   /* In the person's own letters, because that is what the word IS. The box
      holds the letters' names -- a to z -- and roman is what those names look
      like, not what the word looks like. 「単語の文字のところが英語なのはなぜ？」 */
-  return lnField(id, '', IN(into), spWord(sp||[]), cls+(myFontOn()? ' sfont' : ''));
+  return lnField(id, '', IN(into), spWord(sp||[]), cls+(myFontOn()? ' tfont' : ''));
 }
 function spWord(sp){
   var out='', i, l;

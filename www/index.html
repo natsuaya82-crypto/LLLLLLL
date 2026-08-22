@@ -2170,6 +2170,17 @@ html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0
    the glyph was there, and `l` came out as l. 「これ押してもlになる。lingua内
    でも」 Beating them one at a time is a dozen places agreeing; this is one. */
 .sfont{font-family:'LinguaScript',serif !important;line-height:normal}
+/* A field you type into. `LinguaType` carries only the private use area, so
+   what the Lingua keyboard inserted is drawn and everything else -- roman,
+   kana, anything -- falls through to the ordinary font because this face has
+   no glyph there. `.sfont` cannot do it: it maps the drawn letters onto roman
+   and so draws whatever any keyboard typed.
+   「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
+   !important for the same reason .sfont says it: a dozen container rules set
+   font-family:inherit on the input inside them, and every one of those is two
+   selectors where this is one. */
+.tfont{font-family:'LinguaType',-apple-system,BlinkMacSystemFont,system-ui,
+       'Noto Sans JP',sans-serif !important}
 </style>
 <style id="ob-rework">
 .langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}

@@ -273,10 +273,14 @@ FORM_OPEN.post=function(){ openPost(); };
 /* What the meaning field starts as, and what its placeholder says: the gloss
    run together. It was worked out in three places and they have to agree --
    what you are offered has to be what you get if you type nothing. */
-function pwMn(){ return postGlossLine(postGloss(PW.ln)); }
+/* The line as the rest of the app reads it. What is in the field may be what
+   the Lingua keyboard typed, which is the private use area; everything below
+   the field works on the roman spelling. */
+function pwLn(){ return puaRoman(PW.ln); }
+function pwMn(){ return postGlossLine(postGloss(pwLn())); }
 /* And the row of it, which is drawn once when the screen is built and again
    on every letter typed. */
-function pwGl(){ return postGlossHTML(postGloss(PW.ln)); }
+function pwGl(){ return postGlossHTML(postGloss(pwLn())); }
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -644,7 +648,7 @@ function pwHTML(){
          line never grew. The page scrolls now, so the field is as tall as
          what is in it and everything under it moves down. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
-        PW.ln, dirClass(scriptDir())+(myFontOn()? ' sfont' : ''))+
+        PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */

@@ -849,7 +849,7 @@ function addFmHTML(){
     '<div class="fmmks">'+addFms.map(function(m){
       return '<div class="fmmk"><span class="fmmkf">'+esc(fmLabel(m.fm))+'</span>'+
         lnField('fmmk-'+m.id, '', IN('addFmSet', [m.id]), m.hw,
-                'whin'+(myFontOn()? ' sfont' : ''))+
+                'whin'+(myFontOn()? ' tfont' : ''))+
         '<button class="mnx"' + DO('addFmDrop', [m.id]) + ' aria-label="'+
           esc(t('fmr.off'))+'">'+ICON_MINUS+'</button></div>';
     }).join('')+'</div>';

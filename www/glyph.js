@@ -313,6 +313,26 @@ function scriptSig(){
    at E000 in its own font -- so nobody's letters take anybody else's room. */
 var PUA0=0xE000;
 function ltPua(i){ return String.fromCharCode(PUA0+i); }
+/* Back to roman. The private use area is what the Lingua keyboard types INTO
+   a field and it goes no further: everything downstream of the field -- the
+   gloss under the composer, findWord, the spelling engine, what is stored,
+   what a post carries -- works on the roman spelling and always has. A code
+   point nobody else's font has would be a square box on somebody else's
+   phone; the roman is readable there.
+
+   The order is the alphabet's, which is the order installTypeFont mapped
+   them in, so the two cannot disagree: they read the same list. */
+function puaRoman(txt){
+  var s=String(txt||''), out='', i, c, at,
+      lts=ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; }));
+  for(i=0;i<s.length;i++){
+    c=s.charCodeAt(i);
+    at=c-PUA0;
+    if(at>=0 && at<lts.length) out+=(ltName(lts[at])||'');
+    else out+=s.charAt(i);
+  }
+  return out;
+}
 function installTypeFont(){
   var el=document.getElementById('tfontcss');
   if(el) el.parentNode.removeChild(el);
