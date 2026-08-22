@@ -89,7 +89,7 @@ function entryOneHTML(w){ return entryHTML(w); }
    top of the screen. 「allの横に⇆並べ替えつけて〇パッチは廃止」
    Play all is gone: a word says itself on its own row now. */
 function wSortRow(){
-  return '<button class="wsrt"' + DO('wSetSort') + '>'+ICON_SORT+
+  return '<button class="wsrt"' + DO('wordsSetSort') + '>'+ICON_SORT+
     esc(t(wSort==='a'? 'words.sort.a' : 'words.sort.new'))+'</button>';
 }
 /* The words that are not on the list, said where they are missing from.
@@ -185,18 +185,18 @@ function wFilLab(){
 function openFil(){
   var fs=wFilters();
   openForm('wfil', t('f.pos'), fs.map(function(f){
-    return '<button class="set"' + DO('wSetFil', [f.k]) + '>'+
+    return '<button class="set"' + DO('wordsSetFil', [f.k]) + '>'+
       '<span class="sl'+(wFil===f.k? ' on':'')+'">'+esc(f.lab)+'</span>'+
       (wFil===f.k? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
   }).join(''));
 }
 FORM_OPEN.wfil=function(){ openFil(); };
-function wSetFil(k){
+function wordsSetFil(k){
   wFil=k;
   /* Chosen on a sheet, so the sheet goes and the list is what you land on. */
   if(here().r==='form') back(); else render();
 }
-function wSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
+function wordsSetSort(){ wSort=(wSort==='a')?'new':'a'; render(); }
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and
    editing is what you do once.
