@@ -89,14 +89,17 @@ function snsTabs(){
       esc(t(x[1]))+'</button>';
   }).join('')+'</div>';
 }
-/* Everybody's languages, as they are written -- which for the moment is
-   yours, because there is no server yet and a post has nowhere else to go.
-   It is not a placeholder: a post written here is a real post, kept, and it
-   is what the timeline will show when the rest of the world arrives. */
+/* Everybody's languages, as they are written. This said "which for the moment
+   is yours, because there is no server yet and a post has nowhere else to go",
+   and went on saying it after netPush() and netFeed() existed -- the same week
+   docs/STATE.md § 3 was saying the opposite about the same code. A post goes to
+   the server and comes back from it; localStorage is the copy that survives a
+   bad network, not the only place one exists. */
 /* What has arrived, asked for whenever the timeline is looked at. The screen
    does NOT wait: it draws the posts that are here and takes an answer when
    one comes, which is what a timeline does and is the only shape that works
-   on a phone in a tunnel. Today the answer is "nothing new".
+   on a phone in a tunnel. The answer is whatever netFeed() brings back, and
+   postCatchUp() sends whatever this phone has that the server has not.
 
    `snsPulling` stops a second ask while one is out -- a person flicking
    between tabs would otherwise have four in the air. */
