@@ -351,8 +351,42 @@ R.named.forEach((r) => { reachable[r] = 1; });
 Object.keys(goCalls).forEach((r) => { reachable[r] = 1; });
 const stranded = R.pageNames.filter((r) => !reachable[r]);
 
+/* A name registered twice.
+   ------------------------------------------------------------------
+   `act('x', x)` twice is harmless the moment it runs -- the second call
+   writes the same function over the first -- so nothing throws, nothing is
+   unreached, and both directions above stay green. That is exactly why it
+   needs saying: four names were registered twice and no check in the gate
+   had an opinion, because every statement the gate made about act-map.js
+   was about names it does NOT have rather than names it has twice.
+
+   It matters because act-map.js is the one place a screen's vocabulary is
+   written down, and a name appearing twice means two people believed they
+   were adding it. The next one to look will read the first entry, change
+   it, and be overwritten by an entry they never saw. Read off the source
+   rather than the page: at run time the duplicate is already gone. */
+const mapSrc = fs.readFileSync(path.join(ROOT, 'act-map.js'), 'utf8')
+  /* comments out first: the file opens by SHOWING the shape in prose --
+     `act('openWord', openWord);` indented inside a block comment -- and
+     reading that as a registration reports the file's own documentation as a
+     duplicate of the line it documents. Found by looking at what the first
+     version printed rather than by trusting it. */
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/^\s*\/\/.*$/gm, '');
+const regSeen = {}, regTwice = [];
+{
+  const re = /^\s*(act|actIn|actCh|actKey|actAfter)\s*\(\s*(['"])([^'"]+)\2/gm;
+  let m;
+  while ((m = re.exec(mapSrc))) {
+    const key = m[1] + " '" + m[3] + "'";
+    if (regSeen[key]) regTwice.push(key + ' -- registered twice');
+    regSeen[key] = 1;
+  }
+}
+
 const fails = [];
 const say = (label, list) => { if (list.length) fails.push([label, list]); };
+say('a name registered twice in act-map.js', regTwice);
 say('a name with nothing behind it', R.missing);
 say('an entry no screen ever names', R.dead);
 say('an argument that is not the JSON it was written as', R.bad);
@@ -377,4 +411,4 @@ if (fails.length) {
   }
   process.exit(1);
 }
-console.log('\nall five checks pass: every name resolves, and everything that resolves is named.');
+console.log('\nall six checks pass: every name resolves, everything that resolves is named,\nand no name is written down twice.');
