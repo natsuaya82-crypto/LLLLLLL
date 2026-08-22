@@ -7,6 +7,34 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## CSS outlives the screen it dressed, and nothing says so
+
+Found while writing the row-height measurement, not looked for.
+
+`index.html` carries `a.set{text-decoration:none}` under a comment that says
+*"Two of these are `<a>` rather than `<button>` — the two documents at the foot
+of the settings list."* There is no `<a class="set">` anywhere in `www/` any
+more. The two documents are still there (`settings.js:41,44`) and are plain
+anchors now. So the rule dresses nothing and the comment describes a screen
+that stopped existing.
+
+`.weave` is the same, one step worse: it is the class of the sentence-weaving
+chapter, and the word `weave` does not appear in a single `.js` file. The
+chapter went; its class stayed.
+
+**This is `dead-check`'s statement, on the other side of the wall.** Every
+function in `www/` must be named somewhere other than its own declaration, and
+26 orphans were found the day that check was written. Nothing has ever asked
+the same question of a selector, and the answer looks to be of the same order:
+these two were both found by accident in one afternoon.
+
+Not done here because it is not the row-height task and because the check is
+the work, not the deletion — a selector is "named" from a string built by
+concatenation (`'set' + (on ? ' on' : '')`), from `classList.add`, and from
+`index.html` itself, so a naive scan would call live rules dead and delete
+somebody's screen. The `i18n` version of exactly this problem needed a
+prefix rule to be usable; this one will need at least that.
+
 ## A private account — asked for, and deliberately not now
 
 There is no such thing today: every profile and every post is readable by
