@@ -85,7 +85,7 @@ Marked separately, because they are not the same question:
 | Your voice on a post — 30 seconds | shipped, **not device confirmed** | **yes** | yes | `post.vo = {f, ms}`; the bytes are a file in `Documents/Voices/`, never in `localStorage` | decided — 「30秒くらい」「ファイルに出す」「録音まで作る」 |
 | Editing your own post | shipped | yes | — | overwrites `ln`, `ink`, `mn`, `tr` on that post; `post.ed` is new | decided — the line and the meaning only 「文と意味だけ」, and it says `Edited` |
 | Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
-| A post shown three ways | shipped | layers 1 and 2; layer 3 three a day | `tr`: layer 3 unlimited | layers 1 and 2 frozen on the post; layer 3 computed now | decided |
+| A post shown three ways | shipped | **all three layers** | — | layers 1 and 2 frozen on the post; layer 3 computed now | decided — the daily three went out with the AI (2026-08-22) |
 | Post translated into natural languages at write time | **in progress** | yes | yes | `post.tr`, frozen on the post | decided — the seam is in (`postTr`, TR_SEAM); the translator is the reader's own device AI and is not wired up |
 | Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/`postCatchUp`. An account is required to read the timeline or post to it (decision 2026-08-18) |
 | Explore | shipped, **not device confirmed** | yes | — | — | done — people while you type, posts when you press Search; both ask the server (`netFindWho`/`netFindPosts`) |
@@ -150,14 +150,14 @@ Still open, and two of them block the work:
 - what happens when translation fails, or the phone is offline when posting —
   **the post must still go out**
 - whether a post published without translations can gain them afterwards
-- whether free's three are per day. There is no counter to share any more:
-  `AI_FREE_DAILY` went out with Studio, and `TR_FREE_DAILY` in `www/post.js`
-  is layer three's own
+Layer 3 itself is dictionary lookup: it costs nothing and runs offline.
 
-Layer 3 itself is dictionary lookup: it costs nothing, runs offline, and its
-limit of three is a product decision rather than a cost one. That is a fine
-thing for it to be; it is only worth writing down so nobody later "fixes" it
-by removing a limit that looks arbitrary.
+**It has no limit and no capability.** It used to be "three a day on free",
+and both halves are gone: `AI_FREE_DAILY` went out with Studio, `tr` is not
+one of the nine names in `CAN`, and `TR_FREE_DAILY` has no declaration
+anywhere in `www/`. The three were the AI's price wearing layer three's
+clothes, and there is no AI 「1日3回は亡くなりましたaiいれないから」. The
+only ceiling free has left is `FREE_LIMIT`, and that is words.
 
 **Images.** An image and the letters placed on it are past-tense data the
 moment the post exists, so both freeze onto the post exactly as `ink` does.

@@ -245,6 +245,38 @@ Three ways out, and choosing between them is the owner's:
 None of the three is small. The first is the only one that keeps the letter on
 the key, and it is the one that touches stored data.
 
+## `tools/verify-script.mjs` runs now, and says nineteen things
+
+It was recorded as "broken, a font experiment, not in the gate". Two of those
+three were wrong.
+
+What was wrong with it was three things, and the first two are fixed:
+
+1. `gstep()` — renamed `geStep()` and this file was missed.
+2. `scriptDrawn()` — went out in `9226dd6`, when the font stopped being built
+   from anything but the letters. `scriptGlyphDefs().defs.length` is the same
+   number now.
+3. **every mouse click was landing on `#splash`.** It waited 250 ms after
+   `goto` and the splash holds for the later of 900 ms and boot, so the point
+   editor was never touched at all. Every other check in `tools/` waits for
+   `#splash` to detach; this one predates the selector.
+
+With those three fixed it executes end to end for the first time in a long
+while and reports **13 ok, 19 FAIL**. That number is not nineteen bugs. The
+editor has changed a great deal since this was written — the rail it asks for
+is "two marks" and there are four, the circle and arc section fails wholesale,
+and the snap failures are one lattice step out in y and not in x, which reads
+more like the test's own 800-unit mapping than like `geSnap`.
+
+So each of the nineteen needs the same question asked of it: **is the app
+wrong, or is the test old?** Until that triage is done this cannot go in the
+gate, because a check nobody believes is a check nobody reads.
+
+It is worth doing. It is the only thing that proves the whole PUA font path
+end to end — draw, save, build the font, install it, and confirm the browser
+is really using it rather than falling through to a serif. Nothing else in the
+gate can see that.
+
 ## A font for the letters somebody drew — held
 
 The strokes a person draws are a skeleton, and how it is inked is a separate

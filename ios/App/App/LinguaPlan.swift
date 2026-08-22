@@ -83,13 +83,18 @@ public class LinguaPlanPlugin: CAPPlugin, CAPBridgedPlugin {
 
   /// Update if it is there, add if it is not. Two calls rather than one
   /// because SecItemUpdate does not create and SecItemAdd does not replace.
-  @objc func write(_ call: CAPPluginCall) {
-    guard let plan = call.getString("plan"),
-          let data = Self.clean(plan).data(using: .utf8),
-          !Self.clean(plan).isEmpty else {
-      call.reject("not a plan"); return
-    }
-    let q = Self.query()
+  ///
+  /// Static, and not the plugin method, because there are two callers now and
+  /// only one of them is somebody pressing something. LinguaStore.swift writes
+  /// through here when the App Store says the subscription changed, which
+  /// happens with nobody in the app at all -- a renewal, a refund, a family
+  /// member's purchase. One door, so there is one place where a plan is
+  /// written down and one definition of what a plan may say.
+  @discardableResult
+  static func set(_ plan: String) -> OSStatus {
+    let ok = clean(plan)
+    guard !ok.isEmpty, let data = ok.data(using: .utf8) else { return errSecParam }
+    let q = query()
     let attrs: [String: Any] = [
       kSecValueData as String: data,
       kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
@@ -100,6 +105,14 @@ public class LinguaPlanPlugin: CAPPlugin, CAPBridgedPlugin {
       for (k, v) in attrs { add[k] = v }
       st = SecItemAdd(add as CFDictionary, nil)
     }
+    return st
+  }
+
+  @objc func write(_ call: CAPPluginCall) {
+    guard let plan = call.getString("plan"), !Self.clean(plan).isEmpty else {
+      call.reject("not a plan"); return
+    }
+    let st = Self.set(plan)
     if st == errSecSuccess { call.resolve() } else { call.reject("keychain \(st)") }
   }
 }

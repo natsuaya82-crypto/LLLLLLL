@@ -323,10 +323,27 @@ function setOnDisk(){
    plan is the free side of wrong on an upgrade -- which is the side the rule
    in docs/PAID_FEATURES.md asks for, and which StoreKit corrects the moment
    it is asked again. */
+/* Capacitor.nativePromise, and not Capacitor.Plugins.
+
+   This asked Capacitor.Plugins for LinguaPlan and returned quietly when it
+   was not there, and it was never there: Plugins is filled by @capacitor/core,
+   which is an npm package an app with a bundler imports, and there is no
+   bundler here. www/share.js says the same thing at length and cost four
+   builds to learn. So every write was the `if(!p) return` and the Keychain
+   was never written.
+
+   That was not a quiet failure. setOnDisk() takes the plan OUT of the
+   settings file on a phone, precisely because the Keychain is meant to be
+   holding it -- so on a real device nothing held it at all and Plus came back
+   as free at the next launch. In a browser PLAN_NATIVE is false, the plan
+   stays in the file, and none of this is visible, which is why every check
+   passed.
+
+   Not waited for, as before: what this session uses is the value in memory. */
 function planKeep(id){
-  var P=window.Capacitor && Capacitor.Plugins, p=P && P.LinguaPlan;
-  if(!p) return;
-  try{ p.write({plan:String(id||'free')})['catch'](function(){}); }catch(e){}
+  var np=window.Capacitor && Capacitor.nativePromise;
+  if(!np) return;
+  try{ np('LinguaPlan', 'write', {plan:String(id||'free')})['catch'](function(){}); }catch(e){}
 }
 function has(level){ /* level: 'plus' */
   return (level==='plus')? plan()==='plus' : true;
@@ -351,9 +368,8 @@ function has(level){ /* level: 'plus' */
    plan. dead-check holds both directions, exactly as act-map's names are
    held: no capability nothing asks for, no name that is no capability.
 
-   'words' and 'tr' are metered rather than shut: free gets FREE_LIMIT of the
-   one and TR_FREE_DAILY of the other, so can() answering false there means
-   "counted", not "refused". */
+   'words' is metered rather than shut: free gets FREE_LIMIT of them, so can()
+   answering false there means "counted", not "refused". */
 var CAN={
   words:   'plus',   /* a dictionary past FREE_LIMIT */
   data:    'plus',   /* CSV out, and the cloud */
@@ -404,6 +420,27 @@ function capOK(add){
   add=add||1;
   if(can('words')) return true;
   return WORDS.length+add<=FREE_LIMIT;
+}
+/* The ceiling, met. True means the caller must stop.
+
+   This used to be `go('plans'); toast(...)` written out at each of the four
+   places that add a word, and the go() was the problem: somebody halfway
+   through typing a word had the screen taken off them and was put on a price
+   list. The ceiling is the app taking something away, so it is one of the
+   places that has to say so in words -- but it can say so without moving
+   anybody.
+
+   confirm() and not a box of our own: the plans screen is one tap away and
+   this has to be answerable with "no". It is the same dialog wipeAll() asks
+   with, it is drawn by iOS, and it is therefore not a shape this app chose.
+
+   Two strings that already exist, in all ten languages, rather than an
+   eleventh: the sentence the toast said, and the word on the upgrade button.
+   A new key here would have been one sentence in English and nine holes. */
+function capStop(add){
+  if(capOK(add)) return false;
+  if(confirm(t('toast.cap', FREE_LIMIT)+'\n\n'+t('up.cta'))) go('plans');
+  return true;
 }
 /* The day a plan ends, said out loud, once.
 

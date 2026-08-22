@@ -306,10 +306,13 @@ assuming a thing is waiting for you.
 3. ~~**The password reset mail does not arrive.**~~ Done — the template is
    `{{ .Token }}` (`supabase/mail.md`) and the app has a six-digit reset
    screen, because a link has nowhere to land in a Capacitor app.
-4. **The free ceilings are never explained in words.** A hundred words, and
-   three of layer three a day (`TR_FREE_DAILY`). `capBanner()` warns at twenty
-   words left and nothing says either number before you meet it. The third
-   ceiling — three word suggestions a day — went out with Studio.
+4. ~~**The free ceilings are never explained in words.**~~ Done — and there
+   is only one ceiling. `capStop()` asks, in the words `toast.cap` already
+   had, at the moment a word will not fit, and stays on the screen the person
+   was typing on; the five sites that used to throw them at the price list do
+   not any more. The other two ceilings are gone rather than explained: word
+   suggestions went out with Studio, and layer three's three a day went with
+   the AI 「1日3回は亡くなりましたaiいれないから」.
 5. **Signing in from Settings** was fixed but has not been opened on a phone.
    `obBackTo`/`obReturn` in `www/onboard.js`.
 
@@ -343,15 +346,21 @@ Two of them were about capabilities that had been deleted.
    `www/core.js`; all three are gone.
 8. ~~**`press` never reaches `kbReset`.**~~ Done — measured 2026-08-22,
    **213 of 213** distinct names pressed, `kbReset` among them.
-9. **`tools/verify-script.mjs` is broken** — `ReferenceError: gstep is not
-   defined`. It is a font experiment and is not in the gate.
+9. **`tools/verify-script.mjs` runs again** — three breakages, not one:
+   `gstep`→`geStep`, `scriptDrawn` gone since `9226dd6`, and every click was
+   landing on `#splash` because it waited 250 ms where every other check waits
+   for the selector. It is not a font experiment: it is the only end-to-end
+   proof of the PUA font path. It now reports 13 ok / 19 FAIL, and each of the
+   nineteen has to be triaged as app-wrong or test-old before it can go in the
+   gate. `docs/BACKLOG.md`.
 
 ### Offered and not yet answered
 
-10. **`node --check` over `www/*.js` inside `es5-check`.** A comment closed one
-    line early on 2026-08-11; `es5` and `dead` both passed it because they read
-    with regular expressions, and the browser checks caught it ninety seconds
-    later. Two seconds would have.
+10. ~~**`node --check` over `www/*.js` inside `es5-check`.**~~ Done — 46 files
+    in 1.5 s, ahead of the rules, and nothing below runs if one of them does
+    not parse. Proved by putting the 2026-08-11 bug back: the comment on
+    `www/sync.js` closed one line early, and the check named the file and the
+    line and exited 1.
 11. **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
     grep cannot tell. `i18n-check` already renders 271 screens in 10 languages;
@@ -384,9 +393,14 @@ Two of them were about capabilities that had been deleted.
     after it, with no ceiling until this is switched on. What runs out first
     is the timeline's photographs, and the way it goes wrong is a month that
     is already spent by the time anybody looks.
-17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
-    **There is no StoreKit code at all**, so the subscriptions cannot be bought
-    yet however they are configured.
+17. App Store Connect — the subscription, and TestFlight. `docs/apple.md`.
+    The StoreKit code exists now (`ios/App/App/LinguaStore.swift`) and **is not
+    wired to www/**: nothing in JavaScript asks it anything, by instruction
+    「storekitってコードは書いていいよ繋げる作業は後でやる」. It is registered
+    in `MainViewController` so its `Transaction.updates` listener runs. The
+    wiring is one file, `www/store.js`, and the plans screen calling it — and
+    it is deliberately not written yet, because a function nothing calls is a
+    function `dead-check` deletes.
 18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 
 ### Landed on 2026-08-22, and what it still needs
@@ -423,11 +437,29 @@ Two of them were about capabilities that had been deleted.
     either side. `dead` went 1208 → 1209 functions, which is `sharePua` from
     item 21 and not a rename.
 
+### Found while writing the StoreKit code, 2026-08-22
+
+20a. **The plan was never written down on a phone.** `planKeep()` asked
+    `Capacitor.Plugins` for `LinguaPlan`, and `Capacitor.Plugins` is filled by
+    `@capacitor/core`, which this app does not load — `www/share.js` says so at
+    length and it cost four builds to learn. Every write was the early return.
+    And `setOnDisk()` takes the plan OUT of the settings file when the native
+    side is there, on the grounds that the Keychain is holding it. Nothing was
+    holding it: **on a real phone Plus came back as free at the next launch.**
+    Fixed to `Capacitor.nativePromise`, the way `sharePush()` does it. Invisible
+    in a browser, where `PLAN_NATIVE` is false and the plan stays in the file,
+    which is why every check passed. **Device unconfirmed.**
+
 ### Waiting on a phone
 
 19. Build **#82** is green and on TestFlight. What it has not had is a person:
     tapping three dots with round off should give a corner, and saving a letter
     should land on the letters list.
+20b. `ios/App/App/LinguaStore.swift` — that it compiles at all, and then:
+    buying in the sandbox, `restore` after deleting and reinstalling, and a
+    renewal arriving while the app is closed. None of it can be seen here;
+    there is no Swift toolchain in this container.
+
 20. The free plan's keyboard chapter — the iOS steps, the hand-over state line,
     and the QWERTY with nothing to press — has only been seen in a browser,
     where the state line is always the red one because there is no bridge.
