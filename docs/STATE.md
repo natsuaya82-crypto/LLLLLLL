@@ -306,10 +306,13 @@ assuming a thing is waiting for you.
 3. ~~**The password reset mail does not arrive.**~~ Done — the template is
    `{{ .Token }}` (`supabase/mail.md`) and the app has a six-digit reset
    screen, because a link has nowhere to land in a Capacitor app.
-4. **The free ceilings are never explained in words.** A hundred words, and
-   three of layer three a day (`TR_FREE_DAILY`). `capBanner()` warns at twenty
-   words left and nothing says either number before you meet it. The third
-   ceiling — three word suggestions a day — went out with Studio.
+4. ~~**The free ceilings are never explained in words.**~~ Done — and there
+   is only one ceiling. `capStop()` asks, in the words `toast.cap` already
+   had, at the moment a word will not fit, and stays on the screen the person
+   was typing on; the five sites that used to throw them at the price list do
+   not any more. The other two ceilings are gone rather than explained: word
+   suggestions went out with Studio, and layer three's three a day went with
+   the AI 「1日3回は亡くなりましたaiいれないから」.
 5. **Signing in from Settings** was fixed but has not been opened on a phone.
    `obBackTo`/`obReturn` in `www/onboard.js`.
 

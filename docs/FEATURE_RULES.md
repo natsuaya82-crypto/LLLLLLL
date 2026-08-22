@@ -730,7 +730,10 @@ for.
   `data` `file` `kb` are implemented, and flick and free placement are already
   in the keyboard editor. Vertical / RTL is built — `dir` in `CAN`, and a post
   carries the direction it was written in. Translation is built as layer three
-  — `tr` in `CAN`, `TR_FREE_DAILY` three a day on free.
+  and is **free and unmetered**: `tr` was never added to `CAN`, and
+  `TR_FREE_DAILY` was never declared. Decision 2026-08-12 § 3 above said
+  "Layer 3 is Plus, free gets three a day"; that was the AI's price, and the
+  AI is not going in 「1日3回は亡くなりましたaiいれないから」 (2026-08-22).
 
 ### Decision
 - Date: 2026-08-12
