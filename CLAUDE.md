@@ -140,11 +140,13 @@ a file — a commit there on a branch that is not yours is another session in
 that file, and that is the moment to stop and report, not when a merge fails.
 Push the scope declaration as the FIRST commit, before any code: a branch
 nobody can see is a branch nobody can avoid. Push after every commit. **Never
-merge, rebase or cherry-pick another branch** — the owner integrates, because
-the owner is the only one who knows which intent wins where two disagree.
+merge, rebase or cherry-pick another branch** — the leader integrates, and
+asks the owner where the answer is a decision rather than a merge.
 **The one page to hand a session is `docs/SESSIONS.md`.** It carries the rule
-that actually prevents a collision rather than finding one: **the owner names
-the files a session owns, and a session edits nothing else.** `www/index.html`
+that actually prevents a collision rather than finding one: **the leader
+names the files a session owns, and a session edits nothing else.** The leader
+is another session above this one -- it names the territory, integrates the
+branches and runs the whole gate; a session does none of those three. `www/index.html`
 is the known hazard -- every screen's CSS is in it -- so one session at a time
 owns it until that file is split by chapter.
 → `docs/SESSIONS.md`, and `docs/FEATURE_RULES.md` § several sessions at once
@@ -156,7 +158,7 @@ changes behaviour is not a refactor.
 **Done** is not "the code is written". Spec confirmed, blast radius known,
 docs updated, implemented, the check that holds it green, **the bug put back
 and that check watched going red**, static checks, device if it is on the
-list, the whole gate green (the OWNER's run, not the session's), owner
+list, the whole gate green (the LEADER's run, not the session's), owner
 confirmed, CHANGELOG updated. Every report separates `CODE
 CONFIRMED` / `DEVICE CONFIRMED` / `OWNER CONFIRMED`, and none of the three
 implies another. → `docs/FEATURE_RULES.md`
@@ -192,8 +194,8 @@ Three rules about running it:
 1. **It runs in parallel.** Safe only because every check that stands up a
    server has its own port. A new check that listens takes one nothing else
    has.
-2. **A session does not run the whole gate.** The owner runs it, once, over
-   everything that was built. What a session runs is the ONE check that holds
+2. **A session does not run the whole gate.** The leader runs it, once, after
+   integrating. What a session runs is the ONE check that holds
    what it is changing, by name -- `npm run card`, `npm run base`. Say in the
    report which check was run and that the gate was not.
    「ゲートチェックは全部作って最後に確認するから各個人のセッションでは
@@ -208,7 +210,8 @@ Individual: `npm run assets` / `es5` / `dead` / `migrate` / `i18n` / `import` /
 `base` / `press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate, and
-neither is what a session runs: the whole gate is the owner's, at the end.
+neither is what a session runs: the whole gate is the leader's, after
+integrating.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
@@ -947,7 +950,7 @@ change somebody made on purpose.
 - `www/glyph.js` is 79 KB (the font writer and the drawing surface). Grep for
   the function and read that range rather than the whole file.
 - After a change, run the ONE check that holds it (`npm run base`, `npm run card`) --
-  seconds. Not `npm test`: six minutes, and it is the owner's run, at the end.
+  seconds. Not `npm test`: six minutes, and it is the leader's run.
 - Screenshots: `node tools/shot.mjs feed profile` / `--all` / `--dark` / `--lang ja`.
   Not a gate — it is how a change to a screen gets looked at instead of read as a
   diff of string concatenation. A refactor that is meant to change nothing can be

@@ -141,8 +141,8 @@ under `lingua.sess`.
 ## 4b. More than one session at a time
 
 **The page to hand a session is `docs/SESSIONS.md`.** The rule that prevents a
-collision rather than finding one is in it: the owner names the files a session
-owns, and a session edits nothing else. `www/index.html` holds every screen's
+collision rather than finding one is in it: the leader — another session above
+this one — names the files a session owns, and a session edits nothing else. `www/index.html` holds every screen's
 CSS and is where sessions collide first — one session at a time owns it.
 
 Sessions run in separate containers and share exactly one thing: the remote.
@@ -156,7 +156,7 @@ The body is in `docs/FEATURE_RULES.md` § several sessions at once.
   push the scope FIRST             before the first line of code
   push after every commit          a branch nobody can see cannot be avoided
   never integrate                  no merge, no rebase, no cherry-pick of
-                                   another branch -- the owner does that
+                                   another branch -- the leader does that
 ```
 
 A commit on a file from a branch that is not yours means another session is in
@@ -173,9 +173,9 @@ Three rules about running it — the body is in `docs/TESTING.md` § the gate:
 
 1. **Parallel, and safe only because every check that listens has its own
    port.** A new check that stands up a server takes one nothing else has.
-2. **A session does not run the whole gate.** The owner runs it, once, over
-   everything that was built. A session runs the one check that holds what it
-   is changing, by name, and says so in its report.
+2. **A session does not run the whole gate.** The leader runs it, once, after
+   integrating. A session runs the one check that holds what it is changing,
+   by name, and says so in its report.
 3. **Watching it go red is one check too.** Put the bug back and run that
    check, not the other seventeen.
 

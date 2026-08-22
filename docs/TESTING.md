@@ -30,8 +30,8 @@ the code. A new check that listens takes a port nothing else has.
 
 `npm test` is six minutes even in parallel, and a session that runs it once
 per change spends most of its time watching a progress log instead of talking
-to whoever asked for the work. **The owner runs it, once, over everything
-that was built.** 「ゲートチェックは全部作って最後に確認するから各個人の
+to whoever asked for the work. **The leader — the session above this one —
+runs it, once, after integrating the branches.** 「ゲートチェックは全部作って最後に確認するから各個人の
 セッションではやらないようにして欲しい 長くて話にならん」
 
 What a session runs is **the one check that holds what it is changing**, by
@@ -40,7 +40,7 @@ to run when* says which. That is seconds, not minutes.
 
 This is a change to what "green before a commit" means, and it is deliberate:
 a commit on a working branch is a place to put work down, and the gate is what
-stands between that branch and being finished. Say in the commit and in the
+stands between the integrated whole and being finished. Say in the commit and in the
 report which check was run and that the gate was not.
 
 ### 3. Watching it go red is one check too
