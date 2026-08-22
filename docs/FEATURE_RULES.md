@@ -985,10 +985,13 @@ The form is "if A then this, if B then this, and here is what the code does
 now" — not a question with no groundwork under it, and not a decision made
 quietly because it seemed obvious.
 
-The one already on record: `ai` lifts at Plus and `sug` only at Studio, and
-they are the same ceiling — so a Plus account is shown "3 left" forever and
-never spends one. Both are left as they are, because **which plan buys the AI
-is a price, and a price is not a tool's to decide.**
+The one that was on record here — `ai` lifting at Plus and `sug` only at
+Studio, the same ceiling asked twice — is **moot and was removed on
+2026-08-22**. Studio is out, and `CAN.ai`, `CAN.sug`, `AI_FREE_DAILY`,
+`sugLeft()` and `aiSpend()` went with it; the decision log entry dated
+2026-08-12 above says so and this line went on contradicting it. The principle
+it was an example of stands: **which plan buys a thing is a price, and a price
+is not a tool's to decide.**
 
 ## What to report when it is done
 

@@ -332,7 +332,7 @@ function has(level){ /* level: 'plus' */
   return (level==='plus')? plan()==='plus' : true;
 }
 /* What money buys, one capability at a time, and the only place that says so.
-   Nine names, each the level it needs.
+   Ten names, each the level it needs.
 
    has('plus') used to be asked directly, in twenty-three places across nine
    files, and every one of them looked identical to every other. They were not
@@ -344,16 +344,16 @@ function has(level){ /* level: 'plus' */
 
    That is fine while there are two plans and nothing moves between them. It
    stops being fine the first time something does -- open file import on free,
-   move the keyboard to Studio, add a fourth plan -- because then the work is
+   move the keyboard to a tier above, add a third plan -- because then the work is
    to read twenty-three branches and remember, one at a time, what each was
    ever about. A rule lives in one place: this is that place for this rule,
    and the twenty-three sites now name a capability instead of restating the
    plan. dead-check holds both directions, exactly as act-map's names are
    held: no capability nothing asks for, no name that is no capability.
 
-   'words', 'ai' and 'sug' are metered rather than shut: free gets FREE_LIMIT
-   of one and AI_FREE_DAILY of the others, so can() answering false there
-   means "counted", not "refused". */
+   'words' and 'tr' are metered rather than shut: free gets FREE_LIMIT of the
+   one and TR_FREE_DAILY of the other, so can() answering false there means
+   "counted", not "refused". */
 var CAN={
   words:   'plus',   /* a dictionary past FREE_LIMIT */
   data:    'plus',   /* CSV out, and the cloud */
@@ -393,14 +393,6 @@ var CAN={
    So free types, and the letter's own reading stands. Picking a sound for a
    position, or building a word out of sounds instead of letters, is what
    this buys. */
-/* 'ai' and 'sug' are the same ceiling asked at two different levels, and
-   putting them side by side is the first time that has been visible. glyph.js
-   stopped counting at plus; wordsheet.js only stops at studio. So a Plus
-   account is shown "3 left" on the word sheet forever and never spends one --
-   sugLeft() subtracts a counter that aiSpend() returned early without
-   touching. Nothing throws and nothing is refused, which is why it has sat
-   there. Both are left exactly as they were: which plan buys the AI is a
-   price, not a bug, and it is not a tool's place to decide it. */
 function can(what){
   var lv=CAN[what];
   /* A capability nobody declared is a typo, and a typo here reads as "free",
