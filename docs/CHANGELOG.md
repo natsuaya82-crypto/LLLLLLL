@@ -15,6 +15,51 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The server has two questions about an account, not one
+
+`is_member()` was the only door in `supabase/schema.sql` and every write stood
+behind it. It refuses an anonymous account — deliberately, since the day it
+was written — so the account the app now makes at first launch could not store
+one byte of anything.
+
+It is two questions now, and they split along what the write is **for**:
+
+- `has_account()` — there is an account. Anonymous counts, and frozen counts.
+  It guards what is nobody else's business: a language, and everything filed
+  under it.
+- `is_member()` — the account has a name on it and has not been frozen.
+  Unchanged, and it still guards everything other people would see.
+
+Only the three `language` policies moved. Publishing a language did **not**:
+`publication_make` still asks `is_member()`, because putting a language in
+front of other people is the same kind of act as posting.
+
+**Stored:** `language.owner` now references `auth.users(id)` instead of
+`profile(id)`. An account exists before a person does — a profile row IS the
+identity, since the handle is `unique not null` — so pointed at `profile` a
+language could not be made until somebody had chosen a handle, which is the
+one thing a first launch does not ask for. `post.author` stays on `profile`,
+read the other way: a post is seen by other people and has to be signed. The
+change is applied to a database that already has the table by a named
+`alter table ... drop constraint if exists` / `add constraint` pair, so the
+file still applies twice in a row. No row moves and nothing is deleted.
+
+A frozen account can now write its own language, which it could not before.
+That is the 2026-08-22 decision — 「制作は好きにやらせればいいし、sns止められ
+ても作りたいやつは作るでしょ」 — and it follows from `has_account()` saying
+nothing about `banned_at`.
+
+`npm run rls`: **106 attempts, 19 shapes.** Nine new attempts as an account
+with no name on it (it makes a language, reads it, renames it; it cannot post,
+take a handle, follow, publish, own somebody else's language, and nobody else
+sees what it made), two as a frozen account still writing its own language,
+and three shape assertions — that `has_account()` mentions neither
+`is_anonymous` nor `banned_at`, that no `language` write policy asks
+`is_member()`, and that `language.owner` points at `auth.users`. Watched
+failing twice: with `language_make` put back to `is_member()` (6 red) and with
+the foreign key put back to `profile` (4 red).
+
+
 ### The app opens on a blank square, not on a sign-in screen
 
 Step 0 of the onboarding was the door. It is not a step of anything now: the

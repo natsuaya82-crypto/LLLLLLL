@@ -50,6 +50,9 @@ const B = 'b0000000-0000-4000-8000-000000000002';   /* somebody else */
 const L = 'c0000000-0000-4000-8000-000000000003';   /* the language */
 const P = 'd0000000-0000-4000-8000-000000000004';   /* the post */
 const C = 'e0000000-0000-4000-8000-000000000005';   /* whoever reads the reports */
+const D = 'd0000000-0000-4000-8000-000000000004';   /* an account with no name on it */
+const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
+const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
 /* What Supabase already has when schema.sql is pasted into it. None of this is
    ours -- it is the ground the file is poured onto, and it is here so that the
@@ -128,6 +131,35 @@ const CASES = [
     `select 1 from language where id='${L}'`],
   ['published, B still cannot rewrite it',    'denied', B, 0,
     `update language set name='mine now' where id='${L}'`],
+
+  /* --- an account with no name on it, which is what every first launch has -
+     The app signs itself in anonymously before the first frame, so a language
+     is made by somebody who has not said who they are and may never say. That
+     is the whole reason has_account() exists beside is_member(), and D is the
+     only account in this file that never gets a profile row -- which is also
+     why language.owner points at auth.users rather than at profile.
+
+     The pair to read together is the first line and the fourth: it may make a
+     language, and it may not make a post. */
+  ['an anonymous account makes a language',   'ok',     D, 1,
+    `insert into language(id,owner,name) values ('${LD}','${D}','Nen')`],
+  ['and reads its own back',                  'ok',     D, 1,
+    `select 1 from language where id='${LD}'`],
+  ['and renames it',                          'ok',     D, 1,
+    `update language set name='Nenu' where id='${LD}'`],
+  ['but cannot post',                         'denied', D, 1,
+    `insert into post(author,body) values ('${D}','{}'::jsonb)`],
+  ['nor give itself a handle',                'denied', D, 1,
+    `insert into profile(id,handle) values ('${D}','nobody')`],
+  ['nor follow anybody',                      'denied', D, 1,
+    `insert into follow(follower,followed) values ('${D}','${A}')`],
+  ['nor publish what it made',                'denied', D, 1,
+    `insert into publication(language,actor,kind,digest)
+       values ('${LD}','${D}','language','sha')`],
+  ['nor own a language of A\u2019s',          'denied', D, 1,
+    `insert into language(owner,name) values ('${A}','forged')`],
+  ['and nobody else sees it',                 'denied', B, 0,
+    `select 1 from language where id='${LD}'`],
 
   /* --- the record that settles arguments without anybody judging one --- */
   ['A records publishing A\u2019s language',  'ok',     A, 0,
@@ -305,6 +337,15 @@ const CASES = [
     `update profile set display='new' where id='${B}'`],
   ['nor upload anything',                     'denied', B, 0,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
+  /* And the half a freeze must leave alone. 「制作は好きにやらせればいいし、
+     sns止められても作りたいやつは作るでしょ」 A language is nobody else's
+     business, so it goes on being written -- which is only true because the
+     language policies ask has_account() and has_account() says nothing about
+     banned_at. */
+  ['but B still makes a language',            'ok',     B, 0,
+    `insert into language(id,owner,name) values ('${LB}','${B}','Bene')`],
+  ['and goes on writing it',                  'ok',     B, 0,
+    `update language set name='Benet' where id='${LB}'`],
   ['nor lift it by hand',                     'denied', B, 0,
     `update profile set banned_at=null where id='${B}'`],
   ['nor by asking',                           'denied', B, 0,
@@ -390,10 +431,32 @@ const SHAPE = [
      select count(*) from (select 1 where
        has_column_privilege('authenticated','profile','banned_at','UPDATE')
        or has_column_privilege('anon','profile','banned_at','UPDATE')) q`, '0'],
+  /* The split itself, which no attempt above can see going the wrong way: an
+     attempt proves what one account may do, and what has to hold here is that
+     the two questions stayed two. A has_account() that grew a banned_at line
+     would pass every case in this file and would also freeze the making
+     side. */
+  ['there is a question that asks only for an account', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+         where n.nspname='public' and p.proname='has_account'
+           and p.prosrc not like '%is_anonymous%'
+           and p.prosrc not like '%banned_at%') <> 1) q`, '0'],
+  ['and a language asks it rather than the other one', `
+     select count(*) from pg_policies
+      where tablename='language' and cmd in ('INSERT','UPDATE','DELETE')
+        and (coalesce(qual,'')||coalesce(with_check,'')) like '%is_member%'`, '0'],
+  /* A language belongs to the ACCOUNT. Pointed at profile it could not be
+     made until somebody had a handle, which is the one thing the first launch
+     does not ask for. */
+  ['a language belongs to an account, not to a person', `
+     select count(*) from pg_constraint c
+      where c.conrelid='language'::regclass and c.contype='f'
+        and c.confrelid <> 'auth.users'::regclass`, '0'],
   /* A ban that only the app enforces is a ban that lasts until somebody uses
-     something that is not the app. is_member() is the one door every writing
-     policy in the file already stands behind, which is why it is where this
-     goes -- and why the line has to actually be in it. */
+     something that is not the app. is_member() is the one door every policy
+     for something other people see stands behind, which is why it is where
+     this goes -- and why the line has to actually be in it. */
   ['a ban is enforced by the server', `
      select count(*) from (select 1 where
        (select count(*) from pg_proc where proname='is_member'
@@ -529,7 +592,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from

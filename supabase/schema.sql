@@ -79,12 +79,13 @@ alter table profile add column if not exists staff boolean not null default fals
 -- date, for the same reason post.hidden_at is one: two columns that have to
 -- agree about whether something happened are two columns that can disagree.
 --
--- What it does is one line in is_member() below, which every writing policy in
--- this file already asks. So being banned is "nothing you do is written down"
--- and not "you are logged out": somebody ejected can still read, and can still
--- delete their account, because account_delete() does not ask is_member() and
--- must not -- being thrown out of a place is not a reason to be locked out of
--- the door marked exit.
+-- What it does is one line in is_member() below, which every policy for
+-- something OTHER PEOPLE SEE asks. It is not in has_account(), so being frozen
+-- stops the timeline and not the work: somebody ejected can still read, can
+-- still write their own language, and can still delete their account, because
+-- account_delete() does not ask is_member() either and must not -- being
+-- thrown out of a place is not a reason to be locked out of the door marked
+-- exit. 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
@@ -104,7 +105,14 @@ alter table profile add column if not exists banned_why text;
 -- promise that is true.
 create table if not exists language (
   id           uuid primary key default gen_random_uuid(),
-  owner        uuid not null references profile(id) on delete cascade,
+  -- The ACCOUNT, not the person. auth.users and not profile, because a
+  -- language is made on the first launch by an anonymous account and an
+  -- anonymous account has no profile row: a handle is what a profile IS, and
+  -- a handle is the thing nobody has been asked for yet.
+  --
+  -- post.author stays on profile for the same reason read the other way --
+  -- a post is read by other people and has to be signed.
+  owner        uuid not null references auth.users(id) on delete cascade,
   name         text not null default '',
   -- what the author says others may do with the font and the glyphs. The app
   -- shows this; it does not enforce it. We are the record, not the arbiter.
@@ -113,6 +121,13 @@ create table if not exists language (
   published_at timestamptz,
   created_at   timestamptz not null default now()
 );
+-- And on a database that already has the table, where `create table if not
+-- exists` above did nothing at all. Named rather than left to the default so
+-- that dropping it says which one; `if exists` on both halves so this file
+-- goes on being applied twice in a row by npm run rls.
+alter table language drop constraint if exists language_owner_fkey;
+alter table language add  constraint language_owner_fkey
+  foreign key (owner) references auth.users(id) on delete cascade;
 create index if not exists language_owner_idx on language(owner);
 create index if not exists language_published_idx on language(published_at) where published_at is not null;
 
@@ -324,7 +339,30 @@ alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
 
--- A signed-in account that is not an anonymous one.
+-- Two questions, and until now they were one.
+--
+-- The app makes an anonymous account at first launch -- no address, no
+-- handle, nobody -- and everything somebody makes belongs to it from the
+-- first minute. So "may this account write" splits along what the write is
+-- FOR:
+--
+--   has_account()  there is an account. Anonymous counts, and frozen counts.
+--                  What it guards is what is nobody else's business: your
+--                  language, and everything filed under it.
+--   is_member()    the account has a name on it and has not been frozen.
+--                  What it guards is everything other people would see.
+--
+-- 「課金とツイートにはログイン必須。それ以外は流さない」
+--
+-- Anonymous is not a lesser account and this is not a trial: attaching an
+-- identity later keeps the same uid, so nothing is copied, moved or claimed
+-- at that moment. The row that was yours goes on being yours.
+create or replace function has_account() returns boolean
+language sql stable as $$
+  select auth.uid() is not null
+$$;
+
+-- A signed-in account that is not an anonymous one, and has not been frozen.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
@@ -351,18 +389,24 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 
 -- language: a published one is readable by anyone; an unpublished one only by
 -- the person who owns it. Only the owner ever writes.
+--
+-- has_account() and not is_member(), and this is the whole of what the split
+-- is for: a language is made on the first launch, by somebody who has not
+-- said who they are and may never say. Publishing one is the other half and
+-- goes through publication below, which does ask is_member() -- putting a
+-- language in front of other people is the same kind of act as posting.
 drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid());
 drop policy if exists language_make on language;
 create policy language_make on language for insert
-  with check (is_member() and owner = auth.uid());
+  with check (has_account() and owner = auth.uid());
 drop policy if exists language_edit on language;
 create policy language_edit on language for update
-  using (is_member() and owner = auth.uid()) with check (owner = auth.uid());
+  using (has_account() and owner = auth.uid()) with check (owner = auth.uid());
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
-  using (is_member() and owner = auth.uid());
+  using (has_account() and owner = auth.uid());
 
 -- publication: everyone reads the record. Anyone may add to it about their own
 -- language. NOBODY updates or deletes it -- those policies do not exist, which
