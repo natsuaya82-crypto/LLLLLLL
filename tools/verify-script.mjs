@@ -423,13 +423,13 @@ const hint = await pg.evaluate(async () => {
     return { n, sum };
   };
   const frames = [];
-  for (const t of [0.5, 1.4, 2.1, 2.9, 4.4]) { ghDraw(c, t); frames.push(shot()); }
+  for (const t of [0.5, 1.4, 2.1, 2.9, 4.4]) { geHintDraw(c, t); frames.push(shot()); }
   const keys = frames.map(f => f.n + ':' + f.sum);
   /* four sides at 4.2s, and at 5.2s the fourth corner has been joined back to
      the first: one more side of ink than before */
-  ghDraw(c, 3.0); const openLoop = shot().n;
-  ghDraw(c, 4.4); const shutLoop = shot().n;
-  return { running: !!GHINT.raf, distinct: new Set(keys).size, openLoop, shutLoop };
+  geHintDraw(c, 3.0); const openLoop = shot().n;
+  geHintDraw(c, 4.4); const shutLoop = shot().n;
+  return { running: !!GE_HINT.raf, distinct: new Set(keys).size, openLoop, shutLoop };
 });
 ok('the hint is a loop, not a paragraph', !hint.none && hint.running === true);
 ok('it is moving, not a still picture', hint.distinct === 5,
@@ -453,8 +453,8 @@ const demo = await pg.evaluate(() => {
   };
   const out = {};
   for (const k of ['circle', 'new']) {
-    ghDemo(c, 0.6, k); const before = ink();
-    ghDemo(c, 2.4, k); const after = ink();
+    geHintDemo(c, 0.6, k); const before = ink();
+    geHintDemo(c, 2.4, k); const after = ink();
     out[k] = before !== after;
   }
   /* a button with nothing left to draw is dim, but still tappable and still
@@ -464,15 +464,15 @@ const demo = await pg.evaluate(() => {
   const b = document.querySelector('.gtools button[data-g="circle"]');
   const dim = b.className.indexOf('off') >= 0 && b.disabled === false &&
               b.getAttribute('aria-disabled') === 'true' &&
-              b.getAttribute('onclick').indexOf("ghShow('circle')") >= 0;
+              b.getAttribute('onclick').indexOf("geHintShow('circle')") >= 0;
   GE.st = JSON.parse(keep); GE.si = 0; GE.pi = -1; render();
-  GHINT.mode = ''; ghShow('circle');
-  return { ...out, dim, switched: GHINT.mode === 'circle' };
+  GE_HINT.mode = ''; geHintShow('circle');
+  return { ...out, dim, switched: GE_HINT.mode === 'circle' };
 });
 ok('both buttons can show their before and after', demo.circle && demo.new,
   ['circle', 'new'].filter(k => !demo[k]).join(' ') || 'both differ');
 ok('a dim button still explains itself', demo.dim && demo.switched);
-await pg.evaluate(() => ghMount());
+await pg.evaluate(() => geHintMount());
 
 /* save this letter, then draw two more the quick way */
 await pg.evaluate(() => geSave());

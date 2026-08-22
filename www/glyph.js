@@ -719,10 +719,10 @@ function geBtn(fn,n,key,en,on){
      whether the demonstration is hung off the press. The button itself was
      written out twice, once on each side of that, and the two copies were
      identical.  */
-  if(GHDEMO[n]){
+  if(GE_HINT_DEMO[n]){
     if(!en) cl=cl?cl+' off':'off';
     /* the demonstration comes after, because acting redraws the view */
-    act=act+AFTER('ghShow',[n]);
+    act=act+AFTER('geHintShow',[n]);
     off=en? '' : ' aria-disabled="true"';
   }else{
     off=en? '' : ' disabled';
@@ -1240,10 +1240,10 @@ function geWatch(){
    the shape shuts. Same lattice, same pen, same glyphContours() as the editor
    above it: a demonstration, not a picture of one. Wordless, so it says the
    same thing in every language. */
-var GHINT={raf:0, t0:0, mode:''};
-var GHP=[[400,184],[616,544],[184,544]];
-var GHTAP=[0.9,1.7,2.5,3.5];
-var GHCYC=5.2;
+var GE_HINT={raf:0, t0:0, mode:''};
+var GE_HINT_P=[[400,184],[616,544],[184,544]];
+var GE_HINT_TAP=[0.9,1.7,2.5,3.5];
+var GE_HINT_CYC=5.2;
 /* ---- and what each button does -------------------------------------------
    A name only helps if you already know the thing it names, and both of these
    are dim until the drawing is far enough along to allow them — which is
@@ -1252,8 +1252,8 @@ var GHCYC=5.2;
    drawn with the same lattice, pen and glyphContours() as the canvas above. A
    dim button still answers; it just does not act. Nothing to read, so it is
    the same answer in every language. */
-var GHDCYC=3.4;
-var GHDEMO={
+var GE_HINT_DCYC=3.4;
+var GE_HINT_DEMO={
   'circle': { a:[{pts:[[184,616],[400,184],[616,616]]}],
               b:[{pts:[[184,616],[400,184],[616,616]], k:'o'}], m:[400,184] },
   'fill'  : { a:[{pts:[[184,616],[400,184],[616,616],[184,616]]}],
@@ -1263,34 +1263,34 @@ var GHDEMO={
   /* 'new' is kept only so the hint reel still has its demonstration; no
      button calls it any more -- lifting the finger starts the next stroke. */
 };
-function ghShow(k){
-  if(!GHDEMO[k]) return;
-  GHINT.mode=k; GHINT.t0=0;
-  if(!GHINT.raf && document.getElementById('ghint'))
-    GHINT.raf=requestAnimationFrame(ghTick);
+function geHintShow(k){
+  if(!GE_HINT_DEMO[k]) return;
+  GE_HINT.mode=k; GE_HINT.t0=0;
+  if(!GE_HINT.raf && document.getElementById('ghint'))
+    GE_HINT.raf=requestAnimationFrame(geHintTick);
 }
-function ghMount(){
+function geHintMount(){
   var c=document.getElementById('ghint');
-  if(GHINT.raf){ cancelAnimationFrame(GHINT.raf); GHINT.raf=0; }
+  if(GE_HINT.raf){ cancelAnimationFrame(GE_HINT.raf); GE_HINT.raf=0; }
   if(!c) return;
   var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
   var s=Math.round((box.width||190)*dpr);
   c.width=s; c.height=s;
-  GHINT.t0=0; GHINT.mode='';
-  GHINT.raf=requestAnimationFrame(ghTick);
+  GE_HINT.t0=0; GE_HINT.mode='';
+  GE_HINT.raf=requestAnimationFrame(geHintTick);
 }
-function ghTick(ts){
+function geHintTick(ts){
   var c=document.getElementById('ghint');
-  if(!c){ GHINT.raf=0; return; }     /* the view moved on; stop by itself */
-  if(!GHINT.t0) GHINT.t0=ts;
-  var t=(ts-GHINT.t0)/1000;
-  if(GHINT.mode) ghDemo(c, t%GHDCYC, GHINT.mode);
-  else ghDraw(c, t%GHCYC);
-  GHINT.raf=requestAnimationFrame(ghTick);
+  if(!c){ GE_HINT.raf=0; return; }     /* the view moved on; stop by itself */
+  if(!GE_HINT.t0) GE_HINT.t0=ts;
+  var t=(ts-GE_HINT.t0)/1000;
+  if(GE_HINT.mode) geHintDemo(c, t%GE_HINT_DCYC, GE_HINT.mode);
+  else geHintDraw(c, t%GE_HINT_CYC);
+  GE_HINT.raf=requestAnimationFrame(geHintTick);
 }
 /* the square and its dots: a picture of the canvas above, drawn in the plain
    rule rather than the gold one so it does not read as a second canvas to tap */
-function ghField(x,S,k){
+function geHintField(x,S,k){
   var i,j;
   x.strokeStyle=cssVar('--line'); x.lineWidth=Math.max(1,k*2.5);
   x.strokeRect(k*10,k*10,S-k*20,S-k*20);
@@ -1303,7 +1303,7 @@ function ghField(x,S,k){
   }
 }
 /* the ink, through the font's own outliner, and the points still on top of it */
-function ghInk(x,k,strokes){
+function geHintInk(x,k,strokes){
   inkStrokes(x, strokes, k, 0, 0, cssVar('--tx'));
   x.fillStyle=cssVar('--gold');
   strokes.forEach(function(s){
@@ -1312,15 +1312,15 @@ function ghInk(x,k,strokes){
     });
   });
 }
-function ghDemo(c,t,k){
-  var d=GHDEMO[k];
+function geHintDemo(c,t,k){
+  var d=GE_HINT_DEMO[k];
   if(!d) return;
   var x=c.getContext('2d'), S=c.width, u=S/800;
   x.clearRect(0,0,S,S);
-  x.globalAlpha = t>GHDCYC-0.45 ? Math.max(0,(GHDCYC-t)/0.45) : 1;
-  ghField(x,S,u);
+  x.globalAlpha = t>GE_HINT_DCYC-0.45 ? Math.max(0,(GE_HINT_DCYC-t)/0.45) : 1;
+  geHintField(x,S,u);
   var done = t>=1.35;
-  ghInk(x,u, done ? d.b : d.a);
+  geHintInk(x,u, done ? d.b : d.a);
   /* the spot the button acts on: a ring that closes in while it is still the
      before, and opens out at the moment it becomes the after */
   var mx=d.m[0]*u, my=d.m[1]*u, was=x.globalAlpha;
@@ -1336,46 +1336,46 @@ function ghDemo(c,t,k){
   }
   x.globalAlpha=1;
 }
-function ghEase(u){
+function geHintEase(u){
   if(u<0) u=0; if(u>1) u=1;
   return u<0.5 ? 2*u*u : 1-2*(1-u)*(1-u);
 }
-function ghSeg(t,t0,t1,a,b){
-  var u=ghEase((t-t0)/(t1-t0));
+function geHintSeg(t,t0,t1,a,b){
+  var u=geHintEase((t-t0)/(t1-t0));
   return [a[0]+(b[0]-a[0])*u, a[1]+(b[1]-a[1])*u];
 }
 /* four taps round a square, then a fifth back on the dot it started from —
    which is the whole of "join", shown rather than named */
 /* three dots and then back to the first one, which is the whole of "join",
    shown rather than named */
-function ghPos(t){
-  var A=GHP[0], B=GHP[1], C=GHP[2];
-  if(t<0.9) return ghSeg(t,0,0.9,[80,740],A);
+function geHintPos(t){
+  var A=GE_HINT_P[0], B=GE_HINT_P[1], C=GE_HINT_P[2];
+  if(t<0.9) return geHintSeg(t,0,0.9,[80,740],A);
   if(t<1.1) return A;
-  if(t<1.7) return ghSeg(t,1.1,1.7,A,B);
+  if(t<1.7) return geHintSeg(t,1.1,1.7,A,B);
   if(t<1.9) return B;
-  if(t<2.5) return ghSeg(t,1.9,2.5,B,C);
+  if(t<2.5) return geHintSeg(t,1.9,2.5,B,C);
   if(t<2.7) return C;
-  if(t<3.5) return ghSeg(t,2.7,3.5,C,A);
+  if(t<3.5) return geHintSeg(t,2.7,3.5,C,A);
   return A;
 }
-function ghDraw(c,t){
+function geHintDraw(c,t){
   var x=c.getContext('2d'), S=c.width, k=S/800, i, j;
   x.clearRect(0,0,S,S);
-  x.globalAlpha = t>GHCYC-0.6 ? Math.max(0,(GHCYC-t)/0.6) : 1;
+  x.globalAlpha = t>GE_HINT_CYC-0.6 ? Math.max(0,(GE_HINT_CYC-t)/0.6) : 1;
 
-  ghField(x,S,k);
+  geHintField(x,S,k);
 
   var n=0;
-  for(i=0;i<3;i++) if(t>=GHTAP[i]) n=i+1;
+  for(i=0;i<3;i++) if(t>=GE_HINT_TAP[i]) n=i+1;
   var pts=[];
-  for(i=0;i<n;i++) pts.push([GHP[i][0],GHP[i][1]]);
-  ghInk(x,k,[{pts:pts, closed:(t>=GHTAP[3])}]);
+  for(i=0;i<n;i++) pts.push([GE_HINT_P[i][0],GE_HINT_P[i][1]]);
+  geHintInk(x,k,[{pts:pts, closed:(t>=GE_HINT_TAP[3])}]);
 
   /* the tap itself: a ring that opens where the finger landed. The last one
      lands back on the first dot, and the shape shuts. */
-  for(i=0;i<GHTAP.length;i++){
-    var d=t-GHTAP[i], hp=GHP[i===3?0:i];
+  for(i=0;i<GE_HINT_TAP.length;i++){
+    var d=t-GE_HINT_TAP[i], hp=GE_HINT_P[i===3?0:i];
     if(d<0 || d>0.45) continue;
     x.beginPath();
     x.arc(hp[0]*k, hp[1]*k, k*(16+d/0.45*46), 0, Math.PI*2);
@@ -1384,9 +1384,9 @@ function ghDraw(c,t){
     x.stroke(); x.globalAlpha=was;
   }
 
-  var pos=ghPos(t), ahead=ghPos(t+0.06), ang;
+  var pos=geHintPos(t), ahead=geHintPos(t+0.06), ang;
   if(ahead[0]===pos[0] && ahead[1]===pos[1]){
-    var back=ghPos(t-0.06);
+    var back=geHintPos(t-0.06);
     ang=Math.atan2(pos[1]-back[1], pos[0]-back[0]);
   } else ang=Math.atan2(ahead[1]-pos[1], ahead[0]-pos[0]);
   x.save();
@@ -1661,7 +1661,7 @@ function geTools(){
   for(i=0;i<b.length;i++){
     g=b[i].getAttribute('data-g'); s=S[g];
     if(!s) continue;
-    if(GHDEMO[g]){
+    if(GE_HINT_DEMO[g]){
       cl=s[1]?'on':'';
       if(!s[0]) cl=cl?cl+' off':'off';
       b[i].className=cl;
@@ -1975,7 +1975,7 @@ function render(){
   window.scrollTo(0, y);
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
-  if(route==='glyph'){ geMount(); ghMount(); }
+  if(route==='glyph'){ geMount(); geHintMount(); }
   /* Which screens have canvases on them was a list of route names here, and
      a list of route names is a thing that goes out of date the moment a screen
      is split in two -- the letters chapter became three pages and every digit

@@ -65,7 +65,7 @@ act('ltForUnitGo', ltForUnitGo);
 act('ltSave', ltSave);
 act('geUndo', geUndo);
 act('geSave', geSave);
-act('ghShow', ghShow);
+act('geHintShow', geHintShow);
 act('go', go);
 act('goIn', goIn);
 act('openHelp', openHelp);
