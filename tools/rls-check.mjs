@@ -49,6 +49,10 @@ const A = 'a0000000-0000-4000-8000-000000000001';   /* whose language it is */
 const B = 'b0000000-0000-4000-8000-000000000002';   /* somebody else */
 const L = 'c0000000-0000-4000-8000-000000000003';   /* the language */
 const P = 'd0000000-0000-4000-8000-000000000004';   /* the post */
+const C = 'e0000000-0000-4000-8000-000000000005';   /* whoever reads the reports */
+const D = 'd0000000-0000-4000-8000-000000000004';   /* an account with no name on it */
+const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
+const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
 /* What Supabase already has when schema.sql is pasted into it. None of this is
    ours -- it is the ground the file is poured onto, and it is here so that the
@@ -127,6 +131,62 @@ const CASES = [
     `select 1 from language where id='${L}'`],
   ['published, B still cannot rewrite it',    'denied', B, 0,
     `update language set name='mine now' where id='${L}'`],
+
+  /* --- an account with no name on it, which is what every first launch has -
+     The app signs itself in anonymously before the first frame, so a language
+     is made by somebody who has not said who they are and may never say. That
+     is the whole reason has_account() exists beside is_member(), and D is the
+     only account in this file that never gets a profile row -- which is also
+     why language.owner points at auth.users rather than at profile.
+
+     The pair to read together is the first line and the fourth: it may make a
+     language, and it may not make a post. */
+  ['an anonymous account makes a language',   'ok',     D, 1,
+    `insert into language(id,owner,name) values ('${LD}','${D}','Nen')`],
+  ['and reads its own back',                  'ok',     D, 1,
+    `select 1 from language where id='${LD}'`],
+  ['and renames it',                          'ok',     D, 1,
+    `update language set name='Nenu' where id='${LD}'`],
+  ['but cannot post',                         'denied', D, 1,
+    `insert into post(author,body) values ('${D}','{}'::jsonb)`],
+  ['nor give itself a handle',                'denied', D, 1,
+    `insert into profile(id,handle) values ('${D}','nobody')`],
+  ['nor follow anybody',                      'denied', D, 1,
+    `insert into follow(follower,followed) values ('${D}','${A}')`],
+  ['nor publish what it made',                'denied', D, 1,
+    `insert into publication(language,actor,kind,digest)
+       values ('${LD}','${D}','language','sha')`],
+  ['nor own a language of A\u2019s',          'denied', D, 1,
+    `insert into language(owner,name) values ('${A}','forged')`],
+  ['and nobody else sees it',                 'denied', B, 0,
+    `select 1 from language where id='${LD}'`],
+  /* And what the language is MADE of. A slice is the dictionary, the
+     alphabet, the keyboard -- the whole of what somebody spends months on --
+     and it is the one thing in this file that nobody but its owner may read.
+     Not even for a published language: publishing is a copy somebody is
+     given, not a door into the phone. */
+  ['and puts its dictionary in it',           'ok',     D, 1,
+    `insert into slice(language,kind,body) values ('${LD}','words','[1]')`],
+  ['and reads it back',                       'ok',     D, 1,
+    `select 1 from slice where language='${LD}' and kind='words'`],
+  ['and writes over it',                      'ok',     D, 1,
+    `update slice set body='[1,2]', no=2 where language='${LD}' and kind='words'`],
+  ['B cannot read it',                        'denied', B, 0,
+    `select 1 from slice where language='${LD}'`],
+  ['B cannot write into it',                  'denied', B, 0,
+    `insert into slice(language,kind,body) values ('${LD}','letters','[]')`],
+  ['B cannot rewrite it',                     'denied', B, 0,
+    `update slice set body='[]' where language='${LD}' and kind='words'`],
+  ['B cannot delete it',                      'denied', B, 0,
+    `delete from slice where language='${LD}'`],
+  ['nor can somebody with no account at all',  'denied', B, 1,
+    `select 1 from slice where language='${LD}'`],
+  /* L is A's and it is PUBLISHED by this point in the file. A published
+     language is a copy somebody is given; what it is made of stays A's. */
+  ['B cannot read a published language\u2019s slices', 'denied', B, 0,
+    `select 1 from slice where language='${L}'`],
+  ['B cannot put a slice on A\u2019s language', 'denied', B, 0,
+    `insert into slice(language,kind,body) values ('${L}','words','[]')`],
 
   /* --- the record that settles arguments without anybody judging one --- */
   ['A records publishing A\u2019s language',  'ok',     A, 0,
@@ -247,7 +307,93 @@ const CASES = [
   ['nobody signed in uploads',                'denied', B, 1,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
   ['A deletes A\u2019s own picture',           'ok',     A, 0,
-    `delete from storage.objects where name='${A}/${P}/0.jpg'`]
+    `delete from storage.objects where name='${A}/${P}/0.jpg'`],
+
+  /* --- answering a report ------------------------------------------------
+     Last, because taking a post down changes what everything above can see,
+     and it is put back at the foot of this block so that the order of the
+     file stays something anybody can add to. */
+  ['staff reads the reports',                 'ok',     C, 0,
+    `select 1 from report`],
+  ['B cannot make B staff',                   'denied', B, 0,
+    `update profile set staff=true where id='${B}'`],
+  ['B cannot make A staff either',            'denied', B, 0,
+    `update profile set staff=true where id='${A}'`],
+  ['B cannot take a post down',               'denied', B, 0,
+    `select post_hide('${P}','spam')`],
+  ['A cannot take A\u2019s own post down',     'denied', A, 0,
+    `select post_hide('${P}','spam')`],
+  ['staff takes A\u2019s post down',           'ok',     C, 0,
+    `select post_hide('${P}','spam')`],
+  ['and B cannot see it any more',            'denied', B, 0,
+    `select 1 from post where id='${P}'`],
+  ['nor can somebody who is not signed in',   'denied', B, 1,
+    `select 1 from post where id='${P}'`],
+  ['A is still shown A\u2019s own post',       'ok',     A, 0,
+    `select 1 from post where id='${P}'`],
+  ['and staff can still look at it',          'ok',     C, 0,
+    `select 1 from post where id='${P}'`],
+  ['A cannot put A\u2019s own post back up',   'denied', A, 0,
+    `update post set hidden_at=null where id='${P}'`],
+  ['nor by asking for it to be shown',        'denied', A, 0,
+    `select post_show('${P}')`],
+  ['staff puts it back',                      'ok',     C, 0,
+    `select post_show('${P}')`],
+  ['and B sees it again',                     'ok',     B, 0,
+    `select 1 from post where id='${P}'`],
+
+  /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
+     Taking the post down leaves whoever wrote it free to write it again. What
+     a ban IS, here, is one line in is_member() -- so the thing to attack is
+     not the column but every door is_member() stands in. */
+  ['B cannot ban A',                          'denied', B, 0,
+    `select account_ban('${A}','spam')`],
+  ['staff cannot ban staff',                  'denied', C, 0,
+    `select account_ban('${C}','spam')`],
+  ['staff bans B',                            'ok',     C, 0,
+    `select account_ban('${B}','spam')`],
+  ['and B cannot post',                       'denied', B, 0,
+    `insert into post(author,body) values ('${B}','{}'::jsonb)`],
+  ['nor like anything',                       'denied', B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','like')`],
+  ['nor follow anybody',                      'denied', B, 0,
+    `insert into follow(follower,followed) values ('${B}','${A}')`],
+  ['nor report anybody',                      'denied', B, 0,
+    `insert into report(actor,post,why) values ('${B}','${P}','spam')`],
+  ['nor rename themselves',                   'denied', B, 0,
+    `update profile set display='new' where id='${B}'`],
+  ['nor upload anything',                     'denied', B, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
+  /* And the half a freeze must leave alone. 「制作は好きにやらせればいいし、
+     sns止められても作りたいやつは作るでしょ」 A language is nobody else's
+     business, so it goes on being written -- which is only true because the
+     language policies ask has_account() and has_account() says nothing about
+     banned_at. */
+  ['but B still makes a language',            'ok',     B, 0,
+    `insert into language(id,owner,name) values ('${LB}','${B}','Bene')`],
+  ['and goes on writing it',                  'ok',     B, 0,
+    `update language set name='Benet' where id='${LB}'`],
+  ['nor lift it by hand',                     'denied', B, 0,
+    `update profile set banned_at=null where id='${B}'`],
+  ['nor by asking',                           'denied', B, 0,
+    `select account_unban('${B}')`],
+  /* Two things a ban must NOT do. Reading is the one that keeps somebody from
+     being told nothing at all, and the door marked exit is the one that being
+     thrown out of a place is never a reason to lock. */
+  ['B can still read the timeline',           'ok',     B, 0,
+    `select 1 from post where hidden_at is null`],
+  ['B can still leave',                       'ok',     B, 0,
+    `select 1 where (select count(*) from pg_proc p
+                       join pg_namespace n on n.oid=p.pronamespace
+                      where n.nspname='public' and p.proname='account_delete'
+                        and p.prosrc not like '%is_member%') = 1`],
+  ['staff lifts it',                          'ok',     C, 0,
+    `select account_unban('${B}')`],
+  /* A boost and not a like: B liked this post earlier in the file and took
+     only the boost back, so a second like is refused by the primary key and
+     would read as a ban that never lifted. */
+  ['and B writes again',                      'ok',     B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`]
 ];
 
 /* The shape of the file itself, which the prose in schema.sql promises and
@@ -269,6 +415,22 @@ const SHAPE = [
      select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT'`, '0'],
   ['a profile is never deleted, only the account', `
      select count(*) from pg_policies where tablename='profile' and cmd='DELETE'`, '0'],
+  /* A report is about somebody else, so it has to outlive the person who
+     wrote it. `actor` cascaded off the profile until account deletion existed
+     to fire it, and deleting your own account withdrew every report you had
+     ever made -- a third party's record cleared by somebody else leaving.
+     Asked of the constraint and not by deleting an account, because what has
+     to hold is that the FOREIGN KEY says so; a passing delete with no reports
+     in the table would prove nothing. One, and not "none that cascade": a
+     table with no foreign key at all would answer none. */
+  ['a report outlives whoever wrote it', `
+     select count(*) from (select 1 where not exists (
+       select 1 from pg_constraint c
+         join pg_class t on t.oid = c.conrelid
+        where t.relname='report' and c.contype='f' and c.confdeltype='n'
+          and c.conkey = array[(select attnum from pg_attribute
+                                 where attrelid=t.oid and attname='actor')]
+     )) q`, '0'],
   /* A reaction is on or off. An update policy would let a row be turned into
      a different kind, and the primary key would not notice. */
   ['a reaction is never edited', `
@@ -283,6 +445,71 @@ const SHAPE = [
      does is read four tables about one person. */
   ['what happened to you is read as you', `
      select count(*) from pg_proc where proname='notices' and prosecdef`, '0'],
+  /* Row level security says which ROWS may change and has nothing to say
+     about which COLUMNS. "You may edit yourself" was also "you may make
+     yourself staff" until these two were revoked, and neither a policy nor
+     an attempt above can see the difference: the UPDATE is allowed either
+     way, and only the column list decides what it carries. */
+  ['staff is not something an account gives itself', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','profile','staff','UPDATE')
+       or has_column_privilege('anon','profile','staff','UPDATE')) q`, '0'],
+  ['nor lifting your own ban', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','profile','banned_at','UPDATE')
+       or has_column_privilege('anon','profile','banned_at','UPDATE')) q`, '0'],
+  /* The split itself, which no attempt above can see going the wrong way: an
+     attempt proves what one account may do, and what has to hold here is that
+     the two questions stayed two. A has_account() that grew a banned_at line
+     would pass every case in this file and would also freeze the making
+     side. */
+  ['there is a question that asks only for an account', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+         where n.nspname='public' and p.proname='has_account'
+           and p.prosrc not like '%is_anonymous%'
+           and p.prosrc not like '%banned_at%') <> 1) q`, '0'],
+  ['and a language asks it rather than the other one', `
+     select count(*) from pg_policies
+      where tablename='language' and cmd in ('INSERT','UPDATE','DELETE')
+        and (coalesce(qual,'')||coalesce(with_check,'')) like '%is_member%'`, '0'],
+  /* What a language is made of is the one thing in this file with no public
+     face at all. Every other table has a select policy somebody else passes;
+     this one must not, and "nobody has tried the right query yet" is not the
+     same statement. */
+  ['what a language is made of is nobody else\u2019s', `
+     select count(*) from pg_policies
+      where tablename='slice' and cmd='SELECT'
+        and coalesce(qual,'') not like '%owner = auth.uid()%'`, '0'],
+  /* A language belongs to the ACCOUNT. Pointed at profile it could not be
+     made until somebody had a handle, which is the one thing the first launch
+     does not ask for. */
+  ['a language belongs to an account, not to a person', `
+     select count(*) from pg_constraint c
+      where c.conrelid='language'::regclass and c.contype='f'
+        and c.confrelid <> 'auth.users'::regclass`, '0'],
+  /* A ban that only the app enforces is a ban that lasts until somebody uses
+     something that is not the app. is_member() is the one door every policy
+     for something other people see stands behind, which is why it is where
+     this goes -- and why the line has to actually be in it. */
+  ['a ban is enforced by the server', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname='is_member'
+          and prosrc like '%banned_at%') <> 1) q`, '0'],
+  ['nor is putting your own post back up', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','post','hidden_at','UPDATE')
+       or has_column_privilege('anon','post','hidden_at','UPDATE')) q`, '0'],
+  /* Both halves, together: a definer function that forgot to ask is_staff()
+     is every account holding the moderator's rights, and it would pass every
+     attempt above that expects a refusal only because nobody had called it. */
+  ['taking a post down asks who is asking', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname in ('post_hide','post_show')
+          and prosecdef and prosrc like '%is_staff()%') <> 2) q`, '0'],
+  ['a report is never edited or withdrawn', `
+     select count(*) from pg_policies
+      where tablename='report' and cmd in ('UPDATE','DELETE')`, '0'],
   ['the media bucket is there and is public', `
      select count(*) from (select 1) x
       where not exists (select 1 from storage.buckets
@@ -400,7 +627,13 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)});`,
+  /* And one row that IS put here by the owner of the table, which the
+     paragraph above says nothing else is. That is the claim being tested: no
+     policy in schema.sql makes anybody staff, and the column is revoked from
+     every role the app signs in as, so there is no other way to arrive at one.
+     A staff account that could be made through a policy would be the bug. */
+  `insert into profile(id,handle,staff) values (${q(C)},'mod',true);`,
   run,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,

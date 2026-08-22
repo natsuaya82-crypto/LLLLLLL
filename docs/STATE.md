@@ -19,8 +19,9 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `CHANGELOG.md` | what a person would notice, and every change to stored data |
 | `BACKLOG.md` | found and deliberately not done, and why |
 
-Everything below was checked against the repository on **2026-08-11**, and §3
-and §5 again on **2026-08-19**, not remembered. Where a claim can go stale, it
+Everything below was checked against the repository on **2026-08-11**, §3 and
+§5 again on **2026-08-19**, and the whole file again on **2026-08-21**, not
+remembered. Where a claim can go stale, it
 says how to re-check it — and §3 is the proof that it does: it went on saying
 the timeline was not on the server for a week after it was.
 
@@ -100,16 +101,72 @@ that has not changed.
 
 Still unused in `supabase/schema.sql`: `quote`, `publication`, `language` and
 `prompt`. Each has row level security written and held by `npm run rls`, and
-nothing in the app touches any of them.
+nothing in the app touches any of them. `language` is the one to watch: its
+policies changed on 2026-08-22 so that an account with no name can own one,
+and the app still does not write a row.
+
+**The online half was redesigned on 2026-08-22.** Everything belongs to the
+account, cloud storage is for everybody, and an anonymous account is made at
+first launch. The three entries at the head of `docs/FEATURE_RULES.md` § Owner
+decision log say it; read them first, because most of the list below was
+written for an app whose languages lived on the phone.
+
+Order, and where it stands:
+
+1. **Anonymous sign-in — done.** The first launch signs in with no address and
+   no password (`netAnon` in `net.js`, called from `boot.js`), so there is a
+   uid before the first frame. "Signed in" split in two on the phone as well:
+   `netSignedIn()` is a session, `netMember()` is a session with a name, and
+   `obNeed()` asks the second at the six things other people would see — a
+   post, a like, a boost, a report, a follow, a block. The door left the
+   onboarding: the app opens on the square you draw a letter on, and the door
+   is a screen `obDoor()` goes to. Held by `migrate-check` case 7.
+2. **`is_member()` split in two — done.** `has_account()` in `schema.sql` is
+   "there is an account", anonymous and frozen included, and guards the three
+   `language` write policies; `is_member()` is unchanged and guards everything
+   other people see. `language.owner` points at `auth.users` rather than
+   `profile`, because an account exists before a person does. Held by
+   `npm run rls` — 106 attempts, 19 shapes.
+3. **The language actually living on the server — not started, and it is the
+   rest of item 1.** There is nowhere to put a slice yet: `language` holds a
+   name, a licence and a date, and the eleven slices are still `localStorage`
+   only. This is the next thing.
+4. The plan on `profile`, its value still set by hand. Not started.
+5. The rest of moderation — the tombstone in a thread, the ⋯ menu on a
+   profile, the notices, the frozen state on Home. Not started.
+6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
+   from the onboarding. Not started.
+7. StoreKit, and what a purchase opens. Not started; the plans screen has not
+   been touched and must not be until then.
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
-on it), cloud storage, publishing a language, quoting, the day's sentence,
-blocking and reporting, deleting an account server-side, and push. Read that
-before starting anything online.
+on it), cloud storage, publishing a language, quoting, the day's sentence, and
+push. Read that before starting anything online. Blocking, reporting, reading
+the reports, taking a post down, ejecting somebody and deleting an account are
+all done — both halves of what App Store guideline 1.2 asks for.
 
-**No StoreKit.** The plans screen exists and `SET.plan` can be set, but nothing
-charges anybody. `docs/apple.md`.
+**Somebody has to be made staff before any of it is reachable.** One SQL line
+in the Supabase dashboard, `supabase/setup.md` § 5. Nothing in the app grants
+it and nothing is meant to.
+
+**Apple and Google sign-in are wired and cannot work yet.** The buttons went
+from "not in this build" to a real plugin —
+`@capgo/capacitor-social-login`, both providers, Facebook and X switched off in
+`capacitor.config.json` so their SDKs are never linked. What is missing is
+nobody's to write:
+
+- Apple needs the capability on the App ID and the provisioning profile
+  regenerated, or **the next build fails** — `docs/apple.md` § 2
+- Google needs a client id made in the Google Cloud console;
+  `node tools/google-id.mjs <id>` writes it to the two places that have to
+  agree, and until then `GOOGLE_IOS_ID` is empty and the button says so
+- Supabase has to be told to accept both — `supabase/setup.md` § 4
+
+**No StoreKit.** The plans screen exists and the plan can be set by pressing a
+card, but nothing charges anybody. `docs/apple.md`. The plan itself lives in the
+Keychain rather than in the settings file — `ios/App/App/LinguaPlan.swift` says
+why, and what it does not stop.
 
 **No landing page in this repository.** `vercel.json` copies `www/` into
 `public/` and serves the app itself as a static site. There is no marketing
@@ -164,20 +221,15 @@ that file. Stop and report there, not when a merge fails.
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
-fourteen rules the gate enforces". It is `tools/gate.mjs`: the five that need
-no browser run in a row (about two seconds), then the other twelve four at a
-time.
+`npm test` is sixteen checks and is the specification. `CLAUDE.md` → "The
+fourteen rules the gate enforces" (fourteen rules, sixteen checks — some rules
+are held by more than one). `tools/gate.mjs` runs the five that need no
+browser first, in about two seconds, then the eleven browser ones four at a
+time. Run one after another they were ten minutes in this container.
 
-Three rules about running it — the body is in `docs/TESTING.md` § the gate:
-
-1. **Parallel, and safe only because every check that listens has its own
-   port.** A new check that stands up a server takes one nothing else has.
-2. **A session does not run the whole gate.** The leader runs it, once, after
-   integrating. A session runs the one check that holds what it is changing,
-   by name, and says so in its report.
-3. **Watching it go red is one check too.** Put the bug back and run that
-   check, not the other seventeen.
+**It is run once before pushing**, not once per commit — the owner's rule, and
+`docs/TESTING.md` has all three. While working, run the one check that holds
+what you are changing, by name, plus the five fast ones.
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
@@ -219,9 +271,10 @@ assuming a thing is waiting for you.
 3. ~~**The password reset mail does not arrive.**~~ Done — the template is
    `{{ .Token }}` (`supabase/mail.md`) and the app has a six-digit reset
    screen, because a link has nowhere to land in a Capacitor app.
-4. **The two free ceilings are never explained in words.** A hundred words and
-   three AI calls a day. `capBanner()` warns at twenty words left and nothing
-   says either number before you meet it.
+4. **The free ceilings are never explained in words.** A hundred words, and
+   three of layer three a day (`TR_FREE_DAILY`). `capBanner()` warns at twenty
+   words left and nothing says either number before you meet it. The third
+   ceiling — three word suggestions a day — went out with Studio.
 5. **Signing in from Settings** was fixed but has not been opened on a phone.
    `obBackTo`/`obReturn` in `www/onboard.js`.
 
@@ -259,12 +312,26 @@ assuming a thing is waiting for you.
 ### Agreed long ago, never started
 
 13. The onboarding as motion only.
-14. Vertical writing.
+14. Vertical writing — **written.** `DIRS` in `www/wsys.js`, bought with
+    `can('dir')`. This line was stale.
 15. A selectable line gap.
 
 ### The owner's, in a browser
 
-16. Supabase — the reset mail template and the Redirect URLs (see 3).
+16. Supabase — the reset mail template and the Redirect URLs (see 3), and the
+    Apple and Google providers (`supabase/setup.md` § 4).
+16a. The Apple developer site — Sign in with Apple on the App ID, and the
+    profile regenerated after it. **Nothing builds until this is done**, so it
+    is not one to leave. `docs/apple.md` § 2.
+16b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
+16c. Supabase — one SQL line making yourself staff, or the reports are on
+    nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
+    updates a row that has to exist.
+16d. Supabase — **Spend Cap ON**, `supabase/setup.md` § 6. Pro is not a price
+    that stops at $25: 250 GB of egress is included and $0.09/GB is added
+    after it, with no ceiling until this is switched on. What runs out first
+    is the timeline's photographs, and the way it goes wrong is a month that
+    is already spent by the time anybody looks.
 17. App Store Connect — the two subscriptions, and TestFlight. `docs/apple.md`.
     **There is no StoreKit code at all**, so the subscriptions cannot be bought
     yet however they are configured.

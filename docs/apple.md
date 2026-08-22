@@ -46,7 +46,44 @@ CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 
 ---
 
-## 2. 有料にする前に、必ず先に済ませるもの
+## 2. Sign in with Apple を有効にして、プロファイルを作り直す
+
+**これが済むまで、次のビルドは必ず失敗します。** アプリ側は
+`ios/App/App/App.entitlements` で「このアプリは Apple ログインを使う」と
+宣言済みで、宣言だけあってプロファイルに入っていないと Archive が落ちます。
+エラーは署名の話に見えて、Apple ログインの話だとはどこにも書かれません。
+
+順番があります。**1 → 2 → 3 の順でないと意味がありません。**
+
+1. **developer.apple.com → Certificates, Identifiers & Profiles →
+   Identifiers → `com.tokinets.lingua`**
+   - Capabilities の一覧から **Sign in with Apple** にチェック → Save
+   - キーボード拡張（`com.tokinets.lingua.LinguaKeyboard`）のほうは
+     **触らないでください。** ログインするのは本体だけです
+
+2. **Profiles → 本体の配布用プロファイル**
+   - **Edit → そのまま Save** で作り直します。既存のプロファイルは、App ID に
+     機能を足しても自動では追いつきません。作り直して初めて入ります
+   - **Download** して手元に置く
+
+3. **GitHub → Settings → Secrets and variables → Actions**
+   - `PROVISIONING_PROFILE_BASE64` を、2 でダウンロードしたファイルの
+     base64 に差し替える
+   - Mac なら `base64 -i Lingua.mobileprovision | pbcopy`
+   - キーボードのほう（`KEYBOARD_PROVISIONING_PROFILE_BASE64`）は
+     **そのままで構いません。**変えていないので
+
+済んだかどうかは、次のビルドが通るかどうかでしか分かりません。1 と 2 の
+どちらかを飛ばすと、`App.entitlements` に書いた
+`com.apple.developer.applesignin` がプロファイルに無い、という趣旨のエラーで
+Archive が止まります。
+
+Supabase 側は `supabase/setup.md` の 4-1 です。あちらは**この節の後**で
+構いません（順番はどちらでもいいのですが、ビルドが通らないと試せません）。
+
+---
+
+## 3. 有料にする前に、必ず先に済ませるもの
 
 ここが済んでいないと、サブスクリプションの商品を作っても「送信準備完了」に
 なりません。App Store Connect → **ビジネス**（旧 契約/税金/口座情報）で:
@@ -63,31 +100,36 @@ CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 
 ---
 
-## 3. サブスクリプションの商品を作る
+## 4. サブスクリプションの商品を作る
 
 App Store Connect → Lingua → **収益化** → **サブスクリプション**。
 
 ### サブスクリプショングループ
 
 1 つ作ります。名前は `Lingua`。**グループが同じ商品どうしは、ユーザーが
-アップグレード・ダウングレードできます**。Plus と Studio は同じグループに
-入れてください。別グループにすると両方同時に契約できてしまいます。
+アップグレード・ダウングレードできます**。あとで Studio を出すときも同じ
+グループに入れてください。別グループにすると両方同時に契約できてしまいます。
 
-### 商品 2 つ
+### 商品 1 つ
 
-| | Plus | Studio |
-|---|---|---|
-| 参照名 | Lingua Plus | Lingua Studio |
-| **製品 ID** | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.studio.monthly` |
-| 期間 | 1 か月 | 1 か月 |
-| 価格 | **USD 9.99** | **USD 19.99** |
-| グループ内のレベル | 1（下） | 2（上） |
+出すのは Plus だけです。Studio が売っていたのは通したモデルで、それは
+まだありません（`www/core.js` の `PLANS` の注）。**無いものに値段を付けない**
+ので、商品も今は作りません。モデルが入る日に、同じグループの上の段として
+足します。
 
-製品 ID は**あとから変えられません**。上の 2 つで問題なければそのままで、
+| | Plus |
+|---|---|
+| 参照名 | Lingua Plus |
+| **製品 ID** | `com.tokinets.lingua.plus.monthly` |
+| 期間 | 1 か月 |
+| 価格 | **USD 9.99** |
+| グループ内のレベル | 1（下） |
+
+製品 ID は**あとから変えられません**。上のもので問題なければそのままで、
 変えたいなら先に言ってください。
 
 価格は米ドルで入れると、他の国は Apple が自動で決めます。日本円は
-1,500 円 / 3,000 円あたりになります。国別に手で直すこともできます。
+1,500 円あたりになります。国別に手で直すこともできます。
 
 ### それぞれに要るもの
 
@@ -99,7 +141,7 @@ App Store Connect → Lingua → **収益化** → **サブスクリプション
 
 ---
 
-## 4. App の情報（初回審査で必ず要るもの）
+## 5. App の情報（初回審査で必ず要るもの）
 
 App Store Connect → Lingua → **App Store** タブ:
 
@@ -120,7 +162,7 @@ App Store Connect → Lingua → **App Store** タブ:
 
 ---
 
-## 5. 先に言っておくこと — 課金はまだ動きません
+## 6. 先に言っておくこと — 課金はまだ動きません
 
 **アプリに StoreKit（App 内課金）のコードが一行も入っていません。**
 
@@ -149,7 +191,7 @@ App Store Connect → Lingua → **App Store** タブ:
 
 ---
 
-## 6. 詰まったときの見どころ
+## 7. 詰まったときの見どころ
 
 - ビルドが TestFlight に出てこない → GitHub Actions の run が緑か。
   緑なのに出ない → App Store Connect のメール（Apple から却下の理由が来ます）

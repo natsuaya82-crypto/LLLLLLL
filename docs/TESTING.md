@@ -3,57 +3,41 @@
 ## The gate
 
 ```
-npm test        # seventeen checks: five in a row, then twelve four at a time
+npm test        # sixteen checks
 ```
 
-**A session does not run it.** See rule 2.
+`tools/gate.mjs` runs them. The five that need no browser go first, one after
+another, and take about two seconds between them — a missing script tag or an
+arrow function fails there and nothing heavy is started at all. The eleven
+that each start a headless Chromium then go **four at a time**, because they
+are separate processes holding separate ports with nothing to say to each
+other. Run one after another they were about ten minutes.
 
-### 1. It runs in parallel
+Each check's own output is printed whole, in the order the list below has
+them rather than the order they finished in, so a green run reads the same as
+it always did and a counter that moved is still visible.
 
-`tools/gate.mjs` is `npm test`. Five checks need no browser — `assets`, `es5`,
-`dead`, `import`, `sides` — and they run first, one after another, in about
-two seconds. They are also the ones that catch a typo, so a failure there
-means the twelve browsers were never started. The rest run **four at a
-time**: four because each is a browser and a Node process, and past four they
-queue on memory rather than on cores.
+### Three rules about running it, and they are the owner's
 
-Output stays whole. A check prints its lines when it finishes, in the order
-the list has them, so a green run reads exactly as it did when they ran one
-after another.
+**Once before pushing, not once per commit.** A session that makes five
+commits and gates each one has spent half an hour proving the same thing five
+times. Make the whole batch, gate it once, push. 「全部やって完成！じゃあ全部
+のチェックを回す」 If it goes red the fast five and the by-name check have
+already caught most of what could have caused it, and `git log -p` is there
+for the rest.
 
-This is safe only because **every check that stands up a server has its own
-port.** `migrate` and `press` were both on 8123; press moved to 8130. Two on
-one port is one of them failing with `EADDRINUSE`, which says nothing about
-the code. A new check that listens takes a port nothing else has.
+**While working, run the check that holds what you are changing** — one, by
+name, plus the five fast ones. `npm run backup`, `npm run post`. That is the
+loop; `npm test` is the gate at the end of it.
 
-### 2. A session does not run the whole gate
+**Watching a check fail is one run, not a suite.** Put the bug back, run
+**that check alone**, watch it go red, take the bug out. The other fifteen
+have nothing to say about it.
 
-`npm test` is six minutes even in parallel, and a session that runs it once
-per change spends most of its time watching a progress log instead of talking
-to whoever asked for the work. **The leader — the session above this one —
-runs it, once, after integrating the branches.** 「ゲートチェックは全部作って最後に確認するから各個人の
-セッションではやらないようにして欲しい 長くて話にならん」
-
-What a session runs is **the one check that holds what it is changing**, by
-name — `npm run card`, `npm run word`, `npm run gram`. The table under *What
-to run when* says which. That is seconds, not minutes.
-
-This is a change to what "green before a commit" means, and it is deliberate:
-a commit on a working branch is a place to put work down, and the gate is what
-stands between the integrated whole and being finished. Say in the commit and in the
-report which check was run and that the gate was not.
-
-### 3. Watching it go red is one check too
-
-`docs/FEATURE_RULES.md` says a fix is not done until the check that holds it
-has been watched failing with the bug still in place. That is **that check**,
-run on its own. The other sixteen have nothing to do with the bug you just
-put back, and running them proves nothing about it.
-
-`tools/pre-commit` runs the five that need no browser (assets, es5, dead,
-import, sides — about two seconds) plus i18n when a screen file changed. **It
-is not the gate.** CI runs three of the twelve, so a green tick on a push is
-not the gate either. Run `npm test` yourself.
+`tools/pre-commit` runs the five that need no browser plus i18n when a screen
+file changed. **It is not the gate.** CI runs three of the sixteen, so a green
+tick on a push is not the gate either. Run `npm test` yourself, once, before
+the commit.
 
 | check | holds |
 |---|---|

@@ -56,7 +56,40 @@ swMount();
    not waited for -- the app opens on what is on the phone, which is all of
    the making side, and the timeline reads with the publishable key whether
    this comes back or not. */
-netResume(function(){ render(); }, function(){});
+function bootSession(){
+  render();
+  /* And the language, which belongs to this account and exists twice. Read,
+     merged and written back -- both ways, so a phone that has been offline
+     for a week arrives holding the week rather than replacing it.
+
+     After the session and not before: it is done AS somebody, and there is
+     always somebody now. Not waited for either -- the app has already opened
+     on what is on the phone, which is all of the making side. */
+  netLangSync();
+  /* And whether this account is the one that answers the reports, which is
+     one column on one profile and decides whether a row exists at the foot of
+     the settings list. Asked after the session is resumed because it is asked
+     AS somebody, and not waited for: the row appears when the answer does. */
+  netStaff(function(yes){ if(yes) render(); });
+}
+netResume(bootSession, function(){
+  /* No session, so make one, and make it without asking anybody anything.
+     An anonymous account is a real uid the moment the app opens, which is
+     what lets everything somebody makes belong to an account before they
+     have decided to be anybody. Identity is asked at a post and at a
+     purchase and nowhere else. 「オンボーディングで離脱されるのは防ぎたい」
+
+     Only when there is nothing left: netResume answers `bad` for a token the
+     server no longer accepts -- which it clears -- and for a phone with no
+     signal, which it does not. The second is a session that is still good
+     and must not be replaced by an anonymous one.
+
+     A failure here is not told about either. It means the phone is offline on
+     its first launch, and the whole making side works offline; the next
+     launch asks again. */
+  if(netSignedIn()) return;
+  netAnon(bootSession, function(){});
+});
 /* one listener above the screen, since the screen itself is replaced whole on
    every render and nothing can be bound to it */
 actWire(document.getElementById('app'));

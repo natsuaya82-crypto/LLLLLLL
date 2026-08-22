@@ -24,10 +24,30 @@
    it is worth nothing to anybody on any other site.
 
    Reading needs no account at all. post, profile and a published language are
-   world-readable, so the timeline works with the key alone and somebody who
-   has not decided yet is not asked to. Anonymous sign-in would create an
-   account that exists only as a token on one phone -- lose the phone and
-   nobody, including us, can prove it was theirs. So there is none.
+   world-readable, so the timeline works with the key alone.
+
+   There is an account anyway, and nobody typed anything to get it. The first
+   launch signs in ANONYMOUSLY: a real row in auth.users, a real uid, a real
+   pair of tokens, and no identity on any of it. That is what lets everything
+   somebody makes belong to an account from the first minute without a door
+   in front of the app. 「サインイン必須にしたいけど、オンボーディングで離脱
+   されるのは防ぎたい」
+
+   So "signed in" is two questions here and they are not the same one:
+
+     netSignedIn()   there is a session. Anonymous counts.
+     netMember()     the session has somebody's name on it.
+
+   The second is this phone's copy of is_member() in supabase/schema.sql,
+   which has refused an anonymous token since the day it was written -- so
+   everything other people would see is refused by the server whether or not
+   this file remembers to ask. Asking is what makes the refusal a door
+   instead of a shrug.
+
+   An anonymous account is one phone's refresh token and nothing else. Lose
+   the phone and nobody, including us, can prove it was theirs -- which is
+   exactly why buying asks for an identity, and why attaching one later keeps
+   the same uid rather than starting again.
    ========================================================================= */
 
 /* =========================================================================
@@ -36,6 +56,21 @@
 
 var SB_URL='https://iimwukyyasbybfrirhsf.supabase.co';
 var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
+
+/* The Google client made for THIS iOS app, in the Google Cloud console. It is
+   public in the same way SB_KEY is -- it names the app and proves nothing --
+   so it sits here rather than in a secret, and an empty string is a real
+   answer: it means nobody has made one yet, and the Google button says so
+   instead of opening a sheet that cannot finish.
+
+   Two places have to agree, and both are the owner's:
+     1. this string, which is `<number>-<hash>.apps.googleusercontent.com`
+     2. ios/App/App/Info.plist, whose URL scheme is that string REVERSED
+   Supabase also has to be told to accept it -- supabase/setup.md.
+
+   Apple needs nothing here. On iOS the sign-in is the system's own sheet and
+   the app is named by its bundle id, which Xcode already knows. */
+var GOOGLE_IOS_ID='';
 
 /* The session belongs to this phone and to no language, so it is filed beside
    lingua.set and lingua.me rather than under langKey(). */
@@ -56,6 +91,25 @@ function netSave(){
   }catch(e){}
 }
 function netSignedIn(){ return !!(SESS && SESS.rt); }
+/* Whether the token in hand is an anonymous one, read off the TOKEN rather
+   than off the answer that carried it. `is_anonymous` in the JWT is the exact
+   claim is_member() reads in supabase/schema.sql, so the phone and the server
+   settle this out of the same sentence rather than out of two that could
+   drift. An unreadable token is not anonymous: the server is what decides,
+   and a phone guessing "anonymous" would close doors on somebody who has an
+   account. */
+function netAnonTok(at){
+  var p=String(at||'').split('.')[1], c;
+  if(!p) return false;
+  p=p.replace(/-/g, '+').replace(/_/g, '/');
+  while(p.length % 4) p+='=';
+  try{ c=JSON.parse(atob(p)); }catch(e){ return false; }
+  return !!(c && c.is_anonymous);
+}
+/* A session with somebody's name on it. Everything other people would see
+   asks this and not netSignedIn(): a post, a like, a boost, a follow, a
+   block, a report. */
+function netMember(){ return !!(SESS && SESS.rt && !SESS.anon); }
 
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
@@ -119,9 +173,26 @@ function netWhy(d, status){
 function netTook(d){
   if(!d || !d.access_token) return false;
   SESS={ at:d.access_token, rt:d.refresh_token||'',
-         uid:(d.user && d.user.id) || (SESS && SESS.uid) || '' };
+         uid:(d.user && d.user.id) || (SESS && SESS.uid) || '',
+         /* Whether this one has a name on it, decided here because this is
+            the one place that knows what a session is made of. A session
+            already stored when this key arrived has no `anon` on it at all,
+            which reads as false -- correct, because every account that
+            existed before anonymous sign-in did was a real one. */
+         anon:netAnonTok(d.access_token) };
   netSave();
   return true;
+}
+/* An account nobody asked for. Supabase's anonymous sign-in is the signup
+   endpoint with no address and no password on it; what comes back is an
+   ordinary session whose token says is_anonymous, and attaching an identity
+   to it later keeps the same uid rather than making a second account.
+
+   Called from boot.js and nowhere else: this is the app arriving, not
+   something a screen does. */
+function netAnon(ok, bad){
+  netPost('/auth/v1/signup', {data:{}}, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
 }
 function netOut(){
   SESS=null; netSave();
@@ -223,7 +294,7 @@ function netHandleFree(h, ok, bad){
    yet update it. That is docs/BACKLOG.md's, not a silent gap -- a notice with
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netMember()){ bad(null, 0); return; }
   netPost('/rest/v1/profile',
           {id:SESS.uid, handle:h, display:name, av:postAvatar()},
           SESS.at, ok, bad);
@@ -233,6 +304,110 @@ function netIdToken(provider, token, nonce, ok, bad){
   if(nonce) b.nonce=nonce;
   netPost('/auth/v1/token?grant_type=id_token', b, null,
           function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+}
+
+/* ---- a language, which belongs to the account --------------------------
+   Everything somebody makes belongs to the account and the server is where
+   it is kept -- 「全部アカウントごとでしょ」「クラウドは全員で」. The phone
+   goes on being the place it is MADE: nothing here waits for a network, and
+   the whole making side works with no signal, because a language is edited
+   on a phone that may be in a tunnel.
+
+   Two rows and eleven. `language` is the language -- its name, its licence,
+   whether it is published -- and `slice` is what it is made of, one row per
+   slice of SLICES, holding exactly the string localStorage holds.
+
+   Per slice and not per language, because of what happens with two phones: a
+   word added on one and a letter drawn on the other are two different rows
+   and do not touch. Inside one row they are put together by sync.js, which
+   adds both rather than choosing. Nothing here decides a winner; the only
+   thing this file does is carry the strings.
+
+   `LANGS[id].sid` is the server's name for the language, the same way a post
+   carries `sid`. A language with none has never been up. */
+function netLangRow(ok, bad){
+  var L=LANGS[langId];
+  if(!netSignedIn() || !L){ bad(null, 0); return; }
+  if(L.sid){ ok(L.sid); return; }
+  netPost('/rest/v1/language', {owner:SESS.uid, name:langName||''}, SESS.at,
+    function(d){
+      var sid=(d && d.length)? d[0].id : '';
+      if(!sid){ bad(d, 0); return; }
+      L.sid=sid; langStore();
+      ok(sid);
+    }, bad);
+}
+/* Every slice of one language, as {kind: {body, no}}. */
+function netSlices(sid, ok, bad){
+  netGet('/rest/v1/slice?select=kind,body,no&language=eq.'+encodeURIComponent(sid),
+    function(d){
+      var out={}, i;
+      for(i=0;i<(d||[]).length;i++) out[d[i].kind]={body:String(d[i].body||''), no:d[i].no||0};
+      ok(out);
+    }, bad);
+}
+/* One slice, written. `Prefer: resolution=merge-duplicates` is what makes an
+   insert into a table with a two-column primary key an upsert -- the phone
+   does not have to know whether this slice has ever been up. */
+function netSlicePut(sid, kind, body, no, ok, bad){
+  var x=new XMLHttpRequest();
+  x.open('POST', SB_URL+'/rest/v1/slice', true);
+  x.setRequestHeader('apikey', SB_KEY);
+  x.setRequestHeader('Content-Type', 'application/json');
+  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
+  x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
+  x.onreadystatechange=function(){
+    if(x.readyState!==4) return;
+    if(x.status>=200 && x.status<300) ok();
+    else bad(null, x.status);
+  };
+  x.onerror=function(){ bad(null, 0); };
+  x.send(JSON.stringify({language:sid, kind:kind, body:String(body||''),
+                         no:(no||0)+1, at:(new Date()).toISOString()}));
+}
+/* The open language and its copy, put together. Read, merge, write back
+   whatever moved -- in that order, so a phone that has been offline for a
+   week arrives holding the week rather than replacing it.
+
+   Fired and never waited for. Nothing on screen depends on it: the language
+   is already on the phone and already drawn, and what this does is make the
+   two copies the same. A failure is silence, because a phone with no signal
+   is a phone somebody is still writing a language on. */
+var NET_SYNCING=false;
+function netLangSync(then){
+  var done=then || function(){};
+  if(NET_SYNCING || !netSignedIn() || !langId){ done(false); return; }
+  NET_SYNCING=true;
+  function stop(moved){ NET_SYNCING=false; done(!!moved); }
+  netLangRow(function(sid){
+    netSlices(sid, function(there){
+      var i=0, moved=false;
+      function step(){
+        var kind, mine, got, put;
+        if(i>=SLICES.length){
+          if(moved){
+            /* Something came back, so what the screens are holding is older
+               than what is in storage. Read it in the way langOpen() does
+               rather than patching each global by hand. */
+            langRead(); ltRead(); noteRead(); stRead(); sndRead(); kbRead(); wldRead();
+            render();
+          }
+          stop(moved); return;
+        }
+        kind=SLICES[i]; i++;
+        try{ mine=localStorage.getItem(langKey(kind)); }catch(e){ mine=null; }
+        got=there[kind];
+        put=syMerge(kind, mine===null? '' : mine, got? got.body : '');
+        if(put!=='' && put!==mine){
+          try{ localStorage.setItem(langKey(kind), put); moved=true; }catch(e){}
+        }
+        if(put==='' || (got && put===got.body)){ step(); return; }
+        netSlicePut(sid, kind, put, got? got.no : 0,
+                    function(){ step(); }, function(){ step(); });
+      }
+      step();
+    }, function(){ stop(false); });
+  }, function(){ stop(false); });
 }
 
 /* ---- the timeline, when there is one -----------------------------------
@@ -278,7 +453,8 @@ var NET_PAGE=50;
    photograph goes up as the post without it rather than as most of a megabyte
    of base64 in a jsonb column. */
 function netBody(p){
-  var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1};
+  var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
+                     down:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   return o;
 }
@@ -297,6 +473,10 @@ function netRow(r){
   p.sid=r.id;
   p.at=Date.parse(r.created_at) || Date.now();
   if(r.reply_to) p.to=r.reply_to;
+  /* Taken down. Only the author and staff are ever handed one -- post_read in
+     schema.sql -- so this arrives on nobody else's phone, and the author is
+     told by the post rather than by the post quietly not being anywhere. */
+  if(r.hidden_at) p.down=true;
   p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
   return p;
 }
@@ -311,7 +491,7 @@ function netFeed(which, ok, bad){
      the recommended timeline works with the publishable key alone and
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
-  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body'+
+  var sel='/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
           '&order=created_at.desc&limit='+NET_PAGE;
   function got(d){
     var out=[], i;
@@ -352,7 +532,7 @@ function netFeed(which, ok, bad){
    By handle, because a handle is what one person knows another by; the uuid
    is looked up here exactly as netFollow() does. */
 function netBlock(handle, on, ok, bad){
-  if(!netSignedIn() || !handle){ ok(); return; }
+  if(!netMember() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
       var who=(d && d.length)? d[0].id : '';
@@ -388,7 +568,7 @@ function netBlocked(ok){
    refused by the check constraint, which is the right way round: the list of
    reasons is the server's. */
 function netReport(what, why, note, ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netMember()){ bad(null, 0); return; }
   var row={actor:SESS.uid, why:String(why||'other')};
   if(note) row.note=String(note);
   if(what && what.post){ row.post=what.post; }
@@ -404,6 +584,106 @@ function netReport(what, why, note, ok, bad){
   }
   if(!row.post){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/report', row, SESS.at, function(){ ok(); }, bad);
+}
+/* ---- the other side of a report ----------------------------------------
+   Somebody has to read them, and until now nobody could: `report` had no
+   select policy at all, so the only way to see one was the Supabase dashboard.
+   Acting on a report within a day is a condition of being in the App Store,
+   and it is not a condition anybody meets from a laptop they are not sitting
+   at.
+
+   Who may is one column, `profile.staff`, set by hand in the dashboard and
+   revoked from every role the app signs in as. There is no screen that grants
+   it and there is not meant to be one. */
+var NET_STAFF=false, NET_BANNED='';
+/* Asked once, at launch, and remembered. A screen that asked every time it
+   was drawn would put a request behind every render. */
+/* One request, because it is one row and the app wants two things off it:
+   whether this account answers the reports, and whether it has been ejected.
+   The second is not something the app could work out otherwise -- every write
+   would simply be refused, and "the server said no" is not a sentence anybody
+   can act on. */
+function netStaff(ok){
+  ok=ok||function(){};
+  if(!netSignedIn()){ NET_STAFF=false; NET_BANNED=''; ok(false); return; }
+  netGet('/rest/v1/profile?select=staff,banned_at,banned_why&limit=1&id=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var r=(d && d.length)? d[0] : null;
+      NET_STAFF=!!(r && r.staff);
+      /* The reason if there is one, and a space if there is not, so that the
+         string is true-y whenever the account is banned and the screens can
+         ask one question instead of two. */
+      NET_BANNED=(r && r.banned_at)? (String(r.banned_why||'') || ' ') : '';
+      ok(NET_STAFF);
+    },
+    function(){ NET_STAFF=false; NET_BANNED=''; ok(false); });
+}
+/* The reports, newest first, each carrying the thing it is about -- because a
+   list of reasons with no posts under them is a list nobody can act on, and
+   asking for the posts one at a time is one request per row.
+
+   `post(...)` is the row the report points at and not the column of the same
+   name; PostgREST reads the brackets as "follow the foreign key". A report
+   about an account carries no post at all, and `who(handle)` is what it is
+   about instead. */
+function netReports(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netGet('/rest/v1/report?select=id,why,note,created_at,'+
+         'post(id,body,hidden_at,author(id,handle,banned_at)),'+
+         'who(id,handle,banned_at)'+
+         '&order=created_at.desc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i, r, po, au;
+      for(i=0;i<(d||[]).length;i++){
+        r=d[i]||{}; po=r.post||null;
+        /* Whoever it is about: the author of the post, or -- when the report
+           is about an account and carries no post -- the account itself. Both
+           are the same embed of the same table, so both answer the same two
+           questions and the screen does not care which kind it is holding. */
+        au=(po && po.author) || r.who || null;
+        out.push({ id:r.id,
+                   why:String(r.why||'other'),
+                   note:String(r.note||''),
+                   at:Date.parse(r.created_at) || 0,
+                   who:(au && au.handle) || '',
+                   uid:(au && au.id) || '',
+                   out:!!(au && au.banned_at),
+                   pid:po? po.id : '',
+                   ln:(po && po.body && po.body.ln) || '',
+                   down:!!(po && po.hidden_at) });
+      }
+      ok(out);
+    }, bad);
+}
+/* Down, and back up. Two functions on the server and not an update, so that
+   whoever answers the reports cannot rewrite what somebody said -- see the
+   foot of supabase/schema.sql. The reason is kept beside the post: a decision
+   with no reason on it is one nobody can look at again, including whoever
+   made it. */
+function netHide(pid, why, ok, bad){
+  if(!netSignedIn() || !pid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/post_hide', {p:pid, reason:String(why||'')},
+          SESS.at, function(){ ok(); }, bad);
+}
+function netShow(pid, ok, bad){
+  if(!netSignedIn() || !pid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/post_show', {p:pid},
+          SESS.at, function(){ ok(); }, bad);
+}
+/* And the person, which is the other half of answering a report: taking the
+   post down leaves whoever wrote it free to write it again. Nothing of theirs
+   is deleted and they are not signed out -- is_member() in schema.sql stops
+   what they would write and nothing they can read. */
+function netBan(uid, why, ok, bad){
+  if(!netSignedIn() || !uid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/account_ban', {p:uid, reason:String(why||'')},
+          SESS.at, function(){ ok(); }, bad);
+}
+function netUnban(uid, ok, bad){
+  if(!netSignedIn() || !uid){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/account_unban', {p:uid},
+          SESS.at, function(){ ok(); }, bad);
 }
 /* ---- searching, which is the server's ----------------------------------
    A search over what is on THIS phone is a search of the people you already
@@ -449,7 +729,7 @@ function netFindWho(q, ok, bad){
    asked for one of its fields as text. */
 function netFindPosts(q, ok, bad){
   var like=netLike(q);
-  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body'+
+  netGet('/rest/v1/post?select=id,author,created_at,reply_to,body,hidden_at'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+')'+
          '&order=created_at.desc&limit='+NET_PAGE,
@@ -523,7 +803,7 @@ function netBytes(b64){
    rather than as a picture. */
 function netUp(path, b64, mime, ok, bad){
   var x, a=netBytes(b64);
-  if(!netSignedIn() || !a){ bad(null, 0); return; }
+  if(!netMember() || !a){ bad(null, 0); return; }
   x=new XMLHttpRequest();
   x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
   x.setRequestHeader('apikey', SB_KEY);
@@ -546,16 +826,34 @@ function netUp(path, b64, mime, ok, bad){
    and the post goes up carrying the pictures that made it. A post that
    refused to exist because a photograph failed would be a post lost to a
    tunnel. */
+/* Two files per picture: the photograph, and a small copy of it for the
+   timeline. `th` is indexed to match `out` rather than pushed onto, because a
+   small copy that fails to go leaves a HOLE and a list that closed the hole
+   would put picture two's thumbnail under picture one. A hole is read by
+   postThumbs() as "draw the photograph for this one", which is what every
+   post written before this does anyway -- so a thumbnail that does not go up
+   costs bytes and never correctness. */
 function netUpPics(uid, pid, pics, ok){
-  var out=[], i=0;
+  var out=[], th=[], i=0;
+  function next(){ i++; step(); }
   function step(){
     var d;
-    if(i>=pics.length){ ok(out); return; }
+    if(i>=pics.length){ ok(out, th); return; }
     d=netData(pics[i]);
-    if(!d){ i++; step(); return; }
+    if(!d){ next(); return; }
     netUp(uid+'/'+pid+'/'+i+netExt(d.mime), d.b64, d.mime,
-      function(path){ out.push(path); i++; step(); },
-      function(){ i++; step(); });
+      function(path){
+        var k=out.length;
+        out.push(path);
+        postThumb(pics[i], function(small){
+          var td=small && netData(small);
+          if(!td){ next(); return; }
+          netUp(uid+'/'+pid+'/'+k+'.t'+netExt(td.mime), td.b64, td.mime,
+            function(tp){ th[k]=tp; next(); },
+            function(){ next(); });
+        });
+      },
+      function(){ next(); });
   }
   step();
 }
@@ -578,7 +876,7 @@ function netExt(mime){
    `sid` is one that has not gone up yet, which is the whole of the retry. */
 function netPush(post, ok, bad){
   var row, pid, up;
-  if(!netSignedIn() || !post){ bad(null, 0); return; }
+  if(!netMember() || !post){ bad(null, 0); return; }
   pid=netUUID();
   row={id:pid, author:SESS.uid, body:netBody(post)};
   /* What it answers, by the name the SERVER knows -- the local id means
@@ -593,8 +891,12 @@ function netPush(post, ok, bad){
      went. The other order is a post that exists with pictures it cannot name
      until a second request lands -- and a second request is a second thing
      that can fail. */
-  netUpPics(SESS.uid, pid, postPics(post), function(paths){
+  netUpPics(SESS.uid, pid, postPics(post), function(paths, small){
     if(paths.length) row.body.pu=paths;
+    /* The small copies, and only when there are any. A post whose pictures
+       were all smaller than POST_THUMB already carries no `pt` at all rather
+       than a list of empty strings. */
+    if(small.length) row.body.pt=small;
     netUpVoice(SESS.uid, pid, post, function(vpath){
       if(vpath) row.body.vu=vpath;
       netSend('POST', '/rest/v1/post?select=id', row, SESS.at,
@@ -623,7 +925,7 @@ function netUpVoice(uid, pid, post, ok){
    never heard of it, and that is not an error worth showing anybody. */
 function netMark(id, kind, on, ok, bad){
   var p=postById(id), sid=p && p.sid;
-  if(!netSignedIn() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
+  if(!netMember() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
   if(on){
     netSend('POST', '/rest/v1/react', {post:sid, actor:SESS.uid, kind:kind},
             SESS.at, function(){ ok(); }, bad);
@@ -650,7 +952,7 @@ function netMark(id, kind, on, ok, bad){
    same branch as "I cannot find this post". */
 function netDrop(p, ok, bad){
   var sid=p && p.sid;
-  if(!netSignedIn() || !sid){ ok(); return; }
+  if(!netMember() || !sid){ ok(); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
             null, SESS.at, function(){ ok(); }, bad);
@@ -662,18 +964,91 @@ function netDrop(p, ok, bad){
 function netDropFiles(p, done){
   var paths=[], i;
   for(i=0;i<((p && p.pu) || []).length;i++) paths.push(p.pu[i]);
+  /* The small copies too. A picture is two files now, and a deletion that
+     took one of them would leave the other in a public bucket with nothing
+     pointing at it -- which is the exact thing the paragraph above is about.
+     Walked with a hole in it, because `pt` is allowed to have one. */
+  for(i=0;i<((p && p.pt) || []).length;i++) if(p.pt[i]) paths.push(p.pt[i]);
   if(p && p.vu) paths.push(p.vu);
   if(!paths.length){ done(); return; }
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,
           function(){ done(); }, function(){ done(); });
 }
+/* ---- being deleted -----------------------------------------------------
+   The one thing signing out is not. `account_delete()` in supabase/schema.sql
+   reaches auth.users, which no policy in that file can, and everything of
+   this person's cascades off the profile behind it: the languages, the posts,
+   the follows, the blocks, the publication records.
+
+   What does NOT cascade is Storage. A photograph is bytes in a bucket and a
+   bucket has no foreign keys, so a deletion that only called the function
+   would leave every picture anybody had ever posted sitting in a PUBLIC
+   bucket with nothing pointing at it and nobody able to find it to remove it.
+   So the files go first and they go from here.
+
+   Which files is asked of the SERVER and not of this phone. The phone holds
+   the posts it has seen, and "the posts it has seen" stops being "the posts I
+   wrote" the moment there has been a second phone or a storage wipe -- and
+   the whole point of a deletion is that there is no second chance to notice.
+
+   Nothing about the language on this phone is touched. Somebody deleting an
+   account has not asked to lose four months of their own writing, and
+   docs/DATA_SAFETY.md says that in general terms. Erasing the phone is the
+   other button, and it says which it is. */
+function netDropMe(ok, bad){
+  if(!netSignedIn()){ ok(); return; }
+  netGet('/rest/v1/post?select=body&author=eq.'+encodeURIComponent(SESS.uid),
+    function(d){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); },
+    /* The listing failed, and the account still goes. Somebody who asked to
+       be deleted must be deleted; a photograph left behind is a smaller wrong
+       than an account that would not die because the network was bad. */
+    function(){ netEndMe(ok, bad); });
+}
+/* Every path a post of mine put in the bucket. The paths are ON the post --
+   netBody() sends them up with it -- so this reads them back rather than
+   asking the bucket what is under a folder, which is a listing that does not
+   recurse and would have to be walked a level at a time. */
+function netMyFiles(rows){
+  var out=[], i, j, b, pu;
+  for(i=0;i<((rows||[]).length);i++){
+    b=(rows[i] && rows[i].body) || {};
+    pu=b.pu || [];
+    for(j=0;j<pu.length;j++) if(pu[j]) out.push(String(pu[j]));
+    if(b.vu) out.push(String(b.vu));
+  }
+  return out;
+}
+/* A hundred at a time, and a refusal is not a stop. Storage takes a list, and
+   a person with three hundred pictures is one request in this shape and three
+   in the other. Whichever lot fails is left behind and the rest still go: the
+   next line is the account itself and it must be reached. */
+function netDropMine(paths, done){
+  var i=0;
+  function step(){
+    var lot;
+    if(i>=paths.length){ done(); return; }
+    lot=paths.slice(i, i+100); i+=100;
+    netSend('DELETE', '/storage/v1/object/post-media', {prefixes:lot}, SESS.at,
+            step, step);
+  }
+  step();
+}
+/* And the account. netOut() after it and not before: the token is what proves
+   who is being deleted, and throwing it away first would be asking the server
+   to delete nobody. A failure here leaves the person signed in, which is the
+   honest state -- the account is still there. */
+function netEndMe(ok, bad){
+  netSend('POST', '/rest/v1/rpc/account_delete', {}, SESS.at,
+          function(){ netOut(); ok(); }, bad);
+}
+
 /* One row in `follow`, or one row gone. `on` is whether you follow them now.
    Not waited on: the button has already changed, the same way a like has.
 
    A handle and not an id, because a handle is what one person knows another
    by. The id is looked up here, once, in the one place that has to. */
 function netFollow(handle, on, ok, bad){
-  if(!netSignedIn() || !handle){ ok(); return; }
+  if(!netMember() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
       var who=(d && d.length)? d[0].id : '';

@@ -48,6 +48,16 @@ function vSettings(){
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
+    /* And, for the one account that answers them, the reports. It is not one
+       of the six questions this list asks and it is not everybody's row, so
+       it sits under them rather than among them. NET_STAFF is false until the
+       server has said otherwise, which is the right way round: the row that
+       is missing is the row nobody could have used anyway. */
+    (NET_STAFF
+      ? '<button class="set"' + DO('goMod') + '>'+
+          '<span class="sl">'+esc(t('mod.title'))+'</span>'+
+          '<span class="sv">'+ICON_GO+'</span></button>'
+      : '')+
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered
@@ -57,7 +67,7 @@ function setSummary(id, p){
   if(id==='read')  return readMode()==='kana'? capFirst(langDef().rdName) : t('read.'+readMode());
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
-  if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
+  if(id==='acct')  return t(netMember()? 'set.account.on' : 'set.account.guest');
   if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
@@ -133,11 +143,19 @@ function vSet(){
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
-    body=(netSignedIn()
+    body=(netMember()
       ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
         '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
         '<button class="set"' + DO('setSignOut') + '>'+
-        '<span class="sl bad">'+t('set.signout')+'</span></button>'
+        '<span class="sl bad">'+t('set.signout')+'</span></button>'+
+        /* And the account itself, which is a different thing from the phone
+           and now says so. This button used to be the one at the foot of the
+           room, which erased the phone and called itself a deletion because
+           there was nothing else it could have been called: nothing in the
+           app could reach the row on the server. Now something can, so the
+           two are two, and each is named after what it does. */
+        '<button class="set"' + DO('dropAccount') + '>'+
+        '<span class="sl bad">'+t('set.drop')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
         '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set signin google"' + DO('obSignInGoogle') + '><span class="sl">'+MARK_GOOGLE+
@@ -231,6 +249,18 @@ function setUi(l){ SET.ui=l; save(); render(); }
    you erased the phone and the app still greeted you by name. netOut() is
    the same two lines signing out uses; nothing is asked of the server,
    which is what it was already true of. */
+/* The account, on the server. Asked once and not twice: a second "are you
+   sure" is how a person learns to press through them.
+
+   The language on this phone is NOT touched. Somebody deleting an account has
+   not asked to lose their own writing, and the confirm says which is which so
+   that nobody finds out afterwards. */
+function dropAccount(){
+  if(!netSignedIn()) return;
+  if(!confirm(t('confirm.drop'))) return;
+  netDropMe(function(){ toast(t('set.drop.done')); render(); },
+            function(d, st){ toast(netWhy(d, st)); });
+}
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
   /* Throw the stored slices away and read the language back. What an empty
@@ -246,13 +276,20 @@ function wipeAll(){
     for(si=0; si<SLICES.length; si++) localStorage.removeItem(langKey(SLICES[si]));
   }catch(e){}
   langRead(); ltRead(); noteRead(); stRead(); sndRead(); sndStart();
-  /* the person's settings, back to what a fresh install has -- keeping the two
-     that are about them rather than about the language */
-  var theme=SET.theme, ui=SET.ui;
-  SET=setDefaults(); SET.theme=theme; SET.ui=ui;
+  /* the person's settings, back to what a fresh install has -- keeping the
+     three that are about them rather than about the language.
+
+     The plan is the third, and it was not always. Erasing what is on this
+     phone is not cancelling a subscription, and once the plan moved to the
+     Keychain a wipe that set it to free was free for this session and paid
+     again at the next launch -- the file it used to be reset in no longer
+     holds it. Somebody who is paying stays paid, which is also the only
+     answer that does not depend on which of the two copies is read first. */
+  var theme=SET.theme, ui=SET.ui, pl=SET.plan;
+  SET=setDefaults(); SET.theme=theme; SET.ui=ui; SET.plan=pl;
   netOut();
-  /* after the plan is back to free, because that is what decides whether the
-     language gets the twenty-eight slots at all */
+  /* and the twenty-eight slots, for a language that is empty now and on a
+     plan that adds no letters of its own */
   ltStart();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
@@ -344,7 +381,7 @@ function vPlans(){
     '</div></div>';
 }
 function setPlan(id){
-  SET.plan=id; save(); render();
+  SET.plan=id; planKeep(id); save(); render();
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
 
@@ -361,6 +398,6 @@ function setSignOut(){ netOut(); toast(t('set.signout.done')); render(); }
    opening it from here means saying the onboarding is unfinished. For
    somebody who already has a language that is a lie, and the app used to
    make good on it: sign in, and you were walked through drawing an alphabet
-   you already had. obBackTo() is what says the lie is temporary and where to
-   undo it. */
-function setMail(){ obBackTo('set', 'acct'); OBM.mode='in'; OBM.msg=''; SET.done=false; save(); render(); }
+   you already had. obDoor() is what says the lie is temporary and where to
+   undo it, and it is what every other way to the door goes through now. */
+function setMail(){ obDoor('set', 'acct'); }

@@ -219,11 +219,15 @@ const R = await pg.evaluate(async () => {
   const hit = {};
   const screens = [];
 
-  /* Onboarding, which is the one screen render() reaches on its own. */
-  for (let s = 0; s <= 3; s++) {
+  /* Onboarding, which is the one screen render() reaches on its own. Its
+     own count, because the door left it: vOb() shows the door for SET.obback
+     and the steps for ob.step, so a step number no longer reaches it and a
+     leftover note would hide every step behind it. */
+  for (let s = 0; s < OB_STEPS; s++) {
     screens.push({
       label: 'vOb step ' + s,
-      build: () => { window.__seed(); SET.done = false; ob.step = s; show(vOb()); }
+      build: () => { window.__seed(); SET.done = false; SET.obback = null;
+                     ob.step = s; show(vOb()); }
     });
   }
 

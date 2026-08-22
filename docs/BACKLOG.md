@@ -60,11 +60,11 @@ bisected against instead of one.
   their own empty state. Changes what is on screen, so it needs a screenshot
   and an approval, not a quiet commit.
 
-- **`talk.js` / `grammar.js` shared logic.** Only if the shared thing is
-  genuinely one rule. If pulling it out means `grammar.js` starts depending on
-  `talk.js` to say something it can say itself, leave it. Not everything that
-  repeats is duplication — `cffNum` and `csNum` in `otf5.js` are the standing
-  example.
+- ~~**`talk.js` / `grammar.js` shared logic.**~~ Moot: `talk.js` went out with
+  Studio. If the conversation comes back with the hosted model, so does this
+  question, and the answer it had still holds — only if the shared thing is
+  genuinely one rule, and not everything that repeats is duplication.
+  `cffNum` and `csNum` in `otf5.js` are the standing example.
 
 ## A column no longer has anywhere it cannot go
 

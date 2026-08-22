@@ -56,8 +56,10 @@ Marked separately, because they are not the same question:
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
 | One language per person | shipped | 1 | 1 | `LANG_MAX` | decided |
-| AI word suggestions | shipped | 3/day | Plus 3/day; `ai` unmetered at Studio | none | decided |
-| AI conversation — the last chapter | shipped | not shown | Studio only; not shown on Plus | slice `talk` | decided — Studio's daily number **open** |
+| Word suggestions | **lifted** | — | — | none | the chips and their daily three went out with Studio; `makeWord()` in `www/reading.js` stays and is used everywhere else |
+| The conversation — the last chapter | **lifted** | — | — | slice `talk` kept | out until the hosted model is in. See the note on `PLANS` in `www/core.js` |
+| Forms made by a rule | shipped | yes | yes | `STG.fm` | decided — a rule offers, it does not declare. Nothing is made until asked, and what comes out is an ordinary word |
+| A word shares as a page from a dictionary | shipped | yes | yes | none | decided — 1080×1350, senses numbered, the family, an example, the origin |
 
 ## The reading side
 
@@ -148,9 +150,9 @@ Still open, and two of them block the work:
 - what happens when translation fails, or the phone is offline when posting —
   **the post must still go out**
 - whether a post published without translations can gain them afterwards
-- whether free's three are per day, and whether they share the existing
-  `AI_FREE_DAILY` counter — sharing it means asking for a spelling suggestion
-  spends a translation
+- whether free's three are per day. There is no counter to share any more:
+  `AI_FREE_DAILY` went out with Studio, and `TR_FREE_DAILY` in `www/post.js`
+  is layer three's own
 
 Layer 3 itself is dictionary lookup: it costs nothing, runs offline, and its
 limit of three is a product decision rather than a cost one. That is a fine
@@ -182,7 +184,7 @@ vertically-written language is. It is a compromise and it is written down in
 |---|---|---|---|---|---|
 | System keyboard extension (iOS) | shipped | yes | — | App Group | decided |
 | Hand-over app → keyboard | shipped | yes | — | App Group | decided |
-| Purchases (StoreKit) | **planned** | — | — | none | **open** — no code exists; `SET.plan` is set by hand |
+| Purchases (StoreKit) | **planned** | — | — | Keychain | **open** — no code exists; the plan is set by hand |
 | Android | **planned** | — | — | — | **open** — one repo with `android/` beside `ios/`, nothing started |
 
 ## What is left to do online
@@ -193,18 +195,27 @@ because the way a server feature gets lost is by being half-written down.
 
 **Already online, so that this list is read against something:** accounts and
 the profile, posts (write, read, reply, delete), likes and boosts, following,
-notices, photographs and voice in Storage, and search — people and posts.
+notices, photographs and voice in Storage, search — people and posts — and
+deleting an account. And, since 2026-08-22, the account itself: the first
+launch signs in anonymously, so every phone has a uid before the first frame,
+and the server tells "there is an account" (`has_account()`) from "there is
+somebody" (`is_member()`).
 
 ### 1. The plan, on the server — the one with money on it
 
-`SET.plan` is a string in `localStorage` and the app is unbundled JavaScript
-on the phone. **Anybody can set themselves to Studio**, and the server would
-not know: `schema.sql` has no plan column and no plan check; `is_member()`
-asks whether somebody is signed in and nothing else.
+The plan is in the Keychain now — `ios/App/App/LinguaPlan.swift`, read before
+the web view loads and injected as `window.__plan` — because `localStorage` is
+a file inside the app and that file is in the backup a phone makes onto a PC,
+where free tools and no jailbreak turn `free` into `plus`. That door is shut.
+The one behind it is not: on a jailbroken phone the app's own JavaScript can be
+edited and the question never gets asked. **So anybody determined enough can
+still set themselves to Plus**, and the server would not know: `schema.sql` has
+no plan column and no plan check; `is_member()` asks whether somebody is signed
+in and nothing else.
 
-Today that costs nothing but the sale — the AI runs on the phone (`talk.js`,
-`assist.js`, `grammar.js` make no network call), and there is no cloud
-storage. **The day money is taken that stops being true**, so:
+Today that costs nothing but the sale — everything a plan opens runs on the
+phone (`assist.js`, `grammar.js`, `reading.js` make no network call), and there
+is no cloud storage. **The day money is taken that stops being true**, so:
 
 1. the StoreKit receipt is verified **server-side**, not by the app
 2. the plan lives on the account, in `profile` or beside it
@@ -215,11 +226,24 @@ storage. **The day money is taken that stops being true**, so:
 Decided so far: the four products and their prices (2026-08-14), and that
 StoreKit is not to be written yet.
 
-### 2. Cloud storage of a language — Plus
+### 2. Cloud storage of a language — **everybody**, not Plus
 
-Every slice, for a person who is paying. Decided and deferred: the Supabase
-tier it needs is not worth paying for yet. `bkPack()` already produces exactly
-the thing that would be uploaded.
+**OWNER DECISION 2026-08-22** — 「クラウドは全員で」. It is not what Plus sells
+any more, and it is not deferred: everything belongs to the account, the
+server is true and the phone keeps a copy that works with no signal.
+`CAN.data` has to be redefined when this lands.
+
+What is done: an account exists from the first launch, and `language`'s write
+policies ask `has_account()` rather than `is_member()`, so an account with no
+name on it can own a row. What is missing is **the row and somewhere to put a
+slice**: `language` holds a name, a licence and a date, and the eleven slices
+of `SLICES` are `localStorage` only. `bkPack()` already produces exactly the
+thing that would be uploaded — 5.4 KB for a small language, about a megabyte
+for a large one.
+
+Open, and the reason nothing is written yet: whether a slice is a column, a
+row per slice, or a file in Storage; and what happens when the same account
+has edited a language on two phones. Neither is decided.
 
 ### 3. Publishing a language — `language`, `publication`
 
@@ -257,23 +281,74 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 7. Taking a post down
+### 7. Taking a post down — **done** (2026-08-21)
 
-Blocking and reporting are **done** (2026-08-19): `block` and `report` in
+Blocking and reporting were done on 2026-08-19: `block` and `report` in
 `schema.sql`, the ⋯ on every post, and the timeline asking the server to leave
-blocked authors out.
+blocked authors out. Nothing read the reports. They went into a table with no
+select policy on it, so the only way to see one was the Supabase dashboard.
 
-What is left is the other half — **somebody has to read the reports and be
-able to take a post down.** There is no dashboard view and no way to remove
-somebody else's post; `post_drop` is the author's alone. Until that exists a
-report is written and nobody looks at it, which App Store review will ask
-about.
+Now: `profile.staff`, one boolean set by hand in the dashboard and revoked
+from every role the app signs in as — there is no screen that grants it. For
+that one account a row appears at the foot of the settings list, and behind it
+`www/mod.js`: the reports newest first, each carrying the post it is about,
+with a button that takes it down.
 
-### 8. Deleting an account, on the server
+**Down, not deleted.** `post.hidden_at` and `post.hidden_why`, set by
+`post_hide()` and cleared by `post_show()` — two `security definer` functions
+rather than an update policy, so whoever answers a report cannot rewrite what
+somebody said. A deletion could not be undone when the report turns out to be
+wrong, and the reports pointing at the post need it to still be there.
 
-Signing out and wiping this phone both work. **What is on the server is not
-touched by either.** `profile` cascades from `auth.users`, so the delete has
-to happen at the auth level, and nothing in the app asks for it.
+**`post_read` is the part that matters.** `hidden_at is null or author =
+auth.uid() or is_staff()`. The author still gets their own post, with a line on
+it saying it was taken down — a post that goes silently missing is the app
+lying by omission. `npm run rls` attacks all of it: B cannot make B staff, B
+cannot take a post down, A cannot put A's own post back up.
+
+**Two column privileges, and they are the reason any of the above holds.** Row
+level security says which ROWS may change and has nothing at all to say about
+which COLUMNS, so "you may edit yourself" was also "you may make yourself
+staff", and "you may edit your own post" was also "you may put it back up".
+Both are one UPDATE with one extra field in it. The table-level grant is
+revoked at the foot of `schema.sql` and what may be written is named.
+
+**And ejecting somebody**, which is the other half guideline 1.2 asks for by
+name — taking the post down leaves whoever wrote it free to write it again.
+`profile.banned_at`, set by `account_ban()` and cleared by `account_unban()`,
+from a second button on the same report.
+
+What a ban IS, is one line in `is_member()`. Every writing policy in the file
+already stands behind that function, so there is one place to put it and no
+list of doors to keep in step. Three things it deliberately does not do: it
+does not delete anything, it does not sign anybody out, and it does not touch
+`account_delete()` — being thrown out of a place is not a reason to lock the
+door marked exit. `npm run rls` holds all three, and holds that a banned
+account can still read.
+
+**The person is told.** `NET_BANNED` comes off the same request that asks
+whether this account is staff, and the composer says so at the top and again
+if the button is pressed. Without it every write is refused by a policy, which
+arrives as a number. The reason is not shown: the five words the report offered
+are ours to sort by, not an explanation anybody was given.
+
+### 8. Deleting an account, on the server — **done** (2026-08-21)
+
+`netDropMe()` in `www/net.js`, from a button in Settings under signing out.
+It asks the server which posts are mine, deletes their pictures and voice from
+Storage **first** — bytes in a bucket have no foreign key and no cascade
+reaches them — and then calls `account_delete()`, which was already in
+`schema.sql` and reaches `auth.users`. Everything else goes behind it by
+cascade: the profile, the languages, the posts, the follows, the blocks.
+
+**Reports do not go.** `report.actor` was `not null ... on delete cascade`
+until there was a deletion to fire it, which meant deleting your own account
+withdrew every report you had ever made — somebody else's record, cleared by
+your leaving. It is `on delete set null` now, and `npm run rls` holds it.
+
+**The language on the phone is not touched.** Erasing the phone is the other
+button and now says which it is; it used to be called "delete account" because
+nothing in the app could reach the server, and that reason is gone.
 
 ### 9. Push notifications
 

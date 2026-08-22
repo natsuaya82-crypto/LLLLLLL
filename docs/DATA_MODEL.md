@@ -36,8 +36,8 @@ the keyboard and the world — and neither could throw.
 | `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
-| `phases` | `STG` | grammar stages | object |
-| `talk` | `TALK` | the AI conversation | array |
+| `phases` | `STG` | grammar stages, and `fm` — the rules a form is made by (`docs/FEATURES.md`) | object |
+| `talk` | `TALK` | the conversation. **Its screen is lifted** — see the note on `PLANS` in `www/core.js` — so nothing in the app reads or writes this today. The slice stays in `SLICES`, `bkPack()` still copies it out of storage, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
 | `wld` | `WLD` | what the language is for — and two flags. `hide`: whether it has a page anybody else may open; **absent means public**. `dl`: whether the letters and the words may be taken away and used; **absent means no**, and the two defaults point opposite ways on purpose — a page is a thing to be looked at, and handing over months of somebody's drawing is not a thing to decide for them | object |

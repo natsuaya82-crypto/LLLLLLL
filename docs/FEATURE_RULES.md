@@ -185,6 +185,60 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-22
+- Area: What a thing belongs to
+- Decision: **Everything belongs to the account** — language, dictionary,
+  letters, keyboard, plan. The server is true, the phone keeps a copy so it
+  works with no signal. **Cloud storage is for everybody**, so it stops being
+  what Plus sells.
+- Reason: 「全部アカウントごとでしょ」「クラウドは全員で」. It fits $25: a
+  language packs to 5.4 KB, a large one to about a megabyte. What eats a plan
+  that size is photographs on a timeline, and that is bandwidth.
+- Affected features: `SLICES`, `LANGS`, the plan, `is_member()`, `CAN.data`.
+- Affected data: all of it. Nothing is deleted; what is on a phone is adopted
+  by the first account that signs in there.
+- Affected docs: `FEATURES.md`, `STATE.md`, `DATA_MODEL.md`, `PAID_FEATURES.md`.
+- Implementation status: **not started.**
+
+### Decision
+- Date: 2026-08-22
+- Area: When somebody is asked who they are
+- Decision: An **anonymous account is made silently at first launch** and
+  everything is made under it. Identity is asked in **two places only:
+  posting, and buying.** The uid does not change when it is attached.
+- Reason: 「サインイン必須にしたいけど、オンボーディングで離脱されるのは防ぎたい」
+  「課金とツイートにはログイン必須。それ以外は流さない」. Buying needs it
+  because an anonymous account is one phone's refresh token, and a receipt
+  bound to a lost one is paid for and unreachable.
+- Affected features: onboarding, composer, plans screen, `is_member()` — which
+  becomes two questions: your own things, and things other people see.
+- Affected data: none.
+- Affected docs: `FEATURES.md`, `STATE.md`, `supabase/setup.md`.
+- Implementation status: **the phone's half is done.** The first launch signs
+  in anonymously (`netAnon` in `net.js`, called from `boot.js`); `netMember()`
+  is the second question and `obNeed()` asks it at the six things other people
+  see; the door left the onboarding and is opened by `obDoor()`. Buying is
+  untouched — there is no StoreKit to put a door in front of. The SERVER half
+  is not done: `is_member()` still refuses an anonymous account for
+  everything, including its own things, so nothing an anonymous account makes
+  can be stored yet.
+
+### Decision
+- Date: 2026-08-22
+- Area: What being frozen stops
+- Decision: **The SNS side only.** No posting, replying, reacting, following or
+  reporting, and the three sns tabs close. Making a language goes on working.
+- Reason: 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」.
+  Locking the making side takes away offline work, is walked around with flight
+  mode, and misses the point: what hurts is losing the account. Restricting
+  what may be carried OUT was refused for the same reason — a backup that opens
+  on one phone only is a language lost with the phone.
+- Affected features: `is_member()`, the sns tabs, the composer.
+- Affected data: none.
+- Affected docs: `FEATURES.md`, `supabase/setup.md`.
+- Implementation status: partly — writes are stopped, the tabs are not.
+
+### Decision
 - Date: 2026-08-19
 - Area: How a screen is built — four shapes that are banned
 - Decision: 「君あるあるの丸パッチ無限横並び、同じページに情報量詰め込み、ページ
@@ -324,6 +378,10 @@ instead of appearing here.
      |---|---|---|
      | Plus | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.plus.yearly` |
      | Studio | `com.tokinets.lingua.studio.monthly` | `com.tokinets.lingua.studio.yearly` |
+
+     Studio's two are **not created yet** — see the status line at the foot of
+     this decision. The ids stay written down because they can never change
+     once they exist, and the day Studio ships it has to use these.
 
   3. Prices, in US dollars. Every other country is Apple's automatic
      conversion unless somebody sets it by hand:
@@ -541,9 +599,11 @@ for.
 - Affected features: every `plus` row in FEATURES.md
 - Affected data: none by itself
 - Affected docs: FEATURES.md, PAID_FEATURES.md
-- Implementation status: `words` `letters` `wsys` `snd` `gram` `data` `file`
-  `kb` are implemented, and flick and free placement are already in the
-  keyboard editor. Vertical / RTL and translation are not built.
+- Implementation status (2026-08-21): `words` `letters` `wsys` `snd` `gram`
+  `data` `file` `kb` are implemented, and flick and free placement are already
+  in the keyboard editor. Vertical / RTL is built — `dir` in `CAN`, and a post
+  carries the direction it was written in. Translation is built as layer three
+  — `tr` in `CAN`, `TR_FREE_DAILY` three a day on free.
 
 ### Decision
 - Date: 2026-08-12
@@ -554,10 +614,12 @@ for.
 - Affected features: AI suggestions, AI conversation
 - Affected data: `SET.aiDate` / `SET.aiN` (the daily counter)
 - Affected docs: PAID_FEATURES.md, FEATURES.md
-- Implementation status: **NOT implemented, and the code contradicts it.**
-  `CAN.ai` is `'plus'` today, which makes the model unmetered at Plus. Exactly
-  how many chats a day Plus gets is a threshold and has not been decided;
-  `AI_FREE_DAILY` is 3 for everybody who is not unmetered.
+- Implementation status (2026-08-21): **moot.** There is no AI. `AI_SEAM` in
+  `www/glyph.js` marks where a hosted model would join and nothing joins it, so
+  Studio — the tier that sold it — is out, and with it went `CAN.ai`,
+  `AI_FREE_DAILY`, `SET.aiDate`/`SET.aiN`, the suggestion chips and the
+  conversation chapter. The question this decision answers comes back the day
+  the seam has something behind it.
 
 ### Decision
 - Date: 2026-08-12

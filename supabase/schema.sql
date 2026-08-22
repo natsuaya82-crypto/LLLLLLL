@@ -64,6 +64,31 @@ create table if not exists profile (
 -- one for a post.
 alter table profile add column if not exists av jsonb;
 
+-- Whoever answers the reports. It is set by hand in the Supabase dashboard and
+-- by nothing else: no policy below writes it, and the column is taken out of
+-- what an account may update at the foot of this file. An app that could make
+-- somebody staff would be an app where being reported is a thing you can vote
+-- your way out of.
+--
+-- It is not a role, a tier or a badge. It answers one question -- may this
+-- account read reports and take a post down -- and the day it has to answer a
+-- second one it should become a table of its own rather than a second boolean.
+alter table profile add column if not exists staff boolean not null default false;
+
+-- And whoever has been ejected. A timestamp rather than a boolean beside a
+-- date, for the same reason post.hidden_at is one: two columns that have to
+-- agree about whether something happened are two columns that can disagree.
+--
+-- What it does is one line in is_member() below, which every policy for
+-- something OTHER PEOPLE SEE asks. It is not in has_account(), so being frozen
+-- stops the timeline and not the work: somebody ejected can still read, can
+-- still write their own language, and can still delete their account, because
+-- account_delete() does not ask is_member() either and must not -- being
+-- thrown out of a place is not a reason to be locked out of the door marked
+-- exit. 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」
+alter table profile add column if not exists banned_at timestamptz;
+alter table profile add column if not exists banned_why text;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.
@@ -80,7 +105,14 @@ alter table profile add column if not exists av jsonb;
 -- promise that is true.
 create table if not exists language (
   id           uuid primary key default gen_random_uuid(),
-  owner        uuid not null references profile(id) on delete cascade,
+  -- The ACCOUNT, not the person. auth.users and not profile, because a
+  -- language is made on the first launch by an anonymous account and an
+  -- anonymous account has no profile row: a handle is what a profile IS, and
+  -- a handle is the thing nobody has been asked for yet.
+  --
+  -- post.author stays on profile for the same reason read the other way --
+  -- a post is read by other people and has to be signed.
+  owner        uuid not null references auth.users(id) on delete cascade,
   name         text not null default '',
   -- what the author says others may do with the font and the glyphs. The app
   -- shows this; it does not enforce it. We are the record, not the arbiter.
@@ -89,8 +121,46 @@ create table if not exists language (
   published_at timestamptz,
   created_at   timestamptz not null default now()
 );
+-- And on a database that already has the table, where `create table if not
+-- exists` above did nothing at all. Named rather than left to the default so
+-- that dropping it says which one; `if exists` on both halves so this file
+-- goes on being applied twice in a row by npm run rls.
+alter table language drop constraint if exists language_owner_fkey;
+alter table language add  constraint language_owner_fkey
+  foreign key (owner) references auth.users(id) on delete cascade;
 create index if not exists language_owner_idx on language(owner);
 create index if not exists language_published_idx on language(published_at) where published_at is not null;
+
+-- ---- what a language is made of ---------------------------------------
+-- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
+-- snd, kb, wld -- and they are SLICES here for the same reason they are
+-- slices in www/core.js: one row per slice and not one row per language.
+--
+-- The reason is what happens with two phones. One number for a whole language
+-- means adding a word on one phone and drawing a letter on the other is a
+-- collision, and one of the two has to lose something nobody was arguing
+-- about. Per slice they do not touch each other at all.
+--
+-- Inside one slice the phone merges rather than overwriting -- a word added
+-- here and a word added there are both added -- so what is stored is the
+-- result and not a claim about who was first. `no` goes up by one on every
+-- write and is what says a phone is holding something older than the server:
+-- the phone reads, merges what it has into what came back, and writes with
+-- the number it read.
+--
+-- `body` is text and not jsonb on purpose: it is exactly the string
+-- localStorage holds, which is what bkPack() already writes out to a file,
+-- so there is one shape for a slice and not two that could disagree. The
+-- server never looks inside it.
+create table if not exists slice (
+  language   uuid not null references language(id) on delete cascade,
+  kind       text not null,
+  body       text not null default '',
+  no         bigint not null default 1,
+  at         timestamptz not null default now(),
+  primary key (language, kind)
+);
+create index if not exists slice_language_idx on slice(language);
 
 -- The record that settles arguments without anybody having to judge one.
 -- Append only: no update policy and no delete policy exist for this table, so
@@ -164,6 +234,19 @@ create index if not exists post_language_idx on post(language, created_at desc);
 -- the note at the head of the file.
 alter table post add column if not exists reply_to uuid references post(id) on delete set null;
 create index if not exists post_reply_idx on post(reply_to, created_at) where reply_to is not null;
+
+-- Taken down, rather than deleted. Three reasons, and the third is the one
+-- that decided it: a deletion cannot be undone when the report turns out to be
+-- wrong; the reports about it point at a row that has to still be there; and
+-- the person who wrote it is told what happened by the post still being in
+-- their own timeline with a line on it, instead of by silence.
+--
+-- Nobody may set these but the two functions at the foot of this file. The
+-- author can update their own post -- post_edit below -- and an author who
+-- could clear this could put their own post back up.
+alter table post add column if not exists hidden_at timestamptz;
+alter table post add column if not exists hidden_why text;
+create index if not exists post_hidden_idx on post(hidden_at) where hidden_at is not null;
 
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
@@ -239,7 +322,14 @@ create index if not exists block_actor_idx on block(actor);
 -- can count. `note` is optional and is the person's own words.
 create table if not exists report (
   id         bigint generated always as identity primary key,
-  actor      uuid not null references profile(id) on delete cascade,
+  -- Nullable, and `set null` rather than `cascade`, and both for one reason:
+  -- a report is about somebody ELSE. Cascading it off the reporter meant that
+  -- deleting your own account quietly withdrew every report you had ever
+  -- made, which is a way of clearing the record about a third party that
+  -- nobody chose and nobody would see happen. It survives its author leaving.
+  -- (`who` still cascades: a report about an account that no longer exists is
+  -- about nothing.)
+  actor      uuid references profile(id) on delete set null,
   post       uuid references post(id) on delete cascade,
   who        uuid references profile(id) on delete cascade,
   why        text not null check (why in ('spam','abuse','hate','sexual','other')),
@@ -248,6 +338,13 @@ create table if not exists report (
   check (post is not null or who is not null)
 );
 create index if not exists report_made_idx on report(created_at desc);
+-- Said again for a project that already has the table, the way the head of
+-- this file explains. It was `not null ... on delete cascade` until account
+-- deletion existed to fire it.
+alter table report alter column actor drop not null;
+alter table report drop constraint if exists report_actor_fkey;
+alter table report add constraint report_actor_fkey
+  foreign key (actor) references profile(id) on delete set null;
 
 -- ---------------------------------------------------------------------------
 -- Row level security
@@ -273,11 +370,43 @@ alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
 
--- A signed-in account that is not an anonymous one.
+-- Two questions, and until now they were one.
+--
+-- The app makes an anonymous account at first launch -- no address, no
+-- handle, nobody -- and everything somebody makes belongs to it from the
+-- first minute. So "may this account write" splits along what the write is
+-- FOR:
+--
+--   has_account()  there is an account. Anonymous counts, and frozen counts.
+--                  What it guards is what is nobody else's business: your
+--                  language, and everything filed under it.
+--   is_member()    the account has a name on it and has not been frozen.
+--                  What it guards is everything other people would see.
+--
+-- 「課金とツイートにはログイン必須。それ以外は流さない」
+--
+-- Anonymous is not a lesser account and this is not a trial: attaching an
+-- identity later keeps the same uid, so nothing is copied, moved or claimed
+-- at that moment. The row that was yours goes on being yours.
+create or replace function has_account() returns boolean
+language sql stable as $$
+  select auth.uid() is not null
+$$;
+
+-- A signed-in account that is not an anonymous one, and has not been frozen.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
      and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+     and not exists (select 1 from profile
+                      where id = auth.uid() and banned_at is not null)
+$$;
+
+-- And the one account that answers the reports. Written the same way and read
+-- the same way: a sentence that is true or false about whoever is asking.
+create or replace function is_staff() returns boolean
+language sql stable as $$
+  select exists (select 1 from profile where id = auth.uid() and staff)
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
@@ -291,18 +420,49 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 
 -- language: a published one is readable by anyone; an unpublished one only by
 -- the person who owns it. Only the owner ever writes.
+--
+-- has_account() and not is_member(), and this is the whole of what the split
+-- is for: a language is made on the first launch, by somebody who has not
+-- said who they are and may never say. Publishing one is the other half and
+-- goes through publication below, which does ask is_member() -- putting a
+-- language in front of other people is the same kind of act as posting.
 drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid());
 drop policy if exists language_make on language;
 create policy language_make on language for insert
-  with check (is_member() and owner = auth.uid());
+  with check (has_account() and owner = auth.uid());
 drop policy if exists language_edit on language;
 create policy language_edit on language for update
-  using (is_member() and owner = auth.uid()) with check (owner = auth.uid());
+  using (has_account() and owner = auth.uid()) with check (owner = auth.uid());
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
-  using (is_member() and owner = auth.uid());
+  using (has_account() and owner = auth.uid());
+
+-- slice: nobody else's business. Read and written by whoever owns the
+-- language and by nobody else -- not even for a language that is PUBLISHED,
+-- because publishing is a copy somebody is given and not a door into the
+-- phone. has_account() rather than is_member(), the same as language above:
+-- this is what a first launch writes.
+alter table slice enable row level security;
+drop policy if exists slice_read on slice;
+create policy slice_read on slice for select
+  using (exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
+drop policy if exists slice_make on slice;
+create policy slice_make on slice for insert
+  with check (has_account() and exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
+drop policy if exists slice_edit on slice;
+create policy slice_edit on slice for update
+  using (has_account() and exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()))
+  with check (exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
+drop policy if exists slice_drop on slice;
+create policy slice_drop on slice for delete
+  using (has_account() and exists (select 1 from language l
+                  where l.id = language and l.owner = auth.uid()));
 
 -- publication: everyone reads the record. Anyone may add to it about their own
 -- language. NOBODY updates or deletes it -- those policies do not exist, which
@@ -323,8 +483,15 @@ create policy publication_make on publication for insert with check (
 -- be a request rather than an act, so follow grows an accepted column and its
 -- insert policy stops being "you may follow anyone". That is the real cost of
 -- the feature, and it is a column and a policy rather than a redesign.
+-- Everyone reads, except what has been taken down -- which its own author
+-- still reads, and staff still reads. The author keeps it so that a post going
+-- quiet is something they can see rather than something they have to notice:
+-- www/post.js puts a line on it saying so. Staff keeps it because a decision
+-- that cannot be looked at again cannot be undone.
 drop policy if exists post_read on post;
-create policy post_read on post for select using (true);
+create policy post_read on post for select using (
+  hidden_at is null or author = auth.uid() or is_staff()
+);
 drop policy if exists post_make on post;
 create policy post_make on post for insert with check (is_member() and author = auth.uid());
 drop policy if exists post_edit on post;
@@ -378,13 +545,21 @@ create policy block_make on block for insert
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
 
--- report: written and never read. There is no select policy at all, so nobody
--- using the app can read one -- not the person who wrote it and not the person
--- it is about. It is for whoever is looking at the dashboard, and a person who
--- could read reports could work out who reported them.
+-- report: written by anybody, read by staff. Not by the person who wrote it and
+-- not by the person it is about -- somebody who could read reports could work
+-- out who reported them, and that is true of the reporter too, who would learn
+-- which of their reports had been answered and which had not.
 --
--- No update and no delete either: a report that can be withdrawn by the person
--- it is about is not a report.
+-- It used to have no select policy at all, which meant the only way to see a
+-- report was the Supabase dashboard. Acting on one within a day is a condition
+-- of being in the App Store, and a condition nobody can meet from a laptop
+-- they are not sitting at.
+--
+-- No update and no delete either, for anybody: a report that can be withdrawn
+-- by the person it is about is not a report, and one that staff can delete is
+-- a record of what was decided that does not survive the deciding.
+drop policy if exists report_read on report;
+create policy report_read on report for select using (is_staff());
 drop policy if exists report_make on report;
 create policy report_make on report for insert
   with check (is_member() and actor = auth.uid());
@@ -556,3 +731,94 @@ begin
 end $$;
 revoke all on function account_delete() from public;
 grant execute on function account_delete() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Answering a report
+--
+-- Two functions rather than an update policy, because a policy that let staff
+-- update a post would let staff rewrite what somebody said. These reach one
+-- pair of columns and nothing else.
+--
+-- `security definer` for the same reason account_delete() is: the caller is a
+-- normal account whose own policies do not let it touch somebody else's row.
+-- is_staff() is asked inside, so the definer rights are not a way in.
+-- ---------------------------------------------------------------------------
+create or replace function post_hide(p uuid, reason text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  update post set hidden_at = now(), hidden_why = reason where id = p;
+end $$;
+revoke all on function post_hide(uuid, text) from public;
+grant execute on function post_hide(uuid, text) to authenticated;
+
+-- The other direction, which is why hiding is not deleting.
+create or replace function post_show(p uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  update post set hidden_at = null, hidden_why = null where id = p;
+end $$;
+revoke all on function post_show(uuid) from public;
+grant execute on function post_show(uuid) to authenticated;
+
+-- Ejecting somebody, which is the other half of answering a report and is the
+-- half App Store guideline 1.2 asks for by name. Taking the post down leaves
+-- whoever wrote it free to write it again.
+--
+-- It is not a deletion and it is not a sign-out. is_member() above stops
+-- everything they would WRITE and nothing they can read, and account_delete()
+-- goes on working: being thrown out is not a reason to be trapped inside.
+create or replace function account_ban(p uuid, reason text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  -- Which would be a mistake and not an intention. Unbanning yourself would
+  -- still work -- is_staff() is a different question from is_member() -- so
+  -- this is a guard against a slip, not against being locked out.
+  if p = auth.uid() then raise exception 'not yourself'; end if;
+  update profile set banned_at = now(), banned_why = reason where id = p;
+end $$;
+revoke all on function account_ban(uuid, text) from public;
+grant execute on function account_ban(uuid, text) to authenticated;
+
+create or replace function account_unban(p uuid)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  update profile set banned_at = null, banned_why = null where id = p;
+end $$;
+revoke all on function account_unban(uuid) from public;
+grant execute on function account_unban(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- The columns nobody may write
+--
+-- Row level security says which ROWS an account may change. It has nothing to
+-- say about which columns, so `profile_edit` -- "you may edit yourself" -- was
+-- also "you may make yourself staff" and "you may lift your own ban", and
+-- `post_edit` -- "you may edit your own post" -- was also "you may put your own
+-- post back up". Each is one UPDATE with one extra field in it.
+--
+-- Column privileges are the tool for that, and they have to be said this way
+-- round: revoking one column from a role that holds UPDATE on the whole table
+-- does nothing at all (PostgreSQL warns and carries on), because the
+-- table-level grant covers every column there is and every column there will
+-- be. So the table-level grant goes, and what may be updated is named.
+--
+-- Which means a column added later is not updatable until it is added to one
+-- of these lines. That is the right way round -- a new column is not writable
+-- by accident -- and it is why the lines list what the policies above are
+-- ABOUT rather than "everything except the two".
+--
+-- service_role is not touched. The dashboard is where staff is set.
+-- Said after the tables and the policies because the columns have to exist.
+-- ---------------------------------------------------------------------------
+revoke update on profile from anon, authenticated;
+grant  update (handle, display, av) on profile to anon, authenticated;
+revoke update on post from anon, authenticated;
+grant  update (body, language, prompt, reply_to) on post to anon, authenticated;

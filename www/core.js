@@ -147,6 +147,31 @@ try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
 }catch(e){}
+/* Except the plan, on a phone.
+   The settings are a file inside the app, and that file is in the backup a
+   phone makes onto a PC -- which can be opened, edited and restored with free
+   tools and no jailbreak. So the plan is in the Keychain instead, and the
+   native side has already put it in `window.__plan`: it is a script injected
+   before this one rather than an answer to a plugin call, because what a free
+   plan looks like is decided on the first frame and a call comes back after
+   it. ios/App/App/LinguaPlan.swift is the other half, and says what this does
+   not stop.
+
+   In a browser, and in every check under tools/, there is no native side and
+   the settings hold the plan exactly as they always did. */
+var PLAN_NATIVE=(typeof window.__plan==='string');
+if(PLAN_NATIVE){
+  /* Empty means the Keychain has never been written -- a fresh install, or
+     one that predates this and still has the plan in its settings. Both are
+     answered the same way: take whatever is there and put it where it now
+     belongs, once. */
+  if(window.__plan) SET.plan=window.__plan;
+  else planKeep(SET.plan||'free');
+  /* Whatever copy is still in the file goes out with the next save, which
+     setOnDisk() below is what makes true. Taking it out here as well was
+     written first and did nothing: the save that boot does anyway put it
+     straight back, so the one place that decides is the save. */
+}
 
 /* Switch which language is open. Order matters: the language that is open
    when this is called has to be written out before langId changes, or its
@@ -169,7 +194,7 @@ function save(){
     localStorage.setItem(langKey('lines'),JSON.stringify(LINES));
     localStorage.setItem(langKey('lang'),langName);
     localStorage.setItem(langKey('script'),JSON.stringify(SCRIPT));
-    localStorage.setItem(LS_S,JSON.stringify(SET));
+    localStorage.setItem(LS_S,JSON.stringify(setOnDisk()));
     /* the index carries the name so a list of languages can be shown without
        opening each one to find out what it is called */
     if(LANGS[langId]) LANGS[langId].name=langName;
@@ -283,6 +308,26 @@ var PLANS=[
    with it. Nothing was thrown away: it is in the history under this commit. */
 var FREE_LIMIT=100;
 function plan(){ return SET.plan||'free'; }
+/* What of the settings goes to the file. Everything, except on a phone, where
+   the plan is in the Keychain and a second copy in an editable file would be
+   the copy that decides: the next save would put it back over the top. */
+function setOnDisk(){
+  var out={}, k;
+  for(k in SET) if(Object.prototype.hasOwnProperty.call(SET,k)) out[k]=SET[k];
+  if(PLAN_NATIVE) delete out.plan;
+  return out;
+}
+/* Written down when somebody has just changed it, and not waited for. What
+   this session uses is the value in memory; a Keychain that refused the write
+   is a phone that answers with the old plan at the next launch, and the old
+   plan is the free side of wrong on an upgrade -- which is the side the rule
+   in docs/PAID_FEATURES.md asks for, and which StoreKit corrects the moment
+   it is asked again. */
+function planKeep(id){
+  var P=window.Capacitor && Capacitor.Plugins, p=P && P.LinguaPlan;
+  if(!p) return;
+  try{ p.write({plan:String(id||'free')})['catch'](function(){}); }catch(e){}
+}
 function has(level){ /* level: 'plus' */
   return (level==='plus')? plan()==='plus' : true;
 }

@@ -331,6 +331,84 @@ const back = await pg.evaluate(async () => {
                'and a brand new language all look like — refusing it is the failure ' +
                'this whole design was built to avoid.');
 
+  /* ---- the two copies of one language, put together --------------------
+     A language belongs to the account now, so it exists twice: on the phone,
+     where it is made, and on the server, where it is kept. Putting them back
+     together is the same rule as a restore one step further out, and it is
+     the same danger: the way a copy destroys somebody's work is by WINNING.
+
+     syMerge() in www/sync.js is what decides, and every line below is a
+     shape somebody would lose an afternoon to. No server is stood up: what
+     is under test is what a slice IS, which is a string on both sides. */
+  const J = (x) => JSON.stringify(x);
+  const M = (kind, mine, theirs) => JSON.parse(syMerge(kind, J(mine), J(theirs)) || 'null');
+  const hws = (a) => (a || []).map((w) => w.hw).join(',');
+
+  /* The case the owner named: a word added here, a word added there.
+     「そりゃあ両方足すだろ」 Both, and the phone's own order first. */
+  const both = M('words', [{ hw: 'kano' }, { hw: 'yama' }],
+                          [{ hw: 'kano' }, { hw: 'kawa' }]);
+  if (hws(both) !== 'kano,yama,kawa')
+    fails.push('a word added on this phone and a word added on another came back as ' +
+               J(hws(both)) + '. Both are added, and neither is anybody\u2019s to drop');
+
+  /* The same word on both sides is one word, not two. */
+  if (M('words', [{ hw: 'kano', mn: 'mountain' }], [{ hw: 'kano', mn: 'hill' }]).length !== 1)
+    fails.push('one word written on two phones came back as two words. The headword ' +
+               'is what a word IS here');
+
+  /* A letter is its id and not its shape: draw over a letter on one phone and
+     it is still that letter, not a second one under the same name. */
+  const lts = M('letters', [{ id: 'lA', st: [1] }], [{ id: 'lA', st: [2] }, { id: 'lB' }]);
+  if (lts.length !== 2 || lts[0].id !== 'lA' || J(lts[0].st) !== J([1]))
+    fails.push('redrawing a letter on this phone and adding one on another came back ' +
+               'as ' + J(lts) + '. Two letters, and the redrawn one is this phone\u2019s');
+
+  /* A slice with no id of its own -- a note, a line -- is its own name. Two
+     different notes are two notes; the same note twice is one. */
+  if (M('notes', [{ t: 'a' }], [{ t: 'b' }]).length !== 2)
+    fails.push('two different notes came back as one, so one of them is gone');
+  if (M('notes', [{ t: 'a' }], [{ t: 'a' }]).length !== 1)
+    fails.push('the same note on both phones came back as two');
+
+  /* Nested, which is what SCRIPT and STG are. A merge that stopped at the top
+     level would take one phone's whole drawn script over the other's -- and
+     it would look perfectly right, because what came back IS a script. */
+  const sc = M('script', { g: { a: [[1]] }, extra: ['x'] },
+                          { g: { b: [[2]] }, extra: ['y'] });
+  if (!sc.g.a || !sc.g.b)
+    fails.push('a letter drawn on this phone and a letter drawn on another came back ' +
+               'as ' + J(sc.g) + '. The drawn script is nested and has to be gone into');
+  if (J(sc.extra) !== J(['x', 'y']))
+    fails.push('the letters nobody has used yet came back as ' + J(sc.extra) +
+               ' rather than both');
+  /* And where the two disagree about the same thing, the phone keeps its own:
+     this is called with what came off the SERVER as `theirs`, and a language
+     is edited on a phone. */
+  const st = M('phases', { done: { sound: true }, set: { x: 1 } },
+                         { done: { sound: false, word: true }, set: { x: 2 } });
+  if (st.done.sound !== true || st.set.x !== 1)
+    fails.push('where the two copies disagree the phone did not keep its own: ' + J(st));
+  if (st.done.word !== true)
+    fails.push('a stage finished on the other phone was dropped');
+
+  /* Nothing on one side is not a merge, and this is the case that actually
+     happens: a new phone, a reinstall, storage reclaimed. */
+  if (syMerge('words', '', J([{ hw: 'kano' }])) !== J([{ hw: 'kano' }]))
+    fails.push('a phone with nothing on it did not take the copy from the server, ' +
+               'which is what a reinstall is');
+  if (syMerge('words', J([{ hw: 'kano' }]), '') !== J([{ hw: 'kano' }]))
+    fails.push('a language that has never been up was emptied by a server that has ' +
+               'never heard of it');
+  /* And wreckage is not a smaller language. Neither side is parseable here,
+     so nothing may be decided and the phone's own stands. */
+  if (syMerge('words', 'not json', J([{ hw: 'kano' }])) !== 'not json')
+    fails.push('a slice that will not read back was replaced by the server\u2019s. ' +
+               '"Empty" and "broken" are different states');
+  /* The name of a language is the one slice that is not JSON at all. */
+  if (syMerge('lang', 'Vaska', 'Shango') !== 'Vaska')
+    fails.push('the language was renamed by the other phone without being asked');
+
   return { fails };
 });
 
@@ -369,3 +447,7 @@ console.log('        goes up and never down.');
 console.log('        A restore falls through unreadable generations to a good one,');
 console.log('        prefers a good file to wreckage in storage, refuses to write');
 console.log('        wreckage out, and writes an empty language without complaint.');
+console.log('        Two copies of one language are put together rather than one');
+console.log('        winning: a word added here and a word added there are both');
+console.log('        added, a letter redrawn stays one letter, and a drawn script');
+console.log('        is gone into rather than replaced whole.');

@@ -40,19 +40,22 @@ function snsNoneFo(){
    「最初からオンライン前提で作れ」
 
    The making side is untouched and stays untouched. A language is made on
-   this phone, with or without an account -- 「アカウントなしで続ける」 is a
-   line on the door and it means exactly that. What it does not buy is a
-   timeline.
+   this phone, with or without a name on the account.
 
-   One door and not a second one: obDoorHTML() is what the app opens with, so
-   signing in on day one and signing in from the feed are the same screen
-   rather than two that could drift. Without the skip line -- obSkip() means
-   "go and draw a letter", and somebody standing in the timeline has a
-   language already. */
+   What this answers is narrower than it was, and it is not "sign in": the
+   app signs itself in at first launch, so there IS a session on every phone
+   that has ever had a signal, and the three tabs open on it. This is the
+   one case left -- no session at all, which is a first launch with no
+   network. The door is what to show, because a session is what is missing
+   and the door is where one comes from.
+
+   Who you ARE is asked elsewhere and one press later: obNeed(), at the six
+   things other people would see. One door and not a second one either
+   way -- obDoorHTML() is the same screen wherever it is shown. */
 function snsLocked(r){
   OBM.mode='in'; OBM.msg='';
   return '<div class="view">'+rootTop(r)+
-    '<div class="body"><div class="ob center">'+obDoorHTML(false)+'</div></div>'+
+    '<div class="body"><div class="ob center">'+obDoorHTML()+'</div></div>'+
     '</div>';
 }
 /* ---- the two timelines -------------------------------------------------

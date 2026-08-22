@@ -30,6 +30,17 @@
                            time they open the app after the update
      4. a fresh install    nothing to migrate, so one empty language of their
                            own, not zero and not a broken half-language
+     6. the plan moved     it leaves the settings file for the Keychain, and
+                           the file stops deciding. This is the one case where
+                           the migration is the point rather than the risk:
+                           the file is what a PC backup lets somebody edit
+     7. the session        the app signs itself in. A phone with nothing
+                           stored comes up holding an anonymous account it
+                           never had, that account is signed in and is NOT
+                           somebody, and a session already on a phone from
+                           before this existed is still somebody. This is
+                           stored data too -- lingua.sess grew a key -- and
+                           getting it wrong signs a paying customer out
      5. switching          opening a second language puts the first one away
                            and brings the second one out -- all of it, and
                            nothing of the first. This is the one that can lose
@@ -39,7 +50,7 @@
                            next time A is saved. Nothing on screen would look
                            wrong at any point
 
-   Exit code is 0 only when all four hold.
+   Exit code is 0 only when all seven hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -161,6 +172,81 @@ const lacks = (label, got, unwanted) => {
 
 const br = await chromium.launch(fs.existsSync(CHROME) ? { executablePath: CHROME } : {});
 const pg = await br.newPage();
+/* The phone, when a case asks for one. ios/App/App/LinguaPlan.swift reads the
+   Keychain and injects the plan as a script before anything else runs, so
+   there is nothing to await and nothing to stub except the value itself --
+   and the one call that writes it back. Asleep unless `__test.keychain` is
+   there, so the five cases above run in the browser they always ran in. */
+await pg.addInitScript(() => {
+  let box = null;
+  try { box = JSON.parse(localStorage.getItem('__test.keychain') || 'null'); } catch (e) {}
+  if (!box) return;
+  window.__plan = box.plan;
+  window.__wrote = [];
+  window.Capacitor = window.Capacitor || {};
+  window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+  window.Capacitor.Plugins.LinguaPlan = {
+    write: (o) => {
+      window.__wrote.push(o.plan);
+      try {
+        localStorage.setItem('__test.keychain', JSON.stringify({ plan: o.plan }));
+      } catch (e) {}
+      return Promise.resolve();
+    },
+  };
+});
+/* And the server, when a case asks for one. There is no Supabase on a Linux
+   runner and there must not be one: what is under test is what the PHONE does
+   with an answer, not what the answer is. Asleep unless `__test.net` is there,
+   and read on every request rather than once, so a case can change its mind
+   half way through -- which is what signing in over an anonymous account is.
+
+     refresh: 'anon'   | 'member'   the token endpoint hands back a session
+              'dead'                the token is no longer accepted (400)
+              'off'                 no signal at all (status 0), which is not
+                                    the same thing and must not be treated as
+                                    if it were */
+await pg.addInitScript(() => {
+  let on = false;
+  try { on = localStorage.getItem('__test.net') !== null; } catch (e) {}
+  if (!on) return;
+  const knob = () => {
+    try { return JSON.parse(localStorage.getItem('__test.net') || '{}'); }
+    catch (e) { return {}; }
+  };
+  const b64 = (o) => btoa(JSON.stringify(o))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  /* A real JWT's middle third and nothing else: netAnonTok() reads
+     is_anonymous off the token, so a stub that answered `user.is_anonymous`
+     and left the token blank would be testing a claim nothing reads. */
+  const sess = (anon, uid) => JSON.stringify({
+    access_token: 'h.' + b64({ sub: uid, is_anonymous: anon }) + '.s',
+    refresh_token: 'r-' + uid,
+    user: { id: uid, is_anonymous: anon },
+  });
+  window.__sent = [];
+  function Fake(){ this.readyState = 0; this.status = 0; this.responseText = ''; }
+  Fake.prototype.open = function (m, u){ this._m = m; this._u = u; };
+  Fake.prototype.setRequestHeader = function (){};
+  Fake.prototype.send = function (){
+    const self = this, u = String(self._u || '');
+    window.__sent.push(u);
+    let status = 200, out = '[]';
+    if (u.indexOf('/auth/v1/signup') >= 0) out = sess(true, 'u-anon');
+    else if (u.indexOf('/auth/v1/token') >= 0) {
+      const m = knob().refresh;
+      if (m === 'dead') { status = 400; out = '{"error":"invalid_grant"}'; }
+      else if (m === 'off') { status = 0; out = ''; }
+      else out = sess(m !== 'member', m === 'member' ? 'u-them' : 'u-anon');
+    }
+    setTimeout(() => {
+      self.readyState = 4; self.status = status; self.responseText = out;
+      if (status === 0) { if (self.onerror) self.onerror(); return; }
+      if (self.onreadystatechange) self.onreadystatechange();
+    }, 0);
+  };
+  window.XMLHttpRequest = Fake;
+});
 await pg.goto(`http://localhost:${PORT}/`);
 
 /* ---- 1 and 2: an old install ------------------------------------------- */
@@ -293,6 +379,131 @@ want('and its name', A2.name, 'Vaska');
 want('and its drawn script', A2.script, 't');
 want('and its sounds', A2.snd, 't,u,f');
 
+/* ---- 6: the plan leaves the file ---------------------------------------
+   `lingua.set` is inside the app, and the app is inside the backup a phone
+   makes onto a PC. Opening that backup, changing one word and restoring it
+   needs no jailbreak, which made it the lowest door in the building. So the
+   plan is in the Keychain now, and these are the two things that has to mean:
+   what was already bought comes across by itself, and the file stops being
+   listened to afterwards. */
+/* Asked of the parsed file rather than of its text: lacks() above splits on
+   commas, which is right for a list of letter ids and finds nothing at all in
+   a line of JSON. */
+const planInFile = () => pg.evaluate(() => {
+  try {
+    const f = JSON.parse(localStorage.getItem('lingua.set') || 'null');
+    return !!(f && Object.prototype.hasOwnProperty.call(f, 'plan'));
+  } catch (e) { return false; }
+});
+const nativeIs = (plan, settings) => pg.evaluate(([p, st]) => {
+  localStorage.setItem('__test.keychain', JSON.stringify({ plan: p }));
+  if (st !== null) localStorage.setItem('lingua.set', st);
+}, [plan, settings === undefined ? null : settings]);
+
+/* 6a. somebody who is already paying, on the launch after the update: the
+   Keychain has never been written, and the settings still hold the plan. */
+await pg.evaluate(() => localStorage.clear());
+await nativeIs('', '{"theme":"dark","plan":"plus"}');
+await pg.reload();
+want('a plan already bought comes across',
+     await pg.evaluate(() => plan()), 'plus');
+want('and is written where it now lives',
+     await pg.evaluate(() => (window.__wrote || []).join(',')), 'plus');
+want('and is taken out of the file it came from', await planInFile(), false);
+
+/* 6b. the same phone, with the file edited the way a restored backup would
+   edit it. This is the whole reason for the move: the answer is the Keychain's
+   'free', not the file's 'plus'. */
+await nativeIs('free', '{"theme":"dark","plan":"plus"}');
+await pg.reload();
+want('the file no longer decides what the plan is',
+     await pg.evaluate(() => plan()), 'free');
+
+/* 6c. and nothing puts it back. A save writes the settings whole, and a save
+   that carried the plan would hand the file its say again on the next load. */
+await pg.evaluate(() => { SET.theme = 'light'; save(); });
+want('and a save does not write it back into the file', await planInFile(), false);
+want('while the app still knows what it is',
+     await pg.evaluate(() => plan()), 'free');
+
+/* ---- 7: the app signs itself in ----------------------------------------
+   Opening Lingua makes an account. Nobody types anything and nobody is asked
+   anything, and what comes back has no name on it -- which is the whole of
+   what has to hold here: signed in and NOT somebody are two answers now, and
+   they used to be one.
+
+   The danger this holds is the third case. `lingua.sess` grew a key, and a
+   phone that has been signed in for months does not have it; reading its
+   absence as "anonymous" would take the timeline away from every account
+   that exists. */
+const SESSION = () => ({
+  inn: netSignedIn(), member: netMember(), uid: (SESS && SESS.uid) || '',
+  anon: !!(SESS && SESS.anon),
+  signup: (window.__sent || []).filter((u) => u.indexOf('/auth/v1/signup') >= 0).length,
+});
+const netIs = (refresh, sess) => pg.evaluate(([r, sv]) => {
+  localStorage.clear();
+  localStorage.setItem('__test.net', JSON.stringify({ refresh: r }));
+  if (sv !== null) localStorage.setItem('lingua.sess', sv);
+}, [refresh, sess === undefined ? null : sess]);
+/* Fired and not waited for -- boot.js does not hold the app up for a network
+   -- so the answer lands a beat after the page is up. */
+const settle = () => pg.waitForTimeout(120);
+
+/* 7a. a phone with nothing on it at all. */
+await netIs('dead', undefined);
+await pg.reload();
+await settle();
+const s1 = await pg.evaluate(SESSION);
+want('a first launch asks for an account', s1.signup, 1);
+want('and comes up signed in', s1.inn, true);
+want('and it is an anonymous one', s1.anon, true);
+want('so nobody is anybody yet', s1.member, false);
+
+/* 7b. the same phone opened again: one account, not one per launch. */
+await pg.evaluate(() => localStorage.setItem('__test.net', JSON.stringify({ refresh: 'anon' })));
+await pg.reload();
+await settle();
+const s2 = await pg.evaluate(SESSION);
+want('the next launch makes no second account', s2.signup, 0);
+want('and is still signed in', s2.inn, true);
+want('and still nobody', s2.member, false);
+
+/* 7c. somebody who has been signed in since before any of this. Their stored
+   session has no `anon` key at all, and the phone has no signal, so nothing
+   comes back to say what it is: the answer has to come from what is stored,
+   and it has to be "a member". */
+await netIs('off', JSON.stringify({ at: 'old-at', rt: 'old-rt', uid: 'u-them' }));
+await pg.reload();
+await settle();
+const s3 = await pg.evaluate(SESSION);
+want('a session from before this key is still somebody', s3.member, true);
+want('and is left alone', s3.uid, 'u-them');
+want('and no account is made behind their back', s3.signup, 0);
+
+/* 7d. and the same session, refused. It is gone, which is a state and not a
+   failure -- and the app is not left with nothing, because everything made
+   from here belongs to an account. */
+await netIs('dead', JSON.stringify({ at: 'old-at', rt: 'old-rt', uid: 'u-them' }));
+await pg.reload();
+await settle();
+const s4 = await pg.evaluate(SESSION);
+want('a refused token is replaced rather than left empty', s4.inn, true);
+want('by an anonymous one', s4.anon, true);
+want('which is nobody', s4.member, false);
+
+/* 7e. and the anonymous account becoming somebody. The uid changes here
+   because the stub is two accounts; on a phone Supabase links the identity to
+   the same one. What is under test is the phone: the moment a token with a
+   name on it arrives, this is a member. */
+const s5 = await pg.evaluate(() => new Promise((res) => {
+  localStorage.setItem('__test.net', JSON.stringify({ refresh: 'member' }));
+  netSignIn('a@b.c', 'pw',
+    () => res({ member: netMember(), anon: !!(SESS && SESS.anon) }),
+    () => res({ member: null, anon: null }));
+}));
+want('signing in over it makes somebody', s5.member, true);
+want('and the session stops being anonymous', s5.anon, false);
 /* ---- the twenty-eight slots a free language is given ---------------------
    ltStart names them a to z, ! and ?, and gives each one what its name reads.
    Every one of those readings has to be a sound the chart actually has: a
@@ -337,4 +548,8 @@ if (fails.length) {
   process.exit(1);
 }
 console.log('migration: an old install opens with everything in it, twice over, ' +
-            'and a new one starts with a language of its own.');
+            'and a new one starts with a language of its own.\n' +
+            '           A plan already bought moves itself out of the settings file ' +
+            'and into\n           the Keychain, and the file stops being listened to.\n' +
+            '           The app signs itself in, once, and a session that was ' +
+            'somebody\n           before any of this still is.');

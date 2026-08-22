@@ -15,6 +15,212 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A language is kept on the server, and two copies are put together rather than one winning
+
+Everything somebody makes belongs to the account — 「全部アカウントごとでしょ」
+「クラウドは全員で」 — so a language exists twice now: on the phone, where it is
+made, and on the server, where it is kept. The making side is untouched and
+stays untouched: nothing waits for a network, and a language is written on a
+phone in a tunnel exactly as it was.
+
+**Stored, on the server:** a new table, `slice` — `(language, kind)` as its
+key, plus `body`, `no` and `at`. One row per slice of `SLICES`, holding
+exactly the string `localStorage` holds, which is the same string `bkPack()`
+writes into a backup file, so a slice has one shape and not two that could
+disagree. The server never looks inside it. Its policies ask
+`has_account()`, so a first launch can write one, and its **select** policy is
+the owner's alone — the one table in `schema.sql` with no public face, not
+even for a published language, because publishing is a copy somebody is given
+and not a door into the phone.
+
+**Stored, on the phone:** `LANGS[id].sid`, the server's name for the language,
+the same way a post carries one. A language with no `sid` has never been up.
+
+**A row per slice and not per language, and that is the point.** One number
+for a whole language means adding a word on one phone and drawing a letter on
+the other is a collision, and one of the two has to lose something nobody was
+arguing about. Per slice they never touch.
+
+**Inside one slice, both are added.** 「そりゃあ両方足すだろ」 `www/sync.js`
+(chapter 26) is the new file and the whole of what decides: a word added here
+and a word added there are both there afterwards, in this phone's order first.
+A word is its headword and a letter is its id, so redrawing a letter leaves
+one letter rather than two under the same name; a slice with no id of its own
+— a note, a line — is its own content, so two different notes are two and the
+same note twice is one. `SCRIPT` and `STG` are nested and are gone into rather
+than replaced whole, or a letter drawn on one phone would take the other
+phone's entire script with it. Where the two genuinely disagree about the same
+thing the phone keeps its own.
+
+What that costs is a duplicate rather than a deletion: edit the same note on
+two phones and there are two notes afterwards, one to throw away. That is the
+trade, made on purpose — a duplicate is on the screen and a deletion is not
+there to be noticed. `docs/DATA_SAFETY.md`: the way a copy destroys somebody's
+work is by winning.
+
+`netLangSync()` in `net.js` is fired from `boot.js` after the session and
+never waited for. Read, merge, write back whatever moved — in that order, so
+a phone that has been offline for a week arrives holding the week rather than
+replacing it. A failure is silence.
+
+`backup-check` holds the merge — eleven shapes, each one an afternoon somebody
+would lose — and `npm run rls` holds the table: **116 attempts, 20 shapes**,
+ten of them new against `slice`. All watched failing: the merge with the
+server's copy winning outright (6 red) and with the nesting taken out (3 red),
+and the read policy opened to everybody (3 red).
+
+
+### The timeline is sent a small copy of a photograph, not the photograph
+
+A row shows a picture a few hundred pixels across and was being sent one nine
+hundred across. Nothing looked wrong and nothing could: the browser scales it
+down on arrival, so the only difference is the bytes — and bytes are the one
+thing a screenshot cannot show. The timeline is also the only thing in this
+app that anybody scrolls.
+
+A picture now goes up as **two files**: the photograph at `POST_PIC` (900) and
+a small copy at `POST_THUMB` (300), made by `postThumb()` in `post.js` at the
+moment it is uploaded. Measured on the check's own picture: **2 KB against
+7 KB**; on a real photograph it is nearer 8 KB against 80. Pressing a picture
+still opens the photograph.
+
+**Stored:** a post gains `pt`, the small copies' paths in Storage, beside
+`pu`. Nothing is stored on the phone for it — the small copy exists only in
+Storage, so `POST_BYTES` is untouched. `pt` is allowed to have a **hole** in
+it: a small copy that failed to upload leaves its slot empty and
+`postThumbs()` draws the photograph in that slot. It is indexed rather than
+pushed for exactly that reason — a list that closed the hole would put picture
+two's thumbnail under picture one, which is the wrong picture shown with
+nothing throwing. Deleting a post deletes the small copies too
+(`netDropFiles`), or they would sit in a public bucket with nothing pointing
+at them.
+
+Why it was worth doing before anything else online: egress is what runs out
+first on a $25 Supabase — 250 GB included, $0.09/GB after — and at full size
+that is about 800 people opening the app daily. At a tenth of the bytes it is
+about eight thousand.
+
+`post-check` § 12 holds it, in two places on purpose. `postThumbs()` is asked
+directly — the size of the small copy, that a picture already smaller than
+`POST_THUMB` gets no second file at all, that a hole falls back **in its own
+place** at either end of the list, and that the viewer still gets the
+photograph — and then the **row a timeline actually draws** is asked, with the
+photograph's own URL forbidden in it. The second is not the first: the first
+version of this check passed with the row still drawing full-size pictures,
+because a function can be perfectly correct and simply never be the one that
+runs. Both were watched failing.
+
+
+### The server has two questions about an account, not one
+
+`is_member()` was the only door in `supabase/schema.sql` and every write stood
+behind it. It refuses an anonymous account — deliberately, since the day it
+was written — so the account the app now makes at first launch could not store
+one byte of anything.
+
+It is two questions now, and they split along what the write is **for**:
+
+- `has_account()` — there is an account. Anonymous counts, and frozen counts.
+  It guards what is nobody else's business: a language, and everything filed
+  under it.
+- `is_member()` — the account has a name on it and has not been frozen.
+  Unchanged, and it still guards everything other people would see.
+
+Only the three `language` policies moved. Publishing a language did **not**:
+`publication_make` still asks `is_member()`, because putting a language in
+front of other people is the same kind of act as posting.
+
+**Stored:** `language.owner` now references `auth.users(id)` instead of
+`profile(id)`. An account exists before a person does — a profile row IS the
+identity, since the handle is `unique not null` — so pointed at `profile` a
+language could not be made until somebody had chosen a handle, which is the
+one thing a first launch does not ask for. `post.author` stays on `profile`,
+read the other way: a post is seen by other people and has to be signed. The
+change is applied to a database that already has the table by a named
+`alter table ... drop constraint if exists` / `add constraint` pair, so the
+file still applies twice in a row. No row moves and nothing is deleted.
+
+A frozen account can now write its own language, which it could not before.
+That is the 2026-08-22 decision — 「制作は好きにやらせればいいし、sns止められ
+ても作りたいやつは作るでしょ」 — and it follows from `has_account()` saying
+nothing about `banned_at`.
+
+`npm run rls`: **106 attempts, 19 shapes.** Nine new attempts as an account
+with no name on it (it makes a language, reads it, renames it; it cannot post,
+take a handle, follow, publish, own somebody else's language, and nobody else
+sees what it made), two as a frozen account still writing its own language,
+and three shape assertions — that `has_account()` mentions neither
+`is_anonymous` nor `banned_at`, that no `language` write policy asks
+`is_member()`, and that `language.owner` points at `auth.users`. Watched
+failing twice: with `language_make` put back to `is_member()` (6 red) and with
+the foreign key put back to `profile` (4 red).
+
+
+### The app opens on a blank square, not on a sign-in screen
+
+Step 0 of the onboarding was the door. It is not a step of anything now: the
+account already exists by the time the first frame is drawn, so the first
+thing anybody sees is the square they draw a letter on. Three steps instead of
+four — draw, which letter it is, its name — and three dots instead of four.
+
+The door is a screen the app goes **to**. `obDoor(r, a)` is the one way in and
+it carries where to come back to; `obPending()` — the note it leaves, which
+has always outlived a reload — is what `vOb()` shows it for, rather than a
+step number. There are no dots over it, because it is not a walk anybody is
+on. Three places open it: Settings → Account, and the six things that need a
+name (`obNeed()`), and that is all.
+
+"Continue without an account" is gone with it, and so is `SET.anon`, which
+that button was the only writer of and nothing has ever read.
+
+Nothing stored changes and nothing is lost: `SET.obback` and `SET.done` are
+the same pair they were.
+
+Three counters moved, and all three are this change. `screens built` 549 →
+548: the step walk renders three screens where it rendered four, because the
+door is no longer one of them. `buttons pressed` 7181 → 7177: the door's own
+buttons were being pressed twice, once as step 0 and once as the `obStates()`
+entry, and are pressed once now — they are still all pressed, from
+`tools/fixture.mjs`, which is where the door's five faces have always come
+from. `distinct names` 206 → 205, and the one that went is `obSkip`. No other
+name was added or removed.
+
+
+### The app makes an account for you, and being somebody is a second question
+
+Opening Lingua signs you in. Nobody types anything and nobody is asked
+anything: the first launch makes an **anonymous account** on the server and
+everything is made under it. 「サインイン必須にしたいけど、オンボーディングで
+離脱されるのは防ぎたい」
+
+That splits one question into two, and they were the same question until now.
+`netSignedIn()` says there is a session — anonymous or not — and `netMember()`
+says the session has somebody's name on it. The second is the phone's copy of
+`is_member()` in `supabase/schema.sql`, which has always refused an anonymous
+token, and it is read off the token itself rather than off the answer that
+carried it, so the phone and the server are reading the same claim.
+
+What that changes on screen: the timeline, the search and the notices open
+without signing in, because there is a session now. Everything **other people
+would see** asks first, and asking is the door: writing a post, liking one,
+boosting one, reporting one, following somebody, blocking somebody. Press one
+without a name and the door opens with the way back to where you were pressed
+into it. 「課金とツイートにはログイン必須。それ以外は流さない」
+
+Buying is the other half of that sentence and is not here: there is no
+StoreKit yet, so the plans screen is untouched.
+
+**Stored:** `lingua.sess` gains one key, `anon`. A session already on a phone
+does not have it, which reads as false — every account that exists today is a
+real one, so nobody is signed out or demoted by the update. Nothing is
+removed and nothing else moves.
+
+`migrate-check` case 7 holds it: a launch with nothing stored comes up holding
+an anonymous session it did not have, that session is signed in and is not a
+member, an old stored session is still a member, and signing in over the
+anonymous one leaves it a member. Watched failing with the boot call taken
+out.
+
 ### 公開と、持ち出してよいかは別 — OWNER DECISION
 
 言語のページを人が開けるかどうかと、その文字と単語を人がダウンロードして

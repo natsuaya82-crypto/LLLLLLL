@@ -418,8 +418,12 @@ const R = await pg.evaluate(() => {
   UI_LANGS.forEach(c => {
     SET.ui = c;
     T_MISS = {};
-    /* onboarding, every step */
+    /* onboarding, every step. The door is shown for SET.obback rather than
+       for a step number now, so the note is cleared before the steps and
+       after the faces -- one left behind hides every step of every language
+       after it. */
     SET.done = false;
+    SET.obback = null;
     for (let s = 0; s < OB_STEPS; s++) { ob.step = s; try { vOb(); } catch (e) { out.miss.push(c + ' vOb step ' + s + ' threw: ' + e.message); } }
     /* and every face a step has, which is the door's five and the borrow
        list -- asked of tools/fixture.mjs, so a face added there is mirrored
@@ -427,7 +431,7 @@ const R = await pg.evaluate(() => {
     window.__obStates().forEach(([label, run]) => {
       try { run(); } catch (e) { out.miss.push(c + ' ob "' + label + '" threw: ' + e.message); }
     });
-    ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in';
+    ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in'; SET.obback = null;
     SET.done = true;
 
     /* every screen, under every plan and every reading mode, empty and full */
@@ -597,12 +601,12 @@ const R = await pg.evaluate(() => {
     while ((a = ATTRS.exec(raw))) words(where, a[1], 'has an attribute reading');
   }
 
-  SET.ui = 'zz'; SET.done = false;
+  SET.ui = 'zz'; SET.done = false; SET.obback = null;
   for (let s = 0; s < OB_STEPS; s++){ ob.step = s; try { look('vOb step ' + s, vOb()); } catch (e) {} }
   window.__obStates().forEach(([label, run]) => {
     try { look('ob "' + label + '"', run()); } catch (e) {}
   });
-  ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in';
+  ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in'; SET.obback = null;
   SET.done = true;
   ['free','plus'].forEach(p => {
     SET.plan = p;

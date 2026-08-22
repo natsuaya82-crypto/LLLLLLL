@@ -53,7 +53,12 @@ export function seed(){
      at all. The DOOR is the face that needs saying out loud now, and it is
      one entry in halfDone() rather than the state everything else is walked
      in. */
-  SESS = { at:'a', rt:'r', uid:'u' };
+  SESS = { at:'a', rt:'r', uid:'u', anon:false };
+  /* anon:false is the half that matters. There is a session from the first
+     launch now whether or not anybody has said who they are, so a fixture
+     that only set `rt` would be walking the app as somebody with no name --
+     and every button that writes would answer with the door instead of doing
+     what it does. */
   WORDS = [
     {hw:'kano', ph:['k','a','n','o'], mn:'mountain', mns:['mountain'], pos:'n', at:1,
      reg:'wr', tags:['land'], ety:'from the word for head', up:2},
@@ -186,26 +191,27 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
-    /* The door itself, which is the sign-in screen: there is no splash in
-       front of it any more. It was never in this list and did not need to be
-       while nothing on it did anything. */
-    ['the door',                  () => { ob.step = 0; ob.mode = ''; OBM.mode = 'in';
-                                          return vOb(); }],
-    ['characters to borrow',      () => { ob.step = 1; ob.mode = 'borrow';
+    /* The door itself, which is the sign-in screen. It is no longer a step
+       of the onboarding and vOb() will not show it for a step number: what
+       puts the app on it is SET.obback, the note saying where it was opened
+       from, so that is what these five set. */
+    ['the door',                  () => { SET.obback = { r: 'set', a: 'acct' };
+                                          OBM.mode = 'in'; return vOb(); }],
+    ['characters to borrow',      () => { SET.obback = null; ob.step = 0; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
-    ['no script picked to borrow from', () => { ob.step = 1; ob.mode = 'borrow';
+    ['no script picked to borrow from', () => { SET.obback = null; ob.step = 0; ob.mode = 'borrow';
                                                 ob.pick = ''; return vOb(); }],
     /* The step where a letter is drawn. Its two buttons -- finish, or skip the
        drawing -- are the last thing a person touches before the app becomes
        the app, and nothing had ever pressed either of them. */
-    ['drawing the first letter', () => { ob.step = 1; ob.mode = ''; return vOb(); }],
+    ['drawing the first letter', () => { SET.obback = null; ob.step = 0; ob.mode = ''; return vOb(); }],
     /* The shape is drawn and the alphabet is under it. This step is the one
        ltNew() used to answer on everybody's behalf, so it is also the one
        nothing had ever walked. */
-    ['choosing which letter the shape is', () => { ob.step = 2; ob.mode = '';
+    ['choosing which letter the shape is', () => { SET.obback = null; ob.step = 1; ob.mode = '';
                                                    ob.lid = (LETTERS[0] || {}).id || '';
                                                    return vOb(); }],
-    ['naming the language',      () => { ob.step = 3; ob.mode = ''; return vOb(); }],
+    ['naming the language',      () => { SET.obback = null; ob.step = 2; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
        so a walk that only ever renders the door presses none of their
        buttons.
@@ -216,20 +222,24 @@ export function obStates(){
        afterwards, so a fixture that tidied up photographed the screen it had
        tidied back to, and three pictures of the door were captioned as three
        different screens. */
-    ['making an account',        () => { ob.step = 0; OBM.mode = 'up';
-                                         return vOb(); }],
-    ['the six digits out of the mail', () => { ob.step = 0; OBM.mode = 'code';
+    ['making an account',        () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'up'; return vOb(); }],
+    ['the six digits out of the mail', () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
     /* The code and the new password, which is where asking for a reset now
        lands. It used to end at a line saying "sent". */
-    ['choosing a new password',  () => { ob.step = 0; OBM.mode = 'reset';
+    ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'reset';
                                          OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
                                          OBM.busy = false; return vOb(); }],
-    ['having forgotten the password',  () => { ob.step = 0; OBM.mode = 'forgot';
+    ['having forgotten the password',  () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'forgot';
                                          return vOb(); }],
     /* Through the door and not yet anybody. Only a signed-in person reaches
        it, so nothing else in this file or in shot.mjs ever renders it. */
-    ['saying who you are',       () => { ob.step = 0; OBM.mode = 'who';
+    ['saying who you are',       () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'who';
                                          OBM.busy = false; return vOb(); }]
   ];
 }
@@ -438,6 +448,46 @@ export function halfDone(){
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
                               const h = FORM.html; rpFor = null; return h; }],
+    /* And the other end of that form, which is one account's and is drawn for
+       nobody else. The row at the foot of the settings list is the only way
+       in, and NET_STAFF is false everywhere else -- so both the door and the
+       room behind it are on no screen at all without these two. */
+    ['the settings list, for whoever answers the reports', () => {
+        NET_STAFF = true; window.route='settings'; NAV=[{r:'settings'}];
+        const h = vSettings(); NET_STAFF = false; return h; }],
+    /* Three reports, because they are three different rows: a post still up,
+       a post already taken down -- which offers to put it back rather than to
+       take it down again -- and a report about an ACCOUNT, which has no post
+       under it and nothing to press. */
+    ['the reports', () => { const keep = MODS;
+        MODS = [{ id:1, why:'spam',  note:'', at:Date.now()-600000,
+                  who:'veth', uid:'u1', out:false,
+                  pid:'ps1', ln:'kano mos tir', down:false },
+                { id:2, why:'abuse', note:'and again this morning',
+                  at:Date.now()-7200000, who:'iri', uid:'u2', out:true,
+                  pid:'ps2', ln:'qel dross', down:true },
+                /* About an account and not a post: nothing to take down, and
+                   the only button on it is the one that matters. */
+                { id:3, why:'other', note:'', at:Date.now()-86400000,
+                  who:'iri', uid:'u2', out:true, pid:'', ln:'', down:false }];
+        window.route='mod'; NAV=[{r:'mod'}];
+        const h = vMod(); MODS = keep; return h; }],
+    /* The reports before the server has answered, and the reports when there
+       are none. Two sentences, and they are not the same sentence. */
+    ['the reports, and there are none', () => { const keep = MODS; MODS = [];
+        window.route='mod'; NAV=[{r:'mod'}];
+        const h = vMod(); MODS = keep; return h; }],
+    /* The composer, for somebody who has been ejected. Every write they make
+       is refused by the server, and the line saying so is on no screen
+       otherwise -- NET_BANNED is empty for everybody else. */
+    ['the composer, for somebody stopped', () => { NET_BANNED = 'spam';
+        PW = pwBlank(); openPost(); const h = vForm();
+        NET_BANNED = ''; PW = pwBlank(); return h; }],
+    /* Your own post, taken down. Only its author is ever handed one, so this
+       is the only screen the line is ever on. */
+    ['your own post, taken down', () => { const p = postById('p1'); p.down = true;
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); delete p.down; return h; }],
     /* Somebody else's profile, the follow button on it, and the same page
        once you follow them. The only profile a walk sees is this person's
        own, and the two cards are different screens. */
