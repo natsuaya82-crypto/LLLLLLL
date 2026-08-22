@@ -73,12 +73,31 @@ function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
    postTomb() is what a thread draws for it. Your OWN stays where it is,
    wearing the chip that says what state it is in: the person it happened to
    is told by their own post. */
-function postAll(){
+/* Everything this phone holds that there is anything left to draw, newest
+   first. Blocked is gone and so is a post that was taken down -- neither has
+   a page it is still shown on.
+
+   A frozen account's posts are NOT dropped here. They come off the timeline
+   and stay on that account's own page, so the sieve for that is one line
+   further down and this list is what the page uses. */
+function postKept(){
   return POSTS.slice().filter(function(p){
       return !postBlocked(p) && !postGone(p);
     })
     .sort(function(a, b){ return (b.at||0)-(a.at||0); });
 }
+function postAll(){
+  return postKept().filter(function(p){ return !postOut(p); });
+}
+/* Written by an account that has been frozen. Off the timeline and NOT gone:
+   the post is still there, on that account's own page, for whoever goes
+   looking. 「タイムラインから外す、プロフィールからは凍結してますの表示。
+   ツイートは自己責任で見れるようにするのは？」
+
+   A freeze can be lifted, which is the other half of why nothing is
+   destroyed here -- the posts come back to the timeline by themselves the
+   next time the server is asked. */
+function postOut(p){ return !!(p && p.out && !p.mine); }
 /* A post that was taken down and is not yours. It arrives with nothing in it
    -- post_seen in supabase/schema.sql empties the body, so the words are not
    on the wire at all -- and there is nothing to draw but the fact of it. */

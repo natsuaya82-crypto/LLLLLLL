@@ -499,11 +499,21 @@ create policy publication_make on publication for insert with check (
 -- The author and the staff are handed the post itself. The author has to be
 -- told by their own post rather than by it turning into a stranger's
 -- tombstone, and staff have to be able to read what they are deciding about.
+--
+-- `author_out` is the one thing on here that is not the post's: whether the
+-- account that wrote it is frozen. It is on the ROW because that is how the
+-- reading side works everywhere in this app -- what a reader needs is put on
+-- the post -- and because the alternative is the phone asking about every
+-- author it sees. A frozen account's posts come off the timeline and stay
+-- readable on the account's own page; the app decides which, and this is
+-- what it decides with.
 create or replace view post_seen as
-  select id, author, language, prompt, reply_to, created_at, hidden_at,
-         case when hidden_at is null or author = auth.uid() or is_staff()
-              then body else '{}'::jsonb end as body
-    from post;
+  select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
+         p.hidden_at,
+         (a.banned_at is not null) as author_out,
+         case when p.hidden_at is null or p.author = auth.uid() or is_staff()
+              then p.body else '{}'::jsonb end as body
+    from post p left join profile a on a.id = p.author;
 grant select on post_seen to anon, authenticated;
 
 -- post: everyone reads, you write as yourself.

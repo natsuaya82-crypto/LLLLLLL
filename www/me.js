@@ -187,9 +187,9 @@ function whoOf(h){
     p=POSTS[i];
     if(String(p.hd||'')===h)
       return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'',
-              bio:p.bio||'', fo:p.fo||0, fr:p.fr||0};
+              bio:p.bio||'', fo:p.fo||0, fr:p.fr||0, out:!!p.out};
   }
-  return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0};
+  return {who:'', hd:h, av:null, lname:'', bio:'', fo:0, fr:0, out:false};
 }
 function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
 /* Who you have blocked, as handles, beside who you follow -- both are the
@@ -255,6 +255,16 @@ function whoMore(h){
 }
 function whoCard(h){
   var p=whoOf(h), on=meFollows(h);
+  /* Frozen, and then nothing else about them. No face, no name, no follow
+     button -- following an account that cannot post is a button with nothing
+     behind it. What is still under this is their posts, which stay readable
+     on their own page and come off the timeline.
+     「タイムラインから外す、プロフィールからは凍結してますの表示」
+
+     A freeze can be lifted, so nothing here is destroyed and the page comes
+     back by itself. */
+  if(p.out)
+    return '<div class="empty"><div class="eb">'+esc(t('who.out'))+'</div></div>';
   return '<div class="mecard">'+
     '<div class="metop">'+
     '<div class="pav">'+postFace(p)+'</div>'+

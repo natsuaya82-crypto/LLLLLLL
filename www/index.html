@@ -1028,6 +1028,9 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .empty{padding:54px 30px;text-align:center}
 .empty .eb{font-family:'Cinzel',Georgia,serif;font-size:1.3rem;margin-bottom:8px}
 .empty .es{color:var(--txm);font-size:.86rem;line-height:1.9}
+/* The one link in the app that leaves it. A button in every way but the tag:
+   a mailto cannot be a <button>, because what opens Mail is the href. */
+.outapp{display:inline-block;margin-top:18px;text-decoration:none}
 
 /* ---------- the dictionary ---------- */
 /* The box is as tall as the field inside it and no taller. It carried ten

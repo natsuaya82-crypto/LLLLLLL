@@ -67,6 +67,13 @@ plan would give, does not tell somebody what to tap, and does not describe what
 a setting means. An empty state, a count, a state, an error — none of those is
 an explanation. Where one is genuinely needed it goes behind the `?` in the
 bar, which is what the `?` is for. 「アプリ内に説明書くの禁止」
+
+**Narrowed on 2026-08-22, and only this far.** 「必要な説明は書いてね。みて
+わからないのが一番ダメ。最低限ね」 Where the app has TAKEN SOMETHING AWAY and
+the screen would otherwise be a state with no cause and no way out, the
+sentence it needs is written — minimum, and nothing beyond it. The frozen
+screen is the case that settled it and the only one that has it. Everything
+in the paragraph above still holds everywhere else.
 → `docs/FEATURE_RULES.md`
 
 **Tests.** A fix is not done until the check that holds it has been **watched

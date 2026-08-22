@@ -115,6 +115,12 @@ function snsPull(){
     render();
   }, function(){ snsPulling=false; });
 }
+/* Where an appeal goes. An address and not a form: a frozen account cannot
+   write a row anywhere -- every write policy in supabase/schema.sql goes
+   through is_member() and that is the whole of what being frozen means -- so
+   a form here would need a table with the door open, which is a door. Mail
+   is a channel that already exists and is not ours to break. */
+var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
 function vFeed(){
   if(!netSignedIn()) return snsLocked('feed');
   snsPull();
@@ -153,7 +159,19 @@ function vFeed(){
        frozen shuts is shut by is_member() in supabase/schema.sql whether or
        not anything on screen says so; this is the saying so. */
     (NET_BANNED
-      ? '<div class="empty"><div class="eb">'+esc(t('post.out'))+'</div></div>'
+      ? '<div class="empty"><div class="eb">'+esc(t('post.out'))+'</div>'+
+          /* The one place in this app that explains itself, and it is here
+             because not knowing is worse than being told: somebody who finds
+             the buttons gone and no sentence anywhere has to guess whether
+             the app is broken. 「必要な説明は書いてね。見てわからないのが
+             一番ダメ。最低限ね」
+
+             Two lines. What is off, and the way to say it is wrong -- a
+             freeze can be lifted, so there has to be somewhere to write. */
+          '<div class="es">'+esc(t('out.what'))+'</div>'+
+          '<a class="btn ghost outapp" href="'+esc(APPEAL)+'">'+
+            esc(t('out.appeal'))+'</a>'+
+        '</div>'
       : list.length
       ? list.map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not

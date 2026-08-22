@@ -402,6 +402,15 @@ const CASES = [
                        join pg_namespace n on n.oid=p.pronamespace
                       where n.nspname='public' and p.proname='account_delete'
                         and p.prosrc not like '%is_member%') = 1`],
+  /* And what everybody else is handed about a frozen account's posts. Not
+     hidden -- the posts stay readable, and the phone takes them off the
+     timeline and leaves them on the account's own page. 「ツイートは自己責任
+     で見れるようにする」 A reader has to be able to tell, so it is on the row
+     rather than being asked about every author a timeline shows. */
+  ['a frozen account\u2019s post says so on the row', 'ok', A, 0,
+    `select 1 from post_seen where author='${B}' and author_out`],
+  ['and A\u2019s does not',                    'ok',     A, 0,
+    `select 1 from post_seen where author='${A}' and not author_out`],
   ['staff lifts it',                          'ok',     C, 0,
     `select account_unban('${B}')`],
   /* A boost and not a like: B liked this post earlier in the file and took

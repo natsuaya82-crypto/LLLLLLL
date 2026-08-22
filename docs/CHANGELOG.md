@@ -15,6 +15,48 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### A frozen account, from the other side — and a way to say it is wrong
+
+**Their posts come off the timeline and stay on their own page.** Nothing is
+deleted and nothing is hidden on the server: a freeze can be lifted, and
+everything comes back by itself the next time the server is asked.
+「タイムラインから外す、プロフィールからは凍結してますの表示。ツイートは自己
+責任で見れるようにするのは？」
+
+**Stored, on the server:** `post_seen` gains `author_out` — whether the
+account that wrote the post is frozen. It is on the ROW, the way everything
+the reading side needs is, rather than the phone asking about every author a
+timeline shows. `postKept()` is the new list (blocked and taken-down
+removed) and `postAll()` is that list with frozen accounts taken off as
+well; a profile uses the first and the timeline the second.
+
+**Their page says so and shows nothing else about them** — no face, no name,
+no follow button, since following an account that cannot post is a button
+with nothing behind it. Their posts are under it.
+
+**And a way to appeal.** `Lingua@tokinets.com`, opened from the frozen
+screen. An address and not a form: a frozen account cannot write a row
+anywhere — every write policy goes through `is_member()`, which is the whole
+of what being frozen means — so a form would need a table with the door open,
+and that door is the thing being closed. **The alias is the owner's to
+create**, and the link is the app's one `<a href>`: what opens Mail is the
+href, so it cannot be a `<button>`. **Not device confirmed** — whether iOS
+hands a `mailto:` to Mail from inside this WKWebView has not been tried on a
+phone.
+
+**The rule about explaining is narrowed, and only this far.** 「必要な説明は
+書いてね。みてわからないのが一番ダメ。最低限ね」 Where the app has taken
+something away and the screen would otherwise be a state with no cause and no
+way out, the sentence it needs is written. The frozen screen is the case that
+settled it and the only one that has it: a heading, one line saying what is
+off, and the appeal. Everything else in the ban still stands everywhere else.
+`CLAUDE.md` § Explaining and three entries in `docs/FEATURE_RULES.md` say so.
+
+Four strings in all ten languages: `post.rules`, `who.out`, `out.what`,
+`out.appeal`. `npm run rls`: **122 attempts** — a frozen account's post says
+so on the row and an unfrozen one does not.
+
+
 ### A post taken down says so where it was, and a frozen account is told on the page the app opens on
 
 Three things, and all three are the owner narrowing what was proposed.

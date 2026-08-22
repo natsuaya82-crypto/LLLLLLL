@@ -499,6 +499,14 @@ export function halfDone(){
         p.down = true; p.mine = false;
         window.route='thread'; NAV=[{r:'thread', a:'p1'}];
         return vThread(); }],
+    /* An account that has been frozen, seen by somebody else: the page says
+       so and nothing else about them, and their posts are still under it.
+       「タイムラインから外す、プロフィールからは凍結してますの表示。ツイート
+       は自己責任で見れるようにする」 */
+    ["somebody else's page, frozen", () => {
+        POSTS.forEach((x) => { if (x.hd === 'iri') x.out = true; });
+        window.route = 'profile'; NAV = [{ r: 'profile', a: 'iri' }];
+        return vProfile(); }],
     /* Somebody else's profile, the follow button on it, and the same page
        once you follow them. The only profile a walk sees is this person's
        own, and the two cards are different screens. */

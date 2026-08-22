@@ -454,7 +454,7 @@ var NET_PAGE=50;
    of base64 in a jsonb column. */
 function netBody(p){
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
-                     down:1};
+                     down:1, out:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   return o;
 }
@@ -477,6 +477,11 @@ function netRow(r){
      schema.sql -- so this arrives on nobody else's phone, and the author is
      told by the post rather than by the post quietly not being anywhere. */
   if(r.hidden_at) p.down=true;
+  /* And whether the account that wrote it is frozen. It comes off the ROW --
+     post_seen in schema.sql -- rather than being asked about every author a
+     timeline shows, and it is what takes the post off the timeline while
+     leaving it on that account's own page. */
+  if(r.author_out) p.out=true;
   p.mine=!!(SESS && SESS.uid && r.author===SESS.uid);
   return p;
 }
@@ -491,7 +496,7 @@ function netFeed(which, ok, bad){
      the recommended timeline works with the publishable key alone and
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
-  var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at'+
+  var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
           '&order=created_at.desc&limit='+NET_PAGE;
   function got(d){
     var out=[], i;
@@ -729,7 +734,7 @@ function netFindWho(q, ok, bad){
    asked for one of its fields as text. */
 function netFindPosts(q, ok, bad){
   var like=netLike(q);
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at'+
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+')'+
          '&order=created_at.desc&limit='+NET_PAGE,
