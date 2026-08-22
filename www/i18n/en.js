@@ -721,11 +721,8 @@ defLang('en', (function(){
       'set.csv.in'      : "Import from CSV",
       'set.lock.csv.t'  : "CSV import and export",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
-      'set.wipe'        : 'Erase this phone',
-      'set.drop'        : 'Delete account',
-      'set.drop.done'   : 'Account deleted',
-      'confirm.drop'    : 'Delete your account? Your posts, photographs and recordings go from the server and cannot be brought back. The language on this phone stays where it is.',
-      'confirm.wipe'    : "Delete everything on this phone and sign out? The language, the letters and the settings all go, and it cannot be undone.",
+      'set.wipe'        : 'Erase everything',
+      'confirm.wipe'    : "Erase everything? Your account and every post, photograph and recording on it go from the server; every language, letter and setting goes from this phone; the backup files go with them. Nothing can be brought back.",
       /* languages */
       'langs.title'     : "Languages",
       'langs.mine'      : "Your languages",

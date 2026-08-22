@@ -26,6 +26,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "registerFont", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keep", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "dropKept", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
@@ -175,6 +176,30 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   ///
   /// A ".tmp" is never in here: it has the wrong extension, and it is a write
   /// that did not finish rather than a generation.
+  // Every backup file, gone. The one call in this plugin that destroys
+  // somebody's work, and it exists because "erase everything" has to be true:
+  // the copies in Documents are the thing that survives the app being
+  // deleted, so leaving them would make the sentence on the button a lie.
+  //
+  // Only ours, and only .json under the languages directory -- Documents is
+  // the person's own folder and the Files app puts other things in it.
+  @objc func dropKept(_ call: CAPPluginCall) {
+    do {
+      let dir = try languages()
+      let names = try FileManager.default.contentsOfDirectory(atPath: dir.path)
+      var gone = 0
+      for n in names where n.hasSuffix(".json") {
+        try? FileManager.default.removeItem(at: dir.appendingPathComponent(n))
+        gone += 1
+      }
+      call.resolve(["gone": gone])
+    } catch {
+      // Nothing there to remove is not a failure: it is a phone that has
+      // never written one.
+      call.resolve(["gone": 0])
+    }
+  }
+
   @objc func kept(_ call: CAPPluginCall) {
     do {
       let dir = try languages()

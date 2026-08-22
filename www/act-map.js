@@ -220,7 +220,6 @@ act('stExOpen', stExOpen);
 act('wdDelEx', wdDelEx);
 act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
-act('dropAccount', dropAccount);
 act('spAdd', spAdd);
 act('spDrop', spDrop);
 act('ipaToggle', ipaToggle);

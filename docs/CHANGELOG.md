@@ -15,6 +15,75 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### Three rows nobody could tell apart become two
+
+The account room had **Sign out**, **Delete account** and **Erase this
+phone**, with a row about something else between the last two. Delete account
+reached the server and left the phone; erase this phone did the opposite;
+neither name said so, and reading the screen could not tell you.
+「サインアウト、スイッチアカウントはまあそのまま使える。データを消去するで全部
+消えるでいいんじゃない」
+
+Two now, and they are opposite ends of one question:
+
+- **Sign out** — the tokens go and nothing else. The account stays, the
+  languages stay. Signing in as somebody else is what it is for.
+- **Erase everything** — the account and every post, photograph and recording
+  on the server; every language, letter and setting on this phone; **and the
+  backup files in Documents**. One confirm, and the confirm is the whole
+  sentence.
+
+`dropAccount()` is gone and `wipeAll()` does both halves. The server is told
+**first** and the phone is emptied whatever it answers: somebody who asked to
+be deleted must be deleted, and a phone that kept its languages because the
+network was bad would be the button lying in the direction that cannot be
+corrected afterwards.
+
+The backup files could not be deleted at all before — nothing in the app could
+reach them — so `dropKept` is new in `ios/App/App/LinguaShare.swift`, and
+`bkDropAll()` in `backup.js` is the one caller. **Swift, so it is not built
+here**: on a phone that has not been rebuilt the files stay and everything
+else goes.
+
+```
+DELETE REVIEW
+  who deletes       user action — wipeAll(), behind one confirm that names
+                    every one of the four things
+  when              only when somebody presses it. Nothing automatic, no
+                    pruning, nothing on launch
+  what exactly      1. the account row and everything cascading off it on the
+                       server (account_delete() in schema.sql), and the
+                       photographs and voice in Storage, which are listed and
+                       removed first because a bucket has no foreign keys
+                    2. every slice of every language in localStorage
+                    3. the settings, back to a fresh install — keeping the
+                       theme, the interface language and the plan
+                    4. every *.json under Documents/Languages — ours, by
+                       suffix, in that one directory. Nothing else in
+                       Documents is looked at
+  why               there were two buttons and neither did what its name
+                    suggested to the person reading it. 「アカウント消したら
+                    全部消えるけど」
+  recoverable?      NO, and there is nowhere left that has it. This is the
+                    first delete in the app that also removes the backup —
+                    which is exactly what makes the sentence on the button
+                    true, and why the confirm says so before the press
+  does the backup survive it?
+                    no, deliberately, and this is the one place that is so.
+                    Every other delete in this app leaves the backup alone
+  anything to do with the plan?
+                    the plan is KEPT. Erasing your work is not cancelling a
+                    subscription, and it lives in the Keychain, which this
+                    does not reach
+  migration / rollback
+                    none. An account that was never signed in skips step 1
+```
+
+`set.drop`, `set.drop.done` and `confirm.drop` are gone from all ten
+languages; `set.wipe` and `confirm.wipe` say what the one button now does.
+`press` counts one button name fewer: **213**.
+
+
 ### The terms and the privacy policy, and two rows at the foot of Settings
 
 Both documents are written and live on the site —

@@ -174,15 +174,7 @@ function vSet(){
       ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
         '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
         '<button class="set"' + DO('setSignOut') + '>'+
-        '<span class="sl bad">'+t('set.signout')+'</span></button>'+
-        /* And the account itself, which is a different thing from the phone
-           and now says so. This button used to be the one at the foot of the
-           room, which erased the phone and called itself a deletion because
-           there was nothing else it could have been called: nothing in the
-           app could reach the row on the server. Now something can, so the
-           two are two, and each is named after what it does. */
-        '<button class="set"' + DO('dropAccount') + '>'+
-        '<span class="sl bad">'+t('set.drop')+'</span></button>'
+        '<span class="sl bad">'+t('set.signout')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
         '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set signin google"' + DO('obSignInGoogle') + '><span class="sl">'+MARK_GOOGLE+
@@ -201,13 +193,17 @@ function vSet(){
          is not about. Signing out leaves everything where it is; this does
          not, so it says so and asks.
 
-         It said "erase everything", which is a sentence with no object in it:
-         everything of what? Standing in the account room under a sign-out
-         button, the only reading left was the account, so that is what it is
-         called now -- and what it does was made to match, because a button
-         called "delete account" that leaves you signed in afterwards is the
-         same lie the other way round. What it cannot reach is the row on the
-         server; the confirm says "on this phone" rather than pretending. */
+         There were two of these and nobody could tell them apart: "delete
+         account" reached the server and left the phone, "erase this phone"
+         did the opposite, and the two sat either side of a row about
+         something else. 「サインアウト、スイッチアカウントはまあそのまま
+         使える。データを消去するで全部消えるでいいんじゃない」
+
+         One now, and it means what it says: the account, everything of yours
+         on the server, every language on this phone, and the backup files.
+         Signing out is the other button and is the one that changes nothing.
+         Alone at the foot with a gap above it, which is where a phone puts
+         the thing that cannot be undone. */
       '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>';
   } else if(id==='data'){
@@ -278,20 +274,24 @@ function setUi(l){ SET.ui=l; save(); render(); }
    you erased the phone and the app still greeted you by name. netOut() is
    the same two lines signing out uses; nothing is asked of the server,
    which is what it was already true of. */
-/* The account, on the server. Asked once and not twice: a second "are you
-   sure" is how a person learns to press through them.
+/* Everything, and it is the only thing in this app that means that. The
+   account on the server with every post, photograph and recording on it; the
+   languages on this phone; the backup files in Documents that outlive the app
+   itself. Asked once and not twice -- a second "are you sure" is how a person
+   learns to press through them -- and the one question is the whole sentence.
 
-   The language on this phone is NOT touched. Somebody deleting an account has
-   not asked to lose their own writing, and the confirm says which is which so
-   that nobody finds out afterwards. */
-function dropAccount(){
-  if(!netSignedIn()) return;
-  if(!confirm(t('confirm.drop'))) return;
-  netDropMe(function(){ toast(t('set.drop.done')); render(); },
-            function(d, st){ toast(netWhy(d, st)); });
-}
+   The order matters and it is the safe one. The server is told FIRST and the
+   phone is emptied whatever it answers: somebody who asked to be deleted must
+   be deleted, and a phone that kept its languages because the network was bad
+   would be the button lying in the direction that cannot be corrected later.
+   The other order leaves an account nobody can reach and nothing to reach it
+   from. */
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
+  if(netSignedIn()) netDropMe(wipeHere, wipeHere);
+  else wipeHere();
+}
+function wipeHere(){
   /* Throw the stored slices away and read the language back. What an empty
      language IS is langRead() and its four siblings, the same five langOpen()
      calls to bring a different one out -- so this does not describe emptiness
@@ -324,6 +324,10 @@ function wipeAll(){
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
   save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  /* And the copies in Documents, which are the ones that outlive the app.
+     Last, and after the save above rather than before it: a save writes a
+     fresh backup out, so dropping the files first would leave one behind. */
+  bkDropAll();
   /* and where you were standing is nowhere now */
   viewReset();
   ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
