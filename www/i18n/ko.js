@@ -640,6 +640,8 @@ defLang('ko', (function(){
       "num.h"           : "숫자",
       "num.big"         : "{0}까지",
       "num.base"        : "진법",
+      "cal.months"      : "한 해의 달 수",
+      "cal.week"        : "한 주의 날 수",
       "lt.marks"         : "기호",
       "toc.gram"         : "문법",
       /* what the app proposes */
@@ -741,6 +743,10 @@ defLang('ko', (function(){
       "stg.have.d"       : "소유는 어떻게 말하는지",
       "stg.count.t"      : "세기",
       "stg.count.d"      : "1부터 {0}까지",
+      "stg.month.t"      : "달",
+      "stg.month.d"      : "한 해를 나눈 {0}개",
+      "stg.wday.t"       : "요일",
+      "stg.wday.d"       : "한 주의 {0}일",
       /* the kinds of writing */
       "ws.kind"         : "문자의 종류",
       "ws.k.alpha"      : "음소문자",

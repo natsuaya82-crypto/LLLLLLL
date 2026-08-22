@@ -38,7 +38,12 @@ function stRead(){
     var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
     if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
               STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
-              STG.fm=stgs.fm||[]; }
+              STG.fm=stgs.fm||[];
+              /* Absent on every language made before the calendar existed,
+                 and absent is the default rather than a missing answer:
+                 calMonths() and calWeek() take anything that is not a number
+                 in range as twelve and seven. */
+              STG.months=stgs.months; STG.week=stgs.week; }
   }catch(e){}
 }
 stRead();
@@ -89,7 +94,12 @@ var STAGES=[
   {id:'conj',  slots:['and','or','but','because','if','then'], pos:'conj', feats:[]},
   {id:'polite',slots:[], pos:'x',  feats:[]},
   {id:'where', slots:['in','on','under','to','from','with'], pos:'part', feats:['adp']},
-  {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]}
+  {id:'when',  slots:['now','before','after','today','tomorrow','yesterday'], pos:'x', feats:[]},
+  /* The calendar, and its slots come from two numbers the way counting's come
+     from the base. www/cal.js says why there is no arithmetic of anybody's
+     own behind them. */
+  {id:'month', slots:[], pos:'n', feats:[]},
+  {id:'wday',  slots:[], pos:'n', feats:[]}
 ];
 /* Stages that are not every language's, and are not offered until somebody's
    language turns out to have one.
@@ -114,15 +124,22 @@ function stUsed(id){
             (STG.rules && STG.rules[id]) ||
             (STG.ex && STG.ex[id] && STG.ex[id].length));
 }
+/* A copy with its slots filled in, and a copy is the point: STAGES is one
+   array shared by every call, so a stage edited in place stays edited. */
+function stWith(p, slots){
+  return {id:p.id, slots:slots, pos:p.pos, feats:p.feats};
+}
 function stAll(){
   var out=[], i;
   /* The counting stage's slots are the base's, not a fixed ten: twelve words
      in base twelve. Rebuilt rather than written over, because STAGES is one
      array shared by every call and a stage edited in place stays edited. */
-  for(i=0;i<STAGES.length;i++)
-    out.push(STAGES[i].id==='count'
-      ? {id:'count', slots:numWordSlots(), pos:STAGES[i].pos, feats:STAGES[i].feats}
-      : STAGES[i]);
+  for(i=0;i<STAGES.length;i++){
+    if(STAGES[i].id==='count')      out.push(stWith(STAGES[i], numWordSlots()));
+    else if(STAGES[i].id==='month') out.push(stWith(STAGES[i], calMonthSlots()));
+    else if(STAGES[i].id==='wday')  out.push(stWith(STAGES[i], calWeekSlots()));
+    else out.push(STAGES[i]);
+  }
   for(i=0;i<STAGES_IF.length;i++)
     if(stUsed(STAGES_IF[i].id)) out.push(STAGES_IF[i]);
   for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
@@ -141,14 +158,20 @@ function stSlotLabel(p, k){
     var i, s=p.own.labels||{};
     return s[k]||k;
   }
-  if(p.id==='count') return k;
+  /* The three whose slots are numbers name themselves. There is no key for
+     "the third month" because the app does not know what anybody's third
+     month is, and inventing March here would be it deciding. */
+  if(p.id==='count' || p.id==='month' || p.id==='wday') return k;
   return t('stg.'+p.id+'.'+k);
 }
 function stTitle(p){ return p.own ? (p.own.title||t('stg.own.untitled')) : t('stg.'+p.id+'.t'); }
 function stWhat(p){
   if(p.own) return p.own.what||'';
-  /* "One to ten" is only true in base ten. */
+  /* "One to ten" is only true in base ten, and the same is true of twelve
+     months and seven days: all three counts are the language's. */
   if(p.id==='count') return t('stg.count.d', numLabel(numBase()));
+  if(p.id==='month') return t('stg.month.d', numLabel(calMonths()));
+  if(p.id==='wday')  return t('stg.wday.d', numLabel(calWeek()));
   return t('stg.'+p.id+'.d');
 }
 
@@ -440,6 +463,10 @@ function stDetailHTML(p){
   var i, out='';
   out+='<h2 class="sth">'+esc(stTitle(p))+'</h2>';
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
+  /* How many slots this stage has, where the slots are. The counting stage's
+     number is the base and lives in the digits room because a digit is a
+     letter; these two are the calendar's own and have nowhere else to be. */
+  out+=calRows(p.id);
 
   if(p.feats.length){
     out+='<div class="sec">'+t('stg.decide')+'</div>';

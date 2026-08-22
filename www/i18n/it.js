@@ -461,6 +461,8 @@ defLang('it', (function(){
       "num.h"           : "Cifre",
       "num.big"         : "Fino a {0}",
       "num.base"        : "Base",
+      "cal.months"      : "Mesi in un anno",
+      "cal.week"        : "Giorni in una settimana",
       "lt.marks"         : "Segni",
       "toc.gram"         : "Grammatica",
       /* what the app proposes */
@@ -562,6 +564,10 @@ defLang('it', (function(){
       "stg.have.d"       : "Come si dice il possesso",
       "stg.count.t"      : "Contare",
       "stg.count.d"      : "Da uno a {0}",
+      "stg.month.t"      : "Mesi",
+      "stg.month.d"      : "Le {0} parti del tuo anno",
+      "stg.wday.t"       : "Giorni della settimana",
+      "stg.wday.d"       : "I {0} giorni della tua settimana",
       /* the kinds of writing */
       "ws.kind"          : "Tipo di scrittura",
       "ws.k.alpha"       : "Alfabeto",

@@ -469,6 +469,8 @@ defLang('zh', (function(){
       "num.h"           : "数字",
       "num.big"         : "最大 {0}",
       "num.base"        : "进制",
+      "cal.months"      : "一年幾個月",
+      "cal.week"        : "一週幾天",
       "lt.marks"         : "符号",
       "toc.gram"         : "语法",
       /* what the app proposes */
@@ -570,6 +572,10 @@ defLang('zh', (function(){
       "stg.have.d"       : "怎么说所属",
       "stg.count.t"      : "数数",
       "stg.count.d"      : "1 到 {0}",
+      "stg.month.t"      : "月份",
+      "stg.month.d"      : "一年分成的 {0} 段",
+      "stg.wday.t"       : "星期",
+      "stg.wday.d"       : "一週的 {0} 天",
       /* the kinds of writing */
       "ws.kind"          : "文字的种类",
       "ws.k.alpha"       : "全音素文字",
