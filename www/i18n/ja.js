@@ -194,7 +194,6 @@ defLang('ja', (function(){
       "ob.name.ph"                : "例：Shango",
       "ob.signin.apple"           : "Apple で続ける",
       "ob.signin.google"          : "Google で続ける",
-      "ob.signin.skip"            : "アカウントなしで続ける",
       "ob.signin.mail" : "メールで続ける",
       "ob.mail.h.code" : "メールを確認",
       "ob.mail.h.forgot" : "パスワードの再設定",

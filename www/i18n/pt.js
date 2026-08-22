@@ -285,7 +285,6 @@ defLang('pt', (function(){
       "ob.name.ph"                : "um nome",
       "ob.signin.apple"           : "Continuar com a Apple",
       "ob.signin.google"          : "Continuar com o Google",
-      "ob.signin.skip"            : "Continuar sem conta",
       "ob.signin.mail" : "Continuar com e-mail",
       "ob.mail.h.code" : "Verifique seu e-mail",
       "ob.mail.h.forgot" : "Redefinir a senha",

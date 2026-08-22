@@ -72,7 +72,7 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    read it -- and dead-check, which watched functions, could not see a number
    nobody asked for. It watches top-level vars now, so this one is deleted the
    day it stops being read. */
-var OB_STEPS=4;
+var OB_STEPS=3;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -90,48 +90,53 @@ function obGo(n){ ob.step=n; GE=null; render(); window.scrollTo(0,0); }
 /* There is no way back out of 'who': the account exists by then, and the
    screen behind it would offer to sign in as somebody else. */
 function obCanBack(){
-  /* And out of the door itself, when the door was opened from somewhere.
-     Without this there was no way back out of signing in except through it:
-     open it from Settings, change your mind, and the app you already had was
-     an onboarding you could not leave. */
-  return ob.step>0 || ob.mode==='borrow' ||
-         (OBM.mode!=='in' && OBM.mode!=='who') || !!obPending();
+  /* At the door there is always somewhere to be out to -- it is never the
+     app any more, it is somewhere you were sent from. Except once the
+     account exists: the screen behind 'who' would offer to sign in as
+     somebody else. */
+  if(obPending()) return OBM.mode!=='who';
+  return ob.step>0 || ob.mode==='borrow';
 }
 function obBack(){
   /* The chevron in the corner is the only way back in the onboarding, so the
      door goes through it too rather than growing one of its own. Out of the
      code back to the account it was sent for, out of anything else back to
-     signing in -- which is the door itself, so there is nothing behind it. */
-  if(ob.step===0){
+     signing in, and out of signing in to wherever the door was opened
+     from. */
+  if(obPending()){
     if(OBM.mode==='code'){ obMailGo('up'); return; }
     /* Out of the reset back to the address it was sent to, so a mistyped
        address is one press from being retyped rather than two. */
     if(OBM.mode==='reset'){ obMailGo('forgot'); return; }
-    /* The chevron at the door is a way out only when there is somewhere to be
-       out to -- and there is exactly when the door was opened from inside the
-       app rather than being the app. */
-    if(OBM.mode==='in' && obReturn()) return;
+    if(OBM.mode==='in'){ obReturn(); return; }
     obMailGo('in'); return;
   }
-  if(ob.step===1 && ob.mode==='borrow'){
+  if(ob.step===0 && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
   /* Back out of the name with nothing drawn returns to the square, not to a
      step about a shape that does not exist. */
-  if(ob.step===3 && !ob.lid){ obGo(1); return; }
+  if(ob.step===2 && !ob.lid){ obGo(0); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
 
-/* ---- step 0, the door ------------------------------------------------- */
-/* Signing in comes first, and the door is what it looks like. Everything in
-   this app is metered or carried somewhere: a hundred words, three questions
-   a day, a plan that has to hold on the web too. None of that can be counted
-   without knowing whose it is, and an account made after the fact brings a
-   question nobody should be asked on their first day -- you drew a letter
-   here, and the account you just signed into already has a language: which
-   one survives. Asking first means that question never exists.
+/* ---- the door, which is not a step ------------------------------------ */
+/* Signing in used to come first and the app opened on this. It does not any
+   more: boot.js makes an anonymous account before the first frame, so
+   everything is already counted against an account and there is nothing left
+   for a door at the front to buy. 「サインイン必須にしたいけど、オンボー
+   ディングで離脱されるのは防ぎたい」
+
+   The question that argument was about -- you drew a letter here, and the
+   account you just signed into already has a language, which one survives --
+   is answered by the uid not changing: attaching an identity to an anonymous
+   account keeps it, so there are never two.
+
+   This is a screen the app goes TO now, from the two places that need a name
+   and from Settings, and obDoor() is how. obPending() is what says so, and
+   is the same pair of stored things that has always said it.
    Apple and Google are the plugin's; the mail door below is this file's. */
 /* Signing in with Apple, and with Google. Both hand the app an identity
    token without ever opening a browser, and net.js exchanges it for a
@@ -204,14 +209,15 @@ function obShrug(){ OBM.busy=false; render(); }
    account and must not be asked to name itself again. */
 function obIn(){
   OBM.busy=true; OBM.mode='who'; OBM.pw=''; OBM.msg='';
-  SET.anon=false; save(); render();
+  save(); render();
   netMyProfile(function(p){
     OBM.busy=false;
     if(p){
       ME.name=String(p.display||''); ME.handle=String(p.handle||''); saveMe();
       OBM.mode='in';
       /* An account that already has a profile belongs to somebody who has
-         been here. Sending them to step 1 is sending them to draw. */
+         been here. Sending them into the onboarding is sending them to
+         draw an alphabet they already have. */
       if(obReturn()) return;
       /* And so is sending anybody who is already inside. obReturn() answers
          for the doors that were opened from somewhere and remembered where
@@ -220,7 +226,7 @@ function obIn(){
          signing in leaves you standing on the tab you were already on, which
          now has a timeline in it. */
       if(SET.done){ render(); return; }
-      obGo(1); return;
+      obGo(0); return;
     }
     OBM.nm=ME.name; OBM.hd=ME.handle; render();
   }, function(d, s){
@@ -391,11 +397,12 @@ function obCrestHTML(){
    the bar across the foot offers instead of itself. On one screen all of
    that would be written twice in conditionals anyway, and the person would
    not be able to tell which of the two they were looking at. */
-/* `skip` is whether "continue without an account" belongs on this door at
-   all. True on the real one; false wherever the door is shown again after
-   SET.done, where obSkip() would be offering to go and draw a letter to
-   somebody who has a language already. */
-function obFormHTML(up, skip){
+/* There is nothing to skip past. The door is not the way in any more -- the
+   app makes an account by itself at first launch and this is where somebody
+   puts a name on it -- so "continue without an account" would be offering
+   what everybody already has, on a screen nobody arrived at by accident.
+   The chevron is the way out. */
+function obFormHTML(up){
   return '<div class="mid obform">'+
     obCrestHTML()+
     obMailField('ob-em', 'em', 'email', 'username', 'ob.mail.em.ph')+
@@ -408,8 +415,7 @@ function obFormHTML(up, skip){
        : '<button class="obskip"' + DO('obMailGo', ["forgot"]) + '>'+t('ob.mail.to.forgot')+'</button>'+
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
-         '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
-         (skip? '<button class="obskip"' + DO('obSkip') + '>'+t('ob.signin.skip')+'</button>' : ''))+
+         '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>')+
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
@@ -421,9 +427,8 @@ function obFormHTML(up, skip){
    asked for beside it because a timeline with a handle and no name is a
    timeline of strangers.
 
-   This is a face of the door rather than a step of the onboarding. Somebody
-   who came in without an account never sees it, and the dots above count
-   what everybody does. */
+   This is a face of the door, and the door is not a step of anything: there
+   are no dots over it. */
 function obWhoHTML(){
   return '<div class="mid obform">'+
     '<h2 class="obh">'+t('ob.who.h')+'</h2>'+
@@ -458,7 +463,7 @@ function obWhoGo(){
       /* A brand new account made from Settings is still somebody who has a
          language -- they signed up late, not early. */
       if(obReturn()) return;
-      obGo(1);
+      obGo(0);
     }, obNo);
   }, obNo);
 }
@@ -494,27 +499,15 @@ function obResetHTML(){
     '</div>';
 }
 
-/* A way past the door without an account, and what it is worth: the MAKING
-   side. A language is made on this phone and stays on it, which is what the
-   line under the two providers says.
-
-   What it is not worth is the timeline. That used to be the argument for
-   this line -- the timeline is world-readable, so come in and read it -- and
-   it was the app being half-online: a post has a writer, and somebody with
-   no account could write one that went nowhere. The three tabs ask for a
-   session now (snsLocked), and this line buys exactly what it says.
-   「なんでログインしてないアカウントで投稿できんの？」 */
-function obSkip(){ SET.anon=true; save(); obGo(1); }
-
-function obDoorHTML(skip){
+function obDoorHTML(){
   var m=OBM.mode;
   if(m==='who') return obWhoHTML();
   if(m==='reset') return obResetHTML();
   if(m==='code' || m==='forgot') return obAskHTML(m==='code');
-  return obFormHTML(m==='up', skip!==false);
+  return obFormHTML(m==='up');
 }
 
-/* ---- step 1, its name -------------------------------------------------
+/* ---- step 3, its name -------------------------------------------------
    The one thing somebody arrives already having an opinion about, and the
    only question here they can answer without being taught anything. It can
    be left blank and changed at any time from the cover. */
@@ -562,7 +555,7 @@ function obDone(){
   ob.lid=ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id;
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
-  obGo(2);
+  obGo(1);
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
@@ -570,11 +563,11 @@ function obTakeCh(ch){
   ob.lid=ltNew({ ch: ch }).id;
   SET.showScript=true;
   save(); installScriptFont();
-  ob.mode=''; obGo(2);
+  ob.mode=''; obGo(1);
 }
-/* Nothing was drawn, so there is nothing to say which letter it is: step 2 is
-   about a shape and there is no shape. */
-function obSkipDraw(){ ob.lid=''; obGo(3); }
+/* Nothing was drawn, so there is nothing to say which letter it is: the step
+   after this is about a shape and there is no shape. */
+function obSkipDraw(){ ob.lid=''; obGo(2); }
 
 /* ---- step 2, which letter it is ---------------------------------------
    The shape, big, and the alphabet under it. This is the step that used to
@@ -600,7 +593,7 @@ function obRomHTML(){
    away. */
 function obRomDone(){
   if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid);
-  obGo(3);
+  obGo(2);
 }
 
 function obFinish(){
@@ -689,12 +682,15 @@ function obDots(){
   return a;
 }
 function vOb(){
-  var s=ob.step;
+  var s=ob.step, door=!!obPending();
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
-    '<div class="obtop">'+obDots().map(function(i){
-      return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join('')+'</div>'+
+    /* The dots count the onboarding. The door is not part of it and shows
+       none -- three dots over a sign-in screen would be counting a walk
+       nobody is on. */
+    '<div class="obtop">'+(door? '' : obDots().map(function(i){
+      return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join(''))+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){
         return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
@@ -707,11 +703,11 @@ function vOb(){
      language is easier to name once it has made a mark, and obFinish() has
      always been able to invent one out of the inventory for anybody who
      skips it. */
-  var h = (s===0)? obDoorHTML()
-        : (s===1 && ob.mode==='borrow')? obBorrowHTML()
-        : (s===1)? obDrawHTML()
-        : (s===2)? obRomHTML()
+  var h = door? obDoorHTML()
+        : (s===0 && ob.mode==='borrow')? obBorrowHTML()
+        : (s===0)? obDrawHTML()
+        : (s===1)? obRomHTML()
         : obNameHTML();
-  return '<div class="ob view'+(s===0?' center':'')+'">'+head+h+'</div>';
+  return '<div class="ob view'+(door?' center':'')+'">'+head+h+'</div>';
 }
 

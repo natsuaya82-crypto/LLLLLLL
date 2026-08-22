@@ -15,6 +15,36 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The app opens on a blank square, not on a sign-in screen
+
+Step 0 of the onboarding was the door. It is not a step of anything now: the
+account already exists by the time the first frame is drawn, so the first
+thing anybody sees is the square they draw a letter on. Three steps instead of
+four — draw, which letter it is, its name — and three dots instead of four.
+
+The door is a screen the app goes **to**. `obDoor(r, a)` is the one way in and
+it carries where to come back to; `obPending()` — the note it leaves, which
+has always outlived a reload — is what `vOb()` shows it for, rather than a
+step number. There are no dots over it, because it is not a walk anybody is
+on. Three places open it: Settings → Account, and the six things that need a
+name (`obNeed()`), and that is all.
+
+"Continue without an account" is gone with it, and so is `SET.anon`, which
+that button was the only writer of and nothing has ever read.
+
+Nothing stored changes and nothing is lost: `SET.obback` and `SET.done` are
+the same pair they were.
+
+Three counters moved, and all three are this change. `screens built` 549 →
+548: the step walk renders three screens where it rendered four, because the
+door is no longer one of them. `buttons pressed` 7181 → 7177: the door's own
+buttons were being pressed twice, once as step 0 and once as the `obStates()`
+entry, and are pressed once now — they are still all pressed, from
+`tools/fixture.mjs`, which is where the door's five faces have always come
+from. `distinct names` 206 → 205, and the one that went is `obSkip`. No other
+name was added or removed.
+
+
 ### The app makes an account for you, and being somebody is a second question
 
 Opening Lingua signs you in. Nobody types anything and nobody is asked

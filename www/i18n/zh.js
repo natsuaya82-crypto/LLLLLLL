@@ -286,7 +286,6 @@ defLang('zh', (function(){
       "ob.name.ph"                : "一个名字",
       "ob.signin.apple"           : "使用 Apple 继续",
       "ob.signin.google"          : "使用 Google 继续",
-      "ob.signin.skip"            : "不用账号继续",
       "ob.signin.mail" : "用邮箱继续",
       "ob.mail.h.code" : "查看邮件",
       "ob.mail.h.forgot" : "重设密码",

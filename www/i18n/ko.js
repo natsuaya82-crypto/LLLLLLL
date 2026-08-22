@@ -457,7 +457,6 @@ defLang('ko', (function(){
       "ob.name.ph"                : "이름",
       "ob.signin.apple"           : "Apple로 계속하기",
       "ob.signin.google"          : "Google로 계속하기",
-      "ob.signin.skip"            : "계정 없이 계속하기",
       "ob.signin.mail" : "이메일로 계속",
       "ob.mail.h.code" : "메일을 확인하세요",
       "ob.mail.h.forgot" : "비밀번호 재설정",

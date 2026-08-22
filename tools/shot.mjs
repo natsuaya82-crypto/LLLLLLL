@@ -165,6 +165,7 @@ for (const spec of shots) {
           /* The onboarding is not somewhere you go: it is what render() shows
              while SET.done is false, so that is how it is asked for. */
           SET.done = false;
+          SET.obback = null;      /* the door is shown for this, not for a step */
           window.ob.step = n; window.ob.mode = ''; window.ob.lid = '';
           if (face) OB_STATES[n][1]();   /* sets ob.* and returns the html render() rebuilds */
           render();

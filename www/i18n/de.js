@@ -266,7 +266,6 @@ defLang('de', (function(){
       "ob.name.ph"                : "ein Name",
       "ob.signin.apple"           : "Mit Apple fortfahren",
       "ob.signin.google"          : "Mit Google fortfahren",
-      "ob.signin.skip"            : "Ohne Konto fortfahren",
       "ob.signin.mail" : "Mit E-Mail fortfahren",
       "ob.mail.h.code" : "Sieh in deine Mails",
       "ob.mail.h.forgot" : "Passwort zurücksetzen",

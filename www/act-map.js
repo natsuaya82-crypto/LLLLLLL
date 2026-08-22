@@ -106,7 +106,6 @@ act('obResetGo', obResetGo);
 act('obWhoGo', obWhoGo);
 act('setSignOut', setSignOut);
 act('setMail', setMail);
-act('obSkip', obSkip);
 act('obSkipDraw', obSkipDraw);
 act('sndFeel', sndFeel);
 act('openSnd', openSnd);

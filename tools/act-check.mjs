@@ -192,7 +192,11 @@ const R = await pg.evaluate(() => {
      writing systems to choose from, the sounds offered again, the characters
      on offer to borrow. */
   SET.done = false;
-  for (let s = 0; s <= 4; s++) {
+  /* The door is not one of them any more -- it is shown for SET.obback, not
+     for a step number -- so the note has to be off for a step to be seen at
+     all, and the door's own faces come out of obStates() below. */
+  SET.obback = null;
+  for (let s = 0; s < OB_STEPS; s++) {
     ob.step = s;
     try { harvest('vOb step ' + s, vOb()); } catch (e) { out.threw.push('vOb ' + s + ': ' + e.message); }
   }
@@ -201,6 +205,7 @@ const R = await pg.evaluate(() => {
     try { harvest(label, run()); } catch (e) { out.threw.push(label + ': ' + e.message); }
   });
   ob.mode = 'draw';
+  SET.obback = null;
   SET.done = true;
 
   /* A screen that takes an argument is a different screen for each argument:

@@ -214,8 +214,14 @@ instead of appearing here.
   becomes two questions: your own things, and things other people see.
 - Affected data: none.
 - Affected docs: `FEATURES.md`, `STATE.md`, `supabase/setup.md`.
-- Implementation status: **not started.** Anonymous sign-in is configured;
-  nothing uses it.
+- Implementation status: **the phone's half is done.** The first launch signs
+  in anonymously (`netAnon` in `net.js`, called from `boot.js`); `netMember()`
+  is the second question and `obNeed()` asks it at the six things other people
+  see; the door left the onboarding and is opened by `obDoor()`. Buying is
+  untouched — there is no StoreKit to put a door in front of. The SERVER half
+  is not done: `is_member()` still refuses an anonymous account for
+  everything, including its own things, so nothing an anonymous account makes
+  can be stored yet.
 
 ### Decision
 - Date: 2026-08-22

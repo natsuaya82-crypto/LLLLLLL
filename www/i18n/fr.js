@@ -326,7 +326,6 @@ defLang('fr', (function(){
       "ob.name.ph"                : "un nom",
       "ob.signin.apple"           : "Continuer avec Apple",
       "ob.signin.google"          : "Continuer avec Google",
-      "ob.signin.skip"            : "Continuer sans compte",
       "ob.signin.mail" : "Continuer avec un e-mail",
       "ob.mail.h.code" : "Vérifiez vos mails",
       "ob.mail.h.forgot" : "Réinitialiser le mot de passe",

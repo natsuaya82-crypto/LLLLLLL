@@ -281,7 +281,6 @@ defLang('ru', (function(){
       "ob.name.mini"              : "Можно изменить позже",
       "ob.signin.apple"           : "Продолжить с Apple",
       "ob.signin.google"          : "Продолжить с Google",
-      "ob.signin.skip"            : "Продолжить без учётной записи",
       "ob.signin.mail" : "Продолжить по почте",
       "ob.mail.h.code" : "Проверьте почту",
       "ob.mail.h.forgot" : "Сброс пароля",

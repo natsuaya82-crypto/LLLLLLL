@@ -191,26 +191,27 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
-    /* The door itself, which is the sign-in screen: there is no splash in
-       front of it any more. It was never in this list and did not need to be
-       while nothing on it did anything. */
-    ['the door',                  () => { ob.step = 0; ob.mode = ''; OBM.mode = 'in';
-                                          return vOb(); }],
-    ['characters to borrow',      () => { ob.step = 1; ob.mode = 'borrow';
+    /* The door itself, which is the sign-in screen. It is no longer a step
+       of the onboarding and vOb() will not show it for a step number: what
+       puts the app on it is SET.obback, the note saying where it was opened
+       from, so that is what these five set. */
+    ['the door',                  () => { SET.obback = { r: 'set', a: 'acct' };
+                                          OBM.mode = 'in'; return vOb(); }],
+    ['characters to borrow',      () => { SET.obback = null; ob.step = 0; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
-    ['no script picked to borrow from', () => { ob.step = 1; ob.mode = 'borrow';
+    ['no script picked to borrow from', () => { SET.obback = null; ob.step = 0; ob.mode = 'borrow';
                                                 ob.pick = ''; return vOb(); }],
     /* The step where a letter is drawn. Its two buttons -- finish, or skip the
        drawing -- are the last thing a person touches before the app becomes
        the app, and nothing had ever pressed either of them. */
-    ['drawing the first letter', () => { ob.step = 1; ob.mode = ''; return vOb(); }],
+    ['drawing the first letter', () => { SET.obback = null; ob.step = 0; ob.mode = ''; return vOb(); }],
     /* The shape is drawn and the alphabet is under it. This step is the one
        ltNew() used to answer on everybody's behalf, so it is also the one
        nothing had ever walked. */
-    ['choosing which letter the shape is', () => { ob.step = 2; ob.mode = '';
+    ['choosing which letter the shape is', () => { SET.obback = null; ob.step = 1; ob.mode = '';
                                                    ob.lid = (LETTERS[0] || {}).id || '';
                                                    return vOb(); }],
-    ['naming the language',      () => { ob.step = 3; ob.mode = ''; return vOb(); }],
+    ['naming the language',      () => { SET.obback = null; ob.step = 2; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
        so a walk that only ever renders the door presses none of their
        buttons.
@@ -221,20 +222,24 @@ export function obStates(){
        afterwards, so a fixture that tidied up photographed the screen it had
        tidied back to, and three pictures of the door were captioned as three
        different screens. */
-    ['making an account',        () => { ob.step = 0; OBM.mode = 'up';
-                                         return vOb(); }],
-    ['the six digits out of the mail', () => { ob.step = 0; OBM.mode = 'code';
+    ['making an account',        () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'up'; return vOb(); }],
+    ['the six digits out of the mail', () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
     /* The code and the new password, which is where asking for a reset now
        lands. It used to end at a line saying "sent". */
-    ['choosing a new password',  () => { ob.step = 0; OBM.mode = 'reset';
+    ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'reset';
                                          OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
                                          OBM.busy = false; return vOb(); }],
-    ['having forgotten the password',  () => { ob.step = 0; OBM.mode = 'forgot';
+    ['having forgotten the password',  () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'forgot';
                                          return vOb(); }],
     /* Through the door and not yet anybody. Only a signed-in person reaches
        it, so nothing else in this file or in shot.mjs ever renders it. */
-    ['saying who you are',       () => { ob.step = 0; OBM.mode = 'who';
+    ['saying who you are',       () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'who';
                                          OBM.busy = false; return vOb(); }]
   ];
 }

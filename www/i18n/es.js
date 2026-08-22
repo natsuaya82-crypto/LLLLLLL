@@ -238,7 +238,6 @@ defLang('es', (function(){
       "ob.name.ph"                : "un nombre",
       "ob.signin.apple"           : "Continuar con Apple",
       "ob.signin.google"          : "Continuar con Google",
-      "ob.signin.skip"            : "Continuar sin cuenta",
       "ob.signin.mail" : "Continuar con correo",
       "ob.mail.h.code" : "Revisa tu correo",
       "ob.mail.h.forgot" : "Restablecer la contraseña",

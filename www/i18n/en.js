@@ -178,7 +178,6 @@ defLang('en', (function(){
       "ob.name.mini"              : "You can change it later",
       "ob.signin.apple"           : "Continue with Apple",
       "ob.signin.google"          : "Continue with Google",
-      "ob.signin.skip"            : "Continue without an account",
       "ob.signin.mail" : "Continue with email",
       "ob.mail.h.code" : "Check your mail",
       "ob.mail.h.forgot" : "Reset your password",
