@@ -996,7 +996,7 @@ defLang('pt', (function(){
       "mod.in"             : "Reativar @{0}",
       "mod.out.sure"       : "Suspender esta conta?",
       "post.out"           : "Conta suspensa",
-      "post.down"          : "Retirado pela moderação",
+      "post.down"          : "Retirado",
       "post.pin"        : "Fixar esta publicação",
       "post.unpin"        : "Desafixar",
       "post.pinned"        : "Fixada",

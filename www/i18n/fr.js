@@ -1037,7 +1037,7 @@ defLang('fr', (function(){
       "mod.in"             : "Réactiver @{0}",
       "mod.out.sure"       : "Suspendre ce compte ?",
       "post.out"           : "Compte suspendu",
-      "post.down"          : "Retiré par la modération",
+      "post.down"          : "Retiré",
       "post.pin"        : "Épingler ce message",
       "post.unpin"        : "Ne plus épingler",
       "post.pinned"        : "Épinglé",

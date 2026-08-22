@@ -1945,6 +1945,16 @@ function postRow(p){
           ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
           : '')+
         (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
+        /* Taken down. Only its author is ever handed one of these -- post_read
+           in schema.sql -- so it is for them, and it belongs up here beside
+           the lock and "edited": a word for what state the post is in.
+
+           Two goes at this were wrong. It said "hidden", on a post the person
+           reading it can SEE, which is a word contradicting the screen it is
+           written on. Then it said WHO did it, in a line of its own under the
+           head -- which is the app explaining itself, and is the notice's job
+           rather than this one's. 「アプリ内に説明書くの禁止」 */
+        (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
         (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
         /* The ... and, when it is the one that is open, the menu hanging off
            it. It is IN the post rather than a screen you go to, so what you
@@ -1965,15 +1975,6 @@ function postRow(p){
          to do with it has to say what it is, and the id it carries says
          nothing to anybody's eye. */
       (to? '<div class="pto">'+esc(t('post.re.to', '@'+to))+'</div>' : '')+
-      /* Taken down. Only its author is ever handed one of these -- post_read
-         in schema.sql -- so the line is for them, and it is a state rather
-         than a sentence about one.
-
-         It said "hidden" first, on a post the person reading it can see. A
-         word that contradicts the screen it is written on is worse than no
-         word: what happened is that it stopped being public, not that it
-         stopped being here, and the copy in front of them is the proof. */
-      (p.down? '<div class="pdown">'+esc(t('post.down'))+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on
          somebody else's line drew their words in my shapes. Now the shapes

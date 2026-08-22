@@ -993,7 +993,7 @@ defLang('zh', (function(){
       "mod.in"             : "解除冻结 @{0}",
       "mod.out.sure"       : "要冻结这个账号吗？",
       "post.out"           : "账号已冻结",
-      "post.down"          : "已被运营下架",
+      "post.down"          : "已下架",
       "post.pin"        : "置顶这条帖子",
       "post.unpin"        : "取消置顶",
       "post.pinned"        : "已置顶",

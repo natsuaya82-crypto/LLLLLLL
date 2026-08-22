@@ -903,7 +903,7 @@ defLang('en', (function(){
       'mod.in'            : "Unsuspend @{0}",
       'mod.out.sure'      : "Suspend this account?",
       'post.out'          : "Account suspended",
-      'post.down'         : "Taken down by moderation",
+      'post.down'         : "Taken down",
       'post.pin'       : "Pin this post",
       'post.unpin'       : "Unpin",
       'post.pinned'       : "Pinned",

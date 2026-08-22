@@ -905,7 +905,7 @@ defLang('ja', (function(){
       'mod.in'            : "@{0} の凍結を解除",
       'mod.out.sure'      : "このアカウントを凍結しますか？",
       'post.out'          : "アカウントは凍結中",
-      'post.down'         : "運営が公開停止",
+      'post.down'         : "公開停止",
       'post.pin'       : "この投稿を固定する",
       'post.unpin'       : "固定を外す",
       'post.pinned'       : "固定",

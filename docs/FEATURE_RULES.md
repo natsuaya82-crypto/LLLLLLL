@@ -185,6 +185,54 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-22
+- Area: What a thing belongs to
+- Decision: **Everything belongs to the account** — language, dictionary,
+  letters, keyboard, plan. The server is true, the phone keeps a copy so it
+  works with no signal. **Cloud storage is for everybody**, so it stops being
+  what Plus sells.
+- Reason: 「全部アカウントごとでしょ」「クラウドは全員で」. It fits $25: a
+  language packs to 5.4 KB, a large one to about a megabyte. What eats a plan
+  that size is photographs on a timeline, and that is bandwidth.
+- Affected features: `SLICES`, `LANGS`, the plan, `is_member()`, `CAN.data`.
+- Affected data: all of it. Nothing is deleted; what is on a phone is adopted
+  by the first account that signs in there.
+- Affected docs: `FEATURES.md`, `STATE.md`, `DATA_MODEL.md`, `PAID_FEATURES.md`.
+- Implementation status: **not started.**
+
+### Decision
+- Date: 2026-08-22
+- Area: When somebody is asked who they are
+- Decision: An **anonymous account is made silently at first launch** and
+  everything is made under it. Identity is asked in **two places only:
+  posting, and buying.** The uid does not change when it is attached.
+- Reason: 「サインイン必須にしたいけど、オンボーディングで離脱されるのは防ぎたい」
+  「課金とツイートにはログイン必須。それ以外は流さない」. Buying needs it
+  because an anonymous account is one phone's refresh token, and a receipt
+  bound to a lost one is paid for and unreachable.
+- Affected features: onboarding, composer, plans screen, `is_member()` — which
+  becomes two questions: your own things, and things other people see.
+- Affected data: none.
+- Affected docs: `FEATURES.md`, `STATE.md`, `supabase/setup.md`.
+- Implementation status: **not started.** Anonymous sign-in is configured;
+  nothing uses it.
+
+### Decision
+- Date: 2026-08-22
+- Area: What being frozen stops
+- Decision: **The SNS side only.** No posting, replying, reacting, following or
+  reporting, and the three sns tabs close. Making a language goes on working.
+- Reason: 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」.
+  Locking the making side takes away offline work, is walked around with flight
+  mode, and misses the point: what hurts is losing the account. Restricting
+  what may be carried OUT was refused for the same reason — a backup that opens
+  on one phone only is a language lost with the phone.
+- Affected features: `is_member()`, the sns tabs, the composer.
+- Affected data: none.
+- Affected docs: `FEATURES.md`, `supabase/setup.md`.
+- Implementation status: partly — writes are stopped, the tabs are not.
+
+### Decision
 - Date: 2026-08-19
 - Area: How a screen is built — four shapes that are banned
 - Decision: 「君あるあるの丸パッチ無限横並び、同じページに情報量詰め込み、ページ

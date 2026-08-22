@@ -103,6 +103,22 @@ Still unused in `supabase/schema.sql`: `quote`, `publication`, `language` and
 `prompt`. Each has row level security written and held by `npm run rls`, and
 nothing in the app touches any of them.
 
+**The shape of all of it changed on 2026-08-22, and none of the change is
+written.** Everything belongs to the account now — the language, the
+dictionary, the letters, the keyboard and the plan — with the server true and
+the phone a copy that still works with no signal; cloud storage is for
+everybody rather than what Plus sells; an anonymous account is made silently at
+first launch and identity is asked only when posting and when buying. Three
+entries at the head of `docs/FEATURE_RULES.md` § Owner decision log say it in
+full. **Read them before touching anything online**: most of the list below was
+written for an app whose languages lived on the phone.
+
+Order agreed with the owner: (1) anonymous sign-in and the language becoming
+the account's, (2) `is_member()` split in two, (3) the plan onto `profile` with
+its value still set by hand, (4) the moderation half that is left, (5) the
+terms and privacy pages and the links to them, (6) StoreKit and what a purchase
+opens.
+
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
 on it), cloud storage, publishing a language, quoting, the day's sentence, and
@@ -245,8 +261,11 @@ assuming a thing is waiting for you.
 ### Agreed long ago, never started
 
 13. The onboarding as motion only.
-14. Vertical writing.
-15. A selectable line gap.
+14. A selectable line gap.
+
+    Vertical writing was on this list and is written: `DIRS` in `www/wsys.js`
+    holds `ttb-rl` and `ttb-lr`, `can('dir')` buys them, and a post carries the
+    direction it was written in. The line was stale.
 
 ### The owner's, in a browser
 

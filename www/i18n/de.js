@@ -978,7 +978,7 @@ defLang('de', (function(){
       "mod.in"             : "Sperre für @{0} aufheben",
       "mod.out.sure"       : "Dieses Konto sperren?",
       "post.out"           : "Konto gesperrt",
-      "post.down"          : "Von der Moderation zurückgezogen",
+      "post.down"          : "Zurückgezogen",
       "post.pin"        : "Diesen Beitrag anheften",
       "post.unpin"        : "Nicht mehr anheften",
       "post.pinned"        : "Angeheftet",
