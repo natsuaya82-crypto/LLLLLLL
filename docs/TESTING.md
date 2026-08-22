@@ -129,6 +129,44 @@ This is not theoretical. `card-check`'s first version was worthless: it asked
 — a copy of the decision under test — so putting the bug back left it green.
 It has to observe the real code path, not restate it.
 
+It happened again, in `conv-check`'s eighth claim, and it is the same shape
+each time: the check worked the private use assignment out again inside
+itself, so shifting `installTypeFont()` by one moved the keys and the check's
+own copy together and it stayed green with the bug in. **A check that
+recomputes the thing under test is a copy of it, and a copy always agrees.**
+`LinguaFont.build` is wrapped now and the assignment is read off what the font
+writer was actually handed. If you find yourself writing the answer out in the
+check, you are writing the second half of the bug.
+
+### Putting the bug back: choose the bug somebody would actually make
+
+The red you watch has to be the failure you are afraid of, not the easiest one
+to cause, and the two are often different.
+
+A rename across six files was held to "put the declaration back and count the
+complaints" — five call sites, so five complaints, so nothing was missed.
+`dead-check` reports **one name once**, with the first file it saw:
+
+```
+1 name is called and never defined:
+  www/backup.js  ntRead()
+```
+
+The count is of names, not of sites, so it can never answer "how many did I
+miss". And deleting the declaration is not the mistake anybody makes — the
+mistake is **leaving one call site behind**, which is a different red and the
+one worth watching:
+
+```
+core.js:183 back to noteRead()
+  → 1 name is called and never defined:  www/core.js  noteRead()
+```
+
+What proves a rename left nothing behind is `grep -rn '\bOldName\b' www/ tools/`
+coming back empty. The check proves the app still holds together; the grep
+proves the rename finished. They are two statements and neither stands in for
+the other.
+
 Mandatory regression tests, no exceptions:
 
 ```
