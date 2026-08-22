@@ -34,10 +34,26 @@ loop; `npm test` is the gate at the end of it.
 **that check alone**, watch it go red, take the bug out. The other fifteen
 have nothing to say about it.
 
+### Who runs it, when more than one of you is in the tree
+
+The three rules above say *you* run the gate once before pushing.
+`docs/SESSIONS.md` says a session never runs it at all — the leader does, once,
+after integrating. Both are the owner's, both are true, and they are about
+different days.
+
+| | who runs the whole gate |
+|---|---|
+| parallel sessions are running | **the leader**, once, after integrating. A session runs the one check that holds what it changed, by name, and nothing else |
+| one session, nobody else in the tree | **you**, once, before pushing. You are the leader |
+
+`docs/SESSIONS.md` wins while there are parallel sessions; this page wins when
+there are not. The thing forbidden either way is the same: proving one green
+twice. Sixteen minutes multiplied by three sessions is that, three times over,
+and the third run is not more true than the first.
+
 `tools/pre-commit` runs the six that need no browser plus i18n when a screen
 file changed. **It is not the gate.** CI runs three of the seventeen, so a green
-tick on a push is not the gate either. Run `npm test` yourself, once, before
-the commit.
+tick on a push is not the gate either.
 
 | check | holds |
 |---|---|

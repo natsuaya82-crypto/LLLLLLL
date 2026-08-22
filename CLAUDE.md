@@ -193,17 +193,23 @@ holds what you are changing*, by name, plus the five fast ones — that is the l
 *Watching a check fail is one run, not a suite* — put the bug back, run that check
 alone, watch it go red, take the bug out.
 
+**Who runs it depends on how many of you there are, and that is the whole of the
+exception.** The sentence above says *you* run it once before pushing, and
+`docs/SESSIONS.md` says a session never runs it at all — the leader does, once, after
+integrating. Both are true and they are about different days:
+
+- **Parallel sessions are running** → `docs/SESSIONS.md` wins. A session runs the one
+  check that holds what it changed, by name, and nothing else. The whole gate is the
+  leader's, once, at the end. Sixteen minutes of gate multiplied by three sessions is
+  the same green proved three times, and the third one is not more true.
+- **One session, nobody else in the tree** → this section wins. You are the leader,
+  so "once before pushing" and "the leader runs it once at the end" are the same
+  sentence.
+
+What is forbidden either way is unchanged: proving the same green twice.
+
 `tools/pre-commit` runs the ones that need no browser plus i18n when a screen file
 changed. It is not the whole gate: run `npm test` yourself, once, before the commit.
-
-**Three rules about running it, and they are about how long a day takes:**
-
-- **The whole gate is for a commit — once.** Not per experiment, not a second
-  time to be sure. A green run of unchanged code says nothing the first did not.
-- **While you work, run the one check that covers what you touched, by name.**
-  `docs/TESTING.md` § What to run when has the table.
-- **Watching a check go red is one check too.** Put the bug back, run *that*
-  check, watch it fail, take it out. The other sixteen are not about it.
 
 It is `tools/gate.mjs` rather than an `&&` chain, and speed was the smaller
 reason. A chain **stops** at the first failure and prints nothing to say what
