@@ -990,8 +990,7 @@ function postCut(ln){
    punctuation -- is text and stays text. A post already renders a run of text
    as text, which is what a half-drawn alphabet has always given. */
 function postCutTyped(raw){
-  var s=String(raw||''), lts=ltOrder(LETTERS.filter(function(l){
-        return l.st && l.st.length; })), cut=[], txt='', i, at;
+  var s=String(raw||''), lts=ltPuaOrder(), cut=[], txt='', i, at;
   for(i=0;i<s.length;i++){
     at=s.charCodeAt(i)-PUA0;
     if(at>=0 && at<lts.length){
