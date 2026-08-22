@@ -125,6 +125,139 @@ const r = await pg.evaluate(({ s }) => {
   out.boards = kbBoards().length === brds;
   out.faces = KB.kbs[kbShow - 1].lay.length === faces;
 
+  /* ---- 6b. how big it may get, and that nothing is ever cut to fit ----
+     「キーボード縦横って最大を決めてそれ以上は列も行も追加できないようにしよう」
+     Held on ADDING only: an existing layout that is already over stays
+     exactly as it is. */
+  fresh();
+  out.ceilRows = KB_ROWS;
+  out.ceilCols = KB_COLS;
+  /* every pattern this app builds is inside the ceiling as it is built */
+  out.patsFit = KB_PATS.every(function (p){
+    return kbPatLay(p).every(function (face){
+      return face.rows.length <= KB_ROWS && face.rows.every(function (rw){
+        var n = 0, x;
+        for (x = 0; x < rw.length; x++) n += kbU(rw[x].w);
+        return n <= KB_COLS;
+      });
+    });
+  });
+  /* rows stop at the ceiling, and the dashed row stops being drawn */
+  fresh();
+  for (i = 0; i < KB_ROWS + 4; i++) kbAddRowNew();
+  out.rowsCap = kbLayer().rows.length === KB_ROWS;
+  out.plusGone = vKb().indexOf('kbAddRowNew') < 0;
+  /* a full row takes no more keys, however it is asked */
+  fresh();
+  var full = -1;
+  for (i = 0; i < kbLayer().rows.length; i++){
+    var n2 = 0, rw = kbLayer().rows[i];
+    for (j = 0; j < rw.length; j++) n2 += kbU(rw[j].w);
+    if (n2 >= KB_COLS && full < 0) full = i;
+  }
+  out.foundFull = full >= 0;
+  if (full >= 0){
+    var had = kbLayer().rows[full].length;
+    kbAddKey(full, 0, 1);
+    out.colsCap = kbLayer().rows[full].length === had;
+    /* and a key cannot be widened past it either */
+    var w0 = kbLayer().rows[full][0].w || 1;
+    kbSetW(full, 0, 4);
+    out.wCap = (kbLayer().rows[full][0].w || 1) === w0;
+  }
+  /* NOTHING is cut down to fit: a layout already over the ceiling is left
+     alone. This is the half that would lose somebody's keys. */
+  fresh();
+  var lay = kbEdit().lay[0];
+  for (i = 0; i < 5; i++) lay.rows.push([kbKey('lt', ''), kbKey('lt', '')]);
+  var over = lay.rows.length;
+  saveKb(); render();
+  out.overKept = kbLayer().rows.length === over;
+  out.overStillCant = (kbAddRowNew(), kbLayer().rows.length === over);
+
+  /* ---- 6c. a short row sits in the middle of the sheet ----------------- */
+  fresh();
+  kbEdit().lay[0].rows = [[kbKey('lt','a'), kbKey('lt','b'), kbKey('lt','c'),
+                           kbKey('lt','d'), kbKey('lt','e')],
+                          [kbKey('lt','f'), kbKey('lt','g'), kbKey('lt','h')]];
+  saveKb(); render();
+  var cells = document.querySelectorAll('#kb .kbrow')[1].children;
+  var lead = 0, tail = 0, seen = false;
+  for (i = 0; i < cells.length; i++){
+    var c = cells[i];
+    if (c.className.indexOf('kbn') >= 0) continue;
+    if (c.getAttribute('data-k') !== null){ seen = true; continue; }
+    if (seen) tail += 1; else lead += 1;
+  }
+  out.centreLead = lead;
+  out.centreTail = tail;
+  out.centred = lead === tail && lead > 0;
+
+  /* ---- 6d. a page arrives with the way there and the way back ---------
+     「2ページ目作ったときの切り替えボタンは？」 A face nothing can reach and
+     nothing can leave is the trap docs/keyboard.md used to describe in four
+     steps. */
+  fresh();
+  function keysOn(face){
+    var o = [], a, x;
+    for (a = 0; a < face.rows.length; a++)
+      for (x = 0; x < face.rows[a].length; x++) o.push(face.rows[a][x]);
+    return o;
+  }
+  function goesTo(face, n){
+    return keysOn(face).some(function (k){
+      return k.k === 'lay' && (parseInt(k.v, 10) || 0) === n;
+    });
+  }
+  var b0 = kbEdit(), was0 = JSON.stringify(b0.lay[0]), had0 = keysOn(b0.lay[0]).length;
+  kbAddLay();
+  out.faces = b0.lay.length;
+  out.wayThere = goesTo(b0.lay[0], 1);
+  out.wayBack = goesTo(b0.lay[1], 0);
+  /* and it went IN, next to what was there, rather than over it */
+  out.keptKeys = keysOn(b0.lay[0]).length === had0 + 1;
+  out.notOver = was0 !== JSON.stringify(b0.lay[0]);
+  /* the step back takes the whole thing away again, both keys with it */
+  kbUndo();
+  out.layBack = JSON.stringify(kbEdit().lay[0]) === was0;
+  /* Where it lands. A row with room takes it at its FRONT, which is where
+     every phone keeps its 123 and where kbDefault() has always put it; a
+     board whose rows are all full gets a row of its own instead. The QWERTY
+     is ten across on every row, so both cases have to be built. */
+  fresh();
+  kbEdit().lay[0].rows = [[kbKey('lt', 'a'), kbKey('lt', 'b')]];
+  kbLay = 0; saveKb(); render();
+  kbAddLay();
+  var r0 = kbEdit().lay[0].rows;
+  out.layFront = r0.length === 1 && r0[0].length === 3 && r0[0][0].k === 'lay';
+  fresh();
+  var rowsWas2 = kbLayer().rows.length;      /* every row already ten across */
+  kbAddLay();
+  var rr2 = kbEdit().lay[0].rows;
+  out.layNewRow = rr2.length === rowsWas2 + 1 &&
+    rr2[rr2.length - 1].length === 1 && rr2[rr2.length - 1][0].k === 'lay';
+
+  /* and the + is not offered when there is nowhere to put the key */
+  fresh();
+  var lay0 = kbEdit().lay[0];
+  lay0.rows = [];
+  for (i = 0; i < KB_ROWS; i++){
+    var rw = [];
+    for (j = 0; j < KB_COLS / 2; j++) rw.push(kbKey('lt', ''));
+    lay0.rows.push(rw);
+  }
+  kbLay = 0; saveKb(); render();
+  out.plusLayGone = vKb().indexOf('kbAddLay') < 0;
+  out.plusLayNoop = (kbAddLay(), kbEdit().lay.length === 1);
+
+  /* ---- 6e. the switch that draws a letter on each key is on every face -- */
+  fresh();
+  out.romOnEditor = vKb().indexOf('data-do="setKbRom"') >= 0;
+  NAV = [{ r: 'kb', a: '0' }]; render();
+  out.romOnFree = vKb().indexOf('data-do="setKbRom"') >= 0;
+  NAV = [{ r: 'kb', a: '' }]; render();
+  out.romOnList = vKb().indexOf('data-do="setKbRom"') >= 0;
+
   /* ---- 7. a width can be CARRIED onto the sheet ------------------------
      The tap-then-tap way is kbSetNew()/kbPick() and is walked by press. This
      is the other way and it is touches: a tile picked up and put down on a
@@ -152,6 +285,11 @@ const r = await pg.evaluate(({ s }) => {
     touch(tile, 'touchmove', b[0], b[1]);
     touch(tile, 'touchend', b[0], b[1]);
   }
+  /* onto a row with room in it. Every row of the QWERTY is already the full
+     ten across, and a full row takes no more keys -- which is the ceiling
+     doing its job and not the thing under test here. */
+  kbEdit().lay[0].rows[0] = [kbKey('lt', 'a'), kbKey('lt', 'b'), kbKey('lt', 'c')];
+  saveKb(); render();
   var before = kbLayer().rows[0].length;
   var k00 = document.querySelector('#kb .kbrow .kbk[data-r="0"][data-k="0"]');
   out.sawKey = !!k00;
@@ -212,6 +350,28 @@ say(r.letters, 'no letter moved');
 say(r.words, 'no word moved');
 say(r.boards, 'no other keyboard moved');
 say(r.faces, 'no other face of this keyboard moved');
+say(r.ceilCols === 20 && r.ceilRows === 8,
+    'the ceiling is ' + r.ceilRows + ' rows and ' + (r.ceilCols / 2) + ' keys across');
+say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
+say(r.rowsCap, 'rows stop at the ceiling however many times the row is added');
+say(r.plusGone, 'and the dashed row is not drawn once there is no room for one');
+say(r.foundFull, 'the board has a row that is already the full width');
+say(r.colsCap, 'and it takes no more keys');
+say(r.wCap, 'and a key in it cannot be widened past the edge');
+say(r.overKept, 'a layout that is already over the ceiling is left exactly as it is');
+say(r.overStillCant, 'and still cannot be added to');
+say(r.centred, 'a short row sits in the middle: ' + r.centreLead + ' empty each side');
+say(r.faces === 2, 'adding a page gives the keyboard ' + r.faces + ' of them');
+say(r.wayThere, 'and page 1 has a key that goes to page 2');
+say(r.wayBack, 'and page 2 has one that comes back');
+say(r.keptKeys && r.notOver, 'and the key went in beside what was there, not over it');
+say(r.layBack, 'and the step back takes the page and both keys away again');
+say(r.layFront, 'the key goes in at the front of the last row when that row has room');
+say(r.layNewRow, 'and into a row of its own when every row is already full');
+say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at all');
+say(r.plusLayNoop, 'and asking for one anyway does nothing');
+say(r.romOnEditor && r.romOnFree && r.romOnList,
+    'the letter-on-each-key switch is on the editor, the free face and the list');
 say(r.sawKey, 'the sheet has a key to carry a width onto');
 say(r.carried, 'carrying a width onto a key puts one more key in that row');
 say(r.carriedAfter, 'and it is the width that was carried, in after the key it was dropped on');

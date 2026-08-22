@@ -261,10 +261,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    span. */
 .kb.kbsheet .kbrow, .kbhdr{display:grid;gap:0;position:relative;
      grid-template-columns:repeat(var(--kc, 20), 1fr)}
-/* Square. A cell of a sheet is a cell of a sheet, and the corner radius on a
-   key is the key being a picture of a key -- which the read-only board still
-   is and this one is not. 「角丸きんし」 */
-.kb.kbsheet .kbk{min-width:0;border-radius:0;margin:0 2.1px}
+.kb.kbsheet .kbk{min-width:0;margin:0 2.1px}
 .kb.kbsheet .kbk.addrow{grid-column:1/-1}
 /* The letters across the top and the numbers down the side, and both of them
    are how a whole column and a whole row go. They are 44 tall for that
@@ -288,10 +285,14 @@ canvas.pkc{width:34px;height:34px;display:block}
 /* A cell of the sheet with no key on it. Not a key and not pressable -- it is
    the part of the row that is not filled, drawn so it can be seen to be
    there. It is a .kbk so that a key being carried can be dropped on it. */
-.kbk.cell{background:none;opacity:.35;border-radius:0}
+.kbk.cell{background:none;opacity:.35}
 /* --kh is this screen's own drawing of a key and is not what goes to the
    phone: the extension decides that, and nothing in the app sets it now. */
 .kbrow{display:flex;gap:5px;--rh:1}
+/* A KEY keeps its corners, on both boards. 「キーボードは角丸でしょ？そこは
+   いいのよ」 The rule against rounded boxes is about a box drawn round a
+   word -- a button, a banner, a notice -- and a key is not one of those: it
+   is the shape of the thing itself, and every key on every phone has them. */
 .kbk{position:relative;min-height:calc(var(--kh) * var(--rh));min-width:0;
      border:1px solid var(--line);
      border-radius:9px;background:var(--sf);color:var(--tx);font-family:inherit;padding:0;
@@ -1621,11 +1622,10 @@ a.set{text-decoration:none}
    The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
    nobody has been told. */
 .kbnew{display:flex;gap:8px;margin-top:12px;align-items:center}
-/* Square, like the cells they go into. 「角丸きんし」 */
-.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;
+.kbnewt{flex:0 0 auto;min-height:44px;padding:9px 10px;border-radius:10px;
         border:1px solid var(--line);background:none;display:flex;align-items:center}
 .kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
-.kbnewb{display:block;height:22px;background:var(--tx);opacity:.28}
+.kbnewb{display:block;height:22px;border-radius:4px;background:var(--tx);opacity:.28}
 .kbnewt:nth-child(1) .kbnewb{width:22px}
 .kbnewt:nth-child(2) .kbnewb{width:48px}
 .kbnewt:nth-child(3) .kbnewb{width:74px}

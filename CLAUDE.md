@@ -855,7 +855,7 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds nine things: the row that goes is the one pressed
+`tools/kb-check.mjs` holds thirty things: the row that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not
 removed** (a cell spanning b–d, with c taken out, spans b–c); the half key that
@@ -865,7 +865,32 @@ the step back; nothing outside the layout moves — not a letter, not a word, no
 another keyboard, not another face; and the two buttons are down when there is
 nowhere to go.
 
-Four bugs were put back and watched going red before any of it was believed.
+It holds the two ceilings with them, because they are the same screen and the
+same kind of mistake. **Ten across is the phone's number** — the narrowest
+iPhone is 320, so ten keys are 32 each and eleven would be 29 — and every
+pattern the app builds already comes to ten or fewer. **Eight down is not**:
+nothing on the phone sets a height, so it is a ceiling on what somebody can
+build a row at a time, chosen to clear every pattern measured with one to
+spare. Both hold on ADDING only: **a layout already over the ceiling is left
+exactly as it is**, because cutting it down would be the app deleting somebody's
+keys to satisfy a number it invented. The check puts a nine-row layout in and
+demands that nothing moves.
+
+And that a short row sits in the MIDDLE of the sheet rather than at its left
+edge — 「揃えて欲しい」, five keys over three. Counting columns in halves is
+what makes that always divide.
+
+And that a page arrives with the way THERE and the way BACK already on it.
+A face used to arrive as one empty key: the keys that reach a face have always
+had to be placed by hand, so the ordinary way to use this was to add a face,
+put letters on it, and find there was no way to it and no way off it —
+`docs/keyboard.md` described the trap in four steps, which is a manual page
+standing in for the thing working. `kbDefault()` has done it correctly for its
+own digits face from the beginning. Nothing is overwritten: the key goes IN at
+the front of the last row, or into a row of its own, and a face with room for
+neither is not offered a + at all.
+
+Eleven bugs were put back and watched going red before any of it was believed.
 The two the check found on its first run were real and are worth keeping: the
 history was recorded only from the editor's **render**, so a change made by any
 other road had nothing behind it — it is recorded from `saveKb()` as well now,
@@ -1126,7 +1151,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 366`, `screens the mirror
 rendered: 275`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 8713  (218/218 distinct names)` for the same
+`press` prints `buttons pressed: 8716  (218/218 distinct names)` for the same
 reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
@@ -1202,7 +1227,7 @@ It fell to 8453 when `wdMode` and the six faces in `tools/fixture.mjs` that set
 it came out — those six were being walked in a state the app could no longer be
 in — and coverage did not move: 213 of 213 names, still.
 
-**It was 8683 for three sessions' work integrated in one day, and is 8713 now.**
+**It was 8683 for three sessions' work integrated in one day, and is 8716 now.**
 Two of the moves inside it are worth keeping. `setWldDl` was reported by
 `press` as never pressed, and the reason was not that it sits behind a plan:
 the fixture did not seed `WLD`, so the first press of `setWldHide` hid the row
@@ -1219,6 +1244,8 @@ each row — and both are buttons, because pressing one is how that column or
 that row goes. The two on the end are the step back and the step forward. The
 ⊖ on a held key came off in the same change and does not show as a fall: it
 was drawn on one face of the fixture and the fifteen are drawn on every one.
+The +3 after it is one switch — the letter on each key — reaching the two
+faces of this chapter that did not have it.
 
 `screens the mirror rendered` fell from 377 to 275 in the same stretch, and
 that one IS attributed: `i18n-check` renders every screen once per plan, and
