@@ -168,27 +168,13 @@ function vSet(){
       swtHTML(!wldHidden())+'</button>'+
       '';
   } else if(id==='acct'){
-    /* Who you are, then the way out, then the two documents, then the one
-       thing that cannot be undone -- with a gap before it and nothing under
-       it. Three things were wrong with the order this replaces.
-
-       The first row was a BUTTON that did nothing, saying "Account: signed
-       in" on a screen whose heading is Account. A row you can press and that
-       answers nothing is worse than no row. What is worth saying there is
-       WHICH account, so it says the handle, and it is not a button.
-
-       Signing out was red. Red is for the press that cannot be taken back,
-       and there is exactly one of those here; signing out changes nothing at
-       all -- the account stays, the languages stay -- so a red one teaches
-       people that red means nothing.
-
-       And the documents were between the two account actions, which put a
-       contract in the middle of a sentence about leaving. */
+    /* Signed in or not, and the way in or out. It said "guest" and offered two
+       buttons that did nothing whatever the answer was. */
     body=(netMember()
-      ? '<div class="set" style="color:var(--txs)">'+
-          '<span class="sl">@'+esc(meHandle())+'</span></div>'+
+      ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
+        '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
         '<button class="set"' + DO('setSignOut') + '>'+
-        '<span class="sl">'+t('set.signout')+'</span></button>'
+        '<span class="sl bad">'+t('set.signout')+'</span></button>'
       : '<button class="set signin apple"' + DO('obSignInApple') + '><span class="sl">'+MARK_APPLE+
         '<span>'+t('ob.signin.apple')+'</span></span><span class="sv">'+ICON_GO+'</span></button>'+
         '<button class="set signin google"' + DO('obSignInGoogle') + '><span class="sl">'+MARK_GOOGLE+
@@ -197,8 +183,6 @@ function vSet(){
         '<span class="sv">'+ICON_GO+'</span></button>')+
       /* Under both faces of the room, because somebody who has never signed
          in has to be able to read them too. */
-      '<div class="setgap"></div>'+
-      docRows()+
       /* The plan is not in here. An account is who you are; a plan is what
          you may do, and they are answered by different things -- the account
          by a server, the plan by whatever settles it. It is a room of its
