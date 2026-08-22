@@ -186,6 +186,36 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-22
+- Area: How a language is stored on the server, and what happens when two
+  phones have both written
+- Decision: **A row per slice**, not a row per language and not one file.
+  Eleven rows under one language, each carrying its own save number, so a
+  phone uploads only the slices it changed. When a phone arrives with a save
+  number the server has moved past, **the server's copy wins and the phone's
+  is kept** — put into the language list as a second language rather than
+  thrown away. No button is added for making a new language; only the place
+  for one to be put.
+- Reason: two phones that touched different slices do not collide at all
+  under a row per slice, and always collide under the other two — one number
+  per language means somebody always loses. For the case that is left, the
+  same phones touching the same slice, `docs/DATA_SAFETY.md` already settles
+  it: the way a backup destroys somebody's work is by winning. Losing a
+  month of dictionary happens rarely and cannot be undone; two languages of
+  the same name on one phone is visible and can be tidied.
+- Affected features: cloud storage, `SLICES`, `LANGS`, `bkPack()`, the
+  language list.
+- Affected data: a new table. Nothing existing moves, and nothing is deleted
+  on either side of a collision.
+- Affected docs: `FEATURES.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `STATE.md`.
+- Implementation status: **not started.**
+- Open, and deliberately left open: **making a second language by hand.** The
+  owner expects it in a paid tier later — 「今後可能性あり studio あたりで」.
+  That is a button and a plan question and neither is decided. The collision
+  copy is not that button: a plan decides what somebody may DO and never what
+  exists, so a copy is put in the list on every plan.
+
+### Decision
+- Date: 2026-08-22
 - Area: What a thing belongs to
 - Decision: **Everything belongs to the account** — language, dictionary,
   letters, keyboard, plan. The server is true, the phone keeps a copy so it
