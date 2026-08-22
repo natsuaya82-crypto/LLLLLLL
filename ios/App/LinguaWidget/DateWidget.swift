@@ -6,10 +6,11 @@
 //  actually read a shape by -- which is the whole reason for putting a made
 //  alphabet on a home screen.
 //
-//  There is no calendar in the app yet -- no month names, no weekday names --
-//  so what this can honestly show is numbers: the day, large, and the month
-//  under it, small. When the calendar chapter exists the month becomes a word
-//  and this is where it goes.
+//  Under the day is the MONTH, and it is a word when there is one. The
+//  calendar chapter (www/cal.js) makes a word for each part of the year, and
+//  which part today falls in is the year cut into equal parts -- there is no
+//  calendar arithmetic of anybody's own behind it, and that file says why.
+//  A month nobody has named yet is its number, in the person's digits.
 
 import WidgetKit
 import SwiftUI
@@ -63,13 +64,24 @@ struct DayFace: View {
          in, and 23 in base two is 10111 -- five signs at 0.44 of the widget is
          three times its width, drawn straight off both edges. A picture is the
          only thing that says so; nothing throws. */
-      let dv = c.day ?? 1, mv = c.month ?? 1
+      let dv = c.day ?? 1
+      /* Which month this is, in the person's calendar and not the phone's:
+         a language dividing the year into ten has a tenth month and no
+         December. With no file at all it is the ordinary one. */
+      let mv = entry.num?.monthOf(entry.date) ?? (c.month ?? 1)
+      let named = entry.num?.mon?[String(mv)]
       let dEm = min(side * 0.44, side * 0.86 * 800 / CGFloat(boxWidth(dv)))
       let mEm = min(side * 0.17, side * 0.50 * 800 / CGFloat(boxWidth(mv)))
       VStack(spacing: side * 0.04) {
         NumberView(n: dv, num: entry.num, em: dEm)
-        NumberView(n: mv, num: entry.num, em: mEm)
-          .opacity(0.55)
+        Group {
+          if let named = named {
+            WordView(word: named, size: side * 0.17)
+          } else {
+            NumberView(n: mv, num: entry.num, em: mEm)
+          }
+        }
+        .opacity(0.55)
       }
       .frame(width: geo.size.width, height: geo.size.height)
     }

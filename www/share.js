@@ -425,9 +425,51 @@ function shareNums(){
   }
   return out;
 }
+/* A word, as the Lingua keyboard would have typed it.
+   The font in the App Group maps the private use area and nothing else, so a
+   word can only be DRAWN in somebody's letters if every letter of it has a
+   shape. One letter short and the run comes out with a hole in it, which
+   reads worse than not trying -- so a word with any undrawn letter answers
+   empty and the caller falls back to the roman spelling. */
+function shareWordPua(w){
+  var sp=(w && w.sp) || [], out='', i, p;
+  if(!sp.length) return '';
+  for(i=0;i<sp.length;i++){
+    p=sharePua(sp[i].l);
+    if(!p) return '';
+    out+=p;
+  }
+  return out;
+}
+/* The words a stage made, by the slot they fill.
+   Two strings each and both are wanted: `t` is what the font draws, `r` is
+   the roman spelling for a widget with no font yet -- a fresh install, or a
+   language whose letters are all borrowed characters. Absent when nobody has
+   made that month, which the widget reads as "say the number instead". */
+function shareSlotWords(id, n){
+  var out={}, i, w, pua;
+  for(i=1;i<=n;i++){
+    w=null;
+    /* Not stWordFor(): that wants the stage object, and asking stAll() for it
+       rebuilds every stage's slots to answer one question about one word. */
+    (function(key){
+      var j;
+      for(j=0;j<WORDS.length;j++) if(WORDS[j].slot===key){ w=WORDS[j]; return; }
+    }(id+'.'+numLabel(i)));
+    if(!w || !w.hw) continue;
+    pua=shareWordPua(w);
+    out[String(i)]=pua? {t:pua, r:String(w.hw)} : {r:String(w.hw)};
+  }
+  return out;
+}
 function shareWidget(){
   return {v:1, box:SHARE_BOX, base:numBase(), lang:langId, name:langName,
-          dg:shareNums()};
+          dg:shareNums(),
+          /* and the calendar: how the year and the week are divided, and
+             whatever names have been made for the parts. www/cal.js. */
+          mo:calMonths(), wk:calWeek(),
+          mon:shareSlotWords('month', calMonths()),
+          wd:shareSlotWords('wday', calWeek())};
 }
 /* Whether there is a native side at all, and the one way to reach it.
 
