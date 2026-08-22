@@ -154,12 +154,14 @@ function pwSidePaint(){
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(){
-  /* A post has a writer. Nothing on the timeline is reachable signed out --
-     snsLocked() is what the three tabs answer with -- but a form is a route
-     and a route can be come back to, so the composer says so itself rather
-     than trusting that nobody arrived here another way. The feed is where
-     the door is. */
-  if(!netSignedIn()){ go('feed'); return; }
+  /* A post has a writer, and the account the app made at first launch is
+     not anybody yet. So this is where somebody is asked who they are -- one
+     of the two places, the other being a purchase.
+     「課金とツイートにはログイン必須。それ以外は流さない」
+
+     A form is a route and a route can be come back to, so the composer asks
+     itself rather than trusting that nothing else does. */
+  if(!obNeed()) return;
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
     '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
@@ -2052,6 +2054,10 @@ function postRow(p){
 function postLike(id){
   var p=postById(id);
   if(!p) return;
+  /* A like is something other people see, so it asks for a name before it
+     changes anything. Before, and not after: a like counted on this phone
+     and refused by the server is a number that goes backwards. */
+  if(!obNeed()) return;
   p.lime=!p.lime;
   p.li=Math.max(0, (p.li||0)+(p.lime? 1 : -1));
   savePosts(); render();
@@ -2062,6 +2068,7 @@ function postLike(id){
 function postBoost(id){
   var p=postById(id);
   if(!p) return;
+  if(!obNeed()) return;
   p.bome=!p.bome;
   p.bo=Math.max(0, (p.bo||0)+(p.bome? 1 : -1));
   savePosts(); render();
@@ -2141,6 +2148,10 @@ var REPORT_WHY=['spam','abuse','hate','sexual','other'];
 var rpFor=null;
 function openReport(id, handle){
   PMENU='';
+  /* A report has somebody making it -- report.who is not null in the schema
+     -- and it is answered by a person, who has to be able to come back with
+     a question. */
+  if(!obNeed()) return;
   rpFor={post:String(id||''), handle:String(handle||'')};
   openForm('report:'+id, t('post.report'),
     REPORT_WHY.map(function(w){

@@ -205,6 +205,12 @@ function meBlock(h){
   var bl=meBlocking(), i;
   h=String(h||'');
   if(!h || h===meHandle()) return;
+  /* Blocking is a row on the server with your uid on it, so it asks who you
+     are first. Kept on this phone as well and shown as blocked either way --
+     but a block the server has never heard of is not a block, and a list
+     that filled up before anybody signed in would be a promise the timeline
+     could not keep. */
+  if(!obNeed()) return;
   i=bl.indexOf(h);
   if(i>=0) bl.splice(i, 1);
   else {
@@ -223,6 +229,7 @@ function meFollow(h){
   var fo=meFollowing(), i;
   h=String(h||'');
   if(!h || h===meHandle()) return;
+  if(!obNeed()) return;
   i=fo.indexOf(h);
   if(i>=0) fo.splice(i, 1); else fo.push(h);
   ME.fo=fo;

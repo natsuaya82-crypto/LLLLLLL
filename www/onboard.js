@@ -268,7 +268,38 @@ var OBM={ mode:'in', em:'', pw:'', code:'', nm:'', hd:'', busy:false, msg:'' };
    has a whole language through drawing their first letter.
    「普通にログインしてるのに言語の名前とidきめさせられた」「あるのに出てきた」
    The lie and the note saying it is a lie now live or die together. */
-function obBackTo(r, a){ SET.obback={r:r, a:a}; save(); }
+/* Opening the door, from anywhere. Everything it has to put in place is
+   here rather than at each of the places that opens it: the note saying
+   where to come back to, the flag the onboarding reads, and the face of the
+   door to show. Settings did all four by hand and was the only caller; there
+   are several now, and four statements repeated at each of them is four
+   chances to leave one out.
+
+   ob.step goes back to the door too. It is the app's own counter and it
+   stays wherever the onboarding left it, so opening the door in the same
+   session somebody finished the onboarding in showed them the naming
+   screen. */
+function obDoor(r, a){
+  SET.obback={r:r, a:a};
+  ob.step=0; ob.mode=''; GE=null;
+  OBM.mode='in'; OBM.msg=''; OBM.busy=false;
+  SET.done=false; save();
+  render(); window.scrollTo(0,0);
+}
+/* And the question every one of them is asking. Anything other people would
+   see needs somebody's name on it -- a post, a like, a boost, a follow, a
+   block, a report -- and there is a session without one from the first
+   launch, so this is netMember() and not netSignedIn().
+
+   Where you are standing is where the door sends you back to, so a like
+   pressed halfway down a thread does not land you on the timeline. */
+function obNeed(){
+  var h;
+  if(netMember()) return true;
+  h=here();
+  obDoor(h && h.r, h && h.a);
+  return false;
+}
 function obPending(){ return (SET.obback && SET.obback.r)? SET.obback : null; }
 /* Done with the account, and there was somewhere to go back to. Puts back
    the SET.done that the door had to take away. */

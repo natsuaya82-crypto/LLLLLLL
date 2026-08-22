@@ -24,10 +24,30 @@
    it is worth nothing to anybody on any other site.
 
    Reading needs no account at all. post, profile and a published language are
-   world-readable, so the timeline works with the key alone and somebody who
-   has not decided yet is not asked to. Anonymous sign-in would create an
-   account that exists only as a token on one phone -- lose the phone and
-   nobody, including us, can prove it was theirs. So there is none.
+   world-readable, so the timeline works with the key alone.
+
+   There is an account anyway, and nobody typed anything to get it. The first
+   launch signs in ANONYMOUSLY: a real row in auth.users, a real uid, a real
+   pair of tokens, and no identity on any of it. That is what lets everything
+   somebody makes belong to an account from the first minute without a door
+   in front of the app. 「サインイン必須にしたいけど、オンボーディングで離脱
+   されるのは防ぎたい」
+
+   So "signed in" is two questions here and they are not the same one:
+
+     netSignedIn()   there is a session. Anonymous counts.
+     netMember()     the session has somebody's name on it.
+
+   The second is this phone's copy of is_member() in supabase/schema.sql,
+   which has refused an anonymous token since the day it was written -- so
+   everything other people would see is refused by the server whether or not
+   this file remembers to ask. Asking is what makes the refusal a door
+   instead of a shrug.
+
+   An anonymous account is one phone's refresh token and nothing else. Lose
+   the phone and nobody, including us, can prove it was theirs -- which is
+   exactly why buying asks for an identity, and why attaching one later keeps
+   the same uid rather than starting again.
    ========================================================================= */
 
 /* =========================================================================
@@ -71,6 +91,25 @@ function netSave(){
   }catch(e){}
 }
 function netSignedIn(){ return !!(SESS && SESS.rt); }
+/* Whether the token in hand is an anonymous one, read off the TOKEN rather
+   than off the answer that carried it. `is_anonymous` in the JWT is the exact
+   claim is_member() reads in supabase/schema.sql, so the phone and the server
+   settle this out of the same sentence rather than out of two that could
+   drift. An unreadable token is not anonymous: the server is what decides,
+   and a phone guessing "anonymous" would close doors on somebody who has an
+   account. */
+function netAnonTok(at){
+  var p=String(at||'').split('.')[1], c;
+  if(!p) return false;
+  p=p.replace(/-/g, '+').replace(/_/g, '/');
+  while(p.length % 4) p+='=';
+  try{ c=JSON.parse(atob(p)); }catch(e){ return false; }
+  return !!(c && c.is_anonymous);
+}
+/* A session with somebody's name on it. Everything other people would see
+   asks this and not netSignedIn(): a post, a like, a boost, a follow, a
+   block, a report. */
+function netMember(){ return !!(SESS && SESS.rt && !SESS.anon); }
 
 /* ---- the wire ----------------------------------------------------------
    XHR rather than fetch: this has to run on a WKWebView old enough that the
@@ -134,9 +173,26 @@ function netWhy(d, status){
 function netTook(d){
   if(!d || !d.access_token) return false;
   SESS={ at:d.access_token, rt:d.refresh_token||'',
-         uid:(d.user && d.user.id) || (SESS && SESS.uid) || '' };
+         uid:(d.user && d.user.id) || (SESS && SESS.uid) || '',
+         /* Whether this one has a name on it, decided here because this is
+            the one place that knows what a session is made of. A session
+            already stored when this key arrived has no `anon` on it at all,
+            which reads as false -- correct, because every account that
+            existed before anonymous sign-in did was a real one. */
+         anon:netAnonTok(d.access_token) };
   netSave();
   return true;
+}
+/* An account nobody asked for. Supabase's anonymous sign-in is the signup
+   endpoint with no address and no password on it; what comes back is an
+   ordinary session whose token says is_anonymous, and attaching an identity
+   to it later keeps the same uid rather than making a second account.
+
+   Called from boot.js and nowhere else: this is the app arriving, not
+   something a screen does. */
+function netAnon(ok, bad){
+  netPost('/auth/v1/signup', {data:{}}, null,
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
 }
 function netOut(){
   SESS=null; netSave();
@@ -238,7 +294,7 @@ function netHandleFree(h, ok, bad){
    yet update it. That is docs/BACKLOG.md's, not a silent gap -- a notice with
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netMember()){ bad(null, 0); return; }
   netPost('/rest/v1/profile',
           {id:SESS.uid, handle:h, display:name, av:postAvatar()},
           SESS.at, ok, bad);
@@ -372,7 +428,7 @@ function netFeed(which, ok, bad){
    By handle, because a handle is what one person knows another by; the uuid
    is looked up here exactly as netFollow() does. */
 function netBlock(handle, on, ok, bad){
-  if(!netSignedIn() || !handle){ ok(); return; }
+  if(!netMember() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
       var who=(d && d.length)? d[0].id : '';
@@ -408,7 +464,7 @@ function netBlocked(ok){
    refused by the check constraint, which is the right way round: the list of
    reasons is the server's. */
 function netReport(what, why, note, ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netMember()){ bad(null, 0); return; }
   var row={actor:SESS.uid, why:String(why||'other')};
   if(note) row.note=String(note);
   if(what && what.post){ row.post=what.post; }
@@ -643,7 +699,7 @@ function netBytes(b64){
    rather than as a picture. */
 function netUp(path, b64, mime, ok, bad){
   var x, a=netBytes(b64);
-  if(!netSignedIn() || !a){ bad(null, 0); return; }
+  if(!netMember() || !a){ bad(null, 0); return; }
   x=new XMLHttpRequest();
   x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
   x.setRequestHeader('apikey', SB_KEY);
@@ -698,7 +754,7 @@ function netExt(mime){
    `sid` is one that has not gone up yet, which is the whole of the retry. */
 function netPush(post, ok, bad){
   var row, pid, up;
-  if(!netSignedIn() || !post){ bad(null, 0); return; }
+  if(!netMember() || !post){ bad(null, 0); return; }
   pid=netUUID();
   row={id:pid, author:SESS.uid, body:netBody(post)};
   /* What it answers, by the name the SERVER knows -- the local id means
@@ -743,7 +799,7 @@ function netUpVoice(uid, pid, post, ok){
    never heard of it, and that is not an error worth showing anybody. */
 function netMark(id, kind, on, ok, bad){
   var p=postById(id), sid=p && p.sid;
-  if(!netSignedIn() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
+  if(!netMember() || !sid || (kind!=='like' && kind!=='boost')){ ok(); return; }
   if(on){
     netSend('POST', '/rest/v1/react', {post:sid, actor:SESS.uid, kind:kind},
             SESS.at, function(){ ok(); }, bad);
@@ -763,7 +819,7 @@ function netMark(id, kind, on, ok, bad){
    not go the row still does: a post somebody asked to be gone must go. */
 function netDrop(id, ok, bad){
   var p=postById(id), sid=p && p.sid;
-  if(!netSignedIn() || !sid){ ok(); return; }
+  if(!netMember() || !sid){ ok(); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
             null, SESS.at, function(){ ok(); }, bad);
@@ -854,7 +910,7 @@ function netEndMe(ok, bad){
    A handle and not an id, because a handle is what one person knows another
    by. The id is looked up here, once, in the one place that has to. */
 function netFollow(handle, on, ok, bad){
-  if(!netSignedIn() || !handle){ ok(); return; }
+  if(!netMember() || !handle){ ok(); return; }
   netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
     function(d){
       var who=(d && d.length)? d[0].id : '';

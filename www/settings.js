@@ -67,7 +67,7 @@ function setSummary(id, p){
   if(id==='read')  return readMode()==='kana'? capFirst(langDef().rdName) : t('read.'+readMode());
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langName||'—';
-  if(id==='acct')  return t(netSignedIn()? 'set.account.on' : 'set.account.guest');
+  if(id==='acct')  return t(netMember()? 'set.account.on' : 'set.account.guest');
   if(id==='data')  return can('data')? 'CSV' : 'Free';
   return '';
 }
@@ -138,7 +138,7 @@ function vSet(){
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
-    body=(netSignedIn()
+    body=(netMember()
       ? '<button class="set"><span class="sl">'+t('set.account')+'</span>'+
         '<span class="sv">'+esc(t('set.account.on'))+'</span></button>'+
         '<button class="set"' + DO('setSignOut') + '>'+
@@ -392,6 +392,6 @@ function setSignOut(){ netOut(); toast(t('set.signout.done')); render(); }
    opening it from here means saying the onboarding is unfinished. For
    somebody who already has a language that is a lie, and the app used to
    make good on it: sign in, and you were walked through drawing an alphabet
-   you already had. obBackTo() is what says the lie is temporary and where to
-   undo it. */
-function setMail(){ obBackTo('set', 'acct'); OBM.mode='in'; OBM.msg=''; SET.done=false; save(); render(); }
+   you already had. obDoor() is what says the lie is temporary and where to
+   undo it, and it is what every other way to the door goes through now. */
+function setMail(){ obDoor('set', 'acct'); }

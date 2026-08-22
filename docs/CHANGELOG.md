@@ -15,6 +15,42 @@ where it starts.
 
 ## Unreleased — on `claude/save`, code confirmed, **not yet confirmed on a device**
 
+### The app makes an account for you, and being somebody is a second question
+
+Opening Lingua signs you in. Nobody types anything and nobody is asked
+anything: the first launch makes an **anonymous account** on the server and
+everything is made under it. 「サインイン必須にしたいけど、オンボーディングで
+離脱されるのは防ぎたい」
+
+That splits one question into two, and they were the same question until now.
+`netSignedIn()` says there is a session — anonymous or not — and `netMember()`
+says the session has somebody's name on it. The second is the phone's copy of
+`is_member()` in `supabase/schema.sql`, which has always refused an anonymous
+token, and it is read off the token itself rather than off the answer that
+carried it, so the phone and the server are reading the same claim.
+
+What that changes on screen: the timeline, the search and the notices open
+without signing in, because there is a session now. Everything **other people
+would see** asks first, and asking is the door: writing a post, liking one,
+boosting one, reporting one, following somebody, blocking somebody. Press one
+without a name and the door opens with the way back to where you were pressed
+into it. 「課金とツイートにはログイン必須。それ以外は流さない」
+
+Buying is the other half of that sentence and is not here: there is no
+StoreKit yet, so the plans screen is untouched.
+
+**Stored:** `lingua.sess` gains one key, `anon`. A session already on a phone
+does not have it, which reads as false — every account that exists today is a
+real one, so nobody is signed out or demoted by the update. Nothing is
+removed and nothing else moves.
+
+`migrate-check` case 7 holds it: a launch with nothing stored comes up holding
+an anonymous session it did not have, that session is signed in and is not a
+member, an old stored session is still a member, and signing in over the
+anonymous one leaves it a member. Watched failing with the boot call taken
+out.
+
+
 ### Deleting a word puts you back where you were, not on its page
 
 Delete a word and the screen behind you was the word's own page, which then

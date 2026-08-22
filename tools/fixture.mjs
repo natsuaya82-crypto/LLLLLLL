@@ -53,7 +53,12 @@ export function seed(){
      at all. The DOOR is the face that needs saying out loud now, and it is
      one entry in halfDone() rather than the state everything else is walked
      in. */
-  SESS = { at:'a', rt:'r', uid:'u' };
+  SESS = { at:'a', rt:'r', uid:'u', anon:false };
+  /* anon:false is the half that matters. There is a session from the first
+     launch now whether or not anybody has said who they are, so a fixture
+     that only set `rt` would be walking the app as somebody with no name --
+     and every button that writes would answer with the door instead of doing
+     what it does. */
   WORDS = [
     {hw:'kano', ph:['k','a','n','o'], mn:'mountain', mns:['mountain'], pos:'n', at:1,
      reg:'wr', tags:['land'], ety:'from the word for head', up:2},
