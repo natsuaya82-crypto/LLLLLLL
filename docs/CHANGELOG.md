@@ -80,6 +80,225 @@ member, an old stored session is still a member, and signing in over the
 anonymous one leaves it a member. Watched failing with the boot call taken
 out.
 
+### ROUND is done to a stroke, not armed before one — OWNER DECISION
+
+The button used to turn a mode on: press it, then draw, and what came out was
+bent. It is the other way round now — draw the stroke, look at it, then decide.
+「線は先に引いてその後にそれをラウンドにするかどうか選べる仕様にしない？」
+
+Three things follow, and all three are the owner's:
+
+**With nothing drawn the button is down.** ROUND is done to a stroke, so until
+there is one there is nothing for it to be done to.
+
+**A straight stroke stays straight.** 「縦線はラウンド押してもラウンドになる
+わけがない」 It could not before: the ring guess keeps three points of a stroke
+and closes them, and a closed arc is a full circle, so a line drawn straight
+down could come back a ring. 「縦線引いただけで円になるんだって」 It never
+threw and never blanked a screen — the letter simply was not the one drawn.
+
+**Pressing again gives back exactly what was drawn.** The stroke as drawn is
+kept while the editor is open, and every press bends that one rather than
+whatever the last press left behind. The old button only turned its mode off
+and left the stroke bent.
+
+How a stroke bends still depends on how it was made: a dragged one from the
+finger's own path, a tapped one by marking its interior points, because
+thinning what somebody placed dot by dot is dropping what they placed. A
+stroke brought back by undo has neither behind it, so it is taken as it stands
+and treated as tapped — which never drops a point.
+
+**Data.** Nothing new is stored. What ROUND leaves behind is the same `k`,
+`closed` and `'c'` marks it always left; the straight copy lives in the editor
+and goes when the screen does. Nothing already stored changes.
+
+**Deletion.** Nothing is deleted.
+
+**Tested.** `tools/round-check.mjs`, new, in `npm test`: a line of seven points
+drawn straight down is untouched and its ink is still 24 wide, not a ring; a
+stroke with a corner does bend; pressing twice gives back exactly the drawn
+stroke; the button is down with nothing drawn and up with something. Both
+failures were watched — with the straightness guard removed, and with the old
+mode-style button put back.
+
+**Not verified on a device.**
+
+### A stroke can blacken what it goes round — OWNER DECISION
+
+The editor's rail has a fourth button. With the fill on, the stroke being
+drawn shows green on the canvas and the inside of what it goes round is
+black; three points is the least that has an inside, and below that the flag
+sits on the stroke and does nothing. Nothing else happens.
+「塗りボタンオン。緑色の線が出現。三点以上の囲われた部分が塗られる。それ以上は
+なにも起きない」
+
+Green belongs to the editor and nowhere else. On a key, a tile, a card, in a
+post and in the exported font, a filled stroke is the letter's own colour like
+every other stroke — it is a shape somebody drew, not a marked-up one.
+
+**Data.** A stroke may now carry `fill: true`, beside the `closed` and `k`
+flags it could already carry. `docs/DATA_MODEL.md` writes the whole stroke out
+for the first time. Nothing already stored changes: a stroke without the flag
+is a plain line, which is what it has always been, and no migration runs. It
+travels with the letter, so it is in the backup and in a post's ink without
+anything being added to either.
+
+**The font.** Every shape in this app has been a nib swept along a line, and
+this is the one that is not. `glyphContours()` cuts the inside into triangles
+and adds them to the sweep, rather than handing down one concave outline —
+everything below it is allowed to assume its contours are convex and all wound
+the same way, and that assumption stays true. A stroke that crosses itself has
+no ear left at some point; the cut stops there and keeps what it has, so a
+scribble inks most of itself instead of throwing the letter away.
+
+**Deletion.** Nothing is deleted.
+
+**Tested.** `tools/fill-check.mjs`, new, in `npm test`. It counts the pixels
+the real drawing code blackens: a triangle inks 1393px drawn and 6544px
+filled; two points have no inside and ink 648px either way; a self-crossing
+stroke still inks; and after `geSave()` the flag is still there and the letter
+draws the same 6544px. Three of those were watched failing — with the fill
+dropped from `glyphContours`, and with `geSave` rebuilding its strokes without
+the flag.
+
+**Not verified on a device.**
+
+### The pen is 24, and 24 is the ceiling — OWNER DECISION
+
+The pen had been walked up to 40 to see what a page of somebody's writing
+weighs, with a second thinner pen given to the editor's canvas so the lattice
+stayed visible under a finger. Both are out. 「24が限界やね」
+
+The reason is not weight. The lattice step is 36, so two strokes on adjacent
+dots are one step apart, and a pen wider than the step welds them: two strokes
+go in and one comes out, which is the app producing a letter that is not the
+one somebody drew. Measured through the real drawing code at the size a post
+is read at — 44px on a 3× phone, `tools/pen-gap.mjs` — pen 24 leaves white
+between them; 28, 32 and 40 leave none. The answer "then draw them two dots
+apart" was considered and rejected by the owner in the same breath, because a
+letter with two dots between its strokes is a different letter.
+「2あけだとだって書いた文字と別のもんができちゃうくない？」
+
+That also settles the second pen. A wide pen buries the dots under your
+finger, and a thinner editor pen was tried for exactly that — but a canvas
+drawn with a different pen from the font is the same bug backwards: what is
+under your finger stops being what comes out. One pen, everywhere.
+
+**Behaviour.** None. `GPEN.width` was already 24; what is new is that 24 is
+written down as a limit rather than a number somebody picked, with the
+measurement beside it. Nothing may raise it without a decision.
+
+**Data.** Nothing stored changes. Letters hold strokes, never ink — the pen is
+applied when a glyph is drawn, so a change to it would have redrawn every
+letter ever made, and this one changes nothing.
+
+### A dot is a mark
+
+Saving a letter dropped every stroke with only one point in it, on the
+grounds that a line with one end is a line half-drawn. That is true of a
+line, and it also meant a language could not have a dot in it: a letter that
+IS a dot, and a dot placed beside a line, both came back as nothing every
+time they were saved. 「点一つで点で。だって線にするには2で繋ぐ必要あるでしょ」
+
+The pen already lays a dot down — one point is one square of ink, the nib
+itself — so nothing about drawing had to change. What is still dropped is a
+stroke with no points at all, which is the empty one the canvas opens and
+nobody drew on.
+
+**Data.** A letter's `st` can now hold a stroke whose `pts` has one point.
+Nothing already stored changes, nothing is removed, and a letter saved before
+today is unaffected — what it lost, it lost then.
+
+**Deletion.** Nothing is deleted. This is the opposite: one thing that was
+being thrown away is kept.
+
+### A word made brings its forms with it
+
+Rules that make a form (`docs/` chapter 13, `STG.fm`) could only be spent one
+press at a time: a word's own page carried a row saying "make the 2 forms this
+word has not got", and the rules screen a button making every one of them
+across the whole dictionary. Both are after the fact — the word is already in,
+and you go back for its forms.
+
+So the forms are on the sheet the word is coined on. Type a spelling and every
+rule that fits the draft's part of speech shows its form under 規則で作る形,
+already spelled. Each row can be typed over, and each row has a minus. Saving
+the word writes the rows that are left, as ordinary words.
+「保存したら出る。消してたら消す。」
+
+- **A form typed over wins.** Changing the head spelling re-spells only the
+  rows nobody has touched. 「あくまで規則は作るのを楽にするためのツール」
+- **A row taken off stays off** for as long as the sheet is open, even if the
+  spelling is retyped into something the rule fits again.
+- **Only where a word is being coined.** Editing a word that already exists
+  shows none of this and changes none of its forms. 「あくまで追加したとき」
+
+**Data.** Each form goes in as an ordinary word — `hw`, `sp`, `pos`, `at`,
+`from` (the word it was made from) and `fm` (which form it is), which is
+exactly what the row on the word page already wrote. An inflection takes the
+parent's meanings and a derivation takes none, unchanged. Nothing is stored
+about the sheet itself: the rows live only while it is open.
+
+**Deletion.** Nothing here deletes. The minus is on a form that does not exist
+yet, so there is nothing to remove. What was already true stays true and is
+worth writing down, because it is what a person would fear: deleting a word
+that has forms leaves every form alive as a word of its own, with the pointer
+at the parent dropped and nothing else touched (`delWord`). A form deleted on
+its own page deletes that word and nothing else.
+
+**Plan.** No change. The forms count against the free 100 like any other word,
+and the sheet refuses to add more than there is room for.
+
+### A reading is chosen off sounds, and no letter appears where one is chosen
+
+The word sheet carried a row of tiles under the box a word is typed into: one
+tile per letter, and pressing one opened a page that drew that letter big and
+offered the sounds it could read here. Two things were wrong with it and they
+are the same thing. A tile is a LETTER, and the alphabet already joins a sound
+to a letter — having both directions of that table in the app at once is what
+made it unreadable 「音から文字と文字から音で二重になるから困る」. And a reading
+cannot be typed: θ is on nobody's keyboard, and a sound you cannot hear is not
+a sound.
+
+So the sheet has one row — 読みの変更, with the reading on it — and it opens a
+page that is sounds and nothing else: the language's own first, then the whole
+of the IPA grouped by how each sound is made, with a search that matches those
+words (「摩擦」 finds θ) and a back arrow that drops the last one. Every press
+says the sound out loud.
+
+**Data.** Nothing new is stored and nothing is dropped. A word still carries
+`sp` — which letter is in each position and what it says there — and what is
+typed on the page is cut into sounds and handed to those positions in order:
+sounds left over after the last position join it (one letter reading two
+sounds is ordinary), positions left over after the last sound fall silent (a
+silent letter is ordinary too). The letters of a word are still changed only
+by typing the word.
+
+`spPageHTML`, `spRowHTML`, `spOdd`, `wdSetU`, `wdDropAt` and `wdBack` are
+gone. `tools/shot.mjs` takes `--paid`, because this page is the paid plan's
+and every picture until now was of the free one.
+
+`buttons pressed` rises 7102 → 7884: a hundred and sixty tiles on a page the
+fixture holds two faces of. The tiles that came off — the letter row on the
+sheet, and the page for one position of a word — are in that number too, as a
+fall the rise swallowed.
+
+### The plans are the first row of settings
+
+Settings → プラン opened a room holding a single row, which said the plan's
+name and went to the plans page. On a dark phone that is a black screen with
+one line at the top of it. The room is gone; the row is the first thing in
+settings and goes straight to the plans. 「プランを設定の中に入れると課金導線が
+カスだから一番上置くとか」 `set.plan.cur` is dropped from all ten languages.
+
+### 基本形, not 元の語
+
+Wording only, in all ten interface languages. The key does not move.
+
+### The spelling box is in the person's own letters
+
+It held the letters' names — a to z — and drew them in roman, which is what
+those names look like and not what the word looks like.
 
 ### Deleting a word puts you back where you were, not on its page
 

@@ -197,133 +197,40 @@ function sndStart(){
   SND=asOrder(asSounds('plain', 12));
   saveSnd();
 }
-/* ---- an inventory to start from ---------------------------------------
-   Fourteen buttons and no help is not a question anybody can answer the
-   first time. So the app proposes: say what the language should sound like
-   -- soft, hard, flowing, breathy, plain -- and it draws an inventory out of
-   that region of the chart, says it out loud, and waits. Take it, ask for
-   another, or use the chart below and do it yourself.
-
-   This was the third step of onboarding, where it stood between somebody and
-   the first thing they came to do. It belongs here, in the chapter about
-   sounds, where it can be reached on any day rather than once. */
-var sndFeelPick='';
-function sndFeel(id){
-  sndFeelPick=id;
-  SND=asSounds(id, 12);
-  saveSnd();
-  asSay(SND);
-  render();
-}
-function sndFeelAgain(){ if(sndFeelPick) sndFeel(sndFeelPick); }
-/* The proposal, shown in two rows. A flat list of twelve symbols is a wall:
-   there is no way to see that the language has five vowels and seven
-   consonants, which is the single most useful thing about an inventory and
-   the thing that decides what a syllable can look like. Consonants first,
-   vowels under them, each row labelled -- the same two words the chart uses,
-   so nothing new has to be learned to read it.
-
-   Each row ends with the way to lengthen it: one more consonant, one more
-   vowel, drawn from the same character of sound and said as it arrives. And
-   each sound carries the way to take it back out, because a proposal you can
-   only accept whole is not a proposal. */
-/* The same row in two places: in the chapter a sound is tapped to hear it,
-   and in onboarding it is tapped to say that the letter just drawn reads it.
-   The name the button says is passed in rather than assumed. */
-function sndFeelRow(lab, list, kind){
-  return '<div class="obhr"><span class="obhk">'+esc(lab)+'</span>'+
-    '<div class="obhs">'+list.map(function(p){
-      return '<span class="obhp"><button class="obhb"' + DO('ltTakeSnd', [p]) + '>'+esc(p)+'</button>'+
-        '<button class="obhx"' + DO('dropSnd', [p]) + ' aria-label="'+esc(t('as.drop'))+'">'+ICON_CROSS+'</button></span>';
-    }).join('')+
-    '<button class="obhadd"' + DO('sndFeelMore', [kind]) + '>'+ICON_ADD+esc(t('as.more.'+kind))+'</button>'+
-    '</div></div>';
-}
-/* One more sound of the kind asked for. It is said on arrival -- an inventory
-   is a set of sounds, so a sound that joins it silently has not really been
-   heard about. */
-function sndFeelMore(kind){
-  var have=addedSnd(), s=asMore(sndFeelPick||AS_CHARS[0].id, kind, have);
-  if(!s){ toast(t('as.more.none')); return; }
-  SND=asOrder(have.concat([s]));
-  saveSnd(); sayOne(s); render();
-}
-function sndFeelHTML(){
-  var have=addedSnd(), cs=[], vs=[], i;
-  for(i=0;i<have.length;i++){
-    if(ipaIsVowel(have[i])) vs.push(have[i]); else cs.push(have[i]);
-  }
-  /* No line of its own above this. Every screen it appears on says what it is
-     asking; a second sentence here was emptied to an ideographic space to
-     keep i18n-check quiet and left a blank paragraph's worth of gap. */
-  return '<div class="obscripts one">'+AS_CHARS.map(function(c){
-      return '<button class="obsrow'+(sndFeelPick===c.id?' on':'')+'"' + DO('sndFeel', [c.id]) + '>'+
-        '<span class="obnm">'+esc(t('as.'+c.id))+'</span>'+
-        '<span class="obws">'+esc(t('as.'+c.id+'.d'))+'</span></button>';
-    }).join('')+'</div>'+
-    /* the panel stays once a character has been chosen, even if every sound
-       in it has been taken back out -- otherwise dropping the last one takes
-       away the buttons that would put another back */
-    ((have.length || sndFeelPick)
-      ? '<div class="obheard"><div class="obhl">'+tn('ob.snds.n', have.length)+'</div>'+
-        sndFeelRow(t('ipa.cons'), cs, 'c')+sndFeelRow(t('ipa.vows'), vs, 'v')+
-        '<div class="wctl2"><button' + DO('asSay', [addedSnd()]) + '>'+ICON_SPK+t('as.hear')+'</button>'+
-        (sndFeelPick? '<button' + DO('sndFeelAgain') + '>'+t('as.again')+'</button>':'')+'</div></div>'
-      : '');
-}
-
 /* The chart is also how a letter is told what it reads, and that is a
    different thing to do with the same button, so the name it says is passed
    in rather than assumed. Nothing else about the chart changes. */
-/* One symbol on the chart. The same chart serves two questions and the answer
-   to "is it on" is different for each: opened FROM A LETTER it means this
-   letter reads it, and opened from the phonology it means the language has
-   it. `sndFor` is which, and it is the only thing that differs -- one chart,
-   two things a press can mean, rather than a second copy of 111 symbols. */
-function ipaBtn(sym){
-  var l=sndFor? ltById(sndFor) : null, has;
-  if(!sndFor){
-    has=addedSnd().indexOf(sym)>=0;
-    return '<button class="ph2'+(has?' on':'')+'"' + DO('sndTake', [sym]) + '>'+
-      esc(sym)+'</button>';
-  }
-  has=!!(l && (l.snd||[]).indexOf(sym)>=0);
-  return '<button class="ph2'+(has?' on':'')+'"' + DO('ltTakeSnd', [sym]) + '>'+esc(sym)+'</button>';
-}
 /* Into the language, or out of it, with no letter involved. Taking one out
    goes through sndDrop() so the refusal is in one place. */
+/* A sound joins the language, and a letter to write it with joins the
+   alphabet in the same breath. 「音を増やしたら必然的に文字も増やすわけでしょ？」
+
+   The letter arrives with the sound on it and nothing else -- no name, no
+   shape -- so the alphabet gains a cell that says what it reads and is
+   waiting to be drawn. That is the state the alphabet page already draws: a
+   pencil where the shape goes, a dot where the name goes, and the reading
+   under it.
+
+   Paid only, because adding a letter is `letters` and the free plan's
+   alphabet is exactly a to z, the two marks and the digits -- a twenty-ninth
+   slot there would be a letter with no key on a keyboard that cannot change.
+   Nothing on this path is reachable on free: the inventory is Plus's page.
+
+   Dropping a sound does NOT drop the letter. A letter is a thing somebody
+   may have drawn on, and sndDrop already refuses while any letter reads the
+   sound -- so the way out is to say what that letter reads instead, on the
+   letter, which is where that has always been said. */
 function sndTake(sym){
   if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
   SND=asOrder(addedSnd().concat([sym]));
-  saveSnd(); sayOne(sym); openSndAdd();
-}
-function ipaConsTable(){
-  var rows='', mi, pi, m, cell;
-  for(mi=0; mi<IPA_MANNERS.length; mi++){
-    m=IPA_MANNERS[mi];
-    if(!ipaHasManner(m)) continue;
-    rows+='<tr><th>'+esc(t('ipa.m.'+m))+'</th>';
-    for(pi=0; pi<IPA_PLACES.length; pi++){
-      cell=ipaCell(m, IPA_PLACES[pi]);
-      rows+='<td>'+cell.map(function(c){ return ipaBtn(c.s); }).join('')+'</td>';
-    }
-    rows+='</tr>';
+  saveSnd();
+  if(can('letters') && !sndLetters(sym).length){
+    var l=ltNew({});
+    l.snd=[sym]; l.chose=1;
+    saveLetters(); installScriptFont();
   }
-  return '<div class="ipascroll"><table class="ipatab">'+rows+'</table></div>';
+  sayOne(sym); openSndAdd();
 }
-function ipaVowTable(){
-  var rows='', hi, bi, cell;
-  for(hi=0; hi<IPA_HEIGHTS.length; hi++){
-    rows+='<tr><th>'+esc(t('ipa.h.'+IPA_HEIGHTS[hi]))+'</th>';
-    for(bi=0; bi<IPA_BACKS.length; bi++){
-      cell=ipaVCell(IPA_HEIGHTS[hi], IPA_BACKS[bi]);
-      rows+='<td>'+cell.map(function(v){ return ipaBtn(v.s); }).join('')+'</td>';
-    }
-    rows+='</tr>';
-  }
-  return '<table class="ipatab">'+rows+'</table>';
-}
-
 /* ---- what a letter reads ----------------------------------------------
    There was a chapter here: the language's inventory on one page, its
    letters on another, and a letter's sound a fact you could reach from
@@ -338,18 +245,174 @@ function ipaVowTable(){
    It is the same chart the chapter had. What changed is what a symbol does
    when it is pressed: it used to join the language, and now it joins the
    letter, which is the only way it could ever have joined the language. */
+/* ---- the IPA, as one page, wherever it is asked for ----------------------
+   There were three of these and they were three different screens for one
+   question. A letter's sound was a chart -- rows of manner against columns of
+   place -- which does not fit the width of a phone and had the fricatives cut
+   off the right-hand side, with five boxes of prose above it saying what
+   "soft" and "breathy" mean. Adding a sound to the language was the same
+   chart without the prose. A word's reading was neither: a search and a
+   column of groups. 「音のページ単語と文字で全然違うから統一して」
+
+   One shape, and it is the third one, because it is the one that fits: search
+   at the top, this language's own sounds first, then the chart by how each
+   sound is made. No prose 「説明いらん」.
+
+   What differs between the three is one name -- what a press calls -- and
+   which symbols are shown as already on. Both travel on the list itself, so
+   typing in the search can repaint the tiles without knowing which of the
+   three screens it is standing on. */
+var ipaQ='';
+function ipaSetQ(v){ ipaQ=String(v||''); ipaPaint(); }
+/* The list again, without the page around it: what a press calls and what is
+   already on travel on the element, so nothing here has to know which of the
+   three screens it is standing on. */
+function ipaPaint(){
+  var e=document.getElementById('ipa-list');
+  if(!e) return;
+  e.innerHTML=ipaGroupsHTML(e.getAttribute('data-act'),
+                            String(e.getAttribute('data-on')||'').split(' '));
+}
+/* What a symbol can be looked up by: itself, and the words for how it is
+   made. Somebody hunting for theta knows 摩擦 or fricative long before they
+   know where it sits on a chart of a hundred and sixty. */
+function ipaWords(sym){
+  var i, c=IPA_CONS, w=IPA_VOWS;
+  for(i=0;i<c.length;i++) if(c[i].s===sym)
+    return sym+' '+t('ipa.m.'+c[i].m)+' '+t('ipa.p.'+c[i].p);
+  for(i=0;i<w.length;i++) if(w[i].s===sym)
+    return sym+' '+t('ipa.h.'+w[i].h)+' '+t('ipa.b.'+w[i].b);
+  return sym+' '+t('ipa.other');
+}
+function ipaHit(sym){
+  return !ipaQ || ipaWords(sym).toLowerCase().indexOf(ipaQ.toLowerCase())!==-1;
+}
+/* Two things to do with one sound, and they are two buttons. Pressing the
+   symbol takes it -- into the language, onto the letter, onto the reading --
+   and pressing the speaker only says it. They were one button that did both,
+   so the only way to hear a sound was to choose it first and take it back out
+   afterwards. 「そのタイルの右上に音声マークつけて音聞けるようにして」「分けたいね」
+
+   The speaker is a small circle at the corner and a 44pt target: the button
+   is the size a thumb needs and the ink inside it is not. Drawing it small
+   AND making it small is what press-check refuses, and it is right to. */
+function ipaTiles(sym, act, on){
+  return '<span class="phkp">'+
+    '<button class="phk'+(on.indexOf(sym)>=0? ' on':'')+'"' +
+      DO(act, [sym]) + '><span class="pks">'+esc(sym)+'</span></button>'+
+    '<button class="phks"' + DO('sayPh', [[sym]]) + ' aria-label="'+
+      esc(t('f.listen'))+'"><span class="phkd">'+ICON_SPK+'</span></button>'+
+    '</span>';
+}
+/* What a GROUP of sounds is -- 破裂音, 鼻音 -- said as a thing the mouth does,
+   with a few of them heard in a language somebody knows. Not the name:
+   「無声両唇破裂音って聞いて普通の人一発で理解できんの？」 And not one of these per
+   symbol either: the question was about the heading.
+
+   The examples are drawn from IPA_IN, so a group whose sounds no language
+   here has says only what the mouth does, and nothing is invented to fill
+   the gap. */
+function ipaGroupOf(key){
+  if(key.indexOf('m.')===0) return ipaOfManner(key.slice(2));
+  if(key==='v') return IPA_VOWS.map(function(v){ return v.s; });
+  if(key==='o') return IPA_OTHER.map(function(o){ return o.s; });
+  return addedSnd();
+}
+function ipaGroupWords(key){
+  if(key.indexOf('m.')===0) return t('ipa.d.m.'+key.slice(2));
+  if(key==='v') return t('ipa.d.vows');
+  if(key==='o') return t('ipa.d.other');
+  return t('ipa.d.mine');
+}
+function ipaGroupName(key){
+  if(key.indexOf('m.')===0) return t('ipa.m.'+key.slice(2));
+  if(key==='v') return t('ipa.vows');
+  if(key==='o') return t('ipa.other');
+  return t('ipa.mine');
+}
+function openIpaG(key){
+  var rows=[], syms=ipaGroupOf(key), i, j, heard;
+  for(i=0;i<syms.length && rows.length<6;i++){
+    heard=ipaIn(syms[i]);
+    for(j=0;j<heard.length && j<2 && rows.length<6;j++)
+      rows.push([syms[i], heard[j][0], heard[j][1]]);
+  }
+  openForm('ipad:'+key, ipaGroupName(key),
+    '<div class="ipadw">'+esc(ipaGroupWords(key))+'</div>'+
+    (rows.length? '<div class="ipadl">'+rows.map(function(r){
+      return '<div class="ipadr">'+
+        '<button class="ipads"' + DO('sayPh', [[r[0]]]) + ' aria-label="'+
+          esc(t('f.listen'))+'">'+esc(r[0])+'</button>'+
+        '<span class="ipadn">'+esc(LANG[r[1]]? LANG[r[1]].label : r[1])+'</span>'+
+        '<span class="ipadx">'+esc(r[2])+'</span></div>';
+    }).join('')+'</div>' : ''));
+}
+FORM_OPEN.ipad=function(a){ openIpaG(String(a||'')); };
+/* Shut, and opened one at a time. Ten headings and a hundred and sixty tiles
+   were one screen you scrolled past to reach anything.
+   「全部開かないで最初>とかで蛇腹にして開いたら見えるように」
+
+   The language's own is the one that starts open: it is short, and on the
+   page a letter opens it is where that letter's sound already is.
+
+   A search opens whatever matched. Otherwise typing into it would answer with
+   a column of headings, which is the one thing it must not do. */
+var ipaOpen={mine:1};
+function ipaShut(key){ return !ipaQ && !ipaOpen[key]; }
+function ipaToggle(key){
+  if(ipaOpen[key]) delete ipaOpen[key]; else ipaOpen[key]=1;
+  ipaPaint();
+}
+function ipaGroupHTML(key, head, list, act, on){
+  var hit=list.filter(ipaHit);
+  if(!hit.length) return '';
+  return '<div class="ipahr">'+
+    '<button class="ipah'+(ipaShut(key)?'':' on')+'"' + DO('ipaToggle', [key]) + '>'+
+      esc(head)+'</button>'+
+    /* The same badge as the speaker on a tile: one circle, 22px of ink in a
+       44pt target, and it sits beside the thing it is about rather than
+       floated to the far edge. Two shapes for two questions in one app is
+       what this is not. 「⚪︎？で統一しろ」 */
+    '<button class="phks ipaq"' + DO('openIpaG', [key]) + ' aria-label="'+
+      esc(t('help.q'))+'"><span class="phkd">?</span></button>'+
+    '<span class="ipan">'+hit.length+'</span></div>'+
+    (ipaShut(key)? '' :
+     '<div class="phkeys">'+hit.map(function(sym){
+       return ipaTiles(sym, act, on); }).join('')+'</div>');
+}
+/* The manners are read off IPA_CONS rather than written out here, so a manner
+   added to the chart is a heading on this page the same day. */
+function ipaManners(){
+  var out=[], i;
+  for(i=0;i<IPA_CONS.length;i++)
+    if(out.indexOf(IPA_CONS[i].m)<0) out.push(IPA_CONS[i].m);
+  return out;
+}
+function ipaOfManner(m){
+  return IPA_CONS.filter(function(c){ return c.m===m; }).map(function(c){ return c.s; });
+}
+function ipaGroupsHTML(act, on){
+  return ipaGroupHTML('mine', t('ipa.mine'), addedSnd(), act, on)+
+    ipaManners().map(function(m){
+      return ipaGroupHTML('m.'+m, t('ipa.m.'+m), ipaOfManner(m), act, on);
+    }).join('')+
+    ipaGroupHTML('v', t('ipa.vows'), IPA_VOWS.map(function(v){ return v.s; }), act, on)+
+    ipaGroupHTML('o', t('ipa.other'), IPA_OTHER.map(function(o){ return o.s; }), act, on);
+}
+function ipaPickHTML(act, on){
+  on=on||[];
+  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+    '<input id="ipa-q" value="'+esc(ipaQ)+'"' + IN('ipaSetQ') + '></div>'+
+    '<div id="ipa-list" data-act="'+esc(act)+'" data-on="'+esc(on.join(' '))+'">'+
+    ipaGroupsHTML(act, on)+'</div>';
+}
 var sndFor='';
 function openSnd(lid){
   var l=ltById(lid);
   if(!l) return;
   sndFor=lid;
   openForm('snd:'+lid, ltName(l)||t('lt.untitled'),
-    '<div class="sec">'+t('ipa.feel')+'</div>'+sndFeelHTML()+
-    '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
-    '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
-    '<div class="sec">'+t('ipa.other')+'</div>'+
-    '<div class="ipafree">'+IPA_OTHER.map(function(o){
-      return ipaBtn(o.s); }).join('')+'</div>');
+    ipaPickHTML('ltTakeSnd', l.snd||[]));
 }
 FORM_OPEN.snd=function(lid){ openSnd(lid); };
 /* Pressed on the chart, on the proposal, anywhere a symbol is shown in that
@@ -409,38 +472,15 @@ function sndLetters(sym){
 
    So they are shown, because "which letters say this" is the question a
    phonology asks, and they are not pressed. */
-function sndRowHTML(sym){
-  var ls=sndLetters(sym);
-  return '<div class="sndrow">'+
-    '<button class="sndsym"' + DO('sayPh', [sym]) + '>'+esc(sym)+'</button>'+
-    '<div class="sndlts">'+(ls.length
-      ? ls.map(function(l){
-          return '<span class="sndlt">'+ltInk(l, esc(ltName(l)||'·'))+'</span>'; }).join('')
-      : '<span class="sndnone">'+esc(t('snd.nolt'))+'</span>')+'</div>'+
-    '<button class="sndx"' + DO('sndDrop', [sym]) + ' aria-label="'+
-      esc(t('snd.drop'))+'">'+ICON_CROSS+'</button>'+
-    '</div>';
-}
-function vSnd(){
-  var ss=addedSnd();
-  return '<div class="view">'+navTop(String(ss.length))+'<div class="body">'+
-    (ss.length
-      ? ss.map(sndRowHTML).join('')
-      : '<div class="empty"><div class="eb">'+t('snd.empty')+'</div></div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:16px"' +
-      DO('openSndAdd') + '>'+ICON_ADD+t('snd.add')+'</button>'+'<div style="height:80px"></div>'+
-    '</div></div>';
-}
+/* The alphabet is where a sound is now seen and taken out -- sndCell above.
+   What was here was a row per sound with the letters that say it beside it,
+   on a chapter of its own, which is the same pair the letters page already
+   shows from the other end. 「音から文字と文字から音の二重をどうにかしろ」 */
 /* The whole chart, to put a sound into the language before any letter says
    it. The same chart a letter opens; what differs is what a press does. */
 function openSndAdd(){
   sndFor='';
-  openForm('sndadd', t('snd.add'),
-    '<div class="sec">'+t('ipa.cons')+'</div>'+ipaConsTable()+
-    '<div class="sec">'+t('ipa.vows')+'</div>'+ipaVowTable()+
-    '<div class="sec">'+t('ipa.other')+'</div>'+
-    '<div class="ipafree">'+IPA_OTHER.map(function(o){
-      return ipaBtn(o.s); }).join('')+'</div>');
+  openForm('sndadd', t('snd.add'), ipaPickHTML('sndTake', addedSnd()));
 }
 FORM_OPEN.sndadd=function(){ openSndAdd(); };
 /* Taking one out of the inventory. It refuses while a letter still reads it:
@@ -532,26 +572,121 @@ function vLetters(){
 
    Holding a letter picks it up and moving it sets the alphabet's order --
    ltDragMount, in www/letters.js, over ltOrder. */
+/* Which order the cells are in, and which of them are shown. An alphabet of
+   seven is a glance and an alphabet of two hundred is a search, and until now
+   there was one order -- the one somebody dragged them into -- and no way to
+   ask "which of these have I not drawn yet".
+   「これ並び替え、絞り込み追加しよう。アルファベット順、作成順とか」
+
+   Where you are standing in the alphabet, not something the language holds:
+   viewReset() drops both, so arriving in another language does not arrive
+   with a filter on. */
+var LT_SORTS=['own','abc','new'], LT_FILS=['all','drawn','blank','nosnd'];
+var ltSort='own', ltFil='all';
+function setLtFil(k){ if(LT_FILS.indexOf(k)>=0){ ltFil=k; openLtView(); render(); } }
+/* `new` is the order they were made in, which is the order they are IN --
+   LETTERS is appended to and never re-sorted, so its own index is the answer
+   and no letter needs a date written on it to say so. */
+function ltSortList(list){
+  if(ltSort==='abc') return list.slice().sort(function(a, b){
+    var ka=ltAbcKey(a), kb=ltAbcKey(b);
+    return ka<kb? -1 : ka>kb? 1 : 0;
+  });
+  if(ltSort==='new') return list.slice().sort(function(a, b){
+    return LETTERS.indexOf(a)-LETTERS.indexOf(b);
+  });
+  return list;
+}
+function ltDrawn(l){ return !!((l.st && l.st.length) || l.ch); }
+function ltFilList(list){
+  if(ltFil==='drawn') return list.filter(ltDrawn);
+  if(ltFil==='blank') return list.filter(function(l){ return !ltDrawn(l); });
+  if(ltFil==='nosnd') return list.filter(function(l){ return !ltUnits(l).length; });
+  return list;
+}
+/* One row, and it opens a screen. It was two rows of round chips -- the shape
+   CLAUDE.md forbids by name, written by the one thing that had read it.
+   Choosing is a screen and changing is the screen you arrive at. */
+/* The same row the dictionary has, because it is the same question asked of
+   a different list: which of them, and in what order. One shape, both places.
+   「並び替えは単語画面と同じようにして」 */
+function ltViewRow(){
+  return '<div class="wfilrow">'+
+    '<button class="wfil"' + DO('openLtView') + '>'+
+      '<span class="wfilv">'+esc(t('lt.fil.'+ltFil))+'</span>'+ICON_GO+'</button>'+
+    '<button class="wsrt"' + DO('nextLtSort') + '>'+ICON_SORT+
+      esc(t('lt.sort.'+ltSort))+'</button>'+
+    '</div>';
+}
+/* The order steps to the next one. Three of them and a button that says which
+   it is on -- the dictionary's has two and works the same way. */
+function nextLtSort(){
+  ltSort=LT_SORTS[(LT_SORTS.indexOf(ltSort)+1) % LT_SORTS.length];
+  render();
+}
+function ltViewPick(names, now, act, pre){
+  return names.map(function(x){
+    return '<button class="set"' + DO(act, [x]) + '>'+
+      '<span class="sl">'+esc(t(pre+x))+'</span>'+
+      '<span class="sv">'+(x===now? ICON_TICK : '')+'</span></button>';
+  }).join('');
+}
+function openLtView(){
+  openForm('ltview', t('lt.fil'), ltViewPick(LT_FILS, ltFil, 'setLtFil', 'lt.fil.'));
+}
+FORM_OPEN.ltview=function(){ openLtView(); };
 function vLtset(){
   var k=here().a;
   if(LT_KINDS.indexOf(k)<0) k='alpha';
-  var list=ltOfKind(k), loose=ltLoose();
+  var all=ltOfKind(k), loose=ltLoose();
+  /* A digit's place is its value and a mark's is its own; only the alphabet
+     is a thing somebody arranges, so only the alphabet is asked about. */
+  var pick=(k==='alpha'), list=pick? ltFilList(ltSortList(all)) : all;
+  /* Dragging writes the order down, so it is offered only while the order
+     shown IS that order: dropping a letter into place under a different sort
+     would write a number nothing on screen agrees with. ltDragMount looks for
+     this id and finds nothing under any other sort. */
+  var gid=(pick && ltSort==='own' && ltFil==='all')? 'ltgrid' : 'ltgrid-ro';
   return '<div class="view">'+
-    navTop(list.length)+
+    navTop(list.length===all.length? all.length : (list.length+' / '+all.length),
+           ltWob
+             ? '<button class="navq navdone"' + DO('ltWobEnd') + '>'+esc(t('kb.done'))+'</button>'
+             : '')+
     '<div class="body">'+
-    (list.length
-      ? '<div class="ltgrid" id="ltgrid" data-k="'+esc(k)+'">'+
-          list.map(function(l){ return ltCell(l, ''); }).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>')+
+    (pick? ltViewRow() : '')+
+    /* The letters, and after them a cell for every sound of the language that
+       no letter says yet. One page for the pair, rather than a chapter for
+       each end of it. Only on the alphabet, and only where the filter is not
+       narrowing the page to something else. */
+    (function(){
+      var free=(pick && ltFil==='all')? sndLoose() : [];
+      if(!list.length && !free.length) return '<div class="note">'+t('lt.none')+'</div>';
+      return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
+        list.map(function(l){ return ltCell(l, ''); }).join('')+
+        free.map(function(sym){ return sndCell(sym, ltWob && can('snd')); }).join('')+
+        '</div>';
+    }())+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
     /* At the foot of the screen: a grid that grows is a grid you would have
        to scroll to the end of to add to. The free alphabet does not grow --
        the twenty-eight are there from the first second and drawing on them
        is the whole of it -- so there is nothing at the foot of it. */
-    (can('letters')
-      ? '<div class="barfix"><button class="btn ghost"' + DO('newLetter', [k]) + '>'+
-          ICON_ADD+t('lt.new')+'</button></div>'
+    /* Two ways to add, and they are two different things: a letter, which is
+       a shape to draw, and a sound, which is a thing the language says and
+       may not have a shape yet. The sound is the phonology chapter's only
+       remaining door, moved here with it. */
+    ((can('letters') || (k==='alpha' && can('snd')))
+      ? '<div class="barfix">'+
+          (can('letters')
+            ? '<button class="btn ghost"' + DO('newLetter', [k]) + '>'+
+                ICON_ADD+t('lt.new')+'</button>'
+            : '')+
+          ((k==='alpha' && can('snd'))
+            ? '<button class="btn ghost"' + DO('openSndAdd') + '>'+
+                ICON_ADD+t('snd.add')+'</button>'
+            : '')+
+        '</div>'
       : '')+
     '</div></div>';
 }
@@ -562,14 +697,83 @@ function vLtset(){
    without being wrong. The sentence saying which reading is taken is on the
    letter's own page: there is no room for a sentence in a cell, and no reason
    to say it in both places. */
+/* A cell says three things and used to say two: the shape, the name, and what
+   the letter READS. The reading was a page away, so an alphabet was a wall of
+   names with no way to see which sound each of them was for -- and on a
+   language that has taken a sound nobody has drawn yet, the cell for it is a
+   reading with no name and no shape at all. 「この文字のページにzとかの横に
+   読み方書いといて」 */
 function ltCell(l, press){
-  var nm=ltName(l)||t('lt.reads.none');
-  return '<button class="ltc'+(ltTaken(l)? ' dup':'')+'" data-id="'+esc(l.id)+'"'+
-    (press || DO('go', ["letter", l.id])) + ' aria-label="'+esc(nm)+'">'+
+  var nm=ltName(l)||'', rd=ltUnits(l), sa, wob=ltWob && !press;
+  sa=nm || (rd.length? phIpa(rd) : t('lt.reads.none'));
+  /* While the alphabet is held, a cell does not open: what a press is FOR in
+     this state is the corner mark, and a letter that opened its own page from
+     under a wobble would be two answers to one press. The same sentence
+     kbHTML makes about a key.
+
+     The mark is only there where a letter can actually go. The free
+     twenty-eight ARE the alphabet -- a, b, c and the two marks -- and taking
+     one away would leave the free keyboard with a key that answers to
+     nothing, which is why can('letters') guards the letter's own page too.
+     Free still wobbles, because the ORDER is theirs. */
+  return '<button class="ltc'+(ltTaken(l)? ' dup':'')+(wob? ' wob':'')+
+    '" data-id="'+esc(l.id)+'"'+
+    (press || (wob? '' : DO('go', ["letter", l.id]))) + ' aria-label="'+esc(sa)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
-    '<span class="ltcn">'+esc(nm)+'</span></button>';
+    '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
+    '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span>'+
+    ((wob && can('letters'))
+      ? '<span class="ltx"' + DO('ltDelete', [l.id]) + ' role="button" '+
+        'aria-label="'+esc(t('glyph.del'))+'">'+ICON_MINUS+'</span>'
+      : '')+
+    /* And the way to hear it, at the other corner of the same press. Only
+       while the alphabet is at rest -- held, that corner is the mark that
+       takes the letter away, and two things at one corner is one of them
+       being pressed by mistake. A letter that reads nothing has nothing to
+       play. 「この画面も音聞けたら最高やね」 */
+    ((!wob && !press && rd.length && ltHasSound(l))
+      ? '<span class="ltsay"' + DO('sayPh', [rd]) + ' role="button" '+
+        'aria-label="'+esc(t('f.listen'))+'">'+
+        '<span class="phkd">'+ICON_SPK+'</span></span>'
+      : '')+
+    '</button>';
 }
 
+/* Sounds of the language that no letter says yet. The alphabet and the
+   inventory were two chapters showing the same pair from opposite ends --
+   the letter's page said what it reads, and the phonology page said what
+   reads it. 「音から文字と文字から音の二重をどうにかしろ」「文字+音のページに
+   すればいいやん」 So there is one page: the letters, and beside them a cell
+   for each sound still waiting for one. Pressing it draws the letter that
+   says it; held, its mark takes the sound out of the language.
+
+   It is a cell in the same grid rather than a list below, because it is the
+   same thing at an earlier moment. It carries no `data-id`, which is what
+   ltDown and ltOrderKids read to know it is not in the alphabet. */
+function sndCell(sym, wob){
+  return '<button class="ltc lt0'+(wob? ' wob':'')+'" data-snd="'+esc(sym)+'"'+
+    (wob? '' : DO('ltForUnitGo', [sym])) + ' aria-label="'+esc(sym)+'">'+
+    '<span class="ltcf"><span class="nol">'+ICON_PEN+'</span></span>'+
+    '<span class="ltcn">\u00b7</span>'+
+    '<span class="ltcr">'+esc(phIpa([sym]))+'</span>'+
+    (wob
+      ? '<span class="ltx"' + DO('sndDrop', [sym]) + ' role="button" '+
+        'aria-label="'+esc(t('snd.drop'))+'">'+ICON_MINUS+'</span>'
+      : '<span class="ltsay"' + DO('sayPh', [[sym]]) + ' role="button" '+
+        'aria-label="'+esc(t('f.listen'))+'">'+
+        '<span class="phkd">'+ICON_SPK+'</span></span>')+
+    '</button>';
+}
+/* Which sounds those are: in the language, and on no letter. */
+function sndLoose(){
+  return addedSnd().filter(function(sym){ return !sndLetters(sym).length; });
+}
+/* Pressing one makes the letter that says it and opens it to be drawn --
+   which is what a cell with a pen on it says it will do. */
+function ltForUnitGo(sym){
+  var l=ltForUnit(sym);
+  if(l) go('letter', l.id);
+}
 /* One letter: its name, whether it reads a sound or is a mark, what it reads,
    the character it borrows instead of a drawing, and a way to be rid of it.
 
@@ -628,7 +832,12 @@ function vLetter(){
        a, b, c and the two marks, and that is what makes the free keyboard a
        QWERTY that works -- a key is found by the letter's name. Renaming one
        would take the key away and leave a hole nothing could fill. */
-    (can('letters')
+    /* The name, and not on a letter every language starts with: the free
+       keyboard finds its keys by name, so renaming one takes the key away.
+       ltIsBase() in letters.js is the one place that says which those are,
+       and ltCopy below is what somebody wanting a differently-named letter
+       does instead. */
+    ((can('letters') && !ltIsBase(l))
       ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
       : '')+
     (numIsDigit(l)? numWordRow(l) : '')+
@@ -643,14 +852,29 @@ function vLetter(){
         : ltUnits(l).length
           ? (ltHasSound(l)? '/'+esc(l.snd.join('/'))+'/' : esc(l.snd.join(' ')))
           : esc(t('lt.reads.none')))+'</span>'+ICON_GO+'</button>'+
+    /* What the letter MEANS, for the writing systems where it means something.
+       A logography's letter is a word, and a word has a sense that no sound
+       and no name can carry; a syllabary's letter may be a name somebody
+       wants to remember. It is free text and the app never reads it -- it is
+       the person's note about their own letter.
+       「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
+    '<div class="sec">'+t('lt.note')+'</div>'+
+    lnField('lt-nt', '', IN('ltSetNote', [lid]), l.nt||'', 'ntin')+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
       : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
+    /* Making one of one's own from this one -- the way to have a letter
+       called something else when this one may not be renamed, and the way to
+       have two letters of one shape at all. */
     (can('letters')
-      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+      ? '<button class="set" style="margin-top:14px"' + DO('ltCopy', [lid]) + '>'+
+          '<span class="sl">'+t('lt.copy')+'</span>'+ICON_GO+'</button>'
+      : '')+
+    (can('letters')
+      ? '<button class="set" style="border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
           '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+
     '</div>'+

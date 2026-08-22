@@ -222,7 +222,10 @@ function ltCellAt(el){
 }
 function ltDown(e){
   var b=ltCellAt(e.target), p=e.touches? e.touches[0] : e;
-  if(!b || !p) return;
+  /* A sound with no letter yet is a cell in the same grid and is not a letter:
+     there is nothing to put in an order. It cannot be carried, and it is not
+     counted when the order is written -- ltOrderKids below. */
+  if(!b || !p || !b.getAttribute('data-id')) return;
   LTD={el:b, g:b.parentNode, id:b.getAttribute('data-id'),
        x:p.clientX, y:p.clientY, on:false, timer:0};
   LTD.timer=setTimeout(ltLift, 380);
@@ -232,7 +235,19 @@ function ltLift(){
   LTD.on=true;
   LTD.el.classList.add('lift');
   LTD.g.classList.add('moving');
+  /* And the alphabet goes into the state a phone's home screen goes into when
+     an icon is held: every letter wobbling with a mark on its corner. The same
+     state the keyboard being built has had, on the other grid in this app that
+     somebody arranges. 「ここ長押しで右上に⚪︎-つけて欲しい。編集モードになる感じ。
+     それで消せるし、移動もできる。iPhoneのホーム画面と同じ動き」
+
+     Not drawn until the finger comes up: a render() in the middle of a drag
+     takes the cell being dragged out from under it. */
+  ltWob=true;
 }
+/* Where you are standing in the alphabet, so viewReset() drops it. */
+var ltWob=false;
+function ltWobEnd(){ ltWob=false; render(); }
 function ltDrag(e){
   if(!LTD) return;
   var p=e.touches? e.touches[0] : e;
@@ -245,14 +260,30 @@ function ltDrag(e){
   /* the page does not scroll while a letter is being carried */
   e.preventDefault();
   LTD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  /* Out of the hit test for the length of the question. The cell being
+     carried is under the finger and lifted above the others, so it was the
+     answer every time and the drag went home without swapping anything --
+     the same one line, in the other place this gesture lives. */
+  LTD.el.style.pointerEvents='none';
   var over=ltCellAt(document.elementFromPoint(p.clientX, p.clientY));
+  LTD.el.style.pointerEvents='';
   if(!over || over===LTD.el) return;
+  if(!over.getAttribute('data-id')) return;
   var kids=LTD.g.children, a=-1, b=-1, i;
   for(i=0;i<kids.length;i++){ if(kids[i]===LTD.el) a=i; if(kids[i]===over) b=i; }
   LTD.g.insertBefore(LTD.el, b>a? over.nextSibling : over);
   /* it is in a different slot now, so the finger's offset from it starts over */
   LTD.x=p.clientX; LTD.y=p.clientY;
   LTD.el.style.transform='';
+}
+/* The cells of the grid that ARE letters, in the order they are on screen.
+   The grid also holds a cell for every sound of the language no letter says
+   yet, and those are not in the alphabet -- counting them would write a
+   position nothing agrees with. */
+function ltOrderKids(g){
+  var out=[], kids=g.children, i;
+  for(i=0;i<kids.length;i++) if(kids[i].getAttribute('data-id')) out.push(kids[i]);
+  return out;
 }
 function ltUp(e){
   if(!LTD) return;
@@ -262,10 +293,15 @@ function ltUp(e){
   d.el.style.transform='';
   d.el.classList.remove('lift');
   d.g.classList.remove('moving');
-  if(!d.on) return;
+  if(!d.on){
+    /* Held long enough to wobble but let go without moving anything: still a
+       hold, so the marks appear. */
+    if(ltWob) render();
+    return;
+  }
   /* and the press does not also open the letter it was moving */
   if(e && e.preventDefault) e.preventDefault();
-  kids=d.g.children;
+  kids=ltOrderKids(d.g);
   for(i=0;i<kids.length;i++) if(kids[i]===d.el) to=i;
   ltMove(d.g.getAttribute('data-k'), d.id, to);
 }
@@ -360,6 +396,46 @@ function ltNew(o){
    made would be the app deciding what somebody's writing is -- which is the
    one thing the alphabet chapter is written not to do. */
 var LT_START='abcdefghijklmnopqrstuvwxyz!?';
+/* One of the letters every language starts with -- a to z, ! and ?, and a
+   digit for every value of the base. Its NAME is not the person's to change,
+   on any plan.
+
+   kbFixed() finds the free keyboard's keys by name: kbNamed('a') walks
+   LETTERS for one called `a`. So a renamed `a` is a key that answers to
+   nothing -- and ltStart(), which tops a free language up by name, then makes
+   a NEW empty letter called `a` and puts that on the key. Somebody who paid,
+   renamed a letter, drew on it, and let the plan lapse would find a blank
+   where their letter used to be, and nothing anywhere saying why.
+
+   Refusing the rename is the whole fix, and it costs nothing: a letter that
+   is to be called something else is a DIFFERENT letter, and the way to have
+   one is ltCopy(). 「無料で作ったやつを改名できなければ良くない？コピーできる
+   ようにして分けるとかは？」 */
+function ltIsBase(l){
+  if(!l) return false;
+  if(numIsDigit(l)) return true;
+  var ab=String(l.ab||'').toLowerCase();
+  return ab.length===1 && LT_START.indexOf(ab)>=0;
+}
+/* A letter of one's own, made from one that is not. Everything drawn on it
+   comes across -- the strokes or the character it borrows, what it reads and
+   the note -- and the name does not, because a name is the one thing the copy
+   exists to be able to change. It goes in beside the one it came from, which
+   is where somebody looking at that one expects it. */
+function ltCopy(id){
+  var l=ltById(id), n, i;
+  if(!l || !can('letters')) return;
+  n=ltNew({});
+  if(l.st && l.st.length) n.st=JSON.parse(JSON.stringify(l.st));
+  if(l.ch) n.ch=l.ch;
+  if(l.snd && l.snd.length) n.snd=l.snd.slice();
+  if(l.nt) n.nt=l.nt;
+  if(l.chose) n.chose=l.chose;
+  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===n.id){ LETTERS.splice(i, 1); break; }
+  for(i=0;i<LETTERS.length;i++) if(LETTERS[i].id===id){ LETTERS.splice(i+1, 0, n); break; }
+  saveLetters(); installScriptFont();
+  go('letter', n.id);
+}
 function ltStart(){
   if(can('letters')) return;
   var have={}, made=0, i, c, l, read;
@@ -534,6 +610,13 @@ function migrateSndName(){
   }
   if(moved) saveLetters();
 }
+/* A person's note about one of their own letters. Written down as it is
+   typed, like every other field on the sheet; the app never reads it. */
+function ltSetNote(id, v){
+  var l=ltById(id); if(!l) return;
+  if(String(v||'').length) l.nt=String(v); else delete l.nt;
+  saveLetters();
+}
 function ltSetRoman(id, sp){
   var l=ltById(id); if(!l) return;
   if(/^[0-9]+$/.test(String(sp||'').trim())){
@@ -593,12 +676,6 @@ function ltSetChar(id, ch){
   if(ch){ l.ch=ch; l.st=null; } else l.ch='';
   saveLetters(); return l;
 }
-function ltUnlink(id, unit){
-  var l=ltById(id); if(!l || !l.snd) return null;
-  var i=l.snd.indexOf(unit);
-  if(i>=0) l.snd.splice(i,1);
-  saveLetters(); return l;
-}
 /* Deleting a letter: asked for, confirmed, and left behind. ltDel() below is
    the storage half and says nothing to anybody. This was geDelete() on the
    drawing screen, which is why it read the editor's state instead of an id --
@@ -610,7 +687,11 @@ function ltDelete(id){
   ltDel(id);
   if(GE && GE.lid===id) GE=null;
   save(); installScriptFont();
-  back();
+  /* From the corner mark the alphabet is already on screen and the wobble
+     stays on -- somebody taking one letter off is usually taking two. From
+     the letter's own page there is a page to leave. The same sentence
+     kbDelKey makes. */
+  if(here().r==='letter') back(); else render();
   toast(t('glyph.deleted', nm));
 }
 function ltDel(id){

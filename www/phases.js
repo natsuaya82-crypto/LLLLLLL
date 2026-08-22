@@ -409,10 +409,10 @@ function stRow(p, n){
 function stListHTML(){
   var a=stAll(), i, rows='';
   for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
-  return '<button class="set"' + DO('go', ["forms"]) + '>'+
-      '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
-      '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+ICON_GO+'</span></button>'+
-    '<div class="stlist">'+rows+'</div>'+
+  /* The rules that make a form out of a word were at the head of this list.
+     They are not a stage of the grammar and they are about the dictionary, so
+     they are behind the ... in the dictionary's bar -- wordsMore(). */
+  return '<div class="stlist">'+rows+'</div>'+
     /* The fifteen are free and are the whole of the chapter there. They ask
        for forty-six words between them, which is most of what a free
        dictionary is for; a stage of your own is the sixteenth and past that
@@ -421,13 +421,9 @@ function stListHTML(){
        made, and cannot throw it away from a plan that cannot make another. */
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
-          ICON_PLUS+t('stg.own.add.btn')+'</button>'
+          ICON_ADD+t('stg.own.add.btn')+'</button>'
       : '')+
-    '<div class="sec">'+t('gram.seen')+'</div>'+
-    (findings().length? findings().map(function(x){
-      return '<div class="find"><div class="ft">'+x.t+'</div><div class="fd">'+x.d+'</div>'+
-        '<div class="bar"><i style="width:'+Math.round(Math.max(.12,Math.min(1,x.rate))*100)+'%"></i></div></div>';
-    }).join('') : '<div class="note">'+t('rules.empty.s')+'</div>');
+    '';
 }
 
 function stSlotRow(p, k){

@@ -13,10 +13,6 @@
    headings -- and those are the names of places and manners of articulation,
    which are the same twenty-odd words in any of the ten. */
 
-var IPA_PLACES=["bilabial", "labiodental", "dental", "alveolar", "postalveolar", "retroflex", "palatal", "velar", "uvular", "pharyngeal", "glottal"];
-var IPA_MANNERS=["plosive", "nasal", "trill", "tap", "fricative", "latfric", "approx", "latapprox"];
-var IPA_HEIGHTS=["close", "nearclose", "closemid", "mid", "openmid", "nearopen", "open"];
-var IPA_BACKS=["front","central","back"];
 
 /* Each consonant: the symbol, its manner, its place, and whether it is
    voiced. Voiceless and voiced sit in the same cell, in that order. */
@@ -29,6 +25,78 @@ var IPA_VOWS=[{"s": "i", "h": "close", "b": "front", "r": 0}, {"s": "y", "h": "c
    clicks, and the implosives. */
 var IPA_OTHER=[{"s": "ʍ", "g": "other"}, {"s": "w", "g": "other"}, {"s": "ɥ", "g": "other"}, {"s": "ʜ", "g": "other"}, {"s": "ʢ", "g": "other"}, {"s": "ɕ", "g": "other"}, {"s": "ʑ", "g": "other"}, {"s": "ɺ", "g": "other"}, {"s": "ɧ", "g": "other"}, {"s": "ʘ", "g": "click"}, {"s": "ǀ", "g": "click"}, {"s": "ǃ", "g": "click"}, {"s": "ǂ", "g": "click"}, {"s": "ǁ", "g": "click"}, {"s": "ɓ", "g": "implosive"}, {"s": "ɗ", "g": "implosive"}, {"s": "ʄ", "g": "implosive"}, {"s": "ɠ", "g": "implosive"}, {"s": "ʛ", "g": "implosive"}];
 
+/* ---- what a sound is, in words anybody has ------------------------------
+   「無声両唇破裂音って聞いて普通の人一発で理解できんの？」 No. So the page does
+   not say that. It says what to do with your mouth, in pieces: where it is
+   made, how it is made, and whether the voice is on. Thirty-three fragments
+   in each of the ten languages, joined, rather than a hundred and sixty
+   sentences written out -- which would be a hundred and sixty chances to be
+   wrong about somebody else's language, ten times over.
+
+   And where it is heard. That one cannot be composed, so it is a table, and
+   it is short on purpose: the languages this app already speaks, and only
+   the sounds one of them genuinely has. A symbol with nothing here says
+   nothing rather than guessing. */
+var IPA_IN={
+  "p":[["en","pen"],["ja","パン"],["es","padre"]],
+  "b":[["en","bed"],["ja","バス"],["es","bien"]],
+  "t":[["en","ten"],["ru","тот"]],
+  "d":[["en","dog"],["ru","дом"]],
+  "t̪":[["es","todo"],["it","tutto"],["fr","tout"]],
+  "d̪":[["es","donde"],["it","dove"],["fr","doux"]],
+  "k":[["en","cat"],["ja","カメ"],["de","kalt"]],
+  "\u0261":[["en","go"],["ja","ガム"],["de","gut"]],
+  "m":[["en","man"],["ja","ミミ"],["fr","mer"]],
+  "n":[["en","no"],["ja","ナス"],["ru","нос"]],
+  "\u0272":[["es","año"],["fr","agneau"],["it","gnocchi"]],
+  "\u014b":[["en","sing"],["zh","方"],["ko","방"]],
+  "f":[["en","fish"],["de","Fuß"],["it","fare"]],
+  "v":[["en","voice"],["de","Wasser"],["ru","вода"]],
+  "\u03b8":[["en","think"],["es","cielo"]],
+  "\u00f0":[["en","this"],["es","nada"]],
+  "s":[["en","sun"],["ja","サル"],["fr","sec"]],
+  "z":[["en","zoo"],["fr","zéro"],["pt","casa"]],
+  "\u0283":[["en","she"],["pt","chave"],["fr","chat"]],
+  "\u0292":[["fr","je"],["pt","gente"],["en","measure"]],
+  "\u0255":[["ja","シ"],["zh","西"]],
+  "\u0291":[["zh","日"]],
+  "\u00e7":[["de","ich"],["ja","ヒト"]],
+  "x":[["es","jefe"],["de","Bach"],["ru","хлеб"]],
+  "\u03c7":[["fr","rue"],["de","Buch"]],
+  "h":[["en","hat"],["ja","ハト"],["ko","하늘"]],
+  "j":[["en","yes"],["ja","ヤマ"],["de","ja"]],
+  "l":[["en","love"],["it","luna"],["ru","лето"]],
+  "\u028e":[["it","figlio"],["es","llave"],["pt","filho"]],
+  "r":[["es","perro"],["it","carro"],["ru","река"]],
+  "\u027e":[["ja","ラ"],["es","pero"],["en","better"]],
+  "\u0281":[["fr","rouge"],["de","rot"],["pt","carro"]],
+  "\u0279":[["en","red"]],
+  "w":[["en","water"],["ja","ワ"],["fr","oui"]],
+  "\u0265":[["fr","huit"],["zh","月"]],
+  "\u028b":[["ko","우유"]],
+  "\u0294":[["de","Beamte"],["zh","啊"]],
+  "i":[["en","see"],["ja","イ"],["es","sí"]],
+  "y":[["fr","tu"],["de","über"],["zh","雨"]],
+  "\u0268":[["ru","мы"]],
+  "\u026f":[["ja","ウ"],["ko","으"]],
+  "u":[["es","tú"],["it","uno"],["ru","ум"]],
+  "\u026a":[["en","sit"],["de","Bitte"],["ru","ты"]],
+  "\u028a":[["en","book"],["de","Mutter"]],
+  "e":[["ja","エ"],["es","mesa"],["it","vero"]],
+  "\u00f8":[["fr","peu"],["de","schön"]],
+  "\u0259":[["en","about"],["de","bitte"],["ko","어"]],
+  "\u0264":[["ko","으"],["zh","de"]],
+  "o":[["ja","オ"],["es","como"],["it","sole"]],
+  "\u025b":[["fr","père"],["it","bello"],["pt","pé"]],
+  "\u0153":[["fr","peur"],["de","können"]],
+  "\u028c":[["en","cup"],["ru","голова"]],
+  "\u0254":[["en","law"],["it","cosa"],["pt","avó"]],
+  "\u00e6":[["en","cat"]],
+  "a":[["ja","ア"],["es","casa"],["it","pane"]],
+  "\u0251":[["en","father"],["fr","pâte"]],
+  "\u0252":[["en","hot"]]
+};
+function ipaIn(sym){ return IPA_IN[sym] || []; }
 /* Everything, once, for lookups. */
 var IPA_ALL=null;
 function ipaAll(){
@@ -46,21 +114,6 @@ function ipaIsVowel(s){
     for(var i=0;i<IPA_VOWS.length;i++) IPA_ISV[IPA_VOWS[i].s]=1;
   }
   return !!IPA_ISV[s];
-}
-function ipaCell(m,p){
-  var out=[], i;
-  for(i=0;i<IPA_CONS.length;i++) if(IPA_CONS[i].m===m && IPA_CONS[i].p===p) out.push(IPA_CONS[i]);
-  return out;
-}
-function ipaVCell(h,b){
-  var out=[], i;
-  for(i=0;i<IPA_VOWS.length;i++) if(IPA_VOWS[i].h===h && IPA_VOWS[i].b===b) out.push(IPA_VOWS[i]);
-  return out;
-}
-/* A manner with nothing in it anywhere is not given a row. */
-function ipaHasManner(m){
-  for(var i=0;i<IPA_CONS.length;i++) if(IPA_CONS[i].m===m) return true;
-  return false;
 }
 
 /* A roman letter, and the IPA symbol somebody naming a letter that means.
@@ -134,21 +187,58 @@ function ipaRoman(sym){
    Returns null when some of what was typed is not a sound at all, because a
    letter reading half of what somebody wrote is worse than a letter telling
    them so. */
+/* The longest of `list` that the string starts with, by the roman each symbol
+   is spelled with. Null when none of them fits. */
+function ipaLongest(list, s){
+  var best='', bestR='', i, r;
+  for(i=0;i<list.length;i++){
+    r=ipaRoman(list[i]);
+    if(!r || s.indexOf(r)!==0) continue;
+    if(r.length>bestR.length ||
+       (r.length===bestR.length && best!==bestR && list[i]===r)){
+      best=list[i]; bestR=r;
+    }
+  }
+  return best? {u:[best], n:bestR.length} : null;
+}
+/* What IPA_WAS says the front of this string is: the digraph if there is one,
+   otherwise the single letter, otherwise nothing. Its values are LISTS,
+   because ch is t then ʃ. */
+function ipaWasAt(s){
+  var two=s.substr(0,2), one=s.charAt(0);
+  if(IPA_WAS[two]) return {u:IPA_WAS[two], n:2};
+  if(IPA_WAS[one]) return {u:IPA_WAS[one], n:1};
+  return null;
+}
 function ipaFromRoman(sp){
   var s=String(sp||'').toLowerCase().replace(/[^a-z]/g,'');
-  var cand=addedSnd().concat(ipaAll()), out=[], i, best, bestR, r;
+  var mine=addedSnd(), all=ipaAll(), out=[], a, b, c, got;
   while(s.length){
-    best=''; bestR='';
-    for(i=0;i<cand.length;i++){
-      r=ipaRoman(cand[i]);
-      if(!r || s.indexOf(r)!==0) continue;
-      if(r.length>bestR.length ||
-         (r.length===bestR.length && best!==bestR && cand[i]===r)){
-        best=cand[i]; bestR=r;
-      }
-    }
-    if(!best) return null;
-    out.push(best); s=s.slice(bestR.length);
+    /* Three answers to the same question, and the longest of them wins.
+       Tied, they are preferred in this order, which is the order of how much
+       each of them knows about THIS language:
+
+         1  a sound the language already has, spelled that way
+         2  what a roman letter is agreed to mean -- IPA_WAS
+         3  the chart
+
+       Two was missing, and the five letters it is for are exactly the five
+       that were falling through to the letter itself. c q x y matched nothing
+       at all and came back as null, so a free language's C carried the
+       character "c" as a sound, which is in no inventory and cannot be said.
+       And g was worse than nothing: the IPA's g is U+0261, no candidate
+       equals the ASCII g, so the tie went to whichever came first on the
+       chart -- ɟ, a palatal plosive, which is not what anybody naming a
+       letter g means. 「無料版のa-zの音もipa準拠になってるの？」
+
+       One is still first, so a language whose only hushing sound is ɕ still
+       reads sh as that one rather than growing a second. */
+    a=ipaLongest(mine, s); b=ipaWasAt(s); c=ipaLongest(all, s);
+    got=a;
+    if(!got || (b && b.n>got.n)) got=b||got;
+    if(!got || (c && c.n>got.n)) got=c||got;
+    if(!got) return null;
+    out=out.concat(got.u); s=s.slice(got.n);
   }
   return out;
 }

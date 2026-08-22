@@ -43,7 +43,30 @@
    (tools/pen-pick.mjs), pen 36 inks 10% of the cell where the real font inks 19%,
    and pen 60 inks exactly the real font's 19%. A third of the ink is a visibly
    paler page; two strokes welding is one dot's worth of redrawing. */
-var GPEN={width:32, angleDeg:0, contrast:1.0, curve:36};
+/* And then thinner again. 32 against a step of 36 is a pen very nearly as wide
+   as the gap between two dots: a letter drawn carefully on the lattice comes
+   out as one welded mass with the dots it was built on invisible under it.
+   「ペン太すぎて細かい今の点に合わないでズレる」 24 is two thirds of a step,
+   and the page is darker than half a step would leave it. Half a step was
+   tried and looked right in a picture; what a phone shows is the thing to
+   look at. 「24にしよう」
+
+   24 is also the CEILING, and that is a limit rather than a preference. Two
+   strokes on ADJACENT dots are one step apart, and what a wider pen does to
+   them is not weight -- it is a different letter: two strokes go in and one
+   comes out. Measured through the real drawing code at the size a post is
+   read at, 44px on a 3x phone (tools/pen-gap.mjs), 24 leaves white between
+   them and 28, 32 and 40 leave none. "Then draw them two dots apart" is not
+   an answer, because a letter with two dots between its strokes is a
+   different letter.
+   「2あけだとだって書いた文字と別のもんができちゃうくない？」「24が限界やね」
+
+   The same sentence is why there is no second, thinner pen for the editor's
+   canvas. A wide pen buries the lattice under your finger, and a thinner one
+   there was tried for exactly that; but a canvas drawn with a different pen
+   from the font is this bug said backwards -- what is under your finger is
+   then not what comes out. One pen, everywhere. */
+var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of
@@ -324,7 +347,8 @@ function newGE(lid, label){
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
-           free:false, round:false, raw:null, rawFor:-1,
+           free:false, round:false, fill:false, flat:null, flatBy:'',
+           raw:null, rawFor:-1,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
@@ -377,6 +401,9 @@ var GICON={
      one arrow turning back on itself; a ring drawn in dots, which is the shape
      of something that is no longer there. */
   'circle': '<path d="M4.5 17.5Q12 3.5 19.5 17.5"/><circle cx="12" cy="10.5" r="1.6"/>',
+  /* The inside of a shape being blackened, which is the whole of what it
+     does. Stroked like the rest of them, so it goes gold with its caption. */
+  'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
   'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
@@ -493,9 +520,11 @@ var ICON_LINK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="
   'stroke-width="1.6" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M10 13.8a3.6 3.6 0 0 0 5.1 0l2.9-2.9a3.6 3.6 0 0 0-5.1-5.1l-1.3 1.3"/>'+
   '<path d="M14 10.2a3.6 3.6 0 0 0-5.1 0L6 13.1a3.6 3.6 0 0 0 5.1 5.1l1.3-1.3"/></svg>';
-/* An actual plus. ICON_PLUS above is a four-pointed star and always was: it
-   marks what the paid plan adds. Putting it on "one more consonant" would say
-   the sound costs money. */
+/* An actual plus, and it is what every button that ADDS one of something
+   wears. ICON_PLUS above is a four-pointed star: it marks what the paid plan
+   adds, and putting it on "one more consonant" would say the sound costs
+   money. The rules chapter wore the star on three buttons that only ever made
+   a word out of a word. 「基本追加は＋じゃないの？」「プラス統一したい」 */
 var ICON_ADD='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
   '<path d="M12 5v14M5 12h14"/></svg>';
@@ -729,6 +758,23 @@ function geSmooth(p, passes){
    a single clean bow -- and that is what the round primitive is for, so it
    gets used: a true arc through the middle point rather than a corner
    rounded off. */
+/* Every point on one line, within half a lattice step of it. A stroke like
+   that has nothing to bend: ROUND leaves it exactly as it was drawn.
+   「縦線はラウンド押してもラウンドになるわけがない」 Without this the ring
+   guess below could take a straight stroke, keep three of its points and
+   close them into a true circle -- a line drawn straight down coming back as
+   a ring. 「縦線引いただけで円になるんだって」 */
+function geStraight(p){
+  if(p.length<3) return true;
+  var a=p[0], b=p[p.length-1], vx=b[0]-a[0], vy=b[1]-a[1];
+  var L=Math.sqrt(vx*vx+vy*vy), tol=geStep()*0.5, i, d;
+  if(L<1e-6) return false;
+  for(i=1;i<p.length-1;i++){
+    d=Math.abs(vx*(a[1]-p[i][1]) - vy*(a[0]-p[i][0]))/L;
+    if(d>tol) return false;
+  }
+  return true;
+}
 function geShape(st){
   /* ROUND off: the stroke IS the dots the finger went over, and nothing
      downstream gets to disagree with them.
@@ -775,6 +821,8 @@ function geShape(st){
   var raw = (GE.raw && GE.rawFor===GE.si && GE.raw.length>3) ? GE.raw : null;
   var p = raw || st.pts, n = p.length;
   if(n<3){ delete st.k; delete st.closed; return; }
+  /* Straight is straight, whichever button is pressed. */
+  if(geStraight(p)){ delete st.k; delete st.closed; return; }
   var step=geStep(), i;
   var a=p[0], b=p[n-1];
   var span=Math.sqrt((b[0]-a[0])*(b[0]-a[0])+(b[1]-a[1])*(b[1]-a[1]));
@@ -903,13 +951,79 @@ function geLattice(p){
   if(out[out.length-1][2]) out[out.length-1]=[out[out.length-1][0], out[out.length-1][1]];
   return out;
 }
+/* Bend the stroke you have just drawn, or straighten it again.
+   ROUND used to be armed BEFORE drawing: the button turned a mode on and the
+   next stroke came out bent. 「線は先に引いてその後にそれをラウンドにするか
+   どうか選べる仕様にしない？」 So it is a thing done to a stroke now -- draw
+   it, look at it, then decide -- and a new stroke always starts straight.
+
+   Both ways, and from the same starting point every time: the stroke as it
+   was drawn is kept in GE.flat, so bending is always applied to the straight
+   one rather than to whatever the last press left behind. Pressing twice
+   gives back exactly what was drawn, which the old one could not do -- it
+   turned the mode off and left the stroke bent.
+
+   How it bends depends on how it was made, because those are not the same
+   drawing. A dragged stroke goes back through geShape, which reads the
+   finger's own path where it still has it. A tapped one only has its interior
+   points marked as bends: geShape would thin it, and thinning something
+   somebody placed dot by dot is dropping what they placed.
+   A stroke restored by undo has no straight copy behind it and no raw path
+   either, so it is taken as it stands and treated as a tapped one -- that
+   never drops a point. */
+/* Bend the stroke you have just drawn, or straighten it again.
+   ROUND used to be armed BEFORE drawing: the button turned a mode on and the
+   next stroke came out bent. 「線は先に引いてその後にそれをラウンドにするか
+   どうか選べる仕様にしない？」 So it is a thing done to a stroke now -- draw
+   it, look at it, then decide -- and a new stroke always starts straight.
+   Until one has been drawn there is nothing for it to be done to, which is
+   what geBendable() puts the button down for.
+
+   Both ways, and from the same starting point every time: the stroke as it
+   was drawn is kept in GE.flat, so bending is always applied to the straight
+   one rather than to whatever the last press left behind. Pressing twice
+   gives back exactly what was drawn, which the old one could not do -- it
+   turned the mode off and left the stroke bent.
+
+   How it bends depends on how it was made, because those are not the same
+   drawing. A dragged stroke goes back through geShape, which reads the
+   finger's own path where it still has it. A tapped one only has its interior
+   points marked as bends: geShape would thin it, and thinning something
+   somebody placed dot by dot is dropping what they placed. A stroke restored
+   by undo has neither a straight copy behind it nor a raw path, so it is
+   taken as it stands and treated as a tapped one -- that never drops a point.
+
+   A straight stroke is left alone either way. 「縦線はラウンド押してもラウンド
+   になるわけがない」 */
 function geCircle(){
+  var i=GE.st.length-1, st=GE.st[i];
+  if(!st || !st.pts.length) return;
   geMark();
+  if(!GE.flat){ GE.flat=JSON.stringify(st); GE.flatBy='tap'; }
   GE.round=!GE.round;
+  GE.st[i]=JSON.parse(GE.flat); st=GE.st[i];
   if(GE.round){
-    var st=GE.st[GE.st.length-1];
-    if(st && st.pts.length>=2) geShape(st);
+    if(GE.flatBy==='drag' && st.pts.length>=2) geShape(st);
+    else if(st.pts.length>=3 && !geStraight(st.pts)){
+      delete st.k;
+      for(var j=1; j<st.pts.length-1; j++) st.pts[j][2]='c';
+    }
   }
+  GE.pi=-1; render();
+}
+/* Blacken the inside of what was drawn round. A mode, like ROUND was: while
+   it is on the stroke being drawn is a filled one and shows green on the
+   canvas, so which of your strokes are areas is visible while you work.
+   Pressing it also settles the stroke you have just drawn, which is the only
+   way it could be used on a line already finished.
+
+   Three points is the least that has an inside; below that the flag sits on
+   the stroke and does nothing, because a filled line is still a line. */
+function geFill(){
+  geMark();
+  GE.fill=!GE.fill;
+  var st=GE.st[GE.st.length-1];
+  if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
   GE.pi=-1; render();
 }
 function geUndo(){
@@ -921,13 +1035,27 @@ function geUndo(){
      stayed live and the next press -- meant to begin a new line -- landed on
      one of them and dragged the old line out of shape instead. */
   GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
+  /* What came back is a drawing, not the stroke the rail was pointing at:
+     the straight copy behind it belonged to a stroke that may no longer be
+     the last one. 「一つ戻るボタン押したらそれを丸められなくなるって話？」
+     It can still be bent -- it is taken as it stands from here. */
+  GE.round=false; GE.flat=null; GE.flatBy='';
   render();
 }
-function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false; render(); }
+function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
+  GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
 function geSave(){
-  /* A single dot is a stroke half-placed, not a shape. It does not get
-     saved, and it does not get left behind for the next press to trip on. */
-  var keep=GE.st.filter(function(s){ return s.pts.length>1; });
+  /* A dot is a mark. It used to be thrown away here on the grounds that a
+     stroke with one point is a line half-drawn -- which is true of a line and
+     is the app deciding that a language cannot have a dot in it. A letter that
+     IS a dot, or a line with a dot beside it, could not be saved: the dot came
+     back as nothing every time. 「点一つで点で。だって線にするには2で繋ぐ
+     必要あるでしょ」 What is still dropped is a stroke with NO points, which
+     is the empty one geCur() opens and nobody drew on.
+
+     The pen already lays a dot down -- one point gives one square of ink, the
+     nib itself -- so nothing else had to change for this to be drawable. */
+  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
   ltSetStrokes(GE.lid, keep);
   /* Drawing a letter is asking for your own writing. Only onboarding ever set
      this, so every letter drawn in the letters chapter went into a font that
@@ -1046,6 +1174,8 @@ var GHDCYC=3.4;
 var GHDEMO={
   'circle': { a:[{pts:[[184,616],[400,184],[616,616]]}],
               b:[{pts:[[184,616],[400,184],[616,616]], k:'o'}], m:[400,184] },
+  'fill'  : { a:[{pts:[[184,616],[400,184],[616,616],[184,616]]}],
+              b:[{pts:[[184,616],[400,184],[616,616],[184,616]], fill:true}], m:[400,400] },
   'new'   : { a:[{pts:[[256,256],[256,544]]}],
               b:[{pts:[[256,256],[256,544]]},{pts:[[472,256],[616,256],[616,544]]}], m:[472,256] }
   /* 'new' is kept only so the hint reel still has its demonstration; no
@@ -1259,8 +1389,14 @@ function geDown(ev){
        same curve for as long as they are wanted. */
     if(GE.seal || (st && (st.closed || st.k==='o'))){
       GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false;
+      /* ROUND is not armed for what comes next -- it is a thing done to the
+         stroke you have just drawn. A new one starts straight. */
+      GE.round=false; GE.flat=null; GE.flatBy='';
     }
     st.pts.push([p[0],p[1]]); GE.pi=st.pts.length-1;
+    /* The stroke under the finger follows the mode both ways, so turning the
+       fill off while building one takes it back off that stroke. */
+    if(GE.fill) st.fill=true; else if(st.fill) delete st.fill;
     GE.again=false; GE.hit=false;
     /* A point placed on empty lattice is the start of a line if the finger
        keeps going. geMove turns it into one. Before this, pressing and
@@ -1328,7 +1464,14 @@ function geUp(ev){
      wants to be exact rather than quick. */
   if(GE.free && GE.moved){
     GE.seal=true;
-    var rst=GE.st[GE.si]; if(rst) geShape(rst);
+    var rst=GE.st[GE.si];
+    if(rst){
+      geShape(rst);
+      /* The stroke as drawn, kept so that pressing ROUND a second time gives
+         it back exactly. Only while it is straight: once bent, the straight
+         one behind it is the thing being kept. */
+      if(!GE.round){ GE.flat=JSON.stringify(rst); GE.flatBy='drag'; }
+    }
   }
   GE.free=false;
   /* A dot that was pressed and let go without travelling is a tap, and a tap
@@ -1372,10 +1515,14 @@ function geUp(ev){
     var tst=GE.st[GE.si];
     if(tst && tst.pts.length>=3){
       delete tst.k;
+      var bend=GE.round && !geStraight(tst.pts);
       for(var ti=1; ti<tst.pts.length-1; ti++){
-        if(GE.round) tst.pts[ti][2]='c';
+        if(bend) tst.pts[ti][2]='c';
         else tst.pts[ti]=[tst.pts[ti][0], tst.pts[ti][1]];
       }
+    }
+    if(tst && tst.pts.length && !GE.round){
+      GE.flat=JSON.stringify(tst); GE.flatBy='tap';
     }
   }
   /* Tapping the dot just placed says the stroke is finished. It used to
@@ -1402,9 +1549,16 @@ function geUp(ev){
    the finger lifts, so there was nothing left for it to start. Undo and clear
    were words in a corner underneath; they are marks on the rail now, at the
    same size as everything else a thumb has to hit. */
+/* ROUND is done TO a stroke, so until one has been drawn there is nothing
+   for it to be done to and the button is down. */
+function geBendable(){
+  var st=GE && GE.st[GE.st.length-1];
+  return !!(st && st.pts.length>=3);
+}
 function geRail(st, pts){
   return '<div class="gtools">'+
-    geBtn('geCircle','circle','glyph.circle', true, !!GE.round)+
+    geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
+    geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
     geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     geBtn('geClear','clear','glyph.clear', !!pts, false)+
   '</div>';
@@ -1417,7 +1571,8 @@ function geTools(){
   GE.st.forEach(function(s){ pts+=s.pts.length; });
   /* Keyed by name, not by position: the row can be reordered or added to
      without this quietly disabling the wrong button. */
-  var S={ 'circle':[true, !!GE.round],
+  var S={ 'circle':[geBendable(), !!GE.round],
+          'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
           'clear' :[!!pts, false] };
   var b=box.getElementsByTagName('button'), i, s, g, cl;
@@ -1485,7 +1640,18 @@ function geDraw(){
      are drawing is drawn by the same code as the letter on the key, the tile
      and the card. It was not, and a letter could have looked like one thing
      under your finger and another everywhere else. */
+  /* Everything in the letter's own colour first, areas included -- what is
+     on the canvas is what the letter will look like, not a marked-up copy of
+     it. Then the outline of each area again in green, over its own ink.
+
+     The green is the LINE and only the line. Painting the inside green too
+     made the area and its edge one colour and the whole shape one green mass,
+     which is the difference this is here to draw. 「緑は線で塗りつぶしは線と
+     同じ色でしょ。差をつけないといけないやん」 */
+  var area=[];
+  GE.st.forEach(function(s0){ if(s0.fill) area.push({pts:s0.pts, closed:s0.closed, k:s0.k}); });
   inkStrokes(x, GE.st, k, pad, pad, cssVar('--tx'));
+  if(area.length) inkStrokes(x, area, k, pad, pad, cssVar('--fill'));
 
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2);
   GE.st.forEach(function(s){
@@ -1498,11 +1664,14 @@ function geDraw(){
   GE.st.forEach(function(s,si){
     s.pts.forEach(function(p,pi){
       var sel=(si===GE.si && pi===GE.pi);
-      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?24:16),0,Math.PI*2);
+      /* Smaller than the step, or the handle covers the lattice dot it is
+         sitting on and the thing you are aiming at is under the thing you
+         placed. 「⚪︎がでかいのもあるわ。そのせいで点がわからん」 */
+      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?16:11),0,Math.PI*2);
       x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold');
       x.fill();
       if(sel){
-        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*40,0,Math.PI*2);
+        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*32,0,Math.PI*2);
         x.strokeStyle=cssVar('--gold'); x.lineWidth=k*4; x.stroke();
       }
     });
@@ -1538,15 +1707,23 @@ function phkHTML(sym, call){
 function inkStrokes(x, st, k, ox, oy, col){
   var cont=[];
   try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return; }
+  /* One path, filled once. Each contour used to be its own fill, which is
+     invisible while every contour is a nib laid along a line and overlapping
+     its neighbour squarely -- and not invisible at all once a filled area
+     arrives, because that is cut into triangles and every cut came back as a
+     pale hairline where two edges antialiased against each other. Non-zero
+     winding joins them into one shape instead, which is what glyphContours
+     winds them all the same way for. */
   x.fillStyle=col;
+  x.beginPath();
   cont.forEach(function(poly){
     if(poly.length<3) return;
-    x.beginPath();
     poly.forEach(function(p,j){
       if(j) x.lineTo(ox+p[0]*k, oy+p[1]*k); else x.moveTo(ox+p[0]*k, oy+p[1]*k);
     });
-    x.closePath(); x.fill();
+    x.closePath();
   });
+  x.fill();
 }
 /* What a canvas is a picture of: a letter named by its id in data-l, or
    whatever writes the sound named in data-r. Null when there is nothing

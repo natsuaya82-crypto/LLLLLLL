@@ -51,6 +51,7 @@ function openAdd(from){
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
            mns:[], pos:addPos, reg:'', tags:[], ety:'', nt:''};
+    addFmClear();
     wdSync();
   }
   if(!capOK(1)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
@@ -64,10 +65,13 @@ function addOne(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
   var sp=(wEdit && wEdit.sp) || [], hw=spWord(sp), d=addW;
-  var syn, ant, w;
+  var syn, ant, w, made;
   if(!d) return;
   if(!sp.length || !hw){ toast(t('toast.hw2')); return; }
-  if(!capOK(1)){ closeSheet(); go('plans'); return; }
+  /* The word AND the forms going in with it. Asking for room for one and then
+     writing four is how a free language ends up over its own limit. */
+  addFmSync();
+  if(!capOK(1+addFms.length)){ closeSheet(); go('plans'); return; }
   if(findWord(hw)){ toast(t('toast.dup')); return; }
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
@@ -89,11 +93,15 @@ function addOne(){
   addW=null;
   syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
   ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
+  /* And the forms, after the word they are of is in the dictionary: each of
+     them points at it by name. */
+  made=addFmWrite(hw);
+  addFmClear();
   save(); cands=[]; addFrom='';
   /* Onto the word, read. Everything it holds was written on the way in, so
      what is wanted now is a look at it, not another form. */
   if(here().r==='form') back();
-  toast(t('toast.added.1', hw));
+  toast(made? tn('fmr.with', made) : t('toast.added.1', hw));
   openWord(hw);
 }
 function findWord(hw){
@@ -116,16 +124,6 @@ function findWord(hw){
    right that remember where they came from. */
 var openHw='', wEdit=null;
 
-/* A position is marked only when its letter exists and says something else
-   here. A sound with no letter at all is not a sound change -- it is a sound
-   nobody has drawn yet, which is a different thing and not worth a colour. */
-function spOdd(st){
-  var l=ltById(st.l), own=l? ltUnits(l) : [];
-  /* Said something else HERE -- not merely carrying a unit. Every position of
-     a word made before a word was letters carries one, a copy of what its
-     letter reads, so "has a unit" marked all of them and marked nothing. */
-  return !!l && st.u!==undefined && st.u!==null && st.u!==own[0];
-}
 /* ---- spelling a word --------------------------------------------------
    The word is a row of letters, each with the sound it makes underneath. Tap
    a letter in the row and you change what it says HERE and nowhere else --
@@ -145,6 +143,7 @@ function wdSetLn(v){
   lnGrow('wd-ln');
   var r=document.getElementById('wd-rd');
   if(r) r.textContent=phIpa(wEdit.seq);
+  addFmPaint();
 }
 /* The reading, and the way to change it. It is proposed -- the letters of
    the word say what it reads, and that is the answer until somebody says
@@ -161,6 +160,39 @@ function wdSeqHTML(){
   return '<button class="set"' + DO('go', ["spell"]) + '>'+
     '<span class="sl">'+esc(t('word.sp'))+'</span>'+
     '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
+}
+/* ---- the reading of one word ---------------------------------------------
+   A letter has a sound and a word is normally read by running those sounds
+   together, which is what the sheet already shows. This page is for the times
+   it is not: 「たとえば漣音化とか音が変わる時用」.
+
+   So it is sounds and only sounds. No letter appears on it -- the alphabet
+   joins a sound to a letter and this is the other direction, and having both
+   in front of somebody at once is the thing that made no sense
+   「音から文字と文字から音で二重になるから困る」. A reading cannot be typed either:
+   theta is not on anybody's keyboard, and a sound nobody can hear is not a
+   sound. It is chosen, off tiles, and every press says it out loud. */
+/* Appended to the reading, and said. The positions of the word do not move:
+   wdSetRd hands the sounds back to them in order. */
+function spAdd(sym){
+  wdSetRd(spPh((wEdit&&wEdit.sp)||[]).join('')+sym); sayOne(sym);
+}
+function spDrop(){
+  var us=spPh((wEdit&&wEdit.sp)||[]);
+  us.pop(); wdSetRd(us.join(''));
+}
+function vSpell(){
+  var sp=(wEdit&&wEdit.sp)||[];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
+      esc(spWord(sp))+'</span>'+
+      '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
+        esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
+    '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
+    '<div class="wctl2"><button' + DO('spDrop') + (sp.length?'':' disabled')+
+      '>'+ICON_BACK+esc(t('glyph.undo'))+'</button></div>'+
+    ipaPickHTML('spAdd', [])+
+    '</div></div>';
 }
 var wdMode='';
 function wdSetMode(m){ wdMode=m; wdPaint(); }
@@ -560,7 +592,7 @@ function fmRowHTML(hw, f, on){
      thumb has to land on. */
   return '<div class="entry one'+(on?' on':'')+'">'+
     '<button class="ebody"' + DO('fmPick', [hw, f]) + '>'+
-    '<div class="hwrow"><span class="hw">'+esc(fmLabel(f)||t('word.none'))+'</span></div>'+
+    '<div class="hwrow"><span class="hwl">'+esc(fmLabel(f)||t('word.none'))+'</span></div>'+
     '</button>'+fmQ(f)+'<span class="ltck" style="margin-left:auto">'+
     (on? ICON_TICK : '')+'</span></div>';
 }
@@ -610,11 +642,33 @@ function fmrStem(w, r){
 /* Whether this rule has anything to say about this word. `when` is the one
    piece of phonology in it: an ending that only goes on after a vowel is the
    commonest thing a language does to keep two consonants apart. */
+/* Whether the WORD ends in the letters this rule is about -- which is what
+   somebody means by "y becomes i and then ed". Asked of the word and not of
+   the stem: `drop` is what happens NEXT, and the y being tested for is the y
+   about to be dropped.
+
+   Compared as written rather than unit by unit, because two spellings that
+   come out the same word ARE the same ending however they were typed. */
+function fmrEndsWith(w, r){
+  var e=(r && r.wend)||[], s, hw;
+  if(!e.length) return false;
+  s=spWord(e);
+  hw=String((w && w.hw)||'');
+  if(!s.length || hw.length<s.length) return false;
+  return hw.slice(hw.length-s.length)===s;
+}
+/* Whether this rule has anything to say about this word. `when` is the one
+   piece of phonology in it: an ending that only goes on after a vowel is the
+   commonest thing a language does to keep two consonants apart. And `x` is
+   the other kind of condition, which is not phonology at all -- these exact
+   letters at the end. 「英語みたいにyで終わるのはiに変えてedみたいな細かいルール
+   設定はできないの？」 carry: ends in y, drop 1, add ied. */
 function fmrFits(w, r){
   var ph, last;
   if(!w || !r || !(r.add||[]).length) return false;
   if(r.pos && r.pos!==w.pos) return false;
   if(!r.when) return true;
+  if(r.when==='x') return fmrEndsWith(w, r);
   ph=spPh(fmrStem(w, r));
   if(!ph.length) return false;
   last=ph[ph.length-1];
@@ -680,14 +734,154 @@ function fmrAdd(hw){
   toast(tn('fmr.made', made.length));
   openWord(String(w.hw));
 }
+/* Every form the rules can make, across the whole dictionary. A rule is
+   written once and is meant to answer for the language, not for the word you
+   happen to be standing on -- making them one word at a time is the same
+   press repeated as many times as there are words.
+
+   A snapshot of WORDS at the moment it is asked, so a word a rule makes is
+   not immediately fed back into the rules: making the past of a past is not
+   what anybody wrote a rule for, and it would not stop. */
+function fmrTodoAll(){
+  var out=[], seen={}, list=WORDS.slice(), i, j, todo;
+  for(i=0;i<list.length;i++){
+    todo=fmrTodo(list[i]);
+    for(j=0;j<todo.length;j++){
+      if(seen[todo[j].hw]) continue;
+      seen[todo[j].hw]=1;
+      out.push({w:list[i], m:todo[j]});
+    }
+  }
+  return out;
+}
+/* Making all of them. The same word that fmrAdd writes -- one function would
+   be better and is not possible without changing what fmrAdd does, which is
+   open the word's page afterwards; this one has no word to go back to. */
+function fmrAddAll(){
+  var all=fmrTodoAll(), i, w, m, nw, made=0;
+  if(!all.length) return;
+  if(!capOK(all.length)){ go('plans'); toast(t('toast.cap', FREE_LIMIT)); return; }
+  for(i=0;i<all.length;i++){
+    w=all[i].w; m=all[i].m;
+    if(findWord(m.hw)) continue;
+    nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
+        sp:JSON.parse(JSON.stringify(m.sp)),
+        mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
+    nw.mn=nw.mns[0]||'';
+    WORDS.push(nw); made++;
+  }
+  if(!made) return;
+  save();
+  toast(tn('fmr.made', made));
+  render();
+}
 /* The row on a word's page. Only when there is something to make: a button
    that does nothing when pressed is worse than no button. */
 function fmrTodoHTML(w){
   var todo=fmrTodo(w);
   if(!todo.length) return '';
   return '<button class="btn ghost" style="width:100%;margin-top:10px"' +
-    DO('fmrAdd', [String(w.hw)]) + '>'+ICON_PLUS+
+    DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
     esc(tn('fmr.todo', todo.length))+'</button>';
+}
+
+/* ---- the forms on the sheet the word is coined on ------------------------
+   A rule was only ever spent after the fact. The word went in, and then its
+   page offered to make the forms it had not got, or the rules screen offered
+   to make every one of them across the whole dictionary -- both of which are
+   going back for something you were holding a moment ago.
+
+   So the rules are spent where the word is written. Type a spelling and every
+   rule that fits shows what it makes, spelled out; the row can be typed over
+   or taken off; Add writes what is left. 「保存したら出る。消してたら消す。」
+
+   Three things this remembers, and they are all about the sheet rather than
+   about the language, so all three go when the sheet closes:
+
+   `addFmEd` -- a form somebody typed over. It wins from then on: changing the
+   head re-spells only the rows nobody has touched, because a rule is a way of
+   saving typing and not an opinion about the word.
+   「あくまで規則は作るのを楽にするためのツール」
+
+   `addFmOff` -- a row taken off. It stays off even if the head is retyped
+   into something the rule fits again: it was answered once.
+
+   Nothing here deletes. The minus is on a word that does not exist yet. */
+var addFms=[], addFmEd={}, addFmOff={};
+function addFmClear(){ addFms=[]; addFmEd={}; addFmOff={}; }
+/* The draft as a word, which is all fmrMake() ever wanted of one. */
+function addFmDraft(){
+  var sp=(wEdit && wEdit.sp) || [];
+  return {hw:spWord(sp), sp:sp, pos:(wEdit && wEdit.pos) || ''};
+}
+function addFmSync(){
+  var a=fmRules(), w=addFmDraft(), i, m;
+  addFms=[];
+  if(!addW || !w.hw || !w.sp.length) return;
+  for(i=0;i<a.length;i++){
+    if(addFmOff[a[i].id]) continue;
+    m=fmrMake(w, a[i]);
+    if(!m) continue;
+    /* Typed over: the letters are the person's, and the headword is those
+       letters rather than the ones the rule would have put there. */
+    if(addFmEd[a[i].id]){
+      m.sp=addFmEd[a[i].id];
+      m.hw=spWord(m.sp);
+    }
+    if(!m.hw) continue;
+    addFms.push(m);
+  }
+}
+/* Its own node, so the head field can be typed into without the sheet being
+   rebuilt under the thumb: what changes as somebody types is this block and
+   nothing else. */
+function addFmBoxHTML(){ return '<div id="wd-fms">'+addFmHTML()+'</div>'; }
+function addFmPaint(){
+  var e=document.getElementById('wd-fms');
+  if(!e) return;
+  e.outerHTML=addFmBoxHTML();
+  lnGrowAll();
+}
+function addFmHTML(){
+  addFmSync();
+  if(!addFms.length) return '';
+  return '<div class="sec">'+esc(t('fmr.title'))+'</div>'+
+    '<div class="fmmks">'+addFms.map(function(m){
+      return '<div class="fmmk"><span class="fmmkf">'+esc(fmLabel(m.fm))+'</span>'+
+        lnField('fmmk-'+m.id, '', IN('addFmSet', [m.id]), m.hw,
+                'whin'+(myFontOn()? ' sfont' : ''))+
+        '<button class="mnx"' + DO('addFmDrop', [m.id]) + ' aria-label="'+
+          esc(t('fmr.off'))+'">'+ICON_MINUS+'</button></div>';
+    }).join('')+'</div>';
+}
+function addFmSet(id, v){
+  addFmEd[String(id)]=spType(v);
+  lnGrow('fmmk-'+id);
+}
+function addFmDrop(id){
+  addFmOff[String(id)]=1;
+  delete addFmEd[String(id)];
+  addFmPaint();
+}
+/* Written when the word is. Each is an ordinary word, made the way fmrAdd()
+   makes one -- what it is a form OF and what form it is, the parent's
+   meanings if it is an inflection and none if it is a derivation. A form
+   whose spelling is already a word in the dictionary is skipped rather than
+   overwriting it: two words cannot share a headword, and the one already
+   there is the one somebody wrote. */
+function addFmWrite(hw){
+  var par=findWord(hw), i, m, nw, made=0;
+  if(!par) return 0;
+  for(i=0;i<addFms.length;i++){
+    m=addFms[i];
+    if(!m.hw || findWord(m.hw)) continue;
+    nw={hw:m.hw, pos:par.pos, at:Date.now(), from:String(par.hw), fm:m.fm,
+        sp:JSON.parse(JSON.stringify(m.sp)),
+        mns:(fmGroup(m.fm)==='i')? wMns(par).slice() : []};
+    nw.mn=nw.mns[0]||'';
+    WORDS.push(nw); made++;
+  }
+  return made;
 }
 
 /* ---- writing one -------------------------------------------------------- */
@@ -712,7 +906,7 @@ function vForms(){
   var a=fmRules();
   return '<div class="view">'+navTop(a.length? String(a.length) : '')+
     '<div class="body">'+
-    '<div class="note">'+esc(t('fmr.what'))+'</div>'+
+
     (a.length? '<div class="wdrows">'+a.map(function(r){
         return '<button class="wdrow"' + DO('openFmr', [r.id]) + '>'+
           '<span class="wdrowf">'+esc(fmLabel(r.fm)||t('word.none'))+'</span>'+
@@ -720,7 +914,15 @@ function vForms(){
           '<span class="wdrowm">'+esc(r.pos? posLabel(r.pos) : t('fmr.any'))+'</span></button>';
       }).join('')+'</div>' : '')+
     '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('fmrNew') + '>'+
-      ICON_PLUS+esc(t('fmr.new'))+'</button>'+
+      ICON_ADD+esc(t('fmr.new'))+'</button>'+
+    /* And the whole point of writing them: the words they make. Only when
+       there are some to make -- a button that does nothing when pressed is
+       worse than no button, which is what the row on a word's page already
+       says. */
+    (fmrTodoAll().length
+      ? '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('fmrAddAll') + '>'+
+          ICON_ADD+esc(tn('fmr.all', fmrTodoAll().length))+'</button>'
+      : '')+
     '</div></div>';
 }
 function fmrPickRow(label, val, r2){
@@ -747,8 +949,15 @@ function fmrFormHTML(){
     '<div class="sec">'+esc(t('fmr.drop'))+'</div>'+
     fmrSegs(String(r.drop||0), [['0','0'],['1','1'],['2','2']], 'fmrSetDrop')+
     '<div class="sec">'+esc(t('fmr.when'))+'</div>'+
-    fmrSegs(r.when||'', [['', t('fmr.always')], ['v', t('fmr.vowel')], ['c', t('fmr.cons')]],
+    fmrSegs(r.when||'', [['', t('fmr.always')], ['v', t('fmr.vowel')],
+                         ['c', t('fmr.cons')], ['x', t('fmr.ends')]],
             'fmrSetWhen')+
+    /* The letters themselves, and only while that is the condition chosen:
+       a field for an answer to a question nobody asked is a field that will
+       be filled in and then not used. */
+    ((r.when==='x')
+      ? spTypeField('fmr-end', 'fmrSetWend', r.wend||[], 'whin')
+      : '')+
     /* The same row the word sheet says it with. A destructive thing is not
        the brightest button on its own screen. */
     '<button class="set" style="margin-top:22px;border-bottom:none"' +
@@ -775,7 +984,16 @@ function fmrKeep(fn){
 function fmrSetAdd(v){ fmrKeep(function(r){ r.add=spType(v); }); lnGrow('fmr-add'); }
 function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; }); fmrPaint(); }
 function fmrSetDrop(v){ fmrKeep(function(r){ r.drop=parseInt(v,10)||0; }); fmrPaint(); }
-function fmrSetWhen(v){ fmrKeep(function(r){ r.when=(v==='v'||v==='c')? v : ''; }); fmrPaint(); }
+function fmrSetWhen(v){
+  fmrKeep(function(r){
+    r.when=(v==='v'||v==='c'||v==='x')? v : '';
+    /* The letters belong to the condition. Leaving them behind under another
+       condition is a value nothing reads, waiting to come back wrong. */
+    if(r.when!=='x') delete r.wend;
+  });
+  fmrPaint();
+}
+function fmrSetWend(v){ fmrKeep(function(r){ r.wend=spType(v); }); lnGrow('fmr-end'); }
 /* Which rule the two chooser screens are about. Arriving on one with nothing
    open is arriving back on a screen the app has forgotten the subject of -- a
    stale route, a reload. The first rule is a better answer than an empty
@@ -856,7 +1074,12 @@ function wdRegHTML(){
 function wdOneHTML(label, on, doName, val){
   return '<div class="entry one'+(on?' on':'')+'">'+
     '<button class="ebody"' + DO(doName, [val]) + '>'+
-    '<div class="hwrow"><span class="hw">'+esc(label)+'</span></div>'+
+    /* `hwl` and not `hw`. A headword is a word of the person's LANGUAGE and
+       wears the letters they drew; what is on this row is the app's own word
+       for a part of speech or a register. Wearing the same class meant the
+       list of parts of speech came out in a script nobody can read.
+       「自作文字になるのは自分が打った文字だけにしてくれない？」 */
+    '<div class="hwrow"><span class="hwl">'+esc(label)+'</span></div>'+
     '</button><span class="ltck" style="margin-left:auto">'+(on? ICON_TICK : '')+'</span></div>';
 }
 function vPos(){
@@ -947,6 +1170,12 @@ function wdFormHTML(){
       (wdFrom()? wdFmHTML() : '')+
       wdRegHTML()+
     '</div>'+
+
+    /* The forms the rules make of it, where a word is coined and nowhere
+       else. A word that already exists has its forms already, and re-spelling
+       them under it would be the app arguing about a language it did not
+       write. 「あくまで追加したとき」 */
+    (mk? addFmBoxHTML() : '')+
 
     '<div class="sec">'+t('word.tags')+'</div>'+
     wdTagsHTML()+
@@ -1085,9 +1314,18 @@ function wdViewHTML(){
        twice says nothing. */
     (wdRdShown(w)? '<div class="wrd">'+esc(w.hw)+'</div>' : '')+
     '<div class="wsub">'+esc(phIpa(seq))+'</div>'+
-    /* What kind of word it is, and how it is said -- one line, because they
-       are one question. An unmarked word says only its part of speech. */
-    '<div class="wsub2">'+esc(posLabel(w.pos)+(w.reg? ' \u00b7 '+regLabel(w.reg) : ''))+'</div>'+
+    /* What kind of word it is, how it is said, and -- if it was made from
+       another word -- which form of it this is. One line, because they are
+       one question about the word in front of you. An unmarked word says only
+       its part of speech.
+
+       The form was on the dictionary row and came off with the rest of the
+       family when a row became just a word (1f4d059). It belongs here rather
+       than there: on the parent's page the label distinguishes one child from
+       its siblings, and on the child's own page it is what the word IS. */
+    '<div class="wsub2">'+esc(posLabel(w.pos)+
+      ((w.from && w.fm)? ' \u00b7 '+fmLabel(w.fm) : '')+
+      (w.reg? ' \u00b7 '+regLabel(w.reg) : ''))+'</div>'+
     /* What field the word belongs to. Nothing here is pressable and nothing
        here is a list you are working on, so it is a line under the other two
        small facts rather than a row of boxes. */
@@ -1146,58 +1384,6 @@ function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 function goPlans(){ closeSheet(); go('plans'); }
 function wdSetNt(v){ wEdit.nt=v; }
 function wdSetPos(v){ wEdit.pos=v; }
-/* One position of one word, and what it says there. The letter's own
-   readings first, then every sound the language has, because a sound change
-   is exactly the case where the letter's own readings are not enough.
-
-   Which position is the route's argument; which LIST is the caller's, and
-   that is the whole of the difference between the two screens that use this. */
-function spPageHTML(sp, setU, drop){
-  var i=parseInt(here().a,10), st=sp[i];
-  if(!st) return viewGone();
-  var l=ltById(st.l), own=ltUnits(l), mine=addedSnd(), seen={}, opts=[], j;
-  for(j=0;j<own.length;j++) if(!seen[own[j]]){ seen[own[j]]=1; opts.push({u:own[j], own:true}); }
-  for(j=0;j<mine.length;j++) if(!seen[mine[j]]){ seen[mine[j]]=1; opts.push({u:mine[j], own:false}); }
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    /* The sound this position says, not the letter that writes it. A sound is
-       what somebody is heard saying and a letter is a shape; showing the shape
-       on the page where a sound is chosen put both directions of one table in
-       front of somebody at once. 「音を選ぶなのに文字を選ぶのも意味わからない」 */
-    '<div class="spbig">'+esc(phIpa(uSplit(spUnit(st))))+'</div>'+
-    '<div class="phkeys">'+opts.map(function(o){
-      return '<button class="phk'+(o.u===spUnit(st)?' on':'')+(o.own?' own':'')+'"' + DO(setU, [i, o.u]) + '>'+
-        '<span class="pks">'+esc(o.u)+'</span></button>';
-    }).join('')+'</div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:16px"' + DO(drop, [i]) + '>'+
-      t('word.sp.del')+'</button>'+
-    '</div></div>';
-}
-/* The reading, one sound to a row. Not the letters: the row is what this
-   position is HEARD as, which is the whole of what a reading is. */
-function spSndRowsHTML(sp, route){
-  var i, out='';
-  for(i=0;i<sp.length;i++)
-    out+='<button class="wdrow'+(spOdd(sp[i])? ' odd':'')+'"' + DO('go', [route, i]) + '>'+
-      '<span class="wdroww">'+esc(phIpa(uSplit(spUnit(sp[i]))))+'</span></button>';
-  return '<div class="wdrows">'+out+'</div>';
-}
-/* Two faces, and which one is the route's argument. With none, the reading
-   of the whole word and every position of it; with one, that position. */
-function vSpell(){
-  var sp=(wEdit&&wEdit.sp)||[];
-  if(here().a===undefined || here().a===null || here().a==='')
-    return '<div class="view">'+navTop('')+'<div class="body">'+
-      '<div class="whd"><span class="whw'+(myFontOn()? ' sfont':'')+'">'+
-        esc(spWord(sp))+'</span></div>'+
-      '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
-      /* The whole reading, in one field. Changing tira to tiraa one position
-         at a time is four screens to say one thing.
-         「tiraって文字なら全部一気に変えれるようにしようよ」 */
-      lnField('wd-rdln', '', IN('wdSetRd'), spPh(sp).join(''), 'whin')+
-      spSndRowsHTML(sp, 'spell')+
-      '</div></div>';
-  return spPageHTML(sp, 'wdSetU', 'wdDropAt');
-}
 /* A reading typed whole, given back to the positions that make it up.
 
    The sounds are cut out of what was typed and handed along in order, one to
@@ -1214,14 +1400,6 @@ function wdSetRd(v){
   for(i=0;i<sp.length;i++)
     spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
   wdSync(); wdPaint();
-}
-function wdSetU(i, u){
-  if(!wEdit || !wEdit.sp || !wEdit.sp[i]) return;
-  spSetU(wEdit.sp[i], u); wdSync(); sayPh(uSplit(u)); back(); wdPaint();
-}
-function wdDropAt(i){
-  if(!wEdit || !wEdit.sp) return;
-  wEdit.sp.splice(i,1); wdSync(); back(); wdPaint();
 }
 function wdAddMn(){
   var e=document.getElementById('wd-mn'); if(!e) return;

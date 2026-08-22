@@ -923,9 +923,9 @@ function kbLaysHTML(){
    chosen here is the arrangement, and the arrangement is what is shown. A key
    that carries a flick wears the four marks, because that is the whole of
    what makes a flick keyboard one. */
-function kbPatsHTML(){
+function kbPatsHTML(act){
   return '<div class="kbpats">'+KB_PATS.map(function(p){
-    return '<button class="kbpat"' + DO('kbAdd', [p]) + '>'+
+    return '<button class="kbpat"' + DO(act, [p]) + '>'+
       kbMiniHTML(kbPatLay(p))+
       '<span class="kbpn">'+esc(t('kb.pat.'+p))+'</span>'+
       '</button>';
@@ -1048,7 +1048,19 @@ function kbDragTo(e){
   }
   e.preventDefault();
   KBD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  /* The key being carried is directly under the finger -- that is what
+     carrying it means -- and it is lifted above the others, so it is the
+     topmost thing at that point and elementFromPoint answered with IT every
+     single time. `over===KBD.el` then sent the drag home, and a key held and
+     dragged across the whole keyboard never swapped with anything.
+     「長押しして持っていきたいのに動かない」
+
+     So it is taken out of the hit test for the length of the question and put
+     straight back. Nothing else can be asked instead: what is wanted is the
+     key UNDER the one being carried. */
+  KBD.el.style.pointerEvents='none';
   var over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
+  KBD.el.style.pointerEvents='';
   if(!over || over===KBD.el) return;
   /* Into the row the finger is over, beside the key it is over -- which is
      what moving across rows means and is the half a one-dimensional grid
@@ -1111,9 +1123,45 @@ function kbReadRows(){
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
-  openForm('kbnew', t('kb.new'), kbPatsHTML(), function(){ geTiles(); });
+  openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbnew=function(){ kbNew(); };
+/* The pattern of a keyboard that already exists. It could only be chosen when
+   the keyboard was made, so somebody who wanted flick after building a QWERTY
+   had to delete the whole thing and start again 「途中でフリックにしたい！って
+   とき変えられないよ？」
+
+   DELETE REVIEW. Twelve keys and thirty keys are not the same set of places,
+   so there is nowhere to put what was on the old ones and the layout is
+   rebuilt empty: everything assigned to a key on this keyboard goes. Nothing
+   ELSE goes -- not the letters, not the other keyboards, not the name. It is
+   asked for by name, it asks before it does it, and it is not automatic.
+
+   The same five patterns, from the same list, drawn by the same function: the
+   only difference between choosing one here and choosing one for a new
+   keyboard is which name the press carries. */
+function kbRepat(i){
+  var b=kbBoards();
+  if(!b.length) return;
+  kbShow=kbClamp(i, b.length);
+  if(kbIsFree(kbShow)) return;
+  openForm('kbpat:'+kbShow, t('kb.pat.set'), kbPatsHTML('kbSetPat'),
+           function(){ geTiles(); });
+}
+FORM_OPEN.kbpat=function(a){ kbRepat(parseInt(a,10)||0); };
+function kbSetPat(pat){
+  var b=kbBoards(), x;
+  if(KB_PATS.indexOf(pat)<0 || !b.length) return;
+  if(kbIsFree(kbShow)) return;
+  x=KB.kbs[kbShow-1];
+  if(!x) return;
+  if(x.pat===pat){ back(); return; }
+  if(!confirm(t('kb.pat.q'))) return;
+  x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
+  kbLay=0; kbSel=null;
+  saveKb();
+  kbGo();
+}
 /* What this chapter IS, which the screen never said.
    「ここの画面どういうこと？」「Linguaで書いてくださいの画面にどう結びつけるのか
    がわからんて」
@@ -1176,7 +1224,10 @@ var KB_SHOTS={
   /* Add New Keyboard, at the foot of iOS's own list of keyboards */
   'kb-list.jpg': {t:87.0, h:10.2},
   /* Lingua, under Third-Party Keyboards and below everything Apple suggests */
-  'kb-add.jpg':  {t:91.0, h:8.6},
+  /* Measured off the file rather than eyeballed: the Lingua card runs from
+     89.9% to 98.1% of its height, and the ring was set 1.1% below it.
+     「キーボード設定の黄色い囲むやつLinguaのやつだけずれてる」 */
+  'kb-add.jpg':  {t:89.6, h:8.8},
   /* the Keyboards row, at the foot of Lingua's own page in Settings */
   'kb-app.jpg':  {t:88.6, h:11.0},
   /* Allow Full Access, one page further in */
@@ -1241,7 +1292,10 @@ function kbMore(){
     /* Not board 0. It is the free QWERTY, it is not in storage, and there is
        nothing there to delete. */
     (!kbIsFree(now)
-      ? '<button class="set"' + DO('kbDrop', [now]) + '>'+
+      ? '<button class="set"' + DO('kbRepat', [now]) + '>'+
+        '<span class="sl">'+esc(t('kb.pat.set'))+'</span>'+
+        '<span class="sv">'+esc(t('kb.pat.'+kbBoard().pat))+ICON_GO+'</span></button>'+
+        '<button class="set"' + DO('kbDrop', [now]) + '>'+
         '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
       : '')+
     '<button class="set" style="border-bottom:none"' + DO('kbReset') + '>'+

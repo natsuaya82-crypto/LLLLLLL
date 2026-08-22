@@ -109,44 +109,4 @@ function makeWord(pos, A, tk){
 }
 /* Pick a short run of words that shows linking off, if the dictionary has one:
    one that ends on a consonant followed by one that opens on a vowel. */
-/* What the dictionary has quietly decided, said in ordinary words */
-function findings(){
-  var A=analyze(), out=[], N=WORDS.length;
-  if(!N) return out;
-
-  /* The word-final rule, once three words of one part of speech exist */
-  Object.keys(A.finalRule).forEach(function(p){
-    var r=A.finalRule[p];
-    out.push({t:t('find.final.t', posLabel(p), r.ch),
-              d:t('find.final.d', r.all, r.hit), rate:r.rate});
-  });
-
-  /* The inventory can be named from the very first word. It is the first
-     thing anybody can see about their own language. */
-  if(A.used.length){
-    out.push({t:t('find.cons.t', A.used.join(', ')),
-              d:t('find.cons.d', N),
-              rate:Math.min(1,A.used.length/10)});
-  }
-  if(A.vowels.length && A.vowels.length<=4){
-    out.push({t:t('find.vow.t', A.vowels.join(', '), A.vowels.length),
-              d:t('find.vow.d'),
-              rate:1-A.vowels.length/6});
-  }
-  if(A.sylMode && N>=3){
-    out.push({t:tn('find.syl.t', A.sylMode.n),
-              d:t('find.syl.d', A.sylMode.all, A.sylMode.hit),
-              rate:A.sylMode.hit/A.sylMode.all});
-  }
-  var codas=Object.keys(A.co);
-  if(codas.length && codas.length<=4 && N>=3){
-    out.push({t:t('find.coda.t', codas.join(', ')),
-              d:t('find.coda.d'), rate:1-codas.length/8});
-  }
-  if(A.unused.length>=4 && N>=3){
-    out.push({t:t('find.unused.t', A.unused.slice(0,6).join(', ')),
-              d:t('find.unused.d'), rate:A.unused.length/Math.max(1,addedSnd().length)});
-  }
-  return out;
-}
 /* What to do next so that another rule appears, in words a beginner can act on */

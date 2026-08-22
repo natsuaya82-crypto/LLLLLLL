@@ -31,7 +31,10 @@ function viewReset(){
   fq=''; fpick=null;                   /* the find screen */
   mkPos='n'; cands=[];                 /* the make screen */
   abVow='';                            /* the abugida editor */
+  ltSort='own'; ltFil='all';           /* the alphabet's order and filter */
+  ltWob=false;                         /* and whether its letters are wobbling */
   wdMode='';                           /* the sheet a word is written on */
+  ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   tq=''; tkPos=POS_ALL; tcomp=[];      /* talk */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
@@ -164,7 +167,6 @@ var PAGES={
   form:    {tab:'build'},
   letters: {tab:'build', k:'toc.letters'},
   kb:      {tab:'build', k:'kb.title'},
-  snd:     {tab:'build', k:'toc.sound'},
   ltset:   {tab:'build', k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},
@@ -177,8 +179,8 @@ var PAGES={
   pos:     {tab:'build', k:'f.pos'},
   reg:     {tab:'build', k:'word.reg'},
   follows: {tab:'profile'},
-  spell:   {tab:'build', k:'word.sp'},
   glyph:   {tab:'build'},
+  spell:   {tab:'build', k:'word.sp'},
   words:   {tab:'build', k:'toc.words'},
   gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
@@ -408,13 +410,38 @@ function tabBar(){
    viewport, so with the keyboard up it is behind the keyboard and there is
    nothing to leave room for -- leaving it anyway costs sixty points of a
    screen that has just lost half its height. */
+/* The smallest the visible part has been on this phone, this launch -- which
+   is what it is with the keyboard up. A form that is one screen is laid out
+   to THIS and not to --vvh, because a layout that follows --vvh is a layout
+   that moves every time the keyboard goes down: the field stretches, and the
+   meaning and the row of pictures under it slide to the foot of the phone.
+   「キーボードをおろしても位置は動かない」「キーボード開いてない時に写真とかが
+   下の位置にある」
+
+   Until a keyboard has actually been up there is nothing to measure, so it
+   starts as a guess -- 55% of the phone, which is about what is left over an
+   iPhone's kana keyboard and its accessory bar. The first time one opens, the
+   guess is replaced by the truth and the composer settles; it does not move
+   again. */
+var vvMin=0, vvWas=0;
 function vvFit(){
   var v=window.visualViewport, h=v? v.height : window.innerHeight;
   /* 120 rather than 0: a phone's address bar sliding away is also a change of
      height and is not a keyboard. */
   var up=(window.innerHeight-h)>120;
   var d=document.documentElement.style;
+  /* A phone that turned, or a window somebody dragged, is a different screen
+     and the old smallest means nothing on it. */
+  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvMin=0; }
+  if(!vvMin) vvMin=Math.round(window.innerHeight*0.55);
+  if(h<vvMin) vvMin=h;
+  d.setProperty('--vvmin', vvMin+'px');
   d.setProperty('--vvh', h+'px');
+  /* Where the visible part STARTS. iOS scrolls the layout viewport to lift a
+     focused field clear of the keyboard, and a screen pinned to the document
+     goes up with it -- so the bar carrying Post left the top of the phone.
+     A one-screen form is pinned to this instead. */
+  d.setProperty('--vvtop', (v? v.offsetTop : 0)+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
 }
 function vvMount(){
@@ -425,6 +452,52 @@ function vvMount(){
   }
   window.addEventListener('resize', vvFit, false);
 }
+/* ---- going back without reaching for the corner -------------------------
+   The way back is a button in the top-left corner, which on a phone held in
+   one hand is the one place a thumb cannot get to. Every screen keeps it --
+   this is a second way to the same thing, not a replacement.
+   「全部戻るボタンじゃなくて携帯の右からスライドして戻るのも追加してほしい。両方」
+
+   From the RIGHT edge, dragged left. Which edge is the phone's own habit and
+   not ours to argue with, and the one that was asked for is this one.
+
+   Three things it must not do. It must not fire on a drawing: the glyph
+   editor is a canvas that goes to the edge of the screen and a stroke ending
+   there is a stroke, not a gesture. It must not fire while a key is being
+   carried, which is a drag of its own. And it must not fire on something that
+   scrolls sideways -- a row of tabs, a grid being reordered -- so the gesture
+   has to be mostly horizontal AND start within a thumb's width of the edge.
+
+   pointer* and not touch*: this app is one webview and pointer events are
+   what it has. Passive, because it never prevents the default -- a gesture
+   that cancels a scroll it has decided against is worse than no gesture. */
+var swX=0, swY=0, swOn=false;
+function swStart(e){
+  swOn=false;
+  if(!e.isPrimary) return;
+  if(here().r==='glyph' || kbWob) return;
+  var t=e.target;
+  while(t && t!==document.body){
+    var n=t.nodeName;
+    if(n==='CANVAS' || n==='INPUT' || n==='TEXTAREA') return;
+    t=t.parentNode;
+  }
+  if(e.clientX < window.innerWidth-30) return;
+  swX=e.clientX; swY=e.clientY; swOn=true;
+}
+function swEnd(e){
+  if(!swOn) return;
+  swOn=false;
+  var dx=e.clientX-swX, dy=e.clientY-swY;
+  if(dx > -70) return;
+  if(Math.abs(dy) > Math.abs(dx)*0.6) return;
+  back();
+}
+function swMount(){
+  document.addEventListener('pointerdown', swStart, {passive:true});
+  document.addEventListener('pointerup', swEnd, {passive:true});
+  document.addEventListener('pointercancel', function(){ swOn=false; }, {passive:true});
+}
 /* And the bar is put on the page here, once, into an element beside #app that
    render() never rewrites. Writing it into each screen's HTML meant it was
    thrown away and built again -- blur and all -- on every navigation, which
@@ -433,7 +506,11 @@ function vvMount(){
 function tabPaint(){
   var host=document.getElementById('tabs');
   if(!host) return;
-  var sig = SET.done ? (here().r+'|'+uiLang()) : '';
+  /* A one-screen form has no bar of tabs. It is not a place in the app while
+     it is open -- it is a thing being written -- and the room the bar takes
+     is room the picture row needs. 「投稿画面にはホーム画面とかの下タブは要らない」 */
+  var one = here().r==='form' && FORM && FORM.fit;
+  var sig = (SET.done && !one) ? (here().r+'|'+uiLang()) : '';
   if(host.getAttribute('data-sig')===sig) return;
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';

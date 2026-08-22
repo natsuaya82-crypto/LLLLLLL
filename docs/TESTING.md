@@ -49,6 +49,7 @@ shipped once.
 | how anything is saved | `npm run backup` + `npm run migrate`, and see `docs/DATA_SAFETY.md` § changing anything that saves |
 | a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |
 | how a post is rendered | `npm run sides` + `npm run card` |
+| what a word does after two presses in a row — rename, delete, save | `npm run word` |
 | a screen | `node tools/shot.mjs <screen>` and look at it |
 | `www/i18n/*` | `npm run i18n` |
 | anything a plan gates | add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |
@@ -87,9 +88,9 @@ Mandatory regression tests, no exceptions:
 Three checks print a count so that nothing shrinks silently:
 
 ```
-screens walked: 230
-screens the mirror rendered: 319
-buttons pressed: 3972
+screens walked: 338
+screens the mirror rendered: 377
+buttons pressed: 7884
 ```
 
 **A number moving is only ever a question: what changed?** And the answer has

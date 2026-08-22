@@ -92,10 +92,7 @@ function tocRows(){
        AI: a numbered row that appears when you pay renumbers the book under
        somebody who already knows where things are. Free and Plus differ by
        this row and it is at the end. */
-    can('snd')
-      ? [{k:'toc.sound', r:'snd', v:SND.length,
-          txt:SND.length? String(SND.length) : '—'}]
-      : []
+    []
   ).concat(
     /* The AI conversation is Studio's, and it is the LAST chapter so that not
        having it takes nothing away from anybody's numbering.
@@ -126,21 +123,6 @@ function tocRows(){
 function chOf(p){ return ltChar(p); }
 /* A sound belongs to the language either because a word already uses it or
    because you said so; before this, only the first way existed. */
-/* Dropping a sound unhooks the letters that read it. It does not delete them:
-   a letter is a thing you drew and it survives a sound being reconsidered --
-   which is the whole point of them being separate.
-
-   There were two of these. This one, on the × of a row in the chapter, and
-   sndDrop() on the × of the same sound in the proposal panel a few hundred
-   pixels above it -- which spliced the inventory and stopped, leaving every
-   letter that read the sound still reading a sound the language no longer
-   had. The same act, twice, agreeing about the easy half. */
-function dropSnd(p){
-  var a=addedSnd(), i=a.indexOf(p);
-  if(i>=0){ a.splice(i,1); saveSnd(); }
-  ltFor(p).forEach(function(l){ ltUnlink(l.id, p); });
-  render();
-}
 function invAll(){ return wsUnits(); }
 function scriptHave(){ return invAll().filter(function(p){ return !!ltChar(p); }).length; }
 /* A word written in the characters borrowed for it. What a character is
@@ -177,8 +159,13 @@ var pkScript = '';
    the ids are the same. */
 var FORM=null;      /* {key, title, html, mount} — the one being shown */
 var FORM_OPEN={};   /* what rebuilds it when you arrive by the back button */
-function openForm(key, title, html, mount, right){
-  FORM={key:key, title:title, html:html, mount:mount||null, right:right||''};
+/* `fit` is the sixth: a form that is one screen and does not scroll. It was
+   read off FORM in vForm() and set by nobody, so the composer scrolled, kept
+   its bar of tabs, and let the keyboard carry its own header off the top of
+   the phone -- while a comment two files away said otherwise. */
+function openForm(key, title, html, mount, right, fit){
+  FORM={key:key, title:title, html:html, mount:mount||null, right:right||'',
+        fit:!!fit};
   if(here().r==='form' && here().a===key){ render(); window.scrollTo(0,0); }
   else go('form', key);
 }

@@ -316,8 +316,18 @@ export function halfDone(){
     /* And what it says out loud, once, on the day that happens. capLapse()
        only fires on a plan that changed, and nothing in a walk changes one. */
     ['the plan has ended', () => { openCapLapse(); return FORM.html; }],
-    ['the word being spelled', () => { openEdit('kano'); window.route='spell';
-                                       NAV=[{r:'spell'}]; return vSpell(); }],
+    /* The reading of a word, which is the paid plan's and is reached from a
+       sheet that has a word open on it. Once with the search empty and once
+       with something in it: the tiles are the screen, and a search that
+       matches nothing leaves it with none. */
+    ['the reading of a word', () => { SET.plan='plus'; openEdit('kano');
+                                      window.route='spell'; NAV=[{r:'spell'}];
+                                      const h=vSpell(); SET.plan='free'; return h; }],
+    ['the reading of a word, searched', () => { SET.plan='plus'; openEdit('kano');
+                                                window.route='spell'; NAV=[{r:'spell'}];
+                                                spQ='a';
+                                                const h=vSpell(); spQ='';
+                                                SET.plan='free'; return h; }],
     ['the abugida editor',     () => { window.route='abugida'; NAV=[{r:'abugida'}];
                                        SET.wsys='abugida'; abVow = 'a';
                                        const h = vAbugida(); SET.wsys=''; return h; }],
@@ -339,12 +349,20 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* The chart, opened from the letter it is about. It is a sheet now
-       rather than a chapter, so nothing reaches it by walking the routes --
-       and the proposal inside it, with its row of sounds and its way to ask
-       for one more, only exists once a character has been picked. */
-    ['the chart, for one letter', () => { sndFeelPick = AS_CHARS[0].id;
-                                          openSnd(LETTERS[0].id); return FORM.html; }],
+    /* The IPA, opened from the letter it is about, and again from the
+       inventory -- one page, two things a press means, so both are walked.
+       Nothing reaches either by walking the routes. And once with something
+       in the search, because a search that matches nothing leaves the page
+       with no tiles at all. */
+    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return FORM.html; }],
+    ['the sounds, for the language', () => { openSndAdd(); return FORM.html; }],
+    ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
+                                     const h = FORM.html; ipaQ = ''; return h; }],
+    /* What one sound IS, which is a page of its own behind the ? on a tile.
+       Twice: a sound one of the ten languages has, and one that none of them
+       does, because the second says only how it is made. */
+    ['what a group of sounds is', () => { openIpaG('m.plosive'); return FORM.html; }],
+    ['what a group with no examples is', () => { openIpaG('o'); return FORM.html; }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
     /* The new-word sheet with something already chosen on it. The chips for
@@ -370,8 +388,7 @@ export function halfDone(){
        can('snd') buys. All three still have to be walked, so all three flip
        the plan and put it back. */
     /* Derived from a word that already exists, so the sheet opens with a
-       spelling in it -- the row of letter tiles is the only door to the page
-       for one position of it, and an empty sheet has no tiles. */
+       spelling in it -- an empty sheet has no reading to change. */
     ['the new word sheet, by sound', () => { SET.plan = 'plus'; openAdd('kano');
                                              const h = FORM.html; addFrom = '';
                                              SET.plan = 'free'; return h; }],
@@ -690,6 +707,18 @@ export function halfDone(){
                                                     const h = FORM.html; KB = null; kbShow = 0;
                                                     kbSlotFor = null;
                                                     SET.plan = 'free'; return h; }],
+    /* The alphabet held, the same way. Two faces, because the corner mark is
+       the paid plan's -- the free twenty-eight are the alphabet and taking one
+       away would leave the keyboard a key that answers to nothing -- while the
+       wobble and Done are on both, since the ORDER is everybody's. */
+    ['the alphabet being held (paid)', () => { SET.plan = 'plus'; ltWob = true;
+                                       window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+                                       const h = vLtset();
+                                       ltWob = false; SET.plan = 'free'; return h; }],
+    ['the alphabet being held (free)', () => { ltWob = true;
+                                       window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+                                       const h = vLtset();
+                                       ltWob = false; return h; }],
     /* A keyboard with more than one layer: the rail that switches between
        them only exists then -- and so does the rest of the editor: the way
        to add a row, to add a layer, and to put the whole thing back. */
@@ -712,6 +741,14 @@ export function halfDone(){
        of its own and not the free branch of vKb(): the row of keyboards, the
        `+`, the ⋯ and Apply are all above it, and none of them exists on
        free. 「1つ目の無料のqwartyは編集できないようにしてくれ」 */
+    /* The five patterns again, offered to a keyboard that already exists.
+       Same list, same drawing, a different name on the press -- so this face
+       is what proves the second name is reachable at all. */
+    ['the arrangement of a keyboard that already exists', () => {
+        SET.plan = 'plus'; KB = null; kbShow = 0;
+        kbAdd('qwerty'); kbRepat(1);
+        const h = FORM.html;
+        KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the free QWERTY, on a plan that can build others', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 0; KB.at = 1;
@@ -744,11 +781,22 @@ export function halfDone(){
         window.route='kb'; NAV=[{r:'kb', a:'1'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
-    /* The phonology, which is Plus's -- the walk runs on free, so without
-       this its rows and the chart that adds to them belong to no screen. */
-    ['the sounds a language is built from', () => {
-        SET.plan = 'plus'; go('snd');
-        const h = vSnd(); SET.plan = 'free'; return h; }],
+    /* A sound the language has that no letter says yet. It is a cell in the
+       alphabet now rather than a row on a chapter of its own, and it only
+       exists on Plus -- free cannot add a sound. Two faces, because held it
+       carries the mark that takes the sound away and at rest the speaker.
+       The seeded language has a letter for every sound it has, so one is
+       taken off a letter here to make one. */
+    ['a sound with no letter yet', () => {
+        SET.plan = 'plus'; SND.push('\u0283');
+        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+        const h = vLtset();
+        SND.pop(); SET.plan = 'free'; return h; }],
+    ['a sound with no letter yet, held', () => {
+        SET.plan = 'plus'; ltWob = true; SND.push('\u0283');
+        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
+        const h = vLtset();
+        SND.pop(); ltWob = false; SET.plan = 'free'; return h; }],
     ['the chart, for the language rather than a letter', () => {
         SET.plan = 'plus'; openSndAdd();
         const h = FORM.html; SET.plan = 'free'; return h; }],
@@ -761,6 +809,37 @@ export function halfDone(){
     /* The ⋯ at the end of the row of keyboards: deleting this one, and
        starting the whole chapter over. Both are off the screen now, and
        deleting only exists when there is more than one to delete. */
+    /* The ... in the dictionary's bar. The rules that make a form out of a
+       word are behind it, and that is the only door to them -- without this
+       face the walk sees a screen nothing goes to, which is exactly what it
+       would be if the button were deleted. */
+    ['the dictionary\'s ...', () => { wordsMore(); return FORM.html; }],
+    /* The sheet a word is coined on, with something typed into it. The forms
+       the rules make of it are on that sheet, and they are on it only once
+       there is a spelling to make them out of -- so an empty sheet names
+       neither the field one is typed over in nor the minus that takes one
+       off. The rule the fixture seeds is a plural for nouns, and a noun is
+       what the sheet opens on. */
+    ['a word being coined, with its forms', () => {
+        openAdd('');
+        wdSetLn('tirek');
+        return wdFormHTML(); }],
+    /* A rule whose condition is the letters a word ends in. The field for
+       those letters is on the screen only while that is the condition
+       chosen -- a field for a question nobody asked gets filled in and then
+       not used -- so without this face nothing names fmrSetWend. */
+    ['a rule that fires on an ending', () => {
+        /* Left in place rather than put back: press-check rebuilds the screen
+           and then presses it, so a rule that only exists while the HTML is
+           being made is a rule fmrKeep cannot find -- every press emptied the
+           screen. One rule is what a language with a rule looks like. */
+        STG.fm = [];
+        fmrNew();
+        const r = fmRules()[0];
+        r.pos = 'v'; r.fm = 'pst'; r.add = spType('ied');
+        r.drop = 1; r.when = 'x'; r.wend = spType('y');
+        saveStg();
+        return fmrFormHTML(); }],
     ['the two that undo a keyboard', () => {
         SET.plan = 'plus'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 1; kbMore();
@@ -818,10 +897,6 @@ export function halfDone(){
     ['a word being written',   () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
                                        wdSync();
                                        return wdFormHTML()+vForm(); }],
-    ['a word being spelled again', () => { openEdit('kano'); window.route='spell';
-                                           NAV=[{r:'spell'}];
-                                           wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           return vSpell(); }],
     ['a word with a sentence in it', () => { findWord('kano').ex=[{ln:'kano tir', gl:'sees it'}];
                                              openEdit('kano');
                                              const h=wdFormHTML();
@@ -848,14 +923,6 @@ export function halfDone(){
     ['words being suggested for a slot', () => { openSlot('greet','yes');
                                                  stSug=[['k','a'],['t','i']];
                                                  return FORM.html.replace(/$/, stSugHTML()); }],
-    ['one position of a word',   () => { openEdit('kano');
-                                          wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                          window.route='spell'; NAV=[{r:'spell', a:'0'}];
-                                          return vSpell(); }],
-    ['one position of a new word', () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
-                                           wdSync();
-                                           window.route='spell'; NAV=[{r:'spell', a:'0'}];
-                                           return vSpell(); }],
     ['the sound keyboard in a word', () => { SET.plan='plus'; openEdit('kano'); wdMode='ph';
                                              const h=wdFormHTML(); wdMode=''; SET.plan='free'; return h; }],
     ['the sound keyboard in a new word', () => { SET.plan='plus'; openAdd(); wdMode='ph';

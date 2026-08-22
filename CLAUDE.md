@@ -88,6 +88,18 @@ options and what the code does today, and stop. Do not read a spec off the
 code: the code is what happened, not what was wanted.
 → `docs/FEATURE_RULES.md`
 
+**Saying what you are doing, while you are doing it.** Work is reported as it
+happens, not at the end. Before a step that takes more than a moment -- a
+check, a measurement, a build, a file being rewritten -- say in one line what
+it is and why; after it, say what came back. Silence for ten minutes is not
+work being done quietly, it is a session that cannot be steered: by the time
+the report arrives the wrong thing has already been built. One line each, in
+the order they happen. 「せめてやってる作業を細かくここにログで残せや」
+「死ぬほど長い作業をやめてやってる作業を毎回報告する」
+
+This is the opposite of a long reply. Short lines, often. Not a long one at
+the end.
+
 **Reporting.** "Implemented it" is not a report. Files and why, what behaviour
 changes, what data is affected, what is newly stored, migration, deletion, the
 plan, what was tested, what was not, whether a device is needed, known limits.
@@ -154,13 +166,14 @@ backlog entry is not permission, and neither is the absence of one.
 
 ```
 npm test        # assets + es5 + dead + migrate + i18n + import + sides + act + conv
-                # + card + post + backup + press
-                # green before a commit (~110s)
+                # + card + word + post + backup + press
+                # green before a commit. It is minutes, not seconds -- on a
+                # laptop it is about two, and on a slow container six to ten.
 ```
 
 Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate` /
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run act` / `npm run conv` /
-`npm run card` / `npm run post` / `npm run backup` / `npm run press`.
+`npm run card` / `npm run word` / `npm run post` / `npm run backup` / `npm run press`.
 `tools/pre-commit` runs the ones that need no browser (assets, es5, dead, import, sides —
 about two seconds) plus i18n when a screen file changed. It is not the whole gate: run
 `npm test` yourself.
@@ -185,7 +198,7 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The thirteen rules the gate enforces
+## The fourteen rules the gate enforces
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -577,6 +590,27 @@ no Swift on a Linux runner — so what it holds is everything on this side of
 that call. All three of its failures were made to happen before it was
 believed.
 
+### 14. What happens after the second press
+
+`press-check` rebuilds the screen before every press, which is what lets it
+press all seven thousand of them without one leaving the app somewhere the
+next one cannot run. It is also why it can never press two buttons in a row,
+and a whole class of bug lives exactly there: open a word, edit it, save.
+
+Both halves of that were broken and both were green. Renaming a word from its
+own page saved it correctly under the new name and put you down on "That is no
+longer here", because `NAV` still held `form:word:<old>`. Deleting one did the
+same, one screen further back. Neither threw, neither blanked a screen, and
+every check passed.
+
+`tools/word-check.mjs` drives the real app over sequences rather than presses:
+it opens a word, opens its editor, changes the spelling, saves, and asks what
+screen you are standing on. `navRename()` and `navDrop()` in `shell.js` are
+what it holds -- the trail is told when a word is renamed and when one is
+deleted, because the trail names words and words move.
+
+Both of its failures were watched happening before either fix was believed.
+
 ## What the free plan is
 
 One sentence: **your own shapes for a-z and 0-9.** `ltStart` puts thirty-eight
@@ -684,8 +718,10 @@ back for is gone" (`viewGone()`, five screens in four files).
 Six more by running a three-line sliding window over every line of `www/`,
 which is worth doing again and takes a minute to write: a letter's face
 (`ltInk()`), strokes into ink (`inkStrokes()`), the spelling page
-(`spPageHTML()`), the spelling row (`spRowHTML()`), an example sentence
-(`exRowHTML()`), and where the thumb is (`geXY()`).
+(`spPageHTML()`, since deleted — a reading is chosen off sounds now and no
+letter appears on that page at all), the spelling row (`spRowHTML()`, deleted
+with it), an example sentence (`exRowHTML()`), and where the thumb is
+(`geXY()`).
 
 **The worst two sat under comments claiming to be the one place.** `ltFace`
 (since deleted — the alphabet is cells now, and `ltInk` is the face)
@@ -824,9 +860,9 @@ argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` 
 walked the day it is added. Do not narrow either one back to the argument-less face:
 a screen the mirror never renders is a screen where a hard-coded string sits forever.
 
-Both checks print their coverage (`screens walked: 297`, `screens the mirror
-rendered: 350`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 5955` for the same reason — and it is what a
+Both checks print their coverage (`screens walked: 338`, `screens the mirror
+rendered: 377`) because nothing else in a green run would show it shrinking.
+`press` prints `buttons pressed: 7884` for the same reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
@@ -863,7 +899,13 @@ board and a keyboard under the two-layer one. It rose to 5955 the day the
 timeline asked who you were: the feed, the search and the notices answer with
 the app's own door signed out, which is a screen the walk had never rendered,
 and the account room's signed-out face swapped places with its signed-in one
-because the fixture arrives with a session now. A number
+because the fixture arrives with a session now. It rose to 7884 the day a
+word's reading was chosen rather than typed: the reading page carries the
+language's own sounds and the whole of the IPA, which is a hundred and sixty
+tiles, and the fixture holds two faces of it. Two things came off in the same
+stretch and neither shows in that number as a fall, because the same change
+put them back several times over: the row of letter tiles under the box a
+word is typed into, and the page for one position of a word. A number
 moving is only ever a question — what changed — and the answer has to be a
 change somebody made on purpose.
 

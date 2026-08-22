@@ -405,19 +405,27 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   @objc func pickPhoto(_ call: CAPPluginCall) {
     let edge = CGFloat(call.getInt("max") ?? 1200)
+    // How many more the post has room for. A post holds four photographs and
+    // this asked for one, every time, so choosing four meant opening the
+    // picker four times -- and the picker itself would not let you select a
+    // second. The web side knows how many are already on the post, so it is
+    // the one that says.
+    let limit = max(1, min(call.getInt("limit") ?? 1, 10))
     DispatchQueue.main.async {
       guard let host = self.bridge?.viewController else {
         call.reject("no view controller"); return
       }
       var cfg = PHPickerConfiguration()
       cfg.filter = .images
-      cfg.selectionLimit = 1
+      cfg.selectionLimit = limit
       let vc = PHPickerViewController(configuration: cfg)
       // Cancelled is an empty answer, not a rejection: somebody changing their
       // mind is not an error and must not put a message on their screen.
-      let p = PhotoPicker(edge: edge) { [weak self] b64 in
+      let p = PhotoPicker(edge: edge) { [weak self] b64s in
         self?.picking = nil
-        call.resolve(["b64": b64 ?? ""])
+        // `b64` stays, and is the first of them: a phone running an older web
+        // side asks for one and reads one field.
+        call.resolve(["b64": b64s.first ?? "", "b64s": b64s])
       }
       self.picking = p
       vc.delegate = p
@@ -431,27 +439,44 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 /// place, and a call that is never answered is a button that never comes back.
 final class PhotoPicker: NSObject, PHPickerViewControllerDelegate {
   private let edge: CGFloat
-  private let done: (String?) -> Void
+  private let done: ([String]) -> Void
   private var answered = false
 
-  init(edge: CGFloat, done: @escaping (String?) -> Void) {
+  init(edge: CGFloat, done: @escaping ([String]) -> Void) {
     self.edge = edge
     self.done = done
   }
 
-  private func answer(_ s: String?) {
+  private func answer(_ s: [String]) {
     guard !answered else { return }
     answered = true
     DispatchQueue.main.async { self.done(s) }
   }
 
+  /// Every one that was chosen, in the order they were chosen. They load
+  /// concurrently and out of order, so each lands in the slot it was picked
+  /// for and the answer waits for all of them -- one call, one answer, still.
+  /// One that will not load is dropped rather than left as a hole: a post
+  /// with three of the four is a post, and a blank in the strip is not.
   func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
     picker.dismiss(animated: true)
-    guard let item = results.first?.itemProvider,
-          item.canLoadObject(ofClass: UIImage.self) else { answer(nil); return }
-    item.loadObject(ofClass: UIImage.self) { [weak self] obj, _ in
-      guard let self = self, let im = obj as? UIImage else { self?.answer(nil); return }
-      self.answer(PhotoPicker.jpeg(im, self.edge))
+    guard !results.isEmpty else { answer([]); return }
+    var slots = [String?](repeating: nil, count: results.count)
+    let group = DispatchGroup()
+    let lock = NSLock()
+    for (i, r) in results.enumerated() {
+      let item = r.itemProvider
+      guard item.canLoadObject(ofClass: UIImage.self) else { continue }
+      group.enter()
+      item.loadObject(ofClass: UIImage.self) { [weak self] obj, _ in
+        defer { group.leave() }
+        guard let self = self, let im = obj as? UIImage,
+              let s = PhotoPicker.jpeg(im, self.edge) else { return }
+        lock.lock(); slots[i] = s; lock.unlock()
+      }
+    }
+    group.notify(queue: .global()) { [weak self] in
+      self?.answer(slots.compactMap { $0 })
     }
   }
 

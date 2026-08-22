@@ -105,7 +105,19 @@ and that is correct.
 ```
 
 `st` is the strokes somebody drew; `ch` is a character borrowed instead of
-drawing one; a letter with neither has no face yet. `val` makes it a digit — a
+drawing one; a letter with neither has no face yet.
+
+A stroke is `{ pts[], closed?, k?, fill? }`. `pts` are lattice points, a third
+element `'c'` on one marking a bend; `closed` joins the last back to the first;
+`k:'o'` is a true arc through the points rather than a corner rounded off.
+`fill` blackens the inside of what the stroke goes round — three points is the
+least that has an inside, and on fewer it sits there and does nothing. It is
+the one shape in the app that is not a swept nib, so `glyphContours()` cuts
+that inside into triangles; the stroke itself is still drawn. Held by
+`tools/fill-check.mjs`.
+
+A stroke that predates any of these flags is a stroke with none of them set,
+which is a plain open line — the same thing it has always been. `val` makes it a digit — a
 digit is a letter with a value instead of a reading, found by value, because a
 digit has no name to match on.
 

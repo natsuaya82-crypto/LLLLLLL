@@ -157,3 +157,22 @@ Three ways out, and choosing between them is the owner's:
 
 The first is the smallest and probably right, but `ab` is not shown anywhere
 and somebody who renames a letter has no idea it is there.
+
+## A font for the letters somebody drew — held
+
+The strokes a person draws are a skeleton, and how it is inked is a separate
+choice: 角 / 細 / 太 / 丸 / 筆 / 平筆, chosen per language, stored on the
+`script` slice, changing nothing anybody drew and therefore reversible on any
+day. `GPEN` in `glyph.js` is that choice today and it is one constant —
+`{width:60, angleDeg:0, contrast:1.0, curve:72}` — used by the font builder,
+by `inkStrokes`, and by `share.js` when the shapes are cut for the system
+keyboard, so all three would have to read the language's pen instead.
+
+`otf5.js` already takes the nib's width, angle and aspect, which is five of
+the six. 筆 is the sixth and is not a nib: the width varies along the stroke
+and the end is one of 留 / 羽 / 払. `tools/font-mock.mjs` renders that —
+including how each stroke's ending is read off the drawing rather than asked
+about — and is in the repo. It is not a check and is not in the gate.
+
+**Held by the owner on 2026-08-20: 「いったんフォントなしで」.** Nothing in
+`www/` was changed for it. Do not start this without asking.

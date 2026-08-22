@@ -328,7 +328,7 @@ function netIdToken(provider, token, nonce, ok, bad){
      netFeed(which, ok, bad)       ok(posts | null)  'rec' or 'fo'
      netPush(post, ok, bad)        ok()              this post is now public
      netMark(id, kind, on, ok, bad) ok()             liked / boosted, or not
-     netDrop(id, ok, bad)          ok()              gone from the server too
+     netDrop(post, ok, bad)        ok()              gone from the server too
 
    Every one of them is FIRE AND FORGET on the phone's side. A post is on this
    phone the moment it is written, a like is counted the moment it is pressed,
@@ -817,8 +817,15 @@ function netMark(id, kind, on, ok, bad){
    deleted before its files leaves files nothing points at, and "which files
    does nothing point at" is a question with no cheap answer. If the files will
    not go the row still does: a post somebody asked to be gone must go. */
-function netDrop(id, ok, bad){
-  var p=postById(id), sid=p && p.sid;
+/* The POST, not its id. It is called from postDel, which has already taken
+   the post out of POSTS -- so postById() answered null here, sid was
+   undefined, and this returned as though there had been nothing on the
+   server. The post went off the phone, stayed on the server, and came back
+   with the next feed. 「投稿削除ボタン押しても消えないけど？」 Nothing threw and
+   nothing could: the one branch that means "there is no server copy" is the
+   same branch as "I cannot find this post". */
+function netDrop(p, ok, bad){
+  var sid=p && p.sid;
   if(!netMember() || !sid){ ok(); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),

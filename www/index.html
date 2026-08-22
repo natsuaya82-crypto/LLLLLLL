@@ -21,6 +21,9 @@ html[data-theme="dark"]{
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
   --bad:#d9705c;
+  /* An area, while it is being drawn. The editor's only, and never a letter's:
+     what is filled is the letter's own colour everywhere it is read. */
+  --fill:#5fbf7a;
   --pur:#8c7eff; --pursf:rgba(140,126,255,.10); --purln:rgba(140,126,255,.42);
   --onGold:#241d10; --dot:rgba(255,255,255,.42); --shadow:0 10px 26px rgba(0,0,0,.5);
   /* glass: what the tab bar is made of. --glassop is the same surface for a
@@ -38,6 +41,7 @@ html[data-theme="light"]{
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
   --bad:#c9553f;
+  --fill:#2f8f4e;
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
   --raise:#ffffff; --sink:#efeade;
@@ -104,8 +108,49 @@ button{font-family:inherit;cursor:pointer}
 .seqdel{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
         display:inline-flex;align-items:center;justify-content:center}
 .seqdel:disabled{opacity:.25}
-.phkeys{display:flex;flex-wrap:wrap;gap:6px}
-.phk{min-width:56px;min-height:62px;border:1px solid var(--line);background:var(--sf);
+/* The gap has to be wider than the speaker's overhang or the speaker of one
+   tile sits on top of the next tile: 44pt of button hanging 11pt past a
+   corner, over a 6pt gap, means five points of every tile answered to its
+   neighbour's speaker. 「これつまりすぎて誤作動多いな」 Fourteen out, ten
+   over -- and the top margin is for the first row's, which hang above it. */
+.phkeys{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 16px}
+/* A group of the chart, and whether it is open. */
+.ipah{display:flex;align-items:center;flex:0 1 auto;min-height:44px;min-width:96px;
+  padding:11px 2px;background:none;border:0;
+  text-align:left;color:var(--txm);font-size:.86rem;letter-spacing:.06em}
+.ipah:active{color:var(--gold)}
+.ipah.on{color:var(--tx)}
+.ipah::before{content:'\203a';margin-right:.5em;display:inline-block;transition:transform .12s}
+.ipah.on::before{transform:rotate(90deg)}
+.ipan{margin-left:auto;padding-right:2px;font-size:.76rem;color:var(--txm);opacity:.7}
+/* The way to hear one, at the corner of the tile. The BUTTON is 44pt because
+   a thumb is; the circle drawn inside it is not, which is the whole point of
+   putting it in a corner. */
+.phkp{position:relative;display:inline-block}
+.phks{position:absolute;top:-10px;right:-10px;width:44px;height:44px;padding:0;
+  background:none;border:0;display:flex;align-items:flex-start;justify-content:flex-end}
+/* A group's heading, and the way to ask what that group IS. The ? is the
+   same badge as the speaker on a tile -- `.phks` again, not a second shape --
+   put back in the flow instead of at a tile's corner. */
+.ipahr{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+/* 44 across and 44 down, whatever the circle inside it looks like: the
+   target is what a thumb needs and the ink is not. */
+.ipaq{position:static;flex:0 0 44px;width:44px;height:44px;
+  justify-content:center;align-items:center}
+/* One sound, said in words. */
+.ipads{flex:0 0 auto;width:44px;height:44px;background:none;border:0;color:var(--tx);
+  font-size:1.2rem;display:flex;align-items:center;justify-content:center}
+.ipadw{font-size:1.02rem;line-height:1.7;color:var(--tx);margin:6px 2px 22px}
+.ipadl{margin-top:2px}
+.ipadr{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 2px;
+  border-bottom:1px solid var(--line)}
+.ipadn{flex:0 0 auto;font-size:.86rem;color:var(--txm)}
+.ipadx{flex:1 1 auto;text-align:right;font-size:1.05rem;color:var(--tx)}
+.phkd{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);
+  background:var(--bg);color:var(--txm);display:flex;align-items:center;justify-content:center}
+.phkd .ic{width:11px;height:11px}
+.phks:active .phkd{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
+.phk{min-width:62px;min-height:70px;border:1px solid var(--line);background:var(--sf);
      border-radius:9px;color:var(--tx);font-size:1.05rem;padding:8px 10px}
 .phk:active{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 /* A key with a letter on it. The letter you drew is the face of the key --
@@ -416,7 +461,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pind1{padding-left:14px}
 .pind2{padding-left:28px}
 .pind3{padding-left:42px}
-.pline{font-size:1.06rem;line-height:1.45;color:var(--tx);
+.pline{font-size:1.3rem;line-height:1.45;color:var(--tx);
        margin-top:2px;word-break:break-word}
 /* ---------- which way a line runs ----------
    Four of them, and the class is the only place any of it is written down --
@@ -484,7 +529,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    rather than being nudged under it. The width is left to the canvas: inkLine
    gives each one its own advance, and a canvas with a height and no width is
    as wide as its own ratio says. */
-.tcln{display:inline-block;vertical-align:baseline;width:auto;height:.8em}
+.tcln{display:inline-block;vertical-align:baseline;width:auto;height:1em}
 .pmn{font-size:1.0rem;line-height:1.45;color:var(--txs);margin-top:2px}
 .pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
 .pwg{font-size:.76rem;color:var(--txm)}
@@ -639,22 +684,57 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    leaves a `fitin` field alone. Same shape as .view.fixed below; it is not
    the same rule, because that one is about a page and this one is about
    which child gets the slack. */
-.view.fit{height:100vh;height:100dvh;height:var(--vvh,100dvh);
+/* Pinned to the part of the page that can actually be SEEN, not to the
+   document. iOS does not shrink the page for the keyboard -- it slides the
+   keyboard over it and then scrolls the layout viewport up to put the focused
+   field above it, which carries the bar with Post on it off the top of the
+   screen. --vvtop is visualViewport.offsetTop, so the screen stays where it
+   is whether the keyboard is up or down, and the bar does not move when it
+   goes down. 「上のポストと戻るボタンは画面上部に固定で動かない」 */
+/* The height is --vvmin -- the smallest the visible part has been, which is
+   what it is with the keyboard UP -- and not --vvh. A screen laid out to
+   --vvh is re-laid-out every time the keyboard goes down: the field takes the
+   room the keyboard gave back, and the meaning and the row of pictures slide
+   to the foot of the phone. 「キーボードをおろしても位置は動かない」 With
+   --vvmin the screen is the same screen either way; with the keyboard down
+   there is simply black under it. */
+.view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
+   height:var(--vvmin,55vh);
    display:flex;flex-direction:column;overflow:hidden}
-/* The bar at the foot is fixed and floats over the page, so the room it
-   takes has to be left for it here as every other screen leaves it -- one
-   screen means everything on it is visible, and the row of pictures was
-   sitting underneath the tabs. */
+/* No room left at the foot for the bar of tabs, because there is no bar of
+   tabs: a screen that is one screen has nowhere else to be, and where you
+   are is not a question anybody is asking while they write a post.
+   「投稿画面にはホーム画面とかの下タブは要らない」 */
+/* The body holds two children and gives all the slack to the first: what is
+   being written scrolls, and the bar under it does not. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:var(--tabgap,calc(var(--tabh) + 10px));overflow:hidden}
-.view.fit .pwtop{flex:1;min-height:0}
-.view.fit .pwfield{display:flex;flex-direction:column;min-height:0}
-/* `height:0` and not just `flex:1`. A textarea's own height comes from its
-   `rows`/`cols`, and in a vertical writing mode it is `cols` that sets it --
-   twenty characters, which is a base size big enough that the flex line had
-   almost no free space left to grow into. Zeroing the base is what makes
-   "take what is left" mean it. */
-.view.fit .pwfield .lnin{flex:1 1 0;height:0;min-height:0;overflow:auto}
+   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);overflow:hidden}
+/* Everything you are writing, and it is the part that scrolls -- so the line
+   can be as long as it likes and the photographs under it move down with it,
+   the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
+   Before this the field was the only thing that could stretch, so it took the
+   whole screen and the strip of photographs sat under the fold. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:0;overflow:auto}
+.view.fit .pwtop{min-height:0}
+.view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
+/* As tall as its text -- lnFit says how tall; this only stops it widening
+   past the column it is in. */
+.view.fit .pwfield .lnin{max-width:100%;min-height:44px}
+/* A column grows the other way: its height is the page's to give and its
+   WIDTH is what runs out. Capped at the column and scrolling inside itself --
+   without the cap a long line walked off the side of the phone.
+   「縦書きの時文字数突破したら画面外にいくけどありえないから」 */
+.view.fit .pwfield .lnin.dir-ttb-rl,
+.view.fit .pwfield .lnin.dir-ttb-lr{
+   height:calc(var(--vvmin,55vh) - 230px);min-height:150px;
+   max-width:100%;overflow:auto}
+/* The one thing that does not scroll: the row that adds a photograph or a
+   voice, and how much of the line is left. It is the last child of the form,
+   so it sits on the keyboard whatever is above it.
+   「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」 */
+.pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
+   padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
+.pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
 /* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
 .view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 .cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
@@ -690,11 +770,23 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    as a settings screen at seven letters and as a scroll at forty.
    `moving` is on the grid while a letter is being carried, so the page under
    the finger does not scroll away from it. */
-.ltgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;margin-top:2px}
+.ltgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:14px;margin-top:14px}
+/* Room for the corner marks while the alphabet is held, and only then. */
+.ltgrid.held{margin-top:10px;overflow:visible}
 .ltgrid.moving{touch-action:none}
-.ltc{min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+.ltc{position:relative;min-height:100px;display:flex;flex-direction:column;
+     align-items:center;justify-content:center;
      gap:6px;padding:10px 4px 8px;background:var(--pane);border:1px solid var(--line);
      border-radius:14px;color:var(--tx);font-family:inherit}
+/* Hearing a letter, at its corner -- the same button, in the same place, as
+   the speaker on a symbol of the chart, because it is the same question.
+   Ten points out over a fourteen point gutter, so it reaches nothing beside
+   it: the chart had them six apart and every tile answered to its
+   neighbour's speaker. */
+.ltsay{position:absolute;top:-10px;right:-10px;width:44px;height:44px;padding:0;
+   background:none;border:0;display:flex;align-items:flex-start;justify-content:flex-end;
+   z-index:4;color:var(--txm)}
+.ltsay .phkd{pointer-events:none}
 .ltc:active{border-color:var(--goldln)}
 .ltcf{height:38px;display:flex;align-items:center;justify-content:center}
 .ltc canvas.tc{width:38px;height:38px;display:block}
@@ -703,6 +795,11 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .ltcn{display:block;font-family:'Cinzel',Georgia,serif;font-size:.95rem;color:var(--txs);
       max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ltc.dup .ltcn{color:var(--bad)}
+/* What it reads, under what it is called. Empty for a letter that reads
+   nothing, and it keeps its line either way so a grid of cells does not go
+   ragged as sounds are given out. */
+.ltcr{display:block;min-height:1em;font-size:.72rem;color:var(--txm);
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* The same cell, as something to pick rather than to browse. A word is
    spelled by pressing letters one after another, so what matters is how many
    fit on a screen and how far the thumb travels -- not how well each one is
@@ -720,6 +817,24 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .ltgrid.ltpick .nol{display:none}
 /* Picked up: it rides over the others and follows the finger. */
 .ltc.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
+/* Held, the way a phone's home screen is held. The keyframes are the
+   keyboard's -- one wobble, both grids -- and only the selector is new,
+   because a `.kbk` rule cannot reach a `.ltc`. */
+.ltc.wob{animation:kbwob .28s linear infinite}
+.ltc.wob:nth-child(2n){animation-delay:.09s}
+.ltc.wob:nth-child(3n){animation-delay:.05s}
+@media (prefers-reduced-motion:reduce){.ltc.wob{animation:none}}
+/* A little outside the corner, the way a home screen's is. 「内側じゃなくて
+   ちょい外側がいい」 The keyboard's sits INSIDE its key and that is not the
+   same choice made twice: the keyboard runs to both edges of the phone, so a
+   mark hanging off the last key of a row hangs off the screen. This grid has
+   a gutter on every side, so there is somewhere for it to hang. Six points
+   out, and the grid is given the same six at the top so the first row's marks
+   do not sit on the row above them. */
+.ltx{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:999px;
+     background:var(--tx);color:var(--bg);display:flex;align-items:center;
+     justify-content:center;z-index:4}
+.ltx svg{width:13px;height:13px}
 .sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;
         background:none;color:var(--txm);
         display:inline-flex;align-items:center;justify-content:center}
@@ -837,6 +952,13 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .sndx{flex:0 0 auto;min-width:44px;min-height:44px;border:0;background:none;color:var(--txm)}
 /* Which part of speech the dictionary is filtered to: one row that says the
    answer and opens the list, where twelve tabs used to scroll sideways. */
+/* The filter and the order, side by side. */
+.wfilrow{display:flex;align-items:stretch;gap:10px}
+.wfilrow .wfil{flex:1 1 auto;min-width:0}
+.wsrt{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;min-height:44px;
+  padding:0 14px;background:none;border:0;border-bottom:1px solid var(--line);
+  color:var(--txm);font-size:.9rem;font-family:inherit}
+.wsrt:active{color:var(--gold)}
 .wfil{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;
       padding:8px 2px;border:0;border-bottom:1px solid var(--line);
       background:none;color:var(--tx);font-family:inherit;text-align:left}
@@ -930,6 +1052,11 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The label does not stretch: the mark belongs next to the word it is about,
    not at the far side of the row. */
 .entry.one .ebody{flex:0 0 auto;min-width:44px}
+/* A word says itself, on its own row -- 44 down as well as across, because a
+   row is as tall as its text and its text is two lines of small type. */
+.esay{flex:0 0 44px;width:44px;min-height:44px;background:none;border:0;color:var(--txm);
+  display:flex;align-items:center;justify-content:center}
+.esay:active{color:var(--gold)}
 .eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
        display:inline-flex;align-items:center;justify-content:center}
 .eopen:active{color:var(--gold)}
@@ -937,11 +1064,14 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    all. One row, because they are all answers to "what am I looking at". */
 .wmeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
 .wct{font-size:.86rem;color:var(--txm);letter-spacing:.04em;margin-right:auto}
-.wsrt,.wsay{display:inline-flex;align-items:center;gap:7px;min-height:44px;
-      padding:8px 13px;border:1px solid var(--line);border-radius:10px;
-      background:none;color:var(--txs);font-family:inherit;font-size:.88rem}
-.wsay.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-.wsrt:active{border-color:var(--goldln);color:var(--gold)}
+/* This said .wsrt a second time, three hundred lines under the first, as a
+   bordered pill with a 10pt radius -- and being second it won. So the sort
+   button was a rounded box beside a control that is a line, which is the one
+   shape this app does not have: everything a thumb chooses from sits on a
+   rule. 「基本的に下直線なんだから角丸禁止」 The rule that means it is the
+   one beside the filter, and there is only one of it now.
+   `.wsay` went with it: nothing in www/ has carried that class since the
+   dictionary stopped playing a whole list. */
 /* Six ways to narrow the list will not fit across 320px, so the rail slides
    sideways rather than wrapping into a second row that pushes the words off
    the screen. */
@@ -985,8 +1115,15 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .usep:active{color:var(--gold)}
 .hwrow{display:flex;align-items:baseline;gap:10px}
 .hw{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
+/* The same size and weight, and never the drawn script: this one is the
+   app's own text on a row shaped like a word's. */
+.hwl{font-family:'Cinzel',Georgia,serif;font-size:1.26rem;letter-spacing:.02em}
 .rd{font-size:.86rem;color:var(--txm)}
-.pos{margin-left:auto;font-size:.82rem;color:var(--txm);border:1px solid var(--line);border-radius:8px;padding:2px 8px}
+/* What kind of word it is, and it is a fact about the word rather than
+   something to press: it was a bordered pill on the end of every row, which
+   is the shape a control has. A word and its part of speech are one line of
+   reading. 「そのチップも変えて欲しいかも」 */
+.pos{margin-left:auto;font-size:.82rem;color:var(--txm);letter-spacing:.04em}
 .mn{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.08rem;color:var(--txs);margin-top:1px}
 
 /* ---------- sound ---------- */
@@ -1061,15 +1198,29 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* A setting that is a yes or a no wears a switch, not the word ON in ten
    languages. 51x31 and a 27 knob is iOS's own, so it reads as the thing it
    is on the phone this app runs on. */
+/* One definition, and there is nowhere else. There were two -- this and a
+   `.sw` further down the file, 50x30 against 51x31, one knob moved by `left`
+   and the other by `transform`. Both were live at once and neither was whole:
+   the later `.swk` won on the knob's size and its transition, so the switch
+   up here moved by a property nothing was transitioning and JUMPED across
+   instead of sliding. Two rules for one thing do not disagree loudly; they
+   disagree in the half nobody looks at. */
 .swt{margin-left:auto;flex:0 0 auto;width:51px;height:31px;border-radius:999px;
      background:var(--line);position:relative;transition:background .18s ease}
 .swk{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;
-     background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:left .18s ease}
+     background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .18s ease}
 .swt.on{background:var(--gold)}
-.swt.on .swk{left:22px}
-.pick{display:flex;background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:3px;margin:10px 0 4px}
-.pick button{min-height:44px;flex:1;background:none;border:none;color:var(--txs);font-size:.85rem;padding:9px 0;border-radius:9px}
-.pick button.on{background:var(--pane);color:var(--tx);font-weight:600;box-shadow:var(--shadow)}
+.swt.on .swk{transform:translateX(20px)}
+/* One of a few, chosen. It was a rounded box with a rounded box sliding
+   inside it, which is the one shape this app does not have -- everything a
+   thumb chooses from sits on a rule and the chosen one is marked under it.
+   The same look .seg already has, on the row of a keyboard's faces, because
+   it is the same sentence. 「基本的に下直線なんだから角丸禁止」 */
+.pick{display:flex;border-bottom:1px solid var(--line);margin:10px 0 4px}
+.pick button{min-height:44px;flex:1;background:none;border:0;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  color:var(--txs);font-size:.85rem;padding:9px 0;font-family:inherit}
+.pick button.on{color:var(--gold);border-bottom-color:var(--gold);font-weight:600}
 .lrow{justify-content:space-between;gap:10px}
 .lrow .sl{flex:0 0 auto}
 .lrow .lsam{margin-left:auto;font-size:.88rem;color:var(--gold);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1806,16 +1957,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .thtick{width:25px;height:25px;border-radius:999px;border:1.5px solid var(--line);
         display:flex;align-items:center;justify-content:center;color:transparent}
 .thcard.on .thtick{background:var(--gold);border-color:var(--gold);color:#fff}
-/* The switch on a settings row. */
-/* The .sv it sits in is a row of text with a chevron; a switch is not text
-   and was riding on the text baseline. */
-.sw{width:50px;height:30px;border-radius:999px;background:var(--line);display:inline-flex;
-    align-items:center;padding:2px;transition:background .18s;
-    flex:0 0 auto;vertical-align:middle;box-sizing:border-box}
-.sw.on{background:var(--gold)}
-.swk{width:26px;height:26px;border-radius:999px;background:#fff;
-     box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s}
-.sw.on .swk{transform:translateX(20px)}
 .bpic{width:100%;height:100%;border-radius:999px;object-fit:cover;display:block}
 .picrow{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .picrow .pav{width:64px;height:64px;flex:0 0 auto}
@@ -2007,20 +2148,33 @@ html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
    serif underneath, which is what a font stack is for -- so a half-drawn
    script shows the half that exists instead of nothing at all. */
 html[data-script="on"] .hw,
-html[data-script="on"] .line,
-html[data-script="on"] .tname,
-html[data-script="on"] .wcw,
-html[data-script="on"] .sww,
 html[data-script="on"] .psw,
-html[data-script="on"] .usew,
-html[data-script="on"] .lcs,
 html[data-script="on"] .whw,
-html[data-script="on"] .cw,
 html[data-script="on"] .gsw,
-html[data-script="on"] .gor,
 html[data-script="on"] .seq,
-html[data-script="on"] .st-seq,
-html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacing:0}
+html[data-script="on"] .st-seq{font-family:'LinguaScript',serif;letter-spacing:0}
+/* Eight selectors came off this list. Seven of them -- .line .tname .wcw
+   .sww .usew .lcs .cw .link .src -- are on no element anywhere in www/ any
+   more, so they were a list of places the font USED to reach, and a reader
+   checking whether something wears the script would have believed them.
+   The eighth, .gor, is on an element that still exists and should never have
+   been here: it holds t('gram.role.x') -- Subject, Object, Verb -- which is
+   the app's own word for a thing, not a word of anybody's language.
+   「自作文字になるのは自分が打った文字だけにしてくれない？」 */
+/* A placeholder is never in the drawn letters. It is the app saying what the
+   box is for, in the app's own language, and .sfont carries !important so it
+   was winning against every font rule on every empty field: the composer,
+   signed in and with a font of one's own, showed a column of shapes where it
+   meant to say "a line in your language". Empty, that is the whole screen.
+   Three rules and not one list. A selector list is thrown away WHOLE by a
+   browser that does not understand one of its parts, and ::-moz-placeholder
+   is Firefox's -- so on the phone, where the bug is, the whole rule was
+   dropped and .sfont went on winning. Written apart, each browser keeps the
+   one it knows. */
+.sfont::placeholder{font-family:'Cormorant Garamond',Georgia,serif !important;
+  letter-spacing:normal}
+.sfont::-webkit-input-placeholder{font-family:'Cormorant Garamond',Georgia,serif !important;
+  letter-spacing:normal}
 /* `normal` hands the line box to the font, which is where the rule lives:
    ink plus one lattice step. A number here would be a screen deciding the
    spacing of somebody else's script, and there are four screens. */
@@ -2253,7 +2407,6 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .sugchip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 12px;border:1px solid var(--line);
   border-radius:9px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .sugchip:active{transform:scale(.97)}
-.sugchip .sw{font-size:.92rem}
 .sugchip .sr{font-size:.84rem;color:var(--txm)}
 .sugfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
 .sughint{font-size:.84rem;color:var(--txm);line-height:1.5}
@@ -2346,6 +2499,14 @@ html[data-script="on"] .link .src{font-family:'LinguaScript',serif;letter-spacin
 .mnrow .mnv{flex:1;font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.02rem;color:var(--tx)}
 .mnrow .mnx{min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
+/* the forms a rule makes, on the sheet a word is coined on: what it is
+   called, what it is spelled, and the way to say it is not wanted */
+.fmmks{display:flex;flex-direction:column;gap:0}
+.fmmk{display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid var(--line)}
+.fmmk .fmmkf{flex:0 0 auto;min-width:88px;font-size:.78rem;color:var(--txm);letter-spacing:.04em}
+.fmmk .lnin{flex:1;min-width:0;border-bottom:0}
+.fmmk .mnx{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;
+  color:var(--txm);display:flex;align-items:center;justify-content:center}
 .mnadd{display:flex;gap:8px;align-items:stretch}
 .mnadd input{flex:1;min-width:0;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
   padding:12px 2px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
