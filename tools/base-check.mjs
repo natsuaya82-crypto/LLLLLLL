@@ -61,6 +61,34 @@ const r = await pg.evaluate(({s}) => {
   SET.plan = 'free';
   out.freeRow = numBaseRows();
   SET.plan = 'plus';
+
+  /* ---- a slot's name does not change, on any plan ------------------------
+     「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
+     Decision log, 2026-08-22.
+
+     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks LETTERS for
+     one called `a` -- so a renamed slot is a key that cannot be found, and
+     ltStart() then fills the hole with a new empty letter. What somebody drew
+     is still in the alphabet and no longer on the keyboard, with nothing
+     saying why.
+
+     The letter page already hides the field. That is the screen holding it,
+     and a screen is not a rule: ltSetRoman() is reachable from anywhere and
+     did not refuse. So it is asked of the FUNCTION, on the paid plan, which
+     is the only plan where the question can even be put. */
+  var slot = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
+  var dig  = numByVal(3);
+  out.slotWas = slot ? String(ltName(slot)) : '(no a slot)';
+  if (slot) { ltSetRoman(slot.id, 'zzq'); out.slotNow = String(ltName(slot)); }
+  out.digWas = dig ? String(ltName(dig)) : '(no digit 3)';
+  if (dig) { ltSetRoman(dig.id, 'zzq'); out.digNow = String(ltName(dig)); }
+
+  /* and a letter that is NOT a slot still renames -- what paid buys is
+     adding letters, and a letter somebody added is theirs to name. */
+  var mine = ltNew({});
+  ltSetRoman(mine.id, 'qeq');
+  out.mineNow = String(ltName(mine));
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -77,6 +105,23 @@ say(r.red === 3, 'three digits are above the base and the room paints them red (
 say(r.slotBack, 'raising it again makes the empty slot over');
 say(r.noDouble === 1, 'and makes exactly one of it (' + r.noDouble + ')');
 say(r.freeRow === '', 'free counts in ten and has no row to press');
+
+/* 「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
+   Decision log, 2026-08-22. The free QWERTY finds its keys BY NAME, so a
+   renamed slot is a key that cannot be found and ltStart() fills the hole
+   with a new empty letter -- what somebody drew stays in the alphabet and
+   leaves the keyboard, with nothing saying why.
+
+   The letter page already hides the field. A screen is not a rule:
+   ltSetRoman() is reachable from anywhere. So it is asked of the FUNCTION,
+   on the PAID plan, which is the only plan where the question arises. */
+say(r.slotNow === r.slotWas,
+    'the a slot keeps its name on the paid plan (' + r.slotWas + ' -> ' + r.slotNow + ')');
+say(r.digNow === r.digWas,
+    'and so does a digit (' + r.digWas + ' -> ' + r.digNow + ')');
+say(r.mineNow === 'qeq',
+    'a letter somebody ADDED is still theirs to name (' + r.mineNow + ') -- ' +
+    'paid buys adding letters, and refusing to name one refuses what was bought');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
