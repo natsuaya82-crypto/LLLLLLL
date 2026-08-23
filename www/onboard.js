@@ -207,7 +207,8 @@ function obTourHTML(){
   var st=obTourStop(), last=!OB_TOUR_STOPS[obTour+1],
       el=obTourFind(st), b=el? el.getBoundingClientRect() : null,
       W=window.innerWidth, H=window.innerHeight,
-      hb=b? obHandBox(b) : null, m=4, x, y, w, h, out;
+      hb=b? obHandBox(b) : null, m=4, x, y, w, h, out,
+      sw, sx, sayAt;
   if(!b) out=obPane(0,0,W,H);   /* no hole: the last word is over everything */
   else{
     x=Math.min(b.left, hb.left)-m;  y=Math.min(b.top, hb.top)-m;
@@ -217,6 +218,21 @@ function obTourHTML(){
         obPane(0,y+h,W,H-(y+h))+           /* below */
         obPane(0,y,x,h)+                   /* left  */
         obPane(x+w,y,W-(x+w),h);           /* right */
+  }
+  /* Where the words stand. Centred on the thing being tapped rather than on
+     the screen, and held inside both edges -- a key at the end of a row is
+     33 across and the sentence is not. */
+  if(!hb) sayAt='left:24px;right:24px;bottom:calc(var(--tabh) + 26px)';
+  else{
+    sw=Math.min(300, W-48);
+    sx=Math.round(b.left+b.width/2-sw/2);
+    if(sx<24) sx=24;
+    if(sx+sw>W-24) sx=W-24-sw;
+    /* Under the hand, unless the bottom of the screen is too close for the
+       two lines this can run to -- then over the lit thing instead. */
+    sayAt='left:'+sx+'px;width:'+sw+'px;'+
+      ((hb.up && hb.top+hb.h+64 <= H-8)? 'top:'+Math.round(hb.top+hb.h+8)+'px'
+                                       : 'bottom:'+Math.round(H-Math.min(b.top,hb.top)+10)+'px');
   }
   return out+
     /* A lit thing that does something of its own is pressed for real -- the
@@ -238,8 +254,26 @@ function obTourHTML(){
               'left:'+hb.left+'px;top:'+hb.top+'px;width:'+hb.w+'px;height:'+hb.h+'px;'+
               'animation:vopulse 1.1s ease-in-out infinite'+
               (hb.up? '' : ';transform:scaleY(-1)')+'">'+OB_HAND+'</div>' : '')+
-    '<div class="toast on obtoast" style="pointer-events:auto">'+esc(t(st.say))+
-      (last? ' <button class="obskip"' + DO('obTourDone') + '>'+esc(t('ob.next'))+'</button>' : '')+
+    /* The words, and NO BOX. 「角丸変わってないやんけ！」 .toast was borrowed
+       for these three lines and .toast is a rounded box, which is the one
+       shape this app does not have. What is left is the words themselves, in
+       the colour text is -- var(--tx), which is the light one on a dark theme
+       and the dark one on a light theme, and the grey behind it goes the
+       other way in both.
+
+       They stand where the finger is, not at the foot of the screen.
+       「タップの位置の近くに書いて欲しい」 Under the hand where there is room
+       under it, over the lit thing where there is not, and never at the foot
+       unless nothing is lit at all -- which is the last stop, where the words
+       are the whole of it.
+
+       It lets presses through: it lies over the grey, and the grey is what is
+       meant to swallow them. */
+    '<div class="obsay" style="position:fixed;z-index:44;pointer-events:none;'+
+        sayAt+';text-align:center;'+
+        'color:var(--tx);font-size:1.02rem;line-height:1.5">'+esc(t(st.say))+
+      (last? '<span style="pointer-events:auto"><button class="obskip"' + DO('obTourDone') +
+             '>'+esc(t('ob.next'))+'</button></span>' : '')+
     '</div>';
 }
 /* Which thing on the screen is the lit one. A stop names it one of two ways

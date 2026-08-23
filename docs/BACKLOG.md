@@ -7,33 +7,22 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## The tour borrows two classes it should own
+## The tour cuts its hole with four panes
 
 `obTourHTML()` dims the screen with **four `.sbg` panes** laid around the lit
-element, and says its line in a `.toast` with `pointer-events:auto` put on it
-inline. Both are somebody else's classes doing a job they were not written for:
-`.sbg` is the sheet's backdrop and `.toast` is a message that goes away by
-itself.
+element. `.sbg` is the sheet's own backdrop doing a job it was not written
+for, and four rectangles have to agree with each other about where the hole
+is.
 
 It is that way because `www/index.html` belonged to another session on the day
 the tour was written (`docs/SESSIONS.md` — one session at a time owns that
 file), and a screen that half-works is worse than one that borrows.
 
-What it wants, on the day that file is free:
+What it wants, on the day that file is free: **one** dim element with a real
+cut-out — `clip-path`, or a box-shadow ring — instead of four panes whose
+arithmetic has to agree.
 
-- **one** dim element with a real cut-out (`clip-path` or a box-shadow ring),
-  instead of four panes whose arithmetic has to agree with each other
-- a coach line of its own, which is **not a rounded box** — `.toast` is one,
-  and it is on `tools/box-baseline.txt` because it predates the rule. The box
-  is what makes the sentence readable over the grey, so taking it off means
-  giving the words a colour that reads on a half-black scrim in both themes,
-  and there is no variable that is light in both. **That is a colour, and
-  every colour in this app lives in the two theme blocks** — so this half
-  cannot be done from a view at all, which is why the box is still there
-- `pointer-events` set in the stylesheet rather than inline
-
-None of it changes what the tour does. It is four panes and a borrowed toast
-against one element and one line.
+None of it changes what the tour does. It is four panes against one element.
 
 ## ~~CSS outlives the screen it dressed, and nothing says so~~ — the check is in
 

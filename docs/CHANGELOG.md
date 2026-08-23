@@ -56,13 +56,17 @@ Four things it cost, all of them worth writing down:
   keys are `<span>`s. `.obpad` is laid over the hole — and it is in the
   **markup**, not set on the live DOM, because `act-check` reads what a view
   returns and would never see a `data-do` assigned afterwards.
+- **The words have no box, and they stand where the finger is.**
+  「角丸変わってないやんけ！」「タップの位置の近くに書いて欲しい」 They were
+  in a borrowed `.toast`, which is a rounded box — the one shape this app does
+  not have. What is left is the words, in `var(--tx)`, centred on the thing
+  being tapped and set under the hand; at the foot of the screen only on the
+  last stop, where nothing is lit and the words are the whole of it.
 - **No CSS was added.** `www/index.html` belongs to another session today
-  (`claude/code-review-refactor-seaaei`), so the tour borrows `.sbg` for the
-  dim and `.toast` for the line, and the hand's pulse is `vopulse`, which was
-  already in the file. Two classes of its own — a dim that is one element with
-  a real cut-out, and a coach line that is not a rounded box — are what it
-  wants, and the line losing its box needs a colour that reads on the grey,
-  which is a colour and therefore that file's. → `docs/BACKLOG.md`
+  (`claude/code-review-refactor-seaaei`), so the dim is `.sbg` and the hand's
+  pulse is `vopulse`, both already in that file. What the walk still wants
+  there is one dim element with a real cut-out instead of four panes.
+  → `docs/BACKLOG.md`
 
 **Newly stored:** nothing. `obTour` is where you are standing, so
 `viewReset()` drops it, the same as `KBH`.
