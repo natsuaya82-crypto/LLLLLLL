@@ -39,6 +39,48 @@ on what `show()` builds.
 **Still open: deleting any of the 202.** That is a change to the stylesheet,
 one selector at a time, each one read by somebody first.
 
+## iPhone のパスワード保存 — 調べて、やらないと決めた
+
+*2026-08-23, owner:*「パスワードの保存は一旦なしで」
+
+聞かれたのは「ログインのパスワードを iPhone に覚えさせられないか」。答えは
+できるが、ただではない。
+
+**画面の側は既に正しい。** `obMailField()` が `autocomplete="username"` /
+`"current-password"` / `"new-password"` を出していて、`type` も email と
+password。ここに足りないものは無い。
+
+効かない理由はドメインが無いことで、iOS のパスワード管理はドメイン単位で
+照合する。Capacitor は `capacitor://localhost` から配信している
+(`capacitor.config.json` の `server.iosScheme`)ので、照合できる相手が居ない。
+
+やるなら三つ:
+
+1. 配信元を `localhost` から本物のドメインへ (`server.hostname` + `iosScheme`)
+2. `associated-domains` (`webcredentials:そのドメイン`)、Apple の Identifier
+   の capability、プロファイルの作り直し
+3. そのドメインに `/.well-known/apple-app-site-association`
+
+**そして罠が二つあり、一つ目がこれを重くしている。**
+
+`localStorage` はオリジンごと。配信元を変えると新しい空の localStorage に
+なる ── 言語も文字もキーボードも無い状態でアプリが起動する。消えては
+いないが、使う人には見分けがつかない。`backup.js` が Documents に書いた
+ファイルはオリジンに縛られないので渡る道はあるが、それは「バックアップが
+勝つ」形の復元で、`docs/DATA_SAFETY.md` に真正面から関わる。設計が要る。
+
+二つ目。全部やっても出るのは候補までで、「このパスワードを保存しますか」の
+ダイアログは WKWebView では出ない(Safari だけ)。出すには
+`SecAddSharedWebCredential` を叩くネイティブ側が要る。
+
+**そして、この扉には既に Sign in with Apple がある。** パスワードそのものが
+無いので保存する必要がなく、ドメインもエンタイトルメントも要らない。
+「iPhone に覚えさせたい」への答えとしては、もう出荷されている。
+
+やるときに先に決めることが一つ: **オリジンを変えた日に、既にアプリを
+持っている人のデータをどう渡すか。** それが決まるまで、この項目のコードは
+一行も書かない。
+
 ## A private account — asked for, and deliberately not now
 
 There is no such thing today: every profile and every post is readable by
