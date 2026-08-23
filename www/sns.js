@@ -143,7 +143,10 @@ function vFeed(){
        same timeline seen through one day. It is only there when there IS a
        day -- a word that goes to an empty page is worse than no word. */
     rootTop('feed')+
-    '<div class="body">'+
+    /* The body's 10px of head goes when the day's sentence is the first thing
+       in it: the sentence carries its own 12, and two paddings stacked is the
+       timeline pushed down for nothing. */
+    '<div class="body'+(daySay()? ' dayb' : '')+'">'+
     /* Three lines and no more: the name of the screen, the day's sentence,
        and the row you write in. 「あんまり高さ変えずに3列にしたい」
 
