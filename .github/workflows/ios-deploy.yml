@@ -118,6 +118,13 @@ jobs:
             archive \
             -destination "generic/platform=iOS"
 
+      # Archive は署名の指定を pbxproj から取り、Export はこの plist から取る。
+      # 別々なので、ターゲットを増やしたときに Archive だけ通って Export で
+      # 落ちる ── #85 がそれで、appex は正しく署名されて .xcarchive の中に
+      # 入っているのに、ここに行が無いというだけで
+      #   error: exportArchive "LinguaWidget.appex" requires a provisioning
+      #          profile with the App Groups feature.
+      # になった。拡張を足したら、ここの三つ目も足すこと。
       - name: Export IPA
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -139,6 +146,8 @@ jobs:
               <string>Lingua Distribution</string>
               <key>com.tokinets.lingua.keyboard</key>
               <string>Lingua Keyboard Distribution</string>
+              <key>com.tokinets.lingua.widget</key>
+              <string>Lingua Widget Distribution</string>
             </dict>
           </dict>
           </plist>
