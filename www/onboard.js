@@ -72,18 +72,32 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    read it -- and dead-check, which watched functions, could not see a number
    nobody asked for. It watches top-level vars now, so this one is deleted the
    day it stops being read. */
-/* Four, and the first one is signing in.
-   「とりあえずログインして、文字を書くところからやな」
+/* The owner's order, and signing in is the LAST of it:
 
-   It used to be three and the door was not one of them -- the app made an
-   anonymous account at launch and asked who you were only at the six things
-   other people see. Making needs a name on the account now, so the door is
-   the first thing rather than a thing somebody runs into later with a
-   half-made alphabet behind them. */
+     1 draw one letter
+     2 put it in the alphabet
+     3 the making screen
+     4 the keyboard
+     5 the first keyboard -- "the letter you just drew went in here"
+     6 "make letters and words, enjoy your making life"
+     7 sign in -- "to keep making, sign in"
+
+   The door was put FIRST once and that was a misreading of
+   「とりあえずログインして、文字を書くところからやな」, which is what to
+   BUILD first, not what comes first on screen. It goes back to the end,
+   where the owner put it: somebody draws a letter and sees where it landed,
+   and is asked to sign in once there is something to sign in for.
+
+   That is why makeNeed() does not fire while SET.done is false -- the walk
+   below is the one place making happens without a name on the account, and
+   step 7 is where the account is asked for.
+
+   Steps 3 to 6 are not built yet. What is here is the three that were, with
+   the door back at the end of them. */
 var OB_STEPS=4;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
    chances to renumber three of them. */
-var OB_IN=0, OB_DRAW=1, OB_ROM=2, OB_NAME=3;
+var OB_DRAW=0, OB_ROM=1, OB_NAME=2, OB_IN=3;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -108,7 +122,8 @@ function obCanBack(){
   if(obPending()) return OBM.mode!=='who';
   /* Nothing is behind the first step, and nothing is behind the door while
      it IS the first step: there is no app to go back to yet. */
-  return ob.step>OB_IN || ob.mode==='borrow';
+  /* Nothing is behind the first step. */
+  return ob.step>OB_DRAW || ob.mode==='borrow';
 }
 function obBack(){
   /* The chevron in the corner is the only way back in the onboarding, so the
@@ -251,8 +266,11 @@ function obIn(){
          and back in used to land somebody in the onboarding here.
          「ログアウトした後にログインしたらオンボーディング出ないようにも
          してね」 The walk is for a phone with nobody on it, and there is
-         somebody on this one. */
-      SET.done=true; save(); go('build'); return;
+         somebody on this one.
+
+         It is also the last step of the walk for somebody who IS new, and
+         both roads end the same way: the walk is over and the app opens. */
+      obFinish(); return;
     }
     OBM.nm=ME.name; OBM.hd=ME.handle; render();
   }, function(d, s){
@@ -511,9 +529,9 @@ function obWhoGo(){
       /* A brand new account made from Settings is still somebody who has a
          language -- they signed up late, not early. */
       if(obReturn()) return;
-      /* A new account made inside the onboarding: on to the letter, which is
-         the step signing in was in front of. */
-      obGo(OB_DRAW);
+      /* A new account made at the END of the onboarding: that was the last
+         step, so the walk is over. */
+      obFinish();
     }, obNo);
   }, obNo);
 }
@@ -561,11 +579,13 @@ function obDoorHTML(){
    The one thing somebody arrives already having an opinion about, and the
    only question here they can answer without being taught anything. It can
    be left blank and changed at any time from the cover. */
+/* Naming the language is not the end of the walk any more -- signing in is,
+   and it comes after this. */
 function obName(){
   var e=document.getElementById('ob-name');
   if(e) ob.name=String(e.value||'').trim();
   langName=ob.name;
-  save(); obFinish();
+  save(); obGo(OB_IN);
 }
 function obNameHTML(){
   return '<div class="mid">'+
@@ -582,7 +602,7 @@ function obNameHTML(){
 /* Not everyone has a name yet, and being stuck on the first question of the
    app because of it is absurd. The cover asks again, and the pencil beside
    the title is there whenever the answer arrives. */
-function obNameLater(){ ob.name=''; obFinish(); }
+function obNameLater(){ ob.name=''; obGo(OB_IN); }
 
 /* ---- one letter -------------------------------------------------------
    The app used to pick a sound out of the inventory, put "the letter for k"
