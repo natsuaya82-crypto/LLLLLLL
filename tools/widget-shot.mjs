@@ -294,9 +294,11 @@ function html(cases, dark) {
     let heads = `<div style="display:flex;height:${headH.toFixed(1)}px">`;
     for (let i = 1; i <= cols; i++) {
       const w = num && num.wd && num.wd[String(i)];
+      /* 'short' and not 'narrow': narrow is one letter, and one letter in
+         English is S M T W T F S. A stand-in is there to be read. */
       const nm = w ? w.r
         : new Date(Date.UTC(1970, 0, 3 + i)).toLocaleDateString('en',
-            { weekday: 'narrow', timeZone: 'UTC' });
+            { weekday: 'short', timeZone: 'UTC' });
       heads += `<div style="width:${cw.toFixed(2)}px;height:${headH.toFixed(1)}px;`
         + `display:flex;align-items:center;justify-content:center;opacity:.75;`
         + `font:500 ${(headH * 0.62).toFixed(1)}px -apple-system,system-ui,sans-serif;`

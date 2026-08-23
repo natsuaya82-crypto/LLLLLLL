@@ -67,8 +67,11 @@ func dayTint(_ i: Int) -> Color {
 /// 「ない分の言葉はmondayとかで代用しよう」
 func weekdayHead(_ i: Int, _ num: Numerals?) -> Named? {
   if let n = num?.dayName(i) { return n }
-  /* veryShortWeekdaySymbols starts at Sunday, and so does the count. */
-  let syms = Calendar.current.veryShortWeekdaySymbols
+  /* shortWeekdaySymbols and NOT veryShort: very short is one letter, and one
+     letter in English is S M T W T F S -- two pairs that say nothing apart
+     from each other. A stand-in is there to be READ, so it is Sun and Mon.
+     Both lists start at Sunday, and so does the count. */
+  let syms = Calendar.current.shortWeekdaySymbols
   guard syms.count == 7, i >= 1, i <= 7 else { return nil }
   return Named(r: syms[i - 1], all: false)
 }
