@@ -366,6 +366,22 @@ keyboard is the one exception and is measured on its height alone — ten letter
 in a row is what QWERTY *is*, and ten of anything across a phone is 35pt on
 every phone ever made, Apple's own keyboard included. Widening that floor to 44
 would not make a keyboard safer to type on; it would forbid a keyboard.
+**And which class is actually WORN by something.** A screen can be deleted and
+its CSS stay: `a.set` is styled under a comment naming two documents that are
+no longer anchors, and `.weave` is the sentence-weaving chapter, whose word
+appears in no `.js` file at all. `dead-check` asks this of every function and
+nothing had ever asked it of a selector — and a grep cannot, because a class is
+worn from a string built by concatenation, from `classList.add`, and from
+`index.html`'s own markup. So the PAGE is asked, from here, after every build
+AND after every press: a render-only walk never reaches `.on`. 202 were styled
+and worn by nothing, frozen in `tools/css-baseline.txt` as a ratchet.
+**It says "nothing here wore it", not "it is dead"** — a class worn only in a
+state the walk never reaches is on that list too, and clearing a line by adding
+the seed is the better fix. A person reads it; the list is not a licence to
+delete. Its first version reported `.bar` as unworn, which was the check's own
+blind spot (`show()` builds no shell), not a dead rule — a pass through the
+real `render()` was added rather than a baseline frozen over the gap.
+
 **And that rows in one list are one height** -- siblings under one parent,
 wearing one class, coming out at two heights AND two computed type sizes.
 That last clause is the check: the first version asked "different tag"
