@@ -209,13 +209,23 @@ struct CalendarWidget: Widget {
     .configurationDisplayName("Calendar")
     .description("This month, in your own language.")
     .supportedFamilies([.systemMedium])
-    /* Carried across from DateWidget, which this replaced. save added
-       widgetRoom() there and to ClockWidget -- iOS 17 puts a margin round a
-       widget's content that cannot be padded away, and contentMarginsDisabled()
-       is the only thing that gives it back. yoo's widgets were written on the
-       other branch and never had it, so a straight merge would have shipped
-       two of the four with the margin still on. */
-    .widgetRoom()
+    /* widgetRoom() was here and is gone: it never compiled.
+
+         WidgetGround.swift:47:7: error: static method 'buildExpression'
+         requires that 'some WidgetConfiguration' conform to 'View'
+
+       @ViewBuilder is for views. A function returning some WidgetConfiguration
+       cannot be built with it, and there is no WidgetConfiguration builder to
+       swap in that exists before iOS 17 -- which is the version the modifier
+       was there to guard against in the first place.
+
+       It was written on a branch, on Linux, where no Swift compiler runs. Four
+       browser-free checks, twelve browser checks and the whole gate say nothing
+       about a .swift file. Build #89 is the first thing that ever read it.
+
+       So iOS 17's content margin is back on the widget for now. That is a
+       widget that is slightly smaller than it could be, which is a smaller
+       problem than an app that does not build. */
   }
 }
 
@@ -227,6 +237,5 @@ struct CalendarBigWidget: Widget {
     .configurationDisplayName("Calendar, large")
     .description("This month, with room for it, in your own language.")
     .supportedFamilies([.systemLarge])
-    .widgetRoom()
   }
 }

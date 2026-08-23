@@ -202,6 +202,22 @@ struct ClockWidget: Widget {
     .configurationDisplayName("Clock")
     .description("The time, in your own numerals.")
     .supportedFamilies([.systemSmall])
-    .widgetRoom()
+    /* widgetRoom() was here and is gone: it never compiled.
+
+         WidgetGround.swift:47:7: error: static method 'buildExpression'
+         requires that 'some WidgetConfiguration' conform to 'View'
+
+       @ViewBuilder is for views. A function returning some WidgetConfiguration
+       cannot be built with it, and there is no WidgetConfiguration builder to
+       swap in that exists before iOS 17 -- which is the version the modifier
+       was there to guard against in the first place.
+
+       It was written on a branch, on Linux, where no Swift compiler runs. Four
+       browser-free checks, twelve browser checks and the whole gate say nothing
+       about a .swift file. Build #89 is the first thing that ever read it.
+
+       So iOS 17's content margin is back on the widget for now. That is a
+       widget that is slightly smaller than it could be, which is a smaller
+       problem than an app that does not build. */
   }
 }
