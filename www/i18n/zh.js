@@ -479,8 +479,6 @@ defLang('zh', (function(){
       "num.h"           : "数字",
       "num.big"         : "最大 {0}",
       "num.base"        : "进制",
-      "cal.months"      : "一年幾個月",
-      "cal.week"        : "一週幾天",
       "num.wid"         : "在主畫面上",
       "num.wid.how"     : "長按主畫面 → + → Lingua",
       "lt.marks"         : "符号",

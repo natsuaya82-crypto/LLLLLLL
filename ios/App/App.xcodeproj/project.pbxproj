@@ -29,10 +29,11 @@
 		7A1C0F5E2B9D41C8A0E33101 /* Numerals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33113 /* Numerals.swift */; };
 		7A1C0F5E2B9D41C8A0E33102 /* GlyphShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33114 /* GlyphShape.swift */; };
 		7A1C0F5E2B9D41C8A0E33103 /* ClockWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33115 /* ClockWidget.swift */; };
-		7A1C0F5E2B9D41C8A0E33104 /* DateWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33116 /* DateWidget.swift */; };
 		7A1C0F5E2B9D41C8A0E33105 /* WidgetGround.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33117 /* WidgetGround.swift */; };
 		7A1C0F5E2B9D41C8A0E33106 /* LinguaWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33118 /* LinguaWidgetBundle.swift */; };
 		7A1C0F5E2B9D41C8A0E33107 /* ScriptFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33119 /* ScriptFont.swift */; };
+		7A1C0F5E2B9D41C8A0E33108 /* TimeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33120 /* TimeWidget.swift */; };
+		7A1C0F5E2B9D41C8A0E33109 /* CalendarWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33121 /* CalendarWidget.swift */; };
 		7A1C0F5E2B9D41C8A0E33130 /* LinguaWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33110 /* LinguaWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -86,10 +87,11 @@
 		7A1C0F5E2B9D41C8A0E33113 /* Numerals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Numerals.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33114 /* GlyphShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphShape.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33115 /* ClockWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockWidget.swift; sourceTree = "<group>"; };
-		7A1C0F5E2B9D41C8A0E33116 /* DateWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateWidget.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33117 /* WidgetGround.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetGround.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33118 /* LinguaWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaWidgetBundle.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33119 /* ScriptFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptFont.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33120 /* TimeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeWidget.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33121 /* CalendarWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -174,10 +176,11 @@
 				7A1C0F5E2B9D41C8A0E33113 /* Numerals.swift */,
 				7A1C0F5E2B9D41C8A0E33114 /* GlyphShape.swift */,
 				7A1C0F5E2B9D41C8A0E33115 /* ClockWidget.swift */,
-				7A1C0F5E2B9D41C8A0E33116 /* DateWidget.swift */,
 				7A1C0F5E2B9D41C8A0E33117 /* WidgetGround.swift */,
 				7A1C0F5E2B9D41C8A0E33118 /* LinguaWidgetBundle.swift */,
 				7A1C0F5E2B9D41C8A0E33119 /* ScriptFont.swift */,
+				7A1C0F5E2B9D41C8A0E33120 /* TimeWidget.swift */,
+				7A1C0F5E2B9D41C8A0E33121 /* CalendarWidget.swift */,
 				7A1C0F5E2B9D41C8A0E33111 /* Info.plist */,
 				7A1C0F5E2B9D41C8A0E33112 /* LinguaWidget.entitlements */,
 			);
@@ -427,10 +430,11 @@
 				7A1C0F5E2B9D41C8A0E33101 /* Numerals.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33102 /* GlyphShape.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33103 /* ClockWidget.swift in Sources */,
-				7A1C0F5E2B9D41C8A0E33104 /* DateWidget.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33105 /* WidgetGround.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33106 /* LinguaWidgetBundle.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33107 /* ScriptFont.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E33108 /* TimeWidget.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E33109 /* CalendarWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

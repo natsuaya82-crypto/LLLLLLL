@@ -21,6 +21,10 @@ html[data-theme="dark"]{
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
   --bad:#d9705c;
+  /* A calendar is not just numbers: the week has a red end and a blue one.
+     Not --bad, which means an error and would say the wrong thing about a
+     Sunday. 「日曜🟥土曜🟦 カレンダーって数字だけがあればいいわけじゃねえぞ？」 */
+  --sun:#d9705c; --sat:#6f9fd8;
   /* An area, while it is being drawn. The editor's only, and never a letter's:
      what is filled is the letter's own colour everywhere it is read. */
   --fill:#5fbf7a;
@@ -41,6 +45,7 @@ html[data-theme="light"]{
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
   --bad:#c9553f;
+  --sun:#c9553f; --sat:#3b6ea5;
   --fill:#2f8f4e;
   --pur:#5546c8; --pursf:rgba(85,70,200,.07); --purln:rgba(85,70,200,.34);
   --onGold:#fffdf6; --dot:rgba(26,23,18,.46); --shadow:0 8px 22px rgba(60,50,30,.10);
@@ -700,9 +705,29 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numwt{fill:var(--tx);opacity:.28}
 .numwd{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
 .numwbig{line-height:1;white-space:nowrap;color:var(--tx)}
-.numwsm{line-height:1;white-space:nowrap;color:var(--tx);opacity:.55}
 .numrm{display:inline-block;font-size:.62em;line-height:1}
 .numwhow{margin-top:2px}
+/* The month, as it comes out on a home screen. Seven columns, because a week
+   has seven days wherever this is read; the count is handed in as --numcols
+   so the grid and numCalHTML() cannot disagree about it. */
+.numcal{margin:14px 0 4px;max-width:290px}
+.numcm{display:block;font-size:17px;line-height:1;color:var(--tx)}
+.numcg{display:grid;grid-template-columns:repeat(var(--numcols),1fr);gap:2px 0;
+       margin-top:6px}
+.numch{display:flex;align-items:center;justify-content:center;height:18px;
+       font-size:11px;color:var(--tx);opacity:.5;line-height:1;
+       overflow:hidden;white-space:nowrap}
+.numcc{position:relative;display:flex;align-items:center;justify-content:center;
+       height:26px;font-size:13px;color:var(--tx);line-height:1}
+.numch.sun,.numcc.sun{color:var(--sun)}
+.numch.sat,.numcc.sat{color:var(--sat)}
+/* Today. The disc is the ink and the number is the ground knocked out of it,
+   so it reads at 13px where a ring would not. */
+.numdot{position:absolute;width:24px;height:24px;pointer-events:none}
+.numdot circle{fill:var(--tx)}
+.numcc.on,.numcc.on.sun,.numcc.on.sat{color:var(--bg)}
+.numcn{position:relative}
+.numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
 .pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
 .pwg{font-size:.76rem;color:var(--txm)}

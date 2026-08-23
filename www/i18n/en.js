@@ -374,8 +374,6 @@ defLang('en', (function(){
       'num.h'           : 'Digits',
       'num.big'         : 'Up to {0}',
       'num.base'        : 'Base',
-      'cal.months'      : 'Months in a year',
-      'cal.week'        : 'Days in a week',
       'num.wid'         : 'On the home screen',
       'num.wid.how'     : 'Hold the Home Screen → + → Lingua',
       'lt.marks'        : 'Marks',

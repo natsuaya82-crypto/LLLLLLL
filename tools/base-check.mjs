@@ -95,30 +95,22 @@ const r = await pg.evaluate(({s}) => {
      the base it will count in, and that a slot with nothing in it is ABSENT
      rather than an empty shape -- a hole means "put a roman one here", and a
      present-but-empty entry means a blank space where a numeral should be. */
-  /* ---- and the calendar, whose two numbers work the same way -----------
-     The one thing that must NOT work the same way is lowering. Lowering the
-     base can take an untouched digit slot with it, because a digit is a
-     letter and an empty letter is the app's own. A month is a WORD -- it is
-     in the dictionary, it is used in sentences, and nothing here may remove
-     it. Twelve months down to ten leaves both words exactly where they are
-     and the stage simply stops asking. docs/DATA_SAFETY.md. */
-  out.calMo0 = calMonths();
-  out.calWk0 = calWeek();
-  calSetMonths(13); calSetWeek(5);
-  out.calMo = calMonths();
-  out.calWk = calWeek();
+  /* ---- and the calendar --------------------------------------------------
+     Nothing to set any more. The year has twelve months and the week has
+     seven days, because the widget draws the calendar every reader of it
+     already reads -- www/cal.js. What the language does is name them, and
+     the stages ask for exactly that many words.
+     Lowering is therefore not a thing that can happen, and the case that
+     used to be here -- a word for the twelfth month surviving a year of ten
+     -- has nothing to survive. */
+  out.calMo    = calMonths();
+  out.calWk    = calWeek();
   out.calSlots = [stBy('month').slots.length, stBy('wday').slots.length];
-  /* a word in the twelfth month, and then a year of ten */
-  WORDS.push({hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.12'});
-  calSetMonths(10);
-  out.calKept = !!stWordFor(stBy('month'), '12');
-  out.calAsks = stBy('month').slots.length;
-  /* out of range is the default, not a stored number nothing can draw */
-  calSetMonths(99); out.calBad = calMonths();
-  /* Both back, because what follows asks what goes out to the widget and a
-     week still on five from the case above would be answering a question
-     nobody down there asked. */
-  calSetMonths(12); calSetWeek(7);
+  /* Sunday is day one, because that is where a calendar's week starts, and
+     both answers are the phone's rather than a count of our own. */
+  out.calSun   = calDayOf(new Date(2026, 7, 23));   /* a Sunday */
+  out.calSat   = calDayOf(new Date(2026, 7, 22));   /* the Saturday before */
+  out.calAug   = calMonthOf(new Date(2026, 7, 23));
 
   /* A month with a word on it: the widget says the name when there is one
      and the number when there is not, so both have to leave here in the
@@ -134,11 +126,14 @@ const r = await pg.evaluate(({s}) => {
   WORDS.push(mw);
 
   var w = shareWidget();
-  out.wMo     = w.mo;
-  out.wWk     = w.wk;
   out.wMonKey = Object.keys(w.mon).sort().join(' ');
   out.wMonR   = w.mon['3'] && w.mon['3'].r;
   out.wMonAll = !!(w.mon['3'] && w.mon['3'].all);
+  /* The mark between the hours and the minutes. A colon unless somebody drew
+     one, and `:` is not a letter a language starts with -- so `all` is false
+     here and the widget sets a plain colon. */
+  out.wSep    = w.sep && w.sep.r;
+  out.wSepAll = !!(w.sep && w.sep.all);
   /* the same word with one letter that was never drawn */
   mw.sp = [{l:numByVal(10).id}, {l:numByVal(11).id}];
   out.wMonHole = !!(shareWidget().mon['3'] || {}).all;
@@ -193,23 +188,19 @@ say(!r.wFresh, 'nor do the ten a fresh language starts with, which nobody has dr
    them dropped out. */
 say(r.wKeys === '1 10', 'exactly the digits with ink on them go out (' + r.wKeys + ')');
 
-say(r.wMo === 12 && r.wWk === 7, 'the widget is told how the year and the week divide (' + r.wMo + ', ' + r.wWk + ')');
-/* Twelve and three: the word the calendar case above made for the twelfth
-   month, which survived the year going down to ten and is still somebody's,
-   and the third made here. Naming both is the point -- a count would go on
-   passing if the wrong one dropped out. */
-say(r.wMonKey === '12 3', 'only the months somebody named go out (' + r.wMonKey + ')');
+say(r.wMonKey === '3', 'only the months somebody named go out (' + r.wMonKey + ')');
 say(r.wMonR === 'Tuvel', 'with the roman spelling, always (' + r.wMonR + ')');
 say(r.wMonAll, 'and that the font will have every letter of it');
 say(!r.wMonHole, 'one undrawn letter and it says so, so the widget sets the word plainly');
+say(r.wSep === ':', 'the clock is told what goes between the hours and the minutes (' + r.wSep + ')');
+say(!r.wSepAll, 'and that nobody drew one, so it is a plain colon');
 
-say(r.calMo0 === 12 && r.calWk0 === 7,
-    'a language starts with twelve months and a week of seven (' + r.calMo0 + ', ' + r.calWk0 + ')');
-say(r.calMo === 13 && r.calWk === 5, 'both are the language\'s to change');
-say(String(r.calSlots) === '13,5', 'and the stages ask for exactly that many words (' + r.calSlots + ')');
-say(r.calKept, 'a word made for the twelfth month SURVIVES the year going down to ten');
-say(r.calAsks === 10, 'the stage simply stops asking for it (' + r.calAsks + ')');
-say(r.calBad === 12, 'a number out of range is the default, not a year nothing can draw');
+say(r.calMo === 12 && r.calWk === 7,
+    'twelve months and seven days, and neither is a setting (' + r.calMo + ', ' + r.calWk + ')');
+say(String(r.calSlots) === '12,7', 'and the stages ask for exactly that many words (' + r.calSlots + ')');
+say(r.calSun === 1, 'Sunday is day one, because that is where a calendar starts (' + r.calSun + ')');
+say(r.calSat === 7, 'and Saturday is the last (' + r.calSat + ')');
+say(r.calAug === 8, 'the month is the phone\'s, not a year cut into parts (' + r.calAug + ')');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

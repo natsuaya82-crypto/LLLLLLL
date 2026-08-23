@@ -387,8 +387,6 @@ defLang('ja', (function(){
       'num.h'           : '数字',
       'num.big'         : '{0}までです',
       'num.base'        : '進法',
-      'cal.months'      : '1年の月数',
-      'cal.week'        : '1週の日数',
       'num.wid'         : 'ホーム画面では',
       'num.wid.how'     : 'ホーム画面を長押し → + → Lingua',
       'lt.marks'        : '記号',

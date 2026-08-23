@@ -471,14 +471,30 @@ function shareSlotWord(key){
   for(j=0;j<WORDS.length;j++) if(WORDS[j].slot===key) return WORDS[j];
   return null;
 }
+/* The mark between the hours and the minutes.
+   A colon, unless somebody drew one. `:` is not one of the letters a language
+   starts with -- LT_START is a to z and `!?` -- so this is only ever true of a
+   language that went and made one, and that is exactly when it should be
+   theirs. Same shape as a month's name: the spelling, and whether the font
+   has it. 「初期は : 自作言語あるなら変える」 */
+function shareSep(){
+  var i, l;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    if(String(ltName(l)||'')!==':') continue;
+    return {r:':', all:!!(l.st && l.st.length)};
+  }
+  return {r:':', all:false};
+}
 function shareWidget(){
   return {v:1, box:SHARE_BOX, base:numBase(), lang:langId, name:langName,
           dg:shareNums(),
-          /* and the calendar: how the year and the week are divided, and
-             whatever names have been made for the parts. www/cal.js. */
-          mo:calMonths(), wk:calWeek(),
+          /* and the calendar: whatever names have been made for the twelve
+             months and the seven days. How many there are is not sent,
+             because it is not the language's to say -- www/cal.js. */
           mon:shareSlotWords('month', calMonths()),
-          wd:shareSlotWords('wday', calWeek())};
+          wd:shareSlotWords('wday', calWeek()),
+          sep:shareSep()};
 }
 /* Whether there is a native side at all, and the one way to reach it.
 

@@ -10,8 +10,8 @@
    thing. What this does instead is take the SAME widget.json the app really
    produces -- shareWidget(), asked of the running app -- and draw it with the
    SAME numbers the Swift uses: every em, ring radius, hand length, tick size
-   and padding below is copied from ClockWidget.swift and DateWidget.swift,
-   and the glyph scaling is copied from GlyphShape.swift.
+   and padding below is copied from ClockWidget.swift, TimeWidget.swift and
+   CalendarWidget.swift, and the glyph scaling is copied from GlyphShape.swift.
 
    So the data is real and the geometry is real. What it does NOT prove is
    that the Swift compiles, or that SwiftUI lays out the same. Those are on a
@@ -122,8 +122,12 @@ await pg.close();
 /* ---- the same drawing, with the same numbers ---------------------------- */
 const page = await br.newPage({ viewport: { width: 1100, height: 900 }, deviceScaleFactor: 3 });
 
-/* systemSmall on a 6.1-inch phone is 158x158 points. */
+/* systemSmall on a 6.1-inch phone is 158x158 points, and systemMedium and
+   systemLarge are 329 wide by 155 and 345 tall. */
 const SIDE = 158;
+/* The month drawn is the one the machine is in, because that is the month the
+   widget would be showing if this were a phone. */
+const NOW = new Date();
 
 function html(cases, dark) {
   const ink = dark ? '#f2f2f7' : '#1c1c1e';
@@ -226,16 +230,121 @@ function html(cases, dark) {
     return out;
   };
 
-  /* DayFace, number for number. */
-  const day = (num, d, m) => {
+  /* TimeFace, number for number. 8:25 -- the clock most people actually pick
+     up a phone to read. */
+  const time = (num, h, m) => {
     const side = SIDE - 20;                       /* .padding(10) */
-    const dEm = Math.min(side * 0.44, side * 0.86 * 800 / widthOf(d, num));
-    const mEm = Math.min(side * 0.17, side * 0.50 * 800 / widthOf(m, num));
-    return `<div style="position:absolute;inset:0;display:flex;flex-direction:column;`
-      + `align-items:center;justify-content:center;gap:${(side * 0.04).toFixed(1)}px">`
-      + number(d, num, dEm)
-      + `<span style="opacity:.55">${number(m, num, mEm)}</span></div>`;
+    const box = num ? num.box : 800;
+    /* The minute is two signs and the hour may be one, so the em is decided
+       off the whole line at once or the size would jump at ten o'clock. */
+    const pair = m < 10 ? m + 10 : m;
+    const total = widthOf(h, num) + box * 0.42 + widthOf(pair, num);
+    const em = Math.min(side * 0.42, side * 0.92 * 800 / total);
+    /* Two signs, always: 8:05 and not 8:5. In the language's own base, which
+       is why base twelve writes twenty-five past as 2:1. */
+    let mp = places(m, num);
+    if (mp.length < 2) mp = [0].concat(mp);
+    const signs = mp.map((v) => number(v, num, em)).join('');
+    /* SepView: a colon unless somebody drew one, in a box em*0.42 wide. */
+    const sep = `<span style="display:inline-flex;align-items:center;`
+      + `justify-content:center;width:${(em * 0.42).toFixed(2)}px;`
+      + `height:${em.toFixed(2)}px;font:500 ${(em * 0.62).toFixed(1)}px `
+      + `-apple-system,system-ui,sans-serif;color:${ink}">`
+      + `${(num && num.sep && num.sep.r) || ':'}</span>`;
+    return `<div style="position:absolute;inset:0;display:flex;`
+      + `align-items:center;justify-content:center">`
+      + number(h, num, em) + sep + signs + '</div>';
   };
+
+  /* MonthGrid, number for number. The structure is the WORLD's -- twelve
+     months, seven columns, Sunday first, the phone's own month -- and what
+     the language puts into it is the names and the numerals. www/cal.js.
+     A word is set in plain letters here because this page has no
+     LinguaScript loaded; shots/widgets-calendar.png is the app itself and
+     shows the same grid with every word drawn. */
+  const TINT = { 1: '#c95e4c', 7: '#5a8cc2' };
+  const month = (num, when, big) => {
+    const pad = big ? 14 : 10;
+    const W = (big ? 329 : 329) - pad * 2, H = (big ? 345 : 155) - pad * 2;
+    const cols = 7, cw = W / cols;
+    const headH = H * (big ? 0.09 : 0.13);
+    const monH = H * (big ? 0.13 : 0.17);
+    const y = when.getFullYear(), mo = when.getMonth();
+    const last = new Date(y, mo + 1, 0).getDate();
+    const today = when.getDate();
+    const col = (d) => new Date(y, mo, d).getDay();
+    let rows = 1, prev = col(1);
+    for (let d = 2; d <= last; d++) { const c = col(d); if (c <= prev) rows++; prev = c; }
+    const ch = Math.max(1, (H - headH - monH) / rows);
+
+    /* The month over the grid, left-aligned, the way a wall calendar and the
+       phone's own both put it. */
+    const mName = num && num.mon && num.mon[String(when.getMonth() + 1)];
+    const head = `<div style="height:${monH.toFixed(1)}px;display:flex;`
+      + `align-items:center">`
+      + (mName
+        ? `<span style="font:500 ${(monH * 0.62).toFixed(1)}px -apple-system,`
+          + `system-ui,sans-serif;color:${ink}">${mName.r}</span>`
+        : number(when.getMonth() + 1, num, monH * 0.72))
+      + '</div>';
+
+    /* The head of a column: the word somebody made, else the phone's own
+       short name. There is always one, because the week here is the world's
+       seven. 「ない分の言葉はmondayとかで代用しよう」 */
+    let heads = `<div style="display:flex;height:${headH.toFixed(1)}px">`;
+    for (let i = 1; i <= cols; i++) {
+      const w = num && num.wd && num.wd[String(i)];
+      const nm = w ? w.r
+        : new Date(Date.UTC(1970, 0, 3 + i)).toLocaleDateString('en',
+            { weekday: 'narrow', timeZone: 'UTC' });
+      heads += `<div style="width:${cw.toFixed(2)}px;height:${headH.toFixed(1)}px;`
+        + `display:flex;align-items:center;justify-content:center;opacity:.75;`
+        + `font:500 ${(headH * 0.62).toFixed(1)}px -apple-system,system-ui,sans-serif;`
+        + `color:${TINT[i] || ink};overflow:hidden;white-space:nowrap">${nm}</div>`;
+    }
+    heads += '</div>';
+
+    let grid = '', r = 0, seen = -1;
+    const at = {};
+    for (let d = 1; d <= last; d++) {
+      const c = col(d);
+      if (d > 1 && c <= seen) r++;
+      seen = c;
+      at[r + ':' + c] = d;
+    }
+    for (let rr = 0; rr < rows; rr++) {
+      grid += `<div style="display:flex">`;
+      for (let cc = 0; cc < cols; cc++) {
+        const d = at[rr + ':' + cc];
+        grid += `<div style="width:${cw.toFixed(2)}px;height:${ch.toFixed(2)}px;`
+          + `position:relative;display:flex;align-items:center;justify-content:center">`;
+        if (d) {
+          const em = Math.min(ch * 0.62, cw * 0.72);
+          /* Today is a filled disc with the number knocked out of it. A disc
+             is not a rounded box: the rule is about corners on a rectangle,
+             and this has none. */
+          if (d === today) {
+            const dia = Math.min(cw, ch) * 0.88;
+            grid += `<svg style="position:absolute" width="${dia.toFixed(2)}" `
+              + `height="${dia.toFixed(2)}"><circle cx="${(dia / 2).toFixed(2)}" `
+              + `cy="${(dia / 2).toFixed(2)}" r="${(dia / 2).toFixed(2)}" fill="${ink}"/></svg>`;
+          }
+          grid += `<span style="position:relative;color:${d === today ? card : (TINT[cc + 1] || ink)}">`
+            + tinted(number(d, num, em), d === today ? card : (TINT[cc + 1] || ink))
+            + '</span>';
+        }
+        grid += '</div>';
+      }
+      grid += '</div>';
+    }
+    return `<div style="position:absolute;inset:${pad}px">${head}${heads}${grid}</div>`;
+  };
+  /* number() paints the ink colour into the SVG and into the run of text, so
+     a coloured cell has to say so after the fact rather than by inheriting.
+     One replace, on the two places the colour was written. */
+  const tinted = (s, c) => (c === ink) ? s
+    : s.split('fill="' + ink + '"').join('fill="' + c + '"')
+       .split('color:' + ink).join('color:' + c);
 
   const box = (inner, label) =>
     `<figure style="margin:0"><div style="width:${SIDE}px;height:${SIDE}px;position:relative;`
@@ -245,7 +354,17 @@ function html(cases, dark) {
 
   const col = (k, name) => `<div style="display:flex;flex-direction:column;gap:18px;align-items:center">`
     + `<div style="font:600 13px system-ui;color:${ink}">${name}</div>`
-    + box(clock(cases[k], [10, 9]), 'clock') + box(day(cases[k], 23, 8), 'date') + '</div>';
+    + box(clock(cases[k], [10, 9]), 'clock') + box(time(cases[k], 8, 25), 'time') + '</div>';
+
+  /* The calendar, at the two sizes it is offered in. One case only: the grid
+     is 31 numbers and five of them side by side says nothing the strips below
+     do not already say more clearly. */
+  const cal = (k, w, h, big, label) =>
+    `<figure style="margin:0"><div style="width:${w}px;height:${h}px;position:relative;`
+    + `background:${card};border-radius:22px;overflow:hidden">`
+    + month(cases[k], NOW, big) + '</div>'
+    + `<figcaption style="font:12px system-ui;color:${ink};opacity:.7;margin-top:7px;`
+    + `text-align:center">${label}</figcaption></figure>`;
 
   /* One to twelve, written out, because a clock face is twelve numbers and
      the only way to know whether they read is to see them at size. */
@@ -269,6 +388,10 @@ function html(cases, dark) {
     + col('none', 'nothing drawn yet')
     + col('base12', 'counting in twelve')
     + col('base2', 'counting in two')
+    + '</div>'
+    + `<div style="display:flex;gap:26px;align-items:flex-start;margin-top:30px">`
+    + cal('drawn', 329, 155, false, 'calendar, medium')
+    + cal('drawn', 329, 345, true, 'calendar, large')
     + '</div>'
     + `<div style="display:flex;flex-direction:column;gap:22px;margin-top:30px">`
     + strip(cases.drawn, 'one to twelve, counting in ten \u2014 so 10, 11 and 12 are two signs each')
@@ -303,24 +426,40 @@ await app.evaluate(({ s, D }) => {
     const l = numByVal(+v);
     if (l) l.st = D[v].map((run) => ({ pts: run.map((p) => [O + p[0] * K, O + p[1] * K]) }));
   });
-  /* a word for the month today falls in, spelled out of letters that ARE
-     drawn -- the fixture's own, so the font has every one of them */
+  /* Words for the month and for every day of the week, spelled out of
+     letters that ARE drawn -- the fixture's own, so the font has every one of
+     them and the whole calendar comes out in somebody's letters. Without
+     these the picture is a page of roman, which is a true state and not the
+     one worth looking at. */
   const drawn = LETTERS.filter((l) => l.st && l.st.length && !numIsDigit(l));
-  const pick = [0, 1, 2].map((i) => drawn[i % drawn.length]).filter(Boolean);
-  if (pick.length) {
-    WORDS.push({ hw: pick.map((l) => ltName(l)).join(''), mn: 'the month',
-                 pos: 'n', at: 1, slot: 'month.' + calMonthOf(new Date()),
-                 sp: pick.map((l) => ({ l: l.id })) });
-  }
+  const word = (n, slot, mn) => {
+    const pick = [0, 1, 2].map((i) => drawn[(n + i) % drawn.length]).filter(Boolean);
+    if (!pick.length) return;
+    WORDS.push({ hw: pick.map((l) => ltName(l)).join('') + n, mn: mn, pos: 'n',
+                 at: 1, slot: slot, sp: pick.map((l) => ({ l: l.id })) });
+  };
+  word(calMonthOf(new Date()), 'month.' + calMonthOf(new Date()), 'the month');
+  for (let i = 1; i <= calWeek(); i++) word(i, 'wday.' + i, 'day ' + i);
   saveLetters(); save(); installScriptFont();
   window.route = 'ltset'; NAV = [{ r: 'ltset', a: 'num' }];
   render();
 }, { s: seed.toString(), D: DIGITS });
 await app.waitForTimeout(400);
-const row = await app.$('.numwrow');
-if (row) {
-  await row.screenshot({ path: path.join(OUT, 'widgets-in-app.png') });
-  console.log('shots/widgets-in-app.png   <- the app itself, with a month word');
+
+/* The New letter bar and the tab bar are position:fixed and sit over whatever
+   is under them, which is right on a phone. Hiding them for a photograph
+   would be photographing a screen that does not exist, so the page is
+   SCROLLED instead: put the thing near the top of the window, where nothing
+   is over it, and take the picture there. */
+for (const [sel, name] of [['.numwrow', 'widgets-in-app'], ['.numcal', 'widgets-calendar']]) {
+  const el = await app.$(sel);
+  if (!el) continue;
+  await el.evaluate((e) => {
+    window.scrollTo(0, e.getBoundingClientRect().top + window.scrollY - 20);
+  });
+  await app.waitForTimeout(200);
+  await el.screenshot({ path: path.join(OUT, name + '.png') });
+  console.log('shots/' + name + '.png   <- the app itself, drawn digits and made words');
 }
 await br.close();
 srv.close();

@@ -471,8 +471,6 @@ defLang('it', (function(){
       "num.h"           : "Cifre",
       "num.big"         : "Fino a {0}",
       "num.base"        : "Base",
-      "cal.months"      : "Mesi in un anno",
-      "cal.week"        : "Giorni in una settimana",
       "num.wid"         : "Sulla schermata Home",
       "num.wid.how"     : "Tieni premuta la schermata Home → + → Lingua",
       "lt.marks"         : "Segni",

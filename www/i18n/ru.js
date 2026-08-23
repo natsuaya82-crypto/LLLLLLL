@@ -474,8 +474,6 @@ defLang('ru', (function(){
       "num.h"           : "Цифры",
       "num.big"         : "До {0}",
       "num.base"        : "Основание",
-      "cal.months"      : "Месяцев в году",
-      "cal.week"        : "Дней в неделе",
       "num.wid"         : "На домашнем экране",
       "num.wid.how"     : "Зажмите домашний экран → + → Lingua",
       "lt.marks"          : "Знаки",

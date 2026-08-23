@@ -38,12 +38,7 @@ function stRead(){
     var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
     if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
               STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
-              STG.fm=stgs.fm||[];
-              /* Absent on every language made before the calendar existed,
-                 and absent is the default rather than a missing answer:
-                 calMonths() and calWeek() take anything that is not a number
-                 in range as twelve and seven. */
-              STG.months=stgs.months; STG.week=stgs.week; }
+              STG.fm=stgs.fm||[]; }
   }catch(e){}
 }
 stRead();
@@ -390,10 +385,6 @@ function stDetailHTML(p){
   var i, out='';
   out+='<h2 class="sth">'+esc(stTitle(p))+'</h2>';
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
-  /* How many slots this stage has, where the slots are. The counting stage's
-     number is the base and lives in the digits room because a digit is a
-     letter; these two are the calendar's own and have nowhere else to be. */
-  out+=calRows(p.id);
 
   if(p.feats.length){
     out+='<div class="sec">'+t('stg.decide')+'</div>';

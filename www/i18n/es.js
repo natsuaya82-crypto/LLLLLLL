@@ -431,8 +431,6 @@ defLang('es', (function(){
       "num.h"           : "Cifras",
       "num.big"         : "Hasta {0}",
       "num.base"        : "Base",
-      "cal.months"      : "Meses en un año",
-      "cal.week"        : "Días en una semana",
       "num.wid"         : "En la pantalla de inicio",
       "num.wid.how"     : "Mantén pulsada la pantalla de inicio → + → Lingua",
       "lt.marks"         : "Signos",

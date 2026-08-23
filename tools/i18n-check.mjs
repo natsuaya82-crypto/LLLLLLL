@@ -560,6 +560,20 @@ const R = await pg.evaluate(() => {
      different question. Learned from the table rather than exempted by name,
      so an example added there is covered the day it is added. */
   Object.keys(IPA_IN).forEach(k => IPA_IN[k].forEach(x => learn(x[1])));
+  /* And the names the device already has for the days of the week, which is
+     what a calendar column falls back to when the language has not named that
+     day yet. The widget asks iOS for them and the preview asks the browser;
+     neither string was written in this repository, so neither is copy the
+     mirror can ask to see translated. Learned in every language the app
+     speaks, because whose phone it is decides which one comes back. */
+  for (let i = 0; i < 7; i++){
+    const d = new Date(Date.UTC(1970, 0, 4 + i));
+    [undefined].concat(UI_LANGS).forEach(loc => {
+      ['narrow','short','long'].forEach(w => {
+        try { learn(d.toLocaleDateString(loc, { weekday: w, timeZone: 'UTC' })); } catch (e) {}
+      });
+    });
+  }
 
   const seen = {};
   function words(where, s, how){

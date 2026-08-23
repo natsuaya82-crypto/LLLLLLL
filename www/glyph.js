@@ -1930,7 +1930,14 @@ function inkLine(sel, stOf){
     H=Math.max(24, Math.round((c.getBoundingClientRect().height||18)*dpr));
     k=H/800;
     c.height=H; c.width=Math.max(1, Math.round(a.w*k));
-    inkStrokes(c.getContext('2d'), st, k, a.dx*k, 0, cssVar('--tx'));
+    /* The colour the canvas is standing in, not --tx.
+       A letter drawn on a canvas took the ink colour straight from the token,
+       so it was the same black wherever it stood -- and a calendar's Sunday
+       is red. Everywhere else the computed colour IS --tx, because that is
+       what the surrounding CSS sets, so nothing that was right changes.
+       「日曜🟥土曜🟦 カレンダーって数字だけがあればいいわけじゃねえぞ？」 */
+    inkStrokes(c.getContext('2d'), st, k, a.dx*k, 0,
+               (window.getComputedStyle? getComputedStyle(c).color : '') || cssVar('--tx'));
   }
 }
 function phkMount(){ inkCanvases('canvas.pkc', 40, 34); }

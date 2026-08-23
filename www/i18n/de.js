@@ -459,8 +459,6 @@ defLang('de', (function(){
       "num.h"           : "Ziffern",
       "num.big"         : "Bis {0}",
       "num.base"        : "Basis",
-      "cal.months"      : "Monate im Jahr",
-      "cal.week"        : "Tage in der Woche",
       "num.wid"         : "Auf dem Home-Bildschirm",
       "num.wid.how"     : "Home-Bildschirm halten → + → Lingua",
       "lt.marks"         : "Zeichen",

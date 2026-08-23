@@ -101,8 +101,6 @@ act('langOpen', langOpen);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
 act('numStepBase', numStepBase);
-act('calStepMonths', calStepMonths);
-act('calStepWeek', calStepWeek);
 act('obBack', obBack);
 act('obBorrow', obBorrow);
 act('obDone', obDone);
