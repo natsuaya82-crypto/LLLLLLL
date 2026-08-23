@@ -497,17 +497,49 @@ printed and never drawn on leaves nothing behind.
 **Duplicates are allowed** -- `a,a,a` is three boxes -- because this is Pro, and
 Pro is where a letter may be added at all.
 
+**THE SHEET NAMES ITSELF.** 「用紙に番号つけてもそのへんから拾った人はどう
+なんの？」 A number is a pointer into the app's memory, and paper cannot follow
+a pointer: a sheet picked up by somebody else, or imported after a new phone,
+points at nothing. So the twenty names are ON the sheet, and a returned sheet
+needs no memory anywhere to be read.
+
+That is also what the tool that already does this for a living does, which is
+where the rest of these came from. Calligraphr prints a QR code and four corner
+markers, and asks for both to be in the photograph; it prints the character
+faintly inside each box as a guide, light enough that the reader does not pick
+it up; it hands out a PDF to print and a PNG for people who draw on a tablet;
+and it asks for 300-600dpi greyscale, never binary, because a monochrome
+scanner dithers. 「それ鬼パクリで実装しよう」
+
+Copied outright:
+
+- **Four corner marks, not three.** Three give an affine transform, which is a
+  parallelogram; four give a real perspective one, and a photograph taken by a
+  hand is always a trapezoid. It was measured at three and 20 degrees of tilt
+  still landed inside a third of the pen -- four is simply better for nothing.
+- **The name printed faintly inside its own box.** A person can see what each
+  box is for, and the threshold does not pick it up. It half-answers 習字's
+  problem too: something to trace without laying translucent paper over it.
+- **A PNG as well as the PDF**, for drawing on a tablet.
+- **300-600dpi, greyscale, never binary**, and a clean-up pass for photographs
+  taken in bad light.
+
+Deliberately NOT copied: their sheet, its look, or its file. Same kind of thing,
+our own drawing.
+
+Different on one point, and for a reason:
+
+- **Our own grid of cells rather than a QR code.** What is expensive about a QR
+  is that it finds itself in the picture -- and here the four corner marks have
+  already given the transform, so that half is not needed. A fixed block of
+  black and white cells at a known place on the page is about forty lines to
+  write and forty to read, against three hundred plus a decoder. A checksum
+  rides with it, and a sheet that does not check out is **refused rather than
+  half-read**.
+
 Open, and not to be guessed at:
 
-- **How a returned sheet says which box was which.** This falls straight out of
-  the two decisions above and is the one hole in them. The name is printed as a
-  picture, so it cannot be read back off a photograph; the corner marks give
-  "third row, second column" and not "7"; and once duplicates are allowed, the
-  ORDER of the boxes is the only thing carrying the answer. So the sheet needs
-  an identity. The lightest form is one number printed on the page, with the app
-  remembering that sheet 4 was `7,2,25,...` -- which is enough, and which does
-  not survive being made on one phone and imported on another. A small code per
-  box survives that and costs more ink. The owner's, not a session's.
+- The price, and nothing else on this list.
 - Whether the letters that come in are the same 28 slots (when what was drawn
   IS a-z) or a series of their own.
 - The price, and which plan.
