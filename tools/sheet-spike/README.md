@@ -17,9 +17,11 @@ from: a thing that works, kept where it can be run, until it has a home.
     trip.mjs    the round trip of the NAMES, measured
     fake.mjs    a written-on sheet, photographed badly -- a stand-in until a
                 real one arrives
-    read.mjs    node tools/sheet-spike/read.mjs <photo> [out.png]
+    read.mjs    node tools/sheet-spike/read.mjs <photo or PDF> [out.png]
                 the whole reading side: find the marks, undo the perspective,
                 read the names, and pull each box's drawing out as an outline
+    wrap.mjs    the scanner stand-in: an image packed into a real PDF, with a
+                small preview beside the page, so "largest wins" is tested
 
 ## what has been measured
 
@@ -99,11 +101,54 @@ Two things cost a round each here:
   next; it is sampled on a coarse grid now. `shScan` went from not finishing to
   50ms.
 
+## the first sheet somebody actually wrote on
+
+The owner wrote one and sent it back. Twenty boxes, ten of them drawn in. The
+four marks were found, the strip gave all twenty names, the ten drawn boxes came
+out as the letters they were drawn as, and the ten empty ones came back at
+**zero pixels** -- the printed lattice is not read as ink on a real sheet either.
+
+It found one bug on its first run, and the bug is worth keeping written down
+because of the SHAPE of it. `shClean`'s comment said "forget a margin of the
+box, then drop every island smaller than `least`"; the code dropped any island
+that *touched* the margin, on the grounds that the printed box edge is such an
+island. One of the ten letters had a stroke running out past the edge of its
+square. The letter is one connected island, it touched, so the whole letter
+went: **3998 pixels found and 3998 thrown away**, which on the table reads as a
+box that was drawn in and lost -- not as a box left empty. The comment had been
+describing the right rule the whole time and nothing held the code to it.
+
+The margin is forgotten now and never used as a reason to drop anything. It
+costs a stroke the outermost 3 cells of 200, and the other nine boxes did not
+move by one pixel, which is the part that says the printed edge is still not
+coming through. The printed edge is at a place this file KNOWS, because this
+file drew it; where somebody's stroke happens to end is not.
+
+## a PDF that came back
+
+A scanner does not hand back a photograph. iOS Notes, Adobe Scan and every
+flatbed hand back a PDF, and inside one the page IS a photograph -- one JPEG per
+page, stored byte for byte, because `/DCTDecode` means "these bytes are already
+a JPEG". `shPdfJpeg()` takes it out without rendering anything. `wrap.mjs` is
+the scanner stand-in: it packs an image into a real PDF, xref and all, **with a
+small preview of the page beside the page**, because a PDF often carries one and
+reading that instead does not fail -- it reads the sheet at an eighth of the
+size, with a corner mark eight pixels across. Largest wins, and the test proves
+which one was taken by printing its byte count.
+
+The hole is stated rather than papered over: a PDF whose ink was **drawn** on a
+screen has no photograph inside it, and turning one into pixels is a renderer.
+The phone has one -- PDFKit, native, the same bridge the outgoing PDF has to
+cross anyway. This file does not. `shPdfWhy()` answers `photo` / `packed` /
+`drawn` / `not-pdf` so the app can say which of the four arrived instead of
+"could not read this file". All four were watched.
+
 ## what has NOT been measured
 
-- **Real ink.** The letters here are clean vector shapes with blur on them. A
-  brush bleeds into paper and goes dry; its edge is not a step. The owner is
-  testing that with a real sheet before release.
+- **A brush, and pencil.** The sheet that came back was written with a pen that
+  gives a solid black edge. A brush bleeds into paper and goes dry; a hard
+  pencil may not clear "0.85 of the paper around it" at all. Neither has been
+  seen yet.
 - **That the PDF puts things where `shCellAt` says.** The round trip draws the
   page onto a canvas from the same `shBoxAt`/`shMarks`/`shCellAt` the PDF is
   written from, so it holds the reader honest and not the writer. The writer

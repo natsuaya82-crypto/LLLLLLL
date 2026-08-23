@@ -311,6 +311,59 @@ function shReadStrip(warp, dark){
   return shUnpack(bits);
 }
 
+/* ---- a PDF that came back ---------------------------------------------- */
+/* A scanner does not hand back a photograph, it hands back a PDF: iOS Notes,
+   Adobe Scan and every flatbed do. Inside one, the page IS a photograph --
+   one JPEG per page, stored byte for byte, because /DCTDecode means "these
+   bytes are already a JPEG". So the picture comes out without rendering
+   anything, and this file needs no PDF renderer to read a scanned sheet.
+
+   `bytes` is a byte string, one character per byte. It answers the LARGEST
+   JPEG in the file, or null. Largest and not first: a PDF often carries a
+   small preview of its own page beside the page, and taking that one instead
+   gives a picture where a corner mark is eight pixels across -- which does not
+   fail, it reads the sheet badly.
+
+   What it cannot do is a PDF whose ink was DRAWN rather than photographed --
+   somebody who wrote on the sheet on a screen. That is a renderer, and the
+   phone has one (PDFKit, native) while this file does not. shPdfWhy() says
+   which of the two arrived so the app can say which, instead of "could not
+   read this file". */
+function shPdfJpeg(bytes){
+  var best = null, at = 0, s, e, d, end, one;
+  while (true){
+    at = bytes.indexOf('/DCTDecode', at);
+    if (at < 0) break;
+    at += 10;
+    s = bytes.indexOf('stream', at);
+    if (s < 0) break;
+    e = bytes.indexOf('endstream', s);
+    if (e < 0) break;
+    /* Read between the JPEG's own markers rather than trusting /Length, which
+       is very often an indirect reference this file would have to resolve a
+       cross-reference table to follow. SOI is FF D8 FF and EOI is FF D9. */
+    d = bytes.indexOf('\xff\xd8\xff', s);
+    if (d >= 0 && d < e){
+      end = bytes.lastIndexOf('\xff\xd9', e);
+      if (end > d){
+        one = bytes.slice(d, end + 2);
+        if (!best || one.length > best.length) best = one;
+      }
+    }
+    at = e;
+  }
+  return best;
+}
+/* Which kind of file arrived. Four answers and they are four different
+   sentences to a person, which is the whole reason this is not a boolean. */
+function shPdfWhy(bytes){
+  if (bytes.slice(0, 5) !== '%PDF-') return 'not-pdf';
+  if (bytes.indexOf('/DCTDecode') >= 0) return 'photo';
+  if (bytes.indexOf('/Subtype /Image') >= 0 ||
+      bytes.indexOf('/Subtype/Image') >= 0) return 'packed';
+  return 'drawn';
+}
+
 /* ---- what somebody drew in a box --------------------------------------- */
 /* The ink inside box i, as a mask in the app's own 800 square.
    `ink(px,py)` says whether the picture is ink at that pixel; `warp` is the
@@ -335,37 +388,43 @@ function shBoxInk(warp, ink, i, res){
    the threshold -- a photograph taken at an angle darkens one side of a page,
    and the edge on that side can come through. So: forget a margin of the box,
    then drop every island smaller than `least`.
+   The margin is FORGOTTEN and not used as a reason to drop what touches it.
+   It read "an island that reaches the border is the printed box" once, and the
+   first real sheet somebody wrote on had a letter whose stroke ran out past the
+   edge of its square -- one island, touching, so the whole letter went. 3998
+   pixels found and 3998 thrown away, which reads on the table as a box drawn in
+   and lost rather than a box left empty. The printed edge is at a place we
+   know, because this file drew it; where a stroke happens to end is not.
    It returns what it kept AND what it threw away, because "the box was empty"
    and "the box was nothing but dust" have to be tellable apart. */
 function shClean(m, res, least, edge){
-  var lab = [], i, x, y, out = [], parts = [], q, hd, tl, id, keep = 0, drop = 0;
-  for (i = 0; i < res * res; i++){ lab[i] = -1; out[i] = 0; }
-  for (y = 0; y < res; y++) for (x = 0; x < res; x++){
-    if (!m[y * res + x] || lab[y * res + x] >= 0) continue;
+  var lab = [], i, x, y, w = [], out = [], parts = [], q, hd, id, keep = 0, drop = 0;
+  for (i = 0; i < res * res; i++){ lab[i] = -1; out[i] = 0; w[i] = m[i]; }
+  /* the margin, forgotten. A stroke that crosses it is shortened by this much
+     and no more; the printed edge lives entirely inside it. */
+  for (y = 0; y < res; y++) for (x = 0; x < res; x++)
     if (x < edge || y < edge || x >= res - edge || y >= res - edge){
-      /* an island that touches the border is the printed box, not a letter */
+      if (w[y * res + x]) drop++;
+      w[y * res + x] = 0;
     }
+  for (y = 0; y < res; y++) for (x = 0; x < res; x++){
+    if (!w[y * res + x] || lab[y * res + x] >= 0) continue;
     id = parts.length; q = [y * res + x]; lab[y * res + x] = id;
-    hd = 0; var cells = [], touches = false;
+    hd = 0; var cells = [];
     while (hd < q.length){
       var p = q[hd++], py = Math.floor(p / res), px = p % res;
       cells.push(p);
-      if (px < edge || py < edge || px >= res - edge || py >= res - edge) touches = true;
-      if (px + 1 < res && m[p + 1] && lab[p + 1] < 0){ lab[p + 1] = id; q.push(p + 1); }
-      if (px > 0 && m[p - 1] && lab[p - 1] < 0){ lab[p - 1] = id; q.push(p - 1); }
-      if (py + 1 < res && m[p + res] && lab[p + res] < 0){ lab[p + res] = id; q.push(p + res); }
-      if (py > 0 && m[p - res] && lab[p - res] < 0){ lab[p - res] = id; q.push(p - res); }
+      if (px + 1 < res && w[p + 1] && lab[p + 1] < 0){ lab[p + 1] = id; q.push(p + 1); }
+      if (px > 0 && w[p - 1] && lab[p - 1] < 0){ lab[p - 1] = id; q.push(p - 1); }
+      if (py + 1 < res && w[p + res] && lab[p + res] < 0){ lab[p + res] = id; q.push(p + res); }
+      if (py > 0 && w[p - res] && lab[p - res] < 0){ lab[p - res] = id; q.push(p - res); }
     }
-    parts.push({ cells: cells, touches: touches });
+    parts.push(cells);
   }
   for (i = 0; i < parts.length; i++){
-    /* Kept when it is big enough and does not run along the border. A letter
-       drawn right up to the edge of its box is the one thing this gets wrong,
-       and it errs towards throwing the edge away rather than keeping a frame
-       around every letter. */
-    if (parts[i].cells.length < least || parts[i].touches){ drop += parts[i].cells.length; continue; }
-    keep += parts[i].cells.length;
-    for (var j = 0; j < parts[i].cells.length; j++) out[parts[i].cells[j]] = 1;
+    if (parts[i].length < least){ drop += parts[i].length; continue; }
+    keep += parts[i].length;
+    for (var j = 0; j < parts[i].length; j++) out[parts[i][j]] = 1;
   }
   return { m: out, kept: keep, dropped: drop };
 }

@@ -8,10 +8,30 @@ import { chromium, LAUNCH } from '/home/user/LLLLLLL/tools/browser.mjs';
 const SRC = fs.readFileSync(new URL('./sheet.js', import.meta.url), 'utf8');
 const file = process.argv[2];
 const out  = process.argv[3] || '/tmp/sheet-read.png';
-if (!file){ console.error('使い方: node tools/sheet-spike/read.mjs <画像> [出力.png]'); process.exit(1); }
-const ext = path.extname(file).toLowerCase().replace('.', '') || 'png';
+if (!file){ console.error('使い方: node tools/sheet-spike/read.mjs <画像 or PDF> [出力.png]'); process.exit(1); }
+const raw = fs.readFileSync(file);
+let ext = path.extname(file).toLowerCase().replace('.', '') || 'png';
+let bin = raw;
+if (ext === 'pdf'){
+  /* sheet.js knows how to open one, and it is DOM-free on purpose, so it can
+     be asked here rather than inside the page */
+  const S = new Function(SRC + ';return {shPdfJpeg:shPdfJpeg, shPdfWhy:shPdfWhy};')();
+  const bytes = raw.toString('latin1');
+  const why = S.shPdfWhy(bytes);
+  const jpg = S.shPdfJpeg(bytes);
+  if (!jpg){
+    console.error(why === 'not-pdf' ? '  PDF ではありません' :
+      why === 'drawn'
+        ? '  画面の上で書かれた PDF です。中に写真は入っていないので、\n' +
+          '  ページを画にするものが要ります ── 電話は PDFKit を持っていますが、これは持っていません。'
+        : '  中の絵が JPEG ではない形で仕舞われています。取り出せません。');
+    process.exit(1);
+  }
+  console.log('  PDF から写真を取り出しました: ' + jpg.length + ' バイト');
+  bin = Buffer.from(jpg, 'latin1'); ext = 'jpeg';
+}
 const b64 = 'data:image/' + (ext === 'jpg' ? 'jpeg' : ext) + ';base64,' +
-            fs.readFileSync(file).toString('base64');
+            bin.toString('base64');
 
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{ width:1500, height:1000 } });
