@@ -232,7 +232,6 @@ act('wdDelEx', wdDelEx);
 act('wdDelMn', wdDelMn);
 act('wdDerive', wdDerive);
 act('spAdd', spAdd);
-act('spDrop', spDrop);
 act('ipaToggle', ipaToggle);
 act('openIpaG', openIpaG);
 act('wipeAll', wipeAll);

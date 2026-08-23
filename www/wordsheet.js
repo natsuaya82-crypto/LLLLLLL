@@ -186,10 +186,6 @@ function wdSeqHTML(){
 function spAdd(sym){
   wdSetRd(spPh((wEdit&&wEdit.sp)||[]).join('')+sym); sayOne(sym);
 }
-function spDrop(){
-  var us=spPh((wEdit&&wEdit.sp)||[]);
-  us.pop(); wdSetRd(us.join(''));
-}
 function vSpell(){
   var sp=(wEdit&&wEdit.sp)||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
@@ -198,8 +194,6 @@ function vSpell(){
       '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
         esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
     '<div class="wsub">'+esc(phIpa(spPh(sp)))+'</div>'+
-    '<div class="wctl2"><button' + DO('spDrop') + (sp.length?'':' disabled')+
-      '>'+ICON_BACK+esc(t('glyph.undo'))+'</button></div>'+
     ipaPickHTML('spAdd', [])+
     '</div></div>';
 }

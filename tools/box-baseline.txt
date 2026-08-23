@@ -225,8 +225,6 @@
 .vodot | border-radius
 .wc | border
 .wc | border-radius
-.wctl button,.wctl2 button | border
-.wctl button,.wctl2 button | border-radius
 .weave | border
 .weave | border-radius
 .whfo | border
