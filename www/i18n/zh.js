@@ -1011,7 +1011,30 @@ defLang('zh', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "今日",
-      "day.ask"          : "用你自己的语言？"
+      "day.ask"          : "用你自己的语言？",
+      /* The world's names for the twelve months and the seven days. What
+         the slot is CALLED is the world's; what goes in it is the
+         language's. Sunday first -- that is where a calendar's week
+         starts, and cal.js draws it that way. */
+      "cal.m.1" : "一月",
+      "cal.m.2" : "二月",
+      "cal.m.3" : "三月",
+      "cal.m.4" : "四月",
+      "cal.m.5" : "五月",
+      "cal.m.6" : "六月",
+      "cal.m.7" : "七月",
+      "cal.m.8" : "八月",
+      "cal.m.9" : "九月",
+      "cal.m.10" : "十月",
+      "cal.m.11" : "十一月",
+      "cal.m.12" : "十二月",
+      "cal.d.1" : "星期日",
+      "cal.d.2" : "星期一",
+      "cal.d.3" : "星期二",
+      "cal.d.4" : "星期三",
+      "cal.d.5" : "星期四",
+      "cal.d.6" : "星期五",
+      "cal.d.7" : "星期六"
     }
   };
 })());

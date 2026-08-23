@@ -263,7 +263,7 @@ function html(cases, dark) {
 
   /* ClockFace, number for number. */
   const clock = (num, when) => {
-    const side = SIDE - 16;                       /* .padding(8) */
+    const side = SIDE - 4;                        /* .padding(2) */
     const r = side / 2, cx = SIDE / 2, cy = SIDE / 2;
     const most = Math.max(...[...Array(12)].map((_, i) => places(i + 1, num).length));
     const widest = Math.max(...[...Array(12)].map((_, i) => widthOf(i + 1, num)));
@@ -272,7 +272,13 @@ function html(cases, dark) {
     const wide = Math.max(...hours.map((h) => widthOf(h, num)));
     const room = 2 * (r * 0.78) * Math.sin(Math.PI / hours.length);
     const em = Math.min(side * 0.19, room * 0.82 * 800 / wide);
-    const ring = r - em * 0.85;
+    /* The same two lines ClockWidget.swift has, and they have to stay the
+       same two: a numeral is centred on the ring, so what must fit outside it
+       is half the numeral's HEIGHT at twelve and six and half its WIDTH at
+       three and nine. Copying only one of them would make this picture a
+       drawing of a clock the phone does not have. */
+    const halfW = em * wide / 800 / 2;
+    const ring = r - Math.max(em * 0.85, halfW);
     const at = (h) => {
       const a = (h / 12) * 2 * Math.PI - Math.PI / 2;
       return [cx + ring * Math.cos(a), cy + ring * Math.sin(a)];

@@ -922,7 +922,30 @@ defLang('en', (function(){
          from the server, one row a day, in every interface language. */
       'day.k'  : 'Today',
       'day.ask'         : 'In your own language?',
-      'read.sep'        : "  "
+      'read.sep'        : "  ",
+      /* The world's names for the twelve months and the seven days. What
+         the slot is CALLED is the world's; what goes in it is the
+         language's. Sunday first -- that is where a calendar's week
+         starts, and cal.js draws it that way. */
+      "cal.m.1" : "January",
+      "cal.m.2" : "February",
+      "cal.m.3" : "March",
+      "cal.m.4" : "April",
+      "cal.m.5" : "May",
+      "cal.m.6" : "June",
+      "cal.m.7" : "July",
+      "cal.m.8" : "August",
+      "cal.m.9" : "September",
+      "cal.m.10" : "October",
+      "cal.m.11" : "November",
+      "cal.m.12" : "December",
+      "cal.d.1" : "Sunday",
+      "cal.d.2" : "Monday",
+      "cal.d.3" : "Tuesday",
+      "cal.d.4" : "Wednesday",
+      "cal.d.5" : "Thursday",
+      "cal.d.6" : "Friday",
+      "cal.d.7" : "Saturday"
     }
   };
 })());

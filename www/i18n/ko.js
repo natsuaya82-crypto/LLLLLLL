@@ -1181,7 +1181,30 @@ defLang('ko', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "오늘",
-      "day.ask"          : "당신의 언어로?"
+      "day.ask"          : "당신의 언어로?",
+      /* The world's names for the twelve months and the seven days. What
+         the slot is CALLED is the world's; what goes in it is the
+         language's. Sunday first -- that is where a calendar's week
+         starts, and cal.js draws it that way. */
+      "cal.m.1" : "1월",
+      "cal.m.2" : "2월",
+      "cal.m.3" : "3월",
+      "cal.m.4" : "4월",
+      "cal.m.5" : "5월",
+      "cal.m.6" : "6월",
+      "cal.m.7" : "7월",
+      "cal.m.8" : "8월",
+      "cal.m.9" : "9월",
+      "cal.m.10" : "10월",
+      "cal.m.11" : "11월",
+      "cal.m.12" : "12월",
+      "cal.d.1" : "일요일",
+      "cal.d.2" : "월요일",
+      "cal.d.3" : "화요일",
+      "cal.d.4" : "수요일",
+      "cal.d.5" : "목요일",
+      "cal.d.6" : "금요일",
+      "cal.d.7" : "토요일"
     }
   };
 })());

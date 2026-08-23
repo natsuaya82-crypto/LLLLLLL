@@ -1019,7 +1019,30 @@ defLang('ru', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Сегодня",
-      "day.ask"          : "На вашем языке?"
+      "day.ask"          : "На вашем языке?",
+      /* The world's names for the twelve months and the seven days. What
+         the slot is CALLED is the world's; what goes in it is the
+         language's. Sunday first -- that is where a calendar's week
+         starts, and cal.js draws it that way. */
+      "cal.m.1" : "Январь",
+      "cal.m.2" : "Февраль",
+      "cal.m.3" : "Март",
+      "cal.m.4" : "Апрель",
+      "cal.m.5" : "Май",
+      "cal.m.6" : "Июнь",
+      "cal.m.7" : "Июль",
+      "cal.m.8" : "Август",
+      "cal.m.9" : "Сентябрь",
+      "cal.m.10" : "Октябрь",
+      "cal.m.11" : "Ноябрь",
+      "cal.m.12" : "Декабрь",
+      "cal.d.1" : "Воскресенье",
+      "cal.d.2" : "Понедельник",
+      "cal.d.3" : "Вторник",
+      "cal.d.4" : "Среда",
+      "cal.d.5" : "Четверг",
+      "cal.d.6" : "Пятница",
+      "cal.d.7" : "Суббота"
     }
   };
 })());

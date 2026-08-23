@@ -114,7 +114,21 @@ struct ClockFace: View {
       let widest = hours.map { boxWidth($0) }.max() ?? 800
       let room = 2 * (r * 0.78) * sin(.pi / Double(n))
       let em = min(side * 0.19, room * 0.82 * 800 / CGFloat(widest))
-      let ring = r - em * 0.85
+      /* Where the ring sits, and it is the numeral's WIDTH that decides it as
+         often as its height.
+
+         A numeral is drawn centred on the ring, so what has to fit between the
+         ring and the edge is half of it -- half its height at twelve and six,
+         half its WIDTH at three and nine. It was half the height in both
+         places (em * 0.85), and a numeral of four narrow signs is far wider
+         than it is tall: at nine o'clock its left edge sat outside the circle,
+         which is what the eight points of padding were there to hide.
+         This is the change the note under .padding said was wanted.
+
+         em is the box unit; a numeral's width in points is em * its width in
+         box units / 800, which is what boxWidth() answers in. */
+      let halfW = em * CGFloat(widest) / 800 / 2
+      let ring = r - max(em * 0.85, halfW)
 
       ZStack {
         ForEach(hours, id: \.self) { h in
@@ -143,20 +157,18 @@ struct ClockFace: View {
           .position(centre)
       }
     }
-    /* Eight, and it stays eight. Taking it to two was tried and put back:
-       a numeral is drawn CENTRED on the ring and is as wide as it is long, so
-       a four-sign one in base two already reaches past the circle -- its left
-       edge sits at r + 1.15em from the middle, not r. The eight was what kept
-       that inside the widget, and without it the nine o'clock numeral is cut
-       off by the edge. The room this change wins comes from iOS's own margin
-       instead -- widgetRoom() -- which is the one that was actually eating
-       the widget.
+    /* Two, and it is two because the overflow it was hiding is fixed above.
+       Eight was here to keep a wide numeral inside the circle -- the nine
+       o'clock one, in a base whose numerals are four signs long -- and the
+       ring now pulls those in by their own half-width instead. What is left
+       is a hair of breathing room, not a fix.
 
-       The overflow itself is real and is not fixed here: ring could take the
-       numeral's half-WIDTH into account rather than its height alone, which
-       would pull wide numerals in far enough to drop this padding. That is a
-       change to how the face is laid out and it wants a phone. */
-    .padding(8)
+       「時計はもっと幅広く使って欲しい」 iOS 17's own margin is the other
+       sixteen points on each side and it is NOT taken back here: the modifier
+       that does it (contentMarginsDisabled) could not be wrapped in an
+       availability check that compiles, and build #89 is what said so.
+       WidgetGround.swift carries the error. */
+    .padding(2)
   }
 
   private func onRing(centre: CGPoint, r: CGFloat, hour: Double) -> CGPoint {

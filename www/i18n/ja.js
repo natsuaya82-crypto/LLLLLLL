@@ -922,7 +922,30 @@ defLang('ja', (function(){
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "お題",
-      "day.ask"          : "自分の言語で"
+      "day.ask"          : "自分の言語で",
+      /* The world's names for the twelve months and the seven days. What
+         the slot is CALLED is the world's; what goes in it is the
+         language's. Sunday first -- that is where a calendar's week
+         starts, and cal.js draws it that way. */
+      "cal.m.1" : "1月",
+      "cal.m.2" : "2月",
+      "cal.m.3" : "3月",
+      "cal.m.4" : "4月",
+      "cal.m.5" : "5月",
+      "cal.m.6" : "6月",
+      "cal.m.7" : "7月",
+      "cal.m.8" : "8月",
+      "cal.m.9" : "9月",
+      "cal.m.10" : "10月",
+      "cal.m.11" : "11月",
+      "cal.m.12" : "12月",
+      "cal.d.1" : "日曜",
+      "cal.d.2" : "月曜",
+      "cal.d.3" : "火曜",
+      "cal.d.4" : "水曜",
+      "cal.d.5" : "木曜",
+      "cal.d.6" : "金曜",
+      "cal.d.7" : "土曜"
     }
   };
 })());

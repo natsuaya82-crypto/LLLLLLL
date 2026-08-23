@@ -41,20 +41,39 @@ var CAL_WEEK=7;
 function calMonths(){ return CAL_MONTHS; }
 function calWeek(){ return CAL_WEEK; }
 
-/* One slot per month, one per day of the week, named by their number the way
-   the counting stage names its own. A month called "3" reads oddly on its own
-   and is the only honest label: the app does not know what anybody's third
-   month is for, and putting "March" there would be this app deciding whose
-   calendar it is.
+/* One slot per month, one per day of the week, and each is called what the
+   world calls it: January, Sunday. Day one is SUNDAY, because that is where a
+   calendar's week starts.
 
-   Day one is SUNDAY, because that is where a calendar's week starts. */
-function calSlots(n){
+   It said "1" and "3" before, under a comment arguing that a number was the
+   only honest label -- the app does not know what anybody's third month is
+   FOR, so writing March there would be this app deciding whose calendar it
+   is. That was true of the design where a language set its own week and its
+   own year. The head of this file took that design away
+   (「言語内で週の概念作ろうが、ウィジェットに表示するなら世界の概念でやるだろ」)
+   and the comment was not taken away with it: if the structure is the
+   world's, the third month IS March, and a screen listing 1 to 12 with no
+   other clue is a screen nobody can answer.
+   「1ってなに？1月 januaryとかでしょ」「曜日もサンデーからちゃんと示してよ」
+
+   What the slot is CALLED is the world's; what goes in it is the language's.
+   Nothing about the words made here changes -- not how many, not their order,
+   not where they are stored. This is the label above the empty space. */
+/* Written out twice rather than through one function taking the prefix,
+   because a prefix handed in as an argument is a key nobody can find: the
+   i18n check reads the source for what a screen asks for, and `t(pre+i)`
+   names nothing. It said so about all nineteen of these the moment they were
+   written that way, which is the check doing its job. */
+function calMonthSlots(){
   var out=[], i;
-  for(i=1;i<=n;i++) out.push(numLabel(i));
+  for(i=1;i<=CAL_MONTHS;i++) out.push(t('cal.m.'+i));
   return out;
 }
-function calMonthSlots(){ return calSlots(CAL_MONTHS); }
-function calWeekSlots(){ return calSlots(CAL_WEEK); }
+function calWeekSlots(){
+  var out=[], i;
+  for(i=1;i<=CAL_WEEK;i++) out.push(t('cal.d.'+i));
+  return out;
+}
 
 /* Which month, and which day of the week -- both asked of the phone.
    calMonthOf() used to cut the year into equal parts and calDayOf() used to
