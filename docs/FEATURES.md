@@ -483,11 +483,31 @@ Decided:
   is `docs/PAID_FEATURES.md`'s rule, not an exception to it -- fewer buttons,
   never fewer words.
 
+**What a box is called is just text, and it binds to nothing until the drawing
+comes back.** 「アプリ内で打ち込みたい 20 字を決めます。カンマまでで区切ります。
+7,2,25, みたいに。で、文字を取り入れるときにそれが勝手に 7 がこの文字ねってなる」
+
+Twenty names, comma separated, typed in the app. Nothing is created and nothing
+is looked up when the sheet is made -- a name is a label on a box. When the
+drawing comes back, box `7`'s drawing becomes the letter `7`. That is a third
+answer to a question written here as a choice between two, and it is better
+than either: letters still only ever come into being in one place, and a sheet
+printed and never drawn on leaves nothing behind.
+
+**Duplicates are allowed** -- `a,a,a` is three boxes -- because this is Pro, and
+Pro is where a letter may be added at all.
+
 Open, and not to be guessed at:
 
-- Whether typing a name on the sheet screen **creates** the letter or only picks
-  one that exists. Creating would make a second place that adds letters; today
-  that is `can('letters')` and it is one place.
+- **How a returned sheet says which box was which.** This falls straight out of
+  the two decisions above and is the one hole in them. The name is printed as a
+  picture, so it cannot be read back off a photograph; the corner marks give
+  "third row, second column" and not "7"; and once duplicates are allowed, the
+  ORDER of the boxes is the only thing carrying the answer. So the sheet needs
+  an identity. The lightest form is one number printed on the page, with the app
+  remembering that sheet 4 was `7,2,25,...` -- which is enough, and which does
+  not survive being made on one phone and imported on another. A small code per
+  box survives that and costs more ink. The owner's, not a session's.
 - Whether the letters that come in are the same 28 slots (when what was drawn
   IS a-z) or a series of their own.
 - The price, and which plan.
