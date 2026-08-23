@@ -2488,7 +2488,10 @@ html[data-script="on"] .st-seq{font-family:var(--face-script);letter-spacing:0}
 .btn.obauto{margin-top:10px}
 .obhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 /* --- onboarding: the letter, the escape row, the borrowed scripts ------- */
-.oblang{background:none;border:1px solid var(--line);border-radius:10px;color:var(--txs);
+/* 枠も角丸も無い。押せるものは色で押せると分かる ── CLAUDE.md の
+   「NO ROUNDED BOX」で、.btn.ghost の class コメントが言っているのと同じ
+   こと。枠があったころは、扉の右上でここだけが箱だった。 */
+.oblang{background:none;border:0;color:var(--gold);
         font:inherit;font-size:.86rem;padding:12px 10px;min-height:44px;
         -webkit-appearance:none;appearance:none;max-width:118px;
         /* the names of ten languages at 13px, in a bar that also holds a back
