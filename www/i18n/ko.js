@@ -1179,7 +1179,11 @@ defLang('ko', (function(){
       "csv.full"        : "{0}개 가져옴, {1}개 만듦 — Free가 가득 찼습니다",
       "toast.exported"   : "내보냈어요",
       "toast.exportfail" : "내보내지 못했어요",
-      "read.sep"         : "　"
+      "read.sep"         : "　",
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      "day.date"         : "{0}월 {1}일",
+      "day.ask"          : "당신의 언어로?"
     }
   };
 })());

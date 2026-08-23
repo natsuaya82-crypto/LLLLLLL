@@ -1011,7 +1011,11 @@ defLang('pt', (function(){
       "csv.full"        : "{0} importadas, {1} criadas — o Free está cheio",
       "toast.exported"   : "Exportado",
       "toast.exportfail" : "Não foi possível exportar",
-      "read.sep"         : "  "
+      "read.sep"         : "  ",
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      "day.date"         : "{1}/{0}",
+      "day.ask"          : "Na sua própria língua?"
     }
   };
 })());

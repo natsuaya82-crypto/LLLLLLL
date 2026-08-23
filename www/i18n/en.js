@@ -920,6 +920,10 @@ defLang('en', (function(){
       'toast.exportfail': "Could not export",
       /* voice errors */
       /* how IPA and reading are joined when both are shown */
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      'day.date'        : '{0}/{1}',
+      'day.ask'         : 'In your own language?',
       'read.sep'        : "  "
     }
   };

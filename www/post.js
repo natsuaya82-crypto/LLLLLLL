@@ -135,7 +135,7 @@ function postGlossLine(gl){
 
 /* ---- writing one -------------------------------------------------------- */
 var PW={ln:'', mn:''};
-function pwBlank(){ return {ln:'', mn:'', to:'', pics:[]}; }
+function pwBlank(){ return {ln:'', mn:'', to:'', pics:[], pr:0}; }
 /* ---- who a post is for -------------------------------------------------
    「自分専用の日記みたいなポストとみんなに公開するポストカード選べるように」
    「誰に向けて後悔するかでしょ。自分or公開で」「公開（推奨）」
@@ -183,7 +183,23 @@ function pwSidePaint(){
 }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
-function openPost(){
+function openPost(from){
+  /* Opened from the day's sentence, and that is the only argument this takes.
+     The meaning arrives already written and cannot be changed, which is the
+     whole of what makes the day work: two hundred posts mean the same thing,
+     so two hundred alphabets are readable at once. 「消せないようにしよう
+     そこからのやつは。じゃないと意味ないもん」
+
+     What travels is PW.pr -- the row's id -- not the words. The words are in
+     PW.mn so somebody can see what they are answering; the LINK is a column
+     on the post (schema.sql § asked), so it cannot be edited away and every
+     answer to one day is one query rather than a search for a piece of text.
+
+     Set once, and only on a composer that has nothing in it: pressing the row
+     with a half-written post open would otherwise throw away what was there. */
+  if(from==='day' && DAY && !PW.pr && !PW.ln && !PW.mn){
+    PW.pr=DAY.id; PW.mn=daySay();
+  }
   /* A post has a writer. Nothing on the timeline is reachable signed out --
      snsLocked() is what the three tabs answer with -- but a form is a route
      and a route can be come back to, so the composer says so itself rather
@@ -246,7 +262,7 @@ draftsRead();
    sending does. */
 function draftKeep(){
   if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.b64)){ toast(t('post.none')); return; }
-  DRAFTS.push({at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to,
+  DRAFTS.push({at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to, pr:PW.pr||0,
                pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv});
   draftsSave();
   PW=pwBlank();
@@ -263,7 +279,7 @@ function draftOpen(i){
   draftsSave();
   if(here().r==='drafts') back();
   PW=pwBlank();
-  PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||'';
+  PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||''; PW.pr=d.pr||0;
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
   if(d.vo) PW.vo=d.vo;
   openPost();
@@ -716,8 +732,12 @@ function pwHTML(){
       '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
+      /* Read-only when it is the day's sentence. Not disabled: a disabled
+         field is greyed out and unselectable, and this one is the thing you
+         are reading while you write. */
       '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
-        'placeholder="'+esc(pwMn() || t('post.mn'))+'"' +
+        (PW.pr? ' readonly' : '')+
+        ' placeholder="'+esc(pwMn() || t('post.mn'))+'"' +
         IN('pwSetMn') + '>'+
       /* Editing is the line and the meaning. There is nothing to add a
          photograph or a voice to -- the post already has whatever it has --
@@ -773,7 +793,11 @@ function pwLeftPaint(){
   var e=document.getElementById('pw-left');
   if(e) e.innerHTML=pwLeftHTML();
 }
-function pwSetMn(v){ PW.mn=String(v||''); pwFresh(); }
+/* `readonly` is what the field wears; this is what the field cannot be
+   talked out of. The attribute is a rendering and a rendering can be gone --
+   a screen rebuilt from a draft, a browser that ignores it -- and the day's
+   meaning being editable in ANY of those is the day not working. */
+function pwSetMn(v){ if(PW.pr) return; PW.mn=String(v||''); pwFresh(); }
 /* Posting. The meaning is what was typed, or the gloss run together if
    nothing was -- never empty, because a line nobody can read is not a post. */
 /* Whether there is anything to post. It was: a line, or nothing. So a
@@ -850,6 +874,7 @@ function pwSendWith(ln, pics, vo){
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
             ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
             mn:String(PW.mn||'').trim() || postGlossLine(gl),
+            pr:PW.pr||0,
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
      are what is refused -- never the post, and nothing already written is

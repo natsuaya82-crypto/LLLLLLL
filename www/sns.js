@@ -127,6 +127,10 @@ var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
 function vFeed(){
   if(!netSignedIn()) return snsLocked('feed');
   snsPull();
+  /* Beside the feed's own pull and for the same reason: the moment somebody
+     is looking at a timeline is the moment the network is known to be
+     working. Once a session -- dayPull() returns immediately once it has one. */
+  dayPull();
   var list=snsList();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
@@ -142,12 +146,7 @@ function vFeed(){
        not see it has no way to post at all. 「ホームからもツイートできるように」
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
-    (NET_BANNED? '' :
-      '<button class="wrow"' + DO('openPost') + '>'+
-      '<span class="pav">'+
-        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
-    '</button>')+
+    (NET_BANNED? '' : dayRow())+
     /* Under the row you write in and directly on top of the list they choose
        between, because that is what they are about. */
     snsTabs()+
@@ -201,6 +200,60 @@ function vFeed(){
    Signed out there is nobody to post as; frozen, the composer would refuse
    -- and a button that cannot do its one thing is worse than no button: it
    is the app asking somebody to find out. */
+/* ---- the day's sentence -------------------------------------------------
+   One sentence a day, put up by us, that anybody may answer in their own
+   language. It is the loop this whole thing turns on: everyone already knows
+   what the day's sentence means, so a feed of two hundred unreadable scripts
+   becomes two hundred readable ones, and nobody has to learn anything to read
+   it. The words are schema.sql's, where the table was designed and then sat
+   unused; this is the half that shows it.
+
+   It stands where the row you write in stood, because it IS that row -- the
+   round button is one floating thing over a corner and somebody who does not
+   see it has no way to post at all 「ホームからもツイートできるように」. When
+   there is no sentence -- offline, or a day the writer missed -- it is that
+   row again, unchanged. A screen that half-works is a bug; a screen that
+   goes back to what it was is not. */
+var DAY=null, dayPulling=false;
+function dayPull(){
+  if(dayPulling || DAY) return;
+  dayPulling=true;
+  netDay(function(p){
+    dayPulling=false;
+    if(!p) return;
+    DAY=p;
+    render();
+  });
+}
+/* In the person's own language, and the English one under it. A Japanese
+   speaker reading an English prompt is doing two translations and only the
+   second one is the game -- owner, 2026-08-23. */
+function daySay(){
+  var m=(DAY && DAY.says) || {};
+  return String(m[uiLang()] || (DAY && DAY.text) || '');
+}
+function dayRow(){
+  var say=daySay(), d;
+  if(!say){
+    return '<button class="wrow"' + DO('openPost') + '>'+
+      '<span class="pav">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
+    '</button>';
+  }
+  /* The date off the row rather than off this phone's clock: the row says
+     which day it is the sentence for, and that is decided in California by
+     whatever wrote it. Split by hand because `on_day` is `YYYY-MM-DD` and
+     Date parsing of it is a timezone question all over again. */
+  d=String(DAY.on_day||'').split('-');
+  return '<button class="dayrow"' + DO('openPost', ["day"]) + '>'+
+    '<span class="dayq">'+
+      (d.length===3? '<span class="dayd">'+
+         esc(t('day.date', String(+d[1]), String(+d[2])))+'</span> ' : '')+
+      esc(say)+'</span>'+
+    '<span class="daya">'+esc(t('day.ask'))+'</span>'+
+  '</button>';
+}
 function snsFab(){
   if(!netSignedIn() || NET_BANNED) return '';
   return '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+

@@ -66,6 +66,12 @@ export function seed(){
   SESS = { at: jwt({ sub:'u', email:'aya@example.com',
                      app_metadata:{ provider:'email' } }),
            rt:'r', uid:'u', anon:false };
+  /* No sentence of the day, unless a face puts one there. It is server data
+     and there is no network in any of these checks, so null is what the app
+     really has -- and clearing it HERE rather than at the end of the two
+     faces that set it is what keeps shot.mjs's render() from photographing
+     the screen a face tidied back to. */
+  DAY = null;
   /* anon:false is the half that matters. There is a session from the first
      launch now whether or not anybody has said who they are, so a fixture
      that only set `rt` would be walking the app as somebody with no name --
@@ -286,6 +292,26 @@ export function halfDone(){
     ['the timeline, signed out', () => { const was = SESS; SESS = null;
                                          window.route = 'feed'; NAV = [{ r:'feed' }];
                                          const h = vFeed(); SESS = was; return h; }],
+    /* The day's sentence is up. Without this, dayRow() is never rendered by
+       anything: DAY is null until a fetch answers, and no check has a network.
+       Both faces of it are here, because the second one is the whole point --
+       the meaning arrives written and cannot be changed. */
+    ['the day\'s sentence', () => {
+       DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+               says: { en: 'It is unbearably hot today.',
+                       ja: '今日はめちゃくちゃ暑い。' } };
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       /* Left where it is put, like every other entry here leaves ob.step:
+          shot.mjs calls render() afterwards, so a face that tidies up
+          photographs the screen it tidied back to. seed() is what clears
+          DAY, once, before each. */
+       return vFeed(); }],
+    ['answering the day\'s sentence', () => {
+       DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+               says: { en: 'It is unbearably hot today.',
+                       ja: '今日はめちゃくちゃ暑い。' } };
+       PW = pwBlank(); openPost('day');
+       return FORM.html; }],
     ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
                                       return FORM.html; }],
     /* The field for one more of something is not on the sheet until the `+`

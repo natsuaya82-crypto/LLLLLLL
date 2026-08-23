@@ -1009,7 +1009,11 @@ defLang('zh', (function(){
       "csv.full"        : "已导入 {0}，已创建 {1} — Free 已满",
       "toast.exported"   : "已导出",
       "toast.exportfail" : "导出失败",
-      "read.sep"         : "　"
+      "read.sep"         : "　",
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      "day.date"         : "{0}月{1}日",
+      "day.ask"          : "用你自己的语言？"
     }
   };
 })());

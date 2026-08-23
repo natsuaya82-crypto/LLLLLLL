@@ -197,9 +197,27 @@ create index if not exists publication_language_idx on publication(language, at 
 create table if not exists prompt (
   id      bigint generated always as identity primary key,
   on_day  date not null unique,        -- one a day, and the unique says so
-  text    text not null,               -- English, and translated on the device
+  text    text not null,               -- English. The canonical one, and the
+                                       -- fallback when `says` has no entry
   created_at timestamptz not null default now()
 );
+-- The same sentence in each interface language:
+--   {"en":"It is unbearably hot today.","ja":"今日はめちゃくちゃ暑い。", ...}
+--
+-- This column arrived after the table did, and it is ADDED rather than
+-- replacing `text`. The line above used to say "English, and translated on
+-- the device", which was a true description of a design where everybody read
+-- the same English sentence and the translating was the activity. The owner
+-- decided otherwise on 2026-08-23: the day's sentence is shown in the
+-- person's own interface language, because a Japanese speaker reading an
+-- English prompt is doing two translations, and only the second one is the
+-- game. `text` stays, so nothing that was written is lost and a row with no
+-- `says` still shows something.
+--
+-- `if not exists` because this file is run again over a database that
+-- already has the table -- the same reason every create and every policy
+-- above is written to be re-runnable.
+alter table prompt add column if not exists says jsonb not null default '{}'::jsonb;
 
 -- ---- said ------------------------------------------------------------------
 -- A post is a thing somebody said, once. body holds the runs of text and the

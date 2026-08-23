@@ -1550,6 +1550,21 @@ a.set{text-decoration:none}
 .wrt{flex:1 1 auto;min-width:0;color:var(--txm);font-size:1rem;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrow:active{opacity:.6}
+/* The day's sentence, where the row you write in stands. Two lines and no
+   box: the sentence, with the date in front of it, and under that the one
+   question the screen is asking. `border-bottom` and nothing else -- a single
+   side is the shape the field rules already use 「かくまるみたいなのでくくる
+   のやめて欲しい。基本下線だけ」 and it is what .wrow wears one line above. */
+.dayrow{display:block;width:calc(100% + 48px);margin:0 -24px;padding:14px 24px;
+        border:0;border-bottom:1px solid var(--line);background:none;
+        text-align:left;font:inherit;color:inherit}
+.dayrow:active{opacity:.6}
+.dayq{display:block;font-size:1.02rem;line-height:1.55}
+/* The date is the quiet half. It says which day the sentence is for, which
+   is not always this phone's today -- the row comes from California. */
+.dayd{color:var(--txm)}
+.daya{display:block;margin-top:6px;color:var(--gold);font-size:.9rem;
+      font-weight:600}
 /* What a reply is answering, above what you are writing. The same row a
    timeline draws, quieter and with nothing on it to press. */
 .pwq{display:flex;gap:12px;margin:2px 0 14px;padding:12px 14px;
