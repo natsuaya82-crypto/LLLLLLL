@@ -1970,7 +1970,10 @@ function render(){
   /* Onboarding returns before the mount hooks at the foot of this function,
      so the editor it embeds has to be mounted here or its canvas stays blank.
      Every editor action ends in render(), which lands back on this line. */
-  if(!SET.done){
+  /* The tour is the one part of the onboarding that is not a face of vOb():
+     it is the app, dimmed, with one thing lit. So it falls through to the
+     ordinary render below and puts the grey on at the end of it. */
+  if(!SET.done && !obTourOn()){
     /* onboarding is one screen with several faces; moving between them
        animates, tapping something on one of them does not */
     app.setAttribute('data-fresh', (RENDERED==='ob:'+ob.step) ? '0' : '1');
@@ -2040,4 +2043,14 @@ function render(){
   kbDragMount();
   /* and a key, wherever the keyboard is, can be flicked off */
   if(route==='form') formMount();
+  /* and, if the walk through the app is on, everything but one thing goes
+     grey. Last, because it lights something the lines above have just drawn:
+     the grey is put over the finished screen and the lit thing is raised out
+     of it. obTourAt() reads where the app landed, so pressing the lit thing
+     is what moves the tour on -- it does what it really does. */
+  if(!SET.done){
+    obTourAt();
+    app.insertAdjacentHTML('beforeend', obTourHTML());
+    obTourMount();
+  }
 }

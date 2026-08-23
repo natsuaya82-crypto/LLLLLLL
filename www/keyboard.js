@@ -993,8 +993,13 @@ function kbHTML(sel, ro){
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
       at+=kbU(key.w);
+      /* A letter key says which letter it is. Nothing on the keyboard needed
+         that until the onboarding had to point at one and say the letter
+         just drawn went there -- and a key is drawn from a shape, so there
+         was no other way to tell one from another. */
       out+= ro
-        ? '<span class="'+cls+'" style="flex:'+(key.w||1)+'">'+kbFlicks(key, false)+
+        ? '<span class="'+cls+'"'+(key.k==='lt'? ' data-lt="'+esc(key.v)+'"' : '')+
+          ' style="flex:'+(key.w||1)+'">'+kbFlicks(key, false)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
           'style="grid-column:span '+kbU(key.w)+'" '+

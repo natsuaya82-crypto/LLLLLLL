@@ -92,12 +92,171 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    below is the one place making happens without a name on the account, and
    step 7 is where the account is asked for.
 
-   Steps 3 to 6 are not built yet. What is here is the three that were, with
-   the door back at the end of them. */
+   Steps 3 to 6 are not screens of this file. They are the app itself, walked
+   with everything but one thing greyed out -- OB_TOUR_STOPS below. The dots
+   count the four SCREENS the onboarding has (draw, alphabet, name, door);
+   the walk is not one of them, because while it is running the app is
+   showing its own screens and vOb() is not on the page at all. */
 var OB_STEPS=4;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
    chances to renumber three of them. */
-var OB_DRAW=0, OB_ROM=1, OB_NAME=2, OB_IN=3;
+var OB_DRAW=0, OB_ROM=1, OB_TOUR=2, OB_NAME=3, OB_IN=4;
+
+/* ---- the walk through the app itself -----------------------------------
+   Steps three to six of the owner's order are not screens of their own. They
+   are THE APP, with everything but one thing greyed out and a line saying to
+   press that one thing.
+   「本物の画面だよー！ここをタップしてねみたいにして他はグレーアウトして
+     進めるあのゲームとかにありがちなオンボーディングにしたいなーって」
+
+   Each stop is a route, the thing on it to press, and what to say. The tour
+   does not drive the app -- the app drives the tour: pressing the lit thing
+   does what it really does, which lands on the next stop's route, and
+   obTourAt() notices and moves on. So nothing here is a mock of a screen and
+   nothing can get out of step with one.
+
+   The last stop lights nothing: it is the sentence at the end, and its
+   button is the only thing the tour itself owns. */
+var OB_TOUR_STOPS=[
+  { r:'build', a:'', go:'kb', say:'ob.tour.build' },
+  /* The free plan has no LIST of keyboards -- board 0 is the keyboard and the
+     chapter opens straight onto it -- so the owner's fourth and fifth stops
+     are one screen here, and the thing lit on it is the key the letter just
+     drawn ended up on. */
+  { r:'kb',    a:'', lt:1,     say:'ob.tour.kb1' },
+  { r:'kb',    a:'',           say:'ob.tour.enjoy' }
+];
+/* Where the tour has got to. Where you are standing, so viewReset() drops it. */
+var obTour=0;
+function obTourOn(){ return !SET.done && ob.step===OB_TOUR; }
+function obTourStop(){ return OB_TOUR_STOPS[Math.min(obTour, OB_TOUR_STOPS.length-1)]; }
+/* The route the tour wants to be on. render() sends the app there rather than
+   drawing a picture of it. */
+function obTourGo(){
+  var st=obTourStop();
+  if(here().r!==st.r || String(here().a||'')!==st.a) go(st.r, st.a);
+  else render();
+}
+/* The app moved. If where it landed is the NEXT stop, the tour moves with it;
+   the person did the thing rather than being shown it. */
+function obTourAt(){
+  var n=OB_TOUR_STOPS[obTour+1], c=obTourStop();
+  if(!n) return;
+  /* Only a MOVE advances it. Two stops in a row can be the same screen -- the
+     keyboard, then the sentence over it -- and a route that has not changed
+     is not somebody having done the thing. Those advance on their own button. */
+  if(n.r===c.r && n.a===c.a) return;
+  if(here().r===n.r && String(here().a||'')===n.a){ obTour++; }
+}
+/* Done with the walk through the app. */
+function obTourDone(){ obTour=0; obGo(OB_NAME); }
+/* The grey and the one bright thing.
+
+   .sbg is the sheet's own backdrop -- fixed, over everything, and it swallows
+   every press that is not on the lit thing. .toast is the line the app
+   already pins above the tab bar. Both are borrowed rather than written,
+   because www/index.html belongs to another session today; when it is free
+   these want two classes of their own and a cut-out rather than a raise. */
+function obTourHTML(){
+  var st=obTourStop(), last=!OB_TOUR_STOPS[obTour+1], i, out='';
+  /* The pad's box is written HERE rather than at mount, and that is not a
+     tidy-up: a check renders a screen and measures it without ever calling
+     render(), so a pad whose size arrives at mount is a button of nothing to
+     anybody but the app. What is in the markup is what a screen IS.
+     The lit thing is already on the page by the time this runs -- render()
+     inserts the screen and then adds the walk to the end of it. */
+  var padEl=st.lt? obTourFind(st) : null, padB=padEl? padEl.getBoundingClientRect() : null;
+  /* FOUR panes of grey with a hole between them, not one pane with the lit
+     thing lifted through it. Lifting was tried and does not work: .view
+     animates on arrival, an animation makes a stacking context, and a
+     z-index inside one cannot climb out of it -- so the lit thing stayed
+     under the grey and the whole screen was flat.
+     Four rectangles have no such argument to lose. What is not covered is
+     bright, is tappable, and needs nothing from the stylesheet but the grey
+     itself, which .sbg already is. */
+  for(i=0;i<4;i++) out+='<div class="sbg on" data-dim="'+i+'"></div>';
+  return out+
+    /* A lit thing that does something of its own is pressed for real -- the
+       row into the keyboard chapter goes there, and going there is what moves
+       the tour on. A lit thing that does nothing (the free keyboard's keys are
+       spans, because there is no editor behind them) gets this: the tour's own
+       tap target, laid over it at mount.
+
+       It is in the MARKUP rather than written onto the element at mount, and
+       that is not a detail: act-check reads what a screen RETURNS, so a name
+       set on the live DOM is a name nothing can check. */
+    /* Only when there is something to lay it over. The pad is sized at mount
+       from the lit thing's box, so a pad with no lit thing keeps the size in
+       this attribute -- which is nothing, plus a button's own border, which
+       is 4x4 and is a button four pixels across. press-check found one: a
+       press can leave the app on a screen the key is not on while the stop
+       still asks for it. No target, no pad. */
+    (padB? '<button class="obpad"' + DO('obTourNext') +
+              ' style="position:fixed;background:none;z-index:42;'+
+              'left:'+Math.round(padB.left)+'px;top:'+Math.round(padB.top)+'px;'+
+              'width:'+Math.round(padB.width)+'px;height:'+Math.round(padB.height)+'px"'+
+              ' aria-label="'+esc(t(st.say))+'"></button>' : '')+
+    '<div class="toast on obtoast" style="pointer-events:auto">'+esc(t(st.say))+
+      (last? ' <button class="obskip"' + DO('obTourDone') + '>'+esc(t('ob.next'))+'</button>' : '')+
+    '</div>';
+}
+/* Which thing on the screen is the lit one. A stop names it one of two ways
+   and both are read here: a plain CSS selector where the thing has a class of
+   its own, and a ROUTE where it is a row that navigates -- because a row's
+   argument is JSON inside an attribute, and matching that with a selector is
+   matching somebody else's quoting. Reading the attribute and comparing what
+   is in it cannot be broken by an escape. */
+function obTourFind(st){
+  if(st.spot) return document.querySelector(st.spot);
+  /* The key the letter just drawn is on. kbHTML() puts the letter's id on
+     every letter key, so this is the one place that has to agree with it. */
+  if(st.lt) return ob.lid? document.querySelector('#kb .kbk[data-lt="'+ob.lid+'"]') : null;
+  if(!st.go) return null;
+  var els=document.querySelectorAll('[data-do="go"]'), i, a;
+  for(i=0;i<els.length;i++){
+    try{ a=JSON.parse(els[i].getAttribute('data-a')||'[]'); }catch(e){ a=[]; }
+    if(a[0]===st.go) return els[i];
+  }
+  return null;
+}
+/* The lit thing is raised ABOVE the backdrop rather than cut out of it: one
+   line of geometry, no colour, no border -- which is what lets this be done
+   from here at all while the stylesheet is somebody else's.
+
+   Cleared first, every time, because the element that was lit last time is
+   usually still on the page. */
+function obTourMount(){
+  var d=document.querySelectorAll('.sbg[data-dim]');
+  if(!d.length) return;
+  var st=obTourOn()? obTourStop() : null, el=st? obTourFind(st) : null, b, i;
+  /* No hole: the last word of the walk is over the whole screen. */
+  if(!el){
+    for(i=0;i<d.length;i++){
+      d[i].style.left='0'; d[i].style.top='0';
+      d[i].style.width=(i? '0' : '100%'); d[i].style.height=(i? '0' : '100%');
+    }
+    return;
+  }
+  b=el.getBoundingClientRect();
+  /* over, under, and the two beside -- with a hair of margin so the lit thing
+     is not touched by the edge of the grey */
+  function put(n, l, t2, w, h){
+    d[n].style.left=Math.round(l)+'px'; d[n].style.top=Math.round(t2)+'px';
+    d[n].style.width=Math.max(0, Math.round(w))+'px';
+    d[n].style.height=Math.max(0, Math.round(h))+'px';
+  }
+  var m=4, x=b.left-m, y=b.top-m, w2=b.width+m*2, h2=b.height+m*2,
+      W=window.innerWidth, H=window.innerHeight;
+  put(0, 0, 0, W, y);                 /* above */
+  put(1, 0, y+h2, W, H-(y+h2));       /* below */
+  put(2, 0, y, x, h2);                /* left  */
+  put(3, x+w2, y, W-(x+w2), h2);      /* right */
+}
+/* On to the next stop, for a lit thing that had nothing of its own to do. */
+function obTourNext(){
+  if(obTour+1<OB_TOUR_STOPS.length){ obTour++; obTourGo(); return; }
+  obTourDone();
+}
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -637,7 +796,7 @@ function obTakeCh(ch){
 }
 /* Nothing was drawn, so there is nothing to say which letter it is: the step
    after this is about a shape and there is no shape. */
-function obSkipDraw(){ ob.lid=''; obGo(OB_NAME); }
+function obSkipDraw(){ ob.lid=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo(); }
 
 /* ---- step 2, which letter it is ---------------------------------------
    The shape, big, and the alphabet under it. This is the step that used to
@@ -661,9 +820,13 @@ function obRomHTML(){
    Next is this step's Save. The box types into a draft -- the same box the
    letter page has -- so a step that only moved on would throw the answer
    away. */
+/* And out of the alphabet into the app itself -- the walk through the making
+   screen, the keyboard and the first keyboard, which is where the letter just
+   drawn ended up. obTourGo() sends the app to the first stop rather than
+   drawing a picture of one. */
 function obRomDone(){
   if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid);
-  obGo(OB_NAME);
+  obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
 
 function obFinish(){

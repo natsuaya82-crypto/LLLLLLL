@@ -50,6 +50,7 @@ function viewReset(){
   WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   kbNew1=0;                            /* the width waiting to be put on a keyboard */
+  obTour=0;                            /* how far the walk through the app has got */
   KBH=null;                            /* and which row or column is being worked on */
   plansYr=false;                       /* and whether plans are shown by the year */
   snsQ=''; snsHits=null; snsMode='who'; /* the search, what came back, and

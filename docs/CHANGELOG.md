@@ -15,6 +15,53 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The onboarding walks the real app
+
+Steps 3 to 6 of the owner's order — the making screen, the keyboard, the first
+keyboard, "make letters and words" — are not screens of `onboard.js`. They are
+**the app**, with everything but one thing greyed out and a line saying to
+press that one thing.
+「本物の画面だよー！ここをタップしてねみたいにして他はグレーアウトして進める
+あのゲームとかにありがちなオンボーディングにしたいなーって」
+
+`OB_TOUR_STOPS` in `www/onboard.js` is three stops: 制作 with the keyboard row
+lit, the keyboard with **the key the letter just drawn ended up on** lit, and
+a last line with nothing lit. The free plan has no LIST of keyboards — board 0
+is the keyboard and the chapter opens straight onto it — so the owner's fourth
+and fifth stops are one screen here.
+
+**The app drives the tour, not the other way round.** Pressing the lit thing
+does what it really does; the route changes; `obTourAt()` notices and moves on.
+Nothing here is a mock of a screen, so nothing can drift out of step with one.
+
+Three things it cost, all of them worth writing down:
+
+- **The dim is four panes cutting a hole**, not a raised element. Lifting the
+  target with `z-index` does nothing: `.view`'s entrance animation creates a
+  stacking context, and a child of it cannot rise above a sibling of it.
+- **A lit thing that is inert gets a tap target of its own.** A free keyboard's
+  keys are `<span>`s. `.obpad` is laid over the hole — and it is in the
+  **markup**, not set on the live DOM, because `act-check` reads what a view
+  returns and would never see a `data-do` assigned afterwards.
+- **No CSS was added.** `www/index.html` belongs to another session today
+  (`claude/code-review-refactor-seaaei`), so the tour borrows `.sbg` for the
+  dim and `.toast` for the line. Two classes of its own — a dim that is one
+  element with a real cut-out, and a coach line that is not a rounded box —
+  are what it wants, and that is a change to that file on the day it is free.
+  → `docs/BACKLOG.md`
+
+**Newly stored:** nothing. `obTour` is where you are standing, so
+`viewReset()` drops it, the same as `KBH`.
+
+Letter keys now carry `data-lt` with the letter's id, which is how the tour
+finds the one key out of forty.
+
+`CODE CONFIRMED` — the walk runs end to end in a headless browser: dim
+present at every stop, the lit element measured, the sentence read, and the
+last stop's button lands on step `OB_NAME` with `SET.done` still false.
+`DEVICE CONFIRMED` — **no.**
+
+
 ### The face on a notice is the face you are wearing now
 
 The little face beside "somebody liked this" was the one your account was made

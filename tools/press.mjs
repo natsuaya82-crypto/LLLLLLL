@@ -129,10 +129,17 @@ const R = await pg.evaluate(async () => {
          number takes that row away, and sits in the margin the board leaves
          beside itself. Both are as WIDE as the thing they point at, which is
          not a number this file gets to choose; both are as TALL as they like,
-         and both are held to 44 there. */
+         and both are held to 44 there.
+
+         The walk's pad is the third, and it is the same argument arriving
+         from the other end: it is not a button of its own at all, it is laid
+         exactly over the thing the onboarding has lit, so its width is that
+         thing's width. One of the stops lights a key. Widening the pad would
+         put it over the keys beside the lit one, which is the tour pointing
+         at the wrong letter. */
       const cn = ' ' + e.className + ' ';
       if (cn.indexOf(' kbk ') >= 0 || cn.indexOf(' kbcl ') >= 0 ||
-          cn.indexOf(' kbn ') >= 0) {
+          cn.indexOf(' kbn ') >= 0 || cn.indexOf(' obpad ') >= 0) {
         if (r.height >= TAP) continue;
       } else
       if (r.width >= TAP && r.height >= TAP) continue;

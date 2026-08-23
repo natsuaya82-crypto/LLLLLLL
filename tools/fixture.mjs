@@ -246,6 +246,31 @@ export function obStates(){
     ['choosing which letter the shape is', () => { SET.obback = null; ob.step = OB_ROM; ob.mode = '';
                                                    ob.lid = (LETTERS[0] || {}).id || '';
                                                    return vOb(); }],
+    /* The walk through the app itself. It is not a face of vOb() -- it is the
+       real screen with everything but one thing greyed out -- so what these
+       return is the whole app, overlay and all, and nothing else reaches the
+       two buttons the tour owns. */
+    ['the walk: the making screen, with the keyboard lit', () => {
+        SET.done = false; ob.step = OB_TOUR; obTour = 0; ob.mode = '';
+        window.route = 'build'; NAV = [{ r: 'build', a: '' }];
+        return vBuild() + obTourHTML(); }],
+    /* This one puts the screen on the PAGE before building the overlay, and
+       the other two do not need to: the thing this stop lights is one key out
+       of forty, so obTourHTML() asks the document which key carries the
+       letter -- and a screen that is only a string is not on the document.
+       render() does exactly this, in this order: the screen is inserted, then
+       the walk is added to the end of it. */
+    ['the walk: the key the letter went on', () => {
+        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
+        ob.lid = (LETTERS[0] || {}).id || '';
+        window.route = 'kb'; NAV = [{ r: 'kb', a: '' }];
+        var h = vKb();
+        document.getElementById('app').innerHTML = h;
+        return h + obTourHTML(); }],
+    ['the walk: the last word of it', () => {
+        SET.done = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
+        window.route = 'kb'; NAV = [{ r: 'kb', a: '' }];
+        return vKb() + obTourHTML(); }],
     ['naming the language',      () => { SET.obback = null; ob.step = OB_NAME; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
        so a walk that only ever renders the door presses none of their

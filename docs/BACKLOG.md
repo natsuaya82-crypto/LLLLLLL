@@ -7,6 +7,29 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## The tour borrows two classes it should own
+
+`obTourHTML()` dims the screen with **four `.sbg` panes** laid around the lit
+element, and says its line in a `.toast` with `pointer-events:auto` put on it
+inline. Both are somebody else's classes doing a job they were not written for:
+`.sbg` is the sheet's backdrop and `.toast` is a message that goes away by
+itself.
+
+It is that way because `www/index.html` belonged to another session on the day
+the tour was written (`docs/SESSIONS.md` — one session at a time owns that
+file), and a screen that half-works is worse than one that borrows.
+
+What it wants, on the day that file is free:
+
+- **one** dim element with a real cut-out (`clip-path` or a box-shadow ring),
+  instead of four panes whose arithmetic has to agree with each other
+- a coach line of its own, which is **not a rounded box** — `.toast` is one,
+  and it is on `tools/box-baseline.txt` because it predates the rule
+- `pointer-events` set in the stylesheet rather than inline
+
+None of it changes what the tour does. It is four panes and a borrowed toast
+against one element and one line.
+
 ## ~~CSS outlives the screen it dressed, and nothing says so~~ — the check is in
 
 *2026-08-22, owner:*「CSSの死骸は削除ではなく、検査を作る。className /
