@@ -215,6 +215,13 @@ instead of appearing here.
   | `file` a list brought in as a file | — | — | yes |
   | `noads` | — | — | **yes** |
 
+  **`noads` is in that table and is NOT in `CAN` yet, deliberately.**
+  `dead-check` refuses a capability nothing asks for — a line in a price list
+  nothing charges — and nothing can ask `can('noads')` until there is an ad to
+  not show. So the plan tiers land with **nine**, and `noads` goes in in the
+  same commit as the ad. The table says what will be true; it is not a list of
+  what to type today. (Found by the session that was about to type it.)
+
   **`words` and `kb` are the two that stop being yes/no.** Everything else in
   that table is a door; those two are a number, and the number is the plan's.
   `can()` cannot answer them alone any more.
