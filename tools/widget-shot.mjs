@@ -71,13 +71,39 @@ const DIGITS = {
   9: [[[10,4],[16,10],[10,16],[4,10],[10,4]]],             /* ◇ */
 };
 
+/* Twelve more shapes, for the letters a month's name and a day's name are
+   spelled out of.
+
+   The fixture draws three letters and no more, so every word made out of them
+   came out as the same two glyphs seven times over -- a head row that says
+   the same thing in all seven columns, which is not what a calendar in
+   somebody's language looks like. These are twelve told apart at 11 points,
+   and not one of them is one of the ten digits above.
+   Nobody's alphabet, same as the digits: shapes, so that a picture of seven
+   different weekday names is a picture of seven different weekday names. */
+const MARKS = [
+  [[[5,16],[10,4],[15,16],[5,16]]],                        /* △ */
+  [[[5,5],[15,5],[15,15],[5,15],[5,5]]],                   /* □ */
+  [[[15,5],[6,5],[6,15],[15,15]]],                         /* ⊏ */
+  [[[5,5],[14,5],[14,15],[5,15]]],                         /* ⊐ */
+  [[[7,4],[13,10],[7,16]]],                                /* ⟩ */
+  [[[4,5],[16,5],[16,11]]],                                /* ⌐ */
+  [[[4,9],[4,16],[16,16]]],                                /* ⌙ */
+  [[[10,16],[10,9]], [[4,4],[10,9]], [[16,4],[10,9]]],     /* ⋔ */
+  [[[4,10],[16,10]], [[4,5],[4,15]], [[16,5],[16,15]]],    /* ⊝ */
+  [[[4,7],[16,7]], [[4,13],[16,13]], [[10,4],[10,16]]],    /* ♯ */
+  [[[4,5],[16,5]], [[4,5],[4,10]], [[4,10],[16,10]],
+   [[16,10],[16,15]], [[16,15],[4,15]]],                   /* Ƨ */
+  [[[14,4],[14,16]], [[14,10],[4,10]]],                    /* ⊣ */
+];
+
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport: { width: 420, height: 900 }, deviceScaleFactor: 3 });
 await pg.goto(`http://localhost:${PORT}/`);
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 /* Ask the real app for the real payload, four times over. */
-const CASES = await pg.evaluate(({ s, D }) => {
+const CASES = await pg.evaluate(({ s, D, M }) => {
   eval('(' + s + ')()');
   SET.done = true; SET.plan = 'plus';
   const O = GGRID.inset, K = geStep();
@@ -115,8 +141,38 @@ const CASES = await pg.evaluate(({ s, D }) => {
   saveLetters();
   out.base12 = shareWidget();
   numSetBase(10);
+
+  /* And the calendar's own case: every digit drawn, AND a word made for each
+     of the twelve months and each of the seven days. A calendar with the week
+     still in roman is not the thing anybody is making a language for.
+     「そこも自分の言語にしてよ」
+     The words are spelled out of letters that ARE drawn, so the font has
+     every one of them and shareWordAll() says so -- which is what makes the
+     widget set them in LinguaScript rather than plainly. */
+  Object.keys(D).forEach((v) => put(+v, D[v]));
+  /* Letters to spell the names out of, on whichever letters have none. */
+  const spare = LETTERS.filter((l) => !numIsDigit(l) && !(l.st && l.st.length));
+  M.forEach((shape, i) => {
+    const l = spare[i];
+    if (l) l.st = shape.map((run) => ({ pts: run.map((p) => [O + p[0] * K, O + p[1] * K]) }));
+  });
+  const ink = LETTERS.filter((l) => l.st && l.st.length && !numIsDigit(l));
+  const word = (n, slot, mn) => {
+    const pick = [0, 1, 2].map((i) => ink[(n * 2 + i) % ink.length]).filter(Boolean);
+    if (!pick.length) return;
+    WORDS.push({ hw: pick.map((l) => ltName(l)).join(''), mn: mn, pos: 'n',
+                 at: 1, slot: slot, sp: pick.map((l) => ({ l: l.id })) });
+  };
+  for (let i = 1; i <= calMonths(); i++) word(i, 'month.' + i, 'month ' + i);
+  for (let i = 1; i <= calWeek(); i++) word(i, 'wday.' + i, 'day ' + i);
+  saveLetters(); save(); installScriptFont();
+  out.calendar = shareWidget();
+  /* The face itself, so the page below can set those words in it. It is the
+     app's own build of the drawn shapes -- the same bytes the App Group gets
+     -- and not this file's idea of what they look like. */
+  out.font = SFONT.b64;
   return out;
-}, { s: seed.toString(), D: DIGITS });
+}, { s: seed.toString(), D: DIGITS, M: MARKS });
 await pg.close();
 
 /* ---- the same drawing, with the same numbers ---------------------------- */
@@ -128,6 +184,10 @@ const SIDE = 158;
 /* The month drawn is the one the machine is in, because that is the month the
    widget would be showing if this were a phone. */
 const NOW = new Date();
+/* The face the app built out of the drawn shapes, and the name it is under.
+   www/glyph.js: SFONT_FAMILY. */
+const FAM = 'LinguaScript';
+const FONT = CASES.font || '';
 
 function html(cases, dark) {
   const ink = dark ? '#f2f2f7' : '#1c1c1e';
@@ -189,6 +249,17 @@ function html(cases, dark) {
     flush();
     return `<span style="display:inline-flex;align-items:flex-start">${out.join('')}</span>`;
   };
+
+  /* WordView, ScriptFont.swift for word. A word somebody made is set by
+     setting its ROMAN spelling in LinguaScript -- the face the app builds out
+     of the drawn shapes -- which is what makes it come out in their letters.
+     A word with one letter nobody drew has no face to be set in, so it goes
+     out plainly, at 0.86 of the size the way the Swift does it. */
+  const wordHTML = (w, size, color) => (w.all && FONT)
+    ? `<span style="font-family:'${FAM}';font-size:${size.toFixed(1)}px;`
+      + `line-height:normal;color:${color}">${w.r}</span>`
+    : `<span style="font:500 ${(size * 0.86).toFixed(1)}px -apple-system,`
+      + `system-ui,sans-serif;color:${color}">${w.r}</span>`;
 
   /* ClockFace, number for number. */
   const clock = (num, when) => {
@@ -282,10 +353,8 @@ function html(cases, dark) {
     const mName = num && num.mon && num.mon[String(when.getMonth() + 1)];
     const head = `<div style="height:${monH.toFixed(1)}px;display:flex;`
       + `align-items:center">`
-      + (mName
-        ? `<span style="font:500 ${(monH * 0.62).toFixed(1)}px -apple-system,`
-          + `system-ui,sans-serif;color:${ink}">${mName.r}</span>`
-        : number(when.getMonth() + 1, num, monH * 0.72))
+      + (mName ? wordHTML(mName, monH * 0.72, ink)
+               : number(when.getMonth() + 1, num, monH * 0.72))
       + '</div>';
 
     /* The head of a column: the word somebody made, else the phone's own
@@ -296,7 +365,7 @@ function html(cases, dark) {
       const w = num && num.wd && num.wd[String(i)];
       /* 'short' and not 'narrow': narrow is one letter, and one letter in
          English is S M T W T F S. A stand-in is there to be read. */
-      const nm = w ? w.r
+      const nm = w ? wordHTML(w, headH * 0.62, TINT[i] || ink)
         : new Date(Date.UTC(1970, 0, 3 + i)).toLocaleDateString('en',
             { weekday: 'short', timeZone: 'UTC' });
       heads += `<div style="width:${cw.toFixed(2)}px;height:${headH.toFixed(1)}px;`
@@ -383,7 +452,9 @@ function html(cases, dark) {
       + `padding:18px 22px;border-radius:16px;width:max-content">${cells.join('')}</div></div>`;
   };
 
-  return `<div style="background:${ground};padding:26px;font-family:system-ui;width:max-content">`
+  return (FONT ? `<style>@font-face{font-family:'${FAM}';`
+    + `src:url(data:font/otf;base64,${FONT}) format('opentype')}</style>` : '')
+    + `<div style="background:${ground};padding:26px;font-family:system-ui;width:max-content">`
     + `<div style="display:flex;gap:26px">`
     + col('drawn', 'every digit drawn')
     + col('partial', 'no 7 drawn')
@@ -392,8 +463,8 @@ function html(cases, dark) {
     + col('base2', 'counting in two')
     + '</div>'
     + `<div style="display:flex;gap:26px;align-items:flex-start;margin-top:30px">`
-    + cal('drawn', 329, 155, false, 'calendar, medium')
-    + cal('drawn', 329, 345, true, 'calendar, large')
+    + cal('calendar', 329, 155, false, 'calendar, medium')
+    + cal('calendar', 329, 345, true, 'calendar, large')
     + '</div>'
     + `<div style="display:flex;flex-direction:column;gap:22px;margin-top:30px">`
     + strip(cases.drawn, 'one to twelve, counting in ten \u2014 so 10, 11 and 12 are two signs each')
@@ -420,32 +491,37 @@ for (const dark of [false, true]) {
 const app = await br.newPage({ viewport: { width: 390, height: 900 }, deviceScaleFactor: 3 });
 await app.goto(`http://127.0.0.1:${PORT}/`);
 await app.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
-await app.evaluate(({ s, D }) => {
+await app.evaluate(({ s, D, M }) => {
   eval('(' + s + ')()');
   SET.done = true; SET.plan = 'plus';
   const O = GGRID.inset, K = geStep();
-  Object.keys(D).forEach((v) => {
-    const l = numByVal(+v);
-    if (l) l.st = D[v].map((run) => ({ pts: run.map((p) => [O + p[0] * K, O + p[1] * K]) }));
-  });
-  /* Words for the month and for every day of the week, spelled out of
-     letters that ARE drawn -- the fixture's own, so the font has every one of
-     them and the whole calendar comes out in somebody's letters. Without
-     these the picture is a page of roman, which is a true state and not the
-     one worth looking at. */
+  const lay = (l, shape) => {
+    l.st = shape.map((run) => ({ pts: run.map((p) => [O + p[0] * K, O + p[1] * K]) }));
+  };
+  Object.keys(D).forEach((v) => { const l = numByVal(+v); if (l) lay(l, D[v]); });
+  /* Words for the month and for every day of the week, spelled out of letters
+     that ARE drawn, so the font has every one of them and the whole calendar
+     comes out in somebody's letters. Without these the picture is a page of
+     roman, which is a true state and not the one worth looking at.
+     The twelve extra shapes are laid down first for the same reason the
+     mock above lays them down: the fixture draws three letters, and seven
+     weekday names built out of three letters are the same name seven times.
+     「そこも自分の言語にしてよ」 */
+  const spare = LETTERS.filter((l) => !numIsDigit(l) && !(l.st && l.st.length));
+  M.forEach((shape, i) => { if (spare[i]) lay(spare[i], shape); });
   const drawn = LETTERS.filter((l) => l.st && l.st.length && !numIsDigit(l));
   const word = (n, slot, mn) => {
-    const pick = [0, 1, 2].map((i) => drawn[(n + i) % drawn.length]).filter(Boolean);
+    const pick = [0, 1, 2].map((i) => drawn[(n * 2 + i) % drawn.length]).filter(Boolean);
     if (!pick.length) return;
-    WORDS.push({ hw: pick.map((l) => ltName(l)).join('') + n, mn: mn, pos: 'n',
+    WORDS.push({ hw: pick.map((l) => ltName(l)).join(''), mn: mn, pos: 'n',
                  at: 1, slot: slot, sp: pick.map((l) => ({ l: l.id })) });
   };
-  word(calMonthOf(new Date()), 'month.' + calMonthOf(new Date()), 'the month');
+  for (let i = 1; i <= calMonths(); i++) word(i, 'month.' + i, 'month ' + i);
   for (let i = 1; i <= calWeek(); i++) word(i, 'wday.' + i, 'day ' + i);
   saveLetters(); save(); installScriptFont();
   window.route = 'ltset'; NAV = [{ r: 'ltset', a: 'num' }];
   render();
-}, { s: seed.toString(), D: DIGITS });
+}, { s: seed.toString(), D: DIGITS, M: MARKS });
 await app.waitForTimeout(400);
 
 /* The New letter bar and the tab bar are position:fixed and sit over whatever
