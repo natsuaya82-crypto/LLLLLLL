@@ -78,6 +78,90 @@ CI（`.github/workflows/ios-deploy.yml`, `macos-latest`）が毎回やること:
 `com.apple.developer.applesignin` がプロファイルに無い、という趣旨のエラーで
 Archive が止まります。
 
+**2026-08-23、ビルド #83 がまさにこれで落ちました。** エラーはこう出ます:
+
+```
+error: Provisioning profile "Lingua Distribution" doesn't include
+       the Sign In with Apple capability.  (in target 'App')
+error: Provisioning profile "Lingua Distribution" doesn't include
+       the com.apple.developer.applesignin entitlement.
+```
+
+#82 が通っていたのは、`App.entitlements` にあの行が入る前だったからです。
+**新しく壊れたのではなく、上の 1〜3 がまだ一度も済んでいません。**
+
+---
+
+## 2b. ウィジェットのプロファイル（#83 で新しく必要になった）
+
+ホーム画面のウィジェット（`LinguaWidget`）が追加されました。**専用の App ID
+とプロファイルが要ります。** これが無いと Archive はこう落ちます:
+
+```
+error: No profile for team '***' matching 'Lingua Widget Distribution' found
+       (in target 'LinguaWidget')
+```
+
+キーボードのときとまったく同じ形なので、**キーボードのプロファイルを作った
+ときの手順をそのまま繰り返します。** 違うのは名前と ID だけです。
+
+| | 値 |
+|---|---|
+| Bundle ID | `com.tokinets.lingua.widget` |
+| プロファイル名 | **`Lingua Widget Distribution`** |
+| App Group | `group.com.tokinets.lingua`（本体・キーボードと同じ） |
+| 種類 | App Store Distribution |
+
+名前は `ios/App/App.xcodeproj/project.pbxproj` の
+`PROVISIONING_PROFILE_SPECIFIER` に書いてあるものと**一字一句同じ**でなければ
+なりません。違うと「見つからない」で落ちます。
+
+### 順番
+
+1. **Identifiers → ＋ → App IDs → App**
+   - Description: `Lingua Widget`
+   - Bundle ID: **Explicit**、`com.tokinets.lingua.widget`
+   - Capabilities: **App Groups だけ**にチェック → Configure →
+     `group.com.tokinets.lingua` を選ぶ
+   - Sign in with Apple は**要りません**。ログインするのは本体だけです
+   - Continue → Register
+
+2. **Profiles → ＋ → App Store Connect（Distribution）**
+   - App ID に `com.tokinets.lingua.widget` を選ぶ
+   - 証明書は本体・キーボードと同じ配布証明書
+   - **Provisioning Profile Name に `Lingua Widget Distribution`** と入れる
+   - Generate → **Download**
+
+3. **base64 にして GitHub の Secret に入れる**
+   ```
+   base64 -i Lingua_Widget_Distribution.mobileprovision | pbcopy
+   ```
+   - GitHub → Settings → Secrets and variables → Actions → New secret
+   - 名前: **`WIDGET_PROVISIONING_PROFILE_BASE64`**
+   - 値: 上でコピーしたもの
+
+   **改行が混ざらないように。** Mac の `base64` は既定で一行に出しますが、
+   コピーの途中で折り返しが入ると復号に失敗し、
+   「has no application-groups entitlement」で止まります。
+
+4. `.github/workflows/ios-deploy.yml` の「Install Provisioning Profiles」が
+   その Secret を読むようになっている必要があります（#83 の時点では本体と
+   キーボードの二つしか読んでいませんでした。同じコミットで直してあります）。
+
+### 三つが揃っているかの見分け方
+
+ビルドのログの「Install Provisioning Profiles」に、三行こう出ます:
+
+```
+app.mobileprovision: Lingua Distribution
+kb.mobileprovision: Lingua Keyboard Distribution
+wg.mobileprovision: Lingua Widget Distribution
+```
+
+名前が違うもの、または行が足りないものがあれば、そこが原因です。**Archive
+まで進んでから落ちるのを待つ必要はありません。**
+
+
 Supabase 側は `supabase/setup.md` の 4-1 です。あちらは**この節の後**で
 構いません（順番はどちらでもいいのですが、ビルドが通らないと試せません）。
 

@@ -72,16 +72,23 @@ jobs:
         env:
           PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
           KB_PROFILE_BASE64: ${{ secrets.KEYBOARD_PROVISIONING_PROFILE_BASE64 }}
+          WG_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
         run: |
           test -n "$PROFILE_BASE64"    || { echo "::error::PROVISIONING_PROFILE_BASE64 is empty"; exit 1; }
           test -n "$KB_PROFILE_BASE64" || { echo "::error::KEYBOARD_PROVISIONING_PROFILE_BASE64 is empty"; exit 1; }
+          # ウィジェットは #83 で足したターゲット。Secret がまだ無いうちは
+          # 「無い」と言って止まる ── 黙って進んで Archive の途中で
+          # 「No profile matching 'Lingua Widget Distribution'」に化けるより、
+          # ここで名指しで止まったほうが読める。docs/apple.md § 2b。
+          test -n "$WG_PROFILE_BASE64" || { echo "::error::WIDGET_PROVISIONING_PROFILE_BASE64 is empty — docs/apple.md の 2b を読んで、Lingua Widget Distribution を作って入れてください"; exit 1; }
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           echo "$PROFILE_BASE64"    | base64 --decode > app.mobileprovision
           echo "$KB_PROFILE_BASE64" | base64 --decode > kb.mobileprovision
-          cp app.mobileprovision kb.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+          echo "$WG_PROFILE_BASE64" | base64 --decode > wg.mobileprovision
+          cp app.mobileprovision kb.mobileprovision wg.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
           # 名前と App Group をログに出す。署名が通ったあとに「どっちの
           # プロファイルで通ったのか」を後から読めるようにするため。
-          for f in app.mobileprovision kb.mobileprovision; do
+          for f in app.mobileprovision kb.mobileprovision wg.mobileprovision; do
             security cms -D -i "$f" > "$f.plist"
             echo "$f: $(/usr/libexec/PlistBuddy -c 'Print :Name' "$f.plist")"
             /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$f.plist" \
