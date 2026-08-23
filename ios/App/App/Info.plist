@@ -51,21 +51,31 @@
 	     com.googleusercontent.apps.123-abc. Google's SDK reads it from here
 	     and refuses to start if it is missing or does not match.
 
-	     The placeholder below is not a value. Replace it, and GOOGLE_IOS_ID
-	     in www/net.js, with the client made for this app in the Google Cloud
-	     console. Both, or neither: one without the other is a button that
-	     opens a sheet and cannot come back. Neither of them is a secret.
-	     Until then the Google button says it is not in this build, which is
-	     true, and Apple's sign-in is unaffected. -->
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>__GOOGLE_REVERSED_CLIENT_ID__</string>
-			</array>
-		</dict>
-	</array>
+	     There is no CFBundleURLTypes here, and that is deliberate. A
+	     placeholder stood in this file for one build and Apple refused the
+	     delivery: build 86 came back as ITMS-90158, "URL schemes need to
+	     begin with an alphabetic character". A scheme of underscores is not
+	     merely unset, it is malformed, and nothing on this side says so.
+	     An absent key is the honest shape of "not configured".
+
+	     When the client is made in the Google Cloud console, this block goes
+	     back with the real value:
+
+	       <key>CFBundleURLTypes</key>
+	       <array>
+	         <dict>
+	           <key>CFBundleURLSchemes</key>
+	           <array>
+	             <string>com.googleusercontent.apps.123-abc</string>
+	           </array>
+	         </dict>
+	       </array>
+
+	     and GOOGLE_IOS_ID in www/net.js takes the client id at the same
+	     time. Both, or neither: one without the other is a button that opens
+	     a sheet and cannot come back. Neither of them is a secret. Until
+	     then the Google button says it is not in this build, which is true,
+	     and Apple's sign-in is unaffected. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- A language is written to Documents as a file, and these two are the
