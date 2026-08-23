@@ -1554,17 +1554,6 @@ a.set{text-decoration:none}
 .wrt{flex:1 1 auto;min-width:0;color:var(--txm);font-size:1rem;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrow:active{opacity:.6}
-/* The day's sentence, where the row you write in stands. Two lines and no
-   box: the sentence, with the date in front of it, and under that the one
-   question the screen is asking. `border-bottom` and nothing else -- a single
-   side is the shape the field rules already use 「かくまるみたいなのでくくる
-   のやめて欲しい。基本下線だけ」 and it is what .wrow wears one line above. */
-.dayrow{display:flex;align-items:flex-start;gap:12px;
-        width:calc(100% + 48px);margin:0 -24px;padding:14px 16px;
-        border:0;border-bottom:1px solid var(--line);background:none;
-        text-align:left;font:inherit;color:inherit}
-.dayrow .pav{width:40px;height:40px;flex:0 0 auto}
-.daybd{flex:1 1 auto;min-width:0}
 /* The day's sentence, on its own line between the name of the screen and the
    row you write in. One line, cut with an ellipsis, so the three lines are
    the same height whatever the day says 「あんまり高さ変えずに3列にしたい」.
@@ -1585,22 +1574,9 @@ a.set{text-decoration:none}
 /* The sentence at the head of its own page. Same two sizes as the row. */
 .dayhd{padding:14px 0 16px;font-size:1.02rem;line-height:1.55;
        border-bottom:1px solid var(--line);margin-bottom:4px}
-.dayrow:active{opacity:.6}
-.dayq{display:block;font-size:1.02rem;line-height:1.55}
 /* The date is the quiet half. It says which day the sentence is for, which
    is not always this phone's today -- the row comes from California. */
 .dayd{color:var(--txm)}
-/* And the second line is the empty field you are about to type in, not a
-   label about it. It was gold and bold, which reads as a heading -- the row
-   looked like a notice printed over the timeline and not like the way to the
-   screen a post is written on 「投稿画面に飛ぶ感じがしない」.
-
-   An underline and nothing else. That is the shape this stylesheet already
-   uses for a field 「かくまるみたいなのでくくるのやめて欲しい。基本下線
-   だけ」, and it is what .wrt was doing before the sentence took its place:
-   grey placeholder type, at the size a line is typed at. */
-.daya{display:block;margin-top:8px;padding:6px 0;color:var(--txs);
-      font-size:1rem;border-bottom:1px solid var(--line)}
 /* What a reply is answering, above what you are writing. The same row a
    timeline draws, quieter and with nothing on it to press. */
 .pwq{display:flex;gap:12px;margin:2px 0 14px;padding:12px 14px;
