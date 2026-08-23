@@ -183,15 +183,28 @@ function vFeed(){
          written" would be the app being wrong about its own contents. */
       : (snsTab==='fo'? snsNoneFo() : snsNone()))+
     '</div>'+
-    /* Where every timeline puts it: over the feed, above the bar, under the
-       thumb of the hand already holding the phone. */
-    /* And neither way in. Both open a composer that will refuse, and a
-       button that cannot do its one thing is worse than no button: it is the
-       app asking somebody to find out. */
-    (NET_BANNED? '' :
-      '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
-      ICON_ADD2+'</button>')+
+    snsFab()+
     '</div>';
+}
+/* The way to write, and it is one thing in one place.
+
+   The timeline has had it since there was a timeline, and nothing else did.
+   But the app does not open on the timeline -- `route` starts at `profile`
+   and NAV starts at `profile` -- so somebody who never pressed the home tab
+   was standing on a screen with a list of their own posts and no way to add
+   one. 「プロフィール画面の右下に＋がないから投稿ができない」
+
+   Where every timeline puts it: over the list, above the bar, under the
+   thumb of the hand already holding the phone.
+
+   Both conditions travel with it rather than being restated at each end.
+   Signed out there is nobody to post as; frozen, the composer would refuse
+   -- and a button that cannot do its one thing is worse than no button: it
+   is the app asking somebody to find out. */
+function snsFab(){
+  if(!netSignedIn() || NET_BANNED) return '';
+  return '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
+    ICON_ADD2+'</button>';
 }
 /* ---- one conversation --------------------------------------------------
    The timeline is every post there is, newest first, which is the right shape
