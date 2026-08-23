@@ -17,12 +17,12 @@ another session today (`docs/SESSIONS.md`).
 - **Restore.** `restore` exists on the native side and there is nowhere to
   press it. **Apple requires the button** — an app selling a subscription
   without one is rejected. It needs a name in `www/act-map.js`.
-- **Basic's card.** `PLANS` sells Free and Plus. Basic's name, price and
+- **The middle card.** `PLANS` sells Free and Pro. Plus's name, price and
   lines are strings, and `www/i18n/*.js` is not this session's today. Nothing
   can be bought that is not on the screen.
 - **Going back to free is not a purchase and is drawn as one.** Pressing Free
   on a phone sets `SET.plan='free'` by hand, which is a person saying "act as
-  though I am on free"; the next launch reads the Keychain and it is Plus
+  though I am on free"; the next launch reads the Keychain and it is Pro
   again. What that button should do is open Apple's own sheet — `manage` on
   the native side, which exists — because cancelling is Apple's and not ours
   to draw. It needs a name in `act-map.js` too.
@@ -33,15 +33,15 @@ None of the three is hard. All three are one file away.
 
 *2026-08-23, owner:*「1,1+3.無制限って言わなかったっけ？」
 
-**Free 1 — the fixed QWERTY. Basic 1 + 3 = 4. Plus no ceiling.** Counted as a
+**Free 1 — the fixed QWERTY. Plus 1 + 3 = 4. Pro no ceiling.** Counted as a
 pool **across languages**, not per language. `docs/FEATURE_RULES.md` said both
 things on the same day; it says this one in both places now.
 
 **Still to build, and not by the session that asked**: `kbCap()` beside
 `wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX`
 asking it, the count becoming a sum across `LANGS` rather than the length of
-one language's list, and `CAN.kb` moving from `plus` to `basic` **in the same
-commit** — a door opened without its number would give Basic the three
+one language's list, and `CAN.kb` moving from `pro` to `plus` **in the same
+commit** — a door opened without its number would give Plus the three
 `KB_MAX` hands out today, which is neither answer.
 
 `www/keyboard.js` belongs to `claude/detailed-tasks-execution` today and that
@@ -59,12 +59,12 @@ another session today (`docs/SESSIONS.md`).
 - **Restore.** `restore` exists on the native side and there is nowhere to
   press it. **Apple requires the button** — an app selling a subscription
   without one is rejected. It needs a name in `www/act-map.js`.
-- **Basic's card.** `PLANS` sells Free and Plus. Basic's name, price and
+- **The middle card.** `PLANS` sells Free and Pro. Plus's name, price and
   lines are strings, and `www/i18n/*.js` is not this session's today. Nothing
   can be bought that is not on the screen.
 - **Going back to free is not a purchase and is drawn as one.** Pressing Free
   on a phone sets `SET.plan='free'` by hand, which is a person saying "act as
-  though I am on free"; the next launch reads the Keychain and it is Plus
+  though I am on free"; the next launch reads the Keychain and it is Pro
   again. What that button should do is open Apple's own sheet — `manage` on
   the native side, which exists — because cancelling is Apple's and not ours
   to draw. It needs a name in `act-map.js` too.

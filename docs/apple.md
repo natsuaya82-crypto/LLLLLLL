@@ -257,15 +257,15 @@ Identifiers に `com.tokinets.lingua.widget` を作り、App Groups を有効に
 
 ### 商品 4 つ（2 段 × 月・年）
 
-段は Basic と Plus の 2 つです（決定: `docs/FEATURE_RULES.md` 2026-08-23）。
+段は Plus と Pro の 2 つです（決定: `docs/FEATURE_RULES.md` 2026-08-23）。
 Studio が売っていたのは通したモデルで、それはまだありません
 （`www/core.js` の `PLANS` の注）。**無いものに値段を付けない**ので、
 Studio の商品は作りません。
 
-| | Basic 月 | Basic 年 | Plus 月 | Plus 年 |
+| | Plus 月 | Plus 年 | Pro 月 | Pro 年 |
 |---|---|---|---|---|
-| 参照名 | Lingua Basic | Lingua Basic Yearly | Lingua Plus | Lingua Plus Yearly |
-| **製品 ID** | `com.tokinets.lingua.basic.monthly` | `com.tokinets.lingua.basic.yearly` | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.plus.yearly` |
+| 参照名 | Lingua Plus | Lingua Plus Yearly | Lingua Pro | Lingua Pro Yearly |
+| **製品 ID** | `com.tokinets.lingua.plus.monthly` | `com.tokinets.lingua.plus.yearly` | `com.tokinets.lingua.pro.monthly` | `com.tokinets.lingua.pro.yearly` |
 | 期間 | 1 か月 | 1 年 | 1 か月 | 1 年 |
 | 価格 | **USD 4.99** | **USD 49.99** | **USD 9.99** | **USD 99.99** |
 | グループ内のレベル | 2（下） | 2 | 1（上） | 1 |
@@ -273,14 +273,14 @@ Studio の商品は作りません。
 **この 4 つの ID は、アプリのコードに既に書いてあります**
 （`ios/App/App/LinguaStore.swift` の `plans`）。無い商品を聞いても StoreKit は
 それを返さないだけなので、**先に作った分から順に売り物として出てきます**。
-Basic を先に作れば Basic だけが並びます。
+Plus を先に作れば Plus だけが並びます。
 
 製品 ID は**あとから変えられません**。上のもので問題なければそのままで、
 変えたいなら**コードを直すので先に言ってください**。
 
 **グループ内のレベル**は、上げ下げのときに Apple がどちらが上かを知るための
-ものです。Plus を 1（上）、Basic を 2（下）。同じグループに入れておくと、
-Basic → Plus は「アップグレード」として即時に切り替わり、日割りも Apple が
+ものです。Pro を 1（上）、Plus を 2（下）。同じグループに入れておくと、
+Plus → Pro は「アップグレード」として即時に切り替わり、日割りも Apple が
 やります。別々のグループにすると両方同時に契約できてしまいます
 （コード側は両方持っている人には**高いほうを渡す**ので壊れはしませんが、
 二重に課金されるのは親切ではありません）。
@@ -341,8 +341,8 @@ App Store Connect → Lingua → **App Store** タブ:
 
 1. **`www/store.js`**（未着手）— `Capacitor.nativePromise('LinguaStore', …)` を
    叩く一枚。プラグインは要りません
-2. **プラン画面のボタンを「購入」に変える**。Basic のカードと値段の文字列も
-   要ります（`www/i18n/*.js`。Plus のは入っていて、Basic のはまだ無い）
+2. **プラン画面のボタンを「購入」に変える**。Plus（真ん中）のカードと値段の
+   文字列も要ります（`www/i18n/*.js`。Pro のは入っていて、Plus のはまだ無い）
 3. **レシート検証**。ここが本番で、端末の中のフラグを信じてはいけません。
    `SET.plan` は誰でも書き換えられるので、サーバー（Supabase）側で
    Apple に問い合わせて、そのアカウントが本当に払っているかを持つ必要が
@@ -351,7 +351,7 @@ App Store Connect → Lingua → **App Store** タブ:
    `restore` はもうあり、押すところがまだ無いだけです
 
 **そちらでやることは 4 節（商品 4 つ）です。** 作った商品から順に
-アプリに出てくるので、Basic を先に作っても問題ありません。
+アプリに出てくるので、Plus を先に作っても問題ありません。
 
 ---
 

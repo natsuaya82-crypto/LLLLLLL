@@ -48,11 +48,13 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// Every product, and the plan it buys. The only place either is written
   /// down.
   ///
-  /// It was a set of ids that all meant "plus", with a note saying that the
-  /// day a second tier existed this would become a map. That day is
-  /// 2026-08-23: Basic is decided -- `docs/FEATURE_RULES.md`, $4.99 and
-  /// $49.99, and it buys letters, one keyboard, a thousand words, a writing
-  /// system and the choice of a sound.
+  /// It was a set of ids that all meant the paid tier, with a note saying
+  /// that the day a second tier existed this would become a map. That day is
+  /// 2026-08-23: the middle rung is decided -- `docs/FEATURE_RULES.md`, $4.99
+  /// and $49.99, and it buys letters, one keyboard, a thousand words, a
+  /// writing system and the choice of a sound. The tiers are Free, Plus and
+  /// Pro; they were Free, Basic and Plus until the same day, because Basic
+  /// reads as the name of a free tier.
   ///
   /// A product id cannot be changed once it exists (`docs/apple.md` § 4), and
   /// none of Basic's exist yet. Asking for one that does not is not an error:
@@ -60,10 +62,10 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// what is really on sale rather than being told. The same was true of the
   /// yearly Plus id for a fortnight.
   static let plans: [(id: String, plan: String)] = [
-    ("com.tokinets.lingua.basic.monthly", "basic"),
-    ("com.tokinets.lingua.basic.yearly",  "basic"),
-    ("com.tokinets.lingua.plus.monthly",  "plus"),
-    ("com.tokinets.lingua.plus.yearly",   "plus"),
+    ("com.tokinets.lingua.plus.monthly", "plus"),
+    ("com.tokinets.lingua.plus.yearly",  "plus"),
+    ("com.tokinets.lingua.pro.monthly",  "pro"),
+    ("com.tokinets.lingua.pro.yearly",   "pro"),
   ]
   static var ids: [String] { plans.map { $0.id } }
 
@@ -71,7 +73,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// `www/core.js` is. Two copies of an order is how two sides of a bridge
   /// come to disagree about which plan is better, so if one of them ever
   /// gains a rung the other is not optional.
-  static let order = ["free", "basic", "plus"]
+  static let order = ["free", "plus", "pro"]
 
   /// Which plan a product buys, or nothing for an id this app does not sell.
   static func planOf(_ productID: String) -> String? {
@@ -128,8 +130,8 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// is reflected in the list, and the free side is the side to be wrong on.
   ///
   /// It answered a Bool while there was one tier to sell. A Bool cannot say
-  /// WHICH, and the day Basic goes on sale a Bool would read every Basic
-  /// receipt as Plus -- every door open, for five dollars.
+  /// WHICH, and the day the middle tier goes on sale a Bool would read every
+  /// Plus receipt as Pro -- every door open, for five dollars.
   static func entitledPlan() async -> String {
     var out = "free"
     for await result in Transaction.currentEntitlements {

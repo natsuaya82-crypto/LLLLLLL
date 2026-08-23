@@ -51,7 +51,7 @@ const r = await pg.evaluate(({ s }) => {
      still in storage. This is the fault the whole file is about: the two are
      one line apart in words.js and nothing else in the app would look wrong
      if the wrong one were kept. */
-  SET.plan = 'plus'; save();
+  SET.plan = 'pro'; save();
   var n = WORDS.length, i;
   for (i = n; i < 500; i++) WORDS.push({ id: 'w_cap_' + i, hw: 'kata' + i, mn: ['a word'] });
   save();                        /* core.js's save() is what writes WORDS */
@@ -72,7 +72,7 @@ const r = await pg.evaluate(({ s }) => {
 
   /* ---- 2. the ceiling refuses, and refuses in one place ---------------- */
   out.capOKfree = capOK(1);              /* 500 words on free: no room */
-  SET.plan = 'plus'; save();
+  SET.plan = 'pro'; save();
   out.capOKpaid = capOK(1);
   SET.plan = 'free'; save();
 
@@ -99,11 +99,11 @@ const r = await pg.evaluate(({ s }) => {
      list of one, so anything that is not the word plus buys nothing, and
      that is the claim worth holding. A plan read as free would be a second
      answer to the same question. */
-  ['', null, undefined, 0, 'garbage', 'plus ', 'PLUS', 'studio'].forEach(function(v){
+  ['', null, undefined, 0, 'garbage', 'pro ', 'PRO', 'basic', 'studio'].forEach(function(v){
     SET.plan = v;
     out.unknownWords = out.unknownWords && WORDS.length === 500;
-    out.unknownCan = out.unknownCan && can('kb') === false && has('plus') === false;
-    try { has('plus'); capOK(1); wordsSeen(); } catch (e) { out.unknownThrew = String(e); }
+    out.unknownCan = out.unknownCan && can('kb') === false && has('pro') === false;
+    try { has('pro'); capOK(1); wordsSeen(); } catch (e) { out.unknownThrew = String(e); }
   });
   SET.plan = 'free'; save();
 
@@ -117,7 +117,7 @@ const r = await pg.evaluate(({ s }) => {
   out.canCount = names.length;
   SET.plan = 'free';
   out.freeAll = names.every(function(c){ return can(c) === false; });
-  SET.plan = 'plus';
+  SET.plan = 'pro';
   out.paidAll = names.every(function(c){ return can(c) === true; });
   try { can('nosuchthing'); out.canTypo = false; } catch (e) { out.canTypo = true; }
 
@@ -129,17 +129,17 @@ const r = await pg.evaluate(({ s }) => {
      for one tier down. Read off CAN rather than written out here, so a
      capability moved between rungs is walked on the day it moves. */
   out.rungs = {};
-  ['free', 'basic', 'plus'].forEach(function(p){
+  ['free', 'plus', 'pro'].forEach(function(p){
     SET.plan = p;
     out.rungs[p] = names.filter(function(c){ return can(c); }).sort().join(' ');
   });
-  SET.plan = 'basic';
-  out.basicUp = has('basic') === true;
-  out.basicNotPlus = has('plus') === false;
   SET.plan = 'plus';
-  out.plusHasBasic = has('basic') === true;   /* the rung below is included */
+  out.midUp = has('plus') === true;
+  out.midNotTop = has('pro') === false;
+  SET.plan = 'pro';
+  out.topHasMid = has('plus') === true;   /* the rung below is included */
   SET.plan = 'free';
-  out.freeNoBasic = has('basic') === false;
+  out.freeNoMid = has('plus') === false;
 
   /* ---- 4c. the word ceiling is the plan's, and it is a number ----------
      One thousand on Basic, none at all on Plus. Asked of wordCap() and of
@@ -147,12 +147,12 @@ const r = await pg.evaluate(({ s }) => {
      this file exists for is them disagreeing. */
   var capWas = WORDS.length;
   out.capFree = (SET.plan = 'free', wordCap());
-  out.capBasic = (SET.plan = 'basic', wordCap());
-  out.capPlus = (SET.plan = 'plus', wordCap());
-  SET.plan = 'basic'; save();
-  out.basicShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
-  out.basicHolds = WORDS.length;
-  out.basicRoom = capOK(1) === true;
+  out.capMid = (SET.plan = 'plus', wordCap());
+  out.capTop = (SET.plan = 'pro', wordCap());
+  SET.plan = 'plus'; save();
+  out.midShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
+  out.midHolds = WORDS.length;
+  out.midRoom = capOK(1) === true;
   SET.plan = 'free'; save();
   out.freeShows2 = wordsSeen().length;
   out.freeHolds2 = WORDS.length === capWas;
@@ -171,7 +171,7 @@ const r = await pg.evaluate(({ s }) => {
     if (localStorage.getItem(langKey(sl)) === null)
       localStorage.setItem(langKey(sl), '[]');
   });
-  SET.plan = 'plus'; save();
+  SET.plan = 'pro'; save();
   var paidFile = bkPack();
   SET.plan = 'free'; save();
   var freeFile = bkPack();
@@ -189,7 +189,7 @@ const r = await pg.evaluate(({ s }) => {
      top. In a browser there is no Keychain and the file is all there is.
      Both directions, because keeping it in neither is the failure that put
      Plus back to free at the next launch on a real phone. */
-  SET.plan = 'plus';
+  SET.plan = 'pro';
   var wasNative = PLAN_NATIVE;
   PLAN_NATIVE = false;
   out.diskHasPlan = Object.prototype.hasOwnProperty.call(setOnDisk(), 'plan');
@@ -205,9 +205,9 @@ const r = await pg.evaluate(({ s }) => {
      care HOW the plan changed. What it may never do is touch a slice. */
   var said = 0, realOpen = window.openCapLapse;
   window.openCapLapse = function(){ said++; };
-  SET.plan = 'plus'; SET.planWas = undefined; save();
+  SET.plan = 'pro'; SET.planWas = undefined; save();
   capLapse();                       /* first run of all: records, says nothing */
-  out.lapseQuietFirst = said === 0 && SET.planWas === 'plus';
+  out.lapseQuietFirst = said === 0 && SET.planWas === 'pro';
   var beforeLapse = bytes();
   SET.plan = 'free'; save();
   capLapse();
@@ -215,7 +215,7 @@ const r = await pg.evaluate(({ s }) => {
   capLapse(); capLapse();
   out.lapseOnce = said === 1;       /* once, not once per render */
   out.lapseKeptBytes = same(beforeLapse, bytes());
-  SET.plan = 'plus'; save(); capLapse();
+  SET.plan = 'pro'; save(); capLapse();
   out.lapseUpQuiet = said === 1;    /* going UP says nothing */
   window.openCapLapse = realOpen;
 
@@ -227,10 +227,10 @@ const r = await pg.evaluate(({ s }) => {
      on before it is on sale. So the button goes on setting the plan by hand,
      and storeOn() is the whole of the difference. */
   out.storeOff = storeOn() === false;
-  out.storeRefuses = storeBuy('com.tokinets.lingua.plus.monthly') === false;
+  out.storeRefuses = storeBuy('com.tokinets.lingua.pro.monthly') === false;
   SET.plan = 'free'; save();
-  setPlan('plus');
-  out.byHand = plan() === 'plus';
+  setPlan('pro');
+  out.byHand = plan() === 'pro';
   setPlan('free');
   out.byHandBack = plan() === 'free';
 
@@ -238,7 +238,7 @@ const r = await pg.evaluate(({ s }) => {
      of ids is how a buy button comes to name a product App Store Connect has
      never heard of, and the answer to that is not an error -- StoreKit simply
      returns nothing, and the button does nothing, forever. */
-  out.ids = ['basic', 'plus'].map(function(p){
+  out.ids = ['plus', 'pro'].map(function(p){
     return storeId(p, false) + ' ' + storeId(p, true);
   }).join(' ');
 
@@ -247,9 +247,9 @@ const r = await pg.evaluate(({ s }) => {
      second answer to what plan this is. */
   var kept = 0, realKeep = window.planKeep;
   window.planKeep = function(){ kept++; };
-  storeTook({ plan: 'basic' });
+  storeTook({ plan: 'plus' });
   out.tookNoKeychain = kept === 0;
-  out.tookTakesAnswer = plan() === 'basic';
+  out.tookTakesAnswer = plan() === 'plus';
   window.planKeep = realKeep;
   SET.plan = 'free'; save();
 
@@ -275,7 +275,7 @@ say(r.capStopped === true, 'and adding one more is refused');
 say(r.capStayed, 'without taking the screen off anybody');
 
 say(r.emptyPlan, 'no plan at all reads as free');
-say(r.unknownCan, 'and any plan that is not the word plus buys nothing -- garbage, PLUS, studio');
+say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- garbage, PRO, basic, studio');
 say(r.unknownWords, 'and the words are all still there while it does');
 say(!r.unknownThrew, 'and nothing about it throws (' + (r.unknownThrew || 'nothing') + ')');
 
@@ -285,21 +285,21 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.basic === 'letters snd wsys',
-    'basic opens its own letters, its own sounds and a writing system (' + r.rungs.basic + ')');
-say(r.rungs.plus.split(' ').length === r.canCount,
-    'plus opens all ' + r.canCount + ' (' + r.rungs.plus.split(' ').length + ')');
-say(r.basicUp && r.basicNotPlus, 'basic meets its own rung and not the one above it');
-say(r.plusHasBasic, 'and plus meets basic\'s -- a ladder, not three equals signs');
-say(r.freeNoBasic, 'while free meets neither');
+say(r.rungs.plus === 'letters snd wsys',
+    'plus opens its own letters, its own sounds and a writing system (' + r.rungs.plus + ')');
+say(r.rungs.pro.split(' ').length === r.canCount,
+    'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
+say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
+say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
+say(r.freeNoMid, 'while free meets neither');
 
 say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
-say(r.capBasic === 1000, 'basic counts to 1000 (' + r.capBasic + ')');
-say(r.capPlus === null || r.capPlus === undefined || r.capPlus > 1e9 || r.capPlus === 'Infinity',
-    'and plus has no number at all (' + r.capPlus + ')');
-say(r.basicShows === 500 && r.basicHolds === 500,
-    'a 500-word dictionary is all shown on basic (' + r.basicShows + ')');
-say(r.basicRoom, 'and there is room for another');
+say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');
+say(r.capTop === null || r.capTop === undefined || r.capTop > 1e9 || r.capTop === 'Infinity',
+    'and pro has no number at all (' + r.capTop + ')');
+say(r.midShows === 500 && r.midHolds === 500,
+    'a 500-word dictionary is all shown on plus (' + r.midShows + ')');
+say(r.midRoom, 'and there is room for another');
 say(r.freeShows2 === 100 && r.freeHolds2,
     'the same dictionary on free shows 100 and still holds 500');
 
@@ -319,8 +319,8 @@ say(r.lapseUpQuiet, 'going up a plan says nothing at all');
 say(r.storeOff, 'in a browser there is no App Store to ask');
 say(r.storeRefuses, 'and storeBuy() says so rather than pretending');
 say(r.byHand && r.byHandBack, 'so the plans screen still sets the plan by hand there');
-say(r.ids === 'com.tokinets.lingua.basic.monthly com.tokinets.lingua.basic.yearly ' +
-             'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly',
+say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly ' +
+             'com.tokinets.lingua.pro.monthly com.tokinets.lingua.pro.yearly',
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
 say(r.tookNoKeychain, 'what comes back from a purchase is not written to the Keychain twice');
 say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');

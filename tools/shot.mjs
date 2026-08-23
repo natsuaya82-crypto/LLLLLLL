@@ -99,7 +99,7 @@ await pg.evaluate('window.HALF = (' + halfDone.toString() + ')()');
 await pg.evaluate(({ s, ui, dk, pd, mf }) => {
   eval('(' + s + ')()');           /* the fixture, run inside the page */
   SET.done = true;                 /* past the onboarding, unless it is what was asked for */
-  if (pd) SET.plan = 'plus';       /* --paid: the faces the free plan does not show */
+  if (pd) SET.plan = 'pro';       /* --paid: the faces the free plan does not show */
   if (mf) SET.myfont = true;       /* --myfont: the app in the letters somebody drew */
   SET.ui = ui;
   SET.theme = dk ? 'dark' : 'light';

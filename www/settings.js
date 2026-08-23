@@ -470,7 +470,7 @@ function setPlansTerm(yr){ plansYr=!!yr; render(); }
    as what it ADDS to Plus rather than as a second complete list. */
 function planCard(p){
   var cur=(p.id===plan()), yr=plansYr;
-  return '<div class="plan'+(cur? ' cur':'')+(p.id==='plus'? ' lead':'')+'">'+
+  return '<div class="plan'+(cur? ' cur':'')+(p.id==='pro'? ' lead':'')+'">'+
     '<div class="ph2"><span class="pn">'+p.name+'</span>'+planBadge(p.id)+
       (cur? '<span class="badge">'+t('plan.cur')+'</span>' : '')+'</div>'+
     '<div class="pprice"><span class="pp">'+t(yr? p.yr : p.mo)+'</span>'+

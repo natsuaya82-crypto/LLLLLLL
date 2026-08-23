@@ -15,6 +15,66 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The tiers are Free, Plus and Pro — OWNER DECISION
+
+「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」
+「フリープラスプロがいいかなー」 — 2026-08-23.
+
+| was | is | price |
+|---|---|---|
+| Free | Free | — |
+| **Basic** | **Plus** | $4.99 / $49.99 |
+| **Plus** | **Pro** | $9.99 / $99.99 |
+
+Nothing about what each buys changed. `Basic` is what most apps call their
+FREE tier, so the confusable pair was Free and Basic rather than Basic and
+Plus — and the order was inferrable rather than obvious. `Free < Plus < Pro`
+needs nobody told, and all three survive untranslated in ten languages, which
+plan names have to: they do not go through `t()`.
+
+**The replacement was done in the order the owner said** — 「今あるプラスを
+プロに置き換えて、今あるベーシックをその後にプラスに置き換えれば」 — and that
+order is what makes it safe: the other way round, `basic → plus` walks into
+the `plus` that is still there. `plus` was also left alone everywhere it is
+the ordinary English word (`ink plus one step`, `a plus beside them`) and in
+every Japanese quote in a comment, which is a record of what was said and not
+a place to rename anything.
+
+**Data: one value, moved once.** A phone already holding `plan: 'plus'` wrote
+it while Plus was the TOP tier; read in the new world it would be the middle
+one. `planMigrate()` in `www/core.js` moves it up and writes **`SET.planV`**,
+so it can never run twice — after this `plus` is a real middle tier and must
+be left exactly where it is. `SET.planWas` carries a plan name too and moves
+with it, or the next `capLapse()` would announce a step nobody took. On a
+phone the Keychain is written again, or the next launch hands back the old
+word. Nobody had bought anything — no product existed — so the only value this
+can find is one set by hand, and moving it up gives back what they had.
+
+**Newly stored:** `SET.planV`, a number saying which of the two worlds a plan
+value was written in. Nothing else can tell them apart: both spell it `plus`.
+
+**And one bug this turned up, which is the reason `migrate-check` exists.**
+`planMigrate()` first called `save()`. `save()` opens with `bkTouch()`, which
+lives in `backup.js` — a file loaded AFTER `core.js`. The migration runs while
+`core.js` is still loading (what a free plan looks like is decided on the
+first frame), so it threw, `core.js` stopped at that line, and everything
+below it — `CAN` among them — was never defined. **A white screen, from a
+migration meant to move one word.** It writes the settings file straight now.
+No other check reloads the page with an old file under it, so no other check
+could have seen it.
+
+**Product ids follow**: `com.tokinets.lingua.plus.*` is $4.99/$49.99 and
+`...pro.*` is $9.99/$99.99. None exists in App Store Connect yet, which is the
+only reason this rename is free today.
+
+`CODE CONFIRMED` — `plan-check` (45), `migrate-check` (with two new claims),
+`act`, `i18n`, `dead`, `es5`, `base`, `kb`, `backup`, `conv`, `press` all
+green. **Watched failing**: the plan word not moving up (2 red), and the
+migration running at every launch instead of once — *a plan written AFTER the
+rename is left where it is: got "pro", wanted "plus"*. `DEVICE CONFIRMED` —
+**no.**
+
+
 ### How many keyboards: settled — OWNER DECISION
 
 「1,1+3.無制限って言わなかったっけ？」 — 2026-08-23.

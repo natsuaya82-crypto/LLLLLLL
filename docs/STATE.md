@@ -408,12 +408,12 @@ Two of them were about capabilities that had been deleted.
 
     | 参照名 | 製品 ID | 期間 | 価格 | レベル |
     |---|---|---|---|---|
-    | Lingua Basic | `com.tokinets.lingua.basic.monthly` | 1 か月 | USD 4.99 | 2 |
-    | Lingua Basic Yearly | `com.tokinets.lingua.basic.yearly` | 1 年 | USD 49.99 | 2 |
-    | Lingua Plus | `com.tokinets.lingua.plus.monthly` | 1 か月 | USD 9.99 | 1 |
-    | Lingua Plus Yearly | `com.tokinets.lingua.plus.yearly` | 1 年 | USD 99.99 | 1 |
+    | Lingua Plus | `com.tokinets.lingua.plus.monthly` | 1 か月 | USD 4.99 | 2 |
+    | Lingua Plus Yearly | `com.tokinets.lingua.plus.yearly` | 1 年 | USD 49.99 | 2 |
+    | Lingua Pro | `com.tokinets.lingua.pro.monthly` | 1 か月 | USD 9.99 | 1 |
+    | Lingua Pro Yearly | `com.tokinets.lingua.pro.yearly` | 1 年 | USD 99.99 | 1 |
 
-    **One group, Plus above Basic**, so Basic → Plus is an upgrade Apple
+    **One group, Pro above Plus**, so Plus → Pro is an upgrade Apple
     prorates rather than two subscriptions somebody pays for twice. A product
     id can never be changed once it exists, and these four are already written
     into `ios/App/App/LinguaStore.swift`; changing one means changing the code
@@ -426,13 +426,13 @@ Two of them were about capabilities that had been deleted.
     `Transaction.updates` listener, and an id→plan map that answers with the
     HIGHEST entitlement) and `www/store.js`, which `setPlan()` goes through on
     a phone. What is left in the app is three things, each waiting on a file
-    another session holds: the Restore button (**Apple requires it**), Basic's
+    another session holds: the Restore button (**Apple requires it**), Plus's
     card on the plans screen, and the Free button opening Apple's cancel sheet
     instead of setting a flag. `docs/BACKLOG.md`.
 17a. **Sandbox testing**, once the products exist: buy, then `restore` after
     deleting and reinstalling, then a renewal arriving while the app is shut,
-    and — new since Basic — **a Basic receipt reading as Basic and not as
-    Plus**. None of it can be seen anywhere in this repository.
+    and — new since the middle tier — **a Plus receipt reading as Plus and not
+    as Pro**. None of it can be seen anywhere in this repository.
 17b. TestFlight, as before. `docs/apple.md`.
 18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 

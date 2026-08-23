@@ -28,13 +28,18 @@ had paid.
 
 ## How it is asked
 
-**Three plans, and they are a ladder.** `PLAN_ORDER` in `www/core.js` is
-`free`, `basic`, `plus`, cheapest first, and `has(level)` is met by the plan
-that names the level and by **every plan above it**. Written as an equals sign
-it would give Plus what Basic buys and nothing else — a Plus account quietly
+**Three plans, and they are a ladder: Free, Plus, Pro.** `PLAN_ORDER` in
+`www/core.js` is those three, cheapest first, and `has(level)` is met by the
+plan that names the level and by **every plan above it**. Written as an equals
+sign it would give Pro what Plus buys and nothing else — a Pro account quietly
 losing the letters it paid for, one tier down.
 
-| | Free | Basic | Plus |
+They were Free, Basic and Plus until 2026-08-23. 「ベーシック、プラスって名前
+どう思う？なんかどっちが上かわかりにくくない？」 — Basic reads as the name of a
+FREE tier in most apps, so Free and Basic were the confusable pair. `Free <
+Plus < Pro` needs nobody told which is which.
+
+| | Free | Plus | Pro |
 |---|---|---|---|
 | `letters` add / name / delete | — | yes | yes |
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
@@ -44,25 +49,25 @@ losing the letters it paid for, one tier down.
 | `gram` `dir` `data` `file` | — | — | yes |
 
 **The words ceiling is a number, not a door.** `wordCap()` is the one place
-that says it — `Infinity` on Plus, a thousand on Basic, `FREE_LIMIT` below
+that says it — `Infinity` on Pro, a thousand on Plus, `FREE_LIMIT` below
 that — and `can('words')` is asked inside it and nowhere else, meaning "no
 ceiling at all". Everything that shows or enforces the ceiling asks
 `wordCap()`: the dictionary, the banner on the cover, the count in settings,
 `capOK()` and `capStop()`.
 
-**Basic is decided and is not on sale.** Its price is in no language file and
-no subscription for it exists in App Store Connect, so the plans screen sells
-Free and Plus. What is here is the rung: the day a receipt says `basic`, every
-door above is already the right way round.
+**The middle rung is decided and is not on sale.** Plus's price is in no
+language file and no subscription for it exists in App Store Connect, so the
+plans screen sells Free and Pro. What is here is the rung: the day a receipt
+says `plus`, every door above is already the right way round.
 
-**`kb` has not moved down to Basic yet**, and that is not an oversight. The
-number is settled — 「1,1+3.無制限って言わなかったっけ？」 — Free 1, Basic four
-**counted across languages** rather than per language, and Plus no ceiling.
+**`kb` has not moved down to Plus yet**, and that is not an oversight. The
+number is settled — 「1,1+3.無制限って言わなかったっけ？」 — Free 1, Plus four
+**counted across languages** rather than per language, and Pro no ceiling.
 What holds it is `KB_MAX` in `www/keyboard.js`, which belongs to another
 session today and is in the middle of a change about holding more than one
 keyboard. **The door and its number are one statement and must not land
-apart**: `can('kb')` moving to `basic` while `KB_MAX` still hands out three
-per language would give Basic a number the owner has never said.
+apart**: `can('kb')` moving to `plus` while `KB_MAX` still hands out three
+per language would give Plus a number the owner has never said.
 
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`

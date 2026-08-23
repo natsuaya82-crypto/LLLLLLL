@@ -314,6 +314,50 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-23
+- Area: What the tiers are called
+- Decision: **Free / Plus / Pro.** They were Free / Basic / Plus.
+  「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」
+  「フリープラスプロがいいかなー」
+
+  | was | is | price |
+  |---|---|---|
+  | Free | Free | — |
+  | **Basic** | **Plus** | $4.99 / $49.99 |
+  | **Plus** | **Pro** | $9.99 / $99.99 |
+
+  Nothing about what each buys changed. Only the words did, and the stored
+  value with them: `SET.plan` and the Keychain hold `free` / `plus` / `pro`,
+  and the product ids are `com.tokinets.lingua.plus.*` and `...pro.*`.
+- Reason: `Basic` is what most apps call their FREE tier, so the confusable
+  pair was Free and Basic rather than Basic and Plus — and the order was
+  inferrable rather than obvious. `Free < Plus < Pro` needs nobody told which
+  is which, and all three words survive untranslated in the ten languages,
+  which plan names have to (they do not go through `t()`).
+- Affected features: `PLAN_ORDER`, `CAN`, `wordCap()`, `PLANS`, `planBadge()`,
+  the plans screen, `LinguaStore.swift`'s product map, every `SET.plan` in
+  `tools/`, and the nine `plan.plus.*` keys in ten language files, which are
+  `plan.pro.*` now.
+- Affected data: **one value, moved once.** A phone already holding
+  `plan: 'plus'` wrote it while Plus was the TOP tier; read in the new world
+  it would be the middle one. `planMigrate()` in `www/core.js` moves it up
+  and writes `SET.planV = 2` so it can never run twice — after this `plus` is
+  a real middle tier and must be left alone. `SET.planWas` carries a plan name
+  too and moves with it, or the next `capLapse()` would announce a step
+  nobody took. On a phone the Keychain is written again, or the next launch
+  would hand back the old word.
+
+  **Nobody had bought anything** — no product existed in App Store Connect on
+  the day — so the only value this can find is one somebody set by hand, and
+  moving it up gives them back what they had rather than more.
+- Affected docs: `docs/PAID_FEATURES.md`, `docs/apple.md`, `docs/STATE.md`,
+  `docs/BACKLOG.md`. **The decision entries above are left as they were
+  written**: they are a record of what was said on the day, and rewriting them
+  would be rewriting what the owner said. This entry is the mapping.
+- Implementation status: **done**, 2026-08-23, `claude/save`. Held by
+  `plan-check` (45 claims, the rungs read off `CAN`) and `migrate-check`.
+
+### Decision
+- Date: 2026-08-23
 - Area: How many keyboards, said again because the file said it twice
 - Decision: **Free 1 — the fixed QWERTY. Basic 1 + 3 = 4. Plus no ceiling.**
   Counted as a **pool across languages**, not per language.

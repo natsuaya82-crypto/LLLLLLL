@@ -254,7 +254,7 @@ const R = await pg.evaluate(() => {
      Same shape as the dictionary, and the same reason: it would look
      perfectly correct on every phone whose owner is still paying. */
   const keepKB = KB, keepPlan2 = SET.plan;
-  SET.plan = 'plus';
+  SET.plan = 'pro';
   KB = { kbs: [{ nm: 'one',   pat: 'qwerty', lay: [{ rows: [[{ k: 'lt', v: 'a' }]] }] },
                { nm: 'two',   pat: 'flick',  lay: [{ rows: [[{ k: 'lt', v: 'b' }]] }] },
                { nm: 'three', pat: 'tap',    lay: [{ rows: [[{ k: 'lt', v: 'c' }]] }] }],
