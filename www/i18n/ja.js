@@ -925,7 +925,7 @@ defLang('ja', (function(){
          from the server, one row a day, in every interface language. */
       "tab.day"  : "お題",
       "day.date"         : "{0}/{1}",
-      "day.ask"          : "自分の言語で？"
+      "day.ask"          : "自分の言語で"
     }
   };
 })());

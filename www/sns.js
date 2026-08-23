@@ -142,8 +142,17 @@ function vFeed(){
        icon 「文字ね」, and in the bar rather than as a sixth tab: it is the
        same timeline seen through one day. It is only there when there IS a
        day -- a word that goes to an empty page is worse than no word. */
-    rootTop('feed', DAY? '<button class="navlink"' + DO('go', ["day"]) + '>'+
-                         esc(pageName('day'))+'</button>' : '')+
+    /* The day's sentence starts beside the name of the screen, and the row
+       under it is the row you write in, unchanged. 「ホームの横から お題を
+       書き始めて / アイコン 自分の言語で」
+
+       Why there and not on a line of its own: the top of the timeline is then
+       exactly as tall as it always was, whatever the sentence says
+       「こうしたら上の幅のサイズが変わらないでしょ？」. It is one line and it
+       is cut with an ellipsis; the whole of it is on the day's own page,
+       which is where pressing it goes. */
+    rootTop('feed', DAY? '<button class="daytop"' + DO('go', ["day"]) + '>'+
+                         esc(daySay())+'</button>' : '')+
     '<div class="body">'+
 
     /* A row to write in, at the top of the timeline, because the round button
@@ -237,34 +246,16 @@ function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
 }
+/* One row, and it is the row that was always there: the face and a line of
+   grey type. What changes when there is a sentence for the day is what the
+   grey type says and what pressing it opens with -- not the shape, and not
+   the height. */
 function dayRow(){
-  var say=daySay(), d;
-  if(!say){
-    return '<button class="wrow"' + DO('openPost') + '>'+
-      '<span class="pav">'+
-        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
-    '</button>';
-  }
-  /* The date off the row rather than off this phone's clock: the row says
-     which day it is the sentence for, and that is decided in California by
-     whatever wrote it. Split by hand because `on_day` is `YYYY-MM-DD` and
-     Date parsing of it is a timezone question all over again. */
-  d=String(DAY.on_day||'').split('-');
-  /* The face is the person's own, exactly as the row you write in had it.
-     Without it the sentence read as a notice printed over the timeline rather
-     than as the first row of it 「なんか投稿ぽくない。ただ書いてるだけ」 --
-     and what the face says is whose post this is about to be. */
-  return '<button class="dayrow"' + DO('openPost', ["day"]) + '>'+
+  var say=daySay();
+  return '<button class="wrow"' + DO('openPost', say? ["day"] : []) + '>'+
     '<span class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-    '<span class="daybd">'+
-      '<span class="dayq">'+
-        (d.length===3? '<span class="dayd">'+
-           esc(t('day.date', String(+d[1]), String(+d[2])))+'</span> ' : '')+
-        esc(say)+'</span>'+
-      '<span class="daya">'+esc(t('day.ask'))+'</span>'+
-    '</span>'+
+    '<span class="wrt">'+esc(t(say? 'day.ask' : 'post.ln.ph'))+'</span>'+
   '</button>';
 }
 /* ---- one day, and what everybody said ----------------------------------
