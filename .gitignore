@@ -29,6 +29,7 @@ tools/font-spike/shot*.json
 
 # pictures taken to look at once (tools/shot.mjs)
 shots/
+tools/.css-snap.json
 
 # scratch scripts written to look at one thing once
 tools/_*.mjs

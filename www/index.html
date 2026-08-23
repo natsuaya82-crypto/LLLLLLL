@@ -105,7 +105,7 @@ input,textarea,[contenteditable],.mn,.rd,.wordmean,.sentline{
   -webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 /* manipulation keeps scroll and pinch but drops the double-tap-to-zoom that
    was eating every second tap. */
-button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obsnd,.obescb{touch-action:manipulation}
+button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obescb{touch-action:manipulation}
 .cz{font-family:var(--face-caps)}
 .cor{font-family:var(--face-ital)}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
@@ -952,17 +952,9 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .cvst:active{border-color:var(--goldln);color:var(--gold)}
 .cvv{font-family:var(--face-ital);font-style:italic;font-size:1.14rem}
 .cvl{font-size:.82rem;color:var(--txm);letter-spacing:.06em}
-/* ---------- I. sounds, II. letters ----------
-   A sound is a row: the sound itself, the letters that write it, and the two
-   ways to add one. A letter is a cell, because there are as many letters as
-   somebody decides there are. */
-.sndlist{border-top:1px solid var(--line)}
-.sndrow{display:flex;align-items:center;gap:9px;padding:9px 0;
-        border-bottom:1px solid var(--line)}
-.sndp{flex:0 0 auto;min-width:56px;min-height:48px;border:1px solid var(--line);border-radius:9px;
-      background:var(--sf);color:var(--tx);font-size:1.06rem}
-.sndp:active{border-color:var(--goldln);color:var(--gold)}
-.sndls{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+/* ---------- the letters ----------
+   A letter is a cell, because there are as many letters as somebody decides
+   there are. */
 /* The alphabet: one cell per letter, the shape and what it is called, as many
    across as the screen holds. A row per letter was a thumb high each and read
    as a settings screen at seven letters and as a scroll at forty.
@@ -1037,9 +1029,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
         background:none;color:var(--txm);
         display:inline-flex;align-items:center;justify-content:center}
 .sndadd:active{border-color:var(--goldln);color:var(--gold)}
-.sndx{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
-      display:inline-flex;align-items:center;justify-content:center}
-.sndx:active{color:var(--gold)}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
    but nothing on the screen said which was which. */
@@ -1126,27 +1115,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .note{color:var(--txm);font-size:.86rem;line-height:1.75}
 /* A photograph of the settings screen a step lands on, at the width of the
    page, with the corners of a screenshot. */
-/* One sound of the language: the symbol, the letters that say it, and the way
-   to take it out. A sound nothing reads is not an error -- it is a phonology
-   somebody is partway through -- so the empty case is a quiet line and not a
-   warning. */
-.sndrow{display:flex;align-items:center;gap:12px;padding:10px 2px;
-        border-bottom:1px solid var(--line)}
-.sndsym{min-width:44px;min-height:44px;border:0;background:none;color:var(--tx);
-        font-family:var(--face-ital);font-size:1.3rem}
-.sndlts{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
-/* Shown, not pressed. Joining a sound to a letter is the letter's, in one
-   place -- two directions for one fact is what closed the old sound chapter. */
-.sndlt{min-height:36px;min-width:36px;border:1px solid var(--line);border-radius:9px;
-       background:var(--sf);color:var(--tx);font-family:inherit;padding:0 8px;
-       display:inline-flex;align-items:center;justify-content:center}
-/* ltInk() returns a canvas with no size of its own -- every place that shows
-   a letter says how big. 26 is the size of a letter standing in a row of
-   text, which is what this is. */
-.sndlt .tc{width:26px;height:26px;display:block}
-.sndlt .bch{font-size:1.05rem;line-height:1}
-.sndnone{color:var(--txm);font-size:.86rem}
-.sndx{flex:0 0 auto;min-width:44px;min-height:44px;border:0;background:none;color:var(--txm)}
 /* Which part of speech the dictionary is filtered to: one row that says the
    answer and opens the list, where twelve tabs used to scroll sideways. */
 /* The filter and the order, side by side. */
@@ -2498,7 +2466,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
    else, and why nothing said so. Same shape as the `.sfont` bug: one rule in
    one place, quietly outranked by another that was written for one screen. */
 .ob .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:inherit}
-.btn.obauto{margin-top:10px}
 .obhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 /* --- onboarding: the letter, the escape row, the borrowed scripts ------- */
 .oblang{background:none;border:1px solid var(--line);border-radius:10px;color:var(--txs);
@@ -2510,7 +2477,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .ob .obsub{font-family:var(--face-ital);font-style:italic;
            font-size:clamp(.86rem,3.4vw,1.02rem);color:var(--txs);margin-top:6px;flex:0 0 auto}
 .ob .obleft{text-align:left}
-.ob .obq{margin-top:16px}
 .ob .obnote{text-align:center}
 /* The drawing surface takes what the rest of the screen has not asked for.
    Every term is a ceiling: never wider than the column, never taller than a
@@ -2570,12 +2536,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
          display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-content:start}
 .obchb{border:1px solid var(--line);background:var(--sf);border-radius:9px;
        padding:0;font-size:1.05rem;color:var(--tx);min-width:44px;min-height:48px}
-.obsndgrid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px;flex:0 0 auto}
-.obsnd{border:1px solid var(--line);background:var(--sf);border-radius:10px;
-       padding:12px 16px;font-size:1.05rem;color:var(--tx);min-width:52px;min-height:52px}
-.obsnd.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-.obgl{color:var(--gold);display:block;margin:0 auto}
-.obch{color:var(--gold);line-height:1;text-align:center}
 /* The door is drawn, not built out of a box with rounded corners. A CSS
    arch inherits its radius into the panel inside it, needs a different fill
    in each theme, and turns into a pale slab on a light background. One
@@ -2590,8 +2550,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .obdoor{flex:0 1 auto;min-height:0;height:min(30vh, 224px);
         display:flex;align-items:center;justify-content:center;color:var(--gold);line-height:0}
 .obdoor svg{height:100%;width:auto;max-width:min(40vw,148px);display:block}
-.obrule{width:56px;height:1px;margin:clamp(12px,2.4vh,20px) auto 0;flex:0 0 auto;
-        background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 .ob .obh1{font-family:var(--face-caps);font-size:clamp(1.35rem,5.6vw,1.8rem);
           letter-spacing:.2em;margin-top:clamp(10px,2vh,16px);font-weight:600;flex:0 0 auto}
 .ob .obtag{margin-top:clamp(6px,1.4vh,10px);font-size:clamp(.9rem,3.6vw,1.05rem);flex:0 0 auto}
@@ -2665,14 +2623,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}
 .pkch.cur{border-color:var(--gold);color:var(--gold)}
-.sndgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;max-height:46dvh;overflow-y:auto}
-.sndchip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:52px;
-  border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--tx);font:inherit;cursor:pointer}
-.sc1{font-family:var(--face-mono);font-size:.86rem}
-.sc2{font-size:.82rem;color:var(--txm)}
-.scrpv{display:flex;flex-direction:column;gap:4px;padding:13px;border:1px solid var(--line);border-radius:11px;margin-bottom:10px}
-.scrpvw{font-size:1.5rem;line-height:1.4;word-break:break-all}
-.scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
 .scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
   color:var(--tx);font:inherit;font-size:1rem;outline:none}
 .scin:focus{border-color:var(--gold)}
@@ -2680,23 +2630,10 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
   color:var(--tx);font:inherit;font-size:1.05rem;text-align:center;outline:none}
 .scin:focus{border-color:var(--gold)}
-.scrpv{display:flex;flex-direction:column;gap:5px;padding:15px;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
-.scrpvw{font-size:1.7rem;line-height:1.4;word-break:break-all}
-.scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
 .capgo{color:var(--gold);flex-shrink:0}
-.sh2{font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--txm);margin:26px 0 10px}
 .set.lock .sv{color:var(--gold)}
-.nextcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:2px 0 18px;padding:14px 16px;
-  border:1px solid rgba(201,168,106,.34);border-radius:12px;background:rgba(201,168,106,.09);color:inherit;
-  font:inherit;cursor:pointer;transition:.15s;-webkit-tap-highlight-color:transparent}
-.nextcard:hover{border-color:rgba(201,168,106,.6)}
-.nextcard:active{transform:scale(.99)}
-.nextcard .nk{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);flex-shrink:0}
-.nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
-.nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
-
 /* ---------- the grammar, in stages ----------
    A list of stages, each with what it still needs; then one stage open, with
    its words as rows you can fill on the spot. */
@@ -2726,37 +2663,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .stslot .psn{font-size:.88rem;color:var(--txm)}
 .stslot .go{margin-left:auto;color:var(--txm);flex:0 0 auto;align-self:center}
 .stslot.has .psn{display:none}
-
-/* ---------- what the app proposes ----------
-   The inventory it drew, laid out so every sound in it can be heard on its
-   own before the whole thing is accepted. */
-.obheard{margin-top:14px;padding:14px;border:1px solid var(--goldln);border-radius:12px;
-  background:var(--goldsf)}
-.obheard .obhl{font-size:.86rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
-.obhs{display:flex;flex-wrap:wrap;gap:6px}
-/* Consonants and vowels on their own rows, each with its name to the side.
-   The name is quiet and small: it is there to be read once, and after that it
-   is only a marker for which row is which. */
-.obhr{margin-bottom:10px}
-.obhr:last-child{margin-bottom:0}
-.obhk{display:block;font-size:.84rem;letter-spacing:.06em;color:var(--txm);margin-bottom:5px}
-/* A sound and the way to take it back out, joined as one block so it reads
-   as one thing. The sound says itself; the cross removes it. Both are full
-   height, because a target you have to aim at is a target you will miss. */
-.obhp{display:inline-flex;align-items:stretch;border:1px solid var(--goldln);border-radius:8px;
-  background:var(--pane);overflow:hidden}
-.obhb{min-width:44px;min-height:44px;border:0;border-radius:0;
-  background:none;color:var(--tx);font-size:1.02rem;padding:8px 4px 8px 11px}
-.obhb:active{opacity:.55}
-.obhx{min-width:44px;min-height:44px;border:0;background:none;color:var(--txm);
-  display:inline-flex;align-items:center;justify-content:center;padding:0 8px 0 4px}
-.obhx:active{color:var(--gold)}
-/* And the way to lengthen the row. Dashed, because it is not one of the
-   sounds -- it is the space where the next one would go. */
-.obhadd{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 12px;
-  border:1px dashed var(--line);border-radius:8px;background:none;
-  color:var(--txs);font-family:inherit;font-size:.88rem}
-.obhadd:active{border-color:var(--goldln);color:var(--gold)}
 
 /* ---------- a word, opened ----------
    Its meanings are a list, because a word can mean more than one thing, and

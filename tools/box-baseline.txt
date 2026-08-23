@@ -100,24 +100,14 @@
 .mrep | border
 .mrep | border-radius
 .navdo | border-radius
-.nextcard | border
-.nextcard | border-radius
 .ntrow | border
 .ntrow | border-radius
 .ob .btn.ghost | border
 .ob .dot | border-radius
 .obchb | border
 .obchb | border-radius
-.obhadd | border
-.obhadd | border-radius
-.obheard | border
-.obheard | border-radius
-.obhp | border
-.obhp | border-radius
 .oblang | border
 .oblang | border-radius
-.obsnd | border
-.obsnd | border-radius
 .obsrow | border
 .obsrow | border-radius
 .pav | border-radius
@@ -173,17 +163,9 @@
 .rr2 | border-radius
 .scin | border
 .scin | border-radius
-.scrpv | border
-.scrpv | border-radius
 .sheet | border-radius
 .sndadd | border
 .sndadd | border-radius
-.sndchip | border
-.sndchip | border-radius
-.sndlt | border
-.sndlt | border-radius
-.sndp | border
-.sndp | border-radius
 .spc | border
 .spc | border-radius
 .spellrow | border
