@@ -142,18 +142,17 @@ function vFeed(){
        icon 「文字ね」, and in the bar rather than as a sixth tab: it is the
        same timeline seen through one day. It is only there when there IS a
        day -- a word that goes to an empty page is worse than no word. */
-    /* The day's sentence starts beside the name of the screen, and the row
-       under it is the row you write in, unchanged. 「ホームの横から お題を
-       書き始めて / アイコン 自分の言語で」
-
-       Why there and not on a line of its own: the top of the timeline is then
-       exactly as tall as it always was, whatever the sentence says
-       「こうしたら上の幅のサイズが変わらないでしょ？」. It is one line and it
-       is cut with an ellipsis; the whole of it is on the day's own page,
-       which is where pressing it goes. */
-    rootTop('feed', DAY? '<button class="daytop"' + DO('go', ["day"]) + '>'+
-                         esc(daySay())+'</button>' : '')+
+    rootTop('feed')+
     '<div class="body">'+
+    /* Three lines and no more: the name of the screen, the day's sentence,
+       and the row you write in. 「あんまり高さ変えずに3列にしたい」
+
+       The sentence is one line, cut with an ellipsis, so this block is the
+       same height whatever the day says -- and the whole of it is on the
+       day's own page, which is where pressing it goes. .navtop gives up four
+       of its eight bottom pixels when it is here, so three lines cost less
+       than a line. */
+    dayLine()+
 
     /* A row to write in, at the top of the timeline, because the round button
        is one floating thing over the corner of a screen and somebody who does
@@ -245,6 +244,14 @@ function dayPull(){
 function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
+}
+/* The sentence, under the name of the screen and over the row you write in.
+   Nothing when there is no sentence, so the day the server missed is the two
+   lines this screen has always had. */
+function dayLine(){
+  var say=daySay();
+  if(!say) return '';
+  return '<button class="dayline"' + DO('go', ["day"]) + '>'+esc(say)+'</button>';
 }
 /* One row, and it is the row that was always there: the face and a line of
    grey type. What changes when there is a sentence for the day is what the

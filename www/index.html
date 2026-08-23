@@ -1561,15 +1561,21 @@ a.set{text-decoration:none}
         text-align:left;font:inherit;color:inherit}
 .dayrow .pav{width:40px;height:40px;flex:0 0 auto}
 .daybd{flex:1 1 auto;min-width:0}
-/* The day's sentence, beside the name of the screen. One line, cut with an
-   ellipsis: the bar is then exactly as tall as it always was, whatever the
-   sentence says 「こうしたら上の幅のサイズが変わらないでしょ？」. The whole
-   of it is on the day's own page, which is where pressing it goes. */
-.daytop{flex:1 1 auto;min-width:0;margin-left:12px;
-        background:none;border:0;padding:6px 0;font:inherit;font-size:.95rem;
-        color:var(--txm);text-align:left;min-height:44px;
-        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.daytop:active{opacity:.55}
+/* The day's sentence, on its own line between the name of the screen and the
+   row you write in. One line, cut with an ellipsis, so the three lines are
+   the same height whatever the day says 「あんまり高さ変えずに3列にしたい」.
+
+   44pt because it is pressed -- it goes to the day's own page, where the
+   whole sentence is -- and the padding is what makes up the 44 rather than a
+   height, so the type sits where the two lines around it put it. */
+.dayline{display:block;width:100%;background:none;border:0;
+         padding:11px 0;font:inherit;font-size:.95rem;color:var(--txm);
+         text-align:left;min-height:44px;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dayline:active{opacity:.55}
+/* And the bar gives up half its bottom padding when the sentence is under it,
+   so three lines cost less than a line. */
+.body:has(> .dayline){margin-top:-4px}
 /* The sentence at the head of its own page. Same two sizes as the row. */
 .dayhd{padding:14px 0 16px;font-size:1.02rem;line-height:1.55;
        border-bottom:1px solid var(--line);margin-bottom:4px}
