@@ -109,7 +109,8 @@ One check, by name, for what you changed. Not `npm test` — see rule 2.
 | what a word does after two presses in a row — rename, delete, save | `npm run word` |
 | a screen | `node tools/shot.mjs <screen>` and look at it |
 | `www/i18n/*` | `npm run i18n` |
-| anything a plan gates | add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |
+| anything a plan gates | `npm run plan`, **and** add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |
+| `CAN`, `can()`, `has()`, the word ceiling, or where the plan is kept | `npm run plan` |
 
 ## Fixing a bug
 

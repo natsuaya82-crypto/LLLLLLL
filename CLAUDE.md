@@ -41,9 +41,10 @@ object. `post.ink` is the worked example and `card-check` is what holds it.
 
 **Money.** A plan decides what a person may DO and decides nothing about what
 exists. No backup, restore or byte of anybody's language may depend on payment,
-and "the plan is unknown" must never take the same branch as "this person has
-no data" — a failed check means fewer buttons, never fewer words.
-→ `docs/PAID_FEATURES.md`
+and "the no data" — a failed check means fewer buttons, never fewer words.
+**`plan-check` holds it**: five hundred words made on the paid plan are five
+hundred words after it ends, the list is a hundred, and not one byte of any
+slice moved. → `docs/PAID_FEATURES.md`
 
 **Online.** Anything that needs the server is built assuming the server is
 there. A screen that half-works without one is not a step on the way to being
@@ -217,7 +218,7 @@ backlog entry is not permission, and neither is the absence of one.
 
 ```
 npm test        # tools/gate.mjs -- seven with no browser in a row (assets, es5,
-                # dead, import, sides, face, box, ~2s), then the other twelve
+                # dead, import, sides, face, box, ~2s), then the other fourteen
                 # four at a time. Six minutes. NOT run by a session -- rule 2.
 ```
 
@@ -225,10 +226,11 @@ Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate
 `npm run i18n` / `npm run import` / `npm run sides` / `npm run face` / `npm run box` /
 `npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
-`npm run fill` / `npm run round` / `npm run kb` / `npm run press`.
-`tools/gate.mjs` is what `npm test` runs. The six that need no browser go first, one
+`npm run fill` / `npm run round` / `npm run base` / `npm run kb` / `npm run plan` /
+`npm run press`.
+`tools/gate.mjs` is what `npm test` runs. The seven that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
-there and nothing heavy is started at all — and the twelve that each start a headless
+there and nothing heavy is started at all — and the fourteen that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
 output is printed whole and in list order, so a counter that moved is still visible.
 

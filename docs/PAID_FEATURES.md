@@ -184,11 +184,46 @@ Then: add it to `CAN`, ask it with `can()`, and add a `halfDone` entry in
 `act-check` reports the new screen's buttons as an entry no screen names, which
 is true and is not what you meant.
 
+## What holds all of this
+
+`tools/plan-check.mjs` — `npm run plan`. Twenty-five claims, and the sentence
+they are all about is the one at the head of this file: **a plan decides what
+may be DONE and nothing about what exists.**
+
+`dead-check` already holds the SHAPE of the table — every capability in `CAN`
+asked for by name, every `can()` naming one that exists, `has()` core.js's
+alone. What it cannot ask is what happens to somebody's WORDS when the answer
+changes, and that is this: five hundred words made on the paid plan, the plan
+ended, and then the list is a hundred while the language is still five hundred
+and **not one byte of any slice has moved**. Also that no plan at all reads as
+free; that any plan which is not the word `plus` buys nothing (`garbage`,
+`PLUS`, `studio`); that a backup written on the free plan holds every slice the
+paid one does; that the ceiling refuses without taking the screen off anybody;
+that the plan is in the settings file in a browser and NOT in it on a phone,
+where the Keychain has it; and that a plan ending is said once, not once per
+render, and touches nothing.
+
+Six of those were watched failing, with three real bugs put back: a list that
+trims the thing it is listing, a slice quietly left out of a free plan's
+backup, and the ceiling putting somebody on a price list mid-word.
+
 ## Not built yet
 
-**No StoreKit code exists.** The plan is set by hand on the plans screen and by
-nothing else. The two subscriptions are configured in App Store Connect and are
-described in `docs/apple.md`; nothing in the repo talks to them.
+**The StoreKit code exists and nothing in `www/` calls it.**
+`ios/App/App/LinguaStore.swift` has `products`, `buy`, `restore`, `current` and
+`manage`, refuses an `.unverified` transaction, finishes what it consumes and
+watches `Transaction.updates` for a renewal that arrives while the app is shut.
+It writes the answer through `LinguaPlanPlugin.set()`.
+
+What is missing is the wiring: **`www/store.js`, and the plans screen calling
+it**. The plan is still set by hand there — pressing a card is `setPlan(id)`
+and nothing asks the App Store anything. It is deliberately not written yet
+(「storekitってコードは書いていいよ繋げる作業は後でやる」), and writing it
+early would have been worse than not: a function nothing calls is a function
+`dead-check` deletes.
+
+The two subscriptions are configured in App Store Connect and are described in
+`docs/apple.md`.
 
 Where it is kept is settled, though: the Keychain, not the settings file. See
 `ios/App/App/LinguaPlan.swift` for what that closes and what it leaves open, and

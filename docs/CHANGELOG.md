@@ -15,6 +15,55 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### A check that money decides what may be done and nothing about what exists
+
+`tools/plan-check.mjs` — `npm run plan`, and it is in the gate. Twenty-five
+claims about the one rule at the head of `docs/PAID_FEATURES.md`.
+
+`dead-check` already held the SHAPE of the table — every capability in `CAN`
+asked for by name, every `can()` naming one that exists, `has()` core.js's
+alone. **What nothing asked was what happens to somebody's WORDS when the
+answer changes.** Five hundred words are made on the paid plan, the plan ends,
+and then the list is a hundred while the language is still five hundred and
+not one byte of any slice has moved.
+
+And: no plan at all reads as free; any plan that is not the word `plus` buys
+nothing (`garbage`, `PLUS`, `studio` are all asked); a backup written on the
+free plan holds every slice the paid one does — with every slice given
+something first, because `bkPack()` writes a slice only when storage has one
+and a language with no keyboard cannot answer the question; the ceiling
+refuses without taking the screen off anybody; the plan is in the settings
+file in a browser and **not** in it on a phone, where the Keychain has it; and
+a plan ending is said once, not once per render, and going up says nothing.
+
+**Six of them were watched failing, with three real bugs put back:**
+
+- `wordsSeen()` made to assign back to `WORDS` — a list that trims the thing
+  it is listing. Three claims red, including *the plan ending keeps all 500
+  (100)*. The claim order matters and is commented: the LIST is asked for
+  first and what is HELD is read after it, because reading the count before
+  anything has drawn the list is reading it before the damage.
+- `bkPack()` made to skip the keyboard slice when `can('kb')` is false — a
+  slice quietly left out of a free plan's backup, which is exactly the shape
+  of the fault `backup-check` was written after. Two claims red.
+- `capStop()` made to `go('plans')` unconditionally — the price list arriving
+  mid-word. One claim red.
+
+**Nothing about the app changed.** This commit adds a check, a script entry, a
+line in the gate's list, and the documents that were wrong about the code.
+
+**And one of those was wrong in a way worth naming.** `docs/PAID_FEATURES.md`
+§ Not built yet opened with **"No StoreKit code exists"**, and
+`ios/App/App/LinguaStore.swift` has existed since 2026-08-22 — `docs/STATE.md`
+§ 17 says so correctly on the same day. Two documents, one true and one false,
+about a file either of them could have looked at. It now says what is actually
+missing: the wiring — `www/store.js` and the plans screen calling it.
+
+`CODE CONFIRMED` — 25 green, 6 watched red. `DEVICE CONFIRMED` — **no**, and
+this check cannot ever give it: what StoreKit answers on a real phone is item
+20b of `docs/STATE.md`.
+
+
 ### その日の一文 — 全員が同じことを、それぞれの言語で
 
 タイムラインの一番上、これまで「書く行」があったところに、その日の一文が出ます。
