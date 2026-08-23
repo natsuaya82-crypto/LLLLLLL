@@ -421,14 +421,31 @@ Two of them were about capabilities that had been deleted.
     returns nothing for it — so **they can be made one at a time** and each
     appears in the app the moment it exists.
 
+    **What is decided per product is one country's price, not 175.** Apple
+    generates every other storefront from it — its own rounding, its own tax,
+    its own currency — and any of them can be overridden afterwards, one at a
+    time. The only real choice is which country is the base: with Japan as the
+    base the yen are a number somebody chose, with USD as the base they are a
+    number Apple rounded to. `docs/apple.md` § 4.
+
+    **Changing a price here needs no change in the app**, and that is new
+    since 2026-08-23: the plans screen shows `displayPrice` as the App Store
+    gives it, and works the yearly saving out from the two amounts rather than
+    from the 17 on `PLANS`, because Apple rounds each storefront separately
+    and 17% off in dollars is not 17% off in yen. The `$4.99` in `www/i18n` is
+    the browser's fallback and nothing else. Only a **product id** still means
+    changing code first.
+
     The code side of this is done as far as it can be here:
     `LinguaStore.swift` (`products` `buy` `restore` `current` `manage`, the
     `Transaction.updates` listener, and an id→plan map that answers with the
     HIGHEST entitlement) and `www/store.js`, which `setPlan()` goes through on
-    a phone. What is left in the app is three things, each waiting on a file
-    another session holds: the Restore button (**Apple requires it**), Plus's
-    card on the plans screen, and the Free button opening Apple's cancel sheet
-    instead of setting a flag. `docs/BACKLOG.md`.
+    a phone. The three things that were waiting on another session's files are
+    in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
+    Apple's own sheet rather than setting a flag. What the screen still lacks
+    is **the subscription text Apple requires beside a price** — that it
+    renews until cancelled, and links to Terms and to the privacy policy —
+    which needs two URLs that do not exist yet. `docs/BACKLOG.md`.
 17a. **Sandbox testing**, once the products exist: buy, then `restore` after
     deleting and reinstalling, then a renewal arriving while the app is shut,
     and — new since the middle tier — **a Plus receipt reading as Plus and not

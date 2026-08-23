@@ -109,8 +109,79 @@ function storeManage(){
 }
 /* Which product a plan is bought with, monthly or yearly.
    Written here rather than on PLANS, because a product id is the App Store's
-   name for a thing and PLANS is what the app calls it. `plansYr` is where the
-   person is standing on the plans screen. */
+   name for a thing and PLANS is what the app calls it. `yearly` is which of
+   the two terms on that plan's page was pressed. */
 function storeId(planId, yearly){
   return 'com.tokinets.lingua.' + String(planId||'') + (yearly ? '.yearly' : '.monthly');
+}
+
+/* ---- what it costs, in the App Store's words ---------------------------
+
+   Prices differ by country and are not ours to know. In App Store Connect
+   one base price is set and Apple generates the other 174 storefronts from
+   it -- its own rounding, its own tax rules, its own currency -- and any of
+   them can be overridden one at a time. So the number a person is charged is
+   a fact that lives at Apple and arrives here as `displayPrice`: already in
+   their currency, already formatted the way their region formats money.
+
+   Until this, the plans screen showed `$4.99` out of www/i18n/en.js, which is
+   a string somebody typed. It is right in a browser and right in the United
+   States and wrong everywhere else -- and wrong quietly, because a price is
+   never checked against anything. 「国によって値段変わる？」 2026-08-23.
+
+   Asked once and remembered, because the answer cannot change while the app
+   is open: a price is set in a dashboard and takes hours to propagate, and
+   asking on every render is a network call per keystroke on a screen that
+   slides. STORE_P is null until the App Store has answered and a map after
+   -- an empty map when there is nothing on sale yet, which is today. */
+var STORE_P=null;    /* product id -> what the App Store said about it */
+var STORE_ASK=false; /* asked already this session */
+
+function storeRow(id){
+  return (STORE_P && STORE_P[String(id)]) || null;
+}
+/* Ask, once, and redraw when the answer lands. Nothing waits on this: the
+   screen is drawn with what www/i18n has, and the real prices replace them a
+   moment later. A plans screen that is blank until Apple answers is a plans
+   screen that is blank on a bad train. */
+function storeAsk(){
+  var np=storePlug();
+  if(!np || STORE_ASK) return;
+  STORE_ASK=true;
+  np('LinguaStore', 'products', {})
+    .then(function(r){
+      var l=(r && r.products) || [], m={}, i;
+      for(i=0;i<l.length;i++) if(l[i] && l[i].id) m[String(l[i].id)]=l[i];
+      STORE_P=m;
+      render();
+    })
+    ['catch'](function(){ STORE_P={}; });
+}
+/* What one term of one plan costs. Empty when the App Store has not answered,
+   which is every browser and every product not yet made -- the caller falls
+   back to what www/i18n says, and that is the only place a typed price is
+   allowed to reach a screen. */
+function storeCost(planId, yearly){
+  var r=storeRow(storeId(planId, yearly));
+  return (r && r.price) ? String(r.price) : '';
+}
+/* How much less a year is than twelve months, as a whole number of per cent.
+
+   Worked out from the two AMOUNTS and never from the two formatted prices:
+   `$9.99` is a string in ten languages and, on a phone, whatever Apple hands
+   back in whatever currency. It is worked out at all -- rather than being the
+   17 written on PLANS -- because Apple rounds each storefront separately, so
+   a year that is 17% off in dollars is not 17% off in yen, and a number that
+   is only right in one country is a number the app is wrong about in 174.
+
+   Empty unless both terms of that plan are really on sale and the year is
+   really cheaper: a discount worked out from a missing product is a discount
+   made up. */
+function storeOff(planId){
+  var m=storeRow(storeId(planId, false)), y=storeRow(storeId(planId, true));
+  var a=(m && typeof m.amount==='number') ? m.amount : 0;
+  var b=(y && typeof y.amount==='number') ? y.amount : 0;
+  if(!(a>0) || !(b>0)) return '';
+  var off=Math.round((1 - b/(a*12))*100);
+  return (off>0 && off<100) ? String(off) : '';
 }

@@ -255,6 +255,68 @@ const r = await pg.evaluate(({ s }) => {
 
   return out;
 }, { s: seed.toString() });
+
+/* ---- and the prices are the App Store's -------------------------------
+   Everything above runs in a browser, where there is no App Store, and that
+   is the one place the typed prices in www/i18n are correct. On a phone they
+   are correct in the United States and wrong in the other 174 storefronts:
+   Apple generates every one of them from a base price with its own rounding
+   and its own tax, and any of them can be overridden one at a time. Nothing
+   about showing dollars to somebody being charged yen throws, renders wrong,
+   or fails a check -- it is simply a number nobody ever compared to anything.
+   「国によって値段変わる？」 2026-08-23.
+
+   So a fake App Store is stood up and the screen is asked what it says. The
+   yen here are not the real prices and are not meant to be: they are chosen
+   so the saving works out to 33 rather than the 17 written on PLANS, because
+   17 appearing would prove nothing about where it came from.               */
+const st = await pg.evaluate(async () => {
+  var out = {};
+  window.Capacitor = { nativePromise: function(plug, m){
+    if (m !== 'products') return Promise.reject(new Error('not this one'));
+    return Promise.resolve({ products: [
+      { id: 'com.tokinets.lingua.plus.monthly', price: '\u00a5750',   amount: 750 },
+      { id: 'com.tokinets.lingua.plus.yearly',  price: '\u00a56,000', amount: 6000 },
+      /* Pro's monthly only: a product that has not been made in App Store
+         Connect is not an error, it simply does not come back. */
+      { id: 'com.tokinets.lingua.pro.monthly',  price: '\u00a51,500', amount: 1500 },
+    ] });
+  } };
+  STORE_P = null; STORE_ASK = false;
+
+  out.before = vPlans();                       /* asks, and draws meanwhile */
+  await new Promise(function(r){ setTimeout(r, 0); });
+  out.asked = STORE_ASK && STORE_P !== null;
+  var again = vPlans();
+  out.twice = STORE_ASK;                       /* still one ask, not two */
+  out.after = again;
+  /* Per page, because the three do not agree and should not: Plus has both
+     its products and Pro has one, so what each page says about a saving is a
+     different sentence. A claim about the whole screen would be answered by
+     whichever page happened to say it. */
+  var pp = again.split('class="plpage"');
+  out.plusPage = pp[2] || '';
+  out.proPage  = pp[3] || '';
+
+  out.plusMo = storeCost('plus', false);
+  out.plusYr = storeCost('plus', true);
+  out.proYr  = storeCost('pro', true);         /* not on sale -> nothing */
+  out.plusOff = storeOff('plus');
+  out.proOff  = storeOff('pro');               /* one term only -> nothing */
+  out.freeOff = storeOff('free');
+
+  /* Amounts that cannot make a saving make none, rather than making one up. */
+  STORE_P['com.tokinets.lingua.pro.monthly'] = { id: 'x', price: 'free', amount: 0 };
+  STORE_P['com.tokinets.lingua.pro.yearly']  = { id: 'y', price: 'free', amount: 0 };
+  out.zeroOff = storeOff('pro');
+  STORE_P['com.tokinets.lingua.pro.monthly'] = { id: 'x', price: 'a', amount: 100 };
+  STORE_P['com.tokinets.lingua.pro.yearly']  = { id: 'y', price: 'b', amount: 2400 };
+  out.dearOff = storeOff('pro');               /* a year that costs MORE */
+
+  delete window.Capacitor;
+  STORE_P = null; STORE_ASK = false;
+  return out;
+});
 await br.close();
 
 const bad = [];
@@ -324,6 +386,27 @@ say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly 
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
 say(r.tookNoKeychain, 'what comes back from a purchase is not written to the Keychain twice');
 say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');
+
+say(st.asked && st.twice, 'the App Store is asked once and remembered');
+say(st.before.indexOf('$4.99') !== -1,
+    'the screen is drawn before it answers, out of www/i18n');
+say(st.after.indexOf('\u00a5750') !== -1 && st.after.indexOf('$4.99') === -1,
+    'and redrawn with what Apple charges in that country, not what we typed');
+say(st.plusMo === '\u00a5750' && st.plusYr === '\u00a56,000',
+    'both terms come from the App Store (' + st.plusMo + ' ' + st.plusYr + ')');
+say(st.plusOff === '33',
+    'the saving is worked out from the two amounts, not read off PLANS (' + st.plusOff + ')');
+say(st.plusPage.indexOf('33% off') !== -1 && st.plusPage.indexOf('17% off') === -1,
+    'and it is the one on that plan\'s page');
+say(st.proPage.indexOf('17% off') !== -1,
+    'while a plan the App Store said nothing about keeps the one on PLANS');
+say(st.proYr === '', 'a product not yet made says nothing rather than guessing');
+say(st.proOff === '' && st.freeOff === '',
+    'and a saving needs both terms really on sale');
+say(st.after.indexOf('$99.99') !== -1,
+    'so that term falls back to www/i18n, which is the only place a typed price may reach a screen');
+say(st.zeroOff === '' && st.dearOff === '',
+    'nothing costing nothing, and a year dearer than twelve months, make no saving');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

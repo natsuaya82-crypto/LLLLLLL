@@ -175,6 +175,14 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
             "name": p.displayName,
             "text": p.description,
             "price": p.displayPrice,
+            /* The same money as a number, and it is here for exactly one
+               sum: how much less a year is than twelve months. That figure
+               differs by country -- Apple rounds each storefront its own way,
+               so a year that is 17% off in one is 15% off in another -- and
+               working it out from `price` would be arithmetic on a formatted
+               string in whatever currency. It is never shown; only `price`
+               is ever put on a screen. */
+            "amount": NSDecimalNumber(decimal: p.price).doubleValue,
           ]
           /* A subscription's period is what tells the two apart on screen,
              and it is the App Store's answer rather than ours -- a product

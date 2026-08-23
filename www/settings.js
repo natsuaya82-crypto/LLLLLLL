@@ -500,20 +500,30 @@ function planPage(p){
   '</div>';
 }
 /* The two terms, side by side, and each is the button that buys it -- one
-   press where a chooser and a Buy would be two. The year says what it saves
-   rather than a second sum to do: `off` is a number on the plan and not
-   arithmetic on two formatted strings, because $9.99 is a STRING in ten
-   languages and, on a phone, whatever the App Store hands back in whatever
-   currency. Percentages worked out from formatted prices are how an app comes
-   to say "17% off" about numbers that are not those.
+   press where a chooser and a Buy would be two.
+
+   **Neither number is ours on a phone.** `storeCost` is what the App Store
+   charges, in the person's own currency and formatted the way their region
+   formats money, and `storeOff` is the saving worked out from the two amounts
+   Apple gave -- because Apple rounds every storefront separately and a year
+   that is 17% off in dollars is not 17% off in yen. What www/i18n says is the
+   fallback and only the fallback: it is what a browser shows, what a
+   screenshot shows, and what shows for a product not yet made.
+
+   The saving is a number on the plan and never arithmetic on two formatted
+   prices: `$9.99` is a STRING in ten languages, and percentages worked out
+   from strings are how an app comes to say "17% off" about numbers that are
+   not those.
 
    Free has the same row and no buttons in it: it costs nothing, and the row
    is what keeps the five lines below it from jumping as pages slide. */
 function planPrice(p, free){
   function term(yr){
-    var body='<span class="pp">'+esc(t(yr? p.yr : p.mo))+'</span>'+
+    var cost=storeCost(p.id, yr) || t(yr? p.yr : p.mo);
+    var off=storeOff(p.id) || p.off;
+    var body='<span class="pp">'+esc(cost)+'</span>'+
       '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
-      (yr? '<span class="plsave">'+esc(t('plan.off', p.off))+'</span>' : '');
+      ((yr && off)? '<span class="plsave">'+esc(t('plan.off', off))+'</span>' : '');
     return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
                : '<button class="btn ghost plterm"' + DO('setPlan', [p.id, yr]) +
                  '>'+body+'</button>';
@@ -521,6 +531,10 @@ function planPrice(p, free){
   return '<div class="plterms">'+term(false)+term(true)+'</div>';
 }
 function vPlans(){
+  /* The one place that asks. It answers a moment later and redraws, so the
+     typed prices are what is on screen for that moment and the App Store's
+     are what is on screen after it. */
+  storeAsk();
   return '<div class="view">'+
     navTop('')+
     '<div class="plrail">'+PLANS.map(planPage).join('')+'</div>'+

@@ -7,27 +7,28 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## The plans screen is half wired, and the half that is missing is named
+## The plans screen is missing the text Apple requires beside a price
 
-`www/store.js` is in and `setPlan()` goes through it: on a phone, pressing a
-paid card buys, and the plan comes from the App Store's answer. Three things
-are deliberately not there yet, each because a file it needs belongs to
-another session today (`docs/SESSIONS.md`).
+The three things this section used to name are in: **Restore** is a button,
+**Plus** has its own card, and **Cancel** opens Apple's own sheet rather than
+setting a flag. What is left is not wiring, it is words, and two of them are
+owner decisions.
 
-- **Restore.** `restore` exists on the native side and there is nowhere to
-  press it. **Apple requires the button** — an app selling a subscription
-  without one is rejected. It needs a name in `www/act-map.js`.
-- **The middle card.** `PLANS` sells Free and Pro. Plus's name, price and
-  lines are strings, and `www/i18n/*.js` is not this session's today. Nothing
-  can be bought that is not on the screen.
-- **Going back to free is not a purchase and is drawn as one.** Pressing Free
-  on a phone sets `SET.plan='free'` by hand, which is a person saying "act as
-  though I am on free"; the next launch reads the Keychain and it is Pro
-  again. What that button should do is open Apple's own sheet — `manage` on
-  the native side, which exists — because cancelling is Apple's and not ours
-  to draw. It needs a name in `act-map.js` too.
+- **The subscription disclosure.** An app selling an auto-renewing
+  subscription must say, on the screen where it is bought, that it renews
+  until cancelled and where it is cancelled, and must link to **Terms of Use**
+  and to a **privacy policy**. Both competitors looked at on 2026-08-23 (X,
+  HelloTalk, Tandem) carry it; ours does not. It is a common rejection.
+  **It needs two URLs that do not exist yet**, so it cannot be written here —
+  and the wording is the owner's either way (`docs/FEATURE_RULES.md`).
+- **The free plan says `$0`, in every language.** Free is not a product, so
+  the App Store cannot be asked, and `plan.price.free` is a typed string with
+  a dollar sign in it — beside a real price in yen on a Japanese phone, which
+  is the whole fault that made the other prices come from Apple. What it
+  should say instead (`0`, the word for free, or nothing at all) is wording,
+  and wording is not a session's to choose.
 
-None of the three is hard. All three are one file away.
+Neither is hard. Both are waiting on the owner rather than on a file.
 
 ## ~~Two decisions of the same day disagree about how many keyboards~~ — settled
 
