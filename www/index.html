@@ -1547,11 +1547,15 @@ a.set{text-decoration:none}
    a 40px face with 14 above and below -- and three lines of that put the
    timeline 44px further down the screen 「上の幅めちゃくちゃ広くなってる
    やんけ」. 32 + 6 + 6 is 44, which is the floor and not a pixel over it. */
-.wrow{display:flex;align-items:center;gap:12px;width:100%;
+.wrow{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;
       margin:0 -24px 0;width:calc(100% + 48px);padding:6px 16px;
       border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
 .wrow .pav{width:32px;height:32px}
-.wrt{flex:1 1 auto;min-width:0;color:var(--txm);font-size:1rem;
+/* The face and the words are one group in the middle of the row, not a face
+   at the left edge with the words trailing off it 「お題と自分の言語でを
+   もっと中央寄せできない？」. So the text takes the width it needs and gives
+   way only when the row is too narrow for it. */
+.wrt{flex:0 1 auto;min-width:0;color:var(--txm);font-size:1rem;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrow:active{opacity:.6}
 /* The day's sentence, on its own line between the name of the screen and the
@@ -1563,7 +1567,7 @@ a.set{text-decoration:none}
    height, so the type sits where the two lines around it put it. */
 .dayline{display:block;width:100%;background:none;border:0;
          padding:12px 0;font:inherit;font-size:.95rem;line-height:20px;
-         color:var(--txm);text-align:left;
+         color:var(--txm);text-align:center;
          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dayline:active{opacity:.55}
 .dayb{padding-top:0}
