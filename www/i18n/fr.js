@@ -317,7 +317,6 @@ defLang('fr', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.build" : "Touchez le clavier.",
       "ob.tour.kb1" : "Votre lettre est arrivée ici.",
-      "ob.tour.enjoy" : "Créez des lettres et des mots. Amusez-vous.",
       "ob.coach.draw" : "Tracez un trait avec le doigt.",
       "ob.coach.drawn" : "Bien. Ajoutez-en ou continuez.",
       "ob.draw.done"              : "Terminé",

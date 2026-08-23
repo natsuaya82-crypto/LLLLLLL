@@ -257,7 +257,6 @@ defLang('de', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.build" : "Tippe auf die Tastatur.",
       "ob.tour.kb1" : "Dein Buchstabe ist hier gelandet.",
-      "ob.tour.enjoy" : "Mach Buchstaben und Wörter. Viel Freude.",
       "ob.coach.draw" : "Zieh mit dem Finger eine Linie.",
       "ob.coach.drawn" : "Gut. Zieh weitere oder mach weiter.",
       "ob.draw.done"              : "Fertig",

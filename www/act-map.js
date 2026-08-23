@@ -123,7 +123,6 @@ act('setSignOut', setSignOut);
 act('setMail', setMail);
 act('setPwGo', setPwGo);
 act('obSkipDraw', obSkipDraw);
-act('obTourDone', obTourDone);
 act('obTourNext', obTourNext);
 act('openSnd', openSnd);
 act('openSndAdd', openSndAdd);

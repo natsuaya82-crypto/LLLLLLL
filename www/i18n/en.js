@@ -171,7 +171,6 @@ defLang('en', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.build" : "Tap the keyboard.",
       "ob.tour.kb1" : "Your letter went in here.",
-      "ob.tour.enjoy" : "Make letters and words. Enjoy it.",
       "ob.coach.draw" : "Draw a line with your finger.",
       "ob.coach.drawn" : "Good. Add more, or move on.",
       "ob.draw.done"              : "Done",

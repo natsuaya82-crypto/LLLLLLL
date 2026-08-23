@@ -268,8 +268,13 @@ export function obStates(){
         var h = vKb();
         document.getElementById('app').innerHTML = h;
         return h + obTourHTML(); }],
-    ['the walk: the last word of it', () => {
-        SET.done = false; ob.step = OB_TOUR; obTour = 2; ob.mode = '';
+    /* And the same stop with nothing to light. ob.lid is empty for anybody
+       who skipped the drawing, so the key they drew is a key that is not
+       there -- and a grey screen with nothing on it to press would be an app
+       somebody cannot leave. The pad is the whole screen here. */
+    ['the walk: the key that is not there', () => {
+        SET.done = false; ob.step = OB_TOUR; obTour = 1; ob.mode = '';
+        ob.lid = '';
         window.route = 'kb'; NAV = [{ r: 'kb', a: '' }];
         var h = vKb();
         document.getElementById('app').innerHTML = h;

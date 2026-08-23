@@ -276,7 +276,6 @@ defLang('pt', (function(){
       "ob.borrow.take"            : "　",
       "ob.tour.build" : "Toque no teclado.",
       "ob.tour.kb1" : "Sua letra entrou aqui.",
-      "ob.tour.enjoy" : "Crie letras e palavras. Aproveite.",
       "ob.coach.draw" : "Trace uma linha com o dedo.",
       "ob.coach.drawn" : "Bom. Acrescente mais ou siga em frente.",
       "ob.draw.done"              : "Pronto",

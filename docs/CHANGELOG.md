@@ -56,12 +56,18 @@ Four things it cost, all of them worth writing down:
   keys are `<span>`s. `.obpad` is laid over the hole — and it is in the
   **markup**, not set on the live DOM, because `act-check` reads what a view
   returns and would never see a `data-do` assigned afterwards.
-- **The words have no box, and they stand where the finger is.**
-  「角丸変わってないやんけ！」「タップの位置の近くに書いて欲しい」 They were
-  in a borrowed `.toast`, which is a rounded box — the one shape this app does
-  not have. What is left is the words, in `var(--tx)`, centred on the thing
-  being tapped and set under the hand; at the foot of the screen only on the
-  last stop, where nothing is lit and the words are the whole of it.
+- **There are no words on it at all.** 「文字いらなくない？」 A hand pointing
+  at the one bright thing on a grey screen is the whole instruction, and it is
+  what this app does everywhere else: 「アプリ内に説明書くの禁止」. The three
+  sentences went, and the stop that was only a sentence — the last one — went
+  with them. The walk is two stops now, and tapping the key the letter went on
+  ends it. What each stop would have said is the tap pad's `aria-label`: a
+  finger is not something VoiceOver can read out.
+- **A stop with nothing to light is tappable anywhere.** `ob.lid` is empty for
+  anybody who skipped the drawing, so the stop that lights the key they drew
+  has no key to light — and with the words gone, a grey screen with nothing on
+  it to press would be an app somebody cannot leave. The pad is the whole
+  screen there.
 - **No CSS was added.** `www/index.html` belongs to another session today
   (`claude/code-review-refactor-seaaei`), so the dim is `.sbg` and the hand's
   pulse is `vopulse`, both already in that file. What the walk still wants
