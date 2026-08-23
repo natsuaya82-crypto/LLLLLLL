@@ -301,6 +301,7 @@ defLang('ru', (function(){
       "ob.mail.wait" : "Идёт…",
       "ob.mail.to.forgot" : "Забыли пароль?",
       "ob.signin.or" : "или",
+      "ob.in.later" : "Позже",
       "ob.bar.up" : "Создать аккаунт",
       "ob.bar.in" : "Войти",
       "ob.who.h" : "Ваше имя и ID",

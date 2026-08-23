@@ -477,6 +477,7 @@ defLang('ko', (function(){
       "ob.mail.wait" : "처리 중…",
       "ob.mail.to.forgot" : "비밀번호를 잊으셨나요?",
       "ob.signin.or" : "또는",
+      "ob.in.later" : "나중에",
       "ob.bar.up" : "계정 만들기",
       "ob.bar.in" : "로그인",
       "ob.who.h" : "이름과 ID",

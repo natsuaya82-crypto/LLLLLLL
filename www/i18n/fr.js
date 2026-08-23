@@ -346,6 +346,7 @@ defLang('fr', (function(){
       "ob.mail.wait" : "En cours…",
       "ob.mail.to.forgot" : "Mot de passe oublié ?",
       "ob.signin.or" : "ou",
+      "ob.in.later" : "Plus tard",
       "ob.bar.up" : "Créer un compte",
       "ob.bar.in" : "Se connecter",
       "ob.who.h" : "Votre nom et votre ID",

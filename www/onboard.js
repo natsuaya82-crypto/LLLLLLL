@@ -708,10 +708,27 @@ function obFormHTML(up){
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>')+
+    /* And out of it without signing in, when this door is the last step of
+       the onboarding rather than one opened from somewhere.
+       「サインインしなかったときは門で止まるよ！」 -- OWNER DECISION,
+       2026-08-23. The app opens; the MAKING is what asks. Every gate is
+       already there and every one of them is obNeed(), so nothing here
+       decides anything: what this button does is finish the onboarding, and
+       the next time somebody reaches for a letter, a word, a rule or a note
+       the door comes back with where they were written on it.
+
+       What they have made by then is on the phone and stays there: a
+       language is made on this phone, with or without an account. */
+    (obLastStep()? '<button class="obskip"' + DO('obFinish') + '>'+esc(t('ob.in.later'))+'</button>' : '')+
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
 }
+/* Whether this door IS the onboarding's last step, as against one opened from
+   Settings or from a timeline -- obPending() is what remembers that a door
+   was opened from somewhere, and a door that was has somewhere to go back to
+   already. */
+function obLastStep(){ return !SET.done && !obPending() && ob.step===OB_IN; }
 
 /* ---- who the account belongs to ---------------------------------------
    Two things, once, and neither of them invented for anybody. The handle is

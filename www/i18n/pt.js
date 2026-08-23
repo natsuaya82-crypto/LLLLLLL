@@ -305,6 +305,7 @@ defLang('pt', (function(){
       "ob.mail.wait" : "Trabalhando…",
       "ob.mail.to.forgot" : "Esqueceu sua senha?",
       "ob.signin.or" : "ou",
+      "ob.in.later" : "Mais tarde",
       "ob.bar.up" : "Criar uma conta",
       "ob.bar.in" : "Entrar",
       "ob.who.h" : "Seu nome e seu ID",

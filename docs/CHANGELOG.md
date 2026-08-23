@@ -15,6 +15,54 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### A letter on a key stands in the middle of it — OWNER DECISION
+
+「キーボードに配置するときは中央に文字くるようにしてね？」 — 2026-08-23.
+
+A shape drawn into a corner of the lattice was drawn in that corner of the
+key. Where a letter sits in its own square IS the letter — the font is written
+from it, and that is what the alphabet's tile goes on showing — but a key is
+not a place in a line of writing. It is a square somebody hits with a thumb,
+holding one letter and nothing else.
+
+`ltInk(l, none, cls)` takes an extra class, and `keyboard.js` is the only
+caller that asks for one: `midink`, on the four things drawn ON a key — the
+key's face, a layer key's face, the four flick letters at its edges, and the
+five slots in the key sheet. The picker at the foot of that sheet is the
+ALPHABET's tile, not a key, and is unchanged. `inkMid()` in `glyph.js` is the
+offset, read off the strokes' own points: the nib is the same width all the
+way round, so the middle of the points is the middle of the ink.
+
+`CODE CONFIRMED` — two claims in `kb-check`, **watched failing**: a letter
+drawn hard into a corner measures **27% and 24% of the key out of centre**
+with the class taken off, and 2% and 1% with it on. The couple of per cent is
+not slop — a stroke's ends are capped in the direction it was travelling, so
+an L reaches a nib further up and right than its points do. `DEVICE CONFIRMED`
+— **no.**
+
+### Not signing in opens the app, and the making is what asks — OWNER DECISION
+
+「サインインしなかったときは門で止まるよ！」 — 2026-08-23.
+
+The door at the end of the onboarding has **Later** on it. Pressing it
+finishes the onboarding: the app opens, every screen can be looked at, and the
+next time somebody reaches for a letter, a word, a rule or a note the door
+comes back with where they were written on it. Nothing new decides that —
+every gate is `obNeed()` already, and this button only ends the onboarding.
+
+It is on the door only when the door IS the last step (`obLastStep()`). A door
+opened from Settings or from a timeline has somewhere to go back to and has
+always had the chevron.
+
+What somebody has made by then is on the phone and stays there: a language is
+made on this phone, with or without an account.
+
+`CODE CONFIRMED` — the flow from an empty `localStorage` runs twelve screens:
+… the door, **Later**, the app, the letters chapter, the alphabet — all of it
+readable — and then the door again on the letter itself. `DEVICE CONFIRMED` —
+**no.**
+
+
 ### The first step asks for `a`, and the step after it is gone — OWNER DECISION
 
 「じゃあ君のaを書いてみようにして、それを枠にぶち込めばええんちゃう？」

@@ -88,8 +88,13 @@ function ltHasShape(l){ return !!(l && ((l.st && l.st.length) || l.ch)); }
    a comment saying it was the place it lived. That comment was the bug: a
    change to how a letter is shown reached one screen and left five alone,
    and nothing anywhere could see the six had come apart. */
-function ltInk(l, none){
-  if(l && l.st && l.st.length) return '<canvas class="tc" data-l="'+esc(l.id)+'"></canvas>';
+/* `cls` is an extra class for the canvas, and there is one caller and one
+   class: a key of the keyboard asks for `midink`, which stands the shape in
+   the middle of the square instead of where it sits in the lattice.
+   「キーボードに配置するときは中央に文字くるようにしてね？」 */
+function ltInk(l, none, cls){
+  if(l && l.st && l.st.length)
+    return '<canvas class="tc'+(cls? ' '+cls : '')+'" data-l="'+esc(l.id)+'"></canvas>';
   if(l && l.ch) return '<span class="bch">'+esc(l.ch)+'</span>';
   return none||'';
 }

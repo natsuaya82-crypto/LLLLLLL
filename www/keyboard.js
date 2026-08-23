@@ -620,9 +620,18 @@ function kbAt(ri, ki){
 }
 
 /* ---- what a key shows -------------------------------------------------
-   A letter shows the letter -- drawn, borrowed, or its name -- and the same
-   ltInk() the alphabet and the tiles use, so a key cannot look like one thing
-   here and another there. The keys that are not letters show a mark. */
+   A letter shows the letter -- drawn, borrowed, or its name -- through the
+   same ltInk() the alphabet and the tiles use, so a key cannot look like one
+   thing here and another there. The keys that are not letters show a mark.
+
+   With ONE difference, and it is asked for by name: everything drawn on a key
+   asks for `midink`, which stands the shape in the middle of its square
+   instead of where it sits in the lattice.
+   「キーボードに配置するときは中央に文字くるようにしてね？」 A key is a square
+   hit with a thumb; where a letter sits in its own em is the font's business,
+   and that is what the alphabet's tile goes on showing. The picker at the
+   foot of the key sheet is the ALPHABET's tile and not a key, so it is not
+   one of these. */
 /* The letter a key types, small in its corner -- the same thing the system
    keyboard draws (KeyBoardView.swift, `mark`), under the same switch and the
    same three conditions: a LETTER key, whose face is a shape or a BORROWED
@@ -667,7 +676,13 @@ function kbFace(key){
   if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
   var l=ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
-  return ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>');
+  /* midink: on a key the shape stands in the middle of the square rather
+     than where it was drawn in the lattice. A key is a square somebody hits
+     with a thumb, not a place in a line of writing -- where a letter sits in
+     its own em is the FONT's business, and that is what the tile in the
+     alphabet goes on showing. 「キーボードに配置するときは中央に文字くるように
+     してね？」 */
+  return ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>', 'midink');
 }
 function kbLayName(i){ return String(i+1); }
 /* A layer-switch key wears the FIRST LETTER of the layer it goes to, the way
@@ -690,7 +705,7 @@ function kbLayLetter(i){
 }
 function kbLayFace(i){
   var l=kbLayLetter(i);
-  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||kbLayName(i))+'</span>')
+  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||kbLayName(i))+'</span>', 'midink')
           : '<span class="kbl">'+esc(kbLayName(i))+'</span>';
 }
 /* The letters a key gives on a flick, small, at the edges they come from.
@@ -708,7 +723,7 @@ function kbFlicks(key, slots){
   if(!key || !key.f || key.k!=='lt') return '';
   for(i=0;i<4;i++){
     l=key.f[i]? ltById(key.f[i]) : null;
-    if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'))+'</span>';
+    if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'), 'midink')+'</span>';
     else if(slots) out+='<span class="kbf kbfx kbf'+KB_DIRS[i]+'">·</span>';
   }
   return out;
@@ -2038,7 +2053,7 @@ function kbKeyHTML(ri, ki){
    middles of the edges, and this is that, big enough to press. */
 function kbSlotFace(lid){
   var l=lid? ltById(lid) : null;
-  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>')
+  return l? ltInk(l, '<span class="kbl">'+esc(ltName(l)||'·')+'</span>', 'midink')
           : '<span class="kbsx">'+ICON_ADD+'</span>';
 }
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
