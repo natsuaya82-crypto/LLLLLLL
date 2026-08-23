@@ -52,6 +52,13 @@ struct Key: Decodable {
   let w: Double?
   let to: Int?
   let t: String?
+  /// What the key is CALLED, which is not what it types. `t` is the private
+  /// use code point the key inserts; this is the letter's roman name, and it
+  /// is what the small mark shows. They were the same field, and iOS draws
+  /// the private use area as the old SoftBank emoji -- so every key wore an
+  /// aeroplane, a tram, a train. Optional, so a keyboard written by an older
+  /// build still decodes.
+  let nm: String?
   let st: [[[Double]]]?
   let ch: String?
   let f: [Face?]?

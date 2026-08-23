@@ -91,6 +91,15 @@ function sharePua(id){
 function shareFace(id){
   var l=ltById(id), o={t:sharePua(id)||kbTyped(id)}, ink, a;
   if(!l) return o;
+  /* And what the key is CALLED, which is not what it types.
+     `t` is the private use code point -- U+E000 upward, one per drawn letter,
+     and the only thing on a phone that tells this keyboard's `a` from the
+     system QWERTY's. The extension was also using it for the small mark that
+     says which key this is, and iOS draws U+E000 upward as the old SoftBank
+     emoji: the first letter came out as an aeroplane, the second as a tram,
+     the third as a train. 「なにこれ？絵文字」
+     One field was doing two jobs. This is the other one. */
+  o.nm=kbTyped(id);
   ink=shareInk(l);
   if(ink){
     o.st=ink;

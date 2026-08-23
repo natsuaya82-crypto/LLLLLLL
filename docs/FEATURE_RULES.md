@@ -186,6 +186,35 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-23
+- Area: 月と曜日のスロットは、番号ではなく世界の名前で呼ぶ
+- Decision: 月の枠は「1月」「January」、曜日の枠は「日曜」「Sunday」。
+  曜日は**日曜から**並べる。「1ってなに？1月 januaryとかでしょ」
+  「曜日もサンデーからちゃんと示してよ」
+- Reason: `www/cal.js` は既に「構造は世界のもの」と決めている ──
+  年は十二ヶ月、週は七日、日曜始まり。「言語内で週の概念作ろうが、
+  ウィジェットに表示するなら世界の概念でやるだろ」。構造が世界のものなら、
+  三番目の月は March であって「3」ではない。
+- Affected features: 文法の「月」と「曜日」の段（`phases.js` の `calMonthSlots`
+  / `calWeekSlots`）
+- Affected data: 何も増えない。スロットの**ラベル**だけで、作られる単語も
+  その並びも変わらない
+- Affected docs: `www/cal.js` の `calSlots()` のコメント、`docs/CHANGELOG.md`
+- Implementation status: **未着手**。`www/cal.js` は `claude/yoo-kwdg28` の
+  持ち物
+
+**この決定は、`cal.js` に書かれている理由と食い違う。** `calSlots()` の上に
+こうある ── 「A month called "3" ... is the only honest label: the app does
+not know what anybody's third month is for, and putting "March" there would
+be this app deciding whose calendar it is」。それは**週や月の長さを言語が
+決められた頃**の理由で、同じファイルの頭がその設計を取り消している
+(「THE STRUCTURE IS THE WORLD'S」)。取り消され忘れたコメント。
+
+**十二ヶ月＋七曜 = 19 個の文言 × 十言語 = 190。** `Intl` で機械的に出す道も
+あるが、i18n-check の鏡は「t() を通っていない平文」で落ちるので、キーで
+持つことになる。
+
+### Decision
+- Date: 2026-08-23
 - Area: その日の一文 ── どこから来て、何語で出て、消せるか
 - Decision:
 

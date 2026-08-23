@@ -71,8 +71,10 @@ final class KeyView: UIView {
     // that must not have it is the one already wearing its own roman name,
     // which would then be saying the same thing twice -- so: a letter key
     // whose face is a shape or a borrowed character, and never the fallback.
+    // key.nm and not key.t: `t` is the private use code point the key types,
+    // and iOS renders that range as the old SoftBank emoji.
     if wantsMark, key.k == "lt", (key.st != nil || key.ch != nil),
-       let t = key.t, !t.isEmpty {
+       let t = key.nm, !t.isEmpty {
       let l = UILabel()
       l.text = t
       l.textColor = UIColor.secondaryLabel
