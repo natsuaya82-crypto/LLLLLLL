@@ -15,6 +15,59 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The plans screen is three pages that slide — OWNER DECISION
+
+「フリー　プラス　プロ 横並びにして。ページは上に三つあるんじゃなくてスライドで
+変わるタイプで隣のプランが少しはみ出して見える感じ」
+「値段はマンスリー、イヤーを並べてイヤーは何パーオフかを書く」
+「無料に戻すってボタン意味わからないからそこを購入を復元に、サブスクリプションを
+解除するをその下に小さめに入れよう」 — 2026-08-23.
+
+**Free, Plus and Pro are three pages side by side**, snapped, with the next
+one showing at the edge — which is what says there is another one over there.
+The Monthly/Yearly tabs at the top are gone with the toggle they switched.
+
+**Each page lists what that plan does**, and Pro opens with *everything in
+Plus, and:* rather than repeating the five lines above it. Three pages that
+each list everything are three pages somebody has to compare word by word.
+
+**Both terms stand on the page and each is the button that buys it** — one
+press where a chooser and a Buy would be two — and the year says what it
+saves. `off` is a number on the plan and not arithmetic on two formatted
+prices: `$9.99` is a string in ten languages and, on a phone, whatever the App
+Store hands back in whatever currency.
+
+**A mark per line.** 「なんかテキストだけだと味気ないな」 A column of
+identical ticks says nothing about what is in it. The marks are the app's own
+— the pen, the speaker, the stack of pages the making side wears in the tab
+bar, the house the timeline wears, the badge itself — and one is new:
+`ICON_KEYS`, because nothing in this app had a keyboard. Keyed by the line's
+STRING, so a line that moves between plans keeps its mark.
+
+**"Back to free" is gone.** In its place: **Restore purchases**, which Apple
+requires and which had nowhere to be pressed, and under it, smaller,
+**Cancel subscription** — Apple's own sheet (`manage`), because an app that
+draws its own cancel screen will be wrong about a subscription bought on
+another device. In a browser there is no sheet and cancelling still puts the
+plan back to free, which is how a tier is tried on while none is on sale.
+
+**The rounded box went with it.** `.plan` was a bordered, cornered card — the
+shape the rule at the head of `CLAUDE.md` bans by name — and its two lines are
+out of `tools/box-baseline.txt` rather than left there as permission nobody
+asked for. What separates one plan from the next is the gap and the edge of
+the screen.
+
+**Newly stored:** nothing. Thirteen strings per language: the middle tier's
+five lines, its two prices, Pro's reshuffled five, the percentage, Restore,
+Cancel, and "nothing to restore". `plan.take`, `plan.tofree`, `plan.each`,
+`plan.term.*` and `plan.save` are deleted from all ten — nothing asks them.
+
+`CODE CONFIRMED` — `press` (9592 pressed, 217 names, classes worn 540 against
+a baseline of 192), `act`, `i18n`, `box`, `dead`, `face`, `es5`, `plan` green.
+`DEVICE CONFIRMED` — **no**, and the sliding wants a thumb: `scroll-snap` on a
+rail is the one thing a headless browser cannot really answer.
+
+
 ### The tiers are Free, Plus and Pro — OWNER DECISION
 
 「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」

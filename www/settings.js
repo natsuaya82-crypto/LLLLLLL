@@ -450,80 +450,93 @@ function openCapLapse(){
       esc(t('cap.lapse.ok'))+'</button>');
 }
 FORM_OPEN.lapse=function(){ openCapLapse(); };
-/* Monthly or yearly, which is where you are standing on this screen rather
-   than anything the account has -- viewReset() drops it. */
-var plansYr=false;
-function setPlansTerm(yr){ plansYr=!!yr; render(); }
-/* One plan, drawn.
+/* ---- the plans, side by side ------------------------------------------
+   Three pages that slide, with the next one showing at the edge.
+   「横並びにして。ページは上に三つあるんじゃなくてスライドで変わるタイプで
+     隣のプランが少しはみ出して見える感じ」 -- OWNER DECISION, 2026-08-23.
 
-   The three were one shape repeated three times: same box, same weight, same
-   button, one price each and no year. Three identical cards do not say what
-   the difference between them IS, which is the whole of what somebody is
-   deciding. 「全部同じように並んでてどうやってうるんや」
+   The tabs at the top are gone with the toggle they switched: the month and
+   the year stand SIDE BY SIDE on each page now, and the year says what it
+   saves. 「値段はマンスリー、イヤーを並べてイヤーは何パーオフかを書く」
+   That also makes the price the button -- pressing a price buys that term,
+   which is one press where the toggle was two.
 
-   Free is not one of the cards now. It is what everybody already has, so it
-   is a line at the top saying what it is -- putting it beside the two that
-   cost money made "nothing" look like an option being sold.
+   Every box is inline here and none of it is a box: no border, no corner, no
+   panel. www/index.html holds the stylesheet and belongs to another session
+   today, so what a class would say is said on the element; when that file is
+   free these become `.plrail` and `.plpage`. The peeking edge is what makes
+   the row readable as more-to-the-side, and it is `flex-basis` plus
+   `scroll-snap`, nothing else. */
+/* A mark per line, because a column of identical ticks says nothing about
+   what is in it. 「なんかテキストだけだと味気ないな」 -- the marks are the
+   app's own: the pen it draws letters with, the speaker a sound is heard
+   through, the stack of pages the making side wears in the tab bar, the
+   keyboard, the badge itself. Nothing new is invented for a price list.
 
-   What is left is two, and they are not the same either: Plus is where the
-   making side opens, so it is the one with the weight, and Studio is written
-   as what it ADDS to Plus rather than as a second complete list. */
-function planCard(p){
-  var cur=(p.id===plan()), yr=plansYr;
-  return '<div class="plan'+(cur? ' cur':'')+(p.id==='pro'? ' lead':'')+'">'+
-    '<div class="ph2"><span class="pn">'+p.name+'</span>'+planBadge(p.id)+
-      (cur? '<span class="badge">'+t('plan.cur')+'</span>' : '')+'</div>'+
-    '<div class="pprice"><span class="pp">'+t(yr? p.yr : p.mo)+'</span>'+
-      '<span class="pper">'+t(yr? 'plan.per.yr' : 'plan.per.mo')+'</span></div>'+
-    (yr && p.each? '<div class="peach">'+esc(t('plan.each', t(p.each)))+'</div>' : '')+
-    '<div class="pl">'+p.lines.map(function(l){
-      return '<span class="pli">'+ICON_TICK+'<span>'+t(l)+'</span></span>';
-    }).join('')+'</div>'+
-    (cur? '' : '<button' + DO('setPlan', [p.id]) + '>'+t('plan.take', p.name)+'</button>')+
-    '</div>';
+   Keyed by the STRING, not by position: a line moved between plans keeps its
+   mark, and a line added without one shows a tick, which is what every line
+   showed before this. */
+function planMark(key){
+  var m={ 'plan.free.1':ICON_PEN,  'plan.free.2':ICON_LINE, 'plan.free.3':ICON_KEYS,
+          'plan.free.4':TAB_ICON.feed,
+          'plan.plus.1':ICON_ADD,  'plan.plus.2':ICON_SPK,  'plan.plus.3':ICON_LTR,
+          'plan.plus.4':ICON_LINE, 'plan.plus.5':ICON_KEYS,
+          'plan.pro.1':ICON_TICK,  'plan.pro.2':ICON_LINE,  'plan.pro.3':ICON_KEYS,
+          'plan.pro.4':TAB_ICON.build, 'plan.pro.5':ICON_SHARE,
+          'plan.badge':MARK_PLUS };
+  return m[key] || ICON_TICK;
+}
+function planPage(p){
+  var cur=(p.id===plan()), free=(p.id==='free');
+  return '<div class="plpage">'+
+    '<div class="plname"><span class="pn">'+esc(p.name)+'</span>'+planBadge(p.id)+
+      (cur? '<span class="badge">'+esc(t('plan.cur'))+'</span>' : '')+'</div>'+
+    planPrice(p, free)+
+    '<div class="pllines">'+
+      p.lines.map(function(l){
+        return '<span class="pli">'+planMark(l)+'<span>'+t(l)+'</span></span>';
+      }).join('')+
+    '</div>'+
+  '</div>';
+}
+/* The two terms, side by side, and each is the button that buys it -- one
+   press where a chooser and a Buy would be two. The year says what it saves
+   rather than a second sum to do: `off` is a number on the plan and not
+   arithmetic on two formatted strings, because $9.99 is a STRING in ten
+   languages and, on a phone, whatever the App Store hands back in whatever
+   currency. Percentages worked out from formatted prices are how an app comes
+   to say "17% off" about numbers that are not those.
+
+   Free has the same row and no buttons in it: it costs nothing, and the row
+   is what keeps the five lines below it from jumping as pages slide. */
+function planPrice(p, free){
+  function term(yr){
+    var body='<span class="pp">'+esc(t(yr? p.yr : p.mo))+'</span>'+
+      '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
+      (yr? '<span class="plsave">'+esc(t('plan.off', p.off))+'</span>' : '');
+    return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
+               : '<button class="btn ghost plterm"' + DO('setPlan', [p.id, yr]) +
+                 '>'+body+'</button>';
+  }
+  return '<div class="plterms">'+term(false)+term(true)+'</div>';
 }
 function vPlans(){
-  var free=PLANS[0], paid=PLANS.slice(1), on=(plan()==='free');
   return '<div class="view">'+
     navTop('')+
-    '<div class="body">'+
-    /* Monthly or yearly, above both cards, because it is one choice about
-       both of them and not a choice inside each. */
-    '<div class="segs plseg">'+
-      '<button class="seg'+(plansYr? '':' on')+'"' + DO('setPlansTerm', [false]) + '>'+
-        esc(t('plan.term.mo'))+'</button>'+
-      '<button class="seg'+(plansYr? ' on':'')+'"' + DO('setPlansTerm', [true]) + '>'+
-        esc(t('plan.term.yr'))+'<span class="plsave">'+esc(t('plan.save'))+'</span></button>'+
-    '</div>'+
-    paid.map(planCard).join('')+
-    /* Free, at the foot: what you already have, and the way back to it. */
-    '<div class="plfree'+(on? ' cur':'')+'">'+
-      '<div class="ph2"><span class="pn">'+free.name+'</span>'+
-        (on? '<span class="badge">'+t('plan.cur')+'</span>' : '')+'</div>'+
-      '<div class="pl">'+free.lines.map(function(l){
-        return '<span class="pli">'+ICON_TICK+'<span>'+t(l)+'</span></span>';
-      }).join('')+'</div>'+
-      (on? '' : '<button class="btn ghost"' + DO('setPlan', ["free"]) + '>'+
-        esc(t('plan.tofree'))+'</button>')+
-    '</div>'+
-    '</div></div>';
+    '<div class="plrail">'+PLANS.map(planPage).join('')+'</div>'+
+    /* Apple wants somewhere to press for both, and neither is a purchase:
+       restoring reads what this Apple ID already holds, and cancelling is
+       Apple's own sheet.
+       「無料に戻すってボタン意味わからないからそこを購入を復元に、
+         サブスクリプションを解除するをその下に小さめに入れよう」 */
+    '<div class="plfoot"><button class="btn ghost" style="width:100%"' +
+      DO('storeRestore') + '>'+esc(t('plan.restore'))+'</button></div>'+
+    '<div class="plfoot2"><button class="btn ghost" style="width:100%"' +
+      DO('storeManage') + '>'+esc(t('plan.cancel'))+'</button></div>'+
+  '</div>';
 }
-/* Pressing a plan.
-
-   On a phone this BUYS -- storeBuy() asks the App Store and the plan comes
-   from the answer, never from what was asked for. In a browser there is no
-   App Store, and rather than drawing an error state the button goes on doing
-   what it has always done: set the plan by hand. That is how every check
-   walks this screen, how every screenshot of it is taken, and how a tier is
-   tried on before it is on sale.
-
-   Free is not bought. Going back to free is Apple's own sheet -- cancelling
-   is `manage` on the native side and is not ours to draw -- so the button
-   here stays what it was, which on a phone is a person saying "act as though
-   I am on free" and on the next launch is overwritten by what the Keychain
-   says. That is a hole and it is written down: docs/BACKLOG.md. */
-function setPlan(id){
-  if(id!=='free' && storeOn() && storeBuy(storeId(id, plansYr))) return;
+function setPlan(id, yearly){
+  if(id!=='free' && storeOn() && storeBuy(storeId(id, yearly))) return;
   SET.plan=id; planKeep(id); save(); render();
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }

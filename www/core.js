@@ -337,12 +337,22 @@ function tn(k,n){
    pay -- cloud storage is a Plus feature in docs/FEATURES.md, is not built,
    and is therefore not on this list. */
 var PLANS=[
-  {id:'free',  name:'Free',   mo:'plan.price.free', yr:'plan.price.free', each:'',
+  {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
    lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},
-  {id:'pro',   name:'Pro',    mo:'plan.price.pro', yr:'plan.price.pro.yr',
-   each:'plan.each.pro',
+  /* The middle rung. Its price is here and its subscription is not in App
+     Store Connect yet, which is not a hole: StoreKit returns nothing for a
+     product that does not exist, so the card is on the screen and the button
+     does nothing until the product is made. What is NOT allowed is the other
+     way round -- a product on sale that the app does not name. */
+  {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5']},
+  /* Pro opens with "everything in Plus, and:" rather than repeating the five
+     lines above it. Three pages that each list everything are three pages
+     somebody has to compare word by word; the ladder is the thing being sold
+     and it should be readable by scrolling. */
+  {id:'pro',  name:'Pro',  mo:'plan.price.pro', yr:'plan.price.pro.yr', off:'17',
    lines:['plan.pro.1','plan.pro.2','plan.pro.3','plan.pro.4','plan.pro.5',
-          'plan.pro.6','plan.badge']},
+          'plan.badge']},
 ];
 /* Studio is not here. What it sold was the hosted model -- the conversation
    and the suggestions -- and the model is the last thing going in. A tier

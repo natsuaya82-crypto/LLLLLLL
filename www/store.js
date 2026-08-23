@@ -73,6 +73,40 @@ function storeBuy(id){
   return true;
 }
 
+/* The Restore button. Apple wants one and this is it.
+   With StoreKit 2 restoring is mostly reading what this Apple ID already
+   holds -- `current` would answer the same -- but `restore` is the one road
+   that calls AppStore.sync(), which is what a person who has just reinstalled
+   on a new phone actually needs, and it is the road a reviewer looks for.
+
+   In a browser there is nothing to read, and it says so rather than saying
+   nothing: a button that answers with silence reads as broken. */
+function storeRestore(){
+  var np=storePlug();
+  if(!np){ toast(t('store.none')); return; }
+  toast(t('store.wait'));
+  np('LinguaStore', 'restore', {})
+    .then(function(r){
+      var p=storeTook(r);
+      toast(p==='free'? t('store.none') : t('toast.plan.other', p));
+    })
+    ['catch'](function(){ toast(t('store.fail')); });
+}
+/* Cancelling. Apple's own sheet and nothing of ours: an app that draws its
+   own cancel screen is an app that will be wrong about a subscription bought
+   on another device, and about the date it runs to.
+   「サブスクリプションを解除する」
+
+   In a browser there is no sheet to open, and the plan goes back to free by
+   hand -- which is what the button under it used to do on every plan, and is
+   how a tier is tried on and taken off again while none of them is on sale. */
+function storeManage(){
+  var np=storePlug();
+  if(!np){ setPlan('free'); return; }
+  np('LinguaStore', 'manage', {})
+    .then(function(r){ storeTook(r); })
+    ['catch'](function(){ toast(t('store.fail')); });
+}
 /* Which product a plan is bought with, monthly or yearly.
    Written here rather than on PLANS, because a product id is the App Store's
    name for a thing and PLANS is what the app calls it. `plansYr` is where the

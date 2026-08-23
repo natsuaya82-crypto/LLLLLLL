@@ -456,12 +456,6 @@ canvas.pkc{width:34px;height:34px;display:block}
            padding:2px 6px 4px 0;white-space:normal;line-height:1.25;width:108px;
            word-break:normal;overflow-wrap:normal}
 .ipatab td{padding:1px;vertical-align:top}
-.ph2{width:100%;min-height:44px;border:1px solid var(--line);background:var(--sf);
-     border-radius:8px;color:var(--txs);font-size:.95rem;padding:6px 0;margin-bottom:2px;display:block}
-.ph2.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-.ph2:active{opacity:.55}
-.ipafree{display:flex;flex-wrap:wrap;gap:6px}
-.ipafree .ph2{width:auto;min-width:48px;padding:8px 11px}
 .ipamine{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px;min-height:44px}
 .ipamine b{border:1px solid var(--goldln);background:var(--goldsf);color:var(--gold);
            border-radius:8px;padding:8px 12px;font-weight:400;font-size:1rem}
@@ -1445,57 +1439,47 @@ a.set{text-decoration:none}
 .lrow .lsam{margin-left:auto;font-size:.88rem;color:var(--gold);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lrow .lchk{flex:0 0 14px;text-align:right;color:var(--gold)}
 .lrow.on .sl{font-weight:600}
-/* A plan, and the two of them are not the same weight. Three identical cards
-   is the screen saying "here are three things" where somebody is asking "what
-   is the difference" -- so the price is the size of a price, the lines are
-   ticks rather than a paragraph with dots in it, and Plus, where the making
-   side opens, carries the gold. 「全部同じように並んでてどうやってうるんや」 */
-.plan{border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:12px;
-      background:var(--pane)}
-.plan.lead{border-color:var(--goldln);box-shadow:0 0 0 1px var(--goldln)}
-.plan.cur{border-color:var(--goldln);background:var(--goldsf)}
-/* `.ph2` is a BUTTON everywhere else -- the IPA chips -- so it arrives here
-   wearing a border, a fill and a radius. A plan's name is a heading and not a
-   thing to press. 「かくまるみたいなのでくくるのやめて欲しい」 */
-.plan .ph2,.plfree .ph2{border:0;background:none;border-radius:0;padding:0;
-   min-height:0;margin-bottom:0;width:auto;display:flex;align-items:center;gap:9px}
-.plan .pn{font-family:var(--face-caps);font-size:1.15rem}
-/* The number, at the size a number is read at, with its unit beside it rather
-   than glued on -- a price and a period are two facts. */
-.pprice{display:flex;align-items:baseline;gap:6px;margin-top:10px}
-.pprice .pp{color:var(--tx);font-size:1.9rem;font-weight:600;letter-spacing:-.01em}
-.pprice .pper{color:var(--txm);font-size:.86rem}
-.peach{color:var(--txm);font-size:.78rem;margin-top:2px}
-.plan .pl,.plfree .pl{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+/* The plans, side by side. Three pages that slide, with the next one showing
+   at the edge. 「横並びにして。ページは上に三つあるんじゃなくてスライドで
+   変わるタイプで隣のプランが少しはみ出して見える感じ」
+
+   No card, no border, no corner. What separates one plan from the next is the
+   gap and the edge of the screen -- which is also what tells somebody there
+   is another one over there. The rail sits outside .body because .body's side
+   padding would stop it short of the edge, and a rail that stops short cannot
+   show the next page coming. */
+.plrail{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;
+        -webkit-overflow-scrolling:touch;padding:10px 24px 0}
+.plpage{flex:0 0 80%;scroll-snap-align:center}
+.plname{display:flex;align-items:center;gap:8px;min-height:34px}
+.plname .pn{font-family:var(--face-caps);font-size:1.15rem}
+.plname .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);padding:2px 0}
+/* The month and the year, beside each other, each one a button that buys that
+   term. 「値段はマンスリー、イヤーを並べてイヤーは何パーオフかを書く」
+   1.25rem and not the 1.9 a single price on a full-width card was: two of
+   them share a page 80% of a phone wide, and 1.9 wraps `$4.9 / 9`. */
+.plterms{display:flex;gap:14px;margin-top:8px}
+.plterm{flex:1;display:block;text-align:left;padding:6px 0;min-height:44px}
+.plterm .pp{display:block;font-size:1.25rem;font-weight:600;color:var(--tx);
+            line-height:1.25;letter-spacing:-.01em}
+.plterm .pper{display:block;font-size:.72rem;color:var(--txm)}
+.plterm .plsave{display:block;font-size:.72rem;color:var(--gold)}
+/* Free carries its price too, and it is not a button: without it the four
+   lines start higher than the paid pages' five do and the lists jump as
+   somebody slides between them. */
+.plterm.no{color:var(--txm)}
+.plterm.no .pp{color:var(--txm)}
+.pllines{display:flex;flex-direction:column;gap:7px;margin-top:14px}
 .pli{display:flex;align-items:flex-start;gap:8px;color:var(--txs);font-size:.85rem;
      line-height:1.45}
 .pli svg{flex:0 0 auto;margin-top:3px;color:var(--gold)}
-/* A badge is a LABEL, not a thing with a shape -- so it is the word, in the
-   colour, and nothing round it. 「文字書いて四角で囲ったみたいなボタン全部
-   やめてくれ」 applies to a word in a box whether or not it is pressable. */
-.plan .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);padding:2px 0}
-/* The same button as everywhere else. It was a bordered, filled, rounded box
-   -- the shape the rule at the head of CLAUDE.md bans by name -- and the lead
-   plan's was a gold slab on top of that. 「一本化して欲しい。他と同じボタンに」
-   The lead one is still the loud one; it is loud by weight now, not by being
-   a different object. */
-.plan button{min-height:48px;width:100%;margin-top:16px;padding:12px;
-             border:none;background:none;color:var(--gold);
-             font-weight:600;font-size:.92rem;font-family:inherit}
-.plan.lead button{font-weight:700;font-size:1rem}
-/* Monthly or yearly, one choice about both cards, above both of them. */
-.plseg{margin:0 0 16px}
-.plsave{margin-left:6px;font-size:.7rem;letter-spacing:.06em;color:var(--gold)}
-.seg.on .plsave{color:inherit;opacity:.85}
-/* Free is not one of the cards. It is what everybody already has, so it is a
-   line at the foot saying what that is -- beside the two that cost money it
-   made "nothing" look like an option being sold. */
-.plfree{border-top:1px solid var(--line);padding:16px 2px 0;margin-top:6px}
-.plfree .pn{font-family:var(--face-caps);font-size:1rem;color:var(--txs)}
-.plfree .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);padding:2px 0}
-.plfree .pli{color:var(--txm)}
-.plfree .pli svg{color:var(--txm)}
-.plfree button{margin-top:14px;width:100%}
+/* Restoring is the one Apple asks for and cancelling is Apple's own sheet.
+   The second is smaller because it is the rarer road and not a thing to
+   encourage; it is in a box of its own so that it is not a second row of a
+   list wearing one class at two sizes, which is a thing `press` holds. */
+.plfoot{padding:22px 24px 0;text-align:center}
+.plfoot2{padding:2px 24px 0;text-align:center}
+.plfoot2 button{font-size:.8rem;opacity:.7}
 
 /* ---------- locked behind a paid plan ---------- */
 .lock{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;
