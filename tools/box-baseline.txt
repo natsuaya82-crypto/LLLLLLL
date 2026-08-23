@@ -11,9 +11,9 @@
 .abtn | border-radius
 .bar | border-radius
 .bpic | border-radius
-.btn | border-radius
 .btn.apple | border
 .btn.google | border
+.btn.signin | border-radius
 .cand .ck .ckb | border
 .cand .ck .ckb | border-radius
 .capwarn | border
@@ -137,16 +137,10 @@
 .pkclear | border-radius
 .pktab | border
 .pktab | border-radius
-.plan .badge | border
-.plan .badge | border-radius
-.plan button | border
-.plan button | border-radius
 .plan | border
 .plan | border-radius
 .plangtag | border
 .plangtag | border-radius
-.plfree .badge | border
-.plfree .badge | border-radius
 .pmenu | border
 .pmenu | border-radius
 .pmi | border-radius

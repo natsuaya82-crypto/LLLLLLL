@@ -1453,12 +1453,19 @@ a.set{text-decoration:none}
 .pli{display:flex;align-items:flex-start;gap:8px;color:var(--txs);font-size:.85rem;
      line-height:1.45}
 .pli svg{flex:0 0 auto;margin-top:3px;color:var(--gold)}
-.plan .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);
-             border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
-.plan button{min-height:48px;width:100%;margin-top:16px;padding:12px;border-radius:12px;
-             border:1px solid var(--goldln);background:var(--goldsf);color:var(--gold);
+/* A badge is a LABEL, not a thing with a shape -- so it is the word, in the
+   colour, and nothing round it. 「文字書いて四角で囲ったみたいなボタン全部
+   やめてくれ」 applies to a word in a box whether or not it is pressable. */
+.plan .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);padding:2px 0}
+/* The same button as everywhere else. It was a bordered, filled, rounded box
+   -- the shape the rule at the head of CLAUDE.md bans by name -- and the lead
+   plan's was a gold slab on top of that. 「一本化して欲しい。他と同じボタンに」
+   The lead one is still the loud one; it is loud by weight now, not by being
+   a different object. */
+.plan button{min-height:48px;width:100%;margin-top:16px;padding:12px;
+             border:none;background:none;color:var(--gold);
              font-weight:600;font-size:.92rem;font-family:inherit}
-.plan.lead button{background:var(--gold);color:var(--bg);border-color:var(--gold)}
+.plan.lead button{font-weight:700;font-size:1rem}
 /* Monthly or yearly, one choice about both cards, above both of them. */
 .plseg{margin:0 0 16px}
 .plsave{margin-left:6px;font-size:.7rem;letter-spacing:.06em;color:var(--gold)}
@@ -1468,8 +1475,7 @@ a.set{text-decoration:none}
    made "nothing" look like an option being sold. */
 .plfree{border-top:1px solid var(--line);padding:16px 2px 0;margin-top:6px}
 .plfree .pn{font-family:var(--face-caps);font-size:1rem;color:var(--txs)}
-.plfree .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);
-               border:1px solid var(--goldln);border-radius:3px;padding:2px 8px}
+.plfree .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);padding:2px 0}
 .plfree .pli{color:var(--txm)}
 .plfree .pli svg{color:var(--txm)}
 .plfree button{margin-top:14px;width:100%}
@@ -2120,8 +2126,17 @@ a.set{text-decoration:none}
 /* 44 across, always. A button whose whole word became a `+` is as wide as the
    `+` is, which on the narrower of two columns came to 38 points.
    「追加とかそういう日本語はなるべく消したいのよ」 */
-.btn{flex:1;min-width:44px;padding:15px 12px;border-radius:13px;border:none;background:var(--gold);
-     color:var(--onGold);font-weight:700;font-size:.98rem;line-height:1.3;word-break:break-word}
+/* THE button. There used to be two: this one, a gold pill with a corner, on
+   21 places -- Save, Draft, and every other thing you press to finish
+   something -- and `.btn.ghost`, the words on their own, on 20. The app was
+   split down the middle. 「セーブとかドラフトみたいなボタンの角丸は直して。
+   一本化して欲しい。他と同じボタンに」
+
+   So this IS the ghost now, and `.ghost` is left below as the name the twenty
+   already wear rather than as a second look. The padding stays: 44pt under a
+   thumb is not a matter of taste and press measures it. */
+.btn{flex:1;min-width:44px;padding:15px 12px;border:none;background:none;
+     color:var(--gold);font-weight:600;font-size:.98rem;line-height:1.3;word-break:break-word}
 .btn:active{opacity:.82}
 .btn:disabled{opacity:.3}
 /* The second kind of button, and it is not a box. It was a rectangle with a
@@ -2451,7 +2466,14 @@ html[data-script="on"] .st-seq{font-family:var(--face-script);letter-spacing:0}
 .lo:hover,.lpo:hover{border-color:rgba(255,255,255,.35)}
 .lpo.on{border-color:#c9a86a;background:rgba(201,168,106,.14);color:#e9d9b0}
 .obtag{margin-top:20px;font-size:1.15rem;line-height:1.7;opacity:.92;text-align:center}
-.btn.signin{width:100%;justify-content:center;display:inline-flex;align-items:center;gap:10px;margin-bottom:10px}
+/* The one place a corner stays on a button, and it is not ours to decide:
+   Apple and Google both specify the shape of their own sign-in button, down
+   to the radius. It sat here inherited from `.btn` and had to be written out
+   when `.btn` stopped having one -- the same corner, in the one place a
+   corner is somebody else's rule. 「きーぼーどとかは角丸でいい」 and this is
+   the same kind of exception: a thing with a shape, not words in a box. */
+.btn.signin{width:100%;justify-content:center;display:inline-flex;align-items:center;gap:10px;margin-bottom:10px;
+            border-radius:13px}
 .btn.google{background:#fff;color:#1f1f1f;border:1px solid #e2e2e2}
 .btn.apple{background:#000;color:#fff;border:1px solid #000}
 /* The onboarding's, and ONLY the onboarding's. This block is a second
