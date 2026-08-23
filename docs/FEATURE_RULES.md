@@ -195,10 +195,29 @@ instead of appearing here.
   | **Basic** | **$4.99** | **$49.99** |
   | Plus | $9.99 | $99.99 |
 
-  **Basic buys: adding letters, ONE keyboard of your own, and a thousand
-  words.** 「文字+キーボード自由（1個）単語1000までとか」 Where the rest of
-  `CAN` sits — `wsys` `snd` `gram` `dir` `data` `file` — is **not decided
-  here** and no session may read it off the code.
+  **Basic buys: adding letters, ONE keyboard of your own, a thousand words,
+  a writing system that is not an alphabet, and choosing what a letter
+  sounds like.** 「文字+キーボード自由（1個）単語1000までとか」
+  「音と音節文字とか選べるだけかな その他は＋から」
+
+  So the whole of `CAN`, settled:
+
+  | | Free | Basic | Plus |
+  |---|---|---|---|
+  | `letters` add / name / delete | — | **yes** | yes |
+  | `kb` a keyboard of your own | — | **1** | 3 |
+  | `words` | 100 | **1000** | no ceiling |
+  | `wsys` syllabary, abjad, abugida, logography | — | **yes** | yes |
+  | `snd` choose the sound, not the letter's own | — | **yes** | yes |
+  | `gram` a grammar stage of your own | — | — | yes |
+  | `dir` which way it is written | — | — | yes |
+  | `data` CSV out, and the cloud | — | — | yes |
+  | `file` a list brought in as a file | — | — | yes |
+  | `noads` | — | — | **yes** |
+
+  **`words` and `kb` are the two that stop being yes/no.** Everything else in
+  that table is a door; those two are a number, and the number is the plan's.
+  `can()` cannot answer them alone any more.
 
   **Ads are on Free AND Basic. Plus is what has none.**
   「ベーシックも広告表示させるよ？＋から広告非表示で考えてた」
