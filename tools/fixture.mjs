@@ -1008,10 +1008,13 @@ export function halfDone(){
     ['searching the notes', () => { ntFind = true; ntQ = 'a';
                                     window.route='notes'; NAV=[{r:'notes'}];
                                     return vNotes(); }],
-    ['a slot already filled',  () => { openSlot('neg','not'); return FORM.html; }],
-    ['words being suggested for a slot', () => { openSlot('greet','yes');
-                                                 stSug=[['k','a'],['t','i']];
-                                                 return FORM.html.replace(/$/, stSugHTML()); }],
+    /* A slot's word is made on the word screen now, with the two things the
+       slot already knows written in: the meaning is what the slot is called
+       and the part of speech is the stage's. There is no form of its own any
+       more, and no row of suggestions -- both went with it.
+       A slot that is ALREADY filled is not a form at all: openSlot() sends
+       you to the word, and the word screen is walked elsewhere. */
+    ['a slot\'s word being made', () => { openSlot('greet','yes'); return FORM.html; }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;

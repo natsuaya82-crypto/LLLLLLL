@@ -92,21 +92,6 @@ function asWord(pos, avoid){
   }
   return seq;
 }
-/* Three of them, all different, none of them a word you already have. */
-function asWords(pos, n){
-  var out=[], i, seq, guard=0;
-  n=n||3;
-  while(out.length<n && guard<60){
-    guard++;
-    seq=asWord(pos, out);
-    if(!seq) break;
-    var dup=false;
-    for(i=0;i<out.length;i++) if(out[i].join('')===seq.join('')) dup=true;
-    if(!dup) out.push(seq);
-  }
-  return out;
-}
-
 /* The chart's own order, so adding a sound does not shuffle the keyboard. */
 function asOrder(list){
   var all=ipaAll();

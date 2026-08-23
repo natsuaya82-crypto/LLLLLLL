@@ -212,123 +212,50 @@ function stCount(){
   return n;
 }
 
-/* ---- the sheet where a slot's word is made ---------------------------- */
-var stFor=null, stSlot='', stSeq=[], stSug=[];
-function stTap(sym){ sayOne(sym); stSeq.push(sym); stPaint(); }
-/* What was typed, cut into letters and then asked what those letters read --
-   so the word is the letters and the sounds come off them, which is the way
-   round the rest of the app already works. */
-function stSetLn(v){
-  stSp=spType(v);
-  stSeq=spPh(stSp);
-  lnGrow('st-ln');
-  stPaint();
-}
-function stBack(){ stSeq.pop(); stPaint(); }
-/* Nothing to say until something has been typed. This was a condition written
-   inside the button's own markup -- the smallest possible example of code in a
-   place no checker reads. */
-function stSay(){ if(stSeq.length) sayPh(stSeq); }
-function stPaint(){
-  var s=document.getElementById('st-seq'), r=document.getElementById('st-ipa'),
-      b=document.getElementById('st-back'), k=document.getElementById('st-keep');
-  if(s) s.textContent=stSeq.join('');
-  if(r) r.textContent=stSeq.length? phIpa(stSeq) : '';
-  if(b) b.disabled=!stSeq.length;
-  if(k) k.disabled=!stSeq.length;
-}
-function stSugPaint(){
-  var e=document.getElementById('st-sug'); if(e) e.innerHTML=stSugHTML();
-}
-/* Three words this language could plausibly make, each one sayable before it
-   is taken. Nothing is chosen for you; something is put in front of you. */
-function stAsk(){
-  stSug=asWords(stFor? stFor.pos : 'x', 3);
-  stSugPaint();
-}
-function stSugHTML(){
-  if(!stSug.length) return '<button class="btn ghost" style="width:100%"' + DO('stAsk') + '>'+t('stg.help')+'</button>';
-  return '<div class="sugbox"><div class="sugchips">'+stSug.map(function(q,i){
-      return '<button class="sugchip"' + DO('stTake', [i]) + '>'+
-        '<span class="slw">'+esc(q.join(''))+'</span>'+
-        '<span class="sr">'+esc(phIpa(q))+'</span></button>';
-    }).join('')+'</div>'+
-    '<div class="sugfoot"><span class="sughint">'+t('stg.help.d')+'</span>'+
-    '<button class="sugmore"' + DO('stAsk') + '>'+t('stg.again')+'</button></div></div>';
-}
-function stTake(i){
-  if(!stSug[i]) return;
-  stSeq=stSug[i].slice();
-  sayPh(stSeq);
-  stPaint();
-}
+/* ---- a slot's word is a word, and a word has one screen ----------------
+   This used to be a form of its own: a box of sounds you pressed, a reading
+   with a speaker on it, a row of suggestions, and a Keep button. Four things
+   the word screen already does, done a second way, on a screen that could not
+   do the rest of what a word has -- meanings, register, an example, a note.
+
+   「文法から単語とか作るときも、単語画面と全く同じ見た目で、1なら1とか数詞とか
+   埋められてるやつを書いてある感じにして欲しい」
+
+   So it is the word screen, opened with the two things the slot already
+   knows written in: the meaning is what the slot is called, and the part of
+   speech is the stage's. Everything else is typed, the way every other word
+   in the app is typed.
+
+   A slot that is already filled is not a form at all -- it is a word, and it
+   opens on the word. */
 function openSlot(pid, k){
   var p=stBy(pid) || stAll()[0];
-  stFor=p; stSlot=(k===undefined||k===null)? (p.slots[0]||'') : String(k);
-  var had=stWordFor(p, stSlot);
-  stSeq = had? wPh(had).slice() : [];
-  stSp  = had? JSON.parse(JSON.stringify(spOf(had))) : [];
-  stSug=[];
-  var mine=addedSnd();
-  openForm('slot:'+p.id+'/'+stSlot, stSlotLabel(p, stSlot),
-    '<div class="seqbox"><span class="seq" id="st-seq"></span>'+
-      '<button class="seqdel" id="st-back"' + DO('stBack') + ' disabled aria-label="'+esc(t('glyph.undo'))+'">'+ICON_BACK+'</button></div>'+
-    '<div class="pvbox"><span class="pvn">'+t('f.reading')+'</span><span class="pvk" id="st-ipa"></span>'+
-      '<button' + DO('stSay') + '>'+ICON_SPK+t('f.listen')+'</button></div>'+
-    '<div id="st-sug">'+stSugHTML()+'</div>'+
-    /* Typed on free. The word for a meaning is a word, and a word is
-       letters -- being handed the language's sounds to press was the
-       question the alphabet had already answered.
-       「だから、画面表示するのに音で選ぶやついないやろ」 */
-    (!can('snd')
-      ? lnField('st-ln', t('f.spelling'), IN('stSetLn'), stSeq.join(''))
-      : mine.length
-      ? '<div class="sec">'+t('add.ph')+'</div><div class="phkeys">'+mine.map(function(x){
-          return phkHTML(x, DO('stTap',[x])); }).join('')+'</div>'
-      : '<div class="note">'+t('add.ph.none')+'</div>')+
-    '<button class="btn" id="st-keep" style="width:100%;margin-top:14px"' + DO('stKeep') + ' disabled>'+t('stg.keep')+'</button>'+
-    (had? '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('stDrop') + '>'+
-      '<span class="sl bad">'+t('stg.drop')+'</span></button>' : ''),
-    function(){ stPaint(); phkMount(); });
+  var key=(k===undefined||k===null)? (p.slots[0]||'') : String(k);
+  var had=stWordFor(p, key);
+  if(had){ openWord(had.hw); return; }
+  var route='slot:'+p.id+'/'+key;
+  /* The same test openAdd() makes, and for the same reason: coming back from
+     the picker must not throw away what has been typed, and arriving at the
+     route cold must not leave the draft null for wdFormHTML() to trip over. */
+  var fresh=!(here().r==='form' && here().a===route) || !addW || !wEdit;
+  if(fresh){
+    openHw=''; addFrom='';
+    addW={hw:'', mns:[], pos:p.pos, syn:[], ant:[], ex:[]};
+    wdMnNew=false; wdExNew=false;
+    wEdit={seq:[], sp:[], mns:[stSlotLabel(p, key)], pos:p.pos,
+           reg:'', tags:[], ety:'', nt:''};
+    addFmClear();
+    wdSync();
+  }
+  /* Which slot this draft fills. addOne() writes it onto the word, and
+     openAdd() clears it -- a word coined from the dictionary fills nothing. */
+  addSlot=p.id+'.'+key;
+  if(capStop(1)) return;
+  openForm(route, stSlotLabel(p, key),
+    '<div id="wd-body">'+wdFormHTML()+'</div>',
+    function(){ phkMount(); geTiles(); });
 }
 FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i), a.slice(i+1)); };
-/* The letters the typed word came out as, when it was typed. Empty when the
-   word was assembled by pressing sounds, which is what the paid plan still
-   does -- and then the sounds ARE the word, as they always were. */
-var stSp=[];
-function stKeep(){
-  if(!stFor || !stSeq.length) return;
-  /* The spelling is the word wherever there is one. A letter called `c` that
-     reads /k/ would otherwise be saved as the sound it makes rather than as
-     the letter that was typed. */
-  var hw=stSp.length? spWord(stSp) : stSeq.join('');
-  var key=stFor.id+'.'+stSlot, had=stWordFor(stFor, stSlot);
-  var clash=findWord(hw);
-  if(!hw){ return; }
-  if(clash && clash!==had){ toast(t('toast.dup')); return; }
-  if(had){
-    had.hw=hw;
-    if(stSp.length){ had.sp=JSON.parse(JSON.stringify(stSp)); delete had.ph; }
-    else had.ph=stSeq.slice();
-  }
-  else {
-    var nw={hw:hw, mn:stSlotLabel(stFor, stSlot),
-            mns:[stSlotLabel(stFor, stSlot)], pos:stFor.pos, slot:key, at:Date.now()};
-    if(stSp.length) nw.sp=JSON.parse(JSON.stringify(stSp));
-    else nw.ph=stSeq.slice();
-    WORDS.push(nw);
-  }
-  save(); closeSheet({target:{id:'sbg'}}); render();
-  toast(t('toast.saved', hw));
-}
-function stDrop(){
-  var w=stWordFor(stFor, stSlot);
-  if(!w) return;
-  if(!confirm(t('confirm.del', w.hw))) return;
-  WORDS=WORDS.filter(function(x){ return x!==w; });
-  save(); closeSheet({target:{id:'sbg'}}); render();
-}
-
 /* ---- a stage of your own ---------------------------------------------- */
 function openOwnPhase(){
   openForm('own:', t('stg.own.h'),

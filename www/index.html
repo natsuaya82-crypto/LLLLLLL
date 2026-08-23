@@ -136,9 +136,6 @@ button{font-family:inherit;cursor:pointer}
 .seqbox{display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 14px;
         border:1px solid var(--line);background:var(--pane);border-radius:12px}
 .seqbox .seq{flex:1;font-size:1.5rem;letter-spacing:.02em;min-height:1.5rem;color:var(--tx)}
-.seqdel{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
-        display:inline-flex;align-items:center;justify-content:center}
-.seqdel:disabled{opacity:.25}
 /* The gap has to be wider than the speaker's overhang or the speaker of one
    tile sits on top of the next tile: 44pt of button hanging 11pt past a
    corner, over a 6pt gap, means five points of every tile answered to its
@@ -1049,7 +1046,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .spu{font-size:.82rem;color:var(--txm);line-height:1}
 .spc.odd .spu{color:var(--pur)}
 .spnone{flex:1;color:var(--txm);font-size:.88rem}
-.spellrow .seqdel{margin-left:auto}
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
        margin-bottom:14px;color:var(--tx)}
 .spbig canvas.tc{width:80px;height:80px;display:block}
@@ -2665,27 +2661,6 @@ html[data-script="on"] .st-seq{font-family:var(--face-script);letter-spacing:0}
 .scrpv{display:flex;flex-direction:column;gap:5px;padding:15px;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
 .scrpvw{font-size:1.7rem;line-height:1.4;word-break:break-all}
 .scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
-.sugask{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 12px;
-  padding:11px 13px;border:1px dashed var(--line);border-radius:11px;background:transparent;color:var(--txm);
-  font:inherit;font-size:.88rem;cursor:pointer;text-align:left}
-.sugask:active{transform:scale(.99)}
-.sual{display:flex;flex-direction:column;gap:2px;min-width:0}
-.sut{font-size:.82rem;color:var(--tx)}
-.sud{font-size:.84rem;color:var(--txm);line-height:1.5}
-.sugn{color:var(--gold);font-size:.86rem;flex-shrink:0}
-.sugbox{margin:2px 0 12px;padding:11px;border:1px solid var(--line);border-radius:11px}
-.sugchips{display:flex;flex-wrap:wrap;gap:7px}
-.sugchip{display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:8px 12px;border:1px solid var(--line);
-  border-radius:9px;background:var(--bg);color:var(--tx);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.sugchip:active{transform:scale(.97)}
-.sugchip .sr{font-size:.84rem;color:var(--txm)}
-.sugfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}
-.sughint{font-size:.84rem;color:var(--txm);line-height:1.5}
-.sugmore{background:none;border:0;color:var(--gold);font:inherit;font-size:.86rem;cursor:pointer;
-         min-height:44px;padding:0 2px;flex-shrink:0;text-decoration:underline}
-.sugout{display:block;width:100%;margin:2px 0 12px;padding:11px 13px;border:1px solid rgba(201,168,106,.34);border-radius:11px;
-  background:transparent;color:var(--txm);font:inherit;font-size:.88rem;line-height:1.6;text-align:left;cursor:pointer}
-.sugout b{color:var(--gold);font-weight:600;white-space:nowrap}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
 .capgo{color:var(--gold);flex-shrink:0}
@@ -2871,8 +2846,8 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 .ic{vertical-align:-.12em}
 .search .lens{display:flex;align-items:center;color:var(--txm);flex:0 0 auto}
 .set .sv{display:flex;align-items:center;gap:6px}
-.set .sv .go,.capgo .go,.sugout .go{opacity:.75}
-.capgo,.sugout b{display:inline-flex;align-items:center;gap:4px}
+.set .sv .go,.capgo .go{opacity:.75}
+.capgo{display:inline-flex;align-items:center;gap:4px}
 .lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
 .cand .ck svg,.pdel svg{display:block}
 .pdel{position:absolute;top:2px;right:2px;color:var(--txm);line-height:1;

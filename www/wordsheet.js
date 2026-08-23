@@ -34,6 +34,10 @@ var addW=null;
    are the three that are real -- a draft cannot be deleted, cannot derive from
    itself, and is added rather than saved. */
 var addFrom='';
+/* Which grammar slot the draft fills, when it was opened from a stage rather
+   than from the dictionary. `count.1`, and empty for every ordinary word.
+   phases.js § openSlot sets it; addOne() writes it onto the word. */
+var addSlot='';
 function openAdd(from){
   /* Reopened by its own redraw and on the way back from the picker, so what
      has been typed is only cleared when the sheet is genuinely new.
@@ -49,6 +53,10 @@ function openAdd(from){
   var fresh = !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
+  /* A word coined from the dictionary fills no slot. Cleared here rather than
+     on the way out of openSlot, because there is no way out of it: a form is
+     left by going somewhere else. */
+  addSlot='';
   if(fresh){
     openHw='';
       /* The draft holds only what a relation and an example need a WORD for.
@@ -91,6 +99,9 @@ function addOne(){
   w={hw:hw, mns:wEdit.mns.slice(), mn:(wEdit.mns[0]||''), pos:wEdit.pos, at:Date.now()};
   w.sp=JSON.parse(JSON.stringify(sp));
   if(addFrom && addFrom!==hw) w.from=addFrom;
+  /* And which slot it fills, so the stage can see that it is done and so
+     changing the word later changes it there too. */
+  if(addSlot) w.slot=addSlot;
   if(w.from && d.fm) w.fm=d.fm;
   /* Everything written on the draft comes with it. An empty note is no note,
      not an empty one -- the same rule saveWord() holds. */
@@ -106,7 +117,7 @@ function addOne(){
      them points at it by name. */
   made=addFmWrite(hw);
   addFmClear();
-  save(); addFrom='';
+  save(); addFrom=''; addSlot='';
   /* Onto the word, read. Everything it holds was written on the way in, so
      what is wanted now is a look at it, not another form. */
   if(here().r==='form') back();
