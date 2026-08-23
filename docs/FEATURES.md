@@ -421,16 +421,31 @@ Decided:
   and what arrives is a line, not a picture -- so the number is set by paper,
   where it was measured. A whole free alphabet is 38 letters and therefore two
   sheets, which is not 「何枚も」.
-- **Both roads, and they are not the same road.** 「紙が本当にできるならこっちは
-  両方対応にしたい」
+- **Both roads, and WHAT IS IN THE FILE decides how it comes in -- not which
+  road it came by.** 「紙が本当にできるならこっちは両方対応にしたい」
+  「電子も形で入れないの？」 That second question corrected the first answer
+  written here, which had split it by road and was wrong.
 
-  | | comes in as | editable | the brush's thick and thin |
+  | what the file holds | comes in as | editable | the brush's thick and thin |
   |---|---|---|---|
-  | drawn on a screen | strokes | yes | **lost** -- the app redraws with its own 24-wide pen |
-  | drawn on paper | a shape | no | **kept** |
+  | filled closed shapes (a stroke expanded to outlines, out of Illustrator or Affinity) | a shape | no | **kept** |
+  | open paths (an iPad's Ink annotation, a PDF still drawn in lines) | a centre line | yes | **not in the file to begin with** |
+  | pixels (a scan, a photograph) | a shape | no | **kept** |
 
-  The one that looks harder is the one that keeps what a calligrapher actually
-  made. Measured, geometry only, against a letter the app made as the truth:
+  The middle row is the one that is easy to get backwards. Thick and thin is
+  not lost by importing an Ink annotation: **a standard Ink annotation does not
+  carry it.** `/InkList` is points and `/BS /W` is one width; pressure is not in
+  the format. So a screen is not the lossy road -- a CENTRE LINE is, whichever
+  road it arrived by, and a calligrapher who works digitally and expands their
+  strokes hands over a shape as faithful as paper.
+
+  Nobody is asked to choose. The file is read and it says which it is, the same
+  way `www/import.js` reads a paste and says whether it is a spreadsheet or a
+  Toolbox lexicon. `write` is `write` whichever road it came by, and whether a
+  letter holds a shape or a centre line is visible in the letter itself, so it
+  needs no field of its own.
+
+  Paper was measured, geometry only, against a letter the app made as the truth:
   printed, photographed badly, marks found, un-warped, thresholded, traced.
 
   | | box | tilt | furthest off |
