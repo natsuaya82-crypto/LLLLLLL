@@ -537,6 +537,20 @@ function vPlans(){
   storeAsk();
   return '<div class="view">'+
     navTop('')+
+    /* The picture, and it is this phone's own keyboard wearing the letters
+       this person drew. 「絵なんでもいいよ 君のキーボードとか載せる？」 --
+       OWNER DECISION, 2026-08-23.
+
+       kbOf() and not kbBoard(): the one that is APPLIED, which is what is on
+       the phone, rather than whichever one the editor was last left on. On
+       free that is the QWERTY with the drawn letters substituted in, which is
+       what the free plan IS.
+
+       A picture and not a button. Every screen in this app is reached by
+       pressing something that says where it goes, and a keyboard that opens
+       the keyboard chapter from the middle of a price list is a door nobody
+       asked for in a room they came to for one thing. */
+    '<div class="plkb">'+kbShotHTML(kbOf().lay)+'</div>'+
     '<div class="plrail">'+PLANS.map(planPage).join('')+'</div>'+
     /* Apple wants somewhere to press for both, and neither is a purchase:
        restoring reads what this Apple ID already holds, and cancelling is

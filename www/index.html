@@ -1792,6 +1792,26 @@ a.set{text-decoration:none}
 .kbsk .bch{font-size:6px;line-height:1}
 .kbsk svg{width:6px;height:6px}
 .kbsk .kbrm,.kbsk .kbf{display:none}
+/* The picture at the top of the plans screen: the keyboard this phone
+   actually has, wearing the letters this person actually drew.
+   「絵なんでもいいよ 君のキーボードとか載せる？」 -- OWNER DECISION,
+   2026-08-23.
+
+   It is kbShotHTML(), the same one the keyboard list is drawn with, and not a
+   second function that draws a keyboard -- a second one is a second keyboard
+   to keep in step, and this file already carries the argument. What is added
+   here is ROOM: the list's thumbnail is 46px because it sits on a row beside
+   a name, and here the picture is the point.
+
+   No corner is set. A key keeps the 2px it has, which is nearly square at
+   this size, because a bigger radius would be a new pair in
+   tools/box-baseline.txt and that file is the owner's. */
+.plkb{margin:2px 24px 22px}
+.plkb .kbshot2{height:112px;gap:3px}
+.plkb .kbsr{gap:3px}
+.plkb .kbsk .kbl{font-size:12px;line-height:1}
+.plkb .kbsk .bch{font-size:15px;line-height:1}
+.plkb .kbsk svg{width:15px;height:15px}
 .kbtab.on{border-color:var(--goldln);background:var(--goldsf)}
 /* The tick sits ON the picture rather than beside it: beside it the tile has
    to grow to hold a mark that is about the tile. */

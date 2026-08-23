@@ -1513,6 +1513,41 @@ for.
   `fmMine()` and the `fm` screen in `www/wordsheet.js`
 - Free: yes. It is text somebody typed, not a capability
 
+### Decision
+- Date: 2026-08-23
+- Area: What a subscription costs in each country
+- Decision: **The base is the USD prices already decided** — Plus 4.99 / 49.99,
+  Pro 9.99 / 99.99 — and **each country is then rounded to a clean number by
+  hand** in App Store Connect. Not all 175: the storefronts that sell, and the
+  rest left as Apple generated them.
+- Reason: 「基準はさっき値段決めたやろ 各国がキリ良くしたい。」
+- Affected features: the plans screen; nothing else
+- Affected data: none. A price is not stored anywhere in this app
+- Affected docs: apple.md § 4, CHANGELOG, STATE
+- Implementation status: nothing to implement, and that is the point. The
+  screen shows `displayPrice` as the App Store gives it and works the yearly
+  saving out from the two amounts, so **a price changed in the dashboard needs
+  no change in the app** — and rounding each country separately, which makes
+  the saving differ by country, is exactly the case that would have been wrong
+  under the old typed `17`.
+
+### Decision
+- Date: 2026-08-23
+- Area: The picture on the plans screen
+- Decision: **This phone's own keyboard**, wearing the letters this person
+  drew — the applied board, so on free it is the QWERTY with the drawn letters
+  substituted in. A picture and not a button.
+- Reason: 「なんかテキストだけだと味気ないな」「絵なんでもいいよ 君のキーボード
+  とか載せる？」
+- Affected features: the plans screen
+- Affected data: none
+- Affected docs: CHANGELOG
+- Implementation status: implemented. `kbShotHTML(kbOf().lay)` in `vPlans()`,
+  which is the same picture the keyboard list is drawn with — no second
+  function that draws a keyboard — and `.plkb` in `www/index.html`, which is
+  room and nothing else
+- Free: yes. It is a picture of what the free plan already gives
+
 ## What is the owner's to decide
 
 Research it, lay out the options and what the code does today, and **stop**.

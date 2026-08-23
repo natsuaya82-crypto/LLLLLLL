@@ -7,28 +7,26 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## The plans screen is missing the text Apple requires beside a price
+## The plans screen says `$0` in every language
 
 The three things this section used to name are in: **Restore** is a button,
 **Plus** has its own card, and **Cancel** opens Apple's own sheet rather than
-setting a flag. What is left is not wiring, it is words, and two of them are
-owner decisions.
+setting a flag. The prices are the App Store's since 2026-08-23. One thing is
+left, and it is wording, which is not a session's to choose.
 
-- **The subscription disclosure.** An app selling an auto-renewing
-  subscription must say, on the screen where it is bought, that it renews
-  until cancelled and where it is cancelled, and must link to **Terms of Use**
-  and to a **privacy policy**. Both competitors looked at on 2026-08-23 (X,
-  HelloTalk, Tandem) carry it; ours does not. It is a common rejection.
-  **It needs two URLs that do not exist yet**, so it cannot be written here —
-  and the wording is the owner's either way (`docs/FEATURE_RULES.md`).
-- **The free plan says `$0`, in every language.** Free is not a product, so
-  the App Store cannot be asked, and `plan.price.free` is a typed string with
-  a dollar sign in it — beside a real price in yen on a Japanese phone, which
-  is the whole fault that made the other prices come from Apple. What it
-  should say instead (`0`, the word for free, or nothing at all) is wording,
-  and wording is not a session's to choose.
+**Free is not a product, so the App Store cannot be asked**, and
+`plan.price.free` is a typed string with a dollar sign in it — `$0` in all ten
+languages, standing beside a real price in yen on a Japanese phone. That is
+the same fault that made the other prices come from Apple, in the one place
+Apple has no answer. What it should say instead — `0`, the word for free, or
+nothing at all — is the owner's.
 
-Neither is hard. Both are waiting on the owner rather than on a file.
+**The subscription disclosure is not on this list.** An app selling an
+auto-renewing subscription must say on the purchase screen that it renews
+until cancelled, and link to Terms and a privacy policy. Asked on 2026-08-23;
+the owner says it is covered elsewhere — 「利用規約は別に入れてるから大丈夫」 —
+so it is recorded here as answered rather than as work. If a review ever comes
+back naming it, this is the paragraph it is about.
 
 ## ~~Two decisions of the same day disagree about how many keyboards~~ — settled
 

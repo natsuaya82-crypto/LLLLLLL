@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The plans screen has a picture, and it is your keyboard
+
+「なんかテキストだけだと味気ないな」「絵なんでもいいよ 君のキーボードとか
+載せる？」 — 2026-08-23. プラン画面の一番上に、**この電話に入っている
+キーボードそのもの**が、その人が描いた文字を着けて出ます。無料なら QWERTY に
+自作文字が入ったもの — 無料プランがまさにそれです。有料なら適用中の board。
+
+`kbShotHTML()` — キーボードの一覧を描いているのと同じ関数です。**キーボードを
+描く関数を二つ持たない**ため（二つあると足並みを揃え続ける対象が二つになる）、
+足したのは場所だけ（`.plkb`、112px）。角丸は足していません。キーは既にある
+2px のまま — 新しい角丸は `tools/box-baseline.txt` の一行で、あれは owner の
+ものだからです。
+
+**押せません。絵です。** 値段を見に来た人の前に、頼んでもいない扉を置かない
+ため。
+
 ### The prices on the plans screen are the App Store's
 
 「てか国によって値段変わる？ それぞれひとつづつ設定したほうがいいかな」 —
