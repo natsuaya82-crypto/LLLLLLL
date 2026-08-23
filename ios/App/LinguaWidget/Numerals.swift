@@ -49,43 +49,36 @@ struct Numerals: Decodable {
   /// Keyed by value, so a language with no zero has a hole rather than a
   /// shift. Only digits with something to show are in here at all.
   let dg: [String: Face]
-  /// How the year and the week are divided. Absent in a file written before
-  /// the calendar existed, and absent is twelve and seven -- the same
-  /// defaults www/cal.js has, said in the same two numbers.
-  let mo: Int?
-  let wk: Int?
-  /// The names, keyed by which month and which day, counting from one. A
-  /// month nobody has made a word for is simply not here.
+  /// The names, keyed by which month and which day, counting from one, with
+  /// Sunday as day one. A month nobody has made a word for is simply not
+  /// here, and the phone's own name is used instead.
+  ///
+  /// HOW MANY there are is not carried, because it is not the language's to
+  /// say: twelve months and seven days, because that is the calendar every
+  /// reader of this widget already reads. www/cal.js says why.
   let mon: [String: Named]?
   let wd: [String: Named]?
+  /// What goes between the hours and the minutes. A colon, unless somebody
+  /// drew one -- `:` is not a letter a language starts with, so a language
+  /// that has one went and made it.
+  let sep: Named?
 
-  var months: Int { let n = mo ?? 12; return (n >= 2 && n <= 24) ? n : 12 }
-  var week: Int { let n = wk ?? 7; return (n >= 2 && n <= 14) ? n : 7 }
-
-  /// Which part of the year a date falls in, counting from one.
+  /// Which month, and which day of the week -- both asked of the phone.
   ///
-  /// The year cut into equal parts, and the last part takes whatever is left:
-  /// there is no leap rule to be wrong about because a 366th day falls in the
-  /// last month, there being nowhere else for it to be. www/cal.js says why
-  /// there is no calendar arithmetic of anybody's own beyond this.
-  func monthOf(_ d: Date) -> Int {
-    let cal = Calendar.current
-    let day = (cal.ordinality(of: .day, in: .year, for: d) ?? 1) - 1
-    let m = day * months / 365 + 1
-    return min(max(m, 1), months)
-  }
-  /// Which day of the week, counting from one. Days since 1970-01-01 taken
-  /// modulo the week, so a five-day week runs on through the years without a
-  /// seam at new year.
-  func dayOf(_ d: Date) -> Int {
-    let cal = Calendar.current
-    let c = cal.dateComponents([.year, .month, .day], from: d)
-    var g = DateComponents()
-    g.year = c.year; g.month = c.month; g.day = c.day
-    guard let midnight = cal.date(from: g) else { return 1 }
-    let days = Int(floor(midnight.timeIntervalSince1970 / 86400))
-    return ((days % week) + week) % week + 1
-  }
+  /// These used to cut the year into equal parts and count days from an
+  /// epoch of their own. Neither question is this app's to answer: the phone
+  /// has a calendar and it is the one on the lock screen six inches away.
+  /// www/cal.js says where the line is.
+  func monthOf(_ d: Date) -> Int { Calendar.current.component(.month, from: d) }
+  /// Sunday is one, because that is where a calendar's week starts.
+  func dayOf(_ d: Date) -> Int { Calendar.current.component(.weekday, from: d) }
+
+  /// The name for a part of the year, or for a day of the week, when one has
+  /// been made. Nil is not a hole to fill with a number here: a weekday has
+  /// no number anybody says out loud, so the caller falls back to the phone's
+  /// own name for it.
+  func monthName(_ n: Int) -> Named? { mon?[String(n)] }
+  func dayName(_ n: Int) -> Named? { wd?[String(n)] }
 
   static let group = "group.com.tokinets.lingua"
   static let file = "widget.json"

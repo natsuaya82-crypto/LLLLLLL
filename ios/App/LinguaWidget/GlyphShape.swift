@@ -41,6 +41,24 @@ struct GlyphShape: Shape {
   }
 }
 
+/// What colour a number is written in.
+///
+/// `.plain` is the ink of whatever it stands in. `.invert` is the ground,
+/// for a number knocked out of a filled disc. `.tint` is a colour the caller
+/// has a reason for -- a calendar's Sunday.
+enum Ink {
+  case plain, invert
+  case tint(Color)
+
+  var color: Color {
+    switch self {
+    case .plain: return .primary
+    case .invert: return Color(.systemBackground)
+    case .tint(let c): return c
+    }
+  }
+}
+
 /// A number written in the language.
 ///
 /// A LINE, and not a row of squares. The rule is the app's and it is already
@@ -64,6 +82,8 @@ struct NumberView: View {
   let num: Numerals?
   /// The em: how tall one sign is. The width is the ink's own business.
   let em: CGFloat
+  /// Defaulted, because most callers want the ink of where they stand.
+  var ink: Ink = .plain
 
   private var box: Double { num?.box ?? 800 }
 
@@ -120,12 +140,13 @@ struct NumberView: View {
              shape is scaled to the HEIGHT and its ink starts dx into its own
              advance. */
           GlyphShape(poly: f.st ?? [], box: box, dx: f.dx ?? 0)
-            .fill(Color.primary)
+            .fill(ink.color)
             .frame(width: CGFloat(f.aw ?? box) * k, height: em)
         case .text(let s):
           /* No frame: Text takes the width the type wants, which is the whole
              point of handing it the run. */
           Text(s).font(.system(size: em * 0.62, weight: .medium))
+            .foregroundStyle(ink.color)
             .frame(height: em)
         }
       }

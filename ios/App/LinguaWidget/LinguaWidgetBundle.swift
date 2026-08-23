@@ -8,6 +8,8 @@ import SwiftUI
 struct LinguaWidgetBundle: WidgetBundle {
   var body: some Widget {
     ClockWidget()
-    DateWidget()
+    TimeWidget()
+    CalendarWidget()
+    CalendarBigWidget()
   }
 }

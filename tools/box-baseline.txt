@@ -175,8 +175,6 @@
 .scin | border-radius
 .scrpv | border
 .scrpv | border-radius
-.seqbox | border
-.seqbox | border-radius
 .sheet | border-radius
 .sndadd | border
 .sndadd | border-radius
@@ -192,14 +190,6 @@
 .spellrow | border-radius
 .spv | border
 .spv | border-radius
-.sugask | border
-.sugask | border-radius
-.sugbox | border
-.sugbox | border-radius
-.sugchip | border
-.sugchip | border-radius
-.sugout | border
-.sugout | border-radius
 .swk | border-radius
 .swt | border-radius
 .sy | border
@@ -225,8 +215,6 @@
 .vodot | border-radius
 .wc | border
 .wc | border-radius
-.wctl button,.wctl2 button | border
-.wctl button,.wctl2 button | border-radius
 .weave | border
 .weave | border-radius
 .whfo | border

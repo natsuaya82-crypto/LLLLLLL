@@ -270,15 +270,6 @@ function numWidHours(){
 /* The side of one preview, in px. Both are the same square, because on a home
    screen they are the same square. */
 var NUM_WID=118;
-/* A sign is about 0.55 of the em across. An estimate, and an estimate is all
-   this needs: it is choosing a size, not placing anything -- the placing is
-   inkLine's, off the ink's own advance. The Swift asks the real widths
-   because it has them; here the shapes are canvases the browser has not laid
-   out yet when this runs. */
-function numEm(n, room, cap){
-  var w=numSigns(n)*0.55;
-  return Math.min(cap, room/w);
-}
 /* The face. No frame around it: iOS draws the widget's own ground, and a box
    with rounded corners is the one shape this app does not make. */
 function numClockHTML(){
@@ -331,24 +322,116 @@ function numClockHTML(){
    serif in the middle of a word, so a word the font cannot carry whole is set
    plainly instead. shareWordAll() is the one place that answers that, and the
    widget asks it too. */
+/* The first n of a word, for a place that is n wide. */
+function numCut(s, n){
+  s=String(s||'');
+  return (s.length<=n)? s : s.slice(0, n);
+}
+/* The month over the grid: its name when the calendar chapter has made one,
+   and its number when it has not. Bigger than a day and not dimmed -- it is
+   the heading of the thing, not a footnote to it. */
 function numMonthHTML(){
   var m=calMonthOf(new Date()), w=shareSlotWord('month.'+numLabel(m));
-  if(!w || !w.hw)
-    return '<span class="numwsm" style="font-size:'+
-      numEm(m, NUM_WID*0.50, NUM_WID*0.17).toFixed(1)+'px">'+numLineHTML(m)+'</span>';
-  return '<span class="numwsm'+(shareWordAll(w)? ' sfont':'')+
-    '" style="font-size:'+(NUM_WID*0.17).toFixed(1)+'px">'+esc(w.hw)+'</span>';
+  if(!w || !w.hw) return '<span class="numcm">'+numLineHTML(m)+'</span>';
+  return '<span class="numcm'+(shareWordAll(w)? ' sfont':'')+'">'+esc(w.hw)+'</span>';
 }
-function numDateHTML(){
-  var d=new Date(), W=NUM_WID, dv=d.getDate();
-  return '<div class="numwd">'+
-    '<span class="numwbig" style="font-size:'+numEm(dv, W*0.86, W*0.44).toFixed(1)+'px">'+
-      numLineHTML(dv)+'</span>'+
-    numMonthHTML()+'</div>';
+/* The name a day of the week already has, for the days the language has not
+   named yet. 「ない分の言葉はmondayとかで代用しよう」
+   Nobody wrote these down: the widget asks iOS for its weekday symbols and
+   this asks the browser for the same thing. It is the DEVICE's language that
+   answers, not the app's -- because it is the device that will answer on the
+   home screen, and a preview that used a different one would be showing a
+   widget nobody is going to get.
+   Day one is a Sunday, because that is where a calendar starts and where
+   calDayOf() counts from. */
+function numWdayName(i){
+  /* 1970-01-04 was a Sunday, and calDayOf() counts day one from there. */
+  var d=new Date(Date.UTC(1970, 0, 4+(i-1)));
+  try{ return d.toLocaleDateString(undefined, {weekday:'short', timeZone:'UTC'}); }
+  catch(e){ return numLabel(i); }
+}
+/* Twelve or twenty-four is the PHONE's answer, and every clock on the device
+   obeys it. 「電話設置に合わせよう」 */
+function numIs24(){
+  try{ return Intl.DateTimeFormat(undefined, {hour:'numeric'})
+              .resolvedOptions().hour12===false; }
+  catch(e){ return true; }
+}
+/* 8:25, which is the clock most people actually read a phone for. */
+function numTimeHTML(){
+  var d=new Date(), W=NUM_WID, h=d.getHours(), m=d.getMinutes(),
+      b=numBase(), mm=[], left=m, em;
+  if(!numIs24()){ h=h%12; if(!h) h=12; }
+  if(!left) mm=[0];
+  while(left>0){ mm.unshift(left%b); left=Math.floor(left/b); }
+  /* A minute is written with two signs, so 8:05 and not 8:5. */
+  while(mm.length<2) mm.unshift(0);
+  /* Decided off the whole line at once -- hour, mark and minute -- or the
+     size would jump at ten o'clock, when the hour gains a sign.
+     A sign is about 0.55 of the em across, and 0.42 is the mark. Estimates,
+     and estimates are all this needs: it is choosing a size, not placing
+     anything -- the placing is inkLine's, off the ink's own advance. The
+     Swift asks the real widths because it has them; here the shapes are
+     canvases the browser has not laid out yet when this runs. */
+  em=Math.min(W*0.40, W*0.92/((numSigns(h)+mm.length)*0.55+0.42));
+  return '<div class="numwd"><span class="numwbig" style="font-size:'+em.toFixed(1)+'px">'+
+    numLineHTML(h)+'<span class="numsep">'+esc(numSepText())+'</span>'+
+    mm.map(numSignHTML).join('')+'</span></div>';
+}
+/* A colon, unless somebody drew one. `:` is not a letter a language starts
+   with, so a language that has one went and made it. */
+function numSepText(){
+  var i;
+  for(i=0;i<LETTERS.length;i++) if(String(ltName(LETTERS[i])||'')===':') return ':';
+  return ':';
+}
+
+/* The month, as a grid. The widest of the five and the one where the most of
+   a language stands at once: the month's name, the names of the days of the
+   week, and every day of the month.
+   Seven columns, Sunday first, the month the phone is in -- a calendar is the
+   world's shape, and what the language supplies is the names written into it.
+   「言語内で週の概念作ろうがウィジェットに表示するなら世界の概念でやるだろ」 */
+function numCalHTML(){
+  var n=calWeek(), d=new Date(), y=d.getFullYear(), mo=d.getMonth(),
+      last=new Date(y, mo+1, 0).getDate(), today=d.getDate(),
+      heads='', cells='', i, day, col, prev=-1;
+  for(i=1;i<=n;i++){
+    var w=shareSlotWord('wday.'+numLabel(i)), nm;
+    /* The head of a column is as wide as a column. A calendar has always cut
+       the day's name down -- Mon, 月, M -- because seven of them share the
+       width of the grid, and a word somebody made is no different. Two signs,
+       which is what the phone's own short names come to. */
+    nm=(w && w.hw)? esc(numCut(w.hw, 2)) : esc(numCut(numWdayName(i), 3));
+    heads+='<span class="numch'+((w && w.hw && shareWordAll(w))? ' sfont':'')+
+      (calRed(i)? ' sun':'')+(calBlue(i)? ' sat':'')+'">'+nm+'</span>';
+  }
+  for(day=1;day<=last;day++){
+    col=calDayOf(new Date(y, mo, day))-1;
+    /* A row ends where the week wraps, and the first row is padded to put
+       the first of the month under its own column. */
+    if(day===1) for(i=0;i<col;i++) cells+='<span class="numcc"></span>';
+    else if(col<=prev) { /* the wrap is the grid's own, nothing to pad */ }
+    prev=col;
+    /* Today is a filled disc with the number knocked out of it, which is what
+       every calendar on the phone does and is the only mark that reads at this
+       size. The disc is an <svg><circle> and not a radius on the span: a round
+       div is a border-radius, box-check cannot tell a circle from a rounded
+       box, and it is right not to try. 「今日がわかるようにして」 */
+    cells+='<span class="numcc'+(day===today? ' on':'')+
+      (calRed(col+1)? ' sun':'')+(calBlue(col+1)? ' sat':'')+'">'+
+      (day===today? '<svg class="numdot" viewBox="0 0 24 24" aria-hidden="true">'+
+        '<circle cx="12" cy="12" r="11"/></svg>' : '')+
+      '<span class="numcn">'+numLineHTML(day)+'</span></span>';
+  }
+  return '<div class="numcal" style="--numcols:'+n+'">'+
+    numMonthHTML()+
+    '<div class="numcg">'+heads+cells+'</div></div>';
 }
 function numWidHTML(){
   return '<div class="sec">'+esc(t('num.wid'))+'</div>'+
-    '<div class="numwrow">'+numClockHTML()+numDateHTML()+'</div>'+
+    '<div class="numwrow">'+numClockHTML()+numTimeHTML()+'</div>'+
+    numCalHTML()+
     '<div class="mini numwhow">'+esc(t('num.wid.how'))+'</div>';
 }
 /* The canvases, once the HTML they are in exists. inkLine gives each one the

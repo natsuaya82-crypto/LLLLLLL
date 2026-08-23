@@ -163,14 +163,7 @@ spnone
 spu
 spv
 src
-st-seq
 studio
-sual
-sud
-sugask
-sugn
-sugout
-sut
 sy
 sya
 syi
@@ -198,7 +191,6 @@ w
 wc
 wcm
 wct
-wctl
 wcw
 weave
 wldl
