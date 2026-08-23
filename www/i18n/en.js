@@ -665,6 +665,9 @@ defLang('en', (function(){
       'plan.term.yr' : "Yearly",
       'plan.term.mo' : "Monthly",
       'plan.price.plus' : "$9.99",
+      "store.wait" : "Asking the App Store…",
+      "store.pending" : "Waiting to be approved. You will be told when it is.",
+      "store.fail" : "The App Store could not be reached",
       'toast.plan.free' : "Back on the free plan",
       'toast.plan.other': "(mock) switched to {0}",
       /* the write / edit sheets */

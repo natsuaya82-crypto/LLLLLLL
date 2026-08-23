@@ -15,6 +15,48 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The plans screen buys, on a phone
+
+`www/store.js` — chapter 26, the one window onto StoreKit the way `net.js` is
+the one window onto the server. `Capacitor.nativePromise` and **not**
+`Capacitor.Plugins`: this app has no bundler and never loads
+`@capacitor/core`, so a call through `Plugins` does nothing, silently, and
+that cost four builds to learn once already.
+
+`setPlan()` routes through it. On a phone a paid card BUYS, and **the plan is
+taken from the answer, never from what was asked for** — a purchase that ends
+up pending, or a receipt that will not verify, comes back saying free, and
+believing the request instead of the reply is how an app gives away a tier
+nobody paid for.
+
+**In a browser there is no App Store, and that is not an error state to
+draw.** The button goes on setting the plan by hand there: it is how every
+check walks that screen, how every screenshot of it is taken, and how a tier
+is tried on before it is on sale. `storeOn()` is the whole of the difference.
+
+`store.js` does **not** write the plan to the Keychain — `LinguaStore.swift`
+already does, on every road that changes anything, and a second writer is a
+second answer to "what plan is this". It does not decide what a plan may DO
+(that is `CAN`), and it does not phone Apple on launch (the Keychain holds
+last time's answer, and a launch that waits on the network is a launch that
+waits).
+
+**Newly stored:** nothing. Three strings in ten languages — asking, waiting
+for approval, and not reaching the App Store.
+
+**What is deliberately missing and why** — Restore, Basic's card, and the
+Free button opening Apple's cancel sheet instead of setting a flag. Each
+needs `www/act-map.js` or `www/i18n/*.js`, and both belong to another session
+today. → `docs/BACKLOG.md`
+
+`CODE CONFIRMED` — six more claims in `plan-check` (45 now), and two bugs
+**watched failing**: `storeTook()` made to believe the request rather than the
+reply, and made to write the Keychain a second time. `es5`, `dead`, `act`,
+`i18n`, `assets` and `press` green. `DEVICE CONFIRMED` — **no**, and nothing
+here can give it: whether a real purchase comes back at all is
+`docs/STATE.md` 20b.
+
+
 ### StoreKit knows there are two tiers now
 
 `ios/App/App/LinguaStore.swift` held a **set of ids that all meant "plus"**,

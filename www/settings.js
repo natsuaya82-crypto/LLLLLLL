@@ -508,7 +508,22 @@ function vPlans(){
     '</div>'+
     '</div></div>';
 }
+/* Pressing a plan.
+
+   On a phone this BUYS -- storeBuy() asks the App Store and the plan comes
+   from the answer, never from what was asked for. In a browser there is no
+   App Store, and rather than drawing an error state the button goes on doing
+   what it has always done: set the plan by hand. That is how every check
+   walks this screen, how every screenshot of it is taken, and how a tier is
+   tried on before it is on sale.
+
+   Free is not bought. Going back to free is Apple's own sheet -- cancelling
+   is `manage` on the native side and is not ours to draw -- so the button
+   here stays what it was, which on a phone is a person saying "act as though
+   I am on free" and on the next launch is overwritten by what the Keychain
+   says. That is a hole and it is written down: docs/BACKLOG.md. */
 function setPlan(id){
+  if(id!=='free' && storeOn() && storeBuy(storeId(id, plansYr))) return;
   SET.plan=id; planKeep(id); save(); render();
   toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }

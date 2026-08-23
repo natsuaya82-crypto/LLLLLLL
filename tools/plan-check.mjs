@@ -219,6 +219,40 @@ const r = await pg.evaluate(({ s }) => {
   out.lapseUpQuiet = said === 1;    /* going UP says nothing */
   window.openCapLapse = realOpen;
 
+  /* ---- 8. the App Store, and the browser that is not one ---------------
+     www/store.js is the one window onto StoreKit, and in a browser there is
+     no App Store to look through it at. What must NOT happen there is an
+     error state on the plans screen: every check walks that screen without a
+     bridge, every screenshot of it is taken without one, and a tier is tried
+     on before it is on sale. So the button goes on setting the plan by hand,
+     and storeOn() is the whole of the difference. */
+  out.storeOff = storeOn() === false;
+  out.storeRefuses = storeBuy('com.tokinets.lingua.plus.monthly') === false;
+  SET.plan = 'free'; save();
+  setPlan('plus');
+  out.byHand = plan() === 'plus';
+  setPlan('free');
+  out.byHandBack = plan() === 'free';
+
+  /* The product ids the app asks for are the ones the Swift sells. Two lists
+     of ids is how a buy button comes to name a product App Store Connect has
+     never heard of, and the answer to that is not an error -- StoreKit simply
+     returns nothing, and the button does nothing, forever. */
+  out.ids = ['basic', 'plus'].map(function(p){
+    return storeId(p, false) + ' ' + storeId(p, true);
+  }).join(' ');
+
+  /* And nothing in www/ writes the plan to the Keychain on the way back from
+     a purchase: LinguaStore.swift already did, and a second writer is a
+     second answer to what plan this is. */
+  var kept = 0, realKeep = window.planKeep;
+  window.planKeep = function(){ kept++; };
+  storeTook({ plan: 'basic' });
+  out.tookNoKeychain = kept === 0;
+  out.tookTakesAnswer = plan() === 'basic';
+  window.planKeep = realKeep;
+  SET.plan = 'free'; save();
+
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -281,6 +315,15 @@ say(r.lapseSaid, 'a plan ending is said out loud');
 say(r.lapseOnce, 'once, not once per render');
 say(r.lapseKeptBytes, 'and it touches no slice');
 say(r.lapseUpQuiet, 'going up a plan says nothing at all');
+
+say(r.storeOff, 'in a browser there is no App Store to ask');
+say(r.storeRefuses, 'and storeBuy() says so rather than pretending');
+say(r.byHand && r.byHandBack, 'so the plans screen still sets the plan by hand there');
+say(r.ids === 'com.tokinets.lingua.basic.monthly com.tokinets.lingua.basic.yearly ' +
+             'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly',
+    'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
+say(r.tookNoKeychain, 'what comes back from a purchase is not written to the Keychain twice');
+say(r.tookTakesAnswer, 'and the plan is taken from the ANSWER, not from what was asked for');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

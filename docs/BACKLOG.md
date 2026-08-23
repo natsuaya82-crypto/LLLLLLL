@@ -7,6 +7,28 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## The plans screen is half wired, and the half that is missing is named
+
+`www/store.js` is in and `setPlan()` goes through it: on a phone, pressing a
+paid card buys, and the plan comes from the App Store's answer. Three things
+are deliberately not there yet, each because a file it needs belongs to
+another session today (`docs/SESSIONS.md`).
+
+- **Restore.** `restore` exists on the native side and there is nowhere to
+  press it. **Apple requires the button** — an app selling a subscription
+  without one is rejected. It needs a name in `www/act-map.js`.
+- **Basic's card.** `PLANS` sells Free and Plus. Basic's name, price and
+  lines are strings, and `www/i18n/*.js` is not this session's today. Nothing
+  can be bought that is not on the screen.
+- **Going back to free is not a purchase and is drawn as one.** Pressing Free
+  on a phone sets `SET.plan='free'` by hand, which is a person saying "act as
+  though I am on free"; the next launch reads the Keychain and it is Plus
+  again. What that button should do is open Apple's own sheet — `manage` on
+  the native side, which exists — because cancelling is Apple's and not ours
+  to draw. It needs a name in `act-map.js` too.
+
+None of the three is hard. All three are one file away.
+
 ## Two decisions of the same day disagree about how many keyboards — OWNER
 
 `docs/FEATURE_RULES.md` carries both, and they cannot both be implemented.
