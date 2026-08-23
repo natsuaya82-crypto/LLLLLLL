@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { chromium, LAUNCH } from '/home/user/LLLLLLL/tools/browser.mjs';
-const SRC = fs.readFileSync('/tmp/sheet2/sheet.js','utf8');
+const SRC = fs.readFileSync(new URL('./sheet.js', import.meta.url),'utf8');
 const NAMES = ['7','2','25','人','愛','a','a','a','mountain','水','火','木','金','土','日','月','ka','yo','!','?'];
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{width:400,height:300} });
@@ -21,15 +21,17 @@ const out = await pg.evaluate(({src, names, DPI})=>{
     b=shBoxAt(i);
     g.strokeStyle='#d1d1d1'; g.lineWidth=Math.max(1,0.5*S);
     g.strokeRect(b.x*S, Y(b.y+SH_BOX), SH_BOX*S, SH_BOX*S);
-    /* 薄いお手本 */
-    g.fillStyle='rgba(0,0,0,0.14)';
-    g.font='600 '+Math.round(SH_BOX*0.6*S)+'px system-ui, "Noto Sans JP", sans-serif';
-    g.textAlign='center'; g.textBaseline='middle';
-    g.fillText(names[i], (b.x+SH_BOX/2)*S, Y(b.y+SH_BOX/2));
+    /* 格子。アプリの canvas と同じ 21x21。中に名前は刷らない ── 刷ると、自分の
+       字を作りに来た人が日本語の 水 をなぞってしまう */
+    g.fillStyle='rgba(0,0,0,'+(1-SH_DOT_GREY).toFixed(2)+')';
+    var lin=SH_LAT_INSET/800*SH_BOX, lst=(SH_BOX-2*lin)/(SH_LAT_N-1), lx, ly;
+    for(ly=0;ly<SH_LAT_N;ly++) for(lx=0;lx<SH_LAT_N;lx++)
+      g.fillRect((b.x+lin+lx*lst-SH_DOT/2)*S, Y(b.y+lin+ly*lst+SH_DOT/2),
+                 Math.max(1,SH_DOT*S), Math.max(1,SH_DOT*S));
     /* 枠の名前 */
     g.fillStyle='#000'; g.textAlign='left'; g.textBaseline='alphabetic';
-    g.font='600 '+Math.round(14*S)+'px system-ui, "Noto Sans JP", sans-serif';
-    g.fillText(names[i], b.x*S, Y(b.y+SH_BOX+5));
+    g.font='600 '+Math.round(SH_LABEL*0.85*S)+'px system-ui, "Noto Sans JP", sans-serif';
+    g.fillText(names[i], b.x*S, Y(b.y+SH_BOX+SH_LABEL_UP));
   }
   var bits=shPack(names);
   g.fillStyle='#000';
@@ -101,6 +103,9 @@ const out = await pg.evaluate(({src, names, DPI})=>{
     }
     var wf=shWarp(found);
     if(!wf) return {fail:'変換が作れない'};
+    var mm=m, WW=W, HH=H;
+    var dk2=function(px,py){ var xi=Math.round(px), yi=Math.round(py);
+      return xi>=0 && yi>=0 && xi<WW && yi<HH && mm[yi*WW+xi]===1; };
     var dk=function(px,py){
       var xi=Math.round(px), yi=Math.round(py);
       return xi>=0 && yi>=0 && xi<W && yi<H && m[yi*W+xi]===1;
@@ -123,17 +128,30 @@ const out = await pg.evaluate(({src, names, DPI})=>{
       var t5=wf(mk[k2][0],mk[k2][1]);
       err=Math.max(err, Math.hypot(t5[0]-found[k2][0], t5[1]-found[k2][1]));
     }
-    return {read: shReadStrip(wf, dk), bad:bad, err:Math.round(err*10)/10, W:W, H:H};
+    return {read: shReadStrip(wf, dk), bad:bad, err:Math.round(err*10)/10, W:W, H:H, wf:wf, dk:dk2};
   }
   var res=[];
   [[0.8,0.006,1,10,'スキャナ'],[4,0.03,1.5,20,'手で撮った'],
    [10,0.08,2,26,'雑に撮った'],[18,0.16,2.5,32,'かなり斜め']].forEach(function(a){
     var r=shoot(a[0],a[1],a[2],a[3]); r.how=a[4]; r.deg=a[0]; res.push(r);
   });
-  return {res:res, pw:PW, ph:PH, cell:Math.round(SH_CELL*S), mark:Math.round(SH_MARK*S)};
+  return {res:res, pw:PW, ph:PH, cell:Math.round(SH_CELL*S), mark:Math.round(SH_MARK*S),
+          sane:shSane(), dots:(function(){
+            /* 点がインクとして拾われていないか。字を一つも描いていない枠から
+               出てくるものは、掃除のあとゼロでなければならない */
+            var r=shoot(4,0.03,1.5,20);
+            if(r.fail) return null;
+            var RES=128, mask=shBoxInk(r.wf, r.dk, 0, RES), raw=0, k;
+            for(k=0;k<mask.length;k++) raw+=mask[k];
+            var cl=shClean(mask, RES, Math.round(RES*RES*0.0015), 3);
+            return {raw:raw, kept:cl.kept, dropped:cl.dropped, of:RES*RES};
+          })()};
 }, {src:SRC, names:NAMES, DPI:260});
 await br.close();
 console.log('  紙 ' + out.pw + 'x' + out.ph + ' 画素（260dpi）  升 ' + out.cell + 'px  印 ' + out.mark + 'px');
+console.log('  名前が上の箱に届いていないか: ' + (out.sane ? 'よし' : 'だめ'));
+if (out.dots) console.log('  空の枠（格子だけ）: 生 ' + out.dots.raw + ' / ' + out.dots.of +
+  ' 画素、掃除して残った ' + out.dots.kept + '  ← 0 なら点は字に化けていない');
 out.res.forEach(r=>{
   if(r.fail){ console.log('  '+r.how.padEnd(10)+String(r.deg).padStart(5)+'°  '+r.fail); return; }
   const ok = JSON.stringify(r.read)===JSON.stringify(NAMES);

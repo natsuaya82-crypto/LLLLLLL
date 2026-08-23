@@ -28,6 +28,10 @@ undone, and the twenty names read back off the strip.
     carelessly   10°    all twenty
     very skewed  18°    all twenty
 
+It also prints two things that are not the round trip and are checked every
+run: that a box's name does not reach the box above it (`shSane`), and that an
+empty box comes back empty.
+
 Three things that cost a round each and are worth not rediscovering:
 
 - **A fixed threshold does not work over a whole page.** A lighting gradient
@@ -43,6 +47,26 @@ Three things that cost a round each and are worth not rediscovering:
   cell of 2112 refused a sheet before that; now it repairs. Forty scattered bad
   cells still refuse -- which is the half that matters, because a misread sheet
   must be turned away rather than half-imported.
+
+## what is inside a box
+
+**The app's own lattice, and nothing else.** 21 dots across with an inset of
+40 in a square of 800 -- `GGRID`, the same dots a finger traces on the canvas.
+「その代わり四角の中に点線めっちゃ入れてあげたら？」
+
+It was Calligraphr's faint character-to-trace, copied without thinking about
+what this app is for. There it is right: you are collecting somebody's
+handwriting of a letter that already exists. Here it is backwards -- somebody
+inventing their own script for 水 would find 水 waiting in the box and trace
+the Japanese one. A dot says nothing about what to draw.
+
+Measured: an empty box on a photographed sheet comes back with **0 ink pixels
+of 16384**. The dots are pale enough that the local threshold drops them before
+the clean-up is even reached.
+
+That number cuts both ways and is worth writing down: ink has to be darker than
+about 0.85 of the paper around it to be seen at all. A hard pencil may be
+marginal. Something to put in front of a real sheet.
 
 ## what has NOT been measured
 
