@@ -15,6 +15,52 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### StoreKit knows there are two tiers now
+
+`ios/App/App/LinguaStore.swift` held a **set of ids that all meant "plus"**,
+with a note saying that the day a second tier existed this would become a map
+and that the day to come back was that one and not before. That day is
+2026-08-23.
+
+`plans` is now `id -> plan` for four products — Basic monthly and yearly, Plus
+monthly and yearly — and `entitled()` is `entitledPlan()`: not "is there a
+paid entitlement" but **which**, and the **highest** of them where somebody
+holds more than one. A Bool cannot say which, and the day Basic goes on sale a
+Bool would have read every Basic receipt as Plus: every door open, for five
+dollars.
+
+`order` in the Swift is `free`, `basic`, `plus` — the same ladder
+`PLAN_ORDER` in `www/core.js` is, and the comment on each says so about the
+other, because two copies of an order is how two sides of a bridge come to
+disagree about which plan is better.
+
+**None of Basic's product ids exist in App Store Connect yet, and asking for
+one that does not is not an error** — StoreKit simply does not return it,
+which is how this file finds out what is really on sale rather than being
+told. The same was true of the yearly Plus id for a fortnight.
+
+**`docs/apple.md` is rewritten where it was wrong.** § 4 said "one product,
+Plus only" and now carries all four with their ids, prices and group levels,
+plus what a subscription group level is FOR (Basic → Plus as an upgrade Apple
+prorates, rather than two subscriptions somebody pays twice). § 6 opened with
+**"there is not one line of StoreKit code in the app"** — the same lie
+`docs/PAID_FEATURES.md` was telling, about a file both could have opened — and
+recommended installing a Capacitor plugin, which this app cannot load at all.
+It now says what is actually missing: `www/store.js`, the buy button, receipt
+validation on the server, and somewhere to press Restore.
+
+**Data:** nothing. `LinguaPlanPlugin.set()` is written with a plan name that
+can now be `basic`, and `www/core.js` has known that word since the ladder
+landed.
+
+`CODE CONFIRMED` — **no, and not by anything here.** There is no Swift
+toolchain in this container; `assets-check` holds that the file is in the
+target's Sources phase and nothing holds that it compiles. `DEVICE CONFIRMED`
+— **no.** `docs/STATE.md` 20b is the phone this needs: buying in the sandbox,
+`restore` after a reinstall, and a renewal arriving while the app is shut —
+and now also **a Basic receipt reading as Basic**.
+
+
 ### Three plans, and the word ceiling is a number
 
 「ベーシックも入れて」 — the decision of 2026-08-23 in `docs/FEATURE_RULES.md`.
