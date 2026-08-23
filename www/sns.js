@@ -141,21 +141,12 @@ function vFeed(){
     /* The word for the day, beside the name of the screen. A word and not an
        icon 「文字ね」, and in the bar rather than as a sixth tab: it is the
        same timeline seen through one day. It is only there when there IS a
-       day -- a word that goes to an empty page is worse than no word. */
-    rootTop('feed')+
-    /* The body's 10px of head goes when the day's sentence is the first thing
-       in it: the sentence carries its own 12, and two paddings stacked is the
-       timeline pushed down for nothing. */
-    '<div class="body'+(daySay()? ' dayb' : '')+'">'+
-    /* Three lines and no more: the name of the screen, the day's sentence,
-       and the row you write in. 「あんまり高さ変えずに3列にしたい」
-
-       The sentence is one line, cut with an ellipsis, so this block is the
-       same height whatever the day says -- and the whole of it is on the
-       day's own page, which is where pressing it goes. .navtop gives up four
-       of its eight bottom pixels when it is here, so three lines cost less
-       than a line. */
-    dayLine()+
+       day -- a word that goes to an empty page is worse than no word.
+       「ホームの横にお題ってつけれる？」「文字ね」 It is in the bar because a
+       word there costs no height, and the row under it is already two lines. */
+    rootTop('feed', DAY? '<button class="navlink"' + DO('go', ["day"]) + '>'+
+                         esc(pageName('day'))+'</button>' : '')+
+    '<div class="body">'+
 
     /* A row to write in, at the top of the timeline, because the round button
        is one floating thing over the corner of a screen and somebody who does
@@ -248,29 +239,38 @@ function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
 }
-/* The sentence, under the name of the screen and over the row you write in.
-   Nothing when there is no sentence, so the day the server missed is the two
-   lines this screen has always had. */
-function dayLine(){
-  var say=daySay();
-  if(!say) return '';
-  /* What it is, in front of what it says. The word is the SCREEN's name read
-     back with pageName() rather than a string of its own -- the page it goes
-     to is called that, and naming it twice is the thing rule 2's NAMES claim
-     exists to refuse. */
-  return '<button class="dayline"' + DO('go', ["day"]) + '>'+
-    '<span class="dayk">'+esc(pageName('day'))+'</span>'+esc(say)+'</button>';
-}
-/* One row, and it is the row that was always there: the face and a line of
-   grey type. What changes when there is a sentence for the day is what the
-   grey type says and what pressing it opens with -- not the shape, and not
-   the height. */
+/* One row, and the face fills both of its lines: the day's sentence over
+   what you are being asked to do with it. 「アイコンは2列分うめて その横から
+   お題と自分の言語で入れるのは？」
+
+   It is the same skeleton every post on the timeline has -- a face on the
+   left, two lines of type beside it -- so the top of the feed is the shape
+   the rest of the feed is. It is also SHORTER than the row it replaces plus
+   a line: the face already reserves the height the two lines use.
+
+   The label in front of the sentence is the SCREEN's name read back with
+   pageName() rather than a string of its own; naming a screen twice is what
+   rule 2's NAMES claim exists to refuse.
+
+   No sentence -- offline, or a day the server missed -- and it is the one
+   grey line this row has always been. */
 function dayRow(){
   var say=daySay();
-  return '<button class="wrow"' + DO('openPost', say? ["day"] : []) + '>'+
+  if(!say){
+    return '<button class="wrow"' + DO('openPost') + '>'+
+      '<span class="pav">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
+    '</button>';
+  }
+  return '<button class="wrow dayrw"' + DO('openPost', ["day"]) + '>'+
     '<span class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-    '<span class="wrt">'+esc(t(say? 'day.ask' : 'post.ln.ph'))+'</span>'+
+    '<span class="dayrb">'+
+      '<span class="dayline">'+
+        esc(say)+'</span>'+
+      '<span class="wrt">'+esc(t('day.ask'))+'</span>'+
+    '</span>'+
   '</button>';
 }
 /* ---- one day, and what everybody said ----------------------------------
