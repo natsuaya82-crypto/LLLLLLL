@@ -135,8 +135,6 @@ button{font-family:inherit;cursor:pointer}
 .iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .iconb:active{opacity:.5}
-.gtile .bch{font-size:1.5rem;color:var(--gold);line-height:1}
-.gtile .nol{font-size:1.2rem;color:var(--txm);line-height:1}
 /* The gap has to be wider than the speaker's overhang or the speaker of one
    tile sits on top of the next tile: 44pt of button hanging 11pt past a
    corner, over a 6pt gap, means five points of every tile answered to its
@@ -467,8 +465,8 @@ canvas.pkc{width:34px;height:34px;display:block}
            border-radius:8px;padding:8px 12px;font-weight:400;font-size:1rem}
 .ipamine .none{color:var(--txm);font-size:.88rem;align-self:center}
 /* Buttons whose mark is drawn rather than typed line it up with the word. */
-.back.nb,.play,.rr2,.pvbox button{display:inline-flex;align-items:center;gap:6px}
-.back.nb svg,.play svg,.rr2 svg,.pvbox button svg{flex:0 0 auto}
+.back.nb,.play,.pvbox button{display:inline-flex;align-items:center;gap:6px}
+.back.nb svg,.play svg,.pvbox button svg{flex:0 0 auto}
 .set.signin .sl{display:flex;align-items:center;gap:10px}
 .set.signin .sl svg{width:18px;height:18px;flex:0 0 auto}
 .back{background:none;border:none;color:var(--txs);font-size:.88rem;
@@ -1162,21 +1160,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .card{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
 .rule{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto 0}
 
-/* ---------- the title page (home) ---------- */
-.title{padding:34px 30px 20px;text-align:center}
-.tkick{font-size:.82rem;letter-spacing:.34em;color:var(--txm);text-transform:uppercase;margin-bottom:14px}
-/* An inline-flex button inside a centred column is only as wide as its own
-   text and sits at the left edge of it. 「作成中の言語（左寄せになってるから真ん中
-   寄せに。）」 -- it is the one thing on this screen the eye lands on first. */
-.tname{font-family:var(--face-caps);font-weight:600;font-size:2.2rem;line-height:1.15;
-       display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
-       background:none;border:none;color:var(--tx);min-height:44px}
-.tname .pen{font-size:.84rem;color:var(--txm);display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px}
-/* The reading under the language name was purple, and purple means two
-   other things here -- the PLUS tag, and a sound that changed in one word.
-   It means neither on the cover, so it was a colour saying something untrue
-   on the first screen you see. */
-.tsub{font-family:var(--face-ital);font-style:italic;font-size:1.1rem;color:var(--txs);margin-top:6px}
 .toc{margin-top:14px}
 .trow{display:flex;align-items:baseline;gap:12px;padding:16px 2px;width:100%;background:none;border:none;color:var(--tx);text-align:left}
 .trow:active{opacity:.55}
@@ -1184,10 +1167,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .trow .rt{font-size:1.1rem;font-weight:500}
 .trow .lead{flex:1;border-bottom:1px dotted var(--dot);transform:translateY(-3px)}
 .trow .rv{font-family:var(--face-ital);font-size:1.02rem;color:var(--txs);flex:0 0 auto}
-.recent{margin-top:24px;background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;width:100%;text-align:left;color:var(--tx)}
-.recent .rh{font-size:.82rem;letter-spacing:.24em;color:var(--txm);text-transform:uppercase;margin-bottom:10px}
-.recent .line{font-family:var(--face-caps);font-size:1.25rem;letter-spacing:.02em}
-.recent .tr{font-family:var(--face-ital);font-style:italic;font-size:1.02rem;color:var(--txs);margin-top:2px}
 
 /* ---------- the empty state ---------- */
 .empty{padding:54px 30px;text-align:center}
@@ -1337,24 +1316,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The faces of one keyboard, under the row of keyboards. No rule under it:
    the keyboard itself is directly below and two lines is a box. */
 .kbsegs{border-bottom:0;margin-bottom:4px}
-.cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
-.cand .ck{width:44px;height:44px;margin-left:-11px;border:0;background:none;flex:0 0 auto;
-          display:flex;align-items:center;justify-content:center}
-.cand .ck .ckb{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
-          display:flex;align-items:center;justify-content:center;color:var(--onGold)}
-.cand .ck.on .ckb{background:var(--gold);border-color:var(--gold)}
-.cand .cw{font-family:var(--face-caps);font-size:1.1rem}
-.cand .crd{font-size:.86rem;color:var(--txm);margin-left:2px}
-.cand .cm{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txs);font-size:1rem}
-/* 44 is Apple's floor for anything a thumb has to hit, and this said so --
-   then a second .cand .rr three hundred lines further down, in a batch of
-   fixes made when characters became drawings, repeated three of these four
-   declarations and set min-width to 26. A later rule undoing an earlier one
-   about the same thing, so the row's two controls were half a target wide for
-   as long as nobody measured them. There is one rule. */
-.cand .rr{background:none;border:none;color:var(--txm);min-width:44px;min-height:44px;
-          display:flex;align-items:center;justify-content:center}
-
 /* ---------- settings ---------- */
 /* font-size and line-height are set HERE and not left to the tag. A <button>
    takes the browser's own 13.3px/normal and an <a> takes the body's 16px/1.7,
@@ -2141,7 +2102,6 @@ a.set{text-decoration:none}
        padding:8px 22px calc(env(safe-area-inset-bottom,0) + 20px);transform:translateY(101%);
        transition:.27s cubic-bezier(.2,.8,.2,1);max-height:92dvh;overflow:auto}
 .sheet.on{transform:none}
-.grip{width:40px;height:4px;border-radius:3px;background:var(--line);margin:6px auto 14px}
 .sheet h3{font-size:1.05rem;margin:0 2px 6px;font-weight:700}
 .field{margin-bottom:11px}
 .field label{font-size:.84rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
@@ -2259,8 +2219,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .sysep{color:var(--txm);font-size:.88rem}
 /* sentences */
 .sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
-.rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:5px 12px;font-size:.86rem}
-.rr2:active{opacity:.55}
 .link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
 /* weaving a sentence */
 .weave{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:var(--pane);border:1px solid var(--line);border-radius:14px}
@@ -2315,15 +2273,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    the grid of letters, and the canvas you draw one in. Nothing here sets a
    colour of its own — the palette variables carry both themes as everywhere
    else in this file. */
-.gtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px}
-.gtile{position:relative;aspect-ratio:1/1;background:var(--sf);border:1px solid var(--line);
-       border-radius:12px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--tx)}
-.gtile.empty{background:none;border-style:dashed;color:var(--txm)}
-.gtile:active{opacity:.6}
-.gtile canvas{width:100%;height:100%;display:block;border-radius:12px}
-.gtile .rl{position:absolute;left:7px;bottom:4px;font-family:var(--face-ital);
-           font-style:italic;font-size:.88rem;color:var(--gold);opacity:.85;line-height:1}
-.gtile.add{font-size:1.3rem;color:var(--gold);border-style:dashed}
 .gcanvwrap{margin:6px 0 2px;display:flex;justify-content:center}
 /* none, not manipulation: the canvas wants every event, including the ones a
    browser would otherwise spend on panning. */
@@ -2352,12 +2301,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .gtools button:active{opacity:.55}
 html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .gtools .gcap{
   letter-spacing:.01em;font-size:.82rem}
-/* Going back and erasing everything are repairs, not marks. They are not peers
-   of placing a point, so they stand apart and quiet as words rather than
-   taking a sixth of the rail. */
-.gclear:active{opacity:.55}
-html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
-  letter-spacing:.02em;font-size:.84rem}
 .ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
 .spv{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
@@ -2530,8 +2473,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   padding:16px 6px;color:var(--tx);font-family:var(--face-caps);font-size:1.25rem;
   text-align:center;outline:none}
 .obnamebox input:focus{border-bottom-color:var(--goldln)}
-/* a letter the app worked out rather than one anybody drew */
-.gtile.made{border-style:dashed}
 .obchars{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
          display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-content:start}
 .obchb{border:1px solid var(--line);background:var(--sf);border-radius:9px;
@@ -2595,16 +2536,7 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .obback.ph{pointer-events:none;opacity:0}
 .btn.signin .mk{flex-shrink:0}
 
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;margin-bottom:10px}
-.ptile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  height:58px;padding:4px;border:1px solid var(--line);border-radius:10px;background:transparent;
-  color:var(--tx);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ptile.has{border-color:rgba(201,168,106,.45)}
-.ptile:active{transform:scale(.96)}
-.pch{font-size:1.4rem;line-height:1.1}
-.ptile:not(.has) .pch{font-size:.95rem;color:var(--txm)}
 .psn{font-family:var(--face-mono);font-size:.82rem;color:var(--txm)}
-.pdel{position:absolute;top:0;right:3px;font-size:.88rem;color:var(--txm);line-height:1}
 .pkown{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 /* .btn is flex:1 so a row of them shares the width; one beside a field is
    not sharing anything and shrank to the width of its word and grew tall. */
@@ -2709,28 +2641,6 @@ textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(
    padding:12px 2px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
 textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 
-/* ---------- the conversation ----------
-   Its turns sit against the left margin, yours against the right, and every
-   one carries what it means underneath because you are still learning to
-   read this. */
-.tkthread{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}
-.tk{position:relative;max-width:88%;align-self:flex-start;padding:12px 44px 12px 14px;
-  border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--pane)}
-.tk.me{align-self:flex-end;border-radius:14px 14px 4px 14px;
-  border-color:var(--goldln);background:var(--goldsf)}
-.tk .tkw{font-family:var(--face-caps);font-size:1.06rem;color:var(--tx);word-break:break-word}
-.tk .tki{font-family:var(--face-mono);font-size:.84rem;color:var(--gold);margin-top:3px}
-.tk .tkg{font-family:var(--face-ital);font-style:italic;font-size:.9rem;
-  color:var(--txs);margin-top:4px;line-height:1.5}
-.tk .tkp{position:absolute;top:8px;right:6px;min-width:44px;min-height:44px;background:none;border:0;
-  color:var(--txm);display:flex;align-items:center;justify-content:center}
-.tk .tkp:active{opacity:.5}
-.tsend{display:flex;gap:10px;margin-top:12px}
-.tmks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
-.tmk{min-height:44px;padding:8px 14px;border:1px solid var(--goldln);border-radius:8px;
-  background:var(--goldsf);color:var(--gold);font:inherit;font-size:.82rem;cursor:pointer}
-.tmk:disabled{opacity:.35;border-color:var(--line);background:none;color:var(--txm)}
-
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then
    one of your own words before and after it. The demonstration is the point,
@@ -2738,13 +2648,6 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
-.gpiece{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0 0;padding:12px 14px;
-  border:1px solid var(--line);border-radius:11px;background:var(--pane);color:inherit;font:inherit;
-  text-align:left;cursor:pointer;min-height:48px}
-.gpiece.has{border-color:var(--goldln)}
-.gpiece .gpl{font-size:.88rem;color:var(--txs)}
-.gpiece .gpv{margin-left:auto;font-family:var(--face-mono);font-size:.9rem;color:var(--gold)}
-.gpiece:not(.has) .gpv{color:var(--txm);font-family:inherit;font-size:.88rem}
 .gdemo{margin:12px 0 2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--pane)}
 .gside{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
 .gside:first-child{border-top:0}
@@ -2761,8 +2664,7 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
    Apple's floor is 44px and a phone has nothing finer to point with. These
    are the buttons that were drawn to the size of their mark rather than to
    the size of the finger that has to find them. */
-.play,.rr2,.tkp,.gside .gsp,.pkclear,.obskip{min-height:44px}
-.tkp{min-width:44px}
+.play,.gside .gsp,.pkclear,.obskip{min-height:44px}
 .gside .gsp{min-width:44px}
 .sylrow .syk{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
   display:flex;align-items:center;justify-content:center}
@@ -2777,9 +2679,6 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 .set .sv .go,.capgo .go{opacity:.75}
 .capgo{display:inline-flex;align-items:center;gap:4px}
 .lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
-.cand .ck svg,.pdel svg{display:block}
-.pdel{position:absolute;top:2px;right:2px;color:var(--txm);line-height:1;
-      display:flex;align-items:center;justify-content:center;width:15px;height:15px}
 </style>
 </head>
 <body>

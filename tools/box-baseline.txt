@@ -14,8 +14,6 @@
 .btn.apple | border
 .btn.google | border
 .btn.signin | border-radius
-.cand .ck .ckb | border
-.cand .ck .ckb | border-radius
 .capwarn | border
 .capwarn | border-radius
 .card | border
@@ -42,12 +40,6 @@
 .gcanv | border-radius
 .gdemo | border
 .gdemo | border-radius
-.gpiece | border
-.gpiece | border-radius
-.grip | border-radius
-.gtile canvas | border-radius
-.gtile | border
-.gtile | border-radius
 .impfile | border
 .impfile | border-radius
 .imptab | border
@@ -138,8 +130,6 @@
 .povo | border-radius
 .ppic | border
 .ppic | border-radius
-.ptile | border
-.ptile | border-radius
 .pvbox button | border
 .pvbox button | border-radius
 .pw | border
@@ -153,14 +143,10 @@
 .pwpicn | border-radius
 .pwpicx::before | border-radius
 .pwq | border-radius
-.recent | border
-.recent | border-radius
 .rel | border
 .rel | border-radius
 .rowq .qo | border
 .rowq .qo | border-radius
-.rr2 | border
-.rr2 | border-radius
 .scin | border
 .scin | border-radius
 .sheet | border-radius
@@ -185,11 +171,6 @@
 .thmini | border-radius
 .thtick | border
 .thtick | border-radius
-.tk | border
-.tk | border-radius
-.tk.me | border-radius
-.tmk | border
-.tmk | border-radius
 .toast | border
 .toast | border-radius
 .upsell | border
