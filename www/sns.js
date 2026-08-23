@@ -254,7 +254,12 @@ function daySay(){
 function dayLine(){
   var say=daySay();
   if(!say) return '';
-  return '<button class="dayline"' + DO('go', ["day"]) + '>'+esc(say)+'</button>';
+  /* What it is, in front of what it says. The word is the SCREEN's name read
+     back with pageName() rather than a string of its own -- the page it goes
+     to is called that, and naming it twice is the thing rule 2's NAMES claim
+     exists to refuse. */
+  return '<button class="dayline"' + DO('go', ["day"]) + '>'+
+    '<span class="dayk">'+esc(pageName('day'))+'</span>'+esc(say)+'</button>';
 }
 /* One row, and it is the row that was always there: the face and a line of
    grey type. What changes when there is a sentence for the day is what the
