@@ -72,7 +72,18 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    read it -- and dead-check, which watched functions, could not see a number
    nobody asked for. It watches top-level vars now, so this one is deleted the
    day it stops being read. */
-var OB_STEPS=3;
+/* Four, and the first one is signing in.
+   「とりあえずログインして、文字を書くところからやな」
+
+   It used to be three and the door was not one of them -- the app made an
+   anonymous account at launch and asked who you were only at the six things
+   other people see. Making needs a name on the account now, so the door is
+   the first thing rather than a thing somebody runs into later with a
+   half-made alphabet behind them. */
+var OB_STEPS=4;
+/* Which step is which, by name, because 0 1 2 3 in eight places is four
+   chances to renumber three of them. */
+var OB_IN=0, OB_DRAW=1, OB_ROM=2, OB_NAME=3;
 var OB_CHEV='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
 /* The door: a frame, a panel set inside it, a handle. Stroked in currentColor
    so it is gold in both themes and needs no fill to be legible on either.
@@ -95,7 +106,9 @@ function obCanBack(){
      account exists: the screen behind 'who' would offer to sign in as
      somebody else. */
   if(obPending()) return OBM.mode!=='who';
-  return ob.step>0 || ob.mode==='borrow';
+  /* Nothing is behind the first step, and nothing is behind the door while
+     it IS the first step: there is no app to go back to yet. */
+  return ob.step>OB_IN || ob.mode==='borrow';
 }
 function obBack(){
   /* The chevron in the corner is the only way back in the onboarding, so the
@@ -111,13 +124,13 @@ function obBack(){
     if(OBM.mode==='in'){ obReturn(); return; }
     obMailGo('in'); return;
   }
-  if(ob.step===0 && ob.mode==='borrow'){
+  if(ob.step===OB_DRAW && ob.mode==='borrow'){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
   /* Back out of the name with nothing drawn returns to the square, not to a
      step about a shape that does not exist. */
-  if(ob.step===2 && !ob.lid){ obGo(0); return; }
+  if(ob.step===OB_ROM && !ob.lid){ obGo(OB_DRAW); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -233,7 +246,13 @@ function obIn(){
          signing in leaves you standing on the tab you were already on, which
          now has a timeline in it. */
       if(SET.done){ render(); return; }
-      obGo(0); return;
+      /* A profile row means this account has been used. It cannot be a
+         first launch, whatever SET.done on THIS phone says -- signing out
+         and back in used to land somebody in the onboarding here.
+         「ログアウトした後にログインしたらオンボーディング出ないようにも
+         してね」 The walk is for a phone with nobody on it, and there is
+         somebody on this one. */
+      SET.done=true; save(); go('build'); return;
     }
     OBM.nm=ME.name; OBM.hd=ME.handle; render();
   }, function(d, s){
@@ -492,7 +511,9 @@ function obWhoGo(){
       /* A brand new account made from Settings is still somebody who has a
          language -- they signed up late, not early. */
       if(obReturn()) return;
-      obGo(0);
+      /* A new account made inside the onboarding: on to the letter, which is
+         the step signing in was in front of. */
+      obGo(OB_DRAW);
     }, obNo);
   }, obNo);
 }
@@ -584,7 +605,7 @@ function obDone(){
   ob.lid=ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id;
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
-  obGo(1);
+  obGo(OB_ROM);
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
@@ -592,11 +613,11 @@ function obTakeCh(ch){
   ob.lid=ltNew({ ch: ch }).id;
   SET.showScript=true;
   save(); installScriptFont();
-  ob.mode=''; obGo(1);
+  ob.mode=''; obGo(OB_ROM);
 }
 /* Nothing was drawn, so there is nothing to say which letter it is: the step
    after this is about a shape and there is no shape. */
-function obSkipDraw(){ ob.lid=''; obGo(2); }
+function obSkipDraw(){ ob.lid=''; obGo(OB_NAME); }
 
 /* ---- step 2, which letter it is ---------------------------------------
    The shape, big, and the alphabet under it. This is the step that used to
@@ -622,7 +643,7 @@ function obRomHTML(){
    away. */
 function obRomDone(){
   if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid);
-  obGo(2);
+  obGo(OB_NAME);
 }
 
 function obFinish(){
@@ -640,19 +661,48 @@ function obFinish(){
   route='profile'; RENDERED=null; render(); window.scrollTo(0,0);
 }
 
+/* How many strokes are actually on the canvas. GE.st carries the one being
+   drawn as well, and an untouched surface has one of length nought on it, so
+   an empty drawing is not an empty list. obDone() counts the same way. */
+function obStrokes(){
+  if(!GE || !GE.st) return 0;
+  return GE.st.filter(function(x){ return x.pts.length>0; }).length;
+}
+/* What the step says, and it is not the same sentence twice.
+
+   「なんかただ続けるだけじゃなくて、操作のサポートする系のオンボーディングに
+   して欲しい」 A line that says "draw a letter" and then goes on saying it
+   while somebody draws is a caption. This reads the canvas: before anything
+   is on it, it says what to do with a finger; after the first stroke it says
+   that worked and that more is allowed; and the button that ends the step is
+   DOWN until there is something to end it with, so nothing here can be
+   pressed into a dead end.
+
+   This is the one place the app coaches, and it is inside the onboarding,
+   which is the one place CLAUDE.md's rule against explaining is not about --
+   the rule is that a SCREEN does not explain itself, and the onboarding is
+   not a screen somebody arrives at, it is what the app is until it is done. */
+function obCoach(n){
+  /* .obsub, which is the line this step already had -- what changes is the
+     words, and the words changing IS the coaching. No new class, because
+     www/index.html is another session's file today. */
+  return '<p class="obsub">'+esc(t(n? 'ob.coach.drawn' : 'ob.coach.draw'))+'</p>';
+}
 function obDrawHTML(){
   if(!GE) GE=newGE('');
-  var st=GE.st[GE.si], pts=0;
+  var st=GE.st[GE.si], pts=0, n=obStrokes();
   GE.st.forEach(function(x){ pts+=x.pts.length; });
   return '<div class="mid">'+
     '<h2>'+t('ob.draw.h')+'</h2>'+
-    '<p class="obsub">'+t('ob.draw.sub')+'</p>'+
+    obCoach(n)+
     '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="obesc"><button class="obescb"' + DO('obBorrow', [""]) + '>'+
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+
-    '<div class="obfoot"><button class="btn"' + DO('obDone') + '>'+t('ob.draw.done')+'</button>'+
+    '<div class="obfoot">'+
+    '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
+      t('ob.draw.done')+'</button>'+
     '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button></div>';
 }
 
@@ -715,14 +765,15 @@ function obDots(){
   return a;
 }
 function vOb(){
-  var s=ob.step, door=!!obPending();
+  var s=ob.step, door=!!obPending() || s===OB_IN;
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
-    /* The dots count the onboarding. The door is not part of it and shows
-       none -- three dots over a sign-in screen would be counting a walk
-       nobody is on. */
-    '<div class="obtop">'+(door? '' : obDots().map(function(i){
+    /* The dots count the onboarding, and signing in is the first step of it
+       now -- so the door shows them when it IS that step, and shows none when
+       it was opened from Settings or from a timeline. obPending() is what
+       tells the two apart: a door opened from somewhere remembers where. */
+    '<div class="obtop">'+(obPending()? '' : obDots().map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join(''))+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){
@@ -737,9 +788,9 @@ function vOb(){
      always been able to invent one out of the inventory for anybody who
      skips it. */
   var h = door? obDoorHTML()
-        : (s===0 && ob.mode==='borrow')? obBorrowHTML()
-        : (s===0)? obDrawHTML()
-        : (s===1)? obRomHTML()
+        : (s===OB_DRAW && ob.mode==='borrow')? obBorrowHTML()
+        : (s===OB_DRAW)? obDrawHTML()
+        : (s===OB_ROM)? obRomHTML()
         : obNameHTML();
   return '<div class="ob view'+(door?' center':'')+'">'+head+h+'</div>';
 }

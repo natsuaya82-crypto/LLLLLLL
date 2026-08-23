@@ -212,27 +212,41 @@ export function seed(){
    Each entry is a label and a function returning that screen's HTML. */
 export function obStates(){
   return [
-    /* The door itself, which is the sign-in screen. It is no longer a step
-       of the onboarding and vOb() will not show it for a step number: what
-       puts the app on it is SET.obback, the note saying where it was opened
-       from, so that is what these five set. */
+    /* The door, opened from somewhere -- Settings, a timeline. That is a
+       different thing from the door as the onboarding's FIRST STEP, which is
+       what OB_IN is below: obPending() tells them apart and only one of the
+       two counts itself with dots. */
     ['the door',                  () => { SET.obback = { r: 'set', a: 'acct' };
                                           OBM.mode = 'in'; return vOb(); }],
-    ['characters to borrow',      () => { SET.obback = null; ob.step = 0; ob.mode = 'borrow';
+    /* And the door as step one of the walk. Nothing else reaches it. */
+    ['signing in, as the first step', () => { SET.obback = null; ob.step = OB_IN;
+                                              ob.mode = ''; OBM.mode = 'in'; return vOb(); }],
+    ['characters to borrow',      () => { SET.obback = null; ob.step = OB_DRAW; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],
-    ['no script picked to borrow from', () => { SET.obback = null; ob.step = 0; ob.mode = 'borrow';
+    ['no script picked to borrow from', () => { SET.obback = null; ob.step = OB_DRAW; ob.mode = 'borrow';
                                                 ob.pick = ''; return vOb(); }],
-    /* The step where a letter is drawn. Its two buttons -- finish, or skip the
-       drawing -- are the last thing a person touches before the app becomes
-       the app, and nothing had ever pressed either of them. */
-    ['drawing the first letter', () => { SET.obback = null; ob.step = 0; ob.mode = ''; return vOb(); }],
+    /* The step where a letter is drawn, with nothing on the canvas: the line
+       over it says what to do with a finger and the button that ends the step
+       is down. */
+    ['drawing the first letter', () => { SET.obback = null; ob.step = OB_DRAW; ob.mode = '';
+                                         GE = null; return vOb(); }],
+    /* And the same step with a stroke on it, which is the other half of the
+       coaching and the only state the finish button can be pressed from. */
+    /* It leaves GE where it put it, like every other entry here leaves
+       ob.step. Tidying up is what the note above this list is about: shot.mjs
+       calls render() afterwards, so an entry that cleared the canvas
+       photographed the empty one and captioned it as the drawn one. */
+    ['the first letter, once a line is on it', () => {
+        SET.obback = null; ob.step = OB_DRAW; ob.mode = '';
+        GE = newGE(''); GE.st = [{ pts: [[200, 200], [200, 600]] }]; GE.si = 0;
+        return vOb(); }],
     /* The shape is drawn and the alphabet is under it. This step is the one
        ltNew() used to answer on everybody's behalf, so it is also the one
        nothing had ever walked. */
-    ['choosing which letter the shape is', () => { SET.obback = null; ob.step = 1; ob.mode = '';
+    ['choosing which letter the shape is', () => { SET.obback = null; ob.step = OB_ROM; ob.mode = '';
                                                    ob.lid = (LETTERS[0] || {}).id || '';
                                                    return vOb(); }],
-    ['naming the language',      () => { SET.obback = null; ob.step = 2; ob.mode = ''; return vOb(); }],
+    ['naming the language',      () => { SET.obback = null; ob.step = OB_NAME; ob.mode = ''; return vOb(); }],
     /* The door's other three faces. None is reachable from a screen at rest,
        so a walk that only ever renders the door presses none of their
        buttons.
