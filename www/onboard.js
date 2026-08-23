@@ -207,7 +207,14 @@ function obShrug(){ OBM.busy=false; render(); }
    is not the drawing yet: a name and a handle are, and only for somebody who
    does not already have them. Signing in on a second phone is not a new
    account and must not be asked to name itself again. */
+/* Said once, here, because here is where every road in arrives -- the mail
+   door, Apple and Google all end at obIn() and there is no fourth. Signing
+   OUT has said so since the day it existed and signing in said nothing, and
+   after this change signing in is what opens most of the app, so it is the
+   half that needed saying more. 「ログインしたら下にログインしましたポップ
+   つけてあげて」 */
 function obIn(){
+  toast(t('set.signin.done'));
   OBM.busy=true; OBM.mode='who'; OBM.pw=''; OBM.msg='';
   save(); render();
   netMyProfile(function(p){

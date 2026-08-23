@@ -478,7 +478,9 @@ function editLetter(id){
    value, anything else reads itself and is a mark. Say what it is, then
    draw it. Nothing here has to know which of the three lists it came from
    beyond the value a digit starts with. */
+/* 「+文字の追加」 at the foot of the alphabet, the digits and the marks. */
 function newLetter(kind){
+  if(!makeNeed()) return;
   var v=(kind==='num')? numFree() : -1;
   var l=ltNew(v>=0? {val:v} : {});
   go('letter', l.id);

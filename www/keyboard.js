@@ -1147,9 +1147,20 @@ function vKb(){
 /* The ⋯ in the bar of one keyboard's page: deleting it, and starting the
    chapter over. It was at the end of the row of tabs, which is a row that no
    longer exists. */
+/* The ⋯ in the bar of one keyboard's page: deleting it, and starting the
+   chapter over.
+
+   NOT on board 0. Board 0 is the free QWERTY: it is not stored, it cannot be
+   deleted, and it has no editor -- so the two things behind the ⋯ are a
+   delete that refuses and a reset of a chapter this board is not part of.
+   With it gone there is nothing on that page that changes anything, which is
+   what makes the keyboard safe to leave open to everybody.
+   「キーボード1の右上の・・・いらないから消して。そうしたら、そもそも
+   キーボードはいじれないから、防げる。」 */
 function kbMoreQ(){
   if(kbWob)
     return '<button class="navq navdone"' + DO('kbWobEnd') + '>'+esc(t('kb.done'))+'</button>';
+  if(kbIsFree(kbShow)) return '';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }

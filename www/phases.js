@@ -421,7 +421,15 @@ function gOpenOf(){ return (here().r==='gram')? (here().a||null) : null; }
    there is one back button on it and it goes wherever you came from. gOpen
    is the trail's argument now, not a separate piece of state that a second
    back button had to clear. */
-function stOpen(id){ go('gram', id); }
+/* The way from the list of stages into one of them. Writing a grammar stage
+   is the third of the four, and the list is where it is entered from --
+   「文法も並んでるページから入ろうとするとログイン必要にすれば良い」 --
+   so the ask is here rather than on each of the eight things a stage's page
+   can write. */
+function stOpen(id){
+  if(!makeNeed()) return;
+  go('gram', id);
+}
 function stRow(p, n){
   var done=stIsDone(p), tot=stTotal(p);
   return '<button class="strow'+(done?' done':'')+'"' + DO('stOpen', [p.id]) + '>'+

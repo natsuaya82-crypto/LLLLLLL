@@ -213,6 +213,7 @@ defLang('en', (function(){
       "net.nonative" : "Not available in this build.",
       "set.account.on" : "Signed in",
       "set.signout" : "Sign out",
+      "set.signin.done" : "Signed in",
       "set.signout.done" : "Signed out",
       "ob.tagline"                : "Make a language of your own.",
       "script.own.ph"             : "Paste or type a character",

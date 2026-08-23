@@ -313,6 +313,7 @@ defLang('it', (function(){
       "net.nonative" : "Non disponibile in questa build.",
       "set.account.on" : "Connesso",
       "set.signout" : "Esci",
+      "set.signin.done" : "Accesso eseguito",
       "set.signout.done" : "Uscito",
       "ob.tagline"                : "Dai nuovi colori alle tue parole.",
       "script.own.ph"             : "Incolla o scrivi un carattere",

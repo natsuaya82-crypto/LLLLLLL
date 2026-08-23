@@ -273,6 +273,7 @@ defLang('es', (function(){
       "net.nonative" : "No disponible en esta versión.",
       "set.account.on" : "Sesión iniciada",
       "set.signout" : "Cerrar sesión",
+      "set.signin.done" : "Sesión iniciada",
       "set.signout.done" : "Sesión cerrada",
       "ob.tagline"                : "Dale nuevos colores a tus palabras.",
       "script.own.ph"             : "Pega o escribe un carácter",

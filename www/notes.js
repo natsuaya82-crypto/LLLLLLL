@@ -124,9 +124,11 @@ function vNotes(){
         : '<div class="empty"><div class="eb">'+t('notes.empty.t')+'</div>'+
           '<div class="es">'+t('notes.empty.s')+'</div></div>')+
     '</div>'+
-    /* A ＋ and the word, the way every other "make one" in the app reads.
-       It was a notepad glyph, which says what the page is about rather than
-       what the button does. 「メモの追加も＋〇にしてくれ」 */
-    '<div class="barfix"><button class="btn"' + DO('openNote') + '>'+ICON_ADD+t('notes.new')+'</button></div>'+
+    /* The round ＋ in the bottom right corner, which is where this app puts
+       "make one" -- the timeline's post and the dictionary's word are both
+       already there and this was the odd one out, a full-width bar across the
+       foot. 「なんでここだけ右下＋になってないの？」 */
+    '<button class="fab"' + DO('openNote') + ' aria-label="'+esc(t('notes.new'))+'">'+
+      ICON_ADD+'</button>'+
     '</div>';
 }

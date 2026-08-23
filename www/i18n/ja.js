@@ -229,6 +229,7 @@ defLang('ja', (function(){
       "net.nonative" : "このビルドでは使えません",
       "set.account.on" : "ログイン中",
       "set.signout" : "ログアウト",
+      "set.signin.done" : "ログインしました",
       "set.signout.done" : "ログアウトしました",
       "ob.tagline"                : '自分のことばを、つくる。',
       "script.own.ph"             : "字を入力または貼り付け",

@@ -476,7 +476,9 @@ function sndLetters(sym){
    shows from the other end. 「音から文字と文字から音の二重をどうにかしろ」 */
 /* The whole chart, to put a sound into the language before any letter says
    it. The same chart a letter opens; what differs is what a press does. */
+/* 「+音を足す」 at the foot of the alphabet: making, so it is asked too. */
 function openSndAdd(){
+  if(!makeNeed()) return;
   sndFor='';
   openForm('sndadd', t('snd.add'), ipaPickHTML('sndTake', addedSnd()));
 }
@@ -733,7 +735,7 @@ function ltCell(l, press){
   return '<button class="ltc'+(ltTaken(l)? ' dup':'')+(wob? ' wob':'')+
     (numOver(l)? ' over':'')+
     '" data-id="'+esc(l.id)+'"'+
-    (press || (wob? '' : DO('go', ["letter", l.id]))) + ' aria-label="'+esc(sa)+'">'+
+    (press || (wob? '' : DO('ltGo', [l.id]))) + ' aria-label="'+esc(sa)+'">'+
     '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
     '<span class="ltcn">'+esc(nm||'\u00b7')+'</span>'+
     '<span class="ltcr">'+esc(rd.length? phIpa(rd) : '')+'</span>'+
@@ -783,9 +785,25 @@ function sndCell(sym, wob){
 function sndLoose(){
   return addedSnd().filter(function(sym){ return !sndLetters(sym).length; });
 }
+/* ---- the door into a letter -------------------------------------------
+   Every cell on this screen -- the alphabet, the digits, the marks -- goes
+   through here, and here is where the app asks who you are.
+   「文字は書こうとする時点でabcとかのこの画面で防ぐからタップしたら全部
+   ログイン。ここと数字と記号防げば終わり。」
+
+   ONE door and not twenty guards. Behind a letter's page is everything that
+   can be done to a letter -- drawing it, naming it, its sound, its borrowed
+   character, deleting it -- so asking at the way IN covers all of them and
+   cannot be forgotten on the twenty-first. The cell used to press go()
+   itself, which is not a place anything can be asked. */
+function ltGo(id){
+  if(!makeNeed()) return;
+  go('letter', id);
+}
 /* Pressing one makes the letter that says it and opens it to be drawn --
    which is what a cell with a pen on it says it will do. */
 function ltForUnitGo(sym){
+  if(!makeNeed()) return;
   var l=ltForUnit(sym);
   if(l) go('letter', l.id);
 }

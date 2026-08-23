@@ -301,6 +301,7 @@ defLang('de', (function(){
       "net.nonative" : "In diesem Build nicht verfügbar.",
       "set.account.on" : "Angemeldet",
       "set.signout" : "Abmelden",
+      "set.signin.done" : "Angemeldet",
       "set.signout.done" : "Abgemeldet",
       "ob.tagline"                : "Verleih deinen Worten neue Farben.",
       "script.own.ph"             : "Zeichen einfügen oder tippen",

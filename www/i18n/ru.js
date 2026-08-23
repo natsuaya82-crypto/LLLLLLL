@@ -316,6 +316,7 @@ defLang('ru', (function(){
       "net.nonative" : "Недоступно в этой сборке.",
       "set.account.on" : "Выполнен вход",
       "set.signout" : "Выйти",
+      "set.signin.done" : "Вы вошли",
       "set.signout.done" : "Вы вышли",
       "ob.tagline"                : "Придайте новые краски вашим словам.",
       "script.own.ph"             : "Вставьте или введите знак",

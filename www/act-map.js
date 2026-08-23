@@ -125,6 +125,7 @@ act('setPwGo', setPwGo);
 act('obSkipDraw', obSkipDraw);
 act('openSnd', openSnd);
 act('openSndAdd', openSndAdd);
+act('ltGo', ltGo);
 act('sndTake', sndTake);
 act('sndDrop', sndDrop);
 act('ltTakeSnd', ltTakeSnd);

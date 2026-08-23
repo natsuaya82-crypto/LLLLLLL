@@ -320,6 +320,7 @@ defLang('pt', (function(){
       "net.nonative" : "Indisponível nesta versão.",
       "set.account.on" : "Conectado",
       "set.signout" : "Sair",
+      "set.signin.done" : "Sessão iniciada",
       "set.signout.done" : "Você saiu",
       "ob.tagline"                : "Dê novas cores às suas palavras.",
       "script.own.ph"             : "Cole ou digite um caractere",
