@@ -480,6 +480,72 @@ function shScan(px, W, H){
   var m = new Uint8Array(W * H);
   for (y = 0; y < H; y++) for (x = 0; x < W; x++)
     m[y * W + x] = mean(x, y, SM) < bg[((y / STEP) | 0) * GW + ((x / STEP) | 0)] * 0.85 ? 1 : 0;
+  /* A SECOND answer, and it is for a different job.
+     `m` above smooths with a box MEAN and then calls a pixel ink when it is
+     15% darker than the paper around it. Both halves of that are right for
+     finding four square marks and reading a strip of cells, and both are wrong
+     for cutting out a letter.
+     A mean MOVES AN EDGE: a white pixel SM away from a black stroke has its
+     mean dragged down, so every stroke comes back SM pixels fatter on each
+     side. And 0.85 of white paper is 217, which is very nearly white -- so the
+     soft ramp at the side of a stroke, which a camera and a resize both make,
+     counts as ink for most of its width. Measured against the drawn widths on
+     the first real sheet: the strokes came back between 81% and 96% heavier
+     than they were drawn.
+     「なんか俺が送ったやつ文字の太さが違うなまちまちになってる」
+     And the second word of that is the sharper half. Both faults add a roughly
+     fixed number of PIXELS, so a thin stroke gains a far bigger share of itself
+     than a thick one: a hand that varies comes back flattened, which is what a
+     person sees before they see the weight.
+     So, two changes and each is one half of it. A MEDIAN throws away the same
+     grain a mean does and leaves the edge where it is -- that is the whole
+     difference between them. And the edge goes at the MIDPOINT between this
+     paper and the darkest ink near here, rather than at a fixed fraction of the
+     paper. Where there is no ink near here, paper and darkest are the same and
+     nothing is ink, so a blank box stays blank; the 15% is kept, as the floor
+     that says whether there is any ink to find at all. That floor is what
+     decides whether a pencil is seen, and it has not moved. */
+  var gm = new Uint8Array(W * H);
+  var v9 = new Uint8Array(9);
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+    var dx, dy, xi, yi, a9, b9, t9, c9 = 0;
+    for (dy = -1; dy <= 1; dy++) for (dx = -1; dx <= 1; dx++){
+      xi = x + dx; yi = y + dy;
+      if (xi < 0) xi = 0; if (yi < 0) yi = 0;
+      if (xi > W - 1) xi = W - 1; if (yi > H - 1) yi = H - 1;
+      v9[c9++] = gray[yi * W + xi];
+    }
+    for (a9 = 1; a9 < 9; a9++){
+      t9 = v9[a9];
+      for (b9 = a9 - 1; b9 >= 0 && v9[b9] > t9; b9--) v9[b9 + 1] = v9[b9];
+      v9[b9 + 1] = t9;
+    }
+    gm[y * W + x] = v9[4];
+  }
+  /* the darkest thing within LO, off the median picture so one bad pixel
+     cannot drag it. Separable: along, then down. */
+  var LO = SM * 2 + 1;
+  var lo = new Uint8Array(W * H), tmp = new Uint8Array(W * H), a2, b2, mn, u;
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+    a2 = x - LO < 0 ? 0 : x - LO; b2 = x + LO > W - 1 ? W - 1 : x + LO;
+    mn = 255;
+    for (u = a2; u <= b2; u++){ if (gm[y * W + u] < mn) mn = gm[y * W + u]; }
+    tmp[y * W + x] = mn;
+  }
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+    a2 = y - LO < 0 ? 0 : y - LO; b2 = y + LO > H - 1 ? H - 1 : y + LO;
+    mn = 255;
+    for (u = a2; u <= b2; u++){ if (tmp[u * W + x] < mn) mn = tmp[u * W + x]; }
+    lo[y * W + x] = mn;
+  }
+  function crisp(pxx, pyy){
+    var xi = Math.round(pxx), yi = Math.round(pyy);
+    if (xi < 0 || yi < 0 || xi >= W || yi >= H) return false;
+    var b = bg[((yi / STEP) | 0) * GW + ((xi / STEP) | 0)];
+    var l = lo[yi * W + xi];
+    if (b - l < b * 0.15) return false;         /* paper, and nothing else */
+    return gm[yi * W + xi] < (b + l) / 2;
+  }
   /* the four marks: the squarest, best-sized island nearest each corner */
   var lab = new Int32Array(W * H), q = new Int32Array(W * H), blobs = [], k;
   for (i = 0; i < W * H; i++) lab[i] = -1;
@@ -522,7 +588,9 @@ function shScan(px, W, H){
       return { fail: 'marks', cand: cand.length };
   var warp = shWarp(found);
   if (!warp) return { fail: 'warp' };
-  return { warp: warp, marks: found, ink: m, w: W, h: H,
+  /* `dark` finds marks and reads the strip; `crisp` cuts letters out. Two
+     jobs, two answers -- see where crisp is built for why they differ. */
+  return { warp: warp, marks: found, ink: m, w: W, h: H, crisp: crisp,
            dark: function(qx, qy){
              var xi = Math.round(qx), yi = Math.round(qy);
              return xi >= 0 && yi >= 0 && xi < W && yi < H && m[yi * W + xi] === 1;

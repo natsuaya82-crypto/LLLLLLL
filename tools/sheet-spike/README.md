@@ -124,6 +124,47 @@ move by one pixel, which is the part that says the printed edge is still not
 coming through. The printed edge is at a place this file KNOWS, because this
 file drew it; where somebody's stroke happens to end is not.
 
+## the thickness of a stroke
+
+The owner looked at what came back and said the letters were the wrong weight
+and uneven with it -- 「なんか俺が送ったやつ文字の太さが違うなまちまちになってる」.
+Measured against the widths actually drawn, on the ten boxes of the real sheet:
+**they came back between 81% and 96% heavier.** Two causes, and neither is in the
+tracer -- the outline and the thinning together move the area by under 2.3%.
+
+- **A box MEAN moves an edge.** A white pixel SM away from a black stroke has
+  its mean dragged down, so a stroke comes back SM pixels fatter on each side.
+  At SM=3 on a photograph whose strokes are eight pixels wide, that is nearly
+  double. A MEDIAN discards the same grain of noise and leaves the edge where
+  it is; that is the entire difference between the two, and it is why the
+  denoising step could be kept while the fattening went.
+- **0.85 of white paper is 217**, which is very nearly white, so the soft ramp
+  at the side of every stroke counted as ink for most of its width. The edge
+  goes at the MIDPOINT between this paper and the darkest ink near here now.
+  Where there is no ink near here the two are equal and nothing is ink, so a
+  blank box stays blank. The 15% is kept as the FLOOR -- the question "is there
+  any ink here at all", which is what decides whether a pencil is seen. That
+  number has not moved.
+
+    box   drawn    before          after
+    7     3.66     6.89  +88.3%    3.55   -3.0%
+    2     4.05     7.34  +81.2%    4.05    0.0%
+    ...
+    木    3.69     7.24  +96.2%    3.60   -2.4%
+
+Both faults added a roughly fixed number of PIXELS, which is the half worth
+keeping in mind: a thin stroke gains a far larger share of itself than a thick
+one, so a hand that varies comes back flattened. The drawn widths here span
+3.42 to 4.25 and that spread is now reproduced -- the scatter against the drawn
+width fell from 2.5% to 0.9%. **Weight is what a person notices second.**
+
+`shScan` answers two predicates rather than one, because these are two jobs:
+`dark` (mean, 0.85) finds the four marks and reads the strip, where nothing
+cares where an edge is to a pixel, and it keeps the mask every number above was
+measured on. `crisp` (median, midpoint) cuts the letters out. The strip still
+reads all twenty names at 18 degrees, and the empty boxes are still 0 pixels --
+the printed lattice does not become ink under the sharper eye either.
+
 ## a PDF that came back
 
 A scanner does not hand back a photograph. iOS Notes, Adobe Scan and every

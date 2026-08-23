@@ -60,7 +60,7 @@ const r = await pg.evaluate(async ({src, img}) => {
   var RES = 200, rows = [], shapes = [];
   var n = names ? names.length : shPerPage();
   for (i = 0; i < n; i++){
-    var mask = shBoxInk(scan.warp, scan.dark, i, RES);
+    var mask = shBoxInk(scan.warp, scan.crisp, i, RES);
     var raw = 0, k; for(k=0;k<mask.length;k++) raw += mask[k];
     var cl = shClean(mask, RES, Math.round(RES*RES*0.0012), 3);
     var loops = shTrace(cl.m, RES).map(function(L){ return shThin(L, RES/800*6); });
