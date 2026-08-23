@@ -15,6 +15,48 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### `a` becomes the letter somebody drew — OWNER DECISION
+
+「aが自作文字に変わる瞬間みたいなの見せたい」 — 2026-08-23.
+
+**The shape moves into the slot.** On a plan whose alphabet is fixed, naming a
+drawn shape `a` puts it on the letter already called `a` instead of beside it.
+Until now the onboarding left two letters with one name, and the free QWERTY
+finds its keys BY NAME and takes the first — so the key marked `a` was the
+empty slot, and what somebody had just drawn was on no key of their own
+keyboard, with the onboarding saying it was.
+
+**DELETE REVIEW.** One row is removed: the loose letter the onboarding made
+two seconds earlier, whose whole content — its strokes, its borrowed
+character, its sound — is copied onto the slot first. The SLOT survives, so
+its id, its place in the alphabet and its reading all stay and anything
+holding that id still resolves. **A slot somebody has already drawn on is
+never overwritten**: there the move does not happen at all, both letters stay,
+and the alphabet shows the duplicate in red — overwriting a drawing to make
+room for another is the one thing this may never do. A plan that adds letters
+keeps both, because adding letters is what it buys.
+
+`ltFreeSlot()` in `letters.js` is the one place that decides it, and
+`ltSetRoman()` now **returns the id the shape is under afterwards** — a caller
+standing on that letter follows it. `obRomDone()` does, which is how the walk
+can point at the key.
+
+**And the moment is shown.** The walk's last stop lays the roman letter over
+the lit key in the key's own colour and fades it off after a beat: `a` becomes
+the letter they drew, while they watch. It is a picture of a change that has
+already happened — nothing is stored, held back or undone by it — and it is
+`vin`, the stylesheet's own fade-in run backwards, because that file is
+another session's today.
+
+**Data:** one row removed per drawn-and-named shape on the free plan, as
+above. Nothing else changes shape.
+
+`CODE CONFIRMED` — eleven new claims in `base-check`, **watched failing**:
+with `ltFreeSlot()` returning nothing, seven of them go red, including the
+alphabet growing by one and two letters answering to `b`. The whole flow runs
+from an empty `localStorage`. `DEVICE CONFIRMED` — **no.**
+
+
 ### Walking the onboarding from a blank phone, and the four things it turned up
 
 The whole flow was driven for real — no fixture, no seeded language, an empty

@@ -149,6 +149,54 @@ const r = await pg.evaluate(({s}) => {
   out.wBlank  = Object.prototype.hasOwnProperty.call(w.dg, '13');
   out.wFresh  = Object.prototype.hasOwnProperty.call(w.dg, '0');
   out.wKeys   = Object.keys(w.dg).sort().join(' ');
+
+  /* ---- a shape, named after a slot, moves INTO the slot -------------------
+     On a plan whose alphabet is fixed. 「aが自作文字に変わる瞬間みたいなの
+     見せたい」 -- OWNER DECISION, 2026-08-23.
+
+     The onboarding draws a shape and then asks which letter it is. It used to
+     leave two letters called `a`: the slot ltStart() made and the shape just
+     drawn -- and the free QWERTY finds its keys by NAME and takes the first,
+     so the key marked `a` was the empty one and what somebody had drawn was
+     on no key at all.
+
+     Three things are asked here, and the third is the one that matters:
+     the shape arrives on the slot, the SLOT is what survives (its id, so
+     anything holding that id still resolves), and a slot somebody has
+     already drawn on is never overwritten -- there, both letters stay and
+     the alphabet shows the duplicate. */
+  SET.plan = 'free';
+  var slotB = LETTERS.filter(function(l){
+    return ltIsBase(l) && String(l.ab||'').toLowerCase() === 'b'; })[0];
+  if (!slotB) { slotB = ltNew({}); slotB.ab = 'b'; saveLetters(); }
+  out.mvSlot = slotB.id;
+  out.mvBefore = LETTERS.length;
+  var shape = ltNew({ st: [{ pts: [[o+4*D, o+4*D], [o+12*D, o+12*D]] }] });
+  out.mvGrew = LETTERS.length;
+  out.mvNow  = ltSetRoman(shape.id, 'b');
+  out.mvAfter = LETTERS.length;
+  out.mvInk  = !!(ltById(slotB.id) && ltById(slotB.id).st && ltById(slotB.id).st.length);
+  out.mvLoose = !!ltById(shape.id);
+  out.mvOne  = LETTERS.filter(function(l){
+    return String(l.ab||'').toLowerCase() === 'b'; }).length;
+
+  /* a slot with a drawing on it is not touched, and neither letter goes */
+  var second = ltNew({ st: [{ pts: [[o+4*D, o+6*D], [o+12*D, o+6*D]] }] });
+  out.mvKeepId = ltSetRoman(second.id, 'b');
+  out.mvKeepBoth = !!ltById(second.id) && !!ltById(slotB.id);
+  /* guarded: with the move taken out this is null, and a check that throws
+     says less than one that fails */
+  out.mvKeepInk = !!(ltById(slotB.id) && ltById(slotB.id).st &&
+                     ltById(slotB.id).st.length === 1);
+  out.mvTwo = LETTERS.filter(function(l){
+    return String(l.ab||'').toLowerCase() === 'b'; }).length;
+
+  /* and a plan that ADDS letters keeps both, because adding is what it buys */
+  SET.plan = 'plus';
+  var paid = ltNew({ st: [{ pts: [[o+4*D, o+8*D], [o+12*D, o+8*D]] }] });
+  out.mvPaidId = ltSetRoman(paid.id, 'e');
+  out.mvPaidSame = out.mvPaidId === paid.id && !!ltById(paid.id);
+  SET.plan = 'free';
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -210,6 +258,18 @@ say(String(r.calSlots) === '13,5', 'and the stages ask for exactly that many wor
 say(r.calKept, 'a word made for the twelfth month SURVIVES the year going down to ten');
 say(r.calAsks === 10, 'the stage simply stops asking for it (' + r.calAsks + ')');
 say(r.calBad === 12, 'a number out of range is the default, not a year nothing can draw');
+
+say(r.mvGrew === r.mvBefore + 1, 'a shape drawn is a letter of its own until it is named');
+say(r.mvAfter === r.mvBefore, 'naming it after a slot leaves the alphabet the size it was ('
+    + r.mvBefore + ' -> ' + r.mvAfter + ')');
+say(r.mvNow === r.mvSlot, 'and the SLOT is what survives, by its own id');
+say(r.mvInk, 'with the drawing on it');
+say(!r.mvLoose, 'and the two-second-old row it was copied from is gone');
+say(r.mvOne === 1, 'one letter called b, so the key marked b is that letter (' + r.mvOne + ')');
+say(r.mvKeepId !== r.mvSlot, 'a slot ALREADY drawn on does not take a second shape');
+say(r.mvKeepBoth && r.mvKeepInk, 'both letters stay and the first drawing is untouched');
+say(r.mvTwo === 2, 'which is the duplicate the alphabet shows in red (' + r.mvTwo + ')');
+say(r.mvPaidSame, 'and on a plan that adds letters nothing moves at all');
 
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

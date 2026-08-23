@@ -214,7 +214,12 @@ function obTourHTML(){
   var st=obTourStop(),
       el=obTourFind(st), b=el? el.getBoundingClientRect() : null,
       W=window.innerWidth, H=window.innerHeight,
-      hb=b? obHandBox(b) : null, m=4, x, y, w, h, out;
+      hb=b? obHandBox(b) : null, m=4, x, y, w, h, out,
+      /* What the lit key used to be, for the moment below. Only where the
+         thing lit IS the key of the letter just drawn -- the fallback lights
+         the whole keyboard, and a keyboard was never one roman letter. */
+      was=(st.lt && b && el && el.getAttribute && el.getAttribute('data-lt'))
+            ? String(ltName(ltById(ob.lid))||'') : '';
   if(!b) out=obPane(0,0,W,H);   /* nothing found: the grey is the whole screen */
   else{
     x=Math.min(b.left, hb.left)-m;  y=Math.min(b.top, hb.top)-m;
@@ -254,6 +259,23 @@ function obTourHTML(){
                   'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
                 : 'left:0;top:0;width:100%;height:100%')+'"'+
               ' aria-label="'+esc(t(st.lab))+'"></button>' : '')+
+    /* THE MOMENT. 「aが自作文字に変わる瞬間みたいなの見せたい」
+       The key is theirs now -- the shape moved into the slot when they named
+       it -- so what is left to show is what that key WAS. The roman letter is
+       laid over the key, in the key's own surface colour, and fades off it
+       after a beat: a becomes the letter they drew, while they watch.
+
+       vin is index.html's own fade-in, run backwards and left where it ends.
+       No keyframe of its own, because that file is another session's today.
+       Nothing here is stored and nothing here is undone: the letter under it
+       is already the letter, and this is a picture of the change that just
+       happened. */
+    (was? '<span class="obwas" aria-hidden="true" style="position:fixed;z-index:44;'+
+              'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
+              'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px;'+
+              'display:flex;align-items:center;justify-content:center;pointer-events:none;'+
+              'background:var(--sf);color:var(--tx);font-size:1.05rem;'+
+              'animation:vin .5s ease-out .9s 1 reverse forwards">'+esc(was)+'</span>' : '')+
     /* And the hand, which is the whole of what this screen says.
        「文字いらなくない？」 */
     (hb? '<div class="obhand" aria-hidden="true" style="position:fixed;z-index:43;'+
@@ -877,7 +899,11 @@ function obRomDone(){
      the letter page's Save answering; here the screen changes underneath, and
      a line saying "a updated" over the next question is an answer to a
      question nobody asked. */
-  if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid, true);
+  /* And the letter is followed: on the free plan the shape moves into the
+     slot that already answers to the name just given, so the id it is under
+     afterwards is not the id it went in as, and the walk's last stop points
+     at a key BY that id. */
+  if(ob.lid && ltDraft && ltDraft.id===ob.lid) ob.lid=ltSave(ob.lid, true)||ob.lid;
   obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
 

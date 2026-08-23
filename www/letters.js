@@ -568,10 +568,11 @@ function ltDraftAb(l){
    afterwards, and wrong everywhere else: the letter page stays put, and a
    Save that says nothing is a Save nobody can tell happened. */
 function ltSave(id, quiet){
-  var l=ltById(id); if(!l) return;
-  ltSetRoman(id, ltDraftAb(l));
+  var l=ltById(id); if(!l) return id;
+  var now=ltSetRoman(id, ltDraftAb(l));
   ltDraft=null;
-  if(!quiet) toast(t('toast.saved', ltName(ltById(id))||t('lt.untitled')));
+  if(!quiet) toast(t('toast.saved', ltName(ltById(now))||t('lt.untitled')));
+  return now;
 }
 /* What a typed name reads: one unit per word, and the phonemes those units
    are made of. Two answers off one pass, because both callers want both --
@@ -619,8 +620,11 @@ function ltSetNote(id, v){
   if(String(v||'').length) l.nt=String(v); else delete l.nt;
   saveLetters();
 }
+/* Returns the id of the letter that HOLDS this shape afterwards, which is
+   usually the one handed in and is not on the free plan when the shape moves
+   into a slot. A caller standing on the letter follows it. */
 function ltSetRoman(id, sp){
-  var l=ltById(id); if(!l) return;
+  var l=ltById(id); if(!l) return id;
   /* A slot's name does not change, on any plan.
      「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
      Decision log, 2026-08-22.
@@ -646,12 +650,12 @@ function ltSetRoman(id, sp){
      reading the code. */
   if(/^[0-9]+$/.test(String(sp||'').trim())){
     numSetVal(id, parseInt(String(sp).trim(), 10));
-    return;
+    return id;
   }
   /* And now the refusal. A digit reaching this line is one being given a
      NAME, and a digit has no name -- its value is the whole of what it is,
      and the keyboard finds it by that. */
-  if(ltIsBase(l)) return;
+  if(ltIsBase(l)) return id;
   var read=ltReadName(sp), units=read.units, seen=read.seen, i;
   /* A clash is shown, not refused. Refusing meant the box silently kept its
      old value and a toast said why, which is a correction somebody has to
@@ -692,7 +696,55 @@ function ltSetRoman(id, sp){
      いる」 The sound is still read off it -- that is what makes the letter
      work in words -- but the name on the letter is theirs. */
   l.ab=String(sp||'').replace(/^\s+|\s+$/g, '');
+  /* And on a plan whose alphabet is fixed, the shape moves INTO the slot that
+     already answers to this name. 「aが自作文字に変わる瞬間みたいなの見せたい」
+     -- OWNER DECISION, 2026-08-23. See the note on ltFreeSlot below for what
+     is removed and why that is not somebody's work. */
+  var into=ltFreeSlot(l);
+  if(into){
+    if(l.st) into.st=JSON.parse(JSON.stringify(l.st));
+    if(l.ch) into.ch=l.ch;
+    if(l.snd && l.snd.length){ into.snd=l.snd.slice(); into.chose=l.chose||0; }
+    LETTERS.splice(LETTERS.indexOf(l), 1);
+    saveLetters(); installScriptFont(); render();
+    return into.id;
+  }
   saveLetters(); installScriptFont(); render();
+  return id;
+}
+/* Which slot a newly named shape belongs in, on a plan that cannot add
+   letters -- and nothing at all on one that can.
+
+   The free plan IS the twenty-eight slots plus a digit per value: nothing on
+   it adds a letter, deletes one or renames one, and the QWERTY finds its keys
+   BY NAME. So a shape drawn in the onboarding and then called `a` used to sit
+   beside the slot already called `a`: two letters with one name, and the key
+   marked `a` pointing at the empty one -- so what somebody had just drawn was
+   on no key of their own keyboard, with the onboarding saying it was.
+
+   DELETE REVIEW. What goes is the slot ltStart() made: no strokes, no
+   borrowed character, made by the app on first launch and never touched by
+   anybody. What it holds that is worth keeping is copied onto it first -- it
+   IS the surviving row, so its id, its place in the alphabet and its sound
+   all stay, and every id anything else may have written down still resolves.
+   The row that goes is the two-second-old one whose whole content is the
+   strokes that were just copied.
+
+   A slot somebody HAS drawn on is not this: it comes back null, both letters
+   stay, and the alphabet shows the duplicate in red. Overwriting a drawing to
+   make room for another is the one thing this may never do. */
+function ltFreeSlot(l){
+  if(can('letters')) return null;
+  var nm=String(l.ab||'').toLowerCase(), i, s;
+  if(!nm) return null;
+  for(i=0;i<LETTERS.length;i++){
+    s=LETTERS[i];
+    if(s===l || !ltIsBase(s)) continue;
+    if(String(ltName(s)||'').toLowerCase()!==nm) continue;
+    if((s.st && s.st.length) || s.ch) return null;
+    return s;
+  }
+  return null;
 }
 function ltSetStrokes(id, st){
   var l=ltById(id); if(!l) return null;
