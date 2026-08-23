@@ -379,6 +379,15 @@ export function halfDone(){
     /* The digits page, which is the only one of the three carrying the base. */
     ['the digits', () => { window.route='ltset';
                            NAV=[{r:'ltset', a:'num'}]; return vLtset(); }],
+    /* The same page, counted in three. The clock on it wears twelve numerals
+       or four, and which one is decided by the widest hour: more than two
+       signs is a smudge however narrow it is drawn. Three is the first base
+       where that happens -- twelve is 110 -- and the eight hours that lose
+       their numeral get a tick instead. Counting in ten, no hour is ever
+       three signs, so the tick had never been drawn. */
+    ['the digits, counted in three', () => { const was=STG.base; STG.base=3;
+                           window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
+                           const h=vLtset('num'); STG.base=was; return h; }],
     ['the marks',  () => { window.route='ltset';
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
@@ -705,6 +714,19 @@ export function halfDone(){
     ['one photograph, opened', () => {
         window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'p1:0'}];
         return vPhoto(); }],
+    /* The second of four, opened. Every count that used to be along the top of
+       a screen was taken off -- words, letters, drafts, followers -- and this
+       is the one left, because which of four you are looking at is where you
+       are standing and not how much you have. A post carrying one photograph
+       is not told it is one of one, so the seed above never draws it.
+       「総数系いらないやろ全部」 */
+    ['the second of four photographs, opened', () => {
+        POSTS.push({id:'pm', at:Date.now(), lang:langId, lname:'Shango', ln:'kano',
+                    who:'Aya', hd:'aya', mine:true, mn:'four of them', ui:'en',
+                    pics:[POSTS[0].pic, window.__fixPic(600, 900),
+                          window.__fixPic(900, 900), window.__fixPic(1200, 500)]});
+        window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'pm:1'}];
+        const h = vPhoto(); POSTS.pop(); return h; }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
@@ -755,6 +777,31 @@ export function halfDone(){
           ({u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
             marks:[]}));
         openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* The composer of a language written from the right, in its own font.
+       Both of those are the paid plan's and both are off in seed(), so the
+       field the line goes in has only ever been rendered left-to-right in
+       the ordinary face. They are one seed because they are one element:
+       `dirClass(scriptDir()) + (myFontOn()? ' tfont' : '')` is the whole of
+       that field's class, and the two answers meet nowhere else.
+       .tfont is LinguaType, which carries only the private use area, so
+       nothing is drawn here that the Lingua keyboard did not type -- which
+       is the rule the second face exists to keep. */
+    ['a line written from the right, in a font of your own', () => {
+        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+        SET.plan = 'plus'; SCRIPT.dir = 'rtl';
+        SET.myfont = true; installScriptFont();
+        openPost(); const h = FORM.html;
+        PW = pwBlank(); SET.myfont = false;
+        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+    /* And the same line in a timeline, where the direction is the post's own
+       and not the reader's: a post says which way it was written and carries
+       it, because rule 8 is that what somebody wrote is shown the way they
+       wrote it. */
+    ['a post written from the right', () => {
+        const keep = POSTS;
+        POSTS = keep.map((p, i) => i ? p : Object.assign({}, p, { dir: 'rtl' }));
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); POSTS = keep; return h; }],
     /* The contents on Studio. The AI conversation is the last chapter and it
        is Studio's, so on free the contents has no way in to it -- which is
        what act-check reports, correctly, unless the walk is shown the plan

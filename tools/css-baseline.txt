@@ -3,29 +3,7 @@
 # A NEW one fails. Taking a line OUT is progress and needs nobody --
 # either the rule went, or a seed was added that reaches the state that
 # wears it, which is the better way.
-bar
-big
-card
-chap
-chip
-chips
-cn
-cover
-dir-rtl
-find
-fixed
-ipa
 kbghost
 lift
-link
 moving
-navc
-numwt
-out
-pw
-rom
-rule
-sndadd
-spv
 studio
-tfont

@@ -9,18 +9,13 @@
 .abmark | border
 .abmark | border-radius
 .abtn | border-radius
-.bar | border-radius
 .bpic | border-radius
 .btn.apple | border
 .btn.google | border
 .btn.signin | border-radius
 .capwarn | border
 .capwarn | border-radius
-.card | border
-.card | border-radius
 .cardbox | border-radius
-.chip | border
-.chip | border-radius
 .exlb | border
 .exlb | border-radius
 .fab | border-radius
@@ -48,8 +43,6 @@
 .kbring | border
 .kbring | border-radius
 .kbsk | border-radius
-.link | border
-.link | border-radius
 .lock .tag | border
 .lock .tag | border-radius
 .lock | border
@@ -109,8 +102,6 @@
 .ppic | border-radius
 .pvbox button | border
 .pvbox button | border-radius
-.pw | border
-.pw | border-radius
 .pwab | border
 .pwab | border-radius
 .pwpic | border
@@ -125,10 +116,6 @@
 .scin | border
 .scin | border-radius
 .sheet | border-radius
-.sndadd | border
-.sndadd | border-radius
-.spv | border
-.spv | border-radius
 .swk | border-radius
 .swt | border-radius
 .tab | border-radius

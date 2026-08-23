@@ -1708,8 +1708,6 @@ function geTools(){
       b[i].className=s[1]?'on':'';
     }
   }
-  var cn=document.querySelector('.chap .cn');
-  if(cn) cn.textContent=String(pts);
 }
 /* One draw call, three layers: the cell you are drawing inside, the ink the
    font will actually contain, and the points you can still move. The ink is

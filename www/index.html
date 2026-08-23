@@ -463,9 +463,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .navtop:after{content:"";position:absolute;left:0;right:0;top:100%;height:8px;
               background:linear-gradient(180deg,var(--bg),transparent)}
 .chead{padding:0 24px 6px}
-.chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
-.chap .rn{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.3rem}
-.chap .cn{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* As tall as what is left of the screen, so something can be put at the FOOT
    of it -- against the tab bar, not under the last row and not floating in
@@ -833,9 +830,9 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 
    The field takes what is left after everything under it has had its height,
    and scrolls inside itself rather than growing -- which is why lnFit()
-   leaves a `fitin` field alone. Same shape as .view.fixed below; it is not
-   the same rule, because that one is about a page and this one is about
-   which child gets the slack. */
+   leaves a `fitin` field alone. There was a .view.fixed under this that held
+   the cover still -- a page that does not scroll rather than a child that
+   takes the slack -- and it went with the cover it was written for. */
 /* Pinned to the part of the page that can actually be SEEN, not to the
    document. iOS does not shrink the page for the keyboard -- it slides the
    keyboard over it and then scrolls the layout viewport up to put the focused
@@ -887,10 +884,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
    padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
-/* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
-.view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-.cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
-       padding:0 30px calc(var(--tabh) + 12px);text-align:center}
 /* What the language is for, on the cover, because that is where what a book
    is about belongs. */
 .wldrow{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;
@@ -963,10 +956,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
      background:var(--tx);color:var(--bg);display:flex;align-items:center;
      justify-content:center;z-index:4}
 .ltx svg{width:13px;height:13px}
-.sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;
-        background:none;color:var(--txm);
-        display:inline-flex;align-items:center;justify-content:center}
-.sndadd:active{border-color:var(--goldln);color:var(--gold)}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
    but nothing on the screen said which was which. */
@@ -1072,8 +1061,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    just pulls the word apart, so those three languages get none, and a size
    that carries without the capitals trick. */
 html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:.02em;font-size:.86rem}
-.card{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
-.rule{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto 0}
 
 .toc{margin-top:14px}
 .trow{display:flex;align-items:baseline;gap:12px;padding:16px 2px;width:100%;background:none;border:none;color:var(--tx);text-align:left}
@@ -1180,8 +1167,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .ph i{font-style:normal;font-family:var(--face-ital);font-size:.84rem;color:var(--gold);margin-top:2px}
 .ph.off{color:var(--txm);border-style:dashed;background:none;opacity:.6}
 .ph.off i{color:var(--txm)}
-.link{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:center}
-.link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
 /* The mark and nothing round it. It was a bordered box the size of a key
    sitting beside the word, which reads as something to press for a reason
    you have not been told 「謎の四角も要らないマークとしてわからん」 -- and it
@@ -1192,9 +1177,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .play:active{opacity:.6}
 
 /* ---------- rules ---------- */
-.find{padding:16px 0;border-bottom:1px solid var(--line)}
-.bar{height:2px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--gold)}
 
 /* ---------- make ---------- */
 /* Not pills. A pill is a rounded box with a word shut inside it, and this
@@ -2075,10 +2057,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wrd{font-family:var(--face-ital);font-size:1.14rem;color:var(--tx);margin:6px 2px 0;letter-spacing:.03em}
 .wsub{font-family:var(--face-ital);font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
 .wsub2{font-size:.88rem;color:var(--txm);margin:2px 2px 0}
-.pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
-    border:1px solid var(--line);border-radius:11px;padding:7px 12px;color:var(--tx)}
-.pw:active{opacity:.55}
-.ipa{font-family:var(--face-ital);letter-spacing:.02em}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 24px);transform:translateX(-50%) translateY(10px);
        background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
        border-radius:10px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
@@ -2101,9 +2079,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .ob h2.obh{font-size:clamp(1.02rem,4.2vw,1.24rem)}
 .ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
 .ob .obfoot{margin-top:auto;padding-top:12px;flex:0 0 auto}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
-.chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:8px 15px;font-size:.88rem}
-.chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
 .mini{font-size:.86rem;color:var(--txm);margin-top:8px;line-height:1.8}
 
 /* ---------- writing system ----------
@@ -2141,10 +2116,6 @@ html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .g
   letter-spacing:.01em;font-size:.82rem}
 .ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
-.spv{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
-.spv .big{font-size:2.4rem;line-height:1.5;word-break:break-word}
-.spv .rom{font-family:var(--face-caps);font-size:.86rem;color:var(--txm);
-          letter-spacing:.06em;margin-top:10px}
 /* The one switch the whole feature turns on. Everything it changes is a
    font-family: the stored text stays roman letters, always. */
 /* Every place a headword is shown as itself, and nowhere else: not the reading,
