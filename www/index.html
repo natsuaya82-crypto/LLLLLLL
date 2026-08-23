@@ -101,13 +101,11 @@ body{background:var(--bg);color:var(--tx);font-family:var(--face-ui);
    chrome and turned back on for the two places text is genuinely read or
    written. */
 body,#app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-input,textarea,[contenteditable],.mn,.rd,.wordmean,.sentline{
+input,textarea,[contenteditable],.mn,.rd{
   -webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 /* manipulation keeps scroll and pinch but drops the double-tap-to-zoom that
    was eating every second tap. */
 button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obescb{touch-action:manipulation}
-.cz{font-family:var(--face-caps)}
-.cor{font-family:var(--face-ital)}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
 /* A screen slides in when you arrive at it. It must NOT slide in again every
    time something on it is tapped -- but every tap redraws the whole view, so
@@ -437,33 +435,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbsv{flex:1;min-width:0;display:flex;align-items:center;gap:6px;color:var(--tx)}
 .kbsv canvas.tc{width:30px;height:30px;display:block}
 .kbsv .bch{font-size:1.2rem;line-height:1}
-/* --- the IPA chart ---------------------------------------------------- */
-.ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
-.ipascroll table{width:734px}
-.ipatab{border-collapse:collapse;width:100%;table-layout:fixed}
-/* The row heading is the name of a manner or a height, and some of those are
-   long words in some of the ten. Fixed at 44px and told not to wrap, they were
-   cut off mid-word. Widening to 58px and adding word-break:break-word stopped
-   the cutting and started the breaking -- "approximant" came out as approxi /
-   mant, and Russian broke ten of its labels that way. English broke two, which
-   is why it read as fixed.
-   108px is the widest single word any of the ten has, measured rather than
-   guessed: полуоткрытый at 102px plus the padding. Nothing may break inside a
-   word now; the chart is wider and it was already a horizontal scroller. */
-.ipatab th{font-size:.82rem;color:var(--txm);font-weight:400;text-align:left;
-           padding:2px 6px 4px 0;white-space:normal;line-height:1.25;width:108px;
-           word-break:normal;overflow-wrap:normal}
-.ipatab td{padding:1px;vertical-align:top}
 .ph2{width:100%;min-height:44px;border:1px solid var(--line);background:var(--sf);
      border-radius:8px;color:var(--txs);font-size:.95rem;padding:6px 0;margin-bottom:2px;display:block}
 .ph2.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 .ph2:active{opacity:.55}
-.ipafree{display:flex;flex-wrap:wrap;gap:6px}
-.ipafree .ph2{width:auto;min-width:48px;padding:8px 11px}
-.ipamine{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px;min-height:44px}
-.ipamine b{border:1px solid var(--goldln);background:var(--goldsf);color:var(--gold);
-           border-radius:8px;padding:8px 12px;font-weight:400;font-size:1rem}
-.ipamine .none{color:var(--txm);font-size:.88rem;align-self:center}
 /* Buttons whose mark is drawn rather than typed line it up with the word. */
 .back.nb,.play,.pvbox button{display:inline-flex;align-items:center;gap:6px}
 .back.nb svg,.play svg,.pvbox button svg{flex:0 0 auto}
@@ -941,15 +916,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
         min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;
         background:none;color:var(--txs);font-family:inherit;font-size:.88rem}
 .wldrow:active{border-color:var(--goldln)}
-.wldl{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wldl.none{color:var(--txm)}
-.cvrow{display:flex;gap:8px;margin:16px 0 6px}
-.cvst{flex:1;min-height:56px;background:none;border:1px solid var(--line);border-radius:10px;
-      padding:9px 4px;color:var(--tx);font-family:inherit;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.cvst:active{border-color:var(--goldln);color:var(--gold)}
-.cvv{font-family:var(--face-ital);font-style:italic;font-size:1.14rem}
-.cvl{font-size:.82rem;color:var(--txm);letter-spacing:.06em}
 /* ---------- the letters ----------
    A letter is a cell, because there are as many letters as somebody decides
    there are. */
@@ -1038,22 +1004,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .field input.dup{color:var(--bad);border-color:var(--bad)}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-/* ---------- a word, spelled ----------
-   Each position is the letter and, under it, what it says here. A position
-   saying something other than the letter's own reading is marked, because a
-   sound change is the one thing on this row worth noticing. */
-.spellrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:60px;
-          padding:8px 10px;border:1px solid var(--line);background:var(--pane);border-radius:12px}
-.spc{min-width:48px;min-height:52px;border:1px solid var(--line);border-radius:9px;
-     background:var(--sf);color:var(--tx);padding:5px 6px;
-     display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-.spc.odd{border-color:var(--purln);background:var(--pursf)}
-.spf{display:inline-flex;align-items:center;justify-content:center;height:26px;font-size:1.2rem}
-.spf canvas.tc{width:26px;height:26px;display:block}
-.spf .bch{font-size:1.2rem;line-height:1}
-.spu{font-size:.82rem;color:var(--txm);line-height:1}
-.spc.odd .spu{color:var(--pur)}
-.spnone{flex:1;color:var(--txm);font-size:.88rem}
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
        margin-bottom:14px;color:var(--tx)}
 .spbig canvas.tc{width:80px;height:80px;display:block}
@@ -1106,10 +1056,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .abcell canvas.tc{width:60px;height:60px;display:block}
 .abu{font-size:.82rem;color:var(--txm);letter-spacing:.03em}
 .abcell.own .abu{color:var(--gold)}
-/* ---------- search, the tab ---------- */
-.fcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-.fcard.soon{border-style:dashed;opacity:.62}
-.fch{font-family:var(--face-caps);font-size:1rem;margin-bottom:6px}
 .note{color:var(--txm);font-size:.86rem;line-height:1.75}
 /* A photograph of the settings screen a step lands on, at the width of the
    page, with the corners of a screenshot. */
@@ -1204,13 +1150,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .esay{flex:0 0 44px;width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
 .esay:active{color:var(--gold)}
-.eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
-       display:inline-flex;align-items:center;justify-content:center}
-.eopen:active{color:var(--gold)}
-/* How many are on screen, what order they are in, and the way to hear them
-   all. One row, because they are all answers to "what am I looking at". */
-.wmeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
-.wct{font-size:.86rem;color:var(--txm);letter-spacing:.04em;margin-right:auto}
 /* This said .wsrt a second time, three hundred lines under the first, as a
    bordered pill with a 10pt radius -- and being second it won. So the sort
    button was a rounded box beside a control that is a line, which is the one
@@ -1249,14 +1188,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mn .sn + span{margin-right:0}
 .mn .nomn{opacity:.42}
 /* Where a word came from, and how many have come from it. */
-/* A sentence this word is used in. */
-.useln{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
-.useln:last-child{border-bottom:0}
-.usew{font-family:var(--face-caps);font-size:.95rem;flex:0 0 auto;max-width:45%;
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.usem{font-family:var(--face-ital);font-style:italic;
-      font-size:.9rem;color:var(--txs);flex:1;min-width:0;
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .usep{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
       display:inline-flex;align-items:center;justify-content:center}
 .usep:active{color:var(--gold)}
@@ -1281,8 +1212,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .ph.off{color:var(--txm);border-style:dashed;background:none;opacity:.6}
 .ph.off i{color:var(--txm)}
 .link{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:center}
-.link .src{font-family:var(--face-caps);font-size:1.16rem;letter-spacing:.03em}
-.link .arw{color:var(--txm);font-size:.86rem;margin:9px 0 7px}
 .link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
 /* The mark and nothing round it. It was a bordered box the size of a key
    sitting beside the word, which reads as something to press for a reason
@@ -1295,9 +1224,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 
 /* ---------- rules ---------- */
 .find{padding:16px 0;border-bottom:1px solid var(--line)}
-.ft{font-size:1rem;font-weight:500;line-height:1.6}
-.ft em{font-style:normal;color:var(--gold);font-family:var(--face-caps)}
-.fd{color:var(--txm);font-size:.88rem;margin-top:5px;line-height:1.8}
 .bar{height:2px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--gold)}
 
@@ -2200,9 +2126,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wdrow{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:11px 2px;
   background:none;border:0;border-bottom:1px solid var(--line);text-align:left;color:var(--tx)}
 .wdrow:active{background:var(--goldsf)}
-/* A position of a reading that says something other than what its letter
-   reads. Same colour as the tiles used to wear. */
-.wdrow.odd .wdroww{color:var(--pur)}
 .wdrowf{flex:0 0 auto;font-size:.76rem;color:var(--txm)}
 .wdroww{flex:0 0 auto;font-size:1.02rem}
 .wdrowm{flex:1 1 auto;min-width:0;font-size:.9rem;color:var(--txm);text-align:right;
@@ -2210,23 +2133,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wrd{font-family:var(--face-ital);font-size:1.14rem;color:var(--tx);margin:6px 2px 0;letter-spacing:.03em}
 .wsub{font-family:var(--face-ital);font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
 .wsub2{font-size:.88rem;color:var(--txm);margin:2px 2px 0}
-.sylrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.sy{display:inline-flex;flex-direction:column;align-items:center;background:var(--sf);border:1px solid var(--line);
-    border-radius:10px;padding:7px 13px;min-width:52px}
-.sy .sya{font-family:var(--face-caps);font-size:1.02rem}
-.sy .syi{font-family:var(--face-ital);font-size:.88rem;color:var(--gold);margin-top:3px}
-.sy .syk{font-size:.84rem;color:var(--txm);margin-top:1px}
-.sysep{color:var(--txm);font-size:.88rem}
-/* sentences */
-.sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
-.link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
-/* weaving a sentence */
-.weave{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:var(--pane);border:1px solid var(--line);border-radius:14px}
-.wc{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);
-    border:1px solid var(--line);border-radius:11px;padding:8px 13px;color:var(--tx)}
-.wc.on{background:var(--goldsf);border-color:var(--goldln)}
-.wc .wcw{font-family:var(--face-caps);font-size:1.04rem}
-.wc .wcm{font-size:.82rem;color:var(--txm)}
 .pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:220px;overflow:auto}
 .pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
     border:1px solid var(--line);border-radius:11px;padding:7px 12px;color:var(--tx)}
@@ -2666,8 +2572,6 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
    the size of the finger that has to find them. */
 .play,.gside .gsp,.pkclear,.obskip{min-height:44px}
 .gside .gsp{min-width:44px}
-.sylrow .syk{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
-  display:flex;align-items:center;justify-content:center}
 
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever

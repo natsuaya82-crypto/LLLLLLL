@@ -25,13 +25,9 @@
 .chk button | border-radius
 .chk | border
 .chk | border-radius
-.cvst | border
-.cvst | border-radius
 .exlb | border
 .exlb | border-radius
 .fab | border-radius
-.fcard | border
-.fcard | border-radius
 .gborrow .gbx | border
 .gborrow .gbx | border-radius
 .gborrow | border
@@ -44,8 +40,6 @@
 .impfile | border-radius
 .imptab | border
 .imptab | border-radius
-.ipamine b | border
-.ipamine b | border-radius
 .kbe | border
 .kbe | border-radius
 .kbk | border
@@ -152,16 +146,10 @@
 .sheet | border-radius
 .sndadd | border
 .sndadd | border-radius
-.spc | border
-.spc | border-radius
-.spellrow | border
-.spellrow | border-radius
 .spv | border
 .spv | border-radius
 .swk | border-radius
 .swt | border-radius
-.sy | border
-.sy | border-radius
 .tab | border-radius
 .tabbar | border
 .tabbar | border-radius
@@ -176,10 +164,6 @@
 .upsell | border
 .upsell | border-radius
 .vodot | border-radius
-.wc | border
-.wc | border-radius
-.weave | border
-.weave | border-radius
 .whfo | border
 .whfo | border-radius
 .wldrow | border
