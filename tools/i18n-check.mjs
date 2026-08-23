@@ -279,6 +279,31 @@ await pg.evaluate('window.__obStates = ' + obStates.toString());
 const R = await pg.evaluate(() => {
   const out = { keys: [], ph: [], mk: [], name: [], read: [], miss: [], hard: [],
                 langs: UI_LANGS.slice(), walked: [], mirrored: 0 };
+
+  /* ---- what was actually ASKED for -------------------------------------
+     Check 10 below reads the source and calls a key alive if a screen writes
+     its name down, or if a screen writes down a PREFIX of it: t('ipa.p.' +
+     place) makes every ipa.p.* key alive at once, because the suffix is a
+     variable and no reader of the source can know which values it takes.
+     That is the right way round -- it never calls a live key dead -- but it
+     is generous, and 270 of the 692 keys en defines are alive only by a
+     prefix.
+
+     This is the other half, and only the running app can give it: t() itself
+     writes down every key it is handed, through the whole walk and the whole
+     mirror. A key nothing ever asked for, in 283 screens rendered ten times
+     over, is a key worth looking at.
+
+     Worth LOOKING AT, and not a failure -- the toast on an error is real and
+     nothing here walks an error. So it goes out as a report and a person
+     decides. docs/STATE.md §11.
+
+     Wrapping the global rather than adding a line to t() itself: the app is
+     not the place to carry a check's scaffolding, and tn() reaches t through
+     the same global, so both are caught by the one wrapper. */
+  const ASKED = {};
+  const realT = t;
+  window.t = function (k) { ASKED[String(k)] = 1; return realT.apply(null, arguments); };
   const en = LANG.en.str;
   const enK = Object.keys(en);
   out.enKeys = enK.slice();
@@ -631,6 +656,8 @@ const R = await pg.evaluate(() => {
   });
   try { closeSheet(); } catch (e) {}
 
+  window.t = realT;
+  out.asked = Object.keys(ASKED).sort();
   return out;
 });
 
@@ -695,6 +722,76 @@ function checkUnused(enKeys){
     fail('unused', 'en defines ' + k + ' and no screen asks for it — ' +
       'it was translated into all ' + R.langs.length + ' languages and every ' +
       'one of those is dead too. Delete it from all of them, or say who says it.');
+
+  /* ---- and the ones alive only by a prefix -------------------------------
+     Above is what the SOURCE can prove. This is what the RUN saw: of the keys
+     the prefix rule let through, which were never once handed to t() in 283
+     screens rendered ten times over.
+
+     A report and not a failure, because "never walked" is not "never said".
+     The three ways a live key lands here:
+       an error path   a toast that only appears when something goes wrong
+       a state nothing here reaches   a plan, a device, a half-filled form
+       a value the suffix never takes in the fixture
+     All three are real, and none of them is a reason to delete anything. So
+     this prints a list and stops. docs/STATE.md §11. */
+  const seen = new Set(R.asked || []);
+  const byPrefix = enKeys.filter((k) => {
+    if (named.has(k)) return false;                       /* written down: check 10's job */
+    if (VAR.test(k) && named.has(k.replace(VAR, ''))) return false;
+    if (dead.indexOf(k) >= 0) return false;               /* already failed above */
+    if (seen.has(k)) return false;                        /* a screen asked for it */
+    if (VAR.test(k) && seen.has(k.replace(VAR, ''))) return false;
+    return true;
+  }).sort();
+
+  /* Of those, the ones whose SUFFIX is written down somewhere.
+     t('word.fm.' + f) takes f out of FM_INF and FM_DER, and both arrays are
+     two dozen quoted strings sitting in www/wordsheet.js. So word.fm.act is
+     as good as named -- the prefix is written down, the suffix is written
+     down, and only the joining of them happens at run time. Same for the IPA
+     chart's places and manners, the keyboard's patterns, the kinds of
+     writing system. Seventy-three of the hundred and forty-nine were that,
+     and a list with seventy-three explained entries in it is a list nobody
+     reads to the end.
+     Cut at segment boundaries, because the source writes '.d' and '.e' on
+     separately: word.fm.act.d is alive on the strength of 'act'. */
+  const litTail = (k, p) => {
+    const tail = k.slice(p.length).split('.');
+    for (let i = 1; i <= tail.length; i++)
+      if (named.has(tail.slice(0, i).join('.'))) return true;
+    return false;
+  };
+  const longest = (k) => prefixes.filter((x) => k.indexOf(x) === 0)
+                                 .sort((a, b) => b.length - a.length)[0] || '';
+  const spelled = [], loose = [];
+  byPrefix.forEach((k) => {
+    const p = longest(k);
+    (p && litTail(k, p) ? spelled : loose).push(k);
+  });
+
+  const alive = enKeys.filter((k) => seen.has(k)).length;
+  console.log('\nkeys en defines: ' + enKeys.length +
+    ' — asked for during the walk: ' + alive +
+    ', named in the source: ' + enKeys.filter((k) => named.has(k)).length);
+  console.log('built from a prefix and never asked for in the walk: ' + byPrefix.length +
+    ' — of those, ' + spelled.length + ' have their suffix written down too, ' +
+    'so only ' + loose.length + ' are unaccounted for');
+  if (loose.length) {
+    /* grouped by the prefix that is keeping them alive, because they are
+       decided a group at a time: one chart, one table, one list of kinds. */
+    const groups = {};
+    loose.forEach((k) => { const p = longest(k) || '(no prefix)';
+                           (groups[p] = groups[p] || []).push(k); });
+    console.log('  A REPORT, NOT A FAILURE. Three ways a live key lands here:');
+    console.log('    an error path — a toast nothing walks');
+    console.log('    a state nothing here reaches — a plan, a device, a half-filled form');
+    console.log('    a suffix the fixture never takes');
+    console.log('  Each one is real. Somebody decides; this only says where to look.');
+    Object.keys(groups).sort().forEach((p) => {
+      console.log('  ' + p + '  (' + groups[p].length + ')  ' + groups[p].join(' '));
+    });
+  }
   return dead.length;
 }
 const deadKeys = checkUnused(R.enKeys);
