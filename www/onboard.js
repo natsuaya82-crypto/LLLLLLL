@@ -150,52 +150,94 @@ function obTourAt(){
 }
 /* Done with the walk through the app. */
 function obTourDone(){ obTour=0; obGo(OB_NAME); }
-/* The grey and the one bright thing.
+/* The hand that says tap. 「矢印か指とかでタップなんとかみたいにもっとやろうぜ」
+   A hand with the index finger out, stood under the thing to tap so the
+   finger comes up at it. It is drawn INSIDE the light rather than on the
+   grey, which is why it needs no colour of its own beyond the gold every
+   other mark in this app is: a gold hand on a half-black scrim is a hand
+   nobody can see, and the colour that would fix that is a new one in a
+   stylesheet this session does not own. */
+var OB_HAND='<svg viewBox="0 0 24 24" width="54" height="54" fill="currentColor" aria-hidden="true">'+
+  '<path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 '+
+  '13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83'+
+  '-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 '+
+  '4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/></svg>';
+/* Where the hand stands, given the box of the thing to tap. Under it, so the
+   finger points up at it -- and over it, turned over, when the thing is too
+   low on the screen for that. Kept inside the edges either way. */
+function obHandBox(b){
+  /* m is NEGATIVE: the hand OVERLAPS the thing it points at by that much, so
+     the fingertip is on it rather than beside it -- a finger held an inch
+     off the screen is a finger pointing at the gap. */
+  var s=54, m=-15, W=window.innerWidth, H=window.innerHeight,
+      up=(b.bottom+m+s <= H-8),
+      x=Math.round(b.left+b.width/2-s/2),
+      y=Math.round(up? b.bottom+m : b.top-m-s);
+  if(x<8) x=8;
+  if(x+s>W-8) x=W-8-s;
+  return {left:x, top:y, w:s, h:s, up:up};
+}
+/* One pane of the grey. */
+function obPane(l, t2, w, h){
+  return '<div class="sbg on" data-dim="1" style="left:'+Math.round(l)+'px;top:'+Math.round(t2)+
+    'px;width:'+Math.max(0,Math.round(w))+'px;height:'+Math.max(0,Math.round(h))+'px"></div>';
+}
+/* The grey, the one bright thing, and the hand pointing at it.
 
-   .sbg is the sheet's own backdrop -- fixed, over everything, and it swallows
-   every press that is not on the lit thing. .toast is the line the app
-   already pins above the tab bar. Both are borrowed rather than written,
-   because www/index.html belongs to another session today; when it is free
-   these want two classes of their own and a cut-out rather than a raise. */
+   FOUR panes of grey with a hole between them, not one pane with the lit
+   thing lifted through it. Lifting was tried and does not work: .view
+   animates on arrival, an animation makes a stacking context, and a z-index
+   inside one cannot climb out of it -- so the lit thing stayed under the grey
+   and the whole screen was flat. Four rectangles have no such argument to
+   lose, and what is not covered is bright and is tappable.
+
+   The hole is the lit thing AND the hand together, so the hand stands in the
+   light with it. .sbg is the sheet's own backdrop and .toast is the line the
+   app already pins above the tab bar; both are borrowed rather than written,
+   because www/index.html belongs to another session today.
+
+   Every box here is written into the MARKUP, and that is not a tidy-up: a
+   check renders a screen and measures it without ever calling render(), so
+   geometry that arrives afterwards is geometry nothing can check -- press
+   found the pad as a button four pixels across, which is what it was. What a
+   screen returns is what the screen IS. The lit thing is on the page by the
+   time this runs: render() inserts the screen, then adds the walk to the end
+   of it. */
 function obTourHTML(){
-  var st=obTourStop(), last=!OB_TOUR_STOPS[obTour+1], i, out='';
-  /* The pad's box is written HERE rather than at mount, and that is not a
-     tidy-up: a check renders a screen and measures it without ever calling
-     render(), so a pad whose size arrives at mount is a button of nothing to
-     anybody but the app. What is in the markup is what a screen IS.
-     The lit thing is already on the page by the time this runs -- render()
-     inserts the screen and then adds the walk to the end of it. */
-  var padEl=st.lt? obTourFind(st) : null, padB=padEl? padEl.getBoundingClientRect() : null;
-  /* FOUR panes of grey with a hole between them, not one pane with the lit
-     thing lifted through it. Lifting was tried and does not work: .view
-     animates on arrival, an animation makes a stacking context, and a
-     z-index inside one cannot climb out of it -- so the lit thing stayed
-     under the grey and the whole screen was flat.
-     Four rectangles have no such argument to lose. What is not covered is
-     bright, is tappable, and needs nothing from the stylesheet but the grey
-     itself, which .sbg already is. */
-  for(i=0;i<4;i++) out+='<div class="sbg on" data-dim="'+i+'"></div>';
+  var st=obTourStop(), last=!OB_TOUR_STOPS[obTour+1],
+      el=obTourFind(st), b=el? el.getBoundingClientRect() : null,
+      W=window.innerWidth, H=window.innerHeight,
+      hb=b? obHandBox(b) : null, m=4, x, y, w, h, out;
+  if(!b) out=obPane(0,0,W,H);   /* no hole: the last word is over everything */
+  else{
+    x=Math.min(b.left, hb.left)-m;  y=Math.min(b.top, hb.top)-m;
+    w=Math.max(b.right, hb.left+hb.w)+m-x;
+    h=Math.max(b.bottom, hb.top+hb.h)+m-y;
+    out=obPane(0,0,W,y)+                   /* above */
+        obPane(0,y+h,W,H-(y+h))+           /* below */
+        obPane(0,y,x,h)+                   /* left  */
+        obPane(x+w,y,W-(x+w),h);           /* right */
+  }
   return out+
     /* A lit thing that does something of its own is pressed for real -- the
        row into the keyboard chapter goes there, and going there is what moves
        the tour on. A lit thing that does nothing (the free keyboard's keys are
        spans, because there is no editor behind them) gets this: the tour's own
-       tap target, laid over it at mount.
+       tap target, laid over it.
 
-       It is in the MARKUP rather than written onto the element at mount, and
-       that is not a detail: act-check reads what a screen RETURNS, so a name
-       set on the live DOM is a name nothing can check. */
-    /* Only when there is something to lay it over. The pad is sized at mount
-       from the lit thing's box, so a pad with no lit thing keeps the size in
-       this attribute -- which is nothing, plus a button's own border, which
-       is 4x4 and is a button four pixels across. press-check found one: a
-       press can leave the app on a screen the key is not on while the stop
-       still asks for it. No target, no pad. */
-    (padB? '<button class="obpad"' + DO('obTourNext') +
+       It is in the MARKUP rather than written onto the element afterwards, and
+       that is not a detail either: act-check reads what a screen RETURNS, so a
+       name set on the live DOM is a name nothing can check. */
+    (st.lt && b? '<button class="obpad"' + DO('obTourNext') +
               ' style="position:fixed;background:none;z-index:42;'+
-              'left:'+Math.round(padB.left)+'px;top:'+Math.round(padB.top)+'px;'+
-              'width:'+Math.round(padB.width)+'px;height:'+Math.round(padB.height)+'px"'+
+              'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
+              'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px"'+
               ' aria-label="'+esc(t(st.say))+'"></button>' : '')+
+    (hb? '<div class="obhand" aria-hidden="true" style="position:fixed;z-index:43;'+
+              'pointer-events:none;color:var(--gold);line-height:0;'+
+              'left:'+hb.left+'px;top:'+hb.top+'px;width:'+hb.w+'px;height:'+hb.h+'px;'+
+              'animation:vopulse 1.1s ease-in-out infinite'+
+              (hb.up? '' : ';transform:scaleY(-1)')+'">'+OB_HAND+'</div>' : '')+
     '<div class="toast on obtoast" style="pointer-events:auto">'+esc(t(st.say))+
       (last? ' <button class="obskip"' + DO('obTourDone') + '>'+esc(t('ob.next'))+'</button>' : '')+
     '</div>';
@@ -218,39 +260,6 @@ function obTourFind(st){
     if(a[0]===st.go) return els[i];
   }
   return null;
-}
-/* The lit thing is raised ABOVE the backdrop rather than cut out of it: one
-   line of geometry, no colour, no border -- which is what lets this be done
-   from here at all while the stylesheet is somebody else's.
-
-   Cleared first, every time, because the element that was lit last time is
-   usually still on the page. */
-function obTourMount(){
-  var d=document.querySelectorAll('.sbg[data-dim]');
-  if(!d.length) return;
-  var st=obTourOn()? obTourStop() : null, el=st? obTourFind(st) : null, b, i;
-  /* No hole: the last word of the walk is over the whole screen. */
-  if(!el){
-    for(i=0;i<d.length;i++){
-      d[i].style.left='0'; d[i].style.top='0';
-      d[i].style.width=(i? '0' : '100%'); d[i].style.height=(i? '0' : '100%');
-    }
-    return;
-  }
-  b=el.getBoundingClientRect();
-  /* over, under, and the two beside -- with a hair of margin so the lit thing
-     is not touched by the edge of the grey */
-  function put(n, l, t2, w, h){
-    d[n].style.left=Math.round(l)+'px'; d[n].style.top=Math.round(t2)+'px';
-    d[n].style.width=Math.max(0, Math.round(w))+'px';
-    d[n].style.height=Math.max(0, Math.round(h))+'px';
-  }
-  var m=4, x=b.left-m, y=b.top-m, w2=b.width+m*2, h2=b.height+m*2,
-      W=window.innerWidth, H=window.innerHeight;
-  put(0, 0, 0, W, y);                 /* above */
-  put(1, 0, y+h2, W, H-(y+h2));       /* below */
-  put(2, 0, y, x, h2);                /* left  */
-  put(3, x+w2, y, W-(x+w2), h2);      /* right */
 }
 /* On to the next stop, for a lit thing that had nothing of its own to do. */
 function obTourNext(){

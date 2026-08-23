@@ -24,7 +24,12 @@ What it wants, on the day that file is free:
 - **one** dim element with a real cut-out (`clip-path` or a box-shadow ring),
   instead of four panes whose arithmetic has to agree with each other
 - a coach line of its own, which is **not a rounded box** — `.toast` is one,
-  and it is on `tools/box-baseline.txt` because it predates the rule
+  and it is on `tools/box-baseline.txt` because it predates the rule. The box
+  is what makes the sentence readable over the grey, so taking it off means
+  giving the words a colour that reads on a half-black scrim in both themes,
+  and there is no variable that is light in both. **That is a colour, and
+  every colour in this app lives in the two theme blocks** — so this half
+  cannot be done from a view at all, which is why the box is still there
 - `pointer-events` set in the stylesheet rather than inline
 
 None of it changes what the tour does. It is four panes and a borrowed toast

@@ -2044,13 +2044,13 @@ function render(){
   /* and a key, wherever the keyboard is, can be flicked off */
   if(route==='form') formMount();
   /* and, if the walk through the app is on, everything but one thing goes
-     grey. Last, because it lights something the lines above have just drawn:
-     the grey is put over the finished screen and the lit thing is raised out
-     of it. obTourAt() reads where the app landed, so pressing the lit thing
-     is what moves the tour on -- it does what it really does. */
+     grey. Last, because it MEASURES something the lines above have just
+     drawn: the hole in the grey is cut around the lit thing, so the screen
+     has to be on the page before this line runs.
+     obTourAt() reads where the app landed, so pressing the lit thing is what
+     moves the tour on -- it does what it really does. */
   if(!SET.done){
     obTourAt();
     app.insertAdjacentHTML('beforeend', obTourHTML());
-    obTourMount();
   }
 }

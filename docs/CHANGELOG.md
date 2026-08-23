@@ -34,8 +34,21 @@ and fifth stops are one screen here.
 does what it really does; the route changes; `obTourAt()` notices and moves on.
 Nothing here is a mock of a screen, so nothing can drift out of step with one.
 
-Three things it cost, all of them worth writing down:
+**A hand points at the thing to tap.** 「矢印か指とかでタップなんとかみたいに
+もっとやろうぜ」 It stands with its fingertip ON the lit thing rather than
+beside it — a finger held an inch off the screen points at the gap — and it is
+inside the light with it: the hole is cut around the two together. That is not
+a look, it is what lets the hand be `var(--gold)` like every other mark in the
+app. Gold on a half-black scrim is a hand nobody can see, and the colour that
+would fix that is a new one in a stylesheet this session does not own.
 
+Four things it cost, all of them worth writing down:
+
+- **Every box is written into the markup.** There is no mount step. A check
+  renders a screen and measures it without ever calling `render()`, so
+  geometry that arrives afterwards is geometry nothing can check — `press`
+  found the tap pad as a button four pixels across, which is exactly what it
+  was. What a screen returns is what the screen is.
 - **The dim is four panes cutting a hole**, not a raised element. Lifting the
   target with `z-index` does nothing: `.view`'s entrance animation creates a
   stacking context, and a child of it cannot rise above a sibling of it.
@@ -45,10 +58,11 @@ Three things it cost, all of them worth writing down:
   returns and would never see a `data-do` assigned afterwards.
 - **No CSS was added.** `www/index.html` belongs to another session today
   (`claude/code-review-refactor-seaaei`), so the tour borrows `.sbg` for the
-  dim and `.toast` for the line. Two classes of its own — a dim that is one
-  element with a real cut-out, and a coach line that is not a rounded box —
-  are what it wants, and that is a change to that file on the day it is free.
-  → `docs/BACKLOG.md`
+  dim and `.toast` for the line, and the hand's pulse is `vopulse`, which was
+  already in the file. Two classes of its own — a dim that is one element with
+  a real cut-out, and a coach line that is not a rounded box — are what it
+  wants, and the line losing its box needs a colour that reads on the grey,
+  which is a colour and therefore that file's. → `docs/BACKLOG.md`
 
 **Newly stored:** nothing. `obTour` is where you are standing, so
 `viewReset()` drops it, the same as `KBH`.
