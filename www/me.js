@@ -314,7 +314,28 @@ function whoCard(h){
     '</div>'+
     '</div>';
 }
+/* Who you are on the timeline: the name, the handle, the face, the line about
+   yourself. All four are what OTHER PEOPLE see -- netAvSync() sends the face
+   and the profile row carries the rest -- so this is one of the things that
+   needs a name on the account, and it was the one that was not asked.
+
+   obNeed() guarded the six: a post, a like, a boost, a follow, a block, a
+   report. This is the seventh and was missed. Signed out, the sheet opened,
+   the fields took what was typed and saveMe() wrote it to the phone -- so
+   somebody who had signed out could still set the name and the face that
+   the timeline shows for them. 「ログアウトしてんのにプロフィール設定とか
+   できるのどこがログアウトなんだよ」
+
+   The SCREEN stays open, which is deliberate and is the rest of the same
+   sentence: every screen can be looked at, and it is DOING something that
+   asks who you are. 「全部の画面一通り見れるけど制作しようとするとログイン
+   求められる」
+
+   Nothing of ME is deleted by signing out. What somebody wrote about
+   themselves is theirs, and a sign-out that erased it would be the app
+   throwing away something a person made to prove a point about sessions. */
 function openMe(){
+  if(!obNeed()) return;
   /* Named after the page it is the settings for, through the one function
      that names a page. */
   openForm('me:', pageName('profile'),
