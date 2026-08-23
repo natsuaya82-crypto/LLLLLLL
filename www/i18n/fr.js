@@ -224,6 +224,7 @@ defLang('fr', (function(){
       "kb.dir.left"               : "Gauche",
       "kb.empty"               : "Vide",
       "kb.row.add"               : "Ajouter une rangée",
+      "kb.add.k" : "Ajouter une touche",
       "kb.row.ins" : "Ajouter une ligne ici",
       "kb.row.up" : "Au-dessus de cette ligne",
       "kb.row.down" : "En dessous de cette ligne",

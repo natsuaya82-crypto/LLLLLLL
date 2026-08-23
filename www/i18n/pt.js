@@ -183,6 +183,7 @@ defLang('pt', (function(){
       "kb.dir.left"               : "Esquerda",
       "kb.empty"               : "Vazio",
       "kb.row.add"               : "Adicionar uma linha",
+      "kb.add.k" : "Adicionar uma tecla",
       "kb.row.ins" : "Adicionar uma linha aqui",
       "kb.row.up" : "Acima desta linha",
       "kb.row.down" : "Abaixo desta linha",

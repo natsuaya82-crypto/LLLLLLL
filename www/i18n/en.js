@@ -78,6 +78,7 @@ defLang('en', (function(){
       "kb.dir.left"               : "Left",
       "kb.empty"               : "Empty",
       "kb.row.add"               : "Add a row",
+      "kb.add.k" : "Add a key",
       "kb.row.ins" : "Add a row here",
       "kb.row.up" : "Above this row",
       "kb.row.down" : "Below this row",

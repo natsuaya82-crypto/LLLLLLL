@@ -926,25 +926,39 @@ function kbAlign(how){
   tot=kbUsed(row);
   rem=kbCols(rows)-tot;
   if(rem>0){
-    lead = how==='r'? rem : (how==='c'? Math.floor(rem/2) : 0);
+    lead = how==='r'? rem : (how==='c'? kbLead(rem+tot, tot) : 0);
+    /* and right lands on a column for the same reason left already does */
+    if(lead%2) lead--;
     tail = rem-lead;
     if(tail>0) row.push(kbGap(kbGapW(tail)));
     if(lead>0) row.unshift(kbGap(kbGapW(lead)));
   }
   saveKb(); render();
 }
-/* The empty part of a short row, split so the keys sit in the middle of the
-   sheet rather than piled at its left. 「揃えて欲しい」
+/* How much empty goes BEFORE the keys of a short row, so they sit in the
+   middle of the sheet rather than piled at its left. 「揃えて欲しい」
 
      ・・・・・
      　・・・
 
-   A column is half a key, so a row is always short by a whole number of
-   halves and this always divides -- three keys in a board of five leave two,
-   which is one key each side and lands the row on the columns rather than
-   between them. What is left over when it does not divide is a half, and the
-   half goes on the right, which is where the QWERTY's own inset puts it. */
-function kbLead(cols, tot){ return Math.floor((cols-tot)/2); }
+   Rounded down to a whole KEY, and that is the whole of what this function is
+   for. A column is half a key, so half of what is left over is very often an
+   odd number of columns -- three keys on a sheet of ten leave fourteen, and
+   seven of those is three keys and a half. Put that in front and the row sits
+   BETWEEN the columns: every key on it straddles two, and the letters across
+   the top, which are the reason this is a sheet at all, stop naming anything
+   on that row. 「行の中央寄せした後列がずれてるのはどうなる？」
+
+   So the odd half goes to the other end instead. The row is off centre by
+   half a key, which nobody can see, and every key on it is on a column, which
+   is the thing the sheet is for.
+
+   One place, because the drawing of a short row and the button that aligns
+   one have to agree -- kbAlign() asks here too. */
+function kbLead(cols, tot){
+  var half=Math.floor((cols-tot)/2);
+  return half-(half%2);
+}
 function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick(),
       cols=ro? 0 : kbCols(lay.rows), at, b, lead, tot;
@@ -1006,6 +1020,10 @@ function kbHTML(sel, ro){
   if(!ro && kbRoomRow())
     out+='<div class="kbrow"><button class="kbk addrow"' + DO('kbAddRowNew') +
       ' aria-label="'+esc(t('kb.row.add'))+'">'+ICON_ADD+'</button></div>';
+  /* the band down the column being worked on, if one is */
+  if(!ro && KBH && KBH.k==='c' && KBH.i*2<cols)
+    out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(KBH.i*2)+');'+
+      'width:calc(100% / '+cols+' * '+Math.min(2, cols-KBH.i*2)+')"></span>'+out;
   return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
     (ro? '' : ' style="--kc:'+cols+'"')+'>'+out+'</div>';
 }
@@ -2055,11 +2073,13 @@ function kbCellW(w, cols){
 }
 function kbNewHTML(){
   var cols=kbCols(kbLayer().rows);
-  return '<div class="kbnew" id="kbnew">'+[1,2,3].map(function(w){
-    return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
-      ' data-w="'+w+'" style="width:'+kbCellW(w, cols)+'"'+
-      ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
-  }).join('')+'</div>';
+  return '<div class="kbnew" id="kbnew">'+
+    '<span class="kbnewl">'+esc(t('kb.add.k'))+'</span>'+
+    '<span class="kbnewr">'+[1,2,3].map(function(w){
+      return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
+        ' data-w="'+w+'" style="width:'+kbCellW(w, cols)+'"'+
+        ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
+    }).join('')+'</span></div>';
 }
 /* Which slot the alphabet is being opened for. */
 var kbSlotFor=null;

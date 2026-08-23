@@ -181,6 +181,7 @@ defLang('ru', (function(){
       "kb.dir.left"               : "Влево",
       "kb.empty"               : "Пусто",
       "kb.row.add"               : "Добавить ряд",
+      "kb.add.k" : "Добавить клавишу",
       "kb.row.ins" : "Добавить строку здесь",
       "kb.row.up" : "Над этой строкой",
       "kb.row.down" : "Под этой строкой",
