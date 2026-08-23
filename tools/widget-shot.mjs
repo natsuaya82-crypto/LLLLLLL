@@ -274,7 +274,7 @@ function html(cases, dark) {
 
   /* ClockFace, number for number. */
   const clock = (num, when) => {
-    const side = SIDE - 4;                        /* .padding(2) */
+    const side = SIDE;                            /* .padding(0) */
     const r = side / 2, cx = SIDE / 2, cy = SIDE / 2;
     const most = Math.max(...[...Array(12)].map((_, i) => places(i + 1, num).length));
     const widest = Math.max(...[...Array(12)].map((_, i) => widthOf(i + 1, num)));

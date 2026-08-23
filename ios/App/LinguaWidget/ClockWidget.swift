@@ -168,7 +168,11 @@ struct ClockFace: View {
        that does it (contentMarginsDisabled) could not be wrapped in an
        availability check that compiles, and build #89 is what said so.
        WidgetGround.swift carries the error. */
-    .padding(2)
+    /* Nothing. The overflow the old eight was hiding is fixed above -- the
+       ring pulls a wide numeral in by its own half-width now -- so there is
+       nothing left for a margin to protect. 「時計は今余白多すぎるから無くして
+       欲しいの」 */
+    .padding(0)
   }
 
   private func onRing(centre: CGPoint, r: CGFloat, hour: Double) -> CGPoint {
