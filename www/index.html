@@ -404,13 +404,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbedit.fn .kbec{grid-area:1/1}
 /* How tall the keys are, directly under them. No number and no label: the
    keyboard above is the readout, and it moves as the thumb moves. */
-.kbh{padding:10px 0 2px;display:flex}
-.kbrng{flex:1 1 auto;min-height:44px;background:none;-webkit-appearance:none;appearance:none}
-.kbrng::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:var(--line)}
-.kbrng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
-     width:26px;height:26px;margin-top:-11px;border-radius:50%;background:var(--gold)}
-.kbrng::-moz-range-track{height:3px;border-radius:3px;background:var(--line)}
-.kbrng::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:var(--gold)}
 /* A row is added where a row would be. It is drawn as the empty row it is
    about to become, not as a button somewhere else on the screen. */
 .kbk.addrow{flex:1 1 auto;color:var(--txm);background:none;
@@ -428,13 +421,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .lnin:focus{border-bottom-color:var(--goldln)}
 /* One slot of a key -- the key itself, or one of its four corners -- and what
    is in it. The same row shape either way, because they hold the same thing. */
-.kbslot{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;
-        background:none;border:0;border-bottom:1px solid var(--line);
-        color:var(--tx);font-family:inherit;padding:6px 2px;text-align:left}
-.kbslot .sl{flex:0 0 auto;color:var(--txs);font-size:.9rem;min-width:76px}
-.kbsv{flex:1;min-width:0;display:flex;align-items:center;gap:6px;color:var(--tx)}
-.kbsv canvas.tc{width:30px;height:30px;display:block}
-.kbsv .bch{font-size:1.2rem;line-height:1}
 .ph2{width:100%;min-height:44px;border:1px solid var(--line);background:var(--sf);
      border-radius:8px;color:var(--txs);font-size:.95rem;padding:6px 0;margin-bottom:2px;display:block}
 .ph2.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
@@ -479,7 +465,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .chead{padding:0 24px 6px}
 .chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
 .chap .rn{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.3rem}
-.chap .ct{font-family:var(--face-caps);font-size:1.6rem;font-weight:600}
 .chap .cn{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* As tall as what is left of the screen, so something can be put at the FOOT
@@ -552,10 +537,6 @@ canvas.pkc{width:34px;height:34px;display:block}
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* The composer, for somebody who has been ejected. At the top, before the
-   field, because finding out after typing is finding out too late. */
-.pwout{font-size:.9rem;color:var(--bad);border:1px solid var(--bad);
-       border-radius:10px;padding:8px 10px;margin-bottom:10px}
 /* ---------- a report, read ----------
    One card per report, and the reason is the small grey line: what a person
    reading these is looking at is what was SAID, not the five words the app
@@ -702,7 +683,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
-.pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
+.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
 .pwg{font-size:.76rem;color:var(--txm)}
 .pwg.none{color:var(--bad)}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
@@ -962,13 +943,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    A letter with nothing drawn on it shows only its name here. The pen on the
    alphabet page means "this one is waiting for you"; in the middle of
    spelling a word it means nothing, and twenty-eight of them mean less. */
-.ltgrid.ltpick{grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:5px}
-.ltgrid.ltpick .ltc{min-height:52px;padding:5px 2px 4px;gap:2px;border-radius:10px}
-.ltgrid.ltpick .ltcf{height:24px}
-.ltgrid.ltpick .ltc canvas.tc{width:24px;height:24px}
-.ltgrid.ltpick .ltc .bch{font-size:1.05rem}
-.ltgrid.ltpick .ltcn{font-size:.8rem}
-.ltgrid.ltpick .nol{display:none}
 /* Picked up: it rides over the others and follows the finger. */
 .ltc.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
 /* Held, the way a phone's home screen is held. The keyframes are the
@@ -1088,11 +1062,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .kbstepn{font-family:var(--face-ital);font-style:italic;
          color:var(--gold);font-size:1.1rem}
 .kbstept{font-size:1rem;color:var(--tx);margin:2px 0 6px}
-/* Whether what this chapter builds ever reached the phone. In the `?` sheet
-   now, with the steps it belongs to. */
-.kbout{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;
-       background:var(--pane)}
-.kbout.bad{border-color:var(--bad);color:var(--bad)}
 .sec{font-size:.82rem;letter-spacing:.28em;color:var(--txm);text-transform:uppercase;margin:28px 0 10px}
 .sec.secadd{display:flex;align-items:center;margin-right:-8px}
 .secplus{margin-left:auto;min-width:44px;min-height:44px;background:none;border:0;padding:0;
@@ -1261,9 +1230,6 @@ a.set{text-decoration:none}
 .docs a{color:var(--txm);text-decoration:none}
 .docs a:active{color:var(--gold)}
 .docdot{opacity:.5}
-/* Air between two groups of rows that are about different things. A heading
-   over each would be two headings on a screen with six rows on it. */
-.setgap{height:26px}
 /* Deleting something, wherever it is offered. It was written out as
    style="color:#c9553f" on six screens and once more in this file -- seven
    copies of one colour, none of which changed when the dark theme did. */
@@ -1529,8 +1495,6 @@ a.set{text-decoration:none}
    than the one you are looking at. They are different questions -- editing
    does not change what is under somebody's thumb in Messages -- and this row
    is where a person finds that out. */
-.kbbar{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
-.kbbar::-webkit-scrollbar{display:none}
 /* The chapter is a list: one keyboard is a row, and pressing it opens that
    keyboard's own page. It was a row of tabs above the editor, so the thing
    being chosen and the thing being changed were on the same screen and
@@ -1608,13 +1572,6 @@ a.set{text-decoration:none}
 .kbadd{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
        padding:10px 2px;border:0;background:none;color:var(--gold);
        font-family:inherit;font-size:.92rem;text-align:left}
-/* A keyboard is chosen by its SHAPE. The row was round patches reading 1 2 3,
-   which say which one is second and nothing about which one is the flick
-   board. 「マルパッチ禁止」 The tick still says which one is on the phone. */
-.kbtab{flex:0 0 auto;width:96px;min-height:52px;padding:7px 8px 6px;border-radius:10px;
-       border:1px solid var(--line);background:none;color:var(--txm);
-       font-family:inherit;font-size:.9rem;position:relative;
-       display:inline-flex;flex-direction:column;align-items:stretch;justify-content:center}
 /* The keyboard itself, shrunk: the real keys with the real letters on them,
    so what is being chosen between is what will be typed on. The glyphs are
    canvases and scale down with the box; `overflow:hidden` on the key is what
@@ -1634,16 +1591,6 @@ a.set{text-decoration:none}
 .kbsk .bch{font-size:6px;line-height:1}
 .kbsk svg{width:6px;height:6px}
 .kbsk .kbrm,.kbsk .kbf{display:none}
-.kbtab.on{border-color:var(--goldln);background:var(--goldsf)}
-/* The tick sits ON the picture rather than beside it: beside it the tile has
-   to grow to hold a mark that is about the tile. */
-.kbtab .kbon{position:absolute;top:3px;right:4px}
-.kbtab.add{width:44px;min-width:44px;padding:0;align-items:center;justify-content:center;
-           color:var(--gold);border-style:dashed}
-/* The two that undo things live behind this. At the far end, no outline: it
-   is a way out of the row rather than one more thing in it. */
-.kbtab.more{margin-left:auto;width:44px;min-width:44px;padding:0;
-            align-items:center;justify-content:center;border:0;color:var(--txm)}
 .kbon{display:inline-flex;color:var(--gold)}
 .kbon svg{width:14px;height:14px}
 /* ---------- choosing what shape a keyboard is ----------
@@ -1811,9 +1758,6 @@ a.set{text-decoration:none}
 .mkt{min-width:44px;min-height:44px;padding:0 12px;border:0;border-radius:999px;
      background:rgba(0,0,0,.42);color:#fff;font-family:inherit;font-size:.82rem;
      display:inline-flex;align-items:center;gap:7px}
-.mkdot{width:15px;height:15px;border-radius:50%;background:#111;
-       border:1px solid rgba(255,255,255,.65);flex:none}
-.mkdot.w{background:#fff}
 /* The field the line is typed into, and it IS the line: it sits on the
    picture, in the letters and the colour the line will be in, at the size it
    will be. There was a grey box at the foot of the screen as well, which said
@@ -1910,7 +1854,6 @@ a.set{text-decoration:none}
 /* What a post can be given: the camera, the pictures already on the phone,
    and the microphone. One plus stood for all three and only ever meant the
    second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
-.pwadd{display:flex;align-items:center;gap:10px}
 /* 46 across, not 44: the box is border-box and the file input inside it fills
    the CONTENT, so a 44 square with a 1px border gives a 42 target. */
 .pwab{flex:0 0 auto;position:relative;min-width:46px;height:46px;padding:0;
@@ -2049,7 +1992,6 @@ a.set{text-decoration:none}
           border:0;border-bottom:1px solid var(--line);border-radius:0}
 .field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
-.field input.hwf{font-family:var(--face-caps);font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
 /* A note on a word is a line or two, not a page. */
 .field textarea#wd-nt{height:76px}
@@ -2133,19 +2075,9 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wrd{font-family:var(--face-ital);font-size:1.14rem;color:var(--tx);margin:6px 2px 0;letter-spacing:.03em}
 .wsub{font-family:var(--face-ital);font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
 .wsub2{font-size:.88rem;color:var(--txm);margin:2px 2px 0}
-.pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:220px;overflow:auto}
 .pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
     border:1px solid var(--line);border-radius:11px;padding:7px 12px;color:var(--tx)}
 .pw:active{opacity:.55}
-.pw .pww{font-family:var(--face-caps);font-size:.98rem}
-.pw .pwm{font-size:.84rem;color:var(--txs)}
-.pw .pwm.dim{color:var(--txm);opacity:.6}
-.chk{margin-top:12px;font-size:.88rem;line-height:1.8;border-radius:12px;padding:11px 14px;border:1px solid var(--line)}
-.chk.ok{color:var(--txs);background:var(--goldsf);border-color:var(--goldln)}
-.chk.ng{color:var(--txs);background:var(--sf)}
-.chk b{color:var(--gold);font-family:var(--face-caps)}
-.chk button{display:block;margin-top:9px;background:none;border:1px solid var(--goldln);color:var(--gold);
-    border-radius:8px;padding:6px 13px;font-size:.86rem}
 .ipa{font-family:var(--face-ital);letter-spacing:.02em}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 24px);transform:translateX(-50%) translateY(10px);
        background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
@@ -2211,7 +2143,6 @@ html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .g
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
 .spv{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
 .spv .big{font-size:2.4rem;line-height:1.5;word-break:break-word}
-.spv .sm{font-size:17px;line-height:1.9;margin-top:6px;color:var(--txs);word-break:break-word}
 .spv .rom{font-family:var(--face-caps);font-size:.86rem;color:var(--txm);
           letter-spacing:.06em;margin-top:10px}
 /* The one switch the whole feature turns on. Everything it changes is a
@@ -2291,11 +2222,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .tfont{font-family:var(--face-type) !important}
 </style>
 <style id="ob-rework">
-.langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
-.lpo{padding:14px 12px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.03);color:inherit;font:inherit;font-size:1rem;cursor:pointer;transition:.15s;text-align:center;-webkit-tap-highlight-color:transparent}
-.lpo:active{transform:scale(.97)}
-.lo:hover,.lpo:hover{border-color:rgba(255,255,255,.35)}
-.lpo.on{border-color:#c9a86a;background:rgba(201,168,106,.14);color:#e9d9b0}
 .obtag{margin-top:20px;font-size:1.15rem;line-height:1.7;opacity:.92;text-align:center}
 /* The one place a corner stays on a button, and it is not ours to decide:
    Apple and Google both specify the shape of their own sign-in button, down

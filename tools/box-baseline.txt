@@ -21,10 +21,6 @@
 .cardbox | border-radius
 .chip | border
 .chip | border-radius
-.chk button | border
-.chk button | border-radius
-.chk | border
-.chk | border-radius
 .exlb | border
 .exlb | border-radius
 .fab | border-radius
@@ -47,36 +43,23 @@
 .kbk.addrow | border
 .kbmk | border-radius
 .kbnewt | border
-.kbout | border
-.kbout | border-radius
 .kbpat | border
 .kbpat | border-radius
 .kbring | border
 .kbring | border-radius
-.kbrng::-moz-range-thumb | border-radius
-.kbrng::-moz-range-track | border-radius
-.kbrng::-webkit-slider-runnable-track | border-radius
-.kbrng::-webkit-slider-thumb | border-radius
 .kbsk | border-radius
-.kbtab | border
-.kbtab | border-radius
 .link | border
 .link | border-radius
 .lock .tag | border
 .lock .tag | border-radius
 .lock | border
 .lock | border-radius
-.lpo | border
-.lpo | border-radius
 .ltc | border
 .ltc | border-radius
-.ltgrid.ltpick .ltc | border-radius
 .ltx | border-radius
 .meedit | border
 .meedit | border-radius
 .mkdone | border-radius
-.mkdot | border
-.mkdot | border-radius
 .mkh | border
 .mkr | border-radius
 .mkrng::-webkit-slider-runnable-track | border-radius
@@ -130,8 +113,6 @@
 .pw | border-radius
 .pwab | border
 .pwab | border-radius
-.pwout | border
-.pwout | border-radius
 .pwpic | border
 .pwpic | border-radius
 .pwpicn | border-radius
