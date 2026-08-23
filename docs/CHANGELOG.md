@@ -33,12 +33,22 @@ ALPHABET's tile, not a key, and is unchanged. `inkMid()` in `glyph.js` is the
 offset, read off the strokes' own points: the nib is the same width all the
 way round, so the middle of the points is the middle of the ink.
 
-`CODE CONFIRMED` — two claims in `kb-check`, **watched failing**: a letter
-drawn hard into a corner measures **27% and 24% of the key out of centre**
-with the class taken off, and 2% and 1% with it on. The couple of per cent is
-not slop — a stroke's ends are capped in the direction it was travelling, so
-an L reaches a nib further up and right than its points do. `DEVICE CONFIRMED`
-— **no.**
+**And it is the CONTOURS that are measured, not the points.** 「いろんな書き方
+してもちゃんと真ん中？」 — the ways of drawing do not agree about where the ink
+is. A stroke's ends are capped in the direction it was travelling; a round
+stroke bows outside its points; and a round stroke that is **closed** is a
+full circle through them, bulging a seventh of the square past the box those
+points make. Centred on the points, that one sat **6.5 pixels out of 48** and
+the other eight looked perfect. So the middle is taken from the polygons that
+are about to be filled — inside `inkStrokes()`, where they are already built,
+so nothing is computed twice and nothing can drift from what is drawn.
+
+`CODE CONFIRMED` — nine claims in `kb-check`, one per way of drawing, and
+**both bugs watched failing**: with `midink` off, a letter drawn into a corner
+sits 13 pixels out of a 48-pixel key; with the middle taken from the points,
+the closed ring sits 6.5 out. Everything passes within one pixel, which is the
+raster — an ink box has whole-pixel edges, so the middle of a narrow shape can
+only be hit to within one. `DEVICE CONFIRMED` — **no.**
 
 ### Not signing in opens the app, and the making is what asks — OWNER DECISION
 

@@ -1835,9 +1835,33 @@ function phkHTML(sym, call){
    through here, so a letter cannot look like one thing on a key and another
    on a picture somebody posts. The last two did not, and the letter under
    your finger was drawn by different code from the letter everywhere else. */
-function inkStrokes(x, st, k, ox, oy, col){
+/* `mid` stands the shape in the middle of the square it is being drawn in,
+   rather than where it sits in the lattice. It is done HERE, on the contours,
+   because the contours are the only honest answer to "where is the ink".
+
+   The points are not that answer, and the difference is not small: a stroke
+   of three points marked round and CLOSED is a full circle through them, and
+   it bulges a seventh of the square outside the box those three points make.
+   Measured on a key: dead centre by the contours, 13.5% out by the points.
+   Round, filled, capped -- every one of them puts ink where no point is. */
+function inkStrokes(x, st, k, ox, oy, col, mid){
   var cont=[];
   try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return; }
+  if(mid){
+    var mnx=1e9, mxx=-1e9, mny=1e9, mxy=-1e9;
+    cont.forEach(function(poly){
+      poly.forEach(function(p){
+        if(p[0]<mnx) mnx=p[0];
+        if(p[0]>mxx) mxx=p[0];
+        if(p[1]<mny) mny=p[1];
+        if(p[1]>mxy) mxy=p[1];
+      });
+    });
+    if(mnx<=mxx){
+      ox+=(800-(mnx+mxx))/2*k;
+      oy+=(800-(mny+mxy))/2*k;
+    }
+  }
   /* One path, filled once. Each contour used to be its own fill, which is
      invisible while every contour is a nib laid along a line and overlapping
      its neighbour squarely -- and not invisible at all once a filled area
@@ -1888,36 +1912,9 @@ function inkCanvases(sel, floor, dflt, stOf){
     c.width=S; c.height=S;
     /* and, where the caller asked for it, standing in the middle of the
        square rather than where it was drawn in the lattice */
-    var o=((' '+c.className+' ').indexOf(' midink ')>=0)? inkMid(st) : null;
-    inkStrokes(c.getContext('2d'), st, S/800,
-               o? o[0]*S/800 : 0, o? o[1]*S/800 : 0, cssVar('--tx'));
+    inkStrokes(c.getContext('2d'), st, S/800, 0, 0, cssVar('--tx'),
+               (' '+c.className+' ').indexOf(' midink ')>=0);
   }
-}
-/* How far to move a shape so that it stands in the middle of its square.
-
-   In lattice units, the same 0..800 the strokes are in, and read off the
-   POINTS: the nib is the same width all the way round a stroke, so it moves
-   both edges by the same amount and the middle of the points is the middle
-   of the ink. Null when there are no points, which is a letter with no shape
-   and nothing to draw anyway.
-
-   This is not where a letter belongs in general -- where a shape sits in its
-   own square IS the letter, and the font is written from it. It is what a KEY
-   wants: a square hit with a thumb, holding one letter and nothing else.
-   「キーボードに配置するときは中央に文字くるようにしてね？」 */
-function inkMid(st){
-  var i, j, p, mnx=1e9, mxx=-1e9, mny=1e9, mxy=-1e9;
-  for(i=0;i<st.length;i++){
-    for(j=0;j<st[i].pts.length;j++){
-      p=st[i].pts[j];
-      if(p[0]<mnx) mnx=p[0];
-      if(p[0]>mxx) mxx=p[0];
-      if(p[1]<mny) mny=p[1];
-      if(p[1]>mxy) mxy=p[1];
-    }
-  }
-  if(mnx>mxx) return null;
-  return [(800-(mnx+mxx))/2, (800-(mny+mxy))/2];
 }
 /* What a letter takes up standing beside the next one, and where its ink sits
    inside that -- in cell units, for one letter at a time.

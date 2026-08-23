@@ -511,45 +511,62 @@ const r = await pg.evaluate(({ s }) => {
 
   /* ---- 8. a letter on a key stands in the MIDDLE of the key ------------
      「キーボードに配置するときは中央に文字くるようにしてね？」
+     「いろんな書き方してもちゃんと真ん中？」
 
-     A shape drawn in a corner of the lattice was drawn in that corner of the
-     key: where a letter sits in its own square is the FONT's business, and a
-     key is not a place in a line of writing -- it is a square somebody hits
-     with a thumb.
+     A shape drawn into a corner of the lattice was drawn in that corner of the
+     key. Where a letter sits in its own square IS the letter -- the font is
+     written from it, and the alphabet's tile goes on showing it -- but a key
+     is not a place in a line of writing. It is a square hit with a thumb.
 
-     Read off the PAINTED canvas, not off the offset that was handed to it: a
-     check that works the offset out again is a copy of the thing under test
-     and agrees with it whatever it does. So the strokes go into a corner,
-     the real key is drawn, and the ink's own middle is measured in pixels. */
+     Asked of EVERY WAY there is of drawing one, because the ways do not agree
+     about where the ink is. A stroke's ends are capped in the direction it
+     was travelling; a round stroke bows outside its points; a round stroke
+     that is CLOSED is a full circle through them and bulges a seventh of the
+     square past the box those points make. Centred on the points, that last
+     one sat 13.5% off and the other nine looked perfect.
+
+     Read off the PAINTED canvas, never off the offset handed to it: a check
+     that works the offset out again is a copy of the thing under test and
+     agrees with it whatever it does. */
   fresh();
   SET.plan = 'free';
   var kl = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
-  if (kl) {
-    /* hard into the top left quarter of the lattice */
-    kl.st = [{ pts: [[120, 120], [120, 300], [280, 300]] }];
+  out.midWays = [];
+  [ ['straight',    [{pts:[[400,120],[400,680]]}]],
+    ['into a corner',[{pts:[[120,120],[120,300],[280,300]]}]],
+    ['flat',        [{pts:[[100,400],[700,400]]}]],
+    ['one dot',     [{pts:[[220,220]]}]],
+    ['round',       [{pts:[[300,200],[500,400],[300,600]], k:'o'}]],
+    ['round, closed',[{pts:[[300,200],[500,400],[300,600]], k:'o', closed:true}]],
+    ['filled',      [{pts:[[200,200],[600,200],[600,600],[200,600]], fill:true, closed:true}]],
+    ['small, low right',[{pts:[[600,600],[700,700]]}]],
+    ['two strokes', [{pts:[[150,150],[150,650]]},{pts:[[150,400],[650,400]]}]]
+  ].forEach(function(w){
+    if (!kl) return;
+    kl.st = JSON.parse(JSON.stringify(w[1]));
     saveLetters();
     document.getElementById('app').innerHTML = vKb();
     geTiles();
     var kc = document.querySelector('#kb .kbk[data-lt="' + kl.id + '"] canvas.tc');
-    out.keyCanvas = !!kc;
-    if (kc) {
-      var W = kc.width, H = kc.height,
-          px = kc.getContext('2d').getImageData(0, 0, W, H).data,
-          x, y, mnx = 1e9, mxx = -1, mny = 1e9, mxy = -1;
-      for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
-        if (px[(y * W + x) * 4 + 3] < 40) continue;
-        if (x < mnx) mnx = x;
-        if (x > mxx) mxx = x;
-        if (y < mny) mny = y;
-        if (y > mxy) mxy = y;
-      }
-      out.keyInk = mxx >= 0;
-      /* how far the ink's middle is from the canvas's, as a fraction of the
-         canvas -- 0 is dead centre, and drawn in a corner it was 0.2 */
-      out.keyOffX = mxx < 0 ? 1 : Math.abs(((mnx + mxx) / 2 - W / 2) / W);
-      out.keyOffY = mxx < 0 ? 1 : Math.abs(((mny + mxy) / 2 - H / 2) / H);
+    if (!kc) { out.midWays.push([w[0], -1, -1]); return; }
+    var W = kc.width, H = kc.height,
+        px = kc.getContext('2d').getImageData(0, 0, W, H).data,
+        x, y, mnx = 1e9, mxx = -1, mny = 1e9, mxy = -1;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      if (px[(y * W + x) * 4 + 3] < 40) continue;
+      if (x < mnx) mnx = x;
+      if (x > mxx) mxx = x;
+      if (y < mny) mny = y;
+      if (y > mxy) mxy = y;
     }
-  }
+    /* in PIXELS of the canvas, not as a fraction of it: the ink's box has
+       whole-pixel edges, so on a key this size the middle can only be hit to
+       within half a pixel either way, and a narrow shape lands a whole one
+       out. That is the raster, not the placing. */
+    out.midWays.push(mxx < 0 ? [w[0], -1, -1] : [w[0],
+      Math.abs((mnx + mxx) / 2 - W / 2),
+      Math.abs((mny + mxy) / 2 - H / 2), W]);
+  });
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -650,16 +667,15 @@ say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
-say(r.keyCanvas && r.keyInk, 'a letter drawn into a corner of the lattice is on its key');
-/* Not zero, and the couple of per cent is not slop: the ink's box is not
-   the points' box. A stroke's ends are capped in the direction it was
-   travelling, so an L drawn top-left to bottom-right reaches a nib further
-   up and further right than its points do. What the check is about is the
-   difference between a letter in the middle and a letter in the corner, and
-   drawn in that corner it measures a fifth of the key out. */
-say(r.keyOffX < 0.05 && r.keyOffY < 0.05,
-    'and it stands in the MIDDLE of the key, not in that corner (off by '
-    + Math.round(r.keyOffX * 100) + '%, ' + Math.round(r.keyOffY * 100) + '%)');
+/* One pixel, not nothing: the ink's box has whole-pixel edges, so the middle
+   of a narrow shape can only be hit to within one. What this is about is much
+   larger -- a letter drawn into a corner sits THIRTEEN pixels out of a
+   forty-eight-pixel key, and a closed ring centred on its points sits six. */
+r.midWays.forEach(function(w){
+  say(w[1] >= 0 && w[1] <= 1.05 && w[2] <= 1.05,
+      'a letter drawn ' + w[0] + ' stands in the middle of its key (off by '
+      + (w[1] < 0 ? 'nothing drawn' : w[1] + 'px, ' + w[2] + 'px of ' + w[3]) + ')');
+});
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +
