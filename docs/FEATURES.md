@@ -52,7 +52,7 @@ Marked separately, because they are not the same question:
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
-| **Import letters drawn on paper (the sheet)** | planned | — | `sheet`: the whole road | slice `letters` | partial |
+| **write — letters brought in on a sheet** | planned | — | **Pro**: the whole road | slice `letters` | partial |
 | Export CSV | shipped | — | `data` | none | decided |
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
@@ -384,10 +384,30 @@ The order is in `docs/FEATURE_RULES.md` § the order:
 
 ---
 
-## Import letters drawn on paper — the sheet
+## write — letters brought in on a sheet
 
-**OWNER DECISION 2026-08-23.** Plus only. The app hands out a PDF, somebody
-draws on it, and hands it back; what they drew becomes letters.
+**OWNER DECISION 2026-08-23.** **Pro** only -- the top tier, which is the one
+`claude/save` is renaming from Plus as this is written. The app hands out a PDF,
+somebody draws on it, and hands it back; what they drew becomes letters.
+
+**There are two ways a letter gets made, and they have names.**
+「今の点線をなぞるのは make、書いて入れるのは write っていう違いがある」
+
+    make    traced on the dotted lines, in the app. Every letter today.
+    write   drawn somewhere else and brought in on a sheet.
+
+**They can be shown apart, wherever letters are listed -- the keyboard editor
+included.** 「一応、make と write を分けて表示させることができるようにしようぜ、
+キーボード作る時でも」
+
+That is a field on a letter, and it is the one thing here that changes what is
+stored. It goes on at the moment the letter arrives and is never worked out
+again afterwards (`docs/DATA_MODEL.md`): **absent means make**, so not one
+letter that exists today is touched and there is no migration.
+
+It also happens to be the mechanism the paragraph on a lapsed plan needs: a
+Pro road's letters are already a group of their own, so hiding them is hiding a
+group rather than picking through an alphabet.
 
 Decided:
 
@@ -395,6 +415,39 @@ Decided:
   800-unit square, so reading it back is mapping a box onto 0..800 and nothing
   more. Three filled marks at three corners of each box and none at the fourth:
   three points give the transform and the missing one gives the orientation.
+- **Twenty boxes to a sheet, which makes the box 38mm on A4.** Names are typed
+  in comma-separated. The number is not a taste: 38mm is the size that serves
+  BOTH roads. Drawn on a screen the box size does not matter at all -- you zoom,
+  and what arrives is a line, not a picture -- so the number is set by paper,
+  where it was measured. A whole free alphabet is 38 letters and therefore two
+  sheets, which is not 「何枚も」.
+- **Both roads, and they are not the same road.** 「紙が本当にできるならこっちは
+  両方対応にしたい」
+
+  | | comes in as | editable | the brush's thick and thin |
+  |---|---|---|---|
+  | drawn on a screen | strokes | yes | **lost** -- the app redraws with its own 24-wide pen |
+  | drawn on paper | a shape | no | **kept** |
+
+  The one that looks harder is the one that keeps what a calligrapher actually
+  made. Measured, geometry only, against a letter the app made as the truth:
+  printed, photographed badly, marks found, un-warped, thresholded, traced.
+
+  | | box | tilt | furthest off |
+  |---|---|---|---|
+  | scanner | 38mm | 1.2° | 4 |
+  | held in a hand | 38mm | 6° | 4 |
+  | carelessly | 38mm | 12° | 6 |
+  | very skewed | 38mm | 20° | 8 |
+  | carelessly | 23mm | 12° | 8 |
+  | carelessly | 54mm | 12° | 4 |
+
+  Units of an 800 em, against a pen 24 wide -- a third of the pen at the worst,
+  with a lighting gradient over it, and the three marks found every time. What
+  that measurement does NOT cover, said plainly so nobody reads it as more than
+  it is: **real ink**. It blurred clean vector ink; a brush bleeds into paper
+  and goes dry, and its edge is not a step. The owner is testing that with a
+  real sheet before release.
 - **What is on the sheet is chosen in the app.** Type what you want boxes for
   and the PDF is for those. It needs to know nothing about writing systems:
   a logography's signs are letters too in this app (`wsys.js`: *a letter reads a
