@@ -1182,6 +1182,7 @@ defLang('ko', (function(){
       "read.sep"         : "　",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
+      "tab.day"  : "오늘",
       "day.date"         : "{0}월 {1}일",
       "day.ask"          : "당신의 언어로?"
     }

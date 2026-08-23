@@ -1014,6 +1014,7 @@ defLang('pt', (function(){
       "read.sep"         : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
+      "tab.day"  : "Hoje",
       "day.date"         : "{1}/{0}",
       "day.ask"          : "Na sua própria língua?"
     }

@@ -1012,6 +1012,7 @@ defLang('zh', (function(){
       "read.sep"         : "　",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
+      "tab.day"  : "今日",
       "day.date"         : "{0}月{1}日",
       "day.ask"          : "用你自己的语言？"
     }

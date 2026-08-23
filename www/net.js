@@ -958,6 +958,19 @@ function netDay(ok){
     function(d){ ok(d && d.length? d[0] : null); },
     function(){ ok(null); });
 }
+/* Everyone's answers to one day, newest first. One query and not a search:
+   `prompt` is a column with an index behind it (post_prompt_idx), which is
+   why the link was never a word in the text. */
+function netDayPosts(pid, ok, bad){
+  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+         '&prompt=eq.'+encodeURIComponent(pid)+
+         '&order=created_at.desc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i;
+      for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+      ok(out);
+    }, bad);
+}
 function netPush(post, ok, bad){
   var row, pid, up;
   if(!netMember() || !post){ bad(null, 0); return; }

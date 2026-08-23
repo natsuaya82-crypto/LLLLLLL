@@ -922,6 +922,7 @@ defLang('en', (function(){
       /* how IPA and reading are joined when both are shown */
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
+      'tab.day'  : 'Today',
       'day.date'        : '{0}/{1}',
       'day.ask'         : 'In your own language?',
       'read.sep'        : "  "
