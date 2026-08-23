@@ -233,6 +233,52 @@ const R = await pg.evaluate(() => {
                'is merely not listed must go into the file whole');
   WORDS = keepW; SET.plan = keepPlan; save();
 
+  /* ---- and the same sentence for keyboards, which is the one a third plan
+     is about to write ------------------------------------------------------
+     The words half above holds a language built on a paid plan and brought
+     back down: the LIST is short, the lookup still finds, and the file goes
+     out whole. Nothing said the same about keyboards, and a plan that allows
+     ONE of them -- 「文字+キーボード自由（1個）」 -- is the moment somebody
+     writes the ceiling into the wrong place.
+
+     There are three wrong places and only the first is visible:
+
+       kbOf()      SHOULD go short. On a plan with no keyboard of your own it
+                   answers kbFixed(), and that is the plan working.
+       kbStored()  must NOT. It is what is on the disk, and a plan decides
+                   what somebody may DO.
+       bkPack()    must NOT. A keyboard that is merely not offered has to go
+                   into the file whole, or the backup is short for exactly
+                   the people who paid and then stopped.
+
+     Same shape as the dictionary, and the same reason: it would look
+     perfectly correct on every phone whose owner is still paying. */
+  const keepKB = KB, keepPlan2 = SET.plan;
+  SET.plan = 'plus';
+  KB = { kbs: [{ nm: 'one',   pat: 'qwerty', lay: [{ rows: [[{ k: 'lt', v: 'a' }]] }] },
+               { nm: 'two',   pat: 'flick',  lay: [{ rows: [[{ k: 'lt', v: 'b' }]] }] },
+               { nm: 'three', pat: 'tap',    lay: [{ rows: [[{ k: 'lt', v: 'c' }]] }] }],
+         at: 2 };
+  saveKb();
+  SET.plan = 'free'; save();
+  if (kbStored().length !== 3)
+    fails.push('a language with three keyboards dropped to a plan that offers ' +
+               'none, and the disk now holds ' + kbStored().length + '. A plan ' +
+               'decides what somebody may DO and nothing about what exists.');
+  const packedKb = JSON.parse(JSON.parse(JSON.stringify(bkPack())).slice.kb || 'null');
+  const packedN = (packedKb && packedKb.kbs) ? packedKb.kbs.length : 0;
+  if (packedN !== 3)
+    fails.push('the backup of a language on a plan with no keyboard carries ' +
+               packedN + ' of its three. A keyboard that is merely not offered ' +
+               'has to go into the file whole -- otherwise the backup is short ' +
+               'for exactly the people who paid and then stopped.');
+  const shownRows = (kbOf() && kbOf().lay && kbOf().lay[0] && kbOf().lay[0].rows) || [];
+  if (!shownRows.length)
+    fails.push('the free plan shows no keyboard at all. It is supposed to show ' +
+               'the fixed QWERTY -- going short on the SCREEN is the plan ' +
+               'working; going short on the disk is the bug this is about.');
+  KB = keepKB; saveKb(); SET.plan = keepPlan2; save();
+
   return { fails, before, back, name, missing, no: packed.n,
            kb: +(file.length / 1024).toFixed(1) };
 });
