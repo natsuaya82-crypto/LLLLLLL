@@ -719,6 +719,33 @@ export function halfDone(){
         PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
                     marks:[]}];
         openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* A picture with marks already put on it. The count in the corner only
+       exists once there is something to count -- www/post.js pwpicn -- so a
+       composer whose pictures are bare draws no number anywhere. */
+    ['a photograph with marks on it', () => {
+        openPost();
+        PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+                    marks:[{x:.3, y:.4, w:'kano'}, {x:.7, y:.6, w:'mos'}]}];
+        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* A line long enough for the composer to start counting down. It says
+       nothing until forty are left, so a composer with a short line in it --
+       every other one here -- never draws the number. And once past the end,
+       where the same number goes red. */
+    ['a post running out of room', () => {
+        openPost();
+        PW.ln = Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('');
+        openPost(); const h = FORM.html + pwLeftHTML(); PW = pwBlank(); return h; }],
+    ['a post past the end of the room', () => {
+        openPost();
+        PW.ln = Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('');
+        openPost(); const h = FORM.html + pwLeftHTML(); PW = pwBlank(); return h; }],
+    /* And a post that has been edited since it was sent, which is a mark on
+       somebody's own post and on nobody else's. */
+    ['a post that was edited', () => {
+        const keep = POSTS;
+        POSTS = keep.map((p, i) => i ? p : Object.assign({}, p, { ed: 1 }));
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); POSTS = keep; return h; }],
     /* And a post carrying the most it may. The plus is gone at four and the
        strip slides, so the composer with four pictures on it is a different
        screen from the composer with one. */
@@ -763,6 +790,26 @@ export function halfDone(){
     ['a key of the keyboard, opened', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = FORM.html; KB = null; kbShow = 0;
+                                              SET.plan = 'free'; return h; }],
+    /* A FLICK keyboard, which is the other half of the editor and the only
+       one that has corners. kbSlotsShown() is true when the board's pattern
+       is 'flick' or when a key already carries something in one of its four,
+       and a qwerty has neither -- so on the qwerty seeds above a key opens
+       with one slot in the middle and the four directions are on no screen
+       at all. Four classes were unworn for that reason alone: kbeu kbel kber
+       kbed, www/keyboard.js kbKeyHTML(). */
+    ['a key of a flick keyboard, opened', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                                  kbAdd('flick'); kbLay = 0; kbPick(0, 0);
+                                                  const h = FORM.html; KB = null; kbShow = 0;
+                                                  SET.plan = 'free'; return h; }],
+    /* And the board itself, where the four corners of every key are drawn on
+       the key: kbFlicks(key, slots) puts a letter in a corner that has one
+       and a dot in a corner that is empty -- kbf and kbfx -- and it is passed
+       slots:false everywhere the keyboard is only being SHOWN. */
+    ['a flick keyboard, being built', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                              kbAdd('flick'); kbLay = 0;
+                                              window.route = 'kb'; NAV = [{ r:'kb', a:'1' }];
+                                              const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
@@ -1019,6 +1066,61 @@ export function halfDone(){
                                          return vRelate(); }],
     ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;
                                          return FORM.html + pkCharsHTML(); }],
+    /* The same sheet for a letter that already has one borrowed. Taking it
+       back off is the only thing on the sheet that depends on there being
+       something there -- www/home.js pkclear -- so on a bare letter it is on
+       no screen. */
+    ['a character already borrowed', () => { const l = ltById('l1');
+                                             const was = l ? l.ch : '';
+                                             if (l) l.ch = '\u3042';
+                                             openPick('l1'); const h = FORM.html;
+                                             if (l) l.ch = was; return h; }],
+    /* A word with no meaning on it yet, and a word with more than one. The
+       dictionary numbers the meanings only when there are two to tell apart
+       -- www/words.js sn -- and says "add one" only when there are none --
+       nomn. Every word the fixture holds has exactly one, so neither line is
+       on any screen without this. */
+    ['the dictionary, with a word unfinished and a word with two meanings', () => {
+        const keep = WORDS;
+        WORDS = keep.concat([{ hw:'vel', ph:['v','e','l'], mns:[], pos:'n', at:11 },
+                             { hw:'dros', ph:['d','r','o','s'],
+                               mns:['a bank of a river','an edge'], pos:'n', at:12 }]);
+        window.route = 'words'; NAV = [{ r:'words' }];
+        const h = vWords(); WORDS = keep; return h; }],
+    /* A stage that has been finished. A stage is done when its slots, its
+       decisions and the one thing it has to SAY are all answered -- www/
+       phases.js stIsDone -- and the fixture finishes none of them, so the
+       mark on a finished row is on no screen. A part with no slots and no
+       decisions is finished by saying what it does, which is one line. */
+    ['the stages, with one finished', () => {
+        const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
+                  || stAll()[0];
+        const was = stRules(p.id);
+        stSetRules(p.id, 'a name is a word that stands for a thing');
+        window.route = 'gram'; NAV = [{ r:'gram' }];
+        const h = vGram(); stSetRules(p.id, was); return h; }],
+    /* A character another letter has already taken. The picker dims it rather
+       than hiding it, because which letter has it is worth seeing -- and
+       chTaken() is empty in a language that has borrowed nothing, so the dim
+       face is on no screen. www/home.js had. */
+    ['a character another letter has taken', () => {
+        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
+        const ch = w.ch.split(' ')[0];
+        const other = LETTERS.filter(l => l.id !== 'l1')[0];
+        const was = other ? other.ch : '';
+        if (other) other.ch = ch;
+        openPick('l1'); const h = FORM.html + pkCharsHTML();
+        if (other) other.ch = was; return h; }],
+    /* A language with its page turned off. The word that says so sits beside
+       the name and nowhere else -- www/home.js wldoff -- and hide is absent
+       by default, which is what makes it public. */
+    ['a language whose page is hidden', () => { const w = world();
+                                                const was = w.hide; w.hide = true;
+                                                window.route = 'profile'; NAV = [{ r:'profile' }];
+                                                const h = vProfile();
+                                                if (was === undefined) delete w.hide;
+                                                else w.hide = was;
+                                                return h; }],
     ['an abugida being placed',  () => { SET.wsys='abugida';
                                          LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
                                                        ch:'', nm:'', snd:['a']});
