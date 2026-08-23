@@ -121,6 +121,11 @@ var OB_DRAW=0, OB_ROM=1, OB_TOUR=2, OB_NAME=3, OB_IN=4;
    would have said, and it is the pad's aria-label -- a finger is not
    something VoiceOver can read out. */
 var OB_TOUR_STOPS=[
+  /* The app, and the way into the making side. It was missing and the walk
+     began ON the making screen -- which is the one screen somebody arriving
+     has not been shown how to reach. 「制作ボタン押してキーボードの画面開いて
+     とかないよ？」 */
+  { r:'profile', a:'', tab:'build', lab:'ob.tour.tab' },
   { r:'build', a:'', go:'kb', lab:'ob.tour.build' },
   /* The free plan has no LIST of keyboards -- board 0 is the keyboard and the
      chapter opens straight onto it -- so the owner's fourth and fifth stops
@@ -236,8 +241,14 @@ function obTourHTML(){
 
        It is in the MARKUP rather than written onto the element afterwards, and
        that is not a detail either: act-check reads what a screen RETURNS, so a
-       name set on the live DOM is a name nothing can check. */
-    ((st.lt || !b)? '<button class="obpad"' + DO('obTourNext') +
+       name set on the live DOM is a name nothing can check.
+
+       Called obtap and NOT obpad, which is taken: .obpad is the square the
+       first letter is drawn in, and it carries a size and `margin:8px auto 0`.
+       A fixed element wearing it keeps its own left and top and takes the
+       8px anyway, so the tap target sat eight pixels below the thing it was
+       supposed to be over -- invisibly, because it has no colour. */
+    ((st.lt || !b)? '<button class="obtap"' + DO('obTourNext') +
               ' style="position:fixed;background:none;z-index:42;'+
               (b? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
                   'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
@@ -259,14 +270,33 @@ function obTourHTML(){
    is in it cannot be broken by an escape. */
 function obTourFind(st){
   if(st.spot) return document.querySelector(st.spot);
+  /* A tab of the bar at the foot. It is its own case rather than the route
+     match below, because the bar says goTab and a row says go, and a screen
+     can hold both for the same route. */
+  if(st.tab) return obTourArg('.tabbar [data-do="goTab"]', st.tab);
   /* The key the letter just drawn is on. kbHTML() puts the letter's id on
-     every letter key, so this is the one place that has to agree with it. */
-  if(st.lt) return ob.lid? document.querySelector('#kb .kbk[data-lt="'+ob.lid+'"]') : null;
+     every letter key, so this is the one place that has to agree with it.
+
+     It is allowed not to be there, and that is not an edge case: the step
+     before this one does not make anybody say which letter of the alphabet
+     they have drawn -- 「選ばなくても出られる」 -- and a shape nobody has put
+     a name to is on no key of a QWERTY, because a QWERTY finds its keys by
+     name. The keyboard itself is what is lit then. It is the true sentence
+     in both cases: this is where your letters are. */
+  if(st.lt) return (ob.lid && document.querySelector('#kb .kbk[data-lt="'+ob.lid+'"]'))
+                   || document.querySelector('#kb');
   if(!st.go) return null;
-  var els=document.querySelectorAll('[data-do="go"]'), i, a;
+  return obTourArg('[data-do="go"]', st.go);
+}
+/* The one of these whose first argument is this. A row's argument is JSON
+   inside an attribute, and matching that with a selector is matching somebody
+   else's quoting; reading the attribute and comparing what is in it cannot be
+   broken by an escape. */
+function obTourArg(sel, want){
+  var els=document.querySelectorAll(sel), i, a;
   for(i=0;i<els.length;i++){
     try{ a=JSON.parse(els[i].getAttribute('data-a')||'[]'); }catch(e){ a=[]; }
-    if(a[0]===st.go) return els[i];
+    if(a[0]===want) return els[i];
   }
   return null;
 }
@@ -843,7 +873,11 @@ function obRomHTML(){
    drawn ended up. obTourGo() sends the app to the first stop rather than
    drawing a picture of one. */
 function obRomDone(){
-  if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid);
+  /* Saved without a word about it. 「a updateってなに？いらん」 The toast is
+     the letter page's Save answering; here the screen changes underneath, and
+     a line saying "a updated" over the next question is an answer to a
+     question nobody asked. */
+  if(ob.lid && ltDraft && ltDraft.id===ob.lid) ltSave(ob.lid, true);
   obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
 
@@ -883,11 +917,31 @@ function obStrokes(){
    which is the one place CLAUDE.md's rule against explaining is not about --
    the rule is that a SCREEN does not explain itself, and the onboarding is
    not a screen somebody arrives at, it is what the app is until it is done. */
+function obCoachSay(n){ return t(n? 'ob.coach.drawn' : 'ob.coach.draw'); }
 function obCoach(n){
   /* .obsub, which is the line this step already had -- what changes is the
      words, and the words changing IS the coaching. No new class, because
      www/index.html is another session's file today. */
-  return '<p class="obsub">'+esc(t(n? 'ob.coach.drawn' : 'ob.coach.draw'))+'</p>';
+  return '<p class="obsub">'+esc(obCoachSay(n))+'</p>';
+}
+/* And the step answers the hand WHILE the hand is drawing.
+
+   Drawing does not redraw the screen -- geDraw() paints the canvas and
+   geTools() wakes the rail, and neither of them is the step. So the line
+   above the canvas went on saying "draw a letter" over a drawn letter, and
+   the button that ENDS the step stayed down: the first screen of the app,
+   with a letter on it, and no way on. It only came alive if you happened to
+   press one of the tools, because those redraw everything.
+
+   This is geTools() for the two things the STEP owns, called from the same
+   place, and the words are obCoachSay()'s in both. */
+function obDrawTick(){
+  if(SET.done || ob.step!==OB_DRAW) return;
+  var n=obStrokes(),
+      p=document.querySelector('.ob .obsub'),
+      b=document.querySelector('.ob [data-do="obDone"]');
+  if(p) p.textContent=obCoachSay(n);
+  if(b) b.disabled=!n;
 }
 function obDrawHTML(){
   if(!GE) GE=newGE('');

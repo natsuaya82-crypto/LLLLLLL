@@ -272,6 +272,7 @@ defLang('ru', (function(){
       "ob.borrow.h"               : "Заимствованная буква",
       "ob.borrow.sub"             : "　",
       "ob.borrow.take"            : "　",
+      "ob.tour.tab" : "Откройте «Создание».",
       "ob.tour.build" : "Нажмите на клавиатуру.",
       "ob.tour.kb1" : "Ваша буква попала сюда.",
       "ob.coach.draw" : "Проведите линию пальцем.",
@@ -610,12 +611,12 @@ defLang('ru', (function(){
       /* знакомство */
       "ob.next"           : "Дальше",
       "ob.rom.h"           : "Какая это буква?",
-      "ob.name.h"         : "Название языка",
+      "ob.name.h"         : "Как называется ваш язык?",
       "ob.name.sub"       : "　",
       "ob.name.ph"        : "название",
       "ob.name.note"      : "Можно изменить позже",
       "ob.name.later"      : "Решить позже",
-      "ob.draw.h"        : "Нарисуйте одну букву",
+      "ob.draw.h"        : "Как выглядит ваша первая буква?",
       "ob.draw.later"     : "Нарисовать позже",
       /* the writing system */
       "script.show"     : "Показывать",

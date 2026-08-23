@@ -520,7 +520,13 @@ function tabPaint(){
      it is open -- it is a thing being written -- and the room the bar takes
      is room the picture row needs. 「投稿画面にはホーム画面とかの下タブは要らない」 */
   var one = here().r==='form' && FORM && FORM.fit;
-  var sig = (SET.done && !one) ? (here().r+'|'+uiLang()) : '';
+  /* And the walk through the app has it, because the walk IS the app: the
+     onboarding is not done, so this used to hide the bar on every screen the
+     walk stands on -- and the first thing the walk points at is the tab that
+     opens the making side. 「制作ボタン押してキーボードの画面開いてとかないよ？」
+     Everything before the walk -- drawing, the alphabet, the name -- is a
+     screen of the onboarding's own and still has no bar. */
+  var sig = ((SET.done || obTourOn()) && !one) ? (here().r+'|'+uiLang()) : '';
   if(host.getAttribute('data-sig')===sig) return;
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';

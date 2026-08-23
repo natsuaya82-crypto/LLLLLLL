@@ -139,7 +139,7 @@ const R = await pg.evaluate(async () => {
          at the wrong letter. */
       const cn = ' ' + e.className + ' ';
       if (cn.indexOf(' kbk ') >= 0 || cn.indexOf(' kbcl ') >= 0 ||
-          cn.indexOf(' kbn ') >= 0 || cn.indexOf(' obpad ') >= 0) {
+          cn.indexOf(' kbn ') >= 0 || cn.indexOf(' obtap ') >= 0) {
         if (r.height >= TAP) continue;
       } else
       if (r.width >= TAP && r.height >= TAP) continue;

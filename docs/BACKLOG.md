@@ -7,6 +7,45 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## The onboarding adds a 29th letter on the free plan — OWNER DECISION NEEDED
+
+Walking the flow from a blank phone: draw a stroke, answer `a` to "which
+letter is it?", and the alphabet holds **39 letters with two of them called
+`a`** — the base slot `ltStart()` made, empty, and the one just drawn.
+
+`obDone()` calls `ltNew()`, which makes a letter. It does that on every plan.
+CLAUDE.md says the free plan is *your own shapes for a-z and 0-9* and that
+**nothing on the free plan adds a letter, deletes one or renames one** — so
+this is code disagreeing with a written rule, and `docs/FEATURE_RULES.md` says
+the code does not win by being real.
+
+What it costs, beyond the duplicate: **the free QWERTY finds its keys by name**
+(`kbNamed('a')` walks `LETTERS` and takes the first), so the key marked `a` is
+the empty slot, and the shape somebody just drew is on no key at all. The
+onboarding's own sentence — 「今書いた文字はここに入ったよ」 — is not true on
+the free plan today. The walk lights the whole keyboard instead of one key,
+which is at least a true statement, and that is a fallback rather than the
+answer.
+
+The decision is what happens to a shape at the moment somebody names it, and
+there are three shapes it could take. None of them is a tool's to choose:
+
+1. **The shape goes onto the slot.** Naming it `a` writes the strokes onto the
+   base `a` and the loose letter goes. That is a DELETE and needs a DELETE
+   REVIEW; it is also the only one where the keyboard promise comes true.
+2. **Nothing is created until it is named.** `obDone()` keeps the strokes in
+   `ob`, and the rom step writes them wherever the answer points — a slot on
+   free, a new letter where the plan allows one. Nothing is ever deleted.
+   Leaves open: what happens on free when somebody names nothing, which is
+   allowed today.
+3. **Leave it.** The alphabet holds a duplicate, the keyboard shows the empty
+   slot, and the walk lights the keyboard rather than the key.
+
+(2) deletes nothing and is the smallest change to what a person sees, but its
+open question is real: a shape with no name has nowhere to go on a plan whose
+alphabet is fixed. Free could require an answer before Next — which is a
+change to what the step is, and therefore also the owner's.
+
 ## The tour cuts its hole with four panes
 
 `obTourHTML()` dims the screen with **four `.sbg` panes** laid around the lit

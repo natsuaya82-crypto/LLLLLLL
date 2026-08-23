@@ -15,6 +15,53 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### Walking the onboarding from a blank phone, and the four things it turned up
+
+The whole flow was driven for real — no fixture, no seeded language, an empty
+`localStorage` — and photographed screen by screen: draw, which letter, the
+app, the making screen, the keyboard, the name, the door. 「流れそのまま」
+Four things came out of it.
+
+**The button that ends the drawing step was dead.** Drawing does not redraw the
+screen — `geDraw()` paints the canvas and `geTools()` wakes the rail, and
+neither of them is the step — so the line above the canvas went on saying
+"draw a letter" over a drawn letter, and Done stayed down. It came alive only
+if you happened to press one of the tools, because those redraw everything.
+The first screen of the app, with a letter on it, and no way on.
+`obDrawTick()` is `geTools()` for the two things the step owns, called from
+the same place, and `obCoachSay()` is the words in both.
+
+**The walk began on the making screen** — the one screen somebody arriving has
+not been shown how to reach. 「制作ボタン押してキーボードの画面開いてとかない
+よ？」 It starts on the app now, with the hand on the tab that opens the making
+side, and **the walk has the real tab bar**: `tabPaint()` hid it whenever the
+onboarding was not done, which is every screen the walk stands on. Everything
+before the walk — drawing, the alphabet, the name — is a screen of the
+onboarding's own and still has none.
+
+**The tap target wore `.obpad`, which is taken.** That class is the square the
+first letter is drawn in and it carries `margin:8px auto 0`, so the target sat
+eight pixels below the thing it was over — invisibly, because it has no
+colour. It is `.obtap` now.
+
+**The steps ask instead of telling.** 「聞くスタイルにして欲しい。この字はなん
+の文字とか君の言語の名前はとか」 `ob.draw.h`, `ob.rom.h` and `ob.name.h` are
+questions in all ten languages. And the letter is saved without a word about
+it: the toast is the letter page's Save answering, and here the screen changes
+underneath, so "a updated" landed on the next question. 「a updateってなに？
+いらん」 `ltSave(id, quiet)` — quiet only where the person is not standing on
+that letter afterwards.
+
+**Newly stored:** nothing.
+
+`CODE CONFIRMED` — the flow runs end to end in a headless browser from an
+empty `localStorage`: nine screens, every stop of the walk finding what it
+points at. `DEVICE CONFIRMED` — **no.**
+
+**And one thing NOT fixed, because it is a decision.** See
+`docs/BACKLOG.md` § the onboarding adds a 29th letter on the free plan.
+
+
 ### The onboarding walks the real app
 
 Steps 3 to 6 of the owner's order — the making screen, the keyboard, the first

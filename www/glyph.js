@@ -1719,6 +1719,10 @@ function geTools(){
   }
   var cn=document.querySelector('.chap .cn');
   if(cn) cn.textContent=String(pts);
+  /* and the onboarding's own step, which is the other thing on this screen
+     that has to answer the hand: the line over the canvas and the button that
+     ends the step. It knows whether it is on. */
+  obDrawTick();
 }
 /* One draw call, three layers: the cell you are drawing inside, the ink the
    font will actually contain, and the points you can still move. The ink is

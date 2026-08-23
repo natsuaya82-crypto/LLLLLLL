@@ -559,12 +559,19 @@ function ltDraftName(id, v){ ltDraft={id:id, ab:String(v||'')}; }
 function ltDraftAb(l){
   return (l && ltDraft && ltDraft.id===l.id)? ltDraft.ab : ltBoxed(l);
 }
-/* The letter, as typed. This is the only thing that writes it. */
-function ltSave(id){
+/* The letter, as typed. This is the only thing that writes it.
+
+   `quiet` is for a caller whose own screen is the answer. The onboarding's
+   second step saves the letter and goes somewhere else in the same breath, so
+   the toast landed on the NEXT question -- 「a updateってなに？いらん」. Saying
+   nothing is right exactly when the person is not standing on this letter
+   afterwards, and wrong everywhere else: the letter page stays put, and a
+   Save that says nothing is a Save nobody can tell happened. */
+function ltSave(id, quiet){
   var l=ltById(id); if(!l) return;
   ltSetRoman(id, ltDraftAb(l));
   ltDraft=null;
-  toast(t('toast.saved', ltName(ltById(id))||t('lt.untitled')));
+  if(!quiet) toast(t('toast.saved', ltName(ltById(id))||t('lt.untitled')));
 }
 /* What a typed name reads: one unit per word, and the phonemes those units
    are made of. Two answers off one pass, because both callers want both --

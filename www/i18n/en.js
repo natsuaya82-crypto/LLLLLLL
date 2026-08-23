@@ -169,6 +169,7 @@ defLang('en', (function(){
       "ob.borrow.h"               : "Borrowed letter",
       "ob.borrow.sub"             : "　",
       "ob.borrow.take"            : "　",
+      "ob.tour.tab" : "Open Build.",
       "ob.tour.build" : "Tap the keyboard.",
       "ob.tour.kb1" : "Your letter went in here.",
       "ob.coach.draw" : "Draw a line with your finger.",
@@ -510,12 +511,12 @@ defLang('en', (function(){
       /* onboarding */
       'ob.next'         : "Next",
       'ob.rom.h'         : 'Which letter is it?',
-      'ob.name.h'       : "Name of the language",
+      'ob.name.h'       : "What is your language called?",
       'ob.name.sub'     : "　",
       'ob.name.ph'      : "a name",
       'ob.name.note'    : "You can change it later",
       'ob.name.later'   : "Decide later",
-      'ob.draw.h'      : 'Draw one letter',
+      'ob.draw.h'      : "What does your first letter look like?",
       'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.show'     : 'Show',
