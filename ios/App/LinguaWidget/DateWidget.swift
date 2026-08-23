@@ -85,6 +85,8 @@ struct DayFace: View {
       }
       .frame(width: geo.size.width, height: geo.size.height)
     }
+    /* Ten, unchanged. The room comes from widgetRoom() -- see the note in
+       ClockWidget.swift about why this number is not the one to cut. */
     .padding(10)
   }
 }
@@ -97,5 +99,6 @@ struct DateWidget: Widget {
     .configurationDisplayName("Date")
     .description("Today, in your own numerals.")
     .supportedFamilies([.systemSmall])
+    .widgetRoom()
   }
 }

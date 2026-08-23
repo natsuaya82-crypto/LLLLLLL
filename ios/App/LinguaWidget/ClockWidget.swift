@@ -131,14 +131,31 @@ struct ClockFace: View {
               .position(onRing(centre: centre, r: ring, hour: Double(i == 0 ? 12 : i)))
           }
         }
-        Hand(centre: centre, angle: hourAngle, length: r * 0.46, width: side * 0.035)
-        Hand(centre: centre, angle: minuteAngle, length: r * 0.68, width: side * 0.022)
+        /* The hands reach for the numerals rather than stopping well short of
+           them. They are the only thing on the face with no neighbour to
+           collide with, so this is the one measurement here that can simply
+           be bigger. */
+        Hand(centre: centre, angle: hourAngle, length: r * 0.54, width: side * 0.035)
+        Hand(centre: centre, angle: minuteAngle, length: r * 0.80, width: side * 0.022)
         Circle()
           .fill(Color.primary)
           .frame(width: side * 0.05, height: side * 0.05)
           .position(centre)
       }
     }
+    /* Eight, and it stays eight. Taking it to two was tried and put back:
+       a numeral is drawn CENTRED on the ring and is as wide as it is long, so
+       a four-sign one in base two already reaches past the circle -- its left
+       edge sits at r + 1.15em from the middle, not r. The eight was what kept
+       that inside the widget, and without it the nine o'clock numeral is cut
+       off by the edge. The room this change wins comes from iOS's own margin
+       instead -- widgetRoom() -- which is the one that was actually eating
+       the widget.
+
+       The overflow itself is real and is not fixed here: ring could take the
+       numeral's half-WIDTH into account rather than its height alone, which
+       would pull wide numerals in far enough to drop this padding. That is a
+       change to how the face is laid out and it wants a phone. */
     .padding(8)
   }
 
@@ -185,5 +202,6 @@ struct ClockWidget: Widget {
     .configurationDisplayName("Clock")
     .description("The time, in your own numerals.")
     .supportedFamilies([.systemSmall])
+    .widgetRoom()
   }
 }

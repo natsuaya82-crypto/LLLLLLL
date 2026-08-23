@@ -221,7 +221,7 @@ function html(cases, dark) {
     const hA = (((when[0] % 12) + when[1] / 60) / 12) * 2 * Math.PI - Math.PI / 2;
     const mA = ((when[1] / 60)) * 2 * Math.PI - Math.PI / 2;
     out += `<svg style="position:absolute;inset:0" width="${SIDE}" height="${SIDE}">`
-         + hand(hA, r * 0.46, side * 0.035) + hand(mA, r * 0.68, side * 0.022)
+         + hand(hA, r * 0.54, side * 0.035) + hand(mA, r * 0.80, side * 0.022)
          + `<circle cx="${cx}" cy="${cy}" r="${side * 0.025}" fill="${ink}"/></svg>`;
     return out;
   };
