@@ -66,7 +66,7 @@ const r = await pg.evaluate(({ s }) => {
      drawn the list is reading it before the damage. */
   out.freeShown = wordsSeen().length;
   out.freeHeld = WORDS.length;
-  out.freeCap = FREE_LIMIT;
+  out.freeCap = wordCap();
   /* and not one byte of the language moved when the plan did */
   out.freeKeptBytes = same(wasBytes, bytes());
 
@@ -120,6 +120,42 @@ const r = await pg.evaluate(({ s }) => {
   SET.plan = 'plus';
   out.paidAll = names.every(function(c){ return can(c) === true; });
   try { can('nosuchthing'); out.canTypo = false; } catch (e) { out.canTypo = true; }
+
+  /* ---- 4b. the ladder ---------------------------------------------------
+     A level is met by the plan that names it AND by every plan above it.
+     That is the whole of what a ladder is, and the way it fails is not an
+     error: `has` written as an equals sign gives Plus everything Basic buys
+     and nothing else, so a Plus account quietly loses the letters it paid
+     for one tier down. Read off CAN rather than written out here, so a
+     capability moved between rungs is walked on the day it moves. */
+  out.rungs = {};
+  ['free', 'basic', 'plus'].forEach(function(p){
+    SET.plan = p;
+    out.rungs[p] = names.filter(function(c){ return can(c); }).sort().join(' ');
+  });
+  SET.plan = 'basic';
+  out.basicUp = has('basic') === true;
+  out.basicNotPlus = has('plus') === false;
+  SET.plan = 'plus';
+  out.plusHasBasic = has('basic') === true;   /* the rung below is included */
+  SET.plan = 'free';
+  out.freeNoBasic = has('basic') === false;
+
+  /* ---- 4c. the word ceiling is the plan's, and it is a number ----------
+     One thousand on Basic, none at all on Plus. Asked of wordCap() and of
+     what the list actually shows, because those are two things and the fault
+     this file exists for is them disagreeing. */
+  var capWas = WORDS.length;
+  out.capFree = (SET.plan = 'free', wordCap());
+  out.capBasic = (SET.plan = 'basic', wordCap());
+  out.capPlus = (SET.plan = 'plus', wordCap());
+  SET.plan = 'basic'; save();
+  out.basicShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
+  out.basicHolds = WORDS.length;
+  out.basicRoom = capOK(1) === true;
+  SET.plan = 'free'; save();
+  out.freeShows2 = wordsSeen().length;
+  out.freeHolds2 = WORDS.length === capWas;
 
   /* ---- 5. a backup does not know what a plan is ------------------------
      Written on the free plan, and it is the same file the paid plan writes.
@@ -213,6 +249,25 @@ say(r.canCount === 9, 'CAN names ' + r.canCount + ' capabilities');
 say(r.freeAll, 'every one of them is closed on free');
 say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
+
+say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
+say(r.rungs.basic === 'letters snd wsys',
+    'basic opens its own letters, its own sounds and a writing system (' + r.rungs.basic + ')');
+say(r.rungs.plus.split(' ').length === r.canCount,
+    'plus opens all ' + r.canCount + ' (' + r.rungs.plus.split(' ').length + ')');
+say(r.basicUp && r.basicNotPlus, 'basic meets its own rung and not the one above it');
+say(r.plusHasBasic, 'and plus meets basic\'s -- a ladder, not three equals signs');
+say(r.freeNoBasic, 'while free meets neither');
+
+say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
+say(r.capBasic === 1000, 'basic counts to 1000 (' + r.capBasic + ')');
+say(r.capPlus === null || r.capPlus === undefined || r.capPlus > 1e9 || r.capPlus === 'Infinity',
+    'and plus has no number at all (' + r.capPlus + ')');
+say(r.basicShows === 500 && r.basicHolds === 500,
+    'a 500-word dictionary is all shown on basic (' + r.basicShows + ')');
+say(r.basicRoom, 'and there is room for another');
+say(r.freeShows2 === 100 && r.freeHolds2,
+    'the same dictionary on free shows 100 and still holds 500');
 
 say(r.bkSame, 'a backup written on free holds the same slices as one written on plus');
 say(r.bkHasSlices, 'and every slice core.js knows about is in it (' + r.bkFreeKeys + ')');

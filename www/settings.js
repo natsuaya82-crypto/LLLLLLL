@@ -200,7 +200,7 @@ function vSet(){
       '<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langName||'—')+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
-      '<span class="sv">'+WORDS.length+(can('words')?'':' / '+FREE_LIMIT)+ICON_GO+'</span></button>'+
+      '<span class="sv">'+WORDS.length+(can('words')?'':' / '+wordCap())+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
       /* Answered once, if ever: wsGuess() reads it off the letters, and the

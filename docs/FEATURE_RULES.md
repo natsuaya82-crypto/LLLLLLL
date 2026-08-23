@@ -372,10 +372,34 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   add — 「判定が失敗しても減るのはボタンであって言葉ではない」. Same for a
   third keyboard.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`, `docs/apple.md`.
-- Implementation status: **nothing built.** Plus's prices are in
-  `www/i18n/*.js` already; Basic's are nowhere. The leader's proposed order is
-  **Basic first, ads second** — Basic needs no native code at all, and until
-  the ladder exists there is nowhere for somebody who wants the ads gone to go.
+- Implementation status: **the rung is in; the card and the numbers are not.**
+  2026-08-23, `claude/save`.
+
+  In: `PLAN_ORDER` and a laddered `has()` in `www/core.js` — a level is met by
+  the plan that names it and by every plan above it — and `CAN` sits on the
+  three rungs the table says, except `kb` (see below). `wordCap()` is the word
+  ceiling as a number rather than a constant: 100 / 1000 / none. Held by
+  `tools/plan-check.mjs`, with the ladder broken into an equals sign and the
+  ceiling flattened to one number, both watched failing.
+
+  Not in, and each for a reason that is not "no time":
+  - **Basic is not on sale.** Its price is in no language file and no
+    subscription for it exists in App Store Connect. `PLANS` still sells Free
+    and Plus, which is what can actually be bought.
+  - **`kb` has not moved down to Basic.** How many is a number, and the two
+    decisions of this day disagree about it — 4 in a pool against 1, and no
+    ceiling against 3. `docs/BACKLOG.md` has both sides. Opening the door
+    without the number would give Basic the three `KB_MAX` hands out today,
+    which is neither answer.
+  - **`edit` and `badge` are not in `CAN`.** `postEdit()` and `planBadge()`
+    are both in `www/post.js`, which belongs to another session today, and
+    `dead-check` refuses a capability nothing asks for.
+  - The language ceiling does not exist at all yet.
+
+  Plus's prices are in `www/i18n/*.js` already; Basic's are nowhere. The
+  leader's proposed order is **Basic first, ads second** — Basic needs no
+  native code at all, and until the ladder exists there is nowhere for
+  somebody who wants the ads gone to go.
 
 ### Decision
 - Date: 2026-08-23

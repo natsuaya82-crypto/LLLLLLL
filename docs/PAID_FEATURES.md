@@ -28,6 +28,38 @@ had paid.
 
 ## How it is asked
 
+**Three plans, and they are a ladder.** `PLAN_ORDER` in `www/core.js` is
+`free`, `basic`, `plus`, cheapest first, and `has(level)` is met by the plan
+that names the level and by **every plan above it**. Written as an equals sign
+it would give Plus what Basic buys and nothing else — a Plus account quietly
+losing the letters it paid for, one tier down.
+
+| | Free | Basic | Plus |
+|---|---|---|---|
+| `letters` add / name / delete | — | yes | yes |
+| `wsys` a writing system that is not an alphabet | — | yes | yes |
+| `snd` choose the sound, not the letter's own | — | yes | yes |
+| words | 100 | 1000 | no ceiling |
+| `kb` a keyboard of your own | — | **see below** | yes |
+| `gram` `dir` `data` `file` | — | — | yes |
+
+**The words ceiling is a number, not a door.** `wordCap()` is the one place
+that says it — `Infinity` on Plus, a thousand on Basic, `FREE_LIMIT` below
+that — and `can('words')` is asked inside it and nowhere else, meaning "no
+ceiling at all". Everything that shows or enforces the ceiling asks
+`wordCap()`: the dictionary, the banner on the cover, the count in settings,
+`capOK()` and `capStop()`.
+
+**Basic is decided and is not on sale.** Its price is in no language file and
+no subscription for it exists in App Store Connect, so the plans screen sells
+Free and Plus. What is here is the rung: the day a receipt says `basic`, every
+door above is already the right way round.
+
+**`kb` has not moved down to Basic**, and that is not an oversight. How many
+keyboards Basic gets is a number, and two owner decisions of 2026-08-23
+disagree about it — 1 + 3 = 4 in a pool across languages, against 1, and Plus
+with no ceiling against Plus with 3. `docs/BACKLOG.md` carries both sides.
+
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`
 refuses a capability nothing asks for (a price with nothing behind it), a

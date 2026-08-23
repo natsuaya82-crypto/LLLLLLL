@@ -7,6 +7,29 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## Two decisions of the same day disagree about how many keyboards — OWNER
+
+`docs/FEATURE_RULES.md` carries both, and they cannot both be implemented.
+
+- **The earlier one** (§ How many languages, how many keyboards): a keyboard
+  count is a **pool across languages**, Basic gets **1 + 3 = 4**, and **Plus
+  has no ceiling**. Its reasoning is written out at length — a keyboard is
+  layers, so more boards buys only a different arrangement, there are five
+  arrangements, and a ceiling that binds almost nobody is generous on purpose.
+- **The later one** (§ A third plan, and what pays for the free one): the
+  `CAN` table reads `kb`: Free —, Basic **1**, Plus **3**.
+
+Four against one, and no ceiling against three. `CLAUDE.md` says an owner
+decision is a specification and that a session may not resolve a conflict
+between two of them, so **`can('kb')` has been left where it was — `plus`**.
+Moving it down to `basic` without the number would have given Basic the three
+that `KB_MAX` hands out today, which is neither answer.
+
+What is waiting on it: `KB_MAX` in `www/keyboard.js` (a per-language constant
+today, a per-plan number either way, and a pool across languages if the
+earlier decision stands), and the language ceiling, which does not exist at
+all yet.
+
 ## ~~The onboarding adds a 29th letter on the free plan~~ — decided, and in
 
 *2026-08-23, owner:*「aが自作文字に変わる瞬間みたいなの見せたい」

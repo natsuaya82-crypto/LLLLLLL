@@ -41,8 +41,9 @@ function wFilters(){
    example are about words that exist, not about words that are listed, and
    filtering there would quietly change what somebody's own posts say. */
 function wordsSeen(){
-  if(can('words') || WORDS.length<=FREE_LIMIT) return WORDS;
-  return WORDS.slice(0, FREE_LIMIT);
+  var cap=wordCap();
+  if(WORDS.length<=cap) return WORDS;
+  return WORDS.slice(0, cap);
 }
 function wordsHidden(){ return WORDS.length-wordsSeen().length; }
 /* One place decides what is on screen, so the list, the count and the button

@@ -15,6 +15,55 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### Three plans, and the word ceiling is a number
+
+「ベーシックも入れて」 — the decision of 2026-08-23 in `docs/FEATURE_RULES.md`.
+**The rung is in. The card is not, and neither are the keyboard numbers.**
+
+`PLAN_ORDER` in `www/core.js` is `free`, `basic`, `plus`, cheapest first, and
+`has(level)` is met by the plan that names it **and by every plan above it**.
+It was `plan()==='plus'`, which is an equals sign, and an equals sign with
+three plans gives Plus what Basic buys and nothing else — a Plus account
+quietly losing the letters it paid for, one tier down. A plan nobody has heard
+of meets nothing at all, which is the free side and the side to be wrong on.
+
+`CAN` sits on the rungs the decision names: `letters`, `wsys` and `snd` are
+Basic's; `gram`, `dir`, `data`, `file` are Plus's.
+
+**The word ceiling stops being a constant.** `wordCap()` — `Infinity` on Plus,
+a thousand on Basic, `FREE_LIMIT`'s hundred below that — and it is the one
+place: the dictionary, the banner on the cover, the count in settings,
+`capOK()` and `capStop()` all ask it. `can('words')` is asked inside it and
+nowhere else now, and what it means is "no ceiling at all".
+
+`FREE_LIMIT` **keeps its name**: it is still exactly what it always was, and
+renaming it to match its new neighbour would be a rename riding inside a
+change of behaviour. Two tools name it and neither is this session's today.
+
+**Data: nothing changes.** Somebody at 1500 words dropping to Basic keeps all
+1500 and simply cannot add — 「判定が失敗しても減るのはボタンであって言葉では
+ない」. That sentence is now nine claims in `plan-check`.
+
+**What is deliberately NOT in, each for a reason:**
+
+- **Basic is not on sale.** Its price is in no language file and no
+  subscription exists in App Store Connect. `PLANS` still sells Free and Plus.
+- **`kb` has not moved down to Basic.** How many is a number, and **two owner
+  decisions of the same day disagree** — 4 in a pool against 1, and no ceiling
+  against 3. Opening the door without the number would give Basic the three
+  `KB_MAX` hands out today, which is neither answer. Both sides are in
+  `docs/BACKLOG.md`; `CLAUDE.md` says a session does not resolve this.
+- **`edit` and `badge` are not in `CAN`.** `postEdit()` and `planBadge()` are
+  both in `www/post.js`, another session's file today, and `dead-check`
+  refuses a capability nothing asks for.
+
+`CODE CONFIRMED` — `plan-check` is 39 claims now and green, and two more bugs
+were **watched failing**: `has()` written as an equals sign (three red,
+including *plus opens all 9 (6)*), and `wordCap()` flattened to one number
+(six red, including *basic counts to 1000 (100)*). `dead`, `act`, `i18n`,
+`es5`, `backup` and `press` green. `DEVICE CONFIRMED` — **no.**
+
+
 ### A check that money decides what may be done and nothing about what exists
 
 `tools/plan-check.mjs` — `npm run plan`, and it is in the gate. Twenty-five

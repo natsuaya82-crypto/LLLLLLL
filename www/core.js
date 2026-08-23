@@ -306,7 +306,26 @@ var PLANS=[
    It comes back when the seam in www/glyph.js has something behind it, and
    what comes back with it is the chapter and the chips that were lifted out
    with it. Nothing was thrown away: it is in the history under this commit. */
-var FREE_LIMIT=100;
+/* How many words this plan may hold. A constant until today: free's hundred
+   was the only ceiling there was, so the number and the plan were the same
+   fact and FREE_LIMIT could be both. Basic has a thousand and Plus has none,
+   which makes them three facts, and a number that is three facts is a
+   function.
+   「単語1000までとか」 -- OWNER DECISION, 2026-08-23.
+
+   Infinity and not a big number: a ceiling nobody can reach is still a
+   ceiling, and the arithmetic below is the same either way.
+
+   FREE_LIMIT keeps its name. It is still exactly what it always was -- the
+   free plan's hundred -- and renaming it to match its new neighbour would be
+   a rename riding along inside a change of behaviour, which is the one thing
+   a commit may not be two of. tools/fixture.mjs and tools/backup-check.mjs
+   both name it, and neither is this session's file today. */
+var FREE_LIMIT=100, BASIC_LIMIT=1000;
+function wordCap(){
+  if(can('words')) return Infinity;
+  return has('basic')? BASIC_LIMIT : FREE_LIMIT;
+}
 function plan(){ return SET.plan||'free'; }
 /* What of the settings goes to the file. Everything, except on a phone, where
    the plan is in the Keychain and a second copy in an editable file would be
@@ -345,8 +364,28 @@ function planKeep(id){
   if(!np) return;
   try{ np('LinguaPlan', 'write', {plan:String(id||'free')})['catch'](function(){}); }catch(e){}
 }
-function has(level){ /* level: 'plus' */
-  return (level==='plus')? plan()==='plus' : true;
+/* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
+   it is written down once: a level is met by the plan that names it and by
+   every plan above it. 「ベーシックは自分の文字と自分のキーボード、プラスは
+   全部と広告なし」 -- OWNER DECISION, 2026-08-23, docs/FEATURE_RULES.md.
+
+   Basic is DECIDED and is not on sale: the plans screen sells Free and Plus,
+   because Basic's price is in no language file yet and no subscription for it
+   exists in App Store Connect. What is here is the rung -- so the day a
+   receipt says `basic`, every door in the table below is already the right
+   way round. */
+var PLAN_ORDER=['free', 'basic', 'plus'];
+function has(level){ /* level: 'basic' | 'plus' */
+  var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
+  /* A plan nobody has heard of is not a plan. It is a Keychain that answered
+     nothing, a receipt that would not validate, a settings file somebody
+     edited -- and the free side is the side to be wrong on. */
+  if(got<0) return false;
+  /* And a level nobody has heard of is a typo in CAN. can() has already
+     thrown on the capability by the time this runs; this is the second wall
+     and it stands the same way round. */
+  if(want<0) return false;
+  return got>=want;
 }
 /* What money buys, one capability at a time, and the only place that says so.
    Ten names, each the level it needs.
@@ -368,16 +407,26 @@ function has(level){ /* level: 'plus' */
    plan. dead-check holds both directions, exactly as act-map's names are
    held: no capability nothing asks for, no name that is no capability.
 
-   'words' is metered rather than shut: free gets FREE_LIMIT of them, so can()
-   answering false there means "counted", not "refused". */
+   'words' is metered rather than shut, and what it names is the ceiling being
+   LIFTED: free counts to a hundred, basic to a thousand, and only plus has no
+   number at all. wordCap() below is the number and asks this once. */
 var CAN={
-  words:   'plus',   /* a dictionary past FREE_LIMIT */
+  words:   'plus',   /* no ceiling on the dictionary at all -- see wordCap() */
   data:    'plus',   /* CSV out, and the cloud */
   file:    'plus',   /* a list brought in as a file rather than a paste */
-  letters: 'plus',   /* adding, naming and deleting a letter */
-  wsys:    'plus',   /* a writing system that is not an alphabet */
-  kb:      'plus',   /* a keyboard of your own, instead of the fixed QWERTY */
-  snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
+  letters: 'basic',  /* adding, naming and deleting a letter */
+  wsys:    'basic',  /* a writing system that is not an alphabet */
+  /* A keyboard of your own, instead of the fixed QWERTY. Basic buys one and
+     it is NOT moved down yet: how many is a number, the number lives in
+     keyboard.js as KB_MAX, and that file belongs to another session today.
+     Opening the door without setting the ceiling would give Basic three, and
+     three is neither of the two numbers the owner has said.
+     **And the two he has said do not agree** -- one decision of 2026-08-23
+     says Basic 1+3=4 keyboards across all languages and Plus no ceiling, and
+     a later one the same day says Basic 1 and Plus 3. That is for the owner
+     to settle; docs/BACKLOG.md has both sides. */
+  kb:      'plus',
+  snd:     'basic',  /* choosing a sound, rather than taking the letter's own */
   gram:    'plus',   /* a grammar stage of your own, past the fifteen there are */
   dir:     'plus'    /* choosing which way the language is written */
 };
@@ -418,8 +467,7 @@ function can(what){
 }
 function capOK(add){
   add=add||1;
-  if(can('words')) return true;
-  return WORDS.length+add<=FREE_LIMIT;
+  return WORDS.length+(add||1)<=wordCap();
 }
 /* The ceiling, met. True means the caller must stop.
 
@@ -439,7 +487,7 @@ function capOK(add){
    A new key here would have been one sentence in English and nine holes. */
 function capStop(add){
   if(capOK(add)) return false;
-  if(confirm(t('toast.cap', FREE_LIMIT)+'\n\n'+t('up.cta'))) go('plans');
+  if(confirm(t('toast.cap', wordCap())+'\n\n'+t('up.cta'))) go('plans');
   return true;
 }
 /* The day a plan ends, said out loud, once.
