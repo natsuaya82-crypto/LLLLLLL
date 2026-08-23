@@ -476,6 +476,24 @@ Decided:
   6+3+29 points, 1232 bytes, and 2 strokes of 15+6 points, 681 bytes. A drawn
   letter is about 320. Two to four times, not the hundred times an outline
   would have cost.
+- **NOT DECIDED, and it is the owner's: how heavy an imported letter is.**
+  The geometry arrives as drawn. A shape asked for at a known size in the 800
+  square, printed, photographed at 10 degrees with a trapezoid, a blur, a
+  lighting gradient and noise over it, comes back within **2 units of 800** on
+  every edge, and a bar asked for at a width of 24 comes back at 24. So position
+  and size need no decision -- they are already what was drawn.
+  The WEIGHT is a decision, because it is the person's pen and not the app's.
+  Measured on the first real sheet: the strokes came in between 13.4 and 16.7,
+  mean 14.9, against `GPEN.width` of 24. On a 37mm box that is a pen of 0.69mm
+  where the app's own is 1.11mm, so **an imported letter sits about four tenths
+  lighter than one drawn in the app**, and the two are side by side in one
+  alphabet. Three roads and none of them is a tool's to pick:
+  as drawn (what the code does today, and the person's hand is kept);
+  evened to the app's pen (an imported letter is an OUTLINE and not a swept
+  stroke, so this means fattening or thinning a contour, and corners round off
+  -- the letter changes); or said on the paper, since the box is a fixed 37mm
+  and a pen of about 1mm matches the app exactly -- which is words on a sheet
+  and therefore 「アプリ内に説明書くの禁止」's neighbour as well as a price.
 - **A lapsed plan HIDES, it never deletes.** 「単語と同じで隠すつもりよ？また課金
   したら復活！」 Exactly `wordsSeen()`: the letters stay in the slice, in the
   backup, and in everything the app reads for itself; they stop being shown and
