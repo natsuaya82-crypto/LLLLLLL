@@ -46,7 +46,6 @@ gtiles
 had
 hwf
 ipa
-ipafree
 ipamine
 ipascroll
 ipatab
@@ -116,7 +115,6 @@ ped
 pen
 pgl
 pgrid
-pkclear
 ptile
 pw
 pwadd

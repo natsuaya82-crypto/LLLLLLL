@@ -1084,7 +1084,14 @@ export function halfDone(){
     ['a slot\'s word being made', () => { openSlot('greet','yes'); return FORM.html; }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
-    ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;
+    /* One of them is the letter's own, which is the only state that wears
+       .cur. It went unwalked for as long as the plans screen happened to wear
+       the same class on something else -- `press` reports a class nothing
+       wears, and a second wearer somewhere else is a mask, not a test. */
+    ['characters on offer',      () => { const w = WORLD_SCRIPTS[0];
+                                         const l = ltById('l1');
+                                         if (l) l.ch = w.ch.split(' ')[1];
+                                         openPick('l1'); pkScript = w.id;
                                          return FORM.html + pkCharsHTML(); }],
     ['an abugida being placed',  () => { SET.wsys='abugida';
                                          LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
