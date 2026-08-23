@@ -12,9 +12,14 @@ from: a thing that works, kept where it can be run, until it has a home.
 ## what is here
 
     sheet.js    the two halves. Above the line: names in, PDF bytes out; and a
-                page of samples in, names out. No global, no document.
+                photograph in, names and shapes out. No global, no document.
     print.mjs   makes a real sheet.pdf and rasterises it, to be LOOKED at
-    trip.mjs    the round trip, measured
+    trip.mjs    the round trip of the NAMES, measured
+    fake.mjs    a written-on sheet, photographed badly -- a stand-in until a
+                real one arrives
+    read.mjs    node tools/sheet-spike/read.mjs <photo> [out.png]
+                the whole reading side: find the marks, undo the perspective,
+                read the names, and pull each box's drawing out as an outline
 
 ## what has been measured
 
@@ -67,6 +72,32 @@ the clean-up is even reached.
 That number cuts both ways and is worth writing down: ink has to be darker than
 about 0.85 of the paper around it to be seen at all. A hard pencil may be
 marginal. Something to put in front of a real sheet.
+
+## reading a sheet, end to end
+
+`node tools/sheet-spike/read.mjs /tmp/fake.png` on a sheet with three boxes
+drawn in, photographed at 6 degrees with a lighting gradient over it:
+
+    7    (か)   4033 ink pixels   3 loops    57 points
+    2    (よ)   2920             2          41
+    25   (ring) 2717             2          39
+    the other seventeen           0          0
+
+All twenty names came off the strip. **The seventeen empty boxes come back
+empty** -- the lattice is not read as ink. And the ring's hole survives, which
+is the one that matters for a pictographic script: a circle that fills in is a
+blot, not a letter.
+
+Two things cost a round each here:
+
+- **A pixel walk does not close.** The first tracer followed ink pixels and
+  could leave its own loop, so every loop ran to its guard of 160,000 points --
+  and the thinner behind it is O(n^2). Nothing threw; the page just never came
+  back. Following the CRACKS BETWEEN pixels closes by construction. 3ms.
+- **Asking the background brightness per pixel is most of the minute.** It is a
+  fourteenth of the picture wide, so it cannot change from one pixel to the
+  next; it is sampled on a coarse grid now. `shScan` went from not finishing to
+  50ms.
 
 ## what has NOT been measured
 

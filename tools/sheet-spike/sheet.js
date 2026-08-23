@@ -351,12 +351,10 @@ function shClean(m, res, least, edge){
       var p = q[hd++], py = Math.floor(p / res), px = p % res;
       cells.push(p);
       if (px < edge || py < edge || px >= res - edge || py >= res - edge) touches = true;
-      var d = [[1,0],[-1,0],[0,1],[0,-1]], k;
-      for (k = 0; k < 4; k++){
-        var nx = px + d[k][0], ny = py + d[k][1];
-        if (nx < 0 || ny < 0 || nx >= res || ny >= res) continue;
-        if (m[ny * res + nx] && lab[ny * res + nx] < 0){ lab[ny * res + nx] = id; q.push(ny * res + nx); }
-      }
+      if (px + 1 < res && m[p + 1] && lab[p + 1] < 0){ lab[p + 1] = id; q.push(p + 1); }
+      if (px > 0 && m[p - 1] && lab[p - 1] < 0){ lab[p - 1] = id; q.push(p - 1); }
+      if (py + 1 < res && m[p + res] && lab[p + res] < 0){ lab[p + res] = id; q.push(p + res); }
+      if (py > 0 && m[p - res] && lab[p - res] < 0){ lab[p - res] = id; q.push(p - res); }
     }
     parts.push({ cells: cells, touches: touches });
   }
@@ -379,4 +377,165 @@ function shClean(m, res, least, edge){
 function shSane(){
   return (SH_LABEL + SH_LABEL_UP < SH_GAPY) &&
          (shCellAt(0, 0)[1] + SH_CELL < shBoxAt(shPerPage() - 1).y);
+}
+
+/* ---- looking at a photograph ------------------------------------------- */
+/* Everything between "here are the pixels somebody sent" and "here is where
+   the page is". `px` is RGBA, `W` x `H`.
+   Returns { warp, dark, marks } or { fail }.
+
+   Two windows, not one threshold. A fixed one does not survive a whole page:
+   a lighting gradient takes the dark side of the paper under it and the sheet
+   comes back black. A local one alone turns every noise pixel into ink --
+   378,648 islands on a page that has about 170. So: a small window to smooth,
+   a large one for the background, and ink where the small one is darker than
+   0.85 of the large one. Both numbers were watched failing. */
+function shScan(px, W, H){
+  var i, x, y, ii = new Float64Array((W + 1) * (W ? (H + 1) : 1)), run;
+  var gray = new Uint8Array(W * H);
+  for (i = 0; i < W * H; i++) gray[i] = px[i * 4];
+  for (y = 0; y < H; y++){
+    run = 0;
+    for (x = 0; x < W; x++){ run += gray[y * W + x];
+      ii[(y + 1) * (W + 1) + (x + 1)] = ii[y * (W + 1) + (x + 1)] + run; }
+  }
+  function mean(cx, cy, r){
+    var a = cx - r < 0 ? 0 : cx - r, b = cy - r < 0 ? 0 : cy - r;
+    var c = cx + r > W - 1 ? W - 1 : cx + r, d = cy + r > H - 1 ? H - 1 : cy + r;
+    return (ii[(d + 1) * (W + 1) + (c + 1)] - ii[b * (W + 1) + (c + 1)] -
+            ii[(d + 1) * (W + 1) + a] + ii[b * (W + 1) + a]) / ((c - a + 1) * (d - b + 1));
+  }
+  /* the small window is a third of a strip cell, so a cell never blurs into
+     its neighbour; the large one is a fourteenth of the picture */
+  var SM = Math.round(W / 595.276 * SH_CELL / 3);
+  if (SM < 1) SM = 1;
+  var BG = Math.round(W / 14);
+  /* The background is asked on a coarse grid and read between the answers.
+     It is a fourteenth of the picture wide, so it does not change from one
+     pixel to the next, and asking it seven million times was most of the
+     minute this used to take. */
+  var STEP = BG > 8 ? (BG >> 3) : 1;
+  var GW = Math.ceil(W / STEP) + 1, GH = Math.ceil(H / STEP) + 1, bg = new Float64Array(GW * GH);
+  for (y = 0; y < GH; y++) for (x = 0; x < GW; x++)
+    bg[y * GW + x] = mean(x * STEP < W ? x * STEP : W - 1, y * STEP < H ? y * STEP : H - 1, BG);
+  var m = new Uint8Array(W * H);
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++)
+    m[y * W + x] = mean(x, y, SM) < bg[((y / STEP) | 0) * GW + ((x / STEP) | 0)] * 0.85 ? 1 : 0;
+  /* the four marks: the squarest, best-sized island nearest each corner */
+  var lab = new Int32Array(W * H), q = new Int32Array(W * H), blobs = [], k;
+  for (i = 0; i < W * H; i++) lab[i] = -1;
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++){
+    if (!m[y * W + x] || lab[y * W + x] >= 0) continue;
+    var id = blobs.length, hd = 0, tl = 0, sx = 0, sy = 0, n = 0;
+    var ax = x, bx = x, ay = y, by = y;
+    q[tl++] = y * W + x; lab[y * W + x] = id;
+    while (hd < tl){
+      var p = q[hd++], py = (p - (p % W)) / W, pxx = p % W;
+      sx += pxx; sy += py; n++;
+      if (pxx < ax) ax = pxx; if (pxx > bx) bx = pxx;
+      if (py < ay) ay = py; if (py > by) by = py;
+      if (pxx + 1 < W && m[p + 1] && lab[p + 1] < 0){ lab[p + 1] = id; q[tl++] = p + 1; }
+      if (pxx > 0 && m[p - 1] && lab[p - 1] < 0){ lab[p - 1] = id; q[tl++] = p - 1; }
+      if (py + 1 < H && m[p + W] && lab[p + W] < 0){ lab[p + W] = id; q[tl++] = p + W; }
+      if (py > 0 && m[p - W] && lab[p - W] < 0){ lab[p - W] = id; q[tl++] = p - W; }
+    }
+    blobs.push({ cx: sx / n, cy: sy / n, n: n, w: bx - ax + 1, h: by - ay + 1 });
+  }
+  var want = W / SH_W * SH_MARK, cand = [], u;
+  for (i = 0; i < blobs.length; i++){
+    u = blobs[i];
+    if (u.w > want * 0.5 && u.w < want * 2 && u.h > want * 0.5 && u.h < want * 2 &&
+        Math.abs(u.w - u.h) < want * 0.5 && u.n > want * want * 0.5) cand.push(u);
+  }
+  var corners = [[0, 0], [W, 0], [W, H], [0, H]], found = [], j;
+  for (k = 0; k < 4; k++){
+    var best = null, bd = Infinity;
+    for (j = 0; j < cand.length; j++){
+      var dx = cand[j].cx - corners[k][0], dy = cand[j].cy - corners[k][1], D = dx * dx + dy * dy;
+      if (D < bd){ bd = D; best = cand[j]; }
+    }
+    if (!best) return { fail: 'marks', cand: cand.length };
+    found.push([best.cx, best.cy]);
+  }
+  /* the same island twice means three marks were in the picture, not four */
+  for (k = 0; k < 4; k++) for (j = k + 1; j < 4; j++)
+    if (found[k][0] === found[j][0] && found[k][1] === found[j][1])
+      return { fail: 'marks', cand: cand.length };
+  var warp = shWarp(found);
+  if (!warp) return { fail: 'warp' };
+  return { warp: warp, marks: found, ink: m, w: W, h: H,
+           dark: function(qx, qy){
+             var xi = Math.round(qx), yi = Math.round(qy);
+             return xi >= 0 && yi >= 0 && xi < W && yi < H && m[yi * W + xi] === 1;
+           } };
+}
+
+/* ---- ink into an outline ----------------------------------------------- */
+/* Every boundary of the mask, outer rings and the insides of holes alike.
+   A pictogram is full of holes -- a circle, a face -- and a hole is what
+   separates a letter from a blot, so they are all kept.
+
+   The boundary is followed along the CRACKS BETWEEN PIXELS, not along the
+   pixels themselves, and that is not a detail: a walk over pixels can leave
+   the loop it started and never come back, and the first version did. It ran
+   to its guard of res*res*4 every time, handed 160,000-point loops to the
+   thinner, and the thinner is O(n^2). Nothing threw; the page simply never
+   came back. A crack walk closes by construction -- every crack is entered
+   from one side and left on the other, so there is nowhere else to end up. */
+function shTrace(m, res){
+  function ink(x, y){ return x >= 0 && y >= 0 && x < res && y < res && m[y * res + x] === 1; }
+  var DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
+  /* the pixels either side of the crack that leaves corner (cx,cy) in
+     direction d. Ink is kept on the right all the way round. */
+  function side(cx, cy, d, right){
+    if (d === 0) return right ? [cx, cy] : [cx, cy - 1];
+    if (d === 1) return right ? [cx - 1, cy] : [cx, cy];
+    if (d === 2) return right ? [cx - 1, cy - 1] : [cx - 1, cy];
+    return right ? [cx, cy - 1] : [cx - 1, cy - 1];
+  }
+  var used = new Uint8Array((res + 1) * (res + 1) * 4), loops = [], x, y, t;
+  for (y = 0; y <= res; y++) for (x = 0; x <= res; x++){
+    if (!(ink(x, y) && !ink(x, y - 1))) continue;          /* a crack going right */
+    if (used[(y * (res + 1) + x) * 4]) continue;
+    var loop = [], cx = x, cy = y, d = 0, guard = 0, nd, dd, L, R;
+    while (guard++ < (res + 1) * (res + 1) * 4){
+      loop.push([cx, cy]);
+      used[(cy * (res + 1) + cx) * 4 + d] = 1;
+      cx += DX[d]; cy += DY[d];
+      if (cx === x && cy === y && d === 0) break;
+      nd = -1;
+      for (t = 1; t >= -1; t--){                 /* right turn, straight, left */
+        dd = (d + t + 4) % 4;
+        R = side(cx, cy, dd, true); L = side(cx, cy, dd, false);
+        if (ink(R[0], R[1]) && !ink(L[0], L[1])){ nd = dd; break; }
+      }
+      if (nd < 0) break;
+      d = nd;
+      if (used[(cy * (res + 1) + cx) * 4 + d]) break;
+    }
+    if (loop.length > 7) loops.push(loop);
+  }
+  return loops;
+}
+/* Fewer points, same shape. A traced boundary is one point per pixel, and a
+   letter is three or four hundred of them per loop; what a font wants is tens.
+   Douglas-Peucker, with the tolerance in the same units as the mask. */
+function shThin(loop, tol){
+  if (loop.length < 4) return loop.slice();
+  var keep = [], i, st = [[0, loop.length - 1]];
+  for (i = 0; i < loop.length; i++) keep.push(0);
+  keep[0] = keep[loop.length - 1] = 1;
+  while (st.length){
+    var seg = st.pop(), a = seg[0], b = seg[1];
+    var A = loop[a], B = loop[b], vx = B[0] - A[0], vy = B[1] - A[1];
+    var L = Math.sqrt(vx * vx + vy * vy) || 1, worst = tol, at = -1;
+    for (i = a + 1; i < b; i++){
+      var d = Math.abs(vx * (A[1] - loop[i][1]) - vy * (A[0] - loop[i][0])) / L;
+      if (d > worst){ worst = d; at = i; }
+    }
+    if (at > 0){ keep[at] = 1; st.push([a, at]); st.push([at, b]); }
+  }
+  var out = [];
+  for (i = 0; i < loop.length; i++) if (keep[i]) out.push(loop[i]);
+  return out;
 }
