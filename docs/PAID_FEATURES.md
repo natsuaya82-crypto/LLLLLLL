@@ -40,7 +40,7 @@ losing the letters it paid for, one tier down.
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
 | `snd` choose the sound, not the letter's own | — | yes | yes |
 | words | 100 | 1000 | no ceiling |
-| `kb` a keyboard of your own | — | **see below** | yes |
+| `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
 | `gram` `dir` `data` `file` | — | — | yes |
 
 **The words ceiling is a number, not a door.** `wordCap()` is the one place
@@ -55,10 +55,14 @@ no subscription for it exists in App Store Connect, so the plans screen sells
 Free and Plus. What is here is the rung: the day a receipt says `basic`, every
 door above is already the right way round.
 
-**`kb` has not moved down to Basic**, and that is not an oversight. How many
-keyboards Basic gets is a number, and two owner decisions of 2026-08-23
-disagree about it — 1 + 3 = 4 in a pool across languages, against 1, and Plus
-with no ceiling against Plus with 3. `docs/BACKLOG.md` carries both sides.
+**`kb` has not moved down to Basic yet**, and that is not an oversight. The
+number is settled — 「1,1+3.無制限って言わなかったっけ？」 — Free 1, Basic four
+**counted across languages** rather than per language, and Plus no ceiling.
+What holds it is `KB_MAX` in `www/keyboard.js`, which belongs to another
+session today and is in the middle of a change about holding more than one
+keyboard. **The door and its number are one statement and must not land
+apart**: `can('kb')` moving to `basic` while `KB_MAX` still hands out three
+per language would give Basic a number the owner has never said.
 
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`

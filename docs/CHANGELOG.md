@@ -15,6 +15,31 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### How many keyboards: settled — OWNER DECISION
+
+「1,1+3.無制限って言わなかったっけ？」 — 2026-08-23.
+
+**Free 1, the fixed QWERTY. Basic 1 + 3 = 4. Plus no ceiling.** Counted as a
+**pool across languages**, not per language.
+
+`docs/FEATURE_RULES.md` carried two answers written on the same day — one §
+saying four in a pool with Plus unbounded, and the `CAN` table below it saying
+Basic 1 and Plus 3. A session about to move `can('kb')` down to Basic stopped
+on it instead. The owner named the first. **The file says one thing in both
+places now**, and the decision log carries the clarification as its own entry
+rather than as an edit nobody can see.
+
+**Nothing is built for it, and deliberately not here.** `KB_MAX` lives in
+`www/keyboard.js`, which belongs to another session today and is in the middle
+of 126 lines about holding more than one keyboard. What is waiting is written
+out in `docs/BACKLOG.md`: `kbCap()` beside `wordCap()`, the ceiling asking it,
+the count becoming a sum across `LANGS`, and `CAN.kb` moving to `basic` **in
+the same commit** — a door opened without its number would give Basic the
+three `KB_MAX` hands out today, which is neither answer.
+
+**Documents only.** No code, no data, no check moved.
+
+
 ### The plans screen buys, on a phone
 
 `www/store.js` — chapter 26, the one window onto StoreKit the way `net.js` is

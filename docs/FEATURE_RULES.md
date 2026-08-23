@@ -314,6 +314,36 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-23
+- Area: How many keyboards, said again because the file said it twice
+- Decision: **Free 1 — the fixed QWERTY. Basic 1 + 3 = 4. Plus no ceiling.**
+  Counted as a **pool across languages**, not per language.
+  「1,1+3.無制限って言わなかったっけ？」
+- Reason: this file carried two answers written the same day — the § above
+  said 4 in a pool and Plus with no ceiling, and the `CAN` table below it said
+  Basic 1 and Plus 3. A session that was about to move `can('kb')` down to
+  Basic stopped on it instead, because a door opened without its number would
+  have given Basic the three `KB_MAX` hands out today, which is neither
+  answer. The owner named the first one. The table below now says the same
+  thing, so there is one answer in this file again.
+- Affected features: `KB_MAX` in `www/keyboard.js` — a per-language constant
+  today, a per-plan number counted across languages from now — and
+  `CAN.kb`, which moves from `plus` to `basic`.
+- Affected data: none. Somebody over the ceiling keeps every keyboard and
+  simply cannot add another. `backup-check` holds that already.
+- Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
+- Implementation status: **nothing built, and deliberately not by this
+  session.** `www/keyboard.js` belongs to `claude/detailed-tasks-execution`
+  today, and that branch is in the middle of a 126-line change about holding
+  more than one keyboard — `kbAddKb()`, the tab that switches which board is
+  on the phone, the button that deletes one. The number belongs in the same
+  hands as that. What is waiting: `kbCap()` beside `wordCap()` in
+  `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX` asking it
+  instead, the count becoming a sum across `LANGS` rather than a length, and
+  `CAN.kb` moving to `basic` in the same commit — the door and its number are
+  one statement and must not land apart.
+
+### Decision
+- Date: 2026-08-23
 - Area: A third plan, and what pays for the free one
 - Decision: **Three plans, and the prices are settled.**
 
@@ -333,7 +363,7 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   | | Free | Basic | Plus |
   |---|---|---|---|
   | `letters` add / name / delete | — | **yes** | yes |
-  | `kb` a keyboard of your own | — | **1** | 3 |
+  | `kb` a keyboard of your own | 1 (the fixed QWERTY) | **1 + 3 = 4** | **no ceiling** |
   | `words` | 100 | **1000** | no ceiling |
   | `wsys` syllabary, abjad, abugida, logography | — | **yes** | yes |
   | `snd` choose the sound, not the letter's own | — | **yes** | yes |
