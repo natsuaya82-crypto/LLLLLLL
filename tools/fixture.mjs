@@ -71,7 +71,7 @@ export function seed(){
      really has -- and clearing it HERE rather than at the end of the two
      faces that set it is what keeps shot.mjs's render() from photographing
      the screen a face tidied back to. */
-  DAY = null; DAYP = null;
+  DAY = null;
   /* anon:false is the half that matters. There is a session from the first
      launch now whether or not anybody has said who they are, so a fixture
      that only set `rt` would be walking the app as somebody with no name --
@@ -306,16 +306,6 @@ export function halfDone(){
           photographs the screen it tidied back to. seed() is what clears
           DAY, once, before each. */
        return vFeed(); }],
-    /* The day's own page: the sentence at the head and the answers under it.
-       Seeded with what the timeline already holds, so it is a page with
-       something on it -- an empty one is a different face and not this one. */
-    ['one day, and what everybody said', () => {
-       DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
-               says: { en: 'It is unbearably hot today.',
-                       ja: '今日はめちゃくちゃ暑い。' } };
-       DAYP = postKept().slice(0, 3);
-       window.route = 'day'; NAV = [{ r:'feed' }, { r:'day' }];
-       return vDay(); }],
     ['answering the day\'s sentence', () => {
        DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
                says: { en: 'It is unbearably hot today.',

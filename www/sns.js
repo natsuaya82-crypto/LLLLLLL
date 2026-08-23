@@ -138,14 +138,7 @@ function vFeed(){
      font anyway. There is no font to hand it now: a post carries the shapes
      its own line is written in, so a row is read out of the row. */
   return '<div class="view">'+
-    /* The word for the day, beside the name of the screen. A word and not an
-       icon 「文字ね」, and in the bar rather than as a sixth tab: it is the
-       same timeline seen through one day. It is only there when there IS a
-       day -- a word that goes to an empty page is worse than no word.
-       「ホームの横にお題ってつけれる？」「文字ね」 It is in the bar because a
-       word there costs no height, and the row under it is already two lines. */
-    rootTop('feed', DAY? '<button class="navlink"' + DO('go', ["day"]) + '>'+
-                         esc(pageName('day'))+'</button>' : '')+
+    rootTop('feed')+
     '<div class="body">'+
 
     /* A row to write in, at the top of the timeline, because the round button
@@ -268,44 +261,10 @@ function dayRow(){
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
     '<span class="dayrb">'+
       '<span class="dayline">'+
-        esc(say)+'</span>'+
+        '<span class="dayk">'+esc(t('day.k'))+'</span>'+esc(say)+'</span>'+
       '<span class="wrt">'+esc(t('day.ask'))+'</span>'+
     '</span>'+
   '</button>';
-}
-/* ---- one day, and what everybody said ----------------------------------
-   The sentence at the top and every answer under it. This is the half the
-   table was designed for and the reason the link is a column rather than a
-   word in the text: `prompt` has an index behind it, so a day is one query.
-
-   「投稿は残るので、お題は積み上がる ── 誰かが作ったあらゆる言語での同じ
-   意味。その日が過ぎたあとも戻ってくる価値のあるページ」 -- schema.sql. */
-var DAYP=null, dayPPulling=false;
-function dayPPull(){
-  if(dayPPulling || !DAY) return;
-  dayPPulling=true;
-  netDayPosts(DAY.id, function(ps){
-    dayPPulling=false;
-    DAYP=ps||[];
-    render();
-  }, function(){ dayPPulling=false; DAYP=DAYP||[]; });
-}
-function vDay(){
-  if(!netSignedIn()) return snsLocked('day');
-  var say=daySay(), d=String((DAY&&DAY.on_day)||'').split('-'), list;
-  if(DAY) dayPPull();
-  list=DAYP||[];
-  return '<div class="view">'+
-    navTop('')+
-    '<div class="body">'+
-    (say? '<div class="dayhd">'+
-            (d.length===3? '<span class="dayd">'+
-               esc(t('day.date', String(+d[1]), String(+d[2])))+'</span> ' : '')+
-            esc(say)+'</div>' : '')+
-    (list.length? list.map(postRow).join('') : snsNone())+
-    '</div>'+
-    snsFab('day')+
-  '</div>';
 }
 function snsFab(from){
   if(!netSignedIn() || NET_BANNED) return '';

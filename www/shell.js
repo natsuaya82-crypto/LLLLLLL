@@ -162,10 +162,6 @@ var route='profile';
    side: 「←目次　Ⅰ 単語」 */
 var PAGES={
   feed:    {tab:'feed',    k:'tab.home'},
-  /* The day's sentence and everybody's answers to it. Under the feed's tab,
-     because it is the timeline seen through one day rather than a sixth
-     place to be. */
-  day:     {tab:'feed',    k:'tab.day'},
   explore: {tab:'explore', k:'tab.explore'},
   notif:   {tab:'notif',   k:'tab.notif'},
   profile: {tab:'profile', k:'tab.me'},

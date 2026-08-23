@@ -1055,8 +1055,7 @@ defLang('fr', (function(){
       "read.sep"         : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
-      "tab.day"  : "Du jour",
-      "day.date"         : "{1}/{0}",
+      "day.k"  : "Du jour",
       "day.ask"          : "Dans votre propre langue ?"
     }
   };

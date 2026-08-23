@@ -42,7 +42,6 @@ function page(r, view){
 }
 
 page('feed',     vFeed);
-page('day',      vDay);
 page('explore',  vExplore);
 page('notif',    vNotif);
 page('profile',  vProfile);
