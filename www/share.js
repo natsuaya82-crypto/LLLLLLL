@@ -425,9 +425,60 @@ function shareNums(){
   }
   return out;
 }
+/* Is every letter of this word drawn.
+
+   The font in the App Group is LinguaScript, and LinguaScript maps the ROMAN
+   characters -- scriptGlyphDefs() gives each sign the characters that type
+   it, upper and lower. So a widget draws somebody's letters by setting their
+   roman spelling in that font, and there is nothing to send but the spelling.
+
+   The first version of this sent the private use area instead, which is what
+   the keyboard types INTO a field. That is the other font -- LinguaType,
+   installTypeFont() -- and it is not the one written to the App Group. The
+   month would have come out as a row of empty boxes, on a phone, silently.
+
+   What is worth saying is whether the font will have every letter. One
+   undrawn letter is one character falling through to the system serif in the
+   middle of a word, which reads worse than a word set plainly -- so the
+   answer is all or nothing, and the caller sets the whole word plainly when
+   it is nothing. */
+function shareWordAll(w){
+  var sp=(w && w.sp) || [], i, l;
+  if(!sp.length) return false;
+  for(i=0;i<sp.length;i++){
+    l=ltById(sp[i].l);
+    if(!l || !l.st || !l.st.length) return false;
+  }
+  return true;
+}
+/* The words a stage made, by the slot they fill.
+   The spelling, and whether the font will have every letter of it. Absent
+   when nobody has made that month, which the widget reads as "say the number
+   instead". */
+function shareSlotWords(id, n){
+  var out={}, i, w;
+  for(i=1;i<=n;i++){
+    w=shareSlotWord(id+'.'+numLabel(i));
+    if(!w || !w.hw) continue;
+    out[String(i)]={r:String(w.hw), all:shareWordAll(w)};
+  }
+  return out;
+}
+/* Not stWordFor(): that wants the stage object, and asking stAll() for it
+   rebuilds every stage's slots to answer one question about one word. */
+function shareSlotWord(key){
+  var j;
+  for(j=0;j<WORDS.length;j++) if(WORDS[j].slot===key) return WORDS[j];
+  return null;
+}
 function shareWidget(){
   return {v:1, box:SHARE_BOX, base:numBase(), lang:langId, name:langName,
-          dg:shareNums()};
+          dg:shareNums(),
+          /* and the calendar: how the year and the week are divided, and
+             whatever names have been made for the parts. www/cal.js. */
+          mo:calMonths(), wk:calWeek(),
+          mon:shareSlotWords('month', calMonths()),
+          wd:shareSlotWords('wday', calWeek())};
 }
 /* Whether there is a native side at all, and the one way to reach it.
 

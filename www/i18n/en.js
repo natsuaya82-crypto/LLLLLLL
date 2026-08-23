@@ -478,7 +478,7 @@ defLang('en', (function(){
       'stg.desc.d'       : "Where a describing word stands",
       'stg.have.t'       : "Belonging",
       'stg.have.d'       : "How belonging is said",
-      'stg.count.t'      : "Counting",
+      'stg.count.t'      : "Numerals",
       'stg.count.d'      : "One to {0}",
       'stg.month.t'      : 'Months',
       'stg.month.d'      : 'The {0} parts of your year',

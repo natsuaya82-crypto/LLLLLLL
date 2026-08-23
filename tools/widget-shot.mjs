@@ -283,6 +283,45 @@ for (const dark of [false, true]) {
   await el.screenshot({ path: path.join(OUT, 'widgets' + (dark ? '-dark' : '') + '.png') });
   console.log('shots/widgets' + (dark ? '-dark' : '') + '.png');
 }
+/* ---- and one picture that is not a double at all ------------------------
+   Everything above is this file drawing what the Swift draws. This one is the
+   APP drawing it: the preview in the digits room, in the real app, with real
+   digits and a real month word, through the real font.
+
+   It is here because the month's NAME cannot honestly be faked. A word is set
+   in somebody's letters by setting its roman spelling in LinguaScript, and
+   LinguaScript is built by the app out of the shapes -- so a picture of a
+   month name that this file drew itself would be a picture of this file. */
+const app = await br.newPage({ viewport: { width: 390, height: 900 }, deviceScaleFactor: 3 });
+await app.goto(`http://127.0.0.1:${PORT}/`);
+await app.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
+await app.evaluate(({ s, D }) => {
+  eval('(' + s + ')()');
+  SET.done = true; SET.plan = 'plus';
+  const O = GGRID.inset, K = geStep();
+  Object.keys(D).forEach((v) => {
+    const l = numByVal(+v);
+    if (l) l.st = D[v].map((run) => ({ pts: run.map((p) => [O + p[0] * K, O + p[1] * K]) }));
+  });
+  /* a word for the month today falls in, spelled out of letters that ARE
+     drawn -- the fixture's own, so the font has every one of them */
+  const drawn = LETTERS.filter((l) => l.st && l.st.length && !numIsDigit(l));
+  const pick = [0, 1, 2].map((i) => drawn[i % drawn.length]).filter(Boolean);
+  if (pick.length) {
+    WORDS.push({ hw: pick.map((l) => ltName(l)).join(''), mn: 'the month',
+                 pos: 'n', at: 1, slot: 'month.' + calMonthOf(new Date()),
+                 sp: pick.map((l) => ({ l: l.id })) });
+  }
+  saveLetters(); save(); installScriptFont();
+  window.route = 'ltset'; NAV = [{ r: 'ltset', a: 'num' }];
+  render();
+}, { s: seed.toString(), D: DIGITS });
+await app.waitForTimeout(400);
+const row = await app.$('.numwrow');
+if (row) {
+  await row.screenshot({ path: path.join(OUT, 'widgets-in-app.png') });
+  console.log('shots/widgets-in-app.png   <- the app itself, with a month word');
+}
 await br.close();
 srv.close();
 console.log('\nThe data is shareWidget()\'s own and every number is the Swift\'s.');

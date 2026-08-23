@@ -318,13 +318,33 @@ function numClockHTML(){
    and the same rule about a number that takes more signs than it has room
    for -- 23 counted in two is five signs, and five at 0.44 of the square is
    three times its width. */
+/* Under the day, the month -- as a WORD when the calendar chapter has made
+   one for it, and as its number when it has not. Exactly what DateWidget.swift
+   does, because this is a picture of that.
+
+   The word is set in the person's letters by setting its ROMAN spelling in
+   LinguaScript: that font maps the characters that type each sign, so the
+   spelling is the drawing. `.sfont` is the class that asks for it, and it is
+   the same class every other word in the app is shown through.
+
+   All or nothing. One undrawn letter is one character falling through to the
+   serif in the middle of a word, so a word the font cannot carry whole is set
+   plainly instead. shareWordAll() is the one place that answers that, and the
+   widget asks it too. */
+function numMonthHTML(){
+  var m=calMonthOf(new Date()), w=shareSlotWord('month.'+numLabel(m));
+  if(!w || !w.hw)
+    return '<span class="numwsm" style="font-size:'+
+      numEm(m, NUM_WID*0.50, NUM_WID*0.17).toFixed(1)+'px">'+numLineHTML(m)+'</span>';
+  return '<span class="numwsm'+(shareWordAll(w)? ' sfont':'')+
+    '" style="font-size:'+(NUM_WID*0.17).toFixed(1)+'px">'+esc(w.hw)+'</span>';
+}
 function numDateHTML(){
-  var d=new Date(), W=NUM_WID, dv=d.getDate(), mv=d.getMonth()+1;
+  var d=new Date(), W=NUM_WID, dv=d.getDate();
   return '<div class="numwd">'+
     '<span class="numwbig" style="font-size:'+numEm(dv, W*0.86, W*0.44).toFixed(1)+'px">'+
       numLineHTML(dv)+'</span>'+
-    '<span class="numwsm" style="font-size:'+numEm(mv, W*0.50, W*0.17).toFixed(1)+'px">'+
-      numLineHTML(mv)+'</span></div>';
+    numMonthHTML()+'</div>';
 }
 function numWidHTML(){
   return '<div class="sec">'+esc(t('num.wid'))+'</div>'+

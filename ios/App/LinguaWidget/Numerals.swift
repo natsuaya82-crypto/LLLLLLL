@@ -28,6 +28,19 @@ struct Face: Decodable {
   let dx: Double?
 }
 
+/// A word somebody made for a month or a day of the week.
+struct Named: Decodable {
+  /// The spelling, in roman letters. That is all there is to send: the font
+  /// in the App Group is LinguaScript, and LinguaScript maps the roman
+  /// characters -- setting this string in it IS setting it in the person's
+  /// own letters.
+  let r: String
+  /// Whether the font will have every letter of it. One undrawn letter is one
+  /// character falling through to the system serif in the middle of a word,
+  /// so it is all or nothing and this says which.
+  let all: Bool
+}
+
 struct Numerals: Decodable {
   let v: Int
   let box: Double
@@ -36,6 +49,43 @@ struct Numerals: Decodable {
   /// Keyed by value, so a language with no zero has a hole rather than a
   /// shift. Only digits with something to show are in here at all.
   let dg: [String: Face]
+  /// How the year and the week are divided. Absent in a file written before
+  /// the calendar existed, and absent is twelve and seven -- the same
+  /// defaults www/cal.js has, said in the same two numbers.
+  let mo: Int?
+  let wk: Int?
+  /// The names, keyed by which month and which day, counting from one. A
+  /// month nobody has made a word for is simply not here.
+  let mon: [String: Named]?
+  let wd: [String: Named]?
+
+  var months: Int { let n = mo ?? 12; return (n >= 2 && n <= 24) ? n : 12 }
+  var week: Int { let n = wk ?? 7; return (n >= 2 && n <= 14) ? n : 7 }
+
+  /// Which part of the year a date falls in, counting from one.
+  ///
+  /// The year cut into equal parts, and the last part takes whatever is left:
+  /// there is no leap rule to be wrong about because a 366th day falls in the
+  /// last month, there being nowhere else for it to be. www/cal.js says why
+  /// there is no calendar arithmetic of anybody's own beyond this.
+  func monthOf(_ d: Date) -> Int {
+    let cal = Calendar.current
+    let day = (cal.ordinality(of: .day, in: .year, for: d) ?? 1) - 1
+    let m = day * months / 365 + 1
+    return min(max(m, 1), months)
+  }
+  /// Which day of the week, counting from one. Days since 1970-01-01 taken
+  /// modulo the week, so a five-day week runs on through the years without a
+  /// seam at new year.
+  func dayOf(_ d: Date) -> Int {
+    let cal = Calendar.current
+    let c = cal.dateComponents([.year, .month, .day], from: d)
+    var g = DateComponents()
+    g.year = c.year; g.month = c.month; g.day = c.day
+    guard let midnight = cal.date(from: g) else { return 1 }
+    let days = Int(floor(midnight.timeIntervalSince1970 / 86400))
+    return ((days % week) + week) % week + 1
+  }
 
   static let group = "group.com.tokinets.lingua"
   static let file = "widget.json"

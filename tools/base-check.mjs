@@ -115,9 +115,34 @@ const r = await pg.evaluate(({s}) => {
   out.calAsks = stBy('month').slots.length;
   /* out of range is the default, not a stored number nothing can draw */
   calSetMonths(99); out.calBad = calMonths();
-  calSetMonths(12);
+  /* Both back, because what follows asks what goes out to the widget and a
+     week still on five from the case above would be answering a question
+     nobody down there asked. */
+  calSetMonths(12); calSetWeek(7);
+
+  /* A month with a word on it: the widget says the name when there is one
+     and the number when there is not, so both have to leave here in the
+     shape it expects.
+
+     `all` is whether the font in the App Group will have every letter of it.
+     That font is LinguaScript and LinguaScript maps the ROMAN characters, so
+     the spelling IS what gets set in the person's letters -- there is nothing
+     else to send. One undrawn letter and `all` is false, and the widget sets
+     the word plainly rather than with one character in the system serif. */
+  var mw = {hw:'Tuvel', mn:'twelfth', pos:'n', at:1, slot:'month.3',
+            sp:[{l:numByVal(10).id}, {l:'l5'}]};
+  WORDS.push(mw);
 
   var w = shareWidget();
+  out.wMo     = w.mo;
+  out.wWk     = w.wk;
+  out.wMonKey = Object.keys(w.mon).sort().join(' ');
+  out.wMonR   = w.mon['3'] && w.mon['3'].r;
+  out.wMonAll = !!(w.mon['3'] && w.mon['3'].all);
+  /* the same word with one letter that was never drawn */
+  mw.sp = [{l:numByVal(10).id}, {l:numByVal(11).id}];
+  out.wMonHole = !!(shareWidget().mon['3'] || {}).all;
+  mw.sp = [{l:numByVal(10).id}, {l:'l5'}];
   out.wBase   = w.base;
   out.wDrawn  = !!(w.dg['10'] && w.dg['10'].st && w.dg['10'].st.length);
   out.wNamed  = Object.prototype.hasOwnProperty.call(w.dg, '11');
@@ -167,6 +192,16 @@ say(!r.wFresh, 'nor do the ten a fresh language starts with, which nobody has dr
    check drew above. A count alone would go on passing if the wrong one of
    them dropped out. */
 say(r.wKeys === '1 10', 'exactly the digits with ink on them go out (' + r.wKeys + ')');
+
+say(r.wMo === 12 && r.wWk === 7, 'the widget is told how the year and the week divide (' + r.wMo + ', ' + r.wWk + ')');
+/* Twelve and three: the word the calendar case above made for the twelfth
+   month, which survived the year going down to ten and is still somebody's,
+   and the third made here. Naming both is the point -- a count would go on
+   passing if the wrong one dropped out. */
+say(r.wMonKey === '12 3', 'only the months somebody named go out (' + r.wMonKey + ')');
+say(r.wMonR === 'Tuvel', 'with the roman spelling, always (' + r.wMonR + ')');
+say(r.wMonAll, 'and that the font will have every letter of it');
+say(!r.wMonHole, 'one undrawn letter and it says so, so the widget sets the word plainly');
 
 say(r.calMo0 === 12 && r.calWk0 === 7,
     'a language starts with twelve months and a week of seven (' + r.calMo0 + ', ' + r.calWk0 + ')');

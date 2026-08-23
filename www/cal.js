@@ -34,11 +34,12 @@
    Both are one line and neither has a leap rule to be wrong about: a 366th
    day falls in the last month because there is nowhere else for it to be.
 
-   Neither of those two lines is HERE. Nothing in the app says what today is,
-   so a calMonthOf() in this file would be a function nothing calls -- and the
-   one place that does need them is the widget, which recomputes them every
-   day in Swift and cannot ask this file anything. Two copies of a rule is how
-   the two drift; one copy, where it is used. ios/App/LinguaWidget/.
+   The month is here. It was not, and could not be: nothing in the app said
+   what today was, so it would have been a function nothing called. The
+   digits room shows what the widget will show now, and that is a caller.
+   The WEEK is still not here, because nothing shows a day of the week yet.
+   ios/App/LinguaWidget/Numerals.swift has both, in Swift, because a widget
+   recomputes them every day and cannot ask this file anything.
    ========================================================================= */
 
 /* Two, because one part is not a division of anything; twenty-four, because
@@ -86,6 +87,16 @@ function calSlots(n){
 }
 function calMonthSlots(){ return calSlots(calMonths()); }
 function calWeekSlots(){ return calSlots(calWeek()); }
+
+/* Which part of the year a date falls in, counting from one.
+   The year cut into equal parts, and the last part takes whatever is left:
+   366 / (365/12) is 12.03, and a thirteenth month would be a day long. */
+function calMonthOf(d){
+  var n=calMonths(), y=new Date(d.getFullYear(), 0, 1),
+      day=Math.floor((d-y)/86400000),
+      m=Math.floor(day*n/365)+1;
+  return (m<1)? 1 : (m>n? n : m);
+}
 
 /* The two numbers, offered where the words are. A stepper each, the shape the
    base already uses, so the three questions that decide how many slots a
