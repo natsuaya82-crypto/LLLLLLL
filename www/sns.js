@@ -246,12 +246,20 @@ function dayRow(){
      whatever wrote it. Split by hand because `on_day` is `YYYY-MM-DD` and
      Date parsing of it is a timezone question all over again. */
   d=String(DAY.on_day||'').split('-');
+  /* The face is the person's own, exactly as the row you write in had it.
+     Without it the sentence read as a notice printed over the timeline rather
+     than as the first row of it 「なんか投稿ぽくない。ただ書いてるだけ」 --
+     and what the face says is whose post this is about to be. */
   return '<button class="dayrow"' + DO('openPost', ["day"]) + '>'+
-    '<span class="dayq">'+
-      (d.length===3? '<span class="dayd">'+
-         esc(t('day.date', String(+d[1]), String(+d[2])))+'</span> ' : '')+
-      esc(say)+'</span>'+
-    '<span class="daya">'+esc(t('day.ask'))+'</span>'+
+    '<span class="pav">'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+    '<span class="daybd">'+
+      '<span class="dayq">'+
+        (d.length===3? '<span class="dayd">'+
+           esc(t('day.date', String(+d[1]), String(+d[2])))+'</span> ' : '')+
+        esc(say)+'</span>'+
+      '<span class="daya">'+esc(t('day.ask'))+'</span>'+
+    '</span>'+
   '</button>';
 }
 function snsFab(){
