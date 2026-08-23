@@ -39,6 +39,24 @@ on what `show()` builds.
 **Still open: deleting any of the 202.** That is a change to the stylesheet,
 one selector at a time, each one read by somebody first.
 
+## ウィジェットの絵が実物より大きい ── `claude/save` の担当
+
+*2026-08-23, owner:* 実機の写真と `tools/widget-shot.mjs` の出す絵を並べて
+「全然違うし、本当のウィジェットの見た目小さいよ」。
+
+出ている絵は「ホーム画面では」という見出しの下に文字盤を大きく描いていて、
+実機ではもっと小さい。**大きさが違う絵は、確認の役に立たないだけでなく、
+確認したつもりにさせる** ── このリポジトリが何度も踏んでいる形。実機で
+出る大きさで描くこと。iOS のウィジェットは small / medium / large の三つで、
+写真は small。
+
+**カレンダーがまだ無い。** 時計と日付はあるが、カレンダーは無い。
+
+置く手順は「ホーム長押し → 編集 → ウィジェットを追加 → Lingua」。
+
+`ios/App/LinguaWidget/` と `tools/widget-shot.mjs` は `claude/save` が
+持っているファイルなので、こちらでは触っていない。
+
 ## iPhone のパスワード保存 — 調べて、やらないと決めた
 
 *2026-08-23, owner:*「パスワードの保存は一旦なしで」
