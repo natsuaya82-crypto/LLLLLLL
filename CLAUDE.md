@@ -593,6 +593,19 @@ under `ios/App/` must be in `App.xcodeproj`'s Sources build phase, because Xcode
 compiles what the project file lists and nothing else — a file on disk, tracked by
 git, imported by name, and simply absent from that phase is invisible to the
 compiler, and the error it produces names the missing *type*, not the missing file.
+**And that a placeholder has somebody who fills it.** `__APPLE_TEAM_ID__` sits
+in `project.pbxproj` on purpose — the deploy workflow substitutes it, so the
+team id is never in the repo. `__GOOGLE_REVERSED_CLIENT_ID__` sat in
+`Info.plist` looking exactly the same and nothing substituted it: Google's
+client had not been made, and it was standing in for a value that did not
+exist rather than one the workflow would supply. Nothing tells those two apart
+by looking, and nothing throws — the app compiled, archived, exported,
+uploaded, and Apple refused the delivery **by email** an hour later
+(`ITMS-90158`, build 86). It is the only failure here that does not arrive as
+a red tick. So every `__NAME__` under `ios/App/` must be a name the workflow
+actually substitutes, and the list is read off the workflow rather than
+restated — adding an injection there is the whole of adding one.
+
 `Compose.swift` and `CandidateBar.swift` shipped that way once: written, committed,
 pushed, left out of `project.pbxproj`, and the build failed on `cannot find 'Compose'
 in scope` with nothing pointing at why. `index.html` had been held to this rule from

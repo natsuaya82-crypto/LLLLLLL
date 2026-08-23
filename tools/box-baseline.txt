@@ -114,8 +114,6 @@
 .obheard | border-radius
 .obhp | border
 .obhp | border-radius
-.oblang | border
-.oblang | border-radius
 .obsnd | border
 .obsnd | border-radius
 .obsrow | border

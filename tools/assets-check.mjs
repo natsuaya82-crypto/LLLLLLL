@@ -232,6 +232,54 @@ if (existsSync(PBX)) {
   if (!problems.length) swiftCount = swift.length
 }
 
+// -------------------------------------------------- a placeholder nobody fills
+// A third statement of the same shape: something is written down as a stand-in
+// and the thing that was supposed to replace it does not exist.
+//
+// `__APPLE_TEAM_ID__` sits in project.pbxproj on purpose -- the deploy
+// workflow substitutes it before the build, so the repo never holds the team
+// id. `__GOOGLE_REVERSED_CLIENT_ID__` sat in Info.plist looking exactly the
+// same and NOTHING substituted it: Google's client had not been made yet, and
+// the placeholder was standing in for a value that did not exist rather than
+// for one the workflow would supply.
+//
+// Nothing on this side can tell those two apart by looking, and nothing threw.
+// The app compiled, archived, exported, uploaded, and Apple refused the
+// delivery by mail an hour later:
+//
+//   ITMS-90158: The following URL schemes found in your app are not in the
+//   correct format: [__GOOGLE_REVERSED_CLIENT_ID__].
+//
+// That was build 86, and it is the only kind of failure in this repo that
+// arrives as an email instead of a red tick.
+//
+// So: every `__NAME__` under ios/App/ must be a name the deploy workflow
+// actually substitutes. The list is not restated here -- it is read off the
+// workflow, so adding an injection there is the whole of adding one.
+const WF = join(ROOT, '.github', 'workflows', 'ios-deploy.yml')
+const wf = existsSync(WF) ? readFileSync(WF, 'utf8') : ''
+let holes = 0
+if (existsSync(IOS)) {
+  const look = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'Pods' || e.name === 'public' || e.name === 'build') continue
+      const f = join(dir, e.name)
+      if (e.isDirectory()) { look(f); continue }
+      if (!/\.(plist|entitlements|swift|pbxproj|xml|json)$/.test(e.name)) continue
+      const txt = readFileSync(f, 'utf8')
+      const seen = new Set()
+      for (const m of txt.matchAll(/__[A-Z][A-Z0-9_]*__/g)) {
+        if (seen.has(m[0])) continue
+        seen.add(m[0])
+        if (wf.indexOf(m[0]) === -1) {
+          problems.push(`${f.slice(ROOT.length + 1)} carries ${m[0]}, and .github/workflows/ios-deploy.yml never substitutes it. A placeholder nobody fills ships as its own text — build 86 was refused by Apple for exactly this (ITMS-90158). Either wire the substitution into the workflow, or take the key out: an absent key is the honest shape of "not configured".`)
+        } else holes++
+      }
+    }
+  }
+  look(IOS)
+}
+
 // ------------------------------------------------------------------- verdict
 
 if (problems.length) {
@@ -244,4 +292,5 @@ if (problems.length) {
 
 console.log(`assets: ${referenced.length} files loaded by index.html, all present and tracked.`)
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
+console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js (last)`)

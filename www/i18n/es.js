@@ -962,7 +962,11 @@ defLang('es', (function(){
       "csv.full"        : "{0} importadas, {1} creadas — Free está lleno",
       "toast.exported"   : "Exportado",
       "toast.exportfail" : "No se pudo exportar",
-      "read.sep"         : "  "
+      "read.sep"         : "  ",
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      "day.k"  : "Hoy",
+      "day.ask"          : "¿En tu propia lengua?"
     }
   };
 })());

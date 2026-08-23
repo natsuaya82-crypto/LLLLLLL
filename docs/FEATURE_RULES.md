@@ -186,6 +186,42 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-23
+- Area: その日の一文 ── どこから来て、何語で出て、消せるか
+- Decision:
+
+  1. **一日一文、サーバーが持つ。** `prompt` テーブル（schema.sql に設計だけ
+     あって使われていなかったもの）を使う。
+  2. **書くのは Gemini。** 一日一回、一回の呼び出し。「全員同じのを1日1回
+     おくだけならgeminiの無料で行けない？プロンプトガチガチにして」
+  3. **日付はアメリカ時間の 0 時から。**「日付はアメリカ時間の0時から」
+     太平洋時間で実装（Apple が App Store で使う時間帯）。夏時間も追う。
+  4. **十言語で出す。** 見る人の UI 言語で。`text`(英語)は消さず、`says`
+     という列を**足す**。「B. 十言語」
+  5. **お題から開いた投稿は、意味を消せない。**「消せないようにしようそこ
+     からのやつは。じゃないと意味ないもん」
+  6. **繋がりはハッシュタグではなく列。** `post.prompt`。文字列は編集で
+     切れるが、列は切れない。
+
+- Reason: 全員が同じ文の意味を知っているから、読めない二百の文字の並びが
+  読める二百の文になる。これが崩れる形（意味を消せる、言語ごとに別のタグ、
+  端末ごとに違う文）はどれも機能そのものを無くす。
+- Affected features: タイムラインの一番上の行、投稿の画面
+- Affected data: `prompt.says`(新)、`post.prompt`(既存・未使用だった)、
+  投稿と下書きの `pr`。端末に増えるものは無い
+- Affected docs: `supabase/setup.md` § 9、`docs/CHANGELOG.md`、
+  `supabase/schema.sql` § asked
+- Implementation status: IMPLEMENTED（コード）。**サーバー側は未** ──
+  ダッシュボードで鍵と関数と cron を入れるまで、お題は出ない（出ないときは
+  これまで通りの書く行に戻るだけ）
+
+**この決定は、`schema.sql` に書かれていた設計と一箇所ちがう。** `text` の行に
+「English, and translated on the device」とあり、それは「全員が英語の一文を見て
+訳すのが遊びそのもの」という設計だった。オーナーは 2026-08-23 に別の判断をした
+── 日本語話者が英語のお題を読むのは翻訳を二回することで、二回目だけが遊びだから。
+`text` は残してあるので、書かれていたものは失われていない。
+
+### Decision
+- Date: 2026-08-23
 - Area: How many languages, how many keyboards, and two more capabilities
 - Decision:
 

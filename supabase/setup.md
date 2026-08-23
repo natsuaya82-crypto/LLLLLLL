@@ -260,7 +260,102 @@ ON にすると、含まれている分を使い切った時点で**課金が増
   アプリが `PATCH` を投げていません
 - **`profile.av` はアカウントを作った時の顔のまま**です。文字を描き直しても
   変わりません。`docs/BACKLOG.md` に理由を書いてあります
-- **`prompt`（その日の一文）は誰も書けません。** insert ポリシーが存在しない
-  ので、API からは作れません。service_role でしか入れられず、それは意図です
+- **`prompt`（その日の一文）は API からは誰も書けません。** insert ポリシーが
+  存在しないので、service_role でしか入れられません。それは意図で、入れるのは
+  § 9 の関数です
 - **`language` `publication` `quote` は書かれていません。** テーブルとポリシー
   はありますが、アプリがまだ触っていません
+
+---
+
+## 9. その日の一文を、毎日ひとつ書かせる
+
+タイムラインの一番上に出る一文です。**全員が同じ文を見て、それぞれ自分の言語に
+訳して投稿する** ── 読めない二百の文字の並びが、読める二百の文になる、という
+のがこの機能の全部です。
+
+書くのは Gemini で、**一日一回、一回の呼び出し**。無料枠で足ります。
+
+### 9-1. Gemini の鍵をとる
+
+https://aistudio.google.com/apikey → **Create API key**
+
+**この鍵はアプリに入れません。** 電話は Supabase と直接しゃべっていて、その間に
+うちのサーバーは無いので、**アプリが持っているものは全部公開されています**
+（`www/net.js` の `SB_KEY` のコメントがそう言っています）。鍵は次で Supabase の
+中にだけ置きます。
+
+### 9-2. Supabase に鍵を預ける
+
+Dashboard → **Edge Functions** → **Secrets**（左の Manage secrets）
+
+| Name | Value |
+|---|---|
+| `GEMINI_API_KEY` | 9-1 でとった鍵 |
+| `CRON_SECRET` | 適当に長い文字列を自分で決める（後で使う） |
+
+`CRON_SECRET` は、URL を見つけた誰かが勝手に叩いて一日の枠を使い切らないための
+合言葉です。関数はこれが合わなければ 401 を返して何もしません。
+
+### 9-3. 関数を置く
+
+パソコンのターミナルで、このリポジトリの中で:
+
+```
+npx supabase login
+npx supabase link --project-ref <あなたのプロジェクトの ref>
+npx supabase functions deploy daily-prompt
+```
+
+`ref` は Dashboard → Project Settings → General の **Reference ID** です。
+
+### 9-4. 一度、手で叩いて確かめる
+
+```
+curl -X POST "https://<ref>.supabase.co/functions/v1/daily-prompt" \
+  -H "x-cron-secret: <9-2 で決めた CRON_SECRET>"
+```
+
+返ってくるもので、どこまで行ったかが分かります:
+
+| 返り | 意味 |
+|---|---|
+| `{"day":"2026-08-23","wrote":"..."}` | 入りました |
+| `{"day":"...","already":true}` | その日の分はもうあります。二度目は何もしません |
+| `no`（401） | `x-cron-secret` が違うか、`CRON_SECRET` を入れていない |
+| `GEMINI_API_KEY is not set` | 9-2 を飛ばしています |
+| `refused: ja: ...` | モデルの答えが決まりを破ったので**書きませんでした**。もう一度叩けば別の文で試します |
+
+Table Editor → `prompt` に行が一つ増えていて、`says` に十言語ぶん入っていれば
+正解です。
+
+### 9-5. 毎日にする
+
+Dashboard → **Integrations** → **Cron**（または Database → Cron Jobs）→
+**Create job**
+
+| | |
+|---|---|
+| Name | `daily-prompt` |
+| Schedule | `5 7 * * *` |
+| Type | HTTP Request |
+| Method | POST |
+| URL | `https://<ref>.supabase.co/functions/v1/daily-prompt` |
+| HTTP Header | `x-cron-secret` : `<CRON_SECRET>` |
+
+**cron は UTC です。** `5 7 * * *` は 07:05 UTC で、これは太平洋標準時の
+23:05、つまり**その日が始まる少し前**。関数の中は太平洋時間で日付を出すので、
+ここは「日付が変わる頃に一回鳴ればいい」だけです。夏時間の分は関数側が吸収する
+ので、この行は年二回でも直す必要はありません。
+
+**一日一回で十分です。** 関数はその日の行があれば何もしないので、心配なら
+`5 7,13 * * *` のように二回にしておくと、一回失敗しても拾えます。
+
+### 9-6. 文が気に入らない日は
+
+Table Editor → `prompt` → その日の行を直接書き換えてください。`text` が英語、
+`says` が十言語の JSON です。アプリは `says` の中から見ている人の言語のものを
+出し、無ければ `text` に落ちます。
+
+丸ごと消せば、その日はお題の無い日になります ── タイムラインの一番上は、今まで
+通りの「書く行」に戻るだけで、壊れません。

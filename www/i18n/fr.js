@@ -1050,7 +1050,11 @@ defLang('fr', (function(){
       "csv.full"        : "{0} importés, {1} créés — Free est plein",
       "toast.exported"   : "Exporté",
       "toast.exportfail" : "Export impossible",
-      "read.sep"         : "  "
+      "read.sep"         : "  ",
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      "day.k"  : "Du jour",
+      "day.ask"          : "Dans votre propre langue ?"
     }
   };
 })());

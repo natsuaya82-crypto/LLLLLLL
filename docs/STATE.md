@@ -117,11 +117,20 @@ exists.
 app's own door when there is no session. The MAKING side needs no account and
 that has not changed.
 
-Still unused in `supabase/schema.sql`: `quote`, `publication`, `language` and
-`prompt`. Each has row level security written and held by `npm run rls`, and
-nothing in the app touches any of them. `language` is the one to watch: its
-policies changed on 2026-08-22 so that an account with no name can own one,
-and the app still does not write a row.
+Still unused in `supabase/schema.sql`: `quote`, `publication` and `language`.
+Each has row level security written and held by `npm run rls`, and nothing in
+the app touches any of them. `language` is the one to watch: its policies
+changed on 2026-08-22 so that an account with no name can own one, and the app
+still does not write a row.
+
+**`prompt` is used now**, from 2026-08-23: the day's sentence stands at the top
+of the timeline and the composer opens with it already in the meaning, where it
+cannot be edited. `post.prompt` — a column that had been written and never
+filled — is what says which day a post answers. The app side is in; **the
+server side is not**, and until somebody does `supabase/setup.md` § 9 (a Gemini
+key, the `daily-prompt` function, a cron line) there is no row for today and the
+top of the timeline is the plain write-row it has always been. That is the
+degrade, and it is deliberate: no half-working screen.
 
 **The online half was redesigned on 2026-08-22.** Everything belongs to the
 account, cloud storage is for everybody, and an anonymous account is made at

@@ -127,6 +127,10 @@ var APPEAL='mailto:Lingua@tokinets.com?subject=Lingua';
 function vFeed(){
   if(!netSignedIn()) return snsLocked('feed');
   snsPull();
+  /* Beside the feed's own pull and for the same reason: the moment somebody
+     is looking at a timeline is the moment the network is known to be
+     working. Once a session -- dayPull() returns immediately once it has one. */
+  dayPull();
   var list=snsList();
   /* A row takes one argument again. It used to take a second -- whether YOUR
      font was switched on -- and `list.map(postRow)` handed each row its index
@@ -142,12 +146,7 @@ function vFeed(){
        not see it has no way to post at all. 「ホームからもツイートできるように」
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
-    (NET_BANNED? '' :
-      '<button class="wrow"' + DO('openPost') + '>'+
-      '<span class="pav">'+
-        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
-    '</button>')+
+    (NET_BANNED? '' : dayRow())+
     /* Under the row you write in and directly on top of the list they choose
        between, because that is what they are about. */
     snsTabs()+
@@ -183,15 +182,94 @@ function vFeed(){
          written" would be the app being wrong about its own contents. */
       : (snsTab==='fo'? snsNoneFo() : snsNone()))+
     '</div>'+
-    /* Where every timeline puts it: over the feed, above the bar, under the
-       thumb of the hand already holding the phone. */
-    /* And neither way in. Both open a composer that will refuse, and a
-       button that cannot do its one thing is worse than no button: it is the
-       app asking somebody to find out. */
-    (NET_BANNED? '' :
-      '<button class="fab"' + DO('openPost') + ' aria-label="'+esc(t('post.new'))+'">'+
-      ICON_ADD2+'</button>')+
+    snsFab()+
     '</div>';
+}
+/* The way to write, and it is one thing in one place.
+
+   The timeline has had it since there was a timeline, and nothing else did.
+   But the app does not open on the timeline -- `route` starts at `profile`
+   and NAV starts at `profile` -- so somebody who never pressed the home tab
+   was standing on a screen with a list of their own posts and no way to add
+   one. 「プロフィール画面の右下に＋がないから投稿ができない」
+
+   Where every timeline puts it: over the list, above the bar, under the
+   thumb of the hand already holding the phone.
+
+   Both conditions travel with it rather than being restated at each end.
+   Signed out there is nobody to post as; frozen, the composer would refuse
+   -- and a button that cannot do its one thing is worse than no button: it
+   is the app asking somebody to find out. */
+/* ---- the day's sentence -------------------------------------------------
+   One sentence a day, put up by us, that anybody may answer in their own
+   language. It is the loop this whole thing turns on: everyone already knows
+   what the day's sentence means, so a feed of two hundred unreadable scripts
+   becomes two hundred readable ones, and nobody has to learn anything to read
+   it. The words are schema.sql's, where the table was designed and then sat
+   unused; this is the half that shows it.
+
+   It stands where the row you write in stood, because it IS that row -- the
+   round button is one floating thing over a corner and somebody who does not
+   see it has no way to post at all 「ホームからもツイートできるように」. When
+   there is no sentence -- offline, or a day the writer missed -- it is that
+   row again, unchanged. A screen that half-works is a bug; a screen that
+   goes back to what it was is not. */
+var DAY=null, dayPulling=false;
+function dayPull(){
+  if(dayPulling || DAY) return;
+  dayPulling=true;
+  netDay(function(p){
+    dayPulling=false;
+    if(!p) return;
+    DAY=p;
+    render();
+  });
+}
+/* In the person's own language, and the English one under it. A Japanese
+   speaker reading an English prompt is doing two translations and only the
+   second one is the game -- owner, 2026-08-23. */
+function daySay(){
+  var m=(DAY && DAY.says) || {};
+  return String(m[uiLang()] || (DAY && DAY.text) || '');
+}
+/* One row, and the face fills both of its lines: the day's sentence over
+   what you are being asked to do with it. 「アイコンは2列分うめて その横から
+   お題と自分の言語で入れるのは？」
+
+   It is the same skeleton every post on the timeline has -- a face on the
+   left, two lines of type beside it -- so the top of the feed is the shape
+   the rest of the feed is. It is also SHORTER than the row it replaces plus
+   a line: the face already reserves the height the two lines use.
+
+   The label in front of the sentence is the SCREEN's name read back with
+   pageName() rather than a string of its own; naming a screen twice is what
+   rule 2's NAMES claim exists to refuse.
+
+   No sentence -- offline, or a day the server missed -- and it is the one
+   grey line this row has always been. */
+function dayRow(){
+  var say=daySay();
+  if(!say){
+    return '<button class="wrow"' + DO('openPost') + '>'+
+      '<span class="pav">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<span class="wrt">'+esc(t('post.ln.ph'))+'</span>'+
+    '</button>';
+  }
+  return '<button class="wrow dayrw"' + DO('openPost', ["day"]) + '>'+
+    '<span class="pav">'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+    '<span class="dayrb">'+
+      '<span class="dayline">'+
+        '<span class="dayk">'+esc(t('day.k'))+'</span>'+esc(say)+'</span>'+
+      '<span class="wrt">'+esc(t('day.ask'))+'</span>'+
+    '</span>'+
+  '</button>';
+}
+function snsFab(from){
+  if(!netSignedIn() || NET_BANNED) return '';
+  return '<button class="fab"' + DO('openPost', from? [from] : []) +
+    ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }
 /* ---- one conversation --------------------------------------------------
    The timeline is every post there is, newest first, which is the right shape

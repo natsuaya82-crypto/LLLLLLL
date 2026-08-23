@@ -12,7 +12,6 @@
 
 import Foundation
 import Capacitor
-import WidgetKit
 import CoreText
 import UIKit
 import PhotosUI
@@ -79,15 +78,11 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
          than emptying itself. */
       if !num.isEmpty {
         try put(Data(num.utf8), Self.numName, dir)
-        /* And tell WidgetKit, or nobody does.
-           A widget does not watch a file. It draws the timeline it was last
-           handed and asks for another when that one runs out -- an hour for
-           the clock, a week for the date -- so somebody who draws their
-           digits would go on seeing roman ones until then. This is the one
-           call that says "what you are holding is out of date"; iOS budgets
-           how often it will act on it, which is why it is here, behind a
-           signature that only moves when the letters do, and not on a timer. */
-        WidgetCenter.shared.reloadAllTimelines()
+        /* And tell WidgetKit, or nobody does. WidgetPoke.swift holds that
+           call and says why it is not in this file: `import WidgetKit` here
+           takes PHPickerViewController out of scope, which is how #84 failed
+           on a picker that had compiled green since a82a633. */
+        WidgetPoke.reload()
       }
       // Nothing drawn is no font rather than an empty one, exactly as
       // installScriptFont() decides it — so an absent font leaves whatever

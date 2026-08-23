@@ -944,11 +944,31 @@ function netExt(mime){
    the post -- which is what stops the same post coming back down the timeline
    as somebody else's. A push that fails leaves no `sid`, and a post with no
    `sid` is one that has not gone up yet, which is the whole of the retry. */
+/* ---- the day's sentence ------------------------------------------------
+   One row, the newest there is. Not "today's": the app does not work out what
+   day it is in California -- the function that writes the row does that, and
+   asking the server for the newest one is the same answer with no second copy
+   of a timezone rule to get wrong. A day the writer missed shows yesterday's
+   sentence, which is what is true.
+
+   `says` is the ten languages and `text` is the English one under it, so a row
+   written before the column existed still shows something. schema.sql § asked. */
+function netDay(ok){
+  netGet('/rest/v1/prompt?select=id,on_day,text,says&order=on_day.desc&limit=1',
+    function(d){ ok(d && d.length? d[0] : null); },
+    function(){ ok(null); });
+}
 function netPush(post, ok, bad){
   var row, pid, up;
   if(!netMember() || !post){ bad(null, 0); return; }
   pid=netUUID();
   row={id:pid, author:SESS.uid, body:netBody(post)};
+  /* Which day's sentence this answers, if it answers one. It is a column and
+     not a word in the text: post.prompt is a foreign key with an index behind
+     it (schema.sql § asked), so every answer to one day is one query -- and
+     nobody can delete the link by editing their own line, which is what a
+     hashtag in the body would have been. */
+  if(post.pr) row.prompt=post.pr;
   /* What it answers, by the name the SERVER knows -- the local id means
      nothing there. A reply to a post that never went up carries no reply_to
      and is still a post: it already holds the handle it answered (rule 13),

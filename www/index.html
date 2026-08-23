@@ -1560,13 +1560,42 @@ a.set{text-decoration:none}
 /* A row to write in, at the top of the timeline. Not a field: pressing it
    opens the screen a post is written on, where the letters, the photographs
    and the voice are. 「ホームからもツイートできるように」 */
+/* 44 exactly, and the face is what gives the height back. The row was 69 --
+   a 40px face with 14 above and below -- and three lines of that put the
+   timeline 44px further down the screen 「上の幅めちゃくちゃ広くなってる
+   やんけ」. 32 + 6 + 6 is 44, which is the floor and not a pixel over it. */
 .wrow{display:flex;align-items:center;gap:12px;width:100%;
-      margin:0 -24px 0;width:calc(100% + 48px);padding:14px 16px;
+      margin:0 -24px 0;width:calc(100% + 48px);padding:6px 16px;
       border:0;border-bottom:1px solid var(--line);background:none;text-align:left}
-.wrow .pav{width:40px;height:40px}
+.wrow .pav{width:48px;height:48px;flex:0 0 auto}
 .wrt{flex:1 1 auto;min-width:0;color:var(--txm);font-size:1rem;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wrow:active{opacity:.6}
+/* The day's sentence over what you are asked to do with it, beside the face
+   that fills both lines 「アイコンは2列分うめて その横からお題と自分の言語で
+   入れるのは？」. The face is what gives this row its height, so two lines of
+   type cost nothing over one.
+
+   Each line is cut with an ellipsis, so the row is the same height whatever
+   the day says. */
+.dayrw{align-items:center}
+.dayrb{flex:1 1 auto;min-width:0}
+/* The two lines are TALLER than the face, so each sticks out half a step past
+   it rather than both sitting inside it 「アイコンの内に収まるんじゃなくて
+   半歩ずつ出して欲しい」. 24 and 24 against a 40px face is 4px over at each
+   end, which is the half step.
+
+   The sizes are the ones the two lines already had -- .95 for the sentence,
+   1rem for what you are asked to do with it 「文字サイズもさっきと変えないで
+   欲しい」. */
+.dayline{display:block;font-size:.95rem;line-height:26px;color:var(--tx);
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dayrb .wrt{display:block;font-size:1rem;line-height:26px}
+/* The label in front of the sentence. */
+.dayk{color:var(--gold);font-weight:600;margin-right:8px}
+/* And the gap over it. The bar's own 8 and the body's 10 stack into 18px of
+   nothing between the name of the screen and the face under it. */
+.dayrw{margin-top:-8px}
 /* What a reply is answering, above what you are writing. The same row a
    timeline draws, quieter and with nothing on it to press. */
 .pwq{display:flex;gap:12px;margin:2px 0 14px;padding:12px 14px;
@@ -2322,11 +2351,12 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 
 /* ---------- onboarding ---------- */
 .ob{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;
-    padding:calc(env(safe-area-inset-top,0) + 16px) 24px calc(env(safe-area-inset-bottom,0) + 18px)}
+    padding:calc(env(safe-area-inset-top,0) + clamp(8px,1.8vh,16px)) 24px
+            calc(env(safe-area-inset-bottom,0) + clamp(9px,2vh,18px))}
 .ob .obtop{display:flex;gap:6px}
 .ob .dot{width:22px;height:2px;border-radius:2px;background:var(--line)}
 .ob .dot.on{background:var(--gold)}
-.ob .mid{margin:20px 0 0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
+.ob .mid{margin:clamp(8px,2.1vh,20px) 0 0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;
          justify-content:center;align-items:center;text-align:center}
 /* The two list screens are read down a column, so they keep the left edge. */
 .ob .mid.obleft{justify-content:flex-start;align-items:stretch;text-align:left}
@@ -2490,7 +2520,10 @@ html[data-script="on"] .gsw,
 .btn.obauto{margin-top:10px}
 .obhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 /* --- onboarding: the letter, the escape row, the borrowed scripts ------- */
-.oblang{background:none;border:1px solid var(--line);border-radius:10px;color:var(--txs);
+/* 枠も角丸も無い。押せるものは色で押せると分かる ── CLAUDE.md の
+   「NO ROUNDED BOX」で、.btn.ghost の class コメントが言っているのと同じ
+   こと。枠があったころは、扉の右上でここだけが箱だった。 */
+.oblang{background:none;border:0;color:var(--gold);
         font:inherit;font-size:.86rem;padding:12px 10px;min-height:44px;
         -webkit-appearance:none;appearance:none;max-width:118px;
         /* the names of ten languages at 13px, in a bar that also holds a back
@@ -2598,24 +2631,59 @@ html[data-script="on"] .gsw,
 /* .ob.center is what took the margin off the splash, which was centred in the
    whole screen. The forms that replaced it are read from the top and want it
    back, or the heading sits against the chevron. */
-.ob.center .mid.obform{margin:20px 0 0}
-.ob .mid.obform .btn{width:100%;margin-top:6px}
-.ob .obcrest{text-align:center;flex:0 0 auto;margin-bottom:20px}
-.ob .obcrest .obdoor{height:min(16vh,116px)}
-.ob .obcrest .obh1{margin-top:10px}
-.obor{display:flex;align-items:center;gap:12px;margin:20px 0 14px;
+.ob.center .mid.obform{margin:clamp(8px,2.1vh,20px) 0 0}
+/* この扉のたて方向のリズムは、画面の高さについていく。
+
+   サインインの顔だけが背が高い ── ふたつの欄と、押すやつと、忘れたときと、
+   「または」と、Apple と Google。それを固定の余白で積むと、iPhone SE で
+   122px、13 mini で 51px、iPhone 15 でも 21px はみ出していた。ヘッドレスの
+   ブラウザでは env(safe-area-inset-*) が 0 なので、ここは「収まっている」と
+   見えていて、実機だけで起きる ── 測るときは inset を差し込むこと。
+
+   直し方は媒体クエリではなく clamp で、下限・伸び・上限の三つ。背の高い
+   電話は今までと同じ見た目のまま、短い電話だけが自動的に詰まる。分岐が
+   増えないので、四番目の電話が出ても書き足すところがない。
+
+   下限は飾りではない。.btn の中身の行は 20.4px なので、上下 12px を切ると
+   ボタンが 44pt を割る ── 1.7vh をそのまま使って 43px になり、press が
+   それを言った。clamp の第一引数はどれもそういう床。
+
+   .field と .btn.signin は他の三十の画面も着ているので、この扉の中だけに
+   閉じてある。 */
+.ob .mid.obform .btn{width:100%;margin-top:clamp(2px,.7vh,6px);
+                     padding:clamp(12px,1.7vh,15px) 12px}
+.ob .mid.obform .field{margin-bottom:clamp(5px,1.2vh,11px)}
+.ob .mid.obform .btn.signin{margin-bottom:clamp(4px,1vh,10px)}
+.ob .obcrest{text-align:center;flex:0 0 auto;margin-bottom:clamp(9px,1.8vh,20px)}
+.ob .obcrest .obtag{line-height:1.45}
+.ob .obcrest .obdoor{height:clamp(44px,8vh,116px)}
+/* 扉の絵は、残りをもらう。
+
+   高さを vh で決めると、どの電話にも合わない ── 下に積むもの(欄、押すやつ、
+   忘れたとき、または、Apple、Google)は電話が大きくなっても背が伸びないので、
+   余る量は画面の高さに比例しない。SE で 21px、iPhone 15 で 65px 余っていて、
+   その差を一本の vh では表せなかった。
+
+   なので絵が伸び縮みする側になる。116px が上限(前からの大きさ)で、44px が
+   下限。この扉のファイルの一番上にもう書いてあることでもある ──
+   「箱が縮んで、絵はその中に収まる」。 */
+.ob .mid.obform .obcrest{flex:0 1 auto;min-height:0;
+                         display:flex;flex-direction:column;justify-content:flex-end}
+.ob .mid.obform .obcrest .obdoor{flex:1 1 auto;height:auto;min-height:44px;max-height:116px}
+.ob .obcrest .obh1{margin-top:clamp(3px,1vh,10px)}
+.obor{display:flex;align-items:center;gap:12px;margin:clamp(7px,1.6vh,20px) 0 clamp(5px,1.3vh,14px);
       color:var(--txm);font-size:.82rem;flex:0 0 auto}
 .obor::before,.obor::after{content:"";flex:1 1 auto;height:1px;background:var(--line)}
 /* Instagram's bar, and it is the whole reason there are two screens: the way
    from one to the other is a fixed line at the foot, not a link buried under
    the button that does the other thing. */
-.obbar{flex:0 0 auto;margin:0 -24px;padding:14px 24px 0;border-top:1px solid var(--line);
+.obbar{flex:0 0 auto;margin:0 -24px;padding:clamp(6px,1.2vh,14px) 24px 0;border-top:1px solid var(--line);
        display:flex;justify-content:center;align-items:center;gap:7px;
        font-size:.86rem;color:var(--txm)}
 .obbar button{background:none;border:0;padding:0;font:inherit;font-size:.86rem;
               font-weight:600;color:var(--gold);min-height:44px}
 .obbar button:active{opacity:.55}
-.obskip{display:block;width:100%;min-height:44px;margin-top:4px;background:none;border:0;
+.obskip{display:block;width:100%;min-height:44px;margin-top:clamp(0px,.5vh,4px);background:none;border:0;
         color:var(--txs);font:inherit;font-size:.84rem;text-decoration:underline;
         text-underline-offset:3px;text-decoration-color:var(--line)}
 .obskip:active{opacity:.55}

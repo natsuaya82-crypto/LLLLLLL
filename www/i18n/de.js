@@ -991,7 +991,11 @@ defLang('de', (function(){
       "csv.full"        : "{0} übernommen, {1} erstellt — Free ist voll",
       "toast.exported"   : "Exportiert",
       "toast.exportfail" : "Export nicht möglich",
-      "read.sep"         : "  "
+      "read.sep"         : "  ",
+      /* the day's sentence. The sentence itself is not here: it comes
+         from the server, one row a day, in every interface language. */
+      "day.k"  : "Heute",
+      "day.ask"          : "In deiner eigenen Sprache?"
     }
   };
 })());

@@ -386,7 +386,12 @@ function vProfile(){
     (list.length? list.map(postRow).join('')
                 : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'
                                             : pfTab==='re'? 'prof.none.re' : 'prof.none'))+'</div>')+
-    '</div></div>';
+    '</div>'+
+    /* The same one as the timeline's, from the same place. This screen is
+       where the app opens, so without it a person who never pressed the home
+       tab could not post at all. */
+    snsFab()+
+    '</div>';
 }
 
 /* The contents, in the order the work happens: you setPlan sounds, you give
