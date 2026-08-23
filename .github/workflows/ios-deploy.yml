@@ -88,11 +88,23 @@ jobs:
           cp app.mobileprovision kb.mobileprovision wg.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
           # 名前と App Group をログに出す。署名が通ったあとに「どっちの
           # プロファイルで通ったのか」を後から読めるようにするため。
+          #
+          # 訊くのは「キーがあるか」ではなく「group.com.tokinets.lingua が
+          # 入っているか」。Identifier 画面で App Groups に *チェックだけ* 入れて
+          # Configure を押さないと、キーはあって配列が空のプロファイルが出てくる
+          # ── PlistBuddy の Print は空配列でも成功するので、前の書き方はそれを
+          # 通していた。通ると Archive も署名も緑で、App Group のファイルだけ
+          # 読めないウィジェットが出荷される。それが一番読めない壊れ方なので、
+          # ここで名指しで止める。docs/apple.md § 2b。
           for f in app.mobileprovision kb.mobileprovision wg.mobileprovision; do
             security cms -D -i "$f" > "$f.plist"
             echo "$f: $(/usr/libexec/PlistBuddy -c 'Print :Name' "$f.plist")"
-            /usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$f.plist" \
-              || { echo "::error::$f has no application-groups entitlement"; exit 1; }
+            groups=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups' "$f.plist" 2>/dev/null || true)
+            echo "$f app groups: $groups"
+            case "$groups" in
+              *group.com.tokinets.lingua*) ;;
+              *) echo "::error::$f が group.com.tokinets.lingua を持っていません。Identifier の App Groups は *Configure* まで押して group を選び、そのあとプロファイルを作り直してください（古いプロファイルは capability を後から拾いません）。docs/apple.md § 2b"; exit 1 ;;
+            esac
           done
 
       - name: Build & Archive iOS

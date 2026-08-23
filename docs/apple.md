@@ -121,8 +121,10 @@ error: No profile for team '***' matching 'Lingua Widget Distribution' found
 1. **Identifiers → ＋ → App IDs → App**
    - Description: `Lingua Widget`
    - Bundle ID: **Explicit**、`com.tokinets.lingua.widget`
-   - Capabilities: **App Groups だけ**にチェック → Configure →
-     `group.com.tokinets.lingua` を選ぶ
+   - Capabilities: **App Groups だけ**にチェック → **その右の Configure を
+     押して** `group.com.tokinets.lingua` を選ぶ → Continue → Save
+     （チェックだけで済ませると配列が空のまま出てきます。下の
+     「チェックを入れただけでは入りません」を読んでください）
    - Sign in with Apple は**要りません**。ログインするのは本体だけです
    - Continue → Register
 
@@ -160,6 +162,45 @@ wg.mobileprovision: Lingua Widget Distribution
 
 名前が違うもの、または行が足りないものがあれば、そこが原因です。**Archive
 まで進んでから落ちるのを待つ必要はありません。**
+
+すぐ下に App Group も三行出ます。**空だったらそこで止まります。**
+
+```
+app.mobileprovision app groups: Array {
+    group.com.tokinets.lingua
+}
+```
+
+### チェックを入れただけでは入りません（実際に踏んだ）
+
+1 枚目の `Lingua Widget Distribution` はこうなっていました:
+
+```xml
+<key>com.apple.security.application-groups</key>
+<array></array>
+```
+
+キーはある、配列は空。**Identifier 画面で App Groups に *チェックを入れた*
+だけで、その右の *Configure* を押して `group.com.tokinets.lingua` を選んで
+いない**とこうなります。チェックボックスは「この capability を使う」としか
+言っておらず、どのグループかは Configure の中にあります。
+
+これが厄介なのは、何も落ちないからです。プロファイルは正しい名前と正しい
+バンドル ID を持っていて、署名は通り、Archive は緑で、TestFlight にも上がる。
+**App Group のファイルが読めないウィジェットだけが出荷されます。**
+ウィジェットが App Group を読むためだけに存在することを考えると、それは
+「ビルドが失敗した」より悪い状態です。
+
+ワークフローの見張りも、最初はこれを通していました
+(`PlistBuddy -c 'Print :Entitlements:com.apple.security.application-groups'`
+は**空配列でも成功する**)。今は `group.com.tokinets.lingua` という文字列が
+入っているかを訊きます。
+
+**直したら、プロファイルは作り直してください。** App ID を直しても、既に
+発行済みのプロファイルはその capability を後から拾いません
+── `ios/App/App/App.entitlements` の
+"An old profile does not gain a capability by the app claiming one" と
+同じ罠です。Profiles の一覧で古いものを削除して、＋ から作り直します。
 
 
 Supabase 側は `supabase/setup.md` の 4-1 です。あちらは**この節の後**で
