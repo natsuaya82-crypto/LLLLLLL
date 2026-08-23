@@ -2413,7 +2413,18 @@ html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
 html[data-script="on"] .hw,
 html[data-script="on"] .psw,
 html[data-script="on"] .whw,
-html[data-script="on"] .gsw,
+html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
+/* The declaration is on .gsw because .gsw is the last of them, and it went
+   missing once for exactly that reason: the two selectors under it -- .seq
+   and .st-seq -- were dropped when the screen that wore them was deleted, and
+   the block came away with them. What was left was four selectors ending in a
+   comma, which a browser reads as the head of the NEXT rule: every headword,
+   every proposed word and every word under a grammar stage was set in
+   --face-ital, with the placeholder rule's !important behind it, and the
+   drawn letters never appeared anywhere the toggle was for.
+   tools/verify-script.mjs is what said so, by measuring .hw with the toggle
+   on and finding Cormorant Garamond. Nothing else could: the class is worn,
+   the file parses, and every screen still renders. */
 /* Eight selectors came off this list. Seven of them -- .line .tname .wcw
    .sww .usew .lcs .cw .link .src -- are on no element anywhere in www/ any
    more, so they were a list of places the font USED to reach, and a reader
