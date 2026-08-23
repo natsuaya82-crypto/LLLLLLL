@@ -180,6 +180,17 @@ const page = await br.newPage({ viewport: { width: 1100, height: 900 }, deviceSc
 
 /* systemSmall on a 6.1-inch phone is 158x158 points, and systemMedium and
    systemLarge are 329 wide by 155 and 345 tall. */
+/* A small widget is 158pt on most iPhones, and this draws into all of it.
+   That is only true because every widget in this app now says
+   contentMarginsDisabled(). Without it iOS 17 takes about sixteen points off
+   each side before the code sees anything -- geo.size arrives already
+   shrunk -- so the real face was drawn into 126 and this picture into 158,
+   and the picture was 25% bigger than the phone at every size.
+
+   That is what "全然違うし、本当のウィジェットの見た目小さいよ" was, and
+   arguing from this picture while that was true was arguing from a drawing of
+   a widget nobody has. If the modifier ever comes off, this number has to
+   become 158 - 32. */
 const SIDE = 158;
 /* The month drawn is the one the machine is in, because that is the month the
    widget would be showing if this were a phone. */
