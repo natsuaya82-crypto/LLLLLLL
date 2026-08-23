@@ -186,6 +186,69 @@ instead of appearing here.
 
 ### Decision
 - Date: 2026-08-23
+- Area: How many languages, how many keyboards, and two more capabilities
+- Decision:
+
+  | | languages | keyboards, in total |
+  |---|---|---|
+  | Free | 1 | 1 — the fixed QWERTY, which is not built and cannot be |
+  | **Basic** | **1** | **1 + 3 = 4** |
+  | **Plus** | **3** | **no ceiling** |
+
+  Keyboards are counted **across languages, not within one**. Today `KB_MAX`
+  is three boards *per language*; from now the number is a pool. A language
+  may hold all four of Basic's, or one each across Plus's three, or any other
+  split.
+
+  And two capabilities that exist in the app and were never in `CAN`:
+
+  - **`edit` — editing a post you have already sent. Basic and up.**
+    「ツイートの編集も課金から」「課金からはベーシックからってことね
+    プラスならプラスっていうから」 `postEdit()` today asks nothing about a
+    plan: anybody may edit their own post.
+  - **`badge` — the mark beside your name. Plus only.** 「バッチはplusから」
+    `planBadge()` already shows it only on Plus, but it reads `plan()`
+    directly instead of going through `can()`, which is the one thing `CAN`
+    exists to stop.
+
+  So `CAN` is **eleven** when this lands, and twelve when the ad arrives:
+  `words` `kb` `letters` `wsys` `snd` `edit` (basic) · `gram` `dir` `data`
+  `file` `badge` (plus) · `noads` (with the ad).
+- Reason: the numbers were arrived at by asking what a keyboard actually IS
+  in this app rather than by picking a number. **A keyboard is layers** — ABC
+  and あいう are two faces of ONE board, and 「qwertyでも数字で切り替えたり
+  するやん？」 is why. So more boards is not how somebody gets more keys; it
+  is only how they get a different ARRANGEMENT, and there are five of those
+  (`qwerty` `flick` `tap` `chart` `abc`). Most people will build one. Four is
+  past what nearly anybody reaches, which is the point: **the ceiling that
+  sells is the one that binds** — a hundred words binds on the first evening,
+  a–z with nothing addable binds the moment somebody wants a letter. A
+  keyboard count binds almost never, so Basic's four is generous on purpose
+  and Plus's absence of one costs nothing to give.
+
+  A language is the same argument one step out: this app is for making ONE
+  language deeply — the dictionary, the letters, the writing system, the
+  keyboard, the calendar all stack onto one. Three is there for the person who
+  wants a second and a third, not as the thing being sold.
+- Affected features: `KB_MAX` (a per-language ceiling today, a pool from now,
+  and gone entirely on Plus), a new language ceiling that does not exist at
+  all today, `postEdit()`, `planBadge()`.
+- Affected data: none. Somebody over a ceiling keeps everything — every
+  keyboard, every language — and simply cannot add another. `backup-check`
+  holds this for keyboards already.
+- Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`.
+- Implementation status: nothing built.
+
+  **Not a loophole, decided:** the language count is what is on THIS PHONE —
+  `lingua.langs` carries no owner, `netOut()` clears only the session, and
+  `netLangSync()` syncs the open language rather than fetching a list. So
+  signing in as somebody else neither adds a language nor resets the count,
+  and the only way to clear it is to delete everything, which is not a way
+  round a ceiling. Sharing an account to get more is a terms matter, not a
+  thing the code should chase. 「普通に共有は規約違反でしょ」
+
+### Decision
+- Date: 2026-08-23
 - Area: A third plan, and what pays for the free one
 - Decision: **Three plans, and the prices are settled.**
 
