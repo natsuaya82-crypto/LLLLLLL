@@ -132,10 +132,6 @@ button{font-family:inherit;cursor:pointer}
 .iconb:active{opacity:.5}
 .gtile .bch{font-size:1.5rem;color:var(--gold);line-height:1}
 .gtile .nol{font-size:1.2rem;color:var(--txm);line-height:1}
-/* --- a word being built out of its sounds ----------------------------- */
-.seqbox{display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 14px;
-        border:1px solid var(--line);background:var(--pane);border-radius:12px}
-.seqbox .seq{flex:1;font-size:1.5rem;letter-spacing:.02em;min-height:1.5rem;color:var(--tx)}
 /* The gap has to be wider than the speaker's overhang or the speaker of one
    tile sits on top of the next tile: 44pt of button hanging 11pt past a
    corner, over a 6pt gap, means five points of every tile answered to its
@@ -2270,14 +2266,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .sysep{color:var(--txm);font-size:.88rem}
 /* sentences */
 .sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
-/* A word standing in a sentence. It was `.sw`, which is also the switch in the
-   settings -- one class name meaning two things, and the later one wins. So
-   every toggle in the app was `flex-direction:column` with a knob that had a
-   font size and a top margin, which is exactly what a switch with its knob
-   sitting off the pill looks like. 「このトグルもズレてるし」
-   Renamed rather than reordered: two rules that happen to be in the right
-   order is not the same statement as two names that cannot collide. */
-.slw{display:inline-flex;flex-direction:column;align-items:center}
 .rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:5px 12px;font-size:.86rem}
 .rr2:active{opacity:.55}
 .link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
@@ -2401,8 +2389,6 @@ html[data-script="on"] .hw,
 html[data-script="on"] .psw,
 html[data-script="on"] .whw,
 html[data-script="on"] .gsw,
-html[data-script="on"] .seq,
-html[data-script="on"] .st-seq{font-family:var(--face-script);letter-spacing:0}
 /* Eight selectors came off this list. Seven of them -- .line .tname .wcw
    .sww .usew .lcs .cw .link .src -- are on no element anywhere in www/ any
    more, so they were a list of places the font USED to reach, and a reader

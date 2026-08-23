@@ -175,8 +175,6 @@
 .scin | border-radius
 .scrpv | border
 .scrpv | border-radius
-.seqbox | border
-.seqbox | border-radius
 .sheet | border-radius
 .sndadd | border
 .sndadd | border-radius
