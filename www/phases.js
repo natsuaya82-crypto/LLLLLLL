@@ -331,6 +331,8 @@ function stDrop(){
 
 /* ---- a stage of your own ---------------------------------------------- */
 function openOwnPhase(){
+  /* Writing a grammar stage of your own is the third of the four. */
+  if(!makeNeed()) return;
   openForm('own:', t('stg.own.h'),
     '<div class="field"><label>'+t('stg.own.title')+'</label>'+
       '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+

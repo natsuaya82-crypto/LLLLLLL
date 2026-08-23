@@ -42,6 +42,9 @@ function ntBody(n){
 
 var ntAt=-1;                        /* which note the sheet is open for, -1 = new */
 function openNote(i){
+  /* A note is the fourth. Editing one is making one -- what comes out is a
+     note either way -- so this is asked on the way in, not only on the + . */
+  if(!makeNeed()) return;
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   ntAt=k;
   var n = k>=0 ? NOTES[k] : {t:'',b:''};

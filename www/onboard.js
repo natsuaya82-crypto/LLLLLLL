@@ -306,6 +306,28 @@ function obNeed(){
   obDoor(h && h.r, h && h.a);
   return false;
 }
+/* ---- making something needs a name on the account ----------------------
+   「全部の画面一通り見れるけど制作しようとするとログイン求められる」
+   「そうすればログアウトもいけるべ」
+
+   The four the owner named, and no others: writing a letter, adding a word,
+   writing a grammar stage, adding a note. **The keyboard is not one of
+   them** -- 「キーボードは無料だから関係ない」 -- and neither is looking at
+   anything. Every screen opens; it is DOING one of the four that asks.
+
+   Not while the onboarding is running. The onboarding IS somebody drawing
+   their first letter, and asking there would be asking before there is
+   anything to sign in FOR -- the door comes at the end of it, after the
+   letter is drawn and the keyboard has been seen. SET.done is what says
+   which of the two this is.
+
+   One place, because four call sites each remembering to add "and not during
+   the onboarding" is four chances to leave it out, and the one left out is
+   the screen nobody can get past. */
+function makeNeed(){
+  if(!SET.done) return true;
+  return obNeed();
+}
 function obPending(){ return (SET.obback && SET.obback.r)? SET.obback : null; }
 /* Done with the account, and there was somewhere to go back to. Puts back
    the SET.done that the door had to take away. */

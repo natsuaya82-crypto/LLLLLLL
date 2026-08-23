@@ -446,13 +446,20 @@ function newGE(lid, label){
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
-   one if it has none. */
+   one if it has none.
+
+   Both roads into the drawing surface ask makeNeed() first: writing a letter
+   is the first of the four things that need a name on the account. The
+   surface is not opened and nothing is made -- editGlyph() would otherwise
+   have made a letter for the unit on the way past. */
 function editGlyph(unit){
+  if(!makeNeed()) return;
   var l=ltForUnit(unit);
   GE=newGE(l.id, unit); go('glyph', l.id);
 }
 /* From the letters chapter: draw this letter, whatever it reads. */
 function editLetter(id){
+  if(!makeNeed()) return;
   var l=ltById(id); if(!l) return;
   GE=newGE(id, ltName(l)); go('glyph', id);
 }

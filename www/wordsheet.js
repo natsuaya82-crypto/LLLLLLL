@@ -35,6 +35,9 @@ var addW=null;
    itself, and is added rather than saved. */
 var addFrom='';
 function openAdd(from){
+  /* Adding a word is the second of the four. Asked before the sheet opens,
+     so nobody types a word into a form that is going to refuse it. */
+  if(!makeNeed()) return;
   /* Reopened by its own redraw and on the way back from the picker, so what
      has been typed is only cleared when the sheet is genuinely new.
 
