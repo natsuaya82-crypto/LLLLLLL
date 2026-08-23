@@ -52,6 +52,7 @@ Marked separately, because they are not the same question:
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
+| **Import letters drawn on paper (the sheet)** | planned | — | `sheet`: the whole road | slice `letters` | partial |
 | Export CSV | shipped | — | `data` | none | decided |
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
@@ -380,3 +381,59 @@ The order is in `docs/FEATURE_RULES.md` § the order:
   idea → owner decision → FEATURES.md → the docs that apply
        → implementation → tests → device → owner confirmation → merge
 ```
+
+---
+
+## Import letters drawn on paper — the sheet
+
+**OWNER DECISION 2026-08-23.** Plus only. The app hands out a PDF, somebody
+draws on it, and hands it back; what they drew becomes letters.
+
+Decided:
+
+- **The app makes the sheet.** One box per letter, and the box IS the app's own
+  800-unit square, so reading it back is mapping a box onto 0..800 and nothing
+  more. Three filled marks at three corners of each box and none at the fourth:
+  three points give the transform and the missing one gives the orientation.
+- **What is on the sheet is chosen in the app.** Type what you want boxes for
+  and the PDF is for those. It needs to know nothing about writing systems:
+  a logography's signs are letters too in this app (`wsys.js`: *a letter reads a
+  whole word → logography*), so a box for 愛 and a box for `a` are the same
+  kind of thing.
+- **Where it lives:** a page under the letters page.
+- **What comes in is an ordinary letter.** The ink goes into the road a finger
+  already takes -- `GE.raw` then `geShape()` -- so the app's own thinning,
+  lattice and ROUND all work on it and there is no second kind of letter in the
+  alphabet. Measured on a か and a よ put through the real code: 3 strokes of
+  6+3+29 points, 1232 bytes, and 2 strokes of 15+6 points, 681 bytes. A drawn
+  letter is about 320. Two to four times, not the hundred times an outline
+  would have cost.
+- **A lapsed plan HIDES, it never deletes.** 「単語と同じで隠すつもりよ？また課金
+  したら復活！」 Exactly `wordsSeen()`: the letters stay in the slice, in the
+  backup, and in everything the app reads for itself; they stop being shown and
+  stop being on the keyboard, and they are all back the day the plan is. This
+  is `docs/PAID_FEATURES.md`'s rule, not an exception to it -- fewer buttons,
+  never fewer words.
+
+Open, and not to be guessed at:
+
+- Whether typing a name on the sheet screen **creates** the letter or only picks
+  one that exists. Creating would make a second place that adds letters; today
+  that is `can('letters')` and it is one place.
+- Whether the letters that come in are the same 28 slots (when what was drawn
+  IS a-z) or a series of their own.
+- The price, and which plan.
+
+Not yet known, and it decides how much of this is buildable:
+
+- **What an iPad-marked-up PDF actually contains.** If Markup writes Ink
+  annotations, `/InkList` is a list of points and the import is exact with no
+  image processing at all -- a round trip has been driven end to end on a PDF
+  written to that shape, sheet out, ink in, letters drawn through the real
+  `glyphContours`. If iOS instead flattens the drawing to an image, the whole
+  reading half becomes threshold-and-trace and is a different feature. A real
+  file from a real iPad is the only thing that answers it.
+- Printing and scanning is the other road and is not this one: a photograph of
+  a sheet is a photograph, and finding the boxes in it is most of the work. The
+  corner marks are there for that day.
+
