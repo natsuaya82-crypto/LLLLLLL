@@ -185,6 +185,86 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-23
+- Area: A third plan, and what pays for the free one
+- Decision: **Three plans, and the prices are settled.**
+
+  | | month | year |
+  |---|---|---|
+  | Free | — | — |
+  | **Basic** | **$4.99** | **$49.99** |
+  | Plus | $9.99 | $99.99 |
+
+  **Basic buys: adding letters, ONE keyboard of your own, and a thousand
+  words.** 「文字+キーボード自由（1個）単語1000までとか」 Where the rest of
+  `CAN` sits — `wsys` `snd` `gram` `dir` `data` `file` — is **not decided
+  here** and no session may read it off the code.
+
+  **Ads are on Free AND Basic. Plus is what has none.**
+  「ベーシックも広告表示させるよ？＋から広告非表示で考えてた」
+
+  **No banner. The ad sits IN the timeline, wearing a post.**
+  「バナーはつけない。ツイート擬態」
+
+- Reason: the ladder reads in one line — Free is your own shapes for a–z,
+  Basic is your own letters and your own keyboard, Plus is everything and no
+  ads. "Remove the ads" is a reason to buy that everybody understands without
+  being told what a syllabary is.
+- Affected features: `CAN` (a third level, and a new `noads`), `FREE_LIMIT`
+  and `KB_MAX` (constants today, per-plan from now), `capLapse()` (one road
+  today — "back to free" — two from now), the plans screen, StoreKit.
+- Affected data: none. Nothing about a plan may change what is stored:
+  somebody at 1500 words dropping to Basic keeps all 1500 and simply cannot
+  add — 「判定が失敗しても減るのはボタンであって言葉ではない」. Same for a
+  third keyboard.
+- Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`, `docs/apple.md`.
+- Implementation status: **nothing built.** Plus's prices are in
+  `www/i18n/*.js` already; Basic's are nowhere. The leader's proposed order is
+  **Basic first, ads second** — Basic needs no native code at all, and until
+  the ladder exists there is nowhere for somebody who wants the ads gone to go.
+
+### Decision
+- Date: 2026-08-23
+- Area: How the ad is built, and the one thing that turned out not to be true
+- Decision: The ad is **AdMob Native Advanced**, read by Swift, with the
+  MATERIALS handed to the web side, and **Lingua draws the row itself** in the
+  shape a post has. Not a banner, not an SDK-drawn card.
+- Reason: measured against `natsuaya82-crypto/jjjj`, which already ships ads,
+  rather than guessed.
+
+  What carries over: the AdMob account and its ad unit ids, the ATT call, the
+  initialisation, and one shape worth copying outright — `adsDisabled` is
+  checked **immediately before display**, not only at the call sites, because
+  a save loading asynchronously can otherwise let an ad appear for somebody
+  who has already paid.
+
+  What does NOT carry over: **jjjj is Vite + React and Lingua has no
+  bundler.** jjjj says `await import('@capacitor-community/admob')`; Lingua
+  cannot. That is smaller than it looks — `Capacitor.nativePromise('X',
+  'method', …)` reaches a registered native plugin without the JS wrapper,
+  which `LinguaShare` and `LinguaPlan` both learned the hard way.
+
+  **But `@capacitor-community/admob` 8.1.0 has no native ads at all.** Its
+  dist carries banner, interstitial, reward, reward-interstitial and app-open
+  and nothing else — checked by fetching the package, not from memory. So the
+  Native Advanced reader is ours to write: `GADAdLoader` in Swift, materials
+  out through `nativePromise`.
+
+  The mimicry has a ceiling that is not ours: AdMob requires the word
+  "Ad"/"Sponsored" and forbids rearranging the materials. Same skeleton, same
+  spacing, same face as a post, with one word saying what it is — about what
+  X's Promoted looks like.
+- Affected features: a new `LinguaAds` on the native side; the feed inserting
+  a row every N posts; `press` (an ad row must carry no button of ours).
+- Affected data: none.
+- Affected docs: `docs/apple.md` (a second AdMob app, ATT, the privacy
+  manifest).
+- Implementation status: **nothing built.** The Swift side is the expensive
+  half, and this app has had four native hand-overs of which three failed
+  silently — so it gets a status line on screen first, the way `kbOutSay()`
+  was added before anything else worked.
+
+### Decision
 - Date: 2026-08-22
 - Area: Two keyboards. The free one is frozen, the paid one is free
 - Decision: 「だから無料は凍結、有料は自由にだろ。キーボード設定で入れ替えも
