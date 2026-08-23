@@ -240,12 +240,6 @@ export function obStates(){
         SET.obback = null; ob.step = OB_DRAW; ob.mode = '';
         GE = newGE(''); GE.st = [{ pts: [[200, 200], [200, 600]] }]; GE.si = 0;
         return vOb(); }],
-    /* The shape is drawn and the alphabet is under it. This step is the one
-       ltNew() used to answer on everybody's behalf, so it is also the one
-       nothing had ever walked. */
-    ['choosing which letter the shape is', () => { SET.obback = null; ob.step = OB_ROM; ob.mode = '';
-                                                   ob.lid = (LETTERS[0] || {}).id || '';
-                                                   return vOb(); }],
     /* The walk through the app itself. It is not a face of vOb() -- it is the
        real screen with everything but one thing greyed out -- so what these
        return is the whole app, overlay and all, and nothing else reaches the

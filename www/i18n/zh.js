@@ -280,6 +280,7 @@ defLang('zh', (function(){
       "ob.tour.kb1" : "你画的字进到这里了。",
       "ob.coach.draw" : "用手指画一条线。",
       "ob.coach.drawn" : "很好。可以再画，或继续。",
+      "ob.draw.note" : "随时可以重画",
       "ob.draw.done"              : "完成",
       "ob.draw.empty"             : "请先画一笔",
       "ob.lang.a"                 : "界面语言",
@@ -615,11 +616,10 @@ defLang('zh', (function(){
       "ws.made"          : "两者拼在一起是什么样子",
       /* onboarding */
       "ob.next"          : "下一步",
-      "ob.rom.h"          : "这是哪个字母？",
       "ob.name.sub"      : "　",
       "ob.name.note"     : "以后可以改",
       "ob.name.later"     : "稍后再定",
-      "ob.draw.h"       : "你的第一个字长什么样？",
+      "ob.draw.h"       : "画出你自己的 {0}。",
       "ob.draw.later"    : "以后再画",
       /* the writing system */
       "script.show"     : "显示",

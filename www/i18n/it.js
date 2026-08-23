@@ -272,6 +272,7 @@ defLang('it', (function(){
       "ob.tour.kb1" : "La tua lettera è finita qui.",
       "ob.coach.draw" : "Traccia una linea con il dito.",
       "ob.coach.drawn" : "Bene. Aggiungine altre o vai avanti.",
+      "ob.draw.note" : "Puoi ridisegnarla quando vuoi",
       "ob.draw.done"              : "Fatto",
       "ob.draw.empty"             : "Disegni prima un tratto",
       "ob.lang.a"                 : "Lingua dell'interfaccia",
@@ -607,11 +608,10 @@ defLang('it', (function(){
       "ws.made"          : "Che cosa formano insieme",
       /* onboarding */
       "ob.next"          : "Avanti",
-      "ob.rom.h"          : "Che lettera è?",
       "ob.name.sub"      : "　",
       "ob.name.note"     : "Modificabile dopo",
       "ob.name.later"     : "Decido dopo",
-      "ob.draw.h"       : "Com'è la tua prima lettera?",
+      "ob.draw.h"       : "Disegna la tua {0}.",
       "ob.draw.later"    : "Disegnala più tardi",
       /* the writing system */
       "script.show"     : "Mostra",

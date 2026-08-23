@@ -232,6 +232,7 @@ defLang('es', (function(){
       "ob.tour.kb1" : "Tu letra entró aquí.",
       "ob.coach.draw" : "Traza una línea con el dedo.",
       "ob.coach.drawn" : "Bien. Añade más o continúa.",
+      "ob.draw.note" : "Puedes volver a dibujarla cuando quieras",
       "ob.draw.done"              : "Listo",
       "ob.draw.empty"             : "Dibuje un trazo primero",
       "ob.lang.a"                 : "Idioma de la interfaz",
@@ -567,11 +568,10 @@ defLang('es', (function(){
       "ws.made"           : "Lo que forman las dos juntas",
       /* onboarding */
       "ob.next"           : "Siguiente",
-      "ob.rom.h"           : "¿Qué letra es?",
       "ob.name.sub"       : "　",
       "ob.name.note"      : "Se puede cambiar después",
       "ob.name.later"      : "Decidir después",
-      "ob.draw.h"        : "¿Cómo es tu primera letra?",
+      "ob.draw.h"        : "Dibuja tu propia {0}.",
       "ob.draw.later"     : "Dibujarla más tarde",
       /* the writing system */
       "script.show"     : "Mostrar",

@@ -188,6 +188,7 @@ defLang('ja', (function(){
       "ob.tour.kb1" : "いま描いた文字はここに入ったよ。",
       "ob.coach.draw" : "指で線を引いてみて。",
       "ob.coach.drawn" : "いいね。まだ引ける。終わったら次へ。",
+      "ob.draw.note" : "あとで書き直せます",
       "ob.draw.done"              : "完了",
       "ob.draw.empty"             : "描いてください",
       "ob.lang.a"                 : "表示言語",
@@ -523,11 +524,10 @@ defLang('ja', (function(){
       'ws.made'         : "二つを合わせた形",
       /* onboarding */
       'ob.next'         : '次へ',
-      'ob.rom.h'         : "この字はなんの文字？",
       'ob.name.sub'     : '　',
       'ob.name.note'    : "あとで変更できます",
       'ob.name.later'   : 'あとで決める',
-      'ob.draw.h'      : "最初の一文字、どんな形？",
+      'ob.draw.h'      : "君の {0} を書いてみよう。",
       'ob.draw.later'   : "あとで描く",
       /* the writing system */
       'script.show'     : '表示',

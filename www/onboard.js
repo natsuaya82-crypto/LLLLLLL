@@ -97,10 +97,10 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    count the four SCREENS the onboarding has (draw, alphabet, name, door);
    the walk is not one of them, because while it is running the app is
    showing its own screens and vOb() is not on the page at all. */
-var OB_STEPS=4;
+var OB_STEPS=3;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
    chances to renumber three of them. */
-var OB_DRAW=0, OB_ROM=1, OB_TOUR=2, OB_NAME=3, OB_IN=4;
+var OB_DRAW=0, OB_TOUR=1, OB_NAME=2, OB_IN=3;
 
 /* ---- the walk through the app itself -----------------------------------
    Steps three to six of the owner's order are not screens of their own. They
@@ -372,9 +372,6 @@ function obBack(){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
-  /* Back out of the name with nothing drawn returns to the square, not to a
-     step about a shape that does not exist. */
-  if(ob.step===OB_ROM && !ob.lid){ obGo(OB_DRAW); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -848,64 +845,34 @@ function obNameLater(){ ob.name=''; obGo(OB_IN); }
 
    A letter here is a shape. What it reads is said on the letter, whenever
    somebody has something to say. */
+/* Which letter the step asks for. The first of the slots every language
+   starts with, said in one place rather than written 'a' in four. */
+function obFirst(){ return LT_START.charAt(0); }
+/* The shape is THAT letter, so it is named on the way in -- and naming is
+   what puts it in the slot: ltSetRoman() moves it there and hands back the id
+   it is under afterwards. ltFreeSlot() is still the one place that decides
+   whether it may, so a slot somebody has already drawn on is left alone here
+   too and the shape stays a letter of its own. */
+function obIntoSlot(id){ return ltSetRoman(id, obFirst())||id; }
 function obDone(){
   var keep=(GE && GE.st)? GE.st.filter(function(x){ return x.pts.length>0; }) : [];
   if(!keep.length){ toast(t('ob.draw.empty')); return; }
-  ob.lid=ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id;
+  ob.lid=obIntoSlot(ltNew({ st: JSON.parse(JSON.stringify(keep)) }).id);
   SET.myfont=true;
   save(); installScriptFont(); GE=null;
-  obGo(OB_ROM);
+  obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
 function obBorrow(id){ ob.mode='borrow'; ob.pick=id||''; GE=null; render(); window.scrollTo(0,0); }
 function obPickScript(id){ ob.pick=id; render(); window.scrollTo(0,0); }
 function obTakeCh(ch){
-  ob.lid=ltNew({ ch: ch }).id;
+  ob.lid=obIntoSlot(ltNew({ ch: ch }).id);
   SET.showScript=true;
   save(); installScriptFont();
-  ob.mode=''; obGo(OB_ROM);
+  ob.mode=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
 /* Nothing was drawn, so there is nothing to say which letter it is: the step
    after this is about a shape and there is no shape. */
 function obSkipDraw(){ ob.lid=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo(); }
-
-/* ---- step 2, which letter it is ---------------------------------------
-   The shape, big, and the alphabet under it. This is the step that used to
-   not exist, which is why ltNew() answered it on everybody's behalf.
-
-   No line under the heading. The question is four words long and the answer
-   is on the screen; a sentence explaining it would be the app talking about
-   itself again. */
-function obRomHTML(){
-  var l=ltById(ob.lid);
-  return '<div class="mid">'+
-    '<h2>'+t('ob.rom.h')+'</h2>'+
-    '<div class="spbig">'+ltInk(l, '')+'</div>'+
-    ltAbField(l, ob.lid)+
-    '</div>'+
-    '<div class="obfoot"><button class="btn"' + DO('obRomDone') + '>'+t('ob.next')+'</button></div>';
-}
-/* Choosing is not required to leave: a shape whose letter nobody has decided
-   is one of the loose ones, and the letters chapter already lists those.
-
-   Next is this step's Save. The box types into a draft -- the same box the
-   letter page has -- so a step that only moved on would throw the answer
-   away. */
-/* And out of the alphabet into the app itself -- the walk through the making
-   screen, the keyboard and the first keyboard, which is where the letter just
-   drawn ended up. obTourGo() sends the app to the first stop rather than
-   drawing a picture of one. */
-function obRomDone(){
-  /* Saved without a word about it. 「a updateってなに？いらん」 The toast is
-     the letter page's Save answering; here the screen changes underneath, and
-     a line saying "a updated" over the next question is an answer to a
-     question nobody asked. */
-  /* And the letter is followed: on the free plan the shape moves into the
-     slot that already answers to the name just given, so the id it is under
-     afterwards is not the id it went in as, and the walk's last stop points
-     at a key BY that id. */
-  if(ob.lid && ltDraft && ltDraft.id===ob.lid) ob.lid=ltSave(ob.lid, true)||ob.lid;
-  obTour=0; ob.step=OB_TOUR; save(); obTourGo();
-}
 
 function obFinish(){
   /* A language that reached the end of this without a name keeps not having
@@ -974,7 +941,10 @@ function obDrawHTML(){
   var st=GE.st[GE.si], pts=0, n=obStrokes();
   GE.st.forEach(function(x){ pts+=x.pts.length; });
   return '<div class="mid">'+
-    '<h2>'+t('ob.draw.h')+'</h2>'+
+    /* The letter is IN the question. 「じゃあ君のaを書いてみようにして、それを
+       枠にぶち込めばええんちゃう？」 -- so the step after it, which asked which
+       letter the shape was, has nothing left to ask and is gone. */
+    '<h2>'+esc(t('ob.draw.h', obFirst()))+'</h2>'+
     obCoach(n)+
     '<div class="gcanvwrap obpad"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
@@ -984,7 +954,12 @@ function obDrawHTML(){
     '<div class="obfoot">'+
     '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
       t('ob.draw.done')+'</button>'+
-    '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button></div>';
+    '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button>'+
+    /* And that it is not for ever. 「あとで編集できるよって」 The same line the
+       name step has, in the same place: what is being asked for here is the
+       first stroke of an alphabet, and somebody who thinks it has to be right
+       will not draw one. */
+    '<div class="mini obnote">'+esc(t('ob.draw.note'))+'</div></div>';
 }
 
 /* A sample is worth showing only if this phone can actually draw it. Some of
@@ -1071,7 +1046,6 @@ function vOb(){
   var h = door? obDoorHTML()
         : (s===OB_DRAW && ob.mode==='borrow')? obBorrowHTML()
         : (s===OB_DRAW)? obDrawHTML()
-        : (s===OB_ROM)? obRomHTML()
         : obNameHTML();
   return '<div class="ob view'+(door?' center':'')+'">'+head+h+'</div>';
 }

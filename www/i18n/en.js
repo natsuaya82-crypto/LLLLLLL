@@ -174,6 +174,7 @@ defLang('en', (function(){
       "ob.tour.kb1" : "Your letter went in here.",
       "ob.coach.draw" : "Draw a line with your finger.",
       "ob.coach.drawn" : "Good. Add more, or move on.",
+      "ob.draw.note" : "You can redraw it any time",
       "ob.draw.done"              : "Done",
       "ob.draw.empty"             : "Draw a stroke first",
       "ob.lang.a"                 : "Interface language",
@@ -510,13 +511,12 @@ defLang('en', (function(){
       'ws.made'         : "The two combined",
       /* onboarding */
       'ob.next'         : "Next",
-      'ob.rom.h'         : 'Which letter is it?',
       'ob.name.h'       : "What is your language called?",
       'ob.name.sub'     : "　",
       'ob.name.ph'      : "a name",
       'ob.name.note'    : "You can change it later",
       'ob.name.later'   : "Decide later",
-      'ob.draw.h'      : "What does your first letter look like?",
+      'ob.draw.h'      : "Draw your own {0}.",
       'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.show'     : 'Show',

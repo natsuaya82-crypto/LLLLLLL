@@ -15,6 +15,42 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### The first step asks for `a`, and the step after it is gone — OWNER DECISION
+
+「じゃあ君のaを書いてみようにして、それを枠にぶち込めばええんちゃう？」
+「あとで編集できるよって」 — 2026-08-23.
+
+The onboarding asked for **a letter** and then asked **which letter that was**.
+Now it asks for `a`: *Draw your own a.* The shape is named on the way in, and
+naming is what puts it in the slot — `ltSetRoman()`, `ltFreeSlot()`, the same
+one place decided yesterday. So the second step has nothing left to ask and it
+is gone: `obRomHTML()`, `obRomDone()`, `ob.rom.h` in ten languages, its entry
+in `act-map.js` and its face in the fixture.
+
+**The onboarding is three screens now** — draw, name, door — with the walk
+through the app between the first and the second. `OB_STEPS` is 3 and the
+dots count three.
+
+**And it says it is not for ever.** 「あとで編集できるよって」 A line at the
+foot of the drawing step, in the same place and the same size as the name
+step's: *You can redraw it any time.* What is being asked for there is the
+first stroke of an alphabet, and somebody who thinks it has to be right will
+not draw one.
+
+The letter is `LT_START.charAt(0)` said through `obFirst()`, and it reaches the
+heading as `{0}` rather than being written into ten sentences — a step that
+asks for `a` and a slot list that starts somewhere else would be two facts
+disagreeing in a place nobody looks.
+
+**Data:** unchanged from yesterday's decision — the shape goes into the slot,
+one row removed, never over a slot somebody has drawn on.
+
+`CODE CONFIRMED` — the flow from an empty `localStorage` is eight screens now:
+draw, drawn, the app, the making screen, the keyboard, the key becoming their
+letter, the name, the door. `base-check` unchanged and green — it holds the
+move itself, which is where the behaviour lives. `DEVICE CONFIRMED` — **no.**
+
+
 ### `a` becomes the letter somebody drew — OWNER DECISION
 
 「aが自作文字に変わる瞬間みたいなの見せたい」 — 2026-08-23.

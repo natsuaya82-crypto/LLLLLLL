@@ -320,6 +320,7 @@ defLang('fr', (function(){
       "ob.tour.kb1" : "Votre lettre est arrivée ici.",
       "ob.coach.draw" : "Tracez un trait avec le doigt.",
       "ob.coach.drawn" : "Bien. Ajoutez-en ou continuez.",
+      "ob.draw.note" : "Vous pourrez le redessiner plus tard",
       "ob.draw.done"              : "Terminé",
       "ob.draw.empty"             : "Dessinez d'abord un trait",
       "ob.lang.a"                 : "Langue de l’interface",
@@ -655,11 +656,10 @@ defLang('fr', (function(){
       "ws.made"           : "Ce que les deux forment ensemble",
       /* onboarding */
       "ob.next"           : "Suivant",
-      "ob.rom.h"           : "Quelle lettre est-ce ?",
       "ob.name.sub"       : "　",
       "ob.name.note"      : "Modifiable plus tard",
       "ob.name.later"      : "Plus tard",
-      "ob.draw.h"        : "À quoi ressemble votre première lettre ?",
+      "ob.draw.h"        : "Dessinez votre {0}.",
       "ob.draw.later"     : "La dessiner plus tard",
       /* the writing system */
       "script.show"     : "Afficher",

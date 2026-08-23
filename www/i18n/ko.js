@@ -451,6 +451,7 @@ defLang('ko', (function(){
       "ob.tour.kb1" : "방금 그린 글자가 여기 들어갔어요.",
       "ob.coach.draw" : "손가락으로 선을 그어 보세요.",
       "ob.coach.drawn" : "좋아요. 더 그어도 되고, 다음으로 가도 됩니다.",
+      "ob.draw.note" : "언제든 다시 그릴 수 있어요",
       "ob.draw.done"              : "완료",
       "ob.draw.empty"             : "먼저 한 획을 그어 주세요",
       "ob.lang.a"                 : "인터페이스 언어",
@@ -786,11 +787,10 @@ defLang('ko', (function(){
       "ws.made"         : "둘이 합쳐 만드는 것",
       /* onboarding */
       "ob.next"         : "다음",
-      "ob.rom.h"         : "어떤 글자인가요?",
       "ob.name.sub"     : "　",
       "ob.name.note"    : "나중에 바꿀 수 있습니다",
       "ob.name.later"    : "나중에 정하기",
-      "ob.draw.h"      : "첫 글자는 어떤 모양인가요?",
+      "ob.draw.h"      : "당신의 {0} 를 그려 보세요.",
       "ob.draw.later"   : "나중에 그리기",
       /* the writing system */
       "script.show"     : "표시",

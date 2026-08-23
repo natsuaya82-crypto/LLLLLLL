@@ -109,7 +109,6 @@ act('obDone', obDone);
 act('obName', obName);
 act('obNameLater', obNameLater);
 act('obPickScript', obPickScript);
-act('obRomDone', obRomDone);
 act('obSignInApple', obSignInApple);
 act('obSignInGoogle', obSignInGoogle);
 act('obMailGo', obMailGo);
