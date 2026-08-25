@@ -662,3 +662,94 @@ about — and is in the repo. It is not a check and is not in the gate.
 飛ばした組を**別に数えて印字する**のが筋だと思う（見逃しの量が見える）。
 ただしこれは見立てで、仕様ではない。`tools/press.mjs` は今どのセッションの
 領域でもない。
+
+## 語順と三つの位置が、言語ではなく電話に付いている
+
+**2026-08-25、オーナーが否定の段のスクリーンショットを見て
+「動詞の前と決まったわけじゃないのに」と言ったところから出た。読んで
+見つけたのではなく、動かして測った。**
+
+```
+A (Lmt8i0omm): order=OSV  negp=before  words=10
+B (Lmt8i0pq2): order=OSV  negp=before  words=0    ← 単語は 0。語順は A のまま
+B changed to:  order=VOS  negp=after
+back in A:     order=VOS  negp=after  words=10    ← A の語順が B の作業で変わった
+```
+
+`SET` は `LS_S = 'lingua.set'` ひとつに保存される ── `langKey()` を通らない。
+`core.js:22` のコメントが自分でそう言っている:「the person's settings --
+not a language's」。そこに入っているもの:
+
+```
+  SET.order      語順（SOV / SVO / VSO / VOS / OSV / OVS）
+  SET.gpos.adj   形容詞が名詞の前か後か
+  SET.gpos.negp  否定辞が動詞の前か後か
+  SET.gpos.adp   接置詞が名詞の前か後か
+```
+
+`langOpen()` は words / letters / notes / phases / snd / kb / wld を読み直す
+が、**`SET` は読み直さない**。だから四つは言語をまたいで一つしかない。
+
+**なぜ今これが重要か。** 今日「段の数」が item 3 で「二つ目の言語を作る扉」を
+実装している。**扉が入った瞬間に、これは全員に届く。** 今日この穴が届いて
+いないのは、二つ目の言語を作る道が無いからでしかない。
+
+**これは CLAUDE.md が既に名前を挙げている失敗と同じ形。**「**what the
+language is for** sat in `SET`, the person's settings, directly under a
+comment saying it travels with the language」── あれは直った。これは同じ
+場所に残っている四つ。
+
+**直すのは移行であって、移行は写して、読んだものを消さない。** 既に二つ以上の
+言語を持っている人（移行や復元で出来る）は、今どちらの言語で決めたのかも
+分からない一つの値を共有している。どちらに配るのが正しいかは**データの話
+ではなく決めごと**なので、ここでは決めない。
+
+## 「決めること」の下の二択が、誰も選んでいないのに選ばれて見える
+
+同じスクリーンショットから。`phases.js:433` の
+
+```js
+  return '<div class="segs">'+['before','after'].map(function(o){
+      return '<button class="seg'+(o===gPos(id)?' on':'')+'"' + ...
+```
+
+`gPos()` は触られていなければ `GPOS_DEF`（＝`after`）を返すので、**何も
+していない段でも「動詞の後」が光っている。** 人は選んでいない。
+
+**コードの側は既に正しく区別できている。** `phases.js:187`:
+
+> A decision counts once it has been touched. Every one of them has a default
+> and a default nobody chose is not a decision.
+
+`stTouched()` はそのとおりで、進捗の数え方は正しい。**画面だけが、既定を
+選択として描いている。** だから直すのに新しい概念は要らない ── `stTouched(id)`
+が偽のあいだはどちらも光らせない、で足りる。
+
+**そしてもう一段深い方（こちらは決めごと）。** 選択肢が
+`['before','after']` の二つしかない。否定を「動詞の前後に置く小さな語」で
+表す言語だけが表現できる。接辞で示す言語、動詞そのものが変わる言語、
+語順で示す言語には答えが無い。同じことが `adj` と `adp` にも言える。
+**これは「二択が足りない」という実装の話ではなく、「このアプリの文法の段は
+どこまでの言語を作れることにするのか」という決めごと。**
+
+## 段の副題 18 本のうち、いくつかは題を言い直しているだけ
+
+同じスクリーンショットから。オーナー:「否定の表し方　決めること ↑これは
+説明だろ」。
+
+`stg.neg.d` = 「否定の表し方」が、題「否定」の真下に出る。題が「否定」で
+副題が「否定の表し方」は、二度言っているだけで何も足していない。
+`stg.*.d` は 18 本あり、全部が同じではない:
+
+```
+  題を言い直しているだけ   stg.neg.d 否定の表し方 / stg.have.d 所有の表し方
+                           stg.when.d 時の表し方 / stg.desc.d 修飾語の位置
+  何かを足している         stg.count.d 1から{0}まで / stg.month.d 1年を分ける{0}つ
+                           stg.wday.d 1週の{0}日 / stg.verb.d 過去・現在・未来
+  どちらとも読める         stg.order.d 主語・目的語・動詞の並び ほか
+```
+
+**どれを消すかは言葉づかいなので決めない。** 先例はある ──「four screens
+stopped saying what a heading already said」で 18 個のボタンが減った日。
+`stg.decide`（「決めること」）も同じ列に並ぶが、これは題の言い直しではなく
+節の名前（「規則」「必要な単語」「例文」「メモ」と同じ列）なので、別の判断。
