@@ -20,6 +20,12 @@ assert.equal(intransitive.roles.SUBJECT,'mi');
 assert.equal(intransitive.roles.PREDICATE,'luma');
 assert.equal(intransitive.roles.OBJECT,undefined);
 assert.equal(intransitive.features.TENSE,'PAST');
+/* A particle standing in front of a word it cannot attach to. The reader kept
+   the word it had already looked ahead to and never advanced past the
+   particle, so the particle vanished and that word was counted twice --
+   ok:true, with the sentence saying something nobody wrote. */
+const stray=e.morphology.parseSentence(language,'na mi');
+assert.equal(stray.ok,false);
 const adapted=e.adapter.fromLegacy('legacy',[{hw:'luma',mn:'食べる',pos:'v'}],{order:'SOV'});
 assert.equal(adapted.words[0].partOfSpeech,'VERB'); assert.equal(adapted.wordOrder.join(','),'SUBJECT,OBJECT,VERB');
 console.log('Grammar Engine: Phase 1–2 contract is clean');

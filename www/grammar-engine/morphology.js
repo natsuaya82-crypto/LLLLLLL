@@ -20,9 +20,9 @@
   function inflect(model,word,features){ var rules=model.inflections||[],i,r,out=word.lemma,used=[]; for(i=0;i<rules.length;i++){ r=rules[i]; if(applies(r,word)&&featureMatches(r,features)){ out=add(out,r,formOf(model,r)); used.push(r); } } return {surface:out,lemma:word.lemma,inflections:used}; }
   function lookupWord(model,lemma){ var words=model.words||[],i; for(i=0;i<words.length;i++) if(words[i].lemma===lemma) return words[i]; return null; }
   function parseToken(model,text){ var words=model.words||[],i,w,a; for(i=0;i<words.length;i++){ w=words[i]; a=analyzeForm(model,text,w); if(a.lemma===w.lemma) return {word:w,lemma:w.lemma,inflections:a.inflections,surface:text}; } return null; }
-  function parseSentence(model,text){ var parts=String(text||'').replace(/^\s+|\s+$/g,'').split(/\s+/), tokens=[], i, parsed, role, order=model.wordOrder||[], roles={}, features={}, rule, j, slots=[], si=0, vi=-1;
+  function parseSentence(model,text){ var parts=String(text||'').replace(/^\s+|\s+$/g,'').split(/\s+/), tokens=[], i, parsed, role, order=model.wordOrder||[], roles={}, features={}, rule, j, next, slots=[], si=0, vi=-1;
     for(i=0;i<parts.length;i++){ parsed=parseToken(model,parts[i]); if(!parsed && i+1<parts.length){
-        for(j=0;j<(model.inflections||[]).length;j++){ rule=model.inflections[j]; if(rule.operation==='prefix' && String(rule.separator)===' ' && formOf(model,rule)===parts[i]){ parsed=parseToken(model,parts[i+1]); if(parsed&&applies(rule,parsed.word)){ parsed.inflections.push(rule); parsed.surface=parts[i]+' '+parts[i+1]; i++; break; } } }
+        for(j=0;j<(model.inflections||[]).length;j++){ rule=model.inflections[j]; if(rule.operation==='prefix' && String(rule.separator)===' ' && formOf(model,rule)===parts[i]){ next=parseToken(model,parts[i+1]); if(next&&applies(rule,next.word)){ next.inflections.push(rule); next.surface=parts[i]+' '+parts[i+1]; parsed=next; i++; break; } } }
       }
       if(!parsed) return {ok:false,error:'Unknown or invalid word: '+parts[i],originalText:text};
       tokens.push(parsed);
