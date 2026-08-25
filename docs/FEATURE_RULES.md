@@ -285,6 +285,37 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-25
+- Area: Making a second language — where the door is, and what it does
+- Decision:
+
+  「アカウントが変わるイメージ。実際の sns はアカウント切り替えボタンある
+   やん？あれが言語切り替えになるって感じ」「せっていからでいいよ」
+
+  **A language is an account, and the language list is the account switcher.**
+  It stays where it is — Settings → Languages (`www/settings.js`, `go('langs')`,
+  `vLangs()` in `www/home.js`). It is NOT moved onto the profile or behind the
+  face; that was offered and turned down.
+
+  What is added is one button at the **foot of that list**, where "add an
+  account" sits in the app this is modelled on. Pressing it makes a language
+  and opens it. Nothing is asked first: `langFirst()` already makes a nameless
+  one and the onboarding already asks the name, so a second language arrives
+  the same way the first did.
+
+- Reason: the screen, the switching and the making all exist already.
+  `langFirst()` mints the id, puts it in `LANGS` and opens it; `langOpen()`
+  saves the one you are leaving, reads the new one in and calls `viewReset()`
+  so you do not arrive in somebody else's language with your filter still on.
+  What was missing was a door, and only a door.
+- Affected features: `vLangs()` (`www/home.js`), a new act, ten strings, and
+  **the language ceiling** — which lands in the SAME commit, because a door
+  with no ceiling is unlimited languages on the free plan. Free 1 / Plus 1 /
+  Pro 3, from the decision of 2026-08-23. It HIDES and never deletes
+  (`wordsSeen()`'s shape): somebody who already has three keeps three, sees
+  three, backs up three, and is refused only the fourth.
+
+### Decision
+- Date: 2026-08-25
 - Area: The keyboard sheet's width — a column is a fixed size
 - Decision:
 
