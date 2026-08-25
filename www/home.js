@@ -1080,12 +1080,18 @@ function wldSecRows(sec){
 function wldSecs(){
   var out=[{r:'wldov', k:'wld.overview'}], a=wldArts(), i;
   out.push({r:'sound',   k:'toc.sound'});
-  /* `dl` marks the three that can actually BE taken away and used --
-     「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 OWNER
-     2026-08-25. The overview, the sounds, the grammar and anything somebody
-     wrote are read; there is nothing to hand over, so the question is not
-     asked of them. It was being asked of every one of them, including a
-     section still called 「無題」. */
+  /* `dl` marks the four that can actually BE taken away and used --
+     「単語と文字とキーボードと文法にDL可能だけつけろ」 OWNER 2026-08-25, which is
+     the later of two on the same day and the one in force. The earlier said
+     three -- 「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 --
+     and the grammar was added to it. THIS COMMENT WENT ON SAYING THREE while
+     the line below it said four, so the file argued with itself about what
+     the owner had decided; the code was right and the sentence over it was a
+     week out of date.
+
+     The overview, the sounds, and anything somebody wrote are read; there is
+     nothing to hand over, so the question is not asked of them. It was being
+     asked of every one of them, including a section still called 「無題」. */
   out.push({r:'letters', k:'toc.letters', go:'letters', dl:1});
   out.push({r:'words',   k:'toc.words',   go:'words',   dl:1});
   out.push({r:'gram',    k:'toc.gram',    go:'gram',    dl:1});
