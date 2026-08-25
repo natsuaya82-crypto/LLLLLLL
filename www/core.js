@@ -489,24 +489,28 @@ function langCount(){
 }
 /* The ceiling on languages, met. True means the caller must stop.
 
-   Same shape as capStop() below and a different answer to the same question,
-   which is worth reading side by side because the two look like they
-   disagree.
+   capStop()'s shape, exactly, and that is an owner decision rather than a
+   tidiness: 「全部確認して飛ぶ」 OWNER DECISION 2026-08-25. There are three
+   ceilings in this app -- words, keyboards, languages -- and they now say the
+   same thing the same way. This one was the odd one out for half a day: it
+   went straight to the plans screen, which was the earlier decision of the
+   same day read as being about this
+   （「無料はタップすると課金ページに飛ばされる」）, and that decision is
+   about a closed DOOR. A ceiling asks first.
 
-   capStop() must not MOVE anybody: it is the hundredth word arrived at in the
-   middle of typing the hundred-and-first, and taking the screen off somebody
-   mid-sentence to show them a price list is the app punishing them for using
-   it. This is a button pressed on purpose, so the plans screen is the answer
-   to what was just asked rather than an interruption of something else.
-   「無料はタップすると課金ページに飛ばされる」 OWNER DECISION 2026-08-25.
+   iOS's own dialog, and the reason is capStop()'s: it has to be answerable
+   with "no", and a box of our own would be a shape this app chose for a
+   question the phone already has a shape for. Nobody is moved unless they
+   say yes.
 
-   Except where there is nothing to go to. Somebody already holding the
-   biggest ceiling there is would arrive at a price list that answers nothing
-   -- a screen with no cause and no way out, which is the ONE case CLAUDE.md's
-   2026-08-22 narrowing says gets a sentence. It gets one sentence and nothing
-   beyond it. `langCap() < PRO_LANGS` and not a plan name: the question is
-   whether a bigger ceiling exists to buy, and that stays true the day the
-   numbers move.
+   Except where there is nothing to fly to. Somebody already holding the
+   biggest ceiling there is cannot be offered a bigger one, and a dialog whose
+   yes leads to a price list that answers nothing is worse than a sentence --
+   it is a screen with no cause and no way out, which is the ONE case
+   CLAUDE.md's 2026-08-22 narrowing says gets words. It gets one sentence and
+   nothing beyond it. `langCap() < PRO_LANGS` and not a plan name: the
+   question is whether a bigger ceiling exists to buy, and that stays true the
+   day the numbers move.
 
    Nothing here removes, hides or counts down anything. Somebody who already
    has more than this -- a plan that ended, a number that moved -- keeps every
@@ -514,7 +518,9 @@ function langCount(){
    the next one is refused. */
 function langStop(){
   if(langCount()<langCap()) return false;
-  if(langCap()<PRO_LANGS) go('plans');
+  if(langCap()<PRO_LANGS){
+    if(confirm(t('langs.full', langCap())+'\n\n'+t('up.cta'))) go('plans');
+  }
   else alert(t('langs.full', langCap()));
   return true;
 }

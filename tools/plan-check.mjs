@@ -413,13 +413,29 @@ const r = await pg.evaluate(({ s }) => {
 
   /* Pressed on free, where the one language you have IS the ceiling: nothing
      is made and the plans screen is where you land. */
+  /* Pressed on free, where the one language you have IS the ceiling. It asks
+     first and flies on yes -- capStop()'s shape, which all three ceilings
+     wear now. 「全部確認して飛ぶ」 OWNER DECISION 2026-08-25. */
   var wentTo = '', saidIt = '', realAlert = window.alert;
   window.alert = function(m){ saidIt = String(m); };
+  var askedLang = '', realConfirm3 = window.confirm;
   var wasCount = langCount(), wasLang = langId;
+  /* said no: nobody is moved and nothing is made */
+  go('langs');
+  window.confirm = function(m){ askedLang = String(m); return false; };
+  langNew();
+  out.freeAsked = askedLang;
+  out.freeSaidNo = langCount() === wasCount && langId === wasLang && here().r === 'langs';
+  /* the sentence has to read at ONE, which is what the free ceiling is --
+     "1 languages" was what the first version of this string said */
+  out.freeAskedNoPlural = (askedLang || '').indexOf('1 languages') === -1;
+  /* said yes: the plans screen, still without making one */
+  window.confirm = function(){ return true; };
   langNew();
   out.freeMadeNone = langCount() === wasCount && langId === wasLang;
   out.freeWent = here().r === 'plans';
   out.freeSaidNothing = saidIt === '';
+  window.confirm = realConfirm3;
 
   /* Pressed on pro, where there is room: it is made AND opened, which is what
      the account switcher does. */
@@ -456,9 +472,11 @@ const r = await pg.evaluate(({ s }) => {
 
   /* The fourth is the only thing refused. */
   saidIt = '';
+  window.confirm = function(){ return true; };
   langNew();
   out.fourthRefused = langCount() === 3;
   out.fourthWent = here().r === 'plans';
+  window.confirm = realConfirm3;
   /* and the three are the same three, still, AFTER the refusal -- which is
      where a version that prunes down to the ceiling would do it. Asked by id
      and in bytes rather than by counting: a count of three is also what you
@@ -617,8 +635,11 @@ say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
 say(r.langCountReading === 1,
     'a language being READ from somebody else is not one of yours (' + r.langCountReading + ')');
 say(r.doorOnFree, 'the way to make one is drawn on free -- a closed door is shown, not hidden');
+say(r.freeSaidNo, 'pressed on free it asks rather than telling -- no is no, and nobody is moved');
+say(/1/.test(r.freeAsked || ''), 'the sentence says the number (' + (r.freeAsked || 'nothing') + ')');
+say(r.freeAskedNoPlural, 'and it reads at one, which is what the free ceiling is');
 say(r.freeMadeNone && r.freeWent && r.freeSaidNothing,
-    'pressed on free it makes none and lands on the plans screen, saying nothing');
+    'and yes goes to the plans screen, still without making one');
 say(r.proMade && r.proOpened, 'pressed on pro it is made and opened');
 say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words');
 

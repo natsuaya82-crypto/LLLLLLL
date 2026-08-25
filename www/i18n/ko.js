@@ -926,7 +926,7 @@ defLang('ko', (function(){
       "langs.open"       : "열림",
       "langs.none"       : "아직 없어요",
       "langs.new"       : "새 언어",
-      "langs.full"       : "최대 {0}개입니다.",
+      "langs.full"       : "현재 플랜에서는 최대 {0}개입니다.",
       "plans.title"      : "요금제",
       "plan.cur"         : "현재",
       'plan.badge'            : "이름 옆의 배지",
