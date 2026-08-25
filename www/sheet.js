@@ -43,6 +43,10 @@ var SH_LABEL = 14, SH_LABEL_UP = 4;
    twice over -- once because they are pale, once because a dot is a smaller
    island than any stroke. */
 var SH_DOT = 0.5, SH_DOT_GREY = 0.72;
+/* How dark the printed edge of a box is. Pale on purpose: the reader forgets a
+   margin of the box rather than trusting the threshold to drop this line, and
+   a heavy edge is one more thing for a photograph to turn into ink. */
+var SH_BOX_GREY = 0.82;
 var SH_LAT_N = 21, SH_LAT_INSET = 40;       /* GGRID, in the 800 square */
 /* the strip that carries the names */
 var SH_CELL = 4.54;                         /* 1.6mm, ~19 pixels at 300dpi */
@@ -63,6 +67,16 @@ function shBoxAt(i){
            x: x0 + c * (SH_BOX + SH_GAPX),
            y: yTop - r * (SH_BOX + SH_GAPY) - SH_BOX,
            side: SH_BOX };
+}
+/* How wide the name over a box comes out, at SH_LABEL tall. A name wider than
+   its own box is squashed to the box rather than allowed to run into its
+   neighbour. The ONE place: the file prints the name here and the screen draws
+   the same picture in the same spot, and a preview that worked this out again
+   would be a second copy of the sheet -- a copy always agrees, so the day a
+   box moves the picture would go on showing where it used to be. */
+function shLabelW(p){
+  var w = SH_LABEL * p.w / p.h;
+  return w > SH_BOX ? SH_BOX : w;
 }
 /* The four marks, in a fixed order: top-left, top-right, bottom-right,
    bottom-left. Their CENTRES, because that is what a reader finds. */
@@ -177,12 +191,11 @@ function shPageOps(from, count, pics, bits, page, pages){
        another language's word sitting in the box they are about to draw in.
        There is an assertion below rather than a comment saying to be careful. */
     if (p && p.w && p.h){
-      wide = SH_LABEL * p.w / p.h;
-      if (wide > SH_BOX){ wide = SH_BOX; }
+      wide = shLabelW(p);
       o.push('q ' + shNum(wide) + ' 0 0 ' + shNum(SH_LABEL) + ' ' + shNum(b.x) + ' ' +
              shNum(b.y + SH_BOX + SH_LABEL_UP) + ' cm /Im' + i + ' Do Q');
     }
-    o.push('0.82 G 0.5 w ' + shNum(b.x) + ' ' + shNum(b.y) + ' ' +
+    o.push(shNum(SH_BOX_GREY) + ' G 0.5 w ' + shNum(b.x) + ' ' + shNum(b.y) + ' ' +
            SH_BOX + ' ' + SH_BOX + ' re S');
     /* the lattice, as squares rather than circles -- 441 dots a box and twenty
        boxes, so the cheap operator is the right one */
@@ -804,12 +817,50 @@ function shNames(s){
   }
   return out;
 }
-function shPages(n){ return Math.max(1, Math.ceil(n / shPerPage())); }
+/* How many sheets these names come to. Nothing typed is NO sheet, and it used
+   to say one: shMake() refuses a sheet with no names on it (t('wr.none')), so
+   the line under the field was promising a piece of paper the button would
+   not give. It is a count, and a count that is wrong about zero is wrong. */
+function shPages(n){ return n > 0 ? Math.ceil(n / shPerPage()) : 0; }
 
 /* ---- the room ---------------------------------------------------------- */
-function openWrite(){
-  openForm('write:', t('wr.title'), shRoomHTML());
+/* All three pages of this chapter carry the same `?`, because there is one
+   thing to know and it is the ORDER -- type, save, print and write, scan and
+   install. A person who does not know it is as lost on the reading page as on
+   the writing one. 「説明は嫌いだけどわからないと困るから？ボタンは右上に
+   追加して」 OWNER 2026-08-25.
+
+   It is behind the mark and NOT on the screen: 「アプリ内に説明書くの禁止」,
+   and the `?` in the bar is where a genuinely needed explanation goes -- which
+   is what the `?` is for. www/home.js's HELP is the one mechanism and this
+   registers with it rather than growing a second one.
+
+   HELP is www/home.js's and may not be there at all: tools/sheet-spike/*.mjs
+   eval this file with no app around it, and a bare `HELP.wr =` at the top
+   level would take the spike down with a ReferenceError. Same guard as
+   FORM_OPEN at the foot of this file, and for the same reason. */
+if(typeof HELP !== 'undefined'){
+  HELP.wr = function(){
+    return {t:t('wr.help'), h:
+      shStep(1, t('wr.s1'), t('wr.s1.d'))+
+      shStep(2, t('wr.s2'), t('wr.s2.d'))+
+      shStep(3, t('wr.s3'), t('wr.s3.d'))+
+      shStep(4, t('wr.s4'), t('wr.s4.d'))};
+  };
 }
+/* One step: its number, what is done, and the one line that says how. The
+   number is written here rather than into the string, so no translation can
+   put the steps out of order or lose one. */
+function shStep(n, title, body){
+  return '<div class="sec">'+n+'. '+esc(title)+'</div>'+
+    '<div class="note">'+esc(body)+'</div>';
+}
+function openWrite(){
+  openForm('write:', t('wr.title'), shRoomHTML(), null, shQ());
+}
+/* The mark, or nothing at all when this file is being run without the app
+   around it. helpQ() is www/home.js's. */
+function shQ(){ return (typeof helpQ === 'function') ? helpQ('wr') : ''; }
 function shRoomHTML(){
   return '<div class="toc">'+
     '<button class="trow"' + DO('openWrOut') + '>'+
@@ -823,7 +874,7 @@ function shRoomHTML(){
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
-  openForm('wrout:', t('wr.make'), shOutHTML());
+  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw, shQ());
 }
 /* The count under the field is a count. It says how many boxes twenty names
    make and how many sheets that is, which is the one thing a person cannot
@@ -834,9 +885,124 @@ function shOutHTML(){
     '<textarea id="wr-names" placeholder="'+esc(t('wr.ph'))+'"' + IN('shTyped') + '>'+
     esc(s.names)+'</textarea></div>'+
     '<div class="mini" id="wr-mini">'+esc(tn('wr.boxes', n))+' · '+esc(tn('wr.pages', shPages(n)))+'</div>'+
+    shPvHTML()+
     '<div class="barfix"><button class="btn ghost"' + DO('shMake') + '>'+
     esc(t('wr.out'))+'</button></div>';
 }
+/* ---- what will come out, before it comes out ----------------------------
+   「自分の言語に入れたい文字　例 a,b,c みたいにしてカンマで区切ったら、どんな
+   用紙が出てくるかを見せないと。今プレビューこんな感じだよって。」
+   OWNER 2026-08-25.
+
+   It is the PAGE, drawn from shBoxAt(), shMarks(), shCellAt(), shPack(),
+   shLabelW() and shPic() -- the same six the file itself is written from. A
+   preview that worked the layout out again would be a second copy of the
+   sheet, and a copy always agrees: the day a box moves, the picture would go
+   on showing where it used to be.
+
+   The FIRST page. The line above it already says how many sheets there are,
+   which is the one thing a picture of page one cannot say, and a canvas that
+   grows with the names is a height nobody has measured on a phone.
+
+   Paper is white in both themes, because it is paper: everything on it is the
+   grey or the black the file prints and none of it is a colour of this app's.
+   One thing on the page is deliberately not drawn -- the small `Lingua 1/1` at
+   its head. Nothing can translate a word painted onto a canvas, so only
+   `Lingua` may be painted at all (tools/i18n-check.mjs, PAINTS); it is on the
+   paper, and it is not what a person is looking at this for. */
+function shPvHTML(){
+  return '<canvas id="wr-pv" style="width:100%;display:block;margin-top:14px"></canvas>';
+}
+function shPvGrey(v){
+  var n = Math.round(v * 255);
+  return 'rgb(' + n + ',' + n + ',' + n + ')';
+}
+var SH_PVFIT = 0;
+function shPvDraw(){
+  var c = document.getElementById('wr-pv'), w, dpr, W, S, H;
+  if(!c) return;
+  /* Nothing typed is nothing to show. 「打ったらどんな用紙が出てくるかを見せる」
+     is the whole of this, and an empty page of white standing on the screen
+     before a person has typed anything is not a sheet they are getting -- in
+     the dark theme it is a lamp. */
+  if(!shNames(shState().names).length){ c.style.display = 'none'; return; }
+  c.style.display = 'block';
+  w = c.getBoundingClientRect().width || c.offsetWidth || 0;
+  /* Measured before the layout exists the answer is zero, and a canvas sized
+     from zero shows nothing at all. geMount() in www/glyph.js is where that
+     was learned; this is the same bounded retry and not a new rule. */
+  if(!w){
+    if(SH_PVFIT < 10 && window.requestAnimationFrame){
+      SH_PVFIT++;
+      requestAnimationFrame(shPvDraw);
+      return;
+    }
+    w = 300;
+  }
+  SH_PVFIT = 0;
+  dpr = window.devicePixelRatio || 1;
+  W = Math.round(w * dpr);
+  S = W / SH_W;                       /* pixels to the point */
+  H = Math.round(SH_H * S);
+  c.width = W; c.height = H;
+  c.style.height = Math.round(SH_H * S / dpr) + 'px';
+  shPvPage(c.getContext('2d'), S, W, H);
+}
+/* One page, at S pixels to the point. The page's y runs UP and a canvas runs
+   DOWN, so it is flipped here and once only -- shBoxInk() has the same line
+   for the same reason. */
+function shPvPage(g, S, W, H){
+  var names = shNames(shState().names), page = names.slice(0, shPerPage());
+  var i, b, p, m, tile, bits, at, x, y;
+  function Y(v){ return (SH_H - v) * S; }
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = '#000';
+  m = shMarks();
+  for(i = 0; i < m.length; i++)
+    g.fillRect((m[i][0] - SH_MARK / 2) * S, Y(m[i][1] + SH_MARK / 2),
+               SH_MARK * S, SH_MARK * S);
+  /* Every box is the same box, so it is drawn once and stamped twenty times:
+     441 dots a box and twenty boxes is 8820 of them on every keystroke. */
+  tile = shPvBox(S);
+  for(i = 0; i < page.length; i++){
+    b = shBoxAt(i);
+    g.drawImage(tile, b.x * S, Y(b.y + SH_BOX));
+    p = shPic(page[i]);
+    g.drawImage(p.cv, b.x * S, Y(b.y + SH_BOX + SH_LABEL_UP + SH_LABEL),
+                shLabelW(p) * S, SH_LABEL * S);
+  }
+  /* The strip, which is how the paper says what it is. Null is the names
+     refusing to fit, and shMake() says so in a sentence rather than writing a
+     sheet that cannot be read back -- the picture simply stops here. */
+  bits = shPack(page);
+  if(!bits) return;
+  g.fillStyle = '#000';
+  for(y = 0; y < SH_CH; y++) for(x = 0; x < SH_CW; x++){
+    if(!bits[y * SH_CW + x]) continue;
+    at = shCellAt(x, y);
+    g.fillRect(at[0] * S, Y(at[1] + SH_CELL), SH_CELL * S, SH_CELL * S);
+  }
+}
+/* The empty box and its lattice, once. A dot is half a point on paper, which
+   is a third of a pixel on a phone -- drawn at that it is nothing at all, so
+   the floor is half a pixel. What the dots say on a screen is that there are
+   dots; how heavy they are is a question for the printer. */
+function shPvBox(S){
+  var c = document.createElement('canvas'), g, side = Math.round(SH_BOX * S);
+  var lw = Math.max(1, 0.5 * S), lin = SH_LAT_INSET / 800 * SH_BOX * S;
+  var lst = (side - 2 * lin) / (SH_LAT_N - 1), d = Math.max(SH_DOT * S, 0.5), lx, ly;
+  c.width = side; c.height = side;
+  g = c.getContext('2d');
+  g.strokeStyle = shPvGrey(SH_BOX_GREY);
+  g.lineWidth = lw;
+  g.strokeRect(lw / 2, lw / 2, side - lw, side - lw);
+  g.fillStyle = shPvGrey(SH_DOT_GREY);
+  for(ly = 0; ly < SH_LAT_N; ly++) for(lx = 0; lx < SH_LAT_N; lx++)
+    g.fillRect(lin + lx * lst - d / 2, lin + ly * lst - d / 2, d, d);
+  return c;
+}
+
 /* Typed into. The count under the field moves with it, and nothing else does
    -- rebuilding the page would put the caret back to the end of the line on
    every keystroke, which is www/post.js's lesson and not a new one. */
@@ -848,6 +1014,61 @@ function shTyped(v){
     var n = shNames(s.names).length;
     e.innerHTML = esc(tn('wr.boxes', n)) + ' · ' + esc(tn('wr.pages', shPages(n)));
   }
+  shPvDraw();
+}
+/* Each name as a small grey picture, one per box.
+
+   The sheet's own font is Helvetica -- Type1, WinAnsi -- and it cannot say 水.
+   A PDF font that could say every name a person might type is a font embedded
+   in every sheet, which is the whole of otf5.js pointed at a piece of paper.
+   So the name is drawn on a canvas here, where the phone already has the face
+   for it, and rides in the file as a few hundred bytes of DeviceGray.
+   shPageOps() has drawn `/Im<i>` over the box since the day it was written and
+   this is the half that was missing: shMake() called shSheet(names, []), so
+   `p` was null for every box and **not one name was printed on the sheet**.
+   Twenty empty squares and a strip: the paper could still say what it was to
+   the reader, and could not say anything at all to the person holding a pen.
+   The strokes on it would then come back under the right names, which is what
+   makes it silent -- nothing throws, nothing is lost, and every check in the
+   gate is green, because tools/sheet-check.mjs draws its own page rather than
+   printing one through shSheet().
+
+   The size and the way it is drawn are the spike's, tools/sheet-spike/print.mjs,
+   which is where a real sheet was printed from and written on. 64 tall is about
+   four times the 14 points it lands at, so the print has detail to spend.
+   The face is asked of the page: a canvas has no inheritance, so a family
+   written out here would be the one place the stylesheet cannot reach
+   (CLAUDE.md rule 17, and tools/face-check.mjs holds it). */
+/* The picture. The screen draws this one as it is; the file wants its bytes,
+   which is shPics() below -- so reading seven thousand pixels back happens
+   once, when a sheet is written, and not on every keystroke of the preview. */
+function shPic(nm){
+  var H = 64, c = document.createElement('canvas'), g = c.getContext('2d'), f, w;
+  f = '600 ' + Math.round(H * 0.8) + 'px ' + cssVar('--face-ui', 'sans-serif');
+  g.font = f;
+  w = Math.ceil(g.measureText(String(nm)).width);
+  if(!(w > 0)) w = 8;
+  /* Sizing a canvas clears everything set on its context, so the face is set
+     again after and not before. */
+  c.width = w; c.height = H;
+  g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, H);
+  g.fillStyle = '#000'; g.font = f;
+  g.textBaseline = 'middle';
+  g.fillText(String(nm), 0, H * 0.54);
+  return {w: w, h: H, cv: c};
+}
+function shPics(names){
+  var out = [], i, p, g, d, by, k;
+  for(i = 0; i < names.length; i++){
+    p = shPic(names[i]);
+    g = p.cv.getContext('2d');
+    try{ d = g.getImageData(0, 0, p.w, p.h).data; }catch(e){ out.push(null); continue; }
+    by = [];
+    for(k = 0; k < p.w * p.h; k++) by.push(String.fromCharCode(d[k * 4]));
+    out.push({w: p.w, h: p.h, gray: by.join('')});
+  }
+  return out;
 }
 /* The PDF, and out. There is no Swift behind `sheet` yet -- LinguaShare.swift
    has keep/kept/write/pickPhoto/audio and not this -- so on a phone today the
@@ -858,7 +1079,7 @@ function shTyped(v){
 function shMake(){
   var s = shState(), names = shNames(s.names), pdf, p;
   if(!names.length){ toast(t('wr.none')); return; }
-  pdf = shSheet(names, []);
+  pdf = shSheet(names, shPics(names));
   /* null is the packet refusing to fit the strip. A sheet that cannot name
      itself is not a sheet -- it comes back unreadable, and a misread sheet
      must be turned away rather than half-imported. */
@@ -881,7 +1102,7 @@ function shFileName(){
 
 /* ---- reading one back -------------------------------------------------- */
 function openWrIn(){
-  openForm('wrin:', t('wr.read'), shInHTML(), shInMount);
+  openForm('wrin:', t('wr.read'), shInHTML(), shInMount, shQ());
 }
 /* Before a file: the one control. After one: what came off it, a row per box.
    No picture of what was read, and that is on purpose rather than missing --
@@ -890,7 +1111,7 @@ function openWrIn(){
 function shInHTML(){
   var s = shState(), out = '', i, g, n;
   out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
-    '<input type="file" id="wr-file" accept="image/*,.pdf"></label>';
+    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
   if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
   if(!s.got) return out;
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
@@ -925,11 +1146,34 @@ function shInMount(){
   e.addEventListener('change', function(){
     var f = e.files && e.files[0];
     if(!f) return;
+    /* A PDF, and nothing else. OWNER DECISION 2026-08-25
+       「一旦写真禁止で、普通に pdf で提出以外受け取らないで行こう。今後のアプデで追加しよ」
+       -- and the reason is a shipping one rather than a technical one: the
+       half that was never measured is exactly the photograph, a brush and a
+       hard pencil on paper under a real camera. A scan has no camera in it.
+
+       It is HERE and not in shTakeFile(), and that is the decision's own
+       sentence: what changes is which files are offered and accepted, not the
+       reader underneath. This listener is the one door a person comes in by --
+       the picker offers PDFs and anything else that arrives is turned away
+       with a sentence. Below it, shTakeFile() still reads a picture, because
+       the day photographs come back is the day this one line goes. */
+    if(!shIsPdf(f)){ shFail(t('wr.notpdf')); return; }
     var r = new FileReader();
     r.onload = function(){ shTakeFile(String(r.result || ''), f.name); };
     r.onerror = function(){ shFail(t('wr.bad')); };
     r.readAsDataURL(f);
   }, false);
+}
+/* What the picker was told to offer, asked again of what actually arrived.
+   `accept` is a hint and not a fence -- a file can still reach here by another
+   road on some phones, and on a desktop the chooser has an "all files" of its
+   own. Both halves of the name are asked because neither is reliable alone:
+   iOS hands over `application/pdf` and no useful name, and a file that came
+   through Files with no type at all still ends in `.pdf`. */
+function shIsPdf(f){
+  var ty = String((f && f.type) || ''), nm = String((f && f.name) || '');
+  return ty.indexOf('pdf') >= 0 || /\.pdf$/i.test(nm);
 }
 function shFail(why){
   var s = shState();
