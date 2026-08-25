@@ -1237,14 +1237,26 @@ function wldPage(ed){
          that says it, so this inventory is made by drawing letters. */
       inner+=abSounds();
     } else if(sec.r==='letters'){
-      if(drawn.length) inner+='<div class="ltgrid abtlt">'+
+      /* The letters on the READING face and the switch on the writing one --
+         「文字とか単語とかはここで編集しないからこれしか出ない」 OWNER
+         2026-08-25. A letter is drawn in the letters chapter and nowhere
+         else, so the grid here is something to look at; on the face somebody
+         is writing on it is a wall of tiles between them and the one thing
+         this section actually asks. Two of the four were doing this and two
+         were not, which is the same section answering the owner's sentence
+         both ways. */
+      if(ed) inner+=wldSecRows(sec);
+      else if(drawn.length) inner+='<div class="ltgrid abtlt">'+
         ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
-      if(ed) inner+=wldSecRows(sec);
     } else if(sec.r==='gram'){
-      done=stAll();
-      for(i=0;i<done.length;i++) if(stIsDone(done[i]))
-        inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
+      /* And the stages that are finished, for the same reason: they are
+         finished in the grammar chapter, not here. */
       if(ed) inner+=wldSecRows(sec);
+      else {
+        done=stAll();
+        for(i=0;i<done.length;i++) if(stIsDone(done[i]))
+          inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
+      }
     } else if(sec.nm!==undefined){
       /* A section somebody wrote: its title is the heading and its words are
          under it, and while writing those two ARE the boxes -- the heading is
