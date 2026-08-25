@@ -69,6 +69,73 @@ kept: the line, the meaning, whom it answers, the pictures with their letters
 still placed on them, the recording, and whether it was going to be private.
 Nothing prunes it and nothing ages it out.
 
+## The index of languages, and what is actually in it
+
+`lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
+which one every global on the making side means.
+
+| key | written by | what it is |
+|---|---|---|
+| `name` | `langMigrate()`, `langMint()`, `bkRestore()`, and `save()` on the open one | a copy of the language's name, so a row can be drawn without opening the language to find out what it is called. For the OPEN language `langName` is the live answer and this is the copy made at the last save |
+| `mine` | the same three places | **`true`, always, on every entry that has ever existed.** See below |
+| `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot |
+
+`core.js` said `{ name, mine }` **and nothing more** above `LANGS` for as long as
+`sid` has existed. It is three keys. Corrected 2026-08-25.
+
+## A language that is only read — **this state does not exist**
+
+Written down because it has been **decided** and is **not built**, and the gap
+between those two is where a next session invents something.
+
+`LANGS[id].mine` is the only thing that would say a language is not yours, and
+**nothing has ever written it false.** Three places write to `LANGS` —
+`www/core.js:115` (the migration), `www/core.js:140` (`langMint()`), and
+`www/backup.js:264` (a restore putting back a language the index lost) — and
+all three write `mine:true`. So:
+
+```
+  a language that cannot be edited     does not exist
+  a language somebody else made        does not exist
+  LANGS entries where mine is false    have never existed
+```
+
+Two things in the app are already written as though they did, and both are
+reading a state that never arrives:
+
+- **`vLangs()` in `www/home.js`** splits `LANGS` into 「自分の」 and 「読んでいる」.
+  The second list is **always** the empty note. It is not broken — it is the
+  slot DL was going to fill, drawn early.
+- **the comment above `langCount()`** said `LANGS` "also holds every language
+  being read from somebody else", to explain why the ceiling counts `mine`
+  only. The ceiling counting `mine` is right and stays; the sentence about why
+  was describing a thing that is not there. Corrected 2026-08-25.
+
+**What a read-only language will have to answer, and has not:**
+
+1. **Where the slices live.** A downloaded language is `lingua.<id>.<slice>`
+   like any other, or it is not a language at all — `langKeyOf(id, slice)` is
+   the only thing that knows how a language is filed and a second answer is
+   the bug `CLAUDE.md` names twice (the keyboard, the world).
+2. **Whether `SLICES` covers it.** Being in `SLICES` is what makes a slice
+   real: `bkPack()` walks it and `wipeAll` walks it. A downloaded language
+   inside `SLICES` goes into **somebody's backup file**, which may be right
+   (it is on their phone) or wrong (it is not theirs to hand out). **Not
+   decided.**
+3. **What a partial download is.** 「単語文字文法キーボードそれぞれ」 — so a
+   language may arrive with `words` and no `letters`. Today "no slice" and
+   "an empty slice" are already separate states (`bkSound()`, `BK_SHAPE`), and
+   a third — "this slice was never offered" — is not.
+4. **Whether the ceiling counts it.** `langCount()` counts `mine` and the
+   owner counts them separately 「自分の言語+DL言語1個」, so it must not start
+   counting them together. The two numbers themselves are **open**.
+
+**What is already settled, and settled twice.** A downloaded language is
+**never merged into the person's own** — `docs/FEATURES.md` § 4 (2026-08-19)
+and the decision log (2026-08-25). Nothing of theirs is touched, moved,
+renamed or counted differently because a download happened. `DATA_SAFETY.md`'s
+rule holds without an exception being needed: a download **adds**.
+
 ## A word
 
 ```js
