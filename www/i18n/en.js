@@ -663,7 +663,7 @@ defLang('en', (function(){
       'langs.open'      : "Open",
       'langs.none'      : "Nothing yet",
       'langs.new'      : 'New language',
-      'langs.full'      : 'The most is {0} languages.',
+      'langs.full'      : 'The most on this plan is {0}.',
       /* plans */
       'plans.title'     : "Plans",
       'plan.cur'        : "current",

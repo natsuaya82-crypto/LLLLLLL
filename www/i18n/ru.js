@@ -764,7 +764,7 @@ defLang('ru', (function(){
       "langs.open"        : "Открыт",
       "langs.none"        : "Пока ничего",
       "langs.new"        : "Новый язык",
-      "langs.full"        : "Максимум — {0} языка.",
+      "langs.full"        : "Максимум на этом тарифе — {0}.",
       "plans.title"       : "Тарифы",
       "plan.cur"          : "текущий",
       'plan.badge'            : "Значок рядом с именем",

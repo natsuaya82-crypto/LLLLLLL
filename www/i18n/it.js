@@ -752,7 +752,7 @@ defLang('it', (function(){
       "langs.open"       : "Aperta",
       "langs.none"       : "Ancora niente",
       "langs.new"       : "Nuova lingua",
-      "langs.full"       : "Il massimo è {0} lingue.",
+      "langs.full"       : "Il massimo in questo piano è {0}.",
       "plans.title"      : "Piani",
       "plan.cur"         : "attuale",
       'plan.badge'            : "Un distintivo accanto al tuo nome",

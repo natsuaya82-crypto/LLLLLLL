@@ -711,7 +711,7 @@ defLang('es', (function(){
       "langs.open"       : "Abierto",
       "langs.none"       : "Nada todavía",
       "langs.new"       : "Idioma nuevo",
-      "langs.full"       : "El máximo son {0} idiomas.",
+      "langs.full"       : "El máximo en este plan es {0}.",
       "plans.title"      : "Planes",
       "plan.cur"         : "actual",
       'plan.badge'            : "Una insignia junto a tu nombre",
