@@ -145,6 +145,42 @@ function gLay(list){
   }
   return out;
 }
+/* ---- the line an example is, when only its meaning was written ---------
+   OWNER DECISION 2026-08-25: 「gl を打つと ln が辞書と語順から組み上がる」.
+   Every grammar stage already carries Lines, and a line is three boxes: a
+   label, the line in this language, and what it means. Both of the last two
+   were typed by hand, and the second of them is the one the app can already
+   work out -- the dictionary says what the words are and the stage above says
+   what order they go in. So it works it out, and nothing new is stored, no
+   screen is added and no chapter is added: it is the same row, arriving by
+   the other road.
+
+   WHAT WAS TYPED WINS, always. A line somebody wrote is theirs and is never
+   recomposed -- not when the dictionary grows, not when the word order
+   changes. Only an EMPTY line is filled in, which is the same shape the
+   restore rule has (`docs/DATA_SAFETY.md`: fill in what is missing and stop)
+   and the same shape this row already had going the other way -- exRowHTML()
+   has always shown `e.gl || exGloss(e.ln)`, working out the meaning when
+   none was written.
+
+   A meaning with not one word of this language in it gives nothing back, and
+   the caller refuses it exactly as it has always refused an empty line. What
+   it must NOT do is store the natural sentence wearing this language's name.
+
+   A word this dictionary does not have stays in the line as it was typed,
+   which is what docs/FEATURES.md decided ("stays in the natural language").
+   Showing it IN RED is the other half of that decision and is NOT here --
+   see the report: the one place a line's words are drawn is exRowHTML() in
+   www/wordsheet.js, which this session does not own. */
+function gExLine(ln, gl){
+  var e=LinguaGrammarEngine, r, i, n=0;
+  ln=String(ln||'').trim(); gl=String(gl||'').trim();
+  if(ln || !gl) return ln;
+  r=e.translate.run(gModel(), gl);
+  for(i=0;i<r.pieces.length;i++) if(r.pieces[i].kind==='word') n++;
+  if(!n) return '';
+  return e.translate.line(r);
+}
 function gTxt(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return o.join(' '); }
 function gIpaOf(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return '/'+o.join(' ')+'/'; }
 function gFlat(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o=o.concat(ws[i]); return o; }

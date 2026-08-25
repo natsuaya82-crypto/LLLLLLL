@@ -81,7 +81,6 @@ for (const file of ['www/grammar-engine/adapter.js']) {
   assert.equal(fs.readFileSync(file, 'utf8').indexOf("'lingua.'"), -1,
     file + ' builds a storage key by hand. Ask core.js for it instead.');
 }
-console.log('Grammar Engine: Phase 1–2 contract is clean');
 /* ---- the lookup from a meaning to one of my words ------------------------
    docs/FEATURES.md names exactly one thing as missing under "A post shown
    three ways", and this is it. Everything below runs on a language built the
@@ -236,3 +235,76 @@ for(const file of ['www/grammar-engine/lexicon.js','www/grammar-engine/translate
       'DOM-free and globals-free, so it can be put samples through in Node.');
   }
 }
+
+/* ---- the grammar page's own side of the seam -----------------------------
+   Everything above runs the engine alone. This runs www/grammar.js, which is
+   the one file that crosses back to the app: it reads the dictionary, the
+   word order and the three places a word can stand, and hands them over as a
+   model. It is put through here with the app's globals stubbed rather than
+   with a browser, which is the same argument the reader half of
+   www/import.js makes -- tools/gate.mjs runs this check in the group that
+   starts no browser, and it stays in that group.
+
+   Only the app's shapes are stubbed. gExLine(), gModel() and gRules() are the
+   real ones, read off www/grammar.js. */
+const app=vm.createContext({console, LinguaGrammarEngine:e, WORDS:[], SET:{}, STG:{}, langId:'demo'});
+vm.runInContext(fs.readFileSync('www/grammar.js','utf8'),app,{filename:'www/grammar.js'});
+function stage(words,set,slots){
+  app.WORDS=words.slice(); app.SET=set||{}; app.langId='demo';
+  /* stBy/stWordFor are www/phases.js's. A stage is "the words made in it",
+     which is all gRules() asks of them -- www/grammar.js already guards both
+     with typeof, so a language with no stages is the no-stub case below. */
+  if(slots){
+    app.stBy=(id)=>slots[id]?{id, slots:Object.keys(slots[id])}:null;
+    app.stWordFor=(p,k)=>{ const hw=slots[p.id][k]; let f=null;
+      for(const w of app.WORDS) if(w.hw===hw) f=w; return f; };
+  } else { app.stBy=undefined; app.stWordFor=undefined; }
+}
+const DICT=[{hw:'mi',mns:['I','me'],pos:'pro'},{hw:'poko',mns:['fish'],pos:'n'},
+            {hw:'suli',mns:['big'],pos:'adj'},{hw:'luma',mns:['eat'],pos:'v'},
+            {hw:'nai',mns:['not'],pos:'part',slot:'neg.not'}];
+const SLOTS={neg:{not:'nai'}};
+
+/* The owner's decision, in one line: type what it means and the line is built
+   from the dictionary and the word order. */
+stage(DICT,{order:'SOV'},SLOTS);
+assert.equal(app.gExLine('','I eat fish'),'mi poko luma');
+stage(DICT,{order:'SVO'},SLOTS);
+assert.equal(app.gExLine('','I eat fish'),'mi luma poko');
+
+/* WHAT WAS TYPED WINS. A line somebody wrote is theirs: it is not recomposed,
+   not reordered, and not corrected -- only an EMPTY line is filled in. This
+   is docs/DATA_SAFETY.md's shape (fill in what is missing and stop) and it is
+   the half that would destroy somebody's work by winning. */
+stage(DICT,{order:'SOV'},SLOTS);
+assert.equal(app.gExLine('luma poko mi','I eat fish'),'luma poko mi',
+  'A line that was typed was rewritten by the composer.');
+assert.equal(app.gExLine('  luma  ','I eat fish'),'luma');
+
+/* A meaning with not one word of this language in it gives nothing back, so
+   the caller refuses it exactly as it has always refused an empty line. What
+   it must not do is store the natural sentence wearing this language's name. */
+assert.equal(app.gExLine('','hello world'),'');
+assert.equal(app.gExLine('',''),'');
+assert.equal(app.gExLine('',''),app.gExLine('',null));
+
+/* A word this dictionary has no word for stays in the line as it was typed
+   and keeps its place -- docs/FEATURES.md, "stays in the natural language". */
+stage(DICT,{order:'SOV'},SLOTS);
+assert.equal(app.gExLine('','I eat rice'),'mi rice luma');
+
+/* The three places a word can stand reach the line, not just the word order,
+   and the word the 否定 stage made is found through the stage rather than by
+   its part of speech. */
+stage(DICT,{order:'SOV',gpos:{adj:'before',negp:'after',adp:'after'}},SLOTS);
+assert.equal(app.gExLine('','I eat big fish'),'mi suli poko luma');
+stage(DICT,{order:'SOV',gpos:{adj:'after',negp:'before',adp:'after'}},SLOTS);
+assert.equal(app.gExLine('','I not eat fish'),'mi poko nai luma');
+
+/* A language with no stages at all still composes. gSlot()/gSlotAll() guard
+   with typeof because www/phases.js may not have run; without that guard the
+   very first language anybody makes would throw here rather than compose. */
+stage(DICT,{order:'SOV'},null);
+assert.equal(app.gExLine('','I eat fish'),'mi poko luma');
+
+console.log('Grammar Engine: Phase 1-2 contract is clean, and the line a meaning makes is held');
