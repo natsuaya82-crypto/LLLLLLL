@@ -82,7 +82,15 @@ const srv = http.createServer((req, res) => {
 await new Promise(r => srv.listen(PORT, r));
 
 const br = await chromium.launch(LAUNCH);
-const pg = await br.newPage();
+/* A phone. This file measures how wide a thumb target is, how tall the rows
+   of a list are, and what shape a photograph comes out -- and every one of
+   those answers depends on how wide the window is. It was asking them at
+   Playwright's default 1280x720, which is not a phone and is not any device
+   this app runs on: a control that is `flex:1` is three times too wide there,
+   a label that wraps to two lines on a phone does not wrap at all, and both
+   come out fine. The same numbers verify-script uses, because there is one
+   phone and it should not be described twice. */
+const pg = await br.newPage({ viewport: { width: 402, height: 874 }, deviceScaleFactor: 3 });
 await pg.goto(`http://127.0.0.1:${PORT}/`);
 await pg.waitForTimeout(300);
 
@@ -99,10 +107,11 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(async () => {
   const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
-                small: [], big: [], bent: [], picsSeen: 0, tall: [], rowsSeen: 0, classes: [] };
+                small: [], big: [], bent: [], picsSeen: 0, tall: [], rowsSeen: 0, classes: [],
+                wide: [], widthsSeen: 0 };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
      already standing in front of every screen with a phone-sized viewport, so
-     it measures while it is here.
+     it measures while it is here. (It was not. See the viewport above.)
 
      Nothing checked it, and nothing would have: .cand .rr said min-width:44px
      and then a second rule for the same class three hundred lines further
@@ -129,10 +138,22 @@ const R = await pg.evaluate(async () => {
          number takes that row away, and sits in the margin the board leaves
          beside itself. Both are as WIDE as the thing they point at, which is
          not a number this file gets to choose; both are as TALL as they like,
-         and both are held to 44 there. */
+         and both are held to 44 there.
+
+         .kbnewt is the third of exactly that shape, and it was found the day
+         this file was first put in front of a phone: 29x44. The three tiles a
+         new key is dragged off are THE SIZE OF THE KEY THEY MAKE -- one wide,
+         two wide, three wide -- because being a different size from the thing
+         they make is what somebody said was confusing about them.
+         「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
+         The width is kbCellW(), a calc over --kbw and the column count, which
+         is the layout's answer and not this file's; taking the narrowest to
+         44 would make it the size of the two-wide one and there would be two
+         of those. The height is already pinned at 44 in the stylesheet, and
+         that is the floor that means something here. */
       const cn = ' ' + e.className + ' ';
       if (cn.indexOf(' kbk ') >= 0 || cn.indexOf(' kbcl ') >= 0 ||
-          cn.indexOf(' kbn ') >= 0) {
+          cn.indexOf(' kbn ') >= 0 || cn.indexOf(' kbnewt ') >= 0) {
         if (r.height >= TAP) continue;
       } else
       if (r.width >= TAP && r.height >= TAP) continue;
@@ -140,6 +161,58 @@ const R = await pg.evaluate(async () => {
       if (seenSmall[k]) continue;
       seenSmall[k] = 1;
       out.small.push(where + ': ' + k + ' -- under ' + TAP);
+    }
+  }
+  /* Nothing goes off the side.
+     ------------------------------------------------------------------
+     A phone is 402pt across and there is no more. A page that is wider than
+     that does not shrink to fit and does not warn anybody: it pans, so half
+     of a screen is reached by dragging it sideways -- and the half that is
+     off the edge is the half nobody knows is there. It is the one layout
+     fault that cannot be seen in a screenshot of the part that fits.
+
+     Two questions, because a page can be too wide two ways.
+
+     The page itself: documentElement.scrollWidth against its clientWidth.
+     This has no exceptions. A screen of this app is a column and the column
+     is the width of the phone.
+
+     A box that clips: an element whose own scrollWidth is past its
+     clientWidth is holding something wider than itself. That is only a LOSS
+     where the box clips -- `overflow-x:hidden` and nothing else. `visible`
+     paints the overshoot and it is read: a badge sitting at right:-6px, a
+     shadow, a tile that overhangs its cell. `auto` and `scroll` slide, which
+     a strip of photographs and a keyboard are supposed to do. And a box
+     saying `text-overflow:ellipsis` has been told what to do when the words
+     run long and is doing it -- the cut is the answer, and the … says so.
+     What is left is a box that swallows the end of a sentence in silence.
+
+     Slack is 1px for sub-pixel layout, and a text box is allowed one more:
+     a glyph's ink can sit a fraction past its advance without a word of it
+     being lost. */
+  const SIDE_SLACK = 2;
+  const seenWide = {};
+  function measureWidth(where){
+    const de = document.documentElement;
+    out.widthsSeen++;
+    if (de.scrollWidth > de.clientWidth + SIDE_SLACK) {
+      const k = 'the page ' + de.scrollWidth + ' wide in ' + de.clientWidth;
+      if (!seenWide[k]) { seenWide[k] = 1;
+        out.wide.push(where + ': ' + k + ' -- the screen pans sideways'); }
+    }
+    const els = document.querySelectorAll('#app *');
+    for (let i = 0; i < els.length; i++) {
+      const e = els[i];
+      if (e.scrollWidth <= e.clientWidth + SIDE_SLACK) continue;
+      if (!e.clientWidth) continue;                 /* nothing laid out */
+      const cs = getComputedStyle(e);
+      if (cs.overflowX !== 'hidden') continue;          /* painted, or slides */
+      if (cs.textOverflow === 'ellipsis') continue;     /* told what to do */
+      const k = (e.getAttribute('class') || e.tagName) + ' ' +
+                e.scrollWidth + ' in ' + e.clientWidth;
+      if (seenWide[k]) continue;
+      seenWide[k] = 1;
+      out.wide.push(where + ': ' + k + ' -- cut off with nothing to say so');
     }
   }
   /* Rows in one list are one height.
@@ -408,10 +481,18 @@ const R = await pg.evaluate(async () => {
                    window.route = 'feed'; NAV = [{ r: 'feed' }]; show(tabBar()); }
   });
 
-  /* The forms, which are opened rather than routed to. They render into
-     FORM.html, and openForm()'s fifth argument into the bar -- the composer's
-     Post, the word page's Edit. A button in the bar is a button of that form
-     and of no other screen, so both halves go on the page. */
+  /* The forms, which are opened rather than routed to. openForm() routes to
+     `form`, so vForm() is what the app puts on the screen for one: the view,
+     the top bar with openForm()'s fifth argument in it -- the composer's
+     Post, the word page's Edit -- and FORM.html inside `.body`.
+
+     It used to show FORM.html and the bar concatenated, which is the sheet
+     with the page taken off it. Nothing threw, and on a 1280px window nothing
+     looked wrong either; on a phone it is 48px of padding that is not there,
+     so every width this file measured on a form was the width of a form
+     nobody will ever see. .sec.secadd carries margin-right:-8px to hang its
+     plus over the body's padding, and with no body to hang over it hung 8px
+     off the side of the phone instead. */
   opens.forEach(o => {
     screens.push({
       label: o,
@@ -419,7 +500,7 @@ const R = await pg.evaluate(async () => {
                      window.route = 'words'; NAV = [{ r: 'words' }];
                      window[o].length ? window[o]('kano') : window[o]();
                      show((typeof FORM !== 'undefined' && FORM && FORM.html)
-                            ? FORM.html + (FORM.right || '') : ''); }
+                            ? vForm() : ''); }
     });
   });
 
@@ -430,6 +511,7 @@ const R = await pg.evaluate(async () => {
     out.screens++;
     measure(sc.label);
     measureRows(sc.label);
+    measureWidth(sc.label);
     collectClasses();
     for (let i = 0; i < n; i++) {
       try { sc.build(); } catch (e) { out.skipped.push(sc.label + ' #' + i + ': ' + e.message); continue; }
@@ -612,6 +694,30 @@ HELD.forEach(m => fails.push('held: ' + m));
 R.threw.forEach(m => fails.push('threw: ' + m));
 R.blank.forEach(m => fails.push('blank: ' + m));
 R.small.forEach(m => fails.push('too small to hit: ' + m));
+/* The three screens that were already panning the day this was written, kept
+   by name so a FOURTH fails. All three are one fault and it is not this
+   file's to fix: the three tiles a new key is dragged off are the size of the
+   key they make -- one, two and three keys wide, six keys in all -- and the
+   sheet they sit on is as wide as the BOARD. On QWERTY that is ten keys and
+   they fit with room over. On a board three keys across they are twice the
+   sheet, and on one two keys across they are three times it.
+   「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」 and
+   「つまりすぎだから幅いっぱいに使ってすきまあっちいから」 are both being
+   kept, and on a narrow board they cannot both be: three tiles of six keys
+   do not go into three. Which one gives is a decision about what the screen
+   should look like, so it is asked and not guessed. */
+const SIDE_BASE = path.join(HERE, 'side-baseline.txt');
+const sideAllowed = new Set(fs.existsSync(SIDE_BASE)
+  ? fs.readFileSync(SIDE_BASE, 'utf8').split('\n')
+      .map(l => l.trim()).filter(l => l && l[0] !== '#')
+  : []);
+const sideSeen = new Set(R.wide.map(m => m.split(':')[0].trim()));
+R.wide.filter(m => !sideAllowed.has(m.split(':')[0].trim()))
+  .forEach(m => fails.push('off the side: ' + m));
+[...sideAllowed].filter(l => !sideSeen.has(l)).sort().forEach(l =>
+  fails.push('tools/side-baseline.txt allows "' + l + '" to pan sideways and it ' +
+    'no longer does — delete the line. A baseline that outlives what it ' +
+    'described is permission nobody asked for.'));
 R.tall.forEach(m => fails.push('one list, two row heights: ' + m));
 R.big.forEach(m => fails.push('drawn too big: ' + m));
 R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
@@ -621,6 +727,9 @@ console.log('classes worn: ' + (R.classes || []).length +
             ', styled and unworn: ' + unworn.length +
             (fs.existsSync(CSS_BASE) ? ' (baseline ' + cssAllowed.size + ')' : ' (no baseline yet)'));
 console.log('nothing under 44pt: ' + (R.small.length ? R.small.length + ' FOUND' : 'held'));
+console.log('nothing off the side of a 402pt phone: ' +
+            (R.wide.length ? R.wide.length + ' known (baseline ' + sideAllowed.size + ')'
+                           : R.widthsSeen + ' screens measured'));
 console.log('rows in one list are one height: ' +
             (R.tall.length ? R.tall.length + ' FOUND' : R.rowsSeen + ' lists measured'));
 console.log('photographs all one box, filled, none stretched: ' +
