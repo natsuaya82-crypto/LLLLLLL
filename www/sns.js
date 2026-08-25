@@ -232,6 +232,37 @@ function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
 }
+/* Which day this sentence is FOR, drawn. 「日付ないし」
+
+   `on_day` has been on the row since the column existed and no screen has
+   ever shown it, so a sentence written on the 23rd and a sentence written
+   this morning looked exactly alike -- under a label that says "Today" in
+   both cases. netDay() asks for the newest row rather than today's, and says
+   so on purpose: the app does not work out what day it is in California,
+   because that is a timezone rule and a second copy of one is a second one to
+   get wrong. That decision is kept. What it needs to be honest is the date
+   ON the screen, and that is this.
+
+   UTC, and not the phone's midnight: `on_day` is a date and not a moment, so
+   `new Date('2026-08-25')` is UTC midnight and a phone west of Greenwich
+   would draw it as the 24th. tools/../www/numbers.js:350 has the same line
+   for the same reason.
+
+   The year is left off when it is this year, which is what postWhen() does
+   four screens away. */
+function dayWhen(){
+  var s=(DAY && DAY.on_day)? String(DAY.on_day) : '', d, now;
+  if(!s) return '';
+  d=new Date(s.length>10? s : s+'T00:00:00Z');
+  if(isNaN(d.getTime())) return '';
+  now=new Date();
+  try{
+    return d.toLocaleDateString(uiLang(),
+      (d.getUTCFullYear()===now.getFullYear())
+        ? {month:'short', day:'numeric', timeZone:'UTC'}
+        : {year:'numeric', month:'short', day:'numeric', timeZone:'UTC'});
+  }catch(e){ return s; }
+}
 /* One row, and the face fills both of its lines: the day's sentence over
    what you are being asked to do with it. 「アイコンは2列分うめて その横から
    お題と自分の言語で入れるのは？」
@@ -262,7 +293,13 @@ function dayRow(){
     '<span class="dayrb">'+
       '<span class="dayline">'+
         '<span class="dayk">'+esc(t('day.k'))+'</span>'+esc(say)+'</span>'+
-      '<span class="wrt">'+esc(t('day.ask'))+'</span>'+
+      /* The date goes on the SECOND line and not beside the label, because
+         `.dayline` is one line with an ellipsis on it -- anything put in
+         front of the sentence is taken off the end of the sentence, and the
+         sentence is what the row is for. */
+      '<span class="wrt">'+esc(t('day.ask'))+
+        (dayWhen()? '<span class="dayd">'+esc(dayWhen())+'</span>' : '')+
+        '</span>'+
     '</span>'+
   '</button>';
 }
