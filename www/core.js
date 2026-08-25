@@ -44,7 +44,7 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    Neither was reachable from anything that would have thrown. A backup was
    written, it restored, every check was green, and the keyboard somebody
    built was simply not in the file. */
-var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd','kb','wld'];
+var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd','kb','wld','gram2'];
 /* id -> { name, mine } and nothing more: the index says which languages are
    here, and the language's own keys hold what it is. */
 var LANGS={}, langId='';
@@ -63,10 +63,20 @@ function setDefaults(){
    stored as text — a word is roman letters in WORDS and stays that way. */
 var SCRIPT={g:{}, extra:[]};
 
-/* The key a slice of the open language is stored under. Called by every file
-   that keeps a slice of its own -- letters, notes, phases, talk -- so that
-   there is one place that knows how a language is filed. */
-function langKey(slice){ return 'lingua.' + langId + '.' + slice; }
+/* The key a slice of a language is stored under. `langKeyOf` names ANY
+   language; `langKey` names the open one, which is what 290-odd call sites
+   mean when they say it.
+   The two exist because they are two different sentences. Every screen means
+   "the one in front of me" and must not be handed an id it could get wrong.
+   Something that addresses a language BY ID -- the grammar engine's adapter
+   saves a model that carries its own languageId -- cannot say langKey(), and
+   the answer to that is not to let it build the string itself. A key built by
+   concatenation somewhere else is a slice that bkPack() will not find and
+   wipeAll will not clear, which is how a language's leftovers arrive in the
+   next language under the same id. The keyboard and the world were both that
+   bug once; CLAUDE.md names them. */
+function langKeyOf(id, slice){ return 'lingua.' + id + '.' + slice; }
+function langKey(slice){ return langKeyOf(langId, slice); }
 
 /* Which languages are here, and which one is open. Read before anything else
    in this file, because every other key is built out of langId. */
