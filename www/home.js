@@ -1293,29 +1293,32 @@ function wldPage(ed){
       for(i=0;i<done.length;i++) if(stIsDone(done[i]))
         inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
     } else if(sec.nm!==undefined){
-      /* A section somebody wrote: its title is the heading and its words are
-         under it, and while writing those two ARE the boxes -- the heading is
-         the field the title is typed in, where the heading stands. */
+      /* A section somebody wrote, and it is a SECTION on both faces --
+         「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
+         OWNER 2026-08-25. It was the one heading on this screen that was not
+         one: a small title field where 概要 has a heading, no marker, nothing
+         to fold. 「概要だけ文字でかいし ▼ これついてる」 -- one list where one row
+         is a heading and the next is a field is two kinds of thing wearing one
+         list's shape.
+
+         The heading is the name now, at the size every other heading is, and
+         what is under it folds away. The name itself is typed where the words
+         are, on the section's own page -- 「そこだけの画面だから下にも上にも
+         いかないその中で完結」 -- which the ＞ leads to and which ＋ opens on the
+         day a section is made. */
       if(ed) inner+='<textarea class="ntbody grow" rows="'+wldRows(sec.b, 3)+'" '+
         'placeholder="'+esc(t('wld.art.b.ph'))+'"' + CH('wldArtSet', [sec.r, "b"]) + '>'+
         esc(sec.b||'')+'</textarea>';
       else if(sec.b) inner+='<div class="abtl">'+esc(sec.b)+'</div>';
+      if(ed) extra='<button class="abshg"' + DO('go', ["wldart", sec.r]) + '>'+
+        ICON_GO+'</button>';
     }
     /* A section somebody has neither named nor written is not on the reading
        face -- a heading reading 「無題」 over nothing is a promise the page
        does not keep -- but it IS on the writing one, because that is where it
        gets its name. */
     if(sec.blank && !ed) return;
-    if(ed && sec.nm!==undefined)
-      body+='<div class="abshd"><div class="field abshl">'+
-        '<input value="'+esc(sec.t2||'')+'" placeholder="'+esc(t('wld.art.t.ph'))+'"'+
-        IN('wldArtSet', [sec.r, "t"]) + '></div>'+
-        /* And the section on a page of its own, which is the same two fields
-           with the whole screen for the second one. A long section is written
-           there; a line is changed here. */
-        '<button class="abshg"' + DO('go', ["wldart", sec.r]) + '>'+ICON_GO+'</button>'+
-        '</div>'+inner;
-    else body+=abHead(sec, !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
+    body+=abHead(sec, !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
   });
   /* And the way to put another section in, at the end of the ones there are,
      which is where a new section of an article goes. */
