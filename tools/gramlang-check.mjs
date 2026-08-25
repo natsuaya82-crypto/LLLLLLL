@@ -47,8 +47,11 @@
      8. nobody chose it     a stage nobody has touched lights neither of its
                             buttons. A default is not an answer, and the
                             screen was drawing one as if it were
+     9. no subtitle, none   a stage whose `.d` key is gone says nothing under
+                            its title -- not the key, and not the English of
+                            a key the other nine no longer have
 
-   Exit code is 0 only when all eight hold.
+   Exit code is 0 only when all nine hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -287,6 +290,24 @@ want('a stage nobody has touched lights nothing', g.untouched, '');
 want('one that was touched lights the answer it was given', g.touched, g.saysBefore);
 want('pressing the button that was already the default lights it', g.pressed, g.saysAfter);
 want('and marks it as chosen', g.was, 'marked');
+
+/* ---- 9: a stage with nothing more to say says nothing --------------------
+   Four subtitles said the title again and were taken out of all ten files.
+   What must not happen is the key arriving on screen instead: t() answers
+   with the key itself when nothing defines it, and 「否定」の下に
+   「stg.neg.d」 is worse than the sentence that was removed. */
+const h = await pg.evaluate(() => ({
+  neg: stWhat(stBy('neg')), have: stWhat(stBy('have')),
+  when: stWhat(stBy('when')), desc: stWhat(stBy('desc')),
+  /* and one that adds something is untouched */
+  count: stWhat(stBy('count')), order: stWhat(stBy('order'))
+}));
+want('the negation stage says nothing under its title', h.neg, '');
+want('nor does belonging', h.have, '');
+want('nor time', h.when, '');
+want('nor describing', h.desc, '');
+want('a stage that adds something still says it', h.count !== '', true);
+want('and so does the word order', h.order !== '', true);
 
 await br.close();
 srv.close();

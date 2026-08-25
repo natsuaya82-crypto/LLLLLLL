@@ -248,6 +248,18 @@ function stSlotLabel(p, k){
   return t('stg.'+p.id+'.'+k);
 }
 function stTitle(p){ return p.own ? (p.own.title||t('stg.own.untitled')) : t('stg.'+p.id+'.t'); }
+/* Under the title, a stage says one more thing -- when there is one more
+   thing to say. Four of them said the title again 「否定」の下に「否定の
+   表し方」 and are gone: 「↑これは説明だろ」. They are gone from the ten
+   files rather than emptied in them, because a key that is always there and
+   always blank is ten lines in every language that nothing ever shows.
+
+   So the presence of the key IS the answer, asked of `en`, which is the
+   source of truth for the key set. Removing a subtitle is removing ten lines
+   and touching nothing here; adding one is adding ten. Asking t() instead
+   would put the key itself on screen, which i18n-check would then find in
+   plain letters -- rightly. */
+function stHasWhat(id){ return strOf('en')['stg.'+id+'.d']!==undefined; }
 function stWhat(p){
   if(p.own) return p.own.what||'';
   /* "One to ten" is only true in base ten, and the same is true of twelve
@@ -255,7 +267,7 @@ function stWhat(p){
   if(p.id==='count') return t('stg.count.d', numLabel(numBase()));
   if(p.id==='month') return t('stg.month.d', numLabel(calMonths()));
   if(p.id==='wday')  return t('stg.wday.d', numLabel(calWeek()));
-  return t('stg.'+p.id+'.d');
+  return stHasWhat(p.id)? t('stg.'+p.id+'.d') : '';
 }
 
 /* ---- a word made for a slot -------------------------------------------
