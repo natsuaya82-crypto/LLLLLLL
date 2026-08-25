@@ -704,9 +704,16 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pact:active{color:var(--gold)}
 .pact.on{color:var(--gold)}
 /* Writing one wears the same face and the same type as the things around it. */
-/* The button that finishes it, filled, at the end of the bar. */
+/* The button that finishes it, filled, at the end of the bar. It was a 999px
+   pill -- the gold lozenge at the top right of the composer -- and the corner
+   is off it. The gold and the weight are what say it is the one to press;
+   the pill was saying it a second time, in the shape the rule at the head of
+   this file is about. 「角丸は必要なとこ以外はいらない」
+   The FILL stays: this is not words in a box, it is the button that finishes
+   the thing, and a filled primary action is not what 「文字書いて四角で囲った
+   みたいなボタン」 names. */
 .navdo{margin-left:auto;align-self:center;flex:0 0 auto;min-height:44px;min-width:44px;
-       padding:0 20px;border:0;border-radius:999px;background:var(--gold);
+       padding:0 20px;border:0;background:var(--gold);
        color:var(--onGold);font-family:inherit;font-size:.92rem;font-weight:700}
 .navdo:active{opacity:.75}
 .pwto{font-size:.86rem;color:var(--txm);margin-bottom:8px}
@@ -1929,10 +1936,19 @@ a.set{text-decoration:none}
 /* What a post can be given: the camera, the pictures already on the phone,
    and the microphone. One plus stood for all three and only ever meant the
    second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
-/* 46 across, not 44: the box is border-box and the file input inside it fills
-   the CONTENT, so a 44 square with a 1px border gives a 42 target. */
+/* The camera, the library and the microphone. They were 12px-cornered outlined
+   squares -- three little boxes in a row under the line you are writing, which
+   is the shape the owner named 「文字書いて四角で囲ったみたいなボタン全部やめて
+   くれ」 and the one this file's rule 18 exists to stop growing back.
+   The mark is the button now, the way `.pmore` and `.pact` already are on
+   every post.
+
+   46 across and not 44 is KEPT, and the reason it gives has changed: it was
+   "a 44 square with a 1px border gives a 42 target" and there is no border
+   any more, so 46 is now simply 46 -- comfortably over the 44 press measures
+   and worth nothing to shrink. */
 .pwab{flex:0 0 auto;position:relative;min-width:46px;height:46px;padding:0;
-      border-radius:12px;border:1px solid var(--line);background:none;
+      border:0;background:none;
       color:var(--txs);overflow:hidden;font-family:inherit;font-size:.88rem;
       display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .pwab input{position:absolute;inset:0;opacity:0;width:100%;height:100%}

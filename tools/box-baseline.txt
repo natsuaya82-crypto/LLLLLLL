@@ -59,7 +59,6 @@
 .mkt | border-radius
 .mrep | border
 .mrep | border-radius
-.navdo | border-radius
 .ntrow | border
 .ntrow | border-radius
 .ob .btn.ghost | border
@@ -92,8 +91,6 @@
 .ppic | border-radius
 .pvbox button | border
 .pvbox button | border-radius
-.pwab | border
-.pwab | border-radius
 .pwpic | border
 .pwpic | border-radius
 .pwpicn | border-radius
