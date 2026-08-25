@@ -817,7 +817,11 @@ function shNames(s){
   }
   return out;
 }
-function shPages(n){ return Math.max(1, Math.ceil(n / shPerPage())); }
+/* How many sheets these names come to. Nothing typed is NO sheet, and it used
+   to say one: shMake() refuses a sheet with no names on it (t('wr.none')), so
+   the line under the field was promising a piece of paper the button would
+   not give. It is a count, and a count that is wrong about zero is wrong. */
+function shPages(n){ return n > 0 ? Math.ceil(n / shPerPage()) : 0; }
 
 /* ---- the room ---------------------------------------------------------- */
 /* All three pages of this chapter carry the same `?`, because there is one
