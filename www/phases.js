@@ -308,9 +308,15 @@ function stAddEx(id){
   var a=document.getElementById('sx-lb'), b=document.getElementById('sx-ln'),
       c=document.getElementById('sx-gl');
   if(!b) return;
-  var ln=String(b.value||'').trim();
+  /* The line, or -- when none was written and a meaning was -- the line this
+     language makes of that meaning. gExLine() in www/grammar.js is where that
+     is decided, so this stays one question asked in one place: it reads the
+     dictionary and the word order, and it can be put samples through in Node.
+     What was typed always wins; only an empty line is filled in. */
+  var gl=String((c&&c.value)||'').trim();
+  var ln=gExLine(String(b.value||''), gl);
   if(!ln){ toast(t('word.ex.need')); return; }
-  stEx(id).push({lb:String((a&&a.value)||'').trim(), ln:ln, gl:String((c&&c.value)||'').trim()});
+  stEx(id).push({lb:String((a&&a.value)||'').trim(), ln:ln, gl:gl});
   saveStg(); render();
 }
 function stDelEx(id, i){ stEx(id).splice(i,1); saveStg(); render(); }

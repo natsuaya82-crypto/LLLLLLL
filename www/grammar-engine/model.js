@@ -5,7 +5,12 @@
   function id(prefix){ return prefix+'_'+String(new Date().getTime())+'_'+String(Math.floor(Math.random()*100000)); }
   function object(src){ var out={},k; if(!src||typeof src!=='object') return out; for(k in src) if(Object.prototype.hasOwnProperty.call(src,k)) out[k]=src[k]; return out; }
   function array(src){ var out=[],i; if(!Array.isArray(src)) return out; for(i=0;i<src.length;i++) out.push(src[i]); return out; }
-  function word(data){ data=data||{}; return {id:data.id||id('word'),lemma:data.lemma||'',meaning:data.meaning||'',partOfSpeech:data.partOfSpeech||null,morphemeIds:array(data.morphemeIds),metadata:object(data.metadata)}; }
+  /* `meaning` is the joined string and `meanings` is the list the dictionary
+     actually carries. Both, because a lookup FROM a meaning needs the list and
+     everything written before this reads the string. A model saved without the
+     list keeps working: the lexicon beside this file splits the
+     string when the list is empty. */
+  function word(data){ data=data||{}; return {id:data.id||id('word'),lemma:data.lemma||'',meaning:data.meaning||'',meanings:array(data.meanings),partOfSpeech:data.partOfSpeech||null,morphemeIds:array(data.morphemeIds),metadata:object(data.metadata)}; }
   function morpheme(data){ data=data||{}; return {id:data.id||id('morph'),form:data.form||'',gloss:data.gloss||'',type:data.type||'root',metadata:object(data.metadata)}; }
   function derivation(data){ data=data||{}; return {id:data.id||id('deriv'),sourcePartOfSpeech:data.sourcePartOfSpeech||null,targetPartOfSpeech:data.targetPartOfSpeech||null,operation:data.operation||'suffix',morphemeId:data.morphemeId||null,form:data.form||null,separator:data.separator===undefined?'-':data.separator,conditions:object(data.conditions),metadata:object(data.metadata)}; }
   function inflection(data){ data=data||{}; return {id:data.id||id('infl'),target:data.target||'WORD',feature:data.feature||null,value:data.value||null,operation:data.operation||'suffix',morphemeId:data.morphemeId||null,form:data.form||null,separator:data.separator===undefined?'-':data.separator,conditions:object(data.conditions),metadata:object(data.metadata)}; }
