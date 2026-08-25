@@ -9,10 +9,7 @@
      actually carries. Both, because a lookup FROM a meaning needs the list and
      everything written before this reads the string. A model saved without the
      list keeps working: the lexicon beside this file splits the
-     string when the list is empty. (Naming that file here rather than
-     describing it would have been enough to satisfy assets-check, which
-     counts a mention in ANY loaded .js -- including one inside a comment --
-     as the file being referenced. It is not loaded by being mentioned.) */
+     string when the list is empty. */
   function word(data){ data=data||{}; return {id:data.id||id('word'),lemma:data.lemma||'',meaning:data.meaning||'',meanings:array(data.meanings),partOfSpeech:data.partOfSpeech||null,morphemeIds:array(data.morphemeIds),metadata:object(data.metadata)}; }
   function morpheme(data){ data=data||{}; return {id:data.id||id('morph'),form:data.form||'',gloss:data.gloss||'',type:data.type||'root',metadata:object(data.metadata)}; }
   function derivation(data){ data=data||{}; return {id:data.id||id('deriv'),sourcePartOfSpeech:data.sourcePartOfSpeech||null,targetPartOfSpeech:data.targetPartOfSpeech||null,operation:data.operation||'suffix',morphemeId:data.morphemeId||null,form:data.form||null,separator:data.separator===undefined?'-':data.separator,conditions:object(data.conditions),metadata:object(data.metadata)}; }
