@@ -318,6 +318,18 @@ export function obStates(){
    at all -- and press.mjs, which has to rebuild a screen before every press,
    needs the same list act-check walks or the two drift apart silently. */
 export function halfDone(){
+  /* What the app puts round a sheet, for a seed that has changed something
+     since the form opened. FORM.html is the body as it was the moment
+     openForm() ran; a seed that then sets a flag or fills a field has to
+     rebuild it, and a bare body is not a screen. It hands the fresh body to
+     this and gets back what vForm() makes of it -- the view, the top bar with
+     the form's own button in it, and `.body` with its 24px of padding.
+
+     Rebuilding the wrapper here would be a second copy of vForm() that drifts
+     the first time somebody changes the first, so it does not: it puts the
+     body where the app keeps it and asks the app. */
+  const sheet = (html) => { if (typeof FORM !== 'undefined' && FORM) FORM.html = html;
+                            return vForm(); };
   return [
     /* The account screen has two faces and the walk arrives signed IN, so the
        way in -- the three sign-in buttons and the mail door -- is on neither
@@ -352,9 +364,9 @@ export function halfDone(){
                says: { en: 'It is unbearably hot today.',
                        ja: '今日はめちゃくちゃ暑い。' } };
        PW = pwBlank(); openPost('day');
-       return FORM.html; }],
+       return vForm(); }],
     ['the word being edited', () => { openEdit('kano'); wEdit.mns = ['mountain','peak'];
-                                      return FORM.html; }],
+                                      return vForm(); }],
     /* The field for one more of something is not on the sheet until the `+`
        on the heading is pressed, so without these the only way to write a
        second meaning is a screen nothing walks. */
@@ -364,8 +376,10 @@ export function halfDone(){
        window.route = 'pos'; NAV = [{ r:'pos' }]; return vPos(); }],
     ['how it is said', () => { openEdit('kano');
        window.route = 'reg'; NAV = [{ r:'reg' }]; return vReg(); }],
-    ['one more meaning', () => { openEdit('kano'); wdMnNew = true; return wdFormHTML(); }],
-    ['one more example', () => { openEdit('kano'); wdExNew = true; return wdFormHTML(); }],
+    ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
+                                 return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
+    ['one more example', () => { openEdit('kano'); wdExNew = true;
+                                 return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['one more example of a stage', () => {
        const id = stAll()[0].id;
        window.route = 'gram'; NAV = [{ r:'gram', a:id }]; stExNew = id;
@@ -377,17 +391,17 @@ export function halfDone(){
        a parent
        -- so the sheet kano is edited on never carries it, and the row would
        be walked by nothing. */
-    ['a form being edited', () => { openEdit('tira'); return FORM.html; }],
+    ['a form being edited', () => { openEdit('tira'); return vForm(); }],
     /* And the other end: a word read with its forms under it. kano has no
        family, so the labelled rows are on no screen either without this. */
-    ['a word and its forms', () => { openWord('tir'); return FORM.html; }],
+    ['a word and its forms', () => { openWord('tir'); return vForm(); }],
     /* A word, read. It is what opening one gives you now -- the editor is
        behind the button at the foot of it. */
     ['a word, read', () => { const w = findWord('kano');
                              w.ex = [{ln:'kano tir', gl:'sees the mountain'}];
                              w.nt = 'the one behind the village';
                              wRelToggle('kano','syn','mos');
-                             openWord('kano'); const h = FORM.html;
+                             openWord('kano'); const h = vForm();
                              wRelToggle('kano','syn','mos');
                              delete w.ex; delete w.nt; return h; }],
     /* A dictionary that came down from a paid plan: past the free ceiling, so
@@ -403,7 +417,7 @@ export function halfDone(){
       const h = vWords(); WORDS = keep; return h; }],
     /* And what it says out loud, once, on the day that happens. capLapse()
        only fires on a plan that changed, and nothing in a walk changes one. */
-    ['the plan has ended', () => { openCapLapse(); return FORM.html; }],
+    ['the plan has ended', () => { openCapLapse(); return vForm(); }],
     /* The reading of a word, which is the paid plan's and is reached from a
        sheet that has a word open on it. Once with the search empty and once
        with something in it: the tiles are the screen, and a search that
@@ -464,15 +478,15 @@ export function halfDone(){
        Nothing reaches either by walking the routes. And once with something
        in the search, because a search that matches nothing leaves the page
        with no tiles at all. */
-    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return FORM.html; }],
-    ['the sounds, for the language', () => { openSndAdd(); return FORM.html; }],
+    ['the sounds, for one letter', () => { openSnd(LETTERS[0].id); return vForm(); }],
+    ['the sounds, for the language', () => { openSndAdd(); return vForm(); }],
     ['the sounds, searched', () => { ipaQ = 'a'; openSnd(LETTERS[0].id);
-                                     const h = FORM.html; ipaQ = ''; return h; }],
+                                     const h = vForm(); ipaQ = ''; return h; }],
     /* What one sound IS, which is a page of its own behind the ? on a tile.
        Twice: a sound one of the ten languages has, and one that none of them
        does, because the second says only how it is made. */
-    ['what a group of sounds is', () => { openIpaG('m.plosive'); return FORM.html; }],
-    ['what a group with no examples is', () => { openIpaG('o'); return FORM.html; }],
+    ['what a group of sounds is', () => { openIpaG('m.plosive'); return vForm(); }],
+    ['what a group with no examples is', () => { openIpaG('o'); return vForm(); }],
     ['a word related to another', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                           return vRelate('kano'); }],
     /* The new-word sheet with something already chosen on it. The chips for
@@ -488,10 +502,10 @@ export function halfDone(){
                                                    openAdd(''); addW.syn = ['kano'];
                                                    addW.ant = ['tir']; addW.ex = [{ln:'kano tir', gl:'sees it'}];
                                                    openAdd('');
-                                                   const h = FORM.html; addW = null; return h; }],
+                                                   const h = vForm(); addW = null; return h; }],
     /* A note that already exists: the delete button only appears once there
        is something to delete, so a form opened empty never shows it. */
-    ['a note being edited',    () => { openNote(0); return FORM.html; }],
+    ['a note being edited',    () => { openNote(0); return vForm(); }],
     /* The three faces where a word is built out of SOUNDS rather than typed.
        Free types -- the alphabet is a to z and every one of them already
        reads something, so there is nothing to pick -- and picking is what
@@ -500,10 +514,10 @@ export function halfDone(){
     /* Derived from a word that already exists, so the sheet opens with a
        spelling in it -- an empty sheet has no reading to change. */
     ['the new word sheet, by sound', () => { SET.plan = 'pro'; openAdd('kano');
-                                             const h = FORM.html; addFrom = '';
+                                             const h = vForm(); addFrom = '';
                                              SET.plan = 'free'; return h; }],
     ['the word being edited, by sound', () => { SET.plan = 'pro'; openEdit('kano');
-                                                const h = FORM.html;
+                                                const h = vForm();
                                                 SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
        empty list draws neither a row nor anything a row carries. */
@@ -535,7 +549,7 @@ export function halfDone(){
                               const h = vFeed(); ME.bl = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
-                              const h = FORM.html; rpFor = null; return h; }],
+                              const h = vForm(); rpFor = null; return h; }],
     /* And the other end of that form, which is one account's and is drawn for
        nobody else. The row at the foot of the settings list is the only way
        in, and NET_STAFF is false everywhere else -- so both the door and the
@@ -807,7 +821,7 @@ export function halfDone(){
         openPost();
         PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
                     marks:[]}];
-        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* A picture with marks already put on it. The count in the corner only
        exists once there is something to count -- www/post.js pwpicn -- so a
        composer whose pictures are bare draws no number anywhere. */
@@ -815,7 +829,7 @@ export function halfDone(){
         openPost();
         PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
                     marks:[{x:.3, y:.4, w:'kano'}, {x:.7, y:.6, w:'mos'}]}];
-        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* A line long enough for the composer to start counting down. It says
        nothing until forty are left, so a composer with a short line in it --
        every other one here -- never draws the number. And once past the end,
@@ -823,11 +837,11 @@ export function halfDone(){
     ['a post running out of room', () => {
         openPost();
         PW.ln = Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('');
-        openPost(); const h = FORM.html + pwLeftHTML(); PW = pwBlank(); return h; }],
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['a post past the end of the room', () => {
         openPost();
         PW.ln = Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('');
-        openPost(); const h = FORM.html + pwLeftHTML(); PW = pwBlank(); return h; }],
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* And a post that has been edited since it was sent, which is a mark on
        somebody's own post and on nobody else's. */
     ['a post that was edited', () => {
@@ -843,7 +857,7 @@ export function halfDone(){
         PW.pics = Array.apply(null, {length: POST_PICS}).map(() =>
           ({u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
             marks:[]}));
-        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+        openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* The composer of a language written from the right, in its own font.
        Both of those are the paid plan's and both are off in seed(), so the
        field the line goes in has only ever been rendered left-to-right in
@@ -857,7 +871,7 @@ export function halfDone(){
         const wasPlan = SET.plan, wasDir = SCRIPT.dir;
         SET.plan = 'pro'; SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
         SET.myfont = true; installScriptFont();
-        openPost(); const h = FORM.html;
+        openPost(); const h = vForm();
         PW = pwBlank(); SET.myfont = false;
         SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
     /* And the same line in a timeline, where the direction is the post's own
@@ -879,14 +893,14 @@ export function halfDone(){
     /* A grammar stage of your own: the door is on the paid plan, because the
        fifteen are the whole of the free chapter. */
     ['a grammar stage of your own', () => { SET.plan = 'pro'; openOwnPhase();
-                                            const h = FORM.html;
+                                            const h = vForm();
                                             SET.plan = 'free'; return h; }],
     ['the grammar list, paid', () => { SET.plan = 'pro'; window.route='gram';
                                        NAV=[{r:'gram'}]; const h = vGram();
                                        SET.plan = 'free'; return h; }],
     ['a stage slot, by sound', () => { SET.plan = 'pro';
                                        openSlot(stAll()[0].id, stAll()[0].slots[0]);
-                                       const h = FORM.html;
+                                       const h = vForm();
                                        SET.plan = 'free'; return h; }],
     /* The new-word sheet has two faces, and the buttons differ on each. */
     /* The keyboard the language owns, and the two sheets that build it: one
@@ -903,7 +917,7 @@ export function halfDone(){
        and leaves kbShow on it. */
     ['a key of the keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
-                                              const h = FORM.html; KB = null; kbShow = 0;
+                                              const h = vForm(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
        one that has corners. kbSlotsShown() is true when the board's pattern
@@ -914,7 +928,7 @@ export function halfDone(){
        kbed, www/keyboard.js kbKeyHTML(). */
     ['a key of a flick keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('flick'); kbLay = 0; kbPick(0, 0);
-                                                  const h = FORM.html; KB = null; kbShow = 0;
+                                                  const h = vForm(); KB = null; kbShow = 0;
                                                   SET.plan = 'free'; return h; }],
     /* And the board itself, where the four corners of every key are drawn on
        the key: kbFlicks(key, slots) puts a letter in a corner that has one
@@ -929,11 +943,11 @@ export function halfDone(){
        to is a question only that kind of key is asked. */
     ['a key that switches layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                            kbAdd('qwerty'); kbLay = 0; kbSetKind(0, 0, 'lay');
-                                           const h = FORM.html; KB = null; kbShow = 0;
+                                           const h = vForm(); KB = null; kbShow = 0;
                                            SET.plan = 'free'; return h; }],
     ['the alphabet, for one slot of a key', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                     kbAdd('qwerty'); kbLay = 0; kbSlot(0, 0, -1);
-                                                    const h = FORM.html; KB = null; kbShow = 0;
+                                                    const h = vForm(); KB = null; kbShow = 0;
                                                     kbSlotFor = null;
                                                     SET.plan = 'free'; return h; }],
     /* The alphabet held, the same way. Two faces, because the corner mark is
@@ -1001,7 +1015,7 @@ export function halfDone(){
     ['the arrangement of a keyboard that already exists', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('qwerty'); kbRepat(1);
-        const h = FORM.html;
+        const h = vForm();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the free QWERTY, on a plan that can build others', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
@@ -1053,13 +1067,13 @@ export function halfDone(){
         SND.pop(); ltWob = false; SET.plan = 'free'; return h; }],
     ['the chart, for the language rather than a letter', () => {
         SET.plan = 'pro'; openSndAdd();
-        const h = FORM.html; SET.plan = 'free'; return h; }],
+        const h = vForm(); SET.plan = 'free'; return h; }],
     /* The `?` sheet: how the keyboard gets onto the phone. It is a form and
        nothing walks to it -- and the button that opens iOS Settings is on it
        and nowhere else, so without this face that button belongs to no
        screen. Free reaches the same sheet, so the plan is not touched. */
     ['how the keyboard gets onto the phone', () => {
-        openHelp('kb'); return FORM.html; }],
+        openHelp('kb'); return vForm(); }],
     /* The ⋯ at the end of the row of keyboards: deleting this one, and
        starting the whole chapter over. Both are off the screen now, and
        deleting only exists when there is more than one to delete. */
@@ -1067,7 +1081,7 @@ export function halfDone(){
        word are behind it, and that is the only door to them -- without this
        face the walk sees a screen nothing goes to, which is exactly what it
        would be if the button were deleted. */
-    ['the dictionary\'s ...', () => { wordsMore(); return FORM.html; }],
+    ['the dictionary\'s ...', () => { wordsMore(); return vForm(); }],
     /* The sheet a word is coined on, with something typed into it. The forms
        the rules make of it are on that sheet, and they are on it only once
        there is a spelling to make them out of -- so an empty sheet names
@@ -1077,7 +1091,7 @@ export function halfDone(){
     ['a word being coined, with its forms', () => {
         openAdd('');
         wdSetLn('tirek');
-        return wdFormHTML(); }],
+        return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     /* A rule whose condition is the letters a word ends in. The field for
        those letters is on the screen only while that is the condition
        chosen -- a field for a question nobody asked gets filled in and then
@@ -1093,11 +1107,11 @@ export function halfDone(){
         r.pos = 'v'; r.fm = 'pst'; r.add = spType('ied');
         r.drop = 1; r.when = 'x'; r.wend = spType('y');
         saveStg();
-        return fmrFormHTML(); }],
+        return sheet(fmrFormHTML()); }],
     ['the two that undo a keyboard', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 1; kbMore();
-        const h = FORM.html;
+        const h = vForm();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     /* And the five offered, on the sheet that makes another -- which is the
        only door to them now. The chapter itself no longer has an empty face:
@@ -1106,7 +1120,7 @@ export function halfDone(){
     ['choosing another keyboard', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('abc'); kbNew();
-        const h = FORM.html;
+        const h = vForm();
         KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
     /* ---- the paid faces of the making side ----------------------------
        Four screens the free plan does not show, because on free the
@@ -1146,10 +1160,10 @@ export function halfDone(){
                                           return vLetter(); }],
     ['a word being written',   () => { openAdd(); wEdit.sp=[{l:'l1', u:'k'},{l:'', u:'a'}];
                                        wdSync();
-                                       return wdFormHTML()+vForm(); }],
+                                       return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
     ['a word with a sentence in it', () => { findWord('kano').ex=[{ln:'kano tir', gl:'sees it'}];
                                              openEdit('kano');
-                                             const h=wdFormHTML();
+                                             const h=vForm();
                                              delete findWord('kano').ex; return h; }],
     ['relatives to choose from', () => { window.route='relate'; NAV=[{r:'relate', a:'kano'}];
                                          return vRelate('kano'); }],
@@ -1165,7 +1179,7 @@ export function halfDone(){
        a real 1x1 gif: postFace puts it in an <img src>. */
     ['a face already chosen', () => {
         ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-        openMe(); const h = FORM.html; ME.pic = ''; return h; }],
+        openMe(); const h = vForm(); ME.pic = ''; return h; }],
     ['searching the notes', () => { ntFind = true; ntQ = 'a';
                                     window.route='notes'; NAV=[{r:'notes'}];
                                     return vNotes(); }],
@@ -1175,7 +1189,7 @@ export function halfDone(){
        more, and no row of suggestions -- both went with it.
        A slot that is ALREADY filled is not a form at all: openSlot() sends
        you to the word, and the word screen is walked elsewhere. */
-    ['a slot\'s word being made', () => { openSlot('greet','yes'); return FORM.html; }],
+    ['a slot\'s word being made', () => { openSlot('greet','yes'); return vForm(); }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
     /* One of them is the letter's own, which is the only state that wears
@@ -1186,7 +1200,7 @@ export function halfDone(){
                                          const l = ltById('l1');
                                          if (l) l.ch = w.ch.split(' ')[1];
                                          openPick('l1'); pkScript = w.id;
-                                         return FORM.html + pkCharsHTML(); }],
+                                         return sheet(FORM.html + pkCharsHTML()); }],
     /* The same sheet for a letter that already has one borrowed. Taking it
        back off is the only thing on the sheet that depends on there being
        something there -- www/home.js pkclear -- so on a bare letter it is on
@@ -1194,7 +1208,7 @@ export function halfDone(){
     ['a character already borrowed', () => { const l = ltById('l1');
                                              const was = l ? l.ch : '';
                                              if (l) l.ch = '\u3042';
-                                             openPick('l1'); const h = FORM.html;
+                                             openPick('l1'); const h = vForm();
                                              if (l) l.ch = was; return h; }],
     /* A word with no meaning on it yet, and a word with more than one. The
        dictionary numbers the meanings only when there are two to tell apart
@@ -1230,7 +1244,7 @@ export function halfDone(){
         const other = LETTERS.filter(l => l.id !== 'l1')[0];
         const was = other ? other.ch : '';
         if (other) other.ch = ch;
-        openPick('l1'); const h = FORM.html + pkCharsHTML();
+        openPick('l1'); const h = vForm();
         if (other) other.ch = was; return h; }],
     /* A language with its page turned off. The word that says so sits beside
        the name and nowhere else -- www/home.js wldoff -- and hide is absent
@@ -1254,7 +1268,7 @@ export function halfDone(){
                                                       return vGlyph(); }],
     ['the free plan out of room', () => { SET.plan='free'; SET.aiDay='';
                                           SET.aiN=999; openAdd();
-                                          const h=FORM.html; SET.aiN=0; return h; }],
+                                          const h=vForm(); SET.aiN=0; return h; }],
     ['a language somebody else is reading', () => { LANGS.L_other={name:'Necwe', mine:false};
                                                      window.route='langs'; NAV=[{r:'langs'}];
                                                      const h=vLangs(); delete LANGS.L_other; return h; }],
@@ -1275,18 +1289,19 @@ export function halfDone(){
        buttons is a second screen again. */
     ['letters on a photograph', () => { PW = pwBlank();
       PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
-      pwPicAt = 0; pwMarkAt = 0; pwTool = 'mark'; const h = pwMarkHTML();
+      pwMarkOpen(0); pwMarkAt = 0; pwTool = 'mark'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwMarkAt = -1; return h; }],
     /* And the other half of the editor: the crop, with its rectangle over the
        picture. It is a mode of the same screen, so nothing renders it unless
        the walk is put into it. */
     ['cropping a photograph', () => { PW = pwBlank();
       PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
-      pwPicAt = 0; pwTool = 'crop'; const h = pwMarkHTML();
+      pwMarkOpen(0); pwTool = 'crop'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwTool = 'mark'; return h; }],
     ['a photograph with no letters on it yet', () => { PW = pwBlank();
       PW.pics = [{u:POSTS[0].pic, marks:[]}]; pwPicAt = 0; pwMarkAt = -1; pwTool = 'mark';
-      const h = pwMarkHTML(); PW = pwBlank(); pwPicAt = -1; return h; }],
+      pwMarkOpen(0); pwMarkAt = -1;
+      const h = sheet(pwMarkHTML()); PW = pwBlank(); pwPicAt = -1; return h; }],
     ['a reply being written', () => { PW = pwBlank(); PW.to = POSTS[0].id;
         openPost(); pwSetLn('sar'); return vForm(); }],
     /* The three moments the microphone has. A recorder is a thing the runner
@@ -1310,40 +1325,40 @@ export function halfDone(){
     ['a list waiting to be understood', () => { IMP = impBlank();
         impTake('Word,Meaning,Part of Speech,Made\n' +
                 'kano,mountain,noun,2024\nzzk,a thing,verb,2024\n');
-        return FORM.html; }],
+        return vForm(); }],
     /* The same list where one of its words is already in the dictionary, so
        the choice between skipping and overwriting exists at all. */
     ['a list with words already here', () => { IMP = impBlank();
         impTake('Word,Meaning\nkano,mountain\nzzk,a thing\n');
-        return FORM.html; }],
+        return vForm(); }],
     /* An alphabet rather than a dictionary: the same screen, and the counts
        below the table say letters instead of words. */
     ['an alphabet waiting to be understood', () => { IMP = impBlank();
         impTake('Letter,Sound,Name\nϘ,k,qoppa\nϠ,sh,sampi\n');
-        return FORM.html; }],
+        return vForm(); }],
     ['a list just brought in', () => { IMP = impBlank();
         IMP.read = {shape:'table', head:null, rows:[['zzk', 'a thing']]};
         IMP.roles = ['hw', 'mn'];
         doImport();
-        const h = FORM.html; impUndo(); return h; }],
+        const h = vForm(); impUndo(); return h; }],
     /* On the paid plan the file button is a real file input rather than the
        way to the plans. */
     ['a file being chosen', () => { SET.plan = 'pro'; IMP = impBlank();
         openImport();
-        const h = FORM.html; SET.plan = 'free'; return h; }],
+        const h = vForm(); SET.plan = 'free'; return h; }],
     /* The card, which is the only screen whose output leaves the app. All
        three faces: a word, one of the sentences written under a word, and a
        post. They compose the picture differently -- a word is a page out of a
        dictionary, a sentence is a line, a post is somebody's published one --
        and only the post is offered a choice of shape, so the shape picker is
        on no screen but the third. */
-    ['a word as a card',       () => { cardOpen('w', 'kano'); return FORM.html; }],
+    ['a word as a card',       () => { cardOpen('w', 'kano'); return vForm(); }],
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
                                        cardOpen('x', 'kano#0');
-                                       const h=FORM.html; delete findWord('kano').ex; return h; }],
-    ['a post as a card',       () => { cardOpen('p', 'p1'); return FORM.html; }],
+                                       const h=vForm(); delete findWord('kano').ex; return h; }],
+    ['a post as a card',       () => { cardOpen('p', 'p1'); return vForm(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
-    ['a rule for making a form', () => { openFmr('fr1'); return FORM.html; }]
+    ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }]
   ];
 }

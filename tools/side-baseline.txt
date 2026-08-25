@@ -1,0 +1,10 @@
+# Screens that were already wider than a 402pt phone the day tools/press.mjs
+# first stood in front of one. A NEW one fails. Taking a line OUT is progress
+# and needs nobody -- it means the screen fits now.
+#
+# All three are the same fault, described where the check is: the three tiles
+# a new key is dragged off are the size of the key they make, and on a board
+# fewer than six keys across they are wider than the sheet.
+a flick keyboard, being built (paid)
+a keyboard of two layers (paid)
+three keyboards, looking at one that is not applied (paid)
