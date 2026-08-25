@@ -547,17 +547,27 @@ function stDetailHTML(p){
    heard, and the default is what it is arranged by until somebody says
    otherwise. What is gone is the claim that they already did. */
 function stOn(id, is){ return (stTouched(id) && is)? ' on' : ''; }
+/* And the demonstration is the other half of the same sentence.
+   「動詞の前と決まったわけじゃないのに」 OWNER. Lighting neither button was
+   half of it: underneath, gPosDemo() went on laying the two words out by the
+   default and gOrderLine()/gOrderDemo() went on drawing 主語→目的語→動詞,
+   so the screen still answered a question nobody had answered -- louder than
+   the buttons did, because it showed the arrangement as a finished phrase.
+   A stage that has not been touched shows the choices and nothing under them.
+   Press one and it appears. Same stTouched() as the buttons; no new state. */
 function stFeatHTML(id){
   if(id==='order'){
     return '<div class="segs">'+ORDERS.map(function(o){
         return '<button class="seg'+stOn('order', o===orderDef().id)+'"' + DO('setOrder', [o]) + '>'+o+'</button>';
-      }).join('')+'</div>'+gOrderLine()+gOrderDemo();
+      }).join('')+'</div>'+
+      (stTouched('order')? gOrderLine()+gOrderDemo() : '');
   }
   if(id!=='adj' && id!=='negp' && id!=='adp') return '';
   return '<div class="segs">'+['before','after'].map(function(o){
       return '<button class="seg'+stOn(id, o===gPos(id))+'"' + DO('setGPos', [id, o]) + '>'+
         esc(gPosLab(id, o))+'</button>';
-    }).join('')+'</div>'+gPosDemo(id);
+    }).join('')+'</div>'+
+    (stTouched(id)? gPosDemo(id) : '');
 }
 function vGram(){
   var gOpen=gOpenOf();
