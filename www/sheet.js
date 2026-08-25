@@ -68,6 +68,16 @@ function shBoxAt(i){
            y: yTop - r * (SH_BOX + SH_GAPY) - SH_BOX,
            side: SH_BOX };
 }
+/* How wide the name over a box comes out, at SH_LABEL tall. A name wider than
+   its own box is squashed to the box rather than allowed to run into its
+   neighbour. The ONE place: the file prints the name here and the screen draws
+   the same picture in the same spot, and a preview that worked this out again
+   would be a second copy of the sheet -- a copy always agrees, so the day a
+   box moves the picture would go on showing where it used to be. */
+function shLabelW(p){
+  var w = SH_LABEL * p.w / p.h;
+  return w > SH_BOX ? SH_BOX : w;
+}
 /* The four marks, in a fixed order: top-left, top-right, bottom-right,
    bottom-left. Their CENTRES, because that is what a reader finds. */
 function shMarks(){
@@ -181,8 +191,7 @@ function shPageOps(from, count, pics, bits, page, pages){
        another language's word sitting in the box they are about to draw in.
        There is an assertion below rather than a comment saying to be careful. */
     if (p && p.w && p.h){
-      wide = SH_LABEL * p.w / p.h;
-      if (wide > SH_BOX){ wide = SH_BOX; }
+      wide = shLabelW(p);
       o.push('q ' + shNum(wide) + ' 0 0 ' + shNum(SH_LABEL) + ' ' + shNum(b.x) + ' ' +
              shNum(b.y + SH_BOX + SH_LABEL_UP) + ' cm /Im' + i + ' Do Q');
     }
@@ -827,7 +836,7 @@ function shRoomHTML(){
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
-  openForm('wrout:', t('wr.make'), shOutHTML());
+  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw);
 }
 /* The count under the field is a count. It says how many boxes twenty names
    make and how many sheets that is, which is the one thing a person cannot
@@ -838,9 +847,124 @@ function shOutHTML(){
     '<textarea id="wr-names" placeholder="'+esc(t('wr.ph'))+'"' + IN('shTyped') + '>'+
     esc(s.names)+'</textarea></div>'+
     '<div class="mini" id="wr-mini">'+esc(tn('wr.boxes', n))+' · '+esc(tn('wr.pages', shPages(n)))+'</div>'+
+    shPvHTML()+
     '<div class="barfix"><button class="btn ghost"' + DO('shMake') + '>'+
     esc(t('wr.out'))+'</button></div>';
 }
+/* ---- what will come out, before it comes out ----------------------------
+   「自分の言語に入れたい文字　例 a,b,c みたいにしてカンマで区切ったら、どんな
+   用紙が出てくるかを見せないと。今プレビューこんな感じだよって。」
+   OWNER 2026-08-25.
+
+   It is the PAGE, drawn from shBoxAt(), shMarks(), shCellAt(), shPack(),
+   shLabelW() and shPic() -- the same six the file itself is written from. A
+   preview that worked the layout out again would be a second copy of the
+   sheet, and a copy always agrees: the day a box moves, the picture would go
+   on showing where it used to be.
+
+   The FIRST page. The line above it already says how many sheets there are,
+   which is the one thing a picture of page one cannot say, and a canvas that
+   grows with the names is a height nobody has measured on a phone.
+
+   Paper is white in both themes, because it is paper: everything on it is the
+   grey or the black the file prints and none of it is a colour of this app's.
+   One thing on the page is deliberately not drawn -- the small `Lingua 1/1` at
+   its head. Nothing can translate a word painted onto a canvas, so only
+   `Lingua` may be painted at all (tools/i18n-check.mjs, PAINTS); it is on the
+   paper, and it is not what a person is looking at this for. */
+function shPvHTML(){
+  return '<canvas id="wr-pv" style="width:100%;display:block;margin-top:14px"></canvas>';
+}
+function shPvGrey(v){
+  var n = Math.round(v * 255);
+  return 'rgb(' + n + ',' + n + ',' + n + ')';
+}
+var SH_PVFIT = 0;
+function shPvDraw(){
+  var c = document.getElementById('wr-pv'), w, dpr, W, S, H;
+  if(!c) return;
+  /* Nothing typed is nothing to show. 「打ったらどんな用紙が出てくるかを見せる」
+     is the whole of this, and an empty page of white standing on the screen
+     before a person has typed anything is not a sheet they are getting -- in
+     the dark theme it is a lamp. */
+  if(!shNames(shState().names).length){ c.style.display = 'none'; return; }
+  c.style.display = 'block';
+  w = c.getBoundingClientRect().width || c.offsetWidth || 0;
+  /* Measured before the layout exists the answer is zero, and a canvas sized
+     from zero shows nothing at all. geMount() in www/glyph.js is where that
+     was learned; this is the same bounded retry and not a new rule. */
+  if(!w){
+    if(SH_PVFIT < 10 && window.requestAnimationFrame){
+      SH_PVFIT++;
+      requestAnimationFrame(shPvDraw);
+      return;
+    }
+    w = 300;
+  }
+  SH_PVFIT = 0;
+  dpr = window.devicePixelRatio || 1;
+  W = Math.round(w * dpr);
+  S = W / SH_W;                       /* pixels to the point */
+  H = Math.round(SH_H * S);
+  c.width = W; c.height = H;
+  c.style.height = Math.round(SH_H * S / dpr) + 'px';
+  shPvPage(c.getContext('2d'), S, W, H);
+}
+/* One page, at S pixels to the point. The page's y runs UP and a canvas runs
+   DOWN, so it is flipped here and once only -- shBoxInk() has the same line
+   for the same reason. */
+function shPvPage(g, S, W, H){
+  var names = shNames(shState().names), page = names.slice(0, shPerPage());
+  var i, b, p, m, tile, bits, at, x, y;
+  function Y(v){ return (SH_H - v) * S; }
+  g.fillStyle = '#fff';
+  g.fillRect(0, 0, W, H);
+  g.fillStyle = '#000';
+  m = shMarks();
+  for(i = 0; i < m.length; i++)
+    g.fillRect((m[i][0] - SH_MARK / 2) * S, Y(m[i][1] + SH_MARK / 2),
+               SH_MARK * S, SH_MARK * S);
+  /* Every box is the same box, so it is drawn once and stamped twenty times:
+     441 dots a box and twenty boxes is 8820 of them on every keystroke. */
+  tile = shPvBox(S);
+  for(i = 0; i < page.length; i++){
+    b = shBoxAt(i);
+    g.drawImage(tile, b.x * S, Y(b.y + SH_BOX));
+    p = shPic(page[i]);
+    g.drawImage(p.cv, b.x * S, Y(b.y + SH_BOX + SH_LABEL_UP + SH_LABEL),
+                shLabelW(p) * S, SH_LABEL * S);
+  }
+  /* The strip, which is how the paper says what it is. Null is the names
+     refusing to fit, and shMake() says so in a sentence rather than writing a
+     sheet that cannot be read back -- the picture simply stops here. */
+  bits = shPack(page);
+  if(!bits) return;
+  g.fillStyle = '#000';
+  for(y = 0; y < SH_CH; y++) for(x = 0; x < SH_CW; x++){
+    if(!bits[y * SH_CW + x]) continue;
+    at = shCellAt(x, y);
+    g.fillRect(at[0] * S, Y(at[1] + SH_CELL), SH_CELL * S, SH_CELL * S);
+  }
+}
+/* The empty box and its lattice, once. A dot is half a point on paper, which
+   is a third of a pixel on a phone -- drawn at that it is nothing at all, so
+   the floor is half a pixel. What the dots say on a screen is that there are
+   dots; how heavy they are is a question for the printer. */
+function shPvBox(S){
+  var c = document.createElement('canvas'), g, side = Math.round(SH_BOX * S);
+  var lw = Math.max(1, 0.5 * S), lin = SH_LAT_INSET / 800 * SH_BOX * S;
+  var lst = (side - 2 * lin) / (SH_LAT_N - 1), d = Math.max(SH_DOT * S, 0.5), lx, ly;
+  c.width = side; c.height = side;
+  g = c.getContext('2d');
+  g.strokeStyle = shPvGrey(SH_BOX_GREY);
+  g.lineWidth = lw;
+  g.strokeRect(lw / 2, lw / 2, side - lw, side - lw);
+  g.fillStyle = shPvGrey(SH_DOT_GREY);
+  for(ly = 0; ly < SH_LAT_N; ly++) for(lx = 0; lx < SH_LAT_N; lx++)
+    g.fillRect(lin + lx * lst - d / 2, lin + ly * lst - d / 2, d, d);
+  return c;
+}
+
 /* Typed into. The count under the field moves with it, and nothing else does
    -- rebuilding the page would put the caret back to the end of the line on
    every keystroke, which is www/post.js's lesson and not a new one. */
@@ -852,6 +976,7 @@ function shTyped(v){
     var n = shNames(s.names).length;
     e.innerHTML = esc(tn('wr.boxes', n)) + ' · ' + esc(tn('wr.pages', shPages(n)));
   }
+  shPvDraw();
 }
 /* Each name as a small grey picture, one per box.
 
@@ -876,13 +1001,11 @@ function shTyped(v){
    The face is asked of the page: a canvas has no inheritance, so a family
    written out here would be the one place the stylesheet cannot reach
    (CLAUDE.md rule 17, and tools/face-check.mjs holds it). */
-function shPics(names){
-  var out = [], i;
-  for(i = 0; i < names.length; i++) out.push(shPic(names[i]));
-  return out;
-}
+/* The picture. The screen draws this one as it is; the file wants its bytes,
+   which is shPics() below -- so reading seven thousand pixels back happens
+   once, when a sheet is written, and not on every keystroke of the preview. */
 function shPic(nm){
-  var H = 64, c = document.createElement('canvas'), g = c.getContext('2d'), f, w, d, by, k;
+  var H = 64, c = document.createElement('canvas'), g = c.getContext('2d'), f, w;
   f = '600 ' + Math.round(H * 0.8) + 'px ' + cssVar('--face-ui', 'sans-serif');
   g.font = f;
   w = Math.ceil(g.measureText(String(nm)).width);
@@ -895,10 +1018,19 @@ function shPic(nm){
   g.fillStyle = '#000'; g.font = f;
   g.textBaseline = 'middle';
   g.fillText(String(nm), 0, H * 0.54);
-  try{ d = g.getImageData(0, 0, w, H).data; }catch(e){ return null; }
-  by = [];
-  for(k = 0; k < w * H; k++) by.push(String.fromCharCode(d[k * 4]));
-  return {w: w, h: H, gray: by.join('')};
+  return {w: w, h: H, cv: c};
+}
+function shPics(names){
+  var out = [], i, p, g, d, by, k;
+  for(i = 0; i < names.length; i++){
+    p = shPic(names[i]);
+    g = p.cv.getContext('2d');
+    try{ d = g.getImageData(0, 0, p.w, p.h).data; }catch(e){ out.push(null); continue; }
+    by = [];
+    for(k = 0; k < p.w * p.h; k++) by.push(String.fromCharCode(d[k * 4]));
+    out.push({w: p.w, h: p.h, gray: by.join('')});
+  }
+  return out;
 }
 /* The PDF, and out. There is no Swift behind `sheet` yet -- LinguaShare.swift
    has keep/kept/write/pickPhoto/audio and not this -- so on a phone today the
