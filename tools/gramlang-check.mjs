@@ -39,8 +39,13 @@
      6. wreckage is left    a phases slice that will not parse is not written
                             over -- "empty" and "broken" are different states
                             -- and the other languages still arrive
+     7. and it is its own   changing the word order and a position in one
+                            language leaves the other one exactly where it
+                            was. This is the measurement that started it:
+                            B was changed to VOS/after and A came back VOS
+                            /after with it
 
-   Exit code is 0 only when all six hold.
+   Exit code is 0 only when all seven hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -177,12 +182,18 @@ const c = await pg.evaluate(() => {
 await pg.reload();
 const d = await pg.evaluate((id) => ({
   phases: localStorage.getItem('lingua.' + id + '.phases'),
-  order: STG.order, negp: STG.gpos && STG.gpos.negp, open: langId
+  order: STG.order, negp: STG.gpos && STG.gpos.negp, open: langId,
+  /* What the screen reads, which is the half that matters: nothing stored is
+     one thing, and the buttons answering with somebody else's grammar is the
+     other. */
+  reads: orderDef().id, negpReads: gPos('negp')
 }), c);
 want('the new language is the one open', d.open, c);
 want('it has no stage slice at all', d.phases, null);
 want('so it has no word order of its own', d.order, '');
 want('and no position of its own', d.negp, undefined);
+want('the screen reads the default rather than the other language', d.reads, 'SOV');
+want('and the default position with it', d.negpReads, 'after');
 
 /* ---- 6: wreckage is left exactly as it is ------------------------------- */
 const WRECK = '[[[not json';
@@ -202,6 +213,45 @@ const e = await pg.evaluate(() => ({
 want('the unreadable slice is exactly as it was', e.wreck, WRECK);
 want('and the languages beside it still arrive', e.aOrder, 'OSV');
 
+/* ---- 7: one language's answer is its own -------------------------------
+   The measurement this whole thing came out of, run the other way round:
+   change the second language and ask the first one what it says. */
+await pg.evaluate((old) => {
+  localStorage.clear();
+  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
+}, OLD);
+await pg.reload();
+const f = await pg.evaluate(() => {
+  langOpen('LB');
+  setOrder('VOS');
+  setGPos('negp', 'after');
+  const bReads = orderDef().id, bNegp = gPos('negp');
+  langOpen('LA');
+  let aSet = null;
+  try { aSet = JSON.parse(localStorage.getItem('lingua.LA.phases') || 'null'); } catch (e) {}
+  let person = null;
+  try { person = JSON.parse(localStorage.getItem('lingua.set') || 'null'); } catch (e) {}
+  return {
+    bReads: bReads, bNegp: bNegp,
+    aReads: orderDef().id, aNegp: gPos('negp'),
+    aStored: aSet && aSet.order, aStoredNegp: aSet && aSet.gpos && aSet.gpos.negp,
+    bStored: (JSON.parse(localStorage.getItem('lingua.LB.phases') || '{}')).order,
+    /* And the person's settings are not written to any more: they still say
+       what they said before the move, and nothing goes back through them. */
+    personOrder: person && person.order,
+    aTouched: !!STG.set.order, aTouchedAdj: !!STG.set.adj
+  };
+});
+want('the language that was changed says the new order', f.bReads, 'VOS');
+want('and the new position', f.bNegp, 'after');
+want('and it is written down under that language', f.bStored, 'VOS');
+want('the other language still says its own order', f.aReads, 'OSV');
+want('and its own position', f.aNegp, 'before');
+want('which is still what its file says', f.aStored, 'OSV');
+want('all of it', f.aStoredNegp, 'before');
+want('the settings are left saying what they said', f.personOrder, 'OSV');
+want('and what was chosen in one is not chosen in the other', f.aTouchedAdj, false);
+
 await br.close();
 srv.close();
 
@@ -214,3 +264,4 @@ console.log('gramlang: the word order and the three positions arrive on every la
 console.log('          somebody already has, the settings still hold their copy,');
 console.log('          nothing else in a stage moves, an unreadable slice is left');
 console.log('          alone, and a language made afterwards is born with none.');
+console.log('          Changed in one language, the other one does not move.');

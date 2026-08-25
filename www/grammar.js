@@ -25,12 +25,20 @@
 /* All six orders, because all six are used by languages on this planet. The
    old list had three, which quietly ruled out the other half. */
 var ORDERS=['SOV','SVO','VSO','VOS','OVS','OSV'];
+/* The word order is the LANGUAGE's and is filed under langKey('phases') with
+   the rest of what the stages hold -- STG.order, and migrateGramLang() in
+   www/phases.js is how it got there. It was SET.order, which is the person's
+   settings and belongs to no language, so two languages on one phone had one
+   word order between them: 「言語ごとですよ？」 OWNER DECISION 2026-08-25.
+   Empty means nobody has answered, and the default stands. */
 function orderDef(){
-  var o=SET.order||'SOV';
+  var o=(STG && STG.order)||'SOV';
   if(ORDERS.indexOf(o)<0) o='SOV';
   return {id:o, seq:o.split('')};
 }
-function setOrder(id){ SET.order=id; save(); stMarkSet('order'); render(); }
+/* One write, not two. The value and the mark saying somebody chose it are
+   both in STG now, and stMarkSet() is what saves it. */
+function setOrder(id){ STG.order=id; stMarkSet('order'); render(); }
 
 /* ---- where a word stands ----------------------------------------------
    Three positions. Each is one answer for the whole language and each is
@@ -39,14 +47,17 @@ function setOrder(id){ SET.order=id; save(); stMarkSet('order'); render(); }
    something, and none asks you to invent a piece of sound: the word already
    exists, made in the stage that needed it. */
 var GPOS_DEF={adj:'after', negp:'after', adp:'after'};
+/* The language's, beside the word order and for the same reason. Reading one
+   does not write it: the old pair put the default into the person's settings
+   the first time a stage was drawn, so a value existed for three decisions
+   nobody had made. Nothing here answers "was this chosen" -- stTouched() is
+   that question and always was. */
 function gPos(id){
-  if(!SET.gpos) SET.gpos={};
-  if(!SET.gpos[id]) SET.gpos[id]=GPOS_DEF[id]||'after';
-  return SET.gpos[id];
+  return (STG && STG.gpos && STG.gpos[id]) || GPOS_DEF[id] || 'after';
 }
 function setGPos(id, v){
-  if(!SET.gpos) SET.gpos={};
-  SET.gpos[id]=v; save(); stMarkSet(id); render();
+  if(!STG.gpos) STG.gpos={};
+  STG.gpos[id]=v; stMarkSet(id); render();
 }
 /* Which side, and of what. "Before" on its own is not a label: before the
    noun and before the verb are different facts. */
@@ -110,8 +121,13 @@ function gRules(){
    and translate.arrange() never looks at model.words at all -- it reads the
    word order and the rules. The decisions are the same either way, which is
    the point of there being one function. */
+/* The engine is handed the word order and not the settings. fromLegacy()
+   reads one key -- `order` -- and reading it off SET is what made the whole
+   phone share one, so the caller answers with the language's own. The engine
+   is DOM-free and globals-free and this is the one place that crosses back:
+   it does not know what a stage is and does not have to. */
 function gModel(list){
-  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, SET);
+  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().id});
   m.grammarRules=gRules();
   return m;
 }
