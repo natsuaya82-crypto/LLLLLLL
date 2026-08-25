@@ -145,19 +145,34 @@ function go(r, a){
    Returns true when it has taken the press over -- either the person said no
    and stays, or the draft was kept and the trail already moved. */
 function backDraftKept(){
-  var h=here(), to;
+  var h=here(), to, keep;
   if(!h || h.r!=='form' || h.a!=='post:') return false;
   if(typeof PW==='undefined' || !PW || PW.ed) return false;
   if(!pwHas(PW.ln)) return false;
-  /* 仮 -- the words are the owner's and are not settled. Until 'post.back.q'
-     is in www/i18n/*.js this shows the key itself. */
-  if(!window.confirm(t('post.back.q'))) return true;
+  /* Three answers, and window.confirm has two buttons. A single box with
+     three is a NEW control: it would have to be drawn by render()
+     (www/glyph.js), carry names registered in www/act-map.js, and be styled
+     in www/index.html -- three files this session does not own. So the three
+     answers are asked in two steps, which needs no markup, no new name and
+     no stylesheet, and behaves the same on the old WKWebView.
+
+     仮 -- both the wording and the shape of the asking are the owner's. When
+     one box with three buttons exists this is the only place that changes:
+     what the three answers DO is below and does not move. Until the keys are
+     in www/i18n/*.js these show the key names themselves. */
+  if(window.confirm(t('post.back.q'))) keep=true;              /* はい */
+  else if(window.confirm(t('post.back.drop.q'))) keep=false;   /* いいえ */
+  else return true;                                            /* キャンセル */
   /* Where back was going, taken before draftKeep() runs: it ends by going to
      the feed, which is what the Save-a-draft button does. Back is not that
-     button -- it goes back one page -- so the trail is put back afterwards. */
+     button -- it goes back one page -- so the trail is put back afterwards.
+     Both answers leave the composer empty: a post that is in the drafts and
+     still in the composer is the same post in two places, and one that was
+     not kept was not kept. 「残ってほしくない」 */
   to=NAV.slice(0, NAV.length-1);
-  draftKeep();
-  if(to.length){ NAV=to; route=here().r; render(); window.scrollTo(0,0); }
+  if(keep) draftKeep(); else PW=pwBlank();
+  NAV=to.length? to : [{r:'profile'}];
+  route=here().r; render(); window.scrollTo(0,0);
   return true;
 }
 function back(){

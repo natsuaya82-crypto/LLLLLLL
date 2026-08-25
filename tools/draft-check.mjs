@@ -81,9 +81,14 @@ const R = await pg.evaluate(() => {
   };
   /* Every case counts what it was asked and what it answered. "asked nothing"
      is half of what two of these are about. */
-  let asked = 0, answer = true;
+  let asked = 0, answers = [];
   const realConfirm = window.confirm;
-  window.confirm = function(){ asked++; return answer; };
+  /* Two boxes carry three answers, so the stub answers from a queue rather
+     than with one value: [true] is yes, [false,true] is no, [false,false] is
+     cancel. Running out is a fail, not a silent false. */
+  window.confirm = function(){ asked++; if (!answers.length) { out.fails.push(
+    'the app asked more questions than the case had answers for'); return false; }
+    return answers.shift(); };
   /* Typed the way the field types it -- data-in calls these on every
      keystroke. Setting PW directly would prove the test's own assignment. */
   const write = () => { pwSetLn(LN); pwSetMn(MN); };
@@ -98,7 +103,7 @@ const R = await pg.evaluate(() => {
   openPost();
   const opened = JSON.stringify(here());
   write();
-  asked = 0; answer = true;
+  asked = 0; answers = [true];               /* はい */
   back();
   const kept = DRAFTS[DRAFTS.length - 1] || null;
   out.said.push('a post half written, then back: asked ' + asked +
@@ -143,19 +148,44 @@ const R = await pg.evaluate(() => {
   start();
   openPost();
   write();
-  asked = 0; answer = false;
+  asked = 0; answers = [false, false];       /* キャンセル */
+  back();
+  out.said.push('and answering cancel: asked ' + asked + ', drafts ' + DRAFTS.length +
+    ', still on ' + JSON.stringify(here()));
+  if (asked !== 2)
+    out.fails.push('answering cancel asked ' + asked + ' question(s), and it takes two boxes to say cancel');
+  if (DRAFTS.length !== 0)
+    out.fails.push('answering cancel put ' + DRAFTS.length + ' thing(s) in the drafts');
+  if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
+    out.fails.push('answering cancel left the composer anyway -- it is now on ' +
+      JSON.stringify(here()));
+  if (PW.ln !== LN)
+    out.fails.push('answering cancel threw away the line: ' + JSON.stringify(PW.ln));
+
+  /* ---- no: not kept, and not left in the composer either -----------------
+     OWNER DECISION 2026-08-25:「いいえは保存せず1画面戻る」. Nothing goes to
+     the drafts and the composer is empty, because 「残ってほしくない」 -- a
+     post that was not kept is not still sitting there waiting to be written
+     on top of. This is the one answer that throws something away, and it is
+     thrown away only because somebody said so twice. */
+  start();
+  openPost();
+  write();
+  asked = 0; answers = [false, true];        /* いいえ */
   back();
   out.said.push('and answering no: asked ' + asked + ', drafts ' + DRAFTS.length +
-    ', still on ' + JSON.stringify(here()));
-  if (asked !== 1)
+    ', composer left ' + (PW.ln ? JSON.stringify(PW.ln) : 'empty') +
+    ', landed on ' + JSON.stringify(here()));
+  if (asked !== 2)
     out.fails.push('answering no asked ' + asked + ' question(s)');
   if (DRAFTS.length !== 0)
     out.fails.push('answering no put ' + DRAFTS.length + ' thing(s) in the drafts');
-  if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
-    out.fails.push('answering no left the composer anyway -- it is now on ' +
-      JSON.stringify(here()));
-  if (PW.ln !== LN)
-    out.fails.push('answering no threw away the line: ' + JSON.stringify(PW.ln));
+  if (PW.ln || PW.mn)
+    out.fails.push('answering no left the post in the composer: ' +
+      JSON.stringify({ ln: PW.ln, mn: PW.mn }));
+  if (JSON.stringify(here()) !== '{"r":"profile"}')
+    out.fails.push('answering no landed on ' + JSON.stringify(here()) +
+      ' and not one page back');
 
   /* ---- Done on the photograph editor is back(), and must go through ------
      www/post.js:1222 and 1228. The trail is profile -> composer -> marks, and
@@ -168,7 +198,7 @@ const R = await pg.evaluate(() => {
   pwPics().push({ u: PIC });
   pwMarkOpen(0);
   const onMarks = JSON.stringify(here());
-  asked = 0; answer = true;
+  asked = 0; answers = [];                   /* nothing may be asked here */
   back();                                  /* what .mkr and .mkdone do */
   const afterDone = JSON.stringify(here());
   out.said.push('Done on the photograph editor: asked ' + asked + ', drafts ' +
@@ -196,7 +226,7 @@ const R = await pg.evaluate(() => {
      answers this, and it is the app's own answer rather than a second one. */
   start();
   openPost();
-  asked = 0; answer = true;
+  asked = 0; answers = [];
   back();
   out.said.push('an empty composer backed out of: asked ' + asked + ', drafts ' +
     DRAFTS.length);
@@ -218,7 +248,7 @@ const R = await pg.evaluate(() => {
   else {
     postEdit(mine.id);
     const onEdit = JSON.stringify(here());
-    asked = 0; answer = true;
+    asked = 0; answers = [];
     back();
     out.said.push('backing out of an edit: asked ' + asked + ', drafts ' +
       DRAFTS.length);
