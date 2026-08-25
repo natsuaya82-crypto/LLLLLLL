@@ -184,7 +184,38 @@ function pwSidePaint(){
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from){
-  /* Opened from the day's sentence, and that is the only argument this takes.
+  /* The + button, and what it opens is what its name says: a post. Not a
+     reply, and not an edit.
+
+     PW is where a half-written post lives, and it outlives the screen on
+     purpose -- going to look a word up must not throw away what was typed.
+     viewReset() does blank it, but viewReset() runs when the open LANGUAGE
+     changes and at no other moment, so between two visits to the composer
+     nothing clears PW at all. Start a reply, back out without sending, press
+     + an hour later: PW.to is still the post you were answering and the
+     composer opens as a reply to it.
+     「＋ボタンは毎回ふつうの投稿のはずなのに、返信が残っていることがある」
+
+     Only what made it not an ordinary post is dropped, and the two states are
+     not dropped the same way:
+
+       to   goes, the line STAYS. Somebody typed that line themselves and this
+            button is not a delete.
+       ed   takes the whole composer with it. The line there is not something
+            somebody typed for a new post -- postEdit() put the existing
+            post's own text into it -- so handing it to a new post would be
+            offering somebody their own post back as a draft of itself.
+
+     `ed` is the same fault as `to` and was not in what was reported; it is
+     fixed here because it is one line further down the same object and
+     leaving it would mean pressing + could still save over a post that
+     already exists. */
+  if(from==='new'){
+    if(PW.ed) PW=pwBlank();
+    else PW.to='';
+  }
+  /* Opened from the day's sentence, and that is the only OTHER argument this
+     takes.
      The meaning arrives already written and cannot be changed, which is the
      whole of what makes the day work: two hundred posts mean the same thing,
      so two hundred alphabets are readable at once. 「消せないようにしよう

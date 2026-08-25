@@ -266,9 +266,13 @@ function dayRow(){
     '</span>'+
   '</button>';
 }
-function snsFab(from){
+/* `from` was a parameter nobody ever passed -- both callers say `snsFab()` --
+   so the argument this button carried was always none, and openPost() was
+   asked for "whatever PW happens to hold". It says 'new' now, which is the
+   one thing this button has ever meant. */
+function snsFab(){
   if(!netSignedIn() || NET_BANNED) return '';
-  return '<button class="fab"' + DO('openPost', from? [from] : []) +
+  return '<button class="fab"' + DO('openPost', ["new"]) +
     ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }
 /* ---- one conversation --------------------------------------------------
