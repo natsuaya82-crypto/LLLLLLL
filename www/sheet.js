@@ -43,6 +43,10 @@ var SH_LABEL = 14, SH_LABEL_UP = 4;
    twice over -- once because they are pale, once because a dot is a smaller
    island than any stroke. */
 var SH_DOT = 0.5, SH_DOT_GREY = 0.72;
+/* How dark the printed edge of a box is. Pale on purpose: the reader forgets a
+   margin of the box rather than trusting the threshold to drop this line, and
+   a heavy edge is one more thing for a photograph to turn into ink. */
+var SH_BOX_GREY = 0.82;
 var SH_LAT_N = 21, SH_LAT_INSET = 40;       /* GGRID, in the 800 square */
 /* the strip that carries the names */
 var SH_CELL = 4.54;                         /* 1.6mm, ~19 pixels at 300dpi */
@@ -182,7 +186,7 @@ function shPageOps(from, count, pics, bits, page, pages){
       o.push('q ' + shNum(wide) + ' 0 0 ' + shNum(SH_LABEL) + ' ' + shNum(b.x) + ' ' +
              shNum(b.y + SH_BOX + SH_LABEL_UP) + ' cm /Im' + i + ' Do Q');
     }
-    o.push('0.82 G 0.5 w ' + shNum(b.x) + ' ' + shNum(b.y) + ' ' +
+    o.push(shNum(SH_BOX_GREY) + ' G 0.5 w ' + shNum(b.x) + ' ' + shNum(b.y) + ' ' +
            SH_BOX + ' ' + SH_BOX + ' re S');
     /* the lattice, as squares rather than circles -- 441 dots a box and twenty
        boxes, so the cheap operator is the right one */
