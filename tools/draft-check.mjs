@@ -1,8 +1,18 @@
 /* ---------------------------------------------------------------------------
-   tools/draft-check.mjs — what you have half written is still there after you
-   press back.
+   tools/draft-check.mjs — a post you were half way through goes to the drafts
+   when you press back, and does not stay in the composer.
 
    Run it:   node tools/draft-check.mjs
+
+   OWNER DECISION 2026-08-25: 「戻るをした時は確認ダイアログを入れて下書きに
+   入れて欲しい」「もう一回開く時には下書きから選べば出てくるだけで、残って
+   ほしくない」. Backing out of a half-written post asks; yes puts it in the
+   drafts and leaves the composer empty. Both halves matter -- a post that is
+   in the drafts and still in the composer is the same post in two places, and
+   the next thing you write starts on top of the last thing you abandoned.
+
+   The confirm is window.confirm and there is no new UI: OWNER DECISION
+   2026-08-25「新しい UI を足さない。既存の UI だけ」.
 
    Three things in this app are half-finished work that lives in memory and
    nowhere else: `PW`, a post being written; `IMP`, a list being read in; and
@@ -10,24 +20,17 @@
    www/shell.js is the list of them, and it is the only thing that throws
    them away.
 
-   The worry this check was written for was that `back()` threw them away --
-   press back off the composer and the sentence you were writing is gone. It
-   does not, and that is worth pinning down rather than believing: `back()`
-   pops the trail and renders, it does not call viewReset(), and `pwSetLn`
-   keeps every keystroke in PW rather than in the field. So the draft is
-   still there and the composer reached again is the composer you left.
+   `DO('back')` is not only the back button -- the photograph editor's Done is
+   `back()` too (www/post.js:1222 and 1228, `.mkr` and `.mkdone`). A guard put
+   inside `back()` without a way through would turn Done into "keep this?",
+   asked every time somebody finishes putting letters on a picture, about a
+   post that is not going anywhere. So Done is walked here as its own case: it
+   must come back to the composer, with the post still in it, having asked
+   nothing. The way through is the screen you are standing on, not a flag.
 
-   Nothing here asserts whether leaving the composer OUGHT to ask anything.
-   That is the owner's to say and it is not settled. What is asserted is the
-   part that is not a matter of taste: the words must still exist afterwards.
-
-   And one thing that is not taste either. `DO('back')` is not only the back
-   button -- the photograph editor's Done is `back()` too (www/post.js:1222
-   and 1228, `.mkr` and `.mkdone`). A guard put inside `back()` without a way
-   through would turn Done into "throw this away?", asked every time somebody
-   finishes putting letters on a picture, with a draft that is not going
-   anywhere. So Done is walked here as its own case: it must come back to the
-   composer, with the draft whole, having asked nothing.
+   The other two things viewReset() lists -- a letter's name typed and not
+   saved, and a list being read in -- are walked too. They are not the
+   composer, so back() leaves them alone and asks nothing about them.
 
    Exit code is 0 only when every case holds.
    --------------------------------------------------------------------------- */
@@ -65,97 +68,175 @@ const R = await pg.evaluate(() => {
   const out = { fails: [], said: [] };
   const LN = 'a line half written';
   const MN = 'a meaning half written';
+  const PIC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
   /* Signed in, because the composer sends you to the feed if you are not --
-     openPost() says so itself rather than trusting the trail. */
+     openPost() says so itself rather than trusting the trail. The drafts are
+     emptied too: they are read off the disk at load and this counts them. */
   const start = () => {
     window.__seed(); SET.done = true; SET.plan = 'pro';
     SESS = { rt: 'a refresh token' };
-    NAV = [{ r: 'feed' }]; window.route = 'feed';
+    DRAFTS.length = 0;
+    NAV = [{ r: 'profile' }]; window.route = 'profile';
   };
-  /* Every case counts what it was asked, because "asked nothing" is half of
-     what two of them are about. */
-  let asked = 0;
+  /* Every case counts what it was asked and what it answered. "asked nothing"
+     is half of what two of these are about. */
+  let asked = 0, answer = true;
   const realConfirm = window.confirm;
-  window.confirm = function(){ asked++; return true; };
+  window.confirm = function(){ asked++; return answer; };
+  /* Typed the way the field types it -- data-in calls these on every
+     keystroke. Setting PW directly would prove the test's own assignment. */
+  const write = () => { pwSetLn(LN); pwSetMn(MN); };
 
-  /* ---- a post half written, and the back button -------------------------
-     Typed through pwSetLn/pwSetMn, which is what the field's data-in calls on
-     every keystroke -- not by setting PW behind the app's back, or this would
-     prove the test's own assignment and nothing about the app. */
+  /* ---- yes: it goes to the drafts, and the composer is left empty --------
+     OWNER DECISION 2026-08-25. Three things have to be true at once, and the
+     third is the one that is easy to miss: the composer reached again is
+     EMPTY. 「もう一回開く時には下書きから選べば出てくるだけで、残ってほしく
+     ない」 -- a draft that is in the drafts AND still in the composer is the
+     same post in two places. */
   start();
   openPost();
   const opened = JSON.stringify(here());
-  pwSetLn(LN); pwSetMn(MN);
-  asked = 0;
+  write();
+  asked = 0; answer = true;
   back();
-  out.said.push('a post half written, then back: the line is ' +
-    (PW.ln === LN ? 'still there' : JSON.stringify(PW.ln)) +
-    ', and it asked ' + asked + ' question(s)');
+  const kept = DRAFTS[DRAFTS.length - 1] || null;
+  out.said.push('a post half written, then back: asked ' + asked +
+    ', drafts ' + DRAFTS.length + ', composer left ' +
+    (PW.ln ? JSON.stringify(PW.ln) : 'empty') +
+    ', landed on ' + JSON.stringify(here()));
   if (opened !== '{"r":"form","a":"post:"}')
     out.fails.push('openPost() did not open the composer -- it opened ' + opened +
       ', so nothing below is about the composer');
-  if (PW.ln !== LN)
-    out.fails.push('pressing back off the composer threw away the line: ' +
-      JSON.stringify(PW.ln));
-  if (PW.mn !== MN)
-    out.fails.push('pressing back off the composer threw away the meaning: ' +
-      JSON.stringify(PW.mn));
+  if (asked !== 1)
+    out.fails.push('backing out of a half-written post asked ' + asked +
+      ' question(s), and it has to ask exactly one');
+  if (DRAFTS.length !== 1)
+    out.fails.push('backing out of a half-written post left ' + DRAFTS.length +
+      ' draft(s), and it has to leave exactly one');
+  if (!kept || kept.ln !== LN || kept.mn !== MN)
+    out.fails.push('what went into the drafts is not what was typed: ' +
+      JSON.stringify(kept));
+  if (PW.ln || PW.mn)
+    out.fails.push('the post went to the drafts and is STILL in the composer: ' +
+      JSON.stringify({ ln: PW.ln, mn: PW.mn }) + ' -- the same post in two places');
+  /* Back goes back one page. draftKeep() ends by going to the feed, which is
+     what the Save-a-draft button does; the composer here was opened from the
+     profile, so the feed would mean the trail was thrown away. */
+  if (JSON.stringify(here()) !== '{"r":"profile"}')
+    out.fails.push('backing out of the composer landed on ' + JSON.stringify(here()) +
+      ' and the composer was opened from the profile -- back goes back one page');
 
-  /* ---- and the composer reached again is the one you left ---------------
-     PW surviving is not enough on its own. openForm() keeps the body as a
-     STRING, so the draft can be whole in memory and the screen still come
-     back empty if FORM.html went stale. pwFresh() is what keeps the two in
-     step, and this is the case that would notice it going. */
+  /* ---- and the composer opened again is empty ---------------------------
+     PW being blank is not the whole of it. openForm() keeps the body as a
+     STRING, so the composer can be empty in memory and still come back with
+     the old text painted on it. */
   openPost();
   const body = (FORM && FORM.html) || '';
-  out.said.push('the composer reached again shows what was typed: ' +
-    ((body.indexOf(LN) >= 0 && body.indexOf(MN) >= 0) ? 'yes' : 'NO'));
-  if (body.indexOf(LN) < 0)
-    out.fails.push('the composer was reached again and the line is not on it -- ' +
-      'PW kept it and the screen did not');
-  if (body.indexOf(MN) < 0)
-    out.fails.push('the composer was reached again and the meaning is not on it');
+  out.said.push('the composer opened again is ' +
+    (body.indexOf(LN) < 0 ? 'empty' : 'STILL SHOWING the kept post'));
+  if (body.indexOf(LN) >= 0)
+    out.fails.push('the composer opened again still shows the post that was ' +
+      'put in the drafts -- it must be empty');
 
-  /* ---- Done on the photograph editor is back(), and must go through ------
-     www/post.js:1222 and 1228. The trail is feed -> composer -> marks, and
-     Done pops the marks off it. What must be true afterwards: you are on the
-     composer, the draft is whole, and nothing was asked. A guard inside
-     back() with no way through fails this and only this. */
+  /* ---- no: nothing is kept and nothing is left -------------------------- */
   start();
   openPost();
-  pwSetLn(LN); pwSetMn(MN);
-  /* A picture to put letters on. pwMarkOpen() returns without opening
-     anything when there is none, and a case that never opened its screen
-     proves nothing. One pixel is a picture. */
-  pwPics().push({ u: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' });
+  write();
+  asked = 0; answer = false;
+  back();
+  out.said.push('and answering no: asked ' + asked + ', drafts ' + DRAFTS.length +
+    ', still on ' + JSON.stringify(here()));
+  if (asked !== 1)
+    out.fails.push('answering no asked ' + asked + ' question(s)');
+  if (DRAFTS.length !== 0)
+    out.fails.push('answering no put ' + DRAFTS.length + ' thing(s) in the drafts');
+  if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
+    out.fails.push('answering no left the composer anyway -- it is now on ' +
+      JSON.stringify(here()));
+  if (PW.ln !== LN)
+    out.fails.push('answering no threw away the line: ' + JSON.stringify(PW.ln));
+
+  /* ---- Done on the photograph editor is back(), and must go through ------
+     www/post.js:1222 and 1228. The trail is profile -> composer -> marks, and
+     Done pops the marks off it. Nothing is asked, nothing is kept, and the
+     draft is still in the composer because you have not left it. A guard put
+     in back() with no way through fails this and only this. */
+  start();
+  openPost();
+  write();
+  pwPics().push({ u: PIC });
   pwMarkOpen(0);
   const onMarks = JSON.stringify(here());
-  asked = 0;
+  asked = 0; answer = true;
   back();                                  /* what .mkr and .mkdone do */
   const afterDone = JSON.stringify(here());
-  out.said.push('Done on the photograph editor lands on ' + afterDone +
-    ' and asked ' + asked + ' question(s)');
+  out.said.push('Done on the photograph editor: asked ' + asked + ', drafts ' +
+    DRAFTS.length + ', landed on ' + afterDone);
   if (onMarks.indexOf('marks') < 0)
     out.fails.push('pwMarkOpen() did not open the photograph editor -- it opened ' +
       onMarks + ', so the Done case below proves nothing');
   else {
-    if (afterDone !== '{"r":"form","a":"post:"}')
-      out.fails.push('Done on the photograph editor did not land back on the ' +
-        'composer -- it landed on ' + afterDone);
     if (asked !== 0)
       out.fails.push('Done on the photograph editor asked ' + asked + ' question(s). ' +
         'It is the same back() as the back button, and a guard put in back() ' +
-        'without a way through turns finishing a picture into "throw this away?"');
+        'without a way through turns finishing a picture into "keep this?"');
+    if (DRAFTS.length !== 0)
+      out.fails.push('Done on the photograph editor put the post in the drafts');
+    if (afterDone !== '{"r":"form","a":"post:"}')
+      out.fails.push('Done on the photograph editor did not land back on the ' +
+        'composer -- it landed on ' + afterDone);
     if (PW.ln !== LN)
-      out.fails.push('Done on the photograph editor threw away the line: ' +
+      out.fails.push('Done on the photograph editor emptied the composer: ' +
         JSON.stringify(PW.ln));
   }
 
+  /* ---- an empty composer is not a draft ---------------------------------
+     Nothing typed, nothing to keep, nothing to ask about. pwHas() is what
+     answers this, and it is the app's own answer rather than a second one. */
+  start();
+  openPost();
+  asked = 0; answer = true;
+  back();
+  out.said.push('an empty composer backed out of: asked ' + asked + ', drafts ' +
+    DRAFTS.length);
+  if (asked !== 0)
+    out.fails.push('backing out of an EMPTY composer asked ' + asked +
+      ' question(s) -- there is nothing to keep');
+  if (DRAFTS.length !== 0)
+    out.fails.push('backing out of an empty composer made a draft out of nothing');
+
+  /* ---- an edit is not a draft -------------------------------------------
+     PW.ed is a post that already exists. The drafts carry no `ed`, so keeping
+     one would quietly turn an edit into a second post -- two things that are
+     not the same shape sharing one list, which is the rule at the head of
+     docs/DATA_SAFETY.md. Backing out of an edit is left as it was. */
+  start();
+  const mine = POSTS.filter(p => p.mine)[0];
+  if (!mine) out.said.push('(no post of my own in the fixture -- the edit case ' +
+    'did not run)');
+  else {
+    postEdit(mine.id);
+    const onEdit = JSON.stringify(here());
+    asked = 0; answer = true;
+    back();
+    out.said.push('backing out of an edit: asked ' + asked + ', drafts ' +
+      DRAFTS.length);
+    if (onEdit !== '{"r":"form","a":"post:"}')
+      out.fails.push('postEdit() did not open the composer -- it opened ' + onEdit);
+    else {
+      if (asked !== 0)
+        out.fails.push('backing out of an EDIT asked ' + asked + ' question(s)');
+      if (DRAFTS.length !== 0)
+        out.fails.push('backing out of an edit made a draft, which carries no ' +
+          '`ed` -- the edit would come back as a second post');
+    }
+  }
+
   /* ---- the other two things viewReset() lists ---------------------------
-     A letter's name typed and not saved, and a list being read in. Same
-     rule, and they are on the same list, so a change to what back() does
-     reaches all three at once. */
+     A letter's name typed and not saved, and a list being read in. They are
+     on the same list as PW and are not the composer, so back() leaves them
+     exactly as they were. */
   start();
   ltDraft = 'a letter name typed';
   IMP = impBlank(); IMP.rows = [{ a: 1 }];
@@ -164,7 +245,10 @@ const R = await pg.evaluate(() => {
   back();
   out.said.push('a letter name typed and a list being read in survive back: ' +
     ((ltDraft === 'a letter name typed' && IMP && IMP.rows && IMP.rows.length === 1)
-      ? 'both' : 'NO'));
+      ? 'both' : 'NO') + ', asked ' + asked);
+  if (asked !== 0)
+    out.fails.push('backing off a letter asked ' + asked +
+      ' question(s) -- only the composer asks');
   if (ltDraft !== 'a letter name typed')
     out.fails.push('pressing back threw away a letter name typed and not saved: ' +
       JSON.stringify(ltDraft));
@@ -183,4 +267,4 @@ if (R.fails.length) {
   R.fails.forEach(f => console.log('FAIL: ' + f));
   process.exit(1);
 }
-console.log('what you have half written is still there after you press back.');
+console.log('a post half written goes to the drafts, and does not stay behind.');
