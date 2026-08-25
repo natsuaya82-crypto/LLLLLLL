@@ -39,6 +39,16 @@ and `www/card.js` each have a line across them; below it, a post renders from
 the post. `tools/sides-check.mjs` holds both. See `CLAUDE.md` rules 8 and 12,
 and `docs/DATA_MODEL.md` for which fields travel on a post.
 
+**DL — the third thing, decided and not built.** A downloaded official asset is
+a language on the reading side that is filed like one on the making side: it
+sits in `LANGS` and under `lingua.<id>.<slice>`, and it is **switched to**
+rather than merged in (OWNER DECISION 2026-08-25, `docs/FEATURE_RULES.md`).
+That makes it the first language this app has ever held that its user did not
+write, and every global above is still 「the one in front of me」 — so the line
+`sides-check` holds does not move, it just gets a case where the language in
+front of you is one you may not edit. Nothing of it exists yet:
+`docs/DATA_MODEL.md` § a language that is only read says what has to.
+
 ## Where the truth lives
 
 | thing | the truth is | read by |
@@ -52,9 +62,28 @@ and `docs/DATA_MODEL.md` for which fields travel on a post.
 | a copy that survives the app | `Documents/Languages/<name>.json` on the device | `bkPack()` / `bkTake()` (`www/backup.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
 
-**Nothing a person makes is on a server today.** The timeline is
-`localStorage`. The `post` / `follow` / `quote` tables in `schema.sql` are
-written and unused. See `docs/STATE.md`.
+**That was true and is not.** This paragraph said 「Nothing a person makes is
+on a server today. The timeline is `localStorage`. The `post` / `follow` /
+`quote` tables in `schema.sql` are written and unused.」 Two of those three are
+now wrong, and this file is exactly the kind that goes on being believed after
+it stops being true — so the way to read it is the way `docs/STATE.md` § 1 says:
+re-check rather than trust.
+
+```
+grep -n "rest/v1" www/net.js          # what the app actually asks the server for
+```
+
+What that answers today: `profile`, `post`, `follow`, `block`, `report`, the
+notices RPC — **and `language` and `slice`**. A language and every one of its
+slices go up and come back: `netLangRow()` makes the `language` row and keeps
+its id on `LANGS[id].sid`, `netSlices()` reads them, `netSlicePut()` upserts
+one, `netLangSync()` puts the two copies together through `www/sync.js`, and
+**`boot.js` calls it on launch**. `quote` and `publication` really are still
+unused.
+
+`localStorage` stays the truth on the phone, and that is the point rather than
+a stage on the way: the making side works with no account and no signal, and
+what the server holds is the copy. The table above says which key is which.
 
 ## Where a screen comes from
 
