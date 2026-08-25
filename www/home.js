@@ -754,6 +754,11 @@ wldRead();
    that says it, so the inventory is written by drawing letters, not on this
    screen. */
 function vWorld(){
+  /* The note becomes a row of the overview the first time somebody opens this
+     screen. It cannot be done at load: saveWld() touches the backup and
+     backup.js is loaded after this file, which is the same reason
+     migrateWorld() runs from boot.js. Guarded, so it happens once. */
+  wldNoteMigrate();
   var w=world(), out='';
   /* Whether this page exists for anybody else. Asked ONCE, of the whole page,
      because that is the size of the question -- 「そもそもこの言語についてを公開
@@ -765,24 +770,39 @@ function vWorld(){
     '<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
     '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
     swtHTML(!wldHidden())+'</button>';
-  /* The lead, which is the first thing on the article and so the first thing
-     here. It carries no heading over there; here it needs one, because a box
-     to type in with nothing said about it is a box nobody fills. */
-  out+='<div class="sec">'+esc(t('wld.note'))+'</div>'+
-    '<textarea class="ntbody" style="min-height:120px" placeholder="'+esc(t('wld.note.ph'))+'" '+
-      '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>';
+
   wldSecs().forEach(function(sec){
     if(sec.r==='wldov'){
       /* Each field says what it is above the box, the way the article says it
          above the answer -- a placeholder disappears the moment somebody
-         types, and then two boxes of text have nothing to tell them apart. */
-      out+='<div class="sec">'+esc(t('wld.overview'))+'</div>'+
+         types, and then two boxes of text have nothing to tell them apart.
+         The + puts another row in, and a row is a name and what it says. */
+      out+=secAdd(t('wld.overview'), DO('wldOvAdd'), t('wld.overview'))+
         '<div class="abfk">'+esc(t('wld.where'))+'</div>'+
         '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
           'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
         '<div class="abfk">'+esc(t('wld.who'))+'</div>'+
         '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
-          'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>';
+          'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>'+
+        '<div class="ovlist" data-wdrag="ovs">'+
+        wldOvs().map(function(row){
+          /* One box, and inside it the two things a row is: what it is
+             called, and what it says. They were two underlined fields with
+             three buttons beside them -- four lines to a row --
+             「線多すぎてクソ見づらいわ。角丸でもいいから」. Moving one is holding
+             it, so there are no arrows; what is left beside the name is the
+             one way to take the row out. */
+          return '<div class="ovrow" data-wid="'+esc(row.id)+'">'+
+            '<div class="ovtop">'+
+              '<span class="ovlb">'+esc(t('wld.ov.k.ph'))+'</span>'+
+              '<button class="ovx"' + DO('wldOvDel', [row.id]) + ' aria-label="'+
+                esc(t('wld.ov.del'))+'">'+ICON_CROSS+'</button>'+
+            '</div>'+
+            '<input class="ovf" value="'+esc(row.k||'')+'"' + IN('wldOvSet', [row.id, "k"]) + '>'+
+            '<span class="ovlb">'+esc(t('wld.ov.v.ph'))+'</span>'+
+            '<input class="ovf" value="'+esc(row.v||'')+'"' + IN('wldOvSet', [row.id, "v"]) + '>'+
+            '</div>';
+        }).join('')+'</div>';
       return;
     }
     /* Everything somebody wrote is one block, in the place the article puts
@@ -803,18 +823,16 @@ function vWorld(){
      two more beside it, because a button cannot hold a button. The first row
      has no up and the last no down: an arrow that does nothing is a button
      that looks broken. */
+  /* Held to move, like the rows above -- no arrows here either. */
   out+=secAdd(t('wld.secs'), DO('wldArtAdd'), t('wld.secs'))+
-    wldArts().map(function(one, i, all){
-      return '<div class="wsrow">'+
+    '<div class="wslist" data-wdrag="arts">'+
+    wldArts().map(function(one){
+      return '<div class="wsrow" data-wid="'+esc(one.id)+'">'+
         '<button class="wsnm"' + DO('go', ["wldart", one.id]) + '>'+
           '<span class="sl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
           '<span class="sv">'+ICON_GO+'</span></button>'+
-        (i>0? '<button class="wsmv"' + DO('wldArtMove', [one.id, -1]) + ' aria-label="'+
-          esc(t('wld.up'))+'">'+ICON_UP+'</button>' : '<span class="wsmv"></span>')+
-        (i<all.length-1? '<button class="wsmv"' + DO('wldArtMove', [one.id, 1]) + ' aria-label="'+
-          esc(t('wld.down'))+'">'+ICON_DOWN+'</button>' : '<span class="wsmv"></span>')+
         '</div>';
-    }).join('');
+    }).join('')+'</div>';
   return '<div class="view">'+navTop('')+'<div class="body">'+out+'</div></div>';
 }
 /* One section, open: what it is called, what it says, and the two answers
@@ -962,31 +980,149 @@ function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
 var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
-/* Up and down, plain. ICON_INUP/ICON_INDN are the keyboard editor's and are
-   an arrow INTO A LINE -- they answer which side of a line a new row lands
-   on, which is inserting and not moving. These two move a thing that is
-   already there, so they are the arrow without the line. */
-var ICON_UP='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" '+
-  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
-  'aria-hidden="true"><path d="M12 19V6"/><path d="M6 12l6-6 6 6"/></svg>';
-var ICON_DOWN='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" '+
-  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
-  'aria-hidden="true"><path d="M12 5v13"/><path d="M6 12l6 6 6-6"/></svg>';
-/* Where a section sits in the article is the order of `arts` itself -- the
-   array has an order, and a second one kept beside it would be two answers
-   nobody could tell apart the day they disagreed. Moving one is swapping two
-   neighbours, so a run of presses reaches any order.
-   Nothing is created and nothing is destroyed: the same two objects come back
-   in the other order. */
-function wldArtMove(id, d){
-  var a=wldArts(), i, j, t2;
-  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) break;
-  if(i>=a.length) return;
-  j=i+d;
-  if(j<0 || j>=a.length) return;
-  t2=a[i]; a[i]=a[j]; a[j]=t2;
-  world().arts=a; saveWld(); render();
+/* ---- the overview is the person's own list now -------------------------
+   「メモじゃなくて概要に好きに追加したいこと並べればいいやん」 OWNER 2026-08-25.
+   Four fixed facts and one box called 「メモ」 was what this page had; what it
+   needed was rows somebody writes themselves -- a name and what it says --
+   as many as they want, in the order they want. That is what an infobox IS.
+
+   `k` may be empty. A row with no name is the paragraph an article opens
+   with, which is exactly what the note was, and is why the note can become
+   one of these without inventing a heading to put over it. */
+function wldOvs(){
+  var a=world().ovs;
+  return (Object.prototype.toString.call(a)==='[object Array]')? a : [];
 }
+function wldOvMint(){
+  var id='O'+(new Date()).getTime().toString(36), n=0, a=wldOvs(), i, hit=1;
+  while(hit){ hit=0; for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) hit=1;
+    if(hit){ n++; id='O'+(new Date()).getTime().toString(36)+n.toString(36); } }
+  return id;
+}
+function wldOvAdd(){
+  var a=wldOvs();
+  a.push({id:wldOvMint(), k:'', v:''});
+  world().ovs=a; saveWld(); render();
+}
+function wldOvSet(id, f, v){
+  var a=wldOvs(), i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id){ a[i][f]=String(v||''); saveWld(); return; }
+}
+/* DELETE REVIEW is in docs/CHANGELOG.md with this change. What goes is one
+   row of this list and nothing else: no other slice is touched, the four
+   fixed facts are not rows and cannot be reached from here, and `note` --
+   which a row may have been copied FROM -- is left where it is. */
+function wldOvDel(id){
+  var a=wldOvs(), i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id){ a.splice(i,1); break; }
+  world().ovs=a; saveWld(); render();
+}
+/* The note becomes the first of those rows, with no name over it, and the
+   note itself is NOT removed -- `wld.note` stays in the file exactly as it
+   was. A migration copies and never removes what it read (docs/DATA_SAFETY).
+   `ovnote` records that the copy has been made, so a person who then deletes
+   the row does not get it back on the next launch: putting it back would be
+   the app overruling somebody who had just said no. */
+function wldNoteMigrate(){
+  var w=world(), a;
+  if(!w.note || w.ovnote) return;
+  a=wldOvs();
+  a.unshift({id:wldOvMint(), k:'', v:String(w.note)});
+  w.ovs=a; w.ovnote=1; saveWld();
+}
+/* ---- moving a row by holding it -----------------------------------------
+   「四角に入れてそれ長押しで上下移動できるようにすればいいやん」 OWNER 2026-08-25.
+   Two arrows on every row were three buttons of furniture per row and the
+   owner could not read the list past them: 「矢印何それ？見づらいわ」.
+
+   The same gesture the alphabet already has (ltDragMount in www/letters.js):
+   hold, and the row comes up under the finger; the rest move aside as it
+   passes; the order is written ONCE, when the finger lifts, not on every
+   swap. A press that travels before the delay is a scroll and is left alone,
+   which is the only thing the delay is for.
+
+   It is mounted on the document rather than on the list, because the list is
+   rebuilt by every render and the call that would re-mount it lives in
+   render() itself -- www/glyph.js, which this session does not own. One
+   listener, added once, is also fewer than one per render.
+
+   A container says which list it is with data-wdrag; a row says which row it
+   is with data-wid. Nothing else here knows what a section or an overview
+   row is. */
+var WLDD=null;
+function wldDragBox(el){
+  while(el && el.getAttribute && !el.getAttribute('data-wid')) el=el.parentNode;
+  return (el && el.getAttribute && el.getAttribute('data-wid'))? el : null;
+}
+function wldDragDown(e){
+  var b=wldDragBox(e.target), p=e.touches? e.touches[0] : e;
+  if(!b || !p || !b.parentNode || !b.parentNode.getAttribute('data-wdrag')) return;
+  WLDD={el:b, g:b.parentNode, x:p.clientX, y:p.clientY, on:false, timer:0};
+  WLDD.timer=setTimeout(wldDragLift, 380);
+}
+function wldDragLift(){
+  if(!WLDD) return;
+  WLDD.on=true;
+  WLDD.el.className+=' lift';
+  WLDD.g.className+=' moving';
+}
+function wldDragMove(e){
+  var p=e.touches? e.touches[0] : e, kids, i, k, r;
+  if(!WLDD || !p) return;
+  if(!WLDD.on){
+    /* Travelled before it was held: it was a scroll. */
+    if(Math.abs(p.clientX-WLDD.x)>8 || Math.abs(p.clientY-WLDD.y)>8) wldDragOff();
+    return;
+  }
+  e.preventDefault();
+  kids=WLDD.g.childNodes;
+  for(i=0;i<kids.length;i++){
+    k=kids[i];
+    if(!k || k===WLDD.el || !k.getAttribute || !k.getAttribute('data-wid')) continue;
+    r=k.getBoundingClientRect();
+    if(p.clientY>r.top && p.clientY<r.bottom){
+      WLDD.g.insertBefore(WLDD.el, (p.clientY < r.top + r.height/2)? k : k.nextSibling);
+      return;
+    }
+  }
+}
+function wldDragUp(){
+  var g, kind, ids, kids, i;
+  if(!WLDD) return;
+  g=WLDD.g;
+  if(WLDD.on){
+    kind=g.getAttribute('data-wdrag');
+    ids=[]; kids=g.childNodes;
+    for(i=0;i<kids.length;i++)
+      if(kids[i] && kids[i].getAttribute && kids[i].getAttribute('data-wid'))
+        ids.push(kids[i].getAttribute('data-wid'));
+    wldOrderTo(kind, ids);
+  }
+  wldDragOff();
+}
+function wldDragOff(){
+  if(!WLDD) return;
+  clearTimeout(WLDD.timer);
+  if(WLDD.on){ render(); }
+  WLDD=null;
+}
+/* The list is put back in the order the rows ended up in. Nothing is created
+   and nothing is dropped: a row whose id is not in `ids` -- which cannot
+   happen, but the file is somebody's -- keeps its place at the end rather
+   than disappearing. */
+function wldOrderTo(kind, ids){
+  var a=(kind==='ovs')? wldOvs() : wldArts(), out=[], seen={}, i, j;
+  for(i=0;i<ids.length;i++)
+    for(j=0;j<a.length;j++)
+      if(a[j] && a[j].id===ids[i] && !seen[ids[i]]){ out.push(a[j]); seen[ids[i]]=1; }
+  for(j=0;j<a.length;j++) if(a[j] && !seen[a[j].id]) out.push(a[j]);
+  if(kind==='ovs') world().ovs=out; else world().arts=out;
+  saveWld();
+}
+document.addEventListener('touchstart', wldDragDown, false);
+document.addEventListener('touchmove', wldDragMove, {passive:false});
+document.addEventListener('touchend', wldDragUp, false);
+document.addEventListener('touchcancel', wldDragUp, false);
 /* ---- what sections this article has, in one place ---------------------
    Named by the owner, 2026-08-25: 「概要▼ 言語が構成する音▼ 文字▼ 文法▼
    キーボード▼」, and 「単語入れるけどメモはなんで入れんの？」 -- so the lexicon
@@ -1129,11 +1265,9 @@ function vAbout(){
      on any of them 「なんで編集画面じゃないのにトグルが出てくんの？」. What is
      left is the thing itself: a heading that folds, a way through on the ones
      whose chapter is elsewhere, and the content under it. */
-  var lead='';
-  /* The note is the rest of the lead: an article says what it is before it
-     starts dividing itself up, and that paragraph carries no heading. */
-  if(w.note) lead+='<div class="abtl abtlead">'+esc(w.note)+'</div>';
-  body+=lead;
+  /* There is no lead above the first heading any more: the note it was made
+     of is a row of the overview now, and drawing it in both places put the
+     same sentence on the page twice. */
   wldSecs().forEach(function(sec){
     var inner='', done, i;
     /* A section with neither a title nor a body is not drawn. It exists --
@@ -1150,6 +1284,17 @@ function vAbout(){
       if(w.who) inner+=abField(t('wld.who'), w.who);
       inner+=abField(t('ws.kind'), t('ws.k.'+wsys()));
       inner+=abField(t('dir.title'), t('dir.'+scriptDir()));
+      /* Until the note has been copied into a row of its own it is still
+         drawn from where it is, so nothing anybody wrote is invisible for
+         even one render. */
+      if(!w.ovnote && w.note) inner+='<div class="abfv">'+esc(w.note)+'</div>';
+      /* And the rows somebody wrote. A row with a name is a fact; a row with
+         none is a paragraph, which is what an article opens with. */
+      wldOvs().forEach(function(row){
+        if(!row || !(row.k || row.v)) return;
+        inner+=row.k? abField(row.k, row.v)
+                    : '<div class="abfv">'+esc(row.v)+'</div>';
+      });
       inner='<div class="abfx">'+inner+'</div>';
     } else if(sec.r==='sound'){
       /* The sounds the language is made of, in the rows a phonology has --

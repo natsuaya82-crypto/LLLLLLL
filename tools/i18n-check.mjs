@@ -390,7 +390,9 @@ const R = await pg.evaluate(() => {
   WLD = {use:'story', where:'a valley', who:'two families',
          note:'nobody outside the valley speaks it',
          arts:[{id:'A1', t:'The valley', b:'Two families have farmed it.'},
-               {id:'A2', t:'', b:''}]};
+               {id:'A2', t:'', b:''}],
+         ovs:[{id:'O1', k:'Older name', v:'Shangolu'},
+              {id:'O2', k:'', v:'It has no word for the sea.'}]};
 
   /* Ask the page which views exist rather than keeping a list here — a view
      added later is covered without anyone remembering to come back. vOb is
@@ -595,6 +597,7 @@ const R = await pg.evaluate(() => {
      so a field or a section added there is covered the day it is added. */
   ['where','who','note'].forEach(k => learn(world()[k] || ''));
   wldArts().forEach(a => { learn(a.t || ''); learn(a.b || ''); });
+  wldOvs().forEach(o => { learn(o.k || ''); learn(o.v || ''); });
   cands.forEach(c => { try { learnSeq(c.q); } catch (e) {} });
   UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });
   /* Where a sound is heard, which is words in other people's languages ON

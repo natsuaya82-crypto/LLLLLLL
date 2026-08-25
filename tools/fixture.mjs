@@ -124,7 +124,15 @@ export function seed(){
   WLD = {use:'story', where:'a valley', who:'two families',
          note:'nobody outside the valley speaks it',
          arts:[{id:'A1', t:'The valley', b:'Two families have farmed it for nine generations.'},
-               {id:'A2', t:'', b:''}]};
+               {id:'A2', t:'', b:''}],
+         /* Rows of the overview somebody wrote. Two, because the arrows that
+            move one only exist where there is somewhere to move it: a single
+            row draws neither, and the walk then reports wldOvMove as a name
+            no screen ever says, which is true and is not what it means.
+            The second has no name on purpose -- that is the shape the note
+            becomes, and it is drawn as a paragraph rather than as a fact. */
+         ovs:[{id:'O1', k:'Older name', v:'Shangolu'},
+              {id:'O2', k:'', v:'It has no word for the sea.'}]};
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};

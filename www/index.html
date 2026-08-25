@@ -1608,8 +1608,28 @@ a.set{text-decoration:none}
 .wsnm{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-height:44px;
       padding:15px 2px;background:none;border:0;text-align:left;font-family:inherit;
       font-size:.95rem;line-height:1.25;color:var(--tx)}
-.wsmv{flex:0 0 auto;width:44px;min-height:44px;display:flex;align-items:center;
-      justify-content:center;background:none;border:0;color:var(--txm)}
+.wsnm .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
+/* A row of the overview being written: its name over what it says, the way
+   the article shows them, with the two arrows and the way to take the row
+   out beside them. */
+/* A row of the overview is ONE box, and the corner on it is the owner's:
+   「四角に入れて… 線多すぎてクソ見づらいわ。角丸でもいいから」 OWNER 2026-08-25,
+   which is why `.ovrow` is on tools/box-baseline.txt in a commit of its own.
+   Inside it there are no underlines at all -- the box is what says where the
+   row begins and ends, and two fields under two small names is fewer lines
+   than four rules and three buttons. */
+.ovrow{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;
+       margin-top:10px;background:none}
+.ovtop{display:flex;align-items:center;gap:8px;width:100%}
+.ovlb{flex:1 1 auto;color:var(--txm);font-size:.78rem;line-height:1.4}
+.ovx{flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;
+     justify-content:center;background:none;border:0;color:var(--txm)}
+.ovf{width:100%;background:none;border:0;padding:2px 0 6px;color:var(--tx);
+     font-family:inherit;font-size:1rem;line-height:1.5}
+/* Held, and on its way somewhere. The list stops scrolling under the finger
+   while one is up -- the same two states the alphabet's grid has. */
+.ovrow.lift, .wsrow.lift{opacity:.9}
+.ovlist.moving, .wslist.moving{touch-action:none}
 /* The letters, in an article rather than in the alphabet: smaller, denser,
    and with neither the speaker nor the reading under them --
    「文字は音なくていいからもっと小さく並べて」. The corner on the tile itself
