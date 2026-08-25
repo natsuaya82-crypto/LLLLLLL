@@ -1600,6 +1600,16 @@ a.set{text-decoration:none}
    nothing about which section each belonged to. */
 .abdl{padding-left:20px}
 .abdl .sl{color:var(--txm)}
+/* A section's row: what it is called, and the two arrows that move it.
+   Three buttons side by side rather than one inside another. The row keeps
+   the hairline; the name button carries the row's height so a row with
+   arrows and a row without are the same one. */
+.wsrow{display:flex;align-items:center;width:100%;border-bottom:1px solid var(--line)}
+.wsnm{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-height:44px;
+      padding:15px 2px;background:none;border:0;text-align:left;font-family:inherit;
+      font-size:.95rem;line-height:1.25;color:var(--tx)}
+.wsmv{flex:0 0 auto;width:44px;min-height:44px;display:flex;align-items:center;
+      justify-content:center;background:none;border:0;color:var(--txm)}
 /* The letters, in an article rather than in the alphabet: smaller, denser,
    and with neither the speaker nor the reading under them --
    「文字は音なくていいからもっと小さく並べて」. The corner on the tile itself

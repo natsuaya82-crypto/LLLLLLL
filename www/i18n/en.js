@@ -251,6 +251,8 @@ defLang('en', (function(){
       'wld.dl.d'     : "Anyone who can open your language page can download your letters and words and use them in their own language.",
       'wld.hidden'            : "Private",
       'wld.secs'              : "Sections",
+      'wld.up'              : "Move up",
+      'wld.down'              : "Move down",
       'wld.overview'              : "Overview",
       'wld.art.untitled'              : "Untitled",
       'wld.art.t.ph'              : "Title",

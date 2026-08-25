@@ -264,6 +264,8 @@ defLang('ja', (function(){
       'wld.dl.d'     : "言語のページを開ける人が、あなたの文字や単語をダウンロードして自分の言語で使えるようになります。",
       'wld.hidden'            : "非公開",
       'wld.secs'              : "セクション",
+      'wld.up'              : "上へ",
+      'wld.down'              : "下へ",
       'wld.overview'              : "概要",
       'wld.art.untitled'              : "無題",
       'wld.art.t.ph'              : "題",

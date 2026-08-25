@@ -797,11 +797,23 @@ function vWorld(){
         '<span class="sv">'+ICON_GO+'</span></button>'+
       (sec.dl? wldSecRows(sec) : '');
   });
+  /* Each section, and the two arrows that put it where somebody wants it --
+     「セクションの移動できるようにして並べ替えで」 OWNER 2026-08-25. The name is
+     a button because pressing it opens what is written there; the arrows are
+     two more beside it, because a button cannot hold a button. The first row
+     has no up and the last no down: an arrow that does nothing is a button
+     that looks broken. */
   out+=secAdd(t('wld.secs'), DO('wldArtAdd'), t('wld.secs'))+
-    wldArts().map(function(one){
-      return '<button class="set"' + DO('go', ["wldart", one.id]) + '>'+
-        '<span class="sl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
-        '<span class="sv">'+ICON_GO+'</span></button>';
+    wldArts().map(function(one, i, all){
+      return '<div class="wsrow">'+
+        '<button class="wsnm"' + DO('go', ["wldart", one.id]) + '>'+
+          '<span class="sl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
+          '<span class="sv">'+ICON_GO+'</span></button>'+
+        (i>0? '<button class="wsmv"' + DO('wldArtMove', [one.id, -1]) + ' aria-label="'+
+          esc(t('wld.up'))+'">'+ICON_UP+'</button>' : '<span class="wsmv"></span>')+
+        (i<all.length-1? '<button class="wsmv"' + DO('wldArtMove', [one.id, 1]) + ' aria-label="'+
+          esc(t('wld.down'))+'">'+ICON_DOWN+'</button>' : '<span class="wsmv"></span>')+
+        '</div>';
     }).join('');
   return '<div class="view">'+navTop('')+'<div class="body">'+out+'</div></div>';
 }
@@ -950,6 +962,31 @@ function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
 var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
+/* Up and down, plain. ICON_INUP/ICON_INDN are the keyboard editor's and are
+   an arrow INTO A LINE -- they answer which side of a line a new row lands
+   on, which is inserting and not moving. These two move a thing that is
+   already there, so they are the arrow without the line. */
+var ICON_UP='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M12 19V6"/><path d="M6 12l6-6 6 6"/></svg>';
+var ICON_DOWN='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M12 5v13"/><path d="M6 12l6 6 6-6"/></svg>';
+/* Where a section sits in the article is the order of `arts` itself -- the
+   array has an order, and a second one kept beside it would be two answers
+   nobody could tell apart the day they disagreed. Moving one is swapping two
+   neighbours, so a run of presses reaches any order.
+   Nothing is created and nothing is destroyed: the same two objects come back
+   in the other order. */
+function wldArtMove(id, d){
+  var a=wldArts(), i, j, t2;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) break;
+  if(i>=a.length) return;
+  j=i+d;
+  if(j<0 || j>=a.length) return;
+  t2=a[i]; a[i]=a[j]; a[j]=t2;
+  world().arts=a; saveWld(); render();
+}
 /* ---- what sections this article has, in one place ---------------------
    Named by the owner, 2026-08-25: 「概要▼ 言語が構成する音▼ 文字▼ 文法▼
    キーボード▼」, and 「単語入れるけどメモはなんで入れんの？」 -- so the lexicon

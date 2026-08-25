@@ -213,6 +213,7 @@ act('setTheme', setTheme);
 act('setAuto', setAuto);
 act('setUi', setUi);
 act('wldArtAdd', wldArtAdd);
+act('wldArtMove', wldArtMove);
 act('setWldHide', setWldHide);
 act('setWldDl', setWldDl);
 /* the same two, asked of one section of the article rather than of the page */

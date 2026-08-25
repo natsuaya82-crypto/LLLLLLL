@@ -308,6 +308,8 @@ defLang('es', (function(){
       'wld.dl.d'     : "Quien pueda abrir la página de tu lengua podrá descargar tus letras y palabras y usarlas en la suya.",
       'wld.hidden'            : "Privada",
       'wld.secs'              : "Secciones",
+      'wld.up'              : "Subir",
+      'wld.down'              : "Bajar",
       'wld.overview'              : "Resumen",
       'wld.art.untitled'              : "Sin título",
       'wld.art.t.ph'              : "Título",
