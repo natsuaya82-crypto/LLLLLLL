@@ -52,7 +52,7 @@ Marked separately, because they are not the same question:
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
-| **write — letters brought in on a sheet** | planned | — | **Pro**: the whole road | slice `letters` | partial |
+| **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`); **the plan gate and the drawing are not** | — | **Pro**: the whole road, and the gate is NOT in the code yet | slice `letters`: `lt.sh` and `lt.via` **new** | partial |
 | Export CSV | shipped | — | `data` | none | decided |
 | Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
 | Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
@@ -385,6 +385,55 @@ The order is in `docs/FEATURE_RULES.md` § the order:
 ---
 
 ## write — letters brought in on a sheet
+
+**WHAT IS IN THE CODE, as of 2026-08-25.** `www/sheet.js` is chapter 26 and
+`tools/sheet-check.mjs` holds it (`npm run sheet`, thirteen claims, and seven
+bugs were put back and watched going red before any of them was believed). The
+file has a line across it, the same as `www/import.js`: above it is names in →
+PDF bytes out and a page of samples in → names and shapes out, knowing nothing
+about the app; below it are the three pages and the moment a drawing becomes a
+letter.
+
+Three pages, each `openForm()` and therefore a page you went to rather than a
+sheet that slid up: **the room** (under the letters chapter), **make**, where
+the names are typed and the PDF is built, and **read**, where a photograph or
+a scan is handed back and what came off it is listed a row per box. There is
+no picture of what was read on that page, deliberately — drawing an imported
+shape is `www/glyph.js`'s, one place.
+
+What it stores is two fields on a letter, and `docs/CHANGELOG.md` has the whole
+of it:
+
+    lt.sh    the picture as it came -- rings in the 800 square, y down, the
+             outer ring and a hole wound opposite ways
+    lt.via   'write'. ABSENT MEANS make, so no letter that exists today is
+             touched and there is no migration
+
+A letter has `sh` **or** `st` and never both. Taking a sheet in **adds**: a box
+called `7` becomes a new letter called `7` and does not land on the digit
+already in the alphabet — 「a,a,a は三枠」 — and the check holds that `a`, `7`
+and `2` are all still there afterwards.
+
+**Three things are NOT in, and none of them is a decision this session made:**
+
+- **The plan gate.** The road is Pro (OWNER DECISION 2026-08-23) and the gate
+  is one line — `write: 'pro'` in `CAN` — in `www/core.js`, which was not this
+  session's to change and which `claude/save` was editing the same day. The
+  door is therefore ungated in the code today. Deciding to gate it on some
+  other capability instead would have been this session deciding the free/paid
+  line, which is the owner's.
+- **The drawing.** Nothing renders `sh` yet, so an imported letter shows
+  **blank** — the data is there, the face is not. That is `www/glyph.js`, and
+  it is the other half of the seam above.
+- **The way out to the phone.** `shSheet()` builds the PDF and `shMake()` hands
+  it to `LinguaShare` under the method name `sheet`; there is no Swift behind
+  that name yet, so today it says the same thing `bkPush()` says — no bridge.
+  Nothing was built on iOS and no build was triggered.
+
+**Still not measured, and it is the same list the spike had:** a brush, and a
+pencil. The sheet that came back was written with a pen that gives a solid
+black edge. `tools/sheet-check.mjs` stands somebody's hand in with the app's
+own glyph contours, which is honest about what it is not.
 
 **OWNER DECISION 2026-08-23.** **Pro** only -- the top tier, which is the one
 `claude/save` is renaming from Plus as this is written. The app hands out a PDF,
