@@ -1756,8 +1756,34 @@ function postEdit(id){
      four screens away. That one is a ceiling arrived at halfway through
      typing a word, where moving somebody is taking the screen off them; this
      is a door pressed on purpose, where the plans screen is the answer to
-     what was just asked. The two are in the decision log side by side. */
-  if(!can('edit')){ go('plans'); return; }
+     what was just asked. The two are in the decision log side by side.
+
+     WHAT WAS WRONG WITH IT: it went. It did not ask, it did not say, it moved
+     somebody from the timeline to a price list with nothing in between.
+     「編集はplusプランからです。みたいなポップなしに課金画面飛ばされる」
+
+     Asked, the way this app already asks in the three other places a plan
+     stops somebody -- core.js:522 (a second language), core.js:703 (the
+     hundredth word), keyboard.js:349 (a fifth keyboard). All three are
+
+         if(confirm(<what the ceiling is> + '\n\n' + t('up.cta'))) go('plans');
+
+     and the pencil is now the fourth. The decision of 2026-08-25 is kept
+     whole: pressing it still goes to the plans screen. What changed is that
+     it goes when somebody says to.
+
+     THE SENTENCE IS MISSING AND IS NOT THIS SESSION'S TO WRITE. The other
+     three name their ceiling -- `langs.full`, `toast.cap`, `kb.full` -- and
+     there is no key that says what this one is. Inventing one would be an
+     app deciding its own wording about money, which CLAUDE.md § Explaining
+     and the narrowing of 2026-08-22 both put on the owner. So this asks with
+     `up.cta` alone, which is the word this app already uses for the way to
+     the plans screen, and the naming sentence goes in front of it the day
+     there is one to put there. */
+  if(!can('edit')){
+    if(confirm(t('up.cta'))) go('plans');
+    return;
+  }
   PW=pwBlank();
   PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
   openPost();
