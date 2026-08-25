@@ -348,8 +348,16 @@ function openMe(){
      borders are not added here. */
   openForm('me:', pageName('profile'),
     '<div class="sec">'+esc(t('me.pic'))+'</div>'+
-    '<div class="picrow"><span class="pav">'+
-      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+    /* The face is a label for the same input the button below it opens, so
+       the thing somebody actually reaches for is the thing that works. It
+       carries `for` rather than wrapping the input, because the input is
+       already inside .picpick and there is only one of it -- and .picpick
+       does not open the camera roll by being a label at all: the stylesheet
+       stretches the invisible input across it (`position:absolute;inset:0`),
+       so the tap lands on the input itself. Nothing here is styled, added or
+       taken away; a span became a label and kept its class. */
+    '<div class="picrow"><label class="pav" for="me-pic">'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</label>'+
       '<label class="btn ghost picpick">'+esc(t('me.pic.pick'))+
         '<input type="file" id="me-pic" accept="image/*"' + CH('meSetPic') + '></label>'+
     '</div>'+
