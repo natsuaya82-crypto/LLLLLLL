@@ -94,6 +94,9 @@ Marked separately, because they are not the same question:
 | Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
 | Following | shipped, **not device confirmed** | yes | — | `follow` rows, `ME.fo` | done — `netFollow`, and Follow is on a person's row in the search |
 | Quoting | **planned** | ? | ? | `quote` rows | **open** — the table exists in `schema.sql` and nothing reads it |
+| **DL — a language taken from the official assets** | **planned** — 0 lines; **OWNER DECISION**, 未実装 | no | `dl`: **Plus**「DLはplusから」 | a `LANGS` entry that is **not** `mine`, and its slices; **nothing of yours is touched** | decided — it is **not merged into your own language, it is a language you switch TO**; it **cannot be edited**「トキポナに文字足したらトキポナじゃないです」; the four parts (単語・文字・文法・キーボード) are unlocked and taken **separately**; it is taken from the language's overview page on Home 「そこでdlしてください」. `docs/FEATURE_RULES.md` 2026-08-25 |
+| How many DL'd languages a plan holds | **planned** | — | — | none yet | **open** — the owner wrote 「plusは自分の言語+DL言語1個 proは自分の言語3個+DL言語3個**は？**」 and it **ends in a question**. The Plus door is decided; these two numbers are not. Do not write them into `core.js` as settled |
+| Switching language by holding the profile | **planned** | — | — | none | **open** — 「プロフィールのとこ長押しで言語切り替えだって」 **conflicts** with the same day's decision that the list stays in Settings and is 「NOT moved onto the profile」. Both are 2026-08-25. Not resolved here |
 
 ### Notes on the open rows
 
@@ -273,6 +276,12 @@ A downloaded keyboard is edited as it stands — the download is the copy. What
 cannot be mixed is the alphabet: the letters that go on its keys are the
 downloader's own.
 
+**This section is 2026-08-19 and § 10 below is 2026-08-25. They are not the same
+thing and they do not agree.** This one is somebody taking somebody else's
+language; § 10 is the official assets. Three things differ — read § 10 before
+building either. What they agree on is the important half: a downloaded
+dictionary **is never merged into your own**, decided twice, six days apart.
+
 ### 5. Quoting — `quote`
 
 A word of somebody else's post taken into your own language. The table exists
@@ -355,6 +364,71 @@ nothing in the app could reach the server, and that reason is gone.
 ### 9. Push notifications
 
 Nothing exists. The notices tab is pulled when it is looked at.
+
+### 10. DL — the official assets, and a language you can only read
+
+**OWNER DECISION 2026-08-25, and nothing is built.** Zero lines. The decision is
+in `docs/FEATURE_RULES.md` with the owner's words unabridged; this is only the
+part that says what has to exist.
+
+What it is, in the owner's framing: 「例えばトキポナ使いたい人がすぐに使えるように
+するための公式アセットを準備するってイメージ」. Not a marketplace of other people's
+languages — that is § 4, and it is a different decision from a different week.
+
+Decided:
+
+- it is **Plus**「DLはplusから」 — `CAN.dl`, which is **not in `CAN` yet**
+- the thing you get **does not join your language. You switch to it.**
+- it **cannot be edited**, and the reason is not tidiness:
+  「トキポナに文字足したらトキポナじゃないです」
+- **単語 / 文字 / 文法 / キーボード** are four separate unlocks and four separate
+  downloads. Not one switch
+- taken from **the language's overview page on Home**, where public/private
+  already is 「dlは公開非公開があるから、ホームの言語の概要ページに作った」
+- **anybody may use an official asset — inside Lingua only**
+  「公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？」
+- **one account**, however many languages 「でもアカウントは一つだからね？」
+
+Open, and not to be guessed:
+
+- **how many** a plan holds. The owner's line ends in 「は？」
+- whether you can **write a post** in a language you downloaded
+- whether **一部だけ** DL した言語（例えば単語だけ）はその一部だけの言語として
+  一覧に並ぶのか
+- whether the official assets ship **inside the app** or come **from the server**.
+  This decides whether any of this can start today
+- 長押し vs. the Settings list — see the conflict in the decision log
+
+What is missing to build it, checked against the code rather than remembered:
+
+1. **`CAN.dl`.** Not there. It cannot be added alone: `dead-check` refuses a
+   capability nothing asks for, and the only place that would ask is a screen
+   this branch does not own. `docs/PAID_FEATURES.md` § Not built yet already
+   says the general form of this — 「a function nothing calls is a function
+   `dead-check` deletes」.
+2. **A language that is read-only.** There is no such state.
+   `docs/DATA_MODEL.md` § A language that is only read.
+3. **The server may not hand a slice to anybody but its owner.** This is the
+   real block and it is deliberate: `slice_read` in `supabase/schema.sql` is
+   `l.owner = auth.uid()` **even for a published language**, and the comment
+   above it says why — 「publishing is a copy somebody is given and not a door
+   into the phone」. Official assets are not somebody's phone, so they may not
+   need this loosened at all; **that is a question, not a gap to close.**
+4. **A long press.** There is a worked one — `kbDown`/`kbLift` in
+   `www/keyboard.js`, 380 ms, 「iPhoneのホーム画面と同じ挙動」. Copy it; do not
+   invent a second answer to what a hold is.
+
+What is **already there** and should not be rebuilt:
+
+- **a language and its slices already travel to the server and back.**
+  `netLangRow()` / `netSlices()` / `netSlicePut()` / `netLangSync()` in
+  `www/net.js`, called from `boot.js:68`. Whatever `docs/STATE.md` § 3 item 3
+  still says, this half is written.
+- **`bkPack()`** already turns a whole language into one file
+  (`www/backup.js`). An official asset is that shape.
+- **the language list already has the empty half DL fills.** `vLangs()` in
+  `www/home.js` draws 「自分の」 and 「読んでいる」, and the second one is
+  **always** the empty note, because nothing anywhere writes `mine:false`.
 
 **Not on this list and deliberately: the making side.** A language is made on
 this phone with or without an account, and that does not change.
