@@ -184,7 +184,38 @@ function pwSidePaint(){
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from){
-  /* Opened from the day's sentence, and that is the only argument this takes.
+  /* The + button, and what it opens is what its name says: a post. Not a
+     reply, and not an edit.
+
+     PW is where a half-written post lives, and it outlives the screen on
+     purpose -- going to look a word up must not throw away what was typed.
+     viewReset() does blank it, but viewReset() runs when the open LANGUAGE
+     changes and at no other moment, so between two visits to the composer
+     nothing clears PW at all. Start a reply, back out without sending, press
+     + an hour later: PW.to is still the post you were answering and the
+     composer opens as a reply to it.
+     「＋ボタンは毎回ふつうの投稿のはずなのに、返信が残っていることがある」
+
+     Only what made it not an ordinary post is dropped, and the two states are
+     not dropped the same way:
+
+       to   goes, the line STAYS. Somebody typed that line themselves and this
+            button is not a delete.
+       ed   takes the whole composer with it. The line there is not something
+            somebody typed for a new post -- postEdit() put the existing
+            post's own text into it -- so handing it to a new post would be
+            offering somebody their own post back as a draft of itself.
+
+     `ed` is the same fault as `to` and was not in what was reported; it is
+     fixed here because it is one line further down the same object and
+     leaving it would mean pressing + could still save over a post that
+     already exists. */
+  if(from==='new'){
+    if(PW.ed) PW=pwBlank();
+    else PW.to='';
+  }
+  /* Opened from the day's sentence, and that is the only OTHER argument this
+     takes.
      The meaning arrives already written and cannot be changed, which is the
      whole of what makes the day work: two hundred posts mean the same thing,
      so two hundred alphabets are readable at once. 「消せないようにしよう
@@ -577,6 +608,29 @@ function pwAddHTML(){
    already read. Only ones this phone has never seen are added, and then the
    list is put back in the order a timeline reads in, which is newest first
    and is postAll()'s to say. */
+/* And what this phone has DELETED, which is the other half of the same
+   question and was missing.
+
+   Deleting a post ends in render(); on the timeline render() is vFeed(), and
+   vFeed() calls snsPull() every time it runs. So the DELETE going up and the
+   GET coming down are in the air together, and the GET was sent against a
+   server that still had the row. postTake() then asked "have I got this one"
+   -- and the honest answer was no, because it had just been thrown away --
+   so it put it straight back. Pressing delete a second time worked because by
+   then the first DELETE had landed and the timeline no longer carried it.
+   「編集した投稿を消しても一回で消えない。二回押さないと消えない」
+
+   It only ever happened to a post that is ON the server: netDrop() returns
+   without asking anything when there is no `sid`, and a post the server has
+   never heard of cannot come back from it. A post you have edited is one you
+   posted, which is why that is the way to meet this.
+
+   In memory and not on disk, deliberately. This is here to outlive one pull,
+   not one install: if the DELETE really did fail, the post really is still on
+   the server, and it should come back at the next launch rather than being
+   hidden by a phone that remembers a delete the server never did. Nothing new
+   is stored and nothing has to be expired. */
+var POST_GONE={};
 function postTake(ps){
   var have={}, i, p, n=0;
   /* By BOTH names. A post this phone wrote has a local id and, once it has
@@ -590,6 +644,7 @@ function postTake(ps){
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
     if(!p || !p.id || have[p.id]) continue;
+    if(POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
     have[p.id]=1;
     POSTS.push(p);
     n++;
@@ -696,15 +751,50 @@ function postBadge(p){
    No buttons on it. It is what you are looking at, not something to act on;
    the four things a post can be given are on the post itself, in the
    timeline. */
+/* The conversation the reply is going into, and not only the post it answers.
+   「返信するとき、スレッドを開いてそのスレッドを見ながら返信できるように。
+   今は返信先が見えない」
+
+   It was the one post above, in a filled rounded panel. What that could not
+   show is the thing a reply is actually being written into -- a post two
+   answers deep says almost nothing on its own, and going to look at the
+   thread meant leaving the composer, which is where what had been typed was.
+
+   So the whole line up to it is here, oldest first, with the post being
+   answered last and therefore nearest the field. Same walk vThread() does --
+   postUps() -- and a taken-down ancestor is skipped for the same reason it is
+   skipped there: it is somebody else's line and the conversation does not
+   stand or fall with it.
+
+   It scrolls inside itself rather than pushing the field down the screen. The
+   cap is a third of the visible part, and it is `--vvmin` rather than `vh`
+   because with the phone's keyboard up `vh` is still the whole phone -- the
+   same reason the vertical field two rules down in index.html uses it. */
+function pwThreadHTML(to){
+  if(!to) return '';
+  var ups=postUps(to), out='', i;
+  for(i=0;i<ups.length;i++) if(!postGone(ups[i])) out+=pwToHTML(ups[i]);
+  return '<div class="pwqs">'+out+pwToHTML(to)+'</div>';
+}
 function pwToHTML(to){
   if(!to) return '';
   return '<div class="pwq">'+
     '<div class="pav">'+postFace(to)+'</div>'+
     '<div class="pbody">'+
+      /* The same two lines the timeline's head is folded into, and it has to
+         be said here too: `.phead` stopped being the flex row that held the
+         gap between these spans, so a head written the old way came out as
+         `IriVethi@iri` with the words run together. A quoted post has no time
+         on it and nothing to press, so the second line is only the language
+         and the handle. */
       '<div class="phead">'+
-        '<span class="pname">'+esc(postWho(to))+'</span>'+
-        (to.lname? '<span class="plangtag">'+esc(to.lname)+'</span>' : '')+
-        '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
+        '<div class="pheadn">'+
+          '<span class="pname">'+esc(postWho(to))+'</span>'+
+        '</div>'+
+        '<div class="pheadm">'+
+          (to.lname? '<span class="plangtag">'+esc(to.lname)+'</span>' : '')+
+          '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
+        '</div>'+
       '</div>'+
       (to.ln? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
       (postSay(to)? '<div class="pmn">'+esc(postSay(to))+'</div>' : '')+
@@ -717,7 +807,7 @@ function pwHTML(){
      account here, so every reply said you were replying to yourself. */
   return (to? '<div class="pwto">'+
       esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
-      pwToHTML(to) : '')+
+      pwThreadHTML(to) : '')+
     /* The face you are about to post under, which is the one this post will
        carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwscroll">'+
@@ -1701,8 +1791,34 @@ function postEdit(id){
      four screens away. That one is a ceiling arrived at halfway through
      typing a word, where moving somebody is taking the screen off them; this
      is a door pressed on purpose, where the plans screen is the answer to
-     what was just asked. The two are in the decision log side by side. */
-  if(!can('edit')){ go('plans'); return; }
+     what was just asked. The two are in the decision log side by side.
+
+     WHAT WAS WRONG WITH IT: it went. It did not ask, it did not say, it moved
+     somebody from the timeline to a price list with nothing in between.
+     「編集はplusプランからです。みたいなポップなしに課金画面飛ばされる」
+
+     Asked, the way this app already asks in the three other places a plan
+     stops somebody -- core.js:522 (a second language), core.js:703 (the
+     hundredth word), keyboard.js:349 (a fifth keyboard). All three are
+
+         if(confirm(<what the ceiling is> + '\n\n' + t('up.cta'))) go('plans');
+
+     and the pencil is now the fourth. The decision of 2026-08-25 is kept
+     whole: pressing it still goes to the plans screen. What changed is that
+     it goes when somebody says to.
+
+     THE SENTENCE IS MISSING AND IS NOT THIS SESSION'S TO WRITE. The other
+     three name their ceiling -- `langs.full`, `toast.cap`, `kb.full` -- and
+     there is no key that says what this one is. Inventing one would be an
+     app deciding its own wording about money, which CLAUDE.md § Explaining
+     and the narrowing of 2026-08-22 both put on the owner. So this asks with
+     `up.cta` alone, which is the word this app already uses for the way to
+     the plans screen, and the naming sentence goes in front of it the day
+     there is one to put there. */
+  if(!can('edit')){
+    if(confirm(t('up.cta'))) go('plans');
+    return;
+  }
   PW=pwBlank();
   PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
   openPost();
@@ -2054,52 +2170,80 @@ function postRow(p){
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
+      /* Two lines, not eleven things on one.
+         「名前 言語名 ユーザー名 日付 編集済み ↑これ全部一列に表示すると
+         なにも見えない」 This was ONE flex row carrying the name, the badge,
+         the language, the handle, a dot, the time, the lock, the unsent mark,
+         "edited", "taken down", the pin and the ... -- twelve things, on a
+         phone, in the width of a post. `.pname` has `text-overflow:ellipsis`,
+         so what actually happened is that the name -- the one thing on the
+         line somebody is looking for -- gave up its width first and came out
+         as two characters and a dot.
+
+         The fold is by what the thing IS, not by what fits. WHO wrote it, and
+         the ... that acts on it, are what the post is; they are line one and
+         the name has the whole width to itself. WHEN it was written and WHAT
+         STATE it is in are line two, quiet and small.
+
+         Nothing was added and nothing was taken away -- the same spans, in
+         the same order, folded once. No chips in a row and no corners: the
+         second line is text separated by spaces, which is what the rest of
+         this app does with a line of small facts. */
       '<div class="phead">'+
-        '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
-        (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
-        '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
-        '<span class="pdot">·</span>'+
-        '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
-        /* A post that was put right says so, beside the time. It carries the
-           moment it was edited, not a flag: what a person wants to know is
-           when, and a flag cannot be asked that later. */
-        (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
-        /* Yours, public, and not on the server yet. It was nothing at all:
-           netPush() was handed an empty failure function in both places that
-           call it, so a post the server refused looked exactly like one it
-           took, and the only way to find out was somebody's dashboard.
-           「spl流したのにまだ投稿載らんの？」
+        '<div class="pheadn">'+
+          '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
+          /* The ... and, when it is the one that is open, the menu hanging off
+             it. It is IN the post rather than a screen you go to, so what you
+             are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
+             横にメニュー出てきて欲しい」
 
-           `sid` is the server's name for this post and postSid() writes it,
-           so having none is the whole of the question. A post kept to
-           yourself never goes anywhere and is not waiting for anything. */
-        ((p.mine && !p.pv && !p.sid)
-          ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
-          : '')+
-        (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
-        /* Taken down. Only its author is ever handed one of these -- post_read
-           in schema.sql -- so it is for them, and it belongs up here beside
-           the lock and "edited": a word for what state the post is in.
+             On every post, not only your own. It was yours only, which meant
+             the one post you might need to do something about -- somebody
+             else's -- was the one with nothing on it.
 
-           Two goes at this were wrong. It said "hidden", on a post the person
-           reading it can SEE, which is a word contradicting the screen it is
-           written on. Then it said WHO did it, in a line of its own under the
-           head -- which is the app explaining itself, and is the notice's job
-           rather than this one's. 「アプリ内に説明書くの禁止」 */
-        (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
-        (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
-        /* The ... and, when it is the one that is open, the menu hanging off
-           it. It is IN the post rather than a screen you go to, so what you
-           are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
-           横にメニュー出てきて欲しい」 */
-        /* On every post, not only your own. It was yours only, which meant
-           the one post you might need to do something about -- somebody
-           else's -- was the one with nothing on it. */
-        '<span class="pmw">'+
-          '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
-            esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
-          (PMENU===p.id? postMenuHTML(p) : '')+
-          '</span>'+
+             It is on the first line because it acts on the post rather than
+             describing it, and because a 44pt target has to sit on the line
+             that is 44pt tall. */
+          '<span class="pmw">'+
+            '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
+              esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+            (PMENU===p.id? postMenuHTML(p) : '')+
+            '</span>'+
+        '</div>'+
+        '<div class="pheadm">'+
+          (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
+          '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
+          '<span class="pdot">·</span>'+
+          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+          /* A post that was put right says so, beside the time. It carries the
+             moment it was edited, not a flag: what a person wants to know is
+             when, and a flag cannot be asked that later. */
+          (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
+          /* Yours, public, and not on the server yet. It was nothing at all:
+             netPush() was handed an empty failure function in both places that
+             call it, so a post the server refused looked exactly like one it
+             took, and the only way to find out was somebody's dashboard.
+             「spl流したのにまだ投稿載らんの？」
+
+             `sid` is the server's name for this post and postSid() writes it,
+             so having none is the whole of the question. A post kept to
+             yourself never goes anywhere and is not waiting for anything. */
+          ((p.mine && !p.pv && !p.sid)
+            ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
+            : '')+
+          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
+          /* Taken down. Only its author is ever handed one of these -- post_read
+             in schema.sql -- so it is for them, and it belongs up here beside
+             the lock and "edited": a word for what state the post is in.
+
+             Two goes at this were wrong. It said "hidden", on a post the person
+             reading it can SEE, which is a word contradicting the screen it is
+             written on. Then it said WHO did it, in a line of its own under the
+             head -- which is the app explaining itself, and is the notice's job
+             rather than this one's. 「アプリ内に説明書くの禁止」 */
+          (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
+          (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
+        '</div>'+
       '</div>'+
       /* Who this answers, under the head and above the line. It is here
          rather than only on the thread page because the timeline keeps
@@ -2334,6 +2478,16 @@ function postDel(id){
   PMENU='';
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
     gone=POSTS[i]; vo=gone.vo; to=gone.to||''; POSTS.splice(i, 1); break;
+  }
+  /* Under both names, for the reason postTake() gives about `have`: this
+     phone knows it as the id it wrote, and the timeline hands it back wearing
+     the server's. netRow() sets p.id and p.sid to the same server id, so the
+     first of these is what actually catches it -- the second is there because
+     the day a row arrives under one name and not the other, this still
+     holds. */
+  if(gone){
+    POST_GONE[id]=1;
+    if(gone.sid) POST_GONE[gone.sid]=1;
   }
   /* A reply counted one on the post it answered, and deleting it never took
      that one back -- so a post somebody replied to and then deleted the reply

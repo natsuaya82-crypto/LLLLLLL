@@ -232,6 +232,37 @@ function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
 }
+/* Which day this sentence is FOR, drawn. 「日付ないし」
+
+   `on_day` has been on the row since the column existed and no screen has
+   ever shown it, so a sentence written on the 23rd and a sentence written
+   this morning looked exactly alike -- under a label that says "Today" in
+   both cases. netDay() asks for the newest row rather than today's, and says
+   so on purpose: the app does not work out what day it is in California,
+   because that is a timezone rule and a second copy of one is a second one to
+   get wrong. That decision is kept. What it needs to be honest is the date
+   ON the screen, and that is this.
+
+   UTC, and not the phone's midnight: `on_day` is a date and not a moment, so
+   `new Date('2026-08-25')` is UTC midnight and a phone west of Greenwich
+   would draw it as the 24th. tools/../www/numbers.js:350 has the same line
+   for the same reason.
+
+   The year is left off when it is this year, which is what postWhen() does
+   four screens away. */
+function dayWhen(){
+  var s=(DAY && DAY.on_day)? String(DAY.on_day) : '', d, now;
+  if(!s) return '';
+  d=new Date(s.length>10? s : s+'T00:00:00Z');
+  if(isNaN(d.getTime())) return '';
+  now=new Date();
+  try{
+    return d.toLocaleDateString(uiLang(),
+      (d.getUTCFullYear()===now.getFullYear())
+        ? {month:'short', day:'numeric', timeZone:'UTC'}
+        : {year:'numeric', month:'short', day:'numeric', timeZone:'UTC'});
+  }catch(e){ return s; }
+}
 /* One row, and the face fills both of its lines: the day's sentence over
    what you are being asked to do with it. 「アイコンは2列分うめて その横から
    お題と自分の言語で入れるのは？」
@@ -262,13 +293,23 @@ function dayRow(){
     '<span class="dayrb">'+
       '<span class="dayline">'+
         '<span class="dayk">'+esc(t('day.k'))+'</span>'+esc(say)+'</span>'+
-      '<span class="wrt">'+esc(t('day.ask'))+'</span>'+
+      /* The date goes on the SECOND line and not beside the label, because
+         `.dayline` is one line with an ellipsis on it -- anything put in
+         front of the sentence is taken off the end of the sentence, and the
+         sentence is what the row is for. */
+      '<span class="wrt">'+esc(t('day.ask'))+
+        (dayWhen()? '<span class="dayd">'+esc(dayWhen())+'</span>' : '')+
+        '</span>'+
     '</span>'+
   '</button>';
 }
-function snsFab(from){
+/* `from` was a parameter nobody ever passed -- both callers say `snsFab()` --
+   so the argument this button carried was always none, and openPost() was
+   asked for "whatever PW happens to hold". It says 'new' now, which is the
+   one thing this button has ever meant. */
+function snsFab(){
   if(!netSignedIn() || NET_BANNED) return '';
-  return '<button class="fab"' + DO('openPost', from? [from] : []) +
+  return '<button class="fab"' + DO('openPost', ["new"]) +
     ' aria-label="'+esc(t('post.new'))+'">'+ICON_ADD2+'</button>';
 }
 /* ---- one conversation --------------------------------------------------
@@ -345,8 +386,14 @@ function vPhoto(){
    on the contents page, because it searches what is on that page.
    「snsの探すと横断検索は別物ね」
 
-   One field, and `@` is the switch: a query starting with it is looking for a
-   person and anything else is looking for a post. 「@でユーザー検索」
+   One field. `@` was the switch -- a query starting with it looked for a
+   person and anything else looked for a post 「@でユーザー検索」 -- and it is
+   not any more: `snsMode` is, and it starts on people and goes back to people
+   the moment anybody types 「それまでは人」. This paragraph went on saying the
+   old thing after the switch moved, which is how the `@` came to be typed
+   straight through to the server as part of the handle being looked for.
+   What `@` means now is only what it looks like: it is dropped off the front
+   of a name, because that is where people put it.
 
    SNS_SEAM. A search is a QUESTION ASKED OF SOMEWHERE ELSE, and it is built
    as one: snsFind(q, done) hands back an answer through a callback, the way
@@ -417,7 +464,22 @@ function snsFind(q, done){
     netFindPosts(q, function(ps){ done({q:q, who:[], posts:ps}); }, no);
     return;
   }
-  netFindWho(q, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
+  /* A handle is stored WITHOUT its @ -- netRow() and the head of a post both
+     draw it as '@'+hd -- so `@aya` typed into this field asked the server for
+     a handle CONTAINING the character `@`, and no handle contains one.
+     netLike() wraps it as *%40aya* and the answer was always nobody.
+     「検索で @ を打っても誰も出てこない」
+
+     Only off the front, and only for a person: `@` in the middle of a name is
+     a character somebody typed, and a search over posts is a search over text
+     where `@` means itself.
+
+     `q` on the ANSWER stays as it was typed. snsGot() throws away a late
+     answer by comparing it with what is in the field, and the field has the
+     @ in it. */
+  var name=q.replace(/^@+/, '');
+  if(!name){ done({q:q, who:[], posts:[]}); return; }
+  netFindWho(name, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */
