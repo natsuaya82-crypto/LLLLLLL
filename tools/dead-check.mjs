@@ -150,11 +150,20 @@ function bare(s){
   return out;
 }
 
-const jsIn = (dir) => fs.readdirSync(dir)
-  .filter(f => f.endsWith('.js') && !f.startsWith('_'))
-  .map(f => path.join(dir, f));
+/* Every .js under a directory, however deep. It read the top level only, and
+   `i18n` was added below by name -- so the day a chapter arrived in a folder of
+   its own (www/grammar-engine/), this check simply stopped being about it. A
+   made-up call put in one of those files exits 0; the same call in
+   www/notes.js exits 1. A list of directories rots the same way, so it walks
+   instead of naming. */
+const jsIn = (dir, skip) => fs.readdirSync(dir, { withFileTypes: true })
+  .flatMap(e => e.isDirectory()
+    ? ((skip || []).includes(e.name) ? [] : jsIn(path.join(dir, e.name), skip))
+    : (e.name.endsWith('.js') && !e.name.startsWith('_') ? [path.join(dir, e.name)] : []));
 
-const appFiles = jsIn(WWW);
+/* i18n is a mention, not a declaration: those files are ten tables of strings
+   and nothing is written in them. */
+const appFiles = jsIn(WWW, ['i18n']);
 /* Everywhere a mention counts from: the app itself, the page that loads it,
    the ten languages, and every tool. */
 const mentionFiles = appFiles
