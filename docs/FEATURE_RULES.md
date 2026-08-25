@@ -251,6 +251,54 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-25
+- Area: A plan changes what happens when you press, not what you can see
+- Decision:
+
+  「普通に例えばキーボードを plus で5個以上追加しようとしたら pro の案内が
+   出るみたいにさ、そのプランでできることできないことで UI 自体に変更が
+   ない方が良くない？」
+
+  **The screen is the same on every plan.** A ceiling and a closed door both
+  show up at the moment somebody PRESSES, as a way to the plans screen — never
+  as a button that is not there.
+
+  This goes one step further than the decision recorded a few hours earlier
+  the same day (「無料で使えないやつは表示させていいよ。課金させる動線を
+  減らしたくない」), which was about closed doors. This is about ceilings too,
+  and it says the same thing about both.
+
+  **`capStop()` already IS this shape, and is the worked example.** The word
+  ceiling asks with iOS's own `confirm()` — the sentence and the upgrade word,
+  both already in ten languages — and goes to the plans screen on yes, and
+  leaves you exactly where you were on no. It used to `go('plans')` outright
+  and that was taken out for the right reason: it took the screen away from
+  somebody halfway through typing a word. So the answer to the question
+  `claude/plans` asked in ffd6022 is **no change is needed there**.
+
+  **The first thing that is NOT this shape is `kb.full`.** Today
+  `www/keyboard.js` says `toast(t('kb.full', KB_MAX))` and stops — a sentence
+  with no way to the thing it is about. It becomes `capStop()`'s shape.
+
+- Reason: the owner's, in one line — 「課金させる動線を減らしたくない」. You
+  cannot buy what you cannot see, and a button that quietly is not there tells
+  nobody anything.
+
+  **What this does NOT touch, and the distinction is the whole of it.**
+  `CLAUDE.md`'s money paragraph says a failed check means **fewer buttons,
+  never fewer words**. The BUTTON half is what this decision turns over: there
+  are no fewer buttons now either. The WORD half does not move by one
+  character — a plan that lapses hides nothing anybody made, deletes nothing,
+  and takes nothing out of a backup. `wordsSeen()` and the `letters` slice are
+  untouched. That sentence in `CLAUDE.md` needs rewording to match, and
+  rewording the head of that file is not a session's to do alone.
+- Affected features: every screen that draws something a plan closes.
+  Named today: `kb.full` (`www/keyboard.js`), `postEdit()` (`www/post.js`),
+  the door to a second language (`www/home.js`), and the write road
+  (`www/sheet.js`) once `CAN.write` exists.
+- Affected data: none.
+
+### Decision
+- Date: 2026-08-25
 - Area: Making a second language — where the door is, and what it does
 - Decision:
 
