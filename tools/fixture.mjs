@@ -1344,6 +1344,24 @@ export function halfDone(){
     ['a post as a card',       () => { cardOpen('p', 'p1'); return FORM.html; }],
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
-    ['a rule for making a form', () => { openFmr('fr1'); return FORM.html; }]
+    ['a rule for making a form', () => { openFmr('fr1'); return FORM.html; }],
+    /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no
+       buttons: the room, the names being typed, the one control before a file
+       has been handed over, and what came off one afterwards.
+
+       The last is built from a made-up reading rather than from a photograph
+       -- tools/sheet-check.mjs puts a real page through the real reader, and
+       what these two walks are for is the SCREEN. A row that says `empty` and
+       a row that says `drawn` are two different rows, so both are here, and
+       the button at the foot only exists while something was drawn. */
+    ['the sheet',              () => { SH = shBlank(); openWrite(); return FORM.html; }],
+    ['a sheet being made',     () => { SH = shBlank(); SH.names = 'a, ka, 7';
+                                       openWrOut();
+                                       const h = FORM.html; SH = shBlank(); return h; }],
+    ['a sheet to read back',   () => { SH = shBlank(); openWrIn(); return FORM.html; }],
+    ['a sheet that came back', () => { SH = shBlank(); SH.from = 'sheet.jpg';
+        SH.got = [{nm:'ka', sh:[[[100,100],[700,100],[700,700],[100,700]]]},
+                  {nm:'7',  sh:[]}];
+        openWrIn(); const h = FORM.html; SH = shBlank(); return h; }]
   ];
 }

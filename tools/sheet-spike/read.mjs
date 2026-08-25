@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { chromium, LAUNCH } from '/home/user/LLLLLLL/tools/browser.mjs';
 
-const SRC = fs.readFileSync(new URL('./sheet.js', import.meta.url), 'utf8');
+const SRC = fs.readFileSync(new URL('../../www/sheet.js', import.meta.url), 'utf8');
 const file = process.argv[2];
 const out  = process.argv[3] || '/tmp/sheet-read.png';
 if (!file){ console.error('使い方: node tools/sheet-spike/read.mjs <画像 or PDF> [出力.png]'); process.exit(1); }

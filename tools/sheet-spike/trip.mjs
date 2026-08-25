@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { chromium, LAUNCH } from '/home/user/LLLLLLL/tools/browser.mjs';
-const SRC = fs.readFileSync(new URL('./sheet.js', import.meta.url),'utf8');
+const SRC = fs.readFileSync(new URL('../../www/sheet.js', import.meta.url),'utf8');
 const NAMES = ['7','2','25','人','愛','a','a','a','mountain','水','火','木','金','土','日','月','ka','yo','!','?'];
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{width:400,height:300} });
@@ -136,7 +136,7 @@ const out = await pg.evaluate(({src, names, DPI})=>{
     var r=shoot(a[0],a[1],a[2],a[3]); r.how=a[4]; r.deg=a[0]; res.push(r);
   });
   return {res:res, pw:PW, ph:PH, cell:Math.round(SH_CELL*S), mark:Math.round(SH_MARK*S),
-          sane:shSane(), dots:(function(){
+          sane:(SH_LABEL + SH_LABEL_UP < SH_GAPY) && (shCellAt(0,0)[1] + SH_CELL < shBoxAt(shPerPage()-1).y), dots:(function(){
             /* 点がインクとして拾われていないか。字を一つも描いていない枠から
                出てくるものは、掃除のあとゼロでなければならない */
             var r=shoot(4,0.03,1.5,20);

@@ -28,7 +28,8 @@
     "base": "node tools/base-check.mjs",
     "word": "node tools/word-check.mjs",
     "plan": "node tools/plan-check.mjs",
-    "kb": "node tools/kb-check.mjs"
+    "kb": "node tools/kb-check.mjs",
+    "sheet": "node tools/sheet-check.mjs"
   },
   "keywords": [],
   "author": "",

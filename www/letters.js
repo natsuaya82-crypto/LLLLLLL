@@ -374,6 +374,15 @@ function ltNew(o){
             a shape gets the app's guess as soon as it is named. */
          chose:(o && o.snd && o.snd.length)? 1 : 0};
   if(o && typeof o.val==='number') l.val=o.val;
+  /* A letter brought in on a sheet (www/sheet.js, chapter 26). `sh` is the
+     picture as it came -- rings in the 800 square, outer and hole wound
+     opposite ways -- and a letter has `sh` or `st` and never both. `via`
+     says how it got here: 'write' is the sheet, and ABSENT IS make, which is
+     why not one letter that exists today is touched and there is no
+     migration. It is put on at the moment the letter arrives and is never
+     worked out again from the shape afterwards. */
+  if(o && o.sh && o.sh.length) l.sh=o.sh;
+  if(o && o.via) l.via=String(o.via);
   LETTERS.push(l); saveLetters();
   return l;
 }

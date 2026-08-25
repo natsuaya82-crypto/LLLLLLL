@@ -3,7 +3,7 @@
 import fs from 'fs';
 import { seed } from '/home/user/LLLLLLL/tools/fixture.mjs';
 import { chromium, LAUNCH } from '/home/user/LLLLLLL/tools/browser.mjs';
-const SRC = fs.readFileSync(new URL('./sheet.js', import.meta.url),'utf8');
+const SRC = fs.readFileSync(new URL('../../www/sheet.js', import.meta.url),'utf8');
 const OUT = process.argv[2] || '/tmp/sheet-fake.png';
 const DEG = Number(process.argv[3] || 6);
 const NAMES = ['7','2','25','人','愛','a','a','a','mountain','水','火','木','金','土','日','月','ka','yo','!','?'];
@@ -52,7 +52,12 @@ await pg.evaluate(({src, names, s, DPI, deg})=>{
     var L=LinguaFont.glyphContours({strokes:sts}, GPEN);
     g.fillStyle='#000'; g.beginPath();
     L.forEach(function(ct){ ct.forEach(function(p,k2){
-      var ux=(b2.x+p[0]/800*SH_BOX)*S, uy=Y(b2.y+SH_BOX-p[1]/800*SH_BOX);
+      /* shBoxInk's row 0 sits at b.y + side, so the box's TOP is the far edge
+         of the page from the reader's origin and a glyph's y=800 belongs
+         there. This said SH_BOX - p[1] and drew every letter upside down --
+         which nothing here noticed, because what this file is measured on is
+         how many pixels came back and whether the names read. */
+      var ux=(b2.x+p[0]/800*SH_BOX)*S, uy=Y(b2.y+p[1]/800*SH_BOX);
       if(k2===0) g.moveTo(ux,uy); else g.lineTo(ux,uy); }); g.closePath(); });
     g.fill('nonzero');
   }
