@@ -1365,23 +1365,28 @@ function wldPage(ed){
     } else if(sec.r==='kb'){
       /* The keyboard this person actually BUILT, drawn small --
          「キーボードもちゃんとその人が作ってるモックの画像出すように」
-         「無料キーボードはなしでいいよ。作ったキーボードのみ表示」 OWNER 2026-08-25.
+         OWNER 2026-08-25, and the free QWERTY is one of them --
+         「無料出しといていいよやっぱり」. It was left out for one round on
+         「無料キーボードはなしでいいよ」 and that is the sentence this replaces:
+         what somebody types with is their keyboard whether they arranged it
+         or the app did, and it is wearing the letters they drew either way.
 
-         `kbOf()` was the wrong question by one step: it answers with the free
-         QWERTY when there is nothing built, which is correct for what somebody
-         TYPES with and is not something they made. Board 0 IS that QWERTY, so
-         a language with nothing built drew the same picture as every other
-         one -- the alphabet somebody drew, arranged by the app, presented as
-         their keyboard. Asked of the APPLIED board and only drawn when it is
-         not board 0.
+         `kbOf()` is the APPLIED board and answers with the free QWERTY when
+         there is nothing built -- 「何も設定してないならqwartyの作ったやつ
+         引き継いで」 -- so it is the one question here, not two.
+
+         With its NAME, because a keyboard has one --
+         「キーボード1,2,3って名前変えれる機能あるからそのまま入れれるように」.
+         `kbName()` gives what somebody called it and 「キーボード1」 when they
+         have not.
 
          `kbShotHTML` is the keyboard's own -- the real keys wearing the real
          letters rather than a diagram of them, which is what it was written
          for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
          pressable, here or where it came from. */
       kbs=kbBoards(); kbat=kbApplied(kbs.length);
-      if(kbs.length && !kbIsFree(kbat))
-        inner+='<div class="abkb">'+kbShotHTML(kbs[kbat].lay)+'</div>';
+      inner+='<div class="abtl abtline">'+esc(kbName(kbat))+'</div>'+
+        '<div class="abkb">'+kbShotHTML(kbOf().lay)+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
