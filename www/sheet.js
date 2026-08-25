@@ -820,9 +820,43 @@ function shNames(s){
 function shPages(n){ return Math.max(1, Math.ceil(n / shPerPage())); }
 
 /* ---- the room ---------------------------------------------------------- */
-function openWrite(){
-  openForm('write:', t('wr.title'), shRoomHTML());
+/* All three pages of this chapter carry the same `?`, because there is one
+   thing to know and it is the ORDER -- type, save, print and write, scan and
+   install. A person who does not know it is as lost on the reading page as on
+   the writing one. 「説明は嫌いだけどわからないと困るから？ボタンは右上に
+   追加して」 OWNER 2026-08-25.
+
+   It is behind the mark and NOT on the screen: 「アプリ内に説明書くの禁止」,
+   and the `?` in the bar is where a genuinely needed explanation goes -- which
+   is what the `?` is for. www/home.js's HELP is the one mechanism and this
+   registers with it rather than growing a second one.
+
+   HELP is www/home.js's and may not be there at all: tools/sheet-spike/*.mjs
+   eval this file with no app around it, and a bare `HELP.wr =` at the top
+   level would take the spike down with a ReferenceError. Same guard as
+   FORM_OPEN at the foot of this file, and for the same reason. */
+if(typeof HELP !== 'undefined'){
+  HELP.wr = function(){
+    return {t:t('wr.help'), h:
+      shStep(1, t('wr.s1'), t('wr.s1.d'))+
+      shStep(2, t('wr.s2'), t('wr.s2.d'))+
+      shStep(3, t('wr.s3'), t('wr.s3.d'))+
+      shStep(4, t('wr.s4'), t('wr.s4.d'))};
+  };
 }
+/* One step: its number, what is done, and the one line that says how. The
+   number is written here rather than into the string, so no translation can
+   put the steps out of order or lose one. */
+function shStep(n, title, body){
+  return '<div class="sec">'+n+'. '+esc(title)+'</div>'+
+    '<div class="note">'+esc(body)+'</div>';
+}
+function openWrite(){
+  openForm('write:', t('wr.title'), shRoomHTML(), null, shQ());
+}
+/* The mark, or nothing at all when this file is being run without the app
+   around it. helpQ() is www/home.js's. */
+function shQ(){ return (typeof helpQ === 'function') ? helpQ('wr') : ''; }
 function shRoomHTML(){
   return '<div class="toc">'+
     '<button class="trow"' + DO('openWrOut') + '>'+
@@ -836,7 +870,7 @@ function shRoomHTML(){
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
-  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw);
+  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw, shQ());
 }
 /* The count under the field is a count. It says how many boxes twenty names
    make and how many sheets that is, which is the one thing a person cannot
@@ -1064,7 +1098,7 @@ function shFileName(){
 
 /* ---- reading one back -------------------------------------------------- */
 function openWrIn(){
-  openForm('wrin:', t('wr.read'), shInHTML(), shInMount);
+  openForm('wrin:', t('wr.read'), shInHTML(), shInMount, shQ());
 }
 /* Before a file: the one control. After one: what came off it, a row per box.
    No picture of what was read, and that is on purpose rather than missing --
