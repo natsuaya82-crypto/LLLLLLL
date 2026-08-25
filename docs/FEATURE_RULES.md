@@ -251,6 +251,64 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-25
+- Area: The sheet takes a PDF and nothing else, for now
+- Decision:
+
+  「一旦写真禁止で、普通に pdf で提出以外受け取らないで行こう。
+   今後のアプデで追加しよ」
+
+  **The read side accepts a PDF only.** A photograph — jpg, png, a picture
+  taken with the phone — is turned away, and the sentence says so. Photographs
+  come back in a later update; nothing about them is deleted, only shut.
+
+  `www/sheet.js` reads both today: `shPdfJpeg()` takes the page out of a PDF
+  and the reader will equally take a plain image. What changes is which files
+  are offered and accepted, not the reader underneath it.
+
+- Reason: the owner's, and it is a shipping decision rather than a technical
+  one. What was never measured is exactly the photograph case — a brush and a
+  hard pencil, on paper, under a real camera — and 「紙が本当に精度高く
+  できんのか」 was the question this whole road started from. A scan or a
+  print-to-PDF has no camera in it: no lighting gradient, no perspective, no
+  focus. So the half that is proven ships and the half that is not waits.
+- Affected features: `www/sheet.js` — the read page, what the file chooser
+  offers, and one sentence for a file that is not a PDF. `shPdfWhy()` already
+  answers `photo` / `packed` / `drawn` / `not-pdf`, so the sentence has
+  somewhere to come from.
+- Affected data: none.
+
+### Decision
+- Date: 2026-08-25
+- Area: Shipaton 2026 — the app ships to the App Store by 30 September
+- Decision:
+
+  「shipaton だそう。9／30 までには出したい」
+
+  Lingua enters RevenueCat's Shipaton 2026 and the **first public version is
+  on the App Store before 2026-09-30 23:45 Pacific**.
+
+  The two rules that decide eligibility, read off the rules page rather than
+  remembered: the app's first public version must go live between 1 August and
+  30 September 2026 (an app already live anywhere before that window does not
+  qualify), and it must use the RevenueCat SDK for at least one in-app
+  purchase. **Lingua has never been publicly live** — TestFlight only, and
+  build 86 was refused by Apple — so it clears the harder of the two.
+
+- Reason: the money side is designed, priced and coded already, which is what
+  most entrants have to build. What is actually on the critical path is not
+  code: it is `docs/STATE.md` § 7 items 16, 16a–16d and 17, every one of them
+  a console the owner alone can open, and **16a blocks all building**. After
+  those comes an App Store review, which takes days and can fail — build 86
+  already did (`ITMS-90158`).
+- Affected features: `ios/App/App/LinguaStore.swift` gains RevenueCat in place
+  of talking to StoreKit directly. The four product ids do not move.
+  `tools/plan-check.mjs` holds twenty-odd claims about the current shape and
+  will need re-pointing, not rewriting: **money decides what may be DONE and
+  nothing about what exists** stays true through the swap or the swap is wrong.
+- Affected data: none. A subscription is not a slice.
+
+### Decision
+- Date: 2026-08-25
 - Area: A plan changes what happens when you press, not what you can see
 - Decision:
 
