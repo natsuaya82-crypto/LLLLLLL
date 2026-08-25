@@ -1158,6 +1158,7 @@ defLang('ko', (function(){
       'post.vo.busy'          : "녹음 중입니다",
       'post.vo.lost'          : "목소리를 저장하지 못했습니다",
       'post.edit'             : "편집",
+      'post.editplan'         : "글 편집은 Plus 플랜부터입니다",
       'post.save'             : "저장",
       'post.edited'           : "편집됨",
       'post.pv'               : "나만 보기",

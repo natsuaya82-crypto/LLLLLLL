@@ -988,6 +988,7 @@ defLang('zh', (function(){
       'post.vo.busy'          : "正在录音",
       'post.vo.lost'          : "声音没能保存",
       'post.edit'             : "编辑",
+      'post.editplan'         : "编辑动态是 Plus 方案的功能",
       'post.save'             : "保存",
       'post.edited'           : "已编辑",
       'post.pv'               : "仅自己",

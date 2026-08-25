@@ -899,6 +899,7 @@ defLang('ja', (function(){
       'post.vo.busy'          : "録音中です",
       'post.vo.lost'          : "声は保存できませんでした",
       'post.edit'             : "編集",
+      'post.editplan'         : "投稿の編集はPlusプランからです",
       'post.save'             : "保存",
       'post.edited'           : "編集済み",
       'post.pv'               : "自分だけ",
