@@ -972,6 +972,7 @@ defLang('de', (function(){
       'post.vo.busy'          : "Nimmt noch auf",
       'post.vo.lost'          : "Die Stimme konnte nicht gesichert werden",
       'post.edit'             : "Bearbeiten",
+      'post.editplan'         : "Beiträge bearbeiten gibt es im Plus-Plan",
       'post.save'             : "Sichern",
       'post.edited'           : "Bearbeitet",
       'post.pv'               : "Privat",
