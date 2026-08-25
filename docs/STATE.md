@@ -360,11 +360,15 @@ assuming a thing is waiting for you.
 
 ### Open, and the owner's
 
-- **How many keyboards a plan buys.** Two decisions of the same day disagree
-  (`docs/BACKLOG.md`), and the code today matches **neither** — `CAN.kb` is
-  `'pro'`, so **Plus gets zero**, where the earlier decision gives it 4 pooled
-  across languages and the later one gives it 1. `KB_MAX` and the language
-  ceiling both wait on this.
+- ~~**How many keyboards a plan buys.**~~ Settled 2026-08-25, and there had
+  never been a conflict — `docs/BACKLOG.md` had read one table's *languages*
+  column as a second answer about *keyboards*. Free 1 language and the fixed
+  QWERTY; Plus 1 language and 4 keyboards pooled; Pro 3 languages and no
+  ceiling. **Not implemented**: `CAN.kb` is still `'pro'`, so Plus has zero
+  today, `KB_MAX` is still a per-language 3, `edit` and `badge` are still
+  outside `CAN`, and the language ceiling does not exist at all. The last of
+  those takes something away that anybody has today, so it hides and never
+  deletes.
 - **The price of Pro.**
 - **Whether the sheet says anything about what to write with.** The box is a
   fixed 37mm and a pen of about 1mm matches the app's own exactly; a person's
