@@ -469,13 +469,44 @@ Decided:
   whole word → logography*), so a box for 愛 and a box for `a` are the same
   kind of thing.
 - **Where it lives:** a page under the letters page.
-- **What comes in is an ordinary letter.** The ink goes into the road a finger
-  already takes -- `GE.raw` then `geShape()` -- so the app's own thinning,
-  lattice and ROUND all work on it and there is no second kind of letter in the
-  alphabet. Measured on a か and a よ put through the real code: 3 strokes of
-  6+3+29 points, 1232 bytes, and 2 strokes of 15+6 points, 681 bytes. A drawn
-  letter is about 320. Two to four times, not the hundred times an outline
-  would have cost.
+- **OWNER DECISION 2026-08-25: nothing is redrawn. The picture comes in as the
+  picture.** 「画像データをそのまま取り込みたいのよ」
+  「取り込んだやつを上から描き直してるからそうなるんでしょ？」
+
+  This SUPERSEDES the line that stood here, which said the ink goes into the
+  road a finger already takes -- `GE.raw` then `geShape()`, so the app's own
+  thinning, lattice and ROUND work on it. That line contradicted the table
+  above it (pixels come in as a **shape**) and the owner has settled which of
+  the two holds: the shape. Anything that runs somebody's letter through the
+  app's own pen is redrawing it.
+
+  Three places were redrawing and all three are gone:
+
+  | | was | is |
+  |---|---|---|
+  | how finely a box is sampled | a constant 200, or 400 | **the photograph's own** -- how many pixels the box actually came out |
+  | where the edge runs | pixel corners of a yes/no mask | **where the grey crosses half way** between this paper and this ink, between two samples |
+  | thinning the outline | 6 of 800 | **1 of 800** |
+
+  Measured on the real sheet, box `7`: at a thinning of 6 the furthest a point
+  moved was **5.81 of 800** -- four tenths of the width of the stroke it was
+  moving. At 1 it is **0.00**, because the only points dropped are ones sitting
+  exactly on the line between their neighbours. And following the grey rather
+  than the pixel corners took the same letter from 440 points of staircase to
+  **122 points of the letter** -- more faithful AND smaller, because a
+  staircase is the sampling and not the hand.
+
+  Against the widths actually drawn, measured the same way on both sides:
+  **-1.1% to -3.2%** across the ten boxes.
+- **Landing hazard, written down before it bites: `wound()`.** `otf5.js` forces
+  every contour to one winding, which is right for a swept stroke and fills in
+  every hole of an imported outline -- the ring of 火, the eye of a face. The
+  edge follower now emits an outer ring and a hole wound opposite ways, which
+  is the half this side owes; what the font writer does with them is the other
+  half and is not done. Nothing about this throws: the canvas fills even-odd
+  and drew the holes correctly for as long as five of the sixteen cases were
+  reversed. It was found by adding the signed areas of one letter's rings and
+  getting the outer PLUS the hole.
 - **NOT DECIDED, and it is the owner's: how heavy an imported letter is.**
   The geometry arrives as drawn. A shape asked for at a known size in the 800
   square, printed, photographed at 10 degrees with a trapezoid, a blur, a
@@ -483,17 +514,21 @@ Decided:
   every edge, and a bar asked for at a width of 24 comes back at 24. So position
   and size need no decision -- they are already what was drawn.
   The WEIGHT is a decision, because it is the person's pen and not the app's.
-  Measured on the first real sheet: the strokes came in between 13.4 and 16.7,
-  mean 14.9, against `GPEN.width` of 24. On a 37mm box that is a pen of 0.69mm
-  where the app's own is 1.11mm, so **an imported letter sits about four tenths
-  lighter than one drawn in the app**, and the two are side by side in one
-  alphabet. Three roads and none of them is a tool's to pick:
-  as drawn (what the code does today, and the person's hand is kept);
-  evened to the app's pen (an imported letter is an OUTLINE and not a swept
-  stroke, so this means fattening or thinning a contour, and corners round off
-  -- the letter changes); or said on the paper, since the box is a fixed 37mm
-  and a pen of about 1mm matches the app exactly -- which is words on a sheet
-  and therefore 「アプリ内に説明書くの禁止」's neighbour as well as a price.
+  Measured on the first real sheet: the strokes are about **18 of 800**, against
+  `GPEN.width` of 24. On a 37mm box that is a pen of 0.83mm where the app's own
+  is 1.11mm, so an imported letter sits about a **quarter** lighter than one
+  drawn in the app, and the two are side by side in one alphabet.
+
+  (An earlier number here said 14.9, 0.69mm and four tenths. It was measured
+  with a staircase perimeter, which is about a fifth longer than the boundary
+  it is standing in for, so every width came out a fifth small. Both sides are
+  measured the same way now.)
+
+  The owner has ruled out changing it: nothing is redrawn, so the pen is the
+  person's. What remains open is only whether the SHEET says anything about
+  what to write with, since the box is a fixed 37mm and a pen of about 1mm
+  matches the app exactly -- which is words on a sheet, and therefore
+  「アプリ内に説明書くの禁止」's neighbour.
 - **A lapsed plan HIDES, it never deletes.** 「単語と同じで隠すつもりよ？また課金
   したら復活！」 Exactly `wordsSeen()`: the letters stay in the slice, in the
   backup, and in everything the app reads for itself; they stop being shown and

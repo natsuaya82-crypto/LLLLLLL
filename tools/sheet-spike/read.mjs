@@ -57,13 +57,31 @@ const r = await pg.evaluate(async ({src, img}) => {
   var scan = shScan(px, W, H);
   if (scan.fail) return { fail: scan.fail, cand: scan.cand, w:W, h:H };
   var names = shReadStrip(scan.warp, scan.dark);
-  var RES = 200, rows = [], shapes = [];
+  /* How finely to sample a box is the PHOTOGRAPH's to say, not a constant.
+     Finer than the photograph invents detail that is not there; coarser throws
+     some away. Ask how many pixels wide a box actually came out. */
+  var bb = shBoxAt(0);
+  var e0 = scan.warp(bb.x, bb.y + bb.side), e1 = scan.warp(bb.x + bb.side, bb.y + bb.side);
+  var RES = Math.round(Math.sqrt((e1[0]-e0[0])*(e1[0]-e0[0]) + (e1[1]-e0[1])*(e1[1]-e0[1])));
+  if (RES < 120) RES = 120; if (RES > 700) RES = 700;
+  var rows = [], shapes = [];
   var n = names ? names.length : shPerPage();
   for (i = 0; i < n; i++){
     var mask = shBoxInk(scan.warp, scan.crisp, i, RES);
     var raw = 0, k; for(k=0;k<mask.length;k++) raw += mask[k];
     var cl = shClean(mask, RES, Math.round(RES*RES*0.0012), 3);
-    var loops = shTrace(cl.m, RES).map(function(L){ return shThin(L, RES/800*6); });
+    /* The edge runs where the grey crosses half way between this paper and this
+       ink, which is BETWEEN two samples -- following pixel corners instead
+       gives a staircase nobody drew. And the thinning is 1 unit of 800, which
+       at this sampling drops only points sitting exactly on the line between
+       their neighbours: the same straight edge written down twice.
+       Measured on the real sheet: 440 points of staircase become 123 points of
+       the letter. It was 6, which moved a point 5.81 of 800 -- four tenths of
+       the width of the stroke it was moving, and that is the app redrawing
+       somebody's letter rather than keeping it.
+       「画像データをそのまま取り込みたいのよ」 */
+    var fld = shBoxField(scan.warp, scan.sign, i, RES);
+    var loops = shEdge(fld, RES, cl.m).map(function(L){ return shThin(L, RES/800*1); });
     var pts = 0; loops.forEach(function(L){ pts += L.length; });
     rows.push({ name: names ? names[i] : '?', raw: raw, kept: cl.kept,
                 dropped: cl.dropped, loops: loops.length, pts: pts });

@@ -382,6 +382,118 @@ function shBoxInk(warp, ink, i, res){
   }
   return m;
 }
+/* The same box, as the SIGNED field rather than a yes/no -- see shScan's
+   `sign`. Sampled the same way and at the same places, so the two line up. */
+function shBoxField(warp, sign, i, res){
+  var b = shBoxAt(i), f = [], x, y, q, u, v;
+  for (y = 0; y < res; y++) for (x = 0; x < res; x++){
+    u = b.x + (x + 0.5) / res * b.side;
+    v = b.y + b.side - (y + 0.5) / res * b.side;
+    q = warp(u, v);
+    f[y * res + x] = sign(q[0], q[1]);
+  }
+  return f;
+}
+/* The edge, where the field crosses zero. Marching squares with the crossing
+   placed BETWEEN two samples rather than at one of them, which is the whole
+   point: a boundary that follows pixel corners is a staircase, and it is a
+   staircase the person did not draw. Every crossing sits on one edge of the
+   sample grid and each such edge is crossed at most once, so a segment's end is
+   named by which edge it is on -- and stitching the segments into rings is then
+   exact rather than a search by distance. Rings close by construction, the same
+   property crack-following had and for the same reason.
+   `drop` is the yes/no mask of what to KEEP (dust and the printed box edge
+   already thrown out); ink outside it is pushed far negative so no edge is
+   found around it. */
+function shEdge(f, res, keep){
+  var n = res, i, x, y, g = [], seg = [], at = {}, id;
+  for (i = 0; i < n * n; i++) g[i] = (keep && !keep[i] && f[i] > 0) ? -1000 : f[i];
+  function pt(ax, ay, bx, by){
+    var fa = g[ay * n + ax], fb = g[by * n + bx];
+    var t = fa / (fa - fb);
+    if (!(t >= 0)) t = 0; if (t > 1) t = 1;
+    return [ax + (bx - ax) * t, ay + (by - ay) * t];
+  }
+  function H(x2, y2){ return 2 * (y2 * n + x2); }        /* (x,y)-(x+1,y) */
+  function V(x2, y2){ return 2 * (y2 * n + x2) + 1; }    /* (x,y)-(x,y+1) */
+  function need(k, ax, ay, bx, by){
+    if (at[k] === undefined) at[k] = pt(ax, ay, bx, by);
+    return k;
+  }
+  /* Every segment is emitted so the INK is on one fixed side of the walk. That
+     is not tidiness: it is what makes an outer ring and the ring of a hole come
+     out wound opposite ways, and a hole that is wound the same way as its
+     letter is a hole that fills in. Nothing about it throws -- the canvas is
+     filled even-odd here and drew the holes correctly with five of the sixteen
+     cases reversed, and the fault only appears where a winding is actually
+     read. `wound()` in otf5.js forces one winding, so a font built from these
+     would have had every hole solid: the ring of 火, the eye of a face.
+     Found by adding the signed areas of one letter's rings and getting the
+     outer PLUS the hole rather than the outer minus it. */
+  for (y = 0; y < n - 1; y++) for (x = 0; x < n - 1; x++){
+    var a = g[y * n + x] > 0, b = g[y * n + x + 1] > 0;
+    var c = g[(y + 1) * n + x + 1] > 0, d = g[(y + 1) * n + x] > 0;
+    var code = (a ? 1 : 0) | (b ? 2 : 0) | (c ? 4 : 0) | (d ? 8 : 0);
+    if (code === 0 || code === 15) continue;
+    var T = function(){ return need(H(x, y), x, y, x + 1, y); };
+    var R = function(){ return need(V(x + 1, y), x + 1, y, x + 1, y + 1); };
+    var B = function(){ return need(H(x, y + 1), x, y + 1, x + 1, y + 1); };
+    var L = function(){ return need(V(x, y), x, y, x, y + 1); };
+    var mid, join;
+    switch (code){
+      case 1:  seg.push([L(), T()]); break;
+      case 2:  seg.push([T(), R()]); break;
+      case 3:  seg.push([L(), R()]); break;
+      case 4:  seg.push([R(), B()]); break;
+      case 6:  seg.push([T(), B()]); break;
+      case 7:  seg.push([L(), B()]); break;
+      case 8:  seg.push([B(), L()]); break;
+      case 9:  seg.push([B(), T()]); break;
+      case 11: seg.push([B(), R()]); break;
+      case 12: seg.push([R(), L()]); break;
+      case 13: seg.push([R(), T()]); break;
+      case 14: seg.push([T(), L()]); break;
+      /* the two the four corners do not settle: opposite corners are ink and
+         the other two are not, so the middle decides whether they are one thing
+         or two. Asked of the middle rather than picked, which is what turns a
+         cross-stroke into two shapes that touch nowhere. */
+      case 5:
+        mid = (g[y*n+x] + g[y*n+x+1] + g[(y+1)*n+x+1] + g[(y+1)*n+x]) / 4;
+        if (mid > 0){ seg.push([R(), T()]); seg.push([L(), B()]); }
+        else { seg.push([L(), T()]); seg.push([R(), B()]); }
+        break;
+      case 10:
+        mid = (g[y*n+x] + g[y*n+x+1] + g[(y+1)*n+x+1] + g[(y+1)*n+x]) / 4;
+        if (mid > 0){ seg.push([T(), L()]); seg.push([B(), R()]); }
+        else { seg.push([T(), R()]); seg.push([B(), L()]); }
+        break;
+    }
+  }
+  /* stitch: every crossing belongs to at most two segments */
+  var nb = {}, k, sA, sB;
+  for (i = 0; i < seg.length; i++){
+    sA = seg[i][0]; sB = seg[i][1];
+    if (!nb[sA]) nb[sA] = []; nb[sA].push(i);
+    if (!nb[sB]) nb[sB] = []; nb[sB].push(i);
+  }
+  var used = [], loops = [];
+  for (i = 0; i < seg.length; i++) used[i] = false;
+  for (i = 0; i < seg.length; i++){
+    if (used[i]) continue;
+    var ring = [], cur = i, from = seg[i][0], guard = 0;
+    while (cur >= 0 && !used[cur] && guard++ < seg.length + 4){
+      used[cur] = true;
+      var to = seg[cur][0] === from ? seg[cur][1] : seg[cur][0];
+      ring.push(at[from]);
+      var list = nb[to] || [], nx = -1;
+      for (k = 0; k < list.length; k++) if (!used[list[k]]){ nx = list[k]; break; }
+      from = to; cur = nx;
+    }
+    if (ring.length >= 3) loops.push(ring);
+  }
+  return loops;
+}
+
 /* Dust, and the box's own printed edge.
    Two different things and both have to go. A speck is a small island; the
    printed edge is a line that hugs the border, and it is not always dropped by
@@ -590,7 +702,23 @@ function shScan(px, W, H){
   if (!warp) return { fail: 'warp' };
   /* `dark` finds marks and reads the strip; `crisp` cuts letters out. Two
      jobs, two answers -- see where crisp is built for why they differ. */
-  return { warp: warp, marks: found, ink: m, w: W, h: H, crisp: crisp,
+  /* How far INSIDE the ink this pixel is, as a number rather than a yes/no.
+     Positive is ink, negative is paper, and zero is where the edge actually
+     runs. The edge of a stroke in a photograph is not a step -- it is a ramp
+     several pixels wide, and `crisp` above answers a question about it with one
+     bit, which throws the ramp away. The ramp is where the edge IS; keeping it
+     is the difference between a letter's outline and a staircase of pixel
+     corners. Anywhere there is no ink at all this answers far negative, so no
+     edge can be found in blank paper. */
+  function sign(pxx, pyy){
+    var xi = Math.round(pxx), yi = Math.round(pyy);
+    if (xi < 0 || yi < 0 || xi >= W || yi >= H) return -1000;
+    var b = bg[((yi / STEP) | 0) * GW + ((xi / STEP) | 0)];
+    var l = lo[yi * W + xi];
+    if (b - l < b * 0.15) return -1000;
+    return (b + l) / 2 - gm[yi * W + xi];
+  }
+  return { warp: warp, marks: found, ink: m, w: W, h: H, crisp: crisp, sign: sign,
            dark: function(qx, qy){
              var xi = Math.round(qx), yi = Math.round(qy);
              return xi >= 0 && yi >= 0 && xi < W && yi < H && m[yi * W + xi] === 1;
