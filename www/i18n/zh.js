@@ -708,8 +708,8 @@ defLang('zh', (function(){
       "bk.gen"           : "备份 {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "用纸",
-      "wr.make"          : "制作用纸",
-      "wr.read"          : "读取用纸",
+      "wr.make"          : "制作自己的字体",
+      "wr.read"          : "安装自己的文字",
       "wr.names"         : "名称",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} 个格",

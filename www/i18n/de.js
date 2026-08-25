@@ -692,8 +692,8 @@ defLang('de', (function(){
       "bk.gen"           : "Reserve {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Blatt",
-      "wr.make"          : "Ein Blatt erstellen",
-      "wr.read"          : "Ein Blatt einlesen",
+      "wr.make"          : "Eigene Schrift erstellen",
+      "wr.read"          : "Eigene Zeichen installieren",
       "wr.names"         : "Namen",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} Felder",

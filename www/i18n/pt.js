@@ -710,8 +710,8 @@ defLang('pt', (function(){
       "bk.gen"           : "cópia {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Folha",
-      "wr.make"          : "Criar uma folha",
-      "wr.read"          : "Ler uma folha",
+      "wr.make"          : "Criar a sua própria fonte",
+      "wr.read"          : "Instalar as suas próprias letras",
       "wr.names"         : "Nomes",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} quadros",

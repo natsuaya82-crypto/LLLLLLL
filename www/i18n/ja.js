@@ -619,8 +619,8 @@ defLang('ja', (function(){
       'bk.gen'            : "予備 {0}",
       /* ---- 用紙（第 26 章） ---- */
       'wr.title'          : '用紙',
-      'wr.make'           : '用紙をつくる',
-      'wr.read'           : '用紙を読む',
+      'wr.make'           : '自分のフォントを作る',
+      'wr.read'           : '自作文字をインストール',
       'wr.names'          : '名前',
       'wr.ph'             : '7, 2, 25',
       'wr.boxes'          : '{0} 枠',

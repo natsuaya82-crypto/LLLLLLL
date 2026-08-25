@@ -878,8 +878,8 @@ defLang('ko', (function(){
       "bk.gen"           : "예비 {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "용지",
-      "wr.make"          : "용지 만들기",
-      "wr.read"          : "용지 읽기",
+      "wr.make"          : "내 글꼴 만들기",
+      "wr.read"          : "내 글자 설치하기",
       "wr.names"         : "이름",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} 칸",

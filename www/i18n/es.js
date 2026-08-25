@@ -663,8 +663,8 @@ defLang('es', (function(){
       "bk.gen"           : "copia {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Hoja",
-      "wr.make"          : "Crear una hoja",
-      "wr.read"          : "Leer una hoja",
+      "wr.make"          : "Crear tu propia tipografía",
+      "wr.read"          : "Instalar tus propias letras",
       "wr.names"         : "Nombres",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} casillas",

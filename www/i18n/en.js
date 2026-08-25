@@ -614,8 +614,8 @@ defLang('en', (function(){
       'bk.gen'            : "spare {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       'wr.title'          : 'Sheet',
-      'wr.make'           : 'Make a sheet',
-      'wr.read'           : 'Read a sheet',
+      'wr.make'           : 'Make your own font',
+      'wr.read'           : 'Install your own letters',
       'wr.names'          : 'Names',
       'wr.ph'             : '7, 2, 25',
       'wr.boxes'          : '{0} boxes',

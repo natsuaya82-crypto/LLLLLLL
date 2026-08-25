@@ -751,8 +751,8 @@ defLang('fr', (function(){
       "bk.gen"           : "copie {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Feuille",
-      "wr.make"          : "Créer une feuille",
-      "wr.read"          : "Lire une feuille",
+      "wr.make"          : "Créer sa propre police",
+      "wr.read"          : "Installer ses propres lettres",
       "wr.names"         : "Noms",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} cases",

@@ -704,8 +704,8 @@ defLang('it', (function(){
       "bk.gen"           : "copia {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Foglio",
-      "wr.make"          : "Creare un foglio",
-      "wr.read"          : "Leggere un foglio",
+      "wr.make"          : "Creare il proprio carattere",
+      "wr.read"          : "Installare le proprie lettere",
       "wr.names"         : "Nomi",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "{0} caselle",

@@ -716,8 +716,8 @@ defLang('ru', (function(){
       "bk.gen"           : "запасная {0}",
       /* ---- the sheet somebody writes on (ch 26) ---- */
       "wr.title"         : "Лист",
-      "wr.make"          : "Создать лист",
-      "wr.read"          : "Прочитать лист",
+      "wr.make"          : "Создать свой шрифт",
+      "wr.read"          : "Установить свои буквы",
       "wr.names"         : "Имена",
       "wr.ph"            : "7, 2, 25",
       "wr.boxes"         : "Клеток: {0}",
