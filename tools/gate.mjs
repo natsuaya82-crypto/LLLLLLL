@@ -3,9 +3,10 @@
 
    Run it:   npm test
 
-   Sixteen checks, and fifteen of them start a headless browser, serve www/
-   over a port of their own and walk the app. Run one after another that is
-   ten minutes, and ten minutes is long enough that a check stops being run
+   Twenty-four checks, and sixteen of them start a headless browser and walk
+   the app -- most over a port of their own; `shape-check` opens `index.html`
+   off the disk instead, which is why it needs no port. Run one after another
+   that is ten minutes, and ten minutes is long enough that a check stops being run
    after every change and starts being run at the end — which is the one way
    a gate fails: not by being wrong, by being skipped.
 
@@ -36,7 +37,8 @@ const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check',
    when is up to the pool. */
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
               'word-check', 'post-check', 'backup-check', 'fill-check', 'round-check',
-              'base-check', 'kb-check', 'plan-check', 'sheet-check', 'press'];
+              'base-check', 'kb-check', 'plan-check', 'sheet-check', 'shape-check',
+              'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){
