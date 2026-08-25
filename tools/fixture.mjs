@@ -855,7 +855,7 @@ export function halfDone(){
        is the rule the second face exists to keep. */
     ['a line written from the right, in a font of your own', () => {
         const wasPlan = SET.plan, wasDir = SCRIPT.dir;
-        SET.plan = 'plus'; SCRIPT.dir = 'rtl';
+        SET.plan = 'pro'; SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
         SET.myfont = true; installScriptFont();
         openPost(); const h = FORM.html;
         PW = pwBlank(); SET.myfont = false;
@@ -912,7 +912,7 @@ export function halfDone(){
        with one slot in the middle and the four directions are on no screen
        at all. Four classes were unworn for that reason alone: kbeu kbel kber
        kbed, www/keyboard.js kbKeyHTML(). */
-    ['a key of a flick keyboard, opened', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a key of a flick keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('flick'); kbLay = 0; kbPick(0, 0);
                                                   const h = FORM.html; KB = null; kbShow = 0;
                                                   SET.plan = 'free'; return h; }],
@@ -920,7 +920,7 @@ export function halfDone(){
        the key: kbFlicks(key, slots) puts a letter in a corner that has one
        and a dot in a corner that is empty -- kbf and kbfx -- and it is passed
        slots:false everywhere the keyboard is only being SHOWN. */
-    ['a flick keyboard, being built', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a flick keyboard, being built', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                               kbAdd('flick'); kbLay = 0;
                                               window.route = 'kb'; NAV = [{ r:'kb', a:'1' }];
                                               const h = vKb(); KB = null; kbShow = 0;
