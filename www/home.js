@@ -1249,8 +1249,16 @@ function wldPage(ed){
           wldOvs().map(function(row){
             return '<div class="ovrow" data-wid="'+esc(row.id)+'">'+
               '<div class="ovtop">'+
-                '<div class="field ovk"><input value="'+esc(row.k||'')+'" '+
-                  'placeholder="'+esc(t('wld.ov.k.ph'))+'"' + IN('wldOvSet', [row.id, "k"]) + '></div>'+
+                /* No placeholder over it: 「項目名とか入れなくていいから。
+                   アンダーバーでいいだろ」 OWNER, and again 2026-08-25 --
+                   「上の項目名とかは何？いらなくない？」. The line was doing
+                   exactly what that sentence forbids: the words 「項目名」 sat
+                   in the box, so every row somebody had not named yet said
+                   the name of the thing instead of nothing. What names a row
+                   is what the person typed, and what marks the box is the
+                   rule under it. */
+                '<div class="field ovk"><input value="'+esc(row.k||'')+'"'+
+                  IN('wldOvSet', [row.id, "k"]) + '></div>'+
                 /* 「消したかったらマイナスボタン」 OWNER 2026-08-25. It was a
                    cross, which is what CLOSES a thing; the pair the owner
                    drew is ＋ and −, and the ＋ that puts the row in is two

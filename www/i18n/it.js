@@ -348,7 +348,6 @@ defLang('it', (function(){
       'wld.dl.d'     : "Chi può aprire la pagina della tua lingua potrà scaricare le tue lettere e le tue parole e usarle nella propria.",
       'wld.hidden'            : "Privata",
       'wld.secs'              : "Sezioni",
-      'wld.ov.k.ph'              : "Nome",
       'wld.ov.v.ph'              : "Che cosa dice",
       'wld.ov.del'              : "Rimuovi questa voce",
       'wld.overview'              : "Panoramica",
