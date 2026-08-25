@@ -498,15 +498,31 @@ Decided:
 
   Against the widths actually drawn, measured the same way on both sides:
   **-1.1% to -3.2%** across the ten boxes.
-- **Landing hazard, written down before it bites: `wound()`.** `otf5.js` forces
-  every contour to one winding, which is right for a swept stroke and fills in
-  every hole of an imported outline -- the ring of 火, the eye of a face. The
-  edge follower now emits an outer ring and a hole wound opposite ways, which
-  is the half this side owes; what the font writer does with them is the other
-  half and is not done. Nothing about this throws: the canvas fills even-odd
-  and drew the holes correctly for as long as five of the sixteen cases were
-  reversed. It was found by adding the signed areas of one letter's rings and
-  getting the outer PLUS the hole.
+- **What the font writer needs, read off `otf5.js` rather than guessed at.**
+  `glyphContours` returns contours that are **convex and all wound the same**,
+  and its comment says why: `spanAt` below it takes the ink at a height as the
+  min and max over contours, which is only true when a contour meets a
+  horizontal line in exactly one interval. That is what lets this font writer
+  build a profile without rasterising anything. So an imported outline -- one
+  big concave ring, often with a hole in it -- cannot be handed over as it is.
+
+  **The road already exists.** A filled stroke is the one thing here that is
+  not a swept nib: `st.fill` runs `earCut(fillRing(line))` and adds the
+  triangles. A triangle is convex, `wound()` makes them all agree, and a hole
+  survives because no triangle is laid over it -- which is the sentence
+  CLAUDE.md already carries. What is missing is one thing: **ear clipping over
+  a ring that HAS holes.** `fillRing` takes a single ring.
+
+  (An earlier note here said `wound()` fills every hole. That was wrong in a
+  way worth keeping: `wound()` is harmless once only ink-covered triangles are
+  emitted. The winding on the rings is how the holes are KNOWN, not what
+  breaks them.)
+
+  The edge follower emits an outer ring and a hole wound opposite ways, which
+  is the half this side owes. Nothing about it throws: the canvas fills
+  even-odd and drew the holes correctly for as long as five of the sixteen
+  cases were reversed, and it was found by adding the signed areas of one
+  letter's rings and getting the outer PLUS the hole.
 - **NOT DECIDED, and it is the owner's: how heavy an imported letter is.**
   The geometry arrives as drawn. A shape asked for at a known size in the 800
   square, printed, photographed at 10 degrees with a trapezoid, a blur, a
