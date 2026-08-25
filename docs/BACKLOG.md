@@ -920,3 +920,68 @@ asks about」。
 
 だからセッションには「黙って飛ばすのをやめる」一点だけをやらせ、**文言を
 発明させない**。取り得る形を並べてオーナーに決めてもらう。
+
+## `plan-check` が赤い ── 直せるが、直すと文言をアプリが決めることになる
+
+2026-08-25、`claude/leader-integration` で全ゲートを回して見つけた。
+**25 検査中これ一本だけが赤で、残り 24 は緑。** 直し方は分かっていて、
+それでも直していない。上の「黙って課金画面へ飛ばす」の節の続きで、
+あちらが「二箇所ある」話、これは「押さえている検査が旧いまま」の話。
+
+測ったもの:
+
+```
+  plan: 1 failed
+  FAILED  pressing it on free opens no composer and lands on the plans screen
+```
+
+食い違っている二つ:
+
+```
+  www/post.js:1818   if(!can('edit')){ if(confirm(t('up.cta'))) go('plans'); return; }
+                     ← claude/post の 967e734 が入れた
+  tools/plan-check.mjs:237  out.editFreeWent = here().r === 'plans';
+                     ← bc3f622 が書いた。967e734 より前。更新されていない
+```
+
+`bc3f622` は `claude/post` の祖先なので、**この赤は統合で生まれたのではなく、
+`claude/post` の tip で既に赤かった。** 枝の中で振る舞いを変えて、それを
+押さえている検査を同じコミットで直していない ── CLAUDE.md の
+「a check enters the gate in the same commit that adds it」と
+「バグを戻して検査が赤くなるのを見るまで直しは終わっていない」の両方に当たる。
+どの枝も `plan-check` を新しい形に合わせていない（`git log -S editFreeWent`
+の答えは `bc3f622` 一件だけ）。
+
+**なぜ直さないか。** 検査を新しい形に書き換えるのは十分もかからない。だが
+それは「無料で鉛筆を押したら訊いてから飛ぶ」を決まったこととして検査に
+刻むことで、それはまだ決まっていない。SESSIONS.md §11 の
+「合わせられる形にして通すのが一番悪い」がこれ。
+
+そしてもう一つ、今のコードは**天井を名指ししていない**:
+
+```
+  core.js:522      confirm(t('langs.full', langCap()) + '\n\n' + t('up.cta'))
+  core.js:703      confirm(t('toast.cap',  wordCap()) + '\n\n' + t('up.cta'))
+  keyboard.js:349  confirm(t('kb.full',    kbCap())   + '\n\n' + t('up.cta'))
+  post.js:1819     confirm(                             t('up.cta'))   ← 文が無い
+```
+
+`up.cta` は "Upgrade" の一語。他の三つは前に「この段の上限は◯◯」に当たる文を
+置いている。**編集の天井を名指しする鍵は en.js に無い**（`grep -in edit
+www/i18n/en.js` に該当なし）。だからこのダイアログは「Upgrade」と OK／
+キャンセルだけで出る。967e734 のコメント自身がそう書いていて、
+「文言はオーナー待ち」と言っている。
+
+**オーナーに出した三択**（2026-08-25 に訊いたが、このセッションに人が
+おらず届いていない。次に人が居るセッションが訊き直すこと）:
+
+```
+  ① 文をもらって confirm を残す ── 他の三つと同じ形に揃う。苦情そのものが
+     消える。i18n の鍵を一つ足し、plan-check をその形に更新する。推し。
+  ② Upgrade 一語のまま通す ── すぐ緑。天井を名指ししないダイアログが
+     一つだけ残る。
+  ③ master の挙動に戻す ── plan-check 無変更で即緑。ただし
+     「ポップなしに課金画面飛ばされる」は直っていない状態に戻る。
+```
+
+どれも一行から数行で、**止まっているのは手ではなく決定。**
