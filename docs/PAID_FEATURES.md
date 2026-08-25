@@ -67,6 +67,8 @@ Plus < Pro` needs nobody told which is which.
 | words | 100 | 1000 | no ceiling |
 | `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
 | languages on this phone | **1** | **1** | **3** |
+| `dl` a language taken from the official assets | — | **yes** | yes |
+| how many DL'd languages | — | *1?* | *3?* | 
 | `edit` editing a post you have sent | — | **yes** | yes |
 | `gram` `dir` `data` `file` `write` `badge` | — | — | yes |
 
@@ -87,6 +89,40 @@ says `plus`, every door above is already the right way round.
 and **counted as a pool across languages** rather than per language: three
 languages were nine keyboards while `KB_MAX` was three per language, on a plan
 that sells three.
+
+**`dl` is Plus's, and its number is NOT decided.** 「DLはplusから」 — that half
+is flat and is what the row above says. The number is the owner's next line and
+**it ends in a question**:
+
+```
+DLはplusからだけどplusは自分の言語+DL言語1個
+proは自分の言語3個+DL言語3個は？
+```
+
+So the table shows *1?* and *3?* and they are written that way on purpose. A
+number in this file is read as settled by everybody downstream — `wordCap()`,
+`kbCap()` and `langCap()` are each one place saying one number — and turning
+「は？」 into a constant is how a question the owner asked comes back as a rule
+nobody remembers agreeing to. **Ask before writing either into `core.js`.**
+
+What the two numbers already tell us, though, is the shape, and the shape is
+not in question: **a DL'd language is counted SEPARATELY from your own.**
+「自分の言語+DL言語1個」 is two numbers, not one. `langCount()` counts `mine`
+and must go on counting only `mine`; whatever counts downloads is a second
+function beside it, not a change to it. That also means the free plan is
+untouched: Free has one language and no `dl`, exactly as today.
+
+**`CAN.dl` is not in `CAN` yet, and that is not an oversight.** `dead-check`
+refuses a capability nothing asks for, the only screen that would ask
+(`www/home.js`'s overview page) is not written, and § Not built yet below
+already says what happens to code written ahead of its caller. It goes in with
+its first `can('dl')`, the way `kb` went in with `kbCap()`.
+
+**Nothing here may take a language away.** The rule at the head of this file
+covers a downloaded language the same as any other: a plan that lapses means
+fewer buttons — no new download, and the door drawn anyway — and never fewer
+languages. Somebody who downloaded three keeps three, sees three, and backs up
+three, exactly the way `langCap()`'s ceiling already hides and never deletes.
 
 `CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
 `kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
@@ -281,6 +317,13 @@ trims the thing it is listing, a slice quietly left out of a free plan's
 backup, and the ceiling putting somebody on a price list mid-word.
 
 ## Not built yet
+
+**`CAN.dl` — decided, and deliberately not added.** OWNER DECISION 2026-08-25
+(`docs/FEATURE_RULES.md`) puts downloading a language on Plus. The entry is not
+in `CAN`, because `dead-check` is right: `CAN.dl` with no `can('dl')` anywhere
+fails, and the screen that would ask is in another branch's hands. Adding it
+alone would mean weakening the check to keep it green, and the check is the
+only thing that makes this table true. It lands with its caller.
 
 **The StoreKit code exists and nothing in `www/` calls it.**
 `ios/App/App/LinguaStore.swift` has `products`, `buy`, `restore`, `current` and
