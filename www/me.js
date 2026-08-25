@@ -141,11 +141,54 @@ function mePicKeep(url){
   im.src=url;
 }
 function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
+/* ---- ID を断る ----------------------------------------------------------
+   「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
+     みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
+
+   断る言葉は二つとも既にあり、十言語ぶん揃っている ── `net.badhandle` と
+   `net.handle.taken`。オンボーディング (`obWhoGo`) が同じ二つで同じことを
+   していて、そこだけが持っていた。新しい鍵は足していない。
+
+   ここに提出ボタンは無く、打つそばから保存される画面なので、断つ場所は
+   「打ち終わったとき」にする ── 打っている最中の一文字目は必ず短いので、
+   そこで断ったら誰も二文字目に辿り着けない。欄から手が離れるまで待って、
+   離れたところで見て、駄目なら言って、開いたときの ID に戻す。
+
+   サーバに訊くのは長さと文字種が通った後だけ、しかも変えたときだけ。
+   自分の今の ID をもう一度打っただけで「使われています」と言うのは、
+   自分に使われているという意味では正しく、断る理由としては間違っている。
+   繋がっていないときは訊かない ── 訊けなかったことは、空いている証拠でも
+   埋まっている証拠でもない。 */
+var ME_HD0='';       /* 画面を開いたときの ID。断ったらここへ戻す */
+var ME_HD_T=null;    /* 打ち終わりを待つ間 */
+
 function meSetHandle(v){
   /* A handle is what somebody types after an @, so it is the characters that
      survive being typed after one. */
   ME.handle=String(v||'').toLowerCase().replace(/[^a-z0-9_]+/g, '');
   saveMe();
+  if(ME_HD_T) clearTimeout(ME_HD_T);
+  ME_HD_T=setTimeout(meHandleSee, 700);
+}
+/* まだ欄の中に居るなら、まだ打っている。見るのは手が離れてから。 */
+function meHandleSee(){
+  ME_HD_T=null;
+  var el=document.getElementById('me-hd');
+  if(!el) return;                                  /* 画面が閉じた */
+  if(document.activeElement===el){ ME_HD_T=setTimeout(meHandleSee, 700); return; }
+  var h=ME.handle;
+  if(h===ME_HD0) return;                           /* 変えていない */
+  if(h.length<2 || h.length>24){ meHandleNo(t('net.badhandle')); return; }
+  if(typeof netMember!=='function' || !netMember()) return;   /* 訊く先が無い */
+  netHandleFree(h, function(free){
+    if(!free) meHandleNo(t('net.handle.taken'));
+  }, function(){});                                /* 訊けなかった: 断らない */
+}
+function meHandleNo(msg){
+  toast(msg);
+  ME.handle=ME_HD0;
+  saveMe();
+  openMe();
 }
 
 /* ---- the block at the top of the profile ------------------------------- */
@@ -368,6 +411,9 @@ function whoCard(h){
    throwing away something a person made to prove a point about sessions. */
 function openMe(){
   if(!obNeed()) return;
+  /* 断ったときに戻す先。開き直すたびに取り直すので、断って開き直した後は
+     戻した ID がそのまま基準になる。 */
+  ME_HD0=ME.handle;
   /* Named after the page it is the settings for, through the one function
      that names a page. */
   /* The picture first, then the name, the handle and the bio -- OWNER
