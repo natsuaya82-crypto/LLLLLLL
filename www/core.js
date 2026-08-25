@@ -610,7 +610,13 @@ function has(level){ /* level: 'plus' | 'pro' */
   return got>=want;
 }
 /* What money buys, one capability at a time, and the only place that says so.
-   Ten names, each the level it needs.
+   Eleven names, each the level it needs.
+
+   It said ten. A count written into a comment goes stale the next time the
+   list below it grows, so do not trust this one either -- `npm run dead`
+   prints the number it actually counted on every run ("what money buys: N
+   capabilities in CAN"), and that is where this eleven came from rather than
+   from counting by eye.
 
    has('plus') used to be asked directly, in twenty-three places across nine
    files, and every one of them looked identical to every other. They were not
