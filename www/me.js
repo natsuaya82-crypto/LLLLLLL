@@ -29,6 +29,23 @@ var LS_ME='lingua.me';
    server every launch. It is written by netAvSync() and read by nothing else.
    It is here rather than in SET because it belongs to the account, and SET is
    the person's settings and travels between them. */
+/* 何文字まで入るか。一箇所 ── OWNER DECISION, 2026-08-25。
+
+   `handle` の 24 はこちらが選んだ数ではなく、サーバが持っている天井を
+   写したもの: `supabase/schema.sql` の
+     check (handle ~ '^[a-z0-9_]{2,24}$')
+   これより長い ID はアプリを通ってもサーバに弾かれる。**下限の 2 は
+   まだ効いていない** ── 一文字の ID はここを素通りして、サーバで黙って
+   失敗する。断るには断る言葉が要り、www/i18n/*.js はこの枝の持ち物では
+   ないので、そこは残してある。
+
+   残りの四つはこちら側だけの数で、測った上で選んである（390pt の画面で
+   タイムラインの名前は かな19文字ぶん、@ の行は かな10文字ぶん）。
+
+   maxlength は「これから打つもの」にしか効かない。既に長いものが入って
+   いる欄は縮まない ── ブラウザは value を切らない。リリース前で誰も
+   持っていないので今は関係ないが、性質として書いておく。 */
+var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
 var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
 function meRead(){
   ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
@@ -383,11 +400,11 @@ function openMe(){
       '<div style="flex:1 1 auto;min-width:0">'+
         '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
-          '<input id="me-nm" value="'+esc(ME.name)+'" '+
+          '<input id="me-nm" maxlength="'+ME_MAX.name+'" value="'+esc(ME.name)+'" '+
           'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
         '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
-          '<input id="me-hd" value="'+esc(ME.handle)+'" '+
+          '<input id="me-hd" maxlength="'+ME_MAX.handle+'" value="'+esc(ME.handle)+'" '+
           'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
           'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
       '</div>'+
@@ -395,7 +412,8 @@ function openMe(){
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
        '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
-    '<div class="field"><textarea id="me-bio" placeholder="'+esc(t('me.bio.ph'))+'"' +
+    '<div class="field"><textarea id="me-bio" maxlength="'+ME_MAX.bio+'" '+
+      'placeholder="'+esc(t('me.bio.ph'))+'"' +
       IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
     /* ⚠ この二つは半分です。`meSetLink` `meSetLoc` は www/act-map.js に
        登録されておらず、`me.link` `me.loc` は www/i18n/*.js にありません
@@ -405,12 +423,12 @@ function openMe(){
        はそれまで赤です。 */
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
-      '<input id="me-lk" value="'+esc(ME.link||'')+'" '+
+      '<input id="me-lk" maxlength="'+ME_MAX.link+'" value="'+esc(ME.link||'')+'" '+
       'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
-      '<input id="me-lc" value="'+esc(ME.loc||'')+'" '+
+      '<input id="me-lc" maxlength="'+ME_MAX.loc+'" value="'+esc(ME.loc||'')+'" '+
       'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
