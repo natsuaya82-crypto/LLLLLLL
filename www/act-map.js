@@ -212,7 +212,6 @@ act('wordsSetSort', wordsSetSort);
 act('setTheme', setTheme);
 act('setAuto', setAuto);
 act('setUi', setUi);
-act('wldSetUse', wldSetUse);
 act('wldArtAdd', wldArtAdd);
 act('setWldHide', setWldHide);
 act('setWldDl', setWldDl);

@@ -624,7 +624,7 @@ function clearFq(){
    spoken, who speaks it, and anything else. They live on the cover, because
    that is where what a book is about belongs, and they travel with the
    language, because they are part of it. */
-var WORLDS=['story','people','place','real','play'];
+
 /* It is the language's, filed under langKey('wld') exactly as the letters
    and the sounds are. It used to be SET.world -- the PERSON's settings --
    directly under a comment saying it travels with the language, which it did
@@ -664,8 +664,12 @@ function migrateWorld(){
 }
 function saveWld(){ bkTouch(); try{ localStorage.setItem(langKey('wld'), JSON.stringify(WLD)); }catch(e){} }
 function world(){ return WLD; }
-function wldUse(){ var u=world().use; return WORLDS.indexOf(u)>=0? u : ''; }
-function wldSetUse(u){ world().use=(wldUse()===u? '' : u); saveWld(); render(); }
+/* 用途 -- the five 「物語 / 種族 / 土地 / 実際に話す / 試す」 -- came off both
+   screens: 「編集画面の謎のその5択なに？いらんやろ」 OWNER 2026-08-25. What each
+   one MEANT was a line of explanation under it (「本・映画・ゲームの中の言葉」),
+   which is the thing the app is not allowed to do at all.
+   `WLD.use` itself is not touched and not migrated: what somebody chose is
+   still in their file, and nothing here deletes it. */
 function wldSet(k, v){ world()[k]=String(v||''); saveWld(); }
 
 /* ---- the sections somebody writes -------------------------------------
@@ -726,18 +730,6 @@ wldRead();
 function vWorld(){
   var w=world();
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="sec">'+t('wld.use')+'</div>'+
-    /* Five rows, not five cards. They were `.obsrow` -- the onboarding's
-       panels, `border-radius:14px` and a border each -- which is the rule at
-       the head of CLAUDE.md 「角丸やめろ」 sitting on the editor of the page
-       this whole chapter is about. A list is what more than a few of anything
-       is here, and the one that is chosen says so in the colour everything
-       chosen says it in. Taking a corner OUT needs nobody (box-check). */
-    WORLDS.map(function(k){
-      return '<button class="wldu'+(wldUse()===k?' on':'')+'"' + DO('wldSetUse', [k]) + '>'+
-        '<span class="wldun">'+esc(t('wld.'+k))+'</span>'+
-        '<span class="wldud">'+esc(t('wld.'+k+'.d'))+'</span></button>';
-    }).join('')+
     '<div class="sec">'+t('wld.where')+'</div>'+
     '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
       'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
@@ -926,8 +918,6 @@ var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" f
    is the fault this file's own comments keep being written after. */
 function wldSecs(){
   var out=[{r:'wldov', k:'wld.overview'}], a=wldArts(), i;
-  for(i=0;i<a.length;i++) out.push({r:a[i].id, nm:a[i].t||t('wld.art.untitled'),
-                                   b:a[i].b||'', blank:!(a[i].t||a[i].b)});
   out.push({r:'sound',   k:'toc.sound'});
   /* `dl` marks the three that can actually BE taken away and used --
      「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 OWNER
@@ -939,12 +929,39 @@ function wldSecs(){
   out.push({r:'words',   k:'toc.words',   go:'words',   dl:1});
   out.push({r:'gram',    k:'toc.gram',    go:'gram'});
   out.push({r:'kb',      k:'kb.title',    go:'kb',      dl:1});
+  /* And then what somebody wrote, AFTER the ones the book always has --
+     「見出しは全員わかりやすくしろよ」. A section called 「The valley」 sitting
+     between 概要 and 音 reads as one of the article's own headings and is not
+     one; below them it is plainly the part this person added. */
+  for(i=0;i<a.length;i++) out.push({r:a[i].id, nm:a[i].t||t('wld.art.untitled'),
+                                   b:a[i].b||'', blank:!(a[i].t||a[i].b)});
   return out;
 }
 function wldSecNm(sec){ return sec.k? t(sec.k) : sec.nm; }
 /* A heading that folds. It is a button and `.abts` is an <h2>, so the two
    never sit as siblings in one list -- every heading on this page is this
    one now, which is what keeps a list one height. */
+/* The inventory, in rows: each manner that this language actually uses, then
+   its vowels, then anything the chart files under neither. */
+function abSounds(){
+  var mine=addedSnd(), out='', ms=ipaManners(), i, got, rest=mine.slice();
+  function take(list){
+    var k=[], j;
+    for(j=0;j<rest.length;j++) if(list.indexOf(rest[j])>=0) k.push(rest[j]);
+    for(j=0;j<k.length;j++) rest.splice(rest.indexOf(k[j]), 1);
+    return k;
+  }
+  for(i=0;i<ms.length;i++){
+    got=take(ipaOfManner(ms[i]));
+    if(got.length) out+=abField(t('ipa.m.'+ms[i]), got.join('  '));
+  }
+  got=[];
+  for(i=0;i<rest.length;i++) if(ipaIsVowel(rest[i])) got.push(rest[i]);
+  for(i=0;i<got.length;i++) rest.splice(rest.indexOf(got[i]), 1);
+  if(got.length) out+=abField(t('ipa.vows'), got.join('  '));
+  if(rest.length) out+=abField(t('ipa.other'), rest.join('  '));
+  return out? '<div class="abfx">'+out+'</div>' : '';
+}
 function abHead(sec, folds){
   var nm=wldSecNm(sec);
   /* The marker is drawn only when there is something under it to fold. A
@@ -1046,9 +1063,6 @@ function vAbout(){
      left is the thing itself: a heading that folds, a way through on the ones
      whose chapter is elsewhere, and the content under it. */
   var lead='';
-  if(wldUse()) lead+='<div class="abtuse">'+
-    '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
-    '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
   /* The note is the rest of the lead: an article says what it is before it
      starts dividing itself up, and that paragraph carries no heading. */
   if(w.note) lead+='<div class="abtl abtlead">'+esc(w.note)+'</div>';
@@ -1071,11 +1085,14 @@ function vAbout(){
       inner+=abField(t('dir.title'), t('dir.'+scriptDir()));
       inner='<div class="abfx">'+inner+'</div>';
     } else if(sec.r==='sound'){
-      /* The sounds the language is made of. The chapter they used to live in
-         is closed -- a sound belongs to the letter that says it -- so this is
-         the only place the inventory is shown whole, and it is a fact about
-         the language rather than a way into anything. */
-      if(addedSnd().length) inner+='<div class="abtl">'+esc(addedSnd().join('  '))+'</div>';
+      /* The sounds the language is made of, in the rows a phonology has --
+         「破裂音とか母音子音で区別つけるだろ普通に」 OWNER 2026-08-25. They were
+         one flat line, which is a bag of symbols and not an inventory.
+         The manners are read off IPA_CONS through ipaManners(), the way
+         sound.js's own chart reads them, so a manner added there is a row
+         here the same day and nothing is written out twice. A row with none
+         of this language's sounds in it is not drawn. */
+      inner+=abSounds();
     } else if(sec.r==='letters'){
       /* Only what has a shape on it: the free plan puts thirty-eight slots
          there the moment a language exists, so all of them would be a summary
@@ -1085,8 +1102,12 @@ function vAbout(){
          second argument of ltCell() is what a cell answers to instead of
          opening its own page, and giving it one also takes the speaker off:
          this is an article, so a letter here is a picture of a letter. */
+      /* In the order the alphabet has -- 「文字も普通にabc順とか順序あるだろ」.
+         ltOrder() is that order: what somebody arranged by hand if they have,
+         and a b c by name if they have not. The grid was in whatever order
+         LETTERS happened to be in. */
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
-        drawn.map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
+        ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
     } else if(sec.r==='gram'){
       /* The stages that have been answered, by name. Not how many of them --
          a fraction is the app's progress bar, and this is an article. */
