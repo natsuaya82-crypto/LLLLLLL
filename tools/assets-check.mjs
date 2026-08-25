@@ -122,6 +122,21 @@ const src = referenced
   .map((r) => { try { return readFileSync(join(WWW, r), 'utf8') } catch (e) { return '' } })
   .join('\n')
 const named = (rel) => {
+  /* A SCRIPT is not "named". The paragraph above says so already -- a script
+     is loaded by index.html and nothing else can load one -- and for a long
+     time the code below did not do what that paragraph said: it matched the
+     file name anywhere in the concatenated source of every .js, COMMENTS
+     INCLUDED. So `www/foo.js` passed on the strength of another file's
+     comment mentioning it, while no <script> tag loaded it. That is the exact
+     blank screen this whole check was written after, arriving through the
+     check instead of past it, and it was found for real: `lexicon.js` was
+     hidden by the words "lexicon.js が..." in `model.js`'s comment.
+
+     A comment is not a loader. For a .js the only reference that counts is a
+     tag in index.html, which is what `refSet` holds. `named()` is for
+     everything ELSE -- the photograph in the keyboard's help sheet -- which
+     genuinely is reached by the code that shows it. */
+  if (rel.endsWith('.js')) return false
   const leaf = rel.split('/').pop()
   return src.indexOf(rel) >= 0 || src.indexOf(leaf) >= 0
 }
@@ -130,8 +145,13 @@ for (const abs of walk(WWW)) {
   if (rel === 'index.html') continue
   if (!refSet.has(rel) && !named(rel)) {
     note(
-      `www/${rel} exists but nothing in index.html or www/*.js names it.\n` +
-        `      Either reference it, or delete the file.`
+      rel.endsWith('.js')
+        ? `www/${rel} exists and no <script> in index.html loads it.\n` +
+            `      A .js is loaded by index.html or it does not run at all --\n` +
+            `      being mentioned in another file's comment is not loading it.\n` +
+            `      Either add the tag, or delete the file.`
+        : `www/${rel} exists but nothing in index.html or www/*.js names it.\n` +
+            `      Either reference it, or delete the file.`
     )
   }
 }
