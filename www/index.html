@@ -1612,22 +1612,15 @@ a.set{text-decoration:none}
 /* A row of the overview being written: its name over what it says, the way
    the article shows them, with the two arrows and the way to take the row
    out beside them. */
-/* A row of the overview is ONE box, and the corner on it is the owner's:
-   「四角に入れて… 線多すぎてクソ見づらいわ。角丸でもいいから」 OWNER 2026-08-25,
-   which is why `.ovrow` is on tools/box-baseline.txt in a commit of its own.
-   Inside it there are no underlines at all -- the box is what says where the
-   row begins and ends, and two fields under two small names is fewer lines
-   than four rules and three buttons. */
-.ovrow{border:1px solid var(--line);border-radius:12px;padding:10px 12px 12px;
-       margin-top:10px;background:none}
-.ovtop{display:flex;align-items:center;gap:8px;width:100%}
-.ovlb{flex:1 1 auto;color:var(--txm);font-size:.78rem;line-height:1.4}
-.ovx{flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;
+/* A row of the overview: the name on a line with the way to take the row
+   out, and under it what it says. No box and no corner -- 「角丸はゴミ」 --
+   and no label over either field: a rule under each is what a field is here
+   （「基本下線だけ」）. */
+.ovrow{padding:0 0 6px}
+.ovtop{display:flex;align-items:center;gap:6px;width:100%}
+.ovk{flex:1 1 auto;min-width:0}
+.ovx{flex:0 0 auto;width:44px;height:44px;display:flex;align-items:center;
      justify-content:center;background:none;border:0;color:var(--txm)}
-.ovf{width:100%;background:none;border:0;padding:2px 0 6px;color:var(--tx);
-     font-family:inherit;font-size:1rem;line-height:1.5}
-/* Held, and on its way somewhere. The list stops scrolling under the finger
-   while one is up -- the same two states the alphabet's grid has. */
 .ovrow.lift, .wsrow.lift{opacity:.9}
 .ovlist.moving, .wslist.moving{touch-action:none}
 /* The letters, in an article rather than in the alphabet: smaller, denser,
@@ -2730,6 +2723,14 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
    padding:12px 2px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
 textarea.ntbody:focus{border-bottom-color:var(--goldln)}
+/* A box that is written into is as tall as what is in it and no taller: no
+   scrollbar of its own inside a page that already scrolls, and no field of
+   empty grey where nothing has been written yet.
+   `textarea.grow` and not `.grow`, and after `.ntbody` rather than before it,
+   because `.ntbody` sets a floor of 180px and `textarea.ntbody` sets resize —
+   a single class written earlier loses to both, which is what left every one
+   of these boxes tall and half empty. */
+textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then
