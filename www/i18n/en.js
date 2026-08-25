@@ -662,6 +662,8 @@ defLang('en', (function(){
       'langs.untitled'  : "Untitled",
       'langs.open'      : "Open",
       'langs.none'      : "Nothing yet",
+      'langs.new'      : 'New language',
+      'langs.full'      : 'The most is {0} languages.',
       /* plans */
       'plans.title'     : "Plans",
       'plan.cur'        : "current",

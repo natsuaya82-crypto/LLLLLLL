@@ -123,12 +123,27 @@ function langStore(){
     localStorage.setItem(LS_CUR, langId);
   }catch(e){}
 }
+/* A new language of this person's, in the index and nowhere else yet. Its
+   slices do not exist until something writes one, which is what an empty
+   language IS -- langRead() below puts the globals back to empty when it
+   cannot find any.
+
+   One place, because there are two callers and they arrive from opposite
+   ends: langFirst() is the first run, where there is no language to leave,
+   and langNew() is the button, where there is one and it has to be written
+   out first. Minting the id twice would be two answers to what a language id
+   looks like. The loop is not superstition -- getTime() is a millisecond and
+   a check can press a button twice inside one. */
+function langMint(){
+  var id='L'+(new Date()).getTime().toString(36), n=0;
+  while(LANGS[id]){ n++; id='L'+(new Date()).getTime().toString(36)+n.toString(36); }
+  LANGS[id]={ name:'', mine:true };
+  return id;
+}
 /* Nothing here at all: a first run, or a first run after the migration found
    nothing to move. The person gets one empty language of their own. */
 function langFirst(){
-  var id='L'+(new Date()).getTime().toString(36);
-  LANGS[id]={ name:'', mine:true };
-  langId=id;
+  langId=langMint();
   langStore();
 }
 try{
@@ -249,6 +264,27 @@ function langOpen(id){
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
   goTab('profile');
+}
+/* Another language, made and opened. 「アカウントが変わるイメージ。実際の sns
+   はアカウント切り替えボタンあるやん？あれが言語切り替えになるって感じ」
+   OWNER DECISION 2026-08-25: a language is an account and the list is the
+   account switcher, so this sits at the foot of that list and nothing is
+   asked first -- langFirst() already makes a nameless one and the onboarding
+   already asks the name, so the second arrives the way the first did.
+
+   The ceiling is asked HERE and not on the screen that draws the button,
+   because the button is drawn on every plan: 「だいたい無料で使えないやつは
+   表示させていいよ」 OWNER DECISION 2026-08-25. A door that is shown and a
+   door that is open are two different sentences, and this is where the second
+   one is answered.
+
+   langOpen() does the rest and is untouched: it writes out the language being
+   left, switches, reads the new one in and calls viewReset(). */
+function langNew(){
+  if(langStop()) return;
+  var id=langMint();
+  langStore();
+  langOpen(id);
 }
 
 function save(){
@@ -423,6 +459,65 @@ function kbCap(){
   if(has('pro')) return Infinity;
   return has('plus')? PLUS_KB : FREE_KB;
 }
+/* How many languages of their own this person may have. Free 1, Plus 1,
+   Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
+   プロは3」.
+
+   Plus and Free are the same number and that is the decision, not an
+   oversight: this app is for making ONE language deeply, and the three are
+   for the person who wants a second and a third rather than the thing being
+   sold. Written as two names anyway, because they are two facts that happen
+   to be equal today and a number that is two facts is not a constant.
+
+   Not Infinity anywhere: three is a real ceiling on every plan there is. */
+var FREE_LANGS=1, PRO_LANGS=3;
+function langCap(){
+  return has('pro')? PRO_LANGS : FREE_LANGS;
+}
+/* And what it is compared against: the languages that are THIS PERSON'S.
+
+   `mine` and not the length of LANGS, which also holds every language being
+   read from somebody else. Reading one is free and always was -- a timeline
+   is people writing in languages this phone has never seen -- so counting
+   them here would make looking at the timeline fill up a ceiling, which is a
+   punishment for using the app. */
+function langCount(){
+  var n=0, id;
+  for(id in LANGS)
+    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] && LANGS[id].mine) n++;
+  return n;
+}
+/* The ceiling on languages, met. True means the caller must stop.
+
+   Same shape as capStop() below and a different answer to the same question,
+   which is worth reading side by side because the two look like they
+   disagree.
+
+   capStop() must not MOVE anybody: it is the hundredth word arrived at in the
+   middle of typing the hundred-and-first, and taking the screen off somebody
+   mid-sentence to show them a price list is the app punishing them for using
+   it. This is a button pressed on purpose, so the plans screen is the answer
+   to what was just asked rather than an interruption of something else.
+   「無料はタップすると課金ページに飛ばされる」 OWNER DECISION 2026-08-25.
+
+   Except where there is nothing to go to. Somebody already holding the
+   biggest ceiling there is would arrive at a price list that answers nothing
+   -- a screen with no cause and no way out, which is the ONE case CLAUDE.md's
+   2026-08-22 narrowing says gets a sentence. It gets one sentence and nothing
+   beyond it. `langCap() < PRO_LANGS` and not a plan name: the question is
+   whether a bigger ceiling exists to buy, and that stays true the day the
+   numbers move.
+
+   Nothing here removes, hides or counts down anything. Somebody who already
+   has more than this -- a plan that ended, a number that moved -- keeps every
+   one of them, sees every one of them and backs every one of them up. Only
+   the next one is refused. */
+function langStop(){
+  if(langCount()<langCap()) return false;
+  if(langCap()<PRO_LANGS) go('plans');
+  else alert(t('langs.full', langCap()));
+  return true;
+}
 function plan(){ return SET.plan||'free'; }
 /* What of the settings goes to the file. Everything, except on a phone, where
    the plan is in the Keychain and a second copy in an editable file would be
@@ -525,6 +620,20 @@ var CAN={
      「1,1+3.無制限って言わなかったっけ？」 */
   kb:      'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
+  /* Editing a post you have already sent. 「ツイートの編集も課金から」
+     「課金からはベーシックからってことね プラスならプラスっていうから」
+     OWNER DECISION 2026-08-23. postEdit() asked nothing about a plan until
+     this landed -- anybody could edit their own post -- so this is the one
+     capability here that TAKES something away rather than opening a door
+     nobody had. Nothing edited is un-edited by it: the refusal is on the
+     press, and every post already changed stays changed. */
+  edit:    'plus',
+  /* The mark beside your name. 「バッチはplusから」 -- Plus in the old three
+     names, which is Pro in these. postBadge() already showed it only there
+     and read plan() to find out, which is the one thing this table is here
+     to prevent -- a plan name written into a screen is a question nobody can
+     move between rungs without finding every place that asked it. */
+  badge:   'pro',
   gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
   dir:     'pro'     /* choosing which way the language is written */
 };

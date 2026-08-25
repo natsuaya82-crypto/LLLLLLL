@@ -755,6 +755,8 @@ defLang('zh', (function(){
       "langs.untitled"   : "未命名",
       "langs.open"       : "已打开",
       "langs.none"       : "还没有",
+      "langs.new"       : "新建语言",
+      "langs.full"       : "最多 {0} 种语言。",
       "plans.title"      : "方案",
       "plan.cur"         : "当前",
       'plan.badge'            : "名字旁边的徽章",

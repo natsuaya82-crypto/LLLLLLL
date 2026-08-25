@@ -751,6 +751,8 @@ defLang('it', (function(){
       "langs.untitled"   : "Senza titolo",
       "langs.open"       : "Aperta",
       "langs.none"       : "Ancora niente",
+      "langs.new"       : "Nuova lingua",
+      "langs.full"       : "Il massimo è {0} lingue.",
       "plans.title"      : "Piani",
       "plan.cur"         : "attuale",
       'plan.badge'            : "Un distintivo accanto al tuo nome",

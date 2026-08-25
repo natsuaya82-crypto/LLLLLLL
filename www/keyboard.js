@@ -332,7 +332,23 @@ function kbAdd(pat){
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
-  if(!kbRoomKb()){ toast(t('kb.full', kbCap())); return; }
+  /* The ceiling, said and offered. It was a toast: a sentence about a plan
+     with no way to the thing it is about, which is the one shape the owner
+     ruled out. 「そのプランでできることできないことで UI 自体に変更がない方が
+     良くない？」「課金させる動線を減らしたくない」 OWNER DECISION 2026-08-25.
+
+     capStop()'s shape exactly, and for capStop()'s reason: iOS's own dialog
+     rather than one of ours, answerable with "no", and nobody is moved unless
+     they say yes -- building a keyboard is not a place to have the screen
+     taken away. Two strings that are already in ten languages rather than an
+     eleventh.
+
+     Pro never sees it: kbCap() is Infinity there, so kbRoomKb() cannot be
+     false, and there is no plan above to be offered. */
+  if(!kbRoomKb()){
+    if(confirm(t('kb.full', kbCap())+'\n\n'+t('up.cta'))) go('plans');
+    return;
+  }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
@@ -1074,7 +1090,7 @@ function kbHTML(sel, ro){
     out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(KBH.i*2)+');'+
       'width:calc(100% / '+cols+' * '+Math.min(2, cols-KBH.i*2)+')"></span>'+out;
   return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
-    (ro? '' : ' style="--kc:'+cols+'"')+'>'+out+'</div>';
+    (ro? '' : ' style="--kc:'+cols+';width:'+kbSheetW(cols)+'"')+'>'+out+'</div>';
 }
 
 /* ---- the keyboard is not typed on in here ------------------------------
@@ -1397,7 +1413,7 @@ function kbTileTo(e){
     KBT.on=true;
     KBT.ghost=document.createElement('div');
     KBT.ghost.className='kbghost';
-    KBT.ghost.style.width=kbCellW(KBT.w, kbCols(kbLayer().rows));
+    KBT.ghost.style.width=kbCellW(KBT.w);
     document.body.appendChild(KBT.ghost);
   }
   e.preventDefault();
@@ -2125,19 +2141,46 @@ function kbEditFnHTML(key){
    opening it -- one mode, one press to leave it. */
 var kbNew1=0;
 function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
-/* How wide a key of w is ON THIS SHEET, as a calc the stylesheet owns the
-   numbers in. The sheet is --kbw across and kbCols() columns wide, a column is
-   half a key, and a key gives back --kbgap of that to the space beside it. */
-function kbCellW(w, cols){
-  return 'calc(var(--kbw) / '+cols+' * '+(kbU(w))+' - var(--kbgap))';
+/* How wide a key of w is, as a calc the stylesheet owns the numbers in.
+
+   **A column is a fixed width and the board is as wide as its columns make
+   it.** Not the other way round. 「エクセルみたいにキーボードにやって横幅が
+   固定されるはずだよ。縦の列は追加できるかもだけど」 OWNER DECISION
+   2026-08-25.
+
+   It used to divide --kbw by the columns THIS board happens to have, so the
+   board was always the same width and the cells stretched to fill it: a board
+   of three columns drew three enormous cells across the whole phone, and a
+   spreadsheet does not resize its columns because you deleted some.
+
+   So the divisor is KB_COLS -- the ten-key board rule 19 fixes -- and never
+   this board's own count. --kbw is what a FULL board is across; a column is
+   a twentieth of it because a column is half a key. A key gives back --kbgap
+   to the space beside it.
+
+   kbSheetW() below is the other half and has to agree with this to the pixel,
+   which is why they are next to each other rather than one of them being a
+   line in the stylesheet. */
+function kbCellW(w){
+  return 'calc(var(--kbw) / '+KB_COLS+' * '+(kbU(w))+' - var(--kbgap))';
+}
+/* And the board, which is now the consequence rather than the cause: as many
+   fixed columns as it has. It sits where a short row already sits -- the
+   middle of the sheet, rule 19 -- because .kb.kbsheet is margin:auto.
+
+   This is written here rather than in index.html for the reason above: the
+   sheet's width and the cell's width are one statement, and a statement split
+   across two files is two that can drift. The stylesheet still owns every
+   NUMBER in it -- --kbw and --kbgap are its. */
+function kbSheetW(cols){
+  return 'calc(var(--kbw) / '+KB_COLS+' * '+cols+')';
 }
 function kbNewHTML(){
-  var cols=kbCols(kbLayer().rows);
   return '<div class="kbnew" id="kbnew">'+
     '<span class="kbnewl">'+esc(t('kb.add.k'))+'</span>'+
     '<span class="kbnewr">'+[1,2,3].map(function(w){
       return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
-        ' data-w="'+w+'" style="width:'+kbCellW(w, cols)+'"'+
+        ' data-w="'+w+'" style="width:'+kbCellW(w)+'"'+
         ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
     }).join('')+'</span></div>';
 }

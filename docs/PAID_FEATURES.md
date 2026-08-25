@@ -21,6 +21,26 @@ and must never share a branch.** A failed entitlement check means *fewer
 buttons*, never *fewer words*. If the check fails, fail toward the free plan
 and leave every byte where it is.
 
+**The buttons half was turned over by the owner on 2026-08-25, and the words
+half was not.** 「だいたい無料で使えないやつは表示させていいよ。課金させる
+動線を減らしたくない」「無料はタップすると課金ページに飛ばされる」 A door a
+plan has closed is **drawn anyway**, on every plan, and pressing it goes to the
+plans screen. Hiding it was costing the one thing a locked door is for: nobody
+buys what they cannot see.
+
+So *fewer buttons* is no longer how a closed door looks — but the sentence it
+was protecting is untouched and is the one that matters. **Nothing a person
+made is hidden, moved or removed by a plan**, and a screen that shows fewer
+WORDS on the free plan is still the bug it always was. The two halves were
+never the same statement; only one of them was ever absolute.
+
+`capStop()` — the words ceiling met in the middle of typing — is read as NOT
+covered by this, and the reason is written on the function: it stopped doing
+`go('plans')` because somebody halfway through a word had the screen taken off
+them. That is a *metered* ceiling arrived at by accident; this decision is
+about a door pressed on purpose. The decision log says to ask the owner if that
+reading is wrong.
+
 This is already how it is built and it is worth saying why: the backup list
 sits **above** the lock in the settings, not behind it, because charging for
 not losing somebody's work means answering, on the day it is lost, whether they
@@ -46,7 +66,9 @@ Plus < Pro` needs nobody told which is which.
 | `snd` choose the sound, not the letter's own | — | yes | yes |
 | words | 100 | 1000 | no ceiling |
 | `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
-| `gram` `dir` `data` `file` | — | — | yes |
+| languages on this phone | **1** | **1** | **3** |
+| `edit` editing a post you have sent | — | **yes** | yes |
+| `gram` `dir` `data` `file` `write` `badge` | — | — | yes |
 
 **The words ceiling is a number, not a door.** `wordCap()` is the one place
 that says it — `Infinity` on Pro, a thousand on Plus, `FREE_LIMIT` below
@@ -93,6 +115,9 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `gram` | plus | a grammar stage of your own, past the fifteen |
 | `dir` | plus | choosing which way the language is written. **Reading one is free** |
+| `edit` | plus | editing a post you have already sent |
+| `write` | pro | the sheet — letters written on paper and brought back in (ch 26) |
+| `badge` | pro | the mark beside your name |
 
 `dir` is the one that gates half a thing, and the half it does not gate is the
 important one. A language can run left→right, right→left, or down the page

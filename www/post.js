@@ -656,13 +656,25 @@ function postCatchUp(){
    tools/sides-check.mjs allows postBadge() below the line by name, with this
    paragraph as the reason. It is the second exception in that file and the
    first one that is about time rather than about language. */
+/* The mark itself, in one place, because two screens draw it to answer two
+   different questions and only the picture is shared. The plans screen asks
+   "does THIS PLAN carry the mark" -- a fact about a price list, true of the
+   Pro row whoever is reading it. A post asks "does the person holding this
+   phone have it", which is a capability and goes through can(). */
+function badgeMark(){
+  return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
+}
 function planBadge(id){
-  if(id==='pro') return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
+  if(id==='pro') return badgeMark();
   return '';
 }
 function postBadge(p){
   if(!p || !p.mine) return '';
-  return planBadge(plan());
+  /* can('badge') and not plan(). It answered the same thing on the day this
+     changed and will not the first time the mark moves a rung -- which is
+     the whole of why CAN exists. 「バッチはplusから」 OWNER DECISION
+     2026-08-23; the rung is in core.js and nowhere else. */
+  return can('badge')? badgeMark() : '';
 }
 /* There was a preview under the field: the line you were typing, drawn again
    in the letters you drew. It was written before the keyboard was, and the
@@ -1677,6 +1689,20 @@ function postEdit(id){
   var p=postById(id);
   if(!p || !p.mine) return;
   PMENU='';
+  /* Plus's, from 2026-08-23. 「ツイートの編集も課金から」
+
+     The pencil is drawn on EVERY plan and the refusal is here, on the press,
+     which is the owner's decision of 2026-08-25: 「だいたい無料で使えないやつ
+     は表示させていいよ。課金させる動線を減らしたくない」「無料はタップすると
+     課金ページに飛ばされる」. Hiding it was the older shape and it cost the
+     one thing a closed door is for -- nobody buys what they cannot see.
+
+     go() and not a toast, and this is the opposite of what capStop() does
+     four screens away. That one is a ceiling arrived at halfway through
+     typing a word, where moving somebody is taking the screen off them; this
+     is a door pressed on purpose, where the plans screen is the answer to
+     what was just asked. The two are in the decision log side by side. */
+  if(!can('edit')){ go('plans'); return; }
   PW=pwBlank();
   PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
   openPost();

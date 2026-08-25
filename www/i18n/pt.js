@@ -757,6 +757,8 @@ defLang('pt', (function(){
       "langs.untitled"   : "Sem título",
       "langs.open"       : "Aberto",
       "langs.none"       : "Nada ainda",
+      "langs.new"       : "Novo idioma",
+      "langs.full"       : "O máximo são {0} idiomas.",
       "plans.title"      : "Planos",
       "plan.cur"         : "atual",
       'plan.badge'            : "Um distintivo ao lado do seu nome",
