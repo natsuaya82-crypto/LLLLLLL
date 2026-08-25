@@ -29,13 +29,14 @@ var LS_ME='lingua.me';
    server every launch. It is written by netAvSync() and read by nothing else.
    It is here rather than in SET because it belongs to the account, and SET is
    the person's settings and travels between them. */
-var ME={name:'', handle:'', bio:'', pic:'', avSent:''};
+var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
 function meRead(){
-  ME={name:'', handle:'', bio:'', pic:'', avSent:''};
+  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
   try{
     var m=JSON.parse(localStorage.getItem(LS_ME)||'null');
     if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||'');
            ME.bio=String(m.bio||''); ME.pic=String(m.pic||'');
+           ME.link=String(m.link||''); ME.loc=String(m.loc||'');
            ME.avSent=String(m.avSent||''); }
   }catch(e){}
 }
@@ -68,6 +69,20 @@ function meSetName(v){ ME.name=String(v||''); saveMe(); }
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
 function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
+/* リンクと、居るところ。どちらも bio と同じただの文字列で、同じ形で書いて
+   ある ── 検証も、書式も、候補も無い。
+
+   位置情報が自由入力なのは OWNER DECISION, 2026-08-25:
+     「自由入力です。」
+     「だって自分の国入れたい人だっているやん」
+   国名を入れる人が居る、というのが理由。だから国コードにしない、候補リスト
+   にしない、検証しない、地図にしない。端末の位置は使わない ── CoreLocation
+   も権限も Info.plist も要らないし、開けてもいけない。
+
+   リンクについてはオーナーは何も言っていない。位置情報の答えを当てはめない
+   ため、こちらも同じ「ただの文字列」以上のことはしていない。 */
+function meSetLink(v){ ME.link=String(v||''); saveMe(); }
+function meSetLoc(v){ ME.loc=String(v||''); saveMe(); }
 /* ---- a face of your own ------------------------------------------------
    A file input, because that is the one way a WKWebView opens the camera
    roll without a plugin, and the plugin would have to be installed on a
@@ -347,32 +362,52 @@ function openMe(){
      longer the last row. The line it would otherwise draw is a border, and
      borders are not added here. */
   openForm('me:', pageName('profile'),
-    '<div class="sec">'+esc(t('me.pic'))+'</div>'+
-    /* The face is a label for the same input the button below it opens, so
-       the thing somebody actually reaches for is the thing that works. It
-       carries `for` rather than wrapping the input, because the input is
-       already inside .picpick and there is only one of it -- and .picpick
-       does not open the camera roll by being a label at all: the stylesheet
-       stretches the invisible input across it (`position:absolute;inset:0`),
-       so the tap lands on the input itself. Nothing here is styled, added or
-       taken away; a span became a label and kept its class. */
-    '<div class="picrow"><label class="pav" for="me-pic">'+
-      postFace({who:meName(), lname:langName, av:postAvatar()})+'</label>'+
-      '<label class="btn ghost picpick">'+esc(t('me.pic.pick'))+
-        '<input type="file" id="me-pic" accept="image/*"' + CH('meSetPic') + '></label>'+
+    /* The face is the label, and the input lives inside it -- so the thing
+       somebody reaches for is the thing that opens the camera roll, in one
+       tap. `.picpick` never opened it by being a label either: the stylesheet
+       stretches the invisible input across it, and the tap lands on the input.
+       The same trick, on the face, written here because `.pav` is worn by
+       eight other screens and www/index.html is not this branch's to change.
+       The separate "choose a picture" button is gone with it -- it was the
+       thing that made this screen look untouched. */
+    /* 見出しは無し ── 「アイコンって文字いらない」(OWNER, 2026-08-25)。
+       名前・ID・リンク・位置情報は、名札と欄が一行に並ぶ `.field.at` で。
+       これは @ の欄が既に使っている形（`display:flex;align-items:center`）で、
+       新しい CSS は足していない。 */
+    '<div class="picrow" style="align-items:center">'+
+      '<label class="pav" style="position:relative;width:96px;height:96px">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+
+        '<input type="file" id="me-pic" accept="image/*" '+
+          'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+          CH('meSetPic') + '></label>'+
+      '<div style="flex:1 1 auto;min-width:0">'+
+        '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.name'))+'</span>'+
+          '<input id="me-nm" value="'+esc(ME.name)+'" '+
+          'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
+        '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.handle'))+'</span>'+
+          '<input id="me-hd" value="'+esc(ME.handle)+'" '+
+          'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
+          'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
+      '</div>'+
     '</div>'+
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
        '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
-    '<div class="sec">'+esc(t('me.name'))+'</div>'+
-    '<div class="field"><input id="me-nm" value="'+esc(ME.name)+'" '+
-      'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
-    '<div class="sec">'+esc(t('me.handle'))+'</div>'+
-    '<div class="field"><input id="me-hd" value="'+esc(ME.handle)+'" '+
-      'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
     '<div class="field"><textarea id="me-bio" placeholder="'+esc(t('me.bio.ph'))+'"' +
-      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>');
+      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
+    /* ⚠ この二つは半分です。`meSetLink` `meSetLoc` は www/act-map.js に
+       登録されておらず、`me.link` `me.loc` は www/i18n/*.js にありません
+       ── どちらもこの枝の持ち物ではないので、名前を呼ぶだけにしてある。
+       act-map の二行と、十言語ぶんの鍵が入るまで、この二つの欄は表示は
+       されても入力しても保存されません。`npm run act` と `npm run i18n`
+       はそれまで赤です。 */
+    '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.link'))+'</span>'+
+      '<input id="me-lk" value="'+esc(ME.link||'')+'" '+
+      'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
+      'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
+    '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.loc'))+'</span>'+
+      '<input id="me-lc" value="'+esc(ME.loc||'')+'" '+
+      'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
