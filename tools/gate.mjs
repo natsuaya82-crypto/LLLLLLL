@@ -3,7 +3,7 @@
 
    Run it:   npm test
 
-   Twenty-four checks, and sixteen of them start a headless browser and walk
+   Twenty-five checks, and seventeen of them start a headless browser and walk
    the app -- most over a port of their own; `shape-check` opens `index.html`
    off the disk instead, which is why it needs no port. Run one after another
    that is ten minutes, and ten minutes is long enough that a check stops being run

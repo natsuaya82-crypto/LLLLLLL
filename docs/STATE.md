@@ -440,10 +440,15 @@ written down because otherwise the next person repeats the digging:**
   engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
   and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
   and unworn against a baseline of 4**.
-- **The gate is 24 checks**, not the nineteen `CLAUDE.md` still says: eight
-  with no browser (`grammar-engine-check` joined them) and sixteen with one
-  (`plan-check`, `sheet-check` and `shape-check` joined them). That count in
-  `CLAUDE.md` is stale and is on nobody's list yet.
+- **The gate is 25 checks**, not the nineteen `CLAUDE.md` still says: eight
+  with no browser (`grammar-engine-check` joined them) and seventeen with one
+  (`plan-check`, `sheet-check`, `shape-check` and `gramlang-check` joined
+  them). It read 24 here until 2026-08-25, when `4f8b681` wired
+  `gramlang-check` in on `claude/leader-integration` -- the same shape as
+  `shape-check` two bullets down, and caught the same way: by counting
+  `FAST` and `SLOW` in `tools/gate.mjs` rather than believing a sentence.
+  `tools/gate.mjs`'s own opening comment said 24 as well and now says 25.
+  That count in `CLAUDE.md` is stale and is on nobody's list yet.
 - **`shape-check` was written, merged, and left out of the gate.** It was on
   `master` with an `npm run shape` script from the day `claude/inkshape` was
   integrated, and its name was in no list in `tools/gate.mjs`, so `npm test`
