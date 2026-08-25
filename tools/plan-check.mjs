@@ -360,6 +360,97 @@ const r = await pg.evaluate(({ s }) => {
   window.planKeep = realKeep;
   SET.plan = 'free'; save();
 
+  /* ---- 8. how many languages, and what happens to the ones already here --
+     Last, because making one SWITCHES which language is open and everything
+     above reads the open one.
+
+     Free 1, Plus 1, Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25
+     「言語数はプラスは1、プロは3」. This is the only ceiling in this file that
+     can find somebody already over it, so most of what is asked here is what
+     happens to them: they keep every language, see every language, and are
+     refused only the next one. 「ボタンは減る、言葉は減らない」 */
+  out.langFree = (SET.plan = 'free', langCap());
+  out.langMid  = (SET.plan = 'plus', langCap());
+  out.langTop  = (SET.plan = 'pro',  langCap());
+  SET.plan = 'free'; save();
+
+  /* A language being READ is not one of yours. Counting it would make looking
+     at the timeline fill up a ceiling. */
+  LANGS['l_read'] = { name: 'Somebody else\'s', mine: false };
+  out.langCountReading = langCount();          /* still 1 -- the open one */
+  delete LANGS['l_read'];
+
+  /* The door is drawn on the plan that cannot press it. 「だいたい無料で
+     使えないやつは表示させていいよ」 OWNER DECISION 2026-08-25. */
+  out.doorOnFree = vLangs().indexOf('langNew') !== -1;
+
+  /* Pressed on free, where the one language you have IS the ceiling: nothing
+     is made and the plans screen is where you land. */
+  var wentTo = '', saidIt = '', realAlert = window.alert;
+  window.alert = function(m){ saidIt = String(m); };
+  var wasCount = langCount(), wasLang = langId;
+  langNew();
+  out.freeMadeNone = langCount() === wasCount && langId === wasLang;
+  out.freeWent = here().r === 'plans';
+  out.freeSaidNothing = saidIt === '';
+
+  /* Pressed on pro, where there is room: it is made AND opened, which is what
+     the account switcher does. */
+  SET.plan = 'pro'; save();
+  langNew();
+  out.proMade = langCount() === wasCount + 1;
+  out.proOpened = langId !== wasLang && !!LANGS[langId] && LANGS[langId].mine;
+  /* and it arrived empty rather than carrying the last language's words */
+  out.proEmpty = WORDS.length === 0;
+
+  /* Somebody who already has three. The third is made, then the plan is taken
+     away, and the question is what happened to the three. */
+  langNew();
+  out.threeMade = langCount() === 3;
+  var threeIds = [], id0;
+  for (id0 in LANGS) if (LANGS[id0] && LANGS[id0].mine) threeIds.push(id0);
+  /* written out first: a language made a moment ago has no slices in storage
+     until something saves it, so measuring before that would be comparing an
+     unwritten language with a written one and calling the difference damage */
+  save();
+  var bytesThree = bytes();
+
+  SET.plan = 'free'; save();
+  out.freeStillHolds = langCount() === 3;
+  out.freeStillHasAll = threeIds.every(function(x){ return !!LANGS[x]; });
+  /* the LIST is asked for and read after, the same order section 1 uses: the
+     way this fails is a list that trims the thing it is listing */
+  var lhtml = vLangs();
+  out.freeStillShowsAll = threeIds.every(function(x){ return lhtml.indexOf(x) !== -1; });
+  out.freeStillHolds2 = langCount() === 3;
+  out.threeKeptBytes = same(bytesThree, bytes());
+  /* and the backup of the open one is written the same as it ever was */
+  out.threeBackup = bkPack().slices ? true : !!bkPack();
+
+  /* The fourth is the only thing refused. */
+  saidIt = '';
+  langNew();
+  out.fourthRefused = langCount() === 3;
+  out.fourthWent = here().r === 'plans';
+  /* and the three are the same three, still, AFTER the refusal -- which is
+     where a version that prunes down to the ceiling would do it. Asked by id
+     and in bytes rather than by counting: a count of three is also what you
+     get from deleting one and making another. */
+  out.fourthKeptAll = threeIds.every(function(x){ return !!LANGS[x]; });
+  out.fourthKeptBytes = same(bytesThree, bytes());
+
+  /* And on the plan that buys the most, where a price list answers nothing,
+     it says one sentence instead of moving anybody. That is CLAUDE.md's
+     2026-08-22 narrowing and the only place in this feature that has words. */
+  SET.plan = 'pro'; save();
+  go('langs');
+  saidIt = '';
+  langNew();
+  out.topRefused = langCount() === 3;
+  out.topSaid = saidIt;
+  out.topStayed = here().r === 'langs';
+  window.alert = realAlert;
+
   return out;
 }, { s: seed.toString() });
 
@@ -487,6 +578,31 @@ say(r.bdgTop !== '', 'and one on pro (' + (r.bdgTop ? 'drawn' : 'nothing') + ')'
 say(r.bdgTheirs === '', 'never on somebody else\'s post, whatever plan this phone is on');
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
+
+say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
+    'free and plus hold one language, pro holds three (' +
+    r.langFree + ' ' + r.langMid + ' ' + r.langTop + ')');
+say(r.langCountReading === 1,
+    'a language being READ from somebody else is not one of yours (' + r.langCountReading + ')');
+say(r.doorOnFree, 'the way to make one is drawn on free -- a closed door is shown, not hidden');
+say(r.freeMadeNone && r.freeWent && r.freeSaidNothing,
+    'pressed on free it makes none and lands on the plans screen, saying nothing');
+say(r.proMade && r.proOpened, 'pressed on pro it is made and opened');
+say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words');
+
+say(r.threeMade && r.freeStillHolds && r.freeStillHasAll,
+    'somebody with three keeps three when the plan ends');
+say(r.freeStillShowsAll && r.freeStillHolds2,
+    'and the list draws all three of them -- the ceiling hides nothing');
+say(r.threeKeptBytes, 'and not one byte of any slice moved');
+say(r.fourthRefused && r.fourthWent, 'only the fourth is refused, and it goes to the plans screen');
+say(r.fourthKeptAll && r.fourthKeptBytes,
+    'and being refused took none of the three away -- the same three ids, the same bytes');
+say(r.topRefused && r.topStayed,
+    'on the plan that buys the most the fourth is refused without moving anybody');
+say(/3/.test(r.topSaid || ''),
+    'and that is the one place with a sentence, because a price list would answer nothing (' +
+    (r.topSaid || 'nothing said') + ')');
 
 say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');

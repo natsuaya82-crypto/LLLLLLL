@@ -739,6 +739,8 @@ defLang('de', (function(){
       "langs.untitled"   : "Unbenannt",
       "langs.open"       : "Geöffnet",
       "langs.none"       : "Noch nichts",
+      "langs.new"       : "Neue Sprache",
+      "langs.full"       : "Das Maximum sind {0} Sprachen.",
       "plans.title"      : "Tarife",
       "plan.cur"         : "aktuell",
       'plan.badge'            : "Ein Abzeichen neben deinem Namen",

@@ -805,6 +805,26 @@ function langRow(id){
     '<span class="sl">'+esc(nm||t('langs.untitled'))+'</span>'+
     '<span class="lchk">'+(isOpen?ICON_TICK:'')+'</span></button>';
 }
+/* The way to make another one, at the foot of the list -- where "add an
+   account" sits in the app this is modelled on. 「アカウントが変わるイメージ。
+   実際の sns はアカウント切り替えボタンあるやん？あれが言語切り替えになるって
+   感じ」「せっていからでいいよ」 OWNER DECISION 2026-08-25: the list stays in
+   Settings and is not moved onto the profile.
+
+   It is drawn on every plan, including the one that cannot press it: a closed
+   door is shown rather than hidden. 「だいたい無料で使えないやつは表示させて
+   いいよ。課金させる動線を減らしたくない」 What happens on the press is
+   langStop()'s, in core.js, and is not asked here -- a screen that both drew
+   the door and decided whether it opens would be two places holding one rule.
+
+   A row and not a button of its own shape: it is the last row of a list, and
+   rows in one list are one height. Same tag, same class, same two spans as
+   langRow() above, which is what makes that true rather than nearly true. */
+function langAddRow(){
+  return '<button class="set lrow"' + DO('langNew') + '>'+
+    '<span class="sl">'+esc(t('langs.new'))+'</span>'+
+    '<span class="lchk"></span></button>';
+}
 function vLangs(){
   var ids=Object.keys(LANGS), mine=[], reading=[], i;
   for(i=0;i<ids.length;i++){
@@ -812,6 +832,7 @@ function vLangs(){
   }
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
     mine.map(function(id){ return langRow(id); }).join('')+
+    langAddRow()+
     '<div class="sec">'+esc(t('langs.reading'))+'</div>'+
     /* .empty is the full-screen one: 54px of padding and a serif heading,
        which is right for a screen with nothing on it and far too loud for a

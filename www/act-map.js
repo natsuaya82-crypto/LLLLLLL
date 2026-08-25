@@ -99,6 +99,7 @@ act('kbSetW', kbSetW);
 act('kbSlot', kbSlot);
 act('kbPut', kbPut);
 act('langOpen', langOpen);
+act('langNew', langNew);
 act('ltDropChar', ltDropChar);
 act('newLetter', newLetter);
 act('numStepBase', numStepBase);

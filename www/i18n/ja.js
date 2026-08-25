@@ -666,6 +666,8 @@ defLang('ja', (function(){
       'langs.untitled'  : '無題',
       'langs.open'      : '開いている',
       'langs.none'      : 'まだありません',
+      'langs.new'      : '言語を追加',
+      'langs.full'      : '言語は最大 {0} つです。',
       'plans.title'     : 'プラン',
       'plan.cur'        : 'いま',
       'plan.badge'            : "名前の横にバッジ",
