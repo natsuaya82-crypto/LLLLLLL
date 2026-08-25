@@ -51,5 +51,5 @@
   function key(languageId){ return langKeyOf(languageId,'gram2'); }
   function load(languageId, storage){ var raw; storage=storage||root.localStorage; if(!storage||!languageId) return null; try{ raw=storage.getItem(key(languageId)); return raw?api.languageModel(JSON.parse(raw)):null; }catch(e){ return null; } }
   function save(model, storage){ storage=storage||root.localStorage; if(!storage||!model||!model.languageId) throw new Error('Grammar v2 model needs languageId and storage'); storage.setItem(key(model.languageId),JSON.stringify(model)); return model; }
-  api.adapter={fromLegacy:fromLegacy,load:load,save:save,storageKey:key};
+  api.adapter={fromLegacy:fromLegacy,load:load,save:save,storageKey:key,idOf:idOf};
 }(typeof window!=='undefined'?window:this));
