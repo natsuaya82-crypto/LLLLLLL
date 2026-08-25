@@ -66,6 +66,8 @@
 .obchb | border-radius
 .obsrow | border
 .obsrow | border-radius
+.ovrow | border
+.ovrow | border-radius
 .pav | border-radius
 .ph | border
 .ph | border-radius
