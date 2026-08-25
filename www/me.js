@@ -338,7 +338,23 @@ function openMe(){
   if(!obNeed()) return;
   /* Named after the page it is the settings for, through the one function
      that names a page. */
+  /* The picture first, then the name, the handle and the bio -- OWNER
+     DECISION, 2026-08-25. It is the order somebody fills a profile in: the
+     face is the thing they came to change, and it used to be at the bottom
+     under three text fields.
+
+     The drop-the-picture row keeps `border-bottom:none` now that it is no
+     longer the last row. The line it would otherwise draw is a border, and
+     borders are not added here. */
   openForm('me:', pageName('profile'),
+    '<div class="sec">'+esc(t('me.pic'))+'</div>'+
+    '<div class="picrow"><span class="pav">'+
+      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
+      '<label class="btn ghost picpick">'+esc(t('me.pic.pick'))+
+        '<input type="file" id="me-pic" accept="image/*"' + CH('meSetPic') + '></label>'+
+    '</div>'+
+    (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
+       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
     '<div class="sec">'+esc(t('me.name'))+'</div>'+
     '<div class="field"><input id="me-nm" value="'+esc(ME.name)+'" '+
       'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
@@ -348,15 +364,7 @@ function openMe(){
       'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
     '<div class="field"><textarea id="me-bio" placeholder="'+esc(t('me.bio.ph'))+'"' +
-      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
-    '<div class="sec">'+esc(t('me.pic'))+'</div>'+
-    '<div class="picrow"><span class="pav">'+
-      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-      '<label class="btn ghost picpick">'+esc(t('me.pic.pick'))+
-        '<input type="file" id="me-pic" accept="image/*"' + CH('meSetPic') + '></label>'+
-    '</div>'+
-    (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
-       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : ''));
+      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the
