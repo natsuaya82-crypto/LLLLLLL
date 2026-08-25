@@ -251,6 +251,112 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-25
+- Area: The sheet takes a PDF and nothing else, for now
+- Decision:
+
+  「一旦写真禁止で、普通に pdf で提出以外受け取らないで行こう。
+   今後のアプデで追加しよ」
+
+  **The read side accepts a PDF only.** A photograph — jpg, png, a picture
+  taken with the phone — is turned away, and the sentence says so. Photographs
+  come back in a later update; nothing about them is deleted, only shut.
+
+  `www/sheet.js` reads both today: `shPdfJpeg()` takes the page out of a PDF
+  and the reader will equally take a plain image. What changes is which files
+  are offered and accepted, not the reader underneath it.
+
+- Reason: the owner's, and it is a shipping decision rather than a technical
+  one. What was never measured is exactly the photograph case — a brush and a
+  hard pencil, on paper, under a real camera — and 「紙が本当に精度高く
+  できんのか」 was the question this whole road started from. A scan or a
+  print-to-PDF has no camera in it: no lighting gradient, no perspective, no
+  focus. So the half that is proven ships and the half that is not waits.
+- Affected features: `www/sheet.js` — the read page, what the file chooser
+  offers, and one sentence for a file that is not a PDF. `shPdfWhy()` already
+  answers `photo` / `packed` / `drawn` / `not-pdf`, so the sentence has
+  somewhere to come from.
+- Affected data: none.
+
+### Decision
+- Date: 2026-08-25
+- Area: Shipaton 2026 — the app ships to the App Store by 30 September
+- Decision:
+
+  「shipaton だそう。9／30 までには出したい」
+
+  Lingua enters RevenueCat's Shipaton 2026 and the **first public version is
+  on the App Store before 2026-09-30 23:45 Pacific**.
+
+  The two rules that decide eligibility, read off the rules page rather than
+  remembered: the app's first public version must go live between 1 August and
+  30 September 2026 (an app already live anywhere before that window does not
+  qualify), and it must use the RevenueCat SDK for at least one in-app
+  purchase. **Lingua has never been publicly live** — TestFlight only, and
+  build 86 was refused by Apple — so it clears the harder of the two.
+
+- Reason: the money side is designed, priced and coded already, which is what
+  most entrants have to build. What is actually on the critical path is not
+  code: it is `docs/STATE.md` § 7 items 16, 16a–16d and 17, every one of them
+  a console the owner alone can open, and **16a blocks all building**. After
+  those comes an App Store review, which takes days and can fail — build 86
+  already did (`ITMS-90158`).
+- Affected features: `ios/App/App/LinguaStore.swift` gains RevenueCat in place
+  of talking to StoreKit directly. The four product ids do not move.
+  `tools/plan-check.mjs` holds twenty-odd claims about the current shape and
+  will need re-pointing, not rewriting: **money decides what may be DONE and
+  nothing about what exists** stays true through the swap or the swap is wrong.
+- Affected data: none. A subscription is not a slice.
+
+### Decision
+- Date: 2026-08-25
+- Area: A plan changes what happens when you press, not what you can see
+- Decision:
+
+  「普通に例えばキーボードを plus で5個以上追加しようとしたら pro の案内が
+   出るみたいにさ、そのプランでできることできないことで UI 自体に変更が
+   ない方が良くない？」
+
+  **The screen is the same on every plan.** A ceiling and a closed door both
+  show up at the moment somebody PRESSES, as a way to the plans screen — never
+  as a button that is not there.
+
+  This goes one step further than the decision recorded a few hours earlier
+  the same day (「無料で使えないやつは表示させていいよ。課金させる動線を
+  減らしたくない」), which was about closed doors. This is about ceilings too,
+  and it says the same thing about both.
+
+  **`capStop()` already IS this shape, and is the worked example.** The word
+  ceiling asks with iOS's own `confirm()` — the sentence and the upgrade word,
+  both already in ten languages — and goes to the plans screen on yes, and
+  leaves you exactly where you were on no. It used to `go('plans')` outright
+  and that was taken out for the right reason: it took the screen away from
+  somebody halfway through typing a word. So the answer to the question
+  `claude/plans` asked in ffd6022 is **no change is needed there**.
+
+  **The first thing that is NOT this shape is `kb.full`.** Today
+  `www/keyboard.js` says `toast(t('kb.full', KB_MAX))` and stops — a sentence
+  with no way to the thing it is about. It becomes `capStop()`'s shape.
+
+- Reason: the owner's, in one line — 「課金させる動線を減らしたくない」. You
+  cannot buy what you cannot see, and a button that quietly is not there tells
+  nobody anything.
+
+  **What this does NOT touch, and the distinction is the whole of it.**
+  `CLAUDE.md`'s money paragraph says a failed check means **fewer buttons,
+  never fewer words**. The BUTTON half is what this decision turns over: there
+  are no fewer buttons now either. The WORD half does not move by one
+  character — a plan that lapses hides nothing anybody made, deletes nothing,
+  and takes nothing out of a backup. `wordsSeen()` and the `letters` slice are
+  untouched. That sentence in `CLAUDE.md` needs rewording to match, and
+  rewording the head of that file is not a session's to do alone.
+- Affected features: every screen that draws something a plan closes.
+  Named today: `kb.full` (`www/keyboard.js`), `postEdit()` (`www/post.js`),
+  the door to a second language (`www/home.js`), and the write road
+  (`www/sheet.js`) once `CAN.write` exists.
+- Affected data: none.
+
+### Decision
+- Date: 2026-08-25
 - Area: Making a second language — where the door is, and what it does
 - Decision:
 
