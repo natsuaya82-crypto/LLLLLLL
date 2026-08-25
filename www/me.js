@@ -381,10 +381,12 @@ function openMe(){
           'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
           CH('meSetPic') + '></label>'+
       '<div style="flex:1 1 auto;min-width:0">'+
-        '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.name'))+'</span>'+
+        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.name'))+'</span>'+
           '<input id="me-nm" value="'+esc(ME.name)+'" '+
           'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
-        '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.handle'))+'</span>'+
+        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.handle'))+'</span>'+
           '<input id="me-hd" value="'+esc(ME.handle)+'" '+
           'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
           'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
@@ -401,11 +403,13 @@ function openMe(){
        act-map の二行と、十言語ぶんの鍵が入るまで、この二つの欄は表示は
        されても入力しても保存されません。`npm run act` と `npm run i18n`
        はそれまで赤です。 */
-    '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.link'))+'</span>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.link'))+'</span>'+
       '<input id="me-lk" value="'+esc(ME.link||'')+'" '+
       'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
-    '<div class="field at"><span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.loc'))+'</span>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.loc'))+'</span>'+
       '<input id="me-lc" value="'+esc(ME.loc||'')+'" '+
       'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
 }
