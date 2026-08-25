@@ -16,8 +16,6 @@
 .capwarn | border
 .capwarn | border-radius
 .cardbox | border-radius
-.exlb | border
-.exlb | border-radius
 .fab | border-radius
 .gborrow .gbx | border
 .gborrow .gbx | border-radius
@@ -103,8 +101,6 @@
 .pwpicn | border-radius
 .pwpicx::before | border-radius
 .pwq | border-radius
-.rel | border
-.rel | border-radius
 .rowq .qo | border
 .rowq .qo | border-radius
 .scin | border

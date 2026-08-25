@@ -970,17 +970,31 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
        margin-bottom:14px;color:var(--tx)}
 .spbig canvas.tc{width:80px;height:80px;display:block}
 .phk.own{border-color:var(--goldln)}
-/* A label on an example, so a pair reads as a comparison. */
+/* A label on an example, so a pair reads as a comparison. It was a 5px
+   rounded outline around two or three characters -- a box drawn round a word,
+   which is the shape the rule at the head of this file is about. The gold and
+   the letter-spacing already say it is a label; the outline said it twice.
+   No padding either: with the border gone, 6px of it pushed the label out of
+   line with the example underneath. */
 .exlb{display:inline-block;font-size:.82rem;letter-spacing:.08em;color:var(--gold);
-      border:1px solid var(--goldln);border-radius:5px;padding:2px 6px;margin-bottom:5px}
+      margin-bottom:5px}
 .exadd .exsm{flex:0 0 96px;min-height:44px}
 /* ---------- what an entry still had not got ----------
    A synonym or an opposite, as a word you can walk to. An example, as a line
    with its meaning under it. */
-.rels{display:flex;flex-wrap:wrap;gap:7px}
-.rel{border:1px solid var(--line);border-radius:9px;background:var(--pane);
-     padding:8px 11px;min-height:44px;color:var(--tx);text-align:left;font-family:inherit}
-.rel:active{border-color:var(--goldln)}
+/* A row, not a chip. These were 9px-cornered filled boxes wrapping across
+   the line, two blocks above `.exlist`, which is the same thing -- a list of
+   things belonging to this word -- drawn as rows with a hairline between.
+   Two shapes for one idea on one screen. This is `.exlist`/`.exrow`'s shape
+   and `.wdrow`'s press, because that is what a word you can walk to looks
+   like everywhere else in this sheet. `.relw` and `.relm` are untouched: they
+   stack inside the row exactly as they stacked inside the chip, which is why
+   `.rel` stays `display:block` rather than becoming a flex row. */
+.rels{border-top:1px solid var(--line)}
+.rel{display:block;width:100%;min-height:44px;padding:9px 2px;background:none;
+     border:0;border-bottom:1px solid var(--line);
+     color:var(--tx);text-align:left;font-family:inherit}
+.rel:active{background:var(--goldsf)}
 .relw{display:block;font-family:var(--face-caps);font-size:.96rem}
 .relm{display:block;font-family:var(--face-ital);font-style:italic;
       font-size:.88rem;color:var(--txm);margin-top:1px}
