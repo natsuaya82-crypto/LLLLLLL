@@ -1,3 +1,16 @@
+/* What a section carries is ONE question and it is whether it may be taken
+   away -- 「単語と文字とキーボードと文法にDL可能だけつけろ」 OWNER 2026-08-25.
+   The per-section 公開 switch is gone entirely: whether anybody may see this
+   at all is asked ONCE, of the page, at the top of this screen. Eight
+   switches were asking a question the page had already answered.
+
+   On the EDITOR and nowhere else -- 「なんで編集画面じゃないのにトグルが出て
+   くんの？」. The article is what somebody else reads. */
+function wldSecRows(sec){
+  return '<button class="set abdl"' + DO('setWldSecDl', [sec.r, !wldSecDl(sec.r)]) + '>'+
+    '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
+    swtHTML(wldSecDl(sec.r))+'</button>';
+}
 /* Lingua — the cover, the table of contents, the writing system (chapter 6)
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it. */
@@ -727,48 +740,70 @@ function wldArtSet(id, k, v){
   saveWld();
 }
 wldRead();
+/* The editor of the article, and it is laid out AS the article --
+   「編集画面と表示画面全然あってないのはなに？どうやって表示させんの？編集画面で
+   編集して作るんだろなんで独立してんだよ」 OWNER 2026-08-25, and that was right:
+   the two screens had grown their own orders. What you write at the top of
+   this one is what you read at the top of that one, section for section, in
+   the order wldSecs() gives -- one list, asked by both, so they cannot drift
+   apart again.
+
+   The sections whose content is a chapter of the app are a way through to it
+   and the one question that is theirs: whether somebody may take it away. The
+   sounds are not here at all and cannot be -- a sound belongs to the letter
+   that says it, so the inventory is written by drawing letters, not on this
+   screen. */
 function vWorld(){
-  var w=world();
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="sec">'+t('wld.where')+'</div>'+
-    '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
-      'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
-    '<div class="sec">'+t('wld.who')+'</div>'+
-    '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
-      'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>'+
-    '<div class="sec">'+t('wld.note')+'</div>'+
-    '<textarea class="ntbody" style="min-height:140px" placeholder="'+esc(t('wld.note.ph'))+'" '+
-      '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
-    /* And the sections. A row each, and a + that makes one and goes to it --
-       the same shape the notebook's list already has, so nothing new is
-       drawn. An untitled one says so rather than showing an empty row. */
-    secAdd(t('wld.secs'), DO('wldArtAdd'), t('wld.secs'))+
+  var w=world(), out='';
+  /* Whether this page exists for anybody else. Asked ONCE, of the whole page,
+     because that is the size of the question -- 「そもそもこの言語についてを公開
+     非公開にするページつけて。そうしたら他の人のプロフィールから見えない」. It is
+     the same `WLD.hide` the settings room has always written; this is a
+     second door onto it, on the screen where somebody is actually looking at
+     the page, and not a second answer. */
+  out+='<div class="sec">'+esc(t('wld.about'))+'</div>'+
+    '<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
+    '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
+    swtHTML(!wldHidden())+'</button>';
+  /* The lead, which is the first thing on the article and so the first thing
+     here. It carries no heading over there; here it needs one, because a box
+     to type in with nothing said about it is a box nobody fills. */
+  out+='<div class="sec">'+esc(t('wld.note'))+'</div>'+
+    '<textarea class="ntbody" style="min-height:120px" placeholder="'+esc(t('wld.note.ph'))+'" '+
+      '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>';
+  wldSecs().forEach(function(sec){
+    if(sec.r==='wldov'){
+      /* Each field says what it is above the box, the way the article says it
+         above the answer -- a placeholder disappears the moment somebody
+         types, and then two boxes of text have nothing to tell them apart. */
+      out+='<div class="sec">'+esc(t('wld.overview'))+'</div>'+
+        '<div class="abfk">'+esc(t('wld.where'))+'</div>'+
+        '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
+          'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
+        '<div class="abfk">'+esc(t('wld.who'))+'</div>'+
+        '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
+          'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>';
+      return;
+    }
+    /* Everything somebody wrote is one block, in the place the article puts
+       them, with the + that makes another. */
+    if(sec.nm!==undefined) return;
+    if(!sec.go) return;
+    /* The name is on the row that goes there, not on a heading above a row
+       that repeats it. Two rows saying 「文字」 is the fault the article was
+       already pulled up for. */
+    out+='<button class="set"' + DO('go', [sec.go]) + '>'+
+        '<span class="sl">'+esc(wldSecNm(sec))+'</span>'+
+        '<span class="sv">'+ICON_GO+'</span></button>'+
+      (sec.dl? wldSecRows(sec) : '');
+  });
+  out+=secAdd(t('wld.secs'), DO('wldArtAdd'), t('wld.secs'))+
     wldArts().map(function(one){
-      /* No state on these rows any more: the switch that sets it is a few
-         rows below, and the row saying 公開 beside a switch already saying so
-         was one fact in two places on one screen. */
       return '<button class="set"' + DO('go', ["wldart", one.id]) + '>'+
         '<span class="sl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
         '<span class="sv">'+ICON_GO+'</span></button>';
-    }).join('')+
-    /* ---- and what may be seen of each section --------------------------
-       This is the editor, so this is where they are set --
-       「なんで編集画面じゃないのにトグルが出てくんの？」 OWNER 2026-08-25. Every
-       section of the article is here, asked of wldSecs() rather than listed
-       again: a section added there arrives here the same day.
-       A section is public or not, and only a public one can be asked whether
-       it may be taken away -- two questions, and the second only follows the
-       first. */
-    /* Only the three that can actually be handed over carry these --
-       「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 and
-       「トグルいつまであんだよ」 OWNER 2026-08-25. The overview, the sounds, the
-       grammar and anything somebody wrote had a switch each and there was
-       nothing behind any of them: nobody can be shown this page yet, and
-       there is nothing in those four to take away. Eleven switches were
-       ten more than the page had answers for. */
-    '<div class="sec">'+esc(t('wld.shown'))+'</div>'+
-    wldSecs().map(function(sec){ return sec.dl? wldSecRows(sec) : ''; }).join('')+
-    '</div></div>';
+    }).join('');
+  return '<div class="view">'+navTop('')+'<div class="body">'+out+'</div></div>';
 }
 /* One section, open: what it is called, what it says, and the two answers
    about who may have it. The list is where a section is CHOSEN and this is
@@ -860,10 +895,12 @@ function wldSecOf(r){
   o=s[r];
   return (o && typeof o==='object' && !(o instanceof Array))? o : {};
 }
-function wldSecHidden(r){
-  var o=wldSecOf(r);
-  return Object.prototype.hasOwnProperty.call(o,'hide')? !!o.hide : wldHidden();
-}
+/* Whether a SECTION is public was asked of every section and is not asked
+   any more: 「単語と文字とキーボードと文法にDL可能だけつけろ」 and 「そもそもこの
+   言語についてを公開非公開にするページつけて」 OWNER 2026-08-25 -- one answer, of
+   the whole page, and it is `wldHidden()`. `secs[r].hide` is not read and not
+   written now; anything already stored under it is left exactly where it is,
+   because nothing here deletes what somebody's file already says. */
 function wldSecDl(r){
   var o=wldSecOf(r);
   return Object.prototype.hasOwnProperty.call(o,'dl')? !!o.dl : wldDl();
@@ -886,7 +923,6 @@ function wldSecSet(r, k, v){
   o[k]=!!v;
   saveWld(); render();
 }
-function setWldSecHide(r, v){ wldSecSet(r, 'hide', v); }
 function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
@@ -934,7 +970,7 @@ function wldSecs(){
      section still called 「無題」. */
   out.push({r:'letters', k:'toc.letters', go:'letters', dl:1});
   out.push({r:'words',   k:'toc.words',   go:'words',   dl:1});
-  out.push({r:'gram',    k:'toc.gram',    go:'gram'});
+  out.push({r:'gram',    k:'toc.gram',    go:'gram',    dl:1});
   out.push({r:'kb',      k:'kb.title',    go:'kb',      dl:1});
   /* And then what somebody wrote, AFTER the ones the book always has --
      「見出しは全員わかりやすくしろよ」. A section called 「The valley」 sitting
@@ -988,19 +1024,6 @@ function abHead(sec, folds){
 function abField(k, v){
   return '<div class="abfd"><div class="abfk">'+esc(k)+'</div>'+
     '<div class="abfv">'+esc(v)+'</div></div>';
-}
-/* The two answers. They are on the EDITOR and nowhere else --
-   「なんで編集画面じゃないのにトグルが出てくんの？」 OWNER 2026-08-25. The
-   article is what somebody else reads; a switch has no business on it. */
-function wldSecRows(sec){
-  var r=sec.r, nm=wldSecNm(sec);
-  return '<button class="set"' + DO('setWldSecHide', [r, !wldSecHidden(r)]) + '>'+
-    '<span class="sl">'+esc(nm)+'</span>'+
-    swtHTML(!wldSecHidden(r))+'</button>'+
-    ((sec.dl && !wldSecHidden(r))?
-      '<button class="set abdl"' + DO('setWldSecDl', [r, !wldSecDl(r)]) + '>'+
-      '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
-      swtHTML(wldSecDl(r))+'</button>' : '');
 }
 function vAbout(){
   var w=world(), drawn=LETTERS.filter(ltHasShape), body='';
