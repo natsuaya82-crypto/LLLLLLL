@@ -20,6 +20,11 @@ html[data-theme="dark"]{
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
+  /* The mark beside a name. Blue and FILLED is the person who pays; gold and
+     filled is an official account, and that one has nowhere to come from yet.
+     OWNER 2026-08-25「金の塗りを公式に青の塗りをユーザーにしよう」
+     Not --sat, which is Saturday on the calendar: one colour, one meaning. */
+  --verif:#5aa9f0;
   --bad:#d9705c;
   /* A calendar is not just numbers: the week has a red end and a blue one.
      Not --bad, which means an error and would say the wrong thing about a
@@ -44,6 +49,7 @@ html[data-theme="light"]{
   --line:rgba(26,23,18,.12); --line2:rgba(26,23,18,.06);
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
+  --verif:#1d6fd0;
   --bad:#c9553f;
   --sun:#c9553f; --sat:#3b6ea5;
   --fill:#2f8f4e;
@@ -489,8 +495,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    The type is set HERE, on both row classes, and not left to the tag: two
    posts differing in height AND in computed type is the fault press measures
-   («one list, one height»), and content differing -- a language name that is
-   there or is not -- must not be able to drag the type with it. */
+   («one list, one height»), and content differing -- a state a post is in that
+   another is not -- must not be able to drag the type with it. (It said "a
+   language name that is there or is not"; the language name came off this head
+   on 2026-08-25 and the sentence is about any of them.) */
 .phead{line-height:1.3}
 .pheadn{display:flex;align-items:center;gap:5px;font-size:.95rem;line-height:1.3}
 /* Small, quiet, and allowed to wrap. It wraps rather than clipping because
@@ -499,7 +507,13 @@ canvas.pkc{width:34px;height:34px;display:block}
    content, not type, and is the case press deliberately leaves alone. */
 .pheadm{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:1px;
         font-size:.9rem;line-height:1.3}
-.pname{flex:1 1 auto;min-width:0;font-weight:700;font-size:.95rem;color:var(--tx);
+/* `0 1 auto` and not `1 1 auto`: the name takes the room it needs and no more,
+   so the time sits BESIDE it rather than being pushed to the far edge next to
+   the ... -- 「名前　まるまる分前　バッチ」 OWNER 2026-08-25. It still shrinks and
+   still ellipsises, which is the half that matters when a name is long; what it
+   no longer does is grow to fill the line. The ... stays right because `.pmw`
+   says `margin-left:auto`, which was already there and is what holds it. */
+.pname{flex:0 1 auto;min-width:0;font-weight:700;font-size:.95rem;color:var(--tx);
        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* What it is written in -- the place a timeline puts an affiliation, small and
    quiet, because it is not the name. It was a 5px-cornered gold outline, which
@@ -507,7 +521,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    in the head. The gold and the letter-spacing already say what it is. */
 .plangtag{flex:0 0 auto;font-size:.72rem;letter-spacing:.08em;color:var(--gold);
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
-.phandle,.pdot,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
+.phandle,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
 /* Who you are, at the top of your own page. The block itself is further down,
    under "the profile, above the three lists" -- it was written out twice here,
    and the second one set no `display`, so it inherited `flex` from this one
@@ -1500,7 +1514,14 @@ a.set{text-decoration:none}
    「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」 */
 .bdgw{flex:0 0 auto;display:inline-flex;align-items:center;margin-left:1px;
       vertical-align:-2px}
-.bdgw.plus{color:var(--gold)}
+/* The colour goes on the MARK, not on the wrapper, because the mark appears in
+   three places and they are all the same statement: beside a name on a post,
+   on the Pro row of the price list, and inside the button that offers it to
+   somebody who has not bought it. Written on the wrapper it would have been
+   three rules agreeing, and the third is the one that gets missed -- it is the
+   only one nobody sees until they are about to pay. `.bdg` is the svg's own
+   class and travels with it. */
+.bdg{color:var(--verif)}
 .bdgw.studio{color:var(--gold)}
 .bdgw svg{display:block}
 .pname .bdgw{margin-left:5px}

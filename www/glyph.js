@@ -776,8 +776,14 @@ var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
    No colour is written here. `currentColor` means the class beside the name
    says which gold it is, and every colour in this app is a token in
    index.html -- act-check refuses one written into markup and is right to. */
-var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" fill="none" '+
-  'stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true">'+
+/* FILLED, not drawn. OWNER 2026-08-25「塗りつぶしできる？」and then
+   「金の塗りを公式に青の塗りをユーザーにしよう」. At 15px a 1.7px outline is
+   mostly the hole in the middle: the colour is what the mark is FOR now, and an
+   outline at that size shows almost none of it. Measured by looking -- the two
+   were rendered side by side at 15px and at 44px, in both themes, before this
+   changed. The path is the same one; only fill and stroke swapped. */
+var MARK_PLUS='<svg class="bdg" viewBox="0 0 24 24" width="15" height="15" '+
+  'fill="currentColor" stroke="none" aria-hidden="true">'+
   '<path d="M12 3.4c.9 4.6 4.1 7.8 8.6 8.6-4.5.9-7.7 4.1-8.6 8.6-.9-4.5-4.1-7.7-8.6-8.6 4.5-.8 7.7-4 8.6-8.6Z"/></svg>';
 /* A post kept to yourself. 「非公開の時はポストに🔓マークつけよ」
    The shackle is DOWN. It was opened once, on the emoji in that sentence, and

@@ -2190,7 +2190,15 @@ function postRow(p){
          this app does with a line of small facts. */
       '<div class="phead">'+
         '<div class="pheadn">'+
-          '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
+          '<span class="pname">'+esc(postWho(p))+'</span>'+
+          /* WHEN, on the first line beside the name. OWNER 2026-08-25:
+             「名前　まるまる分前　バッチ / @ 編集済み　🔑」 -- and the reason is
+             that the second line stopped fitting. With a long name, a language
+             name, a long handle, the lock and "edited" all on it, the head came
+             out THREE lines, and a reply put a fourth under them; "edited" fell
+             onto a line by itself. The fixture's `Aya` / `Shango @aya · 15分` is
+             short enough that nobody had seen it. */
+          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+postBadge(p)+
           /* The ... and, when it is the one that is open, the menu hanging off
              it. It is IN the post rather than a screen you go to, so what you
              are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
@@ -2210,14 +2218,26 @@ function postRow(p){
             '</span>'+
         '</div>'+
         '<div class="pheadm">'+
-          (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
+          /* WHAT IT IS, and no longer what it is written IN. The language name
+             came off this line -- OWNER 2026-08-25 「多すぎるから言語名表示
+             なくそう。プロフいけば見れる」 -- and that last clause was checked
+             before it was believed: `whoCard()` in me.js draws `p.lname` as a
+             row you press, which goes to "about". It is one tap away, not gone.
+             `plangtag` itself stays: post.js:795 (who you are replying to) and
+             sns.js:510 (a person in a list) both still wear it.
+
+             The `·` went with it. It was there to part `@aya` from `15分`, the
+             time is on the line above now, and it was worn in this one place --
+             so its rule came out of index.html in the same commit, or `press`
+             would report a class nothing wears. */
           '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
-          '<span class="pdot">·</span>'+
-          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
-          /* A post that was put right says so, beside the time. It carries the
-             moment it was edited, not a flag: what a person wants to know is
-             when, and a flag cannot be asked that later. */
+          /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
+             逆にしたら終わりかな」-- asked for the other way round first and
+             swapped after looking at it. The two are not the same kind of
+             fact: the lock is WHO CAN SEE IT and the word is WHAT WAS DONE
+             TO IT, and the one that decides who is reading it comes first. */
           (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
+          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
           /* Yours, public, and not on the server yet. It was nothing at all:
              netPush() was handed an empty failure function in both places that
              call it, so a post the server refused looked exactly like one it
@@ -2230,7 +2250,6 @@ function postRow(p){
           ((p.mine && !p.pv && !p.sid)
             ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
             : '')+
-          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
           /* Taken down. Only its author is ever handed one of these -- post_read
              in schema.sql -- so it is for them, and it belongs up here beside
              the lock and "edited": a word for what state the post is in.
