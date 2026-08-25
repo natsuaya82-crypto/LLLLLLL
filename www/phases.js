@@ -502,10 +502,15 @@ function stDetailHTML(p){
   out+='<h2 class="sth">'+esc(stTitle(p))+'</h2>';
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
 
-  if(p.feats.length){
-    out+='<div class="sec">'+t('stg.decide')+'</div>';
+  /* No heading over the decisions. 「決めることってなに？意味わからない説明は
+     禁止してるのよ。ゴミみたいな日本語はいらん」 OWNER 2026-08-25. A row of
+     「動詞の前 / 動詞の後」 says what it is by being it, and a word over it
+     saying that a decision is a decision is the same shape as the four
+     subtitles that went the same day. The other three headings here name
+     things that would otherwise be unnamed -- the words, the rule, the note --
+     which is why they stay. */
+  if(p.feats.length)
     for(i=0;i<p.feats.length;i++) out+=stFeatHTML(p.feats[i]);
-  }
   if(p.slots.length){
     out+='<div class="sec">'+t('stg.words')+'</div>';
     out+='<div class="stslots">';
