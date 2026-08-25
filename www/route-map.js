@@ -70,6 +70,7 @@ page('notes',    vNotes);
 page('settings', vSettings);
 page('set',      vSet);
 page('world',    vWorld);
+page('wldart',   vWldArt);
 page('about',    vAbout);
 page('thread',   vThread);
 page('photo',    vPhoto);

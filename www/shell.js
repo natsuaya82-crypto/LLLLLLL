@@ -191,6 +191,10 @@ var PAGES={
   settings:{tab:'profile',  k:'set.title'},
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
+  /* One section of the language's article. Named after the section, not
+     after the chapter it sits in -- pageName() below does that for a stage
+     and a letter for the same reason. */
+  wldart:  {tab:'profile', k:'wld.secs'},
   about:   {tab:'profile', k:'wld.about'},
   thread:  {tab:'feed', k:'post.thread'},
   photo:   {tab:'feed', k:'post.pic'},

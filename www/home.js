@@ -667,6 +667,61 @@ function world(){ return WLD; }
 function wldUse(){ var u=world().use; return WORLDS.indexOf(u)>=0? u : ''; }
 function wldSetUse(u){ world().use=(wldUse()===u? '' : u); saveWld(); render(); }
 function wldSet(k, v){ world()[k]=String(v||''); saveWld(); }
+
+/* ---- the sections somebody writes -------------------------------------
+   「wikiを作るんだからね？わかってる？編集もwikiを作るの。それでなにを載せ
+   れんの？世界観とかも含めてのwikiだからね？」 OWNER 2026-08-25.
+
+   Until this, four things could be written about a language: which of the
+   uses it is for, one line of `where`, one line of `who`, and one `note`.
+   A history, a people, a city, a myth had nowhere to go -- so the honest
+   answer to 「なにを載せれんの？」 was "almost nothing". What was missing was
+   not the look of the page, it was somewhere to put anything.
+
+   A section is a title and a body, both the person's own words, and there is
+   no fixed set of them. The ORDER is the array's order and is not stored
+   twice: an array already has an order, and a second one beside it is two
+   answers to the same question waiting to disagree.
+
+   Whether a section is public is `WLD.secs`, which already exists and is
+   already keyed by a section's name -- `secs.letters` for the chapter,
+   `secs[id]` for one of these. One place, not a second one for the new kind.
+
+   No ceiling here. How many a person may write, and on which plan, is a price
+   and a threshold, and neither is decided in a tool. docs/CHANGELOG.md says
+   so; when it is decided it is one line at the head of wldArtAdd(). */
+function wldArts(){
+  var a=world().arts;
+  return (Object.prototype.toString.call(a)==='[object Array]')? a : [];
+}
+/* Minted the way a language is (www/core.js langMint), and checked against
+   what is here rather than trusted: two sections made in the same
+   millisecond would otherwise be one section that cannot be told from
+   itself, and `secs` is keyed by this. */
+function wldArtMint(){
+  var id='A'+(new Date()).getTime().toString(36), n=0;
+  while(wldArtBy(id)){ n++; id='A'+(new Date()).getTime().toString(36)+n.toString(36); }
+  return id;
+}
+function wldArtBy(id){
+  var a=wldArts(), i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) return a[i];
+  return null;
+}
+function wldArtAdd(){
+  var a=wldArts(), one={id:wldArtMint(), t:'', b:''};
+  a.push(one);
+  world().arts=a; saveWld();
+  go('wldart', one.id);
+}
+/* Written into the section that is open. `wldSet` is the same shape for the
+   four fixed fields; this is that for one of these. */
+function wldArtSet(id, k, v){
+  var one=wldArtBy(id);
+  if(!one) return;
+  one[k]=String(v||'');
+  saveWld();
+}
 wldRead();
 function vWorld(){
   var w=world();
@@ -686,6 +741,28 @@ function vWorld(){
     '<div class="sec">'+t('wld.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:140px" placeholder="'+esc(t('wld.note.ph'))+'" '+
       '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
+    /* And the sections. A row each, and a + that makes one and goes to it --
+       the same shape the notebook's list already has, so nothing new is
+       drawn. An untitled one says so rather than showing an empty row. */
+    secAdd(t('wld.secs'), DO('wldArtAdd'), t('wld.secs'))+
+    wldArts().map(function(one){
+      return '<button class="set"' + DO('go', ["wldart", one.id]) + '>'+
+        '<span class="sl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
+        '<span class="sv">'+esc(wldSecSay(one.id))+ICON_GO+'</span></button>';
+    }).join('')+
+    '</div></div>';
+}
+/* One section, open. Its title and its body, and nothing else on the screen:
+   what it is called and what it says are the whole of a wiki section, and
+   whether it is public is set where every other section's is, on the list. */
+function vWldArt(id){
+  var one=wldArtBy(String(id||''));
+  if(!one) return viewGone();
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="field"><input id="wldart-t" value="'+esc(one.t||'')+'" '+
+      'placeholder="'+esc(t('wld.art.t.ph'))+'"' + IN('wldArtSet', [one.id, "t"]) + '></div>'+
+    '<textarea class="ntbody" style="min-height:260px" placeholder="'+esc(t('wld.art.b.ph'))+'" '+
+      '' + CH('wldArtSet', [one.id, "b"]) + '>'+esc(one.b||'')+'</textarea>'+
     '</div></div>';
 }
 /* ---- the page a language has ------------------------------------------
@@ -865,6 +942,17 @@ function vAbout(){
     '<div class="abtl">'+esc(w.who)+'</div>';
   if(w.note) body+='<h2 class="abts">'+esc(t('wld.note'))+'</h2>'+
     '<div class="abtl">'+esc(w.note)+'</div>';
+  /* The sections somebody wrote. This is the article -- the history, the
+     people, the world -- and it is theirs: the heading is their title and the
+     body is their words. Above them the four fixed fields, which are the ones
+     the app asks for; below, the alphabet. A section with nothing in it is
+     not drawn: a heading over nothing is a promise the page does not keep. */
+  wldArts().forEach(function(one){
+    if(wldSecHidden(one.id)) return;
+    if(!(one.t || one.b)) return;
+    body+='<h2 class="abts">'+esc(one.t||t('wld.art.untitled'))+'</h2>'+
+      (one.b? '<div class="abtl">'+esc(one.b)+'</div>' : '');
+  });
   /* The alphabet, and only what has a shape on it: the free plan puts
      thirty-eight slots there the moment a language exists, so all of them
      would be a summary saying every language has thirty-eight letters. */
