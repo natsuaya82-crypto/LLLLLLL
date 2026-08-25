@@ -29,6 +29,10 @@
  *
  * glyphs: [{ name: 'a', roman: 'a', strokes: [ { closed: true, pts: [[x,y,'c'],...] } ] }]
  *   pts   [x, y] or [x, y, 'c'] where 'c' means round this corner into a curve
+ *   A glyph carries `strokes` OR `sh`, never both. `sh` is a letter drawn
+ *   somewhere else and brought in on a sheet: [[[x,y],...], ...], rings of
+ *   outline in the same authoring square, an outer ring and the ring of a hole
+ *   wound opposite ways. It is ink already, so no nib is swept along it.
  *   roman null means the glyph has no cmap entry (a ligature target). Several
  *   codepoints may share one glyph: roman 'aA' maps both cases to the same
  *   drawing, which is what a script with no case distinction wants.
@@ -354,11 +358,159 @@ var LinguaFont = (function () {
     return r;
   }
 
+  // ------------------------------------------------------- brought-in shapes
+  // A letter drawn somewhere else and handed back on a sheet arrives as INK
+  // already -- rings of outline in the same 800 square, y down -- and not as a
+  // centre line for a nib to sweep. Sweeping one would be redrawing somebody
+  // else's letter with this app's pen, which is the thing the owner ruled out.
+  // 「取り込んだやつを上から描き直してるからそうなるんでしょ？」
+  //
+  // It cannot be handed down as it stands either. One imported ring is big and
+  // concave and usually has a hole in it, and spanAt above takes the ink at a
+  // height as the min and max over a contour -- true only where a contour
+  // meets a horizontal line in exactly one interval. So the road a filled
+  // stroke already takes is taken here: cut to triangles, which are convex by
+  // construction, and lay none of them over a hole.
+  //
+  // Which ring IS a hole is asked of containment, not of winding. The reader
+  // winds an outer ring and a hole opposite ways and says so, and the two
+  // agree wherever it is right -- but it was wrong in five of sixteen cases
+  // once, silently, and a hole read off a winding fills in solid the day it is
+  // wrong again: the ring of 火, the eye of a face. A ring lying inside an odd
+  // number of the others is a hole whichever way round it was walked. Rings
+  // out of an edge follower are disjoint, so one point settles a ring.
+  function ptInRing(p, r) {
+    var inside = false, i, j, a, b;
+    for (i = 0, j = r.length - 1; i < r.length; j = i++) {
+      a = r[i]; b = r[j];
+      if ((a[1] > p[1]) !== (b[1] > p[1]) &&
+          p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+    }
+    return inside;
+  }
+  // Three of the ring's points and the majority of them, because a single
+  // vertex can sit exactly on a horizontal edge of the ring it is being asked
+  // about and a ray cast through a vertex is the one case that miscounts.
+  function ringIn(a, b) {
+    var n = a.length, k = 0;
+    if (ptInRing(a[0], b)) k++;
+    if (ptInRing(a[(n / 3) | 0], b)) k++;
+    if (ptInRing(a[((2 * n) / 3) | 0], b)) k++;
+    return k >= 2;
+  }
+  // Every ring at an even depth is an outer with the odd-depth rings directly
+  // inside it as its holes -- so the middle of 回 is an outer of its own and
+  // its own hole survives too.
+  function ringGroups(rings) {
+    var depth = [], at = {}, groups = [], i, j, best;
+    for (i = 0; i < rings.length; i++) {
+      depth[i] = 0;
+      for (j = 0; j < rings.length; j++)
+        if (j !== i && ringIn(rings[i], rings[j])) depth[i]++;
+    }
+    for (i = 0; i < rings.length; i++)
+      if (!(depth[i] % 2)) { at[i] = groups.length; groups.push({ outer: rings[i], holes: [] }); }
+    for (i = 0; i < rings.length; i++) {
+      if (!(depth[i] % 2)) continue;
+      best = -1;
+      for (j = 0; j < rings.length; j++)
+        if (j !== i && depth[j] === depth[i] - 1 && ringIn(rings[i], rings[j])) best = j;
+      if (best >= 0 && at[best] !== undefined) groups[at[best]].holes.push(rings[i]);
+    }
+    return groups;
+  }
+  function turned(r, pos) { return (signedArea(r) > 0) === pos ? r : r.slice().reverse(); }
+  // Does this join cross anything? Two segments that merely meet at a shared
+  // end are not a crossing -- a bridge starts and ends on the boundary, so the
+  // four edges it grows out of touch it there by construction.
+  function crosses(a, b, c, d) {
+    var d1 = cross3(a, b, c), d2 = cross3(a, b, d),
+        d3 = cross3(c, d, a), d4 = cross3(c, d, b);
+    if (!d1 || !d2 || !d3 || !d4) return false;
+    return ((d1 > 0) !== (d2 > 0)) && ((d3 > 0) !== (d4 > 0));
+  }
+  // and does it run over a point? That is the collinear case the strict test
+  // above lets through, and it is what a bridge laid along an existing edge
+  // looks like.
+  function overPt(p, a, b) {
+    var vx = b[0] - a[0], vy = b[1] - a[1], L2 = vx * vx + vy * vy, t, dx, dy;
+    if (!L2) return false;
+    t = ((p[0] - a[0]) * vx + (p[1] - a[1]) * vy) / L2;
+    if (t <= 1e-9 || t >= 1 - 1e-9) return false;
+    dx = a[0] + vx * t - p[0]; dy = a[1] + vy * t - p[1];
+    return dx * dx + dy * dy < 1e-6;
+  }
+  function clearOf(a, b, r, skip) {
+    var i, n = r.length, c, d;
+    for (i = 0; i < n; i++) {
+      c = r[i]; d = r[(i + 1) % n];
+      if (i !== skip && (i + 1) % n !== skip && crosses(a, b, c, d)) return false;
+      if (i !== skip && overPt(c, a, b)) return false;
+    }
+    return true;
+  }
+  // Ear clipping takes ONE ring, so a ring with holes in it is made into one
+  // ring first: each hole is joined to what is already there by a bridge, and
+  // the walk goes out along the bridge, round the hole and back down it. The
+  // seam is a pair of coincident edges lying on top of each other, which is
+  // why the hole is left open rather than filled -- no triangle is ever laid
+  // inside it.
+  //
+  // The bridge is the shortest join that crosses nothing. Nearest first and
+  // stop at the first clear one: on a real letter that is the first or second
+  // pair tried, so the sort costs more than the test does.
+  function bridge(ring, hole, rest) {
+    var cand = [], i, j, dx, dy, ok;
+    for (i = 0; i < hole.length; i++)
+      for (j = 0; j < ring.length; j++) {
+        dx = hole[i][0] - ring[j][0]; dy = hole[i][1] - ring[j][1];
+        cand.push([dx * dx + dy * dy, i, j]);
+      }
+    cand.sort(function (u, v) { return u[0] - v[0] || u[1] - v[1] || u[2] - v[2]; });
+    for (i = 0; i < cand.length; i++) {
+      var h = cand[i][1], g = cand[i][2], a = ring[g], b = hole[h];
+      if (!clearOf(a, b, ring, g) || !clearOf(a, b, hole, h)) continue;
+      ok = true;
+      for (j = 0; j < rest.length; j++) if (!clearOf(a, b, rest[j], -1)) { ok = false; break; }
+      if (ok) return [g, h];
+    }
+    return null;
+  }
+  function joinHole(ring, hole, at) {
+    var g = at[0], h = at[1], rot = hole.slice(h).concat(hole.slice(0, h));
+    return ring.slice(0, g + 1).concat(rot).concat([rot[0]]).concat(ring.slice(g));
+  }
+  // A hole nothing can be bridged to is DROPPED, and dropping a hole leaves it
+  // solid rather than throwing the letter away -- the same bargain earCut
+  // makes with a scribble that crosses itself.
+  function shapeContours(sh) {
+    var out = [];
+    ringGroups(sh.map(fillRing).filter(function (r) { return r.length > 2; }))
+      .forEach(function (grp) {
+        var ring = turned(grp.outer, true),
+            todo = grp.holes.map(function (h) { return turned(h, false); }), at;
+        while (todo.length) {
+          at = bridge(ring, todo[0], todo.slice(1));
+          if (at) ring = joinHole(ring, todo[0], at);
+          todo = todo.slice(1);
+        }
+        earCut(ring).forEach(function (tri) {
+          var t = wound(tri).map(function (p) {
+            return [Math.round(p[0]), Math.round(p[1])];
+          });
+          if (t.length > 2) out.push(t);
+        });
+      });
+    return out;
+  }
+
   // A segment is its own bar; a turn is the hull of the two ends that meet at
   // it, which fills the notch the outside of a corner leaves and nothing more.
   // Result is authoring space, y-DOWN, every contour convex, all the same
   // winding -- which is what the profile below is allowed to assume.
   function glyphContours(g, pen) {
+    /* Brought in on a sheet: it is ink already, and nothing sweeps it. */
+    if (g.sh && g.sh.length) return shapeContours(g.sh);
     var N = nib(pen), w = pen.width, out = [];
     /* A corner between two segments that continue straight on has no notch to
        fill, and its hull comes back a line. Nothing downstream wants a
@@ -831,10 +983,12 @@ var LinguaFont = (function () {
 
     raw.forEach(function (q0) {
       var cs = q0.cs, sx = 1;
-      if (mode === 'fit') {
+      if (mode === 'fit' && !q0.g.sh) {
         // rescale the SKELETON before the nib sweep, so the stroke stays exactly
         // PEN.width. Scaling the outline afterwards would vary the pen per glyph,
         // which is the one thing the user ruled out.
+        // A glyph brought in on a sheet has no skeleton to rescale, and its pen
+        // is the person's rather than this app's, so it is left as drawn.
         var pre = profile(q0.cs, BAND);
         var inner = CELL * (1 - 2 * MARGIN);
         var skel = Math.max(1, (pre.xMax - pre.xMin) - PEN.width);
