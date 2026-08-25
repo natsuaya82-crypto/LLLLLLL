@@ -1560,12 +1560,56 @@ a.set{text-decoration:none}
    not as a box, and which tools/box-check.mjs does not count at all. */
 .abth{font-family:var(--face-caps);font-size:1.7rem;line-height:1.2;color:var(--tx);
       margin:2px 0 0;padding-bottom:8px;border-bottom:1px solid var(--line)}
-.abts{font-family:var(--face-caps);font-size:1.15rem;line-height:1.3;color:var(--tx);
-      margin:26px 0 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
+/* A section heading is the UI face and not the display one, and that is a
+   cross-script fix rather than a taste: `--face-caps` is a Latin display face,
+   so a Japanese heading fell through it to the system font and a Latin one did
+   not. The same class came out visibly LARGER and heavier in Japanese --
+   「セクション」 loud over 「The valley」 quiet -- which put a UI label above the
+   title somebody wrote, the wrong way round on an article whose sections are
+   theirs. One family both scripts have is one heading level in both.
+   The title above keeps the display face: it is one line, it is the subject of
+   the article, and it is the one place the book face belongs. */
+.abts{font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
+      color:var(--tx);margin:26px 0 0;padding-bottom:6px;
+      border-bottom:1px solid var(--line)}
 .abtuse{display:flex;flex-direction:column;gap:3px;padding:14px 0 4px}
 .abtun{font-size:1.15rem;color:var(--tx)}
 .abtud{font-size:.88rem;color:var(--txm);line-height:1.45}
 .abtl{line-height:1.55;color:var(--tx);word-break:break-word;margin-top:10px}
+/* ---- a section heading that folds ---------------------------------------
+   Every section of this article is one of these: a marker, the name, and one
+   rule across -- the shape a mobile encyclopedia article has, and the shape
+   the owner drew (「概要　▽」). It is a <button> and it is the ONLY heading
+   shape on the page, so there is never a heading of one class rendering at
+   two heights beside another (CLAUDE.md: rows in one list are one height).
+   Sides zeroed one at a time with the bottom left as a rule -- `border:0`
+   would be four sides, which is a box. */
+.abshd{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;
+       margin:22px 0 0;padding:8px 2px;background:none;border-left:0;border-right:0;
+       border-top:0;border-bottom:1px solid var(--line);text-align:left;
+       font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
+       color:var(--tx)}
+.abshl{flex:1 1 auto;font-size:1.22rem;line-height:1.35}
+.abmk{flex:0 0 auto;color:var(--txm)}
+.abshd.shut .abmk{transform:rotate(-90deg)}
+/* ---- a fact of the overview --------------------------------------------
+   The name on one line and the answer on the next, never side by side:
+   「話してる場所　あああ みたいにやるのやめて」 OWNER 2026-08-25. Two columns
+   made a settings row of a fact and put a hard left edge down the page. */
+.abfx{padding:4px 0 2px}
+.abfd{padding:8px 0}
+.abfk{color:var(--txm);font-size:.85rem;line-height:1.4}
+.abfv{color:var(--tx);font-size:1rem;line-height:1.5;word-break:break-word;margin-top:2px}
+.abtlead{margin-top:12px}
+/* ---- the list of sections ----------------------------------------------
+   「セクション一覧は消すなよ」. Every section and its answer, without opening
+   any of them. The name in the colour everything pressable already is. */
+.abtc{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;
+      padding:9px 2px;background:none;border-left:0;border-right:0;border-top:0;
+      border-bottom:1px solid var(--line);text-align:left;font-family:inherit;
+      font-size:.95rem;line-height:1.3}
+.abtcl{flex:1 1 auto;color:var(--gold);font-size:.95rem;line-height:1.3}
+.abtcs{flex:0 0 auto;margin-left:auto;color:var(--txm);font-size:.85rem;line-height:1.3}
 .mecard .pbio{margin-top:4px;line-height:1.45;word-break:break-word;
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}

@@ -348,6 +348,7 @@ defLang('it', (function(){
       'wld.dl.d'     : "Chi può aprire la pagina della tua lingua potrà scaricare le tue lettere e le tue parole e usarle nella propria.",
       'wld.hidden'            : "Privata",
       'wld.secs'              : "Sezioni",
+      'wld.overview'              : "Panoramica",
       'wld.art.untitled'              : "Senza titolo",
       'wld.art.t.ph'              : "Titolo",
       'wld.art.b.ph'              : "Scrivi sulla lingua e sul suo mondo.",

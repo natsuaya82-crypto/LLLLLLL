@@ -527,6 +527,7 @@ defLang('ko', (function(){
       'wld.dl.d'     : "당신의 언어 페이지를 열 수 있는 사람이 문자와 단어를 내려받아 자기 언어에 쓸 수 있습니다.",
       'wld.hidden'            : "비공개",
       'wld.secs'              : "섹션",
+      'wld.overview'              : "개요",
       'wld.art.untitled'              : "제목 없음",
       'wld.art.t.ph'              : "제목",
       'wld.art.b.ph'              : "이 언어와 그 세계에 대해 쓰기.",

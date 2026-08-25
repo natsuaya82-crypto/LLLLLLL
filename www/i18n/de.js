@@ -336,6 +336,7 @@ defLang('de', (function(){
       'wld.dl.d'     : "Wer deine Sprachseite öffnen kann, darf deine Zeichen und Wörter herunterladen und in der eigenen Sprache verwenden.",
       'wld.hidden'            : "Privat",
       'wld.secs'              : "Abschnitte",
+      'wld.overview'              : "Überblick",
       'wld.art.untitled'              : "Ohne Titel",
       'wld.art.t.ph'              : "Titel",
       'wld.art.b.ph'              : "Schreibe über die Sprache und ihre Welt.",

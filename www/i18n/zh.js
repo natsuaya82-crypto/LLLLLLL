@@ -356,6 +356,7 @@ defLang('zh', (function(){
       'wld.dl.d'     : "能打开你语言页面的人，可以下载你的文字和词语，用在自己的语言里。",
       'wld.hidden'            : "不公开",
       'wld.secs'              : "章节",
+      'wld.overview'              : "概述",
       'wld.art.untitled'              : "无标题",
       'wld.art.t.ph'              : "标题",
       'wld.art.b.ph'              : "写下这门语言和它的世界。",

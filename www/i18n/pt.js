@@ -355,6 +355,7 @@ defLang('pt', (function(){
       'wld.dl.d'     : "Quem puder abrir a página da sua língua poderá baixar suas letras e palavras e usá-las na sua própria.",
       'wld.hidden'            : "Privada",
       'wld.secs'              : "Seções",
+      'wld.overview'              : "Resumo",
       'wld.art.untitled'              : "Sem título",
       'wld.art.t.ph'              : "Título",
       'wld.art.b.ph'              : "Escreva sobre a língua e o seu mundo.",

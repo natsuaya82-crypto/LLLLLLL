@@ -752,9 +752,10 @@ function vWorld(){
     }).join('')+
     '</div></div>';
 }
-/* One section, open. Its title and its body, and nothing else on the screen:
-   what it is called and what it says are the whole of a wiki section, and
-   whether it is public is set where every other section's is, on the list. */
+/* One section, open: what it is called, what it says, and the two answers
+   about who may have it. The list is where a section is CHOSEN and this is
+   the screen you arrive at, which is where a thing is changed -- the two are
+   not allowed to share a screen and here they do not. */
 function vWldArt(){
   /* The id comes off the route, not off a parameter: PAGES[route].view() is
      called with no arguments (www/glyph.js), so a view that took one was
@@ -768,6 +769,25 @@ function vWldArt(){
       'placeholder="'+esc(t('wld.art.t.ph'))+'"' + IN('wldArtSet', [one.id, "t"]) + '></div>'+
     '<textarea class="ntbody" style="min-height:260px" placeholder="'+esc(t('wld.art.b.ph'))+'" '+
       '' + CH('wldArtSet', [one.id, "b"]) + '>'+esc(one.b||'')+'</textarea>'+
+    /* The same pair the whole page has in the settings room, and in the same
+       order: whether anybody else may open it, and then -- only if they may --
+       whether they may take it away. Two questions, never one.
+
+       Worded with `wld.shown` and `wld.dl.can` rather than the page's own
+       `wld.public`/`wld.dl`, and not as a shortening of them: those two are
+       sentences about the PAGE -- "Show this language to other people" reads
+       as a lie over one section of it. These are the words the section's own
+       row already says about itself in wldSecSay(), so the list and the
+       switch that sets it say the same thing, and no new wording is invented
+       to say it. They are also one line, which is what keeps these two rows
+       the same height as each other. */
+    '<button class="set"' + DO('setWldSecHide', [one.id, !wldSecHidden(one.id)]) + '>'+
+    '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
+    swtHTML(!wldSecHidden(one.id))+'</button>'+
+    (wldSecHidden(one.id)? '' :
+      '<button class="set" style="border-bottom:none"' + DO('setWldSecDl', [one.id, !wldSecDl(one.id)]) + '>'+
+      '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
+      swtHTML(wldSecDl(one.id))+'</button>')+
     '</div></div>';
 }
 /* ---- the page a language has ------------------------------------------
@@ -852,6 +872,26 @@ function wldSecSay(r){
   if(wldSecHidden(r)) return t('wld.hidden');
   return wldSecDl(r)? t('wld.shown')+' \u00b7 '+t('wld.dl.can') : t('wld.shown');
 }
+/* ---- and writing those two answers ------------------------------------
+   The four above READ `secs`. Nothing anywhere wrote it: every row said
+   公開, and there was no way to make one say anything else. This is that
+   missing half, and it is the page-wide pair in the settings room asked of
+   one section -- the same two questions, the same order, the same switch.
+
+   A section nobody has touched stays out of `secs` entirely. These write only
+   the answer that was pressed and never copy the page's value in beside it:
+   copying it would turn "follows the page" into an answer somebody gave, and
+   what a section defaults to is nobody's to decide here. */
+function wldSecSet(r, k, v){
+  var s=world().secs, o;
+  if(!s || typeof s!=='object' || (s instanceof Array)){ s={}; world().secs=s; }
+  o=s[r];
+  if(!o || typeof o!=='object' || (o instanceof Array)){ o={}; s[r]=o; }
+  o[k]=!!v;
+  saveWld(); render();
+}
+function setWldSecHide(r, v){ wldSecSet(r, 'hide', v); }
+function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
@@ -860,6 +900,46 @@ function wldRow(){
     '<span class="wldnm">'+esc(langName)+'</span>'+
     (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
     ICON_GO+'</button>';
+}
+/* ---- a section of the article opens and shuts -------------------------
+   「概要　▽ / 話してる場所 / 〇〇 みたいにして欲しい」 OWNER 2026-08-25, over a
+   screenshot of ja.wikipedia.org, where every section of a mobile article is
+   a heading with a marker and folds away under it.
+
+   Which ones are shut is where you are STANDING in the page, not something
+   the language owns, so it is not in `wld` and is not saved. The line that
+   forgets it belongs in viewReset() in www/shell.js with the rest of what a
+   screen forgets; this session does not own that file, so it is reported
+   rather than reached into. Open is the default: nothing somebody has never
+   touched is folded away from them. */
+var ABSHUT={};
+function abShut(r){ return !!ABSHUT[r]; }
+function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
+var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
+/* A heading that folds. It is a button and `.abts` is an <h2>, so the two
+   never sit as siblings in one list -- every heading on this page is this
+   one now, which is what keeps a list one height. */
+function abHead(r, title){
+  return '<button class="abshd'+(abShut(r)? ' shut':'')+'"' + DO('abToggle', [r]) + '>'+
+    ICON_FOLD+'<span class="abshl">'+esc(title)+'</span></button>';
+}
+/* A fact of the overview: what it is called, and under it what it says.
+   NOT side by side -- 「話してる場所　あああ みたいにやるのやめて」. */
+function abField(k, v){
+  return '<div class="abfd"><div class="abfk">'+esc(k)+'</div>'+
+    '<div class="abfv">'+esc(v)+'</div></div>';
+}
+/* The two answers, in the section they are about. */
+function abSwitches(r){
+  return '<button class="set"' + DO('setWldSecHide', [r, !wldSecHidden(r)]) + '>'+
+    '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
+    swtHTML(!wldSecHidden(r))+'</button>'+
+    (wldSecHidden(r)? '' :
+      '<button class="set"' + DO('setWldSecDl', [r, !wldSecDl(r)]) + '>'+
+      '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
+      swtHTML(wldSecDl(r))+'</button>');
 }
 function vAbout(){
   var w=world(), drawn=LETTERS.filter(ltHasShape), body='';
@@ -907,62 +987,95 @@ function vAbout(){
      were in the middle of the flow, the lead was a two-line fragment under the
      title, the contents were at the FOOT of the page, and no section led
      anywhere. */
-  /* The infobox. Facts, before anything is said. */
-  body+='<div class="set">'+
-      '<span class="sl">'+esc(t('toc.words'))+'</span>'+
-      '<span class="sv">'+WORDS.length+'</span></div>'+
-    '<div class="set">'+
-      '<span class="sl">'+esc(t('toc.letters'))+'</span>'+
-      '<span class="sv">'+ltShaped()+'</span></div>'+
-    '<div class="set">'+
-      '<span class="sl">'+esc(t('ws.kind'))+'</span>'+
-      '<span class="sv">'+esc(t('ws.k.'+wsys()))+'</span></div>';
-  /* The lead: what this language is for, in its own words, before the first
-     heading. It was here already -- it was just sitting above the facts
-     instead of below them, which is the one place an article never puts it. */
+  /* The infobox. Facts, before anything is said.
+
+     These were `.set` rows, which is the class every settings screen in this
+     app wears -- so the article opened with three rows identical to Settings,
+     and then the contents did it again five rows further down. Eight
+     settings-shaped rows is what made the page read as a form.
+     「wikiの見た目にしろって言ってなんでそんなゴミができるの？」 An infobox is a
+     TABLE: a narrow label column in the quiet colour and the value beside it,
+     set tight, with nothing to press.
+
+     Where it is spoken and who speaks it are here rather than being sections
+     of their own. They are one line each -- a heading the size of "The
+     valley" over a three-word answer is the article breaking itself into
+     fragments, and every encyclopedia puts exactly these two in the box at
+     the top instead. Nothing is dropped: the same two strings, in the same
+     order, under the same names. */
+  /* ---- 概要, which is a section and folds like every other one --------
+     The counts came off it: 「今作っている単語数とかどうでもいいねん。人に見て
+     もらうための言語のwikiなんだから作り込ませるための場所ね？」 OWNER
+     2026-08-25. How many words exist today is a number about the app's own
+     progress, not a fact about the language, and it was the first thing a
+     reader met. What is left is what somebody would want to know: where it is
+     spoken, who speaks it, what kind of writing it uses and which way it
+     runs. */
+  var ov='';
+  if(w.where) ov+=abField(t('wld.where'), w.where);
+  if(w.who) ov+=abField(t('wld.who'), w.who);
+  ov+=abField(t('ws.kind'), t('ws.k.'+wsys()));
+  ov+=abField(t('dir.title'), t('dir.'+scriptDir()));
+  body+=abHead('wldov', t('wld.overview'))+
+    (abShut('wldov')? '' : '<div class="abfx">'+ov+'</div>');
+  /* The lead: what this language is for, in its own words. */
   if(wldUse()) body+='<div class="abtuse">'+
     '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
     '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
-  /* The contents. Wikipedia puts one in at four headings and this page has
-     more than four; it had one and kept it at the BOTTOM, which is a list of
-     sections rather than a way into them.
-     Each row goes to the chapter it names, which is the same thing as the
-     「詳細は『X』を参照」 that sits under a section heading over there -- and
-     it needs no new wording, because the chapter's own name is the link.
-     The state stays on the row: this is also where 公開/非公開 will be set,
-     and the row is now a thing you press. */
+  /* And the note, which is the rest of the lead: an article says what it is
+     before it starts dividing itself up, and that paragraph carries no
+     heading of its own. */
+  if(w.note) body+='<div class="abtl abtlead">'+esc(w.note)+'</div>';
+  /* ---- the list of sections -------------------------------------------
+     「セクション一覧は消すなよ」 OWNER 2026-08-25. It was taken out in the
+     commit before this one and that was wrong. It is the one place that says,
+     in one screen, which parts of this language a stranger may see -- every
+     section, and the answer, without opening any of them. */
+  var rows=tocRows();
   body+='<h2 class="abts">'+esc(t('wld.secs'))+'</h2>'+
-    tocRows().map(function(row){
-      return '<button class="set"' + DO('go', [row.r]) + '>'+
-        '<span class="sl">'+esc(t(row.k))+'</span>'+
-        '<span class="sv">'+esc(wldSecSay(row.r))+ICON_GO+'</span></button>';
+    wldArts().map(function(one){
+      return '<button class="abtc"' + DO('go', ["wldart", one.id]) + '>'+
+        '<span class="abtcl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
+        '<span class="abtcs">'+esc(wldSecSay(one.id))+'</span></button>';
+    }).join('')+
+    rows.map(function(row){
+      return '<button class="abtc"' + DO('go', [row.r]) + '>'+
+        '<span class="abtcl">'+esc(t(row.k))+'</span>'+
+        '<span class="abtcs">'+esc(wldSecSay(row.r))+'</span></button>';
     }).join('');
-  /* Then the sections somebody wrote, each under its own heading with the
-     text beneath it -- which is what a section of an article is. They were
-     the same headings before; what has changed is that they now follow a
-     title and a table instead of following three cards. */
-  if(w.where) body+='<h2 class="abts">'+esc(t('wld.where'))+'</h2>'+
-    '<div class="abtl">'+esc(w.where)+'</div>';
-  if(w.who) body+='<h2 class="abts">'+esc(t('wld.who'))+'</h2>'+
-    '<div class="abtl">'+esc(w.who)+'</div>';
-  if(w.note) body+='<h2 class="abts">'+esc(t('wld.note'))+'</h2>'+
-    '<div class="abtl">'+esc(w.note)+'</div>';
-  /* The sections somebody wrote. This is the article -- the history, the
-     people, the world -- and it is theirs: the heading is their title and the
-     body is their words. Above them the four fixed fields, which are the ones
-     the app asks for; below, the alphabet. A section with nothing in it is
-     not drawn: a heading over nothing is a promise the page does not keep. */
+  /* ---- and then the sections themselves -------------------------------
+     What somebody wrote comes first: it is the article's own prose, and the
+     chapters under it are the reference sections. A section with neither a
+     title nor a body is not drawn -- a heading over nothing is a promise the
+     page does not keep.
+
+     A section that is NOT public is drawn here all the same. This is the
+     author's own page, and hiding a section from its author takes its switch
+     away with it: it could be turned off and never turned back on. What
+     `hide` decides is what somebody ELSE is shown, and nobody else can be
+     shown this page yet. */
   wldArts().forEach(function(one){
-    if(wldSecHidden(one.id)) return;
     if(!(one.t || one.b)) return;
-    body+='<h2 class="abts">'+esc(one.t||t('wld.art.untitled'))+'</h2>'+
-      (one.b? '<div class="abtl">'+esc(one.b)+'</div>' : '');
+    body+=abHead(one.id, one.t||t('wld.art.untitled'))+
+      (abShut(one.id)? '' :
+        abSwitches(one.id)+
+        (one.b? '<div class="abtl">'+esc(one.b)+'</div>' : ''));
   });
-  /* The alphabet, and only what has a shape on it: the free plan puts
-     thirty-eight slots there the moment a language exists, so all of them
-     would be a summary saying every language has thirty-eight letters. */
-  if(drawn.length) body+='<h2 class="abts">'+esc(t('toc.letters'))+'</h2>'+
-    '<div class="ltgrid">'+drawn.map(function(l){ return ltCell(l, ''); }).join('')+'</div>';
+  /* Then the chapters, in the order the book has them. The alphabet is the
+     one whose content is on this page -- and only what has a shape on it: the
+     free plan puts thirty-eight slots there the moment a language exists, so
+     all of them would be a summary saying every language has thirty-eight
+     letters. */
+  rows.forEach(function(row){
+    body+=abHead(row.r, t(row.k));
+    if(abShut(row.r)) return;
+    body+=abSwitches(row.r)+
+      '<button class="set"' + DO('go', [row.r]) + '>'+
+        '<span class="sl">'+esc(row.txt||t(row.k))+'</span>'+
+        '<span class="sv">'+ICON_GO+'</span></button>';
+    if(row.r==='letters' && drawn.length)
+      body+='<div class="ltgrid">'+drawn.map(function(l){ return ltCell(l, ''); }).join('')+'</div>';
+  });
   /* An empty language is a language somebody started this morning, not a
      broken one. The sections below are not part of that count: they are here
      whether or not anything has been written into them, which is what makes

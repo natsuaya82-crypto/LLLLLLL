@@ -396,6 +396,7 @@ defLang('fr', (function(){
       'wld.dl.d'     : "Qui peut ouvrir la page de votre langue pourra télécharger vos lettres et vos mots et s'en servir dans la sienne.",
       'wld.hidden'            : "Privée",
       'wld.secs'              : "Sections",
+      'wld.overview'              : "Aperçu",
       'wld.art.untitled'              : "Sans titre",
       'wld.art.t.ph'              : "Titre",
       'wld.art.b.ph'              : "Écrivez sur la langue et son monde.",
