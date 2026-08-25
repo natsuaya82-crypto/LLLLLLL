@@ -89,7 +89,7 @@ const R = await pg.evaluate(() => {
   const fails = [], systems = [];
   const ROMAN_KEYS = ['rom', 'del', 'sp', 'lay', 'next'];
 
-  SET.plan = 'plus';
+  SET.plan = 'pro';
 
   /* Asked of the page, not written out here -- the same reason act-check
      asks the page for its screens rather than keeping a second list that
@@ -232,10 +232,10 @@ const R = await pg.evaluate(() => {
     /* Claim 8 on both plans. The free QWERTY is what BOTH type on, so it is
        walked twice on purpose -- kbFix()'s override is the same code either
        way and the two must answer alike. */
-    ['free', 'plus'].forEach((pl) => {
+    ['free','pro'].forEach((pl) => {
       SET.plan = pl; puaClaim(w + ' (' + pl + ')');
     });
-    SET.plan = 'plus';
+    SET.plan = 'pro';
     const onFree = (bn === 'the free QWERTY');
     let kbd;
     try { kbd = shareKbd(); }

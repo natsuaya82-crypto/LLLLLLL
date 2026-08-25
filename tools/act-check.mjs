@@ -157,7 +157,7 @@ const R = await pg.evaluate(() => {
 
   /* Every screen, under both plans and with and without a dictionary, because
      a button that only exists when there is nothing yet is still a button. */
-  ['free','plus'].forEach(plan => {
+  ['free','pro'].forEach(plan => {
     SET.plan = plan;
     [false, true].forEach(empty => {
       const keep = WORDS;
@@ -206,7 +206,7 @@ const R = await pg.evaluate(() => {
   }
   /* The data room only offers its rows on the paid plan; on the free one it
      offers the lock instead, and both are screens with buttons on them. */
-  ['free','plus'].forEach(pl => {
+  ['free','pro'].forEach(pl => {
     SET.plan = pl;
     walkArg('set', vSet, SETS.map(x => x.id), 'vSet ' + pl);
   });
@@ -218,7 +218,7 @@ const R = await pg.evaluate(() => {
      The stage LIST is asked for on the paid plan, because stAll() is where a
      stage of somebody's own comes from and a walk that could not see one
      would be walking a shorter app than exists. */
-  ['free', 'plus'].forEach(pl => {
+  ['free','pro'].forEach(pl => {
     SET.plan = pl;
     walkArg('gram', vGram, stAll().map(p => p.id), 'vGram ' + pl);
   });
@@ -226,7 +226,7 @@ const R = await pg.evaluate(() => {
   /* The keyboard chapter is a list and each keyboard is a page. Board 0 is
      the free QWERTY and has no editor; the others have one, and the two are
      different screens. */
-  SET.plan = 'plus';
+  SET.plan = 'pro';
   KB = { kbs: [{ nm: '', pat: 'qwerty', lay: kbFixed().lay }], at: 0, v: 2 };
   walkArg('kb', vKb, ['0', '1'], 'vKb');
   KB = null; kbShow = 0; SET.plan = 'free';

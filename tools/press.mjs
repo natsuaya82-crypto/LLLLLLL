@@ -369,7 +369,7 @@ const R = await pg.evaluate(async () => {
 
   /* Every view, under both plans, because a button behind the paywall is a
      button and the lock offered in its place is another one. */
-  ['free','plus'].forEach(plan => {
+  ['free','pro'].forEach(plan => {
     views.forEach(v => {
       const r = v.slice(1).toLowerCase();
       argsOf(r).forEach(a => {
@@ -394,7 +394,7 @@ const R = await pg.evaluate(async () => {
      the free allowance is also spent. Pressing every screen as a paid account
      would never render either. */
   const standings = [
-    ['paid',        () => { SET.plan = 'plus'; }],
+    ['paid',        () => { SET.plan = 'pro'; }],
     ['free',        () => { SET.plan = 'free'; }],
     ['out of room', () => { SET.plan = 'free'; SET.aiDay = ''; SET.aiN = 999; }]
   ];
@@ -422,7 +422,7 @@ const R = await pg.evaluate(async () => {
   opens.forEach(o => {
     screens.push({
       label: o,
-      build: () => { window.__seed(); SET.done = true; SET.plan = 'plus';
+      build: () => { window.__seed(); SET.done = true; SET.plan = 'pro';
                      window.route = 'words'; NAV = [{ r: 'words' }];
                      window[o].length ? window[o]('kano') : window[o]();
                      show((typeof FORM !== 'undefined' && FORM && FORM.html)
@@ -488,7 +488,7 @@ const R = await pg.evaluate(async () => {
      and measureRows() are calibrated on what show() builds, and moving them
      onto render() would change what 44pt and the row heights are measured
      against. This loop touches nothing but seenClass. */
-  ['free','plus'].forEach(function(plan){
+  ['free','pro'].forEach(function(plan){
     Object.keys(PAGES).forEach(function(id){
       argsOf(id).forEach(function(a){
         try {
@@ -548,7 +548,7 @@ const HELD = await pg.evaluate(async () => {
     T(a, 'touchend', rb.left + rb.width / 2, rb.top + rb.height / 2);
     if (now === was) out.push(what + ': held and carried and it did not move');
   };
-  window.__seed(); SET.done = true; SET.plan = 'plus';
+  window.__seed(); SET.done = true; SET.plan = 'pro';
   go('ltset', 'alpha');
   await carry('a letter of the alphabet', '#ltgrid', '.ltc', 0, 2);
   go('kb');

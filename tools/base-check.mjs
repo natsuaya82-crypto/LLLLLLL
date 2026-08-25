@@ -27,7 +27,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 
 const r = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'plus';
+  SET.done = true; SET.plan = 'pro';
   var o = GGRID.inset, D = geStep(), out = {};
 
   out.start = numDigits().length;
@@ -60,7 +60,7 @@ const r = await pg.evaluate(({s}) => {
   /* free has no row to press */
   SET.plan = 'free';
   out.freeRow = numBaseRows();
-  SET.plan = 'plus';
+  SET.plan = 'pro';
 
   /* ---- a slot's name does not change, on any plan ------------------------
      「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
@@ -187,7 +187,7 @@ const r = await pg.evaluate(({s}) => {
     return String(l.ab||'').toLowerCase() === 'b'; }).length;
 
   /* and a plan that ADDS letters keeps both, because adding is what it buys */
-  SET.plan = 'plus';
+  SET.plan = 'pro';
   var paid = ltNew({ st: [{ pts: [[o+4*D, o+8*D], [o+12*D, o+8*D]] }] });
   out.mvPaidId = ltSetRoman(paid.id, 'e');
   out.mvPaidSame = out.mvPaidId === paid.id && !!ltById(paid.id);

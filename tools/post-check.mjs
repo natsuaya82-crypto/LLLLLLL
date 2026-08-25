@@ -119,7 +119,7 @@ const R = await pg.evaluate(async () => {
 
   /* ---- a post, written the way a person writes one ------------------ */
   const before = POSTS.length;
-  SCRIPT.dir = 'rtl'; SET.plan = 'plus';        /* choosing one is Plus */
+  SCRIPT.dir = 'rtl'; SET.plan = 'pro';        /* choosing one is Plus */
   PW = pwBlank();
   PW.ln = 'kano tir';
   PW.mn = 'the mountain is seen';

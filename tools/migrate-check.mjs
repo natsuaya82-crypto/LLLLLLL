@@ -400,11 +400,25 @@ const nativeIs = (plan, settings) => pg.evaluate(([p, st]) => {
 await pg.evaluate(() => localStorage.clear());
 await nativeIs('', '{"theme":"dark","plan":"plus"}');
 await pg.reload();
+/* 'pro' and not 'plus', and that is the tier RENAME rather than a mistake:
+   Free / Basic / Plus became Free / Plus / Pro on 2026-08-23, so a file
+   written before that day says `plus` and means the top tier. planMigrate()
+   moves the word up a rung, once. A settings file this old cannot have said
+   `basic` -- there was never a way to set it. */
 want('a plan already bought comes across',
-     await pg.evaluate(() => plan()), 'plus');
+     await pg.evaluate(() => plan()), 'pro');
 want('and is written where it now lives',
-     await pg.evaluate(() => (window.__wrote || []).join(',')), 'plus');
+     await pg.evaluate(() => (window.__wrote || []).join(',').indexOf('pro') >= 0), true);
 want('and is taken out of the file it came from', await planInFile(), false);
+
+/* 6a2. and the rename moves it ONCE. After it has run, `plus` is a real
+   middle tier: a file that already carries planV must be left exactly where
+   it is, or everybody on the middle rung is promoted at every launch. */
+await pg.evaluate(() => localStorage.clear());
+await nativeIs('', '{"theme":"dark","plan":"plus","planV":2}');
+await pg.reload();
+want('a plan written AFTER the rename is left where it is',
+     await pg.evaluate(() => plan()), 'plus');
 
 /* 6b. the same phone, with the file edited the way a restored backup would
    edit it. This is the whole reason for the move: the answer is the Keychain's

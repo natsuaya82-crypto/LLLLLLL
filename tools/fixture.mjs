@@ -412,19 +412,19 @@ export function halfDone(){
        counts in ten and has no say in it, so the row is on no screen the walk
        renders otherwise. And once more with a digit the base can no longer
        reach, which is the red cell. */
-    ['the digits, where the base is set', () => { SET.plan='plus';
+    ['the digits, where the base is set', () => { SET.plan = 'pro';
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
        const h=vLtset('num'); SET.plan='free'; return h; }],
-    ['a digit above the base', () => { SET.plan='plus';
+    ['a digit above the base', () => { SET.plan = 'pro';
        const was=STG.base; STG.base=10; ltNew({val:11});
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
        const h=vLtset('num');
        LETTERS = LETTERS.filter(l => l.val !== 11); STG.base=was; SET.plan='free';
        return h; }],
-    ['the reading of a word', () => { SET.plan='plus'; openEdit('kano');
+    ['the reading of a word', () => { SET.plan = 'pro'; openEdit('kano');
                                       window.route='spell'; NAV=[{r:'spell'}];
                                       const h=vSpell(); SET.plan='free'; return h; }],
-    ['the reading of a word, searched', () => { SET.plan='plus'; openEdit('kano');
+    ['the reading of a word, searched', () => { SET.plan = 'pro'; openEdit('kano');
                                                 window.route='spell'; NAV=[{r:'spell'}];
                                                 spQ='a';
                                                 const h=vSpell(); spQ='';
@@ -490,10 +490,10 @@ export function halfDone(){
        the plan and put it back. */
     /* Derived from a word that already exists, so the sheet opens with a
        spelling in it -- an empty sheet has no reading to change. */
-    ['the new word sheet, by sound', () => { SET.plan = 'plus'; openAdd('kano');
+    ['the new word sheet, by sound', () => { SET.plan = 'pro'; openAdd('kano');
                                              const h = FORM.html; addFrom = '';
                                              SET.plan = 'free'; return h; }],
-    ['the word being edited, by sound', () => { SET.plan = 'plus'; openEdit('kano');
+    ['the word being edited, by sound', () => { SET.plan = 'pro'; openEdit('kano');
                                                 const h = FORM.html;
                                                 SET.plan = 'free'; return h; }],
     /* The profile's other two lists. Each is empty on a fresh fixture, and an
@@ -693,10 +693,10 @@ export function halfDone(){
        and both places it shows: beside a name on a profile and beside a name
        on a post. The row that sells it is the other way round: it is there
        only while nobody has bought anything. */
-    ['the profile of somebody on Plus', () => { SET.plan = 'plus';
+    ['the profile of somebody on Plus', () => { SET.plan = 'pro';
         window.route='profile'; NAV=[{r:'profile'}];
         const h = vProfile(); SET.plan = 'free'; return h; }],
-    ['the timeline of somebody on Plus', () => { SET.plan = 'plus';
+    ['the timeline of somebody on Plus', () => { SET.plan = 'pro';
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed(); SET.plan = 'free'; return h; }],
     /* A post with no line: a photograph on its own, and a voice on its own.
@@ -799,18 +799,18 @@ export function halfDone(){
        is Studio's, so on free the contents has no way in to it -- which is
        what act-check reports, correctly, unless the walk is shown the plan
        that has the door. */
-    ['the contents on Plus', () => { SET.plan = 'plus';
+    ['the contents on Plus', () => { SET.plan = 'pro';
                                        window.route = 'build'; NAV = [{r:'build'}];
                                        const h = vBuild(); SET.plan = 'free'; return h; }],
     /* A grammar stage of your own: the door is on the paid plan, because the
        fifteen are the whole of the free chapter. */
-    ['a grammar stage of your own', () => { SET.plan = 'plus'; openOwnPhase();
+    ['a grammar stage of your own', () => { SET.plan = 'pro'; openOwnPhase();
                                             const h = FORM.html;
                                             SET.plan = 'free'; return h; }],
-    ['the grammar list, paid', () => { SET.plan = 'plus'; window.route='gram';
+    ['the grammar list, paid', () => { SET.plan = 'pro'; window.route='gram';
                                        NAV=[{r:'gram'}]; const h = vGram();
                                        SET.plan = 'free'; return h; }],
-    ['a stage slot, by sound', () => { SET.plan = 'plus';
+    ['a stage slot, by sound', () => { SET.plan = 'pro';
                                        openSlot(stAll()[0].id, stAll()[0].slots[0]);
                                        const h = FORM.html;
                                        SET.plan = 'free'; return h; }],
@@ -827,17 +827,17 @@ export function halfDone(){
        it -- so opening one of its keys gives an empty sheet, which is the
        whole point of it and would render nothing here. kbAdd() makes board 1
        and leaves kbShow on it. */
-    ['a key of the keyboard, opened', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a key of the keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = FORM.html; KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
-    ['a key that switches layers', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a key that switches layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                            kbAdd('qwerty'); kbLay = 0; kbSetKind(0, 0, 'lay');
                                            const h = FORM.html; KB = null; kbShow = 0;
                                            SET.plan = 'free'; return h; }],
-    ['the alphabet, for one slot of a key', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['the alphabet, for one slot of a key', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                     kbAdd('qwerty'); kbLay = 0; kbSlot(0, 0, -1);
                                                     const h = FORM.html; KB = null; kbShow = 0;
                                                     kbSlotFor = null;
@@ -846,7 +846,7 @@ export function halfDone(){
        the paid plan's -- the free twenty-eight are the alphabet and taking one
        away would leave the keyboard a key that answers to nothing -- while the
        wobble and Done are on both, since the ORDER is everybody's. */
-    ['the alphabet being held (paid)', () => { SET.plan = 'plus'; ltWob = true;
+    ['the alphabet being held (paid)', () => { SET.plan = 'pro'; ltWob = true;
                                        window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
                                        const h = vLtset();
                                        ltWob = false; SET.plan = 'free'; return h; }],
@@ -859,7 +859,7 @@ export function halfDone(){
        to add a row, to add a layer, and to put the whole thing back. */
     /* Held, the way a home screen is held: every key wobbling with a ⊖ on it
        and Done in the bar. Neither the ⊖ nor Done is on the screen at rest. */
-    ['a keyboard being held', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a keyboard being held', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                       kbAdd('qwerty'); kbWob = true;
                                       window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                       const h = vKb();
@@ -868,7 +868,7 @@ export function halfDone(){
     /* A row of the sheet selected, which is a state of the editor and not a
        screen: the bin and the three alignments are only up while something is
        selected, so this is the only face that can press them. */
-    ['a row of the keyboard selected', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a row of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbHeadRow(1);
                                                window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
@@ -877,20 +877,20 @@ export function halfDone(){
     /* the + asking which side of the selected row a new one goes on. The two
        answers replace the alignments and the bin while it asks, so this is
        the only face they can be pressed from. */
-    ['a row selected, asking where a new one goes', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a row selected, asking where a new one goes', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbHeadRow(1); kbInsAsk();
                                                window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
-    ['a column of the keyboard selected', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a column of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);
                                                   window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
-    ['a keyboard of two layers', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+    ['a keyboard of two layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                          kbAdd('qwerty'); kbAddLay();
                                          window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                          const h = vKb();
@@ -905,12 +905,12 @@ export function halfDone(){
        Same list, same drawing, a different name on the press -- so this face
        is what proves the second name is reachable at all. */
     ['the arrangement of a keyboard that already exists', () => {
-        SET.plan = 'plus'; KB = null; kbShow = 0;
+        SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('qwerty'); kbRepat(1);
         const h = FORM.html;
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the free QWERTY, on a plan that can build others', () => {
-        SET.plan = 'plus'; KB = null; kbShow = 0;
+        SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 0; KB.at = 1;
         window.route='kb'; NAV=[{r:'kb', a:'0'}];
         const h = vKb();
@@ -928,14 +928,14 @@ export function halfDone(){
        same would render neither the Apply button nor the line that replaces
        it. */
     ['three keyboards, looking at one that is not applied', () => {
-        SET.plan = 'plus'; KB = null; kbShow = 0;
+        SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('flick'); kbAdd('chart');
         KB.at = 0; kbShow = 2;
         window.route='kb'; NAV=[{r:'kb', a:'2'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the keyboard that is already applied', () => {
-        SET.plan = 'plus'; KB = null; kbShow = 0;
+        SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('tap');
         KB.at = 1; kbShow = 1;
         window.route='kb'; NAV=[{r:'kb', a:'1'}];
@@ -948,17 +948,17 @@ export function halfDone(){
        The seeded language has a letter for every sound it has, so one is
        taken off a letter here to make one. */
     ['a sound with no letter yet', () => {
-        SET.plan = 'plus'; SND.push('\u0283');
+        SET.plan = 'pro'; SND.push('\u0283');
         window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
         const h = vLtset();
         SND.pop(); SET.plan = 'free'; return h; }],
     ['a sound with no letter yet, held', () => {
-        SET.plan = 'plus'; ltWob = true; SND.push('\u0283');
+        SET.plan = 'pro'; ltWob = true; SND.push('\u0283');
         window.route='ltset'; NAV=[{r:'ltset', a:'alpha'}];
         const h = vLtset();
         SND.pop(); ltWob = false; SET.plan = 'free'; return h; }],
     ['the chart, for the language rather than a letter', () => {
-        SET.plan = 'plus'; openSndAdd();
+        SET.plan = 'pro'; openSndAdd();
         const h = FORM.html; SET.plan = 'free'; return h; }],
     /* The `?` sheet: how the keyboard gets onto the phone. It is a form and
        nothing walks to it -- and the button that opens iOS Settings is on it
@@ -1001,7 +1001,7 @@ export function halfDone(){
         saveStg();
         return fmrFormHTML(); }],
     ['the two that undo a keyboard', () => {
-        SET.plan = 'plus'; KB = null; kbShow = 0;
+        SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 1; kbMore();
         const h = FORM.html;
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
@@ -1010,7 +1010,7 @@ export function halfDone(){
        the first keyboard is the one already on the phone, so what the screen
        opens with is a keyboard rather than a chooser for one. */
     ['choosing another keyboard', () => {
-        SET.plan = 'plus'; KB = null; kbShow = 0;
+        SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('abc'); kbNew();
         const h = FORM.html;
         KB = null; kbShow = 0; SET.plan = 'free'; return h; }],
@@ -1020,22 +1020,22 @@ export function halfDone(){
        deleted from. Each of these is the same screen with the plan changed,
        and without them the buttons that do those things belong to no screen
        at all. */
-    ['the alphabet, on the paid plan', () => { SET.plan = 'plus';
+    ['the alphabet, on the paid plan', () => { SET.plan = 'pro';
         window.route = 'ltset'; NAV = [{r:'ltset', a:'alpha'}];
         const h = vLtset(); SET.plan = 'free'; return h; }],
-    ['one letter, on the paid plan', () => { SET.plan = 'plus';
+    ['one letter, on the paid plan', () => { SET.plan = 'pro';
         window.route = 'letter'; NAV = [{r:'letter', a:'l1'}];
         const h = vLetter(); SET.plan = 'free'; return h; }],
     /* The letters chapter with everything open: the keyboard's door, and the
        abugida bench's -- which is the only way to that screen, and only
        exists while the writing is an abugida, which is itself paid. */
-    ['the letters chapter, on the paid plan', () => { SET.plan = 'plus'; SET.wsys = 'abugida';
+    ['the letters chapter, on the paid plan', () => { SET.plan = 'pro'; SET.wsys = 'abugida';
         window.route = 'letters'; NAV = [{r:'letters'}];
         const h = vLetters(); SET.plan = 'free'; SET.wsys = ''; return h; }],
-    ['the abugida bench', () => { SET.plan = 'plus'; SET.wsys = 'abugida';
+    ['the abugida bench', () => { SET.plan = 'pro'; SET.wsys = 'abugida';
         window.route = 'abugida'; NAV = [{r:'abugida'}];
         const h = vAbugida(); SET.plan = 'free'; SET.wsys = ''; return h; }],
-    ['the five kinds of writing', () => { SET.plan = 'plus';
+    ['the five kinds of writing', () => { SET.plan = 'pro';
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); SET.plan = 'free'; return h; }],
     ['one letter, opened',     () => { window.route='letter'; NAV=[{r:'letter', a:'l1'}];
@@ -1084,7 +1084,14 @@ export function halfDone(){
     ['a slot\'s word being made', () => { openSlot('greet','yes'); return FORM.html; }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
-    ['characters on offer',      () => { openPick('l1'); pkScript=WORLD_SCRIPTS[0].id;
+    /* One of them is the letter's own, which is the only state that wears
+       .cur. It went unwalked for as long as the plans screen happened to wear
+       the same class on something else -- `press` reports a class nothing
+       wears, and a second wearer somewhere else is a mask, not a test. */
+    ['characters on offer',      () => { const w = WORLD_SCRIPTS[0];
+                                         const l = ltById('l1');
+                                         if (l) l.ch = w.ch.split(' ')[1];
+                                         openPick('l1'); pkScript = w.id;
                                          return FORM.html + pkCharsHTML(); }],
     ['an abugida being placed',  () => { SET.wsys='abugida';
                                          LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
@@ -1172,7 +1179,7 @@ export function halfDone(){
         const h = FORM.html; impUndo(); return h; }],
     /* On the paid plan the file button is a real file input rather than the
        way to the plans. */
-    ['a file being chosen', () => { SET.plan = 'plus'; IMP = impBlank();
+    ['a file being chosen', () => { SET.plan = 'pro'; IMP = impBlank();
         openImport();
         const h = FORM.html; SET.plan = 'free'; return h; }],
     /* The card, which is the only screen whose output leaves the app. All

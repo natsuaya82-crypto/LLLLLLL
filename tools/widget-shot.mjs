@@ -105,7 +105,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 /* Ask the real app for the real payload, four times over. */
 const CASES = await pg.evaluate(({ s, D, M }) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'plus';
+  SET.done = true; SET.plan = 'pro';
   const O = GGRID.inset, K = geStep();
   const put = (v, shape) => {
     const l = numByVal(v);
@@ -510,7 +510,7 @@ await app.goto(`http://127.0.0.1:${PORT}/`);
 await app.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 await app.evaluate(({ s, D, M }) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'plus';
+  SET.done = true; SET.plan = 'pro';
   const O = GGRID.inset, K = geStep();
   const lay = (l, shape) => {
     l.st = shape.map((run) => ({ pts: run.map((p) => [O + p[0] * K, O + p[1] * K]) }));

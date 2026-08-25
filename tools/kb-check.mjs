@@ -30,7 +30,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const r = await pg.evaluate(({ s }) => {
   eval('(' + s + ')()');
-  SET.done = true; SET.plan = 'plus';
+  SET.done = true; SET.plan = 'pro';
   var out = {}, i, j;
 
   /* A board of this person's own, on the screen it is edited on. Board 0 is

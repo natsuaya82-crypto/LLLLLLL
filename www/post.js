@@ -657,7 +657,7 @@ function postCatchUp(){
    paragraph as the reason. It is the second exception in that file and the
    first one that is about time rather than about language. */
 function planBadge(id){
-  if(id==='plus') return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
+  if(id==='pro') return '<span class="bdgw plus" aria-hidden="true">'+MARK_PLUS+'</span>';
   return '';
 }
 function postBadge(p){

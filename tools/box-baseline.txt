@@ -121,8 +121,6 @@
 .pav | border-radius
 .ph | border
 .ph | border-radius
-.ph2 | border
-.ph2 | border-radius
 .phk | border
 .phk | border-radius
 .phkd | border
@@ -135,8 +133,6 @@
 .pkclear | border-radius
 .pktab | border
 .pktab | border-radius
-.plan | border
-.plan | border-radius
 .plangtag | border
 .plangtag | border-radius
 .pmenu | border

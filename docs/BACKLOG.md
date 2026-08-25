@@ -7,6 +7,92 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## The plans screen says `$0` in every language
+
+The three things this section used to name are in: **Restore** is a button,
+**Plus** has its own card, and **Cancel** opens Apple's own sheet rather than
+setting a flag. The prices are the App Store's since 2026-08-23. One thing is
+left, and it is wording, which is not a session's to choose.
+
+**Free is not a product, so the App Store cannot be asked**, and
+`plan.price.free` is a typed string with a dollar sign in it — `$0` in all ten
+languages, standing beside a real price in yen on a Japanese phone. That is
+the same fault that made the other prices come from Apple, in the one place
+Apple has no answer. What it should say instead — `0`, the word for free, or
+nothing at all — is the owner's.
+
+**The subscription disclosure is not on this list.** An app selling an
+auto-renewing subscription must say on the purchase screen that it renews
+until cancelled, and link to Terms and a privacy policy. Asked on 2026-08-23;
+the owner says it is covered elsewhere — 「利用規約は別に入れてるから大丈夫」 —
+so it is recorded here as answered rather than as work. If a review ever comes
+back naming it, this is the paragraph it is about.
+
+## ~~Two decisions of the same day disagree about how many keyboards~~ — settled
+
+*2026-08-23, owner:*「1,1+3.無制限って言わなかったっけ？」
+
+**Free 1 — the fixed QWERTY. Plus 1 + 3 = 4. Pro no ceiling.** Counted as a
+pool **across languages**, not per language. `docs/FEATURE_RULES.md` said both
+things on the same day; it says this one in both places now.
+
+**Still to build, and not by the session that asked**: `kbCap()` beside
+`wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX`
+asking it, the count becoming a sum across `LANGS` rather than the length of
+one language's list, and `CAN.kb` moving from `pro` to `plus` **in the same
+commit** — a door opened without its number would give Plus the three
+`KB_MAX` hands out today, which is neither answer.
+
+`www/keyboard.js` belongs to `claude/detailed-tasks-execution` today and that
+branch is in the middle of 126 lines about holding more than one keyboard —
+`kbAddKb()`, the tab that switches which board is on the phone, the button
+that deletes one. The number belongs in the same hands as that change.
+
+## The plans screen is half wired, and the half that is missing is named
+
+`www/store.js` is in and `setPlan()` goes through it: on a phone, pressing a
+paid card buys, and the plan comes from the App Store's answer. Three things
+are deliberately not there yet, each because a file it needs belongs to
+another session today (`docs/SESSIONS.md`).
+
+- **Restore.** `restore` exists on the native side and there is nowhere to
+  press it. **Apple requires the button** — an app selling a subscription
+  without one is rejected. It needs a name in `www/act-map.js`.
+- **The middle card.** `PLANS` sells Free and Pro. Plus's name, price and
+  lines are strings, and `www/i18n/*.js` is not this session's today. Nothing
+  can be bought that is not on the screen.
+- **Going back to free is not a purchase and is drawn as one.** Pressing Free
+  on a phone sets `SET.plan='free'` by hand, which is a person saying "act as
+  though I am on free"; the next launch reads the Keychain and it is Pro
+  again. What that button should do is open Apple's own sheet — `manage` on
+  the native side, which exists — because cancelling is Apple's and not ours
+  to draw. It needs a name in `act-map.js` too.
+
+None of the three is hard. All three are one file away.
+
+## Two decisions of the same day disagree about how many keyboards — OWNER
+
+`docs/FEATURE_RULES.md` carries both, and they cannot both be implemented.
+
+- **The earlier one** (§ How many languages, how many keyboards): a keyboard
+  count is a **pool across languages**, Basic gets **1 + 3 = 4**, and **Plus
+  has no ceiling**. Its reasoning is written out at length — a keyboard is
+  layers, so more boards buys only a different arrangement, there are five
+  arrangements, and a ceiling that binds almost nobody is generous on purpose.
+- **The later one** (§ A third plan, and what pays for the free one): the
+  `CAN` table reads `kb`: Free —, Basic **1**, Plus **3**.
+
+Four against one, and no ceiling against three. `CLAUDE.md` says an owner
+decision is a specification and that a session may not resolve a conflict
+between two of them, so **`can('kb')` has been left where it was — `plus`**.
+Moving it down to `basic` without the number would have given Basic the three
+that `KB_MAX` hands out today, which is neither answer.
+
+What is waiting on it: `KB_MAX` in `www/keyboard.js` (a per-language constant
+today, a per-plan number either way, and a pool across languages if the
+earlier decision stands), and the language ceiling, which does not exist at
+all yet.
+
 ## ~~The onboarding adds a 29th letter on the free plan~~ — decided, and in
 
 *2026-08-23, owner:*「aが自作文字に変わる瞬間みたいなの見せたい」

@@ -14,7 +14,7 @@
    information rather than as an interruption. */
 function capBanner(){
   if(can('words')) return '';
-  var left=FREE_LIMIT-WORDS.length;
+  var left=wordCap()-WORDS.length;
   if(left>20 || left<0) return '';
   return '<button class="capwarn"' + DO('go', ["plans"]) + '>'+t('cap.warn', left)+
     '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
@@ -234,7 +234,17 @@ function pkCharsHTML(){
   if(!pkScript) return '';
   var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===pkScript) w=x; });
   if(!w) return '';
-  var cur=chOf(pkFor), taken=chTaken();
+  /* The letter's own character, read off the LETTER. chOf() takes a sound
+     unit -- ltChar() walks LETTERS for one that reads it -- and pkFor is a
+     letter id, so this asked which letter reads the sound `l1` and was told
+     nothing, always. The grid never marked the character the letter already
+     had. openPick() four lines up reads it correctly, which is why the field
+     and the Clear button were right and only the grid was wrong.
+
+     Found by press-check reporting that nothing wears `.cur`: the plans
+     screen wore the same class on something else until today, and a second
+     wearer somewhere else masks this exactly. */
+  var l=ltById(pkFor), cur=(l && l.ch)||'', taken=chTaken();
   return w.ch.split(' ').map(function(ch){
     var used=taken[ch] && taken[ch]!==pkFor;
     return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('ltTakeChar', [pkFor, ch]) + '>'+esc(ch)+'</button>';

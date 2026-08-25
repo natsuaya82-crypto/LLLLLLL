@@ -402,14 +402,55 @@ Two of them were about capabilities that had been deleted.
     after it, with no ceiling until this is switched on. What runs out first
     is the timeline's photographs, and the way it goes wrong is a month that
     is already spent by the time anybody looks.
-17. App Store Connect — the subscription, and TestFlight. `docs/apple.md`.
-    The StoreKit code exists now (`ios/App/App/LinguaStore.swift`) and **is not
-    wired to www/**: nothing in JavaScript asks it anything, by instruction
-    「storekitってコードは書いていいよ繋げる作業は後でやる」. It is registered
-    in `MainViewController` so its `Transaction.updates` listener runs. The
-    wiring is one file, `www/store.js`, and the plans screen calling it — and
-    it is deliberately not written yet, because a function nothing calls is a
-    function `dead-check` deletes.
+17. **App Store Connect — the four subscription products.** This is the one
+    that now blocks everything else about money, and it is nobody's but the
+    owner's. `docs/apple.md` § 4 has every field; the short version:
+
+    | 参照名 | 製品 ID | 期間 | 価格 | レベル |
+    |---|---|---|---|---|
+    | Lingua Plus | `com.tokinets.lingua.plus.monthly` | 1 か月 | USD 4.99 | 2 |
+    | Lingua Plus Yearly | `com.tokinets.lingua.plus.yearly` | 1 年 | USD 49.99 | 2 |
+    | Lingua Pro | `com.tokinets.lingua.pro.monthly` | 1 か月 | USD 9.99 | 1 |
+    | Lingua Pro Yearly | `com.tokinets.lingua.pro.yearly` | 1 年 | USD 99.99 | 1 |
+
+    **One group, Pro above Plus**, so Plus → Pro is an upgrade Apple
+    prorates rather than two subscriptions somebody pays for twice. A product
+    id can never be changed once it exists, and these four are already written
+    into `ios/App/App/LinguaStore.swift`; changing one means changing the code
+    first. Asking for a product that does not exist is not an error — StoreKit
+    returns nothing for it — so **they can be made one at a time** and each
+    appears in the app the moment it exists.
+
+    **What is decided per product is one country's price, not 175.** Apple
+    generates every other storefront from it — its own rounding, its own tax,
+    its own currency — and any of them can be overridden afterwards, one at a
+    time. The only real choice is which country is the base: with Japan as the
+    base the yen are a number somebody chose, with USD as the base they are a
+    number Apple rounded to. `docs/apple.md` § 4.
+
+    **Changing a price here needs no change in the app**, and that is new
+    since 2026-08-23: the plans screen shows `displayPrice` as the App Store
+    gives it, and works the yearly saving out from the two amounts rather than
+    from the 17 on `PLANS`, because Apple rounds each storefront separately
+    and 17% off in dollars is not 17% off in yen. The `$4.99` in `www/i18n` is
+    the browser's fallback and nothing else. Only a **product id** still means
+    changing code first.
+
+    The code side of this is done as far as it can be here:
+    `LinguaStore.swift` (`products` `buy` `restore` `current` `manage`, the
+    `Transaction.updates` listener, and an id→plan map that answers with the
+    HIGHEST entitlement) and `www/store.js`, which `setPlan()` goes through on
+    a phone. The three things that were waiting on another session's files are
+    in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
+    Apple's own sheet rather than setting a flag. What the screen still lacks
+    is **the subscription text Apple requires beside a price** — that it
+    renews until cancelled, and links to Terms and to the privacy policy —
+    which needs two URLs that do not exist yet. `docs/BACKLOG.md`.
+17a. **Sandbox testing**, once the products exist: buy, then `restore` after
+    deleting and reinstalling, then a renewal arriving while the app is shut,
+    and — new since the middle tier — **a Plus receipt reading as Plus and not
+    as Pro**. None of it can be seen anywhere in this repository.
+17b. TestFlight, as before. `docs/apple.md`.
 18. GitHub Secrets, if a build ever needs a new one. No agent can write one.
 
 ### Landed on 2026-08-22, and what it still needs

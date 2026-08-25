@@ -314,6 +314,80 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-23
+- Area: What the tiers are called
+- Decision: **Free / Plus / Pro.** They were Free / Basic / Plus.
+  「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」
+  「フリープラスプロがいいかなー」
+
+  | was | is | price |
+  |---|---|---|
+  | Free | Free | — |
+  | **Basic** | **Plus** | $4.99 / $49.99 |
+  | **Plus** | **Pro** | $9.99 / $99.99 |
+
+  Nothing about what each buys changed. Only the words did, and the stored
+  value with them: `SET.plan` and the Keychain hold `free` / `plus` / `pro`,
+  and the product ids are `com.tokinets.lingua.plus.*` and `...pro.*`.
+- Reason: `Basic` is what most apps call their FREE tier, so the confusable
+  pair was Free and Basic rather than Basic and Plus — and the order was
+  inferrable rather than obvious. `Free < Plus < Pro` needs nobody told which
+  is which, and all three words survive untranslated in the ten languages,
+  which plan names have to (they do not go through `t()`).
+- Affected features: `PLAN_ORDER`, `CAN`, `wordCap()`, `PLANS`, `planBadge()`,
+  the plans screen, `LinguaStore.swift`'s product map, every `SET.plan` in
+  `tools/`, and the nine `plan.plus.*` keys in ten language files, which are
+  `plan.pro.*` now.
+- Affected data: **one value, moved once.** A phone already holding
+  `plan: 'plus'` wrote it while Plus was the TOP tier; read in the new world
+  it would be the middle one. `planMigrate()` in `www/core.js` moves it up
+  and writes `SET.planV = 2` so it can never run twice — after this `plus` is
+  a real middle tier and must be left alone. `SET.planWas` carries a plan name
+  too and moves with it, or the next `capLapse()` would announce a step
+  nobody took. On a phone the Keychain is written again, or the next launch
+  would hand back the old word.
+
+  **Nobody had bought anything** — no product existed in App Store Connect on
+  the day — so the only value this can find is one somebody set by hand, and
+  moving it up gives them back what they had rather than more.
+- Affected docs: `docs/PAID_FEATURES.md`, `docs/apple.md`, `docs/STATE.md`,
+  `docs/BACKLOG.md`. **The decision entries above are left as they were
+  written**: they are a record of what was said on the day, and rewriting them
+  would be rewriting what the owner said. This entry is the mapping.
+- Implementation status: **done**, 2026-08-23, `claude/save`. Held by
+  `plan-check` (45 claims, the rungs read off `CAN`) and `migrate-check`.
+
+### Decision
+- Date: 2026-08-23
+- Area: How many keyboards, said again because the file said it twice
+- Decision: **Free 1 — the fixed QWERTY. Basic 1 + 3 = 4. Plus no ceiling.**
+  Counted as a **pool across languages**, not per language.
+  「1,1+3.無制限って言わなかったっけ？」
+- Reason: this file carried two answers written the same day — the § above
+  said 4 in a pool and Plus with no ceiling, and the `CAN` table below it said
+  Basic 1 and Plus 3. A session that was about to move `can('kb')` down to
+  Basic stopped on it instead, because a door opened without its number would
+  have given Basic the three `KB_MAX` hands out today, which is neither
+  answer. The owner named the first one. The table below now says the same
+  thing, so there is one answer in this file again.
+- Affected features: `KB_MAX` in `www/keyboard.js` — a per-language constant
+  today, a per-plan number counted across languages from now — and
+  `CAN.kb`, which moves from `plus` to `basic`.
+- Affected data: none. Somebody over the ceiling keeps every keyboard and
+  simply cannot add another. `backup-check` holds that already.
+- Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
+- Implementation status: **nothing built, and deliberately not by this
+  session.** `www/keyboard.js` belongs to `claude/detailed-tasks-execution`
+  today, and that branch is in the middle of a 126-line change about holding
+  more than one keyboard — `kbAddKb()`, the tab that switches which board is
+  on the phone, the button that deletes one. The number belongs in the same
+  hands as that. What is waiting: `kbCap()` beside `wordCap()` in
+  `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX` asking it
+  instead, the count becoming a sum across `LANGS` rather than a length, and
+  `CAN.kb` moving to `basic` in the same commit — the door and its number are
+  one statement and must not land apart.
+
+### Decision
+- Date: 2026-08-23
 - Area: A third plan, and what pays for the free one
 - Decision: **Three plans, and the prices are settled.**
 
@@ -333,7 +407,7 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   | | Free | Basic | Plus |
   |---|---|---|---|
   | `letters` add / name / delete | — | **yes** | yes |
-  | `kb` a keyboard of your own | — | **1** | 3 |
+  | `kb` a keyboard of your own | 1 (the fixed QWERTY) | **1 + 3 = 4** | **no ceiling** |
   | `words` | 100 | **1000** | no ceiling |
   | `wsys` syllabary, abjad, abugida, logography | — | **yes** | yes |
   | `snd` choose the sound, not the letter's own | — | **yes** | yes |
@@ -372,10 +446,34 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   add — 「判定が失敗しても減るのはボタンであって言葉ではない」. Same for a
   third keyboard.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`, `docs/apple.md`.
-- Implementation status: **nothing built.** Plus's prices are in
-  `www/i18n/*.js` already; Basic's are nowhere. The leader's proposed order is
-  **Basic first, ads second** — Basic needs no native code at all, and until
-  the ladder exists there is nowhere for somebody who wants the ads gone to go.
+- Implementation status: **the rung is in; the card and the numbers are not.**
+  2026-08-23, `claude/save`.
+
+  In: `PLAN_ORDER` and a laddered `has()` in `www/core.js` — a level is met by
+  the plan that names it and by every plan above it — and `CAN` sits on the
+  three rungs the table says, except `kb` (see below). `wordCap()` is the word
+  ceiling as a number rather than a constant: 100 / 1000 / none. Held by
+  `tools/plan-check.mjs`, with the ladder broken into an equals sign and the
+  ceiling flattened to one number, both watched failing.
+
+  Not in, and each for a reason that is not "no time":
+  - **Basic is not on sale.** Its price is in no language file and no
+    subscription for it exists in App Store Connect. `PLANS` still sells Free
+    and Plus, which is what can actually be bought.
+  - **`kb` has not moved down to Basic.** How many is a number, and the two
+    decisions of this day disagree about it — 4 in a pool against 1, and no
+    ceiling against 3. `docs/BACKLOG.md` has both sides. Opening the door
+    without the number would give Basic the three `KB_MAX` hands out today,
+    which is neither answer.
+  - **`edit` and `badge` are not in `CAN`.** `postEdit()` and `planBadge()`
+    are both in `www/post.js`, which belongs to another session today, and
+    `dead-check` refuses a capability nothing asks for.
+  - The language ceiling does not exist at all yet.
+
+  Plus's prices are in `www/i18n/*.js` already; Basic's are nowhere. The
+  leader's proposed order is **Basic first, ads second** — Basic needs no
+  native code at all, and until the ladder exists there is nowhere for
+  somebody who wants the ads gone to go.
 
 ### Decision
 - Date: 2026-08-23
@@ -1414,6 +1512,41 @@ for.
 - Implementation status: implemented. `FM_INF` / `FM_DER` / `fmLabel()` /
   `fmMine()` and the `fm` screen in `www/wordsheet.js`
 - Free: yes. It is text somebody typed, not a capability
+
+### Decision
+- Date: 2026-08-23
+- Area: What a subscription costs in each country
+- Decision: **The base is the USD prices already decided** — Plus 4.99 / 49.99,
+  Pro 9.99 / 99.99 — and **each country is then rounded to a clean number by
+  hand** in App Store Connect. Not all 175: the storefronts that sell, and the
+  rest left as Apple generated them.
+- Reason: 「基準はさっき値段決めたやろ 各国がキリ良くしたい。」
+- Affected features: the plans screen; nothing else
+- Affected data: none. A price is not stored anywhere in this app
+- Affected docs: apple.md § 4, CHANGELOG, STATE
+- Implementation status: nothing to implement, and that is the point. The
+  screen shows `displayPrice` as the App Store gives it and works the yearly
+  saving out from the two amounts, so **a price changed in the dashboard needs
+  no change in the app** — and rounding each country separately, which makes
+  the saving differ by country, is exactly the case that would have been wrong
+  under the old typed `17`.
+
+### Decision
+- Date: 2026-08-23
+- Area: The picture on the plans screen
+- Decision: **This phone's own keyboard**, wearing the letters this person
+  drew — the applied board, so on free it is the QWERTY with the drawn letters
+  substituted in. A picture and not a button.
+- Reason: 「なんかテキストだけだと味気ないな」「絵なんでもいいよ 君のキーボード
+  とか載せる？」
+- Affected features: the plans screen
+- Affected data: none
+- Affected docs: CHANGELOG
+- Implementation status: implemented. `kbShotHTML(kbOf().lay)` in `vPlans()`,
+  which is the same picture the keyboard list is drawn with — no second
+  function that draws a keyboard — and `.plkb` in `www/index.html`, which is
+  room and nothing else
+- Free: yes. It is a picture of what the free plan already gives
 
 ## What is the owner's to decide
 

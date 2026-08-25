@@ -602,6 +602,16 @@ var ICON_LTR='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 16 12 7l4 9"/>'+
   '<path d="M9.6 13h4.8"/></svg>';
+/* A keyboard: the outline and three rows of keys, with the space bar under
+   them. Drawn rather than borrowed because nothing in this app had one --
+   the keyboard chapter is reached by a row of words, and the tab bar's mark
+   for the making side is a stack of pages. */
+var ICON_KEYS='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="2.5" y="5.5" width="19" height="13" rx="2"/>'+
+  '<path d="M6 9h.01M9.5 9h.01M13 9h.01M16.5 9h.01"/>'+
+  '<path d="M6 12.2h.01M9.5 12.2h.01M13 12.2h.01M16.5 12.2h.01"/>'+
+  '<path d="M8 15.4h8"/></svg>';
 var ICON_GEAR='<svg class="ic" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" '+
   'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/>'+

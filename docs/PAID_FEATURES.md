@@ -28,6 +28,47 @@ had paid.
 
 ## How it is asked
 
+**Three plans, and they are a ladder: Free, Plus, Pro.** `PLAN_ORDER` in
+`www/core.js` is those three, cheapest first, and `has(level)` is met by the
+plan that names the level and by **every plan above it**. Written as an equals
+sign it would give Pro what Plus buys and nothing else — a Pro account quietly
+losing the letters it paid for, one tier down.
+
+They were Free, Basic and Plus until 2026-08-23. 「ベーシック、プラスって名前
+どう思う？なんかどっちが上かわかりにくくない？」 — Basic reads as the name of a
+FREE tier in most apps, so Free and Basic were the confusable pair. `Free <
+Plus < Pro` needs nobody told which is which.
+
+| | Free | Plus | Pro |
+|---|---|---|---|
+| `letters` add / name / delete | — | yes | yes |
+| `wsys` a writing system that is not an alphabet | — | yes | yes |
+| `snd` choose the sound, not the letter's own | — | yes | yes |
+| words | 100 | 1000 | no ceiling |
+| `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
+| `gram` `dir` `data` `file` | — | — | yes |
+
+**The words ceiling is a number, not a door.** `wordCap()` is the one place
+that says it — `Infinity` on Pro, a thousand on Plus, `FREE_LIMIT` below
+that — and `can('words')` is asked inside it and nowhere else, meaning "no
+ceiling at all". Everything that shows or enforces the ceiling asks
+`wordCap()`: the dictionary, the banner on the cover, the count in settings,
+`capOK()` and `capStop()`.
+
+**The middle rung is decided and is not on sale.** Plus's price is in no
+language file and no subscription for it exists in App Store Connect, so the
+plans screen sells Free and Pro. What is here is the rung: the day a receipt
+says `plus`, every door above is already the right way round.
+
+**`kb` has not moved down to Plus yet**, and that is not an oversight. The
+number is settled — 「1,1+3.無制限って言わなかったっけ？」 — Free 1, Plus four
+**counted across languages** rather than per language, and Pro no ceiling.
+What holds it is `KB_MAX` in `www/keyboard.js`, which belongs to another
+session today and is in the middle of a change about holding more than one
+keyboard. **The door and its number are one statement and must not land
+apart**: `can('kb')` moving to `plus` while `KB_MAX` still hands out three
+per language would give Plus a number the owner has never said.
+
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`
 refuses a capability nothing asks for (a price with nothing behind it), a
@@ -184,11 +225,46 @@ Then: add it to `CAN`, ask it with `can()`, and add a `halfDone` entry in
 `act-check` reports the new screen's buttons as an entry no screen names, which
 is true and is not what you meant.
 
+## What holds all of this
+
+`tools/plan-check.mjs` — `npm run plan`. Twenty-five claims, and the sentence
+they are all about is the one at the head of this file: **a plan decides what
+may be DONE and nothing about what exists.**
+
+`dead-check` already holds the SHAPE of the table — every capability in `CAN`
+asked for by name, every `can()` naming one that exists, `has()` core.js's
+alone. What it cannot ask is what happens to somebody's WORDS when the answer
+changes, and that is this: five hundred words made on the paid plan, the plan
+ended, and then the list is a hundred while the language is still five hundred
+and **not one byte of any slice has moved**. Also that no plan at all reads as
+free; that any plan which is not the word `plus` buys nothing (`garbage`,
+`PLUS`, `studio`); that a backup written on the free plan holds every slice the
+paid one does; that the ceiling refuses without taking the screen off anybody;
+that the plan is in the settings file in a browser and NOT in it on a phone,
+where the Keychain has it; and that a plan ending is said once, not once per
+render, and touches nothing.
+
+Six of those were watched failing, with three real bugs put back: a list that
+trims the thing it is listing, a slice quietly left out of a free plan's
+backup, and the ceiling putting somebody on a price list mid-word.
+
 ## Not built yet
 
-**No StoreKit code exists.** The plan is set by hand on the plans screen and by
-nothing else. The two subscriptions are configured in App Store Connect and are
-described in `docs/apple.md`; nothing in the repo talks to them.
+**The StoreKit code exists and nothing in `www/` calls it.**
+`ios/App/App/LinguaStore.swift` has `products`, `buy`, `restore`, `current` and
+`manage`, refuses an `.unverified` transaction, finishes what it consumes and
+watches `Transaction.updates` for a renewal that arrives while the app is shut.
+It writes the answer through `LinguaPlanPlugin.set()`.
+
+What is missing is the wiring: **`www/store.js`, and the plans screen calling
+it**. The plan is still set by hand there — pressing a card is `setPlan(id)`
+and nothing asks the App Store anything. It is deliberately not written yet
+(「storekitってコードは書いていいよ繋げる作業は後でやる」), and writing it
+early would have been worse than not: a function nothing calls is a function
+`dead-check` deletes.
+
+The two subscriptions are configured in App Store Connect and are described in
+`docs/apple.md`.
 
 Where it is kept is settled, though: the Keychain, not the settings file. See
 `ios/App/App/LinguaPlan.swift` for what that closes and what it leaves open, and

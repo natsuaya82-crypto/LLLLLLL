@@ -172,6 +172,53 @@ if(PLAN_NATIVE){
      written first and did nothing: the save that boot does anyway put it
      straight back, so the one place that decides is the save. */
 }
+/* ---- the tiers were renamed, and a saved word moved a rung ---------------
+   Free / Basic / Plus until 2026-08-23, Free / Plus / Pro since.
+   「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」
+   Basic reads as the name of a FREE tier in most apps, so Free and Basic were
+   the confusable pair rather than Basic and Plus.
+
+   The words moved: what was called Plus is Pro, and what was called Basic is
+   Plus. A phone that already holds `plan: 'plus'` wrote it while Plus was the
+   TOP tier, and reading it now would put somebody who had everything on the
+   middle rung.
+
+   So it is moved up, ONCE -- and once is the whole difficulty, because after
+   this `plus` is a real middle tier and must be left exactly where it is.
+   `SET.planV` says which of the two worlds a value was written in; nothing
+   else can tell them apart, since both worlds spell it the same.
+
+   Nobody had bought anything -- no product existed in App Store Connect on
+   the day this ran -- so the only value this can find is one somebody set by
+   hand on the plans screen, and moving it up gives them back what they had
+   rather than more than they had.
+
+   The Keychain holds the same word on a phone and is written again here, or
+   the next launch would read the old one and this would have to run twice. */
+/* NOT in setDefaults(). The defaults are laid down first and the saved file
+   is laid over them, so a `planV` in the defaults is a `planV` every old
+   install appears to have -- and an old install is exactly what this has to
+   be able to recognise. Absent means "written before the rename", which is
+   the only signal there is. A fresh install runs this once over `free`,
+   changes nothing, and writes the mark. */
+var PLAN_V=2;
+function planMigrate(){
+  if(SET.planV===PLAN_V) return;
+  if(SET.plan==='plus') SET.plan='pro';
+  if(SET.planWas==='plus') SET.planWas='pro';
+  SET.planV=PLAN_V;
+  /* The settings file, written straight, and NOT through save(). This runs
+     while core.js is still loading -- it has to, because what a free plan
+     looks like is decided on the first frame -- and save() opens with
+     bkTouch(), which lives in backup.js and is not there yet. Calling it here
+     throws, core.js stops at that line, and everything below it (CAN among
+     them) is never defined: a white screen from a migration that was only
+     ever meant to move one word. Found by migrate-check, which is the only
+     check that reloads the page with an old file under it. */
+  try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
+  if(PLAN_NATIVE) planKeep(SET.plan);
+}
+planMigrate();
 
 /* Switch which language is open. Order matters: the language that is open
    when this is called has to be written out before langId changes, or its
@@ -290,12 +337,22 @@ function tn(k,n){
    pay -- cloud storage is a Plus feature in docs/FEATURES.md, is not built,
    and is therefore not on this list. */
 var PLANS=[
-  {id:'free',  name:'Free',   mo:'plan.price.free', yr:'plan.price.free', each:'',
+  {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
    lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},
-  {id:'plus',  name:'Plus',   mo:'plan.price.plus', yr:'plan.price.plus.yr',
-   each:'plan.each.plus',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
-          'plan.plus.6','plan.badge']},
+  /* The middle rung. Its price is here and its subscription is not in App
+     Store Connect yet, which is not a hole: StoreKit returns nothing for a
+     product that does not exist, so the card is on the screen and the button
+     does nothing until the product is made. What is NOT allowed is the other
+     way round -- a product on sale that the app does not name. */
+  {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5']},
+  /* Pro opens with "everything in Plus, and:" rather than repeating the five
+     lines above it. Three pages that each list everything are three pages
+     somebody has to compare word by word; the ladder is the thing being sold
+     and it should be readable by scrolling. */
+  {id:'pro',  name:'Pro',  mo:'plan.price.pro', yr:'plan.price.pro.yr', off:'17',
+   lines:['plan.pro.1','plan.pro.2','plan.pro.3','plan.pro.4','plan.pro.5',
+          'plan.badge']},
 ];
 /* Studio is not here. What it sold was the hosted model -- the conversation
    and the suggestions -- and the model is the last thing going in. A tier
@@ -306,7 +363,26 @@ var PLANS=[
    It comes back when the seam in www/glyph.js has something behind it, and
    what comes back with it is the chapter and the chips that were lifted out
    with it. Nothing was thrown away: it is in the history under this commit. */
-var FREE_LIMIT=100;
+/* How many words this plan may hold. A constant until today: free's hundred
+   was the only ceiling there was, so the number and the plan were the same
+   fact and FREE_LIMIT could be both. Plus has a thousand and Pro has none,
+   which makes them three facts, and a number that is three facts is a
+   function.
+   「単語1000までとか」 -- OWNER DECISION, 2026-08-23.
+
+   Infinity and not a big number: a ceiling nobody can reach is still a
+   ceiling, and the arithmetic below is the same either way.
+
+   FREE_LIMIT keeps its name. It is still exactly what it always was -- the
+   free plan's hundred -- and renaming it to match its new neighbour would be
+   a rename riding along inside a change of behaviour, which is the one thing
+   a commit may not be two of. tools/fixture.mjs and tools/backup-check.mjs
+   both name it, and neither is this session's file today. */
+var FREE_LIMIT=100, PLUS_LIMIT=1000;
+function wordCap(){
+  if(can('words')) return Infinity;
+  return has('plus')? PLUS_LIMIT : FREE_LIMIT;
+}
 function plan(){ return SET.plan||'free'; }
 /* What of the settings goes to the file. Everything, except on a phone, where
    the plan is in the Keychain and a second copy in an editable file would be
@@ -345,8 +421,33 @@ function planKeep(id){
   if(!np) return;
   try{ np('LinguaPlan', 'write', {plan:String(id||'free')})['catch'](function(){}); }catch(e){}
 }
-function has(level){ /* level: 'plus' */
-  return (level==='plus')? plan()==='plus' : true;
+/* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
+   it is written down once: a level is met by the plan that names it and by
+   every plan above it. 「ベーシックは自分の文字と自分のキーボード、プラスは
+   全部と広告なし」 -- OWNER DECISION, 2026-08-23, docs/FEATURE_RULES.md.
+
+   The middle rung is DECIDED and is not on sale: the plans screen sells Free
+   and Pro, because Plus's price is in no language file yet and no
+   subscription for it exists in App Store Connect. What is here is the rung
+   -- so the day a receipt says `plus`, every door in the table below is
+   already the right way round.
+
+   The names were Basic and Plus until 2026-08-23. 「ベーシック、プラスって
+   名前どう思う？なんかどっちが上かわかりにくくない？」 -- Basic reads as the
+   name of a FREE tier in most apps, so Free and Basic were the confusable
+   pair rather than Basic and Plus. Free < Plus < Pro needs nobody told. */
+var PLAN_ORDER=['free', 'plus', 'pro'];
+function has(level){ /* level: 'plus' | 'pro' */
+  var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
+  /* A plan nobody has heard of is not a plan. It is a Keychain that answered
+     nothing, a receipt that would not validate, a settings file somebody
+     edited -- and the free side is the side to be wrong on. */
+  if(got<0) return false;
+  /* And a level nobody has heard of is a typo in CAN. can() has already
+     thrown on the capability by the time this runs; this is the second wall
+     and it stands the same way round. */
+  if(want<0) return false;
+  return got>=want;
 }
 /* What money buys, one capability at a time, and the only place that says so.
    Ten names, each the level it needs.
@@ -368,18 +469,28 @@ function has(level){ /* level: 'plus' */
    plan. dead-check holds both directions, exactly as act-map's names are
    held: no capability nothing asks for, no name that is no capability.
 
-   'words' is metered rather than shut: free gets FREE_LIMIT of them, so can()
-   answering false there means "counted", not "refused". */
+   'words' is metered rather than shut, and what it names is the ceiling being
+   LIFTED: free counts to a hundred, basic to a thousand, and only plus has no
+   number at all. wordCap() below is the number and asks this once. */
 var CAN={
-  words:   'plus',   /* a dictionary past FREE_LIMIT */
-  data:    'plus',   /* CSV out, and the cloud */
-  file:    'plus',   /* a list brought in as a file rather than a paste */
+  words:   'pro',    /* no ceiling on the dictionary at all -- see wordCap() */
+  data:    'pro',    /* CSV out, and the cloud */
+  file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
-  kb:      'plus',   /* a keyboard of your own, instead of the fixed QWERTY */
+  /* A keyboard of your own, instead of the fixed QWERTY. Basic buys one and
+     it is NOT moved down yet: how many is a number, the number lives in
+     keyboard.js as KB_MAX, and that file belongs to another session today.
+     Opening the door without setting the ceiling would give Basic three, and
+     three is neither of the two numbers the owner has said.
+     **And the two he has said do not agree** -- one decision of 2026-08-23
+     says Basic 1+3=4 keyboards across all languages and Plus no ceiling, and
+     a later one the same day says Basic 1 and Plus 3. That is for the owner
+     to settle; docs/BACKLOG.md has both sides. */
+  kb:      'pro',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
-  gram:    'plus',   /* a grammar stage of your own, past the fifteen there are */
-  dir:     'plus'    /* choosing which way the language is written */
+  gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
+  dir:     'pro'     /* choosing which way the language is written */
 };
 /* 'dir' is the one capability that gates only half of a thing, and the half it
    does not gate is the important one.
@@ -418,8 +529,7 @@ function can(what){
 }
 function capOK(add){
   add=add||1;
-  if(can('words')) return true;
-  return WORDS.length+add<=FREE_LIMIT;
+  return WORDS.length+(add||1)<=wordCap();
 }
 /* The ceiling, met. True means the caller must stop.
 
@@ -439,7 +549,7 @@ function capOK(add){
    A new key here would have been one sentence in English and nine holes. */
 function capStop(add){
   if(capOK(add)) return false;
-  if(confirm(t('toast.cap', FREE_LIMIT)+'\n\n'+t('up.cta'))) go('plans');
+  if(confirm(t('toast.cap', wordCap())+'\n\n'+t('up.cta'))) go('plans');
   return true;
 }
 /* The day a plan ends, said out loud, once.

@@ -45,20 +45,49 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "manage", returnType: CAPPluginReturnPromise),
   ]
 
-  /// The product ids, and the only place they are written down.
+  /// Every product, and the plan it buys. The only place either is written
+  /// down.
   ///
-  /// `docs/apple.md` § 4 fixes the monthly one and says a product id cannot be
-  /// changed afterwards. The yearly one is here because www/core.js offers a
-  /// yearly price and App Store Connect has not been given one yet; StoreKit
-  /// simply does not return a product that does not exist, so asking for both
-  /// is how this file finds out which exist rather than being told.
-  static let ids = ["com.tokinets.lingua.plus.monthly",
-                    "com.tokinets.lingua.plus.yearly"]
+  /// It was a set of ids that all meant the paid tier, with a note saying
+  /// that the day a second tier existed this would become a map. That day is
+  /// 2026-08-23: the middle rung is decided -- `docs/FEATURE_RULES.md`, $4.99
+  /// and $49.99, and it buys letters, one keyboard, a thousand words, a
+  /// writing system and the choice of a sound. The tiers are Free, Plus and
+  /// Pro; they were Free, Basic and Plus until the same day, because Basic
+  /// reads as the name of a free tier.
+  ///
+  /// A product id cannot be changed once it exists (`docs/apple.md` § 4), and
+  /// none of Basic's exist yet. Asking for one that does not is not an error:
+  /// StoreKit simply does not return it, which is how this file finds out
+  /// what is really on sale rather than being told. The same was true of the
+  /// yearly Plus id for a fortnight.
+  static let plans: [(id: String, plan: String)] = [
+    ("com.tokinets.lingua.plus.monthly", "plus"),
+    ("com.tokinets.lingua.plus.yearly",  "plus"),
+    ("com.tokinets.lingua.pro.monthly",  "pro"),
+    ("com.tokinets.lingua.pro.yearly",   "pro"),
+  ]
+  static var ids: [String] { plans.map { $0.id } }
 
-  /// Every id above buys the same thing. When a second tier exists this stops
-  /// being a set and becomes a map, and the plan it names stops being a
-  /// constant -- which is the moment to come back here and not before.
-  static let plusPlan = "plus"
+  /// The ladder, cheapest first, and the same one `PLAN_ORDER` in
+  /// `www/core.js` is. Two copies of an order is how two sides of a bridge
+  /// come to disagree about which plan is better, so if one of them ever
+  /// gains a rung the other is not optional.
+  static let order = ["free", "plus", "pro"]
+
+  /// Which plan a product buys, or nothing for an id this app does not sell.
+  static func planOf(_ productID: String) -> String? {
+    return plans.first { $0.id == productID }?.plan
+  }
+
+  /// The better of two plans. Somebody can hold both -- an old Basic that has
+  /// not run out beside a new Plus, or two subscriptions in different groups
+  /// -- and the answer to that is the higher rung, never the last one read.
+  static func best(_ a: String, _ b: String) -> String {
+    let ia = order.firstIndex(of: a) ?? 0
+    let ib = order.firstIndex(of: b) ?? 0
+    return ia >= ib ? a : b
+  }
 
   /// The listener for transactions that arrive with nobody in the app: a
   /// renewal, a refund, a purchase made on another device, a family member's
@@ -92,26 +121,33 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  /// Is there a live Plus entitlement right now.
+  /// What is live right now: the highest plan among the entitlements this
+  /// device holds, or "free" when there are none.
   ///
   /// `currentEntitlements` already leaves out what has expired and what was
   /// refunded, so there is no date arithmetic here. `revocationDate` is
   /// checked anyway: a refund can be reflected in the transaction before it
   /// is reflected in the list, and the free side is the side to be wrong on.
-  static func entitled() async -> Bool {
+  ///
+  /// It answered a Bool while there was one tier to sell. A Bool cannot say
+  /// WHICH, and the day the middle tier goes on sale a Bool would read every
+  /// Plus receipt as Pro -- every door open, for five dollars.
+  static func entitledPlan() async -> String {
+    var out = "free"
     for await result in Transaction.currentEntitlements {
       guard let t = verified(result) else { continue }
       if t.revocationDate != nil { continue }
-      if ids.contains(t.productID) { return true }
+      guard let p = planOf(t.productID) else { continue }
+      out = best(out, p)
     }
-    return false
+    return out
   }
 
   /// Ask the App Store, then write the answer where the next launch will find
   /// it. Returns what it wrote so a call can answer with the same thing.
   @discardableResult
   private func writeDown() async -> String {
-    let plan = (await Self.entitled()) ? Self.plusPlan : "free"
+    let plan = await Self.entitledPlan()
     LinguaPlanPlugin.set(plan)
     return plan
   }
@@ -120,7 +156,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   /// `buy` that are not a purchase have not changed anything, and a Keychain
   /// write on a cancelled purchase is a write that says nothing.
   private func standing() async -> String {
-    return (await Self.entitled()) ? Self.plusPlan : "free"
+    return await Self.entitledPlan()
   }
 
   /// What is for sale, with prices as the App Store gives them.
@@ -139,6 +175,14 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
             "name": p.displayName,
             "text": p.description,
             "price": p.displayPrice,
+            /* The same money as a number, and it is here for exactly one
+               sum: how much less a year is than twelve months. That figure
+               differs by country -- Apple rounds each storefront its own way,
+               so a year that is 17% off in one is 15% off in another -- and
+               working it out from `price` would be arithmetic on a formatted
+               string in whatever currency. It is never shown; only `price`
+               is ever put on a screen. */
+            "amount": NSDecimalNumber(decimal: p.price).doubleValue,
           ]
           /* A subscription's period is what tells the two apart on screen,
              and it is the App Store's answer rather than ours -- a product

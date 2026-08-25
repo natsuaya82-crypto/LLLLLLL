@@ -60,6 +60,378 @@ Pro から落ちたときに write の字がどうなるかは、単語と同じ
 
 未実装。CODE 未確認、DEVICE 未確認。
 
+### The plans screen has a picture, and it is your keyboard
+
+「なんかテキストだけだと味気ないな」「絵なんでもいいよ 君のキーボードとか
+載せる？」 — 2026-08-23. プラン画面の一番上に、**この電話に入っている
+キーボードそのもの**が、その人が描いた文字を着けて出ます。無料なら QWERTY に
+自作文字が入ったもの — 無料プランがまさにそれです。有料なら適用中の board。
+
+`kbShotHTML()` — キーボードの一覧を描いているのと同じ関数です。**キーボードを
+描く関数を二つ持たない**ため（二つあると足並みを揃え続ける対象が二つになる）、
+足したのは場所だけ（`.plkb`、112px）。角丸は足していません。キーは既にある
+2px のまま — 新しい角丸は `tools/box-baseline.txt` の一行で、あれは owner の
+ものだからです。
+
+**押せません。絵です。** 値段を見に来た人の前に、頼んでもいない扉を置かない
+ため。
+
+### The prices on the plans screen are the App Store's
+
+「てか国によって値段変わる？ それぞれひとつづつ設定したほうがいいかな」 —
+2026-08-23. **変わります。そして一つずつ設定する必要はありません。**
+App Store Connect では基準にする一国の値段だけを決めれば、Apple が残り 174 の
+ストアフロントを自分の丸め方・税・通貨で作ります。気に入らない国だけ個別に
+上書きできます（`docs/apple.md` § 4）。
+
+その結果として、**値段はうちが知っている事実ではなくなりました**。これまで
+プラン画面は `www/i18n/en.js` の `$4.99` を出していて、それはブラウザと
+アメリカでだけ正しく、他のどこでも間違っていました。しかも静かに間違って
+いました — 値段は何とも突き合わされないからです。
+
+- `LinguaStore.products` が返す `displayPrice` を出します。その人の通貨で、
+  その地域の書式で、Apple が組み立てた文字列です。
+- **年が月の 12 か月ぶんよりどれだけ安いかも、Apple が返した二つの数値から
+  計算します。** `PLANS` に書いてある 17 ではありません。Apple は国ごとに
+  別々に丸めるので、ドルで 17% 引きの年額は円では 17% 引きではありません。
+  数値（`amount`）は画面には一切出しません。この一つの割り算のためだけに
+  あります。
+- 一度だけ聞いて覚えます。値段はダッシュボードで決まる事実で、アプリが
+  開いている間に変わりません。
+- **ブラウザには App Store が無いので、そこでは今まで通り `www/i18n` の
+  文字列が出ます。** チェックもスクリーンショットもそちら側です。まだ作って
+  いない商品も同じで、`$99.99` のまま出ます。
+
+保存されるものは何も変わりません。プランがどこに書かれるかも変わりません。
+`tools/plan-check.mjs` が偽の App Store を立てて 11 個持っています。
+
+**まだ決まっていないもの**: 無料の段の `$0` は商品ではないので Apple に
+訊けません。日本語でも `$0` と出ます。言葉の問題なので owner のものです。
+
+### The plans screen is three pages that slide — OWNER DECISION
+
+「フリー　プラス　プロ 横並びにして。ページは上に三つあるんじゃなくてスライドで
+変わるタイプで隣のプランが少しはみ出して見える感じ」
+「値段はマンスリー、イヤーを並べてイヤーは何パーオフかを書く」
+「無料に戻すってボタン意味わからないからそこを購入を復元に、サブスクリプションを
+解除するをその下に小さめに入れよう」 — 2026-08-23.
+
+**Free, Plus and Pro are three pages side by side**, snapped, with the next
+one showing at the edge — which is what says there is another one over there.
+The Monthly/Yearly tabs at the top are gone with the toggle they switched.
+
+**Each page lists what that plan does**, and Pro opens with *everything in
+Plus, and:* rather than repeating the five lines above it. Three pages that
+each list everything are three pages somebody has to compare word by word.
+
+**Both terms stand on the page and each is the button that buys it** — one
+press where a chooser and a Buy would be two — and the year says what it
+saves. `off` is a number on the plan and not arithmetic on two formatted
+prices: `$9.99` is a string in ten languages and, on a phone, whatever the App
+Store hands back in whatever currency.
+
+**A mark per line.** 「なんかテキストだけだと味気ないな」 A column of
+identical ticks says nothing about what is in it. The marks are the app's own
+— the pen, the speaker, the stack of pages the making side wears in the tab
+bar, the house the timeline wears, the badge itself — and one is new:
+`ICON_KEYS`, because nothing in this app had a keyboard. Keyed by the line's
+STRING, so a line that moves between plans keeps its mark.
+
+**"Back to free" is gone.** In its place: **Restore purchases**, which Apple
+requires and which had nowhere to be pressed, and under it, smaller,
+**Cancel subscription** — Apple's own sheet (`manage`), because an app that
+draws its own cancel screen will be wrong about a subscription bought on
+another device. In a browser there is no sheet and cancelling still puts the
+plan back to free, which is how a tier is tried on while none is on sale.
+
+**The rounded box went with it.** `.plan` was a bordered, cornered card — the
+shape the rule at the head of `CLAUDE.md` bans by name — and its two lines are
+out of `tools/box-baseline.txt` rather than left there as permission nobody
+asked for. What separates one plan from the next is the gap and the edge of
+the screen.
+
+**Newly stored:** nothing. Thirteen strings per language: the middle tier's
+five lines, its two prices, Pro's reshuffled five, the percentage, Restore,
+Cancel, and "nothing to restore". `plan.take`, `plan.tofree`, `plan.each`,
+`plan.term.*` and `plan.save` are deleted from all ten — nothing asks them.
+
+`CODE CONFIRMED` — `press` (9592 pressed, 217 names, classes worn 540 against
+a baseline of 192), `act`, `i18n`, `box`, `dead`, `face`, `es5`, `plan` green.
+`DEVICE CONFIRMED` — **no**, and the sliding wants a thumb: `scroll-snap` on a
+rail is the one thing a headless browser cannot really answer.
+
+
+### The tiers are Free, Plus and Pro — OWNER DECISION
+
+「ベーシック、プラスって名前どう思う？なんかどっちが上かわかりにくくない？」
+「フリープラスプロがいいかなー」 — 2026-08-23.
+
+| was | is | price |
+|---|---|---|
+| Free | Free | — |
+| **Basic** | **Plus** | $4.99 / $49.99 |
+| **Plus** | **Pro** | $9.99 / $99.99 |
+
+Nothing about what each buys changed. `Basic` is what most apps call their
+FREE tier, so the confusable pair was Free and Basic rather than Basic and
+Plus — and the order was inferrable rather than obvious. `Free < Plus < Pro`
+needs nobody told, and all three survive untranslated in ten languages, which
+plan names have to: they do not go through `t()`.
+
+**The replacement was done in the order the owner said** — 「今あるプラスを
+プロに置き換えて、今あるベーシックをその後にプラスに置き換えれば」 — and that
+order is what makes it safe: the other way round, `basic → plus` walks into
+the `plus` that is still there. `plus` was also left alone everywhere it is
+the ordinary English word (`ink plus one step`, `a plus beside them`) and in
+every Japanese quote in a comment, which is a record of what was said and not
+a place to rename anything.
+
+**Data: one value, moved once.** A phone already holding `plan: 'plus'` wrote
+it while Plus was the TOP tier; read in the new world it would be the middle
+one. `planMigrate()` in `www/core.js` moves it up and writes **`SET.planV`**,
+so it can never run twice — after this `plus` is a real middle tier and must
+be left exactly where it is. `SET.planWas` carries a plan name too and moves
+with it, or the next `capLapse()` would announce a step nobody took. On a
+phone the Keychain is written again, or the next launch hands back the old
+word. Nobody had bought anything — no product existed — so the only value this
+can find is one set by hand, and moving it up gives back what they had.
+
+**Newly stored:** `SET.planV`, a number saying which of the two worlds a plan
+value was written in. Nothing else can tell them apart: both spell it `plus`.
+
+**And one bug this turned up, which is the reason `migrate-check` exists.**
+`planMigrate()` first called `save()`. `save()` opens with `bkTouch()`, which
+lives in `backup.js` — a file loaded AFTER `core.js`. The migration runs while
+`core.js` is still loading (what a free plan looks like is decided on the
+first frame), so it threw, `core.js` stopped at that line, and everything
+below it — `CAN` among them — was never defined. **A white screen, from a
+migration meant to move one word.** It writes the settings file straight now.
+No other check reloads the page with an old file under it, so no other check
+could have seen it.
+
+**Product ids follow**: `com.tokinets.lingua.plus.*` is $4.99/$49.99 and
+`...pro.*` is $9.99/$99.99. None exists in App Store Connect yet, which is the
+only reason this rename is free today.
+
+`CODE CONFIRMED` — `plan-check` (45), `migrate-check` (with two new claims),
+`act`, `i18n`, `dead`, `es5`, `base`, `kb`, `backup`, `conv`, `press` all
+green. **Watched failing**: the plan word not moving up (2 red), and the
+migration running at every launch instead of once — *a plan written AFTER the
+rename is left where it is: got "pro", wanted "plus"*. `DEVICE CONFIRMED` —
+**no.**
+
+
+### How many keyboards: settled — OWNER DECISION
+
+「1,1+3.無制限って言わなかったっけ？」 — 2026-08-23.
+
+**Free 1, the fixed QWERTY. Basic 1 + 3 = 4. Plus no ceiling.** Counted as a
+**pool across languages**, not per language.
+
+`docs/FEATURE_RULES.md` carried two answers written on the same day — one §
+saying four in a pool with Plus unbounded, and the `CAN` table below it saying
+Basic 1 and Plus 3. A session about to move `can('kb')` down to Basic stopped
+on it instead. The owner named the first. **The file says one thing in both
+places now**, and the decision log carries the clarification as its own entry
+rather than as an edit nobody can see.
+
+**Nothing is built for it, and deliberately not here.** `KB_MAX` lives in
+`www/keyboard.js`, which belongs to another session today and is in the middle
+of 126 lines about holding more than one keyboard. What is waiting is written
+out in `docs/BACKLOG.md`: `kbCap()` beside `wordCap()`, the ceiling asking it,
+the count becoming a sum across `LANGS`, and `CAN.kb` moving to `basic` **in
+the same commit** — a door opened without its number would give Basic the
+three `KB_MAX` hands out today, which is neither answer.
+
+**Documents only.** No code, no data, no check moved.
+
+
+### The plans screen buys, on a phone
+
+`www/store.js` — chapter 26, the one window onto StoreKit the way `net.js` is
+the one window onto the server. `Capacitor.nativePromise` and **not**
+`Capacitor.Plugins`: this app has no bundler and never loads
+`@capacitor/core`, so a call through `Plugins` does nothing, silently, and
+that cost four builds to learn once already.
+
+`setPlan()` routes through it. On a phone a paid card BUYS, and **the plan is
+taken from the answer, never from what was asked for** — a purchase that ends
+up pending, or a receipt that will not verify, comes back saying free, and
+believing the request instead of the reply is how an app gives away a tier
+nobody paid for.
+
+**In a browser there is no App Store, and that is not an error state to
+draw.** The button goes on setting the plan by hand there: it is how every
+check walks that screen, how every screenshot of it is taken, and how a tier
+is tried on before it is on sale. `storeOn()` is the whole of the difference.
+
+`store.js` does **not** write the plan to the Keychain — `LinguaStore.swift`
+already does, on every road that changes anything, and a second writer is a
+second answer to "what plan is this". It does not decide what a plan may DO
+(that is `CAN`), and it does not phone Apple on launch (the Keychain holds
+last time's answer, and a launch that waits on the network is a launch that
+waits).
+
+**Newly stored:** nothing. Three strings in ten languages — asking, waiting
+for approval, and not reaching the App Store.
+
+**What is deliberately missing and why** — Restore, Basic's card, and the
+Free button opening Apple's cancel sheet instead of setting a flag. Each
+needs `www/act-map.js` or `www/i18n/*.js`, and both belong to another session
+today. → `docs/BACKLOG.md`
+
+`CODE CONFIRMED` — six more claims in `plan-check` (45 now), and two bugs
+**watched failing**: `storeTook()` made to believe the request rather than the
+reply, and made to write the Keychain a second time. `es5`, `dead`, `act`,
+`i18n`, `assets` and `press` green. `DEVICE CONFIRMED` — **no**, and nothing
+here can give it: whether a real purchase comes back at all is
+`docs/STATE.md` 20b.
+
+
+### StoreKit knows there are two tiers now
+
+`ios/App/App/LinguaStore.swift` held a **set of ids that all meant "plus"**,
+with a note saying that the day a second tier existed this would become a map
+and that the day to come back was that one and not before. That day is
+2026-08-23.
+
+`plans` is now `id -> plan` for four products — Basic monthly and yearly, Plus
+monthly and yearly — and `entitled()` is `entitledPlan()`: not "is there a
+paid entitlement" but **which**, and the **highest** of them where somebody
+holds more than one. A Bool cannot say which, and the day Basic goes on sale a
+Bool would have read every Basic receipt as Plus: every door open, for five
+dollars.
+
+`order` in the Swift is `free`, `basic`, `plus` — the same ladder
+`PLAN_ORDER` in `www/core.js` is, and the comment on each says so about the
+other, because two copies of an order is how two sides of a bridge come to
+disagree about which plan is better.
+
+**None of Basic's product ids exist in App Store Connect yet, and asking for
+one that does not is not an error** — StoreKit simply does not return it,
+which is how this file finds out what is really on sale rather than being
+told. The same was true of the yearly Plus id for a fortnight.
+
+**`docs/apple.md` is rewritten where it was wrong.** § 4 said "one product,
+Plus only" and now carries all four with their ids, prices and group levels,
+plus what a subscription group level is FOR (Basic → Plus as an upgrade Apple
+prorates, rather than two subscriptions somebody pays twice). § 6 opened with
+**"there is not one line of StoreKit code in the app"** — the same lie
+`docs/PAID_FEATURES.md` was telling, about a file both could have opened — and
+recommended installing a Capacitor plugin, which this app cannot load at all.
+It now says what is actually missing: `www/store.js`, the buy button, receipt
+validation on the server, and somewhere to press Restore.
+
+**Data:** nothing. `LinguaPlanPlugin.set()` is written with a plan name that
+can now be `basic`, and `www/core.js` has known that word since the ladder
+landed.
+
+`CODE CONFIRMED` — **no, and not by anything here.** There is no Swift
+toolchain in this container; `assets-check` holds that the file is in the
+target's Sources phase and nothing holds that it compiles. `DEVICE CONFIRMED`
+— **no.** `docs/STATE.md` 20b is the phone this needs: buying in the sandbox,
+`restore` after a reinstall, and a renewal arriving while the app is shut —
+and now also **a Basic receipt reading as Basic**.
+
+
+### Three plans, and the word ceiling is a number
+
+「ベーシックも入れて」 — the decision of 2026-08-23 in `docs/FEATURE_RULES.md`.
+**The rung is in. The card is not, and neither are the keyboard numbers.**
+
+`PLAN_ORDER` in `www/core.js` is `free`, `basic`, `plus`, cheapest first, and
+`has(level)` is met by the plan that names it **and by every plan above it**.
+It was `plan()==='plus'`, which is an equals sign, and an equals sign with
+three plans gives Plus what Basic buys and nothing else — a Plus account
+quietly losing the letters it paid for, one tier down. A plan nobody has heard
+of meets nothing at all, which is the free side and the side to be wrong on.
+
+`CAN` sits on the rungs the decision names: `letters`, `wsys` and `snd` are
+Basic's; `gram`, `dir`, `data`, `file` are Plus's.
+
+**The word ceiling stops being a constant.** `wordCap()` — `Infinity` on Plus,
+a thousand on Basic, `FREE_LIMIT`'s hundred below that — and it is the one
+place: the dictionary, the banner on the cover, the count in settings,
+`capOK()` and `capStop()` all ask it. `can('words')` is asked inside it and
+nowhere else now, and what it means is "no ceiling at all".
+
+`FREE_LIMIT` **keeps its name**: it is still exactly what it always was, and
+renaming it to match its new neighbour would be a rename riding inside a
+change of behaviour. Two tools name it and neither is this session's today.
+
+**Data: nothing changes.** Somebody at 1500 words dropping to Basic keeps all
+1500 and simply cannot add — 「判定が失敗しても減るのはボタンであって言葉では
+ない」. That sentence is now nine claims in `plan-check`.
+
+**What is deliberately NOT in, each for a reason:**
+
+- **Basic is not on sale.** Its price is in no language file and no
+  subscription exists in App Store Connect. `PLANS` still sells Free and Plus.
+- **`kb` has not moved down to Basic.** How many is a number, and **two owner
+  decisions of the same day disagree** — 4 in a pool against 1, and no ceiling
+  against 3. Opening the door without the number would give Basic the three
+  `KB_MAX` hands out today, which is neither answer. Both sides are in
+  `docs/BACKLOG.md`; `CLAUDE.md` says a session does not resolve this.
+- **`edit` and `badge` are not in `CAN`.** `postEdit()` and `planBadge()` are
+  both in `www/post.js`, another session's file today, and `dead-check`
+  refuses a capability nothing asks for.
+
+`CODE CONFIRMED` — `plan-check` is 39 claims now and green, and two more bugs
+were **watched failing**: `has()` written as an equals sign (three red,
+including *plus opens all 9 (6)*), and `wordCap()` flattened to one number
+(six red, including *basic counts to 1000 (100)*). `dead`, `act`, `i18n`,
+`es5`, `backup` and `press` green. `DEVICE CONFIRMED` — **no.**
+
+
+### A check that money decides what may be done and nothing about what exists
+
+`tools/plan-check.mjs` — `npm run plan`, and it is in the gate. Twenty-five
+claims about the one rule at the head of `docs/PAID_FEATURES.md`.
+
+`dead-check` already held the SHAPE of the table — every capability in `CAN`
+asked for by name, every `can()` naming one that exists, `has()` core.js's
+alone. **What nothing asked was what happens to somebody's WORDS when the
+answer changes.** Five hundred words are made on the paid plan, the plan ends,
+and then the list is a hundred while the language is still five hundred and
+not one byte of any slice has moved.
+
+And: no plan at all reads as free; any plan that is not the word `plus` buys
+nothing (`garbage`, `PLUS`, `studio` are all asked); a backup written on the
+free plan holds every slice the paid one does — with every slice given
+something first, because `bkPack()` writes a slice only when storage has one
+and a language with no keyboard cannot answer the question; the ceiling
+refuses without taking the screen off anybody; the plan is in the settings
+file in a browser and **not** in it on a phone, where the Keychain has it; and
+a plan ending is said once, not once per render, and going up says nothing.
+
+**Six of them were watched failing, with three real bugs put back:**
+
+- `wordsSeen()` made to assign back to `WORDS` — a list that trims the thing
+  it is listing. Three claims red, including *the plan ending keeps all 500
+  (100)*. The claim order matters and is commented: the LIST is asked for
+  first and what is HELD is read after it, because reading the count before
+  anything has drawn the list is reading it before the damage.
+- `bkPack()` made to skip the keyboard slice when `can('kb')` is false — a
+  slice quietly left out of a free plan's backup, which is exactly the shape
+  of the fault `backup-check` was written after. Two claims red.
+- `capStop()` made to `go('plans')` unconditionally — the price list arriving
+  mid-word. One claim red.
+
+**Nothing about the app changed.** This commit adds a check, a script entry, a
+line in the gate's list, and the documents that were wrong about the code.
+
+**And one of those was wrong in a way worth naming.** `docs/PAID_FEATURES.md`
+§ Not built yet opened with **"No StoreKit code exists"**, and
+`ios/App/App/LinguaStore.swift` has existed since 2026-08-22 — `docs/STATE.md`
+§ 17 says so correctly on the same day. Two documents, one true and one false,
+about a file either of them could have looked at. It now says what is actually
+missing: the wiring — `www/store.js` and the plans screen calling it.
+
+`CODE CONFIRMED` — 25 green, 6 watched red. `DEVICE CONFIRMED` — **no**, and
+this check cannot ever give it: what StoreKit answers on a real phone is item
+20b of `docs/STATE.md`.
+
+
 ### その日の一文 — 全員が同じことを、それぞれの言語で
 
 タイムラインの一番上、これまで「書く行」があったところに、その日の一文が出ます。

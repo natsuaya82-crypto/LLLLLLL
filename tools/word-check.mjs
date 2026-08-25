@@ -63,7 +63,7 @@ await pg.evaluate('window.__seed = ' + seed.toString());
 const R = await pg.evaluate(() => {
   const out = { fails: [], said: [] };
   const start = () => {
-    window.__seed(); SET.done = true; SET.plan = 'plus';
+    window.__seed(); SET.done = true; SET.plan = 'pro';
     window.route = 'words'; NAV = [{ r: 'words' }];
   };
   const screen = () => {
