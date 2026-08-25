@@ -759,8 +759,15 @@ function vWorld(){
        A section is public or not, and only a public one can be asked whether
        it may be taken away -- two questions, and the second only follows the
        first. */
+    /* Only the three that can actually be handed over carry these --
+       「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 and
+       「トグルいつまであんだよ」 OWNER 2026-08-25. The overview, the sounds, the
+       grammar and anything somebody wrote had a switch each and there was
+       nothing behind any of them: nobody can be shown this page yet, and
+       there is nothing in those four to take away. Eleven switches were
+       ten more than the page had answers for. */
     '<div class="sec">'+esc(t('wld.shown'))+'</div>'+
-    wldSecs().map(function(sec){ return wldSecRows(sec); }).join('')+
+    wldSecs().map(function(sec){ return sec.dl? wldSecRows(sec) : ''; }).join('')+
     '</div></div>';
 }
 /* One section, open: what it is called, what it says, and the two answers
