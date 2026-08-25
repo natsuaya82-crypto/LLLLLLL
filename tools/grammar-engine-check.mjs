@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const context = { console };
+vm.createContext(context);
+for (const file of ['www/grammar-engine/model.js', 'www/grammar-engine/morphology.js']) vm.runInContext(fs.readFileSync(file, 'utf8'), context, { filename: file });
+const e = context.LinguaGrammarEngine;
+const language = e.languageModel({ languageId:'demo', wordOrder:'SOV', words:[e.word({id:'mi',lemma:'mi',partOfSpeech:'PRONOUN'}),e.word({id:'poko',lemma:'poko',partOfSpeech:'NOUN'}),e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})], inflections:[e.inflection({id:'past',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'}),e.inflection({id:'negative',target:'VERB',feature:'NEGATION',value:true,operation:'prefix',form:'na',separator:' '})] });
+const past=e.morphology.inflect(language,language.words[2],{TENSE:'PAST'});
+assert.equal(past.surface,'luma-ka');
+assert.equal(e.morphology.analyzeForm(language,past.surface,language.words[2]).lemma,'luma');
+const affirmative=e.morphology.parseSentence(language,'mi poko luma-ka');
+assert.equal(affirmative.ok,true); assert.equal(affirmative.roles.SUBJECT,'mi'); assert.equal(affirmative.roles.OBJECT,'poko'); assert.equal(affirmative.roles.PREDICATE,'luma'); assert.equal(affirmative.features.TENSE,'PAST');
+const negative=e.morphology.parseSentence(language,'mi poko na luma-ka');
+assert.equal(negative.ok,true); assert.equal(negative.features.NEGATION,true); assert.equal(negative.features.TENSE,'PAST');
+console.log('Grammar Engine: Phase 1–2 contract is clean');
