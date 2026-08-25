@@ -204,6 +204,66 @@ const r = await pg.evaluate(({ s }) => {
   KB = null; saveKb();
   SET.plan = 'free'; save();
 
+  /* ---- 4e. editing a post you have sent, and the mark beside a name ----
+     Two capabilities that were in the app before they were in CAN.
+     「ツイートの編集も課金から」「バッチはplusから」 OWNER DECISION
+     2026-08-23.
+
+     `edit` is the only capability here that takes something away rather than
+     opening a door nobody had: postEdit() asked nothing about a plan, so
+     anybody could edit their own post. What it may never do is un-edit one,
+     which is the first thing asked below. */
+  var myPost = { id: 'p_plan', at: 1, lang: langId, lname: langName, mine: true,
+                 hd: meHandle(), who: meName(), ln: 'kano mos', mn: 'a line',
+                 ed: 12345 };
+  POSTS.push(myPost);
+  savePosts();
+
+  /* The pencil is DRAWN on every plan, and that is a decision rather than an
+     oversight: 「だいたい無料で使えないやつは表示させていいよ。課金させる動線
+     を減らしたくない」 OWNER DECISION 2026-08-25. Hiding it is the older shape
+     and the one this must not drift back to, so it is asked of the free
+     plan's own menu markup. */
+  SET.plan = 'free'; save();
+  PMENU = 'p_plan';
+  out.penOnFree = postMenuHTML(myPost).indexOf('postEdit') !== -1;
+
+  /* Pressed on free: the composer does not open and the plans screen is where
+     you land. go() and not a toast -- the opposite of capStop(), which must
+     not move anybody, and the two are side by side in the decision log. */
+  PW = pwBlank();
+  postEdit('p_plan');
+  out.editFreeNoPW = !PW.ed;
+  out.editFreeWent = here().r === 'plans';
+  /* and the post itself is untouched by having been refused */
+  out.editFreeKept = postById('p_plan') && postById('p_plan').ln === 'kano mos' &&
+                     postById('p_plan').ed === 12345;
+
+  /* Pressed on plus: it opens, carrying the post it was pressed on. */
+  SET.plan = 'plus'; save();
+  PW = pwBlank();
+  postEdit('p_plan');
+  out.editPlusOpens = PW.ed === 'p_plan' && PW.ln === 'kano mos';
+  PW = pwBlank(); PMENU = '';
+
+  /* The mark. Free none, Plus none, Pro one -- and never on somebody else's
+     post whatever plan they are on, because this phone can only answer the
+     question for the person holding it. */
+  var theirs = { id: 'p_them', at: 1, mine: false, hd: 'iri', who: 'Iri', ln: 'x' };
+  SET.plan = 'free'; out.bdgFree = postBadge(myPost);
+  SET.plan = 'plus'; out.bdgMid  = postBadge(myPost);
+  SET.plan = 'pro';  out.bdgTop  = postBadge(myPost);
+  out.bdgTheirs = postBadge(theirs);
+  /* The price list is the other question and keeps answering it: the Pro row
+     carries the mark for everybody, including somebody reading it on free. */
+  SET.plan = 'free';
+  out.bdgRowPro = planBadge('pro');
+  out.bdgRowFree = planBadge('free');
+
+  POSTS = POSTS.filter(function(x){ return x.id !== 'p_plan'; });
+  savePosts();
+  SET.plan = 'free'; save();
+
   /* ---- 5. a backup does not know what a plan is ------------------------
      Written on the free plan, and it is the same file the paid plan writes.
      The way this breaks is not a refusal -- it is a slice quietly left out of
@@ -388,15 +448,15 @@ say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- ga
 say(r.unknownWords, 'and the words are all still there while it does');
 say(!r.unknownThrew, 'and nothing about it throws (' + (r.unknownThrew || 'nothing') + ')');
 
-say(r.canCount === 9, 'CAN names ' + r.canCount + ' capabilities');
+say(r.canCount === 11, 'CAN names ' + r.canCount + ' capabilities');
 say(r.freeAll, 'every one of them is closed on free');
 say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'kb letters snd wsys',
-    'plus opens a keyboard, its own letters, its own sounds and a writing system (' +
-    r.rungs.plus + ')');
+say(r.rungs.plus === 'edit kb letters snd wsys',
+    'plus opens a keyboard, its own letters, its own sounds, a writing system ' +
+    'and editing a post it has sent (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
 say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
@@ -415,6 +475,18 @@ say(r.kbPool === 3 && r.kbRoomPool === false,
 say(r.kbPoolTop === true, 'and pro is not filled up by them');
 say(r.kbPoolOld === 2,
     'a language stored in the older one-keyboard shape counts as the one it is');
+
+say(r.penOnFree, 'the pencil is drawn on the free plan -- a closed door is shown, not hidden');
+say(r.editFreeNoPW && r.editFreeWent,
+    'pressing it on free opens no composer and lands on the plans screen');
+say(r.editFreeKept, 'and the post it was pressed on is not changed by being refused');
+say(r.editPlusOpens, 'on plus it opens, carrying the post it was pressed on');
+
+say(r.bdgFree === '' && r.bdgMid === '', 'no mark beside the name on free or plus');
+say(r.bdgTop !== '', 'and one on pro (' + (r.bdgTop ? 'drawn' : 'nothing') + ')');
+say(r.bdgTheirs === '', 'never on somebody else\'s post, whatever plan this phone is on');
+say(r.bdgRowPro !== '' && r.bdgRowFree === '',
+    'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
 
 say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');

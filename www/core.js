@@ -525,6 +525,20 @@ var CAN={
      「1,1+3.無制限って言わなかったっけ？」 */
   kb:      'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
+  /* Editing a post you have already sent. 「ツイートの編集も課金から」
+     「課金からはベーシックからってことね プラスならプラスっていうから」
+     OWNER DECISION 2026-08-23. postEdit() asked nothing about a plan until
+     this landed -- anybody could edit their own post -- so this is the one
+     capability here that TAKES something away rather than opening a door
+     nobody had. Nothing edited is un-edited by it: the refusal is on the
+     press, and every post already changed stays changed. */
+  edit:    'plus',
+  /* The mark beside your name. 「バッチはplusから」 -- Plus in the old three
+     names, which is Pro in these. postBadge() already showed it only there
+     and read plan() to find out, which is the one thing this table is here
+     to prevent -- a plan name written into a screen is a question nobody can
+     move between rungs without finding every place that asked it. */
+  badge:   'pro',
   gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
   dir:     'pro'     /* choosing which way the language is written */
 };
