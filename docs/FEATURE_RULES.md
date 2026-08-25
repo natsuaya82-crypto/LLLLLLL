@@ -1638,8 +1638,10 @@ visible there early enough to be avoided.
                                       pushed, before the first line of code
   5  push after every commit          a branch nobody can see is a branch
                                       nobody can avoid
-  6  never integrate                  no merge, no rebase, no cherry-pick of
-                                      another branch. The leader integrates
+  6  never integrate ANOTHER BRANCH   no merge, no rebase, no cherry-pick of
+                                      another branch. The leader integrates.
+                                      master into your OWN branch is not that,
+                                      and is required before you report
   7  the gate is the leader's         see docs/TESTING.md § the gate, rule 2
 ```
 
@@ -1654,10 +1656,31 @@ pushing is invisible for an hour, and every other session is deciding against
 stale information for that hour. The scope declaration is cheap to push and
 it is the thing others read.
 
-**Step 6 is absolute.** A session that merges another branch into its own has
-produced a diff neither session wrote. The leader -- another session above
-this one -- integrates, and asks the owner where the answer is a decision
-rather than a merge. Report the conflict and stop; do not resolve it.
+**Step 6 is absolute about ANOTHER branch.** A session that merges another
+branch into its own has produced a diff neither session wrote. The leader --
+another session above this one -- integrates, and asks the owner where the
+answer is a decision rather than a merge. Report the conflict and stop; do not
+resolve it.
+
+**`master` into your own branch is the opposite and is required**
+(OWNER DECISION 2026-08-25). `git fetch --all --prune && git merge
+origin/master` before you report, every time. It touches nobody else's work --
+it is catching up, not integrating -- and it moves the one job that was
+actually jamming the pipe. On 2026-08-25 four branches were integrated and four
+conflicts came out; **all four came from a branch that had fallen behind** (52,
+86 and 456 commits), and **none** from two sessions wanting the same line. One
+of them was 456 behind and its four commits were all re-doing work `master` had
+already done by another road, so it was dropped rather than merged.
+
+Resolve what comes out of catching up yourself -- it is inside your own branch.
+Stop and report only when you genuinely cannot, which is the rare case where
+two people did want the same line.
+
+Two more from the same day, for the same reason: **integrate in batches, not
+per branch** (one gate run, not four -- proving the same green four times is
+the thing the owner's gate rules already forbid), and **a session's last act is
+to push the Scope of its next piece**, so finishing does not mean queueing
+behind the leader.
 
 **Who is who.** The owner decides what the app does and confirms it on a
 phone. The leader names what each session owns, integrates, and runs the whole
