@@ -237,6 +237,12 @@ const R = await pg.evaluate(() => {
   /* What a word is of the word it came from, chosen on a screen. It is about
      a word, so it is walked on one -- with no word it is the gone box. */
   walkArg('fm', vFm, ['tira'], 'vFm');
+  /* One section of the language's article, open. Asked of the fixture rather
+     than written out, so a section somebody seeds tomorrow is walked
+     tomorrow. With no id it is the gone box -- and the gone box carries
+     neither of the two fields, which are the only place in the app that
+     ever names wldArtSet. */
+  walkArg('wldart', vWldArt, wldArts().map(x => x.id), 'vWldArt');
   /* A conversation, one per post there is. The thread of a post nobody has
      answered is still a screen -- it is what every post's thread is on the
      day it is written -- and the answered one is in halfDone above. */

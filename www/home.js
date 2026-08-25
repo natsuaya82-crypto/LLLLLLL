@@ -755,8 +755,13 @@ function vWorld(){
 /* One section, open. Its title and its body, and nothing else on the screen:
    what it is called and what it says are the whole of a wiki section, and
    whether it is public is set where every other section's is, on the list. */
-function vWldArt(id){
-  var one=wldArtBy(String(id||''));
+function vWldArt(){
+  /* The id comes off the route, not off a parameter: PAGES[route].view() is
+     called with no arguments (www/glyph.js), so a view that took one was
+     handed undefined and drew the gone box instead of the section -- on a
+     phone, not only in the walk. Every other view that is about one thing
+     reads here().a the same way (vThread, vFm, vSet). */
+  var one=wldArtBy(String(here().a||''));
   if(!one) return viewGone();
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="field"><input id="wldart-t" value="'+esc(one.t||'')+'" '+
