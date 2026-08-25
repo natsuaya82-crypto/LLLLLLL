@@ -1062,10 +1062,23 @@ document.addEventListener('touchcancel', wldDragUp, false);
    switches were asking a question the page had already answered.
 
    On the EDITOR and nowhere else -- 「なんで編集画面じゃないのにトグルが出て
-   くんの？」. The article is what somebody else reads. */
+   くんの？」. The article is what somebody else reads.
+
+   ONE ROW, and the row is the section:
+
+     文字　トグル / 単語　トグル / 文法　トグル / キーボード　トグル
+
+   which is how the owner wrote it out, 2026-08-25. It was a heading with a
+   fold marker and a way through to the chapter, and UNDER it a second row
+   saying 「DL可」 -- two rows and three controls where the sentence has one
+   of each. The name of the section is the label now: 「DL可能なやつね？」 says
+   what the switch is, once, for all four, and what it means in full is behind
+   the `?` in the bar where an explanation goes. The heading is gone with it,
+   because a heading that folds nothing and a marker over nothing are the page
+   claiming acts it cannot perform. */
 function wldSecRows(sec){
-  return '<button class="set abdl"' + DO('setWldSecDl', [sec.r, !wldSecDl(sec.r)]) + '>'+
-    '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
+  return '<button class="set"' + DO('setWldSecDl', [sec.r, !wldSecDl(sec.r)]) + '>'+
+    '<span class="sl">'+esc(wldSecNm(sec))+'</span>'+
     swtHTML(wldSecDl(sec.r))+'</button>';
 }
 /* ---- what sections this article has, in one place ---------------------
@@ -1178,7 +1191,7 @@ function vWorld(){
   return wldPage(true);
 }
 function wldPage(ed){
-  var w=world(), drawn=LETTERS.filter(ltHasShape), body='', done, i;
+  var w=world(), drawn=LETTERS.filter(ltHasShape), body='', dls='', done, i;
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
@@ -1191,6 +1204,29 @@ function wldPage(ed){
     swtHTML(!wldHidden())+'</button>';
   wldSecs().forEach(function(sec){
     var inner='', extra='';
+    /* Two of the sections do not reach the writing face at all, and both are
+       the same sentence: 「文字とか単語とかはここで編集しないからこれしか出ない」
+       OWNER 2026-08-25.
+
+       The SOUNDS are not on the owner's list. They are not written here in
+       either face -- a sound belongs to the letter that says it -- so the
+       inventory was five rows of somebody else's chapter standing between the
+       overview and the four switches. It is on the article, where it is
+       something to read.
+
+       And the FOUR are one row each and nothing else: the name and the
+       switch. 「これしか出ない」 is the whole of what the editor shows for
+       them, so the section returns here rather than going on to grow a
+       heading, a fold marker and a way through. */
+    if(ed && sec.r==='sound') return;
+    /* Held back rather than drawn here: the four go at the FOOT of the
+       screen, under everything somebody writes -- 「dlのやつは一番下にして」
+       「上の概要とセクションに混ざらないようにして」 OWNER 2026-08-25. Standing
+       between 概要 and the sections, four switches read as sections of the
+       article that happen to carry a switch, and they are not sections at
+       all: they are one question asked about four chapters that live
+       elsewhere. */
+    if(ed && sec.dl){ dls+=wldSecRows(sec); return; }
     if(sec.r==='wldov'){
       if(ed){
         /* The two the app asks for, then the ones somebody adds. Each is the
@@ -1215,8 +1251,12 @@ function wldPage(ed){
               '<div class="ovtop">'+
                 '<div class="field ovk"><input value="'+esc(row.k||'')+'" '+
                   'placeholder="'+esc(t('wld.ov.k.ph'))+'"' + IN('wldOvSet', [row.id, "k"]) + '></div>'+
+                /* 「消したかったらマイナスボタン」 OWNER 2026-08-25. It was a
+                   cross, which is what CLOSES a thing; the pair the owner
+                   drew is ＋ and −, and the ＋ that puts the row in is two
+                   lines above. */
                 '<button class="ovx"' + DO('wldOvDel', [row.id]) + ' aria-label="'+
-                  esc(t('wld.ov.del'))+'">'+ICON_CROSS+'</button>'+
+                  esc(t('wld.ov.del'))+'">'+ICON_MINUS+'</button>'+
               '</div>'+
               '<textarea class="ntbody grow" rows="'+wldRows(row.v, 1)+'" '+
                 'placeholder="'+esc(t('wld.ov.v.ph'))+'"'+
@@ -1243,26 +1283,15 @@ function wldPage(ed){
          that says it, so this inventory is made by drawing letters. */
       inner+=abSounds();
     } else if(sec.r==='letters'){
-      /* The letters on the READING face and the switch on the writing one --
-         「文字とか単語とかはここで編集しないからこれしか出ない」 OWNER
-         2026-08-25. A letter is drawn in the letters chapter and nowhere
-         else, so the grid here is something to look at; on the face somebody
-         is writing on it is a wall of tiles between them and the one thing
-         this section actually asks. Two of the four were doing this and two
-         were not, which is the same section answering the owner's sentence
-         both ways. */
-      if(ed) inner+=wldSecRows(sec);
-      else if(drawn.length) inner+='<div class="ltgrid abtlt">'+
+      /* The letters somebody has actually drawn. The article only -- the four
+         above return before they reach here. */
+      if(drawn.length) inner+='<div class="ltgrid abtlt">'+
         ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
     } else if(sec.r==='gram'){
-      /* And the stages that are finished, for the same reason: they are
-         finished in the grammar chapter, not here. */
-      if(ed) inner+=wldSecRows(sec);
-      else {
-        done=stAll();
-        for(i=0;i<done.length;i++) if(stIsDone(done[i]))
-          inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
-      }
+      /* And the stages that are finished, for the same reason. */
+      done=stAll();
+      for(i=0;i<done.length;i++) if(stIsDone(done[i]))
+        inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote: its title is the heading and its words are
          under it, and while writing those two ARE the boxes -- the heading is
@@ -1271,8 +1300,6 @@ function wldPage(ed){
         'placeholder="'+esc(t('wld.art.b.ph'))+'"' + CH('wldArtSet', [sec.r, "b"]) + '>'+
         esc(sec.b||'')+'</textarea>';
       else if(sec.b) inner+='<div class="abtl">'+esc(sec.b)+'</div>';
-    } else if(ed && sec.dl){
-      inner+=wldSecRows(sec);
     }
     /* A section somebody has neither named nor written is not on the reading
        face -- a heading reading 「無題」 over nothing is a promise the page
@@ -1295,6 +1322,13 @@ function wldPage(ed){
   if(ed) body+='<button class="set"' + DO('wldArtAdd') + '>'+
     '<span class="sl">'+esc(t('wld.secs'))+'</span>'+
     '<span class="sv">'+ICON_ADD+'</span></button>';
+  /* And then, under the last thing on the page, what may be taken away.
+     「後トグルだけあってもわからないからちゃんとDL云々って書いといて」 OWNER
+     2026-08-25 -- four switches in a column say nothing about what they
+     switch, and the answer is not a sentence on the screen: it is the word
+     over them, which is what a heading is for. What it means in full is
+     behind the `?` in the bar. */
+  if(ed && dls) body+='<div class="sec">'+esc(t('wld.dl.can'))+'</div>'+dls;
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+
     navTop('', ed? '' : '<button class="navdo"' + DO('go', ["world"]) + '>'+esc(t('wld.edit'))+'</button>')+
