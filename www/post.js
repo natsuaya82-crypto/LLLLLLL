@@ -608,6 +608,29 @@ function pwAddHTML(){
    already read. Only ones this phone has never seen are added, and then the
    list is put back in the order a timeline reads in, which is newest first
    and is postAll()'s to say. */
+/* And what this phone has DELETED, which is the other half of the same
+   question and was missing.
+
+   Deleting a post ends in render(); on the timeline render() is vFeed(), and
+   vFeed() calls snsPull() every time it runs. So the DELETE going up and the
+   GET coming down are in the air together, and the GET was sent against a
+   server that still had the row. postTake() then asked "have I got this one"
+   -- and the honest answer was no, because it had just been thrown away --
+   so it put it straight back. Pressing delete a second time worked because by
+   then the first DELETE had landed and the timeline no longer carried it.
+   「編集した投稿を消しても一回で消えない。二回押さないと消えない」
+
+   It only ever happened to a post that is ON the server: netDrop() returns
+   without asking anything when there is no `sid`, and a post the server has
+   never heard of cannot come back from it. A post you have edited is one you
+   posted, which is why that is the way to meet this.
+
+   In memory and not on disk, deliberately. This is here to outlive one pull,
+   not one install: if the DELETE really did fail, the post really is still on
+   the server, and it should come back at the next launch rather than being
+   hidden by a phone that remembers a delete the server never did. Nothing new
+   is stored and nothing has to be expired. */
+var POST_GONE={};
 function postTake(ps){
   var have={}, i, p, n=0;
   /* By BOTH names. A post this phone wrote has a local id and, once it has
@@ -621,6 +644,7 @@ function postTake(ps){
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
     if(!p || !p.id || have[p.id]) continue;
+    if(POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
     have[p.id]=1;
     POSTS.push(p);
     n++;
@@ -2393,6 +2417,16 @@ function postDel(id){
   PMENU='';
   for(i=0;i<POSTS.length;i++) if(POSTS[i].id===id){
     gone=POSTS[i]; vo=gone.vo; to=gone.to||''; POSTS.splice(i, 1); break;
+  }
+  /* Under both names, for the reason postTake() gives about `have`: this
+     phone knows it as the id it wrote, and the timeline hands it back wearing
+     the server's. netRow() sets p.id and p.sid to the same server id, so the
+     first of these is what actually catches it -- the second is there because
+     the day a row arrives under one name and not the other, this still
+     holds. */
+  if(gone){
+    POST_GONE[id]=1;
+    if(gone.sid) POST_GONE[gone.sid]=1;
   }
   /* A reply counted one on the post it answered, and deleting it never took
      that one back -- so a post somebody replied to and then deleted the reply
