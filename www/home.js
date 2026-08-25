@@ -769,25 +769,10 @@ function vWldArt(){
       'placeholder="'+esc(t('wld.art.t.ph'))+'"' + IN('wldArtSet', [one.id, "t"]) + '></div>'+
     '<textarea class="ntbody" style="min-height:260px" placeholder="'+esc(t('wld.art.b.ph'))+'" '+
       '' + CH('wldArtSet', [one.id, "b"]) + '>'+esc(one.b||'')+'</textarea>'+
-    /* The same pair the whole page has in the settings room, and in the same
-       order: whether anybody else may open it, and then -- only if they may --
-       whether they may take it away. Two questions, never one.
-
-       Worded with `wld.shown` and `wld.dl.can` rather than the page's own
-       `wld.public`/`wld.dl`, and not as a shortening of them: those two are
-       sentences about the PAGE -- "Show this language to other people" reads
-       as a lie over one section of it. These are the words the section's own
-       row already says about itself in wldSecSay(), so the list and the
-       switch that sets it say the same thing, and no new wording is invented
-       to say it. They are also one line, which is what keeps these two rows
-       the same height as each other. */
-    '<button class="set"' + DO('setWldSecHide', [one.id, !wldSecHidden(one.id)]) + '>'+
-    '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
-    swtHTML(!wldSecHidden(one.id))+'</button>'+
-    (wldSecHidden(one.id)? '' :
-      '<button class="set" style="border-bottom:none"' + DO('setWldSecDl', [one.id, !wldSecDl(one.id)]) + '>'+
-      '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
-      swtHTML(wldSecDl(one.id))+'</button>')+
+    /* The two answers are NOT here. They are in the section itself, on the
+       article -- 「その中にトグル入れてくれる？」 -- and one thing is set in one
+       place. This page is where the words are written; what may be seen of
+       them is answered where they are read. */
     '</div></div>';
 }
 /* ---- the page a language has ------------------------------------------
