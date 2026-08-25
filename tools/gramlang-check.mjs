@@ -44,8 +44,11 @@
                             was. This is the measurement that started it:
                             B was changed to VOS/after and A came back VOS
                             /after with it
+     8. nobody chose it     a stage nobody has touched lights neither of its
+                            buttons. A default is not an answer, and the
+                            screen was drawing one as if it were
 
-   Exit code is 0 only when all seven hold.
+   Exit code is 0 only when all eight hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -251,6 +254,39 @@ want('which is still what its file says', f.aStored, 'OSV');
 want('all of it', f.aStoredNegp, 'before');
 want('the settings are left saying what they said', f.personOrder, 'OSV');
 want('and what was chosen in one is not chosen in the other', f.aTouchedAdj, false);
+
+/* ---- 8: a default nobody chose is not lit -------------------------------
+   The list has counted it correctly from the beginning -- stTouched() -- and
+   only the drawing said otherwise. `desc` is a stage the seeded phone has
+   never touched; `neg` is one it has. */
+await pg.evaluate((old) => {
+  localStorage.clear();
+  Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
+}, OLD);
+await pg.reload();
+const g = await pg.evaluate(() => {
+  const lit = () => Array.prototype.map.call(
+    document.querySelectorAll('.segs .seg.on'), (b) => b.textContent).join(',');
+  go('gram', 'desc');
+  const untouched = lit();
+  go('gram', 'neg');
+  const touched = lit();
+  /* And pressing one is what turns it on, with nothing else changing. */
+  go('gram', 'desc');
+  setGPos('adj', 'after');
+  return { untouched: untouched, touched: touched, pressed: lit(),
+           /* What the button SAYS is the interface language's and is asked of
+              the page rather than written out here -- a check that spells the
+              label itself is a second copy of it. */
+           saysBefore: gPosLab('negp', 'before'), saysAfter: gPosLab('adj', 'after'),
+           /* the value was 'after' before the press as well -- what moved is
+              that somebody said so */
+           was: STG.set.adj ? 'marked' : 'not marked' };
+});
+want('a stage nobody has touched lights nothing', g.untouched, '');
+want('one that was touched lights the answer it was given', g.touched, g.saysBefore);
+want('pressing the button that was already the default lights it', g.pressed, g.saysAfter);
+want('and marks it as chosen', g.was, 'marked');
 
 await br.close();
 srv.close();

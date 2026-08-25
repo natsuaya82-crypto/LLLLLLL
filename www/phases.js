@@ -517,15 +517,28 @@ function stDetailHTML(p){
    can stand. Each is one answer for the whole language, each changes every
    sentence that uses it, and each is shown in your own words underneath so it
    can be heard rather than only read. Everything else on a stage is written. */
+/* A button is lit when this language ANSWERED, not when the default happens
+   to be what it would answer. stTouched() is that question and has been since
+   the line above stMarkSet() was written -- 「a default nobody chose is not a
+   decision」 -- and the counting on the list has always been right. Only the
+   drawing was not: an untouched stage lit 「動詞の後」, so the screen said
+   somebody had decided where the negation goes when nobody had.
+   No new state and no new concept: the same function the progress reads.
+
+   Nothing else here changes. The demonstration underneath still says the
+   whole line out loud, because a language has to be arranged somehow to be
+   heard, and the default is what it is arranged by until somebody says
+   otherwise. What is gone is the claim that they already did. */
+function stOn(id, is){ return (stTouched(id) && is)? ' on' : ''; }
 function stFeatHTML(id){
   if(id==='order'){
     return '<div class="segs">'+ORDERS.map(function(o){
-        return '<button class="seg'+(o===orderDef().id?' on':'')+'"' + DO('setOrder', [o]) + '>'+o+'</button>';
+        return '<button class="seg'+stOn('order', o===orderDef().id)+'"' + DO('setOrder', [o]) + '>'+o+'</button>';
       }).join('')+'</div>'+gOrderLine()+gOrderDemo();
   }
   if(id!=='adj' && id!=='negp' && id!=='adp') return '';
   return '<div class="segs">'+['before','after'].map(function(o){
-      return '<button class="seg'+(o===gPos(id)?' on':'')+'"' + DO('setGPos', [id, o]) + '>'+
+      return '<button class="seg'+stOn(id, o===gPos(id))+'"' + DO('setGPos', [id, o]) + '>'+
         esc(gPosLab(id, o))+'</button>';
     }).join('')+'</div>'+gPosDemo(id);
 }
