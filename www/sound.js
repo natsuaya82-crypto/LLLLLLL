@@ -223,8 +223,14 @@ function sndTake(sym){
      into the language and taking one out are what `snd` buys read from the
      other end, they are gated on the screen and were gated nowhere else, and
      「音も変えられない」 is one sentence about all of it rather than one about
-     the letter's sheet. openSndAdd() is the only road to either. */
-  if(!can('snd')) return;
+     the letter's sheet. openSndAdd() is the only road to either.
+
+     It goes to the plans screen rather than returning: 「全部確認して課金画面に
+     飛ぶようにして」 OWNER 2026-08-25, which settled a refusal that this app was
+     doing two ways. A symbol pressed on purpose and nothing at all happening is
+     the shape that sends somebody to look for what they did wrong. Same one line
+     ltTakeSnd() below already had. Nothing is written first. */
+  if(!can('snd')){ go('plans'); return; }
   if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
   SND=asOrder(addedSnd().concat([sym]));
   saveSnd();
@@ -536,7 +542,12 @@ FORM_OPEN.sndadd=function(){ openSndAdd(); };
    rather than a refusal to argue with. */
 function sndDrop(sym){
   var ls=sndLetters(sym), i;
-  if(!can('snd')) return;
+  /* 「全部確認して課金画面に飛ぶようにして」 OWNER 2026-08-25 -- the other of
+     the inventory's two doors, and the same answer as sndTake() above.
+     sndTake() calls this one directly, which is safe: it has already refused
+     on the same capability before it gets here, so a free plan never arrives
+     at this line from there. */
+  if(!can('snd')){ go('plans'); return; }
   if(ls.length){
     toast(t('snd.inuse', ls.map(function(l){ return ltName(l)||'·'; }).join(' ')));
     return;

@@ -438,7 +438,12 @@ function ltIsBase(l){
    is where somebody looking at that one expects it. */
 function ltCopy(id){
   var l=ltById(id), n, i;
-  if(!l || !can('letters')) return;
+  /* Two refusals that were one line and are not one thing. A letter that is not
+     there is nothing to copy and there is nowhere to send anybody; a plan that
+     does not buy letters is a door, and 「全部確認して課金画面に飛ぶようにして」
+     OWNER 2026-08-25. Same one line ltDelete() already had. */
+  if(!l) return;
+  if(!can('letters')){ go('plans'); return; }
   n=ltNew({});
   if(l.st && l.st.length) n.st=JSON.parse(JSON.stringify(l.st));
   if(l.ch) n.ch=l.ch;
