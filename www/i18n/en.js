@@ -889,6 +889,7 @@ defLang('en', (function(){
       'post.vo.busy'          : "Still recording",
       'post.vo.lost'          : "The voice could not be saved",
       'post.edit'             : "Edit",
+      'post.editplan'         : "Editing a post is on the Plus plan",
       'post.save'             : "Save",
       'post.edited'           : "Edited",
       'post.pv'               : "Private",

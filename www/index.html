@@ -741,6 +741,20 @@ canvas.pkc{width:34px;height:34px;display:block}
    dozen container rules that set font-family on the input inside them -- the
    file already carries that story, and this is the same story about padding. */
 .pwfield .lnin{padding:11px 2px}
+/* And the COLUMN keeps its own, which the rule above took away from it.
+   `.lnin.dir-ttb-rl,.lnin.dir-ttb-lr` declares `padding:2px 12px`, and in a
+   vertical column the 12px is the same thing 11px is in a horizontal line:
+   the room above and below the type. The inline axis has turned, so it is
+   written on the physical sides. The rule above is the same two selectors,
+   later in the file, so it won here too and cut those 12px to 2px -- and with
+   `box-sizing:border-box` and `min-width:1.6em` doing the rest, the composer
+   came out 34px wide where a thumb needs 44. `press` measured it: 34x251 on
+   the reply to the day's sentence.
+   No new number: this is the vertical rule's own, delivered back to the one
+   place it lost it -- the same sentence as the comment above, about the case
+   that comment did not cover. */
+.pwfield .lnin.dir-ttb-rl,
+.pwfield .lnin.dir-ttb-lr{padding:2px 12px}
 .pwfield input:focus, .pwfield textarea:focus{outline:none}
 /* How much of the post is left, and only once it is worth knowing. It is a
    number and nothing else, so there is no sentence in it to translate. */
@@ -2676,7 +2690,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .strow .go{color:var(--txm);flex:0 0 auto}
 .strow.done .stt{color:var(--txs)}
 .strow.done .stv{color:var(--gold)}
-.sth{font-family:var(--face-caps);font-size:1.35rem;margin:6px 0 8px}
 .stslots{display:flex;flex-direction:column;gap:0}
 .stslot{display:flex;align-items:baseline;gap:10px;width:100%;min-height:56px;padding:13px 2px;
   border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;

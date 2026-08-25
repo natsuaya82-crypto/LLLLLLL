@@ -20,8 +20,9 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `BACKLOG.md` | found and deliberately not done, and why |
 
 Everything below was checked against the repository on **2026-08-11**, §3 and
-§5 again on **2026-08-19**, the whole file again on **2026-08-21**, and §1, §4b
-and §7 again on **2026-08-25**, not
+§5 again on **2026-08-19**, the whole file again on **2026-08-21**, §1, §4b
+and §7 on **2026-08-25**, and §4b, §6 and §7 once more later that same day
+after build #91 went to a real phone — not
 remembered. Where a claim can go stale, it
 says how to re-check it — and §3 is the proof that it does: it went on saying
 the timeline was not on the server for a week after it was.
@@ -30,9 +31,23 @@ the timeline was not on the server for a week after it was.
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `1941783` (2026-08-25), four branches were integrated into it
-that day, and the whole gate is green on it. A fresh clone is the current app,
-and nothing needs checking out.
+`master` is at `f2d5eb4` (2026-08-25, later the same day), and the whole gate
+is green on it -- **25 checks, not the 24 this file said an hour earlier**, and
+`buttons pressed: 10667  (223/223 distinct names)`. A fresh clone is the current
+app, and nothing needs checking out. (This paragraph's own commit sits one on
+top of `f2d5eb4`; a file cannot name the commit it is part of.)
+
+It said `1941783` for **66 commits** after that stopped being true, and the
+sentence around it -- "four branches were integrated into it that day" -- went
+on being read as the whole of the day. It was not: fifteen commits in that
+range say 「を取り込む」. Nobody wrote a wrong number; somebody wrote a right
+one and the ground moved under it, which is what the next paragraph is about
+and why the two lines below exist. **Counting it is one command**, which is the
+only reason this correction could be made at all:
+
+```
+git rev-list --count <the sha this file names>..origin/master     # 0 if current
+```
 
 That commit is a fact with a shelf life. **Run the two lines below rather than
 believing this paragraph** — it has been wrong before and the way it goes wrong
@@ -271,6 +286,46 @@ three sessions possible at all: on 2026-08-25 four branches were touching that
 file at once, and every one of the four conflicts in the last integration came
 out of a branch that had fallen behind.
 
+**Later the same day it was done again with six**, after the owner spent an
+hour on a real phone at build #91 and came back with about twenty-five things.
+The split was by FILE, not by feature, which is the only split that actually
+prevents a collision:
+
+```
+  post      www/post.js, www/sns.js, www/index.html, tools/box-baseline.txt
+  letters   www/letters.js, www/sound.js
+  me        www/me.js, www/settings.js, www/store.js, www/mod.js
+  sheet2    www/sheet.js
+  grammar2  www/grammar.js, www/phases.js, www/wordsheet.js
+  world     www/home.js
+```
+
+Not one file is in two rows. Several of the owner's items wanted both markup
+and CSS — the post header row, the line height under a drawn font, the rounded
+underline — and every one of those went to the session that holds
+`index.html`, rather than the session that holds the screen. **The feature was
+split to fit the file ownership, not the other way round.** The other five were
+told: if you find you need CSS, stop and write the line you need in the commit
+body, and the leader carries it across.
+
+**Three things about this environment, all measured, all of which shape the
+instructions:**
+
+- **A leader can only speak at birth.** `ListAgents` returns nobody and
+  `SendMessage` reaches nobody — sessions are separate containers. The whole
+  instruction has to be in `create_session`'s prompt. There is no "I will tell
+  them later".
+- **The reverse direction works, and it is git.** So every session is told, in
+  the hard half of its instructions: *what is unfinished, what you are stuck
+  on, and where the leader was wrong go in the COMMIT BODY, not in chat.* On
+  2026-08-25 that is how all three of the previous round's real corrections
+  reached the leader.
+- **The session tools come and go.** `create_session` / `archive_session`
+  resolved under `mcp__bf7c680d-…__` and, for one call each, under
+  `mcp__Claude_Code_Remote__`; the second name stopped resolving mid-session
+  with the first still working. **Archive while the tool answers.** If it stops
+  answering, only the owner can close a session.
+
 ## 5. The gate, and what CI does not run
 
 `npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
@@ -305,24 +360,40 @@ start failing.
 ## 6. Builds
 
 `.github/workflows/ios-deploy.yml`, on `workflow_dispatch` or a `build-*` tag.
-It runs on `macos-latest` and takes about twenty minutes.
+It runs on `macos-latest` and takes about three minutes in practice, not the
+twenty this file used to claim — the app is a WebView and the archive is small.
 
 **Do not start one without being asked.** This is a standing instruction from
 the owner of the repository, not a suggestion, and it has been said more than
-once.
+once. 2026-08-25 was an exception the owner named out loud.
 
-Build numbers are the workflow's run numbers. #43 was the first that a person
-typed on; #47 was green. **The latest is #82** — 2026-08-21, green, on
-`claude/save` at `eef389a` (checked against the Actions API on 2026-08-22, not
-remembered). Of the last thirty runs, every one was on `claude/save` and none
-on `master`, and #61 is the only failure among them.
+Build numbers are the workflow's **run numbers** (`github.run_number`), and
+that matters more than it looks: the `build-*` tag is a trigger and a record,
+never the source of the number. A `workflow_dispatch` run gets a build number
+exactly the same way.
 
-**Nothing has been built at the head of `master`.** `eef389a` is an ancestor
-of it, but `master` is **40 commits ahead** of the last thing that compiled —
-the forms chapter, the moderation screens and the anonymous account are all in
-that gap. A green #82 is not a statement about what is on `master` now. iOS work beyond triggering that workflow — opening the project,
-running on a simulator, `npx cap sync ios` — needs a Mac with Xcode and cannot
-be done from a Linux session.
+**The latest is #91** — 2026-08-25, green, `workflow_dispatch` on `master` at
+`9330140`, all fourteen steps, uploaded to App Store Connect. #90 was also a
+`workflow_dispatch`; the tag has not been the trigger in practice for some
+time.
+
+**A green tick is not a delivery.** The workflow passes
+`wait-for-processing: false`, so it goes green the moment the bytes are
+accepted and never waits for Apple to process them. Build 86 went green and
+was refused an hour later **by email** (`ITMS-90158`) — the only failure here
+that does not arrive as a red tick. The upload step's own log is the thing to
+read: `Finished uploading build chunks` / `Marked build upload as complete;
+waiting for processing` means the bytes arrived and nothing more.
+
+**A tag cannot be pushed from a Claude Code session.** Measured 2026-08-25:
+`git push origin build-25` returns HTTP 403 while a branch push to the same
+remote succeeds, because the session's git credentials are scoped to
+`refs/heads/*`. This is not a network fault and retrying does not help. Use
+`workflow_dispatch`; if the tag is wanted as a record, a person pushes it.
+
+iOS work beyond triggering that workflow — opening the project, running on a
+simulator, `npx cap sync ios` — needs a Mac with Xcode and cannot be done from
+a Linux session.
 
 ---
 
@@ -332,16 +403,66 @@ Ordered by what blocks shipping. Anything not on this
 list has either been done or was never agreed to — check `git log` before
 assuming a thing is waiting for you.
 
+### The device round of 2026-08-25, and four things dug out of the code
+
+Build #91 went to TestFlight and the owner spent an hour on a real phone. What
+came back is about twenty-five items and they are being worked by the six
+sessions named in §4b. Most of them are plain and need no note here. **Four
+were run to ground before any session was told to look, and those four are
+written down because otherwise the next person repeats the digging:**
+
+- **「今日のお題」is not a bug in the day feature.** The mechanism is entirely
+  intact — `dayRow()` puts it at the top of the feed, `openPost('day')` carries
+  it into the composer, `PW.pr` pins the answer to it so it cannot be edited
+  away. What is missing is the row. `schema.sql` says the day's sentence *can
+  only come from the service role*, and `prompt` has `on_day date not null
+  unique` — **somebody puts one in from the dashboard, one per day**, and
+  nobody has. That part is the owner's, like the rest of §7's Supabase work.
+  **But two real bugs sit beside it**, and both are the client's:
+  `netDay()` asks `order=on_day.desc&limit=1` and **never asks for today**, so
+  one stale row would be served as "today" forever; and `on_day` is rendered
+  nowhere, which is what 「日付ないし」 means.
+- **The 通報 row in account settings is not the reporting affordance.** It is
+  the door to `www/mod.js` — the *other* side, where a report is read and a
+  post is taken down — and it is behind `profile.staff`, set by hand in the
+  dashboard and by nothing in this app. Its own header says why it exists:
+  *"we act on reports within 24 hours" is something Apple asks about*. The
+  owner has asked for it to come off the settings list. **That leaves `mod.js`
+  with no door**, so a DELETE REVIEW is owed before anything is removed, and
+  the thing being weighed is App Review 1.2 against a row the owner finds
+  meaningless. Reports themselves keep landing in the table either way.
+- **A PDF that was traced on a screen still cannot be read.** The scanned kind
+  works and has since `claude/sheet` landed. `sheet.js` sorts an arriving file
+  into four kinds and `'drawn'` — ink drawn rather than photographed — is on
+  the *cannot* side, by design and in writing: *"That is a renderer, and the
+  phone has one (PDFKit, native) while this file does not."* So
+  「上からなぞった文字のみ利用できる」 is a native-Swift job nobody holds, not
+  a rename. Said here because the file's surface makes it look done.
+- **The rounded underline on the profile's language row had a cause, and it
+  was a duplicate selector.** `.wldrow` is declared twice in `index.html`: the
+  old cover version with `border:1px solid` + `border-radius:10px`, and the
+  current one with `border:0; border-bottom:1px solid`. The second overrides
+  `border` and **never mentions `border-radius`**, so a 10px radius stays and
+  bends a bottom-only line up at both ends. Rule 18's baseline was listing both
+  halves of the dead rule, which is how it survived. **A duplicate declaration
+  is invisible to every check in the gate** — the same blind spot `act-map.js`
+  had before duplicate names were checked for.
+
 ### Landed on 2026-08-25
 
 - **Four branches integrated**, and the gate is green on `master`: the grammar
   engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
   and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
   and unworn against a baseline of 4**.
-- **The gate is 24 checks**, not the nineteen `CLAUDE.md` still says: eight
-  with no browser (`grammar-engine-check` joined them) and sixteen with one
-  (`plan-check`, `sheet-check` and `shape-check` joined them). That count in
-  `CLAUDE.md` is stale and is on nobody's list yet.
+- **The gate is 25 checks**, not the nineteen `CLAUDE.md` still says: eight
+  with no browser (`grammar-engine-check` joined them) and seventeen with one
+  (`plan-check`, `sheet-check`, `shape-check` and `gramlang-check` joined
+  them). It read 24 here until 2026-08-25, when `4f8b681` wired
+  `gramlang-check` in on `claude/leader-integration` -- the same shape as
+  `shape-check` two bullets down, and caught the same way: by counting
+  `FAST` and `SLOW` in `tools/gate.mjs` rather than believing a sentence.
+  `tools/gate.mjs`'s own opening comment said 24 as well and now says 25.
+  That count in `CLAUDE.md` is stale and is on nobody's list yet.
 - **`shape-check` was written, merged, and left out of the gate.** It was on
   `master` with an `npm run shape` script from the day `claude/inkshape` was
   integrated, and its name was in no list in `tools/gate.mjs`, so `npm test`

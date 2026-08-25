@@ -1023,6 +1023,7 @@ defLang('fr', (function(){
       'post.vo.busy'          : "Enregistrement en cours",
       'post.vo.lost'          : "La voix n’a pas pu être gardée",
       'post.edit'             : "Modifier",
+      'post.editplan'         : "Modifier un post est réservé au forfait Plus",
       'post.save'             : "Enregistrer",
       'post.edited'           : "Modifié",
       'post.pv'               : "Privé",
