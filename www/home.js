@@ -421,7 +421,7 @@ function vBuild(){
     '<div class="toc">'+tocRows().map(function(row, i){
       return '<button class="trow"' + DO('go', [row.r]) + '>'+
         '<span class="rn">'+(TOC_N[i]||'')+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
-        '<span class="lead"></span><span class="rv">'+esc(row.txt)+'</span>'+ICON_GO+'</button>';
+        '<span class="lead"></span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
     /* Settings used to hang off the bottom of the contents. It belongs to the
        person, not to the language, and it is already on the profile where
@@ -704,7 +704,19 @@ function vWorld(){
 
    What is on it, and the owner chose it: what the language is for, where, who
    and the note; the letters somebody has actually drawn; and the three
-   numbers. Not the words -- a dictionary is a chapter, not a summary. */
+   numbers. Not the words -- a dictionary is a chapter, not a summary.
+
+   2026-08-25 it became the language's own article rather than a summary of
+   it: 「ここはWikipediaみたいに編集できるようにしたい。ウィキみたいな画面で、
+   キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
+   DL可能になって他の人が使えるようになるイメージ。その人の言語Wikipedia
+   みたいな感じにしたいそのページ」
+
+   THIS IS THE LOOK ONLY, and that is the owner's own order --
+   「見た目を完璧にしてからsqlね」. Nothing here asks the server, nothing
+   here writes, and「他の人が使えるようになる」is the server's half and is
+   not started. What is here is the shape: the article, and under it every
+   section of the language with what it is open to. */
 function wldHidden(){ return !!world().hide; }
 /* From the settings, and it writes the LANGUAGE rather than SET: whether this
    language has a page is about this language, and SET is the person's. The
@@ -723,6 +735,41 @@ function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
    not decide that for them. */
 function wldDl(){ return !!world().dl; }
 function setWldDl(v){ world().dl=!!v; saveWld(); render(); }
+/* ---- and the same two questions, asked of one SECTION of the page -------
+   「キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
+   DL可能になって他の人が使えるようになるイメージ」
+
+   A section that has never been touched has nothing stored for it and follows
+   the PAGE's own flag. That is not a third state: it is the absence of an
+   answer, and it is deliberate. 2026-08-13 settled what a PAGE defaults to
+   (`hide` absent = public) and nothing has settled what a SECTION defaults
+   to, so with nothing stored both answers are still reachable -- the owner
+   decides it by deciding the page's, and no migration has to run either way.
+
+   `wld.secs` is an object of objects rather than two lists, so a section
+   carries both answers in one place and a section nobody has touched is not
+   in the file at all. */
+function wldSecOf(r){
+  var s=world().secs, o;
+  if(!s || typeof s!=='object' || (s instanceof Array)) return {};
+  o=s[r];
+  return (o && typeof o==='object' && !(o instanceof Array))? o : {};
+}
+function wldSecHidden(r){
+  var o=wldSecOf(r);
+  return Object.prototype.hasOwnProperty.call(o,'hide')? !!o.hide : wldHidden();
+}
+function wldSecDl(r){
+  var o=wldSecOf(r);
+  return Object.prototype.hasOwnProperty.call(o,'dl')? !!o.dl : wldDl();
+}
+/* What a section's row says about itself. A state, never a sentence --
+   「アプリ内に説明書くの禁止」 -- and the two are separate questions, so a
+   section that is open and may be taken away says both. */
+function wldSecSay(r){
+  if(wldSecHidden(r)) return t('wld.hidden');
+  return wldSecDl(r)? t('wld.shown')+' \u00b7 '+t('wld.dl.can') : t('wld.shown');
+}
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
@@ -763,8 +810,30 @@ function vAbout(){
   if(drawn.length) body+='<div class="sec">'+esc(t('toc.letters'))+'</div>'+
     '<div class="ltgrid">'+drawn.map(function(l){ return ltCell(l, ''); }).join('')+'</div>';
   /* An empty language is a language somebody started this morning, not a
-     broken one. */
+     broken one. The sections below are not part of that count: they are here
+     whether or not anything has been written into them, which is what makes
+     the page an article about a language rather than a page about what has
+     been filled in. */
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
+  /* ---- the sections, and what each one is open to --------------------
+     The list is the BOOK'S CHAPTERS -- tocRows() -- and not a second list
+     written out here, so a chapter added to the book is a section of this
+     page the same day, numbered the same way, under the same name. One
+     place, not two.
+
+     The rows do not go anywhere and do not carry a switch yet. Changing one
+     is `wldSecSet`/`wldSecDl` and a name a screen may say has to be
+     registered in `www/act-map.js`, which this session does not own -- and
+     a switch that cannot be pressed, or a chevron that arrives nowhere, is
+     worse than a row that only says what is true. What they say is read
+     from the language, so the day those two names exist the rows are
+     already right. */
+  body+='<div class="sec">'+esc(t('wld.secs'))+'</div>'+
+    tocRows().map(function(row){
+      return '<div class="set">'+
+        '<span class="sl">'+esc(t(row.k))+'</span>'+
+        '<span class="sv">'+esc(wldSecSay(row.r))+'</span></div>';
+    }).join('');
   /* And the way to the editor, which is where the chip beside the handle used
      to go. It is here rather than in the settings because this is the page you
      are looking at when you notice it is wrong -- the same place, and the same
