@@ -360,6 +360,33 @@ const r = await pg.evaluate(({ s }) => {
   window.planKeep = realKeep;
   SET.plan = 'free'; save();
 
+  /* ---- 7b. a ceiling met is a way to the plans screen, not a dead end ---
+     「そのプランでできることできないことで UI 自体に変更がない方が良くない？」
+     OWNER DECISION 2026-08-25. The keyboard ceiling said its sentence with a
+     toast and stopped, which is a sentence about a plan with no way to the
+     thing it is about. capStop() was already the right shape; this is the
+     other one. */
+  var askedKb = '', wentKb = '', realConfirm2 = window.confirm;
+  SET.plan = 'plus'; save();
+  KB = { kbs: [], at: 0 };
+  while (kbRoomKb()) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
+  saveKb();
+  out.kbAtCeiling = !kbRoomKb();
+  var kbWas = kbBoards().length;
+  /* said no: nobody is moved, and no keyboard is made */
+  go('kb');
+  window.confirm = function(m){ askedKb = String(m); return false; };
+  kbAdd('qwerty');
+  out.kbSaidNo = kbBoards().length === kbWas && here().r === 'kb';
+  out.kbAsked = askedKb;
+  /* said yes: the plans screen, which is the thing the sentence is about */
+  window.confirm = function(){ return true; };
+  kbAdd('qwerty');
+  out.kbSaidYes = here().r === 'plans' && kbBoards().length === kbWas;
+  window.confirm = realConfirm2;
+  KB = null; saveKb();
+  SET.plan = 'free'; save();
+
   /* ---- 8. how many languages, and what happens to the ones already here --
      Last, because making one SWITCHES which language is open and everything
      above reads the open one.
@@ -578,6 +605,11 @@ say(r.bdgTop !== '', 'and one on pro (' + (r.bdgTop ? 'drawn' : 'nothing') + ')'
 say(r.bdgTheirs === '', 'never on somebody else\'s post, whatever plan this phone is on');
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
+
+say(r.kbAtCeiling, 'plus fills up at four keyboards');
+say(r.kbSaidNo, 'and the fourth-and-one asks rather than telling -- no is no, and nobody is moved');
+say(/4/.test(r.kbAsked || ''), 'the sentence says the number (' + (r.kbAsked || 'nothing') + ')');
+say(r.kbSaidYes, 'and yes goes to the plans screen, still without making one');
 
 say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
     'free and plus hold one language, pro holds three (' +

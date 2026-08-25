@@ -332,7 +332,23 @@ function kbAdd(pat){
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
-  if(!kbRoomKb()){ toast(t('kb.full', kbCap())); return; }
+  /* The ceiling, said and offered. It was a toast: a sentence about a plan
+     with no way to the thing it is about, which is the one shape the owner
+     ruled out. 「そのプランでできることできないことで UI 自体に変更がない方が
+     良くない？」「課金させる動線を減らしたくない」 OWNER DECISION 2026-08-25.
+
+     capStop()'s shape exactly, and for capStop()'s reason: iOS's own dialog
+     rather than one of ours, answerable with "no", and nobody is moved unless
+     they say yes -- building a keyboard is not a place to have the screen
+     taken away. Two strings that are already in ten languages rather than an
+     eleventh.
+
+     Pro never sees it: kbCap() is Infinity there, so kbRoomKb() cannot be
+     false, and there is no plan above to be offered. */
+  if(!kbRoomKb()){
+    if(confirm(t('kb.full', kbCap())+'\n\n'+t('up.cta'))) go('plans');
+    return;
+  }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
