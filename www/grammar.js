@@ -58,13 +58,93 @@ function gSlot(pid, k){
   var p=(typeof stBy==='function')? stBy(pid) : null;
   return p? stWordFor(p, k) : null;
 }
-function gSlotAny(pid){
-  var p=(typeof stBy==='function')? stBy(pid) : null, i, w;
-  if(!p) return null;
-  for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) return w; }
-  return null;
+/* Every word a stage made, not the first one. A language has one word for
+   "not" and several for "at", "on", "under" -- gSlotAny() answered the first
+   of them because one was all a demonstration needed, and the engine needs
+   all of them to know which words are adpositions at all. gSlotAny is the
+   head of this list rather than a second walk of the same slots. */
+function gSlotAll(pid){
+  var p=(typeof stBy==='function')? stBy(pid) : null, i, w, out=[];
+  if(!p) return out;
+  for(i=0;i<p.slots.length;i++){ w=stWordFor(p, p.slots[i]); if(w) out.push(w); }
+  return out;
 }
+function gSlotAny(pid){ return gSlotAll(pid)[0] || null; }
 
+/* ---- this language, handed to the engine --------------------------------
+   www/grammar-engine/ is DOM-free and globals-free so that samples can be put
+   through it in Node. This is the one place that crosses back: the dictionary,
+   the word order and the three places a word can stand, as one model.
+
+   It is a VIEW and not a copy. Nothing is written under `gram2`, and that is
+   deliberate rather than unfinished -- a stored copy of the dictionary would
+   be a second place saying what the words are, and the two would part company
+   the first time somebody added a word. docs/FEATURES.md asks for the same
+   thing from the other side: this arithmetic is `current`, not `frozen`, so a
+   line that half-rendered yesterday renders fully today because the
+   dictionary grew, and freezing it would be the bug.
+
+   Which words ARE the negation and the adpositions is not something a part of
+   speech can say -- the app makes them in a stage -- so the page that knows
+   about stages names them here, by id, and the engine never has to know what
+   a stage is. */
+function gRule(target, feature, value){
+  return LinguaGrammarEngine.grammarRule({type:'syntax', target:target, feature:feature, value:value});
+}
+/* What this language has decided: the three places a word can stand, and
+   which words the stages made are the negation and the adpositions. */
+function gRules(){
+  var e=LinguaGrammarEngine, out=[], w, ws, i;
+  out.push(gRule('ADJECTIVE',  'POSITION', gPos('adj')));
+  out.push(gRule('NEGATION',   'POSITION', gPos('negp')));
+  out.push(gRule('ADPOSITION', 'POSITION', gPos('adp')));
+  w=gSlot('neg','not');
+  if(w) out.push(gRule('NEGATION','WORD', e.adapter.idOf(w)));
+  ws=gSlotAll('where');
+  for(i=0;i<ws.length;i++) out.push(gRule('ADPOSITION','WORD', e.adapter.idOf(ws[i])));
+  return out;
+}
+/* This language, as the engine reads it. `list` is which words to hand over
+   and is the whole dictionary when nobody says: arranging three words for a
+   demonstration would otherwise build five thousand of them on every render,
+   and translate.arrange() never looks at model.words at all -- it reads the
+   word order and the rules. The decisions are the same either way, which is
+   the point of there being one function. */
+function gModel(list){
+  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, SET);
+  m.grammarRules=gRules();
+  return m;
+}
+/* The engine's word and the dictionary's word are one word seen from two
+   sides. The engine knows what part of speech it is and where it stands; only
+   this side knows what it SOUNDS like, because wPh() reads the letters it is
+   spelled with, every time, so a letter that changes its sound changes the
+   words it is in. A demonstration has to come back here to be heard. */
+function gUnits(m, list){
+  var e=LinguaGrammarEngine, out=[], i, j, id;
+  for(i=0;i<list.length;i++){
+    id=e.adapter.idOf(list[i]);
+    for(j=0;j<m.words.length;j++) if(m.words[j].id===id){
+      out.push({kind:'word', word:m.words[j], surface:m.words[j].lemma, text:m.words[j].lemma});
+      break;
+    }
+  }
+  return out;
+}
+/* Words of the dictionary, in the order THIS language puts them in. One
+   place: the demonstration under the buttons on the grammar page and the line
+   a translation writes are the same arrangement, so a language that says its
+   adjective goes first cannot say it one way here and another way in a
+   sentence. */
+function gLay(list){
+  var e=LinguaGrammarEngine, m=gModel(list),
+      pieces=e.translate.arrange(m, gUnits(m, list)), out=[], i, j, id;
+  for(i=0;i<pieces.length;i++){
+    id=pieces[i].word?String(pieces[i].word.id):'';
+    for(j=0;j<list.length;j++) if(e.adapter.idOf(list[j])===id){ out.push(list[j]); break; }
+  }
+  return out;
+}
 function gTxt(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return o.join(' '); }
 function gIpaOf(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o.push(ws[i].join('')); return '/'+o.join(' ')+'/'; }
 function gFlat(ws){ var i,o=[]; for(i=0;i<ws.length;i++) o=o.concat(ws[i]); return o; }
@@ -89,24 +169,35 @@ function gSide(lab, ws, gloss){
     '<button class="gsp"' + DO('sayPh', [gFlat(ws)]) + ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>';
 }
 function gNeedWords(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
-function gPair(a, b){
-  var g=[wMn(a), wMn(b)].filter(Boolean).join(' + ');
-  return {ws:[wPh(a), wPh(b)], gl:g};
+/* Two words to be heard, in the order this language puts them in. gPair()
+   took them already ordered and was the second place that decided which side
+   each went; it is gone, and so is the fallback that would have called it --
+   gLay() is handed a model built from the same list, so it cannot come back
+   short, and a branch nothing can reach hides the next bug rather than
+   catching it. */
+function gPairOf(list){
+  var laid=gLay(list);
+  return {ws:laid.map(function(w){ return wPh(w); }),
+          gl:laid.map(function(w){ return wMn(w); }).filter(Boolean).join(' + ')};
 }
 function gPosDemo(id){
   var pair=null, n, v, a, x;
+  /* The two words, and never which side each goes. That is the one answer
+     this language already gave, and it is applied where every other phrase in
+     the app is arranged -- here it was applied a second time, by hand, so the
+     button could have agreed with itself and disagreed with a sentence. */
   if(id==='adj'){
     n=gWordOf('n'); a=gWordOf('adj');
     if(!n || !a) return gNeedWords();
-    pair = gPos('adj')==='before' ? gPair(a, n) : gPair(n, a);
+    pair = gPairOf([a, n]);
   } else if(id==='negp'){
     v=gWordOf('v'); x=gSlot('neg','not');
     if(!v || !x) return gNeedWords();
-    pair = gPos('negp')==='before' ? gPair(x, v) : gPair(v, x);
+    pair = gPairOf([x, v]);
   } else {
     n=gWordOf('n'); x=gSlotAny('where');
     if(!n || !x) return gNeedWords();
-    pair = gPos('adp')==='before' ? gPair(x, n) : gPair(n, x);
+    pair = gPairOf([x, n]);
   }
   return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
 }
@@ -122,10 +213,13 @@ function gOrderLine(){
 }
 /* The same order, in your own words, so it is a sentence and not a diagram. */
 function gOrderDemo(){
-  var n=gWordOf('n'), v=gWordOf('v'), n2=gWordOf('n', n);
+  var n=gWordOf('n'), v=gWordOf('v'), n2=gWordOf('n', n), laid, ws, gl;
   if(!n || !v) return gNeedWords();
-  var slot={S:n, O:(n2||n), V:v};
-  var ws=orderDef().seq.map(function(k){ return wPh(slot[k]); });
-  var gl=orderDef().seq.map(function(k){ return wMn(slot[k])||slot[k].hw; }).join(' ');
+  /* Subject, verb, object -- the order they would be TYPED in, not the order
+     they come out in. Which of the six this language uses is the engine's to
+     apply, and it applies it in the one place a phrase is arranged. */
+  laid=gLay([n, v, (n2||n)]);
+  ws=laid.map(function(w){ return wPh(w); });
+  gl=laid.map(function(w){ return wMn(w)||w.hw; }).join(' ');
   return '<div class="gdemo">'+gSide(t('gram.pair.line'), ws, gl)+'</div>';
 }
