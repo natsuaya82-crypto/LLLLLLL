@@ -896,6 +896,23 @@ function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
 var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
+/* The mark on a chapter anybody may take away. An arrow down ONTO a line --
+   「↓ / ー　こうじゃないの？」 OWNER 2026-08-25, and that is the shape everything
+   that has ever meant "download" is.
+
+   It was `ICON_INDN`, which is the keyboard editor's 「行を下へ」 and has its
+   line at the TOP: an arrow leaving a line rather than arriving at one, which
+   reads as moving something out. Reusing it here was one glyph asked to mean
+   two things, and flipping it would have turned every 「行を下へ」 button in the
+   keyboard into a download.
+
+   Here rather than in www/glyph.js because that file is not this session's,
+   and because `ICON_FOLD` above is already this chapter's own mark kept beside
+   the screen it marks. When the chapters are put back together this belongs
+   with the rest of them. */
+var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg>';
 /* ---- the overview is the person's own list now -------------------------
    「メモじゃなくて概要に好きに追加したいこと並べればいいやん」 OWNER 2026-08-25.
    Four fixed facts and one box called 「メモ」 was what this page had; what it
@@ -1268,7 +1285,7 @@ function wldPage(ed){
        face, and this is what that answer looks like to somebody reading. */
     if(!ed && sec.dl && wldSecDl(sec.r))
       extra='<span class="abdlm" aria-label="'+esc(t('wld.dl.can'))+'">'+
-        ICON_INDN+'</span>';
+        ICON_DL+'</span>';
     /* Held back rather than drawn here: the four go at the FOOT of the
        screen, under everything somebody writes -- 「dlのやつは一番下にして」
        「上の概要とセクションに混ざらないようにして」 OWNER 2026-08-25. Standing
