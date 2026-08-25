@@ -790,7 +790,7 @@ function vAbout(){
      Not a duplicate of the bar: the bar names the room, this names the
      language, and they are never the same string. `.sth` is the heading a
      stage already uses. */
-  if(langName) body+='<h1 class="sth">'+esc(langName)+'</h1>';
+  if(langName) body+='<h1 class="abth">'+esc(langName)+'</h1>';
   if(wldUse()) body+='<div class="abtuse">'+
     '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
     '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
@@ -827,16 +827,16 @@ function vAbout(){
      text beneath it -- which is what a section of an article is. They were
      the same headings before; what has changed is that they now follow a
      title and a table instead of following three cards. */
-  if(w.where) body+='<div class="sec">'+esc(t('wld.where'))+'</div>'+
+  if(w.where) body+='<h2 class="abts">'+esc(t('wld.where'))+'</h2>'+
     '<div class="abtl">'+esc(w.where)+'</div>';
-  if(w.who) body+='<div class="sec">'+esc(t('wld.who'))+'</div>'+
+  if(w.who) body+='<h2 class="abts">'+esc(t('wld.who'))+'</h2>'+
     '<div class="abtl">'+esc(w.who)+'</div>';
-  if(w.note) body+='<div class="sec">'+esc(t('wld.note'))+'</div>'+
+  if(w.note) body+='<h2 class="abts">'+esc(t('wld.note'))+'</h2>'+
     '<div class="abtl">'+esc(w.note)+'</div>';
   /* The alphabet, and only what has a shape on it: the free plan puts
      thirty-eight slots there the moment a language exists, so all of them
      would be a summary saying every language has thirty-eight letters. */
-  if(drawn.length) body+='<div class="sec">'+esc(t('toc.letters'))+'</div>'+
+  if(drawn.length) body+='<h2 class="abts">'+esc(t('toc.letters'))+'</h2>'+
     '<div class="ltgrid">'+drawn.map(function(l){ return ltCell(l, ''); }).join('')+'</div>';
   /* An empty language is a language somebody started this morning, not a
      broken one. The sections below are not part of that count: they are here
@@ -857,7 +857,7 @@ function vAbout(){
      worse than a row that only says what is true. What they say is read
      from the language, so the day those two names exist the rows are
      already right. */
-  body+='<div class="sec">'+esc(t('wld.secs'))+'</div>'+
+  body+='<h2 class="abts">'+esc(t('wld.secs'))+'</h2>'+
     tocRows().map(function(row){
       return '<div class="set">'+
         '<span class="sl">'+esc(t(row.k))+'</span>'+
