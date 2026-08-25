@@ -249,8 +249,14 @@ for(const file of ['www/grammar-engine/lexicon.js','www/grammar-engine/translate
    real ones, read off www/grammar.js. */
 const app=vm.createContext({console, LinguaGrammarEngine:e, WORDS:[], SET:{}, STG:{}, langId:'demo'});
 vm.runInContext(fs.readFileSync('www/grammar.js','utf8'),app,{filename:'www/grammar.js'});
-function stage(words,set,slots){
-  app.WORDS=words.slice(); app.SET=set||{}; app.langId='demo';
+/* `lang` is the word order and the three positions. It goes into STG and not
+   into SET, because that is where www/grammar.js reads them from since
+   「言語ごとですよ？」 OWNER DECISION 2026-08-25 -- they are the LANGUAGE's,
+   filed under langKey('phases') with the rest of what the stages hold.
+   SET is left empty on purpose: grammar.js names it in a comment and nowhere
+   else now, so anything that starts reading it again fails here first. */
+function stage(words,lang,slots){
+  app.WORDS=words.slice(); app.SET={}; app.STG=lang||{}; app.langId='demo';
   /* stBy/stWordFor are www/phases.js's. A stage is "the words made in it",
      which is all gRules() asks of them -- www/grammar.js already guards both
      with typeof, so a language with no stages is the no-stub case below. */
