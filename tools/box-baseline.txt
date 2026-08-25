@@ -123,8 +123,6 @@
 .thtick | border-radius
 .toast | border
 .toast | border-radius
-.upsell | border
-.upsell | border-radius
 .vodot | border-radius
 .whfo | border
 .whfo | border-radius
