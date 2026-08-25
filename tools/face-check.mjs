@@ -207,10 +207,35 @@ for (const n of familyNames) {
 /* ---- 4. a canvas font comes off the page ------------------------------- */
 for (const f of jsFiles) {
   const src = decomment(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-  src.split('\n').forEach((line, i) => {
+  const lines = src.split('\n');
+  /* A canvas whose size is set loses everything on its context, so the face
+     has to be set TWICE from one value -- which means the honest way to write
+     it is to build the string once into a variable. `fam` used to be named
+     here as the one blessed variable, which is a check knowing a convention
+     rather than a fact: www/sheet.js called its variable `f` and was reported
+     for a line whose own comment says it asks the page.
+     So ask where the variable CAME FROM instead. A name counts as off-the-page
+     only if EVERY assignment to it in this file goes through cssVar() -- one
+     assignment from a literal anywhere and the name is not trusted, which is
+     what keeps this from being a way around the rule. */
+  /* The value that REACHES this line, which is the nearest assignment to that
+     name above it -- not "every assignment in the file". A short name is a
+     different local in every function that uses one: `f` is assigned four
+     times in www/sheet.js, in four functions, and only one of them is a face.
+     Asking the file would call that name untrusted and report the one place
+     that does it correctly. */
+  const filledFromPage = (name, upto) => {
+    const re = new RegExp('(?:^|[^0-9A-Za-z_$.])' + name + '\\s*=[^=]');
+    for (let k = upto; k >= 0; k--) if (re.test(lines[k])) return /cssVar\(/.test(lines[k]);
+    return false;
+  };
+  lines.forEach((line, i) => {
     if (!/\.font\s*=/.test(line)) return;
-    /* built from a variable read, or from a family handed in as an argument */
-    if (/cssVar\(|card(Caps|Ital)\(|\+\s*fam\b|\bfam\s*;/.test(line)) return;
+    /* on this line: asked the page, or a family handed in as an argument */
+    if (/cssVar\(|card(Caps|Ital)\(|\+\s*fam\b/.test(line)) return;
+    /* or from a variable last filled from the page */
+    const via = line.match(/\.font\s*=\s*([A-Za-z_$][\w$]*)\s*;/);
+    if (via && filledFromPage(via[1], i)) return;
     fails.push(`${f}:${i + 1} sets a canvas font without asking the page for the family:\n      ${line.trim()}`);
   });
 }

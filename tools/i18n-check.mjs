@@ -543,7 +543,7 @@ const R = await pg.evaluate(() => {
      that number the chapters, and the two halves of the wordmark. Everything
      here is a proper noun or a symbol — none of it is a sentence. */
   const PLAIN = {};
-  'lingua free plus pro sov svo vso osv ovs vos ipa csv i ii iii iv v vi vii viii ix x lin ua g'
+  'lingua free plus pro sov svo vso osv ovs vos ipa csv pdf i ii iii iv v vi vii viii ix x lin ua g'
     .split(' ').forEach(w => { PLAIN[w] = 1; });
   /* and everything that is data: the words themselves, their meanings, their
      readings in every language, their sounds and their syllables */

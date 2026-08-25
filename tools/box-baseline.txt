@@ -8,7 +8,6 @@
 .abctl button | border-radius
 .abmark | border
 .abmark | border-radius
-.abtn | border-radius
 .bpic | border-radius
 .btn.apple | border
 .btn.google | border
@@ -16,8 +15,6 @@
 .capwarn | border
 .capwarn | border-radius
 .cardbox | border-radius
-.exlb | border
-.exlb | border-radius
 .fab | border-radius
 .gborrow .gbx | border
 .gborrow .gbx | border-radius
@@ -61,7 +58,6 @@
 .mkt | border-radius
 .mrep | border
 .mrep | border-radius
-.navdo | border-radius
 .ntrow | border
 .ntrow | border-radius
 .ob .btn.ghost | border
@@ -85,8 +81,6 @@
 .pkclear | border-radius
 .pktab | border
 .pktab | border-radius
-.plangtag | border
-.plangtag | border-radius
 .pmenu | border
 .pmenu | border-radius
 .pmi | border-radius
@@ -96,15 +90,10 @@
 .ppic | border-radius
 .pvbox button | border
 .pvbox button | border-radius
-.pwab | border
-.pwab | border-radius
 .pwpic | border
 .pwpic | border-radius
 .pwpicn | border-radius
 .pwpicx::before | border-radius
-.pwq | border-radius
-.rel | border
-.rel | border-radius
 .rowq .qo | border
 .rowq .qo | border-radius
 .scin | border
@@ -123,10 +112,6 @@
 .thtick | border-radius
 .toast | border
 .toast | border-radius
-.upsell | border
-.upsell | border-radius
 .vodot | border-radius
 .whfo | border
 .whfo | border-radius
-.wldrow | border
-.wldrow | border-radius

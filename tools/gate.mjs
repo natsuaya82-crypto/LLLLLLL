@@ -3,7 +3,7 @@
 
    Run it:   npm test
 
-   Twenty-five checks, and seventeen of them start a headless browser and walk
+   Twenty-six checks, and eighteen of them start a headless browser and walk
    the app -- most over a port of their own; `shape-check` opens `index.html`
    off the disk instead, which is why it needs no port. Run one after another
    that is ten minutes, and ten minutes is long enough that a check stops being run
@@ -38,7 +38,7 @@ const FAST = ['assets-check', 'es5-check', 'grammar-engine-check', 'dead-check',
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
               'word-check', 'post-check', 'backup-check', 'fill-check', 'round-check',
               'base-check', 'kb-check', 'plan-check', 'sheet-check', 'shape-check',
-              'draft-check', 'press'];
+              'draft-check', 'gramlang-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){

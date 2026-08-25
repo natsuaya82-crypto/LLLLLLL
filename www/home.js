@@ -421,7 +421,7 @@ function vBuild(){
     '<div class="toc">'+tocRows().map(function(row, i){
       return '<button class="trow"' + DO('go', [row.r]) + '>'+
         '<span class="rn">'+(TOC_N[i]||'')+'</span><span class="rt">'+esc(t(row.k))+'</span>'+
-        '<span class="lead"></span><span class="rv">'+esc(row.txt)+'</span>'+ICON_GO+'</button>';
+        '<span class="lead"></span>'+ICON_GO+'</button>';
     }).join('')+'</div>'+
     /* Settings used to hang off the bottom of the contents. It belongs to the
        person, not to the language, and it is already on the profile where
@@ -704,7 +704,19 @@ function vWorld(){
 
    What is on it, and the owner chose it: what the language is for, where, who
    and the note; the letters somebody has actually drawn; and the three
-   numbers. Not the words -- a dictionary is a chapter, not a summary. */
+   numbers. Not the words -- a dictionary is a chapter, not a summary.
+
+   2026-08-25 it became the language's own article rather than a summary of
+   it: 「ここはWikipediaみたいに編集できるようにしたい。ウィキみたいな画面で、
+   キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
+   DL可能になって他の人が使えるようになるイメージ。その人の言語Wikipedia
+   みたいな感じにしたいそのページ」
+
+   THIS IS THE LOOK ONLY, and that is the owner's own order --
+   「見た目を完璧にしてからsqlね」. Nothing here asks the server, nothing
+   here writes, and「他の人が使えるようになる」is the server's half and is
+   not started. What is here is the shape: the article, and under it every
+   section of the language with what it is open to. */
 function wldHidden(){ return !!world().hide; }
 /* From the settings, and it writes the LANGUAGE rather than SET: whether this
    language has a page is about this language, and SET is the person's. The
@@ -723,6 +735,41 @@ function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
    not decide that for them. */
 function wldDl(){ return !!world().dl; }
 function setWldDl(v){ world().dl=!!v; saveWld(); render(); }
+/* ---- and the same two questions, asked of one SECTION of the page -------
+   「キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
+   DL可能になって他の人が使えるようになるイメージ」
+
+   A section that has never been touched has nothing stored for it and follows
+   the PAGE's own flag. That is not a third state: it is the absence of an
+   answer, and it is deliberate. 2026-08-13 settled what a PAGE defaults to
+   (`hide` absent = public) and nothing has settled what a SECTION defaults
+   to, so with nothing stored both answers are still reachable -- the owner
+   decides it by deciding the page's, and no migration has to run either way.
+
+   `wld.secs` is an object of objects rather than two lists, so a section
+   carries both answers in one place and a section nobody has touched is not
+   in the file at all. */
+function wldSecOf(r){
+  var s=world().secs, o;
+  if(!s || typeof s!=='object' || (s instanceof Array)) return {};
+  o=s[r];
+  return (o && typeof o==='object' && !(o instanceof Array))? o : {};
+}
+function wldSecHidden(r){
+  var o=wldSecOf(r);
+  return Object.prototype.hasOwnProperty.call(o,'hide')? !!o.hide : wldHidden();
+}
+function wldSecDl(r){
+  var o=wldSecOf(r);
+  return Object.prototype.hasOwnProperty.call(o,'dl')? !!o.dl : wldDl();
+}
+/* What a section's row says about itself. A state, never a sentence --
+   「アプリ内に説明書くの禁止」 -- and the two are separate questions, so a
+   section that is open and may be taken away says both. */
+function wldSecSay(r){
+  if(wldSecHidden(r)) return t('wld.hidden');
+  return wldSecDl(r)? t('wld.shown')+' \u00b7 '+t('wld.dl.can') : t('wld.shown');
+}
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
@@ -734,37 +781,104 @@ function wldRow(){
 }
 function vAbout(){
   var w=world(), drawn=LETTERS.filter(ltHasShape), body='';
-  if(wldUse()) body+='<div class="abtuse">'+
-    '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
-    '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
+  /* The article names its subject. The bar says what SCREEN this is
+     (「この言語について」, which is PAGES' to say and rule 2's NAMES keeps
+     there); the page itself has to say what the article is ABOUT, and until
+     now nothing on it did -- somebody arriving could read the whole page
+     without being told which language it was. That is the first line of every
+     encyclopedia article and it was the one missing.
+     Not a duplicate of the bar: the bar names the room, this names the
+     language, and they are never the same string. `.sth` is the heading a
+     stage already uses. */
+  if(langName) body+='<h1 class="abth">'+esc(langName)+'</h1>';
   /* The two counts are the way in to the two lists. The dictionary was
      written out here for a moment and taken back off: a language with ten
      thousand words in it is a page nobody reaches the bottom of, and the
      dictionary already has a screen that searches and sorts.
      「lpみたいにしたら1万時ある時どうするつもりなの？」 */
-  body+='<div class="abtnums">'+
-    '<button class="abtn"' + DO('go', ["words"]) + '><b>'+WORDS.length+'</b>'+esc(t('toc.words'))+'</button>'+
-    '<button class="abtn"' + DO('go', ["letters"]) + '><b>'+ltShaped()+'</b>'+esc(t('toc.letters'))+'</button>'+
-    /* The writing system is a word rather than a number, and `Alphabet` in
-       a third of a phone came out as `Alphab...`. Its own class: the value
-       wraps and is set at the size of a word instead of the size of a
-       count. */
-    '<span class="abtn wd"><b>'+esc(t('ws.k.'+wsys()))+'</b>'+esc(t('ws.kind'))+'</span>'+
-    '</div>';
-  if(w.where) body+='<div class="sec">'+esc(t('wld.where'))+'</div>'+
+  /* The facts, as rows. 「wikiの見た目にしろって言ってなんでそんなゴミが
+     できるの？wiki見たことないの？」 OWNER 2026-08-25 -- and the answer is
+     that this was three tiles.
+
+     An encyclopedia article opens with its subject named, a line saying what
+     it is, and then a table of plain facts; it does not open with a row of
+     cards. The three tiles were also `border-radius:14px`, which is the rule
+     at the head of CLAUDE.md.
+     `.set` is that table and is already in this app on every settings screen
+     and at the foot of this very page -- label on the left, value on the
+     right, one hairline under each. Nothing new is drawn.
+     The two that lead somewhere stay pressable and the writing system does
+     not, exactly as before; `.set` carries its own font-size and line-height,
+     so a <button> row and a <div> row are the same height (CLAUDE.md's rule
+     about one list, one height, and what press measures). */
+  /* ---- the skeleton, in the order an article has it -------------------
+     「骨格の話はしてねえし、そもそも骨格の認識がくそ、一旦ページ見てこいよ」
+     OWNER 2026-08-25. Read: wikipedia.org is blocked from this container, so
+     Wikipedia's own Manual of Style/Layout was, which gives the order:
+
+       infobox        the key facts, ABOVE the first heading
+       lead           what this is, in words, still above the first heading
+       contents       when there are four headings or more
+       == section ==  and under its heading, the way to the fuller article
+
+     Every one of those four was in the wrong place or missing here. The facts
+     were in the middle of the flow, the lead was a two-line fragment under the
+     title, the contents were at the FOOT of the page, and no section led
+     anywhere. */
+  /* The infobox. Facts, before anything is said. */
+  body+='<div class="set">'+
+      '<span class="sl">'+esc(t('toc.words'))+'</span>'+
+      '<span class="sv">'+WORDS.length+'</span></div>'+
+    '<div class="set">'+
+      '<span class="sl">'+esc(t('toc.letters'))+'</span>'+
+      '<span class="sv">'+ltShaped()+'</span></div>'+
+    '<div class="set">'+
+      '<span class="sl">'+esc(t('ws.kind'))+'</span>'+
+      '<span class="sv">'+esc(t('ws.k.'+wsys()))+'</span></div>';
+  /* The lead: what this language is for, in its own words, before the first
+     heading. It was here already -- it was just sitting above the facts
+     instead of below them, which is the one place an article never puts it. */
+  if(wldUse()) body+='<div class="abtuse">'+
+    '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
+    '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
+  /* The contents. Wikipedia puts one in at four headings and this page has
+     more than four; it had one and kept it at the BOTTOM, which is a list of
+     sections rather than a way into them.
+     Each row goes to the chapter it names, which is the same thing as the
+     「詳細は『X』を参照」 that sits under a section heading over there -- and
+     it needs no new wording, because the chapter's own name is the link.
+     The state stays on the row: this is also where 公開/非公開 will be set,
+     and the row is now a thing you press. */
+  body+='<h2 class="abts">'+esc(t('wld.secs'))+'</h2>'+
+    tocRows().map(function(row){
+      return '<button class="set"' + DO('go', [row.r]) + '>'+
+        '<span class="sl">'+esc(t(row.k))+'</span>'+
+        '<span class="sv">'+esc(wldSecSay(row.r))+ICON_GO+'</span></button>';
+    }).join('');
+  /* Then the sections somebody wrote, each under its own heading with the
+     text beneath it -- which is what a section of an article is. They were
+     the same headings before; what has changed is that they now follow a
+     title and a table instead of following three cards. */
+  if(w.where) body+='<h2 class="abts">'+esc(t('wld.where'))+'</h2>'+
     '<div class="abtl">'+esc(w.where)+'</div>';
-  if(w.who) body+='<div class="sec">'+esc(t('wld.who'))+'</div>'+
+  if(w.who) body+='<h2 class="abts">'+esc(t('wld.who'))+'</h2>'+
     '<div class="abtl">'+esc(w.who)+'</div>';
-  if(w.note) body+='<div class="sec">'+esc(t('wld.note'))+'</div>'+
+  if(w.note) body+='<h2 class="abts">'+esc(t('wld.note'))+'</h2>'+
     '<div class="abtl">'+esc(w.note)+'</div>';
   /* The alphabet, and only what has a shape on it: the free plan puts
      thirty-eight slots there the moment a language exists, so all of them
      would be a summary saying every language has thirty-eight letters. */
-  if(drawn.length) body+='<div class="sec">'+esc(t('toc.letters'))+'</div>'+
+  if(drawn.length) body+='<h2 class="abts">'+esc(t('toc.letters'))+'</h2>'+
     '<div class="ltgrid">'+drawn.map(function(l){ return ltCell(l, ''); }).join('')+'</div>';
   /* An empty language is a language somebody started this morning, not a
-     broken one. */
+     broken one. The sections below are not part of that count: they are here
+     whether or not anything has been written into them, which is what makes
+     the page an article about a language rather than a page about what has
+     been filled in. */
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
+  /* The contents moved up to where an article keeps them -- see the skeleton
+     note above. They were written out again down here, which was the same
+     list twice on one page. */
   /* And the way to the editor, which is where the chip beside the handle used
      to go. It is here rather than in the settings because this is the page you
      are looking at when you notice it is wrong -- the same place, and the same
