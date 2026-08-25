@@ -369,7 +369,10 @@ assuming a thing is waiting for you.
   outside `CAN`, and the language ceiling does not exist at all. The last of
   those takes something away that anybody has today, so it hides and never
   deletes.
-- **The price of Pro.**
+- ~~**The price of Pro.**~~ Decided — the four products and their prices are in
+  `docs/apple.md` § 4 and written into `ios/App/App/LinguaStore.swift`. What is
+  left is not a decision, it is **entering them in App Store Connect**, which is
+  §7's item 17 and is nobody's but the owner's.
 - **Whether the sheet says anything about what to write with.** The box is a
   fixed 37mm and a pen of about 1mm matches the app's own exactly; a person's
   own pen came in about a quarter lighter. Words on a sheet, so it is next to
