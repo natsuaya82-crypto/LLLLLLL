@@ -36,17 +36,17 @@ back naming it, this is the paragraph it is about.
 pool **across languages**, not per language. `docs/FEATURE_RULES.md` said both
 things on the same day; it says this one in both places now.
 
-**Still to build, and not by the session that asked**: `kbCap()` beside
-`wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX`
-asking it, the count becoming a sum across `LANGS` rather than the length of
-one language's list, and `CAN.kb` moving from `pro` to `plus` **in the same
-commit** — a door opened without its number would give Plus the three
-`KB_MAX` hands out today, which is neither answer.
+**Built, 2026-08-23.** `kbCap()` beside `wordCap()` in `www/core.js`
+(1 / 4 / Infinity), `kbCount()` in `www/keyboard.js` summing across `LANGS`,
+`kbRoomKb()` adding the QWERTY as the 1 in 1 + 3, and `CAN.kb` moved to `plus`
+**in the same commit** — a door opened without its number would have given
+Plus the three `KB_MAX` handed out. `KB_MAX` is gone.
 
-`www/keyboard.js` belongs to `claude/detailed-tasks-execution` today and that
-branch is in the middle of 126 lines about holding more than one keyboard —
-`kbAddKb()`, the tab that switches which board is on the phone, the button
-that deletes one. The number belongs in the same hands as that change.
+It was deferred here because `www/keyboard.js` was `claude/detailed-tasks-
+execution`'s. That branch has not touched the file since 2026-08-15 and no
+live branch is in it — checked with `git log --oneline --all -- www/keyboard.js`
+before starting, which is what `docs/SESSIONS.md` asks for and is the reason
+this could be picked up rather than waiting on a session that had moved on.
 
 ## The plans screen is half wired, and the half that is missing is named
 

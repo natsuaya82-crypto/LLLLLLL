@@ -295,14 +295,18 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   language deeply — the dictionary, the letters, the writing system, the
   keyboard, the calendar all stack onto one. Three is there for the person who
   wants a second and a third, not as the thing being sold.
-- Affected features: `KB_MAX` (a per-language ceiling today, a pool from now,
-  and gone entirely on Plus), a new language ceiling that does not exist at
+- Affected features: `KB_MAX` (a per-language ceiling then, a pool now, and
+  gone entirely on Pro), a new language ceiling that does not exist at
   all today, `postEdit()`, `planBadge()`.
 - Affected data: none. Somebody over a ceiling keeps everything — every
   keyboard, every language — and simply cannot add another. `backup-check`
   holds this for keyboards already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`.
-- Implementation status: nothing built.
+- Implementation status: **the keyboards are built** (2026-08-23,
+  `claude/save`): `kbCap()` in `www/core.js`, `kbCount()` / `kbRoomKb()` in
+  `www/keyboard.js`, `CAN.kb` at `plus`, `KB_MAX` gone. Held by `plan-check`.
+  **The language ceiling, `can('edit')` and `can('badge')` are not built** --
+  `postEdit()` and `planBadge()` are still open.
 
   **Not a loophole, decided:** the language count is what is on THIS PHONE —
   `lingua.langs` carries no owner, `netOut()` clears only the session, and
@@ -375,16 +379,16 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 - Affected data: none. Somebody over the ceiling keeps every keyboard and
   simply cannot add another. `backup-check` holds that already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
-- Implementation status: **nothing built, and deliberately not by this
-  session.** `www/keyboard.js` belongs to `claude/detailed-tasks-execution`
-  today, and that branch is in the middle of a 126-line change about holding
-  more than one keyboard — `kbAddKb()`, the tab that switches which board is
-  on the phone, the button that deletes one. The number belongs in the same
-  hands as that. What is waiting: `kbCap()` beside `wordCap()` in
-  `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX` asking it
-  instead, the count becoming a sum across `LANGS` rather than a length, and
-  `CAN.kb` moving to `basic` in the same commit — the door and its number are
-  one statement and must not land apart.
+- Implementation status: **built, 2026-08-23, `claude/save`.** It was deferred
+  because `www/keyboard.js` was another branch's; that branch has not touched
+  the file since 2026-08-15 and no live branch is in it, which was checked
+  before starting rather than after a merge failed. `kbCap()` sits beside
+  `wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbCount()` in
+  `www/keyboard.js` sums the built keyboards across `LANGS` -- the open
+  language from memory, every other one through `kbBoardsOf()` so an older
+  single-keyboard file counts as the one it is -- `kbRoomKb()` adds the QWERTY
+  as the 1 in 1 + 3, and `CAN.kb` moved to `plus` in the same commit. `KB_MAX`
+  is gone. Seven claims in `plan-check`; three bugs put back and watched.
 
 ### Decision
 - Date: 2026-08-23

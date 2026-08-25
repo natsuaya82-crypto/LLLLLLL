@@ -174,7 +174,7 @@ defLang('es', (function(){
       "kb.done" : "Listo",
       "kb.rm" : "Eliminar este teclado",
       "kb.rm.q" : "¿Eliminar este teclado? Los demás no se tocan.",
-      "kb.full" : "{0} teclados es el máximo por idioma",
+      "kb.full" : "{0} teclados es el máximo",
       "kb.reset.ask"               : "¿Descartar este teclado y volver al primero?",
       "kb.reset.done"               : "Teclado reconstruido",
       "ipa.b.back"                : "posterior",

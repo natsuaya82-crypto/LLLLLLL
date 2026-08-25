@@ -116,7 +116,7 @@ defLang('en', (function(){
       "kb.done" : "Done",
       "kb.rm" : "Delete this keyboard",
       "kb.rm.q" : "Delete this keyboard? The others are untouched.",
-      "kb.full" : "{0} keyboards is the most a language holds",
+      "kb.full" : "{0} keyboards is the most",
       "kb.reset.ask"               : "Throw this keyboard away and build the first one again?",
       "kb.reset.done"               : "Keyboard rebuilt",
       "ipa.b.back"                : "back",

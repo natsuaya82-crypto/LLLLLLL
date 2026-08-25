@@ -157,6 +157,53 @@ const r = await pg.evaluate(({ s }) => {
   out.freeShows2 = wordsSeen().length;
   out.freeHolds2 = WORDS.length === capWas;
 
+  /* ---- 4b. and how many keyboards -------------------------------------
+     「1,1+3.無制限って言わなかったっけ？」 -- free 1, plus 1 + 3, pro none,
+     and **counted as a pool across languages**. That last clause is the
+     whole of why this is here: KB_MAX was three PER LANGUAGE, so three
+     languages were nine keyboards on a plan that sells three, and nothing
+     about it threw -- every keyboard rendered, installed and typed.
+
+     Two of the three numbers are also a promise on the plans screen. Plus's
+     card sells four keyboards and Pro's sells no limit, and until this
+     CAN.kb was 'pro': plus bought a card that said four and got none, and
+     pro's "no limit" was three. A paid screen promising what the app cannot
+     do is the app lying to somebody who is about to pay.                  */
+  out.kbFree = (SET.plan = 'free', kbCap());
+  out.kbMid  = (SET.plan = 'plus', kbCap());
+  out.kbTop  = (SET.plan = 'pro',  kbCap());
+  out.kbDoor = (SET.plan = 'free', can('kb')) === false &&
+               (SET.plan = 'plus', can('kb')) === true &&
+               (SET.plan = 'pro',  can('kb')) === true;
+
+  /* The pool. A second language is written straight into localStorage the
+     way another language on this phone would be, with two keyboards in it,
+     and then this language is asked whether it has room. On plus the answer
+     has to be no: one QWERTY plus two over there plus one here is four. */
+  SET.plan = 'plus'; save();
+  KB = { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 };
+  saveKb();
+  out.kbHere = kbCount();                        /* 1, in the open language */
+  out.kbRoomHere = kbRoomKb();                   /* 1 + 1 < 4 -> yes */
+  LANGS['l_other'] = { nm: 'Other' };
+  localStorage.setItem(langKeyOf('l_other', 'kb'), JSON.stringify(
+    { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay },
+            { nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
+  out.kbPool = kbCount();                        /* 3 */
+  out.kbRoomPool = kbRoomKb();                   /* 1 + 3 < 4 -> no */
+  out.kbPoolTop = (SET.plan = 'pro', kbRoomKb());/* no ceiling -> yes */
+  /* A language stored in the older single-keyboard shape is one keyboard and
+     not nothing: kbBoardsOf() reads either shape, and counting only the new
+     one would hand somebody a free keyboard for every language they made
+     before this. */
+  localStorage.setItem(langKeyOf('l_other', 'kb'), JSON.stringify(
+    { lay: kbFixed().lay }));
+  out.kbPoolOld = kbCount();                     /* 2 */
+  delete LANGS['l_other'];
+  localStorage.removeItem(langKeyOf('l_other', 'kb'));
+  KB = null; saveKb();
+  SET.plan = 'free'; save();
+
   /* ---- 5. a backup does not know what a plan is ------------------------
      Written on the free plan, and it is the same file the paid plan writes.
      The way this breaks is not a refusal -- it is a slice quietly left out of
@@ -347,13 +394,27 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'letters snd wsys',
-    'plus opens its own letters, its own sounds and a writing system (' + r.rungs.plus + ')');
+say(r.rungs.plus === 'kb letters snd wsys',
+    'plus opens a keyboard, its own letters, its own sounds and a writing system (' +
+    r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
 say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
 say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
 say(r.freeNoMid, 'while free meets neither');
+
+say(r.kbFree === 1 && r.kbMid === 4, 'free has one keyboard, plus has 1 + 3 (' +
+    r.kbFree + ' ' + r.kbMid + ')');
+say(r.kbTop === null || r.kbTop === undefined || r.kbTop > 1e9 || r.kbTop === 'Infinity',
+    'and pro has no ceiling on them (' + r.kbTop + ')');
+say(r.kbDoor, 'the door and the number moved together: free cannot lay one out, plus and pro can');
+say(r.kbHere === 1 && r.kbRoomHere, 'one keyboard built here leaves room for more');
+say(r.kbPool === 3 && r.kbRoomPool === false,
+    'two more in ANOTHER language fill the plan up -- the ceiling is a pool across languages (' +
+    r.kbPool + ')');
+say(r.kbPoolTop === true, 'and pro is not filled up by them');
+say(r.kbPoolOld === 2,
+    'a language stored in the older one-keyboard shape counts as the one it is');
 
 say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');

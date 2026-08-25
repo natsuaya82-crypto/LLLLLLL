@@ -60,14 +60,21 @@ language file and no subscription for it exists in App Store Connect, so the
 plans screen sells Free and Pro. What is here is the rung: the day a receipt
 says `plus`, every door above is already the right way round.
 
-**`kb` has not moved down to Plus yet**, and that is not an oversight. The
-number is settled — 「1,1+3.無制限って言わなかったっけ？」 — Free 1, Plus four
-**counted across languages** rather than per language, and Pro no ceiling.
-What holds it is `KB_MAX` in `www/keyboard.js`, which belongs to another
-session today and is in the middle of a change about holding more than one
-keyboard. **The door and its number are one statement and must not land
-apart**: `can('kb')` moving to `plus` while `KB_MAX` still hands out three
-per language would give Plus a number the owner has never said.
+**`kb` is Plus's, and its number landed in the same commit** — 2026-08-23.
+「1,1+3.無制限って言わなかったっけ？」 Free 1, Plus 1 + 3 = 4, Pro no ceiling,
+and **counted as a pool across languages** rather than per language: three
+languages were nine keyboards while `KB_MAX` was three per language, on a plan
+that sells three.
+
+`CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
+`kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
+reason: a constant was one fact while there was one paid tier and is three
+facts now. `kbCount()` in `keyboard.js` is what it is compared against, and it
+reads every language rather than the open one. **The door and its number are
+one statement and did not land apart**: opening `can('kb')` while `KB_MAX`
+still handed out three would have given Plus a number the owner never said.
+`plan-check` holds all seven claims, and three of them were watched failing
+with the bug put back.
 
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`

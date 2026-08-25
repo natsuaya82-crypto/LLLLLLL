@@ -262,7 +262,7 @@ defLang('fr', (function(){
       "kb.done" : "OK",
       "kb.rm" : "Supprimer ce clavier",
       "kb.rm.q" : "Supprimer ce clavier ? Les autres ne bougent pas.",
-      "kb.full" : "{0} claviers au maximum par langue",
+      "kb.full" : "{0} claviers au maximum",
       "kb.reset.ask"               : "Jeter ce clavier et revenir au premier ?",
       "kb.reset.done"               : "Clavier refait",
       "ipa.b.back"                : "postérieure",

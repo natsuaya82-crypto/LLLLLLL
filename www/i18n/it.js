@@ -214,7 +214,7 @@ defLang('it', (function(){
       "kb.done" : "Fine",
       "kb.rm" : "Elimina questa tastiera",
       "kb.rm.q" : "Eliminare questa tastiera? Le altre restano.",
-      "kb.full" : "{0} tastiere è il massimo per lingua",
+      "kb.full" : "{0} tastiere è il massimo",
       "kb.reset.ask"               : "Buttare questa tastiera e rifare la prima?",
       "kb.reset.done"               : "Tastiera rifatta",
       "ipa.b.back"                : "posteriore",

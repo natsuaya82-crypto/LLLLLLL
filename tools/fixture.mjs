@@ -921,7 +921,7 @@ export function halfDone(){
        described, so a pattern that cannot be laid out is a red check rather
        than an empty keyboard on somebody's phone -- qwerty is the first board
        and is there whether or not anything was built, then flick, chart, tap
-       and abc. kbAdd() twice is three keyboards now, which is KB_MAX.
+       and abc. kbAdd() twice is three keyboards, which the paid plan has room for.
 
        The one APPLIED is deliberately not the one shown: that is the whole
        distinction the screen exists to make, and a face where they are the
