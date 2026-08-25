@@ -789,9 +789,22 @@ function ltDelete(id){
   if(here().r==='letter') back(); else render();
   toast(t('glyph.deleted', nm));
 }
+/* The storage half, and the one place a letter leaves LETTERS. Three roads
+   arrive here -- ltDelete above, impUndo when an import is taken back, and
+   numDropBlank when the base comes down onto slots nobody drew on -- so the
+   sound leaving with the letter is said once, here, rather than three times.
+
+   ltSetRoman's own LETTERS.splice() does NOT come through here and must not:
+   that is the free plan's road, where a drawn shape moves into the slot that
+   already answers to its name, and the sound is COPIED onto the surviving
+   letter before the other row goes. There the sound moves. Here it ends. */
 function ltDel(id){
+  var gone=ltUnits(ltById(id)).slice();
   LETTERS=LETTERS.filter(function(l){ return l.id!==id; });
   saveLetters();
+  /* Read off the letter before it goes, asked of the alphabet after -- see
+     sndDropLoose in sound.js, and the DELETE REVIEW in docs/CHANGELOG.md. */
+  sndDropLoose(gone);
 }
 /* Making a letter for a unit that has none, in one step, because that is what
    the sound chapter's "draw one" button means. */

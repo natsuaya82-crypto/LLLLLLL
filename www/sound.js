@@ -499,6 +499,46 @@ function sndDrop(sym){
   SND.splice(i, 1);
   saveSnd(); render();
 }
+/* The other end of ltSetRoman. A letter stops existing, and the sound it read
+   stops with it. 「文字消したのに音は残ります意味わからないから消してくれ。
+   存在を。」 OWNER 2026-08-25, on a phone.
+
+   「存在を」 is the whole instruction. What was left behind was not a row on a
+   screen -- it was the sound still IN the language, and the alphabet drew it
+   straight back onto the same page: sndLoose() answers "in the language, on no
+   letter", and every one of those gets a cell with a pencil on it. So somebody
+   took a letter away and the page put its sound back, two cells along.
+
+   Called from ltDel() and nowhere else, and AFTER the letter has left LETTERS.
+   sndLetters() is asked of what REMAINS -- a line earlier it would answer with
+   the letter being deleted, nothing would ever be loose, and this would do
+   nothing at all while looking exactly like it worked.
+
+   It takes out only what nothing else says. A sound two letters read is a
+   sound the language still has, and that is sndDrop()'s rule seen from the
+   other side: a letter reading a sound the inventory has never heard of is
+   the one state the spelling engine cannot hold, so neither door may make one.
+   Here the letter is already gone, so there is nobody to refuse on behalf of.
+
+   Quiet -- no toast, no render. sndDrop() is a press and answers for itself;
+   this is the second half of somebody else's press, and the caller is already
+   on its way to say what happened and to redraw.
+
+   DELETE REVIEW is in docs/CHANGELOG.md. The one thing it leaves open and
+   this comment will not restate: SND can now reach zero, and sndStart() fills
+   a zero-length SND with twelve plain sounds at the next launch. */
+function sndDropLoose(syms){
+  var went=false, i, k;
+  if(!syms || !syms.length) return;
+  for(i=0;i<syms.length;i++){
+    if(sndLetters(syms[i]).length) continue;
+    k=SND.indexOf(syms[i]);
+    if(k<0) continue;
+    SND.splice(k, 1);
+    went=true;
+  }
+  if(went) saveSnd();
+}
 /* ---- II. letters ------------------------------------------------------
    The alphabet, as a thing in itself. Every letter you have, what it reads,
    and the letters that read nothing yet -- which is the case the old model
