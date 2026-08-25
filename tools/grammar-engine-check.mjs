@@ -11,6 +11,15 @@ const affirmative=e.morphology.parseSentence(language,'mi poko luma-ka');
 assert.equal(affirmative.ok,true); assert.equal(affirmative.roles.SUBJECT,'mi'); assert.equal(affirmative.roles.OBJECT,'poko'); assert.equal(affirmative.roles.PREDICATE,'luma'); assert.equal(affirmative.features.TENSE,'PAST');
 const negative=e.morphology.parseSentence(language,'mi poko na luma-ka');
 assert.equal(negative.ok,true); assert.equal(negative.features.NEGATION,true); assert.equal(negative.features.TENSE,'PAST');
+/* A sentence shorter than the word order. Roles were handed out by position
+   alone, so the verb of a two-word sentence took the OBJECT slot and nothing
+   was the PREDICATE -- ok:true, and wrong. The verb is found by what it is. */
+const intransitive=e.morphology.parseSentence(language,'mi luma-ka');
+assert.equal(intransitive.ok,true);
+assert.equal(intransitive.roles.SUBJECT,'mi');
+assert.equal(intransitive.roles.PREDICATE,'luma');
+assert.equal(intransitive.roles.OBJECT,undefined);
+assert.equal(intransitive.features.TENSE,'PAST');
 const adapted=e.adapter.fromLegacy('legacy',[{hw:'luma',mn:'食べる',pos:'v'}],{order:'SOV'});
 assert.equal(adapted.words[0].partOfSpeech,'VERB'); assert.equal(adapted.wordOrder.join(','),'SUBJECT,OBJECT,VERB');
 console.log('Grammar Engine: Phase 1–2 contract is clean');

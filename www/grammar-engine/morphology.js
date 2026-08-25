@@ -20,14 +20,21 @@
   function inflect(model,word,features){ var rules=model.inflections||[],i,r,out=word.lemma,used=[]; for(i=0;i<rules.length;i++){ r=rules[i]; if(applies(r,word)&&featureMatches(r,features)){ out=add(out,r,formOf(model,r)); used.push(r); } } return {surface:out,lemma:word.lemma,inflections:used}; }
   function lookupWord(model,lemma){ var words=model.words||[],i; for(i=0;i<words.length;i++) if(words[i].lemma===lemma) return words[i]; return null; }
   function parseToken(model,text){ var words=model.words||[],i,w,a; for(i=0;i<words.length;i++){ w=words[i]; a=analyzeForm(model,text,w); if(a.lemma===w.lemma) return {word:w,lemma:w.lemma,inflections:a.inflections,surface:text}; } return null; }
-  function parseSentence(model,text){ var parts=String(text||'').replace(/^\s+|\s+$/g,'').split(/\s+/), tokens=[], i, parsed, role, order=model.wordOrder||[], roles={}, features={}, rule, j;
+  function parseSentence(model,text){ var parts=String(text||'').replace(/^\s+|\s+$/g,'').split(/\s+/), tokens=[], i, parsed, role, order=model.wordOrder||[], roles={}, features={}, rule, j, slots=[], si=0, vi=-1;
     for(i=0;i<parts.length;i++){ parsed=parseToken(model,parts[i]); if(!parsed && i+1<parts.length){
         for(j=0;j<(model.inflections||[]).length;j++){ rule=model.inflections[j]; if(rule.operation==='prefix' && String(rule.separator)===' ' && formOf(model,rule)===parts[i]){ parsed=parseToken(model,parts[i+1]); if(parsed&&applies(rule,parsed.word)){ parsed.inflections.push(rule); parsed.surface=parts[i]+' '+parts[i+1]; i++; break; } } }
       }
       if(!parsed) return {ok:false,error:'Unknown or invalid word: '+parts[i],originalText:text};
       tokens.push(parsed);
     }
-    for(i=0;i<tokens.length;i++){ role=order[i]||'MODIFIER'; roles[role]=tokens[i].lemma; if(role==='VERB') roles.PREDICATE=tokens[i].lemma; for(j=0;j<tokens[i].inflections.length;j++){ rule=tokens[i].inflections[j]; features[rule.feature]=rule.value; } }
+    /* The verb is found by what it is, not by where it stands. Roles were
+       handed out by position alone, so a sentence shorter than the word order
+       put the verb in the OBJECT slot and left nothing as the PREDICATE --
+       ok:true, and wrong. The rest still go in the language's own order, with
+       the verb's place taken out of the queue. */
+    for(i=0;i<order.length;i++) if(order[i]!=='VERB') slots.push(order[i]);
+    for(i=0;i<tokens.length;i++) if(tokens[i].word.partOfSpeech==='VERB'){ vi=i; break; }
+    for(i=0;i<tokens.length;i++){ role=(i===vi)?'VERB':(slots[si++]||'MODIFIER'); roles[role]=tokens[i].lemma; if(role==='VERB') roles.PREDICATE=tokens[i].lemma; for(j=0;j<tokens[i].inflections.length;j++){ rule=tokens[i].inflections[j]; features[rule.feature]=rule.value; } }
     return {ok:true,originalText:text,tokens:tokens,roles:roles,features:features};
   }
   api.morphology={inflect:inflect,analyzeForm:analyzeForm,parseToken:parseToken,parseSentence:parseSentence,lookupWord:lookupWord};
