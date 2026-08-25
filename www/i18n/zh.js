@@ -222,7 +222,7 @@ defLang('zh', (function(){
       "kb.done" : "完成",
       "kb.rm" : "删除这个键盘",
       "kb.rm.q" : "删除这个键盘？其他的不动。",
-      "kb.full" : "一个语言最多 {0} 个键盘",
+      "kb.full" : "最多 {0} 个键盘",
       "kb.reset.ask"               : "丢弃这个键盘，重新生成第一个吗？",
       "kb.reset.done"               : "键盘已重建",
       "ipa.b.back"                : "后",

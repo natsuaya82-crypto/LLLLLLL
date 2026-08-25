@@ -221,7 +221,7 @@ defLang('pt', (function(){
       "kb.done" : "Concluído",
       "kb.rm" : "Excluir este teclado",
       "kb.rm.q" : "Excluir este teclado? Os outros ficam como estão.",
-      "kb.full" : "{0} teclados é o máximo por idioma",
+      "kb.full" : "{0} teclados é o máximo",
       "kb.reset.ask"               : "Descartar este teclado e voltar ao primeiro?",
       "kb.reset.done"               : "Teclado refeito",
       "ipa.b.back"                : "posterior",

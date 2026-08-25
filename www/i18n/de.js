@@ -202,7 +202,7 @@ defLang('de', (function(){
       "kb.done" : "Fertig",
       "kb.rm" : "Diese Tastatur löschen",
       "kb.rm.q" : "Diese Tastatur löschen? Die anderen bleiben.",
-      "kb.full" : "{0} Tastaturen sind das Höchste pro Sprache",
+      "kb.full" : "{0} Tastaturen sind das Höchste",
       "kb.reset.ask"               : "Diese Tastatur verwerfen und die erste neu bauen?",
       "kb.reset.done"               : "Tastatur neu gebaut",
       "ipa.b.back"                : "hinten",

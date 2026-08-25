@@ -63,18 +63,25 @@ function setDefaults(){
    stored as text — a word is roman letters in WORDS and stays that way. */
 var SCRIPT={g:{}, extra:[]};
 
-/* The key a slice of a language is stored under. `langKeyOf` names ANY
-   language; `langKey` names the open one, which is what 290-odd call sites
-   mean when they say it.
-   The two exist because they are two different sentences. Every screen means
-   "the one in front of me" and must not be handed an id it could get wrong.
-   Something that addresses a language BY ID -- the grammar engine's adapter
-   saves a model that carries its own languageId -- cannot say langKey(), and
-   the answer to that is not to let it build the string itself. A key built by
-   concatenation somewhere else is a slice that bkPack() will not find and
-   wipeAll will not clear, which is how a language's leftovers arrive in the
-   next language under the same id. The keyboard and the world were both that
-   bug once; CLAUDE.md names them. */
+/* How a language is filed, and the only thing that knows it. `langKeyOf`
+   names ANY language; `langKey` names the open one, which is what 290-odd call
+   sites mean when they say it.
+
+   It took no argument but the slice for as long as every question was about
+   the language in front of you. Two questions arrived that are not, on two
+   days, from two directions, and both landed on this same pair:
+
+     counting keyboards -- the ceiling is a POOL ACROSS LANGUAGES, so
+     somebody's other language has to be read without being opened;
+     the grammar engine's adapter -- it saves a model that carries its own
+     languageId and cannot say langKey().
+
+   Either one, left to build 'lingua.'+id+'.'+slice where it stood, would have
+   been a second thing that knows how a language is filed -- and a key built by
+   concatenation somewhere else is a slice bkPack() will not find and wipeAll
+   will not clear, which is how one language's leftovers arrive in the next
+   under the same id. The keyboard and the world were both that bug once;
+   CLAUDE.md names them. */
 function langKeyOf(id, slice){ return 'lingua.' + id + '.' + slice; }
 function langKey(slice){ return langKeyOf(langId, slice); }
 
@@ -393,6 +400,29 @@ function wordCap(){
   if(can('words')) return Infinity;
   return has('plus')? PLUS_LIMIT : FREE_LIMIT;
 }
+/* How many keyboards this person may have, counting the fixed QWERTY as one
+   of them. 「1,1+3.無制限って言わなかったっけ？」 -- OWNER DECISION,
+   2026-08-23: free 1, plus 1 + 3, pro no ceiling.
+
+   The same shape as wordCap() above and for the same reason: it was KB_MAX,
+   a constant, which was one fact while there was one paid tier and is three
+   facts now. A number that is three facts is a function.
+
+   **It is a pool across languages**, and that is not this function's half of
+   it -- kbCount() in www/keyboard.js is what counts, and it counts every
+   language rather than the open one. The ceiling is on the person, not on
+   each language: three languages would otherwise be nine keyboards on a plan
+   that sells three.
+
+   No capability is added for the ceiling. `CAN.kb` is the DOOR -- may this
+   person lay a keyboard out at all -- and it opens at plus; how many is a
+   number, and a capability that is really a number is a price with nothing
+   behind it. Infinity and not a big number, exactly as wordCap(). */
+var FREE_KB=1, PLUS_KB=4;
+function kbCap(){
+  if(has('pro')) return Infinity;
+  return has('plus')? PLUS_KB : FREE_KB;
+}
 function plan(){ return SET.plan||'free'; }
 /* What of the settings goes to the file. Everything, except on a phone, where
    the plan is in the Keychain and a second copy in an editable file would be
@@ -488,16 +518,12 @@ var CAN={
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
-  /* A keyboard of your own, instead of the fixed QWERTY. Basic buys one and
-     it is NOT moved down yet: how many is a number, the number lives in
-     keyboard.js as KB_MAX, and that file belongs to another session today.
-     Opening the door without setting the ceiling would give Basic three, and
-     three is neither of the two numbers the owner has said.
-     **And the two he has said do not agree** -- one decision of 2026-08-23
-     says Basic 1+3=4 keyboards across all languages and Plus no ceiling, and
-     a later one the same day says Basic 1 and Plus 3. That is for the owner
-     to settle; docs/BACKLOG.md has both sides. */
-  kb:      'pro',
+  /* A keyboard of your own, laid out key by key, instead of the fixed QWERTY.
+     The DOOR only: how many is kbCap() above, and the two landed together on
+     purpose -- a door opened without its number would have handed plus the
+     three the old KB_MAX gave out, which is neither number the owner said.
+     「1,1+3.無制限って言わなかったっけ？」 */
+  kb:      'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
   dir:     'pro'     /* choosing which way the language is written */
