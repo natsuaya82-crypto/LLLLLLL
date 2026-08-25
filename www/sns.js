@@ -386,8 +386,14 @@ function vPhoto(){
    on the contents page, because it searches what is on that page.
    「snsの探すと横断検索は別物ね」
 
-   One field, and `@` is the switch: a query starting with it is looking for a
-   person and anything else is looking for a post. 「@でユーザー検索」
+   One field. `@` was the switch -- a query starting with it looked for a
+   person and anything else looked for a post 「@でユーザー検索」 -- and it is
+   not any more: `snsMode` is, and it starts on people and goes back to people
+   the moment anybody types 「それまでは人」. This paragraph went on saying the
+   old thing after the switch moved, which is how the `@` came to be typed
+   straight through to the server as part of the handle being looked for.
+   What `@` means now is only what it looks like: it is dropped off the front
+   of a name, because that is where people put it.
 
    SNS_SEAM. A search is a QUESTION ASKED OF SOMEWHERE ELSE, and it is built
    as one: snsFind(q, done) hands back an answer through a callback, the way
@@ -458,7 +464,22 @@ function snsFind(q, done){
     netFindPosts(q, function(ps){ done({q:q, who:[], posts:ps}); }, no);
     return;
   }
-  netFindWho(q, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
+  /* A handle is stored WITHOUT its @ -- netRow() and the head of a post both
+     draw it as '@'+hd -- so `@aya` typed into this field asked the server for
+     a handle CONTAINING the character `@`, and no handle contains one.
+     netLike() wraps it as *%40aya* and the answer was always nobody.
+     「検索で @ を打っても誰も出てこない」
+
+     Only off the front, and only for a person: `@` in the middle of a name is
+     a character somebody typed, and a search over posts is a search over text
+     where `@` means itself.
+
+     `q` on the ANSWER stays as it was typed. snsGot() throws away a late
+     answer by comparing it with what is in the field, and the field has the
+     @ in it. */
+  var name=q.replace(/^@+/, '');
+  if(!name){ done({q:q, who:[], posts:[]}); return; }
+  netFindWho(name, function(ws){ done({q:q, who:ws, posts:[]}); }, no);
 }
 /* Which of the two the answer is about. Where you are standing rather than
    anything the language has, so viewReset() drops it. */
