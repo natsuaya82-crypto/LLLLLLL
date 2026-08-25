@@ -1202,6 +1202,30 @@ function wldPage(ed){
   if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
     '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
     swtHTML(!wldHidden())+'</button>';
+  /* And a page nobody may open is the NAME and nothing else --
+     「非公開にする場合は言語名しか表示されない」「非公開にしたら編集画面が全部
+     非表示になる感じ」 OWNER 2026-08-25.
+
+     Both faces stop here, and they stop at different lines on purpose. The
+     article stops above the switch, because there is no switch on it: what is
+     left is the heading, which is the one thing a language still says about
+     itself when it says nothing else.
+
+     The EDITOR stops BELOW it, and the one row it keeps is the switch that
+     put it here. 「一番上のトグル」 is what the owner called it, and it is the
+     way back: a screen that hid its own way out would be a language shut
+     away with nothing on the phone able to open it again. docs/keyboard.md
+     carries the same trap written out in four steps -- a face reached by a
+     key nobody placed -- and it is a manual page standing in for the thing
+     working. Not here.
+
+     Nothing is deleted and nothing is unset. `hide` is one flag, the sections
+     keep their own answers, and every word is where it was: turning the
+     switch back on brings the whole page back exactly as it was left. */
+  if(wldHidden()) return '<div class="view">'+
+    navTop('', ed? '' : '<button class="navdo"' + DO('go', ["world"]) + '>'+
+      esc(t('wld.edit'))+'</button>')+
+    '<div class="body">'+body+'</div></div>';
   wldSecs().forEach(function(sec){
     var inner='', extra='';
     /* Two of the sections do not reach the writing face at all, and both are
@@ -1219,6 +1243,14 @@ function wldPage(ed){
        them, so the section returns here rather than going on to grow a
        heading, a fold marker and a way through. */
     if(ed && sec.r==='sound') return;
+    /* And two that are not on the ARTICLE -- 「単語と文法とはdl専用だから
+       見れなくていいのよ？　音と文字とキーボードだけ」 OWNER 2026-08-25. A
+       dictionary and a grammar are handed over rather than looked at: what
+       the switch below opens is the file, and the rows they drew here were a
+       heading and an arrow into this phone's own chapters, which is a way
+       through that means nothing to anybody but their owner. What is left to
+       READ is the overview, the sounds, the letters and the keyboard. */
+    if(!ed && (sec.r==='words' || sec.r==='gram')) return;
     /* Held back rather than drawn here: the four go at the FOOT of the
        screen, under everything somebody writes -- 「dlのやつは一番下にして」
        「上の概要とセクションに混ざらないようにして」 OWNER 2026-08-25. Standing
@@ -1295,11 +1327,15 @@ function wldPage(ed){
          above return before they reach here. */
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
         ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
-    } else if(sec.r==='gram'){
-      /* And the stages that are finished, for the same reason. */
-      done=stAll();
-      for(i=0;i<done.length;i++) if(stIsDone(done[i]))
-        inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
+    } else if(sec.r==='kb'){
+      /* The keyboard this person actually built, drawn small --
+         「キーボードもちゃんとその人が作ってるモックの画像出すように」 OWNER
+         2026-08-25. `kbShotHTML` is the keyboard's own -- the real keys
+         wearing the real letters rather than a diagram of them, which is what
+         it was written for: 「リアルなキーボードを縮小して見せれないの？」 -- and
+         `kbOf()` is the one that is APPLIED, which is the one somebody is
+         typing on. Nothing in it is pressable, here or where it came from. */
+      inner+='<div class="abkb">'+kbShotHTML(kbOf().lay)+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」

@@ -1397,6 +1397,29 @@ export function halfDone(){
     ['a sheet that came back', () => { SH = shBlank(); SH.from = 'sheet.jpg';
         SH.got = [{nm:'ka', sh:[[[100,100],[700,100],[700,700],[100,700]]]},
                   {nm:'7',  sh:[]}];
-        openWrIn(); const h = vForm(); SH = shBlank(); return h; }]
+        openWrIn(); const h = vForm(); SH = shBlank(); return h; }],
+    /* A language nobody may open, on both of its faces. `seed()` leaves WLD
+       public -- it has to, or every screen below the top switch narrows away
+       and the walk covers one arrangement of the app while calling it all of
+       them -- so these two faces exist nowhere else, and until they were here
+       the mirror had never once rendered a hidden page in any language.
+
+       They are two entries rather than one because the two faces stop at
+       different lines and that difference is the whole decision:
+       「非公開にする場合は言語名しか表示されない」 is the article, and
+       「非公開にしたら編集画面が全部非表示になる感じ」 is the editor, which keeps
+       the one row that can undo it. A single face would prove whichever of
+       the two it happened to be. */
+    /* Left set, not put back. shot.mjs calls render() after a face, so one
+       that tidies up photographs the screen it tidied back to -- the day's
+       sentence above says the same thing, and this cost one round of looking
+       at a public page and being told it was the hidden one. seed() runs
+       before each face and is what puts it back. */
+    ['the language nobody may open', () => { WLD.hide = true;
+                                         window.route = 'about'; NAV = [{ r:'about' }];
+                                         return vAbout(); }],
+    ['writing on a page nobody may open', () => { WLD.hide = true;
+                                         window.route = 'world'; NAV = [{ r:'world' }];
+                                         return vWorld(); }]
   ];
 }

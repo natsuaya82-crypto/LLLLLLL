@@ -1773,6 +1773,13 @@ a.set{text-decoration:none}
    seven are the same rectangle -- a list where the pictures are different
    sizes is a list you read as ragged rather than as three keyboards. */
 .kbshot2{display:flex;flex-direction:column;gap:1.5px;width:100%;height:46px}
+/* The same keyboard on the article, at a size somebody can look at rather
+   than pick out of a list. No corner and no border: it is the keys that are
+   drawn, and the block around them is nothing. */
+.abkb{width:100%;margin-top:6px}
+.abkb .kbshot2{height:132px;gap:3px}
+.abkb .kbsr{gap:3px}
+.abkb .kbsk .kbl{font-size:9px}
 .kbsr{display:flex;gap:1.5px;flex:1;min-height:0}
 .kbsk{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
       border-radius:2px;background:var(--sf);overflow:hidden}
