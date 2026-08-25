@@ -984,7 +984,6 @@ defLang('it', (function(){
       'post.vo.busy'          : "Sta registrando",
       'post.vo.lost'          : "Non è stato possibile salvare la voce",
       'post.edit'             : "Modifica",
-      'post.editplan'         : "Modificare un post è del piano Plus",
       'post.save'             : "Salva",
       'post.edited'           : "Modificato",
       'post.pv'               : "Privato",

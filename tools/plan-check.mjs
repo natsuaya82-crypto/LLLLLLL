@@ -228,29 +228,13 @@ const r = await pg.evaluate(({ s }) => {
   PMENU = 'p_plan';
   out.penOnFree = postMenuHTML(myPost).indexOf('postEdit') !== -1;
 
-  /* Pressed on free: it ASKS, and the composer does not open either way.
-     This used to be a bare go() and the check said so; 967e734 made it the
-     same shape as the other three ceilings -- core.js:522 (a second
-     language), core.js:703 (the hundredth word), keyboard.js:349 (a fifth
-     keyboard) -- after the owner said 「編集はplusプランからです。みたいな
-     ポップなしに課金画面飛ばされる」. So it is held the way those three are:
-     said no, nobody moves; said yes, the plans screen; and the sentence
-     names the ceiling rather than being `up.cta` on its own, which is what
-     it was for a day and is the one thing that made it unlike the other
-     three. */
-  var askedEd = '', realConfirmEd = window.confirm;
-  go('feed');
+  /* Pressed on free: the composer does not open and the plans screen is where
+     you land. go() and not a toast -- the opposite of capStop(), which must
+     not move anybody, and the two are side by side in the decision log. */
   PW = pwBlank();
-  window.confirm = function(m){ askedEd = String(m); return false; };
   postEdit('p_plan');
   out.editFreeNoPW = !PW.ed;
-  out.editFreeSaidNo = here().r !== 'plans';
-  out.editFreeAsked = askedEd;
-  /* said yes: the plans screen, and still no composer behind it */
-  window.confirm = function(){ return true; };
-  postEdit('p_plan');
-  out.editFreeWent = here().r === 'plans' && !PW.ed;
-  window.confirm = realConfirmEd;
+  out.editFreeWent = here().r === 'plans';
   /* and the post itself is untouched by having been refused */
   out.editFreeKept = postById('p_plan') && postById('p_plan').ln === 'kano mos' &&
                      postById('p_plan').ed === 12345;
@@ -629,11 +613,8 @@ say(r.kbPoolOld === 2,
     'a language stored in the older one-keyboard shape counts as the one it is');
 
 say(r.penOnFree, 'the pencil is drawn on the free plan -- a closed door is shown, not hidden');
-say(r.editFreeNoPW && r.editFreeSaidNo,
-    'pressed on free it asks rather than telling -- no is no, and no composer opens');
-say(/Plus/.test(r.editFreeAsked || ''),
-    'the sentence names the plan (' + (r.editFreeAsked || 'nothing') + ')');
-say(r.editFreeWent, 'and yes goes to the plans screen, still without a composer');
+say(r.editFreeNoPW && r.editFreeWent,
+    'pressing it on free opens no composer and lands on the plans screen');
 say(r.editFreeKept, 'and the post it was pressed on is not changed by being refused');
 say(r.editPlusOpens, 'on plus it opens, carrying the post it was pressed on');
 

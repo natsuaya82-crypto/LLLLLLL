@@ -990,7 +990,6 @@ defLang('pt', (function(){
       'post.vo.busy'          : "A gravar",
       'post.vo.lost'          : "Não foi possível guardar a voz",
       'post.edit'             : "Editar",
-      'post.editplan'         : "Editar uma publicação é do plano Plus",
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",
       'post.pv'               : "Privado",

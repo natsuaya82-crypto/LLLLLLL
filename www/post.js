@@ -1807,15 +1807,16 @@ function postEdit(id){
      whole: pressing it still goes to the plans screen. What changed is that
      it goes when somebody says to.
 
-     AND THE SENTENCE IS THERE NOW. It was missing when the confirm() landed,
-     and asking with `up.cta` alone was a dialog that named no ceiling -- the
-     only one of the four like that. OWNER 2026-08-25, asked and answered:
-     「投稿の編集はplusプランからです」. `post.editplan` is that sentence, and
-     the plan is written into it rather than read off `CAN.edit`, because what
-     the owner settled is this sentence and not a rule about tiers. If `edit`
-     ever moves off plus, this string moves with it. */
+     THE SENTENCE IS MISSING AND IS NOT THIS SESSION'S TO WRITE. The other
+     three name their ceiling -- `langs.full`, `toast.cap`, `kb.full` -- and
+     there is no key that says what this one is. Inventing one would be an
+     app deciding its own wording about money, which CLAUDE.md § Explaining
+     and the narrowing of 2026-08-22 both put on the owner. So this asks with
+     `up.cta` alone, which is the word this app already uses for the way to
+     the plans screen, and the naming sentence goes in front of it the day
+     there is one to put there. */
   if(!can('edit')){
-    if(confirm(t('post.editplan')+'\n\n'+t('up.cta'))) go('plans');
+    if(confirm(t('up.cta'))) go('plans');
     return;
   }
   PW=pwBlank();

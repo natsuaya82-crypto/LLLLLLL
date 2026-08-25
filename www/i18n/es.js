@@ -943,7 +943,6 @@ defLang('es', (function(){
       'post.vo.busy'          : "Grabando",
       'post.vo.lost'          : "No se pudo guardar la voz",
       'post.edit'             : "Editar",
-      'post.editplan'         : "Editar una publicación es del plan Plus",
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",
       'post.pv'               : "Privado",

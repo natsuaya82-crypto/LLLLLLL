@@ -996,7 +996,6 @@ defLang('ru', (function(){
       'post.vo.busy'          : "Идёт запись",
       'post.vo.lost'          : "Голос не удалось сохранить",
       'post.edit'             : "Изменить",
-      'post.editplan'         : "Изменять записи можно на плане Plus",
       'post.save'             : "Сохранить",
       'post.edited'           : "Изменено",
       'post.pv'               : "Только для вас",
