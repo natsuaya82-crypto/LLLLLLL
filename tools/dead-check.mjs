@@ -281,6 +281,11 @@ const BROWSER = ['Date','String','Number','Boolean','Object','Array','Math','JSO
      voice as is base64 -- a canvas gives a data URL and the recorder gives
      one -- and what goes to Storage is the bytes. */
   'atob','btoa',
+  /* The sheet (www/sheet.js, chapter 26). escape/unescape are how UTF-8 is
+     made and unmade without TextEncoder, which an old WKWebView may not have;
+     the two typed arrays are the transform and the flood fill, where a
+     hundred thousand samples in a plain Array is a different thing entirely. */
+  'escape','unescape','Float64Array','Int32Array',
   'getComputedStyle','confirm','alert','prompt','eval'];
 
 const bindings = new Set(decls.map(d => d.name));

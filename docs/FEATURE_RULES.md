@@ -250,6 +250,177 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 `text` は残してあるので、書かれていたものは失われていない。
 
 ### Decision
+- Date: 2026-08-25
+- Area: The sheet takes a PDF and nothing else, for now
+- Decision:
+
+  「一旦写真禁止で、普通に pdf で提出以外受け取らないで行こう。
+   今後のアプデで追加しよ」
+
+  **The read side accepts a PDF only.** A photograph — jpg, png, a picture
+  taken with the phone — is turned away, and the sentence says so. Photographs
+  come back in a later update; nothing about them is deleted, only shut.
+
+  `www/sheet.js` reads both today: `shPdfJpeg()` takes the page out of a PDF
+  and the reader will equally take a plain image. What changes is which files
+  are offered and accepted, not the reader underneath it.
+
+- Reason: the owner's, and it is a shipping decision rather than a technical
+  one. What was never measured is exactly the photograph case — a brush and a
+  hard pencil, on paper, under a real camera — and 「紙が本当に精度高く
+  できんのか」 was the question this whole road started from. A scan or a
+  print-to-PDF has no camera in it: no lighting gradient, no perspective, no
+  focus. So the half that is proven ships and the half that is not waits.
+- Affected features: `www/sheet.js` — the read page, what the file chooser
+  offers, and one sentence for a file that is not a PDF. `shPdfWhy()` already
+  answers `photo` / `packed` / `drawn` / `not-pdf`, so the sentence has
+  somewhere to come from.
+- Affected data: none.
+
+### Decision
+- Date: 2026-08-25
+- Area: Shipaton 2026 — the app ships to the App Store by 30 September
+- Decision:
+
+  「shipaton だそう。9／30 までには出したい」
+
+  Lingua enters RevenueCat's Shipaton 2026 and the **first public version is
+  on the App Store before 2026-09-30 23:45 Pacific**.
+
+  The two rules that decide eligibility, read off the rules page rather than
+  remembered: the app's first public version must go live between 1 August and
+  30 September 2026 (an app already live anywhere before that window does not
+  qualify), and it must use the RevenueCat SDK for at least one in-app
+  purchase. **Lingua has never been publicly live** — TestFlight only, and
+  build 86 was refused by Apple — so it clears the harder of the two.
+
+- Reason: the money side is designed, priced and coded already, which is what
+  most entrants have to build. What is actually on the critical path is not
+  code: it is `docs/STATE.md` § 7 items 16, 16a–16d and 17, every one of them
+  a console the owner alone can open, and **16a blocks all building**. After
+  those comes an App Store review, which takes days and can fail — build 86
+  already did (`ITMS-90158`).
+- Affected features: `ios/App/App/LinguaStore.swift` gains RevenueCat in place
+  of talking to StoreKit directly. The four product ids do not move.
+  `tools/plan-check.mjs` holds twenty-odd claims about the current shape and
+  will need re-pointing, not rewriting: **money decides what may be DONE and
+  nothing about what exists** stays true through the swap or the swap is wrong.
+- Affected data: none. A subscription is not a slice.
+
+### Decision
+- Date: 2026-08-25
+- Area: A plan changes what happens when you press, not what you can see
+- Decision:
+
+  「普通に例えばキーボードを plus で5個以上追加しようとしたら pro の案内が
+   出るみたいにさ、そのプランでできることできないことで UI 自体に変更が
+   ない方が良くない？」
+
+  **The screen is the same on every plan.** A ceiling and a closed door both
+  show up at the moment somebody PRESSES, as a way to the plans screen — never
+  as a button that is not there.
+
+  This goes one step further than the decision recorded a few hours earlier
+  the same day (「無料で使えないやつは表示させていいよ。課金させる動線を
+  減らしたくない」), which was about closed doors. This is about ceilings too,
+  and it says the same thing about both.
+
+  **`capStop()` already IS this shape, and is the worked example.** The word
+  ceiling asks with iOS's own `confirm()` — the sentence and the upgrade word,
+  both already in ten languages — and goes to the plans screen on yes, and
+  leaves you exactly where you were on no. It used to `go('plans')` outright
+  and that was taken out for the right reason: it took the screen away from
+  somebody halfway through typing a word. So the answer to the question
+  `claude/plans` asked in ffd6022 is **no change is needed there**.
+
+  **The first thing that is NOT this shape is `kb.full`.** Today
+  `www/keyboard.js` says `toast(t('kb.full', KB_MAX))` and stops — a sentence
+  with no way to the thing it is about. It becomes `capStop()`'s shape.
+
+- Reason: the owner's, in one line — 「課金させる動線を減らしたくない」. You
+  cannot buy what you cannot see, and a button that quietly is not there tells
+  nobody anything.
+
+  **What this does NOT touch, and the distinction is the whole of it.**
+  `CLAUDE.md`'s money paragraph says a failed check means **fewer buttons,
+  never fewer words**. The BUTTON half is what this decision turns over: there
+  are no fewer buttons now either. The WORD half does not move by one
+  character — a plan that lapses hides nothing anybody made, deletes nothing,
+  and takes nothing out of a backup. `wordsSeen()` and the `letters` slice are
+  untouched. That sentence in `CLAUDE.md` needs rewording to match, and
+  rewording the head of that file is not a session's to do alone.
+- Affected features: every screen that draws something a plan closes.
+  Named today: `kb.full` (`www/keyboard.js`), `postEdit()` (`www/post.js`),
+  the door to a second language (`www/home.js`), and the write road
+  (`www/sheet.js`) once `CAN.write` exists.
+- Affected data: none.
+
+### Decision
+- Date: 2026-08-25
+- Area: Making a second language — where the door is, and what it does
+- Decision:
+
+  「アカウントが変わるイメージ。実際の sns はアカウント切り替えボタンある
+   やん？あれが言語切り替えになるって感じ」「せっていからでいいよ」
+
+  **A language is an account, and the language list is the account switcher.**
+  It stays where it is — Settings → Languages (`www/settings.js`, `go('langs')`,
+  `vLangs()` in `www/home.js`). It is NOT moved onto the profile or behind the
+  face; that was offered and turned down.
+
+  What is added is one button at the **foot of that list**, where "add an
+  account" sits in the app this is modelled on. Pressing it makes a language
+  and opens it. Nothing is asked first: `langFirst()` already makes a nameless
+  one and the onboarding already asks the name, so a second language arrives
+  the same way the first did.
+
+- Reason: the screen, the switching and the making all exist already.
+  `langFirst()` mints the id, puts it in `LANGS` and opens it; `langOpen()`
+  saves the one you are leaving, reads the new one in and calls `viewReset()`
+  so you do not arrive in somebody else's language with your filter still on.
+  What was missing was a door, and only a door.
+- Affected features: `vLangs()` (`www/home.js`), a new act, ten strings, and
+  **the language ceiling** — which lands in the SAME commit, because a door
+  with no ceiling is unlimited languages on the free plan. Free 1 / Plus 1 /
+  Pro 3, from the decision of 2026-08-23. It HIDES and never deletes
+  (`wordsSeen()`'s shape): somebody who already has three keeps three, sees
+  three, backs up three, and is refused only the fourth.
+
+### Decision
+- Date: 2026-08-25
+- Area: The keyboard sheet's width — a column is a fixed size
+- Decision:
+
+  「エクセルみたいにキーボードにやって横幅が固定されるはずだよ。
+   縦の列は追加できるかもだけど」
+
+  **A column is a fixed width. The board is as wide as its columns make it.**
+  Not the other way round.
+
+  Today `--kbw` is `83vw` and `kbCellW(w, cols)` is `--kbw / cols * kbU(w)`, so
+  the board is ALWAYS the same width and the cells stretch to fill it: a board
+  of three columns draws three enormous cells across the whole phone. From now
+  the unit is fixed — a column is what a column is on a ten-column board — and
+  a three-column board is three columns wide, sitting where a short row already
+  sits (the middle of the sheet, rule 19). Adding a column makes the board
+  wider, up to the ten that rule 19 already fixes.
+
+- Reason: it is a spreadsheet, and a spreadsheet does not resize its columns
+  because you deleted some. This also settles a bug rather than patching it.
+  `tools/side-baseline.txt` carries three screens that run off the side of a
+  402pt phone, all one fault: the three tiles a new key is dragged off are the
+  size of the key they make (「1マスとキーボードの1マスのサイズが一緒じゃない
+  から分かりにくいよ」), so together they are 1+2+3 = 6 columns; on a
+  three-column board, six stretched columns are twice the board. Three ways to
+  patch it were put to the owner -- wrap, shrink on narrow boards, stack
+  vertically -- and all three were answers to the wrong question. With a fixed
+  column, six of them are six tenths of the sheet and fit by construction.
+- Affected features: `kbCellW()` and `--kbw` (`www/keyboard.js`,
+  `www/index.html`), how every board narrower than ten columns is DRAWN --
+  nothing stored changes, no layout moves, only the drawing -- and the three
+  lines in `tools/side-baseline.txt`, which come out when it lands.
+
+### Decision
 - Date: 2026-08-23
 - Area: How many languages, how many keyboards, and two more capabilities
 - Decision:
@@ -295,14 +466,18 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   language deeply — the dictionary, the letters, the writing system, the
   keyboard, the calendar all stack onto one. Three is there for the person who
   wants a second and a third, not as the thing being sold.
-- Affected features: `KB_MAX` (a per-language ceiling today, a pool from now,
-  and gone entirely on Plus), a new language ceiling that does not exist at
+- Affected features: `KB_MAX` (a per-language ceiling then, a pool now, and
+  gone entirely on Pro), a new language ceiling that does not exist at
   all today, `postEdit()`, `planBadge()`.
 - Affected data: none. Somebody over a ceiling keeps everything — every
   keyboard, every language — and simply cannot add another. `backup-check`
   holds this for keyboards already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`.
-- Implementation status: nothing built.
+- Implementation status: **the keyboards are built** (2026-08-23,
+  `claude/save`): `kbCap()` in `www/core.js`, `kbCount()` / `kbRoomKb()` in
+  `www/keyboard.js`, `CAN.kb` at `plus`, `KB_MAX` gone. Held by `plan-check`.
+  **The language ceiling, `can('edit')` and `can('badge')` are not built** --
+  `postEdit()` and `planBadge()` are still open.
 
   **Not a loophole, decided:** the language count is what is on THIS PHONE —
   `lingua.langs` carries no owner, `netOut()` clears only the session, and
@@ -375,16 +550,16 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 - Affected data: none. Somebody over the ceiling keeps every keyboard and
   simply cannot add another. `backup-check` holds that already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
-- Implementation status: **nothing built, and deliberately not by this
-  session.** `www/keyboard.js` belongs to `claude/detailed-tasks-execution`
-  today, and that branch is in the middle of a 126-line change about holding
-  more than one keyboard — `kbAddKb()`, the tab that switches which board is
-  on the phone, the button that deletes one. The number belongs in the same
-  hands as that. What is waiting: `kbCap()` beside `wordCap()` in
-  `www/core.js` (1 / 4 / Infinity), `kbBoards().length >= KB_MAX` asking it
-  instead, the count becoming a sum across `LANGS` rather than a length, and
-  `CAN.kb` moving to `basic` in the same commit — the door and its number are
-  one statement and must not land apart.
+- Implementation status: **built, 2026-08-23, `claude/save`.** It was deferred
+  because `www/keyboard.js` was another branch's; that branch has not touched
+  the file since 2026-08-15 and no live branch is in it, which was checked
+  before starting rather than after a merge failed. `kbCap()` sits beside
+  `wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbCount()` in
+  `www/keyboard.js` sums the built keyboards across `LANGS` -- the open
+  language from memory, every other one through `kbBoardsOf()` so an older
+  single-keyboard file counts as the one it is -- `kbRoomKb()` adds the QWERTY
+  as the 1 in 1 + 3, and `CAN.kb` moved to `plus` in the same commit. `KB_MAX`
+  is gone. Seven claims in `plan-check`; three bugs put back and watched.
 
 ### Decision
 - Date: 2026-08-23

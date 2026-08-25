@@ -1029,7 +1029,7 @@ export function halfDone(){
        described, so a pattern that cannot be laid out is a red check rather
        than an empty keyboard on somebody's phone -- qwerty is the first board
        and is there whether or not anything was built, then flick, chart, tap
-       and abc. kbAdd() twice is three keyboards now, which is KB_MAX.
+       and abc. kbAdd() twice is three keyboards, which the paid plan has room for.
 
        The one APPLIED is deliberately not the one shown: that is the whole
        distinction the screen exists to make, and a face where they are the
@@ -1359,6 +1359,28 @@ export function halfDone(){
     ['a post as a card',       () => { cardOpen('p', 'p1'); return vForm(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
-    ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }]
+    ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }],
+    /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no
+       buttons: the room, the names being typed, the one control before a file
+       has been handed over, and what came off one afterwards.
+
+       The last is built from a made-up reading rather than from a photograph
+       -- tools/sheet-check.mjs puts a real page through the real reader, and
+       what these two walks are for is the SCREEN. A row that says `empty` and
+       a row that says `drawn` are two different rows, so both are here, and
+       the button at the foot only exists while something was drawn.
+
+       vForm() and not FORM.html: the app wraps a form in view/body, and a face
+       that hands back the bare html is measured 48px wider than the phone will
+       ever show it. That was fixed across all 48 the same day this arrived. */
+    ['the sheet',              () => { SH = shBlank(); openWrite(); return vForm(); }],
+    ['a sheet being made',     () => { SH = shBlank(); SH.names = 'a, ka, 7';
+                                       openWrOut();
+                                       const h = vForm(); SH = shBlank(); return h; }],
+    ['a sheet to read back',   () => { SH = shBlank(); openWrIn(); return vForm(); }],
+    ['a sheet that came back', () => { SH = shBlank(); SH.from = 'sheet.jpg';
+        SH.got = [{nm:'ka', sh:[[[100,100],[700,100],[700,700],[100,700]]]},
+                  {nm:'7',  sh:[]}];
+        openWrIn(); const h = vForm(); SH = shBlank(); return h; }]
   ];
 }
