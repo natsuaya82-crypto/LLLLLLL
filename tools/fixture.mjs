@@ -1420,6 +1420,19 @@ export function halfDone(){
                                          return vAbout(); }],
     ['writing on a page nobody may open', () => { WLD.hide = true;
                                          window.route = 'world'; NAV = [{ r:'world' }];
-                                         return vWorld(); }]
+                                         return vWorld(); }],
+    /* A language with a keyboard somebody BUILT, and three of its four
+       chapters open to be taken away. Neither is reachable from seed(): the
+       walk runs on the free plan, where `kbBoards()` is empty and the article
+       draws no keyboard at all -- 「無料キーボードはなしでいいよ。作ったキーボード
+       のみ表示」 -- and nothing has ever been switched on for `dl`, so the mark
+       that says a chapter may be taken away was on no screen in any language.
+       Board 1, because board 0 is the free QWERTY itself. */
+    ['a language anybody may take away', () => {
+       SET.plan = 'plus';
+       KB = { at: 1, kbs: [{ nm: 'Shango', pat: 'abc', lay: kbAbcLay() }] };
+       WLD.secs = { letters: { dl: true }, words: { dl: true }, kb: { dl: true } };
+       window.route = 'about'; NAV = [{ r:'about' }];
+       return vAbout(); }]
   ];
 }

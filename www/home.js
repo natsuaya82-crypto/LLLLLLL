@@ -863,9 +863,20 @@ function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
   if(!langName) return '';
+  /* And while it is private it is not a way through at all --
+     「そもそも非公開ならプロフィールから飛べないんだって」 OWNER 2026-08-25. It was
+     a button either way, with a badge beside the name saying so, which is the
+     app marking a door as shut and leaving it open. The row stays, because
+     the name of the language is a fact of this profile and its owner is the
+     one reading it; what goes is the press and the arrow.
+
+     The way back is the same switch in the settings (www/settings.js), which
+     is where it has always also been, so nothing is shut away by this. */
+  if(wldHidden()) return '<div class="wldrow">'+
+    '<span class="wldnm">'+esc(langName)+'</span>'+
+    '<span class="wldoff">'+esc(t('wld.hidden'))+'</span></div>';
   return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
     '<span class="wldnm">'+esc(langName)+'</span>'+
-    (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
     ICON_GO+'</button>';
 }
 /* ---- a section of the article opens and shuts -------------------------
@@ -1191,7 +1202,7 @@ function vWorld(){
   return wldPage(true);
 }
 function wldPage(ed){
-  var w=world(), drawn=LETTERS.filter(ltHasShape), body='', dls='', done, i;
+  var w=world(), drawn=LETTERS.filter(ltHasShape), body='', dls='', done, i, kbs, kbat;
   /* The article names its subject: the bar says which SCREEN this is, and the
      page has to say what the article is ABOUT. The name of a language is not
      written here -- it is the language's own, and it is set where a language
@@ -1250,7 +1261,14 @@ function wldPage(ed){
        heading and an arrow into this phone's own chapters, which is a way
        through that means nothing to anybody but their owner. What is left to
        READ is the overview, the sounds, the letters and the keyboard. */
-    if(!ed && (sec.r==='words' || sec.r==='gram')) return;
+    if(!ed && (sec.r==='words' || sec.r==='gram') && !wldSecDl(sec.r)) return;
+    /* And what MAY be taken away says so, where it is --
+       「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
+       article and not on the editor: the switch is the answer on the writing
+       face, and this is what that answer looks like to somebody reading. */
+    if(!ed && sec.dl && wldSecDl(sec.r))
+      extra='<span class="abdlm" aria-label="'+esc(t('wld.dl.can'))+'">'+
+        ICON_INDN+'</span>';
     /* Held back rather than drawn here: the four go at the FOOT of the
        screen, under everything somebody writes -- 「dlのやつは一番下にして」
        「上の概要とセクションに混ざらないようにして」 OWNER 2026-08-25. Standing
@@ -1328,14 +1346,25 @@ function wldPage(ed){
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
         ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
     } else if(sec.r==='kb'){
-      /* The keyboard this person actually built, drawn small --
-         「キーボードもちゃんとその人が作ってるモックの画像出すように」 OWNER
-         2026-08-25. `kbShotHTML` is the keyboard's own -- the real keys
-         wearing the real letters rather than a diagram of them, which is what
-         it was written for: 「リアルなキーボードを縮小して見せれないの？」 -- and
-         `kbOf()` is the one that is APPLIED, which is the one somebody is
-         typing on. Nothing in it is pressable, here or where it came from. */
-      inner+='<div class="abkb">'+kbShotHTML(kbOf().lay)+'</div>';
+      /* The keyboard this person actually BUILT, drawn small --
+         「キーボードもちゃんとその人が作ってるモックの画像出すように」
+         「無料キーボードはなしでいいよ。作ったキーボードのみ表示」 OWNER 2026-08-25.
+
+         `kbOf()` was the wrong question by one step: it answers with the free
+         QWERTY when there is nothing built, which is correct for what somebody
+         TYPES with and is not something they made. Board 0 IS that QWERTY, so
+         a language with nothing built drew the same picture as every other
+         one -- the alphabet somebody drew, arranged by the app, presented as
+         their keyboard. Asked of the APPLIED board and only drawn when it is
+         not board 0.
+
+         `kbShotHTML` is the keyboard's own -- the real keys wearing the real
+         letters rather than a diagram of them, which is what it was written
+         for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
+         pressable, here or where it came from. */
+      kbs=kbBoards(); kbat=kbApplied(kbs.length);
+      if(kbs.length && !kbIsFree(kbat))
+        inner+='<div class="abkb">'+kbShotHTML(kbs[kbat].lay)+'</div>';
     } else if(sec.nm!==undefined){
       /* A section somebody wrote, and it is a SECTION on both faces --
          「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
