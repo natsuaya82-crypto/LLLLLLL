@@ -41,7 +41,36 @@
 
    Editing does not move that. You can build the next keyboard without
    disturbing the one you are typing on, and press Apply when it is ready. */
-var KB=null, KB_MAX=3;
+var KB=null;
+/* How many keyboards this person has BUILT, across every language they have.
+
+   KB_MAX was a constant here and a per-language one: three in this language,
+   three more in the next, nine on a plan that sells three. The ceiling is on
+   the person -- 「1,1+3.無制限って言わなかったっけ？」, counted as a pool
+   across languages -- so the count has to leave the open language, and
+   kbCap() in core.js is the number it is compared against.
+
+   The open one is read from memory and not from the disk: KB is what the
+   editor is working on, and a keyboard made a moment ago may not have been
+   written yet. Every other language is read through kbBoardsOf(), so one
+   stored in the older single-keyboard shape counts as the one it is rather
+   than as nothing. */
+function kbCount(){
+  var n=0, id, k;
+  for(id in LANGS){
+    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+    if(id===langId){ n+=kbStored().length; continue; }
+    k=null;
+    try{ k=kbBoardsOf(JSON.parse(localStorage.getItem(langKeyOf(id, 'kb'))||'null')); }
+    catch(e){}
+    if(k && k.kbs) n+=k.kbs.length;
+  }
+  return n;
+}
+/* Whether there is room for another. The fixed QWERTY is the 1 in 1 + 3: it
+   is one keyboard this person has, it is not stored, and it is not counted
+   once per language -- so it is added here, once, to what they built. */
+function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
 function kbRead(){
   KB=null;
   try{ KB=kbBoardsOf(JSON.parse(localStorage.getItem(langKey('kb'))||'null')); }
@@ -303,7 +332,7 @@ function kbAdd(pat){
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB={kbs:[], at:0};
-  if(kbBoards().length>=KB_MAX){ toast(t('kb.full', KB_MAX)); return; }
+  if(!kbRoomKb()){ toast(t('kb.full', kbCap())); return; }
   KB.kbs.push({nm:'', pat:pat, lay:kbBlank(kbPatLay(pat))});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
@@ -1086,7 +1115,7 @@ function kbListHTML(){
   var bs=kbBoards(), at=kbApplied(bs.length);
   return '<div class="kblist">'+
     bs.map(function(x, i){ return kbRowHTML(x, i, at); }).join('')+
-    (bs.length<KB_MAX
+    (kbRoomKb()
       ? '<button class="kbadd"' + DO('kbNew') + '>'+ICON_ADD+
         '<span>'+esc(t('kb.new'))+'</span></button>'
       : '')+
