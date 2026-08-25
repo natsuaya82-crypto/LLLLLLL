@@ -219,6 +219,12 @@ function sndStart(){
    sound -- so the way out is to say what that letter reads instead, on the
    letter, which is where that has always been said. */
 function sndTake(sym){
+  /* The inventory's own two doors take the refusal with them. Putting a sound
+     into the language and taking one out are what `snd` buys read from the
+     other end, they are gated on the screen and were gated nowhere else, and
+     「音も変えられない」 is one sentence about all of it rather than one about
+     the letter's sheet. openSndAdd() is the only road to either. */
+  if(!can('snd')) return;
   if(addedSnd().indexOf(sym)>=0){ sndDrop(sym); openSndAdd(); return; }
   SND=asOrder(addedSnd().concat([sym]));
   saveSnd();
@@ -405,6 +411,34 @@ function ipaPickHTML(act, on){
     ipaGroupsHTML(act, on)+'</div>';
 }
 var sndFor='';
+/* The door onto the chart, from the letter it is about.
+
+   **Not on the free plan.** 「あと音も変えられないし。」 OWNER 2026-08-25 --
+   a confirmation of what was already written down rather than a new line:
+   `snd` has been Plus's since the table was written, and it buys choosing a
+   sound INSTEAD of the letter's own. On free the sound follows the name, and
+   ltSetRoman is the one place it is put there.
+
+   It was open on every plan. The row on the letter page is drawn
+   unconditionally, this took no plan, and ltTakeSnd took none either -- so a
+   free account could open the chart, press a symbol, and give `b` a glottal
+   stop. Measured, not read: ["b"] came back ["b","ʔ"], `chose` went on (which
+   detaches the sound from the name for good, so ltSetRoman would never put it
+   right again), and the symbol went into SND. Nothing threw and no screen
+   looked wrong.
+
+   The refusal is on the PRESS and not on this door, and that is the decision
+   read as it is written: 「だいたい無料で使えないやつは表示させていいよ。課金
+   させる動線を減らしたくない」「無料はタップすると課金ページに飛ばされる」
+   OWNER 2026-08-25. The chart is drawn on every plan -- it is also where a
+   free account can see what its own letters read -- and the TAP is what goes
+   to the plans screen. See ltTakeSnd below.
+
+   Closing this door instead was tried and is wrong twice over. It hides the
+   thing the decision says to show, and it takes the chart out of every walk:
+   the checks run on the free plan, so nothing rendered ltTakeSnd any more and
+   act-check reported it as an entry no screen names -- which was true, and was
+   not what was meant. */
 function openSnd(lid){
   var l=ltById(lid);
   if(!l) return;
@@ -420,6 +454,18 @@ FORM_OPEN.snd=function(lid){ openSnd(lid); };
 function ltTakeSnd(sym){
   var l=ltById(sndFor);
   if(!l) return;
+  /* Where the free plan stops, and it is the press rather than the door --
+     see openSnd above. go() and not a toast: this is a symbol pressed on
+     purpose, and the plans screen is the answer to what was just asked. It is
+     the half of the 2026-08-25 decision pwEdit() is already on the other end
+     of, and the opposite of capStop(), which is a ceiling arrived at halfway
+     through typing a word and may not move anybody.
+
+     Nothing is written first. The letter keeps the sound its name gave it,
+     `chose` stays off -- it is what tells a sound somebody picked from one
+     ltSetRoman worked out, and switching it on here would detach `b` from its
+     own name for good -- and SND does not grow. */
+  if(!can('snd')){ go('plans'); return; }
   if(!l.snd) l.snd=[];
   var i=l.snd.indexOf(sym);
   if(i>=0) l.snd.splice(i, 1);
@@ -490,6 +536,7 @@ FORM_OPEN.sndadd=function(){ openSndAdd(); };
    rather than a refusal to argue with. */
 function sndDrop(sym){
   var ls=sndLetters(sym), i;
+  if(!can('snd')) return;
   if(ls.length){
     toast(t('snd.inuse', ls.map(function(l){ return ltName(l)||'·'; }).join(' ')));
     return;
@@ -498,6 +545,46 @@ function sndDrop(sym){
   if(i<0) return;
   SND.splice(i, 1);
   saveSnd(); render();
+}
+/* The other end of ltSetRoman. A letter stops existing, and the sound it read
+   stops with it. 「文字消したのに音は残ります意味わからないから消してくれ。
+   存在を。」 OWNER 2026-08-25, on a phone.
+
+   「存在を」 is the whole instruction. What was left behind was not a row on a
+   screen -- it was the sound still IN the language, and the alphabet drew it
+   straight back onto the same page: sndLoose() answers "in the language, on no
+   letter", and every one of those gets a cell with a pencil on it. So somebody
+   took a letter away and the page put its sound back, two cells along.
+
+   Called from ltDel() and nowhere else, and AFTER the letter has left LETTERS.
+   sndLetters() is asked of what REMAINS -- a line earlier it would answer with
+   the letter being deleted, nothing would ever be loose, and this would do
+   nothing at all while looking exactly like it worked.
+
+   It takes out only what nothing else says. A sound two letters read is a
+   sound the language still has, and that is sndDrop()'s rule seen from the
+   other side: a letter reading a sound the inventory has never heard of is
+   the one state the spelling engine cannot hold, so neither door may make one.
+   Here the letter is already gone, so there is nobody to refuse on behalf of.
+
+   Quiet -- no toast, no render. sndDrop() is a press and answers for itself;
+   this is the second half of somebody else's press, and the caller is already
+   on its way to say what happened and to redraw.
+
+   DELETE REVIEW is in docs/CHANGELOG.md. The one thing it leaves open and
+   this comment will not restate: SND can now reach zero, and sndStart() fills
+   a zero-length SND with twelve plain sounds at the next launch. */
+function sndDropLoose(syms){
+  var went=false, i, k;
+  if(!syms || !syms.length) return;
+  for(i=0;i<syms.length;i++){
+    if(sndLetters(syms[i]).length) continue;
+    k=SND.indexOf(syms[i]);
+    if(k<0) continue;
+    SND.splice(k, 1);
+    went=true;
+  }
+  if(went) saveSnd();
 }
 /* ---- II. letters ------------------------------------------------------
    The alphabet, as a thing in itself. Every letter you have, what it reads,

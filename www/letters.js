@@ -777,6 +777,24 @@ function ltSetChar(id, ch){
    and why deleting a letter meant opening the surface it was drawn on. */
 function ltDelete(id){
   var l=ltById(id); if(!l) return;
+  /* Not on the free plan. 「最初の無料枠で登録した文字はいじれないからね？
+     書き換えるのはできるけど、消せはしないから。」 OWNER 2026-08-25 -- a
+     confirmation of what was already written down: the free plan IS the
+     thirty-eight slots, the QWERTY finds its keys BY NAME, and a slot taken
+     away is a key answering to nothing.
+
+     Both doors onto this already ask can('letters') -- the mark on a held
+     cell and the button on the letter's page -- so nothing reaches here on
+     free today. It is asked again anyway, and that is the sentence
+     ltSetRoman() carries three functions down about renaming the same slots:
+     a screen is not a rule, this is reachable from any name that can be said,
+     and the road added later is the one that will not remember. base-check
+     holds the rename half for exactly this reason.
+
+     go() rather than a silent return, so the day a screen does draw this door
+     on free it is already the shape the 2026-08-25 decision asks for: drawn
+     anyway, and pressed it goes to the plans screen. */
+  if(!can('letters')){ go('plans'); return; }
   var nm=ltName(l)||t('lt.untitled');
   if(!confirm(t('glyph.del.ask'))) return;
   ltDel(id);
@@ -789,9 +807,22 @@ function ltDelete(id){
   if(here().r==='letter') back(); else render();
   toast(t('glyph.deleted', nm));
 }
+/* The storage half, and the one place a letter leaves LETTERS. Three roads
+   arrive here -- ltDelete above, impUndo when an import is taken back, and
+   numDropBlank when the base comes down onto slots nobody drew on -- so the
+   sound leaving with the letter is said once, here, rather than three times.
+
+   ltSetRoman's own LETTERS.splice() does NOT come through here and must not:
+   that is the free plan's road, where a drawn shape moves into the slot that
+   already answers to its name, and the sound is COPIED onto the surviving
+   letter before the other row goes. There the sound moves. Here it ends. */
 function ltDel(id){
+  var gone=ltUnits(ltById(id)).slice();
   LETTERS=LETTERS.filter(function(l){ return l.id!==id; });
   saveLetters();
+  /* Read off the letter before it goes, asked of the alphabet after -- see
+     sndDropLoose in sound.js, and the DELETE REVIEW in docs/CHANGELOG.md. */
+  sndDropLoose(gone);
 }
 /* Making a letter for a unit that has none, in one step, because that is what
    the sound chapter's "draw one" button means. */
