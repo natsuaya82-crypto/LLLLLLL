@@ -849,6 +849,53 @@ function shTyped(v){
     e.innerHTML = esc(tn('wr.boxes', n)) + ' · ' + esc(tn('wr.pages', shPages(n)));
   }
 }
+/* Each name as a small grey picture, one per box.
+
+   The sheet's own font is Helvetica -- Type1, WinAnsi -- and it cannot say 水.
+   A PDF font that could say every name a person might type is a font embedded
+   in every sheet, which is the whole of otf5.js pointed at a piece of paper.
+   So the name is drawn on a canvas here, where the phone already has the face
+   for it, and rides in the file as a few hundred bytes of DeviceGray.
+   shPageOps() has drawn `/Im<i>` over the box since the day it was written and
+   this is the half that was missing: shMake() called shSheet(names, []), so
+   `p` was null for every box and **not one name was printed on the sheet**.
+   Twenty empty squares and a strip: the paper could still say what it was to
+   the reader, and could not say anything at all to the person holding a pen.
+   The strokes on it would then come back under the right names, which is what
+   makes it silent -- nothing throws, nothing is lost, and every check in the
+   gate is green, because tools/sheet-check.mjs draws its own page rather than
+   printing one through shSheet().
+
+   The size and the way it is drawn are the spike's, tools/sheet-spike/print.mjs,
+   which is where a real sheet was printed from and written on. 64 tall is about
+   four times the 14 points it lands at, so the print has detail to spend.
+   The face is asked of the page: a canvas has no inheritance, so a family
+   written out here would be the one place the stylesheet cannot reach
+   (CLAUDE.md rule 17, and tools/face-check.mjs holds it). */
+function shPics(names){
+  var out = [], i;
+  for(i = 0; i < names.length; i++) out.push(shPic(names[i]));
+  return out;
+}
+function shPic(nm){
+  var H = 64, c = document.createElement('canvas'), g = c.getContext('2d'), f, w, d, by, k;
+  f = '600 ' + Math.round(H * 0.8) + 'px ' + cssVar('--face-ui', 'sans-serif');
+  g.font = f;
+  w = Math.ceil(g.measureText(String(nm)).width);
+  if(!(w > 0)) w = 8;
+  /* Sizing a canvas clears everything set on its context, so the face is set
+     again after and not before. */
+  c.width = w; c.height = H;
+  g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, w, H);
+  g.fillStyle = '#000'; g.font = f;
+  g.textBaseline = 'middle';
+  g.fillText(String(nm), 0, H * 0.54);
+  try{ d = g.getImageData(0, 0, w, H).data; }catch(e){ return null; }
+  by = [];
+  for(k = 0; k < w * H; k++) by.push(String.fromCharCode(d[k * 4]));
+  return {w: w, h: H, gray: by.join('')};
+}
 /* The PDF, and out. There is no Swift behind `sheet` yet -- LinguaShare.swift
    has keep/kept/write/pickPhoto/audio and not this -- so on a phone today the
    bridge is there and the method is not, and in a browser there is no bridge
@@ -858,7 +905,7 @@ function shTyped(v){
 function shMake(){
   var s = shState(), names = shNames(s.names), pdf, p;
   if(!names.length){ toast(t('wr.none')); return; }
-  pdf = shSheet(names, []);
+  pdf = shSheet(names, shPics(names));
   /* null is the packet refusing to fit the strip. A sheet that cannot name
      itself is not a sheet -- it comes back unreadable, and a misread sheet
      must be turned away rather than half-imported. */
