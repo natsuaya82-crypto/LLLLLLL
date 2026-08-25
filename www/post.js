@@ -756,10 +756,20 @@ function pwToHTML(to){
   return '<div class="pwq">'+
     '<div class="pav">'+postFace(to)+'</div>'+
     '<div class="pbody">'+
+      /* The same two lines the timeline's head is folded into, and it has to
+         be said here too: `.phead` stopped being the flex row that held the
+         gap between these spans, so a head written the old way came out as
+         `IriVethi@iri` with the words run together. A quoted post has no time
+         on it and nothing to press, so the second line is only the language
+         and the handle. */
       '<div class="phead">'+
-        '<span class="pname">'+esc(postWho(to))+'</span>'+
-        (to.lname? '<span class="plangtag">'+esc(to.lname)+'</span>' : '')+
-        '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
+        '<div class="pheadn">'+
+          '<span class="pname">'+esc(postWho(to))+'</span>'+
+        '</div>'+
+        '<div class="pheadm">'+
+          (to.lname? '<span class="plangtag">'+esc(to.lname)+'</span>' : '')+
+          '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
+        '</div>'+
       '</div>'+
       (to.ln? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
       (postSay(to)? '<div class="pmn">'+esc(postSay(to))+'</div>' : '')+
