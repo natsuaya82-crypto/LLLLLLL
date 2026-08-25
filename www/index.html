@@ -1577,21 +1577,55 @@ a.set{text-decoration:none}
 .abtud{font-size:.88rem;color:var(--txm);line-height:1.45}
 .abtl{line-height:1.55;color:var(--tx);word-break:break-word;margin-top:10px}
 /* ---- a section heading that folds ---------------------------------------
-   Every section of this article is one of these: a marker, the name, and one
-   rule across -- the shape a mobile encyclopedia article has, and the shape
-   the owner drew (「概要　▽」). It is a <button> and it is the ONLY heading
-   shape on the page, so there is never a heading of one class rendering at
-   two heights beside another (CLAUDE.md: rows in one list are one height).
+   Every section of the article is one of these: a marker, the name, one rule
+   across, and -- where the section's content is a chapter elsewhere -- a way
+   through on the right. The name is NOT repeated in a row underneath; that
+   was two rows saying one thing. The shape is the one the owner drew
+   (「概要▼」) and the one a mobile encyclopedia article has.
+   Two buttons side by side rather than one inside another: a button cannot
+   contain a button, and the fold and the way through are two different acts.
    Sides zeroed one at a time with the bottom left as a rule -- `border:0`
    would be four sides, which is a box. */
-.abshd{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;
-       margin:22px 0 0;padding:8px 2px;background:none;border-left:0;border-right:0;
-       border-top:0;border-bottom:1px solid var(--line);text-align:left;
+.abshd{display:flex;align-items:center;width:100%;margin:22px 0 0;
+       border-bottom:1px solid var(--line)}
+.abshf{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-height:44px;
+       padding:8px 2px;background:none;border:0;text-align:left;
        font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
        color:var(--tx)}
 .abshl{flex:1 1 auto;font-size:1.22rem;line-height:1.35}
 .abmk{flex:0 0 auto;color:var(--txm)}
+/* The same heading with nothing to fold: one height with the button one,
+   which is what keeps two neighbouring headings the same row. */
+.abshp{font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
+       color:var(--tx)}
+/* The second question is asked OF the row above it, so it is set in from the
+   left and quieter. Eight rows all reading 「DL可」 down a flat list said
+   nothing about which section each belonged to. */
+.abdl{padding-left:20px}
+.abdl .sl{color:var(--txm)}
+/* The letters, in an article rather than in the alphabet: smaller, denser,
+   and with neither the speaker nor the reading under them --
+   「文字は音なくていいからもっと小さく並べて」. The corner on the tile itself
+   stays; that one is the owner's and is the only rounding kept. */
+.abtlt{grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:8px;margin-top:12px}
+.abtlt .ltc{min-height:58px;padding:6px 2px 5px;gap:3px}
+.abtlt .ltcf{height:26px}
+.abtlt .ltc canvas.tc{width:26px;height:26px}
+.abtlt .ltcn{font-size:.72rem}
+.abtlt .ltcr{display:none}
+/* What this language is for: five rows, not five panels. One line for the
+   name and one under it for what it means -- the same stacking the article's
+   facts use, and no box around either. */
+.wldu{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
+      min-height:44px;padding:11px 2px;background:none;border-left:0;border-right:0;
+      border-top:0;border-bottom:1px solid var(--line);text-align:left;
+      font-family:inherit;font-size:1rem;line-height:1.4;color:var(--tx)}
+.wldun{font-size:1rem;line-height:1.4}
+.wldu.on .wldun{color:var(--gold);font-weight:600}
+.wldud{color:var(--txm);font-size:.85rem;line-height:1.4}
 .abshd.shut .abmk{transform:rotate(-90deg)}
+.abshg{flex:0 0 auto;min-width:44px;min-height:44px;display:flex;align-items:center;
+       justify-content:center;background:none;border:0;color:var(--txm)}
 /* ---- a fact of the overview --------------------------------------------
    The name on one line and the answer on the next, never side by side:
    「話してる場所　あああ みたいにやるのやめて」 OWNER 2026-08-25. Two columns
@@ -1601,15 +1635,9 @@ a.set{text-decoration:none}
 .abfk{color:var(--txm);font-size:.85rem;line-height:1.4}
 .abfv{color:var(--tx);font-size:1rem;line-height:1.5;word-break:break-word;margin-top:2px}
 .abtlead{margin-top:12px}
-/* ---- the list of sections ----------------------------------------------
-   「セクション一覧は消すなよ」. Every section and its answer, without opening
-   any of them. The name in the colour everything pressable already is. */
-.abtc{display:flex;align-items:center;gap:12px;width:100%;min-height:44px;
-      padding:9px 2px;background:none;border-left:0;border-right:0;border-top:0;
-      border-bottom:1px solid var(--line);text-align:left;font-family:inherit;
-      font-size:.95rem;line-height:1.3}
-.abtcl{flex:1 1 auto;color:var(--gold);font-size:.95rem;line-height:1.3}
-.abtcs{flex:0 0 auto;margin-left:auto;color:var(--txm);font-size:.85rem;line-height:1.3}
+/* One answered stage per line, so a list of them is a list and not a
+   paragraph that happens to have gaps in it. */
+.abtline{margin-top:6px}
 .mecard .pbio{margin-top:4px;line-height:1.45;word-break:break-word;
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}
