@@ -382,11 +382,11 @@ function openMe(){
           CH('meSetPic') + '></label>'+
       '<div style="flex:1 1 auto;min-width:0">'+
         '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.name'))+'</span>'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
           '<input id="me-nm" value="'+esc(ME.name)+'" '+
           'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
         '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.handle'))+'</span>'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
           '<input id="me-hd" value="'+esc(ME.handle)+'" '+
           'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
           'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
@@ -404,12 +404,12 @@ function openMe(){
        されても入力しても保存されません。`npm run act` と `npm run i18n`
        はそれまで赤です。 */
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.link'))+'</span>'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
       '<input id="me-lk" value="'+esc(ME.link||'')+'" '+
       'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
       'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap">'+esc(t('me.loc'))+'</span>'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
       '<input id="me-lc" value="'+esc(ME.loc||'')+'" '+
       'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
 }
