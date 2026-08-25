@@ -310,9 +310,19 @@ var LinguaFont = (function () {
             turn = cross3(p0, p1, p2), ear = true;
         if (ccw ? turn <= 0 : turn >= 0) continue;   // a reflex corner is no ear
         for (j = 0; j < idx.length; j++) {
-          var q = idx[j];
+          var q = idx[j], t = v[q];
           if (q === i0 || q === i1 || q === i2) continue;
-          if (inTri(v[q], p0, p1, p2)) { ear = false; break; }
+          /* A vertex standing on one of the ear's own corners is that corner,
+             not something poking into it. Two of them are there by
+             construction once a hole has been bridged into a ring -- the
+             bridge is walked out and back, so both of its ends are in the ring
+             twice -- and inTri counts a point on the boundary as inside, so
+             without this every ear next to a bridge is refused and a ring with
+             a hole in it triangulates to nothing at all. */
+          if ((t[0] === p0[0] && t[1] === p0[1]) ||
+              (t[0] === p1[0] && t[1] === p1[1]) ||
+              (t[0] === p2[0] && t[1] === p2[1])) continue;
+          if (inTri(t, p0, p1, p2)) { ear = false; break; }
         }
         if (!ear) continue;
         out.push([p0, p1, p2]);
