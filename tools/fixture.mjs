@@ -446,6 +446,15 @@ export function halfDone(){
     /* The digits page, which is the only one of the three carrying the base. */
     ['the digits', () => { window.route='ltset';
                            NAV=[{r:'ltset', a:'num'}]; return vLtset(); }],
+    /* The same page, counted in three. The clock on it wears twelve numerals
+       or four, and which one is decided by the widest hour: more than two
+       signs is a smudge however narrow it is drawn. Three is the first base
+       where that happens -- twelve is 110 -- and the eight hours that lose
+       their numeral get a tick instead. Counting in ten, no hour is ever
+       three signs, so the tick had never been drawn. */
+    ['the digits, counted in three', () => { const was=STG.base; STG.base=3;
+                           window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
+                           const h=vLtset('num'); STG.base=was; return h; }],
     ['the marks',  () => { window.route='ltset';
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
@@ -772,6 +781,19 @@ export function halfDone(){
     ['one photograph, opened', () => {
         window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'p1:0'}];
         return vPhoto(); }],
+    /* The second of four, opened. Every count that used to be along the top of
+       a screen was taken off -- words, letters, drafts, followers -- and this
+       is the one left, because which of four you are looking at is where you
+       are standing and not how much you have. A post carrying one photograph
+       is not told it is one of one, so the seed above never draws it.
+       「総数系いらないやろ全部」 */
+    ['the second of four photographs, opened', () => {
+        POSTS.push({id:'pm', at:Date.now(), lang:langId, lname:'Shango', ln:'kano',
+                    who:'Aya', hd:'aya', mine:true, mn:'four of them', ui:'en',
+                    pics:[POSTS[0].pic, window.__fixPic(600, 900),
+                          window.__fixPic(900, 900), window.__fixPic(1200, 500)]});
+        window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'pm:1'}];
+        const h = vPhoto(); POSTS.pop(); return h; }],
     /* A pinned post in the timeline: the mark beside the time only exists on
        one, and a walk over a timeline where nothing is pinned never draws it. */
     ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
@@ -786,6 +808,33 @@ export function halfDone(){
         PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
                     marks:[]}];
         openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* A picture with marks already put on it. The count in the corner only
+       exists once there is something to count -- www/post.js pwpicn -- so a
+       composer whose pictures are bare draws no number anywhere. */
+    ['a photograph with marks on it', () => {
+        openPost();
+        PW.pics = [{u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+                    marks:[{x:.3, y:.4, w:'kano'}, {x:.7, y:.6, w:'mos'}]}];
+        openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* A line long enough for the composer to start counting down. It says
+       nothing until forty are left, so a composer with a short line in it --
+       every other one here -- never draws the number. And once past the end,
+       where the same number goes red. */
+    ['a post running out of room', () => {
+        openPost();
+        PW.ln = Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('');
+        openPost(); const h = FORM.html + pwLeftHTML(); PW = pwBlank(); return h; }],
+    ['a post past the end of the room', () => {
+        openPost();
+        PW.ln = Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('');
+        openPost(); const h = FORM.html + pwLeftHTML(); PW = pwBlank(); return h; }],
+    /* And a post that has been edited since it was sent, which is a mark on
+       somebody's own post and on nobody else's. */
+    ['a post that was edited', () => {
+        const keep = POSTS;
+        POSTS = keep.map((p, i) => i ? p : Object.assign({}, p, { ed: 1 }));
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); POSTS = keep; return h; }],
     /* And a post carrying the most it may. The plus is gone at four and the
        strip slides, so the composer with four pictures on it is a different
        screen from the composer with one. */
@@ -795,6 +844,31 @@ export function halfDone(){
           ({u:'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
             marks:[]}));
         openPost(); const h = FORM.html; PW = pwBlank(); return h; }],
+    /* The composer of a language written from the right, in its own font.
+       Both of those are the paid plan's and both are off in seed(), so the
+       field the line goes in has only ever been rendered left-to-right in
+       the ordinary face. They are one seed because they are one element:
+       `dirClass(scriptDir()) + (myFontOn()? ' tfont' : '')` is the whole of
+       that field's class, and the two answers meet nowhere else.
+       .tfont is LinguaType, which carries only the private use area, so
+       nothing is drawn here that the Lingua keyboard did not type -- which
+       is the rule the second face exists to keep. */
+    ['a line written from the right, in a font of your own', () => {
+        const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+        SET.plan = 'plus'; SCRIPT.dir = 'rtl';
+        SET.myfont = true; installScriptFont();
+        openPost(); const h = FORM.html;
+        PW = pwBlank(); SET.myfont = false;
+        SCRIPT.dir = wasDir; SET.plan = wasPlan; return h; }],
+    /* And the same line in a timeline, where the direction is the post's own
+       and not the reader's: a post says which way it was written and carries
+       it, because rule 8 is that what somebody wrote is shown the way they
+       wrote it. */
+    ['a post written from the right', () => {
+        const keep = POSTS;
+        POSTS = keep.map((p, i) => i ? p : Object.assign({}, p, { dir: 'rtl' }));
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); POSTS = keep; return h; }],
     /* The contents on Studio. The AI conversation is the last chapter and it
        is Studio's, so on free the contents has no way in to it -- which is
        what act-check reports, correctly, unless the walk is shown the plan
@@ -830,6 +904,26 @@ export function halfDone(){
     ['a key of the keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = FORM.html; KB = null; kbShow = 0;
+                                              SET.plan = 'free'; return h; }],
+    /* A FLICK keyboard, which is the other half of the editor and the only
+       one that has corners. kbSlotsShown() is true when the board's pattern
+       is 'flick' or when a key already carries something in one of its four,
+       and a qwerty has neither -- so on the qwerty seeds above a key opens
+       with one slot in the middle and the four directions are on no screen
+       at all. Four classes were unworn for that reason alone: kbeu kbel kber
+       kbed, www/keyboard.js kbKeyHTML(). */
+    ['a key of a flick keyboard, opened', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                                  kbAdd('flick'); kbLay = 0; kbPick(0, 0);
+                                                  const h = FORM.html; KB = null; kbShow = 0;
+                                                  SET.plan = 'free'; return h; }],
+    /* And the board itself, where the four corners of every key are drawn on
+       the key: kbFlicks(key, slots) puts a letter in a corner that has one
+       and a dot in a corner that is empty -- kbf and kbfx -- and it is passed
+       slots:false everywhere the keyboard is only being SHOWN. */
+    ['a flick keyboard, being built', () => { SET.plan = 'plus'; KB = null; kbShow = 0;
+                                              kbAdd('flick'); kbLay = 0;
+                                              window.route = 'kb'; NAV = [{ r:'kb', a:'1' }];
+                                              const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
        to is a question only that kind of key is asked. */
@@ -1093,6 +1187,61 @@ export function halfDone(){
                                          if (l) l.ch = w.ch.split(' ')[1];
                                          openPick('l1'); pkScript = w.id;
                                          return FORM.html + pkCharsHTML(); }],
+    /* The same sheet for a letter that already has one borrowed. Taking it
+       back off is the only thing on the sheet that depends on there being
+       something there -- www/home.js pkclear -- so on a bare letter it is on
+       no screen. */
+    ['a character already borrowed', () => { const l = ltById('l1');
+                                             const was = l ? l.ch : '';
+                                             if (l) l.ch = '\u3042';
+                                             openPick('l1'); const h = FORM.html;
+                                             if (l) l.ch = was; return h; }],
+    /* A word with no meaning on it yet, and a word with more than one. The
+       dictionary numbers the meanings only when there are two to tell apart
+       -- www/words.js sn -- and says "add one" only when there are none --
+       nomn. Every word the fixture holds has exactly one, so neither line is
+       on any screen without this. */
+    ['the dictionary, with a word unfinished and a word with two meanings', () => {
+        const keep = WORDS;
+        WORDS = keep.concat([{ hw:'vel', ph:['v','e','l'], mns:[], pos:'n', at:11 },
+                             { hw:'dros', ph:['d','r','o','s'],
+                               mns:['a bank of a river','an edge'], pos:'n', at:12 }]);
+        window.route = 'words'; NAV = [{ r:'words' }];
+        const h = vWords(); WORDS = keep; return h; }],
+    /* A stage that has been finished. A stage is done when its slots, its
+       decisions and the one thing it has to SAY are all answered -- www/
+       phases.js stIsDone -- and the fixture finishes none of them, so the
+       mark on a finished row is on no screen. A part with no slots and no
+       decisions is finished by saying what it does, which is one line. */
+    ['the stages, with one finished', () => {
+        const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
+                  || stAll()[0];
+        const was = stRules(p.id);
+        stSetRules(p.id, 'a name is a word that stands for a thing');
+        window.route = 'gram'; NAV = [{ r:'gram' }];
+        const h = vGram(); stSetRules(p.id, was); return h; }],
+    /* A character another letter has already taken. The picker dims it rather
+       than hiding it, because which letter has it is worth seeing -- and
+       chTaken() is empty in a language that has borrowed nothing, so the dim
+       face is on no screen. www/home.js had. */
+    ['a character another letter has taken', () => {
+        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
+        const ch = w.ch.split(' ')[0];
+        const other = LETTERS.filter(l => l.id !== 'l1')[0];
+        const was = other ? other.ch : '';
+        if (other) other.ch = ch;
+        openPick('l1'); const h = FORM.html + pkCharsHTML();
+        if (other) other.ch = was; return h; }],
+    /* A language with its page turned off. The word that says so sits beside
+       the name and nowhere else -- www/home.js wldoff -- and hide is absent
+       by default, which is what makes it public. */
+    ['a language whose page is hidden', () => { const w = world();
+                                                const was = w.hide; w.hide = true;
+                                                window.route = 'profile'; NAV = [{ r:'profile' }];
+                                                const h = vProfile();
+                                                if (was === undefined) delete w.hide;
+                                                else w.hide = was;
+                                                return h; }],
     ['an abugida being placed',  () => { SET.wsys='abugida';
                                          LETTERS.push({id:'lv', st:[{pts:[[200,200],[600,600]]}],
                                                        ch:'', nm:'', snd:['a']});

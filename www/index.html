@@ -101,13 +101,11 @@ body{background:var(--bg);color:var(--tx);font-family:var(--face-ui);
    chrome and turned back on for the two places text is genuinely read or
    written. */
 body,#app{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-input,textarea,[contenteditable],.mn,.rd,.wordmean,.sentline{
+input,textarea,[contenteditable],.mn,.rd{
   -webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 /* manipulation keeps scroll and pinch but drops the double-tap-to-zoom that
    was eating every second tap. */
-button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obsnd,.obescb{touch-action:manipulation}
-.cz{font-family:var(--face-caps)}
-.cor{font-family:var(--face-ital)}
+button,select,a,.trow,.entry,.set,.obsrow,.obchb,.obescb{touch-action:manipulation}
 #app{max-width:480px;margin:0 auto;min-height:100dvh;position:relative}
 /* A screen slides in when you arrive at it. It must NOT slide in again every
    time something on it is tapped -- but every tap redraws the whole view, so
@@ -135,8 +133,6 @@ button{font-family:inherit;cursor:pointer}
 .iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .iconb:active{opacity:.5}
-.gtile .bch{font-size:1.5rem;color:var(--gold);line-height:1}
-.gtile .nol{font-size:1.2rem;color:var(--txm);line-height:1}
 /* The gap has to be wider than the speaker's overhang or the speaker of one
    tile sits on top of the next tile: 44pt of button hanging 11pt past a
    corner, over a 6pt gap, means five points of every tile answered to its
@@ -408,13 +404,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbedit.fn .kbec{grid-area:1/1}
 /* How tall the keys are, directly under them. No number and no label: the
    keyboard above is the readout, and it moves as the thumb moves. */
-.kbh{padding:10px 0 2px;display:flex}
-.kbrng{flex:1 1 auto;min-height:44px;background:none;-webkit-appearance:none;appearance:none}
-.kbrng::-webkit-slider-runnable-track{height:3px;border-radius:3px;background:var(--line)}
-.kbrng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
-     width:26px;height:26px;margin-top:-11px;border-radius:50%;background:var(--gold)}
-.kbrng::-moz-range-track{height:3px;border-radius:3px;background:var(--line)}
-.kbrng::-moz-range-thumb{width:26px;height:26px;border:0;border-radius:50%;background:var(--gold)}
 /* A row is added where a row would be. It is drawn as the empty row it is
    about to become, not as a button somewhere else on the screen. */
 .kbk.addrow{flex:1 1 auto;color:var(--txm);background:none;
@@ -432,37 +421,9 @@ canvas.pkc{width:34px;height:34px;display:block}
 .lnin:focus{border-bottom-color:var(--goldln)}
 /* One slot of a key -- the key itself, or one of its four corners -- and what
    is in it. The same row shape either way, because they hold the same thing. */
-.kbslot{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;
-        background:none;border:0;border-bottom:1px solid var(--line);
-        color:var(--tx);font-family:inherit;padding:6px 2px;text-align:left}
-.kbslot .sl{flex:0 0 auto;color:var(--txs);font-size:.9rem;min-width:76px}
-.kbsv{flex:1;min-width:0;display:flex;align-items:center;gap:6px;color:var(--tx)}
-.kbsv canvas.tc{width:30px;height:30px;display:block}
-.kbsv .bch{font-size:1.2rem;line-height:1}
-/* --- the IPA chart ---------------------------------------------------- */
-.ipascroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -24px;padding:0 24px}
-.ipascroll table{width:734px}
-.ipatab{border-collapse:collapse;width:100%;table-layout:fixed}
-/* The row heading is the name of a manner or a height, and some of those are
-   long words in some of the ten. Fixed at 44px and told not to wrap, they were
-   cut off mid-word. Widening to 58px and adding word-break:break-word stopped
-   the cutting and started the breaking -- "approximant" came out as approxi /
-   mant, and Russian broke ten of its labels that way. English broke two, which
-   is why it read as fixed.
-   108px is the widest single word any of the ten has, measured rather than
-   guessed: полуоткрытый at 102px plus the padding. Nothing may break inside a
-   word now; the chart is wider and it was already a horizontal scroller. */
-.ipatab th{font-size:.82rem;color:var(--txm);font-weight:400;text-align:left;
-           padding:2px 6px 4px 0;white-space:normal;line-height:1.25;width:108px;
-           word-break:normal;overflow-wrap:normal}
-.ipatab td{padding:1px;vertical-align:top}
-.ipamine{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px;min-height:44px}
-.ipamine b{border:1px solid var(--goldln);background:var(--goldsf);color:var(--gold);
-           border-radius:8px;padding:8px 12px;font-weight:400;font-size:1rem}
-.ipamine .none{color:var(--txm);font-size:.88rem;align-self:center}
 /* Buttons whose mark is drawn rather than typed line it up with the word. */
-.back.nb,.play,.rr2,.pvbox button{display:inline-flex;align-items:center;gap:6px}
-.back.nb svg,.play svg,.rr2 svg,.pvbox button svg{flex:0 0 auto}
+.back.nb,.play,.pvbox button{display:inline-flex;align-items:center;gap:6px}
+.back.nb svg,.play svg,.pvbox button svg{flex:0 0 auto}
 .set.signin .sl{display:flex;align-items:center;gap:10px}
 .set.signin .sl svg{width:18px;height:18px;flex:0 0 auto}
 .back{background:none;border:none;color:var(--txs);font-size:.88rem;
@@ -498,10 +459,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .navtop:after{content:"";position:absolute;left:0;right:0;top:100%;height:8px;
               background:linear-gradient(180deg,var(--bg),transparent)}
 .chead{padding:0 24px 6px}
-.chap{display:flex;align-items:baseline;gap:12px;margin-top:10px}
-.chap .rn{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.3rem}
-.chap .ct{font-family:var(--face-caps);font-size:1.6rem;font-weight:600}
-.chap .cn{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txm);font-size:1.02rem}
 .body{padding:10px 24px calc(var(--tabh) + 90px)}
 /* As tall as what is left of the screen, so something can be put at the FOOT
    of it -- against the tab bar, not under the last row and not floating in
@@ -573,10 +530,6 @@ canvas.pkc{width:34px;height:34px;display:block}
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* The composer, for somebody who has been ejected. At the top, before the
-   field, because finding out after typing is finding out too late. */
-.pwout{font-size:.9rem;color:var(--bad);border:1px solid var(--bad);
-       border-radius:10px;padding:8px 10px;margin-bottom:10px}
 /* ---------- a report, read ----------
    One card per report, and the reason is the small grey line: what a person
    reading these is looking at is what was SAID, not the five words the app
@@ -723,7 +676,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
-.pgl,.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
+.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
 .pwg{font-size:.76rem;color:var(--txm)}
 .pwg.none{color:var(--bad)}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
@@ -873,9 +826,9 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 
    The field takes what is left after everything under it has had its height,
    and scrolls inside itself rather than growing -- which is why lnFit()
-   leaves a `fitin` field alone. Same shape as .view.fixed below; it is not
-   the same rule, because that one is about a page and this one is about
-   which child gets the slack. */
+   leaves a `fitin` field alone. There was a .view.fixed under this that held
+   the cover still -- a page that does not scroll rather than a child that
+   takes the slack -- and it went with the cover it was written for. */
 /* Pinned to the part of the page that can actually be SEEN, not to the
    document. iOS does not shrink the page for the keyboard -- it slides the
    keyboard over it and then scrolls the layout viewport up to put the focused
@@ -927,36 +880,15 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
    padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
-/* The cover does not scroll. 「ホームもスクロールさせるな固定させてくれ」 */
-.view.fixed{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
-.cover{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;
-       padding:0 30px calc(var(--tabh) + 12px);text-align:center}
 /* What the language is for, on the cover, because that is where what a book
    is about belongs. */
 .wldrow{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;
         min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;
         background:none;color:var(--txs);font-family:inherit;font-size:.88rem}
 .wldrow:active{border-color:var(--goldln)}
-.wldl{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wldl.none{color:var(--txm)}
-.cvrow{display:flex;gap:8px;margin:16px 0 6px}
-.cvst{flex:1;min-height:56px;background:none;border:1px solid var(--line);border-radius:10px;
-      padding:9px 4px;color:var(--tx);font-family:inherit;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
-.cvst:active{border-color:var(--goldln);color:var(--gold)}
-.cvv{font-family:var(--face-ital);font-style:italic;font-size:1.14rem}
-.cvl{font-size:.82rem;color:var(--txm);letter-spacing:.06em}
-/* ---------- I. sounds, II. letters ----------
-   A sound is a row: the sound itself, the letters that write it, and the two
-   ways to add one. A letter is a cell, because there are as many letters as
-   somebody decides there are. */
-.sndlist{border-top:1px solid var(--line)}
-.sndrow{display:flex;align-items:center;gap:9px;padding:9px 0;
-        border-bottom:1px solid var(--line)}
-.sndp{flex:0 0 auto;min-width:56px;min-height:48px;border:1px solid var(--line);border-radius:9px;
-      background:var(--sf);color:var(--tx);font-size:1.06rem}
-.sndp:active{border-color:var(--goldln);color:var(--gold)}
-.sndls{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+/* ---------- the letters ----------
+   A letter is a cell, because there are as many letters as somebody decides
+   there are. */
 /* The alphabet: one cell per letter, the shape and what it is called, as many
    across as the screen holds. A row per letter was a thumb high each and read
    as a settings screen at seven letters and as a scroll at forty.
@@ -1000,13 +932,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    A letter with nothing drawn on it shows only its name here. The pen on the
    alphabet page means "this one is waiting for you"; in the middle of
    spelling a word it means nothing, and twenty-eight of them mean less. */
-.ltgrid.ltpick{grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:5px}
-.ltgrid.ltpick .ltc{min-height:52px;padding:5px 2px 4px;gap:2px;border-radius:10px}
-.ltgrid.ltpick .ltcf{height:24px}
-.ltgrid.ltpick .ltc canvas.tc{width:24px;height:24px}
-.ltgrid.ltpick .ltc .bch{font-size:1.05rem}
-.ltgrid.ltpick .ltcn{font-size:.8rem}
-.ltgrid.ltpick .nol{display:none}
 /* Picked up: it rides over the others and follows the finger. */
 .ltc.lift{position:relative;z-index:3;border-color:var(--gold);box-shadow:var(--shadow)}
 /* Held, the way a phone's home screen is held. The keyframes are the
@@ -1027,13 +952,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
      background:var(--tx);color:var(--bg);display:flex;align-items:center;
      justify-content:center;z-index:4}
 .ltx svg{width:13px;height:13px}
-.sndadd{width:44px;height:44px;flex:0 0 auto;border:1px dashed var(--line);border-radius:9px;
-        background:none;color:var(--txm);
-        display:inline-flex;align-items:center;justify-content:center}
-.sndadd:active{border-color:var(--goldln);color:var(--gold)}
-.sndx{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
-      display:inline-flex;align-items:center;justify-content:center}
-.sndx:active{color:var(--gold)}
 /* A clash, said where it happens. Two letters reading the same unit is not an
    error -- the font takes the first and the second is simply never drawn --
    but nothing on the screen said which was which. */
@@ -1045,22 +963,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .field input.dup{color:var(--bad);border-color:var(--bad)}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-/* ---------- a word, spelled ----------
-   Each position is the letter and, under it, what it says here. A position
-   saying something other than the letter's own reading is marked, because a
-   sound change is the one thing on this row worth noticing. */
-.spellrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:60px;
-          padding:8px 10px;border:1px solid var(--line);background:var(--pane);border-radius:12px}
-.spc{min-width:48px;min-height:52px;border:1px solid var(--line);border-radius:9px;
-     background:var(--sf);color:var(--tx);padding:5px 6px;
-     display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-.spc.odd{border-color:var(--purln);background:var(--pursf)}
-.spf{display:inline-flex;align-items:center;justify-content:center;height:26px;font-size:1.2rem}
-.spf canvas.tc{width:26px;height:26px;display:block}
-.spf .bch{font-size:1.2rem;line-height:1}
-.spu{font-size:.82rem;color:var(--txm);line-height:1}
-.spc.odd .spu{color:var(--pur)}
-.spnone{flex:1;color:var(--txm);font-size:.88rem}
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
        margin-bottom:14px;color:var(--tx)}
 .spbig canvas.tc{width:80px;height:80px;display:block}
@@ -1113,34 +1015,9 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .abcell canvas.tc{width:60px;height:60px;display:block}
 .abu{font-size:.82rem;color:var(--txm);letter-spacing:.03em}
 .abcell.own .abu{color:var(--gold)}
-/* ---------- search, the tab ---------- */
-.fcard{border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-.fcard.soon{border-style:dashed;opacity:.62}
-.fch{font-family:var(--face-caps);font-size:1rem;margin-bottom:6px}
 .note{color:var(--txm);font-size:.86rem;line-height:1.75}
 /* A photograph of the settings screen a step lands on, at the width of the
    page, with the corners of a screenshot. */
-/* One sound of the language: the symbol, the letters that say it, and the way
-   to take it out. A sound nothing reads is not an error -- it is a phonology
-   somebody is partway through -- so the empty case is a quiet line and not a
-   warning. */
-.sndrow{display:flex;align-items:center;gap:12px;padding:10px 2px;
-        border-bottom:1px solid var(--line)}
-.sndsym{min-width:44px;min-height:44px;border:0;background:none;color:var(--tx);
-        font-family:var(--face-ital);font-size:1.3rem}
-.sndlts{flex:1 1 auto;display:flex;flex-wrap:wrap;gap:6px;min-width:0}
-/* Shown, not pressed. Joining a sound to a letter is the letter's, in one
-   place -- two directions for one fact is what closed the old sound chapter. */
-.sndlt{min-height:36px;min-width:36px;border:1px solid var(--line);border-radius:9px;
-       background:var(--sf);color:var(--tx);font-family:inherit;padding:0 8px;
-       display:inline-flex;align-items:center;justify-content:center}
-/* ltInk() returns a canvas with no size of its own -- every place that shows
-   a letter says how big. 26 is the size of a letter standing in a row of
-   text, which is what this is. */
-.sndlt .tc{width:26px;height:26px;display:block}
-.sndlt .bch{font-size:1.05rem;line-height:1}
-.sndnone{color:var(--txm);font-size:.86rem}
-.sndx{flex:0 0 auto;min-width:44px;min-height:44px;border:0;background:none;color:var(--txm)}
 /* Which part of speech the dictionary is filtered to: one row that says the
    answer and opens the list, where twelve tabs used to scroll sideways. */
 /* The filter and the order, side by side. */
@@ -1170,11 +1047,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .kbstepn{font-family:var(--face-ital);font-style:italic;
          color:var(--gold);font-size:1.1rem}
 .kbstept{font-size:1rem;color:var(--tx);margin:2px 0 6px}
-/* Whether what this chapter builds ever reached the phone. In the `?` sheet
-   now, with the steps it belongs to. */
-.kbout{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;
-       background:var(--pane)}
-.kbout.bad{border-color:var(--bad);color:var(--bad)}
 .sec{font-size:.82rem;letter-spacing:.28em;color:var(--txm);text-transform:uppercase;margin:28px 0 10px}
 .sec.secadd{display:flex;align-items:center;margin-right:-8px}
 .secplus{margin-left:auto;min-width:44px;min-height:44px;background:none;border:0;padding:0;
@@ -1185,24 +1057,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    just pulls the word apart, so those three languages get none, and a size
    that carries without the capitals trick. */
 html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:.02em;font-size:.86rem}
-.card{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
-.rule{width:44px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:18px auto 0}
 
-/* ---------- the title page (home) ---------- */
-.title{padding:34px 30px 20px;text-align:center}
-.tkick{font-size:.82rem;letter-spacing:.34em;color:var(--txm);text-transform:uppercase;margin-bottom:14px}
-/* An inline-flex button inside a centred column is only as wide as its own
-   text and sits at the left edge of it. 「作成中の言語（左寄せになってるから真ん中
-   寄せに。）」 -- it is the one thing on this screen the eye lands on first. */
-.tname{font-family:var(--face-caps);font-weight:600;font-size:2.2rem;line-height:1.15;
-       display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
-       background:none;border:none;color:var(--tx);min-height:44px}
-.tname .pen{font-size:.84rem;color:var(--txm);display:inline-flex;align-items:center;vertical-align:middle;margin-left:6px}
-/* The reading under the language name was purple, and purple means two
-   other things here -- the PLUS tag, and a sound that changed in one word.
-   It means neither on the cover, so it was a colour saying something untrue
-   on the first screen you see. */
-.tsub{font-family:var(--face-ital);font-style:italic;font-size:1.1rem;color:var(--txs);margin-top:6px}
 .toc{margin-top:14px}
 .trow{display:flex;align-items:baseline;gap:12px;padding:16px 2px;width:100%;background:none;border:none;color:var(--tx);text-align:left}
 .trow:active{opacity:.55}
@@ -1210,10 +1065,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .trow .rt{font-size:1.1rem;font-weight:500}
 .trow .lead{flex:1;border-bottom:1px dotted var(--dot);transform:translateY(-3px)}
 .trow .rv{font-family:var(--face-ital);font-size:1.02rem;color:var(--txs);flex:0 0 auto}
-.recent{margin-top:24px;background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;width:100%;text-align:left;color:var(--tx)}
-.recent .rh{font-size:.82rem;letter-spacing:.24em;color:var(--txm);text-transform:uppercase;margin-bottom:10px}
-.recent .line{font-family:var(--face-caps);font-size:1.25rem;letter-spacing:.02em}
-.recent .tr{font-family:var(--face-ital);font-style:italic;font-size:1.02rem;color:var(--txs);margin-top:2px}
 
 /* ---------- the empty state ---------- */
 .empty{padding:54px 30px;text-align:center}
@@ -1251,13 +1102,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .esay{flex:0 0 44px;width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
 .esay:active{color:var(--gold)}
-.eopen{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
-       display:inline-flex;align-items:center;justify-content:center}
-.eopen:active{color:var(--gold)}
-/* How many are on screen, what order they are in, and the way to hear them
-   all. One row, because they are all answers to "what am I looking at". */
-.wmeta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
-.wct{font-size:.86rem;color:var(--txm);letter-spacing:.04em;margin-right:auto}
 /* This said .wsrt a second time, three hundred lines under the first, as a
    bordered pill with a 10pt radius -- and being second it won. So the sort
    button was a rounded box beside a control that is a line, which is the one
@@ -1296,14 +1140,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .mn .sn + span{margin-right:0}
 .mn .nomn{opacity:.42}
 /* Where a word came from, and how many have come from it. */
-/* A sentence this word is used in. */
-.useln{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
-.useln:last-child{border-bottom:0}
-.usew{font-family:var(--face-caps);font-size:.95rem;flex:0 0 auto;max-width:45%;
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.usem{font-family:var(--face-ital);font-style:italic;
-      font-size:.9rem;color:var(--txs);flex:1;min-width:0;
-      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .usep{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
       display:inline-flex;align-items:center;justify-content:center}
 .usep:active{color:var(--gold)}
@@ -1327,10 +1163,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .ph i{font-style:normal;font-family:var(--face-ital);font-size:.84rem;color:var(--gold);margin-top:2px}
 .ph.off{color:var(--txm);border-style:dashed;background:none;opacity:.6}
 .ph.off i{color:var(--txm)}
-.link{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:20px;text-align:center}
-.link .src{font-family:var(--face-caps);font-size:1.16rem;letter-spacing:.03em}
-.link .arw{color:var(--txm);font-size:.86rem;margin:9px 0 7px}
-.link .out{font-size:1.34rem;color:var(--gold);letter-spacing:.06em}
 /* The mark and nothing round it. It was a bordered box the size of a key
    sitting beside the word, which reads as something to press for a reason
    you have not been told 「謎の四角も要らないマークとしてわからん」 -- and it
@@ -1341,12 +1173,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .play:active{opacity:.6}
 
 /* ---------- rules ---------- */
-.find{padding:16px 0;border-bottom:1px solid var(--line)}
-.ft{font-size:1rem;font-weight:500;line-height:1.6}
-.ft em{font-style:normal;color:var(--gold);font-family:var(--face-caps)}
-.fd{color:var(--txm);font-size:.88rem;margin-top:5px;line-height:1.8}
-.bar{height:2px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--gold)}
 
 /* ---------- make ---------- */
 /* Not pills. A pill is a rounded box with a word shut inside it, and this
@@ -1363,24 +1189,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 /* The faces of one keyboard, under the row of keyboards. No rule under it:
    the keyboard itself is directly below and two lines is a box. */
 .kbsegs{border-bottom:0;margin-bottom:4px}
-.cand{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line)}
-.cand .ck{width:44px;height:44px;margin-left:-11px;border:0;background:none;flex:0 0 auto;
-          display:flex;align-items:center;justify-content:center}
-.cand .ck .ckb{width:22px;height:22px;border-radius:6px;border:1px solid var(--line);
-          display:flex;align-items:center;justify-content:center;color:var(--onGold)}
-.cand .ck.on .ckb{background:var(--gold);border-color:var(--gold)}
-.cand .cw{font-family:var(--face-caps);font-size:1.1rem}
-.cand .crd{font-size:.86rem;color:var(--txm);margin-left:2px}
-.cand .cm{margin-left:auto;font-family:var(--face-ital);font-style:italic;color:var(--txs);font-size:1rem}
-/* 44 is Apple's floor for anything a thumb has to hit, and this said so --
-   then a second .cand .rr three hundred lines further down, in a batch of
-   fixes made when characters became drawings, repeated three of these four
-   declarations and set min-width to 26. A later rule undoing an earlier one
-   about the same thing, so the row's two controls were half a target wide for
-   as long as nobody measured them. There is one rule. */
-.cand .rr{background:none;border:none;color:var(--txm);min-width:44px;min-height:44px;
-          display:flex;align-items:center;justify-content:center}
-
 /* ---------- settings ---------- */
 /* font-size and line-height are set HERE and not left to the tag. A <button>
    takes the browser's own 13.3px/normal and an <a> takes the body's 16px/1.7,
@@ -1400,9 +1208,6 @@ a.set{text-decoration:none}
 .docs a{color:var(--txm);text-decoration:none}
 .docs a:active{color:var(--gold)}
 .docdot{opacity:.5}
-/* Air between two groups of rows that are about different things. A heading
-   over each would be two headings on a screen with six rows on it. */
-.setgap{height:26px}
 /* Deleting something, wherever it is offered. It was written out as
    style="color:#c9553f" on six screens and once more in this file -- seven
    copies of one colour, none of which changed when the dark theme did. */
@@ -1687,8 +1492,6 @@ a.set{text-decoration:none}
    than the one you are looking at. They are different questions -- editing
    does not change what is under somebody's thumb in Messages -- and this row
    is where a person finds that out. */
-.kbbar{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none}
-.kbbar::-webkit-scrollbar{display:none}
 /* The chapter is a list: one keyboard is a row, and pressing it opens that
    keyboard's own page. It was a row of tabs above the editor, so the thing
    being chosen and the thing being changed were on the same screen and
@@ -1766,13 +1569,6 @@ a.set{text-decoration:none}
 .kbadd{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;
        padding:10px 2px;border:0;background:none;color:var(--gold);
        font-family:inherit;font-size:.92rem;text-align:left}
-/* A keyboard is chosen by its SHAPE. The row was round patches reading 1 2 3,
-   which say which one is second and nothing about which one is the flick
-   board. 「マルパッチ禁止」 The tick still says which one is on the phone. */
-.kbtab{flex:0 0 auto;width:96px;min-height:52px;padding:7px 8px 6px;border-radius:10px;
-       border:1px solid var(--line);background:none;color:var(--txm);
-       font-family:inherit;font-size:.9rem;position:relative;
-       display:inline-flex;flex-direction:column;align-items:stretch;justify-content:center}
 /* The keyboard itself, shrunk: the real keys with the real letters on them,
    so what is being chosen between is what will be typed on. The glyphs are
    canvases and scale down with the box; `overflow:hidden` on the key is what
@@ -1812,16 +1608,6 @@ a.set{text-decoration:none}
 .plkb .kbsk .kbl{font-size:12px;line-height:1}
 .plkb .kbsk .bch{font-size:15px;line-height:1}
 .plkb .kbsk svg{width:15px;height:15px}
-.kbtab.on{border-color:var(--goldln);background:var(--goldsf)}
-/* The tick sits ON the picture rather than beside it: beside it the tile has
-   to grow to hold a mark that is about the tile. */
-.kbtab .kbon{position:absolute;top:3px;right:4px}
-.kbtab.add{width:44px;min-width:44px;padding:0;align-items:center;justify-content:center;
-           color:var(--gold);border-style:dashed}
-/* The two that undo things live behind this. At the far end, no outline: it
-   is a way out of the row rather than one more thing in it. */
-.kbtab.more{margin-left:auto;width:44px;min-width:44px;padding:0;
-            align-items:center;justify-content:center;border:0;color:var(--txm)}
 .kbon{display:inline-flex;color:var(--gold)}
 .kbon svg{width:14px;height:14px}
 /* ---------- choosing what shape a keyboard is ----------
@@ -1989,9 +1775,6 @@ a.set{text-decoration:none}
 .mkt{min-width:44px;min-height:44px;padding:0 12px;border:0;border-radius:999px;
      background:rgba(0,0,0,.42);color:#fff;font-family:inherit;font-size:.82rem;
      display:inline-flex;align-items:center;gap:7px}
-.mkdot{width:15px;height:15px;border-radius:50%;background:#111;
-       border:1px solid rgba(255,255,255,.65);flex:none}
-.mkdot.w{background:#fff}
 /* The field the line is typed into, and it IS the line: it sits on the
    picture, in the letters and the colour the line will be in, at the size it
    will be. There was a grey box at the foot of the screen as well, which said
@@ -2088,7 +1871,6 @@ a.set{text-decoration:none}
 /* What a post can be given: the camera, the pictures already on the phone,
    and the microphone. One plus stood for all three and only ever meant the
    second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
-.pwadd{display:flex;align-items:center;gap:10px}
 /* 46 across, not 44: the box is border-box and the file input inside it fills
    the CONTENT, so a 44 square with a 1px border gives a 42 target. */
 .pwab{flex:0 0 auto;position:relative;min-width:46px;height:46px;padding:0;
@@ -2206,7 +1988,6 @@ a.set{text-decoration:none}
        padding:8px 22px calc(env(safe-area-inset-bottom,0) + 20px);transform:translateY(101%);
        transition:.27s cubic-bezier(.2,.8,.2,1);max-height:92dvh;overflow:auto}
 .sheet.on{transform:none}
-.grip{width:40px;height:4px;border-radius:3px;background:var(--line);margin:6px auto 14px}
 .sheet h3{font-size:1.05rem;margin:0 2px 6px;font-weight:700}
 .field{margin-bottom:11px}
 .field label{font-size:.84rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
@@ -2228,7 +2009,6 @@ a.set{text-decoration:none}
           border:0;border-bottom:1px solid var(--line);border-radius:0}
 .field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
-.field input.hwf{font-family:var(--face-caps);font-size:1.14rem;letter-spacing:.03em}
 .field textarea{height:120px;line-height:1.6}
 /* A note on a word is a line or two, not a page. */
 .field textarea#wd-nt{height:76px}
@@ -2305,9 +2085,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wdrow{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:11px 2px;
   background:none;border:0;border-bottom:1px solid var(--line);text-align:left;color:var(--tx)}
 .wdrow:active{background:var(--goldsf)}
-/* A position of a reading that says something other than what its letter
-   reads. Same colour as the tiles used to wear. */
-.wdrow.odd .wdroww{color:var(--pur)}
 .wdrowf{flex:0 0 auto;font-size:.76rem;color:var(--txm)}
 .wdroww{flex:0 0 auto;font-size:1.02rem}
 .wdrowm{flex:1 1 auto;min-width:0;font-size:.9rem;color:var(--txm);text-align:right;
@@ -2315,39 +2092,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .wrd{font-family:var(--face-ital);font-size:1.14rem;color:var(--tx);margin:6px 2px 0;letter-spacing:.03em}
 .wsub{font-family:var(--face-ital);font-size:1.06rem;color:var(--gold);margin:4px 2px 0;letter-spacing:.02em}
 .wsub2{font-size:.88rem;color:var(--txm);margin:2px 2px 0}
-.sylrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.sy{display:inline-flex;flex-direction:column;align-items:center;background:var(--sf);border:1px solid var(--line);
-    border-radius:10px;padding:7px 13px;min-width:52px}
-.sy .sya{font-family:var(--face-caps);font-size:1.02rem}
-.sy .syi{font-family:var(--face-ital);font-size:.88rem;color:var(--gold);margin-top:3px}
-.sy .syk{font-size:.84rem;color:var(--txm);margin-top:1px}
-.sysep{color:var(--txm);font-size:.88rem}
-/* sentences */
-.sline{display:flex;align-items:flex-end;justify-content:center;gap:14px;flex-wrap:wrap}
-.rr2{background:none;border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:5px 12px;font-size:.86rem}
-.rr2:active{opacity:.55}
-.link .out .kn{font-size:.9rem;color:var(--txs);letter-spacing:.04em}
-/* weaving a sentence */
-.weave{display:flex;flex-wrap:wrap;gap:8px;padding:14px;background:var(--pane);border:1px solid var(--line);border-radius:14px}
-.wc{display:inline-flex;flex-direction:column;align-items:center;gap:2px;background:var(--sf);
-    border:1px solid var(--line);border-radius:11px;padding:8px 13px;color:var(--tx)}
-.wc.on{background:var(--goldsf);border-color:var(--goldln)}
-.wc .wcw{font-family:var(--face-caps);font-size:1.04rem}
-.wc .wcm{font-size:.82rem;color:var(--txm)}
-.pal{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:220px;overflow:auto}
-.pw{display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;background:var(--sf);
-    border:1px solid var(--line);border-radius:11px;padding:7px 12px;color:var(--tx)}
-.pw:active{opacity:.55}
-.pw .pww{font-family:var(--face-caps);font-size:.98rem}
-.pw .pwm{font-size:.84rem;color:var(--txs)}
-.pw .pwm.dim{color:var(--txm);opacity:.6}
-.chk{margin-top:12px;font-size:.88rem;line-height:1.8;border-radius:12px;padding:11px 14px;border:1px solid var(--line)}
-.chk.ok{color:var(--txs);background:var(--goldsf);border-color:var(--goldln)}
-.chk.ng{color:var(--txs);background:var(--sf)}
-.chk b{color:var(--gold);font-family:var(--face-caps)}
-.chk button{display:block;margin-top:9px;background:none;border:1px solid var(--goldln);color:var(--gold);
-    border-radius:8px;padding:6px 13px;font-size:.86rem}
-.ipa{font-family:var(--face-ital);letter-spacing:.02em}
 .toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 24px);transform:translateX(-50%) translateY(10px);
        background:var(--sf2);border:1px solid var(--line);color:var(--tx);font-size:.82rem;padding:10px 18px;
        border-radius:10px;z-index:60;opacity:0;pointer-events:none;transition:.24s;max-width:88%;text-align:center}
@@ -2371,9 +2115,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .ob h2.obh{font-size:clamp(1.02rem,4.2vw,1.24rem)}
 .ob p{color:var(--txm);font-size:.88rem;line-height:2;margin-top:14px}
 .ob .obfoot{margin-top:auto;padding-top:12px;flex:0 0 auto}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px}
-.chip{background:var(--sf);border:1px solid var(--line);color:var(--txs);border-radius:8px;padding:8px 15px;font-size:.88rem}
-.chip.on{background:var(--goldsf);border-color:var(--goldln);color:var(--gold);font-weight:600}
 .mini{font-size:.86rem;color:var(--txm);margin-top:8px;line-height:1.8}
 
 /* ---------- writing system ----------
@@ -2381,15 +2122,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    the grid of letters, and the canvas you draw one in. Nothing here sets a
    colour of its own — the palette variables carry both themes as everywhere
    else in this file. */
-.gtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px}
-.gtile{position:relative;aspect-ratio:1/1;background:var(--sf);border:1px solid var(--line);
-       border-radius:12px;padding:0;display:flex;align-items:center;justify-content:center;color:var(--tx)}
-.gtile.empty{background:none;border-style:dashed;color:var(--txm)}
-.gtile:active{opacity:.6}
-.gtile canvas{width:100%;height:100%;display:block;border-radius:12px}
-.gtile .rl{position:absolute;left:7px;bottom:4px;font-family:var(--face-ital);
-           font-style:italic;font-size:.88rem;color:var(--gold);opacity:.85;line-height:1}
-.gtile.add{font-size:1.3rem;color:var(--gold);border-style:dashed}
 .gcanvwrap{margin:6px 0 2px;display:flex;justify-content:center}
 /* none, not manipulation: the canvas wants every event, including the ones a
    browser would otherwise spend on panning. */
@@ -2418,19 +2150,8 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .gtools button:active{opacity:.55}
 html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .gtools .gcap{
   letter-spacing:.01em;font-size:.82rem}
-/* Going back and erasing everything are repairs, not marks. They are not peers
-   of placing a point, so they stand apart and quiet as words rather than
-   taking a sixth of the rail. */
-.gclear:active{opacity:.55}
-html[lang="ja"] .gclear, html[lang="zh"] .gclear, html[lang="ko"] .gclear{
-  letter-spacing:.02em;font-size:.84rem}
 .ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
-.spv{background:var(--pane);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-align:center}
-.spv .big{font-size:2.4rem;line-height:1.5;word-break:break-word}
-.spv .sm{font-size:17px;line-height:1.9;margin-top:6px;color:var(--txs);word-break:break-word}
-.spv .rom{font-family:var(--face-caps);font-size:.86rem;color:var(--txm);
-          letter-spacing:.06em;margin-top:10px}
 /* The one switch the whole feature turns on. Everything it changes is a
    font-family: the stored text stays roman letters, always. */
 /* Every place a headword is shown as itself, and nowhere else: not the reading,
@@ -2508,11 +2229,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .tfont{font-family:var(--face-type) !important}
 </style>
 <style id="ob-rework">
-.langpick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:24px}
-.lpo{padding:14px 12px;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(255,255,255,.03);color:inherit;font:inherit;font-size:1rem;cursor:pointer;transition:.15s;text-align:center;-webkit-tap-highlight-color:transparent}
-.lpo:active{transform:scale(.97)}
-.lo:hover,.lpo:hover{border-color:rgba(255,255,255,.35)}
-.lpo.on{border-color:#c9a86a;background:rgba(201,168,106,.14);color:#e9d9b0}
 .obtag{margin-top:20px;font-size:1.15rem;line-height:1.7;opacity:.92;text-align:center}
 /* The one place a corner stays on a button, and it is not ours to decide:
    Apple and Google both specify the shape of their own sign-in button, down
@@ -2532,7 +2248,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
    else, and why nothing said so. Same shape as the `.sfont` bug: one rule in
    one place, quietly outranked by another that was written for one screen. */
 .ob .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:inherit}
-.btn.obauto{margin-top:10px}
 .obhead{display:flex;align-items:center;justify-content:space-between;gap:12px}
 /* --- onboarding: the letter, the escape row, the borrowed scripts ------- */
 /* 枠も角丸も無い。押せるものは色で押せると分かる ── CLAUDE.md の
@@ -2547,7 +2262,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .ob .obsub{font-family:var(--face-ital);font-style:italic;
            font-size:clamp(.86rem,3.4vw,1.02rem);color:var(--txs);margin-top:6px;flex:0 0 auto}
 .ob .obleft{text-align:left}
-.ob .obq{margin-top:16px}
 .ob .obnote{text-align:center}
 /* The drawing surface takes what the rest of the screen has not asked for.
    Every term is a ceiling: never wider than the column, never taller than a
@@ -2601,18 +2315,10 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   padding:16px 6px;color:var(--tx);font-family:var(--face-caps);font-size:1.25rem;
   text-align:center;outline:none}
 .obnamebox input:focus{border-bottom-color:var(--goldln)}
-/* a letter the app worked out rather than one anybody drew */
-.gtile.made{border-style:dashed}
 .obchars{margin-top:12px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
          display:grid;grid-template-columns:repeat(6,1fr);gap:6px;align-content:start}
 .obchb{border:1px solid var(--line);background:var(--sf);border-radius:9px;
        padding:0;font-size:1.05rem;color:var(--tx);min-width:44px;min-height:48px}
-.obsndgrid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px;flex:0 0 auto}
-.obsnd{border:1px solid var(--line);background:var(--sf);border-radius:10px;
-       padding:12px 16px;font-size:1.05rem;color:var(--tx);min-width:52px;min-height:52px}
-.obsnd.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
-.obgl{color:var(--gold);display:block;margin:0 auto}
-.obch{color:var(--gold);line-height:1;text-align:center}
 /* The door is drawn, not built out of a box with rounded corners. A CSS
    arch inherits its radius into the panel inside it, needs a different fill
    in each theme, and turns into a pale slab on a light background. One
@@ -2627,8 +2333,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .obdoor{flex:0 1 auto;min-height:0;height:min(30vh, 224px);
         display:flex;align-items:center;justify-content:center;color:var(--gold);line-height:0}
 .obdoor svg{height:100%;width:auto;max-width:min(40vw,148px);display:block}
-.obrule{width:56px;height:1px;margin:clamp(12px,2.4vh,20px) auto 0;flex:0 0 auto;
-        background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 .ob .obh1{font-family:var(--face-caps);font-size:clamp(1.35rem,5.6vw,1.8rem);
           letter-spacing:.2em;margin-top:clamp(10px,2vh,16px);font-weight:600;flex:0 0 auto}
 .ob .obtag{margin-top:clamp(6px,1.4vh,10px);font-size:clamp(.9rem,3.6vw,1.05rem);flex:0 0 auto}
@@ -2709,16 +2413,7 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .obback.ph{pointer-events:none;opacity:0}
 .btn.signin .mk{flex-shrink:0}
 
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;margin-bottom:10px}
-.ptile{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  height:58px;padding:4px;border:1px solid var(--line);border-radius:10px;background:transparent;
-  color:var(--tx);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
-.ptile.has{border-color:rgba(201,168,106,.45)}
-.ptile:active{transform:scale(.96)}
-.pch{font-size:1.4rem;line-height:1.1}
-.ptile:not(.has) .pch{font-size:.95rem;color:var(--txm)}
 .psn{font-family:var(--face-mono);font-size:.82rem;color:var(--txm)}
-.pdel{position:absolute;top:0;right:3px;font-size:.88rem;color:var(--txm);line-height:1}
 .pkown{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 /* .btn is flex:1 so a row of them shares the width; one beside a field is
    not sharing anything and shrank to the width of its word and grew tall. */
@@ -2737,14 +2432,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}
 .pkch.cur{border-color:var(--gold);color:var(--gold)}
-.sndgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:7px;max-height:46dvh;overflow-y:auto}
-.sndchip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;height:52px;
-  border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--tx);font:inherit;cursor:pointer}
-.sc1{font-family:var(--face-mono);font-size:.86rem}
-.sc2{font-size:.82rem;color:var(--txm)}
-.scrpv{display:flex;flex-direction:column;gap:4px;padding:13px;border:1px solid var(--line);border-radius:11px;margin-bottom:10px}
-.scrpvw{font-size:1.5rem;line-height:1.4;word-break:break-all}
-.scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
 .scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;
   color:var(--tx);font:inherit;font-size:1rem;outline:none}
 .scin:focus{border-color:var(--gold)}
@@ -2752,23 +2439,10 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .scin{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
   color:var(--tx);font:inherit;font-size:1.05rem;text-align:center;outline:none}
 .scin:focus{border-color:var(--gold)}
-.scrpv{display:flex;flex-direction:column;gap:5px;padding:15px;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
-.scrpvw{font-size:1.7rem;line-height:1.4;word-break:break-all}
-.scrpvr{font-size:.86rem;color:var(--txm);font-family:var(--face-mono)}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
 .capgo{color:var(--gold);flex-shrink:0}
-.sh2{font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--txm);margin:26px 0 10px}
 .set.lock .sv{color:var(--gold)}
-.nextcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:2px 0 18px;padding:14px 16px;
-  border:1px solid rgba(201,168,106,.34);border-radius:12px;background:rgba(201,168,106,.09);color:inherit;
-  font:inherit;cursor:pointer;transition:.15s;-webkit-tap-highlight-color:transparent}
-.nextcard:hover{border-color:rgba(201,168,106,.6)}
-.nextcard:active{transform:scale(.99)}
-.nextcard .nk{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);flex-shrink:0}
-.nextcard .nl{flex:1;font-size:.92rem;line-height:1.5}
-.nextcard .na{color:var(--gold);flex-shrink:0;display:flex;align-items:center}
-
 /* ---------- the grammar, in stages ----------
    A list of stages, each with what it still needs; then one stage open, with
    its words as rows you can fill on the spot. */
@@ -2798,37 +2472,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .stslot .psn{font-size:.88rem;color:var(--txm)}
 .stslot .go{margin-left:auto;color:var(--txm);flex:0 0 auto;align-self:center}
 .stslot.has .psn{display:none}
-
-/* ---------- what the app proposes ----------
-   The inventory it drew, laid out so every sound in it can be heard on its
-   own before the whole thing is accepted. */
-.obheard{margin-top:14px;padding:14px;border:1px solid var(--goldln);border-radius:12px;
-  background:var(--goldsf)}
-.obheard .obhl{font-size:.86rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
-.obhs{display:flex;flex-wrap:wrap;gap:6px}
-/* Consonants and vowels on their own rows, each with its name to the side.
-   The name is quiet and small: it is there to be read once, and after that it
-   is only a marker for which row is which. */
-.obhr{margin-bottom:10px}
-.obhr:last-child{margin-bottom:0}
-.obhk{display:block;font-size:.84rem;letter-spacing:.06em;color:var(--txm);margin-bottom:5px}
-/* A sound and the way to take it back out, joined as one block so it reads
-   as one thing. The sound says itself; the cross removes it. Both are full
-   height, because a target you have to aim at is a target you will miss. */
-.obhp{display:inline-flex;align-items:stretch;border:1px solid var(--goldln);border-radius:8px;
-  background:var(--pane);overflow:hidden}
-.obhb{min-width:44px;min-height:44px;border:0;border-radius:0;
-  background:none;color:var(--tx);font-size:1.02rem;padding:8px 4px 8px 11px}
-.obhb:active{opacity:.55}
-.obhx{min-width:44px;min-height:44px;border:0;background:none;color:var(--txm);
-  display:inline-flex;align-items:center;justify-content:center;padding:0 8px 0 4px}
-.obhx:active{color:var(--gold)}
-/* And the way to lengthen the row. Dashed, because it is not one of the
-   sounds -- it is the space where the next one would go. */
-.obhadd{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 12px;
-  border:1px dashed var(--line);border-radius:8px;background:none;
-  color:var(--txs);font-family:inherit;font-size:.88rem}
-.obhadd:active{border-color:var(--goldln);color:var(--gold)}
 
 /* ---------- a word, opened ----------
    Its meanings are a list, because a word can mean more than one thing, and
@@ -2875,28 +2518,6 @@ textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(
    padding:12px 2px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
 textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 
-/* ---------- the conversation ----------
-   Its turns sit against the left margin, yours against the right, and every
-   one carries what it means underneath because you are still learning to
-   read this. */
-.tkthread{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}
-.tk{position:relative;max-width:88%;align-self:flex-start;padding:12px 44px 12px 14px;
-  border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--pane)}
-.tk.me{align-self:flex-end;border-radius:14px 14px 4px 14px;
-  border-color:var(--goldln);background:var(--goldsf)}
-.tk .tkw{font-family:var(--face-caps);font-size:1.06rem;color:var(--tx);word-break:break-word}
-.tk .tki{font-family:var(--face-mono);font-size:.84rem;color:var(--gold);margin-top:3px}
-.tk .tkg{font-family:var(--face-ital);font-style:italic;font-size:.9rem;
-  color:var(--txs);margin-top:4px;line-height:1.5}
-.tk .tkp{position:absolute;top:8px;right:6px;min-width:44px;min-height:44px;background:none;border:0;
-  color:var(--txm);display:flex;align-items:center;justify-content:center}
-.tk .tkp:active{opacity:.5}
-.tsend{display:flex;gap:10px;margin-top:12px}
-.tmks{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
-.tmk{min-height:44px;padding:8px 14px;border:1px solid var(--goldln);border-radius:8px;
-  background:var(--goldsf);color:var(--gold);font:inherit;font-size:.82rem;cursor:pointer}
-.tmk:disabled{opacity:.35;border-color:var(--line);background:none;color:var(--txm)}
-
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then
    one of your own words before and after it. The demonstration is the point,
@@ -2904,13 +2525,6 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
-.gpiece{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0 0;padding:12px 14px;
-  border:1px solid var(--line);border-radius:11px;background:var(--pane);color:inherit;font:inherit;
-  text-align:left;cursor:pointer;min-height:48px}
-.gpiece.has{border-color:var(--goldln)}
-.gpiece .gpl{font-size:.88rem;color:var(--txs)}
-.gpiece .gpv{margin-left:auto;font-family:var(--face-mono);font-size:.9rem;color:var(--gold)}
-.gpiece:not(.has) .gpv{color:var(--txm);font-family:inherit;font-size:.88rem}
 .gdemo{margin:12px 0 2px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--pane)}
 .gside{display:flex;align-items:baseline;gap:10px;padding:11px 14px;border-top:1px solid var(--line2);flex-wrap:wrap}
 .gside:first-child{border-top:0}
@@ -2927,11 +2541,8 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
    Apple's floor is 44px and a phone has nothing finer to point with. These
    are the buttons that were drawn to the size of their mark rather than to
    the size of the finger that has to find them. */
-.play,.rr2,.tkp,.gside .gsp,.pkclear,.obskip{min-height:44px}
-.tkp{min-width:44px}
+.play,.gside .gsp,.pkclear,.obskip{min-height:44px}
 .gside .gsp{min-width:44px}
-.sylrow .syk{min-width:44px;min-height:44px;background:none;border:0;color:var(--txs);
-  display:flex;align-items:center;justify-content:center}
 
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever
@@ -2943,9 +2554,6 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 .set .sv .go,.capgo .go{opacity:.75}
 .capgo{display:inline-flex;align-items:center;gap:4px}
 .lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end}
-.cand .ck svg,.pdel svg{display:block}
-.pdel{position:absolute;top:2px;right:2px;color:var(--txm);line-height:1;
-      display:flex;align-items:center;justify-content:center;width:15px;height:15px}
 </style>
 </head>
 <body>
