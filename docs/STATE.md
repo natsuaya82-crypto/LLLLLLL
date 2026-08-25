@@ -338,10 +338,21 @@ assuming a thing is waiting for you.
   engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
   and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
   and unworn against a baseline of 4**.
-- **The gate is 22 checks**, not the nineteen `CLAUDE.md` still says: eight with
-  no browser (`grammar-engine-check` joined them) and fourteen with one
-  (`plan-check` joined them). That count in `CLAUDE.md` is stale and is on
-  nobody's list yet.
+- **The gate is 24 checks**, not the nineteen `CLAUDE.md` still says: eight
+  with no browser (`grammar-engine-check` joined them) and sixteen with one
+  (`plan-check`, `sheet-check` and `shape-check` joined them). That count in
+  `CLAUDE.md` is stale and is on nobody's list yet.
+- **`shape-check` was written, merged, and left out of the gate.** It was on
+  `master` with an `npm run shape` script from the day `claude/inkshape` was
+  integrated, and its name was in no list in `tools/gate.mjs`, so `npm test`
+  never ran it. Nothing was red; the check was simply silent, which is the
+  failure this repository is most often bitten by. Wired in on 2026-08-25
+  (`integrate2`, `db0aacb`); green standalone, 17 assertions, about 30
+  seconds. It takes no port — it opens `www/index.html` over `file://` where
+  the other fifteen browser checks each serve `www/` on one of their own — so
+  it cannot collide in the pool. **The lesson is the general one and is not
+  about this check**: a check enters the gate in the same commit that adds it,
+  or it does not enter at all.
 - **A branch was dropped rather than merged.**
   `claude/detailed-tasks-execution-ak61z2` had four commits on a base **456
   behind**, and `master` had already done all four by another road — the
@@ -377,6 +388,25 @@ assuming a thing is waiting for you.
   fixed 37mm and a pen of about 1mm matches the app's own exactly; a person's
   own pen came in about a quarter lighter. Words on a sheet, so it is next to
   「アプリ内に説明書くの禁止」 as well as being a taste.
+  **Two writing tools are still unmeasured: a brush and a pencil.** What came
+  back and was measured was a pen. Whether a hard pencil clears the
+  「紙より 0.85 倍暗い」 floor the reader uses has not been checked, so a
+  pencil-drawn sheet may simply not be seen. Measuring it needs a printed
+  sheet and a person, not a check.
+- **RevenueCat Shipaton 2026 — whether to enter.** Recorded here on
+  2026-08-25 because it existed in one session's chat and nowhere in this
+  repository, and a fact that lives only in a chat is a fact that is about to
+  be lost. **None of it is verified against RevenueCat's own page** — it is
+  written down as the previous leader reported it, and the first thing to do
+  with it is check it:
+  entry closes 2026-09-30, and an app is disqualified unless its first public
+  release falls between 2026-08-01 and 2026-09-30. Lingua has never been
+  released publicly, so on that reading it qualifies.
+  The decision is not a technical one and is nobody's but the owner's: **is
+  there an intention to be on the App Store by 9/30?** Swapping the store
+  layer to RevenueCat's SDK is the small part — `ios/App/App/LinguaStore.swift`
+  is the only file that talks to StoreKit — and it is downstream of §7 items
+  16a and 17, neither of which any agent can do.
 
 ### Blocks shipping the free version
 
