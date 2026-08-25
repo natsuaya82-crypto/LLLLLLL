@@ -98,7 +98,6 @@
 .pwpic | border-radius
 .pwpicn | border-radius
 .pwpicx::before | border-radius
-.pwq | border-radius
 .rowq .qo | border
 .rowq .qo | border-radius
 .scin | border

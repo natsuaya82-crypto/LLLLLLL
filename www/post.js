@@ -751,6 +751,31 @@ function postBadge(p){
    No buttons on it. It is what you are looking at, not something to act on;
    the four things a post can be given are on the post itself, in the
    timeline. */
+/* The conversation the reply is going into, and not only the post it answers.
+   「返信するとき、スレッドを開いてそのスレッドを見ながら返信できるように。
+   今は返信先が見えない」
+
+   It was the one post above, in a filled rounded panel. What that could not
+   show is the thing a reply is actually being written into -- a post two
+   answers deep says almost nothing on its own, and going to look at the
+   thread meant leaving the composer, which is where what had been typed was.
+
+   So the whole line up to it is here, oldest first, with the post being
+   answered last and therefore nearest the field. Same walk vThread() does --
+   postUps() -- and a taken-down ancestor is skipped for the same reason it is
+   skipped there: it is somebody else's line and the conversation does not
+   stand or fall with it.
+
+   It scrolls inside itself rather than pushing the field down the screen. The
+   cap is a third of the visible part, and it is `--vvmin` rather than `vh`
+   because with the phone's keyboard up `vh` is still the whole phone -- the
+   same reason the vertical field two rules down in index.html uses it. */
+function pwThreadHTML(to){
+  if(!to) return '';
+  var ups=postUps(to), out='', i;
+  for(i=0;i<ups.length;i++) if(!postGone(ups[i])) out+=pwToHTML(ups[i]);
+  return '<div class="pwqs">'+out+pwToHTML(to)+'</div>';
+}
 function pwToHTML(to){
   if(!to) return '';
   return '<div class="pwq">'+
@@ -782,7 +807,7 @@ function pwHTML(){
      account here, so every reply said you were replying to yourself. */
   return (to? '<div class="pwto">'+
       esc(t('post.re', '@'+(to.hd || to.who || to.lname || '')))+'</div>'+
-      pwToHTML(to) : '')+
+      pwThreadHTML(to) : '')+
     /* The face you are about to post under, which is the one this post will
        carry -- worked out here, on the making side, where the letters are. */
     '<div class="pwscroll">'+

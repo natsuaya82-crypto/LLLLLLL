@@ -1418,10 +1418,19 @@ a.set{text-decoration:none}
 /* And the gap over it. The bar's own 8 and the body's 10 stack into 18px of
    nothing between the name of the screen and the face under it. */
 .dayrw{margin-top:-8px}
-/* What a reply is answering, above what you are writing. The same row a
-   timeline draws, quieter and with nothing on it to press. */
-.pwq{display:flex;gap:12px;margin:2px 0 14px;padding:12px 14px;
-     border-radius:14px;background:var(--sf)}
+/* The conversation a reply is going into, above what you are writing. It is
+   a LIST now and not one post, so it is shaped the way every other list in
+   this app is -- rows with a hairline between them -- rather than as a stack
+   of filled 14px panels, which is the chip problem again and is what the rule
+   at the head of this file is about. The last row's line is also the line
+   over the field.
+
+   Capped and scrolling inside itself so a long thread cannot push the field
+   off the bottom. `--vvmin` and not `vh`: with the phone's keyboard up `vh`
+   is still the whole phone, which is the same reason the vertical field
+   below uses it. A third is what leaves the field its own two thirds. */
+.pwqs{margin:2px 0 12px;max-height:calc(var(--vvmin, 100vh) / 3);overflow:auto}
+.pwq{display:flex;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
 .pwq .pav{width:34px;height:34px}
 .pwq .pname{font-size:.9rem}
 .pwq .pline{font-size:.98rem}
