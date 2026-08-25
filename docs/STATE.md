@@ -31,9 +31,23 @@ the timeline was not on the server for a week after it was.
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `1941783` (2026-08-25), four branches were integrated into it
-that day, and the whole gate is green on it. A fresh clone is the current app,
-and nothing needs checking out.
+`master` is at `f2d5eb4` (2026-08-25, later the same day), and the whole gate
+is green on it -- **25 checks, not the 24 this file said an hour earlier**, and
+`buttons pressed: 10667  (223/223 distinct names)`. A fresh clone is the current
+app, and nothing needs checking out. (This paragraph's own commit sits one on
+top of `f2d5eb4`; a file cannot name the commit it is part of.)
+
+It said `1941783` for **66 commits** after that stopped being true, and the
+sentence around it -- "four branches were integrated into it that day" -- went
+on being read as the whole of the day. It was not: fifteen commits in that
+range say 「を取り込む」. Nobody wrote a wrong number; somebody wrote a right
+one and the ground moved under it, which is what the next paragraph is about
+and why the two lines below exist. **Counting it is one command**, which is the
+only reason this correction could be made at all:
+
+```
+git rev-list --count <the sha this file names>..origin/master     # 0 if current
+```
 
 That commit is a fact with a shelf life. **Run the two lines below rather than
 believing this paragraph** — it has been wrong before and the way it goes wrong
