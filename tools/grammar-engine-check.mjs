@@ -26,6 +26,52 @@ assert.equal(intransitive.features.TENSE,'PAST');
    ok:true, with the sentence saying something nobody wrote. */
 const stray=e.morphology.parseSentence(language,'na mi');
 assert.equal(stray.ok,false);
+/* What a word IS, asked of the dictionary rather than restated here.
+   www/shell.js holds the thirteen keys a part of speech is stored as, and the
+   adapter's map named three that this app has never stored (`pron`, `prep`,
+   `int`) while leaving eight that it does (`pro`, `num`, `part`, `intj`,
+   `aff`, `nm`, `idm`, `x`) to fall through to `String(pos).toUpperCase()`.
+   Nothing throws: a pronoun comes out `PRO`, which looks like a part of
+   speech, and morphology.applies() matches `rule.target === partOfSpeech`,
+   so an inflection written for PRONOUN simply never fires. Read the list off
+   www/shell.js, so a fourteenth key is held the day it is added. */
+const POS_KEYS=/var POS=\[([^\]]*)\]/.exec(fs.readFileSync('www/shell.js','utf8'))[1]
+  .split(',').map((s)=>s.trim().replace(/'/g,'')).filter(Boolean);
+assert.ok(POS_KEYS.length>=13,'www/shell.js no longer states its parts of speech as a literal list.');
+for(const k of POS_KEYS){
+  const got=e.adapter.fromLegacy('pos',[{hw:'x',pos:k}],{}).words[0].partOfSpeech;
+  assert.ok(got && got!==k.toUpperCase(),
+    'A word stored as pos "'+k+'" reaches the engine as "'+got+'". That is the key '+
+    'shouted, not a part of speech: the adapter has no row for it, and an inflection '+
+    'targeting it can never fire.');
+}
+
+/* A legacy word has no id -- `hw` is what the dictionary files it under
+   (wKids matches `from === hw`). The adapter passed `w.id || null` on, so
+   model.js minted `word_<clock>_<random>` and the SAME word got a different
+   id on every build. Anything that points at a word -- which is how the
+   grammar page says "this one is the negation" -- pointed at a ghost. */
+const twice=[e.adapter.fromLegacy('id',[{hw:'luma',pos:'v'}],{}),
+             e.adapter.fromLegacy('id',[{hw:'luma',pos:'v'}],{})];
+assert.equal(twice[0].words[0].id,twice[1].words[0].id,
+  'The same word built twice has two ids, so nothing can point at a word.');
+
+/* A word means a LIST of things (wMns in www/core.js). The adapter joined it
+   with " / " on the way in, so the only road back was splitting on a
+   separator that can sit inside a meaning. The list travels beside the
+   joined string; neither replaces the other. */
+const many=e.adapter.fromLegacy('mn',[{hw:'sara',mns:['river','road / way'],pos:'n'}],{}).words[0];
+/* join and compare: the engine runs in a vm context, so its Array is a
+   different realm's and deepStrictEqual refuses two identical lists. */
+assert.equal(many.meanings.join('|'),'river|road / way');
+assert.equal(many.meaning,'river / road / way');
+
+/* Which slot of which stage made this word travels with it. It is how the
+   grammar page can say "the 否定 stage's word is the negation" without the
+   engine having to know what a stage is. */
+const slotted=e.adapter.fromLegacy('sl',[{hw:'nai',pos:'part',slot:'neg.not'}],{}).words[0];
+assert.equal(slotted.metadata.slot,'neg.not');
+
 const adapted=e.adapter.fromLegacy('legacy',[{hw:'luma',mn:'食べる',pos:'v'}],{order:'SOV'});
 assert.equal(adapted.words[0].partOfSpeech,'VERB'); assert.equal(adapted.wordOrder.join(','),'SUBJECT,OBJECT,VERB');
 /* Nothing here builds a storage key out of string pieces. Where a language is
