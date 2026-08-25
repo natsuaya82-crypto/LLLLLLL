@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "es5": "node tools/es5-check.mjs",
+    "grammar": "node tools/grammar-engine-check.mjs",
     "i18n": "node tools/i18n-check.mjs",
     "import": "node tools/import-check.mjs",
     "sides": "node tools/sides-check.mjs",
@@ -28,7 +29,9 @@
     "base": "node tools/base-check.mjs",
     "word": "node tools/word-check.mjs",
     "plan": "node tools/plan-check.mjs",
-    "kb": "node tools/kb-check.mjs"
+    "kb": "node tools/kb-check.mjs",
+    "shape": "node tools/shape-check.mjs",
+    "sheet": "node tools/sheet-check.mjs"
   },
   "keywords": [],
   "author": "",

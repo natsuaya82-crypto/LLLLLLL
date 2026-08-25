@@ -132,6 +132,14 @@ act('ltTakeSnd', ltTakeSnd);
 act('obTakeCh', obTakeCh);
 act('openAdd', openAdd);
 act('openImport', openImport);
+/* The sheet (www/sheet.js, chapter 26): the room, the two pages under it,
+   what is typed into the names field, and the two presses that do something
+   -- make the PDF, and turn what came off a photograph into letters. */
+act('openWrite', openWrite);
+act('openWrOut', openWrOut);
+act('openWrIn', openWrIn);
+act('shMake', shMake);
+act('shTakeIn', shTakeIn);
 act('openNote', openNote);
 act('ntSearch', ntSearch);
 act('openOwnPhase', openOwnPhase);
@@ -249,6 +257,8 @@ actIn('obLang', obLang);
 actIn('obMailSet', obMailSet);
 actIn('setPwSet', setPwSet);
 actIn('fSetQ', fSetQ);
+/* the names typed into the sheet (www/sheet.js, chapter 26) */
+actIn('shTyped', shTyped);
 actIn('wordsSetQ', wordsSetQ);
 actIn('snsSetQ', snsSetQ);
 actIn('wldSet', wldSet);

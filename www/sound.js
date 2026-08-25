@@ -554,7 +554,23 @@ function vLetters(){
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
-    '<div class="toc">'+ltKinds().map(ltKindRow).join('')+'</div>'+
+    '<div class="toc">'+ltKinds().map(ltKindRow).join('')+
+    /* And the way in from somewhere else. A letter is made by tracing the
+       dotted lines here (make) or drawn on paper and brought back on a sheet
+       (write) -- OWNER DECISION 2026-08-23, 「今の点線をなぞるのは make、
+       書いて入れるのは write っていう違いがある」. It is a road into the
+       alphabet, so it is a row of the alphabet's contents and not a button
+       somewhere else.
+
+       NOT GATED, and that is not a decision made here: the road is Pro
+       (OWNER DECISION 2026-08-23) and the gate is one line in `CAN` --
+       `write: 'pro'` -- in www/core.js, which this session does not own and
+       which another branch is changing today. docs/CHANGELOG.md says so out
+       loud rather than leaving it to be found. */
+    '<button class="trow"' + DO('openWrite') + '>'+
+      '<span class="rn"></span><span class="rt">'+esc(t('wr.title'))+'</span>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+    '</div>'+
     '</div></div>';
 }
 /* One of the three. The base belongs on the digits page and nowhere else,

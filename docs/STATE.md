@@ -20,7 +20,8 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `BACKLOG.md` | found and deliberately not done, and why |
 
 Everything below was checked against the repository on **2026-08-11**, §3 and
-§5 again on **2026-08-19**, and the whole file again on **2026-08-21**, not
+§5 again on **2026-08-19**, the whole file again on **2026-08-21**, and §1, §4b
+and §7 again on **2026-08-25**, not
 remembered. Where a claim can go stale, it
 says how to re-check it — and §3 is the proof that it does: it went on saying
 the timeline was not on the server for a week after it was.
@@ -29,8 +30,13 @@ the timeline was not on the server for a week after it was.
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `dbd73d4` (2026-08-22) and every other branch on the remote is
-behind it. A fresh clone is the current app, and nothing needs checking out.
+`master` is at `1941783` (2026-08-25), four branches were integrated into it
+that day, and the whole gate is green on it. A fresh clone is the current app,
+and nothing needs checking out.
+
+That commit is a fact with a shelf life. **Run the two lines below rather than
+believing this paragraph** — it has been wrong before and the way it goes wrong
+is silent.
 
 Do not name a branch here again. This paragraph has said "master and
 `<branch>` are the same commit" three times and been wrong twice, because a
@@ -246,6 +252,25 @@ The body is in `docs/FEATURE_RULES.md` § several sessions at once.
 A commit on a file from a branch that is not yours means another session is in
 that file. Stop and report there, not when a merge fails.
 
+**On 2026-08-25 there were three sessions and a leader**, and the territory was
+named by the leader rather than found by colliding. Who they are is not written
+here — a session list is a fact with the same shelf life as a branch name. What
+IS worth keeping is the shape, because it is the first time it was done this
+way and it held:
+
+```
+  the sheet          www/sheet.js (new), www/index.html, route-map, act-map,
+                     www/sound.js, www/letters.js, www/i18n/*, and the gate
+  the shape          www/otf5.js and the ink-drawing half of www/glyph.js
+  the grammar        www/grammar-engine/*, www/grammar.js
+```
+
+`www/index.html` went to exactly one of the three, and the other two send their
+one line — a `<script src>`, a CSS rule — to the leader. That is what made
+three sessions possible at all: on 2026-08-25 four branches were touching that
+file at once, and every one of the four conflicts in the last integration came
+out of a branch that had fallen behind.
+
 ## 5. The gate, and what CI does not run
 
 `npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
@@ -301,11 +326,57 @@ be done from a Linux session.
 
 ---
 
-## 7. What is next, as of 2026-08-22
+## 7. What is next, as of 2026-08-25
 
-Ordered by what blocks shipping. Nothing here is started. Anything not on this
+Ordered by what blocks shipping. Anything not on this
 list has either been done or was never agreed to — check `git log` before
 assuming a thing is waiting for you.
+
+### Landed on 2026-08-25
+
+- **Four branches integrated**, and the gate is green on `master`: the grammar
+  engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
+  and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
+  and unworn against a baseline of 4**.
+- **The gate is 22 checks**, not the nineteen `CLAUDE.md` still says: eight with
+  no browser (`grammar-engine-check` joined them) and fourteen with one
+  (`plan-check` joined them). That count in `CLAUDE.md` is stale and is on
+  nobody's list yet.
+- **A branch was dropped rather than merged.**
+  `claude/detailed-tasks-execution-ak61z2` had four commits on a base **456
+  behind**, and `master` had already done all four by another road — the
+  keyboard count, the QWERTY start, and both halves of the timeline's sign-in.
+  Merging it would have re-opened settled decisions. Worth keeping as the
+  worked example of what a stale base costs: every one of the four conflicts in
+  that day's integration came from a branch that had fallen behind, and none
+  from two sessions genuinely wanting the same line.
+- **The one that nearly shipped silently.** `press` failed on ten classes
+  "nothing wears" — all of them the flick keyboard's, and all of them very much
+  worn by `www/keyboard.js`. The plan rename had moved `can('kb')` to `pro`
+  while a fixture seed from another branch still said `plus`, so the walk could
+  not buy a keyboard, could not open the flick editor, and reported the classes
+  it never reached as dead. The fix is to reach the state, never to delete the
+  rule or widen the baseline.
+
+### Open, and the owner's
+
+- ~~**How many keyboards a plan buys.**~~ Settled 2026-08-25, and there had
+  never been a conflict — `docs/BACKLOG.md` had read one table's *languages*
+  column as a second answer about *keyboards*. Free 1 language and the fixed
+  QWERTY; Plus 1 language and 4 keyboards pooled; Pro 3 languages and no
+  ceiling. **Not implemented**: `CAN.kb` is still `'pro'`, so Plus has zero
+  today, `KB_MAX` is still a per-language 3, `edit` and `badge` are still
+  outside `CAN`, and the language ceiling does not exist at all. The last of
+  those takes something away that anybody has today, so it hides and never
+  deletes.
+- ~~**The price of Pro.**~~ Decided — the four products and their prices are in
+  `docs/apple.md` § 4 and written into `ios/App/App/LinguaStore.swift`. What is
+  left is not a decision, it is **entering them in App Store Connect**, which is
+  §7's item 17 and is nobody's but the owner's.
+- **Whether the sheet says anything about what to write with.** The box is a
+  fixed 37mm and a pen of about 1mm matches the app's own exactly; a person's
+  own pen came in about a quarter lighter. Words on a sheet, so it is next to
+  「アプリ内に説明書くの禁止」 as well as being a taste.
 
 ### Blocks shipping the free version
 

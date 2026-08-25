@@ -154,6 +154,29 @@ function glyphKey(r){
    Everything below simply asks it. */
 function scriptLetters(){ return wsUnits(); }
 
+/* ---- what a letter's ink IS ---------------------------------------------
+   Two kinds, and a letter has one of them and never both. A letter drawn in
+   the app is STROKES -- a centre line for the pen to sweep. A letter drawn
+   somewhere else and handed back on a sheet is a SHAPE -- rings of outline,
+   ink already, in the same 800 square.
+   「今の点線をなぞるのは make、書いて入れるのは write っていう違いがある」
+
+   One value, and inkDef() is what says which it is, so a letter brought in
+   goes down the road a drawn one already takes: the font, the typing face, a
+   key, a tile, the card, a line of ink. No `sh` is a drawn letter, so not one
+   letter that exists today moves and there is nothing to migrate.
+
+   A stroke is an object with pts on it and a ring is a plain array of points,
+   so nothing has to be stored to tell the two apart. */
+function inkGeo(l){
+  if(!l) return null;
+  if(l.sh && l.sh.length) return l.sh;
+  return (l.st && l.st.length)? l.st : null;
+}
+function inkDef(v){
+  return (v && v.length && v[0] && v[0].pts===undefined)? {sh:v} : {strokes:v};
+}
+
 /* ---- what the font is made of ------------------------------------------
    One list, and it is the letters. A glyph belongs to a letter, and the two
    ways in to it -- what the letter is called, and what it reads -- are both
@@ -206,8 +229,8 @@ function scriptGlyphDefs(){
      `holds` is which glyph a character ended up on, which is not knowable
      until every letter has had its turn -- so the ligatures are only written
      down here and resolved below. */
-  function sign(key, st, codes){
-    var one='', j, c;
+  function sign(key, ink, codes){
+    var one='', j, c, d;
     for(j=0;j<codes.length;j++){
       c=codes[j];
       if(taken[c]) continue;
@@ -215,14 +238,16 @@ function scriptGlyphDefs(){
       if(c.length===1){ one+=c; holds[c]=key; continue; }
       long.push({txt:c, by:key});
     }
-    defs.push({name:key, roman:one||null, strokes:st});
+    d=inkDef(ink);
+    d.name=key; d.roman=one||null;
+    defs.push(d);
   }
   for(i=0;i<LETTERS.length;i++)
-    if(LETTERS[i].st && LETTERS[i].st.length)
-      sign(glyphName(LETTERS[i].id), LETTERS[i].st, ltCodes(LETTERS[i]));
+    if(inkGeo(LETTERS[i]))
+      sign(glyphName(LETTERS[i].id), inkGeo(LETTERS[i]), ltCodes(LETTERS[i]));
   /* And what the writing system needs that nobody drew as one shape. */
   scriptLetters().forEach(function(r){
-    if(ltStrokes(r)) return;                  /* somebody drew it: it is above */
+    if(inkGeo(ltMain(r))) return;             /* somebody made it: it is above */
     var st=wsStrokes(r);
     if(!st || !st.length) return;
     sign(glyphKey(r), st, ltCodes({ab:'', snd:[r]}));
@@ -290,7 +315,8 @@ function scriptSig(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     s.push(l.id+':'+(l.ab||'')+':'+ltUnits(l).join('')+':'+
-           (l.st? JSON.stringify(l.st).length : 0));
+           (l.st? JSON.stringify(l.st).length : 0)+':'+
+           (l.sh? JSON.stringify(l.sh).length : 0));
   }
   /* and what the writing system composes, which is not any letter */
   scriptLetters().forEach(function(r){
@@ -336,7 +362,7 @@ var PUA0=0xE000;
    conv-check's eighth claim holds this: it reads what the font writer was
    actually handed and asks, per letter, that the key agrees. */
 function ltPuaOrder(){
-  return ltOrder(LETTERS.filter(function(l){ return l.st && l.st.length; }));
+  return ltOrder(LETTERS.filter(function(l){ return !!inkGeo(l); }));
 }
 function ltPua(i){ return String.fromCharCode(PUA0+i); }
 /* Back to roman. The private use area is what the Lingua keyboard types INTO
@@ -365,8 +391,11 @@ function installTypeFont(){
   TFONT.built=false;
   try{
     var lts=ltPuaOrder(), defs=[], i;
-    for(i=0;i<lts.length;i++)
-      defs.push({name:glyphName(lts[i].id), roman:ltPua(i), strokes:lts[i].st});
+    for(i=0;i<lts.length;i++){
+      var d=inkDef(inkGeo(lts[i]));
+      d.name=glyphName(lts[i].id); d.roman=ltPua(i);
+      defs.push(d);
+    }
     if(!defs.length) return;
     var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:geSide(),
                        asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(),
@@ -1854,7 +1883,7 @@ function phkHTML(sym, call){
    Round, filled, capped -- every one of them puts ink where no point is. */
 function inkStrokes(x, st, k, ox, oy, col, mid){
   var cont=[];
-  try{ cont=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(e){ return; }
+  try{ cont=LinguaFont.glyphContours(inkDef(st), GPEN); }catch(e){ return; }
   if(mid){
     var mnx=1e9, mxx=-1e9, mny=1e9, mxy=-1e9;
     cont.forEach(function(poly){
@@ -1892,7 +1921,7 @@ function inkStrokes(x, st, k, ox, oy, col, mid){
    whatever writes the sound named in data-r. Null when there is nothing
    drawn to show. */
 function inkOf(lid, sym){
-  var st = lid? ((ltById(lid)||{}).st||null) : wsStrokes(sym);
+  var st = lid? inkGeo(ltById(lid)) : wsStrokes(sym);
   return (st && st.length)? st : null;
 }
 /* Every canvas matching `sel`, filled with the letter it names. Sized in
@@ -1950,7 +1979,7 @@ function inkCanvases(sel, floor, dflt, stOf){
    Null when the strokes ink nothing, which is a letter with no shape. */
 function inkAdv(st){
   var cs, p, e, side=geSide();
-  try{ cs=LinguaFont.glyphContours({strokes:st}, GPEN); }catch(err){ return null; }
+  try{ cs=LinguaFont.glyphContours(inkDef(st), GPEN); }catch(err){ return null; }
   p=LinguaFont.profile(cs);
   if(!(p.xMax>p.xMin)) return null;
   e=LinguaFont.extent(cs);

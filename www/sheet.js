@@ -30,7 +30,7 @@ var SH_MARK = 14;                           /* the side of a corner mark */
 var SH_INSET = 26;                          /* how far in from the page edge */
 /* How tall the name over a box is, and how far above the box it sits. The two
    together must stay inside SH_GAPY or the name climbs into the box ABOVE --
-   shSane() at the foot of this file is what holds it. */
+   tools/sheet-check.mjs is what holds it. */
 var SH_LABEL = 14, SH_LABEL_UP = 4;
 /* The dots inside a box, and they are the app's own lattice -- GGRID is 21
    across with an inset of 40 in a square of 800, so the same dots a finger
@@ -541,14 +541,22 @@ function shClean(m, res, least, edge){
   return { m: out, kept: keep, dropped: drop };
 }
 
-/* The name over a box may not reach the box above it. Checked here rather than
-   remembered: it was wrong once, by four points, and what it produced was
-   another language's word printed inside a square somebody was about to draw
-   their own letter in. */
-function shSane(){
-  return (SH_LABEL + SH_LABEL_UP < SH_GAPY) &&
-         (shCellAt(0, 0)[1] + SH_CELL < shBoxAt(shPerPage() - 1).y);
-}
+/* `shTrace` and `shSane` were here and are in git.
+
+   shTrace followed the boundary along the cracks between pixels of a yes/no
+   mask. shEdge above replaced it: the same closes-by-construction property,
+   with the crossing placed BETWEEN two samples instead of at a pixel corner,
+   which is the difference between 440 points of staircase and 122 points of
+   the letter. Nothing anywhere called it any more -- not the app, not
+   tools/sheet-spike/read.mjs.
+
+   shSane answered one claim about the page: that the name printed over a box
+   cannot reach the box above it, and that the strip clears the bottom row. It
+   was true and it was worth holding -- it was wrong once, by four points, and
+   what it produced was a word printed inside a square somebody was about to
+   draw their own letter in. It is held by tools/sheet-check.mjs now, which
+   runs in the gate, rather than by a function in www/ that only a spike tool
+   in tools/ ever named. */
 
 /* ---- looking at a photograph ------------------------------------------- */
 /* Everything between "here are the pixels somebody sent" and "here is where
@@ -725,53 +733,6 @@ function shScan(px, W, H){
            } };
 }
 
-/* ---- ink into an outline ----------------------------------------------- */
-/* Every boundary of the mask, outer rings and the insides of holes alike.
-   A pictogram is full of holes -- a circle, a face -- and a hole is what
-   separates a letter from a blot, so they are all kept.
-
-   The boundary is followed along the CRACKS BETWEEN PIXELS, not along the
-   pixels themselves, and that is not a detail: a walk over pixels can leave
-   the loop it started and never come back, and the first version did. It ran
-   to its guard of res*res*4 every time, handed 160,000-point loops to the
-   thinner, and the thinner is O(n^2). Nothing threw; the page simply never
-   came back. A crack walk closes by construction -- every crack is entered
-   from one side and left on the other, so there is nowhere else to end up. */
-function shTrace(m, res){
-  function ink(x, y){ return x >= 0 && y >= 0 && x < res && y < res && m[y * res + x] === 1; }
-  var DX = [1, 0, -1, 0], DY = [0, 1, 0, -1];
-  /* the pixels either side of the crack that leaves corner (cx,cy) in
-     direction d. Ink is kept on the right all the way round. */
-  function side(cx, cy, d, right){
-    if (d === 0) return right ? [cx, cy] : [cx, cy - 1];
-    if (d === 1) return right ? [cx - 1, cy] : [cx, cy];
-    if (d === 2) return right ? [cx - 1, cy - 1] : [cx - 1, cy];
-    return right ? [cx, cy - 1] : [cx - 1, cy - 1];
-  }
-  var used = new Uint8Array((res + 1) * (res + 1) * 4), loops = [], x, y, t;
-  for (y = 0; y <= res; y++) for (x = 0; x <= res; x++){
-    if (!(ink(x, y) && !ink(x, y - 1))) continue;          /* a crack going right */
-    if (used[(y * (res + 1) + x) * 4]) continue;
-    var loop = [], cx = x, cy = y, d = 0, guard = 0, nd, dd, L, R;
-    while (guard++ < (res + 1) * (res + 1) * 4){
-      loop.push([cx, cy]);
-      used[(cy * (res + 1) + cx) * 4 + d] = 1;
-      cx += DX[d]; cy += DY[d];
-      if (cx === x && cy === y && d === 0) break;
-      nd = -1;
-      for (t = 1; t >= -1; t--){                 /* right turn, straight, left */
-        dd = (d + t + 4) % 4;
-        R = side(cx, cy, dd, true); L = side(cx, cy, dd, false);
-        if (ink(R[0], R[1]) && !ink(L[0], L[1])){ nd = dd; break; }
-      }
-      if (nd < 0) break;
-      d = nd;
-      if (used[(cy * (res + 1) + cx) * 4 + d]) break;
-    }
-    if (loop.length > 7) loops.push(loop);
-  }
-  return loops;
-}
 /* Fewer points, same shape. A traced boundary is one point per pixel, and a
    letter is three or four hundred of them per loop; what a font wants is tens.
    Douglas-Peucker, with the tolerance in the same units as the mask. */
@@ -793,4 +754,315 @@ function shThin(loop, tol){
   var out = [];
   for (i = 0; i < loop.length; i++) if (keep[i]) out.push(loop[i]);
   return out;
+}
+
+/* ======================================================================
+   26. the sheet, in the app
+   ======================================================================
+   Everything above this line knows nothing about Lingua: names in, PDF bytes
+   out; a page of samples in, names and shapes out. Everything below it is the
+   app -- the screens, and the moment a drawing becomes a letter. The same line
+   www/import.js has, for the same reason, and it is load-bearing twice over:
+   tools/sheet-spike/*.mjs eval THIS FILE bare, with no app around it, so
+   nothing at the top level below here may name an app global without asking
+   whether it is there first. A `FORM_OPEN.write = ...` sitting at column zero
+   would take the whole spike down with a ReferenceError.
+
+   What a person does with it:
+
+     the room      what this chapter is: make one, or read one back
+     make          type the names, get a PDF
+     read          hand a photograph or a scan back, and see what came off it
+
+   Three pages and not one screen with three jobs on it. Each is openForm(),
+   which is a page you went to and not a sheet that slid up over where you
+   were -- www/home.js's openForm comment is the whole argument.
+
+   Nothing is redrawn. OWNER DECISION 2026-08-25:
+   「画像データをそのまま取り込みたいのよ」
+   「取り込んだやつを上から描き直してるからそうなるんでしょ？」
+   The ink that comes off a box is put on the letter as it came -- it does not
+   go through the app's pen, its width, or its lattice. */
+
+/* Where the chapter is standing. Not the language's -- it is where you are in
+   it, so shell.js's viewReset() drops it, exactly as it drops IMP. */
+var SH = null;
+function shBlank(){ return {names:'', got:null, why:'', from:''}; }
+function shState(){ if(!SH) SH = shBlank(); return SH; }
+
+/* The typed string -> the names, in order. Commas, and nothing else is a
+   separator: a name is whatever somebody put between two of them, so a space
+   is part of it and 7, 2, 25 is three names and not six.
+   A trailing comma is somebody still typing and is not an empty box.
+   Duplicates are kept -- `a,a,a` is three boxes, and that is decided:
+   this is Pro, and Pro is where a letter may be added at all. */
+function shNames(s){
+  var xs = String(s || '').split(','), out = [], i, n;
+  for(i = 0; i < xs.length; i++){
+    n = xs[i].replace(/^\s+|\s+$/g, '');
+    if(n) out.push(n);
+  }
+  return out;
+}
+function shPages(n){ return Math.max(1, Math.ceil(n / shPerPage())); }
+
+/* ---- the room ---------------------------------------------------------- */
+function openWrite(){
+  openForm('write:', t('wr.title'), shRoomHTML());
+}
+function shRoomHTML(){
+  return '<div class="toc">'+
+    '<button class="trow"' + DO('openWrOut') + '>'+
+      '<span class="rn"></span><span class="rt">'+esc(t('wr.make'))+'</span>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+    '<button class="trow"' + DO('openWrIn') + '>'+
+      '<span class="rn"></span><span class="rt">'+esc(t('wr.read'))+'</span>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+    '</div>';
+}
+
+/* ---- making one -------------------------------------------------------- */
+function openWrOut(){
+  openForm('wrout:', t('wr.make'), shOutHTML());
+}
+/* The count under the field is a count. It says how many boxes twenty names
+   make and how many sheets that is, which is the one thing a person cannot
+   work out by looking at what they typed. */
+function shOutHTML(){
+  var s = shState(), n = shNames(s.names).length;
+  return '<div class="field"><label>'+esc(t('wr.names'))+'</label>'+
+    '<textarea id="wr-names" placeholder="'+esc(t('wr.ph'))+'"' + IN('shTyped') + '>'+
+    esc(s.names)+'</textarea></div>'+
+    '<div class="mini" id="wr-mini">'+esc(tn('wr.boxes', n))+' · '+esc(tn('wr.pages', shPages(n)))+'</div>'+
+    '<div class="barfix"><button class="btn ghost"' + DO('shMake') + '>'+
+    esc(t('wr.out'))+'</button></div>';
+}
+/* Typed into. The count under the field moves with it, and nothing else does
+   -- rebuilding the page would put the caret back to the end of the line on
+   every keystroke, which is www/post.js's lesson and not a new one. */
+function shTyped(v){
+  var s = shState(), e;
+  s.names = String(v || '');
+  e = document.getElementById('wr-mini');
+  if(e){
+    var n = shNames(s.names).length;
+    e.innerHTML = esc(tn('wr.boxes', n)) + ' · ' + esc(tn('wr.pages', shPages(n)));
+  }
+}
+/* The PDF, and out. There is no Swift behind `sheet` yet -- LinguaShare.swift
+   has keep/kept/write/pickPhoto/audio and not this -- so on a phone today the
+   bridge is there and the method is not, and in a browser there is no bridge
+   at all. Both say so rather than doing nothing: bkPush()'s `no bridge`,
+   which exists because the system keyboard cost four builds and three of them
+   were spent guessing whether the hand-over had gone out. */
+function shMake(){
+  var s = shState(), names = shNames(s.names), pdf, p;
+  if(!names.length){ toast(t('wr.none')); return; }
+  pdf = shSheet(names, []);
+  /* null is the packet refusing to fit the strip. A sheet that cannot name
+     itself is not a sheet -- it comes back unreadable, and a misread sheet
+     must be turned away rather than half-imported. */
+  if(!pdf){ toast(t('wr.long')); return; }
+  p = sharePlug();
+  if(!p){ toast(t('wr.nobridge')); return; }
+  p('LinguaShare', 'sheet', {name:shFileName(), b64:btoa(pdf)})
+    .then(function(){ toast(t('wr.out.ok')); })
+    ['catch'](function(){ toast(t('wr.nobridge')); });
+}
+/* A name a person will recognise in the Files app. bkName()'s argument, and
+   deliberately not bkName() itself: that one carries the language id because
+   two backups of two languages must not overwrite each other, and a sheet is
+   paper -- it is not filed against anything and does not point at a language.
+   It names itself in its own strip. */
+function shFileName(){
+  var n = String(langName || '').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ');
+  return (n ? n.slice(0, 40) + ' ' : '') + 'sheet';
+}
+
+/* ---- reading one back -------------------------------------------------- */
+function openWrIn(){
+  openForm('wrin:', t('wr.read'), shInHTML(), shInMount);
+}
+/* Before a file: the one control. After one: what came off it, a row per box.
+   No picture of what was read, and that is on purpose rather than missing --
+   drawing an imported shape is www/glyph.js's, one place, and a second copy
+   of that rule living here is the thing "One place, not fifteen" is about. */
+function shInHTML(){
+  var s = shState(), out = '', i, g, n;
+  out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
+    '<input type="file" id="wr-file" accept="image/*,.pdf"></label>';
+  if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
+  if(!s.got) return out;
+  out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
+  for(i = 0; i < s.got.length; i++){
+    g = s.got[i];
+    out += '<div class="set"><span class="sl">'+esc(g.nm)+'</span>'+
+      '<span class="sv">'+esc(t(g.sh.length ? 'wr.drawn' : 'wr.empty'))+'</span></div>';
+  }
+  /* A sheet with nothing drawn on it says so and offers nothing to press.
+     "Take in 0" is a button that does nothing, which is worse than no
+     button -- and every empty box coming back empty is the reading side
+     working, not failing: the printed lattice is not read as ink. */
+  n = shTakeCount(s.got);
+  if(!n) return out + '<div class="note">'+esc(t('wr.empty.all'))+'</div>';
+  out += '<div class="barfix"><button class="btn ghost"' + DO('shTakeIn') + '>'+
+    esc(tn('wr.take', n))+'</button></div>';
+  return out;
+}
+function shTakeCount(got){
+  var n = 0, i;
+  for(i = 0; i < got.length; i++) if(got[i].sh.length) n++;
+  return n;
+}
+/* The file input is the one control in the app that cannot go through the
+   action tables -- they hand a listener the element's value, and a file
+   input's value is a made-up path. www/import.js binds its own for the same
+   reason, and this is that sentence and not a second rule. */
+function shInMount(){
+  var e = document.getElementById('wr-file');
+  if(!e || e.getAttribute('data-wired')) return;
+  e.setAttribute('data-wired', '1');
+  e.addEventListener('change', function(){
+    var f = e.files && e.files[0];
+    if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){ shTakeFile(String(r.result || ''), f.name); };
+    r.onerror = function(){ shFail(t('wr.bad')); };
+    r.readAsDataURL(f);
+  }, false);
+}
+function shFail(why){
+  var s = shState();
+  s.got = null; s.why = why; s.from = '';
+  openWrIn();
+}
+/* A data URL in, either a photograph or a PDF with one inside it. A PDF is
+   opened here rather than rendered: /DCTDecode means "these bytes are already
+   a JPEG", so a scan comes out of one without anything drawing a page.
+   shPdfWhy() answers which of the four kinds arrived, so a PDF drawn on a
+   screen is told apart from a PDF that could not be opened -- the phone has
+   PDFKit and this does not, and "we cannot draw this one" is a different
+   sentence from "this is broken". */
+function shTakeFile(url, fname){
+  var s = shState(), i = String(url).indexOf(','), head, b64, bytes, jpg, why;
+  if(i < 0){ shFail(t('wr.bad')); return; }
+  head = String(url).slice(0, i);
+  b64 = String(url).slice(i + 1);
+  if(head.indexOf('application/pdf') >= 0 || /\.pdf$/i.test(String(fname || ''))){
+    try{ bytes = atob(b64); }catch(e){ shFail(t('wr.bad')); return; }
+    why = shPdfWhy(bytes);
+    jpg = shPdfJpeg(bytes);
+    if(!jpg){ shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no')); return; }
+    url = 'data:image/jpeg;base64,' + btoa(jpg);
+  }
+  s.from = String(fname || '');
+  shLook(url);
+}
+/* How big a photograph is worth looking at. A corner mark is about a
+   fortieth of the page, so 2200 pixels down the long edge leaves it 50 across
+   -- and running twelve megapixels through a local threshold is a minute of
+   somebody's phone for detail that is not used. Measured in the spike. */
+var SH_LOOK = 2200;
+function shLook(url){
+  var im = new Image();
+  im.onerror = function(){ shFail(t('wr.bad')); };
+  im.onload = function(){
+    var k = Math.min(1, SH_LOOK / Math.max(im.width, im.height));
+    var W = Math.round(im.width * k), H = Math.round(im.height * k);
+    var c = document.createElement('canvas'), g, px, i, v;
+    c.width = W; c.height = H;
+    g = c.getContext('2d');
+    /* White behind it: a PNG with a transparent ground would otherwise be
+       black everywhere, which is a page of ink and no marks. */
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+    g.drawImage(im, 0, 0, W, H);
+    try{ px = g.getImageData(0, 0, W, H).data; }
+    catch(e){ shFail(t('wr.bad')); return; }
+    for(i = 0; i < W * H; i++){
+      v = (px[i*4] * 0.299 + px[i*4+1] * 0.587 + px[i*4+2] * 0.114) | 0;
+      px[i*4] = px[i*4+1] = px[i*4+2] = v;
+    }
+    shPage(px, W, H);
+  };
+  im.src = url;
+}
+/* One page, read. The order of this is the spike's tools/sheet-spike/read.mjs
+   and the numbers in it were each measured -- README.md in that folder says
+   how. Nothing here is a new decision. */
+function shPage(px, W, H){
+  var s = shState(), scan = shScan(px, W, H), names, bb, e0, e1, RES, out = [], i;
+  if(scan.fail){ shFail(scan.fail === 'marks' ? t('wr.marks') : t('wr.bad')); return; }
+  names = shReadStrip(scan.warp, scan.dark);
+  /* No names is a sheet that cannot say what it is, and it is REFUSED rather
+     than half-read. Guessing the order would put somebody's 水 on the letter
+     called `a`. */
+  if(!names){ shFail(t('wr.strip')); return; }
+  /* How finely a box is sampled is the PHOTOGRAPH's to say and not a
+     constant: finer invents detail that is not there, coarser throws some
+     away. Ask how many pixels wide a box actually came out. */
+  bb = shBoxAt(0);
+  e0 = scan.warp(bb.x, bb.y + bb.side);
+  e1 = scan.warp(bb.x + bb.side, bb.y + bb.side);
+  RES = Math.round(Math.sqrt((e1[0]-e0[0])*(e1[0]-e0[0]) + (e1[1]-e0[1])*(e1[1]-e0[1])));
+  if(RES < 120) RES = 120;
+  if(RES > 700) RES = 700;
+  for(i = 0; i < names.length; i++) out.push({nm:names[i], sh:shBoxShape(scan, i, RES)});
+  s.got = out; s.why = '';
+  openWrIn();
+}
+/* One box, as rings in the app's own 800 square. The edge runs where the grey
+   crosses half way between this paper and this ink, which is BETWEEN two
+   samples -- pixel corners give a staircase nobody drew. The thinning is 1 of
+   800, which drops only points sitting exactly on the line between their
+   neighbours: the same straight edge written down twice. At 6 it moved a
+   point 5.81 of 800, four tenths of the width of the stroke it was moving,
+   and that is the app redrawing somebody's letter. */
+function shBoxShape(scan, i, RES){
+  var mask = shBoxInk(scan.warp, scan.crisp, i, RES),
+      cl = shClean(mask, RES, Math.round(RES * RES * 0.0012), 3),
+      fld, k = 800 / RES;
+  if(!cl.kept) return [];
+  fld = shBoxField(scan.warp, scan.sign, i, RES);
+  return shEdge(fld, RES, cl.m).map(function(L){
+    return shThin(L, RES / 800 * 1).map(function(p){
+      return [Math.round(p[0] * k * 10) / 10, Math.round(p[1] * k * 10) / 10];
+    });
+  });
+}
+/* And the moment a drawing becomes a letter.
+
+   It ADDS. Box `7` becomes a NEW letter called `7` -- nothing already in the
+   alphabet is overwritten, renamed or touched, whatever it is called. Two
+   letters called the same thing is what Pro is for, and it is the decided
+   behaviour: 「a,a,a は三枠」.
+
+   `via` goes on here and is never worked out again afterwards. Absent means
+   make, so not one letter that exists today is touched and there is no
+   migration -- docs/DATA_MODEL.md's rule about the past, and the reason the
+   field is written at the moment the letter arrives rather than read off the
+   shape later. A letter with `sh` today is one that came in on a sheet; that
+   will not stay true the moment anything else can produce one, which is
+   exactly why the letter says so itself. */
+function shTakeIn(){
+  var s = shState(), n = 0, i, g;
+  if(!s.got) return;
+  for(i = 0; i < s.got.length; i++){
+    g = s.got[i];
+    if(!g.sh.length) continue;
+    ltNew({nm:g.nm, sh:g.sh, via:'write'});
+    n++;
+  }
+  if(!n) return;                       /* the button is not there to press */
+  SH = shBlank();
+  toast(tn('wr.took', n));
+  go('ltset', 'alpha');
+}
+
+/* Coming back to one of the three by the back button. FORM_OPEN is shell's
+   and may not be there at all -- tools/sheet-spike/*.mjs eval this file with
+   no app around it. */
+if(typeof FORM_OPEN !== 'undefined'){
+  FORM_OPEN.write = function(){ openWrite(); };
+  FORM_OPEN.wrout = function(){ openWrOut(); };
+  FORM_OPEN.wrin  = function(){ openWrIn(); };
 }

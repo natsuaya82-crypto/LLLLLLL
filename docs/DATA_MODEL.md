@@ -22,7 +22,7 @@ is the procedure.
 
 ## The language
 
-Eleven slices, filed under `lingua.<id>.<slice>`. `SLICES` in `www/core.js` is
+Twelve slices, filed under `lingua.<id>.<slice>`. `SLICES` in `www/core.js` is
 the list, and **being in that list is what makes a slice real**: `bkPack()`
 walks it, so a slice outside it is in no backup; `wipeAll` walks it, so a slice
 outside it survives a wipe into the next language. Two were outside it once —
@@ -40,11 +40,16 @@ the keyboard and the world — and neither could throw.
 | `talk` | `TALK` | the conversation. **Its screen is lifted** — see the note on `PLANS` in `www/core.js` — so nothing in the app reads or writes this today. The slice stays in `SLICES`, `bkPack()` still copies it out of storage, and a restore still puts it back: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
+| `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **Nothing reads or writes it yet** — `adapter.save`/`adapter.load` exist and have no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that is not in the backup. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
 | `wld` | `WLD` | what the language is for — and two flags. `hide`: whether it has a page anybody else may open; **absent means public**. `dl`: whether the letters and the words may be taken away and used; **absent means no**, and the two defaults point opposite ways on purpose — a page is a thing to be looked at, and handing over months of somebody's drawing is not a thing to decide for them | object |
 
 `BK_SHAPE` in `www/backup.js` carries those shapes; `bkSound()` uses it to tell
-a slice from wreckage. `langKey(slice)` is the only thing that knows how a
-language is filed.
+a slice from wreckage. **`langKeyOf(id, slice)` is the only thing that knows how
+a language is filed**, and `langKey(slice)` is it asked about the open one —
+which is what 290-odd call sites mean. The two are one sentence and two
+audiences: a screen means "the one in front of me" and must never be handed an
+id it could get wrong; something that addresses a language BY ID cannot say
+`langKey()`, and the answer to that is not to let it build the string itself.
 
 **Not a slice, and deliberately:** `lingua.set` (`SET`) is the person's
 settings and belongs to no language. It carries `planWas` — the plan the app

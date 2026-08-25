@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { chromium, LAUNCH } from '/home/user/LLLLLLL/tools/browser.mjs';
-const SRC = fs.readFileSync('/home/user/LLLLLLL/tools/sheet-spike/sheet.js','utf8');
+const SRC = fs.readFileSync('/home/user/LLLLLLL/www/sheet.js','utf8');
 const NAMES = ['7','2','25','人','愛','a','a','a','mountain','水','火','木','金','土','日','月','ka','yo','!','?'];
 const br = await chromium.launch(LAUNCH);
 /* 1. 名前を絵にして、PDF を作る（アプリ側の仕事） */

@@ -250,6 +250,40 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 `text` は残してあるので、書かれていたものは失われていない。
 
 ### Decision
+- Date: 2026-08-25
+- Area: The keyboard sheet's width — a column is a fixed size
+- Decision:
+
+  「エクセルみたいにキーボードにやって横幅が固定されるはずだよ。
+   縦の列は追加できるかもだけど」
+
+  **A column is a fixed width. The board is as wide as its columns make it.**
+  Not the other way round.
+
+  Today `--kbw` is `83vw` and `kbCellW(w, cols)` is `--kbw / cols * kbU(w)`, so
+  the board is ALWAYS the same width and the cells stretch to fill it: a board
+  of three columns draws three enormous cells across the whole phone. From now
+  the unit is fixed — a column is what a column is on a ten-column board — and
+  a three-column board is three columns wide, sitting where a short row already
+  sits (the middle of the sheet, rule 19). Adding a column makes the board
+  wider, up to the ten that rule 19 already fixes.
+
+- Reason: it is a spreadsheet, and a spreadsheet does not resize its columns
+  because you deleted some. This also settles a bug rather than patching it.
+  `tools/side-baseline.txt` carries three screens that run off the side of a
+  402pt phone, all one fault: the three tiles a new key is dragged off are the
+  size of the key they make (「1マスとキーボードの1マスのサイズが一緒じゃない
+  から分かりにくいよ」), so together they are 1+2+3 = 6 columns; on a
+  three-column board, six stretched columns are twice the board. Three ways to
+  patch it were put to the owner -- wrap, shrink on narrow boards, stack
+  vertically -- and all three were answers to the wrong question. With a fixed
+  column, six of them are six tenths of the sheet and fit by construction.
+- Affected features: `kbCellW()` and `--kbw` (`www/keyboard.js`,
+  `www/index.html`), how every board narrower than ten columns is DRAWN --
+  nothing stored changes, no layout moves, only the drawing -- and the three
+  lines in `tools/side-baseline.txt`, which come out when it lands.
+
+### Decision
 - Date: 2026-08-23
 - Area: How many languages, how many keyboards, and two more capabilities
 - Decision:
@@ -1638,8 +1672,10 @@ visible there early enough to be avoided.
                                       pushed, before the first line of code
   5  push after every commit          a branch nobody can see is a branch
                                       nobody can avoid
-  6  never integrate                  no merge, no rebase, no cherry-pick of
-                                      another branch. The leader integrates
+  6  never integrate ANOTHER BRANCH   no merge, no rebase, no cherry-pick of
+                                      another branch. The leader integrates.
+                                      master into your OWN branch is not that,
+                                      and is required before you report
   7  the gate is the leader's         see docs/TESTING.md § the gate, rule 2
 ```
 
@@ -1654,10 +1690,31 @@ pushing is invisible for an hour, and every other session is deciding against
 stale information for that hour. The scope declaration is cheap to push and
 it is the thing others read.
 
-**Step 6 is absolute.** A session that merges another branch into its own has
-produced a diff neither session wrote. The leader -- another session above
-this one -- integrates, and asks the owner where the answer is a decision
-rather than a merge. Report the conflict and stop; do not resolve it.
+**Step 6 is absolute about ANOTHER branch.** A session that merges another
+branch into its own has produced a diff neither session wrote. The leader --
+another session above this one -- integrates, and asks the owner where the
+answer is a decision rather than a merge. Report the conflict and stop; do not
+resolve it.
+
+**`master` into your own branch is the opposite and is required**
+(OWNER DECISION 2026-08-25). `git fetch --all --prune && git merge
+origin/master` before you report, every time. It touches nobody else's work --
+it is catching up, not integrating -- and it moves the one job that was
+actually jamming the pipe. On 2026-08-25 four branches were integrated and four
+conflicts came out; **all four came from a branch that had fallen behind** (52,
+86 and 456 commits), and **none** from two sessions wanting the same line. One
+of them was 456 behind and its four commits were all re-doing work `master` had
+already done by another road, so it was dropped rather than merged.
+
+Resolve what comes out of catching up yourself -- it is inside your own branch.
+Stop and report only when you genuinely cannot, which is the rare case where
+two people did want the same line.
+
+Two more from the same day, for the same reason: **integrate in batches, not
+per branch** (one gate run, not four -- proving the same green four times is
+the thing the owner's gate rules already forbid), and **a session's last act is
+to push the Scope of its next piece**, so finishing does not mean queueing
+behind the leader.
 
 **Who is who.** The owner decides what the app does and confirms it on a
 phone. The leader names what each session owns, integrates, and runs the whole

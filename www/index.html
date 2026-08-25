@@ -756,6 +756,15 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
          width:100%;min-height:52px;margin-top:10px;border:1px solid var(--goldln);
          border-radius:11px;background:var(--goldsf);color:var(--gold);font-size:.94rem}
 .impfile input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
+/* The same trick for the sheet (www/sheet.js, chapter 26) and NOT .impfile:
+   that one is a rounded box with a hairline round it, which is what the whole
+   app is being taken away from -- 「角丸やめろ」「文字書いて四角で囲ったみたいな
+   ボタン全部やめてくれ」. It is on the baseline because it is already worn in
+   thirty places; nothing new joins it. So this is .btn.ghost, the words on
+   their own, with the native control laid over the top of them at the size of
+   it -- a file input cannot be styled and a hidden one cannot be pressed. */
+.shfile{position:relative;display:block;width:100%;text-align:center}
+.shfile input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
 .impbig{font-family:var(--face-ital);font-size:1.6rem;text-align:center;
         padding:26px 0 4px;color:var(--tx)}
 /* ---------- the card ----------
@@ -2660,6 +2669,7 @@ textarea.ntbody:focus{border-bottom-color:var(--goldln)}
 <script src="store.js"></script>
 <script src="backup.js"></script>
 <script src="sync.js"></script>
+<script src="sheet.js"></script>
 <script src="route-map.js"></script>
   <script src="act-map.js"></script>
 <script src="boot.js"></script>

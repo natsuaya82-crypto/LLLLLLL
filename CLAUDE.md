@@ -171,8 +171,13 @@ a file — a commit there on a branch that is not yours is another session in
 that file, and that is the moment to stop and report, not when a merge fails.
 Push the scope declaration as the FIRST commit, before any code: a branch
 nobody can see is a branch nobody can avoid. Push after every commit. **Never
-merge, rebase or cherry-pick another branch** — the leader integrates, and
-asks the owner where the answer is a decision rather than a merge.
+merge, rebase or cherry-pick ANOTHER BRANCH** — the leader integrates, and
+asks the owner where the answer is a decision rather than a merge. **Bringing
+`master` into your own branch is not that and is required before reporting**
+(2026-08-25): it touches nobody else's work, it is catching up rather than
+integrating, and it is what makes the leader's merge a fast-forward. Every one
+of the four conflicts in that day's integration came from a branch that had
+fallen behind; none came from two sessions wanting the same line.
 **The one page to hand a session is `docs/SESSIONS.md`.** It carries the rule
 that actually prevents a collision rather than finding one: **the leader
 names the files a session owns, and a session edits nothing else.** The leader
