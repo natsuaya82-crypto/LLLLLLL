@@ -50,8 +50,15 @@
      9. no subtitle, none   a stage whose `.d` key is gone says nothing under
                             its title -- not the key, and not the English of
                             a key the other nine no longer have
+    10. the line's words     a stage's example line is drawn one word at a
+                            time, and a word this dictionary does not have is
+                            marked as one. docs/FEATURES.md: it "stays in the
+                            natural language" and is shown in red. The colour
+                            is www/index.html's and is not here yet; what is
+                            held here is that there is something to colour,
+                            and that the line still reads exactly as typed
 
-   Exit code is 0 only when all nine hold.
+   Exit code is 0 only when all ten hold.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -308,6 +315,25 @@ want('nor time', h.when, '');
 want('nor describing', h.desc, '');
 want('a stage that adds something still says it', h.count !== '', true);
 want('and so does the word order', h.order !== '', true);
+
+/* ---- 10: a word the dictionary does not have ----------------------------
+   The row is exRowHTML() in www/wordsheet.js and a stage's Lines are one of
+   the two places it is drawn -- STG.ex, which is this chapter's. `tuf` is in
+   the seeded dictionary and `rice` is not. */
+const k = await pg.evaluate(() => {
+  stEx('neg').length = 0;
+  stEx('neg').push({ lb: 'a', ln: 'tuf rice', gl: 'b' });
+  saveStg();
+  go('gram', 'neg');
+  const line = document.querySelector('.exl');
+  return {
+    reads: line && line.textContent,
+    marked: Array.prototype.map.call(
+      document.querySelectorAll('.exl .exnew'), (x) => x.textContent).join(',')
+  };
+});
+want('the line reads exactly as it was typed', k.reads, 'tuf rice');
+want('and the word this dictionary does not have is the one marked', k.marked, 'rice');
 
 await br.close();
 srv.close();

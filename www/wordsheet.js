@@ -342,11 +342,41 @@ function exBtn(fn, args, key, icon){
    for the same reason -- and they differ only in what goes at the end of it.
    A stage's examples carry a label (肯定 / 否定); a word's do not, and an
    example with none simply has none. */
+/* The line, one word at a time, because a word this dictionary does not have
+   is not the same thing as one it does.
+
+   docs/FEATURES.md decided both halves: a word there is no word for "stays in
+   the natural language" and "is shown IN RED, so the gap is obvious -- and it
+   is also the door to making that word". The first half has always been true
+   here and nothing said so: the line went into one span, so a word nobody has
+   made looked exactly like a word somebody had. With SET.myfont on it is
+   worse than a missing colour -- `rice`, which is not in the dictionary, is
+   drawn in the same letters somebody drew for `tir`, which is.
+
+   The words asked about are the ones exSeq() and exGloss() ask about, split
+   the same way, so the three cannot come to different answers about what a
+   word is. The gaps between them are kept exactly as they were typed.
+
+   This is the wearing side only. There is no colour here -- www/index.html is
+   another session's file and one line of CSS belongs in it. Until it lands
+   this changes nothing anybody can see, which is the right way round: a rule
+   in the stylesheet with nothing wearing it is a rule the dead-CSS check has
+   to be told about. */
+function exLnHTML(ln){
+  var ps=String(ln||'').split(/(\s+)/), out=[], i, w;
+  for(i=0;i<ps.length;i++){
+    w=ps[i];
+    if(!w) continue;
+    if(!w.replace(/^\s+|\s+$/g,'') || findWord(w)) out.push(esc(w));
+    else out.push('<span class="exnew">'+esc(w)+'</span>');
+  }
+  return out.join('');
+}
 function exRowHTML(e, seq, tail){
   return '<div class="exrow">'+
     '<div class="exb">'+
       (e.lb? '<span class="exlb">'+esc(e.lb)+'</span>' : '')+
-      '<span class="exl'+(myFontOn()?' sfont':'')+'">'+esc(e.ln)+'</span>'+
+      '<span class="exl'+(myFontOn()?' sfont':'')+'">'+exLnHTML(e.ln)+'</span>'+
       '<span class="exg">'+esc(e.gl || exGloss(e.ln))+'</span></div>'+
     (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_SPK) : '')+
     tail+'</div>';
