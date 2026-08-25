@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "es5": "node tools/es5-check.mjs",
+    "grammar": "node tools/grammar-engine-check.mjs",
     "i18n": "node tools/i18n-check.mjs",
     "import": "node tools/import-check.mjs",
     "sides": "node tools/sides-check.mjs",
