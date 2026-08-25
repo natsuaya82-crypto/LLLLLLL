@@ -781,6 +781,16 @@ function wldRow(){
 }
 function vAbout(){
   var w=world(), drawn=LETTERS.filter(ltHasShape), body='';
+  /* The article names its subject. The bar says what SCREEN this is
+     (「この言語について」, which is PAGES' to say and rule 2's NAMES keeps
+     there); the page itself has to say what the article is ABOUT, and until
+     now nothing on it did -- somebody arriving could read the whole page
+     without being told which language it was. That is the first line of every
+     encyclopedia article and it was the one missing.
+     Not a duplicate of the bar: the bar names the room, this names the
+     language, and they are never the same string. `.sth` is the heading a
+     stage already uses. */
+  if(langName) body+='<h1 class="sth">'+esc(langName)+'</h1>';
   if(wldUse()) body+='<div class="abtuse">'+
     '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
     '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
@@ -789,15 +799,34 @@ function vAbout(){
      thousand words in it is a page nobody reaches the bottom of, and the
      dictionary already has a screen that searches and sorts.
      「lpみたいにしたら1万時ある時どうするつもりなの？」 */
-  body+='<div class="abtnums">'+
-    '<button class="abtn"' + DO('go', ["words"]) + '><b>'+WORDS.length+'</b>'+esc(t('toc.words'))+'</button>'+
-    '<button class="abtn"' + DO('go', ["letters"]) + '><b>'+ltShaped()+'</b>'+esc(t('toc.letters'))+'</button>'+
-    /* The writing system is a word rather than a number, and `Alphabet` in
-       a third of a phone came out as `Alphab...`. Its own class: the value
-       wraps and is set at the size of a word instead of the size of a
-       count. */
-    '<span class="abtn wd"><b>'+esc(t('ws.k.'+wsys()))+'</b>'+esc(t('ws.kind'))+'</span>'+
-    '</div>';
+  /* The facts, as rows. 「wikiの見た目にしろって言ってなんでそんなゴミが
+     できるの？wiki見たことないの？」 OWNER 2026-08-25 -- and the answer is
+     that this was three tiles.
+
+     An encyclopedia article opens with its subject named, a line saying what
+     it is, and then a table of plain facts; it does not open with a row of
+     cards. The three tiles were also `border-radius:14px`, which is the rule
+     at the head of CLAUDE.md.
+     `.set` is that table and is already in this app on every settings screen
+     and at the foot of this very page -- label on the left, value on the
+     right, one hairline under each. Nothing new is drawn.
+     The two that lead somewhere stay pressable and the writing system does
+     not, exactly as before; `.set` carries its own font-size and line-height,
+     so a <button> row and a <div> row are the same height (CLAUDE.md's rule
+     about one list, one height, and what press measures). */
+  body+='<button class="set"' + DO('go', ["words"]) + '>'+
+      '<span class="sl">'+esc(t('toc.words'))+'</span>'+
+      '<span class="sv">'+WORDS.length+ICON_GO+'</span></button>'+
+    '<button class="set"' + DO('go', ["letters"]) + '>'+
+      '<span class="sl">'+esc(t('toc.letters'))+'</span>'+
+      '<span class="sv">'+ltShaped()+ICON_GO+'</span></button>'+
+    '<div class="set">'+
+      '<span class="sl">'+esc(t('ws.kind'))+'</span>'+
+      '<span class="sv">'+esc(t('ws.k.'+wsys()))+'</span></div>';
+  /* Then the sections somebody wrote, each under its own heading with the
+     text beneath it -- which is what a section of an article is. They were
+     the same headings before; what has changed is that they now follow a
+     title and a table instead of following three cards. */
   if(w.where) body+='<div class="sec">'+esc(t('wld.where'))+'</div>'+
     '<div class="abtl">'+esc(w.where)+'</div>';
   if(w.who) body+='<div class="sec">'+esc(t('wld.who'))+'</div>'+
