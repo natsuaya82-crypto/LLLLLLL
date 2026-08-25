@@ -115,8 +115,16 @@ export function seed(){
      run. press then reported that button as never pressed, which was true and
      was not what it meant. The walk was narrowing the app as it went, which is
      the one thing seed() exists to stop. Public, so the row below is there. */
+  /* And a section somebody wrote, because the article is theirs to write and
+     a language with none of them walks a page that has never had one on it.
+     Two: one with a title and a body, which is what the article draws, and one
+     with neither, which is the row that has to say so instead of being blank.
+     `wldart:` is reached from the list on the World screen, so seeding these
+     is also what gives that route a way in. */
   WLD = {use:'story', where:'a valley', who:'two families',
-         note:'nobody outside the valley speaks it'};
+         note:'nobody outside the valley speaks it',
+         arts:[{id:'A1', t:'The valley', b:'Two families have farmed it for nine generations.'},
+               {id:'A2', t:'', b:''}]};
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};
