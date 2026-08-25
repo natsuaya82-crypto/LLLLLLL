@@ -891,7 +891,23 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
    Before this the field was the only thing that could stretch, so it took the
    whole screen and the strip of photographs sat under the fold. */
-.view.fit .pwscroll{flex:1;min-width:0;min-height:0;overflow:auto}
+/* `min-height` is 44 and not 0, and that one number is load-bearing.
+
+   `flex:1` with a zero basis means this takes what is LEFT after the things
+   that do not grow -- the bar with Post on it, the strip over the keyboard,
+   the quoted conversation on a reply -- and with `min-height:0` "what is
+   left" is allowed to be nothing. Measured on the reply composer with the
+   phone's keyboard up (--vvmin 300, which is an ordinary Japanese keyboard on
+   an ordinary phone): the field came out 49% visible, sliced flat across the
+   middle. At --vvmin 260 it was 0% -- the line you are typing into was not on
+   the screen at all -- and `.pwbar`'s border-top sits exactly on that clip
+   edge, so what is left looks like a hairline drawn through the row.
+
+   44 is the row unit this file already uses everywhere and the number press
+   measures targets against, so one full row of what is being written can
+   never be taken away. `.pwqs` gives up its space first, which costs nothing:
+   it scrolls inside itself and says so in its own rule. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:44px;overflow:auto}
 .view.fit .pwtop{min-height:0}
 .view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
