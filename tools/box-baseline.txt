@@ -8,7 +8,6 @@
 .abctl button | border-radius
 .abmark | border
 .abmark | border-radius
-.abtn | border-radius
 .bpic | border-radius
 .btn.apple | border
 .btn.google | border

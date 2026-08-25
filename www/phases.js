@@ -499,7 +499,15 @@ function stSlotRow(p, k){
 }
 function stDetailHTML(p){
   var i, out='';
-  out+='<h2 class="sth">'+esc(stTitle(p))+'</h2>';
+  /* No heading. The bar over this page already says the stage's name, and it
+     says it by calling the SAME function -- www/shell.js's pageName() ends in
+     `if(r==='gram' && a) return stTitle(st)`, which is what this line was
+     passing to esc(). Two lines that cannot disagree are one line said twice,
+     and 「否定」 came out twice, one under the other.
+     Rule 2's NAMES is exactly this claim: what a screen is called is PAGES' to
+     say through pageName(), and naming one anywhere else is the same screen
+     named twice. Same precedent as the day four screens stopped saying what a
+     heading already said. */
   if(stWhat(p)) out+='<div class="note" style="margin-bottom:6px">'+esc(stWhat(p))+'</div>';
 
   /* No heading over the decisions. 「決めることってなに？意味わからない説明は

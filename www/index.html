@@ -722,6 +722,19 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwfield input, .pwfield textarea{width:100%;background:none;border:0;color:var(--tx);
                font-family:inherit;font-size:1.2rem;line-height:1.5;min-height:44px;padding:0;
                resize:none;overflow:hidden}
+/* And the line somebody writes in gets its own padding back.
+   「自作文字打つ時に、投稿の隙間が小さすぎてなにも見えなくなるのを修正して
+   くれ」 OWNER 2026-08-25. `.lnin` declares `padding:11px 2px` and wears it on
+   every other screen; here the rule above is two selectors where `.lnin` is
+   one, so `padding:0` won and the composer -- and only the composer -- had no
+   room above or below the type at all. Measured: 0/0 here, 11/11 everywhere
+   else. With nothing above or below the glyphs, whatever comes next sits
+   against them, which is what 「なにも見えなくなる」 looks like.
+   No new number: this is `.lnin`'s own, delivered to the one place it could
+   not reach. Same shape as `.sfont` having to say `!important` to beat the
+   dozen container rules that set font-family on the input inside them -- the
+   file already carries that story, and this is the same story about padding. */
+.pwfield .lnin{padding:11px 2px}
 .pwfield input:focus, .pwfield textarea:focus{outline:none}
 /* How much of the post is left, and only once it is worth knowing. It is a
    number and nothing else, so there is no sentence in it to translate. */
@@ -1518,22 +1531,19 @@ a.set{text-decoration:none}
 .wldoff{flex:0 0 auto;font-size:.78rem;color:var(--txm)}
 .wldrow svg{flex:0 0 auto;color:var(--txm)}
 .wldrow:active{opacity:.6}
-/* The page itself. What the language is for, then the three numbers, then
-   whatever was written about it, then the letters somebody drew. */
+/* The page itself. The language names itself, then what it is for, then the
+   facts as rows, then what was written about it, then the letters drawn.
+   The three tiles that used to sit here (.abtnums/.abtn) are gone with their
+   rules: 「wikiの見た目にしろって言ってなんでそんなゴミができるの？」
+   OWNER 2026-08-25. An article opens with a table of facts, not a row of
+   cards, and `.abtn` carried a `border-radius:14px` besides. The rows are
+   `.set` now, which every settings screen already wears.
+   Deleted rather than left unworn: tools/css-baseline.txt says a line comes
+   OUT as progress, and growing that list to keep a dead rule quiet is the
+   opposite of what it is for. */
 .abtuse{display:flex;flex-direction:column;gap:3px;padding:14px 0 4px}
 .abtun{font-size:1.15rem;color:var(--tx)}
 .abtud{font-size:.88rem;color:var(--txm);line-height:1.45}
-.abtnums{display:flex;gap:10px;margin:12px 0 4px}
-/* Two of the three are buttons now, so they carry what a button needs and
-   nothing they did not already look like. */
-.abtn{flex:1 1 0;min-width:0;min-height:44px;padding:12px 8px;border-radius:14px;
-      border:0;font:inherit;text-align:center;cursor:pointer;
-      -webkit-tap-highlight-color:transparent;
-      background:var(--sf);text-align:center;font-size:.76rem;color:var(--txm);
-      display:flex;flex-direction:column;gap:3px;justify-content:center}
-.abtn b{font-size:1.15rem;color:var(--tx);font-weight:600;
-        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.abtn.wd b{font-size:.95rem;white-space:normal;overflow:visible;line-height:1.25}
 .abtl{line-height:1.55;color:var(--tx);word-break:break-word}
 .mecard .pbio{margin-top:4px;line-height:1.45;word-break:break-word;
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
