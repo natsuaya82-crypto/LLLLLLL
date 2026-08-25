@@ -30,17 +30,105 @@
    choice. */
 /* rules: what you decided, written by you. ex: the lines that show it.
    notes stays for what is neither. */
-var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[]};
+/* `order` and `gpos` are the word order and the three places a word can
+   stand. They are here rather than in SET from 2026-08-25 -- see
+   migrateGramLang() below -- because they are the language's, not the
+   phone's. Empty means nobody has answered and the default stands. */
+var STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
 /* How far the open language has got. Empty first: see langRead() in core.js. */
 function stRead(){
-  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[]};
+  STG={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', gpos:{}};
   try{
     var stgs=JSON.parse(localStorage.getItem(langKey('phases'))||'null');
     if(stgs){ STG.done=stgs.done||{}; STG.notes=stgs.notes||{}; STG.set=stgs.set||{};
               STG.extra=stgs.extra||[]; STG.rules=stgs.rules||{}; STG.ex=stgs.ex||{};
-              STG.fm=stgs.fm||[]; }
+              STG.fm=stgs.fm||[];
+              STG.order=stgs.order||''; STG.gpos=stgs.gpos||{}; }
   }catch(e){}
 }
+/* ---- the word order and the three positions belong to the LANGUAGE -------
+   They belonged to the phone. SET.order and SET.gpos.{adj,negp,adp} live in
+   'lingua.set', which langKey() never touches and which langOpen() does not
+   re-read -- correctly, because SET is the person's. So a second language was
+   born already speaking the first one's grammar, and changing the order in
+   one changed it in the other. Measured on a phone rather than read off the
+   code: docs/BACKLOG.md, and it is the same failure CLAUDE.md already names
+   about what a language is FOR, which sat in SET under a comment saying it
+   travels with the language.
+
+   They come to STG because STG is already the language's -- langKey('phases')
+   -- and 'phases' is already in SLICES, so a value put here is in the backup
+   and goes when the language goes, with nothing added to core.js and nothing
+   added to the list of slices. The state was already split down the middle
+   and this is the half that was on the wrong side: STG.set, which says
+   whether a decision was TOUCHED, has been the language's all along while the
+   value it marks was the phone's.
+
+   This COPIES. SET.order and SET.gpos are read and left exactly where they
+   are -- docs/DATA_SAFETY.md rule 2, and langMigrate()'s own argument: it
+   runs once, on a phone, against the only copy of something somebody spent
+   months on, and copying a few hundred bytes cannot lose anything where
+   moving them could.
+
+   OWNER DECISION 2026-08-25 「言語ごとですよ？」: the ONE value that is there
+   now goes to EVERY language the person already has. That is a decision and
+   not a reading of the data -- somebody with two languages has one value and
+   no way to say which language it was decided in -- and it is the day with
+   the least surprise in it, because that one value is what every one of their
+   screens shows today. A language made AFTERWARDS gets neither key and takes
+   the defaults, which is the whole of the bug: a new language is born with no
+   grammar on it.
+
+   Once per person, so the mark is the person's. It is written the way
+   planMigrate() in www/core.js writes the settings at load, and for the same
+   reason: save() calls bkTouch(), and www/backup.js is loaded after this file
+   in index.html's list.
+
+   It does not touch STG.set. A value arriving is not somebody choosing it,
+   and which decisions were chosen is already recorded per language.
+
+   A phases slice that will not parse is wreckage and is left alone -- "empty"
+   and "broken" are different states, and a restore is what answers the second
+   one. That language keeps the value it has always had in SET and is the one
+   language this does not reach.
+
+   A write that fails leaves the mark unwritten, so the next launch tries the
+   whole thing again: every language it did reach already has an `order` and
+   is skipped. */
+function migrateGramLang(){
+  if(SET.gramLang) return;
+  var id, key, raw, o, g, k, v, failed=false;
+  for(id in LANGS){
+    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
+    key=langKeyOf(id, 'phases');
+    raw=localStorage.getItem(key);
+    o={};
+    if(raw!==null){
+      try{ o=JSON.parse(raw); }catch(e){ o=null; }
+      if(!o || typeof o!=='object' ||
+         Object.prototype.toString.call(o)==='[object Array]') continue;
+    }
+    /* Only an answer this app could have given is copied. Anything else in
+       there is not a word order, and the screen has been showing the default
+       for it all along. */
+    if(o.order===undefined && ORDERS.indexOf(SET.order)>=0) o.order=SET.order;
+    if(o.gpos===undefined){
+      g={};
+      for(k in GPOS_DEF) if(Object.prototype.hasOwnProperty.call(GPOS_DEF, k)){
+        v=SET.gpos && SET.gpos[k];
+        if(v==='before' || v==='after') g[k]=v;
+      }
+      /* Nothing to say is said by saying nothing: an empty gpos and no gpos
+         at all are the same three defaults, and the second invents less. */
+      for(k in g) if(Object.prototype.hasOwnProperty.call(g, k)){ o.gpos=g; break; }
+    }
+    try{ localStorage.setItem(key, JSON.stringify(o)); }catch(e){ failed=true; }
+  }
+  if(failed) return;
+  SET.gramLang=1;
+  try{ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); }catch(e){}
+}
+migrateGramLang();
 stRead();
 function saveStg(){ bkTouch(); try{ localStorage.setItem(langKey('phases'), JSON.stringify(STG)); }catch(e){} }
 
