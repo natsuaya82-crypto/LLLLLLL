@@ -168,6 +168,23 @@ if (otf5 !== -1 && glyph !== -1 && otf5 > glyph) {
   note('otf5.js loads after glyph.js. glyph.js needs LinguaFont at load time.')
 }
 
+/* Every script under grammar-engine/ except model.js reads LinguaGrammarEngine
+   at load time and throws without it, so model.js goes before all of them. A
+   throw in one script does not stop the ones after it, so the app opens, every
+   screen is right, every other check is green, and the engine is simply half
+   there. Nothing would say so. */
+const gmodel = at('grammar-engine/model.js')
+for (const rel of referenced) {
+  if (rel.indexOf('grammar-engine/') !== 0 || rel === 'grammar-engine/model.js') continue
+  if (gmodel !== -1 && at(rel) < gmodel) {
+    note(
+      rel + ' loads before grammar-engine/model.js.\n' +
+        '      It reads LinguaGrammarEngine at load time and throws without it, and\n' +
+        '      a throw there stops nothing else: the app opens with half an engine.'
+    )
+  }
+}
+
 /* The app starts on the last line of boot.js, so boot.js goes last and the
    table of what buttons do goes immediately before it: act-map.js names every
    function directly, so every one of them has to exist by the time it runs. */
