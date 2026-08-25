@@ -138,7 +138,6 @@ act('openImport', openImport);
 act('openWrite', openWrite);
 act('openWrOut', openWrOut);
 act('openWrIn', openWrIn);
-act('shTyped', shTyped);
 act('shMake', shMake);
 act('shTakeIn', shTakeIn);
 act('openNote', openNote);
@@ -258,6 +257,8 @@ actIn('obLang', obLang);
 actIn('obMailSet', obMailSet);
 actIn('setPwSet', setPwSet);
 actIn('fSetQ', fSetQ);
+/* the names typed into the sheet (www/sheet.js, chapter 26) */
+actIn('shTyped', shTyped);
 actIn('wordsSetQ', wordsSetQ);
 actIn('snsSetQ', snsSetQ);
 actIn('wldSet', wldSet);
