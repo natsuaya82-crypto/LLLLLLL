@@ -8,7 +8,10 @@
   function meanings(word){ if(word && word.mns && word.mns.length) return word.mns.join(' / '); return word&&word.mn?String(word.mn):''; }
   function words(legacy){ var out=[],i,w; legacy=legacy||[]; for(i=0;i<legacy.length;i++){ w=legacy[i]||{}; out.push(api.word({id:w.id||null,lemma:w.hw||'',meaning:meanings(w),partOfSpeech:pos(w.pos),metadata:{legacyWord:true}})); } return out; }
   function fromLegacy(languageId, legacyWords, legacySet){ legacySet=legacySet||{}; return api.languageModel({languageId:languageId||null,wordOrder:legacySet.order||'SOV',words:words(legacyWords),metadata:{source:'legacy-adapter',legacyGrammarVersion:1}}); }
-  function key(languageId){ return 'lingua.'+String(languageId)+'.grammar-v2'; }
+  /* How a language is filed is core.js's to say, and it says it in one place.
+     langKey(slice) answers for the language that is open; this model names
+     the language it belongs to, so it asks for that one by id. */
+  function key(languageId){ return langKeyOf(languageId,'gram2'); }
   function load(languageId, storage){ var raw; storage=storage||root.localStorage; if(!storage||!languageId) return null; try{ raw=storage.getItem(key(languageId)); return raw?api.languageModel(JSON.parse(raw)):null; }catch(e){ return null; } }
   function save(model, storage){ storage=storage||root.localStorage; if(!storage||!model||!model.languageId) throw new Error('Grammar v2 model needs languageId and storage'); storage.setItem(key(model.languageId),JSON.stringify(model)); return model; }
   api.adapter={fromLegacy:fromLegacy,load:load,save:save,storageKey:key};

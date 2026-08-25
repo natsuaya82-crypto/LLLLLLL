@@ -28,4 +28,11 @@ const stray=e.morphology.parseSentence(language,'na mi');
 assert.equal(stray.ok,false);
 const adapted=e.adapter.fromLegacy('legacy',[{hw:'luma',mn:'食べる',pos:'v'}],{order:'SOV'});
 assert.equal(adapted.words[0].partOfSpeech,'VERB'); assert.equal(adapted.wordOrder.join(','),'SUBJECT,OBJECT,VERB');
+/* Nothing here builds a storage key out of string pieces. Where a language is
+   filed is core.js's one place to say, and a second place saying it is how a
+   slice ends up outside SLICES -- in no backup, and left behind by a wipe. */
+for (const file of ['www/grammar-engine/adapter.js']) {
+  assert.equal(fs.readFileSync(file, 'utf8').indexOf("'lingua.'"), -1,
+    file + ' builds a storage key by hand. Ask core.js for it instead.');
+}
 console.log('Grammar Engine: Phase 1–2 contract is clean');
