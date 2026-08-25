@@ -791,9 +791,6 @@ function vAbout(){
      language, and they are never the same string. `.sth` is the heading a
      stage already uses. */
   if(langName) body+='<h1 class="abth">'+esc(langName)+'</h1>';
-  if(wldUse()) body+='<div class="abtuse">'+
-    '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
-    '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
   /* The two counts are the way in to the two lists. The dictionary was
      written out here for a moment and taken back off: a language with ten
      thousand words in it is a page nobody reaches the bottom of, and the
@@ -814,15 +811,50 @@ function vAbout(){
      not, exactly as before; `.set` carries its own font-size and line-height,
      so a <button> row and a <div> row are the same height (CLAUDE.md's rule
      about one list, one height, and what press measures). */
-  body+='<button class="set"' + DO('go', ["words"]) + '>'+
+  /* ---- the skeleton, in the order an article has it -------------------
+     「骨格の話はしてねえし、そもそも骨格の認識がくそ、一旦ページ見てこいよ」
+     OWNER 2026-08-25. Read: wikipedia.org is blocked from this container, so
+     Wikipedia's own Manual of Style/Layout was, which gives the order:
+
+       infobox        the key facts, ABOVE the first heading
+       lead           what this is, in words, still above the first heading
+       contents       when there are four headings or more
+       == section ==  and under its heading, the way to the fuller article
+
+     Every one of those four was in the wrong place or missing here. The facts
+     were in the middle of the flow, the lead was a two-line fragment under the
+     title, the contents were at the FOOT of the page, and no section led
+     anywhere. */
+  /* The infobox. Facts, before anything is said. */
+  body+='<div class="set">'+
       '<span class="sl">'+esc(t('toc.words'))+'</span>'+
-      '<span class="sv">'+WORDS.length+ICON_GO+'</span></button>'+
-    '<button class="set"' + DO('go', ["letters"]) + '>'+
+      '<span class="sv">'+WORDS.length+'</span></div>'+
+    '<div class="set">'+
       '<span class="sl">'+esc(t('toc.letters'))+'</span>'+
-      '<span class="sv">'+ltShaped()+ICON_GO+'</span></button>'+
+      '<span class="sv">'+ltShaped()+'</span></div>'+
     '<div class="set">'+
       '<span class="sl">'+esc(t('ws.kind'))+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+'</span></div>';
+  /* The lead: what this language is for, in its own words, before the first
+     heading. It was here already -- it was just sitting above the facts
+     instead of below them, which is the one place an article never puts it. */
+  if(wldUse()) body+='<div class="abtuse">'+
+    '<span class="abtun">'+esc(t('wld.'+wldUse()))+'</span>'+
+    '<span class="abtud">'+esc(t('wld.'+wldUse()+'.d'))+'</span></div>';
+  /* The contents. Wikipedia puts one in at four headings and this page has
+     more than four; it had one and kept it at the BOTTOM, which is a list of
+     sections rather than a way into them.
+     Each row goes to the chapter it names, which is the same thing as the
+     「詳細は『X』を参照」 that sits under a section heading over there -- and
+     it needs no new wording, because the chapter's own name is the link.
+     The state stays on the row: this is also where 公開/非公開 will be set,
+     and the row is now a thing you press. */
+  body+='<h2 class="abts">'+esc(t('wld.secs'))+'</h2>'+
+    tocRows().map(function(row){
+      return '<button class="set"' + DO('go', [row.r]) + '>'+
+        '<span class="sl">'+esc(t(row.k))+'</span>'+
+        '<span class="sv">'+esc(wldSecSay(row.r))+ICON_GO+'</span></button>';
+    }).join('');
   /* Then the sections somebody wrote, each under its own heading with the
      text beneath it -- which is what a section of an article is. They were
      the same headings before; what has changed is that they now follow a
@@ -844,25 +876,9 @@ function vAbout(){
      the page an article about a language rather than a page about what has
      been filled in. */
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
-  /* ---- the sections, and what each one is open to --------------------
-     The list is the BOOK'S CHAPTERS -- tocRows() -- and not a second list
-     written out here, so a chapter added to the book is a section of this
-     page the same day, numbered the same way, under the same name. One
-     place, not two.
-
-     The rows do not go anywhere and do not carry a switch yet. Changing one
-     is `wldSecSet`/`wldSecDl` and a name a screen may say has to be
-     registered in `www/act-map.js`, which this session does not own -- and
-     a switch that cannot be pressed, or a chevron that arrives nowhere, is
-     worse than a row that only says what is true. What they say is read
-     from the language, so the day those two names exist the rows are
-     already right. */
-  body+='<h2 class="abts">'+esc(t('wld.secs'))+'</h2>'+
-    tocRows().map(function(row){
-      return '<div class="set">'+
-        '<span class="sl">'+esc(t(row.k))+'</span>'+
-        '<span class="sv">'+esc(wldSecSay(row.r))+'</span></div>';
-    }).join('');
+  /* The contents moved up to where an article keeps them -- see the skeleton
+     note above. They were written out again down here, which was the same
+     list twice on one page. */
   /* And the way to the editor, which is where the chip beside the handle used
      to go. It is here rather than in the settings because this is the page you
      are looking at when you notice it is wrong -- the same place, and the same
