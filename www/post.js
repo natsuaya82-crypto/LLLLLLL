@@ -2054,52 +2054,80 @@ function postRow(p){
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
     '<div class="pav">'+postFace(p)+'</div>'+
     '<div class="pbody">'+
+      /* Two lines, not eleven things on one.
+         「名前 言語名 ユーザー名 日付 編集済み ↑これ全部一列に表示すると
+         なにも見えない」 This was ONE flex row carrying the name, the badge,
+         the language, the handle, a dot, the time, the lock, the unsent mark,
+         "edited", "taken down", the pin and the ... -- twelve things, on a
+         phone, in the width of a post. `.pname` has `text-overflow:ellipsis`,
+         so what actually happened is that the name -- the one thing on the
+         line somebody is looking for -- gave up its width first and came out
+         as two characters and a dot.
+
+         The fold is by what the thing IS, not by what fits. WHO wrote it, and
+         the ... that acts on it, are what the post is; they are line one and
+         the name has the whole width to itself. WHEN it was written and WHAT
+         STATE it is in are line two, quiet and small.
+
+         Nothing was added and nothing was taken away -- the same spans, in
+         the same order, folded once. No chips in a row and no corners: the
+         second line is text separated by spaces, which is what the rest of
+         this app does with a line of small facts. */
       '<div class="phead">'+
-        '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
-        (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
-        '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
-        '<span class="pdot">·</span>'+
-        '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
-        /* A post that was put right says so, beside the time. It carries the
-           moment it was edited, not a flag: what a person wants to know is
-           when, and a flag cannot be asked that later. */
-        (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
-        /* Yours, public, and not on the server yet. It was nothing at all:
-           netPush() was handed an empty failure function in both places that
-           call it, so a post the server refused looked exactly like one it
-           took, and the only way to find out was somebody's dashboard.
-           「spl流したのにまだ投稿載らんの？」
+        '<div class="pheadn">'+
+          '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
+          /* The ... and, when it is the one that is open, the menu hanging off
+             it. It is IN the post rather than a screen you go to, so what you
+             are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
+             横にメニュー出てきて欲しい」
 
-           `sid` is the server's name for this post and postSid() writes it,
-           so having none is the whole of the question. A post kept to
-           yourself never goes anywhere and is not waiting for anything. */
-        ((p.mine && !p.pv && !p.sid)
-          ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
-          : '')+
-        (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
-        /* Taken down. Only its author is ever handed one of these -- post_read
-           in schema.sql -- so it is for them, and it belongs up here beside
-           the lock and "edited": a word for what state the post is in.
+             On every post, not only your own. It was yours only, which meant
+             the one post you might need to do something about -- somebody
+             else's -- was the one with nothing on it.
 
-           Two goes at this were wrong. It said "hidden", on a post the person
-           reading it can SEE, which is a word contradicting the screen it is
-           written on. Then it said WHO did it, in a line of its own under the
-           head -- which is the app explaining itself, and is the notice's job
-           rather than this one's. 「アプリ内に説明書くの禁止」 */
-        (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
-        (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
-        /* The ... and, when it is the one that is open, the menu hanging off
-           it. It is IN the post rather than a screen you go to, so what you
-           are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
-           横にメニュー出てきて欲しい」 */
-        /* On every post, not only your own. It was yours only, which meant
-           the one post you might need to do something about -- somebody
-           else's -- was the one with nothing on it. */
-        '<span class="pmw">'+
-          '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
-            esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
-          (PMENU===p.id? postMenuHTML(p) : '')+
-          '</span>'+
+             It is on the first line because it acts on the post rather than
+             describing it, and because a 44pt target has to sit on the line
+             that is 44pt tall. */
+          '<span class="pmw">'+
+            '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
+              esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
+            (PMENU===p.id? postMenuHTML(p) : '')+
+            '</span>'+
+        '</div>'+
+        '<div class="pheadm">'+
+          (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
+          '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
+          '<span class="pdot">·</span>'+
+          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
+          /* A post that was put right says so, beside the time. It carries the
+             moment it was edited, not a flag: what a person wants to know is
+             when, and a flag cannot be asked that later. */
+          (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
+          /* Yours, public, and not on the server yet. It was nothing at all:
+             netPush() was handed an empty failure function in both places that
+             call it, so a post the server refused looked exactly like one it
+             took, and the only way to find out was somebody's dashboard.
+             「spl流したのにまだ投稿載らんの？」
+
+             `sid` is the server's name for this post and postSid() writes it,
+             so having none is the whole of the question. A post kept to
+             yourself never goes anywhere and is not waiting for anything. */
+          ((p.mine && !p.pv && !p.sid)
+            ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
+            : '')+
+          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
+          /* Taken down. Only its author is ever handed one of these -- post_read
+             in schema.sql -- so it is for them, and it belongs up here beside
+             the lock and "edited": a word for what state the post is in.
+
+             Two goes at this were wrong. It said "hidden", on a post the person
+             reading it can SEE, which is a word contradicting the screen it is
+             written on. Then it said WHO did it, in a line of its own under the
+             head -- which is the app explaining itself, and is the notice's job
+             rather than this one's. 「アプリ内に説明書くの禁止」 */
+          (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
+          (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
+        '</div>'+
       '</div>'+
       /* Who this answers, under the head and above the line. It is here
          rather than only on the thread page because the timeline keeps

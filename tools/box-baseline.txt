@@ -83,8 +83,6 @@
 .pkclear | border-radius
 .pktab | border
 .pktab | border-radius
-.plangtag | border
-.plangtag | border-radius
 .pmenu | border
 .pmenu | border-radius
 .pmi | border-radius
