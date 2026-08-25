@@ -115,7 +115,68 @@ function go(r, a){
   }
   NAV.push({r:r, a:a}); route=r; render(); window.scrollTo(0,0);
 }
+/* ---- a post half written, on the way out ------------------------------
+   OWNER DECISION 2026-08-25: 「戻るをした時は確認ダイアログを入れて下書きに
+   入れて欲しい」「もう一回開く時には下書きから選べば出てくるだけで、残って
+   ほしくない」. So backing out of the composer asks; yes puts what is there
+   into the drafts and leaves the composer EMPTY. The post is not lost and it
+   is not still sitting in the composer either -- it is in the drafts, which
+   is a place you go and choose from.
+
+   The asking is HERE and not at the top of back() unconditionally, because
+   DO('back') is not only the back button. The photograph editor's Done is
+   back() as well -- www/post.js:1222 and 1228, `.mkr` and `.mkdone` -- and a
+   guard with no way through turns finishing a picture into "keep this?",
+   asked every time, about a post that is not going anywhere.
+
+   The way through is the screen you are standing ON. The composer is
+   `form:post:` and the photograph editor is `form:marks:N`, so Done is not
+   leaving the composer and is never asked. Nothing else in the app is
+   `form:post:`, so nothing else is asked either.
+
+   What counts as "there is something here" is pwHas() -- the app's own
+   answer, the one the send button and draftKeep() already use. A second rule
+   written here would be a copy of it, and the two would drift.
+
+   An edit is not a draft. PW.ed is a post that already exists; the drafts
+   carry no `ed`, so keeping one would quietly turn an edit into a second
+   post. Backing out of an edit is left exactly as it was.
+
+   Returns true when it has taken the press over -- either the person said no
+   and stays, or the draft was kept and the trail already moved. */
+function backDraftKept(){
+  var h=here(), to, keep;
+  if(!h || h.r!=='form' || h.a!=='post:') return false;
+  if(typeof PW==='undefined' || !PW || PW.ed) return false;
+  if(!pwHas(PW.ln)) return false;
+  /* Three answers, and window.confirm has two buttons. A single box with
+     three is a NEW control: it would have to be drawn by render()
+     (www/glyph.js), carry names registered in www/act-map.js, and be styled
+     in www/index.html -- three files this session does not own. So the three
+     answers are asked in two steps, which needs no markup, no new name and
+     no stylesheet, and behaves the same on the old WKWebView.
+
+     仮 -- both the wording and the shape of the asking are the owner's. When
+     one box with three buttons exists this is the only place that changes:
+     what the three answers DO is below and does not move. Until the keys are
+     in www/i18n/*.js these show the key names themselves. */
+  if(window.confirm(t('post.back.q'))) keep=true;              /* はい */
+  else if(window.confirm(t('post.back.drop.q'))) keep=false;   /* いいえ */
+  else return true;                                            /* キャンセル */
+  /* Where back was going, taken before draftKeep() runs: it ends by going to
+     the feed, which is what the Save-a-draft button does. Back is not that
+     button -- it goes back one page -- so the trail is put back afterwards.
+     Both answers leave the composer empty: a post that is in the drafts and
+     still in the composer is the same post in two places, and one that was
+     not kept was not kept. 「残ってほしくない」 */
+  to=NAV.slice(0, NAV.length-1);
+  if(keep) draftKeep(); else PW=pwBlank();
+  NAV=to.length? to : [{r:'profile'}];
+  route=here().r; render(); window.scrollTo(0,0);
+  return true;
+}
 function back(){
+  if(backDraftKept()) return;
   if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
 }
