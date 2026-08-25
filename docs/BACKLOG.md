@@ -1130,3 +1130,50 @@ is obvious — and it is also the door to making that word」。一語も無い�
 組み上がった行は `ln` の箱にそのまま入る。`c757ac4` が挙げた
 `gram.pair.line` と `stg.ex` は、どちらも使わずに済んでいる。
 残っている文言の問いは、上のこれ一つだけ。
+
+## `press` が赤い ── 着る者のいないクラス三つ。`claude/wiki` のもの
+
+2026-08-25、`claude/wiki`（`03fcfa3`）を `claude/leader-integration` に
+取り込んだあと、全ゲートで `press` 一本が赤くなった。**25 検査中これ一本。**
+直していない ── 統合の継ぎ目ではなく、枝の中で閉じていない所だから。
+
+```
+  classes worn: 576, styled and unworn: 7 (baseline 4)
+  FAILED (3)
+    nothing wears .abtline
+    nothing wears .abts
+    nothing wears .obws
+```
+
+**継ぎ目でないことは実測した。** `claude/wiki` の tip 単独で `press` を回すと:
+
+```
+  wiki 単独 03fcfa3   FAILED (5)  .abtline .abts .obws + .sth + lnin 34x251
+  取り込み後          FAILED (3)  .abtline .abts .obws
+```
+
+差の二件は `leader-integration` が先に直したもの（`.sth` の削除と
+`.pwfield .lnin.dir-ttb-*` の padding）で、取り込んだあとも直ったまま。
+**三件は取り込む前から枝の上で赤かった。** `leader-integration` は
+`www/home.js` に一行も触っていない（`git diff --name-only master..HEAD --
+www/home.js` が空）。
+
+三つは直し方が別々で、`press` 自身が二択で言っているとおり:
+
+| クラス | 今どうなっているか | どちら側か |
+|---|---|---|
+| `.obws` | `master` では `www/home.js` が着ていた。wiki の `home.js` 書き直しで着る者が消え、規則だけ残った | **画面が消えた側** ── 規則を消す |
+| `.abts` | 規則は `master` にもある。wiki が着る者を外し、今は `home.js:948` の**コメントの中にしか名前が無い** | 同上。ただしコメントが「`.abts` は `<h2>`」と、もう本当でないことを言っている |
+| `.abtline` | wiki が新しく足した規則。`home.js:1123` の `<div class="abtl abtline">` が**着ている** | **種を足す側** ── 段が一つでも `stIsDone` な状態に歩きが届いていない |
+
+`.abts` のコメントは CLAUDE.md の「a comment saying 'this is the one place'
+is worth nothing on its own」に当たる。**着る者が消えたのに、着ていると
+言っている行が残っている。**
+
+**wiki の最新 tip（`6063190`、`03fcfa3` の次）でも三つとも同じままで、
+直っていない。** 数え直した。
+
+`tools/fixture.mjs` も `www/home.js` も `www/index.html` の該当行も
+`claude/wiki` の持ち物なので、**そのセッションが閉じる。** リーダーが渡すなら
+その時に。統合の側でやると、種の足し方も規則の消し方も、書いた人が
+知っていることを知らずに決めることになる。
