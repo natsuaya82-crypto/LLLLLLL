@@ -890,7 +890,7 @@ function openWrIn(){
 function shInHTML(){
   var s = shState(), out = '', i, g, n;
   out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
-    '<input type="file" id="wr-file" accept="image/*,.pdf"></label>';
+    '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
   if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
   if(!s.got) return out;
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
@@ -925,11 +925,34 @@ function shInMount(){
   e.addEventListener('change', function(){
     var f = e.files && e.files[0];
     if(!f) return;
+    /* A PDF, and nothing else. OWNER DECISION 2026-08-25
+       「一旦写真禁止で、普通に pdf で提出以外受け取らないで行こう。今後のアプデで追加しよ」
+       -- and the reason is a shipping one rather than a technical one: the
+       half that was never measured is exactly the photograph, a brush and a
+       hard pencil on paper under a real camera. A scan has no camera in it.
+
+       It is HERE and not in shTakeFile(), and that is the decision's own
+       sentence: what changes is which files are offered and accepted, not the
+       reader underneath. This listener is the one door a person comes in by --
+       the picker offers PDFs and anything else that arrives is turned away
+       with a sentence. Below it, shTakeFile() still reads a picture, because
+       the day photographs come back is the day this one line goes. */
+    if(!shIsPdf(f)){ shFail(t('wr.notpdf')); return; }
     var r = new FileReader();
     r.onload = function(){ shTakeFile(String(r.result || ''), f.name); };
     r.onerror = function(){ shFail(t('wr.bad')); };
     r.readAsDataURL(f);
   }, false);
+}
+/* What the picker was told to offer, asked again of what actually arrived.
+   `accept` is a hint and not a fence -- a file can still reach here by another
+   road on some phones, and on a desktop the chooser has an "all files" of its
+   own. Both halves of the name are asked because neither is reliable alone:
+   iOS hands over `application/pdf` and no useful name, and a file that came
+   through Files with no type at all still ends in `.pdf`. */
+function shIsPdf(f){
+  var ty = String((f && f.type) || ''), nm = String((f && f.name) || '');
+  return ty.indexOf('pdf') >= 0 || /\.pdf$/i.test(nm);
 }
 function shFail(why){
   var s = shState();
