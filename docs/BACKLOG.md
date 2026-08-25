@@ -7,6 +7,23 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## ~~新しいキーの札が狭い盤からはみ出す~~ — 決着。前提の方が違った
+
+`tools/side-baseline.txt` の三行（a flick keyboard being built 689/402、
+a keyboard of two layers 1023/402、three keyboards looking at one not applied
+422/402）は一つの故障で、`claude/yoo-kwdg28` が電話の幅で測って見つけた。
+
+札は「作るキーと同じ大きさ」なので 1+2+3 = 6 マス分。盤が 3 列だと、その
+6 マスは盤の二倍になる ── 今日の `kbCellW` が `--kbw / cols` で、列が減るほど
+一マスが太るから。
+
+リーダーは三つの直し方を並べた（折り返す／狭いときは縮める／縦に積む）。
+**三つとも間違った前提に対する対処だった。** オーナー 2026-08-25:
+「エクセルみたいにキーボードにやって横幅が固定されるはずだよ」
+
+マスの幅が固定なら、札は常に 6/10 で必ず収まる。直しは札の側ではなく盤の側。
+docs/FEATURE_RULES.md の決定ログに入れた。実装は「段の数」（www/keyboard.js）。
+
 ## The plans screen says `$0` in every language
 
 The three things this section used to name are in: **Restore** is a button,

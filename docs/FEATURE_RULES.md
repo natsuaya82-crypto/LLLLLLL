@@ -250,6 +250,40 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 `text` は残してあるので、書かれていたものは失われていない。
 
 ### Decision
+- Date: 2026-08-25
+- Area: The keyboard sheet's width — a column is a fixed size
+- Decision:
+
+  「エクセルみたいにキーボードにやって横幅が固定されるはずだよ。
+   縦の列は追加できるかもだけど」
+
+  **A column is a fixed width. The board is as wide as its columns make it.**
+  Not the other way round.
+
+  Today `--kbw` is `83vw` and `kbCellW(w, cols)` is `--kbw / cols * kbU(w)`, so
+  the board is ALWAYS the same width and the cells stretch to fill it: a board
+  of three columns draws three enormous cells across the whole phone. From now
+  the unit is fixed — a column is what a column is on a ten-column board — and
+  a three-column board is three columns wide, sitting where a short row already
+  sits (the middle of the sheet, rule 19). Adding a column makes the board
+  wider, up to the ten that rule 19 already fixes.
+
+- Reason: it is a spreadsheet, and a spreadsheet does not resize its columns
+  because you deleted some. This also settles a bug rather than patching it.
+  `tools/side-baseline.txt` carries three screens that run off the side of a
+  402pt phone, all one fault: the three tiles a new key is dragged off are the
+  size of the key they make (「1マスとキーボードの1マスのサイズが一緒じゃない
+  から分かりにくいよ」), so together they are 1+2+3 = 6 columns; on a
+  three-column board, six stretched columns are twice the board. Three ways to
+  patch it were put to the owner -- wrap, shrink on narrow boards, stack
+  vertically -- and all three were answers to the wrong question. With a fixed
+  column, six of them are six tenths of the sheet and fit by construction.
+- Affected features: `kbCellW()` and `--kbw` (`www/keyboard.js`,
+  `www/index.html`), how every board narrower than ten columns is DRAWN --
+  nothing stored changes, no layout moves, only the drawing -- and the three
+  lines in `tools/side-baseline.txt`, which come out when it lands.
+
+### Decision
 - Date: 2026-08-23
 - Area: How many languages, how many keyboards, and two more capabilities
 - Decision:
