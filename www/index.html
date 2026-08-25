@@ -889,12 +889,6 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
    padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
-/* What the language is for, on the cover, because that is where what a book
-   is about belongs. */
-.wldrow{display:flex;align-items:center;gap:8px;width:100%;margin-top:14px;
-        min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;
-        background:none;color:var(--txs);font-family:inherit;font-size:.88rem}
-.wldrow:active{border-color:var(--goldln)}
 /* ---------- the letters ----------
    A letter is a cell, because there are as many letters as somebody decides
    there are. */
@@ -1436,7 +1430,13 @@ a.set{text-decoration:none}
    this app: full width, a hairline under it, nothing around it. .set is that
    shape and this is that shape -- said again rather than borrowed, because
    .set lives on a settings screen and this lives on a profile, and the day
-   one of them changes it must not drag the other with it. */
+   one of them changes it must not drag the other with it.
+   There was a SECOND `.wldrow` rule earlier in this sheet -- the cover's, a
+   bordered box with a 10px corner. This one overrode its `border` and did not
+   override its `border-radius`, so the corner outlived the box: a 10px radius
+   on a rule that draws one hairline, curling the line up at both ends.
+   「角丸みたいな下線がきもい」 The second rule is gone. This is the only
+   `.wldrow`, and it is the cover's row as well as the profile's. */
 .wldrow{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;
         margin-top:6px;padding:13px 2px;background:none;
         border:0;border-bottom:1px solid var(--line);

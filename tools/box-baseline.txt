@@ -128,5 +128,3 @@
 .vodot | border-radius
 .whfo | border
 .whfo | border-radius
-.wldrow | border
-.wldrow | border-radius
