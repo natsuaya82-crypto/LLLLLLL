@@ -165,13 +165,30 @@ function pwSetPriv(v){
    nothing typed there is no draft to save and the only thing worth offering
    is the ones already saved. Editing a post that exists offers neither -- an
    edit is not a draft. */
+/* It sits in the row over the keyboard, beside the microphone, and not in the
+   top bar. 「マイクの横に下書きの保存されてるボタン出てこないし」
+   「下書き1とか下書きに保存するみたいなボタン無くしたんだけど？」
+   OWNER 2026-08-26, having found neither on a phone.
+
+   Neither had been deleted. The top bar is 390 points wide and already holds
+   a back arrow, the screen's name and a filled button, so this one was drawn
+   only when there was something for it to say -- and on a first post there is
+   nothing: nothing typed means no draft to save, and no drafts saved means
+   nothing to go back to. It was correct and it was invisible, which for a
+   control somebody is looking for is the same as absent.
+
+   The row over the keyboard has room, and it is where the other things you
+   can do to a post already are. That is not the older 「だから save a draft を
+   底に置くのやめろって」 coming back: the foot of a screen you have to scroll
+   to is not this row, which rides on the keyboard and is on screen the whole
+   time the composer is. */
 function pwSideHTML(){
   if(PW.ed) return '';
   if(pwHas(String(PW.ln||'').trim()))
-    return '<button class="navside"' + DO('draftKeep') + '>'+
+    return '<button class="pwab wide"' + DO('draftKeep') + '>'+
       esc(t('post.draft.save'))+'</button>';
   if(!DRAFTS.length) return '';
-  return '<button class="navside"' + DO('go', ["drafts"]) + '>'+
+  return '<button class="pwab wide"' + DO('go', ["drafts"]) + '>'+
     esc(tn('post.drafts', DRAFTS.length))+'</button>';
 }
 /* The bar is FORM.right and openPost() is the only thing that builds it, so
@@ -251,7 +268,6 @@ function openPost(from){
      the door is. */
   if(!netSignedIn()){ go('feed'); return; }
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), pwKeepKb,
-    '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
        thing one button can be, and the delegated listener only knows about
@@ -595,7 +611,10 @@ function pwAddHTML(){
           '<button class="pwab"' + DO('pwPickLib') + ' aria-label="'+
             esc(t('post.lib'))+'">'+ICON_LIB+'</button>'
         : '')+
-      pwVoAddHTML();
+      pwVoAddHTML()+
+      /* Beside the microphone. The span is always here so pwSidePaint() has
+         something to patch; it collapses when there is nothing to say. */
+      '<span class="pwside" id="pw-side">'+pwSideHTML()+'</span>';
 }
 /* The line as it will actually look, under the field.
 

@@ -474,6 +474,53 @@ const R = await pg.evaluate(async () => {
     PW = pwBlank();
   }
 
+  /* ---- 11c. the drafts control is on the keyboard, beside the mic -----
+     Neither of the two faces had been deleted, and neither could be found on
+     a phone: they were drawn in the top bar, which is 390 points wide and
+     already holds a back arrow, a screen name and a filled button, so the
+     control was shown only when it had something to say -- and on a first
+     post it has nothing. Correct, and invisible.
+     「マイクの横に下書きの保存されてるボタン出てこないし」
+     「下書き1とか下書きに保存するみたいなボタン無くしたんだけど？」
+
+     Asked of pwAddHTML(), which IS the row over the keyboard, rather than of
+     the whole screen -- the screen would say yes to it sitting anywhere. */
+  {
+    const wasDrafts = DRAFTS.slice();
+    const wasPW = PW;
+
+    PW = pwBlank(); PW.ln = 'kano tir';        /* something to save */
+    const typed = pwAddHTML();
+    if (typed.indexOf('draftKeep') < 0)
+      fails.push('with a line typed, the row over the keyboard offers no way ' +
+                 'to save a draft: pwAddHTML() does not name draftKeep');
+
+    PW = pwBlank();                            /* nothing typed, none saved */
+    DRAFTS.length = 0;
+    const bare = pwAddHTML();
+    if (bare.indexOf('draftKeep') >= 0 || bare.indexOf('drafts') >= 0)
+      fails.push('with nothing typed and no drafts saved, the row still draws ' +
+                 'a drafts control. There is nothing to save and nowhere to go');
+
+    DRAFTS.push({ at: 1, ln: 'kano', mn: '', to: '', pr: 0, pics: [] });
+    const saved = pwAddHTML();
+    if (saved.indexOf('drafts') < 0)
+      fails.push('a draft is saved and the row over the keyboard does not say ' +
+                 'so, so the only way back to it is a screen nobody can reach');
+
+    /* And it is not ALSO in the top bar, which is where it could not be seen.
+       openPost() builds that bar; a control in both places is two controls. */
+    openPost('new');
+    const bar = (typeof FORM !== 'undefined' && FORM) ? String(FORM.right || '') : '';
+    if (bar.indexOf('draftKeep') >= 0 || bar.indexOf('drafts') >= 0)
+      fails.push('the drafts control is in the top bar as well as the row: ' +
+                 'the same button twice, one of them where nobody found it');
+
+    DRAFTS.length = 0;
+    for (const d of wasDrafts) DRAFTS.push(d);
+    PW = wasPW;
+  }
+
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
      A row shows a picture a few hundred pixels across and was being sent one
      nine hundred across. Nothing looked wrong and nothing could: the browser
