@@ -556,6 +556,18 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pmi svg{flex:0 0 auto;color:var(--txm)}
 .pmi:active{background:var(--sf)}
 .pmi.bad,.pmi.bad svg{color:var(--bad)}
+/* The question the back arrow asks, at the head of the same menu the ... on a
+   post opens. A line of text: no corner, no border and no panel of its own --
+   the box around it is `.pmenu`, which was already there and is on the
+   baseline. Rule 18 is about what is ADDED, and this adds neither.
+   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
+.pmq{padding:8px 12px 4px;font-size:.86rem;color:var(--txm);white-space:nowrap}
+/* What the menu hangs off. Same job as `.pmw` around the ... -- the wrapper is
+   what the menu is positioned against, so nothing is measured by hand. The
+   arrow is at the LEFT edge of the bar, so the menu opens to the right of it
+   where `.pmenu`'s own `right:-12px` would push it off the screen. */
+.bkw{position:relative;display:inline-flex;flex:0 0 auto}
+.bkw .pmenu{right:auto;left:-6px}
 /* Who a reply answers. Grey, small, above the line -- it is a label on the
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;

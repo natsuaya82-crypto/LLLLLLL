@@ -32,6 +32,11 @@ act('abScale', abScale);
 act('addOne', addOne);
 act('addFmDrop', addFmDrop);
 act('back', back);
+/* The three answers the back arrow asks for when a post is half-written.
+   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
+act('backKeep', backKeep);
+act('backDrop', backDrop);
+act('backStay', backStay);
 act('setPlan', setPlan);
 act('goMod', goMod);
 act('modLoad', modLoad);

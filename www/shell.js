@@ -47,6 +47,7 @@ function viewReset(){
   pfTab='posts';                       /* which list the profile shows */
   snsTab='rec';                        /* and which timeline the feed shows */
   PMENU='';                            /* the ... open beside a post */
+  BACKQ=0;                             /* and the one hanging off the back arrow */
   WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   kbNew1=0;                            /* the width waiting to be put on a keyboard */
@@ -149,33 +150,61 @@ function backDraftKept(){
   if(!h || h.r!=='form' || h.a!=='post:') return false;
   if(typeof PW==='undefined' || !PW || PW.ed) return false;
   if(!pwHas(PW.ln)) return false;
-  /* Three answers, and window.confirm has two buttons. A single box with
-     three is a NEW control: it would have to be drawn by render()
-     (www/glyph.js), carry names registered in www/act-map.js, and be styled
-     in www/index.html -- three files this session does not own. So the three
-     answers are asked in two steps, which needs no markup, no new name and
-     no stylesheet, and behaves the same on the old WKWebView.
+  /* THREE ANSWERS IN ONE BOX. OWNER 2026-08-25「下書きに保存しますか？
+     はい　いいえ　キャンセル」and, when told window.confirm has two buttons,
+     「なんでまず作らないの？早くやれよ」.
 
-     仮 -- both the wording and the shape of the asking are the owner's. When
-     one box with three buttons exists this is the only place that changes:
-     what the three answers DO is below and does not move. Until the keys are
-     in www/i18n/*.js these show the key names themselves. */
-  if(window.confirm(t('post.back.q'))) keep=true;              /* はい */
-  else if(window.confirm(t('post.back.drop.q'))) keep=false;   /* いいえ */
-  else return true;                                            /* キャンセル */
+     It was two window.confirm calls in a row, because three answers do not
+     fit in a box with two buttons. Two boxes for one question is the app
+     asking twice about one thing, and the second one arrives with no way to
+     tell what pressing it means until you read it.
+
+     It is NOT a new shape. `.pmenu` is what the ... on a post already opens:
+     a list of choices, in place, hanging off the thing you pressed. Every
+     class here is that menu's own -- no corner, no border and no panel is
+     ADDED, which is what rule 18 is about, and it is not a sheet sliding up
+     over where you were either. The only new rule is `.pmq`, which is the
+     question, and it is a line of text with no box around it. */
+  BACKQ = 1; render(); window.scrollTo(0,0);
+  return true;
+}
+/* Whether the back arrow has asked. It is where you are STANDING rather than
+   anything the language owns, so viewReset() forgets it -- arriving on another
+   screen with a question still hanging off the arrow would be a question about
+   a post that is no longer in front of you. */
+var BACKQ=0;
+/* The three answers. What each one DOES is what the two confirms did; only
+   the asking changed. */
+function backKeep(){ backAnswer(true); }
+function backDrop(){ backAnswer(false); }
+function backStay(){ BACKQ = 0; render(); }
+function backAnswer(keep){
   /* Where back was going, taken before draftKeep() runs: it ends by going to
      the feed, which is what the Save-a-draft button does. Back is not that
      button -- it goes back one page -- so the trail is put back afterwards.
      Both answers leave the composer empty: a post that is in the drafts and
      still in the composer is the same post in two places, and one that was
      not kept was not kept. 「残ってほしくない」 */
-  to=NAV.slice(0, NAV.length-1);
+  var to=NAV.slice(0, NAV.length-1);
+  BACKQ = 0;
   if(keep) draftKeep(); else PW=pwBlank();
   NAV=to.length? to : [{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
-  return true;
+}
+/* The box itself, drawn under the back arrow it is about. */
+function backQHTML(){
+  return '<span class="pmenu" data-pm="1">'+
+    '<span class="pmq">'+esc(t('post.back.q'))+'</span>'+
+    '<button class="pmi"' + DO('backKeep') + '>'+
+      '<span>'+esc(t('post.back.keep'))+'</span></button>'+
+    '<button class="pmi"' + DO('backDrop') + '>'+
+      '<span>'+esc(t('post.back.drop'))+'</span></button>'+
+    '<button class="pmi"' + DO('backStay') + '>'+
+      '<span>'+esc(t('post.back.stay'))+'</span></button>'+
+    '</span>';
 }
 function back(){
+  if(BACKQ){ BACKQ = 0; render(); return; }
   if(backDraftKept()) return;
   if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
@@ -330,8 +359,13 @@ function navTop(count, right){
      side and the smaller of them is the one you are leaving.
      「戻るボタンにhomeとかつけなくていいんじゃない？そうしたら矢印だけで済む」
      The word is still there for anybody who cannot see the arrow. */
-  return '<div class="navtop"><button class="back nb"' + DO('back') +
+  return '<div class="navtop">'+
+    /* The arrow and, when it has asked something, the box hanging off it.
+       Same shape as the ... on a post: the wrapper is what the menu is
+       positioned against, so nothing is measured or placed by hand. */
+    '<span class="bkw"><button class="back nb"' + DO('back') +
     ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button>'+
+    (BACKQ? backQHTML() : '')+'</span>'+
     (n? '<span class="navn">'+n+'</span>' : '')+
     '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+

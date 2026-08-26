@@ -81,14 +81,24 @@ const R = await pg.evaluate(() => {
   };
   /* Every case counts what it was asked and what it answered. "asked nothing"
      is half of what two of these are about. */
-  let asked = 0, answers = [];
+  /* WHAT ASKING LOOKS LIKE NOW. It was two window.confirm calls and this
+     stubbed confirm, answering from a queue. OWNER 2026-08-25「なんでまず
+     作らないの？早くやれよ」-- three answers are one box with three buttons,
+     so there is nothing to stub: the box is in the page and the answer is a
+     press, exactly like every other choice in this app.
+
+     `asked` therefore means "is the box open", 0 or 1, and it is read off
+     BACKQ -- the app's own flag -- rather than counted here. The three
+     answers are pressed by name: the same names www/act-map.js registers,
+     so a rename that misses one fails here as well as in act-check. */
+  let asked = 0;
   const realConfirm = window.confirm;
-  /* Two boxes carry three answers, so the stub answers from a queue rather
-     than with one value: [true] is yes, [false,true] is no, [false,false] is
-     cancel. Running out is a fail, not a silent false. */
-  window.confirm = function(){ asked++; if (!answers.length) { out.fails.push(
-    'the app asked more questions than the case had answers for'); return false; }
-    return answers.shift(); };
+  /* Nothing may reach the OS dialog any more. If anything does, the box was
+     not built and the old road is still live -- which would pass every
+     assertion below by accident. */
+  window.confirm = function(){ out.fails.push(
+    'window.confirm was called -- the three answers are a box in the page now, ' +
+    'and the two-step confirm should be gone'); return false; };
   /* Typed the way the field types it -- data-in calls these on every
      keystroke. Setting PW directly would prove the test's own assignment. */
   const write = () => { pwSetLn(LN); pwSetMn(MN); };
@@ -103,8 +113,9 @@ const R = await pg.evaluate(() => {
   openPost();
   const opened = JSON.stringify(here());
   write();
-  asked = 0; answers = [true];               /* はい */
-  back();
+  back();                                    /* opens the box */
+  asked = BACKQ ? 1 : 0;
+  backKeep();                                /* はい */
   const kept = DRAFTS[DRAFTS.length - 1] || null;
   out.said.push('a post half written, then back: asked ' + asked +
     ', drafts ' + DRAFTS.length + ', composer left ' +
@@ -148,12 +159,15 @@ const R = await pg.evaluate(() => {
   start();
   openPost();
   write();
-  asked = 0; answers = [false, false];       /* キャンセル */
-  back();
+  back();                                    /* opens the box */
+  asked = BACKQ ? 1 : 0;
+  backStay();                                /* キャンセル */
   out.said.push('and answering cancel: asked ' + asked + ', drafts ' + DRAFTS.length +
     ', still on ' + JSON.stringify(here()));
-  if (asked !== 2)
-    out.fails.push('answering cancel asked ' + asked + ' question(s), and it takes two boxes to say cancel');
+  if (asked !== 1)
+    out.fails.push('answering cancel: the box opened ' + asked + ' time(s), and it has to open exactly once');
+  if (BACKQ)
+    out.fails.push('answering cancel left the box open');
   if (DRAFTS.length !== 0)
     out.fails.push('answering cancel put ' + DRAFTS.length + ' thing(s) in the drafts');
   if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
@@ -171,13 +185,16 @@ const R = await pg.evaluate(() => {
   start();
   openPost();
   write();
-  asked = 0; answers = [false, true];        /* いいえ */
-  back();
+  back();                                    /* opens the box */
+  asked = BACKQ ? 1 : 0;
+  backDrop();                                /* いいえ */
   out.said.push('and answering no: asked ' + asked + ', drafts ' + DRAFTS.length +
     ', composer left ' + (PW.ln ? JSON.stringify(PW.ln) : 'empty') +
     ', landed on ' + JSON.stringify(here()));
-  if (asked !== 2)
-    out.fails.push('answering no asked ' + asked + ' question(s)');
+  if (asked !== 1)
+    out.fails.push('answering no: the box opened ' + asked + ' time(s)');
+  if (BACKQ)
+    out.fails.push('answering no left the box open');
   if (DRAFTS.length !== 0)
     out.fails.push('answering no put ' + DRAFTS.length + ' thing(s) in the drafts');
   if (PW.ln || PW.mn)
@@ -198,8 +215,8 @@ const R = await pg.evaluate(() => {
   pwPics().push({ u: PIC });
   pwMarkOpen(0);
   const onMarks = JSON.stringify(here());
-  asked = 0; answers = [];                   /* nothing may be asked here */
-  back();                                  /* what .mkr and .mkdone do */
+  back();
+  asked = BACKQ ? 1 : 0;                                  /* what .mkr and .mkdone do */
   const afterDone = JSON.stringify(here());
   out.said.push('Done on the photograph editor: asked ' + asked + ', drafts ' +
     DRAFTS.length + ', landed on ' + afterDone);
@@ -226,13 +243,13 @@ const R = await pg.evaluate(() => {
      answers this, and it is the app's own answer rather than a second one. */
   start();
   openPost();
-  asked = 0; answers = [];
   back();
+  asked = BACKQ ? 1 : 0;
   out.said.push('an empty composer backed out of: asked ' + asked + ', drafts ' +
     DRAFTS.length);
   if (asked !== 0)
     out.fails.push('backing out of an EMPTY composer asked ' + asked +
-      ' question(s) -- there is nothing to keep');
+      ' time(s) -- there is nothing to keep');
   if (DRAFTS.length !== 0)
     out.fails.push('backing out of an empty composer made a draft out of nothing');
 
@@ -248,15 +265,15 @@ const R = await pg.evaluate(() => {
   else {
     postEdit(mine.id);
     const onEdit = JSON.stringify(here());
-    asked = 0; answers = [];
     back();
+    asked = BACKQ ? 1 : 0;
     out.said.push('backing out of an edit: asked ' + asked + ', drafts ' +
       DRAFTS.length);
     if (onEdit !== '{"r":"form","a":"post:"}')
       out.fails.push('postEdit() did not open the composer -- it opened ' + onEdit);
     else {
       if (asked !== 0)
-        out.fails.push('backing out of an EDIT asked ' + asked + ' question(s)');
+        out.fails.push('backing out of an EDIT opened the box ' + asked + ' time(s)');
       if (DRAFTS.length !== 0)
         out.fails.push('backing out of an edit made a draft, which carries no ' +
           '`ed` -- the edit would come back as a second post');
@@ -271,14 +288,14 @@ const R = await pg.evaluate(() => {
   ltDraft = 'a letter name typed';
   IMP = impBlank(); IMP.rows = [{ a: 1 }];
   NAV = [{ r: 'letters' }, { r: 'letter', a: 'x' }]; window.route = 'letter';
-  asked = 0;
   back();
+  asked = BACKQ ? 1 : 0;
   out.said.push('a letter name typed and a list being read in survive back: ' +
     ((ltDraft === 'a letter name typed' && IMP && IMP.rows && IMP.rows.length === 1)
       ? 'both' : 'NO') + ', asked ' + asked);
   if (asked !== 0)
     out.fails.push('backing off a letter asked ' + asked +
-      ' question(s) -- only the composer asks');
+      ' time(s) -- only the composer asks');
   if (ltDraft !== 'a letter name typed')
     out.fails.push('pressing back threw away a letter name typed and not saved: ' +
       JSON.stringify(ltDraft));
