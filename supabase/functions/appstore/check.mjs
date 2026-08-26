@@ -17,6 +17,7 @@
    believed: the two currencies added into one number, a report that never
    arrived coming back as 0 instead of blank, and the admin check answering
    "yes" when it could not ask. */
+import { gzipSync } from 'node:zlib';
 import { generateKeyPairSync } from 'node:crypto';
 
 const pem = generateKeyPairSync('ec', { namedCurve: 'prime256v1' })
