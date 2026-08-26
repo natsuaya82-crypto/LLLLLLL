@@ -68,7 +68,7 @@ Marked separately, because they are not the same question:
 |---|---|---|---|---|---|
 | Writing a post | shipped | yes | — | `lingua.posts`, ink frozen on write | decided |
 | One language, on every plan | shipped | yes | — | `lingua.langs` | decided — there is no way to make a second anywhere in the app, so it is not a price. `LANG_MAX` used to say so in `core.js` and fed a line of text on the language list; the line went with the ban on explaining things on a screen, and the constant went with it. Languages somebody else wrote are not counted: reading one is not making one |
-| Timeline, on this phone | shipped, **not device confirmed** | yes | — | `lingua.posts` | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needs none |
+| Timeline, on this phone | shipped, **not device confirmed** | yes | — | `lingua.posts` | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
 | Replying, and the thread of a conversation | shipped, **not device confirmed** | yes | — | `post.to` (the id, already there), `post.toh` **new** — the handle it answers, frozen on write | decided — replies stay in the timeline carrying 「@xx への返信」; a post opens onto its thread; the indent stops at three |
@@ -430,8 +430,50 @@ What is **already there** and should not be rebuilt:
   `www/home.js` draws 「自分の」 and 「読んでいる」, and the second one is
   **always** the empty note, because nothing anywhere writes `mine:false`.
 
-**Not on this list and deliberately: the making side.** A language is made on
-this phone with or without an account, and that does not change.
+**The making side is on this list now, and it was not.** This said 「A language
+is made on this phone with or without an account, and that does not change」.
+It changed, on 2026-08-26: 「基本は全部サーバー管理 言語周りだけバックアップに
+file使う」「言語はアカウントないと作れないです」「古い記載消してくれうざい」.
+
+What that means here, item by item, and most of it is **already built**:
+
+- **the language lives on the server.** `netLangRow()` makes the `language`
+  row and keeps its id on `LANGS[id].sid`; `netSlicePut()` upserts one slice
+  (`Prefer: resolution=merge-duplicates`); `netSlices()` reads them back;
+  `netLangSync()` puts the two copies together through `www/sync.js`, whose
+  rule is that **neither side wins by being newer** — both are added, and the
+  price of that is a duplicate rather than a deletion 「そりゃあ両方足すだろ」.
+  `www/boot.js` fires it on launch.
+- **the file is the BACKUP, not the truth.** 「言語周りだけバックアップにfile
+  使う」 — `bkPack()` and `Documents/Languages/<name>.json` (`www/backup.js`)
+  stay exactly as they are; what changed is which of the two is the copy.
+- **making works offline.** 「制作はオフラインでも可能次つながった時に更新される」
+  Already true, and it is what `sync.js` is for.
+- **the sns half does not work offline.** 「そりゃそう」 Already true —
+  `vFeed`/`vExplore`/`vNotif` show the app's own door with no session.
+- **deleting the account takes it with them.** 「アカウント消したら残るわけが
+  ないあほだろ」 Already true on the server: `account_delete()` cascades
+  through the profile, the languages, the posts, the follows and the blocks
+  (§ 8 above). The copy on the phone is deliberately not touched — § 8 says so
+  and it has not been re-decided.
+- **a language cannot be made without an account.** **NOT built**, and it is
+  not a small change: the first language is minted at the top of
+  `www/core.js`, which `www/index.html` loads at line 2749 — before `net.js`
+  (2766) and long before `boot.js` (2802), so `netSignedIn` does not exist yet
+  when it runs. Making this true means moving where the first language is
+  made. Reported in `docs/FEATURE_RULES.md`, not patched.
+- **how often it syncs — open.** Today it is once, on launch (`boot.js`). The
+  owner's answer on frequency reached this branch as 「全部だって」 and
+  nothing longer; that is a threshold and is not being written down from one
+  word. **Ask before building a sync loop.**
+
+**The exception, and it is the one place 「全部」 does not reach: a language
+that was downloaded is not synced.** `syMerge` adds both sides, so the first
+time anything is added to a downloaded トキポナ it stops being トキポナ —
+「もちろんダメです。トキポナに文字足したらトキポナじゃないです」 (OWNER
+DECISION 2026-08-25). A read-only language is outside sync by construction, not
+by a flag somebody remembers to set. `docs/DATA_MODEL.md` § a language that is
+only read.
 
 ## Closed on purpose
 
