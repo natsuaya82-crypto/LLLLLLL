@@ -7,6 +7,87 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## 規約とプライバシーポリシー ── リンクは在るが、ページが無く、道も無い
+
+三つ別の話で、リリース前に三つとも要ります。**リリースを止めるのは二つ目です。**
+
+### 1. 押したら Safari に出る（これは大丈夫）
+
+`www/settings.js:39` の `docRows()` が二本、`<a target="_blank" rel="noopener">` で
+`DOC_TERMS` / `DOC_PRIVACY` を指しています。
+
+Capacitor 8 の実物の Swift を読んで確かめました
+（`node_modules/@capacitor/ios/Capacitor/Capacitor/WebViewDelegationHandler.swift`）:
+
+- `decidePolicyFor`（107-113行）が「自分のアプリの URL ではない・最上位の遷移」を見て
+  `UIApplication.shared.open(url)` → **Safari に渡し**、webview 側は `.cancel`
+- `createWebViewWith`（328行）も同じことをする
+
+**確認メールのリンクが着地できなかった件（`docs/keyboard-extension.md` の教訓）とは
+別の話です** ── あちらはアプリに戻ってくる必要があり、こちらは出ていくだけ。
+
+### 2. ページが無い ← **審査で止まる**
+
+```
+https://tokinets.com/lingua/terms.html
+https://tokinets.com/lingua/privacy.html
+```
+
+**OWNER 2026-08-26: 「まだ無い / 404」。** 今日のところ、押しても 404 です。
+
+`docs/apple.md` §5 が書いているとおり、**App Store Connect のプライバシーポリシー
+URL は必須**で、無ければ審査に落ちます。アカウント（メール）と投稿を Supabase に
+置いているので、これは避けられません。
+
+⚠ **このセッションからは URL を叩けません。** エージェントのプロキシが方針で
+CONNECT を 403 にします（`example.com` でも同じ 403 なので、サイト側の話では
+ありません）。DNS だけは通り、`tokinets.com` → `216.198.79.1`。
+**確かめる人はブラウザで開いてください。**
+
+### 3. ログアウト中はそこに行けない ← 2026-08-26 に入れた退行
+
+`docRows()` を呼ぶのは**一箇所だけ**（`settings.js:292`、アカウントの部屋の一番下）。
+そのすぐ上のコメントはこう書いています:
+
+> Under both faces of the room, because somebody who has never signed in has to
+> be able to read them too.
+
+**アカウントの部屋のサインアウト側の顔が、読める道でした。**
+同じ日に入った「ログアウト中は扉だけ」（`appIs()` in `www/shell.js`）が塞ぎました。
+`act-check` の主張がそのまま証拠です ── `signed out: 38 routes asked, every one of
+them the door`。`set` も扉になります。
+
+**扉には二本とも一行もありません**（`www/onboard.js` に `DOC_` は一つも無い）。
+`?` のヘルプも持っていません。つまり **アカウントを作る人は、同意する相手の文面を
+読めません。**
+
+**外した瞬間の判断ではなく、決定がぶつかっています。** オーナー決定
+「Xとかインスタもオンボーディングには出してなくね？」「もっと見えにくいとこに
+入れてくれ」は、**扉が唯一の画面になる前**のものです。
+どこに置くかはオーナーのもの。案は三つ:
+
+- **A** 扉の一番下に小さく二本（`onboard.js`。「オンボーディングには出すな」とぶつかる
+  が、ログアウトして戻ってきた人はもう歩いていない）
+- **B** 何もしない（サインインした人だけが読める。審査員はアカウントを作るので読める）
+- **C** `appIs()` に例外を作って `set:acct` のサインアウト側の顔だけ通す
+  （「それ以外は表示させるな」に正面からぶつかる。**勧めない**）
+
+### 4. 特定商取引法に基づく表記 ── repo のどこにも無い
+
+`www/` `docs/` `supabase/` `ios/` を全部見て、`特定商取引` `特商` `tokushoho` は
+一件も出ません。アプリが持っている外部文書は `DOC_TERMS` と `DOC_PRIVACY` の
+**二本だけ**です。`docs/apple.md` にも EULA・販売者・返金の節はありません。
+
+構造として（法律の判断ではありません）: **App Store の課金は販売者が Apple**
+（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も Apple です。App Store
+Connect が特商法のページを訊いてこないのはそのため。必須で訊くのはプライバシー
+ポリシー URL だけで、EULA は任意（出さなければ Apple の標準 EULA）。
+
+**「だから要らない」とは書きません。** 自社サイトで直接売るなら要りますし、
+App Store だけでも出している会社はあります。**事業の側の判断で、オーナーのものです。**
+要るなら三本目の `DOC_` が増え、`docRows()` は二本ではなく三本になります。
+
+
 ## ⑯⑰ 扉の下半分がキーボードの下に隠れる ── `www/index.html` の `.ob`
 
 実機 #92 の⑯「ログイン画面が固定のはずがスクロールする」と
