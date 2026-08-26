@@ -39,6 +39,15 @@ act('backDrop', backDrop);
 act('backStay', backStay);
 act('setPlan', setPlan);
 act('goMod', goMod);
+/* The screen above the reports, and the way in. `adminTap` is the settings
+   heading counting presses -- there is no button anywhere that opens this,
+   which is the point of it. goAdmin() is not here: nothing names it, because
+   adminTap() calls it. */
+act('adminTap', adminTap);
+act('adminGo', adminGo);
+act('adminLoad', adminLoad);
+act('adminStaffAdd', adminStaffAdd);
+act('adminStaffDrop', adminStaffDrop);
 act('modLoad', modLoad);
 act('modDown', modDown);
 act('modUp', modUp);
@@ -113,7 +122,10 @@ act('obBorrow', obBorrow);
 act('obDone', obDone);
 act('obName', obName);
 act('obNameLater', obNameLater);
-act('obFinish', obFinish);
+/* obFinish is not here any more. It was the door's "later" button, and the
+   door has no way past it since the anonymous account went
+   (OWNER 2026-08-26). The function is alive and called from three places in
+   onboard.js; what is gone is any screen naming it. */
 act('obPickScript', obPickScript);
 act('obSignInApple', obSignInApple);
 act('obSignInGoogle', obSignInGoogle);
@@ -253,6 +265,8 @@ act('wipeAll', wipeAll);
 actIn('impSetRole', impSetRole);
 actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
+actIn('adminSet', adminSet);
+actIn('adminStaffSet', adminStaffSet);
 /* The two the profile grew. They could not be written down before
    claude/me2 came in: this file registers the FUNCTION and not its name, so a
    line here pointing at something www/me.js does not have yet stops the app on

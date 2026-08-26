@@ -34,11 +34,12 @@
                            the file stops deciding. This is the one case where
                            the migration is the point rather than the risk:
                            the file is what a PC backup lets somebody edit
-     7. the session        the app signs itself in. A phone with nothing
-                           stored comes up holding an anonymous account it
-                           never had, that account is signed in and is NOT
-                           somebody, and a session already on a phone from
-                           before this existed is still somebody. This is
+     7. the session        the app does NOT sign itself in (OWNER 2026-08-26,
+                           「言語はアカウントないと作れないです」). A phone with
+                           nothing stored makes no account and comes up signed
+                           out; a refused token is cleared and nothing stands
+                           in for it; and a session already on a phone from
+                           before any of this is still somebody. This is
                            stored data too -- lingua.sess grew a key -- and
                            getting it wrong signs a paying customer out
      5. switching          opening a second language puts the first one away
@@ -435,16 +436,26 @@ want('and a save does not write it back into the file', await planInFile(), fals
 want('while the app still knows what it is',
      await pg.evaluate(() => plan()), 'free');
 
-/* ---- 7: the app signs itself in ----------------------------------------
-   Opening Lingua makes an account. Nobody types anything and nobody is asked
-   anything, and what comes back has no name on it -- which is the whole of
-   what has to hold here: signed in and NOT somebody are two answers now, and
-   they used to be one.
+/* ---- 7: the app does NOT sign itself in --------------------------------
+   It used to. boot.js called netAnon() before the first frame, so everything
+   somebody made belonged to an account before they had decided to be
+   anybody, and this section held that: signed in, and NOT somebody, were two
+   answers where they used to be one.
 
-   The danger this holds is the third case. `lingua.sess` grew a key, and a
-   phone that has been signed in for months does not have it; reading its
-   absence as "anonymous" would take the timeline away from every account
-   that exists. */
+   OWNER DECISION 2026-08-26 took it out -- 「言語はアカウントないと作れない
+   です」「匿名アカウントはねえよ」 -- so what is held here is the opposite,
+   and it is held rather than deleted because "nothing happens on first
+   launch" is a claim that breaks silently: a netAnon() put back by anybody
+   would make an account on every phone again with no screen looking wrong.
+   The signup COUNT is the assertion, not the session, for the same reason --
+   an account made and then dropped is still an account made.
+
+   The danger this section holds is still the third case, and that one has
+   not moved: `lingua.sess` grew a key, and a phone that has been signed in
+   for months does not have it; reading its absence as "anonymous" would take
+   the timeline away from every account that exists. netAnonTok() and
+   SESS.anon stay in www/net.js for exactly that, so they are still asked
+   for here. */
 const SESSION = () => ({
   inn: netSignedIn(), member: netMember(), uid: (SESS && SESS.uid) || '',
   anon: !!(SESS && SESS.anon),
@@ -459,23 +470,25 @@ const netIs = (refresh, sess) => pg.evaluate(([r, sv]) => {
    -- so the answer lands a beat after the page is up. */
 const settle = () => pg.waitForTimeout(120);
 
-/* 7a. a phone with nothing on it at all. */
+/* 7a. a phone with nothing on it at all. Nothing is asked of the server and
+   nobody is signed in: the app opens on the door, which is onboard.js's. */
 await netIs('dead', undefined);
 await pg.reload();
 await settle();
 const s1 = await pg.evaluate(SESSION);
-want('a first launch asks for an account', s1.signup, 1);
-want('and comes up signed in', s1.inn, true);
-want('and it is an anonymous one', s1.anon, true);
+want('a first launch makes no account', s1.signup, 0);
+want('and comes up signed out', s1.inn, false);
 want('so nobody is anybody yet', s1.member, false);
 
-/* 7b. the same phone opened again: one account, not one per launch. */
-await pg.evaluate(() => localStorage.setItem('__test.net', JSON.stringify({ refresh: 'anon' })));
+/* 7b. the same phone opened again. It was "one account, not one per launch";
+   with none being made it is the launch AFTER the one that made none, which
+   is the launch a loop would show up on. */
+await pg.evaluate(() => localStorage.setItem('__test.net', JSON.stringify({ refresh: 'dead' })));
 await pg.reload();
 await settle();
 const s2 = await pg.evaluate(SESSION);
-want('the next launch makes no second account', s2.signup, 0);
-want('and is still signed in', s2.inn, true);
+want('the next launch makes none either', s2.signup, 0);
+want('and is still signed out', s2.inn, false);
 want('and still nobody', s2.member, false);
 
 /* 7c. somebody who has been signed in since before any of this. Their stored
@@ -491,28 +504,29 @@ want('and is left alone', s3.uid, 'u-them');
 want('and no account is made behind their back', s3.signup, 0);
 
 /* 7d. and the same session, refused. It is gone, which is a state and not a
-   failure -- and the app is not left with nothing, because everything made
-   from here belongs to an account. */
+   failure. Nothing is put in its place any more -- and the pair with 7c is
+   the whole of it: REFUSED and NO SIGNAL both answer netResume's `bad` half,
+   and only one of them may clear the session. 7c is the phone in a tunnel
+   and keeps its account; this one is the token the server will not take. */
 await netIs('dead', JSON.stringify({ at: 'old-at', rt: 'old-rt', uid: 'u-them' }));
 await pg.reload();
 await settle();
 const s4 = await pg.evaluate(SESSION);
-want('a refused token is replaced rather than left empty', s4.inn, true);
-want('by an anonymous one', s4.anon, true);
-want('which is nobody', s4.member, false);
+want('a refused token is cleared', s4.inn, false);
+want('and nothing is made to stand in for it', s4.signup, 0);
+want('so nobody is signed in', s4.member, false);
 
-/* 7e. and the anonymous account becoming somebody. The uid changes here
-   because the stub is two accounts; on a phone Supabase links the identity to
-   the same one. What is under test is the phone: the moment a token with a
-   name on it arrives, this is a member. */
+/* 7e. and somebody arriving at the door and signing in. The moment a token
+   with a name on it arrives, this is a member -- which is now the only way
+   to become one. */
 const s5 = await pg.evaluate(() => new Promise((res) => {
   localStorage.setItem('__test.net', JSON.stringify({ refresh: 'member' }));
   netSignIn('a@b.c', 'pw',
     () => res({ member: netMember(), anon: !!(SESS && SESS.anon) }),
     () => res({ member: null, anon: null }));
 }));
-want('signing in over it makes somebody', s5.member, true);
-want('and the session stops being anonymous', s5.anon, false);
+want('signing in at the door makes somebody', s5.member, true);
+want('and the session is not an anonymous one', s5.anon, false);
 /* ---- the twenty-eight slots a free language is given ---------------------
    ltStart names them a to z, ! and ?, and gives each one what its name reads.
    Every one of those readings has to be a sound the chart actually has: a
@@ -560,5 +574,6 @@ console.log('migration: an old install opens with everything in it, twice over, 
             'and a new one starts with a language of its own.\n' +
             '           A plan already bought moves itself out of the settings file ' +
             'and into\n           the Keychain, and the file stops being listened to.\n' +
-            '           The app signs itself in, once, and a session that was ' +
-            'somebody\n           before any of this still is.');
+            '           No account is made on a launch, a refused token is ' +
+            'cleared with\n           nothing put in its place, and a session ' +
+            'that was somebody before\n           any of this still is.');

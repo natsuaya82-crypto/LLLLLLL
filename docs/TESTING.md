@@ -3,12 +3,15 @@
 ## The gate
 
 ```
-npm test        # seventeen checks
+npm test        # twenty-six checks
 ```
 
-`tools/gate.mjs` runs them. The six that need no browser go first, one after
+`tools/gate.mjs` runs them, and the two numbers below are `FAST` and `SLOW` in
+that file — count them there rather than believing this line, which has said
+seventeen, six and eleven since it was written and has been wrong about all
+three for a while. The **eight** that need no browser go first, one after
 another, and take about two seconds between them — a missing script tag or an
-arrow function fails there and nothing heavy is started at all. The eleven
+arrow function fails there and nothing heavy is started at all. The **eighteen**
 that each start a headless Chromium then go **four at a time**, because they
 are separate processes holding separate ports with nothing to say to each
 other. Run one after another they were about ten minutes.
@@ -51,9 +54,9 @@ there are not. The thing forbidden either way is the same: proving one green
 twice. Sixteen minutes multiplied by three sessions is that, three times over,
 and the third run is not more true than the first.
 
-`tools/pre-commit` runs the six that need no browser plus i18n when a screen
-file changed. **It is not the gate.** CI runs three of the seventeen, so a green
-tick on a push is not the gate either.
+`tools/pre-commit` runs the ones that need no browser plus i18n when a screen
+file changed. **It is not the gate.** CI runs three of the twenty-six, so a
+green tick on a push is not the gate either.
 
 | check | holds |
 |---|---|

@@ -68,7 +68,7 @@ Marked separately, because they are not the same question:
 |---|---|---|---|---|---|
 | Writing a post | shipped | yes | — | `lingua.posts`, ink frozen on write | decided |
 | One language, on every plan | shipped | yes | — | `lingua.langs` | decided — there is no way to make a second anywhere in the app, so it is not a price. `LANG_MAX` used to say so in `core.js` and fed a line of text on the language list; the line went with the ban on explaining things on a screen, and the constant went with it. Languages somebody else wrote are not counted: reading one is not making one |
-| Timeline, on this phone | shipped, **not device confirmed** | yes | — | `lingua.posts` | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needs none |
+| Timeline, on this phone | shipped, **not device confirmed** | yes | — | `lingua.posts` | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
 | Replying, and the thread of a conversation | shipped, **not device confirmed** | yes | — | `post.to` (the id, already there), `post.toh` **new** — the handle it answers, frozen on write | decided — replies stay in the timeline carrying 「@xx への返信」; a post opens onto its thread; the indent stops at three |
@@ -78,7 +78,7 @@ Marked separately, because they are not the same question:
 | Profile — face, name, handle, bio, **and your posts** | shipped | yes | — | `lingua.me` | decided |
 | Pin a post to your profile | shipped | yes | — | `post.pin`, one at a time | decided |
 | Share a post — the card | shipped | yes | — | none | decided |
-| Cloud storage of a language | **planned** | no | yes, deferred | every slice | decided — deferred until Supabase $25 is worth paying |
+| Cloud storage of a language | **shipped**, **not device confirmed** | **yes** | same | every slice, as `slice` rows | decided — **everybody, on every plan** 「クラウドは全員で」 (2026-08-22), re-confirmed 2026-08-26 「基本は全部サーバー管理」. This row said `no` / `yes, deferred` / 「deferred until Supabase $25 is worth paying」 and contradicted § 2 below, which had said **everybody** since 08-22. The money did not go away — see `docs/PAID_FEATURES.md` — it stopped being a reason to defer |
 | A photograph on a post | shipped | **yes** | yes | `post.pic`, frozen on the post, 900px q0.72, `POST_BYTES` ceiling | decided |
 | How big a photograph is shown, and opening one | shipped, **not device confirmed** | yes | yes | none — display only; `--picpct` in index.html, route `photo` | decided — one box for every photograph (a third of the screen's width, square), filled with `cover` so the picture is never stretched and the edges are off it, tap opens the whole thing 「xと同じって言ってるやんずっと」 |
 | How hard a photograph is squeezed to store | shipped | 900px long edge, q0.72 | same | `POST_PIC`, `POST_PICQ`; ratio untouched | **open** — 「画質が下がるのはありえない」 against one photograph being 87 KB of the same localStorage the language lives in |
@@ -94,6 +94,9 @@ Marked separately, because they are not the same question:
 | Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
 | Following | shipped, **not device confirmed** | yes | — | `follow` rows, `ME.fo` | done — `netFollow`, and Follow is on a person's row in the search |
 | Quoting | **planned** | ? | ? | `quote` rows | **open** — the table exists in `schema.sql` and nothing reads it |
+| **DL — a language taken from the official assets** | **planned** — 0 lines; **OWNER DECISION**, 未実装 | no | `dl`: **Plus**「DLはplusから」 | a `LANGS` entry that is **not** `mine`, and its slices; **nothing of yours is touched** | decided — it is **not merged into your own language, it is a language you switch TO**; it **cannot be edited**「トキポナに文字足したらトキポナじゃないです」; the four parts (単語・文字・文法・キーボード) are unlocked and taken **separately**; it is taken from the language's overview page on Home 「そこでdlしてください」. `docs/FEATURE_RULES.md` 2026-08-25 |
+| How many DL'd languages a plan holds | **planned** | — | — | none yet | **open** — the owner wrote 「plusは自分の言語+DL言語1個 proは自分の言語3個+DL言語3個**は？**」 and it **ends in a question**. The Plus door is decided; these two numbers are not. Do not write them into `core.js` as settled |
+| Switching language by holding the profile | **planned** | — | — | none | **open** — 「プロフィールのとこ長押しで言語切り替えだって」 **conflicts** with the same day's decision that the list stays in Settings and is 「NOT moved onto the profile」. Both are 2026-08-25. Not resolved here |
 
 ### Notes on the open rows
 
@@ -127,8 +130,17 @@ third goes the opposite way from the other two **on purpose**:
                dictionary grew. Freezing this one would be the bug
 ```
 
-Missing: a lookup from a meaning to one of my words. Word order (`SET.order`,
-six of them) and the grammar stages already exist.
+Missing: a lookup from a meaning to one of my words. The grammar stages exist.
+
+Word order is `STG.order` — it belongs to the LANGUAGE, not the phone.
+`SET.order` was the old flat key and `migrateGramLang()` in `www/phases.js`
+copied it across; `grammar.js` says so on `orderOf()`. Six of them
+(`ORDERS`), chosen on a screen. **The owner has said that is going away** —
+「俺も選ばせたくないし、文章書いてたらsvoが基本でも助詞があるかもしれない」
+(2026-08-26, relayed) — because a sentence with a particle in it is not
+described by one of six letters-triples. Nothing has been built: `ORDERS` is
+still six and `setOrder()` still writes one. **Do not design the replacement
+off this paragraph** — what takes its place has not been decided.
 
 Decided since:
 
@@ -198,10 +210,13 @@ because the way a server feature gets lost is by being half-written down.
 **Already online, so that this list is read against something:** accounts and
 the profile, posts (write, read, reply, delete), likes and boosts, following,
 notices, photographs and voice in Storage, search — people and posts — and
-deleting an account. And, since 2026-08-22, the account itself: the first
-launch signs in anonymously, so every phone has a uid before the first frame,
-and the server tells "there is an account" (`has_account()`) from "there is
-somebody" (`is_member()`).
+deleting an account.
+
+**One kind of account, and no anonymous ones** (OWNER DECISION 2026-08-26 —
+「匿名アカウントはねえよ」「二種類になる意味も分からないけど」). An account is
+somebody who signed in; nothing asks a second question about what kind it is.
+`has_account()` beside `is_member()` in `supabase/schema.sql` existed to let an
+anonymous one through and comes out with it. `claude/admin` has that half.
 
 ### 1. The plan, on the server — the one with money on it
 
@@ -235,17 +250,41 @@ any more, and it is not deferred: everything belongs to the account, the
 server is true and the phone keeps a copy that works with no signal.
 `CAN.data` has to be redefined when this lands.
 
-What is done: an account exists from the first launch, and `language`'s write
-policies ask `has_account()` rather than `is_member()`, so an account with no
-name on it can own a row. What is missing is **the row and somewhere to put a
-slice**: `language` holds a name, a licence and a date, and the eleven slices
-of `SLICES` are `localStorage` only. `bkPack()` already produces exactly the
-thing that would be uploaded — 5.4 KB for a small language, about a megabyte
-for a large one.
+**Re-confirmed 2026-08-26** — 「基本は全部サーバー管理 言語周りだけバックアップに
+file使う」. The file in `Documents/` is not going away; it stops being the truth
+and becomes the backup.
 
-Open, and the reason nothing is written yet: whether a slice is a column, a
-row per slice, or a file in Storage; and what happens when the same account
-has edited a language on two phones. Neither is decided.
+**This section said 「what is missing is the row and somewhere to put a slice」
+and both of those were built.** It also listed two things as open that have
+since been answered. Corrected 2026-08-26 by reading `www/net.js` rather than
+by remembering:
+
+- **a row per slice**, not a column and not a file in Storage. `slice` in
+  `supabase/schema.sql` is `(language, kind)` primary key, `body` the exact
+  string `localStorage` holds — so a slice has one shape and not two that
+  could disagree, and it is the same string `bkPack()` writes to the file.
+- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back, and
+  **neither side wins by being newer.** Both are added. The price of that is a
+  duplicate, never a deletion 「そりゃあ両方足すだろ」 — which is
+  `docs/DATA_SAFETY.md`'s rule, applied to the one place it would have been
+  easiest to break.
+- `netLangRow()` makes the `language` row and puts its id on `LANGS[id].sid`;
+  `netSlicePut()` upserts (`Prefer: resolution=merge-duplicates`);
+  `netSlices()` reads them; `netLangSync()` runs the three, and
+  `www/boot.js` fires it on launch.
+
+`SLICES` is **twelve**, not eleven — `gram2` joined it and this line was not
+updated. `docs/DATA_MODEL.md` has the list.
+
+What is genuinely still open here:
+
+- **how often.** Once, on launch, today. 「全部だって」 is all that reached this
+  branch on the question and it is not enough to build a loop from.
+- **what it costs.** Every account's slices, on every plan, is storage and
+  egress proportional to people rather than to payers. That was the original
+  reason for 「deferred until Supabase $25 is worth paying」, and the decision
+  overrode the deferral without the cost changing. `docs/PAID_FEATURES.md`.
+- **a downloaded language must be left out of all of this.** See § 10.
 
 ### 3. Publishing a language — `language`, `publication`
 
@@ -272,6 +311,12 @@ about a post.
 A downloaded keyboard is edited as it stands — the download is the copy. What
 cannot be mixed is the alphabet: the letters that go on its keys are the
 downloader's own.
+
+**This section is 2026-08-19 and § 10 below is 2026-08-25. They are not the same
+thing and they do not agree.** This one is somebody taking somebody else's
+language; § 10 is the official assets. Three things differ — read § 10 before
+building either. What they agree on is the important half: a downloaded
+dictionary **is never merged into your own**, decided twice, six days apart.
 
 ### 5. Quoting — `quote`
 
@@ -385,16 +430,224 @@ until there was a deletion to fire it, which meant deleting your own account
 withdrew every report you had ever made — somebody else's record, cleared by
 your leaving. It is `on delete set null` now, and `npm run rls` holds it.
 
-**The language on the phone is not touched.** Erasing the phone is the other
-button and now says which it is; it used to be called "delete account" because
-nothing in the app could reach the server, and that reason is gone.
+**~~The language on the phone is not touched.~~ That sentence is stale, and so
+was the note that replaced it here on 2026-08-26.** 「アカウント消したら全部
+消えるに決まってる」 asks for one act that takes everything — and **it already
+exists.** `wipeAll()` (`www/settings.js`, the button 「データを消去」) does all
+of it and has for some time:
+
+```
+  wipeAll()   confirm once, with iOS's own dialog
+      ↓       netDropMe()  — the server: Storage bytes first, then account_delete()
+  wipeHere()  every lingua.<id>.<slice> key removed (not overwritten)
+              SET back to defaults, keeping theme, ui and plan
+              netOut()     — the tokens
+              bkDropAll()  — the backup files in Documents, last, after the
+                             saves above, because a save writes a fresh one out
+```
+
+**The order is already the safe one, and it is the opposite of what this file
+briefly recommended.** The server is told FIRST and the phone is emptied
+**whatever it answers** — the reason is written on the function: 「somebody who
+asked to be deleted must be deleted, and a phone that kept its languages
+because the network was bad would be the button lying in the direction that
+cannot be corrected later」. Doing the phone last on the theory that it is the
+copy that survives a bad network gets it exactly backwards: it leaves an
+account nobody can reach and nothing to reach it from.
+
+So what 2026-08-26 changed here is **not the behaviour — it is which sentence
+in this file is true.** § 8 said the phone copy stays and that erasing it is a
+different button. The button is not different; it is the same one, and it says
+so in its own confirm text 「すべて消去します。アカウントと、サーバー上の投稿・
+写真・録音。この端末の言語・文字・設定。バックアップファイルも。」
+
+Still true and worth keeping: **this is not a `DATA_SAFETY.md` exception.**
+That rule forbids the APP deciding to remove somebody's work — it names four
+reasons, and 「the person asked」 is not one of them.
+
+**What is missing is the middle button: 「言語を削除」.** One language, not all
+of them (OWNER DECISION 2026-08-26). There is no such path anywhere —
+`act-map.js` binds `langOpen` and `langNew` and nothing else. See the decision
+log for the five things to settle before writing it; the sharp one is that
+deleting a language on the phone alone brings it **back** on the next
+`netLangSync()`, because `syMerge` adds both sides.
 
 ### 9. Push notifications
 
 Nothing exists. The notices tab is pulled when it is looked at.
 
-**Not on this list and deliberately: the making side.** A language is made on
-this phone with or without an account, and that does not change.
+### 10. DL — the official assets, and a language you can only read
+
+**OWNER DECISION 2026-08-25, and nothing is built.** Zero lines. The decision is
+in `docs/FEATURE_RULES.md` with the owner's words unabridged; this is only the
+part that says what has to exist.
+
+What it is, in the owner's framing: 「例えばトキポナ使いたい人がすぐに使えるように
+するための公式アセットを準備するってイメージ」. Not a marketplace of other people's
+languages — that is § 4, and it is a different decision from a different week.
+
+Decided:
+
+- it is **Plus**「DLはplusから」 — `CAN.dl`, which is **not in `CAN` yet**
+- the thing you get **does not join your language. You switch to it.**
+- it **cannot be edited**, and the reason is not tidiness:
+  「トキポナに文字足したらトキポナじゃないです」
+- **単語 / 文字 / 文法 / キーボード** are four separate unlocks and four separate
+  downloads. Not one switch
+- taken from **the language's overview page on Home**, where public/private
+  already is 「dlは公開非公開があるから、ホームの言語の概要ページに作った」
+- **anybody may use an official asset — inside Lingua only**
+  「公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？」
+- **one account**, however many languages 「でもアカウントは一つだからね？」
+
+Open, and not to be guessed:
+
+- **how many** a plan holds. The owner's line ends in 「は？」
+- whether you can **write a post** in a language you downloaded
+- whether **一部だけ** DL した言語（例えば単語だけ）はその一部だけの言語として
+  一覧に並ぶのか
+- whether the official assets ship **inside the app** or come **from the server**.
+  This decides whether any of this can start today
+- 長押し vs. the Settings list — see the conflict in the decision log
+
+What is missing to build it, checked against the code rather than remembered:
+
+1. **`CAN.dl`.** Not there. It cannot be added alone: `dead-check` refuses a
+   capability nothing asks for, and the only place that would ask is a screen
+   this branch does not own. `docs/PAID_FEATURES.md` § Not built yet already
+   says the general form of this — 「a function nothing calls is a function
+   `dead-check` deletes」.
+2. **A language that is read-only.** There is no such state.
+   `docs/DATA_MODEL.md` § A language that is only read.
+3. **The server may not hand a slice to anybody but its owner.** This is the
+   real block and it is deliberate: `slice_read` in `supabase/schema.sql` is
+   `l.owner = auth.uid()` **even for a published language**, and the comment
+   above it says why — 「publishing is a copy somebody is given and not a door
+   into the phone」. Official assets are not somebody's phone, so they may not
+   need this loosened at all; **that is a question, not a gap to close.**
+4. **A long press.** There is a worked one — `kbDown`/`kbLift` in
+   `www/keyboard.js`, 380 ms, 「iPhoneのホーム画面と同じ挙動」. Copy it; do not
+   invent a second answer to what a hold is.
+
+What is **already there** and should not be rebuilt:
+
+- **a language and its slices already travel to the server and back.**
+  `netLangRow()` / `netSlices()` / `netSlicePut()` / `netLangSync()` in
+  `www/net.js`, called from `boot.js:68`. Whatever `docs/STATE.md` § 3 item 3
+  still says, this half is written.
+- **`bkPack()`** already turns a whole language into one file
+  (`www/backup.js`). An official asset is that shape.
+- **the language list already has the empty half DL fills.** `vLangs()` in
+  `www/home.js` draws 「自分の」 and 「読んでいる」, and the second one is
+  **always** the empty note, because nothing anywhere writes `mine:false`.
+
+**The making side is on this list now, and it was not.** This said 「A language
+is made on this phone with or without an account, and that does not change」.
+It changed, on 2026-08-26: 「基本は全部サーバー管理 言語周りだけバックアップに
+file使う」「言語はアカウントないと作れないです」「古い記載消してくれうざい」.
+
+What that means here, item by item, and most of it is **already built**:
+
+- **the language lives on the server.** `netLangRow()` makes the `language`
+  row and keeps its id on `LANGS[id].sid`; `netSlicePut()` upserts one slice
+  (`Prefer: resolution=merge-duplicates`); `netSlices()` reads them back;
+  `netLangSync()` puts the two copies together through `www/sync.js`, whose
+  rule is that **neither side wins by being newer** — both are added, and the
+  price of that is a duplicate rather than a deletion 「そりゃあ両方足すだろ」.
+  `www/boot.js` fires it on launch.
+- **the file is the BACKUP, not the truth.** 「言語周りだけバックアップにfile
+  使う」 — `bkPack()` and `Documents/Languages/<name>.json` (`www/backup.js`)
+  stay exactly as they are; what changed is which of the two is the copy.
+- **making works offline.** 「制作はオフラインでも可能次つながった時に更新される」
+  Already true, and it is what `sync.js` is for.
+- **the sns half does not work offline.** 「そりゃそう」 Already true —
+  `vFeed`/`vExplore`/`vNotif` show the app's own door with no session.
+- **deleting the account takes it with them.** 「アカウント消したら残るわけが
+  ないあほだろ」 Already true on the server: `account_delete()` cascades
+  through the profile, the languages, the posts, the follows and the blocks
+  (§ 8 above). The copy on the phone is deliberately not touched — § 8 says so
+  and it has not been re-decided.
+- **a language cannot be made without an account.** **NOT built**, and it is
+  not a small change: the first language is minted at the top of
+  `www/core.js`, which `www/index.html` loads at line 2749 — before `net.js`
+  (2766) and long before `boot.js` (2802), so `netSignedIn` does not exist yet
+  when it runs. Making this true means moving where the first language is
+  made. Reported in `docs/FEATURE_RULES.md`, not patched.
+- **how often it syncs — 「常に同期」 (2026-08-26), and it is TWO clocks, not
+  one.** Refined the same day: 「タイムラインは開くたび / 言語はそういう
+  わけじゃない」.
+
+  **The timeline: every open — and already more than that.** `vFeed()` calls
+  `snsPull()` every time it RUNS, and `render()` rebuilds the screen on any
+  state change, so a like or a toast is another 50-post pull. Whether that
+  wants narrowing to once per visit is a real question and it is about the
+  bill, not about correctness (`docs/PAID_FEATURES.md`).
+
+  **The language: NOT per-open — and that is all that has been said.** The
+  owner named what it is not. What it IS is **open**, and writing a positive
+  rule here would be turning a negation into a decision nobody made. Today
+  `www/boot.js` syncs once on launch, which is not per-open either, so nothing
+  in the code contradicts the decision as stated — it is simply not yet the
+  whole of it. **Ask before building an interval.**
+
+  What is not in question either way: a write on the phone must not be lost
+  waiting for a clock. `bkTouch()` already marks a language as changed, for
+  the backup, and the same mark is what a send would follow.
+
+**Checked 2026-08-26 at the owner's request 「オンボーディング終わったら
+せいさくみれるけどふさがれてるけど？確認して」. Found, and this section had it
+wrong twice before it had it right.**
+
+**There is one kind of account and no anonymous ones** 「匿名アカウントはねえよ」
+「二種類になる意味も分からないけど」. An account is somebody who signed in.
+**`makeNeed()` asking `netMember()` is right and must not be loosened** —
+`netSignedIn()` would let a language be made off a token with nobody on it,
+which is the reverse of 「言語はアカウントないと作れないです」. The anonymous
+token itself is going: `claude/admin` has `netAnon()`, `netAnonTok()` and
+`has_account()`.
+
+**The cause is one button: `www/onboard.js:722.**
+
+```
+(obLastStep()? '<button class="obskip"' + DO('obFinish') + '>'+esc(t('ob.in.later'))+'</button>' : '')
+```
+
+The onboarding's steps are `OB_DRAW → OB_TOUR → OB_NAME → OB_IN`, and **`OB_IN`
+IS the door** — the walk already ends at signing in. Both the roads that go
+through it call `obFinish()` after the account exists (line 499, somebody who
+was already signed in; line 777, somebody who just made one). This third one
+skips it: 「あとで」 / 「Later」, in all ten languages, straight to
+`obFinish()`. Press it and the walk is over with no account, and every making
+action afterwards correctly asks for one — which is what being blocked is.
+
+**And the comment directly above that button is the rotten sentence itself**
+(lines 714–721): 「What they have made by then is on the phone and stays there:
+a language is made on this phone, with or without an account.」 The button is
+not a bug against that rule — **it is that rule, implemented.** 2026-08-26
+overturned the rule, so the button goes with it. That is the fix, and it is a
+deletion rather than a change.
+
+**Done — the owner said 直して, 2026-08-26.** The button is gone, and with it
+`obLastStep()` (its only caller), `act('obFinish', …)` (no screen names it now)
+and `ob.in.later` in ten `www/i18n` files. `obFinish()` itself stays: lines 499
+and 777 still call it, after an account exists. `makeNeed()` was **not** touched
+— `netMember()` is the rule, not a gate to loosen. Green: `es5` `dead` `act`
+`i18n`, and `press` at **10666 buttons / 222 names**, one fewer of each, which is
+the button.
+
+**Left open on purpose, because it is a decision and not a fix:** somebody with
+no signal at that door cannot finish the onboarding at all — signing in needs
+the server, and there is nothing else to end on now. A first launch on a phone
+with no signal is a real state, not a hypothetical. What they have already drawn
+in `OB_DRAW` is on the phone and nothing may take it from them. **Asked.**
+
+**The exception, and it is the one place 「全部」 does not reach: a language
+that was downloaded is not synced.** `syMerge` adds both sides, so the first
+time anything is added to a downloaded トキポナ it stops being トキポナ —
+「もちろんダメです。トキポナに文字足したらトキポナじゃないです」 (OWNER
+DECISION 2026-08-25). A read-only language is outside sync by construction, not
+by a flag somebody remembers to set. `docs/DATA_MODEL.md` § a language that is
+only read.
 
 ## Closed on purpose
 

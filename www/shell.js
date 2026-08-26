@@ -315,7 +315,8 @@ var PAGES={
   drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
   plans:   {tab:'profile',  k:'plans.title'},
-  mod:     {tab:'profile',  k:'mod.title'}
+  mod:     {tab:'profile',  k:'mod.title'},
+  admin:   {tab:'profile',  k:'admin.title'}
 };
 function pageName(r, a){
   /* A page opened on a particular thing is named after that thing. The
@@ -390,7 +391,20 @@ function navTop(count, right){
     '<span class="bkw"><button class="back nb"' + DO('back') +
     ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button></span>'+
     (n? '<span class="navn">'+n+'</span>' : '')+
-    '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
+    /* The settings heading, and only that one, counts presses -- seven of
+       them open the screen the owner is the only account on. 「どっか7回
+       タップとパスワード要求で」 OWNER 2026-08-26, who picked this heading off
+       a screenshot of the two things on screen that carry no action already.
+       adminTap() in www/mod.js is where the counting and the door are; what
+       is here is which heading.
+
+       The SPAN carries it rather than a button wrapped round it. press-check
+       holds anything that is a `button` to 44pt and a heading is eighteen
+       pixels, so making the title of every settings screen a thumb-sized
+       target in order to hide a door behind it would cost the screen more
+       than the door is worth. A `data-do` on any element is pressed. */
+    '<span class="navt"' + (h.r==='settings'? DO('adminTap') : '') + '>'+
+      esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
     (right||'')+
     '</div>'+

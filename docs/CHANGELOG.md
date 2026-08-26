@@ -15,6 +15,110 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 管理画面が、実際に開くようになります
+
+`claude/admin` を束ねたときに `act-check` が両方向から言いました ──
+`PAGES.admin shows nothing` と `vAdmin is on no page`。
+`PAGES.admin`（`shell.js`）と `vAdmin`（`mod.js`）と `goAdmin()` は入っていて、
+`www/route-map.js` の一行だけが無い状態でした。
+
+`goAdmin()` は `go('admin')` します。行き先はあって見せるものが結ばれていないので、
+そのままなら**「管理」という名前の下にホーム画面が出ます** ── 規則4 がそのために
+書かれている形そのものです。`views placed 37/38` → `38/38`。
+
+**データは動きません。** 一行足しただけです。
+
+### 起動時に匿名アカウントを作らないことを、検査が言うようになります
+
+`tools/migrate-check.mjs` の §7 は丸ごと「アプリが自分でサインインする」という
+主張でした。**OWNER DECISION 2026-08-26** がそれを消しています ──
+「言語はアカウントないと作れないです」「匿名アカウントはねえよ」── のに
+`claude/admin` は `boot.js` と `net.js` を変えて、この検査を直していませんでした。
+6件が赤でした。
+
+§7 は**消さずに、逆を主張させました。**「起動しても何も起きない」は黙って壊れる
+種類の主張で、`netAnon()` を誰かが戻したら、どの画面も正しいまま全部の電話が
+またアカウントを作ります。主張は `/auth/v1/signup` の**回数**であってセッションでは
+ありません ── 作って捨てても、作ったことに変わりはないからです。
+
+**7c は一行も動かしていません。** `lingua.sess` が鍵を増やした話で、その鍵が無い
+ことを「匿名」と読むと、**今あるアカウント全部からタイムラインを取り上げます。**
+7d はその対です ── `netResume` の `bad` には「拒否された」と「電波が無い」の
+両方が来て、セッションを消してよいのは前者だけ、というのがこの二つの値打ちです。
+
+検査が最後に名乗る一文と、頭の一覧の7行目も直しました。直さないと**緑のまま
+嘘を出力します。**
+
+**データは動きません。** 検査だけの変更です。
+
+---
+
+
+### サーバ: 自分の行を作るときに「サーバの列」を書けた穴を塞ぎます
+
+`claude/admin` と `claude/dl` を束ねる途中で見つけました。**画面には何も出ません。**
+`supabase/schema.sql` だけの変更で、`localStorage` にも人の作ったものにも触りません。
+
+#### 何が開いていたか
+
+`schema.sql` は「アカウントが書けない列」を、列単位の権限で守っています ──
+`revoke update on profile` ＋ `grant update (handle, display, av)`。
+その段落は **UPDATE のことしか言っていませんでした**（コメントに
+「Each is one UPDATE with one extra field in it」とあります）。
+
+INSERT の列権限は UPDATE とは**別の grant** です。そして `profile` は
+**自分の行を自分で作る表**でした ── `profile_make` が「自分を書き込む」政策なので、
+その行の最初の書き込みは本人のものです。つまり:
+
+```sql
+insert into profile(id,handle,admin) values (自分, 'x', true)   -- 通っていた
+```
+
+`is_admin()` はその列を読みます。まだプロフィールを作っていない会員なら誰でも、
+**管理者として現れることができました** ── `admin_counts()` `staff_add()`
+`staff_drop()` `post_hide()` `post_show()` `account_ban()` `account_unban()`
+と、その裏の通報キューが全部開きます。`staff` も `banned_at` も同じ形でした。
+
+`post` にも同じ非対称がありました。`hidden_at` の上のコメントは
+「nobody may set these but the two functions at the foot of this file」と
+書いていますが、**最初から下げられた状態の投稿を作れました** ──
+運営が下げたように見え、理由の文も本人が書いたもので、`post_show()` は
+スタッフのものなので**やった本人にも戻せません**。
+
+#### 直したこと
+
+UPDATE と同じ言い方を INSERT にも当てただけです。新しい仕掛けはありません。
+
+```sql
+revoke insert on profile from anon, authenticated;
+grant  insert (id, handle, display, av) on profile to anon, authenticated;
+revoke insert on post from anon, authenticated;
+grant  insert (id, author, language, body, prompt, reply_to) on post to anon, authenticated;
+```
+
+名前を挙げた列は、`www/net.js` が実際に送るものです（`netMakeProfile()` と
+`netSend('POST','/rest/v1/post')`）。`post.created_at` は**わざと外して**います ──
+既定の `now()` があり、client が名指しできると投稿の日付を偽れます。
+`@lingua` が両フラグを持って現れる仕掛け（`profile_first()`）は BEFORE トリガで、
+`NEW` に代入するだけで文の中で列を名指ししないので、この grant の外です。
+
+#### データ
+
+**何も移動しません。何も消えません。** 既存の行はそのままです。
+`schema.sql` は貼り直しても同じ結果になる作りのままです。
+
+#### 検査
+
+`tools/rls-check.mjs` に四行足しました。150 → **154 attempts**。
+**四本とも、穴を戻して赤くなるのを見てから**直しました。
+プロフィールを持たない人を三人（G1/G2/G3）足しています ── 一人を使い回すと、
+一本目で通った後は主キー衝突で拒否され、**それが正しい拒否と見分けがつきません**。
+
+`npm test` 26本には入りません（PostgreSQL が要ります）。`npm run rls` です。
+
+---
+
+
 ### プロフィールに「リンク」と「場所」が入り、書けるようになります
 
 `claude/me2` を取り込みました。欄と関数は向こうが書き、**登録と言葉だけが

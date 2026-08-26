@@ -94,13 +94,26 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
 
    Steps 3 to 6 are not screens of this file. They are the app itself, walked
    with everything but one thing greyed out -- OB_TOUR_STOPS below. The dots
-   count the four SCREENS the onboarding has (draw, alphabet, name, door);
-   the walk is not one of them, because while it is running the app is
-   showing its own screens and vOb() is not on the page at all. */
+   count the three SCREENS the onboarding has, in the order they come: the
+   door, the drawing, the name. The walk is not one of them, because while it
+   is running the app is showing its own screens and vOb() is not on the page
+   at all. */
 var OB_STEPS=3;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
-   chances to renumber three of them. */
-var OB_DRAW=0, OB_TOUR=1, OB_NAME=2, OB_IN=3;
+   chances to renumber three of them. The comment was right and this is the
+   day it was written for: the door moved from last to first and nothing here
+   had to be found by grepping for a number.
+   「言語はアカウントないと作れないです」 OWNER 2026-08-26 -- and there is no
+   anonymous account behind the app any more, so there is nothing to draw a
+   letter INTO until somebody has one.
+   (It came first once before, and 2026-08-22 moved it to the end to keep
+   people from leaving at the door. That is the decision being replaced.)
+
+   The three the dots count are 0, 1 and 2, in the order they happen. The walk
+   is last on purpose and not because it happens last -- it is not a screen of
+   this file at all, vOb() is not on the page while it runs, so keeping it
+   outside the counted range is what lets obDots() stay a plain loop. */
+var OB_IN=0, OB_DRAW=1, OB_NAME=2, OB_TOUR=3;
 
 /* ---- the walk through the app itself -----------------------------------
    Steps three to six of the owner's order are not screens of their own. They
@@ -377,16 +390,19 @@ function obBack(){
 function obLang(v){ SET.ui=v; save(); render(); }
 
 /* ---- the door, which is not a step ------------------------------------ */
-/* Signing in used to come first and the app opened on this. It does not any
-   more: boot.js makes an anonymous account before the first frame, so
-   everything is already counted against an account and there is nothing left
-   for a door at the front to buy. 「サインイン必須にしたいけど、オンボー
-   ディングで離脱されるのは防ぎたい」
+/* Signing in comes first and the app opens on this.
+
+   It did once, then it did not: boot.js made an anonymous account before the
+   first frame, so everything was already counted against an account and there
+   was nothing left for a door at the front to buy.
+   「サインイン必須にしたいけど、オンボーディングで離脱されるのは防ぎたい」
+   **OWNER DECISION 2026-08-26 put it back** -- 「言語はアカウントないと作れない
+   です」「ログインした人しか書けないけど」 -- and took the anonymous account
+   with it, so there is nothing for a letter drawn before this to belong to.
 
    The question that argument was about -- you drew a letter here, and the
    account you just signed into already has a language, which one survives --
-   is answered by the uid not changing: attaching an identity to an anonymous
-   account keeps it, so there are never two.
+   does not arise while the door is first: nothing has been drawn yet.
 
    This is a screen the app goes TO now, from the two places that need a name
    and from Settings, and obDoor() is how. obPending() is what says so, and
@@ -689,11 +705,19 @@ function obCrestHTML(){
    the bar across the foot offers instead of itself. On one screen all of
    that would be written twice in conditionals anyway, and the person would
    not be able to tell which of the two they were looking at. */
-/* There is nothing to skip past. The door is not the way in any more -- the
-   app makes an account by itself at first launch and this is where somebody
-   puts a name on it -- so "continue without an account" would be offering
-   what everybody already has, on a screen nobody arrived at by accident.
-   The chevron is the way out. */
+/* There is nothing to skip past, and the reason under this comment changed.
+
+   It said the app makes an account by itself at first launch, so "continue
+   without an account" would be offering what everybody already has. **It does
+   not.** netAnon() gets a token whose JWT carries `is_anonymous`: netMember()
+   reads false off it and so does is_member() in supabase/schema.sql. It is a
+   uid to hang a language on, which is what 2026-08-22 asked for and all it
+   asked for. It is not somebody, and it is not an account. 「匿名アカウントは
+   ねえよ」
+
+   So the offer is missing for the opposite reason now, and a stronger one:
+   2026-08-26, 「言語はアカウントないと作れないです」. There is no continuing
+   without an account to offer. The chevron is the way out. */
 function obFormHTML(up){
   return '<div class="mid obform">'+
     obCrestHTML()+
@@ -708,28 +732,28 @@ function obFormHTML(up){
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>')+
-    /* And out of it without signing in, when this door is the last step of
-       the onboarding rather than one opened from somewhere.
-       「サインインしなかったときは門で止まるよ！」 -- OWNER DECISION,
-       2026-08-23. The app opens; the MAKING is what asks. Every gate is
-       already there and every one of them is obNeed(), so nothing here
-       decides anything: what this button does is finish the onboarding, and
-       the next time somebody reaches for a letter, a word, a rule or a note
-       the door comes back with where they were written on it.
+    /* There WAS a way out of here without signing in: 「あとで」, shown when
+       this door was the onboarding's last step, straight to obFinish().
+       「サインインしなかったときは門で止まるよ！」 OWNER DECISION 2026-08-23 --
+       the walk ended, the app opened, and the MAKING side asked later, which
+       it did: every gate there is obNeed().
 
-       What they have made by then is on the phone and stays there: a
-       language is made on this phone, with or without an account. */
-    (obLastStep()? '<button class="obskip"' + DO('obFinish') + '>'+esc(t('ob.in.later'))+'</button>' : '')+
+       Gone, 2026-08-26. 「言語はアカウントないと作れないです」 So a walk that
+       ends with no account ends on a wall instead: finish, land on the
+       profile, reach for a letter, and the door comes straight back. That
+       is what the owner saw -- 「オンボーディング終わったらせいさくみれるけど
+       ふさがれてるけど？」
+
+       The button was never a bug against the rule. It WAS the rule: the
+       comment on it ended 「a language is made on this phone, with or without
+       an account」, which is the sentence the same decision struck out of
+       CLAUDE.md. The rule went, so it went, and nothing replaced it --
+       OB_IN is the last step and signing in is how it ends. The chevron
+       still goes back a step. */
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
 }
-/* Whether this door IS the onboarding's last step, as against one opened from
-   Settings or from a timeline -- obPending() is what remembers that a door
-   was opened from somewhere, and a door that was has somewhere to go back to
-   already. */
-function obLastStep(){ return !SET.done && !obPending() && ob.step===OB_IN; }
-
 /* ---- who the account belongs to ---------------------------------------
    Two things, once, and neither of them invented for anybody. The handle is
    `unique not null` on the server, so it cannot be put off; the name is
@@ -772,9 +796,10 @@ function obWhoGo(){
       /* A brand new account made from Settings is still somebody who has a
          language -- they signed up late, not early. */
       if(obReturn()) return;
-      /* A new account made at the END of the onboarding: that was the last
-         step, so the walk is over. */
-      obFinish();
+      /* And a new account made at the START of the onboarding, which is where
+         it is made now: the door was the first step, so what follows is the
+         rest of the walk rather than the end of it. */
+      obGo(OB_DRAW);
     }, obNo);
   }, obNo);
 }
@@ -822,13 +847,14 @@ function obDoorHTML(){
    The one thing somebody arrives already having an opinion about, and the
    only question here they can answer without being taught anything. It can
    be left blank and changed at any time from the cover. */
-/* Naming the language is not the end of the walk any more -- signing in is,
-   and it comes after this. */
+/* Naming the language IS the end of the walk again. Signing in was the last
+   step for four days and is the first one now, because there is no account
+   behind the app until somebody makes one. */
 function obName(){
   var e=document.getElementById('ob-name');
   if(e) ob.name=String(e.value||'').trim();
   langName=ob.name;
-  save(); obGo(OB_IN);
+  save(); obFinish();
 }
 function obNameHTML(){
   return '<div class="mid">'+
@@ -845,7 +871,7 @@ function obNameHTML(){
 /* Not everyone has a name yet, and being stuck on the first question of the
    app because of it is absurd. The cover asks again, and the pencil beside
    the title is there whenever the answer arrives. */
-function obNameLater(){ ob.name=''; obGo(OB_IN); }
+function obNameLater(){ ob.name=''; obFinish(); }
 
 /* ---- one letter -------------------------------------------------------
    The app used to pick a sound out of the inventory, put "the letter for k"

@@ -77,24 +77,19 @@ function bootSession(){
      the comparison is against ME.avSent, which is local. */
   netAvSync();
 }
-netResume(bootSession, function(){
-  /* No session, so make one, and make it without asking anybody anything.
-     An anonymous account is a real uid the moment the app opens, which is
-     what lets everything somebody makes belong to an account before they
-     have decided to be anybody. Identity is asked at a post and at a
-     purchase and nowhere else. 「オンボーディングで離脱されるのは防ぎたい」
+/* A session that is still good comes back here and nothing is asked. What
+   used to be in the `bad` half was netAnon(): no session, so make one, without
+   asking anybody anything, so that everything somebody made belonged to an
+   account before they had decided to be anybody.
+   「オンボーディングで離脱されるのは防ぎたい」
 
-     Only when there is nothing left: netResume answers `bad` for a token the
-     server no longer accepts -- which it clears -- and for a phone with no
-     signal, which it does not. The second is a session that is still good
-     and must not be replaced by an anonymous one.
-
-     A failure here is not told about either. It means the phone is offline on
-     its first launch, and the whole making side works offline; the next
-     launch asks again. */
-  if(netSignedIn()) return;
-  netAnon(bootSession, function(){});
-});
+   OWNER DECISION 2026-08-26 took that out -- 「言語はアカウントないと作れない
+   です」 -- so there is nothing to do when there is no session. The app opens
+   on the door instead, which is www/onboard.js's, and the failing half of
+   this call is now the same as the missing half: no session, and nobody is
+   told, because a phone that is merely offline on a launch is not a phone
+   with a problem to report. */
+netResume(bootSession, function(){});
 /* one listener above the screen, since the screen itself is replaced whole on
    every render and nothing can be bound to it */
 actWire(document.getElementById('app'));

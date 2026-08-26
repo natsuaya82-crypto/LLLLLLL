@@ -7,6 +7,41 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## `press` の `lists measured` は走るたびに動く ── ラチェットに使えない
+
+`press-check` が出す数のうち **`rows in one list are one height: N lists
+measured` だけが決定的ではありません。** 同じコミット・同じ木で三回回して:
+
+```
+2292   2286   2289
+```
+
+同じ回の他の数は一つも動きません ── `screens built 685`、`classes worn 588,
+styled and unworn 4 (baseline 4)`、`photographs 82`、
+`buttons pressed 10790 (234/234)`。差はちょうど3の倍数なので、**ある画面が
+回によって3つ並びを出したり出さなかったりしている**のだと思われますが、
+どの画面かはまだ見ていません。
+
+**なぜ書き留めるか。** CLAUDE.md は `buttons pressed` について
+「a number nobody may move by accident」と書き、`docs/HANDOVER-2026-08-26.md`
+§4 は `rows in one list 2277 lists measured` を同じ表に並べています。
+**並べてよい数ではありません。** 次の人が 2277 と 2289 を見比べて
+「12 動いた、何が動かした」を探すと、答えの無い問いを追うことになります。
+
+**検査そのものは緑です。** 見ているのは「一つの親の下で、一つのクラスを着た
+兄弟が二つの高さ・二つの字の大きさで出ていないか」で、それはどの回も held。
+壊れているのは**数えている母数**だけです。
+
+**やっていないこと**、と、その理由: 原因は `press-check` の中か、そこが呼ぶ
+非同期（画像・ネットのスタブ）のどちらかで、**束ねる仕事の外**です。
+直すなら「数が動く原因を潰す」か「その行から数を外す」かで、後者は検査を
+弱める側なので、これは決める人のものです。
+
+**先にやること**: `docs/HANDOVER-2026-08-26.md` §4 の表から
+`rows in one list` の数を外すか、「この数は動く」と添えること。
+そうしないと、次の統合が偽の手がかりを一つ持って始まります。
+
+
 ## ~~新しいキーの札が狭い盤からはみ出す~~ — 決着。前提の方が違った
 
 `tools/side-baseline.txt` の三行（a flick keyboard being built 689/402、

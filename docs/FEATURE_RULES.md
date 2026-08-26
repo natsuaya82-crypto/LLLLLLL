@@ -144,6 +144,17 @@ not an instruction for the task in hand.**
 Afterwards:
 
 1. record it in the log below, and in whichever `docs/` file it governs
+1b. **if it REPLACES a rule that is already written down, fix that rule — in
+   the same commit.** Adding to the log is not enough. A rule is obeyed
+   because it is read, so one that still says the old thing is still being
+   followed, and the decision has not landed however carefully it was
+   recorded. 「新しいのにしたらルーるも直せよ／そのせいで毎回古いルールに
+   引っ張られてんじゃん」 (OWNER DECISION 2026-08-26)
+
+   **Fixing means deleting.** Do not leave the old sentence with 「this is
+   history」 in front of it — it will be read. 「歴史とかいいから消せよ」
+   `docs/CHANGELOG.md` is the exception and is never rewritten: it records
+   what was true on a day. Everywhere else, only sentences about NOW.
 2. implement exactly that, and nothing adjacent
 3. do not reinterpret it into a more reasonable rule
 4. do not quietly generalise it to a nearby behaviour
@@ -151,11 +162,40 @@ Afterwards:
    and change unrelated code to match
 6. a later session reads the decision before changing anything in that area
 
-**If a decision conflicts with a rule already written down: STOP.** Report the
-existing rule, the new decision, the code affected, the data affected, and what
-a migration would have to do. Do not resolve it yourself. Neither side of a
-conflict is automatically right, and picking one quietly is how a spec gets
-lost.
+**If a decision conflicts with a rule already written down: STOP — and read the
+next paragraph before you do, because it is the half that was missing and it is
+the half that gets used most.** Report the existing rule, the new decision, the
+code affected, the data affected, and what a migration would have to do. Do not
+resolve it yourself. Neither side of a conflict is automatically right, and
+picking one quietly is how a spec gets lost.
+
+**STOP only when the owner has not spoken.** If the new side of the conflict is
+something the owner has **just said**, that is the latest and it wins — it is
+not a conflict to escalate, it is an instruction to carry out. Do not ask again.
+Do not ask 「this overturns the decision of the 22nd, is that alright?」 about a
+decision the owner replaced this morning: they know what they said before, and
+asking is making them say it twice.
+
+```
+  the owner has just said it            → it wins. Mark the old one
+                                          superseded, fix the rules, carry on
+  two WRITTEN decisions disagree and
+  the owner has not restated either     → stop and report. This, and only this
+```
+
+Being asked to confirm something already answered is what 「それもふるいわ
+いつまでふるいのずっとやってんだよ うぜえな」「毎回新しくしろよ」 is about
+(OWNER DECISION 2026-08-26). It was asked three times in one day off the
+paragraph above, because that paragraph only had the first half of the rule in
+it. **The newest thing the owner said is the specification.** Older written
+decisions are the record of what it replaced, not a second opinion to weigh
+against it.
+
+Marking and fixing happen in the **same commit** as the new decision. The old
+entry in the log below keeps its words and gains a superseded line — that log
+is a record of what was decided when. **The rules are the opposite: they are
+fixed, and fixing means deleting.** A rule left standing is read, and a rule
+that is read is obeyed.
 
 And the other direction, which is the same rule: **a decision once made is not
 re-opened by a later session because a different shape seems more natural.** If
@@ -220,6 +260,417 @@ verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
 was inferred: where the wording is the owner's it is quoted, and where a
 decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
+
+### Decision
+- Date: 2026-08-26 (同日、五つめ)
+- Area: 匿名アカウントは無くなる。アカウントは一種類
+- Decision:
+
+  ```
+  匿名アカウントはねえよ
+  言語はアカウントないと作れないです
+  ログインした人しか書けないけど
+  二種類になる意味も分からないけど
+  ```
+
+  1. **匿名アカウントは無い。**「アカウント」はサインインした人のこと、一種類。
+  2. **言語はアカウントが無いと作れない。**
+  3. **書けるのはログインした人だけ。**
+  4. **アカウントの種類を二つに分けない。**`has_account()`（アカウントがある）と
+     `is_member()`（名前がある）の二本立ては**やめる。** 一本になる。
+
+- Reason: 「二種類になる意味も分からないけど」。二本立ては匿名アカウントを
+  置くために作られたもので、**匿名が無くなれば分ける先が無い。**
+  区別が要るのは「まだ名前を決めていない人」を通すためであり、その人がもう
+  居ない。
+- Affected features: `www/onboard.js`（扉が唯一の終わり方 ── 済み）、
+  `www/boot.js` の `netAnon()`、`www/net.js` の `netSignedIn()`/`netMember()`/
+  `netAnonTok()`、`supabase/schema.sql` の `has_account()` と、それを使う
+  `language` / `slice` の書き込みポリシー。
+- Affected data: **無い。** 誰の作ったものも消えない。
+- Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`。
+- Implementation status: **docs だけ。** コードは `claude/admin` が持つ。
+  この枝で済んでいるのは、オンボーディングの「あとで」を消したことだけ
+  （アカウント無しで歩きを終えられないようにした）。
+
+#### これが置き換えたもの
+
+2026-08-22「When somebody is asked who they are」── 匿名アカウントを起動時に
+作り、身元を訊くのは投稿と課金の二箇所だけ、`is_member()` を二つに割る。
+**下のその項目に superseded の行を付けた。言葉は消していない。**
+消したのは、それを言っていた**規則**のほうである。
+
+### Decision
+- Date: 2026-08-26 (同日、四つめ)
+- Area: 決定が規則を置き換えたら、**その規則を直す**。決定ログに足すだけでは足りない
+- Decision:
+
+  ```
+  古い規則残りすぎ
+  新しいのにしたらルーるも直せよ
+  そのせいで毎回古いルールに引っ張られてんじゃん
+  ```
+
+  ```
+  歴史とかいいから消せよ
+  ```
+
+  **決定が既存の規則を置き換えたなら、その規則を同じコミットで直す。**
+  決定ログに一件足して終わりにしない。
+
+  そして直し方は**消すこと**である。「これは歴史です」と前置きして残さない ──
+  残っていれば読まれる。それが「毎回古いルールに引っ張られてる」の中身。
+
+  `docs/CHANGELOG.md` は別。あれは「その日そうだった」の記録なので
+  書き換えない。**直すのは、今を語っている文だけ。**
+
+- Reason: オーナーの三行がそのまま理由である。**規則は読まれるから効く。**
+  古い規則が残っていると、次の人はそれを読んで従い、決定ログのほうは
+  見に行かない。決定が「通った」のは、それを言っている文が全部直った
+  ときであって、ログに一行入ったときではない。
+- Affected features: 無い。これは書き方の規則である。
+- Affected data: 無い。
+- Affected docs: `CLAUDE.md`（§ Recording の隣）、このファイル。
+- Implementation status: **書いた。** 同じ日に六箇所掃除した ──
+  ゲートの本数（TESTING.md、17→26）、`CAN` の一覧（無い能力 `tr` が載り
+  `edit` `badge` が抜けていた）、Studio、`localStorage` が唯一の置き場、
+  語順の `SET.order`、そして「アカウント無しでも言語は作れる」。
+
+### Decision
+- Date: 2026-08-26 (同日、三つめ)
+- Area: 設定にある「消す」は三つ ── データを削除 / 言語を削除 / ログアウト
+- Decision:
+
+  ```
+  データを削除
+  言語を削除
+  ログアウトでしょ？
+  ```
+
+  **設定で人が消せるものは三つ。それ以上でも以下でもない。**
+
+  | | 何が消えるか | 今 |
+  |---|---|---|
+  | **データを削除** | 全部。アカウント、サーバーの投稿・写真・録音、この端末の言語と設定、Documents のバックアップ、トークン | **在る。`wipeAll()`（`www/settings.js`）。既に全部やっている** |
+  | **言語を削除** | その言語ひとつ。ほかの言語も、アカウントも残る | **無い。一行も無い** |
+  | **ログアウト** | 何も消えない。トークンだけ | **在る。`setSignOut()` → `netOut()`** |
+
+  一つめは前日の「アカウント消したら全部消えるに決まってる」がそのまま入る所で、
+  **それは既に実装されている**（下）。三つめは既に在る。
+  **無いのは真ん中だけである。**
+
+- Reason: 「ログアウトでしょ？」── 三つが別のことだ、と言っている。
+  全部消すのと、一つ消すのと、何も消さないのは、押す人にとって別の判断である。
+  今は真ん中が無いので、**言語一つを捨てたい人が押せるのは「全部消す」しかない。**
+- Affected features: `www/settings.js`（`wipeAll` の隣）、`vLangs()`
+  （`www/home.js` ── 言語の一覧は行ごとに一つの言語なので、消す道はそこにもある）、
+  `LANGS` と `langKeyOf()`（`www/core.js`）、`netDropMe()` の言語版
+  （`language` 行と `slice` 行、`www/net.js`）。
+- Affected data: 言語ひとつぶんの十二スライスと、`LANGS` の項目と、
+  サーバの `language` / `slice` の行。**本人が言った場合に限る**ので
+  `docs/DATA_SAFETY.md` の禁止には当たらない。
+- Affected docs: `docs/FEATURES.md`、`docs/DATA_MODEL.md`。
+- Implementation status: **「言語を削除」だけ未実装。** ほかの二つは在る。
+
+#### 「言語を削除」を作る人が先に答えること
+
+**決めない。オーナーに訊くこと。** ここに並べるのは、訊かずに書き始めると
+どれかを黙って決めてしまう、という一覧である。
+
+1. **最後の一つを消せるか。** 消せるなら、そのあとは `langFirst()` が
+   空の言語を作る（それが「言語ゼロ」という状態がこのアプリに無いということ）。
+   消せないなら、一覧の最後の行だけ押せない。
+2. **サーバの行も消すか。** 「基本は全部サーバー管理」なら消す。
+   消さないと、次に `netLangSync()` が走った瞬間 **`syMerge` が両方足して
+   帰ってくる** ── 消したはずの言語が戻る。**ここは間違えると
+   「消えない削除」になる。**
+3. **バックアップの file はどうするか。** `bkDropAll()` は全部消す道しか無い。
+   一つだけ消す道は無い。
+4. **DL した言語を消すのは同じボタンか。** 読み取り専用の言語も一覧に並ぶ
+   （2026-08-25）。消せて当然に見えるが、あれは自分の作ったものではない。
+5. **確認は一度。** `wipeAll()` が iOS のダイアログで一度訊いている。同じ形。
+
+### Decision
+- Date: 2026-08-26 (同日、あと。上の「サーバーの範囲」への三つの答え)
+- Area: アカウント削除は全部消える / 同期は常に / 費用はエンタープライズ
+- Decision:
+
+  オーナーの言葉のまま。
+
+  ```
+  アカウント消したら全部消えるに決まってる
+  常に同期
+  supabaseのエンタープライズで対応する予定
+  ```
+
+  1. **アカウントを消したら全部消える。電話の中も含む。**
+     前日の「アカウント消したら残るわけがないあほだろ」をサーバの話と読んだのは
+     **狭すぎた。**「全部」である。
+  2. **同期は常に。** 前の項目で「全部だって」の一語からは書き起こさない、と
+     open にしていたものが、これで閉じた。**常に同期する。**
+
+     **そして同じ日に中身が分かれた ──「タイムラインは開くたび / 言語は
+     そういうわけじゃない」。** 「常に」は一つの時計ではなく二つである:
+
+     ```
+     タイムライン   開くたび          既にそう（vFeed → snsPull）
+     言語           そういうわけじゃない  ＝ per-open ではない
+     ```
+
+     **言語の側は「〜ではない」しか言われていない。** 何であるかは
+     言われていないので、ここには書かない。`docs/FEATURES.md` の行は
+     **open** で持つ。書き起こすと、オーナーが否定しただけのものを
+     肯定形にして決めてしまうことになる。
+  3. **費用は Supabase のエンタープライズで対応する予定。**
+     「人数に比例する」という問題は残るが、**それを飲む前提で範囲が決まっている。**
+     費用を理由に範囲を狭める提案はもう要らない。
+
+- Reason: 1 について ──「決まってる」。消したいと言った人に何かが残っているのは
+  削除ではない、という一行がそのまま理由である。**これは `docs/DATA_SAFETY.md` の
+  絶対規則と衝突しない**（下）。
+- Affected features: `netDropMe()`（`www/net.js`）、`wipeAll()`（`www/settings.js`）、
+  `netLangSync()` の撃ち方（`www/boot.js`）。
+- Affected data: **人が作ったもの全部**。ただし本人が消せと言った場合に限る。
+- Affected docs: `docs/FEATURES.md` § 8、`docs/DATA_MODEL.md`、
+  `docs/PAID_FEATURES.md`、`docs/DATA_SAFETY.md`（私の持ち物ではない ── 報告に書いた）。
+- Implementation status: **三つとも未実装。**
+  削除は `netDropMe()` がサーバだけを消す。電話を消すのは `wipeAll()` という
+  **別のボタン**で、押されていない。同期は起動時一回（`www/boot.js`）。
+
+#### `DATA_SAFETY.md` と衝突しないこと。ここが大事
+
+`CLAUDE.md` の絶対規則は「Nothing a person made is removed because the current
+shape does not need it, because it is an old format, to save space, or because
+something was restructured」であり、**理由を四つ挙げて禁じている。**
+「本人が消せと言った」はその四つのどれでもない。禁じられているのは
+**アプリが勝手に決めること**であって、人が自分のものを捨てることではない。
+
+**ただし、これは今まで別々だった二つのボタンが一つになるという意味である。**
+`docs/FEATURES.md` § 8 は 2026-08-21 に「**The language on the phone is not
+touched.** Erasing the phone is the other button」と決めて、そう書いてある。
+今日の決定はそれを上書きする。§ 8 の側にも書いた。
+
+**そして順番が要る。** 消す順を間違えると「消えたと言われたのに残っている」か
+「消したいと言っていないものまで消えた」のどちらかになる。順番を決めるのは
+実装する人の仕事だが、**確認は一度だけにすること** ── 二度訊くのは、一度目に
+何を訊いたのか分からなくなるという意味である。`wipeAll()` は既に iOS 自身の
+ダイアログで一度訊いている。
+
+### Decision
+- Date: 2026-08-26
+- Area: サーバーの範囲 ── 基本は全部サーバー。言語周りだけ file をバックアップに使う
+- Decision:
+
+  オーナーの言葉をそのまま置く。要約していない。
+
+  ```
+  サーバーの範囲決めようよそろそろ
+  じゃないといつまでもこれになる
+
+  基本は全部サーバー管理 言語周りだけバックアップにfile使う
+  制作はオフラインでも可能次つながった時に更新される
+  ```
+  ```
+  Xがローカル保存してんの？nolaとかの目もアプリもそういう話してんの
+  ```
+  ```
+  言語はアカウントないと作れないです
+  古い記載消してくれうざい
+  SNS部分はオフラインでは動かないよそりゃそう
+  アカウント消したら残るわけがないあほだろ
+  ```
+
+  同期の頻度とプランについては、オーナーの言葉として渡ってきたのは
+  **「全部だって」の四文字だけ**である。「常に同期する／プランに関係なく全員
+  サーバに載る」はそれをリーダーが開いたものであり、**オーナーの言葉ではない。**
+  プラン無関係の方は 2026-08-22 の「クラウドは全員で」と同じことを言っているので
+  独立に裏が取れているが、**「常に同期」は頻度＝しきい値の話であり、この一語から
+  確定させていない。** `docs/FEATURES.md` の行は open として持つ。
+
+  決まったこと:
+
+  1. **基本は全部サーバー管理。** 「Xがローカル保存してんの？」── 普通の
+     アプリはそうしていない、が理由である。
+  2. **言語周りだけ、バックアップに file を使う。** `www/backup.js`（章24）の
+     `Documents/Languages/<name>.json` が消えるのではなく、**サーバが本体で
+     file がバックアップ**という並びになる。
+  3. **制作はオフラインでも可能。次につながった時に更新される。**
+     これは既にそう動いている ── `www/sync.js`（章26）が両側を足し、
+     `netLangSync()` が起動時に撃つ。
+  4. **SNS 部分はオフラインでは動かない。**「そりゃそう」。既にそう。
+  5. **アカウントを消したら残らない。** サーバ側は既にそう ──
+     `account_delete()` の cascade が profile・言語・投稿・follow・block を
+     連れていく（`docs/FEATURES.md` § 8）。
+  6. **言語はアカウントが無いと作れない。** これは**まだそうなっていない。**
+     下の「コードと合っていない所」を見ること。
+  7. **古い記載を消す。** 「アカウント無しでも言語は作れる」と書いてある所を
+     消して、今そうであることを書く。
+
+- Reason: 「Xがローカル保存してんの？nolaとかの目もアプリもそういう話してんの」
+  ── **落とさないこと。** 次の人が「オフライン優先のほうが安全では」「ローカルを
+  真にしたほうが速いのでは」と思いついたときに止まるのはこの一行である。
+  普通のアプリはサーバを本体にしていて、この app だけ違う理由は無い、が理由。
+
+  そして「じゃないといつまでもこれになる」── 範囲が決まっていないことそのものが
+  費用だと言っている。決めない自由は無い。
+
+- Affected features: `www/sync.js`、`www/net.js`（`netLangRow`/`netSlices`/
+  `netSlicePut`/`netLangSync`）、`www/boot.js`、`www/backup.js`、
+  オンボーディングの扉（`www/onboard.js`）、最初の言語が作られる所
+  （`www/core.js` の最上位）。
+- Affected data: 何も消えない。サーバに載る範囲が広がるだけであり、
+  電話の写しはそのまま残る。**費用には効く** ── プランに関係なく全員のスライスが
+  載るなら、ストレージと egress が人数に比例する（`docs/PAID_FEATURES.md`）。
+- Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`、
+  `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/STATE.md`、
+  `docs/CHANGELOG.md`（あれは足すだけ。書き換えない）。
+- Implementation status: **ほぼ implemented、ただし 6 は未実装。**
+  1〜5 はコードに在る。**6「言語はアカウントないと作れない」だけが無い。**
+
+#### コードと合っていない所。直していない ── 報告した
+
+このファイルの「if existing code contradicts it, **report the contradiction** —
+do not go and change unrelated code to match」に従う。今日は docs だけ触った。
+
+**最初の言語は、アカウントを訊けない所で作られている。**
+`www/core.js` の最上位に
+
+```
+try{ if(!langId || !LANGS[langId]){ if(!langMigrate()) langFirst(); } }catch(e){ langFirst(); }
+```
+
+があり、これは `www/index.html` の 2749 行目 ── `net.js`（2766）より前、
+`boot.js`（2802）よりずっと前 ── で走る。その時点で `netSignedIn` はまだ
+**定義されてすらいない。** つまり最初の言語は、アカウントの有無を訊く手段が
+無い場所で、無条件に作られている。「アカウントないと作れない」を効かせるには
+最初の言語を作る場所を動かす必要があり、それは core.js の一行では済まない。
+
+**そして「アカウントの無い人はいない」も、厳密には今日まだ真ではない。**
+`www/boot.js:96` の `netAnon(bootSession, function(){})` は失敗しうる。
+失敗のコールバックは空で、その上のコメントが理由を書いている ──
+「It means the phone is offline on its first launch, and the whole making side
+works offline; the next launch asks again」。**初回起動＋圏外**は、
+アカウントが無く、それでも制作ができる状態であり、コードはそれを意図して
+支えている。この決定は、その状態をどうするかを決めていない。
+
+だから今日消した文は「もう嘘だから」ではなく、**「もう規則ではないから」**
+消した。事実としてはまだ半分残っており、上の一段落がその残りである。
+
+### Decision
+- Date: 2026-08-25
+- Area: DL — 公式アセットの言語を取ってきて使う。取ってきたものは自分の言語には**入らない**
+- Decision:
+
+  オーナーの言葉をそのまま置く。要約していない — この四つが決定の本体であり、
+  下の見出しはそれを拾い直しただけのものである。
+
+  ```
+  DLはplusからだけどplusは自分の言語+DL言語1個
+  proは自分の言語3個+DL言語3個は？
+  ホーム長押しで言語切り替えできる
+  制作以外は変わらない感じは？
+  shangoにしてるならそれ。変えたなら変えた。
+  キーボードも言語変えたら変わる。でもアカウントは一つだからね？
+  ```
+  ```
+  タイムラインは色んな言語を読める
+  DLは例えばトキポナ使いたい人がすぐに使えるようにするための公式アセットを
+  準備するってイメージだけど
+  ```
+  ```
+  dlは公開非公開があるから、ホームの言語の概要ページに作った。
+  そこでdlしてください。
+  単語文字文法キーボードそれぞれ「解放できるかどうか選べる。
+  それぞれdlしてください。
+  もちろんダメです。トキポナに文字足したらトキポナじゃないです。
+  だから公式で参加してくれってメール送ってんのよトキポナに。
+  公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？
+  ぅ言うルール付なんだから。
+  ```
+  ```
+  プロフィールのとこ長押しで言語切り替えだって
+  ```
+
+  拾い直すと、決まったのはこれだけである。
+
+  1. **DL した言語は自分の言語に入らない。切り替える先である。**
+     「自分の言語＋DL 言語」と二つに分けて数えているのがそのままの答えであり、
+     「キーボードも言語変えたら変わる」も同じことを言っている — 入るのなら
+     変わるものがない。
+  2. **DL した言語は編集できない。**「もちろんダメです。トキポナに文字足したら
+     トキポナじゃないです」。これは見た目の問題ではなく、**公式アセットが何であるか**
+     の問題である。だから下の Reason を落とさないこと。
+  3. **アカウントは一つ。**「でもアカウントは一つだからね？」
+     言語を切り替えても人は切り替わらない。
+  4. **単語・文字・文法・キーボードの四つは、それぞれ別に解放を選べ、
+     それぞれ別に DL する。**一つのスイッチではない。
+  5. **DL の場所はホームの言語の概要ページ。**「そこでdlしてください」。
+     新しい画面を作る話ではない — 公開非公開が既にそこにあるからそこだ、と
+     オーナーは理由を一緒に言っている。
+  6. **切り替えはプロフィールのとこを長押し。**オーナーは一度「ホーム長押し」と
+     言い、あとで「プロフィールのとこ長押し」と言い直している。**後の方である。**
+  7. **公式アセットは誰でも使える。ただし lingua の中だけ。**
+     「公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？
+      ぅ言うルール付なんだから。」
+  8. **タイムラインは色んな言語を読める。** DL は読むためのものではない —
+     読むのはもう無料でできる。DL は「使いたい人がすぐに使えるように」の方である。
+
+  **決まっていないのはここである。数字を固めないこと。**
+  「DLはplusから」は言い切りである。そのあとの数は
+  「自分の言語3個+DL言語3個**は？**」と**問いで終わっている**。
+  「制作以外は変わらない感じ**は？**」も同じである。
+  問いを決定に書き換えない — このファイルの「決定をもっともらしい規則に
+  読み直さない」はこの向きにも効く。`docs/FEATURES.md` の行は
+  この二つを **open** として持つ。
+
+- Reason: オーナーが理由を二つ言っている。どちらも落とさないこと —
+  次の人が「もっと綺麗な形がある」と思いついたときに止めるのは理由の方である。
+
+  **「トキポナに文字足したらトキポナじゃないです」** — だから読み取り専用なのであって、
+  実装が楽だからではない。公式アセットは「その言語であること」が価値であり、
+  編集できるトキポナはトキポナではない。「編集させてもいいのでは」と思いついた人は、
+  この一行で止まること。
+
+  **「だから公式で参加してくれってメール送ってんのよトキポナに。」** — 公式アセットは
+  こちらが勝手に作るものではなく、向こうの公式に入ってもらうものである。
+  これはリポジトリの外で起きる仕事であり、コードで先回りしてよいものではない。
+
+- Affected features: ホームの言語の概要ページ（`www/home.js`、`wldSecDl()` の四つの
+  解放トグルは `claude/wiki` が今作っている）、言語一覧 `vLangs()`（同じファイル、
+  「読んでいる」の節が DL 言語の入る枠）、プロフィールの長押し（`www/me.js`）、
+  `CAN.dl`と DL 言語の天井（`www/core.js`）。**今日入ったのは一つもない。**
+- Affected data: `LANGS[id]` に「読み取り専用」を言うものが要る。今は無い —
+  `LANGS` に書き込む三箇所（`core.js:115`、`core.js:140`、`backup.js:264`）は
+  全部 `mine:true` であり、**編集できない言語は今このアプリに一つも存在しない**。
+  人が作ったものは一つも消えない — DL は足すだけであり、自分の言語には触れない。
+  `docs/DATA_MODEL.md` § 読み取り専用の言語。
+- Affected docs: `docs/FEATURES.md`、`docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、
+  `docs/ARCHITECTURE.md`、`docs/STATE.md` § 3。
+- Implementation status: **OWNER DECISION** — 決定済み、未実装。0 行入っていない。
+
+#### この決定がぶつかるもの二つ。ここで解決しない。
+
+このファイルの「決定が既に書かれた規則と衝突したら STOP。両方を報告し、
+自分で決めない」に従う。
+
+**一つめ — 切り替えはプロフィールに置かない、と同じ日に決まっている。**
+下の 2026-08-25「Making a second language — where the door is」はこう書いている —
+「It is NOT moved onto the profile or behind the face; that was offered and turned
+down.」「せっていからでいいよ」。今日の「プロフィールのとこ長押しで言語切り替え」は
+これを真正面から踏む。二つは同じ日付であり、どちらが後かは日付では分からない。
+両立する読み方はある（一覧は設定に残り、長押しはその上の近道）が、
+**その読みはここで決めない。オーナーに訊くこと。**
+
+**二つめ — 公開と DL は 2026-08-19 に一度決まっている。**
+`docs/FEATURES.md` § 4「Publishing and downloading」がそれで、今日のものと
+三つ違う。① キーボードと文字の DL は**無料**だった（今日は「DLはplusから」）。
+② DL したキーボードは**自分の棚に三つまで**並ぶと書いてあるが、今日の形では
+DL は「言語一つ」として数えられ、キーボードはその中にある。
+③ 08-19 は**人が人のものを**取る話、今日は**公式アセット**の話である。
+同じ仕組みを使うが同じものではないかもしれない。
+一つだけ合っている — 08-19 も「A downloaded dictionary is a language you can READ
+and is never merged into your own」と言っている。**入らない、は二度決まっている。**
+残りの三つは**オーナーに訊くこと。**
 
 ### Decision
 - Date: 2026-08-23
@@ -992,6 +1443,12 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-22
+- **SUPERSEDED 2026-08-26** by 「匿名アカウントはねえよ」「言語はアカウントないと
+  作れないです」「ログインした人しか書けないけど」「二種類になる意味も分からない
+  けど」 — the entry at the head of this log. **There is no anonymous account
+  and no second question.** The words below are the record of what was decided
+  on the 22nd and are left exactly as they were; nothing in them is a rule any
+  more. Do not build off this entry.
 - Area: When somebody is asked who they are
 - Decision: An **anonymous account is made silently at first launch** and
   everything is made under it. Identity is asked in **two places only:
@@ -1130,6 +1587,12 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 ### Decision
 - Date: 2026-08-18
 - Area: Anything that is the server's — and the timeline first
+- **Superseded in part on 2026-08-26** (the entry at the head of this log).
+  Point 1 stands and is still absolute. **Point 3 does not**: 「言語はアカウント
+  ないと作れないです」「古い記載消してくれうざい」. The words below are left
+  exactly as they were written — this log is the record of what was decided
+  when, and a record that gets edited to agree with today is not one. Read
+  point 3 as history.
 - Decision:
   1. **Anything that needs the server is built assuming the server is
      there.** A screen that half-works without one is not a step on the way

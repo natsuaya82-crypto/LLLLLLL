@@ -44,10 +44,20 @@
    this file remembers to ask. Asking is what makes the refusal a door
    instead of a shrug.
 
-   An anonymous account is one phone's refresh token and nothing else. Lose
-   the phone and nobody, including us, can prove it was theirs -- which is
-   exactly why buying asks for an identity, and why attaching one later keeps
-   the same uid rather than starting again.
+   There is no anonymous account any more. It was one phone's refresh token
+   and nothing else -- lose the phone and nobody, including us, could prove it
+   was theirs -- and OWNER 2026-08-26 took it out: an account is asked for at
+   the door now, before anything can be made.
+
+   This used to end "and attaching one later keeps the same uid rather than
+   starting again." That was never true here: netSignUp() below posts to
+   /auth/v1/signup with no session token on it, which asks Supabase for a NEW
+   user rather than for an identity on the one already signed in. Nothing was
+   ever lost by it -- the app has never been released and no anonymous account
+   has existed outside a test build -- and there is nothing left to fix now
+   that none is made. It is written down rather than deleted because the
+   sentence was a description of a mechanism nobody had built, and those are
+   the ones that get built on.
    ========================================================================= */
 
 /* =========================================================================
@@ -209,17 +219,29 @@ function netTook(d){
   netSave();
   return true;
 }
-/* An account nobody asked for. Supabase's anonymous sign-in is the signup
-   endpoint with no address and no password on it; what comes back is an
-   ordinary session whose token says is_anonymous, and attaching an identity
-   to it later keeps the same uid rather than making a second account.
+/* There used to be netAnon() here, and boot.js called it before the first
+   frame: Supabase's anonymous sign-in, which is the signup endpoint with no
+   address and no password on it. Everything somebody made belonged to an
+   account from the first minute without anybody being asked anything.
+   「オンボーディングで離脱されるのは防ぎたい」
 
-   Called from boot.js and nowhere else: this is the app arriving, not
-   something a screen does. */
-function netAnon(ok, bad){
-  netPost('/auth/v1/signup', {data:{}}, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
-}
+   OWNER DECISION 2026-08-26 took it out: 「言語はアカウントないと作れないです」
+   「ログインした人しか書けないけど」「二種類になる意味も分からないけど」.
+   supabase/schema.sql says the same thing on the other side -- the policies
+   that used to ask has_account() ask is_member() now, so a session with no
+   name on it is refused by the server whatever this file does.
+
+   netAnonTok() below and SESS.anon stay, and netSignedIn() and netMember()
+   stay two functions. Not for anybody's sake -- there is nobody: the app has
+   never been released, so there is no phone anywhere holding an anonymous
+   session. 「リリースしてないんだからアカウンとないでしょ」 -- OWNER 2026-08-26.
+
+   They stay because collapsing them is a rename, and it is a rename across
+   sns.js, post.js, settings.js and me.js, which this session does not own. A
+   rename does not ride along with a feature (CLAUDE.md); it is its own task,
+   and it is in the report as one. The claim itself is still real on the
+   server -- is_member() in schema.sql reads is_anonymous off the token -- so
+   what is here is a true question with nothing left to answer it yes. */
 function netOut(){
   SESS=null; netSave();
 }
@@ -665,29 +687,71 @@ function netReport(what, why, note, ok, bad){
    Who may is one column, `profile.staff`, set by hand in the dashboard and
    revoked from every role the app signs in as. There is no screen that grants
    it and there is not meant to be one. */
-var NET_STAFF=false, NET_BANNED='';
+/* And the one above it, which is a different question: not "may this account
+   answer a report" but "may this account decide who answers reports".
+   「俺は権限者で他はスタッフみたいな感じで」 One account holds it -- whoever
+   is called `lingua` -- and schema.sql is where that is written down, not
+   here: what this variable is is the answer to a question already asked and
+   already settled by the server. Every door it opens is bolted on that side
+   too, so a phone that lied about this would get a screen and no data. */
+var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
 /* Asked once, at launch, and remembered. A screen that asked every time it
    was drawn would put a request behind every render. */
-/* One request, because it is one row and the app wants two things off it:
-   whether this account answers the reports, and whether it has been ejected.
-   The second is not something the app could work out otherwise -- every write
-   would simply be refused, and "the server said no" is not a sentence anybody
-   can act on. */
+/* One request, because it is one row and the app wants three things off it:
+   whether this account answers the reports, whether it decides who does, and
+   whether it has been ejected. The last is not something the app could work
+   out otherwise -- every write would simply be refused, and "the server said
+   no" is not a sentence anybody can act on. */
 function netStaff(ok){
   ok=ok||function(){};
-  if(!netSignedIn()){ NET_STAFF=false; NET_BANNED=''; ok(false); return; }
-  netGet('/rest/v1/profile?select=staff,banned_at,banned_why&limit=1&id=eq.'+
+  if(!netSignedIn()){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); return; }
+  netGet('/rest/v1/profile?select=staff,admin,banned_at,banned_why&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
       var r=(d && d.length)? d[0] : null;
       NET_STAFF=!!(r && r.staff);
+      NET_ADMIN=!!(r && r.admin);
       /* The reason if there is one, and a space if there is not, so that the
          string is true-y whenever the account is banned and the screens can
          ask one question instead of two. */
       NET_BANNED=(r && r.banned_at)? (String(r.banned_why||'') || ' ') : '';
       ok(NET_STAFF);
     },
-    function(){ NET_STAFF=false; NET_BANNED=''; ok(false); });
+    function(){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); });
+}
+/* Making somebody staff, and unmaking them. By handle, because a handle is
+   the only name this app has for a person: an address lives in auth.users,
+   which is Supabase's and is not read from here.
+   「staffアカウントはスタッフページから追加できるようにしよう」
+
+   staff_add() and staff_drop() in schema.sql ask is_admin() inside
+   themselves, so these two are a screen for a door rather than the door. The
+   `@` a person types is taken off here -- it is how the app says "a person"
+   and is not part of what a handle IS. */
+function netStaffAdd(handle, ok, bad){
+  if(!netSignedIn() || !handle){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/staff_add', {h:netHandleOf(handle)},
+          SESS.at, function(){ ok(); }, bad);
+}
+function netStaffDrop(handle, ok, bad){
+  if(!netSignedIn() || !handle){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/staff_drop', {h:netHandleOf(handle)},
+          SESS.at, function(){ ok(); }, bad);
+}
+/* One place, because both of the above and the screen that lists them would
+   each have written it out. A handle is lower case in the schema's own check
+   constraint, so typing one with a capital in it is a person typing a name
+   rather than a person getting it wrong. */
+function netHandleOf(s){
+  return String(s||'').replace(/^@+/, '').toLowerCase().replace(/\s+/g, '');
+}
+/* Who answers the reports today. profile_read is `using (true)`, so this
+   needs no policy of its own -- what it lists is public, and what it is FOR
+   is not. */
+function netStaffList(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netGet('/rest/v1/profile?select=id,handle,admin&staff=is.true&order=handle.asc',
+    function(d){ ok(d || []); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a
    list of reasons with no posts under them is a list nobody can act on, and
@@ -754,6 +818,23 @@ function netUnban(uid, ok, bad){
   if(!netSignedIn() || !uid){ bad(null, 0); return; }
   netSend('POST', '/rest/v1/rpc/account_unban', {p:uid},
           SESS.at, function(){ ok(); }, bad);
+}
+/* How many of everything there is: people, posts, languages, reports.
+
+   One request and not four, and a function and not four counts off four
+   tables. PostgREST answers a count in a Content-Range HEADER and netSend()
+   above reads bodies -- but that is the small reason. The real one is in
+   supabase/schema.sql over admin_counts(): counting the languages off the
+   table would mean widening `language_read`, and widening it would hand staff
+   the contents of every language nobody has published. A number is not worth
+   somebody's unfinished work, so the number comes back on its own.
+
+   is_staff() is asked inside the function, so this is the same door the
+   reports come through and not a second one to keep in step with it. */
+function netCounts(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/admin_counts', {}, SESS.at,
+          function(d){ ok(d || {}); }, bad);
 }
 /* ---- searching, which is the server's ----------------------------------
    A search over what is on THIS phone is a search of the people you already

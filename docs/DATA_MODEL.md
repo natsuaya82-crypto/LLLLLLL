@@ -28,6 +28,31 @@ walks it, so a slice outside it is in no backup; `wipeAll` walks it, so a slice
 outside it survives a wipe into the next language. Two were outside it once —
 the keyboard and the world — and neither could throw.
 
+**And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
+「基本は全部サーバー管理 言語周りだけバックアップにfile使う」. Each slice is one
+row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
+**the exact string `localStorage` holds** — the same string `bkPack()` writes to
+the file, so a slice has one shape and not three that could drift.
+`netLangSync()` (`www/net.js`, fired from `www/boot.js`) reads, merges through
+`www/sync.js` and writes back. So being in `SLICES` now decides three things at
+once — backup, wipe, and what goes up — and a slice added outside the list is
+missing from all three.
+
+**And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
+「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
+`slice` rows, the `language` row, the bytes in Storage, **and every
+`lingua.<id>.<slice>` key on the phone**, plus `lingua.langs` and `lingua.cur`
+that index them. This is the one place in this file where data is removed on
+purpose, and it is allowed for the one reason `docs/DATA_SAFETY.md` does not
+forbid: **the person asked.** It is not built — `netDropMe()` reaches the server
+only, and `wipeAll()` is a separate button (`docs/FEATURES.md` § 8).
+
+Which of the copies is believed when they differ: **neither.** `sync.js` adds
+both sides and lets neither win by being newer 「そりゃあ両方足すだろ」. The
+cost of merging is a duplicate; the cost of choosing is somebody's word. This
+is `docs/DATA_SAFETY.md`'s rule at the one place it would have been easiest to
+break.
+
 | slice | global | what it is | shape |
 |---|---|---|---|
 | `words` | `WORDS` | the dictionary | array |
@@ -68,6 +93,85 @@ never held, stored or logged.** `lingua.posts` (`POSTS`) is the timeline, and
 kept: the line, the meaning, whom it answers, the pictures with their letters
 still placed on them, the recording, and whether it was going to be private.
 Nothing prunes it and nothing ages it out.
+
+## The index of languages, and what is actually in it
+
+`lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
+which one every global on the making side means.
+
+| key | written by | what it is |
+|---|---|---|
+| `name` | `langMigrate()`, `langMint()`, `bkRestore()`, and `save()` on the open one | a copy of the language's name, so a row can be drawn without opening the language to find out what it is called. For the OPEN language `langName` is the live answer and this is the copy made at the last save |
+| `mine` | the same three places | **`true`, always, on every entry that has ever existed.** See below |
+| `sid` | `netLangRow()` (`www/net.js`) | the server's id for this language, the same way a post carries one. **A language with no `sid` has never been up.** Added after the entry is made, and `langStore()`d on the spot |
+
+`core.js` said `{ name, mine }` **and nothing more** above `LANGS` for as long as
+`sid` has existed. It is three keys. Corrected 2026-08-25.
+
+## A language that is only read — **this state does not exist**
+
+Written down because it has been **decided** and is **not built**, and the gap
+between those two is where a next session invents something.
+
+`LANGS[id].mine` is the only thing that would say a language is not yours, and
+**nothing has ever written it false.** Three places write to `LANGS` —
+`www/core.js:115` (the migration), `www/core.js:140` (`langMint()`), and
+`www/backup.js:264` (a restore putting back a language the index lost) — and
+all three write `mine:true`. So:
+
+```
+  a language that cannot be edited     does not exist
+  a language somebody else made        does not exist
+  LANGS entries where mine is false    have never existed
+```
+
+Two things in the app are already written as though they did, and both are
+reading a state that never arrives:
+
+- **`vLangs()` in `www/home.js`** splits `LANGS` into 「自分の」 and 「読んでいる」.
+  The second list is **always** the empty note. It is not broken — it is the
+  slot DL was going to fill, drawn early.
+- **the comment above `langCount()`** said `LANGS` "also holds every language
+  being read from somebody else", to explain why the ceiling counts `mine`
+  only. The ceiling counting `mine` is right and stays; the sentence about why
+  was describing a thing that is not there. Corrected 2026-08-25.
+
+**What a read-only language will have to answer, and has not:**
+
+1. **Where the slices live.** A downloaded language is `lingua.<id>.<slice>`
+   like any other, or it is not a language at all — `langKeyOf(id, slice)` is
+   the only thing that knows how a language is filed and a second answer is
+   the bug `CLAUDE.md` names twice (the keyboard, the world).
+2. **Whether `SLICES` covers it.** Being in `SLICES` is what makes a slice
+   real: `bkPack()` walks it and `wipeAll` walks it. A downloaded language
+   inside `SLICES` goes into **somebody's backup file**, which may be right
+   (it is on their phone) or wrong (it is not theirs to hand out). **Not
+   decided.**
+3. **What a partial download is.** 「単語文字文法キーボードそれぞれ」 — so a
+   language may arrive with `words` and no `letters`. Today "no slice" and
+   "an empty slice" are already separate states (`bkSound()`, `BK_SHAPE`), and
+   a third — "this slice was never offered" — is not.
+4. **Whether the ceiling counts it.** `langCount()` counts `mine` and the
+   owner counts them separately 「自分の言語+DL言語1個」, so it must not start
+   counting them together. The two numbers themselves are **open**.
+
+**5. It is outside sync, and that is not a flag — it is the whole point.**
+Everything else about a language goes to the server and comes back merged
+(2026-08-26, above), and `syMerge` **adds both sides**. Run a downloaded
+トキポナ through that once and something has been added to it, at which point
+「トキポナに文字足したらトキポナじゃないです」 (OWNER DECISION 2026-08-25). So
+「基本は全部サーバー管理」 has exactly one exception and this is it. It must
+hold by construction — a read-only language that `netLangSync()` simply never
+reaches — and **not** by a `mine` test remembered at each of the four call
+sites, because the one that forgets is the one that ruins somebody's copy of a
+language they did not write and cannot repair. It also does not need syncing:
+nothing on the phone can change it, so the two copies cannot differ.
+
+**What is already settled, and settled twice.** A downloaded language is
+**never merged into the person's own** — `docs/FEATURES.md` § 4 (2026-08-19)
+and the decision log (2026-08-25). Nothing of theirs is touched, moved,
+renamed or counted differently because a download happened. `DATA_SAFETY.md`'s
+rule holds without an exception being needed: a download **adds**.
 
 ## A word
 

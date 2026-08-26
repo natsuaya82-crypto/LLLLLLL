@@ -45,8 +45,13 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    written, it restored, every check was green, and the keyboard somebody
    built was simply not in the file. */
 var SLICES=['words','lines','lang','script','letters','notes','phases','talk','snd','kb','wld','gram2'];
-/* id -> { name, mine } and nothing more: the index says which languages are
-   here, and the language's own keys hold what it is. */
+/* id -> { name, mine, sid }: the index says which languages are here, and the
+   language's own keys hold what it is.
+
+   It said `{ name, mine } and nothing more`, and there were three. `sid` is
+   the server's id for the language, put on by netLangRow() (www/net.js) the
+   first time the language goes up and langStore()'d on the spot: an entry
+   with no `sid` has never been up. */
 var LANGS={}, langId='';
 var WORDS=[], LINES=[], langName='', SET=setDefaults();
 /* What a person's settings are before they touch anything. A function rather
@@ -476,11 +481,25 @@ function langCap(){
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
-   `mine` and not the length of LANGS, which also holds every language being
-   read from somebody else. Reading one is free and always was -- a timeline
-   is people writing in languages this phone has never seen -- so counting
-   them here would make looking at the timeline fill up a ceiling, which is a
-   punishment for using the app. */
+   `mine` and not the length of LANGS, and the reason is about what is COMING
+   rather than what is here. This comment used to say LANGS "also holds every
+   language being read from somebody else", and it does not: the three places
+   that write to LANGS -- langMigrate() and langMint() above, bkRestore() in
+   backup.js -- every one of them writes `mine:true`, and nothing anywhere
+   writes it false. There is no language in this app that is not the person's
+   own, and there never has been. vLangs() draws a 「読んでいる」 list that is
+   always the empty note, for the same reason.
+
+   Counting `mine` is still right, and is right for the reason the old comment
+   was reaching for: a language somebody else made is not one this person
+   made, and a ceiling that filled up because you looked at somebody's work
+   would be a punishment for using the app. That is also the shape the owner
+   counted the downloads in -- 「自分の言語+DL言語1個」, two numbers and not one
+   (OWNER DECISION 2026-08-25, docs/FEATURE_RULES.md). Whatever counts those is
+   a second function beside this one; this one goes on counting `mine`.
+
+   docs/DATA_MODEL.md § a language that is only read says what would have to
+   exist first. */
 function langCount(){
   var n=0, id;
   for(id in LANGS)
@@ -591,7 +610,13 @@ function has(level){ /* level: 'plus' | 'pro' */
   return got>=want;
 }
 /* What money buys, one capability at a time, and the only place that says so.
-   Ten names, each the level it needs.
+   Eleven names, each the level it needs.
+
+   It said ten. A count written into a comment goes stale the next time the
+   list below it grows, so do not trust this one either -- `npm run dead`
+   prints the number it actually counted on every run ("what money buys: N
+   capabilities in CAN"), and that is where this eleven came from rather than
+   from counting by eye.
 
    has('plus') used to be asked directly, in twenty-three places across nine
    files, and every one of them looked identical to every other. They were not
@@ -615,7 +640,14 @@ function has(level){ /* level: 'plus' | 'pro' */
    number at all. wordCap() below is the number and asks this once. */
 var CAN={
   words:   'pro',    /* no ceiling on the dictionary at all -- see wordCap() */
-  data:    'pro',    /* CSV out, and the cloud */
+  /* CSV out. It said "CSV out, and the cloud", and the cloud half was never
+     true here: can('data') is asked twice, both in settings.js and both about
+     the CSV. The cloud is on EVERY plan -- 「クラウドは全員で」 2026-08-22,
+     「基本は全部サーバー管理」 2026-08-26 -- and netLangSync() asks nothing
+     about a plan before it runs, which is the head of docs/PAID_FEATURES.md:
+     a plan decides what may be DONE, and a language existing is not something
+     anybody does. Do not turn this comment back into a gate. */
+  data:    'pro',
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
