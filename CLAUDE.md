@@ -472,8 +472,11 @@ second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
 `core.js` names every capability a plan opens — `words` `data` `file`
-`letters` `wsys` `kb` `snd` `gram` `tr` `dir` — and `can('kb')` is the only way
-to ask.
+`letters` `wsys` `kb` `snd` `edit` `badge` `gram` `dir` — and `can('kb')` is the
+only way to ask. **Count them off `CAN` and not off this line**: it listed `tr`,
+which is not a capability and never was, and it was missing `edit` and `badge`,
+which are. `npm run dead` prints the number it actually counted on every run
+("what money buys: N capabilities in CAN"), which is the thing to read.
 `has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
 no plan (false on every plan — a locked door nobody can open, and nothing says
