@@ -135,16 +135,13 @@ function vSettings(){
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
-    /* And, for the one account that answers them, the reports. It is not one
-       of the six questions this list asks and it is not everybody's row, so
-       it sits under them rather than among them. NET_STAFF is false until the
-       server has said otherwise, which is the right way round: the row that
-       is missing is the row nobody could have used anyway. */
-    (NET_STAFF
-      ? '<button class="set"' + DO('goMod') + '>'+
-          '<span class="sl">'+esc(t('mod.title'))+'</span>'+
-          '<span class="sv">'+ICON_GO+'</span></button>'
-      : '')+
+    /* The reports do NOT hang here. 「設定の通報ボタン消せ」OWNER 2026-08-26.
+
+       They are still answered -- vAdmin() draws the same queue with the same
+       modRow(), and the way in is the seven presses on the heading. This row
+       was the second door to one screen, and a staff row in a list of six
+       ordinary questions is also the one thing on this page that tells
+       whoever is holding the phone that there is a staff at all. */
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered

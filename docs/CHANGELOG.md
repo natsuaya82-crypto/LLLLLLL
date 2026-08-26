@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 通報の扉が、設定から管理画面に移ります
+
+```
+設定の通報ボタン消せ                      OWNER 2026-08-26（実機 build #92）
+```
+
+設定の一覧の一番下に、スタッフのアカウントにだけ出る「通報」の行がありました
+（`vSettings()`、`NET_STAFF` のとき）。それが**唯一の**通報画面への扉でした。
+
+消したので、そのままだと `act-check` が二段階で赤くなります ── まず
+「an entry no screen ever names: goMod」、`act-map.js` の行も消すと
+「www/mod.js:28 goMod」が `dead-check` で到達不能、`goMod()` ごと消すと
+「a screen with no way in: mod」。**三つとも実際に赤を見ました。**
+
+**画面は消していません。** `vMod` が残っているのはオーナーの決定だからです ──
+`mod.js` の `vAdmin` の上のコメントに
+「the reports screen stays what it is and this one carries it」とあり、
+消すのは `CLAUDE.md`「Deciding: 削除はここで決めない」に当たります。
+扉を**移しました**: 管理画面の `admin.reports` の数の行が、その画面への行き方に
+なります（`adminRow()` が第三引数を取るようになり、それがある行だけボタンになる）。
+管理画面は見出しを7回叩いた先なので、電話を渡された人にスタッフの存在は見えません。
+
+- 保存されるものは何も変わりません。移行なし、削除なし。
+- プランは関係しません。
+- 影響: **スタッフではあるが admin ではない人は、通報キューに行けなくなります。**
+  管理画面は `NET_ADMIN` が要り、`adminTap()` は admin でなければ何もしません。
+  今 admin はオーナーだけです。これはオーナーに確かめること
+  ── `docs/reports/plan-2026-08-26.md`。
+
 ### 管理画面が、実際に開くようになります
 
 `claude/admin` を束ねたときに `act-check` が両方向から言いました ──
