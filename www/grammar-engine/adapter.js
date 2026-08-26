@@ -51,5 +51,10 @@
   function key(languageId){ return langKeyOf(languageId,'gram2'); }
   function load(languageId, storage){ var raw; storage=storage||root.localStorage; if(!storage||!languageId) return null; try{ raw=storage.getItem(key(languageId)); return raw?api.languageModel(JSON.parse(raw)):null; }catch(e){ return null; } }
   function save(model, storage){ storage=storage||root.localStorage; if(!storage||!model||!model.languageId) throw new Error('Grammar v2 model needs languageId and storage'); storage.setItem(key(model.languageId),JSON.stringify(model)); return model; }
-  api.adapter={fromLegacy:fromLegacy,load:load,save:save,storageKey:key,idOf:idOf};
+  /* The dictionary alone, without a model around it. A stored model does not
+     carry its words -- they are rebuilt from the dictionary every time it is
+     read -- so the one that reads it needs this half on its own. fromLegacy()
+     is the whole model and calls the same function, so there is one place
+     that turns a word of this app into a word of the engine. */
+  api.adapter={fromLegacy:fromLegacy,wordsOf:words,load:load,save:save,storageKey:key,idOf:idOf};
 }(typeof window!=='undefined'?window:this));

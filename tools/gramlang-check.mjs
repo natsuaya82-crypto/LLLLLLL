@@ -362,6 +362,74 @@ const k = await pg.evaluate(() => {
 want('the line reads exactly as it was typed', k.reads, 'tuf rice');
 want('and the word this dictionary does not have is the one marked', k.marked, 'rice');
 
+/* ---- 11, 12, 13: the model comes from the store when there is one --------
+   gModel() used to build the model from the stages every time. A language
+   with a model of its own under langKey('gram2') is read from it now, and
+   this is the road in -- nothing writes that key yet.
+
+   Nothing here can throw. A model read from the wrong place still arranges a
+   sentence; it arranges it by somebody else's word order. So all three are
+   about WHICH answer came back, never about whether one did.
+
+   The middle one is the load-bearing one: `words` is put back from WORDS on
+   every read, so a stored model can never become a second, stale copy of the
+   dictionary. Adding a word is how you see that -- a copy would not grow. */
+const m = await pg.evaluate(() => {
+  /* A model of this language's own: a word order the stages do not say, and
+     an inflection, which is the thing that has nowhere else to live. */
+  localStorage.setItem('lingua.' + langId + '.gram2', JSON.stringify({
+    schema: 'lingua.grammar', version: 2, languageId: langId,
+    wordOrder: ['VERB', 'SUBJECT', 'OBJECT'],
+    words: [{ id: 'hw:GONE', lemma: 'GONE', meaning: 'not in the dictionary' }],
+    inflections: [{ id: 'nom', target: 'NOUN', feature: 'CASE',
+                    value: 'NOMINATIVE', operation: 'suffix',
+                    form: 'ga', separator: ' ' }],
+    grammarRules: []
+  }));
+  const before = gModel();
+  const had = before.words.length;
+  /* The dictionary grows. A stored copy would not. */
+  WORDS.push({ hw: 'zzznew', pos: 'n', mns: ['new'], at: 1 });
+  const after = gModel();
+  const stale = after.words.filter((w) => w.lemma === 'GONE').length;
+  const grew = after.words.filter((w) => w.lemma === 'zzznew').length;
+  WORDS.pop();
+  /* And a language with no model of its own is untouched. */
+  localStorage.removeItem('lingua.' + langId + '.gram2');
+  const none = gModel();
+  return {
+    order: before.wordOrder.join(','), infl: before.inflections.length,
+    storedRules: before.grammarRules.length,
+    had: had, dict: WORDS.length, stale: stale, grew: grew,
+    afterCount: after.words.length,
+    noneOrder: none.wordOrder.join(','), noneInfl: none.inflections.length,
+    /* Which words are the negation is put back on every read for the same
+       reason the words are: it names them by headword. */
+    rules: none.grammarRules.length
+  };
+});
+
+want('the stored model is the one that answers', m.order, 'VERB,SUBJECT,OBJECT');
+want('and it brought the inflection nothing else can hold', m.infl, 1);
+want('its words are this dictionary, not the ones it was stored with',
+     m.had, m.dict);
+want('a word the stored model carried is not in the model that came back',
+     m.stale, 0);
+want('and a word added to the dictionary afterwards IS', m.grew, 1);
+want('so the count followed the dictionary', m.afterCount, m.dict + 1);
+
+want('a language with no model of its own answers from its stages',
+     m.noneOrder, 'OBJECT,SUBJECT,VERB');
+want('with nothing invented in the slot nobody has filled', m.noneInfl, 0);
+want('and the rules that name words are built fresh either way',
+     m.rules, 3);
+/* The one the objection is about. The stored model above carries an EMPTY
+   grammarRules on purpose: a rule there says 'hw:<headword>' and would stop
+   matching the day that word was renamed, so it is rebuilt from the stages on
+   every read exactly as the words are. Empty in, three out. */
+want('a model stored with no rules still comes back with the ones the stages say',
+     m.storedRules, 3);
+
 await br.close();
 srv.close();
 
@@ -375,3 +443,5 @@ console.log('          somebody already has, the settings still hold their copy,
 console.log('          nothing else in a stage moves, an unreadable slice is left');
 console.log('          alone, and a language made afterwards is born with none.');
 console.log('          Changed in one language, the other one does not move.');
+console.log('          A language with a model of its own is read from it, and its');
+console.log('          words are this dictionary every time rather than a copy.');
