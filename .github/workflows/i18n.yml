@@ -1,11 +1,29 @@
-# Every push runs the two nets under the app. Modern syntax that would be a
-# blank screen on an old iPhone, or a screen not fully translated in all ten
-# languages, fails here — before it can reach a build tag.
+# Three of the twenty-six checks, run where a build tag can see them: what the
+# commit points at, modern syntax that would be a blank screen on an old
+# iPhone, and a screen not fully translated in all ten languages.
+#
+# master and pull requests, and NOT every branch. 「通知が多いねん」OWNER
+# 2026-08-26. Five sessions pushing after every commit ran this thirty times in
+# five hours, and a red on somebody's working branch is an email to the owner
+# about a branch the owner is not reading.
+#
+# What that gives up is small, because none of these three is the only thing
+# asking its question: a session runs the check that holds what it changed, by
+# name, and nothing reaches master without all 26 of tools/gate.mjs having been
+# run over it first. These three are three of those 26.
+#
+# workflow_dispatch stays, so a branch that wants this can still ask for it by
+# hand from the Actions tab without editing this file.
+#
+# For a `push`, GitHub reads this file from the commit that was pushed and not
+# from master — so a branch cut before this change keeps `branches: ['**']` and
+# keeps sending mail until it takes master in. The mail stops per branch, as
+# each one catches up, and not the moment this lands.
 name: i18n
 
 on:
   push:
-    branches: ['**']
+    branches: [master]
   pull_request:
   workflow_dispatch:
 
