@@ -73,8 +73,6 @@
 .phk | border-radius
 .phkd | border
 .phkd | border-radius
-.picpick | border
-.picpick | border-radius
 .pkch | border
 .pkch | border-radius
 .pkclear | border

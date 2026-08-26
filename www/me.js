@@ -427,12 +427,14 @@ function openMe(){
   openForm('me:', pageName('profile'),
     /* The face is the label, and the input lives inside it -- so the thing
        somebody reaches for is the thing that opens the camera roll, in one
-       tap. `.picpick` never opened it by being a label either: the stylesheet
-       stretches the invisible input across it, and the tap lands on the input.
-       The same trick, on the face, written here because `.pav` is worn by
-       eight other screens and www/index.html is not this branch's to change.
-       The separate "choose a picture" button is gone with it -- it was the
-       thing that made this screen look untouched. */
+       tap. The trick came from `.picpick`, which was the separate "choose a
+       picture" button: an invisible input stretched across the label, so the
+       tap lands on the input. That button is gone -- it was the thing that
+       made this screen look untouched -- and `.picpick`'s rule went with it
+       in the same commit that took its last wearer away, along with its two
+       lines in tools/box-baseline.txt. Two corners fewer.
+       The style is written here rather than in a class because `.pav` is worn
+       by eight other screens. */
     /* 見出しは無し ── 「アイコンって文字いらない」(OWNER, 2026-08-25)。
        名前・ID・リンク・位置情報は、名札と欄が一行に並ぶ `.field.at` で。
        これは @ の欄が既に使っている形（`display:flex;align-items:center`）で、
