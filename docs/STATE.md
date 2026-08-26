@@ -31,11 +31,24 @@ the timeline was not on the server for a week after it was.
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `f2d5eb4` (2026-08-25, later the same day), and the whole gate
-is green on it -- **25 checks, not the 24 this file said an hour earlier**, and
-`buttons pressed: 10667  (223/223 distinct names)`. A fresh clone is the current
-app, and nothing needs checking out. (This paragraph's own commit sits one on
-top of `f2d5eb4`; a file cannot name the commit it is part of.)
+`master` is at `5721421` (2026-08-26), and the whole gate is green on it --
+**26 checks, all of them**, and `buttons pressed: 10723  (229/229 distinct
+names)`. A fresh clone is the current app, and nothing needs checking out.
+(This paragraph's own commit sits one on top of `5721421`; a file cannot name
+the commit it is part of.)
+
+**Four branches went in on 2026-08-26** -- `translate` `wiki` `draft` `me2` --
+on top of the six that went in the day before. Do not read that as the whole
+list: seventeen branch tips are ancestors of `master` now, and the way to
+count is the command rather than this sentence:
+
+```
+for b in $(git branch -r | grep -v HEAD); do \
+  git merge-base --is-ancestor $b origin/master && echo "$b"; done
+```
+
+`wiki` is in **as far as `03fcfa3`** and has moved since -- a branch being an
+ancestor and a branch being finished are different facts.
 
 It said `1941783` for **66 commits** after that stopped being true, and the
 sentence around it -- "four branches were integrated into it that day" -- went
