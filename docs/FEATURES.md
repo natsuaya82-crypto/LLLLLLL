@@ -139,8 +139,29 @@ copied it across; `grammar.js` says so on `orderOf()`. Six of them
 「俺も選ばせたくないし、文章書いてたらsvoが基本でも助詞があるかもしれない」
 (2026-08-26, relayed) — because a sentence with a particle in it is not
 described by one of six letters-triples. Nothing has been built: `ORDERS` is
-still six and `setOrder()` still writes one. **Do not design the replacement
-off this paragraph** — what takes its place has not been decided.
+still six and `setOrder()` still writes one.
+
+**What takes its place is a gradient, not another answer.** OWNER 2026-08-26:
+
+```
+埋めれば埋めるほど翻訳精度を上げるってだけで
+なにも書いてないなら上がらないよ？
+```
+
+So there is no state to guard against here, and the question this settles was
+asked the wrong way round. The engine falls back to `['SUBJECT','OBJECT','VERB']`
+when a model says nothing (`translate.js:141`, `295`), and that was read as the
+app CLAIMING a language is SOV when nobody said so — the thing `stTouched()`
+exists to prevent on the old screen. It is not a claim. **It is the floor a
+language sits on before anything has been written, and a language that writes
+nothing simply does not translate well yet.** Filling things in is what moves
+it; nothing has to be true for a language that has filled in nothing.
+
+That is why a language with no particles needs no special case: particles
+OVERRIDE position for the words that carry them (`morphology.js:110-115`), and
+a language with none is arranged by position alone, which is what English and
+Chinese do. Adding particles does not replace word order — it takes words out
+of the positional queue one at a time.
 
 Decided since:
 
