@@ -26,6 +26,212 @@ assert.equal(intransitive.features.TENSE,'PAST');
    ok:true, with the sentence saying something nobody wrote. */
 const stray=e.morphology.parseSentence(language,'na mi');
 assert.equal(stray.ok,false);
+/* ---- derivation ----------------------------------------------------------
+   An inflection makes another form of the same word; a derivation makes a
+   different word of a different part of speech. model.js has carried
+   derivation() since Phase 1 with nothing in www/ that applied it --
+   `grep -rn derivation www/` returned model.js and nothing else -- so a
+   language could declare NOUN + suffix `li` -> ADJECTIVE and the engine would
+   neither make `beauty-li` nor read it back. */
+const deriving=e.languageModel({languageId:'der',wordOrder:'SOV',
+  words:[e.word({id:'beauty',lemma:'beauty',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  derivations:[e.derivation({id:'adj',sourcePartOfSpeech:'NOUN',targetPartOfSpeech:'ADJECTIVE',operation:'suffix',form:'li'})],
+  inflections:[e.inflection({id:'past',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'}),
+               e.inflection({id:'plural',target:'ADJECTIVE',feature:'NUMBER',value:'PLURAL',operation:'suffix',form:'sa'})]});
+const made=e.morphology.derive(deriving,deriving.words[0],'ADJECTIVE');
+assert.equal(made.surface,'beauty-li');
+assert.equal(made.partOfSpeech,'ADJECTIVE');
+assert.equal(made.derivations.length,1);
+/* and back the other way: which word it was made from, and what it became */
+const back=e.morphology.analyzeDerivation(deriving,'beauty-li',deriving.words[0]);
+assert.equal(back.lemma,'beauty');
+assert.equal(back.partOfSpeech,'ADJECTIVE');
+assert.equal(back.derivations.length,1);
+/* a word nobody derived keeps its own part of speech and claims no rule */
+const plain=e.morphology.analyzeDerivation(deriving,'beauty',deriving.words[0]);
+assert.equal(plain.derivations.length,0);
+assert.equal(plain.partOfSpeech,'NOUN');
+/* the sentence reader reaches it too, or the rule is still ornamental:
+   `beauty-li` is a word of this language, standing as the ADJECTIVE it became
+   rather than the NOUN it came from. */
+const readDer=e.morphology.parseToken(deriving,'beauty-li');
+assert.ok(readDer,'a derived form is not a word this language can read');
+assert.equal(readDer.lemma,'beauty');
+assert.equal(readDer.word.partOfSpeech,'ADJECTIVE');
+assert.equal(readDer.derivations.length,1);
+/* Read from the outside in. An inflection sitting on a derived form belongs to
+   what the form BECAME, so it comes off before the mark that made it -- and
+   which part of speech to read it as comes from the derivation rule, not from
+   the source word. Stripped the other way round, `beauty-li-sa` is an
+   ADJECTIVE inflection asked of a NOUN, matches nothing, and the form is not
+   any word at all. */
+const both=e.morphology.parseToken(deriving,'beauty-li-sa');
+assert.ok(both,'a derived form carrying an inflection is not readable');
+assert.equal(both.lemma,'beauty');
+assert.equal(both.derivations.length,1);
+assert.equal(both.inflections.length,1);
+assert.equal(both.inflections[0].feature,'NUMBER');
+/* a form built out of a rule this language does not have is still not a word */
+assert.equal(e.morphology.parseToken(deriving,'beauty-zz'),null);
+/* ---- case: a role from a MARK, not only from a place -----------------------
+   translate.js says it outright -- "Roles come out of the word order the
+   language chose" -- and until now that was the whole story, so a subject was
+   whatever stood in the subject's place. A language that marks the role on the
+   word could not be built: no case system, and no case particles. The owner
+   asked for exactly that -- SVO が基本でも助詞があるかもしれない.
+
+   Word order is NOT replaced. It still decides every word carrying no mark,
+   which is what a positional language is. Both, in one sentence, is the point. */
+const cased=e.languageModel({languageId:'case',wordOrder:'SOV',
+  words:[e.word({id:'neko',lemma:'neko',partOfSpeech:'NOUN'}),
+         e.word({id:'poko',lemma:'poko',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'nom',target:'NOUN',feature:'CASE',value:'NOMINATIVE',operation:'suffix',form:'ga',separator:' '}),
+               e.inflection({id:'acc',target:'NOUN',feature:'CASE',value:'ACCUSATIVE',operation:'suffix',form:'wo',separator:' '}),
+               e.inflection({id:'past',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'})]});
+/* the particle stands after the word it marks, as its own word */
+const marked=e.morphology.parseSentence(cased,'neko ga poko wo luma-ka');
+assert.equal(marked.ok,true);
+assert.equal(marked.roles.SUBJECT,'neko');
+assert.equal(marked.roles.OBJECT,'poko');
+assert.equal(marked.roles.PREDICATE,'luma');
+assert.equal(marked.features.TENSE,'PAST');
+/* THE POINT. The same sentence with the two nouns swapped is the same
+   sentence: the mark travels with the word, so the role does too. Read by
+   position this would say the fish did the eating. */
+const scrambled=e.morphology.parseSentence(cased,'poko wo neko ga luma-ka');
+assert.equal(scrambled.ok,true);
+assert.equal(scrambled.roles.SUBJECT,'neko');
+assert.equal(scrambled.roles.OBJECT,'poko');
+/* and the word order is still there, holding every word that carries no mark */
+const positional=e.morphology.parseSentence(cased,'neko poko luma-ka');
+assert.equal(positional.ok,true);
+assert.equal(positional.roles.SUBJECT,'neko');
+assert.equal(positional.roles.OBJECT,'poko');
+/* both at once, which is the shape the owner actually described. `poko` is
+   marked OBJECT wherever it stands; `neko` carries nothing and takes the first
+   place the language's order still has free. If the marked word's place were
+   left in the queue, `neko` would take OBJECT and overwrite it. */
+const mixed=e.morphology.parseSentence(cased,'poko wo neko luma-ka');
+assert.equal(mixed.ok,true);
+assert.equal(mixed.roles.OBJECT,'poko');
+assert.equal(mixed.roles.SUBJECT,'neko');
+/* The same sentence the other way round, and this is the one that holds the
+   queue rather than merely agreeing with it. `neko` is marked SUBJECT, which
+   is the FIRST place SOV has to give -- so the unmarked `poko` must be handed
+   the second. Leave the marked word's place in the queue and `poko` is handed
+   SUBJECT on top of `neko`, the sentence loses its object entirely, and it
+   still comes back ok:true. Written as `poko wo neko luma-ka` above, the free
+   slot happens to be first either way and the bug does not show. */
+const mixed2=e.morphology.parseSentence(cased,'neko ga poko luma-ka');
+assert.equal(mixed2.ok,true);
+assert.equal(mixed2.roles.SUBJECT,'neko');
+assert.equal(mixed2.roles.OBJECT,'poko');
+/* CASE is what one word is doing and is already said in roles; two marked
+   words would overwrite each other in a sentence-wide feature table */
+assert.equal(marked.features.CASE,undefined);
+/* every token says the role it ended up with, marked or placed */
+assert.equal(marked.tokens[0].role,'SUBJECT');
+assert.equal(marked.tokens[2].role,'VERB');
+assert.equal(positional.tokens[1].role,'OBJECT');
+/* the other spelling of the same thing: a case written ONTO the word. The
+   ordinary suffix already read this; what is new is that it decides a role. */
+const attached=e.languageModel({languageId:'att',wordOrder:'SVO',
+  words:[e.word({id:'neko',lemma:'neko',partOfSpeech:'NOUN'}),
+         e.word({id:'poko',lemma:'poko',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'acc',target:'NOUN',feature:'CASE',value:'ACCUSATIVE',operation:'suffix',form:'wo'})]});
+const att=e.morphology.parseSentence(attached,'poko-wo luma neko');
+assert.equal(att.ok,true);
+assert.equal(att.roles.OBJECT,'poko');
+assert.equal(att.roles.SUBJECT,'neko');
+/* a value no table knows is the role it names, so a language with no case
+   tradition behind it can just write what it means */
+const plainRole=e.languageModel({languageId:'pr',wordOrder:'SOV',
+  words:[e.word({id:'neko',lemma:'neko',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'r',target:'NOUN',feature:'CASE',value:'RECIPIENT',operation:'suffix',form:'ni'})]});
+assert.equal(e.morphology.parseSentence(plainRole,'neko-ni luma').roles.RECIPIENT,'neko');
+/* ---- Semantic IR: the middle of the whole design ---------------------------
+   model.js has carried semanticIR() since Phase 1 and nothing referred to it
+   anywhere but its own definition -- `grep -rni semanticir www/` returned
+   model.js twice and nothing else. 「翻訳の中心には言語非依存の中間表現を置く」.
+
+   What makes it language-INDEPENDENT is that a role holds a MEANING, never a
+   lemma. Put the lemma in and the IR is the first language again in a new
+   shape, and no second language can be written out of it -- which is the one
+   way this can look like it works while being useless. */
+function lang(id,order,words,infl){
+  return e.languageModel({languageId:id,wordOrder:order,
+    words:words.map((w)=>e.word({id:id+':'+w[0],lemma:w[0],meaning:w[1],partOfSpeech:w[2]})),
+    inflections:(infl||[]).map((r)=>e.inflection(r))});
+}
+const PAST_A={id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ta'};
+const A=lang('A','SOV',[['neko','cat','NOUN'],['sakana','fish','NOUN'],['taberu','eat','VERB']],[PAST_A]);
+const readA=e.morphology.parseSentence(A,'neko sakana taberu-ta');
+assert.equal(readA.ok,true);
+const ir=e.translate.toSemantic(A,readA);
+/* meanings, not lemmas -- the whole claim in two lines */
+assert.equal(ir.roles.SUBJECT,'cat');
+assert.equal(ir.roles.OBJECT,'fish');
+assert.equal(ir.roles.PREDICATE,'eat');
+assert.equal(ir.features.TENSE,'PAST');
+assert.equal(ir.languageIndependent,true);
+/* the verb is PREDICATE and not VERB: VERB is a part of speech, which is a
+   fact about a language, and no fact about a language belongs in here */
+assert.equal(ir.roles.VERB,undefined);
+
+/* and out again, into a language that shares not one word or one rule with A.
+   Different order, different lemmas, a different mark for the past. */
+const B=lang('B','SVO',[['ka','cat','NOUN'],['fi','fish','NOUN'],['ea','eat','VERB']],
+  [{id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ed'}]);
+const wroteB=e.translate.fromSemantic(B,ir);
+assert.equal(wroteB.ok,true);
+assert.equal(wroteB.complete,true);
+assert.equal(wroteB.text,'ka ea-ed fi');
+/* THE ROUND TRIP. B read back is the same meaning A started with, or the IR
+   is not carrying the sentence and one of the two directions is lying. */
+const backB=e.translate.toSemantic(B,e.morphology.parseSentence(B,wroteB.text));
+assert.deepEqual(backB.roles,ir.roles);
+assert.deepEqual(backB.features,ir.features);
+
+/* into a language that marks its roles instead of placing them -- the two
+   halves of this session's work meeting. C writes case particles, so the IR
+   comes out wearing them, and reads back the same. */
+const C=lang('C','SOV',[['nya','cat','NOUN'],['uo','fish','NOUN'],['lum','eat','VERB']],
+  [{id:'nom',target:'NOUN',feature:'CASE',value:'NOMINATIVE',operation:'suffix',form:'ga',separator:' '},
+   {id:'acc',target:'NOUN',feature:'CASE',value:'ACCUSATIVE',operation:'suffix',form:'wo',separator:' '},
+   {id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'}]);
+const wroteC=e.translate.fromSemantic(C,ir);
+assert.equal(wroteC.text,'nya ga uo wo lum-ka');
+const backC=e.translate.toSemantic(C,e.morphology.parseSentence(C,wroteC.text));
+assert.deepEqual(backC.roles,ir.roles);
+assert.deepEqual(backC.features,ir.features);
+/* and because C marks rather than places, the words may be written in any
+   order and still mean the same thing -- one IR, two sentences */
+const backCswap=e.translate.toSemantic(C,e.morphology.parseSentence(C,'uo wo nya ga lum-ka'));
+assert.deepEqual(backCswap.roles,ir.roles);
+
+/* negation travels too, and it is a prefix standing apart in A */
+const negA=lang('A2','SOV',[['neko','cat','NOUN'],['sakana','fish','NOUN'],['taberu','eat','VERB']],
+  [PAST_A,{id:'n',target:'VERB',feature:'NEGATION',value:true,operation:'prefix',form:'nai',separator:' '}]);
+const negIR=e.translate.toSemantic(negA,e.morphology.parseSentence(negA,'neko sakana nai taberu-ta'));
+assert.equal(negIR.features.NEGATION,true);
+assert.equal(negIR.features.TENSE,'PAST');
+assert.equal(negIR.roles.SUBJECT,'cat');
+
+/* A meaning this language has no word for is a GAP and stays as the meaning.
+   docs/FEATURES.md already decided what a gap is: it stays in the natural
+   language and is the door to making that word. Inventing one would be worse
+   than showing it is missing, and dropping it would lose what somebody said. */
+const noFish=lang('D','SVO',[['ka','cat','NOUN'],['ea','eat','VERB']],
+  [{id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ed'}]);
+const wroteD=e.translate.fromSemantic(noFish,ir);
+assert.equal(wroteD.complete,false);
+assert.equal(wroteD.gaps.length,1);
+assert.equal(wroteD.gaps[0],'fish');
+assert.equal(wroteD.text,'ka ea-ed fish');
 /* What a word IS, asked of the dictionary rather than restated here.
    www/shell.js holds the thirteen keys a part of speech is stored as, and the
    adapter's map named three that this app has never stored (`pron`, `prep`,
