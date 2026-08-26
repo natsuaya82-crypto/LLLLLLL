@@ -237,7 +237,7 @@ function openPost(from){
      than trusting that nobody arrived here another way. The feed is where
      the door is. */
   if(!netSignedIn()){ go('feed'); return; }
-  openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
+  openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), pwKeepKb,
     '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
@@ -864,6 +864,43 @@ function pwHTML(){
    render() -- come back from the card and the line you were typing is gone.
    So the string is kept in step too, without redrawing anything. */
 function pwFresh(){ if(FORM && FORM.key==='post:') FORM.html=pwHTML(); }
+/* ---- the keyboard is up the whole time this screen is ------------------
+   OWNER 2026-08-25「投稿開いたらキーボードが自動で出て下ろせないが正解」.
+
+   Two things came out of one cause. The row of pictures floated in the middle
+   of the screen when the composer opened, because it is laid out to `--vvmin`
+   -- the smallest the visible part has been -- and until a keyboard has
+   actually been up that is a GUESS (55%). Nothing focused the field, so on a
+   phone the guess was what you saw until you tapped.
+
+   With the field focused from the moment the screen exists there is no moment
+   the guess is used, and the answer to "where does the row go when the
+   keyboard is down" is that it never is.
+
+   `preventScroll` because iOS otherwise scrolls the layout viewport to lift
+   the field, and this screen is pinned to the visual viewport instead -- the
+   two together took the bar off the top of the phone. */
+function pwKeepKb(){
+  if(!FORM || FORM.key!=='post:') return;
+  if(here().r!=='form' || here().a!=='post:') return;
+  var e=document.getElementById('pw-ln');
+  if(!e || document.activeElement===e) return;
+  /* Something else on this screen has it -- the meaning, or a letter being
+     placed on a photograph. That is not the keyboard going down. */
+  var a=document.activeElement;
+  if(a && a!==document.body && a.tagName &&
+     (a.tagName==='INPUT' || a.tagName==='TEXTAREA')) return;
+  try{ e.focus({preventScroll:true}); }catch(err){ e.focus(); }
+}
+/* It goes down by the field losing focus, and there is no key on an iPhone
+   that does anything else -- so putting it back is the whole of "it cannot be
+   lowered". The delay is a frame: the browser has not said who has focus NEXT
+   at the moment it says who lost it, and without waiting this refuses every
+   press on the screen, including Post. */
+function pwKbGuard(){
+  if(!FORM || FORM.key!=='post:') return;
+  setTimeout(pwKeepKb, 0);
+}
 function pwSetLn(v){
   PW.ln=String(v||'');
   var g=document.getElementById('pw-gl');
@@ -2190,7 +2227,15 @@ function postRow(p){
          this app does with a line of small facts. */
       '<div class="phead">'+
         '<div class="pheadn">'+
-          '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
+          '<span class="pname">'+esc(postWho(p))+'</span>'+
+          /* WHEN, on the first line beside the name. OWNER 2026-08-25:
+             「名前　まるまる分前　バッチ / @ 編集済み　🔑」 -- and the reason is
+             that the second line stopped fitting. With a long name, a language
+             name, a long handle, the lock and "edited" all on it, the head came
+             out THREE lines, and a reply put a fourth under them; "edited" fell
+             onto a line by itself. The fixture's `Aya` / `Shango @aya · 15分` is
+             short enough that nobody had seen it. */
+          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+postBadge(p)+
           /* The ... and, when it is the one that is open, the menu hanging off
              it. It is IN the post rather than a screen you go to, so what you
              are choosing about stays in front of you. 「画面遷移じゃなくて投稿の
@@ -2210,14 +2255,26 @@ function postRow(p){
             '</span>'+
         '</div>'+
         '<div class="pheadm">'+
-          (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '')+
+          /* WHAT IT IS, and no longer what it is written IN. The language name
+             came off this line -- OWNER 2026-08-25 「多すぎるから言語名表示
+             なくそう。プロフいけば見れる」 -- and that last clause was checked
+             before it was believed: `whoCard()` in me.js draws `p.lname` as a
+             row you press, which goes to "about". It is one tap away, not gone.
+             `plangtag` itself stays: post.js:795 (who you are replying to) and
+             sns.js:510 (a person in a list) both still wear it.
+
+             The `·` went with it. It was there to part `@aya` from `15分`, the
+             time is on the line above now, and it was worn in this one place --
+             so its rule came out of index.html in the same commit, or `press`
+             would report a class nothing wears. */
           '<span class="phandle">@'+esc(p.hd||'')+'</span>'+
-          '<span class="pdot">·</span>'+
-          '<span class="pwhen">'+esc(postWhen(p.at))+'</span>'+
-          /* A post that was put right says so, beside the time. It carries the
-             moment it was edited, not a flag: what a person wants to know is
-             when, and a flag cannot be asked that later. */
+          /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
+             逆にしたら終わりかな」-- asked for the other way round first and
+             swapped after looking at it. The two are not the same kind of
+             fact: the lock is WHO CAN SEE IT and the word is WHAT WAS DONE
+             TO IT, and the one that decides who is reading it comes first. */
           (p.pv? '<span class="ppv" aria-label="'+esc(t('post.pv'))+'">'+ICON_LOCK+'</span>' : '')+
+          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
           /* Yours, public, and not on the server yet. It was nothing at all:
              netPush() was handed an empty failure function in both places that
              call it, so a post the server refused looked exactly like one it
@@ -2230,7 +2287,6 @@ function postRow(p){
           ((p.mine && !p.pv && !p.sid)
             ? '<span class="ppv" aria-label="'+esc(t('post.unsent'))+'">'+ICON_UNSENT+'</span>'
             : '')+
-          (p.ed? '<span class="ped">'+esc(t('post.edited'))+'</span>' : '')+
           /* Taken down. Only its author is ever handed one of these -- post_read
              in schema.sql -- so it is for them, and it belongs up here beside
              the lock and "edited": a word for what state the post is in.

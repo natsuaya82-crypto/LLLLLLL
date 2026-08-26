@@ -29,13 +29,31 @@ var LS_ME='lingua.me';
    server every launch. It is written by netAvSync() and read by nothing else.
    It is here rather than in SET because it belongs to the account, and SET is
    the person's settings and travels between them. */
-var ME={name:'', handle:'', bio:'', pic:'', avSent:''};
+/* 何文字まで入るか。一箇所 ── OWNER DECISION, 2026-08-25。
+
+   `handle` の 24 はこちらが選んだ数ではなく、サーバが持っている天井を
+   写したもの: `supabase/schema.sql` の
+     check (handle ~ '^[a-z0-9_]{2,24}$')
+   これより長い ID はアプリを通ってもサーバに弾かれる。**下限の 2 は
+   まだ効いていない** ── 一文字の ID はここを素通りして、サーバで黙って
+   失敗する。断るには断る言葉が要り、www/i18n/*.js はこの枝の持ち物では
+   ないので、そこは残してある。
+
+   残りの四つはこちら側だけの数で、測った上で選んである（390pt の画面で
+   タイムラインの名前は かな19文字ぶん、@ の行は かな10文字ぶん）。
+
+   maxlength は「これから打つもの」にしか効かない。既に長いものが入って
+   いる欄は縮まない ── ブラウザは value を切らない。リリース前で誰も
+   持っていないので今は関係ないが、性質として書いておく。 */
+var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
+var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
 function meRead(){
-  ME={name:'', handle:'', bio:'', pic:'', avSent:''};
+  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
   try{
     var m=JSON.parse(localStorage.getItem(LS_ME)||'null');
     if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||'');
            ME.bio=String(m.bio||''); ME.pic=String(m.pic||'');
+           ME.link=String(m.link||''); ME.loc=String(m.loc||'');
            ME.avSent=String(m.avSent||''); }
   }catch(e){}
 }
@@ -68,6 +86,20 @@ function meSetName(v){ ME.name=String(v||''); saveMe(); }
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
 function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
+/* リンクと、居るところ。どちらも bio と同じただの文字列で、同じ形で書いて
+   ある ── 検証も、書式も、候補も無い。
+
+   位置情報が自由入力なのは OWNER DECISION, 2026-08-25:
+     「自由入力です。」
+     「だって自分の国入れたい人だっているやん」
+   国名を入れる人が居る、というのが理由。だから国コードにしない、候補リスト
+   にしない、検証しない、地図にしない。端末の位置は使わない ── CoreLocation
+   も権限も Info.plist も要らないし、開けてもいけない。
+
+   リンクについてはオーナーは何も言っていない。位置情報の答えを当てはめない
+   ため、こちらも同じ「ただの文字列」以上のことはしていない。 */
+function meSetLink(v){ ME.link=String(v||''); saveMe(); }
+function meSetLoc(v){ ME.loc=String(v||''); saveMe(); }
 /* ---- a face of your own ------------------------------------------------
    A file input, because that is the one way a WKWebView opens the camera
    roll without a plugin, and the plugin would have to be installed on a
@@ -109,11 +141,54 @@ function mePicKeep(url){
   im.src=url;
 }
 function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
+/* ---- ID を断る ----------------------------------------------------------
+   「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
+     みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
+
+   断る言葉は二つとも既にあり、十言語ぶん揃っている ── `net.badhandle` と
+   `net.handle.taken`。オンボーディング (`obWhoGo`) が同じ二つで同じことを
+   していて、そこだけが持っていた。新しい鍵は足していない。
+
+   ここに提出ボタンは無く、打つそばから保存される画面なので、断つ場所は
+   「打ち終わったとき」にする ── 打っている最中の一文字目は必ず短いので、
+   そこで断ったら誰も二文字目に辿り着けない。欄から手が離れるまで待って、
+   離れたところで見て、駄目なら言って、開いたときの ID に戻す。
+
+   サーバに訊くのは長さと文字種が通った後だけ、しかも変えたときだけ。
+   自分の今の ID をもう一度打っただけで「使われています」と言うのは、
+   自分に使われているという意味では正しく、断る理由としては間違っている。
+   繋がっていないときは訊かない ── 訊けなかったことは、空いている証拠でも
+   埋まっている証拠でもない。 */
+var ME_HD0='';       /* 画面を開いたときの ID。断ったらここへ戻す */
+var ME_HD_T=null;    /* 打ち終わりを待つ間 */
+
 function meSetHandle(v){
   /* A handle is what somebody types after an @, so it is the characters that
      survive being typed after one. */
   ME.handle=String(v||'').toLowerCase().replace(/[^a-z0-9_]+/g, '');
   saveMe();
+  if(ME_HD_T) clearTimeout(ME_HD_T);
+  ME_HD_T=setTimeout(meHandleSee, 700);
+}
+/* まだ欄の中に居るなら、まだ打っている。見るのは手が離れてから。 */
+function meHandleSee(){
+  ME_HD_T=null;
+  var el=document.getElementById('me-hd');
+  if(!el) return;                                  /* 画面が閉じた */
+  if(document.activeElement===el){ ME_HD_T=setTimeout(meHandleSee, 700); return; }
+  var h=ME.handle;
+  if(h===ME_HD0) return;                           /* 変えていない */
+  if(h.length<2 || h.length>24){ meHandleNo(t('net.badhandle')); return; }
+  if(typeof netMember!=='function' || !netMember()) return;   /* 訊く先が無い */
+  netHandleFree(h, function(free){
+    if(!free) meHandleNo(t('net.handle.taken'));
+  }, function(){});                                /* 訊けなかった: 断らない */
+}
+function meHandleNo(msg){
+  toast(msg);
+  ME.handle=ME_HD0;
+  saveMe();
+  openMe();
 }
 
 /* ---- the block at the top of the profile ------------------------------- */
@@ -336,27 +411,77 @@ function whoCard(h){
    throwing away something a person made to prove a point about sessions. */
 function openMe(){
   if(!obNeed()) return;
+  /* 断ったときに戻す先。開き直すたびに取り直すので、断って開き直した後は
+     戻した ID がそのまま基準になる。 */
+  ME_HD0=ME.handle;
   /* Named after the page it is the settings for, through the one function
      that names a page. */
+  /* The picture first, then the name, the handle and the bio -- OWNER
+     DECISION, 2026-08-25. It is the order somebody fills a profile in: the
+     face is the thing they came to change, and it used to be at the bottom
+     under three text fields.
+
+     The drop-the-picture row keeps `border-bottom:none` now that it is no
+     longer the last row. The line it would otherwise draw is a border, and
+     borders are not added here. */
   openForm('me:', pageName('profile'),
-    '<div class="sec">'+esc(t('me.name'))+'</div>'+
-    '<div class="field"><input id="me-nm" value="'+esc(ME.name)+'" '+
-      'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
-    '<div class="sec">'+esc(t('me.handle'))+'</div>'+
-    '<div class="field"><input id="me-hd" value="'+esc(ME.handle)+'" '+
-      'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
-    '<div class="sec">'+esc(t('me.bio'))+'</div>'+
-    '<div class="field"><textarea id="me-bio" placeholder="'+esc(t('me.bio.ph'))+'"' +
-      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
-    '<div class="sec">'+esc(t('me.pic'))+'</div>'+
-    '<div class="picrow"><span class="pav">'+
-      postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
-      '<label class="btn ghost picpick">'+esc(t('me.pic.pick'))+
-        '<input type="file" id="me-pic" accept="image/*"' + CH('meSetPic') + '></label>'+
+    /* The face is the label, and the input lives inside it -- so the thing
+       somebody reaches for is the thing that opens the camera roll, in one
+       tap. The trick came from `.picpick`, which was the separate "choose a
+       picture" button: an invisible input stretched across the label, so the
+       tap lands on the input. That button is gone -- it was the thing that
+       made this screen look untouched -- and `.picpick`'s rule went with it
+       in the same commit that took its last wearer away, along with its two
+       lines in tools/box-baseline.txt. Two corners fewer.
+       The style is written here rather than in a class because `.pav` is worn
+       by eight other screens. */
+    /* 見出しは無し ── 「アイコンって文字いらない」(OWNER, 2026-08-25)。
+       名前・ID・リンク・位置情報は、名札と欄が一行に並ぶ `.field.at` で。
+       これは @ の欄が既に使っている形（`display:flex;align-items:center`）で、
+       新しい CSS は足していない。 */
+    '<div class="picrow" style="align-items:center">'+
+      '<label class="pav" style="position:relative;width:96px;height:96px">'+
+        postFace({who:meName(), lname:langName, av:postAvatar()})+
+        '<input type="file" id="me-pic" accept="image/*" '+
+          'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
+          CH('meSetPic') + '></label>'+
+      '<div style="flex:1 1 auto;min-width:0">'+
+        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
+          '<input id="me-nm" maxlength="'+ME_MAX.name+'" value="'+esc(ME.name)+'" '+
+          'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
+        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
+          '<input id="me-hd" maxlength="'+ME_MAX.handle+'" value="'+esc(ME.handle)+'" '+
+          'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
+          'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
+      '</div>'+
     '</div>'+
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
-       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : ''));
+       '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
+    '<div class="sec">'+esc(t('me.bio'))+'</div>'+
+    '<div class="field"><textarea id="me-bio" maxlength="'+ME_MAX.bio+'" '+
+      'placeholder="'+esc(t('me.bio.ph'))+'"' +
+      IN('meSetBio') + '>'+esc(ME.bio)+'</textarea></div>'+
+    /* リンクと場所。**両方とも自由入力**で、書式を決めない ──
+       「自由入力です。」「だって自分の国入れたい人だっているやん」
+       OWNER DECISION 2026-08-25。端末の位置ではなく、国コードでもなく、
+       候補の一覧も出さない。人が打った文字がそのまま入る。
+
+       この枝が書けたのは欄と関数までで、`meSetLink`/`meSetLoc` の登録
+       （www/act-map.js）と `me.link` `me.loc` の鍵（www/i18n）は他の
+       セッションの持ち物だった。取り込みと同じコミットで揃えた ──
+       act-map は名前ではなく関数そのものを登録するので、関数より先に行を
+       書くとアプリが読み込みで止まる。**分けられない。** */
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
+      '<input id="me-lk" maxlength="'+ME_MAX.link+'" value="'+esc(ME.link||'')+'" '+
+      'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
+      'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
+      '<input id="me-lc" maxlength="'+ME_MAX.loc+'" value="'+esc(ME.loc||'')+'" '+
+      'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the

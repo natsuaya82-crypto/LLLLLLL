@@ -117,6 +117,13 @@ function actWire(root){
     var el=actOf(e.target, 'data-ch');
     if(el) actRun(ACT_IN, el, 'data-ch', e.target.value);
   }, false);
+  /* The composer keeps the keyboard. It is asked of post.js rather than
+     decided here -- this listener knows about presses and typing, and whether
+     a screen may put its own keyboard back is that screen's question.
+     「投稿開いたらキーボードが自動で出て下ろせないが正解」 OWNER 2026-08-25 */
+  root.addEventListener('focusout', function(){
+    if(typeof pwKbGuard==='function') pwKbGuard();
+  }, false);
   root.addEventListener('keydown', function(e){
     if(e.key!=='Enter' && e.keyCode!==13) return;
     var el=actOf(e.target, 'data-kd');

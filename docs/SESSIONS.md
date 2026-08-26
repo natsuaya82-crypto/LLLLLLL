@@ -454,19 +454,84 @@ push 忘れで、もう片方は指示が指していた検査に**穴があっ�
 
 ---
 
-## 死んでいるブランチ ── 消してよいと確認済み、まだ消えていない
+## 死んでいるブランチ ── 二本、そして「5万行消える」の正体
 
-中身が `master` に入りきったもの。**消す権限がこのセッションには無い**
-（`git push --delete` が 403。push は通るので、拒否されているのは ref の
-削除だけ）。オーナーの承認は取ってあるので、権限のある人が消してよい。
-戻すなら SHA から。
+**2026-08-25 に測り直した。** 表は 2026-08-22 のもので、腐ってはいなかったが
+**足りなかった** ── 二本は同じ理由で死んでいるのではないのに、一つの列に
+並んでいた。並べ方のほうが危なかったので、節ごと書き直す。
 
-| ブランチ | tip | 確認日 | なぜ消してよいか |
+`master` は `66634f6`。数字はここから。
+
+| ブランチ | tip | 未収録 | merge したらどうなるか |
 |---|---|---|---|
-| `claude/cowork-migration-review-wfx1ra` | `e3ffe8f` | 2026-08-22 | 先行0。全部入っている |
-| `claude/detailed-tasks-execution-ak61z2` | `95e73aa` | 2026-08-22 | 先行4だが、その4つの中身(`KB_MAX=3`、タイムラインのサインインの扉、無料QWERTYから始まる有料盤)は別のコミットで master にある。リモートから grep して確認済み |
+| `claude/cowork-migration-review-wfx1ra` | `e3ffe8f` | **0** | **何も起きない。** 結果の tree が `master` の tree と一バイト違わない |
+| `claude/detailed-tasks-execution-ak61z2` | `95e73aa` | **4** | **衝突する。** そして四つの中身は既に master にある |
+
+測ったもの、そのまま:
+
+```
+  W=origin/claude/cowork-migration-review-wfx1ra
+  git rev-list --count origin/master..$W        → 0
+  git merge-base --is-ancestor $W origin/master → YES（枝の tip が master の祖先）
+  git merge-base origin/master $W               → e3ffe8f（枝の tip そのもの）
+  git cherry origin/master $W                   → 一行も出ない
+  git merge-tree --write-tree origin/master $W  → cf54ee5e…
+  git rev-parse origin/master^{tree}            → cf54ee5e…  ← 同じ
+
+  A=origin/claude/detailed-tasks-execution-ak61z2
+  git rev-list --count origin/master..$A        → 4
+  git cherry origin/master $A                   → + が四本（未収録）
+  git merge-tree --write-tree origin/master $A  → 衝突
+```
+
+### 「当てると約5万行消える」は、別の問いの答え
+
+引き継ぎでも伝令でも、この二本には同じ警告が付いてきた ──「当てると
+約 46,000 行が消える」。数字の出どころはこれで、実在する:
+
+```
+  git diff --shortstat origin/master $W   → 164 files, 5828 挿入, 50376 削除
+  git diff --shortstat origin/master $A   → 164 files, 5886 挿入, 51205 削除
+```
+
+**だがこれは「merge したらどうなるか」ではない。** `git diff A B` は
+「A の tree を B の tree にしたら何行動くか」で、向きがある。ここでの B は
+五百コミット以上前の祖先なので、**master がその後に足した五万行が「削除」
+として出る。** 枝が何かを消しているのではなく、枝がまだ知らないだけ。
+
+merge は tree の置き換えではない。**祖先を merge した結果は master 自身**で、
+それは上の `merge-tree` が一バイト単位で示している。
+
+この取り違えは 2026-08-25 に二回起きた ── 引き継ぎ書と、リーダーの伝令。
+**どちらも数字は本物で、答えている問いだけが違った。** そういう間違いは
+「腐った数字」より見つけにくい。数字が合っているので、検算しても合う。
+
+  **merge が何をするかを知りたいなら `git diff` ではなく `git merge-tree`。**
+  **枝が master に入りきったかを知りたいなら `git rev-list --count A..B` か
+  `git merge-base --is-ancestor`。** `git diff` はどちらの問いにも答えない。
+
+### で、二本はどうするのか
+
+**どちらも merge しない。** 理由は別々:
+
+- `wfx1ra` は**入りきっている**。merge しても何も起きないので、危なくはない
+  ── ただ意味が無い。ref を消してよい。消しても一行も失われない
+  （tip の SHA `e3ffe8f` から戻せる）。2026-08-22 の「先行0。全部入っている」は
+  正しく、今日も正しい。
+- `ak61z2` は**入りきっていない**。固有の四つがあり、merge すると衝突する。
+  だが四つの中身は master に別の道で在り、さらに先へ行っている ──
+  `KB_MAX` は `kbCap()` になり（`core.js:443` のコメントが「it was KB_MAX」と
+  言っている）、無料 QWERTY から始まる有料盤は `kbQwertyLay()` になり、
+  タイムラインのサインインの扉は `sns.js` にある。
+  **入れると、決着した決定が開き直る。** 消してよいが、消す前に四つを
+  もう一度 grep すること ── 「別の道で在る」は日付の付く主張。
+
+消す権限はこのセッションには無い（`git push --delete` が 403。push は通るので
+拒まれているのは ref の削除だけ）。オーナーの承認は取ってある。
 
 消したら、この節ごと消す。表が残っていて実物も残っているのが一番紛らわしい。
+**ただし「5万行消える」の段落は、別の場所に残すこと。** あれは枝の話ではなく
+道具の話で、枝が消えても効き続ける。
 
 ## リーダーがコードを読まずに指示を書くと、こうなる ── 2026-08-25 に十一回
 

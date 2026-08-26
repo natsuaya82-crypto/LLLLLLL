@@ -20,6 +20,11 @@ html[data-theme="dark"]{
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
   --gold:#c9a86a; --goldsf:rgba(201,168,106,.10); --goldln:rgba(201,168,106,.34);
+  /* The mark beside a name. Blue and FILLED is the person who pays; gold and
+     filled is an official account, and that one has nowhere to come from yet.
+     OWNER 2026-08-25「金の塗りを公式に青の塗りをユーザーにしよう」
+     Not --sat, which is Saturday on the calendar: one colour, one meaning. */
+  --verif:#5aa9f0;
   --bad:#d9705c;
   /* A calendar is not just numbers: the week has a red end and a blue one.
      Not --bad, which means an error and would say the wrong thing about a
@@ -44,6 +49,7 @@ html[data-theme="light"]{
   --line:rgba(26,23,18,.12); --line2:rgba(26,23,18,.06);
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
   --gold:#8a6a22; --goldsf:rgba(138,106,34,.07); --goldln:rgba(138,106,34,.30);
+  --verif:#1d6fd0;
   --bad:#c9553f;
   --sun:#c9553f; --sat:#3b6ea5;
   --fill:#2f8f4e;
@@ -489,8 +495,10 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    The type is set HERE, on both row classes, and not left to the tag: two
    posts differing in height AND in computed type is the fault press measures
-   («one list, one height»), and content differing -- a language name that is
-   there or is not -- must not be able to drag the type with it. */
+   («one list, one height»), and content differing -- a state a post is in that
+   another is not -- must not be able to drag the type with it. (It said "a
+   language name that is there or is not"; the language name came off this head
+   on 2026-08-25 and the sentence is about any of them.) */
 .phead{line-height:1.3}
 .pheadn{display:flex;align-items:center;gap:5px;font-size:.95rem;line-height:1.3}
 /* Small, quiet, and allowed to wrap. It wraps rather than clipping because
@@ -499,7 +507,13 @@ canvas.pkc{width:34px;height:34px;display:block}
    content, not type, and is the case press deliberately leaves alone. */
 .pheadm{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:1px;
         font-size:.9rem;line-height:1.3}
-.pname{flex:1 1 auto;min-width:0;font-weight:700;font-size:.95rem;color:var(--tx);
+/* `0 1 auto` and not `1 1 auto`: the name takes the room it needs and no more,
+   so the time sits BESIDE it rather than being pushed to the far edge next to
+   the ... -- 「名前　まるまる分前　バッチ」 OWNER 2026-08-25. It still shrinks and
+   still ellipsises, which is the half that matters when a name is long; what it
+   no longer does is grow to fill the line. The ... stays right because `.pmw`
+   says `margin-left:auto`, which was already there and is what holds it. */
+.pname{flex:0 1 auto;min-width:0;font-weight:700;font-size:.95rem;color:var(--tx);
        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* What it is written in -- the place a timeline puts an affiliation, small and
    quiet, because it is not the name. It was a 5px-cornered gold outline, which
@@ -507,7 +521,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    in the head. The gold and the letter-spacing already say what it is. */
 .plangtag{flex:0 0 auto;font-size:.72rem;letter-spacing:.08em;color:var(--gold);
           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
-.phandle,.pdot,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
+.phandle,.pwhen{flex:0 0 auto;font-size:.9rem;color:var(--txm)}
 /* Who you are, at the top of your own page. The block itself is further down,
    under "the profile, above the three lists" -- it was written out twice here,
    and the second one set no `display`, so it inherited `flex` from this one
@@ -542,6 +556,49 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pmi svg{flex:0 0 auto;color:var(--txm)}
 .pmi:active{background:var(--sf)}
 .pmi.bad,.pmi.bad svg{color:var(--bad)}
+/* The question the back arrow asks, at the head of the same menu the ... on a
+   post opens. A line of text: no corner, no border and no panel of its own --
+   the box around it is `.pmenu`, which was already there and is on the
+   baseline. Rule 18 is about what is ADDED, and this adds neither.
+   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
+/* Asking whether a half-written post is kept. It is NOT the ... menu's box --
+   that was tried and 「何そのゴミ見みたいなボタン」. What is left is the shape
+   the rest of this app is: a line of text, a line under it, and the words in
+   the colours they mean. OWNER 2026-08-25:
+     「縦にはいいいえが並ぶボタンないだろ　横だろ」
+     「同じ色じゃわからない」
+     「ばつはせんとかぶるくらいの外側やろ」 */
+.bkq{position:relative;display:block;padding:10px 24px 12px;
+     border-bottom:1px solid var(--line);text-align:center}
+.bkqq{display:block;font-size:.9rem;color:var(--txs);margin-bottom:2px}
+/* SIDE BY SIDE. Two answers to one question are read across, not down -- down
+   is a list of things to do and this is one thing with two ends. */
+/* Centred. OWNER 2026-08-25「下書きを保存するは中央寄せして」 */
+.bkqr{display:flex;align-items:center;justify-content:center;gap:36px}
+/* 44 on BOTH sides. `press` measured 39x44 on the shorter of the two words --
+   a word is as wide as the word is, and a thumb is not. */
+.bkqb{flex:0 0 auto;min-width:44px;min-height:44px;padding:0;
+      background:none;border:0;font-family:inherit;font-size:1rem}
+/* And they are not the same colour, because they are not the same kind of
+   answer: one keeps what was written and one throws it away. Gold is what
+   everything pressable is; --bad is what this app already uses for the press
+   that destroys, on the bin in the ... menu. */
+.bkqb.keep{color:var(--gold)}
+.bkqb.drop{color:var(--bad)}
+.bkqb:active{opacity:.5}
+/* The ✕ sits OUTSIDE, over the line rather than inside the block -- it is not
+   a third answer, it is the way out, and it is not in the row with them. */
+/* 44 here too -- it was 32x32, which `press` caught. The ✕ inside it stays
+   the size it was; what grew is what a thumb lands on. `right` is pulled in
+   by the same amount so the mark itself has not moved. */
+.bkqx{position:absolute;right:8px;bottom:-22px;
+      min-width:44px;min-height:44px;border:0;border-radius:0;
+      background:var(--bg);color:var(--txm);
+      display:inline-flex;align-items:center;justify-content:center}
+.bkqx:active{color:var(--tx)}
+/* The arrow's own place in the bar. The question is no longer hung off it --
+   it is a band across the page under the bar -- so this is just the arrow. */
+.bkw{display:inline-flex;flex:0 0 auto}
 /* Who a reply answers. Grey, small, above the line -- it is a label on the
    post, not part of what was said. */
 .pto{font-size:.84rem;color:var(--txm);margin-top:1px;
@@ -917,8 +974,10 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    「投稿画面にはホーム画面とかの下タブは要らない」 */
 /* The body holds two children and gives all the slack to the first: what is
    being written scrolls, and the bar under it does not. */
+/* The row of pictures is pinned to the keyboard now and is out of the flow,
+   so what scrolls has to clear it: 52px is `.pwbar`'s own min-height. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);overflow:hidden}
+   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 62px);overflow:hidden}
 /* Everything you are writing, and it is the part that scrolls -- so the line
    can be as long as it likes and the photographs under it move down with it,
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
@@ -960,6 +1019,18 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」 */
 .pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
    padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
+/* ON THE KEYBOARD, not on the foot of the box. `--vvkb` is what is left over
+   below the visible part, which IS the keyboard, so a row pinned to it rides
+   up and down with it -- which is what Twitter's Aa row does and is what was
+   asked for. Being the last child of a `--vvmin`-tall box put it where the
+   keyboard WAS, and with no keyboard up yet that height is a guess (55%), so
+   the row floated in the middle of the screen.
+   The 24px each side is `.body`'s own padding, which this no longer sits
+   inside; the background is there because the line above it has to have
+   something to be a line ON while the page scrolls under it. */
+.view.fit .pwbar{position:fixed;left:0;right:0;bottom:var(--vvkb,0px);
+   z-index:20;padding:6px 24px calc(env(safe-area-inset-bottom,0px));
+   background:var(--bg)}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
 /* ---------- the letters ----------
    A letter is a cell, because there are as many letters as somebody decides
@@ -1500,7 +1571,14 @@ a.set{text-decoration:none}
    「plusとstudioでそれぞれTwitterの青バッチみたいなやつつけたい」 */
 .bdgw{flex:0 0 auto;display:inline-flex;align-items:center;margin-left:1px;
       vertical-align:-2px}
-.bdgw.plus{color:var(--gold)}
+/* The colour goes on the MARK, not on the wrapper, because the mark appears in
+   three places and they are all the same statement: beside a name on a post,
+   on the Pro row of the price list, and inside the button that offers it to
+   somebody who has not bought it. Written on the wrapper it would have been
+   three rules agreeing, and the third is the one that gets missed -- it is the
+   only one nobody sees until they are about to pay. `.bdg` is the svg's own
+   class and travels with it. */
+.bdg{color:var(--verif)}
 .bdgw.studio{color:var(--gold)}
 .bdgw svg{display:block}
 .pname .bdgw{margin-left:5px}
@@ -1574,12 +1652,71 @@ a.set{text-decoration:none}
    not as a box, and which tools/box-check.mjs does not count at all. */
 .abth{font-family:var(--face-caps);font-size:1.7rem;line-height:1.2;color:var(--tx);
       margin:2px 0 0;padding-bottom:8px;border-bottom:1px solid var(--line)}
-.abts{font-family:var(--face-caps);font-size:1.15rem;line-height:1.3;color:var(--tx);
-      margin:26px 0 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
-.abtuse{display:flex;flex-direction:column;gap:3px;padding:14px 0 4px}
-.abtun{font-size:1.15rem;color:var(--tx)}
-.abtud{font-size:.88rem;color:var(--txm);line-height:1.45}
+/* A section heading is the UI face and not the display one, and that is a
+   cross-script fix rather than a taste: `--face-caps` is a Latin display face,
+   so a Japanese heading fell through it to the system font and a Latin one did
+   not. The same class came out visibly LARGER and heavier in Japanese --
+   「セクション」 loud over 「The valley」 quiet -- which put a UI label above the
+   title somebody wrote, the wrong way round on an article whose sections are
+   theirs. One family both scripts have is one heading level in both.
+   The title above keeps the display face: it is one line, it is the subject of
+   the article, and it is the one place the book face belongs. */
 .abtl{line-height:1.55;color:var(--tx);word-break:break-word;margin-top:10px}
+/* ---- a section heading that folds ---------------------------------------
+   Every section of the article is one of these: a marker, the name, one rule
+   across, and -- where the section's content is a chapter elsewhere -- a way
+   through on the right. The name is NOT repeated in a row underneath; that
+   was two rows saying one thing. The shape is the one the owner drew
+   (「概要▼」) and the one a mobile encyclopedia article has.
+   Two buttons side by side rather than one inside another: a button cannot
+   contain a button, and the fold and the way through are two different acts.
+   Sides zeroed one at a time with the bottom left as a rule -- `border:0`
+   would be four sides, which is a box. */
+.abshd{display:flex;align-items:center;width:100%;margin:22px 0 0;
+       border-bottom:1px solid var(--line)}
+.abshf{display:flex;align-items:center;gap:10px;flex:1 1 auto;min-height:44px;
+       padding:8px 2px;background:none;border:0;text-align:left;
+       font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
+       color:var(--tx)}
+.abshl{flex:1 1 auto;font-size:1.22rem;line-height:1.35}
+.abmk{flex:0 0 auto;color:var(--txm)}
+/* The same heading with nothing to fold: one height with the button one,
+   which is what keeps two neighbouring headings the same row. */
+.abshp{font-family:var(--face-ui);font-size:1.22rem;font-weight:600;line-height:1.35;
+       color:var(--tx)}
+/* The second question is asked OF the row above it, so it is set in from the
+   left and quieter. Eight rows all reading 「DL可」 down a flat list said
+   nothing about which section each belonged to. */
+.abdl{padding-left:20px}
+.abdl .sl{color:var(--txm)}
+/* The letters, in an article rather than in the alphabet: smaller, denser,
+   and with neither the speaker nor the reading under them --
+   「文字は音なくていいからもっと小さく並べて」. The corner on the tile itself
+   stays; that one is the owner's and is the only rounding kept. */
+.abtlt{grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:8px;margin-top:12px}
+.abtlt .ltc{min-height:58px;padding:6px 2px 5px;gap:3px}
+.abtlt .ltcf{height:26px}
+.abtlt .ltc canvas.tc{width:26px;height:26px}
+.abtlt .ltcn{font-size:.72rem}
+.abtlt .ltcr{display:none}
+/* What this language is for: five rows, not five panels. One line for the
+   name and one under it for what it means -- the same stacking the article's
+   facts use, and no box around either. */
+.abshd.shut .abmk{transform:rotate(-90deg)}
+.abshg{flex:0 0 auto;min-width:44px;min-height:44px;display:flex;align-items:center;
+       justify-content:center;background:none;border:0;color:var(--txm)}
+/* ---- a fact of the overview --------------------------------------------
+   The name on one line and the answer on the next, never side by side:
+   「話してる場所　あああ みたいにやるのやめて」 OWNER 2026-08-25. Two columns
+   made a settings row of a fact and put a hard left edge down the page. */
+.abfx{padding:4px 0 2px}
+.abfd{padding:8px 0}
+.abfk{color:var(--txm);font-size:.85rem;line-height:1.4}
+.abfv{color:var(--tx);font-size:1rem;line-height:1.5;word-break:break-word;margin-top:2px}
+.abtlead{margin-top:12px}
+/* One answered stage per line, so a list of them is a list and not a
+   paragraph that happens to have gaps in it. */
+.abtline{margin-top:6px}
 .mecard .pbio{margin-top:4px;line-height:1.45;word-break:break-word;
               display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;
               overflow:hidden}
@@ -2183,15 +2320,6 @@ a.set{text-decoration:none}
 .bpic{width:100%;height:100%;border-radius:999px;object-fit:cover;display:block}
 .picrow{display:flex;align-items:center;gap:14px;margin-bottom:4px}
 .picrow .pav{width:64px;height:64px;flex:0 0 auto}
-/* A label, not a button, because the input has to be inside it for a tap
-   anywhere on it to open the camera roll -- so it carries its own border
-   rather than inheriting one from .btn.ghost, which a later rule paints in
-   white for the surfaces that are always dark. */
-.picpick{flex:1 1 auto;position:relative;overflow:hidden;text-align:center;
-         display:flex;align-items:center;justify-content:center;min-height:44px;
-         background:none;border:1px solid var(--line);border-radius:13px;
-         color:var(--txs);font-weight:500;padding:15px 12px}
-.picpick input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
 /* The big letter is a button now: it is how the letter gets drawn. */
 button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit}
 .pbio{margin-top:5px;font-size:.88rem;line-height:1.65;color:var(--txs);white-space:pre-wrap}
@@ -2437,7 +2565,6 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 .obnm{font-size:.86rem}
 /* The five kinds of writing are one column, not two: each carries a line of
    explanation, and a name like "Abugida" tells nobody anything without it. */
-.obws{font-size:.86rem;color:var(--txm);line-height:1.5}
 .ob .obscripts.one{grid-template-columns:1fr}
 /* A step is one screen and does not scroll; this is the one part of it that
    does. Whatever a step puts inside takes the height it needs, however many
