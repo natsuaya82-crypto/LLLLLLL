@@ -124,6 +124,29 @@ fewer buttons — no new download, and the door drawn anyway — and never fewer
 languages. Somebody who downloaded three keeps three, sees three, and backs up
 three, exactly the way `langCap()`'s ceiling already hides and never deletes.
 
+**The cloud is on every plan, and that is where the money actually goes.**
+OWNER DECISION 2026-08-22 「クラウドは全員で」, re-confirmed 2026-08-26 「基本は
+全部サーバー管理」. It is not a capability and must not become one: there is no
+`can()` anywhere in `www/net.js`, `www/sync.js` or `www/boot.js`, and
+`netLangSync()` asks nothing about a plan before it runs. That is correct and
+is the rule at the head of this file — a plan decides what may be DONE, and a
+language existing is not something anybody does.
+
+`CAN.data`'s comment in `www/core.js` said 「CSV out, **and the cloud**」 and the
+cloud half was never true in code: `can('data')` is asked in `www/settings.js`
+twice, both about CSV. Corrected 2026-08-26.
+
+**So the bill scales with people, not with payers.** Every account's twelve
+slices are `slice` rows — 5.4 KB for a small language, about a megabyte for a
+large one (`bkPack()`'s own numbers) — plus the egress of reading them back on
+every launch. `docs/FEATURES.md` § 2 carried 「deferred until Supabase $25 is
+worth paying」 as the reason nothing was built; the decision overrode the
+deferral and **the cost did not change**. Nobody has priced it against the four
+subscription products (2026-08-14), and **nobody here should**: what a plan
+costs and where the free/paid line sits are the owner's. What this file can say
+is where to look when it is asked — how often the sync runs is the multiplier
+and it is **open** (today: once, on launch, `www/boot.js`).
+
 `CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
 `kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
 reason: a constant was one fact while there was one paid tier and is three
