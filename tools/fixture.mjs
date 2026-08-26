@@ -1253,6 +1253,23 @@ export function halfDone(){
         stSetRules(p.id, 'a name is a word that stands for a thing');
         window.route = 'gram'; NAV = [{ r:'gram' }];
         const h = vGram(); stSetRules(p.id, was); return h; }],
+    /* The article, with a finished stage in it. `.abtline` is worn by the
+       name of every stage that has been answered -- www/home.js:1123 -- and
+       the fixture finishes none of them, so that line is on no screen and
+       press reported the class as worn by nothing. It is the "add the seed"
+       side of press's two, not the "delete it" side: the wearer is right
+       there and the walk simply never stood where it is.
+
+       Finished the same way "the stages, with one finished" does it, and for
+       the same reason: a part with no slots and no decisions is finished by
+       saying what it does, which is one line. Put back afterwards. */
+    ['this language, with a stage finished in it', () => {
+        const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
+                  || stAll()[0];
+        const was = stRules(p.id);
+        stSetRules(p.id, 'a name is a word that stands for a thing');
+        window.route = 'about'; NAV = [{ r:'about' }];
+        const h = vAbout(); stSetRules(p.id, was); return h; }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim

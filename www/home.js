@@ -945,9 +945,11 @@ function wldSecs(){
   return out;
 }
 function wldSecNm(sec){ return sec.k? t(sec.k) : sec.nm; }
-/* A heading that folds. It is a button and `.abts` is an <h2>, so the two
-   never sit as siblings in one list -- every heading on this page is this
-   one now, which is what keeps a list one height. */
+/* A heading that folds, and it is the only kind this page has now. It used to
+   sit beside `.abts`, an <h2> -- a button and an h2 as siblings in one list
+   are two heights, which is what press measures. `6dc9e0e` took the sections
+   out and `.abts` went with its last wearer; its rule came out of
+   www/index.html in the commit that closed this. */
 /* The inventory, in rows: each manner that this language actually uses, then
    its vowels, then anything the chart files under neither. */
 function abSounds(){
