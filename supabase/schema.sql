@@ -75,17 +75,50 @@ alter table profile add column if not exists av jsonb;
 -- second one it should become a table of its own rather than a second boolean.
 alter table profile add column if not exists staff boolean not null default false;
 
+-- And the one above it, which is a different question: not "may this account
+-- answer a report" but "may this account decide WHO answers reports". One
+-- person holds it -- 「俺は権限者で他はスタッフみたいな感じで」 -- and nothing
+-- in this file ever takes it away, because the failure it exists to prevent is
+-- the owner being locked out of their own app by somebody they made staff.
+--
+-- Not called `owner`: language.owner already means "the account a language
+-- belongs to", and a word that means two things in one schema is a word that
+-- will be read as the wrong one. It is called what the screen it opens is
+-- called.
+--
+-- The comment over `staff` says that the day it has to answer a second
+-- question it should become a table rather than a second boolean. This is not
+-- that day: `staff` is still answering exactly the one question it answered
+-- before, and is_staff() -- which two policies, one view and four functions
+-- ask -- is not touched by a single character. A role table would have meant
+-- rewriting it, and rewriting the sentence that IS the security of the
+-- moderation side in order to add a row above it is the wrong trade. If a
+-- third tier is ever wanted, that is the day.
+alter table profile add column if not exists admin boolean not null default false;
+
 -- And whoever has been ejected. A timestamp rather than a boolean beside a
 -- date, for the same reason post.hidden_at is one: two columns that have to
 -- agree about whether something happened are two columns that can disagree.
 --
--- What it does is one line in is_member() below, which every policy for
--- something OTHER PEOPLE SEE asks. It is not in has_account(), so being frozen
--- stops the timeline and not the work: somebody ejected can still read, can
--- still write their own language, and can still delete their account, because
--- account_delete() does not ask is_member() either and must not -- being
+-- What it does is one line in is_member() below, which every write policy in
+-- this file now asks.
+--
+-- It used to stop the timeline and not the work. The line over it said
+-- 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 and
+-- a frozen account went on writing its own language, because that was nobody
+-- else's business. **OWNER DECISION 2026-08-26 replaced that**: asked directly
+-- whether a frozen account may still edit its language, the answer was that it
+-- may not. A language is handed to other people now -- it can be downloaded and
+-- it can be put on a page anybody may open -- so "nobody else's business" is
+-- not what a language is any more, and the sentence it rested on has gone with
+-- it.
+--
+-- What a frozen account keeps: reading, everything already on the phone, and
+-- the way out. account_delete() does not ask is_member() and must not -- being
 -- thrown out of a place is not a reason to be locked out of the door marked
--- exit. 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」
+-- exit -- and nothing here reaches localStorage, so what somebody has made
+-- goes on opening, editing and backing up on the phone it was made on. What
+-- stops is the copy going up.
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
@@ -371,11 +404,25 @@ alter table report add constraint report_actor_fkey
 -- below opens exactly one door. Read them as sentences: who, may do what, to
 -- which rows.
 --
--- Anonymous accounts can read and cannot write. Supabase gives an anonymous
--- sign-in a real uid, so "not signed in" is not the test -- the JWT carries
--- is_anonymous, and that is what the writing policies check. Somebody browsing
--- without an account is a person who has not decided yet, not a stranger: when
--- they register, the same uid is linked and nothing they did is lost.
+-- Anonymous accounts can read and cannot write anything at all. Supabase gives
+-- an anonymous sign-in a real uid, so "not signed in" is not the test -- the
+-- JWT carries is_anonymous, and that is what every writing policy checks
+-- through is_member().
+--
+-- The app does not make one any more (OWNER 2026-08-26), so this is a wall
+-- with nobody standing at it. It stays because the switch that opens that
+-- endpoint is in the Supabase dashboard rather than in this file.
+--
+-- This paragraph used to end: "when they register, the same uid is linked and
+-- nothing they did is lost." **That was never true of this app.** netSignUp()
+-- in www/net.js posts to /auth/v1/signup with no session token on it, which is
+-- how Supabase is asked for a NEW user rather than for an identity on the one
+-- already here -- so registering made a second uid and left the first one's
+-- rows behind it. Nothing was ever lost by it, because no anonymous account
+-- has ever existed outside a test build, and there is nothing to fix now that
+-- the app has stopped making them. It is written down because a sentence that
+-- describes a mechanism nobody built is the kind of thing the next person
+-- builds on.
 -- ---------------------------------------------------------------------------
 alter table profile     enable row level security;
 alter table language    enable row level security;
@@ -388,30 +435,40 @@ alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
 
--- Two questions, and until now they were one.
+-- One question, and until 2026-08-26 there were two.
 --
--- The app makes an anonymous account at first launch -- no address, no
--- handle, nobody -- and everything somebody makes belongs to it from the
--- first minute. So "may this account write" splits along what the write is
--- FOR:
+-- There used to be an anonymous account made at first launch, and "may this
+-- account write" split along what the write was FOR: has_account() -- anybody
+-- at all, anonymous included -- guarded a language and the slices under it, on
+-- the grounds that those were nobody else's business; is_member() guarded
+-- everything other people would see.
 --
---   has_account()  there is an account. Anonymous counts, and frozen counts.
---                  What it guards is what is nobody else's business: your
---                  language, and everything filed under it.
---   is_member()    the account has a name on it and has not been frozen.
---                  What it guards is everything other people would see.
+-- **The split was drawn along "can anybody else see this", and that line has
+-- moved.** A language can be handed to somebody else now (DL), and it can be
+-- put on a page anybody may open (the publish switch), and what a person makes
+-- is kept on the server rather than only on the phone. So a language is not
+-- "nobody else's business" any more, and there is nothing left for the two
+-- questions to be about.
 --
--- 「課金とツイートにはログイン必須。それ以外は流さない」
+-- OWNER DECISION 2026-08-26: 「言語はアカウントないと作れないです」
+-- 「ログインした人しか書けないけど」「二種類になる意味も分からないけど」
+-- This replaces the anonymous-first decision of 2026-08-22.
 --
--- Anonymous is not a lesser account and this is not a trial: attaching an
--- identity later keeps the same uid, so nothing is copied, moved or claimed
--- at that moment. The row that was yours goes on being yours.
-create or replace function has_account() returns boolean
-language sql stable as $$
-  select auth.uid() is not null
-$$;
-
+-- So has_account() is gone rather than left sitting unused, and every policy
+-- that asked it asks is_member(). is_member() itself is not touched: ten
+-- policies are standing on it and this change is about who else joins them.
+--
 -- A signed-in account that is not an anonymous one, and has not been frozen.
+--
+-- The anonymous clause stays, and not for anybody's sake -- there is nobody:
+-- the app has never been released, so no phone anywhere holds an anonymous
+-- session. 「リリースしてないんだからアカウンとないでしょ」 -- OWNER 2026-08-26.
+-- It stays because this is a wall and not a preference. Anonymous sign-in is a
+-- switch in the Supabase dashboard, not a thing this file can see; if it is on
+-- -- today, or in a year, by somebody setting up a second project -- the
+-- endpoint answers, and what stops that session writing is this line and
+-- nothing else. Ten policies stand on this function and none of them says the
+-- word anonymous.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
@@ -427,6 +484,12 @@ language sql stable as $$
   select exists (select 1 from profile where id = auth.uid() and staff)
 $$;
 
+-- And the one account above that. Same shape, same reading, one column over.
+create or replace function is_admin() returns boolean
+language sql stable as $$
+  select exists (select 1 from profile where id = auth.uid() and admin)
+$$;
+
 -- profile: everyone reads, you write yourself into existence and edit yourself
 drop policy if exists profile_read on profile;
 create policy profile_read on profile for select using (true);
@@ -439,29 +502,34 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- language: a published one is readable by anyone; an unpublished one only by
 -- the person who owns it. Only the owner ever writes.
 --
--- has_account() and not is_member(), and this is the whole of what the split
--- is for: a language is made on the first launch, by somebody who has not
--- said who they are and may never say. Publishing one is the other half and
--- goes through publication below, which does ask is_member() -- putting a
--- language in front of other people is the same kind of act as posting.
+-- is_member(), the same question posting asks. 「言語はアカウントないと作れない
+-- です」「ログインした人しか書けないけど」 -- OWNER 2026-08-26. It used to be
+-- has_account(), which anonymous satisfied, on the grounds that a language was
+-- nobody else's business until it was published. It is not: it can be handed
+-- over whole, and it can be put on a page anybody may open, so making one and
+-- posting one are the same kind of act and ask the same thing.
+--
+-- Reading does not ask it, and that is not an oversight: a published language
+-- is readable by anybody at all, including somebody with no account, which is
+-- what publishing one MEANS.
 drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid());
 drop policy if exists language_make on language;
 create policy language_make on language for insert
-  with check (has_account() and owner = auth.uid());
+  with check (is_member() and owner = auth.uid());
 drop policy if exists language_edit on language;
 create policy language_edit on language for update
-  using (has_account() and owner = auth.uid()) with check (owner = auth.uid());
+  using (is_member() and owner = auth.uid()) with check (owner = auth.uid());
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
-  using (has_account() and owner = auth.uid());
+  using (is_member() and owner = auth.uid());
 
 -- slice: nobody else's business. Read and written by whoever owns the
 -- language and by nobody else -- not even for a language that is PUBLISHED,
 -- because publishing is a copy somebody is given and not a door into the
--- phone. has_account() rather than is_member(), the same as language above:
--- this is what a first launch writes.
+-- phone. is_member(), the same as language above, and for the same reason:
+-- what is filed under a language travels with it.
 alter table slice enable row level security;
 drop policy if exists slice_read on slice;
 create policy slice_read on slice for select
@@ -469,17 +537,17 @@ create policy slice_read on slice for select
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_make on slice;
 create policy slice_make on slice for insert
-  with check (has_account() and exists (select 1 from language l
+  with check (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_edit on slice;
 create policy slice_edit on slice for update
-  using (has_account() and exists (select 1 from language l
+  using (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()))
   with check (exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_drop on slice;
 create policy slice_drop on slice for delete
-  using (has_account() and exists (select 1 from language l
+  using (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 
 -- publication: everyone reads the record. Anyone may add to it about their own
@@ -860,6 +928,165 @@ revoke all on function account_unban(uuid) from public;
 grant execute on function account_unban(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- How many of everything there is
+--
+-- Four numbers on one screen: people, posts, languages, reports. Every one of
+-- them is a count of a table that already exists, and none of them is a new
+-- thing kept anywhere -- asking is the whole of it, and the answer is not
+-- written down. Nothing about a person is in here and nothing can be: what
+-- comes back is four integers with no rows behind them.
+--
+-- It is a function and not four requests for two reasons, and the second is
+-- the one that matters.
+--
+-- The first is that four requests are four requests. PostgREST answers a
+-- count in a Content-Range HEADER, and www/net.js reads bodies.
+--
+-- The second: counting the languages through the table would mean widening
+-- `language_read`, which today is "published, or yours". Adding is_staff() to
+-- it would hand staff the CONTENTS of every language nobody has published --
+-- somebody's four months of work, unfinished, read by an account that only
+-- wanted to know how many there were. rls-check.mjs has a claim named "what a
+-- language is made of is nobody else's" and that claim is the reason. So the
+-- count is taken by a function with definer rights, which sees every row and
+-- hands back a number, and the read policy does not move.
+--
+-- `security definer` for the same reason post_hide() is, and the question is
+-- asked inside for the same reason: the definer rights are not a way in.
+--
+-- is_admin() and not is_staff(): 「＠linguaのアカウントだけ管理者ページには
+-- 入れる」. Staff answer reports, on the reports screen, through report_read.
+-- This is the other screen.
+create or replace function admin_counts()
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n jsonb;
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  select jsonb_build_object(
+    'people',  (select count(*) from profile),
+    'posts',   (select count(*) from post),
+    'langs',   (select count(*) from language),
+    'reports', (select count(*) from report)
+  ) into n;
+  return n;
+end $$;
+revoke all on function admin_counts() from public;
+grant execute on function admin_counts() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- The first one, and everybody after
+--
+-- 「そしたら@でいいよ。linguaで登録してる」. The account holding the handle
+-- `lingua` is the one above staff. It is written here rather than set by hand
+-- in the dashboard, because a step a person has to remember is a step that
+-- gets forgotten once -- and the thing forgotten is the only account that can
+-- let anybody else in.
+--
+-- Both halves, because the row may arrive either side of this file being run:
+-- the trigger catches a profile made later (it is made when somebody signs in
+-- on a phone -- supabase/setup.md §5), and the statement under it catches the
+-- row that is already there. Neither cares which order they happen in, and on
+-- an empty database the statement touches nothing and does not fail, which is
+-- what lets tools/rls-check.mjs apply this file unchanged.
+--
+-- What this does NOT defend against, said out loud: on a database where nobody
+-- holds `lingua` yet, whoever takes the handle first becomes the one above
+-- staff. `handle` is unique, so the window shuts the moment that row exists --
+-- and on the live database it already does. On a new one, sign in first.
+create or replace function profile_first() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.handle = 'lingua' then
+    new.staff := true;
+    new.admin := true;
+  end if;
+  return new;
+end $$;
+drop trigger if exists profile_first on profile;
+create trigger profile_first before insert on profile
+  for each row execute function profile_first();
+
+update profile set staff = true, admin = true where handle = 'lingua';
+
+-- ---------------------------------------------------------------------------
+-- Making somebody staff, and unmaking them
+--
+-- 「staffアカウントはスタッフページから追加できるようにしよう」, by handle,
+-- because a handle is the only name this app has for a person: `profile` holds
+-- id, handle, display, created_at and the flags, and an address lives in
+-- auth.users, which is Supabase's and is not read from here.
+--
+-- Functions and not a policy, for the reason post_hide() is not an update
+-- policy. `for update using (is_admin())` would say "the one above staff may
+-- edit these rows" -- every column of them, including somebody's handle and
+-- the name they chose. These two reach one column and nothing else.
+create or replace function staff_add(h text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  update profile set staff = true where handle = h;
+end $$;
+revoke all on function staff_add(text) from public;
+grant execute on function staff_add(text) to authenticated;
+
+-- `and not admin` is the whole of "the one above staff cannot be taken off
+-- it". It is the one failure here that cannot be undone from inside the app:
+-- an owner who is no longer the owner has no screen left to fix it from.
+-- account_ban() carries the same guard for the same reason, and it costs
+-- three words.
+create or replace function staff_drop(h text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  update profile set staff = false where handle = h and not admin;
+end $$;
+revoke all on function staff_drop(text) from public;
+grant execute on function staff_drop(text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Everybody who starts now starts out following @lingua
+--
+-- 「他の人が始めたらlinguaアカウントは強制的にフォローしてる状態にしたい」,
+-- and, asked which of the two shapes it should be: 「A: 初期状態として
+-- フォロー済み。外せる」.
+--
+-- So it is one row, put in at the moment the profile is made, and an ordinary
+-- follow from then on: `follow_drop` is not touched and the person takes it
+-- off exactly the way they take any other one off. A follow that could not be
+-- removed would be a different thing wearing the same word.
+--
+-- Here and not in the app, because www/ is a suggestion: somebody running a
+-- changed copy of it would simply not do it. This is the one place that
+-- cannot be edited from a phone.
+--
+-- It is an AFTER trigger on INSERT only, so it reaches nobody who is already
+-- here. That is the decision as given -- 「他の人が始めたら」 -- and not a
+-- shortcut: writing the row onto accounts that already exist would be putting
+-- something in somebody's list months after they made it.
+--
+-- `follower <> followed` is a check constraint, so @lingua's own row is
+-- stepped around rather than inserted and rolled back. And on a database
+-- where nobody holds the handle yet there is nobody to follow, which is not
+-- an error -- it is the morning before the owner has signed in.
+create or replace function profile_follows() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare l uuid;
+begin
+  select id into l from profile where handle = 'lingua';
+  if l is not null and l <> new.id then
+    insert into follow(follower, followed) values (new.id, l)
+      on conflict do nothing;
+  end if;
+  return new;
+end $$;
+drop trigger if exists profile_follows on profile;
+create trigger profile_follows after insert on profile
+  for each row execute function profile_follows();
+
+-- ---------------------------------------------------------------------------
 -- The columns nobody may write
 --
 -- Row level security says which ROWS an account may change. It has nothing to
@@ -884,5 +1111,20 @@ grant execute on function account_unban(uuid) to authenticated;
 -- ---------------------------------------------------------------------------
 revoke update on profile from anon, authenticated;
 grant  update (handle, display, av) on profile to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- And the question that is no longer asked
+--
+-- has_account() -- "there is an account, anonymous counts" -- is dropped by
+-- name rather than merely deleted from this file. This file gets pasted over a
+-- database that already has one, so a function nobody writes down any more
+-- goes on existing there, and a function that exists is one a policy written
+-- next year can reach for without anybody noticing what it means.
+--
+-- Here, at the foot, and not where it used to be defined: every policy above
+-- had to stop naming it first. A `drop` with no `cascade` refuses rather than
+-- quietly taking a policy down with it, so if this line ever errors it is
+-- telling the truth -- something is still standing on it.
+drop function if exists has_account();
 revoke update on post from anon, authenticated;
 grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
