@@ -21,11 +21,13 @@ The rest of `docs/` is the working detail behind the rules at the head of
 
 Everything below was checked against the repository on **2026-08-11**, §3 and
 §5 again on **2026-08-19**, the whole file again on **2026-08-21**, §1, §4b
-and §7 on **2026-08-25**, and §4b, §6 and §7 once more later that same day
-after build #91 went to a real phone — not
+and §7 on **2026-08-25**, §4b, §6 and §7 once more later that same day after
+build #91 went to a real phone, and **§1 and §3 again on 2026-08-26** — not
 remembered. Where a claim can go stale, it
 says how to re-check it — and §3 is the proof that it does: it went on saying
-the timeline was not on the server for a week after it was.
+the timeline was not on the server for a week after it was, **and then said
+the languages were not, for as long again.** Both are. The command that
+answers it is in §3 and takes a second.
 
 ---
 
@@ -148,14 +150,48 @@ exists.
 
 **An account is required to read the timeline or post to it**, decided
 2026-08-18 and held by `post-check`. `vFeed`/`vExplore`/`vNotif` answer with the
-app's own door when there is no session. The MAKING side needs no account and
-that has not changed.
+app's own door when there is no session.
 
-Still unused in `supabase/schema.sql`: `quote`, `publication` and `language`.
-Each has row level security written and held by `npm run rls`, and nothing in
-the app touches any of them. `language` is the one to watch: its policies
-changed on 2026-08-22 so that an account with no name can own one, and the app
-still does not write a row.
+**There is no such state as "no account", and the sentence that used to stand
+here saying the making side needs none was about an app that no longer exists.**
+`boot.js:96` calls `netAnon()` at first launch, so a phone that has never been
+signed in to is a phone holding an ANONYMOUS account. `netSignedIn()`
+(`net.js:93`) asks whether there is a session at all; `netMember()`
+(`net.js:116`) asks whether that session is more than anonymous. Two questions,
+two functions, and the app asks the second one where it used to ask nothing.
+
+**OWNER DECISION 2026-08-26**, and it settles what the paragraph above was
+groping at:
+
+```
+  基本は全部サーバー管理  言語周りだけバックアップに file 使う
+  制作はオフラインでも可能  次つながった時に更新される
+  言語はアカウントないと作れないです
+  SNS部分はオフラインでは動かないよ　そりゃそう
+  アカウント消したら残るわけがない
+```
+
+Always in sync, on every plan. Making a language works with no network and
+catches up on the next one; **making a language still needs an account**, and
+deleting the account takes the languages with it. The file in Documents
+(`www/backup.js`, chapter 24) is the one thing that is not the server's.
+
+**`language` and `slice` are written and read.** The paragraph that said they
+were unused was the third thing in this file to be wrong about the server in
+one day. **Count it rather than believe it:**
+
+```
+grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
+```
+
+On 2026-08-26 that answers: `profile` 9, `rpc` 6, `report` 3, `post` 5,
+`follow` 3, `block` 3, `slice` 2, `react` 2, `post_seen` 2, `prompt` 1,
+`language` 1 — and the six `rpc` are `account_ban` `account_delete`
+`account_unban` `notices` `post_hide` `post_show`. `netLangSync()`
+(`net.js:442`) is fired by `boot.js:68` at launch, and `syMerge()`
+(`www/sync.js` ch 26) is what puts two copies together by adding both.
+
+**Still unused: `quote` and `publication`. Those two, and nothing else.**
 
 **`prompt` is used now**, from 2026-08-23: the day's sentence stands at the top
 of the timeline and the composer opens with it already in the meaning, where it
