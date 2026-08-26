@@ -237,7 +237,7 @@ function openPost(from){
      than trusting that nobody arrived here another way. The feed is where
      the door is. */
   if(!netSignedIn()){ go('feed'); return; }
-  openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), null,
+  openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), pwKeepKb,
     '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
@@ -864,6 +864,43 @@ function pwHTML(){
    render() -- come back from the card and the line you were typing is gone.
    So the string is kept in step too, without redrawing anything. */
 function pwFresh(){ if(FORM && FORM.key==='post:') FORM.html=pwHTML(); }
+/* ---- the keyboard is up the whole time this screen is ------------------
+   OWNER 2026-08-25「投稿開いたらキーボードが自動で出て下ろせないが正解」.
+
+   Two things came out of one cause. The row of pictures floated in the middle
+   of the screen when the composer opened, because it is laid out to `--vvmin`
+   -- the smallest the visible part has been -- and until a keyboard has
+   actually been up that is a GUESS (55%). Nothing focused the field, so on a
+   phone the guess was what you saw until you tapped.
+
+   With the field focused from the moment the screen exists there is no moment
+   the guess is used, and the answer to "where does the row go when the
+   keyboard is down" is that it never is.
+
+   `preventScroll` because iOS otherwise scrolls the layout viewport to lift
+   the field, and this screen is pinned to the visual viewport instead -- the
+   two together took the bar off the top of the phone. */
+function pwKeepKb(){
+  if(!FORM || FORM.key!=='post:') return;
+  if(here().r!=='form' || here().a!=='post:') return;
+  var e=document.getElementById('pw-ln');
+  if(!e || document.activeElement===e) return;
+  /* Something else on this screen has it -- the meaning, or a letter being
+     placed on a photograph. That is not the keyboard going down. */
+  var a=document.activeElement;
+  if(a && a!==document.body && a.tagName &&
+     (a.tagName==='INPUT' || a.tagName==='TEXTAREA')) return;
+  try{ e.focus({preventScroll:true}); }catch(err){ e.focus(); }
+}
+/* It goes down by the field losing focus, and there is no key on an iPhone
+   that does anything else -- so putting it back is the whole of "it cannot be
+   lowered". The delay is a frame: the browser has not said who has focus NEXT
+   at the moment it says who lost it, and without waiting this refuses every
+   press on the screen, including Post. */
+function pwKbGuard(){
+  if(!FORM || FORM.key!=='post:') return;
+  setTimeout(pwKeepKb, 0);
+}
 function pwSetLn(v){
   PW.ln=String(v||'');
   var g=document.getElementById('pw-gl');
