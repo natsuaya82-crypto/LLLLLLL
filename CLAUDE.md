@@ -492,21 +492,11 @@ another tier, meant reading twenty-three branches and remembering one at a time
 what each had ever been about. The paid tier ships as a diff on top of the
 free one, so that reading was going to happen.
 
-**What follows is history and none of it is in the app.** There were four plans
-once — free, basic, plus and **Studio** — and Studio, `ai` and `sug` were all
-deleted before 2026-08-23, when the three that are left were named Free, Plus,
-Pro. Read it for what the table is FOR, not for what any of these words mean
-now; `docs/PAID_FEATURES.md` has the three plans that exist.
-
-Putting the twenty-three side by side found something on the first day: `ai`
-lifted at Plus and `sug` only at Studio, and they were the same ceiling. A Plus
-account was shown "3 left" on the word sheet forever and never spent one,
-because `sugLeft()` subtracted a counter `aiSpend()` returned early without
-touching. Nothing threw and nothing was refused, which is why it sat there.
-Both went with the tier — Studio sold a hosted model that does not exist. That
-is the argument for the table and it is the whole reason this paragraph is
-still here: two files apart, nobody saw it; one table apart, it was the first
-thing anybody noticed.
+Putting the twenty-three side by side found a bug on the first day: two of them
+were the same ceiling asked two ways, so one plan was shown "3 left" forever and
+never spent one. Nothing threw and nothing was refused, which is why it sat
+there. Two files apart nobody saw it; one table apart it was the first thing
+anybody noticed.
 
 ### 6. A language somebody already has still opens
 
@@ -713,11 +703,14 @@ same commit that closes the duplication.
 
 `www/backup.js` (chapter 24) writes the open language out as one file, into
 Documents, where iOS puts it in the device backup and the Files app can show
-it. Everything a person makes lived in `localStorage` and nowhere else, which
-is one copy in a place with four ways to lose it: the app is deleted, the
-phone is replaced without a backup, WKWebView's storage is reclaimed, or a
-migration goes wrong. Three of those four are ordinary events.
-「データ消えるのだけはありえない」
+it. The server is the record, `localStorage` is the working copy that runs with
+no signal, and **this file is the backup** — 「基本は全部サーバー管理 言語周りだけ
+バックアップにfile使う」. Every slice goes up and comes back (`netLangSync()` in
+`www/net.js`, from `www/boot.js`).
+
+The file is what is left when the other two are not there: the app is deleted,
+the phone is replaced, WKWebView's storage is reclaimed, a migration goes
+wrong, or there is no signal and never was. 「データ消えるのだけはありえない」
 
 It was measured before it was built — thirty-eight drawn letters are 12.1 KB,
 a hundred words 13.2 KB, five thousand words 685 KB — so a free language is
