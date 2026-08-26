@@ -256,7 +256,6 @@ defLang('es', (function(){
       "ob.mail.wait" : "Trabajando…",
       "ob.mail.to.forgot" : "¿Olvidaste tu contraseña?",
       "ob.signin.or" : "o",
-      "ob.in.later" : "Más tarde",
       "ob.bar.up" : "Crear una cuenta",
       "ob.bar.in" : "Iniciar sesión",
       "ob.who.h" : "Tu nombre y tu ID",

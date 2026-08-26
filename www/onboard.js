@@ -689,11 +689,19 @@ function obCrestHTML(){
    the bar across the foot offers instead of itself. On one screen all of
    that would be written twice in conditionals anyway, and the person would
    not be able to tell which of the two they were looking at. */
-/* There is nothing to skip past. The door is not the way in any more -- the
-   app makes an account by itself at first launch and this is where somebody
-   puts a name on it -- so "continue without an account" would be offering
-   what everybody already has, on a screen nobody arrived at by accident.
-   The chevron is the way out. */
+/* There is nothing to skip past, and the reason under this comment changed.
+
+   It said the app makes an account by itself at first launch, so "continue
+   without an account" would be offering what everybody already has. **It does
+   not.** netAnon() gets a token whose JWT carries `is_anonymous`: netMember()
+   reads false off it and so does is_member() in supabase/schema.sql. It is a
+   uid to hang a language on, which is what 2026-08-22 asked for and all it
+   asked for. It is not somebody, and it is not an account. 「匿名アカウントは
+   ねえよ」
+
+   So the offer is missing for the opposite reason now, and a stronger one:
+   2026-08-26, 「言語はアカウントないと作れないです」. There is no continuing
+   without an account to offer. The chevron is the way out. */
 function obFormHTML(up){
   return '<div class="mid obform">'+
     obCrestHTML()+
@@ -708,28 +716,28 @@ function obFormHTML(up){
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>')+
-    /* And out of it without signing in, when this door is the last step of
-       the onboarding rather than one opened from somewhere.
-       「サインインしなかったときは門で止まるよ！」 -- OWNER DECISION,
-       2026-08-23. The app opens; the MAKING is what asks. Every gate is
-       already there and every one of them is obNeed(), so nothing here
-       decides anything: what this button does is finish the onboarding, and
-       the next time somebody reaches for a letter, a word, a rule or a note
-       the door comes back with where they were written on it.
+    /* There WAS a way out of here without signing in: 「あとで」, shown when
+       this door was the onboarding's last step, straight to obFinish().
+       「サインインしなかったときは門で止まるよ！」 OWNER DECISION 2026-08-23 --
+       the walk ended, the app opened, and the MAKING side asked later, which
+       it did: every gate there is obNeed().
 
-       What they have made by then is on the phone and stays there: a
-       language is made on this phone, with or without an account. */
-    (obLastStep()? '<button class="obskip"' + DO('obFinish') + '>'+esc(t('ob.in.later'))+'</button>' : '')+
+       Gone, 2026-08-26. 「言語はアカウントないと作れないです」 So a walk that
+       ends with no account ends on a wall instead: finish, land on the
+       profile, reach for a letter, and the door comes straight back. That
+       is what the owner saw -- 「オンボーディング終わったらせいさくみれるけど
+       ふさがれてるけど？」
+
+       The button was never a bug against the rule. It WAS the rule: the
+       comment on it ended 「a language is made on this phone, with or without
+       an account」, which is the sentence the same decision struck out of
+       CLAUDE.md. The rule went, so it went, and nothing replaced it --
+       OB_IN is the last step and signing in is how it ends. The chevron
+       still goes back a step. */
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
 }
-/* Whether this door IS the onboarding's last step, as against one opened from
-   Settings or from a timeline -- obPending() is what remembers that a door
-   was opened from somewhere, and a door that was has somewhere to go back to
-   already. */
-function obLastStep(){ return !SET.done && !obPending() && ob.step===OB_IN; }
-
 /* ---- who the account belongs to ---------------------------------------
    Two things, once, and neither of them invented for anybody. The handle is
    `unique not null` on the server, so it cannot be put off; the name is

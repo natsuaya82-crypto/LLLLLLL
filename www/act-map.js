@@ -108,7 +108,6 @@ act('obBorrow', obBorrow);
 act('obDone', obDone);
 act('obName', obName);
 act('obNameLater', obNameLater);
-act('obFinish', obFinish);
 act('obPickScript', obPickScript);
 act('obSignInApple', obSignInApple);
 act('obSignInGoogle', obSignInGoogle);

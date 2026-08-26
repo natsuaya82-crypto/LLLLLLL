@@ -196,7 +196,6 @@ defLang('en', (function(){
       "ob.mail.wait" : "Working…",
       "ob.mail.to.forgot" : "Forgot your password?",
       "ob.signin.or" : "or",
-      "ob.in.later" : "Later",
       "ob.bar.up" : "Create an account",
       "ob.bar.in" : "Sign in instead",
       "ob.who.h" : "Your name and ID",

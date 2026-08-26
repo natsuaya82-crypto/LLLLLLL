@@ -212,7 +212,6 @@ defLang('ja', (function(){
       "ob.mail.wait" : "送信中…",
       "ob.mail.to.forgot" : "パスワードをお忘れですか？",
       "ob.signin.or" : "または",
-      "ob.in.later" : "あとで",
       "ob.bar.up" : "アカウント登録はこちら",
       "ob.bar.in" : "ログインはこちら",
       "ob.who.h" : "ユーザー名とID",
