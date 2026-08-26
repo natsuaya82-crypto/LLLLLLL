@@ -492,15 +492,21 @@ another tier, meant reading twenty-three branches and remembering one at a time
 what each had ever been about. The paid tier ships as a diff on top of the
 free one, so that reading was going to happen.
 
-Putting them side by side found something on the first day: `ai` lifted at
-Plus and `sug` only at Studio, and they were the same ceiling. A Plus account
-was shown "3 left" on the word sheet forever and never spent one, because
-`sugLeft()` subtracted a counter `aiSpend()` returned early without touching.
-Nothing threw and nothing was refused, which is why it sat there. Both are
-gone now — they were Studio's, Studio sold a hosted model that does not exist,
-and the tier went out with what it sold. Which plan buys it is a price, and a
-price is not a
-tool's to decide — but now it is one table apart instead of two files apart.
+**What follows is history and none of it is in the app.** There were four plans
+once — free, basic, plus and **Studio** — and Studio, `ai` and `sug` were all
+deleted before 2026-08-23, when the three that are left were named Free, Plus,
+Pro. Read it for what the table is FOR, not for what any of these words mean
+now; `docs/PAID_FEATURES.md` has the three plans that exist.
+
+Putting the twenty-three side by side found something on the first day: `ai`
+lifted at Plus and `sug` only at Studio, and they were the same ceiling. A Plus
+account was shown "3 left" on the word sheet forever and never spent one,
+because `sugLeft()` subtracted a counter `aiSpend()` returned early without
+touching. Nothing threw and nothing was refused, which is why it sat there.
+Both went with the tier — Studio sold a hosted model that does not exist. That
+is the argument for the table and it is the whole reason this paragraph is
+still here: two files apart, nobody saw it; one table apart, it was the first
+thing anybody noticed.
 
 ### 6. A language somebody already has still opens
 
