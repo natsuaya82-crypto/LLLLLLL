@@ -755,6 +755,23 @@ function netUnban(uid, ok, bad){
   netSend('POST', '/rest/v1/rpc/account_unban', {p:uid},
           SESS.at, function(){ ok(); }, bad);
 }
+/* How many of everything there is: people, posts, languages, reports.
+
+   One request and not four, and a function and not four counts off four
+   tables. PostgREST answers a count in a Content-Range HEADER and netSend()
+   above reads bodies -- but that is the small reason. The real one is in
+   supabase/schema.sql over admin_counts(): counting the languages off the
+   table would mean widening `language_read`, and widening it would hand staff
+   the contents of every language nobody has published. A number is not worth
+   somebody's unfinished work, so the number comes back on its own.
+
+   is_staff() is asked inside the function, so this is the same door the
+   reports come through and not a second one to keep in step with it. */
+function netCounts(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/admin_counts', {}, SESS.at,
+          function(d){ ok(d || {}); }, bad);
+}
 /* ---- searching, which is the server's ----------------------------------
    A search over what is on THIS phone is a search of the people you already
    know and the posts you already have, which is the one search nobody needs.

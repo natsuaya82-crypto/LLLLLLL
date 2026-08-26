@@ -197,7 +197,8 @@ var PAGES={
   drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
   plans:   {tab:'profile',  k:'plans.title'},
-  mod:     {tab:'profile',  k:'mod.title'}
+  mod:     {tab:'profile',  k:'mod.title'},
+  admin:   {tab:'profile',  k:'admin.title'}
 };
 function pageName(r, a){
   /* A page opened on a particular thing is named after that thing. The

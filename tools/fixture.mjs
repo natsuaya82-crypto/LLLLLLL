@@ -604,6 +604,24 @@ export function halfDone(){
     ['the reports, and there are none', () => { const keep = MODS; MODS = [];
         window.route='mod'; NAV=[{r:'mod'}];
         const h = vMod(); MODS = keep; return h; }],
+    /* Both halves of the admin screen, because they are two screens and only
+       one of them is ever on. The door is what everybody sees -- the fixture's
+       account came in through `email`, so adminLocked() is true here exactly
+       as it is on the owner's phone -- and everything the page is FOR is
+       behind it. Without the second entry nothing on it is ever drawn, and a
+       screen no check has ever seen is the white screen this family of checks
+       exists to prevent. */
+    ['the admin screen, locked', () => { window.route='admin'; NAV=[{r:'admin'}];
+        return vAdmin(); }],
+    ['the admin screen', () => { const keep = MODS, keepN = ADMINN;
+        ADMIN_OK = true;
+        ADMINN = { people:1284, posts:9130, langs:412, reports:1 };
+        MODS = [{ id:1, why:'spam', note:'', at:Date.now()-600000,
+                  who:'veth', uid:'u1', out:false,
+                  pid:'ps1', ln:'kano mos tir', down:false }];
+        window.route='admin'; NAV=[{r:'admin'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADMINN = keepN; MODS = keep; return h; }],
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */

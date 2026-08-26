@@ -110,9 +110,122 @@ function vMod(){
   var rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<button class="btn ghost"' + DO('modLoad') + '>'+esc(t('mod.again'))+'</button>'+
+    '<button class="btn ghost"' + DO('goAdmin') + '>'+esc(t('admin.title'))+'</button>'+
     (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
     ((!MODBUSY && !MODERR && MODS && !rows.length)
       ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
     rows.map(modRow).join('')+
+    '</div></div>';
+}
+
+/* ---- the one screen with everything on it -------------------------------
+   「通報の確認とかアナリティクスとか売り上げとか含めて全部見れる新ページ」
+
+   Its own page rather than more of the one above it, which is the owner's
+   call: the reports screen stays what it is and this one carries it. What is
+   on it today is the four numbers and the reports; there is no analytics
+   section and no takings section, because there is nothing recorded to put in
+   one and a heading over an empty box explaining that is the app explaining
+   itself. When there is something, it goes here.
+
+   ── The door ────────────────────────────────────────────────────────────
+   Two things stand in it and only one of them is a wall.
+
+   The wall is is_staff(), in supabase/schema.sql, and it is the server's. Every
+   number here comes back from admin_counts(), which asks it; every report
+   comes through report_read, which IS it. A phone that lies about who it is
+   gets handed nothing, and that is true whatever this file does -- CLAUDE.md:
+   the app is a suggestion, and schema.sql is the security.
+
+   The other is this password, and it is worth what a screen lock is worth: it
+   is for a phone handed to somebody with the app already signed in. So it is
+   not written as though it were more. Nothing is compared in here -- www/*.js
+   goes to the phone as it is and anybody who downloads the app can read every
+   string in it. The password goes to Supabase, on the same endpoint the door
+   uses, and the answer is the server's. netSignIn() is what settings.js
+   already asks with before changing a password, which makes this the second
+   caller of a thing that works rather than a second way of doing it.
+
+   Nothing is kept: not the password, and not the fact that it was right.
+   ADMIN_OK is a variable in memory. Closing the app forgets it, which is the
+   behaviour somebody who locked their admin screen would expect and is also
+   the only behaviour that does not put the answer somewhere it can be found.
+
+   An account that came in through Apple or Google has no password to be asked
+   for -- netHow() says which door was used -- and asking one of them for a
+   password it does not have would lock the owner out of their own screen. So
+   the lock is only there where there is something to unlock it with. */
+var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
+
+function adminLocked(){ return !ADMIN_OK && netHow()==='email'; }
+/* Going there and reading are one press, for the same reason goMod() is. */
+function goAdmin(){ go('admin'); if(!adminLocked()) adminLoad(); }
+/* Stored and not rendered back: render() here would rebuild the field under
+   whoever is typing into it. settings.js's setPwSet() is the same line. */
+function adminSet(k, v){ if(k==='pw') ADMIN_PW=String(v||''); }
+function adminGo(){
+  if(ADMIN_BUSY) return;
+  /* A button that does nothing when the field is empty is a button somebody
+     presses twice and then puts the phone down. settings.js says the same
+     sentence with the same key. */
+  if(!ADMIN_PW){ ADMIN_ERR=t('net.needpw'); render(); return; }
+  ADMIN_BUSY=true; ADMIN_ERR=''; render();
+  netSignIn(netMail(), ADMIN_PW, function(){
+    /* Gone the moment it has been answered, right or wrong. */
+    ADMIN_PW=''; ADMIN_OK=true; ADMIN_BUSY=false; adminLoad();
+  }, function(d, st){
+    ADMIN_PW=''; ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render();
+  });
+}
+/* The numbers, and then the reports under them -- one press asks for both,
+   because a screen with a button for each half is a screen where half of it
+   is out of date and nothing says so. */
+function adminLoad(){
+  if(ADMIN_BUSY) return;
+  ADMIN_BUSY=true; ADMIN_ERR=''; render();
+  netCounts(function(n){ ADMINN=n; ADMIN_BUSY=false; modLoad(); },
+            function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
+}
+/* One number. The same row the settings list is made of, so the rows on this
+   screen are the height the rows everywhere else in the app are. A number
+   that has not come back yet is a blank and not a nought: nought is a fact
+   about the app and this is a fact about the request. */
+function adminRow(k, n){
+  return '<div class="set"><span class="sl">'+esc(t(k))+'</span>'+
+    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+'</span></div>';
+}
+function vAdmin(){
+  if(adminLocked()) return adminDoor();
+  var n=ADMINN||{}, rows=MODS||[];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<button class="btn ghost"' + DO('adminLoad') + '>'+esc(t('mod.again'))+'</button>'+
+    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
+    adminRow('admin.people', n.people)+
+    adminRow('admin.posts', n.posts)+
+    adminRow('admin.langs', n.langs)+
+    adminRow('admin.reports', n.reports)+
+    /* And the reports themselves, drawn by the row the reports screen draws
+       them with. Two lists of the same thing that could disagree about what a
+       report looks like is the second state this chapter refuses to keep. */
+    (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
+    ((!MODBUSY && !MODERR && MODS && !rows.length)
+      ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
+    rows.map(modRow).join('')+
+    '</div></div>';
+}
+/* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app
+   as a PAGE and asks which route shows it. This is not a page -- it is what
+   the admin page IS until it has been opened -- and the one hand-written
+   exception to that rule already in the checker is one more than it wants. */
+function adminDoor(){
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<div class="field"><input id="admin-pw" type="password" '+
+      'value="'+esc(ADMIN_PW)+'" placeholder="'+esc(t('admin.pw'))+'" '+
+      'autocomplete="current-password" autocapitalize="none" autocorrect="off" '+
+      'spellcheck="false"' + IN('adminSet', ['pw']) + '></div>'+
+    (ADMIN_ERR? '<div class="obmsg">'+esc(ADMIN_ERR)+'</div>' : '')+
+    '<button class="btn ghost" style="margin-top:18px"' + DO('adminGo') +
+      (ADMIN_BUSY? ' disabled':'') + '>'+
+      esc(t(ADMIN_BUSY? 'ob.mail.wait' : 'admin.go'))+'</button>'+
     '</div></div>';
 }
