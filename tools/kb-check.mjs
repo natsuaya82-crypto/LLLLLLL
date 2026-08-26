@@ -237,6 +237,56 @@ const r = await pg.evaluate(({ s }) => {
   out.layNewRow = rr2.length === rowsWas2 + 1 &&
     rr2[rr2.length - 1].length === 1 && rr2[rr2.length - 1][0].k === 'lay';
 
+  /* ---- 6d2. no face is a dead end ------------------------------------
+     「2ページ目から戻るボタンがない」 OWNER, build #92.
+
+     The two claims above are about the moment a page is MADE, and they were
+     both true. Nothing was about the moment after: the sheet's two deletes
+     take keys away by the row and by the column, and the way back is a key.
+     Standing on a page somebody has just made -- one row, the back key and
+     one empty slot -- and pressing that row's number left the face with no
+     rows at all, which on the phone is a blank keyboard nobody can get off.
+
+     Both roads, because they take the key from opposite sides, and the first
+     of them also asks about the row itself: a face with no rows is not a
+     face, and there is an x beside the tabs for being rid of one. */
+  function offOf(face){
+    var to = [];
+    (face.rows || []).forEach(function (rw){
+      rw.forEach(function (k){ if (k.k === 'lay') to.push(parseInt(k.v, 10) || 0); });
+    });
+    return to;
+  }
+  fresh(); kbAddLay(); kbLay = 1; render();
+  out.deadRowsWas = kbEdit().lay[1].rows.length;
+  kbHeadRow(0); kbCut();
+  out.deadRowKept = kbEdit().lay[1].rows.length >= 1;
+  out.deadRowOff = offOf(kbEdit().lay[1]).length > 0;
+  /* and the face it goes back to is the one it came from, not a number that
+     is now something else */
+  out.deadRowTo = offOf(kbEdit().lay[1]).indexOf(0) >= 0;
+
+  fresh(); kbAddLay(); kbLay = 1; render();
+  /* a second row, so the column cut has something to take the key out of
+     without the row floor above being what saves it */
+  kbEdit().lay[1].rows.push([kbKey('lt', ''), kbKey('lt', '')]);
+  kbLay = 1; saveKb(); render();
+  kbHeadCol(0); kbCut();
+  out.deadColOff = offOf(kbEdit().lay[1]).length > 0;
+
+  /* and face 0 seen from the other end: with nothing on it pointing anywhere,
+     every page after it is unreachable rather than inescapable */
+  fresh(); kbAddLay(); kbLay = 0; render();
+  kbEdit().lay[0].rows = [[kbKey('lt', 'a'), kbKey('lt', 'b')]];
+  kbLay = 0; saveKb(); render();
+  out.deadFirstOff = offOf(kbEdit().lay[0]).length > 0;
+
+  /* A keyboard of ONE face is left alone: there is nowhere to go and a key
+     that goes nowhere is a key that does nothing. */
+  fresh();
+  kbHeadRow(0); kbCut();
+  out.oneFacePlain = offOf(kbEdit().lay[0]).length === 0;
+
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
   var lay0 = kbEdit().lay[0];
@@ -612,6 +662,12 @@ say(r.keptKeys && r.notOver, 'and the key went in beside what was there, not ove
 say(r.layBack, 'and the step back takes the page and both keys away again');
 say(r.layFront, 'the key goes in at the front of the last row when that row has room');
 say(r.layNewRow, 'and into a row of its own when every row is already full');
+say(r.deadRowKept, 'a face never loses its last row (it had ' + r.deadRowsWas + ')');
+say(r.deadRowOff, 'and taking a row off page 2 leaves it with a way off');
+say(r.deadRowTo, 'and that way off goes to the page it came from');
+say(r.deadColOff, 'taking a column off page 2 leaves it with one too');
+say(r.deadFirstOff, 'and page 1 keeps the way IN to the rest');
+say(r.oneFacePlain, 'a keyboard of one face is left alone -- there is nowhere to go');
 say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at all');
 say(r.plusLayNoop, 'and asking for one anyway does nothing');
 say(r.romOnEditor && r.romOnFree && r.romOnList,
@@ -682,5 +738,6 @@ console.log('\nkb: pressing a row number or a column letter SELECTS it and light
   'the bin takes it away and the three alignments say where a row is short from,\n' +
   'written in gap keys so the phone draws what this drawing does. A key wider than\n' +
   'the column is narrowed rather than removed, a page arrives with the way there and\n' +
-  'the way back on it, and every one of those can be taken back and put again --\n' +
+  'the way back on it AND KEEPS IT -- no face is a dead end -- and every one of\n' +
+  'those can be taken back and put again --\n' +
   'with nothing outside the layout moving.');
