@@ -210,10 +210,13 @@ because the way a server feature gets lost is by being half-written down.
 **Already online, so that this list is read against something:** accounts and
 the profile, posts (write, read, reply, delete), likes and boosts, following,
 notices, photographs and voice in Storage, search — people and posts — and
-deleting an account. And, since 2026-08-22, the account itself: the first
-launch signs in anonymously, so every phone has a uid before the first frame,
-and the server tells "there is an account" (`has_account()`) from "there is
-somebody" (`is_member()`).
+deleting an account.
+
+**One kind of account, and no anonymous ones** (OWNER DECISION 2026-08-26 —
+「匿名アカウントはねえよ」「二種類になる意味も分からないけど」). An account is
+somebody who signed in; nothing asks a second question about what kind it is.
+`has_account()` beside `is_member()` in `supabase/schema.sql` existed to let an
+anonymous one through and comes out with it. `claude/admin` has that half.
 
 ### 1. The plan, on the server — the one with money on it
 
@@ -558,15 +561,13 @@ What that means here, item by item, and most of it is **already built**:
 せいさくみれるけどふさがれてるけど？確認して」. Found, and this section had it
 wrong twice before it had it right.**
 
-**First correction: an anonymous session is not an account.** 「匿名アカウント
-はねえよ」 — and the code agrees, everywhere it matters. `netAnon()` gets a
-token whose JWT carries `is_anonymous`, so `netMember()` is false and
-`is_member()` in `supabase/schema.sql` is false. Calling it 「an account before
-the first frame」 was wrong: it is a **uid to hang things on**, which is what
-2026-08-22 asked for, and it is not somebody. **`makeNeed()` asking
-`netMember()` is correct and must not be changed** — swapping it for
-`netSignedIn()` would let a language be made off an anonymous token, which is
-the exact reverse of 「言語はアカウントないと作れないです」.
+**There is one kind of account and no anonymous ones** 「匿名アカウントはねえよ」
+「二種類になる意味も分からないけど」. An account is somebody who signed in.
+**`makeNeed()` asking `netMember()` is right and must not be loosened** —
+`netSignedIn()` would let a language be made off a token with nobody on it,
+which is the reverse of 「言語はアカウントないと作れないです」. The anonymous
+token itself is going: `claude/admin` has `netAnon()`, `netAnonTok()` and
+`has_account()`.
 
 **The cause is one button: `www/onboard.js:722.**
 
@@ -598,10 +599,10 @@ and 777 still call it, after an account exists. `makeNeed()` was **not** touched
 the button.
 
 **Left open on purpose, because it is a decision and not a fix:** somebody with
-no signal at that door now cannot finish the onboarding at all. `netAnon`'s own
-failure path treats 「first launch, no signal」 as a real state, so this is not
-hypothetical. What they have already drawn in `OB_DRAW` is on the phone and
-nothing may take it from them. **Asked.**
+no signal at that door cannot finish the onboarding at all — signing in needs
+the server, and there is nothing else to end on now. A first launch on a phone
+with no signal is a real state, not a hypothetical. What they have already drawn
+in `OB_DRAW` is on the phone and nothing may take it from them. **Asked.**
 
 **The exception, and it is the one place 「全部」 does not reach: a language
 that was downloaded is not synced.** `syMerge` adds both sides, so the first

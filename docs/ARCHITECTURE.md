@@ -106,11 +106,11 @@ answer is neither, on purpose. `www/sync.js` adds both sides and lets neither
 win by being newer, because the cost of merging is a duplicate and the cost of
 choosing is somebody's word 「そりゃあ両方足すだろ」.
 
-**「with no account」 is gone as a rule and is not yet gone as a fact.** There
-is an account before the first frame (`netAnon`, `www/boot.js`), but the first
-language is minted at the top of `www/core.js` — loaded before `net.js` — so it
-cannot ask. `docs/FEATURE_RULES.md` 2026-08-26 has the detail. Reported, not
-patched.
+**Making a language needs an account, and there is one kind** 「言語はアカウント
+ないと作れないです」「匿名アカウントはねえよ」. The one place that is not true
+yet is the first language: it is minted at the top of `www/core.js`, which
+`index.html` loads before `net.js` exists, so it cannot ask anything about a
+session. `claude/admin` has the rest.
 
 ## Where a screen comes from
 

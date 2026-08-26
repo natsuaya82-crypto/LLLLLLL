@@ -53,23 +53,22 @@ a check, because nothing throws. The timeline is the worked example: the three
 sns tabs and the composer never asked who you were, while every write in
 `schema.sql` had gone through `is_member()` from the first day, so signed out
 you could write a post that went nowhere. Reading the timeline and posting to
-it both need an account now. **The MAKING side used to be the exception and is
-not one any more** — this said 「a language is made on this phone, with or
-without one」 and 2026-08-26 turned it over: 「基本は全部サーバー管理 言語周りだけ
-バックアップにfile使う」「言語はアカウントないと作れないです」. The server is
-where a language lives, the phone keeps the copy that works with no signal, and
-what was made offline goes up when there is a signal again 「制作はオフラインでも
-可能次つながった時に更新される」. **An anonymous session is not an account** —
-this paragraph called it one for a day. 「匿名アカウントはねえよ」 `netAnon()`
-gets a token whose JWT carries `is_anonymous`, and `netMember()` reads false off
-it, as does `is_member()` in `schema.sql`: it is a uid to hang a language on, and
-it is not somebody. So the door is where an account starts, and `makeNeed()`
-asking `netMember()` is the rule, not a gate to loosen. The onboarding ends at
-that door and no longer offers a way past it (2026-08-26). **The first language
-is the one place this is not true yet** — it is minted at the top of
-`www/core.js`, which `index.html` loads before `net.js` exists, so it cannot ask
-anything about a session. Reported, not patched.
-「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
+it both need an account now, **and so does making a language** 「言語はアカウント
+ないと作れないです」「ログインした人しか書けないけど」. The server is where a
+language lives, the phone keeps the copy that works with no signal, and what was
+made offline goes up when there is a signal again 「制作はオフラインでも可能次
+つながった時に更新される」 — offline is a phone that is CARRYING an account, not
+one that has none.
+
+**There is one kind of account and there are no anonymous ones** 「匿名アカウント
+はねえよ」「二種類になる意味も分からないけど」. An account is somebody who
+signed in. The onboarding ends at that door and there is no way past it. Nothing
+asks a second question about what kind of account this is — `has_account()`
+beside `is_member()` existed to let an anonymous one through, and there is
+nothing to let through. **The first language is the one place this is not true
+yet**: it is minted at the top of `www/core.js`, which `index.html` loads before
+`net.js` exists, so it cannot ask anything about a session. `claude/admin` has
+the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
 **Shape.** Four things are banned outright: a row of round chips you scroll
 sideways (if there are more than a few, it is a **list**); the thing being
