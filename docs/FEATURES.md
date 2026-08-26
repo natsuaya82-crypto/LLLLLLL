@@ -546,47 +546,50 @@ What that means here, item by item, and most of it is **already built**:
   the backup, and the same mark is what a send would follow.
 
 **Checked 2026-08-26 at the owner's request 「オンボーディング終わったら
-せいさくみれるけどふさがれてるけど？確認して」 — it is blocked, and here is what
-does it.** Not a fault in the onboarding; one word in `www/onboard.js`:
+せいさくみれるけどふさがれてるけど？確認して」. Found, and this section had it
+wrong twice before it had it right.**
+
+**First correction: an anonymous session is not an account.** 「匿名アカウント
+はねえよ」 — and the code agrees, everywhere it matters. `netAnon()` gets a
+token whose JWT carries `is_anonymous`, so `netMember()` is false and
+`is_member()` in `supabase/schema.sql` is false. Calling it 「an account before
+the first frame」 was wrong: it is a **uid to hang things on**, which is what
+2026-08-22 asked for, and it is not somebody. **`makeNeed()` asking
+`netMember()` is correct and must not be changed** — swapping it for
+`netSignedIn()` would let a language be made off an anonymous token, which is
+the exact reverse of 「言語はアカウントないと作れないです」.
+
+**The cause is one button: `www/onboard.js:722.**
 
 ```
-function makeNeed(){ if(!SET.done) return true; return obNeed(); }
-function obNeed(){ if(netMember()) return true; … obDoor(…); return false; }
+(obLastStep()? '<button class="obskip"' + DO('obFinish') + '>'+esc(t('ob.in.later'))+'</button>' : '')
 ```
 
-`netMember()` is 「a session **with a name on it**」 — `!SESS.anon`. The account
-made at launch by `netAnon()` **is** anonymous, so `netMember()` is false for
-everybody who has not signed up. And `obDoor()` sets `SET.done=false`, which is
-what makes the app *be* the onboarding. So:
+The onboarding's steps are `OB_DRAW → OB_TOUR → OB_NAME → OB_IN`, and **`OB_IN`
+IS the door** — the walk already ends at signing in. Both the roads that go
+through it call `obFinish()` after the account exists (line 499, somebody who
+was already signed in; line 777, somebody who just made one). This third one
+skips it: 「あとで」 / 「Later」, in all ten languages, straight to
+`obFinish()`. Press it and the walk is over with no account, and every making
+action afterwards correctly asks for one — which is what being blocked is.
 
-```
-  finish the onboarding (obFinish: SET.done=true, land on the profile)
-      ↓  tap anything on the making side
-  makeNeed() → obNeed() → netMember() is false → obDoor()
-      ↓  SET.done=false
-  back inside the onboarding, on the sign-in door
-```
+**And the comment directly above that button is the rotten sentence itself**
+(lines 714–721): 「What they have made by then is on the phone and stays there:
+a language is made on this phone, with or without an account.」 The button is
+not a bug against that rule — **it is that rule, implemented.** 2026-08-26
+overturned the rule, so the button goes with it. That is the fix, and it is a
+deletion rather than a change.
 
-It hits all four the owner named and the letter grid: `newLetter` / `editLetter`
-/ `editGlyph` (`www/glyph.js`), `openAdd` (`www/wordsheet.js`), `openOwnPhase` /
-`stOpen` (`www/phases.js`), `openNote` (`www/notes.js`), `ltGo` /
-`ltForUnitGo` / `openSndAdd` (`www/sound.js`). Each of those is where the owner
-put it 「文字は書こうとする時点でabcとかのこの画面で防ぐ」; none of them is
-misplaced.
+`www/onboard.js` is not this branch's to edit; reported. What has to be
+thought about when somebody does take it:
 
-**The sharpest edge: the onboarding IS drawing your first letter**, and it works
-because `makeNeed()` returns true while `SET.done` is false. Draw one, finish,
-try to draw a second — door. The wall is invisible until the moment the app
-stops being the onboarding.
-
-**Why this is a question and not a bug to fix:** two different things are both
-called 「アカウント」 in this code, and today's 「言語はアカウントないと作れない
-です」 does not say which. `netSignedIn()` is 「there is a session」 and
-**everybody has one from the first frame**; `netMember()` is 「there is a name on
-it」. If the decision means the first, `makeNeed()` should ask `netSignedIn()`
-and the wall goes away by itself. If it means the second, the current behaviour
-is right and what is wrong is the ORDER — the onboarding walks somebody through
-making something and then charges them for a second one. **Open. Asked.**
+- **the skip is the only way out of `OB_IN` today.** Removing it makes signing
+  in the only way to finish, which is the decision — but a person with no
+  signal at that moment then cannot finish at all. `netAnon`'s own failure
+  path already treats 「first launch, no signal」 as a real state.
+- **what happens to the letter they already drew** in `OB_DRAW`, before the
+  door. It is on the phone. Nothing may take it away from them.
+- `ob.in.later` becomes an unused key in ten `www/i18n` files.
 
 **The exception, and it is the one place 「全部」 does not reach: a language
 that was downloaded is not synced.** `syMerge` adds both sides, so the first
