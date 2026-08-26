@@ -53,13 +53,13 @@ front of you is one you may not edit. Nothing of it exists yet:
 
 | thing | the truth is | read by |
 |---|---|---|
-| a language's words, letters, script, keyboard, world | `localStorage`, under `lingua.<id>.<slice>` | globals loaded at boot and on `langOpen()` |
+| a language's words, letters, script, keyboard, world | **the `slice` rows on the server**, with `localStorage` under `lingua.<id>.<slice>` as the working copy that runs with no signal (OWNER DECISION 2026-08-26) | globals loaded at boot and on `langOpen()`; `netLangSync()` puts the two together |
 | which languages exist, which is open | `lingua.langs`, `lingua.cur` | `LANGS`, `langId` |
 | the person's settings | `lingua.set` | `SET` |
 | the person's session | `lingua.sess` | `SESS` (`www/net.js`) |
 | the person's profile | `lingua.me` | `ME` (`www/me.js`) |
 | the timeline | `lingua.posts` | `POSTS` (`www/post.js`) |
-| a copy that survives the app | `Documents/Languages/<name>.json` on the device | `bkPack()` / `bkTake()` (`www/backup.js`) |
+| a copy that survives the app — **the backup**, now that the server is the record 「言語周りだけバックアップにfile使う」 | `Documents/Languages/<name>.json` on the device | `bkPack()` / `bkTake()` (`www/backup.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
 
 **That was true and is not.** This paragraph said 「Nothing a person makes is
@@ -81,9 +81,36 @@ one, `netLangSync()` puts the two copies together through `www/sync.js`, and
 **`boot.js` calls it on launch**. `quote` and `publication` really are still
 unused.
 
-`localStorage` stays the truth on the phone, and that is the point rather than
-a stage on the way: the making side works with no account and no signal, and
-what the server holds is the copy. The table above says which key is which.
+**This paragraph said the wrong one was the copy, and it was written yesterday.**
+It said 「`localStorage` stays the truth … the making side works with no account
+and no signal, and what the server holds is the copy」. OWNER DECISION
+2026-08-26 turned both halves over: 「基本は全部サーバー管理 言語周りだけ
+バックアップにfile使う」「言語はアカウントないと作れないです」.
+
+So, the order:
+
+```
+  the server        is the record          language + slice rows
+  localStorage      is the working copy    read at boot, written as you type,
+                                           and what makes the app work with no
+                                           signal 「制作はオフラインでも可能
+                                           次つながった時に更新される」
+  Documents/…json   is the BACKUP          bkPack(), ch. 24 — 「言語周りだけ
+                                           バックアップにfile使う」
+```
+
+Nothing about how the code runs changes with that sentence: the globals are
+still read from `localStorage` at boot and every screen still writes there
+first. What changes is which one is **believed** when they differ — and the
+answer is neither, on purpose. `www/sync.js` adds both sides and lets neither
+win by being newer, because the cost of merging is a duplicate and the cost of
+choosing is somebody's word 「そりゃあ両方足すだろ」.
+
+**「with no account」 is gone as a rule and is not yet gone as a fact.** There
+is an account before the first frame (`netAnon`, `www/boot.js`), but the first
+language is minted at the top of `www/core.js` — loaded before `net.js` — so it
+cannot ask. `docs/FEATURE_RULES.md` 2026-08-26 has the detail. Reported, not
+patched.
 
 ## Where a screen comes from
 
