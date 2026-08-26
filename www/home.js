@@ -727,49 +727,19 @@ function wldArtSet(id, k, v){
   saveWld();
 }
 wldRead();
-function vWorld(){
-  var w=world();
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<div class="sec">'+t('wld.where')+'</div>'+
-    '<div class="field"><input id="wld-where" value="'+esc(w.where||'')+'" '+
-      'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
-    '<div class="sec">'+t('wld.who')+'</div>'+
-    '<div class="field"><input id="wld-who" value="'+esc(w.who||'')+'" '+
-      'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>'+
-    '<div class="sec">'+t('wld.note')+'</div>'+
-    '<textarea class="ntbody" style="min-height:140px" placeholder="'+esc(t('wld.note.ph'))+'" '+
-      '' + CH('wldSet', ["note"]) + '>'+esc(w.note||'')+'</textarea>'+
-    /* And the sections. A row each, and a + that makes one and goes to it --
-       the same shape the notebook's list already has, so nothing new is
-       drawn. An untitled one says so rather than showing an empty row. */
-    secAdd(t('wld.secs'), DO('wldArtAdd'), t('wld.secs'))+
-    wldArts().map(function(one){
-      /* No state on these rows any more: the switch that sets it is a few
-         rows below, and the row saying 公開 beside a switch already saying so
-         was one fact in two places on one screen. */
-      return '<button class="set"' + DO('go', ["wldart", one.id]) + '>'+
-        '<span class="sl">'+esc(one.t||t('wld.art.untitled'))+'</span>'+
-        '<span class="sv">'+ICON_GO+'</span></button>';
-    }).join('')+
-    /* ---- and what may be seen of each section --------------------------
-       This is the editor, so this is where they are set --
-       「なんで編集画面じゃないのにトグルが出てくんの？」 OWNER 2026-08-25. Every
-       section of the article is here, asked of wldSecs() rather than listed
-       again: a section added there arrives here the same day.
-       A section is public or not, and only a public one can be asked whether
-       it may be taken away -- two questions, and the second only follows the
-       first. */
-    /* Only the three that can actually be handed over carry these --
-       「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 and
-       「トグルいつまであんだよ」 OWNER 2026-08-25. The overview, the sounds, the
-       grammar and anything somebody wrote had a switch each and there was
-       nothing behind any of them: nobody can be shown this page yet, and
-       there is nothing in those four to take away. Eleven switches were
-       ten more than the page had answers for. */
-    '<div class="sec">'+esc(t('wld.shown'))+'</div>'+
-    wldSecs().map(function(sec){ return sec.dl? wldSecRows(sec) : ''; }).join('')+
-    '</div></div>';
-}
+/* The editor of the article, and it is laid out AS the article --
+   「編集画面と表示画面全然あってないのはなに？どうやって表示させんの？編集画面で
+   編集して作るんだろなんで独立してんだよ」 OWNER 2026-08-25, and that was right:
+   the two screens had grown their own orders. What you write at the top of
+   this one is what you read at the top of that one, section for section, in
+   the order wldSecs() gives -- one list, asked by both, so they cannot drift
+   apart again.
+
+   The sections whose content is a chapter of the app are a way through to it
+   and the one question that is theirs: whether somebody may take it away. The
+   sounds are not here at all and cannot be -- a sound belongs to the letter
+   that says it, so the inventory is written by drawing letters, not on this
+   screen. */
 /* One section, open: what it is called, what it says, and the two answers
    about who may have it. The list is where a section is CHOSEN and this is
    the screen you arrive at, which is where a thing is changed -- the two are
@@ -860,10 +830,12 @@ function wldSecOf(r){
   o=s[r];
   return (o && typeof o==='object' && !(o instanceof Array))? o : {};
 }
-function wldSecHidden(r){
-  var o=wldSecOf(r);
-  return Object.prototype.hasOwnProperty.call(o,'hide')? !!o.hide : wldHidden();
-}
+/* Whether a SECTION is public was asked of every section and is not asked
+   any more: 「単語と文字とキーボードと文法にDL可能だけつけろ」 and 「そもそもこの
+   言語についてを公開非公開にするページつけて」 OWNER 2026-08-25 -- one answer, of
+   the whole page, and it is `wldHidden()`. `secs[r].hide` is not read and not
+   written now; anything already stored under it is left exactly where it is,
+   because nothing here deletes what somebody's file already says. */
 function wldSecDl(r){
   var o=wldSecOf(r);
   return Object.prototype.hasOwnProperty.call(o,'dl')? !!o.dl : wldDl();
@@ -886,15 +858,25 @@ function wldSecSet(r, k, v){
   o[k]=!!v;
   saveWld(); render();
 }
-function setWldSecHide(r, v){ wldSecSet(r, 'hide', v); }
 function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
   if(!langName) return '';
+  /* And while it is private it is not a way through at all --
+     「そもそも非公開ならプロフィールから飛べないんだって」 OWNER 2026-08-25. It was
+     a button either way, with a badge beside the name saying so, which is the
+     app marking a door as shut and leaving it open. The row stays, because
+     the name of the language is a fact of this profile and its owner is the
+     one reading it; what goes is the press and the arrow.
+
+     The way back is the same switch in the settings (www/settings.js), which
+     is where it has always also been, so nothing is shut away by this. */
+  if(wldHidden()) return '<div class="wldrow">'+
+    '<span class="wldnm">'+esc(langName)+'</span>'+
+    '<span class="wldoff">'+esc(t('wld.hidden'))+'</span></div>';
   return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
     '<span class="wldnm">'+esc(langName)+'</span>'+
-    (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
     ICON_GO+'</button>';
 }
 /* ---- a section of the article opens and shuts -------------------------
@@ -914,6 +896,219 @@ function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
 var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
+/* The mark on a chapter anybody may take away. An arrow down ONTO a line --
+   「↓ / ー　こうじゃないの？」 OWNER 2026-08-25, and that is the shape everything
+   that has ever meant "download" is.
+
+   It was `ICON_INDN`, which is the keyboard editor's 「行を下へ」 and has its
+   line at the TOP: an arrow leaving a line rather than arriving at one, which
+   reads as moving something out. Reusing it here was one glyph asked to mean
+   two things, and flipping it would have turned every 「行を下へ」 button in the
+   keyboard into a download.
+
+   Here rather than in www/glyph.js because that file is not this session's,
+   and because `ICON_FOLD` above is already this chapter's own mark kept beside
+   the screen it marks. When the chapters are put back together this belongs
+   with the rest of them. */
+var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg>';
+/* ---- the overview is the person's own list now -------------------------
+   「メモじゃなくて概要に好きに追加したいこと並べればいいやん」 OWNER 2026-08-25.
+   Four fixed facts and one box called 「メモ」 was what this page had; what it
+   needed was rows somebody writes themselves -- a name and what it says --
+   as many as they want, in the order they want. That is what an infobox IS.
+
+   `k` may be empty. A row with no name is the paragraph an article opens
+   with, which is exactly what the note was, and is why the note can become
+   one of these without inventing a heading to put over it. */
+function wldOvs(){
+  var a=world().ovs;
+  return (Object.prototype.toString.call(a)==='[object Array]')? a : [];
+}
+function wldOvMint(){
+  var id='O'+(new Date()).getTime().toString(36), n=0, a=wldOvs(), i, hit=1;
+  while(hit){ hit=0; for(i=0;i<a.length;i++) if(a[i] && a[i].id===id) hit=1;
+    if(hit){ n++; id='O'+(new Date()).getTime().toString(36)+n.toString(36); } }
+  return id;
+}
+function wldOvAdd(){
+  var a=wldOvs();
+  a.push({id:wldOvMint(), k:'', v:''});
+  world().ovs=a; saveWld(); render();
+}
+function wldOvSet(id, f, v){
+  var a=wldOvs(), i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id){ a[i][f]=String(v||''); saveWld(); return; }
+}
+/* DELETE REVIEW is in docs/CHANGELOG.md with this change. What goes is one
+   row of this list and nothing else: no other slice is touched, the four
+   fixed facts are not rows and cannot be reached from here, and `note` --
+   which a row may have been copied FROM -- is left where it is. */
+function wldOvDel(id){
+  var a=wldOvs(), i;
+  for(i=0;i<a.length;i++) if(a[i] && a[i].id===id){ a.splice(i,1); break; }
+  world().ovs=a; saveWld(); render();
+}
+/* The note becomes the first of those rows, with no name over it, and the
+   note itself is NOT removed -- `wld.note` stays in the file exactly as it
+   was. A migration copies and never removes what it read (docs/DATA_SAFETY).
+   `ovnote` records that the copy has been made, so a person who then deletes
+   the row does not get it back on the next launch: putting it back would be
+   the app overruling somebody who had just said no. */
+function wldNoteMigrate(){
+  var w=world(), a;
+  if(!w.note || w.ovnote) return;
+  a=wldOvs();
+  a.unshift({id:wldOvMint(), k:'', v:String(w.note)});
+  w.ovs=a; w.ovnote=1; saveWld();
+}
+/* ---- moving a row by holding it -----------------------------------------
+   「四角に入れてそれ長押しで上下移動できるようにすればいいやん」 OWNER 2026-08-25.
+   Two arrows on every row were three buttons of furniture per row and the
+   owner could not read the list past them: 「矢印何それ？見づらいわ」.
+
+   The same gesture the alphabet already has (ltDragMount in www/letters.js):
+   hold, and the row comes up under the finger; the rest move aside as it
+   passes; the order is written ONCE, when the finger lifts, not on every
+   swap. A press that travels before the delay is a scroll and is left alone,
+   which is the only thing the delay is for.
+
+   It is mounted on the document rather than on the list, because the list is
+   rebuilt by every render and the call that would re-mount it lives in
+   render() itself -- www/glyph.js, which this session does not own. One
+   listener, added once, is also fewer than one per render.
+
+   A container says which list it is with data-wdrag; a row says which row it
+   is with data-wid. Nothing else here knows what a section or an overview
+   row is. */
+var WLDD=null;
+function wldDragBox(el){
+  while(el && el.getAttribute && !el.getAttribute('data-wid')) el=el.parentNode;
+  return (el && el.getAttribute && el.getAttribute('data-wid'))? el : null;
+}
+function wldDragDown(e){
+  var b=wldDragBox(e.target), p=e.touches? e.touches[0] : e;
+  if(!b || !p || !b.parentNode || !b.parentNode.getAttribute('data-wdrag')) return;
+  WLDD={el:b, g:b.parentNode, x:p.clientX, y:p.clientY, on:false, timer:0};
+  WLDD.timer=setTimeout(wldDragLift, 380);
+}
+function wldDragLift(){
+  if(!WLDD) return;
+  WLDD.on=true;
+  WLDD.el.className+=' lift';
+  WLDD.g.className+=' moving';
+}
+function wldDragMove(e){
+  var p=e.touches? e.touches[0] : e, kids, i, k, r;
+  if(!WLDD || !p) return;
+  if(!WLDD.on){
+    /* Travelled before it was held: it was a scroll. */
+    if(Math.abs(p.clientX-WLDD.x)>8 || Math.abs(p.clientY-WLDD.y)>8) wldDragOff();
+    return;
+  }
+  e.preventDefault();
+  kids=WLDD.g.childNodes;
+  for(i=0;i<kids.length;i++){
+    k=kids[i];
+    if(!k || k===WLDD.el || !k.getAttribute || !k.getAttribute('data-wid')) continue;
+    r=k.getBoundingClientRect();
+    if(p.clientY>r.top && p.clientY<r.bottom){
+      WLDD.g.insertBefore(WLDD.el, (p.clientY < r.top + r.height/2)? k : k.nextSibling);
+      return;
+    }
+  }
+}
+function wldDragUp(){
+  var g, kind, ids, kids, i;
+  if(!WLDD) return;
+  g=WLDD.g;
+  if(WLDD.on){
+    kind=g.getAttribute('data-wdrag');
+    ids=[]; kids=g.childNodes;
+    for(i=0;i<kids.length;i++)
+      if(kids[i] && kids[i].getAttribute && kids[i].getAttribute('data-wid'))
+        ids.push(kids[i].getAttribute('data-wid'));
+    wldOrderTo(kind, ids);
+  }
+  wldDragOff();
+}
+function wldDragOff(){
+  if(!WLDD) return;
+  clearTimeout(WLDD.timer);
+  if(WLDD.on){ render(); }
+  WLDD=null;
+}
+/* The list is put back in the order the rows ended up in. Nothing is created
+   and nothing is dropped: a row whose id is not in `ids` -- which cannot
+   happen, but the file is somebody's -- keeps its place at the end rather
+   than disappearing. */
+function wldOrderTo(kind, ids){
+  var a=(kind==='ovs')? wldOvs() : wldArts(), out=[], seen={}, i, j;
+  for(i=0;i<ids.length;i++)
+    for(j=0;j<a.length;j++)
+      if(a[j] && a[j].id===ids[i] && !seen[ids[i]]){ out.push(a[j]); seen[ids[i]]=1; }
+  for(j=0;j<a.length;j++) if(a[j] && !seen[a[j].id]) out.push(a[j]);
+  if(kind==='ovs') world().ovs=out; else world().arts=out;
+  saveWld();
+}
+/* A box that is written into gets taller instead of growing a scrollbar of
+   its own inside a page that also scrolls -- 「これ長く書いて行った時下見えんの？」
+   Two scrolling things one inside the other is how the bottom of what
+   somebody wrote ends up somewhere nobody finds it.
+   Delegated on the document and run once per keystroke on the one element
+   that was typed into; and once after every render, because a box arrives
+   already holding what was written last time. */
+function wldGrow(el){
+  if(!el || !el.className || el.className.indexOf('grow')<0) return;
+  el.style.height='auto';
+  el.style.height=(el.scrollHeight+2)+'px';
+}
+/* How tall a box has to arrive to hold what is already in it. The growing
+   above happens on a keystroke, and a box that arrives full has had none --
+   the line that would size them all after a render belongs in render()
+   itself, which is www/glyph.js and not this session's. So the height is
+   decided here, where the text is, and written as `rows`.
+   Wrapping is counted at roughly thirty-four characters, which is what a line
+   of this box holds on the narrowest phone: too many rows shows blank space
+   and too few hides the end, and of the two only one loses somebody's words
+   behind a second scrollbar. */
+function wldRows(v, least){
+  var s2=String(v||''), parts=s2.split('\n'), n=0, i;
+  for(i=0;i<parts.length;i++) n+=1+Math.floor(parts[i].length/34);
+  return Math.max(least||1, n);
+}
+document.addEventListener('input', function(e){ wldGrow(e.target); }, false);
+document.addEventListener('touchstart', wldDragDown, false);
+document.addEventListener('touchmove', wldDragMove, {passive:false});
+document.addEventListener('touchend', wldDragUp, false);
+document.addEventListener('touchcancel', wldDragUp, false);
+/* What a section carries is ONE question and it is whether it may be taken
+   away -- 「単語と文字とキーボードと文法にDL可能だけつけろ」 OWNER 2026-08-25.
+   The per-section 公開 switch is gone entirely: whether anybody may see this
+   at all is asked ONCE, of the page, at the top of this screen. Eight
+   switches were asking a question the page had already answered.
+
+   On the EDITOR and nowhere else -- 「なんで編集画面じゃないのにトグルが出て
+   くんの？」. The article is what somebody else reads.
+
+   ONE ROW, and the row is the section:
+
+     文字　トグル / 単語　トグル / 文法　トグル / キーボード　トグル
+
+   which is how the owner wrote it out, 2026-08-25. It was a heading with a
+   fold marker and a way through to the chapter, and UNDER it a second row
+   saying 「DL可」 -- two rows and three controls where the sentence has one
+   of each. The name of the section is the label now: 「DL可能なやつね？」 says
+   what the switch is, once, for all four, and what it means in full is behind
+   the `?` in the bar where an explanation goes. The heading is gone with it,
+   because a heading that folds nothing and a marker over nothing are the page
+   claiming acts it cannot perform. */
+function wldSecRows(sec){
+  return '<button class="set"' + DO('setWldSecDl', [sec.r, !wldSecDl(sec.r)]) + '>'+
+    '<span class="sl">'+esc(wldSecNm(sec))+'</span>'+
+    swtHTML(wldSecDl(sec.r))+'</button>';
+}
 /* ---- what sections this article has, in one place ---------------------
    Named by the owner, 2026-08-25: 「概要▼ 言語が構成する音▼ 文字▼ 文法▼
    キーボード▼」, and 「単語入れるけどメモはなんで入れんの？」 -- so the lexicon
@@ -926,22 +1121,33 @@ var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" f
 function wldSecs(){
   var out=[{r:'wldov', k:'wld.overview'}], a=wldArts(), i;
   out.push({r:'sound',   k:'toc.sound'});
-  /* `dl` marks the three that can actually BE taken away and used --
-     「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 OWNER
-     2026-08-25. The overview, the sounds, the grammar and anything somebody
-     wrote are read; there is nothing to hand over, so the question is not
-     asked of them. It was being asked of every one of them, including a
-     section still called 「無題」. */
+  /* `dl` marks the four that can actually BE taken away and used --
+     「単語と文字とキーボードと文法にDL可能だけつけろ」 OWNER 2026-08-25, which is
+     the later of two on the same day and the one in force. The earlier said
+     three -- 「ダウンロードできるのは単語と文字とキーボードだって言ってんだろ」 --
+     and the grammar was added to it. THIS COMMENT WENT ON SAYING THREE while
+     the line below it said four, so the file argued with itself about what
+     the owner had decided; the code was right and the sentence over it was a
+     week out of date.
+
+     The overview, the sounds, and anything somebody wrote are read; there is
+     nothing to hand over, so the question is not asked of them. It was being
+     asked of every one of them, including a section still called 「無題」. */
   out.push({r:'letters', k:'toc.letters', go:'letters', dl:1});
   out.push({r:'words',   k:'toc.words',   go:'words',   dl:1});
-  out.push({r:'gram',    k:'toc.gram',    go:'gram'});
+  out.push({r:'gram',    k:'toc.gram',    go:'gram',    dl:1});
   out.push({r:'kb',      k:'kb.title',    go:'kb',      dl:1});
   /* And then what somebody wrote, AFTER the ones the book always has --
      「見出しは全員わかりやすくしろよ」. A section called 「The valley」 sitting
      between 概要 and 音 reads as one of the article's own headings and is not
      one; below them it is plainly the part this person added. */
+  /* `nm` is what a heading SAYS (an unnamed one says so); `t2` is what was
+     actually typed, which is what the box on the writing face holds -- a box
+     pre-filled with 「無題」 would make somebody delete a word they never
+     wrote before they could put their own in. */
   for(i=0;i<a.length;i++) out.push({r:a[i].id, nm:a[i].t||t('wld.art.untitled'),
-                                   b:a[i].b||'', blank:!(a[i].t||a[i].b)});
+                                   t2:a[i].t||'', b:a[i].b||'',
+                                   blank:!(a[i].t||a[i].b)});
   return out;
 }
 function wldSecNm(sec){ return sec.k? t(sec.k) : sec.nm; }
@@ -971,7 +1177,7 @@ function abSounds(){
   if(rest.length) out+=abField(t('ipa.other'), rest.join('  '));
   return out? '<div class="abfx">'+out+'</div>' : '';
 }
-function abHead(sec, folds){
+function abHead(sec, folds, extra){
   var nm=wldSecNm(sec);
   /* The marker is drawn only when there is something under it to fold. A
      section whose whole content is the chapter it points at has nothing to
@@ -982,6 +1188,7 @@ function abHead(sec, folds){
     (folds? '<button class="abshf"' + DO('abToggle', [sec.r]) + '>'+
       ICON_FOLD+'<span class="abshl">'+esc(nm)+'</span></button>'
      : '<div class="abshf abshp"><span class="abshl">'+esc(nm)+'</span></div>')+
+    (extra||'')+
     (sec.go? '<button class="abshg"' + DO('go', [sec.go]) + '>'+ICON_GO+'</button>' : '')+
     '</div>';
 }
@@ -991,162 +1198,240 @@ function abField(k, v){
   return '<div class="abfd"><div class="abfk">'+esc(k)+'</div>'+
     '<div class="abfv">'+esc(v)+'</div></div>';
 }
-/* The two answers. They are on the EDITOR and nowhere else --
-   「なんで編集画面じゃないのにトグルが出てくんの？」 OWNER 2026-08-25. The
-   article is what somebody else reads; a switch has no business on it. */
-function wldSecRows(sec){
-  var r=sec.r, nm=wldSecNm(sec);
-  return '<button class="set"' + DO('setWldSecHide', [r, !wldSecHidden(r)]) + '>'+
-    '<span class="sl">'+esc(nm)+'</span>'+
-    swtHTML(!wldSecHidden(r))+'</button>'+
-    ((sec.dl && !wldSecHidden(r))?
-      '<button class="set abdl"' + DO('setWldSecDl', [r, !wldSecDl(r)]) + '>'+
-      '<span class="sl">'+esc(t('wld.dl.can'))+'</span>'+
-      swtHTML(wldSecDl(r))+'</button>' : '');
+/* ---- the article, read and written on the same page ---------------------
+   「もういいよこうやって編集してくれ」 OWNER 2026-08-25, over a screenshot of
+   ja.wikipedia.org's mobile editor: a bar across the top and the ARTICLE
+   underneath it, written on where it stands.
+
+   There is no separate editor screen any more. There were two screens with
+   two layouts for one thing, and every round of this chapter has been spent
+   on the gap between them 「編集画面と表示画面全然あってないのはなに？」. One
+   function draws both now, so a section cannot appear in one and not the
+   other: `ed` is the only difference, and it swaps a piece of text for the
+   box it is written in, in the place it already sits.
+
+   `about` is the reading face and `world` is the writing one -- the same
+   page, and 編集 stays where it is rather than going anywhere. */
+function vAbout(){ return wldPage(false); }
+function vWorld(){
+  /* The note becomes a row of the overview the first time this is opened.
+     It cannot be done at load: saveWld() touches the backup and backup.js is
+     loaded after this file, which is why migrateWorld() runs from boot.js. */
+  wldNoteMigrate();
+  return wldPage(true);
 }
-function vAbout(){
-  var w=world(), drawn=LETTERS.filter(ltHasShape), body='';
-  /* The article names its subject. The bar says what SCREEN this is
-     (「この言語について」, which is PAGES' to say and rule 2's NAMES keeps
-     there); the page itself has to say what the article is ABOUT, and until
-     now nothing on it did -- somebody arriving could read the whole page
-     without being told which language it was. That is the first line of every
-     encyclopedia article and it was the one missing.
-     Not a duplicate of the bar: the bar names the room, this names the
-     language, and they are never the same string. `.sth` is the heading a
-     stage already uses. */
+function wldPage(ed){
+  var w=world(), drawn=LETTERS.filter(ltHasShape), body='', dls='', done, i, kbs, kbat;
+  /* The article names its subject: the bar says which SCREEN this is, and the
+     page has to say what the article is ABOUT. The name of a language is not
+     written here -- it is the language's own, and it is set where a language
+     is set -- so it stays a heading in both faces. */
   if(langName) body+='<h1 class="abth">'+esc(langName)+'</h1>';
-  /* The two counts are the way in to the two lists. The dictionary was
-     written out here for a moment and taken back off: a language with ten
-     thousand words in it is a page nobody reaches the bottom of, and the
-     dictionary already has a screen that searches and sorts.
-     「lpみたいにしたら1万時ある時どうするつもりなの？」 */
-  /* The facts, as rows. 「wikiの見た目にしろって言ってなんでそんなゴミが
-     できるの？wiki見たことないの？」 OWNER 2026-08-25 -- and the answer is
-     that this was three tiles.
+  /* Whether the page exists for anybody else at all. Only while writing:
+     a state with no way to change it does not belong on the reading face. */
+  if(ed) body+='<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
+    '<span class="sl">'+esc(t('wld.shown'))+'</span>'+
+    swtHTML(!wldHidden())+'</button>';
+  /* And a page nobody may open is the NAME and nothing else --
+     「非公開にする場合は言語名しか表示されない」「非公開にしたら編集画面が全部
+     非表示になる感じ」 OWNER 2026-08-25.
 
-     An encyclopedia article opens with its subject named, a line saying what
-     it is, and then a table of plain facts; it does not open with a row of
-     cards. The three tiles were also `border-radius:14px`, which is the rule
-     at the head of CLAUDE.md.
-     `.set` is that table and is already in this app on every settings screen
-     and at the foot of this very page -- label on the left, value on the
-     right, one hairline under each. Nothing new is drawn.
-     The two that lead somewhere stay pressable and the writing system does
-     not, exactly as before; `.set` carries its own font-size and line-height,
-     so a <button> row and a <div> row are the same height (CLAUDE.md's rule
-     about one list, one height, and what press measures). */
-  /* ---- the skeleton, in the order an article has it -------------------
-     「骨格の話はしてねえし、そもそも骨格の認識がくそ、一旦ページ見てこいよ」
-     OWNER 2026-08-25. Read: wikipedia.org is blocked from this container, so
-     Wikipedia's own Manual of Style/Layout was, which gives the order:
+     Both faces stop here, and they stop at different lines on purpose. The
+     article stops above the switch, because there is no switch on it: what is
+     left is the heading, which is the one thing a language still says about
+     itself when it says nothing else.
 
-       infobox        the key facts, ABOVE the first heading
-       lead           what this is, in words, still above the first heading
-       contents       when there are four headings or more
-       == section ==  and under its heading, the way to the fuller article
+     The EDITOR stops BELOW it, and the one row it keeps is the switch that
+     put it here. 「一番上のトグル」 is what the owner called it, and it is the
+     way back: a screen that hid its own way out would be a language shut
+     away with nothing on the phone able to open it again. docs/keyboard.md
+     carries the same trap written out in four steps -- a face reached by a
+     key nobody placed -- and it is a manual page standing in for the thing
+     working. Not here.
 
-     Every one of those four was in the wrong place or missing here. The facts
-     were in the middle of the flow, the lead was a two-line fragment under the
-     title, the contents were at the FOOT of the page, and no section led
-     anywhere. */
-  /* The infobox. Facts, before anything is said.
-
-     These were `.set` rows, which is the class every settings screen in this
-     app wears -- so the article opened with three rows identical to Settings,
-     and then the contents did it again five rows further down. Eight
-     settings-shaped rows is what made the page read as a form.
-     「wikiの見た目にしろって言ってなんでそんなゴミができるの？」 An infobox is a
-     TABLE: a narrow label column in the quiet colour and the value beside it,
-     set tight, with nothing to press.
-
-     Where it is spoken and who speaks it are here rather than being sections
-     of their own. They are one line each -- a heading the size of "The
-     valley" over a three-word answer is the article breaking itself into
-     fragments, and every encyclopedia puts exactly these two in the box at
-     the top instead. Nothing is dropped: the same two strings, in the same
-     order, under the same names. */
-  /* ---- the article, which is its sections and nothing else -----------
-     No list of sections above them 「セクションいらないって」 and no switches
-     on any of them 「なんで編集画面じゃないのにトグルが出てくんの？」. What is
-     left is the thing itself: a heading that folds, a way through on the ones
-     whose chapter is elsewhere, and the content under it. */
-  var lead='';
-  /* The note is the rest of the lead: an article says what it is before it
-     starts dividing itself up, and that paragraph carries no heading. */
-  if(w.note) lead+='<div class="abtl abtlead">'+esc(w.note)+'</div>';
-  body+=lead;
+     Nothing is deleted and nothing is unset. `hide` is one flag, the sections
+     keep their own answers, and every word is where it was: turning the
+     switch back on brings the whole page back exactly as it was left. */
+  if(wldHidden()) return '<div class="view">'+
+    navTop('', ed? '' : '<button class="navdo"' + DO('go', ["world"]) + '>'+
+      esc(t('wld.edit'))+'</button>')+
+    '<div class="body">'+body+'</div></div>';
   wldSecs().forEach(function(sec){
-    var inner='', done, i;
-    /* A section with neither a title nor a body is not drawn. It exists --
-       the + made it and it is in `arts` -- but a heading reading 「無題」 over
-       nothing is the article promising something nobody has written yet. It
-       is still in the editor's list, which is where it gets written. */
-    if(sec.nm!==undefined && !sec.b && sec.blank) return;
+    var inner='', extra='';
+    /* Two of the sections do not reach the writing face at all, and both are
+       the same sentence: 「文字とか単語とかはここで編集しないからこれしか出ない」
+       OWNER 2026-08-25.
+
+       The SOUNDS are not on the owner's list. They are not written here in
+       either face -- a sound belongs to the letter that says it -- so the
+       inventory was five rows of somebody else's chapter standing between the
+       overview and the four switches. It is on the article, where it is
+       something to read.
+
+       And the FOUR are one row each and nothing else: the name and the
+       switch. 「これしか出ない」 is the whole of what the editor shows for
+       them, so the section returns here rather than going on to grow a
+       heading, a fold marker and a way through. */
+    if(ed && sec.r==='sound') return;
+    /* And two that are not on the ARTICLE -- 「単語と文法とはdl専用だから
+       見れなくていいのよ？　音と文字とキーボードだけ」 OWNER 2026-08-25. A
+       dictionary and a grammar are handed over rather than looked at: what
+       the switch below opens is the file, and the rows they drew here were a
+       heading and an arrow into this phone's own chapters, which is a way
+       through that means nothing to anybody but their owner. What is left to
+       READ is the overview, the sounds, the letters and the keyboard. */
+    if(!ed && (sec.r==='words' || sec.r==='gram') && !wldSecDl(sec.r)) return;
+    /* And what MAY be taken away says so, where it is --
+       「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
+       article and not on the editor: the switch is the answer on the writing
+       face, and this is what that answer looks like to somebody reading. */
+    if(!ed && sec.dl && wldSecDl(sec.r))
+      extra='<span class="abdlm" aria-label="'+esc(t('wld.dl.can'))+'">'+
+        ICON_DL+'</span>';
+    /* Held back rather than drawn here: the four go at the FOOT of the
+       screen, under everything somebody writes -- 「dlのやつは一番下にして」
+       「上の概要とセクションに混ざらないようにして」 OWNER 2026-08-25. Standing
+       between 概要 and the sections, four switches read as sections of the
+       article that happen to carry a switch, and they are not sections at
+       all: they are one question asked about four chapters that live
+       elsewhere. */
+    if(ed && sec.dl){ dls+=wldSecRows(sec); return; }
     if(sec.r==='wldov'){
-      /* 概要. Each fact is its name on one line and the answer on the next --
-         「話してる場所　あああ みたいにやるのやめて」. The counts went: 「今作って
-         いる単語数とかどうでもいいねん」 -- how many words exist today is a
-         number about the app's progress, not a fact about the language. */
-      if(w.where) inner+=abField(t('wld.where'), w.where);
-      if(w.who) inner+=abField(t('wld.who'), w.who);
-      inner+=abField(t('ws.kind'), t('ws.k.'+wsys()));
-      inner+=abField(t('dir.title'), t('dir.'+scriptDir()));
-      inner='<div class="abfx">'+inner+'</div>';
+      if(ed){
+        /* The two the app asks for, then the ones somebody adds. Each is the
+           line it will be read on, with a rule under it and nothing else --
+           「項目名とか入れなくていいから。アンダーバーでいいだろ」. */
+        /* These two keep their names above them and the rows somebody adds do
+           not. It is not an inconsistency: a row somebody wrote says what it
+           is in the words they chose, and these two do not -- 「a valley」
+           with nothing over it could be anything, and it is what the reading
+           face has over it as well. */
+        inner+='<div class="abfk">'+esc(t('wld.where'))+'</div>'+
+          '<div class="field"><input value="'+esc(w.where||'')+'" '+
+          'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
+          '<div class="abfk">'+esc(t('wld.who'))+'</div>'+
+          '<div class="field"><input value="'+esc(w.who||'')+'" '+
+          'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>'+
+          abField(t('ws.kind'), t('ws.k.'+wsys()))+
+          abField(t('dir.title'), t('dir.'+scriptDir()))+
+          '<div class="ovlist" data-wdrag="ovs">'+
+          wldOvs().map(function(row){
+            return '<div class="ovrow" data-wid="'+esc(row.id)+'">'+
+              '<div class="ovtop">'+
+                /* No placeholder over it: 「項目名とか入れなくていいから。
+                   アンダーバーでいいだろ」 OWNER, and again 2026-08-25 --
+                   「上の項目名とかは何？いらなくない？」. The line was doing
+                   exactly what that sentence forbids: the words 「項目名」 sat
+                   in the box, so every row somebody had not named yet said
+                   the name of the thing instead of nothing. What names a row
+                   is what the person typed, and what marks the box is the
+                   rule under it. */
+                '<div class="field ovk"><input value="'+esc(row.k||'')+'"'+
+                  IN('wldOvSet', [row.id, "k"]) + '></div>'+
+                /* 「消したかったらマイナスボタン」 OWNER 2026-08-25. It was a
+                   cross, which is what CLOSES a thing; the pair the owner
+                   drew is ＋ and −, and the ＋ that puts the row in is two
+                   lines above. */
+                '<button class="ovx"' + DO('wldOvDel', [row.id]) + ' aria-label="'+
+                  esc(t('wld.ov.del'))+'">'+ICON_MINUS+'</button>'+
+              '</div>'+
+              '<textarea class="ntbody grow" rows="'+wldRows(row.v, 1)+'" '+
+                'placeholder="'+esc(t('wld.ov.v.ph'))+'"'+
+                CH('wldOvSet', [row.id, "v"]) + '>'+esc(row.v||'')+'</textarea>'+
+              '</div>';
+          }).join('')+'</div>';
+        extra='<button class="abshg"' + DO('wldOvAdd') + ' aria-label="'+
+          esc(t('wld.overview'))+'">'+ICON_ADD+'</button>';
+      } else {
+        if(w.where) inner+=abField(t('wld.where'), w.where);
+        if(w.who) inner+=abField(t('wld.who'), w.who);
+        inner+=abField(t('ws.kind'), t('ws.k.'+wsys()));
+        inner+=abField(t('dir.title'), t('dir.'+scriptDir()));
+        if(!w.ovnote && w.note) inner+='<div class="abfv">'+esc(w.note)+'</div>';
+        wldOvs().forEach(function(row){
+          if(!row || !(row.k || row.v)) return;
+          inner+=row.k? abField(row.k, row.v) : '<div class="abfv">'+esc(row.v)+'</div>';
+        });
+      }
+      if(inner) inner='<div class="abfx">'+inner+'</div>';
     } else if(sec.r==='sound'){
-      /* The sounds the language is made of, in the rows a phonology has --
-         「破裂音とか母音子音で区別つけるだろ普通に」 OWNER 2026-08-25. They were
-         one flat line, which is a bag of symbols and not an inventory.
-         The manners are read off IPA_CONS through ipaManners(), the way
-         sound.js's own chart reads them, so a manner added there is a row
-         here the same day and nothing is written out twice. A row with none
-         of this language's sounds in it is not drawn. */
+      /* The sounds the language is made of, in the rows a phonology has. They
+         are not written here in either face: a sound belongs to the letter
+         that says it, so this inventory is made by drawing letters. */
       inner+=abSounds();
     } else if(sec.r==='letters'){
-      /* Only what has a shape on it: the free plan puts thirty-eight slots
-         there the moment a language exists, so all of them would be a summary
-         saying every language has thirty-eight letters. */
-      /* Smaller, and with nothing to press and nothing to hear --
-         「文字は音なくていいからもっと小さく並べて」 OWNER 2026-08-25. The
-         second argument of ltCell() is what a cell answers to instead of
-         opening its own page, and giving it one also takes the speaker off:
-         this is an article, so a letter here is a picture of a letter. */
-      /* In the order the alphabet has -- 「文字も普通にabc順とか順序あるだろ」.
-         ltOrder() is that order: what somebody arranged by hand if they have,
-         and a b c by name if they have not. The grid was in whatever order
-         LETTERS happened to be in. */
+      /* The letters somebody has actually drawn. The article only -- the four
+         above return before they reach here. */
       if(drawn.length) inner+='<div class="ltgrid abtlt">'+
         ltOrder(drawn).map(function(l){ return ltCell(l, ' '); }).join('')+'</div>';
-    } else if(sec.r==='gram'){
-      /* The stages that have been answered, by name. Not how many of them --
-         a fraction is the app's progress bar, and this is an article. */
-      done=stAll();
-      for(i=0;i<done.length;i++) if(stIsDone(done[i]))
-        inner+='<div class="abtl abtline">'+esc(stTitle(done[i]))+'</div>';
-    } else if(sec.b){
-      inner+='<div class="abtl">'+esc(sec.b)+'</div>';
+    } else if(sec.r==='kb'){
+      /* The keyboard this person actually BUILT, drawn small --
+         「キーボードもちゃんとその人が作ってるモックの画像出すように」
+         OWNER 2026-08-25, and the free QWERTY is one of them --
+         「無料出しといていいよやっぱり」. It was left out for one round on
+         「無料キーボードはなしでいいよ」 and that is the sentence this replaces:
+         what somebody types with is their keyboard whether they arranged it
+         or the app did, and it is wearing the letters they drew either way.
+
+         `kbOf()` is the APPLIED board and answers with the free QWERTY when
+         there is nothing built -- 「何も設定してないならqwartyの作ったやつ
+         引き継いで」 -- so it is the one question here, not two.
+
+         With its NAME, because a keyboard has one --
+         「キーボード1,2,3って名前変えれる機能あるからそのまま入れれるように」.
+         `kbName()` gives what somebody called it and 「キーボード1」 when they
+         have not.
+
+         `kbShotHTML` is the keyboard's own -- the real keys wearing the real
+         letters rather than a diagram of them, which is what it was written
+         for: 「リアルなキーボードを縮小して見せれないの？」. Nothing in it is
+         pressable, here or where it came from. */
+      kbs=kbBoards(); kbat=kbApplied(kbs.length);
+      inner+='<div class="abtl abtline">'+esc(kbName(kbat))+'</div>'+
+        '<div class="abkb">'+kbShotHTML(kbOf().lay)+'</div>';
+    } else if(sec.nm!==undefined){
+      /* A section somebody wrote, and it is a SECTION on both faces --
+         「追加したセクションも概要と同じ文字サイズだし▼で隠せるようにして編集でも」
+         OWNER 2026-08-25. It was the one heading on this screen that was not
+         one: a small title field where 概要 has a heading, no marker, nothing
+         to fold. 「概要だけ文字でかいし ▼ これついてる」 -- one list where one row
+         is a heading and the next is a field is two kinds of thing wearing one
+         list's shape.
+
+         The heading is the name now, at the size every other heading is, and
+         what is under it folds away. The name itself is typed where the words
+         are, on the section's own page -- 「そこだけの画面だから下にも上にも
+         いかないその中で完結」 -- which the ＞ leads to and which ＋ opens on the
+         day a section is made. */
+      if(ed) inner+='<textarea class="ntbody grow" rows="'+wldRows(sec.b, 3)+'" '+
+        'placeholder="'+esc(t('wld.art.b.ph'))+'"' + CH('wldArtSet', [sec.r, "b"]) + '>'+
+        esc(sec.b||'')+'</textarea>';
+      else if(sec.b) inner+='<div class="abtl">'+esc(sec.b)+'</div>';
+      if(ed) extra='<button class="abshg"' + DO('go', ["wldart", sec.r]) + '>'+
+        ICON_GO+'</button>';
     }
-    /* A section with nothing under it is still its heading and its way in:
-       an empty chapter is a chapter somebody has not filled in yet, which is
-       true of every language on its first day, and saying so by leaving the
-       section out would make the article change shape as it is written. */
-    body+=abHead(sec, !!inner)+((!inner || abShut(sec.r))? '' : inner);
+    /* A section somebody has neither named nor written is not on the reading
+       face -- a heading reading 「無題」 over nothing is a promise the page
+       does not keep -- but it IS on the writing one, because that is where it
+       gets its name. */
+    if(sec.blank && !ed) return;
+    body+=abHead(sec, !!inner, extra)+((!inner || abShut(sec.r))? '' : inner);
   });
-  /* An empty language is a language somebody started this morning, not a
-     broken one. The sections below are not part of that count: they are here
-     whether or not anything has been written into them, which is what makes
-     the page an article about a language rather than a page about what has
-     been filled in. */
+  /* And the way to put another section in, at the end of the ones there are,
+     which is where a new section of an article goes. */
+  if(ed) body+='<button class="set"' + DO('wldArtAdd') + '>'+
+    '<span class="sl">'+esc(t('wld.secs'))+'</span>'+
+    '<span class="sv">'+ICON_ADD+'</span></button>';
+  /* And then, under the last thing on the page, what may be taken away.
+     「後トグルだけあってもわからないからちゃんとDL云々って書いといて」 OWNER
+     2026-08-25 -- four switches in a column say nothing about what they
+     switch, and the answer is not a sentence on the screen: it is the word
+     over them, which is what a heading is for. What it means in full is
+     behind the `?` in the bar. */
+  if(ed && dls) body+='<div class="sec">'+esc(t('wld.dl.can'))+'</div>'+dls;
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
-  /* The contents moved up to where an article keeps them -- see the skeleton
-     note above. They were written out again down here, which was the same
-     list twice on one page. */
-  /* And the way to the editor, which is where the chip beside the handle used
-     to go. It is here rather than in the settings because this is the page you
-     are looking at when you notice it is wrong -- the same place, and the same
-     shape, as Edit on a profile. */
   return '<div class="view">'+
-    navTop('', '<button class="navdo"' + DO('go', ["world"]) + '>'+esc(t('wld.edit'))+'</button>')+
+    navTop('', ed? '' : '<button class="navdo"' + DO('go', ["world"]) + '>'+esc(t('wld.edit'))+'</button>')+
     '<div class="body">'+body+'</div></div>';
 }
 /* What making this language public means, behind the `?` in the bar rather

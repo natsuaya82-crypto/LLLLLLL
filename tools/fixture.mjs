@@ -124,7 +124,15 @@ export function seed(){
   WLD = {use:'story', where:'a valley', who:'two families',
          note:'nobody outside the valley speaks it',
          arts:[{id:'A1', t:'The valley', b:'Two families have farmed it for nine generations.'},
-               {id:'A2', t:'', b:''}]};
+               {id:'A2', t:'', b:''}],
+         /* Rows of the overview somebody wrote. Two, because the arrows that
+            move one only exist where there is somewhere to move it: a single
+            row draws neither, and the walk then reports wldOvMove as a name
+            no screen ever says, which is true and is not what it means.
+            The second has no name on purpose -- that is the shape the note
+            becomes, and it is drawn as a paragraph rather than as a fact. */
+         ovs:[{id:'O1', k:'Older name', v:'Shangolu'},
+              {id:'O2', k:'', v:'It has no word for the sea.'}]};
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};
@@ -1417,6 +1425,42 @@ export function halfDone(){
     ['a sheet that came back', () => { SH = shBlank(); SH.from = 'sheet.jpg';
         SH.got = [{nm:'ka', sh:[[[100,100],[700,100],[700,700],[100,700]]]},
                   {nm:'7',  sh:[]}];
-        openWrIn(); const h = vForm(); SH = shBlank(); return h; }]
+        openWrIn(); const h = vForm(); SH = shBlank(); return h; }],
+    /* A language nobody may open, on both of its faces. `seed()` leaves WLD
+       public -- it has to, or every screen below the top switch narrows away
+       and the walk covers one arrangement of the app while calling it all of
+       them -- so these two faces exist nowhere else, and until they were here
+       the mirror had never once rendered a hidden page in any language.
+
+       They are two entries rather than one because the two faces stop at
+       different lines and that difference is the whole decision:
+       「非公開にする場合は言語名しか表示されない」 is the article, and
+       「非公開にしたら編集画面が全部非表示になる感じ」 is the editor, which keeps
+       the one row that can undo it. A single face would prove whichever of
+       the two it happened to be. */
+    /* Left set, not put back. shot.mjs calls render() after a face, so one
+       that tidies up photographs the screen it tidied back to -- the day's
+       sentence above says the same thing, and this cost one round of looking
+       at a public page and being told it was the hidden one. seed() runs
+       before each face and is what puts it back. */
+    ['the language nobody may open', () => { WLD.hide = true;
+                                         window.route = 'about'; NAV = [{ r:'about' }];
+                                         return vAbout(); }],
+    ['writing on a page nobody may open', () => { WLD.hide = true;
+                                         window.route = 'world'; NAV = [{ r:'world' }];
+                                         return vWorld(); }],
+    /* A language with a keyboard somebody BUILT, and three of its four
+       chapters open to be taken away. Neither is reachable from seed(): the
+       walk runs on the free plan, where `kbBoards()` is empty and the article
+       draws no keyboard at all -- 「無料キーボードはなしでいいよ。作ったキーボード
+       のみ表示」 -- and nothing has ever been switched on for `dl`, so the mark
+       that says a chapter may be taken away was on no screen in any language.
+       Board 1, because board 0 is the free QWERTY itself. */
+    ['a language anybody may take away', () => {
+       SET.plan = 'plus';
+       KB = { at: 1, kbs: [{ nm: 'Shango', pat: 'abc', lay: kbAbcLay() }] };
+       WLD.secs = { letters: { dl: true }, words: { dl: true }, kb: { dl: true } };
+       window.route = 'about'; NAV = [{ r:'about' }];
+       return vAbout(); }]
   ];
 }

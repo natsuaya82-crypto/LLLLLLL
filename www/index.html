@@ -1687,8 +1687,29 @@ a.set{text-decoration:none}
 /* The second question is asked OF the row above it, so it is set in from the
    left and quieter. Eight rows all reading 「DL可」 down a flat list said
    nothing about which section each belonged to. */
-.abdl{padding-left:20px}
-.abdl .sl{color:var(--txm)}
+/* A section's row: what it is called, and the two arrows that move it.
+   Three buttons side by side rather than one inside another. The row keeps
+   the hairline; the name button carries the row's height so a row with
+   arrows and a row without are the same one. */
+.wsrow{display:flex;align-items:center;width:100%;border-bottom:1px solid var(--line)}
+.wsnm{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-height:44px;
+      padding:15px 2px;background:none;border:0;text-align:left;font-family:inherit;
+      font-size:.95rem;line-height:1.25;color:var(--tx)}
+.wsnm .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
+/* A row of the overview being written: its name over what it says, the way
+   the article shows them, with the two arrows and the way to take the row
+   out beside them. */
+/* A row of the overview: the name on a line with the way to take the row
+   out, and under it what it says. No box and no corner -- 「角丸はゴミ」 --
+   and no label over either field: a rule under each is what a field is here
+   （「基本下線だけ」）. */
+.ovrow{padding:0 0 6px}
+.ovtop{display:flex;align-items:center;gap:6px;width:100%}
+.ovk{flex:1 1 auto;min-width:0}
+.ovx{flex:0 0 auto;width:44px;height:44px;display:flex;align-items:center;
+     justify-content:center;background:none;border:0;color:var(--txm)}
+.ovrow.lift, .wsrow.lift{opacity:.9}
+.ovlist.moving, .wslist.moving{touch-action:none}
 /* The letters, in an article rather than in the alphabet: smaller, denser,
    and with neither the speaker nor the reading under them --
    「文字は音なくていいからもっと小さく並べて」. The corner on the tile itself
@@ -1841,6 +1862,17 @@ a.set{text-decoration:none}
    seven are the same rectangle -- a list where the pictures are different
    sizes is a list you read as ragged rather than as three keyboards. */
 .kbshot2{display:flex;flex-direction:column;gap:1.5px;width:100%;height:46px}
+/* The same keyboard on the article, at a size somebody can look at rather
+   than pick out of a list. No corner and no border: it is the keys that are
+   drawn, and the block around them is nothing. */
+/* The mark on a section anybody may take away. Beside the heading, where the
+   way through sits on the sections that have one -- not a badge and not a
+   panel: the arrow, in the muted colour every mark on this page is. */
+.abdlm{flex:0 0 auto;display:flex;align-items:center;color:var(--txm)}
+.abkb{width:100%;margin-top:6px}
+.abkb .kbshot2{height:132px;gap:3px}
+.abkb .kbsr{gap:3px}
+.abkb .kbsk .kbl{font-size:9px}
 .kbsr{display:flex;gap:1.5px;flex:1;min-height:0}
 .kbsk{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
       border-radius:2px;background:var(--sf);overflow:hidden}
@@ -2778,6 +2810,14 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
 textarea.ntbody{width:100%;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;
    padding:12px 2px;color:var(--tx);font-family:inherit;font-size:.94rem;outline:none;resize:vertical}
 textarea.ntbody:focus{border-bottom-color:var(--goldln)}
+/* A box that is written into is as tall as what is in it and no taller: no
+   scrollbar of its own inside a page that already scrolls, and no field of
+   empty grey where nothing has been written yet.
+   `textarea.grow` and not `.grow`, and after `.ntbody` rather than before it,
+   because `.ntbody` sets a floor of 180px and `textarea.ntbody` sets resize —
+   a single class written earlier loses to both, which is what left every one
+   of these boxes tall and half empty. */
+textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 
 /* ---------- grammar: a decision, and what it does ----------
    A row of choices, then the piece of sound the choice is carried by, then
