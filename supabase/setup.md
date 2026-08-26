@@ -25,15 +25,33 @@
 
 ---
 
-## 1. 匿名サインインを ON にする
+## 1. 匿名サインイン ── **もう要りません**
 
-**Authentication → Providers → Anonymous sign-ins → 有効化**
+**ここでやることはありません。飛ばしてください。**
 
-`schema.sql` の `is_member()` が JWT の `is_anonymous` を見ています。アカウントを
-作っていない人が読むだけ、という状態がここで成立します。
+アプリは起動時に匿名アカウントを作らなくなりました。オーナー決定 2026-08-26
+「言語はアカウントないと作れないです」「ログインした人しか書けないけど」。
+アプリは扉で始まり、サインインするまで何も作れません。
 
-これを ON にしないと `is_member()` が常に false になり、**サインイン済みの人でも
-投稿できません。**
+**この節には前まで「Anonymous sign-ins を有効化してください」と書いてあり、
+その理由が嘘でした。** 「ON にしないと `is_member()` が常に false になり、
+サインイン済みの人でも投稿できません」と書いてありましたが、`is_member()` は
+
+```sql
+coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+```
+
+なので、**claim が無ければ false として読まれ、その比較は真になります。**
+つまり OFF でもサインイン済みの人は投稿できました。この設定を入れなかった人が
+「投稿できないのはこれのせいだ」と探しに行く先として、間違った場所を指して
+いたことになります。
+
+**今 ON になっているものを OFF にするかどうかは、ここでは決めません。**
+今日より前から動いている電話には匿名セッションが残っていて、それが起動のたびに
+トークンを更新しています。OFF がその更新に効くかどうかは Supabase 側の挙動で、
+確かめずに「切ってください」と書くのは、人のアプリを黙って締め出す指示になります。
+**ON のままで害はありません** ── アプリがもう匿名アカウントを作らないので、
+新しく増えることはありません。
 
 ---
 
@@ -44,7 +62,7 @@
 ファイルはリポジトリの `supabase/schema.sql` です。ブラウザからなら:
 
 ```
-https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/claude/save/supabase/schema.sql
+https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/schema.sql
 ```
 
 `Success. No rows returned` が出れば通っています。
