@@ -75,6 +75,27 @@ alter table profile add column if not exists av jsonb;
 -- second one it should become a table of its own rather than a second boolean.
 alter table profile add column if not exists staff boolean not null default false;
 
+-- And the one above it, which is a different question: not "may this account
+-- answer a report" but "may this account decide WHO answers reports". One
+-- person holds it -- 「俺は権限者で他はスタッフみたいな感じで」 -- and nothing
+-- in this file ever takes it away, because the failure it exists to prevent is
+-- the owner being locked out of their own app by somebody they made staff.
+--
+-- Not called `owner`: language.owner already means "the account a language
+-- belongs to", and a word that means two things in one schema is a word that
+-- will be read as the wrong one. It is called what the screen it opens is
+-- called.
+--
+-- The comment over `staff` says that the day it has to answer a second
+-- question it should become a table rather than a second boolean. This is not
+-- that day: `staff` is still answering exactly the one question it answered
+-- before, and is_staff() -- which two policies, one view and four functions
+-- ask -- is not touched by a single character. A role table would have meant
+-- rewriting it, and rewriting the sentence that IS the security of the
+-- moderation side in order to add a row above it is the wrong trade. If a
+-- third tier is ever wanted, that is the day.
+alter table profile add column if not exists admin boolean not null default false;
+
 -- And whoever has been ejected. A timestamp rather than a boolean beside a
 -- date, for the same reason post.hidden_at is one: two columns that have to
 -- agree about whether something happened are two columns that can disagree.
@@ -425,6 +446,12 @@ $$;
 create or replace function is_staff() returns boolean
 language sql stable as $$
   select exists (select 1 from profile where id = auth.uid() and staff)
+$$;
+
+-- And the one account above that. Same shape, same reading, one column over.
+create or replace function is_admin() returns boolean
+language sql stable as $$
+  select exists (select 1 from profile where id = auth.uid() and admin)
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
@@ -866,7 +893,7 @@ grant execute on function account_unban(uuid) to authenticated;
 -- them is a count of a table that already exists, and none of them is a new
 -- thing kept anywhere -- asking is the whole of it, and the answer is not
 -- written down. Nothing about a person is in here and nothing can be: what
--- comes back is six integers with no rows behind them.
+-- comes back is four integers with no rows behind them.
 --
 -- It is a function and not four requests for two reasons, and the second is
 -- the one that matters.
@@ -883,14 +910,18 @@ grant execute on function account_unban(uuid) to authenticated;
 -- count is taken by a function with definer rights, which sees every row and
 -- hands back a number, and the read policy does not move.
 --
--- `security definer` for the same reason post_hide() is, and is_staff() is
+-- `security definer` for the same reason post_hide() is, and the question is
 -- asked inside for the same reason: the definer rights are not a way in.
+--
+-- is_admin() and not is_staff(): 「＠linguaのアカウントだけ管理者ページには
+-- 入れる」. Staff answer reports, on the reports screen, through report_read.
+-- This is the other screen.
 create or replace function admin_counts()
 returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare n jsonb;
 begin
-  if not is_staff() then raise exception 'not staff'; end if;
+  if not is_admin() then raise exception 'not admin'; end if;
   select jsonb_build_object(
     'people',  (select count(*) from profile),
     'posts',   (select count(*) from post),
@@ -901,6 +932,118 @@ begin
 end $$;
 revoke all on function admin_counts() from public;
 grant execute on function admin_counts() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- The first one, and everybody after
+--
+-- 「そしたら@でいいよ。linguaで登録してる」. The account holding the handle
+-- `lingua` is the one above staff. It is written here rather than set by hand
+-- in the dashboard, because a step a person has to remember is a step that
+-- gets forgotten once -- and the thing forgotten is the only account that can
+-- let anybody else in.
+--
+-- Both halves, because the row may arrive either side of this file being run:
+-- the trigger catches a profile made later (it is made when somebody signs in
+-- on a phone -- supabase/setup.md §5), and the statement under it catches the
+-- row that is already there. Neither cares which order they happen in, and on
+-- an empty database the statement touches nothing and does not fail, which is
+-- what lets tools/rls-check.mjs apply this file unchanged.
+--
+-- What this does NOT defend against, said out loud: on a database where nobody
+-- holds `lingua` yet, whoever takes the handle first becomes the one above
+-- staff. `handle` is unique, so the window shuts the moment that row exists --
+-- and on the live database it already does. On a new one, sign in first.
+create or replace function profile_first() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if new.handle = 'lingua' then
+    new.staff := true;
+    new.admin := true;
+  end if;
+  return new;
+end $$;
+drop trigger if exists profile_first on profile;
+create trigger profile_first before insert on profile
+  for each row execute function profile_first();
+
+update profile set staff = true, admin = true where handle = 'lingua';
+
+-- ---------------------------------------------------------------------------
+-- Making somebody staff, and unmaking them
+--
+-- 「staffアカウントはスタッフページから追加できるようにしよう」, by handle,
+-- because a handle is the only name this app has for a person: `profile` holds
+-- id, handle, display, created_at and the flags, and an address lives in
+-- auth.users, which is Supabase's and is not read from here.
+--
+-- Functions and not a policy, for the reason post_hide() is not an update
+-- policy. `for update using (is_admin())` would say "the one above staff may
+-- edit these rows" -- every column of them, including somebody's handle and
+-- the name they chose. These two reach one column and nothing else.
+create or replace function staff_add(h text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  update profile set staff = true where handle = h;
+end $$;
+revoke all on function staff_add(text) from public;
+grant execute on function staff_add(text) to authenticated;
+
+-- `and not admin` is the whole of "the one above staff cannot be taken off
+-- it". It is the one failure here that cannot be undone from inside the app:
+-- an owner who is no longer the owner has no screen left to fix it from.
+-- account_ban() carries the same guard for the same reason, and it costs
+-- three words.
+create or replace function staff_drop(h text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  update profile set staff = false where handle = h and not admin;
+end $$;
+revoke all on function staff_drop(text) from public;
+grant execute on function staff_drop(text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Everybody who starts now starts out following @lingua
+--
+-- 「他の人が始めたらlinguaアカウントは強制的にフォローしてる状態にしたい」,
+-- and, asked which of the two shapes it should be: 「A: 初期状態として
+-- フォロー済み。外せる」.
+--
+-- So it is one row, put in at the moment the profile is made, and an ordinary
+-- follow from then on: `follow_drop` is not touched and the person takes it
+-- off exactly the way they take any other one off. A follow that could not be
+-- removed would be a different thing wearing the same word.
+--
+-- Here and not in the app, because www/ is a suggestion: somebody running a
+-- changed copy of it would simply not do it. This is the one place that
+-- cannot be edited from a phone.
+--
+-- It is an AFTER trigger on INSERT only, so it reaches nobody who is already
+-- here. That is the decision as given -- 「他の人が始めたら」 -- and not a
+-- shortcut: writing the row onto accounts that already exist would be putting
+-- something in somebody's list months after they made it.
+--
+-- `follower <> followed` is a check constraint, so @lingua's own row is
+-- stepped around rather than inserted and rolled back. And on a database
+-- where nobody holds the handle yet there is nobody to follow, which is not
+-- an error -- it is the morning before the owner has signed in.
+create or replace function profile_follows() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare l uuid;
+begin
+  select id into l from profile where handle = 'lingua';
+  if l is not null and l <> new.id then
+    insert into follow(follower, followed) values (new.id, l)
+      on conflict do nothing;
+  end if;
+  return new;
+end $$;
+drop trigger if exists profile_follows on profile;
+create trigger profile_follows after insert on profile
+  for each row execute function profile_follows();
 
 -- ---------------------------------------------------------------------------
 -- The columns nobody may write

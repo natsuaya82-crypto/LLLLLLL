@@ -51,6 +51,14 @@ const L = 'c0000000-0000-4000-8000-000000000003';   /* the language */
 const P = 'd0000000-0000-4000-8000-000000000004';   /* the post */
 const C = 'e0000000-0000-4000-8000-000000000005';   /* whoever reads the reports */
 const D = 'd0000000-0000-4000-8000-000000000044';   /* an account with no name on it */
+/* The one above staff. Not seeded like C is: it arrives by taking the handle,
+   which is the whole of the claim -- schema.sql makes whoever is called
+   `lingua` the one who may add staff, and nothing else in this file does. */
+const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
+/* And somebody who starts AFTER that one exists, which is the only way to
+   watch what a new account is given. A and B are made before it on purpose:
+   they are everybody who was already here, and nothing is written onto them. */
+const F = 'f0000000-0000-4000-8000-00000000000f';   /* somebody starting today */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
@@ -104,6 +112,41 @@ const CASES = [
     `insert into profile(id,handle) values ('${A}','aya')`],
   ['B makes B\u2019s profile',                'ok',     B, 0,
     `insert into profile(id,handle) values ('${B}','iri')`],
+  /* --- and the one above staff, who arrives by being called `lingua` -----
+     Nothing seeds this one. It makes its own profile through the same policy
+     everybody else does, and comes out of it holding both flags -- which is
+     the claim: the first one is written into schema.sql and is not a step
+     somebody has to remember in a dashboard. */
+  ['whoever takes the handle lingua writes themselves in', 'ok', E, 0,
+    `insert into profile(id,handle) values ('${E}','lingua')`],
+  ['and answers reports without being made staff', 'ok', E, 0,
+    `select 1 from profile where id='${E}' and staff`],
+  ['and is the one above that',               'ok',     E, 0,
+    `select 1 from profile where id='${E}' and admin`],
+  ['B is neither',                            'denied', B, 0,
+    `select 1 from profile where id='${B}' and (staff or admin)`],
+  ['B cannot become the one above staff',     'denied', B, 0,
+    `update profile set admin=true where id='${B}'`],
+  /* --- and what somebody starting today starts with ----------------------
+     「他の人が始めたらlinguaアカウントは強制的にフォローしてる状態にしたい」
+     「A: 初期状態としてフォロー済み。外せる」 -- so both halves are asked
+     here, and the second is the one that makes it a follow rather than
+     something else wearing the word. A and B are above this line and get
+     nothing: the row is written when a profile is made, and theirs were. */
+  ['somebody starting now writes themselves in', 'ok',   F, 0,
+    `insert into profile(id,handle) values ('${F}','veth')`],
+  ['and is already following lingua',         'ok',     F, 0,
+    `select 1 from follow where follower='${F}' and followed='${E}'`],
+  ['B cannot take that follow off for them',  'denied', B, 0,
+    `delete from follow where follower='${F}' and followed='${E}'`],
+  ['but they can',                            'ok',     F, 0,
+    `delete from follow where follower='${F}' and followed='${E}'`],
+  ['and then it is gone',                     'denied', F, 0,
+    `select 1 from follow where follower='${F}' and followed='${E}'`],
+  ['lingua is not made to follow itself',     'denied', E, 0,
+    `select 1 from follow where follower='${E}'`],
+  ['and nobody who was already here was given one', 'denied', B, 0,
+    `select 1 from follow where follower='${B}' and followed='${E}'`],
   ['B cannot make a profile for A',           'denied', B, 0,
     `insert into profile(id,handle) values ('${A}','fake')`],
   ['B cannot rename A',                       'denied', B, 0,
@@ -324,8 +367,41 @@ const CASES = [
     `select admin_counts()`],
   ['nor can somebody with no account at all',  'denied', B, 1,
     `select admin_counts()`],
-  ['staff can',                               'ok',     C, 0,
+  /* Staff too, and this is the tier doing its work: whoever answers reports
+     is not whoever opens the screen with the numbers on it.
+     「＠linguaのアカウントだけ管理者ページには入れる」 */
+  ['staff cannot either',                     'denied', C, 0,
     `select admin_counts()`],
+  ['the one above staff can',                 'ok',     E, 0,
+    `select admin_counts()`],
+
+  /* --- and who may make somebody staff ----------------------------------
+     The whole reason there are two tiers. A staff account that could make
+     another staff account is one account away from every account being one,
+     and the owner would find out by reading a report they did not answer. */
+  ['B cannot make somebody staff',            'denied', B, 0,
+    `select staff_add('iri')`],
+  ['nor can staff',                           'denied', C, 0,
+    `select staff_add('iri')`],
+  ['nor can somebody with no account',        'denied', B, 1,
+    `select staff_add('iri')`],
+  ['the one above staff can',                 'ok',     E, 0,
+    `select staff_add('iri')`],
+  ['and B is staff now',                      'ok',     E, 0,
+    `select 1 from profile where handle='iri' and staff`],
+  ['and can take it away again',              'ok',     E, 0,
+    `select staff_drop('iri')`],
+  ['and B is not staff any more',             'denied', E, 0,
+    `select 1 from profile where handle='iri' and staff`],
+  ['B cannot take staff off anybody',         'denied', B, 0,
+    `select staff_drop('mod')`],
+  /* The one that cannot be undone from inside the app. The call is allowed
+     and does nothing, which is the point -- an error here would be a screen
+     saying no, and what is wanted is a row that does not move. */
+  ['the one above staff cannot be taken off it', 'ok', E, 0,
+    `select staff_drop('lingua')`],
+  ['and is still both after trying',          'ok',     E, 0,
+    `select 1 from profile where handle='lingua' and staff and admin`],
   ['B cannot make B staff',                   'denied', B, 0,
     `update profile set staff=true where id='${B}'`],
   ['B cannot make A staff either',            'denied', B, 0,
@@ -564,7 +640,54 @@ const SHAPE = [
   ['counting asks who is asking too', `
      select count(*) from (select 1 where
        (select count(*) from pg_proc where proname='admin_counts'
-          and prosecdef and prosrc like '%is_staff()%') <> 1) q`, '0'],
+          and prosecdef and prosrc like '%is_admin()%') <> 1) q`, '0'],
+  /* The three that hand out and take back what is_staff() answers. All of
+     them definer, all of them asking is_admin() inside -- one that forgot
+     would be every account holding the right to appoint moderators, and it
+     would pass every attempt above that expects a refusal, because nobody had
+     called it yet. */
+  ['making somebody staff asks who is asking', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname in ('staff_add','staff_drop')
+          and prosecdef and prosrc like '%is_admin()%') <> 2) q`, '0'],
+  /* And the one that cannot be undone from inside the app. Three words in
+     staff_drop, and nothing else in this file would notice them going.
+
+     The WHERE clause and not just the words: the first version of this line
+     asked for `%not admin%`, which the function's own `raise exception 'not
+     admin'` answers -- so it stayed green with the guard taken out, and the
+     only thing that caught it was the attempt above. A claim that passes for
+     the wrong reason is worse than no claim, because it is counted. */
+  ['and the one above staff cannot be unmade', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname='staff_drop'
+          and prosrc like '%where handle = h and not admin%') <> 1) q`, '0'],
+  /* Said the same way `staff` is said, one line down in this list: a column
+     nobody signs in as may write is the only reason the functions above are
+     the only road to it. */
+  ['nor is the one above staff something an account gives itself', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','profile','admin','UPDATE')
+       or has_column_privilege('anon','profile','admin','UPDATE')) q`, '0'],
+  /* The first one is written down here rather than remembered by a person.
+     Both halves: the trigger for a row that arrives later, and something in
+     the file that catches a row already there. */
+  ['the first one is in the file and not in somebody’s memory', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_trigger where tgname='profile_first'
+          and not tgisinternal) <> 1) q`, '0'],
+  /* And the row every new account is given. A trigger, because www/ is a
+     suggestion and this one may not be declined by running a changed copy. */
+  ['and the follow is written by the server', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_trigger where tgname='profile_follows'
+          and not tgisinternal) <> 1) q`, '0'],
+  /* The half that makes it a follow and not a fixture. If a later session
+     narrows follow_drop to "anything but that one", this goes red. */
+  ['and it can be taken off like any other', `
+     select count(*) from pg_policies
+      where tablename='follow' and policyname='follow_drop'
+        and qual like '%lingua%'`, '0'],
   ['and it did not open the unpublished languages', `
      select count(*) from pg_policies
       where tablename='language' and policyname='language_read'
@@ -689,7 +812,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from
