@@ -381,27 +381,47 @@ until there was a deletion to fire it, which meant deleting your own account
 withdrew every report you had ever made — somebody else's record, cleared by
 your leaving. It is `on delete set null` now, and `npm run rls` holds it.
 
-**~~The language on the phone is not touched.~~ Overturned 2026-08-26:**
-「アカウント消したら全部消えるに決まってる」. This said the phone copy stays and
-that erasing the phone is the other button. **It is one act now** — deleting the
-account takes the server rows AND everything on this phone. **Not built**:
-`netDropMe()` still deletes only the server side, and `wipeAll()`
-(`www/settings.js`) is a separate button nobody presses on the way through.
+**~~The language on the phone is not touched.~~ That sentence is stale, and so
+was the note that replaced it here on 2026-08-26.** 「アカウント消したら全部
+消えるに決まってる」 asks for one act that takes everything — and **it already
+exists.** `wipeAll()` (`www/settings.js`, the button 「データを消去」) does all
+of it and has for some time:
 
-The old sentence is left visible above rather than removed, because the two
-buttons and the reason they were two are what the next person needs to know
-before merging them. What has to be got right when it is:
+```
+  wipeAll()   confirm once, with iOS's own dialog
+      ↓       netDropMe()  — the server: Storage bytes first, then account_delete()
+  wipeHere()  every lingua.<id>.<slice> key removed (not overwritten)
+              SET back to defaults, keeping theme, ui and plan
+              netOut()     — the tokens
+              bkDropAll()  — the backup files in Documents, last, after the
+                             saves above, because a save writes a fresh one out
+```
 
-- **the order.** Get it wrong and it is either 「消したと言われたのに残っている」
-  or 「消すと言っていないものまで消えた」. Storage bytes, then the server rows,
-  then the phone — the phone last, because it is the only copy that can still
-  answer if the network fails halfway, and `netDropMe()` already decided that a
-  failed listing must not stop the account dying.
-- **asked once.** `wipeAll()` already asks with iOS's own dialog. Two dialogs
-  in a row is one too many and nobody can tell which one they answered.
-- **this is not a `DATA_SAFETY.md` exception.** That rule forbids the APP
-  deciding to remove somebody's work — four named reasons, and 「the person
-  asked」 is not one of them.
+**The order is already the safe one, and it is the opposite of what this file
+briefly recommended.** The server is told FIRST and the phone is emptied
+**whatever it answers** — the reason is written on the function: 「somebody who
+asked to be deleted must be deleted, and a phone that kept its languages
+because the network was bad would be the button lying in the direction that
+cannot be corrected later」. Doing the phone last on the theory that it is the
+copy that survives a bad network gets it exactly backwards: it leaves an
+account nobody can reach and nothing to reach it from.
+
+So what 2026-08-26 changed here is **not the behaviour — it is which sentence
+in this file is true.** § 8 said the phone copy stays and that erasing it is a
+different button. The button is not different; it is the same one, and it says
+so in its own confirm text 「すべて消去します。アカウントと、サーバー上の投稿・
+写真・録音。この端末の言語・文字・設定。バックアップファイルも。」
+
+Still true and worth keeping: **this is not a `DATA_SAFETY.md` exception.**
+That rule forbids the APP deciding to remove somebody's work — it names four
+reasons, and 「the person asked」 is not one of them.
+
+**What is missing is the middle button: 「言語を削除」.** One language, not all
+of them (OWNER DECISION 2026-08-26). There is no such path anywhere —
+`act-map.js` binds `langOpen` and `langNew` and nothing else. See the decision
+log for the five things to settle before writing it; the sharp one is that
+deleting a language on the phone alone brings it **back** on the next
+`netLangSync()`, because `syMerge` adds both sides.
 
 ### 9. Push notifications
 
