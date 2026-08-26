@@ -66,11 +66,35 @@ html は `index.html` `works.html` `lingua/index.html` の三つだけ。
 `docs/apple.md` §5 の「App のプライバシー」欄は、メールアドレスとユーザー
 コンテンツを収集すると書く前提です。JPEL のポリシーはその逆を宣言しています。
 
-**要るのは Lingua 用に書き下ろした二本**（`lingua/terms.html` と
-`lingua/privacy.html`）。そこに置けば、アプリ側の URL は一文字も変えずに済みます。
+**書きました。`natsuaya82-crypto/tokine2` の枝 `claude/lingua-legal`**（`5f3b5d6`）に
+`lingua/terms.html` と `lingua/privacy.html` を英語で置いてあります。**まだ `main` に
+入れていないので、tokinets.com には出ていません** ── 押した瞬間に Vercel が本番へ
+出すので、公開はオーナーの判断です。
 
-⚠ **`tokine2` はこのセッションから push できません**（読み取りだけで付いています）。
-書くなら `access:"push"` で付け直すか、あちらで作業すること。
+`cleanUrls: true` なので `/lingua/terms.html` は `/lingua/terms` に 308 で飛びます。
+**アプリ側の URL は一文字も変えなくてよい。**
+
+中身はこの repo から採った事実だけで書いてあります（推測なし）:
+
+| 書いたこと | 出どころ |
+|---|---|
+| 写真と音声は**誰でも読める**バケットに入る | `schema.sql` の `post-media` が `public=true`、`media_read` が `using (bucket_id='post-media')` |
+| サーバに載るもの | `schema.sql` の profile / language / slice / post / react / follow / block / report |
+| パスワードは受け取らない | 認証は Supabase、返ってくるのはトークン |
+| 広告・IDFA・解析は無い | `www/` と `ios/App/App/` に AdMob も IDFA も解析 SDK も一件も無い |
+| 販売者は Apple、カード情報は来ない | `LinguaStore.swift` は `Transaction` しか見ない |
+| プランは「できること」だけを決め、あるものには触らない | `docs/PAID_FEATURES.md` と `plan-check` |
+| アカウント削除はファイルを先に消す。**通信が失敗したら残ることがある** | `netDropMe()` と、その上のコメント |
+
+**オーナーが決めたこと（2026-08-26）**: 名乗りは `Tokine (刻音)` だけ ── **法人ではない**
+ので、`company` `corporation` を意味する語は二本とも 0 件。連絡先は
+`lingua@tokinets.com`。
+
+**まだ決まっていないもの**: 準拠法と裁判管轄。今は「日本法・東京地裁を第一審の
+専属的合意管轄、ただし居住国の消費者保護法が与える権利は奪わない」と書いてあります。
+**これは私が置いた既定値で、オーナーが確かめる所です。**
+
+**日本語版はありません。** オーナーの指示は「それぞれ英語版で作って欲しい」でした。
 
 `docs/apple.md` §5 が書いているとおり、**App Store Connect のプライバシーポリシー
 URL は必須**で、無ければ審査に落ちます。アカウント（メール）と投稿を Supabase に
