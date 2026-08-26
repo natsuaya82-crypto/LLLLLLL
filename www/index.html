@@ -487,6 +487,12 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pav{flex:0 0 auto;width:40px;height:40px;border-radius:50%;overflow:hidden;
      background:var(--sf);display:flex;align-items:center;justify-content:center}
 .pav canvas{width:26px;height:26px}
+/* The face as a way to the person, on a row that is already a way to the post.
+   44 both ways because a thumb needs 44 and the circle is 40 -- the two extra
+   each side are the target, not the picture, so the negative margin puts the
+   row's geometry back exactly where it was. Without that every post on every
+   timeline moves 4px. */
+.pav.pavb{width:44px;height:44px;margin:-2px;padding:0;border:0;background:none}
 .pav .bch{font-size:1.05rem;color:var(--txs);line-height:1}
 .pbody{flex:1 1 auto;min-width:0}
 /* The head is two lines now, and the reason is in www/post.js over the markup.

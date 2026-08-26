@@ -2233,10 +2233,35 @@ function postFocus(){
 function postOpen(id){
   if(postById(id)) go('thread', id);
 }
+/* The face, and the way to whoever wears it.
+   「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
+   飛ぶようにしてよ。自分ならプロフィールのページ。」 OWNER 2026-08-26.
+
+   The search row has done this since it was written -- go('profile', handle)
+   -- and the timeline had not, so the same face was a door in one list and
+   scenery in the other.
+
+   Below the line, so the handle comes off the POST. A post from a language
+   this phone has never seen still knows who wrote it, because that was put on
+   it when it was written; asking ME or meHandle() here is what rule 8 is
+   about, and sides-check would refuse it.
+
+   A post with no handle on it is scenery again rather than a door to nowhere:
+   everything written before posts carried one is in that state, and a button
+   that opens an empty page is worse than no button. */
+function postAvHTML(p){
+  var h=String((p && p.hd) || '');
+  if(p && p.mine)
+    return '<button class="pav pavb"' + DO('goTab', ["profile"]) + '>'+
+      postFace(p)+'</button>';
+  if(!h) return '<div class="pav">'+postFace(p)+'</div>';
+  return '<button class="pav pavb"' + DO('go', ["profile", h]) + '>'+
+    postFace(p)+'</button>';
+}
 function postRow(p){
   var foc=(postFocus()===p.id), to=postToWho(p);
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
-    '<div class="pav">'+postFace(p)+'</div>'+
+    postAvHTML(p)+
     '<div class="pbody">'+
       /* Two lines, not eleven things on one.
          「名前 言語名 ユーザー名 日付 編集済み ↑これ全部一列に表示すると

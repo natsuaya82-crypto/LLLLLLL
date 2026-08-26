@@ -569,6 +569,42 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- 11e. the face on a post is the way to whoever wears it ---------
+     「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
+     飛ぶようにしてよ。自分ならプロフィールのページ。」
+
+     The search row has done this since it was written; the timeline had not,
+     so the same face was a door in one list and scenery in the other.
+
+     Asked of the ROW, and asked per post rather than as a count: the counts
+     agreeing while the handles are shifted by one is the only way this breaks
+     in a way nobody would see -- every avatar opens somebody, just not the
+     one under the thumb. */
+  {
+    const mine   = { id: 901, mine: true,  hd: 'me',    who: 'Me',    ln: 'a' };
+    const theirs = { id: 902, mine: false, hd: 'shiro', who: 'Shiro', ln: 'a' };
+    const older  = { id: 903, mine: false, hd: '',      who: 'Old',   ln: 'a' };
+
+    const rMine = postRow(mine), rTheirs = postRow(theirs), rOld = postRow(older);
+
+    /* Built with DO() rather than grepped for a word: the handle is on the row
+       in three other places, so 'shiro' appearing somewhere is not the face
+       being a door -- which is exactly how the first version of this passed
+       with the bug in. */
+    const doorTo = (h) => '<button class="pav pavb"' + DO('go', ['profile', h]);
+    if (rTheirs.indexOf(doorTo('shiro')) < 0)
+      fails.push('somebody else’s face on the timeline is not a way to them: ' +
+                 'the only place a person can be opened from is the search');
+    if (rMine.indexOf('<button class="pav pavb"' + DO('goTab', ['profile'])) < 0)
+      fails.push('your own face on the timeline does not go to your profile');
+    if (rMine.indexOf(doorTo('me')) >= 0)
+      fails.push('your own face is opened as if you were somebody else');
+    if (rOld.indexOf('<button class="pav') >= 0)
+      fails.push('a post with no handle on it draws a face you can press, and ' +
+                 'it opens nobody. Everything written before posts carried a ' +
+                 'handle is in that state');
+  }
+
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
      A row shows a picture a few hundred pixels across and was being sent one
      nine hundred across. Nothing looked wrong and nothing could: the browser
