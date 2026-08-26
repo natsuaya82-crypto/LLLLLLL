@@ -524,13 +524,26 @@ What that means here, item by item, and most of it is **already built**:
   (2766) and long before `boot.js` (2802), so `netSignedIn` does not exist yet
   when it runs. Making this true means moving where the first language is
   made. Reported in `docs/FEATURE_RULES.md`, not patched.
-- **how often it syncs — decided 2026-08-26: 「常に同期」.** Not once on launch,
-  which is what `www/boot.js` does today. **Not built.** What "always" has to
-  mean in code is still an engineering answer rather than a second decision:
-  the app has no server of its own in front of Supabase, so "always" that fires
-  on every keystroke is a request per letter typed. The shape that matches the
-  words without doing that is a write that marks the language and a send that
-  follows shortly after it settles — `bkTouch()` already marks, for the backup.
+- **how often it syncs — 「常に同期」 (2026-08-26), and it is TWO clocks, not
+  one.** Refined the same day: 「タイムラインは開くたび / 言語はそういう
+  わけじゃない」.
+
+  **The timeline: every open — and already more than that.** `vFeed()` calls
+  `snsPull()` every time it RUNS, and `render()` rebuilds the screen on any
+  state change, so a like or a toast is another 50-post pull. Whether that
+  wants narrowing to once per visit is a real question and it is about the
+  bill, not about correctness (`docs/PAID_FEATURES.md`).
+
+  **The language: NOT per-open — and that is all that has been said.** The
+  owner named what it is not. What it IS is **open**, and writing a positive
+  rule here would be turning a negation into a decision nobody made. Today
+  `www/boot.js` syncs once on launch, which is not per-open either, so nothing
+  in the code contradicts the decision as stated — it is simply not yet the
+  whole of it. **Ask before building an interval.**
+
+  What is not in question either way: a write on the phone must not be lost
+  waiting for a clock. `bkTouch()` already marks a language as changed, for
+  the backup, and the same mark is what a send would follow.
 
 **Checked 2026-08-26 at the owner's request 「オンボーディング終わったら
 せいさくみれるけどふさがれてるけど？確認して」 — it is blocked, and here is what
