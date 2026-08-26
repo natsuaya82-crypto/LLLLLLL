@@ -381,9 +381,27 @@ until there was a deletion to fire it, which meant deleting your own account
 withdrew every report you had ever made — somebody else's record, cleared by
 your leaving. It is `on delete set null` now, and `npm run rls` holds it.
 
-**The language on the phone is not touched.** Erasing the phone is the other
-button and now says which it is; it used to be called "delete account" because
-nothing in the app could reach the server, and that reason is gone.
+**~~The language on the phone is not touched.~~ Overturned 2026-08-26:**
+「アカウント消したら全部消えるに決まってる」. This said the phone copy stays and
+that erasing the phone is the other button. **It is one act now** — deleting the
+account takes the server rows AND everything on this phone. **Not built**:
+`netDropMe()` still deletes only the server side, and `wipeAll()`
+(`www/settings.js`) is a separate button nobody presses on the way through.
+
+The old sentence is left visible above rather than removed, because the two
+buttons and the reason they were two are what the next person needs to know
+before merging them. What has to be got right when it is:
+
+- **the order.** Get it wrong and it is either 「消したと言われたのに残っている」
+  or 「消すと言っていないものまで消えた」. Storage bytes, then the server rows,
+  then the phone — the phone last, because it is the only copy that can still
+  answer if the network fails halfway, and `netDropMe()` already decided that a
+  failed listing must not stop the account dying.
+- **asked once.** `wipeAll()` already asks with iOS's own dialog. Two dialogs
+  in a row is one too many and nobody can tell which one they answered.
+- **this is not a `DATA_SAFETY.md` exception.** That rule forbids the APP
+  deciding to remove somebody's work — four named reasons, and 「the person
+  asked」 is not one of them.
 
 ### 9. Push notifications
 
@@ -486,10 +504,56 @@ What that means here, item by item, and most of it is **already built**:
   (2766) and long before `boot.js` (2802), so `netSignedIn` does not exist yet
   when it runs. Making this true means moving where the first language is
   made. Reported in `docs/FEATURE_RULES.md`, not patched.
-- **how often it syncs — open.** Today it is once, on launch (`boot.js`). The
-  owner's answer on frequency reached this branch as 「全部だって」 and
-  nothing longer; that is a threshold and is not being written down from one
-  word. **Ask before building a sync loop.**
+- **how often it syncs — decided 2026-08-26: 「常に同期」.** Not once on launch,
+  which is what `www/boot.js` does today. **Not built.** What "always" has to
+  mean in code is still an engineering answer rather than a second decision:
+  the app has no server of its own in front of Supabase, so "always" that fires
+  on every keystroke is a request per letter typed. The shape that matches the
+  words without doing that is a write that marks the language and a send that
+  follows shortly after it settles — `bkTouch()` already marks, for the backup.
+
+**Checked 2026-08-26 at the owner's request 「オンボーディング終わったら
+せいさくみれるけどふさがれてるけど？確認して」 — it is blocked, and here is what
+does it.** Not a fault in the onboarding; one word in `www/onboard.js`:
+
+```
+function makeNeed(){ if(!SET.done) return true; return obNeed(); }
+function obNeed(){ if(netMember()) return true; … obDoor(…); return false; }
+```
+
+`netMember()` is 「a session **with a name on it**」 — `!SESS.anon`. The account
+made at launch by `netAnon()` **is** anonymous, so `netMember()` is false for
+everybody who has not signed up. And `obDoor()` sets `SET.done=false`, which is
+what makes the app *be* the onboarding. So:
+
+```
+  finish the onboarding (obFinish: SET.done=true, land on the profile)
+      ↓  tap anything on the making side
+  makeNeed() → obNeed() → netMember() is false → obDoor()
+      ↓  SET.done=false
+  back inside the onboarding, on the sign-in door
+```
+
+It hits all four the owner named and the letter grid: `newLetter` / `editLetter`
+/ `editGlyph` (`www/glyph.js`), `openAdd` (`www/wordsheet.js`), `openOwnPhase` /
+`stOpen` (`www/phases.js`), `openNote` (`www/notes.js`), `ltGo` /
+`ltForUnitGo` / `openSndAdd` (`www/sound.js`). Each of those is where the owner
+put it 「文字は書こうとする時点でabcとかのこの画面で防ぐ」; none of them is
+misplaced.
+
+**The sharpest edge: the onboarding IS drawing your first letter**, and it works
+because `makeNeed()` returns true while `SET.done` is false. Draw one, finish,
+try to draw a second — door. The wall is invisible until the moment the app
+stops being the onboarding.
+
+**Why this is a question and not a bug to fix:** two different things are both
+called 「アカウント」 in this code, and today's 「言語はアカウントないと作れない
+です」 does not say which. `netSignedIn()` is 「there is a session」 and
+**everybody has one from the first frame**; `netMember()` is 「there is a name on
+it」. If the decision means the first, `makeNeed()` should ask `netSignedIn()`
+and the wall goes away by itself. If it means the second, the current behaviour
+is right and what is wrong is the ORDER — the onboarding walks somebody through
+making something and then charges them for a second one. **Open. Asked.**
 
 **The exception, and it is the one place 「全部」 does not reach: a language
 that was downloaded is not synced.** `syMerge` adds both sides, so the first
