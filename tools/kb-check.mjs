@@ -222,7 +222,14 @@ const r = await pg.evaluate(({ s }) => {
   }
   out.centreLead = lead;
   out.centreTail = tail;
-  out.centred = lead === tail && lead > 0;
+  /* Off centre by at most ONE KEY, never more -- rule 19's own sentence:
+     「半端が出るときはキー1つ単位に丸めて、余った半分は右に回ります」. It used
+     to say lead === tail, which held only because the sheet was as wide as the
+     widest row and that fixture's slack came out even. On a ten-column sheet
+     the slack is very often an odd number of keys, and the whole point of
+     rounding is that the odd one goes to one end rather than splitting a key
+     across two columns. */
+  out.centred = lead > 0 && tail - lead >= 0 && tail - lead <= 1;
 
   /* ---- 6d. a page arrives with the way there and the way back ---------
      「2ページ目作ったときの切り替えボタンは？」 A face nothing can reach and
@@ -379,14 +386,44 @@ const r = await pg.evaluate(({ s }) => {
   ['qwerty', 'flick'].forEach(function (p){
     KB = null; kbShow = 0; kbAdd(p); kbLay = 0;
     window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+    var k = document.querySelector('.kb.kbsheet .kbk[data-r="0"][data-k="0"]');
+    var w = kbLayer().rows[0][0].w || 1;
+    var sheet = document.querySelector('.kb.kbsheet');
     sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
-                 cols: kbCols(kbLayer().rows) };
+                 cols: kbCols(kbLayer().rows), w: w,
+                 kc: sheet ? parseInt(sheet.style.getPropertyValue('--kc'), 10) : -1,
+                 hdr: [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+                        .map(function (b){ return b.textContent; }).join(''),
+                 span: k ? (parseInt(String(k.style.gridColumn || '').replace(/\D/g, ''), 10) || 0) : -1 };
   });
   out.sizes = sizes;
-  /* A key is its share of its row: cols columns across a full-width board, so
-     a key of one is sheet/cols to within the gap the stylesheet takes back. */
-  out.shareQ = Math.abs(sizes.qwerty.key - sizes.qwerty.sheet / sizes.qwerty.cols * 2) < 6;
-  out.shareF = Math.abs(sizes.flick.key - sizes.flick.sheet / sizes.flick.cols * 2) < 6;
+  /* A KEY IS ITS SHARE OF THE TEN, and that is a different sentence from the
+     one that used to be here. It said a key is sheet/cols, which was true
+     while the grid was as wide as the board's widest row -- and that is the
+     thing that made a column narrower every time anything was added.
+     「エクセルは足しても小さくならんやろ」
+
+     The grid is ten now and a key is big by SPANNING it: a flick key is w 2.5,
+     five of the ten columns, 98pt where a QWERTY's is 39. So what is checked
+     is the span, per board, against the width that came back. */
+  out.shareQ = Math.abs(sizes.qwerty.key - sizes.qwerty.sheet * sizes.qwerty.w / 10) < 6;
+  out.shareF = Math.abs(sizes.flick.key - sizes.flick.sheet * sizes.flick.w / 10) < 6;
+  out.spanQ = sizes.qwerty.span === Math.round(sizes.qwerty.w * 2);
+  out.spanF = sizes.flick.span === Math.round(sizes.flick.w * 2);
+  /* AND THE COLUMNS ARE THE SAME COLUMNS ON EVERY BOARD, which is the half of
+     this the widths alone cannot say. 「行と列はエクセルのように数字振ったん
+     だから、小さくなったら意味ないやん」 -- a is an address, and an address is
+     only one if it is in the same place tomorrow.
+
+     Read off the header, because that is the thing a person points at. Both
+     boards show a to j and nothing else: ten columns, whatever is standing on
+     them. It used to be the board's own widest row, so a flick board's sheet
+     had four letters on it and a QWERTY's ten, and the same letter meant a
+     different width on each. Measuring the WIDTH could not see that -- the
+     board is full width either way -- which is why this asks the letters. */
+  out.hdr = sizes.qwerty.hdr;
+  out.colSame = sizes.qwerty.hdr === 'abcdefghij' && sizes.flick.hdr === 'abcdefghij' &&
+    sizes.qwerty.kc === 20 && sizes.flick.kc === 20;
   out.notSame = sizes.flick.key > sizes.qwerty.key * 2;
   out.sameBoard = sizes.flick.sheet === sizes.qwerty.sheet;
   /* and the board's edges do not move when a column is taken out of it, which
@@ -394,8 +431,27 @@ const r = await pg.evaluate(({ s }) => {
   KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
   window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
   const edgeWas = widthOf('.kb.kbsheet');
+  const keyWas = keyW();
+  const hdrWas = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+    .map(function (b){ return b.textContent; }).join('');
   kbHeadCol(0); kbCut();
   out.edgeStill = widthOf('.kb.kbsheet') === edgeWas;
+  /* AND THE KEYS THAT ARE LEFT ARE THE SAME SIZE. 「エクセルは足しても小さく
+     ならんやろ」 said about adding; taking away is the same sentence and is the
+     one a check can reach, because every pattern now fills the ten and there
+     is nothing to add to them.
+
+     With the grid as wide as the board's widest row, taking a column out made
+     the nine that were left STRETCH -- every key on the board bigger, because
+     one was removed. The letters across the top went with them, from ten to
+     nine. Neither throws, both look fine, and the board somebody was building
+     is not the board they had a moment ago. */
+  out.cutKeyStill = Math.abs(keyW() - keyWas) < 0.5;
+  out.cutHdrStill = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+    .map(function (b){ return b.textContent; }).join('') === hdrWas;
+  out.cutKeyWas = keyWas; out.cutKeyNow = keyW();
+  out.cutHdrNow = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+    .map(function (b){ return b.textContent; }).join('');
 
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
@@ -814,7 +870,8 @@ say(r.colsCap, 'and it takes no more keys');
 say(r.wCap, 'and a key in it cannot be widened past the edge');
 say(r.overKept, 'a layout that is already over the ceiling is left exactly as it is');
 say(r.overStillCant, 'and still cannot be added to');
-say(r.centred, 'a short row sits in the middle: ' + r.centreLead + ' empty each side');
+say(r.centred, 'a short row sits in the middle of the ten: ' + r.centreLead +
+    ' empty in front, ' + r.centreTail + ' behind -- off by at most one key');
 say(r.faces === 2, 'adding a page gives the keyboard ' + r.faces + ' of them');
 say(r.wayThere, 'and page 1 has a key that goes to page 2');
 say(r.wayBack, 'and page 2 has one that comes back');
@@ -825,8 +882,19 @@ say(r.layNewRow, 'and into a row of its own when every row is already full');
 say(r.sameBoard, 'a flick board and a QWERTY board are drawn the same width');
 say(r.notSame, 'and a flick key is not a QWERTY key: ' + r.sizes.flick.key +
     'px against ' + r.sizes.qwerty.key + 'px');
-say(r.shareQ && r.shareF, 'each is its share of the row it is in, both boards');
+say(r.shareQ && r.shareF,
+    'each is its share of the ten: qwerty w' + r.sizes.qwerty.w + ' -> ' +
+    r.sizes.qwerty.key + 'px, flick w' + r.sizes.flick.w + ' -> ' + r.sizes.flick.key + 'px');
+say(r.spanQ && r.spanF,
+    'and it is drawn spanning that many columns (' + r.sizes.qwerty.span +
+    ' and ' + r.sizes.flick.span + ' of 20 half columns)');
+say(r.colSame,
+    'and both boards carry the same ten columns: ' + r.sizes.qwerty.hdr +
+    ' / ' + r.sizes.flick.hdr + ' -- a is a is a, whatever stands on it');
 say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.cutKeyStill, 'nor the size of the keys that are left (' + r.cutKeyWas +
+    'px -> ' + r.cutKeyNow + 'px)');
+say(r.cutHdrStill, 'nor which columns there are (' + r.cutHdrNow + ')');
 say(r.narrowPlus === r.widePlus,
     'the row-adding + is the same size on page 2 as on page 1 (' + r.narrowPlus + 'px)');
 say(r.addOn2Plus, 'the dashed row is drawn on page 2 as well as page 1');

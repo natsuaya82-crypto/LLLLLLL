@@ -158,18 +158,65 @@ function kbGap(w){ var k=kbKey('gap'); k.w=w; return k; }
    -- at three across that is 2.41:1, a letterbox nothing on a phone looks
    like. Ten is the other end and rule 19 already fixes it: the narrowest
    iPhone. */
+/* A KEY IS BIG BY SPANNING COLUMNS, so how many to a row has to be a number
+   that divides the ten evenly -- otherwise a key lands between two columns
+   and the letters across the top stop naming anything.
+   「行と列はエクセルのように数字振ったんだから」
+
+   Counted in half columns, that is 20/per being whole: 1, 2, 4, 5, 10. Four
+   is a kana keyboard's three letters and a function column, five is a chart,
+   ten is a QWERTY -- so the set is not a compromise, it is the three shapes a
+   phone keyboard comes in with two ends on it.
+
+   As FEW as will hold the letters in four rows, so the keys come out as big
+   as they can: four rows is the ceiling on how tall a keyboard is. */
+var KB_PERS=[1, 2, 4, 5, 10];
 function kbPer(n){
-  return Math.max(4, Math.min(10, Math.ceil(n/4)));
+  var i, want=Math.ceil(n/4);
+  for(i=0;i<KB_PERS.length;i++) if(KB_PERS[i]>=want) return KB_PERS[i];
+  return 10;
+}
+/* And what one of them is worth. w is in KEYS, kbU() turns it into the half
+   columns the sheet is drawn in, so this is the one place that divides. */
+function kbW(per){ return (KB_COLS/per)/2; }
+/* A row padded out to the full ten with gaps at both ends -- kbAlign's centre,
+   done at the moment a pattern is built. A row that comes to ten is a row the
+   phone draws exactly as the sheet does, because the extension divides a row
+   by its OWN total and a gap is a key that travels. Without it a short row is
+   drawn narrow here and stretched there. */
+function kbFillRow(row){
+  var tot=kbUsed(row), rem=KB_COLS-tot, lead;
+  if(rem<=0) return row;
+  lead=kbLead(KB_COLS, tot);
+  if(rem-lead>0) row.push(kbGap(kbGapW(rem-lead)));
+  if(lead>0) row.unshift(kbGap(kbGapW(lead)));
+  return row;
+}
+/* The bottom bar: the space takes whatever the row has left, which is what
+   every phone does with it, so the row comes to ten without a gap in it. */
+/* Putting the way-across on a bar that is already ten wide: the space pays
+   for it, which is where every phone takes it from. */
+function kbBarLay(row, to){
+  var i;
+  for(i=0;i<row.length;i++) if(row[i].k==='sp' && row[i].w>1){ row[i].w-=1; break; }
+  row.unshift(kbKey('lay', to));
+  return row;
+}
+function kbBar(del){
+  var sp=kbKey('sp'), d=kbKey('del');
+  d.w=del||2;
+  sp.w=(KB_COLS/2)-d.w;
+  return [sp, d];
 }
 function kbRows(list){
-  var rows=[], row=[], i, sp, per=kbPer(list.length);
+  var rows=[], row=[], i, k, per=kbPer(list.length), w=kbW(per);
   for(i=0;i<list.length;i++){
-    row.push(kbKey('lt', list[i].id));
+    k=kbKey('lt', list[i].id); k.w=w;
+    row.push(k);
     if(row.length===per){ rows.push(row); row=[]; }
   }
-  if(row.length) rows.push(row);
-  sp=kbKey('sp'); sp.w=Math.max(2, per-1);
-  rows.push([sp, kbKey('del')]);
+  if(row.length) rows.push(kbFillRow(row));
+  rows.push(kbBar(2));
   return rows;
 }
 /* The second face: the digits and the marks.
@@ -198,8 +245,11 @@ function kbDefault(){
   if(!more) return {lay:[{rows:rows}]};
   /* The way across, on both faces, at the near end of the bottom row --
      where every phone keeps its 123. */
-  rows[rows.length-1].unshift(kbKey('lay', '1'));
-  more.rows[more.rows.length-1].unshift(kbKey('lay', '0'));
+  /* and the space gives up its width for it, so the bar still comes to ten.
+     It used to be unshifted on top, which put the row at eleven -- one key
+     over the phone's number, on the one row every keyboard has. */
+  kbBarLay(rows[rows.length-1], '1');
+  kbBarLay(more.rows[more.rows.length-1], '0');
   return {lay:[{rows:rows}, more]};
 }
 /* ---- the five a keyboard can be made from ------------------------------
@@ -222,14 +272,14 @@ function kbDefault(){
 var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc'];
 /* Ten to a row, which is what a row of a phone keyboard holds. */
 function kbRowsOf(list, per){
-  var rows=[], row=[], i, sp;
+  var rows=[], row=[], i, k, w=kbW(per);
   for(i=0;i<list.length;i++){
-    row.push(kbKey('lt', list[i].id));
+    k=kbKey('lt', list[i].id); k.w=w;
+    row.push(k);
     if(row.length===per){ rows.push(row); row=[]; }
   }
-  if(row.length) rows.push(row);
-  sp=kbKey('sp'); sp.w=3;
-  rows.push([sp, kbKey('del')]);
+  if(row.length) rows.push(kbFillRow(row));
+  rows.push(kbBar(2));
   return rows;
 }
 /* Twelve keys, four directions on each. One key holds five letters, so a
@@ -258,10 +308,18 @@ function kbFlickLay(){
      Never fewer than three rows, because those three keys are three and each
      wants a cell of its own. */
   n=Math.max(3, Math.ceil(keys.length/3));
+  /* Four across, so a key is FIVE columns of the ten -- 97pt on a 390pt
+     phone against a QWERTY's 39. That is the whole of why a flick key is big:
+     not a bigger grid, a key that spans more of it. And four times five is
+     exactly ten, so the row is full and nothing can be added to it that would
+     make these smaller. */
+  var fw=kbW(4);
   for(i=0;i<n;i++){
     row=[];
-    for(j=0;j<3;j++) row.push(keys[i*3+j] || kbKey('lt', ''));
-    row.push(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(1));
+    for(j=0;j<3;j++){ k=keys[i*3+j] || kbKey('lt', ''); k.w=fw; row.push(k); }
+    k=(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(fw));
+    k.w=fw;
+    row.push(k);
     rows.push(row);
   }
   return [{rows:rows}];
@@ -278,11 +336,18 @@ function kbFlickLay(){
 function kbChartLay(){
   var cs=wsCons(), vs=wsVows(), rows=[], row, i, j, l;
   if(!cs.length || !vs.length) return kbTapLay();
+  /* The chart's columns are the language's -- a column per vowel and one for
+     the three that are not letters -- so this is the one pattern whose count
+     is not ours to pick from KB_PERS. Each key takes as many whole columns as
+     fit, and kbFillRow() puts the remainder at the ends, exactly as the free
+     QWERTY's nine-letter row is inset by half a key at each end. */
+  var cw=Math.max(1, Math.floor(KB_COLS/(vs.length+1)))/2, kk;
   for(i=0;i<cs.length;i++){
     row=[];
     for(j=0;j<vs.length;j++){
       l=ltMain(wsKey([cs[i], vs[j]]));
-      row.push(kbKey('lt', l? l.id : ''));
+      kk=kbKey('lt', l? l.id : ''); kk.w=cw;
+      row.push(kk);
     }
     /* The three that are not letters, in a column, for kbFlickLay()'s reason
        -- a row of its own is a whole row, and this is the one pattern whose
@@ -290,8 +355,10 @@ function kbChartLay(){
        consonants and five vowels came to 5 x 7 and half the screen; the same
        chart with the column is 6 x 6. The grid itself is untouched, because
        what a chart is is what the language has. */
-    row.push(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(1));
-    rows.push(row);
+    kk=(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(cw));
+    kk.w=cw;
+    row.push(kk);
+    rows.push(kbFillRow(row));
   }
   return [{rows:rows}];
 }
@@ -1121,7 +1188,25 @@ function kbLead(cols, tot){
 }
 function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick(),
-      cols=ro? 0 : kbCols(lay.rows), at, b, lead, tot;
+      /* TEN KEYS, ALWAYS -- not this face's widest row.
+         「行と列はエクセルのように数字振ったんだから、小さくなったら意味ない
+         やん」「エクセルは足しても小さくならんやろ」 OWNER DECISION 2026-08-26.
+
+         The grid used to be kbCols(lay.rows) wide, so the widest row exactly
+         filled it -- and a column was therefore a different width on every
+         board and got NARROWER every time anything was added. That is not a
+         spreadsheet: a column in one is a fixed width and adding one makes
+         the sheet longer, never the columns thinner. Numbering them a b c is
+         what says they are fixed, and the numbering is what made it wrong.
+
+         Fixed at KB_COLS, a column is width/10 on every board and never
+         moves. A KEY is big by SPANNING columns -- a flick key is five of
+         them (w 2.5), which is why it comes out 97pt where a QWERTY's is 39.
+         And the limit does the rest: a row that already comes to ten refuses
+         another key, so nothing is ever made smaller to fit something in.
+         kbRoomIn() has always said that; what was missing was the fixed
+         width for it to be true against. */
+      cols=ro? 0 : KB_COLS, at, b, lead, tot;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
