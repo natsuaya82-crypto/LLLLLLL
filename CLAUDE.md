@@ -53,8 +53,17 @@ a check, because nothing throws. The timeline is the worked example: the three
 sns tabs and the composer never asked who you were, while every write in
 `schema.sql` had gone through `is_member()` from the first day, so signed out
 you could write a post that went nowhere. Reading the timeline and posting to
-it both need an account now. The MAKING side is the other half of the same
-sentence and needs none: a language is made on this phone, with or without one.
+it both need an account now. **The MAKING side used to be the exception and is
+not one any more** — this said 「a language is made on this phone, with or
+without one」 and 2026-08-26 turned it over: 「基本は全部サーバー管理 言語周りだけ
+バックアップにfile使う」「言語はアカウントないと作れないです」. The server is
+where a language lives, the phone keeps the copy that works with no signal, and
+what was made offline goes up when there is a signal again 「制作はオフラインでも
+可能次つながった時に更新される」. There is an account before the first frame:
+`netAnon()` makes an anonymous one at launch (`www/boot.js`). **The first
+language is the one place this is not true yet** — it is minted at the top of
+`www/core.js`, which `index.html` loads before `net.js` exists, so it cannot ask
+whether there is an account. Reported, not patched.
 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
 **Shape.** Four things are banned outright: a row of round chips you scroll
