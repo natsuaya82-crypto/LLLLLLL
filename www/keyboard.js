@@ -1090,7 +1090,7 @@ function kbHTML(sel, ro){
     out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(KBH.i*2)+');'+
       'width:calc(100% / '+cols+' * '+Math.min(2, cols-KBH.i*2)+')"></span>'+out;
   return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
-    (ro? '' : ' style="--kc:'+cols+';width:'+kbSheetW(cols)+'"')+'>'+out+'</div>';
+    (ro? '' : ' style="--kc:'+cols+';width:'+kbSheetW()+'"')+'>'+out+'</div>';
 }
 
 /* ---- the keyboard is not typed on in here ------------------------------
@@ -1413,7 +1413,7 @@ function kbTileTo(e){
     KBT.on=true;
     KBT.ghost=document.createElement('div');
     KBT.ghost.className='kbghost';
-    KBT.ghost.style.width=kbCellW(KBT.w);
+    KBT.ghost.style.width=kbKeyW(KBT.w);
     document.body.appendChild(KBT.ghost);
   }
   e.preventDefault();
@@ -2193,39 +2193,60 @@ function kbEditFnHTML(key){
    opening it -- one mode, one press to leave it. */
 var kbNew1=0;
 function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
-/* How wide a key of w is, as a calc the stylesheet owns the numbers in.
+/* Three widths that used to be one, and telling them apart is what fixes
+   「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
+   フリックとqwartyのキーのサイズは同じなんか？」 OWNER DECISION 2026-08-26.
 
-   **A column is a fixed width and the board is as wide as its columns make
-   it.** Not the other way round. 「エクセルみたいにキーボードにやって横幅が
-   固定されるはずだよ。縦の列は追加できるかもだけど」 OWNER DECISION
-   2026-08-25.
+   They were. Measured on a 390px screen, a flick key and a QWERTY key were
+   both 28.2 x 44 -- the same pixel, on two keyboards that are nothing like
+   each other on the phone, where a flick row of three keys gives each one a
+   THIRD of the screen and a QWERTY row of ten gives each a tenth.
 
-   It used to divide --kbw by the columns THIS board happens to have, so the
-   board was always the same width and the cells stretched to fill it: a board
-   of three columns drew three enormous cells across the whole phone, and a
-   spreadsheet does not resize its columns because you deleted some.
+   This supersedes OWNER DECISION 2026-08-25 「エクセルみたいにキーボードに
+   やって横幅が固定されるはずだよ」, which is why that sentence is not in this
+   comment any more except here, being replaced. What that decision fixed was
+   real and is fixed a different way below: the sheet used to change width
+   every time the widest row changed, so deleting a column moved everything.
 
-   So the divisor is KB_COLS -- the ten-key board rule 19 fixes -- and never
-   this board's own count. --kbw is what a FULL board is across; a column is
-   a twentieth of it because a column is half a key. A key gives back --kbgap
-   to the space beside it.
+   THE BOARD is always the full width. It is a picture of a keyboard, and a
+   keyboard is as wide as the phone whatever is on it -- so the one number
+   that never moves is this one, and deleting a column no longer moves the
+   sheet's edges at all. kbSheetW().
 
-   kbSheetW() below is the other half and has to agree with this to the pixel,
-   which is why they are next to each other rather than one of them being a
-   line in the stylesheet. */
+   A KEY is its share of the row it is in, which is what the extension does
+   (KeyBoardView.layoutSubviews: free * key.width / the row's total) and what
+   the read-only board here has always done (flex: key.w). On the sheet that
+   falls out of the grid for nothing: the row is `cols` columns of 1fr across
+   a full-width board, and a key spans kbU(w) of them. kbKeyW() says the same
+   number in a calc, for the one thing that is not in the grid -- the ghost
+   that follows a finger.
+
+   A WIDTH IN THE PALETTE is neither. The 1/2/3 tiles under the sheet are a
+   palette of proportions, not pictures of a key: at true size on a three-key
+   board the width-3 tile IS the whole row, and the three of them come to
+   twice the screen. They stay on the ten-key scale, which is the scale they
+   have always been drawn at. kbCellW(). */
 function kbCellW(w){
   return 'calc(var(--kbw) / '+KB_COLS+' * '+(kbU(w))+' - var(--kbgap))';
 }
-/* And the board, which is now the consequence rather than the cause: as many
-   fixed columns as it has. It sits where a short row already sits -- the
-   middle of the sheet, rule 19 -- because .kb.kbsheet is margin:auto.
+/* What a key of w actually comes out at on the sheet in front of somebody --
+   the grid's own arithmetic, written out for the one thing the grid does not
+   place. */
+function kbKeyW(w){
+  return 'calc(var(--kbw) / '+kbCols(kbLayer().rows)+' * '+(kbU(w))+' - var(--kbgap))';
+}
+/* And the board: the full width, always, however few keys are on this face.
 
-   This is written here rather than in index.html for the reason above: the
-   sheet's width and the cell's width are one statement, and a statement split
-   across two files is two that can drift. The stylesheet still owns every
-   NUMBER in it -- --kbw and --kbgap are its. */
-function kbSheetW(cols){
-  return 'calc(var(--kbw) / '+KB_COLS+' * '+cols+')';
+   It used to be `--kbw / KB_COLS * cols`, which drew a face of two keys a
+   FIFTH of the phone across -- and everything standing on it with it. That is
+   both of build #92's width reports in one line: a flick board's keys came
+   out the size of a QWERTY's, and the dashed + that adds a row to a page
+   somebody had just made came out 60px wide against 320 on page one, which
+   reads as「行は2ページ目から追加できない」.
+
+   The stylesheet still owns every NUMBER -- --kbw and --kbgap are its. */
+function kbSheetW(){
+  return 'var(--kbw)';
 }
 function kbNewHTML(){
   return '<div class="kbnew" id="kbnew">'+

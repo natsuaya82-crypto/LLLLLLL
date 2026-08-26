@@ -909,38 +909,54 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   three, backs up three, and is refused only the fourth.
 
 ### Decision
-- Date: 2026-08-25
-- Area: The keyboard sheet's width — a column is a fixed size
+- Date: 2026-08-26
+- Area: The keyboard sheet's width — a key is its share of the row it is in
 - Decision:
 
-  「エクセルみたいにキーボードにやって横幅が固定されるはずだよ。
-   縦の列は追加できるかもだけど」
+  「フリックなのに qwerty サイズ」
+  「qwartyはqwartyのサイズあるやろ　フリックとqwartyのキーのサイズは
+   同じなんか？え？」
 
-  **A column is a fixed width. The board is as wide as its columns make it.**
-  Not the other way round.
+  They were. Measured on a 390px screen, a flick key and a QWERTY key were
+  both **28.2 × 44** — the same pixel, on two keyboards that are nothing like
+  each other on the phone.
 
-  Today `--kbw` is `83vw` and `kbCellW(w, cols)` is `--kbw / cols * kbU(w)`, so
-  the board is ALWAYS the same width and the cells stretch to fill it: a board
-  of three columns draws three enormous cells across the whole phone. From now
-  the unit is fixed — a column is what a column is on a ten-column board — and
-  a three-column board is three columns wide, sitting where a short row already
-  sits (the middle of the sheet, rule 19). Adding a column makes the board
-  wider, up to the ten that rule 19 already fixes.
+  **The board is the full width, always, whatever is on it. A key is its
+  share of the row it is in.** That is what the extension already does
+  (`KeyBoardView.layoutSubviews`: `free * key.width / the row's total`) and
+  what the read-only board in the app has always done (`flex: key.w`), so
+  this is the editor being made to agree with the two things it is a picture
+  of rather than a third opinion.
 
-- Reason: it is a spreadsheet, and a spreadsheet does not resize its columns
-  because you deleted some. This also settles a bug rather than patching it.
-  `tools/side-baseline.txt` carries three screens that run off the side of a
-  402pt phone, all one fault: the three tiles a new key is dragged off are the
-  size of the key they make (「1マスとキーボードの1マスのサイズが一緒じゃない
-  から分かりにくいよ」), so together they are 1+2+3 = 6 columns; on a
-  three-column board, six stretched columns are twice the board. Three ways to
-  patch it were put to the owner -- wrap, shrink on narrow boards, stack
-  vertically -- and all three were answers to the wrong question. With a fixed
-  column, six of them are six tenths of the sheet and fit by construction.
-- Affected features: `kbCellW()` and `--kbw` (`www/keyboard.js`,
-  `www/index.html`), how every board narrower than ten columns is DRAWN --
-  nothing stored changes, no layout moves, only the drawing -- and the three
-  lines in `tools/side-baseline.txt`, which come out when it lands.
+  A flick board of three keys draws each of them a third of the board; a
+  QWERTY of ten draws each a tenth. 103.7px against 28.2px, measured.
+
+  **This replaces the decision of 2026-08-25** — 「エクセルみたいにキーボード
+  にやって横幅が固定されるはずだよ」 — which made a column a fixed width and
+  the board as wide as its columns made it. What that decision was FOR
+  survives and is stronger: the board's edges must not move when a column is
+  taken out of it. They no longer move at all, where before the sheet changed
+  width every time the widest row changed. What it cost was the key size, and
+  the key size is the thing somebody types on.
+
+- Reason: the editor is the preview — there is no second picture of the
+  keyboard beside it — so a key drawn at a width the phone will never use is
+  the screen lying about the only thing it shows. It also settles a second
+  report in the same line: a page somebody had just made was two keys wide,
+  so the sheet was a fifth of the phone across and the dashed `＋` that adds
+  a row to it was 60px against 320 on page one, which reads as 「8列も追加
+  できるのに行は2ページ目から追加できない」. Rows could always be added; the
+  thing to press was a sliver.
+- Affected features: `kbSheetW()` and `kbKeyW()` (`www/keyboard.js`), how
+  every board narrower than ten columns is DRAWN — **nothing stored changes,
+  no layout moves, only the drawing**. `kbCellW()` stays on the ten-key scale
+  and is now only the 1/2/3 width palette, which is a palette of proportions
+  and not a picture of a key: at true size on a three-key board those three
+  tiles come to twice the screen, which is the fault
+  `tools/side-baseline.txt` carried three lines of and which the 2026-08-25
+  decision fixed. It stays fixed.
+  Height is NOT part of this and is unchanged: a row is one height whatever
+  the board is, so the sheet is the phone's shape across and not down.
 
 ### Decision
 - Date: 2026-08-23

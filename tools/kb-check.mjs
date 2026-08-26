@@ -287,6 +287,85 @@ const r = await pg.evaluate(({ s }) => {
   kbHeadRow(0); kbCut();
   out.oneFacePlain = offOf(kbEdit().lay[0]).length === 0;
 
+  /* ---- 6d3. a row can be added on EVERY face --------------------------
+     「8列も追加できるのに行は2ページ目から追加できない」 OWNER, build #92.
+
+     kbRoomRow() and kbAddRowNew() both read kbLayer(), which is the face
+     being shown, so this holds and held on the first run -- the row goes in.
+     It is written down anyway because nothing said it: every claim about
+     adding a row above is made on face 0, and "it works on the face the
+     fixture happens to be standing on" is the shape of claim that stays true
+     right up until somebody makes the count board-wide.
+
+     What WAS wrong on page 2 is not the function, it is the size of the thing
+     you press: the sheet was kbCols(this face's rows) columns of a fixed
+     width, so a face of two keys was drawn a fifth of the phone across and
+     the dashed + with it -- 60px against 320 on page one. Which is the same
+     line as 「フリックなのに qwerty サイズ」, so it is claimed below with it. */
+  fresh(); kbAddLay(); kbLay = 1; render();
+  out.addOn2Was = kbLayer().rows.length;
+  out.addOn2Plus = vKb().indexOf('kbAddRowNew') >= 0;
+  kbAddRowNew();
+  out.addOn2 = kbLayer().rows.length === out.addOn2Was + 1;
+  /* and the other road onto a face: the + over a selected row */
+  kbHeadRow(0); kbInsAsk(); kbIns(true);
+  out.insOn2 = kbLayer().rows.length === out.addOn2Was + 2;
+  /* ---- 6d4. a key is its share of its row, and the board is the phone ---
+     「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
+     フリックとqwartyのキーのサイズは同じなんか？」 OWNER, 2026-08-26.
+
+     They were the same: 28.2 x 44 on both, on a 390px screen. The sheet was
+     as many FIXED columns as the face happened to have, so a flick board of
+     three keys came out a quarter of the phone across with QWERTY-sized keys
+     on it -- and a page somebody had just made came out a fifth, with the
+     control that adds a row to it 60px wide.
+
+     Two claims and they are one sentence. THE BOARD is the full width
+     whatever is on it, because it is a picture of a keyboard and a keyboard
+     is as wide as the phone. A KEY is its share of the row it is in, which is
+     what the extension does (free * key.width / the row's total) and what the
+     read-only board has always done (flex: key.w).
+
+     Measured off the PAGE and never worked out again here: the whole failure
+     was two places computing a width and agreeing with each other while
+     disagreeing with the phone. */
+  function widthOf(sel){
+    const el = document.querySelector(sel);
+    return el ? Math.round(el.getBoundingClientRect().width) : -1;
+  }
+  function keyW(){
+    const el = document.querySelector('.kb.kbsheet .kbk:not(.cell):not(.addrow)');
+    return el ? +el.getBoundingClientRect().width.toFixed(1) : -1;
+  }
+  out.narrowCols = kbCols(kbLayer().rows);
+  out.narrowSheet = widthOf('.kb.kbsheet');
+  out.narrowPlus = widthOf('.kbk.addrow');
+  fresh();
+  out.wideSheet = widthOf('.kb.kbsheet');
+  out.widePlus = widthOf('.kbk.addrow');
+  /* and the two boards the owner put side by side */
+  const sizes = {};
+  ['qwerty', 'flick'].forEach(function (p){
+    KB = null; kbShow = 0; kbAdd(p); kbLay = 0;
+    window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+    sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
+                 cols: kbCols(kbLayer().rows) };
+  });
+  out.sizes = sizes;
+  /* A key is its share of its row: cols columns across a full-width board, so
+     a key of one is sheet/cols to within the gap the stylesheet takes back. */
+  out.shareQ = Math.abs(sizes.qwerty.key - sizes.qwerty.sheet / sizes.qwerty.cols * 2) < 6;
+  out.shareF = Math.abs(sizes.flick.key - sizes.flick.sheet / sizes.flick.cols * 2) < 6;
+  out.notSame = sizes.flick.key > sizes.qwerty.key * 2;
+  out.sameBoard = sizes.flick.sheet === sizes.qwerty.sheet;
+  /* and the board's edges do not move when a column is taken out of it, which
+     is the half of OWNER DECISION 2026-08-25 that survives it being replaced */
+  KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+  const edgeWas = widthOf('.kb.kbsheet');
+  kbHeadCol(0); kbCut();
+  out.edgeStill = widthOf('.kb.kbsheet') === edgeWas;
+
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
   var lay0 = kbEdit().lay[0];
@@ -662,6 +741,16 @@ say(r.keptKeys && r.notOver, 'and the key went in beside what was there, not ove
 say(r.layBack, 'and the step back takes the page and both keys away again');
 say(r.layFront, 'the key goes in at the front of the last row when that row has room');
 say(r.layNewRow, 'and into a row of its own when every row is already full');
+say(r.sameBoard, 'a flick board and a QWERTY board are drawn the same width');
+say(r.notSame, 'and a flick key is not a QWERTY key: ' + r.sizes.flick.key +
+    'px against ' + r.sizes.qwerty.key + 'px');
+say(r.shareQ && r.shareF, 'each is its share of the row it is in, both boards');
+say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.narrowPlus === r.widePlus,
+    'the row-adding + is the same size on page 2 as on page 1 (' + r.narrowPlus + 'px)');
+say(r.addOn2Plus, 'the dashed row is drawn on page 2 as well as page 1');
+say(r.addOn2, 'and a row goes in on page 2 (' + r.addOn2Was + ' -> ' + (r.addOn2Was + 1) + ')');
+say(r.insOn2, 'and the + over a selected row puts one in there too');
 say(r.deadRowKept, 'a face never loses its last row (it had ' + r.deadRowsWas + ')');
 say(r.deadRowOff, 'and taking a row off page 2 leaves it with a way off');
 say(r.deadRowTo, 'and that way off goes to the page it came from');
@@ -722,6 +811,13 @@ say(r.hasUndo, 'the screen has a step back on it');
 say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
+
+console.log('\n  a face of ' + (r.narrowCols / 2) + ' keys is drawn ' + r.narrowSheet +
+  'px across, and the row-adding + on it is ' + r.narrowPlus + 'px');
+console.log('  a face of 10 keys is drawn ' + r.wideSheet +
+  'px across, and the same + is ' + r.widePlus + 'px');
+console.log('  a QWERTY key is ' + r.sizes.qwerty.key + 'px and a flick key is ' +
+  r.sizes.flick.key + 'px, on boards both ' + r.sizes.qwerty.sheet + 'px across\n');
 
 /* One pixel, not nothing: the ink's box has whole-pixel edges, so the middle
    of a narrow shape can only be hit to within one. What this is about is much
