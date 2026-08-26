@@ -1027,9 +1027,23 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the row floated in the middle of the screen.
    The 24px each side is `.body`'s own padding, which this no longer sits
    inside; the background is there because the line above it has to have
-   something to be a line ON while the page scrolls under it. */
+   something to be a line ON while the page scrolls under it.
+
+   The room under it is the home indicator's, and only while there is nothing
+   else down there. `env(safe-area-inset-bottom)` is a property of the PHONE,
+   not of what is on screen: it is 34px on a notched iPhone whether or not a
+   keyboard is up. So with the keyboard up the row was pushed 34px clear of
+   it, to leave room for a home indicator the keyboard was already covering --
+   and that gap, plus iOS's own accessory bar under it, is what the row was
+   floating on. 「カメラとかの下のやつキーボードにひっつけろって言ってんのに
+   引っ付いてないし」 OWNER 2026-08-26, on the second time of asking.
+
+   Subtracting --vvkb is exact rather than a guess at a number: with no
+   keyboard it is 0 and the whole inset stands, and the moment anything is
+   down there the inset is eaten by exactly as much as is covered. */
 .view.fit .pwbar{position:fixed;left:0;right:0;bottom:var(--vvkb,0px);
-   z-index:20;padding:6px 24px calc(env(safe-area-inset-bottom,0px));
+   z-index:20;
+   padding:6px 24px max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px)));
    background:var(--bg)}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
 /* ---------- the letters ----------
