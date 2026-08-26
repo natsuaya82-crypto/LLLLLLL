@@ -130,8 +130,17 @@ third goes the opposite way from the other two **on purpose**:
                dictionary grew. Freezing this one would be the bug
 ```
 
-Missing: a lookup from a meaning to one of my words. Word order (`SET.order`,
-six of them) and the grammar stages already exist.
+Missing: a lookup from a meaning to one of my words. The grammar stages exist.
+
+Word order is `STG.order` — it belongs to the LANGUAGE, not the phone.
+`SET.order` was the old flat key and `migrateGramLang()` in `www/phases.js`
+copied it across; `grammar.js` says so on `orderOf()`. Six of them
+(`ORDERS`), chosen on a screen. **The owner has said that is going away** —
+「俺も選ばせたくないし、文章書いてたらsvoが基本でも助詞があるかもしれない」
+(2026-08-26, relayed) — because a sentence with a particle in it is not
+described by one of six letters-triples. Nothing has been built: `ORDERS` is
+still six and `setOrder()` still writes one. **Do not design the replacement
+off this paragraph** — what takes its place has not been decided.
 
 Decided since:
 
