@@ -519,4 +519,12 @@ assert.equal(app.gExLine('','I not eat fish'),'mi poko nai luma');
 stage(DICT,{order:'SOV'},null);
 assert.equal(app.gExLine('','I eat fish'),'mi poko luma');
 
-console.log('Grammar Engine: Phase 1-2 contract is clean, and the line a meaning makes is held');
+/* What this says has to be what it just did. It said "Phase 1-2" while the
+   file had grown three sections above that one -- derivation, case, and the
+   Semantic IR round trip -- so a green run reported less than it held, and a
+   reader deciding whether Phase 3 and Phase 7 were covered would have got the
+   wrong answer from the only line the gate prints. Adding a section here
+   means adding it to this sentence. */
+console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
+            'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
+            'and the line a meaning makes is held');
