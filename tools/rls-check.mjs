@@ -55,6 +55,14 @@ const D = 'd0000000-0000-4000-8000-000000000044';   /* an account with no name o
    which is the whole of the claim -- schema.sql makes whoever is called
    `lingua` the one who may add staff, and nothing else in this file does. */
 const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
+/* Three more who have not written themselves in yet, and one each rather
+   than one reused: a profile is keyed on the account, so the second attempt
+   by somebody who got through on the first is refused by the primary key.
+   That is a denial for the wrong reason, and it reads exactly like the
+   right one. */
+const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
+const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
+const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
 /* And somebody who starts AFTER that one exists, which is the only way to
    watch what a new account is given. A and B are made before it on purpose:
    they are everybody who was already here, and nothing is written onto them. */
@@ -127,6 +135,27 @@ const CASES = [
     `select 1 from profile where id='${B}' and (staff or admin)`],
   ['B cannot become the one above staff',     'denied', B, 0,
     `update profile set admin=true where id='${B}'`],
+  /* --- nor on the way in, which is a different statement -----------------
+     The two lines above are UPDATEs, and revoking UPDATE on a column says
+     nothing about INSERT: they are separate grants. It only matters where the
+     row is written by the account it is about, and profile is exactly that --
+     `profile_make` is how somebody writes THEMSELVES into existence, so the
+     first write of the row is theirs and one extra field in it was the whole
+     of the attack. Anybody who had not made their profile yet could arrive
+     holding admin, and is_admin() reads that column. */
+  ['nor by writing it in on the way in',      'denied', G1, 0,
+    `insert into profile(id,handle,admin) values ('${G1}','probe1',true)`],
+  ['nor staff on the way in',                 'denied', G2, 0,
+    `insert into profile(id,handle,staff) values ('${G2}','probe2',true)`],
+  ['nor a ban on the way in',                 'denied', G3, 0,
+    `insert into profile(id,handle,banned_at) values ('${G3}','probe3',now())`],
+  /* And the same statement about a post. schema.sql says over hidden_at that
+     "nobody may set these but the two functions at the foot of this file";
+     a post arriving with it set reads as taken down by staff, carrying a
+     reason its own author wrote, and post_show() is staff's -- so it could
+     not be put back by the person who did it either. */
+  ['nor does a post arrive already taken down', 'denied', A, 0,
+    `insert into post(author,body,hidden_at,hidden_why) values ('${A}','{}'::jsonb,now(),'x')`],
   /* --- and what somebody starting today starts with ----------------------
      「他の人が始めたらlinguaアカウントは強制的にフォローしてる状態にしたい」
      「A: 初期状態としてフォロー済み。外せる」 -- so both halves are asked
@@ -831,7 +860,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from

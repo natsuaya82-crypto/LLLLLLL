@@ -1112,6 +1112,28 @@ create trigger profile_follows after insert on profile
 revoke update on profile from anon, authenticated;
 grant  update (handle, display, av) on profile to anon, authenticated;
 
+-- And the same sentence about INSERT, which is not the same statement.
+--
+-- The paragraph above says "each is one UPDATE with one extra field in it",
+-- and that was the whole of it for as long as the row already existed when
+-- somebody reached for it. A profile does not: `profile_make` is how an
+-- account writes ITSELF into existence, so the first write of the row is an
+-- INSERT the account controls, and `insert into profile(id,handle,admin)
+-- values (me,'x',true)` was one extra field in exactly the same way. Column
+-- privileges for INSERT are a separate grant from the ones for UPDATE, so
+-- revoking UPDATE said nothing about it: `is_admin()` reads `profile.admin`,
+-- and anybody who had not made their profile yet could arrive holding it,
+-- which opens admin_counts(), staff_add(), staff_drop(), post_hide(),
+-- account_ban() and the report queue behind them.
+--
+-- The four named are what netMakeProfile() in www/net.js sends. staff, admin,
+-- banned_at and banned_why are the server's, and the only thing that writes
+-- them is profile_first() -- a BEFORE trigger, which assigns to NEW rather
+-- than naming a column in the statement, so it is not what this grant is
+-- about and @lingua still arrives holding both flags.
+revoke insert on profile from anon, authenticated;
+grant  insert (id, handle, display, av) on profile to anon, authenticated;
+
 -- ---------------------------------------------------------------------------
 -- And the question that is no longer asked
 --
@@ -1128,3 +1150,19 @@ grant  update (handle, display, av) on profile to anon, authenticated;
 drop function if exists has_account();
 revoke update on post from anon, authenticated;
 grant  update (body, language, prompt, reply_to) on post to anon, authenticated;
+
+-- And INSERT, for the same reason as profile above. The comment over
+-- hidden_at says "nobody may set these but the two functions at the foot of
+-- this file", and revoking UPDATE held that for every post that already
+-- existed. A post does not exist until its author writes it, and that write
+-- is theirs: `insert into post(author,body,hidden_at,hidden_why) values
+-- (me,'{}',now(),'x')` put up a post that reads as taken down by staff, with
+-- a reason its own author wrote, and post_show() is staff's -- so it could
+-- not be undone by the person who did it either.
+--
+-- The five named are what netSend('POST','/rest/v1/post') sends in www/net.js
+-- (id, author, body, prompt, reply_to) plus `language`, which the update line
+-- above already calls the author's. created_at is left out on purpose: it
+-- defaults to now() and a client that could name it could date a post.
+revoke insert on post from anon, authenticated;
+grant  insert (id, author, language, body, prompt, reply_to) on post to anon, authenticated;
