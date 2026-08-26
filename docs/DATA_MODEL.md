@@ -38,6 +38,15 @@ the file, so a slice has one shape and not three that could drift.
 once — backup, wipe, and what goes up — and a slice added outside the list is
 missing from all three.
 
+**And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
+「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
+`slice` rows, the `language` row, the bytes in Storage, **and every
+`lingua.<id>.<slice>` key on the phone**, plus `lingua.langs` and `lingua.cur`
+that index them. This is the one place in this file where data is removed on
+purpose, and it is allowed for the one reason `docs/DATA_SAFETY.md` does not
+forbid: **the person asked.** It is not built — `netDropMe()` reaches the server
+only, and `wipeAll()` is a separate button (`docs/FEATURES.md` § 8).
+
 Which of the copies is believed when they differ: **neither.** `sync.js` adds
 both sides and lets neither win by being newer 「そりゃあ両方足すだろ」. The
 cost of merging is a duplicate; the cost of choosing is somebody's word. This

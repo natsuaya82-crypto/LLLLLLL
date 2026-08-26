@@ -143,9 +143,22 @@ every launch. `docs/FEATURES.md` § 2 carried 「deferred until Supabase $25 is
 worth paying」 as the reason nothing was built; the decision overrode the
 deferral and **the cost did not change**. Nobody has priced it against the four
 subscription products (2026-08-14), and **nobody here should**: what a plan
-costs and where the free/paid line sits are the owner's. What this file can say
-is where to look when it is asked — how often the sync runs is the multiplier
-and it is **open** (today: once, on launch, `www/boot.js`).
+costs and where the free/paid line sits are the owner's.
+
+**Answered 2026-08-26: 「supabaseのエンタープライズで対応する予定」.** The bill
+scaling with people rather than payers is not a reason to narrow the scope, and
+proposals to narrow it on cost grounds are **finished** — the owner has priced
+the decision and taken it. The multiplier is settled too: 「常に同期」, not the
+once-on-launch `www/boot.js` does today, so the number goes UP from whatever it
+is now.
+
+What is still true and still this file's job to say: **none of it may reach
+anybody's data.** An enterprise plan that lapses, a bill that goes unpaid, a
+project that gets suspended — each of those is the entitlement check failing,
+and the rule at the head of this file already says what happens then: fewer
+buttons, never fewer words, and every byte where it was. The phone holds a
+working copy of every slice and `bkPack()` writes the file; a server that
+stops answering is a person who can still open their language.
 
 `CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
 `kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
