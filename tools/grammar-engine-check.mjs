@@ -153,6 +153,85 @@ const plainRole=e.languageModel({languageId:'pr',wordOrder:'SOV',
          e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
   inflections:[e.inflection({id:'r',target:'NOUN',feature:'CASE',value:'RECIPIENT',operation:'suffix',form:'ni'})]});
 assert.equal(e.morphology.parseSentence(plainRole,'neko-ni luma').roles.RECIPIENT,'neko');
+/* ---- Semantic IR: the middle of the whole design ---------------------------
+   model.js has carried semanticIR() since Phase 1 and nothing referred to it
+   anywhere but its own definition -- `grep -rni semanticir www/` returned
+   model.js twice and nothing else. 「翻訳の中心には言語非依存の中間表現を置く」.
+
+   What makes it language-INDEPENDENT is that a role holds a MEANING, never a
+   lemma. Put the lemma in and the IR is the first language again in a new
+   shape, and no second language can be written out of it -- which is the one
+   way this can look like it works while being useless. */
+function lang(id,order,words,infl){
+  return e.languageModel({languageId:id,wordOrder:order,
+    words:words.map((w)=>e.word({id:id+':'+w[0],lemma:w[0],meaning:w[1],partOfSpeech:w[2]})),
+    inflections:(infl||[]).map((r)=>e.inflection(r))});
+}
+const PAST_A={id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ta'};
+const A=lang('A','SOV',[['neko','cat','NOUN'],['sakana','fish','NOUN'],['taberu','eat','VERB']],[PAST_A]);
+const readA=e.morphology.parseSentence(A,'neko sakana taberu-ta');
+assert.equal(readA.ok,true);
+const ir=e.translate.toSemantic(A,readA);
+/* meanings, not lemmas -- the whole claim in two lines */
+assert.equal(ir.roles.SUBJECT,'cat');
+assert.equal(ir.roles.OBJECT,'fish');
+assert.equal(ir.roles.PREDICATE,'eat');
+assert.equal(ir.features.TENSE,'PAST');
+assert.equal(ir.languageIndependent,true);
+/* the verb is PREDICATE and not VERB: VERB is a part of speech, which is a
+   fact about a language, and no fact about a language belongs in here */
+assert.equal(ir.roles.VERB,undefined);
+
+/* and out again, into a language that shares not one word or one rule with A.
+   Different order, different lemmas, a different mark for the past. */
+const B=lang('B','SVO',[['ka','cat','NOUN'],['fi','fish','NOUN'],['ea','eat','VERB']],
+  [{id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ed'}]);
+const wroteB=e.translate.fromSemantic(B,ir);
+assert.equal(wroteB.ok,true);
+assert.equal(wroteB.complete,true);
+assert.equal(wroteB.text,'ka ea-ed fi');
+/* THE ROUND TRIP. B read back is the same meaning A started with, or the IR
+   is not carrying the sentence and one of the two directions is lying. */
+const backB=e.translate.toSemantic(B,e.morphology.parseSentence(B,wroteB.text));
+assert.deepEqual(backB.roles,ir.roles);
+assert.deepEqual(backB.features,ir.features);
+
+/* into a language that marks its roles instead of placing them -- the two
+   halves of this session's work meeting. C writes case particles, so the IR
+   comes out wearing them, and reads back the same. */
+const C=lang('C','SOV',[['nya','cat','NOUN'],['uo','fish','NOUN'],['lum','eat','VERB']],
+  [{id:'nom',target:'NOUN',feature:'CASE',value:'NOMINATIVE',operation:'suffix',form:'ga',separator:' '},
+   {id:'acc',target:'NOUN',feature:'CASE',value:'ACCUSATIVE',operation:'suffix',form:'wo',separator:' '},
+   {id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'}]);
+const wroteC=e.translate.fromSemantic(C,ir);
+assert.equal(wroteC.text,'nya ga uo wo lum-ka');
+const backC=e.translate.toSemantic(C,e.morphology.parseSentence(C,wroteC.text));
+assert.deepEqual(backC.roles,ir.roles);
+assert.deepEqual(backC.features,ir.features);
+/* and because C marks rather than places, the words may be written in any
+   order and still mean the same thing -- one IR, two sentences */
+const backCswap=e.translate.toSemantic(C,e.morphology.parseSentence(C,'uo wo nya ga lum-ka'));
+assert.deepEqual(backCswap.roles,ir.roles);
+
+/* negation travels too, and it is a prefix standing apart in A */
+const negA=lang('A2','SOV',[['neko','cat','NOUN'],['sakana','fish','NOUN'],['taberu','eat','VERB']],
+  [PAST_A,{id:'n',target:'VERB',feature:'NEGATION',value:true,operation:'prefix',form:'nai',separator:' '}]);
+const negIR=e.translate.toSemantic(negA,e.morphology.parseSentence(negA,'neko sakana nai taberu-ta'));
+assert.equal(negIR.features.NEGATION,true);
+assert.equal(negIR.features.TENSE,'PAST');
+assert.equal(negIR.roles.SUBJECT,'cat');
+
+/* A meaning this language has no word for is a GAP and stays as the meaning.
+   docs/FEATURES.md already decided what a gap is: it stays in the natural
+   language and is the door to making that word. Inventing one would be worse
+   than showing it is missing, and dropping it would lose what somebody said. */
+const noFish=lang('D','SVO',[['ka','cat','NOUN'],['ea','eat','VERB']],
+  [{id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ed'}]);
+const wroteD=e.translate.fromSemantic(noFish,ir);
+assert.equal(wroteD.complete,false);
+assert.equal(wroteD.gaps.length,1);
+assert.equal(wroteD.gaps[0],'fish');
+assert.equal(wroteD.text,'ka ea-ed fish');
 /* What a word IS, asked of the dictionary rather than restated here.
    www/shell.js holds the thirteen keys a part of speech is stored as, and the
    adapter's map named three that this app has never stored (`pron`, `prep`,

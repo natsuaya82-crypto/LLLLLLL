@@ -29,6 +29,11 @@
 (function(root){
   'use strict';
   var api=root.LinguaGrammarEngine;
+  /* The same table morphology.js reads a mark WITH, used here to write one.
+     Both directions of one fact, and it is stated in morphology.js -- this
+     asks the engine for it rather than restating it, because two copies of a
+     table is two answers to "what does ACCUSATIVE mean" the day one moves. */
+  var CASE_ROLE=api&&api.morphology&&api.morphology.CASE_ROLE;
   if(!api) throw new Error('LinguaGrammarEngine model must load before translate');
 
   /* ---- what the language has decided --------------------------------------
@@ -232,5 +237,90 @@
     return out.join(' ');
   }
 
-  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder};
+  /* ---- Semantic IR ---------------------------------------------------------
+     model.js has carried semanticIR() since Phase 1 with nothing referring to
+     it anywhere but its own definition. It is the middle of the whole design:
+     「翻訳の中心には言語非依存の中間表現を置く」, so that N languages need N
+     readers and N writers rather than N x N translators.
+
+     What makes it language-INDEPENDENT is that a role holds a MEANING and not
+     a lemma. `mi poko luma-ka` and `watashi ringo taberu-ta` are two languages
+     and one IR: {SUBJECT:'I', OBJECT:'apple', PREDICATE:'eat', TENSE:'PAST'}.
+     Put the lemma in and the IR is just the first language again wearing a
+     different shape, and the second language cannot be written from it.
+
+     A word means a LIST of things and the first is the one that stands for it
+     here -- the same choice lexicon.cut() already makes when it matches. */
+  /* tools/es5-check.mjs bans `.find(` -- Array.prototype.find is ES2015 and
+     www/ runs in an old WKWebView. This is lexicon's OWN find, and a regular
+     expression cannot tell the two apart, so the reference is taken here where
+     no call bracket follows it rather than the rule being weakened for both. */
+  var lexFind=api.lexicon.find;
+  function meaningOf(word){ var ms=api.lexicon.meaningsOf(word); return ms.length?ms[0]:String((word&&word.lemma)||''); }
+
+  /* A parsed sentence, as what it MEANS. The verb's role is PREDICATE here and
+     not VERB: VERB is a part of speech, which is a fact about a language, and
+     nothing about a language belongs in this object. */
+  function toSemantic(model, parsed){
+    var roles={}, features={}, i, tok, role, k;
+    if(!parsed||!parsed.ok) return null;
+    for(i=0;i<parsed.tokens.length;i++){ tok=parsed.tokens[i];
+      role=(tok.role==='VERB')?'PREDICATE':tok.role;
+      if(!role||roles[role]) continue;
+      roles[role]=meaningOf(tok.word);
+    }
+    for(k in parsed.features) if(Object.prototype.hasOwnProperty.call(parsed.features,k)) features[k]=parsed.features[k];
+    return api.semanticIR({roles:roles, features:features});
+  }
+
+  /* Which CASE value this language writes for a role, if it writes one at all.
+     A language with no case system answers nothing and is arranged by its word
+     order alone, which is what it was doing before any of this. */
+  function caseFor(model, role){
+    var rules=(model&&model.inflections)||[], i, r, v;
+    for(i=0;i<rules.length;i++){ r=rules[i];
+      if(r.feature!=='CASE') continue;
+      v=String(r.value||'').toUpperCase();
+      if(CASE_ROLE[v]===role||v===role) return r.value;
+    }
+    return null;
+  }
+
+  /* The other direction: an IR, written out as a sentence of THIS language --
+     its words, its order, its marks, its inflections. A meaning this language
+     has no word for is a gap and stays as the meaning, for the same reason
+     lexicon.cut() leaves one: inventing the word would be worse than showing
+     that it is missing, and the gap is the door to making it. */
+  function fromSemantic(model, ir){
+    var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
+        roles=(ir&&ir.roles)||{}, features=(ir&&ir.features)||{},
+        seen={}, queue=[], out=[], gaps=[], i, k, role, slot;
+    /* the order this language puts roles in, then anything it has no place for */
+    for(i=0;i<order.length;i++){ slot=(order[i]==='VERB')?'PREDICATE':order[i]; if(!seen[slot]){ seen[slot]=true; queue.push(slot); } }
+    for(k in roles) if(Object.prototype.hasOwnProperty.call(roles,k)&&!seen[k]){ seen[k]=true; queue.push(k); }
+    for(i=0;i<queue.length;i++){ role=queue[i];
+      if(!Object.prototype.hasOwnProperty.call(roles,role)) continue;
+      out.push(pieceFor(model, role, roles[role], features, gaps));
+    }
+    return {ok:true, text:surfaces(out).join(' '), pieces:out, gaps:gaps, complete:gaps.length===0};
+  }
+
+  /* One role of an IR, as this language writes it. The verb takes the
+     sentence's features; a nominal takes this language's mark for its role,
+     when this language has one. */
+  function pieceFor(model, role, meaning, features, gaps){
+    var found=lexFind(model, meaning), word, made, cv, marked;
+    if(!found.length){ gaps.push(meaning); return {role:role, surface:String(meaning), word:null, gap:true}; }
+    word=found[0];
+    if(role==='PREDICATE'){ made=api.morphology.inflect(model, word, features); return {role:role, surface:made.surface, word:word, gap:false}; }
+    cv=caseFor(model, role);
+    if(cv===null) return {role:role, surface:String(word.lemma||''), word:word, gap:false};
+    marked={}; marked.CASE=cv;
+    made=api.morphology.inflect(model, word, marked);
+    return {role:role, surface:made.surface, word:word, gap:false};
+  }
+
+  function surfaces(pieces){ var out=[], i; for(i=0;i<pieces.length;i++) out.push(pieces[i].surface); return out; }
+
+  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic};
 }(typeof window!=='undefined'?window:this));

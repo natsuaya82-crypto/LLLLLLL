@@ -122,5 +122,5 @@
     }
     return {ok:true,originalText:text,tokens:tokens,roles:roles,features:features};
   }
-  api.morphology={inflect:inflect,analyzeForm:analyzeForm,derive:derive,analyzeDerivation:analyzeDerivation,parseToken:parseToken,parseSentence:parseSentence,lookupWord:lookupWord};
+  api.morphology={inflect:inflect,analyzeForm:analyzeForm,derive:derive,analyzeDerivation:analyzeDerivation,parseToken:parseToken,parseSentence:parseSentence,lookupWord:lookupWord,CASE_ROLE:CASE_ROLE};
 }(typeof window!=='undefined'?window:this));
