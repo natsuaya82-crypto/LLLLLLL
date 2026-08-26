@@ -316,6 +316,16 @@ const CASES = [
      file stays something anybody can add to. */
   ['staff reads the reports',                 'ok',     C, 0,
     `select 1 from report`],
+  /* And the four numbers, which are the same door with a different handle on
+     it. A count that anybody could ask for would be the one thing on the
+     screen that did not need staff, which is how a screen ends up being the
+     only thing keeping somebody out. */
+  ['B cannot ask how many of everything there is', 'denied', B, 0,
+    `select admin_counts()`],
+  ['nor can somebody with no account at all',  'denied', B, 1,
+    `select admin_counts()`],
+  ['staff can',                               'ok',     C, 0,
+    `select admin_counts()`],
   ['B cannot make B staff',                   'denied', B, 0,
     `update profile set staff=true where id='${B}'`],
   ['B cannot make A staff either',            'denied', B, 0,
@@ -546,6 +556,19 @@ const SHAPE = [
      select count(*) from (select 1 where
        (select count(*) from pg_proc where proname in ('post_hide','post_show')
           and prosecdef and prosrc like '%is_staff()%') <> 2) q`, '0'],
+  /* Counting is the same shape and gets the same pair of claims. The second
+     is the one worth holding: the count exists as a definer function SO THAT
+     `language_read` would not have to grow is_staff() -- which would have
+     handed staff the contents of every language nobody has published. If a
+     later session takes the easy road, this goes red. */
+  ['counting asks who is asking too', `
+     select count(*) from (select 1 where
+       (select count(*) from pg_proc where proname='admin_counts'
+          and prosecdef and prosrc like '%is_staff()%') <> 1) q`, '0'],
+  ['and it did not open the unpublished languages', `
+     select count(*) from pg_policies
+      where tablename='language' and policyname='language_read'
+        and qual like '%is_staff%'`, '0'],
   ['a report is never edited or withdrawn', `
      select count(*) from pg_policies
       where tablename='report' and cmd in ('UPDATE','DELETE')`, '0'],

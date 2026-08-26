@@ -860,6 +860,49 @@ revoke all on function account_unban(uuid) from public;
 grant execute on function account_unban(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- How many of everything there is
+--
+-- Four numbers on one screen: people, posts, languages, reports. Every one of
+-- them is a count of a table that already exists, and none of them is a new
+-- thing kept anywhere -- asking is the whole of it, and the answer is not
+-- written down. Nothing about a person is in here and nothing can be: what
+-- comes back is six integers with no rows behind them.
+--
+-- It is a function and not four requests for two reasons, and the second is
+-- the one that matters.
+--
+-- The first is that four requests are four requests. PostgREST answers a
+-- count in a Content-Range HEADER, and www/net.js reads bodies.
+--
+-- The second: counting the languages through the table would mean widening
+-- `language_read`, which today is "published, or yours". Adding is_staff() to
+-- it would hand staff the CONTENTS of every language nobody has published --
+-- somebody's four months of work, unfinished, read by an account that only
+-- wanted to know how many there were. rls-check.mjs has a claim named "what a
+-- language is made of is nobody else's" and that claim is the reason. So the
+-- count is taken by a function with definer rights, which sees every row and
+-- hands back a number, and the read policy does not move.
+--
+-- `security definer` for the same reason post_hide() is, and is_staff() is
+-- asked inside for the same reason: the definer rights are not a way in.
+create or replace function admin_counts()
+returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare n jsonb;
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  select jsonb_build_object(
+    'people',  (select count(*) from profile),
+    'posts',   (select count(*) from post),
+    'langs',   (select count(*) from language),
+    'reports', (select count(*) from report)
+  ) into n;
+  return n;
+end $$;
+revoke all on function admin_counts() from public;
+grant execute on function admin_counts() to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- The columns nobody may write
 --
 -- Row level security says which ROWS an account may change. It has nothing to
