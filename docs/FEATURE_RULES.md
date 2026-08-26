@@ -178,6 +178,43 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 売上とアナリティクスを、アプリの中で見る
+- Date: 2026-08-26
+- Area: 数字を見る画面（新しい章）／App Store Connect の API／Supabase
+- Decision: **アプリの中に、staff だけ見える一枚を作る。** 出すのは四つ ──
+  ①契約者数と売上 ②ダウンロード数 ③解約と継続率 ④アプリの中の数
+  （アカウント数・投稿数・言語数）。**数字は画面を開いたときに毎回取る。**
+- Reason:「売り上げもアナリティクスも見れるようにしたい」「アプリの中で見たい」
+  「画面を開いたときに毎回」。鍵の置き場所は Supabase の Secrets で、
+  GitHub ではない ──「（GitHub ではない）」。理由はオーナーの言葉ではなく
+  コードが言っている: アプリは Supabase と直接しゃべっていて間にうちのサーバーが
+  無いので、**アプリが持つものは全部公開されている**（www/net.js の SB_KEY の
+  コメント）。だから Apple の鍵は Edge Function の中にしか置けない。
+- Affected features: 新しい章。前例は二つあり、どちらも動いている ──
+  `mod`（staff だけ見える画面、schema.sql の is_staff() が守る）と
+  `daily-prompt`（Edge Function ＋ Secrets ＋ cron）
+- Affected data: **増える。** Apple から取った数字を置く表が要る（未設計）。
+  ④ だけは表が要らない ── profile / post / language を数えるだけ
+- Affected docs: supabase/setup.md（鍵の作り方と置き方）、docs/apple.md、
+  docs/FEATURES.md、schema.sql と npm run rls
+- Implementation status: **決定のみ。コードは一行も無い。**
+  四つのうち **④ だけが今日作れる**（鍵も Edge Function も要らない）。
+  ①②③ は App Store Connect の API キー待ち、かつ **「開くたび」がどこまで
+  可能かは Apple の API の形しだい** ── 売上レポートと解析レポートは取り方が
+  違い、後者は「頼んで作らせてから取りに行く」形のことがある。
+  **確かめてから作る。推測で作らない。**
+
+### Decision
+- Date:
+- Area:
+- Decision:
+- Reason:
+- Affected features:
+- Affected data:
+- Affected docs:
+- Implementation status:
+```
+
 Entries below are transcribed from decisions the repository already records
 verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
 was inferred: where the wording is the owner's it is quoted, and where a

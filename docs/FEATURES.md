@@ -283,6 +283,43 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
+### 8. Sales and analytics, inside the app — **planned** (2026-08-26)
+
+**OWNER DECISION 2026-08-26.**「売り上げもアナリティクスも見れるようにしたい」
+「アプリの中で見たい」「画面を開いたときに毎回」。
+
+One screen, `staff` only, the same shape as § 7's — a row at the foot of the
+settings list and a view behind it. **Four things on it:**
+
+```
+  ① 契約者数と売上          App Store Connect
+  ② ダウンロード数           App Store Connect
+  ③ 解約と継続率            App Store Connect
+  ④ アプリの中の数           Supabase -- accounts, posts, languages
+```
+
+**Nothing is built.** What exists is the decision and the two worked examples
+it will be built out of: `mod` (a `staff`-only screen held by `is_staff()` in
+`schema.sql`) and `daily-prompt` (an Edge Function with its key in Supabase's
+Secrets and nothing in the app).
+
+| | |
+|---|---|
+| Plan | not a plan — `staff` only, and `staff` is set by hand in the dashboard |
+| Data | **grows.** A table for what Apple returns (undesigned). ④ needs none — it counts `profile` / `post` / `language` |
+| Decided | the four things, the screen, and that it refreshes on every open |
+| Not decided | what a number is called, what period it covers, what the screen looks like |
+
+**④ is the only one that can be built with nothing外から:** no key, no Edge
+Function, no new table. ①②③ wait on an App Store Connect API key with the
+`Sales and Reports` role, which is the owner's — `supabase/setup.md` § 10 has
+how to make it and where it goes.
+
+**"Every open" is decided, and whether Apple allows it is not known yet.**
+Sales reports and analytics reports are fetched differently, and the second is
+sometimes "ask for a report to be made, then come back for it". **Check before
+building. Do not guess.**
+
 ### 7. Taking a post down — **done** (2026-08-21)
 
 Blocking and reporting were done on 2026-08-19: `block` and `report` in

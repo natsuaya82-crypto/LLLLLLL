@@ -359,3 +359,58 @@ Table Editor → `prompt` → その日の行を直接書き換えてくださ�
 
 丸ごと消せば、その日はお題の無い日になります ── タイムラインの一番上は、今まで
 通りの「書く行」に戻るだけで、壊れません。
+
+---
+
+## 10. 売上とアナリティクスの鍵（App Store Connect）
+
+**OWNER DECISION 2026-08-26**「売り上げもアナリティクスも見れるようにしたい」
+「アプリの中で見たい」。読む側（Edge Function と画面）は**まだ何もありません**
+── 決定は `docs/FEATURE_RULES.md` の決定ログに、状態は `docs/FEATURES.md` に
+あります。ここは**鍵を作って置くところまで**で、それだけでも先にできます。
+
+### 10-1. キーを作る
+
+App Store Connect → **ユーザーとアクセス** → **統合** → **App Store Connect API**
+
+1. **＋** でキーを生成
+2. 名前は何でもいい（`Lingua Sales` など）
+3. **アクセスは `Sales and Reports`**
+4. **`.p8` は一度しかダウンロードできません。** 二度目はありません
+5. 同じ画面から三つ控える ── **Issuer ID**（上部、全キー共通）、**Key ID**、
+   そして `.p8` の中身
+
+**ビルドを TestFlight に上げているキーとは別に作ってください。** あちらは
+GitHub Secrets の `APP_STORE_CONNECT_ISSUER_ID` / `IOS_KEY_ID` / `IOS_API_KEY`
+で、役割が違います（`.github/workflows/ios-deploy.yml`）。
+
+### 10-2. Supabase に置く
+
+Dashboard → **Edge Functions** → **Secrets**
+
+| Name | Value |
+|---|---|
+| `ASC_ISSUER_ID` | Issuer ID |
+| `ASC_KEY_ID` | Key ID |
+| `ASC_PRIVATE_KEY` | `.p8` の中身をそのまま（`-----BEGIN PRIVATE KEY-----` から末尾まで、改行込み） |
+
+**GitHub ではなく Supabase です。** 理由は好みではありません ── 電話は
+Supabase と直接しゃべっていて、その間にうちのサーバーは無いので、
+**アプリが持っているものは全部公開されています**（`www/net.js` の `SB_KEY` の
+コメント）。Apple の鍵をアプリに入れると、売上が誰にでも読めるどころか、
+その鍵で App Store Connect にできることが全部誰にでもできます。
+`GEMINI_API_KEY` と同じ理由、同じ置き場所です。
+
+### 10-3. まだ無いもの
+
+置いただけでは何も起きません。要るのは:
+
+```
+  Edge Function   Apple の API を叩いて数字を表へ入れる（新規）
+  schema.sql      その表と、is_staff() だけが読める RLS。npm run rls に行を足す
+  アプリの画面     設定の奥に staff だけ見える一枚。前例は `mod`
+```
+
+**「画面を開くたびに取る」がどこまで可能かは、Apple の API の形しだいです。**
+売上のレポートと解析のレポートは取り方が違い、後者は「頼んで作らせてから
+取りに行く」形のことがあります。**確かめてから作ります。**
