@@ -910,6 +910,53 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-26
+- Area: How many rows a keyboard may have — it is the keyboard's HEIGHT
+- Decision:
+
+  「キーボードの高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。
+   だから行の列はそのキーボードの制限の範囲内で追加できるって話だけど？」
+
+  **The ceiling is the keyboard's height, which is already decided, and the
+  number of rows falls out of it.** It is not a number anybody chooses and
+  there is no longer one written in the app.
+
+  `KeyboardViewController` caps the whole keyboard at `mostOfScreen = 0.55`
+  of the screen, a row at `rowHeight = 54`, and the edges plus the candidate
+  bar at `8 + 44` — and past the cap it SQUEEZES the rows rather than growing
+  (「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズくらいまで
+  にしないとキツくない？」). So a row past the cap was never a row; it was
+  every row on the keyboard getting shorter.
+
+  `kbRowsMax()` divides it out: `(screen × 0.55 − 52) / 54`.
+
+  | screen | rows |
+  |---|---|
+  | 667 (iPhone SE) | **5** |
+  | 812 / 844 / 852 / 874 (13 mini … 16) | **7** |
+  | 932 / 956 (Pro Max) | **8** |
+
+  It was `KB_ROWS = 8`, invented in `www/keyboard.js` under a comment saying
+  「nothing on the phone sets a height」 — which was not true when it was
+  written. Eight is what only the largest phone has room for.
+
+- Reason: two places were deciding how tall a keyboard may be and only one of
+  them was enforcing it. Holding it in one place is the whole of this; the
+  three numbers are the extension's, so **`tools/kb-check.mjs` reads them out
+  of `KeyboardViewController.swift`** and fails if the two sides disagree — a
+  comment naming the Swift file does not hold that, and a check that wrote
+  `54` down again would be a third copy.
+  The candidate bar is assumed present because it nearly always is
+  (`shareConv()` answers for an alphabet too) and because assuming it is the
+  stricter of the two answers.
+- Affected features: `kbRowsMax()`, `kbRoomRow()`, `kbLayRoom()`,
+  `kbLayPut()` (`www/keyboard.js`) — **nothing stored changes and no layout
+  moves.** rule 19's "held on ADDING only" is unchanged and is what makes
+  this safe: a keyboard built on a Pro Max and opened on an SE is left
+  exactly as it is, and simply cannot be added to there.
+- Implementation status: **implemented**, 2026-08-26, `claude/kb2`.
+
+### Decision
+- Date: 2026-08-26
 - Area: The keyboard sheet's width — a key is its share of the row it is in
 - Decision:
 

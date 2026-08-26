@@ -15,6 +15,43 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 行の上限は、キーボードそのものの高さから出る数になります
+
+「キーボードの高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。
+だから行の列はそのキーボードの制限の範囲内で追加できるって話だけど？」
+**OWNER DECISION 2026-08-26**（`docs/FEATURE_RULES.md`）。
+
+`KB_ROWS = 8` は `www/keyboard.js` で発明された数でした。コメントは
+「nothing on the phone sets a height」と書いていて、**それが書かれた時点で
+嘘でした。**
+
+実機は最初から全体の高さを止めています ── `KeyboardViewController`:
+画面の 55% (`mostOfScreen`)、1行 54pt (`rowHeight`)、上下 8pt ＋ 変換バー 44pt。
+そして**上限を超えたら行を潰します**（`h = min(want, cap)`）。だから9行目は
+9行目ではなく、**全部の行が低くなること**でした。
+
+`kbRowsMax()` が割り算します ── `(画面 × 0.55 − 52) / 54`:
+
+| 画面 | 行 |
+|---|---|
+| 667（iPhone SE） | **5** |
+| 812 / 844 / 852 / 874（13 mini〜16） | **7** |
+| 932 / 956（Pro Max） | **8** |
+
+**8行入るのは Pro Max だけでした。**
+
+**データは動きません。レイアウトも1つも動きません。** rule 19 の
+「足すときだけに効く」はそのままで、それがこれを安全にしています ── Pro Max で
+組んだ8行のキーボードを SE で開いても**そのまま**で、そこで足せないだけです。
+
+`tools/kb-check.mjs` は**三つの数を `KeyboardViewController.swift` から読みます。**
+二つの言語に同じ数を2つ置くのが、ずれる元です。チェックに `54` と書き直したら
+それは3つ目の写しになります。5項目。**赤を二通り見ています** ──
+`kbRowsMax()` を `8` に戻すと `so the ceiling is 8 rows on a 844pt screen`、
+Swift と一行だけ食い違わせると `one row is 48pt here and 54pt in the extension`。
+
+`CLAUDE.md` rule 19 と `docs/keyboard.md` の「縦8行」を同じコミットで直しました。
+
 ### フリックのキーは、QWERTY のキーより大きく出るようになります
 
 実機 build #92。「フリックなのに qwerty サイズ」

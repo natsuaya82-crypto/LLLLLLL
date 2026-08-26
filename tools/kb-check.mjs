@@ -19,6 +19,7 @@
    Run: node tools/kb-check.mjs                                          */
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import path from 'path';
 import { chromium, LAUNCH } from './browser.mjs';
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -130,12 +131,14 @@ const r = await pg.evaluate(({ s }) => {
      Held on ADDING only: an existing layout that is already over stays
      exactly as it is. */
   fresh();
-  out.ceilRows = KB_ROWS;
+  out.ceilRows = kbRowsMax();
+  out.screenH = kbScreenH();
+  out.most = KB_MOST; out.rowh = KB_ROWH; out.bars = KB_BARS;
   out.ceilCols = KB_COLS;
   /* every pattern this app builds is inside the ceiling as it is built */
   out.patsFit = KB_PATS.every(function (p){
     return kbPatLay(p).every(function (face){
-      return face.rows.length <= KB_ROWS && face.rows.every(function (rw){
+      return face.rows.length <= kbRowsMax() && face.rows.every(function (rw){
         var n = 0, x;
         for (x = 0; x < rw.length; x++) n += kbU(rw[x].w);
         return n <= KB_COLS;
@@ -144,8 +147,8 @@ const r = await pg.evaluate(({ s }) => {
   });
   /* rows stop at the ceiling, and the dashed row stops being drawn */
   fresh();
-  for (i = 0; i < KB_ROWS + 4; i++) kbAddRowNew();
-  out.rowsCap = kbLayer().rows.length === KB_ROWS;
+  for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
+  out.rowsCap = kbLayer().rows.length === kbRowsMax();
   out.plusGone = vKb().indexOf('kbAddRowNew') < 0;
   /* a full row takes no more keys, however it is asked */
   fresh();
@@ -370,7 +373,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var lay0 = kbEdit().lay[0];
   lay0.rows = [];
-  for (i = 0; i < KB_ROWS; i++){
+  for (i = 0; i < kbRowsMax(); i++){
     var rw = [];
     for (j = 0; j < KB_COLS / 2; j++) rw.push(kbKey('lt', ''));
     lay0.rows.push(rw);
@@ -538,7 +541,7 @@ const r = await pg.evaluate(({ s }) => {
   kbUndo();
   /* it cannot break the ceiling, and the + is down when there is no room */
   fresh();
-  for (i = 0; i < KB_ROWS + 4; i++) kbAddRowNew();
+  for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
   kbHeadRow(0);
   out.insFullDown = /kbInsAsk[^>]*disabled/.test(vKb());
   var wasFull = kbLayer().rows.length;
@@ -700,6 +703,32 @@ const r = await pg.evaluate(({ s }) => {
 }, { s: seed.toString() });
 await br.close();
 
+/* ---- the two sides of the wall say the same three numbers ---------------
+   「キーボードの高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。
+   だから行の列はそのキーボードの制限の範囲内で追加できるって話だけど？」
+   OWNER, 2026-08-26.
+
+   How many rows a keyboard may have is not a number anybody chooses: the
+   extension caps the whole keyboard's height and SQUEEZES past the cap, so
+   the rows that fit fall out of a division. www/keyboard.js does that
+   division, which means it has to carry the extension's three numbers -- and
+   two copies of a number in two languages is the thing that drifts.
+
+   So they are read out of the Swift rather than restated here. A check that
+   wrote 54 down again would be a third copy. */
+const SWIFT = fs.readFileSync(
+  path.join(dir, '..', 'ios', 'App', 'LinguaKeyboard', 'KeyboardViewController.swift'),
+  'utf8');
+function swiftNum(re, what){
+  const m = SWIFT.match(re);
+  if (!m) return { ok: false, what: what, saw: 'no line matching ' + re };
+  return { ok: true, what: what, n: parseFloat(m[1]) };
+}
+const swRowH = swiftNum(/rowHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'rowHeight');
+const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
+const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
+const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
+
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
@@ -723,8 +752,21 @@ say(r.letters, 'no letter moved');
 say(r.words, 'no word moved');
 say(r.boards, 'no other keyboard moved');
 say(r.faces, 'no other face of this keyboard moved');
-say(r.ceilCols === 20 && r.ceilRows === 8,
-    'the ceiling is ' + r.ceilRows + ' rows and ' + (r.ceilCols / 2) + ' keys across');
+say([swRowH, swBarH, swMost, swEdge].every((x) => x.ok),
+    'the extension still says its height in the three ways this reads' +
+    ([swRowH, swBarH, swMost, swEdge].filter((x) => !x.ok).map((x) => ' -- ' + x.what + ': ' + x.saw).join('')));
+say(swRowH.ok && r.rowh === swRowH.n,
+    'one row is ' + r.rowh + 'pt here and ' + (swRowH.ok ? swRowH.n : '?') + 'pt in the extension');
+say(swMost.ok && r.most === swMost.n,
+    'a keyboard may take ' + r.most + ' of the screen, both sides');
+say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
+    'the bars come to ' + r.bars + 'pt here and ' +
+    ((swEdge.ok && swBarH.ok) ? (swEdge.n + ' + ' + swBarH.n) : '?') + ' in the extension');
+say(r.ceilRows === Math.max(1, Math.floor((r.screenH * r.most - r.bars) / r.rowh)),
+    'so the ceiling is ' + r.ceilRows + ' rows on a ' + r.screenH +
+    'pt screen -- divided out of the cap, not chosen');
+say(r.ceilCols === 20,
+    'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
 say(r.rowsCap, 'rows stop at the ceiling however many times the row is added');
 say(r.plusGone, 'and the dashed row is not drawn once there is no room for one');
@@ -812,6 +854,9 @@ say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
+console.log('\n  rows that fit, at ' + r.rowh + 'pt a row and ' + r.most +
+  ' of the screen: ' + [667, 812, 844, 852, 874, 932, 956].map((h) =>
+    h + '->' + Math.max(1, Math.floor((h * r.most - r.bars) / r.rowh))).join('  '));
 console.log('\n  a face of ' + (r.narrowCols / 2) + ' keys is drawn ' + r.narrowSheet +
   'px across, and the row-adding + on it is ' + r.narrowPlus + 'px');
 console.log('  a face of 10 keys is drawn ' + r.wideSheet +

@@ -1045,13 +1045,22 @@ nowhere to go.
 It holds the two ceilings with them, because they are the same screen and the
 same kind of mistake. **Ten across is the phone's number** — the narrowest
 iPhone is 320, so ten keys are 32 each and eleven would be 29 — and every
-pattern the app builds already comes to ten or fewer. **Eight down is not**:
-nothing on the phone sets a height, so it is a ceiling on what somebody can
-build a row at a time, chosen to clear every pattern measured with one to
-spare. Both hold on ADDING only: **a layout already over the ceiling is left
-exactly as it is**, because cutting it down would be the app deleting somebody's
-keys to satisfy a number it invented. The check puts a nine-row layout in and
-demands that nothing moves.
+pattern the app builds already comes to ten or fewer. **How many DOWN is the
+phone's number too, and it is not a number written in the app.** 「キーボードの
+高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。だから行の列は
+そのキーボードの制限の範囲内で追加できるって話だけど？」 The extension caps the
+whole keyboard at **0.55 of the screen** and SQUEEZES the rows past it, so a
+ninth row was never a ninth row — it was every row getting shorter. The rows
+that fit are therefore divided out of that cap rather than chosen:
+`(screen × 0.55 − bars) / 54`, which is **five on an SE, seven on most phones,
+eight only on a Pro Max**. It was `KB_ROWS = 8` — a number this file used to
+justify with "nothing on the phone sets a height", which was untrue when it was
+written. `kbRowsMax()` is the one place, and **`kb-check` reads the three
+numbers OUT of `KeyboardViewController.swift`**, because two copies of a number
+in two languages is the thing that drifts. Both ceilings hold on ADDING only:
+**a layout already over the ceiling is left exactly as it is**, because cutting
+it down would be the app deleting somebody's keys. The check puts an
+over-the-ceiling layout in and demands that nothing moves.
 
 And that a short row sits in the MIDDLE of the sheet rather than at its left
 edge — 「揃えて欲しい」, five keys over three. Counting columns in halves is

@@ -824,23 +824,60 @@ function kbCol(i){
    comes to ten or fewer, and the free QWERTY is exactly ten -- so this
    forbids nothing that exists.
 
-   EIGHT DOWN is not the phone's number, because nothing on the phone sets it:
-   the extension decides its own height and the app says nothing about it. It
-   is a ceiling on how tall a thing somebody can build by adding one row at a
-   time, and eight clears every pattern measured (QWERTY 5, ABC 4, flick 3,
-   tap 7, chart 7 on a 27-letter alphabet) with one to spare.
+   HOW MANY DOWN is the phone's number too, and it is not a number written
+   here. 「キーボードの高さ制限を決めたやん。キーの高さじゃなくてキーボード
+   そのもの。だから行の列はそのキーボードの制限の範囲内で追加できるって話
+   だけど？」 OWNER, 2026-08-26.
 
-   Both are held on ADDING only. A layout that is already over -- a pattern
-   built from a very large alphabet, a keyboard made before this existed --
-   is left exactly as it is and simply cannot be added to. Nothing is ever cut
-   down to fit: that would be the app deleting somebody's keys to satisfy a
-   number it invented. */
-var KB_ROWS=8, KB_COLS=20;      /* columns are half keys -- kbU() below */
+   It was `8`, and eight was invented here: the comment said "nothing on the
+   phone sets it" and that was wrong when it was written. The extension has
+   capped the whole keyboard's height since the day it stopped taking a
+   multiplier -- 「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版の
+   サイズくらいまでにしないとキツくない？」 -- and past the cap it SQUEEZES the
+   rows rather than growing. So a ninth row was never a ninth row; it was
+   every row getting shorter.
+
+   Two places deciding how tall a keyboard may be, and only one of them
+   enforcing it. The number of rows is the consequence, so it is divided out
+   of the cap rather than said again:
+
+     KB_MOST  the most of the screen a keyboard may take       0.55
+     KB_ROWH  one row, which is what carries the touch          54
+     KB_BARS  the two edges, and the candidate bar above     8 + 44
+
+   All three are ios/App/LinguaKeyboard/KeyboardViewController.swift's, and
+   kb-check reads them OUT of that file and fails if these disagree -- the one
+   thing that could go wrong here is the two sides drifting, and a comment
+   naming the Swift file does not hold that. The bar is assumed to be there
+   because it nearly always is (shareConv() answers for an alphabet too) and
+   because assuming it is the stricter of the two answers.
+
+   What that comes to, at 54pt a row: five on an iPhone SE, seven on every
+   phone from the 13 mini to the 16, eight on a Pro Max. Eight was a number
+   only the largest phone ever had room for.
+
+   Both ceilings are held on ADDING only. A layout that is already over -- a
+   pattern built from a very large alphabet, a keyboard built on a bigger
+   phone than the one in your hand, a keyboard made before this existed -- is
+   left exactly as it is and simply cannot be added to. Nothing is ever cut
+   down to fit: that would be the app deleting somebody's keys. */
+var KB_COLS=20;                 /* columns are half keys -- kbU() below */
+var KB_MOST=0.55, KB_ROWH=54, KB_BARS=8+44;
+/* How tall the phone is, as the extension sees it. window.innerHeight is the
+   app's own window, which on a phone is the screen -- and where it is not
+   (a browser, a check) it is the height the keyboard would have to fit into
+   anyway, so it is the right question either way. */
+function kbScreenH(){
+  return (window.innerHeight || (window.screen && window.screen.height) || 844);
+}
+function kbRowsMax(){
+  return Math.max(1, Math.floor((kbScreenH()*KB_MOST - KB_BARS) / KB_ROWH));
+}
 /* Is there room for another row, and is there room in this one for a key of
    that width. Asked in one place each so a way in that forgets cannot exist:
    the dashed row at the foot, a width dropped on a cell, a width tapped into
    place, and a key made wider all come through these two. */
-function kbRoomRow(){ return kbLayer().rows.length<KB_ROWS; }
+function kbRoomRow(){ return kbLayer().rows.length<kbRowsMax(); }
 function kbUsed(row){
   var n=0, i;
   for(i=0;i<row.length;i++) n+=kbU(row[i].w);
@@ -1960,13 +1997,13 @@ function kbLayRoom(face){
   var rows=face && face.rows;
   if(!rows || !rows.length) return true;
   if(kbUsed(rows[rows.length-1])+2<=KB_COLS) return true;
-  return rows.length<KB_ROWS;
+  return rows.length<kbRowsMax();
 }
 function kbLayPut(face, v){
   var rows=face.rows, k=kbKey('lay', String(v));
   if(!rows.length){ rows.push([k]); return true; }
   if(kbUsed(rows[rows.length-1])+2<=KB_COLS){ rows[rows.length-1].unshift(k); return true; }
-  if(rows.length<KB_ROWS){ rows.push([k]); return true; }
+  if(rows.length<kbRowsMax()){ rows.push([k]); return true; }
   return false;
 }
 /* NO FACE IS A DEAD END, and that is the sentence above one step further out.
