@@ -19,6 +19,7 @@
    Run: node tools/kb-check.mjs                                          */
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import path from 'path';
 import { chromium, LAUNCH } from './browser.mjs';
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -130,12 +131,42 @@ const r = await pg.evaluate(({ s }) => {
      Held on ADDING only: an existing layout that is already over stays
      exactly as it is. */
   fresh();
-  out.ceilRows = KB_ROWS;
+  out.ceilRows = kbRowsMax();
+  out.screenH = KB_REF_H;
+  out.most = KB_MOST; out.roww = KB_ROWW; out.bars = KB_BARS;
+  out.refW = KB_REF_W; out.rowh = kbRowH(KB_REF_W);
   out.ceilCols = KB_COLS;
   /* every pattern this app builds is inside the ceiling as it is built */
+  /* ---- every pattern comes out the shape of a keyboard ----------------
+     「qwartyとフリックだとサイズ違うでしょ？そういうのはどうなんの？」
+     「フリックだけじゃなくて全部。」 OWNER, 2026-08-26.
+
+     A key is width/cols across and one row tall, and a row is KB_ROWW of the
+     width -- so the SHAPE of a key is 1 / (cols x KB_ROWW) and the phone
+     cancels out. Every keyboard on a phone sits between iOS's QWERTY at ten
+     across (0.72:1) and its ten-key at four (1.81:1). Ours came out at three
+     across: 2.41:1, a key 130pt wide and 54 tall, which is a letterbox and is
+     nothing anybody has typed on.
+
+     Both faces of every pattern, and the widest row of each, because that is
+     what sets the columns. Printed as well as judged: what these come to is
+     the whole of the answer and a range that passes says nothing about where
+     inside it they landed. */
+  out.shapes = [];
+  KB_PATS.forEach(function (p){
+    kbPatLay(p).forEach(function (face, fi){
+      var cols = kbCols(face.rows) / 2;
+      out.shapes.push({ pat: p + (fi ? ' face ' + (fi + 1) : ''), cols: cols,
+        rows: face.rows.length, aspect: 1 / (cols * KB_ROWW),
+        screen: (face.rows.length * kbRowH(KB_REF_W) + KB_BARS) / KB_REF_H });
+    });
+  });
+  out.patsShape = out.shapes.every(function (x){
+    return x.aspect >= 0.71 && x.aspect <= 1.82;
+  });
   out.patsFit = KB_PATS.every(function (p){
     return kbPatLay(p).every(function (face){
-      return face.rows.length <= KB_ROWS && face.rows.every(function (rw){
+      return face.rows.length <= kbRowsMax() && face.rows.every(function (rw){
         var n = 0, x;
         for (x = 0; x < rw.length; x++) n += kbU(rw[x].w);
         return n <= KB_COLS;
@@ -144,8 +175,8 @@ const r = await pg.evaluate(({ s }) => {
   });
   /* rows stop at the ceiling, and the dashed row stops being drawn */
   fresh();
-  for (i = 0; i < KB_ROWS + 4; i++) kbAddRowNew();
-  out.rowsCap = kbLayer().rows.length === KB_ROWS;
+  for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
+  out.rowsCap = kbLayer().rows.length === kbRowsMax();
   out.plusGone = vKb().indexOf('kbAddRowNew') < 0;
   /* a full row takes no more keys, however it is asked */
   fresh();
@@ -287,11 +318,90 @@ const r = await pg.evaluate(({ s }) => {
   kbHeadRow(0); kbCut();
   out.oneFacePlain = offOf(kbEdit().lay[0]).length === 0;
 
+  /* ---- 6d3. a row can be added on EVERY face --------------------------
+     「8列も追加できるのに行は2ページ目から追加できない」 OWNER, build #92.
+
+     kbRoomRow() and kbAddRowNew() both read kbLayer(), which is the face
+     being shown, so this holds and held on the first run -- the row goes in.
+     It is written down anyway because nothing said it: every claim about
+     adding a row above is made on face 0, and "it works on the face the
+     fixture happens to be standing on" is the shape of claim that stays true
+     right up until somebody makes the count board-wide.
+
+     What WAS wrong on page 2 is not the function, it is the size of the thing
+     you press: the sheet was kbCols(this face's rows) columns of a fixed
+     width, so a face of two keys was drawn a fifth of the phone across and
+     the dashed + with it -- 60px against 320 on page one. Which is the same
+     line as 「フリックなのに qwerty サイズ」, so it is claimed below with it. */
+  fresh(); kbAddLay(); kbLay = 1; render();
+  out.addOn2Was = kbLayer().rows.length;
+  out.addOn2Plus = vKb().indexOf('kbAddRowNew') >= 0;
+  kbAddRowNew();
+  out.addOn2 = kbLayer().rows.length === out.addOn2Was + 1;
+  /* and the other road onto a face: the + over a selected row */
+  kbHeadRow(0); kbInsAsk(); kbIns(true);
+  out.insOn2 = kbLayer().rows.length === out.addOn2Was + 2;
+  /* ---- 6d4. a key is its share of its row, and the board is the phone ---
+     「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
+     フリックとqwartyのキーのサイズは同じなんか？」 OWNER, 2026-08-26.
+
+     They were the same: 28.2 x 44 on both, on a 390px screen. The sheet was
+     as many FIXED columns as the face happened to have, so a flick board of
+     three keys came out a quarter of the phone across with QWERTY-sized keys
+     on it -- and a page somebody had just made came out a fifth, with the
+     control that adds a row to it 60px wide.
+
+     Two claims and they are one sentence. THE BOARD is the full width
+     whatever is on it, because it is a picture of a keyboard and a keyboard
+     is as wide as the phone. A KEY is its share of the row it is in, which is
+     what the extension does (free * key.width / the row's total) and what the
+     read-only board has always done (flex: key.w).
+
+     Measured off the PAGE and never worked out again here: the whole failure
+     was two places computing a width and agreeing with each other while
+     disagreeing with the phone. */
+  function widthOf(sel){
+    const el = document.querySelector(sel);
+    return el ? Math.round(el.getBoundingClientRect().width) : -1;
+  }
+  function keyW(){
+    const el = document.querySelector('.kb.kbsheet .kbk:not(.cell):not(.addrow)');
+    return el ? +el.getBoundingClientRect().width.toFixed(1) : -1;
+  }
+  out.narrowCols = kbCols(kbLayer().rows);
+  out.narrowSheet = widthOf('.kb.kbsheet');
+  out.narrowPlus = widthOf('.kbk.addrow');
+  fresh();
+  out.wideSheet = widthOf('.kb.kbsheet');
+  out.widePlus = widthOf('.kbk.addrow');
+  /* and the two boards the owner put side by side */
+  const sizes = {};
+  ['qwerty', 'flick'].forEach(function (p){
+    KB = null; kbShow = 0; kbAdd(p); kbLay = 0;
+    window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+    sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
+                 cols: kbCols(kbLayer().rows) };
+  });
+  out.sizes = sizes;
+  /* A key is its share of its row: cols columns across a full-width board, so
+     a key of one is sheet/cols to within the gap the stylesheet takes back. */
+  out.shareQ = Math.abs(sizes.qwerty.key - sizes.qwerty.sheet / sizes.qwerty.cols * 2) < 6;
+  out.shareF = Math.abs(sizes.flick.key - sizes.flick.sheet / sizes.flick.cols * 2) < 6;
+  out.notSame = sizes.flick.key > sizes.qwerty.key * 2;
+  out.sameBoard = sizes.flick.sheet === sizes.qwerty.sheet;
+  /* and the board's edges do not move when a column is taken out of it, which
+     is the half of OWNER DECISION 2026-08-25 that survives it being replaced */
+  KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+  const edgeWas = widthOf('.kb.kbsheet');
+  kbHeadCol(0); kbCut();
+  out.edgeStill = widthOf('.kb.kbsheet') === edgeWas;
+
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
   var lay0 = kbEdit().lay[0];
   lay0.rows = [];
-  for (i = 0; i < KB_ROWS; i++){
+  for (i = 0; i < kbRowsMax(); i++){
     var rw = [];
     for (j = 0; j < KB_COLS / 2; j++) rw.push(kbKey('lt', ''));
     lay0.rows.push(rw);
@@ -459,7 +569,7 @@ const r = await pg.evaluate(({ s }) => {
   kbUndo();
   /* it cannot break the ceiling, and the + is down when there is no room */
   fresh();
-  for (i = 0; i < KB_ROWS + 4; i++) kbAddRowNew();
+  for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
   kbHeadRow(0);
   out.insFullDown = /kbInsAsk[^>]*disabled/.test(vKb());
   var wasFull = kbLayer().rows.length;
@@ -621,6 +731,32 @@ const r = await pg.evaluate(({ s }) => {
 }, { s: seed.toString() });
 await br.close();
 
+/* ---- the two sides of the wall say the same three numbers ---------------
+   「キーボードの高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。
+   だから行の列はそのキーボードの制限の範囲内で追加できるって話だけど？」
+   OWNER, 2026-08-26.
+
+   How many rows a keyboard may have is not a number anybody chooses: the
+   extension caps the whole keyboard's height and SQUEEZES past the cap, so
+   the rows that fit fall out of a division. www/keyboard.js does that
+   division, which means it has to carry the extension's three numbers -- and
+   two copies of a number in two languages is the thing that drifts.
+
+   So they are read out of the Swift rather than restated here. A check that
+   wrote 54 down again would be a third copy. */
+const SWIFT = fs.readFileSync(
+  path.join(dir, '..', 'ios', 'App', 'LinguaKeyboard', 'KeyboardViewController.swift'),
+  'utf8');
+function swiftNum(re, what){
+  const m = SWIFT.match(re);
+  if (!m) return { ok: false, what: what, saw: 'no line matching ' + re };
+  return { ok: true, what: what, n: parseFloat(m[1]) };
+}
+const swRowW = swiftNum(/rowPerWidth:\s*CGFloat\s*=\s*([0-9.]+)/, 'rowPerWidth');
+const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
+const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
+const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
+
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
@@ -644,9 +780,33 @@ say(r.letters, 'no letter moved');
 say(r.words, 'no word moved');
 say(r.boards, 'no other keyboard moved');
 say(r.faces, 'no other face of this keyboard moved');
-say(r.ceilCols === 20 && r.ceilRows === 8,
-    'the ceiling is ' + r.ceilRows + ' rows and ' + (r.ceilCols / 2) + ' keys across');
+say([swRowW, swBarH, swMost, swEdge].every((x) => x.ok),
+    'the extension still says its height in the three ways this reads' +
+    ([swRowW, swBarH, swMost, swEdge].filter((x) => !x.ok).map((x) => ' -- ' + x.what + ': ' + x.saw).join('')));
+say(swRowW.ok && r.roww === swRowW.n,
+    'a row is ' + r.roww + ' of the phone across, here and in the extension' +
+    ' (' + (swRowW.ok ? swRowW.n : '?') + ')');
+say(Math.abs(r.rowh - 54) < 0.5,
+    'which on the 390pt phone it was measured at is ' + r.rowh.toFixed(1) +
+    'pt -- the 54 it used to be flat at, so that phone does not move');
+say(swMost.ok && r.most === swMost.n,
+    'a keyboard may take ' + r.most + ' of the screen, both sides');
+say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
+    'the bars come to ' + r.bars + 'pt here and ' +
+    ((swEdge.ok && swBarH.ok) ? (swEdge.n + ' + ' + swBarH.n) : '?') + ' in the extension');
+say(r.ceilRows === Math.max(1, Math.floor((r.screenH * r.most - r.bars) / r.rowh)),
+    'so the ceiling is ' + r.ceilRows + ' rows -- divided out of the cap, not chosen');
+say(r.screenH === 844 && r.ceilRows === 7,
+    'and it is one number for every phone (referenced to ' + r.screenH +
+    'pt), not as many as the phone in your hand fits');
+say(r.ceilCols === 20,
+    'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
+say(r.patsShape,
+    'and every one of them is the shape of a keyboard -- a key between 0.72:1' +
+    ' (ten across, iOS QWERTY) and 1.81:1 (four across, its ten-key)' +
+    (r.patsShape ? '' : ': ' + r.shapes.filter((x) => x.aspect < 0.71 || x.aspect > 1.82)
+      .map((x) => x.pat + ' is ' + x.aspect.toFixed(2) + ':1 at ' + x.cols + ' across').join(', ')));
 say(r.rowsCap, 'rows stop at the ceiling however many times the row is added');
 say(r.plusGone, 'and the dashed row is not drawn once there is no room for one');
 say(r.foundFull, 'the board has a row that is already the full width');
@@ -662,6 +822,16 @@ say(r.keptKeys && r.notOver, 'and the key went in beside what was there, not ove
 say(r.layBack, 'and the step back takes the page and both keys away again');
 say(r.layFront, 'the key goes in at the front of the last row when that row has room');
 say(r.layNewRow, 'and into a row of its own when every row is already full');
+say(r.sameBoard, 'a flick board and a QWERTY board are drawn the same width');
+say(r.notSame, 'and a flick key is not a QWERTY key: ' + r.sizes.flick.key +
+    'px against ' + r.sizes.qwerty.key + 'px');
+say(r.shareQ && r.shareF, 'each is its share of the row it is in, both boards');
+say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.narrowPlus === r.widePlus,
+    'the row-adding + is the same size on page 2 as on page 1 (' + r.narrowPlus + 'px)');
+say(r.addOn2Plus, 'the dashed row is drawn on page 2 as well as page 1');
+say(r.addOn2, 'and a row goes in on page 2 (' + r.addOn2Was + ' -> ' + (r.addOn2Was + 1) + ')');
+say(r.insOn2, 'and the + over a selected row puts one in there too');
 say(r.deadRowKept, 'a face never loses its last row (it had ' + r.deadRowsWas + ')');
 say(r.deadRowOff, 'and taking a row off page 2 leaves it with a way off');
 say(r.deadRowTo, 'and that way off goes to the page it came from');
@@ -722,6 +892,27 @@ say(r.hasUndo, 'the screen has a step back on it');
 say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
+
+console.log('\n  the ceiling is ' + r.ceilRows + ' rows, one number for every phone.');
+console.log('\n  every pattern, as the keyboard it comes out as:');
+r.shapes.forEach((x) => console.log('    ' + x.pat.padEnd(14) +
+  String(x.cols).padStart(3) + ' x ' + x.rows + '   ' + x.aspect.toFixed(2) +
+  ':1   ' + Math.round(x.screen * 100) + '% of the screen'));
+console.log('  a key is a tenth of the phone across and ' + r.roww +
+  ' of it tall, so it keeps its shape. What each phone comes to,');
+console.log('  as  width x height -> row height, rows that fit:');
+[[320, 568], [375, 667], [375, 812], [390, 844], [393, 852], [402, 874],
+ [428, 926], [430, 932], [440, 956]].forEach(([w, h]) => {
+  const rh = w * r.roww;
+  console.log('    ' + String(w).padStart(3) + ' x ' + h + ' -> ' +
+    rh.toFixed(1) + 'pt, ' + Math.max(1, Math.floor((h * r.most - r.bars) / rh)) + ' rows');
+});
+console.log('\n  a face of ' + (r.narrowCols / 2) + ' keys is drawn ' + r.narrowSheet +
+  'px across, and the row-adding + on it is ' + r.narrowPlus + 'px');
+console.log('  a face of 10 keys is drawn ' + r.wideSheet +
+  'px across, and the same + is ' + r.widePlus + 'px');
+console.log('  a QWERTY key is ' + r.sizes.qwerty.key + 'px and a flick key is ' +
+  r.sizes.flick.key + 'px, on boards both ' + r.sizes.qwerty.sheet + 'px across\n');
 
 /* One pixel, not nothing: the ink's box has whole-pixel edges, so the middle
    of a narrow shape can only be hit to within one. What this is about is much
