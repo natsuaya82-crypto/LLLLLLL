@@ -78,7 +78,7 @@ Marked separately, because they are not the same question:
 | Profile — face, name, handle, bio, **and your posts** | shipped | yes | — | `lingua.me` | decided |
 | Pin a post to your profile | shipped | yes | — | `post.pin`, one at a time | decided |
 | Share a post — the card | shipped | yes | — | none | decided |
-| Cloud storage of a language | **planned** | no | yes, deferred | every slice | decided — deferred until Supabase $25 is worth paying |
+| Cloud storage of a language | **shipped**, **not device confirmed** | **yes** | same | every slice, as `slice` rows | decided — **everybody, on every plan** 「クラウドは全員で」 (2026-08-22), re-confirmed 2026-08-26 「基本は全部サーバー管理」. This row said `no` / `yes, deferred` / 「deferred until Supabase $25 is worth paying」 and contradicted § 2 below, which had said **everybody** since 08-22. The money did not go away — see `docs/PAID_FEATURES.md` — it stopped being a reason to defer |
 | A photograph on a post | shipped | **yes** | yes | `post.pic`, frozen on the post, 900px q0.72, `POST_BYTES` ceiling | decided |
 | How big a photograph is shown, and opening one | shipped, **not device confirmed** | yes | yes | none — display only; `--picpct` in index.html, route `photo` | decided — one box for every photograph (a third of the screen's width, square), filled with `cover` so the picture is never stretched and the edges are off it, tap opens the whole thing 「xと同じって言ってるやんずっと」 |
 | How hard a photograph is squeezed to store | shipped | 900px long edge, q0.72 | same | `POST_PIC`, `POST_PICQ`; ratio untouched | **open** — 「画質が下がるのはありえない」 against one photograph being 87 KB of the same localStorage the language lives in |
@@ -238,17 +238,41 @@ any more, and it is not deferred: everything belongs to the account, the
 server is true and the phone keeps a copy that works with no signal.
 `CAN.data` has to be redefined when this lands.
 
-What is done: an account exists from the first launch, and `language`'s write
-policies ask `has_account()` rather than `is_member()`, so an account with no
-name on it can own a row. What is missing is **the row and somewhere to put a
-slice**: `language` holds a name, a licence and a date, and the eleven slices
-of `SLICES` are `localStorage` only. `bkPack()` already produces exactly the
-thing that would be uploaded — 5.4 KB for a small language, about a megabyte
-for a large one.
+**Re-confirmed 2026-08-26** — 「基本は全部サーバー管理 言語周りだけバックアップに
+file使う」. The file in `Documents/` is not going away; it stops being the truth
+and becomes the backup.
 
-Open, and the reason nothing is written yet: whether a slice is a column, a
-row per slice, or a file in Storage; and what happens when the same account
-has edited a language on two phones. Neither is decided.
+**This section said 「what is missing is the row and somewhere to put a slice」
+and both of those were built.** It also listed two things as open that have
+since been answered. Corrected 2026-08-26 by reading `www/net.js` rather than
+by remembering:
+
+- **a row per slice**, not a column and not a file in Storage. `slice` in
+  `supabase/schema.sql` is `(language, kind)` primary key, `body` the exact
+  string `localStorage` holds — so a slice has one shape and not two that
+  could disagree, and it is the same string `bkPack()` writes to the file.
+- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back, and
+  **neither side wins by being newer.** Both are added. The price of that is a
+  duplicate, never a deletion 「そりゃあ両方足すだろ」 — which is
+  `docs/DATA_SAFETY.md`'s rule, applied to the one place it would have been
+  easiest to break.
+- `netLangRow()` makes the `language` row and puts its id on `LANGS[id].sid`;
+  `netSlicePut()` upserts (`Prefer: resolution=merge-duplicates`);
+  `netSlices()` reads them; `netLangSync()` runs the three, and
+  `www/boot.js` fires it on launch.
+
+`SLICES` is **twelve**, not eleven — `gram2` joined it and this line was not
+updated. `docs/DATA_MODEL.md` has the list.
+
+What is genuinely still open here:
+
+- **how often.** Once, on launch, today. 「全部だって」 is all that reached this
+  branch on the question and it is not enough to build a loop from.
+- **what it costs.** Every account's slices, on every plan, is storage and
+  egress proportional to people rather than to payers. That was the original
+  reason for 「deferred until Supabase $25 is worth paying」, and the decision
+  overrode the deferral without the cost changing. `docs/PAID_FEATURES.md`.
+- **a downloaded language must be left out of all of this.** See § 10.
 
 ### 3. Publishing a language — `language`, `publication`
 
