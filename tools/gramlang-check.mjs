@@ -90,7 +90,26 @@ const LA_PHASES = { done: { greet: true }, notes: { neg: 'a note' },
                     set: { order: 1, negp: 1 }, extra: [],
                     rules: { neg: 'a rule' }, ex: { neg: [{ lb: 'a', ln: 'x', gl: 'b' }] },
                     fm: [] };
+/* A phone with somebody on it. Every screen in this file is one you have to
+   be signed in to see -- OWNER 2026-08-26, 「言語はアカウントないと作れない
+   です」-- and appIs() in www/shell.js sends a phone with no session to the
+   door instead of to the route it was asked for. Without this, go('gram','neg')
+   renders the sign-in screen, `.segs .seg.on` matches nothing, and four of the
+   claims below read "" for the wrong reason while a fifth PASSES for the wrong
+   reason: "a stage nobody has touched lights nothing" is also true of a door.
+
+   In storage rather than on the globals, because this file reloads the page
+   between claims and a session in memory does not survive that. `rt` is what
+   netSignedIn() reads and `anon:false` is what netMember() reads; the token is
+   the same shape tools/fixture.mjs builds. */
+const SESSION = JSON.stringify({
+  at: 'h.' + Buffer.from(JSON.stringify({ sub:'u', email:'aya@example.com',
+        app_metadata:{ provider:'email' } })).toString('base64')
+        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'') + '.s',
+  rt: 'r', uid: 'u', anon: false });
+
 const OLD = {
+  'lingua.sess': SESSION,
   'lingua.langs': JSON.stringify({ LA: { name: 'Vaska', mine: true },
                                    LB: { name: 'Tosk', mine: true } }),
   'lingua.cur': 'LA',
@@ -277,14 +296,21 @@ await pg.reload();
 const g = await pg.evaluate(() => {
   const lit = () => Array.prototype.map.call(
     document.querySelectorAll('.segs .seg.on'), (b) => b.textContent).join(',');
+  /* How many there are at all. "Nothing is lit" is also true of a screen with
+     no buttons on it -- the door is one -- so the claim below is two claims
+     and used to be one: the stage is on the page, AND none of its answers is
+     lit. It passed through a whole run where every other claim here was
+     rendering the sign-in screen. */
+  const segs = () => document.querySelectorAll('.segs .seg').length;
   go('gram', 'desc');
-  const untouched = lit();
+  const untouched = lit(), untouchedOf = segs();
   go('gram', 'neg');
   const touched = lit();
   /* And pressing one is what turns it on, with nothing else changing. */
   go('gram', 'desc');
   setGPos('adj', 'after');
-  return { untouched: untouched, touched: touched, pressed: lit(),
+  return { untouched: untouched, untouchedOf: untouchedOf,
+           touched: touched, pressed: lit(),
            /* What the button SAYS is the interface language's and is asked of
               the page rather than written out here -- a check that spells the
               label itself is a second copy of it. */
@@ -293,7 +319,8 @@ const g = await pg.evaluate(() => {
               that somebody said so */
            was: STG.set.adj ? 'marked' : 'not marked' };
 });
-want('a stage nobody has touched lights nothing', g.untouched, '');
+want('a stage nobody has touched is on the page', g.untouchedOf > 0, true);
+want('and lights nothing', g.untouched, '');
 want('one that was touched lights the answer it was given', g.touched, g.saysBefore);
 want('pressing the button that was already the default lights it', g.pressed, g.saysAfter);
 want('and marks it as chosen', g.was, 'marked');

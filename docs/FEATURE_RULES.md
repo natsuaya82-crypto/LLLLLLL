@@ -218,6 +218,34 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 規約とプライバシーは設定の中だけ。特定商取引法の表記は出さない
+- Date: 2026-08-26
+- Area: 規約・プライバシーポリシー・特定商取引法に基づく表記
+- Decision: **特商法の表記は出さない**（「出さない。」）。**ログアウト中に
+  規約とプライバシーが読めなくてよい**（「ログアウト中は見れなくていいでしょ？
+  ログインしたら設定から見れるし」）。読める道は**設定 → アカウントの一番下、
+  一箇所だけ**。
+- Reason: オーナーの言葉のまま上に。仕組みの側で分かっていること ── App Store
+  の課金は販売者が Apple（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も
+  Apple なので、App Store Connect は特商法のページを訊いてこない。必須で訊くのは
+  プライバシーポリシー URL だけ。
+- Affected features: `docRows()`（www/settings.js）。**二本のままで、三本目は
+  作らない。** ログアウト中に扉しか出ないのは 2026-08-26 の「ログアウトしたら
+  普通にログイン画面だけ出せばいいやろ」のとおりで、**これは退行ではなく仕様**。
+- Affected data: **無し。** 保存するものは増えも減りもしない。
+- Affected docs: docs/BACKLOG.md（§3 と §4 をこの決定に合わせる）、docs/apple.md
+- Implementation status: **コードの変更は要らない。今の姿がこの決定。**
+  残っているのは repo の外で、そちらは片付いていない ── `natsuaya82-crypto/tokine2`
+  （Vercel で tokinets.com）を読んだ結果:
+  **`lingua/` の中は `index.html` 一つだけで、`terms.html` も `privacy.html` も
+  無い。** アプリの二本のリンクは今日 404。直下には二本あるが **どちらも別アプリの
+  もの**（`terms.html` は「利用規約 | JPEL Manager」、`privacy.html` は
+  「本アプリには『JPEL Manager』が含まれます」と書き、メールを求めない・端末内
+  にのみ保存・AdMob 広告あり、と Lingua と真逆を宣言している）。**流用は不可** ──
+  審査に落ちるより先に、事実と違う申告になる。
+  **要るのは Lingua 用に書き下ろした二本。** App Store Connect のプライバシー
+  ポリシー URL は必須なので、これができるまで審査に出せない。サイトの仕事。
+
 ### 売上とアナリティクスを、アプリの中で見る
 - Date: 2026-08-26
 - Area: 数字を見る画面（新しい章）／App Store Connect の API／Supabase
