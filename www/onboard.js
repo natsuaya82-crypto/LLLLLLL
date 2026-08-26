@@ -362,8 +362,12 @@ function obCanBack(){
      account exists: the screen behind 'who' would offer to sign in as
      somebody else. */
   if(obPending()) return OBM.mode!=='who';
-  /* Nothing is behind the first step, and nothing is behind the door while
-     it IS the first step: there is no app to go back to yet. */
+  /* And nothing at all is behind a door somebody was not sent to. Signed out,
+     the app IS this screen -- 「他の画面に行かせるな。ログアウトの時は。」 --
+     so the chevron would be a way into an onboarding they finished months ago.
+     ob.step is still sitting wherever it ended, which is what made the test
+     below say yes. */
+  if(appIs()==='door') return false;
   /* Nothing is behind the first step. */
   return ob.step>OB_DRAW || ob.mode==='borrow';
 }
@@ -1064,7 +1068,11 @@ function obDots(){
   return a;
 }
 function vOb(){
-  var s=ob.step, door=!!obPending() || s===OB_IN;
+  /* Signed out, this is the door whatever step ob.step is left on -- a person
+     who signs out after finishing has ob.step sitting on the name or the
+     tour, and neither of those is a screen to show somebody with no account.
+     appIs() in www/shell.js is where that is decided. */
+  var s=ob.step, door=appIs()==='door' || !!obPending() || s===OB_IN;
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
@@ -1072,7 +1080,7 @@ function vOb(){
        now -- so the door shows them when it IS that step, and shows none when
        it was opened from Settings or from a timeline. obPending() is what
        tells the two apart: a door opened from somewhere remembers where. */
-    '<div class="obtop">'+(obPending()? '' : obDots().map(function(i){
+    '<div class="obtop">'+((obPending() || SET.done)? '' : obDots().map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join(''))+'</div>'+
     '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
       UI_LANGS.map(function(c){

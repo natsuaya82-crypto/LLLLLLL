@@ -24,7 +24,11 @@ var MODS=null, MODBUSY=false, MODERR='';
 
 /* Going there and reading are one press. A view that fetched what it needed
    while it was being drawn would fetch it again every time anything on the
-   screen changed, and act-check draws every screen many times over. */
+   screen changed, and act-check draws every screen many times over.
+
+   The press is on the admin screen now and not in settings.
+   「設定の通報ボタン消せ」OWNER 2026-08-26 -- see vSettings() in
+   www/settings.js for what went, and adminRow() below for where it went. */
 function goMod(){ go('mod'); modLoad(); }
 function modLoad(){
   if(MODBUSY) return;
@@ -261,9 +265,12 @@ function adminStaffRow(r){
    screen are the height the rows everywhere else in the app are. A number
    that has not come back yet is a blank and not a nought: nought is a fact
    about the app and this is a fact about the request. */
-function adminRow(k, n){
-  return '<div class="set"><span class="sl">'+esc(t(k))+'</span>'+
-    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+'</span></div>';
+function adminRow(k, n, go){
+  var body='<span class="sl">'+esc(t(k))+'</span>'+
+    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+
+    (go? ICON_GO : '')+'</span>';
+  return go? '<button class="set"' + DO(go) + '>'+body+'</button>'
+           : '<div class="set">'+body+'</div>';
 }
 function vAdmin(){
   if(adminLocked()) return adminDoor();
@@ -274,7 +281,14 @@ function vAdmin(){
     adminRow('admin.people', n.people)+
     adminRow('admin.posts', n.posts)+
     adminRow('admin.langs', n.langs)+
-    adminRow('admin.reports', n.reports)+
+    /* The count of reports is also the way to them. It was a row in settings
+       until 「設定の通報ボタン消せ」OWNER 2026-08-26 -- and settings is where
+       anybody holding the phone can see it, which is the half of that worth
+       keeping. The screen it opens is unchanged: 「通報の確認とかアナリティクス
+       とか売り上げとか含めて全部見れる新ページ」 put the reports on this page
+       as well, and the owner's call was that the reports screen stays what it
+       is. So the number here goes to it rather than replacing it. */
+    adminRow('admin.reports', n.reports, 'goMod')+
     /* Who answers them, and the field that adds one. The heading is a name
        and not a sentence about what the list is for -- without it the handles
        sit under four numbers and read as a fifth. */

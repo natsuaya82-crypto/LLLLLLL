@@ -288,9 +288,29 @@ function shareConv(t){
   return max? {how:wsys(), max:max, map:map} : null;
 }
 /* Whether the keys are roman. A syllabary is spelled in roman and converted;
-   an alphabet is typed in its own letters and only suggested at. */
+   an alphabet is typed in its own letters and only suggested at.
+
+   It asks what the person CHOSE and not what wsys() answers, and those are
+   two different questions the moment nobody has chosen: wsys() falls through
+   to wsGuess(), which reads 'syll' off a single letter that happens to write
+   two sounds. That guess is a suggestion for the screens inside this app,
+   where it costs a wrong default somebody can see and change. Here it costs a
+   whole extra page on the keyboard on the phone -- a roman QWERTY appearing
+   behind a keyboard somebody built one face of and never asked a question
+   about. 「2ページ目未設定なのに端末で qwerty の2ページ目が出る」
+
+   Which is the same sentence as the one on shareKbd() below, one step
+   further out: a keyboard with no editor grew a second face out of a setting
+   somewhere else, and a setting nobody set is the worst version of that.
+
+   The plan is asked for the reason wsys() asks it: SET.wsys survives a plan
+   ending, so a language that chose a syllabary on Plus must not go on
+   shipping a roman face after it comes back down to a plan where the writing
+   system is an alphabet and there is nothing to convert. */
 function shareRoman(){
-  var w=wsys();
+  var w=SET.wsys;
+  if(!can('wsys')) return false;
+  if(WSYS.indexOf(w)<0) return false;
   return w==='syll' || w==='abugida' || w==='logo';
 }
 /* The face you spell on. Not the person's letters -- the q of QWERTY, there

@@ -125,7 +125,7 @@ function migrateKbFree(){
   KB.kbs=kbs; KB.at=at; KB.v=2;
   saveKb();
 }
-function saveKb(){ kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+function saveKb(){ kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
@@ -1614,6 +1614,12 @@ function kbDelRow(ri){
   var rows=kbLayer().rows;
   ri=parseInt(ri, 10)||0;
   if(ri<0 || ri>=rows.length) return;
+  /* Never the last row of a face, which is kbDrop()'s "never the last one"
+     about the thing one size down. A face with no rows is not a face: it
+     renders as nothing here, goes to the phone as a keyboard with no keys on
+     it, and the only way off it would be a key that no longer exists. The
+     way to be rid of a face is the x beside the tabs. */
+  if(rows.length<2) return;
   rows.splice(ri, 1);
   kbSel=null; KBH=null; saveKb(); render();
 }
@@ -1962,6 +1968,52 @@ function kbLayPut(face, v){
   if(kbUsed(rows[rows.length-1])+2<=KB_COLS){ rows[rows.length-1].unshift(k); return true; }
   if(rows.length<KB_ROWS){ rows.push([k]); return true; }
   return false;
+}
+/* NO FACE IS A DEAD END, and that is the sentence above one step further out.
+   「2ページ目から戻るボタンがない」 OWNER, build #92.
+
+   kbAddLay() puts the way there and the way back on at the moment a page is
+   made, and it does that correctly. What nothing held is that they STAY: the
+   two deletes on the sheet take keys away by the row and by the column, and
+   the back key is a key. Standing on page 2 of a page somebody has just made
+   -- one row, the back key and one empty slot -- and pressing the row's
+   number leaves that face with NO ROWS AT ALL, which on the phone is a blank
+   keyboard nobody can get off. The column does it too, from the other side.
+
+   Neither throws. The editor draws a face with nothing on it perfectly
+   happily, the tab bar still says 2, and every check was green -- the trap is
+   only ever reached by somebody typing on a real phone, which is where it was
+   found.
+
+   ONE PLACE, and it is saveKb(), for kbNoted()'s own reason one line up:
+   saveKb() is what every change to a keyboard ends in, so it cannot be
+   forgotten. The alternative was the same three lines in kbDelRow, kbDelCol
+   and kbDelKey, which is three places each remembering a rule.
+
+   It only ever ADDS, and only where there is nothing: a face that already
+   carries a way off keeps exactly the keys it has, in the order it has them.
+   To be rid of a face there is the x beside the tabs -- kbDropLay() -- which
+   is the thing the row delete was being used as and is not.
+
+   It repairs as well as prevents. A keyboard whose page 2 lost its way back
+   on an earlier build gets it again the first time anything on that keyboard
+   is changed. Nothing walks the boards nobody is editing: kbEdit() is the one
+   in front of somebody, and rearranging a keyboard they are not looking at is
+   the thing this rule exists to stop. */
+function kbWayOff(){
+  var b=kbEdit(), i, j, k, rows, has;
+  if(!b || !b.lay || b.lay.length<2) return;
+  for(i=0;i<b.lay.length;i++){
+    has=false;
+    rows=b.lay[i].rows;
+    for(j=0;j<rows.length && !has;j++)
+      for(k=0;k<rows[j].length;k++)
+        if(rows[j][k].k==='lay'){ has=true; break; }
+    /* Face 0 is the way IN to the rest, so its missing key is the same hole
+       seen from the other end: with nothing on it pointing anywhere, every
+       page after it is unreachable rather than inescapable. */
+    if(!has) kbLayPut(b.lay[i], i===0? 1 : 0);
+  }
 }
 /* A page arrives with the way THERE and the way BACK already on it.
    「2ページ目作ったときの切り替えボタンは？」「ページを作るなら切り替えボタン
