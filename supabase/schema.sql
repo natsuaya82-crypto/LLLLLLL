@@ -100,13 +100,25 @@ alter table profile add column if not exists admin boolean not null default fals
 -- date, for the same reason post.hidden_at is one: two columns that have to
 -- agree about whether something happened are two columns that can disagree.
 --
--- What it does is one line in is_member() below, which every policy for
--- something OTHER PEOPLE SEE asks. It is not in has_account(), so being frozen
--- stops the timeline and not the work: somebody ejected can still read, can
--- still write their own language, and can still delete their account, because
--- account_delete() does not ask is_member() either and must not -- being
+-- What it does is one line in is_member() below, which every write policy in
+-- this file now asks.
+--
+-- It used to stop the timeline and not the work. The line over it said
+-- 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 and
+-- a frozen account went on writing its own language, because that was nobody
+-- else's business. **OWNER DECISION 2026-08-26 replaced that**: asked directly
+-- whether a frozen account may still edit its language, the answer was that it
+-- may not. A language is handed to other people now -- it can be downloaded and
+-- it can be put on a page anybody may open -- so "nobody else's business" is
+-- not what a language is any more, and the sentence it rested on has gone with
+-- it.
+--
+-- What a frozen account keeps: reading, everything already on the phone, and
+-- the way out. account_delete() does not ask is_member() and must not -- being
 -- thrown out of a place is not a reason to be locked out of the door marked
--- exit. 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」
+-- exit -- and nothing here reaches localStorage, so what somebody has made
+-- goes on opening, editing and backing up on the phone it was made on. What
+-- stops is the copy going up.
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
@@ -409,30 +421,33 @@ alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
 
--- Two questions, and until now they were one.
+-- One question, and until 2026-08-26 there were two.
 --
--- The app makes an anonymous account at first launch -- no address, no
--- handle, nobody -- and everything somebody makes belongs to it from the
--- first minute. So "may this account write" splits along what the write is
--- FOR:
+-- There used to be an anonymous account made at first launch, and "may this
+-- account write" split along what the write was FOR: has_account() -- anybody
+-- at all, anonymous included -- guarded a language and the slices under it, on
+-- the grounds that those were nobody else's business; is_member() guarded
+-- everything other people would see.
 --
---   has_account()  there is an account. Anonymous counts, and frozen counts.
---                  What it guards is what is nobody else's business: your
---                  language, and everything filed under it.
---   is_member()    the account has a name on it and has not been frozen.
---                  What it guards is everything other people would see.
+-- **The split was drawn along "can anybody else see this", and that line has
+-- moved.** A language can be handed to somebody else now (DL), and it can be
+-- put on a page anybody may open (the publish switch), and what a person makes
+-- is kept on the server rather than only on the phone. So a language is not
+-- "nobody else's business" any more, and there is nothing left for the two
+-- questions to be about.
 --
--- 「課金とツイートにはログイン必須。それ以外は流さない」
+-- OWNER DECISION 2026-08-26: 「言語はアカウントないと作れないです」
+-- 「ログインした人しか書けないけど」「二種類になる意味も分からないけど」
+-- This replaces the anonymous-first decision of 2026-08-22.
 --
--- Anonymous is not a lesser account and this is not a trial: attaching an
--- identity later keeps the same uid, so nothing is copied, moved or claimed
--- at that moment. The row that was yours goes on being yours.
-create or replace function has_account() returns boolean
-language sql stable as $$
-  select auth.uid() is not null
-$$;
-
+-- So has_account() is gone rather than left sitting unused, and every policy
+-- that asked it asks is_member(). is_member() itself is not touched: ten
+-- policies are standing on it and this change is about who else joins them.
+--
 -- A signed-in account that is not an anonymous one, and has not been frozen.
+-- The anonymous clause stays: the app no longer MAKES one, but a phone that
+-- has been running since before today still holds a session that says it is,
+-- and that session must not quietly become a member.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
@@ -466,29 +481,34 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- language: a published one is readable by anyone; an unpublished one only by
 -- the person who owns it. Only the owner ever writes.
 --
--- has_account() and not is_member(), and this is the whole of what the split
--- is for: a language is made on the first launch, by somebody who has not
--- said who they are and may never say. Publishing one is the other half and
--- goes through publication below, which does ask is_member() -- putting a
--- language in front of other people is the same kind of act as posting.
+-- is_member(), the same question posting asks. 「言語はアカウントないと作れない
+-- です」「ログインした人しか書けないけど」 -- OWNER 2026-08-26. It used to be
+-- has_account(), which anonymous satisfied, on the grounds that a language was
+-- nobody else's business until it was published. It is not: it can be handed
+-- over whole, and it can be put on a page anybody may open, so making one and
+-- posting one are the same kind of act and ask the same thing.
+--
+-- Reading does not ask it, and that is not an oversight: a published language
+-- is readable by anybody at all, including somebody with no account, which is
+-- what publishing one MEANS.
 drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid());
 drop policy if exists language_make on language;
 create policy language_make on language for insert
-  with check (has_account() and owner = auth.uid());
+  with check (is_member() and owner = auth.uid());
 drop policy if exists language_edit on language;
 create policy language_edit on language for update
-  using (has_account() and owner = auth.uid()) with check (owner = auth.uid());
+  using (is_member() and owner = auth.uid()) with check (owner = auth.uid());
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
-  using (has_account() and owner = auth.uid());
+  using (is_member() and owner = auth.uid());
 
 -- slice: nobody else's business. Read and written by whoever owns the
 -- language and by nobody else -- not even for a language that is PUBLISHED,
 -- because publishing is a copy somebody is given and not a door into the
--- phone. has_account() rather than is_member(), the same as language above:
--- this is what a first launch writes.
+-- phone. is_member(), the same as language above, and for the same reason:
+-- what is filed under a language travels with it.
 alter table slice enable row level security;
 drop policy if exists slice_read on slice;
 create policy slice_read on slice for select
@@ -496,17 +516,17 @@ create policy slice_read on slice for select
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_make on slice;
 create policy slice_make on slice for insert
-  with check (has_account() and exists (select 1 from language l
+  with check (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_edit on slice;
 create policy slice_edit on slice for update
-  using (has_account() and exists (select 1 from language l
+  using (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()))
   with check (exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_drop on slice;
 create policy slice_drop on slice for delete
-  using (has_account() and exists (select 1 from language l
+  using (is_member() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 
 -- publication: everyone reads the record. Anyone may add to it about their own
@@ -1070,5 +1090,20 @@ create trigger profile_follows after insert on profile
 -- ---------------------------------------------------------------------------
 revoke update on profile from anon, authenticated;
 grant  update (handle, display, av) on profile to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- And the question that is no longer asked
+--
+-- has_account() -- "there is an account, anonymous counts" -- is dropped by
+-- name rather than merely deleted from this file. This file gets pasted over a
+-- database that already has one, so a function nobody writes down any more
+-- goes on existing there, and a function that exists is one a policy written
+-- next year can reach for without anybody noticing what it means.
+--
+-- Here, at the foot, and not where it used to be defined: every policy above
+-- had to stop naming it first. A `drop` with no `cascade` refuses rather than
+-- quietly taking a policy down with it, so if this line ever errors it is
+-- telling the truth -- something is still standing on it.
+drop function if exists has_account();
 revoke update on post from anon, authenticated;
 grant  update (body, language, prompt, reply_to) on post to anon, authenticated;

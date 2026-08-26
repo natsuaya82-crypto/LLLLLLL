@@ -175,32 +175,46 @@ const CASES = [
   ['published, B still cannot rewrite it',    'denied', B, 0,
     `update language set name='mine now' where id='${L}'`],
 
-  /* --- an account with no name on it, which is what every first launch has -
-     The app signs itself in anonymously before the first frame, so a language
-     is made by somebody who has not said who they are and may never say. That
-     is the whole reason has_account() exists beside is_member(), and D is the
-     only account in this file that never gets a profile row -- which is also
-     why language.owner points at auth.users rather than at profile.
+  /* --- an account with no name on it --------------------------------------
+     There used to be one on every phone: the app signed itself in anonymously
+     before the first frame, and a language was made by somebody who had not
+     said who they were and might never say. **OWNER DECISION 2026-08-26 took
+     that out** -- \u300c\u8a00\u8a9e\u306f\u30a2\u30ab\u30a6\u30f3\u30c8\u306a\u3044\u3068\u4f5c\u308c\u306a\u3044\u3067\u3059\u300d\u300c\u30ed\u30b0\u30a4\u30f3\u3057\u305f\u4eba\u3057\u304b
+     \u66f8\u3051\u306a\u3044\u3051\u3069\u300d -- and the whole reason has_account() existed beside
+     is_member() went with it.
 
-     The pair to read together is the first line and the fourth: it may make a
-     language, and it may not make a post. */
-  ['an anonymous account makes a language',   'ok',     D, 1,
+     So D is the other direction now: a session that IS anonymous, on a phone
+     that has been running since before that day, may write nothing at all. It
+     is still the only account in this file that never gets a profile row,
+     which is why language.owner points at auth.users rather than at profile --
+     a row it could not have had.
+
+     Every line of it is one word. There is nothing an account with no name on
+     it may do. */
+  ['an anonymous account cannot make a language', 'denied', D, 1,
     `insert into language(id,owner,name) values ('${LD}','${D}','Nen')`],
-  ['and reads its own back',                  'ok',     D, 1,
-    `select 1 from language where id='${LD}'`],
-  ['and renames it',                          'ok',     D, 1,
-    `update language set name='Nenu' where id='${LD}'`],
-  ['but cannot post',                         'denied', D, 1,
+  ['nor put a slice on anybody\u2019s',       'denied', D, 1,
+    `insert into slice(language,kind,body) values ('${L}','words','[1]')`],
+  ['nor post',                                'denied', D, 1,
     `insert into post(author,body) values ('${D}','{}'::jsonb)`],
   ['nor give itself a handle',                'denied', D, 1,
     `insert into profile(id,handle) values ('${D}','nobody')`],
   ['nor follow anybody',                      'denied', D, 1,
     `insert into follow(follower,followed) values ('${D}','${A}')`],
-  ['nor publish what it made',                'denied', D, 1,
+  ['nor publish anything',                    'denied', D, 1,
     `insert into publication(language,actor,kind,digest)
-       values ('${LD}','${D}','language','sha')`],
+       values ('${L}','${D}','language','sha')`],
   ['nor own a language of A\u2019s',          'denied', D, 1,
     `insert into language(owner,name) values ('${A}','forged')`],
+  ['and the language it could not make is not there', 'denied', B, 0,
+    `select 1 from language where id='${LD}'`],
+
+  /* A second language, unpublished, for the slice questions below. L is
+     PUBLISHED by this point and a published one answers the reading half
+     differently, so the two cannot be the same row. It used to be D's; D
+     cannot have one now, so it is A's. */
+  ['A makes a second one and leaves it unpublished', 'ok', A, 0,
+    `insert into language(id,owner,name) values ('${LD}','${A}','Nen')`],
   ['and nobody else sees it',                 'denied', B, 0,
     `select 1 from language where id='${LD}'`],
   /* And what the language is MADE of. A slice is the dictionary, the
@@ -208,11 +222,11 @@ const CASES = [
      and it is the one thing in this file that nobody but its owner may read.
      Not even for a published language: publishing is a copy somebody is
      given, not a door into the phone. */
-  ['and puts its dictionary in it',           'ok',     D, 1,
+  ['and puts its dictionary in it',           'ok',     A, 0,
     `insert into slice(language,kind,body) values ('${LD}','words','[1]')`],
-  ['and reads it back',                       'ok',     D, 1,
+  ['and reads it back',                       'ok',     A, 0,
     `select 1 from slice where language='${LD}' and kind='words'`],
-  ['and writes over it',                      'ok',     D, 1,
+  ['and writes over it',                      'ok',     A, 0,
     `update slice set body='[1,2]', no=2 where language='${LD}' and kind='words'`],
   ['B cannot read it',                        'denied', B, 0,
     `select 1 from slice where language='${LD}'`],
@@ -465,15 +479,19 @@ const CASES = [
     `update profile set display='new' where id='${B}'`],
   ['nor upload anything',                     'denied', B, 0,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
-  /* And the half a freeze must leave alone. 「制作は好きにやらせればいいし、
-     sns止められても作りたいやつは作るでしょ」 A language is nobody else's
-     business, so it goes on being written -- which is only true because the
-     language policies ask has_account() and has_account() says nothing about
-     banned_at. */
-  ['but B still makes a language',            'ok',     B, 0,
+  /* And the language, which used to be the half a freeze left alone.
+     「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 was
+     true while a language was nobody else's business and the language policies
+     asked has_account(), which said nothing about banned_at.
+     **OWNER DECISION 2026-08-26 replaced it**, asked directly: a frozen account
+     may not write its language either. They ask is_member() now, and
+     is_member() is where banned_at lives. */
+  ['nor make a language any more',            'denied', B, 0,
     `insert into language(id,owner,name) values ('${LB}','${B}','Bene')`],
-  ['and goes on writing it',                  'ok',     B, 0,
-    `update language set name='Benet' where id='${LB}'`],
+  ['nor write the one they had',              'denied', B, 0,
+    `update language set name='Benet' where id='${L}'`],
+  ['nor put a slice in it',                   'denied', B, 0,
+    `insert into slice(language,kind,body) values ('${L}','words','[]')`],
   ['nor lift it by hand',                     'denied', B, 0,
     `update profile set banned_at=null where id='${B}'`],
   ['nor by asking',                           'denied', B, 0,
@@ -568,21 +586,13 @@ const SHAPE = [
      select count(*) from (select 1 where
        has_column_privilege('authenticated','profile','banned_at','UPDATE')
        or has_column_privilege('anon','profile','banned_at','UPDATE')) q`, '0'],
-  /* The split itself, which no attempt above can see going the wrong way: an
-     attempt proves what one account may do, and what has to hold here is that
-     the two questions stayed two. A has_account() that grew a banned_at line
-     would pass every case in this file and would also freeze the making
-     side. */
-  ['there is a question that asks only for an account', `
-     select count(*) from (select 1 where
-       (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-         where n.nspname='public' and p.proname='has_account'
-           and p.prosrc not like '%is_anonymous%'
-           and p.prosrc not like '%banned_at%') <> 1) q`, '0'],
-  ['and a language asks it rather than the other one', `
-     select count(*) from pg_policies
-      where tablename='language' and cmd in ('INSERT','UPDATE','DELETE')
-        and (coalesce(qual,'')||coalesce(with_check,'')) like '%is_member%'`, '0'],
+  /* These two used to say the opposite, and they are worth keeping as a note
+     rather than deleting silently: they held the SPLIT -- that there was a
+     question asking only for an account, and that a language asked it rather
+     than the other one. Both were true and both were replaced by
+     OWNER DECISION 2026-08-26. The pair that stands now is at the foot of this
+     list: no such question exists, and every write to a language asks the same
+     thing a post does. */
   /* post_seen runs as its owner and sees every row -- that is what lets it
      hand back a taken-down post with nothing in it. Two things have to hold
      for that to be a wall rather than a door. It must not carry the column
@@ -692,6 +702,15 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename='language' and policyname='language_read'
         and qual like '%is_staff%'`, '0'],
+  /* The question that is no longer asked. Two halves, because deleting a
+     function and stopping a policy from wanting one are different statements
+     and only the second is the rule. 「言語はアカウントないと作れないです」 */
+  ['there is no way to ask that only wants an account', `
+     select count(*) from pg_proc where proname='has_account'`, '0'],
+  ['and a language asks the same thing a post does', `
+     select count(*) from pg_policies
+      where tablename in ('language','slice') and cmd <> 'SELECT'
+        and coalesce(qual,'') || coalesce(with_check,'') not like '%is_member%'`, '0'],
   ['a report is never edited or withdrawn', `
      select count(*) from pg_policies
       where tablename='report' and cmd in ('UPDATE','DELETE')`, '0'],
