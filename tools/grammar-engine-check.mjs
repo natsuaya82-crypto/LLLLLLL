@@ -26,6 +26,54 @@ assert.equal(intransitive.features.TENSE,'PAST');
    ok:true, with the sentence saying something nobody wrote. */
 const stray=e.morphology.parseSentence(language,'na mi');
 assert.equal(stray.ok,false);
+/* ---- derivation ----------------------------------------------------------
+   An inflection makes another form of the same word; a derivation makes a
+   different word of a different part of speech. model.js has carried
+   derivation() since Phase 1 with nothing in www/ that applied it --
+   `grep -rn derivation www/` returned model.js and nothing else -- so a
+   language could declare NOUN + suffix `li` -> ADJECTIVE and the engine would
+   neither make `beauty-li` nor read it back. */
+const deriving=e.languageModel({languageId:'der',wordOrder:'SOV',
+  words:[e.word({id:'beauty',lemma:'beauty',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  derivations:[e.derivation({id:'adj',sourcePartOfSpeech:'NOUN',targetPartOfSpeech:'ADJECTIVE',operation:'suffix',form:'li'})],
+  inflections:[e.inflection({id:'past',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'}),
+               e.inflection({id:'plural',target:'ADJECTIVE',feature:'NUMBER',value:'PLURAL',operation:'suffix',form:'sa'})]});
+const made=e.morphology.derive(deriving,deriving.words[0],'ADJECTIVE');
+assert.equal(made.surface,'beauty-li');
+assert.equal(made.partOfSpeech,'ADJECTIVE');
+assert.equal(made.derivations.length,1);
+/* and back the other way: which word it was made from, and what it became */
+const back=e.morphology.analyzeDerivation(deriving,'beauty-li',deriving.words[0]);
+assert.equal(back.lemma,'beauty');
+assert.equal(back.partOfSpeech,'ADJECTIVE');
+assert.equal(back.derivations.length,1);
+/* a word nobody derived keeps its own part of speech and claims no rule */
+const plain=e.morphology.analyzeDerivation(deriving,'beauty',deriving.words[0]);
+assert.equal(plain.derivations.length,0);
+assert.equal(plain.partOfSpeech,'NOUN');
+/* the sentence reader reaches it too, or the rule is still ornamental:
+   `beauty-li` is a word of this language, standing as the ADJECTIVE it became
+   rather than the NOUN it came from. */
+const readDer=e.morphology.parseToken(deriving,'beauty-li');
+assert.ok(readDer,'a derived form is not a word this language can read');
+assert.equal(readDer.lemma,'beauty');
+assert.equal(readDer.word.partOfSpeech,'ADJECTIVE');
+assert.equal(readDer.derivations.length,1);
+/* Read from the outside in. An inflection sitting on a derived form belongs to
+   what the form BECAME, so it comes off before the mark that made it -- and
+   which part of speech to read it as comes from the derivation rule, not from
+   the source word. Stripped the other way round, `beauty-li-sa` is an
+   ADJECTIVE inflection asked of a NOUN, matches nothing, and the form is not
+   any word at all. */
+const both=e.morphology.parseToken(deriving,'beauty-li-sa');
+assert.ok(both,'a derived form carrying an inflection is not readable');
+assert.equal(both.lemma,'beauty');
+assert.equal(both.derivations.length,1);
+assert.equal(both.inflections.length,1);
+assert.equal(both.inflections[0].feature,'NUMBER');
+/* a form built out of a rule this language does not have is still not a word */
+assert.equal(e.morphology.parseToken(deriving,'beauty-zz'),null);
 /* What a word IS, asked of the dictionary rather than restated here.
    www/shell.js holds the thirteen keys a part of speech is stored as, and the
    adapter's map named three that this app has never stored (`pron`, `prep`,
