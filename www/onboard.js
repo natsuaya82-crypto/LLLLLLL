@@ -705,11 +705,19 @@ function obCrestHTML(){
    the bar across the foot offers instead of itself. On one screen all of
    that would be written twice in conditionals anyway, and the person would
    not be able to tell which of the two they were looking at. */
-/* There is nothing to skip past. The door is not the way in any more -- the
-   app makes an account by itself at first launch and this is where somebody
-   puts a name on it -- so "continue without an account" would be offering
-   what everybody already has, on a screen nobody arrived at by accident.
-   The chevron is the way out. */
+/* There is nothing to skip past, and the reason under this comment changed.
+
+   It said the app makes an account by itself at first launch, so "continue
+   without an account" would be offering what everybody already has. **It does
+   not.** netAnon() gets a token whose JWT carries `is_anonymous`: netMember()
+   reads false off it and so does is_member() in supabase/schema.sql. It is a
+   uid to hang a language on, which is what 2026-08-22 asked for and all it
+   asked for. It is not somebody, and it is not an account. 「匿名アカウントは
+   ねえよ」
+
+   So the offer is missing for the opposite reason now, and a stronger one:
+   2026-08-26, 「言語はアカウントないと作れないです」. There is no continuing
+   without an account to offer. The chevron is the way out. */
 function obFormHTML(up){
   return '<div class="mid obform">'+
     obCrestHTML()+
@@ -724,23 +732,28 @@ function obFormHTML(up){
          '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
          '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
          '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>')+
-    /* There used to be a way out of it without signing in, on the door that
-       was the onboarding's last step. 「サインインしなかったときは門で止まる
-       よ！」 -- OWNER DECISION 2026-08-23 -- and it was right while the app
-       had an anonymous account behind it: the making side worked, what
-       somebody made belonged to that uid, and the door came back the next
-       time they reached for a letter.
+    /* There WAS a way out of here without signing in: 「あとで」, shown when
+       this door was the onboarding's last step, straight to obFinish().
+       「サインインしなかったときは門で止まるよ！」 OWNER DECISION 2026-08-23 --
+       the walk ended, the app opened, and the MAKING side asked later, which
+       it did: every gate there is obNeed().
 
-       **OWNER DECISION 2026-08-26 took the account away** -- 「言語はアカウント
-       ないと作れないです」 -- and with it the thing this button led to. What is
-       on the other side of it now is an app that cannot make anything and
-       cannot say why, which is worse than a door: a door is at least a
-       question somebody can answer. So there is no way past this one. */
+       Gone, 2026-08-26. 「言語はアカウントないと作れないです」 So a walk that
+       ends with no account ends on a wall instead: finish, land on the
+       profile, reach for a letter, and the door comes straight back. That
+       is what the owner saw -- 「オンボーディング終わったらせいさくみれるけど
+       ふさがれてるけど？」
+
+       The button was never a bug against the rule. It WAS the rule: the
+       comment on it ended 「a language is made on this phone, with or without
+       an account」, which is the sentence the same decision struck out of
+       CLAUDE.md. The rule went, so it went, and nothing replaced it --
+       OB_IN is the last step and signing in is how it ends. The chevron
+       still goes back a step. */
     '</div>'+
     '<div class="obbar"><button' + DO('obMailGo', [up? "in" : "up"]) + '>'+
       t(up? 'ob.bar.in' : 'ob.bar.up')+'</button></div>';
 }
-
 /* ---- who the account belongs to ---------------------------------------
    Two things, once, and neither of them invented for anybody. The handle is
    `unique not null` on the server, so it cannot be put off; the name is

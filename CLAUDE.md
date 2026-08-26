@@ -53,9 +53,22 @@ a check, because nothing throws. The timeline is the worked example: the three
 sns tabs and the composer never asked who you were, while every write in
 `schema.sql` had gone through `is_member()` from the first day, so signed out
 you could write a post that went nowhere. Reading the timeline and posting to
-it both need an account now. The MAKING side is the other half of the same
-sentence and needs none: a language is made on this phone, with or without one.
-「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
+it both need an account now, **and so does making a language** 「言語はアカウント
+ないと作れないです」「ログインした人しか書けないけど」. The server is where a
+language lives, the phone keeps the copy that works with no signal, and what was
+made offline goes up when there is a signal again 「制作はオフラインでも可能次
+つながった時に更新される」 — offline is a phone that is CARRYING an account, not
+one that has none.
+
+**There is one kind of account and there are no anonymous ones** 「匿名アカウント
+はねえよ」「二種類になる意味も分からないけど」. An account is somebody who
+signed in. The onboarding ends at that door and there is no way past it. Nothing
+asks a second question about what kind of account this is — `has_account()`
+beside `is_member()` existed to let an anonymous one through, and there is
+nothing to let through. **The first language is the one place this is not true
+yet**: it is minted at the top of `www/core.js`, which `index.html` loads before
+`net.js` exists, so it cannot ask anything about a session. `claude/admin` has
+the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
 **Shape.** Four things are banned outright: a row of round chips you scroll
 sideways (if there are more than a few, it is a **list**); the thing being
@@ -139,6 +152,17 @@ plan, what was tested, what was not, whether a device is needed, known limits.
 **Recording.** Anything that changes what is stored, moved or removed goes in
 `docs/CHANGELOG.md` — before the code, not after.
 
+**And when a decision replaces a rule, FIX THE RULE — in the same commit.**
+Recording it is not enough. A rule works because it is read, so one that still
+says the old thing is still being obeyed, and the decision has not landed
+however carefully it was logged. 「古い規則残りすぎ」「新しいのにしたらルーるも
+直せよ」「そのせいで毎回古いルールに引っ張られてんじゃん」 **Fixing means
+deleting**: do not leave the old sentence standing with 「this is history」 in
+front of it, because it will be read anyway. 「歴史とかいいから消せよ」
+`docs/CHANGELOG.md` is the one exception and is never rewritten — it records
+what was true on a day. Everywhere else, including this file, only sentences
+about now. → `docs/FEATURE_RULES.md`
+
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
 retention, deletion, migration, how past data behaves, timing, what is
@@ -148,7 +172,17 @@ generalise it to anything nearby. A later session reads it before changing
 that area, and does not re-open it because a different shape seems more
 natural. If a decision conflicts with a rule already written down — **stop**,
 report both sides with the code and data affected, and do not resolve it
-yourself. → `docs/FEATURE_RULES.md`
+yourself.
+
+**But stop only when the owner has not spoken.** When the new side is something
+the owner has **just said**, it wins: that is the specification, not a conflict
+to escalate. Mark the old decision superseded, fix the rules it wrote, and carry
+on — in the same commit. Do not ask 「this overturns the decision of the 22nd,
+is that alright?」 about something they replaced this morning; they know what
+they said before, and asking makes them say it twice. 「それもふるいわ いつまで
+ふるいのずっとやってんだよ うぜえな」「毎回新しくしろよ」 Stopping is for two
+WRITTEN decisions that disagree with **neither restated** — that case, and no
+other. → `docs/FEATURE_RULES.md`
 
 **Code is not the specification.** Code says what is happening; `docs/` says
 what should happen; an owner decision settles it. When code and docs disagree,
@@ -294,6 +328,11 @@ somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
 ## The nineteen rules the gate enforces
+
+Nineteen is how many rules are written below. **The gate is twenty-six checks,
+and the two are not the same number and must not be made to match** — count the
+rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
+rule can take three checks and one check can hold two rules.
 
 ### 1. `www/**/*.js` must be ES5
 
@@ -458,8 +497,11 @@ second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
 `core.js` names every capability a plan opens — `words` `data` `file`
-`letters` `wsys` `kb` `snd` `gram` `tr` `dir` — and `can('kb')` is the only way
-to ask.
+`letters` `wsys` `kb` `snd` `edit` `badge` `gram` `dir` — and `can('kb')` is the
+only way to ask. **Count them off `CAN` and not off this line**: it listed `tr`,
+which is not a capability and never was, and it was missing `edit` and `badge`,
+which are. `npm run dead` prints the number it actually counted on every run
+("what money buys: N capabilities in CAN"), which is the thing to read.
 `has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
 no plan (false on every plan — a locked door nobody can open, and nothing says
@@ -475,15 +517,11 @@ another tier, meant reading twenty-three branches and remembering one at a time
 what each had ever been about. The paid tier ships as a diff on top of the
 free one, so that reading was going to happen.
 
-Putting them side by side found something on the first day: `ai` lifted at
-Plus and `sug` only at Studio, and they were the same ceiling. A Plus account
-was shown "3 left" on the word sheet forever and never spent one, because
-`sugLeft()` subtracted a counter `aiSpend()` returned early without touching.
-Nothing threw and nothing was refused, which is why it sat there. Both are
-gone now — they were Studio's, Studio sold a hosted model that does not exist,
-and the tier went out with what it sold. Which plan buys it is a price, and a
-price is not a
-tool's to decide — but now it is one table apart instead of two files apart.
+Putting the twenty-three side by side found a bug on the first day: two of them
+were the same ceiling asked two ways, so one plan was shown "3 left" forever and
+never spent one. Nothing threw and nothing was refused, which is why it sat
+there. Two files apart nobody saw it; one table apart it was the first thing
+anybody noticed.
 
 ### 6. A language somebody already has still opens
 
@@ -690,11 +728,14 @@ same commit that closes the duplication.
 
 `www/backup.js` (chapter 24) writes the open language out as one file, into
 Documents, where iOS puts it in the device backup and the Files app can show
-it. Everything a person makes lived in `localStorage` and nowhere else, which
-is one copy in a place with four ways to lose it: the app is deleted, the
-phone is replaced without a backup, WKWebView's storage is reclaimed, or a
-migration goes wrong. Three of those four are ordinary events.
-「データ消えるのだけはありえない」
+it. The server is the record, `localStorage` is the working copy that runs with
+no signal, and **this file is the backup** — 「基本は全部サーバー管理 言語周りだけ
+バックアップにfile使う」. Every slice goes up and comes back (`netLangSync()` in
+`www/net.js`, from `www/boot.js`).
+
+The file is what is left when the other two are not there: the app is deleted,
+the phone is replaced, WKWebView's storage is reclaimed, a migration goes
+wrong, or there is no signal and never was. 「データ消えるのだけはありえない」
 
 It was measured before it was built — thirty-eight drawn letters are 12.1 KB,
 a hundred words 13.2 KB, five thousand words 685 KB — so a free language is

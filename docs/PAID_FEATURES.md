@@ -67,6 +67,8 @@ Plus < Pro` needs nobody told which is which.
 | words | 100 | 1000 | no ceiling |
 | `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
 | languages on this phone | **1** | **1** | **3** |
+| `dl` a language taken from the official assets | — | **yes** | yes |
+| how many DL'd languages | — | *1?* | *3?* | 
 | `edit` editing a post you have sent | — | **yes** | yes |
 | `gram` `dir` `data` `file` `write` `badge` | — | — | yes |
 
@@ -87,6 +89,146 @@ says `plus`, every door above is already the right way round.
 and **counted as a pool across languages** rather than per language: three
 languages were nine keyboards while `KB_MAX` was three per language, on a plan
 that sells three.
+
+**`dl` is Plus's, and its number is NOT decided.** 「DLはplusから」 — that half
+is flat and is what the row above says. The number is the owner's next line and
+**it ends in a question**:
+
+```
+DLはplusからだけどplusは自分の言語+DL言語1個
+proは自分の言語3個+DL言語3個は？
+```
+
+So the table shows *1?* and *3?* and they are written that way on purpose. A
+number in this file is read as settled by everybody downstream — `wordCap()`,
+`kbCap()` and `langCap()` are each one place saying one number — and turning
+「は？」 into a constant is how a question the owner asked comes back as a rule
+nobody remembers agreeing to. **Ask before writing either into `core.js`.**
+
+What the two numbers already tell us, though, is the shape, and the shape is
+not in question: **a DL'd language is counted SEPARATELY from your own.**
+「自分の言語+DL言語1個」 is two numbers, not one. `langCount()` counts `mine`
+and must go on counting only `mine`; whatever counts downloads is a second
+function beside it, not a change to it. That also means the free plan is
+untouched: Free has one language and no `dl`, exactly as today.
+
+**`CAN.dl` is not in `CAN` yet, and that is not an oversight.** `dead-check`
+refuses a capability nothing asks for, the only screen that would ask
+(`www/home.js`'s overview page) is not written, and § Not built yet below
+already says what happens to code written ahead of its caller. It goes in with
+its first `can('dl')`, the way `kb` went in with `kbCap()`.
+
+**Nothing here may take a language away.** The rule at the head of this file
+covers a downloaded language the same as any other: a plan that lapses means
+fewer buttons — no new download, and the door drawn anyway — and never fewer
+languages. Somebody who downloaded three keeps three, sees three, and backs up
+three, exactly the way `langCap()`'s ceiling already hides and never deletes.
+
+**The cloud is on every plan, and that is where the money actually goes.**
+OWNER DECISION 2026-08-22 「クラウドは全員で」, re-confirmed 2026-08-26 「基本は
+全部サーバー管理」. It is not a capability and must not become one: there is no
+`can()` anywhere in `www/net.js`, `www/sync.js` or `www/boot.js`, and
+`netLangSync()` asks nothing about a plan before it runs. That is correct and
+is the rule at the head of this file — a plan decides what may be DONE, and a
+language existing is not something anybody does.
+
+`CAN.data`'s comment in `www/core.js` said 「CSV out, **and the cloud**」 and the
+cloud half was never true in code: `can('data')` is asked in `www/settings.js`
+twice, both about CSV. Corrected 2026-08-26.
+
+**So the bill scales with people, not with payers.** Every account's twelve
+slices are `slice` rows — 5.4 KB for a small language, about a megabyte for a
+large one (`bkPack()`'s own numbers) — plus the egress of reading them back on
+every launch. `docs/FEATURES.md` § 2 carried 「deferred until Supabase $25 is
+worth paying」 as the reason nothing was built; the decision overrode the
+deferral and **the cost did not change**. Nobody has priced it against the four
+subscription products (2026-08-14), and **nobody here should**: what a plan
+costs and where the free/paid line sits are the owner's.
+
+### How many people a plan holds, and what actually decides it
+
+Asked 2026-08-26: 「proプランでも何人くらい囲える？」
+
+**The number is not about how many sign up. It is about how many OPEN the app,
+and what each opening downloads.** `supabase/setup.md` § 6 already carries the
+table and it is the one to keep:
+
+| 毎日開く人 | 月の通信 | |
+|---|---|---|
+| 500 | ~15 GB | 余裕 |
+| 2,000 | ~60 GB | 余裕 |
+| **8,000** | **~240 GB** | **250 GB に当たる** |
+| 20,000 | ~600 GB | 超過 +$32/月 |
+
+Pro is 8 GB of database, 100 GB of files and **250 GB of egress a month**, and
+$0.09/GB after. Egress runs out first, long before storage does — the database
+is the one that would hold a hundred thousand languages (5.4 KB packed, a
+megabyte for a large one) and 8 GB does not run out on words.
+
+**That table's one assumption is thumbnails, and it holds — checked
+2026-08-26.** `POST_THUMB=300` in `www/post.js` and `pt` on the post: the
+timeline draws the 300px copy and the full picture is fetched only when
+somebody taps it. Without that the table is **ten times worse** — 8,000 becomes
+800 — so anything that puts a full-size picture in a feed row is not a
+performance question, it is the plan.
+
+**What 「常に同期」 does and does not mean, settled 2026-08-26:** 「タイムライン
+は開くたび / 言語はそういうわけじゃない」. **The two halves are on different
+clocks and only one of them is per-open.**
+
+**This file said the opposite yesterday and it was wrong.** It read 「常に同期」
+as covering the language too, and warned that re-reading every slice's body on
+every sync would make the language four times the cost of the whole timeline.
+The arithmetic was right; **the premise was not.** The language is not on the
+per-open clock, so the table above stands at 8,000 and the language is not what
+threatens it.
+
+**The timeline half is the one to watch, and the code does MORE than 「開くたび」.**
+`vFeed()` calls `snsPull()` **every time it runs** — its own comment in
+`www/post.js` says so — and `render()` rebuilds the whole screen on any state
+change. So a like, a follow, a toast, a tab switch back: each is another
+`netFeed()`, which is `NET_PAGE=50` posts with their whole `body` on it,
+**`ink` included** — the frozen stroke shapes, which is the biggest field a
+post has. `snsPulling` only stops a second ask while one is still out; it does
+not stop the next one.
+
+The photographs are the cheap half of that, and deliberately: they are Storage
+URLs on the post rather than bytes in the JSON, so the webview caches them and
+a re-render redraws the same picture without asking for it again. **It is the
+JSON that repeats.**
+
+So the honest form of the number: **8,000 daily openers if a visit is a pull,
+and fewer in proportion to how many times a visit re-renders.** Nobody has
+measured that multiplier on a device. It is the single cheapest thing to
+measure and the single most likely reason the table is optimistic.
+
+**None of this is a decision to make here.** Not the interval, not the tier,
+not the price. What this section is for is that the person who implements
+「開くたび」 knows the app currently does it per RENDER, and that the expensive
+part of a pull is the fifty bodies, not the pictures.
+
+**And for the language half, when it is written:** `no` is a version counter
+that goes up on every write (`netSlicePut`, and `supabase/schema.sql` says so),
+and `netSlices()` currently asks `select=kind,body,no` — every body, every
+time. Asking `select=kind,no` first and fetching bodies only for the slices
+whose number moved makes a sync that found nothing cost almost nothing. That
+matters less now that the language is off the per-open clock, but it is the
+difference between a cheap sync and an expensive one whenever it does run.
+
+**Answered 2026-08-26: 「supabaseのエンタープライズで対応する予定」.** The bill
+scaling with people rather than payers is not a reason to narrow the scope, and
+proposals to narrow it on cost grounds are **finished** — the owner has priced
+the decision and taken it. The multiplier is settled too: 「常に同期」, not the
+once-on-launch `www/boot.js` does today, so the number goes UP from whatever it
+is now.
+
+What is still true and still this file's job to say: **none of it may reach
+anybody's data.** An enterprise plan that lapses, a bill that goes unpaid, a
+project that gets suspended — each of those is the entitlement check failing,
+and the rule at the head of this file already says what happens then: fewer
+buttons, never fewer words, and every byte where it was. The phone holds a
+working copy of every slice and `bkPack()` writes the file; a server that
+stops answering is a person who can still open their language.
 
 `CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
 `kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
@@ -281,6 +423,13 @@ trims the thing it is listing, a slice quietly left out of a free plan's
 backup, and the ceiling putting somebody on a price list mid-word.
 
 ## Not built yet
+
+**`CAN.dl` — decided, and deliberately not added.** OWNER DECISION 2026-08-25
+(`docs/FEATURE_RULES.md`) puts downloading a language on Plus. The entry is not
+in `CAN`, because `dead-check` is right: `CAN.dl` with no `can('dl')` anywhere
+fails, and the screen that would ask is in another branch's hands. Adding it
+alone would mean weakening the check to keep it green, and the check is the
+only thing that makes this table true. It lands with its caller.
 
 **The StoreKit code exists and nothing in `www/` calls it.**
 `ios/App/App/LinguaStore.swift` has `products`, `buy`, `restore`, `current` and
