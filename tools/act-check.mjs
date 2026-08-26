@@ -375,6 +375,63 @@ const R = await pg.evaluate(() => {
          there is nothing behind a door nobody was sent to. */
       if (/class="obback"/.test(html)) out.doors.push(r + ': a way back into the app');
     });
+    /* And that a refusal SAYS so, on the door, in the colour a refusal is.
+       ⑱ on the owner's phone: 「メアド／パスワードが違う時、赤文字で出ない」.
+       This is not an explanation and the rule says so -- an error is a state,
+       and a screen with no cause and no way out is the thing forbidden.
+
+       It is the wire that is stubbed and not netWhy(), because netWhy() being
+       right is not the claim: the claim is that a refusal travelling the whole
+       way -- XHR, netSend, netSignIn's bad half, obNo, render -- comes out as
+       words somebody can read. Every shape GoTrue has shipped its refusal in
+       is put through it, plus no connection at all, because a message that
+       only survives one of them is a message that stops the day Supabase
+       changes a key. */
+    const RealXHR = window.XMLHttpRequest;
+    const REFUSALS = [
+      [400, { code:400, error_code:'invalid_credentials', msg:'Invalid login credentials' }],
+      [400, { error:'invalid_grant', error_description:'Invalid login credentials' }],
+      [400, { message:'Invalid login credentials' }],
+      [401, { msg:'Unauthorized' }],
+      [0,   null],
+    ];
+    SESS = null; SET.done = true; SET.obback = null; ob.step = OB_IN;
+    window.route = 'profile'; NAV = [{ r:'profile' }];
+    REFUSALS.forEach(([code, body]) => {
+      window.XMLHttpRequest = function(){
+        this.readyState = 0; this.status = 0; this.responseText = '';
+        this.open = function(){}; this.setRequestHeader = function(){};
+        const self = this;
+        this.send = function(){
+          self.readyState = 4; self.status = code;
+          self.responseText = body ? JSON.stringify(body) : '';
+          if (code === 0) { if (self.onerror) self.onerror(); }
+          else if (self.onreadystatechange) self.onreadystatechange();
+        };
+      };
+      OBM.mode = 'in'; OBM.em = 'a@b.c'; OBM.pw = 'wrong'; OBM.msg = ''; OBM.busy = false;
+      render();
+      try { obMailIn(); } catch (e) { out.doors.push(code + ': threw: ' + e.message); }
+      const m = app.querySelector('.obmsg');
+      const where = 'a refusal (' + code + ')';
+      if (!m) { out.doors.push(where + ': says nothing'); return; }
+      if (!m.textContent.trim()) out.doors.push(where + ': an empty line where the reason goes');
+      /* The colour a refusal is, read off the page rather than named here --
+         every colour lives in the two theme blocks at the top of index.html. */
+      const bad = getComputedStyle(document.documentElement).getPropertyValue('--bad').trim();
+      const want = (function(){ const d=document.createElement('span');
+        d.style.color = bad; document.body.appendChild(d);
+        const c = getComputedStyle(d).color; d.remove(); return c; })();
+      if (getComputedStyle(m).color !== want)
+        out.doors.push(where + ': not the colour a refusal is');
+      /* and where somebody can see it: on the door, above the fold */
+      const r = m.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > window.innerHeight)
+        out.doors.push(where + ': off the screen at ' + Math.round(r.top));
+    });
+    window.XMLHttpRequest = RealXHR;
+    OBM.mode = 'in'; OBM.em = ''; OBM.pw = ''; OBM.msg = ''; OBM.busy = false;
+
     SESS = wasS; window.route = wasR; NAV = wasN; SET.done = wasDone;
     SET.obback = wasBack; ob.step = wasStep;
     try { render(); } catch (e) { out.doors.push('and back again threw: ' + e.message); }
@@ -467,7 +524,7 @@ console.log(`screens walked: ${R.screens}`);
 console.log(`routes reached: ${R.pageNames.length - stranded.length}/${R.pageNames.length}`);
 console.log(`pages: ${R.pages}  views placed ${R.placed}/${R.views}  (vOb is what the app is, not a place in it)`);
 console.log(`names: pressed ${R.seen.do}/${R.have.do}  typed ${R.seen.in}/${R.have.in}  Enter ${R.seen.kd}/${R.have.kd}`);
-console.log(`signed out: ${R.pages} routes asked, every one of them the door, no bar, no way off`);
+console.log(`signed out: ${R.pages} routes asked, every one of them the door, no bar, no way off,\n            and a refusal says so on it in five shapes and with no connection at all`);
 
 if (fails.length) {
   console.log('');
