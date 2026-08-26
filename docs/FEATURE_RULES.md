@@ -162,11 +162,40 @@ Afterwards:
    and change unrelated code to match
 6. a later session reads the decision before changing anything in that area
 
-**If a decision conflicts with a rule already written down: STOP.** Report the
-existing rule, the new decision, the code affected, the data affected, and what
-a migration would have to do. Do not resolve it yourself. Neither side of a
-conflict is automatically right, and picking one quietly is how a spec gets
-lost.
+**If a decision conflicts with a rule already written down: STOP — and read the
+next paragraph before you do, because it is the half that was missing and it is
+the half that gets used most.** Report the existing rule, the new decision, the
+code affected, the data affected, and what a migration would have to do. Do not
+resolve it yourself. Neither side of a conflict is automatically right, and
+picking one quietly is how a spec gets lost.
+
+**STOP only when the owner has not spoken.** If the new side of the conflict is
+something the owner has **just said**, that is the latest and it wins — it is
+not a conflict to escalate, it is an instruction to carry out. Do not ask again.
+Do not ask 「this overturns the decision of the 22nd, is that alright?」 about a
+decision the owner replaced this morning: they know what they said before, and
+asking is making them say it twice.
+
+```
+  the owner has just said it            → it wins. Mark the old one
+                                          superseded, fix the rules, carry on
+  two WRITTEN decisions disagree and
+  the owner has not restated either     → stop and report. This, and only this
+```
+
+Being asked to confirm something already answered is what 「それもふるいわ
+いつまでふるいのずっとやってんだよ うぜえな」「毎回新しくしろよ」 is about
+(OWNER DECISION 2026-08-26). It was asked three times in one day off the
+paragraph above, because that paragraph only had the first half of the rule in
+it. **The newest thing the owner said is the specification.** Older written
+decisions are the record of what it replaced, not a second opinion to weigh
+against it.
+
+Marking and fixing happen in the **same commit** as the new decision. The old
+entry in the log below keeps its words and gains a superseded line — that log
+is a record of what was decided when. **The rules are the opposite: they are
+fixed, and fixing means deleting.** A rule left standing is read, and a rule
+that is read is obeyed.
 
 And the other direction, which is the same rule: **a decision once made is not
 re-opened by a later session because a different shape seems more natural.** If

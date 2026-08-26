@@ -173,7 +173,17 @@ generalise it to anything nearby. A later session reads it before changing
 that area, and does not re-open it because a different shape seems more
 natural. If a decision conflicts with a rule already written down — **stop**,
 report both sides with the code and data affected, and do not resolve it
-yourself. → `docs/FEATURE_RULES.md`
+yourself.
+
+**But stop only when the owner has not spoken.** When the new side is something
+the owner has **just said**, it wins: that is the specification, not a conflict
+to escalate. Mark the old decision superseded, fix the rules it wrote, and carry
+on — in the same commit. Do not ask 「this overturns the decision of the 22nd,
+is that alright?」 about something they replaced this morning; they know what
+they said before, and asking makes them say it twice. 「それもふるいわ いつまで
+ふるいのずっとやってんだよ うぜえな」「毎回新しくしろよ」 Stopping is for two
+WRITTEN decisions that disagree with **neither restated** — that case, and no
+other. → `docs/FEATURE_RULES.md`
 
 **Code is not the specification.** Code says what is happening; `docs/` says
 what should happen; an owner decision settles it. When code and docs disagree,
