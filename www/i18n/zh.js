@@ -304,7 +304,6 @@ defLang('zh', (function(){
       "ob.mail.wait" : "处理中…",
       "ob.mail.to.forgot" : "忘记密码？",
       "ob.signin.or" : "或",
-      "ob.in.later" : "稍后",
       "ob.bar.up" : "注册账号",
       "ob.bar.in" : "登录",
       "ob.who.h" : "你的名字和 ID",

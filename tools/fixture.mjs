@@ -233,7 +233,7 @@ export function obStates(){
     ['the door',                  () => { SET.obback = { r: 'set', a: 'acct' };
                                           OBM.mode = 'in'; return vOb(); }],
     /* And the door as step one of the walk. Nothing else reaches it. */
-    ['signing in, the last step', () => { SET.obback = null; ob.step = OB_IN;
+    ['signing in, the first step', () => { SET.obback = null; ob.step = OB_IN;
                                               ob.mode = ''; OBM.mode = 'in'; return vOb(); }],
     ['characters to borrow',      () => { SET.obback = null; ob.step = OB_DRAW; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],

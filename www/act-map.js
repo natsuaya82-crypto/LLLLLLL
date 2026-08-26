@@ -122,7 +122,10 @@ act('obBorrow', obBorrow);
 act('obDone', obDone);
 act('obName', obName);
 act('obNameLater', obNameLater);
-act('obFinish', obFinish);
+/* obFinish is not here any more. It was the door's "later" button, and the
+   door has no way past it since the anonymous account went
+   (OWNER 2026-08-26). The function is alive and called from three places in
+   onboard.js; what is gone is any screen naming it. */
 act('obPickScript', obPickScript);
 act('obSignInApple', obSignInApple);
 act('obSignInGoogle', obSignInGoogle);
