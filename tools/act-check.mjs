@@ -97,7 +97,7 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(() => {
   const out = { missing: [], dead: [], bad: [], inline: [], screens: 0,
-                seen: { do: [], in: [], kd: [] }, threw: [], routes: [], pages: 0, placed: 0, views: 0 };
+                seen: { do: [], in: [], kd: [] }, threw: [], routes: [], doors: [], pages: 0, placed: 0, views: 0 };
   const seenDo = {}, seenIn = {}, seenKd = {}, named = {};
 
   /* Every name this piece of markup asks for, and whether its arguments are
@@ -332,6 +332,54 @@ const R = await pg.evaluate(() => {
       else out.placed++;
     });
 
+  /* ---- 6. signed out, every route is the door --------------------------
+     OWNER DECISION 2026-08-26: 「ログアウトしたら普通にログイン画面だけ出せば
+     いいやろ。それ以外は表示させるな。ログインしてないのに謎に課金できるし
+     バカやろ。他の画面に行かせるな。ログアウトの時は。」
+
+     Check 5 above asks what a route SHOWS. This asks what it shows to
+     somebody with no account, and it is a different question with a different
+     failure: nothing throws, every screen is correct, and the plans screen
+     takes money from somebody who is not signed in.
+
+     It drives the real render() rather than calling a view, because the
+     decision is render()'s -- appIs() in www/shell.js -- and a check that
+     called vPlans() directly would be asking the screen a question the screen
+     does not answer. Every route in PAGES is asked, so a screen added next
+     month is asked the day it is added; a list of screens to guard is what
+     this replaced.
+
+     The bar at the foot is the second half and not a detail: it is painted
+     outside every view, so no view's HTML could ever carry it, and 「それ以外
+     は表示させるな」 is about the bar too. */
+  {
+    const wasS = SESS, wasR = window.route, wasN = NAV, wasDone = SET.done,
+          wasBack = SET.obback, wasStep = ob.step;
+    const app = document.getElementById('app'), tabs = document.getElementById('tabs');
+    SESS = null;
+    /* Finished, and standing wherever the tour left ob.step -- which is the
+       state a person who signs out is actually in, and the one that used to
+       show them the app. */
+    SET.done = true; SET.obback = null; ob.step = OB_NAME;
+    Object.keys(PAGES).forEach(r => {
+      window.route = r; NAV = [{ r: r }];
+      try { render(); } catch (e) { out.doors.push(r + ' threw: ' + e.message); return; }
+      const html = app.innerHTML;
+      /* The door is the only thing vOb() draws with a `.ob` on it, and the
+         crest is on every face of it. Asked of the PAGE, so a door rebuilt
+         out of different markup still answers. */
+      if (!/class="ob view/.test(html)) out.doors.push(r + ': not the door');
+      else if (!/obcrest/.test(html))   out.doors.push(r + ': the door without its own face');
+      if (tabs && tabs.innerHTML.trim()) out.doors.push(r + ': the bar at the foot is up');
+      /* And no way off it. The chevron is the onboarding's one way back and
+         there is nothing behind a door nobody was sent to. */
+      if (/class="obback"/.test(html)) out.doors.push(r + ': a way back into the app');
+    });
+    SESS = wasS; window.route = wasR; NAV = wasN; SET.done = wasDone;
+    SET.obback = wasBack; ob.step = wasStep;
+    try { render(); } catch (e) { out.doors.push('and back again threw: ' + e.message); }
+  }
+
   out.named = Object.keys(named);
   out.seen.do = Object.keys(seenDo).length;
   out.seen.in = Object.keys(seenIn).length;
@@ -410,6 +458,7 @@ say('an argument that is not the JSON it was written as', R.bad);
 say('JavaScript still inside markup', R.inline);
 say('a screen that threw while being walked', R.threw);
 say('a page with no view, or a view on no page', R.routes);
+say('a screen shown to somebody with no account', R.doors);
 say('a screen with no way in', stranded.map((r) =>
   r + ': in PAGES, has a view, and nothing anywhere goes to it'));
 if (pageErrors.length) fails.push(['the page itself', pageErrors]);
@@ -418,6 +467,7 @@ console.log(`screens walked: ${R.screens}`);
 console.log(`routes reached: ${R.pageNames.length - stranded.length}/${R.pageNames.length}`);
 console.log(`pages: ${R.pages}  views placed ${R.placed}/${R.views}  (vOb is what the app is, not a place in it)`);
 console.log(`names: pressed ${R.seen.do}/${R.have.do}  typed ${R.seen.in}/${R.have.in}  Enter ${R.seen.kd}/${R.have.kd}`);
+console.log(`signed out: ${R.pages} routes asked, every one of them the door, no bar, no way off`);
 
 if (fails.length) {
   console.log('');
@@ -428,4 +478,4 @@ if (fails.length) {
   }
   process.exit(1);
 }
-console.log('\nall six checks pass: every name resolves, everything that resolves is named,\nand no name is written down twice.');
+console.log('\nall seven checks pass: every name resolves, everything that resolves is named,\nno name is written down twice, and signed out there is one screen and no way past it.');

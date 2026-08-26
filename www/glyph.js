@@ -2054,7 +2054,10 @@ function render(){
   /* The tour is the one part of the onboarding that is not a face of vOb():
      it is the app, dimmed, with one thing lit. So it falls through to the
      ordinary render below and puts the grey on at the end of it. */
-  if(!SET.done && !obTourOn()){
+  /* What the app IS is appIs()'s to say, in www/shell.js, and this is the one
+     line that used to hold a second copy of it -- `!SET.done && !obTourOn()`,
+     which had nothing to say about being signed out. */
+  if(appIs()!=='app'){
     /* onboarding is one screen with several faces; moving between them
        animates, tapping something on one of them does not */
     app.setAttribute('data-fresh', (RENDERED==='ob:'+ob.step) ? '0' : '1');
