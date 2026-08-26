@@ -191,16 +191,29 @@ function backAnswer(keep){
   NAV=to.length? to : [{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
 }
-/* The box itself, drawn under the back arrow it is about. */
+/* The box itself, drawn under the back arrow it is about.
+
+   TWO answers and a way out, not three answers. OWNER 2026-08-25:
+   「下書きとして保存しますか？／保存する　破棄する／ポップ自体に❌つければ
+   いいんじゃない？」-- and before that, of the three-row version:
+   「何そのゴミ見みたいなボタン」.
+
+   The third row was the problem. "Cancel" is not a third thing to DO with the
+   post; it is not doing any of them, and putting it in the list made three
+   rows that read as three equal choices when two of them act on the draft and
+   one does not. The ✕ says the same thing in the place every ✕ already says
+   it, and the two rows left are the two answers. */
 function backQHTML(){
-  return '<span class="pmenu" data-pm="1">'+
-    '<span class="pmq">'+esc(t('post.back.q'))+'</span>'+
-    '<button class="pmi"' + DO('backKeep') + '>'+
-      '<span>'+esc(t('post.back.keep'))+'</span></button>'+
-    '<button class="pmi"' + DO('backDrop') + '>'+
-      '<span>'+esc(t('post.back.drop'))+'</span></button>'+
-    '<button class="pmi"' + DO('backStay') + '>'+
-      '<span>'+esc(t('post.back.stay'))+'</span></button>'+
+  return '<span class="bkq">'+
+    '<span class="bkqq">'+esc(t('post.back.q'))+'</span>'+
+    '<span class="bkqr">'+
+      '<button class="bkqb keep"' + DO('backKeep') + '>'+
+        esc(t('post.back.keep'))+'</button>'+
+      '<button class="bkqb drop"' + DO('backDrop') + '>'+
+        esc(t('post.back.drop'))+'</button>'+
+      '</span>'+
+    '<button class="bkqx"' + DO('backStay') +
+      ' aria-label="'+esc(t('post.back.stay'))+'">'+ICON_CROSS+'</button>'+
     '</span>';
 }
 function back(){
@@ -364,13 +377,15 @@ function navTop(count, right){
        Same shape as the ... on a post: the wrapper is what the menu is
        positioned against, so nothing is measured or placed by hand. */
     '<span class="bkw"><button class="back nb"' + DO('back') +
-    ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button>'+
-    (BACKQ? backQHTML() : '')+'</span>'+
+    ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button></span>'+
     (n? '<span class="navn">'+n+'</span>' : '')+
     '<span class="navt">'+esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
     (right||'')+
-    '</div>';
+    '</div>'+
+    /* Under the bar and across the page, not hanging off the arrow. It is
+       about leaving this screen, which is what the whole bar is about. */
+    (BACKQ? backQHTML() : '');
 }
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens

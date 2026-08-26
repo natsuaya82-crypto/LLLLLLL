@@ -161,20 +161,20 @@ const R = await pg.evaluate(() => {
   write();
   back();                                    /* opens the box */
   asked = BACKQ ? 1 : 0;
-  backStay();                                /* キャンセル */
-  out.said.push('and answering cancel: asked ' + asked + ', drafts ' + DRAFTS.length +
+  backStay();                                /* ✕ ── 書き続ける */
+  out.said.push('and pressing the cross: asked ' + asked + ', drafts ' + DRAFTS.length +
     ', still on ' + JSON.stringify(here()));
   if (asked !== 1)
-    out.fails.push('answering cancel: the box opened ' + asked + ' time(s), and it has to open exactly once');
+    out.fails.push('pressing the cross: the box opened ' + asked + ' time(s), and it has to open exactly once');
   if (BACKQ)
-    out.fails.push('answering cancel left the box open');
+    out.fails.push('pressing the cross left the box open');
   if (DRAFTS.length !== 0)
-    out.fails.push('answering cancel put ' + DRAFTS.length + ' thing(s) in the drafts');
+    out.fails.push('pressing the cross put ' + DRAFTS.length + ' thing(s) in the drafts');
   if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
-    out.fails.push('answering cancel left the composer anyway -- it is now on ' +
+    out.fails.push('pressing the cross left the composer anyway -- it is now on ' +
       JSON.stringify(here()));
   if (PW.ln !== LN)
-    out.fails.push('answering cancel threw away the line: ' + JSON.stringify(PW.ln));
+    out.fails.push('pressing the cross threw away the line: ' + JSON.stringify(PW.ln));
 
   /* ---- no: not kept, and not left in the composer either -----------------
      OWNER DECISION 2026-08-25:「いいえは保存せず1画面戻る」. Nothing goes to

@@ -615,6 +615,17 @@ export function halfDone(){
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */
+    /* Backing out of a half-written post, with the question up. BACKQ is 0
+       everywhere else, so `.bkq` and the two answers are on no screen without
+       this -- press reported five classes and act-check three names, all of
+       them real and all of them this one state.
+
+       It is set rather than reached by pressing: back() would ALSO run, and a
+       face is a screen rather than a sequence. What the three answers DO is
+       draft-check's, over the real back(). */
+    ['a half-written post, asked about on the way out', () => {
+        PW = pwBlank(); openPost(); pwSetLn('kano mos'); pwSetMn('a hill');
+        BACKQ = 1; const h = vForm(); BACKQ = 0; PW = pwBlank(); return h; }],
     ['the composer, for somebody stopped', () => { NET_BANNED = 'spam';
         PW = pwBlank(); openPost(); const h = vForm();
         NET_BANNED = ''; PW = pwBlank(); return h; }],
