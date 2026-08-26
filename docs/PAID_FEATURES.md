@@ -172,26 +172,48 @@ somebody taps it. Without that the table is **ten times worse** — 8,000 become
 800 — so anything that puts a full-size picture in a feed row is not a
 performance question, it is the plan.
 
-**What the table does NOT include, and it is new: 「常に同期」.** It was written
-when the language went up once, on launch. Two things about how it goes up
-decide whether this stays 8,000 or falls to a quarter of it:
+**What 「常に同期」 does and does not mean, settled 2026-08-26:** 「タイムライン
+は開くたび / 言語はそういうわけじゃない」. **The two halves are on different
+clocks and only one of them is per-open.**
 
-- `netSlices()` asks for `select=kind,body,no` — **every slice's whole body,
-  on every sync.** A 100 KB language re-read forty times in a day is 4 MB a day
-  per person, ~120 MB a month. The whole timeline, thumbnails and all, is about
-  31 MB a month per person at the 8,000 line. **So a naive 「always」 makes the
-  language four times the cost of everything else put together.**
-- The fix is already half-built and costs nothing: **`no` is a version counter**
-  that goes up on every write (`netSlicePut`, and `schema.sql` says so). Ask
-  `select=kind,no` first — a few dozen bytes — and fetch `body` only for the
-  slices whose number moved. An idle sync then costs nothing at all, which is
-  what almost every sync is.
+**This file said the opposite yesterday and it was wrong.** It read 「常に同期」
+as covering the language too, and warned that re-reading every slice's body on
+every sync would make the language four times the cost of the whole timeline.
+The arithmetic was right; **the premise was not.** The language is not on the
+per-open clock, so the table above stands at 8,000 and the language is not what
+threatens it.
 
-**This is engineering, not a decision.** Nobody here should pick the interval,
-the price or the tier. What this section is for is so that the person who
-writes 「常に同期」 knows that the interval is not the expensive part — **asking
-for bodies nobody needs is** — and that the counter to avoid it is already in
-the schema.
+**The timeline half is the one to watch, and the code does MORE than 「開くたび」.**
+`vFeed()` calls `snsPull()` **every time it runs** — its own comment in
+`www/post.js` says so — and `render()` rebuilds the whole screen on any state
+change. So a like, a follow, a toast, a tab switch back: each is another
+`netFeed()`, which is `NET_PAGE=50` posts with their whole `body` on it,
+**`ink` included** — the frozen stroke shapes, which is the biggest field a
+post has. `snsPulling` only stops a second ask while one is still out; it does
+not stop the next one.
+
+The photographs are the cheap half of that, and deliberately: they are Storage
+URLs on the post rather than bytes in the JSON, so the webview caches them and
+a re-render redraws the same picture without asking for it again. **It is the
+JSON that repeats.**
+
+So the honest form of the number: **8,000 daily openers if a visit is a pull,
+and fewer in proportion to how many times a visit re-renders.** Nobody has
+measured that multiplier on a device. It is the single cheapest thing to
+measure and the single most likely reason the table is optimistic.
+
+**None of this is a decision to make here.** Not the interval, not the tier,
+not the price. What this section is for is that the person who implements
+「開くたび」 knows the app currently does it per RENDER, and that the expensive
+part of a pull is the fifty bodies, not the pictures.
+
+**And for the language half, when it is written:** `no` is a version counter
+that goes up on every write (`netSlicePut`, and `supabase/schema.sql` says so),
+and `netSlices()` currently asks `select=kind,body,no` — every body, every
+time. Asking `select=kind,no` first and fetching bodies only for the slices
+whose number moved makes a sync that found nothing cost almost nothing. That
+matters less now that the language is off the per-open clock, but it is the
+difference between a cheap sync and an expensive one whenever it does run.
 
 **Answered 2026-08-26: 「supabaseのエンタープライズで対応する予定」.** The bill
 scaling with people rather than payers is not a reason to narrow the scope, and
