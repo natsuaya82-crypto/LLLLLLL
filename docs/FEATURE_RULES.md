@@ -185,6 +185,59 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-26 (同日、あと。上の「サーバーの範囲」への三つの答え)
+- Area: アカウント削除は全部消える / 同期は常に / 費用はエンタープライズ
+- Decision:
+
+  オーナーの言葉のまま。
+
+  ```
+  アカウント消したら全部消えるに決まってる
+  常に同期
+  supabaseのエンタープライズで対応する予定
+  ```
+
+  1. **アカウントを消したら全部消える。電話の中も含む。**
+     前日の「アカウント消したら残るわけがないあほだろ」をサーバの話と読んだのは
+     **狭すぎた。**「全部」である。
+  2. **同期は常に。** 前の項目で「全部だって」の一語からは書き起こさない、と
+     open にしていたものが、これで閉じた。**常に同期する。**
+  3. **費用は Supabase のエンタープライズで対応する予定。**
+     「人数に比例する」という問題は残るが、**それを飲む前提で範囲が決まっている。**
+     費用を理由に範囲を狭める提案はもう要らない。
+
+- Reason: 1 について ──「決まってる」。消したいと言った人に何かが残っているのは
+  削除ではない、という一行がそのまま理由である。**これは `docs/DATA_SAFETY.md` の
+  絶対規則と衝突しない**（下）。
+- Affected features: `netDropMe()`（`www/net.js`）、`wipeAll()`（`www/settings.js`）、
+  `netLangSync()` の撃ち方（`www/boot.js`）。
+- Affected data: **人が作ったもの全部**。ただし本人が消せと言った場合に限る。
+- Affected docs: `docs/FEATURES.md` § 8、`docs/DATA_MODEL.md`、
+  `docs/PAID_FEATURES.md`、`docs/DATA_SAFETY.md`（私の持ち物ではない ── 報告に書いた）。
+- Implementation status: **三つとも未実装。**
+  削除は `netDropMe()` がサーバだけを消す。電話を消すのは `wipeAll()` という
+  **別のボタン**で、押されていない。同期は起動時一回（`www/boot.js`）。
+
+#### `DATA_SAFETY.md` と衝突しないこと。ここが大事
+
+`CLAUDE.md` の絶対規則は「Nothing a person made is removed because the current
+shape does not need it, because it is an old format, to save space, or because
+something was restructured」であり、**理由を四つ挙げて禁じている。**
+「本人が消せと言った」はその四つのどれでもない。禁じられているのは
+**アプリが勝手に決めること**であって、人が自分のものを捨てることではない。
+
+**ただし、これは今まで別々だった二つのボタンが一つになるという意味である。**
+`docs/FEATURES.md` § 8 は 2026-08-21 に「**The language on the phone is not
+touched.** Erasing the phone is the other button」と決めて、そう書いてある。
+今日の決定はそれを上書きする。§ 8 の側にも書いた。
+
+**そして順番が要る。** 消す順を間違えると「消えたと言われたのに残っている」か
+「消したいと言っていないものまで消えた」のどちらかになる。順番を決めるのは
+実装する人の仕事だが、**確認は一度だけにすること** ── 二度訊くのは、一度目に
+何を訊いたのか分からなくなるという意味である。`wipeAll()` は既に iOS 自身の
+ダイアログで一度訊いている。
+
+### Decision
 - Date: 2026-08-26
 - Area: サーバーの範囲 ── 基本は全部サーバー。言語周りだけ file をバックアップに使う
 - Decision:
