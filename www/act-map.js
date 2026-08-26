@@ -233,7 +233,6 @@ act('wldArtAdd', wldArtAdd);
 act('wldOvAdd', wldOvAdd);
 act('wldOvDel', wldOvDel);
 act('setWldHide', setWldHide);
-act('setWldDl', setWldDl);
 /* the same two, asked of one section of the article rather than of the page */
 act('setWldSecDl', setWldSecDl);
 act('abToggle', abToggle);

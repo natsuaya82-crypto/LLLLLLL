@@ -436,6 +436,217 @@ const R = await pg.evaluate(async () => {
                'written by nobody');
   SESS = wasSess;
 
+  /* ---- 11b. the day does not follow the + button ---------------------
+     PW outlives the screen on purpose -- going to look a word up must not
+     throw away what was typed -- so openPost('new') has to drop what made
+     the composer NOT an ordinary post, by name. `to` was on that list and
+     `ed` was added to it; `pr` was never on it, so opening the day's
+     sentence, leaving, and pressing + an hour later came back to the day.
+     「お題じゃないところ+から入ったのに戻ってまた投稿しようとするとそこになる」
+
+     mn goes with pr and the LINE stays, which is not symmetry for its own
+     sake: under `pr` the meaning field is readonly (pwSetMn returns early),
+     so that text is daySay() and nobody typed it -- while the line is the
+     one thing somebody did type, and this button is not a delete. */
+  {
+    const wasDay = DAY;
+    DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+            says: 'It is unbearably hot today.' };
+    PW = pwBlank();
+    openPost('day');
+    if (PW.pr !== 7 || !PW.mn)
+      fails.push('the composer did not take the day at all (pr=' + PW.pr +
+                 ', mn=' + JSON.stringify(PW.mn) + '), so nothing below this ' +
+                 'is a test of anything');
+    PW.ln = 'kano tir';                       /* somebody types their line */
+    openPost('new');                          /* an hour later, the + button */
+    if (PW.pr)
+      fails.push('pressing + came back to the day: PW.pr is still ' + PW.pr +
+                 '. The + button is an ordinary post every time');
+    if (PW.mn)
+      fails.push('pressing + left the day’s words in the meaning (' +
+                 JSON.stringify(PW.mn) + '). Under `pr` that field is readonly, ' +
+                 'so nobody typed it and it is not theirs to keep');
+    if (PW.ln !== 'kano tir')
+      fails.push('pressing + threw away the line somebody typed (' +
+                 JSON.stringify(PW.ln) + '). Dropping the day is not a delete');
+    DAY = wasDay;
+    PW = pwBlank();
+  }
+
+  /* ---- 11c. the drafts control is on the keyboard, beside the mic -----
+     Neither of the two faces had been deleted, and neither could be found on
+     a phone: they were drawn in the top bar, which is 390 points wide and
+     already holds a back arrow, a screen name and a filled button, so the
+     control was shown only when it had something to say -- and on a first
+     post it has nothing. Correct, and invisible.
+     「マイクの横に下書きの保存されてるボタン出てこないし」
+     「下書き1とか下書きに保存するみたいなボタン無くしたんだけど？」
+
+     Asked of pwAddHTML(), which IS the row over the keyboard, rather than of
+     the whole screen -- the screen would say yes to it sitting anywhere. */
+  {
+    const wasDrafts = DRAFTS.slice();
+    const wasPW = PW;
+
+    PW = pwBlank(); PW.ln = 'kano tir';        /* something to save */
+    const typed = pwAddHTML();
+    if (typed.indexOf('draftKeep') < 0)
+      fails.push('with a line typed, the row over the keyboard offers no way ' +
+                 'to save a draft: pwAddHTML() does not name draftKeep');
+
+    PW = pwBlank();                            /* nothing typed, none saved */
+    DRAFTS.length = 0;
+    const bare = pwAddHTML();
+    if (bare.indexOf('draftKeep') >= 0 || bare.indexOf('drafts') >= 0)
+      fails.push('with nothing typed and no drafts saved, the row still draws ' +
+                 'a drafts control. There is nothing to save and nowhere to go');
+
+    DRAFTS.push({ at: 1, ln: 'kano', mn: '', to: '', pr: 0, pics: [] });
+    const saved = pwAddHTML();
+    if (saved.indexOf('drafts') < 0)
+      fails.push('a draft is saved and the row over the keyboard does not say ' +
+                 'so, so the only way back to it is a screen nobody can reach');
+
+    /* And it is not ALSO in the top bar, which is where it could not be seen.
+       openPost() builds that bar; a control in both places is two controls. */
+    openPost('new');
+    const bar = (typeof FORM !== 'undefined' && FORM) ? String(FORM.right || '') : '';
+    if (bar.indexOf('draftKeep') >= 0 || bar.indexOf('drafts') >= 0)
+      fails.push('the drafts control is in the top bar as well as the row: ' +
+                 'the same button twice, one of them where nobody found it');
+
+    DRAFTS.length = 0;
+    for (const d of wasDrafts) DRAFTS.push(d);
+    PW = wasPW;
+  }
+
+  /* ---- 11d. on a reply, the person's own side still fits two fields ---
+     The composer is laid out to --vvmin, which is the smallest the visible
+     part has been -- that is, the screen with the keyboard up. A reply puts
+     two more things in that box: who you are answering, and the post itself.
+     What gave way was the part somebody is writing in.
+     「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」
+
+     Measured rather than read. --vvmin is set here to a real one: 300 is an
+     ordinary Japanese keyboard on an ordinary phone, and it is the number the
+     rule above this one in index.html was already written against. */
+  {
+    const wasPW = PW;
+    const root = document.documentElement;
+    const hadMin = root.style.getPropertyValue('--vvmin');
+    root.style.setProperty('--vvmin', '300px');
+
+    const other = POSTS.filter(q => q.id !== p.id)[0] || p;
+    PW = pwBlank(); PW.to = other.id;
+    openPost();
+    render();
+    await new Promise(r => requestAnimationFrame(() => r()));
+
+    const scroll = document.querySelector('.view.fit .pwscroll');
+    const quote  = document.querySelector('.view.fit .pwqs');
+    if (!scroll || !quote) {
+      fails.push('the reply composer drew no quote or no writing area at all ' +
+                 '(scroll=' + !!scroll + ', quote=' + !!quote + ')');
+    } else {
+      const h = Math.round(scroll.getBoundingClientRect().height);
+      if (h < 88)
+        fails.push('the reply composer leaves ' + h + 'px for what the person ' +
+                   'is writing. There are two fields there -- the line and the ' +
+                   'meaning -- so one 44pt row is not enough by construction');
+      const ln = document.getElementById('pw-ln');
+      if (ln) {
+        const lb = ln.getBoundingClientRect(), sb = scroll.getBoundingClientRect();
+        if (lb.height < 1 || lb.bottom > sb.bottom + 1)
+          fails.push('the line being typed into is cut off by the box it is in ' +
+                     '(' + Math.round(lb.bottom - sb.bottom) + 'px past the ' +
+                     'bottom): the field somebody is looking at is the one that ' +
+                     'gave way');
+      }
+    }
+    if (hadMin) root.style.setProperty('--vvmin', hadMin);
+    else root.style.removeProperty('--vvmin');
+    PW = wasPW;
+  }
+
+  /* ---- 11e. the face on a post is the way to whoever wears it ---------
+     「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
+     飛ぶようにしてよ。自分ならプロフィールのページ。」
+
+     The search row has done this since it was written; the timeline had not,
+     so the same face was a door in one list and scenery in the other.
+
+     Asked of the ROW, and asked per post rather than as a count: the counts
+     agreeing while the handles are shifted by one is the only way this breaks
+     in a way nobody would see -- every avatar opens somebody, just not the
+     one under the thumb. */
+  {
+    const mine   = { id: 901, mine: true,  hd: 'me',    who: 'Me',    ln: 'a' };
+    const theirs = { id: 902, mine: false, hd: 'shiro', who: 'Shiro', ln: 'a' };
+    const older  = { id: 903, mine: false, hd: '',      who: 'Old',   ln: 'a' };
+
+    const rMine = postRow(mine), rTheirs = postRow(theirs), rOld = postRow(older);
+
+    /* Built with DO() rather than grepped for a word: the handle is on the row
+       in three other places, so 'shiro' appearing somewhere is not the face
+       being a door -- which is exactly how the first version of this passed
+       with the bug in. */
+    const doorTo = (h) => '<button class="pav pavb"' + DO('go', ['profile', h]);
+    if (rTheirs.indexOf(doorTo('shiro')) < 0)
+      fails.push('somebody else’s face on the timeline is not a way to them: ' +
+                 'the only place a person can be opened from is the search');
+    if (rMine.indexOf('<button class="pav pavb"' + DO('goTab', ['profile'])) < 0)
+      fails.push('your own face on the timeline does not go to your profile');
+    if (rMine.indexOf(doorTo('me')) >= 0)
+      fails.push('your own face is opened as if you were somebody else');
+    if (rOld.indexOf('<button class="pav') >= 0)
+      fails.push('a post with no handle on it draws a face you can press, and ' +
+                 'it opens nobody. Everything written before posts carried a ' +
+                 'handle is in that state');
+  }
+
+  /* ---- 11f. backing out asks about anything somebody typed ------------
+     The latch on back() asked pwHas(), which is "is there a post here" -- the
+     question the send button needs. A meaning on its own is not a post, so a
+     meaning typed on its own was thrown away silently on the way out.
+     「何か入ってる時は下書きに保存するかどうかをやるんじゃないの？」
+
+     Driven: the real back() is pressed on the real composer, and what is
+     asked is whether the arrow was taken over. */
+  {
+    const wasPW = PW, wasNav = NAV.slice(), wasQ = BACKQ;
+    const asks = () => {
+      BACKQ = 0;
+      openPost();
+      back();
+      const q = !!BACKQ;
+      BACKQ = 0;
+      return q;
+    };
+
+    PW = pwBlank(); PW.mn = 'the mountain is seen';
+    if (!asks())
+      fails.push('a meaning typed on its own is thrown away by the back arrow ' +
+                 'without asking. It is somebody’s words in a field they typed ' +
+                 'them into');
+
+    PW = pwBlank(); PW.mn = 'It is unbearably hot today.'; PW.pr = 7;
+    if (asks())
+      fails.push('backing out of the day’s sentence asks whether to keep words ' +
+                 'nobody wrote: under PW.pr the meaning is readonly and holds ' +
+                 'daySay(). That teaches somebody to press No without reading');
+
+    PW = pwBlank();
+    if (asks())
+      fails.push('an empty composer asks on the way out');
+
+    PW = pwBlank(); PW.ln = 'kano tir';
+    if (!asks())
+      fails.push('a line typed is thrown away by the back arrow without asking');
+
+    BACKQ = wasQ; NAV = wasNav; PW = wasPW;
+  }
+
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
      A row shows a picture a few hundred pixels across and was being sent one
      nine hundred across. Nothing looked wrong and nothing could: the browser

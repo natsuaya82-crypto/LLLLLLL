@@ -807,9 +807,15 @@ function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
    `dl` is absent by default and absent means no. The page's own flag is the
    other way round -- absent is public -- because a page is a thing to be
    looked at; this hands over months of somebody's drawing, and the app does
-   not decide that for them. */
+   not decide that for them.
+
+   Nothing SETS it any more, and that is the whole of it being here: the one
+   switch that wrote it was a second copy of a switch this page already has,
+   on the settings screen, and it went 2026-08-26. What is left is the answer
+   a section falls back to when nobody has answered for that section --
+   `wldSecDl` below. Every value already stored under `dl` is still stored and
+   still read. */
 function wldDl(){ return !!world().dl; }
-function setWldDl(v){ world().dl=!!v; saveWld(); render(); }
 /* ---- and the same two questions, asked of one SECTION of the page -------
    「キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
    DL可能になって他の人が使えるようになるイメージ」

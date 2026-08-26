@@ -979,6 +979,16 @@ that failed the alternative it exists to push people towards would be read as
 `www/*.js` is in no stylesheet, so nothing above could ever see it; zero is the
 only number that closes that hole.
 
+**The plans page's two term buttons are a box, and they are the only thing that
+is.** 「11は、角丸でいいから囲わないとボタンを押してるかわからん」OWNER
+2026-08-26. The month and the year are the only thing on that page anybody
+presses, and with nothing round them they read as two prices printed side by
+side — somebody pressing one cannot tell they pressed. That is the reason and
+the whole of it: it is not permission for a corner anywhere else, and the
+baseline is what holds it to the one pair (`.btn.plterm | border` and
+`.btn.plterm | border-radius`, and nothing else). `.ghost` is off those two
+buttons for the same reason — it is the class that means "not a box".
+
 **What it does not hold, said out loud so silence is not read as approval:**
 "a filled panel" is the third thing the rule names. A background colour is not a
 panel — the bar, the sheet and the body all have one and always did — and no

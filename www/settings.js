@@ -135,16 +135,13 @@ function vSettings(){
         '<span class="sl">'+esc(t(x.k))+'</span>'+
         '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
     }).join('')+
-    /* And, for the one account that answers them, the reports. It is not one
-       of the six questions this list asks and it is not everybody's row, so
-       it sits under them rather than among them. NET_STAFF is false until the
-       server has said otherwise, which is the right way round: the row that
-       is missing is the row nobody could have used anyway. */
-    (NET_STAFF
-      ? '<button class="set"' + DO('goMod') + '>'+
-          '<span class="sl">'+esc(t('mod.title'))+'</span>'+
-          '<span class="sv">'+ICON_GO+'</span></button>'
-      : '')+
+    /* The reports do NOT hang here. 「設定の通報ボタン消せ」OWNER 2026-08-26.
+
+       They are still answered -- vAdmin() draws the same queue with the same
+       modRow(), and the way in is the seven presses on the heading. This row
+       was the second door to one screen, and a staff row in a list of six
+       ordinary questions is also the one thing on this page that tells
+       whoever is holding the phone that there is a staff at all. */
     '</div></div>';
 }
 /* What each room answers, said on its door, so most questions are answered
@@ -208,24 +205,20 @@ function vSet(){
          every time it was opened. A row like the rows above it, because it is
          one -- it arrived here as a rail of five tabs among a column of rows,
          which is the sort of thing that looks wrong before it is read. */
-      '<button class="set"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
+      /* The last row of this room, so it carries no line under it. It became
+         the last one when the two switches below it went: whether the page is
+         public, and whether it can be downloaded. Both are on the page's own
+         editing face now -- the public one is the same `setWldHide`, and the
+         download one is asked of each SECTION rather than of the whole page
+         (`setWldSecDl`). 「ここの言語ページを公開すると単語と文字 dl できるようにするは
+         いらない。wiki でできるから。」OWNER 2026-08-26.
+
+         `world().dl` is still there and still read: it is what a section that
+         has never been touched falls back to (`wldSecDl`). Nothing was
+         removed from anybody's file -- what went is the second place to set
+         it, which is the thing that was wrong. */
+      '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
-      /* Whether this language has a page anybody else can open. Public is the
-         absence of the flag, which is the default the owner chose and the one
-         no migration can get wrong. Nothing reads it off this phone yet --
-         there is one profile here and it is this person's -- so what this
-         switch does today is take the row off their own profile and say so.
-         「これは設定から公開非公開もかのう」 */
-      '<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
-      '<span class="sl">'+t('wld.public')+'</span>'+
-      swtHTML(!wldHidden())+'</button>'+
-      /* And whether it can be taken away, which is a different question and
-         only asked of a page anybody can open. What both of them mean is
-         behind the `?` in the bar, which is where an explanation goes. */
-      (wldHidden()? '' :
-        '<button class="set" style="border-bottom:none"' + DO('setWldDl', [!wldDl()]) + '>'+
-        '<span class="sl">'+t('wld.dl')+'</span>'+
-        swtHTML(wldDl())+'</button>')+
       '';
   } else if(id==='pw'){
     /* Two fields and a button. The same shape as the door's, because it is
@@ -516,7 +509,18 @@ function planPage(p){
    not those.
 
    Free has the same row and no buttons in it: it costs nothing, and the row
-   is what keeps the five lines below it from jumping as pages slide. */
+   is what keeps the five lines below it from jumping as pages slide.
+
+   `.ghost` is NOT on these two. It is the class that means "not a box"
+   ── 「文字書いて四角で囲ったみたいなボタン全部やめてくれ」 ── and these two
+   are the one place in the app the owner asked for the box back:
+   「11は、角丸でいいから囲わないとボタンを押してるかわからん」OWNER 2026-08-26.
+   Nothing else may take that as permission;規則18 in CLAUDE.md carries the
+   exception and tools/box-baseline.txt is what holds it to this one pair.
+
+   ⚠ The box itself is a rule in www/index.html and is NOT in this branch --
+   see docs/reports/plan-2026-08-26.md. Until it lands these read exactly as
+   they did, because `.ghost` and `.btn` are the same declarations today. */
 function planPrice(p, free){
   function term(yr){
     var cost=storeCost(p.id, yr) || t(yr? p.yr : p.mo);
@@ -525,7 +529,7 @@ function planPrice(p, free){
       '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
       ((yr && off)? '<span class="plsave">'+esc(t('plan.off', off))+'</span>' : '');
     return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
-               : '<button class="btn ghost plterm"' + DO('setPlan', [p.id, yr]) +
+               : '<button class="btn plterm"' + DO('setPlan', [p.id, yr]) +
                  '>'+body+'</button>';
   }
   return '<div class="plterms">'+term(false)+term(true)+'</div>';
