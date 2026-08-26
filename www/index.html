@@ -1687,15 +1687,6 @@ a.set{text-decoration:none}
 /* The second question is asked OF the row above it, so it is set in from the
    left and quieter. Eight rows all reading 「DL可」 down a flat list said
    nothing about which section each belonged to. */
-/* A section's row: what it is called, and the two arrows that move it.
-   Three buttons side by side rather than one inside another. The row keeps
-   the hairline; the name button carries the row's height so a row with
-   arrows and a row without are the same one. */
-.wsrow{display:flex;align-items:center;width:100%;border-bottom:1px solid var(--line)}
-.wsnm{display:flex;align-items:center;gap:12px;flex:1 1 auto;min-height:44px;
-      padding:15px 2px;background:none;border:0;text-align:left;font-family:inherit;
-      font-size:.95rem;line-height:1.25;color:var(--tx)}
-.wsnm .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
 /* A row of the overview being written: its name over what it says, the way
    the article shows them, with the two arrows and the way to take the row
    out beside them. */
@@ -1708,8 +1699,8 @@ a.set{text-decoration:none}
 .ovk{flex:1 1 auto;min-width:0}
 .ovx{flex:0 0 auto;width:44px;height:44px;display:flex;align-items:center;
      justify-content:center;background:none;border:0;color:var(--txm)}
-.ovrow.lift, .wsrow.lift{opacity:.9}
-.ovlist.moving, .wslist.moving{touch-action:none}
+.ovrow.lift{opacity:.9}
+.ovlist.moving{touch-action:none}
 /* The letters, in an article rather than in the alphabet: smaller, denser,
    and with neither the speaker nor the reading under them --
    「文字は音なくていいからもっと小さく並べて」. The corner on the tile itself
@@ -1734,7 +1725,6 @@ a.set{text-decoration:none}
 .abfd{padding:8px 0}
 .abfk{color:var(--txm);font-size:.85rem;line-height:1.4}
 .abfv{color:var(--tx);font-size:1rem;line-height:1.5;word-break:break-word;margin-top:2px}
-.abtlead{margin-top:12px}
 /* One answered stage per line, so a list of them is a list and not a
    paragraph that happens to have gaps in it. */
 .abtline{margin-top:6px}
