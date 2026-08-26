@@ -252,6 +252,12 @@ act('wipeAll', wipeAll);
 actIn('impSetRole', impSetRole);
 actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
+/* The two the profile grew. They could not be written down before
+   claude/me2 came in: this file registers the FUNCTION and not its name, so a
+   line here pointing at something www/me.js does not have yet stops the app on
+   load -- which is the whole reason it is written this way. */
+actIn('meSetLink', meSetLink);
+actIn('meSetLoc', meSetLoc);
 actIn('meSetBio', meSetBio);
 actIn('meSetPic', meSetPic);
 actIn('ntSetQ', ntSetQ);
