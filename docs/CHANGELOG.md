@@ -15,6 +15,36 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### プランの月／年のボタンが囲われます ── 規則18 の、ただ一つの例外
+
+```
+プランのボタンは枠で囲え。4.99/月は一列にしろ
+11は、角丸でいいから囲わないとボタンを押してるかわからん   OWNER 2026-08-26
+```
+
+`CLAUDE.md` の **NO ROUNDED BOX**「角丸やめろ」を、この二つのボタンについてだけ
+オーナーが上書きしました。矛盾として止める案件ではありません ──
+`CLAUDE.md`「But stop only when the owner has not spoken」。規則18 に例外を
+書き足しました（**古い文はそのまま。例外を足しただけ**）。
+
+理由は一点です: プランの画面で人が押すのは月と年の二つだけで、囲いが無いと
+値段が二つ並べて刷ってあるようにしか見えず、押したことが分かりません。
+**他のどこにも広がりません。**
+
+この枝に入ったのは `www/settings.js` の側だけです ── `planPrice()` の
+`class="btn ghost plterm"` から `ghost` を外しました。`.ghost` は「囲いを外す」
+という意味のクラスで、この二つはその逆になったからです。**今日は見た目が一切
+変わりません**: `.btn` と `.btn.ghost` は今この木では同じ宣言です
+（`index.html:2299` と `:2311`、`.btn` はもう箱ではありません）。
+
+⚠ **囲い自体（CSS と `tools/box-baseline.txt` の二行）はこの枝に入っていません。**
+CSS は `www/index.html` にあり、それは今日ほかのセッションのものです。
+そのまま貼れる形で `docs/reports/plan-2026-08-26.md` に置きました。
+**CSS と baseline は同じコミットで入れること** ── baseline の行だけ先に入れると
+「a baseline line matching nothing」で `box-check` が逆向きに赤くなります。
+
+- 保存されるものは何も変わりません。移行なし、削除なし。値段の扱いも変わりません。
+
 ### 通報の扉が、設定から管理画面に移ります
 
 ```

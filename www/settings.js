@@ -509,7 +509,18 @@ function planPage(p){
    not those.
 
    Free has the same row and no buttons in it: it costs nothing, and the row
-   is what keeps the five lines below it from jumping as pages slide. */
+   is what keeps the five lines below it from jumping as pages slide.
+
+   `.ghost` is NOT on these two. It is the class that means "not a box"
+   ── 「文字書いて四角で囲ったみたいなボタン全部やめてくれ」 ── and these two
+   are the one place in the app the owner asked for the box back:
+   「11は、角丸でいいから囲わないとボタンを押してるかわからん」OWNER 2026-08-26.
+   Nothing else may take that as permission;規則18 in CLAUDE.md carries the
+   exception and tools/box-baseline.txt is what holds it to this one pair.
+
+   ⚠ The box itself is a rule in www/index.html and is NOT in this branch --
+   see docs/reports/plan-2026-08-26.md. Until it lands these read exactly as
+   they did, because `.ghost` and `.btn` are the same declarations today. */
 function planPrice(p, free){
   function term(yr){
     var cost=storeCost(p.id, yr) || t(yr? p.yr : p.mo);
@@ -518,7 +529,7 @@ function planPrice(p, free){
       '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
       ((yr && off)? '<span class="plsave">'+esc(t('plan.off', off))+'</span>' : '');
     return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
-               : '<button class="btn ghost plterm"' + DO('setPlan', [p.id, yr]) +
+               : '<button class="btn plterm"' + DO('setPlan', [p.id, yr]) +
                  '>'+body+'</button>';
   }
   return '<div class="plterms">'+term(false)+term(true)+'</div>';
