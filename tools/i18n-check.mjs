@@ -382,6 +382,15 @@ const R = await pg.evaluate(() => {
   langName = 'Aelinor';
   comp = ['Aelin','Silvar']; compSel = 0;
   cands = [{q:['a','e','l','o','r'], on:true}, {q:['n','e','\u03b8','i','s'], on:false}];
+  /* The language's article, so the mirror has a section to open. Without one
+     wldart is walked with a null argument only, the screen is the gone box,
+     and the two placeholders on it are never rendered in any language --
+     which is exactly the hard-coded line this check exists to catch. Two,
+     the way tools/fixture.mjs seeds them: one written, one still blank. */
+  WLD = {use:'story', where:'a valley', who:'two families',
+         note:'nobody outside the valley speaks it',
+         arts:[{id:'A1', t:'The valley', b:'Two families have farmed it.'},
+               {id:'A2', t:'', b:''}]};
 
   /* Ask the page which views exist rather than keeping a list here — a view
      added later is covered without anyone remembering to come back. vOb is
@@ -413,6 +422,7 @@ const R = await pg.evaluate(() => {
     r === 'fm' ? ['tira'] :
     r === 'thread' ? [null].concat(postAll().map(x => x.id)) :
     r === 'photo' ? [null].concat(postAll().filter(x => postPics(x).length).map(x => x.id + ':0')) :
+    r === 'wldart' ? [null].concat(wldArts().map(x => x.id)) :
     [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
@@ -578,6 +588,13 @@ const R = await pg.evaluate(() => {
   });
   LINES.forEach(l => { learn(l.mn); l.ws.forEach(learnWord); });
   learn(langName);
+  /* What somebody wrote ABOUT their language: where it is spoken, who speaks
+     it, the note, and every section's title and body. All of it is theirs,
+     none of it is copy -- an article says the same thing in all ten because
+     it is the same article. Read off the world rather than listed by name,
+     so a field or a section added there is covered the day it is added. */
+  ['where','who','note'].forEach(k => learn(world()[k] || ''));
+  wldArts().forEach(a => { learn(a.t || ''); learn(a.b || ''); });
   cands.forEach(c => { try { learnSeq(c.q); } catch (e) {} });
   UI_LANGS.forEach(c => { learn(LANG[c].label); learn(LANG[c].rdName); });
   /* Where a sound is heard, which is words in other people's languages ON

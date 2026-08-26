@@ -32,7 +32,8 @@
     "gramlang": "node tools/gramlang-check.mjs",
     "kb": "node tools/kb-check.mjs",
     "shape": "node tools/shape-check.mjs",
-    "sheet": "node tools/sheet-check.mjs"
+    "sheet": "node tools/sheet-check.mjs",
+    "draft": "node tools/draft-check.mjs"
   },
   "keywords": [],
   "author": "",

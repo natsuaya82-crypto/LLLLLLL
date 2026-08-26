@@ -47,6 +47,7 @@ function viewReset(){
   pfTab='posts';                       /* which list the profile shows */
   snsTab='rec';                        /* and which timeline the feed shows */
   PMENU='';                            /* the ... open beside a post */
+  BACKQ=0;                             /* and the one hanging off the back arrow */
   WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   kbNew1=0;                            /* the width waiting to be put on a keyboard */
@@ -115,7 +116,109 @@ function go(r, a){
   }
   NAV.push({r:r, a:a}); route=r; render(); window.scrollTo(0,0);
 }
+/* ---- a post half written, on the way out ------------------------------
+   OWNER DECISION 2026-08-25: 「戻るをした時は確認ダイアログを入れて下書きに
+   入れて欲しい」「もう一回開く時には下書きから選べば出てくるだけで、残って
+   ほしくない」. So backing out of the composer asks; yes puts what is there
+   into the drafts and leaves the composer EMPTY. The post is not lost and it
+   is not still sitting in the composer either -- it is in the drafts, which
+   is a place you go and choose from.
+
+   The asking is HERE and not at the top of back() unconditionally, because
+   DO('back') is not only the back button. The photograph editor's Done is
+   back() as well -- www/post.js:1222 and 1228, `.mkr` and `.mkdone` -- and a
+   guard with no way through turns finishing a picture into "keep this?",
+   asked every time, about a post that is not going anywhere.
+
+   The way through is the screen you are standing ON. The composer is
+   `form:post:` and the photograph editor is `form:marks:N`, so Done is not
+   leaving the composer and is never asked. Nothing else in the app is
+   `form:post:`, so nothing else is asked either.
+
+   What counts as "there is something here" is pwHas() -- the app's own
+   answer, the one the send button and draftKeep() already use. A second rule
+   written here would be a copy of it, and the two would drift.
+
+   An edit is not a draft. PW.ed is a post that already exists; the drafts
+   carry no `ed`, so keeping one would quietly turn an edit into a second
+   post. Backing out of an edit is left exactly as it was.
+
+   Returns true when it has taken the press over -- either the person said no
+   and stays, or the draft was kept and the trail already moved. */
+function backDraftKept(){
+  var h=here(), to, keep;
+  if(!h || h.r!=='form' || h.a!=='post:') return false;
+  if(typeof PW==='undefined' || !PW || PW.ed) return false;
+  if(!pwHas(PW.ln)) return false;
+  /* THREE ANSWERS IN ONE BOX. OWNER 2026-08-25「下書きに保存しますか？
+     はい　いいえ　キャンセル」and, when told window.confirm has two buttons,
+     「なんでまず作らないの？早くやれよ」.
+
+     It was two window.confirm calls in a row, because three answers do not
+     fit in a box with two buttons. Two boxes for one question is the app
+     asking twice about one thing, and the second one arrives with no way to
+     tell what pressing it means until you read it.
+
+     It is NOT a new shape. `.pmenu` is what the ... on a post already opens:
+     a list of choices, in place, hanging off the thing you pressed. Every
+     class here is that menu's own -- no corner, no border and no panel is
+     ADDED, which is what rule 18 is about, and it is not a sheet sliding up
+     over where you were either. The only new rule is `.pmq`, which is the
+     question, and it is a line of text with no box around it. */
+  BACKQ = 1; render(); window.scrollTo(0,0);
+  return true;
+}
+/* Whether the back arrow has asked. It is where you are STANDING rather than
+   anything the language owns, so viewReset() forgets it -- arriving on another
+   screen with a question still hanging off the arrow would be a question about
+   a post that is no longer in front of you. */
+var BACKQ=0;
+/* The three answers. What each one DOES is what the two confirms did; only
+   the asking changed. */
+function backKeep(){ backAnswer(true); }
+function backDrop(){ backAnswer(false); }
+function backStay(){ BACKQ = 0; render(); }
+function backAnswer(keep){
+  /* Where back was going, taken before draftKeep() runs: it ends by going to
+     the feed, which is what the Save-a-draft button does. Back is not that
+     button -- it goes back one page -- so the trail is put back afterwards.
+     Both answers leave the composer empty: a post that is in the drafts and
+     still in the composer is the same post in two places, and one that was
+     not kept was not kept. 「残ってほしくない」 */
+  var to=NAV.slice(0, NAV.length-1);
+  BACKQ = 0;
+  if(keep) draftKeep(); else PW=pwBlank();
+  NAV=to.length? to : [{r:'profile'}];
+  route=here().r; render(); window.scrollTo(0,0);
+}
+/* The box itself, drawn under the back arrow it is about.
+
+   TWO answers and a way out, not three answers. OWNER 2026-08-25:
+   「下書きとして保存しますか？／保存する　破棄する／ポップ自体に❌つければ
+   いいんじゃない？」-- and before that, of the three-row version:
+   「何そのゴミ見みたいなボタン」.
+
+   The third row was the problem. "Cancel" is not a third thing to DO with the
+   post; it is not doing any of them, and putting it in the list made three
+   rows that read as three equal choices when two of them act on the draft and
+   one does not. The ✕ says the same thing in the place every ✕ already says
+   it, and the two rows left are the two answers. */
+function backQHTML(){
+  return '<span class="bkq">'+
+    '<span class="bkqq">'+esc(t('post.back.q'))+'</span>'+
+    '<span class="bkqr">'+
+      '<button class="bkqb keep"' + DO('backKeep') + '>'+
+        esc(t('post.back.keep'))+'</button>'+
+      '<button class="bkqb drop"' + DO('backDrop') + '>'+
+        esc(t('post.back.drop'))+'</button>'+
+      '</span>'+
+    '<button class="bkqx"' + DO('backStay') +
+      ' aria-label="'+esc(t('post.back.stay'))+'">'+ICON_CROSS+'</button>'+
+    '</span>';
+}
 function back(){
+  if(BACKQ){ BACKQ = 0; render(); return; }
+  if(backDraftKept()) return;
   if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
   route=here().r; render(); window.scrollTo(0,0);
 }
@@ -191,6 +294,10 @@ var PAGES={
   settings:{tab:'profile',  k:'set.title'},
   set:     {tab:'profile'},
   world:   {tab:'profile', k:'wld.title'},
+  /* One section of the language's article. Named after the section, not
+     after the chapter it sits in -- pageName() below does that for a stage
+     and a letter for the same reason. */
+  wldart:  {tab:'profile', k:'wld.secs'},
   about:   {tab:'profile', k:'wld.about'},
   thread:  {tab:'feed', k:'post.thread'},
   photo:   {tab:'feed', k:'post.pic'},
@@ -266,8 +373,12 @@ function navTop(count, right){
      side and the smaller of them is the one you are leaving.
      「戻るボタンにhomeとかつけなくていいんじゃない？そうしたら矢印だけで済む」
      The word is still there for anybody who cannot see the arrow. */
-  return '<div class="navtop"><button class="back nb"' + DO('back') +
-    ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button>'+
+  return '<div class="navtop">'+
+    /* The arrow and, when it has asked something, the box hanging off it.
+       Same shape as the ... on a post: the wrapper is what the menu is
+       positioned against, so nothing is measured or placed by hand. */
+    '<span class="bkw"><button class="back nb"' + DO('back') +
+    ' aria-label="'+esc(lab)+'">'+ICON_BACK+'</button></span>'+
     (n? '<span class="navn">'+n+'</span>' : '')+
     /* The settings heading, and only that one, counts presses -- seven of
        them open the screen the owner is the only account on. 「どっか7回
@@ -285,7 +396,10 @@ function navTop(count, right){
       esc(pageName(h.r, h.a))+'</span>'+
     (count? '<span class="navc">'+count+'</span>' : '')+
     (right||'')+
-    '</div>';
+    '</div>'+
+    /* Under the bar and across the page, not hanging off the arrow. It is
+       about leaving this screen, which is what the whole bar is about. */
+    (BACKQ? backQHTML() : '');
 }
 /* Coming back to a screen for a thing that is no longer there -- a word that
    was deleted, a form that was closed, a letter that is gone. Five screens
@@ -465,6 +579,17 @@ function vvFit(){
      goes up with it -- so the bar carrying Post left the top of the phone.
      A one-screen form is pinned to this instead. */
   d.setProperty('--vvtop', (v? v.offsetTop : 0)+'px');
+  /* HOW TALL THE KEYBOARD IS, which is the one thing nothing here measured.
+     「Aaとかがキーボードの上に引っ付いてる形なんだけど、それをカメラとか
+     フォルダのマークでやって欲しい」 OWNER 2026-08-25, with a picture of
+     Twitter's row.
+
+     The row was the last child of a box `--vvmin` tall, so it sat on the foot
+     of THAT -- which is where the keyboard was the last time one was up, and
+     is not the keyboard. What is left over below the visible part is the
+     keyboard itself, and a row pinned to that rides up and down with it. */
+  d.setProperty('--vvkb',
+    Math.max(0, window.innerHeight - h - (v? v.offsetTop : 0))+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
 }
 function vvMount(){

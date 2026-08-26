@@ -32,6 +32,11 @@ act('abScale', abScale);
 act('addOne', addOne);
 act('addFmDrop', addFmDrop);
 act('back', back);
+/* The three answers the back arrow asks for when a post is half-written.
+   OWNER 2026-08-25「下書きに保存しますか？はい　いいえ　キャンセル」 */
+act('backKeep', backKeep);
+act('backDrop', backDrop);
+act('backStay', backStay);
 act('setPlan', setPlan);
 act('goMod', goMod);
 act('modLoad', modLoad);
@@ -212,9 +217,13 @@ act('wordsSetSort', wordsSetSort);
 act('setTheme', setTheme);
 act('setAuto', setAuto);
 act('setUi', setUi);
-act('wldSetUse', wldSetUse);
+act('wldArtAdd', wldArtAdd);
 act('setWldHide', setWldHide);
 act('setWldDl', setWldDl);
+/* the same two, asked of one section of the article rather than of the page */
+act('setWldSecHide', setWldSecHide);
+act('setWldSecDl', setWldSecDl);
+act('abToggle', abToggle);
 act('setWsys', setWsys);
 act('setScriptDir', setScriptDir);
 act('stAddOwn', stAddOwn);
@@ -243,6 +252,12 @@ act('wipeAll', wipeAll);
 actIn('impSetRole', impSetRole);
 actIn('kbSetNm', kbSetNm);
 actIn('meSetName', meSetName);
+/* The two the profile grew. They could not be written down before
+   claude/me2 came in: this file registers the FUNCTION and not its name, so a
+   line here pointing at something www/me.js does not have yet stops the app on
+   load -- which is the whole reason it is written this way. */
+actIn('meSetLink', meSetLink);
+actIn('meSetLoc', meSetLoc);
 actIn('meSetBio', meSetBio);
 actIn('meSetPic', meSetPic);
 actIn('ntSetQ', ntSetQ);
@@ -263,6 +278,7 @@ actIn('shTyped', shTyped);
 actIn('wordsSetQ', wordsSetQ);
 actIn('snsSetQ', snsSetQ);
 actIn('wldSet', wldSet);
+actIn('wldArtSet', wldArtSet);
 actIn('stNote', stNote);
 actIn('stSetRules', stSetRules);
 actIn('wdSetNt', wdSetNt);

@@ -31,11 +31,24 @@ the timeline was not on the server for a week after it was.
 
 ## 1. `master` is the app again. Keep it that way.
 
-`master` is at `f2d5eb4` (2026-08-25, later the same day), and the whole gate
-is green on it -- **25 checks, not the 24 this file said an hour earlier**, and
-`buttons pressed: 10667  (223/223 distinct names)`. A fresh clone is the current
-app, and nothing needs checking out. (This paragraph's own commit sits one on
-top of `f2d5eb4`; a file cannot name the commit it is part of.)
+`master` is at `5721421` (2026-08-26), and the whole gate is green on it --
+**26 checks, all of them**, and `buttons pressed: 10723  (229/229 distinct
+names)`. A fresh clone is the current app, and nothing needs checking out.
+(This paragraph's own commit sits one on top of `5721421`; a file cannot name
+the commit it is part of.)
+
+**Four branches went in on 2026-08-26** -- `translate` `wiki` `draft` `me2` --
+on top of the six that went in the day before. Do not read that as the whole
+list: seventeen branch tips are ancestors of `master` now, and the way to
+count is the command rather than this sentence:
+
+```
+for b in $(git branch -r | grep -v HEAD); do \
+  git merge-base --is-ancestor $b origin/master && echo "$b"; done
+```
+
+`wiki` is in **as far as `03fcfa3`** and has moved since -- a branch being an
+ancestor and a branch being finished are different facts.
 
 It said `1941783` for **66 commits** after that stopped being true, and the
 sentence around it -- "four branches were integrated into it that day" -- went
@@ -328,9 +341,12 @@ instructions:**
 
 ## 5. The gate, and what CI does not run
 
-`npm test` is seventeen checks and is the specification. `CLAUDE.md` → "The
-seventeen rules the gate enforces". `tools/gate.mjs` runs the six that need no
-browser first, in about two seconds, then the eleven browser ones four at a
+`npm test` is **twenty-six** checks and is the specification. `CLAUDE.md` → "The
+nineteen rules the gate enforces" -- **and those two numbers are not the same
+kind of thing.** Nineteen is how many RULES are written down; twenty-six is how
+many CHECKS run. They have never been equal and making them equal would be
+wrong. `tools/gate.mjs` runs the eight that need no
+browser first, in about two seconds, then the eighteen browser ones four at a
 time. Run one after another they were ten minutes in this container.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
@@ -454,15 +470,17 @@ written down because otherwise the next person repeats the digging:**
   engine's first three files, the plan rename and StoreKit, the dead-CSS sweep,
   and the sheet's spike. `press` reads **10486 buttons, 217/217 names, 4 styled
   and unworn against a baseline of 4**.
-- **The gate is 25 checks**, not the nineteen `CLAUDE.md` still says: eight
-  with no browser (`grammar-engine-check` joined them) and seventeen with one
-  (`plan-check`, `sheet-check`, `shape-check` and `gramlang-check` joined
-  them). It read 24 here until 2026-08-25, when `4f8b681` wired
-  `gramlang-check` in on `claude/leader-integration` -- the same shape as
-  `shape-check` two bullets down, and caught the same way: by counting
-  `FAST` and `SLOW` in `tools/gate.mjs` rather than believing a sentence.
-  `tools/gate.mjs`'s own opening comment said 24 as well and now says 25.
-  That count in `CLAUDE.md` is stale and is on nobody's list yet.
+- **The gate is 26 checks**: eight with no browser (`grammar-engine-check`
+  joined them) and eighteen with one (`plan-check`, `sheet-check`,
+  `shape-check`, `gramlang-check` and `draft-check` joined them). It read 24
+  here, then 25, then 26, all on 2026-08-25 -- `4f8b681` wired
+  `gramlang-check` in and `claude/draft` wired `draft-check` in, each on its
+  own branch, and each time this file was a day behind. Every one was caught
+  the same way: by counting `FAST` and `SLOW` in `tools/gate.mjs` rather than
+  believing a sentence. **`CLAUDE.md`'s "nineteen rules" is NOT this number
+  and must not be made to match it** -- nineteen is how many rules are
+  written down, and there are nineteen. This bullet said "not the nineteen
+  CLAUDE.md still says" and that sentence was itself the mistake.
 - **`shape-check` was written, merged, and left out of the gate.** It was on
   `master` with an `npm run shape` script from the day `claude/inkshape` was
   integrated, and its name was in no list in `tools/gate.mjs`, so `npm test`
@@ -471,7 +489,9 @@ written down because otherwise the next person repeats the digging:**
   (`integrate2`, `db0aacb`); green standalone, 17 assertions, about 30
   seconds. It takes no port — it opens `www/index.html` over `file://` where
   the other fifteen browser checks each serve `www/` on one of their own — so
-  it cannot collide in the pool. **The lesson is the general one and is not
+  it cannot collide in the pool. (That sentence said "the other fifteen
+  browser checks"; it is seventeen now. The number is `SLOW.length` in
+  `tools/gate.mjs`.) **The lesson is the general one and is not
   about this check**: a check enters the gate in the same commit that adds it,
   or it does not enter at all.
 - **A branch was dropped rather than merged.**

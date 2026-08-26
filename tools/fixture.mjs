@@ -115,8 +115,16 @@ export function seed(){
      run. press then reported that button as never pressed, which was true and
      was not what it meant. The walk was narrowing the app as it went, which is
      the one thing seed() exists to stop. Public, so the row below is there. */
+  /* And a section somebody wrote, because the article is theirs to write and
+     a language with none of them walks a page that has never had one on it.
+     Two: one with a title and a body, which is what the article draws, and one
+     with neither, which is the row that has to say so instead of being blank.
+     `wldart:` is reached from the list on the World screen, so seeding these
+     is also what gives that route a way in. */
   WLD = {use:'story', where:'a valley', who:'two families',
-         note:'nobody outside the valley speaks it'};
+         note:'nobody outside the valley speaks it',
+         arts:[{id:'A1', t:'The valley', b:'Two families have farmed it for nine generations.'},
+               {id:'A2', t:'', b:''}]};
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.',
         fo:['iri','veth'], fr:['iri']};
@@ -630,6 +638,17 @@ export function halfDone(){
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */
+    /* Backing out of a half-written post, with the question up. BACKQ is 0
+       everywhere else, so `.bkq` and the two answers are on no screen without
+       this -- press reported five classes and act-check three names, all of
+       them real and all of them this one state.
+
+       It is set rather than reached by pressing: back() would ALSO run, and a
+       face is a screen rather than a sequence. What the three answers DO is
+       draft-check's, over the real back(). */
+    ['a half-written post, asked about on the way out', () => {
+        PW = pwBlank(); openPost(); pwSetLn('kano mos'); pwSetMn('a hill');
+        BACKQ = 1; const h = vForm(); BACKQ = 0; PW = pwBlank(); return h; }],
     ['the composer, for somebody stopped', () => { NET_BANNED = 'spam';
         PW = pwBlank(); openPost(); const h = vForm();
         NET_BANNED = ''; PW = pwBlank(); return h; }],
@@ -1257,6 +1276,23 @@ export function halfDone(){
         stSetRules(p.id, 'a name is a word that stands for a thing');
         window.route = 'gram'; NAV = [{ r:'gram' }];
         const h = vGram(); stSetRules(p.id, was); return h; }],
+    /* The article, with a finished stage in it. `.abtline` is worn by the
+       name of every stage that has been answered -- www/home.js:1123 -- and
+       the fixture finishes none of them, so that line is on no screen and
+       press reported the class as worn by nothing. It is the "add the seed"
+       side of press's two, not the "delete it" side: the wearer is right
+       there and the walk simply never stood where it is.
+
+       Finished the same way "the stages, with one finished" does it, and for
+       the same reason: a part with no slots and no decisions is finished by
+       saying what it does, which is one line. Put back afterwards. */
+    ['this language, with a stage finished in it', () => {
+        const p = stAll().filter(x => !x.slots.length && !x.feats.length)[0]
+                  || stAll()[0];
+        const was = stRules(p.id);
+        stSetRules(p.id, 'a name is a word that stands for a thing');
+        window.route = 'about'; NAV = [{ r:'about' }];
+        const h = vAbout(); stSetRules(p.id, was); return h; }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim
