@@ -209,17 +209,24 @@ function netTook(d){
   netSave();
   return true;
 }
-/* An account nobody asked for. Supabase's anonymous sign-in is the signup
-   endpoint with no address and no password on it; what comes back is an
-   ordinary session whose token says is_anonymous, and attaching an identity
-   to it later keeps the same uid rather than making a second account.
+/* There used to be netAnon() here, and boot.js called it before the first
+   frame: Supabase's anonymous sign-in, which is the signup endpoint with no
+   address and no password on it. Everything somebody made belonged to an
+   account from the first minute without anybody being asked anything.
+   「オンボーディングで離脱されるのは防ぎたい」
 
-   Called from boot.js and nowhere else: this is the app arriving, not
-   something a screen does. */
-function netAnon(ok, bad){
-  netPost('/auth/v1/signup', {data:{}}, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
-}
+   OWNER DECISION 2026-08-26 took it out: 「言語はアカウントないと作れないです」
+   「ログインした人しか書けないけど」「二種類になる意味も分からないけど」.
+   supabase/schema.sql says the same thing on the other side -- the policies
+   that used to ask has_account() ask is_member() now, so a session with no
+   name on it is refused by the server whatever this file does.
+
+   What is NOT gone, and must not be: netAnonTok() below and SESS.anon. A
+   phone that has been running since before today still holds an anonymous
+   session, and it is still anonymous -- the claim is in the token the server
+   issued. Treating netSignedIn() and netMember() as the same question now
+   would quietly call every one of those a member, and the only thing that
+   would come back is a refusal with nothing to say about itself. */
 function netOut(){
   SESS=null; netSave();
 }
