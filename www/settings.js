@@ -208,24 +208,20 @@ function vSet(){
          every time it was opened. A row like the rows above it, because it is
          one -- it arrived here as a rail of five tabs among a column of rows,
          which is the sort of thing that looks wrong before it is read. */
-      '<button class="set"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
+      /* The last row of this room, so it carries no line under it. It became
+         the last one when the two switches below it went: whether the page is
+         public, and whether it can be downloaded. Both are on the page's own
+         editing face now -- the public one is the same `setWldHide`, and the
+         download one is asked of each SECTION rather than of the whole page
+         (`setWldSecDl`). 「ここの言語ページを公開すると単語と文字 dl できるようにするは
+         いらない。wiki でできるから。」OWNER 2026-08-26.
+
+         `world().dl` is still there and still read: it is what a section that
+         has never been touched falls back to (`wldSecDl`). Nothing was
+         removed from anybody's file -- what went is the second place to set
+         it, which is the thing that was wrong. */
+      '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
-      /* Whether this language has a page anybody else can open. Public is the
-         absence of the flag, which is the default the owner chose and the one
-         no migration can get wrong. Nothing reads it off this phone yet --
-         there is one profile here and it is this person's -- so what this
-         switch does today is take the row off their own profile and say so.
-         「これは設定から公開非公開もかのう」 */
-      '<button class="set"' + DO('setWldHide', [!wldHidden()]) + '>'+
-      '<span class="sl">'+t('wld.public')+'</span>'+
-      swtHTML(!wldHidden())+'</button>'+
-      /* And whether it can be taken away, which is a different question and
-         only asked of a page anybody can open. What both of them mean is
-         behind the `?` in the bar, which is where an explanation goes. */
-      (wldHidden()? '' :
-        '<button class="set" style="border-bottom:none"' + DO('setWldDl', [!wldDl()]) + '>'+
-        '<span class="sl">'+t('wld.dl')+'</span>'+
-        swtHTML(wldDl())+'</button>')+
       '';
   } else if(id==='pw'){
     /* Two fields and a button. The same shape as the door's, because it is
