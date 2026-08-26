@@ -137,6 +137,33 @@ const r = await pg.evaluate(({ s }) => {
   out.refW = KB_REF_W; out.rowh = kbRowH(KB_REF_W);
   out.ceilCols = KB_COLS;
   /* every pattern this app builds is inside the ceiling as it is built */
+  /* ---- every pattern comes out the shape of a keyboard ----------------
+     「qwartyとフリックだとサイズ違うでしょ？そういうのはどうなんの？」
+     「フリックだけじゃなくて全部。」 OWNER, 2026-08-26.
+
+     A key is width/cols across and one row tall, and a row is KB_ROWW of the
+     width -- so the SHAPE of a key is 1 / (cols x KB_ROWW) and the phone
+     cancels out. Every keyboard on a phone sits between iOS's QWERTY at ten
+     across (0.72:1) and its ten-key at four (1.81:1). Ours came out at three
+     across: 2.41:1, a key 130pt wide and 54 tall, which is a letterbox and is
+     nothing anybody has typed on.
+
+     Both faces of every pattern, and the widest row of each, because that is
+     what sets the columns. Printed as well as judged: what these come to is
+     the whole of the answer and a range that passes says nothing about where
+     inside it they landed. */
+  out.shapes = [];
+  KB_PATS.forEach(function (p){
+    kbPatLay(p).forEach(function (face, fi){
+      var cols = kbCols(face.rows) / 2;
+      out.shapes.push({ pat: p + (fi ? ' face ' + (fi + 1) : ''), cols: cols,
+        rows: face.rows.length, aspect: 1 / (cols * KB_ROWW),
+        screen: (face.rows.length * kbRowH(KB_REF_W) + KB_BARS) / KB_REF_H });
+    });
+  });
+  out.patsShape = out.shapes.every(function (x){
+    return x.aspect >= 0.71 && x.aspect <= 1.82;
+  });
   out.patsFit = KB_PATS.every(function (p){
     return kbPatLay(p).every(function (face){
       return face.rows.length <= kbRowsMax() && face.rows.every(function (rw){
@@ -775,6 +802,11 @@ say(r.screenH === 844 && r.ceilRows === 7,
 say(r.ceilCols === 20,
     'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
+say(r.patsShape,
+    'and every one of them is the shape of a keyboard -- a key between 0.72:1' +
+    ' (ten across, iOS QWERTY) and 1.81:1 (four across, its ten-key)' +
+    (r.patsShape ? '' : ': ' + r.shapes.filter((x) => x.aspect < 0.71 || x.aspect > 1.82)
+      .map((x) => x.pat + ' is ' + x.aspect.toFixed(2) + ':1 at ' + x.cols + ' across').join(', ')));
 say(r.rowsCap, 'rows stop at the ceiling however many times the row is added');
 say(r.plusGone, 'and the dashed row is not drawn once there is no room for one');
 say(r.foundFull, 'the board has a row that is already the full width');
@@ -862,6 +894,10 @@ say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
 console.log('\n  the ceiling is ' + r.ceilRows + ' rows, one number for every phone.');
+console.log('\n  every pattern, as the keyboard it comes out as:');
+r.shapes.forEach((x) => console.log('    ' + x.pat.padEnd(14) +
+  String(x.cols).padStart(3) + ' x ' + x.rows + '   ' + x.aspect.toFixed(2) +
+  ':1   ' + Math.round(x.screen * 100) + '% of the screen'));
 console.log('  a key is a tenth of the phone across and ' + r.roww +
   ' of it tall, so it keeps its shape. What each phone comes to,');
 console.log('  as  width x height -> row height, rows that fit:');

@@ -910,6 +910,50 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-26
+- Area: The five patterns — each comes out the shape of a keyboard
+- Decision:
+
+  「qwartyとフリックだとサイズ違うでしょ？そういうのはどうなんの？」
+  「フリックだけじゃなくて全部。」
+
+  **Every pattern comes out at a real keyboard's proportions.** Measured on a
+  390 × 844 phone, iOS is QWERTY 10 across (0.72:1), kana 5 (1.44:1),
+  ten-key 4 (1.81:1) — all four rows, all about a third of the screen. Ours
+  were flick 3 across (2.41:1, a 130 × 54pt letterbox) and tap and chart
+  seven rows deep, half the screen.
+
+  Two sentences do it:
+
+  - **The keys that are not letters take a COLUMN, not a row.** On a short
+    board a row of their own is a whole row, and a keyboard with no return is
+    one nobody can send a message on. flick's fourth column and chart's last
+    column carry delete, space and return down them.
+  - **Letters go as many to a row as it takes to fit in four rows, and never
+    fewer than four across** (`kbPer()`). Four rows is the ceiling on how
+    tall; four across is the floor on how wide, because a key is
+    `1 / (cols × 0.1385)` and three across is 2.41:1.
+
+  | | before | after |
+  |---|---|---|
+  | qwerty | 10×5, 0.72:1, 38% | unchanged |
+  | flick | 3×3, **2.41:1**, 25% | 4×3, **1.81:1**, 25% |
+  | tap | 5×7, 1.44:1, **51%** | 8×5, 0.90:1, **38%** |
+  | chart | 5×7, 1.44:1, **51%** | 6×6, 1.20:1, **45%** |
+  | abc | 10×4, 0.72:1, 32% | unchanged |
+
+  **chart's grid is untouched**: its row count is the number of consonants,
+  which is the language's and not ours. Only the column moved.
+
+- Reason: the editor is the preview and a pattern is where a keyboard starts,
+  so a pattern that starts at a shape no phone has is the app handing somebody
+  a bad keyboard and calling it a starting point.
+- Affected features: `kbPer()`, `kbRows()`, `kbFlickLay()`, `kbChartLay()`
+  (`www/keyboard.js`). **Nothing stored changes and no existing keyboard
+  moves** — only what a NEW board is made from.
+- Implementation status: **implemented**, 2026-08-26, `claude/kb2`.
+
+### Decision
+- Date: 2026-08-26
 - Area: How many rows a keyboard may have — it is the keyboard's HEIGHT
 - Decision:
 

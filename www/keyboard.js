@@ -142,14 +142,33 @@ function kbGap(w){ var k=kbKey('gap'); k.w=w; return k; }
 /* Letters five to a row, with a space and a backspace under them. Used for
    both faces of the first keyboard, so the two cannot drift in how wide a
    row is. */
+/* How many keys to a row, so that what comes out is the shape of a keyboard.
+
+   Measured on a 390pt phone: every keyboard on a phone is FOUR rows of keys
+   and about a third of the screen -- iOS's QWERTY (ten across), its kana
+   (five), its ten-key (four) -- and a key is between 0.72:1 and 1.81:1. Our
+   own patterns came out at 3 x 3 and 5 x 7: a flick key 130pt wide and 54
+   tall, and a tap board taking HALF the screen.
+   「qwartyとフリックだとサイズ違うでしょ？そういうのはどうなんの？」
+   「フリックだけじゃなくて全部。」 OWNER, 2026-08-26.
+
+   Both ends matter and they pull against each other. FOUR ROWS is the ceiling
+   on how tall, so the letters want as many to a row as it takes. FOUR ACROSS
+   is the floor on how wide, because a key is width/per wide and one row tall
+   -- at three across that is 2.41:1, a letterbox nothing on a phone looks
+   like. Ten is the other end and rule 19 already fixes it: the narrowest
+   iPhone. */
+function kbPer(n){
+  return Math.max(4, Math.min(10, Math.ceil(n/4)));
+}
 function kbRows(list){
-  var rows=[], row=[], i, sp;
+  var rows=[], row=[], i, sp, per=kbPer(list.length);
   for(i=0;i<list.length;i++){
     row.push(kbKey('lt', list[i].id));
-    if(row.length===5){ rows.push(row); row=[]; }
+    if(row.length===per){ rows.push(row); row=[]; }
   }
   if(row.length) rows.push(row);
-  sp=kbKey('sp'); sp.w=3;
+  sp=kbKey('sp'); sp.w=Math.max(2, per-1);
   rows.push([sp, kbKey('del')]);
   return rows;
 }
@@ -219,17 +238,32 @@ function kbRowsOf(list, per){
    order the alphabet is in: the fifth of every group is the key itself and
    the four around it are the flicks, so the groups read across. */
 function kbFlickLay(){
-  var ls=ltOrder(ltOfKind('alpha')), rows=[], row=[], i, j, k, sp;
+  var ls=ltOrder(ltOfKind('alpha')), keys=[], rows=[], row, i, j, k, n;
   for(i=0;i<ls.length;i+=5){
     k=kbKey('lt', ls[i].id);
     for(j=1;j<5;j++) if(ls[i+j]) k.f[j-1]=ls[i+j].id;
-    row.push(k);
-    if(row.length===3){ rows.push(row); row=[]; }
+    keys.push(k);
   }
-  if(row.length) rows.push(row);
-  if(!rows.length) rows.push([kbKey('lt', '')]);
-  sp=kbKey('sp'); sp.w=2;
-  rows.push([sp, kbKey('del')]);
+  /* THREE letters across and a column of its own for the three keys that are
+     not letters -- four across, which is what a phone's ten-key is and what a
+     kana keyboard is once its two outer columns are counted. It was three
+     across with the space and the delete on a row of their own, which made a
+     key 130pt wide and 54 tall on a 390pt phone: 2.41:1, a letterbox.
+
+     A row of its own costs a whole row on a board this short, and a keyboard
+     with no return is one nobody can send a message on -- kbFixed() learnt
+     that. A column costs a quarter of the width and holds all three.
+     「！？スペース　改行」
+
+     Never fewer than three rows, because those three keys are three and each
+     wants a cell of its own. */
+  n=Math.max(3, Math.ceil(keys.length/3));
+  for(i=0;i<n;i++){
+    row=[];
+    for(j=0;j<3;j++) row.push(keys[i*3+j] || kbKey('lt', ''));
+    row.push(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(1));
+    rows.push(row);
+  }
   return [{rows:rows}];
 }
 /* Consonants down the page and vowels across it, which is the shape a
@@ -242,7 +276,7 @@ function kbFlickLay(){
    With no sounds taken up at all there is nothing to lay out, and the answer
    is the plain grid rather than a chart of nothing. */
 function kbChartLay(){
-  var cs=wsCons(), vs=wsVows(), rows=[], row, i, j, l, sp;
+  var cs=wsCons(), vs=wsVows(), rows=[], row, i, j, l;
   if(!cs.length || !vs.length) return kbTapLay();
   for(i=0;i<cs.length;i++){
     row=[];
@@ -250,10 +284,15 @@ function kbChartLay(){
       l=ltMain(wsKey([cs[i], vs[j]]));
       row.push(kbKey('lt', l? l.id : ''));
     }
+    /* The three that are not letters, in a column, for kbFlickLay()'s reason
+       -- a row of its own is a whole row, and this is the one pattern whose
+       row count is the LANGUAGE's rather than ours: a row per consonant. Six
+       consonants and five vowels came to 5 x 7 and half the screen; the same
+       chart with the column is 6 x 6. The grid itself is untouched, because
+       what a chart is is what the language has. */
+    row.push(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(1));
     rows.push(row);
   }
-  sp=kbKey('sp'); sp.w=Math.max(2, vs.length-1);
-  rows.push([sp, kbKey('del')]);
   return [{rows:rows}];
 }
 function kbTapLay(){ return kbDefault().lay; }
