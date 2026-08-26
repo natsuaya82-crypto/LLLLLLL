@@ -968,8 +968,10 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    「投稿画面にはホーム画面とかの下タブは要らない」 */
 /* The body holds two children and gives all the slack to the first: what is
    being written scrolls, and the bar under it does not. */
+/* The row of pictures is pinned to the keyboard now and is out of the flow,
+   so what scrolls has to clear it: 52px is `.pwbar`'s own min-height. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);overflow:hidden}
+   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 62px);overflow:hidden}
 /* Everything you are writing, and it is the part that scrolls -- so the line
    can be as long as it likes and the photographs under it move down with it,
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
@@ -1011,6 +1013,18 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」 */
 .pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
    padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
+/* ON THE KEYBOARD, not on the foot of the box. `--vvkb` is what is left over
+   below the visible part, which IS the keyboard, so a row pinned to it rides
+   up and down with it -- which is what Twitter's Aa row does and is what was
+   asked for. Being the last child of a `--vvmin`-tall box put it where the
+   keyboard WAS, and with no keyboard up yet that height is a guess (55%), so
+   the row floated in the middle of the screen.
+   The 24px each side is `.body`'s own padding, which this no longer sits
+   inside; the background is there because the line above it has to have
+   something to be a line ON while the page scrolls under it. */
+.view.fit .pwbar{position:fixed;left:0;right:0;bottom:var(--vvkb,0px);
+   z-index:20;padding:6px 24px calc(env(safe-area-inset-bottom,0px));
+   background:var(--bg)}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
 /* ---------- the letters ----------
    A letter is a cell, because there are as many letters as somebody decides

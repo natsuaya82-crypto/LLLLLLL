@@ -565,6 +565,17 @@ function vvFit(){
      goes up with it -- so the bar carrying Post left the top of the phone.
      A one-screen form is pinned to this instead. */
   d.setProperty('--vvtop', (v? v.offsetTop : 0)+'px');
+  /* HOW TALL THE KEYBOARD IS, which is the one thing nothing here measured.
+     「Aaとかがキーボードの上に引っ付いてる形なんだけど、それをカメラとか
+     フォルダのマークでやって欲しい」 OWNER 2026-08-25, with a picture of
+     Twitter's row.
+
+     The row was the last child of a box `--vvmin` tall, so it sat on the foot
+     of THAT -- which is where the keyboard was the last time one was up, and
+     is not the keyboard. What is left over below the visible part is the
+     keyboard itself, and a row pinned to that rides up and down with it. */
+  d.setProperty('--vvkb',
+    Math.max(0, window.innerHeight - h - (v? v.offsetTop : 0))+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
 }
 function vvMount(){
