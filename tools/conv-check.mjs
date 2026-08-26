@@ -25,9 +25,12 @@
        it looks one up
      - ink has no two entries that are the same shape twice
      - the roman face -- QWERTY, there to spell with -- exists exactly when
-       wsys() needs one, sits LAST, is reached by a key on the person's own
-       first face, and never wears a person's own letter: rom, del, sp, lay,
-       next, and nothing else
+       the person CHOSE a writing system that needs one, sits LAST, is
+       reached by a key on the person's own first face, and never wears a
+       person's own letter: rom, del, sp, lay, next, and nothing else
+     - and no face at all where nobody chose. wsGuess() reads 'syll' off one
+       letter that writes two sounds, and a guess may not put a page on
+       somebody's phone
      - conv.how says what wsys() said
 
    CLAUDE.md's own rule is the reason this file exists: "A comment saying
@@ -389,7 +392,47 @@ const R = await pg.evaluate(() => {
     systems.push(rec);
   });
 
-  return { fails: fails, systems: systems, listedCount: list.length };
+  /* 9. a writing system NOBODY CHOSE adds no face.
+
+     Every pair above sets SET.wsys before it looks, which is the case where
+     somebody went to the writing-system screen and said "syllabary". It is
+     not the only case: wsys() falls through to wsGuess() when SET.wsys is
+     unset, and wsGuess() reads 'syll' off one letter that happens to write
+     two sounds. So the eight claims above were all being made about the road
+     the app takes when it is TOLD, and the road it takes when it GUESSES had
+     never been walked at all -- which is how a keyboard somebody built one
+     face of went to the phone with a roman QWERTY behind it.
+     「2ページ目未設定なのに端末で qwerty の2ページ目が出る」
+
+     The guess is asked for first, so this cannot go quietly vacuous: if the
+     fixture's language ever stops guessing a converting system, the claim
+     below would hold for the wrong reason, and this says so instead. */
+  const guessFails = [];
+  delete SET.wsys;
+  KB = { kbs: [{ nm: '', pat: 'qwerty', lay: kbFixed().lay }], at: 1, v: 2 };
+  kbShow = 1;
+  const guessed = wsys();
+  if (guessed !== 'syll' && guessed !== 'abugida' && guessed !== 'logo')
+    guessFails.push('nothing was chosen and wsGuess() answered "' + guessed +
+      '", which needs no roman face anyway -- so this claim proves nothing.' +
+      ' Give the fixture a letter that writes two sounds');
+  else {
+    const g = shareKbd();
+    if (g.lay.length !== 1)
+      guessFails.push('nothing was chosen, wsGuess() said "' + guessed +
+        '", and the keyboard went out with ' + g.lay.length + ' faces. The' +
+        ' person built one. A guess may not add a page to somebody\'s phone');
+    if (g.rom !== undefined)
+      guessFails.push('nothing was chosen and rom says face ' + g.rom +
+        ' is roman -- there is no roman face to be');
+    if (g.lay[0].rows.some((r) => r.some((k) => k.k === 'lay')))
+      guessFails.push('nothing was chosen and the one face carries a key to' +
+        ' another page. There is no other page');
+  }
+  guessFails.forEach((m) => fails.push('nothing chosen: ' + m));
+
+  return { fails: fails, systems: systems, listedCount: list.length,
+           guessed: guessed };
 });
 
 await br.close();
@@ -408,6 +451,8 @@ R.systems.forEach((s) => {
 });
 const largest = R.systems.reduce((m, s) => Math.max(m, s.bytes), 0);
 console.log('largest table: ' + (largest / 1024).toFixed(1) + ' KB');
+console.log('nothing chosen, wsGuess() said: ' + R.guessed +
+  ' -- and no face was added for it');
 
 if (R.fails.length) {
   console.error('\nFAILED (' + R.fails.length + '):');
@@ -415,10 +460,11 @@ if (R.fails.length) {
   if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
   process.exit(1);
 }
-console.log('\nall eight claims hold, for every writing system: every map index' +
+console.log('\nall nine claims hold, for every writing system: every map index' +
   ' resolves, max is the longest key, nothing in ink goes unreached, every' +
-  ' key is lower case and unique, the roman layer appears exactly where' +
-  ' wsys() needs one and wears nothing but its own five kinds of key, and' +
+  ' key is lower case and unique, the roman layer appears exactly where the' +
+  ' person CHOSE one and never where the app merely guessed, and wears' +
+  ' nothing but its own five kinds of key, and' +
   ' conv.how says what wsys() says. And a letter key puts in the code point' +
   ' installTypeFont() gave that letter, on both plans -- so what the Lingua' +
   ' keyboard types is drawn in the letters somebody drew, and what any other' +
