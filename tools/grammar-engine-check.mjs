@@ -74,6 +74,85 @@ assert.equal(both.inflections.length,1);
 assert.equal(both.inflections[0].feature,'NUMBER');
 /* a form built out of a rule this language does not have is still not a word */
 assert.equal(e.morphology.parseToken(deriving,'beauty-zz'),null);
+/* ---- case: a role from a MARK, not only from a place -----------------------
+   translate.js says it outright -- "Roles come out of the word order the
+   language chose" -- and until now that was the whole story, so a subject was
+   whatever stood in the subject's place. A language that marks the role on the
+   word could not be built: no case system, and no case particles. The owner
+   asked for exactly that -- SVO が基本でも助詞があるかもしれない.
+
+   Word order is NOT replaced. It still decides every word carrying no mark,
+   which is what a positional language is. Both, in one sentence, is the point. */
+const cased=e.languageModel({languageId:'case',wordOrder:'SOV',
+  words:[e.word({id:'neko',lemma:'neko',partOfSpeech:'NOUN'}),
+         e.word({id:'poko',lemma:'poko',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'nom',target:'NOUN',feature:'CASE',value:'NOMINATIVE',operation:'suffix',form:'ga',separator:' '}),
+               e.inflection({id:'acc',target:'NOUN',feature:'CASE',value:'ACCUSATIVE',operation:'suffix',form:'wo',separator:' '}),
+               e.inflection({id:'past',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ka'})]});
+/* the particle stands after the word it marks, as its own word */
+const marked=e.morphology.parseSentence(cased,'neko ga poko wo luma-ka');
+assert.equal(marked.ok,true);
+assert.equal(marked.roles.SUBJECT,'neko');
+assert.equal(marked.roles.OBJECT,'poko');
+assert.equal(marked.roles.PREDICATE,'luma');
+assert.equal(marked.features.TENSE,'PAST');
+/* THE POINT. The same sentence with the two nouns swapped is the same
+   sentence: the mark travels with the word, so the role does too. Read by
+   position this would say the fish did the eating. */
+const scrambled=e.morphology.parseSentence(cased,'poko wo neko ga luma-ka');
+assert.equal(scrambled.ok,true);
+assert.equal(scrambled.roles.SUBJECT,'neko');
+assert.equal(scrambled.roles.OBJECT,'poko');
+/* and the word order is still there, holding every word that carries no mark */
+const positional=e.morphology.parseSentence(cased,'neko poko luma-ka');
+assert.equal(positional.ok,true);
+assert.equal(positional.roles.SUBJECT,'neko');
+assert.equal(positional.roles.OBJECT,'poko');
+/* both at once, which is the shape the owner actually described. `poko` is
+   marked OBJECT wherever it stands; `neko` carries nothing and takes the first
+   place the language's order still has free. If the marked word's place were
+   left in the queue, `neko` would take OBJECT and overwrite it. */
+const mixed=e.morphology.parseSentence(cased,'poko wo neko luma-ka');
+assert.equal(mixed.ok,true);
+assert.equal(mixed.roles.OBJECT,'poko');
+assert.equal(mixed.roles.SUBJECT,'neko');
+/* The same sentence the other way round, and this is the one that holds the
+   queue rather than merely agreeing with it. `neko` is marked SUBJECT, which
+   is the FIRST place SOV has to give -- so the unmarked `poko` must be handed
+   the second. Leave the marked word's place in the queue and `poko` is handed
+   SUBJECT on top of `neko`, the sentence loses its object entirely, and it
+   still comes back ok:true. Written as `poko wo neko luma-ka` above, the free
+   slot happens to be first either way and the bug does not show. */
+const mixed2=e.morphology.parseSentence(cased,'neko ga poko luma-ka');
+assert.equal(mixed2.ok,true);
+assert.equal(mixed2.roles.SUBJECT,'neko');
+assert.equal(mixed2.roles.OBJECT,'poko');
+/* CASE is what one word is doing and is already said in roles; two marked
+   words would overwrite each other in a sentence-wide feature table */
+assert.equal(marked.features.CASE,undefined);
+/* every token says the role it ended up with, marked or placed */
+assert.equal(marked.tokens[0].role,'SUBJECT');
+assert.equal(marked.tokens[2].role,'VERB');
+assert.equal(positional.tokens[1].role,'OBJECT');
+/* the other spelling of the same thing: a case written ONTO the word. The
+   ordinary suffix already read this; what is new is that it decides a role. */
+const attached=e.languageModel({languageId:'att',wordOrder:'SVO',
+  words:[e.word({id:'neko',lemma:'neko',partOfSpeech:'NOUN'}),
+         e.word({id:'poko',lemma:'poko',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'acc',target:'NOUN',feature:'CASE',value:'ACCUSATIVE',operation:'suffix',form:'wo'})]});
+const att=e.morphology.parseSentence(attached,'poko-wo luma neko');
+assert.equal(att.ok,true);
+assert.equal(att.roles.OBJECT,'poko');
+assert.equal(att.roles.SUBJECT,'neko');
+/* a value no table knows is the role it names, so a language with no case
+   tradition behind it can just write what it means */
+const plainRole=e.languageModel({languageId:'pr',wordOrder:'SOV',
+  words:[e.word({id:'neko',lemma:'neko',partOfSpeech:'NOUN'}),
+         e.word({id:'luma',lemma:'luma',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'r',target:'NOUN',feature:'CASE',value:'RECIPIENT',operation:'suffix',form:'ni'})]});
+assert.equal(e.morphology.parseSentence(plainRole,'neko-ni luma').roles.RECIPIENT,'neko');
 /* What a word IS, asked of the dictionary rather than restated here.
    www/shell.js holds the thirteen keys a part of speech is stored as, and the
    adapter's map named three that this app has never stored (`pron`, `prep`,
