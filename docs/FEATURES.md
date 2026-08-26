@@ -580,16 +580,19 @@ not a bug against that rule — **it is that rule, implemented.** 2026-08-26
 overturned the rule, so the button goes with it. That is the fix, and it is a
 deletion rather than a change.
 
-`www/onboard.js` is not this branch's to edit; reported. What has to be
-thought about when somebody does take it:
+**Done — the owner said 直して, 2026-08-26.** The button is gone, and with it
+`obLastStep()` (its only caller), `act('obFinish', …)` (no screen names it now)
+and `ob.in.later` in ten `www/i18n` files. `obFinish()` itself stays: lines 499
+and 777 still call it, after an account exists. `makeNeed()` was **not** touched
+— `netMember()` is the rule, not a gate to loosen. Green: `es5` `dead` `act`
+`i18n`, and `press` at **10666 buttons / 222 names**, one fewer of each, which is
+the button.
 
-- **the skip is the only way out of `OB_IN` today.** Removing it makes signing
-  in the only way to finish, which is the decision — but a person with no
-  signal at that moment then cannot finish at all. `netAnon`'s own failure
-  path already treats 「first launch, no signal」 as a real state.
-- **what happens to the letter they already drew** in `OB_DRAW`, before the
-  door. It is on the phone. Nothing may take it away from them.
-- `ob.in.later` becomes an unused key in ten `www/i18n` files.
+**Left open on purpose, because it is a decision and not a fix:** somebody with
+no signal at that door now cannot finish the onboarding at all. `netAnon`'s own
+failure path treats 「first launch, no signal」 as a real state, so this is not
+hypothetical. What they have already drawn in `OB_DRAW` is on the phone and
+nothing may take it from them. **Asked.**
 
 **The exception, and it is the one place 「全部」 does not reach: a language
 that was downloaded is not synced.** `syMerge` adds both sides, so the first

@@ -59,11 +59,16 @@ without one」 and 2026-08-26 turned it over: 「基本は全部サーバー管�
 バックアップにfile使う」「言語はアカウントないと作れないです」. The server is
 where a language lives, the phone keeps the copy that works with no signal, and
 what was made offline goes up when there is a signal again 「制作はオフラインでも
-可能次つながった時に更新される」. There is an account before the first frame:
-`netAnon()` makes an anonymous one at launch (`www/boot.js`). **The first
-language is the one place this is not true yet** — it is minted at the top of
+可能次つながった時に更新される」. **An anonymous session is not an account** —
+this paragraph called it one for a day. 「匿名アカウントはねえよ」 `netAnon()`
+gets a token whose JWT carries `is_anonymous`, and `netMember()` reads false off
+it, as does `is_member()` in `schema.sql`: it is a uid to hang a language on, and
+it is not somebody. So the door is where an account starts, and `makeNeed()`
+asking `netMember()` is the rule, not a gate to loosen. The onboarding ends at
+that door and no longer offers a way past it (2026-08-26). **The first language
+is the one place this is not true yet** — it is minted at the top of
 `www/core.js`, which `index.html` loads before `net.js` exists, so it cannot ask
-whether there is an account. Reported, not patched.
+anything about a session. Reported, not patched.
 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
 **Shape.** Four things are banned outright: a row of round chips you scroll
