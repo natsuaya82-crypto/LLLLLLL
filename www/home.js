@@ -890,15 +890,24 @@ function wldRow(){
    screenshot of ja.wikipedia.org, where every section of a mobile article is
    a heading with a marker and folds away under it.
 
-   Which ones are shut is where you are STANDING in the page, not something
+   Which ones are open is where you are STANDING in the page, not something
    the language owns, so it is not in `wld` and is not saved. The line that
    forgets it belongs in viewReset() in www/shell.js with the rest of what a
    screen forgets; this session does not own that file, so it is reported
-   rather than reached into. Open is the default: nothing somebody has never
-   touched is folded away from them. */
-var ABSHUT={};
-function abShut(r){ return !!ABSHUT[r]; }
-function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
+   rather than reached into.
+
+   SHUT is the default. 「この言語については初手は全部閉じて」 OWNER 2026-08-26.
+   It was open, and the argument for that was that nothing somebody has never
+   touched should be folded away from them -- true of one section and wrong of
+   five, because five open sections is a page you have to scroll past to find
+   out what is on it. What the marker is FOR is choosing, and a page that has
+   already chosen for you gives it nothing to do.
+
+   So the map records what is OPEN, not what is shut: the empty map is the
+   arriving state, and the arriving state is everything closed. */
+var ABOPEN={};
+function abShut(r){ return !ABOPEN[r]; }
+function abToggle(r){ ABOPEN[r]=!ABOPEN[r]; render(); }
 var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';
