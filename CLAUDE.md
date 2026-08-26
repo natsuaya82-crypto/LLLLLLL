@@ -153,6 +153,17 @@ plan, what was tested, what was not, whether a device is needed, known limits.
 **Recording.** Anything that changes what is stored, moved or removed goes in
 `docs/CHANGELOG.md` — before the code, not after.
 
+**And when a decision replaces a rule, FIX THE RULE — in the same commit.**
+Recording it is not enough. A rule works because it is read, so one that still
+says the old thing is still being obeyed, and the decision has not landed
+however carefully it was logged. 「古い規則残りすぎ」「新しいのにしたらルーるも
+直せよ」「そのせいで毎回古いルールに引っ張られてんじゃん」 **Fixing means
+deleting**: do not leave the old sentence standing with 「this is history」 in
+front of it, because it will be read anyway. 「歴史とかいいから消せよ」
+`docs/CHANGELOG.md` is the one exception and is never rewritten — it records
+what was true on a day. Everywhere else, including this file, only sentences
+about now. → `docs/FEATURE_RULES.md`
+
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
 retention, deletion, migration, how past data behaves, timing, what is

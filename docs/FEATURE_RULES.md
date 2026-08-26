@@ -144,6 +144,17 @@ not an instruction for the task in hand.**
 Afterwards:
 
 1. record it in the log below, and in whichever `docs/` file it governs
+1b. **if it REPLACES a rule that is already written down, fix that rule — in
+   the same commit.** Adding to the log is not enough. A rule is obeyed
+   because it is read, so one that still says the old thing is still being
+   followed, and the decision has not landed however carefully it was
+   recorded. 「新しいのにしたらルーるも直せよ／そのせいで毎回古いルールに
+   引っ張られてんじゃん」 (OWNER DECISION 2026-08-26)
+
+   **Fixing means deleting.** Do not leave the old sentence with 「this is
+   history」 in front of it — it will be read. 「歴史とかいいから消せよ」
+   `docs/CHANGELOG.md` is the exception and is never rewritten: it records
+   what was true on a day. Everywhere else, only sentences about NOW.
 2. implement exactly that, and nothing adjacent
 3. do not reinterpret it into a more reasonable rule
 4. do not quietly generalise it to a nearby behaviour
@@ -183,6 +194,42 @@ verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
 was inferred: where the wording is the owner's it is quoted, and where a
 decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
+
+### Decision
+- Date: 2026-08-26 (同日、四つめ)
+- Area: 決定が規則を置き換えたら、**その規則を直す**。決定ログに足すだけでは足りない
+- Decision:
+
+  ```
+  古い規則残りすぎ
+  新しいのにしたらルーるも直せよ
+  そのせいで毎回古いルールに引っ張られてんじゃん
+  ```
+
+  ```
+  歴史とかいいから消せよ
+  ```
+
+  **決定が既存の規則を置き換えたなら、その規則を同じコミットで直す。**
+  決定ログに一件足して終わりにしない。
+
+  そして直し方は**消すこと**である。「これは歴史です」と前置きして残さない ──
+  残っていれば読まれる。それが「毎回古いルールに引っ張られてる」の中身。
+
+  `docs/CHANGELOG.md` は別。あれは「その日そうだった」の記録なので
+  書き換えない。**直すのは、今を語っている文だけ。**
+
+- Reason: オーナーの三行がそのまま理由である。**規則は読まれるから効く。**
+  古い規則が残っていると、次の人はそれを読んで従い、決定ログのほうは
+  見に行かない。決定が「通った」のは、それを言っている文が全部直った
+  ときであって、ログに一行入ったときではない。
+- Affected features: 無い。これは書き方の規則である。
+- Affected data: 無い。
+- Affected docs: `CLAUDE.md`（§ Recording の隣）、このファイル。
+- Implementation status: **書いた。** 同じ日に六箇所掃除した ──
+  ゲートの本数（TESTING.md、17→26）、`CAN` の一覧（無い能力 `tr` が載り
+  `edit` `badge` が抜けていた）、Studio、`localStorage` が唯一の置き場、
+  語順の `SET.order`、そして「アカウント無しでも言語は作れる」。
 
 ### Decision
 - Date: 2026-08-26 (同日、三つめ)
