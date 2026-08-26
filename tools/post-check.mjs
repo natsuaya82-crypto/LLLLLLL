@@ -436,6 +436,44 @@ const R = await pg.evaluate(async () => {
                'written by nobody');
   SESS = wasSess;
 
+  /* ---- 11b. the day does not follow the + button ---------------------
+     PW outlives the screen on purpose -- going to look a word up must not
+     throw away what was typed -- so openPost('new') has to drop what made
+     the composer NOT an ordinary post, by name. `to` was on that list and
+     `ed` was added to it; `pr` was never on it, so opening the day's
+     sentence, leaving, and pressing + an hour later came back to the day.
+     「お題じゃないところ+から入ったのに戻ってまた投稿しようとするとそこになる」
+
+     mn goes with pr and the LINE stays, which is not symmetry for its own
+     sake: under `pr` the meaning field is readonly (pwSetMn returns early),
+     so that text is daySay() and nobody typed it -- while the line is the
+     one thing somebody did type, and this button is not a delete. */
+  {
+    const wasDay = DAY;
+    DAY = { id: 7, on_day: '2026-08-23', text: 'It is unbearably hot today.',
+            says: 'It is unbearably hot today.' };
+    PW = pwBlank();
+    openPost('day');
+    if (PW.pr !== 7 || !PW.mn)
+      fails.push('the composer did not take the day at all (pr=' + PW.pr +
+                 ', mn=' + JSON.stringify(PW.mn) + '), so nothing below this ' +
+                 'is a test of anything');
+    PW.ln = 'kano tir';                       /* somebody types their line */
+    openPost('new');                          /* an hour later, the + button */
+    if (PW.pr)
+      fails.push('pressing + came back to the day: PW.pr is still ' + PW.pr +
+                 '. The + button is an ordinary post every time');
+    if (PW.mn)
+      fails.push('pressing + left the day’s words in the meaning (' +
+                 JSON.stringify(PW.mn) + '). Under `pr` that field is readonly, ' +
+                 'so nobody typed it and it is not theirs to keep');
+    if (PW.ln !== 'kano tir')
+      fails.push('pressing + threw away the line somebody typed (' +
+                 JSON.stringify(PW.ln) + '). Dropping the day is not a delete');
+    DAY = wasDay;
+    PW = pwBlank();
+  }
+
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
      A row shows a picture a few hundred pixels across and was being sent one
      nine hundred across. Nothing looked wrong and nothing could: the browser

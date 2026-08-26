@@ -209,10 +209,23 @@ function openPost(from){
      `ed` is the same fault as `to` and was not in what was reported; it is
      fixed here because it is one line further down the same object and
      leaving it would mean pressing + could still save over a post that
-     already exists. */
+     already exists.
+
+       pr   goes, and mn goes WITH it. The day's sentence is the third way a
+            composer is not an ordinary post, and it was the one missing from
+            this list: open the day, back out, press + an hour later, and the
+            composer still carried the day.
+            「お題じゃないところ+から入ったのに戻ってまた投稿しようとすると
+              そこになる」
+            mn is dropped rather than kept because under `pr` it is not
+            something somebody typed -- pwSetMn() returns early while `pr` is
+            set, so the field is readonly and holds exactly daySay(). Keeping
+            it would leave the day's words sitting in a now-editable field of
+            a post that has nothing to do with the day. The LINE still stays:
+            that one was typed. */
   if(from==='new'){
     if(PW.ed) PW=pwBlank();
-    else PW.to='';
+    else { PW.to=''; if(PW.pr){ PW.pr=0; PW.mn=''; } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
      takes.
