@@ -640,7 +640,14 @@ function has(level){ /* level: 'plus' | 'pro' */
    number at all. wordCap() below is the number and asks this once. */
 var CAN={
   words:   'pro',    /* no ceiling on the dictionary at all -- see wordCap() */
-  data:    'pro',    /* CSV out, and the cloud */
+  /* CSV out. It said "CSV out, and the cloud", and the cloud half was never
+     true here: can('data') is asked twice, both in settings.js and both about
+     the CSV. The cloud is on EVERY plan -- 「クラウドは全員で」 2026-08-22,
+     「基本は全部サーバー管理」 2026-08-26 -- and netLangSync() asks nothing
+     about a plan before it runs, which is the head of docs/PAID_FEATURES.md:
+     a plan decides what may be DONE, and a language existing is not something
+     anybody does. Do not turn this comment back into a gate. */
+  data:    'pro',
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
