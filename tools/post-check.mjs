@@ -521,6 +521,54 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- 11d. on a reply, the person's own side still fits two fields ---
+     The composer is laid out to --vvmin, which is the smallest the visible
+     part has been -- that is, the screen with the keyboard up. A reply puts
+     two more things in that box: who you are answering, and the post itself.
+     What gave way was the part somebody is writing in.
+     「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」
+
+     Measured rather than read. --vvmin is set here to a real one: 300 is an
+     ordinary Japanese keyboard on an ordinary phone, and it is the number the
+     rule above this one in index.html was already written against. */
+  {
+    const wasPW = PW;
+    const root = document.documentElement;
+    const hadMin = root.style.getPropertyValue('--vvmin');
+    root.style.setProperty('--vvmin', '300px');
+
+    const other = POSTS.filter(q => q.id !== p.id)[0] || p;
+    PW = pwBlank(); PW.to = other.id;
+    openPost();
+    render();
+    await new Promise(r => requestAnimationFrame(() => r()));
+
+    const scroll = document.querySelector('.view.fit .pwscroll');
+    const quote  = document.querySelector('.view.fit .pwqs');
+    if (!scroll || !quote) {
+      fails.push('the reply composer drew no quote or no writing area at all ' +
+                 '(scroll=' + !!scroll + ', quote=' + !!quote + ')');
+    } else {
+      const h = Math.round(scroll.getBoundingClientRect().height);
+      if (h < 88)
+        fails.push('the reply composer leaves ' + h + 'px for what the person ' +
+                   'is writing. There are two fields there -- the line and the ' +
+                   'meaning -- so one 44pt row is not enough by construction');
+      const ln = document.getElementById('pw-ln');
+      if (ln) {
+        const lb = ln.getBoundingClientRect(), sb = scroll.getBoundingClientRect();
+        if (lb.height < 1 || lb.bottom > sb.bottom + 1)
+          fails.push('the line being typed into is cut off by the box it is in ' +
+                     '(' + Math.round(lb.bottom - sb.bottom) + 'px past the ' +
+                     'bottom): the field somebody is looking at is the one that ' +
+                     'gave way');
+      }
+    }
+    if (hadMin) root.style.setProperty('--vvmin', hadMin);
+    else root.style.removeProperty('--vvmin');
+    PW = wasPW;
+  }
+
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
      A row shows a picture a few hundred pixels across and was being sent one
      nine hundred across. Nothing looked wrong and nothing could: the browser

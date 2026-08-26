@@ -998,8 +998,16 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    44 is the row unit this file already uses everywhere and the number press
    measures targets against, so one full row of what is being written can
    never be taken away. `.pwqs` gives up its space first, which costs nothing:
-   it scrolls inside itself and says so in its own rule. */
+   it scrolls inside itself and says so in its own rule.
+
+   88 on a reply, and that is not 44 rounded up. What is being written here is
+   TWO fields -- the line and the meaning under it -- so one row is by
+   construction not enough, and a reply is the only composer where anything
+   else is competing for the height. It came out as a placeholder with the
+   next field sliced off under it.
+   「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」 */
 .view.fit .pwscroll{flex:1;min-width:0;min-height:44px;overflow:auto}
+.view.fit .pwqs + .pwscroll{min-height:88px}
 .view.fit .pwtop{min-height:0}
 .view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
@@ -1573,7 +1581,15 @@ a.set{text-decoration:none}
    off the bottom. `--vvmin` and not `vh`: with the phone's keyboard up `vh`
    is still the whole phone, which is the same reason the vertical field
    below uses it. A third is what leaves the field its own two thirds. */
-.pwqs{margin:2px 0 12px;max-height:calc(var(--vvmin, 100vh) / 3);overflow:auto}
+/* min-height:0 is what lets it actually give the room up. A flex item's floor
+   is its content unless it is told otherwise, so `overflow:auto` on its own
+   made this shrink-proof: the cap stopped it growing and nothing made it get
+   out of the way, and what got clipped instead was the box below -- the one
+   somebody is writing in. A quarter rather than a third for the same reason:
+   the person's own side is the point of the screen and the quote is what they
+   are answering. It scrolls inside itself, so nothing is lost by being small. */
+.pwqs{margin:2px 0 12px;max-height:calc(var(--vvmin, 100vh) / 4);
+   min-height:0;overflow:auto}
 .pwq{display:flex;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
 .pwq .pav{width:34px;height:34px}
 .pwq .pname{font-size:.9rem}
