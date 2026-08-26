@@ -24,6 +24,77 @@ a keyboard of two layers 1023/402、three keyboards looking at one not applied
 マスの幅が固定なら、札は常に 6/10 で必ず収まる。直しは札の側ではなく盤の側。
 docs/FEATURE_RULES.md の決定ログに入れた。実装は「段の数」（www/keyboard.js）。
 
+## `dead-check` は IIFE で包まれたファイルを、一ファイルまるごと見ていない
+
+`feature/grammar-engine` のセッションが最後の報告で「IIFE-wrapped dead-check
+hole」と言い残したもの。**本当だった。**ただし原因は報告より一段細かい。
+
+**フォルダを飛ばしているのではない。**`tools/dead-check.mjs:159` の `jsIn()`
+は深さに関係なく歩くし、その上のコメントが「A list of directories rots the
+same way, so it walks instead of naming」と、まさにその直し方をした経緯まで
+書いている。`www/grammar-engine/` は歩かれている。
+
+**落ちているのは宣言を拾う正規表現。**`/^function\s+([A-Za-z_$][\w$]*)\s*\(/`
+── **行頭アンカー**。そして `www/grammar-engine/` の五ファイルは全部
+`(function(root){ 'use strict'; … })` で包まれているので、中身が丸ごと一段
+字下げされている:
+
+```
+www/grammar-engine/morphology.js  行頭 0  字下げ 10
+www/grammar-engine/lexicon.js     行頭 0  字下げ  9
+www/grammar-engine/translate.js   行頭 0  字下げ 13
+www/grammar-engine/adapter.js     行頭 0  字下げ 10
+www/grammar-engine/model.js       行頭 0  字下げ 12
+```
+
+**54 個の関数宣言のうち、行頭にあるものはゼロ。**だから `decls` にひとつも
+入らず、「誰かに名指しされているか」を一度も訊かれない。
+
+**そしてこれは意図的な設計が化けたもので、単純なバグではない。**同じファイルの
+294-299 行が、呼ぶ側と死ぬ側で規則を変えている理由を書いている:
+
+> A function declared anywhere, not only at the start of a line. The dead
+> check above **deliberately** looks only at column zero — a nested helper is
+> reached by the function around it and is not the thing it is hunting — but
+> for resolving a call, an inner function is a perfectly good answer.
+
+平らなファイルでは「字下げ ＝ 入れ子の補助関数 ＝ 外側から届く」が正しい。
+**ファイルごと包まれると、その前提が「一ファイル丸ごと免除」に化ける。**
+呼ぶ側は字下げも見るので、呼び出しは全部解決して**緑のまま**になる ──
+赤にならずに穴だけが空く。
+
+**読んだのではなく、実測した**（2026-08-26、`f10b655` の上で）:
+
+```
+IIFE の中（字下げ）に置く:
+  www/grammar-engine/model.js に function zzzNobodyEverCallsThis(){ return 1; }
+  node tools/dead-check.mjs → EXIT=0  緑
+
+同じ関数を平らなファイルの行頭に置く:
+  www/notes.js の末尾に同じ一行
+  node tools/dead-check.mjs → 赤
+    1 function nothing reaches:
+      www/notes.js:136  zzzNobodyEverCallsThis
+```
+
+**直し方は決めていない。**思いつく形は二つあり、どちらも副作用がある:
+
+- **包まれたファイルだけ、一段目の字下げも宣言として拾う** ── どのファイルが
+  「包まれている」かを判定する規則が要る。行数で決めるのは proxy であって、
+  CLAUDE.md 規則3が proxy を捨てた理由がそのまま当てはまる
+- **`www/grammar-engine/` を IIFE で包むのをやめる** ── 他の `www/*.js` と
+  同じ平らな形にする。ただし `root.X =` で export している設計そのものを
+  変えることになり、これは**リファクタで、振る舞いの変更と同じ commit に
+  乗せてはいけない**
+
+**どちらも今日やらない**（リーダー 2026-08-26「直すのは別の仕事。今日やらない」）。
+今わかっているのは「`www/grammar-engine/` の 54 個は誰にも訊かれていない」
+という事実だけで、その中に実際に死んでいるものがあるかは**まだ数えていない。**
+数えるのは直す前の別の一歩。
+
+（この節の置き場所は当て推量です ── ファイルの頭が「順番はやる順番」と
+言っているので、リーダーが動かしてください。）
+
 ## The plans screen says `$0` in every language
 
 The three things this section used to name are in: **Restore** is a button,
