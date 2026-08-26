@@ -149,7 +149,18 @@ function backDraftKept(){
   var h=here(), to, keep;
   if(!h || h.r!=='form' || h.a!=='post:') return false;
   if(typeof PW==='undefined' || !PW || PW.ed) return false;
-  if(!pwHas(PW.ln)) return false;
+  /* Two different questions, and pwHas() answers the other one. It is "is
+     there a post here" -- what the send button and draftKeep() both need --
+     and a meaning on its own is not a post, so it says no. What is being
+     asked HERE is "is there anything to lose", and a meaning somebody typed
+     is something to lose: it is their words, in a field they typed them into,
+     and backing out threw them away without a word.
+     「何か入ってる時は下書きに保存するかどうかをやるんじゃないの？」
+
+     Not while the day is on it. Under PW.pr that field is readonly and holds
+     daySay(), so asking would be asking whether to keep words nobody wrote --
+     which is how you teach somebody to press No without reading. */
+  if(!pwHas(PW.ln) && !(!PW.pr && String(PW.mn||'').trim())) return false;
   /* THREE ANSWERS IN ONE BOX. OWNER 2026-08-25「下書きに保存しますか？
      はい　いいえ　キャンセル」and, when told window.confirm has two buttons,
      「なんでまず作らないの？早くやれよ」.

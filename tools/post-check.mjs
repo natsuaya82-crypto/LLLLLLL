@@ -605,6 +605,48 @@ const R = await pg.evaluate(async () => {
                  'handle is in that state');
   }
 
+  /* ---- 11f. backing out asks about anything somebody typed ------------
+     The latch on back() asked pwHas(), which is "is there a post here" -- the
+     question the send button needs. A meaning on its own is not a post, so a
+     meaning typed on its own was thrown away silently on the way out.
+     「何か入ってる時は下書きに保存するかどうかをやるんじゃないの？」
+
+     Driven: the real back() is pressed on the real composer, and what is
+     asked is whether the arrow was taken over. */
+  {
+    const wasPW = PW, wasNav = NAV.slice(), wasQ = BACKQ;
+    const asks = () => {
+      BACKQ = 0;
+      openPost();
+      back();
+      const q = !!BACKQ;
+      BACKQ = 0;
+      return q;
+    };
+
+    PW = pwBlank(); PW.mn = 'the mountain is seen';
+    if (!asks())
+      fails.push('a meaning typed on its own is thrown away by the back arrow ' +
+                 'without asking. It is somebody’s words in a field they typed ' +
+                 'them into');
+
+    PW = pwBlank(); PW.mn = 'It is unbearably hot today.'; PW.pr = 7;
+    if (asks())
+      fails.push('backing out of the day’s sentence asks whether to keep words ' +
+                 'nobody wrote: under PW.pr the meaning is readonly and holds ' +
+                 'daySay(). That teaches somebody to press No without reading');
+
+    PW = pwBlank();
+    if (asks())
+      fails.push('an empty composer asks on the way out');
+
+    PW = pwBlank(); PW.ln = 'kano tir';
+    if (!asks())
+      fails.push('a line typed is thrown away by the back arrow without asking');
+
+    BACKQ = wasQ; NAV = wasNav; PW = wasPW;
+  }
+
   /* ---- 12. the timeline is sent the small copy, not the photograph ----
      A row shows a picture a few hundred pixels across and was being sent one
      nine hundred across. Nothing looked wrong and nothing could: the browser
