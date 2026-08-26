@@ -320,6 +320,11 @@ Adding a policy means adding the line somebody would use against it.
 
 ## The nineteen rules the gate enforces
 
+Nineteen is how many rules are written below. **The gate is twenty-six checks,
+and the two are not the same number and must not be made to match** — count the
+rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
+rule can take three checks and one check can hold two rules.
+
 ### 1. `www/**/*.js` must be ES5
 
 Everything under `www/` runs in WKWebView on whatever iPhone the user already owns.
