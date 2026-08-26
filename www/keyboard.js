@@ -863,15 +863,33 @@ function kbCol(i){
    down to fit: that would be the app deleting somebody's keys. */
 var KB_COLS=20;                 /* columns are half keys -- kbU() below */
 var KB_MOST=0.55, KB_ROWH=54, KB_BARS=8+44;
-/* How tall the phone is, as the extension sees it. window.innerHeight is the
-   app's own window, which on a phone is the screen -- and where it is not
-   (a browser, a check) it is the height the keyboard would have to fit into
-   anyway, so it is the right question either way. */
-function kbScreenH(){
-  return (window.innerHeight || (window.screen && window.screen.height) || 844);
-}
+/* A REFERENCE screen, and not the phone in your hand. That was the first
+   version of this and it was wrong in the way the ceiling itself was wrong.
+   「八行入っても小さかったら打ちにくいだけだぞ？」 OWNER, 2026-08-26.
+
+   A keyboard belongs to a LANGUAGE, and a language moves between phones. So
+   "as many rows as fit on this phone" builds eight rows on a Pro Max, where
+   they fit at 54pt each, and hands them to an SE -- where place() squeezes
+   the same eight into 39pt each, because it caps and squeezes rather than
+   growing. Eight rows that fit is not the same as eight rows anybody can
+   type on.
+
+   It is the WIDTH rule one axis over, and rule 19 has always said the width
+   this way: 「TEN ACROSS is the phone's number -- the narrowest iPhone is
+   320」. Not the phone in your hand. The narrowest one.
+
+   The reference below is 844 rather than the shortest phone the app runs on,
+   and that is a number waiting on the owner rather than a decided one --
+   docs/reports/kb2-2026-08-26.md. The arithmetic that makes it a question:
+   the extension's rowHeight is a CONSTANT 54, so a key is the same height on
+   every phone and only the row count changes, which is backwards from what a
+   bigger phone is for. Until that constant is a fraction of the screen, the
+   shortest supported phone (568) allows four rows -- fewer than the free
+   QWERTY's own five -- and that is the proof that the constant is the thing
+   to fix, not this number. 844 refuses nothing that exists today. */
+var KB_REF_H=844;
 function kbRowsMax(){
-  return Math.max(1, Math.floor((kbScreenH()*KB_MOST - KB_BARS) / KB_ROWH));
+  return Math.max(1, Math.floor((KB_REF_H*KB_MOST - KB_BARS) / KB_ROWH));
 }
 /* Is there room for another row, and is there room in this one for a key of
    that width. Asked in one place each so a way in that forgets cannot exist:

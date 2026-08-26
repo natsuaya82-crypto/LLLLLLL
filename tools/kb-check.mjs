@@ -132,7 +132,7 @@ const r = await pg.evaluate(({ s }) => {
      exactly as it is. */
   fresh();
   out.ceilRows = kbRowsMax();
-  out.screenH = kbScreenH();
+  out.screenH = KB_REF_H;
   out.most = KB_MOST; out.rowh = KB_ROWH; out.bars = KB_BARS;
   out.ceilCols = KB_COLS;
   /* every pattern this app builds is inside the ceiling as it is built */
@@ -763,8 +763,10 @@ say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
     'the bars come to ' + r.bars + 'pt here and ' +
     ((swEdge.ok && swBarH.ok) ? (swEdge.n + ' + ' + swBarH.n) : '?') + ' in the extension');
 say(r.ceilRows === Math.max(1, Math.floor((r.screenH * r.most - r.bars) / r.rowh)),
-    'so the ceiling is ' + r.ceilRows + ' rows on a ' + r.screenH +
-    'pt screen -- divided out of the cap, not chosen');
+    'so the ceiling is ' + r.ceilRows + ' rows -- divided out of the cap, not chosen');
+say(r.screenH === 844 && r.ceilRows === 7,
+    'and it is one number for every phone (referenced to ' + r.screenH +
+    'pt), not as many as the phone in your hand fits');
 say(r.ceilCols === 20,
     'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
@@ -854,9 +856,13 @@ say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
-console.log('\n  rows that fit, at ' + r.rowh + 'pt a row and ' + r.most +
-  ' of the screen: ' + [667, 812, 844, 852, 874, 932, 956].map((h) =>
-    h + '->' + Math.max(1, Math.floor((h * r.most - r.bars) / r.rowh))).join('  '));
+console.log('\n  the ceiling is ' + r.ceilRows + ' rows, one number for every phone.');
+console.log('  what would fit per phone, at ' + r.rowh + 'pt a row (a CONSTANT in the' +
+  ' extension, so a key is the same height on every phone):');
+console.log('    ' + [568, 667, 812, 844, 852, 874, 932, 956].map((h) =>
+  h + '->' + Math.max(1, Math.floor((h * r.most - r.bars) / r.rowh))).join('  '));
+console.log('  568 is the shortest phone iOS 15 runs on, and four is fewer than the' +
+  " free QWERTY's own five -- docs/reports/kb2-2026-08-26.md");
 console.log('\n  a face of ' + (r.narrowCols / 2) + ' keys is drawn ' + r.narrowSheet +
   'px across, and the row-adding + on it is ' + r.narrowPlus + 'px');
 console.log('  a face of 10 keys is drawn ' + r.wideSheet +
