@@ -225,6 +225,45 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-26 (同日、五つめ)
+- Area: 匿名アカウントは無くなる。アカウントは一種類
+- Decision:
+
+  ```
+  匿名アカウントはねえよ
+  言語はアカウントないと作れないです
+  ログインした人しか書けないけど
+  二種類になる意味も分からないけど
+  ```
+
+  1. **匿名アカウントは無い。**「アカウント」はサインインした人のこと、一種類。
+  2. **言語はアカウントが無いと作れない。**
+  3. **書けるのはログインした人だけ。**
+  4. **アカウントの種類を二つに分けない。**`has_account()`（アカウントがある）と
+     `is_member()`（名前がある）の二本立ては**やめる。** 一本になる。
+
+- Reason: 「二種類になる意味も分からないけど」。二本立ては匿名アカウントを
+  置くために作られたもので、**匿名が無くなれば分ける先が無い。**
+  区別が要るのは「まだ名前を決めていない人」を通すためであり、その人がもう
+  居ない。
+- Affected features: `www/onboard.js`（扉が唯一の終わり方 ── 済み）、
+  `www/boot.js` の `netAnon()`、`www/net.js` の `netSignedIn()`/`netMember()`/
+  `netAnonTok()`、`supabase/schema.sql` の `has_account()` と、それを使う
+  `language` / `slice` の書き込みポリシー。
+- Affected data: **無い。** 誰の作ったものも消えない。
+- Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`。
+- Implementation status: **docs だけ。** コードは `claude/admin` が持つ。
+  この枝で済んでいるのは、オンボーディングの「あとで」を消したことだけ
+  （アカウント無しで歩きを終えられないようにした）。
+
+#### これが置き換えたもの
+
+2026-08-22「When somebody is asked who they are」── 匿名アカウントを起動時に
+作り、身元を訊くのは投稿と課金の二箇所だけ、`is_member()` を二つに割る。
+**下のその項目に superseded の行を付けた。言葉は消していない。**
+消したのは、それを言っていた**規則**のほうである。
+
+### Decision
 - Date: 2026-08-26 (同日、四つめ)
 - Area: 決定が規則を置き換えたら、**その規則を直す**。決定ログに足すだけでは足りない
 - Decision:
@@ -1367,6 +1406,12 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-22
+- **SUPERSEDED 2026-08-26** by 「匿名アカウントはねえよ」「言語はアカウントないと
+  作れないです」「ログインした人しか書けないけど」「二種類になる意味も分からない
+  けど」 — the entry at the head of this log. **There is no anonymous account
+  and no second question.** The words below are the record of what was decided
+  on the 22nd and are left exactly as they were; nothing in them is a rule any
+  more. Do not build off this entry.
 - Area: When somebody is asked who they are
 - Decision: An **anonymous account is made silently at first launch** and
   everything is made under it. Identity is asked in **two places only:
