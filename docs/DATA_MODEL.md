@@ -28,6 +28,22 @@ walks it, so a slice outside it is in no backup; `wipeAll` walks it, so a slice
 outside it survives a wipe into the next language. Two were outside it once —
 the keyboard and the world — and neither could throw.
 
+**And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
+「基本は全部サーバー管理 言語周りだけバックアップにfile使う」. Each slice is one
+row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
+**the exact string `localStorage` holds** — the same string `bkPack()` writes to
+the file, so a slice has one shape and not three that could drift.
+`netLangSync()` (`www/net.js`, fired from `www/boot.js`) reads, merges through
+`www/sync.js` and writes back. So being in `SLICES` now decides three things at
+once — backup, wipe, and what goes up — and a slice added outside the list is
+missing from all three.
+
+Which of the copies is believed when they differ: **neither.** `sync.js` adds
+both sides and lets neither win by being newer 「そりゃあ両方足すだろ」. The
+cost of merging is a duplicate; the cost of choosing is somebody's word. This
+is `docs/DATA_SAFETY.md`'s rule at the one place it would have been easiest to
+break.
+
 | slice | global | what it is | shape |
 |---|---|---|---|
 | `words` | `WORDS` | the dictionary | array |
@@ -129,6 +145,18 @@ reading a state that never arrives:
 4. **Whether the ceiling counts it.** `langCount()` counts `mine` and the
    owner counts them separately 「自分の言語+DL言語1個」, so it must not start
    counting them together. The two numbers themselves are **open**.
+
+**5. It is outside sync, and that is not a flag — it is the whole point.**
+Everything else about a language goes to the server and comes back merged
+(2026-08-26, above), and `syMerge` **adds both sides**. Run a downloaded
+トキポナ through that once and something has been added to it, at which point
+「トキポナに文字足したらトキポナじゃないです」 (OWNER DECISION 2026-08-25). So
+「基本は全部サーバー管理」 has exactly one exception and this is it. It must
+hold by construction — a read-only language that `netLangSync()` simply never
+reaches — and **not** by a `mine` test remembered at each of the four call
+sites, because the one that forgets is the one that ruins somebody's copy of a
+language they did not write and cannot repair. It also does not need syncing:
+nothing on the phone can change it, so the two copies cannot differ.
 
 **What is already settled, and settled twice.** A downloaded language is
 **never merged into the person's own** — `docs/FEATURES.md` § 4 (2026-08-19)
