@@ -44,10 +44,20 @@
    this file remembers to ask. Asking is what makes the refusal a door
    instead of a shrug.
 
-   An anonymous account is one phone's refresh token and nothing else. Lose
-   the phone and nobody, including us, can prove it was theirs -- which is
-   exactly why buying asks for an identity, and why attaching one later keeps
-   the same uid rather than starting again.
+   There is no anonymous account any more. It was one phone's refresh token
+   and nothing else -- lose the phone and nobody, including us, could prove it
+   was theirs -- and OWNER 2026-08-26 took it out: an account is asked for at
+   the door now, before anything can be made.
+
+   This used to end "and attaching one later keeps the same uid rather than
+   starting again." That was never true here: netSignUp() below posts to
+   /auth/v1/signup with no session token on it, which asks Supabase for a NEW
+   user rather than for an identity on the one already signed in. Nothing was
+   ever lost by it -- the app has never been released and no anonymous account
+   has existed outside a test build -- and there is nothing left to fix now
+   that none is made. It is written down rather than deleted because the
+   sentence was a description of a mechanism nobody had built, and those are
+   the ones that get built on.
    ========================================================================= */
 
 /* =========================================================================

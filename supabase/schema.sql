@@ -404,11 +404,25 @@ alter table report add constraint report_actor_fkey
 -- below opens exactly one door. Read them as sentences: who, may do what, to
 -- which rows.
 --
--- Anonymous accounts can read and cannot write. Supabase gives an anonymous
--- sign-in a real uid, so "not signed in" is not the test -- the JWT carries
--- is_anonymous, and that is what the writing policies check. Somebody browsing
--- without an account is a person who has not decided yet, not a stranger: when
--- they register, the same uid is linked and nothing they did is lost.
+-- Anonymous accounts can read and cannot write anything at all. Supabase gives
+-- an anonymous sign-in a real uid, so "not signed in" is not the test -- the
+-- JWT carries is_anonymous, and that is what every writing policy checks
+-- through is_member().
+--
+-- The app does not make one any more (OWNER 2026-08-26), so this is a wall
+-- with nobody standing at it. It stays because the switch that opens that
+-- endpoint is in the Supabase dashboard rather than in this file.
+--
+-- This paragraph used to end: "when they register, the same uid is linked and
+-- nothing they did is lost." **That was never true of this app.** netSignUp()
+-- in www/net.js posts to /auth/v1/signup with no session token on it, which is
+-- how Supabase is asked for a NEW user rather than for an identity on the one
+-- already here -- so registering made a second uid and left the first one's
+-- rows behind it. Nothing was ever lost by it, because no anonymous account
+-- has ever existed outside a test build, and there is nothing to fix now that
+-- the app has stopped making them. It is written down because a sentence that
+-- describes a mechanism nobody built is the kind of thing the next person
+-- builds on.
 -- ---------------------------------------------------------------------------
 alter table profile     enable row level security;
 alter table language    enable row level security;
