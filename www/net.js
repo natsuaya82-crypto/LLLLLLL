@@ -665,29 +665,71 @@ function netReport(what, why, note, ok, bad){
    Who may is one column, `profile.staff`, set by hand in the dashboard and
    revoked from every role the app signs in as. There is no screen that grants
    it and there is not meant to be one. */
-var NET_STAFF=false, NET_BANNED='';
+/* And the one above it, which is a different question: not "may this account
+   answer a report" but "may this account decide who answers reports".
+   「俺は権限者で他はスタッフみたいな感じで」 One account holds it -- whoever
+   is called `lingua` -- and schema.sql is where that is written down, not
+   here: what this variable is is the answer to a question already asked and
+   already settled by the server. Every door it opens is bolted on that side
+   too, so a phone that lied about this would get a screen and no data. */
+var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
 /* Asked once, at launch, and remembered. A screen that asked every time it
    was drawn would put a request behind every render. */
-/* One request, because it is one row and the app wants two things off it:
-   whether this account answers the reports, and whether it has been ejected.
-   The second is not something the app could work out otherwise -- every write
-   would simply be refused, and "the server said no" is not a sentence anybody
-   can act on. */
+/* One request, because it is one row and the app wants three things off it:
+   whether this account answers the reports, whether it decides who does, and
+   whether it has been ejected. The last is not something the app could work
+   out otherwise -- every write would simply be refused, and "the server said
+   no" is not a sentence anybody can act on. */
 function netStaff(ok){
   ok=ok||function(){};
-  if(!netSignedIn()){ NET_STAFF=false; NET_BANNED=''; ok(false); return; }
-  netGet('/rest/v1/profile?select=staff,banned_at,banned_why&limit=1&id=eq.'+
+  if(!netSignedIn()){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); return; }
+  netGet('/rest/v1/profile?select=staff,admin,banned_at,banned_why&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
       var r=(d && d.length)? d[0] : null;
       NET_STAFF=!!(r && r.staff);
+      NET_ADMIN=!!(r && r.admin);
       /* The reason if there is one, and a space if there is not, so that the
          string is true-y whenever the account is banned and the screens can
          ask one question instead of two. */
       NET_BANNED=(r && r.banned_at)? (String(r.banned_why||'') || ' ') : '';
       ok(NET_STAFF);
     },
-    function(){ NET_STAFF=false; NET_BANNED=''; ok(false); });
+    function(){ NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; ok(false); });
+}
+/* Making somebody staff, and unmaking them. By handle, because a handle is
+   the only name this app has for a person: an address lives in auth.users,
+   which is Supabase's and is not read from here.
+   「staffアカウントはスタッフページから追加できるようにしよう」
+
+   staff_add() and staff_drop() in schema.sql ask is_admin() inside
+   themselves, so these two are a screen for a door rather than the door. The
+   `@` a person types is taken off here -- it is how the app says "a person"
+   and is not part of what a handle IS. */
+function netStaffAdd(handle, ok, bad){
+  if(!netSignedIn() || !handle){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/staff_add', {h:netHandleOf(handle)},
+          SESS.at, function(){ ok(); }, bad);
+}
+function netStaffDrop(handle, ok, bad){
+  if(!netSignedIn() || !handle){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/staff_drop', {h:netHandleOf(handle)},
+          SESS.at, function(){ ok(); }, bad);
+}
+/* One place, because both of the above and the screen that lists them would
+   each have written it out. A handle is lower case in the schema's own check
+   constraint, so typing one with a capital in it is a person typing a name
+   rather than a person getting it wrong. */
+function netHandleOf(s){
+  return String(s||'').replace(/^@+/, '').toLowerCase().replace(/\s+/g, '');
+}
+/* Who answers the reports today. profile_read is `using (true)`, so this
+   needs no policy of its own -- what it lists is public, and what it is FOR
+   is not. */
+function netStaffList(ok, bad){
+  if(!netSignedIn()){ bad(null, 0); return; }
+  netGet('/rest/v1/profile?select=id,handle,admin&staff=is.true&order=handle.asc',
+    function(d){ ok(d || []); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a
    list of reasons with no posts under them is a list nobody can act on, and

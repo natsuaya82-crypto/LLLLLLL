@@ -613,15 +613,20 @@ export function halfDone(){
        exists to prevent. */
     ['the admin screen, locked', () => { window.route='admin'; NAV=[{r:'admin'}];
         return vAdmin(); }],
-    ['the admin screen', () => { const keep = MODS, keepN = ADMINN;
+    ['the admin screen', () => { const keep = MODS, keepN = ADMINN, keepS = ADMINS;
         ADMIN_OK = true;
         ADMINN = { people:1284, posts:9130, langs:412, reports:1 };
+        /* Two rows and they are not the same row: the one above staff is in
+           the list and cannot be taken off it, so it is the one without a
+           press. A list holding only the second kind would never draw that. */
+        ADMINS = [{ id:'u9', handle:'lingua', admin:true },
+                  { id:'u1', handle:'mod', admin:false }];
         MODS = [{ id:1, why:'spam', note:'', at:Date.now()-600000,
                   who:'veth', uid:'u1', out:false,
                   pid:'ps1', ln:'kano mos tir', down:false }];
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
-        ADMIN_OK = false; ADMINN = keepN; MODS = keep; return h; }],
+        ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
     /* The composer, for somebody who has been ejected. Every write they make
        is refused by the server, and the line saying so is on no screen
        otherwise -- NET_BANNED is empty for everybody else. */

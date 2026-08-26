@@ -110,7 +110,6 @@ function vMod(){
   var rows=MODS||[];
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<button class="btn ghost"' + DO('modLoad') + '>'+esc(t('mod.again'))+'</button>'+
-    '<button class="btn ghost"' + DO('goAdmin') + '>'+esc(t('admin.title'))+'</button>'+
     (MODERR? '<div class="mnone bad">'+esc(MODERR)+'</div>' : '')+
     ((!MODBUSY && !MODERR && MODS && !rows.length)
       ? '<div class="mnone">'+esc(t('mod.none'))+'</div>' : '')+
@@ -156,10 +155,41 @@ function vMod(){
    password it does not have would lock the owner out of their own screen. So
    the lock is only there where there is something to unlock it with. */
 var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
+var ADMINS=null, ADMIN_H='';
 
 function adminLocked(){ return !ADMIN_OK && netHow()==='email'; }
 /* Going there and reading are one press, for the same reason goMod() is. */
 function goAdmin(){ go('admin'); if(!adminLocked()) adminLoad(); }
+/* And how anybody gets here at all. 「どっか7回タップとパスワード要求で」
+   OWNER 2026-08-26, on the settings heading, which is where navTop() in
+   www/shell.js puts the count.
+
+   There is no button anywhere. A visible way in beside a hidden one is not a
+   hidden one, and the reports screen carried a button here for about an hour
+   before the owner chose this instead.
+
+   It does nothing at all for anybody but the one account above staff -- not a
+   refusal, not a wrong-password screen, nothing. A door that says "wrong
+   password" is a door somebody now knows is there, and the whole of what this
+   is worth is that a phone somebody was handed does not look like it has one.
+   What it is NOT worth is anything at all against somebody sending their own
+   requests: admin_counts(), staff_add() and staff_drop() each ask is_admin()
+   on the server, and that is the wall. This is the curtain in front of it.
+
+   Nothing resets the count, which is deliberate: seven presses spread over a
+   week still open it, and there is nothing to be gained by making the owner
+   hurry. tools/press.mjs rebuilds the screen before every press but not the
+   app's variables, so its walk does reach seven -- and arrives at the same
+   nothing, because NET_ADMIN is false everywhere in the fixture except the
+   one face that sets it. */
+var ADMIN_TAPS=0;
+function adminTap(){
+  ADMIN_TAPS++;
+  if(ADMIN_TAPS<7) return;
+  ADMIN_TAPS=0;
+  if(!NET_ADMIN) return;
+  goAdmin();
+}
 /* Stored and not rendered back: render() here would rebuild the field under
    whoever is typing into it. settings.js's setPwSet() is the same line. */
 function adminSet(k, v){ if(k==='pw') ADMIN_PW=String(v||''); }
@@ -183,8 +213,49 @@ function adminGo(){
 function adminLoad(){
   if(ADMIN_BUSY) return;
   ADMIN_BUSY=true; ADMIN_ERR=''; render();
-  netCounts(function(n){ ADMINN=n; ADMIN_BUSY=false; modLoad(); },
-            function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
+  netCounts(function(n){
+    ADMINN=n;
+    /* Who answers the reports is the third thing on this screen and the only
+       one that can be changed from it, so it is asked for in the same press.
+       A list that failed to arrive is an empty list and not an error: the
+       numbers above it are already up, and one refusal that stops the whole
+       screen is a screen that is blank for the wrong reason. */
+    netStaffList(function(rows){ ADMINS=rows; ADMIN_BUSY=false; modLoad(); },
+                 function(){ ADMINS=[]; ADMIN_BUSY=false; modLoad(); });
+  },        function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
+}
+/* ---- who answers the reports -------------------------------------------
+   「staffアカウントはスタッフページから追加できるようにしよう」
+   「そしたら@でいいよ」 -- by handle, because the app has no other name for a
+   person: an address is in auth.users and this app does not read it.
+
+   Adding is not confirmed and neither is taking away, which is the opposite
+   of modOut() one chapter up, and deliberately: ejecting somebody is done TO
+   them and cannot be taken back by typing their name again. This can, by the
+   same person, on the same screen, in one press. */
+function adminStaffSet(k, v){ if(k==='h') ADMIN_H=String(v||''); }
+function adminStaffAdd(){
+  if(ADMIN_BUSY || !ADMIN_H) return;
+  ADMIN_BUSY=true; ADMIN_ERR=''; render();
+  netStaffAdd(ADMIN_H, function(){ ADMIN_H=''; ADMIN_BUSY=false; adminLoad(); },
+              function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
+}
+function adminStaffDrop(h){
+  if(ADMIN_BUSY) return;
+  ADMIN_BUSY=true; ADMIN_ERR=''; render();
+  netStaffDrop(h, function(){ ADMIN_BUSY=false; adminLoad(); },
+               function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
+}
+/* One of them. The account above staff is in the list and is not a button --
+   staff_drop() in schema.sql refuses to take it off, so a button there would
+   be one that does nothing. Same class either way, so the rows are one
+   height; what differs is whether it is pressable, which is what the rule
+   about rows is not about. */
+function adminStaffRow(r){
+  return r.admin
+    ? '<div class="set"><span class="sl">@'+esc(r.handle)+'</span></div>'
+    : '<button class="set"' + DO('adminStaffDrop', [r.handle]) + '>'+
+        '<span class="sl">@'+esc(r.handle)+'</span></button>';
 }
 /* One number. The same row the settings list is made of, so the rows on this
    screen are the height the rows everywhere else in the app are. A number
@@ -204,6 +275,17 @@ function vAdmin(){
     adminRow('admin.posts', n.posts)+
     adminRow('admin.langs', n.langs)+
     adminRow('admin.reports', n.reports)+
+    /* Who answers them, and the field that adds one. The heading is a name
+       and not a sentence about what the list is for -- without it the handles
+       sit under four numbers and read as a fifth. */
+    '<div class="set"><span class="sl">'+esc(t('admin.staff'))+'</span></div>'+
+    (ADMINS||[]).map(adminStaffRow).join('')+
+    '<div class="field"><input id="admin-h" type="text" '+
+      'value="'+esc(ADMIN_H)+'" placeholder="'+esc(t('admin.staff.ph'))+'" '+
+      'autocapitalize="none" autocorrect="off" spellcheck="false"' +
+      IN('adminStaffSet', ['h']) + '></div>'+
+    '<button class="btn ghost"' + DO('adminStaffAdd') +
+      (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
     /* And the reports themselves, drawn by the row the reports screen draws
        them with. Two lists of the same thing that could disagree about what a
        report looks like is the second state this chapter refuses to keep. */
