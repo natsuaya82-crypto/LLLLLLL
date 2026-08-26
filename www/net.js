@@ -221,12 +221,17 @@ function netTook(d){
    that used to ask has_account() ask is_member() now, so a session with no
    name on it is refused by the server whatever this file does.
 
-   What is NOT gone, and must not be: netAnonTok() below and SESS.anon. A
-   phone that has been running since before today still holds an anonymous
-   session, and it is still anonymous -- the claim is in the token the server
-   issued. Treating netSignedIn() and netMember() as the same question now
-   would quietly call every one of those a member, and the only thing that
-   would come back is a refusal with nothing to say about itself. */
+   netAnonTok() below and SESS.anon stay, and netSignedIn() and netMember()
+   stay two functions. Not for anybody's sake -- there is nobody: the app has
+   never been released, so there is no phone anywhere holding an anonymous
+   session. 「リリースしてないんだからアカウンとないでしょ」 -- OWNER 2026-08-26.
+
+   They stay because collapsing them is a rename, and it is a rename across
+   sns.js, post.js, settings.js and me.js, which this session does not own. A
+   rename does not ride along with a feature (CLAUDE.md); it is its own task,
+   and it is in the report as one. The claim itself is still real on the
+   server -- is_member() in schema.sql reads is_anonymous off the token -- so
+   what is here is a true question with nothing left to answer it yes. */
 function netOut(){
   SESS=null; netSave();
 }

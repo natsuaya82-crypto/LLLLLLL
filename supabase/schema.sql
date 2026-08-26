@@ -445,9 +445,16 @@ alter table report      enable row level security;
 -- policies are standing on it and this change is about who else joins them.
 --
 -- A signed-in account that is not an anonymous one, and has not been frozen.
--- The anonymous clause stays: the app no longer MAKES one, but a phone that
--- has been running since before today still holds a session that says it is,
--- and that session must not quietly become a member.
+--
+-- The anonymous clause stays, and not for anybody's sake -- there is nobody:
+-- the app has never been released, so no phone anywhere holds an anonymous
+-- session. 「リリースしてないんだからアカウンとないでしょ」 -- OWNER 2026-08-26.
+-- It stays because this is a wall and not a preference. Anonymous sign-in is a
+-- switch in the Supabase dashboard, not a thing this file can see; if it is on
+-- -- today, or in a year, by somebody setting up a second project -- the
+-- endpoint answers, and what stops that session writing is this line and
+-- nothing else. Ten policies stand on this function and none of them says the
+-- word anonymous.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
