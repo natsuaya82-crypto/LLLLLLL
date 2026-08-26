@@ -133,7 +133,8 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   out.ceilRows = kbRowsMax();
   out.screenH = KB_REF_H;
-  out.most = KB_MOST; out.rowh = KB_ROWH; out.bars = KB_BARS;
+  out.most = KB_MOST; out.roww = KB_ROWW; out.bars = KB_BARS;
+  out.refW = KB_REF_W; out.rowh = kbRowH(KB_REF_W);
   out.ceilCols = KB_COLS;
   /* every pattern this app builds is inside the ceiling as it is built */
   out.patsFit = KB_PATS.every(function (p){
@@ -724,7 +725,7 @@ function swiftNum(re, what){
   if (!m) return { ok: false, what: what, saw: 'no line matching ' + re };
   return { ok: true, what: what, n: parseFloat(m[1]) };
 }
-const swRowH = swiftNum(/rowHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'rowHeight');
+const swRowW = swiftNum(/rowPerWidth:\s*CGFloat\s*=\s*([0-9.]+)/, 'rowPerWidth');
 const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
 const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
 const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
@@ -752,11 +753,15 @@ say(r.letters, 'no letter moved');
 say(r.words, 'no word moved');
 say(r.boards, 'no other keyboard moved');
 say(r.faces, 'no other face of this keyboard moved');
-say([swRowH, swBarH, swMost, swEdge].every((x) => x.ok),
+say([swRowW, swBarH, swMost, swEdge].every((x) => x.ok),
     'the extension still says its height in the three ways this reads' +
-    ([swRowH, swBarH, swMost, swEdge].filter((x) => !x.ok).map((x) => ' -- ' + x.what + ': ' + x.saw).join('')));
-say(swRowH.ok && r.rowh === swRowH.n,
-    'one row is ' + r.rowh + 'pt here and ' + (swRowH.ok ? swRowH.n : '?') + 'pt in the extension');
+    ([swRowW, swBarH, swMost, swEdge].filter((x) => !x.ok).map((x) => ' -- ' + x.what + ': ' + x.saw).join('')));
+say(swRowW.ok && r.roww === swRowW.n,
+    'a row is ' + r.roww + ' of the phone across, here and in the extension' +
+    ' (' + (swRowW.ok ? swRowW.n : '?') + ')');
+say(Math.abs(r.rowh - 54) < 0.5,
+    'which on the 390pt phone it was measured at is ' + r.rowh.toFixed(1) +
+    'pt -- the 54 it used to be flat at, so that phone does not move');
 say(swMost.ok && r.most === swMost.n,
     'a keyboard may take ' + r.most + ' of the screen, both sides');
 say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
@@ -857,12 +862,15 @@ say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
 console.log('\n  the ceiling is ' + r.ceilRows + ' rows, one number for every phone.');
-console.log('  what would fit per phone, at ' + r.rowh + 'pt a row (a CONSTANT in the' +
-  ' extension, so a key is the same height on every phone):');
-console.log('    ' + [568, 667, 812, 844, 852, 874, 932, 956].map((h) =>
-  h + '->' + Math.max(1, Math.floor((h * r.most - r.bars) / r.rowh))).join('  '));
-console.log('  568 is the shortest phone iOS 15 runs on, and four is fewer than the' +
-  " free QWERTY's own five -- docs/reports/kb2-2026-08-26.md");
+console.log('  a key is a tenth of the phone across and ' + r.roww +
+  ' of it tall, so it keeps its shape. What each phone comes to,');
+console.log('  as  width x height -> row height, rows that fit:');
+[[320, 568], [375, 667], [375, 812], [390, 844], [393, 852], [402, 874],
+ [428, 926], [430, 932], [440, 956]].forEach(([w, h]) => {
+  const rh = w * r.roww;
+  console.log('    ' + String(w).padStart(3) + ' x ' + h + ' -> ' +
+    rh.toFixed(1) + 'pt, ' + Math.max(1, Math.floor((h * r.most - r.bars) / rh)) + ' rows');
+});
 console.log('\n  a face of ' + (r.narrowCols / 2) + ' keys is drawn ' + r.narrowSheet +
   'px across, and the row-adding + on it is ' + r.narrowPlus + 'px');
 console.log('  a face of 10 keys is drawn ' + r.wideSheet +

@@ -842,7 +842,7 @@ function kbCol(i){
    of the cap rather than said again:
 
      KB_MOST  the most of the screen a keyboard may take       0.55
-     KB_ROWH  one row, which is what carries the touch          54
+     KB_ROWW  one row, as a share of the phone's short side   0.1385
      KB_BARS  the two edges, and the candidate bar above     8 + 44
 
    All three are ios/App/LinguaKeyboard/KeyboardViewController.swift's, and
@@ -852,9 +852,14 @@ function kbCol(i){
    because it nearly always is (shareConv() answers for an alphabet too) and
    because assuming it is the stricter of the two answers.
 
-   What that comes to, at 54pt a row: five on an iPhone SE, seven on every
-   phone from the 13 mini to the 16, eight on a Pro Max. Eight was a number
-   only the largest phone ever had room for.
+   A ROW IS A KEY TALL. 「キーのサイズはiPhoneのサイズによって変わるんじゃない
+   の？八行入っても小さかったら打ちにくいだけだぞ？」 OWNER DECISION 2026-08-26.
+   The extension's row was a flat 54, so a key was the same height on every
+   phone and the only thing a bigger phone bought was MORE ROWS -- backwards
+   from what a bigger phone is for. Width always scaled, because ten keys
+   divide whatever the phone is across; the height now follows it, so a key
+   keeps its shape: 44pt on the narrowest iPhone, 54 on a 390, 61 on a Pro
+   Max. 0.1385 is that same 54 at the 390 it was chosen on.
 
    Both ceilings are held on ADDING only. A layout that is already over -- a
    pattern built from a very large alphabet, a keyboard built on a bigger
@@ -862,7 +867,7 @@ function kbCol(i){
    left exactly as it is and simply cannot be added to. Nothing is ever cut
    down to fit: that would be the app deleting somebody's keys. */
 var KB_COLS=20;                 /* columns are half keys -- kbU() below */
-var KB_MOST=0.55, KB_ROWH=54, KB_BARS=8+44;
+var KB_MOST=0.55, KB_ROWW=0.1385, KB_BARS=8+44;
 /* A REFERENCE screen, and not the phone in your hand. That was the first
    version of this and it was wrong in the way the ceiling itself was wrong.
    「八行入っても小さかったら打ちにくいだけだぞ？」 OWNER, 2026-08-26.
@@ -878,18 +883,19 @@ var KB_MOST=0.55, KB_ROWH=54, KB_BARS=8+44;
    this way: 「TEN ACROSS is the phone's number -- the narrowest iPhone is
    320」. Not the phone in your hand. The narrowest one.
 
-   The reference below is 844 rather than the shortest phone the app runs on,
-   and that is a number waiting on the owner rather than a decided one --
-   docs/reports/kb2-2026-08-26.md. The arithmetic that makes it a question:
-   the extension's rowHeight is a CONSTANT 54, so a key is the same height on
-   every phone and only the row count changes, which is backwards from what a
-   bigger phone is for. Until that constant is a fraction of the screen, the
-   shortest supported phone (568) allows four rows -- fewer than the free
-   QWERTY's own five -- and that is the proof that the constant is the thing
-   to fix, not this number. 844 refuses nothing that exists today. */
-var KB_REF_H=844;
+   The reference is a 390 x 844 phone -- the one most people are holding, and
+   the one the 0.1385 above was measured at, so this is the phone where the
+   keyboard is exactly what it always was. Every other phone gets a key of its
+   own size and, because the bars do not scale, within a row of the same
+   answer: seven from the 13 mini up, six on an SE 2, five on an SE 1. The
+   ceiling is one number rather than each of those, for the reason above.
+
+   kb-check prints what every phone comes to, so a change to any of the three
+   numbers shows its whole shape rather than one number moving. */
+var KB_REF_W=390, KB_REF_H=844;
+function kbRowH(w){ return (w||KB_REF_W)*KB_ROWW; }
 function kbRowsMax(){
-  return Math.max(1, Math.floor((KB_REF_H*KB_MOST - KB_BARS) / KB_ROWH));
+  return Math.max(1, Math.floor((KB_REF_H*KB_MOST - KB_BARS) / kbRowH(KB_REF_W)));
 }
 /* Is there room for another row, and is there room in this one for a key of
    that width. Asked in one place each so a way in that forgets cannot exist:

@@ -17,10 +17,29 @@ final class KeyboardViewController: UIInputViewController,
   private var height: NSLayoutConstraint?
   private var compose: Compose?
 
-  /// A row is a thumb high. Ten keys across a phone is about 35pt wide each,
-  /// which is what QWERTY is and what Apple's own keyboard measures — the
-  /// height is what carries the touch.
-  private let rowHeight: CGFloat = 54
+  /// A row is a KEY tall, and a key is a tenth of the phone wide — so the
+  /// height follows the width and a key keeps its shape on every phone.
+  /// 「キーのサイズはiPhoneのサイズによって変わるんじゃないの？八行入っても
+  /// 小さかったら打ちにくいだけだぞ？」 OWNER DECISION 2026-08-26.
+  ///
+  /// It was a flat 54, and a flat number is a key that does not change when
+  /// the phone does: on a bigger phone the keys stayed exactly as tall and
+  /// the only thing that grew was HOW MANY ROWS FIT — which is backwards from
+  /// what a bigger phone is for. Width has always scaled, because ten keys
+  /// divide whatever the phone is across; only the height did not.
+  ///
+  /// 0.1385 is the 54 this used to be, at the 390pt phone it was chosen on.
+  /// So nothing moves on that phone and everything else follows it: 44pt on
+  /// the narrowest iPhone, 61pt on a Pro Max.
+  ///
+  /// The SHORT side, not `width`, so the answer does not change when the
+  /// phone is turned over — a key is not suddenly two and a half times taller
+  /// in landscape.
+  private static let rowPerWidth: CGFloat = 0.1385
+  private var rowHeight: CGFloat {
+    let b = UIScreen.main.bounds
+    return min(b.width, b.height) * KeyboardViewController.rowPerWidth
+  }
   private let barHeight: CGFloat = 44
   /// The most of the screen a keyboard may take. Apple's own is about four
   /// tenths and a kana keyboard about half; this is the ceiling, not the aim,

@@ -927,13 +927,32 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   にしないとキツくない？」). So a row past the cap was never a row; it was
   every row on the keyboard getting shorter.
 
-  `kbRowsMax()` divides it out: `(screen × 0.55 − 52) / 54`.
+  **And a row is a KEY tall.** 「キーのサイズはiPhoneのサイズによって変わる
+  んじゃないの？八行入っても小さかったら打ちにくいだけだぞ？」
 
-  | screen | rows |
-  |---|---|
-  | 667 (iPhone SE) | **5** |
-  | 812 / 844 / 852 / 874 (13 mini … 16) | **7** |
-  | 932 / 956 (Pro Max) | **8** |
+  `rowHeight` was a flat `54`, so a key was the same height on every phone and
+  the only thing a bigger phone bought was MORE ROWS. Width always scaled —
+  ten keys divide whatever the phone is across — and the height now follows
+  it at **0.1385 of the phone's short side**, which is that same 54 at the
+  390pt phone it was measured on. A key keeps its shape everywhere.
+
+  `kbRowsMax()` divides the rest out: `(screen × 0.55 − 52) / (width × 0.1385)`.
+
+  | phone | row height | rows that fit |
+  |---|---|---|
+  | 320 × 568 (SE 1) | 44.3pt | **5** |
+  | 375 × 667 (SE 2/3) | 51.9pt | **6** |
+  | 375 × 812 … 402 × 874 (13 mini … 16) | 51.9 – 55.7pt | **7** |
+  | 428 × 926 … 440 × 956 (Pro Max) | 59.3 – 60.9pt | **7** |
+
+  **Eight fits on nothing now**, which is what the report was about.
+
+  **The ceiling is ONE number — seven — and not each row of that table.** A
+  keyboard belongs to a language and a language moves between phones, so
+  "as many as the phone in your hand fits" builds eight on a Pro Max and hands
+  an SE eight rows squeezed to 39pt. It is the width rule one axis over:
+  rule 19 has always set the width by the narrowest iPhone, not the phone in
+  your hand.
 
   It was `KB_ROWS = 8`, invented in `www/keyboard.js` under a comment saying
   「nothing on the phone sets a height」 — which was not true when it was
@@ -944,13 +963,19 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   three numbers are the extension's, so **`tools/kb-check.mjs` reads them out
   of `KeyboardViewController.swift`** and fails if the two sides disagree — a
   comment naming the Swift file does not hold that, and a check that wrote
-  `54` down again would be a third copy.
+  `0.1385` down again would be a third copy. Putting `rowHeight` back to a
+  flat `54` fails it as "no line matching", which is the shape that matters:
+  the check breaks when the extension stops answering the question, not only
+  when it answers differently.
   The candidate bar is assumed present because it nearly always is
   (`shareConv()` answers for an alphabet too) and because assuming it is the
   stricter of the two answers.
-- Affected features: `kbRowsMax()`, `kbRoomRow()`, `kbLayRoom()`,
-  `kbLayPut()` (`www/keyboard.js`) — **nothing stored changes and no layout
-  moves.** rule 19's "held on ADDING only" is unchanged and is what makes
+- Affected features: `rowHeight` / `rowPerWidth`
+  (`ios/App/LinguaKeyboard/KeyboardViewController.swift`) and `kbRowsMax()`,
+  `kbRowH()`, `kbRoomRow()`, `kbLayRoom()`, `kbLayPut()`
+  (`www/keyboard.js`) — **nothing stored changes and no layout moves.**
+  **The Swift half is NOT device confirmed**: it cannot be built or run from
+  Linux. rule 19's "held on ADDING only" is unchanged and is what makes
   this safe: a keyboard built on a Pro Max and opened on an SE is left
   exactly as it is, and simply cannot be added to there.
 - Implementation status: **implemented**, 2026-08-26, `claude/kb2`.
