@@ -185,6 +185,106 @@ decision has never been made the row in `docs/FEATURES.md` says **open**
 instead of appearing here.
 
 ### Decision
+- Date: 2026-08-26
+- Area: サーバーの範囲 ── 基本は全部サーバー。言語周りだけ file をバックアップに使う
+- Decision:
+
+  オーナーの言葉をそのまま置く。要約していない。
+
+  ```
+  サーバーの範囲決めようよそろそろ
+  じゃないといつまでもこれになる
+
+  基本は全部サーバー管理 言語周りだけバックアップにfile使う
+  制作はオフラインでも可能次つながった時に更新される
+  ```
+  ```
+  Xがローカル保存してんの？nolaとかの目もアプリもそういう話してんの
+  ```
+  ```
+  言語はアカウントないと作れないです
+  古い記載消してくれうざい
+  SNS部分はオフラインでは動かないよそりゃそう
+  アカウント消したら残るわけがないあほだろ
+  ```
+
+  同期の頻度とプランについては、オーナーの言葉として渡ってきたのは
+  **「全部だって」の四文字だけ**である。「常に同期する／プランに関係なく全員
+  サーバに載る」はそれをリーダーが開いたものであり、**オーナーの言葉ではない。**
+  プラン無関係の方は 2026-08-22 の「クラウドは全員で」と同じことを言っているので
+  独立に裏が取れているが、**「常に同期」は頻度＝しきい値の話であり、この一語から
+  確定させていない。** `docs/FEATURES.md` の行は open として持つ。
+
+  決まったこと:
+
+  1. **基本は全部サーバー管理。** 「Xがローカル保存してんの？」── 普通の
+     アプリはそうしていない、が理由である。
+  2. **言語周りだけ、バックアップに file を使う。** `www/backup.js`（章24）の
+     `Documents/Languages/<name>.json` が消えるのではなく、**サーバが本体で
+     file がバックアップ**という並びになる。
+  3. **制作はオフラインでも可能。次につながった時に更新される。**
+     これは既にそう動いている ── `www/sync.js`（章26）が両側を足し、
+     `netLangSync()` が起動時に撃つ。
+  4. **SNS 部分はオフラインでは動かない。**「そりゃそう」。既にそう。
+  5. **アカウントを消したら残らない。** サーバ側は既にそう ──
+     `account_delete()` の cascade が profile・言語・投稿・follow・block を
+     連れていく（`docs/FEATURES.md` § 8）。
+  6. **言語はアカウントが無いと作れない。** これは**まだそうなっていない。**
+     下の「コードと合っていない所」を見ること。
+  7. **古い記載を消す。** 「アカウント無しでも言語は作れる」と書いてある所を
+     消して、今そうであることを書く。
+
+- Reason: 「Xがローカル保存してんの？nolaとかの目もアプリもそういう話してんの」
+  ── **落とさないこと。** 次の人が「オフライン優先のほうが安全では」「ローカルを
+  真にしたほうが速いのでは」と思いついたときに止まるのはこの一行である。
+  普通のアプリはサーバを本体にしていて、この app だけ違う理由は無い、が理由。
+
+  そして「じゃないといつまでもこれになる」── 範囲が決まっていないことそのものが
+  費用だと言っている。決めない自由は無い。
+
+- Affected features: `www/sync.js`、`www/net.js`（`netLangRow`/`netSlices`/
+  `netSlicePut`/`netLangSync`）、`www/boot.js`、`www/backup.js`、
+  オンボーディングの扉（`www/onboard.js`）、最初の言語が作られる所
+  （`www/core.js` の最上位）。
+- Affected data: 何も消えない。サーバに載る範囲が広がるだけであり、
+  電話の写しはそのまま残る。**費用には効く** ── プランに関係なく全員のスライスが
+  載るなら、ストレージと egress が人数に比例する（`docs/PAID_FEATURES.md`）。
+- Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`、
+  `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/STATE.md`、
+  `docs/CHANGELOG.md`（あれは足すだけ。書き換えない）。
+- Implementation status: **ほぼ implemented、ただし 6 は未実装。**
+  1〜5 はコードに在る。**6「言語はアカウントないと作れない」だけが無い。**
+
+#### コードと合っていない所。直していない ── 報告した
+
+このファイルの「if existing code contradicts it, **report the contradiction** —
+do not go and change unrelated code to match」に従う。今日は docs だけ触った。
+
+**最初の言語は、アカウントを訊けない所で作られている。**
+`www/core.js` の最上位に
+
+```
+try{ if(!langId || !LANGS[langId]){ if(!langMigrate()) langFirst(); } }catch(e){ langFirst(); }
+```
+
+があり、これは `www/index.html` の 2749 行目 ── `net.js`（2766）より前、
+`boot.js`（2802）よりずっと前 ── で走る。その時点で `netSignedIn` はまだ
+**定義されてすらいない。** つまり最初の言語は、アカウントの有無を訊く手段が
+無い場所で、無条件に作られている。「アカウントないと作れない」を効かせるには
+最初の言語を作る場所を動かす必要があり、それは core.js の一行では済まない。
+
+**そして「アカウントの無い人はいない」も、厳密には今日まだ真ではない。**
+`www/boot.js:96` の `netAnon(bootSession, function(){})` は失敗しうる。
+失敗のコールバックは空で、その上のコメントが理由を書いている ──
+「It means the phone is offline on its first launch, and the whole making side
+works offline; the next launch asks again」。**初回起動＋圏外**は、
+アカウントが無く、それでも制作ができる状態であり、コードはそれを意図して
+支えている。この決定は、その状態をどうするかを決めていない。
+
+だから今日消した文は「もう嘘だから」ではなく、**「もう規則ではないから」**
+消した。事実としてはまだ半分残っており、上の一段落がその残りである。
+
+### Decision
 - Date: 2026-08-25
 - Area: DL — 公式アセットの言語を取ってきて使う。取ってきたものは自分の言語には**入らない**
 - Decision:
@@ -1209,6 +1309,12 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 ### Decision
 - Date: 2026-08-18
 - Area: Anything that is the server's — and the timeline first
+- **Superseded in part on 2026-08-26** (the entry at the head of this log).
+  Point 1 stands and is still absolute. **Point 3 does not**: 「言語はアカウント
+  ないと作れないです」「古い記載消してくれうざい」. The words below are left
+  exactly as they were written — this log is the record of what was decided
+  when, and a record that gets edited to agree with today is not one. Read
+  point 3 as history.
 - Decision:
   1. **Anything that needs the server is built assuming the server is
      there.** A screen that half-works without one is not a step on the way
