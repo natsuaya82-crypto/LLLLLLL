@@ -145,6 +145,54 @@ deferral and **the cost did not change**. Nobody has priced it against the four
 subscription products (2026-08-14), and **nobody here should**: what a plan
 costs and where the free/paid line sits are the owner's.
 
+### How many people a plan holds, and what actually decides it
+
+Asked 2026-08-26: 「proプランでも何人くらい囲える？」
+
+**The number is not about how many sign up. It is about how many OPEN the app,
+and what each opening downloads.** `supabase/setup.md` § 6 already carries the
+table and it is the one to keep:
+
+| 毎日開く人 | 月の通信 | |
+|---|---|---|
+| 500 | ~15 GB | 余裕 |
+| 2,000 | ~60 GB | 余裕 |
+| **8,000** | **~240 GB** | **250 GB に当たる** |
+| 20,000 | ~600 GB | 超過 +$32/月 |
+
+Pro is 8 GB of database, 100 GB of files and **250 GB of egress a month**, and
+$0.09/GB after. Egress runs out first, long before storage does — the database
+is the one that would hold a hundred thousand languages (5.4 KB packed, a
+megabyte for a large one) and 8 GB does not run out on words.
+
+**That table's one assumption is thumbnails, and it holds — checked
+2026-08-26.** `POST_THUMB=300` in `www/post.js` and `pt` on the post: the
+timeline draws the 300px copy and the full picture is fetched only when
+somebody taps it. Without that the table is **ten times worse** — 8,000 becomes
+800 — so anything that puts a full-size picture in a feed row is not a
+performance question, it is the plan.
+
+**What the table does NOT include, and it is new: 「常に同期」.** It was written
+when the language went up once, on launch. Two things about how it goes up
+decide whether this stays 8,000 or falls to a quarter of it:
+
+- `netSlices()` asks for `select=kind,body,no` — **every slice's whole body,
+  on every sync.** A 100 KB language re-read forty times in a day is 4 MB a day
+  per person, ~120 MB a month. The whole timeline, thumbnails and all, is about
+  31 MB a month per person at the 8,000 line. **So a naive 「always」 makes the
+  language four times the cost of everything else put together.**
+- The fix is already half-built and costs nothing: **`no` is a version counter**
+  that goes up on every write (`netSlicePut`, and `schema.sql` says so). Ask
+  `select=kind,no` first — a few dozen bytes — and fetch `body` only for the
+  slices whose number moved. An idle sync then costs nothing at all, which is
+  what almost every sync is.
+
+**This is engineering, not a decision.** Nobody here should pick the interval,
+the price or the tier. What this section is for is so that the person who
+writes 「常に同期」 knows that the interval is not the expensive part — **asking
+for bodies nobody needs is** — and that the counter to avoid it is already in
+the schema.
+
 **Answered 2026-08-26: 「supabaseのエンタープライズで対応する予定」.** The bill
 scaling with people rather than payers is not a reason to narrow the scope, and
 proposals to narrow it on cost grounds are **finished** — the owner has priced
