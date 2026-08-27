@@ -449,6 +449,71 @@ function gPosDemo(id){
   return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
 }
 
+/* ====================================================================
+   Grammar v2 -- the page that DEFINES a language, chapter by chapter
+   docs/GRAMMAR-V2-SPEC.md is the specification. It is the owner's, and this
+   file implements it rather than interpreting it.
+
+   §3 is the whole argument for this chapter: 「ユーザーに最初から SOV/SVO を
+   選ばせるのではない。まず実際に自分の言語で文章を作ってみるところから始める」.
+   So there is no list of six here. There are this language's own three words,
+   in the order this language puts them, and moving them is what says what the
+   order is. 「ユーザーが SOV という専門用語を知らなくても、言語を作れる UI に
+   する。SOV という表示は結果として表示する」
+
+   It is built BESIDE the old chapter rather than over it: the fifteen stages,
+   STG and the six-choice are untouched, and not one byte of anybody's language
+   moves. What this writes is `STG.order`, which is where the word order has
+   lived since 2026-08-25 -- the same answer arrived at a different way, so a
+   language that has one keeps it and the two screens cannot disagree.
+   ==================================================================== */
+
+/* Which word is picked up. Where you are standing, not something the language
+   holds, so it is never saved. */
+var g2Lift=-1;
+/* The three words a sentence needs, in the order THIS language puts them.
+   gLay() runs the real engine, so what is drawn is what a sentence of this
+   language would actually come out as -- not a diagram of one. */
+function g2Three(){
+  var s=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), o;
+  if(!s || !v) return null;
+  o=gWordOf('n', s);
+  if(!o) return null;
+  return gLay([s, v, o]);
+}
+/* Moving one. The first press lifts a word and the second puts it where the
+   other one stood -- two presses and no dragging, because a drag needs a
+   listener of its own and every button in this app carries a NAME instead.
+
+   What is swapped is the ORDER, not the words: position i is showing the role
+   orderDef().seq[i], because gLay() arranged them by exactly that. So this
+   writes the one value the old screen writes, through setOrder(), which marks
+   it chosen and redraws. */
+function g2Move(i){
+  var q=orderDef().seq.slice(), t;
+  if(g2Lift<0){ g2Lift=i; render(); return; }
+  if(g2Lift===i){ g2Lift=-1; render(); return; }
+  t=q[g2Lift]; q[g2Lift]=q[i]; q[i]=t;
+  g2Lift=-1;
+  setOrder(q.join(''));
+}
+/* §14 Sentence Structure. The words, then what they are, then the name --
+   in that order, because the name is the RESULT and nobody has to read it. */
+function g2Sent(){
+  var w=g2Three(), i, out='';
+  if(!w) return gNeedWords();
+  for(i=0;i<w.length;i++)
+    out+='<button class="seg'+(g2Lift===i? ' on' : '')+'"' + DO('g2Move', [i]) + '>'+
+      esc(wOut(w[i].hw))+'</button>';
+  return '<div class="segs">'+out+'</div>'+gOrderLine()+
+    '<div class="gsl">'+esc(orderDef().id)+'</div>';
+}
+/* The page. One chapter today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+   they arrive one at a time, each with its own picture. */
+function g2Page(){
+  return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent();
+}
+
 /* ---- the screen -------------------------------------------------------- */
 /* Word order, written as the three roles in the order chosen, with the drawn
    chevron between them. It used to be a translated string with an arrow
