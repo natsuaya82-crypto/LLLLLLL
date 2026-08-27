@@ -125,7 +125,7 @@ function migrateKbFree(){
   KB.kbs=kbs; KB.at=at; KB.v=2;
   saveKb();
 }
-function saveKb(){ kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
+function saveKb(){ kbVFix(); kbWayOff(); kbNoted(); bkTouch(); try{ localStorage.setItem(langKey('kb'), JSON.stringify(KB)); }catch(e){} }
 
 /* The four directions a finger can leave a key by, in the order they are
    stored. Written once because the editor, the renderer and the flick all
@@ -1249,13 +1249,28 @@ function kbKeyIs(ri, ki){
   return !!KBH && KBH.k==='k' && KBH.r===ri && KBH.i===ki;
 }
 function kbTapKey(ri, ki){
+  var rows, ui;
   if(kbIsFree(kbShow)) return;
   if(!kbEdit()) return;
+  /* The lower half of a merged key IS that key. One redirect here rather than
+     a second name in the markup, so everything below -- selecting, joining,
+     the bin -- is about the key somebody pressed. */
+  rows=kbLayer().rows;
+  if(rows[ri] && kbShadow(rows[ri][ki])){
+    ui=kbAtKey(rows[ri-1], kbAtOf(rows[ri], ki));
+    if(ui<0) return;
+    ri=ri-1; ki=ui;
+  }
   /* the one beside the one already chosen: the two become one */
   if(KBH && KBH.k==='k' && KBH.r===ri && (KBH.i===ki-1 || KBH.i===ki+1)){
     kbJoin(KBH.r, Math.min(KBH.i, ki));
     return;
   }
+  /* and the one directly under or over it: the two become one, two rows
+     tall. Refused when they do not line up, and then this is an ordinary
+     press that selects what was pressed. */
+  if(KBH && KBH.k==='k' && KBH.r===ri-1 && kbVJoin(KBH.r, KBH.i)) return;
+  if(KBH && KBH.k==='k' && KBH.r===ri+1 && kbVJoin(ri, ki)) return;
   KBH = kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki};
   kbSel=null;
   render();
@@ -1285,6 +1300,124 @@ function kbJoinable(){
   if(!KBH || KBH.k!=='k') return false;
   row=kbLayer().rows[KBH.r];
   return !!(row && row[KBH.i] && row[KBH.i+1]);
+}
+
+/* ---- a key that covers the row below it too -----------------------------
+   「縦はリーダーに確認して許可降りたらやって欲しい」OWNER 2026-08-27, and the
+   leader gave it the same day.
+
+   A merged cell is two things stored: `h` on the key that covers, and a GAP
+   carrying `up` standing in the same columns of the row below. The gap is
+   what keeps that row the width it was -- the keys beside it do not slide
+   under the merged key, and every total this file counts still adds up,
+   because a gap has always been a key with a width and no job.
+
+   It is a GAP and not a kind of its own, and that is the whole of why this
+   shape rather than a tidier one. KeyBoardView.swift switches on `k` and
+   falls to `default:` for anything it has never heard of -- which draws an
+   ordinary grey key and inserts nothing when pressed. A `gap` is drawn clear
+   and does nothing. So a board carrying a merge, read by a build from before
+   merges existed, is a keyboard with a hole where the lower half is and a key
+   of one row above it: the merge is missing and NOTHING ELSE IS. A keyboard
+   belongs to a language and a language moves between phones, so that is the
+   case that decides the shape. `h` and `up` are both unknown keys to an older
+   Decodable and are ignored rather than refused. */
+function kbTall(k){ return !!k && (k.h||1)>1; }
+/* How many rows a key stands in, as the variable .kbk already reads. It is
+   --rh and not a new class because .kbk's own min-height is written in terms
+   of it and has been since the sheet had two boards -- there is one rule
+   saying how tall a key is, and this is the number it was always given. */
+function kbRhCSS(k){ return kbTall(k)? ';--rh:'+(k.h||1) : ''; }
+function kbShadow(k){ return !!k && k.k==='gap' && !!k.up; }
+/* Where a key starts, in columns, and which key stands at a column. A merge
+   is only ever between a key and the one directly under it -- same column,
+   same width -- because anything else is a ragged cell and there is no such
+   thing on a sheet. */
+function kbAtOf(row, ki){
+  var at=0, i;
+  for(i=0;i<ki && i<row.length;i++) at+=kbU(row[i].w);
+  return at;
+}
+function kbAtKey(row, at){
+  var n=0, i;
+  if(!row) return -1;
+  for(i=0;i<row.length;i++){
+    if(n===at) return i;
+    if(n>at) return -1;
+    n+=kbU(row[i].w);
+  }
+  return -1;
+}
+/* Whether anything in this row is half of a merge. The three alignments are
+   down on such a row: where a merged pair goes when the row it is in is
+   pushed left or right is the OWNER's, and has not been asked. Moving one
+   half and not the other is not an answer to it. */
+function kbRowTied(ri){
+  var row=kbLayer().rows[ri], i;
+  if(!row) return false;
+  for(i=0;i<row.length;i++) if(kbTall(row[i]) || kbShadow(row[i])) return true;
+  return false;
+}
+/* The two, becoming one that is two rows tall. What it keeps is the UPPER
+   one -- its letter, its four flick slots, what it does when pressed -- for
+   kbJoin()'s reason: a key carries one letter, and somebody pressing two
+   keys has said nothing about which. The step back is what stands behind it.
+
+   It answers whether it happened, so kbTapKey() can fall through to plain
+   selection when the two do not line up. Refused rather than repaired: a
+   merge of a wide key and a narrow one is a cell this sheet cannot draw. */
+function kbVJoin(ri, ki){
+  var b=kbEdit(), rows, up, dn, di;
+  if(!b) return false;
+  rows=kbLayer().rows;
+  up=rows[ri]; dn=rows[ri+1];
+  if(!up || !dn || !up[ki]) return false;
+  if(kbTall(up[ki]) || kbShadow(up[ki])) return false;
+  di=kbAtKey(dn, kbAtOf(up, ki));
+  if(di<0 || kbU(dn[di].w)!==kbU(up[ki].w)) return false;
+  if(kbTall(dn[di]) || kbShadow(dn[di])) return false;
+  up[ki].h=2;
+  dn[di]=kbGap(dn[di].w); dn[di].up=1;
+  KBH={k:'k', r:ri, i:ki};
+  kbSel=null;
+  saveKb(); render();
+  return true;
+}
+/* Merges, kept honest, in one place. A row can be deleted, a column taken
+   out, a key put in beside one -- and any of those can leave a key covering
+   a row with no hole under it, or a hole under nothing. Neither throws and
+   both draw: what comes out is a keyboard that is not the one somebody built.
+
+   It runs from saveKb(), which is what every change to a keyboard ends in,
+   and BEFORE kbNoted() inside it, so what the step back holds is the repaired
+   layout rather than a state the app never showed. Rows are walked downwards,
+   so a key whose `h` is dropped here is dropped before the gap under it is
+   asked about. */
+function kbVFix(){
+  var i, j, rows, k, ri, ki, at, di;
+  if(!KB || !KB.kbs) return;
+  for(i=0;i<KB.kbs.length;i++){
+    if(!KB.kbs[i] || !KB.kbs[i].lay) continue;
+    for(j=0;j<KB.kbs[i].lay.length;j++){
+      rows=KB.kbs[i].lay[j].rows;
+      if(!rows) continue;
+      for(ri=0;ri<rows.length;ri++){
+        for(ki=0;ki<rows[ri].length;ki++){
+          k=rows[ri][ki];
+          at=kbAtOf(rows[ri], ki);
+          if(kbTall(k)){
+            di=kbAtKey(rows[ri+1], at);
+            if(di<0 || !kbShadow(rows[ri+1][di]) ||
+               kbU(rows[ri+1][di].w)!==kbU(k.w)) delete k.h;
+          }else if(kbShadow(k)){
+            di=kbAtKey(rows[ri-1], at);
+            if(di<0 || !kbTall(rows[ri-1][di]) ||
+               kbU(rows[ri-1][di].w)!==kbU(k.w)) delete k.up;
+          }
+        }
+      }
+    }
+  }
 }
 /* The letters across the top, one to a whole key and not one to a column --
    nobody insets a row by half a letter. Inside #kb so it shares the grid's
@@ -1468,6 +1601,10 @@ function kbGapW(half){ return half/2; }
 function kbAlign(how){
   var b=kbEdit(), rows, row, i, tot, rem, lead, tail;
   if(!b || !KBH || KBH.k!=='r') return;
+  /* Not a row with half a merge in it. The button is down for one, and this
+     is the same sentence said where it cannot be got round -- where a merged
+     pair goes when its row is pushed is the OWNER's and has not been asked. */
+  if(kbRowTied(KBH.i)) return;
   rows=kbLayer().rows;
   row=rows[KBH.i];
   if(!row) return;
@@ -1582,10 +1719,10 @@ function kbHTML(sel, ro){
          was no other way to tell one from another. */
       out+= ro
         ? '<span class="'+cls+'"'+(key.k==='lt'? ' data-lt="'+esc(key.v)+'"' : '')+
-          ' style="flex:'+(key.w||1)+'">'+kbFlicks(key, false)+
+          ' style="flex:'+(key.w||1)+kbRhCSS(key)+'">'+kbFlicks(key, false)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
-          'style="grid-column:span '+kbU(key.w)+'" '+
+          'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
           (kbWob? '' : DO('kbTapKey', [ri, ki])) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
@@ -2132,7 +2269,12 @@ var ICON_KEYSET='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill
   '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 12h6"/></svg>';
 function kbToolHTML(){
   var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c',
-      key=!!KBH && KBH.k==='k', ask=!!KBH && !!KBH.ins;
+      key=!!KBH && KBH.k==='k', ask=!!KBH && !!KBH.ins,
+      /* and whether that row may be pushed left or right at all. A row with
+         half a merge in it may not: where a merged pair goes when its row is
+         pushed is the OWNER's and has not been asked, and moving one half
+         and not the other is not an answer to it. */
+      al=row && !kbRowTied(KBH.i);
   return '<div class="kbtool">'+
     kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
     kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
@@ -2154,11 +2296,11 @@ function kbToolHTML(){
             ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>'+
           '<button class="kbtb"' + DO('kbOpenSel') +
             ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
-        : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
+        : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (al? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
-          '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
+          '<button class="kbtb"' + DO('kbAlign', ["c"]) + (al? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
-          '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
+          '<button class="kbtb"' + DO('kbAlign', ["r"]) + (al? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
     /* 「最大になったら+はなし」 -- down, which is what this button has always
        done when a row is as tall as it may get, and what the three beside it

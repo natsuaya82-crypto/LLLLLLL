@@ -1082,6 +1082,127 @@ const r = await pg.evaluate(({ s }) => {
   out.selForgot = !KBH && !/class="kbrow sel"/.test(vKb());
 
 
+  /* ---- 6i. a key joined to the one UNDER it ---------------------------
+     「縦はリーダーに確認して許可降りたらやって欲しい」OWNER 2026-08-27, and
+     the leader gave it the same day.
+
+     Stored as `h` on the key that covers and a gap carrying `up` standing in
+     the same columns of the row below. Nothing here can throw: a merge that
+     loses the letter, one whose lower half slides the rest of its row left,
+     one that cannot be taken back -- every one of those still renders, still
+     installs, and is not the keyboard somebody built.
+
+     The qwerty board's first two rows are ten keys of one, so they line up;
+     its third is inset by half a key at each end, so row 1 and row 2 do NOT,
+     and that is the pair a ragged merge is refused on. */
+  fresh();
+  var vr = kbLayer().rows;
+  /* A LETTER on both, and two different ones. Patterns blank every key, so a
+     claim about which letter survives is vacuous on the board as it arrives --
+     which is how this check passed once with the wrong key kept. */
+  vr[0][3].v = 'aa'; vr[0][3].f = ['u', 'r', 'd', 'l'];
+  vr[1][3].v = 'bb';
+  /* recorded BEFORE the mark the step back is measured from, or the undo
+     below would be asked to restore letters that were never written down */
+  saveKb();
+  var vjWas = rows(), vjWasW = widths();
+  out.vjDid = kbVJoin(0, 3);
+  out.vjTall = (kbLayer().rows[0][3].h || 1) === 2;
+  /* what it keeps is the UPPER one, letter and all four flick slots */
+  out.vjKeeps = kbLayer().rows[0][3].v === 'aa' &&
+    kbLayer().rows[0][3].f.join('') === 'urdl';
+  var sh = kbLayer().rows[1][3];
+  out.vjShadow = sh.k === 'gap' && !!sh.up && (sh.w || 1) === (kbLayer().rows[0][3].w || 1);
+  /* the rest of the row below did not move: same keys, same order, only the
+     one under the merge is different */
+  out.vjRowSame = kbLayer().rows[1].length === vr[1].length &&
+    kbLayer().rows[1].map(function (k, i) { return i === 3 ? 'x' : k.k + ':' + k.v; })
+      .join(' ') === vjWas[1].split(' ').map(function (t, i) {
+        return i === 3 ? 'x' : t.split(':').slice(0, 2).join(':'); }).join(' ');
+  /* and both rows still come to what they came to */
+  out.vjWidth = widths()[0] === vjWasW[0] && widths()[1] === vjWasW[1];
+  out.vjOthers = rows().slice(2).join('|') === vjWas.slice(2).join('|');
+  /* it is drawn as two rows, and the lower half draws nothing */
+  var vjHtml = vKb();
+  out.vjDrawn = /--rh:2/.test(vjHtml);
+  /* a gap wears `fn` as well -- it is not a letter key -- and it is drawn
+     with no background at all, which is what the lower half of a merge has
+     to be. Asked of the PAGE rather than of the string, because "the class
+     is on it" and "nothing is painted" are two different claims and the
+     second is the one that matters. */
+  render();
+  var shEl = document.querySelectorAll('#kb .kbrow')[1].querySelectorAll('.kbk')[3];
+  out.vjShadowPlain = !!shEl && / gap/.test(' ' + shEl.className) &&
+    getComputedStyle(shEl).backgroundColor === 'rgba(0, 0, 0, 0)';
+  /* pressing the lower half is pressing THAT key, not the hole */
+  KBH = null;
+  kbTapKey(1, 3);
+  out.vjTapUp = !!KBH && KBH.k === 'k' && KBH.r === 0 && KBH.i === 3;
+  /* joining it again is refused -- three rows is not a thing here */
+  out.vjTwice = kbVJoin(0, 3) === false;
+  /* the three alignments are down on a row with half a merge in it */
+  kbHeadRow(0);
+  out.vjAlDown = /kbAlign[^>]*disabled/.test(vKb());
+  var alWas = rows().join('|');
+  kbAlign('c');
+  out.vjAlNoop = rows().join('|') === alWas;
+  KBH = null;
+  /* the step back, and the step forward after it */
+  var vjJoined = rows().join('|');
+  kbUndo();
+  out.vjUndo = rows().join('|') === vjWas.join('|');
+  kbRedo();
+  out.vjRedo = rows().join('|') === vjJoined;
+  /* h and up are still there after it has been through localStorage */
+  saveKb(); kbRead();
+  out.vjKept = (kbLayer().rows[0][3].h || 1) === 2 && !!kbLayer().rows[1][3].up;
+  /* what the extension is handed: the rows tall, and not this side's word for
+     which gap is the lower half */
+  var vjSent = shareKey(kbLayer().rows[0][3]), vjSentGap = shareKey(kbLayer().rows[1][3]);
+  out.vjSendsH = vjSent.h === 2;
+  out.vjSendsNoUp = vjSentGap.up === undefined && vjSentGap.k === 'gap' &&
+    (vjSentGap.w || 1) === (kbLayer().rows[1][3].w || 1);
+
+  /* two that do NOT line up are refused rather than repaired: row 1 key 0 is
+     a whole key at column 0, row 2 starts with the half-key inset */
+  fresh();
+  var ragWas = rows().join('|');
+  out.vjRagged = kbVJoin(1, 0) === false && rows().join('|') === ragWas;
+
+  /* the row above goes: the hole under it is a hole under nothing, and what
+     is left is an ordinary gap. The row below goes: the key above covers a
+     row that is not there. kbVFix() answers for both, from saveKb(). */
+  fresh();
+  kbVJoin(0, 3);
+  kbDelRow(0);
+  out.vjDelUp = !kbLayer().rows.join ? false :
+    kbLayer().rows.every(function (row) {
+      return row.every(function (k) { return !k.up; }); });
+  fresh();
+  kbVJoin(0, 3);
+  kbDelRow(1);
+  out.vjDelDn = kbLayer().rows.every(function (row) {
+    return row.every(function (k) { return (k.h || 1) === 1; }); });
+
+  /* a column taken out narrows BOTH halves by the same amount and the merge
+     stands. Made two keys wide first, so there is something to narrow. */
+  fresh();
+  kbJoin(0, 3); kbJoin(1, 3);
+  kbVJoin(0, 3);
+  var wideWas = (kbLayer().rows[0][3].w || 1);
+  kbDelCol(3);
+  var vcU = kbLayer().rows[0][3], vcD = kbLayer().rows[1][3];
+  out.vjColBoth = !!vcU && !!vcD && (vcU.w || 1) === (vcD.w || 1) &&
+    (vcU.w || 1) < wideWas;
+  out.vjColStands = (vcU.h || 1) === 2 && !!vcD.up;
+
+  /* a board nobody merged anything on is written exactly as it was written
+     before merges existed -- no h, no up, anywhere */
+  fresh();
+  saveKb();
+  out.vjClean = JSON.stringify(kbEdit().lay).indexOf('"h":') < 0 &&
+    JSON.stringify(kbEdit().lay).indexOf('"up":') < 0;
+
   /* ---- 7. and the two buttons say whether there is anywhere to go ------ */
   fresh();
   var first = vKb();
@@ -1440,6 +1561,30 @@ say(r.dnWhere === 'ab.c', 'below puts it under: ' + r.dnWhere);
 say(r.insFullDown, 'the + is down on a board that is already as tall as it may get');
 say(r.insFullNoop, 'and asking anyway adds nothing');
 say(r.selForgot, 'a keyboard made while a row was selected does not arrive with it lit');
+say(r.vjDid, 'a key joins to the one directly under it');
+say(r.vjTall, 'and it stands two rows tall');
+say(r.vjKeeps, 'and it keeps the UPPER key: its letter and all four flicks');
+say(r.vjShadow, 'and the row below holds a gap of the same width where its lower half is');
+say(r.vjRowSame, 'and nothing else in that row moved');
+say(r.vjWidth, 'and both rows still come to what they came to');
+say(r.vjOthers, 'and no other row moved');
+say(r.vjDrawn, 'it is drawn two rows tall');
+say(r.vjShadowPlain, 'and the lower half draws nothing');
+say(r.vjTapUp, 'pressing the lower half selects the key, not the hole');
+say(r.vjTwice, 'joining it a second time is refused');
+say(r.vjAlDown, 'the three alignments are down on a row with half a merge in it');
+say(r.vjAlNoop, 'and asking anyway moves nothing');
+say(r.vjUndo, 'the step back takes the merge apart again, exactly');
+say(r.vjRedo, 'and the step forward puts it back');
+say(r.vjKept, 'the merge is still there after localStorage');
+say(r.vjSendsH, 'the extension is handed how many rows the key stands in');
+say(r.vjSendsNoUp, 'and an ordinary gap of the right width where the lower half is');
+say(r.vjRagged, 'two that do not line up are refused, and nothing moves');
+say(r.vjDelUp, 'deleting the row above leaves no hole under nothing');
+say(r.vjDelDn, 'deleting the row below leaves no key covering a row that is not there');
+say(r.vjColBoth, 'a column taken out narrows both halves by the same amount');
+say(r.vjColStands, 'and the merge stands');
+say(r.vjClean, 'a board nobody merged anything on carries no h and no up');
 say(r.hasUndo, 'the screen has a step back on it');
 say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');

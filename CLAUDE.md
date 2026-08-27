@@ -1065,7 +1065,9 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds seventy things: the row that goes is the one pressed
+`tools/kb-check.mjs` holds a hundred and sixty-eight things — count the `say(`
+lines there rather than trusting this number, which has been stale twice: the row
+that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not
 removed** (a cell spanning b–d, with c taken out, spans b–c); the half key that
@@ -1074,6 +1076,32 @@ three of them walk back through three deletes in order; the step forward undoes
 the step back; nothing outside the layout moves — not a letter, not a word, not
 another keyboard, not another face; and the two buttons are down when there is
 nowhere to go.
+
+**A key can also be joined to the one UNDER it**, and the shape that is stored
+is the whole of why it is safe. 「a1a2触ってキーをくっつける」「横で。縦はリーダー
+に確認して許可降りたらやって欲しい」OWNER 2026-08-27, and the leader gave it the
+same day. The key that covers carries `h`, and a GAP carrying `up` stands in the
+same columns of the row below — which is what keeps that row the width it was, so
+nothing beside it slides under the merge and every total still adds up. It is a
+gap rather than a kind of its own because `KeyBoardView.swift` switches on `k`
+and falls to `default:` for anything it has never heard of, which draws an
+ordinary grey key and inserts nothing when pressed; a gap is drawn clear and does
+nothing. **A board carrying a merge, opened by a build from before merges
+existed, is that keyboard with a hole where the lower half is — the merge is
+missing and nothing else is.** A keyboard belongs to a language and a language
+moves between phones, so that is the case that decides the shape.
+
+Two keys are joined only when they line up — same column, same width — and a
+ragged pair is REFUSED rather than repaired. `kbVFix()` is the one place that
+answers for a merge whose halves have been separated by a row going, a column
+being cut or a key going in beside one; it runs from `saveKb()` and BEFORE
+`kbNoted()` inside it, so the step back holds the repaired layout rather than a
+state the app never showed.
+
+**And the three alignments are DOWN on a row with half a merge in it.** Where a
+merged pair goes when its row is pushed left or right is the owner's and has not
+been asked; moving one half and not the other is not an answer to it. That is
+`docs/FEATURE_RULES.md` § Deciding, on the newest thing on this screen.
 
 It holds the two ceilings with them, because they are the same screen and the
 same kind of mistake. **Ten across is the phone's number** — the narrowest
