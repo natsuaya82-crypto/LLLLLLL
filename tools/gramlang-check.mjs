@@ -790,7 +790,7 @@ const g2v = await pg.evaluate(() => {
 });
 
 const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are six chapters on the page', g2v.secs.length, 6);
+want('there are seven chapters on the page', g2v.secs.length, 7);
 want('the second is the nouns', sec(1).name, 'noun');
 want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
 want('the third is the verbs', sec(2).name, 'verb');
@@ -1050,6 +1050,66 @@ want('nor the other way about', adj.cross.afterOrder, adj.cross.order);
 want('and exactly one word is lifted afterwards -- the one just pressed',
      adj.cross.lit, 1);
 
+/* ---- 79-84: where a place word stands ------------------------------------
+   docs/GRAMMAR-V2-SPEC.md §7: 「現在の adp の位置設定だけではなく、場所を
+   どう表現するかを定義できるようにする」
+
+   `house in` and `in house`, arranged rather than chosen from a labelled
+   pair. Same claim as the adjectives and a different answer, which is the
+   point: the two are separate rows writing separate values, and a page that
+   moved both at once would look right in a picture of either one. */
+const adp = await pg.evaluate(() => {
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const wasAdp = STG.gpos && STG.gpos.adp, wasAdj = STG.gpos && STG.gpos.adj;
+  const wasSet = !!STG.set.adp;
+  WORDS.push({ hw:'zrua', pos:'adj', mns:['red'], at:1 });
+  WORDS.push({ hw:'zni', pos:'part', mns:['in'], at:1, slot:'where.in' });
+  STG.fm = [];
+  if (!STG.gpos) STG.gpos = {};
+  STG.gpos.adp = 'before'; STG.gpos.adj = 'before';
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; g2Lift = ''; render();
+  /* The rows, by the name they carry, rather than by where they sit: an
+     index would follow whichever chapter happened to draw one. */
+  /* data-a is a JSON array -- ["adp",0] -- so the row's name is the FIRST
+     item, read by parsing rather than by where the letters fall in the
+     string. Asking for indexOf(...) === 0 matched nothing, every row came
+     back empty, and the first .click() on an empty list threw: the check
+     DIED rather than failing, and the command watching for the word FAILED
+     printed nothing at all. Twice now. Read the tail. */
+  const row = (key) => {
+    const b = document.querySelectorAll('#app .segs .seg');
+    return Array.prototype.filter.call(b, (x) => {
+      let a = null;
+      try { a = JSON.parse(x.getAttribute('data-a') || '[]'); } catch (e) {}
+      return !!a && a[0] === key;
+    });
+  };
+  const say = (key) => row(key).map((x) => x.textContent).join(' ');
+  const before = say('adp'), n = row('adp').length;
+  /* Says what it found rather than dying on `undefined.click`. The fault when
+     this chapter draws the wrong row is "the place row has 0 words", and a
+     stack trace about click() sends the next reader to the wrong file. */
+  if (n >= 2) { row('adp')[0].click(); row('adp')[1].click(); }
+  const after = say('adp'), side = STG.gpos.adp, adjSide = STG.gpos.adj;
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (wasAdp) STG.gpos.adp = wasAdp; else delete STG.gpos.adp;
+  if (wasAdj) STG.gpos.adj = wasAdj; else delete STG.gpos.adj;
+  if (!wasSet) delete STG.set.adp;
+  g2Lift = '';
+  return { n: n, before: before, after: after,
+           side: side, adjSide: adjSide, adjN: row('adj').length };
+});
+
+want('the place word stands beside its noun', adp.n, 2);
+want('on the side this language put it', adp.before, 'zni tuf');
+want('moving it says the other side', adp.after, 'tuf zni');
+want('and that is what the language now holds', adp.side, 'after');
+
+/* The other two-word row is on the same page and must not have moved. */
+want('the describing word is still where it was', adp.adjSide, 'before');
+want('and its row is still drawn', adp.adjN, 2);
+
 await br.close();
 srv.close();
 
@@ -1081,3 +1141,5 @@ console.log('          Every kind of form the app can write lands in exactly one
 console.log('          chapter -- not two, and not none.');
 console.log('          A describing word is put on the side this language puts it,');
 console.log('          and one that changes is drawn where it can be seen.');
+console.log('          A place word stands where this language puts it, and the');
+console.log('          two rows that arrange a pair do not move each other.');

@@ -752,6 +752,27 @@ function g2Adj(){
   return g2Side('adj', a, n)+g2Forms('adj', 'adj');
 }
 
+/* §14 Adpositions / Location. 「現在の adp の位置設定だけではなく、場所を
+   どう表現するかを定義できるようにする」
+
+   `house in` and `in house` are this: the place word and its noun, in the
+   order this language puts them, and moving one says which side. It replaces
+   a pair of buttons labelled 「名詞の前 / 名詞の後」 with the phrase itself.
+
+   `house-LOC` -- the third way §7 names, where the place is marked on the
+   noun rather than said with a word -- CANNOT BE WRITTEN in this app yet.
+   The engine hears it (morphology.js knows LOCATIVE and ABLATIVE), and the
+   助詞 stage offers three roles that do not include them. docs/BACKLOG.md
+   carries that, because which of the two places a person should write it in
+   is not this file's to decide.
+
+   The place words themselves are the 場所 stage's and are not listed again
+   here: this chapter is about how a place is SAID, not about which places
+   this language has words for. */
+function g2Adp(){
+  return g2Side('adp', gSlotAny('where'), gWordOf('n'));
+}
+
 /* §14 Questions. 「方法は言語によって違う ── suffix / prefix / separate word /
    word order / particle / intonation / combination。Lingua 側が勝手に決めない」
 
@@ -773,7 +794,7 @@ function g2Ques(){
                 t('stg.ask.t'), null);
 }
 
-/* The page. Six chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+/* The page. Seven chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
@@ -781,7 +802,8 @@ function g2Page(){
     '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs()+
     '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg()+
     '<div class="sec">'+esc(t('stg.ask.t'))+'</div>'+g2Ques()+
-    '<div class="sec">'+esc(posLabel('adj'))+'</div>'+g2Adj();
+    '<div class="sec">'+esc(posLabel('adj'))+'</div>'+g2Adj()+
+    '<div class="sec">'+esc(t('stg.where.t'))+'</div>'+g2Adp();
 }
 
 /* ---- the screen -------------------------------------------------------- */
