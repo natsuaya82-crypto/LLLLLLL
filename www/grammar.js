@@ -538,14 +538,19 @@ function g2Row(lab, from, to, act, arg){
    twice. Asked of the rule rather than of a list of ids, so a rule written
    tomorrow lands in the right chapter without anything being added here. */
 var G2_NOUN={NUMBER:1, CASE:1};
-function g2Nouns(){
-  var e=LinguaGrammarEngine, w=gWordOf('n'), m, a, i, r, made, out='', md;
+/* One word of this part of speech, and every form of it this language can
+   make that belongs to this chapter. Every chapter of §14 that is about a
+   word changing is this same walk with a different word and a different set
+   of features, so it is written once: the chapters differ in what they are
+   ABOUT, not in how they are drawn. */
+function g2Forms(pos, feats){
+  var w=gWordOf(pos), m, a, i, r, made, out='', md;
   if(!w) return gNeedWords();
   m=gModel([w]);
   a=m.inflections;
   for(i=0;i<a.length;i++){
     r=a[i];
-    if(!G2_NOUN[String(r.feature)]) continue;
+    if(!feats[String(r.feature)]) continue;
     made=g2Made(m, r);
     if(!made) continue;
     md=r.metadata||{};
@@ -555,6 +560,16 @@ function g2Nouns(){
   }
   return out || gNeedRules();
 }
+function g2Nouns(){ return g2Forms('n', G2_NOUN); }
+/* §14 Verbs. 「luma / luma-ka をユーザーが実際に作る」 -- tense, and with it
+   every other way this language changes a verb.
+
+   Negation is NOT here. §4 gives it a chapter of its own, and it earns one:
+   a language may write it as an ending, as a beginning, or as a separate word
+   altogether, and 「必ず PREFIX になると決めつけない」 is the whole point of
+   asking about it apart from the tenses. */
+var G2_VERB={TENSE:1, ASPECT:1, MOOD:1, VOICE:1};
+function g2Verbs(){ return g2Forms('v', G2_VERB); }
 /* What THIS RULE makes of this word, asked of the engine and not worked out
    again here.
 
@@ -581,7 +596,8 @@ function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
-    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns();
+    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns()+
+    '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs();
 }
 
 /* ---- the screen -------------------------------------------------------- */
