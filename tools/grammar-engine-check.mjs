@@ -519,6 +519,83 @@ assert.equal(app.gExLine('','I not eat fish'),'mi poko nai luma');
 stage(DICT,{order:'SOV'},null);
 assert.equal(app.gExLine('','I eat fish'),'mi poko luma');
 
+/* ---- a rule that changes the stem, and a rule that is only for some words
+   Two things sat on the model since Phase 1 with nothing behind them.
+
+   `conditions` was stored and NOTHING READ IT, so a rule written for one shape
+   of word fired on every word -- and a language with two endings that share a
+   feature produced both at once. Nothing threw; the word simply came out wrong.
+
+   And there was no way at all to say that the stem CHANGES. 「英語みたいにyで
+   終わるのはiに変えてedみたいな細かいルール設定はできないの？」 -- the app's own
+   rule editor has had `drop` since that was asked, and the engine had nowhere
+   to put it, so those rules could be written and then not happen. */
+const stemChange = e.languageModel({languageId:'stem', wordOrder:'SVO',
+  words:[e.word({id:'carry',lemma:'carry',partOfSpeech:'VERB'}),
+         e.word({id:'walk', lemma:'walk', partOfSpeech:'VERB'})],
+  inflections:[
+    /* ends in y: drop the y, add ied */
+    e.inflection({id:'pst-y', target:'VERB', feature:'TENSE', value:'PAST',
+                  operation:'suffix', form:'ied', separator:'', drop:1,
+                  conditions:{endsWith:'y'}}),
+    /* everything else: add ed */
+    e.inflection({id:'pst', target:'VERB', feature:'TENSE', value:'PAST',
+                  operation:'suffix', form:'ed', separator:''})]});
+const carry = stemChange.words[0], walk = stemChange.words[1];
+
+/* The condition is what keeps the two apart. Without it BOTH fire on both
+   words and the surface is whatever the second one made of the first one's
+   output -- which is why this is asked as the exact word, never as "it
+   changed". */
+assert.equal(e.morphology.inflect(stemChange, carry, {TENSE:'PAST'}).surface, 'carried');
+assert.equal(e.morphology.inflect(stemChange, walk,  {TENSE:'PAST'}).surface, 'walked');
+
+/* The stem is never eaten whole. A rule dropping more than the word has left
+   would otherwise make every verb the same form of itself. */
+const short = e.languageModel({languageId:'short', wordOrder:'SVO',
+  words:[e.word({id:'a',lemma:'a',partOfSpeech:'VERB'})],
+  inflections:[e.inflection({id:'d', target:'VERB', feature:'X', value:'Y',
+                             operation:'suffix', form:'z', separator:'', drop:5})]});
+assert.equal(e.morphology.inflect(short, short.words[0], {X:'Y'}).surface, 'az');
+
+/* Reading back. A rule that changes the stem is not walked backwards -- what
+   went missing is written nowhere on the word -- and the contract of
+   analyzeForm() is "take off what you can", with the CALLER deciding whether
+   what is left is the word it was asking about. So the thing to hold is the
+   caller's answer, not the strip: `carried` must not come back as `carry`.
+
+   Writing this the other way round is how the first version of this check went
+   wrong, and it is worth keeping: it asserted that `carried` strips to itself,
+   which is not what the function does or has ever claimed. The engine was
+   right and the expectation was habit.
+
+   The real road back is the dictionary. The app writes every form it makes in
+   as a word of its own, so `carried` is FOUND, with its own entry saying what
+   it is a form of. Guessing `carry` out of `carr` would be inventing a word. */
+assert.notEqual(e.morphology.analyzeForm(stemChange, 'carried', carry).lemma, 'carry');
+assert.equal(e.morphology.parseToken(stemChange, 'carried'), null);
+/* The plain rule still reads its own forms perfectly. */
+assert.equal(e.morphology.analyzeForm(stemChange, 'walked',  walk).lemma,  'walk');
+assert.equal(e.morphology.parseToken(stemChange, 'walked').lemma, 'walk');
+
+/* And the condition holds on the way back too: `walked` must not be read as
+   the y-rule's doing just because the letters happen to line up. */
+assert.equal(e.morphology.analyzeForm(stemChange, 'walked', walk).inflections.length, 1);
+assert.equal(e.morphology.analyzeForm(stemChange, 'walked', walk).inflections[0].id, 'pst');
+
+/* A derivation may change the stem and may be conditional in the same way. */
+const derStem = e.languageModel({languageId:'ds', wordOrder:'SVO',
+  words:[e.word({id:'beauty',lemma:'beauty',partOfSpeech:'NOUN'}),
+         e.word({id:'stone', lemma:'stone', partOfSpeech:'NOUN'})],
+  derivations:[
+    e.derivation({id:'adj-y', sourcePartOfSpeech:'NOUN', targetPartOfSpeech:'ADJECTIVE',
+                  operation:'suffix', form:'iful', separator:'', drop:1,
+                  conditions:{endsWith:'y'}})]});
+assert.equal(e.morphology.derive(derStem, derStem.words[0], 'ADJECTIVE').surface, 'beautiful');
+/* stone does not end in y, so this language has no adjective of it -- and the
+   engine says so by leaving the word alone rather than by inventing one. */
+assert.equal(e.morphology.derive(derStem, derStem.words[1], 'ADJECTIVE').surface, 'stone');
+
 /* What this says has to be what it just did. It said "Phase 1-2" while the
    file had grown three sections above that one -- derivation, case, and the
    Semantic IR round trip -- so a green run reported less than it held, and a
@@ -527,4 +604,5 @@ assert.equal(app.gExLine('','I eat fish'),'mi poko luma');
    means adding it to this sentence. */
 console.log('Grammar Engine: derivation applies, a case MARK carries a role, the ' +
             'Semantic IR goes both ways and back, the Phase 1-2 contract is clean, ' +
+            'a rule may change the stem and may be for some words only, ' +
             'and the line a meaning makes is held');
