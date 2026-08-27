@@ -1111,6 +1111,25 @@ function kbRoomIn(ri, w){
   var row=kbLayer().rows[ri];
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
 }
+/* And whether ANY row on this face could take one, which is what the palette
+   under the sheet has to ask before it offers a width.
+   「フリックのaddキーのサイズ合ってなくね？」 OWNER 2026-08-26.
+
+   The three tiles were drawn and pressable always. Every pattern's rows come
+   to the full ten, so on a keyboard somebody has just made, picking a width
+   and then pressing a key does NOTHING -- measured on all five: 10 keys
+   before, 10 keys after. Cut one column out and only the narrowest of the
+   three fits, and the other two go on being offered.
+
+   Nothing throws. The tile lights up, the key it was pressed on opens
+   nothing, and the row is the row it was. Which is the sentence the owner
+   said about the column + an hour before this 「最大になったら+はなし」, one
+   size down. */
+function kbRoomAny(w){
+  var rows=kbLayer().rows, i;
+  for(i=0;i<rows.length;i++) if(kbRoomIn(i, w)) return true;
+  return false;
+}
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
    of w 0.5 at each end, and "grid-column: span 0.5" is not a thing: the
@@ -2561,7 +2580,11 @@ function kbEditFnHTML(key){
    While it is set, pressing a key puts the new one after that key rather than
    opening it -- one mode, one press to leave it. */
 var kbNew1=0;
-function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
+function kbSetNew(w){
+  if(!kbRoomAny(w)){ kbNew1=0; render(); return; }
+  kbNew1=(kbNew1===w)? 0 : w;
+  render();
+}
 /* Three widths that used to be one, and telling them apart is what fixes
    「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
    フリックとqwartyのキーのサイズは同じなんか？」 OWNER DECISION 2026-08-26.
@@ -2617,11 +2640,19 @@ function kbKeyW(w){
 function kbSheetW(){
   return 'var(--kbw)';
 }
+/* The three widths, each drawn AT THE SIZE OF THE KEY IT MAKES -- kbCellW()
+   is the same arithmetic the sheet lays a key out with, over the ten fixed
+   columns, so a tile of one is one key of one wherever it is dropped. What
+   was wrong was never the width; it was that a tile with nowhere to go was
+   offered exactly like one that fits. It is down instead, which is what the
+   three buttons over the sheet do when nothing is selected. */
 function kbNewHTML(){
   return '<div class="kbnew" id="kbnew">'+
     '<span class="kbnewl">'+esc(t('kb.add.k'))+'</span>'+
     '<span class="kbnewr">'+[1,2,3].map(function(w){
-      return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
+      var room=kbRoomAny(w);
+      return '<button class="kbnewt'+((kbNew1===w && room)? ' on':'')+'"' + DO('kbSetNew', [w]) +
+        (room? '' : ' disabled') +
         ' data-w="'+w+'" style="width:'+kbCellW(w)+'"'+
         ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
     }).join('')+'</span></div>';

@@ -556,6 +556,70 @@ const r = await pg.evaluate(({ s }) => {
      is in front of them, and the other one is still theirs */
   out.addsOnlyN = kbEdit().lay[1].rows.length;
 
+  /* ---- 6f2. a tile is the size of the key it makes, on every pattern ---
+     「フリックのaddキーのサイズ合ってなくね？」 OWNER 2026-08-26.
+
+     Two claims and the second is the one that was broken.
+
+     THE SIZE. A tile is drawn with kbCellW(), which is the arithmetic the
+     sheet lays a key out with over the ten fixed columns -- so a tile of one
+     is one key of one. Nothing held that, and a check must not work it out
+     again: recomputing the thing under test is a copy of it and a copy always
+     agrees (rule 10). So BOTH are measured off the page -- the tile, and a key
+     of that width actually placed on that board -- and compared.
+
+     AND WHETHER IT IS OFFERED AT ALL. Every pattern's rows come to the full
+     ten, so on a board somebody has just made no key of any width can go
+     anywhere: picking a tile and pressing a key left 10 keys as 10 keys, on
+     all five patterns. The tile lit up and nothing happened.
+
+     Asked of KB_PATS rather than a list written here, for press-check's
+     reason: a sixth pattern is walked the day it is added. */
+  out.tiles = [];
+  function standKb(){
+    window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+  }
+  function tileEl(w){ return document.querySelector('.kbnewt[data-w="' + w + '"]'); }
+  KB_PATS.forEach(function (p){
+    var rec = { pat: p, full: [], noop: [], sized: [], hgt: [] };
+    /* the board as a pattern makes it: every row at ten, so no width fits */
+    KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
+    [1, 2, 3].forEach(function (w){
+      var el = tileEl(w);
+      rec.full.push(!!(el && el.disabled));
+    });
+    /* and picking one and pressing a key changes nothing */
+    [1, 2, 3].forEach(function (w){
+      KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
+      var before = kbLayer().rows[0].length;
+      kbSetNew(w); kbPick(0, 0); standKb();
+      rec.noop.push(kbLayer().rows[0].length === before);
+    });
+    /* with exactly enough room cut for THIS width, the tile and the key it
+       makes -- both read off the page, one width per board so that placing
+       one never eats the room for the next */
+    [1, 2, 3].forEach(function (w){
+      var i;
+      KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
+      for (i = 0; i < w; i++){ kbHeadCol(0); kbCut(); }
+      KBH = null; standKb();
+      var tile = tileEl(w);
+      var tw = tile ? +tile.getBoundingClientRect().width.toFixed(1) : -1;
+      var th = tile ? +tile.getBoundingClientRect().height.toFixed(1) : -1;
+      var down = !!(tile && tile.disabled);
+      var before = kbLayer().rows[0].length;
+      kbSetNew(w); kbPick(0, 0); standKb();
+      var made = kbLayer().rows[0].length > before;
+      var key = document.querySelector('.kb.kbsheet .kbk[data-r="0"][data-k="1"]');
+      rec.sized.push({ w: w, made: made, down: down, tile: tw,
+        key: (made && key) ? +key.getBoundingClientRect().width.toFixed(1) : -1,
+        got: made ? (kbLayer().rows[0][1].w || 1) : null });
+      rec.hgt.push({ w: w, tile: th,
+        key: (made && key) ? +key.getBoundingClientRect().height.toFixed(1) : -1 });
+    });
+    out.tiles.push(rec);
+  });
+
   /* ---- 6g. a column goes in, and not when the board is full -----------
      「これって列とか行とかはたせないの？」「いいよー 最大になったら+はなし」
      OWNER, 2026-08-26.
@@ -1101,6 +1165,20 @@ say(r.deadColOff, 'taking a column off page 2 leaves it with one too');
 say(r.deadFirstOff, 'and page 1 keeps the way IN to the rest');
 say(r.oneFacePlain, 'a keyboard of one face is left alone -- there is nowhere to go');
 say(r.addsOnly, 'and a face that already has one comes out of a save with the keys it went in with (' + r.addsOnlyN + ' rows), twice over');
+const tileRoom = r.tiles.every((x) => x.full.every(Boolean));
+const tileNoop = r.tiles.every((x) => x.noop.every(Boolean));
+const tileMade = r.tiles.every((x) => x.sized.every((t) => t.made && !t.down));
+const tileSize = r.tiles.every((x) => x.sized.every((t) => Math.abs(t.tile - t.key) < 1));
+const tileW = r.tiles.every((x) => x.sized.every((t) => t.got === t.w));
+const tileH = r.tiles.every((x) => x.hgt.every((t) => Math.abs(t.tile - t.key) < 1));
+say(tileRoom, 'every pattern comes to the full ten, so all three width tiles are down');
+say(tileNoop, 'and picking one and pressing a key adds nothing while they are');
+say(tileMade, 'cut room for one out and that one is up again, and goes in');
+say(tileW, 'and each puts in a key of exactly the width it says');
+say(tileSize, 'and each is DRAWN the size of the key it makes: ' +
+    r.tiles.map((x) => x.pat + ' ' + x.sized.map((t) => t.tile + '/' + t.key).join(' ')).join('  '));
+say(tileH, 'and as tall as one: ' +
+    r.tiles[0].hgt.map((t) => t.tile + '/' + t.key).join(' '));
 say(r.insColFullDown && r.insColFullAsk,
     'a board that is already ten across is offered no + for a column');
 say(r.insColFullNoop && r.insColFullBtn,
