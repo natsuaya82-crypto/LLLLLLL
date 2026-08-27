@@ -7,29 +7,6 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
-## 画面の上でペンで書いた PDF が読めない ── レンダラが要る
-
-**見つけたのは sheet3、2026-08-27。ゲートは緑。実機だけで効きます。**
-
-シートの道は 印刷 → 紙に手で書く → スキャン → 戻す です。スキャナの PDF は
-中身が JPEG（`/DCTDecode`）なので、`shPdfJpeg()` がレンダラなしで取り出せます。
-
-**iPad と Apple Pencil で、Files の Markup や GoodNotes の上に直接書いた PDF は
-読めません。** ページはベクタのままで、書いた線も注釈でありビットマップでは
-ないからです。`shPdfWhy()` はそれを `drawn` と答え、「この PDF の中に写真が
-ありません。」で断ります。**断り方は正しく、断ること自体が惜しい**という状態です。
-
-形は分かっています: `LinguaShare.swift` に `renderPdf` を足し、PDFKit
-（`PDFPage.thumbnail` か `CGContext` の `drawPDFPage`）で1ページ目を 2200px の
-JPEG にして base64 で返す。`shTakeFile()` は `jpg` が null で `why === 'drawn'`
-のとき、そこへ回す。`shLook()` から先は一切変わりません。
-
-**やらなかった理由:** これは直しではなく機能で、紙を受け取る道を一本増やす
-決定です。OWNER DECISION 2026-08-25「一旦写真禁止で、普通に pdf で提出以外
-受け取らないで行こう。今後のアプデで追加しよ」が受け取り口について決めた側に
-あたります。それと、Linux では Swift を一行も走らせられません。
-
-
 ## パターンから作ったキーボードには、段の上限が効いていない
 
 **見つけたのはリーダー、2026-08-26。ゲートは緑のまま。実機だけで効きます。**

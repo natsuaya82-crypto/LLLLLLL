@@ -15,6 +15,30 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 画面の上でペンで書いた PDF が読めるようになる
+
+「pdfkitのレンダラやろう」OWNER 2026-08-27。
+
+シートの道は 印刷 → 紙に手で書く → スキャン → 戻す でした。スキャナの PDF は
+中身が JPEG（`/DCTDecode`）なので、`shPdfJpeg()` がレンダラなしで取り出せます。
+**iPad と Apple Pencil で Files の Markup や GoodNotes の上に直接書いた PDF**、
+および**ページがこのファイルのほどけないフィルタの後ろにいる PDF** は、写真が
+入っていないので読めませんでした。今は電話に描かせます。
+
+`LinguaShare.renderPdf` が一ページ目を 2200px の JPEG にして返します
+（`SH_LOOK`。読む側が見る大きさで、数はこれまで通り `www/sheet.js` の一箇所）。
+`shPdfDraw()` が `shPdfJpeg()` 以外で PDF が絵になる唯一の場所で、`shLook()`
+から先は一切変わりません —— 同じ閾値、同じ四隅のマーク、同じ帯。
+
+**保存されるものは何も増えません。** 送った PDF も返ってきた絵もどこにも
+書かれず、読み終わったら消えます。電話がないとき（ブラウザ、このビルドより前の
+アプリ）はこれまでの文が出ます。
+
+PDFKit ではなく CoreGraphics（`CGPDFDocument` / `drawPDFPage`）です。
+`LinguaShare.swift` は `import WidgetKit` で一度ビルドを落としている（#84、
+`PHPickerViewController` がスコープから消えた）ので、既にある import だけで
+済む道を取りました。
+
 ### 書き出したシートが Documents に落ちる ── 書き出しは一度も動いていなかった
 
 「自分の文字作ろうとpdf書き出してもダウンロードできないよ？アップロードしても
