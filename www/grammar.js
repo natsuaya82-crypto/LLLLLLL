@@ -820,17 +820,63 @@ function g2Status(){
     g2Stat(t('g2.der'), m.derivations.length);
 }
 
-/* The page. Eight chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
-   they arrive one at a time, each with its own picture. */
-function g2Page(){
-  return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
-    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns()+
-    '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs()+
-    '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg()+
-    '<div class="sec">'+esc(t('stg.ask.t'))+'</div>'+g2Ques()+
-    '<div class="sec">'+esc(posLabel('adj'))+'</div>'+g2Adj()+
-    '<div class="sec">'+esc(t('stg.where.t'))+'</div>'+g2Adp()+
-    '<div class="sec">'+esc(t('wld.about'))+'</div>'+g2Status();
+/* THE CHAPTERS, and each one is a PAGE.
+
+   They were eight headings stacked down one screen, which is two of the four
+   shapes this repository forbids by name: 「同じページに情報量詰め込み」 and
+   「ページ遷移型にせずに」. It got worse with every chapter -- by the seventh
+   it was a page you scroll through to find out what is on it -- and §14 has
+   more to come. So the list is a list, and a chapter is where you go.
+
+   Splitting them buys something the owner named: 「新しい規則は＋とかで作れば
+   いいやん」. **A chapter knows its own part of speech and its own kind of
+   rule.** The + on the noun chapter makes a noun rule; nobody is asked which,
+   because the page they are standing on already said it.
+
+   Asked of the page rather than written down twice: gramArgs() in
+   www/phases.js hands this list to both walks, so a ninth chapter is walked
+   the day it is added. */
+function g2Chaps(){
+  /* The function comes before the name, and that is not taste: dead-check
+     counts a mention as the name against a bracket, a comma or a semicolon,
+     so a function that is the LAST thing in an object literal is followed by
+     `}` and reads as unused. Eight of them did. */
+  return [
+    {id:'order', body:g2Sent,   nm:t('stg.order.t')},
+    {id:'n',     body:g2Nouns,  nm:posLabel('n')},
+    {id:'v',     body:g2Verbs,  nm:posLabel('v')},
+    {id:'neg',   body:g2Neg,    nm:t('stg.neg.t')},
+    {id:'q',     body:g2Ques,   nm:t('stg.ask.t')},
+    {id:'adj',   body:g2Adj,    nm:posLabel('adj')},
+    {id:'adp',   body:g2Adp,    nm:t('stg.where.t')},
+    {id:'st',    body:g2Status, nm:t('wld.about')}
+  ];
+}
+function g2ChapBy(id){
+  var a=g2Chaps(), i;
+  for(i=0;i<a.length;i++) if(a[i].id===id) return a[i];
+  return null;
+}
+/* What a chapter is called, wherever it is named. The bar over a chapter's
+   page asks this through pageName(), so the list and the bar cannot disagree
+   about what somebody just opened. */
+function g2ChapName(id){
+  var c=g2ChapBy(id);
+  return c? c.nm : t('stg.order.t');
+}
+/* The list. Names and nothing else -- a row that explained what a chapter was
+   for would be the thing 「無駄に説明をするやつ」 names, and a count would need
+   a definition of "done" per chapter that nobody has given. */
+function g2List(){
+  var a=g2Chaps(), i, out='';
+  for(i=0;i<a.length;i++)
+    out+='<button class="stslot"' + DO('go', ['gram', 'v2:'+a[i].id]) + '>'+
+      '<span class="psm">'+esc(a[i].nm)+'</span>'+ICON_GO+'</button>';
+  return out;
+}
+function g2Page(a){
+  var c=(a && a.indexOf('v2:')===0)? g2ChapBy(a.slice(3)) : null;
+  return c? c.body() : g2List();
 }
 
 /* ---- the screen -------------------------------------------------------- */

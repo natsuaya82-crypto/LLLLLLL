@@ -607,7 +607,7 @@ const g2 = await pg.evaluate(() => {
   WORDS.push({ hw:'zke',  pos:'pro', mns:['the one speaking'], at:1 });
   WORDS.push({ hw:'zkano', pos:'n',  mns:['a thing'], at:1 });
   WORDS.push({ hw:'ztir', pos:'v',   mns:['does'], at:1 });
-  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render(); };
+  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }]; render(); };
   const words = () => Array.prototype.map.call(
     document.querySelectorAll('#app .segs .seg'), (b) => b.textContent);
   /* Says what it found rather than throwing on `undefined.click`. A check
@@ -714,7 +714,7 @@ const g2n = await pg.evaluate(() => {
        shown here as well */
     { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
   ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }]; render();
   const rows = Array.prototype.map.call(
     document.querySelectorAll('#app .stslot'), (b) => ({
       lab: b.querySelector('.psm').textContent,
@@ -772,36 +772,33 @@ const g2v = await pg.evaluate(() => {
     /* and a plural is the nouns' */
     { id:'n1', pos:'n', fm:'pl',  at:'end',   drop:0, add:sp('mi'), when:'' }
   ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
-  /* Which section a row is under, read off the page rather than assumed: the
-     rows of both chapters wear one class, and a check that just counted them
-     would pass with every row under one heading. */
-  const secs = [], kids = document.querySelectorAll('#app .body > *');
-  let now = null;
-  Array.prototype.forEach.call(kids, (el) => {
-    if (el.className === 'sec') { now = { name: el.textContent, rows: [] }; secs.push(now); }
-    else if (now && el.className.indexOf('stslot') >= 0)
-      now.rows.push(el.querySelector('.psm').textContent + ':' +
-                    el.querySelector('.psi').textContent);
-  });
+  /* A chapter is a PAGE now, so this walks the pages rather than reading
+     headings down one screen. That is the claim it always meant: what a
+     chapter draws is its own, and what it does not draw is somewhere else. */
+  const on = (id) => {
+    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
+    return Array.prototype.map.call(document.querySelectorAll('#app .stslot'),
+      (b) => b.querySelector('.psm').textContent + ':' +
+             b.querySelector('.psi').textContent);
+  };
+  const chaps = {};
+  g2Chaps().forEach((c) => { chaps[c.id] = on(c.id); });
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
-  return { secs: secs.map((x) => ({ name: x.name, rows: x.rows })) };
+  return { chaps: chaps, ids: g2Chaps().map((c) => c.id) };
 });
 
-const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are eight chapters on the page', g2v.secs.length, 8);
-want('the second is the nouns', sec(1).name, 'noun');
-want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
-want('the third is the verbs', sec(2).name, 'verb');
-
+want('the page is a list of chapters, each one its own', g2v.ids.length, 8);
+want('the nouns chapter holds only what a noun does',
+     g2v.chaps.n.join(' '), 'Plural:tufmi');
 /* Past and passive, and NOT the negation -- which is the next chapter's. */
 want('a verb shows the endings this language gives it',
-     sec(2).rows.indexOf('Past:zlumaka') >= 0, true);
+     g2v.chaps.v.indexOf('Past:zlumaka') >= 0, true);
 want('a rule that goes on the front comes out on the front',
-     sec(2).rows.indexOf('Passive:ezluma') >= 0, true);
-want('and the negation is not drawn here', sec(2).rows.join(' ').indexOf('nn'), -1);
-want('so the verbs chapter has exactly two rows', sec(2).rows.length, 2);
+     g2v.chaps.v.indexOf('Passive:ezluma') >= 0, true);
+want('and the negation is not drawn there',
+     g2v.chaps.v.join(' ').indexOf('nn'), -1);
+want('so the verbs chapter has exactly two rows', g2v.chaps.v.length, 2);
 
 /* ---- 57-64: negation, and the three ways a language may write one --------
    docs/GRAMMAR-V2-SPEC.md §4: 「ただし『必ず PREFIX になる』と決めつけない」.
@@ -834,7 +831,7 @@ const neg = (fm, opts) => pg.evaluate(({ fm, o }) => {
   STG.fm = fm.map((r) => ({ id:r.id, pos:r.pos, fm:r.fm, at:r.at, drop:0,
                             add:sp(r.add), when:r.when || '',
                             wend:r.wend? sp(r.wend) : [] }));
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg' }]; render();
   const rows = Array.prototype.map.call(
     document.querySelectorAll('#app .stslot'), (b) => ({
       lab: b.querySelector('.psm').textContent,
@@ -931,20 +928,19 @@ const chap = await pg.evaluate(() => {
   const kinds = FM_INF.map((f, i) => ({ fm:f, add:'q' + (i < 10 ? '0' : '') + i }));
   STG.fm = kinds.map((k, i) => ({ id:'k' + i, pos:'', fm:k.fm, at:'end',
                                   drop:0, add:sp(k.add), when:'' }));
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
-  /* Which section each row is under, and how many sections drew each ending */
-  const seen = {}, secs = [];
-  let now = null;
-  Array.prototype.forEach.call(document.querySelectorAll('#app .body > *'), (el) => {
-    if (el.className === 'sec') { now = el.textContent; secs.push(now); }
-    else if (now && el.className.indexOf('stslot') >= 0) {
+  /* Each chapter is a page, so this opens every one of them and asks which
+     ones drew each ending. The answer has to be one, every time. */
+  const seen = {};
+  g2Chaps().forEach((c) => {
+    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + c.id }]; render();
+    Array.prototype.forEach.call(document.querySelectorAll('#app .stslot'), (el) => {
       const to = el.querySelector('.psi').textContent;
       kinds.forEach((k) => {
         if (to.indexOf(k.add) < 0) return;
         if (!seen[k.fm]) seen[k.fm] = [];
-        if (seen[k.fm].indexOf(now) < 0) seen[k.fm].push(now);
+        if (seen[k.fm].indexOf(c.id) < 0) seen[k.fm].push(c.id);
       });
-    }
+    });
   });
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
@@ -988,37 +984,34 @@ const adj = await pg.evaluate(() => {
               when:'' }];
   if (!STG.gpos) STG.gpos = {};
   STG.gpos.adj = 'before';
-  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render(); };
-  /* the adjective row is the LAST .segs on the page; the first is the
-     sentence. Read off the page rather than assumed -- if the chapter ever
-     stopped drawing one, an index would quietly pick up the other's. */
-  const rows = () => document.querySelectorAll('#app .segs');
-  const words = () => { const r = rows(); return Array.prototype.map.call(
-    r[r.length - 1].querySelectorAll('.seg'), (b) => b.textContent).join(' '); };
-  const press = (i) => { const r = rows();
-    r[r.length - 1].querySelectorAll('.seg')[i].click(); };
-  g2Lift = ''; show();
-  const nSegs = rows().length;
-  const before = words(), wasOrder = STG.order;
-  /* lifting one and putting it on the other is what says the side */
+  const show = (id) => { window.route = 'gram';
+    NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
+  const segs = () => document.querySelectorAll('#app .segs .seg');
+  const say = () => Array.prototype.map.call(segs(), (b) => b.textContent).join(' ');
+  const press = (i) => { const b = segs();
+    if (!b[i]) throw new Error('no word ' + i + ': the row has ' + b.length);
+    b[i].click(); };
+  g2Lift = ''; show('adj');
+  const nSegs = document.querySelectorAll('#app .segs').length;
+  const before = say(), wasOrder = STG.order;
   press(0); press(1);
-  const after = words(), side = STG.gpos.adj;
-  /* and it did not disturb the sentence above it */
+  const after = say(), side = STG.gpos.adj;
   const order = STG.order;
   const form = Array.prototype.map.call(
     document.querySelectorAll('#app .stslot'), (b) =>
       b.querySelector('.psm').textContent + ':' + b.querySelector('.psi').textContent)
     .filter((x) => x.indexOf('si') >= 0).join(',');
-  /* And across the two rows. Lift a word of the SENTENCE, then press a word
-     of the adjective row: what may not happen is the two being treated as one
-     arrangement. Carrying a role into a phrase means nothing, so the press
-     lifts the adjective's word instead and neither answer moves. */
-  g2Lift = ''; STG.order = wasOrder; STG.gpos.adj = 'before'; show();
-  const all = document.querySelectorAll('#app .segs');
-  all[0].querySelectorAll('.seg')[0].click();          /* lift in the sentence */
+
+  /* ACROSS THE PAGES. The two rows that arrange a pair are on different
+     chapters now, and what is lifted survives going from one to the other --
+     so this is the same claim it always was and a longer road to it: lift a
+     word in the sentence, walk to the phrase, press. Carrying a role into a
+     phrase means nothing, so that press lifts instead and neither answer
+     moves. */
+  g2Lift = ''; STG.order = wasOrder; STG.gpos.adj = 'before';
+  show('order'); press(0);
   const cross = { order:STG.order, side:STG.gpos.adj };
-  document.querySelectorAll('#app .segs')[1]
-          .querySelectorAll('.seg')[1].click();        /* press in the phrase */
+  show('adj'); press(1);
   cross.afterOrder = STG.order;
   cross.afterSide = STG.gpos.adj;
   cross.lit = document.querySelectorAll('#app .segs .seg.on').length;
@@ -1032,7 +1025,8 @@ const adj = await pg.evaluate(() => {
            order: order, wasOrder: wasOrder, form: form, cross: cross };
 });
 
-want('the page has two rows somebody arranges', adj.nSegs, 2);
+want('the chapter has the one row it is about', adj.nSegs, 1);
+
 want('the describing word stands where this language put it',
      adj.before, 'zrua tuf');
 want('moving it says the other side', adj.after, 'tuf zrua');
@@ -1067,7 +1061,7 @@ const adp = await pg.evaluate(() => {
   STG.fm = [];
   if (!STG.gpos) STG.gpos = {};
   STG.gpos.adp = 'before'; STG.gpos.adj = 'before';
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; g2Lift = ''; render();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:adp' }]; g2Lift = ''; render();
   /* The rows, by the name they carry, rather than by where they sit: an
      index would follow whichever chapter happened to draw one. */
   /* data-a is a JSON array -- ["adp",0] -- so the row's name is the FIRST
@@ -1091,6 +1085,13 @@ const adp = await pg.evaluate(() => {
      stack trace about click() sends the next reader to the wrong file. */
   if (n >= 2) { row('adp')[0].click(); row('adp')[1].click(); }
   const after = say('adp'), side = STG.gpos.adp, adjSide = STG.gpos.adj;
+  /* The other pair-arranging row is on its OWN page now, so it is opened to
+     be looked at rather than read off this one -- and while the words are
+     still here: the tidying below takes them away again. Same claim as
+     before: moving the place word wrote the place answer and left the
+     describing word's alone. */
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:adj' }]; render();
+  const adjN = document.querySelectorAll('#app .segs .seg').length;
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   if (wasAdp) STG.gpos.adp = wasAdp; else delete STG.gpos.adp;
@@ -1098,7 +1099,7 @@ const adp = await pg.evaluate(() => {
   if (!wasSet) delete STG.set.adp;
   g2Lift = '';
   return { n: n, before: before, after: after,
-           side: side, adjSide: adjSide, adjN: row('adj').length };
+           side: side, adjSide: adjSide, adjN: adjN };
 });
 
 want('the place word stands beside its noun', adp.n, 2);
@@ -1108,7 +1109,7 @@ want('and that is what the language now holds', adp.side, 'after');
 
 /* The other two-word row is on the same page and must not have moved. */
 want('the describing word is still where it was', adp.adjSide, 'before');
-want('and its row is still drawn', adp.adjN, 2);
+want('and its row is still drawn on its own page', adp.adjN, 2);
 
 /* ---- 85-90: what this language has -------------------------------------
    docs/GRAMMAR-V2-SPEC.md §14's last block, and §24's argument for the whole
@@ -1133,7 +1134,7 @@ const stat = await pg.evaluate(() => {
     /* about SOUND, so it cannot cross and must not be counted as if it had */
     { id:'v2', pos:'v', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'v' }
   ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:st' }]; render();
   const rows = {}, secs = document.querySelectorAll('#app .gside');
   Array.prototype.forEach.call(secs, (el) => {
     rows[el.querySelector('.gsl').textContent] = el.querySelector('.gsw').textContent;
