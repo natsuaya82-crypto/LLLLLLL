@@ -534,11 +534,21 @@ const st = await pg.evaluate(async () => {
   window.Capacitor = { nativePromise: function(plug, m){
     if (m !== 'products') return Promise.reject(new Error('not this one'));
     return Promise.resolve({ products: [
-      { id: 'com.tokinets.lingua.plus.monthly', price: '\u00a5750',   amount: 750 },
+      /* `year` is twelve of the monthly one, formatted by the App Store and
+         not by us -- it is what the year's price is struck through with.
+         ¥9,000 and not ¥9000: the point of the field is that Apple wrote the
+         string, so a check that accepted either would be accepting a string
+         this app could have built. */
+      { id: 'com.tokinets.lingua.plus.monthly', price: '\u00a5750',   amount: 750,
+        year: '\u00a59,000' },
       { id: 'com.tokinets.lingua.plus.yearly',  price: '\u00a56,000', amount: 6000 },
       /* Pro's monthly only: a product that has not been made in App Store
-         Connect is not an error, it simply does not come back. */
-      { id: 'com.tokinets.lingua.pro.monthly',  price: '\u00a51,500', amount: 1500 },
+         Connect is not an error, it simply does not come back. It carries a
+         `year` all the same -- twelve of it is a fact about the month -- and
+         nothing may be struck through with it, because there is no year on
+         sale to compare it to. */
+      { id: 'com.tokinets.lingua.pro.monthly',  price: '\u00a51,500', amount: 1500,
+        year: '\u00a518,000' },
     ] });
   } };
   STORE_P = null; STORE_ASK = false;
@@ -563,6 +573,28 @@ const st = await pg.evaluate(async () => {
   out.plusOff = storeOff('plus');
   out.proOff  = storeOff('pro');               /* one term only -> nothing */
   out.freeOff = storeOff('free');
+
+  /* ---- and the year is struck through with what twelve months cost -------
+     Read off the two term buttons rather than off the page, because the
+     claim is about WHICH of them wears it: a count over the whole page is
+     answered by either one, and a month with a line through its own price
+     twelve times over is the way this breaks. */
+  var pt = planPrice(PLANS[1], false).split('<button');
+  out.plusMoHTML = pt[1] || '';
+  out.plusYrHTML = pt[2] || '';
+  out.plusWas = storeWas('plus');
+  out.proWas  = storeWas('pro');               /* has `year`, has no saving */
+
+  /* The App Store answered, and answered without the field -- which is every
+     phone carrying a build older than the one that added it. Nothing is
+     struck through, and the year's own price and its saving are untouched. */
+  var keep = STORE_P['com.tokinets.lingua.plus.monthly'];
+  STORE_P['com.tokinets.lingua.plus.monthly'] =
+    { id: keep.id, price: keep.price, amount: keep.amount };
+  out.noYearWas = storeWas('plus');
+  out.noYearOff = storeOff('plus');
+  out.noYearHTML = planPrice(PLANS[1], false);
+  STORE_P['com.tokinets.lingua.plus.monthly'] = keep;
 
   /* Amounts that cannot make a saving make none, rather than making one up. */
   STORE_P['com.tokinets.lingua.pro.monthly'] = { id: 'x', price: 'free', amount: 0 };
@@ -728,6 +760,30 @@ say(st.after.indexOf('$99.99') !== -1,
     'so that term falls back to www/i18n, which is the only place a typed price may reach a screen');
 say(st.zeroOff === '' && st.dearOff === '',
     'nothing costing nothing, and a year dearer than twelve months, make no saving');
+
+/* ---- the year, struck through with twelve months of the monthly price ----
+   「49.99は取り消し線＋17%OFF」OWNER 2026-08-26. The saving above is the
+   17% half and was already held; this is the line through the old number.  */
+say(st.plusWas === '\u00a59,000',
+    'a year is struck through with the App Store\'s own twelve months (' + st.plusWas + ')');
+say(st.plusYrHTML.indexOf('<s class="pwas">\u00a59,000</s>') !== -1,
+    'and it is on the screen, in Apple\'s formatting and not built out of a number');
+say(st.plusMoHTML.indexOf('pwas') === -1,
+    'the month is not struck through with twelve of itself');
+say(st.proWas === '',
+    'a plan with no year on sale strikes nothing through, `year` or no `year`');
+say(st.noYearWas === '' && st.noYearHTML.indexOf('pwas') === -1,
+    'an App Store that answers without the field strikes nothing through');
+say(st.noYearOff === '33',
+    'and the saving it does know is still said (' + st.noYearOff + ')');
+/* The whole of the fallback, and it is the owner's: 何も出さない.
+   OWNER 2026-08-26. A browser, every screenshot, and a product not yet made
+   are the same case -- and www/i18n has no typed price for this one on
+   purpose, because a struck-through price exists to be compared with the one
+   beside it, and a dollar sign shown to somebody being charged yen is the
+   one place that comparison is a lie rather than merely a wrong number. */
+say(st.before.indexOf('pwas') === -1,
+    'and before Apple has answered at all, nothing is struck through -- there is no typed one');
 
 if (bad.length) { console.error('\nplan: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nplan: money decides what may be DONE and nothing about what exists --\n' +

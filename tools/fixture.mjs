@@ -954,6 +954,49 @@ export function halfDone(){
     ['the grammar list, paid', () => { SET.plan = 'pro'; window.route='gram';
                                        NAV=[{r:'gram'}]; const h = vGram();
                                        SET.plan = 'free'; return h; }],
+    /* ---- the 助詞 stage, both faces ------------------------------------
+       It is in STAGES_IF -- off the list until a language says it has one,
+       because English has none and opening the chapter with it would be the
+       app asserting something about somebody's language. So it is on NO
+       screen until something says yes, and neither of these two faces is
+       reachable from the state everything else is walked in.
+
+       The first is the stage EMPTY, which is what somebody sees the moment
+       they press the door at the foot of the list: three slots and nothing in
+       them. The second has the particle made, because a slot with a word in
+       it draws a different row -- the spelling and its sound instead of
+       「作る」 -- and that row is most of what this chapter IS.
+
+       Both put the mark back. stMarkSet() writes STG.set and saves, so a face
+       that left it set would put the stage on the list for every face walked
+       after it, and the door would be gone from the list face above. */
+    ['the particle stage, empty', () => {
+        const was = !!STG.set.part;
+        stMarkSet('part');
+        window.route = 'gram'; NAV = [{ r:'gram', a:'part' }];
+        const h = vGram();
+        if (!was) { delete STG.set.part; saveStg(); }
+        return h; }],
+    ['the particle stage, with a mark made', () => {
+        const was = !!STG.set.part;
+        stMarkSet('part');
+        WORDS.push({ hw:'ga', ph:['g','a'], mn:'subject mark',
+                     mns:['subject mark'], pos:'part', slot:'part.subj', at:5 });
+        window.route = 'gram'; NAV = [{ r:'gram', a:'part' }];
+        const h = vGram();
+        WORDS.pop();
+        if (!was) { delete STG.set.part; saveStg(); }
+        return h; }],
+    /* And the list with the door on it, which is the only place the way in
+       exists. Everything else walks with the stage off the list, so this is
+       the one face that renders that button. */
+    ['the grammar list, with the way in to particles', () => {
+        const was = !!STG.set.part;
+        if (was) { delete STG.set.part; saveStg(); }
+        window.route = 'gram'; NAV = [{ r:'gram' }];
+        const h = vGram();
+        if (was) { stMarkSet('part'); }
+        return h; }],
     ['a stage slot, by sound', () => { SET.plan = 'pro';
                                        openSlot(stAll()[0].id, stAll()[0].slots[0]);
                                        const h = vForm();

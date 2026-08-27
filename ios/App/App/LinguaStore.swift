@@ -180,9 +180,24 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
                differs by country -- Apple rounds each storefront its own way,
                so a year that is 17% off in one is 15% off in another -- and
                working it out from `price` would be arithmetic on a formatted
-               string in whatever currency. It is never shown; only `price`
-               is ever put on a screen. */
+               string in whatever currency. It is never shown; only a string
+               the App Store formatted is ever put on a screen. */
             "amount": NSDecimalNumber(decimal: p.price).doubleValue,
+            /* Twelve of this one, formatted by the App Store's own formatter.
+               It is what a year is struck through with on the plans page:
+               「49.99は取り消し線＋17%OFF」OWNER 2026-08-26.
+
+               The sum is done here and not in www for the same reason
+               `amount` is never shown -- www has the number but not the
+               currency and not the region's way of writing money, so twelve
+               times ¥750 could only be built there as "¥" and a number.
+               「4はドル。でもさっき価格登録してきたけど日本円は800円とかに
+               なってたよ」 Apple formats it or nobody does.
+
+               On every product, not only the monthly one: what a term is
+               worth twelve of is a fact about that term, and it is the
+               monthly row www reads this off. */
+            "year": (p.price * 12).formatted(p.priceFormatStyle),
           ]
           /* A subscription's period is what tells the two apart on screen,
              and it is the App Store's answer rather than ours -- a product

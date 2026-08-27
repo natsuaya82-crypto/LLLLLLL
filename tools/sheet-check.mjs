@@ -53,39 +53,165 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
   if (typeof shBlank === 'undefined') return null;
   eval('(' + s + ')()');
   SET.done = true;
+
+  /* ---- the page IS the file --------------------------------------------
+     This used to draw the page itself, out of shBoxAt/shMarks/shCellAt --
+     the same functions the PDF is written from, so the geometry agreed. What
+     it never touched was shSheet()'s BYTES, and that is the half the owner
+     met: a sheet that goes out and cannot come back in. A page drawn beside
+     the writer is a copy of the writer, and a copy always agrees.
+
+     So the real PDF is built and then PLAYED: its cross-reference table is
+     read, its page found, its content stream tokenised, and its operators
+     run onto the canvas. Nothing here asks the app where a box is. If the
+     bytes say something the reader does not expect, this is where it shows.
+
+     Only the operators shPageOps() emits are understood -- `re f`, `re S`,
+     `g`, `G`, `w`, `q`/`Q`/`cm`, `Do`, and a line of text. An operator that
+     turns up and is not one of these is a FAILURE rather than a shrug: it
+     means the sheet grew something this cannot see, and a page rendered with
+     a piece missing is exactly the silent wrong answer this file exists to
+     refuse. */
+  function shdPlay(pdf, want, ctx, S, PH, seen){
+    /* the cross-reference table, which is how a reader finds an object. Not
+       a scan for `N 0 obj`: a gray image stream is arbitrary bytes and may
+       spell anything. */
+    var sx = pdf.lastIndexOf('startxref');
+    if (sx < 0) return 'no startxref';
+    var xat = parseInt(String(pdf.slice(sx + 9)).replace(/^\s+/, ''), 10);
+    if (!(xat > 0) || pdf.slice(xat, xat + 4) !== 'xref') return 'no xref at ' + xat;
+    var hd = /^\s*(\d+)\s+(\d+)\s*/.exec(pdf.slice(xat + 4, xat + 44));
+    if (!hd) return 'xref head';
+    var first = +hd[1], count = +hd[2], at = xat + 4 + hd[0].length, off = [], i;
+    for (i = 0; i < count; i++){ off[first + i] = parseInt(pdf.substr(at, 10), 10); at += 20; }
+
+    function body(k){
+      var a = off[k];
+      if (!(a > 0)) return '';
+      var h = pdf.indexOf('obj', a);
+      if (h < 0) return '';
+      /* objects are written in order, so the next one's offset is this one's
+         end -- and the last one ends where the table starts. */
+      var b = (off[k + 1] > 0) ? off[k + 1] : xat;
+      return pdf.slice(h + 3, b);
+    }
+    function stream(k){
+      var t = body(k), a = t.indexOf('stream\n'), b = t.lastIndexOf('\nendstream');
+      return (a < 0 || b < a) ? '' : t.slice(a + 7, b);
+    }
+    var kids = (body(2).match(/\d+ 0 R/g) || []).map(function(r){ return parseInt(r, 10); });
+    if (!kids[want]) return 'no page ' + want;
+    var page = body(kids[want]);
+    var cm = /\/Contents (\d+) 0 R/.exec(page);
+    if (!cm) return 'no contents';
+    var ims = {}, xo = /\/XObject <<([^>]*)>>/.exec(page), mm, re = /\/(Im\d+) (\d+) 0 R/g;
+    if (xo) while ((mm = re.exec(xo[1]))) ims[mm[1]] = +mm[2];
+
+    /* an image as a canvas of its own: DeviceGray, 8 bits, one byte a pixel,
+       row 0 at the TOP -- which is the opposite way up from the unit square
+       a PDF draws it into, and the flip is done once, below. */
+    function pic(k){
+      var d = body(k), w = +(/\/Width (\d+)/.exec(d) || [0, 0])[1],
+          h = +(/\/Height (\d+)/.exec(d) || [0, 0])[1], by = stream(k);
+      if (!(w > 0 && h > 0) || by.length < w * h) return null;
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var q = c.getContext('2d'), id = q.createImageData(w, h), j, v;
+      for (j = 0; j < w * h; j++){
+        v = by.charCodeAt(j) & 255;
+        id.data[j*4] = id.data[j*4+1] = id.data[j*4+2] = v; id.data[j*4+3] = 255;
+      }
+      q.putImageData(id, 0, 0);
+      return c;
+    }
+
+    /* PDF points straight onto the canvas: y runs UP on paper and DOWN here,
+       and this is the one place the two meet. */
+    ctx.save();
+    ctx.setTransform(S, 0, 0, -S, 0, PH);
+    var st = [], fill = '#000', strk = '#000', tf = 8, tx = 0, ty = 0, bad = null;
+    function gray(v){ var n2 = Math.round(v * 255); return 'rgb(' + n2 + ',' + n2 + ',' + n2 + ')'; }
+    var toks = String(stream(cm[1])).match(/\([^)]*\)|\/[^\s/<>\[\]()]+|[^\s]+/g) || [];
+    for (i = 0; i < toks.length; i++){
+      var tk = toks[i];
+      if (/^[-+]?[\d.]+$/.test(tk)){ st.push(parseFloat(tk)); continue; }
+      if (tk.charAt(0) === '/' || tk.charAt(0) === '('){ st.push(tk); continue; }
+      switch (tk){
+        case 'g': fill = gray(st.pop()); break;
+        case 'G': strk = gray(st.pop()); break;
+        case 'w': ctx.lineWidth = st.pop(); break;
+        case 're': st = st.slice(-4); break;             /* x y w h, kept for f/S */
+        case 'f': case 'S': {
+          if (st.length < 4){ bad = bad || 'rect with ' + st.length; break; }
+          var h4 = st.pop(), w4 = st.pop(), y4 = st.pop(), x4 = st.pop();
+          if (tk === 'f'){ ctx.fillStyle = fill; ctx.fillRect(x4, y4, w4, h4);
+                           seen.push(['f', x4, y4, w4, h4]); }
+          else            { ctx.strokeStyle = strk; ctx.strokeRect(x4, y4, w4, h4);
+                           seen.push(['S', x4, y4, w4, h4]); }
+          st = [];
+          break;
+        }
+        case 'q': ctx.save(); break;
+        case 'Q': ctx.restore(); st = []; break;
+        case 'cm': {
+          var f6 = st.pop(), e6 = st.pop(), d6 = st.pop(), c6 = st.pop(), b6 = st.pop(), a6 = st.pop();
+          ctx.transform(a6, b6, c6, d6, e6, f6);
+          st = [];
+          break;
+        }
+        case 'Do': {
+          var nm = String(st.pop()).slice(1), c7 = ims[nm] ? pic(ims[nm]) : null;
+          if (!c7){ bad = bad || 'no image ' + nm; break; }
+          ctx.save(); ctx.transform(1, 0, 0, -1, 0, 1);   /* row 0 is the top */
+          ctx.drawImage(c7, 0, 0, 1, 1); ctx.restore();
+          seen.push(['Do', nm]);
+          st = [];
+          break;
+        }
+        case 'BT': st = []; break;
+        case 'Tf': tf = st.pop(); st.pop(); break;
+        case 'Td': ty = st.pop(); tx = st.pop(); break;
+        case 'Tj': {
+          var s8 = String(st.pop()); s8 = s8.slice(1, s8.length - 1);
+          ctx.save(); ctx.translate(tx, ty); ctx.scale(1, -1);
+          ctx.fillStyle = fill; ctx.font = tf + 'px Helvetica, sans-serif';
+          ctx.textBaseline = 'alphabetic'; ctx.fillText(s8, 0, 0); ctx.restore();
+          st = [];
+          break;
+        }
+        case 'ET': st = []; break;
+        case 'gs': st = []; break;
+        default: bad = bad || 'unknown operator ' + tk;
+      }
+      if (bad) break;
+    }
+    ctx.restore();
+    return bad;
+  }
+
   var S = DPI/72, PW = Math.round(SH_W*S), PH = Math.round(SH_H*S);
   var pc = document.createElement('canvas'); pc.width = PW; pc.height = PH;
   var g = pc.getContext('2d'), Y = function(y){ return PH - y*S; };
   g.fillStyle = '#fff'; g.fillRect(0, 0, PW, PH);
-  g.fillStyle = '#000';
-  shMarks().forEach(function(m){
-    g.fillRect((m[0]-SH_MARK/2)*S, Y(m[1]+SH_MARK/2), SH_MARK*S, SH_MARK*S); });
   var i, x, y, b, at;
-  for (i = 0; i < names.length; i++){
-    b = shBoxAt(i);
-    g.strokeStyle = '#d1d1d1'; g.lineWidth = Math.max(1, 0.5*S);
-    g.strokeRect(b.x*S, Y(b.y+SH_BOX), SH_BOX*S, SH_BOX*S);
-    g.fillStyle = 'rgba(0,0,0,' + (1-SH_DOT_GREY).toFixed(2) + ')';
-    var lin = SH_LAT_INSET/800*SH_BOX, lst = (SH_BOX-2*lin)/(SH_LAT_N-1), lx, ly;
-    for (ly = 0; ly < SH_LAT_N; ly++) for (lx = 0; lx < SH_LAT_N; lx++)
-      g.fillRect((b.x+lin+lx*lst-SH_DOT/2)*S, Y(b.y+lin+ly*lst+SH_DOT/2),
-                 Math.max(1, SH_DOT*S), Math.max(1, SH_DOT*S));
-    g.fillStyle = '#000'; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
-    g.font = '600 ' + Math.round(SH_LABEL*0.85*S) + 'px system-ui, "Noto Sans JP", sans-serif';
-    g.fillText(names[i], b.x*S, Y(b.y+SH_BOX+SH_LABEL_UP));
-  }
-  var bits = shPack(names);
+
+  var pdf = shSheet(names, shPics(names));
+  if (!pdf) return { fail: 'shSheet refused the names' };
+  var seen = [], why = shdPlay(pdf, 0, g, S, PH, seen);
+  if (why) return { fail: 'the page could not be played: ' + why };
+
+  var bits = shPack(names.slice(0, shPerPage()));
   /* `damage` is somebody's thumb over the strip, or a fold, or a scanner that
      lost a band. The packet is written three and a bit times over and the
      first copy that checksums wins, so a few bad cells REPAIR -- what this
      asks for is enough of them that no copy checks out, and then the sheet
-     has to be turned away rather than read with the names guessed. */
-  if (damage) for (i = 0; i < damage; i++)
-    bits[(i*37 + 11) % (SH_CW*SH_CH)] ^= 1;
-  g.fillStyle = '#000';
-  for (y = 0; y < SH_CH; y++) for (x = 0; x < SH_CW; x++){
-    if (!bits[y*SH_CW+x]) continue;
-    at = shCellAt(x, y);
+     has to be turned away rather than read with the names guessed.
+     It is done to the PHOTOGRAPH now and not to the packet before printing:
+     the page came off the real PDF, so this is a cell painted over rather
+     than a sheet printed wrong. */
+  if (damage) for (i = 0; i < damage; i++){
+    var di = (i*37 + 11) % (SH_CW*SH_CH);
+    at = shCellAt(di % SH_CW, (di / SH_CW) | 0);
+    g.fillStyle = bits[di] ? '#fff' : '#000';
     g.fillRect(at[0]*S, Y(at[1]+SH_CELL), SH_CELL*S, SH_CELL*S);
   }
   var KA = [[[175,265],[330,250],[440,275],[470,350],[450,470],[390,570],[300,640],[225,655],[205,610],[240,585]],
@@ -163,6 +289,12 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
      by four points, and what it produced was a word printed inside a square
      somebody was about to draw their own letter in. */
   return {
+    /* off the bytes, and only the bytes can say it: a name printed over
+       every box, and a box drawn under every name. A page that goes out with
+       one label missing is a box nobody can tell from its neighbour, and it
+       renders, prints and photographs perfectly. */
+    drew: { pics: seen.filter(function(o){ return o[0] === 'Do'; }).length,
+            boxes: seen.filter(function(o){ return o[0] === 'S'; }).length },
     label: SH_LABEL + SH_LABEL_UP < SH_GAPY,
     strip: shCellAt(0, 0)[1] + SH_CELL < shBoxAt(shPerPage()-1).y,
     before: LETTERS.length,
@@ -173,6 +305,14 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
   };
 };
 const shot = await pg.evaluate(build, { names: NAMES, s: seed.toString(), DPI: 250, deg: 6, blur: 1.6, grain: 18, lit: true });
+/* The page is the PDF now, so a PDF that cannot be built or cannot be played
+   is the end of the run rather than twenty confusing lines about ink. Said
+   here, with the reason, because everything below reads `shot`. */
+if (!shot || shot.fail){
+  console.log('  FAILED  ' + ((shot && shot.fail) || 'the app did not load'));
+  await br.close();
+  process.exit(1);
+}
 
 /* ---- 2. hand it back, through the road a person's finger takes ---------- */
 await pg.evaluate(() => { SH = shBlank(); shTakeFile(window.__SHEET, 'sheet.png'); });
@@ -340,6 +480,10 @@ await br.close();
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
+/* what the file itself drew, read back off the file */
+say(shot.drew.pics === Math.min(NAMES.length, 20) && shot.drew.boxes === Math.min(NAMES.length, 20),
+  'the file draws a name over every box and a box under every name: ' +
+  shot.drew.pics + ' names, ' + shot.drew.boxes + ' boxes');
 say(shot.label && shot.strip,
     'the name over a box stays out of the box above it, and the strip clears the bottom row');
 say(shot.oldVia === 0 && shot.oldSh === 0,

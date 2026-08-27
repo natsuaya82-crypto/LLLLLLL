@@ -57,6 +57,7 @@ function viewReset(){
                                           which of the two it is about */
   NOTES_HAVE=null;                     /* the notices, asked again */
   BKLIST=null;                         /* what is on the disk, asked again */
+  ABOPEN={};                           /* which sections of the language's article are open */
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------
