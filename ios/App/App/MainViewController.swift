@@ -69,12 +69,21 @@ class MainViewController: CAPBridgeViewController {
      setHideFormAccessoryBar:) and has done in the App Store for years; this
      is that code with the dead UIWebBrowserView half dropped.
 
+     Taking that road at all is an owner decision and this is where it came
+     from: 「真似よう。ダメなら諦める」OWNER 2026-08-27 -- match the shipping
+     implementation, and if Apple refuses it, stop. **The second half is as
+     much the decision as the first: a rejection here is not a puzzle for a
+     later session to solve.** The strip stays and nobody looks for another
+     way.
+
      **One thing is deliberately NOT copied.** The plugin assembles the class
      name as ["WK","Content","View"].joined() so the string is not in the
      binary. The name is written out here. Hiding it changes nothing about
      what runs and everything about what it looks like, and this repo does not
      get to be the one that disguises what it is doing. If that is not
      acceptable, the answer is to remove this function, not to obfuscate it.
+     Somebody who has decided they can live with being refused has no reason
+     to hide anything from the people doing the refusing.
 
      It fails visibly rather than quietly: if Apple renames or removes the
      class, the guard falls through and the strip is on the screen, which is
