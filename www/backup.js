@@ -280,19 +280,27 @@ function bkTakeGen(gens){
   }
   return 0;
 }
-/* Every backup file, gone. Called by one thing -- wipeAll() -- and it is the
-   only place in this app that destroys a copy on purpose. The rule it looks
-   like it breaks is docs/DATA_SAFETY.md's "no automatic deletion", and it
-   does not: this is not automatic, it is somebody pressing the one button
-   that says everything goes. Leaving the files would make that button a lie,
-   because they are the copy that survives the app itself.
+/* Everything this app wrote into Documents, gone. Called by one thing --
+   wipeAll() -- and it is the only place in this app that destroys a copy on
+   purpose. The rule it looks like it breaks is docs/DATA_SAFETY.md's "no
+   automatic deletion", and it does not: this is not automatic, it is somebody
+   pressing the one button that says everything goes. Leaving the files would
+   make that button a lie, because they are the copy that survives the app
+   itself.
+
+   `dropAll` and not `dropKept`: the backups were the only folder being
+   emptied, and the recordings and the PDF sheets sat in Documents beside them
+   where the Files app shows them. 「アカウント削除で残るものねえ」OWNER
+   2026-08-27 -- a recording still there is that sentence being untrue
+   somewhere the person can look. `dropKept` is still the backups alone and is
+   still what a language being replaced would use.
 
    No native side means nothing to remove, which is a browser and every check
    under tools/. */
 function bkDropAll(then){
   var p=sharePlug();
   if(!p){ if(then) then(); return; }
-  p('LinguaShare', 'dropKept', {})
+  p('LinguaShare', 'dropAll', {})
     .then(function(){ if(then) then(); })
     ['catch'](function(){ if(then) then(); });
 }

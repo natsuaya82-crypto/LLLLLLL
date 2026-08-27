@@ -532,9 +532,8 @@ person's settings and belongs to no language. `langKey('words')` is the only
 thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
-real: `bkPack()` walks it, so a slice outside it is in no backup, and
-`wipeAll` walks it, so a slice outside it survives a wipe into the next
-language. Two were outside it. The **keyboard** is the language's — built in
+**backed up**: `bkPack()` walks it, so a slice outside it is in no backup.
+Two were outside it. The **keyboard** is the language's — built in
 the app, filed under `langKey('kb')` beside the words — and was in no backup;
 and **what the language is for** sat in `SET`, the person's settings, directly
 under a comment saying it travels with the language. Neither could throw:
@@ -542,6 +541,22 @@ a backup was written, it restored, every check was green, and the keyboard
 somebody built simply was not in the file. `backup-check` now names both
 rather than counting slices — a count says eleven and goes on saying eleven
 when the eleventh is the wrong one.
+
+**Being in it has nothing to do with being deleted, and that is new on
+2026-08-27.** `wipeAll` used to walk `SLICES` too, and every key added after
+that line was written stayed behind — the drafts, the posts, the person's
+name and face, the index of languages, the flat keys from before there could
+be more than one. One bug, seven times: **a list of keys, written by hand,
+that nobody remembered to add to.** 「アカウント削除で残るものねえって言ってん
+だろ何回言わせんだよ全部消えんだよ。」 So `lsWipeNS()` counts `localStorage`
+instead and removes everything under `lingua.` — no list, and a key added
+tomorrow is gone the day it is added. The prefix includes the dot, because
+`lingua` and `linguaX` in the same storage are somebody else's.
+
+**There is no way to delete one language**, and that is a fact about today
+rather than a rule: no screen offers it. When one is built it walks `SLICES`
+for one id through `langKeyOf()` — and it is emphatically not `lsWipeNS()`,
+which is the whole namespace and belongs to the account going.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
 the app shows one language at a time and 290-odd places say `WORDS` meaning

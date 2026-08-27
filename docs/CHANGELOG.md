@@ -16,89 +16,93 @@ where it starts.
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
 
-### 【DELETE REVIEW ── コードはまだ書いていません】アカウントと言語を消したら、下書きも消える
+### アカウントを消したら、その人のものは一つも残りません
 
 ```
-アカウント削除は全部消すって言ってるやん。言語を消すでも言語系は全部消すって
-言ってるでしょ？なんでそれに含まれないと思うの？          OWNER 2026-08-27
+アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。
+                                                        OWNER 2026-08-27
 ```
 
-`docs/BACKLOG.md` の「下書きについて、決まっていない二つ」は**決まっていない二つ
-ではありませんでした。**既にある決定に含まれていた、というのがオーナーの答えです。
+**「何回言わせんだよ」です。**これは新しい決定ではなく、前からある決定でした。
+一つ前のこの欄が「下書きだけ」で書かれていたのは、その読み違いです。
 
-**これは DELETE REVIEW だけです。実装は入っていません** ── `CLAUDE.md`
-「anything that deletes gets a DELETE REVIEW first」。**そして §5 に、判断が
-要る一点があって、そこで止めています。**
+#### なぜ下書きが残っていたか ── 一件ではなく、一つの原因でした
 
-#### 下書きが今どこに、どんな形で入っているか（読んで確かめた事実）
+`wipeAll()` は**消す鍵を手で書いていました**。`SLICES` を回して
+`langKey(SLICES[i])` を消すだけで、`removeItem` はアプリ全体で**二箇所**しか
+ありませんでした（`net.js:100` のトークンと、そこ）。だから **`lingua.` で
+始まる鍵を誰かが足すたびに、消し忘れが一つ増えていました**:
 
 ```
-www/post.js:310   var LS_DRAFTS='lingua.drafts';
-www/post.js:317   localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS));
+lingua.drafts   下書き            残っていた
+lingua.posts    投稿の写し        残っていた
+lingua.me       名前・顔・自己紹介 残っていた
+lingua.langs    言語の索引        残っていた
+lingua.cur      開いている言語     残っていた
+lingua.set      設定              既定値で上書きされるだけ
+lingua.words ほか旧8本            残っていた
 ```
 
-**`langKey()` を通りません。平の一本の鍵です。**中身は
-`{at, ln, mn, to, pr, pics, vo, pv}` の配列 ── 書いた行、意味、返信先、お題、
-文字を置いた写真、録音、非公開かどうか。
+**だから一行足すのは直し方ではありません。**同じ穴をもう一つ塞ぐだけで、次に
+鍵を足した日にまた起きます。`CLAUDE.md`「a rule lives in one place, and the
+places that follow it do not restate it」。
 
-⚠ **下書きは、どの言語で書いたかを持っていません。**（§5-2）
+#### 直し方 ── 一覧を持つのをやめました
 
-#### 今、削除で何が消えて何が残るか
+`lsWipeNS()`（`www/core.js`）が `localStorage` を**数え上げて**、
+`lingua.` で始まる鍵を全部消します。**一覧はどこにもありません。**
+鍵が増えても、その日から消えます。
 
-**言語だけを消すボタンはありません。**`wipeAll()`（`www/settings.js:387`）が
-このアプリで唯一の全体削除で、アカウント削除と端末の消去を**兼ねています**。
-オーナーの二つの文は、どちらも同じ関数に落ちます。
+接頭辞は `'lingua.'`（点まで）で厳密に見ます ── `lingua` という別の鍵や
+`linguaX...` は**他人のもので、触りません**。
 
-`removeItem` はアプリ全体で**二箇所だけ**です（`net.js:100`、`settings.js:403`）。
+`SLICES` は「消す一覧」としては要らなくなりました。**`bkPack()` が歩くものとしては
+生きています** ── 規則6 の「being in it is what makes a slice real」は
+バックアップ側の話として残ります。`CLAUDE.md` の規則6 が「`wipeAll` walks it」と
+言っていたので、**同じコミットで直しました**（古い文は消しました）。
 
-| localStorage の鍵 | 中身 | いま `wipeAll` の後 |
-|---|---|---|
-| `lingua.<id>.<SLICES 12本>` | 言語そのもの | **消える** |
-| `lingua.sess` | トークン | **消える**（`netOut`） |
-| `lingua.set` | 設定 | 既定値で上書き（theme/ui/plan は残す） |
-| `lingua.drafts` | **下書き** | **残る** ← オーナーの指摘 |
-| `lingua.posts` | 端末に持っている投稿の写し | **残る** |
-| `lingua.me` | 名前・ハンドル・顔・自己紹介 | **残る** |
-| `lingua.langs` `lingua.cur` | 言語の索引と、開いているもの | **残る** |
-| `lingua.words` ほか旧8本 | 多言語化前の平の鍵 | 残る（`langMigrate` が意図的に残したもの） |
+#### 言語を一つ消すほうは、別の操作です
 
-サーバ側は `netDropMe()`（`net.js:1200`）が写真を消してからアカウントを消します。
-**下書きはサーバに行きません** ── `localStorage` だけです。
+「言語を消すでも言語系は全部消す」── そちらは**その言語の `lingua.<id>.*` が
+全部消えて、他の言語は一つも動かない**、です。名前空間ごと消すのは
+アカウント削除だけ。**二つは混ざりません。**
 
-#### この変更で新しく消えるもの
+#### 端末の Documents
 
-**`lingua.drafts`。それだけです。**上の表の「残る」のうち、この決定が名指しして
-いるのは下書きだけなので、ほかには手を付けません
-（`CLAUDE.md`「do not ... generalise it to anything nearby」）。
-`lingua.posts` `lingua.me` `lingua.langs` が残っているのは**別の話**で、
-`docs/BACKLOG.md` に分けて出します。
+`bkDropAll()` → `dropKept`（`LinguaShare.swift`）が `Documents/Languages/` の
+`.json` を**世代込みで**全部消します。ここは元から在りました。
 
-#### 戻せるか
+⚠ **録音（`Documents/Voices/`）と PDF シート（`Documents/Sheets/`）には、
+一括で消す口がありませんでした** ── `dropVoice(name)` が一本ずつ消すだけで、
+シートには消す口自体がありません。**在ることにしないために書いておきます。**
+`dropAll` を足しました（`dropKept` と同じ形で、三つのディレクトリを空にします）。
+**Swift は Linux でコンパイルできないので `COMPILE CONFIRMED` は未です。**
 
-**戻せません。**バックアップは `bkPack()` が `SLICES` を歩くものなので、
-下書きは**どのバックアップにも入っていません**。今日の時点で、消えたら終わりです。
-（`SLICES` に入れると入るようになります ── それが §5 です。）
+#### 設定について、一つ言っておくこと
+
+`theme` `ui` `plan` を残すのもやめました。**プランは次の起動で Keychain から
+戻ります** ── アカウントを消すことは購読を解約することではなく、Apple の側は
+そのままだからです。`CLAUDE.md`「money … decides nothing about what exists」に
+反しません: 消えるものはプランに関係なく全部消え、プランは何も守りません。
 
 ```
 DELETE REVIEW
   who deletes      人が押す。wipeAll() の confirm 一回のうち
-  when             アカウント削除／端末の消去のとき
-  what exactly     lingua.drafts の全部
-  why              「アカウント削除は全部消す」OWNER 2026-08-27
-  recoverable?     いまは不可能。バックアップに下書きは入っていない（§5 次第）
-  backup survive?  §5 で決まる。SLICES に入れれば入り、入れなければ入らない
-  plan?            no。下書きは無料でも有料でも同じで、can() を一つも通らない
-  migration        なし。鍵を一本消すだけで、形は変えない
+  when             アカウント削除のとき
+  what exactly     localStorage の `lingua.` で始まる鍵の全部（一覧は持たない）、
+                   Documents の Languages / Voices / Sheets の中身、
+                   サーバのアカウントと写真（netDropMe、元から）
+  why              「アカウント削除で残るものねえ…全部消えんだよ」OWNER 2026-08-27
+  recoverable?     **戻せません。それがこの決定です。**
+                   バックアップのファイルも同時に消えるので、戻す先がありません
+  backup survive?  しません。Documents の世代も消えます
+  plan?            no。プランは何も守らず、何も守られません。
+                   次の起動で Keychain から戻るだけ（購読は解約されていないので）
+  migration        なし。鍵の形は何も変えていません
 ```
 
-#### 検査
-
-`npm run backup` に足します。**両方向を見ます** ──
-「消えるはずのものが残っている」と「**残るはずのものが消えた**」。
-後者は取り返しがつかないので、`wipeAll` のあとに**別の言語の中身が生きている**
-ことも見ます。バグは戻して赤を見てから。
-
-**CODE CONFIRMED: 未（コードなし）／DEVICE CONFIRMED: 未**
+**CODE CONFIRMED / COMPILE CONFIRMED: 未 / DEVICE CONFIRMED: 未 は
+`docs/reports/del-2026-08-27.md` に。**
 
 ### 辞書の ⋯ に「AIに相談」が付きました
 

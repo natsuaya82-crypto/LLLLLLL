@@ -27,6 +27,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "keep", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "kept", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropKept", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "dropAll", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
@@ -218,6 +219,36 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       // never written one.
       call.resolve(["gone": 0])
     }
+  }
+
+  /// Everything this app has written into Documents, in all three of its
+  /// folders. 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ
+  /// 全部消えんだよ。」OWNER 2026-08-27 -- and Documents is visible in the Files
+  /// app, so a language file still sitting there after somebody deleted their
+  /// account is the sentence being untrue where they can see it.
+  ///
+  /// `dropKept` above is the backups alone and stays what it is; this is the
+  /// account going. The recordings had only `dropVoice(name)`, one at a time
+  /// and by a name that is in localStorage -- which is emptied in the same
+  /// breath -- and the sheets had no way to be removed at all.
+  ///
+  /// Only OUR three directories, and only their contents. Documents itself is
+  /// the person's folder and may hold things they put there; the same
+  /// argument `dropKept` makes about staying inside Languages/.
+  @objc func dropAll(_ call: CAPPluginCall) {
+    var gone = 0
+    for dir in [try? languages(), try? voices(), try? sheets()] {
+      guard let dir = dir else { continue }
+      guard let names = try? FileManager.default.contentsOfDirectory(atPath: dir.path)
+      else { continue }
+      for n in names {
+        try? FileManager.default.removeItem(at: dir.appendingPathComponent(n))
+        gone += 1
+      }
+    }
+    // Nothing there to remove is not a failure: it is a phone that never
+    // wrote one. Same answer dropKept gives.
+    call.resolve(["gone": gone])
   }
 
   @objc func kept(_ call: CAPPluginCall) {
