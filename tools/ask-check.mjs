@@ -42,9 +42,11 @@
       to a reader with no font at all. Nothing throws: the URL builds, the
       link opens, and the other end shows squares.
 
-      And the tab is the round trip. A hundred words that have to be retyped
-      is not a hundred words made, so what goes out is what impDelim()
-      (www/import.js:66) reads back with no scoring -- see askWords().
+      And the tab is the round trip. This is for somebody making words in
+      BULK and no number is part of it 「100じゃなくてもいいけど」 -- whatever
+      comes back, having to retype it is not making words in bulk, so what
+      goes out is what impDelim() (www/import.js:66) reads back with no
+      scoring at all. See askWords().
 
    Japanese is nine URL bytes a character (あ -> %E3%81%82) where English is
    one, so the ten languages are not ten spellings of one test: at the same
