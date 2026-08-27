@@ -34,7 +34,8 @@
     "shape": "node tools/shape-check.mjs",
     "sheet": "node tools/sheet-check.mjs",
     "draft": "node tools/draft-check.mjs",
-    "world": "node tools/world-check.mjs"
+    "world": "node tools/world-check.mjs",
+    "ask": "node tools/ask-check.mjs"
   },
   "keywords": [],
   "author": "",

@@ -691,50 +691,91 @@ const r = await pg.evaluate(({ s }) => {
 
      Asked of KB_PATS rather than a list written here, for press-check's
      reason: a sixth pattern is walked the day it is added. */
-  out.tiles = [];
+  /* ---- 6f2. the sheet is worked by touching it ------------------------
+     「下のキーを動かして入れるのやめない？ a1とかタップしたらキーを追加とか、
+     a1a2触ってキーをくっつける」「タップしたらそのキーが選ばれて上のゴミ箱
+     ボタンとかくっつけるボタンとか押してその作業がされるようにしようよ」
+     OWNER DECISION 2026-08-27.
+
+     What went was the palette of three widths under the sheet, dragged onto
+     a cell. Its widths were 1, 2 and 3 in a unit of their own while a key is
+     however many of the ten columns it spans -- so on a flick board the thing
+     picked up and the thing that landed were different sizes.
+
+     An empty cell IS a key's worth of room, so pressing one puts a key
+     exactly there and exactly that wide; and a key is widened by joining it
+     to its neighbour, which cannot come out wider than the row has room for
+     because both were already in it.
+
+     Every claim here is read off the PAGE and driven through the real button
+     names, because what is under test is what a finger reaches. */
+  fresh();
   function standKb(){
     window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
   }
-  function tileEl(w){ return document.querySelector('.kbnewt[data-w="' + w + '"]'); }
-  KB_PATS.forEach(function (p){
-    var rec = { pat: p, full: [], noop: [], sized: [], hgt: [] };
-    /* the board as a pattern makes it: every row at ten, so no width fits */
-    KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
-    [1, 2, 3].forEach(function (w){
-      var el = tileEl(w);
-      rec.full.push(!!(el && el.disabled));
-    });
-    /* and picking one and pressing a key changes nothing */
-    [1, 2, 3].forEach(function (w){
-      KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
-      var before = kbLayer().rows[0].length;
-      kbSetNew(w); kbPick(0, 0); standKb();
-      rec.noop.push(kbLayer().rows[0].length === before);
-    });
-    /* with exactly enough room cut for THIS width, the tile and the key it
-       makes -- both read off the page, one width per board so that placing
-       one never eats the room for the next */
-    [1, 2, 3].forEach(function (w){
-      var i;
-      KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
-      for (i = 0; i < w; i++){ kbHeadCol(0); kbCut(); }
-      KBH = null; standKb();
-      var tile = tileEl(w);
-      var tw = tile ? +tile.getBoundingClientRect().width.toFixed(1) : -1;
-      var th = tile ? +tile.getBoundingClientRect().height.toFixed(1) : -1;
-      var down = !!(tile && tile.disabled);
-      var before = kbLayer().rows[0].length;
-      kbSetNew(w); kbPick(0, 0); standKb();
-      var made = kbLayer().rows[0].length > before;
-      var key = document.querySelector('.kb.kbsheet .kbk[data-r="0"][data-k="1"]');
-      rec.sized.push({ w: w, made: made, down: down, tile: tw,
-        key: (made && key) ? +key.getBoundingClientRect().width.toFixed(1) : -1,
-        got: made ? (kbLayer().rows[0][1].w || 1) : null });
-      rec.hgt.push({ w: w, tile: th,
-        key: (made && key) ? +key.getBoundingClientRect().height.toFixed(1) : -1 });
-    });
-    out.tiles.push(rec);
-  });
+  /* a board a pattern made has no slack, so a cell only exists after a cut */
+  out.cellNoneFull = document.querySelectorAll('.kb.kbsheet .kbk.cell').length === 0;
+  kbHeadCol(0); kbCut(); KBH = null; standKb();
+  var cells = document.querySelectorAll('.kb.kbsheet .kbk.cell');
+  out.cellShown = cells.length > 0;
+  out.cellIsButton = cells.length > 0 && cells[0].tagName === 'BUTTON';
+  var keysWas = kbLayer().rows[0].length;
+  var usedWas = kbUsed(kbLayer().rows[0]);
+  /* press the first empty cell of row 0 */
+  var c0 = document.querySelector('.kb.kbsheet .kbrow .kbk.cell');
+  if (c0) c0.click();
+  standKb();
+  out.cellAdded = kbLayer().rows[0].length === keysWas + 1;
+  out.cellAddedW = out.cellAdded && kbUsed(kbLayer().rows[0]) === usedWas + 2;
+  out.cellBack = (kbUndo(), kbLayer().rows[0].length === keysWas);
+
+  /* pressing a key selects it, and pressing it again puts it down */
+  fresh();
+  kbTapKey(0, 2); standKb();
+  out.keySel = !!(KBH && KBH.k === 'k' && KBH.r === 0 && KBH.i === 2);
+  out.keyLit = document.querySelectorAll('.kb.kbsheet .kbk.on').length === 1;
+  kbTapKey(0, 2); standKb();
+  out.keyOff = !KBH;
+
+  /* and the key beside it joins the two */
+  fresh();
+  /* TWO DIFFERENT LETTERS, put on by hand. A pattern blanks every key it
+     makes, so both of these carry '' and "the left one's letter survived"
+     is true of a join that kept the right one's. Watched staying green with
+     that bug in before it was written this way. */
+  kbLayer().rows[0][2].v = 'aa'; kbLayer().rows[0][3].v = 'bb';
+  saveKb();
+  var w2Was = kbU(kbLayer().rows[0][2].w) + kbU(kbLayer().rows[0][3].w);
+  var v2Was = kbLayer().rows[0][2].v;
+  var nWas = kbLayer().rows[0].length;
+  var totWas = kbUsed(kbLayer().rows[0]);
+  kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+  var j = kbLayer().rows[0][2];
+  out.joined = kbLayer().rows[0].length === nWas - 1;
+  out.joinedW = out.joined && kbU(j.w) === w2Was;
+  out.joinedKeeps = out.joined && j.v === v2Was;
+  out.joinedRow = kbUsed(kbLayer().rows[0]) === totWas;
+  out.joinedSel = !!(KBH && KBH.k === 'k' && KBH.i === 2);
+  out.joinBack = (kbUndo(), kbLayer().rows[0].length === nWas);
+
+  /* the buttons over the sheet act on the key that is selected */
+  fresh();
+  kbTapKey(0, 2); standKb();
+  var tool = vKb();
+  out.keyJoinBtn = tool.indexOf('data-do="kbJoinSel"') >= 0;
+  out.keyOpenBtn = tool.indexOf('data-do="kbOpenSel"') >= 0;
+  out.keyBinUp = tool.indexOf('data-do="kbCut"') >= 0;
+  /* and no alignment, which is a row's business */
+  out.keyNoAlign = tool.indexOf('data-do="kbAlign"') < 0;
+  var binWas = kbLayer().rows[0].length;
+  kbCut(); standKb();
+  out.keyBinTook = kbLayer().rows[0].length === binWas - 1;
+  out.keyBinBack = (kbUndo(), kbLayer().rows[0].length === binWas);
+
+  /* the last of the palette is gone, and so is the ghost it was carried as */
+  fresh();
+  out.tilesGone = document.querySelectorAll('.kbnewt').length === 0 &&
+    !document.getElementById('kbnew');
 
   /* ---- 6g. a column goes in, and not when the board is full -----------
      「これって列とか行とかはたせないの？」「いいよー 最大になったら+はなし」
@@ -1040,85 +1081,6 @@ const r = await pg.evaluate(({ s }) => {
   window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
   out.selForgot = !KBH && !/class="kbrow sel"/.test(vKb());
 
-  /* ---- 6i. the tiles are the size of the cell they make ---------------- */
-  fresh();
-  var cols0 = kbCols(kbLayer().rows);
-  var tiles = document.querySelectorAll('#kbnew .kbnewt');
-  var kcell = document.querySelector('#kb .kbrow .kbk[data-r="0"][data-k="0"]');
-  out.tileCount = tiles.length;
-  var lab = document.querySelector('#kbnew .kbnewl');
-  out.tileSaid = !!lab && !!lab.textContent.trim();
-  if (tiles.length && kcell){
-    var kw = kcell.getBoundingClientRect().width, kh = kcell.getBoundingClientRect().height;
-    var t1 = tiles[0].getBoundingClientRect(), t3 = tiles[2].getBoundingClientRect();
-    out.tileOne = Math.abs(t1.width - kw) < 1.5;
-    out.tileTall = Math.abs(t1.height - kh) < 1.5;
-    /* three cells is three cells wide, gaps and all */
-    out.tileThree = Math.abs(t3.width - (kw * 3 + (t1.width - kw) * 0 + 2 * (kw ? 0 : 0)
-                     + 2 * ((t3.width - 3 * kw) / 2))) < 1e9 &&
-                    t3.width > kw * 2.5 && t3.width < kw * 3.6;
-    out.tileCols = cols0;
-  }
-
-  /* ---- 7. a width can be CARRIED onto the sheet ------------------------
-     The tap-then-tap way is kbSetNew()/kbPick() and is walked by press. This
-     is the other way and it is touches: a tile picked up and put down on a
-     cell. 「あれ持っていけないの？」 It is dispatched for real rather than by
-     calling kbTileUp() with a made-up state, because what is under the finger
-     is the half that can be wrong. */
-  fresh();
-  function touch(el, type, x, y){
-    var t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y });
-    el.dispatchEvent(new TouchEvent(type, {
-      touches: type === 'touchend' ? [] : [t],
-      targetTouches: type === 'touchend' ? [] : [t],
-      changedTouches: [t], bubbles: true, cancelable: true }));
-  }
-  function mid(el){
-    var b = el.getBoundingClientRect();
-    return [b.left + b.width / 2, b.top + b.height / 2];
-  }
-  function carry(w, to){
-    var tile = document.querySelectorAll('#kbnew .kbnewt')[w - 1];
-    tile.scrollIntoView();
-    var a = mid(tile), b = mid(to);
-    touch(tile, 'touchstart', a[0], a[1]);
-    touch(tile, 'touchmove', a[0] + 30, a[1] - 30);   /* past the 12px it takes to start */
-    touch(tile, 'touchmove', b[0], b[1]);
-    touch(tile, 'touchend', b[0], b[1]);
-  }
-  /* onto a row with room in it. Every row of the QWERTY is already the full
-     ten across, and a full row takes no more keys -- which is the ceiling
-     doing its job and not the thing under test here. */
-  kbEdit().lay[0].rows[0] = [kbKey('lt', 'a'), kbKey('lt', 'b'), kbKey('lt', 'c')];
-  saveKb(); render();
-  var before = kbLayer().rows[0].length;
-  var k00 = document.querySelector('#kb .kbrow .kbk[data-r="0"][data-k="0"]');
-  out.sawKey = !!k00;
-  if (k00){
-    carry(2, k00);
-    var row0 = kbLayer().rows[0];
-    out.carried = row0.length === before + 1;
-    out.carriedAfter = row0.length === before + 1 && row0[1].w === 2;
-    out.carriedBack = (kbUndo(), kbLayer().rows[0].length === before);
-  }
-  /* and onto the dashed row at the foot, which is a row of its own.
-     A board made from the qwerty pattern is AT the ceiling -- five rows, the
-     free QWERTY's own shape -- so the dashed row is not drawn on it at all,
-     which is the ceiling doing its job. One row off, and it is back. */
-  fresh();
-  kbHeadRow(0); kbCut(); KBH = null; render();
-  var rowsWas = kbLayer().rows.length;
-  var plus = document.querySelector('#kb .kbk.addrow');
-  out.sawPlus = !!plus;
-  if (plus){
-    carry(3, plus);
-    out.carriedRow = kbLayer().rows.length === rowsWas + 1;
-    out.carriedRowW = out.carriedRow &&
-      kbLayer().rows[rowsWas][0].w === 3;
-  }
-  /* nothing left behind on the page */
-  out.noGhost = !document.querySelector('.kbghost');
 
   /* ---- 7. and the two buttons say whether there is anywhere to go ------ */
   fresh();
@@ -1391,20 +1353,25 @@ say(r.deadColOff, 'taking a column off page 2 leaves it with one too');
 say(r.deadFirstOff, 'and page 1 keeps the way IN to the rest');
 say(r.oneFacePlain, 'a keyboard of one face is left alone -- there is nowhere to go');
 say(r.addsOnly, 'and a face that already has one comes out of a save with the keys it went in with (' + r.addsOnlyN + ' rows), twice over');
-const tileRoom = r.tiles.every((x) => x.full.every(Boolean));
-const tileNoop = r.tiles.every((x) => x.noop.every(Boolean));
-const tileMade = r.tiles.every((x) => x.sized.every((t) => t.made && !t.down));
-const tileSize = r.tiles.every((x) => x.sized.every((t) => Math.abs(t.tile - t.key) < 1));
-const tileW = r.tiles.every((x) => x.sized.every((t) => t.got === t.w));
-const tileH = r.tiles.every((x) => x.hgt.every((t) => Math.abs(t.tile - t.key) < 1));
-say(tileRoom, 'every pattern comes to the full ten, so all three width tiles are down');
-say(tileNoop, 'and picking one and pressing a key adds nothing while they are');
-say(tileMade, 'cut room for one out and that one is up again, and goes in');
-say(tileW, 'and each puts in a key of exactly the width it says');
-say(tileSize, 'and each is DRAWN the size of the key it makes: ' +
-    r.tiles.map((x) => x.pat + ' ' + x.sized.map((t) => t.tile + '/' + t.key).join(' ')).join('  '));
-say(tileH, 'and as tall as one: ' +
-    r.tiles[0].hgt.map((t) => t.tile + '/' + t.key).join(' '));
+say(r.cellNoneFull, 'a board a pattern made has no empty cell -- every row is ten');
+say(r.cellShown && r.cellIsButton, 'cut a column out and the empty cells are buttons');
+say(r.cellAdded && r.cellAddedW,
+    'pressing one puts a key of exactly that cell there');
+say(r.cellBack, 'and the step back takes it away again');
+say(r.keySel && r.keyLit, 'pressing a key selects it and lights it, one at a time');
+say(r.keyOff, 'and pressing it again puts it down');
+say(r.joined && r.joinedW,
+    'pressing the key beside it joins the two, as wide as the two of them were');
+say(r.joinedKeeps, 'keeping the letter of the one on the left');
+say(r.joinedRow, 'and the row comes to what it came to before');
+say(r.joinedSel, 'and what is left is what is selected');
+say(r.joinBack, 'and the step back takes the two back');
+say(r.keyJoinBtn && r.keyOpenBtn && r.keyBinUp,
+    'with a key selected the buttons over the sheet are join, its page, and the bin');
+say(r.keyNoAlign, 'and not the alignments, which are a row\'s business');
+say(r.keyBinTook, 'the bin takes the key that is selected');
+say(r.keyBinBack, 'and the step back puts it back');
+say(r.tilesGone, 'and the three widths under the sheet are gone entirely');
 say(r.insColFullDown && r.insColFullAsk,
     'a board that is already ten across is offered no + for a column');
 say(r.insColFullNoop && r.insColFullBtn,
@@ -1473,19 +1440,6 @@ say(r.dnWhere === 'ab.c', 'below puts it under: ' + r.dnWhere);
 say(r.insFullDown, 'the + is down on a board that is already as tall as it may get');
 say(r.insFullNoop, 'and asking anyway adds nothing');
 say(r.selForgot, 'a keyboard made while a row was selected does not arrive with it lit');
-say(r.tileCount === 3, 'there are ' + r.tileCount + ' widths under the sheet');
-say(r.tileSaid, 'and a word in front of them saying what they are');
-say(r.tileOne, 'and a width of one is exactly one cell of the sheet wide');
-say(r.tileTall, 'and exactly as tall as a key');
-say(r.tileThree, 'and a width of three is three of them');
-say(r.sawKey, 'the sheet has a key to carry a width onto');
-say(r.carried, 'carrying a width onto a key puts one more key in that row');
-say(r.carriedAfter, 'and it is the width that was carried, in after the key it was dropped on');
-say(r.carriedBack, 'and the step back takes it away again');
-say(r.sawPlus, 'the sheet has the dashed row at its foot');
-say(r.carriedRow, 'carrying a width onto that makes a row of its own');
-say(r.carriedRowW, 'and the key in it is the width that was carried');
-say(r.noGhost, 'and nothing is left following the finger afterwards');
 say(r.hasUndo, 'the screen has a step back on it');
 say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');

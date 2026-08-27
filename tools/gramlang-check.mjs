@@ -581,6 +581,172 @@ want('and it is an adjective afterwards', fmr.beautyPos, 'ADJECTIVE');
    ending is what was missing before this. */
 want('and a sentence comes out with the tense on it', fmr.line, 'zmi lumaka');
 
+/* ---- 32-40: the word order is arranged, not chosen from six -------------
+   docs/GRAMMAR-V2-SPEC.md §3: 「ユーザーに最初から SOV/SVO などを選ばせるのでは
+   ない。まず実際に自分の言語で文章を作ってみるところから始める」
+
+   So the thing to hold is that MOVING A WORD IS WHAT SAYS THE ORDER -- and
+   that the words drawn are this language's own, arranged by the real engine,
+   so what is on screen is what a sentence would come out as.
+
+   Nothing here throws either. A swap that wrote the wrong order still redraws
+   three words in some order, and the page looks exactly as convincing. Every
+   claim below is about WHICH word ended up where.
+
+   Pressed for real through the app's own action table, because a check that
+   calls g2Move() directly would be a copy of the button rather than the
+   button -- the same reason card-check drives cardPaint(). */
+const g2 = await pg.evaluate(() => {
+  const was = STG.order, wasSet = !!STG.set.order, wl = WORDS.length;
+  /* This chapter needs a pronoun, a noun and a verb, and the open language of
+     this check has ONE word. Seeded here and taken away again, the way the two
+     blocks above do it -- and worth saying why: the first version of this
+     block assumed the dictionary was full, and the check DIED on
+     `undefined.click` instead of failing. It looked green, because the command
+     that ran it grepped for FAILED and a crash prints no such line. */
+  WORDS.push({ hw:'zke',  pos:'pro', mns:['the one speaking'], at:1 });
+  WORDS.push({ hw:'zkano', pos:'n',  mns:['a thing'], at:1 });
+  WORDS.push({ hw:'ztir', pos:'v',   mns:['does'], at:1 });
+  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render(); };
+  const words = () => Array.prototype.map.call(
+    document.querySelectorAll('#app .segs .seg'), (b) => b.textContent);
+  /* Says what it found rather than throwing on `undefined.click`. A check
+     that dies with a TypeError names the wrong thing: the fault is "the row
+     has n buttons", and a stack trace about `click` sends the next reader to
+     the wrong file. */
+  const press = (i) => {
+    const b = document.querySelectorAll('#app .segs .seg');
+    if (!b[i]) throw new Error('no word ' + i + ' to press: the row has ' + b.length);
+    b[i].click();
+  };
+  const lit = () => Array.prototype.map.call(
+    document.querySelectorAll('#app .segs .seg'), (b) => b.className.indexOf('on') >= 0)
+    .indexOf(true);
+
+  /* Nobody has chosen anything yet. A block above this one presses the old
+     六択, so the mark is already standing when this starts -- and an assertion
+     about "has decided nothing yet" would pass on any code at all. Cleared
+     here and put back at the end. */
+  delete STG.set.order;
+  g2Lift = -1; STG.order = 'SOV'; show();
+  const start = words();
+  /* one press lifts and writes nothing */
+  press(0);
+  const afterOne = { lit: lit(), order: STG.order, words: words(),
+                     /* and, the half a same-value write hides: lifting a word
+                        is not DECIDING anything. STG.set.order is what says
+                        somebody chose -- 「a default nobody chose is not a
+                        decision」 -- and a first press that called setOrder()
+                        with the order unchanged would write the same string
+                        and mark it chosen, which no assertion about the string
+                        can see. */
+                     set: !!STG.set.order };
+  /* pressing the same one puts it down again */
+  press(0);
+  const putDown = { lit: lit(), order: STG.order };
+  /* lift the first and drop it on the last: S and V change places */
+  press(0); press(2);
+  const swapped = { order: STG.order, words: words(), lit: lit() };
+  /* and the words on screen followed, because they are laid by the engine */
+  const moved = swapped.words[0] === start[2] && swapped.words[2] === start[0];
+
+  WORDS.length = wl;
+  STG.order = was;
+  if (wasSet) STG.set.order = 1; else delete STG.set.order;
+  g2Lift = -1;
+  return { start: start.join(' '), n: start.length,
+           afterOneLit: afterOne.lit, afterOneOrder: afterOne.order,
+           afterOneWords: afterOne.words.join(' '), afterOneSet: afterOne.set,
+           putDownLit: putDown.lit, putDownOrder: putDown.order,
+           order: swapped.order, moved: moved, litAfter: swapped.lit,
+           words: swapped.words.join(' ') };
+});
+
+want('three words of this language are on the page', g2.n, 3);
+want('one press lifts that word and no other', g2.afterOneLit, 0);
+want('and writes nothing yet', g2.afterOneOrder, 'SOV');
+want('and moves nothing yet', g2.afterOneWords, g2.start);
+want('and has decided nothing yet', g2.afterOneSet, false);
+want('pressing it again puts it down', g2.putDownLit, -1);
+want('still writing nothing', g2.putDownOrder, 'SOV');
+
+want('first and last change places, and THAT is what says the order',
+     g2.order, 'VOS');
+want('the words on screen followed', g2.moved, true);
+want('and nothing is left lifted afterwards', g2.litAfter, -1);
+
+/* ---- 41-48: the noun chapter shows what this language really does --------
+   docs/GRAMMAR-V2-SPEC.md §14 Nouns: 「ユーザーが『りんご』『りんごたち』などを
+   実際の言語で作る。例えば poko / poko-mi」
+
+   So the row is a REAL pair, worked out by the engine -- the same road a
+   translation takes. A row that showed the rule and not what it makes of this
+   word would look identical and say nothing, which is why every claim below is
+   about the surface that came out.
+
+   And it must not build a second rule editor: the rules live on the word side
+   and the marks are words made in the 助詞 stage, so a row goes back to
+   whichever of the two it came from. That is what the last two hold. */
+const g2n = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wasPart = !!STG.set.part;
+  const wl = WORDS.length;
+  WORDS.push({ hw:'zpoko', pos:'n', mns:['fish'], at:1 });
+  WORDS.push({ hw:'ga', pos:'part', mns:['subject mark'], at:1, slot:'part.subj' });
+  stMarkSet('part');
+  STG.fm = [
+    { id:'p1', pos:'n', fm:'pl', at:'end', drop:0, add:sp('mi'), when:'' },
+    /* A SECOND way of making a plural, for nouns ending in a letter this one
+       does not end in. Two things at once, and both silent:
+
+       it must draw NO row, because an unchanged row is the app claiming a
+       form the language has not got -- and this is the shape that tests it,
+       since a rule of some OTHER feature would be filtered out by the chapter
+       before the question was ever asked;
+
+       and the row that IS drawn must be the plain rule's. A feature is spent
+       on the first rule that matches it, so asking the engine for
+       NUMBER=PLURAL rather than for THIS RULE hands both rows the same answer
+       -- the same word, under two different names, both looking right. */
+    { id:'p2', pos:'n', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'x',
+      wend:sp('q') },
+    /* and a rule about VERBS, which is the verbs chapter's and must not be
+       shown here as well */
+    { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
+  ];
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  const rows = Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) => ({
+      lab: b.querySelector('.psm').textContent,
+      from: b.querySelector('.psw').textContent,
+      to: b.querySelector('.psi').textContent,
+      go: b.getAttribute('data-do'), a: b.getAttribute('data-a') }));
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (!wasPart) delete STG.set.part;
+  return { n: rows.length, rows: rows,
+           pl: rows.filter((r) => r.to.indexOf('mi') >= 0)[0] || null,
+           mark: rows.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
+           tense: rows.filter((r) => r.to.indexOf('ka') >= 0).length };
+});
+
+want('the noun has exactly the forms this language can make of it', g2n.n, 2);
+want('a rule that says nothing about this word draws no row',
+     g2n.rows.filter((r) => r.from === r.to).length, 0);
+want('and the verbs chapter is not shown here as well', g2n.tense, 0);
+
+/* `tuf` is the first noun of the language this check opens -- g2Nouns() shows
+   the language's own word, not one the check invented, which is the point. */
+want('the plural is the word this language really makes',
+     g2n.pl && g2n.pl.to, 'tufmi');
+want('from the word it is a form of', g2n.pl && g2n.pl.from, 'tuf');
+want('and pressing it goes to where that rule is written',
+     g2n.pl && g2n.pl.go, 'openFmr');
+
+want('the mark stands apart, which is how this app writes one',
+     g2n.mark && g2n.mark.to, 'tuf ga');
+want('and pressing it goes to the word it is', g2n.mark && g2n.mark.go, 'openSlot');
+
 await br.close();
 srv.close();
 
@@ -600,3 +766,7 @@ console.log('          A particle somebody made is a word, and a word carrying o
 console.log('          is the doer wherever it stands.');
 console.log('          What somebody wrote on the forms page reaches the engine,');
 console.log('          and a rule this side cannot say is counted, not sent.');
+console.log('          The word order is arranged by moving a word, and the six');
+console.log('          are not what anybody is asked.');
+console.log('          A noun shows the forms this language really makes of it,');
+console.log('          and a row goes back to where its rule is written.');

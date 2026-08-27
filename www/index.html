@@ -1479,9 +1479,12 @@ a.set{text-decoration:none}
    box the term buttons got, so 「4.99/月は一列にしろ」OWNER 2026-08-26 was not
    actually met -- and at 320 the amount broke mid-number (`$99.9` / `9`).
    Measured at 320 and 390, both currencies, both terms. `press` walks a 402pt
-   phone and only that one, so neither showed there. */
-.btn.plterm{padding:10px 8px}
-.plterm .pp{font-size:1.1rem}
+   phone and only that one, so neither showed there. The padding lives on the
+   box rule below and NOT here: this file already had a `.btn.plterm` twenty
+   lines down, so a second one of the same strength was simply overwritten --
+   green everywhere, because box-check counts borders and corners and says
+   nothing about a rule that lost. */
+.plterm .pp{font-size:clamp(.78rem, 3.3vw, 1.1rem)}
 /* An amount never breaks, and neither does its term: what may drop to a second
    line is the whole of `/ month`, and only on a 320 phone. */
 .plterm .pp,.plterm .pper{white-space:nowrap}
@@ -1500,14 +1503,14 @@ a.set{text-decoration:none}
    may take it as permission.
    `.btn.plterm` and not `.plterm`: .btn says border:none 800 lines below, and
    one class cannot beat two. */
-.btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 6px}
 .btn.plterm:active{border-color:var(--gold)}
 /* 「4.99/月は一列にしろ」OWNER 2026-08-26. The amount and the term were two
    blocks, so every price stood two lines high and the term read as a caption
    under it rather than as part of the price. The saving stays on its own
    line: it is a third thing and not part of what the year costs. */
 .plterm .pp{display:inline}
-.plterm .pper{display:inline;margin-left:3px}
+.plterm .pper{display:inline;margin-left:2px;font-size:clamp(.6rem, 2.1vw, .72rem)}
 /* Free carries its price too, and it is not a button: without it the four
    lines start higher than the paid pages' five do and the lists jump as
    somebody slides between them. */
@@ -1885,23 +1888,6 @@ a.set{text-decoration:none}
    they are the size of the cells they make and were sitting shoulder to
    shoulder with 4 between them, which reads as one lump rather than three
    things. 「つまりすぎだから幅いっぱいに使ってすきまあっちいから」 */
-.kbnew{display:block;width:var(--kbw);margin:12px auto 0}
-.kbnewr{display:flex;justify-content:space-between;align-items:center}
-/* One word OVER them, on a line of its own. Three blank keys under a keyboard
-   are three blank keys until something says they are the ones you add.
-   「add⚪︎⚪︎みたいに軽くかいといて」「addは上においてくれキーの」
-   Light: it is a name, not a sentence about how to use them. */
-.kbnewl{display:block;font-size:.72rem;color:var(--txm);margin:0 0 5px 2px}
-/* The same corner a key has. A tile that MAKES a key and does not look like
-   one reads as a blank strip under the board -- 「フリックのaddキーのサイズ
-   合ってなくね？角丸じゃないし」OWNER 2026-08-26. Rule 18 holds the corner to
-   what tools/box-baseline.txt lists, and this pair is on it for that reason:
-   it is not a new box, it is the box `.kbk` already is, on the thing that
-   makes one. 9px, read off `.kbk` and not chosen again. */
-.kbnewt{flex:0 0 auto;min-height:44px;height:44px;padding:0;
-        border:1px solid var(--line);border-radius:9px;background:var(--sf);
-        display:flex;align-items:center;justify-content:center}
-.kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
 /* A width being carried onto the sheet: the tile stays where it is -- a
    palette does not empty when you take from it -- and this is what follows
    the finger. It is under the finger rather than beside it, because that is

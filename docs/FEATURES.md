@@ -770,7 +770,8 @@ called `7` becomes a new letter called `7` and does not land on the digit
 already in the alphabet — 「a,a,a は三枠」 — and the check holds that `a`, `7`
 and `2` are all still there afterwards.
 
-**Three things are NOT in, and none of them is a decision this session made:**
+**Three things were NOT in. One of them is now; the other two are not, and
+neither is a decision this session made:**
 
 - **The plan gate.** The road is Pro (OWNER DECISION 2026-08-23) and the gate
   is one line — `write: 'pro'` in `CAN` — in `www/core.js`, which was not this
@@ -781,10 +782,11 @@ and `2` are all still there afterwards.
 - **The drawing.** Nothing renders `sh` yet, so an imported letter shows
   **blank** — the data is there, the face is not. That is `www/glyph.js`, and
   it is the other half of the seam above.
-- **The way out to the phone.** `shSheet()` builds the PDF and `shMake()` hands
-  it to `LinguaShare` under the method name `sheet`; there is no Swift behind
-  that name yet, so today it says the same thing `bkPush()` says — no bridge.
-  Nothing was built on iOS and no build was triggered.
+- ~~The way out to the phone.~~ **Built 2026-08-27** (`claude/sheet3`).
+  `LinguaShare.sheet` writes the PDF into `Documents/Sheets/`, never
+  overwriting; `LinguaShare.renderPdf` draws a page back into a picture with
+  **PDFKit**, because `CGContext.drawPDFPage` does not draw annotations and iOS
+  Markup saves every stroke as one. Neither has been on a phone.
 
 **Still not measured, and it is the same list the spike had:** a brush, and a
 pencil. The sheet that came back was written with a pen that gives a solid
@@ -868,6 +870,40 @@ Decided:
   it is: **real ink**. It blurred clean vector ink; a brush bleeds into paper
   and goes dry, and its edge is not a step. The owner is testing that with a
   real sheet before release.
+- **AND IT IS WRITTEN ON INSIDE LINGUA.** 「たのむ」OWNER 2026-08-27, on the
+  eight steps across two apps that the Files road was.
+  `LinguaMarkup.swift` opens `QLPreviewController` in `.updateContents` mode —
+  Apple's own Markup, in this app, on the file `sheet` just wrote — and what
+  comes back goes into `shTakeFile()`. **No second way of reading a PDF**: it
+  is the same one door the picker feeds. The button is on the make screen and
+  is there only once a sheet exists. Cancelled does nothing, and whether
+  anything was written is asked of the file's modification date rather than of
+  a delegate callback that has to fire.
+
+- **PRINTING IS NOT REQUIRED, and the screen is the road that has to work.**
+  「印刷はむりにしない？そのままdlした端末上で書くとか？じゃないと無理じゃね」
+  OWNER 2026-08-27. This does not overturn 「両方対応にしたい」 above — it says
+  which of the two a person must be able to do with nothing but the phone in
+  their hand. Print → write → scan needs a printer; write on the file in Files
+  needs nothing. The four steps in the app's `?` said 「印刷して書く」 and
+  「スキャンして取り込む」 and now say 「書く」 and 「取り込む」, in ten
+  languages, and `wr.in` offers a PDF rather than a scanned one.
+
+  **What makes that road work is `renderPdf`**, and specifically that it draws
+  with PDFKit: Markup keeps a stroke as a PDF ANNOTATION, and
+  `CGContext.drawPDFPage` does not draw annotations — a sheet written on with
+  a finger came back as the blank sheet it was printed as, with every step
+  before and after it perfectly correct.
+
+- **A screen's ink comes in as a SHAPE today, not as the centre line decided
+  above**, and this is a gap rather than a change of mind. `renderPdf` draws
+  the page to a picture, so an Ink annotation arrives as pixels: `lt.sh`, not
+  editable, thick-and-thin kept from however the annotation was drawn. Reading
+  `/InkList` off the annotations instead would need no phone at all — and it
+  needs an INFLATE, because a PDF saved by Markup carries its objects in
+  compressed object streams, and `www/sheet.js` is ES5 with no dependencies
+  and no way to unpack one. `docs/BACKLOG.md` has it.
+
 - **What is on the sheet is chosen in the app.** Type what you want boxes for
   and the PDF is for those. It needs to know nothing about writing systems:
   a logography's signs are letters too in this app (`wsys.js`: *a letter reads a

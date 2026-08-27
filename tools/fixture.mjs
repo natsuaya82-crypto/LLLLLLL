@@ -961,6 +961,23 @@ export function halfDone(){
     ['the grammar list, paid', () => { SET.plan = 'pro'; window.route='gram';
                                        NAV=[{r:'gram'}]; const h = vGram();
                                        SET.plan = 'free'; return h; }],
+    /* ---- the chapter that is being rebuilt ------------------------------
+       docs/GRAMMAR-V2-SPEC.md §14. It arrives as an argument of the `gram`
+       route rather than as a route of its own -- www/shell.js's PAGES is
+       another session's file -- and act-check walks that route's arguments by
+       asking stAll(), which this page is deliberately NOT in. So without a
+       face here the walk never renders it: every button on it would be an
+       entry no screen names, and every string on it could be hard-coded
+       forever. Two faces, because a word being carried looks different from
+       a word standing still, and that difference is the whole chapter. */
+    ['the word order, arranged', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
+        g2Lift = -1;
+        return vGram(); }],
+    ['the word order, one word lifted', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
+        g2Lift = 0;
+        const h = vGram(); g2Lift = -1; return h; }],
     /* ---- the 助詞 stage, both faces ------------------------------------
        It is in STAGES_IF -- off the list until a language says it has one,
        because English has none and opening the chapter with it would be the
@@ -1099,6 +1116,18 @@ export function halfDone(){
                                                kbAdd('qwerty'); kbLay = 0;
                                                kbHeadRow(0); kbCut();
                                                kbHeadRow(1); kbInsAsk();
+                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                               const h = vKb();
+                                               KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                               SET.plan = 'free'; return h; }],
+    /* A KEY of the sheet selected. Pressing a key selects it now -- the same
+       habit as the row's number and the column's letter -- and the buttons
+       over the sheet act on it: joining it to the one beside it, opening its
+       own page, and the bin. This is the only face they can be pressed from.
+       「タップしたらそのキーが選ばれて上のゴミ箱ボタンとかくっつけるボタンとか
+       押してその作業がされるようにしようよ」 */
+    ['a key of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                               kbAdd('qwerty'); kbLay = 0; kbTapKey(0, 2);
                                                window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
@@ -1517,6 +1546,12 @@ export function halfDone(){
     ['the sheet',              () => { SH = shBlank(); openWrite(); return vForm(); }],
     ['a sheet being made',     () => { SH = shBlank(); SH.names = 'a, ka, 7';
                                        openWrOut();
+                                       const h = vForm(); SH = shBlank(); return h; }],
+    /* and the same screen once the sheet is out. `file` is what it was filed
+       as, which is the only thing that says a sheet exists to write on -- the
+       row that opens Apple's Markup is not there before one does. */
+    ['a sheet that is written', () => { SH = shBlank(); SH.names = 'a, ka, 7';
+                                       SH.file = 'sheet.pdf'; openWrOut();
                                        const h = vForm(); SH = shBlank(); return h; }],
     ['a sheet to read back',   () => { SH = shBlank(); openWrIn(); return vForm(); }],
     ['a sheet that came back', () => { SH = shBlank(); SH.from = 'sheet.jpg';

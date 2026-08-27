@@ -150,7 +150,12 @@ function gInfl(){
     f=w? String(w.hw||'') : '';
     if(!f) continue;
     out.push(e.inflection({id:'case.'+k, target:'WORD', feature:'CASE', value:GCASE[k],
-                           operation:'suffix', separator:' ', form:f}));
+                           operation:'suffix', separator:' ', form:f,
+                           /* What this app calls it, and the way back to where
+                              it is written. The engine has no business knowing
+                              either, which is why they ride on metadata: it is
+                              the one field model.js keeps and never reads. */
+                           metadata:{label:t('stg.part.'+k), slot:k}}));
   }
   return out;
 }
@@ -237,7 +242,8 @@ function gFmRules(){
     op=(r.at==='start')? 'prefix' : 'suffix';
     pos=r.pos;
     k={id:'fm.'+String(r.id||i), operation:op, form:f, separator:'',
-       drop:gFmDrop(r), conditions:c||{}};
+       drop:gFmDrop(r), conditions:c||{},
+       metadata:{label:fmLabel(fm), rule:String(r.id||'')}};
     if(fmGroup(fm)==='d'){
       k.sourcePartOfSpeech=gFmPos(pos);
       k.targetPartOfSpeech=GFM_DER[fm] || null;
@@ -447,6 +453,135 @@ function gPosDemo(id){
     pair = gPairOf([x, n]);
   }
   return '<div class="gdemo">'+gSide(t('gram.pair.phrase'), pair.ws, pair.gl)+'</div>';
+}
+
+/* ====================================================================
+   Grammar v2 -- the page that DEFINES a language, chapter by chapter
+   docs/GRAMMAR-V2-SPEC.md is the specification. It is the owner's, and this
+   file implements it rather than interpreting it.
+
+   §3 is the whole argument for this chapter: 「ユーザーに最初から SOV/SVO を
+   選ばせるのではない。まず実際に自分の言語で文章を作ってみるところから始める」.
+   So there is no list of six here. There are this language's own three words,
+   in the order this language puts them, and moving them is what says what the
+   order is. 「ユーザーが SOV という専門用語を知らなくても、言語を作れる UI に
+   する。SOV という表示は結果として表示する」
+
+   It is built BESIDE the old chapter rather than over it: the fifteen stages,
+   STG and the six-choice are untouched, and not one byte of anybody's language
+   moves. What this writes is `STG.order`, which is where the word order has
+   lived since 2026-08-25 -- the same answer arrived at a different way, so a
+   language that has one keeps it and the two screens cannot disagree.
+   ==================================================================== */
+
+/* Which word is picked up. Where you are standing, not something the language
+   holds, so it is never saved. */
+var g2Lift=-1;
+/* The three words a sentence needs, in the order THIS language puts them.
+   gLay() runs the real engine, so what is drawn is what a sentence of this
+   language would actually come out as -- not a diagram of one. */
+function g2Three(){
+  var s=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), o;
+  if(!s || !v) return null;
+  o=gWordOf('n', s);
+  if(!o) return null;
+  return gLay([s, v, o]);
+}
+/* Moving one. The first press lifts a word and the second puts it where the
+   other one stood -- two presses and no dragging, because a drag needs a
+   listener of its own and every button in this app carries a NAME instead.
+
+   What is swapped is the ORDER, not the words: position i is showing the role
+   orderDef().seq[i], because gLay() arranged them by exactly that. So this
+   writes the one value the old screen writes, through setOrder(), which marks
+   it chosen and redraws. */
+function g2Move(i){
+  var q=orderDef().seq.slice(), t;
+  if(g2Lift<0){ g2Lift=i; render(); return; }
+  if(g2Lift===i){ g2Lift=-1; render(); return; }
+  t=q[g2Lift]; q[g2Lift]=q[i]; q[i]=t;
+  g2Lift=-1;
+  setOrder(q.join(''));
+}
+/* §14 Sentence Structure. The words, then what they are, then the name --
+   in that order, because the name is the RESULT and nobody has to read it. */
+function g2Sent(){
+  var w=g2Three(), i, out='';
+  if(!w) return gNeedWords();
+  for(i=0;i<w.length;i++)
+    out+='<button class="seg'+(g2Lift===i? ' on' : '')+'"' + DO('g2Move', [i]) + '>'+
+      esc(wOut(w[i].hw))+'</button>';
+  return '<div class="segs">'+out+'</div>'+gOrderLine()+
+    '<div class="gsl">'+esc(orderDef().id)+'</div>';
+}
+/* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
+   例えば poko / poko-mi。ユーザーが差分を定義する」
+
+   So this shows a real noun of this language and every form of it this
+   language can make, worked out by the ENGINE -- the same road a translation
+   takes, so what is on the row is what would actually be written.
+
+   It does not build a second rule editor. The one there is lives on the word
+   side (www/wordsheet.js, `openFmr`) and a rule for the marks is a WORD made
+   in the 助詞 stage (`openSlot`). Two places that write the same thing is the
+   shape this repository is most often bitten by, so a row goes to whichever
+   of the two it came from -- which is what the rule's metadata carries. */
+function g2Row(lab, from, to, act, arg){
+  return '<button class="stslot has"' + DO(act, arg) + '>'+
+    '<span class="psm">'+esc(lab)+'</span>'+
+    '<span class="psw'+(myFontOn()? ' sfont' : '')+'">'+esc(from)+'</span>'+
+    '<span class="gsep">'+ICON_GO+'</span>'+
+    '<span class="psi">'+esc(to)+'</span>'+ICON_GO+'</button>';
+}
+/* Which rules this chapter is about. A noun is changed for NUMBER and it is
+   marked for CASE; the tenses belong to the verbs chapter and are not shown
+   twice. Asked of the rule rather than of a list of ids, so a rule written
+   tomorrow lands in the right chapter without anything being added here. */
+var G2_NOUN={NUMBER:1, CASE:1};
+function g2Nouns(){
+  var e=LinguaGrammarEngine, w=gWordOf('n'), m, a, i, r, made, out='', md;
+  if(!w) return gNeedWords();
+  m=gModel([w]);
+  a=m.inflections;
+  for(i=0;i<a.length;i++){
+    r=a[i];
+    if(!G2_NOUN[String(r.feature)]) continue;
+    made=g2Made(m, r);
+    if(!made) continue;
+    md=r.metadata||{};
+    out+=g2Row(md.label || String(r.value), wOut(w.hw), made,
+               md.slot? 'openSlot' : 'openFmr',
+               md.slot? ['part', md.slot] : [md.rule || '']);
+  }
+  return out || gNeedRules();
+}
+/* What THIS RULE makes of this word, asked of the engine and not worked out
+   again here.
+
+   The model is narrowed to the one rule while it is asked, and that is not
+   tidiness: inflect() takes a FEATURE, and a feature is spent on the first
+   rule that matches it. A language with two ways of making a plural -- one
+   for words ending in a letter, one for the rest -- would therefore answer
+   with whichever came first, twice, and this chapter would draw the same row
+   under two different names. The row has to be about the rule it names.
+
+   A rule that has nothing to say about this word comes back unchanged, and an
+   unchanged row would be the app claiming a form the language has not got. */
+function g2Made(m, r){
+  var f={}, w=m.words[0], all=m.inflections, made;
+  f[String(r.feature)]=r.value;
+  m.inflections=[r];
+  made=LinguaGrammarEngine.morphology.inflect(m, w, f);
+  m.inflections=all;
+  return (made.surface===w.lemma)? '' : made.surface;
+}
+function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
+
+/* The page. Two chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+   they arrive one at a time, each with its own picture. */
+function g2Page(){
+  return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
+    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns();
 }
 
 /* ---- the screen -------------------------------------------------------- */
