@@ -155,6 +155,130 @@ function gInfl(){
   return out;
 }
 
+/* ---- the forms somebody wrote down ------------------------------------
+   The rules that make a form out of a word have been in this app since
+   「英語みたいにyで終わるのはiに変えてedみたいな細かいルール設定はできないの？」
+   was asked. They are written on the word side -- www/wordsheet.js, the forms
+   page -- and kept in STG.fm with the rest of what a language decided.
+
+   **They had never reached the engine.** gModel() handed it an empty
+   `inflections`, so a language whose past tense somebody had defined was
+   translated with no past tense at all. Both ends were built and the middle
+   was missing; this is the middle. Nothing new is stored and no screen
+   changes -- what somebody already wrote starts counting.
+
+   The two lists are one list. `fm` says what a form IS, and www/wordsheet.js
+   splits them by fmGroup(): a form of the same word (past, plural) is an
+   inflection, and a different word built out of it (agent, opposite) is a
+   derivation. Same rule shape, two destinations.
+
+   What each label MEANS is here and nowhere else. It is the one place a
+   label of the app becomes a feature of the engine, and it is written out
+   rather than derived: `pst` is TENSE/PAST because somebody decided that, not
+   because of anything about the letters. */
+var GFM_INF={
+  pst:['TENSE','PAST'],      prs:['TENSE','PRESENT'],   fut:['TENSE','FUTURE'],
+  prg:['ASPECT','PROGRESSIVE'], prf:['ASPECT','PERFECT'],
+  neg:['NEGATION',true],
+  imp:['MOOD','IMPERATIVE'], que:['MOOD','INTERROGATIVE'], cnd:['MOOD','CONDITIONAL'],
+  cau:['VOICE','CAUSATIVE'], pas:['VOICE','PASSIVE'],
+  pl :['NUMBER','PLURAL']
+};
+/* A derivation says what the word BECOMES. Three of the twelve name a part of
+   speech outright; the other nine name a kind of word without saying which
+   part of speech it is -- an agent is usually a noun and this app has never
+   been told so. Leaving it null is the engine's own "unchanged", and inventing
+   NOUN here would be the app deciding something about somebody's language that
+   nobody said. 指示書 §10: 勝手に推測しない。 */
+var GFM_DER={adj:'ADJECTIVE', vrb:'VERB', adv:'ADVERB'};
+
+/* What a rule adds, as the letters it was written in. */
+function gFmForm(r){
+  return (typeof spWord==='function' && r && r.add && r.add.length)? String(spWord(r.add)) : '';
+}
+/* How much of the stem goes first, in CHARACTERS -- which is what the engine
+   works in, while the rule counts LETTERS. The two agree except where a letter
+   is written with more than one character, and the one case that matters says
+   the exact letters itself: 「y で終わるのは」 is `wend`, so its spelling IS the
+   piece being dropped and the count is exact however that letter is named. */
+function gFmDrop(r){
+  var n=Math.max(0, parseInt(r && r.drop, 10) || 0), e;
+  if(!n) return 0;
+  e=(r && r.wend) || [];
+  if(e.length===n && typeof spWord==='function') return String(spWord(e)).length;
+  return n;
+}
+/* The one condition that travels. `x` names the letters a word has to end in,
+   and those are letters, so they cross. `v` and `c` are about SOUND -- after a
+   vowel, after a consonant -- and the engine has no phonology; sending one
+   without its condition would make a rule for some words fire on all of them,
+   which is worse than the rule not being there. So those stay behind, and
+   gFmLeft() is how many did, because a number nobody can see is the same as
+   no number at all. */
+function gFmCond(r){
+  var e;
+  if(!r || !r.when) return null;
+  if(r.when!=='x') return false;
+  e=(r.wend)||[];
+  if(!e.length || typeof spWord!=='function') return false;
+  return {endsWith:String(spWord(e))};
+}
+var gFmLeftN=0;
+function gFmRules(){
+  var e=LinguaGrammarEngine, a=(STG && STG.fm) || [], inf=[], der=[], i, r, f, c, k, op, pos, fm;
+  gFmLeftN=0;
+  for(i=0;i<a.length;i++){
+    r=a[i]; if(!r) continue;
+    f=gFmForm(r);
+    if(!f){ continue; }                    /* a rule with nothing to add does nothing */
+    c=gFmCond(r);
+    if(c===false){ gFmLeftN++; continue; } /* a condition this side cannot say */
+    fm=String(r.fm||'');
+    op=(r.at==='start')? 'prefix' : 'suffix';
+    pos=r.pos;
+    k={id:'fm.'+String(r.id||i), operation:op, form:f, separator:'',
+       drop:gFmDrop(r), conditions:c||{}};
+    if(fmGroup(fm)==='d'){
+      k.sourcePartOfSpeech=gFmPos(pos);
+      k.targetPartOfSpeech=GFM_DER[fm] || null;
+      der.push(e.derivation(k));
+    }else{
+      k.target=gFmPos(pos) || 'WORD';
+      /* A label somebody wrote themselves is its own feature. We do not know
+         what kind of thing it is and must not guess one -- 指示書 §10 -- so it
+         is asked for by the name they gave it. */
+      k.feature=(GFM_INF[fm]? GFM_INF[fm][0] : (fm || 'FORM'));
+      k.value  =(GFM_INF[fm]? GFM_INF[fm][1] : true);
+      inf.push(e.inflection(k));
+    }
+  }
+  /* The specific before the general. A rule with a condition and a rule
+     without can be about the same feature -- 「y の後は ied、それ以外は ed」 --
+     and the engine spends a feature on the FIRST that matches, so the one that
+     is choosier has to stand in front. The person writing them never has to
+     know that; this is where it is arranged. */
+  inf=gFmSpecificFirst(inf);
+  der=gFmSpecificFirst(der);
+  return {inf:inf, der:der, left:gFmLeftN};
+}
+function gFmSpecificFirst(a){
+  var with_=[], without=[], i, c;
+  for(i=0;i<a.length;i++){
+    c=a[i].conditions;
+    if(c && c.endsWith) with_.push(a[i]); else without.push(a[i]);
+  }
+  return with_.concat(without);
+}
+/* The app's part of speech as the engine's. adapter.js owns that table; this
+   asks it rather than writing a second one. An empty pos means "any word",
+   which the engine spells 'WORD' for an inflection and null for a derivation. */
+function gFmPos(p){
+  var w;
+  if(!p) return null;
+  w=LinguaGrammarEngine.adapter.wordsOf([{hw:'x', pos:p}]);
+  return (w.length && w[0].partOfSpeech) || null;
+}
+
 /* This language, as the engine reads it. `list` is which words to hand over
    and is the whole dictionary when nobody says: arranging three words for a
    demonstration would otherwise build five thousand of them on every render,
@@ -192,7 +316,14 @@ function gModel(list){
   if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().id});
   else m.words=e.adapter.wordsOf(list||WORDS);
   m.grammarRules=gRules();
-  m.inflections=(m.inflections||[]).concat(gInfl());
+  var fm=gFmRules();
+  m.inflections=(m.inflections||[]).concat(gInfl()).concat(fm.inf);
+  m.derivations=(m.derivations||[]).concat(fm.der);
+  /* How many of somebody's rules this side could not say. Nothing shows it
+     yet; it is on the model so that the screen which will show it has
+     something to read, and so that "some rules did not travel" is a number
+     rather than a silence. */
+  m.metadata.fmLeft=fm.left;
   return m;
 }
 /* The engine's word and the dictionary's word are one word seen from two

@@ -26,8 +26,6 @@
 .gcanv | border-radius
 .gdemo | border
 .gdemo | border-radius
-.impfile | border
-.impfile | border-radius
 .imptab | border
 .imptab | border-radius
 .kbe | border

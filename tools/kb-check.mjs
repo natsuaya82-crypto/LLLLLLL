@@ -134,7 +134,20 @@ const r = await pg.evaluate(({ s }) => {
   out.ceilRows = kbRowsMax();
   out.screenH = KB_REF_H;
   out.most = KB_MOST; out.roww = KB_ROWW; out.bars = KB_BARS;
-  out.refW = KB_REF_W; out.rowh = kbRowH(KB_REF_W);
+  out.refW = KB_REF_W; out.rowh = kbRowH(KB_REF_W); out.row390 = kbRowH(390);
+  /* EVERY PHONE, stood up: the board a pattern makes, at that phone's row
+     height, against that phone's cap. This is the claim that was missing --
+     the ceiling was divided out of KB_MOST correctly and nothing ever put the
+     answer back on a screen to see what it came to. Referenced to 844 it came
+     to 63.8% on an iPhone SE 1. 「キーボードの高さは画面の半分までってルール
+     あるのになんで七も足したら7割埋まるけど」 */
+  out.phones = [[320, 568], [375, 667], [375, 812], [390, 844], [393, 852],
+                [402, 874], [430, 932], [440, 956]].map(function (ph){
+    var rowH = Math.min(ph[0], ph[1]) * KB_ROWW;
+    var tall = kbRowsMax() * rowH + KB_BARS;
+    return { w: ph[0], h: ph[1], tall: +tall.toFixed(0),
+             pct: +(tall / ph[1] * 100).toFixed(1), cap: +(ph[1] * KB_MOST).toFixed(0) };
+  });
   out.ceilCols = KB_COLS;
   /* every pattern this app builds is inside the ceiling as it is built */
   /* ---- every pattern comes out the shape of a keyboard ----------------
@@ -331,9 +344,12 @@ const r = await pg.evaluate(({ s }) => {
   out.faces = b0.lay.length;
   out.wayThere = goesTo(b0.lay[0], 1);
   out.wayBack = goesTo(b0.lay[1], 0);
-  /* and it went IN, next to what was there, rather than over it */
+  /* and it went IN, next to what was there, rather than over it. On a board
+     whose rows all come to ten the space bar gives up a key's width for it,
+     so the key COUNT goes up by one and no key is replaced. */
   out.keptKeys = keysOn(b0.lay[0]).length === had0 + 1;
-  out.notOver = was0 !== JSON.stringify(b0.lay[0]);
+  out.notOver = was0 !== JSON.stringify(b0.lay[0]) &&
+    keysOn(b0.lay[0]).filter(function (x){ return x.k === 'lay'; }).length === 1;
   /* the step back takes the whole thing away again, both keys with it */
   kbUndo();
   out.layBack = JSON.stringify(kbEdit().lay[0]) === was0;
@@ -347,12 +363,31 @@ const r = await pg.evaluate(({ s }) => {
   kbAddLay();
   var r0 = kbEdit().lay[0].rows;
   out.layFront = r0.length === 1 && r0[0].length === 3 && r0[0][0].k === 'lay';
+  /* THE SPACE BAR PAYS BEFORE A ROW IS MADE. It used to be a row of its own
+     the moment every row came to ten, and the day the ceiling came down to
+     five that stopped working: a board shaped like the free QWERTY is five
+     rows of ten, so there was no row to make and kbAddLay() silently did
+     nothing -- a + that can be pressed and does not work.
+     「無料はそもそも動かさないんだから関係ないだろ？」 -- board 0 is not
+     edited and is not this: this is a board MADE FROM the qwerty pattern,
+     which is a copy of it and is edited. */
   fresh();
   var rowsWas2 = kbLayer().rows.length;      /* every row already ten across */
+  var spWas = (function (){
+    var r = kbLayer().rows[rowsWas2 - 1], i;
+    for (i = 0; i < r.length; i++) if (r[i].k === 'sp') return r[i].w;
+    return 0;
+  })();
   kbAddLay();
   var rr2 = kbEdit().lay[0].rows;
-  out.layNewRow = rr2.length === rowsWas2 + 1 &&
-    rr2[rr2.length - 1].length === 1 && rr2[rr2.length - 1][0].k === 'lay';
+  var spNow = (function (){
+    var r = rr2[rr2.length - 1], i;
+    for (i = 0; i < r.length; i++) if (r[i].k === 'sp') return r[i].w;
+    return 0;
+  })();
+  out.layNewRow = rr2.length === rowsWas2 && spWas > 0 && spNow === spWas - 1 &&
+    rr2[rr2.length - 1][0].k === 'lay';
+  out.spWas = spWas; out.spNow = spNow;
 
   /* ---- 6d2. no face is a dead end ------------------------------------
      「2ページ目から戻るボタンがない」 OWNER, build #92.
@@ -457,7 +492,11 @@ const r = await pg.evaluate(({ s }) => {
   out.narrowCols = kbCols(kbLayer().rows);
   out.narrowSheet = widthOf('.kb.kbsheet');
   out.narrowPlus = widthOf('.kbk.addrow');
+  /* the ten-key board with one row off it, so the dashed row is drawn there
+     too -- at the ceiling it is not, and that is the ceiling and not the
+     width this is about */
   fresh();
+  kbHeadRow(0); kbCut(); KBH = null; render();
   out.wideSheet = widthOf('.kb.kbsheet');
   out.widePlus = widthOf('.kbk.addrow');
   /* and the two boards the owner put side by side */
@@ -854,6 +893,52 @@ const r = await pg.evaluate(({ s }) => {
      which is what makes the phone agree with this drawing */
   out.alKeys = L[2] === 3 && C[2] === 3 && R[2] === 3;
   out.alFull = L[3] === KB_COLS && C[3] === KB_COLS && R[3] === KB_COLS;
+
+  /* ---- and a row with HALF A KEY in it -------------------------------
+     「キーボードも左右寄せにするなら、ハンキーとか関係なく寄せて。」
+     OWNER DECISION 2026-08-27.
+
+     Right used to send the odd half to the other end so the row's first key
+     landed on a whole column. That is what CENTRING is for -- a row nobody
+     aligned has to be pointed at -- and is not what an end is for.
+
+     A row of whole keys cannot see the difference: the leftover is an even
+     number of half columns and the rounding never fires. So the row is given
+     a key of half a key, which is the case the owner is talking about and the
+     only one where the two answers differ. */
+  fresh();
+  var halfKey = kbKey('lt', 'c'); halfKey.w = 0.5;
+  /* the other rows stay ten across, because the slack a row is aligned in is
+     measured against the WIDEST row -- a board of one row has none */
+  kbEdit().lay[0].rows[0] = [kbKey('lt', 'a'), kbKey('lt', 'b'), halfKey];
+  kbLay = 0; kbSel = null; KBH = null; saveKb(); render();
+  kbHeadRow(0);
+  kbAlign('l'); var HL = ends();
+  kbAlign('r'); var HR = ends();
+  kbAlign('c'); var HC = ends();
+  out.halfOdd = (2 + 2 + 1) % 2 === 1;              /* the row really is odd */
+  out.halfLeft = HL[0] === 0 && HL[1] === KB_COLS - 5;
+  out.halfRight = HR[0] === KB_COLS - 5 && HR[1] === 0;
+  out.halfCentre = HC[0] % 2 === 0 && HC[0] > 0 && HC[1] > 0;
+  out.halfFull = HL[3] === KB_COLS && HR[3] === KB_COLS && HC[3] === KB_COLS;
+  out.halfR0 = HR[0]; out.halfC0 = HC[0];
+  /* and the consequence, said out loud: centring puts every key on a whole
+     column and right-aligning does not, on a row that carries half a key.
+     That is not a defect of right -- it is the reason centring exists, and
+     the reason the day before's decision reads the way it does: a row that
+     ends up half a key out lines up with no column and lights for none. */
+  function onColsRow0(){
+    var rw = kbLayer().rows[0], at = 0, ok = true, x;
+    for (x = 0; x < rw.length; x++){
+      if (rw[x].k !== 'gap' && at % 2) ok = false;
+      at += kbU(rw[x].w);
+    }
+    return ok;
+  }
+  kbAlign('c'); out.halfConCols = onColsRow0();
+  kbAlign('r'); out.halfRonCols = onColsRow0();
+  /* put the board back -- every claim after this one is about a plain one */
+  fresh();
   /* EVERY key of an aligned row starts on a whole column, whichever of the
      three was pressed -- otherwise the letters across the top stop naming
      anything on that row. 「行の中央寄せした後列がずれてるのはどうなる？」
@@ -1017,8 +1102,12 @@ const r = await pg.evaluate(({ s }) => {
     out.carriedAfter = row0.length === before + 1 && row0[1].w === 2;
     out.carriedBack = (kbUndo(), kbLayer().rows[0].length === before);
   }
-  /* and onto the dashed row at the foot, which is a row of its own */
+  /* and onto the dashed row at the foot, which is a row of its own.
+     A board made from the qwerty pattern is AT the ceiling -- five rows, the
+     free QWERTY's own shape -- so the dashed row is not drawn on it at all,
+     which is the ceiling doing its job. One row off, and it is back. */
   fresh();
+  kbHeadRow(0); kbCut(); KBH = null; render();
   var rowsWas = kbLayer().rows.length;
   var plus = document.querySelector('#kb .kbk.addrow');
   out.sawPlus = !!plus;
@@ -1101,6 +1190,49 @@ const r = await pg.evaluate(({ s }) => {
   });
   return out;
 }, { s: seed.toString() });
+/* ---- and the SHEET, on the smallest phone the app runs on ---------------
+   「キーボードの高さは画面の半分までってルールあるのになんで七も足したら7割
+   埋まるけど」「入力欄も含めて50パーに収めたいんだよ」 OWNER 2026-08-27.
+
+   The editor is the preview -- there is no second picture of the keyboard --
+   so a sheet that fills seven tenths of the screen is the screen saying the
+   keyboard does. `.kb.kbsheet` said `--kh:44px`, a FIXED pixel height, while
+   the phone's row is the short side x KB_ROWW: 44.3pt on the narrowest iPhone
+   and 60.9 on a Pro Max. So the sheet came out 388px tall on every phone --
+   40.6% of a Pro Max and 68.3% of an SE.
+
+   It has to be measured on a SECOND PAGE, at 320 x 568, because a flat 44px
+   and the right answer differ by less than a pixel at the 390 this check
+   otherwise runs at. That is the whole reason the fault survived: at the size
+   everything is looked at, the wrong number is the right one. */
+const small = await br.newPage({ viewport: { width: 320, height: 568 } });
+await small.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+await small.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
+const SM = await small.evaluate(({ s }) => {
+  eval('(' + s + ')()');
+  SET.done = true; SET.plan = 'pro';
+  KB = null; kbShow = 0; kbAdd('abc'); kbLay = 0;
+  var lay = kbEdit().lay[0], i, j, r;
+  lay.rows = [];
+  for (i = 0; i < kbRowsMax(); i++){
+    r = [];
+    for (j = 0; j < 10; j++) r.push(kbKey('lt', ''));
+    lay.rows.push(r);
+  }
+  saveKb();
+  window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+  var sheet = document.querySelector('.kb.kbsheet');
+  var key = document.querySelector('.kb.kbsheet .kbk:not(.cell):not(.addrow)');
+  return {
+    vw: window.innerWidth, vh: window.innerHeight,
+    sheetW: sheet ? +sheet.getBoundingClientRect().width.toFixed(1) : -1,
+    sheetH: sheet ? +sheet.getBoundingClientRect().height.toFixed(1) : -1,
+    rowH: key ? +key.getBoundingClientRect().height.toFixed(1) : -1,
+    roww: KB_ROWW, most: KB_MOST, rows: kbRowsMax()
+  };
+}, { s: seed.toString() });
+await small.close();
+
 await br.close();
 
 /* ---- the two sides of the wall say the same three numbers ---------------
@@ -1158,9 +1290,9 @@ say([swRowW, swBarH, swMost, swEdge].every((x) => x.ok),
 say(swRowW.ok && r.roww === swRowW.n,
     'a row is ' + r.roww + ' of the phone across, here and in the extension' +
     ' (' + (swRowW.ok ? swRowW.n : '?') + ')');
-say(Math.abs(r.rowh - 54) < 0.5,
-    'which on the 390pt phone it was measured at is ' + r.rowh.toFixed(1) +
-    'pt -- the 54 it used to be flat at, so that phone does not move');
+say(Math.abs(r.row390 - 54) < 0.5,
+    'which on the 390pt phone it was measured at is still ' + r.row390.toFixed(1) +
+    'pt -- the 54 it used to be flat at');
 say(swMost.ok && r.most === swMost.n,
     'a keyboard may take ' + r.most + ' of the screen, both sides');
 say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
@@ -1168,9 +1300,25 @@ say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
     ((swEdge.ok && swBarH.ok) ? (swEdge.n + ' + ' + swBarH.n) : '?') + ' in the extension');
 say(r.ceilRows === Math.max(1, Math.floor((r.screenH * r.most - r.bars) / r.rowh)),
     'so the ceiling is ' + r.ceilRows + ' rows -- divided out of the cap, not chosen');
-say(r.screenH === 844 && r.ceilRows === 7,
-    'and it is one number for every phone (referenced to ' + r.screenH +
-    'pt), not as many as the phone in your hand fits');
+say(r.refW === 320 && r.screenH === 568,
+    'referenced to the SMALLEST phone the app runs on (' + r.refW + ' x ' +
+    r.screenH + '), which is what rule 19 already does one axis over');
+say(r.phones.every((p) => p.tall <= p.cap),
+    'so a board at the ceiling is inside the cap on EVERY phone' +
+    (r.phones.filter((p) => p.tall > p.cap).length
+      ? ': ' + r.phones.filter((p) => p.tall > p.cap)
+          .map((p) => p.w + 'x' + p.h + ' -> ' + p.pct + '%').join(', ')
+      : ''));
+say(Math.abs(SM.rowH - SM.sheetW * SM.roww) < 0.6,
+    'the sheet in the app is a row of ' + SM.rowH + 'px on a ' + SM.vw +
+    'pt phone, which is its own width x ' + SM.roww + ' (' +
+    (SM.sheetW * SM.roww).toFixed(1) + ') -- not a flat number');
+say(SM.sheetH / SM.vh <= SM.most,
+    'and a board at the ceiling fills ' + (SM.sheetH / SM.vh * 100).toFixed(1) +
+    '% of that screen, inside KB_MOST');
+say(r.phones.every((p) => p.pct <= 50),
+    'and inside half the screen too -- worst is ' +
+    Math.max.apply(null, r.phones.map((p) => p.pct)) + '%');
 say(r.ceilCols === 20,
     'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
@@ -1213,7 +1361,8 @@ say(r.wayBack, 'and page 2 has one that comes back');
 say(r.keptKeys && r.notOver, 'and the key went in beside what was there, not over it');
 say(r.layBack, 'and the step back takes the page and both keys away again');
 say(r.layFront, 'the key goes in at the front of the last row when that row has room');
-say(r.layNewRow, 'and into a row of its own when every row is already full');
+say(r.layNewRow, 'and the space bar gives up a key for it when every row is full (' +
+    r.spWas + ' -> ' + r.spNow + '), rather than a row nothing has room for');
 say(r.sameBoard, 'a flick board and a QWERTY board are drawn the same width');
 say(r.notSame, 'and a flick key is not a QWERTY key: ' + r.sizes.flick.key +
     'px against ' + r.sizes.qwerty.key + 'px');
@@ -1294,6 +1443,17 @@ say(r.colNoAl, 'but has no slack across it, so the alignments stay down');
 say(r.alLeft, 'aligning left puts the whole slack after the keys');
 say(r.alRight, 'aligning right puts it before them');
 say(r.alCentre, 'and centring splits it evenly, to within the one key it gives up to stay on a column');
+say(r.halfOdd && r.halfLeft,
+    'a row with half a key in it goes hard against the left, nothing in front');
+say(r.halfRight,
+    'and hard against the right: all ' + r.halfR0 +
+    ' half columns in front, half key and all');
+say(r.halfCentre,
+    'while centring still rounds to a whole key (' + r.halfC0 + ' in front, even)');
+say(r.halfFull, 'and all three still come to the full ten');
+say(r.halfConCols && !r.halfRonCols,
+    'and on that row centring lands every key on a whole column while right' +
+    ' does not -- which is what centring is FOR');
 say(r.alKeys, 'no key moves, whichever of the three is pressed');
 say(r.alFull, 'and the row comes to the full width, so the phone draws what this does');
 say(r.colsL && r.colsC && r.colsR,

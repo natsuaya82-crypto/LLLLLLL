@@ -5,9 +5,52 @@
   if(!api) throw new Error('LinguaGrammarEngine model must load before morphology');
   function findById(items,id){ var i; for(i=0;i<items.length;i++) if(items[i].id===id) return items[i]; return null; }
   function formOf(model,rule){ var m=findById(model.morphemes||[],rule.morphemeId); return rule.form!==null&&rule.form!==undefined?String(rule.form):(m?String(m.form||''):''); }
-  function applies(rule,word){ return rule.target==='WORD'||!rule.target||rule.target===word.partOfSpeech; }
+/* ---- when a rule has anything to say about a word ------------------------
+     Two questions, and they were one. `target` is the part of speech and has
+     been asked since Phase 1. `conditions` has been on the model since then
+     too and **nothing read it** -- so a rule written for one shape of word
+     fired on every word, silently, and a language with two endings that share
+     a feature produced both at once.
+
+     `endsWith` is the one condition a string engine can answer honestly: this
+     word ends in these letters. 「英語みたいにyで終わるのはiに変えてedみたいな
+     細かいルール」 is exactly it. A condition about SOUND -- after a vowel, after
+     a consonant -- is not here and must not be faked: this file has no
+     phonology and inventing one would be the engine deciding how somebody's
+     language sounds. What cannot be expressed is left out by the caller rather
+     than approximated here. */
+  function conditionsHold(rule,word){
+    var c=rule.conditions, e, s;
+    if(!c) return true;
+    e=c.endsWith;
+    if(e!==undefined && e!==null && String(e)!==''){
+      s=String(word&&word.lemma||'');
+      e=String(e);
+      if(s.length<e.length || s.slice(s.length-e.length)!==e) return false;
+    }
+    return true;
+  }
+  function applies(rule,word){
+    if(!(rule.target==='WORD'||!rule.target||rule.target===word.partOfSpeech)) return false;
+    return conditionsHold(rule,word);
+  }
   function derives(rule,partOfSpeech){ return !rule.sourcePartOfSpeech||rule.sourcePartOfSpeech===partOfSpeech; }
-  function add(form,rule,piece){ var sep=rule.separator===undefined?'-':String(rule.separator); if(rule.operation==='prefix') return piece+(sep?sep:'')+form; if(rule.operation==='suffix') return form+(sep?sep:'')+piece; if(rule.operation==='replace') return piece; throw new Error('Unsupported morphology operation: '+rule.operation); }
+  function derivesWord(rule,word){ return derives(rule,word&&word.partOfSpeech)&&conditionsHold(rule,word); }
+/* The stem, less whatever this rule takes off it. Off the END either way --
+     a prefix that changes the stem changes it in the same place a suffix does,
+     and that is what the app's own rule editor does. Never all of it: a rule
+     that ate the word would make every verb the same form of itself. */
+  function stemOf(form,rule){
+    var d=Math.max(0,parseInt(rule&&rule.drop,10)||0);
+    if(!d) return form;
+    return form.slice(0, Math.max(1, form.length-d));
+  }
+  function add(form,rule,piece){ var sep=rule.separator===undefined?'-':String(rule.separator);
+    if(rule.operation==='replace') return piece;
+    form=stemOf(form,rule);
+    if(rule.operation==='prefix') return piece+(sep?sep:'')+form;
+    if(rule.operation==='suffix') return form+(sep?sep:'')+piece;
+    throw new Error('Unsupported morphology operation: '+rule.operation); }
   function featureMatches(rule,features){ return features && features[rule.feature]===rule.value; }
   /* ---- case ---------------------------------------------------------------
      Until now a role came out of POSITION alone -- translate.js says it in so
@@ -24,16 +67,42 @@
      table does not know is taken as the role it names rather than dropped. */
   var CASE_ROLE={NOMINATIVE:'SUBJECT',ERGATIVE:'SUBJECT',ABSOLUTIVE:'SUBJECT',ACCUSATIVE:'OBJECT',DATIVE:'RECIPIENT',GENITIVE:'POSSESSOR',INSTRUMENTAL:'INSTRUMENT',LOCATIVE:'PLACE',ABLATIVE:'SOURCE',VOCATIVE:'ADDRESSEE'};
   function caseRole(token){ var i,r,v; for(i=0;i<token.inflections.length;i++){ r=token.inflections[i]; if(r.feature!=='CASE') continue; v=String(r.value||'').toUpperCase(); return CASE_ROLE[v]||v; } return null; }
+  /* Reading a surface back to its lemma. A rule that CHANGES THE STEM cannot
+     be walked backwards from the surface alone -- taking `ied` off `carried`
+     leaves `carr`, and what went missing is not written anywhere on the word.
+     So those rules are not tried here, and that is not a hole: the app writes
+     every form it makes into the dictionary as a word of its own, so `carried`
+     is found by looking it up, with its own entry saying what it is a form of.
+     Guessing `carry` back out of `carr` would be inventing somebody's word. */
   function analyzeForm(model,surface,word){ var rules=model.inflections||[],i,r,piece,sep,mark,hit=[],changed=true;
     surface=String(surface||'');
     while(changed){ changed=false; for(i=0;i<rules.length;i++){ r=rules[i]; piece=formOf(model,r); sep=r.separator===undefined?'-':String(r.separator); mark=(r.operation==='prefix'?piece+sep:sep+piece);
-      if(!piece||!applies(r,word)) continue;
+      if(!piece||r.drop||!applies(r,word)) continue;
       if(r.operation==='suffix' && surface.length>mark.length && surface.slice(-mark.length)===mark){ surface=surface.slice(0,-mark.length); hit.push(r); changed=true; break; }
       if(r.operation==='prefix' && surface.length>mark.length && surface.slice(0,mark.length)===mark){ surface=surface.slice(mark.length); hit.push(r); changed=true; break; }
     }}
     return {lemma:surface,inflections:hit};
   }
-  function inflect(model,word,features){ var rules=model.inflections||[],i,r,out=word.lemma,used=[]; for(i=0;i<rules.length;i++){ r=rules[i]; if(applies(r,word)&&featureMatches(r,features)){ out=add(out,r,formOf(model,r)); used.push(r); } } return {surface:out,lemma:word.lemma,inflections:used}; }
+/* ---- ONE FEATURE, ONE ENDING --------------------------------------------
+     Every matching rule used to fire, in file order, each one on top of the
+     last. A language that says "after y it is -ied, otherwise -ed" therefore
+     produced `carrieded`: both rules are about TENSE=PAST and both matched.
+     Nothing threw and nothing was empty -- it is simply not a word.
+
+     A feature is spent once. The FIRST rule that matches a feature is the one
+     that happens, and the rest of that feature is done. So the specific rule
+     has to stand before the general one, which is how an ordered set of
+     morphological rules has always worked; the caller that builds this model
+     from what somebody wrote is what puts them in that order. */
+  function inflect(model,word,features){ var rules=model.inflections||[],i,r,out=word.lemma,used=[],spent={},k;
+    for(i=0;i<rules.length;i++){ r=rules[i];
+      if(!applies(r,word)||!featureMatches(r,features)) continue;
+      k=String(r.feature);
+      if(spent[k]) continue;
+      spent[k]=1;
+      out=add(out,r,formOf(model,r)); used.push(r);
+    }
+    return {surface:out,lemma:word.lemma,inflections:used}; }
   /* ---- derivation ---------------------------------------------------------
      An inflection makes another FORM of the same word; a derivation makes a
      different word, of a different part of speech. `derivation()` has been in
@@ -43,11 +112,15 @@
      they are deliberately the same shape as inflect/analyzeForm above so the
      two kinds of rule are told apart by what they mean, not by how they are
      called. */
+  /* And one derivation makes one word, for the same reason: two rules that
+     both turn a noun into an adjective are two ways of doing it, not two
+     things done one after the other. The first that matches is the one. */
   function derive(model,word,targetPartOfSpeech){ var rules=model.derivations||[],i,r,out=word.lemma,used=[],pos=word.partOfSpeech;
     for(i=0;i<rules.length;i++){ r=rules[i];
-      if(!formOf(model,r)||!derives(r,pos)) continue;
+      if(!formOf(model,r)||!derivesWord(r,word)) continue;
       if(targetPartOfSpeech&&r.targetPartOfSpeech!==targetPartOfSpeech) continue;
       out=add(out,r,formOf(model,r)); used.push(r); pos=r.targetPartOfSpeech||pos;
+      break;
     }
     return {surface:out,lemma:word.lemma,partOfSpeech:pos,derivations:used};
   }
@@ -58,7 +131,7 @@
   function analyzeDerivation(model,surface,word){ var rules=model.derivations||[],i,r,piece,sep,mark,src=(word&&word.partOfSpeech)||null;
     surface=String(surface||'');
     for(i=0;i<rules.length;i++){ r=rules[i]; piece=formOf(model,r); sep=r.separator===undefined?'-':String(r.separator); mark=(r.operation==='prefix'?piece+sep:sep+piece);
-      if(!piece||!derives(r,src)) continue;
+      if(!piece||r.drop||!derives(r,src)) continue;
       if(r.operation==='suffix' && surface.length>mark.length && surface.slice(-mark.length)===mark) return {lemma:surface.slice(0,-mark.length),derivations:[r],partOfSpeech:r.targetPartOfSpeech||src};
       if(r.operation==='prefix' && surface.length>mark.length && surface.slice(0,mark.length)===mark) return {lemma:surface.slice(mark.length),derivations:[r],partOfSpeech:r.targetPartOfSpeech||src};
     }
@@ -73,7 +146,7 @@
   function parseDerived(model,text){ var words=model.words||[],rules=model.derivations||[],i,j,w,r,virtual,a,d;
     for(i=0;i<words.length;i++){ w=words[i];
       for(j=0;j<rules.length;j++){ r=rules[j];
-        if(!formOf(model,r)||!derives(r,w.partOfSpeech)) continue;
+        if(!formOf(model,r)||r.drop||!derivesWord(r,w)) continue;
         virtual={id:w.id,lemma:w.lemma,meaning:w.meaning,meanings:w.meanings,partOfSpeech:r.targetPartOfSpeech||w.partOfSpeech,morphemeIds:w.morphemeIds,metadata:w.metadata};
         a=analyzeForm(model,text,virtual);
         d=analyzeDerivation(model,a.lemma,w);

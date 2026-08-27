@@ -34,6 +34,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "renderPdf", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -295,6 +296,41 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     } catch {
       call.reject(error.localizedDescription)
     }
+  }
+
+  /// A page of a PDF, as a picture.
+  ///
+  /// www/sheet.js reads a scanned sheet without a renderer, because a scanner
+  /// stores its page as a JPEG byte for byte (/DCTDecode) and the bytes come
+  /// straight out. What it cannot do is a page whose ink was DRAWN -- somebody
+  /// who wrote on the sheet with a pencil on a screen rather than with a pen
+  /// on paper -- or one whose picture is behind a filter that file cannot
+  /// undo. Both need a renderer. The phone has one.
+  /// OWNER 2026-08-27「pdfkitのレンダラやろう」
+  ///
+  /// The drawing itself is LinguaPdf.swift, and it is a file of its own for
+  /// the reason written at the top of it: an import in THIS file is how build
+  /// #84 failed, and what somebody wrote on the sheet only comes back if the
+  /// page is drawn by PDFKit.
+  @objc func renderPdf(_ call: CAPPluginCall) {
+    let b64 = call.getString("b64") ?? ""
+    let edge = CGFloat(call.getDouble("edge") ?? 2200)
+    guard let data = Data(base64Encoded: b64), !data.isEmpty else {
+      call.reject("nothing to draw")
+      return
+    }
+    guard let im = LinguaPdf.page(data, edge) else {
+      call.reject("this is not a PDF page the phone can open")
+      return
+    }
+    // The one place a UIImage becomes bytes for the web view. It is already at
+    // `edge`, so this scales by 1 -- it is here to be the only answer to "how
+    // is a picture handed over", not to resize anything.
+    guard let out = Self.jpeg(im, edge) else {
+      call.reject("the page could not be drawn")
+      return
+    }
+    call.resolve(["jpeg": out])
   }
 
   /// Put the language's font into the phone itself, which is the only way
