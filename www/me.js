@@ -176,7 +176,11 @@ function meName(){ return ME.name || langName || ''; }
 function meHandle(){
   return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
-function meSetName(v){ ME.name=String(v||''); saveMe(); }
+/* Each of these makes its box as tall as what is in it. Nothing here calls
+   render() -- a profile that redrew on every letter would take the keyboard's
+   focus off the field being typed into -- so lnGrow() is what says the field
+   grew, the same call the composer's line makes. */
+function meSetName(v){ ME.name=String(v||''); lnGrow('me-nm'); saveMe(); }
 /* A line about yourself, which is the one thing on a profile that is not
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
@@ -193,8 +197,8 @@ function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
 
    リンクについてはオーナーは何も言っていない。位置情報の答えを当てはめない
    ため、こちらも同じ「ただの文字列」以上のことはしていない。 */
-function meSetLink(v){ ME.link=String(v||''); saveMe(); }
-function meSetLoc(v){ ME.loc=String(v||''); saveMe(); }
+function meSetLink(v){ ME.link=String(v||''); lnGrow('me-lk'); saveMe(); }
+function meSetLoc(v){ ME.loc=String(v||''); lnGrow('me-lc'); saveMe(); }
 /* ---- a face of your own ------------------------------------------------
    A file input, because that is the one way a WKWebView opens the camera
    roll without a plugin, and the plugin would have to be installed on a
@@ -261,6 +265,7 @@ function meSetHandle(v){
   /* A handle is what somebody types after an @, so it is the characters that
      survive being typed after one. */
   ME.handle=String(v||'').toLowerCase().replace(/[^a-z0-9_]+/g, '');
+  lnGrow('me-hd');
   saveMe();
   if(ME_HD_T) clearTimeout(ME_HD_T);
   ME_HD_T=setTimeout(meHandleSee, 700);
@@ -543,13 +548,13 @@ function openMe(){
       '<div style="flex:1 1 auto;min-width:0">'+
         '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
-          '<input id="me-nm" maxlength="'+ME_MAX.name+'" value="'+esc(ME.name)+'" '+
-          'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
+          lnField('me-nm', langName||'',
+            ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), ME.name)+'</div>'+
         '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
-          '<input id="me-hd" maxlength="'+ME_MAX.handle+'" value="'+esc(ME.handle)+'" '+
-          'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
-          'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
+          lnField('me-hd', meHandle(),
+            ' maxlength="'+ME_MAX.handle+'" autocapitalize="none"' + IN('meSetHandle'),
+            ME.handle)+'</div>'+
       '</div>'+
     '</div>'+
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
@@ -570,13 +575,13 @@ function openMe(){
        書くとアプリが読み込みで止まる。**分けられない。** */
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
-      '<input id="me-lk" maxlength="'+ME_MAX.link+'" value="'+esc(ME.link||'')+'" '+
-      'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
+      lnField('me-lk', t('me.link.ph')||'',
+        ' maxlength="'+ME_MAX.link+'" autocapitalize="none"' + IN('meSetLink'),
+        ME.link||'')+'</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
-      '<input id="me-lc" maxlength="'+ME_MAX.loc+'" value="'+esc(ME.loc||'')+'" '+
-      'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
+      lnField('me-lc', t('me.loc.ph')||'',
+        ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the

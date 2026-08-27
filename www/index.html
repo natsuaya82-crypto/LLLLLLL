@@ -2401,6 +2401,19 @@ a.set{text-decoration:none}
 .field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
 .field textarea{height:120px;line-height:1.6}
+/* A field that WRAPS is a textarea, and an ordinary one-line field is one
+   too now -- an <input> is a single row that scrolls sideways forever and
+   there is no CSS that makes it wrap.
+   「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+   `.lnin` is the shape (www/shell.js's lnField), and the two lines above are
+   what has to be undone for it: the 120px is for the box a paragraph is
+   written in, and a name or a handle is not one. Its height is what is in
+   it, which lnGrow() sets. Nothing is added here -- no frame, no corner. */
+.field .lnin{height:auto;line-height:1.5;padding:12px 2px;font-size:.95rem;
+             margin-bottom:0}
+/* And inside the @ row the line is the ROW's, drawn once for the label and
+   the field together, so the field does not draw a second one under itself. */
+.field.at .lnin{flex:1;min-width:0;border-bottom:0;padding-left:3px}
 /* The box a list is pasted into takes the room that was standing empty under
    it. 「下のスペース余ってんなら上の入力欄広くしてみやすくしろよ」OWNER
    2026-08-27. `.field textarea` is worn by thirty screens, so this is by id --
