@@ -725,6 +725,7 @@ defLang('pt', (function(){
       "wr.pages"         : "{0} folhas",
       "wr.pages.1"       : "1 folha",
       "wr.out"           : "Guardar a folha",
+      "wr.write"         : "Escrever aqui",
       "wr.out.ok"        : "Guardada",
       "wr.nobridge"      : "A aplicação não chega ao armazenamento de ficheiros.",
       "wr.long"          : "Estes nomes não cabem numa folha.",

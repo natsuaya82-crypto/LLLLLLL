@@ -869,6 +869,16 @@ Decided:
   it is: **real ink**. It blurred clean vector ink; a brush bleeds into paper
   and goes dry, and its edge is not a step. The owner is testing that with a
   real sheet before release.
+- **AND IT IS WRITTEN ON INSIDE LINGUA.** 「たのむ」OWNER 2026-08-27, on the
+  eight steps across two apps that the Files road was.
+  `LinguaMarkup.swift` opens `QLPreviewController` in `.updateContents` mode —
+  Apple's own Markup, in this app, on the file `sheet` just wrote — and what
+  comes back goes into `shTakeFile()`. **No second way of reading a PDF**: it
+  is the same one door the picker feeds. The button is on the make screen and
+  is there only once a sheet exists. Cancelled does nothing, and whether
+  anything was written is asked of the file's modification date rather than of
+  a delegate callback that has to fire.
+
 - **PRINTING IS NOT REQUIRED, and the screen is the road that has to work.**
   「印刷はむりにしない？そのままdlした端末上で書くとか？じゃないと無理じゃね」
   OWNER 2026-08-27. This does not overturn 「両方対応にしたい」 above — it says

@@ -837,7 +837,7 @@ function shThin(loop, tol){
 /* Where the chapter is standing. Not the language's -- it is where you are in
    it, so shell.js's viewReset() drops it, exactly as it drops IMP. */
 var SH = null;
-function shBlank(){ return {names:'', got:null, why:'', from:''}; }
+function shBlank(){ return {names:'', got:null, why:'', from:'', file:''}; }
 function shState(){ if(!SH) SH = shBlank(); return SH; }
 
 /* The typed string -> the names, in order. Commas, and nothing else is a
@@ -924,7 +924,38 @@ function shOutHTML(){
     '<div class="mini" id="wr-mini">'+esc(tn('wr.boxes', n))+' · '+esc(tn('wr.pages', shPages(n)))+'</div>'+
     shPvHTML()+
     '<div class="barfix"><button class="btn ghost"' + DO('shMake') + '>'+
-    esc(t('wr.out'))+'</button></div>';
+    esc(t('wr.out'))+'</button>'+
+    /* Only once there IS a sheet. Before that it is a button that opens
+       nothing, and a state is what says so -- the sheet is not written yet,
+       which the screen already shows by not having this row. */
+    (s.file ? '<button class="btn ghost"' + DO('shWrite') + '>'+
+              esc(t('wr.write'))+'</button>' : '')+
+    '</div>';
+}
+/* Write on the sheet without leaving the app.
+   OWNER 2026-08-27「そのままdlした端末上で書くとか？じゃないと無理じゃね」
+
+   The road with no printer in it was: write the file out, LEAVE Lingua, find
+   it in Files, open it, press the pen, write, press Done, come back, press
+   upload, find the file again. Eight steps across two apps to write three
+   letters. This is the same eight with the two apps taken out --
+   LinguaMarkup.swift opens Apple's own Markup on the file, and what comes
+   back goes into shTakeFile() as though it had been chosen with the picker.
+
+   Nothing new reads a PDF here. It is the same one door: bytes, a name, and
+   the reading side. Cancelled writes nothing and says nothing, because
+   changing your mind is not an error. */
+function shWrite(){
+  var s = shState(), p;
+  if(!s.file) return;
+  p = sharePlug();
+  if(!p){ toast(t('wr.nobridge')); return; }
+  p('LinguaShare', 'markup', {file: s.file})
+    .then(function(r){
+      if(!r || !r.wrote || !r.b64) return;
+      shTakeFile('data:application/pdf;base64,' + r.b64, s.file);
+    })
+    ['catch'](function(){ toast(t('wr.nobridge')); });
 }
 /* ---- what will come out, before it comes out ----------------------------
    「自分の言語に入れたい文字　例 a,b,c みたいにしてカンマで区切ったら、どんな
@@ -1124,7 +1155,15 @@ function shMake(){
   p = sharePlug();
   if(!p){ toast(t('wr.nobridge')); return; }
   p('LinguaShare', 'sheet', {name:shFileName(), b64:btoa(pdf)})
-    .then(function(){ toast(t('wr.out.ok')); })
+    .then(function(r){
+      /* What it was actually filed as, which is not shFileName(): a sheet is
+         never overwritten, so the second one of a name is `<name> 2.pdf`.
+         Writing on the wrong one of two would be somebody's letters going
+         into a sheet they did not just make. */
+      shState().file = (r && r.file) || '';
+      toast(t('wr.out.ok'));
+      openWrOut();
+    })
     ['catch'](function(){ toast(t('wr.nobridge')); });
 }
 /* A name a person will recognise in the Files app. bkName()'s argument, and

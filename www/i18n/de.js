@@ -707,6 +707,7 @@ defLang('de', (function(){
       "wr.pages"         : "{0} Blätter",
       "wr.pages.1"       : "1 Blatt",
       "wr.out"           : "Blatt speichern",
+      "wr.write"         : "Hier schreiben",
       "wr.out.ok"        : "Gespeichert",
       "wr.nobridge"      : "Die App erreicht den Dateispeicher nicht.",
       "wr.long"          : "Diese Namen passen nicht auf ein Blatt.",

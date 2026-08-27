@@ -893,6 +893,7 @@ defLang('ko', (function(){
       "wr.pages"         : "{0} 장",
       "wr.pages.1"       : "1 장",
       "wr.out"           : "용지 내보내기",
+      "wr.write"         : "여기서 쓰기",
       "wr.out.ok"        : "내보냈습니다",
       "wr.nobridge"      : "앱이 파일 보관함에 닿지 않습니다.",
       "wr.long"          : "이 이름들은 한 장에 들어가지 않습니다.",

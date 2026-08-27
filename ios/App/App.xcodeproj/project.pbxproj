@@ -16,6 +16,7 @@
 		7A1C0F5E2B9D41C8A0E33007 /* LinguaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33008 /* LinguaStore.swift */; };
 		7A1C0F5E2B9D41C8A0E33180 /* WidgetPoke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33181 /* WidgetPoke.swift */; };
 		7A1C0F5E2B9D41C8A0E33190 /* LinguaPdf.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33191 /* LinguaPdf.swift */; };
+		7A1C0F5E2B9D41C8A0E33192 /* LinguaMarkup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33193 /* LinguaMarkup.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
@@ -67,6 +68,7 @@
 		7A1C0F5E2B9D41C8A0E33008 /* LinguaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaStore.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33181 /* WidgetPoke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPoke.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33191 /* LinguaPdf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaPdf.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33193 /* LinguaMarkup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaMarkup.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33003 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 				7A1C0F5E2B9D41C8A0E33008 /* LinguaStore.swift */,
 				7A1C0F5E2B9D41C8A0E33181 /* WidgetPoke.swift */,
 				7A1C0F5E2B9D41C8A0E33191 /* LinguaPdf.swift */,
+				7A1C0F5E2B9D41C8A0E33193 /* LinguaMarkup.swift */,
 				7A1C0F5E2B9D41C8A0E33003 /* App.entitlements */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
@@ -415,6 +418,7 @@
 				7A1C0F5E2B9D41C8A0E33007 /* LinguaStore.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33180 /* WidgetPoke.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33190 /* LinguaPdf.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E33192 /* LinguaMarkup.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1505,6 +1505,12 @@ export function halfDone(){
     ['a sheet being made',     () => { SH = shBlank(); SH.names = 'a, ka, 7';
                                        openWrOut();
                                        const h = vForm(); SH = shBlank(); return h; }],
+    /* and the same screen once the sheet is out. `file` is what it was filed
+       as, which is the only thing that says a sheet exists to write on -- the
+       row that opens Apple's Markup is not there before one does. */
+    ['a sheet that is written', () => { SH = shBlank(); SH.names = 'a, ka, 7';
+                                       SH.file = 'sheet.pdf'; openWrOut();
+                                       const h = vForm(); SH = shBlank(); return h; }],
     ['a sheet to read back',   () => { SH = shBlank(); openWrIn(); return vForm(); }],
     ['a sheet that came back', () => { SH = shBlank(); SH.from = 'sheet.jpg';
         SH.got = [{nm:'ka', sh:[[[100,100],[700,100],[700,700],[100,700]]]},
