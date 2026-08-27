@@ -1150,6 +1150,61 @@ const r = await pg.evaluate(({ s }) => {
       Math.abs((mnx + mxx) / 2 - W / 2),
       Math.abs((mny + mxy) / 2 - H / 2), W]);
   });
+
+  /* ---- the letters offered for a key are the ALPHABET'S OWN list --------
+     「絞り込みと検索が欲しいね。」 OWNER 2026-08-27, on 「レター多くなったら
+     選ぶのキツくね？」.
+
+     kbLtGrid() laid every letter out, always. It draws the PAID alphabet --
+     free has no editor to reach it from -- which is the one that grows to
+     three hundred.
+
+     What is held is that it is the alphabet chapter's list and not a second
+     one: the same ltSortList/ltFilList vLtset builds with, and the same row
+     of buttons driving them. Nothing here can throw. A grid that quietly
+     stopped asking would draw perfectly and be the whole alphabet again, and
+     the only way to see it is to set the filter and count what came back --
+     so it is counted, per filter, and the three have to add up. */
+  (function (){
+    fresh();
+    var wasS = ltSort, wasF = ltFil;
+    function cells(h){ return (String(h).match(/class="ltc"/g) || []).length; }
+    function names(h){
+      var m = String(h).match(/class="ltcn">([^<]*)</g) || [];
+      return m.map(function (x){ return x.replace(/.*>/, ''); });
+    }
+    ltSort = 'own'; ltFil = 'all';
+    var all = kbLtGrid(0, 0, -1);
+    out.ltRow = /class="wfilrow"/.test(all);
+    out.ltAll = cells(all);
+    ltFil = 'drawn';  out.ltDrawn = cells(kbLtGrid(0, 0, -1));
+    ltFil = 'blank';  out.ltBlank = cells(kbLtGrid(0, 0, -1));
+    /* drawn and blank are the two halves of the same alphabet, so they add
+       back up to it -- a count on its own would pass a grid that answered
+       the same list to every filter as long as it was shorter. */
+    out.ltSplits = (out.ltDrawn + out.ltBlank === out.ltAll) &&
+                   out.ltDrawn > 0 && out.ltBlank > 0;
+    ltFil = 'all'; ltSort = 'own';
+    var own = names(kbLtGrid(0, 0, -1));
+    /* `new` and not `abc`, and the reason is worth keeping: this fixture's
+       alphabet IS a to z, so sorting it alphabetically is the order it was
+       already in and a claim built on `abc` passes whether the sort is asked
+       or not. It was written that way first and went red here, which is the
+       check catching its own proxy. `new` is the order they were made in and
+       is genuinely a different order on this alphabet. */
+    ltSort = 'new';
+    var other = names(kbLtGrid(0, 0, -1));
+    out.ltSame = own.length === other.length;
+    /* the ORDER moved and not the membership: the same letters, re-ordered */
+    out.ltSorted = own.join(' ') !== other.join(' ') &&
+      own.slice().sort().join(' ') === other.slice().sort().join(' ');
+    /* and the sheet that only holds the alphabet asks the same thing */
+    ltSort = 'own'; ltFil = 'blank';
+    kbSlotFor = { r: 0, k: 0, d: -1 };
+    out.ltSheet = cells(kbLtHTML()) === out.ltBlank;
+    kbSlotFor = null;
+    ltSort = wasS; ltFil = wasF;
+  }());
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -1338,6 +1393,13 @@ say(r.colSame,
     'and both boards carry the same ten columns: ' + r.sizes.qwerty.hdr +
     ' / ' + r.sizes.flick.hdr + ' -- a is a is a, whatever stands on it');
 say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.ltRow, 'the letters offered for a key carry the alphabet\'s own row of ' +
+    'buttons -- the order and the filter, not a second pair');
+say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +
+    r.ltDrawn + ' drawn and ' + r.ltBlank + ' not, which is all of them twice over');
+say(r.ltSame && r.ltSorted,
+    'and the order moves the same letters rather than a different set');
+say(r.ltSheet, 'and the sheet that holds only the alphabet answers the same list');
 say(r.cutKeyStill, 'nor the size of the keys that are left (' + r.cutKeyWas +
     'px -> ' + r.cutKeyNow + 'px)');
 say(r.cutHdrStill, 'nor which columns there are (' + r.cutHdrNow + ')');
