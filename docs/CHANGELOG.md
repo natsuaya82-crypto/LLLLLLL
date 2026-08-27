@@ -34,10 +34,19 @@ where it starts.
 書かれず、読み終わったら消えます。電話がないとき（ブラウザ、このビルドより前の
 アプリ）はこれまでの文が出ます。
 
-PDFKit ではなく CoreGraphics（`CGPDFDocument` / `drawPDFPage`）です。
-`LinguaShare.swift` は `import WidgetKit` で一度ビルドを落としている（#84、
-`PHPickerViewController` がスコープから消えた）ので、既にある import だけで
-済む道を取りました。
+描くのは **PDFKit の `PDFPage.draw(with:to:)`** です。`CGContext.drawPDFPage`
+ではありません ── あれはページの**内容ストリーム**を描くもので、**注釈を
+描きません。** iOS の Markup は一本一本を PDF の注釈として保存するので、ペンで
+書いたシートは印刷されたときの白紙のまま出てきます。何も throw しません:
+四隅のマークは見つかり、帯は読め、二十の名前は返り、どの枠も空。**人の書いた
+ものだけが抜けた、正しく見える答え**です。
+OWNER 2026-08-27「俺たちがアプリで作ったpdfで書いた文字が読み込めれば
+なに使ってもいいのよ」
+
+`import PDFKit` は `LinguaPdf.swift` という別ファイルに置きました。
+`WidgetPoke.swift` と同じ理由です ── `LinguaShare.swift` に import を足したのが
+#84 の落ち方でした（`import WidgetKit` で `PHPickerViewController` がスコープ
+から消えた）。`project.pbxproj` に4行、Sources phase まで。
 
 ### 書き出したシートが Documents に落ちる ── 書き出しは一度も動いていなかった
 
