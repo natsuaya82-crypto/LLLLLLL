@@ -820,6 +820,61 @@ function g2Status(){
     g2Stat(t('g2.der'), m.derivations.length);
 }
 
+/* ---- what a chapter can still be told ----------------------------------
+   「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27.
+
+   A chapter knows its part of speech, so nobody is asked which -- that is
+   what splitting the page bought. It does NOT know which FORM: a verb has
+   eleven of them, and choosing among eleven is a choice however the page is
+   arranged.
+
+   So the chapter shows them the way a STAGE shows its words: the ones this
+   language has, as the pair they make, and the ones it has not, as a row
+   saying 作成. Pressing an empty one writes the rule and opens it for its
+   letters. No picker for the part of speech and none for the form -- the row
+   pressed IS the answer to both.
+
+   Which forms belong to which chapter is NOT a second table. It is asked of
+   g2Chap(), the one place that already decides it, by handing it the rule
+   that form would make. A form added to the app lands in a chapter the day
+   it is added. */
+function g2PosTarget(pos){
+  var w=LinguaGrammarEngine.adapter.wordsOf([{hw:'x', pos:pos}]);
+  return (w.length && w[0].partOfSpeech) || 'WORD';
+}
+function g2FmsOf(id){
+  var c=g2ChapBy(id), out=[], i, f, g;
+  if(!c || !c.pos || typeof FM_INF==='undefined') return out;
+  for(i=0;i<FM_INF.length;i++){
+    f=FM_INF[i]; g=GFM_INF[f];
+    if(!g) continue;
+    if(g2Chap({feature:g[0], value:g[1], target:g2PosTarget(c.pos)})!==id) continue;
+    out.push(f);
+  }
+  return out;
+}
+/* Whether this language has already said this. Asked of the rules somebody
+   wrote rather than of the engine: a rule this side cannot carry over is
+   still a rule they wrote, and offering to write it again would be the app
+   forgetting what it was told. */
+function g2HasFm(pos, fm){
+  var a=(STG && STG.fm) || [], i;
+  for(i=0;i<a.length;i++)
+    if(a[i] && String(a[i].fm)===fm && String(a[i].pos||'')===String(pos)) return true;
+  return false;
+}
+function g2Add(id){
+  var c=g2ChapBy(id), fms=g2FmsOf(id), i, out='';
+  if(!c || !c.pos) return '';
+  for(i=0;i<fms.length;i++){
+    if(g2HasFm(c.pos, fms[i])) continue;
+    out+='<button class="stslot"' + DO('fmrNew', [c.pos, fms[i]]) + '>'+
+      '<span class="psm">'+esc(fmLabel(fms[i]))+'</span>'+
+      '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
+  }
+  return out;
+}
+
 /* THE CHAPTERS, and each one is a PAGE.
 
    They were eight headings stacked down one screen, which is two of the four
@@ -843,11 +898,11 @@ function g2Chaps(){
      `}` and reads as unused. Eight of them did. */
   return [
     {id:'order', body:g2Sent,   nm:t('stg.order.t')},
-    {id:'n',     body:g2Nouns,  nm:posLabel('n')},
-    {id:'v',     body:g2Verbs,  nm:posLabel('v')},
-    {id:'neg',   body:g2Neg,    nm:t('stg.neg.t')},
-    {id:'q',     body:g2Ques,   nm:t('stg.ask.t')},
-    {id:'adj',   body:g2Adj,    nm:posLabel('adj')},
+    {id:'n',     body:g2Nouns,  nm:posLabel('n'),   pos:'n'},
+    {id:'v',     body:g2Verbs,  nm:posLabel('v'),   pos:'v'},
+    {id:'neg',   body:g2Neg,    nm:t('stg.neg.t'),  pos:'v'},
+    {id:'q',     body:g2Ques,   nm:t('stg.ask.t'),  pos:'v'},
+    {id:'adj',   body:g2Adj,    nm:posLabel('adj'), pos:'adj'},
     {id:'adp',   body:g2Adp,    nm:t('stg.where.t')},
     {id:'st',    body:g2Status, nm:t('wld.about')}
   ];
@@ -876,7 +931,7 @@ function g2List(){
 }
 function g2Page(a){
   var c=(a && a.indexOf('v2:')===0)? g2ChapBy(a.slice(3)) : null;
-  return c? c.body() : g2List();
+  return c? (c.body()+g2Add(c.id)) : g2List();
 }
 
 /* ---- the screen -------------------------------------------------------- */

@@ -715,8 +715,11 @@ const g2n = await pg.evaluate(() => {
     { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
   ];
   window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }]; render();
-  const rows = Array.prototype.map.call(
-    document.querySelectorAll('#app .stslot'), (b) => ({
+  /* Only the rows that ARE a form: a chapter also lists what this language
+     has not said yet, and those carry 作成 instead of a word. */
+  const rows = Array.prototype.filter.call(
+      document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
+    .map((b) => ({
       lab: b.querySelector('.psm').textContent,
       from: b.querySelector('.psw').textContent,
       to: b.querySelector('.psi').textContent,
@@ -777,9 +780,13 @@ const g2v = await pg.evaluate(() => {
      chapter draws is its own, and what it does not draw is somewhere else. */
   const on = (id) => {
     window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
-    return Array.prototype.map.call(document.querySelectorAll('#app .stslot'),
-      (b) => b.querySelector('.psm').textContent + ':' +
-             b.querySelector('.psi').textContent);
+    /* Only the rows that ARE a form. A chapter also lists what this language
+       has not said yet, and those rows carry 作成 rather than a word -- they
+       are an invitation, not something the language does. */
+    return Array.prototype.filter.call(document.querySelectorAll('#app .stslot'),
+        (b) => !!b.querySelector('.psi'))
+      .map((b) => b.querySelector('.psm').textContent + ':' +
+                  b.querySelector('.psi').textContent);
   };
   const chaps = {};
   g2Chaps().forEach((c) => { chaps[c.id] = on(c.id); });
@@ -832,8 +839,9 @@ const neg = (fm, opts) => pg.evaluate(({ fm, o }) => {
                             add:sp(r.add), when:r.when || '',
                             wend:r.wend? sp(r.wend) : [] }));
   window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg' }]; render();
-  const rows = Array.prototype.map.call(
-    document.querySelectorAll('#app .stslot'), (b) => ({
+  const rows = Array.prototype.filter.call(
+      document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
+    .map((b) => ({
       lab: b.querySelector('.psm').textContent,
       from: b.querySelector('.psw').textContent,
       to: b.querySelector('.psi').textContent,
@@ -934,6 +942,7 @@ const chap = await pg.evaluate(() => {
   g2Chaps().forEach((c) => {
     window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + c.id }]; render();
     Array.prototype.forEach.call(document.querySelectorAll('#app .stslot'), (el) => {
+      if (!el.querySelector('.psi')) return;   /* a make row, not a form */
       const to = el.querySelector('.psi').textContent;
       kinds.forEach((k) => {
         if (to.indexOf(k.add) < 0) return;
@@ -997,9 +1006,10 @@ const adj = await pg.evaluate(() => {
   press(0); press(1);
   const after = say(), side = STG.gpos.adj;
   const order = STG.order;
-  const form = Array.prototype.map.call(
-    document.querySelectorAll('#app .stslot'), (b) =>
-      b.querySelector('.psm').textContent + ':' + b.querySelector('.psi').textContent)
+  const form = Array.prototype.filter.call(
+      document.querySelectorAll('#app .stslot'), (b) => !!b.querySelector('.psi'))
+    .map((b) => b.querySelector('.psm').textContent + ':' +
+                b.querySelector('.psi').textContent)
     .filter((x) => x.indexOf('si') >= 0).join(',');
 
   /* ACROSS THE PAGES. The two rows that arrange a pair are on different
@@ -1153,6 +1163,84 @@ want('the words are this dictionary', stat.rows['Words'], String(stat.words));
 want('the forms are the ones the engine was handed', stat.rows['Forms'], '2');
 want('and the word formation is too', stat.rows['Word formation'], '1');
 
+/* ---- 91-98: a chapter is where a rule is made ---------------------------
+   「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27.
+
+   The chapter shows what this language has and what it has not, the way a
+   stage shows its words, and pressing an empty row writes the rule. What is
+   held here is that the row wrote the rule THE ROW NAMED -- the part of
+   speech of the chapter and the form of the row -- because nothing asks
+   afterwards: the two screens that could have changed either are going away
+   in the same day's work.
+
+   A rule made with the wrong part of speech applies to nothing and draws no
+   row, which looks exactly like a language that has not said it yet. */
+const mk = await pg.evaluate(() => {
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  STG.fm = [];
+  const open = (id) => { window.route = 'gram';
+    NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
+  const rows = () => Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) => ({
+      lab: b.querySelector('.psm').textContent,
+      make: !!b.querySelector('.psn'),
+      a: b.getAttribute('data-a') }));
+
+  open('v');
+  const verbs = rows();
+  /* every form a verb can take, and none of them said yet */
+  const before = verbs.length, allMake = verbs.filter((r) => r.make).length;
+  /* Press a row found by what it WRITES rather than by what it is called:
+     this check runs in English and the label is whatever the interface
+     language says. data-a is ["v","pas"].
+
+     The PASSIVE and not the past, deliberately. A button that ignored the row
+     and made whatever it always made would make a verb's PAST -- which is what
+     the one button there used to be able to make -- and pressing the past
+     would look perfectly right. The row has to be the answer, so the check
+     presses one whose answer is different. */
+  const press = (a) => {
+    const at = verbs.map((r) => r.a).indexOf(a);
+    if (at < 0) throw new Error('no row writes ' + a + '; rows: ' +
+                                verbs.map((r) => r.a).join(' '));
+    document.querySelectorAll('#app .stslot')[at].click();
+  };
+  press('["v","pas"]');
+  const made = (STG.fm[0] || {}), nMade = STG.fm.length;
+  /* and the chapter no longer offers it */
+  open('v');
+  const after = rows().filter((r) => r.make).length;
+  /* And one from another chapter, so the PART OF SPEECH is tested as well:
+     a chapter that wrote its own name would give both rules `v`. */
+  open('n');
+  const nouns = rows().map((r) => r.lab);
+  const nAt = rows().map((r) => r.a).indexOf('["n","pl"]');
+  if (nAt < 0) throw new Error('the noun chapter offers no plural');
+  document.querySelectorAll('#app .stslot')[nAt].click();
+  const second = STG.fm[1] || {};
+
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  return { before: before, allMake: allMake, pos: made.pos, fm: made.fm,
+           n: nMade, after: after, nouns: nouns,
+           secondPos: second.pos, secondFm: second.fm };
+});
+
+want('a verb chapter offers every form a verb can take', mk.before, 9);
+want('and with nothing said yet, every one of them is a make row',
+     mk.allMake, mk.before);
+want('pressing one writes exactly one rule', mk.n, 1);
+want('with the part of speech of the chapter', mk.pos, 'v');
+want('and the form of the row', mk.fm, 'pas');
+want('which the chapter then stops offering', mk.after, mk.before - 1);
+
+/* The chapters do not offer each other's forms: that is what makes asking
+   unnecessary. A noun is not offered a tense. */
+want('the noun chapter offers what a noun takes', mk.nouns.join(','), 'Plural');
+want('and its row writes a NOUN rule', mk.secondPos, 'n');
+want('of the form that row names', mk.secondFm, 'pl');
+
 await br.close();
 srv.close();
 
@@ -1188,3 +1276,5 @@ console.log('          A place word stands where this language puts it, and the'
 console.log('          two rows that arrange a pair do not move each other.');
 console.log('          What this language HAS is counted off what the engine was');
 console.log('          handed, not off what somebody typed.');
+console.log('          A chapter is where a rule is made, and the row pressed is');
+console.log('          the answer to both what and of what.');
