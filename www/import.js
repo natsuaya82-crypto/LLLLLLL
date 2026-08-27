@@ -475,12 +475,20 @@ function impGetHTML(){
 }
 /* A file rather than a paste. Pasting is fine for forty words and impossible
    for four thousand, which is the size of list this is for -- so this is
-   where the paid plan starts, and the free one still gets the paste. */
+   where the paid plan starts, and the free one still gets the paste.
+
+   `.btn.ghost` and not a box. 「これも角丸だし」OWNER 2026-08-27. It was a
+   filled panel with a hairline round it and a corner on it -- the shape
+   CLAUDE.md's fifth rule is about -- and the comment over `.shfile` in
+   index.html has named this button as the one still wearing it since the
+   sheet's own file control was moved off it. `.impfile` is what lays the
+   native control over the words, and that is all it is for now: a file input
+   cannot be styled and a hidden one cannot be pressed. */
 function impFileHTML(){
   if(!can('file'))
-    return '<button class="impfile"' + DO('go', ["plans"]) + '>'+esc(t('imp.file'))+
+    return '<button class="btn ghost"' + DO('go', ["plans"]) + '>'+esc(t('imp.file'))+
       '<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
-  return '<label class="impfile">'+esc(t('imp.file'))+
+  return '<label class="btn ghost impfile">'+esc(t('imp.file'))+
     '<input type="file" id="f-file" accept=".csv,.tsv,.tab,.txt,.json,.db,.dic,.lex"></label>';
 }
 /* The file input is the one control in the app that cannot go through the
