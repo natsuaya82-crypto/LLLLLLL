@@ -535,7 +535,27 @@ function planPrice(p, free){
   function term(yr){
     var cost=storeCost(p.id, yr) || t(yr? p.yr : p.mo);
     var off=storeOff(p.id) || p.off;
-    var body='<span class="pp">'+esc(cost)+'</span>'+
+    /* Twelve months at the monthly price, struck through, beside what a year
+       actually costs. 「49.99は取り消し線＋17%OFF」OWNER 2026-08-26.
+
+       storeWas() and NOT `t(...) || something`: the two prices either side of
+       this line are compared by whoever reads them, so a typed one is worse
+       here than none at all. It is empty in a browser, in every screenshot,
+       and for a product not yet made -- 何も出さない, OWNER 2026-08-26 -- and
+       the year's own price and its saving are on the screen either way.
+
+       ⚠ `.plterm .pwas` is NOT in the stylesheet yet and is needed: `.pp` is
+       `display:inline` since 「4.99/月は一列にしろ」, so with nothing on this
+       class the two prices touch -- `¥9,000¥6,000`. Measured at 320 and 390,
+       not guessed. The rule is in docs/reports/plan2-2026-08-27.md;
+       www/index.html is not this branch's to write.
+
+       And nothing in the gate but plan-check ever renders this: every other
+       walk runs in a browser, where there is no App Store and storeWas() is
+       empty. The fixture face that fixes that is in the same report. */
+    var was=yr? storeWas(p.id) : '';
+    var body=(was? '<s class="pwas">'+esc(was)+'</s>' : '')+
+      '<span class="pp">'+esc(cost)+'</span>'+
       '<span class="pper">'+esc(t(yr? 'plan.per.yr' : 'plan.per.mo'))+'</span>'+
       ((yr && off)? '<span class="plsave">'+esc(t('plan.off', off))+'</span>' : '');
     return free? (yr? '' : '<span class="plterm no">'+body+'</span>')
