@@ -1387,6 +1387,110 @@ const r = await pg.evaluate(({ s }) => {
     out.overWide = halves()[full] === KB_COLS + 2;
     drag(donor, 0, full, 0);
     out.overUntouched = JSON.stringify(kbLayer().rows.map(say)) === overWas;
+
+    /* ---- a MERGED PAIR is carried as one thing ------------------------
+       「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかある
+       けどその分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
+
+       The carry moved the half under the finger and left the other where it
+       was, so kbVFix() -- which is right, and is the one place that says what
+       a valid pair is -- found a tall key with no hole under it and took the
+       merge apart. Nothing threw. The pair somebody made was simply gone.
+
+       What is asked here is that BOTH halves arrive, in the same column, in
+       rows that are still next to each other; and that a drop the sheet
+       cannot hold leaves them exactly where they were rather than eating
+       one. The second is the one that matters -- a carry that loses a key is
+       the worst thing on this screen. */
+    function pairUp(){
+      fresh();
+      var r, k, made = false, at = null;
+      for (r = 0; r + 1 < kbLayer().rows.length && !made; r++)
+        for (k = 0; k < kbLayer().rows[r].length && !made; k++)
+          if (kbVJoin(r, k)){ made = true; at = { r: r, k: k }; }
+      return at;
+    }
+    /* where the tall key is, and whether its other half is under it */
+    function pairAt(){
+      var rows = kbLayer().rows, ri, ki, a, di;
+      for (ri = 0; ri < rows.length; ri++)
+        for (ki = 0; ki < rows[ri].length; ki++)
+          if (kbTall(rows[ri][ki])){
+            a = kbAtOf(rows[ri], ki);
+            di = kbAtKey(rows[ri + 1] || [], a);
+            return { row: ri, col: a,
+                     whole: di >= 0 && kbShadow(rows[ri + 1][di]) &&
+                            kbU(rows[ri + 1][di].w) === kbU(rows[ri][ki].w) };
+          }
+      return null;
+    }
+    var p0 = pairUp();
+    out.pairMade = !!p0;
+    if (p0){
+      /* room in the two rows it is going to -- the pattern's rows are full */
+      kbLayer().rows[2].pop(); kbLayer().rows[2].pop(); kbLayer().rows[3].pop();
+      saveKb(); render();
+      var pWas = JSON.stringify(kbLayer().rows.map(say));
+      out.pairBefore = pairAt();
+      drag(p0.r, p0.k, 2, 0);
+      out.pairAfter = pairAt();
+      out.pairMoved = !!out.pairAfter && out.pairAfter.row === 2;
+      out.pairWhole = !!out.pairAfter && out.pairAfter.whole;
+      /* ONE step back, not two -- if the halves were two moves it is not one
+         thing, which is the whole of what the owner asked for */
+      kbUndo();
+      out.pairUndoOne = JSON.stringify(kbLayer().rows.map(say)) === pWas;
+
+      /* grabbing the BOTTOM half carries it too */
+      var p1 = pairUp();
+      kbLayer().rows[2].pop(); kbLayer().rows[2].pop(); kbLayer().rows[3].pop();
+      saveKb(); render();
+      var under = kbAtKey(kbLayer().rows[p1.r + 1], kbAtOf(kbLayer().rows[p1.r], p1.k));
+      drag(p1.r + 1, under, 2, 0);
+      var byLow = pairAt();
+      out.pairByLow = !!byLow && byLow.row === 2 && byLow.whole;
+
+      /* the LAST row has no row under it, so nothing lands there -- and the
+         pair stays where it was rather than losing a half.
+
+         ROOM IS MADE IN IT FIRST, and that is the whole of this claim being
+         about anything. The pattern's last row is full, so without this the
+         drop is refused for having no room and the claim passes whether the
+         "no row under it" rule exists or not -- watched: taking that rule out
+         left this green. A check that is right for the wrong reason is the
+         one this file warns about twice. */
+      var p2 = pairUp();
+      var last = kbLayer().rows.length - 1;
+      kbLayer().rows[last].pop(); kbLayer().rows[last].pop();
+      saveKb(); render();
+      var lastWas = JSON.stringify(kbLayer().rows.map(say));
+      drag(p2.r, p2.k, last, 0);
+      out.pairNotLast = JSON.stringify(kbLayer().rows.map(say)) === lastWas &&
+                        !!pairAt() && pairAt().whole;
+
+      /* and a row with no room refuses the same way -- nothing is eaten */
+      var p3 = pairUp();
+      var fullWas = JSON.stringify(kbLayer().rows.map(say));
+      drag(p3.r, p3.k, 2, 0);      /* every row of the pattern is full */
+      out.pairNotFull = JSON.stringify(kbLayer().rows.map(say)) === fullWas &&
+                        !!pairAt() && pairAt().whole;
+
+      /* ---- and the row UNDER the one it lands in is asked too -----------
+         The claim above is about the row the top half goes into, and that one
+         is refused a step earlier, in kbDragTo, by the gate the single carry
+         already had. Taking the second gate out therefore left it green --
+         watched. So this one gives the landing row room and leaves the row
+         BELOW it full: the only thing that can refuse it now is the bottom
+         half having nowhere to go. */
+      var p4 = pairUp();
+      kbLayer().rows[2].pop(); kbLayer().rows[2].pop();   /* room above */
+      saveKb(); render();                                  /* row 3 still full */
+      out.underFull = kbUsed(kbLayer().rows[3]) === KB_COLS;
+      var underWas = JSON.stringify(kbLayer().rows.map(say));
+      drag(p4.r, p4.k, 2, 0);
+      out.pairNotUnder = JSON.stringify(kbLayer().rows.map(say)) === underWas &&
+                         !!pairAt() && pairAt().whole;
+    }
     SET.plan = wasPlan;
   }());
   (function (){
@@ -1707,6 +1811,16 @@ say(r.dragInRow && r.dragInRowWide,
     'while the same row still rearranges its own keys, full though it is');
 say(r.overWide && r.overUntouched,
     'and a row somebody already has that is eleven wide is left exactly as it is');
+say(r.pairMade, 'two keys can be merged into one that is two rows tall');
+say(r.pairMoved, 'and carrying it takes it to the row it was carried to' +
+    (r.pairAfter ? ' (row ' + r.pairAfter.row + ')' : ''));
+say(r.pairWhole, 'with BOTH halves -- same column, the row under it, same width');
+say(r.pairUndoOne, 'and one step back puts the pair where it was, in one');
+say(r.pairByLow, 'grabbing the lower half carries the pair just the same');
+say(r.pairNotLast, 'the last row has no room under it, so the pair stays where it was');
+say(r.pairNotFull, 'and a row with no room refuses it -- with neither half lost');
+say(r.underFull && r.pairNotUnder,
+    'and so does a landing row with room whose NEXT row has none -- both are asked');
 say(r.ltRow, 'the letters offered for a key carry the alphabet\'s own row of ' +
     'buttons -- the order and the filter, not a second pair');
 say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +

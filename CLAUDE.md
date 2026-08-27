@@ -1182,6 +1182,22 @@ in two languages is the thing that drifts. Both ceilings hold on ADDING only:
 it down would be the app deleting somebody's keys. The check puts an
 over-the-ceiling layout in and demands that nothing moves.
 
+**A MERGED PAIR is carried as one thing.** 「長押しの時は動くよ？ iPhoneの
+ホーム画面と同じ ウェジットも2*2とかあるけどその分みんな動くでしょ？それと
+同じ」 OWNER 2026-08-27. A key merged with the one under it is two cells — the
+tall key and the gap holding its room — and the carry moved only the half under
+the finger. `kbVFix()` then did what it is for and took the merge apart:
+nothing threw, the board drew, and the pair somebody made was gone. **That is
+not `kbVFix()`'s to fix** — it is the one place that says what a valid pair is,
+and an exception there would be a hole opened from a side that does not know
+the rule. The carry takes both halves, so by the time `kbVFix()` looks there is
+nothing to undo. Either half may be grabbed; the **top** one is the pair, the
+way `kbVJoin()` keeps the upper key. It needs the row under the one it lands
+in, so nothing lands in the last row, and **both** rows are asked for room —
+the same gate as above, asked twice, not a second rule. A drop the sheet cannot
+hold leaves the pair exactly where it was: "no row is over ten" is also true of
+a carry that ate a half, which is why those are separate claims.
+
 **And CARRYING a key is adding one**, so the ten holds there too.
 「満杯だと追加できないから」 OWNER 2026-08-27. A key can be held and dragged
 into another row, and that road asked nothing about width — a board of ten-key

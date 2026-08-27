@@ -2058,10 +2058,56 @@ function kbKeyAt(el){
   while(el && el.classList && !el.classList.contains('kbk')) el=el.parentNode;
   return (el && el.classList && el.classList.contains('kbk'))? el : null;
 }
+/* ---- a merged pair is carried as ONE thing ------------------------------
+   「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかあるけど
+   その分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
+
+   A key merged with the one under it is two cells -- the tall key and the gap
+   holding its room in the next row -- and the carry moved only the one under
+   the finger. kbVFix() then found a tall key with no hole under it, and did
+   what it is for: it took the merge apart. Nothing threw, the board drew, and
+   the pair somebody made was gone.
+
+   That is not kbVFix()'s to fix. It is the ONE place that says what a valid
+   pair is, and giving it an exception would be a hole opened from a side that
+   does not know the rule. What was wrong is that the carry left half behind.
+   So the carry takes both, and by the time kbVFix() looks, the pair lines up
+   and there is nothing to undo.
+
+   The OTHER half, as the element standing for it. Asked once, while the
+   finger goes down and the layout still says what the page says -- the model
+   does not move again until the finger comes up, and data-r/data-k never
+   change, so the two elements found here stay the two halves for the whole
+   carry. */
+function kbMateEl(el){
+  var g=document.getElementById('kb'), rows=kbLayer().rows, ri, ki, k, at, di, wr;
+  if(!g || !rows) return null;
+  ri=parseInt(el.getAttribute('data-r'), 10);
+  ki=parseInt(el.getAttribute('data-k'), 10);
+  k=kbAt(ri, ki);
+  if(!k || !rows[ri]) return null;
+  at=kbAtOf(rows[ri], ki);
+  if(kbTall(k)) wr=ri+1;
+  else if(kbShadow(k)) wr=ri-1;
+  else return null;
+  if(!rows[wr]) return null;
+  di=kbAtKey(rows[wr], at);
+  if(di<0) return null;
+  return g.querySelector('.kbk[data-r="'+wr+'"][data-k="'+di+'"]');
+}
 function kbDown(e){
-  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e;
+  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e, mate, k;
   if(!b || !p || b.getAttribute('data-r')===null) return;
-  KBD={el:b, x:p.clientX, y:p.clientY, on:false, timer:0};
+  mate=kbMateEl(b);
+  /* The pair is carried by its TOP half whichever half was touched -- the top
+     is the key, and the one under it is the room it takes. kbVJoin() keeps
+     the upper one for the same reason. */
+  if(mate){
+    k=kbAt(parseInt(b.getAttribute('data-r'), 10),
+           parseInt(b.getAttribute('data-k'), 10));
+    if(kbShadow(k)){ var t=b; b=mate; mate=t; }
+  }
+  KBD={el:b, mate:mate||null, x:p.clientX, y:p.clientY, on:false, timer:0};
   KBD.timer=setTimeout(kbLift, 380);
 }
 function kbLift(){
@@ -2123,9 +2169,20 @@ function kbDragTo(e){
      Only across rows. Inside one row nothing about the width changes, and
      asking there would count the key twice and freeze the ordering of every
      full row -- which is most of them. */
-  var carried=kbAt(parseInt(KBD.el.getAttribute('data-r'), 10),
-                   parseInt(KBD.el.getAttribute('data-k'), 10));
-  if(mine!==row && (!carried || !kbRoomFor(kbRowOf(row), carried.w))) return;
+  var carried=kbKeyOfEl(KBD.el);
+  if(!carried) return;
+  if(mine!==row && !kbRoomFor(kbRowOf(row), carried.w)) return;
+  /* A MERGED PAIR needs the row under the one it lands in, and room in both.
+     「その分みんな動くでしょ？」 -- the same gate as above, asked twice, and
+     no new judgement anywhere. Nothing lands in the last row, because there
+     would be no row to hold the bottom half. */
+  if(KBD.mate){
+    if(over===KBD.mate) return;
+    if(!kbPairMove(row, over, carried.w)) return;
+    KBD.x=p.clientX; KBD.y=p.clientY;
+    KBD.el.style.transform='';
+    return;
+  }
   for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
   row.insertBefore(KBD.el, (a>=0 && b>a)? over.nextSibling : over);
   /* A row emptied by the last key leaving it is a row of nothing, which is a
@@ -2133,6 +2190,59 @@ function kbDragTo(e){
   if(mine!==row && !mine.children.length) mine.parentNode.removeChild(mine);
   KBD.x=p.clientX; KBD.y=p.clientY;
   KBD.el.style.transform='';
+}
+/* Both halves, or neither. It answers whether it happened, so a drop the
+   sheet cannot hold leaves the pair exactly where it was rather than half
+   moved -- which is the state kbVFix() would take apart.
+
+   The bottom half comes OUT of the page first, so the columns of the row it
+   is going into are counted without it; everything is put back untouched if
+   any of the three questions says no. */
+function kbPairMove(row, over, w){
+  var tall=KBD.el, mate=KBD.mate,
+      tallRow=tall.parentNode, tallNext=tall.nextSibling,
+      mateRow=mate.parentNode, mateNext=mate.nextSibling,
+      under, kids, a=-1, b=-1, i, at, below, di, ref, kk;
+  function putBack(){
+    tallRow.insertBefore(tall, tallNext);
+    mateRow.insertBefore(mate, mateNext);
+    return false;
+  }
+  mateRow.removeChild(mate);
+  /* the row that will hold the bottom half: the one under where the top half
+     is going. `over` may be in the row the pair already stands in. */
+  under=row.nextSibling;
+  if(!under || under===row){ return putBack(); }
+  if(under!==mateRow && !kbRoomFor(kbRowOf(under), w)) return putBack();
+  kids=row.children;
+  for(i=0;i<kids.length;i++){ if(kids[i]===tall) a=i; if(kids[i]===over) b=i; }
+  if(b<0) return putBack();
+  row.insertBefore(tall, (a>=0 && b>a)? over.nextSibling : over);
+  /* where the top half now starts, and the same column in the row below. A
+     row whose keys do not break there cannot hold the other half -- which is
+     kbVJoin()'s own rule ("same column, same width"), asked before the move
+     rather than repaired after it. */
+  /* asked of each ELEMENT and not of kbRowOf(row)[i] -- that list leaves out
+     anything standing for nothing, so its i stops matching the page's i the
+     moment a row holds an empty cell. Watched: it threw. */
+  at=0;
+  for(i=0;i<row.children.length;i++){
+    if(row.children[i]===tall) break;
+    kk=kbKeyOfEl(row.children[i]);
+    if(kk) at+=kbU(kk.w);
+  }
+  below=kbRowOf(under);
+  di=(at===kbUsed(below))? below.length : kbAtKey(below, at);
+  if(di<0) return putBack();
+  ref=under.children[di] || null;
+  under.insertBefore(mate, ref);
+  /* A row emptied by the last key leaving it is a row of nothing. Both rows
+     the pair came out of are asked, and never the ones it went into. */
+  if(tallRow!==row && tallRow!==under && !tallRow.children.length)
+    tallRow.parentNode.removeChild(tallRow);
+  if(mateRow!==row && mateRow!==under && !mateRow.children.length)
+    mateRow.parentNode.removeChild(mateRow);
+  return true;
 }
 function kbUp(e){
   if(!KBD) return;
@@ -2169,10 +2279,18 @@ function kbWobEnd(){ kbWob=false; kbSel=null; render(); }
    holds while a finger is still down -- and it is what kbReadRows() below has
    always done to every row at once. Said once, because kbDragTo() has to ask
    it of one row before the finger comes up. */
+/* The key one element on the page is standing for, or null. An empty CELL is
+   a .kbk with no data-r at all -- it stands for nothing yet -- so this answers
+   null for it rather than throwing, and every caller skips it. */
+function kbKeyOfEl(el){
+  if(!el || !el.getAttribute) return null;
+  return kbAt(parseInt(el.getAttribute('data-r'), 10),
+              parseInt(el.getAttribute('data-k'), 10));
+}
 function kbRowOf(el){
   var out=[], ks=el.children, j, k;
   for(j=0;j<ks.length;j++){
-    k=kbAt(parseInt(ks[j].getAttribute('data-r'), 10), parseInt(ks[j].getAttribute('data-k'), 10));
+    k=kbKeyOfEl(ks[j]);
     if(k) out.push(k);
   }
   return out;
