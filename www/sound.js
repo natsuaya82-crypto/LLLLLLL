@@ -697,6 +697,12 @@ function vLetters(){
    with a filter on. */
 var LT_SORTS=['own','abc','new'], LT_FILS=['all','drawn','blank','nosnd'];
 var ltSort='own', ltFil='all';
+/* And what was typed to find one. 「絞り込みと検索が欲しいね。」 OWNER
+   2026-08-27, on 「レター多くなったら選ぶのキツくね？」 -- thirty-eight is a
+   glance and three hundred is a search, and the paid alphabet grows.
+
+   Where you are standing, like the other two, so viewReset() drops it. */
+var ltQ='';
 function setLtFil(k){ if(LT_FILS.indexOf(k)>=0){ ltFil=k; openLtView(); render(); } }
 /* `new` is the order they were made in, which is the order they are IN --
    LETTERS is appended to and never re-sorted, so its own index is the answer
@@ -718,6 +724,48 @@ function ltFilList(list){
   if(ltFil==='nosnd') return list.filter(function(l){ return !ltUnits(l).length; });
   return list;
 }
+/* NAME AND SOUND, BOTH. 「名前と音どっちも調べれる。」 OWNER 2026-08-27.
+
+   ltCodes() is already the list of every way one letter can be typed -- what
+   somebody called it and what it reads, in both cases -- and it is what the
+   font is built out of, so a letter answering to something here is a letter
+   that really answers to it. Asking it rather than reading `ab` and `snd`
+   again is the difference between one answer and a fourth copy of it.
+
+   indexOf and not .includes: www/ is ES5. */
+function ltQList(list){
+  if(!ltQ) return list;
+  var q=String(ltQ).toLowerCase();
+  return list.filter(function(l){
+    var c=ltCodes(l), i;
+    for(i=0;i<c.length;i++) if(String(c[i]).toLowerCase().indexOf(q)>=0) return true;
+    return String(ltName(l)||'').toLowerCase().indexOf(q)>=0;
+  });
+}
+/* The three of them, in the order they have to go: narrow, then order, then
+   narrow again by what was typed. Said once because two screens show this
+   list -- the alphabet's own page and the keyboard's "what goes on this key"
+   -- and a list shown twice with the tools on one of them is what this was.  */
+function ltPickList(list){ return ltQList(ltFilList(ltSortList(list))); }
+/* ---- typing in the box repaints the LIST, not the page --------------------
+   render() would rebuild the field being typed into, so the caret would be
+   gone after one letter. Every search in this app repaints its own list for
+   that reason -- wordsPaint(), findPaint(), ipaPaint() -- and this is the
+   fourth, not a new idea.
+
+   Which list is on the page is the page's to say: both screens put their
+   cells in #lt-list and leave the function that rebuilds them here. */
+var ltReList=null;
+function ltPaint(){
+  var e=document.getElementById('lt-list');
+  if(!e || !ltReList) return;
+  e.innerHTML=ltReList();
+  /* the alphabet's cells are dragged to reorder them, and the ones just drawn
+     are new elements -- the same call render() makes, and it asks for #ltgrid
+     itself, which a narrowed list does not have */
+  ltDragMount();
+}
+function ltSetQ(v){ ltQ=String(v||''); ltPaint(); }
 /* One row, and it opens a screen. It was two rows of round chips -- the shape
    CLAUDE.md forbids by name, written by the one thing that had read it.
    Choosing is a screen and changing is the screen you arrive at. */
@@ -725,7 +773,16 @@ function ltFilList(list){
    a different list: which of them, and in what order. One shape, both places.
    「並び替えは単語画面と同じようにして」 */
 function ltViewRow(){
-  return '<div class="wfilrow">'+
+  /* The box is ALWAYS here, and that is a decision rather than an oversight:
+     every search in this app is (the dictionary, the find screen, the IPA
+     table), and there is no box anywhere that appears once a list passes some
+     length. Making this the first one would be a rule nobody else follows.
+
+     No placeholder and no clear button, which is ipaPickHTML() four hundred
+     lines up -- the same .search, on the same chapter's other list. */
+  return '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
+      '<input id="lt-q" value="'+esc(ltQ)+'"' + IN('ltSetQ') + '></div>'+
+    '<div class="wfilrow">'+
     '<button class="wfil"' + DO('openLtView') + '>'+
       '<span class="wfilv">'+esc(t('lt.fil.'+ltFil))+'</span>'+ICON_GO+'</button>'+
     '<button class="wsrt"' + DO('nextLtSort') + '>'+ICON_SORT+
@@ -755,12 +812,29 @@ function vLtset(){
   var all=ltOfKind(k), loose=ltLoose();
   /* A digit's place is its value and a mark's is its own; only the alphabet
      is a thing somebody arranges, so only the alphabet is asked about. */
-  var pick=(k==='alpha'), list=pick? ltFilList(ltSortList(all)) : all;
-  /* Dragging writes the order down, so it is offered only while the order
-     shown IS that order: dropping a letter into place under a different sort
-     would write a number nothing on screen agrees with. ltDragMount looks for
-     this id and finds nothing under any other sort. */
-  var gid=(pick && ltSort==='own' && ltFil==='all')? 'ltgrid' : 'ltgrid-ro';
+  var pick=(k==='alpha');
+  /* The cells, on their own, so typing in the box can put them back without
+     rebuilding the field being typed into. ltPaint() calls this. */
+  function cells(){
+    var list=pick? ltPickList(all) : all;
+    /* Dragging writes the order down, so it is offered only while the order
+       shown IS that order: dropping a letter into place under a different
+       sort, a filter or a SEARCH would write a number nothing on screen
+       agrees with. ltDragMount looks for this id and finds nothing while the
+       list is narrowed by any of the three. */
+    var gid=(pick && ltSort==='own' && ltFil==='all' && !ltQ)? 'ltgrid' : 'ltgrid-ro';
+    /* The letters, and after them a cell for every sound of the language that
+       no letter says yet. One page for the pair, rather than a chapter for
+       each end of it. Only on the alphabet, and only where nothing is
+       narrowing the page to something else. */
+    var free=(pick && ltFil==='all' && !ltQ)? sndLoose() : [];
+    if(!list.length && !free.length) return '<div class="note">'+t('lt.none')+'</div>';
+    return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
+      list.map(function(l){ return ltCell(l, ''); }).join('')+
+      free.map(function(sym){ return sndCell(sym, ltWob && can('snd')); }).join('')+
+      '</div>';
+  }
+  ltReList=cells;
   return '<div class="view">'+
     navTop('',
            ltWob
@@ -774,18 +848,7 @@ function vLtset(){
        neither, and rather than on the counting stage, where it would be a
        second place saying the same thing about the same letters. */
     (k==='num'? numBaseRows() : '')+
-    /* The letters, and after them a cell for every sound of the language that
-       no letter says yet. One page for the pair, rather than a chapter for
-       each end of it. Only on the alphabet, and only where the filter is not
-       narrowing the page to something else. */
-    (function(){
-      var free=(pick && ltFil==='all')? sndLoose() : [];
-      if(!list.length && !free.length) return '<div class="note">'+t('lt.none')+'</div>';
-      return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
-        list.map(function(l){ return ltCell(l, ''); }).join('')+
-        free.map(function(sym){ return sndCell(sym, ltWob && can('snd')); }).join('')+
-        '</div>';
-    }())+
+    '<div id="lt-list">'+cells()+'</div>'+
     ((k==='alpha' && loose.length)
       ? '<div class="mini" style="margin-top:10px">'+tn('lt.loose', loose.length)+'</div>' : '')+
 

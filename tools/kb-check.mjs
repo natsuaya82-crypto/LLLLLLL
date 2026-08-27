@@ -194,7 +194,7 @@ const r = await pg.evaluate(({ s }) => {
      somebody adding a row by hand -- the patterns were never measured at all.
      105 letters came out a seven-row flick and a twelve-row ABC; 300 came out
      twenty and thirty-one. Nothing throws: the board is drawn, saved, handed
-     over, and the extension squeezes it into 0.55 of the screen with every
+     over, and the extension squeezes it into 0.5 of the screen with every
      row shorter.
 
      So the alphabet is REPLACED, at five sizes, and the patterns are built
@@ -1281,6 +1281,338 @@ const r = await pg.evaluate(({ s }) => {
       Math.abs((mnx + mxx) / 2 - W / 2),
       Math.abs((mny + mxy) / 2 - H / 2), W]);
   });
+
+  /* ---- the letters offered for a key are the ALPHABET'S OWN list --------
+     「絞り込みと検索が欲しいね。」 OWNER 2026-08-27, on 「レター多くなったら
+     選ぶのキツくね？」.
+
+     kbLtGrid() laid every letter out, always. It draws the PAID alphabet --
+     free has no editor to reach it from -- which is the one that grows to
+     three hundred.
+
+     What is held is that it is the alphabet chapter's list and not a second
+     one: the same ltSortList/ltFilList vLtset builds with, and the same row
+     of buttons driving them. Nothing here can throw. A grid that quietly
+     stopped asking would draw perfectly and be the whole alphabet again, and
+     the only way to see it is to set the filter and count what came back --
+     so it is counted, per filter, and the three have to add up. */
+  /* ---- a key CARRIED into a full row does not go in ---------------------
+     「満杯だと追加できないから」 OWNER 2026-08-27.
+
+     A key can be held and carried to another row. That road asked nothing
+     about width, so it made a row of ELEVEN on a board of tens -- and rule 19
+     is what forbids eleven ("ten keys are 32 each and eleven would be 29").
+     kbCellAdd(), the same act done by pressing an empty cell, has always
+     asked kbRoomIn(); this was the one road not through the gate.
+
+     Nothing about it throws, and press cannot reach it: the carry is
+     touchstart/touchmove/touchend with no [data-do] anywhere on it. So the
+     real handlers are called here the way a finger calls them, with
+     elementFromPoint standing in for the finger for the length of one
+     question -- what is underneath -- and nothing else replaced. */
+  function drag(fromR, fromK, toR, toK){
+    function el(ri, ki){
+      return document.querySelector('#kb [data-r="' + ri + '"][data-k="' + ki + '"]');
+    }
+    var src = el(fromR, fromK), dst = el(toR, toK), real;
+    if (!src || !dst) return false;
+    kbDown({ target: src, touches: [{ clientX: 100, clientY: 100 }] });
+    kbLift();                                   /* the 380ms hold, fired */
+    real = document.elementFromPoint;
+    document.elementFromPoint = function (){ return dst; };
+    kbDragTo({ touches: [{ clientX: 120, clientY: 140 }], preventDefault: function (){} });
+    document.elementFromPoint = real;
+    kbUp({ preventDefault: function (){} });
+    return true;
+  }
+  (function (){
+    /* The block above this one leaves the plan on FREE -- it is about a
+       letter's ink, which free draws too. There is no editor on free (board 0
+       is the QWERTY itself and kbEdit() answers null), so a carry cannot
+       happen there at all and every claim below would pass by not running. */
+    var wasPlan = SET.plan;
+    SET.plan = 'pro';
+    fresh();
+    /* in HALF COLUMNS -- kbUsed() is the app's own, and widths() above counts
+       whole keys, which is a different number and was the first thing this
+       got wrong */
+    function halves(){ return kbLayer().rows.map(kbUsed); }
+    var was = rows(), wasW = halves(), full = -1, donor = -1, i;
+    for (i = 0; i < wasW.length; i++) if (wasW[i] === KB_COLS && full < 0) full = i;
+    for (i = 0; i < wasW.length; i++) if (i !== full && wasW[i] > 2 && donor < 0) donor = i;
+    out.dragFull = full; out.dragDonor = donor;
+    out.dragRan = drag(donor, 0, full, 0);
+    out.dragWidths = halves();
+    out.dragNoneOver = out.dragWidths.every(function (w){ return w <= KB_COLS; });
+    /* and the key is BACK, not gone -- a refusal that ate it would leave
+       every row inside ten as well, which is the whole reason this is two
+       claims and not one */
+    out.dragPutBack = JSON.stringify(rows()) === JSON.stringify(was);
+    /* a refused carry never reached saveKb(), so there is no step to take
+       back -- otherwise the undo stack fills with moves that did nothing */
+    out.dragNoStep = !(KBU && KBU.u && KBU.u.length);
+
+    /* ---- and the same row's own order still moves, full or not ----------
+       The cheap way to pass everything above is to refuse every carry. This
+       is what says the gate is about WIDTH: inside one row nothing about the
+       width changes, so a full row still rearranges. */
+    fresh();
+    /* One key is MARKED and then found again by where it ended up. Comparing
+       the row as a string cannot see this: a fresh qwerty's keys stringify
+       identically ("lt::1" ten times), so a reorder that worked and one that
+       did nothing read the same, and the first version of this claim was
+       green either way. */
+    kbLayer().rows[full][0].v = '†mark';
+    saveKb(); render();
+    function markAt(){
+      var row = kbLayer().rows[full], j;
+      for (j = 0; j < row.length; j++) if (row[j].v === '†mark') return j;
+      return -1;
+    }
+    out.dragMarkWas = markAt();
+    drag(full, 0, full, 3);
+    out.dragMarkNow = markAt();
+    out.dragInRow = out.dragMarkWas === 0 && out.dragMarkNow > 0;
+    out.dragInRowWide = halves()[full] === KB_COLS;
+
+    /* ---- a board already over the ceiling is not touched ----------------
+       Rule 19 holds both ceilings on ADDING only, and a carry is an add. A
+       row of eleven that somebody already has stays a row of eleven -- the
+       carry may not start trimming it, and may not add to it either. */
+    fresh();
+    var lay = kbEdit(), over = lay.lay[0].rows;
+    over[full] = over[full].concat([kbKey('lt', '')]);   /* eleven wide */
+    saveKb(); render();
+    var overWas = JSON.stringify(kbLayer().rows.map(say));
+    out.overWide = halves()[full] === KB_COLS + 2;
+    drag(donor, 0, full, 0);
+    out.overUntouched = JSON.stringify(kbLayer().rows.map(say)) === overWas;
+
+    /* ---- a MERGED PAIR is carried as one thing ------------------------
+       「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかある
+       けどその分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
+
+       The carry moved the half under the finger and left the other where it
+       was, so kbVFix() -- which is right, and is the one place that says what
+       a valid pair is -- found a tall key with no hole under it and took the
+       merge apart. Nothing threw. The pair somebody made was simply gone.
+
+       What is asked here is that BOTH halves arrive, in the same column, in
+       rows that are still next to each other; and that a drop the sheet
+       cannot hold leaves them exactly where they were rather than eating
+       one. The second is the one that matters -- a carry that loses a key is
+       the worst thing on this screen. */
+    function pairUp(){
+      fresh();
+      var r, k, made = false, at = null;
+      for (r = 0; r + 1 < kbLayer().rows.length && !made; r++)
+        for (k = 0; k < kbLayer().rows[r].length && !made; k++)
+          if (kbVJoin(r, k)){ made = true; at = { r: r, k: k }; }
+      return at;
+    }
+    /* where the tall key is, and whether its other half is under it */
+    function pairAt(){
+      var rows = kbLayer().rows, ri, ki, a, di;
+      for (ri = 0; ri < rows.length; ri++)
+        for (ki = 0; ki < rows[ri].length; ki++)
+          if (kbTall(rows[ri][ki])){
+            a = kbAtOf(rows[ri], ki);
+            di = kbAtKey(rows[ri + 1] || [], a);
+            return { row: ri, col: a,
+                     whole: di >= 0 && kbShadow(rows[ri + 1][di]) &&
+                            kbU(rows[ri + 1][di].w) === kbU(rows[ri][ki].w) };
+          }
+      return null;
+    }
+    var p0 = pairUp();
+    out.pairMade = !!p0;
+    if (p0){
+      /* room in the two rows it is going to -- the pattern's rows are full */
+      kbLayer().rows[2].pop(); kbLayer().rows[2].pop(); kbLayer().rows[3].pop();
+      saveKb(); render();
+      var pWas = JSON.stringify(kbLayer().rows.map(say));
+      out.pairBefore = pairAt();
+      drag(p0.r, p0.k, 2, 0);
+      out.pairAfter = pairAt();
+      out.pairMoved = !!out.pairAfter && out.pairAfter.row === 2;
+      out.pairWhole = !!out.pairAfter && out.pairAfter.whole;
+      /* ONE step back, not two -- if the halves were two moves it is not one
+         thing, which is the whole of what the owner asked for */
+      kbUndo();
+      out.pairUndoOne = JSON.stringify(kbLayer().rows.map(say)) === pWas;
+
+      /* grabbing the BOTTOM half carries it too */
+      var p1 = pairUp();
+      kbLayer().rows[2].pop(); kbLayer().rows[2].pop(); kbLayer().rows[3].pop();
+      saveKb(); render();
+      var under = kbAtKey(kbLayer().rows[p1.r + 1], kbAtOf(kbLayer().rows[p1.r], p1.k));
+      drag(p1.r + 1, under, 2, 0);
+      var byLow = pairAt();
+      out.pairByLow = !!byLow && byLow.row === 2 && byLow.whole;
+
+      /* the LAST row has no row under it, so nothing lands there -- and the
+         pair stays where it was rather than losing a half.
+
+         ROOM IS MADE IN IT FIRST, and that is the whole of this claim being
+         about anything. The pattern's last row is full, so without this the
+         drop is refused for having no room and the claim passes whether the
+         "no row under it" rule exists or not -- watched: taking that rule out
+         left this green. A check that is right for the wrong reason is the
+         one this file warns about twice. */
+      var p2 = pairUp();
+      var last = kbLayer().rows.length - 1;
+      kbLayer().rows[last].pop(); kbLayer().rows[last].pop();
+      saveKb(); render();
+      var lastWas = JSON.stringify(kbLayer().rows.map(say));
+      drag(p2.r, p2.k, last, 0);
+      out.pairNotLast = JSON.stringify(kbLayer().rows.map(say)) === lastWas &&
+                        !!pairAt() && pairAt().whole;
+
+      /* and a row with no room refuses the same way -- nothing is eaten */
+      var p3 = pairUp();
+      var fullWas = JSON.stringify(kbLayer().rows.map(say));
+      drag(p3.r, p3.k, 2, 0);      /* every row of the pattern is full */
+      out.pairNotFull = JSON.stringify(kbLayer().rows.map(say)) === fullWas &&
+                        !!pairAt() && pairAt().whole;
+
+      /* ---- and the row UNDER the one it lands in is asked too -----------
+         The claim above is about the row the top half goes into, and that one
+         is refused a step earlier, in kbDragTo, by the gate the single carry
+         already had. Taking the second gate out therefore left it green --
+         watched. So this one gives the landing row room and leaves the row
+         BELOW it full: the only thing that can refuse it now is the bottom
+         half having nowhere to go. */
+      var p4 = pairUp();
+      kbLayer().rows[2].pop(); kbLayer().rows[2].pop();   /* room above */
+      saveKb(); render();                                  /* row 3 still full */
+      out.underFull = kbUsed(kbLayer().rows[3]) === KB_COLS;
+      var underWas = JSON.stringify(kbLayer().rows.map(say));
+      drag(p4.r, p4.k, 2, 0);
+      out.pairNotUnder = JSON.stringify(kbLayer().rows.map(say)) === underWas &&
+                         !!pairAt() && pairAt().whole;
+    }
+    SET.plan = wasPlan;
+  }());
+  (function (){
+    fresh();
+    var wasS = ltSort, wasF = ltFil;
+    function cells(h){ return (String(h).match(/class="ltc"/g) || []).length; }
+    function names(h){
+      var m = String(h).match(/class="ltcn">([^<]*)</g) || [];
+      return m.map(function (x){ return x.replace(/.*>/, ''); });
+    }
+    ltSort = 'own'; ltFil = 'all';
+    var all = kbLtGrid(0, 0, -1);
+    out.ltRow = /class="wfilrow"/.test(all);
+    out.ltAll = cells(all);
+    ltFil = 'drawn';  out.ltDrawn = cells(kbLtGrid(0, 0, -1));
+    ltFil = 'blank';  out.ltBlank = cells(kbLtGrid(0, 0, -1));
+    /* drawn and blank are the two halves of the same alphabet, so they add
+       back up to it -- a count on its own would pass a grid that answered
+       the same list to every filter as long as it was shorter. */
+    out.ltSplits = (out.ltDrawn + out.ltBlank === out.ltAll) &&
+                   out.ltDrawn > 0 && out.ltBlank > 0;
+    ltFil = 'all'; ltSort = 'own';
+    var own = names(kbLtGrid(0, 0, -1));
+    /* `new` and not `abc`, and the reason is worth keeping: this fixture's
+       alphabet IS a to z, so sorting it alphabetically is the order it was
+       already in and a claim built on `abc` passes whether the sort is asked
+       or not. It was written that way first and went red here, which is the
+       check catching its own proxy. `new` is the order they were made in and
+       is genuinely a different order on this alphabet. */
+    ltSort = 'new';
+    var other = names(kbLtGrid(0, 0, -1));
+    out.ltSame = own.length === other.length;
+    /* the ORDER moved and not the membership: the same letters, re-ordered */
+    out.ltSorted = own.join(' ') !== other.join(' ') &&
+      own.slice().sort().join(' ') === other.slice().sort().join(' ');
+    /* and the sheet that only holds the alphabet asks the same thing */
+    ltSort = 'own'; ltFil = 'blank';
+    kbSlotFor = { r: 0, k: 0, d: -1 };
+    out.ltSheet = cells(kbLtHTML()) === out.ltBlank;
+    kbSlotFor = null;
+    ltSort = wasS; ltFil = wasF;
+  }());
+
+  /* ---- and it is searched, by NAME and by SOUND ------------------------
+     「名前と音どっちも調べれる。」 OWNER 2026-08-27.
+
+     A search that reads only the name looks identical on this fixture for
+     nearly every letter -- an alphabet of a to z is named after what it says.
+     So the letter this asks about is one whose SOUND IS IN NO LETTER'S NAME:
+     `g` reads `ɡ` (U+0261, the script g), which no name contains, because
+     every name here is ASCII. A name-only search answers nothing for it.
+     That one letter is the whole claim; the rest is arithmetic around it. */
+  (function (){
+    var wasQ = ltQ, wasS = ltSort, wasF = ltFil, i, j, u, l, odd = null, oddU = '';
+    ltQ = ''; ltSort = 'own'; ltFil = 'all';
+    var alpha = LETTERS.filter(function (x){ return ltKindOf(x) === 'alpha'; });
+    for (i = 0; i < alpha.length && !odd; i++){
+      l = alpha[i];
+      for (j = 0; j < ltUnits(l).length; j++){
+        u = String(ltUnits(l)[j]);
+        /* not in ITS name, and in nobody else's either */
+        if (!alpha.some(function (x){
+              return String(ltName(x) || '').toLowerCase().indexOf(u.toLowerCase()) >= 0;
+            })){ odd = l; oddU = u; break; }
+      }
+    }
+    out.qOdd = odd ? { name: ltName(odd), snd: oddU } : null;
+    function cells(h){ return (String(h).match(/class="ltc"/g) || []).length; }
+    out.qAll = cells(kbLtGrid(0, 0, -1));
+    out.qBox = /id="lt-q"/.test(kbLtGrid(0, 0, -1));
+    /* by NAME */
+    ltQ = String(ltName(alpha[0]) || '');
+    out.qByName = cells(kbLtGrid(0, 0, -1));
+    /* by SOUND -- the letter it belongs to comes back, and it could not have
+       come back by name */
+    if (odd){
+      ltQ = oddU;
+      out.qBySound = cells(kbLtGrid(0, 0, -1));
+      /* the trailing `<` of the match goes too -- keeping it made every name
+         miss, and the claim went red on the check rather than on the app */
+      out.qSoundNames = (String(kbLtGrid(0, 0, -1)).match(/class="ltcn">([^<]*)</g) || [])
+        .map(function (x){ return x.replace(/.*>/, '').replace(/<$/, ''); });
+      out.qSoundIsIt = out.qSoundNames.indexOf(String(ltName(odd))) >= 0;
+    }
+    /* nothing answers to it -> the empty state, not the whole alphabet */
+    ltQ = 'zzqqxx';
+    out.qNone = cells(kbLtGrid(0, 0, -1));
+    /* and clearing gives all of them back */
+    ltQ = '';
+    out.qBack = cells(kbLtGrid(0, 0, -1)) === out.qAll;
+
+    /* ---- the FIELD survives being typed into ---------------------------
+       This is the whole reason ltPaint() exists rather than render(): the box
+       is inside the screen, so rebuilding the screen destroys the element
+       being typed into and the caret goes with it after one letter. Measured
+       on the real page: focus the box, type, and ask whether the focused
+       element is still there. */
+    window.route = 'ltset'; NAV = [{ r: 'ltset', a: 'alpha' }];
+    render();
+    var box = document.getElementById('lt-q');
+    out.qFieldThere = !!box;
+    if (box){
+      box.focus();
+      var had = document.activeElement === box;
+      /* how many the page ARRIVED with, before a key is pressed */
+      out.qOnArrival = document.querySelectorAll('#lt-list .ltc').length;
+      ltSetQ('a');
+      out.qFieldKept = had && document.activeElement === document.getElementById('lt-q');
+      /* and the list under it really was repainted -- fewer cells than the
+         page arrived with, and not zero */
+      out.qPaintedTo = document.querySelectorAll('#lt-list .ltc').length;
+      /* ---- and a narrowed list may not be DRAGGED into a new order ------
+         Dropping a letter writes the order down. Under a search the page is
+         showing some of the alphabet, so a drop would write a number nothing
+         on screen agrees with -- the same reason the sort and the filter turn
+         it off. ltDragMount asks for #ltgrid and a narrowed list is not it. */
+      out.qNoDrag = !document.querySelector('#lt-list #ltgrid');
+      ltSetQ('');
+      out.qDragBack = !!document.querySelector('#lt-list #ltgrid');
+    }
+    ltQ = wasQ; ltSort = wasS; ltFil = wasF;
+  }());
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -1469,6 +1801,49 @@ say(r.colSame,
     'and both boards carry the same ten columns: ' + r.sizes.qwerty.hdr +
     ' / ' + r.sizes.flick.hdr + ' -- a is a is a, whatever stands on it');
 say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.dragRan, 'a key can be held and carried into another row');
+say(r.dragNoneOver,
+    'and a full row does not take it: every row is still ten or fewer (' +
+    r.dragWidths.map(function (w){ return w / 2; }).join(', ') + ' keys)');
+say(r.dragPutBack, 'and the key is back where it was rather than gone');
+say(r.dragNoStep, 'and a carry that was refused left no step to take back');
+say(r.dragInRow && r.dragInRowWide,
+    'while the same row still rearranges its own keys, full though it is');
+say(r.overWide && r.overUntouched,
+    'and a row somebody already has that is eleven wide is left exactly as it is');
+say(r.pairMade, 'two keys can be merged into one that is two rows tall');
+say(r.pairMoved, 'and carrying it takes it to the row it was carried to' +
+    (r.pairAfter ? ' (row ' + r.pairAfter.row + ')' : ''));
+say(r.pairWhole, 'with BOTH halves -- same column, the row under it, same width');
+say(r.pairUndoOne, 'and one step back puts the pair where it was, in one');
+say(r.pairByLow, 'grabbing the lower half carries the pair just the same');
+say(r.pairNotLast, 'the last row has no room under it, so the pair stays where it was');
+say(r.pairNotFull, 'and a row with no room refuses it -- with neither half lost');
+say(r.underFull && r.pairNotUnder,
+    'and so does a landing row with room whose NEXT row has none -- both are asked');
+say(r.ltRow, 'the letters offered for a key carry the alphabet\'s own row of ' +
+    'buttons -- the order and the filter, not a second pair');
+say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +
+    r.ltDrawn + ' drawn and ' + r.ltBlank + ' not, which is all of them twice over');
+say(r.ltSame && r.ltSorted,
+    'and the order moves the same letters rather than a different set');
+say(r.ltSheet, 'and the sheet that holds only the alphabet answers the same list');
+say(r.qBox, 'the letters are searched too, from a box that is always on the screen');
+say(r.qByName > 0 && r.qByName < r.qAll,
+    'a name narrows them: ' + r.qAll + ' letters to ' + r.qByName);
+say(!!r.qOdd, 'the alphabet has a letter whose sound is in nobody\'s name' +
+    (r.qOdd ? ' -- ' + r.qOdd.name + ' reads ' + r.qOdd.snd : ''));
+say(!!r.qOdd && r.qBySound > 0 && r.qSoundIsIt,
+    'and searching that SOUND finds it (' + (r.qOdd ? r.qOdd.snd : '?') + ' -> ' +
+    (r.qSoundNames || []).join(' ') + ') -- which a name-only search cannot');
+say(r.qNone === 0, 'a search nothing answers to shows none of them, not all of them');
+say(r.qBack, 'and clearing it gives every letter back');
+say(r.qFieldThere && r.qFieldKept,
+    'the box survives being typed into -- the list repaints, the field does not');
+say(r.qPaintedTo > 0 && r.qPaintedTo < r.qOnArrival,
+    'and the list under it really did narrow, ' + r.qOnArrival + ' -> ' + r.qPaintedTo);
+say(r.qNoDrag && r.qDragBack,
+    'a narrowed list cannot be dragged into a new order, and can be again once cleared');
 say(r.cutKeyStill, 'nor the size of the keys that are left (' + r.cutKeyWas +
     'px -> ' + r.cutKeyNow + 'px)');
 say(r.cutHdrStill, 'nor which columns there are (' + r.cutHdrNow + ')');

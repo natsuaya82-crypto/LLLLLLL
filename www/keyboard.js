@@ -216,7 +216,7 @@ function kbBar(del){
    patterns, and a pattern is built out of however many letters the language
    has: 105 letters came out seven rows on a flick and twelve on an ABC, 300
    came out twenty and thirty-one. Nothing throws. The board is drawn, saved,
-   handed over, and the extension SQUEEZES it into 0.55 of the screen -- every
+   handed over, and the extension SQUEEZES it into 0.5 of the screen -- every
    row shorter. Which is the failure rule 19 was rewritten around on 2026-08-26
    「八行入っても小さかったら打ちにくいだけだぞ？」, arriving by another road.
 
@@ -1054,7 +1054,7 @@ function kbCol(i){
    enforcing it. The number of rows is the consequence, so it is divided out
    of the cap rather than said again:
 
-     KB_MOST  the most of the screen a keyboard may take       0.55
+     KB_MOST  the most of the screen a keyboard may take        0.5
      KB_ROWW  one row, as a share of the phone's short side   0.1385
      KB_BARS  the two edges, and the candidate bar above     8 + 44
 
@@ -1080,7 +1080,7 @@ function kbCol(i){
    left exactly as it is and simply cannot be added to. Nothing is ever cut
    down to fit: that would be the app deleting somebody's keys. */
 var KB_COLS=20;                 /* columns are half keys -- kbU() below */
-var KB_MOST=0.55, KB_ROWW=0.1385, KB_BARS=8+44;
+var KB_MOST=0.5, KB_ROWW=0.1385, KB_BARS=8+44;
 /* A REFERENCE screen, and not the phone in your hand. That was the first
    version of this and it was wrong in the way the ceiling itself was wrong.
    「八行入っても小さかったら打ちにくいだけだぞ？」 OWNER, 2026-08-26.
@@ -1122,7 +1122,19 @@ var KB_MOST=0.55, KB_ROWW=0.1385, KB_BARS=8+44;
    is divided out of too, and the answer holds everywhere above it.
 
    FIVE. Which is the free QWERTY's own row count (digits, q, a, z, the bar)
-   and what a real phone keyboard is: four rows, five with a number row. */
+   and what a real phone keyboard is: four rows, five with a number row.
+
+   HALF IS THE LIMIT, and five did not move when it became half.
+   「0.5が限界」 OWNER 2026-08-27. KB_MOST was 0.55 and is 0.5, and the number
+   of rows is DIVIDED out of it, so the obvious reading is that fewer fit.
+   Measured on the phone it is divided on: (568 x 0.55 - 52) / 44.32 = 5.875,
+   and (568 x 0.5 - 52) / 44.32 = 5.235. Both floor to five. What the ceiling
+   lost is the SLACK -- 0.875 of a row became 0.235, which on an SE 1 is 38pt
+   of room becoming 10pt -- and a sixth row was never within reach of either.
+
+   So no board anybody has can stop fitting because of this, and none needs
+   to be cut. The three numbers still come out of the Swift; only this one
+   moved. */
 var KB_REF_W=320, KB_REF_H=568;
 function kbRowH(w){ return (w||KB_REF_W)*KB_ROWW; }
 function kbRowsMax(){
@@ -1138,9 +1150,17 @@ function kbUsed(row){
   for(i=0;i<row.length;i++) n+=kbU(row[i].w);
   return n;
 }
-function kbRoomIn(ri, w){
-  var row=kbLayer().rows[ri];
+/* Is there room in THIS row for a key of that width -- the rule itself, given
+   a row rather than a place to find one. Split out because the second road
+   into it has no row NUMBER to offer: a key being carried is somewhere in the
+   page and nowhere in the layout until the finger comes up, so kbDragTo() can
+   only hand over the row it built out of what is on screen. Two roads, one
+   sentence about ten columns. */
+function kbRoomFor(row, w){
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
+}
+function kbRoomIn(ri, w){
+  return kbRoomFor(kbLayer().rows[ri], w);
 }
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
@@ -2038,10 +2058,56 @@ function kbKeyAt(el){
   while(el && el.classList && !el.classList.contains('kbk')) el=el.parentNode;
   return (el && el.classList && el.classList.contains('kbk'))? el : null;
 }
+/* ---- a merged pair is carried as ONE thing ------------------------------
+   「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかあるけど
+   その分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
+
+   A key merged with the one under it is two cells -- the tall key and the gap
+   holding its room in the next row -- and the carry moved only the one under
+   the finger. kbVFix() then found a tall key with no hole under it, and did
+   what it is for: it took the merge apart. Nothing threw, the board drew, and
+   the pair somebody made was gone.
+
+   That is not kbVFix()'s to fix. It is the ONE place that says what a valid
+   pair is, and giving it an exception would be a hole opened from a side that
+   does not know the rule. What was wrong is that the carry left half behind.
+   So the carry takes both, and by the time kbVFix() looks, the pair lines up
+   and there is nothing to undo.
+
+   The OTHER half, as the element standing for it. Asked once, while the
+   finger goes down and the layout still says what the page says -- the model
+   does not move again until the finger comes up, and data-r/data-k never
+   change, so the two elements found here stay the two halves for the whole
+   carry. */
+function kbMateEl(el){
+  var g=document.getElementById('kb'), rows=kbLayer().rows, ri, ki, k, at, di, wr;
+  if(!g || !rows) return null;
+  ri=parseInt(el.getAttribute('data-r'), 10);
+  ki=parseInt(el.getAttribute('data-k'), 10);
+  k=kbAt(ri, ki);
+  if(!k || !rows[ri]) return null;
+  at=kbAtOf(rows[ri], ki);
+  if(kbTall(k)) wr=ri+1;
+  else if(kbShadow(k)) wr=ri-1;
+  else return null;
+  if(!rows[wr]) return null;
+  di=kbAtKey(rows[wr], at);
+  if(di<0) return null;
+  return g.querySelector('.kbk[data-r="'+wr+'"][data-k="'+di+'"]');
+}
 function kbDown(e){
-  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e;
+  var b=kbKeyAt(e.target), p=e.touches? e.touches[0] : e, mate, k;
   if(!b || !p || b.getAttribute('data-r')===null) return;
-  KBD={el:b, x:p.clientX, y:p.clientY, on:false, timer:0};
+  mate=kbMateEl(b);
+  /* The pair is carried by its TOP half whichever half was touched -- the top
+     is the key, and the one under it is the room it takes. kbVJoin() keeps
+     the upper one for the same reason. */
+  if(mate){
+    k=kbAt(parseInt(b.getAttribute('data-r'), 10),
+           parseInt(b.getAttribute('data-k'), 10));
+    if(kbShadow(k)){ var t=b; b=mate; mate=t; }
+  }
+  KBD={el:b, mate:mate||null, x:p.clientX, y:p.clientY, on:false, timer:0};
   KBD.timer=setTimeout(kbLift, 380);
 }
 function kbLift(){
@@ -2086,6 +2152,37 @@ function kbDragTo(e){
      what moving across rows means and is the half a one-dimensional grid
      never has to answer. */
   var row=over.parentNode, mine=KBD.el.parentNode, kids=row.children, a=-1, b=-1, i;
+  /* AND THE ROW HAS TO HAVE ROOM. 「満杯だと追加できないから」 OWNER 2026-08-27.
+     This asked nothing, so a key carried into a row that was already ten wide
+     went in beside the others and made it eleven -- measured, on a qwerty
+     board: [20,20,20,20,20] half columns became [22,18,20,20,20]. Rule 19 is
+     what forbids it ("TEN ACROSS is the phone's number... eleven would be
+     29"), and nothing throws: the board draws, saves, and reaches the phone
+     as eleven keys each a little narrower.
+
+     The gate was already here and this was the one road not through it --
+     kbCellAdd(), which is the same act done with a press instead of a finger,
+     has always asked kbRoomIn(). So this asks the same sentence rather than a
+     new one, and somebody carrying a key into a full row now finds what
+     somebody pressing an empty cell in one has always found.
+
+     Only across rows. Inside one row nothing about the width changes, and
+     asking there would count the key twice and freeze the ordering of every
+     full row -- which is most of them. */
+  var carried=kbKeyOfEl(KBD.el);
+  if(!carried) return;
+  if(mine!==row && !kbRoomFor(kbRowOf(row), carried.w)) return;
+  /* A MERGED PAIR needs the row under the one it lands in, and room in both.
+     「その分みんな動くでしょ？」 -- the same gate as above, asked twice, and
+     no new judgement anywhere. Nothing lands in the last row, because there
+     would be no row to hold the bottom half. */
+  if(KBD.mate){
+    if(over===KBD.mate) return;
+    if(!kbPairMove(row, over, carried.w)) return;
+    KBD.x=p.clientX; KBD.y=p.clientY;
+    KBD.el.style.transform='';
+    return;
+  }
   for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
   row.insertBefore(KBD.el, (a>=0 && b>a)? over.nextSibling : over);
   /* A row emptied by the last key leaving it is a row of nothing, which is a
@@ -2093,6 +2190,59 @@ function kbDragTo(e){
   if(mine!==row && !mine.children.length) mine.parentNode.removeChild(mine);
   KBD.x=p.clientX; KBD.y=p.clientY;
   KBD.el.style.transform='';
+}
+/* Both halves, or neither. It answers whether it happened, so a drop the
+   sheet cannot hold leaves the pair exactly where it was rather than half
+   moved -- which is the state kbVFix() would take apart.
+
+   The bottom half comes OUT of the page first, so the columns of the row it
+   is going into are counted without it; everything is put back untouched if
+   any of the three questions says no. */
+function kbPairMove(row, over, w){
+  var tall=KBD.el, mate=KBD.mate,
+      tallRow=tall.parentNode, tallNext=tall.nextSibling,
+      mateRow=mate.parentNode, mateNext=mate.nextSibling,
+      under, kids, a=-1, b=-1, i, at, below, di, ref, kk;
+  function putBack(){
+    tallRow.insertBefore(tall, tallNext);
+    mateRow.insertBefore(mate, mateNext);
+    return false;
+  }
+  mateRow.removeChild(mate);
+  /* the row that will hold the bottom half: the one under where the top half
+     is going. `over` may be in the row the pair already stands in. */
+  under=row.nextSibling;
+  if(!under || under===row){ return putBack(); }
+  if(under!==mateRow && !kbRoomFor(kbRowOf(under), w)) return putBack();
+  kids=row.children;
+  for(i=0;i<kids.length;i++){ if(kids[i]===tall) a=i; if(kids[i]===over) b=i; }
+  if(b<0) return putBack();
+  row.insertBefore(tall, (a>=0 && b>a)? over.nextSibling : over);
+  /* where the top half now starts, and the same column in the row below. A
+     row whose keys do not break there cannot hold the other half -- which is
+     kbVJoin()'s own rule ("same column, same width"), asked before the move
+     rather than repaired after it. */
+  /* asked of each ELEMENT and not of kbRowOf(row)[i] -- that list leaves out
+     anything standing for nothing, so its i stops matching the page's i the
+     moment a row holds an empty cell. Watched: it threw. */
+  at=0;
+  for(i=0;i<row.children.length;i++){
+    if(row.children[i]===tall) break;
+    kk=kbKeyOfEl(row.children[i]);
+    if(kk) at+=kbU(kk.w);
+  }
+  below=kbRowOf(under);
+  di=(at===kbUsed(below))? below.length : kbAtKey(below, at);
+  if(di<0) return putBack();
+  ref=under.children[di] || null;
+  under.insertBefore(mate, ref);
+  /* A row emptied by the last key leaving it is a row of nothing. Both rows
+     the pair came out of are asked, and never the ones it went into. */
+  if(tallRow!==row && tallRow!==under && !tallRow.children.length)
+    tallRow.parentNode.removeChild(tallRow);
+  if(mateRow!==row && mateRow!==under && !mateRow.children.length)
+    mateRow.parentNode.removeChild(mateRow);
+  return true;
 }
 function kbUp(e){
   if(!KBD) return;
@@ -2124,15 +2274,32 @@ function kbWobEnd(){ kbWob=false; kbSel=null; render(); }
 /* The layout, read back off the screen. The keys moved in the page while the
    finger was down and the language is told once, here -- the same way the
    alphabet is told its order once, on the way up. */
+/* The keys a row of the PAGE is standing for. A key being carried has moved in
+   the page and not in the layout, so this is the only way to ask what a row
+   holds while a finger is still down -- and it is what kbReadRows() below has
+   always done to every row at once. Said once, because kbDragTo() has to ask
+   it of one row before the finger comes up. */
+/* The key one element on the page is standing for, or null. An empty CELL is
+   a .kbk with no data-r at all -- it stands for nothing yet -- so this answers
+   null for it rather than throwing, and every caller skips it. */
+function kbKeyOfEl(el){
+  if(!el || !el.getAttribute) return null;
+  return kbAt(parseInt(el.getAttribute('data-r'), 10),
+              parseInt(el.getAttribute('data-k'), 10));
+}
+function kbRowOf(el){
+  var out=[], ks=el.children, j, k;
+  for(j=0;j<ks.length;j++){
+    k=kbKeyOfEl(ks[j]);
+    if(k) out.push(k);
+  }
+  return out;
+}
 function kbReadRows(){
-  var g=document.getElementById('kb'), lay=kbEdit(), rows=[], i, j, r, ks, row, k;
+  var g=document.getElementById('kb'), lay=kbEdit(), rows=[], i, row;
   if(!g || !lay) return;
   for(i=0;i<g.children.length;i++){
-    r=g.children[i]; ks=r.children; row=[];
-    for(j=0;j<ks.length;j++){
-      k=kbAt(parseInt(ks[j].getAttribute('data-r'), 10), parseInt(ks[j].getAttribute('data-k'), 10));
-      if(k) row.push(k);
-    }
+    row=kbRowOf(g.children[i]);
     if(row.length) rows.push(row);
   }
   if(!rows.length) return;
@@ -2834,19 +3001,51 @@ function kbSlotsShown(key){
 }
 /* The alphabet, as a grid, for one slot. `dir` is -1 for the key itself and
    0..3 for a corner -- the same numbering kbSlot() uses, because it is the
-   same slot. */
+   same slot.
+
+   NARROWED THE WAY THE ALPHABET'S OWN PAGE IS NARROWED.
+   「絞り込みと検索が欲しいね。」 OWNER 2026-08-27, on 「レター多くなったら
+   選ぶのキツくね？」.
+
+   This laid the whole alphabet out, every letter, always. Thirty-eight is a
+   glance and the free plan never reaches this screen at all -- board 0 has no
+   editor -- so the list this actually draws is the PAID one, which is the
+   only one that grows: three hundred letters is three hundred tiles to find
+   one in with your eyes.
+
+   The same list is already drawn one chapter over, on vLtset, and that page
+   has had an order and a filter since 「これ並び替え、絞り込み追加しよう。
+   アルファベット順、作成順とか」. So this is not a second set of tools; it is
+   the same expression vLtset builds its list with, asked from here --
+   ltPickList() over ltOfKind('alpha'), and ltViewRow() for the box and the
+   two buttons that drive it. Nothing new is stored.
+
+   Which also means the DEFAULTS are not decided here -- they are ltSort,
+   ltFil and ltQ in sound.js, and where somebody left them on one screen is
+   where they are on the other. viewReset() forgets all three, so arriving in
+   another language does not arrive with a search on.
+
+   The ltOrder() that used to wrap this was a second sort over a sorted list:
+   ltOfKind('alpha') ends in ltOrder() itself. */
 function kbLtGrid(ri, ki, dir){
-  var ls=ltOrder(ltOfKind('alpha'));
-  return '<button class="btn ghost" style="width:100%;margin-bottom:10px"' +
+  /* The cells alone, so typing in the search repaints them without rebuilding
+     the field being typed into -- ltPaint() calls this, and vLtset leaves the
+     same kind of function behind. Both screens put them in #lt-list. */
+  function cells(){
+    var ls=ltPickList(ltOfKind('alpha'));
+    if(!ls.length) return '<div class="note">'+t('lt.none')+'</div>';
+    return '<div class="ltgrid">'+ls.map(function(l){
+      return '<button class="ltc"' + DO('kbPut', [ri, ki, dir, l.id]) + ' aria-label="'+
+        esc(ltName(l)||t('lt.reads.none'))+'">'+
+        '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
+        '<span class="ltcn">'+esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
+    }).join('')+'</div>';
+  }
+  ltReList=cells;
+  return ltViewRow()+
+    '<button class="btn ghost" style="width:100%;margin:10px 0"' +
       DO('kbPut', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
-    (ls.length
-      ? '<div class="ltgrid">'+ls.map(function(l){
-          return '<button class="ltc"' + DO('kbPut', [ri, ki, dir, l.id]) + ' aria-label="'+
-            esc(ltName(l)||t('lt.reads.none'))+'">'+
-            '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
-            '<span class="ltcn">'+esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
-        }).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>');
+    '<div id="lt-list">'+cells()+'</div>';
 }
 function kbLtHTML(){
   var s=kbSlotFor;
