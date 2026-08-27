@@ -7,6 +7,29 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## `askLink()` の `extra` に、値を入れる呼び手が一つもありません
+
+**消していません。消すなら別のコミットです。**
+
+`www/assist.js` の `askLink(ask, extra)` / `askHead(extra)` は、呼ぶ側が自分の
+材料を行の配列で渡せる口を持っています。**文法ページから呼ぶために開けたもの
+です。**
+
+その予定は 2026-08-27 に消えました ── 「あと、AIは単語だけでいいや」。
+今この口に値を入れる呼び手は**一つもありません**: `askBtn` は受け取って渡す
+だけで、`www/words.js` は `null` を渡します。
+
+**これは `CLAUDE.md` が名指しで禁じている *we'll need this later* です。**
+`dead-check` は関数と変数を見るので、引数一つでは赤くなりません ── だから
+ここに書いてあります。
+
+**やらない理由:** 消すのは refactor で、「a behaviour change, a refactor and a
+rename never share a commit」。単語側の作り直しと同じコミットには入れられま
+せんでした。リーダーの指示も「口そのものを壊す必要はない」です。
+
+**消すときは三行**: `askHead` の引数と `if(extra)` の行、`askLink` の引数、
+`askBtn` の引数。`tools/ask-check.mjs` は `null` しか渡していないので触りません。
+
 ## ~~AI に相談 ── アカウントを持っていない人は、外で止まります~~ ── 閉じました
 
 **2026-08-27 のオーナーの決定で閉じました。** 「他アプリに遷移します。暗いかいと
