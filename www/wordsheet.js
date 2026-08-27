@@ -936,8 +936,13 @@ function fmrSay(r){
   if(!s) return '';
   return (r.at==='start')? (s+'‑') : ('‑'+s);
 }
-function fmrNew(){
-  var r={id:'fr'+Date.now()+String(fmRules().length), pos:'v', fm:'pst',
+/* A new rule, of a kind the caller already knows. It used to be able to make
+   only one kind -- a verb's past -- and the two screens that could then change
+   the part of speech and the form were how you got any other. A chapter of the
+   grammar page knows both before the button is pressed, so it says them here
+   and those two screens have nothing left to ask. */
+function fmrNew(pos, fm){
+  var r={id:'fr'+Date.now()+String(fmRules().length), pos:pos||'v', fm:fm||'pst',
          at:'end', drop:0, add:[], when:''};
   fmRules().push(r); saveStg(); openFmr(r.id);
 }
