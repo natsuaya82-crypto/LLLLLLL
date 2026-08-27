@@ -488,6 +488,7 @@ defLang('zh', (function(){
       "num.big"         : "最大 {0}",
       "num.base"        : "进制",
       "num.wid"         : "在主畫面上",
+      "num.wid.how"     : "长按主屏幕 → 编辑 → 添加小组件 → Lingua",
       "lt.marks"         : "符号",
       "toc.gram"         : "语法",
       /* what the app proposes */
@@ -653,6 +654,11 @@ defLang('zh', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "咨询 AI",
+      "ask.leave"    : "将打开 {0}",
+      "ask.to.chatgpt" : "ChatGPT",
+      "ask.to.gemini" : "Gemini",
+      "ask.to.grok"  : "Grok",
+      "ask.to.perplexity" : "Perplexity",
       "ask.head"     : "我正在用一个叫 Lingua 的应用创造一门人造语言。",
       "ask.f.name"   : "语言名称",
       "ask.f.snd"    : "音（IPA）",
