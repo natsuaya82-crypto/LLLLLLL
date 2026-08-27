@@ -1055,13 +1055,33 @@ nowhere to go.
 It holds the two ceilings with them, because they are the same screen and the
 same kind of mistake. **Ten across is the phone's number** — the narrowest
 iPhone is 320, so ten keys are 32 each and eleven would be 29 — and every
-pattern the app builds already comes to ten or fewer. **Eight down is not**:
-nothing on the phone sets a height, so it is a ceiling on what somebody can
-build a row at a time, chosen to clear every pattern measured with one to
-spare. Both hold on ADDING only: **a layout already over the ceiling is left
-exactly as it is**, because cutting it down would be the app deleting somebody's
-keys to satisfy a number it invented. The check puts a nine-row layout in and
-demands that nothing moves.
+pattern the app builds already comes to ten or fewer. **How many DOWN is the
+phone's number too, and it is not a number written in the app.** 「キーボードの
+高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。だから行の列は
+そのキーボードの制限の範囲内で追加できるって話だけど？」 The extension caps the
+whole keyboard at **0.55 of the screen** and SQUEEZES the rows past it, so a
+ninth row was never a ninth row — it was every row getting shorter. **And a row
+is a KEY tall**: 「キーのサイズはiPhoneのサイズによって変わるんじゃないの？八行
+入っても小さかったら打ちにくいだけだぞ？」 The extension's row was a flat 54pt,
+so a key was the same height on every phone and the only thing a bigger phone
+bought was more rows — backwards from what a bigger phone is for. Width always
+scaled, because ten keys divide whatever the phone is across; the height
+follows it now, at **0.1385 of the phone's short side**, which is that same 54
+at the 390 it was measured on. A key keeps its shape: **44pt on the narrowest
+iPhone, 61 on a Pro Max**. The rows that fit are then divided out of the cap
+rather than chosen — **seven from the 13 mini up, six on an SE 2, five on an
+SE 1, and eight on nothing**. It was `KB_ROWS = 8` — a number this file used to
+justify with "nothing on the phone sets a height", which was untrue when it was
+written, and which no phone ever had room for. The ceiling is **one number for
+every phone**, not as many as the phone in your hand fits: a keyboard belongs
+to a language and a language moves between phones, so building eight where they
+fit and handing them to an SE is eight rows nobody can type on — the width rule
+one axis over. `kbRowsMax()` is the one place, and **`kb-check` reads the three
+numbers OUT of `KeyboardViewController.swift`**, because two copies of a number
+in two languages is the thing that drifts. Both ceilings hold on ADDING only:
+**a layout already over the ceiling is left exactly as it is**, because cutting
+it down would be the app deleting somebody's keys. The check puts an
+over-the-ceiling layout in and demands that nothing moves.
 
 And that a short row sits in the MIDDLE of the sheet rather than at its left
 edge — 「揃えて欲しい」, five keys over three. Counting columns in halves is
