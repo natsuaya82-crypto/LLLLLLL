@@ -1568,6 +1568,19 @@ export function halfDone(){
 
        Both faces, because they hold different things: the article draws the
        rows, and the editor draws the fields that write them. */
+    /* The plans page after the App Store has answered. Every other walk runs
+       in a browser, where there is no App Store at all, so the struck-through
+       price a year carries is on no screen any of them reaches -- and a class
+       nothing wears reads as a class nothing needs.
+       「49.99は取り消し線＋17%OFF」OWNER 2026-08-26. The numbers are the same
+       fakes tools/plan-check.mjs uses and for the same reason: a saving that
+       comes out 33 cannot be the 17 written on PLANS. */
+    ['the plans, priced by the App Store', () => {
+        STORE_P = { 'com.tokinets.lingua.plus.monthly':
+                      { price: '¥750', amount: 750, year: '¥9,000' },
+                    'com.tokinets.lingua.plus.yearly':
+                      { price: '¥6,000', amount: 6000 } };
+        const h = vPlans(); STORE_P = null; return h; }],
     ['a page with every section open', () => {
        /* Public, said here rather than assumed: act-check does NOT re-seed
           between faces, and the two faces above are left hidden on purpose.
