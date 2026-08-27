@@ -1270,8 +1270,49 @@ function kbCellAdd(ri, at){
 /* Which key is being worked on. It is KBH's third kind, beside the row and
    the column, so that one thing is selected at a time and the buttons over
    the sheet have one question to ask. */
+/* ---- more than one key, and only ever a straight run --------------------
+   「あと複数キー選べないから」「タップしたら上に削除とか出るとこに編集、色んな
+   キー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
+   「選ぶとこはバラバラは選べないから、バラバラ押した時は選択が解除されるように
+   してほしい。」 OWNER 2026-08-27.
+
+   A key selection is a START and how many follow it, across or down:
+   {k:'k', r, i, n, d}. `r` and `i` stay the FIRST key, so everything that was
+   written when only one could be chosen -- the bin, the edit button, the join
+   -- still reads the same two fields and still means the same key.
+
+   ACROSS is the next index in the row. DOWN is the key whose start column is
+   this one's, in the row below -- the sheet's own idea of "under", the one
+   kbVJoin() uses, and not "index i of the next row", which on a row inset by
+   half a key is a different key entirely. */
+function kbSelD(){ return (KBH && KBH.d) || 'x'; }
+function kbSelN(){ return (KBH && KBH.n) || 1; }
+function kbUnderOf(ri, ki){
+  var rows=kbLayer().rows, di;
+  if(!rows[ri] || !rows[ri][ki] || !rows[ri+1]) return null;
+  di=kbAtKey(rows[ri+1], kbAtOf(rows[ri], ki));
+  return di<0? null : {r:ri+1, i:di};
+}
+/* Every key of the selection, first to last. One list, so nothing has to work
+   the run out again -- the bin, the carry and the drawing all walk this. */
+function kbSelKeys(){
+  var out=[], n, j, u;
+  if(!KBH || KBH.k!=='k') return out;
+  out.push({r:KBH.r, i:KBH.i});
+  n=kbSelN();
+  for(j=1;j<n;j++){
+    if(kbSelD()==='y'){
+      u=kbUnderOf(out[j-1].r, out[j-1].i);
+      if(!u) break;
+      out.push(u);
+    }else out.push({r:KBH.r, i:KBH.i+j});
+  }
+  return out;
+}
 function kbKeyIs(ri, ki){
-  return !!KBH && KBH.k==='k' && KBH.r===ri && KBH.i===ki;
+  var ms=kbSelKeys(), j;
+  for(j=0;j<ms.length;j++) if(ms[j].r===ri && ms[j].i===ki) return true;
+  return false;
 }
 function kbTapKey(ri, ki){
   var rows, ui;
@@ -1286,7 +1327,50 @@ function kbTapKey(ri, ki){
     if(ui<0) return;
     ri=ri-1; ki=ui;
   }
-  kbSelTo(kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki});
+  kbSelTo(kbSelSpread(ri, ki));
+}
+/* What the selection BECOMES when this key is pressed. Three answers and no
+   fourth: it is already in the run and the run stands; it lengthens the run at
+   one end; or it is somewhere the run cannot reach and the selection is
+   RELEASED. 「バラバラ押した時は選択が解除されるようにしてほしい」
+
+   Released and not moved-to. That is the half that reads like a detail and is
+   not: with "the pressed key becomes the selection" there is no press left
+   that means "nothing", so the only way back to nothing would be pressing the
+   selected key again -- which is exactly the toggle the owner asked to be rid
+   of 「同じとこ触ると選択解除されるからわかりにくい」. Releasing costs a second
+   press to choose a far key; keeping it would cost the owner the thing they
+   asked for. So: press once to let go, press again to choose. */
+function kbSelSpread(ri, ki){
+  var one={k:'k', r:ri, i:ki, n:1, d:'x'}, n, d, u, last;
+  if(!KBH) return one;
+  /* a ROW or a COLUMN is chosen and this is a key: it cannot lengthen that,
+     so it releases it. 「今列選択してる時も適当に触ったら選択解除されるように
+     して欲しい」 -- a key is one of the arbitrary things being touched. */
+  if(KBH.k!=='k') return null;
+  if(kbKeyIs(ri, ki)) return KBH;          /* already chosen: it stands */
+  n=kbSelN(); d=kbSelD();
+  /* one key so far: the run has no direction yet, so any of the four says it */
+  if(n===1){
+    if(ri===KBH.r && ki===KBH.i+1) return {k:'k', r:KBH.r, i:KBH.i, n:2, d:'x'};
+    if(ri===KBH.r && ki===KBH.i-1) return {k:'k', r:ri, i:ki, n:2, d:'x'};
+    u=kbUnderOf(KBH.r, KBH.i);
+    if(u && u.r===ri && u.i===ki) return {k:'k', r:KBH.r, i:KBH.i, n:2, d:'y'};
+    u=kbUnderOf(ri, ki);
+    if(u && u.r===KBH.r && u.i===KBH.i) return {k:'k', r:ri, i:ki, n:2, d:'y'};
+    return null;
+  }
+  if(d==='x'){
+    if(ri===KBH.r && ki===KBH.i+n) return {k:'k', r:KBH.r, i:KBH.i, n:n+1, d:'x'};
+    if(ri===KBH.r && ki===KBH.i-1) return {k:'k', r:ri, i:ki, n:n+1, d:'x'};
+    return null;
+  }
+  last=kbSelKeys()[n-1];
+  u=last && kbUnderOf(last.r, last.i);
+  if(u && u.r===ri && u.i===ki) return {k:'k', r:KBH.r, i:KBH.i, n:n+1, d:'y'};
+  u=kbUnderOf(ri, ki);
+  if(u && u.r===KBH.r && u.i===KBH.i) return {k:'k', r:ri, i:ki, n:n+1, d:'y'};
+  return null;
 }
 /* Two keys, side by side, becoming one as wide as the two of them were.
 
@@ -1529,13 +1613,24 @@ function kbSelTo(next){
   kbSel=null;
   render();
 }
+/* A head answers the same sentence a key does, because it is the same
+   sentence: pressed with nothing chosen it chooses; pressed again it STANDS
+   (the toggle is gone -- 「同じとこ触ると選択解除されるからわかりにくい」); and
+   pressed while something else is chosen it releases 「今列選択してる時も適当に
+   触ったら選択解除されるようにして欲しい」. A row and a column cannot be run
+   together the way keys can, so "lengthens the run" has no case here. */
+function kbHeadTo(k, i){
+  if(!KBH) return {k:k, i:i, ins:false};
+  if(kbHeadIs(k, i)) return KBH;
+  return null;
+}
 function kbHeadRow(ri){
   ri=parseInt(ri, 10)||0;
-  kbSelTo(kbHeadIs('r', ri)? null : {k:'r', i:ri, ins:false});
+  kbSelTo(kbHeadTo('r', ri));
 }
 function kbHeadCol(ci){
   ci=parseInt(ci, 10)||0;
-  kbSelTo(kbHeadIs('c', ci)? null : {k:'c', i:ci});
+  kbSelTo(kbHeadTo('c', ci));
 }
 /* ---- a row going in where you are, rather than at the foot -------------
    The dashed row at the bottom adds one AFTER the last. There was no way to
