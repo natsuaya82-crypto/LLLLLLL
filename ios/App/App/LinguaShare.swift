@@ -35,7 +35,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "sheetList", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "renderPdf", returnType: CAPPluginReturnPromise),
   ]
 
@@ -325,46 +324,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       try bytes.write(to: url,
                       options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
       call.resolve(["file": url.lastPathComponent])
-    } catch {
-      call.reject(error.localizedDescription)
-    }
-  }
-
-  /// What is in Documents/Sheets, so the app can say how many are there.
-  ///
-  /// OWNER 2026-08-27「だから戻ってこないから言ってんのよ dlもできないし」, on
-  /// a build that had every part of this chapter in it. **"I cannot download
-  /// it" is two different faults wearing one sentence** -- nothing was ever
-  /// written, or something was written and cannot be found -- and from the
-  /// web side those look identical. This is what tells them apart: a count
-  /// the person can read off their own screen. Three files means the argument
-  /// is about where Files keeps them; zero means the write never happened.
-  ///
-  /// It READS. Nothing here creates, moves, renames or removes anything --
-  /// `sheets()` is asked with create:true only because that is the one place
-  /// that knows the path, and a folder that does not exist yet is an empty
-  /// list rather than an error.
-  ///
-  /// Newest first, because the one somebody just made is the one they are
-  /// looking for. A file with no date sorts last rather than crashing the
-  /// sort: `distantPast` is a real date and `nil` is not comparable.
-  @objc func sheetList(_ call: CAPPluginCall) {
-    do {
-      let dir = try sheets()
-      let fm = FileManager.default
-      let names = (try? fm.contentsOfDirectory(atPath: dir.path)) ?? []
-      var rows: [(name: String, size: Int, at: Date)] = []
-      for n in names {
-        guard n.hasSuffix(".pdf") else { continue }
-        let u = dir.appendingPathComponent(n)
-        let a = try? fm.attributesOfItem(atPath: u.path)
-        let size = (a?[.size] as? NSNumber)?.intValue ?? 0
-        let at = (a?[.modificationDate] as? Date) ?? Date.distantPast
-        rows.append((name: n, size: size, at: at))
-      }
-      rows.sort { $0.at > $1.at }
-      let out: [[String: Any]] = rows.map { ["name": $0.name, "size": $0.size] }
-      call.resolve(["files": out])
     } catch {
       call.reject(error.localizedDescription)
     }
