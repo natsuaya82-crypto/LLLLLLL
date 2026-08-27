@@ -522,17 +522,36 @@ function obIn(){
          both roads end the same way: the walk is over and the app opens. */
       obFinish(); return;
     }
-    OBM.nm=ME.name; OBM.hd=ME.handle; render();
-  }, function(d, s){
+    /* No profile row for this account means this account is new -- that is
+       what "no row" IS, and netMyProfile() asking by SESS.uid is what makes
+       it about this account rather than about this phone. So the two fields
+       start empty.
+
+       They used to start at ME.name and ME.handle, and on 2026-08-27 a phone
+       offered `Lingua` and `@lingua2` -- the account that had signed OUT --
+       to an Apple account that had just been made. www/me.js keeps the copy
+       per account now, so ME is already not somebody else's by the time this
+       line runs; it is written out rather than left to follow from that,
+       because this is the line the photograph was of, and "it happens to be
+       blank" and "it is blank" fail differently later.
+
+       Somebody signing in on a second phone does not come through here at
+       all: they have a row, and the branch above returns. */
+    OBM.nm=''; OBM.hd=''; render();
+  }, function(d, s, m){
     /* The lookup failed, so we do not know whether there is a row. Asking is
        the safe half: an insert that turns out to be a duplicate is refused
        by the constraint and says so, where skipping would leave somebody
        with an account nobody can address. */
-    OBM.busy=false; OBM.msg=netWhy(d, s); render();
+    OBM.busy=false; OBM.msg=netWhy(d, s, m); render();
   });
 }
-function obNo(d, s){
-  OBM.busy=false; OBM.msg=netWhy(d, s); render();
+/* The third argument is which kind of failure it was, and it only ever comes
+   from net.js. Everything that reports through here gets it for free -- the
+   two social doors, the mail door, the six digits, the handle, the profile --
+   which is the whole of the reason it is one function. */
+function obNo(d, s, m){
+  OBM.busy=false; OBM.msg=netWhy(d, s, m); render();
 }
 
 /* ---- the door, by mail -------------------------------------------------

@@ -229,13 +229,20 @@ const R = await pg.evaluate(() => {
 
      netWhy() is asked directly. The three arguments are the three shapes the
      three roads actually hand it. */
-  const gone   = netWhy(null, 0);                    /* never left the phone */
-  const unsent = netWhy(null, 0, 'mkprofile');       /* never made at all */
-  const notSess= netWhy({}, 0, 'token', true);       /* 200, and not a session */
+  let unsent = '';
+  netOut();                                   /* so the refusal is the real one */
+  netMakeProfile('h', 'n', () => no('6: 署名が無いのに profile を作りに行った'),
+                 (d, st, m) => { unsent = netWhy(d, st, m); });
+  const gone    = netWhy(null, 0, netTag('/rest/v1/profile?select=handle') + ' 0');
+  const notSess = netWhy({}, 0, 'token ≠');
+  const plain   = netWhy(null, 0);
+  if (!unsent) no('6: 送らなかった失敗が、何も答えなかった');
   if (gone === unsent)
     no('6: 「届かなかった」と「送っていない」が同じ文言 — ' + JSON.stringify(gone));
   if (gone === notSess || unsent === notSess)
     no('6: 「セッションではなかった」が他と同じ文言 — ' + JSON.stringify(notSess));
+  if (plain === gone)
+    no('6: 印の無い 0 と、印のある 0 が同じ文言 — ' + JSON.stringify(plain));
   say('6: status 0 の三つの道が、画面で見分けられる');
   say('   届かない  : ' + gone);
   say('   送ってない: ' + unsent);

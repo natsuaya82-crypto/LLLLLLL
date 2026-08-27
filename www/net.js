@@ -170,9 +170,9 @@ function netSend(method, path, body, tok, ok, bad){
     var d=null;
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
     if(x.status>=200 && x.status<300) ok(d);
-    else bad(d, x.status);
+    else bad(d, x.status, netTag(path)+' '+x.status);
   };
-  x.onerror=function(){ bad(null, 0); };
+  x.onerror=function(){ bad(null, 0, netTag(path)+' 0'); };
   x.send(body? JSON.stringify(body) : null);
 }
 function netPost(path, body, tok, ok, bad){
@@ -189,8 +189,39 @@ function netGet(path, ok, bad){
    one and in its own words where we do not. A message invented here would be
    a second copy of a rule the server owns -- how long a password has to be,
    what an address may look like -- and it would go out of date silently. */
-function netWhy(d, status){
-  if(!status) return t('net.offline');
+/* ---- which zero this is -------------------------------------------------
+   `status` 0 meant three different things and said one sentence for all
+   three, which is what the owner's photograph on 2026-08-27 was:
+   「接続できません」 in red, on a screen where nothing could be done about it.
+
+     the request went and nothing came back   netSend()'s x.onerror
+     the request was never made at all        netMyProfile / netMakeProfile /
+                                              netSetPass / netLangRow /
+                                              netResume, each refusing locally
+                                              when it sees no session
+     the answer was 200 and was not a session netTook(d) false
+
+   The first is a network. The second never touched one. The third means the
+   server answered and the app could not use what it said. Three causes and
+   three exits, and a phone has no console to tell them apart with.
+
+   So a failure carries a mark, and `bad` takes it as a third argument. Every
+   caller that does not want it goes on passing two and gets exactly what it
+   got before -- www/sns.js and www/settings.js are untouched by this.
+
+   The mark is a STATE and not a sentence: `CLAUDE.md` -- 「An empty state, a
+   count, a state, an error — none of those is an explanation.」 It is not
+   translated for the same reason a status code is not. `−` is "never sent",
+   `≠` is "not a session", and a bare word plus the real HTTP number is the
+   ordinary road. www/backup.js's BK.how and www/share.js's SHARE.how are the
+   same instrument, put in for the same reason and on the same day's evidence:
+   一枚のスクリーンショットで原因が落ちてくる。 */
+function netTag(path){
+  var p=String(path||'').split('?')[0].split('/');
+  return p[p.length-1] || 'server';
+}
+function netWhy(d, status, mark){
+  if(!status) return t('net.offline') + (mark? ' ('+mark+')' : '');
   var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
   if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
   if(status===400 && /already registered/i.test(m)) return t('net.taken');
@@ -217,6 +248,16 @@ function netTook(d){
             existed before anonymous sign-in did was a real one. */
          anon:netAnonTok(d.access_token) };
   netSave();
+  /* And who the phone belongs to now. lingua.me is a separate key from
+     lingua.sess and used to survive this entirely, so the account that
+     arrived here inherited the last one's name, handle, face, line about
+     itself and follow list. meFor() parks the old copy and fetches this
+     account's own; it deletes nothing. www/me.js has the whole of why.
+
+     Here rather than at the five call sites because this is the one place
+     that knows what a session is made of -- the same reason `anon` is
+     decided here. */
+  meFor(SESS.uid);
   return true;
 }
 /* There used to be netAnon() here, and boot.js called it before the first
@@ -244,15 +285,20 @@ function netTook(d){
    what is here is a true question with nothing left to answer it yes. */
 function netOut(){
   SESS=null; netSave();
+  /* Signed out is nobody's phone, so the name comes off the screen the same
+     moment the session does. Parked, not erased -- signing back in brings it
+     back, and wipeAll() has already blanked ME by the time it reaches here,
+     so nothing is written back out over a deleted account. */
+  meFor('');
 }
 /* The token in hand lasts an hour. This is what makes the next launch silent:
    nothing is typed, nothing is remembered by the person, and the thing on the
    phone that does it can be taken away from the server's side. */
 function netResume(ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netSignedIn()){ bad(null, 0, 'resume −'); return; }
   netPost('/auth/v1/token?grant_type=refresh_token',
           {refresh_token:SESS.rt}, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); },
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); },
           function(d, s){
             /* A refresh token that is no longer accepted is not an error to
                show anybody: it means the session ended, which is a state, not
@@ -267,7 +313,7 @@ function netSignUp(email, pass, ok, bad){
 function netSignIn(email, pass, ok, bad){
   netPost('/auth/v1/token?grant_type=password',
           {email:email, password:pass}, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
 /* The six digits out of the mail. A link would have to land somewhere, and
    there is nowhere for it to land: this is a Capacitor app with no web page
@@ -275,7 +321,7 @@ function netSignIn(email, pass, ok, bad){
    phone. A code goes back to the screen that asked for it. */
 function netVerify(email, code, ok, bad){
   netPost('/auth/v1/verify', {type:'signup', email:email, token:code}, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
 function netRecover(email, ok, bad){
   netPost('/auth/v1/recover', {email:email}, null, ok, bad);
@@ -292,14 +338,14 @@ function netRecover(email, ok, bad){
    The Reset Password template says {{ .Token }} for that reason. */
 function netRecoverCode(email, code, ok, bad){
   netPost('/auth/v1/verify', {type:'recovery', email:email, token:code}, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
 /* Changing the password of whoever is signed in. It is only ever reached
    holding a session the code above bought a moment ago, so nothing here
    knows or asks what the OLD password was -- which is the whole point: the
    person forgot it. */
 function netSetPass(pass, ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netSignedIn()){ bad(null, 0, 'setpass −'); return; }
   netSend('PUT', '/auth/v1/user', {password:pass}, SESS.at, ok, bad);
 }
 /* A native sign-in hands back an identity token and Supabase gives a session
@@ -321,7 +367,7 @@ function netSetPass(pass, ok, bad){
    has a profile and must not be asked to choose a handle they picked a year
    ago. */
 function netMyProfile(ok, bad){
-  if(!netSignedIn()){ bad(null, 0); return; }
+  if(!netSignedIn()){ bad(null, 0, 'profile −'); return; }
   netGet('/rest/v1/profile?select=handle,display&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
          function(d){ ok(d && d.length? d[0] : null); }, bad);
@@ -342,7 +388,7 @@ function netHandleFree(h, ok, bad){
    yet update it. That is docs/BACKLOG.md's, not a silent gap -- a notice with
    no face draws no face and nothing throws. */
 function netMakeProfile(h, name, ok, bad){
-  if(!netMember()){ bad(null, 0); return; }
+  if(!netMember()){ bad(null, 0, 'mkprofile −'); return; }
   var av=postAvatar();
   netPost('/rest/v1/profile',
           {id:SESS.uid, handle:h, display:name, av:av},
@@ -390,7 +436,7 @@ function netIdToken(provider, token, nonce, ok, bad){
   var b={ provider:provider, id_token:token };
   if(nonce) b.nonce=nonce;
   netPost('/auth/v1/token?grant_type=id_token', b, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0); }, bad);
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
 }
 
 /* ---- a language, which belongs to the account --------------------------
@@ -414,7 +460,7 @@ function netIdToken(provider, token, nonce, ok, bad){
    carries `sid`. A language with none has never been up. */
 function netLangRow(ok, bad){
   var L=LANGS[langId];
-  if(!netSignedIn() || !L){ bad(null, 0); return; }
+  if(!netSignedIn() || !L){ bad(null, 0, 'langrow −'); return; }
   if(L.sid){ ok(L.sid); return; }
   netPost('/rest/v1/language', {owner:SESS.uid, name:langName||''}, SESS.at,
     function(d){

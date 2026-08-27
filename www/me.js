@@ -46,21 +46,116 @@ var LS_ME='lingua.me';
    いる欄は縮まない ── ブラウザは value を切らない。リリース前で誰も
    持っていないので今は関係ないが、性質として書いておく。 */
 var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
-var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
+/* `uid` is the account this copy belongs to -- the server's own name for it,
+   which is `profile.id` and `SESS.uid` and nothing a person types. It is here
+   because signing out used to leave everything else in this object exactly
+   where it was, and the next person to sign in got it.
+
+   OWNER 2026-08-27, on a phone, with a photograph: 「Appleでログインしたあと
+   前のアカウントが出てくるんだけどなんで？」 The 「ユーザー名とID」 screen
+   was offering `Lingua` and `@lingua2` to an account that had just been made.
+
+   It could not be fixed by emptying this on the way out, and that is the
+   whole reason `uid` exists rather than a line in netOut(). Two things are
+   true at once and only the uid can tell them apart:
+
+     a different person signs in    the previous person must not be here
+     the same person signs back in  their name must still be theirs
+
+   A handle cannot do it (it is chosen, and it changes), an address cannot do
+   it (an Apple account may not have one -- netMail() says so), and the door
+   they came in by cannot do it. The uid is what the server means by "this
+   account".
+
+   Copies written before this field existed have no uid. They are treated as
+   nobody's rather than as everybody's: the first account to sign in adopts
+   one, which is right on the phone this was actually about -- a person who
+   made an account, then signed in again as themselves -- and on any phone
+   where it is wrong, the wrong thing is an empty name rather than somebody
+   else's. */
+var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''};
+function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''}; }
+function meFrom(m){
+  var o=meBlank();
+  if(m){ o.name=String(m.name||''); o.handle=String(m.handle||'');
+         o.bio=String(m.bio||''); o.pic=String(m.pic||'');
+         o.link=String(m.link||''); o.loc=String(m.loc||'');
+         o.avSent=String(m.avSent||''); o.uid=String(m.uid||'');
+         /* Two lists, and absent is not empty -- meFollowing() and
+            meFollowers() are written against that and would answer [] for a
+            list that had been turned into one. */
+         if(m.fo && m.fo.length) o.fo=m.fo;
+         if(m.fr && m.fr.length) o.fr=m.fr; }
+  return o;
+}
+/* Whether this copy has anything in it. Used before parking one: a blank
+   copy is not worth a key, and writing one would matter -- wipeHere() blanks
+   ME and then calls netOut(), so a park that did not ask this would write the
+   deleted person straight back out of memory, one line after lsWipeNS() had
+   removed every trace of them. 「アカウント削除で残るものねえ」 */
+function meHas(m){
+  return !!(m && (m.name || m.handle || m.bio || m.pic || m.link || m.loc ||
+                  (m.fo && m.fo.length) || (m.fr && m.fr.length)));
+}
 function meRead(){
-  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
-  try{
-    var m=JSON.parse(localStorage.getItem(LS_ME)||'null');
-    if(m){ ME.name=String(m.name||''); ME.handle=String(m.handle||'');
-           ME.bio=String(m.bio||''); ME.pic=String(m.pic||'');
-           ME.link=String(m.link||''); ME.loc=String(m.loc||'');
-           ME.avSent=String(m.avSent||''); }
-  }catch(e){}
+  ME=meBlank();
+  try{ ME=meFrom(JSON.parse(localStorage.getItem(LS_ME)||'null')); }catch(e){}
 }
 meRead();
 function saveMe(){
   try{ localStorage.setItem(LS_ME, JSON.stringify(ME)); }catch(e){}
 }
+/* ---- whose phone this is, right now ------------------------------------
+   Called when the session's identity changes -- signing in, signing out, and
+   a refresh that comes back naming somebody else. net.js's netTook() and
+   netOut() are the two places that know, and they are the only callers.
+
+   NOTHING IS DELETED HERE. `bio`, `link` and `loc` exist on this phone and
+   nowhere else -- netMakeProfile() sends `handle`, `display` and `av`, and
+   that is all of it -- so a sign-out that emptied them would be a loss with
+   no way back, which is the one thing `CLAUDE.md` does not allow: 「人が
+   作ったものは消さない」.
+
+   So the copy is PARKED, under this key plus the uid that owns it, and
+   handed back when that account returns. It stops being visible; it does not
+   stop existing.
+
+   lsWipeNS() removes every key beginning `lingua.`, counted rather than
+   listed, so a parked copy goes with the account when the account goes.
+   bkPack() walks SLICES under langKey() and has never carried lingua.me at
+   all, so parking takes nothing out of a backup that was in one. */
+function meParkKey(uid){ return LS_ME + '.' + uid; }
+function meFor(uid){
+  var want=String(uid||''), had=String(ME.uid||''), park, got=null;
+  if(want===had) return;
+  /* Out of the way first, so nothing below can write over it. A copy with no
+     owner is not parked anywhere: there is no key to park it under, and it
+     is the one this phone has been using. */
+  if(had && meHas(ME)){
+    try{ localStorage.setItem(meParkKey(had), JSON.stringify(ME)); }catch(e){}
+  }
+  /* An unclaimed copy is adopted rather than thrown away -- see `uid` above.
+     Only when somebody is actually arriving: signing OUT of an unclaimed copy
+     leaves it unclaimed and leaves it where it is. */
+  if(!had && want && meHas(ME)){ ME.uid=want; saveMe(); return; }
+  if(want){
+    try{ park=localStorage.getItem(meParkKey(want)); }catch(e){ park=null; }
+    if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
+  }
+  ME=meFrom(got);
+  ME.uid=want;
+  saveMe();
+}
+/* And once at load, because the two keys are read by two files that do not
+   know about each other: net.js reads lingua.sess when it loads and this file
+   reads lingua.me when it loads, and nothing between them ever compared the
+   two. A phone that was signed in as somebody while carrying somebody else's
+   copy stayed that way until the next sign-in.
+
+   net.js is loaded before this file (www/index.html), so SESS is here to be
+   asked. Signed out, this parks whatever the phone was holding, which is the
+   same thing netOut() does and is right for the same reason. */
+meFor(SESS && SESS.uid);
 /* Nobody is made to fill this in before they can post. With no name the
    language's name stands in, which is what it did before there were accounts
    at all -- so the screen never shows an empty space or a word invented to
