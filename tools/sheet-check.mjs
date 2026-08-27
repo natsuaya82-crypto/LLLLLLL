@@ -593,6 +593,13 @@ await pg.evaluate(({ names }) => {
     /* the name it was actually filed under, which is not the one asked for:
        a sheet is never overwritten, so the second of a name is `<name> 2.pdf` */
     if (method === 'sheet') return Promise.resolve({ file: 'Test sheet 2.pdf' });
+    /* the folder AFTER the write, which is the only evidence on this side
+       that the bytes landed -- and the one thing that tells "nothing was
+       written" apart from "written, and I cannot find it". */
+    if (method === 'sheetList') return Promise.resolve({ files: [
+      { name: 'Test sheet 2.pdf', size: 61204 },
+      { name: 'Test sheet.pdf',   size: 60997 }
+    ] });
     return Promise.resolve({});
   } };
   document.getElementById('toast').textContent = '';
@@ -624,7 +631,10 @@ const filed = await pg.evaluate(() => {
    symptom with three causes, and the fourth fell out of one screenshot the
    moment the app was made to say whether the hand-over had gone out. */
 await pg.evaluate(({ names }) => {
-  window.Capacitor = { nativePromise: function(){
+  window.Capacitor = { nativePromise: function(plug, method){
+    /* refused the write, and the folder is empty -- which is what the two
+       lines together have to show: it was refused AND nothing is there. */
+    if (method === 'sheetList') return Promise.resolve({ files: [] });
     return Promise.reject(new Error('the disk is full'));
   } };
   /* deliberately NOT shBlank(): the four lines the LAST press left are still
@@ -636,7 +646,7 @@ await pg.evaluate(({ names }) => {
   SH.names = names.join(', ');
   shMake();
 }, { names: NAMES });
-await pg.waitForFunction(() => window.SH && (SH.say || []).length >= 4,
+await pg.waitForFunction(() => window.SH && (SH.say || []).length >= 5,
                          null, { timeout: 60000 });
 const sheetNo = await pg.evaluate(() => ({
   lines: (SH.say || []).slice(),
@@ -802,19 +812,29 @@ say(unnamed !== filed.ok && unnamed === filed.no,
 /* what the screen says happened. Not a debug line -- every one of these is a
    state or a count, which CLAUDE.md names among the things that are NOT an
    explanation, and it is the only thing anybody can photograph. */
-say(filed.lines.length === 4 &&
+say(filed.lines.length === 5 &&
     filed.onscreen.join(' | ').indexOf('Test sheet 2.pdf') >= 0,
     'and the screen says what happened, step by step, where a photograph can ' +
     'carry it off the phone: ' + filed.lines.length + ' lines — "' +
     filed.lines.join('" / "') + '"');
-say(sheetNo.lines.length === 4 &&
+/* the two faults "I cannot download it" can be. A count off the person's own
+   screen is what tells them apart, and neither of these can throw. */
+say(filed.lines[4].indexOf('2') >= 0 && filed.lines[4].indexOf('Test sheet 2.pdf') >= 0,
+    'and it counts the folder AFTERWARDS, so "nothing was written" and ' +
+    '"written, and I cannot find it" are not the same screen: "' +
+    filed.lines[4] + '"');
+say(sheetNo.lines.length === 5 &&
     sheetNo.lines.join(' ').indexOf('the disk is full') >= 0 &&
     sheetNo.onscreen.join(' ').indexOf('the disk is full') >= 0,
     'and when the phone refuses, what the PHONE said reaches the screen rather ' +
-    'than being swallowed: "' + sheetNo.lines[sheetNo.lines.length - 1] + '"');
-say(sheetNo.lines.length === 4,
+    'than being swallowed: "' + sheetNo.lines[3] + '"');
+say(sheetNo.lines[4] !== filed.lines[4] &&
+    sheetNo.onscreen.join(' ') !== filed.onscreen.join(' '),
+    'and the refused one counts an EMPTY folder, which is the other half of ' +
+    'the same sentence: "' + sheetNo.lines[4] + '"');
+say(sheetNo.lines.length === 5,
     'and a second try does not show the first one\'s lines: ' +
-    sheetNo.lines.length + ' lines, not ' + (sheetNo.lines.length + 4));
+    sheetNo.lines.length + ' lines, not ' + (sheetNo.lines.length + 5));
 say(drawn.said.join(' ').indexOf('drew') >= 0 || drawn.said.length >= 3,
     'and the reading side says the same way: ' + drawn.said.length +
     ' lines — "' + drawn.said.join('" / "') + '"');

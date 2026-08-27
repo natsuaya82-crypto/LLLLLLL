@@ -1203,16 +1203,44 @@ function shMake(){
   shSay(t('wr.say.sent'));
   p('LinguaShare', 'sheet', {name:shFileName(), b64:b64})
     .then(function(r){
-      if(!(r && r.file)){ shSay(t('wr.say.unnamed')); toast(t('wr.nobridge')); openWrOut(); return; }
+      if(!(r && r.file)){ shSay(t('wr.say.unnamed')); toast(t('wr.nobridge')); shHave(); return; }
       shSay(t('wr.say.filed', String(r.file)));
       toast(t('wr.out.ok'));
-      openWrOut();
+      shHave();
     })
     ['catch'](function(e){
       shSay(t('wr.say.refused', shWhat(e)));
       toast(t('wr.nobridge'));
-      openWrOut();
+      shHave();
     });
+}
+/* How many sheets are actually sitting in Documents/Sheets, said on the
+   screen at the end of every attempt.
+
+   「dlもできない」 is TWO faults wearing one sentence -- nothing was written,
+   or something was written and cannot be found -- and from in here they look
+   identical. A count tells them apart, and it is the person's own screen that
+   answers rather than anybody guessing: three files means the argument is
+   about where Files keeps them, zero means the write never happened. It is
+   asked AFTER the write, so it is also the only evidence on this side that
+   the bytes landed at all -- the phone naming a file is what it says it did,
+   and this is the folder afterwards.
+
+   It reads and nothing else. Nothing here removes, renames or moves a sheet.
+
+   Whatever happened, the screen is redrawn once, from here -- otherwise the
+   lines shMake() recorded would sit in memory with nothing showing them. */
+function shHave(){
+  var p = sharePlug();
+  if(!p){ openWrOut(); return; }
+  p('LinguaShare', 'sheetList', {})
+    .then(function(r){
+      var xs = (r && r.files) || [];
+      shSay(xs.length ? t('wr.say.have', xs.length, String((xs[0] && xs[0].name) || ''))
+                      : t('wr.say.have.none'));
+      openWrOut();
+    })
+    ['catch'](function(e){ shSay(t('wr.say.have.no', shWhat(e))); openWrOut(); });
 }
 /* What the native side said, out of whatever shape it threw. The same three
    places bkPush() and sharePush() look, and for the same reason: a rejection
