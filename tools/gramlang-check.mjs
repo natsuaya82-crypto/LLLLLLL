@@ -500,6 +500,87 @@ want('and the doer changes when the order does', q.bare[1], 'poko');
 
 want('the word deleted takes its rule with it', q.after, 0);
 
+/* ---- 20-31: what somebody wrote on the FORMS page reaches the engine -----
+   The rules that make a form out of a word live on the word side -- the forms
+   page, www/wordsheet.js -- and are kept in STG.fm. gModel() used to hand the
+   engine an empty `inflections`, so a language whose past tense somebody had
+   defined was translated with no past tense in it. Both ends were built and
+   the middle was missing.
+
+   Nothing here throws. A rule that never arrives still leaves a translation --
+   the bare lemma, exactly as before anybody wrote the rule -- so every one of
+   these is about WHICH letters came out.
+
+   The last two are the ones that would go silently wrong: a rule about words
+   ending in one letter must not fire on the others, and a rule whose condition
+   is about SOUND cannot cross at all (this engine has no phonology) so it must
+   be COUNTED rather than sent without its condition. */
+const fmr = await pg.evaluate(() => {
+  /* The letters to add, written as themselves. Going through spOf() looked
+     tidier and was wrong: it maps each sound to whichever letter of THIS
+     language reads it, so `ka` came back as `ca` -- the fixture's letter for
+     /k/ is named c. A rule's `add` may hold a bare unit with no letter, which
+     spWord() renders as itself, and that is what a check about the RULE
+     should say. The app's own editor writes letters there; that is the app's
+     business and not what is under test here. */
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const was = JSON.stringify(STG.fm || []);
+  const wl = WORDS.length;
+  WORDS.push({ hw:'zmi',  pos:'pro', mns:['the one speaking'], at:1 });
+  WORDS.push({ hw:'luma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'carry', pos:'v', mns:['carry'], at:1 });
+  WORDS.push({ hw:'beauty', pos:'n', mns:['beauty'], at:1 });
+  STG.fm = [
+    /* 「過去形は動詞の後ろに -ka を付けます」 */
+    { id:'r1', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' },
+    /* 「y で終わるのは i に変えて ed」 */
+    { id:'r2', pos:'v', fm:'pst', at:'end', drop:1, add:sp('ied'), when:'x',
+      wend:sp('y') },
+    /* a derivation: a noun becomes an adjective */
+    { id:'r3', pos:'n', fm:'adj', at:'end', drop:0, add:sp('li'), when:'' },
+    /* and one this side cannot say: only after a vowel. It is about sound. */
+    { id:'r4', pos:'v', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'v' }
+  ];
+  const e = LinguaGrammarEngine, m = gModel();
+  const w = (lemma) => m.words.filter((x) => x.lemma === lemma)[0];
+  const past = (lemma) => e.morphology.inflect(m, w(lemma), { TENSE:'PAST' }).surface;
+  const out = {
+    inf: m.inflections.filter((x) => x.feature === 'TENSE').length,
+    der: m.derivations.length,
+    left: m.metadata && m.metadata.fmLeft,
+    /* the plain rule */
+    luma: past('luma'),
+    /* the choosier one, on the word it is about */
+    carry: past('carry'),
+    /* the derivation */
+    beauty: e.morphology.derive(m, w('beauty'), 'ADJECTIVE').surface,
+    beautyPos: e.morphology.derive(m, w('beauty'), 'ADJECTIVE').partOfSpeech,
+    /* and the whole point: a sentence of this language comes out with the
+       tense on it, through the same road a translation takes */
+    line: e.translate.fromSemantic(m, e.semanticIR({
+            roles:{ SUBJECT:'the one speaking', PREDICATE:'eat' },
+            features:{ TENSE:'PAST' } })).text
+  };
+  WORDS.length = wl;
+  STG.fm = JSON.parse(was);
+  return out;
+});
+
+want('both past-tense rules reached the engine', fmr.inf, 2);
+want('and the derivation did too', fmr.der, 1);
+want('the rule whose condition is about sound was counted, not sent',
+     fmr.left, 1);
+
+want('a verb takes the ending somebody wrote', fmr.luma, 'lumaka');
+want('and a word the choosier rule is about takes THAT one', fmr.carry, 'carried');
+want('a noun becomes an adjective the way somebody wrote it', fmr.beauty, 'beautyli');
+want('and it is an adjective afterwards', fmr.beautyPos, 'ADJECTIVE');
+
+/* The sentence is the reason for all of it: two words of this language, in
+   this language's order, with the ending somebody wrote on the verb. That
+   ending is what was missing before this. */
+want('and a sentence comes out with the tense on it', fmr.line, 'zmi lumaka');
+
 await br.close();
 srv.close();
 
@@ -517,3 +598,5 @@ console.log('          A language with a model of its own is read from it, and i
 console.log('          words are this dictionary every time rather than a copy.');
 console.log('          A particle somebody made is a word, and a word carrying one');
 console.log('          is the doer wherever it stands.');
+console.log('          What somebody wrote on the forms page reaches the engine,');
+console.log('          and a rule this side cannot say is counted, not sent.');
