@@ -602,10 +602,61 @@ function tabBar(){
        whose whole content is an aria-hidden drawing has nothing to be called
        by otherwise, and pageName() stays the one place that names a tab. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' + DO('goTab', [r]) +
+      (r==='profile'? ' data-hold="1"' : '')+
       ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+'</button>';
   }
   return '<div class="tabbar">'+out+'</div>';
 }
+/* ---- holding the profile tab ------------------------------------------
+   「インスタと同じようにしたから出てくる。で切り替えタップしたらその言語にいく。
+    あかうんとは切り替えられないから、制作の中身だけ変わる」 OWNER 2026-08-27.
+
+   It goes to the `langs` PAGE -- the one Settings has always linked to, drawn
+   by vLangs() in www/home.js. Not a sheet over the tab bar: CLAUDE.md bans
+   「ページ遷移型にせず下からひょいって出すやつ」 and also says choosing is a
+   screen and changing is the screen you arrive at, which is this exactly. The
+   switcher the owner is describing was already built as a page on 2026-08-25;
+   what was missing was a way to reach it without going through Settings, and
+   that is all this is. The list STAYS in Settings 「せっていからでいいよ」 --
+   this is the short way to the same page, not a second copy of it.
+
+   What it does NOT do is change who is signed in. langOpen() writes the old
+   language out, reads the new one in and calls viewReset(); it never touches
+   `lingua.me` or `lingua.sess`, and vLangs() draws language names and no
+   faces. 「あかうんとは切り替えられない」 is a property of what is called here,
+   not a rule this file has to remember.
+
+   The press is delivered on `click`, in www/act.js, and a hold would arrive
+   there as an ordinary press of the profile tab on the way back up. So the
+   hold sets HELD and the capture-phase listener below eats that one click --
+   capture, because act.js's own listener is on the same root and would
+   otherwise run first. */
+var HOLD_MS=500, holdT=null, HELD=false;
+function holdStart(e){
+  var el=e.target;
+  while(el && el!==document && el.getAttribute && !el.getAttribute('data-hold')) el=el.parentNode;
+  if(!el || !el.getAttribute || !el.getAttribute('data-hold')) return;
+  holdClear();
+  holdT=setTimeout(function(){
+    holdT=null; HELD=true;
+    goTab('profile'); go('langs');
+  }, HOLD_MS);
+}
+function holdClear(){ if(holdT){ clearTimeout(holdT); holdT=null; } }
+function holdEat(e){
+  if(!HELD) return;
+  HELD=false; e.stopPropagation(); e.preventDefault();
+}
+/* Capture, and on `document`: act.js listens on the app root in the bubble
+   phase, so capture here is the only place that runs before it. */
+document.addEventListener('touchstart',  holdStart, false);
+document.addEventListener('touchend',    holdClear, false);
+document.addEventListener('touchmove',   holdClear, false);
+document.addEventListener('touchcancel', holdClear, false);
+document.addEventListener('mousedown',   holdStart, false);
+document.addEventListener('mouseup',     holdClear, false);
+document.addEventListener('click',       holdEat,   true);
+
 /* ---- how much of the screen the page can actually see ------------------
    The software keyboard does not shrink `100dvh`. It slides OVER the page, so
    a screen sized to the viewport is a screen whose foot is behind the
