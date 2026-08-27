@@ -433,7 +433,11 @@ function kbFacePut(face, to){
   var rows=face.rows, i, j, k;
   for(i=0;i<rows.length;i++)
     for(j=0;j<rows[i].length;j++)
-      if(rows[i][j].k==='gap'){
+      /* A WHOLE KEY of gap, and not the half key the QWERTY is inset by.
+         A gap of 0.5 is not a slot somebody left empty, it is the third row's
+         inset -- and a layer key half a key wide is 14pt on a 390pt phone,
+         which is not a thing anybody can press. */
+      if(rows[i][j].k==='gap' && rows[i][j].w>=1){
         k=kbKey('lay', String(to)); k.w=rows[i][j].w;
         rows[i][j]=k;
         return true;
@@ -441,7 +445,16 @@ function kbFacePut(face, to){
   for(i=rows.length-1;i>=0;i--)
     for(j=0;j<rows[i].length;j++)
       if(rows[i][j].k==='sp' && rows[i][j].w>1){ kbBarLay(rows[i], String(to)); return true; }
-  return kbLayPut(face, to);
+  /* and a row of its own, which is the last resort and the only one that can
+     push a face past the ceiling -- kbFaceRows() leaves a bar's worth of room
+     so that it never comes to that, and kb-check counts the rows afterwards
+     rather than trusting this sentence. */
+  if(!rows.length){ rows.push([kbKey('lay', String(to))]); return true; }
+  if(kbUsed(rows[rows.length-1])+2<=KB_COLS){
+    rows[rows.length-1].unshift(kbKey('lay', String(to))); return true;
+  }
+  if(rows.length<kbRowsMax()){ rows.push([kbKey('lay', String(to))]); return true; }
+  return false;
 }
 /* EVERY FACE IS REACHED AND EVERY FACE CAN BE LEFT, whatever a pattern came
    out as. One place, because a pattern is no longer one face and two: the
@@ -1092,7 +1105,25 @@ var KB_MOST=0.55, KB_ROWW=0.1385, KB_BARS=8+44;
 
    kb-check prints what every phone comes to, so a change to any of the three
    numbers shows its whole shape rather than one number moving. */
-var KB_REF_W=390, KB_REF_H=844;
+/* THE SMALLEST PHONE THE APP RUNS ON, and not the one most people hold.
+   「キーボードの高さは画面の半分までってルールあるのになんで七も足したら7割
+   埋まるけど」 OWNER 2026-08-27.
+
+   It was 390 x 844, and that is the error. Referenced to a big phone, seven
+   rows come to 51% there and 63.8% on an iPhone SE 1 -- the cap broken on the
+   two phones with the least room, which is the opposite of what a ceiling is
+   for. Measured, all eight: 63.8% / 62.3% / 51.2% / 51.0% / 50.8% / 50.5% /
+   50.3% / 50.1%.
+
+   The WIDTH rule has always done this correctly and says so in rule 19:
+   「TEN ACROSS is the phone's number -- the narrowest iPhone is 320」. Not the
+   phone in your hand, and not the roomiest one. The narrowest. 320 x 568 is
+   that phone -- iOS 15 runs on an iPhone SE 1 -- so it is the one the height
+   is divided out of too, and the answer holds everywhere above it.
+
+   FIVE. Which is the free QWERTY's own row count (digits, q, a, z, the bar)
+   and what a real phone keyboard is: four rows, five with a number row. */
+var KB_REF_W=320, KB_REF_H=568;
 function kbRowH(w){ return (w||KB_REF_W)*KB_ROWW; }
 function kbRowsMax(){
   return Math.max(1, Math.floor((KB_REF_H*KB_MOST - KB_BARS) / kbRowH(KB_REF_W)));
@@ -1359,8 +1390,21 @@ function kbAlign(how){
   rem=kbCols(rows)-tot;
   if(rem>0){
     lead = how==='r'? rem : (how==='c'? kbLead(rem+tot, tot) : 0);
-    /* and right lands on a column for the same reason left already does */
-    if(lead%2) lead--;
+    /* CENTRE rounds to a whole key; LEFT and RIGHT do not.
+       「キーボードも左右寄せにするなら、ハンキーとか関係なく寄せて。」
+       OWNER DECISION 2026-08-27.
+
+       Right used to send the odd half to the other end, so that the row's
+       first key landed on a whole column -- which is what centring is FOR
+       (a row nobody aligned sits in the middle and has to be pointed at), and
+       is not what an end is for. Pushing a row to the right means putting it
+       against the right, and if half a key is left over it stays left over.
+
+       It agrees with the decision of the day before: a column takes only the
+       keys it is entirely made of, so a row that ends up half a key out lines
+       up with no column and lights for none -- the same as the free QWERTY's
+       inset third row, and true for the same reason. */
+    if(how==='c' && lead%2) lead--;
     tail = rem-lead;
     if(tail>0) row.push(kbGap(kbGapW(tail)));
     if(lead>0) row.unshift(kbGap(kbGapW(lead)));
@@ -1480,7 +1524,7 @@ function kbHTML(sel, ro){
     out='<span class="kbband" style="left:calc(100% / '+cols+' * '+(KBH.i*2)+');'+
       'width:calc(100% / '+cols+' * '+Math.min(2, cols-KBH.i*2)+')"></span>'+out;
   return '<div class="kb'+(ro? '' : ' kbsheet')+'" id="kb"'+
-    (ro? '' : ' style="--kc:'+cols+';width:'+kbSheetW()+'"')+'>'+out+'</div>';
+    (ro? '' : ' style="--kc:'+cols+';width:'+kbSheetW()+';--kh:'+kbSheetH()+'"')+'>'+out+'</div>';
 }
 
 /* ---- the keyboard is not typed on in here ------------------------------
@@ -2368,19 +2412,32 @@ function kbGoLay(i){ kbLay=i; render(); }
    keeps its 123 and where kbDefault() has always put it; failing that, a row
    of its own. Failing both, the face is as big as a face may get and the
    answer is no -- which is why the + is not drawn.  */
+/* Whether a key to another face can go on this one. THREE places it can go,
+   and they are kbFacePut()'s three -- a gap that is already there, a space
+   bar that can give up a key's width, or a row of its own.
+
+   It used to know only the last two, and the day the ceiling came down to
+   five that stopped being enough: the free QWERTY is exactly five rows and
+   every one of them comes to ten, so a board shaped like it could take no
+   new row AND no new face. kbAddLay() simply did nothing, which is a + that
+   can be pressed and does not work.
+
+   So the two of them are one question with one answer now. kbFacePut() is
+   where it lives, because it is the one that knows about gaps -- a flick
+   board's fourth column is gaps from its fourth row down, and that is a slot
+   sitting there on a board every one of whose rows is full. */
 function kbLayRoom(face){
-  var rows=face && face.rows;
+  var rows=face && face.rows, i, j;
   if(!rows || !rows.length) return true;
+  for(i=0;i<rows.length;i++)
+    for(j=0;j<rows[i].length;j++){
+      if(rows[i][j].k==='gap' && rows[i][j].w>=1) return true;
+      if(rows[i][j].k==='sp' && rows[i][j].w>1) return true;
+    }
   if(kbUsed(rows[rows.length-1])+2<=KB_COLS) return true;
   return rows.length<kbRowsMax();
 }
-function kbLayPut(face, v){
-  var rows=face.rows, k=kbKey('lay', String(v));
-  if(!rows.length){ rows.push([k]); return true; }
-  if(kbUsed(rows[rows.length-1])+2<=KB_COLS){ rows[rows.length-1].unshift(k); return true; }
-  if(rows.length<kbRowsMax()){ rows.push([k]); return true; }
-  return false;
-}
+function kbLayPut(face, v){ return kbFacePut(face, v); }
 /* NO FACE IS A DEAD END, and that is the sentence above one step further out.
    「2ページ目から戻るボタンがない」 OWNER, build #92.
 
@@ -2663,6 +2720,23 @@ function kbKeyW(w){
    The stylesheet still owns every NUMBER -- --kbw and --kbgap are its. */
 function kbSheetW(){
   return 'var(--kbw)';
+}
+/* And how tall a row of it is, which is the same statement one axis over and
+   was the only thing left saying a number of its own.
+   「キーボードの高さは画面の半分までってルールあるのになんで七も足したら7割
+   埋まるけど」 OWNER 2026-08-27.
+
+   `.kb.kbsheet` said `--kh:44px`, a FIXED pixel height, while the phone's row
+   is the short side x KB_ROWW -- 44.3pt on the narrowest iPhone and 60.9 on a
+   Pro Max. So the sheet was 388px tall whatever phone it was drawn on: 40.6%
+   of a Pro Max and 68.3% of an SE. The seven tenths the owner was looking at.
+
+   The sheet is --kbw across, so a row of it is --kbw x KB_ROWW: the whole
+   board at the same scale, down as well as across. The stylesheet's 44px
+   stays as what it always was -- the value for a phone this was measured on
+   -- and this overrides it, the way kbSheetW() overrides the width. */
+function kbSheetH(){
+  return 'calc(var(--kbw) * '+KB_ROWW+')';
 }
 /* The three widths, each drawn AT THE SIZE OF THE KEY IT MAKES -- kbCellW()
    is the same arithmetic the sheet lays a key out with, over the ten fixed

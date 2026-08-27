@@ -317,10 +317,17 @@ export function obStates(){
     ['the six digits out of the mail', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
-    /* The code and the new password, which is where asking for a reset now
-       lands. It used to end at a line saying "sent". */
-    ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
+    /* Asking for a reset lands on the digits. It used to end at a line saying
+       "sent"; then it was the digits and the password on one screen; it is two
+       screens now, and both are here because both are screens. */
+    ['the six digits of a reset', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'reset';
+                                         OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
+                                         OBM.busy = false; return vOb(); }],
+    /* And what a code the server accepted opens onto. Reached from nowhere
+       else: obResetGo() is the only thing that sets this mode. */
+    ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'newpw';
                                          OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
                                          OBM.busy = false; return vOb(); }],
     ['having forgotten the password',  () => { SET.obback = { r: 'set', a: 'acct' };
@@ -1101,8 +1108,14 @@ export function halfDone(){
     /* the + asking which side of the selected row a new one goes on. The two
        answers replace the alignments and the bin while it asks, so this is
        the only face they can be pressed from. */
+    /* One row is taken off first: a board made from the qwerty pattern is AT
+       the row ceiling -- five rows, the free QWERTY's own shape -- so the +
+       is down on it and there is nothing to ask. That is the ceiling working,
+       and this face is about the two answers it gives when there IS room. */
     ['a row selected, asking where a new one goes', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
-                                               kbAdd('qwerty'); kbLay = 0; kbHeadRow(1); kbInsAsk();
+                                               kbAdd('qwerty'); kbLay = 0;
+                                               kbHeadRow(0); kbCut();
+                                               kbHeadRow(1); kbInsAsk();
                                                window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
@@ -1572,6 +1585,19 @@ export function halfDone(){
 
        Both faces, because they hold different things: the article draws the
        rows, and the editor draws the fields that write them. */
+    /* The plans page after the App Store has answered. Every other walk runs
+       in a browser, where there is no App Store at all, so the struck-through
+       price a year carries is on no screen any of them reaches -- and a class
+       nothing wears reads as a class nothing needs.
+       「49.99は取り消し線＋17%OFF」OWNER 2026-08-26. The numbers are the same
+       fakes tools/plan-check.mjs uses and for the same reason: a saving that
+       comes out 33 cannot be the 17 written on PLANS. */
+    ['the plans, priced by the App Store', () => {
+        STORE_P = { 'com.tokinets.lingua.plus.monthly':
+                      { price: '¥750', amount: 750, year: '¥9,000' },
+                    'com.tokinets.lingua.plus.yearly':
+                      { price: '¥6,000', amount: 6000 } };
+        const h = vPlans(); STORE_P = null; return h; }],
     ['a page with every section open', () => {
        /* Public, said here rather than assumed: act-check does NOT re-seed
           between faces, and the two faces above are left hidden on purpose.

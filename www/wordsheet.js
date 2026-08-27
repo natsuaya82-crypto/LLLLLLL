@@ -1525,11 +1525,39 @@ function exportCSV(){
   var csv='spelling,meaning,pos,ipa,sounds,from\n'+WORDS.map(function(w){
     return [w.hw,wMns(w).join(' / '),w.pos,phIpa(wPh(w)),wPh(w).join(' '),w.from||''].map(function(x){return '"'+String(x||'').replace(/"/g,'""')+'"';}).join(',');
   }).join('\n');
+  var name=(langName||'lingua')+'.csv', b, f, u, a;
+  try{ b=new Blob([csv],{type:'text/csv'}); }catch(e){ b=null; }
+  if(!b){ toast(t('toast.exportfail')); return; }
+  /* The share sheet, which is where a file goes on a phone: the person picks
+     Files, or mail, or the next app, and SEES it happen. It is what chapter
+     15 already does with the card -- www/card.js, cardDeliver() -- and this
+     is the same rule written a second time, which is the thing CLAUDE.md's
+     「One place, not fifteen」 is about. The two want one home and moving
+     them there touches card.js, so it is docs/BACKLOG.md and not this
+     commit. */
+  if(navigator.share && window.File){
+    f=new File([b], name, {type:'text/csv'});
+    if(!navigator.canShare || navigator.canShare({files:[f]})){
+      try{ navigator.share({files:[f]})['catch'](function(){}); return; }catch(e){}
+    }
+  }
+  /* `<a download>` is a BROWSER's answer, and on a phone it does nothing at
+     all: WKWebView ignores the attribute, will not navigate to a blob, and
+     throws nothing on the way past. So the whole of this used to be that one
+     line inside a `try` that could not fail, and the app said 「書き出しま
+     した」 over a file that had never been written anywhere.
+     「csv書き出しも書き出しましたって通知くるだけでなに？」OWNER 2026-08-27
+
+     `sharePlug()` is the one question that separates the two -- 「is there a
+     native side at all」 -- and www/backup.js asks it for the same reason.
+     Where there is one, and the share sheet above did not take, there is
+     nowhere for this to go and the app says so instead of lying. */
+  if(sharePlug()){ toast(t('toast.exportfail')); return; }
   try{
-    var b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a');
-    a.href=u; a.download=(langName||'lingua')+'.csv'; a.click(); URL.revokeObjectURL(u);
-    toast(t('toast.exported'));
-  }catch(e){ toast(t('toast.exportfail')); }
+    u=URL.createObjectURL(b); a=document.createElement('a');
+    a.href=u; a.download=name; a.click(); URL.revokeObjectURL(u);
+  }catch(e){ toast(t('toast.exportfail')); return; }
+  toast(t('toast.exported'));
 }
 /* Bringing a list IN is chapter 17, www/import.js: it grew a reader for
    every shape a list arrives in and stopped fitting under this heading. */

@@ -103,6 +103,30 @@ const r = await pg.evaluate(({s}) => {
                              .map(function(h){ return h.r; });
   }
 
+  /* And walking off the page shuts them again. 「初手は全部閉じて」 --
+     arriving again is arriving (OWNER 2026-08-26, read by the leader on
+     08-27 as covering coming back). viewReset() cannot hold this: it runs on
+     langOpen() and wipeAll() and on nothing else, so leaving a screen is
+     neither. viewLeft() in www/shell.js is where it lives now, called from
+     the one line in render() that already knows the screen changed.
+
+     go() and not stand(), because stand() sets `route` by hand and never goes
+     through render()'s `same` -- a check that walked off the page that way
+     would be testing nothing and would say so with a pass. */
+  if(out.arrive.length){
+    go('about'); abToggle(out.arrive[0].r);
+    out.beforeLeave = heads().filter(function(h){ return !h.shut; }).length;
+    go('profile'); go('about');
+    out.afterLeave = heads().filter(function(h){ return !h.shut; })
+                            .map(function(h){ return h.r; });
+    /* and the two faces of the one page are not "leaving": about reads the
+       article and world writes it, and wldPage() draws both. */
+    go('about'); abToggle(out.arrive[0].r);
+    go('world'); go('about');
+    out.acrossFaces = heads().filter(function(h){ return !h.shut; }).length;
+    abToggle(out.arrive[0].r);
+  }
+
   /* the writing face arrives shut too -- it is the same page */
   stand('world');
   out.edOpen = heads().filter(function(h){ return !h.shut; })
@@ -141,6 +165,19 @@ else {
         'open: ' + r.arriveOpen.join(' ') + '. 「この言語については初手は全部閉じて」 ' +
         '— ABOPEN records what is OPEN, so the empty map has to be every ' +
         'section shut.');
+  if (r.beforeLeave !== 1)
+    say('the section pressed before walking off did not open (' + r.beforeLeave +
+        ' open), so the two claims below prove nothing.');
+  else {
+    if (r.afterLeave && r.afterLeave.length)
+      say('leaving the article and coming back left ' + r.afterLeave.length +
+          ' section(s) open: ' + r.afterLeave.join(' ') + '. 「初手は全部閉じて」 ' +
+          '-- viewLeft() in www/shell.js has to drop ABOPEN on the way out.');
+    if (r.acrossFaces !== 1)
+      say('moving between the article and its writing face shut the sections (' +
+          r.acrossFaces + ' open, wanted 1). They are two faces of ONE page -- ' +
+          'wldPage() draws both -- so that is not leaving.');
+  }
   if (r.beforeSwitch !== 1)
     say('the section pressed before switching languages did not open (' +
         r.beforeSwitch + ' open), so the claim below proves nothing.');
@@ -187,6 +224,8 @@ if (r.sectionWins !== true)
 
 console.log('the article: ' + ((r.arrive || []).length) + ' foldable sections, ' +
             'every one shut on arrival, on both faces');
+console.log('and closed again after walking off it, while the reading and ' +
+            'writing faces are one page');
 console.log('and arrives closed in the next language too: ' +
             'viewReset() drops what was open');
 console.log('one place each: 公開 is the article\'s, DL is asked of a section');

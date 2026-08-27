@@ -57,7 +57,38 @@ function viewReset(){
                                           which of the two it is about */
   NOTES_HAVE=null;                     /* the notices, asked again */
   BKLIST=null;                         /* what is on the disk, asked again */
-  ABOPEN={};                           /* which sections of the language's article are open */
+}
+
+/* ---- and what a SCREEN forgets when you walk off it ---------------------
+   viewReset() above is what a LANGUAGE forgets: it runs when another language
+   is opened, and when everything is erased. Those are the only two things
+   that call it. Leaving a screen is neither, and there was nowhere for
+   "forget this when the screen changes" to live at all.
+
+   OWNER DECISION 2026-08-26: 「この言語については初手は全部閉じてくれ。人が
+   見て開くのよ閉じたらまた閉じるし」 -- the article's sections are shut when
+   you arrive, and arriving again is arriving. Read by the leader as covering
+   coming back, 2026-08-27, and that reading is the specification now.
+
+   Called from render() with the route being left and the route being arrived
+   at, at the one moment that already knows the screen changed -- `same` in
+   www/glyph.js. Not from go() and goTab() and the three ways back, which is
+   the same rule written five times and short by one the day a sixth is added.
+
+   And this is the ONLY place. viewReset() above carried `ABOPEN={}` for a
+   day, for the language switch: open a section in one language, switch, and
+   the next language's article was already unfolded. That line is gone,
+   because langOpen() ends in goTab('profile') -- so switching languages walks
+   off the page and arrives here anyway, and two places saying one rule is the
+   thing this repo is most often wrong about. Watched: with only this one the
+   language-switch claim in tools/world-check.mjs is green, with only that one
+   the walking-off claims are red, and with neither both are red.
+
+   The article is two faces of one page (`about` reads it, `world` writes it,
+   and wldPage() draws both), so moving between those two is not leaving. */
+var ABPAGES={about:1, world:1};
+function viewLeft(from, to){
+  if(ABPAGES[from] && !ABPAGES[to]) ABOPEN={};
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------

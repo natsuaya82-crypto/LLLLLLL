@@ -75,7 +75,22 @@ stays red is a host field written the wrong way, not a wait.
 `Authentication → Rate Limits` → emails → 30/hour. Custom SMTP does not lift
 Supabase's own limit; it is a separate number and it is low by default.
 
-## The template, which is not optional
+## The templates, which are not optional — and there are TWO
+
+**Confirm signup and Reset Password are two separate templates in the
+dashboard, and changing one does nothing to the other.** They are listed one
+above the other on the same screen, which is exactly why one of them gets done
+and the other does not.
+
+That is not a hypothetical. `supabase/setup.md` § 3 ended at the signup one for
+weeks and the reset one lived only in the prose below, and what happened was
+what the shape of the list predicted: the signup code arrived as six digits,
+the reset arrived as a link, and it kept arriving as a link every time somebody
+asked. 「6桁の数字がそもそも届かない。リンクでくるのをやめて欲しい」 OWNER
+2026-08-26. **A step that is not in the list people follow is a step nobody
+takes.** Both are numbered in setup.md now.
+
+### 1 of 2 — Confirm signup
 
 `Authentication → Emails → Templates → Confirm signup`. Replace
 `{{ .ConfirmationURL }}` with `{{ .Token }}`:
@@ -95,9 +110,12 @@ is on a server nobody here can read.
 
 `Authentication → Providers → Email → Confirm email` on.
 
-**Reset password is a code too, now.** Same wall, same answer: the link in the
-default template opens nothing on the phone, so the app takes six digits and
-sets the new password itself.
+### 2 of 2 — Reset Password
+
+**Same wall, same answer.** The link in the default template opens nothing on
+the phone, so the app takes six digits and sets the new password itself. It is
+two screens now: the digits, and then — once the server has accepted them — the
+new password (`obResetGo` and `obNewPwGo` in `www/onboard.js`).
 
 `Authentication → Emails → Templates → Reset Password`. Replace
 `{{ .ConfirmationURL }}` with `{{ .Token }}`:
@@ -114,6 +132,20 @@ nothing to be given — `netRecoverCode` in `www/net.js` posts the token to
 with the session that comes back. The template is the other half of that pair,
 and there is no check that can hold the two together, because one of them is on
 a server nobody here can read.
+
+### Which one is which, from the mailbox
+
+There is no check in the gate that can hold either of these, and there never
+can be: one half of the pair is on a server nobody here can read, and the API
+key that could read it is a secret this repo may not hold. **The mailbox is the
+check.** Ask for each from the app and look:
+
+| what arrives | what it means |
+|---|---|
+| one big number | that template is done |
+| a link, and nothing else | that template is still `{{ .ConfirmationURL }}` |
+
+Both, separately. The signup one being right says nothing about the reset one.
 
 ## Checking it
 
