@@ -173,8 +173,104 @@ function inkGeo(l){
   if(l.sh && l.sh.length) return l.sh;
   return (l.st && l.st.length)? l.st : null;
 }
+/* ---- an area is the inside of a RING, and a ring gets drawn a side at a time
+   On a lattice nobody draws a square in one sweep: they draw the top, then
+   the right, then the bottom, then the left, and the fill button stays on
+   for all four. So four strokes come out of the editor each carrying the
+   fill flag, and the editor paints all four green -- it says, plainly, that
+   there is an area there.
+
+   Downstream did not agree. `glyphContours` cuts the inside of each stroke's
+   OWN ring into triangles, and a two-point ring has no inside, so every one
+   of the four asked for a fill and got nothing. Nothing threw; the letter
+   came back with a green line right round it and white in the middle.
+   「塗りも囲いにしてるのに塗られないけど？」 OWNER 2026-08-27 -- and the
+   photograph had five dots, four corners and one part-way down the right
+   side where two strokes met.
+
+   So the pieces are read as the one line they make, here, before anything
+   downstream sees them: strokes that were marked as area and that end where
+   the next one begins are the same line, and it is filled as one.
+
+   Three things it is careful not to do:
+
+   - It only ever joins strokes the person marked. A stroke that shares a
+     corner with an area but was not marked is a line that happens to touch
+     it, and stays one.
+   - It does not invent a bend. A point where two strokes met was the END of
+     a stroke, and an end never bends -- so the seam is stripped of its curve
+     flag as the two are put together. Each piece keeps its own curvature and
+     gains none. (Rule 16 is about ROUND, but the thing it forbids is this:
+     a stroke coming back bent that was not drawn bent.)
+   - It leaves a stroke that is already a ring of its own alone -- one that
+     was closed, or that ROUND made a circle of. Those already fill.
+
+   What it DOES change, deliberately: the joins stop being notched. Four
+   separate bars leave the outside of each corner unfilled, and one line
+   through the same points fills it with the hull of the two ends. A filled
+   square with four nicks out of its corners is not a shape anybody drew, and
+   `tools/fill-check.mjs` asks for the two to be the same ink to the pixel. */
+function inkJoinable(s){
+  return !!(s && s.fill && s.pts && s.pts.length>1 && !s.closed && !s.k);
+}
+function inkSamePt(a,b){ return !!(a && b && a[0]===b[0] && a[1]===b[1]); }
+/* a copy with the curve flag off, for a point that is about to stop being an end */
+function inkHard(p){ return [p[0], p[1]]; }
+function inkJoinFills(v){
+  var i, j, used=[], any=false;
+  for(i=0;i<v.length;i++){ used.push(false); if(inkJoinable(v[i])) any=true; }
+  if(!any) return v;
+  var out=[], grew=false;
+  for(i=0;i<v.length;i++){
+    if(used[i]) continue;
+    if(!inkJoinable(v[i])){ out.push(v[i]); used[i]=true; continue; }
+    /* the chain this stroke is part of, walked both ways from it. A stroke
+       may be joined either end first and either way round -- which end the
+       finger started at is not a fact about the shape. */
+    var pts=[], k;
+    for(k=0;k<v[i].pts.length;k++) pts.push(v[i].pts[k]);
+    used[i]=true;
+    var went=true;
+    while(went){
+      went=false;
+      for(j=0;j<v.length;j++){
+        if(used[j] || !inkJoinable(v[j])) continue;
+        var q=v[j].pts, a=q[0], z=q[q.length-1],
+            head=pts[0], tail=pts[pts.length-1], m, add=null, atEnd=true;
+        if(inkSamePt(tail,a)){ add=q; }
+        else if(inkSamePt(tail,z)){ add=q.slice().reverse(); }
+        else if(inkSamePt(head,z)){ add=q; atEnd=false; }
+        else if(inkSamePt(head,a)){ add=q.slice().reverse(); atEnd=false; }
+        if(!add) continue;
+        used[j]=true; went=true; grew=true;
+        if(atEnd){
+          /* the shared point is now in the middle of a line, so it is held
+             hard: it was two ends and neither of them bent */
+          pts[pts.length-1]=inkHard(pts[pts.length-1]);
+          for(m=1;m<add.length;m++) pts.push(add[m]);
+        }else{
+          pts[0]=inkHard(pts[0]);
+          for(m=add.length-2;m>=0;m--) pts.unshift(add[m]);
+        }
+      }
+    }
+    /* back where it started: drop the repeat and say so, which is exactly
+       the stroke somebody would have got by drawing the ring in one go */
+    var shut=false;
+    if(pts.length>2 && inkSamePt(pts[0], pts[pts.length-1])){
+      pts.pop(); shut=true;
+      pts[0]=inkHard(pts[0]);
+    }
+    if(pts.length===v[i].pts.length && !shut){ out.push(v[i]); continue; }
+    var one={pts:pts, fill:true};
+    if(shut) one.closed=true;
+    out.push(one);
+  }
+  return grew? out : v;
+}
 function inkDef(v){
-  return (v && v.length && v[0] && v[0].pts===undefined)? {sh:v} : {strokes:v};
+  if(v && v.length && v[0] && v[0].pts===undefined) return {sh:v};
+  return {strokes: (v && v.length)? inkJoinFills(v) : v};
 }
 
 /* ---- what the font is made of ------------------------------------------

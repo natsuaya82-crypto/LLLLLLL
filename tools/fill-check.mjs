@@ -90,11 +90,14 @@ const r = await pg.evaluate(({s}) => {
      marked is a chain of four that runs r3 r4 r0 r1 r2 and stops -- so it
      inks what that open line inks, which is what a single stroke through the
      same five points has always inked. A stroke that was never marked is not
-     part of the area and does not join to one. */
+     part of the area and does not join to one: the side whose fill was taken
+     off is still DRAWN, as the plain line it now is, which is why it is in
+     the comparison beside the chain. */
   var half = sides(true); delete half[2].fill;
   out.partial = ink(half);
   out.partialOne = ink([{ pts: [ring[3], ring[4], ring[0], ring[1], ring[2]],
-                          fill: true }]);
+                          fill: true },
+                        { pts: [ring[2], ring[3]] }]);
 
   /* a shape that crosses itself is still a drawing and must come back */
   var bow = [P(4,4), P(16,16), P(16,4), P(4,16)];
