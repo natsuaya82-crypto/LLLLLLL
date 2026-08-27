@@ -2773,9 +2773,26 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
    なので絵が伸び縮みする側になる。116px が上限(前からの大きさ)で、44px が
    下限。この扉のファイルの一番上にもう書いてあることでもある ──
    「箱が縮んで、絵はその中に収まる」。 */
-.ob .mid.obform .obcrest{flex:0 1 auto;min-height:0;
+/* The crest TAKES the slack, and that is what pushes Apple and Google down to
+   the bar. 「Googleはアカウント登録はこちらのギリギリで貼り付けて欲しい。全部下に
+   行けば扉もっとデカくできるでしょ」OWNER 2026-08-26, build #93.
+
+   It was `0 1 auto` -- shrink but never grow -- and every other child of
+   .mid.obform is `0 0 auto`, so on a tall phone 111px of nothing sat between
+   the last button and the bar. One of them growing is the whole fix: no
+   margin-top:auto anywhere, because there is no slack left to push with once
+   the crest has eaten it.
+
+   Measured at four sizes: 390x844 the door goes 77x116 -> 144x219 and the gap
+   111 -> 8; 375x667 and 320x568 do not move at all, because they had 6-7px of
+   slack and there was nothing to eat. */
+.ob .mid.obform .obcrest{flex:1 1 auto;min-height:0;
                          display:flex;flex-direction:column;justify-content:flex-end}
-.ob .mid.obform .obcrest .obdoor{flex:1 1 auto;height:auto;min-height:44px;max-height:116px}
+/* 220 and not more: .obdoor svg is `max-width:min(40vw,148px)` and the drawing
+   is about 0.66 as wide as it is tall, so at 220 it is 146 across -- one step
+   short of that cap. Past here the width holds it and the picture stops
+   growing. */
+.ob .mid.obform .obcrest .obdoor{flex:1 1 auto;height:auto;min-height:44px;max-height:220px}
 .ob .obcrest .obh1{margin-top:clamp(3px,1vh,10px)}
 .obor{display:flex;align-items:center;gap:12px;margin:clamp(7px,1.6vh,20px) 0 clamp(5px,1.3vh,14px);
       color:var(--txm);font-size:.82rem;flex:0 0 auto}
