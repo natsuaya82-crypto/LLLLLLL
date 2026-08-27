@@ -871,9 +871,12 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* The file button holds the input on top of itself, invisible and the whole
    size of it, because a native file control cannot be styled and a hidden one
    cannot be pressed. */
-.impfile{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;
-         width:100%;min-height:52px;margin-top:10px;border:1px solid var(--goldln);
-         border-radius:11px;background:var(--goldsf);color:var(--gold);font-size:.94rem}
+/* The one thing left here is that a native file control has to lie over the
+   words. Everything else -- the size, the colour, the height a thumb needs --
+   is `.btn.ghost`'s, which is what a button in this app IS.
+   「これも角丸だし」OWNER 2026-08-27: it was a filled, cornered box, which is
+   the rule at the head of CLAUDE.md. `.shfile` below is the same one line. */
+.impfile{position:relative;display:block;width:100%;text-align:center}
 .impfile input{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0}
 /* The same trick for the sheet (www/sheet.js, chapter 26) and NOT .impfile:
    that one is a rounded box with a hairline round it, which is what the whole
@@ -2396,6 +2399,14 @@ a.set{text-decoration:none}
 .field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
 .field textarea{height:120px;line-height:1.6}
+/* The box a list is pasted into takes the room that was standing empty under
+   it. 「下のスペース余ってんなら上の入力欄広くしてみやすくしろよ」OWNER
+   2026-08-27. `.field textarea` is worn by thirty screens, so this is by id --
+   the shape `#wd-nt` and `#me-bio` already use. 360 is measured: 70 above,
+   11 + a 50pt button + 12 + a 50pt button below, and `.body`'s own foot of
+   `--tabh` + 90. On 844, 667 and 568 the foot of the page lands within two
+   points of the foot of the screen, so nothing scrolls on any phone. */
+.field textarea#f-csv{height:calc(100dvh - 360px);min-height:120px}
 /* A note on a word is a line or two, not a page. */
 .field textarea#wd-nt{height:76px}
 .row2{display:flex;gap:10px}.row2 .field{flex:1}
