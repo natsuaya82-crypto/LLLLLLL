@@ -569,6 +569,54 @@ await pg.waitForFunction(() => window.SH && (SH.got || SH.why), null, { timeout:
 const drewNo = await pg.evaluate(() => ({ why: SH.why, got: !!SH.got }));
 await pg.evaluate(() => { try { delete window.Capacitor; } catch (e) { window.Capacitor = undefined; } });
 
+/* ---- 9. and writing on it without leaving the app -----------------------
+   OWNER 2026-08-27「そのままdlした端末上で書くとか？じゃないと無理じゃね」.
+   The road with no printer in it went out of Lingua, through Files, and back.
+   Apple's Markup is the same editor either way, so what changed is which app
+   it opens in -- and that is all Swift. What is held here is this side of it:
+   that the sheet the PHONE filed is the one that gets opened, that changing
+   your mind does nothing at all, and that what comes back goes in by the one
+   door and not a second one. */
+await pg.evaluate(({ names }) => {
+  var asked = [];
+  /* `sheet` answers a name that is NOT the one asked for -- a sheet is never
+     overwritten, so the second of a name is `<name> 2.pdf`. Writing on the
+     first of two would be somebody's letters going into the wrong sheet. */
+  window.Capacitor = { nativePromise: function(plug, method, args){
+    asked.push({ plug: plug, method: method, args: args });
+    if (method === 'sheet')  return Promise.resolve({ file: 'Test sheet 2.pdf' });
+    if (method === 'markup') return Promise.resolve({ wrote: window.__WROTE,
+                                                      b64: window.__WANT.b64 });
+    if (method === 'renderPdf'){
+      var j = String(window.__SHEETJPG);
+      return Promise.resolve({ jpeg: j.slice(j.indexOf(',') + 1) });
+    }
+    return Promise.resolve({});
+  } };
+  window.__ASKED2 = asked;
+  SH = shBlank(); SH.names = names.join(', ');
+  window.__WROTE = false;
+  shMake();
+}, { names: NAMES });
+await pg.waitForFunction(() => window.SH && SH.file, null, { timeout: 60000 });
+/* changed their mind: nothing happens, and nothing is said */
+await pg.evaluate(() => { shWrite(); });
+await pg.waitForFunction(() => window.__ASKED2.filter(c => c.method === 'markup').length === 1,
+                         null, { timeout: 60000 });
+const gaveUp = await pg.evaluate(() => ({
+  file: SH.file, got: !!SH.got, why: SH.why,
+  args: (window.__ASKED2.filter(function(c){ return c.method === 'markup'; })[0] || {}).args
+}));
+/* and then they write on it */
+await pg.evaluate(() => { window.__WROTE = true; SH = shBlank();
+                          SH.file = 'Test sheet 2.pdf'; shWrite(); });
+await pg.waitForFunction(() => window.SH && (SH.got || SH.why), null, { timeout: 60000 });
+const wrote = await pg.evaluate(() => ({
+  why: SH.why, names: SH.got ? SH.got.map(function(g){ return g.nm; }) : null,
+  ink: SH.got ? SH.got.filter(function(g){ return g.sh.length; }).length : 0
+}));
+await pg.evaluate(() => { try { delete window.Capacitor; } catch (e) { window.Capacitor = undefined; } });
+
 await br.close();
 
 /* ---- what came back ----------------------------------------------------- */
@@ -702,6 +750,15 @@ say(!!drawn.names && drawn.names.length === NAMES.length && drawn.ink === DREW.l
 say(!drewNo.got && !!drewNo.why,
     'and a page the phone cannot draw is a sentence, not a screen that never ' +
     'changes: "' + drewNo.why + '"');
+say(gaveUp.file === 'Test sheet 2.pdf' && !!gaveUp.args &&
+    gaveUp.args.file === 'Test sheet 2.pdf',
+    'the sheet that gets written on is the one the PHONE filed, not the name ' +
+    'that was asked for: opened "' + (gaveUp.args && gaveUp.args.file) + '"');
+say(!gaveUp.got && !gaveUp.why,
+    'and changing your mind does nothing at all — no rows, and nothing said');
+say(!!wrote.names && wrote.names.length === NAMES.length && wrote.ink === DREW.length,
+    'and what was written on it comes in by the same one door: ' +
+    (wrote.names ? wrote.names.length : 0) + ' names, ' + wrote.ink + ' written in');
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');
