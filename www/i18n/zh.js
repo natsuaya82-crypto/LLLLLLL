@@ -747,7 +747,6 @@ defLang('zh', (function(){
       "wr.pages"         : "{0} 张",
       "wr.pages.1"       : "1 张",
       "wr.out"           : "导出用纸",
-      "wr.write"         : "在这里写",
       "wr.out.ok"        : "已导出",
       "wr.nobridge"      : "应用没有连到文件存放处。",
       "wr.long"          : "这些名称放不进一张纸。",

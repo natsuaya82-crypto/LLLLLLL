@@ -870,16 +870,6 @@ Decided:
   it is: **real ink**. It blurred clean vector ink; a brush bleeds into paper
   and goes dry, and its edge is not a step. The owner is testing that with a
   real sheet before release.
-- **AND IT IS WRITTEN ON INSIDE LINGUA.** 「たのむ」OWNER 2026-08-27, on the
-  eight steps across two apps that the Files road was.
-  `LinguaMarkup.swift` opens `QLPreviewController` in `.updateContents` mode —
-  Apple's own Markup, in this app, on the file `sheet` just wrote — and what
-  comes back goes into `shTakeFile()`. **No second way of reading a PDF**: it
-  is the same one door the picker feeds. The button is on the make screen and
-  is there only once a sheet exists. Cancelled does nothing, and whether
-  anything was written is asked of the file's modification date rather than of
-  a delegate callback that has to fire.
-
 - **PRINTING IS NOT REQUIRED, and the screen is the road that has to work.**
   「印刷はむりにしない？そのままdlした端末上で書くとか？じゃないと無理じゃね」
   OWNER 2026-08-27. This does not overturn 「両方対応にしたい」 above — it says
@@ -888,6 +878,14 @@ Decided:
   needs nothing. The four steps in the app's `?` said 「印刷して書く」 and
   「スキャンして取り込む」 and now say 「書く」 and 「取り込む」, in ten
   languages, and `wr.in` offers a PDF rather than a scanned one.
+
+  **Where a person writes is Files, and that was settled twice.** For half a
+  day the app opened Apple's Markup itself, so the road never left Lingua.
+  「あとはシートの書き出しだけど、ここで書く無くして。毎回ファイルに保存して
+  欲しい。」 OWNER 2026-08-27 (evening, on a real phone) took it back the same
+  day: the sheet is written out as a FILE, every time, and what a person does
+  with that file is theirs. The app has one way out to the phone and no editor
+  of its own.
 
   **What makes that road work is `renderPdf`**, and specifically that it draws
   with PDFKit: Markup keeps a stroke as a PDF ANNOTATION, and
