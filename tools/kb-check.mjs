@@ -759,7 +759,11 @@ const r = await pg.evaluate(({ s }) => {
   var v2Was = kbLayer().rows[0][2].v;
   var nWas = kbLayer().rows[0].length;
   var totWas = kbUsed(kbLayer().rows[0]);
-  kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+  /* SELECT, THEN PRESS THE BUTTON. 「なんで？ 結合ボタン作れよ。編集も含め全部
+     ボタンで作業だから」 OWNER 2026-08-27. It used to be two taps -- press a
+     key, press the one beside it -- and that road is what a second key had to
+     be selected on, so it is gone. Tapping selects; the button joins. */
+  kbTapKey(0, 2); kbJoinSel(); standKb();
   var j = kbLayer().rows[0][2];
   out.joined = kbLayer().rows[0].length === nWas - 1;
   out.joinedW = out.joined && kbU(j.w) === w2Was;
@@ -767,6 +771,26 @@ const r = await pg.evaluate(({ s }) => {
   out.joinedRow = kbUsed(kbLayer().rows[0]) === totWas;
   out.joinedSel = !!(KBH && KBH.k === 'k' && KBH.i === 2);
   out.joinBack = (kbUndo(), kbLayer().rows[0].length === nWas);
+
+  /* ---- and TAPPING a neighbour does not join any more -------------------
+     This is the road that had to be cleared: a key selected, the one beside
+     it pressed, and the two became one -- so a second key could never be
+     SELECTED, which is what 「あと複数キー選べないから」 is. Nothing about it
+     throws; the board simply loses a key where somebody meant to choose one.  */
+  fresh();
+  var tapWas = kbLayer().rows[0].length;
+  kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+  out.tapNoJoin = kbLayer().rows[0].length === tapWas;
+  out.tapMoved = !!(KBH && KBH.k === 'k' && KBH.i === 3);
+
+  /* the button reaches the key UNDER it too, when there is none beside it --
+     one button, both directions, because the owner asked for one */
+  fresh();
+  var last = kbLayer().rows[0].length - 1;
+  kbTapKey(0, last); standKb();
+  out.downOnly = !kbJoinRight() && kbJoinDown();
+  kbJoinSel(); standKb();
+  out.downJoined = (kbLayer().rows[0][last].h || 1) === 2;
 
   /* the buttons over the sheet act on the key that is selected */
   fresh();
@@ -1872,6 +1896,11 @@ say(r.joinedKeeps, 'keeping the letter of the one on the left');
 say(r.joinedRow, 'and the row comes to what it came to before');
 say(r.joinedSel, 'and what is left is what is selected');
 say(r.joinBack, 'and the step back takes the two back');
+say(r.tapNoJoin,
+    'but TAPPING the one beside it does not join them -- tapping only selects');
+say(r.tapMoved, 'it is the key that was tapped that is selected afterwards');
+say(r.downOnly && r.downJoined,
+    'and the one button reaches the key UNDER it when there is none beside it');
 say(r.keyJoinBtn && r.keyOpenBtn && r.keyBinUp,
     'with a key selected the buttons over the sheet are join, its page, and the bin');
 say(r.keyNoAlign, 'and not the alignments, which are a row\'s business');

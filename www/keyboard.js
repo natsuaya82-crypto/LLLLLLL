@@ -1242,8 +1242,13 @@ function kbDragMount(){
 
    It is also the shape the sheet already had: a row is worked by pressing its
    number, a column by pressing its letter, and now a key by pressing the key.
-   Press to select, press again to put it down, and the buttons over the sheet
-   act on whatever is selected. Three things, one habit. */
+   Press to select, and the buttons over the sheet act on whatever is selected.
+   Three things, one habit -- and no exception:
+   「なんで？ 結合ボタン作れよ。編集も含め全部ボタンで作業だから」 OWNER
+   2026-08-27. Pressing the key BESIDE a selected one used to join the two,
+   which was the one place on this sheet where a press did something rather
+   than choosing something -- and it was standing exactly where a second key
+   would have to be chosen 「あと複数キー選べないから」. */
 function kbCellHTML(ri, at, span){
   return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
     ' style="grid-column:span '+span+'"' +
@@ -1281,16 +1286,6 @@ function kbTapKey(ri, ki){
     if(ui<0) return;
     ri=ri-1; ki=ui;
   }
-  /* the one beside the one already chosen: the two become one */
-  if(KBH && KBH.k==='k' && KBH.r===ri && (KBH.i===ki-1 || KBH.i===ki+1)){
-    kbJoin(KBH.r, Math.min(KBH.i, ki));
-    return;
-  }
-  /* and the one directly under or over it: the two become one, two rows
-     tall. Refused when they do not line up, and then this is an ordinary
-     press that selects what was pressed. */
-  if(KBH && KBH.k==='k' && KBH.r===ri-1 && kbVJoin(KBH.r, KBH.i)) return;
-  if(KBH && KBH.k==='k' && KBH.r===ri+1 && kbVJoin(ri, ki)) return;
   kbSelTo(kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki});
 }
 /* Two keys, side by side, becoming one as wide as the two of them were.
@@ -1313,12 +1308,31 @@ function kbJoin(ri, ki){
   saveKb(); render();
 }
 /* Whether the selected key has one beside it to join to. */
-function kbJoinable(){
+/* Whether the selected key has one to join to -- the one beside it, or the one
+   under it. Both, because the button is ONE button: 「なんで？ 結合ボタン
+   作れよ。編集も含め全部ボタンで作業だから」 OWNER 2026-08-27.
+
+   The pair under it is only offered where the two line up, which is kbVJoin()'s
+   own rule; asking it here rather than restating it means the button is down
+   exactly when the join would be refused. */
+function kbJoinRight(){
   var row;
   if(!KBH || KBH.k!=='k') return false;
   row=kbLayer().rows[KBH.r];
   return !!(row && row[KBH.i] && row[KBH.i+1]);
 }
+function kbJoinDown(){
+  var rows, up, dn, di;
+  if(!KBH || KBH.k!=='k') return false;
+  rows=kbLayer().rows;
+  up=rows[KBH.r]; dn=rows[KBH.r+1];
+  if(!up || !dn || !up[KBH.i]) return false;
+  if(kbTall(up[KBH.i]) || kbShadow(up[KBH.i])) return false;
+  di=kbAtKey(dn, kbAtOf(up, KBH.i));
+  if(di<0 || kbU(dn[di].w)!==kbU(up[KBH.i].w)) return false;
+  return !kbTall(dn[di]) && !kbShadow(dn[di]);
+}
+function kbJoinable(){ return kbJoinRight() || kbJoinDown(); }
 
 /* ---- a key that covers the row below it too -----------------------------
    「縦はリーダーに確認して許可降りたらやって欲しい」OWNER 2026-08-27, and the
@@ -1631,7 +1645,14 @@ function kbCut(){
 /* The two the toolbar does to a key. They take what is selected rather than
    arguments, because a button over the sheet acts on the selection -- the bin
    and the three alignments have always worked that way. */
-function kbJoinSel(){ if(KBH && KBH.k==='k') kbJoin(KBH.r, KBH.i); }
+/* The button. Beside first, then under -- a row is read across, so "join" with
+   nothing else said means the one next to it, and the one below is what is
+   left when there is nothing beside it. */
+function kbJoinSel(){
+  if(!KBH || KBH.k!=='k') return;
+  if(kbJoinRight()) kbJoin(KBH.r, KBH.i);
+  else if(kbJoinDown()) kbVJoin(KBH.r, KBH.i);
+}
 function kbOpenSel(){ if(KBH && KBH.k==='k') kbPick(KBH.r, KBH.i); }
 /* ---- where the slack in a row goes -------------------------------------
    「エクセルみたいに中央寄せとかのボタン置けば？行とか列選択して中央寄せ
