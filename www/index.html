@@ -209,7 +209,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    height, and this row's share of it. 「マス目の大きさもカスタマイズできる
    ように」 52px is what every key was, so a keyboard nobody has touched is
    the keyboard it was. */
-.kb{display:flex;flex-direction:column;gap:6px;margin:2px -20px 0;--kh:52px}
+.kb{display:flex;flex-direction:column;gap:var(--kbrg);margin:2px -20px 0;--kh:52px;--kbrg:6px}
 /* THE EDITOR'S board, which is a different thing from the one above and is
    why this is a second class rather than a change to the first. The one
    above is the keyboard AS IT WILL BE -- free's face, board 0's, the row on
@@ -261,11 +261,17 @@ canvas.pkc{width:34px;height:34px;display:block}
    「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
    kbNewHTML() writes calc() over these two, so the number lives here only. */
 :root{--kbw:83vw;--kbgap:4.2px}
-.kb.kbsheet{width:var(--kbw);margin:2px auto 0;--kh:44px;gap:5px}
+.kb.kbsheet{width:var(--kbw);margin:2px auto 0;--kh:44px;--kbrg:5px;gap:var(--kbrg)}
 /* No gap between COLUMNS -- a column is half a key, so a gap there would be
    counted twice on a whole key and twelve times on a space bar. The space
    between two keys is the keys' own margin, which is the same 4 whatever they
    span. */
+/* A key joined to the one below is two rows tall, and a grid row grows to
+   its content -- so without these two the row itself stretched, pushed the
+   row under it down, and took every neighbour on its own row up with it.
+   `.kb` rather than `.kb.kbsheet`: it holds for the read-only board too. */
+.kb .kbrow{height:var(--kh)}
+.kb .kbk{align-self:start}
 .kb.kbsheet .kbrow, .kbhdr{display:grid;gap:0;position:relative;
      grid-template-columns:repeat(var(--kc, 20), 1fr)}
 .kb.kbsheet .kbk{min-width:0;margin:0 calc(var(--kbgap) / 2)}
@@ -325,7 +331,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    いいのよ」 The rule against rounded boxes is about a box drawn round a
    word -- a button, a banner, a notice -- and a key is not one of those: it
    is the shape of the thing itself, and every key on every phone has them. */
-.kbk{position:relative;min-height:calc(var(--kh) * var(--rh));min-width:0;
+.kbk{position:relative;min-height:calc(var(--kh) * var(--rh) + var(--kbrg, 0px) * (var(--rh) - 1));min-width:0;
      border:1px solid var(--line);
      border-radius:9px;background:var(--sf);color:var(--tx);font-family:inherit;padding:0;
      display:flex;align-items:center;justify-content:center;overflow:hidden}
