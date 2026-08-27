@@ -1033,7 +1033,15 @@ one. `kbColHas()` is the one place. What the BIN then takes is a different
 question and is not this one: `kbDelCol()` asks how much of a key is inside the
 column, and narrows it by that much, so the inset row still gives up its half.
 
-**Where a row is short from is rounded to a whole key**, and that is the half
+**Left and right ignore the half key; only CENTRE rounds to a whole one.**
+「キーボードも左右寄せにするなら、ハンキーとか関係なく寄せて。」 OWNER
+2026-08-27. Right used to send the odd half to the other end so the row's first
+key landed on a whole column — which is what centring is FOR, and is not what
+an end is for. Pushing a row right means putting it against the right, and half
+a key left over stays left over. It agrees with the sentence above: a row that
+ends up half a key out lines up with no column and lights for none.
+
+**Where a CENTRED row is short from is rounded to a whole key**, and that is the half
 of it that is easy to get wrong. A column is half a key, so half of what is
 left over is very often an odd number of columns — three keys on a sheet of
 ten leave fourteen, and seven of those is three keys and a half. Put that in
@@ -1084,14 +1092,20 @@ scaled, because ten keys divide whatever the phone is across; the height
 follows it now, at **0.1385 of the phone's short side**, which is that same 54
 at the 390 it was measured on. A key keeps its shape: **44pt on the narrowest
 iPhone, 61 on a Pro Max**. The rows that fit are then divided out of the cap
-rather than chosen — **seven from the 13 mini up, six on an SE 2, five on an
-SE 1, and eight on nothing**. It was `KB_ROWS = 8` — a number this file used to
-justify with "nothing on the phone sets a height", which was untrue when it was
-written, and which no phone ever had room for. The ceiling is **one number for
-every phone**, not as many as the phone in your hand fits: a keyboard belongs
-to a language and a language moves between phones, so building eight where they
-fit and handing them to an SE is eight rows nobody can type on — the width rule
-one axis over. `kbRowsMax()` is the one place, and **`kb-check` reads the three
+rather than chosen, and **divided out of the SMALLEST phone the app runs on —
+320 × 568** — which is what the width rule has always done: not the phone in
+your hand, and not the roomiest one, the narrowest. **Five**, which is the free
+QWERTY's own row count and what a real phone keyboard is. Referenced to a big
+phone instead it came to **63.8% of an iPhone SE 1** — the cap broken on the
+two phones with the least room, which is the opposite of what a ceiling is for.
+「キーボードの高さは画面の半分までってルールあるのになんで七も足したら7割埋まる
+けど」 It was `KB_ROWS = 8` before that — a number this file used to justify
+with "nothing on the phone sets a height", which was untrue when it was
+written, and which no phone ever had room for. **And the sheet in the app is a
+row of `--kbw × KB_ROWW`, not a flat 44px**: the editor is the preview, and a
+flat number drew it 388px tall on every phone — 40.6% of a Pro Max and 68.3%
+of an SE. A keyboard belongs to a language and a language moves between
+phones, which is why the ceiling is one number rather than each phone's own. `kbRowsMax()` is the one place, and **`kb-check` reads the three
 numbers OUT of `KeyboardViewController.swift`**, because two copies of a number
 in two languages is the thing that drifts. Both ceilings hold on ADDING only:
 **a layout already over the ceiling is left exactly as it is**, because cutting
