@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these twenty-seven checks, so a green tick on a push is not the gate. This
+> these twenty-eight checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -258,7 +258,7 @@ backlog entry is not permission, and neither is the absence of one.
 ```
 npm test        # tools/gate.mjs -- eight with no browser in a row (assets, es5,
                 # grammar-engine, dead, import, sides, face, box, ~2s), then the
-                # other nineteen four at a time. NOT run by a session -- rule 2.
+                # other twenty four at a time. NOT run by a session -- rule 2.
                 # The count is FAST.length + SLOW.length in tools/gate.mjs and
                 # nowhere else; every number in this file is a copy of it.
 ```
@@ -268,10 +268,10 @@ Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate
 `npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
 `npm run fill` / `npm run round` / `npm run base` / `npm run kb` / `npm run plan` /
-`npm run world` / `npm run press`.
+`npm run world` / `npm run ask` / `npm run press`.
 `tools/gate.mjs` is what `npm test` runs. The eight that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
-there and nothing heavy is started at all — and the nineteen that each start a headless
+there and nothing heavy is started at all — and the twenty that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
 output is printed whole and in list order, so a counter that moved is still visible.
 
@@ -329,7 +329,7 @@ Adding a policy means adding the line somebody would use against it.
 
 ## The twenty rules the gate enforces
 
-Twenty is how many rules are written below. **The gate is twenty-seven checks,
+Twenty is how many rules are written below. **The gate is twenty-eight checks,
 and the two are not the same number and must not be made to match** — count the
 rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
 rule can take three checks and one check can hold two rules.
