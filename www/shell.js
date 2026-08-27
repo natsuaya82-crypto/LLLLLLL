@@ -409,6 +409,11 @@ function pageName(r, a){
     return t('tab.build');
   }
   if(r==='gram' && a){
+    /* A chapter of the chapter being rebuilt names itself, in the one place
+       its name is written -- so the bar and the list cannot disagree about
+       what somebody just opened. */
+    if(a.indexOf('v2:')===0 && typeof g2ChapName==='function')
+      return g2ChapName(a.slice(3));
     var st=(typeof stBy==='function')? stBy(a) : null;
     if(st) return stTitle(st);
   }

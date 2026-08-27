@@ -418,7 +418,7 @@ const R = await pg.evaluate(() => {
      ground for the same reason; see walkArg there. */
   const argsOf = (r) =>
     r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
-    r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
+    r === 'gram' ? [null].concat(gramArgs()) :
     r === 'ltset' ? [null].concat(LT_KINDS) :
     r === 'kb' ? [null].concat(kbBoards().map((x, i) => String(i))) :
     r === 'fm' ? ['tira'] :

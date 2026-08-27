@@ -972,12 +972,12 @@ export function halfDone(){
        a word standing still, and that difference is the whole chapter. */
     ['the word order, arranged', () => {
         window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
-        g2Lift = -1;
+        g2Lift = '';
         return vGram(); }],
     ['the word order, one word lifted', () => {
         window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
-        g2Lift = 0;
-        const h = vGram(); g2Lift = -1; return h; }],
+        g2Lift = 'order:0';
+        const h = vGram(); g2Lift = ''; return h; }],
     /* ---- the 助詞 stage, both faces ------------------------------------
        It is in STAGES_IF -- off the list until a language says it has one,
        because English has none and opening the chapter with it would be the

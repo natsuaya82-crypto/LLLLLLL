@@ -240,6 +240,18 @@ function stAll(){
                                            pos:'x', feats:[], own:STG.extra[i]});
   return out;
 }
+/* Every argument the `gram` route takes -- the stages, and the chapters of
+   the chapter that is being rebuilt. Both walks ask THIS rather than keeping
+   a list of their own: tools/act-check.mjs's walkArg and tools/i18n-check.mjs's
+   argsOf. A ninth chapter is walked the day it is added, and a chapter that
+   nothing renders is a chapter where a hard-coded string sits forever. */
+function gramArgs(){
+  var out=stAll().map(function(p){ return p.id; }), a, i;
+  out.push('v2');
+  a=(typeof g2Chaps==='function')? g2Chaps() : [];
+  for(i=0;i<a.length;i++) out.push('v2:'+a[i].id);
+  return out;
+}
 function stBy(id){
   var a=stAll(), i;
   for(i=0;i<a.length;i++) if(a[i].id===id) return a[i];
@@ -619,8 +631,9 @@ function vGram(){
      this route rather than as a route of its own: www/shell.js's PAGES is
      another session's file and a view with no page there fails act-check.
      When it is given a route, this branch is what moves. */
-  if(gOpen==='v2') return '<div class="view">'+navTop()+
-    '<div class="body">'+g2Page()+'</div></div>';
+  if(gOpen==='v2' || (gOpen && gOpen.indexOf('v2:')===0))
+    return '<div class="view">'+navTop()+
+      '<div class="body">'+g2Page(gOpen)+'</div></div>';
   p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
     navTop()+

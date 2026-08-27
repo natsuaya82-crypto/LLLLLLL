@@ -607,7 +607,7 @@ const g2 = await pg.evaluate(() => {
   WORDS.push({ hw:'zke',  pos:'pro', mns:['the one speaking'], at:1 });
   WORDS.push({ hw:'zkano', pos:'n',  mns:['a thing'], at:1 });
   WORDS.push({ hw:'ztir', pos:'v',   mns:['does'], at:1 });
-  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render(); };
+  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }]; render(); };
   const words = () => Array.prototype.map.call(
     document.querySelectorAll('#app .segs .seg'), (b) => b.textContent);
   /* Says what it found rather than throwing on `undefined.click`. A check
@@ -628,7 +628,7 @@ const g2 = await pg.evaluate(() => {
      about "has decided nothing yet" would pass on any code at all. Cleared
      here and put back at the end. */
   delete STG.set.order;
-  g2Lift = -1; STG.order = 'SOV'; show();
+  g2Lift = ''; STG.order = 'SOV'; show();
   const start = words();
   /* one press lifts and writes nothing */
   press(0);
@@ -653,7 +653,7 @@ const g2 = await pg.evaluate(() => {
   WORDS.length = wl;
   STG.order = was;
   if (wasSet) STG.set.order = 1; else delete STG.set.order;
-  g2Lift = -1;
+  g2Lift = '';
   return { start: start.join(' '), n: start.length,
            afterOneLit: afterOne.lit, afterOneOrder: afterOne.order,
            afterOneWords: afterOne.words.join(' '), afterOneSet: afterOne.set,
@@ -714,7 +714,7 @@ const g2n = await pg.evaluate(() => {
        shown here as well */
     { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
   ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }]; render();
   const rows = Array.prototype.map.call(
     document.querySelectorAll('#app .stslot'), (b) => ({
       lab: b.querySelector('.psm').textContent,
@@ -772,36 +772,386 @@ const g2v = await pg.evaluate(() => {
     /* and a plural is the nouns' */
     { id:'n1', pos:'n', fm:'pl',  at:'end',   drop:0, add:sp('mi'), when:'' }
   ];
-  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
-  /* Which section a row is under, read off the page rather than assumed: the
-     rows of both chapters wear one class, and a check that just counted them
-     would pass with every row under one heading. */
-  const secs = [], kids = document.querySelectorAll('#app .body > *');
-  let now = null;
-  Array.prototype.forEach.call(kids, (el) => {
-    if (el.className === 'sec') { now = { name: el.textContent, rows: [] }; secs.push(now); }
-    else if (now && el.className.indexOf('stslot') >= 0)
-      now.rows.push(el.querySelector('.psm').textContent + ':' +
-                    el.querySelector('.psi').textContent);
+  /* A chapter is a PAGE now, so this walks the pages rather than reading
+     headings down one screen. That is the claim it always meant: what a
+     chapter draws is its own, and what it does not draw is somewhere else. */
+  const on = (id) => {
+    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + id }]; render();
+    return Array.prototype.map.call(document.querySelectorAll('#app .stslot'),
+      (b) => b.querySelector('.psm').textContent + ':' +
+             b.querySelector('.psi').textContent);
+  };
+  const chaps = {};
+  g2Chaps().forEach((c) => { chaps[c.id] = on(c.id); });
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  return { chaps: chaps, ids: g2Chaps().map((c) => c.id) };
+});
+
+want('the page is a list of chapters, each one its own', g2v.ids.length, 8);
+want('the nouns chapter holds only what a noun does',
+     g2v.chaps.n.join(' '), 'Plural:tufmi');
+/* Past and passive, and NOT the negation -- which is the next chapter's. */
+want('a verb shows the endings this language gives it',
+     g2v.chaps.v.indexOf('Past:zlumaka') >= 0, true);
+want('a rule that goes on the front comes out on the front',
+     g2v.chaps.v.indexOf('Passive:ezluma') >= 0, true);
+want('and the negation is not drawn there',
+     g2v.chaps.v.join(' ').indexOf('nn'), -1);
+want('so the verbs chapter has exactly two rows', g2v.chaps.v.length, 2);
+
+/* ---- 57-64: negation, and the three ways a language may write one --------
+   docs/GRAMMAR-V2-SPEC.md §4: 「ただし『必ず PREFIX になる』と決めつけない」.
+   An ending, a beginning, or A WORD OF ITS OWN -- and the last is not a
+   setting of the first two: it changes the SENTENCE, not the verb.
+
+   So the row is a pair of LINES, and the same row reads for all three. What
+   is held here is that each way produces the line that way really makes, and
+   that where a negation WORD lands is the ENGINE's answer -- this language's
+   chosen position -- and not a guess made while drawing.
+
+   Nothing throws in any of it. A negation that never arrives leaves the
+   positive line printed twice, which looks like a language that does not
+   negate rather than like a fault. */
+const neg = (fm, opts) => pg.evaluate(({ fm, o }) => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const hidden = [];
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  /* The word this language says no with. It lives in the 否定 stage's slot,
+     which is where it has always lived; this check's language has a dictionary
+     of one word, so it is seeded here and taken away again. */
+  if (!o.noWord)
+    WORDS.push({ hw:'znak', pos:'part', mns:['not'], at:1, slot:'neg.not' });
+  if (o.noWord)
+    for (let i = WORDS.length - 1; i >= 0; i--)
+      if (WORDS[i].slot === 'neg.not') hidden.push(WORDS.splice(i, 1)[0]);
+  if (o.negp) { if (!STG.gpos) STG.gpos = {}; STG.gpos.negp = o.negp; }
+  const wasNegp = STG.gpos && STG.gpos.negp;
+  STG.fm = fm.map((r) => ({ id:r.id, pos:r.pos, fm:r.fm, at:r.at, drop:0,
+                            add:sp(r.add), when:r.when || '',
+                            wend:r.wend? sp(r.wend) : [] }));
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:neg' }]; render();
+  const rows = Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) => ({
+      lab: b.querySelector('.psm').textContent,
+      from: b.querySelector('.psw').textContent,
+      to: b.querySelector('.psi').textContent,
+      go: b.getAttribute('data-do') }));
+  WORDS.length = wl;
+  hidden.forEach((w) => WORDS.push(w));
+  STG.fm = JSON.parse(wasFm);
+  return { rows: rows, negp: wasNegp };
+}, { fm, o: opts || {} });
+
+/* 1. a word of its own. Where it goes is what this language answered, so the
+   same word is asked for twice -- after the verb and before it -- and the two
+   lines have to differ. A drawing that put it in a fixed place would give the
+   same answer to both. */
+const nAfter = await neg([], { negp:'after' });
+const nBefore = await neg([], { negp:'before' });
+const rowOf = (r) => r.rows.filter((x) => x.from !== x.to && x.to.indexOf(' ') >= 0)
+                           .filter((x) => x.go === 'openSlot')[0] || null;
+
+want('a negation written as a word makes a longer line',
+     rowOf(nAfter) && rowOf(nAfter).to, 'tuf zluma znak');
+want('and the language decides which side it lands',
+     rowOf(nBefore) && rowOf(nBefore).to, 'tuf znak zluma');
+want('the positive line is the same either way',
+     rowOf(nAfter) && rowOf(nAfter).from, 'tuf zluma');
+want('and pressing it goes to the word it is',
+     rowOf(nAfter) && rowOf(nAfter).go, 'openSlot');
+
+/* 2. an ending, and a beginning. The verb changes and the rest of the line
+   does not -- which is the half a rebuilt line would get wrong. */
+const nEnd = await neg([{ id:'n1', pos:'v', fm:'neg', at:'end', add:'nn' }],
+                       { noWord:true });
+const nPre = await neg([{ id:'n2', pos:'v', fm:'neg', at:'start', add:'un' }],
+                       { noWord:true });
+const ruleRow = (r) => r.rows.filter((x) => x.go === 'openFmr' &&
+                                            x.from.indexOf(' ') >= 0)[0] || null;
+
+want('a negation written as an ending goes on the verb',
+     ruleRow(nEnd) && ruleRow(nEnd).to, 'tuf zlumann');
+want('one written as a beginning goes in front of the verb',
+     ruleRow(nPre) && ruleRow(nPre).to, 'tuf unzluma');
+want('and the rest of the line is untouched',
+     ruleRow(nPre) && ruleRow(nPre).from, 'tuf zluma');
+want('pressing it goes to where that rule is written',
+     ruleRow(nEnd) && ruleRow(nEnd).go, 'openFmr');
+
+/* 3. two ways of saying no, which a language may have: one for verbs ending
+   in a letter, one for the rest. Both rows are drawn -- showing only the
+   first would be this page choosing which of somebody's rules counts -- and
+   each row has to be about the rule it names.
+
+   That last half is the one that goes silently wrong. A feature is spent on
+   the first rule that matches it, so asking the engine for NEGATION rather
+   than for THIS RULE gives both rows the same word, under two different
+   names, both looking perfectly right. */
+const nTwo = await neg([{ id:'n3', pos:'v', fm:'neg', at:'end', add:'xx',
+                          when:'x', wend:'a' },
+                        { id:'n4', pos:'v', fm:'neg', at:'end', add:'yy' }],
+                       { noWord:true });
+const twoRows = nTwo.rows.filter((x) => x.go === 'openFmr' &&
+                                        x.from.indexOf(' ') >= 0);
+want('both ways of saying no are drawn', twoRows.length, 2);
+want('the one for verbs ending in a is the one that ends in a',
+     twoRows.filter((x) => x.to === 'tuf zlumaxx').length, 1);
+want('and the other row is the OTHER rule, not the same word twice',
+     twoRows.filter((x) => x.to === 'tuf zlumayy').length, 1);
+
+/* ---- 65-70: one rule, one chapter ----------------------------------------
+   The general form of a bug that shipped. An interrogative is a MOOD, and the
+   verbs chapter took every MOOD, so the same rule was drawn under 動詞 and
+   under 疑問 -- one screen apart, both rows correct, nothing thrown. The
+   opposite is just as silent: a rule that no chapter claims is a rule nobody
+   can see.
+
+   So this does not ask about questions. It puts one rule of EVERY kind this
+   app can write into a language and counts, for each, how many chapters drew
+   it. The answer has to be one, every time -- and a kind added later is
+   walked the day it is added, because the list comes from the app's own
+   labels rather than from anything written here. */
+const chap = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  /* Every inflection label the app offers, each with an ending of its own so
+     the rows can be told apart. FM_INF is www/wordsheet.js's list and is
+     asked for rather than copied. */
+  /* Two digits, not one. With `q1`..`q11` the ending of the eleventh CONTAINS
+     the ending of the second, so a row drawn once was counted twice and this
+     check reported a rule in two chapters that was only ever in one. It was
+     the check's own arithmetic, not the page's -- and it read exactly like a
+     real finding, which is why it is written down here. */
+  const kinds = FM_INF.map((f, i) => ({ fm:f, add:'q' + (i < 10 ? '0' : '') + i }));
+  STG.fm = kinds.map((k, i) => ({ id:'k' + i, pos:'', fm:k.fm, at:'end',
+                                  drop:0, add:sp(k.add), when:'' }));
+  /* Each chapter is a page, so this opens every one of them and asks which
+     ones drew each ending. The answer has to be one, every time. */
+  const seen = {};
+  g2Chaps().forEach((c) => {
+    window.route = 'gram'; NAV = [{ r:'gram', a:'v2:' + c.id }]; render();
+    Array.prototype.forEach.call(document.querySelectorAll('#app .stslot'), (el) => {
+      const to = el.querySelector('.psi').textContent;
+      kinds.forEach((k) => {
+        if (to.indexOf(k.add) < 0) return;
+        if (!seen[k.fm]) seen[k.fm] = [];
+        if (seen[k.fm].indexOf(c.id) < 0) seen[k.fm].push(c.id);
+      });
+    });
   });
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
-  return { secs: secs.map((x) => ({ name: x.name, rows: x.rows })) };
+  return { kinds: kinds.map((k) => k.fm),
+           twice: kinds.filter((k) => (seen[k.fm] || []).length > 1)
+                       .map((k) => k.fm + ' in ' + (seen[k.fm] || []).join('+')),
+           none: kinds.filter((k) => !(seen[k.fm] || []).length).map((k) => k.fm),
+           once: kinds.filter((k) => (seen[k.fm] || []).length === 1).length };
 });
 
-const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are three chapters on the page', g2v.secs.length, 3);
-want('the second is the nouns', sec(1).name, 'noun');
-want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
-want('the third is the verbs', sec(2).name, 'verb');
+want('every kind of form the app can write was tried', chap.kinds.length, 12);
+want('no rule is drawn in two chapters', chap.twice.join(', '), '');
+want('and none is drawn in no chapter', chap.none.join(', '), '');
+want('so every one of them landed in exactly one', chap.once, chap.kinds.length);
 
-/* Past and passive, and NOT the negation -- which is the next chapter's. */
-want('a verb shows the endings this language gives it',
-     sec(2).rows.indexOf('Past:zlumaka') >= 0, true);
-want('a rule that goes on the front comes out on the front',
-     sec(2).rows.indexOf('Passive:ezluma') >= 0, true);
-want('and the negation is not drawn here', sec(2).rows.join(' ').indexOf('nn'), -1);
-want('so the verbs chapter has exactly two rows', sec(2).rows.length, 2);
+/* ---- 71-78: adjectives -- where one stands, and how one changes ----------
+   docs/GRAMMAR-V2-SPEC.md §6: 「単に before / after だけにしない」
+
+   Two claims. WHERE a describing word stands is arranged the way the sentence
+   is in the first chapter, so the two words swap and the language records it;
+   the old screen asked it with a pair of labelled buttons and this asks it by
+   being the phrase. And a describing word may itself CHANGE, which is the
+   half the old screen had nowhere to show at all.
+
+   The second is the one that was invisible before this chapter existed. A
+   rule about adjectives carrying feature NUMBER was read by its FEATURE and
+   handed to the nouns chapter -- which draws a NOUN, so the rule applied to
+   nothing and no row was ever drawn. Not wrong: absent. */
+const adj = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const wasPos = STG.gpos && STG.gpos.adj, wasSet = !!STG.set.adj;
+  WORDS.push({ hw:'zrua', pos:'adj', mns:['red'], at:1 });
+  /* The sentence chapter needs a subject, a verb and a second noun, and this
+     check's language has one noun. Without them that chapter draws "make some
+     words first" and has no row -- so "two rows, and one does not disturb the
+     other" would be asked of a page with one row on it. */
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'zpoko', pos:'n', mns:['fish'], at:1 });
+  STG.fm = [{ id:'a1', pos:'adj', fm:'pl', at:'end', drop:0, add:sp('si'),
+              when:'' }];
+  if (!STG.gpos) STG.gpos = {};
+  STG.gpos.adj = 'before';
+  const show = (id) => { window.route = 'gram';
+    NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
+  const segs = () => document.querySelectorAll('#app .segs .seg');
+  const say = () => Array.prototype.map.call(segs(), (b) => b.textContent).join(' ');
+  const press = (i) => { const b = segs();
+    if (!b[i]) throw new Error('no word ' + i + ': the row has ' + b.length);
+    b[i].click(); };
+  g2Lift = ''; show('adj');
+  const nSegs = document.querySelectorAll('#app .segs').length;
+  const before = say(), wasOrder = STG.order;
+  press(0); press(1);
+  const after = say(), side = STG.gpos.adj;
+  const order = STG.order;
+  const form = Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) =>
+      b.querySelector('.psm').textContent + ':' + b.querySelector('.psi').textContent)
+    .filter((x) => x.indexOf('si') >= 0).join(',');
+
+  /* ACROSS THE PAGES. The two rows that arrange a pair are on different
+     chapters now, and what is lifted survives going from one to the other --
+     so this is the same claim it always was and a longer road to it: lift a
+     word in the sentence, walk to the phrase, press. Carrying a role into a
+     phrase means nothing, so that press lifts instead and neither answer
+     moves. */
+  g2Lift = ''; STG.order = wasOrder; STG.gpos.adj = 'before';
+  show('order'); press(0);
+  const cross = { order:STG.order, side:STG.gpos.adj };
+  show('adj'); press(1);
+  cross.afterOrder = STG.order;
+  cross.afterSide = STG.gpos.adj;
+  cross.lit = document.querySelectorAll('#app .segs .seg.on').length;
+
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (wasPos) STG.gpos.adj = wasPos; else delete STG.gpos.adj;
+  if (!wasSet) delete STG.set.adj;
+  g2Lift = '';
+  return { nSegs: nSegs, before: before, after: after, side: side,
+           order: order, wasOrder: wasOrder, form: form, cross: cross };
+});
+
+want('the chapter has the one row it is about', adj.nSegs, 1);
+
+want('the describing word stands where this language put it',
+     adj.before, 'zrua tuf');
+want('moving it says the other side', adj.after, 'tuf zrua');
+want('and that is what the language now holds', adj.side, 'after');
+/* Against what it WAS, not against a word order written here: this check's
+   language has one of its own and an expectation typed in would be about the
+   fixture rather than about the two rows being separate. */
+want('the sentence above it did not move', adj.order, adj.wasOrder);
+
+want('a describing word that changes is drawn', adj.form, 'Plural:zruasi');
+
+want('a word lifted in the sentence does not move the phrase',
+     adj.cross.afterSide, adj.cross.side);
+want('nor the other way about', adj.cross.afterOrder, adj.cross.order);
+want('and exactly one word is lifted afterwards -- the one just pressed',
+     adj.cross.lit, 1);
+
+/* ---- 79-84: where a place word stands ------------------------------------
+   docs/GRAMMAR-V2-SPEC.md §7: 「現在の adp の位置設定だけではなく、場所を
+   どう表現するかを定義できるようにする」
+
+   `house in` and `in house`, arranged rather than chosen from a labelled
+   pair. Same claim as the adjectives and a different answer, which is the
+   point: the two are separate rows writing separate values, and a page that
+   moved both at once would look right in a picture of either one. */
+const adp = await pg.evaluate(() => {
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const wasAdp = STG.gpos && STG.gpos.adp, wasAdj = STG.gpos && STG.gpos.adj;
+  const wasSet = !!STG.set.adp;
+  WORDS.push({ hw:'zrua', pos:'adj', mns:['red'], at:1 });
+  WORDS.push({ hw:'zni', pos:'part', mns:['in'], at:1, slot:'where.in' });
+  STG.fm = [];
+  if (!STG.gpos) STG.gpos = {};
+  STG.gpos.adp = 'before'; STG.gpos.adj = 'before';
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:adp' }]; g2Lift = ''; render();
+  /* The rows, by the name they carry, rather than by where they sit: an
+     index would follow whichever chapter happened to draw one. */
+  /* data-a is a JSON array -- ["adp",0] -- so the row's name is the FIRST
+     item, read by parsing rather than by where the letters fall in the
+     string. Asking for indexOf(...) === 0 matched nothing, every row came
+     back empty, and the first .click() on an empty list threw: the check
+     DIED rather than failing, and the command watching for the word FAILED
+     printed nothing at all. Twice now. Read the tail. */
+  const row = (key) => {
+    const b = document.querySelectorAll('#app .segs .seg');
+    return Array.prototype.filter.call(b, (x) => {
+      let a = null;
+      try { a = JSON.parse(x.getAttribute('data-a') || '[]'); } catch (e) {}
+      return !!a && a[0] === key;
+    });
+  };
+  const say = (key) => row(key).map((x) => x.textContent).join(' ');
+  const before = say('adp'), n = row('adp').length;
+  /* Says what it found rather than dying on `undefined.click`. The fault when
+     this chapter draws the wrong row is "the place row has 0 words", and a
+     stack trace about click() sends the next reader to the wrong file. */
+  if (n >= 2) { row('adp')[0].click(); row('adp')[1].click(); }
+  const after = say('adp'), side = STG.gpos.adp, adjSide = STG.gpos.adj;
+  /* The other pair-arranging row is on its OWN page now, so it is opened to
+     be looked at rather than read off this one -- and while the words are
+     still here: the tidying below takes them away again. Same claim as
+     before: moving the place word wrote the place answer and left the
+     describing word's alone. */
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:adj' }]; render();
+  const adjN = document.querySelectorAll('#app .segs .seg').length;
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (wasAdp) STG.gpos.adp = wasAdp; else delete STG.gpos.adp;
+  if (wasAdj) STG.gpos.adj = wasAdj; else delete STG.gpos.adj;
+  if (!wasSet) delete STG.set.adp;
+  g2Lift = '';
+  return { n: n, before: before, after: after,
+           side: side, adjSide: adjSide, adjN: adjN };
+});
+
+want('the place word stands beside its noun', adp.n, 2);
+want('on the side this language put it', adp.before, 'zni tuf');
+want('moving it says the other side', adp.after, 'tuf zni');
+want('and that is what the language now holds', adp.side, 'after');
+
+/* The other two-word row is on the same page and must not have moved. */
+want('the describing word is still where it was', adp.adjSide, 'before');
+want('and its row is still drawn on its own page', adp.adjN, 2);
+
+/* ---- 85-90: what this language has -------------------------------------
+   docs/GRAMMAR-V2-SPEC.md §14's last block, and §24's argument for the whole
+   page: 「作り込むほど Words + Inflections + Derivations が蓄積され、その結果
+   精度が上がる」. So the numbers have to be the ones the ENGINE was handed --
+   a panel counting what somebody typed, rather than what crossed over, would
+   say the language is fuller than the translation can see.
+
+   Which is exactly the failure this page was built to end. A rule this side
+   cannot express is COUNTED and not sent (the sound conditions), so a panel
+   reading STG.fm would say 3 where the engine has 2. */
+const stat = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const wasPart = !!STG.set.part;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'ga', pos:'part', mns:['subject'], at:1, slot:'part.subj' });
+  stMarkSet('part');
+  STG.fm = [
+    { id:'v1', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' },
+    { id:'d1', pos:'n', fm:'adj', at:'end', drop:0, add:sp('li'), when:'' },
+    /* about SOUND, so it cannot cross and must not be counted as if it had */
+    { id:'v2', pos:'v', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'v' }
+  ];
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:st' }]; render();
+  const rows = {}, secs = document.querySelectorAll('#app .gside');
+  Array.prototype.forEach.call(secs, (el) => {
+    rows[el.querySelector('.gsl').textContent] = el.querySelector('.gsw').textContent;
+  });
+  const words = WORDS.length;
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (!wasPart) delete STG.set.part;
+  return { rows: rows, n: secs.length, words: words };
+});
+
+want('the panel has a row for each thing that can be counted', stat.n, 3);
+want('the words are this dictionary', stat.rows['Words'], String(stat.words));
+/* One inflection wrote a tense, one wrote a mark, and the third is about
+   sound and did not cross. */
+want('the forms are the ones the engine was handed', stat.rows['Forms'], '2');
+want('and the word formation is too', stat.rows['Word formation'], '1');
 
 await br.close();
 srv.close();
@@ -828,3 +1178,13 @@ console.log('          A noun shows the forms this language really makes of it,'
 console.log('          and a row goes back to where its rule is written.');
 console.log('          Each chapter draws its own forms and only its own, and a');
 console.log('          rule that goes on the front comes out on the front.');
+console.log('          A negation reads the same whether it is an ending, a');
+console.log('          beginning, or a word of its own.');
+console.log('          Every kind of form the app can write lands in exactly one');
+console.log('          chapter -- not two, and not none.');
+console.log('          A describing word is put on the side this language puts it,');
+console.log('          and one that changes is drawn where it can be seen.');
+console.log('          A place word stands where this language puts it, and the');
+console.log('          two rows that arrange a pair do not move each other.');
+console.log('          What this language HAS is counted off what the engine was');
+console.log('          handed, not off what somebody typed.');
