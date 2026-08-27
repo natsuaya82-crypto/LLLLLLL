@@ -368,13 +368,50 @@ function shPdfJpeg(bytes){
   return best;
 }
 /* Which kind of file arrived. Four answers and they are four different
-   sentences to a person, which is the whole reason this is not a boolean. */
+   sentences to a person, which is the whole reason this is not a boolean.
+
+   `packed` used to be "there is an image and it is not a JPEG", and that was
+   the app's own sheet: the twenty names over the boxes are images. So a
+   person who handed back the very file this app had just written was told
+   THE PICTURE INSIDE IT COULD NOT BE TAKEN OUT, which is not what happened
+   -- there is no picture inside it. Nothing threw and no screen looked
+   wrong; the sentence was simply about a different file.
+
+   An image that is not a photograph and an image that cannot be opened are
+   two things, and what tells them apart is a FILTER. A page a scanner made
+   is always behind one -- DCTDecode, and when it is not a JPEG then Flate,
+   JPX or CCITT, none of which this file can undo. What shSheet() writes is
+   behind none: raw eight-bit grey, which no scanner has ever produced. */
 function shPdfWhy(bytes){
   if (bytes.slice(0, 5) !== '%PDF-') return 'not-pdf';
   if (bytes.indexOf('/DCTDecode') >= 0) return 'photo';
-  if (bytes.indexOf('/Subtype /Image') >= 0 ||
-      bytes.indexOf('/Subtype/Image') >= 0) return 'packed';
+  var at = 0, k, a, b, lo;
+  while (true){
+    k = shPdfImageAt(bytes, at);
+    if (k < 0) break;
+    /* the dictionary this /Subtype sits in: back to its `<<`, forward to the
+       bytes it introduces. Bounded by the end of whatever stream came before
+       it, so a `<<` that is really a pair of bytes inside a picture cannot
+       drag the window somewhere else. */
+    lo = bytes.lastIndexOf('endstream', k);
+    a = bytes.lastIndexOf('<<', k);
+    if (a < lo) a = lo;
+    if (a < 0) a = k;
+    b = bytes.indexOf('stream', k);
+    if (b < 0) b = bytes.length;
+    if (bytes.slice(a, b).indexOf('/Filter') >= 0) return 'packed';
+    at = k + 10;
+  }
   return 'drawn';
+}
+/* Where the next image dictionary says what it is. Written with a space and
+   without, because a PDF may do either and both turn up in the wild. */
+function shPdfImageAt(bytes, from){
+  var a = bytes.indexOf('/Subtype /Image', from);
+  var b = bytes.indexOf('/Subtype/Image', from);
+  if (a < 0) return b;
+  if (b < 0) return a;
+  return a < b ? a : b;
 }
 
 /* ---- what somebody drew in a box --------------------------------------- */
@@ -1196,11 +1233,48 @@ function shTakeFile(url, fname){
     try{ bytes = atob(b64); }catch(e){ shFail(t('wr.bad')); return; }
     why = shPdfWhy(bytes);
     jpg = shPdfJpeg(bytes);
-    if(!jpg){ shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no')); return; }
+    if(!jpg){ shPdfDraw(b64, why, String(fname || '')); return; }
     url = 'data:image/jpeg;base64,' + btoa(jpg);
   }
   s.from = String(fname || '');
   shLook(url);
+}
+/* A PDF with no photograph in it to take out. Two files arrive this way and
+   they are the same problem: one where somebody wrote on the sheet with a
+   pencil on a SCREEN, so the ink is drawn into the page rather than being
+   pixels of a picture of it, and one whose page is a picture behind a filter
+   this file cannot undo. Both need a renderer, this file is not one and never
+   will be, and the phone has one.
+   OWNER 2026-08-27「pdfkitのレンダラやろう」
+
+   It is the ONE place a PDF becomes a picture by any road other than
+   shPdfJpeg(), and everything from shLook() on is untouched -- the same
+   threshold, the same marks, the same strip. A second road would be a page
+   rendered two ways that could quietly disagree.
+
+   Whether the page can be drawn is the RENDERER's to answer and not this
+   file's. shPdfWhy() said which kind of file arrived, which is a different
+   question, and asking it to decide who may try would put a guess in front of
+   the only thing that actually knows. So everything with no JPEG in it is
+   offered, including a file that is not a PDF at all -- CoreGraphics refuses
+   that one, which is the answer.
+
+   With no phone under it -- a browser, or a build made before the renderer --
+   there is nothing to ask and what comes out is the sentence that was there
+   before. */
+function shPdfDraw(b64, why, fname){
+  var p = sharePlug();
+  if(!p){ shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no')); return; }
+  p('LinguaShare', 'renderPdf', {b64: b64, edge: SH_LOOK})
+    .then(function(r){
+      var jpg = r && r.jpeg;
+      /* Answered, and with nothing. Not the same as being refused, and it is
+         the same dead end either way. */
+      if(!jpg){ shFail(t('wr.bad')); return; }
+      shState().from = fname;
+      shLook('data:image/jpeg;base64,' + jpg);
+    })
+    ['catch'](function(){ shFail(t('wr.bad')); });
 }
 /* How big a photograph is worth looking at. A corner mark is about a
    fortieth of the page, so 2200 pixels down the long edge leaves it 50 across
