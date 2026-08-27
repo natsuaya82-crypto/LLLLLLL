@@ -381,7 +381,15 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     // The one place a UIImage becomes bytes for the web view. It is already at
     // `edge`, so this scales by 1 -- it is here to be the only answer to "how
     // is a picture handed over", not to resize anything.
-    guard let out = Self.jpeg(im, edge) else {
+    //
+    // `PhotoPicker.jpeg` and not `Self.jpeg`: it is a static method on
+    // PhotoPicker further down this file, not on the plugin, and `Self` here
+    // is the plugin. Build 94 died on that one word -- `type 'Self' has no
+    // member 'jpeg'` -- and nothing on this side could have caught it: Swift
+    // does not compile on Linux, and assets-check only asks whether a file is
+    // in the Sources phase. The line five hundred below already calls it the
+    // right way.
+    guard let out = PhotoPicker.jpeg(im, edge) else {
       call.reject("the page could not be drawn")
       return
     }
