@@ -1103,6 +1103,18 @@ export function halfDone(){
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
+    /* A KEY of the sheet selected. Pressing a key selects it now -- the same
+       habit as the row's number and the column's letter -- and the buttons
+       over the sheet act on it: joining it to the one beside it, opening its
+       own page, and the bin. This is the only face they can be pressed from.
+       「タップしたらそのキーが選ばれて上のゴミ箱ボタンとかくっつけるボタンとか
+       押してその作業がされるようにしようよ」 */
+    ['a key of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                               kbAdd('qwerty'); kbLay = 0; kbTapKey(0, 2);
+                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                               const h = vKb();
+                                               KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                               SET.plan = 'free'; return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
     ['a column of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);

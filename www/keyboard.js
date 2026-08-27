@@ -1142,25 +1142,6 @@ function kbRoomIn(ri, w){
   var row=kbLayer().rows[ri];
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
 }
-/* And whether ANY row on this face could take one, which is what the palette
-   under the sheet has to ask before it offers a width.
-   「フリックのaddキーのサイズ合ってなくね？」 OWNER 2026-08-26.
-
-   The three tiles were drawn and pressable always. Every pattern's rows come
-   to the full ten, so on a keyboard somebody has just made, picking a width
-   and then pressing a key does NOTHING -- measured on all five: 10 keys
-   before, 10 keys after. Cut one column out and only the narrowest of the
-   three fits, and the other two go on being offered.
-
-   Nothing throws. The tile lights up, the key it was pressed on opens
-   nothing, and the row is the row it was. Which is the sentence the owner
-   said about the column + an hour before this 「最大になったら+はなし」, one
-   size down. */
-function kbRoomAny(w){
-  var rows=kbLayer().rows, i;
-  for(i=0;i<rows.length;i++) if(kbRoomIn(i, w)) return true;
-  return false;
-}
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
    of w 0.5 at each end, and "grid-column: span 0.5" is not a thing: the
@@ -1204,6 +1185,106 @@ function kbCols(rows){
    In half columns, because a key can be half of one -- kbU() says why. */
 function kbColHas(at, w, ci){
   return at<=ci*2 && at+kbU(w)>=ci*2+2;
+}
+/* The key being held, or null. */
+var KBD=null;
+/* A key can still be held and carried -- the same gesture as the alphabet's
+   tiles, on the other thing in this app that is a grid somebody arranges.
+   What went is the OTHER half of what this used to mount: the three widths
+   under the sheet, which were dragged onto a cell. A cell is pressed now.
+   www/glyph.js calls this after every render and does not need to know. */
+function kbDragMount(){
+  var g=document.getElementById('kb');
+  if(!g) return;
+  g.addEventListener('touchstart', kbDown, false);
+  g.addEventListener('touchmove', kbDragTo, false);
+  g.addEventListener('touchend', kbUp, false);
+  g.addEventListener('touchcancel', kbUp, false);
+}
+/* ---- a sheet is worked by touching it -----------------------------------
+   「下のキーを動かして入れるのやめない？ a1とかタップしたらキーを追加とか、
+   a1a2触ってキーをくっつける」「タップしたらそのキーが選ばれて上のゴミ箱ボタン
+   とかくっつけるボタンとか押してその作業がされるようにしようよ」
+   OWNER DECISION 2026-08-27.
+
+   A key used to be placed by picking one of three widths from a palette under
+   the sheet and carrying it onto a cell with a finger. Two things were wrong
+   with that and only one of them was the finger. The palette's widths were
+   1, 2 and 3 in a unit of their own, while a key on the sheet is however many
+   of the ten columns it spans -- so on a flick board the thing you picked up
+   and the thing that landed were different sizes, and nothing could say so
+   because there was nothing to compare them to.
+
+   Touching the sheet has neither problem. An empty cell IS a key's worth of
+   room, so pressing one puts a key exactly there and exactly that wide. And a
+   key is made wider by joining it to the one beside it, which cannot come out
+   at a width the row has no room for because both were already in the row.
+
+   It is also the shape the sheet already had: a row is worked by pressing its
+   number, a column by pressing its letter, and now a key by pressing the key.
+   Press to select, press again to put it down, and the buttons over the sheet
+   act on whatever is selected. Three things, one habit. */
+function kbCellHTML(ri, at, span){
+  return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
+    ' style="grid-column:span '+span+'"' +
+    ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
+}
+/* Where in the row a key goes when the cell at this column is pressed.
+   kbColAt() is the same arithmetic the column insert uses -- a cell before
+   the keys lands at the front, one after them at the end. */
+function kbCellAdd(ri, at){
+  var b=kbEdit(), rows, k;
+  if(!b) return;
+  rows=kbLayer().rows;
+  if(!rows[ri] || !kbRoomIn(ri, 1)) return;
+  k=kbKey('lt', '');
+  rows[ri].splice(kbColAt(rows[ri], at), 0, k);
+  KBH=null; kbSel=null;
+  saveKb(); render();
+}
+/* Which key is being worked on. It is KBH's third kind, beside the row and
+   the column, so that one thing is selected at a time and the buttons over
+   the sheet have one question to ask. */
+function kbKeyIs(ri, ki){
+  return !!KBH && KBH.k==='k' && KBH.r===ri && KBH.i===ki;
+}
+function kbTapKey(ri, ki){
+  if(kbIsFree(kbShow)) return;
+  if(!kbEdit()) return;
+  /* the one beside the one already chosen: the two become one */
+  if(KBH && KBH.k==='k' && KBH.r===ri && (KBH.i===ki-1 || KBH.i===ki+1)){
+    kbJoin(KBH.r, Math.min(KBH.i, ki));
+    return;
+  }
+  KBH = kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki};
+  kbSel=null;
+  render();
+}
+/* Two keys, side by side, becoming one as wide as the two of them were.
+
+   WHAT IT KEEPS is the left one -- its letter, its four flick slots, what it
+   does when pressed. The right one's width is all that is taken, because a
+   key can only carry one letter and choosing which of the two survives is not
+   something a person pressing two keys has said anything about. The step back
+   is what stands behind it, the same as the row and the column deletes. */
+function kbJoin(ri, ki){
+  var b=kbEdit(), row, a, c;
+  if(!b) return;
+  row=kbLayer().rows[ri];
+  if(!row || !row[ki] || !row[ki+1]) return;
+  a=row[ki]; c=row[ki+1];
+  a.w=(kbU(a.w)+kbU(c.w))/2;
+  row.splice(ki+1, 1);
+  KBH={k:'k', r:ri, i:ki};
+  kbSel=null;
+  saveKb(); render();
+}
+/* Whether the selected key has one beside it to join to. */
+function kbJoinable(){
+  var row;
+  if(!KBH || KBH.k!=='k') return false;
+  row=kbLayer().rows[KBH.r];
+  return !!(row && row[KBH.i] && row[KBH.i+1]);
 }
 /* The letters across the top, one to a whole key and not one to a column --
    nobody insets a row by half a letter. Inside #kb so it shares the grid's
@@ -1268,6 +1349,7 @@ function kbHeadCol(ci){
    so it is refused when any one of those rows is already ten across. */
 function kbInsRoom(){
   if(!KBH) return false;
+  if(KBH.k==='k') return false;
   return KBH.k==='r'? kbRoomRow() : kbRoomCol(KBH.i);
 }
 function kbInsAsk(){
@@ -1352,8 +1434,15 @@ function kbCut(){
   if(!KBH) return;
   var h=KBH;
   KBH=null;
-  if(h.k==='r') kbDelRow(h.i); else kbDelCol(h.i);
+  if(h.k==='r') kbDelRow(h.i);
+  else if(h.k==='k') kbDelKey(h.r, h.i);
+  else kbDelCol(h.i);
 }
+/* The two the toolbar does to a key. They take what is selected rather than
+   arguments, because a button over the sheet acts on the selection -- the bin
+   and the three alignments have always worked that way. */
+function kbJoinSel(){ if(KBH && KBH.k==='k') kbJoin(KBH.r, KBH.i); }
+function kbOpenSel(){ if(KBH && KBH.k==='k') kbPick(KBH.r, KBH.i); }
 /* ---- where the slack in a row goes -------------------------------------
    「エクセルみたいに中央寄せとかのボタン置けば？行とか列選択して中央寄せ
    すればそこだけ中央寄せになるとか。」
@@ -1473,16 +1562,16 @@ function kbHTML(sel, ro){
       lead=kbLead(cols, tot);
       while(at<lead){
         b=Math.min(2, lead-at);
-        out+='<span class="kbk cell" style="grid-column:span '+b+'"></span>';
+        out+=kbCellHTML(ri, at, b);
         at+=b;
       }
-
     }
     for(ki=0;ki<row.length;ki++){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
-        /* a key standing in the column being worked on */
+        /* the key being worked on, and a key standing in the column that is */
+        ((!ro && kbKeyIs(ri, ki))? ' on':'')+
         ((!ro && KBH && KBH.k==='c' && kbColHas(at, key.w, KBH.i))? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
@@ -1498,14 +1587,14 @@ function kbHTML(sel, ro){
         : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
           'style="grid-column:span '+kbU(key.w)+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
-          (kbWob? '' : DO('kbPick', [ri, ki])) + '>'+kbFlicks(key, slots)+
+          (kbWob? '' : DO('kbTapKey', [ri, ki])) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
     }
     /* and the other half, after them. A row of a keyboard built from a
        pattern comes to the same total as the widest and has neither. */
     if(!ro) while(at<cols){
       b=Math.min(2, cols-at);
-      out+='<span class="kbk cell" style="grid-column:span '+b+'"></span>';
+      out+=kbCellHTML(ri, at, b);
       at+=b;
     }
     out+='</div>';
@@ -1632,7 +1721,6 @@ function vKb(){
     kbToolHTML()+
     kbHTML(kbSel)+
     kbLaysHTML()+
-    kbNewHTML()+
     /* The one control whose whole job is to change how a key LOOKS, on the
        screen the keys are on. It was on the free plan's face and on the list
        and nowhere else, so the board somebody was actually building was the
@@ -1778,147 +1866,6 @@ function kbApplyHTML(){
     '<button class="btn ghost" style="width:100%"' + DO('kbApply', [now]) + '>'+
       esc(t('kb.apply'))+'</button>'+
     '</div>';
-}
-/* ---- holding a key and moving it ---------------------------------------
-   「pcみたいなuiも嫌だ長押しで編集とかスマホの編集にしてくれよ」
-
-   A key used to be moved with a ◀ and a ▶ at the bottom of a sheet, which is
-   a PC's answer: pick the thing, then find the control that acts on it. On a
-   phone the thing IS the control. Hold a key and it lifts; carry it and the
-   others move aside; let go and it is where you left it.
-
-   The gesture is the alphabet's, key for key -- 380ms to lift, twelve pixels
-   of travel to be a scroll instead, the order written on the way up and not
-   on every swap. What differs is only where a thing can land: a letter lives
-   in one grid and a key lives in a row among rows, so this carries across
-   rows as well as along them.
-
-   Tapping still opens the key. The hold is the second thing a press can be,
-   which is the whole reason a delay is there. */
-var KBD=null;
-function kbDragMount(){
-  var g=document.getElementById('kb'), n=document.getElementById('kbnew');
-  if(g){
-    g.addEventListener('touchstart', kbDown, false);
-    g.addEventListener('touchmove', kbDragTo, false);
-    g.addEventListener('touchend', kbUp, false);
-    g.addEventListener('touchcancel', kbUp, false);
-  }
-  if(n){
-    n.addEventListener('touchstart', kbTileDown, false);
-    n.addEventListener('touchmove', kbTileTo, false);
-    n.addEventListener('touchend', kbTileUp, false);
-    n.addEventListener('touchcancel', kbTileUp, false);
-  }
-}
-/* ---- carrying a width onto the sheet -----------------------------------
-   The three tiles under the sheet are the widths a new key can be, and they
-   were placed by pressing one and then pressing where it goes. That still
-   works, and it is what a tap does. This is the other way: pick the tile up
-   and put it down on the sheet. 「あれ持っていけないの？」
-
-   It is not the same gesture as moving a key and must not be: a key is HELD
-   first, because a key is also a thing you press to open, and a press and a
-   drag have to be told apart. A tile does one thing, so it comes away at
-   once -- which is what a palette is, in every program that has one.
-
-   Where it lands: on a key, the new one goes in after that key; on an empty
-   cell, at the end of that row; on the dashed row at the foot, in a row of
-   its own. Anywhere else, nothing happens and the tile goes back. */
-var KBT=null;
-function kbTileOf(el){
-  while(el && el.classList && !el.classList.contains('kbnewt')) el=el.parentNode;
-  return (el && el.classList && el.classList.contains('kbnewt'))? el : null;
-}
-function kbTileDown(e){
-  var b=kbTileOf(e.target), p=e.touches? e.touches[0] : e, w;
-  if(!b || !p) return;
-  w=parseInt(b.getAttribute('data-w'), 10)||1;
-  KBT={w:w, x:p.clientX, y:p.clientY, on:false, ghost:null, over:null};
-}
-/* The tile follows the finger as a copy of itself: the tile stays where it
-   is, because a palette does not empty when you take from it. */
-function kbTileTo(e){
-  var p=e.touches? e.touches[0] : e, dx, dy, over;
-  if(!KBT || !p) return;
-  dx=p.clientX-KBT.x; dy=p.clientY-KBT.y;
-  if(!KBT.on){
-    if(dx*dx+dy*dy<=144) return;
-    KBT.on=true;
-    KBT.ghost=document.createElement('div');
-    KBT.ghost.className='kbghost';
-    KBT.ghost.style.width=kbKeyW(KBT.w);
-    document.body.appendChild(KBT.ghost);
-  }
-  e.preventDefault();
-  KBT.ghost.style.left=p.clientX+'px';
-  KBT.ghost.style.top=p.clientY+'px';
-  over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
-  if(over && !kbTakes(over, KBT.w)) over=null;
-  if(KBT.over===over) return;
-  if(KBT.over) KBT.over.classList.remove('drop');
-  KBT.over=over;
-  if(over) over.classList.add('drop');
-}
-/* Whether the cell under the finger would take this width. The answer has to
-   be the same one the drop gives, so the drop asks it too -- a cell that
-   lights up and then does nothing is worse than one that never lit. */
-function kbTakes(cell, w){
-  var ri;
-  if(cell.classList.contains('addrow')) return kbRoomRow();
-  ri=kbRowOf(cell);
-  return ri>=0 && kbRoomIn(ri, w);
-}
-/* Which row of the layout a cell is in. The cells are drawn from the row, so
-   the row is the DOM's answer rather than something to count out again -- and
-   the header is #kb's first child and is not a row. */
-function kbRowOf(cell){
-  var g=document.getElementById('kb'), row=cell.parentNode, i;
-  if(!g || !row) return -1;
-  for(i=1;i<g.children.length;i++) if(g.children[i]===row) return i-1;
-  return -1;
-}
-function kbTileUp(e){
-  var d=KBT, over, ri, ki;
-  if(!d) return;
-  KBT=null;
-  if(d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
-  if(d.over) d.over.classList.remove('drop');
-  if(!d.on) return;                       /* a tap: kbSetNew has it */
-  if(e && e.preventDefault) e.preventDefault();
-  over=d.over;
-  if(!over) return;
-  if(over.classList.contains('addrow')){ kbNew1=d.w; kbAddRowNew(); return; }
-  ri=parseInt(over.getAttribute('data-r'), 10);
-  ki=parseInt(over.getAttribute('data-k'), 10);
-  /* An empty cell carries neither, and it is an END of its row. */
-  if(isNaN(ri)) return kbDropAtEdge(over, d.w);
-  kbAddKey(ri, ki, d.w);
-}
-/* An empty cell is not a key and has no place of its own to be after, so what
-   it means is an end of the row -- and WHICH end is the half that is easy to
-   get wrong now that a short row is centred. There are empty cells on both
-   sides of it. So: the keys that come before this cell in the row are counted,
-   and the new one goes in after the last of them. None before it means the
-   front of the row, which is the left-hand half saying what it should. */
-function kbDropAtEdge(cell, w){
-  var row=cell.parentNode, ri=kbRowOf(cell), i, n=0;
-  if(ri<0 || !row) return;
-  for(i=0;i<row.children.length;i++){
-    if(row.children[i]===cell) break;
-    if(row.children[i].getAttribute && row.children[i].getAttribute('data-k')!==null) n++;
-  }
-  if(!kbRoomIn(ri, w)) return;
-  if(!n){
-    var rows=kbLayer().rows, k=kbKey('lt', '');
-    if(w>1) k.w=w;
-    rows[ri].unshift(k);
-    kbNew1=0;
-    saveKb();
-    kbPick(ri, 0);
-    return;
-  }
-  kbAddKey(ri, n-1, w);
 }
 /* The key a touch landed on. What is under a finger is the canvas or one of
    the four flick marks as often as it is the button. */
@@ -2173,8 +2120,19 @@ var ICON_INLF='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="
 var ICON_INRT='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M5 4v16"/><path d="M9 12h10"/><path d="M15 8l4 4-4 4"/></svg>';
+/* Two keys becoming one, and the key's own sheet. They are here rather than
+   in glyph.js for ICON_INLF's reason -- that file is held elsewhere today,
+   and www/home.js already draws one of its own. */
+var ICON_JOIN='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M4 6v12"/><path d="M20 6v12"/><path d="M9 12h6"/>'+
+  '<path d="M11 9l-2 3 2 3"/><path d="M13 9l2 3-2 3"/></svg>';
+var ICON_KEYSET='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 12h6"/></svg>';
 function kbToolHTML(){
-  var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c', ask=!!KBH && !!KBH.ins;
+  var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c',
+      key=!!KBH && KBH.k==='k', ask=!!KBH && !!KBH.ins;
   return '<div class="kbtool">'+
     kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
     kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
@@ -2189,21 +2147,29 @@ function kbToolHTML(){
               ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
             '<button class="kbtb"' + DO('kbIns', [true]) +
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
-      : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
-          ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
-        '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
-          ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
-        '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
-          ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
+      : key
+        /* a KEY is selected: the two things there are to do to one, in the
+           place the three alignments stand when a row is */
+        ? '<button class="kbtb"' + DO('kbJoinSel') + (kbJoinable()? '' : ' disabled') +
+            ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>'+
+          '<button class="kbtb"' + DO('kbOpenSel') +
+            ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
+        : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
+            ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
+          '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
+            ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
+          '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
+            ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
     /* 「最大になったら+はなし」 -- down, which is what this button has always
        done when a row is as tall as it may get, and what the three beside it
        do when nothing is selected. The toolbar keeps its shape; the dashed row
        at the FOOT of the sheet is the one that goes away entirely, because
        that one is drawn where a row would go rather than sitting in a row of
        buttons. */
-    '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
-      (kbInsRoom()? '' : ' disabled') +
-      ' aria-label="'+esc(t(col? 'kb.col.ins' : 'kb.row.ins'))+'">'+ICON_ADD+'</button>'+
+    (key? ''
+      : '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
+        (kbInsRoom()? '' : ' disabled') +
+        ' aria-label="'+esc(t(col? 'kb.col.ins' : 'kb.row.ins'))+'">'+ICON_ADD+'</button>')+
     (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH))+
     '</div>';
 }
@@ -2552,8 +2518,6 @@ function kbPick(ri, ki){
      are drawn as plain spans and nothing on the screen opens this -- but a
      route can be come back to, and `form:kbkey:0:0` is a route. */
   if(kbIsFree(kbShow)) return;
-  /* A width is waiting to be placed, so this press is where it goes. */
-  if(kbNew1){ kbAddKey(ri, ki, kbNew1); return; }
   kbSel={r:ri, k:ki};
   openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
 }
@@ -2651,63 +2615,6 @@ function kbEditHTML(ri, ki, key){
 function kbEditFnHTML(key){
   return '<div class="kbedit fn"><span class="kbe kbec">'+kbFace(key)+'</span></div>';
 }
-/* ---- putting a key where you want it ----------------------------------
-   A width, chosen, and then the place it goes. It was: add a key (one, at the
-   end, one wide), then open it, then choose a width in a row of numbers --
-   three screens for one tile. 「1×1,1×2,1×3とかでいいんちゃう」
-
-   `kbNew1` is the width waiting to be placed, or 0. It is where you are
-   standing rather than anything the language has, so viewReset() drops it.
-   While it is set, pressing a key puts the new one after that key rather than
-   opening it -- one mode, one press to leave it. */
-var kbNew1=0;
-function kbSetNew(w){
-  if(!kbRoomAny(w)){ kbNew1=0; render(); return; }
-  kbNew1=(kbNew1===w)? 0 : w;
-  render();
-}
-/* Three widths that used to be one, and telling them apart is what fixes
-   「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
-   フリックとqwartyのキーのサイズは同じなんか？」 OWNER DECISION 2026-08-26.
-
-   They were. Measured on a 390px screen, a flick key and a QWERTY key were
-   both 28.2 x 44 -- the same pixel, on two keyboards that are nothing like
-   each other on the phone, where a flick row of three keys gives each one a
-   THIRD of the screen and a QWERTY row of ten gives each a tenth.
-
-   This supersedes OWNER DECISION 2026-08-25 「エクセルみたいにキーボードに
-   やって横幅が固定されるはずだよ」, which is why that sentence is not in this
-   comment any more except here, being replaced. What that decision fixed was
-   real and is fixed a different way below: the sheet used to change width
-   every time the widest row changed, so deleting a column moved everything.
-
-   THE BOARD is always the full width. It is a picture of a keyboard, and a
-   keyboard is as wide as the phone whatever is on it -- so the one number
-   that never moves is this one, and deleting a column no longer moves the
-   sheet's edges at all. kbSheetW().
-
-   A KEY is its share of the row it is in, which is what the extension does
-   (KeyBoardView.layoutSubviews: free * key.width / the row's total) and what
-   the read-only board here has always done (flex: key.w). On the sheet that
-   falls out of the grid for nothing: the row is `cols` columns of 1fr across
-   a full-width board, and a key spans kbU(w) of them. kbKeyW() says the same
-   number in a calc, for the one thing that is not in the grid -- the ghost
-   that follows a finger.
-
-   A WIDTH IN THE PALETTE is neither. The 1/2/3 tiles under the sheet are a
-   palette of proportions, not pictures of a key: at true size on a three-key
-   board the width-3 tile IS the whole row, and the three of them come to
-   twice the screen. They stay on the ten-key scale, which is the scale they
-   have always been drawn at. kbCellW(). */
-function kbCellW(w){
-  return 'calc(var(--kbw) / '+KB_COLS+' * '+(kbU(w))+' - var(--kbgap))';
-}
-/* What a key of w actually comes out at on the sheet in front of somebody --
-   the grid's own arithmetic, written out for the one thing the grid does not
-   place. */
-function kbKeyW(w){
-  return 'calc(var(--kbw) / '+kbCols(kbLayer().rows)+' * '+(kbU(w))+' - var(--kbgap))';
-}
 /* And the board: the full width, always, however few keys are on this face.
 
    It used to be `--kbw / KB_COLS * cols`, which drew a face of two keys a
@@ -2737,23 +2644,6 @@ function kbSheetW(){
    -- and this overrides it, the way kbSheetW() overrides the width. */
 function kbSheetH(){
   return 'calc(var(--kbw) * '+KB_ROWW+')';
-}
-/* The three widths, each drawn AT THE SIZE OF THE KEY IT MAKES -- kbCellW()
-   is the same arithmetic the sheet lays a key out with, over the ten fixed
-   columns, so a tile of one is one key of one wherever it is dropped. What
-   was wrong was never the width; it was that a tile with nowhere to go was
-   offered exactly like one that fits. It is down instead, which is what the
-   three buttons over the sheet do when nothing is selected. */
-function kbNewHTML(){
-  return '<div class="kbnew" id="kbnew">'+
-    '<span class="kbnewl">'+esc(t('kb.add.k'))+'</span>'+
-    '<span class="kbnewr">'+[1,2,3].map(function(w){
-      var room=kbRoomAny(w);
-      return '<button class="kbnewt'+((kbNew1===w && room)? ' on':'')+'"' + DO('kbSetNew', [w]) +
-        (room? '' : ' disabled') +
-        ' data-w="'+w+'" style="width:'+kbCellW(w)+'"'+
-        ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
-    }).join('')+'</span></div>';
 }
 /* Which slot the alphabet is being opened for. */
 var kbSlotFor=null;
@@ -2840,11 +2730,10 @@ function kbAddKey(ri, ki, w){
   if(!kbEdit()) return;
   var rows=kbLayer().rows, k;
   if(!rows[ri]) return;
-  if(!kbRoomIn(ri, w)){ kbNew1=0; render(); return; }
+  if(!kbRoomIn(ri, w)) return;
   k=kbKey('lt', '');
   if(w>1) k.w=w;
   rows[ri].splice(ki+1, 0, k);
-  kbNew1=0;
   saveKb();
   /* Placed from the keyboard, the key is opened so the letter can go on it --
      which is the next thing anybody does. Placed from the key's own sheet,
@@ -2856,11 +2745,8 @@ function kbAddKey(ri, ki, w){
    key in a new row; pressing it with none adds the empty row it always did. */
 function kbAddRowNew(){
   if(!kbEdit()) return;
-  if(!kbRoomRow()){ kbNew1=0; render(); return; }
-  var w=kbNew1, k=kbKey('lt', '');
-  if(w>1) k.w=w;
-  kbLayer().rows.push([k]);
-  kbNew1=0;
+  if(!kbRoomRow()) return;
+  kbLayer().rows.push([kbKey('lt', '')]);
   saveKb(); render();
 }
 /* A row with nothing left in it is not a row. */
