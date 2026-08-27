@@ -962,16 +962,35 @@ function vGlyph(){
      find the square again. Those four are what a letter IS, not how it is
      drawn, and vLetter is the screen about that. The canvas, the rail and the
      preview come to 844 exactly. */
+  /* Save is at the top, at the far end of the bar the back arrow is on, and
+     there is no Cancel anywhere. 「この画面キャンセルと保存下にあるけど保存は
+     右上にしてキャンセルは消して。戻るがキャンセルだから。」 OWNER 2026-08-27.
+
+     Two buttons at the foot said the screen had two ways out, and one of them
+     was the arrow's job -- so the arrow and Cancel were the same press, drawn
+     twice, in two places. What the arrow does is no longer cancelling either:
+     see geLeft(). Leaving with the drawing kept is what both of them do now,
+     and Save is the one that also finishes the letter and puts you back with
+     the others.
+
+     navTop's `right` is the slot for exactly this -- "one control pinned to
+     the far end of the bar, the place every phone puts the thing that
+     finishes what you are doing" -- and it already carries the ? on four
+     screens and the AI mark on one. `navsave` is beside `navq` so that the
+     bar keeps working with the CSS that is there today; the rule that makes
+     it read as the primary action rather than as a muted mark is one line and
+     it is `www/index.html`'s, which is not this session's to write. It is
+     measured in the commit body. */
   return '<div class="view">'+
-    navTop()+
-    '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
+    navTop('', '<button class="navq navsave"' + DO('geSave') + '>'+
+                 esc(t('glyph.save'))+'</button>')+
+    /* Nothing is pinned over the foot of this screen any more, so the room
+       that was left for it is not left. What is under the page is the tab
+       bar, which is what .body's own padding is already about. */
+    '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
-    '</div>'+
-    '<div class="barfix">'+
-      '<button class="btn ghost"' + DO('back') + '>'+t('glyph.cancel')+'</button>'+
-      '<button class="btn"' + DO('geSave') + '>'+t('glyph.save')+'</button>'+
     '</div></div>';
 }
 function geCur(){
@@ -1316,6 +1335,44 @@ function geUndo(){
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
   GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
+/* Putting the drawing where the letter keeps it, and nothing else -- no
+   toast, no going anywhere, no saying the sound. Both ways out of this screen
+   need this half and only one of them needs the rest. */
+function geKeep(){
+  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
+  ltSetStrokes(GE.lid, keep);
+  /* Drawing a letter is asking for your own writing. Only onboarding ever set
+     this, so every letter drawn in the letters chapter went into a font that
+     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
+  if(keep.length) SET.myfont=true;
+  save();
+  installScriptFont();
+  return keep;
+}
+/* ---- leaving the drawing screen keeps the drawing ----------------------
+   「書いている途中で戻ったらそれはそこの文字として保存していちいち消える
+   のやめて。」 OWNER 2026-08-27.
+
+   It used to be thrown away. GE held every stroke until something wrote it
+   down, and the only thing that did was the Save button -- so the back arrow,
+   the tab bar, and anything else that moved the screen took the drawing with
+   it without a word. Nothing was warned about and nothing was recoverable:
+   `docs/DATA_SAFETY.md` is 「人が作ったものは消さない」 and this was the app
+   quietly doing the opposite, on the one screen whose entire purpose is
+   making something by hand.
+
+   So there is no such thing as an unsaved drawing here any more. Leaving the
+   screen writes what is on it to the letter it was opened for. That is the
+   whole of it -- no question hanging off the arrow, because there is nothing
+   to ask: nothing is being lost either way.
+
+   Called from render(), on the one line that knows the screen changed. GE is
+   already null by the time geSave() gets here, so the two never both run. */
+function geLeft(from, to){
+  if(from!=='glyph' || to==='glyph' || !GE) return;
+  geKeep();
+  GE=null;
+}
 function geSave(){
   /* A dot is a mark. It used to be thrown away here on the grounds that a
      stroke with one point is a line half-drawn -- which is true of a line and
@@ -1327,14 +1384,7 @@ function geSave(){
 
      The pen already lays a dot down -- one point gives one square of ink, the
      nib itself -- so nothing else had to change for this to be drawable. */
-  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
-  ltSetStrokes(GE.lid, keep);
-  /* Drawing a letter is asking for your own writing. Only onboarding ever set
-     this, so every letter drawn in the letters chapter went into a font that
-     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
-  if(keep.length) SET.myfont=true;
-  save();
-  installScriptFont();
+  var keep=geKeep();
   var r=GE.r, l=ltById(GE.lid), snd=(l||{}).snd||[], k=ltKindOf(l);
   GE=null;
   /* Saving a letter finishes the letter, so it puts you back with the others
@@ -2207,6 +2257,11 @@ function render(){
   var same = (RENDERED===route);
   /* and what the screen being left forgets, which is viewLeft()'s in
      www/shell.js -- this is the one line that knows a screen changed. */
+  /* The drawing screen writes what is on it down as it is left. It is here
+     rather than in viewLeft() because viewLeft is www/shell.js's and this is
+     the glyph editor's own business -- and because it has to run BEFORE the
+     next screen is built out of the letters it just changed. */
+  if(!same) geLeft(RENDERED, route);
   if(!same) viewLeft(RENDERED, route);
   var y = same ? (window.scrollY || window.pageYOffset || 0) : 0;
   RENDERED=route;

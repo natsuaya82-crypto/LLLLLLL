@@ -528,7 +528,6 @@ defLang('ja', (function(){
       'glyph.fill'     : "塗り",
       'glyph.undo'        : "一画戻す",
       'glyph.clear'       : "すべて消去",
-      'glyph.cancel'      : "キャンセル",
       'glyph.save'        : "保存",
       'glyph.saved'       : "{0} を保存しました",
       'fmr.title'        : "規則で作る形",

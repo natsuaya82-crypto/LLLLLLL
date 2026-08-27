@@ -572,7 +572,6 @@ defLang('es', (function(){
       "glyph.fill"     : "Relleno",
       "glyph.undo"        : "Deshacer",
       "glyph.clear"       : "Vaciar",
-      "glyph.cancel"      : "Cancelar",
       "glyph.save"        : "Guardar",
       "glyph.saved"       : "{0} guardada",
       "fmr.title"        : "Formas hechas por una regla",

@@ -619,7 +619,6 @@ defLang('pt', (function(){
       "glyph.fill"     : "Preencher",
       "glyph.undo"        : "Desfazer",
       "glyph.clear"       : "Limpar",
-      "glyph.cancel"      : "Cancelar",
       "glyph.save"        : "Salvar",
       "glyph.saved"       : "{0} salva",
       "fmr.title"        : "Formas feitas por uma regra",

@@ -128,9 +128,37 @@ const r = await pg.evaluate(({s}) => {
   GE = newGE(l.id, ltName(l));
   GE.st = [{ pts: tri, fill: true }];
   geSave();
-  var back = (ltById(l.id) || {}).st || [];
-  out.kept = !!(back[0] && back[0].fill);
-  out.reopened = ink(back);
+  /* not `back` -- that is the app's back arrow, and a `var back` here hoists
+     over it for the whole of this function */
+  var readBack = (ltById(l.id) || {}).st || [];
+  out.kept = !!(readBack[0] && readBack[0].fill);
+  out.reopened = ink(readBack);
+
+  /* ---- and it survives being LEFT, which is the other way out of here ----
+     「書いている途中で戻ったらそれはそこの文字として保存していちいち消える
+     のやめて。」 OWNER 2026-08-27.
+
+     A fill that is dropped on the way to storage and a fill that is dropped
+     because somebody pressed the arrow instead of Save are the same letter
+     arriving thinner, and neither throws. The one above is asked of
+     geSave(); this is asked of the back arrow.
+
+     Driven the way the app drives it: editGlyph() to get onto the screen,
+     strokes onto GE, then back(), which is what the arrow is wired to. */
+  var l2 = LETTERS[1] || LETTERS[0];
+  var sq2 = [P(5,5), P(15,5), P(15,15), P(5,15)];
+  editGlyph(ltName(l2) || l2.id);
+  GE.st = [{ pts: sq2, closed: true, fill: true }];
+  var lid2 = GE.lid;                       /* back() is about to let GE go */
+  back();
+  var kept = (ltById(lid2) || {}).st || [];
+  out.leftKept  = kept.length;
+  out.leftFill  = !!(kept[0] && kept[0].fill);
+  out.leftInk   = ink(kept);
+  out.leftWant  = ink([{ pts: sq2, closed: true, fill: true }]);
+  /* and the screen is not still holding it: a drawing that is both written
+     down and still in GE comes back twice the next time the editor opens */
+  out.leftGone = (GE === null);
 
   /* and the editor shows an area in its own colour, not the letter's */
   out.green = cssVar('--fill') || '';
@@ -162,6 +190,13 @@ say(r.seam === 0,
 say(r.kept, 'the flag is still on the stroke after geSave()');
 say(r.reopened === r.filled,
     'saved and read back it draws the same ' + r.reopened + 'px');
+say(r.leftKept > 0,
+    'backing out of the editor keeps the drawing: ' + r.leftKept + ' stroke(s)');
+say(r.leftFill, 'and it is still an area after backing out, not a line');
+say(r.leftInk === r.leftWant,
+    'and it draws the same ' + r.leftWant + 'px as it did on the screen'
+    + (r.leftInk === r.leftWant ? '' : ' (kept: ' + r.leftInk + 'px)'));
+say(r.leftGone, 'and the editor is not still holding a second copy of it');
 say(!!r.green, 'the editor has a colour of its own for an area: ' + r.green);
 
 if (bad.length) { console.error('\nfill: ' + bad.length + ' failed'); process.exit(1); }
