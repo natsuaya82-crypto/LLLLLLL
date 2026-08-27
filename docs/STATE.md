@@ -92,6 +92,38 @@ for b in $(git branch -r | grep -v HEAD); do \
   echo "$b +$(git rev-list --count origin/master..$b)"; done
 ```
 
+**Before believing any of that: `git branch -r` can be lying, and on a fresh
+clone it usually is.** The `git clone --depth 1` that `add_repo` tells a
+session to run leaves a fetch refspec that names ONE branch:
+
+```
+git config --get-all remote.origin.fetch
+  → +refs/heads/master:refs/remotes/origin/master      # master, and nothing else
+```
+
+With that in place `git fetch --all --prune` brings back master and nothing
+else, and `git branch -r` prints `origin/master` alone — **and that looks
+exactly like a remote with one branch on it.** The repair, which every session
+should run before the three lines below:
+
+```
+git config --unset-all remote.origin.fetch
+git config --add remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+git fetch --all --prune
+git ls-remote origin | wc -l        # the remote's own answer, not the clone's
+```
+
+**This has now caught two sessions on one day.** `claude/pw3` ran the collision
+test against one branch on 2026-08-27 and found out after pushing
+(`docs/reports/pw3-2026-08-27.md` § the hole, `5f33611`), and asked for this
+line here; `claude/acct` did the same thing a few hours later, reported "no
+live branches on this remote", and found **45** — eleven of them ahead of
+master, five of them touched within the same minutes — when a stop hook
+complained about something else entirely. Neither session was wrong about what
+it was looking at. **It is the same failure as the paragraph above and the
+opposite half of it**: that one is `master` being stale, this one is `master`
+being all you can see. Both end in believing two zeros.
+
 **`--all`, and `git branch -r`, are the point.** The two lines that used to be
 here compared HEAD against `origin/master` and nothing else, so they cannot see
 the case that has now happened twice: `master` itself being the stale thing. On
@@ -797,6 +829,57 @@ Two of them were about capabilities that had been deleted.
     which is why every check passed. **Device unconfirmed.**
 
 ### Waiting on a phone
+
+21. **「接続できません」 that the app can now name, and one that only a phone
+    can answer.** OWNER 2026-08-27, Apple sign-in on a real device:
+    「Appleでログインしたあと前のアカウントが出てくるんだけどなんで？ あと
+    このあと接続できませんって出るけど？」 `claude/acct` settled the first
+    half in code and made the second half answerable, and did not answer it.
+
+    **What was settled without a phone, and is worth not re-deriving:
+    the Apple provider IS enabled in Supabase.** Reaching the 「ユーザー名と
+    ID」 screen at all is the proof. `OBM.mode='who'` is set in exactly one
+    place — `www/onboard.js`, the first line of `obIn()` — and `obIn` is
+    passed to `netIdToken()` as the SUCCESS callback and nowhere else. A
+    disabled provider answers `/auth/v1/token?grant_type=id_token` with 400,
+    `obNo` runs, and the person stays on the door. So `supabase/setup.md` §4-1
+    is done. **§4-2 and §4-3 — Google — are still unverified and still the
+    owner's**; `GOOGLE_IOS_ID` is filled in, so that button opens a sheet
+    whether or not Supabase will accept what comes back.
+
+    **What could NOT be settled here.** `status` 0 had three roads into one
+    sentence — the request went and nothing came back, the request was never
+    made, and a 200 that was not a session. Which one the phone is on cannot
+    be read off this repository. It carries a mark now, so one screenshot
+    decides it:
+
+    ```
+    接続できません (profile 0)      a REST GET went and nothing came back
+    接続できません (mkprofile −)    never sent; the app judged it had no session
+    接続できません (token ≠)        200, and what came back was not a session
+    ```
+
+    **The reasoning that narrows it, for whoever gets the screenshot.** The
+    handle in the photograph, `lingua2`, was ALREADY the previous account's.
+    So if `netHandleFree()`'s GET had reached the server, the answer would
+    have been 「その ID は使われています」 and not this. That the offline
+    sentence appeared instead says the REST call did not complete — which
+    also means `netMyProfile()`, the same shape a moment earlier, is the
+    thing to look at first. **`/auth/v1/` worked and `/rest/v1/` apparently
+    did not, in one sitting, on one network** — that is the shape of the
+    thing, and no check in this repository can see it.
+
+    Also found and NOT changed, because it is only reachable by guessing:
+    `netTook()` reads
+    `uid:(d.user && d.user.id) || (SESS && SESS.uid) || ''`. The middle term
+    is there for the refresh, which may answer without a `user`. It also
+    means that switching accounts WITHOUT signing out first — the door opened
+    from Settings while a session is still held — would hand the new account
+    the old one's uid if the grant ever answered without a `user`. Supabase
+    always sends one, so this is a hazard rather than a bug; it is written
+    down because `www/me.js` now decides whose phone it is off that uid, so
+    the cost of it being wrong went up.
+
 
 19. Build **#82** is green and on TestFlight. What it has not had is a person:
     tapping three dots with round off should give a corner, and saving a letter

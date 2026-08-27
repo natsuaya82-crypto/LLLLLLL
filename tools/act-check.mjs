@@ -506,6 +506,58 @@ const R = await pg.evaluate(() => {
     SESS = null; SET.done = true; SET.obback = null;
     OBM.mode = 'in'; OBM.em = ''; OBM.pw = ''; OBM.code = ''; OBM.msg = ''; OBM.busy = false;
 
+    /* ---- 6b. and the OTHER kind of signed out --------------------------
+       OWNER 2026-08-27: 「オンボーディング→最後にログイン」「ログアウトした
+       時はログイン画面から動かさない」 -- two sentences, and they are about
+       two different people.
+
+       Everything above this point sets `SET.done = true` before it walks, so
+       all of it is asking about the second one: somebody who finished and
+       then signed out. **Nobody had ever asked about the first.** A brand new
+       phone is not signed in either, and appIs() answered 'door' to it on the
+       first line and never reached the second -- so the onboarding could not
+       be got to at all, on a device that had never been used, and deleting an
+       account did not bring it back.
+
+       That is why this sits here rather than in a file of its own: the case
+       it is about is one line away from the case above it, and the reason it
+       was missing is that the case above it looked like the whole question.
+
+       appIs() is asked directly. It is the only thing that decides which of
+       the three the app is, and a check that drove render() would be asking
+       about markup when the claim is about a choice. */
+    {
+      const three = [
+        /* SET.done, signed in, what appIs() must answer, and who that is */
+        [false, false, 'ob',   '新品の端末 ── まだ済ませていない人'],
+        [true,  false, 'door', '済ませたのにサインアウトした人'],
+        [true,  true,  'app',  '両方済んだ人'],
+      ];
+      three.forEach(([done, inn, want, who]) => {
+        SET.done = done; SET.obback = null; ob.step = OB_NAME;
+        SESS = inn ? { rt: 'a refresh token' } : null;
+        let got;
+        try { got = appIs(); } catch (e) { got = 'threw: ' + e.message; }
+        if (got !== want)
+          out.doors.push('appIs() ' + who + ': ' + want + ' のはずが ' + got);
+      });
+
+      /* And the one the owner actually pressed: deleting the account puts the
+         phone back to new, so the onboarding is what comes next. wipeHere()
+         is walked rather than imitated -- it is the thing that has to be
+         right, and it takes SET.done away and THEN signs out, which is the
+         order that used to land on the door. confirm() is answered yes for
+         the length of it, and the language it rebuilds is the fixture's. */
+      const wasConfirm = window.confirm;
+      window.confirm = () => true;
+      let wiped;
+      try { wipeHere(); wiped = appIs(); }
+      catch (e) { wiped = 'threw: ' + e.message; }
+      window.confirm = wasConfirm;
+      if (wiped !== 'ob')
+        out.doors.push('アカウント削除のあと: ob のはずが ' + wiped);
+    }
+
     SESS = wasS; window.route = wasR; NAV = wasN; SET.done = wasDone;
     SET.obback = wasBack; ob.step = wasStep;
     try { render(); } catch (e) { out.doors.push('and back again threw: ' + e.message); }
@@ -609,4 +661,4 @@ if (fails.length) {
   }
   process.exit(1);
 }
-console.log('\nall seven checks pass: every name resolves, everything that resolves is named,\nno name is written down twice, and signed out there is one screen and no way past it.');
+console.log('\nall seven checks pass: every name resolves, everything that resolves is named,\nno name is written down twice, signed out there is one screen and no way past it,\nand appIs() answers all three of its states -- including the new phone that has\nnever been signed in, which is the onboarding and not the door.');
