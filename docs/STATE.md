@@ -92,6 +92,38 @@ for b in $(git branch -r | grep -v HEAD); do \
   echo "$b +$(git rev-list --count origin/master..$b)"; done
 ```
 
+**Before believing any of that: `git branch -r` can be lying, and on a fresh
+clone it usually is.** The `git clone --depth 1` that `add_repo` tells a
+session to run leaves a fetch refspec that names ONE branch:
+
+```
+git config --get-all remote.origin.fetch
+  → +refs/heads/master:refs/remotes/origin/master      # master, and nothing else
+```
+
+With that in place `git fetch --all --prune` brings back master and nothing
+else, and `git branch -r` prints `origin/master` alone — **and that looks
+exactly like a remote with one branch on it.** The repair, which every session
+should run before the three lines below:
+
+```
+git config --unset-all remote.origin.fetch
+git config --add remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
+git fetch --all --prune
+git ls-remote origin | wc -l        # the remote's own answer, not the clone's
+```
+
+**This has now caught two sessions on one day.** `claude/pw3` ran the collision
+test against one branch on 2026-08-27 and found out after pushing
+(`docs/reports/pw3-2026-08-27.md` § the hole, `5f33611`), and asked for this
+line here; `claude/acct` did the same thing a few hours later, reported "no
+live branches on this remote", and found **45** — eleven of them ahead of
+master, five of them touched within the same minutes — when a stop hook
+complained about something else entirely. Neither session was wrong about what
+it was looking at. **It is the same failure as the paragraph above and the
+opposite half of it**: that one is `master` being stale, this one is `master`
+being all you can see. Both end in believing two zeros.
+
 **`--all`, and `git branch -r`, are the point.** The two lines that used to be
 here compared HEAD against `origin/master` and nothing else, so they cannot see
 the case that has now happened twice: `master` itself being the stale thing. On
