@@ -34,7 +34,7 @@ function viewReset(){
   q=''; wFil='*'; wSort='a';           /* the word list */
   fq=''; fpick=null;                   /* the find screen */
   abVow='';                            /* the abugida editor */
-  ltSort='own'; ltFil='all';           /* the alphabet's order and filter */
+  ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
   ltWob=false;                         /* and whether its letters are wobbling */
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   GE=null;                             /* the glyph editor */

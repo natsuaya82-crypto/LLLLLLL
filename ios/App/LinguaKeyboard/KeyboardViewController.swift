@@ -44,7 +44,11 @@ final class KeyboardViewController: UIInputViewController,
   /// The most of the screen a keyboard may take. Apple's own is about four
   /// tenths and a kana keyboard about half; this is the ceiling, not the aim,
   /// and only a keyboard with many rows ever meets it.
-  private static let mostOfScreen: CGFloat = 0.55
+  ///
+  /// HALF, and half is the limit. 「0.5が限界」 OWNER 2026-08-27. It is the
+  /// same number `www/keyboard.js` divides the rows out of, and kb-check
+  /// reads this line to hold the two sides together.
+  private static let mostOfScreen: CGFloat = 0.5
 
   override func viewDidLoad() {
     super.viewDidLoad()

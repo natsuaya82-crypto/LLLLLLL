@@ -159,6 +159,7 @@ defLang('it', (function(){
       "kb.key"               : "Tasto",
       "kb.key.del"               : "Elimina questo tasto",
       "kb.what"               : "Cosa fa",
+      "kb.w"               : "Larghezza",
       "kb.on"               : "Alla pressione",
       "kb.del"               : "Backspace",
       "kb.sp"               : "Spazio",
@@ -644,7 +645,7 @@ defLang('it', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Chiedi a un'IA",
-      "ask.full"     : "Troppo lungo da inviare",
+      "ask.leave"    : "Apre un'altra app",
       "ask.head"     : "Sto costruendo una lingua artificiale in un'app chiamata Lingua.",
       "ask.f.name"   : "Nome della lingua",
       "ask.f.snd"    : "Suoni (IPA)",
@@ -655,7 +656,7 @@ defLang('it', (function(){
       "ask.f.end"    : "Finale di parola",
       "ask.f.end.v"  : "{0}: -{1} in {2} su {3}",
       "ask.f.words"  : "Parole che ha già",
-      "ask.word.ask" : "Proponi 8 parole nuove adatte a questa lingua. Usa solo i suoni sopra e le forme di parola che ha già. Per ognuna, dai la parola, un significato, la lettura in IPA e una riga sul perché di quella forma.",
+      "ask.word.ask" : "Voglio creare molte parole per questa lingua. Portala dove ti sembra giusto — fammi domande, contraddicimi, prova direzioni a cui non ho pensato. Solo una cosa sulla forma: dai l'elenco in un blocco di codice, una parola per riga, parola e significato separati da una tabulazione, così posso incollarlo di nuovo nell'app.",
       "words.more" : "Altro",
       "words.search"     : "Cerca",
       "words.clear"      : "Cancellare",

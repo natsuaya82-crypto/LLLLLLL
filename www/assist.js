@@ -165,15 +165,42 @@ function askHead(extra){
   if(extra) for(i=0;i<extra.length;i++) out.push(extra[i]);
   return out.join('\n')+'\n';
 }
-/* The words to send, and why these. A word with no meaning teaches nothing
-   about the language it belongs to, so it does not spend any of the budget.
-   In the dictionary's own order, because an order that moves between two
-   presses is a different question asked twice. */
+/* The words to send, and the shape they go in.
+
+   TAB, and not " = ". 「〇〇　〇〇 みたいに単語と意味を送るやん。」
+   「100じゃなくてもいいけど」 OWNER 2026-08-27 -- this is for somebody making
+   words in BULK, and no number is part of it. Whatever comes back, having to
+   type it in by hand is not making words in bulk, so what leaves has to be
+   the shape that comes back, and the shape that comes back has to be one
+   www/import.js already reads. Nothing was added there to meet this; this
+   was written to meet it.
+
+   Tab because impDelim() (www/import.js:66) returns it the moment it sees
+   one, with no scoring at all -- where `,` `;` and `|` are chosen by
+   counting how many columns each row would have, so one malformed line in a
+   hundred can tip the whole paste onto a different delimiter. And a meaning
+   HAS commas in it: "mountain, hill" is in tools/import-check.mjs as a real
+   sample, and comma-separated it arrives as two columns.
+
+   ROMAN, and this is not a precaution. A spelling typed on the Lingua
+   keyboard is private use code points until spType() (www/letters.js:944)
+   turns it back -- "the one place a typed spelling becomes the language's
+   letters". A word that came in through IMPORT never passes that:
+   www/import.js:770 takes hw out of the file as it stands. So "hw is roman"
+   was true of one road in and unchecked on the other, and the reader would
+   have been sent code points out of somebody else's font.
+   「自作文字の場合はaiに送る時はアルファベットになるように。」 OWNER
+   2026-08-27. ask-check holds it.
+
+   A word with no meaning teaches nothing about the language it belongs to,
+   so it does not spend any of the budget. In the dictionary's own order,
+   because an order that moves between two presses is a different question
+   asked twice. */
 function askWords(){
   var out=[], i, m;
   for(i=0;i<WORDS.length;i++){
     m=wMn(WORDS[i]);
-    if(m) out.push(String(WORDS[i].hw)+' = '+m);
+    if(m) out.push(puaRoman(String(WORDS[i].hw))+'\t'+m);
   }
   return out;
 }
@@ -200,18 +227,50 @@ function askLink(ask, extra){
   if(put) body=lab+body;
   return {url: base+encodeURIComponent(head+body+tail), put:put, all:rows.length};
 }
-/* One row, wherever a screen wants to offer this. An <a> and not a button:
-   a button would carry code, and this carries a destination -- the same
-   shape docRows() in www/settings.js has shipped with since it was written.
-   It is also what keeps tools/press.mjs out of it; that walk presses
-   [data-do], and a press here would open a window in the middle of a check.
+/* The mark. 「四角にAIってもじいれれば？」 OWNER 2026-08-27.
 
-   .set sets its own font-size and line-height (www/index.html), so this row
-   is exactly as tall as the <button class="set"> rows beside it. */
-function askRow(ask, extra){
+   Drawn rather than borrowed, because nothing in the set says this. The
+   four-pointed star is what every other app uses for a model, and here it is
+   already taken: glyph.js gives it to what the paid plan adds, and this costs
+   nothing and never could -- it opens somebody's own account. A star on it
+   would say the opposite of the one thing this feature is.
+
+   The square is in the SVG and not in the stylesheet, which is the same
+   reason ICON_LTR draws its own: a border round a button is the rounded box
+   the whole app is rid of 「角丸やめろ」, and a shape drawn inside a mark is
+   not one. ICON_LTR is the precedent -- a letter in a square, at this size,
+   in this weight.
+
+   It lives here rather than in www/glyph.js with the other forty-four, and
+   that is the one thing about it that is wrong. Five branches are in that
+   file today, so moving it there is a collision; it wants to go home when
+   they have landed. */
+var ICON_AI='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" '+
+  'stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="3" y="3" width="18" height="18" rx="4"/>'+
+  '<path d="M7 16.2 9.7 8l2.7 8.2"/><path d="M8 13.6h3.4"/>'+
+  '<path d="M16.4 8v8.2"/></svg>';
+/* One mark on the bar of a screen, and it is NOT a row of words.
+   「AIを使いたいって思うとこどこ？隠してどうすんの？しかも文字で書くなや」
+   OWNER 2026-08-27. It was a line of text inside the ⋯ menu of the
+   dictionary, which is two mistakes at once: behind a press, and spelled out.
+   It is on the bar now, beside the ⋯ rather than inside it.
+
+   An <a> and not a button: a button carries a NAME and this carries a
+   DESTINATION -- the same shape docRows() in www/settings.js has shipped
+   with since it was written. It is also what keeps tools/press.mjs out of
+   it; that walk presses [data-do], and a press here would open a window in
+   the middle of a check.
+
+   Nothing comes back when the scaffold alone is over the ceiling -- there is
+   no shorter version left to fall to, and half a prompt is the failure this
+   whole chapter exists to prevent. It takes a language name of about a
+   thousand characters to reach, and ask-check holds that it returns ''
+   rather than opening something cut in half. */
+function askBtn(ask, extra){
   var L=askLink(ask, extra);
-  if(!L.url) return '<div class="set"><span class="sl">'+esc(t('ask.full'))+'</span></div>';
-  return '<a class="set" href="'+esc(L.url)+'" target="_blank" rel="noopener">'+
-    '<span class="sl">'+esc(t('ask.open'))+'</span>'+
-    '<span class="sv">'+(L.put<L.all? esc(L.put+'/'+L.all) : '')+ICON_LINK+'</span></a>';
+  if(!L.url) return '';
+  return '<a class="navq" href="'+esc(L.url)+'" target="_blank" rel="noopener"'+
+    ' aria-label="'+esc(t('ask.open'))+'">'+ICON_AI+'</a>';
 }

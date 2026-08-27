@@ -61,6 +61,7 @@ defLang('en', (function(){
       "kb.key"               : "Key",
       "kb.key.del"               : "Delete this key",
       "kb.what"               : "What it does",
+      "kb.w"               : "Width",
       "kb.on"               : "Pressed",
       "kb.del"               : "Backspace",
       "kb.sp"               : "Space",
@@ -550,7 +551,7 @@ defLang('en', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       'ask.open'     : "Ask an AI",
-      'ask.full'     : "Too long to send",
+      'ask.leave'    : "Opens another app",
       'ask.head'     : "I am building a constructed language in an app called Lingua.",
       'ask.f.name'   : "Language name",
       'ask.f.snd'    : "Sounds (IPA)",
@@ -561,7 +562,7 @@ defLang('en', (function(){
       'ask.f.end'    : "Word ending",
       'ask.f.end.v'  : "{0}: -{1} in {2} of {3}",
       'ask.f.words'  : "Words it already has",
-      'ask.word.ask' : "Propose 8 new words that fit this language. Use only the sounds above, and the word shapes it already has. For each, give the word, a meaning, its reading in IPA, and one line on why that shape.",
+      'ask.word.ask' : "I want to make a lot of words for this language. Take it wherever you think is right — ask me things, push back, try directions I have not thought of. One thing only about the shape: give the list as a code block, one word per line, the word and its meaning separated by a tab, so I can paste it straight back into the app.",
       'words.more' : "More",
       'words.search'    : "Search",
       'words.clear'     : 'Clear',

@@ -163,6 +163,29 @@ front of it, because it will be read anyway. 「歴史とかいいから消せ�
 what was true on a day. Everywhere else, including this file, only sentences
 about now. → `docs/FEATURE_RULES.md`
 
+**"Rule" is the wrong word for what has to be fixed, and the wrong word let a
+whole file rot.** What goes stale is anything WRITTEN DOWN — a rule, a
+handbook, a comment over a function, and above all `docs/STATE.md`, which says
+what is BUILT. That last kind is the most dangerous and was the one nothing
+covered: a stale rule reads as odd and gets questioned, while a stale statement
+of fact is simply believed. 「古いのは全部新しくする約束は？」 So: **a change
+lands with every sentence it falsifies, wherever it lives.**
+
+`docs/STATE.md` is the case that proved it. Three places tell a session to READ
+it — the head of this file, the table below, and `docs/SESSIONS.md` twice —
+and **not one place told anybody to WRITE it**, so it belonged to nobody and
+went months out of date while every session opened with it. It said "No
+StoreKit" with `LinguaStore.swift` shipped and `storeBuy` called from
+`setPlan`; it said the Apple capability was still to do after the owner had
+done it. A leader read those sentences and told the owner their own finished
+work was outstanding. **It is the LEADER's file**: the leader integrates, so
+the leader is the one who knows what became true today.
+
+And the same reason the corners needed `box-check`: prose does not hold a rule.
+This one is not held by anything yet — `docs/BACKLOG.md` carries what a check
+could mechanically catch (a line claiming something is absent while the code
+has it) and what it could not.
+
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
 retention, deletion, migration, how past data behaves, timing, what is
@@ -251,7 +274,7 @@ backlog entry is not permission, and neither is the absence of one.
 | `docs/CHANGELOG.md` | what a person would notice, and every change to stored data |
 | `docs/FEATURES.md` | every feature, its plan, its data, and whether the owner has decided it — read before building anything |
 | `docs/BACKLOG.md` | found and deliberately not done, and why |
-| `docs/STATE.md` | where the project stands — read first |
+| `docs/STATE.md` | where the project stands — read first, and **the leader writes it**: every session reads it, so a sentence left stale there is believed by all of them |
 
 ## The gate
 
@@ -532,9 +555,8 @@ person's settings and belongs to no language. `langKey('words')` is the only
 thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
-real: `bkPack()` walks it, so a slice outside it is in no backup, and
-`wipeAll` walks it, so a slice outside it survives a wipe into the next
-language. Two were outside it. The **keyboard** is the language's — built in
+**backed up**: `bkPack()` walks it, so a slice outside it is in no backup.
+Two were outside it. The **keyboard** is the language's — built in
 the app, filed under `langKey('kb')` beside the words — and was in no backup;
 and **what the language is for** sat in `SET`, the person's settings, directly
 under a comment saying it travels with the language. Neither could throw:
@@ -542,6 +564,22 @@ a backup was written, it restored, every check was green, and the keyboard
 somebody built simply was not in the file. `backup-check` now names both
 rather than counting slices — a count says eleven and goes on saying eleven
 when the eleventh is the wrong one.
+
+**Being in it has nothing to do with being deleted, and that is new on
+2026-08-27.** `wipeAll` used to walk `SLICES` too, and every key added after
+that line was written stayed behind — the drafts, the posts, the person's
+name and face, the index of languages, the flat keys from before there could
+be more than one. One bug, seven times: **a list of keys, written by hand,
+that nobody remembered to add to.** 「アカウント削除で残るものねえって言ってん
+だろ何回言わせんだよ全部消えんだよ。」 So `lsWipeNS()` counts `localStorage`
+instead and removes everything under `lingua.` — no list, and a key added
+tomorrow is gone the day it is added. The prefix includes the dot, because
+`lingua` and `linguaX` in the same storage are somebody else's.
+
+**There is no way to delete one language**, and that is a fact about today
+rather than a rule: no screen offers it. When one is built it walks `SLICES`
+for one id through `langKeyOf()` — and it is emphatically not `lsWipeNS()`,
+which is the whole namespace and belongs to the account going.
 
 The globals do not change. `WORDS` is the open language's dictionary, because
 the app shows one language at a time and 290-odd places say `WORDS` meaning
@@ -1065,7 +1103,9 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds seventy things: the row that goes is the one pressed
+`tools/kb-check.mjs` holds a hundred and sixty-eight things — count the `say(`
+lines there rather than trusting this number, which has been stale twice: the row
+that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
 one key's worth from each; **a key wider than the column is NARROWED and not
 removed** (a cell spanning b–d, with c taken out, spans b–c); the half key that
@@ -1075,6 +1115,32 @@ the step back; nothing outside the layout moves — not a letter, not a word, no
 another keyboard, not another face; and the two buttons are down when there is
 nowhere to go.
 
+**A key can also be joined to the one UNDER it**, and the shape that is stored
+is the whole of why it is safe. 「a1a2触ってキーをくっつける」「横で。縦はリーダー
+に確認して許可降りたらやって欲しい」OWNER 2026-08-27, and the leader gave it the
+same day. The key that covers carries `h`, and a GAP carrying `up` stands in the
+same columns of the row below — which is what keeps that row the width it was, so
+nothing beside it slides under the merge and every total still adds up. It is a
+gap rather than a kind of its own because `KeyBoardView.swift` switches on `k`
+and falls to `default:` for anything it has never heard of, which draws an
+ordinary grey key and inserts nothing when pressed; a gap is drawn clear and does
+nothing. **A board carrying a merge, opened by a build from before merges
+existed, is that keyboard with a hole where the lower half is — the merge is
+missing and nothing else is.** A keyboard belongs to a language and a language
+moves between phones, so that is the case that decides the shape.
+
+Two keys are joined only when they line up — same column, same width — and a
+ragged pair is REFUSED rather than repaired. `kbVFix()` is the one place that
+answers for a merge whose halves have been separated by a row going, a column
+being cut or a key going in beside one; it runs from `saveKb()` and BEFORE
+`kbNoted()` inside it, so the step back holds the repaired layout rather than a
+state the app never showed.
+
+**And the three alignments are DOWN on a row with half a merge in it.** Where a
+merged pair goes when its row is pushed left or right is the owner's and has not
+been asked; moving one half and not the other is not an answer to it. That is
+`docs/FEATURE_RULES.md` § Deciding, on the newest thing on this screen.
+
 It holds the two ceilings with them, because they are the same screen and the
 same kind of mistake. **Ten across is the phone's number** — the narrowest
 iPhone is 320, so ten keys are 32 each and eleven would be 29 — and every
@@ -1082,8 +1148,8 @@ pattern the app builds already comes to ten or fewer. **How many DOWN is the
 phone's number too, and it is not a number written in the app.** 「キーボードの
 高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。だから行の列は
 そのキーボードの制限の範囲内で追加できるって話だけど？」 The extension caps the
-whole keyboard at **0.55 of the screen** and SQUEEZES the rows past it, so a
-ninth row was never a ninth row — it was every row getting shorter. **And a row
+whole keyboard at **half the screen** — 「0.5が限界」 OWNER 2026-08-27 — and
+SQUEEZES the rows past it, so a ninth row was never a ninth row — it was every row getting shorter. **And a row
 is a KEY tall**: 「キーのサイズはiPhoneのサイズによって変わるんじゃないの？八行
 入っても小さかったら打ちにくいだけだぞ？」 The extension's row was a flat 54pt,
 so a key was the same height on every phone and the only thing a bigger phone
@@ -1095,7 +1161,11 @@ iPhone, 61 on a Pro Max**. The rows that fit are then divided out of the cap
 rather than chosen, and **divided out of the SMALLEST phone the app runs on —
 320 × 568** — which is what the width rule has always done: not the phone in
 your hand, and not the roomiest one, the narrowest. **Five**, which is the free
-QWERTY's own row count and what a real phone keyboard is. Referenced to a big
+QWERTY's own row count and what a real phone keyboard is. The division gives
+5.235 and floors, so what a sixth row would need is a cap this rule does not
+have — and tightening the cap to half took that SLACK away rather than a row,
+which is why no keyboard anybody had built stopped fitting when it tightened.
+Referenced to a big
 phone instead it came to **63.8% of an iPhone SE 1** — the cap broken on the
 two phones with the least room, which is the opposite of what a ceiling is for.
 「キーボードの高さは画面の半分までってルールあるのになんで七も足したら7割埋まる
@@ -1111,6 +1181,35 @@ in two languages is the thing that drifts. Both ceilings hold on ADDING only:
 **a layout already over the ceiling is left exactly as it is**, because cutting
 it down would be the app deleting somebody's keys. The check puts an
 over-the-ceiling layout in and demands that nothing moves.
+
+**A MERGED PAIR is carried as one thing.** 「長押しの時は動くよ？ iPhoneの
+ホーム画面と同じ ウェジットも2*2とかあるけどその分みんな動くでしょ？それと
+同じ」 OWNER 2026-08-27. A key merged with the one under it is two cells — the
+tall key and the gap holding its room — and the carry moved only the half under
+the finger. `kbVFix()` then did what it is for and took the merge apart:
+nothing threw, the board drew, and the pair somebody made was gone. **That is
+not `kbVFix()`'s to fix** — it is the one place that says what a valid pair is,
+and an exception there would be a hole opened from a side that does not know
+the rule. The carry takes both halves, so by the time `kbVFix()` looks there is
+nothing to undo. Either half may be grabbed; the **top** one is the pair, the
+way `kbVJoin()` keeps the upper key. It needs the row under the one it lands
+in, so nothing lands in the last row, and **both** rows are asked for room —
+the same gate as above, asked twice, not a second rule. A drop the sheet cannot
+hold leaves the pair exactly where it was: "no row is over ten" is also true of
+a carry that ate a half, which is why those are separate claims.
+
+**And CARRYING a key is adding one**, so the ten holds there too.
+「満杯だと追加できないから」 OWNER 2026-08-27. A key can be held and dragged
+into another row, and that road asked nothing about width — a board of ten-key
+rows became one of eleven, which is the 29pt this rule exists to forbid.
+`kbCellAdd()`, the same act done by pressing an empty cell rather than by
+carrying, had asked `kbRoomIn()` from the beginning: the gate was already
+there and one road went round it. Both ask `kbRoomFor()` now. **Only across
+rows** — inside one row the width does not change, and asking there counts the
+key twice and freezes the ordering of every full row. What a refused carry
+must do is leave the key where it was: "no row is over ten" is also true of a
+carry that ate the key, and those are two claims in `kb-check` because putting
+the bug in showed the first one staying green while the key vanished.
 
 And that a short row sits in the MIDDLE of the sheet rather than at its left
 edge — 「揃えて欲しい」, five keys over three. Counting columns in halves is
