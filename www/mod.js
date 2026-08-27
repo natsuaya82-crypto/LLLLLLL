@@ -355,123 +355,65 @@ function adminPct(v){
   return (typeof v==='number')? (Math.round(v*100)+'%') : null;
 }
 
-/* ---- the line ------------------------------------------------------------
-   An SVG built here rather than a class in www/index.html, because that file
-   belongs to another session today. It wears no class at all and sets no
-   border and no corner -- there is nothing here for tools/box-check.mjs to
-   find, and nothing in the stylesheet to keep in step with it. The colour
-   NAMES `var(--gold)` rather than being a colour, so the two theme blocks at
-   the top of index.html stay the one place a colour lives.
+/* ---- the days and the months --------------------------------------------
+   「棒グラフいらないから、日毎の売り上げと月毎の売り上げに分けて。
+     8/1 まるまる、8月 〇〇 みたいに」OWNER 2026-08-26.
 
-   IT CARRIES ITS NUMBERS AND ITS DATES. The first version was a bare stroke:
-   a shape that goes up and down and says neither WHEN nor HOW MUCH.
-   「日付もいくら売れたかもわかんねえじゃねえかよ」 OWNER 2026-08-26. A line
-   with no scale on it is a decoration -- it cannot be read, only admired, and
-   the whole reason it is on this screen is to be read. So: the highest and
-   the lowest value down the left, the first and the last day along the
-   bottom, and a dot on the newest point with its own value beside it.
+   There was a chart here. It is gone -- both of them are, and the drawing
+   code with them: a line that nobody asked to keep is dead code, and git
+   remembers it. What is here instead is what the owner drew: a date on the
+   left, a number on the right, one row each, in the row every other list in
+   this app is made of.
 
-   No stretching. `preserveAspectRatio="none"` fits any box and squashes the
-   text with it -- the numbers came out narrow and wrong. The viewBox keeps
-   its ratio and the whole drawing scales together.
+   Newest first. A list of days is read from today backwards -- the row
+   somebody came to see is the top one, not the one thirty scrolls down.
 
    A day Apple never readied is not in the series at all: the Edge Function
-   drops it, for the reason adminRow() gives above. Nothing is decided again
-   here -- what this has to do is not LIE about the gap, so x is the DAY and
-   not the position in the list. Two points a week apart sit a week apart, and
-   the week is visible instead of being smoothed into a run of days that never
-   existed.
-
-   The one absence this file does judge is a different one: `keep` is null on a
-   day that HAS a report and on which nothing renewed and nothing cancelled.
-   That is no rate rather than a missing day, so the point is skipped here. */
-function adminDayNo(d){
-  var p=String(d||'').split('-');
-  if(p.length!==3) return 0;
-  return Math.round(Date.UTC(+p[0], +p[1]-1, +p[2])/86400000);
-}
-/* 2026-08-25 -> 8/25. The year is the same on every point of a month-long
-   line, so it is the part that says least and takes the most room. */
+   drops it, for the reason adminRow() gives above. So a gap in the list is a
+   day with no report, and it is missing rather than zero. */
 function adminMD(d){
   var p=String(d||'').split('-');
   return (p.length===3)? (+p[1])+'/'+(+p[2]) : '';
 }
-/* A number a person reads at a glance: 6955 rather than 6955.00, and 74%
-   rather than 0.74. Money keeps its hundredths only when it has any. */
-function adminNum(v, pct){
-  if(pct) return Math.round(v*100)+'%';
-  return String(Math.round(v*100)/100);
+/* 2026-08 -> 8月 / August, in the interface language. The phone knows the
+   twelve names and this app does not have to: postWhen() in www/post.js
+   already dates every post this way, with the same fallback for a browser
+   that refuses. No year -- twelve months back cannot hold the same month
+   twice, so the name alone says which. */
+function adminMon(m){
+  var p=String(m||'').split('-'), d;
+  if(p.length!==2) return '';
+  d=new Date(+p[0], +p[1]-1, 1);
+  try{ return d.toLocaleDateString(uiLang(), {month:'long'}); }
+  catch(e){ return p[0]+'-'+p[1]; }
 }
-function adminTx(x, y, anchor, txt){
-  return '<text x="'+x+'" y="'+y+'" font-size="10" fill="var(--txm)" '+
-    'text-anchor="'+anchor+'">'+esc(txt)+'</text>';
+/* One purse as one row's value: `JPY 6955`, or the biggest of several when a
+   day sold in more than one country. The others are not lost -- the plan page
+   carries every currency -- but a list of thirty days cannot be three lists.
+   Nothing is added across currencies here either. */
+function adminOne(m){
+  var i, best=-1, out=null;
+  for(i=0;i<(m||[]).length;i++) if(m[i].total>best){ best=m[i].total; out=m[i].cur+' '+m[i].total; }
+  return out;
 }
-function adminLine(vals, pct){
-  /* vals: [{d:'YYYY-MM-DD', v:number}], oldest first, nulls already dropped.
-     Two points are the fewest that make a line; one is a dot and no line. */
-  if(vals.length<2) return '';
-  var W=320, H=132, L=52, R=8, T=16, B=20, i;
-  var x0=adminDayNo(vals[0].d);
-  var span=adminDayNo(vals[vals.length-1].d)-x0;
-  var lo=vals[0].v, hi=vals[0].v;
-  for(i=1;i<vals.length;i++){
-    if(vals[i].v<lo) lo=vals[i].v;
-    if(vals[i].v>hi) hi=vals[i].v;
-  }
-  /* A flat line sits in the middle rather than dividing by nothing. */
-  var rng=(hi-lo) || 1;
-  var pts=[], lx=0, ly=0;
-  for(i=0;i<vals.length;i++){
-    var x=span? ((adminDayNo(vals[i].d)-x0)/span)*(W-L-R)+L : (L+W-R)/2;
-    var y=(H-B)-((vals[i].v-lo)/rng)*(H-T-B);
-    lx=x; ly=y;
-    pts.push(Math.round(x*10)/10+','+Math.round(y*10)/10);
-  }
-  var last=vals[vals.length-1];
-  return '<svg viewBox="0 0 '+W+' '+H+'" '+
-    'style="width:100%;height:auto;display:block;margin:4px 0 14px">'+
-    '<polyline fill="none" stroke="var(--gold)" stroke-width="1.5" '+
-      'stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(' ')+'"/>'+
-    /* The newest point, which is the one the rows above are about. */
-    '<circle cx="'+(Math.round(lx*10)/10)+'" cy="'+(Math.round(ly*10)/10)+'" '+
-      'r="2.5" fill="var(--gold)"/>'+
-    /* How much: the top and the bottom of what the line covers. */
-    adminTx(L-8, T+4, 'end', adminNum(hi, pct))+
-    adminTx(L-8, H-B, 'end', adminNum(lo, pct))+
-    /* And when. */
-    adminTx(L, H-4, 'start', adminMD(vals[0].d))+
-    adminTx(W-R, H-4, 'end', adminMD(last.d))+
-    '</svg>';
+/* A row whose LABEL is a date. adminRow() takes a key and calls t() on it,
+   which a date is not, so this is the other kind of row -- same class, same
+   height, same shape, and that is what makes it one list with the rest. */
+function adminWhenRow(when, v){
+  return '<div class="set"><span class="sl">'+esc(when)+'</span>'+
+    '<span class="sv">'+esc((v===0 || v)? String(v) : '')+'</span></div>';
 }
-/* The takings, day by day, in ONE currency -- the line cannot mix two for the
-   same reason the row cannot add them. The one drawn is the one the newest
-   day has most of; the others are in the rows above it.
-
-   It is what ARRIVES and not what was paid, because that is the number this
-   line is about; the two move together anyway, being the same sales less a
-   fixed share. */
-function adminMoneyLine(){
-  var ser=adminAsc().series || [], m=adminNow().got || [], i, j, cur='', best=-1;
-  for(i=0;i<m.length;i++) if(m[i].total>best){ best=m[i].total; cur=m[i].cur; }
-  if(!cur) return '';
-  var vals=[];
-  for(i=0;i<ser.length;i++){
-    var mm=ser[i].got || [];
-    for(j=0;j<mm.length;j++) if(mm[j].cur===cur) vals.push({d:ser[i].day, v:mm[j].total});
-  }
-  return adminLine(vals, false);
+function adminDays(){
+  var ser=adminAsc().series || [], i, out='';
+  for(i=ser.length-1;i>=0;i--)
+    out+=adminWhenRow(adminMD(ser[i].day), adminOne(ser[i].got));
+  return out;
 }
-function adminKeepLine(){
-  var ser=adminAsc().series || [], i, vals=[];
-  for(i=0;i<ser.length;i++)
-    if(typeof ser[i].keep==='number') vals.push({d:ser[i].day, v:ser[i].keep});
-  return adminLine(vals, true);
-}
-function adminDlLine(){
-  var ser=adminAsc().series || [], i, vals=[];
-  for(i=0;i<ser.length;i++)
-    if(typeof ser[i].downloads==='number') vals.push({d:ser[i].day, v:ser[i].downloads});
-  return adminLine(vals, false);
+function adminMonths(){
+  var ms=adminAsc().months || [], i, out='';
+  for(i=ms.length-1;i>=0;i--)
+    out+=adminWhenRow(adminMon(ms[i].month), adminOne(ms[i].got));
+  return out;
 }
 
 /* ---- one number, one page -----------------------------------------------
@@ -506,30 +448,43 @@ function adminOpen(k, n, to){
 /* What the takings row says before you open it: the newest day's proceeds in
    the currency there is most of, with the code beside it. Blank until an
    answer -- adminRow() says why that is not a nought. */
-function adminGotTop(){
-  var m=adminNow().got || [], i, best=-1, out=null;
-  for(i=0;i<m.length;i++) if(m[i].total>best){ best=m[i].total; out=m[i].cur+' '+m[i].total; }
-  return out;
+function adminGotTop(){ return adminOne(adminNow().got); }
+/* The month we are in, which is the last row of the months list. */
+function adminMonthTop(){
+  var ms=adminAsc().months || [];
+  return ms.length? adminOne(ms[ms.length-1].got) : null;
+}
+/* How many are paying for something, across every plan. */
+function adminPlanTop(){
+  var p=adminNow().plans || [], i, n=0;
+  if(!p.length) return null;
+  for(i=0;i<p.length;i++) n+=p[i].live;
+  return n;
 }
 function adminView(){
-  var a=adminAt(), n=ADMINN||{}, now=adminNow(), asc=adminAsc(), body;
-  if(a==='money'){
-    /* 「特に売り上げはどのプランかが大事やろ」 -- so the plans are here, under
-       the two totals they add up to, rather than on the front page. */
-    body=adminMoneyLine()+
-      adminPurse('paid', 'admin.paid')+
+  var a=adminAt(), now=adminNow(), asc=adminAsc(), body;
+  if(a==='days'){
+    /* 「8/1 まるまる」 -- one day, one number, newest first. */
+    body=adminDays();
+  } else if(a==='months'){
+    /* 「8月 〇〇」. The month we are in is on the top of this list and is
+       still running; Apple has no report for it, so the Edge Function adds it
+       up out of the days. */
+    body=adminMonths();
+  } else if(a==='plans'){
+    /* 「特に売り上げはどのプランかが大事やろ」 -- and this is where every
+       currency is, which the two lists above cannot carry a row each of. */
+    body=adminPurse('paid', 'admin.paid')+
       adminPurse('got', 'admin.got')+
       adminPlans()+
       adminRow('admin.day', asc.day || '');
   } else if(a==='keep'){
-    body=adminKeepLine()+
-      adminRow('admin.keep', adminPct(now.keep))+
+    body=adminRow('admin.keep', adminPct(now.keep))+
       adminRow('admin.renew', (now.renew===0 || now.renew)? now.renew : null)+
       adminRow('admin.cancel', (now.cancel===0 || now.cancel)? now.cancel : null)+
       adminRow('admin.day', asc.day || '');
   } else if(a==='dl'){
-    body=adminDlLine()+
-      adminRow('admin.dl', now.downloads)+
+    body=adminRow('admin.dl', now.downloads)+
       adminRow('admin.day', asc.day || '');
   } else {
     body=null;
@@ -554,7 +509,9 @@ function vAdmin(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
     (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
     adminRow('admin.people', n.people)+
-    adminOpen('admin.got', adminGotTop(), 'money')+
+    adminOpen('admin.days', adminGotTop(), 'days')+
+    adminOpen('admin.months', adminMonthTop(), 'months')+
+    adminOpen('admin.plans', adminPlanTop(), 'plans')+
     adminOpen('admin.keep', adminPct(now.keep), 'keep')+
     adminOpen('admin.dl', now.downloads, 'dl')+
     adminRow('admin.reports', n.reports, 'goMod')+
