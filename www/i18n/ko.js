@@ -659,7 +659,6 @@ defLang('ko', (function(){
       "num.big"         : "{0}까지",
       "num.base"        : "진법",
       "num.wid"         : "홈 화면에서는",
-      "num.wid.how"     : "홈 화면 길게 누르기 → + → Lingua",
       "lt.marks"         : "기호",
       "toc.gram"         : "문법",
       /* what the app proposes */
@@ -825,7 +824,6 @@ defLang('ko', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "AI에 상담",
-      "ask.leave"    : "다른 앱으로 이동합니다",
       "ask.head"     : "Lingua라는 앱에서 인공어를 만들고 있습니다.",
       "ask.f.name"   : "언어 이름",
       "ask.f.snd"    : "소리 (IPA)",

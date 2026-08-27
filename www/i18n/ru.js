@@ -483,7 +483,6 @@ defLang('ru', (function(){
       "num.big"         : "До {0}",
       "num.base"        : "Основание",
       "num.wid"         : "На домашнем экране",
-      "num.wid.how"     : "Зажмите домашний экран → + → Lingua",
       "lt.marks"          : "Знаки",
       "toc.gram"          : "Грамматика",
       /* что предлагает приложение */
@@ -659,7 +658,6 @@ defLang('ru', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Спросить ИИ",
-      "ask.leave"    : "Откроет другое приложение",
       "ask.head"     : "Я создаю искусственный язык в приложении Lingua.",
       "ask.f.name"   : "Название языка",
       "ask.f.snd"    : "Звуки (МФА)",

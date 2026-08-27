@@ -396,7 +396,6 @@ defLang('ja', (function(){
       'num.big'         : '{0}までです',
       'num.base'        : '進法',
       'num.wid'         : 'ホーム画面では',
-      'num.wid.how'     : 'ホーム画面を長押し → + → Lingua',
       'lt.marks'        : '記号',
       'toc.gram'        : '文法',
       /* what the app proposes */
@@ -565,7 +564,6 @@ defLang('ja', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       'ask.open'     : "AIに相談",
-      'ask.leave'    : "他アプリに遷移します",
       'ask.head'     : "Lingua というアプリで人工言語を作っています。",
       'ask.f.name'   : "言語の名前",
       'ask.f.snd'    : "使う音 (IPA)",

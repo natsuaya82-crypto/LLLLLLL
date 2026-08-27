@@ -528,7 +528,6 @@ defLang('fr', (function(){
       "num.big"         : "Jusqu'à {0}",
       "num.base"        : "Base",
       "num.wid"         : "Sur l'écran d'accueil",
-      "num.wid.how"     : "Maintiens l'écran d'accueil → + → Lingua",
       "lt.marks"         : "Signes",
       "toc.gram"         : "Grammaire",
       /* what the app proposes */
@@ -697,7 +696,6 @@ defLang('fr', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Demander à une IA",
-      "ask.leave"    : "Ouvre une autre application",
       "ask.head"     : "Je construis une langue construite dans une application appelée Lingua.",
       "ask.f.name"   : "Nom de la langue",
       "ask.f.snd"    : "Sons (API)",

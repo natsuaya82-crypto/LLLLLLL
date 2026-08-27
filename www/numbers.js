@@ -431,8 +431,7 @@ function numCalHTML(){
 function numWidHTML(){
   return '<div class="sec">'+esc(t('num.wid'))+'</div>'+
     '<div class="numwrow">'+numClockHTML()+numTimeHTML()+'</div>'+
-    numCalHTML()+
-    '<div class="mini numwhow">'+esc(t('num.wid.how'))+'</div>';
+    numCalHTML();
 }
 /* The canvases, once the HTML they are in exists. inkLine gives each one the
    width its own ink asks for, which is what makes this a line. */
