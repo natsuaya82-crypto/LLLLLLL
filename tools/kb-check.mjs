@@ -1165,6 +1165,99 @@ const r = await pg.evaluate(({ s }) => {
      stopped asking would draw perfectly and be the whole alphabet again, and
      the only way to see it is to set the filter and count what came back --
      so it is counted, per filter, and the three have to add up. */
+  /* ---- a key CARRIED into a full row does not go in ---------------------
+     「満杯だと追加できないから」 OWNER 2026-08-27.
+
+     A key can be held and carried to another row. That road asked nothing
+     about width, so it made a row of ELEVEN on a board of tens -- and rule 19
+     is what forbids eleven ("ten keys are 32 each and eleven would be 29").
+     kbCellAdd(), the same act done by pressing an empty cell, has always
+     asked kbRoomIn(); this was the one road not through the gate.
+
+     Nothing about it throws, and press cannot reach it: the carry is
+     touchstart/touchmove/touchend with no [data-do] anywhere on it. So the
+     real handlers are called here the way a finger calls them, with
+     elementFromPoint standing in for the finger for the length of one
+     question -- what is underneath -- and nothing else replaced. */
+  function drag(fromR, fromK, toR, toK){
+    function el(ri, ki){
+      return document.querySelector('#kb [data-r="' + ri + '"][data-k="' + ki + '"]');
+    }
+    var src = el(fromR, fromK), dst = el(toR, toK), real;
+    if (!src || !dst) return false;
+    kbDown({ target: src, touches: [{ clientX: 100, clientY: 100 }] });
+    kbLift();                                   /* the 380ms hold, fired */
+    real = document.elementFromPoint;
+    document.elementFromPoint = function (){ return dst; };
+    kbDragTo({ touches: [{ clientX: 120, clientY: 140 }], preventDefault: function (){} });
+    document.elementFromPoint = real;
+    kbUp({ preventDefault: function (){} });
+    return true;
+  }
+  (function (){
+    /* The block above this one leaves the plan on FREE -- it is about a
+       letter's ink, which free draws too. There is no editor on free (board 0
+       is the QWERTY itself and kbEdit() answers null), so a carry cannot
+       happen there at all and every claim below would pass by not running. */
+    var wasPlan = SET.plan;
+    SET.plan = 'pro';
+    fresh();
+    /* in HALF COLUMNS -- kbUsed() is the app's own, and widths() above counts
+       whole keys, which is a different number and was the first thing this
+       got wrong */
+    function halves(){ return kbLayer().rows.map(kbUsed); }
+    var was = rows(), wasW = halves(), full = -1, donor = -1, i;
+    for (i = 0; i < wasW.length; i++) if (wasW[i] === KB_COLS && full < 0) full = i;
+    for (i = 0; i < wasW.length; i++) if (i !== full && wasW[i] > 2 && donor < 0) donor = i;
+    out.dragFull = full; out.dragDonor = donor;
+    out.dragRan = drag(donor, 0, full, 0);
+    out.dragWidths = halves();
+    out.dragNoneOver = out.dragWidths.every(function (w){ return w <= KB_COLS; });
+    /* and the key is BACK, not gone -- a refusal that ate it would leave
+       every row inside ten as well, which is the whole reason this is two
+       claims and not one */
+    out.dragPutBack = JSON.stringify(rows()) === JSON.stringify(was);
+    /* a refused carry never reached saveKb(), so there is no step to take
+       back -- otherwise the undo stack fills with moves that did nothing */
+    out.dragNoStep = !(KBU && KBU.u && KBU.u.length);
+
+    /* ---- and the same row's own order still moves, full or not ----------
+       The cheap way to pass everything above is to refuse every carry. This
+       is what says the gate is about WIDTH: inside one row nothing about the
+       width changes, so a full row still rearranges. */
+    fresh();
+    /* One key is MARKED and then found again by where it ended up. Comparing
+       the row as a string cannot see this: a fresh qwerty's keys stringify
+       identically ("lt::1" ten times), so a reorder that worked and one that
+       did nothing read the same, and the first version of this claim was
+       green either way. */
+    kbLayer().rows[full][0].v = '†mark';
+    saveKb(); render();
+    function markAt(){
+      var row = kbLayer().rows[full], j;
+      for (j = 0; j < row.length; j++) if (row[j].v === '†mark') return j;
+      return -1;
+    }
+    out.dragMarkWas = markAt();
+    drag(full, 0, full, 3);
+    out.dragMarkNow = markAt();
+    out.dragInRow = out.dragMarkWas === 0 && out.dragMarkNow > 0;
+    out.dragInRowWide = halves()[full] === KB_COLS;
+
+    /* ---- a board already over the ceiling is not touched ----------------
+       Rule 19 holds both ceilings on ADDING only, and a carry is an add. A
+       row of eleven that somebody already has stays a row of eleven -- the
+       carry may not start trimming it, and may not add to it either. */
+    fresh();
+    var lay = kbEdit(), over = lay.lay[0].rows;
+    over[full] = over[full].concat([kbKey('lt', '')]);   /* eleven wide */
+    saveKb(); render();
+    var overWas = JSON.stringify(kbLayer().rows.map(say));
+    out.overWide = halves()[full] === KB_COLS + 2;
+    drag(donor, 0, full, 0);
+    out.overUntouched = JSON.stringify(kbLayer().rows.map(say)) === overWas;
+    SET.plan = wasPlan;
+  }());
   (function (){
     fresh();
     var wasS = ltSort, wasF = ltFil;
@@ -1393,6 +1486,16 @@ say(r.colSame,
     'and both boards carry the same ten columns: ' + r.sizes.qwerty.hdr +
     ' / ' + r.sizes.flick.hdr + ' -- a is a is a, whatever stands on it');
 say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.dragRan, 'a key can be held and carried into another row');
+say(r.dragNoneOver,
+    'and a full row does not take it: every row is still ten or fewer (' +
+    r.dragWidths.map(function (w){ return w / 2; }).join(', ') + ' keys)');
+say(r.dragPutBack, 'and the key is back where it was rather than gone');
+say(r.dragNoStep, 'and a carry that was refused left no step to take back');
+say(r.dragInRow && r.dragInRowWide,
+    'while the same row still rearranges its own keys, full though it is');
+say(r.overWide && r.overUntouched,
+    'and a row somebody already has that is eleven wide is left exactly as it is');
 say(r.ltRow, 'the letters offered for a key carry the alphabet\'s own row of ' +
     'buttons -- the order and the filter, not a second pair');
 say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +
