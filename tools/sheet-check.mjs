@@ -552,7 +552,12 @@ const drawn = await pg.evaluate(() => {
     edge: !!a.args && a.args.edge === w.edge, look: w.edge,
     why: SH.why, from: SH.from,
     names: SH.got ? SH.got.map(function(g){ return g.nm; }) : null,
-    ink: SH.got ? SH.got.filter(function(g){ return g.sh.length; }).length : 0
+    ink: SH.got ? SH.got.filter(function(g){ return g.sh.length; }).length : 0,
+    /* and what the screen SAID it did, off the rendered page rather than off
+       the state -- a line held in memory and never drawn is the thing this
+       whole section exists to stop. */
+    said: Array.prototype.slice.call(document.querySelectorAll('#app .mini'))
+            .map(function(e){ return e.textContent; })
   };
 });
 /* and the other end of it: a phone that cannot draw the page says so, and the
@@ -603,9 +608,41 @@ const filed = await pg.evaluate(() => {
     calls: c.length,
     bytes: !!(c[0] && c[0].args && c[0].args.b64),
     plug: c[0] && c[0].plug,
+    lines: (SH.say || []).slice(),
+    onscreen: Array.prototype.slice.call(document.querySelectorAll('#app .mini'))
+                .map(function(e){ return e.textContent; }),
     ok: t('wr.out.ok'), no: t('wr.nobridge')
   };
 });
+/* ---- 10. and when the phone refuses, it says what the phone said ---------
+   OWNER 2026-08-27「だから戻ってこないから言ってんのよ dlもできないし」 on
+   build #96, which had every part of this chapter in it and did neither.
+   Nothing on this side can see which half of the bridge failed, so what is
+   held here is that the app does not SWALLOW the answer: the native side's
+   own words reach the screen, where a photograph can carry them out of the
+   phone. docs/keyboard-extension.md is why -- three builds went on one
+   symptom with three causes, and the fourth fell out of one screenshot the
+   moment the app was made to say whether the hand-over had gone out. */
+await pg.evaluate(({ names }) => {
+  window.Capacitor = { nativePromise: function(){
+    return Promise.reject(new Error('the disk is full'));
+  } };
+  /* deliberately NOT shBlank(): the four lines the LAST press left are still
+     sitting there, so the only thing that can clear them is shSayNew() inside
+     shMake(). Wiping the state here first would make the claim below a copy of
+     this check's own setup -- green whether or not the app clears anything,
+     which is the shape CLAUDE.md rule 10 was written after. Watched: with
+     shSayNew() made a no-op this goes red only because of this line. */
+  SH.names = names.join(', ');
+  shMake();
+}, { names: NAMES });
+await pg.waitForFunction(() => window.SH && (SH.say || []).length >= 4,
+                         null, { timeout: 60000 });
+const sheetNo = await pg.evaluate(() => ({
+  lines: (SH.say || []).slice(),
+  onscreen: Array.prototype.slice.call(document.querySelectorAll('#app .mini'))
+              .map(function(e){ return e.textContent; })
+}));
 /* and the same press with a phone that answers, but names no file. Nothing
    rejects and nothing throws -- it is a resolved promise with nothing in it,
    which is exactly what an older build of the app answers, and there is no
@@ -762,6 +799,25 @@ say(filed.calls === 1 && filed.bytes && filed.plug === 'LinguaShare' &&
 say(unnamed !== filed.ok && unnamed === filed.no,
     'and a phone that answers but names no file is NOT called saved — there is ' +
     'nothing in Files, and the screen says that: "' + unnamed + '"');
+/* what the screen says happened. Not a debug line -- every one of these is a
+   state or a count, which CLAUDE.md names among the things that are NOT an
+   explanation, and it is the only thing anybody can photograph. */
+say(filed.lines.length === 4 &&
+    filed.onscreen.join(' | ').indexOf('Test sheet 2.pdf') >= 0,
+    'and the screen says what happened, step by step, where a photograph can ' +
+    'carry it off the phone: ' + filed.lines.length + ' lines — "' +
+    filed.lines.join('" / "') + '"');
+say(sheetNo.lines.length === 4 &&
+    sheetNo.lines.join(' ').indexOf('the disk is full') >= 0 &&
+    sheetNo.onscreen.join(' ').indexOf('the disk is full') >= 0,
+    'and when the phone refuses, what the PHONE said reaches the screen rather ' +
+    'than being swallowed: "' + sheetNo.lines[sheetNo.lines.length - 1] + '"');
+say(sheetNo.lines.length === 4,
+    'and a second try does not show the first one\'s lines: ' +
+    sheetNo.lines.length + ' lines, not ' + (sheetNo.lines.length + 4));
+say(drawn.said.join(' ').indexOf('drew') >= 0 || drawn.said.length >= 3,
+    'and the reading side says the same way: ' + drawn.said.length +
+    ' lines — "' + drawn.said.join('" / "') + '"');
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');
