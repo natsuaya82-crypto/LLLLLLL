@@ -538,14 +538,19 @@ function g2Row(lab, from, to, act, arg){
    twice. Asked of the rule rather than of a list of ids, so a rule written
    tomorrow lands in the right chapter without anything being added here. */
 var G2_NOUN={NUMBER:1, CASE:1};
-function g2Nouns(){
-  var e=LinguaGrammarEngine, w=gWordOf('n'), m, a, i, r, made, out='', md;
+/* One word of this part of speech, and every form of it this language can
+   make that belongs to this chapter. Every chapter of §14 that is about a
+   word changing is this same walk with a different word and a different set
+   of features, so it is written once: the chapters differ in what they are
+   ABOUT, not in how they are drawn. */
+function g2Forms(pos, feats){
+  var w=gWordOf(pos), m, a, i, r, made, out='', md;
   if(!w) return gNeedWords();
   m=gModel([w]);
   a=m.inflections;
   for(i=0;i<a.length;i++){
     r=a[i];
-    if(!G2_NOUN[String(r.feature)]) continue;
+    if(!feats[String(r.feature)]) continue;
     made=g2Made(m, r);
     if(!made) continue;
     md=r.metadata||{};
@@ -555,6 +560,7 @@ function g2Nouns(){
   }
   return out || gNeedRules();
 }
+function g2Nouns(){ return g2Forms('n', G2_NOUN); }
 /* What THIS RULE makes of this word, asked of the engine and not worked out
    again here.
 
