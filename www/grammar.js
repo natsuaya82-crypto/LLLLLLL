@@ -732,12 +732,24 @@ function g2NegSurf(m, v, r, plus){
    NOUN → ADJECTIVE is not here. §8 gives word formation a chapter of its own
    and it is a different question: this one is about a word that already is an
    adjective. */
+/* Two words of this language, in the order this language puts them, and
+   moving one says which side. Two chapters are this -- a describing word
+   beside its noun, and a place word beside its noun -- and both replace a
+   pair of buttons that had to be READ. */
+function g2Side(key, w, n){
+  var laid, i, out='';
+  if(!w || !n) return gNeedWords();
+  laid=gLay([w, n]);
+  for(i=0;i<laid.length;i++) out+=g2Chip(key, i, laid[i]);
+  return '<div class="segs">'+out+'</div>';
+}
 function g2Adj(){
-  var a=gWordOf('adj'), n=gWordOf('n'), laid, i, out='';
+  var a=gWordOf('adj'), n=gWordOf('n');
+  /* One "make some words first" and not two: without an adjective there is
+     nothing to arrange AND nothing to change, and saying so twice is the app
+     talking to itself. */
   if(!a || !n) return gNeedWords();
-  laid=gLay([a, n]);
-  for(i=0;i<laid.length;i++) out+=g2Chip('adj', i, laid[i]);
-  return '<div class="segs">'+out+'</div>'+g2Forms('adj', 'adj');
+  return g2Side('adj', a, n)+g2Forms('adj', 'adj');
 }
 
 /* §14 Questions. 「方法は言語によって違う ── suffix / prefix / separate word /
