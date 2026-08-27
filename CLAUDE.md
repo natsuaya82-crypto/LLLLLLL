@@ -1124,9 +1124,16 @@ another keyboard, not another face; and the two buttons are down when there is
 nowhere to go.
 
 **A key can also be joined to the one UNDER it**, and the shape that is stored
-is the whole of why it is safe. 「a1a2触ってキーをくっつける」「横で。縦はリーダー
-に確認して許可降りたらやって欲しい」OWNER 2026-08-27, and the leader gave it the
-same day. The key that covers carries `h`, and a GAP carrying `up` stands in the
+is the whole of why it is safe. **Joining is a BUTTON**, beside the one that
+opens a key and the ones that align a row — 「なんで？ 結合ボタン作れよ。編集も
+含め全部ボタンで作業だから」 OWNER 2026-08-27. Tapping a key SELECTS it and
+does nothing else, which is the sentence at the head of this rule with no
+exception left in it: the sheet is worked from its edges and **the buttons over
+it act on what is selected**. Tapping the key beside a selected one used to
+join the two, and that is what left nowhere for a second key to be selected
+「あと複数キー選べないから」. One button reaches both directions — the key
+beside, or, where there is none, the key under. The key that covers carries
+`h`, and a GAP carrying `up` stands in the
 same columns of the row below — which is what keeps that row the width it was, so
 nothing beside it slides under the merge and every total still adds up. It is a
 gap rather than a kind of its own because `KeyBoardView.swift` switches on `k`

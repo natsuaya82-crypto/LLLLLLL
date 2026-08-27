@@ -1242,8 +1242,13 @@ function kbDragMount(){
 
    It is also the shape the sheet already had: a row is worked by pressing its
    number, a column by pressing its letter, and now a key by pressing the key.
-   Press to select, press again to put it down, and the buttons over the sheet
-   act on whatever is selected. Three things, one habit. */
+   Press to select, and the buttons over the sheet act on whatever is selected.
+   Three things, one habit -- and no exception:
+   「なんで？ 結合ボタン作れよ。編集も含め全部ボタンで作業だから」 OWNER
+   2026-08-27. Pressing the key BESIDE a selected one used to join the two,
+   which was the one place on this sheet where a press did something rather
+   than choosing something -- and it was standing exactly where a second key
+   would have to be chosen 「あと複数キー選べないから」. */
 function kbCellHTML(ri, at, span){
   return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
     ' style="grid-column:span '+span+'"' +
@@ -1265,8 +1270,49 @@ function kbCellAdd(ri, at){
 /* Which key is being worked on. It is KBH's third kind, beside the row and
    the column, so that one thing is selected at a time and the buttons over
    the sheet have one question to ask. */
+/* ---- more than one key, and only ever a straight run --------------------
+   「あと複数キー選べないから」「タップしたら上に削除とか出るとこに編集、色んな
+   キー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
+   「選ぶとこはバラバラは選べないから、バラバラ押した時は選択が解除されるように
+   してほしい。」 OWNER 2026-08-27.
+
+   A key selection is a START and how many follow it, across or down:
+   {k:'k', r, i, n, d}. `r` and `i` stay the FIRST key, so everything that was
+   written when only one could be chosen -- the bin, the edit button, the join
+   -- still reads the same two fields and still means the same key.
+
+   ACROSS is the next index in the row. DOWN is the key whose start column is
+   this one's, in the row below -- the sheet's own idea of "under", the one
+   kbVJoin() uses, and not "index i of the next row", which on a row inset by
+   half a key is a different key entirely. */
+function kbSelD(){ return (KBH && KBH.d) || 'x'; }
+function kbSelN(){ return (KBH && KBH.n) || 1; }
+function kbUnderOf(ri, ki){
+  var rows=kbLayer().rows, di;
+  if(!rows[ri] || !rows[ri][ki] || !rows[ri+1]) return null;
+  di=kbAtKey(rows[ri+1], kbAtOf(rows[ri], ki));
+  return di<0? null : {r:ri+1, i:di};
+}
+/* Every key of the selection, first to last. One list, so nothing has to work
+   the run out again -- the bin, the carry and the drawing all walk this. */
+function kbSelKeys(){
+  var out=[], n, j, u;
+  if(!KBH || KBH.k!=='k') return out;
+  out.push({r:KBH.r, i:KBH.i});
+  n=kbSelN();
+  for(j=1;j<n;j++){
+    if(kbSelD()==='y'){
+      u=kbUnderOf(out[j-1].r, out[j-1].i);
+      if(!u) break;
+      out.push(u);
+    }else out.push({r:KBH.r, i:KBH.i+j});
+  }
+  return out;
+}
 function kbKeyIs(ri, ki){
-  return !!KBH && KBH.k==='k' && KBH.r===ri && KBH.i===ki;
+  var ms=kbSelKeys(), j;
+  for(j=0;j<ms.length;j++) if(ms[j].r===ri && ms[j].i===ki) return true;
+  return false;
 }
 function kbTapKey(ri, ki){
   var rows, ui;
@@ -1281,19 +1327,50 @@ function kbTapKey(ri, ki){
     if(ui<0) return;
     ri=ri-1; ki=ui;
   }
-  /* the one beside the one already chosen: the two become one */
-  if(KBH && KBH.k==='k' && KBH.r===ri && (KBH.i===ki-1 || KBH.i===ki+1)){
-    kbJoin(KBH.r, Math.min(KBH.i, ki));
-    return;
+  kbSelTo(kbSelSpread(ri, ki));
+}
+/* What the selection BECOMES when this key is pressed. Three answers and no
+   fourth: it is already in the run and the run stands; it lengthens the run at
+   one end; or it is somewhere the run cannot reach and the selection is
+   RELEASED. 「バラバラ押した時は選択が解除されるようにしてほしい」
+
+   Released and not moved-to. That is the half that reads like a detail and is
+   not: with "the pressed key becomes the selection" there is no press left
+   that means "nothing", so the only way back to nothing would be pressing the
+   selected key again -- which is exactly the toggle the owner asked to be rid
+   of 「同じとこ触ると選択解除されるからわかりにくい」. Releasing costs a second
+   press to choose a far key; keeping it would cost the owner the thing they
+   asked for. So: press once to let go, press again to choose. */
+function kbSelSpread(ri, ki){
+  var one={k:'k', r:ri, i:ki, n:1, d:'x'}, n, d, u, last;
+  if(!KBH) return one;
+  /* a ROW or a COLUMN is chosen and this is a key: it cannot lengthen that,
+     so it releases it. 「今列選択してる時も適当に触ったら選択解除されるように
+     して欲しい」 -- a key is one of the arbitrary things being touched. */
+  if(KBH.k!=='k') return null;
+  if(kbKeyIs(ri, ki)) return KBH;          /* already chosen: it stands */
+  n=kbSelN(); d=kbSelD();
+  /* one key so far: the run has no direction yet, so any of the four says it */
+  if(n===1){
+    if(ri===KBH.r && ki===KBH.i+1) return {k:'k', r:KBH.r, i:KBH.i, n:2, d:'x'};
+    if(ri===KBH.r && ki===KBH.i-1) return {k:'k', r:ri, i:ki, n:2, d:'x'};
+    u=kbUnderOf(KBH.r, KBH.i);
+    if(u && u.r===ri && u.i===ki) return {k:'k', r:KBH.r, i:KBH.i, n:2, d:'y'};
+    u=kbUnderOf(ri, ki);
+    if(u && u.r===KBH.r && u.i===KBH.i) return {k:'k', r:ri, i:ki, n:2, d:'y'};
+    return null;
   }
-  /* and the one directly under or over it: the two become one, two rows
-     tall. Refused when they do not line up, and then this is an ordinary
-     press that selects what was pressed. */
-  if(KBH && KBH.k==='k' && KBH.r===ri-1 && kbVJoin(KBH.r, KBH.i)) return;
-  if(KBH && KBH.k==='k' && KBH.r===ri+1 && kbVJoin(ri, ki)) return;
-  KBH = kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki};
-  kbSel=null;
-  render();
+  if(d==='x'){
+    if(ri===KBH.r && ki===KBH.i+n) return {k:'k', r:KBH.r, i:KBH.i, n:n+1, d:'x'};
+    if(ri===KBH.r && ki===KBH.i-1) return {k:'k', r:ri, i:ki, n:n+1, d:'x'};
+    return null;
+  }
+  last=kbSelKeys()[n-1];
+  u=last && kbUnderOf(last.r, last.i);
+  if(u && u.r===ri && u.i===ki) return {k:'k', r:KBH.r, i:KBH.i, n:n+1, d:'y'};
+  u=kbUnderOf(ri, ki);
+  if(u && u.r===KBH.r && u.i===KBH.i) return {k:'k', r:ri, i:ki, n:n+1, d:'y'};
+  return null;
 }
 /* Two keys, side by side, becoming one as wide as the two of them were.
 
@@ -1315,12 +1392,40 @@ function kbJoin(ri, ki){
   saveKb(); render();
 }
 /* Whether the selected key has one beside it to join to. */
-function kbJoinable(){
+/* Whether the selected key has one to join to -- the one beside it, or the one
+   under it. Both, because the button is ONE button: 「なんで？ 結合ボタン
+   作れよ。編集も含め全部ボタンで作業だから」 OWNER 2026-08-27.
+
+   The pair under it is only offered where the two line up, which is kbVJoin()'s
+   own rule; asking it here rather than restating it means the button is down
+   exactly when the join would be refused. */
+/* WHAT IS JOINED IS WHAT IS CHOSEN -- the two keys selected, and not "the one
+   selected and whatever happens to sit beside it". 「なんで？ 結合ボタン作れよ。
+   編集も含め全部ボタンで作業だから」 OWNER 2026-08-27: choosing is the tap and
+   doing is the button, so the button acts on the choice.
+
+   Exactly two. Three keys becoming one is not a thing this sheet has, and
+   picking two out of three would be the button choosing what the person did
+   not -- so it is drawn over any run of two or more and is DOWN on anything
+   it cannot do, which is what every other button here does. */
+function kbJoinRight(){
   var row;
-  if(!KBH || KBH.k!=='k') return false;
+  if(!KBH || KBH.k!=='k' || kbSelN()!==2 || kbSelD()!=='x') return false;
   row=kbLayer().rows[KBH.r];
   return !!(row && row[KBH.i] && row[KBH.i+1]);
 }
+function kbJoinDown(){
+  var rows, up, dn, di;
+  if(!KBH || KBH.k!=='k' || kbSelN()!==2 || kbSelD()!=='y') return false;
+  rows=kbLayer().rows;
+  up=rows[KBH.r]; dn=rows[KBH.r+1];
+  if(!up || !dn || !up[KBH.i]) return false;
+  if(kbTall(up[KBH.i]) || kbShadow(up[KBH.i])) return false;
+  di=kbAtKey(dn, kbAtOf(up, KBH.i));
+  if(di<0 || kbU(dn[di].w)!==kbU(up[KBH.i].w)) return false;
+  return !kbTall(dn[di]) && !kbShadow(dn[di]);
+}
+function kbJoinable(){ return kbJoinRight() || kbJoinDown(); }
 
 /* ---- a key that covers the row below it too -----------------------------
    「縦はリーダーに確認して許可降りたらやって欲しい」OWNER 2026-08-27, and the
@@ -1495,15 +1600,46 @@ function kbNHTML(ri){
    viewReset() drops it. Pressing the same head again puts it down. */
 var KBH=null;
 function kbHeadIs(k, i){ return !!KBH && KBH.k===k && KBH.i===i; }
+/* ---- WHAT IS SELECTED CHANGES IN ONE PLACE ------------------------------
+   A row, a column and a key are three things to select and there were three
+   places deciding it, each toggling on its own. That is one rule written out
+   three times, and the owner is reading it as one:
+   「今列選択してる時も適当に触ったら選択解除されるようにして欲しい。同じとこ
+   触ると選択解除されるからわかりにくい」 OWNER 2026-08-27.
+
+   This does not change what happens yet -- it is the same three answers, in
+   one place, so that the sentence the owner asked for is one line to write
+   and not three to find. What the sentence IS is still being asked: press
+   something unrelated and the selection is released, but whether the thing
+   just pressed then becomes the selection is the half that was not said, and
+   is a judgement about how the screen feels rather than a bug. It is in
+   docs/reports/kb6-tools-2026-08-27.md with the button table.
+
+   Everything that selects goes through here: the row's number, the column's
+   letter, and a key. */
+function kbSelTo(next){
+  KBH=next || null;
+  kbSel=null;
+  render();
+}
+/* A head answers the same sentence a key does, because it is the same
+   sentence: pressed with nothing chosen it chooses; pressed again it STANDS
+   (the toggle is gone -- 「同じとこ触ると選択解除されるからわかりにくい」); and
+   pressed while something else is chosen it releases 「今列選択してる時も適当に
+   触ったら選択解除されるようにして欲しい」. A row and a column cannot be run
+   together the way keys can, so "lengthens the run" has no case here. */
+function kbHeadTo(k, i){
+  if(!KBH) return {k:k, i:i, ins:false};
+  if(kbHeadIs(k, i)) return KBH;
+  return null;
+}
 function kbHeadRow(ri){
   ri=parseInt(ri, 10)||0;
-  KBH=kbHeadIs('r', ri)? null : {k:'r', i:ri, ins:false};
-  kbSel=null; render();
+  kbSelTo(kbHeadTo('r', ri));
 }
 function kbHeadCol(ci){
   ci=parseInt(ci, 10)||0;
-  KBH=kbHeadIs('c', ci)? null : {k:'c', i:ci};
-  kbSel=null; render();
+  kbSelTo(kbHeadTo('c', ci));
 }
 /* ---- a row going in where you are, rather than at the foot -------------
    The dashed row at the bottom adds one AFTER the last. There was no way to
@@ -1602,18 +1738,40 @@ function kbIns(down){
   saveKb(); render();
 }
 /* And the one button that takes it away, whichever of the two it is. */
+/* The bin takes WHAT IS SELECTED, and once a run can be selected that is every
+   key of it. It took `KBH.r, KBH.i` -- the first -- which was the whole of a
+   selection until keys came in runs, and would now quietly leave three of four
+   behind: the board still draws, the press still looks like it worked, and the
+   keys somebody meant to be rid of are still there. Right to left, so the
+   indexes of the ones not yet taken do not move under it.
+
+   DELETE REVIEW is in docs/CHANGELOG.md and is unchanged: this takes keys and
+   nothing else -- not the letters they point at, not another face, not another
+   keyboard -- it is asked for by pressing the bin, and the step back holds it. */
 function kbCut(){
   if(!KBH) return;
-  var h=KBH;
+  var h=KBH, ms, j;
+  if(h.k==='k'){
+    ms=kbSelKeys();
+    KBH=null;
+    kbDelKeys(ms);
+    return;
+  }
   KBH=null;
   if(h.k==='r') kbDelRow(h.i);
-  else if(h.k==='k') kbDelKey(h.r, h.i);
   else kbDelCol(h.i);
 }
 /* The two the toolbar does to a key. They take what is selected rather than
    arguments, because a button over the sheet acts on the selection -- the bin
    and the three alignments have always worked that way. */
-function kbJoinSel(){ if(KBH && KBH.k==='k') kbJoin(KBH.r, KBH.i); }
+/* The button. Beside first, then under -- a row is read across, so "join" with
+   nothing else said means the one next to it, and the one below is what is
+   left when there is nothing beside it. */
+function kbJoinSel(){
+  if(!KBH || KBH.k!=='k') return;
+  if(kbJoinRight()) kbJoin(KBH.r, KBH.i);
+  else if(kbJoinDown()) kbVJoin(KBH.r, KBH.i);
+}
 function kbOpenSel(){ if(KBH && KBH.k==='k') kbPick(KBH.r, KBH.i); }
 /* ---- where the slack in a row goes -------------------------------------
    「エクセルみたいに中央寄せとかのボタン置けば？行とか列選択して中央寄せ
@@ -2485,12 +2643,16 @@ function kbToolHTML(){
             '<button class="kbtb"' + DO('kbIns', [true]) +
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : key
-        /* a KEY is selected: the two things there are to do to one, in the
-           place the three alignments stand when a row is */
-        ? '<button class="kbtb"' + DO('kbJoinSel') + (kbJoinable()? '' : ' disabled') +
-            ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>'+
-          '<button class="kbtb"' + DO('kbOpenSel') +
-            ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
+        /* KEYS are selected, and WHICH buttons is how many.
+           「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27 -- a key's page is
+           about one key, and offering it over four would have to pick one.
+           Joining is the other way round: it is about two, so it stands where
+           the edit button does when there is only one. */
+        ? (kbSelN()===1
+            ? '<button class="kbtb"' + DO('kbOpenSel') +
+                ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
+            : '<button class="kbtb"' + DO('kbJoinSel') + (kbJoinable()? '' : ' disabled') +
+                ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>')
         : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (al? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
           '<button class="kbtb"' + DO('kbAlign', ["c"]) + (al? '' : ' disabled') +
@@ -3119,12 +3281,22 @@ function kbAddRowNew(){
   saveKb(); render();
 }
 /* A row with nothing left in it is not a row. */
-function kbDelKey(ri, ki){
+/* KEYS, and ONE step back for the press that took them. Each of these used to
+   be its own kbDelKey() and so its own saveKb(), which is its own entry in the
+   history -- so the bin taking four keys took four presses of the step back to
+   put right. One press, one step: that is what the step back is FOR, and it is
+   the same sentence as「巻き戻しボタンと進むボタンも入れよう」.
+
+   Right to left, so the indexes of the keys not yet taken do not move under
+   it. A vertical run is in different rows, where they never would. */
+function kbDelKeys(ms){
   if(!kbEdit()) return;
-  var rows=kbLayer().rows;
-  if(!rows[ri]) return;
-  rows[ri].splice(ki, 1);
-  if(!rows[ri].length) rows.splice(ri, 1);
+  var rows=kbLayer().rows, j, row;
+  for(j=ms.length-1;j>=0;j--){
+    row=rows[ms[j].r];
+    if(row) row.splice(ms[j].i, 1);
+  }
+  for(j=rows.length-1;j>=0;j--) if(!rows[j].length) rows.splice(j, 1);
   if(!rows.length) rows.push([kbKey('lt', '')]);
   saveKb(); kbSel=null;
   /* From the ⊖ the keyboard is already on screen and the wobble stays on --
@@ -3133,3 +3305,4 @@ function kbDelKey(ri, ki){
   if(here().r==='form'){ back(); return; }
   render();
 }
+function kbDelKey(ri, ki){ kbDelKeys([{r:ri, i:ki}]); }
