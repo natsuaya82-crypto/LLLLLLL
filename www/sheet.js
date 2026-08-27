@@ -837,7 +837,7 @@ function shThin(loop, tol){
 /* Where the chapter is standing. Not the language's -- it is where you are in
    it, so shell.js's viewReset() drops it, exactly as it drops IMP. */
 var SH = null;
-function shBlank(){ return {names:'', got:null, why:'', from:'', file:''}; }
+function shBlank(){ return {names:'', got:null, why:'', from:''}; }
 function shState(){ if(!SH) SH = shBlank(); return SH; }
 
 /* The typed string -> the names, in order. Commas, and nothing else is a
@@ -1124,15 +1124,7 @@ function shMake(){
   p = sharePlug();
   if(!p){ toast(t('wr.nobridge')); return; }
   p('LinguaShare', 'sheet', {name:shFileName(), b64:btoa(pdf)})
-    .then(function(r){
-      /* What it was actually filed as, which is not shFileName(): a sheet is
-         never overwritten, so the second one of a name is `<name> 2.pdf`.
-         Writing on the wrong one of two would be somebody's letters going
-         into a sheet they did not just make. */
-      shState().file = (r && r.file) || '';
-      toast(t('wr.out.ok'));
-      openWrOut();
-    })
+    .then(function(){ toast(t('wr.out.ok')); })
     ['catch'](function(){ toast(t('wr.nobridge')); });
 }
 /* A name a person will recognise in the Files app. bkName()'s argument, and
