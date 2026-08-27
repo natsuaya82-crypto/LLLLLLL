@@ -477,6 +477,78 @@ const r = await pg.evaluate(({ s }) => {
      is in front of them, and the other one is still theirs */
   out.addsOnlyN = kbEdit().lay[1].rows.length;
 
+  /* ---- 6g. a column goes in, and not when the board is full -----------
+     「これって列とか行とかはたせないの？」「いいよー 最大になったら+はなし」
+     OWNER, 2026-08-26.
+
+     A column could only ever be TAKEN AWAY. It is only safe to offer the
+     other direction because the grid is ten fixed columns: a new key fills
+     slack that is already there, so nothing on the board is made smaller to
+     hold it -- 「小さくなったら意味ないやん」 -- and when there is no slack
+     there is no +.
+
+     Every pattern comes to the full ten, so a fresh board is exactly the
+     "no room" case and the fixture has to CUT before it can put back. That is
+     the check's shape as well as the app's. */
+  fresh();
+  out.insColFullDown = (kbHeadCol(2), !kbRoomCol(2));
+  out.insColFullAsk = (kbInsAsk(), !(KBH && KBH.ins));
+  out.insColFullNoop = (kbInsCol(true), kbLayer().rows.every(function (r){
+    return kbUsed(r) === KB_COLS;
+  }));
+  out.insColFullBtn = vKb().indexOf('data-do="kbInsCol"') < 0;
+
+  fresh();
+  kbHeadCol(0); kbCut();
+  /* A SHORT ROW, put in on purpose. Without one, "the rows that reach it and
+     no others" cannot be watched failing: every row of a QWERTY is the same
+     width, so inserting into all of them and inserting into the ones that
+     reach column c are the same edit. This row reaches column 0 and not
+     column 2, so it is the difference between those two sentences. */
+  kbEdit().lay[0].rows[3] = [kbKey('lt', ''), kbKey('lt', '')];
+  saveKb(); render();
+  var wideWas = keyW();
+  var rowsWas = kbLayer().rows.map(function (r){ return kbUsed(r); });
+  /* what each row is MADE of, so an added key can be told from an added gap */
+  function kinds(){
+    return kbLayer().rows.map(function (r){
+      var o = {}, i;
+      for (i = 0; i < r.length; i++) o[r[i].k] = (o[r[i].k] || 0) + 1;
+      return o;
+    });
+  }
+  var kindsWas = kinds();
+  out.insColShort = rowsWas[3] === 4;              /* two keys: reaches a, not c */
+  out.insColRoom = (kbHeadCol(2), kbRoomCol(2));
+  kbInsAsk();
+  out.insColAsks = !!(KBH && KBH.ins) && vKb().indexOf('data-do="kbInsCol"') >= 0;
+  kbInsCol(true);
+  var rowsNow = kbLayer().rows.map(function (r){ return kbUsed(r); });
+  out.insColWent = rowsNow.every(function (u, i){
+    return u === rowsWas[i] + (i === 3 ? 0 : 2);
+  });
+  /* and the short row is the row it was, key for key */
+  out.insColLeft = rowsNow[3] === rowsWas[3];
+  /* and it did not make anything smaller: the grid is ten either way, so a
+     key that was 28.2px is 28.2px */
+  out.insColSize = Math.abs(keyW() - wideWas) < 0.5;
+  /* WHAT went in: exactly one more `lt` in every row that took one, and not
+     one more of anything else. A gap would satisfy "the row got wider" and is
+     not a key -- 「文字でないキー」は列を使う、というのとは別の話で、ここで
+     頼まれたのはキーです。 */
+  var kindsNow = kinds();
+  out.insColKey = kindsNow.every(function (o, i){
+    var was = kindsWas[i], k, want;
+    for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)){
+      want = (was[k] || 0) + ((k === 'lt' && i !== 3) ? 1 : 0);
+      if (o[k] !== want) return false;
+    }
+    for (k in was) if (Object.prototype.hasOwnProperty.call(was, k) && !(k in o)) return false;
+    return true;
+  });
+  out.insColBack = (kbUndo(), kbLayer().rows.map(function (r){ return kbUsed(r); })
+    .join(',') === rowsWas.join(','));
+
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
   var lay0 = kbEdit().lay[0];
@@ -931,6 +1003,18 @@ say(r.deadColOff, 'taking a column off page 2 leaves it with one too');
 say(r.deadFirstOff, 'and page 1 keeps the way IN to the rest');
 say(r.oneFacePlain, 'a keyboard of one face is left alone -- there is nowhere to go');
 say(r.addsOnly, 'and a face that already has one comes out of a save with the keys it went in with (' + r.addsOnlyN + ' rows), twice over');
+say(r.insColFullDown && r.insColFullAsk,
+    'a board that is already ten across is offered no + for a column');
+say(r.insColFullNoop && r.insColFullBtn,
+    'and asking anyway adds nothing, and neither side is drawn');
+say(r.insColRoom && r.insColAsks,
+    'cut one out and the + comes back, offering left and right');
+say(r.insColShort, 'the board has a row too short to reach that column');
+say(r.insColWent && r.insColLeft,
+    'and a column goes into every row that REACHES it, leaving that one alone');
+say(r.insColSize, 'without making one key on the board smaller');
+say(r.insColKey, 'and what goes in is an empty key, not a gap');
+say(r.insColBack, 'and the step back takes it out again');
 say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at all');
 say(r.plusLayNoop, 'and asking for one anyway does nothing');
 say(r.romOnEditor && r.romOnFree && r.romOnList,

@@ -1094,10 +1094,78 @@ function kbHeadCol(ci){
    three alignments and the bin while it is asking, because those are about
    the row that is there and this is about one that is not. Pressing the +
    again puts the question away. */
+/* Whether the + can offer anything, for whichever of the two is selected.
+   A column is a different question from a row: a row is one row against the
+   ceiling, and a column is a key's worth added to EVERY row that reaches it,
+   so it is refused when any one of those rows is already ten across. */
+function kbInsRoom(){
+  if(!KBH) return false;
+  return KBH.k==='r'? kbRoomRow() : kbRoomCol(KBH.i);
+}
 function kbInsAsk(){
-  if(!KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  if(!KBH || !kbInsRoom()) return;
   KBH.ins=!KBH.ins;
   render();
+}
+/* ---- putting a column in -----------------------------------------------
+   「これって列とか行とかはたせないの？」「いいよー 最大になったら+はなし」
+   OWNER DECISION 2026-08-26.
+
+   Rows could be added two ways and a column could only be TAKEN AWAY. On a
+   sheet that is one thing missing rather than a small one: the letters across
+   the top and the numbers down the side are the same kind of handle, both
+   select, both delete -- and only one of them could put anything back except
+   through the step back.
+
+   It is only safe to offer BECAUSE the grid is ten fixed columns. On a sheet
+   that was as wide as its widest row, adding a column made every key on the
+   board thinner, which is the thing the owner ruled out in the same breath as
+   asking for this 「小さくなったら意味ないやん」. On ten fixed columns a new
+   key fills slack that is already there, and when there is no slack the + is
+   not drawn at all 「最大になったら+はなし」 -- kbRoomCol() below, and
+   kbInsRoom() above it, are the one place that says so.
+
+   It is kbDelCol() turned around, and it is deliberately NOT "every row gets
+   wider". A column comes out of the rows that REACH it and leaves the rest
+   alone, so a column goes into those same rows and no others. A short row is
+   short because somebody made it short.
+
+   What goes in is an empty letter slot -- what the dashed row at the foot
+   puts in, and what a pattern leaves for somebody to fill. Not a gap: a gap
+   is space, and what was asked for is a key. */
+function kbColAt(row, half){
+  var at=0, i;
+  for(i=0;i<row.length;i++){
+    if(at>=half) return i;
+    at+=kbU(row[i].w);
+  }
+  return row.length;
+}
+function kbColRows(ci){
+  var rows=kbLayer().rows, out=[], i;
+  for(i=0;i<rows.length;i++) if(kbUsed(rows[i])>ci*2) out.push(i);
+  return out;
+}
+function kbRoomCol(ci){
+  var rows=kbLayer().rows, at=kbColRows(ci), i;
+  if(!at.length) return false;
+  for(i=0;i<at.length;i++) if(kbUsed(rows[at[i]])+2>KB_COLS) return false;
+  return true;
+}
+function kbInsCol(right){
+  var b=kbEdit(), rows, at, i, half;
+  if(!b || !KBH || KBH.k!=='c' || !kbRoomCol(KBH.i)) return;
+  rows=kbLayer().rows;
+  half=KBH.i*2 + (right? 2 : 0);
+  at=kbColRows(KBH.i);
+  for(i=0;i<at.length;i++)
+    rows[at[i]].splice(kbColAt(rows[at[i]], half), 0, kbKey('lt', ''));
+  /* and the selection follows the column it was on, which has moved right by
+     one if the new one went in on its left -- kbIns() does the same thing one
+     axis over */
+  KBH={k:'c', i:right? KBH.i : KBH.i+1};
+  kbSel=null;
+  saveKb(); render();
 }
 function kbIns(down){
   var b=kbEdit(), rows, at;
@@ -1913,26 +1981,48 @@ function kbTb(name, icon, label, off){
   return '<button class="kbtb'+(name==='kbCut'? ' bad':'')+'"' + DO(name) +
     (off? ' disabled' : '') + ' aria-label="'+esc(label)+'">'+icon+'</button>';
 }
+/* The arrow-into-a-line of ICON_INUP / ICON_INDN, turned a quarter: which
+   SIDE of the line the new column lands on. They are here rather than beside
+   their two siblings in glyph.js because glyph.js is being changed on three
+   other branches today -- docs/BACKLOG.md carries the move. www/home.js
+   already draws an icon of its own, so this is not a new kind of thing. */
+var ICON_INLF='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M19 4v16"/><path d="M15 12H5"/><path d="M9 8l-4 4 4 4"/></svg>';
+var ICON_INRT='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M5 4v16"/><path d="M9 12h10"/><path d="M15 8l4 4-4 4"/></svg>';
 function kbToolHTML(){
-  var row=!!KBH && KBH.k==='r', ask=row && !!KBH.ins;
+  var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c', ask=!!KBH && !!KBH.ins;
   return '<div class="kbtool">'+
     kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
     kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
     '<span class="kbtgap"></span>'+
     (ask
-      ? '<button class="kbtb"' + DO('kbIns', [false]) +
-          ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
-        '<button class="kbtb"' + DO('kbIns', [true]) +
-          ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>'
+      ? (col
+          ? '<button class="kbtb"' + DO('kbInsCol', [false]) +
+              ' aria-label="'+esc(t('kb.col.l'))+'">'+ICON_INLF+'</button>'+
+            '<button class="kbtb"' + DO('kbInsCol', [true]) +
+              ' aria-label="'+esc(t('kb.col.r'))+'">'+ICON_INRT+'</button>'
+          : '<button class="kbtb"' + DO('kbIns', [false]) +
+              ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
+            '<button class="kbtb"' + DO('kbIns', [true]) +
+              ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
           ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
         '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
           ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
         '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
           ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
+    /* 「最大になったら+はなし」 -- down, which is what this button has always
+       done when a row is as tall as it may get, and what the three beside it
+       do when nothing is selected. The toolbar keeps its shape; the dashed row
+       at the FOOT of the sheet is the one that goes away entirely, because
+       that one is drawn where a row would go rather than sitting in a row of
+       buttons. */
     '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
-      ((row && kbRoomRow())? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.row.ins'))+'">'+ICON_ADD+'</button>'+
+      (kbInsRoom()? '' : ' disabled') +
+      ' aria-label="'+esc(t(col? 'kb.col.ins' : 'kb.row.ins'))+'">'+ICON_ADD+'</button>'+
     (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH))+
     '</div>';
 }
