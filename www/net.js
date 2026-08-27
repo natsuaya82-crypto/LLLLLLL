@@ -80,7 +80,7 @@ var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
 
    Apple needs nothing here. On iOS the sign-in is the system's own sheet and
    the app is named by its bundle id, which Xcode already knows. */
-var GOOGLE_IOS_ID='';
+var GOOGLE_IOS_ID='535150348007-i8roam4vdjjlfql5ktb4mld3v9chb6gr.apps.googleusercontent.com';
 
 /* The session belongs to this phone and to no language, so it is filed beside
    lingua.set and lingua.me rather than under langKey(). */

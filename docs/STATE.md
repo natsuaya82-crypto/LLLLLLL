@@ -257,12 +257,11 @@ The buttons went from "not in this build" to a real plugin —
 - **Apple: done.** `com.apple.developer.applesignin` is in
   `ios/App/App/App.entitlements`, and the owner reports the App ID capability
   and the regenerated profile done (2026-08-27).
-- **Google: the client is made** (the owner, 2026-08-27) **and its id is not in
-  this repository.** `GOOGLE_IOS_ID` in `www/net.js` is `''` on every branch,
-  and `Info.plist` has no `CFBundleURLTypes`. Making the client does not put
-  the id here; somebody has to run `node tools/google-id.mjs <id>`, which
-  writes both places at once. Until then the button says it is not in this
-  build, which is true.
+- **Google: done, both halves.** `GOOGLE_IOS_ID` in `www/net.js` and the
+  reversed scheme in `Info.plist`'s `CFBundleURLTypes` are the same client id
+  (2026-08-27). Supabase has to be told to accept it — `supabase/setup.md` § 4,
+  the owner's. Neither value is a secret: the id names the app and proves
+  nothing.
 
 **What this file cannot see.** App Store Connect, the Apple developer site,
 Google Cloud and the Supabase dashboard are outside the repository. Where a
@@ -686,9 +685,11 @@ Two of them were about capabilities that had been deleted.
     Apple and Google providers (`supabase/setup.md` § 4).
 16a. ~~The Apple developer site — Sign in with Apple on the App ID, and the
     profile regenerated after it.~~ **Done** (the owner, 2026-08-27).
-16b. Google Cloud — the iOS client is **made** (the owner, 2026-08-27). What is
-    left is **not the owner's**: `node tools/google-id.mjs <id>` has to be run
-    in this repository. It is in this list only until somebody is handed the id.
+16b. ~~Google Cloud — the iOS client.~~ **Done**, and **the id is in this
+    repository now** (2026-08-27). It had been sitting in
+    `docs/HANDOVER-2026-08-26.md` for a day: the owner handed it over, it was
+    written down, and nobody put it in the code. Looking for a value before
+    asking for it again is the lesson.
 16c. Supabase — one SQL line making yourself staff, or the reports are on
     nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
     updates a row that has to exist.
