@@ -301,10 +301,18 @@ output is printed whole and in list order, so a counter that moved is still visi
 **Three rules about running it, and they are the owner's.** *Once before pushing, not
 once per commit* — make the whole batch, gate it once, push; a session that gates five
 commits separately has spent half an hour proving the same thing five times.
-「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the one check that
-holds what you are changing*, by name, plus the five fast ones — that is the loop.
-*Watching a check fail is one run, not a suite* — put the bug back, run that check
-alone, watch it go red, take the bug out.
+「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the fast eight —
+they are two seconds and they catch what blanks a device.* *Watching a check fail is
+one run, not a suite* — put the bug back, run the one check that holds it, watch it
+go red, take the bug out.
+
+**And then push, without running it green.** 「ゲートが緑になる確認は…まとめて。
+個人個人でやる必要ある？」 OWNER 2026-08-27. **Red is work and green is
+verification**: only the person holding the bug can see it go red, and the green is
+the same green however many people watch it. `npm run press` is five minutes — paid
+by the session, the sub-leader and the leader it is fifteen, and **the third green is
+not truer than the second**. It was measured: two chapters ran five to six hours, and
+the repeated green runs were most of it.
 
 **Who runs it depends on how many of you there are, and that is the whole of the
 exception.** The sentence above says *you* run it once before pushing, and
