@@ -1479,9 +1479,12 @@ a.set{text-decoration:none}
    box the term buttons got, so 「4.99/月は一列にしろ」OWNER 2026-08-26 was not
    actually met -- and at 320 the amount broke mid-number (`$99.9` / `9`).
    Measured at 320 and 390, both currencies, both terms. `press` walks a 402pt
-   phone and only that one, so neither showed there. */
-.btn.plterm{padding:10px 8px}
-.plterm .pp{font-size:1.1rem}
+   phone and only that one, so neither showed there. The padding lives on the
+   box rule below and NOT here: this file already had a `.btn.plterm` twenty
+   lines down, so a second one of the same strength was simply overwritten --
+   green everywhere, because box-check counts borders and corners and says
+   nothing about a rule that lost. */
+.plterm .pp{font-size:clamp(.78rem, 3.3vw, 1.1rem)}
 /* An amount never breaks, and neither does its term: what may drop to a second
    line is the whole of `/ month`, and only on a 320 phone. */
 .plterm .pp,.plterm .pper{white-space:nowrap}
@@ -1500,14 +1503,14 @@ a.set{text-decoration:none}
    may take it as permission.
    `.btn.plterm` and not `.plterm`: .btn says border:none 800 lines below, and
    one class cannot beat two. */
-.btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 6px}
 .btn.plterm:active{border-color:var(--gold)}
 /* 「4.99/月は一列にしろ」OWNER 2026-08-26. The amount and the term were two
    blocks, so every price stood two lines high and the term read as a caption
    under it rather than as part of the price. The saving stays on its own
    line: it is a third thing and not part of what the year costs. */
 .plterm .pp{display:inline}
-.plterm .pper{display:inline;margin-left:3px}
+.plterm .pper{display:inline;margin-left:2px;font-size:clamp(.6rem, 2.1vw, .72rem)}
 /* Free carries its price too, and it is not a button: without it the four
    lines start higher than the paid pages' five do and the lists jump as
    somebody slides between them. */
