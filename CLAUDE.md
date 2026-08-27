@@ -46,7 +46,17 @@ and "the no data" — a failed check means fewer buttons, never fewer words.
 hundred words after it ends, the list is a hundred, and not one byte of any
 slice moved. → `docs/PAID_FEATURES.md`
 
-**Online.** Anything that needs the server is built assuming the server is
+**Online.** **Everything the timeline is made of lives on the server** —
+posts, photographs, the voice, **drafts**, the handle, the display name, the
+profile picture, reactions, follows, blocks and reports. 「SNSは全部サーバー」,
+and it has been said more than once because the code keeps being read as the
+spec: drafts are a flat key on the phone and a voice is a file in Documents,
+and **both of those are old code, not a decision**. The phone keeps the copy
+that works with no signal; it is never where a thing lives. What is NOT the
+timeline's — a language's backup file, an exported sheet, the settings — is
+the phone's and stays there.
+
+Anything that needs the server is built assuming the server is
 there. A screen that half-works without one is not a step on the way to being
 online — it is a bug, and it is found by somebody using the app rather than by
 a check, because nothing throws. The timeline is the worked example: the three
@@ -1510,7 +1520,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the copy that survives the app — a language as one file in Documents (ch 24) |
-| `www/rec.js` | the voice on a post — thirty seconds, as a file in Documents, never in `localStorage` (ch 25) |
+| `www/rec.js` | the voice on a post — thirty seconds. A file in Documents today, and **that is the code being old**: 「SNSは全部サーバー」, so a voice belongs on the server with the post it is part of. Not moved yet — `docs/BACKLOG.md` (ch 25) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |

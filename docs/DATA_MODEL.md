@@ -94,6 +94,15 @@ kept: the line, the meaning, whom it answers, the pictures with their letters
 still placed on them, the recording, and whether it was going to be private.
 Nothing prunes it and nothing ages it out.
 
+**Both of those are the copy that survives a bad network, and NEITHER is where
+they live.** 「SNSは全部サーバー」 OWNER, said again on 2026-08-27 — a draft is
+the timeline's, and so is a voice, so both belong on the server the same way a
+post does. The code has not caught up: `lingua.drafts` is a flat key on this
+phone and a recording is a file in `Documents/Voices/`, and neither goes up.
+**That is the code being old, not the spec** — write them as the server's when
+the code is fixed, and until then know that a person who changes phones loses
+both. `docs/BACKLOG.md` carries what is left to move.
+
 ## The index of languages, and what is actually in it
 
 `lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
@@ -257,7 +266,7 @@ writer's language:
 | `pics` | **up to four photographs**, each squeezed to 900px on the long edge at q0.72 — about 22 KB as text apiece. See below: this is the one field big enough to matter |
 | `pic` | one photograph, on posts written before `pics` existed. Never rewritten. `postPics()` is the one place that reads either |
 | `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
-| `vo` | **the voice**, as `{f, ms}` — the name of a file in `Documents/Voices/` and how long it is. The bytes are NOT here: thirty seconds of AAC is about 240 KB, which is ten free-sized languages, and `lingua.posts` shares its quota with everything a person has made. `www/rec.js` writes the file before the post is stored, so a name on a post is a file on the disk |
+| `vo` | **the voice**, as `{f, ms}` — the name of a file in `Documents/Voices/` and how long it is. The bytes are NOT here: thirty seconds of AAC is about 240 KB, which is ten free-sized languages, and `lingua.posts` shares its quota with everything a person has made. `www/rec.js` writes the file before the post is stored, so a name on a post is a file on the disk. **On the disk is not where it belongs** — 「SNSは全部サーバー」, and a voice is the post's, so it goes up with the post. Not moved yet; `docs/BACKLOG.md` |
 | `ed` | when it was edited, if it ever was. An author may put the **line and the meaning** right; the photographs and the voice stay as they were. The `ink` is re-cut at that moment, which is the one place in this app where a post's shapes are not the shapes it was born with — a changed line with the old shapes is the old line |
 | `to`, `toh` | **what it answers, and who wrote that.** Both, and for two different readers: `to` is the id, which is how a reply and its parent are put back together on a phone that has them both, and `toh` is the handle, which is what is SHOWN — so it is on the reply, because the post it answers may not be here at all. `postToWho()` in `www/post.js` is the one place either is read for display: it takes `toh`, falls back to asking the parent when the parent is here, and shows nothing when it is not. A reply written before `toh` existed has only `to` and is not back-filled |
 | `dir` | **which way the line runs** — `ltr`, `rtl`, `ttb-rl`, `ttb-lr`. The language's, frozen at the moment of writing. A timeline that asked the open language would set every post the way MY language runs, which is `ink` all over again. Absent means `ltr`, which is how every post before this was written |
