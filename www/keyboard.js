@@ -2266,6 +2266,15 @@ function kbDown(e){
     if(kbShadow(k)){ var t=b; b=mate; mate=t; }
   }
   KBD={el:b, mate:mate||null, x:p.clientX, y:p.clientY, on:false, timer:0};
+  /* A RUN that is being carried goes as one. 「色んなキー触ったら一気に動かせ
+     たりしようよ。横と縦に限定だけど。」「縦でタップしたらそのままその2キーを
+     持っていける」 OWNER 2026-08-27 -- the keys are already chosen, so what a
+     hold on one of them means is "carry these", not "carry this one out of
+     them". Asked once, here, while the layout still says what the page says. */
+  if(!mate && kbSelN()>1 &&
+     kbKeyIs(parseInt(b.getAttribute('data-r'), 10),
+             parseInt(b.getAttribute('data-k'), 10)))
+    KBD.run=kbSelKeys();
   KBD.timer=setTimeout(kbLift, 380);
 }
 function kbLift(){
@@ -2341,6 +2350,12 @@ function kbDragTo(e){
     KBD.el.style.transform='';
     return;
   }
+  if(KBD.run){
+    if(!kbRunMove(row, over)) return;
+    KBD.x=p.clientX; KBD.y=p.clientY;
+    KBD.el.style.transform='';
+    return;
+  }
   for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
   row.insertBefore(KBD.el, (a>=0 && b>a)? over.nextSibling : over);
   /* A row emptied by the last key leaving it is a row of nothing, which is a
@@ -2348,6 +2363,71 @@ function kbDragTo(e){
   if(mine!==row && !mine.children.length) mine.parentNode.removeChild(mine);
   KBD.x=p.clientX; KBD.y=p.clientY;
   KBD.el.style.transform='';
+}
+/* ---- a RUN of chosen keys, carried as one -------------------------------
+   「色んなキー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
+   「縦でタップしたらそのままその2キーを持っていける」 OWNER 2026-08-27.
+
+   ALL of them land or NONE of them do, and that is the whole of the care here.
+   One key of four arriving and three staying behind is the shape that loses
+   somebody's work: the board draws, the press felt like it worked, and the run
+   somebody built is scattered. So every one of them comes out of the page
+   first, each is asked for room in the row it is going to, and anything that
+   says no puts every one of them back exactly where it was.
+
+   ROOM IS ASKED ONE KEY AT A TIME, through the same kbRoomFor() a single carry
+   asks -- and asked AFTER each one goes in, so that a run going across a row
+   is counted against a row that already holds the ones before it. Asking all
+   of them against the row as it was would let four keys into a row with space
+   for one, four times over. */
+function kbRunMove(row, over){
+  var ms=KBD.run, g=document.getElementById('kb'),
+      els=[], back=[], tgt=[], i, e, k, at, di, ref, r0, dir=kbSelD();
+  if(!g || !ms || !ms.length) return false;
+  for(i=0;i<ms.length;i++){
+    e=g.querySelector('.kbk[data-r="'+ms[i].r+'"][data-k="'+ms[i].i+'"]');
+    k=kbAt(ms[i].r, ms[i].i);
+    if(!e || !k) return false;
+    if(e===over) return false;
+    els.push(e); back.push({p:e.parentNode, n:e.nextSibling, w:k.w});
+  }
+  /* the rows they are going to: one row for a run across, and the row under
+     the last for each further key of a run down */
+  if(dir==='y'){
+    r0=row;
+    for(i=0;i<els.length;i++){ if(!r0) return false; tgt.push(r0); r0=r0.nextSibling; }
+  }else for(i=0;i<els.length;i++) tgt.push(row);
+  function putBack(){
+    for(i=els.length-1;i>=0;i--) back[i].p.insertBefore(els[i], back[i].n);
+    return false;
+  }
+  for(i=0;i<els.length;i++) els[i].parentNode.removeChild(els[i]);
+  for(i=0;i<els.length;i++){
+    if(!kbRoomFor(kbRowOf(tgt[i]), back[i].w)) return putBack();
+    if(i===0){
+      if(over.parentNode!==tgt[0]) return putBack();
+      tgt[0].insertBefore(els[0], over);
+    }else if(dir==='x'){
+      tgt[i].insertBefore(els[i], els[i-1].nextSibling);
+    }else{
+      /* the same column as the one above it, which is what a run DOWN is */
+      at=0;
+      for(var j=0;j<tgt[0].children.length;j++){
+        if(tgt[0].children[j]===els[0]) break;
+        k=kbKeyOfEl(tgt[0].children[j]);
+        if(k) at+=kbU(k.w);
+      }
+      di=(at===kbUsed(kbRowOf(tgt[i])))? tgt[i].children.length : kbAtKey(kbRowOf(tgt[i]), at);
+      if(di<0) return putBack();
+      ref=tgt[i].children[di] || null;
+      tgt[i].insertBefore(els[i], ref);
+    }
+  }
+  /* a row emptied by the last key leaving it is a row of nothing */
+  for(i=0;i<back.length;i++)
+    if(back[i].p.parentNode && tgt.indexOf(back[i].p)<0 && !back[i].p.children.length)
+      back[i].p.parentNode.removeChild(back[i].p);
+  return true;
 }
 /* Both halves, or neither. It answers whether it happened, so a drop the
    sheet cannot hold leaves the pair exactly where it was rather than half

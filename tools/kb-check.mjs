@@ -1571,6 +1571,72 @@ const r = await pg.evaluate(({ s }) => {
     drag(donor, 0, full, 0);
     out.overUntouched = JSON.stringify(kbLayer().rows.map(say)) === overWas;
 
+    /* ---- a RUN of chosen keys is carried as one thing ------------------
+       「色んなキー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
+       「縦でタップしたらそのままその2キーを持っていける」 OWNER 2026-08-27.
+
+       ALL of them or NONE. One arriving and the rest staying behind draws
+       perfectly and feels like the press worked, and the run somebody built is
+       scattered -- so what is counted is HOW MANY KEYS THE BOARD HAS, before
+       and after, on the drop that works and on the drop that is refused. */
+    function keyCount(){
+      return kbLayer().rows.reduce(function (a, rw){ return a + rw.length; }, 0);
+    }
+    fresh();
+    kbLayer().rows[3].pop(); kbLayer().rows[3].pop(); kbLayer().rows[3].pop();
+    saveKb(); render();
+    kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+    out.runChose = kbSelKeys().length === 2;
+    var runWasN = keyCount(), runWasH = halves(), runWasShape = kbLayer().rows.map(say);
+    drag(0, 2, 3, 0);
+    out.runKeys = keyCount() === runWasN;                 /* nothing lost */
+    out.runLeft = runWasH[0] - halves()[0];               /* row 0 gave up */
+    out.runCame = halves()[3] - runWasH[3];               /* row 3 took them */
+    out.runBoth = out.runLeft === 4 && out.runCame === 4;
+    kbUndo(); standKb();
+    out.runUndoOne = JSON.stringify(kbLayer().rows.map(say)) === JSON.stringify(runWasShape);
+
+    /* ---- refused PART WAY THROUGH, and NOTHING is lost -----------------
+       The landing row has room for TWO and three are carried. That matters:
+       a row with room for none is turned away a step earlier, by the gate the
+       single carry already had, so a run aimed at one never reaches this code
+       at all and the claim passes whether the rollback exists or not --
+       watched, twice. Room for two and three carried is the only shape where
+       the run itself has to say no, half-way, with two already placed. */
+    fresh();
+    var narrow = kbLayer().rows.length - 1;          /* the space bar's row */
+    (function (){
+      var rw = kbLayer().rows[narrow];
+      while (rw.length > 1 && kbUsed(rw) > KB_COLS - 4) rw.pop();
+      saveKb(); render();
+    }());
+    kbTapKey(0, 2); kbTapKey(0, 3); kbTapKey(0, 4); standKb();
+    out.runThree = kbSelKeys().length === 3;
+    out.roomForTwo = kbUsed(kbLayer().rows[narrow]) === KB_COLS - 4;
+    var noN = keyCount(), noShape = JSON.stringify(kbLayer().rows.map(say));
+    drag(0, 2, narrow, 0);
+    out.runNoRoomKeys = keyCount() === noN;
+    out.runNoRoomSame = JSON.stringify(kbLayer().rows.map(say)) === noShape;
+
+    /* and a run DOWN arrives one to a row, in the same column */
+    fresh();
+    kbLayer().rows[3].pop(); kbLayer().rows[3].pop();
+    kbLayer().rows[4].pop();
+    saveKb(); render();
+    kbTapKey(0, 1); standKb();
+    var dn1 = kbUnderOf(0, 1);
+    if (dn1){ kbTapKey(dn1.r, dn1.i); standKb(); }
+    out.runDownChose = kbSelKeys().length === 2;
+    var dWasN = keyCount();
+    drag(0, 1, 3, 0);
+    out.runDownKeys = keyCount() === dWasN;
+    out.runDownRows = (function (){
+      var a = kbSelKeys();
+      if (a.length !== 2) return false;
+      return a[1].r === a[0].r + 1 &&
+        kbAtOf(kbLayer().rows[a[1].r], a[1].i) === kbAtOf(kbLayer().rows[a[0].r], a[0].i);
+    }());
+
     /* ---- a MERGED PAIR is carried as one thing ------------------------
        「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかある
        けどその分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
@@ -1994,6 +2060,15 @@ say(r.dragInRow && r.dragInRowWide,
     'while the same row still rearranges its own keys, full though it is');
 say(r.overWide && r.overUntouched,
     'and a row somebody already has that is eleven wide is left exactly as it is');
+say(r.runChose && r.runBoth,
+    'two chosen keys are carried together: the row gives up ' + r.runLeft +
+    ' half columns and the other takes ' + r.runCame);
+say(r.runKeys, 'and the board has every key it had -- none left behind');
+say(r.runUndoOne, 'and ONE step back puts the run where it was');
+say(r.runThree && r.roomForTwo && r.runNoRoomKeys && r.runNoRoomSame,
+    'three carried into a row with space for two: nothing moves, and NOT ONE key is lost');
+say(r.runDownChose && r.runDownKeys && r.runDownRows,
+    'and a run chosen DOWNWARD arrives one to a row, in the same column');
 say(r.pairMade, 'two keys can be merged into one that is two rows tall');
 say(r.pairMoved, 'and carrying it takes it to the row it was carried to' +
     (r.pairAfter ? ' (row ' + r.pairAfter.row + ')' : ''));
