@@ -15,6 +15,91 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+
+### 【DELETE REVIEW ── コードはまだ書いていません】アカウントと言語を消したら、下書きも消える
+
+```
+アカウント削除は全部消すって言ってるやん。言語を消すでも言語系は全部消すって
+言ってるでしょ？なんでそれに含まれないと思うの？          OWNER 2026-08-27
+```
+
+`docs/BACKLOG.md` の「下書きについて、決まっていない二つ」は**決まっていない二つ
+ではありませんでした。**既にある決定に含まれていた、というのがオーナーの答えです。
+
+**これは DELETE REVIEW だけです。実装は入っていません** ── `CLAUDE.md`
+「anything that deletes gets a DELETE REVIEW first」。**そして §5 に、判断が
+要る一点があって、そこで止めています。**
+
+#### 下書きが今どこに、どんな形で入っているか（読んで確かめた事実）
+
+```
+www/post.js:310   var LS_DRAFTS='lingua.drafts';
+www/post.js:317   localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS));
+```
+
+**`langKey()` を通りません。平の一本の鍵です。**中身は
+`{at, ln, mn, to, pr, pics, vo, pv}` の配列 ── 書いた行、意味、返信先、お題、
+文字を置いた写真、録音、非公開かどうか。
+
+⚠ **下書きは、どの言語で書いたかを持っていません。**（§5-2）
+
+#### 今、削除で何が消えて何が残るか
+
+**言語だけを消すボタンはありません。**`wipeAll()`（`www/settings.js:387`）が
+このアプリで唯一の全体削除で、アカウント削除と端末の消去を**兼ねています**。
+オーナーの二つの文は、どちらも同じ関数に落ちます。
+
+`removeItem` はアプリ全体で**二箇所だけ**です（`net.js:100`、`settings.js:403`）。
+
+| localStorage の鍵 | 中身 | いま `wipeAll` の後 |
+|---|---|---|
+| `lingua.<id>.<SLICES 12本>` | 言語そのもの | **消える** |
+| `lingua.sess` | トークン | **消える**（`netOut`） |
+| `lingua.set` | 設定 | 既定値で上書き（theme/ui/plan は残す） |
+| `lingua.drafts` | **下書き** | **残る** ← オーナーの指摘 |
+| `lingua.posts` | 端末に持っている投稿の写し | **残る** |
+| `lingua.me` | 名前・ハンドル・顔・自己紹介 | **残る** |
+| `lingua.langs` `lingua.cur` | 言語の索引と、開いているもの | **残る** |
+| `lingua.words` ほか旧8本 | 多言語化前の平の鍵 | 残る（`langMigrate` が意図的に残したもの） |
+
+サーバ側は `netDropMe()`（`net.js:1200`）が写真を消してからアカウントを消します。
+**下書きはサーバに行きません** ── `localStorage` だけです。
+
+#### この変更で新しく消えるもの
+
+**`lingua.drafts`。それだけです。**上の表の「残る」のうち、この決定が名指しして
+いるのは下書きだけなので、ほかには手を付けません
+（`CLAUDE.md`「do not ... generalise it to anything nearby」）。
+`lingua.posts` `lingua.me` `lingua.langs` が残っているのは**別の話**で、
+`docs/BACKLOG.md` に分けて出します。
+
+#### 戻せるか
+
+**戻せません。**バックアップは `bkPack()` が `SLICES` を歩くものなので、
+下書きは**どのバックアップにも入っていません**。今日の時点で、消えたら終わりです。
+（`SLICES` に入れると入るようになります ── それが §5 です。）
+
+```
+DELETE REVIEW
+  who deletes      人が押す。wipeAll() の confirm 一回のうち
+  when             アカウント削除／端末の消去のとき
+  what exactly     lingua.drafts の全部
+  why              「アカウント削除は全部消す」OWNER 2026-08-27
+  recoverable?     いまは不可能。バックアップに下書きは入っていない（§5 次第）
+  backup survive?  §5 で決まる。SLICES に入れれば入り、入れなければ入らない
+  plan?            no。下書きは無料でも有料でも同じで、can() を一つも通らない
+  migration        なし。鍵を一本消すだけで、形は変えない
+```
+
+#### 検査
+
+`npm run backup` に足します。**両方向を見ます** ──
+「消えるはずのものが残っている」と「**残るはずのものが消えた**」。
+後者は取り返しがつかないので、`wipeAll` のあとに**別の言語の中身が生きている**
+ことも見ます。バグは戻して赤を見てから。
+
+**CODE CONFIRMED: 未（コードなし）／DEVICE CONFIRMED: 未**
+
 ### 辞書の ⋯ に「AIに相談」が付きました
 
 **アプリは何も生成しません。** 押すと ChatGPT が**本文の入った状態で開き**、
