@@ -261,19 +261,42 @@ collide with the others, and it is short on purpose.
 
 ---
 
-## Who is who
+## Who is who ── OWNER DECISION 2026-08-27
 
 ```
-  the owner    decides what the app does -- behaviour, thresholds, prices,
-               what is deleted, wording. Confirms it on a phone.
-               → docs/FEATURE_RULES.md § owner decisions are specifications
+  the owner        decides what the app does -- behaviour, thresholds, prices,
+                   what is deleted, wording. Confirms it on a phone.
+                   → docs/FEATURE_RULES.md § owner decisions are specifications
 
-  the leader   another session, above this one. Names what each session owns,
-               integrates the branches, and runs the whole gate at the end.
-               A session never does any of those three.
+  the leader       one session. Takes the owner's words, works out what they
+                   mean, names what each session owns, and dispatches. Runs the
+                   whole gate at the end and triggers the build.
 
-  you          one area, one branch, the files you were named. Nothing else.
+  sub-leader ①     takes what the sessions push, integrates it, and makes the
+  (green)          gate GREEN. The gate is run here, once, and nowhere else.
+
+  sub-leader ②     reads what the other sessions actually did -- the diffs, not
+  (check)          their reports -- and says where it is wrong. Writes no
+                   feature code.
+
+  you              one area, one branch, the files you were named. Nothing else.
 ```
+
+**オーナーはリーダーにしか話しかけません。** So:
+
+- A session's question goes **to the leader**, never to the owner and never to
+  another session. The leader collects them and asks the owner in one batch.
+- The owner sometimes answers **inside** a session instead. That session then
+  **reports the answer up to the leader** — otherwise the leader is dispatching
+  from a spec it has never seen.
+- **The leader does not decide.** 「確認して伝えて承認が出てから直せや」OWNER
+  2026-08-27 — investigate, report, wait for the owner's approval, and only then
+  dispatch. A leader that guesses is one wrong reading landing on every branch.
+
+**トークンを使いすぎない。** Weekly limit, and it went past 70% in three days.
+So: no session runs the gate to see it green (§6), no session is left open with
+nothing to do, and a report is what changed and what it breaks — not a retelling
+of the work.
 
 Where this page says **the leader**, it means that session and not the owner.
 An owner decision is still the specification; the leader says who implements
