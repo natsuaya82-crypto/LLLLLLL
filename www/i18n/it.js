@@ -743,7 +743,6 @@ defLang('it', (function(){
       "wr.pages"         : "{0} fogli",
       "wr.pages.1"       : "1 foglio",
       "wr.out"           : "Salvare il foglio",
-      "wr.out.ok"        : "Salvato",
       "wr.nobridge"      : "L’app non raggiunge l’archivio dei file.",
       "wr.long"          : "Questi nomi non stanno in un foglio.",
       "wr.none"          : "Ancora nessun nome",

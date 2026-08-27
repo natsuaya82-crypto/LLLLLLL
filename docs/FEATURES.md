@@ -887,6 +887,17 @@ Decided:
   with that file is theirs. The app has one way out to the phone and no editor
   of its own.
 
+  **And the file is OFFERED, not just written.**
+  「普通に共有画面みたいなやつから保存してそこでファイルに保存させてくれ」
+  OWNER 2026-08-27, on a build where the write had worked four times over and
+  the person still could not get at the file — writing into Documents and
+  saying nothing is not a download. `LinguaShare.sheet` still files it under
+  `Documents/Sheets/` and still never overwrites; `LinguaShare.shareFile` then
+  hands that file to iOS's own share sheet, where "Save to Files" lives.
+  **Nothing says it was saved** — once the sheet is up, save, send and cancel
+  never come back to the app, so any sentence about it would be a guess.
+  「保存できてないのに保存しましたとかやめてくんない？」
+
   **What makes that road work is `renderPdf`**, and specifically that it draws
   with PDFKit: Markup keeps a stroke as a PDF ANNOTATION, and
   `CGContext.drawPDFPage` does not draw annotations — a sheet written on with

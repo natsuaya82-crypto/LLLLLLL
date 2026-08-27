@@ -653,7 +653,6 @@ defLang('en', (function(){
       'wr.pages'          : '{0} sheets',
       'wr.pages.1'        : '1 sheet',
       'wr.out'            : 'Save the sheet',
-      'wr.out.ok'         : 'Saved',
       'wr.nobridge'       : 'The app cannot reach the file store.',
       'wr.long'           : 'These names will not fit on one sheet.',
       'wr.none'           : 'No names yet',

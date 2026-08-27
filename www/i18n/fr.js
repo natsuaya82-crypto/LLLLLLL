@@ -790,7 +790,6 @@ defLang('fr', (function(){
       "wr.pages"         : "{0} feuilles",
       "wr.pages.1"       : "1 feuille",
       "wr.out"           : "Enregistrer la feuille",
-      "wr.out.ok"        : "Enregistrée",
       "wr.nobridge"      : "L’application n’atteint pas le stockage de fichiers.",
       "wr.long"          : "Ces noms ne tiennent pas sur une feuille.",
       "wr.none"          : "Pas encore de noms",

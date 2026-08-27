@@ -1107,14 +1107,27 @@ function shPics(names){
   }
   return out;
 }
-/* The PDF, and out. It goes to the phone as a FILE, every time somebody
-   presses this, and there is no second road: no share sheet, no `<a
-   download>`, nothing that lives only on the screen.
-   OWNER 2026-08-27「毎回ファイルに保存して欲しい」.
+/* The PDF, and out. Two things happen and they are not the same thing: the
+   file is WRITTEN, and then it is OFFERED.
+   OWNER 2026-08-27「普通に共有画面みたいなやつから保存してそこでファイルに
+   保存させてくれ」 -- said about a build where the write had already worked
+   four times and the person still could not get at the file. **Writing it
+   into Documents and saying nothing is not a download.**
 
    `LinguaShare.sheet` writes it into `Documents/Sheets/`, where iOS puts it in
    the device backup and the Files app can show it, and it NEVER OVERWRITES --
-   the second sheet of a name is `<name> 2.pdf`.
+   the second sheet of a name is `<name> 2.pdf`. That stays exactly as it was:
+   taking it away would be docs/DATA_SAFETY.md, because a sheet already sitting
+   there may have been drawn on. `LinguaShare.shareFile` then hands that file
+   to iOS's own share sheet, which is where "Save to Files" lives and where
+   choosing the destination stops being this app's business.
+
+   **Nothing says it was saved, and that is the point.** Once the share sheet
+   is up, what somebody picks -- save, send, cancel -- never comes back here,
+   so any sentence about it would be a guess. 「保存できてないのに保存しました
+   とかやめてくんない？」 Only the ways it can fail BEFORE that speak: no
+   bridge, a phone that files nothing, a refusal. Cancelling says nothing,
+   because changing your mind is not a failure.
 
    **It does not rotate generations, and www/backup.js does. That difference is
    deliberate and it is not an inconsistency.** keep() rotates the last file to
@@ -1160,8 +1173,12 @@ function shMake(){
   if(!p){ toast(t('wr.nobridge')); return; }
   p('LinguaShare', 'sheet', {name:shFileName(), b64:b64})
     .then(function(r){
+      /* The name the PHONE filed it under, which is not shFileName(): a sheet
+         is never overwritten, so the second of a name is `<name> 2.pdf`.
+         Handing the wrong one of two to the share sheet would give somebody
+         the sheet they made last week. */
       if(!(r && r.file)){ toast(t('wr.nobridge')); return; }
-      toast(t('wr.out.ok'));
+      return p('LinguaShare', 'shareFile', {file: String(r.file)});
     })
     ['catch'](function(){ toast(t('wr.nobridge')); });
 }

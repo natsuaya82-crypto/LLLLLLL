@@ -658,7 +658,6 @@ defLang('ja', (function(){
       'wr.pages'          : '{0} 枚',
       'wr.pages.1'        : '1 枚',
       'wr.out'            : '用紙を書き出す',
-      'wr.out.ok'         : '書き出しました',
       'wr.nobridge'       : 'ファイルの保存先に届いていません。',
       'wr.long'           : 'この名前は一枚に収まりません。',
       'wr.none'           : '名前がありません',

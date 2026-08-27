@@ -702,7 +702,6 @@ defLang('es', (function(){
       "wr.pages"         : "{0} hojas",
       "wr.pages.1"       : "1 hoja",
       "wr.out"           : "Guardar la hoja",
-      "wr.out.ok"        : "Guardada",
       "wr.nobridge"      : "La aplicación no llega al almacén de archivos.",
       "wr.long"          : "Estos nombres no caben en una hoja.",
       "wr.none"          : "Todavía no hay nombres",
