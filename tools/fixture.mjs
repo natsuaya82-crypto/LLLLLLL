@@ -961,6 +961,23 @@ export function halfDone(){
     ['the grammar list, paid', () => { SET.plan = 'pro'; window.route='gram';
                                        NAV=[{r:'gram'}]; const h = vGram();
                                        SET.plan = 'free'; return h; }],
+    /* ---- the chapter that is being rebuilt ------------------------------
+       docs/GRAMMAR-V2-SPEC.md §14. It arrives as an argument of the `gram`
+       route rather than as a route of its own -- www/shell.js's PAGES is
+       another session's file -- and act-check walks that route's arguments by
+       asking stAll(), which this page is deliberately NOT in. So without a
+       face here the walk never renders it: every button on it would be an
+       entry no screen names, and every string on it could be hard-coded
+       forever. Two faces, because a word being carried looks different from
+       a word standing still, and that difference is the whole chapter. */
+    ['the word order, arranged', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
+        g2Lift = -1;
+        return vGram(); }],
+    ['the word order, one word lifted', () => {
+        window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }];
+        g2Lift = 0;
+        const h = vGram(); g2Lift = -1; return h; }],
     /* ---- the 助詞 stage, both faces ------------------------------------
        It is in STAGES_IF -- off the list until a language says it has one,
        because English has none and opening the chapter with it would be the

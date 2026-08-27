@@ -508,6 +508,12 @@ function stListHTML(){
       ? ''
       : '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('stAddPart') + '>'+
           ICON_ADD+t('stg.part.t')+'</button>')+
+    /* The way in to the chapter that is being rebuilt. It says the name of
+       what it opens and nothing else -- docs/GRAMMAR-V2-SPEC.md §14 is a page
+       about the word order among other things, and 語順 is what that is
+       called here already. */
+    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('go', ['gram', 'v2']) + '>'+
+      esc(t('stg.order.t'))+'</button>'+
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
           ICON_ADD+t('stg.own.add.btn')+'</button>'
@@ -607,7 +613,15 @@ function stFeatHTML(id){
 }
 function vGram(){
   var gOpen=gOpenOf();
-  var p = gOpen? stBy(gOpen) : null;
+  var p;
+  /* docs/GRAMMAR-V2-SPEC.md §14 -- the page that DEFINES a language. It is
+     built beside the old chapter, not over it, so it arrives as an argument of
+     this route rather than as a route of its own: www/shell.js's PAGES is
+     another session's file and a view with no page there fails act-check.
+     When it is given a route, this branch is what moves. */
+  if(gOpen==='v2') return '<div class="view">'+navTop()+
+    '<div class="body">'+g2Page()+'</div></div>';
+  p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
     navTop()+
     '<div class="body">'+

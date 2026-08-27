@@ -246,6 +246,7 @@ act('setWldSecDl', setWldSecDl);
 act('abToggle', abToggle);
 act('setWsys', setWsys);
 act('setScriptDir', setScriptDir);
+act('g2Move', g2Move);
 act('stAddPart', stAddPart);
 act('stAddOwn', stAddOwn);
 act('stDelEx', stDelEx);
