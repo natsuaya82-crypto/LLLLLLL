@@ -173,8 +173,104 @@ function inkGeo(l){
   if(l.sh && l.sh.length) return l.sh;
   return (l.st && l.st.length)? l.st : null;
 }
+/* ---- an area is the inside of a RING, and a ring gets drawn a side at a time
+   On a lattice nobody draws a square in one sweep: they draw the top, then
+   the right, then the bottom, then the left, and the fill button stays on
+   for all four. So four strokes come out of the editor each carrying the
+   fill flag, and the editor paints all four green -- it says, plainly, that
+   there is an area there.
+
+   Downstream did not agree. `glyphContours` cuts the inside of each stroke's
+   OWN ring into triangles, and a two-point ring has no inside, so every one
+   of the four asked for a fill and got nothing. Nothing threw; the letter
+   came back with a green line right round it and white in the middle.
+   「塗りも囲いにしてるのに塗られないけど？」 OWNER 2026-08-27 -- and the
+   photograph had five dots, four corners and one part-way down the right
+   side where two strokes met.
+
+   So the pieces are read as the one line they make, here, before anything
+   downstream sees them: strokes that were marked as area and that end where
+   the next one begins are the same line, and it is filled as one.
+
+   Three things it is careful not to do:
+
+   - It only ever joins strokes the person marked. A stroke that shares a
+     corner with an area but was not marked is a line that happens to touch
+     it, and stays one.
+   - It does not invent a bend. A point where two strokes met was the END of
+     a stroke, and an end never bends -- so the seam is stripped of its curve
+     flag as the two are put together. Each piece keeps its own curvature and
+     gains none. (Rule 16 is about ROUND, but the thing it forbids is this:
+     a stroke coming back bent that was not drawn bent.)
+   - It leaves a stroke that is already a ring of its own alone -- one that
+     was closed, or that ROUND made a circle of. Those already fill.
+
+   What it DOES change, deliberately: the joins stop being notched. Four
+   separate bars leave the outside of each corner unfilled, and one line
+   through the same points fills it with the hull of the two ends. A filled
+   square with four nicks out of its corners is not a shape anybody drew, and
+   `tools/fill-check.mjs` asks for the two to be the same ink to the pixel. */
+function inkJoinable(s){
+  return !!(s && s.fill && s.pts && s.pts.length>1 && !s.closed && !s.k);
+}
+function inkSamePt(a,b){ return !!(a && b && a[0]===b[0] && a[1]===b[1]); }
+/* a copy with the curve flag off, for a point that is about to stop being an end */
+function inkHard(p){ return [p[0], p[1]]; }
+function inkJoinFills(v){
+  var i, j, used=[], any=false;
+  for(i=0;i<v.length;i++){ used.push(false); if(inkJoinable(v[i])) any=true; }
+  if(!any) return v;
+  var out=[], grew=false;
+  for(i=0;i<v.length;i++){
+    if(used[i]) continue;
+    if(!inkJoinable(v[i])){ out.push(v[i]); used[i]=true; continue; }
+    /* the chain this stroke is part of, walked both ways from it. A stroke
+       may be joined either end first and either way round -- which end the
+       finger started at is not a fact about the shape. */
+    var pts=[], k;
+    for(k=0;k<v[i].pts.length;k++) pts.push(v[i].pts[k]);
+    used[i]=true;
+    var went=true;
+    while(went){
+      went=false;
+      for(j=0;j<v.length;j++){
+        if(used[j] || !inkJoinable(v[j])) continue;
+        var q=v[j].pts, a=q[0], z=q[q.length-1],
+            head=pts[0], tail=pts[pts.length-1], m, add=null, atEnd=true;
+        if(inkSamePt(tail,a)){ add=q; }
+        else if(inkSamePt(tail,z)){ add=q.slice().reverse(); }
+        else if(inkSamePt(head,z)){ add=q; atEnd=false; }
+        else if(inkSamePt(head,a)){ add=q.slice().reverse(); atEnd=false; }
+        if(!add) continue;
+        used[j]=true; went=true; grew=true;
+        if(atEnd){
+          /* the shared point is now in the middle of a line, so it is held
+             hard: it was two ends and neither of them bent */
+          pts[pts.length-1]=inkHard(pts[pts.length-1]);
+          for(m=1;m<add.length;m++) pts.push(add[m]);
+        }else{
+          pts[0]=inkHard(pts[0]);
+          for(m=add.length-2;m>=0;m--) pts.unshift(add[m]);
+        }
+      }
+    }
+    /* back where it started: drop the repeat and say so, which is exactly
+       the stroke somebody would have got by drawing the ring in one go */
+    var shut=false;
+    if(pts.length>2 && inkSamePt(pts[0], pts[pts.length-1])){
+      pts.pop(); shut=true;
+      pts[0]=inkHard(pts[0]);
+    }
+    if(pts.length===v[i].pts.length && !shut){ out.push(v[i]); continue; }
+    var one={pts:pts, fill:true};
+    if(shut) one.closed=true;
+    out.push(one);
+  }
+  return grew? out : v;
+}
 function inkDef(v){
-  return (v && v.length && v[0] && v[0].pts===undefined)? {sh:v} : {strokes:v};
+  if(v && v.length && v[0] && v[0].pts===undefined) return {sh:v};
+  return {strokes: (v && v.length)? inkJoinFills(v) : v};
 }
 
 /* ---- what the font is made of ------------------------------------------
@@ -471,7 +567,7 @@ function newGE(lid, label){
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
-           raw:null, rawFor:-1,
+           raw:null, rawFor:-1, z:1, cx:400, cy:400,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
@@ -537,7 +633,18 @@ var GICON={
      does. Stroked like the rest of them, so it goes gold with its caption. */
   'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
-  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
+  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>',
+  /* The magnifier, and it is the one the app already draws -- ICON_LENS, the
+     same circle and the same handle -- with a bar across it for smaller and
+     a cross for bigger. 「虫眼鏡マークタップして大きくしたり小さくしたり
+     したい。」 OWNER 2026-08-27. Two marks rather than one that cycles:
+     「大きくしたり小さくしたり」 is two things, and a single button that
+     wrapped round from biggest to smallest would make one of them a
+     four-press journey. Stroked, no fill, no corner -- like the other four. */
+  'zin'   : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
+            '<path d="M10.5 7.8v5.4M7.8 10.5h5.4"/>',
+  'zout'  : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
+            '<path d="M7.8 10.5h5.4"/>'
 };
 /* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
    drawing: it arrives at whatever weight and colour the system feels like,
@@ -866,16 +973,35 @@ function vGlyph(){
      find the square again. Those four are what a letter IS, not how it is
      drawn, and vLetter is the screen about that. The canvas, the rail and the
      preview come to 844 exactly. */
+  /* Save is at the top, at the far end of the bar the back arrow is on, and
+     there is no Cancel anywhere. 「この画面キャンセルと保存下にあるけど保存は
+     右上にしてキャンセルは消して。戻るがキャンセルだから。」 OWNER 2026-08-27.
+
+     Two buttons at the foot said the screen had two ways out, and one of them
+     was the arrow's job -- so the arrow and Cancel were the same press, drawn
+     twice, in two places. What the arrow does is no longer cancelling either:
+     see geLeft(). Leaving with the drawing kept is what both of them do now,
+     and Save is the one that also finishes the letter and puts you back with
+     the others.
+
+     navTop's `right` is the slot for exactly this -- "one control pinned to
+     the far end of the bar, the place every phone puts the thing that
+     finishes what you are doing" -- and it already carries the ? on four
+     screens and the AI mark on one. `navsave` is beside `navq` so that the
+     bar keeps working with the CSS that is there today; the rule that makes
+     it read as the primary action rather than as a muted mark is one line and
+     it is `www/index.html`'s, which is not this session's to write. It is
+     measured in the commit body. */
   return '<div class="view">'+
-    navTop()+
-    '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + 120px)">'+
+    navTop('', '<button class="navq navsave"' + DO('geSave') + '>'+
+                 esc(t('glyph.save'))+'</button>')+
+    /* Nothing is pinned over the foot of this screen any more, so the room
+       that was left for it is not left. What is under the page is the tab
+       bar, which is what .body's own padding is already about. */
+    '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
-    '</div>'+
-    '<div class="barfix">'+
-      '<button class="btn ghost"' + DO('back') + '>'+t('glyph.cancel')+'</button>'+
-      '<button class="btn"' + DO('geSave') + '>'+t('glyph.save')+'</button>'+
     '</div></div>';
 }
 function geCur(){
@@ -1202,6 +1328,37 @@ function geFill(){
   if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
   GE.pi=-1; render();
 }
+/* ---- bigger and smaller ------------------------------------------------
+   The magnifier moves through 1, 1.5, 2 and 3. At 3 the dots are about 51px
+   apart, which is a thumb's width, which is the point of it.
+
+   WHERE it magnifies is the thing worth writing down. A magnifier held over
+   a page shows what you are looking at, so this one centres on the point you
+   have selected -- and failing that on the last point of the stroke you are
+   drawing, which is where your hand already is. Only when the magnifier is
+   pressed, never while drawing: recentring on every tap would slide the
+   whole square out from under the finger placing it, which is the one thing
+   a drawing surface may not do.
+
+   It is not stored. Zoom is where you are standing, not part of the letter,
+   so it goes when the screen does and nothing new is written to a language.
+   (`docs/DATA_MODEL.md` stays as it is.) */
+function geZoomStep(d){
+  if(!GE) return;
+  var i=0, j;
+  for(j=0;j<GEZOOM.length;j++) if(GEZOOM[j]===geZ()) i=j;
+  i+=d;
+  if(i<0 || i>=GEZOOM.length) return;
+  /* what to look at, decided BEFORE the zoom changes */
+  var st=GE.st[GE.si], p=null;
+  if(st && st.pts.length){ p=(GE.pi>=0 && st.pts[GE.pi])? st.pts[GE.pi] : st.pts[st.pts.length-1]; }
+  if(GEZOOM[i]===1){ GE.cx=400; GE.cy=400; }
+  else if(p){ GE.cx=p[0]; GE.cy=p[1]; }
+  GE.z=GEZOOM[i];
+  render();
+}
+function geZoomIn(){ geZoomStep(1); }
+function geZoomOut(){ geZoomStep(-1); }
 function geUndo(){
   if(!GE.undo.length) return;
   GE.st=JSON.parse(GE.undo.pop());
@@ -1220,6 +1377,52 @@ function geUndo(){
 }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
   GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
+/* Putting the drawing where the letter keeps it, and nothing else -- no
+   toast, no going anywhere, no saying the sound. Both ways out of this screen
+   need this half and only one of them needs the rest. */
+function geKeep(){
+  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
+  ltSetStrokes(GE.lid, keep);
+  /* Drawing a letter is asking for your own writing. Only onboarding ever set
+     this, so every letter drawn in the letters chapter went into a font that
+     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
+  if(keep.length) SET.myfont=true;
+  save();
+  installScriptFont();
+  return keep;
+}
+/* ---- leaving the drawing screen keeps the drawing ----------------------
+   「書いている途中で戻ったらそれはそこの文字として保存していちいち消える
+   のやめて。」 OWNER 2026-08-27.
+
+   It used to be thrown away. GE held every stroke until something wrote it
+   down, and the only thing that did was the Save button -- so the back arrow,
+   the tab bar, and anything else that moved the screen took the drawing with
+   it without a word. Nothing was warned about and nothing was recoverable:
+   `docs/DATA_SAFETY.md` is 「人が作ったものは消さない」 and this was the app
+   quietly doing the opposite, on the one screen whose entire purpose is
+   making something by hand.
+
+   So there is no such thing as an unsaved drawing here any more. Leaving the
+   screen writes what is on it to the letter it was opened for. That is the
+   whole of it -- no question hanging off the arrow, because there is nothing
+   to ask: nothing is being lost either way.
+
+   Called from render(), on the one line that knows the screen changed. GE is
+   already null by the time geSave() gets here, so the two never both run. */
+function geLeft(from, to){
+  if(from!=='glyph' || to==='glyph' || !GE) return;
+  /* Opening a letter and leaving it alone is not a change to it. Without
+     this, walking past this screen rewrote the letter, saved the language and
+     rebuilt the whole font every time -- and rebuilding the font is not
+     cheap. What is compared is what would be WRITTEN against what is already
+     there, so a letter nobody drew on is left exactly as it was found,
+     borrowed character and all. */
+  var l=ltById(GE.lid), was=(l && l.st)? l.st : [],
+      now=GE.st.filter(function(s){ return s.pts.length>0; });
+  if(JSON.stringify(was)!==JSON.stringify(now)) geKeep();
+  GE=null;
+}
 function geSave(){
   /* A dot is a mark. It used to be thrown away here on the grounds that a
      stroke with one point is a line half-drawn -- which is true of a line and
@@ -1231,14 +1434,7 @@ function geSave(){
 
      The pen already lays a dot down -- one point gives one square of ink, the
      nib itself -- so nothing else had to change for this to be drawable. */
-  var keep=GE.st.filter(function(s){ return s.pts.length>0; });
-  ltSetStrokes(GE.lid, keep);
-  /* Drawing a letter is asking for your own writing. Only onboarding ever set
-     this, so every letter drawn in the letters chapter went into a font that
-     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
-  if(keep.length) SET.myfont=true;
-  save();
-  installScriptFont();
+  var keep=geKeep();
   var r=GE.r, l=ltById(GE.lid), snd=(l||{}).snd||[], k=ltKindOf(l);
   GE=null;
   /* Saving a letter finishes the letter, so it puts you back with the others
@@ -1512,11 +1708,51 @@ var GEPAD=0.055;
    CSS pixels with a padding round it, and the drawing is not; this is the one
    place that knows the difference. Both of the two below started with the
    same four lines. */
+/* ---- where the square sits inside its canvas, at whatever zoom ---------
+   「文字書くページのときズームできるようにできない？じゃないと細かすぎて
+   描きにくいわ。」「虫眼鏡マークタップして大きくしたり小さくしたりしたい。」
+   OWNER 2026-08-27.
+
+   The lattice is 21x21 in a square that is at most 340px wide, so the dots
+   are about 17px apart and about 6px across -- against a fingertip that is
+   reckoned at 44. The owner is aiming at something two and a half times
+   finer than a thumb can hit, which is what 「細かすぎて」 measures out as.
+
+   THE FORMULA IS WRITTEN ONCE. It used to be written twice -- here, undoing
+   the padding to find where the thumb is, and again in geDraw() applying it
+   -- and two copies of a mapping that MUST agree is exactly the place a zoom
+   goes wrong: the moment they disagree by a hair the dot stops appearing
+   under the finger, and it does it silently, on a device, in a way no check
+   here would see. So both go through geTo/geFrom and neither knows anything
+   about zoom beyond asking these.
+
+   `z` is how much bigger, and the window on the square is the middle 800/z
+   of it, clamped so it never shows past the edge. */
+var GEZOOM=[1, 1.5, 2, 3];
+function geZ(){ return (GE && GE.z)? GE.z : 1; }
+/* The top-left corner of what is visible, in the square's own 0-800. */
+function geOrg(){
+  var z=geZ(), span=800/z, hi=800-span,
+      cx=(GE && GE.cx!==undefined)? GE.cx : 400,
+      cy=(GE && GE.cy!==undefined)? GE.cy : 400,
+      ox=cx-span/2, oy=cy-span/2;
+  if(ox<0) ox=0; if(ox>hi) ox=hi;
+  if(oy<0) oy=0; if(oy>hi) oy=hi;
+  return [ox, oy];
+}
+/* Canvas pixels per unit of the square, and the margin the pen needs at the
+   outermost lattice points. geMar is the UNZOOMED one: the frame drawn round
+   the canvas is the canvas's own edge, not part of the drawing, so it must
+   not grow when the drawing does. */
+function geMar(S){ return S*GEPAD; }
+function geK0(S){ return (S-2*geMar(S))/800; }
+function geK(S){ return geK0(S)*geZ(); }
+/* the square's 0-800 -> a pixel on the canvas, and back. ax 0 is x, 1 is y */
+function geTo(S, v, ax){ return geMar(S) + (v-geOrg()[ax])*geK(S); }
+function geFrom(S, px, ax){ return (px-geMar(S))/geK(S) + geOrg()[ax]; }
 function geXY(c,ev){
-  var b=c.getBoundingClientRect();
-  var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
-  return [((ev.clientX-b.left)-px)/(w-2*px)*800,
-          ((ev.clientY-b.top)-py)/(h-2*py)*800];
+  var b=c.getBoundingClientRect(), w=b.width||1, h=b.height||1;
+  return [geFrom(w, ev.clientX-b.left, 0), geFrom(h, ev.clientY-b.top, 1)];
 }
 function geAtRaw(c,ev){
   var p=geXY(c,ev), lo=GGRID.inset, hi=800-GGRID.inset;
@@ -1743,6 +1979,8 @@ function geRail(st, pts){
     geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
     geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     geBtn('geClear','clear','glyph.clear', !!pts, false)+
+    geBtn('geZoomOut','zout','glyph.zout', geZ()>GEZOOM[0], false)+
+    geBtn('geZoomIn','zin','glyph.zin', geZ()<GEZOOM[GEZOOM.length-1], !!(GE && GE.z>1))+
   '</div>';
 }
 
@@ -1792,11 +2030,13 @@ function geDraw(){
      drawing is put into an inset square instead: the frame is the canvas, the
      lattice lives within it with room for the pen. geAt undoes exactly this,
      so where the finger is and where the dot appears stay the same place. */
-  var pad=S*GEPAD, k=(S-2*pad)/800;
-  var X=function(v){ return pad+v*k; };
+  /* k0 is the canvas's own scale and k is the drawing's -- the same number
+     until somebody presses the magnifier. The frame belongs to the canvas. */
+  var pad=geMar(S), k0=geK0(S), k=geK(S);
+  var X=function(v){ return geTo(S,v,0); }, Y=function(v){ return geTo(S,v,1); };
   x.clearRect(0,0,S,S);
-  x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2.5);
-  x.strokeRect(k*3,k*3,S-k*6,S-k*6);
+  x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k0*2.5);
+  x.strokeRect(k0*3,k0*3,S-k0*6,S-k0*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
      along here", and that is the thing being taken away. */
   var gs=geStep(), gi, gj;
@@ -1814,7 +2054,7 @@ function geDraw(){
     for(gj=0; gj<GGRID.n; gj++){
       x.beginPath();
       /* the dot scales with the step, so 100 dots do not read as a grey wash */
-      x.arc(X(GGRID.inset+gi*gs), X(GGRID.inset+gj*gs), Math.max(2,k*gs*0.115), 0, Math.PI*2);
+      x.arc(X(GGRID.inset+gi*gs), Y(GGRID.inset+gj*gs), Math.max(2,k*gs*0.115), 0, Math.PI*2);
       x.fill();
     }
   }
@@ -1834,15 +2074,19 @@ function geDraw(){
      同じ色でしょ。差をつけないといけないやん」 */
   var area=[];
   GE.st.forEach(function(s0){ if(s0.fill) area.push({pts:s0.pts, closed:s0.closed, k:s0.k}); });
-  inkStrokes(x, GE.st, k, pad, pad, cssVar('--tx'));
-  if(area.length) inkStrokes(x, area, k, pad, pad, cssVar('--fill'));
+  /* inkStrokes lays down ox + v*k, which is geTo() written out, so the
+     origin it is handed is where 0 of the square falls once the window has
+     been scrolled to geOrg(). At z=1 that is pad, as it always was. */
+  var org=geOrg(), ix=pad-org[0]*k, iy=pad-org[1]*k;
+  inkStrokes(x, GE.st, k, ix, iy, cssVar('--tx'));
+  if(area.length) inkStrokes(x, area, k, ix, iy, cssVar('--fill'));
 
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2);
   GE.st.forEach(function(s){
     if(s.pts.length<2) return;
     var poly=LinguaFont.toPolyline(s);
     x.beginPath();
-    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),X(p[1])); else x.moveTo(X(p[0]),X(p[1])); });
+    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),Y(p[1])); else x.moveTo(X(p[0]),Y(p[1])); });
     x.stroke();
   });
   GE.st.forEach(function(s,si){
@@ -1851,11 +2095,11 @@ function geDraw(){
       /* Smaller than the step, or the handle covers the lattice dot it is
          sitting on and the thing you are aiming at is under the thing you
          placed. 「⚪︎がでかいのもあるわ。そのせいで点がわからん」 */
-      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?16:11),0,Math.PI*2);
+      x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*(sel?16:11),0,Math.PI*2);
       x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold');
       x.fill();
       if(sel){
-        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*32,0,Math.PI*2);
+        x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*32,0,Math.PI*2);
         x.strokeStyle=cssVar('--gold'); x.lineWidth=k*4; x.stroke();
       }
     });
@@ -2111,6 +2355,11 @@ function render(){
   var same = (RENDERED===route);
   /* and what the screen being left forgets, which is viewLeft()'s in
      www/shell.js -- this is the one line that knows a screen changed. */
+  /* The drawing screen writes what is on it down as it is left. It is here
+     rather than in viewLeft() because viewLeft is www/shell.js's and this is
+     the glyph editor's own business -- and because it has to run BEFORE the
+     next screen is built out of the letters it just changed. */
+  if(!same) geLeft(RENDERED, route);
   if(!same) viewLeft(RENDERED, route);
   var y = same ? (window.scrollY || window.pageYOffset || 0) : 0;
   RENDERED=route;

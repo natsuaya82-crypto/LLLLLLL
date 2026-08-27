@@ -58,6 +58,47 @@ const r = await pg.evaluate(({s}) => {
   out.line     = ink([{ pts: line }]);
   out.lineFill = ink([{ pts: line, fill: true }]);
 
+  /* An enclosure drawn as SEVERAL strokes, which is how a square gets drawn
+     on a lattice: a side at a time, each one ending where the next begins.
+     Every one of them carries the fill flag, because the button was on for
+     all of them -- and the editor paints every one of them green, so it says
+     an area is there.
+
+     Each stroke's own ring is two points, and two points have no inside. So
+     the letter came back with the green line right round it and nothing
+     inside it: 「塗りも囲いにしてるのに塗られないけど？」 OWNER 2026-08-27.
+     The photograph had five dots -- four corners and one part-way down the
+     right-hand side, where two strokes met.
+
+     What is asked for here is that the pieces are read as the one line they
+     make. Not "close enough": the SAME ink as the same ring drawn in one go,
+     because that is the shape somebody drew either way. */
+  var ring = [P(4,4), P(16,4), P(16,12), P(16,16), P(4,16)];
+  function sides(f){
+    var o = [], i;
+    for (i = 0; i < ring.length; i++) {
+      o.push({ pts: [ring[i], ring[(i + 1) % ring.length]], fill: f || undefined });
+    }
+    return o;
+  }
+  out.pieces     = ink(sides(false));
+  out.piecesFill = ink(sides(true));
+  out.oneGo      = ink([{ pts: ring, closed: true, fill: true }]);
+
+  /* and it is "as if drawn in one go" all the way, not only when the pieces
+     happen to shut. Take the fill off ONE side of the ring and what is left
+     marked is a chain of four that runs r3 r4 r0 r1 r2 and stops -- so it
+     inks what that open line inks, which is what a single stroke through the
+     same five points has always inked. A stroke that was never marked is not
+     part of the area and does not join to one: the side whose fill was taken
+     off is still DRAWN, as the plain line it now is, which is why it is in
+     the comparison beside the chain. */
+  var half = sides(true); delete half[2].fill;
+  out.partial = ink(half);
+  out.partialOne = ink([{ pts: [ring[3], ring[4], ring[0], ring[1], ring[2]],
+                          fill: true },
+                        { pts: [ring[2], ring[3]] }]);
+
   /* a shape that crosses itself is still a drawing and must come back */
   var bow = [P(4,4), P(16,16), P(16,4), P(4,16)];
   out.bow     = ink([{ pts: bow }]);
@@ -87,9 +128,37 @@ const r = await pg.evaluate(({s}) => {
   GE = newGE(l.id, ltName(l));
   GE.st = [{ pts: tri, fill: true }];
   geSave();
-  var back = (ltById(l.id) || {}).st || [];
-  out.kept = !!(back[0] && back[0].fill);
-  out.reopened = ink(back);
+  /* not `back` -- that is the app's back arrow, and a `var back` here hoists
+     over it for the whole of this function */
+  var readBack = (ltById(l.id) || {}).st || [];
+  out.kept = !!(readBack[0] && readBack[0].fill);
+  out.reopened = ink(readBack);
+
+  /* ---- and it survives being LEFT, which is the other way out of here ----
+     「書いている途中で戻ったらそれはそこの文字として保存していちいち消える
+     のやめて。」 OWNER 2026-08-27.
+
+     A fill that is dropped on the way to storage and a fill that is dropped
+     because somebody pressed the arrow instead of Save are the same letter
+     arriving thinner, and neither throws. The one above is asked of
+     geSave(); this is asked of the back arrow.
+
+     Driven the way the app drives it: editGlyph() to get onto the screen,
+     strokes onto GE, then back(), which is what the arrow is wired to. */
+  var l2 = LETTERS[1] || LETTERS[0];
+  var sq2 = [P(5,5), P(15,5), P(15,15), P(5,15)];
+  editGlyph(ltName(l2) || l2.id);
+  GE.st = [{ pts: sq2, closed: true, fill: true }];
+  var lid2 = GE.lid;                       /* back() is about to let GE go */
+  back();
+  var kept = (ltById(lid2) || {}).st || [];
+  out.leftKept  = kept.length;
+  out.leftFill  = !!(kept[0] && kept[0].fill);
+  out.leftInk   = ink(kept);
+  out.leftWant  = ink([{ pts: sq2, closed: true, fill: true }]);
+  /* and the screen is not still holding it: a drawing that is both written
+     down and still in GE comes back twice the next time the editor opens */
+  out.leftGone = (GE === null);
 
   /* and the editor shows an area in its own colour, not the letter's */
   out.green = cssVar('--fill') || '';
@@ -106,11 +175,28 @@ say(r.lineFill === r.line,
     'two points have no inside: ' + r.line + 'px either way');
 say(r.bowFill > r.bow,
     'a stroke that crosses itself still inks: ' + r.bow + ' -> ' + r.bowFill + 'px');
+say(r.piecesFill > r.pieces * 2,
+    'an enclosure drawn as five strokes inks ' + r.pieces + 'px drawn and '
+    + r.piecesFill + 'px filled');
+say(r.piecesFill === r.oneGo,
+    'drawn a side at a time or in one go it is the same ' + r.oneGo + 'px'
+    + (r.piecesFill === r.oneGo ? '' : ' (pieces: ' + r.piecesFill + 'px)'));
+say(r.partial === r.partialOne,
+    'the fill off one side leaves the chain that is left, ' + r.partialOne
+    + 'px, and it is the same either way'
+    + (r.partial === r.partialOne ? '' : ' (pieces: ' + r.partial + 'px)'));
 say(r.seam === 0,
     'a filled square is solid across all ' + r.span + 'px of it, no seam at a cut');
 say(r.kept, 'the flag is still on the stroke after geSave()');
 say(r.reopened === r.filled,
     'saved and read back it draws the same ' + r.reopened + 'px');
+say(r.leftKept > 0,
+    'backing out of the editor keeps the drawing: ' + r.leftKept + ' stroke(s)');
+say(r.leftFill, 'and it is still an area after backing out, not a line');
+say(r.leftInk === r.leftWant,
+    'and it draws the same ' + r.leftWant + 'px as it did on the screen'
+    + (r.leftInk === r.leftWant ? '' : ' (kept: ' + r.leftInk + 'px)'));
+say(r.leftGone, 'and the editor is not still holding a second copy of it');
 say(!!r.green, 'the editor has a colour of its own for an area: ' + r.green);
 
 if (bad.length) { console.error('\nfill: ' + bad.length + ' failed'); process.exit(1); }
