@@ -430,6 +430,76 @@ want('and the rules that name words are built fresh either way',
 want('a model stored with no rules still comes back with the ones the stages say',
      m.storedRules, 3);
 
+/* ---- 14-19: a mark takes a word out of the queue, wherever it stands -----
+   The engine has been able to hear a case mark since the day morphology.js
+   got CASE_ROLE, and nothing in www/ could write one. The 助詞 stage's slots
+   are that place: a particle is a WORD here, made the way the word for "not"
+   is, and gInfl() turns the word somebody made into the rule the engine reads.
+
+   Nothing here throws. A language whose mark never reaches the engine still
+   translates -- it translates by position alone, which is exactly what it did
+   before anybody wrote a particle, and the sentence still comes out. So every
+   one of these is about WHICH word got which role.
+
+   The first three are the claim itself and the last three are its shadow: the
+   SAME three words with no mark on them move their roles about when the order
+   changes. Without that pair the first three would also pass on a model that
+   simply gave the same answer to everything. */
+const q = await pg.evaluate(() => {
+  /* Say yes to the stage, the way the button at the foot of the list does. */
+  stMarkSet('part');
+  const seen = go('gram', 'part') === undefined;
+  /* The particle, as a word of this language filed in the stage's slot --
+     nothing here writes storage of its own. */
+  WORDS.push({ hw: 'ga', pos: 'part', mns: ['subject mark'], at: 1,
+               slot: 'part.subj' });
+  WORDS.push({ hw: 'mi', pos: 'pro', mns: ['I'], at: 1 });
+  WORDS.push({ hw: 'poko', pos: 'n', mns: ['fish'], at: 1 });
+  WORDS.push({ hw: 'luma', pos: 'v', mns: ['eat'], at: 1 });
+  const e = LinguaGrammarEngine, m = gModel();
+  const marks = m.inflections.filter((x) => x.feature === 'CASE');
+  /* The same sentence three ways round. `poko ga` is the doer every time,
+     however far from the front it stands -- that is the whole claim. */
+  const read = (text) => {
+    const r = e.morphology.parseSentence(m, text);
+    return r.ok ? String(r.roles.SUBJECT) : 'BROKEN:' + r.error;
+  };
+  const marked = [read('poko ga mi luma'), read('mi poko ga luma'),
+                  read('luma mi poko ga')];
+  /* And with no mark at all, the same three words, so it is visible that
+     position is still doing the work when nothing overrides it. This
+     language's order is OSV -- the fixture's, seeded above -- so with no mark
+     the FIRST word is the one being done to and the second is the doer. That
+     is the point of reading it in this language rather than in SOV: an
+     expectation written from habit would have been the other way round, and
+     was. */
+  const bare = [read('poko mi luma'), read('mi poko luma')];
+  WORDS.length = WORDS.length - 4;
+  return { seen: seen, marks: marks.length, form: marks[0] && marks[0].form,
+           value: marks[0] && marks[0].value, sep: marks[0] && marks[0].separator,
+           marked: marked, bare: bare,
+           /* And with the word gone, the rule goes with it -- it is a view of
+              the dictionary, not a copy kept beside it. */
+           after: gModel().inflections.filter((x) => x.feature === 'CASE').length };
+});
+
+want('the stage the button opens is a stage', q.seen, true);
+want('the particle somebody made reached the engine as one rule', q.marks, 1);
+want('carrying its spelling', q.form, 'ga');
+want('and the role it marks', q.value, 'SUBJECT');
+want('standing apart from the word, which is how this app writes one',
+     q.sep, ' ');
+
+want('the marked word is the doer at the front', q.marked[0], 'poko');
+want('and in the middle', q.marked[1], 'poko');
+want('and at the back', q.marked[2], 'poko');
+
+want('with no mark, this OSV language reads the SECOND word as the doer',
+     q.bare[0], 'mi');
+want('and the doer changes when the order does', q.bare[1], 'poko');
+
+want('the word deleted takes its rule with it', q.after, 0);
+
 await br.close();
 srv.close();
 
@@ -445,3 +515,5 @@ console.log('          alone, and a language made afterwards is born with none.'
 console.log('          Changed in one language, the other one does not move.');
 console.log('          A language with a model of its own is read from it, and its');
 console.log('          words are this dictionary every time rather than a copy.');
+console.log('          A particle somebody made is a word, and a word carrying one');
+console.log('          is the doer wherever it stands.');
