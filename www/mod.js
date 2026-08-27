@@ -375,11 +375,16 @@ function adminPct(v){
    text with it -- the numbers came out narrow and wrong. The viewBox keeps
    its ratio and the whole drawing scales together.
 
-   A day Apple never readied is not in the series at all -- the function
-   leaves it out rather than sending a nought, because a nought on a chart is
-   a claim that nothing sold. So x is the DAY and not the position in the
-   list: two points a week apart sit a week apart, and the gap is visible
-   instead of being smoothed into a run of days that never existed. */
+   A day Apple never readied is not in the series at all: the Edge Function
+   drops it, for the reason adminRow() gives above. Nothing is decided again
+   here -- what this has to do is not LIE about the gap, so x is the DAY and
+   not the position in the list. Two points a week apart sit a week apart, and
+   the week is visible instead of being smoothed into a run of days that never
+   existed.
+
+   The one absence this file does judge is a different one: `keep` is null on a
+   day that HAS a report and on which nothing renewed and nothing cancelled.
+   That is no rate rather than a missing day, so the point is skipped here. */
 function adminDayNo(d){
   var p=String(d||'').split('-');
   if(p.length!==3) return 0;

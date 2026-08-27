@@ -323,7 +323,7 @@ function keep(renew: number, cancel: number): number | null {
   return n ? Math.round((renew / n) * 1000) / 1000 : null;
 }
 /* One day, all three reports. A report Apple has not readied is null and its
-   half of the day is simply absent -- never a nought. */
+   half of the day is simply absent -- report() above says why. */
 async function oneDay(tok: string, vendor: string, day: string) {
   const [sa, su, ev] = await Promise.all([
     report(tok, vendor, 'sales', day),
@@ -433,9 +433,9 @@ Deno.serve(async (req: Request) => {
     const got = await pool(days.map((d) => () => oneDay(tok, vendor, d)));
 
     /* Oldest first, because that is the direction a line is read in. A day
-       Apple had nothing for is left OUT rather than drawn as a nought -- a
-       zero on a chart is a claim that nothing sold, and "not readied" is a
-       different sentence. */
+       Apple had nothing for is dropped rather than sent as a zero, which is
+       report() above applied to a whole day: this is the ONE place the line's
+       missing days are decided, and the phone draws what it is given. */
     const series = got.filter(Boolean).reverse();
     return say({
       ready: true,
