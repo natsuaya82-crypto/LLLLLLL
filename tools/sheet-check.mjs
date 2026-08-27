@@ -516,10 +516,17 @@ const ownBack = await pg.evaluate(({ n }) => ({
    The file handed over is the sheet itself and the picture handed back is the
    photograph section 1 already took of it -- which is what an annotated page
    IS: the same twenty boxes, with ink on three of them. */
-/* a fresh sheet and a fresh photograph of it: sections 5 and 6 each built one
-   of their own over the top, and section 6's is the torn one. */
+/* A fresh sheet, and a picture of it with NO CAMERA IN IT -- flat, sharp, at
+   the size the renderer answers -- because that is what a phone that drew the
+   page hands back. Every other pass in this file is a photograph, and a
+   photograph is the easy half here: it washes the printed lattice out on its
+   own. A page drawn by the phone gives those dots back at exactly the grey
+   they were printed at, and a reader that takes them for ink turns a sheet
+   with three letters on it into twenty. Nothing about that throws.
+   (Sections 5 and 6 each built a sheet of their own over the top, and section
+   6's is the torn one, so this is built again rather than reused.) */
 await pg.evaluate(build, { names: NAMES, s: seed.toString(), DPI: 250,
-                           deg: 6, blur: 1.6, grain: 18, lit: true });
+                           deg: 0, blur: 0, grain: 0, lit: false });
 await pg.evaluate(({ names }) => {
   var pdf = shSheet(names, shPics(names)), asked = [];
   /* a real promise, not a hand-rolled thenable: share.js's sharePush() runs
@@ -689,7 +696,9 @@ say(drawn.asked === 1 && drawn.plug === 'LinguaShare' && drawn.method === 'rende
 say(!!drawn.names && drawn.names.length === NAMES.length && drawn.ink === DREW.length &&
     drawn.from === 'written on.pdf',
     'and what the phone drew goes through the same reading side as a scan: ' +
-    (drawn.names ? drawn.names.length : 0) + ' names, ' + drawn.ink + ' of them written in');
+    (drawn.names ? drawn.names.length : 0) + ' names, ' + drawn.ink + ' written in, ' +
+    ((drawn.names ? drawn.names.length : 0) - drawn.ink) + ' empty — with no camera ' +
+    'to wash the printed lattice out, it is still not ink');
 say(!drewNo.got && !!drewNo.why,
     'and a page the phone cannot draw is a sentence, not a screen that never ' +
     'changes: "' + drewNo.why + '"');
