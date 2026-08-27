@@ -611,34 +611,35 @@ function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</
    this file's -- arrange() places it by the position this language chose.
    Where it is an ending, the verb is inflected and the line is otherwise the
    same. Neither branch decides anything: both ask. */
-function g2NegRules(m){
+/* The rules of this model that are about one thing. `value` is optional: a
+   negation is a feature of its own, and a question is one VALUE of MOOD, so
+   the chapters ask differently and neither has to know how the other does. */
+function g2Rules(m, feature, value){
   var a=m.inflections, out=[], i;
-  for(i=0;i<a.length;i++) if(String(a[i].feature)==='NEGATION') out.push(a[i]);
+  for(i=0;i<a.length;i++){
+    if(String(a[i].feature)!==feature) continue;
+    if(value!==undefined && String(a[i].value)!==value) continue;
+    out.push(a[i]);
+  }
   return out;
 }
-function g2Line(list){
-  var laid=gLay(list), i, out=[];
-  for(i=0;i<laid.length;i++) out.push(wOut(laid[i].hw));
-  return out.join(' ');
-}
-function g2Neg(){
-  var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'),
-      m, rules, word, plus, minus, md, i, out='';
-  if(!sub || !v) return gNeedWords();
-  m=gModel([sub, v]);
-  rules=g2NegRules(m);
-  word=gSlot('neg', 'not');
-  plus=g2Line([sub, v]);
-  /* One row per rule, as in the two chapters above. A language may have two
-     ways of saying no -- one for words of a shape, one for the rest -- and
-     showing only the first would be this page choosing which of somebody's
-     rules counts. The ending goes on the verb and the rest of the line is
-     untouched; asked of THAT rule, for the same reason g2Made() is. */
+/* A chapter that is a pair of LINES rather than a pair of words. Two chapters
+   are this shape -- negation and questions -- and they are this shape for the
+   same reason: what changes may be the verb OR the sentence, and only showing
+   both lines reads the same for either.
+
+   One row per rule. Showing only the first would be this page choosing which
+   of somebody's rules counts, and asking the engine for the FEATURE rather
+   than for each rule would give every row the same word under a different
+   name -- which is the mistake that has now turned up in every chapter of
+   this page, because a feature is spent on the first rule that matches it. */
+function g2Pair(m, sub, v, rules, word, label, slotArgs){
+  var plus=g2Line([sub, v]), minus, md, i, out='';
   for(i=0;i<rules.length;i++){
     minus=g2NegSurf(m, v, rules[i], plus);
     if(!minus || minus===plus) continue;
     md=rules[i].metadata || {};
-    out+=g2Row(md.label || t('stg.neg.t'), plus, minus, 'openFmr', [md.rule || '']);
+    out+=g2Row(md.label || label, plus, minus, 'openFmr', [md.rule || '']);
   }
   /* And a word of its own, which is not a rule at all: the sentence is
      arranged again WITH it in, and where it lands is what this language
@@ -646,9 +647,21 @@ function g2Neg(){
   if(word){
     minus=g2Line([sub, v, word]);
     if(minus && minus!==plus)
-      out+=g2Row(t('stg.neg.t'), plus, minus, 'openSlot', ['neg', 'not']);
+      out+=g2Row(label, plus, minus, 'openSlot', slotArgs);
   }
   return out || gNeedRules();
+}
+function g2Line(list){
+  var laid=gLay(list), i, out=[];
+  for(i=0;i<laid.length;i++) out.push(wOut(laid[i].hw));
+  return out.join(' ');
+}
+function g2Neg(){
+  var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
+  if(!sub || !v) return gNeedWords();
+  m=gModel([sub, v]);
+  return g2Pair(m, sub, v, g2Rules(m, 'NEGATION'), gSlot('neg', 'not'),
+                t('stg.neg.t'), ['neg', 'not']);
 }
 /* The same line with the verb in its negative form. The word is swapped in
    the laid-out line rather than the line being built twice: what changes is
