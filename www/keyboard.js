@@ -1150,9 +1150,17 @@ function kbUsed(row){
   for(i=0;i<row.length;i++) n+=kbU(row[i].w);
   return n;
 }
-function kbRoomIn(ri, w){
-  var row=kbLayer().rows[ri];
+/* Is there room in THIS row for a key of that width -- the rule itself, given
+   a row rather than a place to find one. Split out because the second road
+   into it has no row NUMBER to offer: a key being carried is somewhere in the
+   page and nowhere in the layout until the finger comes up, so kbDragTo() can
+   only hand over the row it built out of what is on screen. Two roads, one
+   sentence about ten columns. */
+function kbRoomFor(row, w){
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
+}
+function kbRoomIn(ri, w){
+  return kbRoomFor(kbLayer().rows[ri], w);
 }
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
@@ -1971,15 +1979,24 @@ function kbWobEnd(){ kbWob=false; kbSel=null; render(); }
 /* The layout, read back off the screen. The keys moved in the page while the
    finger was down and the language is told once, here -- the same way the
    alphabet is told its order once, on the way up. */
+/* The keys a row of the PAGE is standing for. A key being carried has moved in
+   the page and not in the layout, so this is the only way to ask what a row
+   holds while a finger is still down -- and it is what kbReadRows() below has
+   always done to every row at once. Said once, because kbDragTo() has to ask
+   it of one row before the finger comes up. */
+function kbRowOf(el){
+  var out=[], ks=el.children, j, k;
+  for(j=0;j<ks.length;j++){
+    k=kbAt(parseInt(ks[j].getAttribute('data-r'), 10), parseInt(ks[j].getAttribute('data-k'), 10));
+    if(k) out.push(k);
+  }
+  return out;
+}
 function kbReadRows(){
-  var g=document.getElementById('kb'), lay=kbEdit(), rows=[], i, j, r, ks, row, k;
+  var g=document.getElementById('kb'), lay=kbEdit(), rows=[], i, row;
   if(!g || !lay) return;
   for(i=0;i<g.children.length;i++){
-    r=g.children[i]; ks=r.children; row=[];
-    for(j=0;j<ks.length;j++){
-      k=kbAt(parseInt(ks[j].getAttribute('data-r'), 10), parseInt(ks[j].getAttribute('data-k'), 10));
-      if(k) row.push(k);
-    }
+    row=kbRowOf(g.children[i]);
     if(row.length) rows.push(row);
   }
   if(!rows.length) return;
