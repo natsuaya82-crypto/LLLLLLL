@@ -1012,9 +1012,17 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    else is competing for the height. It came out as a placeholder with the
    next field sliced off under it.
    「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」 */
-.view.fit .pwscroll{flex:1;min-width:0;min-height:44px;overflow:auto}
-.view.fit .pwqs + .pwscroll{min-height:88px}
-.view.fit .pwtop{min-height:0}
+/* The box you write in is TWO fields, and that does not change with whether
+   this is a reply. It was said twice in two numbers -- 44 here and 88 when a
+   quoted post was above it -- and two numbers for one fact is how they drift.
+   162 is measured: the line 44, `.pwgl` 6, the meaning 10+44, the foot 6, and
+   the floor a column needs. 「自分の言語で一行と意味がこのページで見れるように」
+   OWNER 2026-08-26. The flex column is one thing with the rule below it: with
+   no settled height on `.pwtop` a vertical line cannot ask what it is inside. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:162px;overflow:auto;
+   display:flex;flex-direction:column}
+.view.fit .pwqs{flex:0 1 auto;min-height:44px}
+.view.fit .pwtop{flex:1 1 auto;min-height:0}
 .view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
    past the column it is in. */
@@ -1023,9 +1031,16 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    WIDTH is what runs out. Capped at the column and scrolling inside itself --
    without the cap a long line walked off the side of the phone.
    「縦書きの時文字数突破したら画面外にいくけどありえないから」 */
+/* A line that runs DOWN the page. `230` was the broken number: it was measured
+   on a composer with nothing quoted above it, where `.pwscroll` starts at 70 --
+   in a reply it starts at 242. The column asked for `vvmin - 230` and the box
+   held `vvmin - 300`, so the meaning was pushed out by the difference, and the
+   difference grows with the screen. It asks its parent now instead of asking
+   the viewport. 96 is the floor a column stays readable at (four characters);
+   at 44 it collapses and reads as a sideways line. */
 .view.fit .pwfield .lnin.dir-ttb-rl,
 .view.fit .pwfield .lnin.dir-ttb-lr{
-   height:calc(var(--vvmin,55vh) - 230px);min-height:150px;
+   height:auto;flex:1 1 auto;min-height:96px;
    max-width:100%;overflow:auto}
 /* The one thing that does not scroll: the row that adds a photograph or a
    voice, and how much of the line is left. It is the last child of the form,
@@ -1857,8 +1872,14 @@ a.set{text-decoration:none}
    「add⚪︎⚪︎みたいに軽くかいといて」「addは上においてくれキーの」
    Light: it is a name, not a sentence about how to use them. */
 .kbnewl{display:block;font-size:.72rem;color:var(--txm);margin:0 0 5px 2px}
+/* The same corner a key has. A tile that MAKES a key and does not look like
+   one reads as a blank strip under the board -- 「フリックのaddキーのサイズ
+   合ってなくね？角丸じゃないし」OWNER 2026-08-26. Rule 18 holds the corner to
+   what tools/box-baseline.txt lists, and this pair is on it for that reason:
+   it is not a new box, it is the box `.kbk` already is, on the thing that
+   makes one. 9px, read off `.kbk` and not chosen again. */
 .kbnewt{flex:0 0 auto;min-height:44px;height:44px;padding:0;
-        border:1px solid var(--line);background:var(--sf);
+        border:1px solid var(--line);border-radius:9px;background:var(--sf);
         display:flex;align-items:center;justify-content:center}
 .kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
 /* A width being carried onto the sheet: the tile stays where it is -- a
@@ -2224,11 +2245,14 @@ a.set{text-decoration:none}
       color:var(--txs);overflow:hidden;font-family:inherit;font-size:.88rem;
       display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .pwab input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
-/* One that carries words rather than a mark, and so is as wide as they are.
-   Same shape, same height, more room -- the way .pwab.rec already does it for
-   the count while a voice is being recorded. */
-.pwab.wide{padding:0 14px;font-family:inherit;font-size:.86rem;font-weight:600;
-   white-space:nowrap}
+/* How many drafts there are, beside the mark. A count is a state, not a
+   sentence about the app, so it may sit in a row of marks -- and it is what
+   the words used to carry before the drafts control became a mark like the
+   camera and the microphone beside it.
+   「下書きマーク作ったのにないけど？文字で書けなんか言ってねえよ」2026-08-26.
+   `.pwab.wide` -- the rule that made a button as wide as the words on it --
+   went with them: nothing wears it now. */
+.pwabn{font-size:.78rem;font-weight:600;color:var(--txs)}
 /* The drafts control is drawn only when it has something to say -- nothing
    typed means no draft to save, and none saved means nowhere to go back to.
    Collapsing when empty is what stops the row's gap being spent on it. */

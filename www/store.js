@@ -185,3 +185,29 @@ function storeOff(planId){
   var off=Math.round((1 - b/(a*12))*100);
   return (off>0 && off<100) ? String(off) : '';
 }
+/* What a year WOULD cost at the monthly price -- the number a year is struck
+   through with. 「49.99は取り消し線＋17%OFF」OWNER 2026-08-26.
+
+   Read off the monthly product and never worked out here. LinguaStore.swift
+   does the sum, because doing it in this file would mean building a currency
+   string out of `amount`, which has the money and not the currency: twelve
+   times ¥750 would come out `$9000` in every storefront that is not the one
+   the person is in. 「4はドル。でもさっき価格登録してきたけど日本円は800円と
+   かになってたよ」
+
+   Empty is the answer everywhere the App Store has not said, and it is not a
+   hole to be filled: **there is no typed fallback for this one.** `$59.88` in
+   www/i18n would be a second `$4.99` -- right in one country and quietly
+   wrong in 174 -- and a struck-through price is the one number on the screen
+   whose whole job is to be compared with the one beside it. Nothing shown is
+   not a lie; a dollar sign shown to somebody being charged yen is.
+   OWNER 2026-08-26, on the fallback: 何も出さない.
+
+   It is gated on storeOff() and not merely on the field being there: a line
+   drawn through a price that is not higher than the one beside it is the app
+   inventing a saving. The two are one statement and are answered together. */
+function storeWas(planId){
+  var m=storeRow(storeId(planId, false));
+  if(!storeOff(planId)) return '';
+  return (m && m.year) ? String(m.year) : '';
+}

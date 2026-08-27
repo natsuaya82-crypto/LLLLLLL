@@ -166,14 +166,23 @@ for (const spec of shots) {
   const err = hd
     ? await pg.evaluate((n) => {
         try {
-          /* The entry sets the app up and RETURNS the html. render() is what
-             puts it on the screen, and it rebuilds from the state the entry
-             just set -- which is why an entry that tidied up after itself
-             photographs the screen it tidied back to. */
+          /* The entry sets the app up and RETURNS the html. It used to be
+             render() here, which rebuilds from the state -- and MANY of these
+             entries put the state back before returning (`MODS = keep`,
+             `ADMIN_OK = false`, `SH = shBlank()`), so the picture was the
+             screen they tidied BACK to. Silently: a face called "a flick
+             keyboard being built" photographed the free QWERTY, and the one
+             called "the admin screen" photographed the password door.
+
+             So the HTML the entry RETURNED goes on the screen, which is what
+             it is for and what act-check and press already do with it. The
+             shell is painted first so the bar and the tab bar are there, then
+             the face's own body replaces #app. */
           SET.done = true;
           window.__seed();
-          HALF[n][1]();
+          var html = HALF[n][1]();
           render();
+          if (html) document.getElementById('app').innerHTML = html;
           return null;
         } catch (e) { return String(e && e.message || e); }
       }, Number(hd[1]))
