@@ -58,6 +58,44 @@ const r = await pg.evaluate(({s}) => {
   out.line     = ink([{ pts: line }]);
   out.lineFill = ink([{ pts: line, fill: true }]);
 
+  /* An enclosure drawn as SEVERAL strokes, which is how a square gets drawn
+     on a lattice: a side at a time, each one ending where the next begins.
+     Every one of them carries the fill flag, because the button was on for
+     all of them -- and the editor paints every one of them green, so it says
+     an area is there.
+
+     Each stroke's own ring is two points, and two points have no inside. So
+     the letter came back with the green line right round it and nothing
+     inside it: 「塗りも囲いにしてるのに塗られないけど？」 OWNER 2026-08-27.
+     The photograph had five dots -- four corners and one part-way down the
+     right-hand side, where two strokes met.
+
+     What is asked for here is that the pieces are read as the one line they
+     make. Not "close enough": the SAME ink as the same ring drawn in one go,
+     because that is the shape somebody drew either way. */
+  var ring = [P(4,4), P(16,4), P(16,12), P(16,16), P(4,16)];
+  function sides(f){
+    var o = [], i;
+    for (i = 0; i < ring.length; i++) {
+      o.push({ pts: [ring[i], ring[(i + 1) % ring.length]], fill: f || undefined });
+    }
+    return o;
+  }
+  out.pieces     = ink(sides(false));
+  out.piecesFill = ink(sides(true));
+  out.oneGo      = ink([{ pts: ring, closed: true, fill: true }]);
+
+  /* and it is "as if drawn in one go" all the way, not only when the pieces
+     happen to shut. Take the fill off ONE side of the ring and what is left
+     marked is a chain of four that runs r3 r4 r0 r1 r2 and stops -- so it
+     inks what that open line inks, which is what a single stroke through the
+     same five points has always inked. A stroke that was never marked is not
+     part of the area and does not join to one. */
+  var half = sides(true); delete half[2].fill;
+  out.partial = ink(half);
+  out.partialOne = ink([{ pts: [ring[3], ring[4], ring[0], ring[1], ring[2]],
+                          fill: true }]);
+
   /* a shape that crosses itself is still a drawing and must come back */
   var bow = [P(4,4), P(16,16), P(16,4), P(4,16)];
   out.bow     = ink([{ pts: bow }]);
@@ -106,6 +144,16 @@ say(r.lineFill === r.line,
     'two points have no inside: ' + r.line + 'px either way');
 say(r.bowFill > r.bow,
     'a stroke that crosses itself still inks: ' + r.bow + ' -> ' + r.bowFill + 'px');
+say(r.piecesFill > r.pieces * 2,
+    'an enclosure drawn as five strokes inks ' + r.pieces + 'px drawn and '
+    + r.piecesFill + 'px filled');
+say(r.piecesFill === r.oneGo,
+    'drawn a side at a time or in one go it is the same ' + r.oneGo + 'px'
+    + (r.piecesFill === r.oneGo ? '' : ' (pieces: ' + r.piecesFill + 'px)'));
+say(r.partial === r.partialOne,
+    'the fill off one side leaves the chain that is left, ' + r.partialOne
+    + 'px, and it is the same either way'
+    + (r.partial === r.partialOne ? '' : ' (pieces: ' + r.partial + 'px)'));
 say(r.seam === 0,
     'a filled square is solid across all ' + r.span + 'px of it, no seam at a cut');
 say(r.kept, 'the flag is still on the stroke after geSave()');
