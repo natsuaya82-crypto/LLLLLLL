@@ -1233,11 +1233,48 @@ function shTakeFile(url, fname){
     try{ bytes = atob(b64); }catch(e){ shFail(t('wr.bad')); return; }
     why = shPdfWhy(bytes);
     jpg = shPdfJpeg(bytes);
-    if(!jpg){ shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no')); return; }
+    if(!jpg){ shPdfDraw(b64, why, String(fname || '')); return; }
     url = 'data:image/jpeg;base64,' + btoa(jpg);
   }
   s.from = String(fname || '');
   shLook(url);
+}
+/* A PDF with no photograph in it to take out. Two files arrive this way and
+   they are the same problem: one where somebody wrote on the sheet with a
+   pencil on a SCREEN, so the ink is drawn into the page rather than being
+   pixels of a picture of it, and one whose page is a picture behind a filter
+   this file cannot undo. Both need a renderer, this file is not one and never
+   will be, and the phone has one.
+   OWNER 2026-08-27「pdfkitのレンダラやろう」
+
+   It is the ONE place a PDF becomes a picture by any road other than
+   shPdfJpeg(), and everything from shLook() on is untouched -- the same
+   threshold, the same marks, the same strip. A second road would be a page
+   rendered two ways that could quietly disagree.
+
+   Whether the page can be drawn is the RENDERER's to answer and not this
+   file's. shPdfWhy() said which kind of file arrived, which is a different
+   question, and asking it to decide who may try would put a guess in front of
+   the only thing that actually knows. So everything with no JPEG in it is
+   offered, including a file that is not a PDF at all -- CoreGraphics refuses
+   that one, which is the answer.
+
+   With no phone under it -- a browser, or a build made before the renderer --
+   there is nothing to ask and what comes out is the sentence that was there
+   before. */
+function shPdfDraw(b64, why, fname){
+  var p = sharePlug();
+  if(!p){ shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no')); return; }
+  p('LinguaShare', 'renderPdf', {b64: b64, edge: SH_LOOK})
+    .then(function(r){
+      var jpg = r && r.jpeg;
+      /* Answered, and with nothing. Not the same as being refused, and it is
+         the same dead end either way. */
+      if(!jpg){ shFail(t('wr.bad')); return; }
+      shState().from = fname;
+      shLook('data:image/jpeg;base64,' + jpg);
+    })
+    ['catch'](function(){ shFail(t('wr.bad')); });
 }
 /* How big a photograph is worth looking at. A corner mark is about a
    fortieth of the page, so 2200 pixels down the long edge leaves it 50 across

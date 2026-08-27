@@ -34,6 +34,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "renderPdf", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -295,6 +296,85 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     } catch {
       call.reject(error.localizedDescription)
     }
+  }
+
+  /// A page of a PDF, as a picture.
+  ///
+  /// www/sheet.js reads a scanned sheet without a renderer, because a scanner
+  /// stores its page as a JPEG byte for byte (/DCTDecode) and the bytes come
+  /// straight out. What it cannot do is a page whose ink was DRAWN -- somebody
+  /// who wrote on the sheet with a pencil on a screen rather than with a pen
+  /// on paper -- or one whose picture is behind a filter that file cannot
+  /// undo. Both need a renderer. The phone has one.
+  /// OWNER 2026-08-27「pdfkitのレンダラやろう」
+  ///
+  /// CoreGraphics and not PDFKit, and that is not a preference. This file
+  /// records what `import WidgetKit` did here: it took PHPickerViewController
+  /// out of scope and #84 failed on a picker that had compiled green since
+  /// a82a633. CGPDFDocument and drawPDFPage are UIKit's own and need no import
+  /// that is not already at the top of this file.
+  ///
+  /// getDrawingTransform rather than arithmetic on the crop box: a page can
+  /// carry a rotation, a scanner's very often does, and a sheet rendered
+  /// ninety degrees round is four corner marks in the wrong corners -- which
+  /// does not fail, it reads the sheet as something that is not a sheet.
+  ///
+  /// One page, the first, because that is what the reading side has always
+  /// done: shPdfJpeg() answers the largest JPEG in the file and shPage() reads
+  /// one page. A twenty-first name is a second sheet, not a second page of
+  /// this one.
+  @objc func renderPdf(_ call: CAPPluginCall) {
+    let b64 = call.getString("b64") ?? ""
+    let edge = CGFloat(call.getDouble("edge") ?? 2200)
+    guard edge > 0,
+          let data = Data(base64Encoded: b64),
+          let src = CGDataProvider(data: data as CFData),
+          let doc = CGPDFDocument(src),
+          let page = doc.page(at: 1) else {
+      call.reject("this is not a PDF page the phone can open")
+      return
+    }
+    var box = page.getBoxRect(.cropBox)
+    if box.width <= 0 || box.height <= 0 { box = page.getBoxRect(.mediaBox) }
+    guard box.width > 0, box.height > 0 else {
+      call.reject("the page has no size")
+      return
+    }
+    // A quarter turn swaps which way the long edge runs, and `edge` is about
+    // the long one.
+    var pw = box.width, ph = box.height
+    if page.rotationAngle % 180 != 0 { swap(&pw, &ph) }
+    let k = edge / max(pw, ph)
+    let size = CGSize(width: (pw * k).rounded(), height: (ph * k).rounded())
+    guard size.width >= 1, size.height >= 1 else {
+      call.reject("the page came out too small to read")
+      return
+    }
+    let box2 = box
+    let im = UIGraphicsImageRenderer(size: size).image { c in
+      // White behind it. A PDF page is transparent where nothing was drawn,
+      // and transparent flattens to black -- which is a page of ink and no
+      // corner marks. www/sheet.js's shLook() does the same for the same
+      // reason, and this is the other side of that wall.
+      UIColor.white.setFill()
+      c.fill(CGRect(origin: .zero, size: size))
+      let g = c.cgContext
+      g.translateBy(x: 0, y: size.height)
+      g.scaleBy(x: 1, y: -1)
+      g.concatenate(page.getDrawingTransform(.cropBox,
+                                             rect: CGRect(origin: .zero, size: size),
+                                             rotate: 0, preserveAspectRatio: true))
+      g.clip(to: box2)
+      g.drawPDFPage(page)
+    }
+    // The one place a UIImage becomes bytes for the web view. It is already at
+    // `edge`, so this scales by 1 -- it is here to be the only answer to "how
+    // is a picture handed over", not to resize anything.
+    guard let out = Self.jpeg(im, edge) else {
+      call.reject("the page could not be drawn")
+      return
+    }
+    call.resolve(["jpeg": out])
   }
 
   /// Put the language's font into the phone itself, which is the only way

@@ -283,6 +283,9 @@ const build = ({ names, s, DPI, deg, blur, grain, lit, damage }) => {
     h.putImageData(id, 0, 0);
   }
   window.__SHEET = sc.toDataURL('image/png');
+  /* the same photograph as a JPEG, which is what a phone that had rendered a
+     page would hand back. Section 8 is the only thing that reads it. */
+  window.__SHEETJPG = sc.toDataURL('image/jpeg', 0.9);
   window.__DREW = drawn;
   /* the claim shSane held: a name printed over a box may not reach the box
      ABOVE it, and the strip may not sit on the bottom row. It was wrong once,
@@ -500,6 +503,65 @@ const ownBack = await pg.evaluate(({ n }) => ({
   why: SH.why, got: !!SH.got, grew: LETTERS.length - n
 }), { n: own.n });
 
+/* ---- 8. and a page the phone had to draw --------------------------------
+   OWNER 2026-08-27「pdfkitのレンダラやろう」. A page whose ink was DRAWN --
+   somebody who wrote on the sheet with a pencil on a screen -- has no
+   photograph inside it to take out, and reading it needs a renderer. That
+   renderer is Swift, and there is no Swift on a Linux runner, so what is held
+   here is everything on this side of that call: that it is MADE, that it is
+   made with the right file and the right size, that what comes back is put
+   through the same reading side as a scan, and that a refusal is a refusal
+   rather than a blank screen. backup-check draws the same line for keep().
+
+   The file handed over is the sheet itself and the picture handed back is the
+   photograph section 1 already took of it -- which is what an annotated page
+   IS: the same twenty boxes, with ink on three of them. */
+/* a fresh sheet and a fresh photograph of it: sections 5 and 6 each built one
+   of their own over the top, and section 6's is the torn one. */
+await pg.evaluate(build, { names: NAMES, s: seed.toString(), DPI: 250,
+                           deg: 6, blur: 1.6, grain: 18, lit: true });
+await pg.evaluate(({ names }) => {
+  var pdf = shSheet(names, shPics(names)), asked = [];
+  /* a real promise, not a hand-rolled thenable: share.js's sharePush() runs
+     on every render and calls .catch on whatever this hands back. */
+  window.Capacitor = { nativePromise: function(plug, method, args){
+    asked.push({ plug: plug, method: method, args: args });
+    var j = String(window.__SHEETJPG);
+    return Promise.resolve({ jpeg: j.slice(j.indexOf(',') + 1) });
+  } };
+  SH = shBlank();
+  shTakeFile('data:application/pdf;base64,' + btoa(pdf), 'written on.pdf');
+  window.__ASKED = asked;
+  window.__WANT = { b64: btoa(pdf), edge: SH_LOOK };
+}, { names: NAMES });
+await pg.waitForFunction(() => window.SH && (SH.got || SH.why), null, { timeout: 60000 });
+const drawn = await pg.evaluate(() => {
+  var all = window.__ASKED.filter(function(c){ return c.method === 'renderPdf'; });
+  var a = all[0] || {}, w = window.__WANT;
+  return {
+    asked: all.length, other: window.__ASKED.length - all.length,
+    plug: a.plug, method: a.method,
+    same: !!a.args && a.args.b64 === w.b64,
+    edge: !!a.args && a.args.edge === w.edge, look: w.edge,
+    why: SH.why, from: SH.from,
+    names: SH.got ? SH.got.map(function(g){ return g.nm; }) : null,
+    ink: SH.got ? SH.got.filter(function(g){ return g.sh.length; }).length : 0
+  };
+});
+/* and the other end of it: a phone that cannot draw the page says so, and the
+   screen is a sentence rather than nothing at all. */
+await pg.evaluate(() => {
+  window.Capacitor = { nativePromise: function(plug, method){
+    return method === 'renderPdf' ? Promise.reject(new Error('cannot draw it'))
+                                  : Promise.resolve({});
+  } };
+  SH = shBlank();
+  shTakeFile('data:application/pdf;base64,' + btoa('%PDF-1.4\nnot a page\n'), 'torn.pdf');
+});
+await pg.waitForFunction(() => window.SH && (SH.got || SH.why), null, { timeout: 60000 });
+const drewNo = await pg.evaluate(() => ({ why: SH.why, got: !!SH.got }));
+await pg.evaluate(() => { try { delete window.Capacitor; } catch (e) { window.Capacitor = undefined; } });
+
 await br.close();
 
 /* ---- what came back ----------------------------------------------------- */
@@ -619,6 +681,18 @@ say(ownBack.grew === 0 && !ownBack.got &&
     ownBack.why === 'There is no photograph inside this PDF.',
     'and its own sheet handed straight back is turned away with the true ' +
     'reason rather than a guess about another file: "' + ownBack.why + '"');
+say(drawn.asked === 1 && drawn.plug === 'LinguaShare' && drawn.method === 'renderPdf' &&
+    drawn.same && drawn.edge,
+    'a page with no photograph in it is handed to the phone to draw: ' +
+    drawn.asked + ' call to ' + drawn.plug + '.' + drawn.method +
+    ', the file itself, at the size the reader looks at (' + drawn.look + ')');
+say(!!drawn.names && drawn.names.length === NAMES.length && drawn.ink === DREW.length &&
+    drawn.from === 'written on.pdf',
+    'and what the phone drew goes through the same reading side as a scan: ' +
+    (drawn.names ? drawn.names.length : 0) + ' names, ' + drawn.ink + ' of them written in');
+say(!drewNo.got && !!drewNo.why,
+    'and a page the phone cannot draw is a sentence, not a screen that never ' +
+    'changes: "' + drewNo.why + '"');
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');
