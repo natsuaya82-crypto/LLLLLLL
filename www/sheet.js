@@ -1114,9 +1114,18 @@ function shPics(names){
 
    `LinguaShare.sheet` writes it into `Documents/Sheets/`, where iOS puts it in
    the device backup and the Files app can show it, and it NEVER OVERWRITES --
-   the second sheet of a name is `<name> 2.pdf`. That is stronger than the
-   generations keep() rotates in www/backup.js: a sheet already sitting there
-   may have been written on, and nothing here moves it.
+   the second sheet of a name is `<name> 2.pdf`.
+
+   **It does not rotate generations, and www/backup.js does. That difference is
+   deliberate and it is not an inconsistency.** keep() rotates the last file to
+   `.1` and that to `.2` because a backup is a REPLACEMENT: the new file says
+   the same thing as the old one, only later, so letting the third one push the
+   first off the end costs nothing anybody had. A sheet is not a replacement.
+   Each one is a separate piece of paper, and the one already sitting there may
+   have been opened in Files and written on -- rotating would be the app
+   deleting what somebody drew, to make room for a blank. So nothing here moves
+   anything: CLAUDE.md's Data rule, where automatic deletion, pruning and
+   cleanup are forbidden unless a written spec asks for them, and none does.
 
    **What it says is the part that had to be got right.** The one way this
    chapter can hurt somebody is to say a sheet was written when none was: they
