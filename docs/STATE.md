@@ -233,8 +233,10 @@ Order, and where it stands:
    profile, the notices, the frozen state on Home. Not started.
 6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
    from the onboarding. Not started.
-7. StoreKit, and what a purchase opens. Not started; the plans screen has not
-   been touched and must not be until then.
+7. What a purchase OPENS. StoreKit itself is **written** ── `ios/App/App/LinguaStore.swift`,
+   `www/store.js`, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller.
+   What is not done is the other half: a purchase has to reach the server and
+   set the plan on `profile`, and today the plan is still set by hand (item 4).
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
@@ -247,23 +249,37 @@ all done — both halves of what App Store guideline 1.2 asks for.
 in the Supabase dashboard, `supabase/setup.md` § 5. Nothing in the app grants
 it and nothing is meant to.
 
-**Apple and Google sign-in are wired and cannot work yet.** The buttons went
-from "not in this build" to a real plugin —
+**Apple sign-in is wired. Google is wired and is missing one string.**
+The buttons went from "not in this build" to a real plugin —
 `@capgo/capacitor-social-login`, both providers, Facebook and X switched off in
-`capacitor.config.json` so their SDKs are never linked. What is missing is
-nobody's to write:
+`capacitor.config.json` so their SDKs are never linked.
 
-- Apple needs the capability on the App ID and the provisioning profile
-  regenerated, or **the next build fails** — `docs/apple.md` § 2
-- Google needs a client id made in the Google Cloud console;
-  `node tools/google-id.mjs <id>` writes it to the two places that have to
-  agree, and until then `GOOGLE_IOS_ID` is empty and the button says so
-- Supabase has to be told to accept both — `supabase/setup.md` § 4
+- **Apple: done.** `com.apple.developer.applesignin` is in
+  `ios/App/App/App.entitlements`, and the owner reports the App ID capability
+  and the regenerated profile done (2026-08-27).
+- **Google: the client is made** (the owner, 2026-08-27) **and its id is not in
+  this repository.** `GOOGLE_IOS_ID` in `www/net.js` is `''` on every branch,
+  and `Info.plist` has no `CFBundleURLTypes`. Making the client does not put
+  the id here; somebody has to run `node tools/google-id.mjs <id>`, which
+  writes both places at once. Until then the button says it is not in this
+  build, which is true.
 
-**No StoreKit.** The plans screen exists and the plan can be set by pressing a
-card, but nothing charges anybody. `docs/apple.md`. The plan itself lives in the
-Keychain rather than in the settings file — `ios/App/App/LinguaPlan.swift` says
-why, and what it does not stop.
+**What this file cannot see.** App Store Connect, the Apple developer site,
+Google Cloud and the Supabase dashboard are outside the repository. Where a
+line above says one of those is done, it is because the OWNER said so, on the
+date given — it is not something anybody verified from here, and it must not be
+written as though it were. Read `git grep` for the repo side; ask for the rest.
+
+**StoreKit is written, and has never run on a device.** `LinguaStore.swift`
+holds the four products, `www/store.js` is the only thing in `www/` that talks
+to it, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller. The owner
+reports the four subscription products made in App Store Connect (2026-08-27) —
+which this repository cannot see. Asking for a product that does not exist is
+not an error: StoreKit returns nothing for it, so a missing product looks
+exactly like a button that does nothing. That is what to expect if a purchase
+does not start. The plan itself lives in the Keychain rather than in the
+settings file — `ios/App/App/LinguaPlan.swift` says why, and what it does not
+stop.
 
 **No landing page in this repository.** `vercel.json` copies `www/` into
 `public/` and serves the app itself as a static site. There is no marketing
@@ -668,10 +684,11 @@ Two of them were about capabilities that had been deleted.
 
 16. Supabase — the reset mail template and the Redirect URLs (see 3), and the
     Apple and Google providers (`supabase/setup.md` § 4).
-16a. The Apple developer site — Sign in with Apple on the App ID, and the
-    profile regenerated after it. **Nothing builds until this is done**, so it
-    is not one to leave. `docs/apple.md` § 2.
-16b. Google Cloud — the iOS client, then `node tools/google-id.mjs <id>`.
+16a. ~~The Apple developer site — Sign in with Apple on the App ID, and the
+    profile regenerated after it.~~ **Done** (the owner, 2026-08-27).
+16b. Google Cloud — the iOS client is **made** (the owner, 2026-08-27). What is
+    left is **not the owner's**: `node tools/google-id.mjs <id>` has to be run
+    in this repository. It is in this list only until somebody is handed the id.
 16c. Supabase — one SQL line making yourself staff, or the reports are on
     nobody's screen (`supabase/setup.md` § 5). Sign in on the phone first: it
     updates a row that has to exist.

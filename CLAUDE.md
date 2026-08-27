@@ -163,6 +163,29 @@ front of it, because it will be read anyway. 「歴史とかいいから消せ�
 what was true on a day. Everywhere else, including this file, only sentences
 about now. → `docs/FEATURE_RULES.md`
 
+**"Rule" is the wrong word for what has to be fixed, and the wrong word let a
+whole file rot.** What goes stale is anything WRITTEN DOWN — a rule, a
+handbook, a comment over a function, and above all `docs/STATE.md`, which says
+what is BUILT. That last kind is the most dangerous and was the one nothing
+covered: a stale rule reads as odd and gets questioned, while a stale statement
+of fact is simply believed. 「古いのは全部新しくする約束は？」 So: **a change
+lands with every sentence it falsifies, wherever it lives.**
+
+`docs/STATE.md` is the case that proved it. Three places tell a session to READ
+it — the head of this file, the table below, and `docs/SESSIONS.md` twice —
+and **not one place told anybody to WRITE it**, so it belonged to nobody and
+went months out of date while every session opened with it. It said "No
+StoreKit" with `LinguaStore.swift` shipped and `storeBuy` called from
+`setPlan`; it said the Apple capability was still to do after the owner had
+done it. A leader read those sentences and told the owner their own finished
+work was outstanding. **It is the LEADER's file**: the leader integrates, so
+the leader is the one who knows what became true today.
+
+And the same reason the corners needed `box-check`: prose does not hold a rule.
+This one is not held by anything yet — `docs/BACKLOG.md` carries what a check
+could mechanically catch (a line claiming something is absent while the code
+has it) and what it could not.
+
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
 retention, deletion, migration, how past data behaves, timing, what is
@@ -251,7 +274,7 @@ backlog entry is not permission, and neither is the absence of one.
 | `docs/CHANGELOG.md` | what a person would notice, and every change to stored data |
 | `docs/FEATURES.md` | every feature, its plan, its data, and whether the owner has decided it — read before building anything |
 | `docs/BACKLOG.md` | found and deliberately not done, and why |
-| `docs/STATE.md` | where the project stands — read first |
+| `docs/STATE.md` | where the project stands — read first, and **the leader writes it**: every session reads it, so a sentence left stale there is believed by all of them |
 
 ## The gate
 
