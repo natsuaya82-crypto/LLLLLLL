@@ -315,6 +315,7 @@ actIn('wdSetNt', wdSetNt);
 actIn('wdSetLn', wdSetLn);
 actIn('addFmSet', addFmSet);
 actIn('ipaSetQ', ipaSetQ);
+actIn('ltSetQ', ltSetQ);
 actIn('fmrSetAdd', fmrSetAdd);
 actIn('fmrSetWend', fmrSetWend);
 act('fmPick', fmPick);

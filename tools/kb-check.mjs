@@ -1298,6 +1298,86 @@ const r = await pg.evaluate(({ s }) => {
     kbSlotFor = null;
     ltSort = wasS; ltFil = wasF;
   }());
+
+  /* ---- and it is searched, by NAME and by SOUND ------------------------
+     「名前と音どっちも調べれる。」 OWNER 2026-08-27.
+
+     A search that reads only the name looks identical on this fixture for
+     nearly every letter -- an alphabet of a to z is named after what it says.
+     So the letter this asks about is one whose SOUND IS IN NO LETTER'S NAME:
+     `g` reads `ɡ` (U+0261, the script g), which no name contains, because
+     every name here is ASCII. A name-only search answers nothing for it.
+     That one letter is the whole claim; the rest is arithmetic around it. */
+  (function (){
+    var wasQ = ltQ, wasS = ltSort, wasF = ltFil, i, j, u, l, odd = null, oddU = '';
+    ltQ = ''; ltSort = 'own'; ltFil = 'all';
+    var alpha = LETTERS.filter(function (x){ return ltKindOf(x) === 'alpha'; });
+    for (i = 0; i < alpha.length && !odd; i++){
+      l = alpha[i];
+      for (j = 0; j < ltUnits(l).length; j++){
+        u = String(ltUnits(l)[j]);
+        /* not in ITS name, and in nobody else's either */
+        if (!alpha.some(function (x){
+              return String(ltName(x) || '').toLowerCase().indexOf(u.toLowerCase()) >= 0;
+            })){ odd = l; oddU = u; break; }
+      }
+    }
+    out.qOdd = odd ? { name: ltName(odd), snd: oddU } : null;
+    function cells(h){ return (String(h).match(/class="ltc"/g) || []).length; }
+    out.qAll = cells(kbLtGrid(0, 0, -1));
+    out.qBox = /id="lt-q"/.test(kbLtGrid(0, 0, -1));
+    /* by NAME */
+    ltQ = String(ltName(alpha[0]) || '');
+    out.qByName = cells(kbLtGrid(0, 0, -1));
+    /* by SOUND -- the letter it belongs to comes back, and it could not have
+       come back by name */
+    if (odd){
+      ltQ = oddU;
+      out.qBySound = cells(kbLtGrid(0, 0, -1));
+      /* the trailing `<` of the match goes too -- keeping it made every name
+         miss, and the claim went red on the check rather than on the app */
+      out.qSoundNames = (String(kbLtGrid(0, 0, -1)).match(/class="ltcn">([^<]*)</g) || [])
+        .map(function (x){ return x.replace(/.*>/, '').replace(/<$/, ''); });
+      out.qSoundIsIt = out.qSoundNames.indexOf(String(ltName(odd))) >= 0;
+    }
+    /* nothing answers to it -> the empty state, not the whole alphabet */
+    ltQ = 'zzqqxx';
+    out.qNone = cells(kbLtGrid(0, 0, -1));
+    /* and clearing gives all of them back */
+    ltQ = '';
+    out.qBack = cells(kbLtGrid(0, 0, -1)) === out.qAll;
+
+    /* ---- the FIELD survives being typed into ---------------------------
+       This is the whole reason ltPaint() exists rather than render(): the box
+       is inside the screen, so rebuilding the screen destroys the element
+       being typed into and the caret goes with it after one letter. Measured
+       on the real page: focus the box, type, and ask whether the focused
+       element is still there. */
+    window.route = 'ltset'; NAV = [{ r: 'ltset', a: 'alpha' }];
+    render();
+    var box = document.getElementById('lt-q');
+    out.qFieldThere = !!box;
+    if (box){
+      box.focus();
+      var had = document.activeElement === box;
+      /* how many the page ARRIVED with, before a key is pressed */
+      out.qOnArrival = document.querySelectorAll('#lt-list .ltc').length;
+      ltSetQ('a');
+      out.qFieldKept = had && document.activeElement === document.getElementById('lt-q');
+      /* and the list under it really was repainted -- fewer cells than the
+         page arrived with, and not zero */
+      out.qPaintedTo = document.querySelectorAll('#lt-list .ltc').length;
+      /* ---- and a narrowed list may not be DRAGGED into a new order ------
+         Dropping a letter writes the order down. Under a search the page is
+         showing some of the alphabet, so a drop would write a number nothing
+         on screen agrees with -- the same reason the sort and the filter turn
+         it off. ltDragMount asks for #ltgrid and a narrowed list is not it. */
+      out.qNoDrag = !document.querySelector('#lt-list #ltgrid');
+      ltSetQ('');
+      out.qDragBack = !!document.querySelector('#lt-list #ltgrid');
+    }
+    ltQ = wasQ; ltSort = wasS; ltFil = wasF;
+  }());
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -1503,6 +1583,22 @@ say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +
 say(r.ltSame && r.ltSorted,
     'and the order moves the same letters rather than a different set');
 say(r.ltSheet, 'and the sheet that holds only the alphabet answers the same list');
+say(r.qBox, 'the letters are searched too, from a box that is always on the screen');
+say(r.qByName > 0 && r.qByName < r.qAll,
+    'a name narrows them: ' + r.qAll + ' letters to ' + r.qByName);
+say(!!r.qOdd, 'the alphabet has a letter whose sound is in nobody\'s name' +
+    (r.qOdd ? ' -- ' + r.qOdd.name + ' reads ' + r.qOdd.snd : ''));
+say(!!r.qOdd && r.qBySound > 0 && r.qSoundIsIt,
+    'and searching that SOUND finds it (' + (r.qOdd ? r.qOdd.snd : '?') + ' -> ' +
+    (r.qSoundNames || []).join(' ') + ') -- which a name-only search cannot');
+say(r.qNone === 0, 'a search nothing answers to shows none of them, not all of them');
+say(r.qBack, 'and clearing it gives every letter back');
+say(r.qFieldThere && r.qFieldKept,
+    'the box survives being typed into -- the list repaints, the field does not');
+say(r.qPaintedTo > 0 && r.qPaintedTo < r.qOnArrival,
+    'and the list under it really did narrow, ' + r.qOnArrival + ' -> ' + r.qPaintedTo);
+say(r.qNoDrag && r.qDragBack,
+    'a narrowed list cannot be dragged into a new order, and can be again once cleared');
 say(r.cutKeyStill, 'nor the size of the keys that are left (' + r.cutKeyWas +
     'px -> ' + r.cutKeyNow + 'px)');
 say(r.cutHdrStill, 'nor which columns there are (' + r.cutHdrNow + ')');

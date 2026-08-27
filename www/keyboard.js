@@ -2729,31 +2729,35 @@ function kbSlotsShown(key){
    has had an order and a filter since 「これ並び替え、絞り込み追加しよう。
    アルファベット順、作成順とか」. So this is not a second set of tools; it is
    the same expression vLtset builds its list with, asked from here --
-   ltFilList(ltSortList(...)) over ltOfKind('alpha'), and ltViewRow() for the
-   two buttons that drive them. Nothing new is stored and nothing new is
-   registered: `openLtView` and `nextLtSort` are already in act-map, because
-   the other screen says them.
+   ltPickList() over ltOfKind('alpha'), and ltViewRow() for the box and the
+   two buttons that drive it. Nothing new is stored.
 
-   Which also means the DEFAULTS are not decided here -- they are ltSort='own'
-   and ltFil='all' in sound.js, and where somebody left them on one screen is
-   where they are on the other. viewReset() already forgets both, so arriving
-   in another language does not arrive with a filter on.
+   Which also means the DEFAULTS are not decided here -- they are ltSort,
+   ltFil and ltQ in sound.js, and where somebody left them on one screen is
+   where they are on the other. viewReset() forgets all three, so arriving in
+   another language does not arrive with a search on.
 
    The ltOrder() that used to wrap this was a second sort over a sorted list:
    ltOfKind('alpha') ends in ltOrder() itself. */
 function kbLtGrid(ri, ki, dir){
-  var ls=ltFilList(ltSortList(ltOfKind('alpha')));
+  /* The cells alone, so typing in the search repaints them without rebuilding
+     the field being typed into -- ltPaint() calls this, and vLtset leaves the
+     same kind of function behind. Both screens put them in #lt-list. */
+  function cells(){
+    var ls=ltPickList(ltOfKind('alpha'));
+    if(!ls.length) return '<div class="note">'+t('lt.none')+'</div>';
+    return '<div class="ltgrid">'+ls.map(function(l){
+      return '<button class="ltc"' + DO('kbPut', [ri, ki, dir, l.id]) + ' aria-label="'+
+        esc(ltName(l)||t('lt.reads.none'))+'">'+
+        '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
+        '<span class="ltcn">'+esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
+    }).join('')+'</div>';
+  }
+  ltReList=cells;
   return ltViewRow()+
     '<button class="btn ghost" style="width:100%;margin:10px 0"' +
       DO('kbPut', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
-    (ls.length
-      ? '<div class="ltgrid">'+ls.map(function(l){
-          return '<button class="ltc"' + DO('kbPut', [ri, ki, dir, l.id]) + ' aria-label="'+
-            esc(ltName(l)||t('lt.reads.none'))+'">'+
-            '<span class="ltcf">'+ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</span>'+
-            '<span class="ltcn">'+esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
-        }).join('')+'</div>'
-      : '<div class="note">'+t('lt.none')+'</div>');
+    '<div id="lt-list">'+cells()+'</div>';
 }
 function kbLtHTML(){
   var s=kbSlotFor;
