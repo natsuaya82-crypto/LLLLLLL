@@ -63,6 +63,7 @@ const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
+const G4='a0000000-0000-4000-8000-0000000000a4';   /* tries to arrive holding gold */
 /* And somebody who starts AFTER that one exists, which is the only way to
    watch what a new account is given. A and B are made before it on purpose:
    they are everybody who was already here, and nothing is written onto them. */
@@ -149,6 +150,14 @@ const CASES = [
     `insert into profile(id,handle,staff) values ('${G2}','probe2',true)`],
   ['nor a ban on the way in',                 'denied', G3, 0,
     `insert into profile(id,handle,banned_at) values ('${G3}','probe3',now())`],
+  /* And the gold mark, which is the whole of that feature. It is not a plan
+     and cannot be bought -- 「例えばエンタープライズとして、金の印を与える
+     Twitterの金印と同じ扱い」 OWNER 2026-08-27 -- so the only thing standing
+     between anybody and calling themselves an enterprise is this line and the
+     UPDATE one further down. An app where you can award yourself the mark is
+     an app where the mark says nothing. */
+  ['nor the gold mark on the way in',         'denied', G4, 0,
+    `insert into profile(id,handle,gold) values ('${G4}','probe4',true)`],
   /* And the same statement about a post. schema.sql says over hidden_at that
      "nobody may set these but the two functions at the foot of this file";
      a post arriving with it set reads as taken down by staff, carrying a
@@ -449,6 +458,58 @@ const CASES = [
     `update profile set staff=true where id='${B}'`],
   ['B cannot make A staff either',            'denied', B, 0,
     `update profile set staff=true where id='${A}'`],
+
+  /* --- and who may give the gold mark ------------------------------------
+     The same two functions one rung along, and the same reason: the mark says
+     the OPERATOR vouches for this account, so the operator has to be the only
+     one who can say it. What is different from staff is what it opens, which
+     is nothing -- no screen, no door, no row anybody else could not already
+     read. It is how somebody is DRAWN, and that is exactly why it has to be
+     unforgeable: a mark that means "we vouch for this" and can be set by the
+     account it is about means nothing at all.
+
+     The first two lines are the feature. Everything else here is around
+     them. */
+  ['B cannot give B the gold mark',           'denied', B, 0,
+    `update profile set gold=true where id='${B}'`],
+  ['nor by calling the function on itself',   'denied', B, 0,
+    `select gold_add('iri')`],
+  ['B cannot give A the gold mark either',    'denied', B, 0,
+    `update profile set gold=true where id='${A}'`],
+  ['nor can staff give it',                   'denied', C, 0,
+    `select gold_add('iri')`],
+  ['nor does the mark come off a signed-out door', 'denied', B, 1,
+    `select gold_add('iri')`],
+  ['and B has it after none of that',         'denied', E, 0,
+    `select 1 from profile where handle='iri' and gold`],
+  ['the one above staff can give it',         'ok',     E, 0,
+    `select gold_add('iri')`],
+  ['and B is an enterprise now',              'ok',     E, 0,
+    `select 1 from profile where handle='iri' and gold`],
+  /* And that it did not hand out anything else on the way past. The two
+     functions reach one column each; a `set gold = true, staff = true` would
+     pass every line above this one. */
+  ['and was given nothing else with it',      'denied', E, 0,
+    `select 1 from profile where handle='iri' and (staff or admin)`],
+  ['B still cannot take it off itself',       'denied', B, 0,
+    `update profile set gold=false where id='${B}'`],
+  ['nor by calling the other function',       'denied', B, 0,
+    `select gold_drop('iri')`],
+  ['the one above staff can take it back',    'ok',     E, 0,
+    `select gold_drop('iri')`],
+  ['and B is not an enterprise any more',     'denied', E, 0,
+    `select 1 from profile where handle='iri' and gold`],
+  /* Unlike staff_drop, which refuses to take the last admin off itself. The
+     gold mark opens no screen, so nobody is locked out by losing it and
+     gold_add() puts it straight back. Asserted rather than assumed, because
+     "it behaves like the one above it" is the kind of sentence that is true
+     until somebody copies the guard across. */
+  ['the operator can be given it',            'ok',     E, 0,
+    `select gold_add('lingua')`],
+  ['and can take it off itself',              'ok',     E, 0,
+    `select gold_drop('lingua')`],
+  ['and is still both after that',            'ok',     E, 0,
+    `select 1 from profile where handle='lingua' and staff and admin`],
   ['B cannot take a post down',               'denied', B, 0,
     `select post_hide('${P}','spam')`],
   ['A cannot take A\u2019s own post down',     'denied', A, 0,
@@ -708,6 +769,18 @@ const SHAPE = [
      select count(*) from (select 1 where
        has_column_privilege('authenticated','profile','admin','UPDATE')
        or has_column_privilege('anon','profile','admin','UPDATE')) q`, '0'],
+  /* And the gold mark, on BOTH grants rather than on UPDATE alone. The
+     attempts above try one road each and this is the road itself: INSERT and
+     UPDATE are separate column grants, and `admin` was writable on the way in
+     for as long as only the UPDATE one was said out loud. A column added later
+     is not in either line, which is the right way round -- so what this holds
+     is that nobody adds it to one of them while widening something else. */
+  ['nor is being an enterprise', `
+     select count(*) from (select 1 where
+       has_column_privilege('authenticated','profile','gold','UPDATE')
+       or has_column_privilege('anon','profile','gold','UPDATE')
+       or has_column_privilege('authenticated','profile','gold','INSERT')
+       or has_column_privilege('anon','profile','gold','INSERT')) q`, '0'],
   /* The first one is written down here rather than remembered by a person.
      Both halves: the trigger for a row that arrives later, and something in
      the file that catches a row already there. */
@@ -860,7 +933,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)});`,
+  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from

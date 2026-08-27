@@ -96,6 +96,38 @@ alter table profile add column if not exists staff boolean not null default fals
 -- third tier is ever wanted, that is the day.
 alter table profile add column if not exists admin boolean not null default false;
 
+-- ---------------------------------------------------------------------------
+-- And whether this account is an ENTERPRISE. A third question, and not a
+-- third rung of the two above it.
+--
+-- 「例えばエンタープライズとして、金の印を与えるTwitterの金印と同じ扱い」
+-- OWNER DECISION 2026-08-27. The gold mark beside a name. A company, an
+-- institution, whoever is standing behind a language -- 「言語検討する人」 are
+-- inside it.
+--
+-- **It cannot be bought.** It is not a plan, it is not a rung, and nothing in
+-- www/core.js's CAN has a key for it: a plan decides what somebody may DO, and
+-- this decides how they are DRAWN. The operator gives it, the way staff is
+-- given, through the two functions at the foot of this file.
+--
+-- Not `staff`, and not a column added to it. `staff` answers "may this account
+-- read reports and take a post down" and the comment over it says that the day
+-- it has to answer a second question it should become a table rather than a
+-- second boolean. This is not that day and this is not that question: nothing
+-- reads `gold` to decide what somebody may do, so is_staff() -- which two
+-- policies, one view and four functions ask -- is not touched by a character.
+-- One account can be both, either, or neither.
+--
+-- Nobody may set it on themselves, and that is the whole of the feature. An
+-- app where you could call yourself an enterprise is an app where the mark
+-- means nothing. Two separate statements hold it and both are at the foot of
+-- this file: `gold` is not in the `grant update (...)` line, so no account may
+-- write it onto a row it already owns, and it is not in the `grant insert
+-- (...)` line either, so nobody may arrive holding it -- which is the hole
+-- `admin` had and is the reason both lines name their columns rather than
+-- excluding two.
+alter table profile add column if not exists gold boolean not null default false;
+
 -- And whoever has been ejected. A timestamp rather than a boolean beside a
 -- date, for the same reason post.hidden_at is one: two columns that have to
 -- agree about whether something happened are two columns that can disagree.
@@ -1045,6 +1077,44 @@ begin
 end $$;
 revoke all on function staff_drop(text) from public;
 grant execute on function staff_drop(text) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Giving somebody the gold mark, and taking it back
+--
+-- The same two functions as staff_add/staff_drop above, by handle for the same
+-- reason -- a handle is the only name this app has for a person -- and behind
+-- is_admin() for the same reason: the mark says the operator vouches for this
+-- account, so the operator is the only one who can say it.
+--
+-- Functions and not a policy, for the reason staff_add() is not one.
+-- `for update using (is_admin())` would say "the one above staff may edit
+-- these rows", every column of them, including somebody's handle and the name
+-- they chose. These two reach one column and nothing else.
+create or replace function gold_add(h text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  update profile set gold = true where handle = h;
+end $$;
+revoke all on function gold_add(text) from public;
+grant execute on function gold_add(text) to authenticated;
+
+-- No `and not admin` here, unlike staff_drop. That guard exists because an
+-- owner who is taken off `admin` has no screen left to put themselves back on
+-- it from -- it is the one failure that cannot be undone from inside the app.
+-- The gold mark opens no screen and guards no door, so taking it off the
+-- operator's own account locks nobody out of anything: gold_add() puts it
+-- straight back.
+create or replace function gold_drop(h text)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_admin() then raise exception 'not admin'; end if;
+  update profile set gold = false where handle = h;
+end $$;
+revoke all on function gold_drop(text) from public;
+grant execute on function gold_drop(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Everybody who starts now starts out following @lingua
