@@ -1291,9 +1291,7 @@ function kbTapKey(ri, ki){
      press that selects what was pressed. */
   if(KBH && KBH.k==='k' && KBH.r===ri-1 && kbVJoin(KBH.r, KBH.i)) return;
   if(KBH && KBH.k==='k' && KBH.r===ri+1 && kbVJoin(ri, ki)) return;
-  KBH = kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki};
-  kbSel=null;
-  render();
+  kbSelTo(kbKeyIs(ri, ki)? null : {k:'k', r:ri, i:ki});
 }
 /* Two keys, side by side, becoming one as wide as the two of them were.
 
@@ -1495,15 +1493,35 @@ function kbNHTML(ri){
    viewReset() drops it. Pressing the same head again puts it down. */
 var KBH=null;
 function kbHeadIs(k, i){ return !!KBH && KBH.k===k && KBH.i===i; }
+/* ---- WHAT IS SELECTED CHANGES IN ONE PLACE ------------------------------
+   A row, a column and a key are three things to select and there were three
+   places deciding it, each toggling on its own. That is one rule written out
+   three times, and the owner is reading it as one:
+   「今列選択してる時も適当に触ったら選択解除されるようにして欲しい。同じとこ
+   触ると選択解除されるからわかりにくい」 OWNER 2026-08-27.
+
+   This does not change what happens yet -- it is the same three answers, in
+   one place, so that the sentence the owner asked for is one line to write
+   and not three to find. What the sentence IS is still being asked: press
+   something unrelated and the selection is released, but whether the thing
+   just pressed then becomes the selection is the half that was not said, and
+   is a judgement about how the screen feels rather than a bug. It is in
+   docs/reports/kb6-tools-2026-08-27.md with the button table.
+
+   Everything that selects goes through here: the row's number, the column's
+   letter, and a key. */
+function kbSelTo(next){
+  KBH=next || null;
+  kbSel=null;
+  render();
+}
 function kbHeadRow(ri){
   ri=parseInt(ri, 10)||0;
-  KBH=kbHeadIs('r', ri)? null : {k:'r', i:ri, ins:false};
-  kbSel=null; render();
+  kbSelTo(kbHeadIs('r', ri)? null : {k:'r', i:ri, ins:false});
 }
 function kbHeadCol(ci){
   ci=parseInt(ci, 10)||0;
-  KBH=kbHeadIs('c', ci)? null : {k:'c', i:ci};
-  kbSel=null; render();
+  kbSelTo(kbHeadIs('c', ci)? null : {k:'c', i:ci});
 }
 /* ---- a row going in where you are, rather than at the foot -------------
    The dashed row at the bottom adds one AFTER the last. There was no way to
