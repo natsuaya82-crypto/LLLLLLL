@@ -760,6 +760,16 @@ var ICON_LIB='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
   '<rect x="7" y="3" width="14" height="14" rx="2"/>'+
   '<path d="m10 12 2.5-3 3 3.5 2-2L21 14"/>'+
   '<path d="M17 21H5a2 2 0 0 1-2-2V7"/></svg>';
+/* A draft: a sheet with its corner turned. It sits in the row the camera, the
+   library and the microphone are in, and those are marks -- a word among them
+   is a word that has to be read while everything beside it is looked at.
+   「下書きマーク作ったのにないけど？文字で書けなんか言ってねえよ」OWNER
+   2026-08-26. How many there are goes BESIDE it, because a count is a state
+   and not an explanation; what the press does is on the button as its label. */
+var ICON_DRAFT='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>'+
+  '<path d="M14 3v5h5"/></svg>';
 var ICON_MIC='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<rect x="9" y="3" width="6" height="11" rx="3"/>'+

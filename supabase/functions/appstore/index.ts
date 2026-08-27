@@ -45,11 +45,17 @@
 // somebody being charged yen." So takings come back as a list, one row per
 // currency, and the app prints the code Apple sent beside the number.
 //
-// It does not work out a retention rate. Neither report has such a column;
-// getting one means choosing a denominator and a period, and both of those are
-// the owner's (docs/FEATURES.md § 8: "Not decided: what a number is called,
-// what period it covers"). What comes back is what Apple counted -- how many
-// subscriptions are live, how many cancelled, how many renewed.
+// It DOES work out a retention rate now. 「あとは継続率」OWNER 2026-08-26.
+// Neither report has such a column, so it is renewals over renewals plus
+// cancellations, on the day -- the only rate the daily reports can carry
+// without inventing a cohort. It is one line, `keep()` below, so the day the
+// owner names a different denominator there is one place to change.
+//
+// And it goes back over a WINDOW rather than fetching one day, because the
+// screen draws a line now: 「もっと日毎の折れ線グラフとかさ」. `days` in the
+// request body says how many; DAYS is the ceiling. Each day is three reports
+// and they are asked for together, POOL at a time -- one at a time was thirty
+// round trips end to end.
 
 const ASC = 'https://api.appstoreconnect.apple.com/v1/salesReports';
 
@@ -60,6 +66,11 @@ const REPORTS = {
   sales:  { reportType: 'SALES',              reportSubType: 'SUMMARY', frequency: 'DAILY', version: '1_0' },
   subs:   { reportType: 'SUBSCRIPTION',       reportSubType: 'SUMMARY', frequency: 'DAILY', version: '1_3' },
   events: { reportType: 'SUBSCRIPTION_EVENT', reportSubType: 'SUMMARY', frequency: 'DAILY', version: '1_3' },
+  /* The same report a month at a time. Apple offers SALES/SUMMARY at four
+     frequencies and this is one of them, so a month is ASKED FOR rather than
+     added up out of thirty days -- thirty requests to reach a number Apple
+     already has, and only as far back as the daily window goes. */
+  month:  { reportType: 'SALES',              reportSubType: 'SUMMARY', frequency: 'MONTHLY', version: '1_0' },
 };
 
 /* Which Product Type Identifiers are a first-time download, which are the same
@@ -73,10 +84,22 @@ const NEW_APP = ['1', '1-B', 'F1-B', '1E', '1EP', '1EU', '1F', '1T', 'F1'];
 const AGAIN   = ['3', '3F'];
 const UPDATE  = ['7', '7F', '7T', 'F7'];
 
-/* How many days back to look before giving up. Apple's data is next-day, so
-   the first day asked for is yesterday; a report that is not there yet answers
-   404 and the day before is tried. Five is a long weekend plus a day. */
+/* How many days back to look before giving up on the NEWEST day. Apple's data
+   is next-day, so the first day asked for is yesterday; a report that is not
+   there yet answers 404 and the day before is tried. Five is a long weekend
+   plus a day. */
 const BACK = 5;
+/* And how far back the line goes. Thirty is a month of days on a phone-width
+   chart -- more than that and the points are closer together than a finger.
+   A ceiling rather than a fixed number: the screen asks for what it can draw. */
+const DAYS = 30;
+/* And how many months. Twelve is a year, which is what somebody looking at a
+   month-by-month list wants to see, and it is twelve requests. */
+const MONTHS = 12;
+/* Requests in flight at once. Thirty days is ninety reports; all ninety at
+   once is a burst Apple has no reason to like, and one at a time is ninety
+   round trips. */
+const POOL = 8;
 
 /* The day, in US Pacific -- Apple's day runs 00:00-23:59 Pacific and every
    other date in this project's life already means Pacific for that reason.
@@ -92,6 +115,14 @@ function pacificDay(now: Date): string {
 }
 function daysAgo(n: number): string {
   return pacificDay(new Date(Date.now() - n * 86400000));
+}
+/* YYYY-MM, n whole months back from the one we are in. Built off the Pacific
+   date rather than by subtracting 30-day lumps, which drifts. */
+function monthsAgo(n: number): string {
+  const now = pacificDay(new Date()).split('-');
+  let y = +now[0], m = +now[1] - n;
+  while (m < 1) { m += 12; y -= 1; }
+  return y + '-' + (m < 10 ? '0' + m : String(m));
 }
 
 /* ---- the token ------------------------------------------------------------
@@ -177,14 +208,30 @@ function tsv(text: string): Record<string, string>[] {
 }
 /* The same day walked backwards until Apple has one. Each report is walked
    separately: they are three files at Apple's end and one being ready says
-   nothing about another. */
+   nothing about another. This finds where the line ENDS; the window below
+   counts back from there. */
 async function latest(tok: string, vendor: string, kind: keyof typeof REPORTS) {
   for (let i = 1; i <= BACK; i++) {
     const day = daysAgo(i);
     const rows = await report(tok, vendor, kind, day);
-    if (rows) return { day, rows };
+    if (rows) return { day, rows, back: i };
   }
   return null;
+}
+/* POOL at a time. Not Promise.all over the lot: ninety requests opened
+   together is a burst, and Apple answers 429 to bursts. Order is kept because
+   the results go back into the slot the day came out of. */
+async function pool<T>(jobs: (() => Promise<T>)[]): Promise<T[]> {
+  const out = new Array<T>(jobs.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(POOL, jobs.length) }, async () => {
+    for (;;) {
+      const i = next++;
+      if (i >= jobs.length) return;
+      out[i] = await jobs[i]();
+    }
+  }));
+  return out;
 }
 
 function num(s: string): number {
@@ -192,55 +239,84 @@ function num(s: string): number {
   return isFinite(n) ? n : 0;
 }
 
-/* ---- the four numbers -----------------------------------------------------
-   Nothing is converted, nothing is rated, nothing is renamed. What each of
-   these is called on the screen, and what period it covers, is the owner's and
-   is not decided -- so what comes back is what Apple counted, on the day Apple
-   counted it. */
+/* ---- what a day comes to ---------------------------------------------------
+   Nothing is converted and nothing is renamed. What each of these is called on
+   the screen is the app's; what they COUNT is Apple's. */
 function fromSales(rows: Record<string, string>[]) {
   let fresh = 0, again = 0, updates = 0;
-  const money: Record<string, number> = {};
+  /* Two purses, and they are two different facts -- OWNER 2026-08-26 asked for
+     both as their own rows. `paid` is what came out of somebody's pocket;
+     `got` is what arrives here after Apple's commission and the local tax.
+     They are in DIFFERENT currencies as well as different amounts: a customer
+     in Japan pays in JPY and, depending on where the proceeds are booked, the
+     proceeds currency need not match -- so each is counted under its own
+     column's currency and the two are never crossed. */
+  const paid: Record<string, number> = {};
+  const got: Record<string, number> = {};
   for (const row of rows) {
     const kind = row['Product Type Identifier'] || '';
     const units = num(row['Units']);
     if (NEW_APP.indexOf(kind) !== -1) fresh += units;
     else if (AGAIN.indexOf(kind) !== -1) again += units;
     else if (UPDATE.indexOf(kind) !== -1) updates += units;
-    /* Proceeds are PER UNIT in this report -- the column says so in its own
-       name -- so a row of three is three times its own number. Every product
-       type counts here, because takings are takings whether they came from the
-       app or from a subscription inside it. */
-    const cur = row['Currency of Proceeds'] || row['Proceeds Currency'] || '';
-    if (cur) money[cur] = (money[cur] || 0) + units * num(row['Developer Proceeds']);
+    /* Both columns are PER UNIT in this report -- "Developer Proceeds (per
+       unit)" says so in its own name and Customer Price is the shelf price --
+       so a row of three is three times its own number. */
+    const pc = row['Customer Currency'] || '';
+    if (pc) paid[pc] = (paid[pc] || 0) + units * num(row['Customer Price']);
+    const gc = row['Currency of Proceeds'] || row['Proceeds Currency'] || '';
+    if (gc) got[gc] = (got[gc] || 0) + units * num(row['Developer Proceeds']);
   }
-  return {
-    downloads: fresh, redownloads: again, updates: updates,
-    /* Rounded to the hundredth because a float of a hundred small products is
-       a float, and Apple's own numbers have two decimals. */
-    money: Object.keys(money).sort().map((cur) => (
-      { cur: cur, proceeds: Math.round(money[cur] * 100) / 100 })),
-  };
+  return { downloads: fresh, redownloads: again, updates,
+           paid: purse(paid), got: purse(got) };
 }
-/* Every "Active ..." column is a count of live subscriptions in some state, so
-   the live count is their sum. Read off the row rather than listed here: Apple
+/* One row per currency, and never a sum across them. Apple pays per storefront
+   in that storefront's currency and there is no exchange rate in this project
+   -- www/store.js and LinguaStore.swift both carry the sentence: "Building '$'
+   + a number is how an app ends up showing dollars to somebody being charged
+   yen." One currency comes back as one row, which is what a total looks like
+   when there is only one, and that is the whole of how 「合計の売り上げ」 is
+   answered honestly. */
+function purse(m: Record<string, number>) {
+  return Object.keys(m).sort().map((cur) => (
+    { cur, total: Math.round(m[cur] * 100) / 100 }));
+}
+/* The subscriptions, and WHICH ONE -- 「特に売り上げはどのプランかが大事やろ」
+   OWNER 2026-08-26. `Subscription Name` is the owner's own name for the
+   product, set in App Store Connect, so nothing here has to know what the
+   plans are called or how many there are: a plan added at Apple appears here
+   the day it sells one.
+
+   Every "Active ..." column is a count of live subscriptions in some state, so
+   a plan's count is their sum. Read off the row rather than listed here: Apple
    has added columns to this report before (win-back offers are the newest),
    and a list written out in this file would go quietly out of date -- the new
-   column would simply not be counted and the number would be a little low with
-   nothing saying so. */
+   column would simply not be counted and the number would be low with nothing
+   saying so. */
 function fromSubs(rows: Record<string, string>[]) {
+  const by: Record<string, { live: number; money: Record<string, number> }> = {};
   let live = 0;
   for (const row of rows) {
-    for (const col of Object.keys(row)) {
-      if (col.indexOf('Active ') === 0) live += num(row[col]);
-    }
+    const name = row['Subscription Name'] || '';
+    let n = 0;
+    for (const col of Object.keys(row)) if (col.indexOf('Active ') === 0) n += num(row[col]);
+    live += n;
+    const p = by[name] || (by[name] = { live: 0, money: {} });
+    p.live += n;
+    /* What this plan is worth per day at today's count: the proceeds of one
+       subscription times how many are live. The sales report says what was
+       actually taken; this says what is standing. */
+    const cur = row['Proceeds Currency'] || row['Currency of Proceeds'] || '';
+    if (cur) p.money[cur] = (p.money[cur] || 0) + n * num(row['Developer Proceeds']);
   }
-  return { live: live };
+  const plans = Object.keys(by).sort().map((name) => (
+    { name, live: by[name].live, money: purse(by[name].money) }));
+  return { live, plans };
 }
 /* Apple's fourteen event names, of which these are the ones about somebody
-   staying or going. No rate is worked out from them -- see the head of this
-   file. `Quantity` is how many the row stands for. */
+   staying or going. `Quantity` is how many the row stands for. */
 function fromEvents(rows: Record<string, string>[]) {
-  let cancel = 0, renew = 0, back = 0;
+  let renew = 0, cancel = 0, back = 0;
   for (const row of rows) {
     const ev = row['Event'] || '';
     const q = num(row['Quantity']) || 1;
@@ -248,7 +324,35 @@ function fromEvents(rows: Record<string, string>[]) {
     else if (ev === 'Renew') renew += q;
     else if (ev === 'Reactivate') back += q;
   }
-  return { cancel: cancel, renew: renew, back: back };
+  return { renew, cancel, back, keep: keep(renew, cancel) };
+}
+/* 「あとは継続率」OWNER 2026-08-26. Renewals over renewals plus cancellations,
+   on the day. It is the only rate the daily reports can carry without
+   inventing a cohort -- a rate over a month of signups needs the SUBSCRIBER
+   report and a denominator nobody has named -- and it is ONE line so that
+   naming a different one later is one line.
+
+   Null and not 0 on a day nothing renewed and nothing cancelled: no rate
+   exists there, and 0% would read as everybody leaving. */
+function keep(renew: number, cancel: number): number | null {
+  const n = renew + cancel;
+  return n ? Math.round((renew / n) * 1000) / 1000 : null;
+}
+/* One day, all three reports. A report Apple has not readied is null and its
+   half of the day is simply absent -- report() above says why. */
+async function oneDay(tok: string, vendor: string, day: string) {
+  const [sa, su, ev] = await Promise.all([
+    report(tok, vendor, 'sales', day),
+    report(tok, vendor, 'subs', day),
+    report(tok, vendor, 'events', day),
+  ]);
+  if (!sa && !su && !ev) return null;
+  return {
+    day,
+    ...(sa ? fromSales(sa) : {}),
+    ...(su ? fromSubs(su) : {}),
+    ...(ev ? fromEvents(ev) : {}),
+  };
 }
 
 /* ---- the door -------------------------------------------------------------
@@ -323,21 +427,65 @@ Deno.serve(async (req: Request) => {
     return say({ ready: false, error: 'ASC_PRIVATE_KEY: ' + String(e) }, 500);
   }
 
+  /* How many days of line the screen can draw. Its own number, capped here --
+     a phone that asks for a year would be ninety times three requests. */
+  let want = DAYS;
   try {
-    const [sales, subs, events] = await Promise.all([
-      latest(tok, vendor, 'sales'),
-      latest(tok, vendor, 'subs'),
-      latest(tok, vendor, 'events'),
-    ]);
+    const body = await req.json();
+    if (body && typeof body.days === 'number') want = Math.max(1, Math.min(DAYS, body.days | 0));
+  } catch { /* no body is the ordinary case and means the default */ }
+
+  try {
+    /* Where the line ENDS. Asked of the sales report because that is the one
+       every app has -- an app with no subscriptions still sells nothing every
+       day, and Apple readies a report saying so. */
+    const end = await latest(tok, vendor, 'sales');
+    if (!end) return say({ ready: true, day: null, series: [] });
+
+    /* ...and back from there, a day at a time, POOL at a time. `end.back` is
+       how many days ago the newest one was, so the window starts there. */
+    const days: string[] = [];
+    for (let i = 0; i < want; i++) days.push(daysAgo(end.back + i));
+    const got = await pool(days.map((d) => () => oneDay(tok, vendor, d)));
+
+    /* Oldest first, because that is the direction a line is read in. A day
+       Apple had nothing for is dropped rather than sent as a zero, which is
+       report() above applied to a whole day: this is the ONE place the line's
+       missing days are decided, and the phone draws what it is given. */
+    const series = got.filter(Boolean).reverse();
+
+    /* And the months. Apple readies a month's report after the month closes,
+       so the one we are IN is never among them -- it is added up out of the
+       daily series instead, which always reaches back past the first of the
+       month because the window is thirty days. Without that the newest row of
+       a month-by-month list would be last month, on every day of this one. */
+    const months = (await pool(
+      Array.from({ length: MONTHS }, (_, i) => () => report(tok, vendor, 'month', monthsAgo(i + 1)))
+    )).map((rows, i) => (rows ? { month: monthsAgo(i + 1), ...fromSales(rows) } : null))
+      .filter(Boolean).reverse();
+
+    const thisMonth = monthsAgo(0);
+    const open = series.filter((d) => String(d.day).indexOf(thisMonth) === 0);
+    if (open.length) {
+      const paid: Record<string, number> = {}, got2: Record<string, number> = {};
+      for (const d of open) {
+        for (const r of (d.paid || [])) paid[r.cur] = (paid[r.cur] || 0) + r.total;
+        for (const r of (d.got || [])) got2[r.cur] = (got2[r.cur] || 0) + r.total;
+      }
+      /* `part: true` says this month is not finished. The screen does not draw
+         it differently today, but a number that is still growing and one that
+         is final are different facts and the answer has to carry which. */
+      months.push({ month: thisMonth, paid: purse(paid), got: purse(got2), part: true });
+    }
+
     return say({
       ready: true,
-      /* Each half carries its own day, because Apple readies them separately
-         and one date over three numbers would be wrong about two of them. A
-         half that is not there at all is null, which the screen draws as a
-         blank -- see report() above for why that is not a nought. */
-      sales: sales && { day: sales.day, ...fromSales(sales.rows) },
-      subs: subs && { day: subs.day, ...fromSubs(subs.rows) },
-      events: events && { day: events.day, ...fromEvents(events.rows) },
+      day: end.day,
+      /* The newest day, on its own, so the screen does not have to know that
+         the last element of the line is also the headline. */
+      now: series.length ? series[series.length - 1] : null,
+      series,
+      months,
     });
   } catch (e) {
     return say({ ready: false, error: String(e) }, 502);

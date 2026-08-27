@@ -139,8 +139,53 @@ copied it across; `grammar.js` says so on `orderOf()`. Six of them
 「俺も選ばせたくないし、文章書いてたらsvoが基本でも助詞があるかもしれない」
 (2026-08-26, relayed) — because a sentence with a particle in it is not
 described by one of six letters-triples. Nothing has been built: `ORDERS` is
-still six and `setOrder()` still writes one. **Do not design the replacement
-off this paragraph** — what takes its place has not been decided.
+still six and `setOrder()` still writes one.
+
+**What takes its place is a gradient, not another answer.** OWNER 2026-08-26:
+
+```
+埋めれば埋めるほど翻訳精度を上げるってだけで
+なにも書いてないなら上がらないよ？
+```
+
+So there is no state to guard against here, and the question this settles was
+asked the wrong way round. The engine falls back to `['SUBJECT','OBJECT','VERB']`
+when a model says nothing (`translate.js:141`, `295`), and that was read as the
+app CLAIMING a language is SOV when nobody said so — the thing `stTouched()`
+exists to prevent on the old screen. It is not a claim. **It is the floor a
+language sits on before anything has been written, and a language that writes
+nothing simply does not translate well yet.** Filling things in is what moves
+it; nothing has to be true for a language that has filled in nothing.
+
+That is why a language with no particles needs no special case: particles
+OVERRIDE position for the words that carry them (`morphology.js:110-115`), and
+a language with none is arranged by position alone, which is what English and
+Chinese do. Adding particles does not replace word order — it takes words out
+of the positional queue one at a time.
+
+**Built 2026-08-26.** A particle is a WORD, made in the 助詞 stage the way the
+word for "not" is made in the 否定 one, and `gInfl()` in `www/grammar.js` is
+what hands it to the engine. Three slots — the doer, the one done to, the one
+given to — because those are the roles WORD ORDER would otherwise decide, and
+a mark is what takes a word out of that queue. Where a thing is and where it
+goes are the 場所 stage's adpositions and are not repeated here.
+
+Nothing new is stored: the particle is a word in `WORDS`, whether the stage is
+on the list is `STG.set.part`, and the `inflections` the engine reads are
+rebuilt on every read. `form` is the particle's spelling, so a stored copy
+would be the spelling as of the day it was saved — the same reason `words` and
+`grammarRules` are views. **`gram2` is still written by nobody**: `gModel()`
+reads it (§1 of that day's work), and there is nothing in the app yet that a
+person can write which does NOT point at the dictionary.
+
+The stage was already in `STAGES_IF` — off the list until a language uses one,
+because English has none and opening the chapter with it would be the app
+asserting something about somebody's language. What it did not have was a way
+IN, which rule 19 of `CLAUDE.md` is written about ("a page arrives with the way
+THERE and the way BACK already on it"). The door is at the FOOT of the stage
+list, beside the one that adds a stage of your own, and it is gone once the
+stage is on the list. **Where the door goes is a screen decision and is the
+owner's** — that it has to exist is not.
 
 Decided since:
 

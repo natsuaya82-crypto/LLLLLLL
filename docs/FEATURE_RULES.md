@@ -950,27 +950,36 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   were flick 3 across (2.41:1, a 130 × 54pt letterbox) and tap and chart
   seven rows deep, half the screen.
 
-  Two sentences do it:
+  Three sentences do it:
 
   - **The keys that are not letters take a COLUMN, not a row.** On a short
     board a row of their own is a whole row, and a keyboard with no return is
     one nobody can send a message on. flick's fourth column and chart's last
     column carry delete, space and return down them.
-  - **Letters go as many to a row as it takes to fit in four rows, and never
-    fewer than four across** (`kbPer()`). Four rows is the ceiling on how
-    tall; four across is the floor on how wide, because a key is
-    `1 / (cols × 0.1385)` and three across is 2.41:1.
+  - **Letters go as few to a row as will hold them in four rows** (`kbPer()`),
+    so the keys come out as big as they can. Four rows is the ceiling on how
+    tall a keyboard is.
+  - **And the count has to divide the ten evenly** — 1, 2, 4, 5 or 10
+    (`KB_PERS`) — because a key is big by spanning whole columns, and a key
+    that lands between two of them is one the letters across the top cannot
+    name. Four is a kana keyboard, five a chart, ten a QWERTY.
+
+  Every row a pattern builds comes to exactly ten. Measured on 390 × 844:
 
   | | before | after |
   |---|---|---|
-  | qwerty | 10×5, 0.72:1, 38% | unchanged |
-  | flick | 3×3, **2.41:1**, 25% | 4×3, **1.81:1**, 25% |
-  | tap | 5×7, 1.44:1, **51%** | 8×5, 0.90:1, **38%** |
-  | chart | 5×7, 1.44:1, **51%** | 6×6, 1.20:1, **45%** |
-  | abc | 10×4, 0.72:1, 32% | unchanged |
+  | qwerty | 10 keys of 39pt, 5 rows, 38% | unchanged |
+  | flick | 3 keys of **130pt**, 3 rows, 25% | **4 keys of 97pt**, 3 rows, 25% |
+  | tap | 5 keys of 78pt, **7 rows**, **51%** | 10 keys of 39pt, **4 rows**, **32%** |
+  | tap face 2 | 5 of 78pt, 5 rows, 38% | **4 of 97pt**, 4 rows, 32% |
+  | chart | 5 of 78pt, **7 rows**, **51%** | 6 of 59pt, **6 rows**, **45%** |
+  | abc | 10 of 39pt, 4 rows, 32% | unchanged |
 
   **chart's grid is untouched**: its row count is the number of consonants,
-  which is the language's and not ours. Only the column moved.
+  which is the language's and not ours. Only the column moved, and its keys
+  take as many whole columns as fit with the remainder at the ends — the free
+  QWERTY's nine-letter row, which is inset by half a key at each end, is the
+  same trick.
 
 - Reason: the editor is the preview and a pattern is where a keyboard starts,
   so a pattern that starts at a shape no phone has is the app handing somebody
@@ -1054,7 +1063,7 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
 
 ### Decision
 - Date: 2026-08-26
-- Area: The keyboard sheet's width — a key is its share of the row it is in
+- Area: The keyboard sheet's width — ten fixed columns, and a key spans them
 - Decision:
 
   「フリックなのに qwerty サイズ」
@@ -1065,23 +1074,39 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   both **28.2 × 44** — the same pixel, on two keyboards that are nothing like
   each other on the phone.
 
-  **The board is the full width, always, whatever is on it. A key is its
-  share of the row it is in.** That is what the extension already does
-  (`KeyBoardView.layoutSubviews`: `free * key.width / the row's total`) and
-  what the read-only board in the app has always done (`flex: key.w`), so
-  this is the editor being made to agree with the two things it is a picture
-  of rather than a third opinion.
+  **The board is the full width and the grid is TEN COLUMNS, always. A column
+  is a tenth and never moves. A KEY is big by spanning columns.**
 
-  A flick board of three keys draws each of them a third of the board; a
-  QWERTY of ten draws each a tenth. 103.7px against 28.2px, measured.
+  「行と列はエクセルのように数字振ったんだから、小さくなったら意味ないやん」
+  「エクセルは足しても小さくならんやろ」
+
+  This was got wrong once in between, and the wrong version is worth writing
+  down because it is the obvious one: the grid was made as wide as the board's
+  widest row, so a key WAS its share of that row. It gave the right key sizes
+  and the wrong sheet — a column was a different width on every board, and
+  taking one out made the nine that were left STRETCH, with the letters across
+  the top going from ten to nine. Numbering columns `a b c` is what says they
+  are fixed; a column that changes width is not an address.
+
+  Ten fixed columns says both things at once. A flick key is `w 2.5` — five of
+  the ten — so it comes out **97pt where a QWERTY's is 39**, and `a` is `a` on
+  both boards. And the ceiling does the rest: a row that already comes to ten
+  refuses another key, so nothing is ever made smaller to fit something in.
+  `kbRoomIn()` has always said that; what was missing was a fixed width for it
+  to be true against.
+
+  **Every row a pattern builds comes to exactly ten**, with the space bar
+  taking the slack on a bar row and gaps at both ends of a short one. That is
+  what makes the sheet and the phone the same picture: the extension divides a
+  row by its OWN total, and a row of ten drawn on ten columns is the same row.
 
   **This replaces the decision of 2026-08-25** — 「エクセルみたいにキーボード
-  にやって横幅が固定されるはずだよ」 — which made a column a fixed width and
-  the board as wide as its columns made it. What that decision was FOR
-  survives and is stronger: the board's edges must not move when a column is
-  taken out of it. They no longer move at all, where before the sheet changed
-  width every time the widest row changed. What it cost was the key size, and
-  the key size is the thing somebody types on.
+  にやって横幅が固定されるはずだよ」 — only in where the fixed column comes
+  from. That decision fixed the column at a tenth and let the BOARD be as wide
+  as its columns made it, so a four-column board was a quarter of the phone
+  across. The column is still a tenth; the board is now always the whole
+  phone, and a short board is short rows on a full grid rather than a small
+  sheet.
 
 - Reason: the editor is the preview — there is no second picture of the
   keyboard beside it — so a key drawn at a width the phone will never use is
@@ -1091,9 +1116,9 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   a row to it was 60px against 320 on page one, which reads as 「8列も追加
   できるのに行は2ページ目から追加できない」. Rows could always be added; the
   thing to press was a sliver.
-- Affected features: `kbSheetW()` and `kbKeyW()` (`www/keyboard.js`), how
-  every board narrower than ten columns is DRAWN — **nothing stored changes,
-  no layout moves, only the drawing**. `kbCellW()` stays on the ten-key scale
+- Affected features: `kbSheetW()`, `kbKeyW()` and the `cols` `kbHTML()` draws
+  on (`www/keyboard.js`), how every board narrower than ten columns is DRAWN —
+  **nothing stored changes, no layout moves, only the drawing**. `kbCellW()` stays on the ten-key scale
   and is now only the 1/2/3 width palette, which is a palette of proportions
   and not a picture of a key: at true size on a three-key board those three
   tiles come to twice the screen, which is the fault

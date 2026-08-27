@@ -158,20 +158,112 @@ function kbGap(w){ var k=kbKey('gap'); k.w=w; return k; }
    -- at three across that is 2.41:1, a letterbox nothing on a phone looks
    like. Ten is the other end and rule 19 already fixes it: the narrowest
    iPhone. */
+/* A KEY IS BIG BY SPANNING COLUMNS, so how many to a row has to be a number
+   that divides the ten evenly -- otherwise a key lands between two columns
+   and the letters across the top stop naming anything.
+   「行と列はエクセルのように数字振ったんだから」
+
+   Counted in half columns, that is 20/per being whole: 1, 2, 4, 5, 10. Four
+   is a kana keyboard's three letters and a function column, five is a chart,
+   ten is a QWERTY -- so the set is not a compromise, it is the three shapes a
+   phone keyboard comes in with two ends on it.
+
+   As FEW as will hold the letters in four rows, so the keys come out as big
+   as they can: four rows is the ceiling on how tall a keyboard is. */
+var KB_PERS=[1, 2, 4, 5, 10];
 function kbPer(n){
-  return Math.max(4, Math.min(10, Math.ceil(n/4)));
+  var i, want=Math.ceil(n/4);
+  for(i=0;i<KB_PERS.length;i++) if(KB_PERS[i]>=want) return KB_PERS[i];
+  return 10;
 }
-function kbRows(list){
-  var rows=[], row=[], i, sp, per=kbPer(list.length);
+/* And what one of them is worth. w is in KEYS, kbU() turns it into the half
+   columns the sheet is drawn in, so this is the one place that divides. */
+function kbW(per){ return (KB_COLS/per)/2; }
+/* A row padded out to the full ten with gaps at both ends -- kbAlign's centre,
+   done at the moment a pattern is built. A row that comes to ten is a row the
+   phone draws exactly as the sheet does, because the extension divides a row
+   by its OWN total and a gap is a key that travels. Without it a short row is
+   drawn narrow here and stretched there. */
+function kbFillRow(row){
+  var tot=kbUsed(row), rem=KB_COLS-tot, lead;
+  if(rem<=0) return row;
+  lead=kbLead(KB_COLS, tot);
+  if(rem-lead>0) row.push(kbGap(kbGapW(rem-lead)));
+  if(lead>0) row.unshift(kbGap(kbGapW(lead)));
+  return row;
+}
+/* The bottom bar: the space takes whatever the row has left, which is what
+   every phone does with it, so the row comes to ten without a gap in it. */
+/* Putting the way-across on a bar that is already ten wide: the space pays
+   for it, which is where every phone takes it from. */
+function kbBarLay(row, to){
+  var i;
+  for(i=0;i<row.length;i++) if(row[i].k==='sp' && row[i].w>1){ row[i].w-=1; break; }
+  row.unshift(kbKey('lay', to));
+  return row;
+}
+function kbBar(del){
+  var sp=kbKey('sp'), d=kbKey('del');
+  d.w=del||2;
+  sp.w=(KB_COLS/2)-d.w;
+  return [sp, d];
+}
+/* ---- a pattern that does not fit is more FACES, never fewer letters -----
+   「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
+
+   kbRowsMax() was asked in two places -- kbRoomRow() and kbAddRowNew() --
+   which are the two ways somebody adds a row BY HAND. Nothing asked it of the
+   patterns, and a pattern is built out of however many letters the language
+   has: 105 letters came out seven rows on a flick and twelve on an ABC, 300
+   came out twenty and thirty-one. Nothing throws. The board is drawn, saved,
+   handed over, and the extension SQUEEZES it into 0.55 of the screen -- every
+   row shorter. Which is the failure rule 19 was rewritten around on 2026-08-26
+   「八行入っても小さかったら打ちにくいだけだぞ？」, arriving by another road.
+
+   It misses the free plan (38 letters) and lands on exactly the paid one: a
+   syllabary, an abugida, a logography -- the languages the paid plan is for.
+
+   Two of the three ways out are already forbidden and it was not a choice:
+   CUTTING at the ceiling drops letters somebody made (docs/DATA_SAFETY.md),
+   and REFUSING is a sentence explaining itself on a screen. What is left is
+   to keep every letter and give it another face -- which is the machinery of
+   2026-08-26 already: a page arrives with the way there and the way back, and
+   no face is a dead end.
+
+   How many rows of letters one face holds: the ceiling, less the bar it ends
+   in. A face with no bar has no space and no delete on it. */
+function kbFaceRows(){ return Math.max(1, kbRowsMax()-1); }
+/* Cut a list of rows into chunks that fit, as EVENLY as it divides -- filling
+   the first faces and leaving the last one with a single row would be the
+   same keyboard and a worse-looking one. */
+function kbChunk(rows, per){
+  var n=Math.max(1, Math.ceil(rows.length/per)), each=Math.ceil(rows.length/n),
+      out=[], i;
+  for(i=0;i<rows.length;i+=each) out.push(rows.slice(i, i+each));
+  return out;
+}
+/* The letters, in rows, with nothing else on them. `per` for the one pattern
+   that says how many across it wants (ABC order is ten, like a QWERTY);
+   everything else asks kbPer(). */
+function kbLetterRows(list, per){
+  var rows=[], row=[], i, k, w;
+  per=per||kbPer(list.length); w=kbW(per);
   for(i=0;i<list.length;i++){
-    row.push(kbKey('lt', list[i].id));
+    k=kbKey('lt', list[i].id); k.w=w;
+    row.push(k);
     if(row.length===per){ rows.push(row); row=[]; }
   }
-  if(row.length) rows.push(row);
-  sp=kbKey('sp'); sp.w=Math.max(2, per-1);
-  rows.push([sp, kbKey('del')]);
+  if(row.length) rows.push(kbFillRow(row));
   return rows;
 }
+/* And those rows as faces, each ending in its own bar. Every face can be
+   typed on: a face with letters and no space bar is half a keyboard. */
+function kbRowFaces(list, per){
+  var parts=kbChunk(kbLetterRows(list, per), kbFaceRows()), out=[], i;
+  for(i=0;i<parts.length;i++) out.push({rows:parts[i].concat([kbBar(2)])});
+  return out;
+}
+
 /* The second face: the digits and the marks.
    「qwertyでも数字で切り替えたりするやん？そう考えると1画面だけってきついかな」
 
@@ -187,20 +279,22 @@ function kbRows(list){
    face, and the key to reach it would be a key that does nothing. */
 function kbSecond(){
   var xs=ltOfKind('num').concat(ltOfKind('mark'));
-  return xs.length? {rows:kbRows(xs)} : null;
+  return xs.length? kbRowFaces(xs) : null;
 }
 /* The first keyboard, so there is something to type on before anybody has
    built anything: the letters in the order they are already in, and the
    digits and marks behind a switch. It is a starting point and it is meant
    to be pulled apart. Nothing is stored until it is. */
 function kbDefault(){
-  var rows=kbRows(ltOrder(ltOfKind('alpha'))), more=kbSecond();
-  if(!more) return {lay:[{rows:rows}]};
-  /* The way across, on both faces, at the near end of the bottom row --
-     where every phone keeps its 123. */
-  rows[rows.length-1].unshift(kbKey('lay', '1'));
-  more.rows[more.rows.length-1].unshift(kbKey('lay', '0'));
-  return {lay:[{rows:rows}, more]};
+  var lay=kbRowFaces(ltOrder(ltOfKind('alpha'))), more=kbSecond();
+  /* The digits and the marks are their own group and split on their own, so
+     they never share a face with the letters however many of either there
+     are. The keys that go BETWEEN faces are not put on here any more:
+     kbPatLay() links every face of every pattern in one place, because with
+     the letters alone able to become five faces there is no longer a "first"
+     and a "second" to wire to each other. */
+  if(more) lay=lay.concat(more);
+  return {lay:lay};
 }
 /* ---- the five a keyboard can be made from ------------------------------
    「まずはqwartyかフリックかタップとかキーボードのパターンを選べて」
@@ -221,17 +315,6 @@ function kbDefault(){
    back except the screen, to say so. */
 var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc'];
 /* Ten to a row, which is what a row of a phone keyboard holds. */
-function kbRowsOf(list, per){
-  var rows=[], row=[], i, sp;
-  for(i=0;i<list.length;i++){
-    row.push(kbKey('lt', list[i].id));
-    if(row.length===per){ rows.push(row); row=[]; }
-  }
-  if(row.length) rows.push(row);
-  sp=kbKey('sp'); sp.w=3;
-  rows.push([sp, kbKey('del')]);
-  return rows;
-}
 /* Twelve keys, four directions on each. One key holds five letters, so a
    language of sixty is one face -- which is the whole argument for a flick
    keyboard and the reason Japanese phones have one. The letters go on in the
@@ -257,14 +340,32 @@ function kbFlickLay(){
 
      Never fewer than three rows, because those three keys are three and each
      wants a cell of its own. */
+  /* As many rows as the letters need, cut into faces that fit -- and the
+     three that are not letters come round again ON EVERY FACE, because they
+     live in the fourth column rather than on a bar of their own. A face after
+     the first with nothing but gaps down that column would be letters with no
+     space, no delete and no return. */
+  var fr=kbFaceRows();
   n=Math.max(3, Math.ceil(keys.length/3));
+  if(n>fr) n=Math.ceil(keys.length/3)>fr? Math.ceil(keys.length/3) : n;
+  /* Four across, so a key is FIVE columns of the ten -- 97pt on a 390pt
+     phone against a QWERTY's 39. That is the whole of why a flick key is big:
+     not a bigger grid, a key that spans more of it. And four times five is
+     exactly ten, so the row is full and nothing can be added to it that would
+     make these smaller. */
+  var fw=kbW(4);
   for(i=0;i<n;i++){
     row=[];
-    for(j=0;j<3;j++) row.push(keys[i*3+j] || kbKey('lt', ''));
-    row.push(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(1));
+    for(j=0;j<3;j++){ k=keys[i*3+j] || kbKey('lt', ''); k.w=fw; row.push(k); }
+    var at=i%fr;
+    k=(at===0? kbKey('del') : at===1? kbKey('sp') : at===2? kbKey('ret') : kbGap(fw));
+    k.w=fw;
+    row.push(k);
     rows.push(row);
   }
-  return [{rows:rows}];
+  var parts=kbChunk(rows, fr), out=[], q;
+  for(q=0;q<parts.length;q++) out.push({rows:parts[q]});
+  return out;
 }
 /* Consonants down the page and vowels across it, which is the shape a
    syllabary is taught in and the reason a kana chart looks like a chart. The
@@ -278,11 +379,18 @@ function kbFlickLay(){
 function kbChartLay(){
   var cs=wsCons(), vs=wsVows(), rows=[], row, i, j, l;
   if(!cs.length || !vs.length) return kbTapLay();
+  /* The chart's columns are the language's -- a column per vowel and one for
+     the three that are not letters -- so this is the one pattern whose count
+     is not ours to pick from KB_PERS. Each key takes as many whole columns as
+     fit, and kbFillRow() puts the remainder at the ends, exactly as the free
+     QWERTY's nine-letter row is inset by half a key at each end. */
+  var cw=Math.max(1, Math.floor(KB_COLS/(vs.length+1)))/2, kk, fr=kbFaceRows();
   for(i=0;i<cs.length;i++){
     row=[];
     for(j=0;j<vs.length;j++){
       l=ltMain(wsKey([cs[i], vs[j]]));
-      row.push(kbKey('lt', l? l.id : ''));
+      kk=kbKey('lt', l? l.id : ''); kk.w=cw;
+      row.push(kk);
     }
     /* The three that are not letters, in a column, for kbFlickLay()'s reason
        -- a row of its own is a whole row, and this is the one pattern whose
@@ -290,23 +398,76 @@ function kbChartLay(){
        consonants and five vowels came to 5 x 7 and half the screen; the same
        chart with the column is 6 x 6. The grid itself is untouched, because
        what a chart is is what the language has. */
-    row.push(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(1));
-    rows.push(row);
+    /* per FACE, for kbFlickLay()'s reason: a chart of twenty consonants is
+       more faces than one, and every one of them needs its own three. */
+    var at=i%fr;
+    kk=(at===0? kbKey('del') : at===1? kbKey('sp') : at===2? kbKey('ret') : kbGap(cw));
+    kk.w=cw;
+    row.push(kk);
+    rows.push(kbFillRow(row));
   }
-  return [{rows:rows}];
+  var parts=kbChunk(rows, fr), out=[], q;
+  for(q=0;q<parts.length;q++) out.push({rows:parts[q]});
+  return out;
 }
 function kbTapLay(){ return kbDefault().lay; }
-function kbAbcLay(){ return [{rows:kbRowsOf(ltOrder(ltOfKind('alpha')), 10)}]; }
+/* Ten to a row, and as many faces as that takes. Ten because ABC order is
+   the QWERTY's shape with the letters in order; the chunking is what stops it
+   being thirty-one rows deep on a language of three hundred letters. */
+function kbAbcLay(){ return kbRowFaces(ltOrder(ltOfKind('alpha')), 10); }
 /* The free plan's layout, editable. kbFixed() is where it is written down and
    this asks it rather than saying it again -- so the QWERTY somebody starts
    from is the same QWERTY they were typing on, key for key. */
 function kbQwertyLay(){ return kbFixed().lay; }
+/* Where a key to another face can go on this one, and putting it there.
+
+   A GAP first: a gap is space somebody has not used, and on a flick or a
+   chart the fourth column is gaps from the fourth row down -- so the key
+   lands in the column the three that are not letters already live in.
+   Then the SPACE BAR, which gives up a key's width, which is where every
+   phone takes its 123 from. Then a row of its own, which is the last resort
+   and the only one that can push a face past the ceiling -- kbFaceRows()
+   leaves room for a bar so that it never comes to that, and kb-check counts
+   the rows afterwards rather than trusting this sentence. */
+function kbFacePut(face, to){
+  var rows=face.rows, i, j, k;
+  for(i=0;i<rows.length;i++)
+    for(j=0;j<rows[i].length;j++)
+      if(rows[i][j].k==='gap'){
+        k=kbKey('lay', String(to)); k.w=rows[i][j].w;
+        rows[i][j]=k;
+        return true;
+      }
+  for(i=rows.length-1;i>=0;i--)
+    for(j=0;j<rows[i].length;j++)
+      if(rows[i][j].k==='sp' && rows[i][j].w>1){ kbBarLay(rows[i], String(to)); return true; }
+  return kbLayPut(face, to);
+}
+/* EVERY FACE IS REACHED AND EVERY FACE CAN BE LEFT, whatever a pattern came
+   out as. One place, because a pattern is no longer one face and two: the
+   letters alone become five of them on a language of three hundred, and
+   kbDefault()'s old「first and second, wired to each other」cannot say that.
+
+   The face before and the face after, wrapping -- so from any face you reach
+   any other and come back the way you came. Two faces means one key each way,
+   because the face before and the face after are the same face and two keys
+   to one place is a key that does nothing. */
+function kbLinkFaces(lay){
+  var n=lay.length, i;
+  if(n<2) return lay;
+  for(i=0;i<n;i++){
+    if(n===2){ kbFacePut(lay[i], 1-i); continue; }
+    kbFacePut(lay[i], (i+1)%n);
+    kbFacePut(lay[i], (i+n-1)%n);
+  }
+  return lay;
+}
 function kbPatLay(pat){
-  if(pat==='qwerty') return kbQwertyLay();
-  if(pat==='flick')  return kbFlickLay();
-  if(pat==='chart')  return kbChartLay();
-  if(pat==='abc')    return kbAbcLay();
-  return kbTapLay();
+  if(pat==='qwerty') return kbLinkFaces(kbQwertyLay());
+  if(pat==='flick')  return kbLinkFaces(kbFlickLay());
+  if(pat==='chart')  return kbLinkFaces(kbChartLay());
+  if(pat==='abc')    return kbLinkFaces(kbAbcLay());
+  return kbLinkFaces(kbTapLay());
 }
 /* The shape without the letters.
    「それ以外2つ目作るときは形だけ」
@@ -950,6 +1111,25 @@ function kbRoomIn(ri, w){
   var row=kbLayer().rows[ri];
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
 }
+/* And whether ANY row on this face could take one, which is what the palette
+   under the sheet has to ask before it offers a width.
+   「フリックのaddキーのサイズ合ってなくね？」 OWNER 2026-08-26.
+
+   The three tiles were drawn and pressable always. Every pattern's rows come
+   to the full ten, so on a keyboard somebody has just made, picking a width
+   and then pressing a key does NOTHING -- measured on all five: 10 keys
+   before, 10 keys after. Cut one column out and only the narrowest of the
+   three fits, and the other two go on being offered.
+
+   Nothing throws. The tile lights up, the key it was pressed on opens
+   nothing, and the row is the row it was. Which is the sentence the owner
+   said about the column + an hour before this 「最大になったら+はなし」, one
+   size down. */
+function kbRoomAny(w){
+  var rows=kbLayer().rows, i;
+  for(i=0;i<rows.length;i++) if(kbRoomIn(i, w)) return true;
+  return false;
+}
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
    of w 0.5 at each end, and "grid-column: span 0.5" is not a thing: the
@@ -969,6 +1149,30 @@ function kbCols(rows){
     if(w>n) n=w;
   }
   return n||2;
+}
+/* Whether a key COVERS a column, which is the question a lit column asks of
+   every key on the sheet. 「半キーにしよう。その代わり縦列の選択の時では
+   選ばれない。例えばaが半きーのばあい。aを選択したら他の124列目だけ選ばれて
+   削除して中央揃えした場合全部がハンキーになる感じ。」
+   OWNER DECISION 2026-08-26.
+
+   It used to ask whether the key OVERLAPPED the column at all, and that is a
+   different question on the one row that is inset by half a key. The free
+   QWERTY's third row is `gap 0.5 / nine letters / gap 0.5`, so every key on
+   it straddles two columns and every key on it therefore answered yes to two
+   of them: pressing any letter across the top lit TWO of the nine, on that
+   row alone, on the keyboard both plans type on.
+
+   Both halves of the decision are kept and they pull the same way. The half
+   key stays -- that inset is what a QWERTY looks like. And a column takes
+   only what it is entirely made of, so on that row it takes nothing at all.
+   **A row where the band comes down and no key lights is the right answer
+   and not a bug**: it is the row saying it does not line up with the columns,
+   which is exactly what somebody needs to know before they cut one.
+
+   In half columns, because a key can be half of one -- kbU() says why. */
+function kbColHas(at, w, ci){
+  return at<=ci*2 && at+kbU(w)>=ci*2+2;
 }
 /* The letters across the top, one to a whole key and not one to a column --
    nobody insets a row by half a letter. Inside #kb so it shares the grid's
@@ -1027,10 +1231,78 @@ function kbHeadCol(ci){
    three alignments and the bin while it is asking, because those are about
    the row that is there and this is about one that is not. Pressing the +
    again puts the question away. */
+/* Whether the + can offer anything, for whichever of the two is selected.
+   A column is a different question from a row: a row is one row against the
+   ceiling, and a column is a key's worth added to EVERY row that reaches it,
+   so it is refused when any one of those rows is already ten across. */
+function kbInsRoom(){
+  if(!KBH) return false;
+  return KBH.k==='r'? kbRoomRow() : kbRoomCol(KBH.i);
+}
 function kbInsAsk(){
-  if(!KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  if(!KBH || !kbInsRoom()) return;
   KBH.ins=!KBH.ins;
   render();
+}
+/* ---- putting a column in -----------------------------------------------
+   「これって列とか行とかはたせないの？」「いいよー 最大になったら+はなし」
+   OWNER DECISION 2026-08-26.
+
+   Rows could be added two ways and a column could only be TAKEN AWAY. On a
+   sheet that is one thing missing rather than a small one: the letters across
+   the top and the numbers down the side are the same kind of handle, both
+   select, both delete -- and only one of them could put anything back except
+   through the step back.
+
+   It is only safe to offer BECAUSE the grid is ten fixed columns. On a sheet
+   that was as wide as its widest row, adding a column made every key on the
+   board thinner, which is the thing the owner ruled out in the same breath as
+   asking for this 「小さくなったら意味ないやん」. On ten fixed columns a new
+   key fills slack that is already there, and when there is no slack the + is
+   not drawn at all 「最大になったら+はなし」 -- kbRoomCol() below, and
+   kbInsRoom() above it, are the one place that says so.
+
+   It is kbDelCol() turned around, and it is deliberately NOT "every row gets
+   wider". A column comes out of the rows that REACH it and leaves the rest
+   alone, so a column goes into those same rows and no others. A short row is
+   short because somebody made it short.
+
+   What goes in is an empty letter slot -- what the dashed row at the foot
+   puts in, and what a pattern leaves for somebody to fill. Not a gap: a gap
+   is space, and what was asked for is a key. */
+function kbColAt(row, half){
+  var at=0, i;
+  for(i=0;i<row.length;i++){
+    if(at>=half) return i;
+    at+=kbU(row[i].w);
+  }
+  return row.length;
+}
+function kbColRows(ci){
+  var rows=kbLayer().rows, out=[], i;
+  for(i=0;i<rows.length;i++) if(kbUsed(rows[i])>ci*2) out.push(i);
+  return out;
+}
+function kbRoomCol(ci){
+  var rows=kbLayer().rows, at=kbColRows(ci), i;
+  if(!at.length) return false;
+  for(i=0;i<at.length;i++) if(kbUsed(rows[at[i]])+2>KB_COLS) return false;
+  return true;
+}
+function kbInsCol(right){
+  var b=kbEdit(), rows, at, i, half;
+  if(!b || !KBH || KBH.k!=='c' || !kbRoomCol(KBH.i)) return;
+  rows=kbLayer().rows;
+  half=KBH.i*2 + (right? 2 : 0);
+  at=kbColRows(KBH.i);
+  for(i=0;i<at.length;i++)
+    rows[at[i]].splice(kbColAt(rows[at[i]], half), 0, kbKey('lt', ''));
+  /* and the selection follows the column it was on, which has moved right by
+     one if the new one went in on its left -- kbIns() does the same thing one
+     axis over */
+  KBH={k:'c', i:right? KBH.i : KBH.i+1};
+  kbSel=null;
+  saveKb(); render();
 }
 function kbIns(down){
   var b=kbEdit(), rows, at;
@@ -1121,7 +1393,25 @@ function kbLead(cols, tot){
 }
 function kbHTML(sel, ro){
   var lay=kbLayer(), out='', ri, ki, row, key, cls, slots=!ro && kbHasFlick(),
-      cols=ro? 0 : kbCols(lay.rows), at, b, lead, tot;
+      /* TEN KEYS, ALWAYS -- not this face's widest row.
+         「行と列はエクセルのように数字振ったんだから、小さくなったら意味ない
+         やん」「エクセルは足しても小さくならんやろ」 OWNER DECISION 2026-08-26.
+
+         The grid used to be kbCols(lay.rows) wide, so the widest row exactly
+         filled it -- and a column was therefore a different width on every
+         board and got NARROWER every time anything was added. That is not a
+         spreadsheet: a column in one is a fixed width and adding one makes
+         the sheet longer, never the columns thinner. Numbering them a b c is
+         what says they are fixed, and the numbering is what made it wrong.
+
+         Fixed at KB_COLS, a column is width/10 on every board and never
+         moves. A KEY is big by SPANNING columns -- a flick key is five of
+         them (w 2.5), which is why it comes out 97pt where a QWERTY's is 39.
+         And the limit does the rest: a row that already comes to ten refuses
+         another key, so nothing is ever made smaller to fit something in.
+         kbRoomIn() has always said that; what was missing was the fixed
+         width for it to be true against. */
+      cols=ro? 0 : KB_COLS, at, b, lead, tot;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
@@ -1149,7 +1439,7 @@ function kbHTML(sel, ro){
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
         /* a key standing in the column being worked on */
-        ((!ro && KBH && KBH.k==='c' && at<KBH.i*2+2 && at+kbU(key.w)>KBH.i*2)? ' sel':'');
+        ((!ro && KBH && KBH.k==='c' && kbColHas(at, key.w, KBH.i))? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
       at+=kbU(key.w);
@@ -1828,26 +2118,48 @@ function kbTb(name, icon, label, off){
   return '<button class="kbtb'+(name==='kbCut'? ' bad':'')+'"' + DO(name) +
     (off? ' disabled' : '') + ' aria-label="'+esc(label)+'">'+icon+'</button>';
 }
+/* The arrow-into-a-line of ICON_INUP / ICON_INDN, turned a quarter: which
+   SIDE of the line the new column lands on. They are here rather than beside
+   their two siblings in glyph.js because glyph.js is being changed on three
+   other branches today -- docs/BACKLOG.md carries the move. www/home.js
+   already draws an icon of its own, so this is not a new kind of thing. */
+var ICON_INLF='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M19 4v16"/><path d="M15 12H5"/><path d="M9 8l-4 4 4 4"/></svg>';
+var ICON_INRT='<svg class="ic" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M5 4v16"/><path d="M9 12h10"/><path d="M15 8l4 4-4 4"/></svg>';
 function kbToolHTML(){
-  var row=!!KBH && KBH.k==='r', ask=row && !!KBH.ins;
+  var row=!!KBH && KBH.k==='r', col=!!KBH && KBH.k==='c', ask=!!KBH && !!KBH.ins;
   return '<div class="kbtool">'+
     kbTb('kbUndo', ICON_UNDO, t('kb.undo'), !KBU.u.length)+
     kbTb('kbRedo', ICON_REDO, t('kb.redo'), !KBU.r.length)+
     '<span class="kbtgap"></span>'+
     (ask
-      ? '<button class="kbtb"' + DO('kbIns', [false]) +
-          ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
-        '<button class="kbtb"' + DO('kbIns', [true]) +
-          ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>'
+      ? (col
+          ? '<button class="kbtb"' + DO('kbInsCol', [false]) +
+              ' aria-label="'+esc(t('kb.col.l'))+'">'+ICON_INLF+'</button>'+
+            '<button class="kbtb"' + DO('kbInsCol', [true]) +
+              ' aria-label="'+esc(t('kb.col.r'))+'">'+ICON_INRT+'</button>'
+          : '<button class="kbtb"' + DO('kbIns', [false]) +
+              ' aria-label="'+esc(t('kb.row.up'))+'">'+ICON_INUP+'</button>'+
+            '<button class="kbtb"' + DO('kbIns', [true]) +
+              ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (row? '' : ' disabled') +
           ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
         '<button class="kbtb"' + DO('kbAlign', ["c"]) + (row? '' : ' disabled') +
           ' aria-label="'+esc(t('kb.al.c'))+'">'+ICON_ALC+'</button>'+
         '<button class="kbtb"' + DO('kbAlign', ["r"]) + (row? '' : ' disabled') +
           ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
+    /* 「最大になったら+はなし」 -- down, which is what this button has always
+       done when a row is as tall as it may get, and what the three beside it
+       do when nothing is selected. The toolbar keeps its shape; the dashed row
+       at the FOOT of the sheet is the one that goes away entirely, because
+       that one is drawn where a row would go rather than sitting in a row of
+       buttons. */
     '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
-      ((row && kbRoomRow())? '' : ' disabled') +
-      ' aria-label="'+esc(t('kb.row.ins'))+'">'+ICON_ADD+'</button>'+
+      (kbInsRoom()? '' : ' disabled') +
+      ' aria-label="'+esc(t(col? 'kb.col.ins' : 'kb.row.ins'))+'">'+ICON_ADD+'</button>'+
     (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH))+
     '</div>';
 }
@@ -2292,7 +2604,11 @@ function kbEditFnHTML(key){
    While it is set, pressing a key puts the new one after that key rather than
    opening it -- one mode, one press to leave it. */
 var kbNew1=0;
-function kbSetNew(w){ kbNew1=(kbNew1===w)? 0 : w; render(); }
+function kbSetNew(w){
+  if(!kbRoomAny(w)){ kbNew1=0; render(); return; }
+  kbNew1=(kbNew1===w)? 0 : w;
+  render();
+}
 /* Three widths that used to be one, and telling them apart is what fixes
    「フリックなのに qwerty サイズ」「qwartyはqwartyのサイズあるやろ
    フリックとqwartyのキーのサイズは同じなんか？」 OWNER DECISION 2026-08-26.
@@ -2348,11 +2664,19 @@ function kbKeyW(w){
 function kbSheetW(){
   return 'var(--kbw)';
 }
+/* The three widths, each drawn AT THE SIZE OF THE KEY IT MAKES -- kbCellW()
+   is the same arithmetic the sheet lays a key out with, over the ten fixed
+   columns, so a tile of one is one key of one wherever it is dropped. What
+   was wrong was never the width; it was that a tile with nowhere to go was
+   offered exactly like one that fits. It is down instead, which is what the
+   three buttons over the sheet do when nothing is selected. */
 function kbNewHTML(){
   return '<div class="kbnew" id="kbnew">'+
     '<span class="kbnewl">'+esc(t('kb.add.k'))+'</span>'+
     '<span class="kbnewr">'+[1,2,3].map(function(w){
-      return '<button class="kbnewt'+(kbNew1===w? ' on':'')+'"' + DO('kbSetNew', [w]) +
+      var room=kbRoomAny(w);
+      return '<button class="kbnewt'+((kbNew1===w && room)? ' on':'')+'"' + DO('kbSetNew', [w]) +
+        (room? '' : ' disabled') +
         ' data-w="'+w+'" style="width:'+kbCellW(w)+'"'+
         ' aria-label="'+esc(t('kb.w'))+' '+w+'"></button>';
     }).join('')+'</span></div>';
