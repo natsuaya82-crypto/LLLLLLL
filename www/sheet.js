@@ -837,44 +837,8 @@ function shThin(loop, tol){
 /* Where the chapter is standing. Not the language's -- it is where you are in
    it, so shell.js's viewReset() drops it, exactly as it drops IMP. */
 var SH = null;
-function shBlank(){ return {names:'', got:null, why:'', from:'', say:[]}; }
+function shBlank(){ return {names:'', got:null, why:'', from:''}; }
 function shState(){ if(!SH) SH = shBlank(); return SH; }
-
-/* ---- what actually happened, said on the screen -------------------------
-   OWNER 2026-08-27「だから戻ってこないから言ってんのよ dlもできないし」, on
-   build #96, which had every part of this chapter in it and did neither.
-
-   This is not a fix and it is deliberately not one. Everything on the far
-   side of `Capacitor.nativePromise` is Swift, there is no Swift on a Linux
-   runner, and NOTHING HERE CAN SEE WHICH HALF FAILED. A guess costs a build,
-   and a guess that happens to work costs more than that: nobody learns which
-   of the five things it was.
-
-   The keyboard chapter is the worked example and it is written down in
-   docs/keyboard-extension.md: three builds went on the same symptom with
-   three different causes, and the fourth cause fell out of ONE PHOTOGRAPH the
-   moment the app was made to say whether the hand-over had gone out. **Build
-   the status line first.** www/backup.js's BK.how/bkSay() is the same
-   mechanism, kept since; SHARE.how in www/share.js is the other.
-
-   It is not an explanation and 「アプリ内に説明を書くの禁止」 does not reach
-   it. Every line is a state or a count -- how many bytes, which of four
-   kinds, resolved or refused and what it said. CLAUDE.md says so in as many
-   words: *an empty state, a count, a state, an error -- none of those is an
-   explanation.* It tells nobody what to tap and promises nothing.
-
-   The lines are kept on the state rather than toasted because a toast is
-   gone in 1.9 seconds and the thing wanted here is a PHOTOGRAPH. */
-function shSayNew(){ var s = shState(); s.say = []; return s; }
-function shSay(line){ var s = shState(); if(!s.say) s.say = []; s.say.push(line); }
-/* One line each, in the order they happened. `.note` and `.mini` are the two
-   classes this chapter already wears; no rule is added and none is needed. */
-function shSayHTML(){
-  var s = shState(), out = '', i;
-  if(!s.say || !s.say.length) return '';
-  for(i = 0; i < s.say.length; i++) out += '<div class="mini">'+esc(s.say[i])+'</div>';
-  return '<div style="margin-top:14px">'+out+'</div>';
-}
 
 /* The typed string -> the names, in order. Commas, and nothing else is a
    separator: a name is whatever somebody put between two of them, so a space
@@ -959,7 +923,6 @@ function shOutHTML(){
     esc(s.names)+'</textarea></div>'+
     '<div class="mini" id="wr-mini">'+esc(tn('wr.boxes', n))+' · '+esc(tn('wr.pages', shPages(n)))+'</div>'+
     shPvHTML()+
-    shSayHTML()+
     '<div class="barfix"><button class="btn ghost"' + DO('shMake') + '>'+
     esc(t('wr.out'))+'</button></div>';
 }
@@ -1144,14 +1107,27 @@ function shPics(names){
   }
   return out;
 }
-/* The PDF, and out. It goes to the phone as a FILE, every time somebody
-   presses this, and there is no second road: no share sheet, no `<a
-   download>`, nothing that lives only on the screen.
-   OWNER 2026-08-27「毎回ファイルに保存して欲しい」.
+/* The PDF, and out. Two things happen and they are not the same thing: the
+   file is WRITTEN, and then it is OFFERED.
+   OWNER 2026-08-27「普通に共有画面みたいなやつから保存してそこでファイルに
+   保存させてくれ」 -- said about a build where the write had already worked
+   four times and the person still could not get at the file. **Writing it
+   into Documents and saying nothing is not a download.**
 
    `LinguaShare.sheet` writes it into `Documents/Sheets/`, where iOS puts it in
    the device backup and the Files app can show it, and it NEVER OVERWRITES --
-   the second sheet of a name is `<name> 2.pdf`.
+   the second sheet of a name is `<name> 2.pdf`. That stays exactly as it was:
+   taking it away would be docs/DATA_SAFETY.md, because a sheet already sitting
+   there may have been drawn on. `LinguaShare.shareFile` then hands that file
+   to iOS's own share sheet, which is where "Save to Files" lives and where
+   choosing the destination stops being this app's business.
+
+   **Nothing says it was saved, and that is the point.** Once the share sheet
+   is up, what somebody picks -- save, send, cancel -- never comes back here,
+   so any sentence about it would be a guess. 「保存できてないのに保存しました
+   とかやめてくんない？」 Only the ways it can fail BEFORE that speak: no
+   bridge, a phone that files nothing, a refusal. Cancelling says nothing,
+   because changing your mind is not a failure.
 
    **It does not rotate generations, and www/backup.js does. That difference is
    deliberate and it is not an inconsistency.** keep() rotates the last file to
@@ -1177,51 +1153,34 @@ function shPics(names){
    No bridge, a rejection, or an answer with no name in it all say the same
    thing, because to a person they are the same thing -- it is not there. */
 function shMake(){
-  var s = shSayNew(), names = shNames(s.names), pdf, b64, p;
+  var s = shState(), names = shNames(s.names), pdf, b64, p;
   if(!names.length){ toast(t('wr.none')); return; }
   pdf = shSheet(names, shPics(names));
   /* null is the packet refusing to fit the strip. A sheet that cannot name
      itself is not a sheet -- it comes back unreadable, and a misread sheet
      must be turned away rather than half-imported. */
-  if(!pdf){ shSay(t('wr.say.build.no')); toast(t('wr.long')); openWrOut(); return; }
-  shSay(t('wr.say.build', pdf.length));
+  if(!pdf){ toast(t('wr.long')); return; }
   /* btoa() throws on a character over 255, and this is the one line in the
-     chapter that NO CHECK HAS EVER RUN: a browser has no bridge, so every
-     walk turns back at the line above and `btoa(pdf)` happens on a phone and
-     nowhere else. Un-caught it would land outside the promise, so nothing
-     would toast, nothing would be said, and the button would do nothing at
-     all -- which is one of the shapes 「dlもできない」 can have.
-     Measured, and it is not the current fault: shSheet() over ASCII, kana,
+     chapter NO CHECK HAS EVER RUN: a browser has no bridge, so every walk
+     turns back at the line below and this happens on a phone and nowhere
+     else. Un-caught it would land outside the promise, so nothing would
+     toast and the button would do nothing at all.
+     Measured and it is not a fault today -- shSheet() over ASCII, kana,
      accented and emoji names comes back with nothing above char 122, and the
-     pictures are bytes by construction. Caught because it is untested, not
-     because it is suspected. */
-  try{ b64 = btoa(pdf); }
-  catch(e){ shSay(t('wr.say.b64.no', shWhat(e))); toast(t('wr.bad')); openWrOut(); return; }
-  shSay(t('wr.say.b64', b64.length));
+     pictures are bytes by construction. Caught because it is untested. */
+  try{ b64 = btoa(pdf); }catch(e){ toast(t('wr.bad')); return; }
   p = sharePlug();
-  if(!p){ shSay(t('wr.say.nobridge')); toast(t('wr.nobridge')); openWrOut(); return; }
-  shSay(t('wr.say.sent'));
+  if(!p){ toast(t('wr.nobridge')); return; }
   p('LinguaShare', 'sheet', {name:shFileName(), b64:b64})
     .then(function(r){
-      if(!(r && r.file)){ shSay(t('wr.say.unnamed')); toast(t('wr.nobridge')); openWrOut(); return; }
-      shSay(t('wr.say.filed', String(r.file)));
-      toast(t('wr.out.ok'));
-      openWrOut();
+      /* The name the PHONE filed it under, which is not shFileName(): a sheet
+         is never overwritten, so the second of a name is `<name> 2.pdf`.
+         Handing the wrong one of two to the share sheet would give somebody
+         the sheet they made last week. */
+      if(!(r && r.file)){ toast(t('wr.nobridge')); return; }
+      return p('LinguaShare', 'shareFile', {file: String(r.file)});
     })
-    ['catch'](function(e){
-      shSay(t('wr.say.refused', shWhat(e)));
-      toast(t('wr.nobridge'));
-      openWrOut();
-    });
-}
-/* What the native side said, out of whatever shape it threw. The same three
-   places bkPush() and sharePush() look, and for the same reason: a rejection
-   from the bridge is sometimes an Error, sometimes a string, and sometimes an
-   object with `errorMessage` on it. Nobody wrote this sentence for a person
-   to read, which is why it goes INSIDE one that was. */
-function shWhat(e){
-  if(!e) return '?';
-  return String((e.message || e.errorMessage) || e);
+    ['catch'](function(){ toast(t('wr.nobridge')); });
 }
 /* A name a person will recognise in the Files app. bkName()'s argument, and
    deliberately not bkName() itself: that one carries the language id because
@@ -1245,8 +1204,8 @@ function shInHTML(){
   var s = shState(), out = '', i, g, n;
   out = '<label class="btn ghost shfile">'+esc(t('wr.in'))+
     '<input type="file" id="wr-file" accept="application/pdf,.pdf"></label>';
-  if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>' + shSayHTML();
-  if(!s.got) return out + shSayHTML();
+  if(s.why) return out + '<div class="note">'+esc(s.why)+'</div>';
+  if(!s.got) return out;
   out += '<div class="mini" style="margin-top:14px">'+esc(s.from)+'</div>';
   for(i = 0; i < s.got.length; i++){
     g = s.got[i];
@@ -1259,8 +1218,7 @@ function shInHTML(){
      working, not failing: the printed lattice is not read as ink. */
   n = shTakeCount(s.got);
   if(!n) return out + '<div class="note">'+esc(t('wr.empty.all'))+'</div>';
-  out += shSayHTML()+
-    '<div class="barfix"><button class="btn ghost"' + DO('shTakeIn') + '>'+
+  out += '<div class="barfix"><button class="btn ghost"' + DO('shTakeIn') + '>'+
     esc(tn('wr.take', n))+'</button></div>';
   return out;
 }
@@ -1292,10 +1250,6 @@ function shInMount(){
        the picker offers PDFs and anything else that arrives is turned away
        with a sentence. Below it, shTakeFile() still reads a picture, because
        the day photographs come back is the day this one line goes. */
-    /* A new attempt. Everything the last one said goes, so what is on the
-       screen is always about the file in front of somebody. */
-    shSayNew();
-    shSay(t('wr.say.got', f.size || 0));
     if(!shIsPdf(f)){ shFail(t('wr.notpdf')); return; }
     var r = new FileReader();
     r.onload = function(){ shTakeFile(String(r.result || ''), f.name); };
@@ -1333,10 +1287,8 @@ function shTakeFile(url, fname){
   if(head.indexOf('application/pdf') >= 0 || /\.pdf$/i.test(String(fname || ''))){
     try{ bytes = atob(b64); }catch(e){ shFail(t('wr.bad')); return; }
     why = shPdfWhy(bytes);
-    shSay(t('wr.say.kind', String(why)));
     jpg = shPdfJpeg(bytes);
-    if(!jpg){ shSay(t('wr.say.jpeg.no')); shPdfDraw(b64, why, String(fname || '')); return; }
-    shSay(t('wr.say.jpeg', jpg.length));
+    if(!jpg){ shPdfDraw(b64, why, String(fname || '')); return; }
     url = 'data:image/jpeg;base64,' + btoa(jpg);
   }
   s.from = String(fname || '');
@@ -1367,23 +1319,17 @@ function shTakeFile(url, fname){
    before. */
 function shPdfDraw(b64, why, fname){
   var p = sharePlug();
-  if(!p){
-    shSay(t('wr.say.nobridge'));
-    shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no'));
-    return;
-  }
-  shSay(t('wr.say.draw'));
+  if(!p){ shFail(why === 'drawn' ? t('wr.pdf.drawn') : t('wr.pdf.no')); return; }
   p('LinguaShare', 'renderPdf', {b64: b64, edge: SH_LOOK})
     .then(function(r){
       var jpg = r && r.jpeg;
       /* Answered, and with nothing. Not the same as being refused, and it is
          the same dead end either way. */
-      if(!jpg){ shSay(t('wr.say.drew.no')); shFail(t('wr.bad')); return; }
-      shSay(t('wr.say.drew', String(jpg).length));
+      if(!jpg){ shFail(t('wr.bad')); return; }
       shState().from = fname;
       shLook('data:image/jpeg;base64,' + jpg);
     })
-    ['catch'](function(e){ shSay(t('wr.say.refused', shWhat(e))); shFail(t('wr.bad')); });
+    ['catch'](function(){ shFail(t('wr.bad')); });
 }
 /* How big a photograph is worth looking at. A corner mark is about a
    fortieth of the page, so 2200 pixels down the long edge leaves it 50 across
@@ -1435,7 +1381,6 @@ function shPage(px, W, H){
   if(RES > 700) RES = 700;
   for(i = 0; i < names.length; i++) out.push({nm:names[i], sh:shBoxShape(scan, i, RES)});
   s.got = out; s.why = '';
-  shSay(t('wr.say.read', out.length, shTakeCount(out)));
   openWrIn();
 }
 /* One box, as rings in the app's own 800 square. The edge runs where the grey

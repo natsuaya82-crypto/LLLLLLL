@@ -552,12 +552,7 @@ const drawn = await pg.evaluate(() => {
     edge: !!a.args && a.args.edge === w.edge, look: w.edge,
     why: SH.why, from: SH.from,
     names: SH.got ? SH.got.map(function(g){ return g.nm; }) : null,
-    ink: SH.got ? SH.got.filter(function(g){ return g.sh.length; }).length : 0,
-    /* and what the screen SAID it did, off the rendered page rather than off
-       the state -- a line held in memory and never drawn is the thing this
-       whole section exists to stop. */
-    said: Array.prototype.slice.call(document.querySelectorAll('#app .mini'))
-            .map(function(e){ return e.textContent; })
+    ink: SH.got ? SH.got.filter(function(g){ return g.sh.length; }).length : 0
   };
 });
 /* and the other end of it: a phone that cannot draw the page says so, and the
@@ -574,18 +569,24 @@ await pg.waitForFunction(() => window.SH && (SH.got || SH.why), null, { timeout:
 const drewNo = await pg.evaluate(() => ({ why: SH.why, got: !!SH.got }));
 await pg.evaluate(() => { try { delete window.Capacitor; } catch (e) { window.Capacitor = undefined; } });
 
-/* ---- 9. it says a sheet was written only when one was -------------------
-   OWNER 2026-08-27「あとはシートの書き出しだけど、ここで書く無くして。毎回
-   ファイルに保存して欲しい。」 Pressing save hands the bytes to the phone,
-   which files them under a name and answers with it. That answer is the only
-   evidence there is on this side, and what is held here is that the app does
-   not go past it.
+/* ---- 9. written, then OFFERED -- and nothing claimed in between ---------
+   OWNER 2026-08-27「普通に共有画面みたいなやつから保存してそこでファイルに
+   保存させてくれ」「保存できてないのに保存しましたとかやめてくんない？」,
+   on a build where the write had worked four times over and the person still
+   could not get at the file. Writing into Documents and saying nothing is not
+   a download, so the press does two things: the phone files the bytes and
+   answers with the name it filed them under, and THAT name goes to iOS's own
+   share sheet.
 
-   It is www/wordsheet.js's CSV, put back where it can happen again: there,
-   `<a download>` did nothing in WKWebView and threw nothing either, so every
-   run reached the line that said it had exported. Nothing throws when a file
-   fails to appear -- that is the whole shape of this bug -- so the only way
-   to hold it is to ask what the SCREEN said, which is what these two do. */
+   Two ways this breaks and neither throws. The share sheet can be opened on
+   the name the app ASKED for rather than the one the phone gave back -- a
+   sheet is never overwritten, so those differ the moment there are two, and
+   somebody would be handed last week's sheet with every screen looking
+   right. And the app can announce a save it knows nothing about: once the
+   sheet is up, save/send/cancel never comes back here. It is
+   www/wordsheet.js's CSV again, where `<a download>` did nothing in WKWebView
+   and threw nothing either, so every run reached the line that said it had
+   exported. */
 await pg.evaluate(({ names }) => {
   window.__ASKED2 = [];
   window.Capacitor = { nativePromise: function(plug, method, args){
@@ -593,6 +594,37 @@ await pg.evaluate(({ names }) => {
     /* the name it was actually filed under, which is not the one asked for:
        a sheet is never overwritten, so the second of a name is `<name> 2.pdf` */
     if (method === 'sheet') return Promise.resolve({ file: 'Test sheet 2.pdf' });
+    if (method === 'shareFile') return Promise.resolve({ shown: true });
+    return Promise.resolve({});
+  } };
+  document.getElementById('toast').textContent = '';
+  SH = shBlank(); SH.names = names.join(', ');
+  shMake();
+}, { names: NAMES });
+await pg.waitForFunction(() => window.__ASKED2.filter(c => c.method === 'shareFile').length === 1,
+                         null, { timeout: 60000 });
+const filed = await pg.evaluate(() => {
+  const c = window.__ASKED2.filter(function(a){ return a.method === 'sheet'; });
+  const h = window.__ASKED2.filter(function(a){ return a.method === 'shareFile'; });
+  return {
+    said: document.getElementById('toast').textContent,
+    calls: c.length,
+    bytes: !!(c[0] && c[0].args && c[0].args.b64),
+    plug: c[0] && c[0].plug,
+    shares: h.length,
+    shared: (h[0] && h[0].args && h[0].args.file) || '',
+    asked: (c[0] && c[0].args && c[0].args.name) || '',
+    no: t('wr.nobridge')
+  };
+});
+/* and the same press with a phone that answers, but names no file. Nothing
+   rejects and nothing throws -- it is a resolved promise with nothing in it,
+   which is what an older build of the app answers, and there is no file
+   anywhere. */
+await pg.evaluate(({ names }) => {
+  window.__ASKED3 = [];
+  window.Capacitor = { nativePromise: function(plug, method){
+    window.__ASKED3.push(method);
     return Promise.resolve({});
   } };
   document.getElementById('toast').textContent = '';
@@ -601,61 +633,10 @@ await pg.evaluate(({ names }) => {
 }, { names: NAMES });
 await pg.waitForFunction(() => document.getElementById('toast').textContent !== '',
                          null, { timeout: 60000 });
-const filed = await pg.evaluate(() => {
-  const c = window.__ASKED2.filter(function(a){ return a.method === 'sheet'; });
-  return {
-    said: document.getElementById('toast').textContent,
-    calls: c.length,
-    bytes: !!(c[0] && c[0].args && c[0].args.b64),
-    plug: c[0] && c[0].plug,
-    lines: (SH.say || []).slice(),
-    onscreen: Array.prototype.slice.call(document.querySelectorAll('#app .mini'))
-                .map(function(e){ return e.textContent; }),
-    ok: t('wr.out.ok'), no: t('wr.nobridge')
-  };
-});
-/* ---- 10. and when the phone refuses, it says what the phone said ---------
-   OWNER 2026-08-27「だから戻ってこないから言ってんのよ dlもできないし」 on
-   build #96, which had every part of this chapter in it and did neither.
-   Nothing on this side can see which half of the bridge failed, so what is
-   held here is that the app does not SWALLOW the answer: the native side's
-   own words reach the screen, where a photograph can carry them out of the
-   phone. docs/keyboard-extension.md is why -- three builds went on one
-   symptom with three causes, and the fourth fell out of one screenshot the
-   moment the app was made to say whether the hand-over had gone out. */
-await pg.evaluate(({ names }) => {
-  window.Capacitor = { nativePromise: function(){
-    return Promise.reject(new Error('the disk is full'));
-  } };
-  /* deliberately NOT shBlank(): the four lines the LAST press left are still
-     sitting there, so the only thing that can clear them is shSayNew() inside
-     shMake(). Wiping the state here first would make the claim below a copy of
-     this check's own setup -- green whether or not the app clears anything,
-     which is the shape CLAUDE.md rule 10 was written after. Watched: with
-     shSayNew() made a no-op this goes red only because of this line. */
-  SH.names = names.join(', ');
-  shMake();
-}, { names: NAMES });
-await pg.waitForFunction(() => window.SH && (SH.say || []).length >= 4,
-                         null, { timeout: 60000 });
-const sheetNo = await pg.evaluate(() => ({
-  lines: (SH.say || []).slice(),
-  onscreen: Array.prototype.slice.call(document.querySelectorAll('#app .mini'))
-              .map(function(e){ return e.textContent; })
+const unnamed = await pg.evaluate(() => ({
+  said: document.getElementById('toast').textContent,
+  shares: window.__ASKED3.filter(function(m){ return m === 'shareFile'; }).length
 }));
-/* and the same press with a phone that answers, but names no file. Nothing
-   rejects and nothing throws -- it is a resolved promise with nothing in it,
-   which is exactly what an older build of the app answers, and there is no
-   file anywhere. */
-await pg.evaluate(({ names }) => {
-  window.Capacitor = { nativePromise: function(){ return Promise.resolve({}); } };
-  document.getElementById('toast').textContent = '';
-  SH = shBlank(); SH.names = names.join(', ');
-  shMake();
-}, { names: NAMES });
-await pg.waitForFunction(() => document.getElementById('toast').textContent !== '',
-                         null, { timeout: 60000 });
-const unnamed = await pg.evaluate(() => document.getElementById('toast').textContent);
 await pg.evaluate(() => { try { delete window.Capacitor; } catch (e) { window.Capacitor = undefined; } });
 
 await br.close();
@@ -791,33 +772,21 @@ say(!!drawn.names && drawn.names.length === NAMES.length && drawn.ink === DREW.l
 say(!drewNo.got && !!drewNo.why,
     'and a page the phone cannot draw is a sentence, not a screen that never ' +
     'changes: "' + drewNo.why + '"');
-say(filed.calls === 1 && filed.bytes && filed.plug === 'LinguaShare' &&
-    filed.said === filed.ok,
-    'pressing save hands the sheet to the phone as a file, once, and says so: ' +
-    filed.calls + ' call to ' + filed.plug + '.sheet with the bytes on it — "' +
-    filed.said + '"');
-say(unnamed !== filed.ok && unnamed === filed.no,
-    'and a phone that answers but names no file is NOT called saved — there is ' +
-    'nothing in Files, and the screen says that: "' + unnamed + '"');
-/* what the screen says happened. Not a debug line -- every one of these is a
-   state or a count, which CLAUDE.md names among the things that are NOT an
-   explanation, and it is the only thing anybody can photograph. */
-say(filed.lines.length === 4 &&
-    filed.onscreen.join(' | ').indexOf('Test sheet 2.pdf') >= 0,
-    'and the screen says what happened, step by step, where a photograph can ' +
-    'carry it off the phone: ' + filed.lines.length + ' lines — "' +
-    filed.lines.join('" / "') + '"');
-say(sheetNo.lines.length === 4 &&
-    sheetNo.lines.join(' ').indexOf('the disk is full') >= 0 &&
-    sheetNo.onscreen.join(' ').indexOf('the disk is full') >= 0,
-    'and when the phone refuses, what the PHONE said reaches the screen rather ' +
-    'than being swallowed: "' + sheetNo.lines[sheetNo.lines.length - 1] + '"');
-say(sheetNo.lines.length === 4,
-    'and a second try does not show the first one\'s lines: ' +
-    sheetNo.lines.length + ' lines, not ' + (sheetNo.lines.length + 4));
-say(drawn.said.join(' ').indexOf('drew') >= 0 || drawn.said.length >= 3,
-    'and the reading side says the same way: ' + drawn.said.length +
-    ' lines — "' + drawn.said.join('" / "') + '"');
+say(filed.calls === 1 && filed.bytes && filed.plug === 'LinguaShare',
+    'pressing save hands the sheet to the phone as a file, once: ' +
+    filed.calls + ' call to ' + filed.plug + '.sheet with the bytes on it');
+say(filed.shares === 1 && filed.shared === 'Test sheet 2.pdf' &&
+    filed.shared !== filed.asked,
+    'and then the file the PHONE filed is the one offered to the share sheet, ' +
+    'not the name that was asked for: offered "' + filed.shared + '", asked for "' +
+    filed.asked + '"');
+say(filed.said === '',
+    'and nothing claims it was saved — once the share sheet is up, save, send ' +
+    'and cancel never come back here: the screen said "' + filed.said + '"');
+say(unnamed.shares === 0 && unnamed.said === filed.no,
+    'and a phone that answers but names no file opens NO share sheet and says ' +
+    'so — there is nothing to offer: ' + unnamed.shares + ' offered, "' +
+    unnamed.said + '"');
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');

@@ -35,6 +35,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "shareFile", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "renderPdf", returnType: CAPPluginReturnPromise),
   ]
 
@@ -326,6 +327,64 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.resolve(["file": url.lastPathComponent])
     } catch {
       call.reject(error.localizedDescription)
+    }
+  }
+
+  /// Hand a sheet to iOS's own share sheet, so a person can put it where they
+  /// want it.
+  ///
+  /// OWNER 2026-08-27「普通に共有画面みたいなやつから保存してそこでファイルに
+  /// 保存させてくれ」, on a build where the write had worked four times and the
+  /// person could not get at the file. **That is the whole reason this exists:
+  /// writing it into Documents and saying nothing is not a download.** The
+  /// share sheet is where iOS puts "Save to Files", and choosing where it goes
+  /// is the person's, not this app's.
+  ///
+  /// It does NOT replace the write. sheet() still files the PDF under
+  /// Documents/Sheets and still never overwrites -- taking that away would be
+  /// docs/DATA_SAFETY.md, and a sheet somebody already drew on lives there.
+  /// This hands over the file that is already on disk.
+  ///
+  /// A name, not a path and not bytes: the same fence keep()'s siblings have,
+  /// because Documents is the person's own folder and the Files app puts other
+  /// things in it.
+  ///
+  /// **The popover is not optional.** On iPad a UIActivityViewController with
+  /// no sourceView is a crash, not a layout problem, and this is a Universal
+  /// app. Anchored to the middle of the host's view because the web view owns
+  /// the button and UIKit cannot see it.
+  ///
+  /// It resolves the moment the sheet is up. What somebody then chooses --
+  /// save, send, cancel -- is not answered here and must not be guessed at:
+  /// the web side says nothing about it, because it does not know.
+  @objc func shareFile(_ call: CAPPluginCall) {
+    let name = call.getString("file") ?? ""
+    guard !name.isEmpty, !name.contains("/"), name != ".", name != ".." else {
+      call.reject("no sheet of that name")
+      return
+    }
+    DispatchQueue.main.async {
+      guard let host = self.bridge?.viewController else {
+        call.reject("no view controller")
+        return
+      }
+      do {
+        let url = try self.sheets().appendingPathComponent(name)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+          call.reject("that sheet is not here any more")
+          return
+        }
+        let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        if let pop = vc.popoverPresentationController {
+          pop.sourceView = host.view
+          pop.sourceRect = CGRect(x: host.view.bounds.midX, y: host.view.bounds.midY,
+                                  width: 0, height: 0)
+          pop.permittedArrowDirections = []
+        }
+        host.present(vc, animated: true) { call.resolve(["shown": true]) }
+      } catch {
+        call.reject(error.localizedDescription)
+      }
     }
   }
 
