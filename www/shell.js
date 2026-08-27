@@ -634,9 +634,25 @@ function tabBar(){
 
    Until a keyboard has actually been up there is nothing to measure, so it
    starts as a guess -- 55% of the phone, which is about what is left over an
-   iPhone's kana keyboard and its accessory bar. The first time one opens, the
-   guess is replaced by the truth and the composer settles; it does not move
-   again. */
+   iPhone's kana keyboard and its accessory bar.
+
+   THE GUESS IS ONLY EVER LOWERED, so on most phones it is never replaced,
+   and the sentence that used to stand here -- "the first time one opens, the
+   guess is replaced by the truth and the composer settles" -- was true only
+   where the keyboard covers more than 45% of the screen. Measured
+   2026-08-27, one value per phone, the keyboard fully up:
+
+     390x844, keyboard 336   visible 508   --vvmin stays at the guess, 464
+     375x667, keyboard 300   visible 367   --vvmin 367, the same by accident
+     320x568, keyboard 260   visible 308   --vvmin 308, the truth
+
+   So on a 390x844 the composer is laid out to 464 while it has 508, and the
+   44 it does not use is under the row over the keyboard. Nothing is broken by
+   it and nothing is hidden -- the row has a background and stands on the
+   keyboard either way -- so it is left exactly as it is: making the box taller
+   moves a screen that was laid out by measurement (the 162 floor, the two
+   fields of a reply) and that is somebody's to look at on a phone first.
+   docs/BACKLOG.md carries it. */
 var vvMin=0, vvWas=0, vvKbMax=0;
 /* Is there a keyboard, or is one on its way? Nothing on a phone answers that
    in advance -- `visualViewport` says how much is hidden AFTER iOS has
