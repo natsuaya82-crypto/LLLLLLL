@@ -33,6 +33,7 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -239,6 +240,58 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
         (byLang[base] ?? [:]).keys.sorted().compactMap { byLang[base]?[$0] }
       }
       call.resolve(["langs": out])
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  // ---- the paper -------------------------------------------------------
+  //
+  // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down.
+  // Documents again, and for the same reason keep() is there: the App Group
+  // is how two programs of this app talk, and Documents is where the
+  // person's own work lives -- iOS puts it in the device backup and, with
+  // UIFileSharingEnabled, the Files app can show it. A sheet is paper: it is
+  // a thing somebody prints, writes on, and hands back.
+  //
+  // The one difference from keep(). A sheet is not filed against a language
+  // and every write would carry the same name, so this NEVER OVERWRITES: a
+  // sheet already sitting in Documents may have been written on -- opened in
+  // Files, marked up with a pencil, saved in place -- and that is somebody's
+  // own work. `<name> 2.pdf` and on. Nothing here removes anything.
+
+  static let sheetDir = "Sheets"
+
+  private func sheets() throws -> URL {
+    let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+                                           appropriateFor: nil, create: true)
+    let dir = docs.appendingPathComponent(Self.sheetDir, isDirectory: true)
+    if !FileManager.default.fileExists(atPath: dir.path) {
+      try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    }
+    return dir
+  }
+
+  @objc func sheet(_ call: CAPPluginCall) {
+    let name = (call.getString("name") ?? "sheet")
+    let b64 = call.getString("b64") ?? ""
+    guard let bytes = Data(base64Encoded: b64), !bytes.isEmpty else {
+      call.reject("nothing to write")
+      return
+    }
+    do {
+      let dir = try sheets()
+      let fm = FileManager.default
+      var url = dir.appendingPathComponent("\(name).pdf")
+      var n = 2
+      while fm.fileExists(atPath: url.path) {
+        url = dir.appendingPathComponent("\(name) \(n).pdf")
+        n += 1
+        if n > 999 { call.reject("too many sheets of that name"); return }
+      }
+      try bytes.write(to: url,
+                      options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+      call.resolve(["file": url.lastPathComponent])
     } catch {
       call.reject(error.localizedDescription)
     }
