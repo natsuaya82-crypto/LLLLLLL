@@ -675,6 +675,78 @@ want('first and last change places, and THAT is what says the order',
 want('the words on screen followed', g2.moved, true);
 want('and nothing is left lifted afterwards', g2.litAfter, -1);
 
+/* ---- 41-48: the noun chapter shows what this language really does --------
+   docs/GRAMMAR-V2-SPEC.md §14 Nouns: 「ユーザーが『りんご』『りんごたち』などを
+   実際の言語で作る。例えば poko / poko-mi」
+
+   So the row is a REAL pair, worked out by the engine -- the same road a
+   translation takes. A row that showed the rule and not what it makes of this
+   word would look identical and say nothing, which is why every claim below is
+   about the surface that came out.
+
+   And it must not build a second rule editor: the rules live on the word side
+   and the marks are words made in the 助詞 stage, so a row goes back to
+   whichever of the two it came from. That is what the last two hold. */
+const g2n = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wasPart = !!STG.set.part;
+  const wl = WORDS.length;
+  WORDS.push({ hw:'zpoko', pos:'n', mns:['fish'], at:1 });
+  WORDS.push({ hw:'ga', pos:'part', mns:['subject mark'], at:1, slot:'part.subj' });
+  stMarkSet('part');
+  STG.fm = [
+    { id:'p1', pos:'n', fm:'pl', at:'end', drop:0, add:sp('mi'), when:'' },
+    /* A SECOND way of making a plural, for nouns ending in a letter this one
+       does not end in. Two things at once, and both silent:
+
+       it must draw NO row, because an unchanged row is the app claiming a
+       form the language has not got -- and this is the shape that tests it,
+       since a rule of some OTHER feature would be filtered out by the chapter
+       before the question was ever asked;
+
+       and the row that IS drawn must be the plain rule's. A feature is spent
+       on the first rule that matches it, so asking the engine for
+       NUMBER=PLURAL rather than for THIS RULE hands both rows the same answer
+       -- the same word, under two different names, both looking right. */
+    { id:'p2', pos:'n', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'x',
+      wend:sp('q') },
+    /* and a rule about VERBS, which is the verbs chapter's and must not be
+       shown here as well */
+    { id:'p3', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' }
+  ];
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  const rows = Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) => ({
+      lab: b.querySelector('.psm').textContent,
+      from: b.querySelector('.psw').textContent,
+      to: b.querySelector('.psi').textContent,
+      go: b.getAttribute('data-do'), a: b.getAttribute('data-a') }));
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (!wasPart) delete STG.set.part;
+  return { n: rows.length, rows: rows,
+           pl: rows.filter((r) => r.to.indexOf('mi') >= 0)[0] || null,
+           mark: rows.filter((r) => r.to.indexOf(' ') >= 0)[0] || null,
+           tense: rows.filter((r) => r.to.indexOf('ka') >= 0).length };
+});
+
+want('the noun has exactly the forms this language can make of it', g2n.n, 2);
+want('a rule that says nothing about this word draws no row',
+     g2n.rows.filter((r) => r.from === r.to).length, 0);
+want('and the verbs chapter is not shown here as well', g2n.tense, 0);
+
+/* `tuf` is the first noun of the language this check opens -- g2Nouns() shows
+   the language's own word, not one the check invented, which is the point. */
+want('the plural is the word this language really makes',
+     g2n.pl && g2n.pl.to, 'tufmi');
+want('from the word it is a form of', g2n.pl && g2n.pl.from, 'tuf');
+want('and pressing it goes to where that rule is written',
+     g2n.pl && g2n.pl.go, 'openFmr');
+
+want('the mark stands apart, which is how this app writes one',
+     g2n.mark && g2n.mark.to, 'tuf ga');
+want('and pressing it goes to the word it is', g2n.mark && g2n.mark.go, 'openSlot');
+
 await br.close();
 srv.close();
 
@@ -696,3 +768,5 @@ console.log('          What somebody wrote on the forms page reaches the engine,
 console.log('          and a rule this side cannot say is counted, not sent.');
 console.log('          The word order is arranged by moving a word, and the six');
 console.log('          are not what anybody is asked.');
+console.log('          A noun shows the forms this language really makes of it,');
+console.log('          and a row goes back to where its rule is written.');
