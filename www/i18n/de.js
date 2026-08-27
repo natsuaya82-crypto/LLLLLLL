@@ -147,6 +147,7 @@ defLang('de', (function(){
       "kb.key"               : "Taste",
       "kb.key.del"               : "Diese Taste löschen",
       "kb.what"               : "Was sie tut",
+      "kb.w"               : "Breite",
       "kb.on"               : "Beim Drücken",
       "kb.del"               : "Rücktaste",
       "kb.sp"               : "Leertaste",

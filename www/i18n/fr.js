@@ -207,6 +207,7 @@ defLang('fr', (function(){
       "kb.key"               : "Touche",
       "kb.key.del"               : "Supprimer cette touche",
       "kb.what"               : "Ce qu’elle fait",
+      "kb.w"               : "Largeur",
       "kb.on"               : "Appui",
       "kb.del"               : "Retour arrière",
       "kb.sp"               : "Espace",

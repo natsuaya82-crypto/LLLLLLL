@@ -166,6 +166,7 @@ defLang('pt', (function(){
       "kb.key"               : "Tecla",
       "kb.key.del"               : "Excluir esta tecla",
       "kb.what"               : "O que faz",
+      "kb.w"               : "Largura",
       "kb.on"               : "Ao pressionar",
       "kb.del"               : "Retrocesso",
       "kb.sp"               : "Espaço",

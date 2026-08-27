@@ -159,6 +159,7 @@ defLang('it', (function(){
       "kb.key"               : "Tasto",
       "kb.key.del"               : "Elimina questo tasto",
       "kb.what"               : "Cosa fa",
+      "kb.w"               : "Larghezza",
       "kb.on"               : "Alla pressione",
       "kb.del"               : "Backspace",
       "kb.sp"               : "Spazio",

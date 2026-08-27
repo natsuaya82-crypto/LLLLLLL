@@ -61,6 +61,7 @@ defLang('en', (function(){
       "kb.key"               : "Key",
       "kb.key.del"               : "Delete this key",
       "kb.what"               : "What it does",
+      "kb.w"               : "Width",
       "kb.on"               : "Pressed",
       "kb.del"               : "Backspace",
       "kb.sp"               : "Space",

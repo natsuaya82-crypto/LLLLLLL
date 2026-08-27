@@ -164,6 +164,7 @@ defLang('ru', (function(){
       "kb.key"               : "Клавиша",
       "kb.key.del"               : "Удалить эту клавишу",
       "kb.what"               : "Что делает",
+      "kb.w"               : "Ширина",
       "kb.on"               : "При нажатии",
       "kb.del"               : "Backspace",
       "kb.sp"               : "Пробел",

@@ -75,6 +75,7 @@ defLang('ja', (function(){
       "kb.key"               : "キー",
       "kb.key.del"               : "このキーを消す",
       "kb.what"               : "押したとき",
+      "kb.w"               : "幅",
       "kb.on"               : "押す",
       "kb.del"               : "削除",
       "kb.sp"               : "スペース",

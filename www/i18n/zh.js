@@ -167,6 +167,7 @@ defLang('zh', (function(){
       "kb.key"               : "按键",
       "kb.key.del"               : "删除这个键",
       "kb.what"               : "按下时",
+      "kb.w"               : "宽度",
       "kb.on"               : "按下",
       "kb.del"               : "删除",
       "kb.sp"               : "空格",

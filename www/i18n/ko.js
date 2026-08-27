@@ -338,6 +338,7 @@ defLang('ko', (function(){
       "kb.key"               : "키",
       "kb.key.del"               : "이 키 삭제",
       "kb.what"               : "눌렀을 때",
+      "kb.w"               : "너비",
       "kb.on"               : "누르기",
       "kb.del"               : "지우기",
       "kb.sp"               : "스페이스",
