@@ -476,7 +476,7 @@ function gPosDemo(id){
 
 /* Which word is picked up. Where you are standing, not something the language
    holds, so it is never saved. */
-var g2Lift=-1;
+var g2Lift='';
 /* The three words a sentence needs, in the order THIS language puts them.
    gLay() runs the real engine, so what is drawn is what a sentence of this
    language would actually come out as -- not a diagram of one. */
@@ -495,13 +495,31 @@ function g2Three(){
    orderDef().seq[i], because gLay() arranged them by exactly that. So this
    writes the one value the old screen writes, through setOrder(), which marks
    it chosen and redraws. */
-function g2Move(i){
-  var q=orderDef().seq.slice(), t;
-  if(g2Lift<0){ g2Lift=i; render(); return; }
-  if(g2Lift===i){ g2Lift=-1; render(); return; }
-  t=q[g2Lift]; q[g2Lift]=q[i]; q[i]=t;
-  g2Lift=-1;
-  setOrder(q.join(''));
+function g2Move(key, i){
+  var at=g2Lift.split(':'), q, t, j;
+  /* Nothing lifted, or a word of a DIFFERENT row: this one is lifted instead.
+     Two rows arrange two different things -- what order the roles go in, and
+     which side a describing word stands -- and carrying a word from one into
+     the other would mean nothing. */
+  if(!g2Lift || at[0]!==key){ g2Lift=key+':'+i; render(); return; }
+  j=Number(at[1]);
+  if(j===i){ g2Lift=''; render(); return; }
+  g2Lift='';
+  if(key==='order'){
+    q=orderDef().seq.slice();
+    t=q[j]; q[j]=q[i]; q[i]=t;
+    setOrder(q.join(''));
+    return;
+  }
+  /* A row of two. Swapping them IS the other answer, so there is nothing to
+     work out: it is whichever side this language is not on now. */
+  setGPos(key, gPos(key)==='before'? 'after' : 'before');
+}
+/* One word of a row somebody arranges. The row is named so that two of them
+   on one page cannot pick each other's words up. */
+function g2Chip(key, i, w){
+  return '<button class="seg'+(g2Lift===key+':'+i? ' on' : '')+'"' +
+    DO('g2Move', [key, i]) + '>'+esc(wOut(w.hw))+'</button>';
 }
 /* §14 Sentence Structure. The words, then what they are, then the name --
    in that order, because the name is the RESULT and nobody has to read it. */
@@ -509,8 +527,7 @@ function g2Sent(){
   var w=g2Three(), i, out='';
   if(!w) return gNeedWords();
   for(i=0;i<w.length;i++)
-    out+='<button class="seg'+(g2Lift===i? ' on' : '')+'"' + DO('g2Move', [i]) + '>'+
-      esc(wOut(w[i].hw))+'</button>';
+    out+=g2Chip('order', i, w[i]);
   return '<div class="segs">'+out+'</div>'+gOrderLine()+
     '<div class="gsl">'+esc(orderDef().id)+'</div>';
 }
@@ -537,15 +554,43 @@ function g2Row(lab, from, to, act, arg){
    marked for CASE; the tenses belong to the verbs chapter and are not shown
    twice. Asked of the rule rather than of a list of ids, so a rule written
    tomorrow lands in the right chapter without anything being added here. */
-var G2_NOUN={NUMBER:1, CASE:1};
-function g2Nouns(){
-  var e=LinguaGrammarEngine, w=gWordOf('n'), m, a, i, r, made, out='', md;
+/* WHICH CHAPTER A RULE BELONGS TO, and it is asked here and nowhere else.
+   A rule drawn in two chapters is the same fact said twice; a rule drawn in
+   none is a rule nobody can see. Both are silent -- the page looks complete
+   either way -- and the first of them shipped: an interrogative is a MOOD, so
+   it appeared under the verbs AND under its own chapter, one screen apart.
+
+   The chapters are not features. 疑問 is one VALUE of MOOD while 否定 is a
+   feature of its own, and the imperative and the conditional are moods that
+   belong with the tenses. Reading it off the feature alone is what put the
+   question in two places. */
+function g2Chap(r){
+  var f=String(r.feature), v=String(r.value);
+  /* WHAT a rule is about comes before what it is called. A describing word
+     that agrees for number carries feature NUMBER, and reading the feature
+     alone put it in the nouns chapter -- which draws a NOUN, so the rule
+     applied to nothing and the row was never drawn at all. A rule visible
+     nowhere is the quieter half of the same mistake. */
+  if(String(r.target)==='ADJECTIVE') return 'adj';
+  if(f==='NUMBER' || f==='CASE') return 'n';
+  if(f==='NEGATION') return 'neg';
+  if(f==='MOOD' && v==='INTERROGATIVE') return 'q';
+  if(f==='TENSE' || f==='ASPECT' || f==='MOOD' || f==='VOICE') return 'v';
+  return '';
+}
+/* One word of this part of speech, and every form of it this language can
+   make that belongs to this chapter. Every chapter of §14 that is about a
+   word changing is this same walk with a different word and a different set
+   of features, so it is written once: the chapters differ in what they are
+   ABOUT, not in how they are drawn. */
+function g2Forms(pos, chap){
+  var w=gWordOf(pos), m, a, i, r, made, out='', md;
   if(!w) return gNeedWords();
   m=gModel([w]);
   a=m.inflections;
   for(i=0;i<a.length;i++){
     r=a[i];
-    if(!G2_NOUN[String(r.feature)]) continue;
+    if(g2Chap(r)!==chap) continue;
     made=g2Made(m, r);
     if(!made) continue;
     md=r.metadata||{};
@@ -555,6 +600,16 @@ function g2Nouns(){
   }
   return out || gNeedRules();
 }
+function g2Nouns(){ return g2Forms('n', 'n'); }
+/* §14 Verbs. 「luma / luma-ka をユーザーが実際に作る」 -- tense, and with it
+   every other way this language changes a verb.
+
+   Negation and questions are NOT here. §4 and §5 give each a chapter of its
+   own, and they earn one: either may be an ending, a beginning, or a separate
+   word altogether, and 「必ず PREFIX になると決めつけない」 is the whole point
+   of asking about them apart from the tenses. g2Chap() is what keeps them
+   apart, in one place. */
+function g2Verbs(){ return g2Forms('v', 'v'); }
 /* What THIS RULE makes of this word, asked of the engine and not worked out
    again here.
 
@@ -577,11 +632,251 @@ function g2Made(m, r){
 }
 function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
 
-/* The page. Two chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
-   they arrive one at a time, each with its own picture. */
-function g2Page(){
-  return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
-    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns();
+/* §14 Negation. The chapter that is NOT the same walk as the two above, and
+   the specification says why: 「必ず PREFIX になると決めつけない」. A language
+   may write its negation as an ending, as a beginning, or as a WORD OF ITS
+   OWN, and those are not three settings of one thing -- the first two change
+   the verb and the third changes the sentence.
+
+   So this chapter shows the pair of LINES rather than a pair of words, which
+   is what §14 draws:
+
+       Positive:  mi luma
+       Negative:  mi na luma
+
+   and it reads the same for all three ways, because the difference between
+   them is exactly what the two lines show.
+
+   Where the negation is a word, WHERE IT GOES is the engine's answer, not
+   this file's -- arrange() places it by the position this language chose.
+   Where it is an ending, the verb is inflected and the line is otherwise the
+   same. Neither branch decides anything: both ask. */
+/* The rules of this model that are about one thing. `value` is optional: a
+   negation is a feature of its own, and a question is one VALUE of MOOD, so
+   the chapters ask differently and neither has to know how the other does. */
+function g2Rules(m, chap){
+  var a=m.inflections, out=[], i;
+  for(i=0;i<a.length;i++) if(g2Chap(a[i])===chap) out.push(a[i]);
+  return out;
+}
+/* A chapter that is a pair of LINES rather than a pair of words. Two chapters
+   are this shape -- negation and questions -- and they are this shape for the
+   same reason: what changes may be the verb OR the sentence, and only showing
+   both lines reads the same for either.
+
+   One row per rule. Showing only the first would be this page choosing which
+   of somebody's rules counts, and asking the engine for the FEATURE rather
+   than for each rule would give every row the same word under a different
+   name -- which is the mistake that has now turned up in every chapter of
+   this page, because a feature is spent on the first rule that matches it. */
+function g2Pair(m, sub, v, rules, word, label, slotArgs){
+  var plus=g2Line([sub, v]), minus, md, i, out='';
+  for(i=0;i<rules.length;i++){
+    minus=g2NegSurf(m, v, rules[i], plus);
+    if(!minus || minus===plus) continue;
+    md=rules[i].metadata || {};
+    out+=g2Row(md.label || label, plus, minus, 'openFmr', [md.rule || '']);
+  }
+  /* And a word of its own, which is not a rule at all: the sentence is
+     arranged again WITH it in, and where it lands is what this language
+     answered rather than anything decided here. */
+  if(word){
+    minus=g2Line([sub, v, word]);
+    if(minus && minus!==plus)
+      out+=g2Row(label, plus, minus, 'openSlot', slotArgs);
+  }
+  return out || gNeedRules();
+}
+function g2Line(list){
+  var laid=gLay(list), i, out=[];
+  for(i=0;i<laid.length;i++) out.push(wOut(laid[i].hw));
+  return out.join(' ');
+}
+function g2Neg(){
+  var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
+  if(!sub || !v) return gNeedWords();
+  m=gModel([sub, v]);
+  return g2Pair(m, sub, v, g2Rules(m, 'neg'), gSlot('neg', 'not'),
+                t('stg.neg.t'), ['neg', 'not']);
+}
+/* The same line with the verb in its negative form. The word is swapped in
+   the laid-out line rather than the line being built twice: what changes is
+   one word, and rebuilding would let the two lines disagree about everything
+   else. */
+function g2NegSurf(m, v, r, plus){
+  var e=LinguaGrammarEngine, w, all=m.inflections, f={}, made;
+  for(w=0;w<m.words.length;w++) if(m.words[w].id===e.adapter.idOf(v)) break;
+  if(w>=m.words.length) return '';
+  f[String(r.feature)]=r.value;
+  m.inflections=[r];
+  made=e.morphology.inflect(m, m.words[w], f);
+  m.inflections=all;
+  if(made.surface===m.words[w].lemma) return '';
+  return plus.split(' ').map(function(x){
+    return (x===wOut(v.hw))? made.surface : x; }).join(' ');
+}
+
+/* §14 Adjectives. 「単に before / after だけにしない」
+
+   Two things, and the first is why the chapter is not just a row of forms:
+   WHERE a describing word stands is arranged here the way the sentence is
+   arranged in the first chapter -- two words of this language, and moving one
+   is what says which side. The old screen asked it with a pair of buttons
+   labelled 「名詞の前 / 名詞の後」; nobody has to read a label to see
+   `red house` become `house red`.
+
+   The second is that a describing word may itself CHANGE -- 「形容詞そのものが
+   変化する言語にも対応できるようにする」 -- and those rules are drawn under
+   the same heading, on an adjective of this language.
+
+   NOUN → ADJECTIVE is not here. §8 gives word formation a chapter of its own
+   and it is a different question: this one is about a word that already is an
+   adjective. */
+/* Two words of this language, in the order this language puts them, and
+   moving one says which side. Two chapters are this -- a describing word
+   beside its noun, and a place word beside its noun -- and both replace a
+   pair of buttons that had to be READ. */
+function g2Side(key, w, n){
+  var laid, i, out='';
+  if(!w || !n) return gNeedWords();
+  laid=gLay([w, n]);
+  for(i=0;i<laid.length;i++) out+=g2Chip(key, i, laid[i]);
+  return '<div class="segs">'+out+'</div>';
+}
+function g2Adj(){
+  var a=gWordOf('adj'), n=gWordOf('n');
+  /* One "make some words first" and not two: without an adjective there is
+     nothing to arrange AND nothing to change, and saying so twice is the app
+     talking to itself. */
+  if(!a || !n) return gNeedWords();
+  return g2Side('adj', a, n)+g2Forms('adj', 'adj');
+}
+
+/* §14 Adpositions / Location. 「現在の adp の位置設定だけではなく、場所を
+   どう表現するかを定義できるようにする」
+
+   `house in` and `in house` are this: the place word and its noun, in the
+   order this language puts them, and moving one says which side. It replaces
+   a pair of buttons labelled 「名詞の前 / 名詞の後」 with the phrase itself.
+
+   `house-LOC` -- the third way §7 names, where the place is marked on the
+   noun rather than said with a word -- CANNOT BE WRITTEN in this app yet.
+   The engine hears it (morphology.js knows LOCATIVE and ABLATIVE), and the
+   助詞 stage offers three roles that do not include them. docs/BACKLOG.md
+   carries that, because which of the two places a person should write it in
+   is not this file's to decide.
+
+   The place words themselves are the 場所 stage's and are not listed again
+   here: this chapter is about how a place is SAID, not about which places
+   this language has words for. */
+function g2Adp(){
+  return g2Side('adp', gSlotAny('where'), gWordOf('n'));
+}
+
+/* §14 Questions. 「方法は言語によって違う ── suffix / prefix / separate word /
+   word order / particle / intonation / combination。Lingua 側が勝手に決めない」
+
+   The same pair of lines as the negation, because a question is the same kind
+   of thing: what changes may be the verb or the sentence. An interrogative is
+   one VALUE of MOOD rather than a feature of its own, which is the only
+   difference and is why g2Rules() takes one.
+
+   **This app can write two of the seven ways and no more.** An ending and a
+   beginning are rules and arrive here; the other five have nowhere to be
+   written. That is not decided here and must not be papered over -- a chapter
+   that quietly showed one way would be this page narrowing the specification.
+   docs/BACKLOG.md carries what is missing, with what each would need. */
+function g2Ques(){
+  var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
+  if(!sub || !v) return gNeedWords();
+  m=gModel([sub, v]);
+  return g2Pair(m, sub, v, g2Rules(m, 'q'), null,
+                t('stg.ask.t'), null);
+}
+
+/* §14 Language Engine Status. 「ユーザーが Lingua で言語を作り込むほど、
+   Words + Morphemes + Derivations + Inflections + ... が蓄積され、その結果
+   Parser / Generator / Translation の精度が上がる」(§24)
+
+   So the last block of the page is what this language HAS. It is a count and
+   not a report: a number is a state, and the rest of the page is where each
+   of them can be seen one at a time.
+
+   Three rows and not the seven §14 draws. `Morphemes` is always nought --
+   nothing in this app writes one, because a rule carries its own letters --
+   and a row that can only ever say nought is a slot nobody can fill, which is
+   the shape this page has spent all day taking OUT. `Grammar rules` counts
+   what this file builds for the engine rather than anything somebody wrote.
+   Parser and generator coverage are drawn in §14 as `...` and are not a
+   number anybody has defined yet. Those four arrive when they can be true. */
+function g2Stat(lab, n){
+  return '<div class="gside"><span class="gsl">'+esc(lab)+'</span>'+
+    '<span class="gsw">'+esc(String(n))+'</span></div>';
+}
+function g2Status(){
+  var m=gModel([]);
+  return g2Stat(t('g2.words'), WORDS.length)+
+    g2Stat(t('g2.forms'), m.inflections.length)+
+    g2Stat(t('g2.der'), m.derivations.length);
+}
+
+/* THE CHAPTERS, and each one is a PAGE.
+
+   They were eight headings stacked down one screen, which is two of the four
+   shapes this repository forbids by name: 「同じページに情報量詰め込み」 and
+   「ページ遷移型にせずに」. It got worse with every chapter -- by the seventh
+   it was a page you scroll through to find out what is on it -- and §14 has
+   more to come. So the list is a list, and a chapter is where you go.
+
+   Splitting them buys something the owner named: 「新しい規則は＋とかで作れば
+   いいやん」. **A chapter knows its own part of speech and its own kind of
+   rule.** The + on the noun chapter makes a noun rule; nobody is asked which,
+   because the page they are standing on already said it.
+
+   Asked of the page rather than written down twice: gramArgs() in
+   www/phases.js hands this list to both walks, so a ninth chapter is walked
+   the day it is added. */
+function g2Chaps(){
+  /* The function comes before the name, and that is not taste: dead-check
+     counts a mention as the name against a bracket, a comma or a semicolon,
+     so a function that is the LAST thing in an object literal is followed by
+     `}` and reads as unused. Eight of them did. */
+  return [
+    {id:'order', body:g2Sent,   nm:t('stg.order.t')},
+    {id:'n',     body:g2Nouns,  nm:posLabel('n')},
+    {id:'v',     body:g2Verbs,  nm:posLabel('v')},
+    {id:'neg',   body:g2Neg,    nm:t('stg.neg.t')},
+    {id:'q',     body:g2Ques,   nm:t('stg.ask.t')},
+    {id:'adj',   body:g2Adj,    nm:posLabel('adj')},
+    {id:'adp',   body:g2Adp,    nm:t('stg.where.t')},
+    {id:'st',    body:g2Status, nm:t('wld.about')}
+  ];
+}
+function g2ChapBy(id){
+  var a=g2Chaps(), i;
+  for(i=0;i<a.length;i++) if(a[i].id===id) return a[i];
+  return null;
+}
+/* What a chapter is called, wherever it is named. The bar over a chapter's
+   page asks this through pageName(), so the list and the bar cannot disagree
+   about what somebody just opened. */
+function g2ChapName(id){
+  var c=g2ChapBy(id);
+  return c? c.nm : t('stg.order.t');
+}
+/* The list. Names and nothing else -- a row that explained what a chapter was
+   for would be the thing 「無駄に説明をするやつ」 names, and a count would need
+   a definition of "done" per chapter that nobody has given. */
+function g2List(){
+  var a=g2Chaps(), i, out='';
+  for(i=0;i<a.length;i++)
+    out+='<button class="stslot"' + DO('go', ['gram', 'v2:'+a[i].id]) + '>'+
+      '<span class="psm">'+esc(a[i].nm)+'</span>'+ICON_GO+'</button>';
+  return out;
+}
+function g2Page(a){
+  var c=(a && a.indexOf('v2:')===0)? g2ChapBy(a.slice(3)) : null;
+  return c? c.body() : g2List();
 }
 
 /* ---- the screen -------------------------------------------------------- */

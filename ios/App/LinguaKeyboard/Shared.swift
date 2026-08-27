@@ -70,7 +70,18 @@ struct Key: Decodable {
   let aw: Double?
   let dx: Double?
 
+  /// How many rows this key stands in. 2 when somebody joined it to the key
+  /// under it on the app's sheet, and a `gap` stands in the row below where
+  /// its lower half is; absent -- and 1 -- on every key written before merges
+  /// existed and on every key that is not one.
+  ///
+  /// Not `Board.h`, which is the old key-height multiplier nothing sends and
+  /// nothing reads. That is a Board and it was a multiplier; this is a Key
+  /// and it is a count of rows.
+  let h: Int?
+
   var width: CGFloat { CGFloat(w ?? 1) }
+  var tall: CGFloat { CGFloat(max(1, h ?? 1)) }
   var face: Face { Face(t: t, st: st, ch: ch, aw: aw, dx: dx) }
 }
 

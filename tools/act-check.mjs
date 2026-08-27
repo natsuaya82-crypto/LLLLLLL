@@ -220,7 +220,7 @@ const R = await pg.evaluate(() => {
      would be walking a shorter app than exists. */
   ['free','pro'].forEach(pl => {
     SET.plan = pl;
-    walkArg('gram', vGram, stAll().map(p => p.id), 'vGram ' + pl);
+    walkArg('gram', vGram, gramArgs(), 'vGram ' + pl);
   });
   SET.plan = 'free';
   /* The keyboard chapter is a list and each keyboard is a page. Board 0 is

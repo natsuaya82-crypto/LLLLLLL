@@ -444,6 +444,160 @@ const back = await pg.evaluate(async () => {
   return { fails };
 });
 
+/* ---------------------------------------------------------------------------
+   And the one act that is meant to destroy: the account going.
+
+   「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
+   OWNER 2026-08-27.
+
+   Four claims, and the last two are the ones that cannot be undone if they
+   are wrong. What is asked is IS THERE / IS THERE NOT and never how many:
+   a count is a number that changes the day somebody adds a key, and this
+   check exists precisely because keys get added.
+   --------------------------------------------------------------------------- */
+const gone = await pg.evaluate(async () => {
+  const fails = [];
+  const keys = () => {
+    const out = [];
+    for (let i = 0; i < localStorage.length; i++) out.push(localStorage.key(i));
+    return out;
+  };
+  const ours = () => keys().filter(k => k && k.indexOf('lingua.') === 0);
+
+  /* Somebody's phone, with everything on it that has ever been reported as
+     surviving a wipe. Written through the app's own savers, not poked into
+     localStorage, so a saver that files something somewhere else is caught. */
+  ME = { name: 'Ola', handle: 'ola', bio: 'hi', pic: '', link: '', loc: '', avSent: '' };
+  saveMe();
+  DRAFTS = [{ at: 1, ln: 'kano mos', mn: 'a tall hill', to: '', pr: 0, pics: [], vo: null, pv: false }];
+  draftsSave();
+  POSTS = [{ id: 'p1', ln: 'kano', at: 1 }];
+  savePosts();
+  localStorage.setItem('lingua.words', '[{"hw":"old"}]');   /* the flat keys from before */
+  SET.theme = 'dark'; SET.ui = 'ja'; save();
+
+  /* A neighbour in the same storage. NOT ours: no dot after the name, and a
+     name that merely starts with the same letters. If a wipe takes either of
+     these it has taken somebody else's data, which is the one mistake here
+     that cannot be corrected. */
+  localStorage.setItem('lingua', 'not ours');
+  localStorage.setItem('linguaphone.x', 'not ours either');
+
+  const hadDrafts = DRAFTS.length;
+
+  /* 1. the namespace itself, asked of the function that does it */
+  lsWipeNS();
+  if (ours().length)
+    fails.push('lsWipeNS() left ' + ours().length + ' key' +
+               (ours().length === 1 ? '' : 's') + ' under `lingua.`: ' +
+               ours().slice(0, 6).join(' '));
+
+  /* 3. and it did not reach past the dot. Asked here because the wipe has
+        just run; this is the same act as 1 seen from the other side. */
+  if (localStorage.getItem('lingua') !== 'not ours' ||
+      localStorage.getItem('linguaphone.x') !== 'not ours either')
+    fails.push('the wipe took a key that is not this app\u2019s. `lingua.` is the ' +
+               'prefix and the dot is part of it');
+
+  return { fails, hadDrafts };
+});
+
+/* The whole button, not the function underneath it: wipeAll() asks, tells the
+   server, empties the phone and drops the files, and a claim about lsWipeNS()
+   alone would be green with any of those four unwired. confirm() is answered
+   yes, which is the person pressing through the one question there is. */
+const wiped = await pg.evaluate(async () => {
+  const fails = [];
+  const ours = () => {
+    const out = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf('lingua.') === 0) out.push(k);
+    }
+    return out;
+  };
+  window.confirm = () => true;
+  let dropped = '';
+  window.Capacitor = { nativePromise: (plug, method) => {
+    if (method === 'dropAll') dropped = 'dropAll';
+    if (method === 'kept') return Promise.resolve({ langs: [] });
+    return Promise.resolve({});
+  } };
+
+  const old = langId;
+  ME = { name: 'Ola', handle: 'ola', bio: 'hi', pic: '', link: '', loc: '', avSent: '' };
+  saveMe();
+  DRAFTS = [{ at: 1, ln: 'kano mos', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false }];
+  draftsSave();
+  WORDS = [{ hw: 'kano', mn: 'hill' }]; save();
+
+  /* Signed in is the road a real phone takes, and it is not synchronous:
+     wipeAll() tells the server FIRST and empties the phone whatever it
+     answers, so wipeHere() runs in a callback. Poll rather than guess at a
+     delay -- a fixed wait that is one tick short is a check that passes on a
+     fast machine and fails on a slow one. */
+  wipeAll();
+  for (let i = 0; i < 200 && localStorage.getItem('lingua.me'); i++) {
+    await new Promise(r => setTimeout(r, 10));
+  }
+  if (localStorage.getItem('lingua.me'))
+    fails.push('wipeAll() never reached wipeHere() within two seconds. ' +
+               'netDropMe() calls it on both roads -- see www/net.js');
+
+  /* Nothing of the person's is readable, and nothing of the OLD language's is
+     filed anywhere. A fresh language exists again -- that is what a first run
+     is and it is not somebody's data -- so the question is the old id, never
+     "is the namespace empty" after the app has drawn itself again. */
+  if (ours().some(k => k.indexOf('lingua.' + old + '.') === 0))
+    fails.push('a slice of the language that was here is still filed after wipeAll()');
+  if (DRAFTS.length) fails.push('the drafts are still in the app after wipeAll()');
+  if (ME.name || ME.handle || ME.bio)
+    fails.push('the app still knows the person\u2019s name after wipeAll()');
+  if (POSTS.length) fails.push('the posts are still in the app after wipeAll()');
+  if (localStorage.getItem('lingua.drafts'))
+    fails.push('`lingua.drafts` was written back out after wipeAll()');
+  if (localStorage.getItem('lingua.me'))
+    fails.push('`lingua.me` was written back out after wipeAll()');
+  if (localStorage.getItem('lingua.words'))
+    fails.push('a flat key from before there could be more than one language survived');
+  if (SET.theme !== 'system' || SET.ui !== '')
+    fails.push('a setting was carried over. 「残るものねえ」 is the whole sentence');
+
+  /* 2. the files in Documents, which are the copies that outlive the app.
+        The stub records the call rather than the deletion -- there is no
+        Swift on a Linux runner -- so what is held here is that the button
+        asks for all three folders and not for the backups alone. */
+  if (dropped !== 'dropAll')
+    fails.push('wipeAll() did not ask the native side to empty Documents ' +
+               '(got ' + (dropped || 'nothing') + '). The recordings and the ' +
+               'sheets sit beside the backups where the Files app shows them');
+
+  return { fails };
+});
+
+/* And the other direction, which is the one that cannot be undone: an
+   ORDINARY save must not take a draft. Every failure of a delete is somebody
+   pressing a button; a failure here is the app losing work nobody asked it to
+   touch. Two saves in a row and a relaunch, per docs/DATA_SAFETY.md. */
+const kept2 = await pg.evaluate(async () => {
+  const fails = [];
+  DRAFTS = [{ at: 1, ln: 'one', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false },
+            { at: 2, ln: 'two', mn: '', to: '', pr: 0, pics: [], vo: null, pv: false }];
+  draftsSave();
+  WORDS = [{ hw: 'kano', mn: 'hill' }];
+  save(); save();                        /* a normal save, and two in a row */
+  saveLetters(); saveNotes(); saveStg(); saveSnd();
+  draftsRead();
+  if (DRAFTS.length !== 2)
+    fails.push('an ordinary save lost a draft: 2 saved, ' + DRAFTS.length + ' back');
+  /* a relaunch: the globals thrown away and read off storage again */
+  DRAFTS = [];
+  draftsRead();
+  if (DRAFTS.length !== 2 || DRAFTS[0].ln !== 'one' || DRAFTS[1].ln !== 'two')
+    fails.push('the drafts did not come back as they were after a relaunch');
+  return { fails };
+});
+
 await br.close();
 srv.close();
 
@@ -461,7 +615,7 @@ if (R.missing.length){
                 'nothing looks wrong until somebody needs it back.\n');
   process.exit(1);
 }
-const ALL = R.fails.concat(back.fails);
+const ALL = R.fails.concat(back.fails, gone.fails, wiped.fails, kept2.fails);
 if (ALL.length){
   console.error('\nbackup: ' + ALL.length + ' thing' + (ALL.length === 1 ? '' : 's') +
                 ' about keeping a language do not hold:\n');
@@ -476,6 +630,8 @@ console.log('        comes back whole from a storage wipe, refuses to overwrite 
 console.log('        language that is already there, and carries save number ' + R.no +
             ', which');
 console.log('        goes up and never down.');
+console.log('        Deleting the account leaves nothing under `lingua.` and nothing');
+console.log('        of anybody else\u2019s touched, and an ordinary save never takes a draft.');
 console.log('        A restore falls through unreadable generations to a good one,');
 console.log('        prefers a good file to wreckage in storage, refuses to write');
 console.log('        wreckage out, and writes an empty language without complaint.');

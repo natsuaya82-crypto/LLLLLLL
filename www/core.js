@@ -28,10 +28,52 @@
       of me". They still do.
    ========================================================================= */
 var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
-/* The eleven slices a language is filed under. One list, because emptying a
-   language, reading one and writing one out all have to name every slice, and
-   a wipe that named ten would leave a slice of the old language inside the
-   new one.
+/* Everything this app has ever written, and it is NOT a list.
+
+   「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
+   OWNER 2026-08-27 -- and the reason it had to be said again is one bug, not
+   several. wipeAll() used to name the keys it removed, so every key added
+   after it was written stayed behind: the drafts, the posts, the person's
+   name and face, the index of languages, and the eight flat keys from before
+   there could be more than one. Nothing threw. Somebody deleted their account
+   and the app still greeted them by name.
+
+   So the keys are COUNTED rather than named. A key added tomorrow is gone the
+   day it is added, and there is nothing to keep in step. `SLICES` below is no
+   longer part of this: it is what a BACKUP is made of and nothing else now.
+
+   The prefix is exact and includes the dot. `lingua` on its own, and anything
+   starting `linguaX`, belong to somebody else -- this is a shared storage and
+   a wipe that took a neighbour's key would be the one mistake here that
+   cannot be undone.
+
+   Two passes, because removeItem() renumbers the keys under localStorage.key()
+   and a single loop skips every second one. */
+function lsWipeNS(){
+  var doomed=[], i, k;
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=localStorage.key(i);
+      if(k && k.indexOf('lingua.')===0) doomed.push(k);
+    }
+    for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]);
+  }catch(e){}
+  return doomed.length;
+}
+/* 「言語を消すでも言語系は全部消す」OWNER 2026-08-27 describes a DIFFERENT act,
+   and there is nothing here to hold it: **this app has no way to delete one
+   language.** vLangs() (www/home.js) lists them and adds one; no screen
+   removes one, and nothing anywhere calls for it. A function written for it
+   today would be a function nothing reaches. When that button is built it
+   walks SLICES for one id via langKeyOf() -- and it is not lsWipeNS(), which
+   is the whole namespace and belongs to the account going, not a language.
+
+   The eleven slices a language is filed under. One list, because reading a
+   language and writing one out both have to name every slice.
+
+   It used to empty one too. That is `langWipe()` above now, and the whole of
+   what a wipe of the WHOLE app is is `lsWipeNS()` -- being in this list has
+   nothing to do with being deleted any more, only with being backed up.
 
    Two were missing from it and had been for as long as they existed, which
    is the whole reason the list is a list. The KEYBOARD is the language's --

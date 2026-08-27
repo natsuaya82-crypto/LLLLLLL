@@ -390,30 +390,42 @@ function wipeAll(){
   else wipeHere();
 }
 function wipeHere(){
-  /* Throw the stored slices away and read the language back. What an empty
-     language IS is langRead() and its four siblings, the same five langOpen()
-     calls to bring a different one out -- so this does not describe emptiness
-     a second time.
+  /* Everything under this app's name, counted rather than listed.
+     「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
+     OWNER 2026-08-27.
 
-     It used to: eleven assignments written out by hand, which is how ob was
-     still being reset to {snd:''} after that field had been replaced by lid,
-     and how STG was rebuilt without the rules and ex it has carried since. */
-  var si;
-  try{
-    for(si=0; si<SLICES.length; si++) localStorage.removeItem(langKey(SLICES[si]));
-  }catch(e){}
+     This used to walk SLICES, and SLICES is what a LANGUAGE is made of -- so
+     the drafts, the posts, the person's name and face, the index of languages
+     and the eight flat keys from before there could be more than one all sat
+     through it. Every one of them was the same bug: a list of keys, written by
+     hand, that nobody remembered to add to. lsWipeNS() in core.js has no list.
+
+     Then a first run, out of the same functions a first run uses. langFirst()
+     mints a NEW id, so not one key of the language that was here can be
+     written back by the saves below -- keeping the old id was how
+     lingua.langs surviving turned into the old language's letters being
+     rebuilt under it. */
+  lsWipeNS();
+  LANGS={}; langId='';
+  langFirst();
   langRead(); ltRead(); ntRead(); stRead(); sndRead(); sndStart();
-  /* the person's settings, back to what a fresh install has -- keeping the
-     three that are about them rather than about the language.
+  /* Whom this phone belonged to, what it was carrying, and what had been
+     written and not sent. All three are the person's and none of them is a
+     slice, which is why none of them was going anywhere before today. The
+     keys are gone above; these are the copies in memory, which would
+     otherwise be written straight back out by the next save. */
+  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
+  POSTS=[]; DRAFTS=[];
+  /* the person's settings, back to what a fresh install has, and NOTHING is
+     carried over -- not the theme, not the interface language, not the plan.
+     「残るものねえ」is the whole sentence.
 
-     The plan is the third, and it was not always. Erasing what is on this
-     phone is not cancelling a subscription, and once the plan moved to the
-     Keychain a wipe that set it to free was free for this session and paid
-     again at the next launch -- the file it used to be reset in no longer
-     holds it. Somebody who is paying stays paid, which is also the only
-     answer that does not depend on which of the two copies is read first. */
-  var theme=SET.theme, ui=SET.ui, pl=SET.plan;
-  SET=setDefaults(); SET.theme=theme; SET.ui=ui; SET.plan=pl;
+     The plan comes back by itself at the next launch, out of the Keychain,
+     and that is correct rather than a hole: deleting an account is not
+     cancelling a subscription, and Apple has not been told anything. Money
+     decides what may be DONE and nothing about what exists -- here nothing
+     exists either way, so it protects nothing and costs nothing. */
+  SET=setDefaults();
   netOut();
   /* and the twenty-eight slots, for a language that is empty now and on a
      plan that adds no letters of its own */

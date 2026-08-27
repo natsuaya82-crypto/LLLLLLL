@@ -45,37 +45,30 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<!-- Google's sign-in comes back to the app through a URL scheme, and the
-	     scheme is the client id with its two halves swapped: a client id of
-	     123-abc.apps.googleusercontent.com is the scheme
-	     com.googleusercontent.apps.123-abc. Google's SDK reads it from here
-	     and refuses to start if it is missing or does not match.
+	<!--- Google's sign-in comes back to the app through a URL scheme, and the
+	     scheme is the client id with its two halves swapped. Google's SDK reads
+	     it from here and refuses to start if it is missing or does not match.
 
-	     There is no CFBundleURLTypes here, and that is deliberate. A
-	     placeholder stood in this file for one build and Apple refused the
-	     delivery: build 86 came back as ITMS-90158, "URL schemes need to
-	     begin with an alphabetic character". A scheme of underscores is not
-	     merely unset, it is malformed, and nothing on this side says so.
-	     An absent key is the honest shape of "not configured".
+	     This value and GOOGLE_IOS_ID in www/net.js are the same client id and
+	     have to stay that way: one without the other is a button that opens a
+	     sheet and cannot come back. Neither is a secret — the id names the app
+	     and proves nothing.
 
-	     When the client is made in the Google Cloud console, this block goes
-	     back with the real value:
-
-	       <key>CFBundleURLTypes</key>
-	       <array>
-	         <dict>
-	           <key>CFBundleURLSchemes</key>
-	           <array>
-	             <string>com.googleusercontent.apps.123-abc</string>
-	           </array>
-	         </dict>
-	       </array>
-
-	     and GOOGLE_IOS_ID in www/net.js takes the client id at the same
-	     time. Both, or neither: one without the other is a button that opens
-	     a sheet and cannot come back. Neither of them is a secret. Until
-	     then the Google button says it is not in this build, which is true,
-	     and Apple's sign-in is unaffected. -->
+	     A PLACEHOLDER once stood here and Apple refused the delivery: build 86
+	     came back as ITMS-90158, "URL schemes need to begin with an alphabetic
+	     character". A scheme of underscores is not merely unset, it is
+	     malformed. If this client ever goes away, DELETE this whole block:
+	     an absent key is the honest shape of "not configured". Do not leave a
+	     stand-in. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.535150348007-i8roam4vdjjlfql5ktb4mld3v9chb6gr</string>
+			</array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- A language is written to Documents as a file, and these two are the

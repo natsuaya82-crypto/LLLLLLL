@@ -154,6 +154,14 @@ function shareKey(key){
     o={k:key.k};
   }
   o.w=key.w||1;
+  /* How many rows it stands in, when somebody joined it to the one under it.
+     Only when there is one: a board with no merges is written exactly as it
+     was written before merges existed. The gap standing in the row below
+     crosses as an ordinary gap -- the extension draws one clear and does
+     nothing when it is pressed, which is what the lower half of a merged key
+     has to be -- so `up` stays in here and is not sent. It is this side's
+     word for which gap that is, and nothing over there asks. */
+  if((key.h||1)>1) o.h=key.h;
   if(key.k==='lt' && key.f){
     f=[]; any=false;
     for(i=0;i<4;i++){

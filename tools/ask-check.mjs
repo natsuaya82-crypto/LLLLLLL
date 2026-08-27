@@ -31,6 +31,21 @@
       'chatgpt'` does not fall back at all: ASK_TO[w] is undefined and the
       builder throws on `base.length`.
 
+   5. WHAT LEAVES IS ROMAN, AND IT IS TAB-SEPARATED. 「自作文字の場合はaiに送る
+      時はアルファベットになるように。」「〇〇　〇〇 みたいに単語と意味を送る
+      やん。」 OWNER 2026-08-27. A spelling typed on the Lingua keyboard is
+      private use code points -- U+E000 upward, one per drawn letter -- and
+      spType() turns them back only on the road in from the field. A word that
+      arrived through IMPORT never passes it: www/import.js:770 takes hw out
+      of the file as it stands. So a dictionary can hold private use spellings
+      today, and every one of them would have gone out as somebody else's font
+      to a reader with no font at all. Nothing throws: the URL builds, the
+      link opens, and the other end shows squares.
+
+      And the tab is the round trip. A hundred words that have to be retyped
+      is not a hundred words made, so what goes out is what impDelim()
+      (www/import.js:66) reads back with no scoring -- see askWords().
+
    Japanese is nine URL bytes a character (あ -> %E3%81%82) where English is
    one, so the ten languages are not ten spellings of one test: at the same
    ceiling they carry three times less material, and a budget counted in
@@ -87,6 +102,42 @@ const r = await pg.evaluate(({s}) => {
           fails.push('2: ' + lg + ' counted ' + L.put + ' words and one of them is not there: ' + rows[i]);
     }
   });
+
+  /* 5 -- private use code points never leave, and the pair is tab-separated.
+     Seeded the way IMPORT seeds one: straight into WORDS, without passing
+     spType(). PUA0 is the page's own start of the range. */
+  SET.ui = 'en';
+  const pua = String.fromCharCode(PUA0) + String.fromCharCode(PUA0 + 1) +
+              String.fromCharCode(PUA0 + 2);
+  /* At the FRONT, and that is the whole of whether this check means
+     anything. Pushed to the end it sat at index 510 of a dictionary the
+     budget cuts off around 43, so the code point never reached the URL and
+     the check passed with puaRoman() taken out -- green, and about nothing.
+     Watched failing to fix, which is the only reason it was found. */
+  WORDS.unshift({ hw: pua, mns: ['a word typed on the Lingua keyboard'],
+                  pos: 'noun', ph: ['k','a'] });
+  {
+    const L = askLink(t('ask.word.ask'), null);
+    const back = decodeURIComponent(L.url.slice(L.url.indexOf('?q=') + 3));
+    for (let i = 0; i < back.length; i++) {
+      const c = back.charCodeAt(i);
+      if (c >= 0xE000 && c <= 0xF8FF) {
+        fails.push('5: a private use code point (U+' + c.toString(16).toUpperCase() +
+          ') left for an AI that has no font for it — hw reached the URL without puaRoman()');
+        break;
+      }
+    }
+    /* the pair is a pair, and the thing between them is a tab */
+    const rows = askWords();
+    if (!rows.length) fails.push('5: nothing to send');
+    rows.forEach(r => {
+      if (r.indexOf('\t') < 0)
+        fails.push('5: a word and its meaning are not tab-separated: ' + JSON.stringify(r));
+      else if (r.split('\t').length !== 2)
+        fails.push('5: a row is not one pair: ' + JSON.stringify(r));
+    });
+  }
+  WORDS.shift();
 
   /* 3 -- a scaffold that cannot fit opens nothing */
   SET.ui = 'ja';

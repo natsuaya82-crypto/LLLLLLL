@@ -170,7 +170,15 @@ final class KeyBoardView: UIView {
       var x = gap
       for v in row {
         let w = free * (v.key.width / total)
-        v.frame = CGRect(x: x, y: y, width: w, height: rowH)
+        // A key joined to the one under it covers that row too, and the gap
+        // between the two rows as well -- otherwise it stops 3 points short
+        // and the merge reads as two keys with a seam. The row below still
+        // holds a `gap` where its lower half is, so nothing there slides
+        // under it and the widths still divide. That gap is drawn clear, and
+        // keyAt() takes the first view containing the point -- this one, one
+        // row earlier -- so pressing the lower half presses this key.
+        let high = rowH * v.key.tall + gap * (v.key.tall - 1)
+        v.frame = CGRect(x: x, y: y, width: w, height: high)
         x += w + gap
       }
       y += rowH + gap

@@ -107,7 +107,7 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(async () => {
   const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [],
-                small: [], big: [], bent: [], picsSeen: 0, tall: [], rowsSeen: 0, classes: [],
+                small: [], big: [], bent: [], picsSeen: 0, picsSkip: [], picsAt: {}, tall: [], rowsSeen: 0, classes: [],
                 wide: [], widthsSeen: 0 };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
      already standing in front of every screen with a phone-sized viewport, so
@@ -368,7 +368,19 @@ const R = await pg.evaluate(async () => {
     const els = document.querySelectorAll('#app img.ppic');
     for (let i = 0; i < els.length; i++) {
       const e = els[i], r = e.getBoundingClientRect();
-      if (!r.width || !r.height || !e.naturalWidth) continue;
+      /* An <img> that never loaded has no naturalWidth, so it cannot be
+         measured -- and skipping it in silence is the one thing this must not
+         do. `photographs: 82` and `photographs: 81` look like the same kind
+         of number, so a picture that stopped loading reads as a picture that
+         was removed on purpose, and the walk says nothing either way. It is
+         named here instead. */
+      out.picsAt[where] = (out.picsAt[where] || 0) + 1;
+      if (!r.width || !r.height || !e.naturalWidth) {
+        out.picsSkip.push(where + ': a photograph that never loaded' +
+                          ' (' + Math.round(r.width) + 'x' + Math.round(r.height) +
+                          ', natural ' + e.naturalWidth + ')');
+        continue;
+      }
       out.picsSeen++;
       if (pct && (Math.abs(r.width - box) > 1 || Math.abs(r.height - box) > 1))
         out.big.push(where + ': a photograph drawn ' + Math.round(r.width) + 'x' +
@@ -744,6 +756,13 @@ console.log('photographs all one box, filled, none stretched: ' +
             ((R.big.length || R.bent.length)
               ? (R.big.length + R.bent.length) + ' FOUND'
               : R.picsSeen + ' measured'));
+if (process.env.PICS_AT) {
+  Object.keys(R.picsAt).sort().forEach(k => console.log('  pics ' + R.picsAt[k] + '  ' + k));
+}
+if (R.picsSkip.length) {
+  console.log('photographs that never loaded: ' + R.picsSkip.length);
+  R.picsSkip.forEach(m => console.log('  ' + m));
+}
 console.log('held and carried: ' + (HELD.length ? HELD.length + ' FOUND' : 'the alphabet and a keyboard both moved'));
 console.log('buttons pressed: ' + R.pressed +
             '  (' + R.names.length + '/' + (R.names.length + R.never.length) + ' distinct names)');
