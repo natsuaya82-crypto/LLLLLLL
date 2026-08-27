@@ -15,6 +15,37 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### DL の枠が決まりました（文書だけ。コードはまだ 0 行です）
+
+**オーナー 2026-08-27**（原文）:
+
+> 「DL言語は plus 1個 pro 2個。**これは自作言語とはまた別**」
+
+> 「無料はdlさせる**なんか話した？** お前さ、**公式アセットのdlはplusからって
+> いう決定事項あんのに**なんで聞いてくんの？」
+
+```
+無料 0   Plus 1   Pro 2      自作の言語とは別に数える
+```
+
+**Pro は 2 です。**08-25 の「DL言語3個**は？**」が浮かべた 3 ではありません
+── 問いは本当に問いで、違う数で返ってきました。`docs/PAID_FEATURES.md` の
+「its number is NOT decided」を今日の事実に直しました。
+
+**無料は最初から決まっていました。**「DLはplusから」がその答えであり、
+`docs/PAID_FEATURES.md` は「Free has one language and no `dl`」と既に
+書いていました。**訊いた方が間違いでした。**
+
+#### コードは一行も入っていません
+
+`CAN.dl` はまだ `CAN` に入れません。`dead-check` が
+「1 capability nothing asks for: CAN.dl — Delete the line.」と赤で返します。
+訊く画面（`www/home.js` の言語の概要ページの DL）が**まだ書かれていない**
+からで、`docs/PAID_FEATURES.md` が先に
+「It goes in with its first `can('dl')`, the way `kb` went in with `kbCap()`」
+と書いています。**数は文書が持ち、扉と一緒に入ります。**
+
+
 ### CSV の書き出しがなくなりました。取り込みは残ります
 
 **オーナー 2026-08-27**（原文）:

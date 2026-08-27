@@ -68,7 +68,7 @@ Plus < Pro` needs nobody told which is which.
 | `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
 | languages on this phone | **1** | **1** | **3** |
 | `dl` a language taken from the official assets | — | **yes** | yes |
-| how many DL'd languages | — | *1?* | *3?* | 
+| how many DL'd languages | — | 1 | 2 | 
 | `edit` editing a post you have sent | — | **yes** | yes |
 | `gram` `dir` `data` `file` `write` `badge` | — | — | yes |
 
@@ -90,20 +90,25 @@ and **counted as a pool across languages** rather than per language: three
 languages were nine keyboards while `KB_MAX` was three per language, on a plan
 that sells three.
 
-**`dl` is Plus's, and its number is NOT decided.** 「DLはplusから」 — that half
-is flat and is what the row above says. The number is the owner's next line and
-**it ends in a question**:
+**`dl` is Plus's, and its numbers landed 2026-08-27.** 「DLはplusから」 was
+always flat and is what the row above says. The count was the owner's next
+line and it ended in a question 「proは自分の言語3個+DL言語3個**は？**」 — that
+question has now been answered, and **not with the number it guessed**:
 
 ```
-DLはplusからだけどplusは自分の言語+DL言語1個
-proは自分の言語3個+DL言語3個は？
+DL言語は plus 1個 pro 2個。これは自作言語とはまた別   OWNER 2026-08-27
 ```
 
-So the table shows *1?* and *3?* and they are written that way on purpose. A
-number in this file is read as settled by everybody downstream — `wordCap()`,
-`kbCap()` and `langCap()` are each one place saying one number — and turning
-「は？」 into a constant is how a question the owner asked comes back as a rule
-nobody remembers agreeing to. **Ask before writing either into `core.js`.**
+**Free does not download at all**, and that was never open — it falls out of
+「DLはplusから」, which is this row. Asked again on 2026-08-27 the owner said
+so in the plainest terms: 「無料はdlさせるなんか話した？　公式アセットのdlは
+plusからっていう決定事項あんのになんで聞いてくんの？」 **It was decided; the
+asking was the mistake.** Free 0, Plus 1, Pro 2.
+
+Note Pro is **2 and not the 3 the question floated** — the 「は？」 was a real
+question and it came back with a different number. This is exactly why a
+「は？」 is not written into `core.js` as a constant while it is still a
+question.
 
 What the two numbers already tell us, though, is the shape, and the shape is
 not in question: **a DL'd language is counted SEPARATELY from your own.**
