@@ -792,9 +792,8 @@ defLang('ru', (function(){
       "set.data"          : "Данные",
       "set.terms"          : "Условия использования",
       "set.privacy"          : "Политика конфиденциальности",
-      "set.csv.out"       : "Экспорт в CSV",
       "set.csv.in"        : "Импорт из CSV",
-      "set.lock.csv.t"    : "Импорт и экспорт CSV",
+      "set.lock.csv.t"    : "Импорт CSV",
       "set.lock.csv.d"    : "Влейте партию, собранную в таблице",
       "set.wipe"          : "Удалить всё",
       "set.pw"          : "Сменить пароль",
@@ -1113,8 +1112,6 @@ defLang('ru', (function(){
       "csv.ph"            : "кошка\nвода\nидти\n\nkano, гора, существительное",
       "csv.btn"           : "Импортировать",
       "csv.full"        : "{0} перенесено, {1} создано — Free заполнен",
-      "toast.exported"    : "Экспортировано",
-      "toast.exportfail"  : "Не удалось экспортировать",
       "read.sep"          : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */

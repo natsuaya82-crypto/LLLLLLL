@@ -739,9 +739,8 @@ defLang('es', (function(){
       "set.data"         : "Datos",
       "set.terms"         : "Términos de uso",
       "set.privacy"         : "Política de privacidad",
-      "set.csv.out"      : "Exportar como CSV",
       "set.csv.in"       : "Importar desde CSV",
-      "set.lock.csv.t"   : "Importar y exportar CSV",
+      "set.lock.csv.t"   : "Importar CSV",
       "set.lock.csv.d"   : "Vuelca un lote que hayas armado en una hoja de cálculo",
       "set.wipe"         : "Borrar todo",
       "set.pw"         : "Cambiar contraseña",
@@ -1060,8 +1059,6 @@ defLang('es', (function(){
       "csv.ph"           : "gato\nagua\ncaminar\n\nkano, montaña, sustantivo",
       "csv.btn"          : "Importar",
       "csv.full"        : "{0} importadas, {1} creadas — Free está lleno",
-      "toast.exported"   : "Exportado",
-      "toast.exportfail" : "No se pudo exportar",
       "read.sep"         : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */

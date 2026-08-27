@@ -690,9 +690,8 @@ defLang('en', (function(){
       'set.data'        : "Data",
       'set.terms'        : 'Terms of Use',
       'set.privacy'        : 'Privacy Policy',
-      'set.csv.out'     : "Export as CSV",
       'set.csv.in'      : "Import from CSV",
-      'set.lock.csv.t'  : "CSV import and export",
+      'set.lock.csv.t'  : "CSV import",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
       'set.wipe'        : 'Erase everything',
       'set.pw'        : 'Change password',
@@ -1014,8 +1013,6 @@ defLang('en', (function(){
       'csv.ph'          : "cat\nwater\nto walk\n\nkano, mountain, noun",
       'csv.btn'         : "Import",
       'csv.full'        : '{0} taken, {1} coined — Free is full',
-      'toast.exported'  : "Exported",
-      'toast.exportfail': "Could not export",
       /* voice errors */
       /* how IPA and reading are joined when both are shown */
       /* the day's sentence. The sentence itself is not here: it comes

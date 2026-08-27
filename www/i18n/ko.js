@@ -954,9 +954,8 @@ defLang('ko', (function(){
       "set.data"         : "데이터",
       "set.terms"         : "이용약관",
       "set.privacy"         : "개인정보처리방침",
-      "set.csv.out"      : "CSV로 내보내기",
       "set.csv.in"       : "CSV에서 가져오기",
-      "set.lock.csv.t"   : "CSV 가져오기와 내보내기",
+      "set.lock.csv.t"   : "CSV 가져오기",
       "set.lock.csv.d"   : "스프레드시트에서 만들어 둔 묶음을 한꺼번에 부어 넣어요",
       "set.wipe"         : "모든 데이터 삭제",
       "set.pw"         : "비밀번호 변경",
@@ -1275,8 +1274,6 @@ defLang('ko', (function(){
       "csv.ph"           : "고양이\n물\n걷다\n\nkano, 산, 명사",
       "csv.btn"          : "가져오기",
       "csv.full"        : "{0}개 가져옴, {1}개 만듦 — Free가 가득 찼습니다",
-      "toast.exported"   : "내보냈어요",
-      "toast.exportfail" : "내보내지 못했어요",
       "read.sep"         : "　",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */

@@ -780,9 +780,8 @@ defLang('it', (function(){
       "set.data"         : "Dati",
       "set.terms"         : "Termini di utilizzo",
       "set.privacy"         : "Informativa sulla privacy",
-      "set.csv.out"      : "Esporta in CSV",
       "set.csv.in"       : "Importa da CSV",
-      "set.lock.csv.t"   : "Importazione ed esportazione CSV",
+      "set.lock.csv.t"   : "Importazione CSV",
       "set.lock.csv.d"   : "Riversa un blocco costruito in un foglio di calcolo",
       "set.wipe"         : "Cancella tutto",
       "set.pw"         : "Cambia password",
@@ -1101,8 +1100,6 @@ defLang('it', (function(){
       "csv.ph"           : "gatto\nacqua\ncamminare\n\nkano, montagna, sostantivo",
       "csv.btn"          : "Importare",
       "csv.full"        : "{0} importate, {1} create — Free è pieno",
-      "toast.exported"   : "Esportato",
-      "toast.exportfail" : "Esportazione non riuscita",
       "read.sep"         : "  ",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
