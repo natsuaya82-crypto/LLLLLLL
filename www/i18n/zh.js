@@ -650,6 +650,7 @@ defLang('zh', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "咨询 AI",
+      "ask.leave"    : "将打开其他应用",
       "ask.head"     : "我正在用一个叫 Lingua 的应用创造一门人造语言。",
       "ask.f.name"   : "语言名称",
       "ask.f.snd"    : "音（IPA）",
@@ -660,7 +661,7 @@ defLang('zh', (function(){
       "ask.f.end"    : "词尾",
       "ask.f.end.v"  : "{0}：{3} 个中有 {2} 个以 -{1} 结尾",
       "ask.f.words"  : "已有的词",
-      "ask.word.ask" : "请为这门语言提出 8 个新词。只使用上面的音，以及它已有的词形。每个词请给出词、一个意思、IPA 读音，以及一行说明为什么是这个形状。",
+      "ask.word.ask" : "我想为这门语言批量造词。请提出 100 个左右，接下来怎么走由你决定 —— 想问什么就问，觉得不对就说，也可以试我没想到的方向。关于格式只有一点：请把列表放在代码块里，一行一个词，词和意思之间用制表符分隔，这样我能直接粘回应用里。",
       "words.more" : "更多",
       "words.search"     : "搜索",
       "words.clear"      : "清除",

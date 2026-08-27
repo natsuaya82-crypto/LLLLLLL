@@ -693,6 +693,7 @@ defLang('fr', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Demander à une IA",
+      "ask.leave"    : "Ouvre une autre application",
       "ask.head"     : "Je construis une langue construite dans une application appelée Lingua.",
       "ask.f.name"   : "Nom de la langue",
       "ask.f.snd"    : "Sons (API)",
@@ -703,7 +704,7 @@ defLang('fr', (function(){
       "ask.f.end"    : "Fin de mot",
       "ask.f.end.v"  : "{0} : -{1} dans {2} sur {3}",
       "ask.f.words"  : "Mots qu'elle a déjà",
-      "ask.word.ask" : "Propose 8 mots nouveaux qui conviennent à cette langue. N'utilise que les sons ci-dessus et les formes de mots qu'elle a déjà. Pour chacun, donne le mot, un sens, sa lecture en API et une ligne expliquant ce choix de forme.",
+      "ask.word.ask" : "Je veux créer beaucoup de mots pour cette langue. Propose-en une centaine et mène ça comme tu le sens — pose-moi des questions, contredis-moi, essaie des directions auxquelles je n'ai pas pensé. Une seule chose sur la forme : donne la liste dans un bloc de code, un mot par ligne, le mot et son sens séparés par une tabulation, pour que je puisse la recoller dans l'application.",
       "words.more" : "Plus",
       "words.search"     : "Rechercher",
       "words.clear"      : "Effacer",

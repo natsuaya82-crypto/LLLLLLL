@@ -165,15 +165,41 @@ function askHead(extra){
   if(extra) for(i=0;i<extra.length;i++) out.push(extra[i]);
   return out.join('\n')+'\n';
 }
-/* The words to send, and why these. A word with no meaning teaches nothing
-   about the language it belongs to, so it does not spend any of the budget.
-   In the dictionary's own order, because an order that moves between two
-   presses is a different question asked twice. */
+/* The words to send, and the shape they go in.
+
+   TAB, and not " = ". 「〇〇　〇〇 みたいに単語と意味を送るやん。」
+   「これの候補を100個くらい出してみたいにすればいいんじゃないの？」 OWNER
+   2026-08-27. A hundred words that have to be typed back in by hand is not
+   making a hundred words, so what leaves has to be the shape that comes
+   back, and the shape that comes back has to be one www/import.js already
+   reads. Nothing was added there to meet this; this was written to meet it.
+
+   Tab because impDelim() (www/import.js:66) returns it the moment it sees
+   one, with no scoring at all -- where `,` `;` and `|` are chosen by
+   counting how many columns each row would have, so one malformed line in a
+   hundred can tip the whole paste onto a different delimiter. And a meaning
+   HAS commas in it: "mountain, hill" is in tools/import-check.mjs as a real
+   sample, and comma-separated it arrives as two columns.
+
+   ROMAN, and this is not a precaution. A spelling typed on the Lingua
+   keyboard is private use code points until spType() (www/letters.js:944)
+   turns it back -- "the one place a typed spelling becomes the language's
+   letters". A word that came in through IMPORT never passes that:
+   www/import.js:770 takes hw out of the file as it stands. So "hw is roman"
+   was true of one road in and unchecked on the other, and the reader would
+   have been sent code points out of somebody else's font.
+   「自作文字の場合はaiに送る時はアルファベットになるように。」 OWNER
+   2026-08-27. ask-check holds it.
+
+   A word with no meaning teaches nothing about the language it belongs to,
+   so it does not spend any of the budget. In the dictionary's own order,
+   because an order that moves between two presses is a different question
+   asked twice. */
 function askWords(){
   var out=[], i, m;
   for(i=0;i<WORDS.length;i++){
     m=wMn(WORDS[i]);
-    if(m) out.push(String(WORDS[i].hw)+' = '+m);
+    if(m) out.push(puaRoman(String(WORDS[i].hw))+'\t'+m);
   }
   return out;
 }

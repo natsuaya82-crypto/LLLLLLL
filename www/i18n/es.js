@@ -605,6 +605,7 @@ defLang('es', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Consultar a una IA",
+      "ask.leave"    : "Abre otra app",
       "ask.head"     : "Estoy creando una lengua construida en una app llamada Lingua.",
       "ask.f.name"   : "Nombre de la lengua",
       "ask.f.snd"    : "Sonidos (AFI)",
@@ -615,7 +616,7 @@ defLang('es', (function(){
       "ask.f.end"    : "Final de palabra",
       "ask.f.end.v"  : "{0}: -{1} en {2} de {3}",
       "ask.f.words"  : "Palabras que ya tiene",
-      "ask.word.ask" : "Propón 8 palabras nuevas que encajen con esta lengua. Usa solo los sonidos de arriba y las formas de palabra que ya tiene. Para cada una, da la palabra, un significado, su lectura en AFI y una línea explicando por qué esa forma.",
+      "ask.word.ask" : "Quiero crear muchas palabras para esta lengua. Propón unas 100 y llévalo por donde te parezca — pregúntame cosas, contradíceme, prueba direcciones que no se me hayan ocurrido. Solo una cosa sobre la forma: da la lista en un bloque de código, una palabra por línea, la palabra y su significado separados por un tabulador, para poder pegarla de vuelta en la app.",
       "words.more" : "Más",
       "words.search"     : "Buscar",
       "words.clear"      : "Borrar",
