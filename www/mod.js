@@ -293,73 +293,158 @@ function adminRow(k, n, go){
   return go? '<button class="set"' + DO(go) + '>'+body+'</button>'
            : '<div class="set">'+body+'</div>';
 }
-/* ---- what Apple counted -------------------------------------------------
-   「売り上げもアナリティクスも見れるようにしたい」「アプリの中で見たい」
-   OWNER 2026-08-26. supabase/functions/appstore/ is what fetches it and
+/* ---- what Apple counted, and the line it makes ---------------------------
+   「登録ユーザー数とそれぞれのプランの課金数、それで合計の売り上げ」
+   「特に売り上げはどのプランかが大事やろ」「あとは継続率」
+   「もっと日毎の折れ線グラフとかさ」 OWNER 2026-08-26.
+
+   supabase/functions/appstore/ is what fetches it and
    docs/reports/sales-2026-08-26.md is what was confirmed at Apple first.
 
-   Three things about these rows, and all three are about not saying more than
-   Apple said.
-
-   The takings are ONE ROW PER CURRENCY and are never added up. Apple pays per
+   THE TAKINGS ARE ONE ROW PER CURRENCY AND ARE NEVER ADDED UP. Apple pays per
    storefront in that storefront's currency, and turning EUR into JPY needs an
    exchange rate, which is not in this app. www/store.js and LinguaStore.swift
    both carry the sentence this comes from: "Building '$' + a number is how an
-   app ends up showing dollars to somebody being charged yen." So the code
-   Apple sent travels with the number and nothing is converted.
+   app ends up showing dollars to somebody being charged yen." One currency is
+   one row, which is what a total looks like when there is only one -- so
+   「合計の売り上げ」 is answered, and answered without inventing a rate.
 
-   There is no continuation RATE, only the counts Apple gives -- how many
-   renewed, how many cancelled. A rate means choosing a denominator and a
-   period and neither is decided (docs/FEATURES.md § 8).
+   A PLAN IS NAMED BY APPLE and not by this app: `Subscription Name` is what
+   the product is called in App Store Connect, so a plan added there appears
+   here the day it sells one, and nothing in www/ has to be told about it.
+   It is not put through t() for the same reason a handle is not.
 
-   And the DAY, because Apple's data is next-day: there is no such thing as
-   today's takings, so a number here with no date on it is yesterday's being
-   read as today's. It is one row and not three because the three reports are
-   readied separately at Apple's end; when they disagree it says both days
-   rather than picking one and being wrong about the others. */
-function adminDay(){
-  var a=ADMIN_ASC||{}, days=[], i;
-  var all=[a.sales && a.sales.day, a.subs && a.subs.day, a.events && a.events.day];
-  for(i=0;i<all.length;i++)
-    if(all[i] && days.indexOf(all[i])===-1) days.push(all[i]);
-  return days.sort().join(' / ');
-}
-/* The takings, in Apple's own currency codes. One blank row where nothing has
-   come back, so the screen has the same shape before and after -- and a blank
-   and not a nought, which adminRow() above says why. */
-function adminMoney(){
-  var a=ADMIN_ASC||{}, m=(a.sales && a.sales.money) || [];
-  if(!m.length) return adminRow('admin.money', null);
+   THE DAY is a row because Apple's data is next-day: there is no such thing as
+   today's takings, and a number here with no date on it is yesterday's being
+   read as today's. */
+function adminAsc(){ return ADMIN_ASC || {}; }
+function adminNow(){ return adminAsc().now || {}; }
+/* Two rows and they are two different facts, both asked for by name
+   「両方を別の行で出す」OWNER 2026-08-26: what came out of somebody's pocket,
+   and what arrives here after Apple's commission and the local tax.
+
+   Each is one row per currency, and one currency is ONE row -- which is what
+   a total looks like when everything was sold in one place, so 「合計の売り上げ」
+   is answered without an exchange rate being invented. Apple sets the price of
+   every storefront off one base price, so ¥800 and $4.99 are the same product;
+   what Apple does NOT publish in these reports is what ¥800 of Japanese
+   takings and $4.99 of American takings come to together, and neither does
+   this app. docs/reports/sales-2026-08-26.md § 10 has the way to collapse them
+   when it is wanted -- Apple's own price table, not a rate. */
+function adminPurse(k, key){
+  var m=adminNow()[k] || [];
+  if(!m.length) return adminRow(key, null);
   return m.map(function(row){
-    return adminRow('admin.money', row.cur+' '+row.proceeds);
+    return adminRow(key, row.cur+' '+row.total);
   }).join('');
+}
+
+/* Every plan Apple knows about, in its own name, with how many are paying for
+   it. Nothing before the first answer: a made-up row here would be a plan
+   that does not exist. */
+function adminPlans(){
+  var p=adminNow().plans || [], i, out='';
+  for(i=0;i<p.length;i++)
+    out+='<div class="set"><span class="sl">'+esc(p[i].name)+'</span>'+
+         '<span class="sv">'+esc(String(p[i].live))+'</span></div>';
+  return out;
+}
+/* A rate is a rate and reads as one. Null is a day on which nothing renewed
+   and nothing cancelled, which is not 0% -- 0% is everybody leaving. */
+function adminPct(v){
+  return (typeof v==='number')? (Math.round(v*100)+'%') : null;
+}
+
+/* ---- the line -----------------------------------------------------------
+   An SVG built here rather than a class in www/index.html, because that file
+   belongs to another session today. It wears no class at all and sets no
+   border and no corner -- there is nothing here for tools/box-check.mjs to
+   find, and nothing in the stylesheet to keep in step with it.
+
+   The colour is `var(--gold)`, which NAMES the variable rather than being a
+   colour: the two theme blocks at the top of index.html stay the one place a
+   colour lives, and the line is right in both themes without this file
+   knowing either.
+
+   A day Apple never readied is not in the series at all -- the function
+   leaves it out rather than sending a nought, because a nought on a chart is
+   a claim that nothing sold. So x is the DAY and not the position in the
+   list: two points a week apart sit a week apart, and the gap is visible
+   instead of being smoothed into a straight run of days that never existed. */
+function adminDayNo(d){
+  var p=String(d||'').split('-');
+  if(p.length!==3) return 0;
+  return Math.round(Date.UTC(+p[0], +p[1]-1, +p[2])/86400000);
+}
+function adminLine(vals){
+  /* vals: [{d:'YYYY-MM-DD', v:number}], oldest first, nulls already dropped.
+     Two points are the fewest that make a line; one is a dot and no line. */
+  if(vals.length<2) return '';
+  var W=320, H=76, PAD=3, i, x0=adminDayNo(vals[0].d);
+  var span=adminDayNo(vals[vals.length-1].d)-x0;
+  var lo=vals[0].v, hi=vals[0].v;
+  for(i=1;i<vals.length;i++){
+    if(vals[i].v<lo) lo=vals[i].v;
+    if(vals[i].v>hi) hi=vals[i].v;
+  }
+  /* A flat line sits in the middle rather than dividing by nothing. */
+  var rng=(hi-lo) || 1;
+  var pts=[];
+  for(i=0;i<vals.length;i++){
+    var x=span? ((adminDayNo(vals[i].d)-x0)/span)*(W-PAD*2)+PAD : W/2;
+    var y=H-PAD-((vals[i].v-lo)/rng)*(H-PAD*2);
+    pts.push(Math.round(x*10)/10+','+Math.round(y*10)/10);
+  }
+  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" '+
+    'style="width:100%;height:76px;display:block;margin:2px 0 14px" '+
+    'aria-hidden="true"><polyline fill="none" stroke="var(--gold)" '+
+    'stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" '+
+    'points="'+pts.join(' ')+'"/></svg>';
+}
+/* The takings, day by day, in ONE currency -- the line cannot mix two for the
+   same reason the row cannot add them. The one drawn is the one the newest
+   day has most of, which is the line somebody looking at this wants; the
+   others are in the rows above it. */
+function adminMoneyLine(){
+  var ser=adminAsc().series || [], m=adminNow().got || [], i, j, cur='', best=-1;
+  for(i=0;i<m.length;i++) if(m[i].total>best){ best=m[i].total; cur=m[i].cur; }
+  if(!cur) return '';
+  var vals=[];
+  for(i=0;i<ser.length;i++){
+    var mm=ser[i].got || [];
+    for(j=0;j<mm.length;j++) if(mm[j].cur===cur) vals.push({d:ser[i].day, v:mm[j].total});
+  }
+  return adminLine(vals);
+}
+function adminKeepLine(){
+  var ser=adminAsc().series || [], i, vals=[];
+  for(i=0;i<ser.length;i++)
+    if(typeof ser[i].keep==='number') vals.push({d:ser[i].day, v:ser[i].keep});
+  return adminLine(vals);
 }
 function vAdmin(){
   if(adminLocked()) return adminDoor();
-  var n=ADMINN||{}, rows=MODS||[], asc=ADMIN_ASC||{};
+  var n=ADMINN||{}, rows=MODS||[], asc=adminAsc(), now=adminNow();
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<button class="btn ghost"' + DO('adminLoad') + '>'+esc(t('mod.again'))+'</button>'+
     (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
+    /* The owner's four, in the order they were asked for:
+       「登録ユーザー数とそれぞれのプランの課金数、それで合計の売り上げ」
+       「あとは継続率」 OWNER 2026-08-26.
+
+       投稿 and 言語 came off in the same breath -- 「投稿数とかはいいのよ」.
+       Nothing was deleted to do it: admin_counts() in supabase/schema.sql
+       still counts both and still sends them, so either is one row back. */
     adminRow('admin.people', n.people)+
-    adminRow('admin.posts', n.posts)+
-    adminRow('admin.langs', n.langs)+
-    /* The count of reports is also the way to them. It was a row in settings
-       until 「設定の通報ボタン消せ」OWNER 2026-08-26 -- and settings is where
-       anybody holding the phone can see it, which is the half of that worth
-       keeping. The screen it opens is unchanged: 「通報の確認とかアナリティクス
-       とか売り上げとか含めて全部見れる新ページ」 put the reports on this page
-       as well, and the owner's call was that the reports screen stays what it
-       is. So the number here goes to it rather than replacing it. */
+    adminPlans()+
+    adminPurse('paid', 'admin.paid')+
+    adminPurse('got', 'admin.got')+
+    adminMoneyLine()+
+    adminRow('admin.keep', adminPct(now.keep))+
+    adminKeepLine()+
+    adminRow('admin.dl', now.downloads)+
+    adminRow('admin.day', asc.day || '')+
     adminRow('admin.reports', n.reports, 'goMod')+
-    /* Apple's four, under the app's own four. Each reads through the half of
-       the answer it belongs to, so a report Apple had not readied yet leaves
-       its own rows blank and does not take the others down with it. */
-    adminMoney()+
-    adminRow('admin.dl',     asc.sales  && asc.sales.downloads)+
-    adminRow('admin.subs',   asc.subs   && asc.subs.live)+
-    adminRow('admin.renew',  asc.events && asc.events.renew)+
-    adminRow('admin.cancel', asc.events && asc.events.cancel)+
-    adminRow('admin.day',    adminDay())+
     /* Who answers them, and the field that adds one. The heading is a name
        and not a sentence about what the list is for -- without it the handles
        sit under four numbers and read as a fifth. */

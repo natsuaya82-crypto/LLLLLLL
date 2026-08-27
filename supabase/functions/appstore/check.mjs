@@ -116,8 +116,12 @@ is('ready', d.ready, true);
 is('downloads are first-time only', now.downloads, 3);
 is('an update is not a download', now.updates, 9);
 is('a re-download is its own number', now.redownloads, 2);
-is('one currency is one row, two are two', now.money,
+is('what arrives, one row per currency', now.got,
    [{ cur: 'JPY', total: 700 }, { cur: 'USD', total: 3.49 }]);
+/* 「両方を別の行で出す」OWNER 2026-08-26 -- the shelf price is its own fact and
+   is bigger than the proceeds by Apple's commission. */
+is('what the customer paid is its own number', now.paid,
+   [{ cur: 'JPY', total: 1000 }, { cur: 'USD', total: 4.99 }]);
 is('live subscriptions add the Active columns', now.live, 21);
 is('both kinds of cancel count', now.cancel, 3);
 is('renewals', now.renew, 9);

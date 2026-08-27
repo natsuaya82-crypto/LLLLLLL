@@ -228,19 +228,31 @@ function num(s: string): number {
    the screen is the app's; what they COUNT is Apple's. */
 function fromSales(rows: Record<string, string>[]) {
   let fresh = 0, again = 0, updates = 0;
-  const money: Record<string, number> = {};
+  /* Two purses, and they are two different facts -- OWNER 2026-08-26 asked for
+     both as their own rows. `paid` is what came out of somebody's pocket;
+     `got` is what arrives here after Apple's commission and the local tax.
+     They are in DIFFERENT currencies as well as different amounts: a customer
+     in Japan pays in JPY and, depending on where the proceeds are booked, the
+     proceeds currency need not match -- so each is counted under its own
+     column's currency and the two are never crossed. */
+  const paid: Record<string, number> = {};
+  const got: Record<string, number> = {};
   for (const row of rows) {
     const kind = row['Product Type Identifier'] || '';
     const units = num(row['Units']);
     if (NEW_APP.indexOf(kind) !== -1) fresh += units;
     else if (AGAIN.indexOf(kind) !== -1) again += units;
     else if (UPDATE.indexOf(kind) !== -1) updates += units;
-    /* Proceeds are PER UNIT in this report -- the column says so in its own
-       name -- so a row of three is three times its own number. */
-    const cur = row['Currency of Proceeds'] || row['Proceeds Currency'] || '';
-    if (cur) money[cur] = (money[cur] || 0) + units * num(row['Developer Proceeds']);
+    /* Both columns are PER UNIT in this report -- "Developer Proceeds (per
+       unit)" says so in its own name and Customer Price is the shelf price --
+       so a row of three is three times its own number. */
+    const pc = row['Customer Currency'] || '';
+    if (pc) paid[pc] = (paid[pc] || 0) + units * num(row['Customer Price']);
+    const gc = row['Currency of Proceeds'] || row['Proceeds Currency'] || '';
+    if (gc) got[gc] = (got[gc] || 0) + units * num(row['Developer Proceeds']);
   }
-  return { downloads: fresh, redownloads: again, updates, money: purse(money) };
+  return { downloads: fresh, redownloads: again, updates,
+           paid: purse(paid), got: purse(got) };
 }
 /* One row per currency, and never a sum across them. Apple pays per storefront
    in that storefront's currency and there is no exchange rate in this project
