@@ -120,20 +120,6 @@ function vWords(){
        -- and neither saw that the last row had gone with the other's. A ⋯
        that opens nothing is a button that used to work. */
     navTop('', askBtn(t('ask.word.ask'), null))+
-    /* The one sentence the app is allowed to say about itself on this screen,
-       and it SAYS WHERE IT GOES.
-       「じゃあ遷移前にchatgptに移動しますみたいにすれば？」 OWNER 2026-08-27,
-       replacing 「他アプリに遷移します」 of the same morning -- 「他アプリ」 is
-       the true sentence that tells somebody nothing, and what they want to
-       know before pressing is which door this is.
-
-       The name is asked of `askWho()`, which is `www/assist.js`'s answer to
-       who `SET.askTo` names, so this screen holds no list of its own. It goes
-       through `t()` like every other visible string: a name is not translated
-       (ChatGPT is ChatGPT in ten languages) but it is still text on a screen,
-       and the only place text on a screen lives is www/i18n. */
-    '<div class="aleave">'+
-      esc(t('ask.leave', t('ask.to.'+askWho())))+'</div>'+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+

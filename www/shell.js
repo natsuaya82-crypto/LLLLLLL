@@ -817,7 +817,46 @@ function swEnd(e){
   if(Math.abs(dy) > Math.abs(dx)*0.6) return;
   back();
 }
+/* ---- putting the keyboard down -----------------------------------------
+   「投稿画面は下させるな、投稿画面以外は絶対下させろって話」 OWNER 2026-08-27.
+
+   Half of that was already true and half of it was nowhere. There is no
+   .blur() anywhere in www/ -- the app has never had a way to put a keyboard
+   down, and left it entirely to what iOS does on its own, which on a page
+   where every tap lands on something is not much. The only thing that puts
+   one back UP is pwKeepKb(), and that is bolted to the composer by two
+   guards, so 「投稿画面は下させるな」 has been right from the start.
+
+   Tapping the paper is the way, and it is the one that cannot break a press:
+   anything somebody meant to press -- a field, a button, a link, a label, a
+   select, anything carrying an action name -- is left alone and does what it
+   always did. What is left is the margins, the headings and the prose, and
+   none of those has ever done anything when pressed.
+
+   `pointerdown` and beside the back gesture, because this is the same kind of
+   thing: one listener above an app whose screens are thrown away and rebuilt
+   several times a second.
+
+   The composer is the exception and asks the same question pwKeepKb() asks,
+   in the same words -- two places saying "am I the composer" that must not
+   drift, which is why neither invents its own test. */
+function kbLetGo(e){
+  var a=document.activeElement;
+  if(!a) return;
+  if(a.nodeName!=='INPUT' && a.nodeName!=='TEXTAREA' && !a.isContentEditable) return;
+  if(here().r==='form' && here().a==='post:') return;
+  var t=e.target, n;
+  while(t && t!==document && t.nodeName!=='BODY'){
+    n=t.nodeName;
+    if(n==='INPUT' || n==='TEXTAREA' || n==='BUTTON' || n==='A' ||
+       n==='LABEL' || n==='SELECT' || t.isContentEditable) return;
+    if(t.getAttribute && t.getAttribute('data-do')) return;
+    t=t.parentNode;
+  }
+  a.blur();
+}
 function swMount(){
+  document.addEventListener('pointerdown', kbLetGo, {passive:true});
   document.addEventListener('pointerdown', swStart, {passive:true});
   document.addEventListener('pointerup', swEnd, {passive:true});
   document.addEventListener('pointercancel', function(){ swOn=false; }, {passive:true});

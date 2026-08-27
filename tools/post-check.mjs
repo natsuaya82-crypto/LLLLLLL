@@ -692,6 +692,102 @@ const R = await pg.evaluate(async () => {
     else root.style.removeProperty('--vvkb');
   }
 
+  /* ---- 11c2. the composer keeps its keyboard, and nothing else does ----
+     「投稿画面は下させるな、投稿画面以外は絶対下させろって話」 OWNER
+     2026-08-27.
+
+     Both halves are one function's whole content -- kbLetGo() in shell.js is
+     nothing but the exception -- so the exception is asked here against the
+     rule it is an exception TO. Asked of the composer AND of the dictionary,
+     because "focus survives a tap on the paper" is also true of a build where
+     nothing ever lets go, which is the state this replaced. */
+  {
+    const wasPW = PW;
+    const tap = (el) => {
+      const ev = new PointerEvent('pointerdown',
+        { bubbles: true, cancelable: true, isPrimary: true });
+      el.dispatchEvent(ev);
+    };
+    const paper = () => {
+      /* something nobody presses: a heading, a plain row, the body itself */
+      const app = document.getElementById('app');
+      const els = app.querySelectorAll('div, span, p, h1, h2, h3');
+      for (const e of els) {
+        if (e.closest('[data-do],button,a,label,select,input,textarea')) continue;
+        if (e.getBoundingClientRect().height > 0) return e;
+      }
+      return app;
+    };
+
+    PW = pwBlank(); openPost(); render();
+    await new Promise(r => requestAnimationFrame(() => r()));
+    let f = document.getElementById('pw-ln');
+    if (!f) fails.push('the composer drew no line to type in');
+    else {
+      f.focus();
+      tap(paper());
+      if (document.activeElement !== f)
+        fails.push('a tap on the paper of the COMPOSER put the keyboard down. ' +
+                   'That is the one screen it may not go down on');
+    }
+    PW = wasPW;
+
+    go('words'); render();
+    await new Promise(r => requestAnimationFrame(() => r()));
+    const q = document.getElementById('w-q');
+    if (!q) fails.push('the dictionary drew no search field');
+    else {
+      q.focus();
+      tap(paper());
+      if (document.activeElement === q)
+        fails.push('a tap on the paper of the DICTIONARY left the field ' +
+                   'focused, so the keyboard stays up with no way to put it ' +
+                   'down. Only the composer may do that');
+      /* and a press somebody meant is still a press */
+      q.focus();
+      const btn = document.querySelector('#app [data-do]');
+      if (btn) {
+        tap(btn);
+        if (document.activeElement !== q)
+          fails.push('pressing a button took the keyboard down with it. Only ' +
+                     'a tap on nothing may do that');
+      }
+    }
+  }
+
+  /* ---- 11d1. what is being written wraps, and does not run off the side --
+     「全部そうだけど、書くときに画面外に横にどんどん消えていくのやめて
+     欲しい。全部改行して画面内に文字が収まるようにして欲しい。」 OWNER
+     2026-08-27.
+
+     An <input> cannot wrap -- there is no CSS for it -- so this is asked of
+     the RECTANGLE and not of the tag: scrollWidth past clientWidth is the
+     text being off the screen, whatever element it is in. The line was fixed
+     for this same complaint long ago and the meaning beside it was not, so
+     one column held a field that wraps sitting on a field that does not. */
+  {
+    const wasPW = PW;
+    for (const n of [8, 60, 200]) {
+      PW = pwBlank();
+      PW.mn = 'meaning '.repeat(Math.ceil(n / 8)).slice(0, n);
+      PW.ln = 'kano tir '.repeat(Math.ceil(n / 9)).slice(0, n);
+      openPost();
+      render();
+      await new Promise(r => requestAnimationFrame(() => r()));
+      if (typeof lnGrowAll === 'function') lnGrowAll();
+      for (const id of ['pw-ln', 'pw-mn']) {
+        const e = document.getElementById(id);
+        if (!e) { fails.push('the composer drew no ' + id); continue; }
+        const off = Math.round(e.scrollWidth - e.clientWidth);
+        if (off > 2)
+          fails.push('#' + id + ' is ' + off + 'px wider than it is, with ' + n +
+                     ' characters in it: what was typed first has run off the ' +
+                     'side of the screen and cannot be read back');
+      }
+    }
+    PW = wasPW;
+  }
+
   /* ---- 11d2. the row over the keyboard does not move while one arrives --
      「2枚目が正解なのに1枚目みたいにまだガチャガチャうごくのうざい。
      写真とかは固定でしょ？」 OWNER 2026-08-27, two photographs a second
