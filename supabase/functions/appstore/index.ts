@@ -66,6 +66,11 @@ const REPORTS = {
   sales:  { reportType: 'SALES',              reportSubType: 'SUMMARY', frequency: 'DAILY', version: '1_0' },
   subs:   { reportType: 'SUBSCRIPTION',       reportSubType: 'SUMMARY', frequency: 'DAILY', version: '1_3' },
   events: { reportType: 'SUBSCRIPTION_EVENT', reportSubType: 'SUMMARY', frequency: 'DAILY', version: '1_3' },
+  /* The same report a month at a time. Apple offers SALES/SUMMARY at four
+     frequencies and this is one of them, so a month is ASKED FOR rather than
+     added up out of thirty days -- thirty requests to reach a number Apple
+     already has, and only as far back as the daily window goes. */
+  month:  { reportType: 'SALES',              reportSubType: 'SUMMARY', frequency: 'MONTHLY', version: '1_0' },
 };
 
 /* Which Product Type Identifiers are a first-time download, which are the same
@@ -88,6 +93,9 @@ const BACK = 5;
    chart -- more than that and the points are closer together than a finger.
    A ceiling rather than a fixed number: the screen asks for what it can draw. */
 const DAYS = 30;
+/* And how many months. Twelve is a year, which is what somebody looking at a
+   month-by-month list wants to see, and it is twelve requests. */
+const MONTHS = 12;
 /* Requests in flight at once. Thirty days is ninety reports; all ninety at
    once is a burst Apple has no reason to like, and one at a time is ninety
    round trips. */
@@ -107,6 +115,14 @@ function pacificDay(now: Date): string {
 }
 function daysAgo(n: number): string {
   return pacificDay(new Date(Date.now() - n * 86400000));
+}
+/* YYYY-MM, n whole months back from the one we are in. Built off the Pacific
+   date rather than by subtracting 30-day lumps, which drifts. */
+function monthsAgo(n: number): string {
+  const now = pacificDay(new Date()).split('-');
+  let y = +now[0], m = +now[1] - n;
+  while (m < 1) { m += 12; y -= 1; }
+  return y + '-' + (m < 10 ? '0' + m : String(m));
 }
 
 /* ---- the token ------------------------------------------------------------
@@ -437,6 +453,31 @@ Deno.serve(async (req: Request) => {
        report() above applied to a whole day: this is the ONE place the line's
        missing days are decided, and the phone draws what it is given. */
     const series = got.filter(Boolean).reverse();
+
+    /* And the months. Apple readies a month's report after the month closes,
+       so the one we are IN is never among them -- it is added up out of the
+       daily series instead, which always reaches back past the first of the
+       month because the window is thirty days. Without that the newest row of
+       a month-by-month list would be last month, on every day of this one. */
+    const months = (await pool(
+      Array.from({ length: MONTHS }, (_, i) => () => report(tok, vendor, 'month', monthsAgo(i + 1)))
+    )).map((rows, i) => (rows ? { month: monthsAgo(i + 1), ...fromSales(rows) } : null))
+      .filter(Boolean).reverse();
+
+    const thisMonth = monthsAgo(0);
+    const open = series.filter((d) => String(d.day).indexOf(thisMonth) === 0);
+    if (open.length) {
+      const paid: Record<string, number> = {}, got2: Record<string, number> = {};
+      for (const d of open) {
+        for (const r of (d.paid || [])) paid[r.cur] = (paid[r.cur] || 0) + r.total;
+        for (const r of (d.got || [])) got2[r.cur] = (got2[r.cur] || 0) + r.total;
+      }
+      /* `part: true` says this month is not finished. The screen does not draw
+         it differently today, but a number that is still growing and one that
+         is final are different facts and the answer has to carry which. */
+      months.push({ month: thisMonth, paid: purse(paid), got: purse(got2), part: true });
+    }
+
     return say({
       ready: true,
       day: end.day,
@@ -444,6 +485,7 @@ Deno.serve(async (req: Request) => {
          the last element of the line is also the headline. */
       now: series.length ? series[series.length - 1] : null,
       series,
+      months,
     });
   } catch (e) {
     return say({ ready: false, error: String(e) }, 502);

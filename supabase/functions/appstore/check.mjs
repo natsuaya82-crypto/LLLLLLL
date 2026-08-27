@@ -50,6 +50,16 @@ const EVENTS = [
 ].join('\n');
 
 let ADMIN = true, DAYS_READY = 1, DAYS_READY_N = 4, SEEN = [], skipDay = null;
+/* Whole months Apple has readied, newest first. The month we are IN is
+   deliberately not among them. */
+const pacific = (d) => d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
+const monthBack = (n) => {
+  const p = pacific(new Date()).split('-');
+  let y = +p[0], m = +p[1] - n;
+  while (m < 1) { m += 12; y -= 1; }
+  return y + '-' + String(m).padStart(2, '0');
+};
+let MONTHS_READY = [monthBack(1), monthBack(2), monthBack(3)];
 globalThis.fetch = async (url, opt) => {
   const u = String(url);
   if (u.indexOf('/rpc/is_admin') !== -1) {
@@ -57,7 +67,16 @@ globalThis.fetch = async (url, opt) => {
   }
   const q = new URL(u).searchParams;
   const type = q.get('filter[reportType]');
+  const freq = q.get('filter[frequency]');
   const day = q.get('filter[reportDate]');
+  /* A month at a time. Apple only readies a month once it has closed, so the
+     stub answers for whole months back and never for the one we are in --
+     which is the case the open-month arithmetic exists for. */
+  if (freq === 'MONTHLY') {
+    SEEN.push('MONTH@' + day);
+    if (MONTHS_READY.indexOf(day) < 0) return new Response('', { status: 404 });
+    return new Response(gzipSync(Buffer.from(SALES)), { status: 200 });
+  }
   SEEN.push(type + '@' + day);
   const auth = opt.headers.Authorization || '';
   if (auth.split('.').length !== 3) throw new Error('not a JWT: ' + auth);
@@ -165,6 +184,26 @@ DAYS_READY = 99;
 const f = await (await call('Bearer x')).json();
 is('nothing ready is an empty line', [f.day, f.series.length], [null, 0]);
 is('and no headline day', f.now === undefined || f.now === null, true);
+
+/* 9. the months -- 「月毎の売り上げ」OWNER 2026-08-26 */
+DAYS_READY = 1; DAYS_READY_N = 4; skipDay = null; SEEN = [];
+const mm = await (await call('Bearer x')).json();
+is('a month is ASKED for, not added up out of days',
+   SEEN.filter((s) => s.indexOf('MONTH@') === 0).length, 12);
+is('only the months Apple readied come back, oldest first',
+   mm.months.map((x) => x.month).slice(0, 3),
+   [monthBack(3), monthBack(2), monthBack(1)]);
+is('a whole month is not marked part-way', !!mm.months[0].part, false);
+/* The month we are IN has no report at Apple, so it is added up out of the
+   daily series -- otherwise the newest row would be last month, all month. */
+const OPEN = mm.months[mm.months.length - 1];
+is('the month we are in is there too', OPEN.month, monthBack(0));
+is('and is marked as still running', OPEN.part, true);
+/* four days of the stub's sales report, at 700 JPY of proceeds each -- but
+   only those that fall inside this month */
+const inMonth = mm.series.filter((d) => d.day.indexOf(monthBack(0)) === 0).length;
+is('the open month adds up only its own days',
+   OPEN.got[0].total, Math.round(700 * inMonth * 100) / 100);
 
 console.log(fails ? '\n' + fails + ' FAILED' : '\nall green');
 process.exit(fails ? 1 : 0);
