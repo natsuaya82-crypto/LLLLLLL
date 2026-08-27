@@ -1370,7 +1370,15 @@ function geKeep(){
    already null by the time geSave() gets here, so the two never both run. */
 function geLeft(from, to){
   if(from!=='glyph' || to==='glyph' || !GE) return;
-  geKeep();
+  /* Opening a letter and leaving it alone is not a change to it. Without
+     this, walking past this screen rewrote the letter, saved the language and
+     rebuilt the whole font every time -- and rebuilding the font is not
+     cheap. What is compared is what would be WRITTEN against what is already
+     there, so a letter nobody drew on is left exactly as it was found,
+     borrowed character and all. */
+  var l=ltById(GE.lid), was=(l && l.st)? l.st : [],
+      now=GE.st.filter(function(s){ return s.pts.length>0; });
+  if(JSON.stringify(was)!==JSON.stringify(now)) geKeep();
   GE=null;
 }
 function geSave(){
