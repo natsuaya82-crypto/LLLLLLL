@@ -729,7 +729,10 @@ const r = await pg.evaluate(({ s }) => {
   out.cellAddedW = out.cellAdded && kbUsed(kbLayer().rows[0]) === usedWas + 2;
   out.cellBack = (kbUndo(), kbLayer().rows[0].length === keysWas);
 
-  /* pressing a key selects it, and pressing it again puts it down */
+  /* pressing a key selects it, and pressing it again leaves it selected --
+     「同じとこ触ると選択解除されるからわかりにくい」 OWNER 2026-08-27. It used
+     to put the key down, and that was the only way to reach "nothing is
+     selected"; a press the run cannot reach does it now. */
   fresh();
   kbTapKey(0, 2); standKb();
   out.keySel = !!(KBH && KBH.k === 'k' && KBH.r === 0 && KBH.i === 2);
@@ -745,7 +748,7 @@ const r = await pg.evaluate(({ s }) => {
     !!pk && !!pkOther &&
     getComputedStyle(pk).backgroundColor !== getComputedStyle(pkOther).backgroundColor;
   kbTapKey(0, 2); standKb();
-  out.keyOff = !KBH;
+  out.keyStands = !!(KBH && KBH.k === 'k' && KBH.i === 2);
 
   /* and the key beside it joins the two */
   fresh();
@@ -759,7 +762,11 @@ const r = await pg.evaluate(({ s }) => {
   var v2Was = kbLayer().rows[0][2].v;
   var nWas = kbLayer().rows[0].length;
   var totWas = kbUsed(kbLayer().rows[0]);
-  kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+  /* SELECT, THEN PRESS THE BUTTON. 「なんで？ 結合ボタン作れよ。編集も含め全部
+     ボタンで作業だから」 OWNER 2026-08-27. It used to be two taps -- press a
+     key, press the one beside it -- and that road is what a second key had to
+     be selected on, so it is gone. Tapping selects; the button joins. */
+  kbTapKey(0, 2); kbTapKey(0, 3); kbJoinSel(); standKb();
   var j = kbLayer().rows[0][2];
   out.joined = kbLayer().rows[0].length === nWas - 1;
   out.joinedW = out.joined && kbU(j.w) === w2Was;
@@ -768,19 +775,184 @@ const r = await pg.evaluate(({ s }) => {
   out.joinedSel = !!(KBH && KBH.k === 'k' && KBH.i === 2);
   out.joinBack = (kbUndo(), kbLayer().rows[0].length === nWas);
 
-  /* the buttons over the sheet act on the key that is selected */
+  /* ---- and TAPPING a neighbour does not join any more -------------------
+     This is the road that had to be cleared: a key selected, the one beside
+     it pressed, and the two became one -- so a second key could never be
+     SELECTED, which is what 「あと複数キー選べないから」 is. Nothing about it
+     throws; the board simply loses a key where somebody meant to choose one.  */
+  fresh();
+  var tapWas = kbLayer().rows[0].length;
+  kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+  out.tapNoJoin = kbLayer().rows[0].length === tapWas;
+  /* it LENGTHENS now rather than moving -- what matters here is that the
+     two keys are still two keys */
+  out.tapMoved = kbSelKeys().length === 2;
+
+  /* the button reaches the key UNDER it too, when there is none beside it --
+     one button, both directions, because the owner asked for one */
+  fresh();
+  var last = kbLayer().rows[0].length - 1;
+  kbTapKey(0, last); standKb();
+  var un2 = kbUnderOf(0, last);
+  if (un2) kbTapKey(un2.r, un2.i);
+  standKb();
+  out.downOnly = !kbJoinRight() && kbJoinDown();
+  kbJoinSel(); standKb();
+  out.downJoined = (kbLayer().rows[0][last].h || 1) === 2;
+
+  /* ---- more than one key, and only ever a straight run ------------------
+     「色んなキー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
+     「バラバラ押した時は選択が解除されるようにしてほしい。」 OWNER 2026-08-27.
+
+     None of this throws. A run that quietly does not lengthen looks exactly
+     like one key chosen, and a press that quietly moves the selection instead
+     of releasing it looks exactly like a press that worked -- so what is
+     counted here is how many keys are lit, and what is lit after a press that
+     should have let go. */
+  function litKeys(){
+    return (String(vKb()).match(/background:var\(--pur\)/g) || []).length;
+  }
+  fresh();
+  kbTapKey(0, 2); standKb();
+  out.selOne = kbSelKeys().length === 1;
+  kbTapKey(0, 3); standKb();
+  out.selTwo = kbSelKeys().length === 2;
+  /* asked THROUGH the length, because a claim that indexes into the run
+     throws when the run is empty -- and a check that throws takes the whole
+     run down and reports nothing at all, which is worse than one that fails.
+     Watched: cutting the lengthening turned this file's own output into a
+     stack trace instead of a red line. */
+  out.selAcross = out.selTwo && kbSelKeys()[0].i === 2 && kbSelKeys()[1].i === 3;
+  kbTapKey(0, 4); standKb();
+  out.selThree = kbSelKeys().length === 3;
+  /* and the OTHER end lengthens it too */
+  kbTapKey(0, 1); standKb();
+  out.selBack = kbSelKeys().length === 4 && kbSelKeys()[0].i === 1;
+  out.selBackN = kbSelKeys().length;
+  out.selLit = litKeys() === 4;
+  /* pressing one that is already in the run leaves it alone -- no toggle */
+  kbTapKey(0, 2); standKb();
+  out.selNoToggle = kbSelKeys().length === 4;
+  /* ---- and one it cannot reach RELEASES it ---------------------------- */
+  fresh();
+  kbTapKey(0, 2); kbTapKey(0, 3); standKb();
+  out.relWas = kbSelKeys().length;
+  kbTapKey(2, 7); standKb();
+  out.released = !KBH && kbSelKeys().length === 0 && litKeys() === 0;
+  /* and the next press chooses it, so nothing is out of reach */
+  kbTapKey(2, 7); standKb();
+  out.relThenPick = kbSelKeys().length === 1 && kbSelKeys()[0].r === 2;
+  out.relPickN = kbSelKeys().length;
+
+  /* a COLUMN is released the same way -- 「今列選択してる時も適当に触ったら
+     選択解除されるようにして欲しい」 */
+  fresh();
+  kbHeadCol(3); standKb();
+  out.colWas = !!(KBH && KBH.k === 'c');
+  kbHeadCol(3); standKb();
+  out.colStands = !!(KBH && KBH.k === 'c');        /* pressed again: stands */
+  kbTapKey(1, 1); standKb();
+  out.colGone = !KBH;
+  /* and a row, by pressing a key */
+  fresh();
+  kbHeadRow(1); standKb();
+  out.rowWas = !!(KBH && KBH.k === 'r');
+  kbHeadRow(1); standKb();
+  out.rowStands = !!(KBH && KBH.k === 'r');
+  kbHeadCol(2); standKb();
+  out.rowGone = !KBH;
+
+  /* DOWN is the key whose column this one starts at, not index i of the next
+     row -- the free QWERTY's third row is inset by half a key, so those two
+     are different keys there */
+  fresh();
+  kbTapKey(0, 3); standKb();
+  var un = kbUnderOf(0, 3);
+  out.underIsCol = !!un &&
+    kbAtOf(kbLayer().rows[1], un.i) === kbAtOf(kbLayer().rows[0], 3);
+  if (un){ kbTapKey(un.r, un.i); standKb(); }
+  out.selDown = kbSelKeys().length === 2 && kbSelKeys()[1].r === 1;
+  out.selDownN = kbSelKeys().length;
+
+  /* ---- the buttons over the sheet are WHAT IS CHOSEN, and how many ------
+     「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27. A key's page is about one
+     key; joining is about two. Nothing throws either way -- an edit button
+     over four chosen keys would open one of them and look perfectly fine. */
   fresh();
   kbTapKey(0, 2); standKb();
   var tool = vKb();
-  out.keyJoinBtn = tool.indexOf('data-do="kbJoinSel"') >= 0;
-  out.keyOpenBtn = tool.indexOf('data-do="kbOpenSel"') >= 0;
+  out.oneOpenBtn = tool.indexOf('data-do="kbOpenSel"') >= 0;
+  out.oneNoJoin = tool.indexOf('data-do="kbJoinSel"') < 0;
   out.keyBinUp = tool.indexOf('data-do="kbCut"') >= 0;
   /* and no alignment, which is a row's business */
   out.keyNoAlign = tool.indexOf('data-do="kbAlign"') < 0;
+  kbTapKey(0, 3); standKb();
+  var tool2 = vKb();
+  out.twoJoinBtn = tool2.indexOf('data-do="kbJoinSel"') >= 0;
+  out.twoNoOpen = tool2.indexOf('data-do="kbOpenSel"') < 0;
+  out.twoBinUp = tool2.indexOf('data-do="kbCut"') >= 0;
+  /* three chosen: the join is drawn and DOWN -- two of three is not a choice
+     the button gets to make */
+  kbTapKey(0, 4); standKb();
+  out.threeJoinDown = /kbJoinSel[^>]*disabled/.test(vKb());
+  /* The DOWNWARD join has its own "exactly two", and the run above is across
+     so it never reaches it -- watched: taking that guard out left every claim
+     green. Asked of the guard itself, with ONE key chosen that does have a
+     key lined up under it. */
+  fresh();
+  kbTapKey(0, 3); standKb();
+  out.downHasOne = !!kbUnderOf(0, 3);
+  out.downAtOne = kbJoinDown() === false;
+  /* a vertical run STOPS where the rows stop lining up. The QWERTY's third row
+     is inset by half a key, so nothing in it starts at the column row 1 does --
+     the sheet saying that row does not line up, which is kbVJoin's answer too. */
+  var d1 = kbUnderOf(0, 3);
+  if (d1){ kbTapKey(d1.r, d1.i); standKb(); }
+  out.downTwo = kbSelKeys().length === 2;
+  var d2 = d1 && kbUnderOf(d1.r, d1.i);
+  out.downNoThird = !d2;
+  if (d2){ kbTapKey(d2.r, d2.i); standKb(); }
+  out.downStops = kbSelKeys().length === 2;
+  /* THREE lined up downward, which the pattern does not give -- so the two
+     gaps come off row 2 and the three rows line up. Only then does the
+     downward join's "exactly two" have a case to answer: without such a board
+     the direction test masks it, and taking the count out leaves every claim
+     green. Watched exactly that. The board is left behind, so the claims after
+     this one start again from fresh(). */
+  fresh();
+  (function (){
+    var r2 = kbLayer().rows[2], j2;
+    for (j2 = r2.length - 1; j2 >= 0; j2--) if (r2[j2].k === 'gap') r2.splice(j2, 1);
+    saveKb(); render();
+  }());
+  kbTapKey(0, 0); standKb();
+  var e1 = kbUnderOf(0, 0);
+  if (e1){ kbTapKey(e1.r, e1.i); standKb(); }
+  var e2 = e1 && kbUnderOf(e1.r, e1.i);
+  if (e2){ kbTapKey(e2.r, e2.i); standKb(); }
+  out.deepN = kbSelKeys().length;
+  out.deepJoinDown = out.deepN === 3 && kbJoinDown() === false;
+  fresh();
+  kbTapKey(0, 2); standKb();
   var binWas = kbLayer().rows[0].length;
   kbCut(); standKb();
   out.keyBinTook = kbLayer().rows[0].length === binWas - 1;
   out.keyBinBack = (kbUndo(), kbLayer().rows[0].length === binWas);
+  /* ---- and the bin takes EVERY key of a run, in ONE step ---------------
+     It took the first, which was the whole of a selection until runs existed:
+     three of four would have been left behind with the press looking like it
+     worked. And each key taken was its own saveKb(), so one press of the bin
+     wanted three presses of the step back -- which is not what a step back is.
+     Both halves are asked, because fixing one without the other is a keyboard
+     that loses keys somebody cannot get back in one go. */
+  fresh();
+  kbTapKey(0, 2); kbTapKey(0, 3); kbTapKey(0, 4); standKb();
+  var manyWas = kbLayer().rows[0].length;
+  out.manyChosen = kbSelKeys().length === 3;
+  kbCut(); standKb();
+  out.manyBinTook = kbLayer().rows[0].length === manyWas - 3;
+  kbUndo(); standKb();
+  out.manyBinBack = kbLayer().rows[0].length === manyWas;
 
   /* the last of the palette is gone, and so is the ghost it was carried as */
   fresh();
@@ -901,12 +1073,18 @@ const r = await pg.evaluate(({ s }) => {
   var kOther = document.querySelector('#kb .kbrow:not(.sel) .kbk');
   out.keysPlain = !!kAny && !!kOther &&
     getComputedStyle(kAny).backgroundColor === getComputedStyle(kOther).backgroundColor;
-  /* pressing the same head again puts it down */
+  /* pressing the same head again leaves it selected */
   kbHeadRow(1);
   var down = vKb();
-  out.selOff = !/class="kbrow sel"/.test(down);
-  out.cutDown = /kbCut[^>]*disabled/.test(down);
-  out.alDown = /kbAlign[^>]*disabled/.test(down);
+  out.selStands = /class="kbrow sel"/.test(down);
+  /* and the buttons go down when the selection is RELEASED, which is now a
+     press somewhere it cannot reach rather than a press on the same head */
+  kbTapKey(0, 0); standKb();
+  kbTapKey(0, 0); standKb();          /* released, then chosen: a key, not a row */
+  kbHeadCol(2); standKb();            /* a column while a key is chosen: released */
+  var down2 = vKb();
+  out.cutDown = /kbCut[^>]*disabled/.test(down2);
+  out.alDown = /kbAlign[^>]*disabled/.test(down2);
   /* a COLUMN lights up and can be cut, but has no slack to align */
   kbHeadCol(2);
   var colLit = vKb();
@@ -1072,7 +1250,12 @@ const r = await pg.evaluate(({ s }) => {
   out.selMoved = !!KBH && KBH.k === 'r' && kbLayer().rows[KBH.i][0].v === 'b';
   kbUndo();
   out.insBack = firsts() === 'abc';
-  kbHeadRow(1); kbInsAsk(); kbIns(true);
+  /* TWO presses, and that is the new rule showing its cost rather than a
+     wrinkle in the check: a row is chosen here already (the one the insert
+     followed), so the first press on a DIFFERENT head releases and the second
+     chooses. 「バラバラ押した時は選択が解除される」 -- moving from one thing to
+     another goes through nothing. */
+  kbHeadRow(1); kbHeadRow(1); kbInsAsk(); kbIns(true);
   out.dnWhere = firsts();
   kbUndo();
   /* it cannot break the ceiling, and the + is down when there is no room */
@@ -1865,17 +2048,50 @@ say(r.cellAdded && r.cellAddedW,
     'pressing one puts a key of exactly that cell there');
 say(r.cellBack, 'and the step back takes it away again');
 say(r.keySel && r.keyLit, 'pressing a key selects it and lights it, one at a time');
-say(r.keyOff, 'and pressing it again puts it down');
+say(r.keyStands, 'and pressing it again leaves it selected -- no toggle');
 say(r.joined && r.joinedW,
     'pressing the key beside it joins the two, as wide as the two of them were');
 say(r.joinedKeeps, 'keeping the letter of the one on the left');
 say(r.joinedRow, 'and the row comes to what it came to before');
 say(r.joinedSel, 'and what is left is what is selected');
 say(r.joinBack, 'and the step back takes the two back');
-say(r.keyJoinBtn && r.keyOpenBtn && r.keyBinUp,
-    'with a key selected the buttons over the sheet are join, its page, and the bin');
+say(r.tapNoJoin,
+    'but TAPPING the one beside it does not join them -- tapping only selects');
+say(r.tapMoved, 'the two of them are chosen instead -- the run lengthened');
+say(r.downOnly && r.downJoined,
+    'and the one button reaches the key UNDER it when there is none beside it');
+say(r.selOne && r.selTwo && r.selAcross && r.selThree,
+    'pressing the key beside a chosen one LENGTHENS the choice: 1, 2, 3 across' +
+    (r.selTwo ? '' : ' -- it did not lengthen at all'));
+say(r.selBack, 'and the other end of the run lengthens it too (' + r.selBackN + ' chosen)');
+say(r.selLit, 'and all four are lit, not just the first');
+say(r.selNoToggle,
+    'pressing one already in the run leaves it alone -- the toggle is gone');
+say(r.released,
+    'a key the run cannot reach RELEASES it: ' + r.relWas + ' chosen, then none');
+say(r.relThenPick, 'and the next press chooses that key, so nothing is out of reach');
+say(r.colWas && r.colStands && r.colGone,
+    'a column stands when pressed again, and is released by pressing a key');
+say(r.rowWas && r.rowStands && r.rowGone,
+    'and a row the same, released by pressing a column');
+say(r.underIsCol && r.selDown,
+    'DOWN is the key at this one\'s column in the next row, not index i of it');
+say(r.oneOpenBtn && r.oneNoJoin && r.keyBinUp,
+    'ONE key chosen: its page and the bin, and no join -- joining is about two');
+say(r.twoJoinBtn && r.twoNoOpen && r.twoBinUp,
+    'TWO chosen: join and the bin, and no page -- a page is about one key');
+say(r.threeJoinDown, 'THREE chosen: the join is down, not guessing which two');
+say(r.downHasOne && r.downAtOne,
+    'the downward join is down at ONE chosen, even where a key is lined up under it');
+say(r.deepJoinDown,
+    'and down at THREE lined up downward too (' + r.deepN + ' chosen), not just at one');
+say(r.downTwo && r.downNoThird && r.downStops,
+    'and a downward run stops where the rows stop lining up -- the inset third row');
 say(r.keyNoAlign, 'and not the alignments, which are a row\'s business');
 say(r.keyBinTook, 'the bin takes the key that is selected');
+say(r.manyChosen && r.manyBinTook,
+    'and every key of a run, not just the first -- three chosen, three gone');
+say(r.manyBinBack, 'and the step back puts all three back');
 say(r.keyBinBack, 'and the step back puts it back');
 say(r.tilesGone, 'and the three widths under the sheet are gone entirely');
 say(r.insColFullDown && r.insColFullAsk,
@@ -1899,7 +2115,8 @@ say(r.selLit && r.selHead, 'it lights the row up and its number with it');
 say(r.cutUp && r.alUp, 'and the bin and the three alignments come up');
 say(r.bandBack, 'the selection is a band BEHIND the keys');
 say(r.keysPlain, 'and the keys themselves are the colour they always were');
-say(r.selOff && r.cutDown && r.alDown, 'pressing it again puts the selection and the buttons down');
+say(r.selStands, 'pressing the same head again leaves it selected');
+say(r.cutDown && r.alDown, 'and the buttons go down once the selection is released');
 say(r.colLit, 'a column lights up too, header and the keys standing in it');
 say(r.insetAt >= 0, 'the board has a row inset by half a key (row ' + r.insetAt + ')');
 say(r.litInset, 'and no key on it lights for any column -- it lines up with none of them');

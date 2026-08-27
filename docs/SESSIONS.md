@@ -186,9 +186,29 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    自分で解く。自分の枝の中の話なので。手に負えない衝突が出たら、そこで止めて
    報告する ── それは二人が本当に同じ行を欲しがった、数少ない場合。
 
-7. npm test は回さない（六分かかる）。回すのは、変えた場所を押さえる検査
-   一つだけ、名指しで（npm run card / post / base など）。
-   バグを戻して赤を見るのも、その一つだけ。全ゲートはリーダーが最後に一度。
+7. **赤を見るのは作業、緑を見るのは検証。作業は本人にしかできず、検証はまとめ
+   られる。** 2026-08-27 にオーナーが数えた ──「キーボードと文法がリアルに
+   5〜6時間動いてるんだけど、長すぎない？ ゲートが緑になる確認は…まとめて。
+   個人個人でやる必要ある？」
+
+   **速い八つ（約2秒）は好きなだけ回す。** ES5・script タグ・死んだコード・
+   角丸で、落ちると端末が真っ白になる種類。`tools/pre-commit` が毎コミット
+   回している。
+
+   **遅い二十は、赤を見るためだけに回す。** バグを戻して、担当の検査が落ちる
+   のを一度見る。**そのあと直したら、緑を見に行かずに push する。**
+   `npm run press` は五分、`kb` も重い ── その五分を、本人と、サブリーダーと、
+   リーダーで三回払うと十五分になり、**三回目の緑が二回目より本当になることは
+   ない。**
+
+   **緑はリーダーとサブリーダーが、取り込んだあとに一度。** 全ゲート28本。
+
+   リーダーへ: **セッションに「一度回して緑を見て」と言わないこと。** 2026-08-27
+   にリーダーが何度もそう指示して、そのぶんそのまま遅れた。追いついた直後の
+   確認も、取り込みのときにまとめて出る。
+
+   取り込んだゲートが赤なら、そのとき枝ごとに担当の検査を一本ずつ回して切り
+   分ける ── **一回のデバッグ**であって、毎回全員が緑を払うのとは釣り合わない。
 
 8. 終わったら報告する:
      何を、どのファイルで変えたか
@@ -347,9 +367,25 @@ Report the overlap. Stop. That is the finished job.
 
 ## 6. The gate is the leader's
 
-A session runs **the one check that holds what it changed**, by name --
-`npm run card`, `npm run post`. Not `npm test`: six minutes, and the leader
-runs it once over everything after integrating.
+**Watching a check go RED is work; watching it go GREEN is verification.
+Only the author can do the first. The second can be done once, for everybody.**
+
+- **The fast eight (~2s): run them freely.** ES5, a missing script tag, dead
+  code, a corner -- the kinds that blank a device. `tools/pre-commit` runs
+  them on every commit anyway.
+- **The slow twenty: run ONE, and only to watch the bug go red.** Put the bug
+  back, see the check that holds it fail, take the bug out -- then **push
+  without running it green.** `npm run press` is five minutes; paid by the
+  session, the sub-leader and the leader it is fifteen, and the third green is
+  not truer than the second.
+- **The green belongs to the leader and the sub-leader, once, after
+  integrating.** All 28.
+
+**Leaders: do not ask a session to "run it once and see green".** That was
+done repeatedly on 2026-08-27 and the delay was exactly the sum of it.
+
+If the integrated gate goes red, run the one check per branch then to find
+which -- one debugging session, against everyone paying for green every time.
 → `docs/TESTING.md` § the gate
 
 ---

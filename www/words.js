@@ -106,24 +106,6 @@ function wordsHidHTML(){
   return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
-/* The ... in the dictionary's bar. What is behind it is about the WORDS of
-   this language rather than about one of them -- the rules that make a form
-   out of a word, which sat at the head of the grammar chapter above the
-   fifteen stages and is not a stage. 「規則で作る形はあってもいいけど、ここに
-   載せるのは反対」
-
-   It is where a downloaded word list will go too, when there is one to go
-   there: both are the dictionary seen from outside a single word. Nothing is
-   put here before it exists -- a row that opens nothing is a button that used
-   to work. */
-function wordsMore(){
-  openForm('wmore', t('words.more'),
-    '<button class="set" style="border-bottom:none"' + DO('go', ["forms"]) + '>'+
-      '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
-      '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+
-      ICON_GO+'</span></button>');
-}
-FORM_OPEN.wmore=function(){ wordsMore(); };
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
@@ -131,18 +113,13 @@ function vWords(){
        wants it at the moment they are looking at their dictionary and short
        of a word, and a thing you have to open a menu to find is a thing
        nobody finds. www/assist.js builds it. */
-    /* Two marks at the right end of one bar, and .navq alone cannot make
-       them: it pushes with margin-left:auto, so two of them SPLIT the free
-       space and the first stands in the middle of the bar -- which is what
-       the comment over .navc in www/index.html has said all along. .bkw is
-       the wrapper the back arrow already uses: inline-flex, flex:0 0 auto,
-       no auto margin. Inside it the two are flex items and keep their 44,
-       and the .navc round it does the one push. No new CSS. */
-    navTop('<span class="bkw">'+
-             askBtn(t('ask.word.ask'), null)+
-             '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
-               esc(t('words.more'))+'">'+ICON_DOTS+'</button>'+
-           '</span>', '')+
+    /* One mark, so .navq's own margin-left:auto is the whole of the push and
+       the .bkw wrapper is not needed. The ⋯ that stood beside it is gone: two
+       sessions each took a row out of the sheet it opened -- the word ask
+       moved to this bar, and the rules moved into the grammar page's chapters
+       -- and neither saw that the last row had gone with the other's. A ⋯
+       that opens nothing is a button that used to work. */
+    navTop('', askBtn(t('ask.word.ask'), null))+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+
