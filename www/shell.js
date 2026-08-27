@@ -637,7 +637,18 @@ function tabBar(){
    iPhone's kana keyboard and its accessory bar. The first time one opens, the
    guess is replaced by the truth and the composer settles; it does not move
    again. */
-var vvMin=0, vvWas=0;
+var vvMin=0, vvWas=0, vvKbMax=0;
+/* Is there a keyboard, or is one on its way? Nothing on a phone answers that
+   in advance -- `visualViewport` says how much is hidden AFTER iOS has
+   finished moving it, and a field being focused is what brought the keyboard
+   up in the first place. So this is the question asked, and it is asked of
+   the page rather than of a screen name: `--vvkb` is read by one rule
+   (`.view.fit .pwbar`) and by nothing else. */
+function vvTyping(){
+  var e=document.activeElement;
+  if(!e) return false;
+  return e.nodeName==='INPUT' || e.nodeName==='TEXTAREA' || !!e.isContentEditable;
+}
 function vvFit(){
   var v=window.visualViewport, h=v? v.height : window.innerHeight;
   /* 120 rather than 0: a phone's address bar sliding away is also a change of
@@ -646,7 +657,7 @@ function vvFit(){
   var d=document.documentElement.style;
   /* A phone that turned, or a window somebody dragged, is a different screen
      and the old smallest means nothing on it. */
-  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvMin=0; }
+  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvMin=0; vvKbMax=0; }
   if(!vvMin) vvMin=Math.round(window.innerHeight*0.55);
   if(h<vvMin) vvMin=h;
   d.setProperty('--vvmin', vvMin+'px');
@@ -664,9 +675,53 @@ function vvFit(){
      The row was the last child of a box `--vvmin` tall, so it sat on the foot
      of THAT -- which is where the keyboard was the last time one was up, and
      is not the keyboard. What is left over below the visible part is the
-     keyboard itself, and a row pinned to that rides up and down with it. */
-  d.setProperty('--vvkb',
-    Math.max(0, window.innerHeight - h - (v? v.offsetTop : 0))+'px');
+     keyboard itself, and a row pinned to that rides up and down with it.
+
+     WHAT IS MEASURED IS NOT WHAT IS TRUE WHILE THE KEYBOARD IS MOVING, and
+     that is the whole of the bug the owner photographed.
+     「2枚目が正解なのに1枚目みたいにまだガチャガチャうごくのうざい。
+     写真とかは固定でしょ？」 OWNER 2026-08-27, two photographs a second
+     apart: no row in the first, the row in the second, one screen.
+
+     Measured, at 390x844 with a 336pt keyboard: while the keyboard is rising
+     and the viewport has not been told yet, `innerHeight - h` is 0 -- which
+     is the same answer as no keyboard at all -- so the row sat at bottom:0,
+     UNDER the keyboard. That is the first photograph. Then the value arrives
+     and it leaps 336px. And every intermediate value iOS hands over on the
+     way moves it again, one position per event, which is the shaking.
+
+     X's row does not do this because it is stuck to the keyboard natively
+     (`inputAccessoryView`), and we took that road away today -- `hideForm-
+     AccessoryBar()` in MainViewController.swift. So the height has to be
+     REMEMBERED instead: the deepest reading of this launch, on this screen.
+     A keyboard is a property of the phone and does not change size between
+     two openings of the same composer, so once it has been seen once the row
+     can be put in the right place on the frame the field is focused -- before
+     iOS has said anything -- and every value that arrives afterwards is
+     smaller than the one already in use and moves nothing.
+
+     The first keyboard of a launch still rises with it: how tall a keyboard
+     this phone has is not knowable before one has been up, and guessing it
+     would be a number nobody measured. It only ever grows, so it does not
+     shake on the way.
+
+     It is `vvTyping()` and not this measurement that decides whether there is
+     a keyboard at all, because the measurement says 0 both when the keyboard
+     is down and when it is half way up.
+
+     What is remembered is the KEYBOARD, and what is written out is where the
+     TOP OF IT is in the page -- and those are two numbers, which the one line
+     this replaced had as one. `offsetTop` is how far iOS has scrolled the
+     page up to clear the focused field; the keyboard has not moved, the page
+     under it has, so the row has to come down by exactly that much to stay on
+     it. Measured with the page lifted 40: the keyboard is still 336 tall and
+     its top is 296 up from the foot of the page. Remembering the number with
+     the scroll already taken out of it would have frozen the row 40 clear of
+     the keyboard for as long as iOS held the page up. */
+  var off=(v? v.offsetTop : 0);
+  var kb=Math.max(0, window.innerHeight - h);
+  if(kb>vvKbMax) vvKbMax=kb;
+  d.setProperty('--vvkb', Math.max(0,(vvTyping()? vvKbMax : kb) - off)+'px');
   d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
 }
 function vvMount(){

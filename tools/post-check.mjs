@@ -692,6 +692,105 @@ const R = await pg.evaluate(async () => {
     else root.style.removeProperty('--vvkb');
   }
 
+  /* ---- 11d2. the row over the keyboard does not move while one arrives --
+     「2枚目が正解なのに1枚目みたいにまだガチャガチャうごくのうざい。
+     写真とかは固定でしょ？」 OWNER 2026-08-27, two photographs a second
+     apart: no row in the first, the row in the second, one screen.
+
+     `.view.fit .pwbar` hangs off `--vvkb`, which vvFit() recomputes on every
+     `resize` and every `scroll` visualViewport sends. Two things follow and
+     both were live: while the keyboard is rising and the viewport has not
+     been told yet, `innerHeight - height` is 0 -- the same answer as no
+     keyboard -- so the row was at the foot of the page, UNDER the keyboard;
+     and every intermediate value iOS hands over on the way moved it again.
+
+     visualViewport is replaced with one this check can drive. That is the
+     only way to ask this on a Linux runner: a headless browser has no soft
+     keyboard, so nothing here ever sends the events a phone sends. What is
+     held is vvFit()'s answer to each value -- how many values a real iPhone
+     sends, and when, is the phone's business and is not knowable from here.
+
+     The ramp is fed twice on purpose. The FIRST keyboard of a launch has
+     never been measured, so the row rises with it; the second must not move
+     at all, and neither must the third if the phone sends one event rather
+     than twenty. */
+  {
+    const wasPW = PW, root = document.documentElement;
+    const hadKb = root.style.getPropertyValue('--vvkb');
+    const KB = 336;                       /* a JP keyboard on a 390x844 */
+    const real = Object.getOwnPropertyDescriptor(window, 'visualViewport');
+    const fake = { height: window.innerHeight, offsetTop: 0,
+                   addEventListener: function () {}, removeEventListener: function () {} };
+    Object.defineProperty(window, 'visualViewport',
+      { configurable: true, get: function () { return fake; } });
+
+    const field = () => document.querySelector('.view.fit .lnin') ||
+                        document.querySelector('.view.fit input, .view.fit textarea');
+    const barTop = () => {
+      const b = document.querySelector('.pwbar');
+      return b ? Math.round(b.getBoundingClientRect().top) : null;
+    };
+    const ramp = [0.08, 0.22, 0.41, 0.6, 0.78, 0.92, 1];
+    const open = () => {
+      PW = pwBlank(); openPost(); render();
+      const f = field(); if (f) f.focus();
+      fake.height = window.innerHeight; fake.offsetTop = 0; vvFit();
+      const seen = [barTop()];
+      for (const fr of ramp) {
+        fake.height = Math.round(window.innerHeight - KB * fr);
+        vvFit(); seen.push(barTop());
+      }
+      return seen;
+    };
+    const shut = () => {
+      const f = field(); if (f) f.blur();
+      document.body.focus();
+      fake.height = window.innerHeight; fake.offsetTop = 0; vvFit();
+    };
+
+    const first = open();
+    const settled = first[first.length - 1];
+    shut();
+    const down = barTop();
+    const second = open();
+    const moved = second.filter(y => y !== settled).length;
+
+    if (moved)
+      fails.push('with a keyboard already measured, the row over the keyboard ' +
+                 'moved ' + moved + ' time(s) while the next one came up (' +
+                 second.join(' -> ') + '). It is meant to be standing on the ' +
+                 'keyboard before iOS says anything and not to move again');
+    if (second[0] !== settled)
+      fails.push('the row over the keyboard starts at ' + second[0] + ' and ' +
+                 'ends at ' + settled + ', so it is drawn under the keyboard ' +
+                 'until the viewport reports -- which is the frame the owner ' +
+                 'photographed with no row on it');
+    /* and it still comes back down: a row welded to the last keyboard would
+       pass everything above and hang in the middle of a screen with none. */
+    if (down === null || down <= settled)
+      fails.push('with the keyboard down and nothing focused the row is at ' +
+                 down + ', not at the foot of the screen. It is welded to a ' +
+                 'keyboard that is not there');
+    /* iOS lifts the page to clear the focused field; the keyboard has not
+       moved, so the row has to come down by exactly that much to stay on it. */
+    fake.height = window.innerHeight - KB; fake.offsetTop = 0; vvFit();
+    const flat = barTop();
+    fake.offsetTop = 40; vvFit();
+    const lifted = barTop();
+    if (lifted !== flat + 40)
+      fails.push('iOS scrolled the page up by 40 and the row moved by ' +
+                 (lifted - flat) + ' in the page instead of 40, so it is no ' +
+                 'longer on the keyboard while the page is held up');
+
+    if (real) Object.defineProperty(window, 'visualViewport', real);
+    else delete window.visualViewport;
+    const f = field(); if (f) f.blur();
+    document.body.focus();
+    if (hadKb) root.style.setProperty('--vvkb', hadKb);
+    else root.style.removeProperty('--vvkb');
+    PW = wasPW;
+  }
+
   /* ---- 11e. the face on a post is the way to whoever wears it ---------
      「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
      飛ぶようにしてよ。自分ならプロフィールのページ。」
