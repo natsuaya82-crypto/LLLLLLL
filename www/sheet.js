@@ -1107,12 +1107,29 @@ function shPics(names){
   }
   return out;
 }
-/* The PDF, and out. There is no Swift behind `sheet` yet -- LinguaShare.swift
-   has keep/kept/write/pickPhoto/audio and not this -- so on a phone today the
-   bridge is there and the method is not, and in a browser there is no bridge
-   at all. Both say so rather than doing nothing: bkPush()'s `no bridge`,
-   which exists because the system keyboard cost four builds and three of them
-   were spent guessing whether the hand-over had gone out. */
+/* The PDF, and out. It goes to the phone as a FILE, every time somebody
+   presses this, and there is no second road: no share sheet, no `<a
+   download>`, nothing that lives only on the screen.
+   OWNER 2026-08-27「毎回ファイルに保存して欲しい」.
+
+   `LinguaShare.sheet` writes it into `Documents/Sheets/`, where iOS puts it in
+   the device backup and the Files app can show it, and it NEVER OVERWRITES --
+   the second sheet of a name is `<name> 2.pdf`. That is stronger than the
+   generations keep() rotates in www/backup.js: a sheet already sitting there
+   may have been written on, and nothing here moves it.
+
+   **What it says is the part that had to be got right.** The one way this
+   chapter can hurt somebody is to say a sheet was written when none was: they
+   go to Files, there is nothing there, and the letters they were going to draw
+   go nowhere. www/wordsheet.js's CSV shipped exactly that -- `<a download>`
+   does nothing in WKWebView and throws nothing either, so the `try` always
+   passed and the app always said it had exported. This road never used that
+   mechanism, and the remaining way to say it wrongly is to believe the phone
+   answered when it only answered SOMETHING. So the proof is the NAME: the
+   native side resolves with the name it filed the sheet under and rejects on
+   every other path, and nothing but a name is read as a sheet on the phone.
+   No bridge, a rejection, or an answer with no name in it all say the same
+   thing, because to a person they are the same thing -- it is not there. */
 function shMake(){
   var s = shState(), names = shNames(s.names), pdf, p;
   if(!names.length){ toast(t('wr.none')); return; }
@@ -1124,7 +1141,10 @@ function shMake(){
   p = sharePlug();
   if(!p){ toast(t('wr.nobridge')); return; }
   p('LinguaShare', 'sheet', {name:shFileName(), b64:btoa(pdf)})
-    .then(function(){ toast(t('wr.out.ok')); })
+    .then(function(r){
+      if(!(r && r.file)){ toast(t('wr.nobridge')); return; }
+      toast(t('wr.out.ok'));
+    })
     ['catch'](function(){ toast(t('wr.nobridge')); });
 }
 /* A name a person will recognise in the Files app. bkName()'s argument, and
