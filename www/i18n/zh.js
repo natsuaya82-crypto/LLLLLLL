@@ -651,7 +651,6 @@ defLang('zh', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "咨询 AI",
-      "ask.full"     : "太长，无法发送",
       "ask.head"     : "我正在用一个叫 Lingua 的应用创造一门人造语言。",
       "ask.f.name"   : "语言名称",
       "ask.f.snd"    : "音（IPA）",

@@ -116,17 +116,8 @@ function wordsHidHTML(){
    there: both are the dictionary seen from outside a single word. Nothing is
    put here before it exists -- a row that opens nothing is a button that used
    to work. */
-/* The ⋯ sheet of the dictionary, and the one place the word ask is offered
-   from. It goes here rather than on the list itself because it is a thing
-   done TO the dictionary, which is what this sheet already holds -- and
-   because the list's own thumb corner is the + that writes one by hand.
-
-   www/assist.js builds the link; this only says what is being asked for.
-   The row above keeps its hairline and the row below stays the last one, so
-   nothing about the existing row moves. */
 function wordsMore(){
   openForm('wmore', t('words.more'),
-    askRow(t('ask.word.ask'), null)+
     '<button class="set" style="border-bottom:none"' + DO('go', ["forms"]) + '>'+
       '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
       '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+
@@ -136,9 +127,22 @@ FORM_OPEN.wmore=function(){ wordsMore(); };
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
-    navTop('',
-           '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
-             esc(t('words.more'))+'">'+ICON_DOTS+'</button>')+
+    /* The mark for asking an AI is ON the bar, not inside the ⋯. Somebody
+       wants it at the moment they are looking at their dictionary and short
+       of a word, and a thing you have to open a menu to find is a thing
+       nobody finds. www/assist.js builds it. */
+    /* Two marks at the right end of one bar, and .navq alone cannot make
+       them: it pushes with margin-left:auto, so two of them SPLIT the free
+       space and the first stands in the middle of the bar -- which is what
+       the comment over .navc in www/index.html has said all along. .bkw is
+       the wrapper the back arrow already uses: inline-flex, flex:0 0 auto,
+       no auto margin. Inside it the two are flex items and keep their 44,
+       and the .navc round it does the one push. No new CSS. */
+    navTop('<span class="bkw">'+
+             askBtn(t('ask.word.ask'), null)+
+             '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
+               esc(t('words.more'))+'">'+ICON_DOTS+'</button>'+
+           '</span>', '')+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+
