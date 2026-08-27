@@ -766,7 +766,7 @@ const r = await pg.evaluate(({ s }) => {
      ボタンで作業だから」 OWNER 2026-08-27. It used to be two taps -- press a
      key, press the one beside it -- and that road is what a second key had to
      be selected on, so it is gone. Tapping selects; the button joins. */
-  kbTapKey(0, 2); kbJoinSel(); standKb();
+  kbTapKey(0, 2); kbTapKey(0, 3); kbJoinSel(); standKb();
   var j = kbLayer().rows[0][2];
   out.joined = kbLayer().rows[0].length === nWas - 1;
   out.joinedW = out.joined && kbU(j.w) === w2Was;
@@ -793,6 +793,9 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var last = kbLayer().rows[0].length - 1;
   kbTapKey(0, last); standKb();
+  var un2 = kbUnderOf(0, last);
+  if (un2) kbTapKey(un2.r, un2.i);
+  standKb();
   out.downOnly = !kbJoinRight() && kbJoinDown();
   kbJoinSel(); standKb();
   out.downJoined = (kbLayer().rows[0][last].h || 1) === 2;
@@ -871,19 +874,85 @@ const r = await pg.evaluate(({ s }) => {
   out.selDown = kbSelKeys().length === 2 && kbSelKeys()[1].r === 1;
   out.selDownN = kbSelKeys().length;
 
-  /* the buttons over the sheet act on the key that is selected */
+  /* ---- the buttons over the sheet are WHAT IS CHOSEN, and how many ------
+     「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27. A key's page is about one
+     key; joining is about two. Nothing throws either way -- an edit button
+     over four chosen keys would open one of them and look perfectly fine. */
   fresh();
   kbTapKey(0, 2); standKb();
   var tool = vKb();
-  out.keyJoinBtn = tool.indexOf('data-do="kbJoinSel"') >= 0;
-  out.keyOpenBtn = tool.indexOf('data-do="kbOpenSel"') >= 0;
+  out.oneOpenBtn = tool.indexOf('data-do="kbOpenSel"') >= 0;
+  out.oneNoJoin = tool.indexOf('data-do="kbJoinSel"') < 0;
   out.keyBinUp = tool.indexOf('data-do="kbCut"') >= 0;
   /* and no alignment, which is a row's business */
   out.keyNoAlign = tool.indexOf('data-do="kbAlign"') < 0;
+  kbTapKey(0, 3); standKb();
+  var tool2 = vKb();
+  out.twoJoinBtn = tool2.indexOf('data-do="kbJoinSel"') >= 0;
+  out.twoNoOpen = tool2.indexOf('data-do="kbOpenSel"') < 0;
+  out.twoBinUp = tool2.indexOf('data-do="kbCut"') >= 0;
+  /* three chosen: the join is drawn and DOWN -- two of three is not a choice
+     the button gets to make */
+  kbTapKey(0, 4); standKb();
+  out.threeJoinDown = /kbJoinSel[^>]*disabled/.test(vKb());
+  /* The DOWNWARD join has its own "exactly two", and the run above is across
+     so it never reaches it -- watched: taking that guard out left every claim
+     green. Asked of the guard itself, with ONE key chosen that does have a
+     key lined up under it. */
+  fresh();
+  kbTapKey(0, 3); standKb();
+  out.downHasOne = !!kbUnderOf(0, 3);
+  out.downAtOne = kbJoinDown() === false;
+  /* a vertical run STOPS where the rows stop lining up. The QWERTY's third row
+     is inset by half a key, so nothing in it starts at the column row 1 does --
+     the sheet saying that row does not line up, which is kbVJoin's answer too. */
+  var d1 = kbUnderOf(0, 3);
+  if (d1){ kbTapKey(d1.r, d1.i); standKb(); }
+  out.downTwo = kbSelKeys().length === 2;
+  var d2 = d1 && kbUnderOf(d1.r, d1.i);
+  out.downNoThird = !d2;
+  if (d2){ kbTapKey(d2.r, d2.i); standKb(); }
+  out.downStops = kbSelKeys().length === 2;
+  /* THREE lined up downward, which the pattern does not give -- so the two
+     gaps come off row 2 and the three rows line up. Only then does the
+     downward join's "exactly two" have a case to answer: without such a board
+     the direction test masks it, and taking the count out leaves every claim
+     green. Watched exactly that. The board is left behind, so the claims after
+     this one start again from fresh(). */
+  fresh();
+  (function (){
+    var r2 = kbLayer().rows[2], j2;
+    for (j2 = r2.length - 1; j2 >= 0; j2--) if (r2[j2].k === 'gap') r2.splice(j2, 1);
+    saveKb(); render();
+  }());
+  kbTapKey(0, 0); standKb();
+  var e1 = kbUnderOf(0, 0);
+  if (e1){ kbTapKey(e1.r, e1.i); standKb(); }
+  var e2 = e1 && kbUnderOf(e1.r, e1.i);
+  if (e2){ kbTapKey(e2.r, e2.i); standKb(); }
+  out.deepN = kbSelKeys().length;
+  out.deepJoinDown = out.deepN === 3 && kbJoinDown() === false;
+  fresh();
+  kbTapKey(0, 2); standKb();
   var binWas = kbLayer().rows[0].length;
   kbCut(); standKb();
   out.keyBinTook = kbLayer().rows[0].length === binWas - 1;
   out.keyBinBack = (kbUndo(), kbLayer().rows[0].length === binWas);
+  /* ---- and the bin takes EVERY key of a run, in ONE step ---------------
+     It took the first, which was the whole of a selection until runs existed:
+     three of four would have been left behind with the press looking like it
+     worked. And each key taken was its own saveKb(), so one press of the bin
+     wanted three presses of the step back -- which is not what a step back is.
+     Both halves are asked, because fixing one without the other is a keyboard
+     that loses keys somebody cannot get back in one go. */
+  fresh();
+  kbTapKey(0, 2); kbTapKey(0, 3); kbTapKey(0, 4); standKb();
+  var manyWas = kbLayer().rows[0].length;
+  out.manyChosen = kbSelKeys().length === 3;
+  kbCut(); standKb();
+  out.manyBinTook = kbLayer().rows[0].length === manyWas - 3;
+  kbUndo(); standKb();
+  out.manyBinBack = kbLayer().rows[0].length === manyWas;
 
   /* the last of the palette is gone, and so is the ghost it was carried as */
   fresh();
@@ -2007,10 +2076,22 @@ say(r.rowWas && r.rowStands && r.rowGone,
     'and a row the same, released by pressing a column');
 say(r.underIsCol && r.selDown,
     'DOWN is the key at this one\'s column in the next row, not index i of it');
-say(r.keyJoinBtn && r.keyOpenBtn && r.keyBinUp,
-    'with a key selected the buttons over the sheet are join, its page, and the bin');
+say(r.oneOpenBtn && r.oneNoJoin && r.keyBinUp,
+    'ONE key chosen: its page and the bin, and no join -- joining is about two');
+say(r.twoJoinBtn && r.twoNoOpen && r.twoBinUp,
+    'TWO chosen: join and the bin, and no page -- a page is about one key');
+say(r.threeJoinDown, 'THREE chosen: the join is down, not guessing which two');
+say(r.downHasOne && r.downAtOne,
+    'the downward join is down at ONE chosen, even where a key is lined up under it');
+say(r.deepJoinDown,
+    'and down at THREE lined up downward too (' + r.deepN + ' chosen), not just at one');
+say(r.downTwo && r.downNoThird && r.downStops,
+    'and a downward run stops where the rows stop lining up -- the inset third row');
 say(r.keyNoAlign, 'and not the alignments, which are a row\'s business');
 say(r.keyBinTook, 'the bin takes the key that is selected');
+say(r.manyChosen && r.manyBinTook,
+    'and every key of a run, not just the first -- three chosen, three gone');
+say(r.manyBinBack, 'and the step back puts all three back');
 say(r.keyBinBack, 'and the step back puts it back');
 say(r.tilesGone, 'and the three widths under the sheet are gone entirely');
 say(r.insColFullDown && r.insColFullAsk,

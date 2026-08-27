@@ -1143,6 +1143,18 @@ export function halfDone(){
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
+    /* TWO keys chosen, which is the face the join button lives on now.
+       「なんで？ 結合ボタン作れよ。編集も含め全部ボタンで作業だから」
+       「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27 -- so the join is drawn
+       here and the key's page is drawn on the face above, and neither is on
+       both. Without this the walk never sees kbJoinSel at all. */
+    ['two keys of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  kbAdd('qwerty'); kbLay = 0;
+                                                  kbTapKey(0, 2); kbTapKey(0, 3);
+                                                  window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                                  const h = vKb();
+                                                  KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                                  SET.plan = 'free'; return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
     ['a column of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);

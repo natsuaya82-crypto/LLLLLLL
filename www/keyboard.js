@@ -1399,15 +1399,24 @@ function kbJoin(ri, ki){
    The pair under it is only offered where the two line up, which is kbVJoin()'s
    own rule; asking it here rather than restating it means the button is down
    exactly when the join would be refused. */
+/* WHAT IS JOINED IS WHAT IS CHOSEN -- the two keys selected, and not "the one
+   selected and whatever happens to sit beside it". 「なんで？ 結合ボタン作れよ。
+   編集も含め全部ボタンで作業だから」 OWNER 2026-08-27: choosing is the tap and
+   doing is the button, so the button acts on the choice.
+
+   Exactly two. Three keys becoming one is not a thing this sheet has, and
+   picking two out of three would be the button choosing what the person did
+   not -- so it is drawn over any run of two or more and is DOWN on anything
+   it cannot do, which is what every other button here does. */
 function kbJoinRight(){
   var row;
-  if(!KBH || KBH.k!=='k') return false;
+  if(!KBH || KBH.k!=='k' || kbSelN()!==2 || kbSelD()!=='x') return false;
   row=kbLayer().rows[KBH.r];
   return !!(row && row[KBH.i] && row[KBH.i+1]);
 }
 function kbJoinDown(){
   var rows, up, dn, di;
-  if(!KBH || KBH.k!=='k') return false;
+  if(!KBH || KBH.k!=='k' || kbSelN()!==2 || kbSelD()!=='y') return false;
   rows=kbLayer().rows;
   up=rows[KBH.r]; dn=rows[KBH.r+1];
   if(!up || !dn || !up[KBH.i]) return false;
@@ -1729,12 +1738,27 @@ function kbIns(down){
   saveKb(); render();
 }
 /* And the one button that takes it away, whichever of the two it is. */
+/* The bin takes WHAT IS SELECTED, and once a run can be selected that is every
+   key of it. It took `KBH.r, KBH.i` -- the first -- which was the whole of a
+   selection until keys came in runs, and would now quietly leave three of four
+   behind: the board still draws, the press still looks like it worked, and the
+   keys somebody meant to be rid of are still there. Right to left, so the
+   indexes of the ones not yet taken do not move under it.
+
+   DELETE REVIEW is in docs/CHANGELOG.md and is unchanged: this takes keys and
+   nothing else -- not the letters they point at, not another face, not another
+   keyboard -- it is asked for by pressing the bin, and the step back holds it. */
 function kbCut(){
   if(!KBH) return;
-  var h=KBH;
+  var h=KBH, ms, j;
+  if(h.k==='k'){
+    ms=kbSelKeys();
+    KBH=null;
+    kbDelKeys(ms);
+    return;
+  }
   KBH=null;
   if(h.k==='r') kbDelRow(h.i);
-  else if(h.k==='k') kbDelKey(h.r, h.i);
   else kbDelCol(h.i);
 }
 /* The two the toolbar does to a key. They take what is selected rather than
@@ -2619,12 +2643,16 @@ function kbToolHTML(){
             '<button class="kbtb"' + DO('kbIns', [true]) +
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : key
-        /* a KEY is selected: the two things there are to do to one, in the
-           place the three alignments stand when a row is */
-        ? '<button class="kbtb"' + DO('kbJoinSel') + (kbJoinable()? '' : ' disabled') +
-            ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>'+
-          '<button class="kbtb"' + DO('kbOpenSel') +
-            ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
+        /* KEYS are selected, and WHICH buttons is how many.
+           「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27 -- a key's page is
+           about one key, and offering it over four would have to pick one.
+           Joining is the other way round: it is about two, so it stands where
+           the edit button does when there is only one. */
+        ? (kbSelN()===1
+            ? '<button class="kbtb"' + DO('kbOpenSel') +
+                ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
+            : '<button class="kbtb"' + DO('kbJoinSel') + (kbJoinable()? '' : ' disabled') +
+                ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>')
         : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (al? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.al.l'))+'">'+ICON_ALL+'</button>'+
           '<button class="kbtb"' + DO('kbAlign', ["c"]) + (al? '' : ' disabled') +
@@ -3253,12 +3281,22 @@ function kbAddRowNew(){
   saveKb(); render();
 }
 /* A row with nothing left in it is not a row. */
-function kbDelKey(ri, ki){
+/* KEYS, and ONE step back for the press that took them. Each of these used to
+   be its own kbDelKey() and so its own saveKb(), which is its own entry in the
+   history -- so the bin taking four keys took four presses of the step back to
+   put right. One press, one step: that is what the step back is FOR, and it is
+   the same sentence as「巻き戻しボタンと進むボタンも入れよう」.
+
+   Right to left, so the indexes of the keys not yet taken do not move under
+   it. A vertical run is in different rows, where they never would. */
+function kbDelKeys(ms){
   if(!kbEdit()) return;
-  var rows=kbLayer().rows;
-  if(!rows[ri]) return;
-  rows[ri].splice(ki, 1);
-  if(!rows[ri].length) rows.splice(ri, 1);
+  var rows=kbLayer().rows, j, row;
+  for(j=ms.length-1;j>=0;j--){
+    row=rows[ms[j].r];
+    if(row) row.splice(ms[j].i, 1);
+  }
+  for(j=rows.length-1;j>=0;j--) if(!rows[j].length) rows.splice(j, 1);
   if(!rows.length) rows.push([kbKey('lt', '')]);
   saveKb(); kbSel=null;
   /* From the ⊖ the keyboard is already on screen and the wobble stays on --
@@ -3267,3 +3305,4 @@ function kbDelKey(ri, ki){
   if(here().r==='form'){ back(); return; }
   render();
 }
+function kbDelKey(ri, ki){ kbDelKeys([{r:ri, i:ki}]); }
