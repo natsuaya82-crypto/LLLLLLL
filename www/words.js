@@ -107,10 +107,13 @@ function wordsHidHTML(){
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
 /* The ... in the dictionary's bar. What is behind it is about the WORDS of
-   this language rather than about one of them -- the rules that make a form
-   out of a word, which sat at the head of the grammar chapter above the
-   fifteen stages and is not a stage. 「規則で作る形はあってもいいけど、ここに
-   載せるのは反対」
+   this language rather than about one of them.
+
+   The rules that make a form out of a word were the other thing here, and
+   they have gone to the chapters of the grammar page -- a rule is drawn under
+   what it is ABOUT now, and made from there. A list of every rule with no
+   chapter over it was the same fact said in a second place, and the second
+   place is the one that goes.
 
    It is where a downloaded word list will go too, when there is one to go
    there: both are the dictionary seen from outside a single word. Nothing is
@@ -125,12 +128,7 @@ function wordsHidHTML(){
    The row above keeps its hairline and the row below stays the last one, so
    nothing about the existing row moves. */
 function wordsMore(){
-  openForm('wmore', t('words.more'),
-    askRow(t('ask.word.ask'), null)+
-    '<button class="set" style="border-bottom:none"' + DO('go', ["forms"]) + '>'+
-      '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
-      '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+
-      ICON_GO+'</span></button>');
+  openForm('wmore', t('words.more'), askRow(t('ask.word.ask'), null));
 }
 FORM_OPEN.wmore=function(){ wordsMore(); };
 function vWords(){

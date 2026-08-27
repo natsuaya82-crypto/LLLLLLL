@@ -941,11 +941,6 @@ function addFmWrite(hw){
 
 /* ---- writing one -------------------------------------------------------- */
 var fmrOpen='';
-function fmrSay(r){
-  var s=spWord((r && r.add)||[]);
-  if(!s) return '';
-  return (r.at==='start')? (s+'‑') : ('‑'+s);
-}
 /* A new rule, of a kind the caller already knows. It used to be able to make
    only one kind -- a verb's past -- and the two screens that could then change
    the part of speech and the form were how you got any other. A chapter of the
@@ -962,34 +957,6 @@ function fmrDel(id){
   saveStg();
   if(here().r==='form') back(); else render();
 }
-function vForms(){
-  var a=fmRules();
-  return '<div class="view">'+navTop()+
-    '<div class="body">'+
-
-    (a.length? '<div class="wdrows">'+a.map(function(r){
-        return '<button class="wdrow"' + DO('openFmr', [r.id]) + '>'+
-          '<span class="wdrowf">'+esc(fmLabel(r.fm)||t('word.none'))+'</span>'+
-          '<span class="wdroww'+(myFontOn()?' sfont':'')+'">'+esc(fmrSay(r))+'</span>'+
-          '<span class="wdrowm">'+esc(r.pos? posLabel(r.pos) : t('fmr.any'))+'</span></button>';
-      }).join('')+'</div>' : '')+
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('fmrNew') + '>'+
-      ICON_ADD+esc(t('fmr.new'))+'</button>'+
-    /* And the whole point of writing them: the words they make. Only when
-       there are some to make -- a button that does nothing when pressed is
-       worse than no button, which is what the row on a word's page already
-       says. */
-    (fmrTodoAll().length
-      ? '<button class="btn ghost" style="width:100%;margin-top:10px"' + DO('fmrAddAll') + '>'+
-          ICON_ADD+esc(tn('fmr.all', fmrTodoAll().length))+'</button>'
-      : '')+
-    '</div></div>';
-}
-function fmrPickRow(label, val, r2){
-  return '<button class="set"' + DO('go', [r2]) + '>'+
-    '<span class="sl">'+esc(label)+'</span>'+
-    '<span class="sv">'+esc(val)+ICON_GO+'</span></button>';
-}
 function fmrSegs(now, list, fn){
   var i, out='<div class="pick">';
   for(i=0;i<list.length;i++)
@@ -1001,8 +968,6 @@ function fmrFormHTML(){
   var r=fmrById(fmrOpen);
   if(!r) return '';
   return '<div id="fmr-body">'+
-    fmrPickRow(t('fmr.pos'), r.pos? posLabel(r.pos) : t('fmr.any'), 'fmrpos')+
-    fmrPickRow(t('fmr.fm'),  fmLabel(r.fm)||t('word.none'), 'fmrfm')+
     '<div class="sec">'+esc(t('fmr.add'))+'</div>'+
     spTypeField('fmr-add', 'fmrSetAdd', r.add||[], 'whin')+
     fmrSegs(r.at||'end', [['end', t('fmr.end')], ['start', t('fmr.start')]], 'fmrSetAt')+
@@ -1054,39 +1019,6 @@ function fmrSetWhen(v){
   fmrPaint();
 }
 function fmrSetWend(v){ fmrKeep(function(r){ r.wend=spType(v); }); lnGrow('fmr-end'); }
-/* Which rule the two chooser screens are about. Arriving on one with nothing
-   open is arriving back on a screen the app has forgotten the subject of -- a
-   stale route, a reload. The first rule is a better answer than an empty
-   page, and there is nowhere else those screens could be about. */
-function fmrHere(){
-  var r=fmrById(fmrOpen);
-  if(!r){ r=fmRules()[0]; if(r) fmrOpen=r.id; }
-  return r;
-}
-/* Two screens rather than one screen with a mode on it. They ask the same
-   kind of question of two tables, which is an argument for one screen right
-   up until the mode is a variable nothing sets on the way in: the second
-   list then belongs to no route, and a route is the only thing that can be
-   walked. */
-function vFmrPos(){
-  var r=fmrHere(), out='', i;
-  if(!r) return viewGone();
-  out+=wdOneHTML(t('fmr.any'), !r.pos, 'fmrPickPos', '');
-  for(i=0;i<POS.length;i++)
-    out+=wdOneHTML(posLabel(POS[i]), POS[i]===r.pos, 'fmrPickPos', POS[i]);
-  return '<div class="view">'+navTop()+'<div class="body">'+out+'</div></div>';
-}
-function vFmrFm(){
-  var r=fmrHere(), out='', i, list;
-  if(!r) return viewGone();
-  list=FM_INF.concat(FM_DER).concat(fmMine('i')).concat(fmMine('d'));
-  for(i=0;i<list.length;i++)
-    out+=wdOneHTML(fmLabel(list[i]), list[i]===r.fm, 'fmrPickFm', list[i]);
-  return '<div class="view">'+navTop()+'<div class="body">'+out+'</div></div>';
-}
-function fmrPickPos(k){ fmrKeep(function(r){ r.pos=String(k||''); }); back(); }
-function fmrPickFm(k){ fmrKeep(function(r){ r.fm=String(k||''); }); back(); }
-
 function vFm(){
   var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;
   if(!w) return viewGone();

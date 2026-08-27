@@ -332,8 +332,6 @@ act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);
 act('fmrSetDrop', fmrSetDrop);
 act('fmrSetWhen', fmrSetWhen);
-act('fmrPickPos', fmrPickPos);
-act('fmrPickFm', fmrPickFm);
 act('regPick', regPick);
 actKey('fmNew', fmNew);
 actIn('wdSetTags', wdSetTags);
