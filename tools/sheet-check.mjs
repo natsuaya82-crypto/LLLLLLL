@@ -474,6 +474,32 @@ const torn = await pg.evaluate(({ n }) => ({
   why: SH.why, got: !!SH.got, grew: LETTERS.length - n
 }), { n: before6 });
 
+/* ---- 7. and the sheet itself, handed straight back ---------------------
+   The one road nobody had walked. A person who has just written the file out
+   and hands it back has not scanned anything, and what they get told has to
+   be about THAT and not about some other file: there is no photograph in
+   here, which is a different sentence from "the picture in here cannot be
+   taken out". It is refused either way -- an unwritten sheet has nothing on
+   it, and a sheet written on with a pencil on a screen needs a renderer this
+   file does not have -- so what is held is the answer, not the refusal. */
+const own = await pg.evaluate(({ names }) => {
+  var pdf = shSheet(names, shPics(names));
+  var n = LETTERS.length;
+  SH = shBlank();
+  shTakeFile('data:application/pdf;base64,' + btoa(pdf), 'my sheet.pdf');
+  return { why: shPdfWhy(pdf), jpeg: !!shPdfJpeg(pdf), n: n,
+           /* and a scanner's PDF, which is the road that works, and one whose
+              page is a picture behind a filter this file cannot undo. Both
+              are made here rather than carried as fixtures: what is being
+              asked is which of the three sentences comes out. */
+           scan: shPdfWhy('%PDF-1.4\n<< /Subtype /Image /Filter /DCTDecode >>'),
+           flat: shPdfWhy('%PDF-1.4\n<< /Subtype /Image /Filter /FlateDecode >>'),
+           not:  shPdfWhy('hello') };
+}, { names: NAMES });
+const ownBack = await pg.evaluate(({ n }) => ({
+  why: SH.why, got: !!SH.got, grew: LETTERS.length - n
+}), { n: own.n });
+
 await br.close();
 
 /* ---- what came back ----------------------------------------------------- */
@@ -585,6 +611,14 @@ say(took.stored === shot.before + DREW.length,
 say(!after.got && !!after.why && after.grew === 0,
     'a photograph that is not a sheet is refused whole: ' + after.grew +
     ' letters added, and it says why');
+say(own.why === 'drawn' && !own.jpeg && own.scan === 'photo' &&
+    own.flat === 'packed' && own.not === 'not-pdf',
+    'the app knows which kind of PDF arrived: its own sheet is `' + own.why +
+    '`, a scan `' + own.scan + '`, a page behind a filter `' + own.flat + '`');
+say(ownBack.grew === 0 && !ownBack.got &&
+    ownBack.why === 'There is no photograph inside this PDF.',
+    'and its own sheet handed straight back is turned away with the true ' +
+    'reason rather than a guess about another file: "' + ownBack.why + '"');
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');

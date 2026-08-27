@@ -368,13 +368,50 @@ function shPdfJpeg(bytes){
   return best;
 }
 /* Which kind of file arrived. Four answers and they are four different
-   sentences to a person, which is the whole reason this is not a boolean. */
+   sentences to a person, which is the whole reason this is not a boolean.
+
+   `packed` used to be "there is an image and it is not a JPEG", and that was
+   the app's own sheet: the twenty names over the boxes are images. So a
+   person who handed back the very file this app had just written was told
+   THE PICTURE INSIDE IT COULD NOT BE TAKEN OUT, which is not what happened
+   -- there is no picture inside it. Nothing threw and no screen looked
+   wrong; the sentence was simply about a different file.
+
+   An image that is not a photograph and an image that cannot be opened are
+   two things, and what tells them apart is a FILTER. A page a scanner made
+   is always behind one -- DCTDecode, and when it is not a JPEG then Flate,
+   JPX or CCITT, none of which this file can undo. What shSheet() writes is
+   behind none: raw eight-bit grey, which no scanner has ever produced. */
 function shPdfWhy(bytes){
   if (bytes.slice(0, 5) !== '%PDF-') return 'not-pdf';
   if (bytes.indexOf('/DCTDecode') >= 0) return 'photo';
-  if (bytes.indexOf('/Subtype /Image') >= 0 ||
-      bytes.indexOf('/Subtype/Image') >= 0) return 'packed';
+  var at = 0, k, a, b, lo;
+  while (true){
+    k = shPdfImageAt(bytes, at);
+    if (k < 0) break;
+    /* the dictionary this /Subtype sits in: back to its `<<`, forward to the
+       bytes it introduces. Bounded by the end of whatever stream came before
+       it, so a `<<` that is really a pair of bytes inside a picture cannot
+       drag the window somewhere else. */
+    lo = bytes.lastIndexOf('endstream', k);
+    a = bytes.lastIndexOf('<<', k);
+    if (a < lo) a = lo;
+    if (a < 0) a = k;
+    b = bytes.indexOf('stream', k);
+    if (b < 0) b = bytes.length;
+    if (bytes.slice(a, b).indexOf('/Filter') >= 0) return 'packed';
+    at = k + 10;
+  }
   return 'drawn';
+}
+/* Where the next image dictionary says what it is. Written with a space and
+   without, because a PDF may do either and both turn up in the wild. */
+function shPdfImageAt(bytes, from){
+  var a = bytes.indexOf('/Subtype /Image', from);
+  var b = bytes.indexOf('/Subtype/Image', from);
+  if (a < 0) return b;
+  if (b < 0) return a;
+  return a < b ? a : b;
 }
 
 /* ---- what somebody drew in a box --------------------------------------- */
