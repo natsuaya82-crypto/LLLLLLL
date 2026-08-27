@@ -20,6 +20,7 @@
 
 import UIKit
 import Capacitor
+import ObjectiveC
 
 class MainViewController: CAPBridgeViewController {
   override func capacitorDidLoad() {
@@ -34,5 +35,63 @@ class MainViewController: CAPBridgeViewController {
     // what a free plan looks like is decided on the first frame, and a call
     // comes back after it. See the head of LinguaPlan.swift.
     LinguaPlanPlugin.inject(into: bridge?.webView)
+    /* And the bar iOS puts over the keyboard. prepareWebView() has already
+       made the WKWebView by the time this runs (CAPBridgeViewController's
+       loadView(), a few lines above the capacitorDidLoad() call), so WebKit
+       is loaded and the class below is registered. */
+    hideFormAccessoryBar()
+  }
+
+  /* The `∧ ∨ ✓` strip over the keyboard. 「チェック▼▲みたいなところはいらない
+     から消して。」「あとカメラとかマイクのやつはキーボードの上に絶対に貼り付けて
+     くれ。」OWNER 2026-08-26 -- and those are one fix, not two. The camera row
+     is already pinned to `bottom: var(--vvkb)` (www/index.html), and --vvkb is
+     what is left under the visual viewport, which is the keyboard AND this
+     strip. Take the strip away and the row lands on the keys. Nothing in www/
+     changes.
+
+     **There is no public way to do this and it is worth saying so plainly.**
+     The strip is not ours -- it is nothing in the app's HTML or CSS. It is the
+     inputAccessoryView of the view WebKit puts inside a WKWebView, and the
+     property is read-only. What is checked:
+
+       - Capacitor 8 has no setting for it. `accessory` appears nowhere in
+         @capacitor/ios; the one keyboard flag it does carry
+         (keyboardShouldRequireUserInteraction) is about programmatic focus.
+       - @capacitor/keyboard's setAccessoryBarVisible() is not available: this
+         app installs @capacitor/core and @capacitor/ios only.
+       - UIWebView's inputAssistantItem governs the iPad shortcuts bar and not
+         this.
+
+     So this replaces the implementation of `inputAccessoryView` -- a PUBLIC
+     property, declared on UIResponder -- on a PRIVATE class, WKContentView.
+     That is exactly what @capacitor/keyboard does (Keyboard.m,
+     setHideFormAccessoryBar:) and has done in the App Store for years; this
+     is that code with the dead UIWebBrowserView half dropped.
+
+     **One thing is deliberately NOT copied.** The plugin assembles the class
+     name as ["WK","Content","View"].joined() so the string is not in the
+     binary. The name is written out here. Hiding it changes nothing about
+     what runs and everything about what it looks like, and this repo does not
+     get to be the one that disguises what it is doing. If that is not
+     acceptable, the answer is to remove this function, not to obfuscate it.
+
+     It fails visibly rather than quietly: if Apple renames or removes the
+     class, the guard falls through and the strip is on the screen, which is
+     the state somebody is looking at today. There is nothing to be silently
+     wrong about.
+
+     What it costs: `✓` is also Done, which blurs the field. On the composer
+     that already does nothing -- pwKeepKb() in www/post.js puts the focus
+     straight back, which is 「キーボードが下ろせる」being answered. Everywhere
+     else the keyboard goes down by touching off the field, as it does in
+     every other web view. */
+  private func hideFormAccessoryBar() {
+    guard let contentView = NSClassFromString("WKContentView"),
+          let getter = class_getInstanceMethod(contentView,
+                                               NSSelectorFromString("inputAccessoryView"))
+    else { return }
+    let noBar: @convention(block) (AnyObject) -> UIView? = { _ in nil }
+    _ = method_setImplementation(getter, imp_implementationWithBlock(noBar))
   }
 }
