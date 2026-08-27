@@ -1292,6 +1292,16 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    across the top of two screens. 「検索バー縦長すぎる」 */
 .search{display:flex;align-items:center;gap:9px;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 2px;margin:8px 0 2px}
 .search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
+/* A search box is a field that WRAPS now, which means it is a textarea --
+   an <input> is one row that scrolls sideways forever and there is no CSS
+   that makes it wrap. 「全部改行して画面内に文字が収まるようにして欲しい」
+   OWNER 2026-08-27. `.lnin` brings its own line under it and its own gap
+   below, and `.search` already draws the line for the whole row -- two of
+   them is two lines. So this takes them off rather than adding anything:
+   what is left is the row that was always here, one line under it, as tall
+   as what is in it. */
+.search .lnin{flex:1;min-height:44px;border-bottom:0;margin-bottom:0;
+              padding:11px 0;font-size:.92rem}
 .gl{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
 /* An entry is two controls now -- the word, which says itself, and the
    chevron, which opens it -- so the row is a container and the padding and
