@@ -801,9 +801,19 @@ function fmrTodoAll(){
 }
 /* Making all of them. The same word that fmrAdd writes -- one function would
    be better and is not possible without changing what fmrAdd does, which is
-   open the word's page afterwards; this one has no word to go back to. */
-function fmrAddAll(){
+   open the word's page afterwards; this one has no word to go back to.
+
+   Every word the rules would make, or every word ONE KIND of rule would make.
+   A chapter of the grammar page asks for its own -- 「その章のページへ」 -- and
+   being on the verbs and having it make a noun's plurals would be the button
+   doing more than the page it is on says. Asked for with no kind, it is
+   everything, which is what it always was. */
+function fmrAddAll(pos, fms){
   var all=fmrTodoAll(), i, w, m, nw, made=0;
+  if(pos) all=all.filter(function(x){
+    return String(x.w.pos)===String(pos) &&
+           (!fms || !fms.length || fms.indexOf(String(x.m.fm))>=0);
+  });
   if(!all.length) return;
   if(capStop(all.length)) return;
   for(i=0;i<all.length;i++){
