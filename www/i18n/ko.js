@@ -822,6 +822,7 @@ defLang('ko', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "AI에 상담",
+      "ask.leave"    : "다른 앱으로 이동합니다",
       "ask.head"     : "Lingua라는 앱에서 인공어를 만들고 있습니다.",
       "ask.f.name"   : "언어 이름",
       "ask.f.snd"    : "소리 (IPA)",
@@ -832,7 +833,7 @@ defLang('ko', (function(){
       "ask.f.end"    : "어말",
       "ask.f.end.v"  : "{0}: {3}개 중 {2}개가 -{1}",
       "ask.f.words"  : "이미 있는 단어",
-      "ask.word.ask" : "이 언어에 어울리는 새 단어를 8개 제안해 주세요. 위의 소리와 이미 있는 단어의 형태만 사용해 주세요. 각각 단어, 뜻, IPA 발음, 그리고 왜 그 형태인지 한 줄로 적어 주세요.",
+      "ask.word.ask" : "이 언어의 단어를 많이 만들고 싶습니다. 100개 정도 제안해 주시고, 진행 방식은 맡기겠습니다 — 묻고 싶은 게 있으면 물어보고, 아니라고 생각하면 말해 주고, 제가 생각하지 못한 방향도 좋습니다. 형식만 하나 부탁드립니다: 목록은 코드 블록으로, 한 줄에 한 단어, 단어와 뜻을 탭으로 구분해 주세요. 그대로 앱에 다시 붙여 넣을 거라서요.",
       "words.more" : "더 보기",
       "words.search"     : "검색",
       "words.clear"      : "지우기",

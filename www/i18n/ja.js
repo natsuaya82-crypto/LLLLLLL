@@ -562,6 +562,7 @@ defLang('ja', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       'ask.open'     : "AIに相談",
+      'ask.leave'    : "他アプリに遷移します",
       'ask.head'     : "Lingua というアプリで人工言語を作っています。",
       'ask.f.name'   : "言語の名前",
       'ask.f.snd'    : "使う音 (IPA)",
@@ -572,7 +573,7 @@ defLang('ja', (function(){
       'ask.f.end'    : "語末",
       'ask.f.end.v'  : "{0}は {3} 語中 {2} 語が -{1}",
       'ask.f.words'  : "すでにある単語",
-      'ask.word.ask' : "この言語に合う新しい単語を 8 つ提案してください。上の音と、すでにある語の形だけを使ってください。それぞれ、単語・意味・IPA での読み・なぜその形にしたかを一行で書いてください。",
+      'ask.word.ask' : "この言語の単語をまとめて作りたいです。100 個くらい提案してください。進め方は任せます ── 聞きたいことがあれば聞いてください、違うと思ったら言ってください、こちらが思いつかない方向でもかまいません。形だけ一つお願いです: 一覧はコードブロックで、一行に一語、単語と意味をタブで区切ってください。そのままアプリに貼り戻すので。",
       'words.more' : "その他",
       'words.search'    : "検索",
       'words.clear'     : '検索の消去',

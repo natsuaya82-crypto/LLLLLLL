@@ -143,6 +143,14 @@ function vWords(){
              '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
                esc(t('words.more'))+'">'+ICON_DOTS+'</button>'+
            '</span>', '')+
+    /* The one sentence the app is allowed to say about itself on this screen.
+       「他アプリに遷移します。暗いかいとけば？」 OWNER 2026-08-27, and it
+       overrides 「アプリ内に説明を書くの禁止」 because it is newer than the
+       rule -- the mark above leaves for somebody else's app the instant it is
+       pressed, and nothing else on the screen says so. One line, and nothing
+       beyond it. Its colour is var(--txm), which every dim line in this app
+       already uses; no new colour, no border, no corner. */
+    '<div class="aleave">'+esc(t('ask.leave'))+'</div>'+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
     '<input id="w-q" placeholder="'+esc(t('words.search'))+'" value="'+esc(q)+'"' + IN('wordsSetQ') + '>'+
