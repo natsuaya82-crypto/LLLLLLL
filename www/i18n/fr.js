@@ -660,6 +660,8 @@ defLang('fr', (function(){
       "glyph.fill"     : "Remplir",
       "glyph.undo"        : "Annuler",
       "glyph.clear"       : "Tout effacer",
+      "glyph.zin"        : "Plus",
+      "glyph.zout"       : "Moins",
       "glyph.save"        : "Enregistrer",
       "glyph.saved"       : "{0} enregistrée",
       "fmr.title"        : "Formes faites par une règle",

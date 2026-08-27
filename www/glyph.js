@@ -567,7 +567,7 @@ function newGE(lid, label){
            si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
-           raw:null, rawFor:-1,
+           raw:null, rawFor:-1, z:1, cx:400, cy:400,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
@@ -633,7 +633,18 @@ var GICON={
      does. Stroked like the rest of them, so it goes gold with its caption. */
   'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
-  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
+  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>',
+  /* The magnifier, and it is the one the app already draws -- ICON_LENS, the
+     same circle and the same handle -- with a bar across it for smaller and
+     a cross for bigger. 「虫眼鏡マークタップして大きくしたり小さくしたり
+     したい。」 OWNER 2026-08-27. Two marks rather than one that cycles:
+     「大きくしたり小さくしたり」 is two things, and a single button that
+     wrapped round from biggest to smallest would make one of them a
+     four-press journey. Stroked, no fill, no corner -- like the other four. */
+  'zin'   : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
+            '<path d="M10.5 7.8v5.4M7.8 10.5h5.4"/>',
+  'zout'  : '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>'+
+            '<path d="M7.8 10.5h5.4"/>'
 };
 /* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
    drawing: it arrives at whatever weight and colour the system feels like,
@@ -1317,6 +1328,37 @@ function geFill(){
   if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
   GE.pi=-1; render();
 }
+/* ---- bigger and smaller ------------------------------------------------
+   The magnifier moves through 1, 1.5, 2 and 3. At 3 the dots are about 51px
+   apart, which is a thumb's width, which is the point of it.
+
+   WHERE it magnifies is the thing worth writing down. A magnifier held over
+   a page shows what you are looking at, so this one centres on the point you
+   have selected -- and failing that on the last point of the stroke you are
+   drawing, which is where your hand already is. Only when the magnifier is
+   pressed, never while drawing: recentring on every tap would slide the
+   whole square out from under the finger placing it, which is the one thing
+   a drawing surface may not do.
+
+   It is not stored. Zoom is where you are standing, not part of the letter,
+   so it goes when the screen does and nothing new is written to a language.
+   (`docs/DATA_MODEL.md` stays as it is.) */
+function geZoomStep(d){
+  if(!GE) return;
+  var i=0, j;
+  for(j=0;j<GEZOOM.length;j++) if(GEZOOM[j]===geZ()) i=j;
+  i+=d;
+  if(i<0 || i>=GEZOOM.length) return;
+  /* what to look at, decided BEFORE the zoom changes */
+  var st=GE.st[GE.si], p=null;
+  if(st && st.pts.length){ p=(GE.pi>=0 && st.pts[GE.pi])? st.pts[GE.pi] : st.pts[st.pts.length-1]; }
+  if(GEZOOM[i]===1){ GE.cx=400; GE.cy=400; }
+  else if(p){ GE.cx=p[0]; GE.cy=p[1]; }
+  GE.z=GEZOOM[i];
+  render();
+}
+function geZoomIn(){ geZoomStep(1); }
+function geZoomOut(){ geZoomStep(-1); }
 function geUndo(){
   if(!GE.undo.length) return;
   GE.st=JSON.parse(GE.undo.pop());
@@ -1666,11 +1708,51 @@ var GEPAD=0.055;
    CSS pixels with a padding round it, and the drawing is not; this is the one
    place that knows the difference. Both of the two below started with the
    same four lines. */
+/* ---- where the square sits inside its canvas, at whatever zoom ---------
+   「文字書くページのときズームできるようにできない？じゃないと細かすぎて
+   描きにくいわ。」「虫眼鏡マークタップして大きくしたり小さくしたりしたい。」
+   OWNER 2026-08-27.
+
+   The lattice is 21x21 in a square that is at most 340px wide, so the dots
+   are about 17px apart and about 6px across -- against a fingertip that is
+   reckoned at 44. The owner is aiming at something two and a half times
+   finer than a thumb can hit, which is what 「細かすぎて」 measures out as.
+
+   THE FORMULA IS WRITTEN ONCE. It used to be written twice -- here, undoing
+   the padding to find where the thumb is, and again in geDraw() applying it
+   -- and two copies of a mapping that MUST agree is exactly the place a zoom
+   goes wrong: the moment they disagree by a hair the dot stops appearing
+   under the finger, and it does it silently, on a device, in a way no check
+   here would see. So both go through geTo/geFrom and neither knows anything
+   about zoom beyond asking these.
+
+   `z` is how much bigger, and the window on the square is the middle 800/z
+   of it, clamped so it never shows past the edge. */
+var GEZOOM=[1, 1.5, 2, 3];
+function geZ(){ return (GE && GE.z)? GE.z : 1; }
+/* The top-left corner of what is visible, in the square's own 0-800. */
+function geOrg(){
+  var z=geZ(), span=800/z, hi=800-span,
+      cx=(GE && GE.cx!==undefined)? GE.cx : 400,
+      cy=(GE && GE.cy!==undefined)? GE.cy : 400,
+      ox=cx-span/2, oy=cy-span/2;
+  if(ox<0) ox=0; if(ox>hi) ox=hi;
+  if(oy<0) oy=0; if(oy>hi) oy=hi;
+  return [ox, oy];
+}
+/* Canvas pixels per unit of the square, and the margin the pen needs at the
+   outermost lattice points. geMar is the UNZOOMED one: the frame drawn round
+   the canvas is the canvas's own edge, not part of the drawing, so it must
+   not grow when the drawing does. */
+function geMar(S){ return S*GEPAD; }
+function geK0(S){ return (S-2*geMar(S))/800; }
+function geK(S){ return geK0(S)*geZ(); }
+/* the square's 0-800 -> a pixel on the canvas, and back. ax 0 is x, 1 is y */
+function geTo(S, v, ax){ return geMar(S) + (v-geOrg()[ax])*geK(S); }
+function geFrom(S, px, ax){ return (px-geMar(S))/geK(S) + geOrg()[ax]; }
 function geXY(c,ev){
-  var b=c.getBoundingClientRect();
-  var w=b.width||1, h=b.height||1, px=w*GEPAD, py=h*GEPAD;
-  return [((ev.clientX-b.left)-px)/(w-2*px)*800,
-          ((ev.clientY-b.top)-py)/(h-2*py)*800];
+  var b=c.getBoundingClientRect(), w=b.width||1, h=b.height||1;
+  return [geFrom(w, ev.clientX-b.left, 0), geFrom(h, ev.clientY-b.top, 1)];
 }
 function geAtRaw(c,ev){
   var p=geXY(c,ev), lo=GGRID.inset, hi=800-GGRID.inset;
@@ -1897,6 +1979,8 @@ function geRail(st, pts){
     geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
     geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     geBtn('geClear','clear','glyph.clear', !!pts, false)+
+    geBtn('geZoomOut','zout','glyph.zout', geZ()>GEZOOM[0], false)+
+    geBtn('geZoomIn','zin','glyph.zin', geZ()<GEZOOM[GEZOOM.length-1], !!(GE && GE.z>1))+
   '</div>';
 }
 
@@ -1946,11 +2030,13 @@ function geDraw(){
      drawing is put into an inset square instead: the frame is the canvas, the
      lattice lives within it with room for the pen. geAt undoes exactly this,
      so where the finger is and where the dot appears stay the same place. */
-  var pad=S*GEPAD, k=(S-2*pad)/800;
-  var X=function(v){ return pad+v*k; };
+  /* k0 is the canvas's own scale and k is the drawing's -- the same number
+     until somebody presses the magnifier. The frame belongs to the canvas. */
+  var pad=geMar(S), k0=geK0(S), k=geK(S);
+  var X=function(v){ return geTo(S,v,0); }, Y=function(v){ return geTo(S,v,1); };
   x.clearRect(0,0,S,S);
-  x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2.5);
-  x.strokeRect(k*3,k*3,S-k*6,S-k*6);
+  x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k0*2.5);
+  x.strokeRect(k0*3,k0*3,S-k0*6,S-k0*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
      along here", and that is the thing being taken away. */
   var gs=geStep(), gi, gj;
@@ -1968,7 +2054,7 @@ function geDraw(){
     for(gj=0; gj<GGRID.n; gj++){
       x.beginPath();
       /* the dot scales with the step, so 100 dots do not read as a grey wash */
-      x.arc(X(GGRID.inset+gi*gs), X(GGRID.inset+gj*gs), Math.max(2,k*gs*0.115), 0, Math.PI*2);
+      x.arc(X(GGRID.inset+gi*gs), Y(GGRID.inset+gj*gs), Math.max(2,k*gs*0.115), 0, Math.PI*2);
       x.fill();
     }
   }
@@ -1988,15 +2074,19 @@ function geDraw(){
      同じ色でしょ。差をつけないといけないやん」 */
   var area=[];
   GE.st.forEach(function(s0){ if(s0.fill) area.push({pts:s0.pts, closed:s0.closed, k:s0.k}); });
-  inkStrokes(x, GE.st, k, pad, pad, cssVar('--tx'));
-  if(area.length) inkStrokes(x, area, k, pad, pad, cssVar('--fill'));
+  /* inkStrokes lays down ox + v*k, which is geTo() written out, so the
+     origin it is handed is where 0 of the square falls once the window has
+     been scrolled to geOrg(). At z=1 that is pad, as it always was. */
+  var org=geOrg(), ix=pad-org[0]*k, iy=pad-org[1]*k;
+  inkStrokes(x, GE.st, k, ix, iy, cssVar('--tx'));
+  if(area.length) inkStrokes(x, area, k, ix, iy, cssVar('--fill'));
 
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k*2);
   GE.st.forEach(function(s){
     if(s.pts.length<2) return;
     var poly=LinguaFont.toPolyline(s);
     x.beginPath();
-    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),X(p[1])); else x.moveTo(X(p[0]),X(p[1])); });
+    poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),Y(p[1])); else x.moveTo(X(p[0]),Y(p[1])); });
     x.stroke();
   });
   GE.st.forEach(function(s,si){
@@ -2005,11 +2095,11 @@ function geDraw(){
       /* Smaller than the step, or the handle covers the lattice dot it is
          sitting on and the thing you are aiming at is under the thing you
          placed. 「⚪︎がでかいのもあるわ。そのせいで点がわからん」 */
-      x.beginPath(); x.arc(X(p[0]),X(p[1]),k*(sel?16:11),0,Math.PI*2);
+      x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*(sel?16:11),0,Math.PI*2);
       x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold');
       x.fill();
       if(sel){
-        x.beginPath(); x.arc(X(p[0]),X(p[1]),k*32,0,Math.PI*2);
+        x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*32,0,Math.PI*2);
         x.strokeStyle=cssVar('--gold'); x.lineWidth=k*4; x.stroke();
       }
     });

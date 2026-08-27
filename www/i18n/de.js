@@ -600,6 +600,8 @@ defLang('de', (function(){
       "glyph.fill"     : "Füllen",
       "glyph.undo"        : "Zurück",
       "glyph.clear"       : "Leeren",
+      "glyph.zin"        : "Groß",
+      "glyph.zout"       : "Klein",
       "glyph.save"        : "Sichern",
       "glyph.saved"       : "{0} gesichert",
       "fmr.title"        : "Formen nach einer Regel",
