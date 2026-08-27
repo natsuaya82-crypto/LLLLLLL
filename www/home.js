@@ -1485,7 +1485,14 @@ function langRow(id){
    account" sits in the app this is modelled on. 「アカウントが変わるイメージ。
    実際の sns はアカウント切り替えボタンあるやん？あれが言語切り替えになるって
    感じ」「せっていからでいいよ」 OWNER DECISION 2026-08-25: the list stays in
-   Settings and is not moved onto the profile.
+   Settings. It is still there and this is still the page it opens.
+
+   **A second way in was added 2026-08-27** 「インスタと同じようにしたから出て
+   くる」: holding the profile tab comes to this same page (holdStart() in
+   www/shell.js). The list was NOT moved -- Settings still links here, which is
+   what 「せっていからでいいよ」 asked for, and the hold is a short way to the
+   page rather than a copy of it. That is the reading docs/FEATURE_RULES.md
+   offered on 2026-08-25 and would not settle on its own; the owner settled it.
 
    It is drawn on every plan, including the one that cannot press it: a closed
    door is shown rather than hidden. 「だいたい無料で使えないやつは表示させて

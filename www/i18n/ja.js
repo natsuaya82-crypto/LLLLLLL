@@ -678,9 +678,8 @@ defLang('ja', (function(){
       'set.data'        : 'データ',
       'set.terms'        : '利用規約',
       'set.privacy'        : 'プライバシーポリシー',
-      'set.csv.out'     : 'CSVの書き出し',
       'set.csv.in'      : 'リストの取り込み',
-      'set.lock.csv.t'  : 'CSVの取り込みと書き出し',
+      'set.lock.csv.t'  : 'CSVの取り込み',
       'set.lock.csv.d'  : "表計算でまとめて作った単語を取り込む",
       'set.wipe'        : 'データを消去',
       'set.pw'        : 'パスワードを変更',
@@ -999,8 +998,6 @@ defLang('ja', (function(){
       'csv.ph'          : 'ねこ\nみず\n歩く\n\nkano, 山, 名詞',
       'csv.btn'         : '取り込み',
       'csv.full'        : '{0}語取り込み、{1}語作成。Freeの上限に達しました',
-      'toast.exported'  : '書き出しました',
-      'toast.exportfail': '書き出せませんでした',
       'read.sep'        : '　',
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */

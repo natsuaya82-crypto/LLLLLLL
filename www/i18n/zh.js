@@ -767,9 +767,8 @@ defLang('zh', (function(){
       "set.data"         : "数据",
       "set.terms"         : "使用条款",
       "set.privacy"         : "隐私政策",
-      "set.csv.out"      : "导出为 CSV",
       "set.csv.in"       : "从 CSV 导入",
-      "set.lock.csv.t"   : "CSV 导入与导出",
+      "set.lock.csv.t"   : "CSV 导入",
       "set.lock.csv.d"   : "把你在表格里做好的一批词倒进来",
       "set.wipe"         : "清除全部数据",
       "set.pw"         : "修改密码",
@@ -1088,8 +1087,6 @@ defLang('zh', (function(){
       "csv.ph"           : "猫\n水\n走\n\nkano, 山, 名词",
       "csv.btn"          : "导入",
       "csv.full"        : "已导入 {0}，已创建 {1} — Free 已满",
-      "toast.exported"   : "已导出",
-      "toast.exportfail" : "导出失败",
       "read.sep"         : "　",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
