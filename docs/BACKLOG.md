@@ -410,14 +410,32 @@ viewport は縮まないので、`.ob{height:100%}` は画面ぶんのままで�
 web view の外にあります。**リーダーが試して、届きませんでした。**
 
 唯一の道は `ios/App/` の Swift で web view の `inputAccessoryView` を潰すことです。
+**書きました** ── `hideFormAccessoryBar()` in `ios/App/App/MainViewController.swift`
+（`claude/bar`、2026-08-27）。`docs/reports/bar-2026-08-27.md` に調べが全部あります。
+**`COMPILE CONFIRMED` も `DEVICE CONFIRMED` も未**なので、この項目は
+実機で見るまで閉じません。
 
-**やっていないこと、と理由。** `ios/App/` は誰の持ち場でもなく、
-**実機とビルドが要ります**（Linux のセッションからは確かめられません）。
-`docs/HANDOVER-2026-08-26.md` §4 のとおり `ios/App/` はビルド #91 から
-一行も動いていないので、これに触ると木のハッシュが変わります。
+### ⚠ の答え ── 「キーボードを下ろす手段まで消えないか」は、消えません
 
-**⚠ 推測で「消した」と言わないこと。** 潰した結果として、ほかのアクセサリ
-（キーボードを下ろす手段）まで消える可能性があります。
+**2026-08-27 に調べました。この一行がこの項目の宿題でした。**
+
+- **投稿画面では、`✓` はもともと効いていません。** `pwKeepKb()` / `pwKbGuard()`
+  (`www/post.js:916`) がフォーカスを外されると戻します。そのコメント自身が
+  こう書いています ── *「It goes down by the field losing focus, and there is no
+  key on an iPhone that does anything else -- so putting it back is the whole of
+  『it cannot be lowered』」*。**引き継ぎ ②㉑ の「キーボードが下ろせる」への
+  答えが、これでした。**だから帯を消しても、この画面で失うものはありません。
+- **それ以外の画面**（単語、検索、設定の名前、サインインの扉）では、
+  フィールドの外を触れば下がります ── どの web view でもそうなる普通の道です。
+
+### 「カメラの行がキーボードに貼り付かない」は、これと同じ一件でした
+
+`--vvkb` (`www/shell.js:663`) は visualViewport の下に残った高さで、そこには
+**キーボードとこの帯の両方**が入っています。`.view.fit .pwbar{bottom:var(--vvkb)}`
+はそれに貼り付いているので、**帯が消えれば行はキーの上に降ります。**
+`www/index.html:1069` のコメントが既に名指ししていました ──
+「その隙間と、その下の iOS 自身の accessory bar が、行が浮いていた元」。
+**`www/` 側に直すところはありません。**
 
 
 ## `press` の `lists measured` は走るたびに動く ── ラチェットに使えない
