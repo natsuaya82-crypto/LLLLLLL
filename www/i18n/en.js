@@ -383,7 +383,7 @@ defLang('en', (function(){
       'num.big'         : 'Up to {0}',
       'num.base'        : 'Base',
       'num.wid'         : 'On the home screen',
-      'num.wid.how'     : 'Hold the Home Screen → + → Lingua',
+      'num.wid.how'     : "Hold the Home Screen → Edit → Add Widget → Lingua",
       'lt.marks'        : 'Marks',
       'toc.gram'        : "Grammar",
       /* what the app proposes */
@@ -555,7 +555,11 @@ defLang('en', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       'ask.open'     : "Ask an AI",
-      'ask.leave'    : "Opens another app",
+      'ask.leave'    : "Opens {0}",
+      'ask.to.chatgpt' : "ChatGPT",
+      'ask.to.gemini' : "Gemini",
+      'ask.to.grok'  : "Grok",
+      'ask.to.perplexity' : "Perplexity",
       'ask.head'     : "I am building a constructed language in an app called Lingua.",
       'ask.f.name'   : "Language name",
       'ask.f.snd'    : "Sounds (IPA)",

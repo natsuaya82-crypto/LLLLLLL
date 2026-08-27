@@ -487,7 +487,7 @@ defLang('pt', (function(){
       "num.big"         : "Até {0}",
       "num.base"        : "Base",
       "num.wid"         : "No ecrã principal",
-      "num.wid.how"     : "Mantém premido o ecrã principal → + → Lingua",
+      "num.wid.how"     : "Mantém premido o ecrã principal → Editar → Adicionar widget → Lingua",
       "lt.marks"         : "Sinais",
       "toc.gram"         : "Gramática",
       /* what the app proposes */
@@ -656,7 +656,11 @@ defLang('pt', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Consultar uma IA",
-      "ask.leave"    : "Abre outro app",
+      "ask.leave"    : "Abre {0}",
+      "ask.to.chatgpt" : "ChatGPT",
+      "ask.to.gemini" : "Gemini",
+      "ask.to.grok"  : "Grok",
+      "ask.to.perplexity" : "Perplexity",
       "ask.head"     : "Estou criando uma língua construída num app chamado Lingua.",
       "ask.f.name"   : "Nome da língua",
       "ask.f.snd"    : "Sons (AFI)",

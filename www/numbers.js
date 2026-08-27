@@ -432,6 +432,11 @@ function numWidHTML(){
   return '<div class="sec">'+esc(t('num.wid'))+'</div>'+
     '<div class="numwrow">'+numClockHTML()+numTimeHTML()+'</div>'+
     numCalHTML()+
+    /* The four steps iOS actually asks for. 「ウェジットはホーム長押し編集
+       ウェジット追加linguaね？」 OWNER 2026-08-27 -- it said 「→ + →」 before,
+       which is one step short AND names a button iOS does not have on that
+       screen: the + adds a widget once you are already editing. A手順 that
+       does not work is worse than none, because somebody follows it. */
     '<div class="mini numwhow">'+esc(t('num.wid.how'))+'</div>';
 }
 /* The canvases, once the HTML they are in exists. inkLine gives each one the
