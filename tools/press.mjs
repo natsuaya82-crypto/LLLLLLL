@@ -407,7 +407,15 @@ const R = await pg.evaluate(async () => {
     /^open[A-Z]/.test(k) && typeof window[k] === 'function' && k !== 'openForm');
   const argsOf = (r) =>
     r === 'set'  ? [null].concat(SETS.map(x => x.id)) :
-    r === 'gram' ? [null].concat(stAll().map(p => p.id)) :
+    /* gramArgs() and not stAll(), which is the stages alone. The chapters of
+       the new grammar page are routes of `gram` too, and this walk was the
+       one of the three that never got told: act-check and i18n-check were
+       moved onto gramArgs() the day it was written and this line was not, so
+       every chapter page went unpressed while both other walks covered them.
+       It is invisible in a green run except as a count that does not move --
+       eight pages of buttons were added over three commits and `buttons
+       pressed` did not change by one. */
+    r === 'gram' ? [null].concat(gramArgs()) :
     /* The form picker is about a word, and with no word it is the gone box. */
     r === 'fm'   ? ['tira'] :
     [null];
