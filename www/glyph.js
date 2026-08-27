@@ -2109,6 +2109,9 @@ function render(){
      frame later. That fall is what made every chapter open on its middle.
      A different screen starts where a page starts. */
   var same = (RENDERED===route);
+  /* and what the screen being left forgets, which is viewLeft()'s in
+     www/shell.js -- this is the one line that knows a screen changed. */
+  if(!same) viewLeft(RENDERED, route);
   var y = same ? (window.scrollY || window.pageYOffset || 0) : 0;
   RENDERED=route;
   /* the entrance animation belongs to arriving, not to redrawing */

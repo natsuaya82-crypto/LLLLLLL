@@ -382,6 +382,10 @@ function obBack(){
     /* Out of the reset back to the address it was sent to, so a mistyped
        address is one press from being retyped rather than two. */
     if(OBM.mode==='reset'){ obMailGo('forgot'); return; }
+    /* Out of the password back to the address, and not back to the digits:
+       the code that got here has been spent, so the way to try again is a
+       new one. */
+    if(OBM.mode==='newpw'){ obMailGo('forgot'); return; }
     if(OBM.mode==='in'){ obReturn(); return; }
     obMailGo('in'); return;
   }
@@ -678,12 +682,22 @@ function obMailForgot(){
 function obResetGo(){
   if(OBM.busy) return;
   if(!OBM.code){ OBM.msg=t('net.needcode'); render(); return; }
+  OBM.busy=true; OBM.msg=''; render();
+  /* The server says whether the digits are right, and nothing here does. A
+     comparison in this file would be the answer sitting on the phone that is
+     asking the question. What comes back is a session, and the next screen is
+     what spends it. */
+  netRecoverCode(OBM.em, OBM.code, function(){
+    OBM.busy=false; OBM.code=''; OBM.pw=''; obMailGo('newpw');
+  }, obNo);
+}
+/* Somebody holding a session changing their own password. Nothing here asks
+   what the old one was, which is the point -- they forgot it. */
+function obNewPwGo(){
+  if(OBM.busy) return;
   if(!OBM.pw){ OBM.msg=t('net.needpass'); render(); return; }
   OBM.busy=true; OBM.msg=''; render();
-  var pw=OBM.pw;
-  netRecoverCode(OBM.em, OBM.code, function(){
-    netSetPass(pw, function(){ OBM.pw=''; OBM.code=''; obIn(); }, obNo);
-  }, obNo);
+  netSetPass(OBM.pw, function(){ OBM.pw=''; obIn(); }, obNo);
 }
 function obMailField(id, k, type, auto, ph){
   return '<div class="field"><input id="'+id+'" type="'+type+'" '+
@@ -823,18 +837,40 @@ function obAskHTML(code){
       t(OBM.busy? 'ob.mail.wait' : (code? 'ob.mail.verify' : 'ob.mail.send'))+'</button>'+
     '</div>';
 }
-/* The reset, which is the code and the new password on one screen. Not two
-   screens: they arrive in the same minute out of the same mail, and a code
-   typed on one screen and a password on the next is a second place for the
-   code to expire in. */
+/* The reset, in two steps: the six digits, and then the new password.
+
+   It was one screen, and the reason written here was that the code and the
+   password arrive in the same minute out of the same mail, so a code typed on
+   one screen and a password on the next is a second place for the code to
+   expire in. **That is no longer true and it is no longer the shape.**
+   「6桁の数字打って正しかったらパスワード入力するようにして」 OWNER 2026-08-26.
+
+   The old reason does not come back with the second screen, because the code
+   is spent on the FIRST one: obResetGo() verifies it against Supabase and
+   what comes back is a session. The password screen is somebody holding a
+   session changing their own password, which has no code in it and nothing
+   left to expire.
+
+   Two headings and two buttons, and every word of both was already written --
+   `ob.mail.h.code` over the digits and `ob.mail.h.reset` over the password.
+   The one screen had been wearing the second heading over both. */
 function obResetHTML(){
   return '<div class="mid obform">'+
-    '<h2 class="obh">'+t('ob.mail.h.reset')+'</h2>'+
+    '<h2 class="obh">'+t('ob.mail.h.code')+'</h2>'+
     '<p class="obsub">'+esc(t('ob.mail.code.sub', OBM.em))+'</p>'+
     obMailField('ob-code', 'code', 'text', 'one-time-code', 'ob.mail.code.ph')+
-    obMailField('ob-pw', 'pw', 'password', 'new-password', 'ob.mail.newpw.ph')+
     (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
     '<button class="btn"' + DO('obResetGo') + (OBM.busy? ' disabled':'') + '>'+
+      t(OBM.busy? 'ob.mail.wait' : 'ob.mail.verify')+'</button>'+
+    '</div>';
+}
+/* And the second step, reached only by a code the server accepted. */
+function obNewPwHTML(){
+  return '<div class="mid obform">'+
+    '<h2 class="obh">'+t('ob.mail.h.reset')+'</h2>'+
+    obMailField('ob-pw', 'pw', 'password', 'new-password', 'ob.mail.newpw.ph')+
+    (OBM.msg? '<div class="obmsg">'+esc(OBM.msg)+'</div>' : '')+
+    '<button class="btn"' + DO('obNewPwGo') + (OBM.busy? ' disabled':'') + '>'+
       t(OBM.busy? 'ob.mail.wait' : 'ob.mail.reset')+'</button>'+
     '</div>';
 }
@@ -843,6 +879,7 @@ function obDoorHTML(){
   var m=OBM.mode;
   if(m==='who') return obWhoHTML();
   if(m==='reset') return obResetHTML();
+  if(m==='newpw') return obNewPwHTML();
   if(m==='code' || m==='forgot') return obAskHTML(m==='code');
   return obFormHTML(m==='up');
 }

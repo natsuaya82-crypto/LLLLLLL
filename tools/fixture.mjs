@@ -317,10 +317,17 @@ export function obStates(){
     ['the six digits out of the mail', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'code';
                                          OBM.em = 'a@b.c'; return vOb(); }],
-    /* The code and the new password, which is where asking for a reset now
-       lands. It used to end at a line saying "sent". */
-    ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
+    /* Asking for a reset lands on the digits. It used to end at a line saying
+       "sent"; then it was the digits and the password on one screen; it is two
+       screens now, and both are here because both are screens. */
+    ['the six digits of a reset', () => { SET.obback = { r: 'set', a: 'acct' };
                                          OBM.mode = 'reset';
+                                         OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
+                                         OBM.busy = false; return vOb(); }],
+    /* And what a code the server accepted opens onto. Reached from nowhere
+       else: obResetGo() is the only thing that sets this mode. */
+    ['choosing a new password',  () => { SET.obback = { r: 'set', a: 'acct' };
+                                         OBM.mode = 'newpw';
                                          OBM.em = 'a@b.c'; OBM.code = ''; OBM.pw = '';
                                          OBM.busy = false; return vOb(); }],
     ['having forgotten the password',  () => { SET.obback = { r: 'set', a: 'acct' };

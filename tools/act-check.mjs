@@ -429,8 +429,82 @@ const R = await pg.evaluate(() => {
       if (r.top < 0 || r.bottom > window.innerHeight)
         out.doors.push(where + ': off the screen at ' + Math.round(r.top));
     });
+
+    /* ---- and the reset is two steps, with the server deciding the first ---
+       「6桁の数字打って正しかったらパスワード入力するようにして」 OWNER
+       2026-08-26. Three things have to hold and none of them throws when it
+       does not: a wrong code must NOT open the password screen; a right one
+       must; and the password screen must not carry the code field with it,
+       because a code already spent is a field that can only be got wrong.
+
+       The wire is stubbed rather than the two functions, for the reason the
+       refusals above are: what is under test is the whole road, and a check
+       that called netRecoverCode() itself would be asking a different
+       question than the button asks. */
+    const wire = (code, body) => {
+      window.XMLHttpRequest = function(){
+        this.readyState = 0; this.status = 0; this.responseText = '';
+        this.open = function(){}; this.setRequestHeader = function(){};
+        const self = this;
+        this.send = function(){
+          self.readyState = 4; self.status = code;
+          self.responseText = body ? JSON.stringify(body) : '';
+          if (self.onreadystatechange) self.onreadystatechange();
+        };
+      };
+    };
+    const seen = () => ({ mode: OBM.mode,
+      code: !!app.querySelector('#ob-code'), pw: !!app.querySelector('#ob-pw') });
+
+    /* Standing where obDoor() puts somebody: it is the one way to this
+       screen and it takes SET.done away, which is what keeps the app on the
+       door. Without that, the moment the server accepts the code the session
+       arrives, appIs() answers 'app', and render() draws a route instead --
+       which is what the first run of this check actually did, and it said so
+       by failing rather than by passing. */
+    SESS = null; SET.done = false; SET.obback = { r:'set', a:'acct' };
+    OBM.mode = 'reset'; OBM.em = 'a@b.c'; OBM.code = '000000'; OBM.pw = ''; OBM.msg = '';
+    OBM.busy = false; render();
+    const step1 = seen();
+    if (!step1.code) out.doors.push('the reset does not start on the six digits');
+    if (step1.pw)    out.doors.push('the six digits arrive with a password field beside them');
+
+    /* a code the server refuses */
+    wire(400, { msg: 'Token has expired or is invalid' });
+    try { obResetGo(); } catch (e) { out.doors.push('a refused code threw: ' + e.message); }
+    if (OBM.mode !== 'reset')
+      out.doors.push('a code the server REFUSED opened the password screen (' + OBM.mode + ')');
+    if (!OBM.msg) out.doors.push('a refused code said nothing');
+
+    /* and one it accepts: what comes back is a session, and that is what the
+       second screen spends */
+    OBM.code = '123456'; OBM.msg = ''; OBM.busy = false;
+    wire(200, { access_token: 'h.e.s', refresh_token: 'r', user: { id: 'u' } });
+    try { obResetGo(); } catch (e) { out.doors.push('an accepted code threw: ' + e.message); }
+    render();
+    const step2 = seen();
+    if (step2.mode !== 'newpw')
+      out.doors.push('a code the server ACCEPTED did not open the password screen (' + step2.mode + ')');
+    if (step2.code) out.doors.push('the password screen still carries the spent code field');
+    if (!step2.pw)  out.doors.push('the password screen has no password field');
+
+    /* and setting it needs one */
+    OBM.pw = ''; OBM.msg = ''; OBM.busy = false;
+    let sent = 0;
+    window.XMLHttpRequest = function(){
+      this.readyState = 0; this.status = 0; this.responseText = '';
+      this.open = function(){ sent++; }; this.setRequestHeader = function(){};
+      const self = this;
+      this.send = function(){ self.readyState = 4; self.status = 200;
+        self.responseText = '{}'; if (self.onreadystatechange) self.onreadystatechange(); };
+    };
+    try { obNewPwGo(); } catch (e) { out.doors.push('an empty password threw: ' + e.message); }
+    if (sent) out.doors.push('an empty new password was sent to the server anyway');
+    if (!OBM.msg) out.doors.push('an empty new password said nothing');
+
     window.XMLHttpRequest = RealXHR;
-    OBM.mode = 'in'; OBM.em = ''; OBM.pw = ''; OBM.msg = ''; OBM.busy = false;
+    SESS = null; SET.done = true; SET.obback = null;
+    OBM.mode = 'in'; OBM.em = ''; OBM.pw = ''; OBM.code = ''; OBM.msg = ''; OBM.busy = false;
 
     SESS = wasS; window.route = wasR; NAV = wasN; SET.done = wasDone;
     SET.obback = wasBack; ob.step = wasStep;
