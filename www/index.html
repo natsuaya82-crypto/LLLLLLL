@@ -1472,6 +1472,23 @@ a.set{text-decoration:none}
             line-height:1.25;letter-spacing:-.01em}
 .plterm .pper{display:block;font-size:.72rem;color:var(--txm)}
 .plterm .plsave{display:block;font-size:.72rem;color:var(--gold)}
+/* 1.25rem was 3px too wide for `$4.99 / month` to sit on one line inside the
+   box the term buttons got, so 「4.99/月は一列にしろ」OWNER 2026-08-26 was not
+   actually met -- and at 320 the amount broke mid-number (`$99.9` / `9`).
+   Measured at 320 and 390, both currencies, both terms. `press` walks a 402pt
+   phone and only that one, so neither showed there. */
+.btn.plterm{padding:10px 8px}
+.plterm .pp{font-size:1.1rem}
+/* An amount never breaks, and neither does its term: what may drop to a second
+   line is the whole of `/ month`, and only on a 320 phone. */
+.plterm .pp,.plterm .pper{white-space:nowrap}
+/* Twelve months at the monthly price, struck through, on the line above what a
+   year costs. Its own line: beside the price it pushes the amount onto a second
+   line, which is the fault above. Muted and small -- it is the number being
+   compared AGAINST, and the one being paid is the big one.
+   「49.99は取り消し線＋17%OFF」OWNER 2026-08-26. */
+.plterm .pwas{display:block;font-size:.72rem;color:var(--txm);line-height:1.35;
+              white-space:nowrap}
 /* The one box in the app. 「11は、角丸でいいから囲わないとボタンを押してるか
    わからん」OWNER 2026-08-26 -- the month and the year are the only thing on
    this page anybody presses, and with nothing round them they read as two
