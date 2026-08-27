@@ -218,6 +218,34 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 規約とプライバシーは設定の中だけ。特定商取引法の表記は出さない
+- Date: 2026-08-26
+- Area: 規約・プライバシーポリシー・特定商取引法に基づく表記
+- Decision: **特商法の表記は出さない**（「出さない。」）。**ログアウト中に
+  規約とプライバシーが読めなくてよい**（「ログアウト中は見れなくていいでしょ？
+  ログインしたら設定から見れるし」）。読める道は**設定 → アカウントの一番下、
+  一箇所だけ**。
+- Reason: オーナーの言葉のまま上に。仕組みの側で分かっていること ── App Store
+  の課金は販売者が Apple（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も
+  Apple なので、App Store Connect は特商法のページを訊いてこない。必須で訊くのは
+  プライバシーポリシー URL だけ。
+- Affected features: `docRows()`（www/settings.js）。**二本のままで、三本目は
+  作らない。** ログアウト中に扉しか出ないのは 2026-08-26 の「ログアウトしたら
+  普通にログイン画面だけ出せばいいやろ」のとおりで、**これは退行ではなく仕様**。
+- Affected data: **無し。** 保存するものは増えも減りもしない。
+- Affected docs: docs/BACKLOG.md（§3 と §4 をこの決定に合わせる）、docs/apple.md
+- Implementation status: **コードの変更は要らない。今の姿がこの決定。**
+  残っているのは repo の外で、そちらは片付いていない ── `natsuaya82-crypto/tokine2`
+  （Vercel で tokinets.com）を読んだ結果:
+  **`lingua/` の中は `index.html` 一つだけで、`terms.html` も `privacy.html` も
+  無い。** アプリの二本のリンクは今日 404。直下には二本あるが **どちらも別アプリの
+  もの**（`terms.html` は「利用規約 | JPEL Manager」、`privacy.html` は
+  「本アプリには『JPEL Manager』が含まれます」と書き、メールを求めない・端末内
+  にのみ保存・AdMob 広告あり、と Lingua と真逆を宣言している）。**流用は不可** ──
+  審査に落ちるより先に、事実と違う申告になる。
+  **要るのは Lingua 用に書き下ろした二本。** App Store Connect のプライバシー
+  ポリシー URL は必須なので、これができるまで審査に出せない。サイトの仕事。
+
 ### 売上とアナリティクスを、アプリの中で見る
 - Date: 2026-08-26
 - Area: 数字を見る画面（新しい章）／App Store Connect の API／Supabase
@@ -909,38 +937,170 @@ be this app deciding whose calendar it is」。それは**週や月の長さを�
   three, backs up three, and is refused only the fourth.
 
 ### Decision
-- Date: 2026-08-25
-- Area: The keyboard sheet's width — a column is a fixed size
+- Date: 2026-08-26
+- Area: The five patterns — each comes out the shape of a keyboard
 - Decision:
 
-  「エクセルみたいにキーボードにやって横幅が固定されるはずだよ。
-   縦の列は追加できるかもだけど」
+  「qwartyとフリックだとサイズ違うでしょ？そういうのはどうなんの？」
+  「フリックだけじゃなくて全部。」
 
-  **A column is a fixed width. The board is as wide as its columns make it.**
-  Not the other way round.
+  **Every pattern comes out at a real keyboard's proportions.** Measured on a
+  390 × 844 phone, iOS is QWERTY 10 across (0.72:1), kana 5 (1.44:1),
+  ten-key 4 (1.81:1) — all four rows, all about a third of the screen. Ours
+  were flick 3 across (2.41:1, a 130 × 54pt letterbox) and tap and chart
+  seven rows deep, half the screen.
 
-  Today `--kbw` is `83vw` and `kbCellW(w, cols)` is `--kbw / cols * kbU(w)`, so
-  the board is ALWAYS the same width and the cells stretch to fill it: a board
-  of three columns draws three enormous cells across the whole phone. From now
-  the unit is fixed — a column is what a column is on a ten-column board — and
-  a three-column board is three columns wide, sitting where a short row already
-  sits (the middle of the sheet, rule 19). Adding a column makes the board
-  wider, up to the ten that rule 19 already fixes.
+  Two sentences do it:
 
-- Reason: it is a spreadsheet, and a spreadsheet does not resize its columns
-  because you deleted some. This also settles a bug rather than patching it.
-  `tools/side-baseline.txt` carries three screens that run off the side of a
-  402pt phone, all one fault: the three tiles a new key is dragged off are the
-  size of the key they make (「1マスとキーボードの1マスのサイズが一緒じゃない
-  から分かりにくいよ」), so together they are 1+2+3 = 6 columns; on a
-  three-column board, six stretched columns are twice the board. Three ways to
-  patch it were put to the owner -- wrap, shrink on narrow boards, stack
-  vertically -- and all three were answers to the wrong question. With a fixed
-  column, six of them are six tenths of the sheet and fit by construction.
-- Affected features: `kbCellW()` and `--kbw` (`www/keyboard.js`,
-  `www/index.html`), how every board narrower than ten columns is DRAWN --
-  nothing stored changes, no layout moves, only the drawing -- and the three
-  lines in `tools/side-baseline.txt`, which come out when it lands.
+  - **The keys that are not letters take a COLUMN, not a row.** On a short
+    board a row of their own is a whole row, and a keyboard with no return is
+    one nobody can send a message on. flick's fourth column and chart's last
+    column carry delete, space and return down them.
+  - **Letters go as many to a row as it takes to fit in four rows, and never
+    fewer than four across** (`kbPer()`). Four rows is the ceiling on how
+    tall; four across is the floor on how wide, because a key is
+    `1 / (cols × 0.1385)` and three across is 2.41:1.
+
+  | | before | after |
+  |---|---|---|
+  | qwerty | 10×5, 0.72:1, 38% | unchanged |
+  | flick | 3×3, **2.41:1**, 25% | 4×3, **1.81:1**, 25% |
+  | tap | 5×7, 1.44:1, **51%** | 8×5, 0.90:1, **38%** |
+  | chart | 5×7, 1.44:1, **51%** | 6×6, 1.20:1, **45%** |
+  | abc | 10×4, 0.72:1, 32% | unchanged |
+
+  **chart's grid is untouched**: its row count is the number of consonants,
+  which is the language's and not ours. Only the column moved.
+
+- Reason: the editor is the preview and a pattern is where a keyboard starts,
+  so a pattern that starts at a shape no phone has is the app handing somebody
+  a bad keyboard and calling it a starting point.
+- Affected features: `kbPer()`, `kbRows()`, `kbFlickLay()`, `kbChartLay()`
+  (`www/keyboard.js`). **Nothing stored changes and no existing keyboard
+  moves** — only what a NEW board is made from.
+- Implementation status: **implemented**, 2026-08-26, `claude/kb2`.
+
+### Decision
+- Date: 2026-08-26
+- Area: How many rows a keyboard may have — it is the keyboard's HEIGHT
+- Decision:
+
+  「キーボードの高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。
+   だから行の列はそのキーボードの制限の範囲内で追加できるって話だけど？」
+
+  **The ceiling is the keyboard's height, which is already decided, and the
+  number of rows falls out of it.** It is not a number anybody chooses and
+  there is no longer one written in the app.
+
+  `KeyboardViewController` caps the whole keyboard at `mostOfScreen = 0.55`
+  of the screen, a row at `rowHeight = 54`, and the edges plus the candidate
+  bar at `8 + 44` — and past the cap it SQUEEZES the rows rather than growing
+  (「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズくらいまで
+  にしないとキツくない？」). So a row past the cap was never a row; it was
+  every row on the keyboard getting shorter.
+
+  **And a row is a KEY tall.** 「キーのサイズはiPhoneのサイズによって変わる
+  んじゃないの？八行入っても小さかったら打ちにくいだけだぞ？」
+
+  `rowHeight` was a flat `54`, so a key was the same height on every phone and
+  the only thing a bigger phone bought was MORE ROWS. Width always scaled —
+  ten keys divide whatever the phone is across — and the height now follows
+  it at **0.1385 of the phone's short side**, which is that same 54 at the
+  390pt phone it was measured on. A key keeps its shape everywhere.
+
+  `kbRowsMax()` divides the rest out: `(screen × 0.55 − 52) / (width × 0.1385)`.
+
+  | phone | row height | rows that fit |
+  |---|---|---|
+  | 320 × 568 (SE 1) | 44.3pt | **5** |
+  | 375 × 667 (SE 2/3) | 51.9pt | **6** |
+  | 375 × 812 … 402 × 874 (13 mini … 16) | 51.9 – 55.7pt | **7** |
+  | 428 × 926 … 440 × 956 (Pro Max) | 59.3 – 60.9pt | **7** |
+
+  **Eight fits on nothing now**, which is what the report was about.
+
+  **The ceiling is ONE number — seven — and not each row of that table.** A
+  keyboard belongs to a language and a language moves between phones, so
+  "as many as the phone in your hand fits" builds eight on a Pro Max and hands
+  an SE eight rows squeezed to 39pt. It is the width rule one axis over:
+  rule 19 has always set the width by the narrowest iPhone, not the phone in
+  your hand.
+
+  It was `KB_ROWS = 8`, invented in `www/keyboard.js` under a comment saying
+  「nothing on the phone sets a height」 — which was not true when it was
+  written. Eight is what only the largest phone has room for.
+
+- Reason: two places were deciding how tall a keyboard may be and only one of
+  them was enforcing it. Holding it in one place is the whole of this; the
+  three numbers are the extension's, so **`tools/kb-check.mjs` reads them out
+  of `KeyboardViewController.swift`** and fails if the two sides disagree — a
+  comment naming the Swift file does not hold that, and a check that wrote
+  `0.1385` down again would be a third copy. Putting `rowHeight` back to a
+  flat `54` fails it as "no line matching", which is the shape that matters:
+  the check breaks when the extension stops answering the question, not only
+  when it answers differently.
+  The candidate bar is assumed present because it nearly always is
+  (`shareConv()` answers for an alphabet too) and because assuming it is the
+  stricter of the two answers.
+- Affected features: `rowHeight` / `rowPerWidth`
+  (`ios/App/LinguaKeyboard/KeyboardViewController.swift`) and `kbRowsMax()`,
+  `kbRowH()`, `kbRoomRow()`, `kbLayRoom()`, `kbLayPut()`
+  (`www/keyboard.js`) — **nothing stored changes and no layout moves.**
+  **The Swift half is NOT device confirmed**: it cannot be built or run from
+  Linux. rule 19's "held on ADDING only" is unchanged and is what makes
+  this safe: a keyboard built on a Pro Max and opened on an SE is left
+  exactly as it is, and simply cannot be added to there.
+- Implementation status: **implemented**, 2026-08-26, `claude/kb2`.
+
+### Decision
+- Date: 2026-08-26
+- Area: The keyboard sheet's width — a key is its share of the row it is in
+- Decision:
+
+  「フリックなのに qwerty サイズ」
+  「qwartyはqwartyのサイズあるやろ　フリックとqwartyのキーのサイズは
+   同じなんか？え？」
+
+  They were. Measured on a 390px screen, a flick key and a QWERTY key were
+  both **28.2 × 44** — the same pixel, on two keyboards that are nothing like
+  each other on the phone.
+
+  **The board is the full width, always, whatever is on it. A key is its
+  share of the row it is in.** That is what the extension already does
+  (`KeyBoardView.layoutSubviews`: `free * key.width / the row's total`) and
+  what the read-only board in the app has always done (`flex: key.w`), so
+  this is the editor being made to agree with the two things it is a picture
+  of rather than a third opinion.
+
+  A flick board of three keys draws each of them a third of the board; a
+  QWERTY of ten draws each a tenth. 103.7px against 28.2px, measured.
+
+  **This replaces the decision of 2026-08-25** — 「エクセルみたいにキーボード
+  にやって横幅が固定されるはずだよ」 — which made a column a fixed width and
+  the board as wide as its columns made it. What that decision was FOR
+  survives and is stronger: the board's edges must not move when a column is
+  taken out of it. They no longer move at all, where before the sheet changed
+  width every time the widest row changed. What it cost was the key size, and
+  the key size is the thing somebody types on.
+
+- Reason: the editor is the preview — there is no second picture of the
+  keyboard beside it — so a key drawn at a width the phone will never use is
+  the screen lying about the only thing it shows. It also settles a second
+  report in the same line: a page somebody had just made was two keys wide,
+  so the sheet was a fifth of the phone across and the dashed `＋` that adds
+  a row to it was 60px against 320 on page one, which reads as 「8列も追加
+  できるのに行は2ページ目から追加できない」. Rows could always be added; the
+  thing to press was a sliver.
+- Affected features: `kbSheetW()` and `kbKeyW()` (`www/keyboard.js`), how
+  every board narrower than ten columns is DRAWN — **nothing stored changes,
+  no layout moves, only the drawing**. `kbCellW()` stays on the ten-key scale
+  and is now only the 1/2/3 width palette, which is a palette of proportions
+  and not a picture of a key: at true size on a three-key board those three
+  tiles come to twice the screen, which is the fault
+  `tools/side-baseline.txt` carried three lines of and which the 2026-08-25
+  decision fixed. It stays fixed.
+  Height is NOT part of this and is unchanged: a row is one height whatever
+  the board is, so the sheet is the phone's shape across and not down.
 
 ### Decision
 - Date: 2026-08-23

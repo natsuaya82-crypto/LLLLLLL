@@ -1457,6 +1457,22 @@ a.set{text-decoration:none}
             line-height:1.25;letter-spacing:-.01em}
 .plterm .pper{display:block;font-size:.72rem;color:var(--txm)}
 .plterm .plsave{display:block;font-size:.72rem;color:var(--gold)}
+/* The one box in the app. 「11は、角丸でいいから囲わないとボタンを押してるか
+   わからん」OWNER 2026-08-26 -- the month and the year are the only thing on
+   this page anybody presses, and with nothing round them they read as two
+   prices printed side by side rather than as a choice. Rule 18 carries the
+   exception and tools/box-baseline.txt holds it to this pair; nothing else
+   may take it as permission.
+   `.btn.plterm` and not `.plterm`: .btn says border:none 800 lines below, and
+   one class cannot beat two. */
+.btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.btn.plterm:active{border-color:var(--gold)}
+/* 「4.99/月は一列にしろ」OWNER 2026-08-26. The amount and the term were two
+   blocks, so every price stood two lines high and the term read as a caption
+   under it rather than as part of the price. The saving stays on its own
+   line: it is a third thing and not part of what the year costs. */
+.plterm .pp{display:inline}
+.plterm .pper{display:inline;margin-left:3px}
 /* Free carries its price too, and it is not a button: without it the four
    lines start higher than the paid pages' five do and the lists jump as
    somebody slides between them. */

@@ -373,42 +373,62 @@ and nothing reads it.
 One a day, and `post.prompt` already points at it. The table exists and
 nothing reads it.
 
-### 8. Sales and analytics, inside the app — **planned** (2026-08-26)
+### 8. Sales and analytics, inside the app — **implemented** (2026-08-26)
 
 **OWNER DECISION 2026-08-26.**「売り上げもアナリティクスも見れるようにしたい」
 「アプリの中で見たい」「画面を開いたときに毎回」。
 
-One screen, `staff` only, the same shape as § 7's — a row at the foot of the
-settings list and a view behind it. **Four things on it:**
+Four things, all four now on the admin screen — which is where they went
+because the row at the foot of settings this was going to hang off stopped
+existing on the same day (「設定の通報ボタン消せ」OWNER 2026-08-26), and the
+owner's own words for that screen were 「通報の確認とかアナリティクスとか売り上げ
+とか含めて全部見れる新ページ」.
 
 ```
-  ① 契約者数と売上          App Store Connect
-  ② ダウンロード数           App Store Connect
-  ③ 解約と継続率            App Store Connect
-  ④ アプリの中の数           Supabase -- accounts, posts, languages
+  ① 契約者数と売上          App Store Connect   -- supabase/functions/appstore/
+  ② ダウンロード数           App Store Connect   -- the same one request
+  ③ 解約と継続             App Store Connect   -- the same three reports
+  ④ アプリの中の数           Supabase            -- admin_counts()
 ```
-
-**Nothing is built.** What exists is the decision and the two worked examples
-it will be built out of: `mod` (a `staff`-only screen held by `is_staff()` in
-`schema.sql`) and `daily-prompt` (an Edge Function with its key in Supabase's
-Secrets and nothing in the app).
 
 | | |
 |---|---|
-| Plan | not a plan — `staff` only, and `staff` is set by hand in the dashboard |
-| Data | **grows.** A table for what Apple returns (undesigned). ④ needs none — it counts `profile` / `post` / `language` |
+| Plan | not a plan — **`admin` only**, and `admin` is set by hand in the dashboard |
+| Data | **none.** No table was added and `schema.sql` did not move |
 | Decided | the four things, the screen, and that it refreshes on every open |
-| Not decided | what a number is called, what period it covers, what the screen looks like |
+| Not decided | what a number is called, what period it covers, how the takings of several currencies should read, whether a continuation RATE is wanted and against what |
 
-**④ is the only one that can be built with nothing外から:** no key, no Edge
-Function, no new table. ①②③ wait on an App Store Connect API key with the
-`Sales and Reports` role, which is the owner's — `supabase/setup.md` § 10 has
-how to make it and where it goes.
+**It is `is_admin()` and not `is_staff()`.** § 8 said staff when it was
+written, and then the screen these numbers sit on turned out to be the admin
+one — 「＠linguaのアカウントだけ管理者ページには入れる」. The function asks the
+same `is_admin()` `admin_counts()` asks, with the caller's own token.
 
-**"Every open" is decided, and whether Apple allows it is not known yet.**
-Sales reports and analytics reports are fetched differently, and the second is
-sometimes "ask for a report to be made, then come back for it". **Check before
-building. Do not guess.**
+**No table.** The plan said "a table for what Apple returns (undesigned)".
+There is nothing to design: `GET /v1/salesReports` is synchronous and hands the
+report back in the body, so there is nothing to keep a copy of between opens.
+
+**"Every open" was checked at Apple before anything was built**, which is what
+the previous version of this section demanded by name. It holds — for the
+takings, the downloads and the subscriptions, one synchronous request each.
+What it does NOT mean is fresh: Apple's data is **next-day, in Pacific time**,
+so there is no such thing as today's takings and every number on the screen
+carries the day it is for. The App Store **Analytics** reports really are the
+"ask for a report to be made, then come back for it" shape — POST a request,
+then walk reports → instances → segments, with a download URL that lives five
+minutes — and nothing here uses them, because everything ①②③ need is in the
+sales reports. `docs/reports/sales-2026-08-26.md` § 1 has every source.
+
+**Two numbers are deliberately not produced, and both are the owner's.**
+The takings are **one row per currency and are never added up** — Apple pays
+per storefront in that storefront's currency and an exchange rate is not in
+this repo (`www/store.js`: "Building '$' + a number is how an app ends up
+showing dollars to somebody being charged yen"). And there is **no continuation
+rate**: neither report has such a column, and producing one means choosing a
+denominator and a period.
+
+**A fourth key is required**, which § 10 of `supabase/setup.md` did not know
+when it was written: `filter[vendorNumber]` is mandatory on every sales report
+and no endpoint will tell you yours. It is now `ASC_VENDOR_NUMBER` there.
 
 ### 7. Taking a post down — **done** (2026-08-21)
 

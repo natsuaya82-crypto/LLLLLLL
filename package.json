@@ -33,7 +33,8 @@
     "kb": "node tools/kb-check.mjs",
     "shape": "node tools/shape-check.mjs",
     "sheet": "node tools/sheet-check.mjs",
-    "draft": "node tools/draft-check.mjs"
+    "draft": "node tools/draft-check.mjs",
+    "world": "node tools/world-check.mjs"
   },
   "keywords": [],
   "author": "",

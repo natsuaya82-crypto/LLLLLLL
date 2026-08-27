@@ -7,6 +7,193 @@ refactor, a feature and a rename never arrive in the same diff.
 
 The order is the order to do them in.
 
+## パターンから作ったキーボードには、段の上限が効いていない
+
+**見つけたのはリーダー、2026-08-26。ゲートは緑のまま。実機だけで効きます。**
+
+`kbRowsMax()` は 7 を返します（一番細い iPhone で 5）。**その上限が効くのは
+手で行を足すときだけ** ── `kbRoomRow()` と `kbAddRowNew()` の二箇所です。
+**「パターンから作る」で出てくる盤は誰も測っていません。**
+
+実際に作らせて数えました（390pt の電話、`kbRowsMax()` = 7）:
+
+| 文字数 | フリック | abc |
+|---|---|---|
+| 26字 | 3行 | 4行 |
+| 60字 | 4行 | **7行** |
+| 105字 | **7行** | **12行** |
+| 150字 | **10行** | **16行** |
+| 300字 | **20行** | **31行** |
+
+音節表（`kbSylLay`）はもっと直接で、**行数が子音の数そのもの**です。子音が20あれば
+20行。`claude/kb2` の報告がそう書いています ──「chart の格子は触っていません。
+行数は子音の数で、言語のものです」。それは正しい判断ですが、上限との関係は
+書かれていません。
+
+**何も throw しません。** 盤は描かれ、保存され、端末に渡り、拡張が
+`KB_MOST`（画面の 0.55）に収めるために**行を潰します**。31行の盤を渡すと、
+全部の行が短くなる ── 2026-08-26 に規則19 が書き直された、まさにその失敗です。
+「八行入っても小さかったら打ちにくいだけ」と同じことが、パターン経由で起きます。
+
+**無料には当たりません**（38字）。**当たるのは有料の、文字の多い言語** ──
+音節文字・アブギダ・表語文字、つまり有料がそのためにある言語です。
+
+**直していない理由:** どうするかが決定だからです。`CLAUDE.md`「Deciding」。
+少なくとも三つの道があり、どれも別のものを失います:
+
+1. **上限で切る** ── 入らない文字が盤に無い。アプリが人の文字を落とす
+2. **面に分ける** ── 7行ずつ別の面に。行き来のキーが要る（規則19 が既に持っている）
+3. **断る** ── 「この言語はこのパターンでは作れません」。説明を書かない規則と
+   ぶつかる（状態であって説明ではない、と読めるかどうか）
+
+**2 が一番それらしく見えますが、決めるのはオーナーです。**
+
+そして直すときは `kb-check` に「どんな文字数でもパターンは上限を超えない」を
+足すこと。今 169行が `face.rows.length <= kbRowsMax()` を見ていますが、
+**fixture の小さい字数でしか見ていません。**
+
+## 規約とプライバシーポリシー ── リンクは在るが、ページが無く、道も無い
+
+三つ別の話で、リリース前に三つとも要ります。**リリースを止めるのは二つ目です。**
+
+### 1. 押したら Safari に出る（これは大丈夫）
+
+`www/settings.js:39` の `docRows()` が二本、`<a target="_blank" rel="noopener">` で
+`DOC_TERMS` / `DOC_PRIVACY` を指しています。
+
+Capacitor 8 の実物の Swift を読んで確かめました
+（`node_modules/@capacitor/ios/Capacitor/Capacitor/WebViewDelegationHandler.swift`）:
+
+- `decidePolicyFor`（107-113行）が「自分のアプリの URL ではない・最上位の遷移」を見て
+  `UIApplication.shared.open(url)` → **Safari に渡し**、webview 側は `.cancel`
+- `createWebViewWith`（328行）も同じことをする
+
+**確認メールのリンクが着地できなかった件（`docs/keyboard-extension.md` の教訓）とは
+別の話です** ── あちらはアプリに戻ってくる必要があり、こちらは出ていくだけ。
+
+### 2. Lingua 用のページが無く、**別アプリ用のものが二本ある** ← 審査で止まる
+
+```
+https://tokinets.com/lingua/terms.html      -> 404
+https://tokinets.com/lingua/privacy.html    -> 404
+```
+
+**OWNER 2026-08-26: 「まだ無い / 404」。** サイトの repo
+（`natsuaya82-crypto/tokine2`、Vercel で tokinets.com、`559dee1`）を読んで、
+なぜ 404 なのかと、**何が在るのか**が分かりました:
+
+- **`lingua/` の中は `index.html` 一つだけ。** Lingua の紹介ページで、リンクは
+  `/` と X だけ。規約へもプライバシーへも行かない
+- `vercel.json` は `cleanUrls` と `trailingSlash` だけ。**`/lingua/…` を直下へ
+  振り替える書き換えは無い**
+- 直下に `terms.html` と `privacy.html` が在るが、**どちらも Lingua のものでは
+  ない**
+
+**ここが危ない所です。** 直下の二本は流用できそうに見えて、できません:
+
+- `terms.html` の題は **「利用規約 | JPEL Manager」** ── 別製品
+- `privacy.html` は「§1 はじめに 本ポリシーは、刻音…が開発・提供するアプリケーション
+  における情報の取り扱いについて説明します。**本アプリには「JPEL Manager」が
+  含まれます。**」
+
+そして中身が Lingua と真逆を宣言しています:
+
+| privacy.html が言っていること | Lingua の実際 |
+|---|---|
+| 「**メールアドレス**など…求めることはありません」 | メールでアカウントを作る |
+| 「§2 端末内にのみ保存 … サーバーへ送信されることはありません」 | 言語も投稿も Supabase に載る |
+| 「§4 本アプリは Google **AdMob** による広告を表示します」「IDFA」 | 広告は一つも無い。IDFA も触らない |
+
+**`Lingua` という語は二本のどちらにも一度も出ません。** Lingua を名指ししている
+html は `index.html` `works.html` `lingua/index.html` の三つだけ。
+
+**流用したら、審査に落ちるより先に事実と違う申告になります。**
+`docs/apple.md` §5 の「App のプライバシー」欄は、メールアドレスとユーザー
+コンテンツを収集すると書く前提です。JPEL のポリシーはその逆を宣言しています。
+
+**書きました。`natsuaya82-crypto/tokine2` の枝 `claude/lingua-legal`**（`5f3b5d6`）に
+`lingua/terms.html` と `lingua/privacy.html` を英語で置いてあります。**まだ `main` に
+入れていないので、tokinets.com には出ていません** ── 押した瞬間に Vercel が本番へ
+出すので、公開はオーナーの判断です。
+
+`cleanUrls: true` なので `/lingua/terms.html` は `/lingua/terms` に 308 で飛びます。
+**アプリ側の URL は一文字も変えなくてよい。**
+
+中身はこの repo から採った事実だけで書いてあります（推測なし）:
+
+| 書いたこと | 出どころ |
+|---|---|
+| 写真と音声は**誰でも読める**バケットに入る | `schema.sql` の `post-media` が `public=true`、`media_read` が `using (bucket_id='post-media')` |
+| サーバに載るもの | `schema.sql` の profile / language / slice / post / react / follow / block / report |
+| パスワードは受け取らない | 認証は Supabase、返ってくるのはトークン |
+| 広告・IDFA・解析は無い | `www/` と `ios/App/App/` に AdMob も IDFA も解析 SDK も一件も無い |
+| 販売者は Apple、カード情報は来ない | `LinguaStore.swift` は `Transaction` しか見ない |
+| プランは「できること」だけを決め、あるものには触らない | `docs/PAID_FEATURES.md` と `plan-check` |
+| アカウント削除はファイルを先に消す。**通信が失敗したら残ることがある** | `netDropMe()` と、その上のコメント |
+
+**オーナーが決めたこと（2026-08-26）**: 名乗りは `Tokine (刻音)` だけ ── **法人ではない**
+ので、`company` `corporation` を意味する語は二本とも 0 件。連絡先は
+`lingua@tokinets.com`。
+
+**まだ決まっていないもの**: 準拠法と裁判管轄。今は「日本法・東京地裁を第一審の
+専属的合意管轄、ただし居住国の消費者保護法が与える権利は奪わない」と書いてあります。
+**これは私が置いた既定値で、オーナーが確かめる所です。**
+
+**日本語版はありません。** オーナーの指示は「それぞれ英語版で作って欲しい」でした。
+
+`docs/apple.md` §5 が書いているとおり、**App Store Connect のプライバシーポリシー
+URL は必須**で、無ければ審査に落ちます。アカウント（メール）と投稿を Supabase に
+置いているので、これは避けられません。
+
+⚠ **このセッションからは URL を叩けません。** エージェントのプロキシが方針で
+CONNECT を 403 にします（`example.com` でも同じ 403 なので、サイト側の話では
+ありません）。DNS だけは通り、`tokinets.com` → `216.198.79.1`。
+**確かめる人はブラウザで開いてください。**
+
+### 3. ログアウト中はそこに行けない ← 2026-08-26 に入れた退行
+
+`docRows()` を呼ぶのは**一箇所だけ**（`settings.js:292`、アカウントの部屋の一番下）。
+そのすぐ上のコメントはこう書いています:
+
+> Under both faces of the room, because somebody who has never signed in has to
+> be able to read them too.
+
+**アカウントの部屋のサインアウト側の顔が、読める道でした。**
+同じ日に入った「ログアウト中は扉だけ」（`appIs()` in `www/shell.js`）が塞ぎました。
+`act-check` の主張がそのまま証拠です ── `signed out: 38 routes asked, every one of
+them the door`。`set` も扉になります。
+
+**扉には二本とも一行もありません**（`www/onboard.js` に `DOC_` は一つも無い）。
+`?` のヘルプも持っていません。つまり **アカウントを作る人は、同意する相手の文面を
+読めません。**
+
+**決まりました。退行ではなく仕様です。** OWNER 2026-08-26:
+「ログアウト中は見れなくていいでしょ？ログインしたら設定から見れるし」
+
+**直すものはありません。** 扉に二本を足すことも、`appIs()` に例外を作ることも
+しません。読める道は設定 → アカウントの一番下、一箇所だけ。
+決定ログは docs/FEATURE_RULES.md。
+
+`www/settings.js` に立っていた「Under both faces of the room, because somebody
+who has never signed in has to be able to read them too」の二箇所は、この決定で
+嘘になったので消しました ── CLAUDE.md「決定が規則を置き換えたら、同じコミットで
+規則を直せ。直すとは消すこと」。
+
+### 4. 特定商取引法に基づく表記 ── **出さない**（OWNER 2026-08-26）
+
+`www/` `docs/` `supabase/` `ios/` を全部見て、`特定商取引` `特商` `tokushoho` は
+一件も出ません。アプリが持っている外部文書は `DOC_TERMS` と `DOC_PRIVACY` の
+**二本だけ**です。`docs/apple.md` にも EULA・販売者・返金の節はありません。
+
+構造として（法律の判断ではありません）: **App Store の課金は販売者が Apple**
+（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も Apple です。App Store
+Connect が特商法のページを訊いてこないのはそのため。必須で訊くのはプライバシー
+ポリシー URL だけで、EULA は任意（出さなければ Apple の標準 EULA）。
+
+**OWNER 2026-08-26:「出さない。」** 決まりました。三本目の `DOC_` は作らず、
+`docRows()` は二本のままです。決定ログは docs/FEATURE_RULES.md。
+
+
 ## ⑯⑰ 扉の下半分がキーボードの下に隠れる ── `www/index.html` の `.ob`
 
 実機 #92 の⑯「ログイン画面が固定のはずがスクロールする」と
