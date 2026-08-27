@@ -747,6 +747,62 @@ want('the mark stands apart, which is how this app writes one',
      g2n.mark && g2n.mark.to, 'tuf ga');
 want('and pressing it goes to the word it is', g2n.mark && g2n.mark.go, 'openSlot');
 
+/* ---- 49-56: the verbs chapter, and the line between it and the nouns -----
+   docs/GRAMMAR-V2-SPEC.md §14 Verbs. Same walk as the nouns, a different word
+   and a different set of features -- so what is worth holding is not that it
+   draws rows (the nouns already proved that) but that **each chapter draws its
+   own and only its own**. A feature landing in two chapters, or in none, is
+   silent: the page looks complete either way.
+
+   And a rule that goes on the FRONT has to come out on the front. The app's
+   own editor has had that switch since before this page existed, and nothing
+   until now put what it produces on a screen. */
+const g2v = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  /* This check's language has nouns and no verb, so the verbs chapter would
+     draw "make some words first" and every claim below would be about an
+     empty section. Seeded and taken away again. */
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  STG.fm = [
+    { id:'v1', pos:'v', fm:'pst', at:'end',   drop:0, add:sp('ka'), when:'' },
+    { id:'v2', pos:'v', fm:'pas', at:'start', drop:0, add:sp('e'),  when:'' },
+    /* the negation is the next chapter's and must not be drawn here */
+    { id:'v3', pos:'v', fm:'neg', at:'end',   drop:0, add:sp('nn'), when:'' },
+    /* and a plural is the nouns' */
+    { id:'n1', pos:'n', fm:'pl',  at:'end',   drop:0, add:sp('mi'), when:'' }
+  ];
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  /* Which section a row is under, read off the page rather than assumed: the
+     rows of both chapters wear one class, and a check that just counted them
+     would pass with every row under one heading. */
+  const secs = [], kids = document.querySelectorAll('#app .body > *');
+  let now = null;
+  Array.prototype.forEach.call(kids, (el) => {
+    if (el.className === 'sec') { now = { name: el.textContent, rows: [] }; secs.push(now); }
+    else if (now && el.className.indexOf('stslot') >= 0)
+      now.rows.push(el.querySelector('.psm').textContent + ':' +
+                    el.querySelector('.psi').textContent);
+  });
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  return { secs: secs.map((x) => ({ name: x.name, rows: x.rows })) };
+});
+
+const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
+want('there are three chapters on the page', g2v.secs.length, 3);
+want('the second is the nouns', sec(1).name, 'noun');
+want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
+want('the third is the verbs', sec(2).name, 'verb');
+
+/* Past and passive, and NOT the negation -- which is the next chapter's. */
+want('a verb shows the endings this language gives it',
+     sec(2).rows.indexOf('Past:zlumaka') >= 0, true);
+want('a rule that goes on the front comes out on the front',
+     sec(2).rows.indexOf('Passive:ezluma') >= 0, true);
+want('and the negation is not drawn here', sec(2).rows.join(' ').indexOf('nn'), -1);
+want('so the verbs chapter has exactly two rows', sec(2).rows.length, 2);
+
 await br.close();
 srv.close();
 
@@ -770,3 +826,5 @@ console.log('          The word order is arranged by moving a word, and the six'
 console.log('          are not what anybody is asked.');
 console.log('          A noun shows the forms this language really makes of it,');
 console.log('          and a row goes back to where its rule is written.');
+console.log('          Each chapter draws its own forms and only its own, and a');
+console.log('          rule that goes on the front comes out on the front.');

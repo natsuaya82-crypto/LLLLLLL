@@ -561,6 +561,15 @@ function g2Forms(pos, feats){
   return out || gNeedRules();
 }
 function g2Nouns(){ return g2Forms('n', G2_NOUN); }
+/* §14 Verbs. 「luma / luma-ka をユーザーが実際に作る」 -- tense, and with it
+   every other way this language changes a verb.
+
+   Negation is NOT here. §4 gives it a chapter of its own, and it earns one:
+   a language may write it as an ending, as a beginning, or as a separate word
+   altogether, and 「必ず PREFIX になると決めつけない」 is the whole point of
+   asking about it apart from the tenses. */
+var G2_VERB={TENSE:1, ASPECT:1, MOOD:1, VOICE:1};
+function g2Verbs(){ return g2Forms('v', G2_VERB); }
 /* What THIS RULE makes of this word, asked of the engine and not worked out
    again here.
 
@@ -587,7 +596,8 @@ function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
-    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns();
+    '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns()+
+    '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs();
 }
 
 /* ---- the screen -------------------------------------------------------- */
