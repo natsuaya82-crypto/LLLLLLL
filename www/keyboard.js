@@ -1941,6 +1941,26 @@ function kbDragTo(e){
      what moving across rows means and is the half a one-dimensional grid
      never has to answer. */
   var row=over.parentNode, mine=KBD.el.parentNode, kids=row.children, a=-1, b=-1, i;
+  /* AND THE ROW HAS TO HAVE ROOM. 「満杯だと追加できないから」 OWNER 2026-08-27.
+     This asked nothing, so a key carried into a row that was already ten wide
+     went in beside the others and made it eleven -- measured, on a qwerty
+     board: [20,20,20,20,20] half columns became [22,18,20,20,20]. Rule 19 is
+     what forbids it ("TEN ACROSS is the phone's number... eleven would be
+     29"), and nothing throws: the board draws, saves, and reaches the phone
+     as eleven keys each a little narrower.
+
+     The gate was already here and this was the one road not through it --
+     kbCellAdd(), which is the same act done with a press instead of a finger,
+     has always asked kbRoomIn(). So this asks the same sentence rather than a
+     new one, and somebody carrying a key into a full row now finds what
+     somebody pressing an empty cell in one has always found.
+
+     Only across rows. Inside one row nothing about the width changes, and
+     asking there would count the key twice and freeze the ordering of every
+     full row -- which is most of them. */
+  var carried=kbAt(parseInt(KBD.el.getAttribute('data-r'), 10),
+                   parseInt(KBD.el.getAttribute('data-k'), 10));
+  if(mine!==row && (!carried || !kbRoomFor(kbRowOf(row), carried.w))) return;
   for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
   row.insertBefore(KBD.el, (a>=0 && b>a)? over.nextSibling : over);
   /* A row emptied by the last key leaving it is a row of nothing, which is a
