@@ -863,6 +863,31 @@ function g2HasFm(pos, fm){
     if(a[i] && String(a[i].fm)===fm && String(a[i].pos||'')===String(pos)) return true;
   return false;
 }
+/* The words this chapter's rules would make and this language has not got.
+   fmrTodoAll() is the one place that works that out; this only narrows it to
+   the chapter somebody is standing on. */
+function g2Todo(id){
+  var c=g2ChapBy(id), fms=g2FmsOf(id), all, out=[], i, x;
+  if(!c || !c.pos || typeof fmrTodoAll!=='function') return out;
+  all=fmrTodoAll();
+  for(i=0;i<all.length;i++){
+    x=all[i];
+    if(String(x.w.pos)!==c.pos) continue;
+    if(fms.indexOf(String(x.m.fm))<0) continue;
+    out.push(x);
+  }
+  return out;
+}
+/* And the button that makes them, only when there are some -- a button that
+   does nothing when pressed is worse than no button, which is what the row on
+   a word's page has always said. */
+function g2MakeAll(id){
+  var c=g2ChapBy(id), n=g2Todo(id).length;
+  if(!c || !c.pos || !n) return '';
+  return '<button class="btn ghost" style="width:100%;margin-top:14px"' +
+    DO('fmrAddAll', [c.pos, g2FmsOf(id)]) + '>'+ICON_ADD+
+    esc(tn('fmr.all', n))+'</button>';
+}
 function g2Add(id){
   var c=g2ChapBy(id), fms=g2FmsOf(id), i, out='';
   if(!c || !c.pos) return '';
@@ -931,7 +956,7 @@ function g2List(){
 }
 function g2Page(a){
   var c=(a && a.indexOf('v2:')===0)? g2ChapBy(a.slice(3)) : null;
-  return c? (c.body()+g2Add(c.id)) : g2List();
+  return c? (c.body()+g2Add(c.id)+g2MakeAll(c.id)) : g2List();
 }
 
 /* ---- the screen -------------------------------------------------------- */
