@@ -569,6 +569,112 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- 11d2. and the MEANING is in that box, not under it -------------
+     「自分の言語で一行と意味がこのページで見れるように。」OWNER 2026-08-27
+
+     11d above asks whether the box somebody writes in is big enough and
+     whether the LINE is inside it. It never asked about the field under the
+     line, and that is the field the owner could not find on a real phone.
+     Nothing throws: `.pwscroll` scrolls, so the meaning is 29px under the
+     fold, perfectly rendered, with no scrollbar on a phone to say it is
+     there. Every screenshot of this screen is right.
+
+     It is measured over four things at once because the fault is different in
+     each and the first reading of it -- one reply, one direction, one
+     viewport -- said the screen was fine:
+
+       the visible viewport   The reply was measured once at 508, which is a
+                              390x844 phone with the system keyboard up, and
+                              at 508 the horizontal case does fit. At 380 it
+                              is 9px out and at 300 it is 29px out. A number
+                              that holds at the top of the range and nowhere
+                              else is the shape a single measurement gives.
+
+       which way the language  A column is the case that is wrong at EVERY
+                              size and gets WORSE as the phone gets bigger --
+                              153px out at 560 against 128 at 300 -- because
+                              the column asked for its height as a share of
+                              the whole screen while it sits in a box that is
+                              a fraction of it. Backwards from every other
+                              rule here, and invisible to anybody testing on
+                              one phone in one language.
+
+       reply or not           A reply is where it bites, because the thread
+                              over it takes the room. It is not only a reply:
+                              a column on a small viewport is out by 48px with
+                              nothing quoted at all.
+
+       a photograph           The strip is in the same column as the two
+                              fields, so it competes with them.
+
+     Asked of the RECTANGLE, per case, and never as a count of what is on the
+     page: `#pw-mn` is drawn in every one of these and always was. Whether it
+     is on the screen is where it IS. */
+  {
+    const wasPW = PW, root = document.documentElement;
+    const hadMin = root.style.getPropertyValue('--vvmin');
+    const hadKb  = root.style.getPropertyValue('--vvkb');
+    const wasPlan = SET.plan, wasDir = SCRIPT.dir;
+    /* A column is what money buys (`CAN.dir` is 'pro'), so free is the one
+       plan where this case cannot be reached at all. Asking for it on the
+       plan the walks run on would be measuring the horizontal field twice. */
+    SET.plan = 'pro';
+    const other = POSTS.filter(q => q.id !== p.id)[0] || p;
+
+    /* 260 is the smallest a phone leaves: the extension caps a keyboard at
+       0.55 of the screen, and 0.45 of an SE's 568 is 255. 508 is a 390x844
+       with the system keyboard up, which is where this was measured when it
+       looked fine. */
+    for (const vv of [260, 380, 508]) {
+      for (const dir of ['ltr', 'ttb-rl']) {
+        for (const reply of [false, true]) {
+          for (const pic of [false, true]) {
+            root.style.setProperty('--vvmin', vv + 'px');
+            root.style.setProperty('--vvkb', (844 - vv) + 'px');
+            SCRIPT.dir = dir;
+            PW = pwBlank();
+            if (reply) PW.to = other.id;
+            if (pic && p.pic) PW.pics = [p.pic];
+            openPost();
+            render();
+            await new Promise(r => requestAnimationFrame(() => r()));
+
+            const scroll = document.querySelector('.view.fit .pwscroll');
+            const mn = document.getElementById('pw-mn');
+            const where = vv + 'px of visible screen, ' +
+              (dir === 'ltr' ? 'a line across' : 'a column down') +
+              (reply ? ', replying' : ', a new post') +
+              (pic ? ', with a photograph' : '');
+            if (!scroll || !mn) {
+              fails.push('the composer drew no writing area or no meaning at ' +
+                         'all (' + where + ')');
+              continue;
+            }
+            const sb = scroll.getBoundingClientRect();
+            const mb = mn.getBoundingClientRect();
+            const under = Math.round(mb.bottom - sb.bottom);
+            if (under > 1)
+              fails.push('the meaning is ' + under + 'px under the fold of the ' +
+                         'box it is in (' + where + '). It is drawn, it is ' +
+                         'reachable by scrolling a box with no scrollbar on a ' +
+                         'phone, and somebody writing a post cannot see what ' +
+                         'their line means');
+            const over = Math.round(sb.top - mb.top);
+            if (over > 1)
+              fails.push('the meaning is ' + over + 'px above the top of the ' +
+                         'box it is in (' + where + ')');
+          }
+        }
+      }
+    }
+
+    SET.plan = wasPlan; SCRIPT.dir = wasDir; PW = wasPW;
+    if (hadMin) root.style.setProperty('--vvmin', hadMin);
+    else root.style.removeProperty('--vvmin');
+    if (hadKb) root.style.setProperty('--vvkb', hadKb);
+    else root.style.removeProperty('--vvkb');
+  }
+
   /* ---- 11e. the face on a post is the way to whoever wears it ---------
      「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
      飛ぶようにしてよ。自分ならプロフィールのページ。」
