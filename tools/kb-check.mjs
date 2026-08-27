@@ -194,7 +194,7 @@ const r = await pg.evaluate(({ s }) => {
      somebody adding a row by hand -- the patterns were never measured at all.
      105 letters came out a seven-row flick and a twelve-row ABC; 300 came out
      twenty and thirty-one. Nothing throws: the board is drawn, saved, handed
-     over, and the extension squeezes it into 0.55 of the screen with every
+     over, and the extension squeezes it into 0.5 of the screen with every
      row shorter.
 
      So the alphabet is REPLACED, at five sizes, and the patterns are built

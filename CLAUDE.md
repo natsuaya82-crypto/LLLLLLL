@@ -1082,8 +1082,8 @@ pattern the app builds already comes to ten or fewer. **How many DOWN is the
 phone's number too, and it is not a number written in the app.** 「キーボードの
 高さ制限を決めたやん。キーの高さじゃなくてキーボードそのもの。だから行の列は
 そのキーボードの制限の範囲内で追加できるって話だけど？」 The extension caps the
-whole keyboard at **0.55 of the screen** and SQUEEZES the rows past it, so a
-ninth row was never a ninth row — it was every row getting shorter. **And a row
+whole keyboard at **half the screen** — 「0.5が限界」 OWNER 2026-08-27 — and
+SQUEEZES the rows past it, so a ninth row was never a ninth row — it was every row getting shorter. **And a row
 is a KEY tall**: 「キーのサイズはiPhoneのサイズによって変わるんじゃないの？八行
 入っても小さかったら打ちにくいだけだぞ？」 The extension's row was a flat 54pt,
 so a key was the same height on every phone and the only thing a bigger phone
@@ -1095,7 +1095,11 @@ iPhone, 61 on a Pro Max**. The rows that fit are then divided out of the cap
 rather than chosen, and **divided out of the SMALLEST phone the app runs on —
 320 × 568** — which is what the width rule has always done: not the phone in
 your hand, and not the roomiest one, the narrowest. **Five**, which is the free
-QWERTY's own row count and what a real phone keyboard is. Referenced to a big
+QWERTY's own row count and what a real phone keyboard is. The division gives
+5.235 and floors, so what a sixth row would need is a cap this rule does not
+have — and tightening the cap to half took that SLACK away rather than a row,
+which is why no keyboard anybody had built stopped fitting when it tightened.
+Referenced to a big
 phone instead it came to **63.8% of an iPhone SE 1** — the cap broken on the
 two phones with the least room, which is the opposite of what a ceiling is for.
 「キーボードの高さは画面の半分までってルールあるのになんで七も足したら7割埋まる

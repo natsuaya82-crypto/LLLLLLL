@@ -216,7 +216,7 @@ function kbBar(del){
    patterns, and a pattern is built out of however many letters the language
    has: 105 letters came out seven rows on a flick and twelve on an ABC, 300
    came out twenty and thirty-one. Nothing throws. The board is drawn, saved,
-   handed over, and the extension SQUEEZES it into 0.55 of the screen -- every
+   handed over, and the extension SQUEEZES it into 0.5 of the screen -- every
    row shorter. Which is the failure rule 19 was rewritten around on 2026-08-26
    「八行入っても小さかったら打ちにくいだけだぞ？」, arriving by another road.
 
@@ -1054,7 +1054,7 @@ function kbCol(i){
    enforcing it. The number of rows is the consequence, so it is divided out
    of the cap rather than said again:
 
-     KB_MOST  the most of the screen a keyboard may take       0.55
+     KB_MOST  the most of the screen a keyboard may take        0.5
      KB_ROWW  one row, as a share of the phone's short side   0.1385
      KB_BARS  the two edges, and the candidate bar above     8 + 44
 
@@ -1080,7 +1080,7 @@ function kbCol(i){
    left exactly as it is and simply cannot be added to. Nothing is ever cut
    down to fit: that would be the app deleting somebody's keys. */
 var KB_COLS=20;                 /* columns are half keys -- kbU() below */
-var KB_MOST=0.55, KB_ROWW=0.1385, KB_BARS=8+44;
+var KB_MOST=0.5, KB_ROWW=0.1385, KB_BARS=8+44;
 /* A REFERENCE screen, and not the phone in your hand. That was the first
    version of this and it was wrong in the way the ceiling itself was wrong.
    「八行入っても小さかったら打ちにくいだけだぞ？」 OWNER, 2026-08-26.
@@ -1122,7 +1122,19 @@ var KB_MOST=0.55, KB_ROWW=0.1385, KB_BARS=8+44;
    is divided out of too, and the answer holds everywhere above it.
 
    FIVE. Which is the free QWERTY's own row count (digits, q, a, z, the bar)
-   and what a real phone keyboard is: four rows, five with a number row. */
+   and what a real phone keyboard is: four rows, five with a number row.
+
+   HALF IS THE LIMIT, and five did not move when it became half.
+   「0.5が限界」 OWNER 2026-08-27. KB_MOST was 0.55 and is 0.5, and the number
+   of rows is DIVIDED out of it, so the obvious reading is that fewer fit.
+   Measured on the phone it is divided on: (568 x 0.55 - 52) / 44.32 = 5.875,
+   and (568 x 0.5 - 52) / 44.32 = 5.235. Both floor to five. What the ceiling
+   lost is the SLACK -- 0.875 of a row became 0.235, which on an SE 1 is 38pt
+   of room becoming 10pt -- and a sixth row was never within reach of either.
+
+   So no board anybody has can stop fitting because of this, and none needs
+   to be cut. The three numbers still come out of the Swift; only this one
+   moved. */
 var KB_REF_W=320, KB_REF_H=568;
 function kbRowH(w){ return (w||KB_REF_W)*KB_ROWW; }
 function kbRowsMax(){
