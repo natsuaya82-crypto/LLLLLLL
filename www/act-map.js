@@ -326,7 +326,6 @@ act('posPick', posPick);
 act('fmrNew', fmrNew);
 act('fmrAddAll', fmrAddAll);
 act('openFmr', openFmr);
-act('wordsMore', wordsMore);
 act('fmrDel', fmrDel);
 act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);

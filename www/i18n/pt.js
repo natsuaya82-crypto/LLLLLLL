@@ -668,7 +668,6 @@ defLang('pt', (function(){
       "ask.f.end.v"  : "{0}: -{1} em {2} de {3}",
       "ask.f.words"  : "Palavras que já tem",
       "ask.word.ask" : "Quero criar muitas palavras para esta língua. Leve isso para onde achar melhor — pergunte coisas, discorde, tente direções que não me ocorreram. Só uma coisa sobre o formato: dê a lista num bloco de código, uma palavra por linha, a palavra e o significado separados por uma tabulação, para eu colar de volta no app.",
-      "words.more" : "Mais",
       "words.search"     : "Procurar",
       "words.clear"      : "Limpar",
       "words.sort.a"     : "Por som",

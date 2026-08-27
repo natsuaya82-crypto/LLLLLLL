@@ -649,7 +649,6 @@ defLang('de', (function(){
       "ask.f.end.v"  : "{0}: -{1} bei {2} von {3}",
       "ask.f.words"  : "Wörter, die es schon gibt",
       "ask.word.ask" : "Ich möchte viele Wörter für diese Sprache machen. Führ das, wohin du willst — frag mich Dinge, widersprich mir, probier Richtungen, auf die ich nicht gekommen bin. Nur eines zur Form: gib die Liste als Codeblock, ein Wort pro Zeile, Wort und Bedeutung durch einen Tabulator getrennt, damit ich sie direkt zurück in die App einfügen kann.",
-      "words.more" : "Mehr",
       "words.search"     : "Suchen",
       "words.clear"      : "Löschen",
       "words.sort.a"     : "Nach Laut",

@@ -567,7 +567,6 @@ defLang('en', (function(){
       'ask.f.end.v'  : "{0}: -{1} in {2} of {3}",
       'ask.f.words'  : "Words it already has",
       'ask.word.ask' : "I want to make a lot of words for this language. Take it wherever you think is right — ask me things, push back, try directions I have not thought of. One thing only about the shape: give the list as a code block, one word per line, the word and its meaning separated by a tab, so I can paste it straight back into the app.",
-      'words.more' : "More",
       'words.search'    : "Search",
       'words.clear'     : 'Clear',
       'words.sort.a'    : 'By sound',

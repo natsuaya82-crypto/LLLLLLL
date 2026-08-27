@@ -709,7 +709,6 @@ defLang('fr', (function(){
       "ask.f.end.v"  : "{0} : -{1} dans {2} sur {3}",
       "ask.f.words"  : "Mots qu'elle a déjà",
       "ask.word.ask" : "Je veux créer beaucoup de mots pour cette langue. Mène ça comme tu le sens — pose-moi des questions, contredis-moi, essaie des directions auxquelles je n'ai pas pensé. Une seule chose sur la forme : donne la liste dans un bloc de code, un mot par ligne, le mot et son sens séparés par une tabulation, pour que je puisse la recoller dans l'application.",
-      "words.more" : "Plus",
       "words.search"     : "Rechercher",
       "words.clear"      : "Effacer",
       "words.sort.a"     : "Par le son",

@@ -1257,7 +1257,6 @@ export function halfDone(){
        word are behind it, and that is the only door to them -- without this
        face the walk sees a screen nothing goes to, which is exactly what it
        would be if the button were deleted. */
-    ['the dictionary\'s ...', () => { wordsMore(); return vForm(); }],
     /* The sheet a word is coined on, with something typed into it. The forms
        the rules make of it are on that sheet, and they are on it only once
        there is a spelling to make them out of -- so an empty sheet names

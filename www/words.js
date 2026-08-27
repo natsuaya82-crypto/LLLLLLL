@@ -106,34 +106,6 @@ function wordsHidHTML(){
   return '<button class="capwarn" style="margin:14px 0 0"' + DO('goPlans') + '>'+
     t('cap.hid', n)+'<span class="capgo">'+t('up.cta')+ICON_GO+'</span></button>';
 }
-/* The ... in the dictionary's bar. What is behind it is about the WORDS of
-   this language rather than about one of them.
-
-   The rules that make a form out of a word were the other thing here, and
-   they have gone to the chapters of the grammar page -- a rule is drawn under
-   what it is ABOUT now, and made from there. A list of every rule with no
-   chapter over it was the same fact said in a second place, and the second
-   place is the one that goes.
-
-   It is where a downloaded word list will go too, when there is one to go
-   there: both are the dictionary seen from outside a single word. Nothing is
-   put here before it exists -- a row that opens nothing is a button that used
-   to work. */
-function wordsMore(){
-  /* EMPTY, and that is a merge of two removals rather than anybody's design.
-     claude/ai took the word ask out of here this morning -- it is a mark on
-     the dictionary's bar now -- and claude/gram took the rules out, because a
-     rule is drawn and made in its chapter of the grammar page. Neither
-     session removed the other's row, and neither meant to leave a ⋯ that
-     opens nothing.
-
-     The ⋯ itself is in vWords below, which claude/ai rewrote this morning, so
-     it is not this session's to take out. docs/BACKLOG.md, and the leader's
-     to settle: the comment above already says what the answer probably is --
-     a row that opens nothing is a button that used to work. */
-  openForm('wmore', t('words.more'), '');
-}
-FORM_OPEN.wmore=function(){ wordsMore(); };
 function vWords(){
   var items=wordsList();
   return '<div class="view">'+
@@ -141,18 +113,13 @@ function vWords(){
        wants it at the moment they are looking at their dictionary and short
        of a word, and a thing you have to open a menu to find is a thing
        nobody finds. www/assist.js builds it. */
-    /* Two marks at the right end of one bar, and .navq alone cannot make
-       them: it pushes with margin-left:auto, so two of them SPLIT the free
-       space and the first stands in the middle of the bar -- which is what
-       the comment over .navc in www/index.html has said all along. .bkw is
-       the wrapper the back arrow already uses: inline-flex, flex:0 0 auto,
-       no auto margin. Inside it the two are flex items and keep their 44,
-       and the .navc round it does the one push. No new CSS. */
-    navTop('<span class="bkw">'+
-             askBtn(t('ask.word.ask'), null)+
-             '<button class="navq"' + DO('wordsMore') + ' aria-label="'+
-               esc(t('words.more'))+'">'+ICON_DOTS+'</button>'+
-           '</span>', '')+
+    /* One mark, so .navq's own margin-left:auto is the whole of the push and
+       the .bkw wrapper is not needed. The ⋯ that stood beside it is gone: two
+       sessions each took a row out of the sheet it opened -- the word ask
+       moved to this bar, and the rules moved into the grammar page's chapters
+       -- and neither saw that the last row had gone with the other's. A ⋯
+       that opens nothing is a button that used to work. */
+    navTop('', askBtn(t('ask.word.ask'), null))+
     /* The one sentence the app is allowed to say about itself on this screen,
        and it SAYS WHERE IT GOES.
        「じゃあ遷移前にchatgptに移動しますみたいにすれば？」 OWNER 2026-08-27,
