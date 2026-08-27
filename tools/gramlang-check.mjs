@@ -790,7 +790,7 @@ const g2v = await pg.evaluate(() => {
 });
 
 const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are seven chapters on the page', g2v.secs.length, 7);
+want('there are eight chapters on the page', g2v.secs.length, 8);
 want('the second is the nouns', sec(1).name, 'noun');
 want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
 want('the third is the verbs', sec(2).name, 'verb');
@@ -1110,6 +1110,48 @@ want('and that is what the language now holds', adp.side, 'after');
 want('the describing word is still where it was', adp.adjSide, 'before');
 want('and its row is still drawn', adp.adjN, 2);
 
+/* ---- 85-90: what this language has -------------------------------------
+   docs/GRAMMAR-V2-SPEC.md §14's last block, and §24's argument for the whole
+   page: 「作り込むほど Words + Inflections + Derivations が蓄積され、その結果
+   精度が上がる」. So the numbers have to be the ones the ENGINE was handed --
+   a panel counting what somebody typed, rather than what crossed over, would
+   say the language is fuller than the translation can see.
+
+   Which is exactly the failure this page was built to end. A rule this side
+   cannot express is COUNTED and not sent (the sound conditions), so a panel
+   reading STG.fm would say 3 where the engine has 2. */
+const stat = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const wasPart = !!STG.set.part;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'ga', pos:'part', mns:['subject'], at:1, slot:'part.subj' });
+  stMarkSet('part');
+  STG.fm = [
+    { id:'v1', pos:'v', fm:'pst', at:'end', drop:0, add:sp('ka'), when:'' },
+    { id:'d1', pos:'n', fm:'adj', at:'end', drop:0, add:sp('li'), when:'' },
+    /* about SOUND, so it cannot cross and must not be counted as if it had */
+    { id:'v2', pos:'v', fm:'pl', at:'end', drop:0, add:sp('zz'), when:'v' }
+  ];
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  const rows = {}, secs = document.querySelectorAll('#app .gside');
+  Array.prototype.forEach.call(secs, (el) => {
+    rows[el.querySelector('.gsl').textContent] = el.querySelector('.gsw').textContent;
+  });
+  const words = WORDS.length;
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (!wasPart) delete STG.set.part;
+  return { rows: rows, n: secs.length, words: words };
+});
+
+want('the panel has a row for each thing that can be counted', stat.n, 3);
+want('the words are this dictionary', stat.rows['Words'], String(stat.words));
+/* One inflection wrote a tense, one wrote a mark, and the third is about
+   sound and did not cross. */
+want('the forms are the ones the engine was handed', stat.rows['Forms'], '2');
+want('and the word formation is too', stat.rows['Word formation'], '1');
+
 await br.close();
 srv.close();
 
@@ -1143,3 +1185,5 @@ console.log('          A describing word is put on the side this language puts i
 console.log('          and one that changes is drawn where it can be seen.');
 console.log('          A place word stands where this language puts it, and the');
 console.log('          two rows that arrange a pair do not move each other.');
+console.log('          What this language HAS is counted off what the engine was');
+console.log('          handed, not off what somebody typed.');

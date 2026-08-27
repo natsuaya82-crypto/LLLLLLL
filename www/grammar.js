@@ -794,7 +794,33 @@ function g2Ques(){
                 t('stg.ask.t'), null);
 }
 
-/* The page. Seven chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+/* §14 Language Engine Status. 「ユーザーが Lingua で言語を作り込むほど、
+   Words + Morphemes + Derivations + Inflections + ... が蓄積され、その結果
+   Parser / Generator / Translation の精度が上がる」(§24)
+
+   So the last block of the page is what this language HAS. It is a count and
+   not a report: a number is a state, and the rest of the page is where each
+   of them can be seen one at a time.
+
+   Three rows and not the seven §14 draws. `Morphemes` is always nought --
+   nothing in this app writes one, because a rule carries its own letters --
+   and a row that can only ever say nought is a slot nobody can fill, which is
+   the shape this page has spent all day taking OUT. `Grammar rules` counts
+   what this file builds for the engine rather than anything somebody wrote.
+   Parser and generator coverage are drawn in §14 as `...` and are not a
+   number anybody has defined yet. Those four arrive when they can be true. */
+function g2Stat(lab, n){
+  return '<div class="gside"><span class="gsl">'+esc(lab)+'</span>'+
+    '<span class="gsw">'+esc(String(n))+'</span></div>';
+}
+function g2Status(){
+  var m=gModel([]);
+  return g2Stat(t('g2.words'), WORDS.length)+
+    g2Stat(t('g2.forms'), m.inflections.length)+
+    g2Stat(t('g2.der'), m.derivations.length);
+}
+
+/* The page. Eight chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
@@ -803,7 +829,8 @@ function g2Page(){
     '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg()+
     '<div class="sec">'+esc(t('stg.ask.t'))+'</div>'+g2Ques()+
     '<div class="sec">'+esc(posLabel('adj'))+'</div>'+g2Adj()+
-    '<div class="sec">'+esc(t('stg.where.t'))+'</div>'+g2Adp();
+    '<div class="sec">'+esc(t('stg.where.t'))+'</div>'+g2Adp()+
+    '<div class="sec">'+esc(t('wld.about'))+'</div>'+g2Status();
 }
 
 /* ---- the screen -------------------------------------------------------- */
