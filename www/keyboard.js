@@ -1150,6 +1150,30 @@ function kbCols(rows){
   }
   return n||2;
 }
+/* Whether a key COVERS a column, which is the question a lit column asks of
+   every key on the sheet. 「半キーにしよう。その代わり縦列の選択の時では
+   選ばれない。例えばaが半きーのばあい。aを選択したら他の124列目だけ選ばれて
+   削除して中央揃えした場合全部がハンキーになる感じ。」
+   OWNER DECISION 2026-08-26.
+
+   It used to ask whether the key OVERLAPPED the column at all, and that is a
+   different question on the one row that is inset by half a key. The free
+   QWERTY's third row is `gap 0.5 / nine letters / gap 0.5`, so every key on
+   it straddles two columns and every key on it therefore answered yes to two
+   of them: pressing any letter across the top lit TWO of the nine, on that
+   row alone, on the keyboard both plans type on.
+
+   Both halves of the decision are kept and they pull the same way. The half
+   key stays -- that inset is what a QWERTY looks like. And a column takes
+   only what it is entirely made of, so on that row it takes nothing at all.
+   **A row where the band comes down and no key lights is the right answer
+   and not a bug**: it is the row saying it does not line up with the columns,
+   which is exactly what somebody needs to know before they cut one.
+
+   In half columns, because a key can be half of one -- kbU() says why. */
+function kbColHas(at, w, ci){
+  return at<=ci*2 && at+kbU(w)>=ci*2+2;
+}
 /* The letters across the top, one to a whole key and not one to a column --
    nobody insets a row by half a letter. Inside #kb so it shares the grid's
    width and its columns; it holds no key, so kbReadRows() walks straight past
@@ -1415,7 +1439,7 @@ function kbHTML(sel, ro){
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
         /* a key standing in the column being worked on */
-        ((!ro && KBH && KBH.k==='c' && at<KBH.i*2+2 && at+kbU(key.w)>KBH.i*2)? ' sel':'');
+        ((!ro && KBH && KBH.k==='c' && kbColHas(at, key.w, KBH.i))? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
       at+=kbU(key.w);

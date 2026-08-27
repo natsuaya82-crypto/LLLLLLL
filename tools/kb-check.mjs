@@ -556,6 +556,83 @@ const r = await pg.evaluate(({ s }) => {
      is in front of them, and the other one is still theirs */
   out.addsOnlyN = kbEdit().lay[1].rows.length;
 
+  /* ---- 6f1. a column takes only what it is entirely made of -----------
+     「半キーにしよう。その代わり縦列の選択の時では選ばれない。例えばaが半きー
+     のばあい。aを選択したら他の124列目だけ選ばれて削除して中央揃えした場合
+     全部がハンキーになる感じ。」 OWNER DECISION 2026-08-26.
+
+     The test was whether a key OVERLAPPED the column at all. The free
+     QWERTY's third row is inset by half a key at each end, so every key on it
+     straddles two columns and answered yes to both: pressing ANY letter
+     across the top lit two of the nine, on the keyboard both plans type on.
+
+     Both halves are kept. The inset stays -- it is what a QWERTY looks like.
+     And a column takes only the keys it is entirely made of, so on that row
+     it takes NONE. A row with the band down it and no key lit is the right
+     answer: it is the row saying it does not line up with the columns.
+
+     Read off the page, per row, for every column -- the failure was a count
+     of two where one was meant, and only counting can see that. */
+  fresh();
+  function litPerRow(){
+    return [].slice.call(document.querySelectorAll('#kb .kbrow')).map(function (rw){
+      return [].slice.call(rw.children).filter(function (e){
+        return e.className.indexOf('kbk') >= 0 && e.className.indexOf('sel') >= 0;
+      }).length;
+    });
+  }
+  /* which row is inset, asked of the layout rather than written down as "2" */
+  var insetAt = -1, plainAt = [];
+  kbLayer().rows.forEach(function (rw, i){
+    var half = rw.some(function (k){ return kbU(k.w) % 2 === 1; });
+    if (half) insetAt = i; else plainAt.push(i);
+  });
+  out.insetAt = insetAt;
+  out.lit = [];
+  var ci;
+  for (ci = 0; ci < kbCols(kbLayer().rows) / 2; ci++){
+    KBH = { k: 'c', i: ci }; render();
+    out.lit.push(litPerRow());
+  }
+  KBH = null; render();
+  out.litInset = insetAt >= 0 && out.lit.every(function (per){ return per[insetAt] === 0; });
+  out.litPlain = plainAt.length > 0 && out.lit.every(function (per){
+    return plainAt.every(function (i){ return per[i] === 1; });
+  });
+  /* the widest keys on the board -- a del of three and a space of six -- are
+     entirely made of the column they stand on, so rule 19's "a key wider than
+     the column is narrowed rather than removed" is about keys that DO light */
+  var wideLit = 0, wideSeen = 0;
+  kbLayer().rows.forEach(function (rw, i){
+    var at = 0;
+    rw.forEach(function (k){
+      var u = kbU(k.w), c;
+      if (u > 2){
+        wideSeen += 1;
+        for (c = 0; c < 10; c++) if (at <= c * 2 && at + u >= c * 2 + 2){ wideLit += 1; break; }
+      }
+      at += u;
+    });
+  });
+  out.wideSeen = wideSeen; out.wideLit = wideLit;
+  /* and what the DELETE does to a key that lit: it is exactly one column, so
+     a key of one goes and a wider one comes back one column narrower */
+  fresh();
+  var col = 3, litWas = [];
+  KBH = { k: 'c', i: col }; render();
+  kbLayer().rows.forEach(function (rw, i){
+    var at = 0;
+    rw.forEach(function (k, j){
+      if (at <= col * 2 && at + kbU(k.w) >= col * 2 + 2) litWas.push([i, kbU(k.w)]);
+      at += kbU(k.w);
+    });
+  });
+  var usedWas = kbLayer().rows.map(function (rw){ return kbUsed(rw); });
+  kbCut();
+  var usedNow = kbLayer().rows.map(function (rw){ return kbUsed(rw); });
+  out.litCount = litWas.length;
+  out.cutTookTwo = litWas.every(function (x){ return usedNow[x[0]] === usedWas[x[0]] - 2; });
+
   /* ---- 6f2. a tile is the size of the key it makes, on every pattern ---
      「フリックのaddキーのサイズ合ってなくね？」 OWNER 2026-08-26.
 
@@ -1202,6 +1279,14 @@ say(r.bandBack, 'the selection is a band BEHIND the keys');
 say(r.keysPlain, 'and the keys themselves are the colour they always were');
 say(r.selOff && r.cutDown && r.alDown, 'pressing it again puts the selection and the buttons down');
 say(r.colLit, 'a column lights up too, header and the keys standing in it');
+say(r.insetAt >= 0, 'the board has a row inset by half a key (row ' + r.insetAt + ')');
+say(r.litInset, 'and no key on it lights for any column -- it lines up with none of them');
+say(r.litPlain, 'while every row that DOES line up lights exactly one key per column');
+say(r.wideSeen > 0 && r.wideLit === r.wideSeen,
+    'and all ' + r.wideSeen + ' keys wider than a column light for one -- rule 19 stands');
+say(r.litCount > 0 && r.cutTookTwo,
+    'cutting that column takes exactly one column out of every row a key lit in (' +
+    r.litCount + ' lit)');
 say(r.colBand, 'a band runs down the whole sheet where that column is');
 say(r.colBandAt, 'and it stands under the letter that names it');
 say(r.colCut, 'and can be taken away');
