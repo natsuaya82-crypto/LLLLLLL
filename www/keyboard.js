@@ -208,17 +208,62 @@ function kbBar(del){
   sp.w=(KB_COLS/2)-d.w;
   return [sp, d];
 }
-function kbRows(list){
-  var rows=[], row=[], i, k, per=kbPer(list.length), w=kbW(per);
+/* ---- a pattern that does not fit is more FACES, never fewer letters -----
+   「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
+
+   kbRowsMax() was asked in two places -- kbRoomRow() and kbAddRowNew() --
+   which are the two ways somebody adds a row BY HAND. Nothing asked it of the
+   patterns, and a pattern is built out of however many letters the language
+   has: 105 letters came out seven rows on a flick and twelve on an ABC, 300
+   came out twenty and thirty-one. Nothing throws. The board is drawn, saved,
+   handed over, and the extension SQUEEZES it into 0.55 of the screen -- every
+   row shorter. Which is the failure rule 19 was rewritten around on 2026-08-26
+   「八行入っても小さかったら打ちにくいだけだぞ？」, arriving by another road.
+
+   It misses the free plan (38 letters) and lands on exactly the paid one: a
+   syllabary, an abugida, a logography -- the languages the paid plan is for.
+
+   Two of the three ways out are already forbidden and it was not a choice:
+   CUTTING at the ceiling drops letters somebody made (docs/DATA_SAFETY.md),
+   and REFUSING is a sentence explaining itself on a screen. What is left is
+   to keep every letter and give it another face -- which is the machinery of
+   2026-08-26 already: a page arrives with the way there and the way back, and
+   no face is a dead end.
+
+   How many rows of letters one face holds: the ceiling, less the bar it ends
+   in. A face with no bar has no space and no delete on it. */
+function kbFaceRows(){ return Math.max(1, kbRowsMax()-1); }
+/* Cut a list of rows into chunks that fit, as EVENLY as it divides -- filling
+   the first faces and leaving the last one with a single row would be the
+   same keyboard and a worse-looking one. */
+function kbChunk(rows, per){
+  var n=Math.max(1, Math.ceil(rows.length/per)), each=Math.ceil(rows.length/n),
+      out=[], i;
+  for(i=0;i<rows.length;i+=each) out.push(rows.slice(i, i+each));
+  return out;
+}
+/* The letters, in rows, with nothing else on them. `per` for the one pattern
+   that says how many across it wants (ABC order is ten, like a QWERTY);
+   everything else asks kbPer(). */
+function kbLetterRows(list, per){
+  var rows=[], row=[], i, k, w;
+  per=per||kbPer(list.length); w=kbW(per);
   for(i=0;i<list.length;i++){
     k=kbKey('lt', list[i].id); k.w=w;
     row.push(k);
     if(row.length===per){ rows.push(row); row=[]; }
   }
   if(row.length) rows.push(kbFillRow(row));
-  rows.push(kbBar(2));
   return rows;
 }
+/* And those rows as faces, each ending in its own bar. Every face can be
+   typed on: a face with letters and no space bar is half a keyboard. */
+function kbRowFaces(list, per){
+  var parts=kbChunk(kbLetterRows(list, per), kbFaceRows()), out=[], i;
+  for(i=0;i<parts.length;i++) out.push({rows:parts[i].concat([kbBar(2)])});
+  return out;
+}
+
 /* The second face: the digits and the marks.
    「qwertyでも数字で切り替えたりするやん？そう考えると1画面だけってきついかな」
 
@@ -234,23 +279,22 @@ function kbRows(list){
    face, and the key to reach it would be a key that does nothing. */
 function kbSecond(){
   var xs=ltOfKind('num').concat(ltOfKind('mark'));
-  return xs.length? {rows:kbRows(xs)} : null;
+  return xs.length? kbRowFaces(xs) : null;
 }
 /* The first keyboard, so there is something to type on before anybody has
    built anything: the letters in the order they are already in, and the
    digits and marks behind a switch. It is a starting point and it is meant
    to be pulled apart. Nothing is stored until it is. */
 function kbDefault(){
-  var rows=kbRows(ltOrder(ltOfKind('alpha'))), more=kbSecond();
-  if(!more) return {lay:[{rows:rows}]};
-  /* The way across, on both faces, at the near end of the bottom row --
-     where every phone keeps its 123. */
-  /* and the space gives up its width for it, so the bar still comes to ten.
-     It used to be unshifted on top, which put the row at eleven -- one key
-     over the phone's number, on the one row every keyboard has. */
-  kbBarLay(rows[rows.length-1], '1');
-  kbBarLay(more.rows[more.rows.length-1], '0');
-  return {lay:[{rows:rows}, more]};
+  var lay=kbRowFaces(ltOrder(ltOfKind('alpha'))), more=kbSecond();
+  /* The digits and the marks are their own group and split on their own, so
+     they never share a face with the letters however many of either there
+     are. The keys that go BETWEEN faces are not put on here any more:
+     kbPatLay() links every face of every pattern in one place, because with
+     the letters alone able to become five faces there is no longer a "first"
+     and a "second" to wire to each other. */
+  if(more) lay=lay.concat(more);
+  return {lay:lay};
 }
 /* ---- the five a keyboard can be made from ------------------------------
    「まずはqwartyかフリックかタップとかキーボードのパターンを選べて」
@@ -271,17 +315,6 @@ function kbDefault(){
    back except the screen, to say so. */
 var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc'];
 /* Ten to a row, which is what a row of a phone keyboard holds. */
-function kbRowsOf(list, per){
-  var rows=[], row=[], i, k, w=kbW(per);
-  for(i=0;i<list.length;i++){
-    k=kbKey('lt', list[i].id); k.w=w;
-    row.push(k);
-    if(row.length===per){ rows.push(row); row=[]; }
-  }
-  if(row.length) rows.push(kbFillRow(row));
-  rows.push(kbBar(2));
-  return rows;
-}
 /* Twelve keys, four directions on each. One key holds five letters, so a
    language of sixty is one face -- which is the whole argument for a flick
    keyboard and the reason Japanese phones have one. The letters go on in the
@@ -307,7 +340,14 @@ function kbFlickLay(){
 
      Never fewer than three rows, because those three keys are three and each
      wants a cell of its own. */
+  /* As many rows as the letters need, cut into faces that fit -- and the
+     three that are not letters come round again ON EVERY FACE, because they
+     live in the fourth column rather than on a bar of their own. A face after
+     the first with nothing but gaps down that column would be letters with no
+     space, no delete and no return. */
+  var fr=kbFaceRows();
   n=Math.max(3, Math.ceil(keys.length/3));
+  if(n>fr) n=Math.ceil(keys.length/3)>fr? Math.ceil(keys.length/3) : n;
   /* Four across, so a key is FIVE columns of the ten -- 97pt on a 390pt
      phone against a QWERTY's 39. That is the whole of why a flick key is big:
      not a bigger grid, a key that spans more of it. And four times five is
@@ -317,12 +357,15 @@ function kbFlickLay(){
   for(i=0;i<n;i++){
     row=[];
     for(j=0;j<3;j++){ k=keys[i*3+j] || kbKey('lt', ''); k.w=fw; row.push(k); }
-    k=(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(fw));
+    var at=i%fr;
+    k=(at===0? kbKey('del') : at===1? kbKey('sp') : at===2? kbKey('ret') : kbGap(fw));
     k.w=fw;
     row.push(k);
     rows.push(row);
   }
-  return [{rows:rows}];
+  var parts=kbChunk(rows, fr), out=[], q;
+  for(q=0;q<parts.length;q++) out.push({rows:parts[q]});
+  return out;
 }
 /* Consonants down the page and vowels across it, which is the shape a
    syllabary is taught in and the reason a kana chart looks like a chart. The
@@ -341,7 +384,7 @@ function kbChartLay(){
      is not ours to pick from KB_PERS. Each key takes as many whole columns as
      fit, and kbFillRow() puts the remainder at the ends, exactly as the free
      QWERTY's nine-letter row is inset by half a key at each end. */
-  var cw=Math.max(1, Math.floor(KB_COLS/(vs.length+1)))/2, kk;
+  var cw=Math.max(1, Math.floor(KB_COLS/(vs.length+1)))/2, kk, fr=kbFaceRows();
   for(i=0;i<cs.length;i++){
     row=[];
     for(j=0;j<vs.length;j++){
@@ -355,25 +398,76 @@ function kbChartLay(){
        consonants and five vowels came to 5 x 7 and half the screen; the same
        chart with the column is 6 x 6. The grid itself is untouched, because
        what a chart is is what the language has. */
-    kk=(i===0? kbKey('del') : i===1? kbKey('sp') : i===2? kbKey('ret') : kbGap(cw));
+    /* per FACE, for kbFlickLay()'s reason: a chart of twenty consonants is
+       more faces than one, and every one of them needs its own three. */
+    var at=i%fr;
+    kk=(at===0? kbKey('del') : at===1? kbKey('sp') : at===2? kbKey('ret') : kbGap(cw));
     kk.w=cw;
     row.push(kk);
     rows.push(kbFillRow(row));
   }
-  return [{rows:rows}];
+  var parts=kbChunk(rows, fr), out=[], q;
+  for(q=0;q<parts.length;q++) out.push({rows:parts[q]});
+  return out;
 }
 function kbTapLay(){ return kbDefault().lay; }
-function kbAbcLay(){ return [{rows:kbRowsOf(ltOrder(ltOfKind('alpha')), 10)}]; }
+/* Ten to a row, and as many faces as that takes. Ten because ABC order is
+   the QWERTY's shape with the letters in order; the chunking is what stops it
+   being thirty-one rows deep on a language of three hundred letters. */
+function kbAbcLay(){ return kbRowFaces(ltOrder(ltOfKind('alpha')), 10); }
 /* The free plan's layout, editable. kbFixed() is where it is written down and
    this asks it rather than saying it again -- so the QWERTY somebody starts
    from is the same QWERTY they were typing on, key for key. */
 function kbQwertyLay(){ return kbFixed().lay; }
+/* Where a key to another face can go on this one, and putting it there.
+
+   A GAP first: a gap is space somebody has not used, and on a flick or a
+   chart the fourth column is gaps from the fourth row down -- so the key
+   lands in the column the three that are not letters already live in.
+   Then the SPACE BAR, which gives up a key's width, which is where every
+   phone takes its 123 from. Then a row of its own, which is the last resort
+   and the only one that can push a face past the ceiling -- kbFaceRows()
+   leaves room for a bar so that it never comes to that, and kb-check counts
+   the rows afterwards rather than trusting this sentence. */
+function kbFacePut(face, to){
+  var rows=face.rows, i, j, k;
+  for(i=0;i<rows.length;i++)
+    for(j=0;j<rows[i].length;j++)
+      if(rows[i][j].k==='gap'){
+        k=kbKey('lay', String(to)); k.w=rows[i][j].w;
+        rows[i][j]=k;
+        return true;
+      }
+  for(i=rows.length-1;i>=0;i--)
+    for(j=0;j<rows[i].length;j++)
+      if(rows[i][j].k==='sp' && rows[i][j].w>1){ kbBarLay(rows[i], String(to)); return true; }
+  return kbLayPut(face, to);
+}
+/* EVERY FACE IS REACHED AND EVERY FACE CAN BE LEFT, whatever a pattern came
+   out as. One place, because a pattern is no longer one face and two: the
+   letters alone become five of them on a language of three hundred, and
+   kbDefault()'s old「first and second, wired to each other」cannot say that.
+
+   The face before and the face after, wrapping -- so from any face you reach
+   any other and come back the way you came. Two faces means one key each way,
+   because the face before and the face after are the same face and two keys
+   to one place is a key that does nothing. */
+function kbLinkFaces(lay){
+  var n=lay.length, i;
+  if(n<2) return lay;
+  for(i=0;i<n;i++){
+    if(n===2){ kbFacePut(lay[i], 1-i); continue; }
+    kbFacePut(lay[i], (i+1)%n);
+    kbFacePut(lay[i], (i+n-1)%n);
+  }
+  return lay;
+}
 function kbPatLay(pat){
-  if(pat==='qwerty') return kbQwertyLay();
-  if(pat==='flick')  return kbFlickLay();
-  if(pat==='chart')  return kbChartLay();
-  if(pat==='abc')    return kbAbcLay();
-  return kbTapLay();
+  if(pat==='qwerty') return kbLinkFaces(kbQwertyLay());
+  if(pat==='flick')  return kbLinkFaces(kbFlickLay());
+  if(pat==='chart')  return kbLinkFaces(kbChartLay());
+  if(pat==='abc')    return kbLinkFaces(kbAbcLay());
+  return kbLinkFaces(kbTapLay());
 }
 /* The shape without the letters.
    「それ以外2つ目作るときは形だけ」

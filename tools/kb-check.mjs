@@ -173,6 +173,85 @@ const r = await pg.evaluate(({ s }) => {
       });
     });
   });
+  /* ---- 5b. a pattern that does not fit is more FACES ------------------
+     「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
+
+     The claim above is made on THIS language, and this language has 38
+     letters. kbRowsMax() was asked in two places and both of them are
+     somebody adding a row by hand -- the patterns were never measured at all.
+     105 letters came out a seven-row flick and a twelve-row ABC; 300 came out
+     twenty and thirty-one. Nothing throws: the board is drawn, saved, handed
+     over, and the extension squeezes it into 0.55 of the screen with every
+     row shorter.
+
+     So the alphabet is REPLACED, at five sizes, and the patterns are built
+     against each. Three things are asked of every face, and the second is the
+     one that matters: cutting at the ceiling would satisfy the first and the
+     third while dropping letters somebody drew.
+
+     LETTERS is put back afterwards -- every claim below this one is about the
+     fixture's own language. */
+  var lettersWas = LETTERS;
+  function alphaOf(n){
+    var ls = [], i;
+    for (i = 0; i < n; i++)
+      ls.push({ id: 'zz' + i, nm: 'zz' + i, st: [[[0, 0], [1, 1]]], kind: 'alpha' });
+    return ls;
+  }
+  out.sizes5 = [];
+  [26, 60, 105, 150, 300].forEach(function (n){
+    LETTERS = alphaOf(n);
+    KB_PATS.forEach(function (p){
+      var lay = kbPatLay(p), ids = {}, over = 0, dead = 0, deep = 0;
+      lay.forEach(function (face){
+        if (face.rows.length > kbRowsMax()) over += 1;
+        if (face.rows.length > deep) deep = face.rows.length;
+        var off = 0;
+        face.rows.forEach(function (rw){ rw.forEach(function (k){
+          if (k.k === 'lt' && k.v) ids[k.v] = 1;
+          if (k.k === 'lt' && k.f) k.f.forEach(function (f){ if (f) ids[f] = 1; });
+          if (k.k === 'lay') off += 1;
+        }); });
+        if (lay.length > 1 && !off) dead += 1;
+      });
+      /* Whether this pattern is built out of THE ALPHABET. qwerty is not: it
+         is kbFixed(), which finds a-z BY NAME, so an alphabet of three
+         hundred letters called something else puts none of them on it and it
+         is three rows whatever happens. Nor is the chart, whose keys come
+         from the sounds. Both are counted and printed; only the three that
+         lay the whole alphabet out are held to keeping all of it. */
+      out.sizes5.push({ n: n, pat: p, faces: lay.length, deep: deep, over: over,
+        kept: Object.keys(ids).length, dead: dead,
+        ofAlpha: (p === 'flick' || p === 'tap' || p === 'abc') });
+    });
+  });
+  LETTERS = lettersWas;
+  /* and the chart, whose rows are the number of CONSONANTS and not the number
+     of letters -- so the four sizes above cannot move it, and it needs the
+     other end of the language changed to be asked the same question. */
+  var sndWas = SND;
+  function consOf(n){
+    var o = [], i, ipa = 'ptkbdgmnszfvrljwhcxq';
+    for (i = 0; i < n; i++) o.push(ipa.charAt(i % ipa.length) + (i > 19 ? String(i) : ''));
+    return o.concat(['a', 'i', 'u']);
+  }
+  out.chart5 = [];
+  [3, 8, 14, 24].forEach(function (n){
+    SND = consOf(n);
+    var lay = kbPatLay('chart'), over = 0, deep = 0, dead = 0;
+    lay.forEach(function (face){
+      if (face.rows.length > kbRowsMax()) over += 1;
+      if (face.rows.length > deep) deep = face.rows.length;
+      var off = 0;
+      face.rows.forEach(function (rw){ rw.forEach(function (k){
+        if (k.k === 'lay') off += 1; }); });
+      if (lay.length > 1 && !off) dead += 1;
+    });
+    out.chart5.push({ n: n, cons: wsCons().length, faces: lay.length,
+                      deep: deep, over: over, dead: dead });
+  });
+  SND = sndWas;
+
   /* rows stop at the ceiling, and the dashed row stops being drawn */
   fresh();
   for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
@@ -954,6 +1033,25 @@ say(r.screenH === 844 && r.ceilRows === 7,
 say(r.ceilCols === 20,
     'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
+say(r.sizes5.every((x) => x.over === 0),
+    'and at 26 / 60 / 105 / 150 / 300 letters too -- no face over the ceiling' +
+    (r.sizes5.filter((x) => x.over).length
+      ? ': ' + r.sizes5.filter((x) => x.over)
+          .map((x) => x.pat + ' at ' + x.n + ' is ' + x.deep + ' rows').join(', ')
+      : ''));
+const ofAlpha = r.sizes5.filter((x) => x.ofAlpha);
+say(ofAlpha.every((x) => x.kept === x.n),
+    'and not one letter is dropped to make them fit, over ' + ofAlpha.length +
+    ' builds of the three that lay the whole alphabet out' +
+    (ofAlpha.filter((x) => x.kept !== x.n).length
+      ? ': ' + ofAlpha.filter((x) => x.kept !== x.n)
+          .map((x) => x.pat + ' at ' + x.n + ' kept ' + x.kept).join(', ')
+      : ''));
+say(r.sizes5.every((x) => x.dead === 0),
+    'and no face of any of them is a dead end');
+say(r.chart5.every((x) => x.over === 0 && x.dead === 0),
+    'the chart too, whose rows are the consonants: ' +
+    r.chart5.map((x) => x.cons + '->' + x.faces + 'x' + x.deep).join('  '));
 say(r.patsShape,
     'and every one of them is the shape of a keyboard -- a key between 0.72:1' +
     ' (ten across, iOS QWERTY) and 1.81:1 (four across, its ten-key)' +
@@ -1070,6 +1168,14 @@ say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
+console.log('\n  patterns at five alphabet sizes (faces x deepest face).');
+console.log('  qwerty finds a-z by name and the chart is built from sounds, so' +
+  ' neither moves with the alphabet:');
+[26, 60, 105, 150, 300].forEach((n) => {
+  console.log('    ' + String(n).padStart(3) + ' letters   ' +
+    r.sizes5.filter((x) => x.n === n)
+      .map((x) => x.pat + ' ' + x.faces + 'x' + x.deep).join('   '));
+});
 console.log('\n  the ceiling is ' + r.ceilRows + ' rows, one number for every phone.');
 console.log('\n  every pattern, as the keyboard it comes out as:');
 r.shapes.forEach((x) => console.log('    ' + x.pat.padEnd(14) +
