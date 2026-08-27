@@ -313,22 +313,53 @@ var route='profile';
        ログインしてないのに謎に課金できるしバカやろ。
        他の画面に行かせるな。ログアウトの時は。」
 
-   Signed out is the same KIND of state as an unfinished onboarding: the app
-   is not a place you are standing in, it is one screen. So it is answered
-   here, once, rather than by an `if(!netSignedIn())` on each screen -- which
-   is what the app had, and what left the settings, the plans and the language
-   screens open to somebody with no account. A list of screens to guard is a
-   list that is one short the day a screen is added.
+   Answered here, once, rather than by an `if(!netSignedIn())` on each screen
+   -- which is what the app had, and what left the settings, the plans and the
+   language screens open to somebody with no account. A list of screens to
+   guard is a list that is one short the day a screen is added.
 
-   'door' the door and nothing else -- signed out
    'ob'   the onboarding, which is the app until SET.done
+   'door' the door and nothing else -- finished, and signed out of
    'app'  a route, a view, and the bar at the foot
 
    The tour is 'app' on purpose: it is the app with one thing lit, not a
-   screen of the onboarding's own. */
+   screen of the onboarding's own.
+
+   ---- THE ORDER OF THESE TWO LINES IS THE WHOLE THING --------------------
+
+   OWNER 2026-08-27: 「オンボーディング→最後にログイン」「ログアウトした時は
+   ログイン画面から動かさない」.
+
+   This used to ask about the session FIRST, and it cost the app its own front
+   door. A new phone is not signed in, so it was answered 'door' on line one
+   and never reached line two -- **the onboarding could not be got to at all,
+   on a phone that had never been used.** Deleting the account did not bring
+   it back either: wipeHere() puts SET.done to false and then calls netOut(),
+   so it landed in the same place. 「アカウント削除で新品に戻る」 did not.
+
+   What was missing is that NOT SIGNED IN IS TWO DIFFERENT PEOPLE, and only
+   one of them belongs at the door:
+
+     SET.done false   has not been through the onboarding -- and the sign-in
+                      is the LAST STEP OF IT, so sending them to the door is
+                      sending them to the end of a walk they have not started
+     SET.done true    has been through it and signed out -- the door, and
+                      nothing else, which is 2026-08-26 and is untouched
+
+   The paragraph that used to be here said "signed out is the same KIND of
+   state as an unfinished onboarding". They are not the same kind, and that
+   sentence is why the two got one line. It is taken down rather than
+   corrected: a wrong reason left standing next to the right code is how this
+   comes back.
+
+   tools/act-check.mjs asks appIs() for all three, and it asks what wipeHere()
+   leaves behind. The reason nothing caught this is that the check beside it
+   sets SET.done = true before it walks, so every case in this file was about
+   the second person. */
 function appIs(){
+  if(!SET.done && !obTourOn()) return 'ob';
   if(typeof netSignedIn!=='function' || !netSignedIn()) return 'door';
-  return (!SET.done && !obTourOn())? 'ob' : 'app';
+  return 'app';
 }
 
 /* ---- every page ------------------------------------------------------
