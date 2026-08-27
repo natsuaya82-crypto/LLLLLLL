@@ -1857,8 +1857,14 @@ a.set{text-decoration:none}
    「add⚪︎⚪︎みたいに軽くかいといて」「addは上においてくれキーの」
    Light: it is a name, not a sentence about how to use them. */
 .kbnewl{display:block;font-size:.72rem;color:var(--txm);margin:0 0 5px 2px}
+/* The same corner a key has. A tile that MAKES a key and does not look like
+   one reads as a blank strip under the board -- 「フリックのaddキーのサイズ
+   合ってなくね？角丸じゃないし」OWNER 2026-08-26. Rule 18 holds the corner to
+   what tools/box-baseline.txt lists, and this pair is on it for that reason:
+   it is not a new box, it is the box `.kbk` already is, on the thing that
+   makes one. 9px, read off `.kbk` and not chosen again. */
 .kbnewt{flex:0 0 auto;min-height:44px;height:44px;padding:0;
-        border:1px solid var(--line);background:var(--sf);
+        border:1px solid var(--line);border-radius:9px;background:var(--sf);
         display:flex;align-items:center;justify-content:center}
 .kbnewt.on{border-color:var(--gold);background:var(--goldsf)}
 /* A width being carried onto the sheet: the tile stays where it is -- a
