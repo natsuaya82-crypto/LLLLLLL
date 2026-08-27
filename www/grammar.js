@@ -592,12 +592,88 @@ function g2Made(m, r){
 }
 function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</div>'; }
 
-/* The page. Two chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+/* §14 Negation. The chapter that is NOT the same walk as the two above, and
+   the specification says why: 「必ず PREFIX になると決めつけない」. A language
+   may write its negation as an ending, as a beginning, or as a WORD OF ITS
+   OWN, and those are not three settings of one thing -- the first two change
+   the verb and the third changes the sentence.
+
+   So this chapter shows the pair of LINES rather than a pair of words, which
+   is what §14 draws:
+
+       Positive:  mi luma
+       Negative:  mi na luma
+
+   and it reads the same for all three ways, because the difference between
+   them is exactly what the two lines show.
+
+   Where the negation is a word, WHERE IT GOES is the engine's answer, not
+   this file's -- arrange() places it by the position this language chose.
+   Where it is an ending, the verb is inflected and the line is otherwise the
+   same. Neither branch decides anything: both ask. */
+function g2NegRules(m){
+  var a=m.inflections, out=[], i;
+  for(i=0;i<a.length;i++) if(String(a[i].feature)==='NEGATION') out.push(a[i]);
+  return out;
+}
+function g2Line(list){
+  var laid=gLay(list), i, out=[];
+  for(i=0;i<laid.length;i++) out.push(wOut(laid[i].hw));
+  return out.join(' ');
+}
+function g2Neg(){
+  var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'),
+      m, rules, word, plus, minus, md, i, out='';
+  if(!sub || !v) return gNeedWords();
+  m=gModel([sub, v]);
+  rules=g2NegRules(m);
+  word=gSlot('neg', 'not');
+  plus=g2Line([sub, v]);
+  /* One row per rule, as in the two chapters above. A language may have two
+     ways of saying no -- one for words of a shape, one for the rest -- and
+     showing only the first would be this page choosing which of somebody's
+     rules counts. The ending goes on the verb and the rest of the line is
+     untouched; asked of THAT rule, for the same reason g2Made() is. */
+  for(i=0;i<rules.length;i++){
+    minus=g2NegSurf(m, v, rules[i], plus);
+    if(!minus || minus===plus) continue;
+    md=rules[i].metadata || {};
+    out+=g2Row(md.label || t('stg.neg.t'), plus, minus, 'openFmr', [md.rule || '']);
+  }
+  /* And a word of its own, which is not a rule at all: the sentence is
+     arranged again WITH it in, and where it lands is what this language
+     answered rather than anything decided here. */
+  if(word){
+    minus=g2Line([sub, v, word]);
+    if(minus && minus!==plus)
+      out+=g2Row(t('stg.neg.t'), plus, minus, 'openSlot', ['neg', 'not']);
+  }
+  return out || gNeedRules();
+}
+/* The same line with the verb in its negative form. The word is swapped in
+   the laid-out line rather than the line being built twice: what changes is
+   one word, and rebuilding would let the two lines disagree about everything
+   else. */
+function g2NegSurf(m, v, r, plus){
+  var e=LinguaGrammarEngine, w, all=m.inflections, f={}, made;
+  for(w=0;w<m.words.length;w++) if(m.words[w].id===e.adapter.idOf(v)) break;
+  if(w>=m.words.length) return '';
+  f[String(r.feature)]=r.value;
+  m.inflections=[r];
+  made=e.morphology.inflect(m, m.words[w], f);
+  m.inflections=all;
+  if(made.surface===m.words[w].lemma) return '';
+  return plus.split(' ').map(function(x){
+    return (x===wOut(v.hw))? made.surface : x; }).join(' ');
+}
+
+/* The page. Four chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
     '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns()+
-    '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs();
+    '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs()+
+    '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg();
 }
 
 /* ---- the screen -------------------------------------------------------- */

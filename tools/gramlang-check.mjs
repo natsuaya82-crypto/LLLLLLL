@@ -790,7 +790,7 @@ const g2v = await pg.evaluate(() => {
 });
 
 const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are three chapters on the page', g2v.secs.length, 3);
+want('there are four chapters on the page', g2v.secs.length, 4);
 want('the second is the nouns', sec(1).name, 'noun');
 want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
 want('the third is the verbs', sec(2).name, 'verb');
@@ -802,6 +802,107 @@ want('a rule that goes on the front comes out on the front',
      sec(2).rows.indexOf('Passive:ezluma') >= 0, true);
 want('and the negation is not drawn here', sec(2).rows.join(' ').indexOf('nn'), -1);
 want('so the verbs chapter has exactly two rows', sec(2).rows.length, 2);
+
+/* ---- 57-64: negation, and the three ways a language may write one --------
+   docs/GRAMMAR-V2-SPEC.md §4: 「ただし『必ず PREFIX になる』と決めつけない」.
+   An ending, a beginning, or A WORD OF ITS OWN -- and the last is not a
+   setting of the first two: it changes the SENTENCE, not the verb.
+
+   So the row is a pair of LINES, and the same row reads for all three. What
+   is held here is that each way produces the line that way really makes, and
+   that where a negation WORD lands is the ENGINE's answer -- this language's
+   chosen position -- and not a guess made while drawing.
+
+   Nothing throws in any of it. A negation that never arrives leaves the
+   positive line printed twice, which looks like a language that does not
+   negate rather than like a fault. */
+const neg = (fm, opts) => pg.evaluate(({ fm, o }) => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const hidden = [];
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  /* The word this language says no with. It lives in the 否定 stage's slot,
+     which is where it has always lived; this check's language has a dictionary
+     of one word, so it is seeded here and taken away again. */
+  if (!o.noWord)
+    WORDS.push({ hw:'znak', pos:'part', mns:['not'], at:1, slot:'neg.not' });
+  if (o.noWord)
+    for (let i = WORDS.length - 1; i >= 0; i--)
+      if (WORDS[i].slot === 'neg.not') hidden.push(WORDS.splice(i, 1)[0]);
+  if (o.negp) { if (!STG.gpos) STG.gpos = {}; STG.gpos.negp = o.negp; }
+  const wasNegp = STG.gpos && STG.gpos.negp;
+  STG.fm = fm.map((r) => ({ id:r.id, pos:r.pos, fm:r.fm, at:r.at, drop:0,
+                            add:sp(r.add), when:r.when || '',
+                            wend:r.wend? sp(r.wend) : [] }));
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  const rows = Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) => ({
+      lab: b.querySelector('.psm').textContent,
+      from: b.querySelector('.psw').textContent,
+      to: b.querySelector('.psi').textContent,
+      go: b.getAttribute('data-do') }));
+  WORDS.length = wl;
+  hidden.forEach((w) => WORDS.push(w));
+  STG.fm = JSON.parse(wasFm);
+  return { rows: rows, negp: wasNegp };
+}, { fm, o: opts || {} });
+
+/* 1. a word of its own. Where it goes is what this language answered, so the
+   same word is asked for twice -- after the verb and before it -- and the two
+   lines have to differ. A drawing that put it in a fixed place would give the
+   same answer to both. */
+const nAfter = await neg([], { negp:'after' });
+const nBefore = await neg([], { negp:'before' });
+const rowOf = (r) => r.rows.filter((x) => x.from !== x.to && x.to.indexOf(' ') >= 0)
+                           .filter((x) => x.go === 'openSlot')[0] || null;
+
+want('a negation written as a word makes a longer line',
+     rowOf(nAfter) && rowOf(nAfter).to, 'tuf zluma znak');
+want('and the language decides which side it lands',
+     rowOf(nBefore) && rowOf(nBefore).to, 'tuf znak zluma');
+want('the positive line is the same either way',
+     rowOf(nAfter) && rowOf(nAfter).from, 'tuf zluma');
+want('and pressing it goes to the word it is',
+     rowOf(nAfter) && rowOf(nAfter).go, 'openSlot');
+
+/* 2. an ending, and a beginning. The verb changes and the rest of the line
+   does not -- which is the half a rebuilt line would get wrong. */
+const nEnd = await neg([{ id:'n1', pos:'v', fm:'neg', at:'end', add:'nn' }],
+                       { noWord:true });
+const nPre = await neg([{ id:'n2', pos:'v', fm:'neg', at:'start', add:'un' }],
+                       { noWord:true });
+const ruleRow = (r) => r.rows.filter((x) => x.go === 'openFmr' &&
+                                            x.from.indexOf(' ') >= 0)[0] || null;
+
+want('a negation written as an ending goes on the verb',
+     ruleRow(nEnd) && ruleRow(nEnd).to, 'tuf zlumann');
+want('one written as a beginning goes in front of the verb',
+     ruleRow(nPre) && ruleRow(nPre).to, 'tuf unzluma');
+want('and the rest of the line is untouched',
+     ruleRow(nPre) && ruleRow(nPre).from, 'tuf zluma');
+want('pressing it goes to where that rule is written',
+     ruleRow(nEnd) && ruleRow(nEnd).go, 'openFmr');
+
+/* 3. two ways of saying no, which a language may have: one for verbs ending
+   in a letter, one for the rest. Both rows are drawn -- showing only the
+   first would be this page choosing which of somebody's rules counts -- and
+   each row has to be about the rule it names.
+
+   That last half is the one that goes silently wrong. A feature is spent on
+   the first rule that matches it, so asking the engine for NEGATION rather
+   than for THIS RULE gives both rows the same word, under two different
+   names, both looking perfectly right. */
+const nTwo = await neg([{ id:'n3', pos:'v', fm:'neg', at:'end', add:'xx',
+                          when:'x', wend:'a' },
+                        { id:'n4', pos:'v', fm:'neg', at:'end', add:'yy' }],
+                       { noWord:true });
+const twoRows = nTwo.rows.filter((x) => x.go === 'openFmr' &&
+                                        x.from.indexOf(' ') >= 0);
+want('both ways of saying no are drawn', twoRows.length, 2);
+want('the one for verbs ending in a is the one that ends in a',
+     twoRows.filter((x) => x.to === 'tuf zlumaxx').length, 1);
+want('and the other row is the OTHER rule, not the same word twice',
+     twoRows.filter((x) => x.to === 'tuf zlumayy').length, 1);
 
 await br.close();
 srv.close();
@@ -828,3 +929,5 @@ console.log('          A noun shows the forms this language really makes of it,'
 console.log('          and a row goes back to where its rule is written.');
 console.log('          Each chapter draws its own forms and only its own, and a');
 console.log('          rule that goes on the front comes out on the front.');
+console.log('          A negation reads the same whether it is an ending, a');
+console.log('          beginning, or a word of its own.');
