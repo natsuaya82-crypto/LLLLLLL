@@ -281,7 +281,7 @@ all done — both halves of what App Store guideline 1.2 asks for.
 in the Supabase dashboard, `supabase/setup.md` § 5. Nothing in the app grants
 it and nothing is meant to.
 
-**Apple sign-in is wired. Google is wired and is missing one string.**
+**Apple sign-in and Google sign-in are both wired, on both sides.**
 The buttons went from "not in this build" to a real plugin —
 `@capgo/capacitor-social-login`, both providers, Facebook and X switched off in
 `capacitor.config.json` so their SDKs are never linked.
@@ -291,9 +291,10 @@ The buttons went from "not in this build" to a real plugin —
   and the regenerated profile done (2026-08-27).
 - **Google: done, both halves.** `GOOGLE_IOS_ID` in `www/net.js` and the
   reversed scheme in `Info.plist`'s `CFBundleURLTypes` are the same client id
-  (2026-08-27). Supabase has to be told to accept it — `supabase/setup.md` § 4,
-  the owner's. Neither value is a secret: the id names the app and proves
-  nothing.
+  (2026-08-27), and the owner reports the Supabase provider enabled
+  (`supabase/setup.md` § 4, 2026-08-27). Neither value is a secret: the id
+  names the app and proves nothing. What is left is a phone — whether the
+  sheet comes back with a session.
 
 **What this file cannot see.** App Store Connect, the Apple developer site,
 Google Cloud and the Supabase dashboard are outside the repository. Where a
@@ -713,8 +714,10 @@ Two of them were about capabilities that had been deleted.
 
 ### The owner's, in a browser
 
-16. Supabase — the reset mail template and the Redirect URLs (see 3), and the
-    Apple and Google providers (`supabase/setup.md` § 4).
+16. ~~Supabase — the Apple and Google providers (`supabase/setup.md` § 4).~~
+    **Done** (the owner, 2026-08-27: 「7終わってるわ」). Still the owner's, and
+    still outside this repository: the reset mail template and the Redirect
+    URLs (see 3).
 16a. ~~The Apple developer site — Sign in with Apple on the App ID, and the
     profile regenerated after it.~~ **Done** (the owner, 2026-08-27).
 16b. ~~Google Cloud — the iOS client.~~ **Done**, and **the id is in this
@@ -730,9 +733,10 @@ Two of them were about capabilities that had been deleted.
     after it, with no ceiling until this is switched on. What runs out first
     is the timeline's photographs, and the way it goes wrong is a month that
     is already spent by the time anybody looks.
-17. **App Store Connect — the four subscription products.** This is the one
-    that now blocks everything else about money, and it is nobody's but the
-    owner's. `docs/apple.md` § 4 has every field; the short version:
+17. ~~**App Store Connect — the four subscription products**, and the four
+    sales keys into Supabase's Secrets.~~ **Done** (the owner, 2026-08-27:
+    「7終わってるわ」). `docs/apple.md` § 4 has every field; the four are kept
+    here because a price that changes has to be changed in one known place:
 
     | 参照名 | 製品 ID | 期間 | 価格 | レベル |
     |---|---|---|---|---|
@@ -843,9 +847,9 @@ Two of them were about capabilities that had been deleted.
     passed to `netIdToken()` as the SUCCESS callback and nowhere else. A
     disabled provider answers `/auth/v1/token?grant_type=id_token` with 400,
     `obNo` runs, and the person stays on the door. So `supabase/setup.md` §4-1
-    is done. **§4-2 and §4-3 — Google — are still unverified and still the
-    owner's**; `GOOGLE_IOS_ID` is filled in, so that button opens a sheet
-    whether or not Supabase will accept what comes back.
+    is done. **§4-2 and §4-3 — Google — are done too** (the owner,
+    2026-08-27), and `GOOGLE_IOS_ID` is filled in. What is left about Google is
+    a phone: whether the sheet comes back with a session.
 
     **What could NOT be settled here.** `status` 0 had three roads into one
     sentence — the request went and nothing came back, the request was never
