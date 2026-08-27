@@ -116,8 +116,17 @@ function wordsHidHTML(){
    there: both are the dictionary seen from outside a single word. Nothing is
    put here before it exists -- a row that opens nothing is a button that used
    to work. */
+/* The ⋯ sheet of the dictionary, and the one place the word ask is offered
+   from. It goes here rather than on the list itself because it is a thing
+   done TO the dictionary, which is what this sheet already holds -- and
+   because the list's own thumb corner is the + that writes one by hand.
+
+   www/assist.js builds the link; this only says what is being asked for.
+   The row above keeps its hairline and the row below stays the last one, so
+   nothing about the existing row moves. */
 function wordsMore(){
   openForm('wmore', t('words.more'),
+    askRow(t('ask.word.ask'), null)+
     '<button class="set" style="border-bottom:none"' + DO('go', ["forms"]) + '>'+
       '<span class="sl">'+esc(t('fmr.title'))+'</span>'+
       '<span class="sv">'+(fmRules().length? String(fmRules().length) : '')+

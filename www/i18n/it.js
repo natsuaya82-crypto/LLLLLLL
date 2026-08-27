@@ -637,6 +637,25 @@ defLang('it', (function(){
       "count.words"      : "{0} parole",
       "count.words.1"    : "1 parola",
       "home.write"       : "Parola nuova",
+      /* AI に相談する -- www/assist.js builds the link. The sentences below
+         are the PROMPT, and they are here for the same reason every other
+         string is: the language a prompt is written in decides the language
+         the answer comes back in. What is around the material is translated;
+         the material itself -- the sounds, the words, the shapes -- is what
+         the person made and is never touched. */
+      "ask.open"     : "Chiedi a un'IA",
+      "ask.full"     : "Troppo lungo da inviare",
+      "ask.head"     : "Sto costruendo una lingua artificiale in un'app chiamata Lingua.",
+      "ask.f.name"   : "Nome della lingua",
+      "ask.f.snd"    : "Suoni (IPA)",
+      "ask.f.lts"    : "Lettere",
+      "ask.f.order"  : "Ordine delle parole",
+      "ask.f.syl"    : "Sillabe",
+      "ask.f.syl.v"  : "{0} in {1} parole su {2}",
+      "ask.f.end"    : "Finale di parola",
+      "ask.f.end.v"  : "{0}: -{1} in {2} su {3}",
+      "ask.f.words"  : "Parole che ha già",
+      "ask.word.ask" : "Proponi 8 parole nuove adatte a questa lingua. Usa solo i suoni sopra e le forme di parola che ha già. Per ognuna, dai la parola, un significato, la lettura in IPA e una riga sul perché di quella forma.",
       "words.more" : "Altro",
       "words.search"     : "Cerca",
       "words.clear"      : "Cancellare",

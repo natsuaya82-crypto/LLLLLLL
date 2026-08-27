@@ -813,6 +813,25 @@ defLang('ko', (function(){
       "count.words"      : "낱말 {0}개",
       "count.words.1"    : "낱말 1개",
       "home.write"       : "새 단어",
+      /* AI に相談する -- www/assist.js builds the link. The sentences below
+         are the PROMPT, and they are here for the same reason every other
+         string is: the language a prompt is written in decides the language
+         the answer comes back in. What is around the material is translated;
+         the material itself -- the sounds, the words, the shapes -- is what
+         the person made and is never touched. */
+      "ask.open"     : "AI에 상담",
+      "ask.full"     : "너무 길어 보낼 수 없습니다",
+      "ask.head"     : "Lingua라는 앱에서 인공어를 만들고 있습니다.",
+      "ask.f.name"   : "언어 이름",
+      "ask.f.snd"    : "소리 (IPA)",
+      "ask.f.lts"    : "문자 수",
+      "ask.f.order"  : "어순",
+      "ask.f.syl"    : "음절 수",
+      "ask.f.syl.v"  : "{2}개 중 {1}개가 {0}",
+      "ask.f.end"    : "어말",
+      "ask.f.end.v"  : "{0}: {3}개 중 {2}개가 -{1}",
+      "ask.f.words"  : "이미 있는 단어",
+      "ask.word.ask" : "이 언어에 어울리는 새 단어를 8개 제안해 주세요. 위의 소리와 이미 있는 단어의 형태만 사용해 주세요. 각각 단어, 뜻, IPA 발음, 그리고 왜 그 형태인지 한 줄로 적어 주세요.",
       "words.more" : "더 보기",
       "words.search"     : "검색",
       "words.clear"      : "지우기",

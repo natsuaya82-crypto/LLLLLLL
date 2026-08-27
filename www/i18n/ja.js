@@ -553,6 +553,25 @@ defLang('ja', (function(){
       'count.words'     : '{0}語',
       'count.words.1'   : '1語',
       'home.write'      : '単語の作成',
+      /* AI に相談する -- www/assist.js builds the link. The sentences below
+         are the PROMPT, and they are here for the same reason every other
+         string is: the language a prompt is written in decides the language
+         the answer comes back in. What is around the material is translated;
+         the material itself -- the sounds, the words, the shapes -- is what
+         the person made and is never touched. */
+      'ask.open'     : "AIに相談",
+      'ask.full'     : "長すぎて送れません",
+      'ask.head'     : "Lingua というアプリで人工言語を作っています。",
+      'ask.f.name'   : "言語の名前",
+      'ask.f.snd'    : "使う音 (IPA)",
+      'ask.f.lts'    : "文字数",
+      'ask.f.order'  : "語順",
+      'ask.f.syl'    : "音節数",
+      'ask.f.syl.v'  : "{2} 語中 {1} 語が {0}",
+      'ask.f.end'    : "語末",
+      'ask.f.end.v'  : "{0}は {3} 語中 {2} 語が -{1}",
+      'ask.f.words'  : "すでにある単語",
+      'ask.word.ask' : "この言語に合う新しい単語を 8 つ提案してください。上の音と、すでにある語の形だけを使ってください。それぞれ、単語・意味・IPA での読み・なぜその形にしたかを一行で書いてください。",
       'words.more' : "その他",
       'words.search'    : "検索",
       'words.clear'     : '検索の消去',

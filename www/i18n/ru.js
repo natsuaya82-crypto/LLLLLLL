@@ -647,6 +647,25 @@ defLang('ru', (function(){
       "count.words.1"     : "1 слово",
       "count.words.few"   : "{0} слова",
       "home.write"        : "Новое слово",
+      /* AI に相談する -- www/assist.js builds the link. The sentences below
+         are the PROMPT, and they are here for the same reason every other
+         string is: the language a prompt is written in decides the language
+         the answer comes back in. What is around the material is translated;
+         the material itself -- the sounds, the words, the shapes -- is what
+         the person made and is never touched. */
+      "ask.open"     : "Спросить ИИ",
+      "ask.full"     : "Слишком длинно для отправки",
+      "ask.head"     : "Я создаю искусственный язык в приложении Lingua.",
+      "ask.f.name"   : "Название языка",
+      "ask.f.snd"    : "Звуки (МФА)",
+      "ask.f.lts"    : "Буквы",
+      "ask.f.order"  : "Порядок слов",
+      "ask.f.syl"    : "Слоги",
+      "ask.f.syl.v"  : "{0} в {1} из {2} слов",
+      "ask.f.end"    : "Конец слова",
+      "ask.f.end.v"  : "{0}: -{1} в {2} из {3}",
+      "ask.f.words"  : "Уже имеющиеся слова",
+      "ask.word.ask" : "Предложи 8 новых слов, подходящих этому языку. Используй только звуки выше и те формы слов, которые уже есть. Для каждого дай слово, значение, чтение в МФА и одну строку о том, почему такая форма.",
       "words.more" : "Ещё",
       "words.search"      : "Поиск",
       "words.clear"       : "Очистить",

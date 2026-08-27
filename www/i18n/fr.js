@@ -685,6 +685,25 @@ defLang('fr', (function(){
       "count.words"      : "{0} mots",
       "count.words.1"    : "1 mot",
       "home.write"       : "Nouveau mot",
+      /* AI に相談する -- www/assist.js builds the link. The sentences below
+         are the PROMPT, and they are here for the same reason every other
+         string is: the language a prompt is written in decides the language
+         the answer comes back in. What is around the material is translated;
+         the material itself -- the sounds, the words, the shapes -- is what
+         the person made and is never touched. */
+      "ask.open"     : "Demander à une IA",
+      "ask.full"     : "Trop long à envoyer",
+      "ask.head"     : "Je construis une langue construite dans une application appelée Lingua.",
+      "ask.f.name"   : "Nom de la langue",
+      "ask.f.snd"    : "Sons (API)",
+      "ask.f.lts"    : "Lettres",
+      "ask.f.order"  : "Ordre des mots",
+      "ask.f.syl"    : "Syllabes",
+      "ask.f.syl.v"  : "{0} dans {1} mots sur {2}",
+      "ask.f.end"    : "Fin de mot",
+      "ask.f.end.v"  : "{0} : -{1} dans {2} sur {3}",
+      "ask.f.words"  : "Mots qu'elle a déjà",
+      "ask.word.ask" : "Propose 8 mots nouveaux qui conviennent à cette langue. N'utilise que les sons ci-dessus et les formes de mots qu'elle a déjà. Pour chacun, donne le mot, un sens, sa lecture en API et une ligne expliquant ce choix de forme.",
       "words.more" : "Plus",
       "words.search"     : "Rechercher",
       "words.clear"      : "Effacer",
