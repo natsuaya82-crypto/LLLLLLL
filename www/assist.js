@@ -168,11 +168,12 @@ function askHead(extra){
 /* The words to send, and the shape they go in.
 
    TAB, and not " = ". 「〇〇　〇〇 みたいに単語と意味を送るやん。」
-   「これの候補を100個くらい出してみたいにすればいいんじゃないの？」 OWNER
-   2026-08-27. A hundred words that have to be typed back in by hand is not
-   making a hundred words, so what leaves has to be the shape that comes
-   back, and the shape that comes back has to be one www/import.js already
-   reads. Nothing was added there to meet this; this was written to meet it.
+   「100じゃなくてもいいけど」 OWNER 2026-08-27 -- this is for somebody making
+   words in BULK, and no number is part of it. Whatever comes back, having to
+   type it in by hand is not making words in bulk, so what leaves has to be
+   the shape that comes back, and the shape that comes back has to be one
+   www/import.js already reads. Nothing was added there to meet this; this
+   was written to meet it.
 
    Tab because impDelim() (www/import.js:66) returns it the moment it sees
    one, with no scoring at all -- where `,` `;` and `|` are chosen by

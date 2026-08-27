@@ -660,7 +660,7 @@ defLang('it', (function(){
       "ask.f.end"    : "Finale di parola",
       "ask.f.end.v"  : "{0}: -{1} in {2} su {3}",
       "ask.f.words"  : "Parole che ha già",
-      "ask.word.ask" : "Voglio creare molte parole per questa lingua. Proponine un centinaio e portala dove ti sembra giusto — fammi domande, contraddicimi, prova direzioni a cui non ho pensato. Solo una cosa sulla forma: dai l'elenco in un blocco di codice, una parola per riga, parola e significato separati da una tabulazione, così posso incollarlo di nuovo nell'app.",
+      "ask.word.ask" : "Voglio creare molte parole per questa lingua. Portala dove ti sembra giusto — fammi domande, contraddicimi, prova direzioni a cui non ho pensato. Solo una cosa sulla forma: dai l'elenco in un blocco di codice, una parola per riga, parola e significato separati da una tabulazione, così posso incollarlo di nuovo nell'app.",
       "words.more" : "Altro",
       "words.search"     : "Cerca",
       "words.clear"      : "Cancellare",
