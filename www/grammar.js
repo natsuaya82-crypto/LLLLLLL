@@ -476,7 +476,7 @@ function gPosDemo(id){
 
 /* Which word is picked up. Where you are standing, not something the language
    holds, so it is never saved. */
-var g2Lift=-1;
+var g2Lift='';
 /* The three words a sentence needs, in the order THIS language puts them.
    gLay() runs the real engine, so what is drawn is what a sentence of this
    language would actually come out as -- not a diagram of one. */
@@ -495,13 +495,31 @@ function g2Three(){
    orderDef().seq[i], because gLay() arranged them by exactly that. So this
    writes the one value the old screen writes, through setOrder(), which marks
    it chosen and redraws. */
-function g2Move(i){
-  var q=orderDef().seq.slice(), t;
-  if(g2Lift<0){ g2Lift=i; render(); return; }
-  if(g2Lift===i){ g2Lift=-1; render(); return; }
-  t=q[g2Lift]; q[g2Lift]=q[i]; q[i]=t;
-  g2Lift=-1;
-  setOrder(q.join(''));
+function g2Move(key, i){
+  var at=g2Lift.split(':'), q, t, j;
+  /* Nothing lifted, or a word of a DIFFERENT row: this one is lifted instead.
+     Two rows arrange two different things -- what order the roles go in, and
+     which side a describing word stands -- and carrying a word from one into
+     the other would mean nothing. */
+  if(!g2Lift || at[0]!==key){ g2Lift=key+':'+i; render(); return; }
+  j=Number(at[1]);
+  if(j===i){ g2Lift=''; render(); return; }
+  g2Lift='';
+  if(key==='order'){
+    q=orderDef().seq.slice();
+    t=q[j]; q[j]=q[i]; q[i]=t;
+    setOrder(q.join(''));
+    return;
+  }
+  /* A row of two. Swapping them IS the other answer, so there is nothing to
+     work out: it is whichever side this language is not on now. */
+  setGPos(key, gPos(key)==='before'? 'after' : 'before');
+}
+/* One word of a row somebody arranges. The row is named so that two of them
+   on one page cannot pick each other's words up. */
+function g2Chip(key, i, w){
+  return '<button class="seg'+(g2Lift===key+':'+i? ' on' : '')+'"' +
+    DO('g2Move', [key, i]) + '>'+esc(wOut(w.hw))+'</button>';
 }
 /* §14 Sentence Structure. The words, then what they are, then the name --
    in that order, because the name is the RESULT and nobody has to read it. */
@@ -509,8 +527,7 @@ function g2Sent(){
   var w=g2Three(), i, out='';
   if(!w) return gNeedWords();
   for(i=0;i<w.length;i++)
-    out+='<button class="seg'+(g2Lift===i? ' on' : '')+'"' + DO('g2Move', [i]) + '>'+
-      esc(wOut(w[i].hw))+'</button>';
+    out+=g2Chip('order', i, w[i]);
   return '<div class="segs">'+out+'</div>'+gOrderLine()+
     '<div class="gsl">'+esc(orderDef().id)+'</div>';
 }
@@ -549,6 +566,12 @@ function g2Row(lab, from, to, act, arg){
    question in two places. */
 function g2Chap(r){
   var f=String(r.feature), v=String(r.value);
+  /* WHAT a rule is about comes before what it is called. A describing word
+     that agrees for number carries feature NUMBER, and reading the feature
+     alone put it in the nouns chapter -- which draws a NOUN, so the rule
+     applied to nothing and the row was never drawn at all. A rule visible
+     nowhere is the quieter half of the same mistake. */
+  if(String(r.target)==='ADJECTIVE') return 'adj';
   if(f==='NUMBER' || f==='CASE') return 'n';
   if(f==='NEGATION') return 'neg';
   if(f==='MOOD' && v==='INTERROGATIVE') return 'q';
@@ -693,6 +716,30 @@ function g2NegSurf(m, v, r, plus){
     return (x===wOut(v.hw))? made.surface : x; }).join(' ');
 }
 
+/* §14 Adjectives. 「単に before / after だけにしない」
+
+   Two things, and the first is why the chapter is not just a row of forms:
+   WHERE a describing word stands is arranged here the way the sentence is
+   arranged in the first chapter -- two words of this language, and moving one
+   is what says which side. The old screen asked it with a pair of buttons
+   labelled 「名詞の前 / 名詞の後」; nobody has to read a label to see
+   `red house` become `house red`.
+
+   The second is that a describing word may itself CHANGE -- 「形容詞そのものが
+   変化する言語にも対応できるようにする」 -- and those rules are drawn under
+   the same heading, on an adjective of this language.
+
+   NOUN → ADJECTIVE is not here. §8 gives word formation a chapter of its own
+   and it is a different question: this one is about a word that already is an
+   adjective. */
+function g2Adj(){
+  var a=gWordOf('adj'), n=gWordOf('n'), laid, i, out='';
+  if(!a || !n) return gNeedWords();
+  laid=gLay([a, n]);
+  for(i=0;i<laid.length;i++) out+=g2Chip('adj', i, laid[i]);
+  return '<div class="segs">'+out+'</div>'+g2Forms('adj', 'adj');
+}
+
 /* §14 Questions. 「方法は言語によって違う ── suffix / prefix / separate word /
    word order / particle / intonation / combination。Lingua 側が勝手に決めない」
 
@@ -714,14 +761,15 @@ function g2Ques(){
                 t('stg.ask.t'), null);
 }
 
-/* The page. Five chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+/* The page. Six chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
     '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns()+
     '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs()+
     '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg()+
-    '<div class="sec">'+esc(t('stg.ask.t'))+'</div>'+g2Ques();
+    '<div class="sec">'+esc(t('stg.ask.t'))+'</div>'+g2Ques()+
+    '<div class="sec">'+esc(posLabel('adj'))+'</div>'+g2Adj();
 }
 
 /* ---- the screen -------------------------------------------------------- */

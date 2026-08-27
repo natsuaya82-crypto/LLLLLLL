@@ -628,7 +628,7 @@ const g2 = await pg.evaluate(() => {
      about "has decided nothing yet" would pass on any code at all. Cleared
      here and put back at the end. */
   delete STG.set.order;
-  g2Lift = -1; STG.order = 'SOV'; show();
+  g2Lift = ''; STG.order = 'SOV'; show();
   const start = words();
   /* one press lifts and writes nothing */
   press(0);
@@ -653,7 +653,7 @@ const g2 = await pg.evaluate(() => {
   WORDS.length = wl;
   STG.order = was;
   if (wasSet) STG.set.order = 1; else delete STG.set.order;
-  g2Lift = -1;
+  g2Lift = '';
   return { start: start.join(' '), n: start.length,
            afterOneLit: afterOne.lit, afterOneOrder: afterOne.order,
            afterOneWords: afterOne.words.join(' '), afterOneSet: afterOne.set,
@@ -790,7 +790,7 @@ const g2v = await pg.evaluate(() => {
 });
 
 const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are five chapters on the page', g2v.secs.length, 5);
+want('there are six chapters on the page', g2v.secs.length, 6);
 want('the second is the nouns', sec(1).name, 'noun');
 want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
 want('the third is the verbs', sec(2).name, 'verb');
@@ -960,6 +960,96 @@ want('no rule is drawn in two chapters', chap.twice.join(', '), '');
 want('and none is drawn in no chapter', chap.none.join(', '), '');
 want('so every one of them landed in exactly one', chap.once, chap.kinds.length);
 
+/* ---- 71-78: adjectives -- where one stands, and how one changes ----------
+   docs/GRAMMAR-V2-SPEC.md §6: 「単に before / after だけにしない」
+
+   Two claims. WHERE a describing word stands is arranged the way the sentence
+   is in the first chapter, so the two words swap and the language records it;
+   the old screen asked it with a pair of labelled buttons and this asks it by
+   being the phrase. And a describing word may itself CHANGE, which is the
+   half the old screen had nowhere to show at all.
+
+   The second is the one that was invisible before this chapter existed. A
+   rule about adjectives carrying feature NUMBER was read by its FEATURE and
+   handed to the nouns chapter -- which draws a NOUN, so the rule applied to
+   nothing and no row was ever drawn. Not wrong: absent. */
+const adj = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  const wasPos = STG.gpos && STG.gpos.adj, wasSet = !!STG.set.adj;
+  WORDS.push({ hw:'zrua', pos:'adj', mns:['red'], at:1 });
+  /* The sentence chapter needs a subject, a verb and a second noun, and this
+     check's language has one noun. Without them that chapter draws "make some
+     words first" and has no row -- so "two rows, and one does not disturb the
+     other" would be asked of a page with one row on it. */
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  WORDS.push({ hw:'zpoko', pos:'n', mns:['fish'], at:1 });
+  STG.fm = [{ id:'a1', pos:'adj', fm:'pl', at:'end', drop:0, add:sp('si'),
+              when:'' }];
+  if (!STG.gpos) STG.gpos = {};
+  STG.gpos.adj = 'before';
+  const show = () => { window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render(); };
+  /* the adjective row is the LAST .segs on the page; the first is the
+     sentence. Read off the page rather than assumed -- if the chapter ever
+     stopped drawing one, an index would quietly pick up the other's. */
+  const rows = () => document.querySelectorAll('#app .segs');
+  const words = () => { const r = rows(); return Array.prototype.map.call(
+    r[r.length - 1].querySelectorAll('.seg'), (b) => b.textContent).join(' '); };
+  const press = (i) => { const r = rows();
+    r[r.length - 1].querySelectorAll('.seg')[i].click(); };
+  g2Lift = ''; show();
+  const nSegs = rows().length;
+  const before = words(), wasOrder = STG.order;
+  /* lifting one and putting it on the other is what says the side */
+  press(0); press(1);
+  const after = words(), side = STG.gpos.adj;
+  /* and it did not disturb the sentence above it */
+  const order = STG.order;
+  const form = Array.prototype.map.call(
+    document.querySelectorAll('#app .stslot'), (b) =>
+      b.querySelector('.psm').textContent + ':' + b.querySelector('.psi').textContent)
+    .filter((x) => x.indexOf('si') >= 0).join(',');
+  /* And across the two rows. Lift a word of the SENTENCE, then press a word
+     of the adjective row: what may not happen is the two being treated as one
+     arrangement. Carrying a role into a phrase means nothing, so the press
+     lifts the adjective's word instead and neither answer moves. */
+  g2Lift = ''; STG.order = wasOrder; STG.gpos.adj = 'before'; show();
+  const all = document.querySelectorAll('#app .segs');
+  all[0].querySelectorAll('.seg')[0].click();          /* lift in the sentence */
+  const cross = { order:STG.order, side:STG.gpos.adj };
+  document.querySelectorAll('#app .segs')[1]
+          .querySelectorAll('.seg')[1].click();        /* press in the phrase */
+  cross.afterOrder = STG.order;
+  cross.afterSide = STG.gpos.adj;
+  cross.lit = document.querySelectorAll('#app .segs .seg.on').length;
+
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  if (wasPos) STG.gpos.adj = wasPos; else delete STG.gpos.adj;
+  if (!wasSet) delete STG.set.adj;
+  g2Lift = '';
+  return { nSegs: nSegs, before: before, after: after, side: side,
+           order: order, wasOrder: wasOrder, form: form, cross: cross };
+});
+
+want('the page has two rows somebody arranges', adj.nSegs, 2);
+want('the describing word stands where this language put it',
+     adj.before, 'zrua tuf');
+want('moving it says the other side', adj.after, 'tuf zrua');
+want('and that is what the language now holds', adj.side, 'after');
+/* Against what it WAS, not against a word order written here: this check's
+   language has one of its own and an expectation typed in would be about the
+   fixture rather than about the two rows being separate. */
+want('the sentence above it did not move', adj.order, adj.wasOrder);
+
+want('a describing word that changes is drawn', adj.form, 'Plural:zruasi');
+
+want('a word lifted in the sentence does not move the phrase',
+     adj.cross.afterSide, adj.cross.side);
+want('nor the other way about', adj.cross.afterOrder, adj.cross.order);
+want('and exactly one word is lifted afterwards -- the one just pressed',
+     adj.cross.lit, 1);
+
 await br.close();
 srv.close();
 
@@ -989,3 +1079,5 @@ console.log('          A negation reads the same whether it is an ending, a');
 console.log('          beginning, or a word of its own.');
 console.log('          Every kind of form the app can write lands in exactly one');
 console.log('          chapter -- not two, and not none.');
+console.log('          A describing word is put on the side this language puts it,');
+console.log('          and one that changes is drawn where it can be seen.');
