@@ -733,7 +733,17 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   kbTapKey(0, 2); standKb();
   out.keySel = !!(KBH && KBH.k === 'k' && KBH.r === 0 && KBH.i === 2);
-  out.keyLit = document.querySelectorAll('.kb.kbsheet .kbk.on').length === 1;
+  /* `pick` and not `on`. `on` is the key whose PAGE is open; this is the key
+     SELECTED on the sheet, and they were one class wearing --goldsf at 7% on
+     a 28px key -- which is a state nobody could see they were in.
+     「選んだキーは色変えないと選んでるかわかんなくない？」OWNER 2026-08-27.
+     Asked of the PAGE and not of the class: what the claim is about is that
+     it LOOKS different from the key beside it. */
+  var pk = document.querySelector('.kb.kbsheet .kbk.pick');
+  var pkOther = document.querySelectorAll('.kb.kbsheet .kbk:not(.pick)')[0];
+  out.keyLit = document.querySelectorAll('.kb.kbsheet .kbk.pick').length === 1 &&
+    !!pk && !!pkOther &&
+    getComputedStyle(pk).backgroundColor !== getComputedStyle(pkOther).backgroundColor;
   kbTapKey(0, 2); standKb();
   out.keyOff = !KBH;
 

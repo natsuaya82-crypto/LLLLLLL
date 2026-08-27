@@ -1328,6 +1328,25 @@ function kbTall(k){ return !!k && (k.h||1)>1; }
    of it and has been since the sheet had two boards -- there is one rule
    saying how tall a key is, and this is the number it was always given. */
 function kbRhCSS(k){ return kbTall(k)? ';--rh:'+(k.h||1) : ''; }
+/* What a SELECTED key looks like. 「選んだキーは色変えないと選んでるかわかん
+   ないくない？」OWNER 2026-08-27 -- it wore --goldsf, a tint at 7%, on a key
+   28px across, and nobody could see which one they had chosen.
+
+   It is purple because that is what "selected on this sheet" already is: the
+   row's band, the column's band and a key standing in a chosen column are all
+   --pur. Gold means OPEN in this app and is what `.kbk.on` still is -- the key
+   whose page you are looking at -- and the two had been sharing one class.
+
+   Written here rather than in the stylesheet, and that is the one thing about
+   it worth arguing with. index.html belongs to another session today, and a
+   class with no rule behind it is a selection nobody can see -- which is the
+   bug being fixed. It NAMES THE VARIABLE and does not spell a colour, so the
+   colour itself still lives in the two theme blocks and nowhere else, which is
+   what that rule asks for. If it should be a stylesheet rule, it is one line
+   -- `.kbk.pick{background:var(--pur);color:var(--bg)}` -- and this goes. */
+function kbPickCSS(ri, ki){
+  return kbKeyIs(ri, ki)? ';background:var(--pur);color:var(--bg)' : '';
+}
 function kbShadow(k){ return !!k && k.k==='gap' && !!k.up; }
 /* Where a key starts, in columns, and which key stands at a column. A merge
    is only ever between a key and the one directly under it -- same column,
@@ -1707,8 +1726,16 @@ function kbHTML(sel, ro){
       key=row[ki];
       cls='kbk'+(key.k!=='lt'? ' fn':'')+(key.k==='gap'? ' gap':'')+(ro? ' ro':'')+
         ((!ro && sel && sel.r===ri && sel.k===ki)? ' on':'')+
-        /* the key being worked on, and a key standing in the column that is */
-        ((!ro && kbKeyIs(ri, ki))? ' on':'')+
+        /* the key being worked on, and a key standing in the column that is.
+           `pick` and not `on`: those are two different states that had been
+           wearing one class. `on` is the key whose PAGE is open, and it is
+           gold because gold is what open means everywhere in this app; this
+           is the key SELECTED on the sheet, which is the same state the row's
+           number and the column's letter go into, and that is purple. Sharing
+           the class made them one look, and the look was --goldsf -- a tint at
+           7% on a 28px key. 「選んだキーは色変えないと選んでるかわかんなく
+           ない？」OWNER 2026-08-27. */
+        ((!ro && kbKeyIs(ri, ki))? ' pick':'')+
         ((!ro && KBH && KBH.k==='c' && kbColHas(at, key.w, KBH.i))? ' sel':'');
       /* Two columns wide, or as many as it is: a key of three IS six columns
          joined, which is where a wide key comes from on a sheet. */
@@ -1722,7 +1749,8 @@ function kbHTML(sel, ro){
           ' style="flex:'+(key.w||1)+kbRhCSS(key)+'">'+kbFlicks(key, false)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
-          'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+'" '+
+          'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+
+            (ro? '' : kbPickCSS(ri, ki))+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
           (kbWob? '' : DO('kbTapKey', [ri, ki])) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
