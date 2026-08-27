@@ -187,10 +187,24 @@ function pwSideHTML(){
   if(pwHas(String(PW.ln||'').trim()))
     return '<button class="pwab"' + DO('draftKeep') + ' aria-label="'+
       esc(t('post.draft.save'))+'">'+ICON_DRAFT+'</button>';
-  if(!DRAFTS.length) return '';
+  /* THE MARK IS ALWAYS HERE, and the number is not.
+     「あと下書きマークは0でも出して。」 OWNER 2026-08-27, on a phone.
+
+     It used to return nothing at all with none saved, which is the same
+     shape of mistake as the one the comment above is about: correct, and
+     invisible. Somebody making their first post has nothing saved by
+     definition, so the one state where 「下書きというものがある」 has never
+     been said is the state everybody starts in.
+
+     The COUNT still goes when there is nothing to count. A disc with 0 in it
+     is the app saying the number of things it has none of, and the name it
+     is read out by follows the same line -- `post.drafts.t` is the drafts
+     screen's own name, so nothing new is written down for this. */
   return '<button class="pwab"' + DO('go', ["drafts"]) + ' aria-label="'+
-    esc(tn('post.drafts', DRAFTS.length))+'">'+ICON_DRAFT+
-    '<span class="pwabn">'+DRAFTS.length+'</span></button>';
+    esc(DRAFTS.length? tn('post.drafts', DRAFTS.length) : t('post.drafts.t'))+
+    '">'+ICON_DRAFT+
+    (DRAFTS.length? '<span class="pwabn">'+DRAFTS.length+'</span>' : '')+
+    '</button>';
 }
 /* The bar is FORM.right and openPost() is the only thing that builds it, so
    typing would not change it -- and what it says depends on whether anything
@@ -614,7 +628,8 @@ function pwAddHTML(){
         : '')+
       pwVoAddHTML()+
       /* Beside the microphone. The span is always here so pwSidePaint() has
-         something to patch; it collapses when there is nothing to say. */
+         something to patch; it collapses only while a posted thing is being
+         edited, which is the one state drafts have nothing to do with. */
       '<span class="pwside" id="pw-side">'+pwSideHTML()+'</span>';
 }
 /* The line as it will actually look, under the field.

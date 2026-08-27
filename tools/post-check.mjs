@@ -495,18 +495,35 @@ const R = await pg.evaluate(async () => {
       fails.push('with a line typed, the row over the keyboard offers no way ' +
                  'to save a draft: pwAddHTML() does not name draftKeep');
 
+    /* Nothing typed and none saved: the MARK is here and the NUMBER is not.
+       「あと下書きマークは0でも出して。」 OWNER 2026-08-27, which replaces
+       what this block used to demand -- that the row draw nothing at all in
+       that state. It was the state everybody's first post is in, so the one
+       screen where the drafts control was never once shown was the first one
+       anybody sees. The count is the half that still goes: a disc reading 0
+       counts nothing. */
     PW = pwBlank();                            /* nothing typed, none saved */
     DRAFTS.length = 0;
     const bare = pwAddHTML();
-    if (bare.indexOf('draftKeep') >= 0 || bare.indexOf('drafts') >= 0)
-      fails.push('with nothing typed and no drafts saved, the row still draws ' +
-                 'a drafts control. There is nothing to save and nowhere to go');
+    if (bare.indexOf('draftKeep') >= 0)
+      fails.push('with nothing typed, the row offers to SAVE a draft. There ' +
+                 'is nothing to save');
+    if (bare.indexOf('drafts') < 0)
+      fails.push('with no drafts saved, the row over the keyboard draws no ' +
+                 'drafts mark at all, so the one screen everybody starts on ' +
+                 'is the one that never says drafts exist');
+    if (bare.indexOf('pwabn') >= 0)
+      fails.push('with no drafts saved, the mark still carries a count. A ' +
+                 'disc reading 0 is the number of things there are none of');
 
     DRAFTS.push({ at: 1, ln: 'kano', mn: '', to: '', pr: 0, pics: [] });
     const saved = pwAddHTML();
     if (saved.indexOf('drafts') < 0)
       fails.push('a draft is saved and the row over the keyboard does not say ' +
                  'so, so the only way back to it is a screen nobody can reach');
+    if (saved.indexOf('pwabn') < 0 || saved.indexOf('>1<') < 0)
+      fails.push('a draft is saved and the mark carries no count, so the mark ' +
+                 'says the same thing with one saved as with none');
 
     /* And it is not ALSO in the top bar, which is where it could not be seen.
        openPost() builds that bar; a control in both places is two controls. */
