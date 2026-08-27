@@ -885,10 +885,17 @@ function pwHTML(){
       /* Read-only when it is the day's sentence. Not disabled: a disabled
          field is greyed out and unselectable, and this one is the thing you
          are reading while you write. */
-      '<input id="pw-mn" class="pwmn" value="'+esc(PW.mn)+'" '+
-        (PW.pr? ' readonly' : '')+
-        ' placeholder="'+esc(pwMn() || t('post.mn'))+'"' +
-        IN('pwSetMn') + '>'+
+      /* THE SAME FIELD AS THE LINE ABOVE IT, and it was an <input>.
+         「全部改行して画面内に文字が収まるようにして欲しい。」 OWNER
+         2026-08-27. An <input> cannot wrap -- there is no CSS for it -- so a
+         meaning longer than the column scrolled off the side and what was
+         typed first stopped being on the screen. The line above it was fixed
+         for this exact complaint 「改行されないせいで画面が今でいく」 and
+         lnField() has been the one place ever since; the meaning never got
+         it, so one column had a field that wraps sitting on a field that does
+         not. It grows with its text (lnGrow), same as the line. */
+      lnField('pw-mn', pwMn() || t('post.mn'),
+        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
       /* Editing is the line and the meaning. There is nothing to add a
          photograph or a voice to -- the post already has whatever it has --
          so the row that adds them is not there rather than there and

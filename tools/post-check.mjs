@@ -692,6 +692,39 @@ const R = await pg.evaluate(async () => {
     else root.style.removeProperty('--vvkb');
   }
 
+  /* ---- 11d1. what is being written wraps, and does not run off the side --
+     「全部そうだけど、書くときに画面外に横にどんどん消えていくのやめて
+     欲しい。全部改行して画面内に文字が収まるようにして欲しい。」 OWNER
+     2026-08-27.
+
+     An <input> cannot wrap -- there is no CSS for it -- so this is asked of
+     the RECTANGLE and not of the tag: scrollWidth past clientWidth is the
+     text being off the screen, whatever element it is in. The line was fixed
+     for this same complaint long ago and the meaning beside it was not, so
+     one column held a field that wraps sitting on a field that does not. */
+  {
+    const wasPW = PW;
+    for (const n of [8, 60, 200]) {
+      PW = pwBlank();
+      PW.mn = 'meaning '.repeat(Math.ceil(n / 8)).slice(0, n);
+      PW.ln = 'kano tir '.repeat(Math.ceil(n / 9)).slice(0, n);
+      openPost();
+      render();
+      await new Promise(r => requestAnimationFrame(() => r()));
+      if (typeof lnGrowAll === 'function') lnGrowAll();
+      for (const id of ['pw-ln', 'pw-mn']) {
+        const e = document.getElementById(id);
+        if (!e) { fails.push('the composer drew no ' + id); continue; }
+        const off = Math.round(e.scrollWidth - e.clientWidth);
+        if (off > 2)
+          fails.push('#' + id + ' is ' + off + 'px wider than it is, with ' + n +
+                     ' characters in it: what was typed first has run off the ' +
+                     'side of the screen and cannot be read back');
+      }
+    }
+    PW = wasPW;
+  }
+
   /* ---- 11d2. the row over the keyboard does not move while one arrives --
      「2枚目が正解なのに1枚目みたいにまだガチャガチャうごくのうざい。
      写真とかは固定でしょ？」 OWNER 2026-08-27, two photographs a second
