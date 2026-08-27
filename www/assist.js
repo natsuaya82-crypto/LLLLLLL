@@ -123,11 +123,15 @@ function asOrder(list){
    ten. What is NOT translated is the material -- the sounds, the words, the
    shapes -- because that is what the person made. */
 
-/* Who it opens. The name never reaches a screen: the button says "ask an AI"
-   whoever is set, which is also what keeps this clear of OpenAI's brand
-   rules -- our name first, theirs nowhere, no logo, nothing that reads as a
-   partnership. www/settings.js writes SET.askTo; this is the only list of
-   what that key may say. */
+/* Who it opens. The name is never PRINTED on a screen: the mark says "ask an
+   AI" whoever is set, no logo, nothing that reads as a partnership, which is
+   what keeps this clear of OpenAI's brand rules. It is said once, in the
+   phone's own dialog, at the moment of pressing -- 「画面に印刷すんな」
+   「ポップだって話聞いてねえのか」 OWNER 2026-08-27, on the second time of
+   asking: it had been written across the dictionary as a line of prose, which
+   is both the explaining rule and this paragraph broken at once.
+   www/settings.js writes SET.askTo; this is the only list of what that key
+   may say. */
 var ASK_TO={
   chatgpt:    'https://chatgpt.com/?q=',
   gemini:     'https://gemini.google.com/app?q=',
@@ -261,7 +265,9 @@ var ICON_AI='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="no
    DESTINATION -- the same shape docRows() in www/settings.js has shipped
    with since it was written. It is also what keeps tools/press.mjs out of
    it; that walk presses [data-do], and a press here would open a window in
-   the middle of a check.
+   the middle of a check. **That is why the question below is a listener and
+   not an action name**: giving this a data-do to hang the confirm off would
+   put it straight back in front of the walk.
 
    Nothing comes back when the scaffold alone is over the ceiling -- there is
    no shorter version left to fall to, and half a prompt is the failure this
@@ -271,6 +277,31 @@ var ICON_AI='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="no
 function askBtn(ask, extra){
   var L=askLink(ask, extra);
   if(!L.url) return '';
-  return '<a class="navq" href="'+esc(L.url)+'" target="_blank" rel="noopener"'+
-    ' aria-label="'+esc(t('ask.open'))+'">'+ICON_AI+'</a>';
+  return '<a class="navq" data-ask="1" href="'+esc(L.url)+'" target="_blank"'+
+    ' rel="noopener" aria-label="'+esc(t('ask.open'))+'">'+ICON_AI+'</a>';
 }
+/* SAID ON THE PRESS, NOT PRINTED ON THE SCREEN.
+   「誰がここにチャットGPTに遷移しますって出せって言ったんだよ ポップだって
+   話聞いてねえのか」「画面に印刷すんな」 OWNER 2026-08-27.
+
+   What leaves this app for somebody else's is worth one question first, and
+   「遷移前に」 means at the moment of pressing -- not a sentence standing on
+   the dictionary where it is read once and then read forever.
+
+   One listener above the app, for the same reason www/act.js has one: a
+   screen is thrown away and rebuilt several times a second, so nothing
+   survives being bound to the element. It answers for the ANCHOR, which
+   act.js deliberately does not handle -- that file is the table of NAMES a
+   button may say, and this carries a destination instead.
+
+   The default is left alone when the answer is yes. Cancelling the anchor
+   and opening the window ourselves would be this app deciding to be a popup
+   in a webview that is entitled to refuse one; letting the <a> do what an <a>
+   does keeps the press a press. */
+function askLeaveOK(e){
+  var a=e.target;
+  while(a && a!==document && !(a.getAttribute && a.getAttribute('data-ask'))) a=a.parentNode;
+  if(!a || a===document || !a.getAttribute) return;
+  if(!window.confirm(t('ask.leave', t('ask.to.'+askWho())))) e.preventDefault();
+}
+document.addEventListener('click', askLeaveOK, false);
