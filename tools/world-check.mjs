@@ -83,6 +83,26 @@ const r = await pg.evaluate(({s}) => {
     out.backShut = heads().filter(function(h){ return !h.shut; }).length === 0;
   }
 
+  /* And it arrives shut in a language you have never opened, which is a
+     different sentence and needed a different line. ABOPEN is where you are
+     STANDING rather than anything a language owns, so viewReset() in
+     www/shell.js drops it -- and without that line the sections you opened in
+     one language are open in the next one, on an article you have never seen.
+     Nothing throws; the page is simply already unfolded.
+
+     langOpen() is the real one and not a render: it is the only thing that
+     calls viewReset() here, so a check that reset ABOPEN itself would be a
+     copy of the line under test. */
+  if(out.arrive.length){
+    abToggle(out.arrive[0].r);
+    out.beforeSwitch = heads().filter(function(h){ return !h.shut; }).length;
+    LANGS['LZW'] = { name:'Zeth', mine:true }; langStore();
+    langOpen('LZW');
+    stand('about');
+    out.afterSwitch = heads().filter(function(h){ return !h.shut; })
+                             .map(function(h){ return h.r; });
+  }
+
   /* the writing face arrives shut too -- it is the same page */
   stand('world');
   out.edOpen = heads().filter(function(h){ return !h.shut; })
@@ -121,6 +141,14 @@ else {
         'open: ' + r.arriveOpen.join(' ') + '. 「この言語については初手は全部閉じて」 ' +
         '— ABOPEN records what is OPEN, so the empty map has to be every ' +
         'section shut.');
+  if (r.beforeSwitch !== 1)
+    say('the section pressed before switching languages did not open (' +
+        r.beforeSwitch + ' open), so the claim below proves nothing.');
+  else if (r.afterSwitch && r.afterSwitch.length)
+    say('opening a section and then switching to another language left ' +
+        r.afterSwitch.length + ' section(s) open on THAT language\'s article: ' +
+        r.afterSwitch.join(' ') + '. ABOPEN is where you are standing, not ' +
+        'something a language owns -- viewReset() in www/shell.js has to drop it.');
   if (r.opened && (r.opened.length !== 1 || r.opened[0] !== r.pressed))
     say('pressing "' + r.pressed + '" left these open: ' +
         (r.opened.join(' ') || '(none)') + '. One press opens one section.');
@@ -159,6 +187,8 @@ if (r.sectionWins !== true)
 
 console.log('the article: ' + ((r.arrive || []).length) + ' foldable sections, ' +
             'every one shut on arrival, on both faces');
+console.log('and arrives closed in the next language too: ' +
+            'viewReset() drops what was open');
 console.log('one place each: 公開 is the article\'s, DL is asked of a section');
 console.log('world().dl: still stored, still read as what an unanswered ' +
             'section falls back to');

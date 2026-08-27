@@ -115,6 +115,46 @@ function gRules(){
   for(i=0;i<ws.length;i++) out.push(gRule('ADPOSITION','WORD', e.adapter.idOf(ws[i])));
   return out;
 }
+/* ---- the marks --------------------------------------------------------
+   A particle is a WORD in this app, made in the 助詞 stage exactly as the
+   word for "not" is made in the 否定 one, so this reads the words somebody
+   made and says what the engine already knows how to hear.
+
+   `separator:' '` is a particle standing APART from the word it marks --
+   `mi ga`, which is how this app writes one, because it was written as its
+   own word. morphology.js reads both that and the attached kind.
+
+   What a mark DOES is in morphology.js and is the whole reason this exists:
+   a word carrying one takes its role wherever it stands, and the place it
+   would have taken in the positional queue is given up. So a language with
+   no marks is arranged by word order alone -- which is what English and
+   Chinese do -- and a mark does not replace the word order, it takes one
+   word out of it at a time.
+
+   `target:'WORD'` is the engine's own way of saying "any word". A particle
+   here is a separate word rather than an ending, so which part of speech it
+   may follow is a question about a sentence somebody typed wrong, not about
+   what this language is.
+
+   It is a VIEW and never stored, for the same reason gRules() and the words
+   are: `form` is the particle's SPELLING, read from the dictionary now. A
+   stored copy would be the spelling as it was on the day it was saved, and
+   would go quietly wrong the moment somebody redrew or renamed that word. */
+var GCASE={subj:'SUBJECT', obj:'OBJECT', rec:'RECIPIENT'};
+function gInfl(){
+  var e=LinguaGrammarEngine, out=[], p=(typeof stBy==='function')? stBy('part') : null, k, w, f;
+  if(!p) return out;
+  for(k in GCASE){
+    if(!Object.prototype.hasOwnProperty.call(GCASE, k)) continue;
+    w=stWordFor(p, k);
+    f=w? String(w.hw||'') : '';
+    if(!f) continue;
+    out.push(e.inflection({id:'case.'+k, target:'WORD', feature:'CASE', value:GCASE[k],
+                           operation:'suffix', separator:' ', form:f}));
+  }
+  return out;
+}
+
 /* This language, as the engine reads it. `list` is which words to hand over
    and is the whole dictionary when nobody says: arranging three words for a
    demonstration would otherwise build five thousand of them on every render,
@@ -152,6 +192,7 @@ function gModel(list){
   if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().id});
   else m.words=e.adapter.wordsOf(list||WORDS);
   m.grammarRules=gRules();
+  m.inflections=(m.inflections||[]).concat(gInfl());
   return m;
 }
 /* The engine's word and the dictionary's word are one word seen from two

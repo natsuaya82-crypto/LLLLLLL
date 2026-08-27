@@ -199,8 +199,19 @@ var STAGES=[
    shape does not need it.
 
    Adding one back by hand is what `stAddOwn` has always been for. */
+/* Its slots are the three roles a mark can take a word OUT of the queue for.
+   A particle is a WORD in this app -- the same as the 否定 stage's word for
+   "not" and the 場所 stage's adpositions -- so making one is making a word,
+   and nothing new is stored anywhere. gInfl() in www/grammar.js is what turns
+   the word somebody made here into something the engine reads.
+
+   Three, and not the eight morphology.js knows: these are the ones WORD ORDER
+   would otherwise decide, and a mark is what takes a word out of that queue.
+   Where a thing IS and where it goes are the 場所 stage's adpositions and
+   already have somewhere to live -- two places saying the same thing is the
+   one shape this repository is most often bitten by. */
 var STAGES_IF=[
-  {id:'part',  slots:[], pos:'part', feats:[]}
+  {id:'part',  slots:['subj','obj','rec'], pos:'part', feats:[]}
 ];
 function stUsed(id){
   return !!(stTouched(id) || (STG.notes && STG.notes[id]) ||
@@ -366,6 +377,11 @@ function openOwnPhase(){
       t('stg.own.add')+'</button>');
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
+/* Saying yes to the stage that is off the list. stMarkSet() is what stUsed()
+   reads, so the stage is on the list from here on and this button is not --
+   and the mark is in STG.set, which is the language's and is already in the
+   backup. Nothing is added to what is stored. */
+function stAddPart(){ stMarkSet('part'); go('gram', 'part'); }
 function stAddOwn(){
   /* The screen only offers this on a paid plan; a form is a route and a route
      can be arrived at from anywhere. */
@@ -480,6 +496,18 @@ function stListHTML(){
        is what can('gram') buys. Deleting one is gated as well -- see
        stDelOwn: a language that came down from a paid plan still owns what it
        made, and cannot throw it away from a plan that cannot make another. */
+    /* The way IN to the one stage that is not on the list. It is off the list
+       on purpose -- English has no particles and opening the chapter with a
+       page for them is the app saying a language has something it may well
+       not -- but a page with no door is the trap rule 19 is written about,
+       and 「好きに書かせて幅広げた方が良くねえか」 is an argument for being
+       able to say yes, not for being asked. So it is at the FOOT, next to
+       the stage somebody adds themselves, and it is gone once the stage is
+       on the list above. The stage names itself; nothing here explains it. */
+    (stUsed('part')
+      ? ''
+      : '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('stAddPart') + '>'+
+          ICON_ADD+t('stg.part.t')+'</button>')+
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
           ICON_ADD+t('stg.own.add.btn')+'</button>'
