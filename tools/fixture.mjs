@@ -1054,6 +1054,18 @@ export function halfDone(){
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
+    /* the + asking which side of the selected COLUMN a new one goes on, which
+       is the row face one axis over -- and it needs a column CUT first,
+       because every pattern the app builds comes to the full ten and a board
+       with no slack is not offered a + at all. 「最大になったら+はなし」 */
+    ['a column selected, asking where a new one goes', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
+                                                  kbAdd('qwerty'); kbLay = 0;
+                                                  kbHeadCol(0); kbCut();
+                                                  kbHeadCol(2); kbInsAsk();
+                                                  window.route='kb'; NAV=[{r:'kb', a:'1'}];
+                                                  const h = vKb();
+                                                  KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                                  SET.plan = 'free'; return h; }],
     ['a keyboard of two layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                          kbAdd('qwerty'); kbAddLay();
                                          window.route='kb'; NAV=[{r:'kb', a:'1'}];

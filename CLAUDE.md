@@ -1018,6 +1018,21 @@ conversation — so the delete and the undo are one statement and have to be hel
 as one. **A delete with a broken undo behind it is worse than a delete that
 asks**, because the app has told somebody it is safe to try things.
 
+**A column takes only the keys it is entirely made of.** 「半キーにしよう。その
+代わり縦列の選択の時では選ばれない。例えばaが半きーのばあい。aを選択したら他の
+124列目だけ選ばれて」 OWNER 2026-08-26. The test used to be whether a key
+overlapped the column at all, and the free QWERTY's third row is inset by half
+a key at each end — so every key on it straddles two columns and lit for both:
+pressing any letter across the top lit TWO of the nine, on the keyboard both
+plans type on. Both halves of the decision are kept and they pull the same way:
+the inset stays, because that is what a QWERTY looks like, and on that row a
+column is therefore made of nothing and lights nothing. **A row with the band
+down it and no key lit is the right answer** — it is the row saying it does not
+line up with the columns, which is what somebody needs to know before cutting
+one. `kbColHas()` is the one place. What the BIN then takes is a different
+question and is not this one: `kbDelCol()` asks how much of a key is inside the
+column, and narrows it by that much, so the inset row still gives up its half.
+
 **Where a row is short from is rounded to a whole key**, and that is the half
 of it that is easy to get wrong. A column is half a key, so half of what is
 left over is very often an odd number of columns — three keys on a sheet of

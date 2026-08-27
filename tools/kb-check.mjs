@@ -173,6 +173,85 @@ const r = await pg.evaluate(({ s }) => {
       });
     });
   });
+  /* ---- 5b. a pattern that does not fit is more FACES ------------------
+     「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
+
+     The claim above is made on THIS language, and this language has 38
+     letters. kbRowsMax() was asked in two places and both of them are
+     somebody adding a row by hand -- the patterns were never measured at all.
+     105 letters came out a seven-row flick and a twelve-row ABC; 300 came out
+     twenty and thirty-one. Nothing throws: the board is drawn, saved, handed
+     over, and the extension squeezes it into 0.55 of the screen with every
+     row shorter.
+
+     So the alphabet is REPLACED, at five sizes, and the patterns are built
+     against each. Three things are asked of every face, and the second is the
+     one that matters: cutting at the ceiling would satisfy the first and the
+     third while dropping letters somebody drew.
+
+     LETTERS is put back afterwards -- every claim below this one is about the
+     fixture's own language. */
+  var lettersWas = LETTERS;
+  function alphaOf(n){
+    var ls = [], i;
+    for (i = 0; i < n; i++)
+      ls.push({ id: 'zz' + i, nm: 'zz' + i, st: [[[0, 0], [1, 1]]], kind: 'alpha' });
+    return ls;
+  }
+  out.sizes5 = [];
+  [26, 60, 105, 150, 300].forEach(function (n){
+    LETTERS = alphaOf(n);
+    KB_PATS.forEach(function (p){
+      var lay = kbPatLay(p), ids = {}, over = 0, dead = 0, deep = 0;
+      lay.forEach(function (face){
+        if (face.rows.length > kbRowsMax()) over += 1;
+        if (face.rows.length > deep) deep = face.rows.length;
+        var off = 0;
+        face.rows.forEach(function (rw){ rw.forEach(function (k){
+          if (k.k === 'lt' && k.v) ids[k.v] = 1;
+          if (k.k === 'lt' && k.f) k.f.forEach(function (f){ if (f) ids[f] = 1; });
+          if (k.k === 'lay') off += 1;
+        }); });
+        if (lay.length > 1 && !off) dead += 1;
+      });
+      /* Whether this pattern is built out of THE ALPHABET. qwerty is not: it
+         is kbFixed(), which finds a-z BY NAME, so an alphabet of three
+         hundred letters called something else puts none of them on it and it
+         is three rows whatever happens. Nor is the chart, whose keys come
+         from the sounds. Both are counted and printed; only the three that
+         lay the whole alphabet out are held to keeping all of it. */
+      out.sizes5.push({ n: n, pat: p, faces: lay.length, deep: deep, over: over,
+        kept: Object.keys(ids).length, dead: dead,
+        ofAlpha: (p === 'flick' || p === 'tap' || p === 'abc') });
+    });
+  });
+  LETTERS = lettersWas;
+  /* and the chart, whose rows are the number of CONSONANTS and not the number
+     of letters -- so the four sizes above cannot move it, and it needs the
+     other end of the language changed to be asked the same question. */
+  var sndWas = SND;
+  function consOf(n){
+    var o = [], i, ipa = 'ptkbdgmnszfvrljwhcxq';
+    for (i = 0; i < n; i++) o.push(ipa.charAt(i % ipa.length) + (i > 19 ? String(i) : ''));
+    return o.concat(['a', 'i', 'u']);
+  }
+  out.chart5 = [];
+  [3, 8, 14, 24].forEach(function (n){
+    SND = consOf(n);
+    var lay = kbPatLay('chart'), over = 0, deep = 0, dead = 0;
+    lay.forEach(function (face){
+      if (face.rows.length > kbRowsMax()) over += 1;
+      if (face.rows.length > deep) deep = face.rows.length;
+      var off = 0;
+      face.rows.forEach(function (rw){ rw.forEach(function (k){
+        if (k.k === 'lay') off += 1; }); });
+      if (lay.length > 1 && !off) dead += 1;
+    });
+    out.chart5.push({ n: n, cons: wsCons().length, faces: lay.length,
+                      deep: deep, over: over, dead: dead });
+  });
+  SND = sndWas;
+
   /* rows stop at the ceiling, and the dashed row stops being drawn */
   fresh();
   for (i = 0; i < kbRowsMax() + 4; i++) kbAddRowNew();
@@ -222,7 +301,14 @@ const r = await pg.evaluate(({ s }) => {
   }
   out.centreLead = lead;
   out.centreTail = tail;
-  out.centred = lead === tail && lead > 0;
+  /* Off centre by at most ONE KEY, never more -- rule 19's own sentence:
+     「半端が出るときはキー1つ単位に丸めて、余った半分は右に回ります」. It used
+     to say lead === tail, which held only because the sheet was as wide as the
+     widest row and that fixture's slack came out even. On a ten-column sheet
+     the slack is very often an odd number of keys, and the whole point of
+     rounding is that the odd one goes to one end rather than splitting a key
+     across two columns. */
+  out.centred = lead > 0 && tail - lead >= 0 && tail - lead <= 1;
 
   /* ---- 6d. a page arrives with the way there and the way back ---------
      「2ページ目作ったときの切り替えボタンは？」 A face nothing can reach and
@@ -379,14 +465,44 @@ const r = await pg.evaluate(({ s }) => {
   ['qwerty', 'flick'].forEach(function (p){
     KB = null; kbShow = 0; kbAdd(p); kbLay = 0;
     window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+    var k = document.querySelector('.kb.kbsheet .kbk[data-r="0"][data-k="0"]');
+    var w = kbLayer().rows[0][0].w || 1;
+    var sheet = document.querySelector('.kb.kbsheet');
     sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
-                 cols: kbCols(kbLayer().rows) };
+                 cols: kbCols(kbLayer().rows), w: w,
+                 kc: sheet ? parseInt(sheet.style.getPropertyValue('--kc'), 10) : -1,
+                 hdr: [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+                        .map(function (b){ return b.textContent; }).join(''),
+                 span: k ? (parseInt(String(k.style.gridColumn || '').replace(/\D/g, ''), 10) || 0) : -1 };
   });
   out.sizes = sizes;
-  /* A key is its share of its row: cols columns across a full-width board, so
-     a key of one is sheet/cols to within the gap the stylesheet takes back. */
-  out.shareQ = Math.abs(sizes.qwerty.key - sizes.qwerty.sheet / sizes.qwerty.cols * 2) < 6;
-  out.shareF = Math.abs(sizes.flick.key - sizes.flick.sheet / sizes.flick.cols * 2) < 6;
+  /* A KEY IS ITS SHARE OF THE TEN, and that is a different sentence from the
+     one that used to be here. It said a key is sheet/cols, which was true
+     while the grid was as wide as the board's widest row -- and that is the
+     thing that made a column narrower every time anything was added.
+     「エクセルは足しても小さくならんやろ」
+
+     The grid is ten now and a key is big by SPANNING it: a flick key is w 2.5,
+     five of the ten columns, 98pt where a QWERTY's is 39. So what is checked
+     is the span, per board, against the width that came back. */
+  out.shareQ = Math.abs(sizes.qwerty.key - sizes.qwerty.sheet * sizes.qwerty.w / 10) < 6;
+  out.shareF = Math.abs(sizes.flick.key - sizes.flick.sheet * sizes.flick.w / 10) < 6;
+  out.spanQ = sizes.qwerty.span === Math.round(sizes.qwerty.w * 2);
+  out.spanF = sizes.flick.span === Math.round(sizes.flick.w * 2);
+  /* AND THE COLUMNS ARE THE SAME COLUMNS ON EVERY BOARD, which is the half of
+     this the widths alone cannot say. 「行と列はエクセルのように数字振ったん
+     だから、小さくなったら意味ないやん」 -- a is an address, and an address is
+     only one if it is in the same place tomorrow.
+
+     Read off the header, because that is the thing a person points at. Both
+     boards show a to j and nothing else: ten columns, whatever is standing on
+     them. It used to be the board's own widest row, so a flick board's sheet
+     had four letters on it and a QWERTY's ten, and the same letter meant a
+     different width on each. Measuring the WIDTH could not see that -- the
+     board is full width either way -- which is why this asks the letters. */
+  out.hdr = sizes.qwerty.hdr;
+  out.colSame = sizes.qwerty.hdr === 'abcdefghij' && sizes.flick.hdr === 'abcdefghij' &&
+    sizes.qwerty.kc === 20 && sizes.flick.kc === 20;
   out.notSame = sizes.flick.key > sizes.qwerty.key * 2;
   out.sameBoard = sizes.flick.sheet === sizes.qwerty.sheet;
   /* and the board's edges do not move when a column is taken out of it, which
@@ -394,8 +510,28 @@ const r = await pg.evaluate(({ s }) => {
   KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
   window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
   const edgeWas = widthOf('.kb.kbsheet');
+  const keyWas = keyW();
+  const hdrWas = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+    .map(function (b){ return b.textContent; }).join('');
   kbHeadCol(0); kbCut();
   out.edgeStill = widthOf('.kb.kbsheet') === edgeWas;
+  /* AND THE KEYS THAT ARE LEFT ARE THE SAME SIZE. 「エクセルは足しても小さく
+     ならんやろ」 said about adding; taking away is the same sentence and is the
+     one a check can reach, because every pattern now fills the ten and there
+     is nothing to add to them.
+
+     With the grid as wide as the board's widest row, taking a column out made
+     the nine that were left STRETCH -- every key on the board bigger, because
+     one was removed. The letters across the top went with them, from ten to
+     nine. Neither throws, both look fine, and the board somebody was building
+     is not the board they had a moment ago. */
+  out.cutKeyStill = Math.abs(keyW() - keyWas) < 0.5;
+  out.cutHdrStill = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+    .map(function (b){ return b.textContent; }).join('') === hdrWas;
+  out.cutKeyWas = keyWas; out.cutKeyNow = keyW();
+  out.cutHdrNow = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
+    .map(function (b){ return b.textContent; }).join('');
+
   /* And the claim kbWayOff() makes about itself, which nothing else here asks:
      IT ONLY EVER ADDS. It runs inside saveKb(), which is every change to a
      keyboard, on the board somebody is looking at -- so a face that already
@@ -419,6 +555,219 @@ const r = await pg.evaluate(({ s }) => {
   /* and the same on the face somebody has NOT opened -- kbLay says which one
      is in front of them, and the other one is still theirs */
   out.addsOnlyN = kbEdit().lay[1].rows.length;
+
+  /* ---- 6f1. a column takes only what it is entirely made of -----------
+     「半キーにしよう。その代わり縦列の選択の時では選ばれない。例えばaが半きー
+     のばあい。aを選択したら他の124列目だけ選ばれて削除して中央揃えした場合
+     全部がハンキーになる感じ。」 OWNER DECISION 2026-08-26.
+
+     The test was whether a key OVERLAPPED the column at all. The free
+     QWERTY's third row is inset by half a key at each end, so every key on it
+     straddles two columns and answered yes to both: pressing ANY letter
+     across the top lit two of the nine, on the keyboard both plans type on.
+
+     Both halves are kept. The inset stays -- it is what a QWERTY looks like.
+     And a column takes only the keys it is entirely made of, so on that row
+     it takes NONE. A row with the band down it and no key lit is the right
+     answer: it is the row saying it does not line up with the columns.
+
+     Read off the page, per row, for every column -- the failure was a count
+     of two where one was meant, and only counting can see that. */
+  fresh();
+  function litPerRow(){
+    return [].slice.call(document.querySelectorAll('#kb .kbrow')).map(function (rw){
+      return [].slice.call(rw.children).filter(function (e){
+        return e.className.indexOf('kbk') >= 0 && e.className.indexOf('sel') >= 0;
+      }).length;
+    });
+  }
+  /* which row is inset, asked of the layout rather than written down as "2" */
+  var insetAt = -1, plainAt = [];
+  kbLayer().rows.forEach(function (rw, i){
+    var half = rw.some(function (k){ return kbU(k.w) % 2 === 1; });
+    if (half) insetAt = i; else plainAt.push(i);
+  });
+  out.insetAt = insetAt;
+  out.lit = [];
+  var ci;
+  for (ci = 0; ci < kbCols(kbLayer().rows) / 2; ci++){
+    KBH = { k: 'c', i: ci }; render();
+    out.lit.push(litPerRow());
+  }
+  KBH = null; render();
+  out.litInset = insetAt >= 0 && out.lit.every(function (per){ return per[insetAt] === 0; });
+  out.litPlain = plainAt.length > 0 && out.lit.every(function (per){
+    return plainAt.every(function (i){ return per[i] === 1; });
+  });
+  /* the widest keys on the board -- a del of three and a space of six -- are
+     entirely made of the column they stand on, so rule 19's "a key wider than
+     the column is narrowed rather than removed" is about keys that DO light */
+  var wideLit = 0, wideSeen = 0;
+  kbLayer().rows.forEach(function (rw, i){
+    var at = 0;
+    rw.forEach(function (k){
+      var u = kbU(k.w), c;
+      if (u > 2){
+        wideSeen += 1;
+        for (c = 0; c < 10; c++) if (at <= c * 2 && at + u >= c * 2 + 2){ wideLit += 1; break; }
+      }
+      at += u;
+    });
+  });
+  out.wideSeen = wideSeen; out.wideLit = wideLit;
+  /* and what the DELETE does to a key that lit: it is exactly one column, so
+     a key of one goes and a wider one comes back one column narrower */
+  fresh();
+  var col = 3, litWas = [];
+  KBH = { k: 'c', i: col }; render();
+  kbLayer().rows.forEach(function (rw, i){
+    var at = 0;
+    rw.forEach(function (k, j){
+      if (at <= col * 2 && at + kbU(k.w) >= col * 2 + 2) litWas.push([i, kbU(k.w)]);
+      at += kbU(k.w);
+    });
+  });
+  var usedWas = kbLayer().rows.map(function (rw){ return kbUsed(rw); });
+  kbCut();
+  var usedNow = kbLayer().rows.map(function (rw){ return kbUsed(rw); });
+  out.litCount = litWas.length;
+  out.cutTookTwo = litWas.every(function (x){ return usedNow[x[0]] === usedWas[x[0]] - 2; });
+
+  /* ---- 6f2. a tile is the size of the key it makes, on every pattern ---
+     「フリックのaddキーのサイズ合ってなくね？」 OWNER 2026-08-26.
+
+     Two claims and the second is the one that was broken.
+
+     THE SIZE. A tile is drawn with kbCellW(), which is the arithmetic the
+     sheet lays a key out with over the ten fixed columns -- so a tile of one
+     is one key of one. Nothing held that, and a check must not work it out
+     again: recomputing the thing under test is a copy of it and a copy always
+     agrees (rule 10). So BOTH are measured off the page -- the tile, and a key
+     of that width actually placed on that board -- and compared.
+
+     AND WHETHER IT IS OFFERED AT ALL. Every pattern's rows come to the full
+     ten, so on a board somebody has just made no key of any width can go
+     anywhere: picking a tile and pressing a key left 10 keys as 10 keys, on
+     all five patterns. The tile lit up and nothing happened.
+
+     Asked of KB_PATS rather than a list written here, for press-check's
+     reason: a sixth pattern is walked the day it is added. */
+  out.tiles = [];
+  function standKb(){
+    window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }]; render();
+  }
+  function tileEl(w){ return document.querySelector('.kbnewt[data-w="' + w + '"]'); }
+  KB_PATS.forEach(function (p){
+    var rec = { pat: p, full: [], noop: [], sized: [], hgt: [] };
+    /* the board as a pattern makes it: every row at ten, so no width fits */
+    KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
+    [1, 2, 3].forEach(function (w){
+      var el = tileEl(w);
+      rec.full.push(!!(el && el.disabled));
+    });
+    /* and picking one and pressing a key changes nothing */
+    [1, 2, 3].forEach(function (w){
+      KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
+      var before = kbLayer().rows[0].length;
+      kbSetNew(w); kbPick(0, 0); standKb();
+      rec.noop.push(kbLayer().rows[0].length === before);
+    });
+    /* with exactly enough room cut for THIS width, the tile and the key it
+       makes -- both read off the page, one width per board so that placing
+       one never eats the room for the next */
+    [1, 2, 3].forEach(function (w){
+      var i;
+      KB = null; kbShow = 0; kbAdd(p); kbLay = 0; standKb();
+      for (i = 0; i < w; i++){ kbHeadCol(0); kbCut(); }
+      KBH = null; standKb();
+      var tile = tileEl(w);
+      var tw = tile ? +tile.getBoundingClientRect().width.toFixed(1) : -1;
+      var th = tile ? +tile.getBoundingClientRect().height.toFixed(1) : -1;
+      var down = !!(tile && tile.disabled);
+      var before = kbLayer().rows[0].length;
+      kbSetNew(w); kbPick(0, 0); standKb();
+      var made = kbLayer().rows[0].length > before;
+      var key = document.querySelector('.kb.kbsheet .kbk[data-r="0"][data-k="1"]');
+      rec.sized.push({ w: w, made: made, down: down, tile: tw,
+        key: (made && key) ? +key.getBoundingClientRect().width.toFixed(1) : -1,
+        got: made ? (kbLayer().rows[0][1].w || 1) : null });
+      rec.hgt.push({ w: w, tile: th,
+        key: (made && key) ? +key.getBoundingClientRect().height.toFixed(1) : -1 });
+    });
+    out.tiles.push(rec);
+  });
+
+  /* ---- 6g. a column goes in, and not when the board is full -----------
+     「これって列とか行とかはたせないの？」「いいよー 最大になったら+はなし」
+     OWNER, 2026-08-26.
+
+     A column could only ever be TAKEN AWAY. It is only safe to offer the
+     other direction because the grid is ten fixed columns: a new key fills
+     slack that is already there, so nothing on the board is made smaller to
+     hold it -- 「小さくなったら意味ないやん」 -- and when there is no slack
+     there is no +.
+
+     Every pattern comes to the full ten, so a fresh board is exactly the
+     "no room" case and the fixture has to CUT before it can put back. That is
+     the check's shape as well as the app's. */
+  fresh();
+  out.insColFullDown = (kbHeadCol(2), !kbRoomCol(2));
+  out.insColFullAsk = (kbInsAsk(), !(KBH && KBH.ins));
+  out.insColFullNoop = (kbInsCol(true), kbLayer().rows.every(function (r){
+    return kbUsed(r) === KB_COLS;
+  }));
+  out.insColFullBtn = vKb().indexOf('data-do="kbInsCol"') < 0;
+
+  fresh();
+  kbHeadCol(0); kbCut();
+  /* A SHORT ROW, put in on purpose. Without one, "the rows that reach it and
+     no others" cannot be watched failing: every row of a QWERTY is the same
+     width, so inserting into all of them and inserting into the ones that
+     reach column c are the same edit. This row reaches column 0 and not
+     column 2, so it is the difference between those two sentences. */
+  kbEdit().lay[0].rows[3] = [kbKey('lt', ''), kbKey('lt', '')];
+  saveKb(); render();
+  var wideWas = keyW();
+  var rowsWas = kbLayer().rows.map(function (r){ return kbUsed(r); });
+  /* what each row is MADE of, so an added key can be told from an added gap */
+  function kinds(){
+    return kbLayer().rows.map(function (r){
+      var o = {}, i;
+      for (i = 0; i < r.length; i++) o[r[i].k] = (o[r[i].k] || 0) + 1;
+      return o;
+    });
+  }
+  var kindsWas = kinds();
+  out.insColShort = rowsWas[3] === 4;              /* two keys: reaches a, not c */
+  out.insColRoom = (kbHeadCol(2), kbRoomCol(2));
+  kbInsAsk();
+  out.insColAsks = !!(KBH && KBH.ins) && vKb().indexOf('data-do="kbInsCol"') >= 0;
+  kbInsCol(true);
+  var rowsNow = kbLayer().rows.map(function (r){ return kbUsed(r); });
+  out.insColWent = rowsNow.every(function (u, i){
+    return u === rowsWas[i] + (i === 3 ? 0 : 2);
+  });
+  /* and the short row is the row it was, key for key */
+  out.insColLeft = rowsNow[3] === rowsWas[3];
+  /* and it did not make anything smaller: the grid is ten either way, so a
+     key that was 28.2px is 28.2px */
+  out.insColSize = Math.abs(keyW() - wideWas) < 0.5;
+  /* WHAT went in: exactly one more `lt` in every row that took one, and not
+     one more of anything else. A gap would satisfy "the row got wider" and is
+     not a key -- 「文字でないキー」は列を使う、というのとは別の話で、ここで
+     頼まれたのはキーです。 */
+  var kindsNow = kinds();
+  out.insColKey = kindsNow.every(function (o, i){
+    var was = kindsWas[i], k, want;
+    for (k in o) if (Object.prototype.hasOwnProperty.call(o, k)){
+      want = (was[k] || 0) + ((k === 'lt' && i !== 3) ? 1 : 0);
+      if (o[k] !== want) return false;
+    }
+    for (k in was) if (Object.prototype.hasOwnProperty.call(was, k) && !(k in o)) return false;
+    return true;
+  });
+  out.insColBack = (kbUndo(), kbLayer().rows.map(function (r){ return kbUsed(r); })
+    .join(',') === rowsWas.join(','));
 
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
@@ -825,6 +1174,25 @@ say(r.screenH === 844 && r.ceilRows === 7,
 say(r.ceilCols === 20,
     'and ' + (r.ceilCols / 2) + ' keys across, which IS a number: the narrowest iPhone');
 say(r.patsFit, 'and every pattern the app builds is inside it as it is built');
+say(r.sizes5.every((x) => x.over === 0),
+    'and at 26 / 60 / 105 / 150 / 300 letters too -- no face over the ceiling' +
+    (r.sizes5.filter((x) => x.over).length
+      ? ': ' + r.sizes5.filter((x) => x.over)
+          .map((x) => x.pat + ' at ' + x.n + ' is ' + x.deep + ' rows').join(', ')
+      : ''));
+const ofAlpha = r.sizes5.filter((x) => x.ofAlpha);
+say(ofAlpha.every((x) => x.kept === x.n),
+    'and not one letter is dropped to make them fit, over ' + ofAlpha.length +
+    ' builds of the three that lay the whole alphabet out' +
+    (ofAlpha.filter((x) => x.kept !== x.n).length
+      ? ': ' + ofAlpha.filter((x) => x.kept !== x.n)
+          .map((x) => x.pat + ' at ' + x.n + ' kept ' + x.kept).join(', ')
+      : ''));
+say(r.sizes5.every((x) => x.dead === 0),
+    'and no face of any of them is a dead end');
+say(r.chart5.every((x) => x.over === 0 && x.dead === 0),
+    'the chart too, whose rows are the consonants: ' +
+    r.chart5.map((x) => x.cons + '->' + x.faces + 'x' + x.deep).join('  '));
 say(r.patsShape,
     'and every one of them is the shape of a keyboard -- a key between 0.72:1' +
     ' (ten across, iOS QWERTY) and 1.81:1 (four across, its ten-key)' +
@@ -837,7 +1205,8 @@ say(r.colsCap, 'and it takes no more keys');
 say(r.wCap, 'and a key in it cannot be widened past the edge');
 say(r.overKept, 'a layout that is already over the ceiling is left exactly as it is');
 say(r.overStillCant, 'and still cannot be added to');
-say(r.centred, 'a short row sits in the middle: ' + r.centreLead + ' empty each side');
+say(r.centred, 'a short row sits in the middle of the ten: ' + r.centreLead +
+    ' empty in front, ' + r.centreTail + ' behind -- off by at most one key');
 say(r.faces === 2, 'adding a page gives the keyboard ' + r.faces + ' of them');
 say(r.wayThere, 'and page 1 has a key that goes to page 2');
 say(r.wayBack, 'and page 2 has one that comes back');
@@ -848,8 +1217,19 @@ say(r.layNewRow, 'and into a row of its own when every row is already full');
 say(r.sameBoard, 'a flick board and a QWERTY board are drawn the same width');
 say(r.notSame, 'and a flick key is not a QWERTY key: ' + r.sizes.flick.key +
     'px against ' + r.sizes.qwerty.key + 'px');
-say(r.shareQ && r.shareF, 'each is its share of the row it is in, both boards');
+say(r.shareQ && r.shareF,
+    'each is its share of the ten: qwerty w' + r.sizes.qwerty.w + ' -> ' +
+    r.sizes.qwerty.key + 'px, flick w' + r.sizes.flick.w + ' -> ' + r.sizes.flick.key + 'px');
+say(r.spanQ && r.spanF,
+    'and it is drawn spanning that many columns (' + r.sizes.qwerty.span +
+    ' and ' + r.sizes.flick.span + ' of 20 half columns)');
+say(r.colSame,
+    'and both boards carry the same ten columns: ' + r.sizes.qwerty.hdr +
+    ' / ' + r.sizes.flick.hdr + ' -- a is a is a, whatever stands on it');
 say(r.edgeStill, "and taking a column out does not move the board's edges");
+say(r.cutKeyStill, 'nor the size of the keys that are left (' + r.cutKeyWas +
+    'px -> ' + r.cutKeyNow + 'px)');
+say(r.cutHdrStill, 'nor which columns there are (' + r.cutHdrNow + ')');
 say(r.narrowPlus === r.widePlus,
     'the row-adding + is the same size on page 2 as on page 1 (' + r.narrowPlus + 'px)');
 say(r.addOn2Plus, 'the dashed row is drawn on page 2 as well as page 1');
@@ -862,6 +1242,32 @@ say(r.deadColOff, 'taking a column off page 2 leaves it with one too');
 say(r.deadFirstOff, 'and page 1 keeps the way IN to the rest');
 say(r.oneFacePlain, 'a keyboard of one face is left alone -- there is nowhere to go');
 say(r.addsOnly, 'and a face that already has one comes out of a save with the keys it went in with (' + r.addsOnlyN + ' rows), twice over');
+const tileRoom = r.tiles.every((x) => x.full.every(Boolean));
+const tileNoop = r.tiles.every((x) => x.noop.every(Boolean));
+const tileMade = r.tiles.every((x) => x.sized.every((t) => t.made && !t.down));
+const tileSize = r.tiles.every((x) => x.sized.every((t) => Math.abs(t.tile - t.key) < 1));
+const tileW = r.tiles.every((x) => x.sized.every((t) => t.got === t.w));
+const tileH = r.tiles.every((x) => x.hgt.every((t) => Math.abs(t.tile - t.key) < 1));
+say(tileRoom, 'every pattern comes to the full ten, so all three width tiles are down');
+say(tileNoop, 'and picking one and pressing a key adds nothing while they are');
+say(tileMade, 'cut room for one out and that one is up again, and goes in');
+say(tileW, 'and each puts in a key of exactly the width it says');
+say(tileSize, 'and each is DRAWN the size of the key it makes: ' +
+    r.tiles.map((x) => x.pat + ' ' + x.sized.map((t) => t.tile + '/' + t.key).join(' ')).join('  '));
+say(tileH, 'and as tall as one: ' +
+    r.tiles[0].hgt.map((t) => t.tile + '/' + t.key).join(' '));
+say(r.insColFullDown && r.insColFullAsk,
+    'a board that is already ten across is offered no + for a column');
+say(r.insColFullNoop && r.insColFullBtn,
+    'and asking anyway adds nothing, and neither side is drawn');
+say(r.insColRoom && r.insColAsks,
+    'cut one out and the + comes back, offering left and right');
+say(r.insColShort, 'the board has a row too short to reach that column');
+say(r.insColWent && r.insColLeft,
+    'and a column goes into every row that REACHES it, leaving that one alone');
+say(r.insColSize, 'without making one key on the board smaller');
+say(r.insColKey, 'and what goes in is an empty key, not a gap');
+say(r.insColBack, 'and the step back takes it out again');
 say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at all');
 say(r.plusLayNoop, 'and asking for one anyway does nothing');
 say(r.romOnEditor && r.romOnFree && r.romOnList,
@@ -873,6 +1279,14 @@ say(r.bandBack, 'the selection is a band BEHIND the keys');
 say(r.keysPlain, 'and the keys themselves are the colour they always were');
 say(r.selOff && r.cutDown && r.alDown, 'pressing it again puts the selection and the buttons down');
 say(r.colLit, 'a column lights up too, header and the keys standing in it');
+say(r.insetAt >= 0, 'the board has a row inset by half a key (row ' + r.insetAt + ')');
+say(r.litInset, 'and no key on it lights for any column -- it lines up with none of them');
+say(r.litPlain, 'while every row that DOES line up lights exactly one key per column');
+say(r.wideSeen > 0 && r.wideLit === r.wideSeen,
+    'and all ' + r.wideSeen + ' keys wider than a column light for one -- rule 19 stands');
+say(r.litCount > 0 && r.cutTookTwo,
+    'cutting that column takes exactly one column out of every row a key lit in (' +
+    r.litCount + ' lit)');
 say(r.colBand, 'a band runs down the whole sheet where that column is');
 say(r.colBandAt, 'and it stands under the letter that names it');
 say(r.colCut, 'and can be taken away');
@@ -917,6 +1331,14 @@ say(r.undoOffAtFirst, 'and it is down on a board nothing has been done to');
 say(r.undoOnAfter, 'and up once something has');
 say(r.redoOnAfterUndo, 'and the step forward is up once something has been taken back');
 
+console.log('\n  patterns at five alphabet sizes (faces x deepest face).');
+console.log('  qwerty finds a-z by name and the chart is built from sounds, so' +
+  ' neither moves with the alphabet:');
+[26, 60, 105, 150, 300].forEach((n) => {
+  console.log('    ' + String(n).padStart(3) + ' letters   ' +
+    r.sizes5.filter((x) => x.n === n)
+      .map((x) => x.pat + ' ' + x.faces + 'x' + x.deep).join('   '));
+});
 console.log('\n  the ceiling is ' + r.ceilRows + ' rows, one number for every phone.');
 console.log('\n  every pattern, as the keyboard it comes out as:');
 r.shapes.forEach((x) => console.log('    ' + x.pat.padEnd(14) +
