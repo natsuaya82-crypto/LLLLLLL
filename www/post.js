@@ -185,11 +185,12 @@ function pwSetPriv(v){
 function pwSideHTML(){
   if(PW.ed) return '';
   if(pwHas(String(PW.ln||'').trim()))
-    return '<button class="pwab wide"' + DO('draftKeep') + '>'+
-      esc(t('post.draft.save'))+'</button>';
+    return '<button class="pwab"' + DO('draftKeep') + ' aria-label="'+
+      esc(t('post.draft.save'))+'">'+ICON_DRAFT+'</button>';
   if(!DRAFTS.length) return '';
-  return '<button class="pwab wide"' + DO('go', ["drafts"]) + '>'+
-    esc(tn('post.drafts', DRAFTS.length))+'</button>';
+  return '<button class="pwab"' + DO('go', ["drafts"]) + ' aria-label="'+
+    esc(tn('post.drafts', DRAFTS.length))+'">'+ICON_DRAFT+
+    '<span class="pwabn">'+DRAFTS.length+'</span></button>';
 }
 /* The bar is FORM.right and openPost() is the only thing that builds it, so
    typing would not change it -- and what it says depends on whether anything
@@ -813,21 +814,21 @@ function pwToHTML(to){
   return '<div class="pwq">'+
     '<div class="pav">'+postFace(to)+'</div>'+
     '<div class="pbody">'+
-      /* The same two lines the timeline's head is folded into, and it has to
-         be said here too: `.phead` stopped being the flex row that held the
-         gap between these spans, so a head written the old way came out as
-         `IriVethi@iri` with the words run together. A quoted post has no time
-         on it and nothing to press, so the second line is only the language
-         and the handle. */
-      '<div class="phead">'+
-        '<div class="pheadn">'+
-          '<span class="pname">'+esc(postWho(to))+'</span>'+
-        '</div>'+
-        '<div class="pheadm">'+
-          (to.lname? '<span class="plangtag">'+esc(to.lname)+'</span>' : '')+
-          '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
-        '</div>'+
-      '</div>'+
+      /* ONE ROW: the name and the handle beside each other, and the language's
+         name is not on it. 「言語名いらんから名前と@を横に並べて」OWNER
+         2026-08-26. It was two lines -- the name, and under it the language
+         and the handle -- which is three facts stacked where you are looking
+         at somebody else's post to answer it. Whose post it is, is the name
+         and the handle; what language it is in is what the line under them
+         already shows.
+
+         `.pheadn` is the flex row that holds the gap, and both spans go in
+         it: written any other way the words run together (`IriVethi@iri`),
+         which is what `.phead` losing its own flex did once already. */
+      '<div class="phead"><div class="pheadn">'+
+        '<span class="pname">'+esc(postWho(to))+'</span>'+
+        '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
+      '</div></div>'+
       (to.ln? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
       (postSay(to)? '<div class="pmn">'+esc(postSay(to))+'</div>' : '')+
     '</div>'+

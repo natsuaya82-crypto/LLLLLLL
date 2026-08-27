@@ -2230,11 +2230,14 @@ a.set{text-decoration:none}
       color:var(--txs);overflow:hidden;font-family:inherit;font-size:.88rem;
       display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .pwab input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
-/* One that carries words rather than a mark, and so is as wide as they are.
-   Same shape, same height, more room -- the way .pwab.rec already does it for
-   the count while a voice is being recorded. */
-.pwab.wide{padding:0 14px;font-family:inherit;font-size:.86rem;font-weight:600;
-   white-space:nowrap}
+/* How many drafts there are, beside the mark. A count is a state, not a
+   sentence about the app, so it may sit in a row of marks -- and it is what
+   the words used to carry before the drafts control became a mark like the
+   camera and the microphone beside it.
+   「下書きマーク作ったのにないけど？文字で書けなんか言ってねえよ」2026-08-26.
+   `.pwab.wide` -- the rule that made a button as wide as the words on it --
+   went with them: nothing wears it now. */
+.pwabn{font-size:.78rem;font-weight:600;color:var(--txs)}
 /* The drafts control is drawn only when it has something to say -- nothing
    typed means no draft to save, and none saved means nowhere to go back to.
    Collapsing when empty is what stops the row's gap being spent on it. */
