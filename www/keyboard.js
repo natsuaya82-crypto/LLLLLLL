@@ -2676,10 +2676,38 @@ function kbSlotsShown(key){
 }
 /* The alphabet, as a grid, for one slot. `dir` is -1 for the key itself and
    0..3 for a corner -- the same numbering kbSlot() uses, because it is the
-   same slot. */
+   same slot.
+
+   NARROWED THE WAY THE ALPHABET'S OWN PAGE IS NARROWED.
+   「絞り込みと検索が欲しいね。」 OWNER 2026-08-27, on 「レター多くなったら
+   選ぶのキツくね？」.
+
+   This laid the whole alphabet out, every letter, always. Thirty-eight is a
+   glance and the free plan never reaches this screen at all -- board 0 has no
+   editor -- so the list this actually draws is the PAID one, which is the
+   only one that grows: three hundred letters is three hundred tiles to find
+   one in with your eyes.
+
+   The same list is already drawn one chapter over, on vLtset, and that page
+   has had an order and a filter since 「これ並び替え、絞り込み追加しよう。
+   アルファベット順、作成順とか」. So this is not a second set of tools; it is
+   the same expression vLtset builds its list with, asked from here --
+   ltFilList(ltSortList(...)) over ltOfKind('alpha'), and ltViewRow() for the
+   two buttons that drive them. Nothing new is stored and nothing new is
+   registered: `openLtView` and `nextLtSort` are already in act-map, because
+   the other screen says them.
+
+   Which also means the DEFAULTS are not decided here -- they are ltSort='own'
+   and ltFil='all' in sound.js, and where somebody left them on one screen is
+   where they are on the other. viewReset() already forgets both, so arriving
+   in another language does not arrive with a filter on.
+
+   The ltOrder() that used to wrap this was a second sort over a sorted list:
+   ltOfKind('alpha') ends in ltOrder() itself. */
 function kbLtGrid(ri, ki, dir){
-  var ls=ltOrder(ltOfKind('alpha'));
-  return '<button class="btn ghost" style="width:100%;margin-bottom:10px"' +
+  var ls=ltFilList(ltSortList(ltOfKind('alpha')));
+  return ltViewRow()+
+    '<button class="btn ghost" style="width:100%;margin:10px 0"' +
       DO('kbPut', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
     (ls.length
       ? '<div class="ltgrid">'+ls.map(function(l){
