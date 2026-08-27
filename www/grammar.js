@@ -537,20 +537,37 @@ function g2Row(lab, from, to, act, arg){
    marked for CASE; the tenses belong to the verbs chapter and are not shown
    twice. Asked of the rule rather than of a list of ids, so a rule written
    tomorrow lands in the right chapter without anything being added here. */
-var G2_NOUN={NUMBER:1, CASE:1};
+/* WHICH CHAPTER A RULE BELONGS TO, and it is asked here and nowhere else.
+   A rule drawn in two chapters is the same fact said twice; a rule drawn in
+   none is a rule nobody can see. Both are silent -- the page looks complete
+   either way -- and the first of them shipped: an interrogative is a MOOD, so
+   it appeared under the verbs AND under its own chapter, one screen apart.
+
+   The chapters are not features. 疑問 is one VALUE of MOOD while 否定 is a
+   feature of its own, and the imperative and the conditional are moods that
+   belong with the tenses. Reading it off the feature alone is what put the
+   question in two places. */
+function g2Chap(r){
+  var f=String(r.feature), v=String(r.value);
+  if(f==='NUMBER' || f==='CASE') return 'n';
+  if(f==='NEGATION') return 'neg';
+  if(f==='MOOD' && v==='INTERROGATIVE') return 'q';
+  if(f==='TENSE' || f==='ASPECT' || f==='MOOD' || f==='VOICE') return 'v';
+  return '';
+}
 /* One word of this part of speech, and every form of it this language can
    make that belongs to this chapter. Every chapter of §14 that is about a
    word changing is this same walk with a different word and a different set
    of features, so it is written once: the chapters differ in what they are
    ABOUT, not in how they are drawn. */
-function g2Forms(pos, feats){
+function g2Forms(pos, chap){
   var w=gWordOf(pos), m, a, i, r, made, out='', md;
   if(!w) return gNeedWords();
   m=gModel([w]);
   a=m.inflections;
   for(i=0;i<a.length;i++){
     r=a[i];
-    if(!feats[String(r.feature)]) continue;
+    if(g2Chap(r)!==chap) continue;
     made=g2Made(m, r);
     if(!made) continue;
     md=r.metadata||{};
@@ -560,16 +577,16 @@ function g2Forms(pos, feats){
   }
   return out || gNeedRules();
 }
-function g2Nouns(){ return g2Forms('n', G2_NOUN); }
+function g2Nouns(){ return g2Forms('n', 'n'); }
 /* §14 Verbs. 「luma / luma-ka をユーザーが実際に作る」 -- tense, and with it
    every other way this language changes a verb.
 
-   Negation is NOT here. §4 gives it a chapter of its own, and it earns one:
-   a language may write it as an ending, as a beginning, or as a separate word
-   altogether, and 「必ず PREFIX になると決めつけない」 is the whole point of
-   asking about it apart from the tenses. */
-var G2_VERB={TENSE:1, ASPECT:1, MOOD:1, VOICE:1};
-function g2Verbs(){ return g2Forms('v', G2_VERB); }
+   Negation and questions are NOT here. §4 and §5 give each a chapter of its
+   own, and they earn one: either may be an ending, a beginning, or a separate
+   word altogether, and 「必ず PREFIX になると決めつけない」 is the whole point
+   of asking about them apart from the tenses. g2Chap() is what keeps them
+   apart, in one place. */
+function g2Verbs(){ return g2Forms('v', 'v'); }
 /* What THIS RULE makes of this word, asked of the engine and not worked out
    again here.
 
@@ -614,13 +631,9 @@ function gNeedRules(){ return '<div class="note gneed">'+t('gram.demo.need')+'</
 /* The rules of this model that are about one thing. `value` is optional: a
    negation is a feature of its own, and a question is one VALUE of MOOD, so
    the chapters ask differently and neither has to know how the other does. */
-function g2Rules(m, feature, value){
+function g2Rules(m, chap){
   var a=m.inflections, out=[], i;
-  for(i=0;i<a.length;i++){
-    if(String(a[i].feature)!==feature) continue;
-    if(value!==undefined && String(a[i].value)!==value) continue;
-    out.push(a[i]);
-  }
+  for(i=0;i<a.length;i++) if(g2Chap(a[i])===chap) out.push(a[i]);
   return out;
 }
 /* A chapter that is a pair of LINES rather than a pair of words. Two chapters
@@ -660,7 +673,7 @@ function g2Neg(){
   var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
   if(!sub || !v) return gNeedWords();
   m=gModel([sub, v]);
-  return g2Pair(m, sub, v, g2Rules(m, 'NEGATION'), gSlot('neg', 'not'),
+  return g2Pair(m, sub, v, g2Rules(m, 'neg'), gSlot('neg', 'not'),
                 t('stg.neg.t'), ['neg', 'not']);
 }
 /* The same line with the verb in its negative form. The word is swapped in
@@ -680,13 +693,35 @@ function g2NegSurf(m, v, r, plus){
     return (x===wOut(v.hw))? made.surface : x; }).join(' ');
 }
 
-/* The page. Four chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
+/* §14 Questions. 「方法は言語によって違う ── suffix / prefix / separate word /
+   word order / particle / intonation / combination。Lingua 側が勝手に決めない」
+
+   The same pair of lines as the negation, because a question is the same kind
+   of thing: what changes may be the verb or the sentence. An interrogative is
+   one VALUE of MOOD rather than a feature of its own, which is the only
+   difference and is why g2Rules() takes one.
+
+   **This app can write two of the seven ways and no more.** An ending and a
+   beginning are rules and arrive here; the other five have nowhere to be
+   written. That is not decided here and must not be papered over -- a chapter
+   that quietly showed one way would be this page narrowing the specification.
+   docs/BACKLOG.md carries what is missing, with what each would need. */
+function g2Ques(){
+  var sub=gWordOf('pro') || gWordOf('n'), v=gWordOf('v'), m;
+  if(!sub || !v) return gNeedWords();
+  m=gModel([sub, v]);
+  return g2Pair(m, sub, v, g2Rules(m, 'q'), null,
+                t('stg.ask.t'), null);
+}
+
+/* The page. Five chapters today; docs/GRAMMAR-V2-SPEC.md §14 lists the rest and
    they arrive one at a time, each with its own picture. */
 function g2Page(){
   return '<div class="sec">'+esc(t('stg.order.t'))+'</div>'+g2Sent()+
     '<div class="sec">'+esc(posLabel('n'))+'</div>'+g2Nouns()+
     '<div class="sec">'+esc(posLabel('v'))+'</div>'+g2Verbs()+
-    '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg();
+    '<div class="sec">'+esc(t('stg.neg.t'))+'</div>'+g2Neg()+
+    '<div class="sec">'+esc(t('stg.ask.t'))+'</div>'+g2Ques();
 }
 
 /* ---- the screen -------------------------------------------------------- */

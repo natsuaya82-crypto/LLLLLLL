@@ -790,7 +790,7 @@ const g2v = await pg.evaluate(() => {
 });
 
 const sec = (i) => g2v.secs[i] || { name:'', rows:[] };
-want('there are four chapters on the page', g2v.secs.length, 4);
+want('there are five chapters on the page', g2v.secs.length, 5);
 want('the second is the nouns', sec(1).name, 'noun');
 want('and holds only what a noun does', sec(1).rows.join(' '), 'Plural:tufmi');
 want('the third is the verbs', sec(2).name, 'verb');
@@ -904,6 +904,62 @@ want('the one for verbs ending in a is the one that ends in a',
 want('and the other row is the OTHER rule, not the same word twice',
      twoRows.filter((x) => x.to === 'tuf zlumayy').length, 1);
 
+/* ---- 65-70: one rule, one chapter ----------------------------------------
+   The general form of a bug that shipped. An interrogative is a MOOD, and the
+   verbs chapter took every MOOD, so the same rule was drawn under 動詞 and
+   under 疑問 -- one screen apart, both rows correct, nothing thrown. The
+   opposite is just as silent: a rule that no chapter claims is a rule nobody
+   can see.
+
+   So this does not ask about questions. It puts one rule of EVERY kind this
+   app can write into a language and counts, for each, how many chapters drew
+   it. The answer has to be one, every time -- and a kind added later is
+   walked the day it is added, because the list comes from the app's own
+   labels rather than from anything written here. */
+const chap = await pg.evaluate(() => {
+  const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
+  const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
+  WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
+  /* Every inflection label the app offers, each with an ending of its own so
+     the rows can be told apart. FM_INF is www/wordsheet.js's list and is
+     asked for rather than copied. */
+  /* Two digits, not one. With `q1`..`q11` the ending of the eleventh CONTAINS
+     the ending of the second, so a row drawn once was counted twice and this
+     check reported a rule in two chapters that was only ever in one. It was
+     the check's own arithmetic, not the page's -- and it read exactly like a
+     real finding, which is why it is written down here. */
+  const kinds = FM_INF.map((f, i) => ({ fm:f, add:'q' + (i < 10 ? '0' : '') + i }));
+  STG.fm = kinds.map((k, i) => ({ id:'k' + i, pos:'', fm:k.fm, at:'end',
+                                  drop:0, add:sp(k.add), when:'' }));
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2' }]; render();
+  /* Which section each row is under, and how many sections drew each ending */
+  const seen = {}, secs = [];
+  let now = null;
+  Array.prototype.forEach.call(document.querySelectorAll('#app .body > *'), (el) => {
+    if (el.className === 'sec') { now = el.textContent; secs.push(now); }
+    else if (now && el.className.indexOf('stslot') >= 0) {
+      const to = el.querySelector('.psi').textContent;
+      kinds.forEach((k) => {
+        if (to.indexOf(k.add) < 0) return;
+        if (!seen[k.fm]) seen[k.fm] = [];
+        if (seen[k.fm].indexOf(now) < 0) seen[k.fm].push(now);
+      });
+    }
+  });
+  WORDS.length = wl;
+  STG.fm = JSON.parse(wasFm);
+  return { kinds: kinds.map((k) => k.fm),
+           twice: kinds.filter((k) => (seen[k.fm] || []).length > 1)
+                       .map((k) => k.fm + ' in ' + (seen[k.fm] || []).join('+')),
+           none: kinds.filter((k) => !(seen[k.fm] || []).length).map((k) => k.fm),
+           once: kinds.filter((k) => (seen[k.fm] || []).length === 1).length };
+});
+
+want('every kind of form the app can write was tried', chap.kinds.length, 12);
+want('no rule is drawn in two chapters', chap.twice.join(', '), '');
+want('and none is drawn in no chapter', chap.none.join(', '), '');
+want('so every one of them landed in exactly one', chap.once, chap.kinds.length);
+
 await br.close();
 srv.close();
 
@@ -931,3 +987,5 @@ console.log('          Each chapter draws its own forms and only its own, and a'
 console.log('          rule that goes on the front comes out on the front.');
 console.log('          A negation reads the same whether it is an ending, a');
 console.log('          beginning, or a word of its own.');
+console.log('          Every kind of form the app can write lands in exactly one');
+console.log('          chapter -- not two, and not none.');
