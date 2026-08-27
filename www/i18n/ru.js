@@ -655,7 +655,6 @@ defLang('ru', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Спросить ИИ",
-      "ask.full"     : "Слишком длинно для отправки",
       "ask.head"     : "Я создаю искусственный язык в приложении Lingua.",
       "ask.f.name"   : "Название языка",
       "ask.f.snd"    : "Звуки (МФА)",

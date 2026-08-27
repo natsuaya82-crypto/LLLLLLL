@@ -561,7 +561,6 @@ defLang('ja', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       'ask.open'     : "AIに相談",
-      'ask.full'     : "長すぎて送れません",
       'ask.head'     : "Lingua というアプリで人工言語を作っています。",
       'ask.f.name'   : "言語の名前",
       'ask.f.snd'    : "使う音 (IPA)",

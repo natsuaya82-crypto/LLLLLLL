@@ -645,7 +645,6 @@ defLang('it', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Chiedi a un'IA",
-      "ask.full"     : "Troppo lungo da inviare",
       "ask.head"     : "Sto costruendo una lingua artificiale in un'app chiamata Lingua.",
       "ask.f.name"   : "Nome della lingua",
       "ask.f.snd"    : "Suoni (IPA)",

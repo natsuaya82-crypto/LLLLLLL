@@ -821,7 +821,6 @@ defLang('ko', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "AI에 상담",
-      "ask.full"     : "너무 길어 보낼 수 없습니다",
       "ask.head"     : "Lingua라는 앱에서 인공어를 만들고 있습니다.",
       "ask.f.name"   : "언어 이름",
       "ask.f.snd"    : "소리 (IPA)",

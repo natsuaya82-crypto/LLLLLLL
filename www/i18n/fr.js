@@ -693,7 +693,6 @@ defLang('fr', (function(){
          the material itself -- the sounds, the words, the shapes -- is what
          the person made and is never touched. */
       "ask.open"     : "Demander à une IA",
-      "ask.full"     : "Trop long à envoyer",
       "ask.head"     : "Je construis une langue construite dans une application appelée Lingua.",
       "ask.f.name"   : "Nom de la langue",
       "ask.f.snd"    : "Sons (API)",
