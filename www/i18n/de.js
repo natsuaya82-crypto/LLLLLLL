@@ -936,6 +936,8 @@ defLang('de', (function(){
       "admin.paid"         : "Gezahlt",
       "admin.got"          : "Einnahmen",
       "admin.keep"         : "Verbleib",
+      "admin.renew"        : "Verlängerungen",
+      "admin.cancel"       : "Kündigungen",
       "admin.dl"           : "Downloads",
       "admin.day"          : "Tag",
       "admin.staff"        : "Team",

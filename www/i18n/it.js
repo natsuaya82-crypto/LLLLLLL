@@ -948,6 +948,8 @@ defLang('it', (function(){
       "admin.paid"         : "Pagato",
       "admin.got"          : "Ricavi",
       "admin.keep"         : "Fidelizzazione",
+      "admin.renew"        : "Rinnovi",
+      "admin.cancel"       : "Disdette",
       "admin.dl"           : "Download",
       "admin.day"          : "Giorno",
       "admin.staff"        : "Staff",

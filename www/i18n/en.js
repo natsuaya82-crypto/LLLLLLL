@@ -861,6 +861,8 @@ defLang('en', (function(){
       'admin.paid'        : "Paid by customers",
       'admin.got'         : "Proceeds",
       'admin.keep'        : "Retention",
+      'admin.renew'       : "Renewals",
+      'admin.cancel'      : "Cancellations",
       'admin.dl'          : "Downloads",
       'admin.day'         : "Day",
       'admin.staff'       : "Staff",

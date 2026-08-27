@@ -863,6 +863,8 @@ defLang('ja', (function(){
       'admin.paid'        : "支払い",
       'admin.got'         : "売上",
       'admin.keep'        : "継続率",
+      'admin.renew'       : "継続",
+      'admin.cancel'      : "解約",
       'admin.dl'          : "ダウンロード",
       'admin.day'         : "日",
       'admin.staff'       : "スタッフ",

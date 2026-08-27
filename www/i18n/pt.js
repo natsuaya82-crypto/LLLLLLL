@@ -954,6 +954,8 @@ defLang('pt', (function(){
       "admin.paid"         : "Pago",
       "admin.got"          : "Receita",
       "admin.keep"         : "Retenção",
+      "admin.renew"        : "Renovações",
+      "admin.cancel"       : "Cancelamentos",
       "admin.dl"           : "Downloads",
       "admin.day"          : "Dia",
       "admin.staff"        : "Equipa",

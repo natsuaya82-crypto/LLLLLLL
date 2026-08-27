@@ -952,6 +952,8 @@ defLang('zh', (function(){
       "admin.paid"         : "支付额",
       "admin.got"          : "收入",
       "admin.keep"         : "留存率",
+      "admin.renew"        : "续订",
+      "admin.cancel"       : "取消",
       "admin.dl"           : "下载",
       "admin.day"          : "日期",
       "admin.staff"        : "管理员",

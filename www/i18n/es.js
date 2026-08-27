@@ -907,6 +907,8 @@ defLang('es', (function(){
       "admin.paid"         : "Pagado",
       "admin.got"          : "Ingresos",
       "admin.keep"         : "Retención",
+      "admin.renew"        : "Renovaciones",
+      "admin.cancel"       : "Cancelaciones",
       "admin.dl"           : "Descargas",
       "admin.day"          : "Día",
       "admin.staff"        : "Personal",

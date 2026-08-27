@@ -45,7 +45,13 @@ act('goMod', goMod);
    adminTap() calls it. */
 act('adminTap', adminTap);
 act('adminGo', adminGo);
-act('adminLoad', adminLoad);
+/* The refresh button is gone from the admin screen: 「読み直すってなに？」
+   OWNER 2026-08-26, and the answer was that it re-asked the server -- which
+   the screen already does on every open, so the button was a second way to do
+   what opening the page does. adminLoad() itself is still what goAdmin() and
+   adminGo() call; it is no longer a thing anybody presses.
+   The reports screen keeps its own, which is modLoad below. */
+act('adminGoTo', adminGoTo);
 act('adminStaffAdd', adminStaffAdd);
 act('adminStaffDrop', adminStaffDrop);
 act('modLoad', modLoad);

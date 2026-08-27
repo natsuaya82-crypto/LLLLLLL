@@ -995,6 +995,8 @@ defLang('fr', (function(){
       "admin.paid"         : "Payé",
       "admin.got"          : "Recettes",
       "admin.keep"         : "Rétention",
+      "admin.renew"        : "Renouvellements",
+      "admin.cancel"       : "Résiliations",
       "admin.dl"           : "Téléchargements",
       "admin.day"          : "Jour",
       "admin.staff"        : "Équipe",

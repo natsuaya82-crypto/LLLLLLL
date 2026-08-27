@@ -355,32 +355,58 @@ function adminPct(v){
   return (typeof v==='number')? (Math.round(v*100)+'%') : null;
 }
 
-/* ---- the line -----------------------------------------------------------
+/* ---- the line ------------------------------------------------------------
    An SVG built here rather than a class in www/index.html, because that file
    belongs to another session today. It wears no class at all and sets no
    border and no corner -- there is nothing here for tools/box-check.mjs to
-   find, and nothing in the stylesheet to keep in step with it.
+   find, and nothing in the stylesheet to keep in step with it. The colour
+   NAMES `var(--gold)` rather than being a colour, so the two theme blocks at
+   the top of index.html stay the one place a colour lives.
 
-   The colour is `var(--gold)`, which NAMES the variable rather than being a
-   colour: the two theme blocks at the top of index.html stay the one place a
-   colour lives, and the line is right in both themes without this file
-   knowing either.
+   IT CARRIES ITS NUMBERS AND ITS DATES. The first version was a bare stroke:
+   a shape that goes up and down and says neither WHEN nor HOW MUCH.
+   「日付もいくら売れたかもわかんねえじゃねえかよ」 OWNER 2026-08-26. A line
+   with no scale on it is a decoration -- it cannot be read, only admired, and
+   the whole reason it is on this screen is to be read. So: the highest and
+   the lowest value down the left, the first and the last day along the
+   bottom, and a dot on the newest point with its own value beside it.
+
+   No stretching. `preserveAspectRatio="none"` fits any box and squashes the
+   text with it -- the numbers came out narrow and wrong. The viewBox keeps
+   its ratio and the whole drawing scales together.
 
    A day Apple never readied is not in the series at all -- the function
    leaves it out rather than sending a nought, because a nought on a chart is
    a claim that nothing sold. So x is the DAY and not the position in the
    list: two points a week apart sit a week apart, and the gap is visible
-   instead of being smoothed into a straight run of days that never existed. */
+   instead of being smoothed into a run of days that never existed. */
 function adminDayNo(d){
   var p=String(d||'').split('-');
   if(p.length!==3) return 0;
   return Math.round(Date.UTC(+p[0], +p[1]-1, +p[2])/86400000);
 }
-function adminLine(vals){
+/* 2026-08-25 -> 8/25. The year is the same on every point of a month-long
+   line, so it is the part that says least and takes the most room. */
+function adminMD(d){
+  var p=String(d||'').split('-');
+  return (p.length===3)? (+p[1])+'/'+(+p[2]) : '';
+}
+/* A number a person reads at a glance: 6955 rather than 6955.00, and 74%
+   rather than 0.74. Money keeps its hundredths only when it has any. */
+function adminNum(v, pct){
+  if(pct) return Math.round(v*100)+'%';
+  return String(Math.round(v*100)/100);
+}
+function adminTx(x, y, anchor, txt){
+  return '<text x="'+x+'" y="'+y+'" font-size="10" fill="var(--txm)" '+
+    'text-anchor="'+anchor+'">'+esc(txt)+'</text>';
+}
+function adminLine(vals, pct){
   /* vals: [{d:'YYYY-MM-DD', v:number}], oldest first, nulls already dropped.
      Two points are the fewest that make a line; one is a dot and no line. */
   if(vals.length<2) return '';
-  var W=320, H=76, PAD=3, i, x0=adminDayNo(vals[0].d);
+  var W=320, H=132, L=52, R=8, T=16, B=20, i;
+  var x0=adminDayNo(vals[0].d);
   var span=adminDayNo(vals[vals.length-1].d)-x0;
   var lo=vals[0].v, hi=vals[0].v;
   for(i=1;i<vals.length;i++){
@@ -389,22 +415,36 @@ function adminLine(vals){
   }
   /* A flat line sits in the middle rather than dividing by nothing. */
   var rng=(hi-lo) || 1;
-  var pts=[];
+  var pts=[], lx=0, ly=0;
   for(i=0;i<vals.length;i++){
-    var x=span? ((adminDayNo(vals[i].d)-x0)/span)*(W-PAD*2)+PAD : W/2;
-    var y=H-PAD-((vals[i].v-lo)/rng)*(H-PAD*2);
+    var x=span? ((adminDayNo(vals[i].d)-x0)/span)*(W-L-R)+L : (L+W-R)/2;
+    var y=(H-B)-((vals[i].v-lo)/rng)*(H-T-B);
+    lx=x; ly=y;
     pts.push(Math.round(x*10)/10+','+Math.round(y*10)/10);
   }
-  return '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" '+
-    'style="width:100%;height:76px;display:block;margin:2px 0 14px" '+
-    'aria-hidden="true"><polyline fill="none" stroke="var(--gold)" '+
-    'stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" '+
-    'points="'+pts.join(' ')+'"/></svg>';
+  var last=vals[vals.length-1];
+  return '<svg viewBox="0 0 '+W+' '+H+'" '+
+    'style="width:100%;height:auto;display:block;margin:4px 0 14px">'+
+    '<polyline fill="none" stroke="var(--gold)" stroke-width="1.5" '+
+      'stroke-linejoin="round" stroke-linecap="round" points="'+pts.join(' ')+'"/>'+
+    /* The newest point, which is the one the rows above are about. */
+    '<circle cx="'+(Math.round(lx*10)/10)+'" cy="'+(Math.round(ly*10)/10)+'" '+
+      'r="2.5" fill="var(--gold)"/>'+
+    /* How much: the top and the bottom of what the line covers. */
+    adminTx(L-8, T+4, 'end', adminNum(hi, pct))+
+    adminTx(L-8, H-B, 'end', adminNum(lo, pct))+
+    /* And when. */
+    adminTx(L, H-4, 'start', adminMD(vals[0].d))+
+    adminTx(W-R, H-4, 'end', adminMD(last.d))+
+    '</svg>';
 }
 /* The takings, day by day, in ONE currency -- the line cannot mix two for the
    same reason the row cannot add them. The one drawn is the one the newest
-   day has most of, which is the line somebody looking at this wants; the
-   others are in the rows above it. */
+   day has most of; the others are in the rows above it.
+
+   It is what ARRIVES and not what was paid, because that is the number this
+   line is about; the two move together anyway, being the same sales less a
+   fixed share. */
 function adminMoneyLine(){
   var ser=adminAsc().series || [], m=adminNow().got || [], i, j, cur='', best=-1;
   for(i=0;i<m.length;i++) if(m[i].total>best){ best=m[i].total; cur=m[i].cur; }
@@ -414,40 +454,108 @@ function adminMoneyLine(){
     var mm=ser[i].got || [];
     for(j=0;j<mm.length;j++) if(mm[j].cur===cur) vals.push({d:ser[i].day, v:mm[j].total});
   }
-  return adminLine(vals);
+  return adminLine(vals, false);
 }
 function adminKeepLine(){
   var ser=adminAsc().series || [], i, vals=[];
   for(i=0;i<ser.length;i++)
     if(typeof ser[i].keep==='number') vals.push({d:ser[i].day, v:ser[i].keep});
-  return adminLine(vals);
+  return adminLine(vals, true);
+}
+function adminDlLine(){
+  var ser=adminAsc().series || [], i, vals=[];
+  for(i=0;i<ser.length;i++)
+    if(typeof ser[i].downloads==='number') vals.push({d:ser[i].day, v:ser[i].downloads});
+  return adminLine(vals, false);
+}
+
+/* ---- one number, one page -----------------------------------------------
+   「項目ごとで分けて別ページにして」「なんで同じページに入れんだよ」
+   OWNER 2026-08-26, twice. The first answer was six more rows on the one
+   page, which is what was being complained about.
+
+   It is the `admin` route with an ARGUMENT, the way `set` is six rooms on one
+   route -- because a new route means a PAGES entry in www/shell.js, and four
+   other branches are in that file today (docs/SESSIONS.md rule: one session
+   at a time owns a file). Nothing here touches it.
+
+   ONE THING IS STILL MISSING AND IT IS NOT MINE TO ADD: pageName() in
+   shell.js decides what the bar says, and with no branch for these it says
+   「管理」 on every one of them. The branch is three lines and is written out
+   in docs/reports/sales-2026-08-26.md § 11 for whoever owns that file.
+
+   The reports and the staff list stay on the front page. Not taste: their
+   buttons exist ONLY where they are drawn, and tools/act-check.mjs walks a
+   route with no argument, so a staff button moved onto a page it can only
+   reach with one would be reported as a name no screen says -- correctly.
+   Adding `walkArg('admin', ...)` there is the other half of the same patch. */
+function adminGoTo(k){ go('admin', k); }
+function adminAt(){ var h=here(); return String((h && h.a)||''); }
+/* A row that opens one of them. The number on it is that page's headline, so
+   the front page is still a page of numbers and not a menu of words. */
+function adminOpen(k, n, to){
+  return '<button class="set"' + DO('adminGoTo', [to]) + '>'+
+    '<span class="sl">'+esc(t(k))+'</span>'+
+    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+ICON_GO+'</span></button>';
+}
+/* What the takings row says before you open it: the newest day's proceeds in
+   the currency there is most of, with the code beside it. Blank until an
+   answer -- adminRow() says why that is not a nought. */
+function adminGotTop(){
+  var m=adminNow().got || [], i, best=-1, out=null;
+  for(i=0;i<m.length;i++) if(m[i].total>best){ best=m[i].total; out=m[i].cur+' '+m[i].total; }
+  return out;
+}
+function adminView(){
+  var a=adminAt(), n=ADMINN||{}, now=adminNow(), asc=adminAsc(), body;
+  if(a==='money'){
+    /* 「特に売り上げはどのプランかが大事やろ」 -- so the plans are here, under
+       the two totals they add up to, rather than on the front page. */
+    body=adminMoneyLine()+
+      adminPurse('paid', 'admin.paid')+
+      adminPurse('got', 'admin.got')+
+      adminPlans()+
+      adminRow('admin.day', asc.day || '');
+  } else if(a==='keep'){
+    body=adminKeepLine()+
+      adminRow('admin.keep', adminPct(now.keep))+
+      adminRow('admin.renew', (now.renew===0 || now.renew)? now.renew : null)+
+      adminRow('admin.cancel', (now.cancel===0 || now.cancel)? now.cancel : null)+
+      adminRow('admin.day', asc.day || '');
+  } else if(a==='dl'){
+    body=adminDlLine()+
+      adminRow('admin.dl', now.downloads)+
+      adminRow('admin.day', asc.day || '');
+  } else {
+    body=null;
+  }
+  return body;
 }
 function vAdmin(){
   if(adminLocked()) return adminDoor();
-  var n=ADMINN||{}, rows=MODS||[], asc=adminAsc(), now=adminNow();
-  return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<button class="btn ghost"' + DO('adminLoad') + '>'+esc(t('mod.again'))+'</button>'+
-    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
-    /* The owner's four, in the order they were asked for:
-       「登録ユーザー数とそれぞれのプランの課金数、それで合計の売り上げ」
-       「あとは継続率」 OWNER 2026-08-26.
+  var inner=adminView();
+  if(inner!==null)
+    return '<div class="view">'+navTop('')+'<div class="body">'+inner+'</div></div>';
 
-       投稿 and 言語 came off in the same breath -- 「投稿数とかはいいのよ」.
-       Nothing was deleted to do it: admin_counts() in supabase/schema.sql
-       still counts both and still sends them, so either is one row back. */
+  /* The front page. Every number here is a way IN to the page about it, so
+     this is still a page of numbers rather than a menu of words -- what each
+     row carries is that page's headline. 「登録ユーザー数とそれぞれのプランの
+     課金数、それで合計の売り上げ」「あとは継続率」 OWNER 2026-08-26.
+
+     投稿 and 言語 came off in the same breath -- 「投稿数とかはいいのよ」.
+     Nothing was deleted to do it: admin_counts() in supabase/schema.sql still
+     counts both and still sends them, so either is one row back. */
+  var n=ADMINN||{}, rows=MODS||[], now=adminNow();
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
     adminRow('admin.people', n.people)+
-    adminPlans()+
-    adminPurse('paid', 'admin.paid')+
-    adminPurse('got', 'admin.got')+
-    adminMoneyLine()+
-    adminRow('admin.keep', adminPct(now.keep))+
-    adminKeepLine()+
-    adminRow('admin.dl', now.downloads)+
-    adminRow('admin.day', asc.day || '')+
+    adminOpen('admin.got', adminGotTop(), 'money')+
+    adminOpen('admin.keep', adminPct(now.keep), 'keep')+
+    adminOpen('admin.dl', now.downloads, 'dl')+
     adminRow('admin.reports', n.reports, 'goMod')+
-    /* Who answers them, and the field that adds one. The heading is a name
-       and not a sentence about what the list is for -- without it the handles
-       sit under four numbers and read as a fifth. */
+    /* Who answers them, and the field that adds one. Both stay here: their
+       buttons exist only where they are drawn, and act-check walks this route
+       with no argument -- see the head of this section. */
     '<div class="set"><span class="sl">'+esc(t('admin.staff'))+'</span></div>'+
     (ADMINS||[]).map(adminStaffRow).join('')+
     '<div class="field"><input id="admin-h" type="text" '+

@@ -960,6 +960,8 @@ defLang('ru', (function(){
       "admin.paid"          : "Оплачено",
       "admin.got"           : "Доход",
       "admin.keep"          : "Удержание",
+      "admin.renew"         : "Продления",
+      "admin.cancel"        : "Отмены",
       "admin.dl"            : "Загрузки",
       "admin.day"           : "День",
       "admin.staff"         : "Модераторы",

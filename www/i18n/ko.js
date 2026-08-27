@@ -1122,6 +1122,8 @@ defLang('ko', (function(){
       "admin.paid"         : "결제액",
       "admin.got"          : "수익",
       "admin.keep"         : "유지율",
+      "admin.renew"        : "갱신",
+      "admin.cancel"       : "해지",
       "admin.dl"           : "다운로드",
       "admin.day"          : "날짜",
       "admin.staff"        : "운영자",
