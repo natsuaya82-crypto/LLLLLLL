@@ -453,6 +453,30 @@ const r = await pg.evaluate(({ s }) => {
   out.cutHdrNow = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
     .map(function (b){ return b.textContent; }).join('');
 
+  /* And the claim kbWayOff() makes about itself, which nothing else here asks:
+     IT ONLY EVER ADDS. It runs inside saveKb(), which is every change to a
+     keyboard, on the board somebody is looking at -- so a face that already
+     carries its way off must come out of a save with exactly the keys it went
+     in with, in exactly the order it had them. If it ever dropped or moved one
+     it would be quietly rewriting a keyboard somebody built, on a save that
+     was about something else entirely, and nothing would throw.
+
+     Compared after ONE more save and after TWO, not after two alone: a
+     mutation that is its own undo -- a reverse, a swap -- comes back to where
+     it started on an even count, and a check that only looked after two of
+     them called it unchanged. That is what this said before it was watched
+     failing. */
+  fresh(); kbAddLay(); kbLay = 1; render();
+  kbEdit().lay[1].rows.push([kbKey('lt', 'x'), kbKey('lt', 'y')]);
+  saveKb();
+  var wasLay = JSON.stringify(kbEdit().lay);
+  saveKb(); var layOnce = JSON.stringify(kbEdit().lay);
+  saveKb(); var layTwice = JSON.stringify(kbEdit().lay);
+  out.addsOnly = layOnce === wasLay && layTwice === wasLay;
+  /* and the same on the face somebody has NOT opened -- kbLay says which one
+     is in front of them, and the other one is still theirs */
+  out.addsOnlyN = kbEdit().lay[1].rows.length;
+
   /* and the + is not offered when there is nowhere to put the key */
   fresh();
   var lay0 = kbEdit().lay[0];
@@ -906,6 +930,7 @@ say(r.deadRowTo, 'and that way off goes to the page it came from');
 say(r.deadColOff, 'taking a column off page 2 leaves it with one too');
 say(r.deadFirstOff, 'and page 1 keeps the way IN to the rest');
 say(r.oneFacePlain, 'a keyboard of one face is left alone -- there is nowhere to go');
+say(r.addsOnly, 'and a face that already has one comes out of a save with the keys it went in with (' + r.addsOnlyN + ' rows), twice over');
 say(r.plusLayGone, 'a face with nowhere to put that key is not offered a + at all');
 say(r.plusLayNoop, 'and asking for one anyway does nothing');
 say(r.romOnEditor && r.romOnFree && r.romOnList,

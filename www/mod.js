@@ -24,7 +24,11 @@ var MODS=null, MODBUSY=false, MODERR='';
 
 /* Going there and reading are one press. A view that fetched what it needed
    while it was being drawn would fetch it again every time anything on the
-   screen changed, and act-check draws every screen many times over. */
+   screen changed, and act-check draws every screen many times over.
+
+   The press is on the admin screen now and not in settings.
+   「設定の通報ボタン消せ」OWNER 2026-08-26 -- see vSettings() in
+   www/settings.js for what went, and adminRow() below for where it went. */
 function goMod(){ go('mod'); modLoad(); }
 function modLoad(){
   if(MODBUSY) return;
@@ -156,6 +160,9 @@ function vMod(){
    the lock is only there where there is something to unlock it with. */
 var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
 var ADMINS=null, ADMIN_H='';
+/* And what App Store Connect said, which is the same sentence as ADMINN one
+   line up: null until it has been asked, and never {} standing in for it. */
+var ADMIN_ASC=null;
 
 function adminLocked(){ return !ADMIN_OK && netHow()==='email'; }
 /* Going there and reading are one press, for the same reason goMod() is. */
@@ -220,8 +227,8 @@ function adminLoad(){
        A list that failed to arrive is an empty list and not an error: the
        numbers above it are already up, and one refusal that stops the whole
        screen is a screen that is blank for the wrong reason. */
-    netStaffList(function(rows){ ADMINS=rows; ADMIN_BUSY=false; modLoad(); },
-                 function(){ ADMINS=[]; ADMIN_BUSY=false; modLoad(); });
+    netStaffList(function(rows){ ADMINS=rows; adminAsk(); },
+                 function(){ ADMINS=[]; adminAsk(); });
   },        function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
 }
 /* ---- who answers the reports -------------------------------------------
@@ -233,6 +240,24 @@ function adminLoad(){
    of modOut() one chapter up, and deliberately: ejecting somebody is done TO
    them and cannot be taken back by typing their name again. This can, by the
    same person, on the same screen, in one press. */
+/* Apple, last. It is the slowest thing on the screen by a long way -- the
+   function signs a token and then asks App Store Connect for up to three
+   gzipped reports -- and everything above it is already up, so it is asked
+   after the rest rather than in front of it.
+
+   「画面を開いたときに毎回」OWNER 2026-08-26, so it is in adminLoad() and not
+   behind a button of its own. Nothing is cached: Apple's day is yesterday's
+   and does not move while somebody is looking at it, but neither does asking
+   twice cost anything anybody can see.
+
+   A refusal leaves ADMIN_ASC null, which is blanks, and does not become
+   ADMIN_ERR: the four numbers above and the reports below arrived, and one
+   red line across a screen that is nine tenths right is a screen somebody
+   stops reading. Same argument as netStaffList's empty list one line up. */
+function adminAsk(){
+  netStore(function(d){ ADMIN_ASC=d; ADMIN_BUSY=false; modLoad(); },
+           function(){ ADMIN_ASC=null; ADMIN_BUSY=false; modLoad(); });
+}
 function adminStaffSet(k, v){ if(k==='h') ADMIN_H=String(v||''); }
 function adminStaffAdd(){
   if(ADMIN_BUSY || !ADMIN_H) return;
@@ -261,20 +286,80 @@ function adminStaffRow(r){
    screen are the height the rows everywhere else in the app are. A number
    that has not come back yet is a blank and not a nought: nought is a fact
    about the app and this is a fact about the request. */
-function adminRow(k, n){
-  return '<div class="set"><span class="sl">'+esc(t(k))+'</span>'+
-    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+'</span></div>';
+function adminRow(k, n, go){
+  var body='<span class="sl">'+esc(t(k))+'</span>'+
+    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+
+    (go? ICON_GO : '')+'</span>';
+  return go? '<button class="set"' + DO(go) + '>'+body+'</button>'
+           : '<div class="set">'+body+'</div>';
+}
+/* ---- what Apple counted -------------------------------------------------
+   「売り上げもアナリティクスも見れるようにしたい」「アプリの中で見たい」
+   OWNER 2026-08-26. supabase/functions/appstore/ is what fetches it and
+   docs/reports/sales-2026-08-26.md is what was confirmed at Apple first.
+
+   Three things about these rows, and all three are about not saying more than
+   Apple said.
+
+   The takings are ONE ROW PER CURRENCY and are never added up. Apple pays per
+   storefront in that storefront's currency, and turning EUR into JPY needs an
+   exchange rate, which is not in this app. www/store.js and LinguaStore.swift
+   both carry the sentence this comes from: "Building '$' + a number is how an
+   app ends up showing dollars to somebody being charged yen." So the code
+   Apple sent travels with the number and nothing is converted.
+
+   There is no continuation RATE, only the counts Apple gives -- how many
+   renewed, how many cancelled. A rate means choosing a denominator and a
+   period and neither is decided (docs/FEATURES.md § 8).
+
+   And the DAY, because Apple's data is next-day: there is no such thing as
+   today's takings, so a number here with no date on it is yesterday's being
+   read as today's. It is one row and not three because the three reports are
+   readied separately at Apple's end; when they disagree it says both days
+   rather than picking one and being wrong about the others. */
+function adminDay(){
+  var a=ADMIN_ASC||{}, days=[], i;
+  var all=[a.sales && a.sales.day, a.subs && a.subs.day, a.events && a.events.day];
+  for(i=0;i<all.length;i++)
+    if(all[i] && days.indexOf(all[i])===-1) days.push(all[i]);
+  return days.sort().join(' / ');
+}
+/* The takings, in Apple's own currency codes. One blank row where nothing has
+   come back, so the screen has the same shape before and after -- and a blank
+   and not a nought, which adminRow() above says why. */
+function adminMoney(){
+  var a=ADMIN_ASC||{}, m=(a.sales && a.sales.money) || [];
+  if(!m.length) return adminRow('admin.money', null);
+  return m.map(function(row){
+    return adminRow('admin.money', row.cur+' '+row.proceeds);
+  }).join('');
 }
 function vAdmin(){
   if(adminLocked()) return adminDoor();
-  var n=ADMINN||{}, rows=MODS||[];
+  var n=ADMINN||{}, rows=MODS||[], asc=ADMIN_ASC||{};
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<button class="btn ghost"' + DO('adminLoad') + '>'+esc(t('mod.again'))+'</button>'+
     (ADMIN_ERR? '<div class="mnone bad">'+esc(ADMIN_ERR)+'</div>' : '')+
     adminRow('admin.people', n.people)+
     adminRow('admin.posts', n.posts)+
     adminRow('admin.langs', n.langs)+
-    adminRow('admin.reports', n.reports)+
+    /* The count of reports is also the way to them. It was a row in settings
+       until 「設定の通報ボタン消せ」OWNER 2026-08-26 -- and settings is where
+       anybody holding the phone can see it, which is the half of that worth
+       keeping. The screen it opens is unchanged: 「通報の確認とかアナリティクス
+       とか売り上げとか含めて全部見れる新ページ」 put the reports on this page
+       as well, and the owner's call was that the reports screen stays what it
+       is. So the number here goes to it rather than replacing it. */
+    adminRow('admin.reports', n.reports, 'goMod')+
+    /* Apple's four, under the app's own four. Each reads through the half of
+       the answer it belongs to, so a report Apple had not readied yet leaves
+       its own rows blank and does not take the others down with it. */
+    adminMoney()+
+    adminRow('admin.dl',     asc.sales  && asc.sales.downloads)+
+    adminRow('admin.subs',   asc.subs   && asc.subs.live)+
+    adminRow('admin.renew',  asc.events && asc.events.renew)+
+    adminRow('admin.cancel', asc.events && asc.events.cancel)+
+    adminRow('admin.day',    adminDay())+
     /* Who answers them, and the field that adds one. The heading is a name
        and not a sentence about what the list is for -- without it the handles
        sit under four numbers and read as a fifth. */

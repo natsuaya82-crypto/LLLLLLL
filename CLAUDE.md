@@ -14,7 +14,7 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 > says the two that are easiest to get backwards: the timeline **is** on the
 > server now — `post`, `react`, `follow`, `profile` and the notices RPC, with
 > `localStorage` as the copy that survives a bad network — and CI runs three of
-> these twenty-six checks, so a green tick on a push is not the gate. This
+> these twenty-seven checks, so a green tick on a push is not the gate. This
 > paragraph said the opposite of the first of those for a week after it stopped
 > being true, which is the whole reason that file says how to re-check rather
 > than what to believe: `grep -n "rest/v1" www/net.js`.
@@ -258,7 +258,7 @@ backlog entry is not permission, and neither is the absence of one.
 ```
 npm test        # tools/gate.mjs -- eight with no browser in a row (assets, es5,
                 # grammar-engine, dead, import, sides, face, box, ~2s), then the
-                # other eighteen four at a time. NOT run by a session -- rule 2.
+                # other nineteen four at a time. NOT run by a session -- rule 2.
                 # The count is FAST.length + SLOW.length in tools/gate.mjs and
                 # nowhere else; every number in this file is a copy of it.
 ```
@@ -268,10 +268,10 @@ Individual: `npm run assets` / `npm run es5` / `npm run dead` / `npm run migrate
 `npm run act` /
 `npm run conv` / `npm run card` / `npm run word` / `npm run post` / `npm run backup` /
 `npm run fill` / `npm run round` / `npm run base` / `npm run kb` / `npm run plan` /
-`npm run press`.
+`npm run world` / `npm run press`.
 `tools/gate.mjs` is what `npm test` runs. The eight that need no browser go first, one
 after another, in about two seconds — a missing script tag or an arrow function fails
-there and nothing heavy is started at all — and the eighteen that each start a headless
+there and nothing heavy is started at all — and the nineteen that each start a headless
 Chromium then go **four at a time**. Sequentially they were ten minutes. Each check's
 output is printed whole and in list order, so a counter that moved is still visible.
 
@@ -327,9 +327,9 @@ only ever one person in a test. So `rls-check` is a second person — it applies
 somebody with no account, to do all 34 things the file says cannot be done.
 Adding a policy means adding the line somebody would use against it.
 
-## The nineteen rules the gate enforces
+## The twenty rules the gate enforces
 
-Nineteen is how many rules are written below. **The gate is twenty-six checks,
+Twenty is how many rules are written below. **The gate is twenty-seven checks,
 and the two are not the same number and must not be made to match** — count the
 rules here, and count `FAST` and `SLOW` in `tools/gate.mjs` for the other. One
 rule can take three checks and one check can hold two rules.
@@ -979,6 +979,16 @@ that failed the alternative it exists to push people towards would be read as
 `www/*.js` is in no stylesheet, so nothing above could ever see it; zero is the
 only number that closes that hole.
 
+**The plans page's two term buttons are a box, and they are the only thing that
+is.** 「11は、角丸でいいから囲わないとボタンを押してるかわからん」OWNER
+2026-08-26. The month and the year are the only thing on that page anybody
+presses, and with nothing round them they read as two prices printed side by
+side — somebody pressing one cannot tell they pressed. That is the reason and
+the whole of it: it is not permission for a corner anywhere else, and the
+baseline is what holds it to the one pair (`.btn.plterm | border` and
+`.btn.plterm | border-radius`, and nothing else). `.ghost` is off those two
+buttons for the same reason — it is the class that means "not a box".
+
 **What it does not hold, said out loud so silence is not read as approval:**
 "a filled panel" is the third thing the rule names. A background colour is not a
 panel — the bar, the sheet and the body all have one and always did — and no
@@ -1101,6 +1111,41 @@ which is what every change to a keyboard ends in; and a board is identified by
 one the old one's history, and the step back would have put a deleted
 keyboard's layout onto a keyboard that never had it. Making one and deleting
 one both forget.
+
+### 20. The language's page arrives closed, and each of its two switches has one place
+
+Two decisions of 2026-08-26, and neither can throw.
+
+**「この言語については初手は全部閉じて」** It arrived open, and the argument for
+open was that nothing somebody has never touched should be folded away from
+them — true of one section and wrong of five, because five open sections is a
+page you scroll past to find out what is on it. What the marker is FOR is
+choosing, and a page that has already chosen for you gives it nothing to do.
+
+`ABOPEN` in `home.js` therefore records what is OPEN, so the empty map IS the
+arriving state. The way this comes back is somebody flipping the sense to
+"what is shut" — which reads identically, renders perfectly, and is the
+opposite page.
+
+**「ここの言語ページを公開すると単語と文字 dl できるようにするはいらない。wiki で
+できるから。」** The settings room and the article's writing face both offered
+公開, writing the same `world().hide`; the room also offered a whole-page DL
+where the article asks it of each section. The room's two rows went and the
+article's stayed. A switch in two places writes the same field from both, so
+nothing throws and every screenshot is right — it is found by somebody turning
+it off in one place and finding it on in the other.
+
+**And nothing came out of anybody's file.** `world().dl` is still stored and
+still read: it is what a section nobody has answered for falls back to. The
+row that WROTE it went; orphaning the value would turn somebody's answer off
+without asking, which is `docs/DATA_SAFETY.md`. So `world-check` asks the
+fallback both ways and asks that a section with its own answer still beats it.
+
+Its first version stayed green with the second bug put back, because it called
+`vSet('lang')` — and `vSet()` takes no argument, it reads `here().a`. It was
+asking about whatever screen the check happened to be standing on. **A screen
+is a route AND its argument**, which this file says twice already, and the
+check now stands on the route.
 
 ## What the free plan is
 

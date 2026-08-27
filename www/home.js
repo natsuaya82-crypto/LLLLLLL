@@ -807,9 +807,15 @@ function setWldHide(v){ world().hide=!!v; saveWld(); render(); }
    `dl` is absent by default and absent means no. The page's own flag is the
    other way round -- absent is public -- because a page is a thing to be
    looked at; this hands over months of somebody's drawing, and the app does
-   not decide that for them. */
+   not decide that for them.
+
+   Nothing SETS it any more, and that is the whole of it being here: the one
+   switch that wrote it was a second copy of a switch this page already has,
+   on the settings screen, and it went 2026-08-26. What is left is the answer
+   a section falls back to when nobody has answered for that section --
+   `wldSecDl` below. Every value already stored under `dl` is still stored and
+   still read. */
 function wldDl(){ return !!world().dl; }
-function setWldDl(v){ world().dl=!!v; saveWld(); render(); }
 /* ---- and the same two questions, asked of one SECTION of the page -------
    「キーボードと文字とかそれぞれのセクションで公開非公開できて、DL可能なら
    DL可能になって他の人が使えるようになるイメージ」
@@ -884,15 +890,24 @@ function wldRow(){
    screenshot of ja.wikipedia.org, where every section of a mobile article is
    a heading with a marker and folds away under it.
 
-   Which ones are shut is where you are STANDING in the page, not something
+   Which ones are open is where you are STANDING in the page, not something
    the language owns, so it is not in `wld` and is not saved. The line that
    forgets it belongs in viewReset() in www/shell.js with the rest of what a
    screen forgets; this session does not own that file, so it is reported
-   rather than reached into. Open is the default: nothing somebody has never
-   touched is folded away from them. */
-var ABSHUT={};
-function abShut(r){ return !!ABSHUT[r]; }
-function abToggle(r){ ABSHUT[r]=!ABSHUT[r]; render(); }
+   rather than reached into.
+
+   SHUT is the default. 「この言語については初手は全部閉じて」 OWNER 2026-08-26.
+   It was open, and the argument for that was that nothing somebody has never
+   touched should be folded away from them -- true of one section and wrong of
+   five, because five open sections is a page you have to scroll past to find
+   out what is on it. What the marker is FOR is choosing, and a page that has
+   already chosen for you gives it nothing to do.
+
+   So the map records what is OPEN, not what is shut: the empty map is the
+   arriving state, and the arriving state is everything closed. */
+var ABOPEN={};
+function abShut(r){ return !ABOPEN[r]; }
+function abToggle(r){ ABOPEN[r]=!ABOPEN[r]; render(); }
 var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>';

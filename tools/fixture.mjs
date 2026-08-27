@@ -121,6 +121,12 @@ export function seed(){
      with neither, which is the row that has to say so instead of being blank.
      `wldart:` is reached from the list on the World screen, so seeding these
      is also what gives that route a way in. */
+  /* And the page arrives with every section shut -- 「この言語については初手は
+     全部閉じて」 -- so the state that says which are OPEN is emptied here with
+     the rest of the arriving state. It belongs in viewReset() (www/shell.js)
+     for the app itself; the two faces below are what the walk needs to get
+     INSIDE a section, because arriving is now outside every one of them. */
+  ABOPEN = {};
   WLD = {use:'story', where:'a valley', who:'two families',
          note:'nobody outside the valley speaks it',
          arts:[{id:'A1', t:'The valley', b:'Two families have farmed it for nine generations.'},
@@ -1484,6 +1490,31 @@ export function halfDone(){
        KB = { at: 1, kbs: [{ nm: 'Shango', pat: 'abc', lay: kbAbcLay() }] };
        WLD.secs = { letters: { dl: true }, words: { dl: true }, kb: { dl: true } };
        window.route = 'about'; NAV = [{ r:'about' }];
-       return vAbout(); }]
+       return vAbout(); }],
+    /* Inside the sections. The page arrives with every one of them shut as of
+       2026-08-26, so everything a section CONTAINS is now behind a press --
+       and a walk that only ever arrives reports every one of those buttons as
+       an entry no screen names, which is true of the arriving page and is not
+       what it means. `wldOvDel`, `wldOvSet` and `wldSet` went that way the
+       hour the default changed.
+
+       Both faces, because they hold different things: the article draws the
+       rows, and the editor draws the fields that write them. */
+    ['a page with every section open', () => {
+       /* Public, said here rather than assumed: act-check does NOT re-seed
+          between faces, and the two faces above are left hidden on purpose.
+          A hidden page is the NAME and nothing else, so without this line
+          these two render no section at all and prove nothing -- which is how
+          they were first written, and act-check went on reporting the three
+          buttons inside a section as named by no screen. */
+       WLD.hide = false;
+       wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
+       window.route = 'about'; NAV = [{ r:'about' }];
+       return vAbout(); }],
+    ['writing with every section open', () => {
+       WLD.hide = false;
+       wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
+       window.route = 'world'; NAV = [{ r:'world' }];
+       return vWorld(); }]
   ];
 }

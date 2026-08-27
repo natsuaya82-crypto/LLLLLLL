@@ -149,7 +149,18 @@ function backDraftKept(){
   var h=here(), to, keep;
   if(!h || h.r!=='form' || h.a!=='post:') return false;
   if(typeof PW==='undefined' || !PW || PW.ed) return false;
-  if(!pwHas(PW.ln)) return false;
+  /* Two different questions, and pwHas() answers the other one. It is "is
+     there a post here" -- what the send button and draftKeep() both need --
+     and a meaning on its own is not a post, so it says no. What is being
+     asked HERE is "is there anything to lose", and a meaning somebody typed
+     is something to lose: it is their words, in a field they typed them into,
+     and backing out threw them away without a word.
+     「何か入ってる時は下書きに保存するかどうかをやるんじゃないの？」
+
+     Not while the day is on it. Under PW.pr that field is readonly and holds
+     daySay(), so asking would be asking whether to keep words nobody wrote --
+     which is how you teach somebody to press No without reading. */
+  if(!pwHas(PW.ln) && !(!PW.pr && String(PW.mn||'').trim())) return false;
   /* THREE ANSWERS IN ONE BOX. OWNER 2026-08-25「下書きに保存しますか？
      はい　いいえ　キャンセル」and, when told window.confirm has two buttons,
      「なんでまず作らないの？早くやれよ」.
@@ -258,6 +269,36 @@ function goIn(r){ goTab('build'); go(r); }
 function goTab(r){ NAV=[{r:r}]; route=r; render(); window.scrollTo(0,0); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
 var route='profile';
+
+/* ---- what the app IS, before any route is drawn ------------------------
+   Three states, and this is the only place that says which one the app is in.
+   It was written out three times -- render() in glyph.js, tabPaint() below,
+   and vOb() in onboard.js each carried their own copy of `SET.done` and
+   obTourOn() -- and the third state was missing from all three.
+
+   OWNER DECISION 2026-08-26:
+     「ログアウトしたら普通にログイン画面だけ出せばいいやろ。
+       それ以外は表示させるな。
+       ログインしてないのに謎に課金できるしバカやろ。
+       他の画面に行かせるな。ログアウトの時は。」
+
+   Signed out is the same KIND of state as an unfinished onboarding: the app
+   is not a place you are standing in, it is one screen. So it is answered
+   here, once, rather than by an `if(!netSignedIn())` on each screen -- which
+   is what the app had, and what left the settings, the plans and the language
+   screens open to somebody with no account. A list of screens to guard is a
+   list that is one short the day a screen is added.
+
+   'door' the door and nothing else -- signed out
+   'ob'   the onboarding, which is the app until SET.done
+   'app'  a route, a view, and the bar at the foot
+
+   The tour is 'app' on purpose: it is the app with one thing lit, not a
+   screen of the onboarding's own. */
+function appIs(){
+  if(typeof netSignedIn!=='function' || !netSignedIn()) return 'door';
+  return (!SET.done && !obTourOn())? 'ob' : 'app';
+}
 
 /* ---- every page ------------------------------------------------------
    Its numeral in the book, its name, and which tab it lives under. The back
@@ -664,7 +705,7 @@ function tabPaint(){
      opens the making side. 「制作ボタン押してキーボードの画面開いてとかないよ？」
      Everything before the walk -- drawing, the alphabet, the name -- is a
      screen of the onboarding's own and still has no bar. */
-  var sig = ((SET.done || obTourOn()) && !one) ? (here().r+'|'+uiLang()) : '';
+  var sig = (appIs()==='app' && !one) ? (here().r+'|'+uiLang()) : '';
   if(host.getAttribute('data-sig')===sig) return;
   host.setAttribute('data-sig', sig);
   host.innerHTML = sig ? tabBar() : '';

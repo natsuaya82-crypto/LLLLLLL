@@ -487,6 +487,12 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pav{flex:0 0 auto;width:40px;height:40px;border-radius:50%;overflow:hidden;
      background:var(--sf);display:flex;align-items:center;justify-content:center}
 .pav canvas{width:26px;height:26px}
+/* The face as a way to the person, on a row that is already a way to the post.
+   44 both ways because a thumb needs 44 and the circle is 40 -- the two extra
+   each side are the target, not the picture, so the negative margin puts the
+   row's geometry back exactly where it was. Without that every post on every
+   timeline moves 4px. */
+.pav.pavb{width:44px;height:44px;margin:-2px;padding:0;border:0;background:none}
 .pav .bch{font-size:1.05rem;color:var(--txs);line-height:1}
 .pbody{flex:1 1 auto;min-width:0}
 /* The head is two lines now, and the reason is in www/post.js over the markup.
@@ -998,8 +1004,16 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    44 is the row unit this file already uses everywhere and the number press
    measures targets against, so one full row of what is being written can
    never be taken away. `.pwqs` gives up its space first, which costs nothing:
-   it scrolls inside itself and says so in its own rule. */
+   it scrolls inside itself and says so in its own rule.
+
+   88 on a reply, and that is not 44 rounded up. What is being written here is
+   TWO fields -- the line and the meaning under it -- so one row is by
+   construction not enough, and a reply is the only composer where anything
+   else is competing for the height. It came out as a placeholder with the
+   next field sliced off under it.
+   「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」 */
 .view.fit .pwscroll{flex:1;min-width:0;min-height:44px;overflow:auto}
+.view.fit .pwqs + .pwscroll{min-height:88px}
 .view.fit .pwtop{min-height:0}
 .view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
@@ -1027,9 +1041,23 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the row floated in the middle of the screen.
    The 24px each side is `.body`'s own padding, which this no longer sits
    inside; the background is there because the line above it has to have
-   something to be a line ON while the page scrolls under it. */
+   something to be a line ON while the page scrolls under it.
+
+   The room under it is the home indicator's, and only while there is nothing
+   else down there. `env(safe-area-inset-bottom)` is a property of the PHONE,
+   not of what is on screen: it is 34px on a notched iPhone whether or not a
+   keyboard is up. So with the keyboard up the row was pushed 34px clear of
+   it, to leave room for a home indicator the keyboard was already covering --
+   and that gap, plus iOS's own accessory bar under it, is what the row was
+   floating on. 「カメラとかの下のやつキーボードにひっつけろって言ってんのに
+   引っ付いてないし」 OWNER 2026-08-26, on the second time of asking.
+
+   Subtracting --vvkb is exact rather than a guess at a number: with no
+   keyboard it is 0 and the whole inset stands, and the moment anything is
+   down there the inset is eaten by exactly as much as is covered. */
 .view.fit .pwbar{position:fixed;left:0;right:0;bottom:var(--vvkb,0px);
-   z-index:20;padding:6px 24px calc(env(safe-area-inset-bottom,0px));
+   z-index:20;
+   padding:6px 24px max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px)));
    background:var(--bg)}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm)}
 /* ---------- the letters ----------
@@ -1429,6 +1457,22 @@ a.set{text-decoration:none}
             line-height:1.25;letter-spacing:-.01em}
 .plterm .pper{display:block;font-size:.72rem;color:var(--txm)}
 .plterm .plsave{display:block;font-size:.72rem;color:var(--gold)}
+/* The one box in the app. 「11は、角丸でいいから囲わないとボタンを押してるか
+   わからん」OWNER 2026-08-26 -- the month and the year are the only thing on
+   this page anybody presses, and with nothing round them they read as two
+   prices printed side by side rather than as a choice. Rule 18 carries the
+   exception and tools/box-baseline.txt holds it to this pair; nothing else
+   may take it as permission.
+   `.btn.plterm` and not `.plterm`: .btn says border:none 800 lines below, and
+   one class cannot beat two. */
+.btn.plterm{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.btn.plterm:active{border-color:var(--gold)}
+/* 「4.99/月は一列にしろ」OWNER 2026-08-26. The amount and the term were two
+   blocks, so every price stood two lines high and the term read as a caption
+   under it rather than as part of the price. The saving stays on its own
+   line: it is a third thing and not part of what the year costs. */
+.plterm .pp{display:inline}
+.plterm .pper{display:inline;margin-left:3px}
 /* Free carries its price too, and it is not a button: without it the four
    lines start higher than the paid pages' five do and the lists jump as
    somebody slides between them. */
@@ -1559,7 +1603,15 @@ a.set{text-decoration:none}
    off the bottom. `--vvmin` and not `vh`: with the phone's keyboard up `vh`
    is still the whole phone, which is the same reason the vertical field
    below uses it. A third is what leaves the field its own two thirds. */
-.pwqs{margin:2px 0 12px;max-height:calc(var(--vvmin, 100vh) / 3);overflow:auto}
+/* min-height:0 is what lets it actually give the room up. A flex item's floor
+   is its content unless it is told otherwise, so `overflow:auto` on its own
+   made this shrink-proof: the cap stopped it growing and nothing made it get
+   out of the way, and what got clipped instead was the box below -- the one
+   somebody is writing in. A quarter rather than a third for the same reason:
+   the person's own side is the point of the screen and the quote is what they
+   are answering. It scrolls inside itself, so nothing is lost by being small. */
+.pwqs{margin:2px 0 12px;max-height:calc(var(--vvmin, 100vh) / 4);
+   min-height:0;overflow:auto}
 .pwq{display:flex;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
 .pwq .pav{width:34px;height:34px}
 .pwq .pname{font-size:.9rem}
@@ -2172,6 +2224,16 @@ a.set{text-decoration:none}
       color:var(--txs);overflow:hidden;font-family:inherit;font-size:.88rem;
       display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .pwab input{position:absolute;inset:0;opacity:0;width:100%;height:100%}
+/* One that carries words rather than a mark, and so is as wide as they are.
+   Same shape, same height, more room -- the way .pwab.rec already does it for
+   the count while a voice is being recorded. */
+.pwab.wide{padding:0 14px;font-family:inherit;font-size:.86rem;font-weight:600;
+   white-space:nowrap}
+/* The drafts control is drawn only when it has something to say -- nothing
+   typed means no draft to save, and none saved means nowhere to go back to.
+   Collapsing when empty is what stops the row's gap being spent on it. */
+.pwside{display:flex;flex:0 0 auto}
+.pwside:empty{display:none}
 .pwab:active{border-color:var(--goldln);color:var(--gold)}
 /* Recording. The dot is the one place in this app where something blinks, and
    it is the one place where something is happening that cannot be seen. */
@@ -2207,17 +2269,6 @@ a.set{text-decoration:none}
 .navdo.pv{display:inline-flex;align-items:center;gap:6px;
           background:var(--sf);color:var(--tx)}
 /* Saving a draft, and the ones already saved, at the foot of the composer. */
-/* Beside the filled button, not under the screen. It takes the auto margin so
-   the pair sits at the end of the bar together; .navdo keeps its own, which
-   does nothing once something before it has already pushed. */
-.navside-w{margin-left:auto;flex:0 0 auto;align-self:center;display:flex}
-/* Two auto margins would split the free space between them and stand the
-   pair in the middle of the bar. The one in front does the pushing. */
-.navside-w + .navdo{margin-left:0}
-.navside{min-height:44px;padding:0 10px;border:0;background:none;
-         color:var(--gold);font-family:inherit;font-size:.86rem;font-weight:600;
-         white-space:nowrap}
-.navside:active{opacity:.6}
 .dfrow{display:flex;align-items:center;gap:6px;
        border-bottom:1px solid var(--line)}
 .dfb{flex:1 1 auto;min-width:0;min-height:48px;display:flex;align-items:center;gap:10px;

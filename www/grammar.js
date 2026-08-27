@@ -126,8 +126,31 @@ function gRules(){
    phone share one, so the caller answers with the language's own. The engine
    is DOM-free and globals-free and this is the one place that crosses back:
    it does not know what a stage is and does not have to. */
+/* Where the model comes from, from 2026-08-26. A language that has a model of
+   its own under langKey('gram2') is read from it; every other language is
+   built from the stages exactly as before, so nothing a person has today
+   answers differently. Nothing writes that key yet -- this is the road in,
+   built before there is anything on it.
+
+   TWO things are put back on every read rather than being taken from the
+   store, and it is one reason twice: they point AT the dictionary, and a
+   stored copy of something that points at the dictionary parts company with
+   it the first time somebody renames a word.
+
+     words         the dictionary itself
+     grammarRules  'hw:<headword>' -- which words are the negation and the
+                   adpositions. isMarked() in translate.js compares that
+                   string against a word id rebuilt from WORDS, so a stored
+                   rule simply stops matching. Nothing throws: the sentence
+                   still comes out, with the negation read as an ordinary
+                   noun.
+
+   docs/FEATURES.md says the same thing from the other side -- this
+   arithmetic is `current`, not `frozen`, and freezing it would be the bug. */
 function gModel(list){
-  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().id});
+  var e=LinguaGrammarEngine, m=e.adapter.load(langId);
+  if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().id});
+  else m.words=e.adapter.wordsOf(list||WORDS);
   m.grammarRules=gRules();
   return m;
 }

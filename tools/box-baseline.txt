@@ -11,6 +11,8 @@
 .bpic | border-radius
 .btn.apple | border
 .btn.google | border
+.btn.plterm | border
+.btn.plterm | border-radius
 .btn.signin | border-radius
 .capwarn | border
 .capwarn | border-radius

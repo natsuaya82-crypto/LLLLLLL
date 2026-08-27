@@ -165,13 +165,30 @@ function pwSetPriv(v){
    nothing typed there is no draft to save and the only thing worth offering
    is the ones already saved. Editing a post that exists offers neither -- an
    edit is not a draft. */
+/* It sits in the row over the keyboard, beside the microphone, and not in the
+   top bar. 「マイクの横に下書きの保存されてるボタン出てこないし」
+   「下書き1とか下書きに保存するみたいなボタン無くしたんだけど？」
+   OWNER 2026-08-26, having found neither on a phone.
+
+   Neither had been deleted. The top bar is 390 points wide and already holds
+   a back arrow, the screen's name and a filled button, so this one was drawn
+   only when there was something for it to say -- and on a first post there is
+   nothing: nothing typed means no draft to save, and no drafts saved means
+   nothing to go back to. It was correct and it was invisible, which for a
+   control somebody is looking for is the same as absent.
+
+   The row over the keyboard has room, and it is where the other things you
+   can do to a post already are. That is not the older 「だから save a draft を
+   底に置くのやめろって」 coming back: the foot of a screen you have to scroll
+   to is not this row, which rides on the keyboard and is on screen the whole
+   time the composer is. */
 function pwSideHTML(){
   if(PW.ed) return '';
   if(pwHas(String(PW.ln||'').trim()))
-    return '<button class="navside"' + DO('draftKeep') + '>'+
+    return '<button class="pwab wide"' + DO('draftKeep') + '>'+
       esc(t('post.draft.save'))+'</button>';
   if(!DRAFTS.length) return '';
-  return '<button class="navside"' + DO('go', ["drafts"]) + '>'+
+  return '<button class="pwab wide"' + DO('go', ["drafts"]) + '>'+
     esc(tn('post.drafts', DRAFTS.length))+'</button>';
 }
 /* The bar is FORM.right and openPost() is the only thing that builds it, so
@@ -209,10 +226,23 @@ function openPost(from){
      `ed` is the same fault as `to` and was not in what was reported; it is
      fixed here because it is one line further down the same object and
      leaving it would mean pressing + could still save over a post that
-     already exists. */
+     already exists.
+
+       pr   goes, and mn goes WITH it. The day's sentence is the third way a
+            composer is not an ordinary post, and it was the one missing from
+            this list: open the day, back out, press + an hour later, and the
+            composer still carried the day.
+            「お題じゃないところ+から入ったのに戻ってまた投稿しようとすると
+              そこになる」
+            mn is dropped rather than kept because under `pr` it is not
+            something somebody typed -- pwSetMn() returns early while `pr` is
+            set, so the field is readonly and holds exactly daySay(). Keeping
+            it would leave the day's words sitting in a now-editable field of
+            a post that has nothing to do with the day. The LINE still stays:
+            that one was typed. */
   if(from==='new'){
     if(PW.ed) PW=pwBlank();
-    else PW.to='';
+    else { PW.to=''; if(PW.pr){ PW.pr=0; PW.mn=''; } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
      takes.
@@ -238,7 +268,6 @@ function openPost(from){
      the door is. */
   if(!netSignedIn()){ go('feed'); return; }
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), pwKeepKb,
-    '<span class="navside-w" id="pw-side">'+pwSideHTML()+'</span>'+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
        thing one button can be, and the delegated listener only knows about
@@ -582,7 +611,10 @@ function pwAddHTML(){
           '<button class="pwab"' + DO('pwPickLib') + ' aria-label="'+
             esc(t('post.lib'))+'">'+ICON_LIB+'</button>'
         : '')+
-      pwVoAddHTML();
+      pwVoAddHTML()+
+      /* Beside the microphone. The span is always here so pwSidePaint() has
+         something to patch; it collapses when there is nothing to say. */
+      '<span class="pwside" id="pw-side">'+pwSideHTML()+'</span>';
 }
 /* The line as it will actually look, under the field.
 
@@ -2201,10 +2233,35 @@ function postFocus(){
 function postOpen(id){
   if(postById(id)) go('thread', id);
 }
+/* The face, and the way to whoever wears it.
+   「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
+   飛ぶようにしてよ。自分ならプロフィールのページ。」 OWNER 2026-08-26.
+
+   The search row has done this since it was written -- go('profile', handle)
+   -- and the timeline had not, so the same face was a door in one list and
+   scenery in the other.
+
+   Below the line, so the handle comes off the POST. A post from a language
+   this phone has never seen still knows who wrote it, because that was put on
+   it when it was written; asking ME or meHandle() here is what rule 8 is
+   about, and sides-check would refuse it.
+
+   A post with no handle on it is scenery again rather than a door to nowhere:
+   everything written before posts carried one is in that state, and a button
+   that opens an empty page is worse than no button. */
+function postAvHTML(p){
+  var h=String((p && p.hd) || '');
+  if(p && p.mine)
+    return '<button class="pav pavb"' + DO('goTab', ["profile"]) + '>'+
+      postFace(p)+'</button>';
+  if(!h) return '<div class="pav">'+postFace(p)+'</div>';
+  return '<button class="pav pavb"' + DO('go', ["profile", h]) + '>'+
+    postFace(p)+'</button>';
+}
 function postRow(p){
   var foc=(postFocus()===p.id), to=postToWho(p);
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
-    '<div class="pav">'+postFace(p)+'</div>'+
+    postAvHTML(p)+
     '<div class="pbody">'+
       /* Two lines, not eleven things on one.
          「名前 言語名 ユーザー名 日付 編集済み ↑これ全部一列に表示すると
