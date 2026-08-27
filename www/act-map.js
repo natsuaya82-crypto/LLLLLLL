@@ -167,7 +167,6 @@ act('openWrite', openWrite);
 act('openWrOut', openWrOut);
 act('openWrIn', openWrIn);
 act('shMake', shMake);
-act('shWrite', shWrite);
 act('shTakeIn', shTakeIn);
 act('openNote', openNote);
 act('ntSearch', ntSearch);

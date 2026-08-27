@@ -36,7 +36,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "settings", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sheet", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "renderPdf", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "markup", returnType: CAPPluginReturnPromise),
   ]
 
   /// The one path between the two programs. It is also in App.entitlements and
@@ -327,60 +326,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.resolve(["file": url.lastPathComponent])
     } catch {
       call.reject(error.localizedDescription)
-    }
-  }
-
-  /// The editor has to outlive the call that made it, exactly as the photo
-  /// picker's delegate does and for the same reason.
-  private var marking: LinguaMarkup?
-
-  /// Write on a sheet without leaving this app.
-  /// OWNER 2026-08-27「そのままdlした端末上で書くとか？じゃないと無理じゃね」
-  ///
-  /// It opens a sheet THIS APP WROTE, by name, out of Documents/Sheets -- not
-  /// a path and not bytes handed over from the web side. A name with a slash
-  /// in it is refused: `Documents` is the person's own folder and the Files
-  /// app puts other things in it, which is dropKept()'s sentence and the same
-  /// care.
-  ///
-  /// Cancelled comes back as `wrote: false` and NOTHING ELSE happens. The
-  /// file is answered either way because the web side has no other copy of it,
-  /// and a call that is never answered is a button that never comes back.
-  @objc func markup(_ call: CAPPluginCall) {
-    let name = call.getString("file") ?? ""
-    guard !name.isEmpty, !name.contains("/"), name != ".", name != ".." else {
-      call.reject("no sheet of that name")
-      return
-    }
-    DispatchQueue.main.async {
-      guard let host = self.bridge?.viewController else {
-        call.reject("no view controller")
-        return
-      }
-      do {
-        let url = try self.sheets().appendingPathComponent(name)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-          call.reject("that sheet is not here any more")
-          return
-        }
-        self.marking = LinguaMarkup.open(url, from: host) { [weak self] wrote in
-          self?.marking = nil
-          // Nothing was written, so there is nothing to hand over. A sheet
-          // somebody has drawn on is megabytes, and reading it back to say
-          // "never mind" is the whole file across the bridge for nothing.
-          guard wrote else {
-            call.resolve(["wrote": false])
-            return
-          }
-          guard let bytes = try? Data(contentsOf: url), !bytes.isEmpty else {
-            call.reject("the sheet could not be read back")
-            return
-          }
-          call.resolve(["wrote": true, "b64": bytes.base64EncodedString()])
-        }
-      } catch {
-        call.reject(error.localizedDescription)
-      }
     }
   }
 
