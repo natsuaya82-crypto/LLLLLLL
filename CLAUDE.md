@@ -1116,6 +1116,19 @@ in two languages is the thing that drifts. Both ceilings hold on ADDING only:
 it down would be the app deleting somebody's keys. The check puts an
 over-the-ceiling layout in and demands that nothing moves.
 
+**And CARRYING a key is adding one**, so the ten holds there too.
+「満杯だと追加できないから」 OWNER 2026-08-27. A key can be held and dragged
+into another row, and that road asked nothing about width — a board of ten-key
+rows became one of eleven, which is the 29pt this rule exists to forbid.
+`kbCellAdd()`, the same act done by pressing an empty cell rather than by
+carrying, had asked `kbRoomIn()` from the beginning: the gate was already
+there and one road went round it. Both ask `kbRoomFor()` now. **Only across
+rows** — inside one row the width does not change, and asking there counts the
+key twice and freezes the ordering of every full row. What a refused carry
+must do is leave the key where it was: "no row is over ten" is also true of a
+carry that ate the key, and those are two claims in `kb-check` because putting
+the bug in showed the first one staying green while the key vanished.
+
 And that a short row sits in the MIDDLE of the sheet rather than at its left
 edge — 「揃えて欲しい」, five keys over three. Counting columns in halves is
 what makes that always divide.
