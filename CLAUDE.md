@@ -1166,7 +1166,7 @@ removed where it should have been narrowed to two, an undo that puts back the
 state *after* the change rather than the one before — every one of those is a
 keyboard that still renders, still installs, and is not the one somebody built.
 
-`tools/kb-check.mjs` holds a hundred and sixty-eight things — count the `say(`
+`tools/kb-check.mjs` holds two hundred and fifty-one things — count the `say(`
 lines there rather than trusting this number, which has been stale twice: the row
 that goes is the one pressed
 and every other row is untouched and in order; a column comes out of every row,
