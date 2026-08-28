@@ -128,6 +128,19 @@ function vFilter(){
         '<span class="sl">'+esc(t(snsFilKey(k)))+'</span>'+
         '<span class="sv">'+(snsFilNow()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
+    /* And the words somebody keeps, under the two timelines because they are
+       the same question asked a third way: what am I looking at. The heading
+       is a NAME and not an explanation -- vWsys puts `dir.title` over its
+       three directions in the same shape. Nothing at all when none are kept,
+       rather than a heading over an empty space. */
+    (snsSaved().length
+      ? '<div class="sec">'+esc(t('sns.saved'))+'</div>'+
+        snsSaved().map(function(q){
+          return '<button class="set"' + DO('snsPickSaved', [q]) + '>'+
+            '<span class="sl">'+esc(q)+'</span>'+
+            '<span class="sv">'+ICON_GO+'</span></button>';
+        }).join('')
+      : '')+
     '</div></div>';
 }
 /* Chosen, and then you are back on the thing it is about. The same shape as
@@ -263,6 +276,92 @@ document.addEventListener('touchstart',  pullStart, false);
 document.addEventListener('touchmove',   pullMove, PULL_OPT? {passive:false} : false);
 document.addEventListener('touchend',    pullEnd, false);
 document.addEventListener('touchcancel', pullEnd, false);
+
+/* ---- and reaching the bottom ---------------------------------------------
+   「下まで行ったら勝手に更新される感じ。文字は出さない」 OWNER 2026-08-28,
+   through the leader.
+
+   The other end of the pull, and the same shape for the same reason: which
+   routes it answers on is a table, not a rule written out on each screen.
+   **The notices are not one of them** -- 「通知は不要」 -- so `MORE_ON` has
+   two entries where `PULL_ON` has three, and that difference is the decision
+   rather than an oversight.
+
+   NOTHING IS SAID ON THE SCREEN. No spinner, no "loading", no "that is all
+   there is". 「文字は出さない」, and CLAUDE.md bans the explaining anyway:
+   more posts arriving under the ones already there is the whole of the
+   feedback, because it is the thing that happened.
+
+   Three states and they are three, not two. Asking is not "there is more",
+   and "there is no more" is not "could not ask" -- a phone in a tunnel that
+   was told there is nothing left would stop asking for the rest of the
+   session and the timeline would simply end. `snsMoreAsk` is the one in the
+   air; `snsMoreEnd` is set only by an answer that came back SHORT, which is
+   the server saying it has run out. */
+var MORE_ON={feed:1, explore:1};
+var MORE_NEAR=600;
+var snsMoreAsk=false, snsMoreEnd=false;
+function snsMoreWhere(){
+  var r=here().r;
+  if(!MORE_ON[r] || !netSignedIn()) return '';
+  /* The search has a second condition the timeline does not, and measuring
+     is what found it: a search with nothing on it is SHORTER than the phone,
+     so its foot is already in view and the bottom was reached the moment the
+     screen opened. There is nothing to continue either -- what comes after
+     the oldest post of a search nobody has made is not a question. So it
+     pages a search that has brought posts back, and not the empty screen and
+     not a list of people, which is a different query. */
+  if(r==='explore' && !(snsHits && snsHits.posts && snsHits.posts.length)) return '';
+  return r;
+}
+/* How far the foot of the page is from the foot of the window. Asked of the
+   document rather than of a screen, the same way pullTop() is. */
+function snsMoreLeft(){
+  var d=document.documentElement, b=document.body,
+      h=Math.max(d? d.scrollHeight : 0, b? b.scrollHeight : 0);
+  return h - (pullTop() + (window.innerHeight||0));
+}
+function snsMoreCheck(){
+  if(snsMoreAsk || snsMoreEnd) return;
+  if(!snsMoreWhere()) return;
+  if(snsMoreLeft() > MORE_NEAR) return;
+  snsMore();
+}
+/* THE SEAM, and the network side of it is deliberately not here.
+
+   Asking for the posts AFTER the ones already on screen is www/net.js's, and
+   nothing in that file can do it yet: `netFeed()` and `netFindPosts()` both
+   end in `&order=created_at.desc&limit=' + NET_PAGE` with no offset and no
+   cursor, so there is no page two to ask for. That file belongs to another
+   session; the call goes in here, as one line, the day its name arrives.
+
+   What is here is the half that is this screen's and is the same whatever
+   that function turns out to be called: WHEN to ask, and not asking again
+   while one is out. It is written now rather than with the call because a
+   page that fires four asks while the first answer is still in the air is a
+   bug this end owns.
+
+   WHAT THE ANSWER MUST DO, so that it is written down before it is written:
+
+     snsMoreAsk=false;                        always, refused or not
+     if(!ps) return;                          could not ask -- NOT the end
+     if(ps.length < NET_PAGE) snsMoreEnd=true; a short answer IS the end
+     if(ps.length){ postTake(ps); render(); }
+
+   The middle two are the ones that cannot be collapsed. A phone in a tunnel
+   answering `null` must not set the end, or the timeline stops for the rest
+   of the session; and a short answer is the only thing that may set it, or
+   the bottom asks for ever. */
+function snsMore(){
+  if(snsMoreAsk) return;
+  snsMoreAsk=true;
+  /* www/net.js, one line: ask for what comes after the oldest post on
+     screen. Nothing is in the air until it exists, so the flag comes back
+     down here -- otherwise the first touch of the bottom would switch this
+     off for the rest of the session. */
+  snsMoreAsk=false;
+}
+window.addEventListener('scroll', snsMoreCheck, false);
 
 /* Where an appeal goes. An address and not a form: a frozen account cannot
    write a row anywhere -- every write policy in supabase/schema.sql goes
@@ -558,7 +657,7 @@ function vPhoto(){
 /* `snsMode` is which of the two the search is about -- people, or posts. It
    starts on people and goes back to people the moment anybody types.
    「それまでは人」 */
-var snsQ='', snsHits=null, snsMode='who';
+var snsQ='', snsHits=null, snsMode='who', snsSort='new';
 function snsSetQ(v){
   snsQ=String(v||'');
   /* Typing is looking for somebody again. A query that answered with posts
@@ -587,7 +686,14 @@ function snsClearQ(){ snsQ=''; snsHits=null; snsMode='who'; render(); }
 
    The two lists are exclusive by the `@`: a query for a person asks for
    people and gets no posts, and the other way round. That is the server's
-   business too -- it is cheaper to ask for one thing. */
+   business too -- it is cheaper to ask for one thing.
+
+   AND THIS IS WHERE THE ORDER IS ASKED FOR. `snsSort` is 'new' or 'buzz',
+   and netFindPosts() does not take it yet -- www/net.js is another session's
+   and the ordering lives there, beside the numbers that make it. When it
+   takes one, it is the call below and nothing else on this screen: what
+   comes back is drawn in the order it comes back in, which is already true.
+   Nothing here scores a post or re-arranges an answer, deliberately. */
 function snsFind(q, done){
   q=String(q||'').trim();
   if(!q){ done({q:q, who:[], posts:[]}); return; }
@@ -661,8 +767,114 @@ function snsWhoRow(p){
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
     '</div>';
 }
+/* ---- the words somebody keeps ------------------------------------------
+   「検索ページで言葉を⭐️で保存、絞り込みから選ぶとその言葉で検索し直す」
+   OWNER 2026-08-28, through the leader -- and it is what the owner meant by
+   「自分が好きなトピックとか」 back when the filter was built. There are no
+   tags in this app and none have been invented: a kept word is a SEARCH
+   somebody made, and choosing it makes that search again.
+
+   WHERE THEY LIVE IS NOT SETTLED AND THIS IS NOT THE DECISION.
+   `SET` is the person's settings, which docs/ says outright is the phone's
+   ("What is NOT the timeline's -- a language's backup file, an exported
+   sheet, the settings -- is the phone's and stays there"), and a kept word is
+   in none of the things 「SNSは全部サーバー」 lists. So it is a setting today
+   and it persists with the rest of them, `setOnDisk()` copying every key it
+   finds. If the answer comes back that these belong to the ACCOUNT and
+   should follow somebody to a new phone, the two functions below are the
+   only places that read and write them, which is the whole reason they are
+   two functions and not a dozen `SET.saved` all over this file. */
+var ICON_STAR='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 4.2l2.35 4.76 5.25.76-3.8 3.7.9 5.23L12 16.18l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>';
+var ICON_STAR_ON='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 4.2l2.35 4.76 5.25.76-3.8 3.7.9 5.23L12 16.18l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>';
+/* The one place they are read. An array of the words as they were typed. */
+function snsSaved(){
+  var a=SET.saved;
+  return (a && a.length)? a : [];
+}
+function snsIsSaved(q){
+  var a=snsSaved(), i, k=String(q||'').trim();
+  for(i=0;i<a.length;i++) if(a[i]===k) return true;
+  return false;
+}
+/* And the one place they are written. A toggle, because the star is one
+   button and pressing it again is how somebody takes a word off a list they
+   put it on -- a second screen to remove one would be a screen. Newest
+   first: the word just kept is the one being looked for. */
+function snsSaveQ(){
+  var k=String(snsQ||'').trim(), a=snsSaved(), out=[], i;
+  if(!k) return;
+  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
+  if(out.length===a.length) out.unshift(k);
+  SET.saved=out;
+  save();
+  render();
+}
+/* Chosen from the filter, and it SEARCHES rather than taking you to a field
+   with the word already in it. snsHits is emptied so that vExplore's own ask
+   fires -- that screen already asks for a query it has no answer for, and a
+   second ask here would be two places asking one question. */
+function snsPickSaved(q){
+  snsQ=String(q||'');
+  snsMode='posts';
+  snsHits=null;
+  goTab('explore');
+}
+/* ---- newest, or what people answered ------------------------------------
+   「最新／話題」 OWNER 2026-08-28.
+
+   THE ORDER IS THE SERVER'S AND THIS FILE DOES NOT HOLD IT.
+   「SNSは全部サーバー」, and the leader said it again on 2026-08-28 when this
+   screen was sorting the answer itself: **a phone that sorts is a phone that
+   reorders the fifty rows it happens to have, and fifty rows reordered are
+   not the top fifty.** Whichever way somebody asks for them, the question
+   "which posts" and the question "in what order" have one answer and it is
+   made where all the posts are.
+
+   So this screen has a MOUTH and no opinion. `snsSort` is what was asked
+   for; www/net.js carries it to the server and the answer arrives in the
+   order it arrives in, and gets drawn in that order.
+
+   It used to score the posts here -- a like one, a repost three, an answer
+   five. Those numbers are gone from this file on purpose and must not come
+   back: they live in one place, beside the query that uses them, because two
+   copies of a number in two languages is the thing that drifts. The badge's
+   own multiplier is the same argument and this file has never held it.
+
+   Changing it therefore ASKS AGAIN rather than re-arranging what is here --
+   emptying `snsHits` is what makes vExplore put the question again, which is
+   the one place that asks it. */
+function snsSortNow(){ return (snsSort==='buzz')? 'buzz' : 'new'; }
+function snsSortKey(k){ return (k==='buzz')? 'sort.buzz' : 'sort.new'; }
+/* The mark in the corner of the search's bar, the same corner the timeline
+   puts its filter in and for the same reason: what a list is sorted by is
+   not something to work out from the list. */
+function snsSortTop(){
+  return '<button class="navq"' + DO('go', ['sort']) + '>'+
+    esc(t(snsSortKey(snsSortNow())))+'</button>';
+}
+function vSort(){
+  var ks=['new','buzz'];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    ks.map(function(k){
+      return '<button class="set"' + DO('snsSetSort', [k]) + '>'+
+        '<span class="sl">'+esc(t(snsSortKey(k)))+'</span>'+
+        '<span class="sv">'+(snsSortNow()===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    '</div></div>';
+}
+function snsSetSort(k){
+  snsSort=(k==='buzz')? 'buzz' : 'new';
+  /* The answer is in the old order, so it is not an answer to this question
+     any more. Thrown away rather than re-sorted, and vExplore asks again. */
+  snsHits=null;
+  back();
+}
 function snsHitsHTML(){
-  var r=snsHits, out='', i;
+  var r=snsHits, out='', i, ps;
   if(!snsQ.trim() || !r) return '';
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
@@ -670,8 +882,11 @@ function snsHitsHTML(){
      not somebody you are looking for, and neither is what they wrote. */
   for(i=0;i<(r.who||[]).length;i++)
     if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
-  for(i=0;i<(r.posts||[]).length;i++)
-    if(!postBlocked(r.posts[i])) out+=postRow(r.posts[i]);
+  /* In the order it arrived. The order is the server's answer to `snsSort`,
+     not something to be worked out again here. */
+  ps=r.posts||[];
+  for(i=0;i<ps.length;i++)
+    if(!postBlocked(ps[i])) out+=postRow(ps[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
 function vExplore(){
@@ -679,7 +894,7 @@ function vExplore(){
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);
-  return '<div class="view">'+rootTop('explore')+
+  return '<div class="view">'+rootTop('explore', snsSortTop())+
     '<div class="body">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
       /* `enterkeyhint` is what makes the phone's own return key say Search,
@@ -695,6 +910,14 @@ function vExplore(){
          keydown listener stops the key before it runs the name. */
       lnField('sns-q', t('sns.search'),
         ' enterkeyhint="search"' + IN('snsSetQ') + KD('snsGo'), snsQ)+
+      /* Kept, or not. Two drawings rather than a class, because "saved" is a
+         filled star and "not saved" is an outline of one, and that is the
+         whole difference -- there is no CSS for it to need. It is only there
+         when there is a word to keep. */
+      (snsQ.trim()
+        ? '<button class="sx"' + DO('snsSaveQ') + ' aria-label="'+
+            esc(t('sns.save'))+'">'+(snsIsSaved(snsQ)? ICON_STAR_ON : ICON_STAR)+'</button>'
+        : '')+
       '<button class="sx" id="sns-x"' + DO('snsClearQ') + (snsQ?'':' hidden')+
         ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+
