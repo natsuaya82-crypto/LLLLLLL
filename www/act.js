@@ -112,6 +112,27 @@ function actWire(root){
   root.addEventListener('input', function(e){
     var el=actOf(e.target, 'data-in');
     if(el) actRun(ACT_IN, el, 'data-in', e.target.value);
+    /* A line field is as tall as what is in it, and a field with NO NAME on
+       it has nobody to say so. `.lnin` is a textarea with `overflow:hidden`,
+       so a field that never grows does not scroll -- what was typed is simply
+       not on the screen, which is the same complaint as the one this shape
+       was built for, arriving downwards instead of sideways.
+       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+
+       Measured on `wd-exl`, which had been in this state since the day the
+       shape was written: 120 characters, box 46px, content 116px -- 70px of
+       what somebody typed was not there. With this line, 115px and 1px.
+
+       The screens that DO carry a name call lnGrow() themselves and are
+       unaffected; this is for the ones where a field is read when the form
+       is saved rather than as it is typed. Asked of the class rather than of
+       a list of ids, so a field added tomorrow grows tomorrow -- the same
+       argument lnGrowAll() is already making.
+
+       `lnFit` by name: this file is the one delegated listener and it does
+       not otherwise know shell.js exists. */
+    if(typeof lnFit==='function' && e.target &&
+       String(e.target.className||'').indexOf('lnin')>=0) lnFit(e.target);
   }, false);
   root.addEventListener('change', function(e){
     var el=actOf(e.target, 'data-ch');
