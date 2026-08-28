@@ -916,16 +916,21 @@ const SHAPE = [
      not among the attempts because these statements run as the table's owner,
      which is the only way rows of different ages exist at all. */
   /* The tick. 「4時間ごと。0 4 8 12 16 20 24 これは入れ替わらない。」 Asked of
-     the clock rather than of the source, and asked in the zone it is defined
-     in: an answer that is on the hour in UTC but half past in New York would
-     be a tick that moved, which is the one thing the owner said it does not
-     do. Both halves -- the hour is one of the six, and nothing below the hour
-     is left on it. */
+     the clock rather than of the source. Both halves -- the hour is one of
+     the six, and nothing below the hour is left on it. */
   ['the list turns on a four-hour tick', `
      select count(*) from (select 1 where
-       extract(hour from (feed_slot() at time zone 'America/New_York'))::int % 4 <> 0
+       extract(hour from (feed_slot() at time zone 'UTC'))::int % 4 <> 0
        or extract(minute from feed_slot())::int <> 0
        or extract(second from feed_slot())::numeric <> 0) q`, '0'],
+  /* And it names no zone. 「時間もお題のページに合わせるってこと」 OWNER, and
+     what that page decided was not a zone but the absence of one -- www/sns.js
+     over dayWhen(): a timezone rule copied a second time is a second one to
+     get wrong. A zone named in here would go wrong twice a year on its own,
+     inside a function nobody opens, and change what the app recommends. */
+  ['and names no timezone to get wrong', `
+     select count(*) from pg_proc
+      where proname in ('feed_slot','feed_hot') and prosrc like '%time zone%'`, '0'],
   /* And it is the tick that has HAPPENED. One in the future is a window that
      has not opened, and every post would be older than it. */
   ['and on the one that has already come', `

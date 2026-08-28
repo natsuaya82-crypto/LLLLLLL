@@ -1016,20 +1016,34 @@ grant execute on function notices(int) to authenticated;
 -- The number is NOT decided. It has not been asked of the owner, so it is not
 -- invented here -- a made-up multiplier is a made-up ranking, and nobody would
 -- be able to tell by looking at the app that it had been guessed.
--- The tick the list turns on. 「3はアメリカ時間ね。4時間ごと。0 4 8 12 16 20 24
--- これは入れ替わらない。」 OWNER 2026-08-28 -- so this answers the most recent
--- of those six hours, and never anything in between.
+-- The tick the list turns on. 「4時間ごと。0 4 8 12 16 20 24 これは入れ替わら
+-- ない。」 OWNER 2026-08-28 -- so this answers the most recent of those six
+-- hours and never anything in between.
 --
--- WHICH America. The United States is four time zones wide and the owner said
--- "American time", so this names one in ONE place rather than four call sites
--- quietly disagreeing. It is the line to change if the answer is a different
--- coast, and it is in the report as a question.
+-- IN UTC, and that is 「時間もお題のページに合わせるってこと」 OWNER. The
+-- day's sentence is the page that already had to answer this, and the answer
+-- written there is not a zone -- it is that there is no zone arithmetic at
+-- all. netDay() asks for the NEWEST row rather than today's, and www/sns.js
+-- says why over dayWhen(): "the app does not work out what day it is in
+-- California, because that is a timezone rule and a second copy of one is a
+-- second one to get wrong. That decision is kept." `prompt.on_day` is a date
+-- and the screen draws it in UTC for the same reason.
+--
+-- So this does not name a zone either. A named zone here would be exactly the
+-- second copy that page refused, and it would be a copy that goes wrong twice
+-- a year on its own, in a function nobody looks at, changing what the whole
+-- app recommends.
+--
+-- WHAT THIS COSTS, said out loud because it is a real cost and not nothing:
+-- the six hours are 0 4 8 12 16 20 UTC, so they are those hours in American
+-- local time only while the offset is a whole multiple of four -- true on
+-- US Eastern in summer and US Pacific in winter, and four hours out of six
+-- otherwise. Two owner sentences pull against each other here and this one
+-- follows the later of the two. It is in the report.
 create or replace function feed_slot()
 returns timestamptz language sql stable as $$
-  select (date_trunc('hour', (now() at time zone 'America/New_York'))
-          - make_interval(hours =>
-              (extract(hour from (now() at time zone 'America/New_York'))::int % 4)))
-         at time zone 'America/New_York'
+  select date_trunc('hour', now())
+         - make_interval(hours => (extract(hour from now())::int % 4))
 $$;
 
 create or replace function feed_weight(who uuid)
