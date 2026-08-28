@@ -241,13 +241,13 @@ export function seed(){
 export function obStates(){
   return [
     /* The door, opened from somewhere -- Settings, a timeline. That is a
-       different thing from the door as the onboarding's FIRST STEP, which is
+       different thing from the door as the onboarding's LAST STEP, which is
        what OB_IN is below: obPending() tells them apart and only one of the
        two counts itself with dots. */
     ['the door',                  () => { SET.obback = { r: 'set', a: 'acct' };
                                           OBM.mode = 'in'; return vOb(); }],
-    /* And the door as step one of the walk. Nothing else reaches it. */
-    ['signing in, the first step', () => { SET.obback = null; ob.step = OB_IN;
+    /* And the door as the walk's last step. Nothing else reaches it. */
+    ['signing in, the last step', () => { SET.obback = null; ob.step = OB_IN;
                                               ob.mode = ''; OBM.mode = 'in'; return vOb(); }],
     ['characters to borrow',      () => { SET.obback = null; ob.step = OB_DRAW; ob.mode = 'borrow';
                                           ob.pick = WORLD_SCRIPTS[0].id; return vOb(); }],

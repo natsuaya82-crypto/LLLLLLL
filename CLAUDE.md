@@ -70,6 +70,25 @@ made offline goes up when there is a signal again 「制作はオフラインで
 つながった時に更新される」 — offline is a phone that is CARRYING an account, not
 one that has none.
 
+**The onboarding is the one place making happens before there is an account,
+and that is the order the owner asked for** 「オンボーディング→最後にログイン」.
+Somebody draws a letter, is walked through the app, and names what they are
+making; the door is the LAST step, and `obFinish()` calls `netLangSync()` the
+moment they are through it, so what they made goes up as they arrive. **A
+screen that makes something before that door still has to put it on the
+server at it** — anything added to the walk is added to what that call
+carries, and there is no second road out: 「あとで」 is gone and nothing gets
+past the door without signing in.
+
+It was read the other way for two days. 「言語はアカウントないと作れないです」
+says what a language NEEDS, not what order the screens come in, and a session
+turned it into "so the door is first" — an app whose first screen was a
+sign-in form, on the owner's phone, which is not what they asked for
+「そんなの俺頼んでねえぞ」. `open-check` holds it now by starting from an empty
+`localStorage` and reading what is on the screen: `appIs()` answered `'ob'`
+correctly through the whole of it, so every check that asked `appIs()` was
+green.
+
 **There is one kind of account and there are no anonymous ones** 「匿名アカウント
 はねえよ」「二種類になる意味も分からないけど」. An account is somebody who
 signed in. The onboarding ends at that door and there is no way past it. Nothing
@@ -77,8 +96,11 @@ asks a second question about what kind of account this is — `has_account()`
 beside `is_member()` existed to let an anonymous one through, and there is
 nothing to let through. **The first language is the one place this is not true
 yet**: it is minted at the top of `www/core.js`, which `index.html` loads before
-`net.js` exists, so it cannot ask anything about a session. `claude/admin` has
-the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
+`net.js` exists, so it cannot ask anything about a session — and it is minted
+for somebody who has not reached the door yet, which is the paragraph above
+rather than a hole. What closes it is that the door is on the way out:
+nothing made in the walk stays account-less past `obFinish()`. `claude/admin`
+has the rest. 「最初からオンライン前提で作れ」 → `docs/FEATURE_RULES.md`
 
 **Shape.** Four things are banned outright: a row of round chips you scroll
 sideways (if there are more than a few, it is a **list**); the thing being
