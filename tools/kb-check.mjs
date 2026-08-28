@@ -40,7 +40,15 @@ const r = await pg.evaluate(({ s }) => {
      before it left behind. */
   function fresh(){
     KB = null; kbShow = 0; kbAdd('qwerty'); kbLay = 0;
-    window.route = 'kb'; NAV = [{ r: 'kb', a: String(kbShow) }];
+    /* and NOT `NAV = [{r:'kb', a:String(kbShow)}]`. Which keyboard you are on
+       is carried by the ROUTE, so writing it here is the check standing on a
+       screen the app never put anybody on: kbAdd() landed on the chapter's
+       own page, which is the LIST, and every claim below was made about a
+       page nothing reached. The ⋯ is drawn on a board's page and the list
+       carries the ? instead, so the road that changes a keyboard's
+       arrangement had no first step and 251 green claims said nothing about
+       it. kbAdd() lands on the board it made; if it stops, everything here
+       goes red at once, which is the point. */
     render();
   }
   /* what a row is, as a string, so two of them can be compared */
@@ -54,6 +62,64 @@ const r = await pg.evaluate(({ s }) => {
     return n;
   }
   function widths(){ return kbLayer().rows.map(units); }
+
+
+  /* ---- the road that changes a keyboard's ARRANGEMENT --------------------
+     ⋯ then kbRepat() then kbSetPat(), walked through the buttons on the page
+     rather than called.
+
+     All three names are in act-map.js, so act-check and dead-check are green
+     on them whatever happens here, and press prints a name it never pressed
+     without failing on it. That left the whole road able to go missing under
+     a full gate: nothing was wrong with any of the three -- kbSetPat('flick')
+     turned a row of ten into four keys of 2.5 and sent the 2.5 to the phone
+     the entire time -- and the ⋯ was on no screen a finger could reach,
+     because making a keyboard landed on the chooser it was chosen from.
+
+     So what is asked here is reachability, one step at a time, and each step
+     is asked of the DOM. A claim that called kbMore() would have been green
+     on the day this was broken. */
+  (function (){
+    var el;
+    KB = null; kbShow = 0; kbLay = 0;
+    /* Nothing is being held. The ⋯ is Done while a key is wobbling, which is
+       a state a claim above leaves behind, and it is not this road. */
+    kbWob = false; kbSel = null;
+    /* the one act: choose a pattern for a new keyboard */
+    kbAdd('qwerty');
+    out.roadOnBoard = String(here().a);
+    out.roadDots = !!document.querySelector('[data-do="kbMore"]');
+    if (!out.roadDots) return;
+    el = document.querySelector('[data-do="kbMore"]');
+    el.click();
+    out.roadRepat = !!document.querySelector('[data-do="kbRepat"]');
+    if (!out.roadRepat) return;
+    document.querySelector('[data-do="kbRepat"]').click();
+    out.roadPats = [].slice.call(document.querySelectorAll('[data-do="kbSetPat"]'))
+      .map(function (b){ return JSON.parse(b.getAttribute('data-a'))[0]; });
+    el = [].slice.call(document.querySelectorAll('[data-do="kbSetPat"]'))
+      .filter(function (b){ return b.getAttribute('data-a') === JSON.stringify(['flick']); })[0];
+    out.roadFlick = !!el;
+    if (!el) return;
+    /* the confirm the change asks -- answered yes, the way a finger does */
+    var was = window.confirm; window.confirm = function (){ return true; };
+    el.click();
+    window.confirm = was;
+    out.roadPat = KB.kbs[0].pat;
+    /* 1x10 became 2.5x4: the widths were never the broken part and stay
+       measured here, so a fix to the road cannot quietly cost them */
+    out.roadRow = kbLayer().rows[0].map(function (k){ return (k.w || 1); }).join(',');
+    /* and it comes back to the keyboard it just changed, not to the chooser */
+    out.roadBack = String(here().a);
+    out.roadDots2 = !!document.querySelector('[data-do="kbMore"]');
+    KB = null; kbShow = 0; kbLay = 0;
+  }());
+  /* Nothing below can be asked on a screen that is not there. The sheet, the
+     row numbers, the column letters and the buttons over them are all on a
+     BOARD's page, so a broken landing is not one more red line among 251 --
+     it is the check unable to start, and it says so here rather than throwing
+     on the first row it goes to read. */
+  if (!out.roadDots) return out;
 
   /* ---- 0. the board arrives as the sheet it is meant to be ------------- */
   fresh();
@@ -2285,6 +2351,7 @@ const r = await pg.evaluate(({ s }) => {
   }());
   out.seqSeen = seen.join(' | ');
 
+
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -2362,6 +2429,25 @@ const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
 console.log('what is selected, what acts on it, and the step back\n');
+say(r.roadOnBoard === '1',
+    'choosing a pattern lands on the keyboard it made, not on the chooser (route '
+    + r.roadOnBoard + ')');
+say(r.roadDots, 'and the \u22ef is on that screen');
+say(r.roadRepat, 'and it opens the way to change the arrangement');
+say(r.roadFlick && (r.roadPats || []).length === 5,
+    'which offers all five patterns [' + (r.roadPats || []).join(' ') + ']');
+say(r.roadPat === 'flick', 'and choosing one changes the keyboard (' + r.roadPat + ')');
+say(r.roadRow === '2.5,2.5,2.5,2.5',
+    'to four keys of two and a half columns, which is what goes to the phone ('
+    + r.roadRow + ')');
+say(r.roadBack === '1' && r.roadDots2,
+    'and it comes back to that keyboard with the \u22ef still on it (route '
+    + r.roadBack + ')');
+if (!r.roadDots){
+  console.error('\nkb-check: the ' + '\u22ef' + ' is on no screen the app lands on, so nothing'
+    + ' below it could be asked. ' + bad.length + ' FAILED');
+  process.exit(1);
+}
 say(r.rows > 3, 'the board has ' + r.rows + ' rows to work on');
 say(r.cols === 20, 'the sheet is ' + r.cols + ' columns wide, which is ten keys -- a column is half a key');
 say(r.halves, 'and one row is inset by half a key, which is what the columns count in');
@@ -2809,6 +2895,7 @@ say(r.seqLiftFound && r.seqLiftSel,
     'hold a key up and put it down, and a key can be chosen the ordinary way');
 say(r.seqLiftHole, 'and the sheet is still frames after it');
 console.log('    frames, hole by hole: ' + r.seqSeen);
+
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

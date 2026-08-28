@@ -569,15 +569,45 @@ function kbAdd(pat){
   /* And onto it. This is pressed on the sheet that offers the five patterns,
      so render() alone redrew the sheet -- somebody chose a keyboard and was
      left looking at the chooser. 「追加した時に画面動かないまま追加される
-     のやめてくれ」 */
-  kbGo();
+     のやめてくれ」 The board is NAMED, because the chapter's own page is the
+     chooser as well. */
+  kbGo(kbShow);
 }
 /* The keyboard chapter, from wherever this was pressed. go() lands on a
    screen already behind you by cutting the trail back to it, so pressing
-   Apply from a sheet does not push a second copy of the chapter. */
-function kbGo(){
-  if(here().r==='kb') render();
-  else go('kb');
+   Apply from a sheet does not push a second copy of the chapter.
+
+   And ONTO A BOARD when one is named, because the chapter's own page is the
+   LIST. Cutting back to the chapter was only half of "onto it": the route
+   carries which keyboard you are on, and this put nothing there, so a
+   keyboard made from the sheet of patterns landed on the chooser it was
+   chosen from -- 「追加した時に画面動かないまま追加されるのやめてくれ」 is
+   what that was written to answer and is not what it got. Changing an
+   existing keyboard's pattern landed there too, one screen away from the
+   keyboard it had just changed.
+
+   That is also what took the ⋯ off the screen. kbMoreQ() is drawn on a
+   BOARD's page and the list carries helpQ() instead, so the road that
+   changes a keyboard's arrangement -- ⋯ then kbRepat() then kbSetPat() --
+   had no first step from the one screen somebody arrives on after making a
+   keyboard. Nothing was wrong with any of the three: kbSetPat('flick')
+   turned 1x10 into 2.5x4 and sent the 2.5 to the phone the whole time. It
+   was the way there that was missing.
+
+   The board goes on TOP of the chapter, so the back arrow still walks to the
+   list rather than out of the chapter altogether. Pressed with nothing named
+   -- which is what deleting a keyboard does -- it is the list, because the
+   board it was pressed on is gone. */
+function kbGo(i){
+  var to = (i===undefined || i===null)? undefined
+         : String(kbClamp(i, Math.max(1, kbBoards().length)));
+  var h = here();
+  /* Already the screen being asked for. go() returns without drawing in that
+     case, which is right for a press that is going somewhere and wrong for
+     one that has just changed what is on the screen. */
+  if(h.r==='kb' && h.a===to){ render(); return; }
+  if(h.r!=='kb') go('kb');
+  if(to!==undefined) go('kb', to);
 }
 /* Which one goes to the phone. The only thing on this screen that changes
    what somebody types with. */
@@ -593,7 +623,10 @@ function kbApply(i){
 function kbGoBoard(i){
   kbShow=kbClamp(i, Math.max(1, kbBoards().length));
   kbLay=0; kbSel=null;
-  go('kb', String(kbShow));
+  /* One place says what landing on a board's page is. This said it a second
+     time, which is how the other two roads onto a board came to say
+     something else. */
+  kbGo(kbShow);
 }
 /* A keyboard goes only when somebody says so, and never the last one: with
    none left there is nothing to apply, and the app would be quietly back to
@@ -2897,7 +2930,9 @@ function kbSetPat(pat){
   x.pat=pat; x.lay=kbBlank(kbPatLay(pat));
   kbLay=0; kbSel=null;
   saveKb();
-  kbGo();
+  /* Back onto the keyboard whose arrangement this just changed, which is the
+     one screen that shows the change. */
+  kbGo(kbShow);
 }
 /* What this chapter IS, which the screen never said.
    「ここの画面どういうこと？」「Linguaで書いてくださいの画面にどう結びつけるのか

@@ -1049,7 +1049,19 @@ export function halfDone(){
        Board 0 is the free QWERTY, it is not in storage, and kbEdit() refuses
        it -- so opening one of its keys gives an empty sheet, which is the
        whole point of it and would render nothing here. kbAdd() makes board 1
-       and leaves kbShow on it. */
+       and leaves kbShow on it -- and LANDS on it, which is why none of these
+       says where it is.
+
+       They used to. Every face on a board's page wrote its own
+       `window.route='kb'; NAV=[{r:'kb', a:'1'}]`, and that is a state no
+       press produces: the route carries which keyboard you are on, and the
+       app was putting nothing there, so what the walk saw and what a finger
+       reached were two different screens. The ⋯ is drawn on a board's page
+       and the chapter's list carries the ? instead, so these faces showed a
+       ⋯ that was on no screen anybody could get to, and press stayed green
+       over a road with its first step missing -- it prints a name it never
+       pressed and does not fail on one. A face is built by the acts now, and
+       an act that stops landing takes the face with it. */
     ['a key of the keyboard, opened', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = vForm(); KB = null; kbShow = 0;
@@ -1071,7 +1083,6 @@ export function halfDone(){
        slots:false everywhere the keyboard is only being SHOWN. */
     ['a flick keyboard, being built', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                               kbAdd('flick'); kbLay = 0;
-                                              window.route = 'kb'; NAV = [{ r:'kb', a:'1' }];
                                               const h = vKb(); KB = null; kbShow = 0;
                                               SET.plan = 'free'; return h; }],
     /* A key that switches layers rather than typing one: which layer it goes
@@ -1104,7 +1115,6 @@ export function halfDone(){
        and Done in the bar. Neither the ⊖ nor Done is on the screen at rest. */
     ['a keyboard being held', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                       kbAdd('qwerty'); kbWob = true;
-                                      window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                       const h = vKb();
                                       kbWob = false; KB = null; kbShow = 0;
                                       SET.plan = 'free'; return h; }],
@@ -1113,7 +1123,6 @@ export function halfDone(){
        selected, so this is the only face that can press them. */
     ['a row of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbHeadRow(1);
-                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
@@ -1128,7 +1137,6 @@ export function halfDone(){
                                                kbAdd('qwerty'); kbLay = 0;
                                                kbHeadRow(0); kbCut();
                                                kbHeadRow(1); kbInsAsk();
-                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
@@ -1139,7 +1147,6 @@ export function halfDone(){
        「a1a2触ってキーをくっつける」 */
     ['a keyboard with a key two rows tall', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbVJoin(0, 3);
-                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
@@ -1151,7 +1158,6 @@ export function halfDone(){
        押してその作業がされるようにしようよ」 */
     ['a key of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0; kbTapKey(0, 2);
-                                               window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                SET.plan = 'free'; return h; }],
@@ -1163,14 +1169,12 @@ export function halfDone(){
     ['two keys of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbTapKey(0, 2); kbTapKey(0, 3);
-                                                  window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
     ['a column of the keyboard selected', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);
-                                                  window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
@@ -1182,13 +1186,11 @@ export function halfDone(){
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbHeadCol(0); kbCut();
                                                   kbHeadCol(2); kbInsAsk();
-                                                  window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   SET.plan = 'free'; return h; }],
     ['a keyboard of two layers', () => { SET.plan = 'pro'; KB = null; kbShow = 0;
                                          kbAdd('qwerty'); kbAddLay();
-                                         window.route='kb'; NAV=[{r:'kb', a:'1'}];
                                          const h = vKb();
                                          KB = null; kbShow = 0; kbLay = 0;
                                          SET.plan = 'free'; return h; }],
@@ -1208,7 +1210,7 @@ export function halfDone(){
     ['the free QWERTY, on a plan that can build others', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('tap'); kbShow = 0; KB.at = 1;
-        window.route='kb'; NAV=[{r:'kb', a:'0'}];
+        kbGoBoard(0);
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     /* A language holding more than one keyboard, which is where the row of
@@ -1227,14 +1229,12 @@ export function halfDone(){
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('flick'); kbAdd('chart');
         KB.at = 0; kbShow = 2;
-        window.route='kb'; NAV=[{r:'kb', a:'2'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     ['the keyboard that is already applied', () => {
         SET.plan = 'pro'; KB = null; kbShow = 0;
         kbAdd('tap');
         KB.at = 1; kbShow = 1;
-        window.route='kb'; NAV=[{r:'kb', a:'1'}];
         const h = vKb();
         KB = null; kbShow = 0; kbLay = 0; SET.plan = 'free'; return h; }],
     /* A sound the language has that no letter says yet. It is a cell in the
