@@ -107,6 +107,11 @@ export function seed(){
   SET.theme='system'; SET.plan='free'; SET.done=true; SET.order='SOV';
   SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
   SET.myfont=false; SET.wsys=''; SET.gpos=''; SET.myfont=false;
+  /* Two saved searches, for the same reason `WLD` is seeded below: with none
+     saved, the row that lists them never renders, so `snsPickSaved` was an
+     entry no screen ever named -- true, and not what it meant. A saved search
+     is a word as it was typed. */
+  SET.saved = ['ka', 'the sea'];
   SND = ['k','t','m','n','s','r','a','i','u','e','o'];
   /* What the language is FOR. Seeded because it is a slice like the others,
      and because NOT seeding it made one button unreachable: `setWldHide`
