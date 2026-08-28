@@ -1141,11 +1141,23 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    in a reply it starts at 242. The column asked for `vvmin - 230` and the box
    held `vvmin - 300`, so the meaning was pushed out by the difference, and the
    difference grows with the screen. It asks its parent now instead of asking
-   the viewport. 96 is the floor a column stays readable at (four characters);
-   at 44 it collapses and reads as a sideways line. */
+   the viewport.
+
+   AND IT TAKES WHAT IS THERE RATHER THAN ASKING FOR 96. 96 was the floor a
+   column stays readable at -- four characters; at 44 it collapses and reads as
+   a sideways line -- and on the owner's small phone there is no reading of the
+   screen where a column gets it AND the post being answered is on the screen
+   at all. 320x568 with the keyboard up leaves the box somebody writes in 104,
+   which is a column of 48 over a meaning of 46. Asking for 96 anyway does not
+   produce a 96 column: it pushes the meaning out of the box, which is the
+   thing post-check exists to catch and is what the owner was looking at.
+   「相手の投稿は小さく固定、その下から自分が打てるようにしてくれ」 -- the
+   quoted post is what was asked for, so the column is what yields, and it
+   scrolls inside itself the way it already did when a line got too long.
+   On a 402 it is 242 tall and none of this is reached. */
 .view.fit .pwfield .lnin.dir-ttb-rl,
 .view.fit .pwfield .lnin.dir-ttb-lr{
-   height:auto;flex:1 1 auto;min-height:96px;
+   height:auto;flex:1 1 auto;min-height:0;
    max-width:100%;overflow:auto}
 /* The one thing that does not scroll: the row that adds a photograph or a
    voice, and how much of the line is left. It is the last child of the form,
