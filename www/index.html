@@ -990,9 +990,31 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* The body holds two children and gives all the slack to the first: what is
    being written scrolls, and the bar under it does not. */
 /* The row of pictures is pinned to the keyboard now and is out of the flow,
-   so what scrolls has to clear it: 52px is `.pwbar`'s own min-height. */
+   so what scrolls has to clear it -- and what it has to clear is exactly the
+   row's own box, which is the rule twenty lines down said back in one place.
+   「投稿打つ時、文字と写真とかの帯の間に謎の隙間があるから直して欲しい」
+   OWNER 2026-08-28.
+
+   It was `safe-area + 62`, and the row is 53: `min-height:52px` plus the
+   `border-top:1px` above it. Two numbers for one fact, and they had drifted
+   by ten. Worse, the safe area was added TWICE -- the row subtracts what the
+   keyboard already covers (`max(0, safe - vvkb)`, the rule below), and this
+   one added the whole inset regardless, so with a keyboard up on a notched
+   phone the whole 34px was reserved for a home indicator the keyboard was
+   already sitting on top of.
+
+   Measured at 390x844, from the foot of what scrolls to the top of the row:
+
+     safe=0   keyboard down    9px -> 0
+     safe=0   keyboard up      9px -> 0
+     safe=34  keyboard down    9px -> 0
+     safe=34  keyboard up     43px -> 0    <- the photograph the owner sent
+
+   The two halves of `.pwbar`'s height are declared together below, so the 53
+   here is those two added up and nothing else. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 62px);overflow:hidden}
+   padding-bottom:calc(53px + max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
+   overflow:hidden}
 /* Everything you are writing, and it is the part that scrolls -- so the line
    can be as long as it likes and the photographs under it move down with it,
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
