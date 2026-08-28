@@ -1637,6 +1637,81 @@ const r = await pg.evaluate(({ s }) => {
         kbAtOf(kbLayer().rows[a[1].r], a[1].i) === kbAtOf(kbLayer().rows[a[0].r], a[0].i);
     }());
 
+
+    /* ---- and every one of them LIFTS, and follows the finger -----------
+       「5個とか選択したら選択したのが持ち上がって動くようにしてよ」 OWNER
+       2026-08-28.
+
+       The block above is about where the keys END UP, and it was green while
+       the carry still looked wrong to the person doing it: only the key under
+       the finger rose and moved, and the other n-1 sat flat in their old
+       places until the drop, when they jumped. The model the owner named is a
+       phone's home screen, where everything picked up travels with the finger.
+
+       So this measures the MIDDLE of a carry rather than its end -- at the one
+       moment the app asks what is under the finger, which is after the
+       transform goes on and before anything is rearranged. Three things are
+       asked of every carried key at that moment, and the third is the one that
+       is easy to miss: a lifted key sits UNDER THE FINGER, so if it is left in
+       the hit test it answers `elementFromPoint` instead of the key being
+       aimed at, and the carry is silently refused. One key out of the way was
+       enough while one key moved. */
+    function dragWatch(fromR, fromK, toR, toK){
+      function el(ri, ki){
+        return document.querySelector('#kb [data-r="' + ri + '"][data-k="' + ki + '"]');
+      }
+      var src = el(fromR, fromK), dst = el(toR, toK), real, seen = null, els, lifted;
+      if (!src || !dst) return null;
+      els = kbSelKeys().map(function (m){ return el(m.r, m.i); });
+      if (els.indexOf(null) >= 0) return null;
+      kbDown({ target: src, touches: [{ clientX: 100, clientY: 100 }] });
+      kbLift();                                   /* the 380ms hold, fired */
+      lifted = els.filter(function (e){ return /(^|\s)lift(\s|$)/.test(e.className); }).length;
+      real = document.elementFromPoint;
+      document.elementFromPoint = function (){
+        seen = els.map(function (e){
+          return { t: e.style.transform, pe: e.style.pointerEvents };
+        });
+        return dst;
+      };
+      kbDragTo({ touches: [{ clientX: 120, clientY: 140 }], preventDefault: function (){} });
+      document.elementFromPoint = real;
+      kbUp({ preventDefault: function (){} });
+      return { n: els.length, lifted: lifted, seen: seen };
+    }
+    fresh();
+    (function (){
+      var rw = kbLayer().rows[3];
+      while (rw.length > 1 && kbUsed(rw) > KB_COLS - 6) rw.pop();
+      saveKb(); render();
+    }());
+    kbTapKey(0, 2); kbTapKey(0, 3); kbTapKey(0, 4); standKb();
+    out.liftChose = kbSelKeys().length === 3;
+    var lw = dragWatch(0, 2, 3, 0);
+    out.liftRan = !!lw && !!lw.seen;
+    out.liftN = lw ? lw.n : 0;
+    out.liftUp = lw ? lw.lifted : 0;
+    /* all of them rose */
+    out.liftAll = !!lw && lw.lifted === lw.n;
+    /* all of them were following the finger, by the same amount -- a run that
+       travels as one thing does not stretch on the way */
+    out.liftMoves = !!lw && !!lw.seen && lw.seen.every(function (s){
+      return s.t && s.t === lw.seen[0].t;
+    });
+    out.liftMoveN = lw && lw.seen ? lw.seen.filter(function (s){ return !!s.t; }).length : 0;
+    /* and not one of them was in the way of the question */
+    out.liftHit = !!lw && !!lw.seen && lw.seen.every(function (s){ return s.pe === 'none'; });
+    out.liftHitN = lw && lw.seen ? lw.seen.filter(function (s){ return s.pe === 'none'; }).length : 0;
+    /* THE CLAIM THAT IS NOT MADE HERE, so the next reader does not add it
+       back believing it holds something: "and letting go puts every one of
+       them back down". kbUp() does clear the lift and the transform off every
+       carried key -- but it then calls kbReadRows(), which ends in render(),
+       and render() REBUILDS the board. Measured: of the 3 elements carried, 0
+       are still in the page after the drop. So a query for a key left lifted
+       finds nothing whether kbUp clears them or not; the claim was written,
+       watched with the clearing removed, and STAYED GREEN. A green line that
+       cannot go red is worse than no line, because it is believed. */
+
     /* ---- a MERGED PAIR is carried as one thing ------------------------
        「長押しの時は動くよ？ iPhoneのホーム画面と同じ ウェジットも2*2とかある
        けどその分みんな動くでしょ？それと同じ」 OWNER 2026-08-27.
@@ -1862,6 +1937,54 @@ const r = await pg.evaluate(({ s }) => {
     }
     ltQ = wasQ; ltSort = wasS; ltFil = wasF;
   }());
+  /* ---- a press answers while the keys wobble, and half a column is not
+          something to press ------------------------------------------------
+     Both are the same shape of fault: something was taken away and what stood
+     on it was left behind. */
+  SET.plan = 'pro';
+  fresh();
+  /* fresh() leaves the read-only board 0 showing on this path, and board 0 is
+     the free QWERTY -- its keys are spans and answer nothing on purpose. The
+     claim below is about the board somebody EDITS. */
+  kbShow = 1; kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb', a: '1' }];
+  function keysOnPage(){
+    return [].slice.call(document.querySelectorAll('#kb .kbk'))
+      .filter(function(el){ return el.className.indexOf('cell') < 0; });
+  }
+  function pressable(list){
+    return list.filter(function(el){
+      return el.getAttribute('data-do') === 'kbTapKey';
+    }).length;
+  }
+  render();
+  kbWob = true; render();
+  out.wobKeys = keysOnPage().length;
+  out.wobPressable = pressable(keysOnPage());
+  kbWob = false; render();
+
+  /* every cell OFFERED holds a key; a leftover of one column is drawn as
+     space instead. Counted off the page, because what is wrong is what a
+     finger meets.
+
+     A row is made short by exactly ONE column to get the case: a column is
+     half a key, so this is the row that ends half a key from the edge -- what
+     the free QWERTY's third row does by construction, and what any row does
+     once a key on it is narrowed. */
+  kbLayer().rows[0][0].w = 0.5;
+  /* and a row short by a whole key, so the claim above is about something:
+     that row DOES get a cell, and it is a button. */
+  kbLayer().rows[1].splice(0, 1);
+  saveKb(); render();
+  function spanOf(el){
+    var m = /span (\d+)/.exec(el.style.gridColumn || '');
+    return m ? +m[1] : 0;
+  }
+  out.cellSpans = [].slice.call(document.querySelectorAll('#kb .kbk.cell'))
+    .map(spanOf);
+  out.halfSpacers = [].slice.call(document.querySelectorAll('#kb .kbrow > span'))
+    .filter(function(el){ return spanOf(el) === 1; }).length;
+
   return out;
 }, { s: seed.toString() });
 /* ---- and the SHEET, on the smallest phone the app runs on ---------------
@@ -2069,6 +2192,16 @@ say(r.runThree && r.roomForTwo && r.runNoRoomKeys && r.runNoRoomSame,
     'three carried into a row with space for two: nothing moves, and NOT ONE key is lost');
 say(r.runDownChose && r.runDownKeys && r.runDownRows,
     'and a run chosen DOWNWARD arrives one to a row, in the same column');
+say(r.liftChose && r.liftRan && r.liftAll,
+    'and all ' + r.liftN + ' of them LIFT, not just the one under the finger (' +
+    r.liftUp + ' of ' + r.liftN + ' up)');
+say(r.liftMoves,
+    'and all ' + r.liftN + ' follow the finger, by the same amount (' +
+    r.liftMoveN + ' of ' + r.liftN + ' moving)');
+say(r.liftHit,
+    'and not one of them is in the way of "what is under the finger" (' +
+    r.liftHitN + ' of ' + r.liftN + ' out of the hit test)');
+
 say(r.pairMade, 'two keys can be merged into one that is two rows tall');
 say(r.pairMoved, 'and carrying it takes it to the row it was carried to' +
     (r.pairAfter ? ' (row ' + r.pairAfter.row + ')' : ''));
@@ -2305,6 +2438,22 @@ r.midWays.forEach(function(w){
       'a letter drawn ' + w[0] + ' stands in the middle of its key (off by '
       + (w[1] < 0 ? 'nothing drawn' : w[1] + 'px, ' + w[2] + 'px of ' + w[3]) + ')');
 });
+
+say(r.wobKeys > 0 && r.wobPressable === r.wobKeys,
+    'while the keys wobble, every one of them still answers a finger ('
+    + r.wobPressable + ' of ' + r.wobKeys + ')');
+
+/* The ⊖ on a held key came off and this is what was standing on it: the press
+   was stripped because the ⊖ was what a press was FOR, and nothing took its
+   place. 「キー触っても反応ないし、選択しているところと違うとこさわれば選択解除
+   されるはずなのにそれもない」 */
+
+say(r.cellSpans.length > 0 && r.cellSpans.every(function(n){ return n > 1; }),
+    'every empty cell offered has a key\'s worth of room in it ('
+    + r.cellSpans.length + ' cells, narrowest ' + Math.min.apply(null, r.cellSpans) + ' columns)');
+say(r.halfSpacers > 0,
+    'a leftover of one column is drawn as space rather than as something to press ('
+    + r.halfSpacers + ' of them on this board)');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

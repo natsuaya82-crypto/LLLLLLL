@@ -63,7 +63,34 @@ enum LinguaPdf {
     return UIGraphicsImageRenderer(size: size).image { c in
       UIColor.white.setFill()
       c.fill(CGRect(origin: .zero, size: size))
-      page.draw(with: .cropBox, to: c.cgContext)
+      // The flip and the SCALE, and neither is decoration.
+      //
+      // `page.draw(with:to:)` draws the page at its own size, in POINTS. It
+      // places the box and it carries the rotation; it does not fit the page
+      // to the context it is handed. So drawing an A4 page straight into a
+      // 1556x2200 context put a 595x842 sheet in the corner of it -- and
+      // nothing threw, because the picture that came back was a real picture
+      // of the sheet, only 2.6 times too small inside a white page.
+      //
+      // What that costs is the whole feature. www/sheet.js's shScan() sizes
+      // the four corner marks off the image it is given -- `want = W / SH_W *
+      // SH_MARK`, and it accepts half to twice that. At `edge` the marks are
+      // 36.6 pixels; drawn unscaled they are 14, which is under the floor of
+      // 18.3, so every one of the four is thrown away and the answer is
+      // `fail:'marks'` -- 「四隅の印が四つとも写っていません」 on a sheet that
+      // was never touched. Measured both ways in the browser before this was
+      // written: 36.6 finds four marks, 14.0 finds none.
+      //
+      // The flip is the other half. UIGraphicsImageRenderer hands out a
+      // context whose y runs DOWN, the way UIKit draws; a PDF's y runs UP. So
+      // the scale is negative and the origin starts at the foot of the image.
+      // Without it the sheet comes back upside down, which does not fail
+      // either: four marks are found, in the wrong corners, and the strip is
+      // read from the bottom.
+      let g = c.cgContext
+      g.translateBy(x: 0, y: size.height)
+      g.scaleBy(x: k, y: -k)
+      page.draw(with: .cropBox, to: g)
     }
   }
 }

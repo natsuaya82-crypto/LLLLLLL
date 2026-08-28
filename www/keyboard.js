@@ -1249,10 +1249,25 @@ function kbDragMount(){
    which was the one place on this sheet where a press did something rather
    than choosing something -- and it was standing exactly where a second key
    would have to be chosen 「あと複数キー選べないから」. */
-function kbCellHTML(ri, at, span){
-  return '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
-    ' style="grid-column:span '+span+'"' +
-    ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
+/* An empty cell, and whether a key can actually go in it.
+   `can` is false for a leftover of ONE column, which is half a key. A column
+   is half a key wide -- that is what makes a short row always divide -- so a
+   row that stops half a key short of the widest leaves one column over, and
+   it was being drawn as a cell like any other. Pressing it did nothing: a key
+   is one key wide, kbCellAdd() asks kbRoomIn(ri, 1) for that much room, and
+   half a column is not it.
+   「ここに謎のスペースできてキーの追加もできない」 OWNER 2026-08-28.
+
+   So the half column is drawn as SPACE and not as something to press. It is
+   not a key's worth of room and it never was; what was wrong was the app
+   offering it. A key half a column wide would be a new kind of key and a
+   different question -- it is the owner's, and it is not answered here. */
+function kbCellHTML(ri, at, span, can){
+  return can
+    ? '<button class="kbk cell"' + DO('kbCellAdd', [ri, at]) +
+      ' style="grid-column:span '+span+'"' +
+      ' aria-label="'+esc(t('kb.cell.add'))+'"></button>'
+    : '<span style="grid-column:span '+span+'"></span>';
 }
 /* Where in the row a key goes when the cell at this column is pressed.
    kbColAt() is the same arithmetic the column insert uses -- a cell before
@@ -1896,7 +1911,7 @@ function kbHTML(sel, ro){
       lead=kbLead(cols, tot);
       while(at<lead){
         b=Math.min(2, lead-at);
-        out+=kbCellHTML(ri, at, b);
+        out+=kbCellHTML(ri, at, b, b>1);
         at+=b;
       }
     }
@@ -1930,14 +1945,14 @@ function kbHTML(sel, ro){
           'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+
             (ro? '' : kbPickCSS(ri, ki))+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
-          (kbWob? '' : DO('kbTapKey', [ri, ki])) + '>'+kbFlicks(key, slots)+
+          DO('kbTapKey', [ri, ki]) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
     }
     /* and the other half, after them. A row of a keyboard built from a
        pattern comes to the same total as the widest and has neither. */
     if(!ro) while(at<cols){
       b=Math.min(2, cols-at);
-      out+=kbCellHTML(ri, at, b);
+      out+=kbCellHTML(ri, at, b, b>1);
       at+=b;
     }
     out+='</div>';
@@ -2273,14 +2288,55 @@ function kbDown(e){
      them". Asked once, here, while the layout still says what the page says. */
   if(!mate && kbSelN()>1 &&
      kbKeyIs(parseInt(b.getAttribute('data-r'), 10),
-             parseInt(b.getAttribute('data-k'), 10)))
+             parseInt(b.getAttribute('data-k'), 10))){
     KBD.run=kbSelKeys();
+    KBD.runEls=kbRunEls(KBD.run);
+  }
   KBD.timer=setTimeout(kbLift, 380);
+}
+/* ---- everything the finger is carrying ----------------------------------
+   「5個とか選択したら選択したのが持ち上がって動くようにしてよ」 OWNER
+   2026-08-28. Lifting, following the finger, coming out of the hit test and
+   being put back down are four things done to the SAME set, and that set is
+   the run when there is one and the single key otherwise. Said once here, so
+   the four cannot drift apart -- the way they had, with the lift on one key
+   and the landing on all of them.
+
+   A merged pair is not in it. kbPairMove() carries the two together already,
+   and the bottom half is a shadow -- the ROOM the tall key takes, drawn
+   clear -- so there is nothing there to raise. */
+function kbRunEls(ms){
+  var g=document.getElementById('kb'), out=[], e, i;
+  if(!g || !ms) return out;
+  for(i=0;i<ms.length;i++){
+    e=g.querySelector('.kbk[data-r="'+ms[i].r+'"][data-k="'+ms[i].i+'"]');
+    if(e) out.push(e);
+  }
+  return out;
+}
+function kbCarried(){
+  if(!KBD) return [];
+  return (KBD.runEls && KBD.runEls.length)? KBD.runEls : [KBD.el];
+}
+/* dx null puts them back where the layout says they are */
+function kbCarryAt(dx, dy){
+  var c=kbCarried(), v=(dx===null)? '' : 'translate('+dx+'px,'+dy+'px)', i;
+  for(i=0;i<c.length;i++) c[i].style.transform=v;
+}
+/* Out of the way of "what is under the finger", and straight back. A carried
+   key is directly under the finger and lifted above the others, so it is the
+   topmost thing at that point and answers the question itself. One key was
+   taken out while one key moved; a run has to take out all of them, or the
+   second key of it answers instead and the carry is silently refused. */
+function kbCarryHit(off){
+  var c=kbCarried(), i;
+  for(i=0;i<c.length;i++) c[i].style.pointerEvents=off? 'none' : '';
 }
 function kbLift(){
   if(!KBD) return;
   KBD.on=true;
-  KBD.el.classList.add('lift');
+  var c=kbCarried(), i;
+  for(i=0;i<c.length;i++) c[i].classList.add('lift');
   var g=document.getElementById('kb');
   if(g) g.classList.add('moving');
   /* And the keyboard goes into the state a phone's home screen goes into
@@ -2300,7 +2356,7 @@ function kbDragTo(e){
     return;
   }
   e.preventDefault();
-  KBD.el.style.transform='translate('+dx+'px,'+dy+'px)';
+  kbCarryAt(dx, dy);
   /* The key being carried is directly under the finger -- that is what
      carrying it means -- and it is lifted above the others, so it is the
      topmost thing at that point and elementFromPoint answered with IT every
@@ -2311,9 +2367,9 @@ function kbDragTo(e){
      So it is taken out of the hit test for the length of the question and put
      straight back. Nothing else can be asked instead: what is wanted is the
      key UNDER the one being carried. */
-  KBD.el.style.pointerEvents='none';
+  kbCarryHit(true);
   var over=kbKeyAt(document.elementFromPoint(p.clientX, p.clientY));
-  KBD.el.style.pointerEvents='';
+  kbCarryHit(false);
   if(!over || over===KBD.el) return;
   /* Into the row the finger is over, beside the key it is over -- which is
      what moving across rows means and is the half a one-dimensional grid
@@ -2347,13 +2403,13 @@ function kbDragTo(e){
     if(over===KBD.mate) return;
     if(!kbPairMove(row, over, carried.w)) return;
     KBD.x=p.clientX; KBD.y=p.clientY;
-    KBD.el.style.transform='';
+    kbCarryAt(null);
     return;
   }
   if(KBD.run){
     if(!kbRunMove(row, over)) return;
     KBD.x=p.clientX; KBD.y=p.clientY;
-    KBD.el.style.transform='';
+    kbCarryAt(null);
     return;
   }
   for(i=0;i<kids.length;i++){ if(kids[i]===KBD.el) a=i; if(kids[i]===over) b=i; }
@@ -2362,7 +2418,7 @@ function kbDragTo(e){
      gap in the keyboard that nothing can be put back into. */
   if(mine!==row && !mine.children.length) mine.parentNode.removeChild(mine);
   KBD.x=p.clientX; KBD.y=p.clientY;
-  KBD.el.style.transform='';
+  kbCarryAt(null);
 }
 /* ---- a RUN of chosen keys, carried as one -------------------------------
    「色んなキー触ったら一気に動かせたりしようよ。横と縦に限定だけど。」
@@ -2485,14 +2541,13 @@ function kbPairMove(row, over, w){
 function kbUp(e){
   if(!KBD) return;
   clearTimeout(KBD.timer);
-  var d=KBD, g=document.getElementById('kb');
+  var d=KBD, g=document.getElementById('kb'), c=kbCarried(), i;
   KBD=null;
-  d.el.style.transform='';
-  d.el.classList.remove('lift');
+  for(i=0;i<c.length;i++){ c[i].style.transform=''; c[i].classList.remove('lift'); }
   if(g) g.classList.remove('moving');
   if(!d.on){
     /* Held long enough to wobble but let go without moving anything: still a
-       hold, so the ⊖ appear. */
+       hold, so the keys are drawn wobbling. */
     if(kbWob) render();
     return;
   }
@@ -2501,10 +2556,24 @@ function kbUp(e){
   kbReadRows();
 }
 /* ---- the state a home screen is in while an icon is held ---------------
-   Every key wobbling, a ⊖ on each one, and Done in the bar. Pressing a key
-   does nothing while it lasts -- what a press is FOR in this state is the ⊖,
-   and a key that opened its own sheet from under a wobble would be two
-   answers to one press.
+   Every key wobbling, and Done in the bar.
+
+   A press still SELECTS while it lasts, and that is a fix rather than a
+   choice. This state used to strip `kbTapKey` off every key, and the reason
+   written here was that a press was for the ⊖ on the key's corner -- so a key
+   that also opened its own sheet would have been two answers to one press.
+   The ⊖ came off. Nothing took its place, and the sentence justifying the
+   strip stayed, so what was left was a keyboard where **no key answered a
+   finger at all**: not to select, not to let go of a selection, and with no
+   way out but Done in the bar.
+   「キー触っても反応ないし、選択しているところと違うとこさわれば選択解除される
+   はずなのにそれもない」 OWNER 2026-08-28.
+
+   With no ⊖ there is no second answer to compete with, so a press means here
+   what it means everywhere else on this sheet: press to select, press
+   somewhere the run cannot reach to let go. A press that ENDED a carry is
+   already stopped in kbUp() -- it calls preventDefault(), which is what keeps
+   a key from being selected by the finger that just put it down.
 
    Where you are standing, so viewReset() drops it. */
 var kbWob=false;

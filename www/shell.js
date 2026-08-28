@@ -55,6 +55,7 @@ function viewReset(){
   snsQ=''; snsHits=null; snsMode='who'; /* the search, what came back, and
                                           which of the two it is about */
   snsSort='new';                       /* and newest or most answered */
+  snsFil=null;                         /* and the word the feed is filtered to */
   NOTES_HAVE=null;                     /* the notices, asked again */
   BKLIST=null;                         /* what is on the disk, asked again */
 }
