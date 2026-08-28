@@ -2921,6 +2921,12 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   padding:12px 2px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
 .mnadd input:focus{border-bottom-color:var(--goldln)}
 .mnadd .btn{flex:0 0 auto}
+/* A meaning being added wraps now, so the field in this row is a textarea.
+   `.lnin` is display:block and brings its own gap below; in a flex row it
+   takes the room the input had and nothing else. 「全部改行して画面内に文字が
+   収まるようにして欲しい」 OWNER 2026-08-27. Nothing is added -- no frame,
+   no corner; the line under it is `.lnin`'s own, one side. */
+.mnadd .lnin{flex:1;min-width:0;margin-bottom:0}
 /* the letter a sound wears, when it was borrowed rather than drawn */
 .gborrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);
   border-radius:11px;background:var(--pane)}

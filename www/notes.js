@@ -49,8 +49,13 @@ function openNote(i){
   ntAt=k;
   var n = k>=0 ? NOTES[k] : {t:'',b:''};
   openForm('note:'+k, (k>=0? t('notes.edit') : t('notes.new')),
+    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+       An <input> is one row that scrolls sideways forever and no CSS makes it
+       wrap. This field carries no name of its own -- it is read when the form
+       is saved -- so what makes it grow is the line in www/act.js. */
     '<div class="field"><label>'+t('notes.t')+'</label>'+
-      '<input id="nt-t" value="'+esc(n.t||'')+'" placeholder="'+esc(t('notes.t.ph'))+'"></div>'+
+      lnField('nt-t', t('notes.t.ph'), '', n.t||'')+'</div>'+
     '<div class="field"><label>'+t('notes.b')+'</label>'+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'">'+esc(n.b||'')+'</textarea></div>'+
     '<button class="btn" style="width:100%;margin-top:6px"' + DO('saveNote') + '>'+t('notes.save')+'</button>'+
