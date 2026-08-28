@@ -353,6 +353,7 @@ defLang('fr', (function(){
       "ob.coach.draw" : "Tracez un trait avec le doigt.",
       "ob.coach.drawn" : "Bien. Ajoutez-en ou continuez.",
       "ob.draw.note" : "Vous pourrez le redessiner plus tard",
+      "ob.skip" : "Se connecter",
       "ob.draw.done"              : "Terminé",
       "ob.draw.empty"             : "Dessinez d'abord un trait",
       "ob.lang.a"                 : "Langue de l’interface",
@@ -688,7 +689,6 @@ defLang('fr', (function(){
       "ob.name.note"      : "Modifiable plus tard",
       "ob.name.later"      : "Plus tard",
       "ob.draw.h"        : "Dessinez votre {0}.",
-      "ob.draw.later"     : "La dessiner plus tard",
       /* the writing system */
       "script.show"     : "Afficher",
       "script.show.own"   : "Vos lettres",

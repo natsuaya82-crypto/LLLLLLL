@@ -55,6 +55,11 @@ answers it is in §3 and takes a second.
 | 文法ページ | **誰も動かしていない。**`feature/grammar-engine`（`claude/grammar2` を含む）が master より **364進み・281遅れ**、140ファイル。`index.html` `act-map.js` `core.js` `glyph.js` i18n×10 に触る | `origin/feature/grammar-engine` |
 | 絞り込みの⭐️ | `snsPickSaved()` が `goTab('explore')` で**検索タブへ飛ぶ**。決定は「その言葉で検索し直す（飛ばすのではない）」 | `sns.js` `snsPickSaved` |
 
+**オーナーは iPhone SE2 と iPhone 17 で実機確認しています。**OWNER 2026-08-28
+「iPhone se2と17で作業してる」。**一番狭い端末と一番広い端末の両方**なので、
+画面の話はその二つで成り立つかを考えること ── `press` が測っているのは 402pt の
+一台だけで、SE2 の 320pt はそこに入っていません。
+
 **でんわ、という語を使わないこと。端末、または iPhone。**OWNER 2026-08-28、
 二度言われた。二度目は「使うなって言ってんだから使うな」。報告でも、コメントでも、
 画面の文字でも、docs でも。**リポジトリ全体で 0 件にしてある。増やさないこと。**

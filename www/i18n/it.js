@@ -305,6 +305,7 @@ defLang('it', (function(){
       "ob.coach.draw" : "Traccia una linea con il dito.",
       "ob.coach.drawn" : "Bene. Aggiungine altre o vai avanti.",
       "ob.draw.note" : "Puoi ridisegnarla quando vuoi",
+      "ob.skip" : "Accedi",
       "ob.draw.done"              : "Fatto",
       "ob.draw.empty"             : "Disegni prima un tratto",
       "ob.lang.a"                 : "Lingua dell'interfaccia",
@@ -640,7 +641,6 @@ defLang('it', (function(){
       "ob.name.note"     : "Modificabile dopo",
       "ob.name.later"     : "Decido dopo",
       "ob.draw.h"       : "Disegna la tua {0}.",
-      "ob.draw.later"    : "Disegnala più tardi",
       /* the writing system */
       "script.show"     : "Mostra",
       "script.show.own"   : "Le tue lettere",

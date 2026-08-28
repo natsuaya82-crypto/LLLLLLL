@@ -254,8 +254,8 @@ function obTourDone(){ obGo(OB_SNS); }
    OWNER 2026-08-28.
 
    Out of the first stop is out of the walk, which is the drawing square: it is
-   where the walk was entered from, by all three roads (obDone, obTakeCh,
-   obSkipDraw). obTour is left where it is by obGo(), which is what lets the
+   where the walk was entered from, by both roads (obDone and obTakeCh,
+   obTakeCh). obTour is left where it is by obGo(), which is what lets the
    step after the walk come back INTO it at the stop it left. */
 function obTourBack(){
   obAuto=-1;
@@ -1373,17 +1373,9 @@ function obTakeCh(ch){
   save(); installScriptFont();
   ob.mode=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
-/* Nothing was drawn, so there is nothing to say which letter it is: the stop
-   that lights the key of the letter just drawn has no key to light.
-
-   THE WALK IS THE SAME WALK ANYWAY, and the keyboard is not skipped.
-   「後で書くしたなら、キーボード画面飛ばす必要ないし」 OWNER 2026-08-28, and
-   the reason is the whole point of the walk: 「オンボーディングは使い方をレク
-   チャーするページだから」. Lighting one key is not what that stop is FOR --
-   showing somebody the keyboard is -- so with no letter drawn, the keyboard
-   itself is what is lit, which is obTourFind()'s fallback and is the true
-   sentence either way: this is where your letters are. */
-function obSkipDraw(){ ob.lid=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo(); }
+/* Past the drawing, the walk, the timeline and the name, to the door -- and
+   not past the door. 「ログイン画面までスキップ」 OWNER 2026-08-28. */
+function obSkipAll(){ ob.lid=''; obTour=0; obGo(OB_IN); }
 
 function obFinish(){
   /* A language that reached the end of this without a name keeps not having
@@ -1435,7 +1427,14 @@ function obStrokes(){
    which is the one place CLAUDE.md's rule against explaining is not about --
    the rule is that a SCREEN does not explain itself, and the onboarding is
    not a screen somebody arrives at, it is what the app is until it is done. */
-function obCoachSay(n){ return t(n? 'ob.coach.drawn' : 'ob.coach.draw'); }
+/* What the step says AND that it is not for ever, on one line under the
+   heading. 「指で線を引いて。後で書き直せます。」 OWNER 2026-08-28 -- the
+   reassurance used to sit at the foot, under the buttons, which is after
+   somebody has decided. Somebody who thinks the first stroke has to be right
+   will not draw one, so they have to know before they decide, not after. */
+function obCoachSay(n){
+  return t(n? 'ob.coach.drawn' : 'ob.coach.draw')+' '+t('ob.draw.note');
+}
 function obCoach(n){
   /* .obsub, which is the line this step already had -- what changes is the
      words, and the words changing IS the coaching. No new class, because
@@ -1476,15 +1475,39 @@ function obDrawHTML(){
     '<div class="obesc"><button class="obescb"' + DO('obBorrow', [""]) + '>'+
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+
-    '<div class="obfoot">'+
-    '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
-      t('ob.draw.done')+'</button>'+
-    '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button>'+
-    /* And that it is not for ever. 「あとで編集できるよって」 The same line the
-       name step has, in the same place: what is being asked for here is the
-       first stroke of an alphabet, and somebody who thinks it has to be right
-       will not draw one. */
-    '<div class="mini obnote">'+esc(t('ob.draw.note'))+'</div></div>';
+    /* The foot takes the room that is left, so the two rows can stand apart:
+       Done just under the strip above, and the way to the door pinned to the
+       bottom of the screen. 「完了の位置が下帯のちょい下 / ログインへは一番下に
+       張り付く感じで」 OWNER 2026-08-28.
+
+       Written here rather than in a rule, because `.ob .obfoot` is
+       `flex:0 0 auto` -- it hugs its rows -- and www/index.html is another
+       session's file today. Nothing but layout: no corner, no border, no
+       colour. */
+    '<div class="obfoot" style="flex:1 1 auto;min-height:0;display:flex;'+
+      'flex-direction:column;align-items:stretch">'+
+    /* flex:0 0 auto, because `.btn` is `flex:1` -- written for a ROW of
+       buttons, where it shares the width. In a column it shares the HEIGHT,
+       and the button came out 117px tall with the row under it pushed up
+       against it. */
+    '<button class="btn" style="flex:0 0 auto"' + DO('obDone') +
+      (n? '' : ' disabled') + '>'+t('ob.draw.done')+'</button>'+
+    /* Straight to the door, past all of it. 「ログインまでスキップ」 OWNER
+       2026-08-28 -- for somebody who has an account already and is looking at
+       this screen because they reinstalled the app.
+
+       It skips TO the door, not past it: the door is still the last step and
+       there is still no way round it (OWNER 2026-08-26, and act-check holds
+       it -- signed out, all 37 routes are the door). Signing in from there
+       ends the onboarding exactly as it does at the end of the walk, because
+       obIn() calls obFinish() whenever SET.done is false.
+
+       Here and nowhere else. This is the FIRST screen, which is where somebody
+       decides they do not want the walk; the name step already reaches the
+       door through 「あとで決める」, and the walk's own chevron comes back here. */
+    '<button class="obskip" style="margin-top:auto"' + DO('obSkipAll') + '>'+
+      t('ob.skip')+'</button>'+
+    '</div>';
 }
 
 /* A sample is worth showing only if this phone can actually draw it. Some of

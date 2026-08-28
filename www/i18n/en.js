@@ -207,6 +207,7 @@ defLang('en', (function(){
       "ob.coach.draw" : "Draw a line with your finger.",
       "ob.coach.drawn" : "Good. Add more, or move on.",
       "ob.draw.note" : "You can redraw it any time",
+      "ob.skip" : "Sign in instead",
       "ob.draw.done"              : "Done",
       "ob.draw.empty"             : "Draw a stroke first",
       "ob.lang.a"                 : "Interface language",
@@ -545,7 +546,6 @@ defLang('en', (function(){
       'ob.name.note'    : "You can change it later",
       'ob.name.later'   : "Decide later",
       'ob.draw.h'      : "Draw your own {0}.",
-      'ob.draw.later'   : "Draw it later",
       /* the writing system */
       'script.show'     : 'Show',
       'script.show.own'   : "Your letters",
