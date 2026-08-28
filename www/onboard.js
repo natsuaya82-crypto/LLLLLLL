@@ -75,12 +75,27 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
 /* The owner's order, and signing in is the LAST of it:
 
      1 draw one letter
-     2 put it in the alphabet
-     3 the making screen
-     4 the keyboard
-     5 the first keyboard -- "the letter you just drew went in here"
-     6 "make letters and words, enjoy your making life"
-     7 sign in -- "to keep making, sign in"
+     2 the keyboard
+     3 the letters page
+     4 the words page
+     5 the grammar page
+     6 name the language
+     7 sign in
+
+   OWNER 2026-08-28: 「キーボードの後、文字のページ、単語のページ、文法のページ、
+   …→君の言語を決めよう→ログイン」
+
+   Every stop is one of the app's OWN finished screens -- 「オンボーディングは
+   追加だから基本完成したページを見せて欲しい。指でここ押すんだよみたいなやつは
+   他のページでもそのまま使って」 OWNER 2026-08-28. Nothing here draws a picture
+   of a screen; the walk points at what is already there.
+
+   THERE IS NO MOCK OF A TIMELINE, and there is not going to be one made up
+   out of nothing. The owner asked for 「君の文字でSNSを見てみよう（モックの
+   ページ）」 and what was built for it was invented people saying invented
+   words -- 「snsの画面それなに？ゴミはいらねえよ」 OWNER 2026-08-28. It is
+   gone. Anything that stands here later has to be somebody's real writing,
+   not something this file made up.
 
    The door was put FIRST once and that was a misreading of
    「とりあえずログインして、文字を書くところからやな」, which is what to
@@ -92,13 +107,19 @@ var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
    below is the one place making happens without a name on the account, and
    step 7 is where the account is asked for.
 
-   Steps 3 to 6 are not screens of this file. They are the app itself, walked
-   with everything but one thing greyed out -- OB_TOUR_STOPS below. The dots
-   count the three SCREENS the onboarding has, in the order they come: the
-   drawing, the name, the door. The walk is not one of them, because while it
-   is running the app is showing its own screens and vOb() is not on the page
-   at all. */
-var OB_STEPS=3;
+   Steps 2 to 5 are not screens of this file. They are the app itself, walked
+   with everything but one thing greyed out -- OB_TOUR_STOPS below.
+
+   The dots count FOUR: the drawing, the timeline, the name, the door, in the
+   order they come. Two of those four never draw a dot, and for one reason --
+   the walk and the timeline are both the app itself, so vOb() is not on the
+   page at all while either is showing and the head that holds the dots is not
+   there to hold them. They are counted anyway because `i<=s` in obDots() is
+   what lights them, and that is a comparison against the step NUMBER: leaving
+   the timeline out of the count would light the name's dot for the door as
+   well. The walk is the one step outside the numbering, and it can be because
+   nothing after it ever needs to say it has been passed. */
+var OB_STEPS=4;
 /* Which step is which, by name, because 0 1 2 3 in eight places is four
    chances to renumber three of them.
 
@@ -120,11 +141,14 @@ var OB_STEPS=3;
    on 2026-08-26 and that decision stands. Draw, name, and then sign in with
    no way past it.
 
-   The three the dots count are 0, 1 and 2, in the order they happen. The walk
-   is last on purpose and not because it happens last -- it is not a screen of
-   this file at all, vOb() is not on the page while it runs, so keeping it
-   outside the counted range is what lets obDots() stay a plain loop. */
-var OB_DRAW=0, OB_NAME=1, OB_IN=2, OB_TOUR=3;
+   The four the dots count are 0, 1, 2 and 3, in the order they happen. The
+   walk is last on purpose and not because it happens last -- it is not a
+   screen of this file at all, vOb() is not on the page while it runs, so
+   keeping it outside the counted range is what lets obDots() stay a plain
+   loop. The numbers are in the order the screens COME, which is what makes
+   `i<=s` in obDots() the right test: the walk runs between OB_DRAW and
+   OB_SNS, and nothing on the screen counts it. */
+var OB_DRAW=0, OB_SNS=1, OB_NAME=2, OB_IN=3, OB_TOUR=4;
 
 /* ---- the walk through the app itself -----------------------------------
    Steps three to six of the owner's order are not screens of their own. They
@@ -155,11 +179,63 @@ var OB_TOUR_STOPS=[
      chapter opens straight onto it -- so the owner's fourth and fifth stops
      are one screen here, and the thing lit on it is the key the letter just
      drawn ended up on. It is the last of them: tapping it ends the walk. */
-  { r:'kb',    a:'', lt:1,     lab:'ob.tour.kb1' }
+  { r:'kb',    a:'', lt:1,     lab:'ob.tour.kb1' },
+  /* And then the chapters, each one ENTERED from the contents and LEFT by
+     pressing the app's own back arrow. 「単語とかやったら戻る」 and
+     「戻るボタン押させてないね」 OWNER 2026-08-28 -- the second of those is
+     what `bk` is: the walk used to carry the person back to the contents
+     itself, so the one gesture they need most in this app was the one gesture
+     the walk never let them make. Now the finger points at the arrow and the
+     press is theirs. 「指で合図してあげて」
+
+     THE WORDS CHAPTER IS NOT ON THE WALK. 「単語のとこなにもないなら行かせなく
+     ていいか」 OWNER 2026-08-28 -- a new dictionary is empty, so the stop lit
+     an empty list and pointed a finger at nothing.
+
+     Three kinds of stop and each says what a press does -- obTourNext():
+
+       go / tab   a door. Pressing the real thing goes there and obTourAt()
+                  notices; the walk does not move itself.
+       bk         the app's own back arrow, which is a door too: back() lands
+                  on the contents, which is the next stop.
+       look / lt  a page, or a key. Nothing on it leads where the walk goes
+                  next, so the walk moves itself. */
+  { r:'kb',      a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
+  { r:'build',   a:'', go:'letters', lab:'ob.tour.row.letters' },
+  { r:'letters', a:'', spot:'.body', look:1, lab:'ob.tour.letters' },
+  { r:'letters', a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
+  { r:'build',   a:'', go:'gram',    lab:'ob.tour.row.gram' },
+  { r:'gram',    a:'', spot:'.body', look:1, lab:'ob.tour.gram' },
+  { r:'gram',    a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
+  /* And the other half of the app. 「ここが制作、ここがsnsって最後まで見せて
+     ログイン画面にしよう」 OWNER 2026-08-28: the first stop of the walk points
+     at the making side, and this one points at the timeline.
+
+     It is `look` and not `tab`, which is the one place this walk does not
+     press what it points at, and the reason is the next step rather than a
+     shortcut: vFeed() in www/sns.js answers snsLocked() to anybody with no
+     account, so pressing this tab for real lands on a sign-in form in the
+     middle of the walk. Pressing it here ends the walk, and what comes up is
+     the real timeline on the real `feed` route -- obTourDone() goes there and
+     obSnsMock() is what puts the six on it -- with the door two steps after. */
+  { r:'build',   a:'', tab:'feed', look:1, lab:'ob.tour.sns' }
 ];
 /* Where the tour has got to. Where you are standing, so viewReset() drops it. */
 var obTour=0;
-function obTourOn(){ return !SET.done && ob.step===OB_TOUR; }
+/* Is the app itself what is on the screen? appIs() in www/shell.js asks this,
+   and what it decides is everything the shell paints around a view -- the bar
+   at the top and the bar of tabs at the foot.
+
+   TWO of the onboarding's steps are the app: the walk, and the timeline after
+   it. 「TLの見た目全然違うだろちゃんと同じにしろ」 OWNER 2026-08-28 -- the SNS
+   stage was a face of vOb(), so it got the onboarding's frame and none of the
+   app's, and no amount of work inside that face could have given it the tab
+   bar, which is painted into an element beside #app that vOb() never reaches.
+   It is the real feed screen now, so it has to be answered for here.
+
+   Everything else about the two stays different: the walk greys the screen and
+   lights one thing, the timeline greys nothing and is sealed whole. */
+function obTourOn(){ return !SET.done && (ob.step===OB_TOUR || ob.step===OB_SNS); }
 function obTourStop(){ return OB_TOUR_STOPS[Math.min(obTour, OB_TOUR_STOPS.length-1)]; }
 /* The route the tour wants to be on. render() sends the app there rather than
    drawing a picture of it. */
@@ -179,8 +255,36 @@ function obTourAt(){
   if(n.r===c.r && n.a===c.a) return;
   if(here().r===n.r && String(here().a||'')===n.a){ obTour++; }
 }
-/* Done with the walk through the app. */
-function obTourDone(){ obTour=0; obGo(OB_NAME); }
+/* Done with the walk through the app. What is after it is the timeline -- and
+   the timeline is a ROUTE, not a face of this file, so this goes there. The
+   walk's own position is left exactly where it stopped: obTourBack() reads it
+   to put somebody back on the stop they came off, and go() does not reset it
+   (viewReset() would, and nothing on this road calls it). */
+function obTourDone(){ ob.step=OB_SNS; GE=null; go('feed'); }
+/* And back out of it, one stop at a time.
+
+   There was no way back inside the walk at all: obBack() ended at
+   `if(ob.step>0) obGo(ob.step-1)`, which steps the FILE's screens, and the
+   walk is not one of them -- so one press from the step after it fell all the
+   way to the drawing square. 「一個戻るボタンしたら書くところからになるのクソ」
+   OWNER 2026-08-28.
+
+   Out of the first stop is out of the walk, which is the drawing square: it is
+   where the walk was entered from, by all three roads (obDone, obTakeCh,
+   obSkipDraw). obTour is left where it is by everything that leaves the walk
+   forwards, which is what lets the timeline after it come back INTO it at the
+   stop it left. */
+function obTourBack(){
+  /* Out of the TIMELINE is back into the walk, at the stop it stopped on. The
+     timeline is the other step that is the app itself, and it is reached from
+     the walk's last stop -- so this is the same "one stop at a time" the two
+     lines below are, said for the one step that is not counted in obTour.
+     It has to put ob.step back first: obTourGo() renders, and the render would
+     draw this stage's seal again over whichever screen it landed on. */
+  if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
+  if(obTour>0){ obTour--; obTourGo(); return; }
+  obTour=0; obGo(OB_DRAW);
+}
 /* The hand that says tap. 「矢印か指とかでタップなんとかみたいにもっとやろうぜ」
    A hand with the index finger out, stood under the thing to tap so the
    finger comes up at it. It is drawn INSIDE the light rather than on the
@@ -213,6 +317,15 @@ function obPane(l, t2, w, h){
   return '<div class="sbg on" data-dim="1" style="left:'+Math.round(l)+'px;top:'+Math.round(t2)+
     'px;width:'+Math.max(0,Math.round(w))+'px;height:'+Math.max(0,Math.round(h))+'px"></div>';
 }
+/* Where a thumb may land: the lit thing and the hand together. Not the same
+   rectangle as the hole in the grey -- the light says which one thing this is
+   about, and a hand hanging below it is still part of pressing it. */
+function obTapBox(b, hb){
+  var x=Math.min(b.left, hb.left), y=Math.min(b.top, hb.top),
+      w=Math.max(b.right, hb.left+hb.w)-x, h=Math.max(b.bottom, hb.top+hb.h)-y;
+  return 'left:'+Math.round(x)+'px;top:'+Math.round(y)+'px;'+
+         'width:'+Math.round(w)+'px;height:'+Math.round(h)+'px';
+}
 /* The grey, the one bright thing, and the hand pointing at it.
 
    FOUR panes of grey with a hole between them, not one pane with the lit
@@ -235,6 +348,9 @@ function obPane(l, t2, w, h){
    time this runs: render() inserts the screen, then adds the walk to the end
    of it. */
 function obTourHTML(){
+  /* The timeline is the other step that IS the app, and it is not a stop of
+     the walk: nothing on it is lit, because all of it is. */
+  if(ob.step===OB_SNS) return obSnsSealHTML();
   var st=obTourStop(),
       el=obTourFind(st), b=el? el.getBoundingClientRect() : null,
       W=window.innerWidth, H=window.innerHeight,
@@ -244,11 +360,21 @@ function obTourHTML(){
          the whole keyboard, and a keyboard was never one roman letter. */
       was=(st.lt && b && el && el.getAttribute && el.getAttribute('data-lt'))
             ? String(ltName(ltById(ob.lid))||'') : '';
+  /* THE HOLE IS THE LIT THING AND NOTHING ELSE.
+
+     It used to be the lit thing AND the hand together, so that the hand stood
+     in the light -- and the hand is 54px tall standing under what it points
+     at, which on a list is the NEXT ROW. Two rows of the contents came up
+     bright and the walk was pointing at both.
+     「それ単語と文法で両方光ってるやんけ」 OWNER 2026-08-28.
+
+     The hand is over the grey now. It is legible there for the same reason
+     the chevron above it is: gold is what this app makes a thing you press,
+     and the scrim is the same half-black in both themes. What the hand is
+     part of is the TAP TARGET, not the light -- obTapBox() below. */
   if(!b) out=obPane(0,0,W,H);   /* nothing found: the grey is the whole screen */
   else{
-    x=Math.min(b.left, hb.left)-m;  y=Math.min(b.top, hb.top)-m;
-    w=Math.max(b.right, hb.left+hb.w)+m-x;
-    h=Math.max(b.bottom, hb.top+hb.h)+m-y;
+    x=b.left-m;  y=b.top-m;  w=b.width+m*2;  h=b.height+m*2;
     out=obPane(0,0,W,y)+                   /* above */
         obPane(0,y+h,W,H-(y+h))+           /* below */
         obPane(0,y,x,h)+                   /* left  */
@@ -257,10 +383,14 @@ function obTourHTML(){
   return out+
     /* A lit thing that does something of its own is pressed for real -- the
        row into the keyboard chapter goes there, and going there is what moves
-       the tour on. Two cases need a tap target of the walk's own:
+       the tour on. Three cases need a tap target of the walk's own:
 
        A lit thing that does NOTHING. The free keyboard's keys are spans,
        because there is no editor behind them.
+
+       A stop that is a PAGE rather than a door -- `look` above. The letters,
+       words and grammar pages are what somebody came to be shown, and none of
+       them has a thing on it whose job is to lead to the next one.
 
        And NOTHING LIT AT ALL, which is the way out of a locked screen rather
        than a nicety. ob.lid is empty for anybody who skipped the drawing, so
@@ -277,12 +407,28 @@ function obTourHTML(){
        A fixed element wearing it keeps its own left and top and takes the
        8px anyway, so the tap target sat eight pixels below the thing it was
        supposed to be over -- invisibly, because it has no colour. */
-    ((st.lt || !b)? '<button class="obtap"' + DO('obTourNext') +
+    /* ONE TAP TARGET, on every stop, over the lit thing and the hand together.
+
+       It used to be only for a lit thing that does nothing of its own. The
+       stops that DO something -- a tab of the bar, a row of the contents --
+       had none, so the hand standing under them was on the grey and a press
+       there did nothing. That is most of this walk, and the hand is the only
+       mark on the screen saying "press": it was found by filming the walk and
+       tapping the finger nine times without the app ever leaving the first
+       screen.
+
+       What a press DOES is obTourNext()'s to say, in one place, and it is not
+       the same answer on both kinds -- see there. */
+    ('<button class="obtap"' + DO('obTourNext') +
               ' style="position:fixed;background:none;z-index:42;'+
-              (b? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
-                  'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
-                : 'left:0;top:0;width:100%;height:100%')+'"'+
-              ' aria-label="'+esc(t(st.lab))+'"></button>' : '')+
+              /* THE LIT THING AND THE HAND, which is bigger than the light.
+                 The hand stands under what it points at, and it was outside
+                 this button -- so the one thing on the screen saying "press"
+                 was the one place a press did nothing. It is not the same
+                 rectangle as the hole above: the light says WHICH ONE, and
+                 this says WHERE A THUMB LANDS. */
+              (b? obTapBox(b, hb) : 'left:0;top:0;width:100%;height:100%')+'"'+
+              ' aria-label="'+esc(t(st.lab))+'"></button>')+
     /* THE MOMENT. 「aが自作文字に変わる瞬間みたいなの見せたい」
        The key is theirs now -- the shape moved into the slot when they named
        it -- so what is left to show is what that key WAS. The roman letter is
@@ -306,7 +452,52 @@ function obTourHTML(){
               'pointer-events:none;color:var(--gold);line-height:0;'+
               'left:'+hb.left+'px;top:'+hb.top+'px;width:'+hb.w+'px;height:'+hb.h+'px;'+
               'animation:vopulse 1.1s ease-in-out infinite'+
-              (hb.up? '' : ';transform:scaleY(-1)')+'">'+OB_HAND+'</div>' : '');
+              (hb.up? '' : ';transform:scaleY(-1)')+'">'+OB_HAND+'</div>' : '')+
+    /* And the way back, which the walk did not have at all.
+
+       Every other screen of the onboarding carries this chevron in its corner
+       -- vOb() puts it there -- and the walk is the one part that is not a
+       screen of this file, so it had none: the only way out of the middle of
+       the walk was forwards. 「一個戻るボタンしたら書くところからになるのクソ」
+
+       It is `.obback`, the same class and the same 44pt target as the one on
+       the other screens, stood in the same corner. Nothing new is styled: what
+       is written here is where it stands, because a fixed thing over the app's
+       own screen cannot be laid out by a class that was written for a row.
+
+       Gold, for the same reason the hand is: over the grey, gold is what this
+       app makes things you can press, and `color:inherit` is the page's text
+       colour, which on the light theme is black on a half-black scrim.
+
+       It stands ON the screen's own back arrow where the screen has one, and
+       that is not a nicety: at a fixed 8,8 it landed beside `.back.nb` rather
+       than on it, and the corner had TWO arrows in it -- one gold and live,
+       one grey and dead, a few pixels apart. The screens with no arrow of
+       their own (the roots -- profile, feed) have nothing there to stand on
+       and nothing to collide with, so those take the corner. */
+    (obBackBox()? obBackBox()+'>'+OB_CHEV+'</button>' : '');
+}
+/* Where the walk's chevron stands: on the screen's own back arrow, or in the
+   corner when the screen has none. Everything up to the `>` of the tag,
+   because the two cases differ only in the four numbers. */
+function obBackBox(at){
+  /* Nothing at all on a stop whose lit thing IS the back arrow: the walk's
+     chevron stands exactly there, and two back arrows in one corner going two
+     different ways is worse than being one screen without ours. The stop
+     after it has it again, and stepping back from there returns here. */
+  if(obTourStop().bk) return '';
+  /* `at` is a place to stand, for the one screen that has nowhere. Everywhere
+     else this measures, and the two cases differ only in the four numbers --
+     which is why the button itself is built once, here, rather than a second
+     time wherever a different corner is wanted. */
+  var el=document.querySelector('.navtop .back.nb'), b=el? el.getBoundingClientRect() : null,
+      pos=at? at
+        : (b && b.width)
+        ? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
+          'width:'+Math.round(b.width)+'px;height:'+Math.round(b.height)+'px'
+        : 'left:8px;top:8px';
+  return '<button class="obback"' + DO('obTourBack') + ' aria-label="'+esc(t('ob.back'))+'"'+
+    ' style="position:fixed;z-index:45;'+pos+';color:var(--gold)"';
 }
 /* Which thing on the screen is the lit one. A stop names it one of two ways
    and both are read here: a plain CSS selector where the thing has a class of
@@ -346,8 +537,23 @@ function obTourArg(sel, want){
   }
   return null;
 }
-/* On to the next stop, for a lit thing that had nothing of its own to do. */
+/* What pressing the bright part of the screen does, and it is two different
+   answers written in one place.
+
+   A stop whose lit thing DOES something -- a tab of the bar, a row of the
+   contents -- presses that thing, and the walk is not moved from here at all:
+   the app moves and obTourAt() notices where it landed, exactly as when the
+   row itself is pressed. Nothing about "the app drives the tour" changes; the
+   hand simply becomes another way of pressing the row it points at.
+
+   A stop that is a PAGE, or a key, or a screen with nothing found to light,
+   has nothing of its own to do, so the walk moves itself. */
 function obTourNext(){
+  var st=obTourStop(), el;
+  if(!st.lt && !st.look){
+    el=obTourFind(st);
+    if(el && el.click){ el.click(); return; }
+  }
   if(obTour+1<OB_TOUR_STOPS.length){ obTour++; obTourGo(); return; }
   obTourDone();
 }
@@ -404,6 +610,18 @@ function obBack(){
     if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
+  /* And otherwise one step, which is the whole of what the owner asked for
+     here: 「一個戻るボタンしたら書くところからになるのクソ」 OWNER 2026-08-28,
+     of a back press on the name screen landing on the drawing square four
+     screens away. The steps are numbered in the order they come, so one back
+     from the name is the timeline and one back from the door is the name.
+
+     It does NOT reach into the walk any more, and that is the same fix rather
+     than a change to it: back from the name used to land on the stop the walk
+     stopped at, and the timeline now sits in between, so that same line would
+     be two steps in one press. The step off the timeline and back into the
+     walk is obTourBack()'s, on the chevron the sealed stage carries -- one
+     press, one step, the whole way down to the drawing square. */
   if(ob.step>0) obGo(ob.step-1);
 }
 function obLang(v){ SET.ui=v; save(); render(); }
@@ -947,6 +1165,170 @@ function obNameHTML(){
    the title is there whenever the answer arrives. */
 function obNameLater(){ ob.name=''; obGo(OB_IN); }
 
+/* ---- the timeline ------------------------------------------------------
+   「TLの見た目全然違うだろちゃんと同じにしろ」「画像は？」「自作文字って言って
+     んだろ」 OWNER 2026-08-28.
+
+   IT IS THE REAL ROW. postRow() in www/post.js draws it -- the same function
+   the feed, the thread and a profile draw a post with -- so it cannot look
+   different from the real timeline, because it is not a second drawing of
+   one. What was here before was a hand-built approximation and it was wrong in
+   every way somebody would notice.
+
+   That is exactly what post.js's line is FOR. Below it a post renders FROM THE
+   POST: the name, the handle, the shapes the line is written in, the pictures.
+   A mock is a reader with none of the writer's language, which is the case
+   rule 8 and rule 12 exist for -- so these posts carry everything on them, the
+   way a post from a stranger's phone does.
+
+   THE LINES ARE IN THEIR OWN LETTERS. Six people who have made a language,
+   writing in it. The shapes are the mock's own alphabet below -- not the
+   person's, who has drawn one letter so far, and not roman.
+
+   The only thing added around the real row is that nothing here is pressable:
+   there is no account, no thread and no picture behind any of it, so a press
+   would promise something that is not there. One `pointer-events:none` on the
+   wrapper; the rows are untouched. */
+/* THE LETTERS ARE THE PERSON'S OWN. 「自作文字って言ってんだろ」 OWNER
+   2026-08-28, and 「君の文字でSNSを見てみよう」 the first time they asked.
+
+   postInk() is the app's own cut: the line against LETTERS, so every letter
+   this person has drawn a shape for arrives as that shape and the rest stays
+   text. It is the same function the real composer freezes onto a real post.
+
+   An alphabet was invented here for one commit -- fifteen made-up glyphs, so
+   that the mock would be full of shapes whatever the person had drawn. That is
+   the same 作り話 as the first go at this page: shapes belonging to nobody.
+   What goes on this page is what this person has made. One letter drawn means
+   one shape in these lines and the rest roman, which is exactly what their
+   timeline WILL look like -- and it fills in as they draw. */
+/* トプ画, and the photographs on the posts. Both are small SVGs carried as
+   data URIs -- nothing is fetched and nothing is stored. They are the one
+   place this file names a colour, and that is what a picture IS: content, the
+   way a photograph is, not a surface of the interface. */
+var OB_SNS_TONE=['#8c7a5b,#e6dcc4','#6f7f74,#dae2d8','#8a6b6b,#eddcd6',
+                 '#6b7288,#dbe0ea','#8a7f5c,#e9e3c9','#7a6a80,#e3d9e8'];
+function obSnsSvg(body){
+  return 'data:image/svg+xml;charset=utf-8,'+
+    encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" '+body+'</svg>');
+}
+function obSnsPic(i){
+  var c=OB_SNS_TONE[i%OB_SNS_TONE.length].split(',');
+  return obSnsSvg('viewBox="0 0 80 80"><rect width="80" height="80" fill="'+c[1]+'"/>'+
+    '<circle cx="40" cy="30" r="16" fill="'+c[0]+'" opacity=".9"/>'+
+    '<circle cx="26" cy="58" r="20" fill="'+c[0]+'" opacity=".55"/>'+
+    '<circle cx="58" cy="62" r="16" fill="'+c[0]+'" opacity=".7"/>');
+}
+function obSnsShot(i){
+  var c=OB_SNS_TONE[(i+2)%OB_SNS_TONE.length].split(',');
+  return obSnsSvg('viewBox="0 0 160 120"><rect width="160" height="120" fill="'+c[1]+'"/>'+
+    '<circle cx="122" cy="30" r="13" fill="'+c[0]+'" opacity=".45"/>'+
+    '<path d="M0 96 L44 52 L78 88 L104 66 L160 108 L160 120 L0 120 Z" fill="'+c[0]+'" opacity=".8"/>'+
+    '<path d="M0 110 L38 78 L86 120 L0 120 Z" fill="'+c[0]+'" opacity=".5"/>');
+}
+/* Who is on it. Every string is ONE string -- the same in all ten interface
+   languages -- because a name is a name and a sentence somebody wrote in their
+   own language is that sentence. 「TLは日本語にしないで」 They still go through
+   t(), which is how the i18n mirror can see that they did.
+
+   The keys are written out whole and not built from a number and a suffix:
+   i18n-check reads the SOURCE for which keys a screen asks for. */
+var OB_SNS_WHO=[
+  {n:'ob.sns.1.n', h:'ob.sns.1.h', l:'ob.sns.1.l', ago:4,    re:3,  bo:11, pics:1},
+  {n:'ob.sns.2.n', h:'ob.sns.2.h', l:'ob.sns.2.l', ago:26,   re:1,  bo:4},
+  {n:'ob.sns.3.n', h:'ob.sns.3.h', l:'ob.sns.3.l', ago:73,   re:12, bo:38, pics:2},
+  {n:'ob.sns.4.n', h:'ob.sns.4.h', l:'ob.sns.4.l', ago:140,  re:0,  bo:2},
+  {n:'ob.sns.5.n', h:'ob.sns.5.h', l:'ob.sns.5.l', ago:395,  re:5,  bo:19, pics:1},
+  {n:'ob.sns.6.n', h:'ob.sns.6.h', l:'ob.sns.6.l', ago:1220, re:2,  bo:7}
+];
+/* One post, in the shape post.js reads: everything a reader needs is ON it. */
+function obSnsPost(w, i){
+  var ln=t(w.l), pics=[], k;
+  for(k=0;k<(w.pics||0);k++) pics.push(obSnsShot(i+k));
+  return { id:'ob'+i, who:t(w.n), hd:t(w.h), at:Date.now()-w.ago*60000,
+           ln:ln, ink:postInk(ln), dir:'ltr',
+           av:{pic:obSnsPic(i)}, pics:pics, re:w.re, bo:w.bo, mine:false };
+}
+/* THE SIX, AND ONLY WHILE THAT STAGE IS SHOWING. www/sns.js asks this before
+   it draws the timeline: an array means "draw these instead of the phone's own
+   posts, and ask the network for nothing", and null means the app.
+
+   It is a function and not a flag because it answers both halves of the
+   question in one -- whether, and which -- so there is no state anywhere that
+   can say yes with nothing behind it.
+
+   Nothing is cached. Six rows are six string concatenations, and a cache would
+   be a copy of the person's alphabet frozen at the moment they first arrived
+   here: postInk() below cuts each line against the letters they have drawn,
+   and the whole point of this page is that it fills in as they draw. */
+function obSnsMock(){
+  if(SET.done || ob.step!==OB_SNS) return null;
+  /* Written out rather than `map(obSnsPost)`: obSnsPost takes two arguments,
+     and map hands its callback the index as a second whether it was wanted or
+     not. Here it IS wanted -- the index picks the avatar and the photographs
+     -- which is exactly the case that reads as correct and is one rename away
+     from not being. sides-check refuses the bare form in every file for that
+     reason. */
+  return OB_SNS_WHO.map(function(w, i){ return obSnsPost(w, i); });
+}
+/* And the stage sealed shut.
+
+   The screen under this is the REAL timeline -- every button on it goes
+   somewhere, and every one of those somewheres is out of the onboarding, which
+   is not done until the door two steps from here. 「オンボーディングは SET.done
+   が立つまでアプリそのもの」 -- so there is no way off this screen but the way
+   on.
+
+   One pad over the whole of it does that, and does it by construction rather
+   than by disabling things one at a time: nothing underneath is reachable, so
+   nothing underneath can navigate and nothing underneath can throw. It is the
+   walk's own `.obtap` and the walk's own hand -- the same two things every
+   stop before this one ends with -- so a person who has just walked five
+   screens already knows what it means. The hand stands low, where the thumb
+   is, because there is nothing on this screen it is pointing AT: the whole
+   screen is the thing.
+
+   It is drawn from obTourHTML(), which render() appends after the screen is on
+   the page -- so it is over the timeline, the round button and the bar of tabs
+   alike without any of the three being named here, and the hand can be stood
+   against a bar that is already drawn. */
+function obSnsSealHTML(){
+  var W=window.innerWidth, H=window.innerHeight,
+      /* Above the bar of tabs, which is MEASURED rather than guessed at: it is
+         painted into an element beside #app, its height is index.html's, and a
+         number copied here would be a second copy of it that nothing holds.
+         Nothing at all when the bar has not been painted yet -- then it stands
+         where a thumb rests on a bare screen. */
+      bar=document.querySelector('.tabbar'),
+      bt=bar? bar.getBoundingClientRect().top : H-24,
+      s=54, x=Math.round(W/2-s/2), y=Math.round(bt-16-s),
+      /* Both bottoms on one line, 16 above the bar of tabs. */
+      bk=obBackBox('left:8px;top:'+Math.round(bt-16-44)+'px;width:44px;height:44px');
+  return '<button class="obtap"' + DO('obSnsGo') +
+      ' style="position:fixed;left:0;top:0;width:100%;height:100%;background:none;z-index:42"'+
+      ' aria-label="'+esc(t('ob.tour.sns'))+'"></button>'+
+    /* And the walk's own chevron, which every stop before this one carries.
+       Without it this is the one screen of the onboarding with no way back,
+       and the owner asked for the opposite 「戻るボタン押させてないね」. Same
+       arrow, same one step -- obBackBox() builds it, here as everywhere.
+
+       It is told where to stand, and this is the one screen that has to be:
+       the feed's bar is a ROOT's, so it carries the screen's NAME at the left
+       and the filter at the right, and there is no free corner at the top at
+       all. At 8,8 the chevron lies across the H of Home. So it goes down
+       beside the bar of tabs, on the line the hand is on and opposite the
+       round button -- clear of everything, and the bar at the top is left
+       looking exactly like the bar at the top of the real timeline, which is
+       the whole of what this stage is for. */
+    (bk? bk+'>'+OB_CHEV+'</button>' : '')+
+    '<div class="obhand" aria-hidden="true" style="position:fixed;z-index:43;'+
+      'pointer-events:none;color:var(--gold);line-height:0;'+
+      'left:'+x+'px;top:'+y+'px;width:'+s+'px;height:'+s+'px;'+
+      'animation:vopulse 1.1s ease-in-out infinite">'+OB_HAND+'</div>';
+}
+function obSnsGo(){ obGo(OB_NAME); }
+
+
 /* ---- one letter -------------------------------------------------------
    The app used to pick a sound out of the inventory, put "the letter for k"
    at the top, and open the editor already belonging to k -- so the first
@@ -987,8 +1369,16 @@ function obTakeCh(ch){
   save(); installScriptFont();
   ob.mode=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
-/* Nothing was drawn, so there is nothing to say which letter it is: the step
-   after this is about a shape and there is no shape. */
+/* Nothing was drawn, so there is nothing to say which letter it is: the stop
+   that lights the key of the letter just drawn has no key to light.
+
+   THE WALK IS THE SAME WALK ANYWAY, and the keyboard is not skipped.
+   「後で書くしたなら、キーボード画面飛ばす必要ないし」 OWNER 2026-08-28, and
+   the reason is the whole point of the walk: 「オンボーディングは使い方をレク
+   チャーするページだから」. Lighting one key is not what that stop is FOR --
+   showing somebody the keyboard is -- so with no letter drawn, the keyboard
+   itself is what is lit, which is obTourFind()'s fallback and is the true
+   sentence either way: this is where your letters are. */
 function obSkipDraw(){ ob.lid=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo(); }
 
 function obFinish(){

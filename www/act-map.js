@@ -152,6 +152,8 @@ act('setPwGo', setPwGo);
 act('setPwForgot', setPwForgot);
 act('obSkipDraw', obSkipDraw);
 act('obTourNext', obTourNext);
+act('obTourBack', obTourBack);
+act('obSnsGo', obSnsGo);
 act('openSnd', openSnd);
 act('openSndAdd', openSndAdd);
 act('ltGo', ltGo);
