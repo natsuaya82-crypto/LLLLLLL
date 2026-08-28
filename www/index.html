@@ -60,6 +60,18 @@ html[data-theme="light"]{
   --glassrim:rgba(26,23,18,.10); --glassspec:rgba(255,255,255,.9);
   --glassdrop:rgba(60,50,30,.16);
 }
+/* And one that is deliberately the SAME in both: the plate a line of letters
+   sits on when it is put on a photograph.
+   「行ごとに背景の板がある」── from the picture of Instagram the owner sent,
+   2026-08-28, where it is a black plate under white letters.
+
+   **A photograph has no theme.** The plate is lying on somebody's picture,
+   not on the app's ground: a person reading in the light theme may put
+   letters on a dark photograph and the other way round, so following the
+   theme would be following the wrong thing. It is the dark ground's value,
+   named here rather than written into `www/post.js`, because every colour
+   lives in these two blocks and the views only touch the variables. */
+html[data-theme="dark"], html[data-theme="light"]{ --mkplate:#0a0a0e }
 /* How much of the bottom of the screen the tab bar has. It is on every screen
    now, so everything that used to sit at the bottom sits on top of it, and
    every one of them measures from here rather than carrying its own number:
@@ -2210,7 +2222,7 @@ a.set{text-decoration:none}
    overflow is hidden and the corner is not draggable. */
 .mktx{position:absolute;transform:translate(-50%,-50%);
       min-width:44px;min-height:44px;
-      background:var(--bg);border:0;padding:0;outline:1px dashed rgba(255,255,255,.7);
+      background:var(--mkplate);border:0;padding:0;outline:1px dashed rgba(255,255,255,.7);
       outline-offset:3px;line-height:1.25;font-family:inherit;text-align:center;
       resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:break-word;
       -webkit-appearance:none;appearance:none}

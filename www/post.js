@@ -1830,19 +1830,26 @@ function pwMarkLines(m){
    ある。文字幅ぴったりの黒い板。行の長さで板の幅も変わる」 -- read off the
    picture the owner sent of Instagram, 2026-08-28.
 
-   **The colour is the page's own ground and not a new one.** `--bg` is what
-   the body is, in both themes, and index.html's two theme blocks are the only
-   place a colour is named: 「Every colour lives in these two blocks and
-   nowhere else; the views only ever touch the variables.」 The letters keep
-   the colour somebody picked from the eight -- the plate goes behind them and
-   changes nothing about them.
+   **The colour is named in the stylesheet and is not a new one.**
+   `--mkplate` is the dark ground's value, declared in index.html's two theme
+   blocks as the same colour in both -- 「Every colour lives in these two
+   blocks and nowhere else; the views only ever touch the variables.」
+
+   It does not follow the theme, and that is the point: **a photograph has no
+   theme.** The plate lies on somebody's picture rather than on the app's
+   ground, so a person reading in the light theme may put letters on a dark
+   photograph and the other way round. Following the theme would be following
+   the wrong thing, and Instagram does not either.
+
+   The letters keep the colour somebody picked from the eight -- the plate
+   goes behind them and changes nothing about them.
 
    A cell tall, because that is what a line of this is: `k` is the cell over
    800, so 800k is one cell. */
 function pwMarkPlate(x, units, k, ox, oy){
   var w=pwMarkAdv(units)*k;
   if(w<=0) return;
-  x.fillStyle=cssVar('--bg', '#000');
+  x.fillStyle=cssVar('--mkplate');
   x.fillRect(ox, oy, w, 800*k);
 }
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
