@@ -990,9 +990,31 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* The body holds two children and gives all the slack to the first: what is
    being written scrolls, and the bar under it does not. */
 /* The row of pictures is pinned to the keyboard now and is out of the flow,
-   so what scrolls has to clear it: 52px is `.pwbar`'s own min-height. */
+   so what scrolls has to clear it -- and what it has to clear is exactly the
+   row's own box, which is the rule twenty lines down said back in one place.
+   「投稿打つ時、文字と写真とかの帯の間に謎の隙間があるから直して欲しい」
+   OWNER 2026-08-28.
+
+   It was `safe-area + 62`, and the row is 53: `min-height:52px` plus the
+   `border-top:1px` above it. Two numbers for one fact, and they had drifted
+   by ten. Worse, the safe area was added TWICE -- the row subtracts what the
+   keyboard already covers (`max(0, safe - vvkb)`, the rule below), and this
+   one added the whole inset regardless, so with a keyboard up on a notched
+   phone the whole 34px was reserved for a home indicator the keyboard was
+   already sitting on top of.
+
+   Measured at 390x844, from the foot of what scrolls to the top of the row:
+
+     safe=0   keyboard down    9px -> 0
+     safe=0   keyboard up      9px -> 0
+     safe=34  keyboard down    9px -> 0
+     safe=34  keyboard up     43px -> 0    <- the photograph the owner sent
+
+   The two halves of `.pwbar`'s height are declared together below, so the 53
+   here is those two added up and nothing else. */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(env(safe-area-inset-bottom,0px) + 62px);overflow:hidden}
+   padding-bottom:calc(53px + max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
+   overflow:hidden}
 /* Everything you are writing, and it is the part that scrolls -- so the line
    can be as long as it likes and the photographs under it move down with it,
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
@@ -1158,7 +1180,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 .obmsg{color:var(--bad);font-size:.9rem;margin-top:10px}
 /* What this letter is in the alphabet, when another letter already says
    the same. Shown, not refused. */
-.field input.dup{color:var(--bad);border-color:var(--bad)}
+.field input.dup,.field .lnin.dup{color:var(--bad);border-color:var(--bad)}
 .ltck{flex:0 0 auto;width:40px;text-align:center;color:var(--gold)}
 .phk.on{border-color:var(--goldln);background:var(--goldsf);color:var(--gold)}
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
@@ -1292,6 +1314,16 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    across the top of two screens. 「検索バー縦長すぎる」 */
 .search{display:flex;align-items:center;gap:9px;background:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:0 2px;margin:8px 0 2px}
 .search input{flex:1;min-height:44px;background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;outline:none}
+/* A search box is a field that WRAPS now, which means it is a textarea --
+   an <input> is one row that scrolls sideways forever and there is no CSS
+   that makes it wrap. 「全部改行して画面内に文字が収まるようにして欲しい」
+   OWNER 2026-08-27. `.lnin` brings its own line under it and its own gap
+   below, and `.search` already draws the line for the whole row -- two of
+   them is two lines. So this takes them off rather than adding anything:
+   what is left is the row that was always here, one line under it, as tall
+   as what is in it. */
+.search .lnin{flex:1;min-height:44px;border-bottom:0;margin-bottom:0;
+              padding:11px 0;font-size:.92rem}
 .gl{font-family:var(--face-ital);font-style:italic;color:var(--gold);font-size:1.1rem;margin:20px 0 2px;opacity:.9}
 /* An entry is two controls now -- the word, which says itself, and the
    chevron, which opens it -- so the row is a container and the padding and
@@ -2391,6 +2423,22 @@ a.set{text-decoration:none}
 .field.at>span{padding-left:2px;color:var(--txm);font-size:.95rem}
 .field.at input{border:0;background:none;padding-left:3px;border-radius:0}
 .field textarea{height:120px;line-height:1.6}
+/* A field that WRAPS is a textarea, and an ordinary one-line field is one
+   too now -- an <input> is a single row that scrolls sideways forever and
+   there is no CSS that makes it wrap.
+   「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+   `.lnin` is the shape (www/shell.js's lnField), and the two lines above are
+   what has to be undone for it: the 120px is for the box a paragraph is
+   written in, and a name or a handle is not one. Its height is what is in
+   it, which lnGrow() sets. Nothing is added here -- no frame, no corner. */
+.field .lnin{height:auto;line-height:1.5;padding:12px 2px;font-size:.95rem;
+             margin-bottom:0}
+/* And in the row where the label stands to the LEFT of the field, the line is
+   the ROW's -- drawn once, under the label and the field together -- so the
+   field does not draw a second one under itself. 「アイコンだけ上にして。
+   あとはリンクと同じ並びにして欲しい。」 OWNER 2026-08-28: this is the row
+   that shape refers to, and all four of the profile's fields wear it. */
+.field.at .lnin{flex:1;min-width:0;border-bottom:0;padding-left:3px}
 /* The box a list is pasted into takes the room that was standing empty under
    it. 「下のスペース余ってんなら上の入力欄広くしてみやすくしろよ」OWNER
    2026-08-27. `.field textarea` is worn by thirty screens, so this is by id --
@@ -2435,7 +2483,12 @@ a.set{text-decoration:none}
 .nbv{min-width:2.4em;text-align:center;font-size:1.05rem;color:var(--tx);
      font-variant-numeric:tabular-nums}
 .bpic{width:100%;height:100%;border-radius:999px;object-fit:cover;display:block}
-.picrow{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+/* The face stands in the MIDDLE of the page. 「画像は中央寄せして」
+   OWNER 2026-08-28. It used to sit against the left because the name and the
+   handle stood beside it and a row starts at its left edge; with those moved
+   down to rows of their own, the face is the only thing on this line and a
+   line holding one thing has no left to start from. */
+.picrow{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:4px}
 .picrow .pav{width:64px;height:64px;flex:0 0 auto}
 /* The big letter is a button now: it is how the letter gets drawn. */
 button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:inherit;color:inherit}
@@ -2890,6 +2943,12 @@ html[data-script="on"] .gsw{font-family:var(--face-script);letter-spacing:0}
   padding:12px 2px;color:var(--tx);font:inherit;font-size:.92rem;outline:none}
 .mnadd input:focus{border-bottom-color:var(--goldln)}
 .mnadd .btn{flex:0 0 auto}
+/* A meaning being added wraps now, so the field in this row is a textarea.
+   `.lnin` is display:block and brings its own gap below; in a flex row it
+   takes the room the input had and nothing else. 「全部改行して画面内に文字が
+   収まるようにして欲しい」 OWNER 2026-08-27. Nothing is added -- no frame,
+   no corner; the line under it is `.lnin`'s own, one side. */
+.mnadd .lnin{flex:1;min-width:0;margin-bottom:0}
 /* the letter a sound wears, when it was borrowed rather than drawn */
 .gborrow{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);
   border-radius:11px;background:var(--pane)}

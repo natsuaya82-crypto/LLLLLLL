@@ -224,8 +224,9 @@ function wdMnsHTML(){
       '<button class="mnx"' + DO('wdDelMn', [i]) + ' aria-label="'+esc(t('word.mn.del'))+'">'+ICON_CROSS+'</button></div>';
   }).join('');
   return '<div class="mnlist">'+rows+'</div>'+
-    (wdMnNew? '<div class="mnadd"><input id="wd-mn" aria-label="'+esc(t('word.means'))+'" '+
-      '' + KD('wdAddMn') + '></div>' : '');
+    (wdMnNew? '<div class="mnadd">'+
+      lnField('wd-mn', '', ' aria-label="'+esc(t('word.means'))+'"' + KD('wdAddMn'), '')+
+      '</div>' : '');
 }
 /* ---- what a dictionary entry still had not got ------------------------
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
@@ -399,8 +400,7 @@ function wdExHTML(){
     : '')+
     (wdExNew? '<div class="exadd">'+
       lnField('wd-exl', exHint(), KD('wdAddEx'), '')+
-      '<input id="wd-exg" aria-label="'+esc(t('word.ex.gl.ph'))+'" '+
-        '' + KD('wdAddEx') + '>'+
+      lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"' + KD('wdAddEx'), '')+
     '</div>' : '');
 }
 function wdAddEx(){
@@ -435,9 +435,10 @@ function vRelate(){
        here and find it". 「その場で類義語とか対義語を作れるようにすればいいやん」
        So it is made here, and joined here, in one press. */
     '<div class="sec">'+t('home.write')+'</div>'+
-    '<div class="row2"><div class="field"><input id="rel-hw" placeholder="'+
-      esc(t('f.spelling'))+'" autocapitalize="none" autocorrect="off" spellcheck="false"></div>'+
-    '<div class="field"><input id="rel-mn" placeholder="'+esc(t('f.meaning.ph'))+'"></div></div>'+
+    '<div class="row2"><div class="field">'+
+      lnField('rel-hw', t('f.spelling'), ' autocapitalize="none"', '')+'</div>'+
+    '<div class="field">'+
+      lnField('rel-mn', t('f.meaning.ph'), '', '')+'</div></div>'+
     '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') +
       ' aria-label="'+esc(t('add.btn'))+'">'+ICON_ADD+'</button>'+
     (list.length
@@ -648,8 +649,9 @@ function fmGroupHTML(hw, g, now){
   return secAdd(t('word.fm.'+(g==='i'? 'inf' : 'der')), DO('fmOpen', [g]), t('word.fm.own'))+
     list.map(function(f){ return fmRowHTML(hw, f, f===now); }).join('')+
     (fmNewG===g? '<div class="field" style="margin-top:8px">'+
-      '<input id="fm-'+g+'" aria-label="'+esc(t('word.fm.own'))+
-      '" autocapitalize="none" autocorrect="off"' + KD('fmNew', [hw, g]) + '></div>' : '');
+      lnField('fm-'+g, '',
+        ' aria-label="'+esc(t('word.fm.own'))+'" autocapitalize="none"' +
+        KD('fmNew', [hw, g]), '')+'</div>' : '');
 }
 /* ---- forms made by a rule ------------------------------------------------
    Registering a past tense makes it a word, which is right and which is also
@@ -1096,15 +1098,20 @@ function regPick(r){ wdSetReg(r); relDirty(); back(); }
    「四角のなかにつづりとか読みとか書くの消して」 The name stays as aria-label,
    for anybody not looking at the screen. */
 function wdTagsHTML(){
-  return '<div class="field"><input id="wd-tags" value="'+esc((wEdit.tags||[]).join(', '))+
-    '" aria-label="'+esc(t('word.tags'))+'"' + IN('wdSetTags') + '></div>';
+  /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+     「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+     Tags are a list run together with commas, so this is the field most
+     likely to be long, and it was the one that scrolled off the side. */
+  return '<div class="field">'+
+    lnField('wd-tags', '', ' aria-label="'+esc(t('word.tags'))+'"' + IN('wdSetTags'),
+      (wEdit.tags||[]).join(', '))+'</div>';
 }
 function wdEtyHTML(){
   return '<div class="field"><textarea id="wd-ety" rows="2" aria-label="'+
     esc(t('word.ety'))+'"' + IN('wdSetEty') + '>'+esc(wEdit.ety||'')+'</textarea></div>';
 }
 function wdSetReg(v){ wEdit.reg=v; }
-function wdSetTags(v){ wEdit.tags=tagCut(v); }
+function wdSetTags(v){ wEdit.tags=tagCut(v); lnGrow('wd-tags'); }
 function wdSetEty(v){ wEdit.ety=v; }
 /* The sheet a word is written on -- the same one whether the word is in the
    dictionary or is being made. Three things differ, and all three are real:

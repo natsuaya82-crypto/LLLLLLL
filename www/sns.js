@@ -565,6 +565,7 @@ function snsSetQ(v){
      and then went on answering with posts as the next name was typed would
      be a screen that changed what it was about and never changed back. */
   snsMode='who';
+  lnGrow('sns-q');
   snsFind(snsQ, snsGot);
   var x=document.getElementById('sns-x');
   if(x){ if(snsQ) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
@@ -684,10 +685,16 @@ function vExplore(){
       /* `enterkeyhint` is what makes the phone's own return key say Search,
          and pressing it is what asks for posts. 「ツイートの検索は検索ボタン
          押したら出てくる」 */
-      '<input id="sns-q" placeholder="'+esc(t('sns.search'))+'" value="'+esc(snsQ)+'" '+
-      'enterkeyhint="search" '+
-      'autocomplete="off" autocorrect="off" spellcheck="false"' +
-      IN('snsSetQ') + KD('snsGo') + '>'+
+      /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+         「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
+         and 「全部なくせ」 when asked what was left. An <input> is one row that
+         scrolls sideways forever; there is no CSS for it, so the element
+         changes. lnField() is the one place that shape lives.
+
+         Enter still searches rather than putting a newline in: the one
+         keydown listener stops the key before it runs the name. */
+      lnField('sns-q', t('sns.search'),
+        ' enterkeyhint="search"' + IN('snsSetQ') + KD('snsGo'), snsQ)+
       '<button class="sx" id="sns-x"' + DO('snsClearQ') + (snsQ?'':' hidden')+
         ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+

@@ -258,7 +258,7 @@ function adminAsk(){
   netStore(function(d){ ADMIN_ASC=d; ADMIN_BUSY=false; modLoad(); },
            function(){ ADMIN_ASC=null; ADMIN_BUSY=false; modLoad(); });
 }
-function adminStaffSet(k, v){ if(k==='h') ADMIN_H=String(v||''); }
+function adminStaffSet(k, v){ if(k==='h'){ ADMIN_H=String(v||''); lnGrow('admin-h'); } }
 function adminStaffAdd(){
   if(ADMIN_BUSY || !ADMIN_H) return;
   ADMIN_BUSY=true; ADMIN_ERR=''; render();
@@ -520,10 +520,16 @@ function vAdmin(){
        with no argument -- see the head of this section. */
     '<div class="set"><span class="sl">'+esc(t('admin.staff'))+'</span></div>'+
     (ADMINS||[]).map(adminStaffRow).join('')+
-    '<div class="field"><input id="admin-h" type="text" '+
-      'value="'+esc(ADMIN_H)+'" placeholder="'+esc(t('admin.staff.ph'))+'" '+
-      'autocapitalize="none" autocorrect="off" spellcheck="false"' +
-      IN('adminStaffSet', ['h']) + '></div>'+
+    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+       A handle is short, but nothing stops a long one being pasted here, and
+       an <input> is one row that scrolls sideways forever. The password on
+       the door above is NOT this -- it stays an <input type="password">,
+       because a textarea has no such type and would print somebody's word on
+       the screen. */
+    '<div class="field">'+
+      lnField('admin-h', t('admin.staff.ph'), ' autocapitalize="none"' +
+        IN('adminStaffSet', ['h']), ADMIN_H)+'</div>'+
     '<button class="btn ghost"' + DO('adminStaffAdd') +
       (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
     /* And the reports themselves, drawn by the row the reports screen draws

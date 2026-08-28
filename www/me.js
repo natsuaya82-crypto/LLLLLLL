@@ -176,25 +176,62 @@ function meName(){ return ME.name || langName || ''; }
 function meHandle(){
   return ME.handle || String(meName()).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
-function meSetName(v){ ME.name=String(v||''); saveMe(); }
+/* Each of these makes its box as tall as what is in it. Nothing here calls
+   render() -- a profile that redrew on every letter would take the keyboard's
+   focus off the field being typed into -- so lnGrow() is what says the field
+   grew, the same call the composer's line makes. */
+function meSetName(v){ ME.name=String(v||''); lnGrow('me-nm'); saveMe(); }
 /* A line about yourself, which is the one thing on a profile that is not
    about the language. It is never invented and never stands in for
    anything: with nothing written there is nothing there. */
 function meSetBio(v){ ME.bio=String(v||''); saveMe(); }
-/* リンクと、居るところ。どちらも bio と同じただの文字列で、同じ形で書いて
-   ある ── 検証も、書式も、候補も無い。
-
-   位置情報が自由入力なのは OWNER DECISION, 2026-08-25:
+/* 居るところは、ただの文字列。検証も、書式も、候補も無い ──
+   OWNER DECISION, 2026-08-25:
      「自由入力です。」
      「だって自分の国入れたい人だっているやん」
    国名を入れる人が居る、というのが理由。だから国コードにしない、候補リスト
    にしない、検証しない、地図にしない。端末の位置は使わない ── CoreLocation
    も権限も Info.plist も要らないし、開けてもいけない。
 
-   リンクについてはオーナーは何も言っていない。位置情報の答えを当てはめない
-   ため、こちらも同じ「ただの文字列」以上のことはしていない。 */
-function meSetLink(v){ ME.link=String(v||''); saveMe(); }
-function meSetLoc(v){ ME.loc=String(v||''); saveMe(); }
+   **リンクは違う。** 「リンクもhttpのリンクの形からじゃないと入力できない
+   ようにして欲しい」 OWNER 2026-08-28。この欄はリンクの形からしか打てない。
+
+   2026-08-25 の決定を覆したのではない ── あの日オーナーが答えたのは
+   **居るところ**についてで（理由が「自分の国入れたい人」なのがその証拠）、
+   リンクについては何も言っていなかった。この欄が自由入力だったのは、
+   居るところの答えをリンクに当てはめた**こちらの推測**で、決定ではない。 */
+/* 打てるのは、リンクの形になっているものと、そこへ向かって打っている途中の
+   ものだけ。`h` `ht` `htt` `http` `http:` `http://` は途中なので通り、`e` は
+   通らない ── そこから始まるリンクは無いので。
+
+   空も通る。リンクが無いことは、書式の間違いではない。
+
+   そして**前からあった値を消している最中も通す**。この規則より前に入った
+   `example.com` のような値は、一字ずつ消せないと消せなくなる ── 人が入れた
+   ものを消せない画面にはしない。 */
+function meLinkOK(v, was){
+  var s=String(v||''), w=String(was||''), c=s.toLowerCase();
+  if(!s) return true;
+  /* 大文字小文字は見ない。`HTTPS://` は綴りの間違いではなく、打った字は
+     打ったまま残す ── ここで決めているのは形であって、綴りではない。 */
+  if(c.indexOf('http://')===0 || c.indexOf('https://')===0) return true;
+  if('http://'.indexOf(c)===0 || 'https://'.indexOf(c)===0) return true;
+  return w.indexOf(s)===0 && s.length < w.length;
+}
+/* 通らなかった打鍵は**無かったことにする**。画面には何も出ない ──
+   「アプリ内に説明を書くの禁止」。欄が受け付けないことが、それ自体で
+   言っていることになる。 */
+function meSetLink(v){
+  var s=String(v||''), e;
+  if(!meLinkOK(s, ME.link)){
+    e=document.getElementById('me-lk');
+    if(e) e.value=String(ME.link||'');
+    lnGrow('me-lk');
+    return;
+  }
+  ME.link=s; lnGrow('me-lk'); saveMe();
+}
+function meSetLoc(v){ ME.loc=String(v||''); lnGrow('me-lc'); saveMe(); }
 /* ---- a face of your own ------------------------------------------------
    A file input, because that is the one way a WKWebView opens the camera
    roll without a plugin, and the plugin would have to be installed on a
@@ -261,6 +298,7 @@ function meSetHandle(v){
   /* A handle is what somebody types after an @, so it is the characters that
      survive being typed after one. */
   ME.handle=String(v||'').toLowerCase().replace(/[^a-z0-9_]+/g, '');
+  lnGrow('me-hd');
   saveMe();
   if(ME_HD_T) clearTimeout(ME_HD_T);
   ME_HD_T=setTimeout(meHandleSee, 700);
@@ -531,29 +569,37 @@ function openMe(){
        The style is written here rather than in a class because `.pav` is worn
        by eight other screens. */
     /* 見出しは無し ── 「アイコンって文字いらない」(OWNER, 2026-08-25)。
-       名前・ID・リンク・位置情報は、名札と欄が一行に並ぶ `.field.at` で。
-       これは @ の欄が既に使っている形（`display:flex;align-items:center`）で、
-       新しい CSS は足していない。 */
-    '<div class="picrow" style="align-items:center">'+
+       それは顔の話で、下の四つの欄の話ではない。名札は欄の**左**、`.field.at`
+       ── 「アイコンだけ上にして。あとはリンクと同じ並びにして欲しい。」
+       OWNER 2026-08-28。リンクと場所の行が既にその形で、名前と ID をそれに
+       揃える。
+
+       **顔は単独で上に立つ。** 96px の顔が名前と ID の左に居たので、その二つ
+       だけ欄が 80px しか無く、320px の端末で日本語 4字で二行になっていた
+       ──「場所も名前も二行にしないで。はみ出さない、二行にしない範囲の名前
+       しか設定できない。これだとなん文字？」OWNER 2026-08-28。顔を外に出すと
+       四つとも同じ幅の行になる。
+
+       欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
+       折り返せないので、書いた字が横に消えていた。 */
+    '<div class="picrow">'+
       '<label class="pav" style="position:relative;width:96px;height:96px">'+
         postFace({who:meName(), lname:langName, av:postAvatar()})+
         '<input type="file" id="me-pic" accept="image/*" '+
           'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
           CH('meSetPic') + '></label>'+
-      '<div style="flex:1 1 auto;min-width:0">'+
-        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
-          '<input id="me-nm" maxlength="'+ME_MAX.name+'" value="'+esc(ME.name)+'" '+
-          'placeholder="'+esc(langName||'')+'"' + IN('meSetName') + '></div>'+
-        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
-          '<input id="me-hd" maxlength="'+ME_MAX.handle+'" value="'+esc(ME.handle)+'" '+
-          'placeholder="'+esc(meHandle())+'" autocapitalize="none" '+
-          'autocorrect="off" spellcheck="false"' + IN('meSetHandle') + '></div>'+
-      '</div>'+
     '</div>'+
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
        '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
+      lnField('me-nm', langName||'',
+        ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), ME.name)+'</div>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
+      lnField('me-hd', meHandle(),
+        ' maxlength="'+ME_MAX.handle+'" autocapitalize="none"' + IN('meSetHandle'),
+        ME.handle)+'</div>'+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
     '<div class="field"><textarea id="me-bio" maxlength="'+ME_MAX.bio+'" '+
       'placeholder="'+esc(t('me.bio.ph'))+'"' +
@@ -561,7 +607,9 @@ function openMe(){
     /* リンクと場所。**両方とも自由入力**で、書式を決めない ──
        「自由入力です。」「だって自分の国入れたい人だっているやん」
        OWNER DECISION 2026-08-25。端末の位置ではなく、国コードでもなく、
-       候補の一覧も出さない。人が打った文字がそのまま入る。
+       候補の一覧も出さない。人が打った文字がそのまま入る。**2026-08-28 に
+       リンクの形を検査する話が出たが、この決定のままにしてある** ── 書式を
+       決めないのが決定で、検査を足すのはそれに反する。
 
        この枝が書けたのは欄と関数までで、`meSetLink`/`meSetLoc` の登録
        （www/act-map.js）と `me.link` `me.loc` の鍵（www/i18n）は他の
@@ -570,13 +618,13 @@ function openMe(){
        書くとアプリが読み込みで止まる。**分けられない。** */
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
-      '<input id="me-lk" maxlength="'+ME_MAX.link+'" value="'+esc(ME.link||'')+'" '+
-      'placeholder="'+esc(t('me.link.ph')||'')+'" autocapitalize="none" '+
-      'autocorrect="off" spellcheck="false"' + IN('meSetLink') + '></div>'+
+      lnField('me-lk', t('me.link.ph')||'',
+        ' maxlength="'+ME_MAX.link+'" autocapitalize="none"' + IN('meSetLink'),
+        ME.link||'')+'</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
-      '<input id="me-lc" maxlength="'+ME_MAX.loc+'" value="'+esc(ME.loc||'')+'" '+
-      'placeholder="'+esc(t('me.loc.ph')||'')+'"' + IN('meSetLoc') + '></div>');
+      lnField('me-lc', t('me.loc.ph')||'',
+        ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
 FORM_OPEN.me=function(){ openMe(); };
 /* The two lists behind the two numbers. One screen, and which one it is is the

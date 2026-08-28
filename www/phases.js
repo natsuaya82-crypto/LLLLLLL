@@ -379,8 +379,13 @@ function openOwnPhase(){
   /* Writing a grammar stage of your own is the third of the four. */
   if(!makeNeed()) return;
   openForm('own:', t('stg.own.h'),
+    /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27.
+       An <input> is one row that scrolls sideways forever and no CSS makes it
+       wrap. This field carries no name of its own -- it is read when the form
+       is saved -- so what makes it grow is the line in www/act.js. */
     '<div class="field"><label>'+t('stg.own.title')+'</label>'+
-      '<input id="st-t" placeholder="'+esc(t('stg.own.title.ph'))+'"></div>'+
+      lnField('st-t', t('stg.own.title.ph'), '', '')+'</div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
     /* This one still says what it does: it is the button that makes the
@@ -463,10 +468,9 @@ function stExHTML(id){
       }).join('')+'</div>'
     : '')+
     (stExNew===id? '<div class="exadd">'+
-      '<input id="sx-lb" class="exsm" placeholder="'+esc(t('stg.ex.lb.ph'))+'" autocomplete="off">'+
+      lnField('sx-lb', t('stg.ex.lb.ph'), '', '', 'exsm')+
       lnField('sx-ln', exHint(), KD('stAddEx', [id]), '')+
-      '<input id="sx-gl" placeholder="'+esc(t('word.ex.gl.ph'))+'" '+
-        '' + KD('stAddEx', [id]) + '>'+
+      lnField('sx-gl', t('word.ex.gl.ph'), KD('stAddEx', [id]), '')+
     '</div>' : '');
 }
 

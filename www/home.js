@@ -458,7 +458,11 @@ function vFind(){
     navTop()+
     '<div class="chead">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
-    '<input id="f-q" placeholder="'+esc(t('find.ph'))+'" value="'+esc(fq)+'"' + IN('fSetQ') + '>'+
+    /* THE SAME FIELD AS EVERY OTHER SEARCH BOX, and it was an <input>.
+       「全部改行して画面内に文字が収まるようにして欲しい」 OWNER 2026-08-27,
+       and 「全部なくせ」 when asked what was left. An <input> is one row that
+       scrolls sideways forever and no CSS makes it wrap. */
+    lnField('f-q', t('find.ph'), IN('fSetQ'), fq)+
     '<button class="sx" id="f-x"' + DO('clearFq') + ''+(fq?'':' hidden')+
       ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button></div></div>'+
     '<div class="body" id="f-list">'+findBodyHTML()+'</div>'+
@@ -605,10 +609,13 @@ function findPaint(){
   var x=document.getElementById('f-x');
   if(x){ if(fq) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
-function fSetQ(v){ fq=v; if(v) fpick=null; findPaint(); }
+/* The box is as tall as what is in it, and typing repaints the list rather
+   than the screen, so nothing else would say the field grew. */
+function fSetQ(v){ fq=v; if(v) fpick=null; lnGrow('f-q'); findPaint(); }
 function clearFq(){
   var e=document.getElementById('f-q');
   fq=''; if(e){ e.value=''; e.focus(); }
+  lnGrow('f-q');
   findPaint();
 }
 /* ---- what the language is for ----------------------------------------
@@ -1322,11 +1329,20 @@ function wldPage(ed){
            with nothing over it could be anything, and it is what the reading
            face has over it as well. */
         inner+='<div class="abfk">'+esc(t('wld.where'))+'</div>'+
-          '<div class="field"><input value="'+esc(w.where||'')+'" '+
-          'placeholder="'+esc(t('wld.where.ph'))+'"' + IN('wldSet', ["where"]) + '></div>'+
+          /* THE SAME FIELD AS EVERYWHERE ELSE, and it was an <input>.
+             「全部改行して画面内に文字が収まるようにして欲しい」 OWNER
+             2026-08-27. A place and a people are written in words, and an
+             <input> is one row that scrolls sideways forever. These two had
+             no id at all -- lnField() needs one to be grown by name, and
+             nothing else in the app points at them, so the id is new and
+             carries nothing. */
+          '<div class="field">'+
+          lnField('wld-where', t('wld.where.ph'), IN('wldSet', ["where"]), w.where||'')+
+          '</div>'+
           '<div class="abfk">'+esc(t('wld.who'))+'</div>'+
-          '<div class="field"><input value="'+esc(w.who||'')+'" '+
-          'placeholder="'+esc(t('wld.who.ph'))+'"' + IN('wldSet', ["who"]) + '></div>'+
+          '<div class="field">'+
+          lnField('wld-who', t('wld.who.ph'), IN('wldSet', ["who"]), w.who||'')+
+          '</div>'+
           abField(t('ws.kind'), t('ws.k.'+wsys()))+
           abField(t('dir.title'), t('dir.'+scriptDir()))+
           '<div class="ovlist" data-wdrag="ovs">'+
@@ -1341,8 +1357,10 @@ function wldPage(ed){
                    the name of the thing instead of nothing. What names a row
                    is what the person typed, and what marks the box is the
                    rule under it. */
-                '<div class="field ovk"><input value="'+esc(row.k||'')+'"'+
-                  IN('wldOvSet', [row.id, "k"]) + '></div>'+
+                /* One per row, so the id carries the row's own. */
+                '<div class="field ovk">'+
+                  lnField('wld-ov-'+row.id, '', IN('wldOvSet', [row.id, "k"]), row.k||'')+
+                '</div>'+
                 /* 「消したかったらマイナスボタン」 OWNER 2026-08-25. It was a
                    cross, which is what CLOSES a thing; the pair the owner
                    drew is ＋ and −, and the ＋ that puts the row in is two

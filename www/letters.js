@@ -574,7 +574,10 @@ function ltDupOf(l){
    about it. viewReset() throws it away, because a half-typed name is where
    you are standing and not something the language has. */
 var ltDraft=null;
-function ltDraftName(id, v){ ltDraft={id:id, ab:String(v||'')}; }
+/* The box is as tall as what is in it. Nothing here calls render() -- the
+   letter page would take the keyboard's focus off the field being typed
+   into -- so lnGrow() is what says the field grew. */
+function ltDraftName(id, v){ ltDraft={id:id, ab:String(v||'')}; lnGrow('lt-rom'); }
 function ltDraftAb(l){
   return (l && ltDraft && ltDraft.id===l.id)? ltDraft.ab : ltBoxed(l);
 }
