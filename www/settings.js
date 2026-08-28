@@ -299,22 +299,30 @@ function vSet(){
          you may do, and they are answered by different things -- the account
          by a server, the plan by whatever settles it. It is a room of its
          own on the settings list. 「アカウント内にプラン入れるのやめてくんね？」 */
-      /* Erasing what is on this phone is the person's, beside signing out --
-         it sat at the foot of the language room, which is the one place it
-         is not about. Signing out leaves everything where it is; this does
-         not, so it says so and asks.
+      /* THREE rows that take something away, and they take three different
+         things. 「端末のデータはSNSは消えないで言語データが全部消えるの」
+         OWNER 2026-08-28.
 
-         There were two of these and nobody could tell them apart: "delete
-         account" reached the server and left the phone, "erase this phone"
-         did the opposite, and the two sat either side of a row about
-         something else. 「サインアウト、スイッチアカウントはまあそのまま
-         使える。データを消去するで全部消えるでいいんじゃない」
+           sign out            nothing goes. The keys come off this phone
+           erase this phone    every language ON THIS PHONE goes. The timeline
+                               does not, and the server is not touched at all
+           delete account      everything goes. Everything
 
-         One now, and it means what it says: the account, everything of yours
-         on the server, every language on this phone, and the backup files.
-         Signing out is the other button and is the one that changes nothing.
-         Alone at the foot with a gap above it, which is where a phone puts
-         the thing that cannot be undone. */
+         The middle one had no button. It used to, and it was taken out on the
+         day the other two were told apart -- 「サインアウト、スイッチアカウント
+         はまあそのまま使える。データを消去するで全部消えるでいいんじゃない」 --
+         because at the time the pair of them said the same words in different
+         orders and nobody could tell which was which. That is not what this
+         is: the account and the languages on this phone are two different
+         things to be rid of, and there was only one button for both, so
+         somebody who wanted their phone tidy had to delete their account.
+
+         Order is the owner's, and it is also the order of how much is lost.
+         Signing out is the row above, inside the signed-in half, because
+         there is nothing to sign out of otherwise; these two are here whoever
+         is holding the phone. */
+      '<button class="set"' + DO('wipeLangs') + '>'+
+      '<span class="sl bad">'+t('set.wipe.langs')+'</span></button>'+
       '<button class="set"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>'+
       /* The two documents, at the very foot of this room and nowhere else in
@@ -421,6 +429,79 @@ function setUi(l){ SET.ui=l; save(); render(); }
    would be the button lying in the direction that cannot be corrected later.
    The other order leaves an account nobody can reach and nothing to reach it
    from. */
+/* Erase the languages on this phone, and nothing else.
+   「端末のデータはSNSは消えないで言語データが全部消えるの」OWNER 2026-08-28.
+
+   The one below erases everything and this one is not a smaller version of
+   it. They are told apart by what they DO NOT touch, and the list is the
+   whole of the difference:
+
+     the server            not touched. Not one net* call from here. The
+                           posts, the photographs, the recordings, the
+                           follows and the profile are still there, and the
+                           languages are still there too (netLangSync()), so
+                           this is undone by the next sync as often as not
+     lingua.set            not touched. The theme, the interface language and
+                           the plan are the PERSON's and none of them is a
+                           language
+     lingua.me             not touched, and neither are the posts or the
+                           drafts. 「SNSは消えない」is that sentence
+     Documents/            not touched. The backup files are what this is
+                           recoverable FROM, and whether they should go is
+                           not something the owner has said
+
+   So the keys are NAMED rather than counted -- the opposite of lsWipeNS(),
+   deliberately, and it is the one place in this file where naming them is
+   right. lsWipeNS() counts because "everything under lingua." is what it
+   means, and a key added tomorrow belongs in it. Here a key added tomorrow
+   belongs in it only if it is a LANGUAGE's, and the list of what a language
+   is made of already exists and is already kept in step: SLICES, which
+   bkPack() walks to write a backup. A count here would take the drafts and
+   the timeline's copy with it on the day somebody adds a key, silently.
+
+   Every language, not the open one. langKeyOf() is what names a language
+   that is not open, which is what it was given its first argument for.
+
+   Then a first run out of the same functions a first run uses, and this half
+   is not tidying up: the globals still hold the language that was just
+   erased, and the next save() writes them straight back out under the new
+   id. langFirst() mints a new one for the same reason wipeHere() does --
+   with the old id kept, ltStart() rebuilds twenty-eight letters under it and
+   the language is back. */
+function wipeLangs(){
+  if(!confirm(t('confirm.wipe.langs'))) return;
+  var ids=[], id, i, j;
+  for(id in LANGS) if(Object.prototype.hasOwnProperty.call(LANGS, id)) ids.push(id);
+  try{
+    for(i=0;i<ids.length;i++)
+      for(j=0;j<SLICES.length;j++)
+        localStorage.removeItem(langKeyOf(ids[i], SLICES[j]));
+    /* and the index of them. lingua.cur is left where it is: langFirst()
+       below writes it, so removing it here would be the same key twice. */
+    localStorage.removeItem(LS_LANGS);
+  }catch(e){}
+  LANGS={}; langId='';
+  langFirst();
+  /* Every global a language owns, put back to what an empty one looks like.
+     This is langOpen()'s own line less migratePostInk(), which cuts ink onto
+     posts out of the alphabet they were written in -- there is no alphabet
+     here now, and the posts are not going anywhere. */
+  langRead(); ltRead(); ntRead(); stRead(); sndRead(); sndStart(); ltStart();
+  kbRead(); migrateKbFree(); wldRead();
+  SFONT={built:false, sig:null};
+  var css=document.getElementById('sfontcss');
+  if(css && css.parentNode) css.parentNode.removeChild(css);
+  save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  /* and where you were standing was in a language that is not there.
+     langOpen()'s own two lines: the last one leaves you on the cover of the
+     empty language, which is the only way this row can be seen to have done
+     anything -- rendering the settings room again draws a screen that looks
+     exactly as it did before it was pressed. GE goes with them: the glyph
+     editor holds one letter, and that letter is not there either. */
+  GE=null;
+  viewReset();
+  goTab('profile');
+}
 function wipeAll(){
   if(!confirm(t('confirm.wipe'))) return;
   if(netSignedIn()) netDropMe(wipeHere, wipeHere);

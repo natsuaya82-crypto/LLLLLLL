@@ -679,6 +679,7 @@ defLang('en', (function(){
       'set.lock.csv.t'  : "CSV import",
       'set.lock.csv.d'  : "Pour in a batch you built in a spreadsheet",
       'set.wipe'        : 'Erase everything',
+      'set.wipe.langs' : 'Erase the data on this phone',
       'set.pw'        : 'Change password',
       'set.pw.old'        : 'Current password',
       'set.mail'        : 'Email',
@@ -686,6 +687,7 @@ defLang('en', (function(){
       'set.pw.done'        : 'Password changed',
       'net.needpw'        : 'Fill both.',
       'confirm.wipe'    : "Erase everything? Your account and every post, photograph and recording on it go from the server; every language, letter and setting goes from this phone; the backup files go with them. Nothing can be brought back.",
+      'confirm.wipe.langs' : "Erase the data on this phone? Every language on it goes -- the words, the letters, the writing system, the keyboard, the notes. Your account stays, and so do your posts and your settings. The backup files stay. Nothing on this phone can be brought back.",
       /* languages */
       'langs.title'     : "Languages",
       'langs.mine'      : "Your languages",

@@ -274,6 +274,7 @@ act('wdDerive', wdDerive);
 act('spAdd', spAdd);
 act('ipaToggle', ipaToggle);
 act('openIpaG', openIpaG);
+act('wipeLangs', wipeLangs);
 act('wipeAll', wipeAll);
 
 /* ---- typed into, or chosen ---------------------------------------------- */
