@@ -166,6 +166,104 @@ function snsPull(){
     render();
   }, function(){ snsPulling=false; });
 }
+/* ---- pulling a timeline down to ask again --------------------------------
+   「プルトゥーリフレッシュも入れて欲しい」 OWNER 2026-08-28.
+
+   ONE mechanism for the three screens the timeline is made of, and that is
+   the whole reason it is here rather than three times: a rule written out on
+   the feed, the search and the notices is a rule the fourth screen will not
+   have. Which routes it answers on is a table, so a screen added to the
+   timeline is pulled the day it is added.
+
+   Only from the TOP. Anywhere else a finger going down the screen is a
+   person scrolling, and a page that reloaded itself in the middle of a
+   timeline would be taking the thing they were reading away.
+
+   It has to be FELT. Nothing on a phone says "let go now" except the page
+   moving, so the body follows the finger at half speed and stops -- half,
+   because a list that keeps up exactly with the thumb reads as the page
+   having come loose. The bar does not move: it is outside `.body`, so what
+   slides is the timeline and what stays is where you are.
+
+   Already asking is not asked twice. `snsPulling` and `notPulling` have held
+   that since the two pulls were written -- a person flicking between tabs
+   would otherwise have four asks in the air -- so this hands the pull to
+   them and they refuse it, rather than a third place keeping a third flag.
+
+   It does NOT fight the profile tab's hold in www/shell.js. That one arms on
+   an element carrying `data-hold` and disarms on any touchmove, which is
+   exactly right: a pull is not a hold. And preventDefault stops the browser
+   bouncing the page, not the other listeners -- they are still called. */
+var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
+var PULL_ON={feed:1, explore:1, notif:1};
+var pullY=-1, pullEl=null, pullAt=0;
+/* Which timeline is under the finger, or '' for a screen this is not about.
+   Signed out there is nothing to ask for: the three screens are the door. */
+function pullWhere(){
+  var r=here().r;
+  return (PULL_ON[r] && netSignedIn())? r : '';
+}
+/* How far the page has been scrolled. `scrollingElement` is the one that
+   knows on a modern browser and is not there on an old WKWebView, which is
+   what the other two are for. */
+function pullTop(){
+  var d=document.scrollingElement || document.documentElement || document.body;
+  return Math.max(0, window.pageYOffset||0, (d? d.scrollTop : 0)||0);
+}
+function pullStart(e){
+  pullY=-1; pullEl=null; pullAt=0;
+  if(!pullWhere()) return;
+  if(!e.touches || e.touches.length!==1) return;
+  if(pullTop()>0) return;
+  pullY=e.touches[0].clientY;
+  pullEl=document.querySelector('#app .view > .body');
+}
+function pullMove(e){
+  if(pullY<0 || !pullEl) return;
+  if(!e.touches || e.touches.length!==1){ pullLet(false); return; }
+  var dy=e.touches[0].clientY-pullY;
+  /* Upwards, or the page moved under the finger: an ordinary scroll, and it
+     never was a pull. */
+  if(dy<=0 || pullTop()>0){ pullLet(false); return; }
+  /* And the page does not bounce as well. `cancelable` is false once the
+     browser has already decided this gesture is a scroll. */
+  if(e.cancelable) e.preventDefault();
+  pullAt=Math.min(PULL_MAX, dy*PULL_R);
+  pullEl.style.transform='translateY('+pullAt+'px)';
+}
+function pullEnd(){ pullLet(pullAt>=PULL_GO); }
+/* Let go: the body goes back where it was, and far enough down it asks.
+   The transition is put on for the way back and taken off after it, or the
+   next render's first paint would animate from wherever this left it. */
+function pullLet(ask){
+  var el=pullEl, r=pullWhere();
+  pullY=-1; pullEl=null; pullAt=0;
+  if(el){
+    el.style.transition='transform .22s ease-out';
+    el.style.transform='';
+    setTimeout(function(){ if(el.style) el.style.transition=''; }, 300);
+  }
+  if(!ask) return;
+  if(r==='notif') notPull(); else if(r) snsPull();
+}
+/* touchmove has to be able to say no to the browser's own bounce, and a
+   listener the browser thinks is passive cannot. Whether the third argument
+   is read as an options object or as `capture` is the one thing that differs
+   between the WKWebView this runs in and the one it was written on, so it is
+   asked rather than assumed -- handing an object to a browser that wants a
+   boolean would register this in the capture phase instead. */
+var PULL_OPT=false;
+try{
+  var pullProbe=Object.defineProperty({}, 'passive',
+    { get: function(){ PULL_OPT=true; return false; } });
+  window.addEventListener('lingua-pull', null, pullProbe);
+  window.removeEventListener('lingua-pull', null, pullProbe);
+}catch(pullNo){}
+document.addEventListener('touchstart',  pullStart, false);
+document.addEventListener('touchmove',   pullMove, PULL_OPT? {passive:false} : false);
+document.addEventListener('touchend',    pullEnd, false);
+document.addEventListener('touchcancel', pullEnd, false);
+
 /* Where an appeal goes. An address and not a form: a frozen account cannot
    write a row anywhere -- every write policy in supabase/schema.sql goes
    through is_member() and that is the whole of what being frozen means -- so
