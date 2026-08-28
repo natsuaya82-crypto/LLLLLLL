@@ -1469,6 +1469,12 @@ function obDrawHTML(){
       '<span>'+t('ob.or')+'</span>'+OB_CHEVR+
     '</button></div></div>'+
     '<div class="obfoot">'+
+    /* THE NOTE IS FIRST. 「あとでかきなおせます / 完了 / ログインへ」 OWNER
+       2026-08-28 -- what it says belongs to the drawing above it, not to the
+       buttons under it: somebody who thinks the first stroke has to be right
+       will not draw one, and they need to know that before they decide, not
+       after. 「あとで編集できるよって」 */
+    '<div class="mini obnote">'+esc(t('ob.draw.note'))+'</div>'+
     '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
       t('ob.draw.done')+'</button>'+
     /* Straight to the door, past all of it. 「ログインまでスキップ」 OWNER
@@ -1483,14 +1489,9 @@ function obDrawHTML(){
 
        Here and nowhere else. This is the FIRST screen, which is where somebody
        decides they do not want the walk; the name step already reaches the
-       door through 「あとで決める」, and the walk's own chevron comes back here.
-       Same class as the row above it, so the two are one height. */
+       door through 「あとで決める」, and the walk's own chevron comes back here. */
     '<button class="obskip"' + DO('obSkipAll') + '>'+t('ob.skip')+'</button>'+
-    /* And that it is not for ever. 「あとで編集できるよって」 The same line the
-       name step has, in the same place: what is being asked for here is the
-       first stroke of an alphabet, and somebody who thinks it has to be right
-       will not draw one. */
-    '<div class="mini obnote">'+esc(t('ob.draw.note'))+'</div></div>';
+    '</div>';
 }
 
 /* A sample is worth showing only if this phone can actually draw it. Some of
