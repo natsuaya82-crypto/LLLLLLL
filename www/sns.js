@@ -264,6 +264,92 @@ document.addEventListener('touchmove',   pullMove, PULL_OPT? {passive:false} : f
 document.addEventListener('touchend',    pullEnd, false);
 document.addEventListener('touchcancel', pullEnd, false);
 
+/* ---- and reaching the bottom ---------------------------------------------
+   「下まで行ったら勝手に更新される感じ。文字は出さない」 OWNER 2026-08-28,
+   through the leader.
+
+   The other end of the pull, and the same shape for the same reason: which
+   routes it answers on is a table, not a rule written out on each screen.
+   **The notices are not one of them** -- 「通知は不要」 -- so `MORE_ON` has
+   two entries where `PULL_ON` has three, and that difference is the decision
+   rather than an oversight.
+
+   NOTHING IS SAID ON THE SCREEN. No spinner, no "loading", no "that is all
+   there is". 「文字は出さない」, and CLAUDE.md bans the explaining anyway:
+   more posts arriving under the ones already there is the whole of the
+   feedback, because it is the thing that happened.
+
+   Three states and they are three, not two. Asking is not "there is more",
+   and "there is no more" is not "could not ask" -- a phone in a tunnel that
+   was told there is nothing left would stop asking for the rest of the
+   session and the timeline would simply end. `snsMoreAsk` is the one in the
+   air; `snsMoreEnd` is set only by an answer that came back SHORT, which is
+   the server saying it has run out. */
+var MORE_ON={feed:1, explore:1};
+var MORE_NEAR=600;
+var snsMoreAsk=false, snsMoreEnd=false;
+function snsMoreWhere(){
+  var r=here().r;
+  if(!MORE_ON[r] || !netSignedIn()) return '';
+  /* The search has a second condition the timeline does not, and measuring
+     is what found it: a search with nothing on it is SHORTER than the phone,
+     so its foot is already in view and the bottom was reached the moment the
+     screen opened. There is nothing to continue either -- what comes after
+     the oldest post of a search nobody has made is not a question. So it
+     pages a search that has brought posts back, and not the empty screen and
+     not a list of people, which is a different query. */
+  if(r==='explore' && !(snsHits && snsHits.posts && snsHits.posts.length)) return '';
+  return r;
+}
+/* How far the foot of the page is from the foot of the window. Asked of the
+   document rather than of a screen, the same way pullTop() is. */
+function snsMoreLeft(){
+  var d=document.documentElement, b=document.body,
+      h=Math.max(d? d.scrollHeight : 0, b? b.scrollHeight : 0);
+  return h - (pullTop() + (window.innerHeight||0));
+}
+function snsMoreCheck(){
+  if(snsMoreAsk || snsMoreEnd) return;
+  if(!snsMoreWhere()) return;
+  if(snsMoreLeft() > MORE_NEAR) return;
+  snsMore();
+}
+/* THE SEAM, and the network side of it is deliberately not here.
+
+   Asking for the posts AFTER the ones already on screen is www/net.js's, and
+   nothing in that file can do it yet: `netFeed()` and `netFindPosts()` both
+   end in `&order=created_at.desc&limit=' + NET_PAGE` with no offset and no
+   cursor, so there is no page two to ask for. That file belongs to another
+   session; the call goes in here, as one line, the day its name arrives.
+
+   What is here is the half that is this screen's and is the same whatever
+   that function turns out to be called: WHEN to ask, and not asking again
+   while one is out. It is written now rather than with the call because a
+   page that fires four asks while the first answer is still in the air is a
+   bug this end owns.
+
+   WHAT THE ANSWER MUST DO, so that it is written down before it is written:
+
+     snsMoreAsk=false;                        always, refused or not
+     if(!ps) return;                          could not ask -- NOT the end
+     if(ps.length < NET_PAGE) snsMoreEnd=true; a short answer IS the end
+     if(ps.length){ postTake(ps); render(); }
+
+   The middle two are the ones that cannot be collapsed. A phone in a tunnel
+   answering `null` must not set the end, or the timeline stops for the rest
+   of the session; and a short answer is the only thing that may set it, or
+   the bottom asks for ever. */
+function snsMore(){
+  if(snsMoreAsk) return;
+  snsMoreAsk=true;
+  /* www/net.js, one line: ask for what comes after the oldest post on
+     screen. Nothing is in the air until it exists, so the flag comes back
+     down here -- otherwise the first touch of the bottom would switch this
+     off for the rest of the session. */
+  snsMoreAsk=false;
+}
+window.addEventListener('scroll', snsMoreCheck, false);
+
 /* Where an appeal goes. An address and not a form: a frozen account cannot
    write a row anywhere -- every write policy in supabase/schema.sql goes
    through is_member() and that is the whole of what being frozen means -- so
