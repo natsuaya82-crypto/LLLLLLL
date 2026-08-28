@@ -174,37 +174,44 @@ var OB_TOUR_STOPS=[
      are one screen here, and the thing lit on it is the key the letter just
      drawn ended up on. It is the last of them: tapping it ends the walk. */
   { r:'kb',    a:'', lt:1,     lab:'ob.tour.kb1' },
-  /* And then the three chapters the owner named, in the owner's order -- each
-     one entered FROM the contents and left back TO it.
-     「単語とかやったら戻る」 OWNER 2026-08-28.
+  /* And then the chapters, each one ENTERED from the contents and LEFT by
+     pressing the app's own back arrow. 「単語とかやったら戻る」 and
+     「戻るボタン押させてないね」 OWNER 2026-08-28 -- the second of those is
+     what `bk` is: the walk used to carry the person back to the contents
+     itself, so the one gesture they need most in this app was the one gesture
+     the walk never let them make. Now the finger points at the arrow and the
+     press is theirs. 「指で合図してあげて」
 
-     That going back is the whole reason the contents appears four times here
-     rather than once. The walk used to jump letters -> words -> gram, which is
-     a road nobody can take: there is no row on the letters page that leads to
-     the words page, and somebody taught by that walk would not know how to get
-     from one chapter to the next. Going in and coming out is how the app is
-     actually used, and this page is 「使い方をレクチャーするページ」.
+     THE WORDS CHAPTER IS NOT ON THE WALK. 「単語のとこなにもないなら行かせなく
+     ていいか」 OWNER 2026-08-28 -- a new dictionary is empty, so the stop lit
+     an empty list and pointed a finger at nothing.
 
-     Two kinds of stop, alternating:
+     Three kinds of stop and each says what a press does -- obTourNext():
 
-     A ROW OF THE CONTENTS. `go` -- the walk does not drive this one, the
-     person does: pressing the row really goes there, and obTourAt() notices
-     the app landed on the next stop. tocRows() in www/home.js is where those
-     routes come from, so the names here are that table's.
-
-     THE CHAPTER ITSELF. `look` -- what is lit is the page's own `.body`,
-     which is the whole of what somebody came to be shown, and nothing on it
-     leads anywhere the walk wants to go next, so the tap target is the walk's
-     own. 「オンボーディングは追加だから基本完成したページを見せて欲しい」 --
-     these are the app's finished pages and nothing here draws a picture of
-     one. `.body` is every screen's content region: neither the bar at the top
-     nor the tabs at the foot. */
+       go / tab   a door. Pressing the real thing goes there and obTourAt()
+                  notices; the walk does not move itself.
+       bk         the app's own back arrow, which is a door too: back() lands
+                  on the contents, which is the next stop.
+       look / lt  a page, or a key. Nothing on it leads where the walk goes
+                  next, so the walk moves itself. */
+  { r:'kb',      a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
   { r:'build',   a:'', go:'letters', lab:'ob.tour.row.letters' },
   { r:'letters', a:'', spot:'.body', look:1, lab:'ob.tour.letters' },
-  { r:'build',   a:'', go:'words',   lab:'ob.tour.row.words' },
-  { r:'words',   a:'', spot:'.body', look:1, lab:'ob.tour.words' },
+  { r:'letters', a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
   { r:'build',   a:'', go:'gram',    lab:'ob.tour.row.gram' },
-  { r:'gram',    a:'', spot:'.body', look:1, lab:'ob.tour.gram' }
+  { r:'gram',    a:'', spot:'.body', look:1, lab:'ob.tour.gram' },
+  { r:'gram',    a:'', spot:'.navtop .back.nb', bk:1, lab:'ob.back' },
+  /* And the other half of the app. 「ここが制作、ここがsnsって最後まで見せて
+     ログイン画面にしよう」 OWNER 2026-08-28: the first stop of the walk points
+     at the making side, and this one points at the timeline.
+
+     It is `look` and not `tab`, which is the one place this walk does not
+     press what it points at, and the reason is the next step rather than a
+     shortcut: vFeed() in www/sns.js answers snsLocked() to anybody with no
+     account, so pressing this tab for real lands on a sign-in form in the
+     middle of the walk. Pressing it here ends the walk, and what comes up is
+     the timeline -- obSnsHTML() -- with the door two steps after it. */
+  { r:'build',   a:'', tab:'feed', look:1, lab:'ob.tour.sns' }
 ];
 /* Where the tour has got to. Where you are standing, so viewReset() drops it. */
 var obTour=0;
@@ -433,12 +440,17 @@ function obTourHTML(){
        one grey and dead, a few pixels apart. The screens with no arrow of
        their own (the roots -- profile, feed) have nothing there to stand on
        and nothing to collide with, so those take the corner. */
-    obBackBox()+'>'+OB_CHEV+'</button>';
+    (obBackBox()? obBackBox()+'>'+OB_CHEV+'</button>' : '');
 }
 /* Where the walk's chevron stands: on the screen's own back arrow, or in the
    corner when the screen has none. Everything up to the `>` of the tag,
    because the two cases differ only in the four numbers. */
 function obBackBox(){
+  /* Nothing at all on a stop whose lit thing IS the back arrow: the walk's
+     chevron stands exactly there, and two back arrows in one corner going two
+     different ways is worse than being one screen without ours. The stop
+     after it has it again, and stepping back from there returns here. */
+  if(obTourStop().bk) return '';
   var el=document.querySelector('.navtop .back.nb'), b=el? el.getBoundingClientRect() : null,
       pos=(b && b.width)
         ? 'left:'+Math.round(b.left)+'px;top:'+Math.round(b.top)+'px;'+
@@ -1133,11 +1145,23 @@ function obNameLater(){ ob.name=''; obGo(OB_IN); }
 
    No heading. The screen shows what it is, which is the rule everywhere else
    in the app and is also the only way it can look like a real one. */
-/* Who is on it. The name is copy -- it is a person's name, and it is written
-   in the reader's own script, so it is `t()`'s like everything else. The
-   handle is READ OFF the name rather than written down twice, and the minutes
-   are a number rather than a word: postWhen() is the app's one place for how
-   long ago a thing was written, so these say it exactly as a real row does. */
+/* THE TIMELINE IS NOT IN THE READER'S LANGUAGE. It is in a made-up one, which
+   is what this app is for. 「snsは日本語じゃなくて人工言語のモック」
+   「TLは日本語にしないで」 OWNER 2026-08-28.
+
+   The first go at this translated the names and the lines into all ten, so a
+   Japanese phone showed マラ saying a Japanese sentence -- a timeline of people
+   who had made a language and were not writing in it. Every string below is
+   ONE string: the same in en, ja, ru and the other seven, because a name is a
+   name and a sentence in somebody's own language is that sentence. They still
+   go through `t()`, which is how the i18n mirror can see they did.
+
+   They are ROMAN and not the person's drawn letters: 「文字の線画は禁止」
+   OWNER 2026-08-28, and nothing on this page is a canvas or a stroke.
+
+   The minutes are a number rather than a word -- postWhen() is the app's one
+   place for how long ago a thing was written, so these say it exactly as a
+   real row does. */
 /* The keys are written out whole and not built out of a number and a suffix.
    i18n-check reads the SOURCE for which keys a screen asks for, so a key
    assembled by concatenation is a key nothing can see being asked for -- it
@@ -1155,10 +1179,31 @@ var OB_SNS_WHO=[
    not what a handle is anywhere. It is the same value in all ten languages,
    because a handle is an id rather than copy; it goes through t() all the
    same, so the mirror can see it has. */
-function obSnsRow(w){
+/* トプ画. 「トプ画も設置して」 OWNER 2026-08-28, twice -- and a letter in a
+   circle, which is what postFace() falls back to for somebody with no picture,
+   is the ABSENCE of one. These are pictures: six small SVGs carried as data
+   URIs, worn through `.bpic`, which is the app's own class for a photograph on
+   an avatar. No file is fetched and nothing is stored.
+
+   They are the one place in this file that names a colour, and that is
+   deliberate rather than an oversight of the rule that colour lives in
+   index.html's two theme blocks: these are picture CONTENT, the way a
+   photograph is, not a surface of the interface -- and a photograph does not
+   change with the theme. Six warm tones that sit beside the app's own. */
+var OB_SNS_FACE=['#8c7a5b,#d9c9a3','#6f7f74,#cfd8cd','#8a6b6b,#e0c9c2',
+                 '#6b7288,#ccd2e0','#8a7f5c,#ddd6b6','#7a6a80,#d6cadd'];
+function obSnsPic(i){
+  var c=OB_SNS_FACE[i%OB_SNS_FACE.length].split(','),
+      svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">'+
+        '<rect width="80" height="80" fill="'+c[1]+'"/>'+
+        '<circle cx="40" cy="31" r="15" fill="'+c[0]+'"/>'+
+        '<path d="M8 80c0-19 14-30 32-30s32 11 32 30z" fill="'+c[0]+'"/></svg>';
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function obSnsRow(w, i){
   var nm=t(w.n), at=Date.now()-w.ago*60000;
   return '<div class="post">'+
-    '<div class="pav"><span class="bch">'+esc(nm.charAt(0))+'</span></div>'+
+    '<div class="pav"><img class="bpic" src="'+esc(obSnsPic(i))+'" alt=""></div>'+
     '<div class="pbody">'+
       '<div class="phead">'+
         '<div class="pheadn">'+
@@ -1167,12 +1212,11 @@ function obSnsRow(w){
         '</div>'+
         '<div class="pheadm"><span class="phandle">@'+esc(t(w.h))+'</span></div>'+
       '</div>'+
-      /* .pmn and not .pline. 1.3rem is the size the LETTERS somebody drew are
-         set at, and there are none on this page -- 「文字の線画は禁止」. At
-         that size four posts filled the screen, which is the opposite of
-         「人がたくさんいるように」. .pmn is the app's own row for a post said
-         in a language you read. */
-      '<div class="pmn">'+esc(t(w.l))+'</div>'+
+      /* .pline, which is the app's own row for what a post SAYS in its own
+         language -- and that is what is on it now. It was .pmn, the row for a
+         post said in a language you read, while the line was in the reader's
+         own: both halves of that were the same mistake. */
+      '<div class="pline">'+esc(t(w.l))+'</div>'+
       '<div class="pacts">'+
         '<span class="pact">'+ICON_REPLY+'<span class="pn">'+(w.re||'')+'</span></span>'+
         '<span class="pact">'+ICON_BOOST+'<span class="pn">'+(w.bo||'')+'</span></span>'+
@@ -1184,7 +1228,11 @@ function obSnsHTML(){
      fifteen scripts to borrow from sits in. Without it the six rows ran under
      the foot and 次へ was printed across somebody's post. */
   return '<div class="mid obleft"><div class="obscroll"><div class="body">'+
-    OB_SNS_WHO.map(obSnsRow).join('')+
+    /* Written out rather than handed to map bare. A two-argument function
+       passed straight to map is the fault CLAUDE.md rule 8 was written after:
+       there the second argument arrived by accident. Here it is wanted, and
+       saying so is what stops the next reader having to work out which. */
+    OB_SNS_WHO.map(function(w, i){ return obSnsRow(w, i); }).join('')+
     '</div></div></div>'+
     '<div class="obfoot"><button class="btn"' + DO('obSnsGo') + '>'+t('ob.next')+'</button></div>';
 }
