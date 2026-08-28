@@ -428,7 +428,6 @@ defLang('pt', (function(){
       "post.new"        : "Nova publicação",
       "post.ln.ph"      : "uma linha na tua língua",
       "post.mn"         : "O que significa",
-      "post.re"         : "A responder a {0}",
       "post.send"       : "Publicar",
       "post.none"       : "Não há nada para publicar",
       "post.del"        : "Eliminar",

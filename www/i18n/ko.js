@@ -600,7 +600,6 @@ defLang('ko', (function(){
       "post.new"        : "새 글",
       "post.ln.ph"      : "당신의 언어로 한 줄",
       "post.mn"         : "무슨 뜻인지",
-      "post.re"         : "{0}에게 답장",
       "post.send"       : "올리기",
       "post.none"       : "올릴 것이 없습니다",
       "post.del"        : "삭제",

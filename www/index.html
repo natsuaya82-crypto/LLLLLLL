@@ -832,7 +832,6 @@ canvas.pkc{width:34px;height:34px;display:block}
        padding:0 6px;border:0;background:none;
        color:var(--gold);font-family:inherit;font-size:.92rem;font-weight:700}
 .navdo:active{opacity:.75}
-.pwto{font-size:.86rem;color:var(--txm);margin-bottom:8px}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
 .pwfield input, .pwfield textarea{width:100%;background:none;border:0;color:var(--tx);
@@ -1111,8 +1110,10 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    phone with no way to reach it. 「投稿の返信画面みづらいや」
 
    104 is the two fields and nothing else -- the line 44, the gap 10, the
-   meaning 46 -- which is 「自分の言語で一行と意味がこのページで見れるように」
-   OWNER 2026-08-26 and is the smallest this may be without breaking it. What
+   meaning 46, and the 4 the meaning's own box ends on -- which is
+   「自分の言語で一行と意味がこのページで見れるように」 OWNER 2026-08-26 and is
+   the smallest this may be without breaking it. 100 was tried and is 4px
+   short: the meaning is 46 tall and does not end where it ends. What
    used to be in the other 58 is a column's floor (96, the vertical rule
    below): a line that runs DOWN the page still asks for it, and on a 320 it
    scrolls inside this box rather than pushing it off the screen.
@@ -1121,7 +1122,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    inside itself and says so in its own rule -- and the person's own side of
    the screen is the point of the screen. 「相手の投稿は小さく固定、その下から
    自分が打てるようにしてくれ」 Measured, keyboard up: 320x568 gives the quote
-   40 and this 104 -- the line and the meaning both whole, neither of them
+   44 and this 100 -- the line and the meaning both whole, neither of them
    behind the row of pictures -- and 402x874 gives the quote its whole 76 and
    this 298. */
 .view.fit .pwscroll{flex:1;min-width:0;min-height:104px;overflow:auto;
@@ -1778,7 +1779,12 @@ a.set{text-decoration:none}
    And the row itself is smaller than a post in the timeline -- 26px of face,
    the type one step down, half the padding. It is what you are glancing at,
    not what you are reading. */
-.pwqs{margin:2px 0 8px;max-height:76px;overflow:auto}
+/* The gap is under it only, and it is 6. A margin over it was 2px that buys
+   nothing -- the line saying who is being answered is already a grey line of
+   its own -- and on the small phone this box is squeezed to nothing and its
+   margins are not, so every pixel here is spent whether or not there is
+   anything to look at. */
+.pwqs{margin:0 0 6px;max-height:76px;overflow:auto}
 .pwq{display:flex;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
 .pwq .pav{width:26px;height:26px}
 .pwq .pname{font-size:.82rem}
