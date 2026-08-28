@@ -2084,6 +2084,15 @@ function gePinStart(c){
   GEPIN.anchor=m;
   /* the paper under the middle of the two, read BEFORE anything moves */
   GEPIN.mid0=[geFrom(w, m[0], 0), geFrom(h, m[1], 1)];
+  /* AND PAINT IT. gePinDrop() has just taken a stroke out of GE.st and
+     nothing else here draws: gePinMove() returns before geDraw() until the
+     fingers have moved enough to mean something, and a pinch that never
+     decides never draws at all. So the line the second finger threw away sat
+     on the paper for the whole gesture -- gone from the drawing, still in
+     front of the person doing it, and coming back off only when they lifted.
+     Photographed before and after the second finger, the two pictures were
+     the same picture. Nothing threw; the data was right the whole time. */
+  geDraw(); geTools();
 }
 /* how far each finger has come from where it landed */
 function gePinRun(i){
