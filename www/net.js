@@ -163,7 +163,12 @@ function netSend(method, path, body, tok, ok, bad){
      not to. Asked here, once, for every write to a table -- rather than at the
      one call site that needs the new row's id today and forgotten at the
      second one tomorrow. The auth endpoints are not PostgREST and ignore it. */
-  if(method==='POST' && path.indexOf('/rest/v1/')===0)
+  /* PATCH as well as POST, and for a second reason on top of the first: an
+     update that matched NO ROW answers 204 and looks exactly like one that
+     matched. netDraftUp() below is built on being able to tell -- that is how
+     a draft the server has never seen turns into an insert -- and a write
+     that changed nothing must never read as a write that worked. */
+  if((method==='POST' || method==='PATCH') && path.indexOf('/rest/v1/')===0)
     x.setRequestHeader('Prefer', 'return=representation');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
@@ -1163,6 +1168,69 @@ function netUpVoice(uid, pid, post, ok){
     netUp(uid+'/'+pid+'/vo.m4a', b64, 'audio/mp4',
       function(path){ ok(path); }, function(){ ok(''); });
   });
+}
+/* ---- what was written and not sent -------------------------------------
+
+   A draft is the timeline's, so it lives on the server. 「SNSは全部サーバー」
+   OWNER, said again on 2026-08-27; CLAUDE.md § Online is where it is written
+   down, and `draft` in supabase/schema.sql is the table. The phone keeps the
+   copy that works with no signal -- www/post.js's DRAFTS -- and that copy is
+   never the place a draft lives.
+
+   The whole of a draft goes in `body`, pictures and recording included, as
+   the composer holds them: base64 in hand. Not in the media bucket, and that
+   is not a shortcut -- `post-media` is PUBLIC (schema.sql § the bucket, and
+   media_read is `using (bucket_id = 'post-media')`), so a draft's photographs
+   put there would be readable by anybody with the publishable key while the
+   draft itself was not. The bytes go up when the post does, through
+   netUpPics() and netUpVoice(), exactly as they do today.
+
+   It also means account deletion has nothing extra to reach: netMyFiles()
+   below collects what to remove out of `post.body`, and a draft that owned
+   files in the bucket would be files nothing pointed at.
+
+   The id is the phone's -- netUUID(), the way netPush() names a post -- so a
+   draft written with no signal already has the name it will go up under. */
+function netDraftUp(d, ok, bad){
+  if(!netMember() || !d || !d.id){ bad && bad(null, 0); return; }
+  var row={id:d.id, author:SESS.uid, body:netDraftBody(d)};
+  /* The update first and the insert only if it matched nothing. The other
+     order is an insert that fails on the primary key every time after the
+     first, and a refusal that is expected is a refusal nobody reads. Two
+     requests happen once per draft; every save after it is one. */
+  netSend('PATCH', '/rest/v1/draft?id=eq.'+encodeURIComponent(d.id),
+          {body:row.body, updated_at:(new Date()).toISOString()}, SESS.at,
+    function(r){
+      if(r && r.length){ ok && ok(); return; }
+      netSend('POST', '/rest/v1/draft', row, SESS.at,
+              function(){ ok && ok(); }, bad || function(){});
+    },
+    bad || function(){});
+}
+/* Everything of a draft except its name, which is the column and not a field
+   of the body. The same shape as netBody() above and for the same reason. */
+function netDraftBody(d){
+  var o={}, k, skip={id:1};
+  for(k in d) if(Object.prototype.hasOwnProperty.call(d, k) && !skip[k]) o[k]=d[k];
+  return o;
+}
+/* Everything this account has written and not sent. draft_read in schema.sql
+   is `is_member() and author = auth.uid()`, so the filter here is what the
+   app asks for and not what makes it safe -- the server would hand over
+   nothing else if this asked for everything. */
+function netDrafts(ok, bad){
+  if(!netMember()){ bad && bad(null, 0); return; }
+  netGet('/rest/v1/draft?select=id,body,updated_at&order=updated_at.desc',
+         function(d){ ok(d || []); }, bad || function(){});
+}
+/* And taking one off. Called when a draft is thrown away, and when it stops
+   being a draft by being posted -- www/post.js does the second one AFTER the
+   post is up, never before: a delete that ran first would be somebody's
+   writing gone on the day the post itself would not go. */
+function netDraftDrop(id, ok, bad){
+  if(!netMember() || !id){ bad && bad(null, 0); return; }
+  netSend('DELETE', '/rest/v1/draft?id=eq.'+encodeURIComponent(id), null,
+          SESS.at, function(){ ok && ok(); }, bad || function(){});
 }
 /* `kind` is 'like' or 'boost', `on` is whether it now is. NOT a count: a count
    is what the server adds up, and two phones sending counts is how a number
