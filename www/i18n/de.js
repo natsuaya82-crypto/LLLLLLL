@@ -188,7 +188,7 @@ defLang('de', (function(){
       "kb.sys.go" : "Einstellungen öffnen",
       "kb.sys.no" : "Einstellungen ließen sich nicht öffnen",
       "kb.rom"               : "Ein Buchstabe auf jeder Taste",
-      "kb.up.d" : "Dafür ist ein größerer Plan nötig.",
+      "kb.up.d" : "Mit einem größeren Plan hat die Tastatur jede Form, die du willst.",
       "kb.free.no" : "Die Tastatur im kostenlosen Plan lässt sich nicht bearbeiten.",
       "kb.free.up" : "Für eine eigene Tastatur bitte auf einen größeren Plan wechseln.",
       "kb.up.go" : "Plan wechseln",

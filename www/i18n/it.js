@@ -200,7 +200,7 @@ defLang('it', (function(){
       "kb.sys.go" : "Apri Impostazioni",
       "kb.sys.no" : "Impossibile aprire Impostazioni",
       "kb.rom"               : "Una lettera su ogni tasto",
-      "kb.up.d" : "Serve un piano superiore.",
+      "kb.up.d" : "Con un piano superiore la tastiera può avere la forma che vuoi.",
       "kb.free.no" : "La tastiera del piano gratuito non si può modificare.",
       "kb.free.up" : "Per creare la tua tastiera, passa a un piano superiore.",
       "kb.up.go" : "Passa a un piano superiore",

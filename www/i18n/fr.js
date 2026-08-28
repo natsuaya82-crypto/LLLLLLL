@@ -248,7 +248,7 @@ defLang('fr', (function(){
       "kb.sys.go" : "Ouvrir les Réglages",
       "kb.sys.no" : "Impossible d’ouvrir les Réglages",
       "kb.rom"               : "Une lettre sur chaque touche",
-      "kb.up.d" : "Il faut passer au forfait supérieur.",
+      "kb.up.d" : "Passez au forfait supérieur et le clavier prend la forme que vous voulez.",
       "kb.free.no" : "Le clavier du forfait gratuit ne peut pas être modifié.",
       "kb.free.up" : "Pour créer votre propre clavier, passez au forfait supérieur.",
       "kb.up.go" : "Passer au forfait supérieur",

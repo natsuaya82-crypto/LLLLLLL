@@ -207,7 +207,7 @@ defLang('pt', (function(){
       "kb.sys.go" : "Abrir Ajustes",
       "kb.sys.no" : "Não foi possível abrir os Ajustes",
       "kb.rom"               : "Uma letra em cada tecla",
-      "kb.up.d" : "É preciso fazer upgrade.",
+      "kb.up.d" : "Faça upgrade e o teclado pode ter a forma que você quiser.",
       "kb.free.no" : "O teclado do plano gratuito não pode ser editado.",
       "kb.free.up" : "Para criar seu próprio teclado, faça upgrade.",
       "kb.up.go" : "Fazer upgrade",

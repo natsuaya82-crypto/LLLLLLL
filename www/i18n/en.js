@@ -102,7 +102,7 @@ defLang('en', (function(){
       "kb.sys.go" : "Open Settings",
       "kb.sys.no" : "Settings would not open",
       "kb.rom"               : "A letter on each key",
-      "kb.up.d" : "An upgrade is needed.",
+      "kb.up.d" : "Upgrade and the keyboard can be any shape you like.",
       "kb.free.no" : "The free plan's keyboard cannot be edited.",
       "kb.free.up" : "To build a keyboard of your own, upgrade.",
       "kb.up.go" : "Upgrade",

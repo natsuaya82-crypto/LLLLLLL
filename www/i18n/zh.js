@@ -208,7 +208,7 @@ defLang('zh', (function(){
       "kb.sys.go" : "打开设置",
       "kb.sys.no" : "设置打不开",
       "kb.rom"               : "每个键上显示字母",
-      "kb.up.d" : "需要升级。",
+      "kb.up.d" : "升级之后，键盘想做成什么形状都行。",
       "kb.free.no" : "免费方案的键盘不能编辑。",
       "kb.free.up" : "想做自己的键盘，请升级。",
       "kb.up.go" : "升级",

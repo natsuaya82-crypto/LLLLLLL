@@ -2833,10 +2833,16 @@ function kbToolHTML(){
 function kbNew(){
   /* The one road to a keyboard of your own, so it is the one place that
      answers somebody who cannot take it yet. */
+  /* The five arrangements, drawn, and every one of them a way to the plans
+     page. A sentence saying an upgrade is needed is a price with nothing
+     behind it; the flick, the chart and the rest ARE what is being bought.
+     「フリックとか他のキーボードの写真を載せて自由自在っていうのアピール
+     しろよ」 OWNER 2026-08-28. */
   if(!can('kb')){ openForm('kbup', t('kb.new'),
     '<div class="note">'+esc(t('kb.up.d'))+'</div>'+
+    kbPatsHTML('goPlans')+
     '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('goPlans') + '>'+
-      t('up.cta')+'</button>'); return; }
+      t('kb.up.go')+'</button>'); return; }
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbup=function(){ kbNew(); };
@@ -2962,30 +2968,16 @@ function kbStepHTML(n, title, body){
     '<div class="kbstept">'+esc(title)+'</div>'+body+'</div>';
 }
 HELP.kb=function(){
-  /* On the free plan the first thing this ? is asked is why the keys do
-     nothing, so that is what it answers first. 「無料プランのキーボードは編集
-     ができません。／自作キーボードを作りたい場合はアップグレードしてください。
-     ／アップグレードする。」 OWNER 2026-08-28. The four steps stay under it:
-     switching the keyboard on in iOS is not a paid feature and free needs
-     them more than anybody. */
+  /* Free: why the keys do nothing, and the way out, and that is the whole of
+     what this ? says on that plan. 「無料プランのキーボードは編集ができません。
+     ／自作キーボードを作りたい場合はアップグレードしてください。／アップ
+     グレードする。」 OWNER 2026-08-28. */
+  if(!can('kb')) return {t:t('kb.sys.h'), h:
+    '<div class="note">'+esc(t('kb.free.no'))+'</div>'+
+    '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
+    '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
+      t('kb.up.go')+'</button>'};
   return {t:t('kb.sys.h'), h:
-    (can('kb')? '' :
-      '<div class="note">'+esc(t('kb.free.no'))+'</div>'+
-      '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('goPlans') + '>'+
-        t('kb.up.go')+'</button>')+
-    /* One step is one tap, and one tap is one photograph. It was two steps
-       with both photographs stacked under the second -- so the step reading
-       "turn on Full Access" carried a picture of a DIFFERENT page, the one
-       you have to go through to reach it, and neither picture said which of
-       its rows was the one to press.
-
-       Step 1 carries the path and no button. It is the only one of the four
-       that has to be walked to, because Apple gives no public door to that
-       page -- a path and a button printed together were directions to two
-       different screens. 「端末の設定を開くボタンあるのになんで設定→一般
-       みたいな順序で説明すんの？」 The button is on step 3, which is the page
-       it actually lands on. */
     kbStepHTML(1, t('kb.step1'), '<div class="mini">'+t('kb.step1.d')+'</div>'+
       kbShot('kb-list.jpg'))+
     kbStepHTML(2, t('kb.step2'), kbShot('kb-add.jpg'))+
