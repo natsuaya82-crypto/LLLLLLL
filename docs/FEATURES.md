@@ -47,7 +47,7 @@ Marked separately, because they are not the same question:
 | Notebook | shipped | yes | — | slice `notes` | decided |
 | Numbers — a digit is a letter with a value | shipped | yes | — | slice `letters` | decided |
 | What the language is for (the world) | shipped | yes | — | slice `wld` | decided |
-| **AI に相談 — ChatGPT を本文入りで開く** | in progress | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none stored by this; reads `SET.askTo` (www/settings.js writes it) | **partial** — 既定 ChatGPT・相手は設定で選ぶ・ボタンは常に「AIに相談」は decided (2026-08-27)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
+| **AI に相談 — ChatGPT を本文入りで開く** | in progress | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none stored by this; reads `SET.askTo`, and nothing writes it | **partial** — 相手は ChatGPT だけ・ボタンは常に「AIに相談」は decided (2026-08-28)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
 | Keyboard layout built in the app | shipped | fixed QWERTY, nothing to set | `kb`: your own | slice `kb` | decided |
 | Keyboard: flick, four directions per key | shipped | — | `kb` | slice `kb` | decided |
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
