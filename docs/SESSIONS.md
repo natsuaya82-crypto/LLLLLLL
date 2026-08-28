@@ -66,12 +66,12 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
 残っている」と言い残していて、畳む前に `docs/STATE.md` §7 に全部あることを
 確かめた。無ければ、畳む前に書き写す。
 
-## 追いつくのは自分で、束ねるのはリーダー ── OWNER DECISION 2026-08-25
+## 追いつくのは自分で、束ねるのはサブリーダー ── OWNER DECISION 2026-08-25 / 08-28
 
 規則 6 は「merge / rebase / cherry-pick を一切しない」だった。**他の枝**につい
 てはそのまま。**master を自分の枝に入れることは、そこから外す。**
 
-  他の枝を取り込む     禁止。リーダーの仕事
+  他の枝を取り込む     禁止。**サブリーダーの仕事**（OWNER 2026-08-28）
   master を取り込む    **報告の前に必ずやる。** 自分に追いつかせるだけ
 
 なぜ変えたか。2026-08-25 に四つの枝を束ねて、衝突は四箇所出た。**四箇所とも
@@ -79,9 +79,13 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
 欲しがった衝突は**ゼロ**だった。一つは 456 後ろで、四つのコミットが全部 master
 の済んだ話をやり直していたので取り込まずに落とした。
 
-そして詰まっていたのはリーダーだった。枝が届くたびに解いて、六分のゲートを
-回して、押す。働き手は終わっても、その列に並んで止まる。追いつきを働き手に
-返すと、リーダーの取り込みは `--ff-only` になり、解く仕事が消える。
+そして詰まっていたのは束ねる側だった。枝が届くたびに解いて、ゲートを回して、
+押す。働き手は終わっても、その列に並んで止まる。追いつきを働き手に返すと、
+束ねる側の取り込みは `--ff-only` になり、解く仕事が消える。
+
+**束ねるのはサブリーダーです**（OWNER 2026-08-28「取り込むのはサブリね？」）。
+取り込んで、そのままゲート28本を回す ── 取り込んだ形でしか全部は緑にならない
+ので、取り込む人と回す人は同じです。リーダーは配ってビルドを引く。
 
 一緒に決めたこと二つ:
 
@@ -201,7 +205,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    リーダーで三回払うと十五分になり、**三回目の緑が二回目より本当になることは
    ない。**
 
-   **緑はリーダーとサブリーダーが、取り込んだあとに一度。** 全ゲート28本。
+   **緑はサブリーダーが、取り込んだあとに一度。** 全ゲート28本。取り込むのも
+   回すのも同じ人です（OWNER 2026-08-28「取り込むのはサブリね？」）。
 
    **そしてビルドが先、ゲートが後。**「先に確認したいから、全部取り込んだら君が
    ビルド出して、ゲートはビルド出してから確認でいいよ」OWNER 2026-08-28。
@@ -280,8 +285,12 @@ collide with the others, and it is short on purpose.
                    → docs/FEATURE_RULES.md § owner decisions are specifications
 
   the leader       one session. Takes the owner's words, works out what they
-                   mean, names what each session owns, and dispatches. Runs the
-                   whole gate at the end and triggers the build.
+                   mean, names what each session owns, and dispatches. Triggers
+                   the build when the owner says so. **Does not integrate and
+                   does not run the gate** -- both are sub-leader ①'s
+                   (OWNER 2026-08-28「取り込むのはサブリね？」). Writes no
+                   feature code either: the leader dispatches, the sessions
+                   write.
 
   sub-leader ①     takes what the sessions push, integrates it, and makes the
   (green)          gate GREEN. The gate is run here, once, and nowhere else.

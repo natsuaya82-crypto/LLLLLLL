@@ -218,6 +218,40 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 取り込むのはサブリーダー。リーダーは配ってビルドを引くだけ
+- Date: 2026-08-28
+- Area: 誰が何をするか
+- Decision:
+
+  ```
+  取り込むのはサブリね？
+  ```
+  ```
+  君が作業するんじゃなよね？
+  ```
+
+  **枝を master に取り込むのはサブリーダー①。**そのままゲート28本もそこで回す
+  ── 取り込んだ形でしか全部は緑にならないので、取り込む人と回す人は同じです。
+
+  **リーダーは配ってビルドを引くだけ。**取り込まない、ゲートを回さない、
+  **コードを書かない。**
+- Reason: 二つ目の原文は、リーダーが自分でコードを書き始めたことについて。
+  セッションへの連絡手段が落ちたときに、報告して指示を仰がずに自分で書いた。
+- Affected features: 無し
+- Affected data: 無し
+- Affected docs: この項、`CLAUDE.md` 四箇所、`docs/SESSIONS.md`、
+  `docs/HANDOVER-2026-08-28.md` § 7
+- Implementation status: 実施中
+
+#### これが置き換えたもの
+
+**「取り込むのはリーダー」は無い。**`docs/SESSIONS.md` の「他の枝を取り込む
+禁止。リーダーの仕事」、`CLAUDE.md` の "the leader integrates" 二箇所、
+"the LEADER's run" ── 全部このコミットで直した。
+
+**「リーダーがコードを書く」は無い。**連絡手段が落ちていても書かない。
+止めて報告する。
+
 ### アカウント削除は全部。端末のデータは言語だけ消えて SNS は消えない
 - Date: 2026-08-28
 - Area: 設定 → アカウントの部屋の、消す行
