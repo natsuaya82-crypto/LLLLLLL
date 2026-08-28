@@ -668,3 +668,8 @@ what was wanted ではない」。今日わかったのは、その裏側も同�
 「目次から数を外すと press の buttons pressed が動く」と書いて配った。
 外したのは `<span>` で押せる物ではなく、数は 10652 のまま動かなかった。
 **動くと書くなら、先に測ること。** 動かないことも測って書く価値がある。
+
+## claude/more — 2026-08-28
+Scope: キーボードの配置（型）を変える道が画面に出ていない件。
+触るファイル: `www/keyboard.js` `www/shell.js` `tools/kb-check.mjs` `tools/fixture.mjs`。
+それ以外は触らない。
