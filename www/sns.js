@@ -74,20 +74,68 @@ function snsLocked(r){
    Following is by HANDLE, off the post, the way everything on the reading side
    is: `p.hd` is who wrote it, frozen when it was written. Your own are in it,
    because a timeline of people you follow that leaves you out is a timeline
-   you cannot see yourself having spoken in. */
+   you cannot see yourself having spoken in.
+
+   THE TWO ARE NO LONGER A ROW OF TABS OVER THE TIMELINE.
+   「タイムラインの見た目 X すぎて炎上しそうだから、おすすめ・フォローなくして
+   基本おすすめ」 OWNER 2026-08-28. Two tabs across the head of a timeline is
+   the shape of somebody else's app, and this one arrives as the one it was
+   always going to arrive as.
+
+   `snsTab` stays and still starts at 'rec'. Which timeline is being asked for
+   is a real question -- `netFeed` takes it, and on a server the two are two
+   queries with two answers -- so what went is the ROW, not the question. It
+   is answered in the corner of the bar now, which is the block below. */
 var snsTab='rec';
-function snsSetTab(k){ snsTab=(k==='fo')? 'fo' : 'rec'; render(); }
 function snsMine(p){ return !!p.mine || meFollows(p.hd); }
 function snsList(){
   var all=postAll();
   return (snsTab==='fo')? all.filter(snsMine) : all;
 }
-function snsTabs(){
-  var tabs=[['rec','feed.rec'], ['fo','feed.fo']];
-  return '<div class="pftabs snstabs">'+tabs.map(function(x){
-    return '<button class="pftab'+(snsTab===x[0]?' on':'')+'"' + DO('snsSetTab', [x[0]]) + '>'+
-      esc(t(x[1]))+'</button>';
-  }).join('')+'</div>';
+/* ---- and where the two are chosen ---------------------------------------
+   「右上にフィルター作ってフォロー中、自分が好きなトピックとかで見れるように
+   できる？」 OWNER 2026-08-28.
+
+   A PAGE and not a sheet. CLAUDE.md bans 「ページ遷移型にせず下からひょいって
+   出すやつ」 and says the same thing the other way round: choosing is a
+   screen, changing is the screen you arrive at. So the corner of the
+   timeline's bar is a way THERE, and the choosing happens there.
+
+   The corner also SAYS which one is on. A filter you cannot see the state of
+   is a timeline that is quietly not the timeline -- somebody who chose
+   「フォロー中」 yesterday arrives on a short list today with nothing on the
+   screen to say why.
+
+   What is on the page is the two timelines and nothing else. The owner also
+   said 「自分が好きなトピックとか」 and there is nothing in this app that is a
+   topic: a post carries which language it is written in and which day's
+   question it answers, and no tags. That is the leader's to put to the
+   owner, and until it comes back nothing here invents one. */
+function snsFilNow(){ return (snsTab==='fo')? 'fo' : 'rec'; }
+function snsFilKey(k){ return (k==='fo')? 'feed.fo' : 'feed.rec'; }
+/* The mark in the corner of the timeline's bar. rootTop()'s second argument
+   is what it is for -- www/home.js already puts the contents page's lens
+   there -- so this is the same bar with the same corner and no new one. */
+function snsFilTop(){
+  return '<button class="navq"' + DO('go', ['filter']) + '>'+
+    esc(t(snsFilKey(snsFilNow())))+'</button>';
+}
+function vFilter(){
+  var ks=['rec','fo'];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    ks.map(function(k){
+      return '<button class="set"' + DO('snsSetFil', [k]) + '>'+
+        '<span class="sl">'+esc(t(snsFilKey(k)))+'</span>'+
+        '<span class="sv">'+(snsFilNow()===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    '</div></div>';
+}
+/* Chosen, and then you are back on the thing it is about. The same shape as
+   every other chooser that is a page of its own: the answer is the reason
+   you came, so there is nothing left to do here. */
+function snsSetFil(k){
+  snsTab=(k==='fo')? 'fo' : 'rec';
+  back();
 }
 /* Everybody's languages, as they are written. This said "which for the moment
    is yours, because there is no server yet and a post has nowhere else to go",
@@ -118,6 +166,104 @@ function snsPull(){
     render();
   }, function(){ snsPulling=false; });
 }
+/* ---- pulling a timeline down to ask again --------------------------------
+   「プルトゥーリフレッシュも入れて欲しい」 OWNER 2026-08-28.
+
+   ONE mechanism for the three screens the timeline is made of, and that is
+   the whole reason it is here rather than three times: a rule written out on
+   the feed, the search and the notices is a rule the fourth screen will not
+   have. Which routes it answers on is a table, so a screen added to the
+   timeline is pulled the day it is added.
+
+   Only from the TOP. Anywhere else a finger going down the screen is a
+   person scrolling, and a page that reloaded itself in the middle of a
+   timeline would be taking the thing they were reading away.
+
+   It has to be FELT. Nothing on a phone says "let go now" except the page
+   moving, so the body follows the finger at half speed and stops -- half,
+   because a list that keeps up exactly with the thumb reads as the page
+   having come loose. The bar does not move: it is outside `.body`, so what
+   slides is the timeline and what stays is where you are.
+
+   Already asking is not asked twice. `snsPulling` and `notPulling` have held
+   that since the two pulls were written -- a person flicking between tabs
+   would otherwise have four asks in the air -- so this hands the pull to
+   them and they refuse it, rather than a third place keeping a third flag.
+
+   It does NOT fight the profile tab's hold in www/shell.js. That one arms on
+   an element carrying `data-hold` and disarms on any touchmove, which is
+   exactly right: a pull is not a hold. And preventDefault stops the browser
+   bouncing the page, not the other listeners -- they are still called. */
+var PULL_R=0.5, PULL_GO=64, PULL_MAX=96;
+var PULL_ON={feed:1, explore:1, notif:1};
+var pullY=-1, pullEl=null, pullAt=0;
+/* Which timeline is under the finger, or '' for a screen this is not about.
+   Signed out there is nothing to ask for: the three screens are the door. */
+function pullWhere(){
+  var r=here().r;
+  return (PULL_ON[r] && netSignedIn())? r : '';
+}
+/* How far the page has been scrolled. `scrollingElement` is the one that
+   knows on a modern browser and is not there on an old WKWebView, which is
+   what the other two are for. */
+function pullTop(){
+  var d=document.scrollingElement || document.documentElement || document.body;
+  return Math.max(0, window.pageYOffset||0, (d? d.scrollTop : 0)||0);
+}
+function pullStart(e){
+  pullY=-1; pullEl=null; pullAt=0;
+  if(!pullWhere()) return;
+  if(!e.touches || e.touches.length!==1) return;
+  if(pullTop()>0) return;
+  pullY=e.touches[0].clientY;
+  pullEl=document.querySelector('#app .view > .body');
+}
+function pullMove(e){
+  if(pullY<0 || !pullEl) return;
+  if(!e.touches || e.touches.length!==1){ pullLet(false); return; }
+  var dy=e.touches[0].clientY-pullY;
+  /* Upwards, or the page moved under the finger: an ordinary scroll, and it
+     never was a pull. */
+  if(dy<=0 || pullTop()>0){ pullLet(false); return; }
+  /* And the page does not bounce as well. `cancelable` is false once the
+     browser has already decided this gesture is a scroll. */
+  if(e.cancelable) e.preventDefault();
+  pullAt=Math.min(PULL_MAX, dy*PULL_R);
+  pullEl.style.transform='translateY('+pullAt+'px)';
+}
+function pullEnd(){ pullLet(pullAt>=PULL_GO); }
+/* Let go: the body goes back where it was, and far enough down it asks.
+   The transition is put on for the way back and taken off after it, or the
+   next render's first paint would animate from wherever this left it. */
+function pullLet(ask){
+  var el=pullEl, r=pullWhere();
+  pullY=-1; pullEl=null; pullAt=0;
+  if(el){
+    el.style.transition='transform .22s ease-out';
+    el.style.transform='';
+    setTimeout(function(){ if(el.style) el.style.transition=''; }, 300);
+  }
+  if(!ask) return;
+  if(r==='notif') notPull(); else if(r) snsPull();
+}
+/* touchmove has to be able to say no to the browser's own bounce, and a
+   listener the browser thinks is passive cannot. Whether the third argument
+   is read as an options object or as `capture` is the one thing that differs
+   between the WKWebView this runs in and the one it was written on, so it is
+   asked rather than assumed -- handing an object to a browser that wants a
+   boolean would register this in the capture phase instead. */
+var PULL_OPT=false;
+try{
+  var pullProbe=Object.defineProperty({}, 'passive',
+    { get: function(){ PULL_OPT=true; return false; } });
+  window.addEventListener('lingua-pull', null, pullProbe);
+  window.removeEventListener('lingua-pull', null, pullProbe);
+}catch(pullNo){}
+document.addEventListener('touchstart',  pullStart, false);
+document.addEventListener('touchmove',   pullMove, PULL_OPT? {passive:false} : false);
+document.addEventListener('touchend',    pullEnd, false);
+document.addEventListener('touchcancel', pullEnd, false);
+
 /* Where an appeal goes. An address and not a form: a frozen account cannot
    write a row anywhere -- every write policy in supabase/schema.sql goes
    through is_member() and that is the whole of what being frozen means -- so
@@ -138,7 +284,7 @@ function vFeed(){
      font anyway. There is no font to hand it now: a post carries the shapes
      its own line is written in, so a row is read out of the row. */
   return '<div class="view">'+
-    rootTop('feed')+
+    rootTop('feed', snsFilTop())+
     '<div class="body">'+
 
     /* A row to write in, at the top of the timeline, because the round button
@@ -147,9 +293,6 @@ function vFeed(){
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
     (NET_BANNED? '' : dayRow())+
-    /* Under the row you write in and directly on top of the list they choose
-       between, because that is what they are about. */
-    snsTabs()+
     /* Frozen, said here and nowhere else. Not a notice -- 「通知はいらんて
        ホーム画面にバンでいいやん」 -- and not a coloured strip over a
        timeline that goes on scrolling underneath it: it takes the timeline's

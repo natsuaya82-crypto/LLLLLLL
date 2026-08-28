@@ -318,6 +318,7 @@ defLang('ja', (function(){
       'sns.none.fo'     : "フォローしている人はまだ書いていない",
       'feed.rec'        : "おすすめ",
       'feed.fo'         : "フォロー中",
+      'feed.fil'        : "絞り込み",
       'sns.search'            : "さがす　@で人",
       'sns.nohit'             : "見つかりません",
       'notif.like'            : "{0} がいいね",

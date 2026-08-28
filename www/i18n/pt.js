@@ -409,6 +409,7 @@ defLang('pt', (function(){
       "sns.none.fo"     : "Ninguém que você segue escreveu ainda",
       "feed.rec"        : "Para você",
       "feed.fo"         : "A seguir",
+      "feed.fil"        : "Filtro",
       'sns.search'            : "Procurar — @ para pessoas",
       'sns.nohit'             : "Nada encontrado",
       'notif.like'            : "{0} gostou",

@@ -410,6 +410,7 @@ defLang('zh', (function(){
       "sns.none.fo"     : "你关注的人还没有写过",
       "feed.rec"        : "推荐",
       "feed.fo"         : "关注中",
+      "feed.fil"        : "筛选",
       'sns.search'            : "搜索 — @ 找人",
       'sns.nohit'             : "没有找到",
       'notif.like'            : "{0} 点了赞",

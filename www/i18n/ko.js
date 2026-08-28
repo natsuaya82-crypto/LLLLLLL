@@ -581,6 +581,7 @@ defLang('ko', (function(){
       "sns.none.fo"     : "팔로우한 사람이 아직 쓴 글이 없습니다",
       "feed.rec"        : "추천",
       "feed.fo"         : "팔로잉",
+      "feed.fil"        : "필터",
       'sns.search'            : "찾기 — @ 는 사람",
       'sns.nohit'             : "찾지 못했습니다",
       'notif.like'            : "{0} 님이 좋아합니다",

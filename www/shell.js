@@ -415,6 +415,11 @@ var PAGES={
      and a letter for the same reason. */
   wldart:  {tab:'profile', k:'wld.secs'},
   about:   {tab:'profile', k:'wld.about'},
+  /* Which timeline the feed is showing, chosen on a page of its own.
+     「右上にフィルター作って」 OWNER 2026-08-28 -- and choosing is a screen,
+     so it is a route rather than something that slides up over the one you
+     were on. */
+  filter:  {tab:'feed', k:'feed.fil'},
   thread:  {tab:'feed', k:'post.thread'},
   photo:   {tab:'feed', k:'post.pic'},
   drafts:  {tab:'feed', k:'post.drafts.t'},

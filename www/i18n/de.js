@@ -390,6 +390,7 @@ defLang('de', (function(){
       "sns.none.fo"     : "Noch niemand, dem du folgst, hat geschrieben",
       "feed.rec"        : "Für dich",
       "feed.fo"         : "Folge ich",
+      "feed.fil"        : "Filter",
       'sns.search'            : "Suchen — @ für Leute",
       'sns.nohit'             : "Nichts gefunden",
       'notif.like'            : "{0} gefällt das",
