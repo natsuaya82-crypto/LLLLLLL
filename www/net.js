@@ -437,11 +437,45 @@ function netAvSync(){
           function(){ ME.avSent=now; saveMe(); },
           function(){});
 }
+/* ---- which side of the nonce ------------------------------------------
+   Supabase refuses this call when the id_token carries a nonce claim and the
+   request does not, or the other way round. Its own words, from the OIDC
+   entrance (internal/api/token_oidc.go): 「Passed nonce and nonce in id_token
+   should either both exist or not.」 -- and that sentence names neither side,
+   so from a phone there is no way to see WHICH of the two is true. It is the
+   one thing somebody looking at the screen needs and the only thing the
+   sentence leaves out.
+
+   So the two sides go on the end of what the server said. It is a STATE and
+   not a sentence and it is not translated, for the same reason netWhy()'s
+   mark is not: a status code is not translated either. `y` is "has one", `n`
+   is "has none", `?` is a token that could not be read.
+
+   **The nonce itself is never shown.** It is half of a credential, and what
+   is being asked here is whether one is THERE, not what it is.
+
+   Only when the server's own words are about the nonce. Every other failure
+   of every other call reads exactly as it did before -- this is a state put
+   on one sentence, not a mark added to all of them.
+
+   Nothing is invented: the server's words are kept whole and this goes after
+   them. netClaims() is the one place a JWT is read and this is not a second. */
+function netIdWhy(d, token, nonce){
+  var said, c;
+  if(!d) return d;
+  said=(d.msg || d.message || d.error_description || d.error) || '';
+  if(!/nonce/i.test(said)) return d;
+  c=netClaims(token);
+  d.msg=said+' (nonce id_token:'+(c? (c.nonce? 'y' : 'n') : '?')+
+        ' sent:'+(nonce? 'y' : 'n')+')';
+  return d;
+}
 function netIdToken(provider, token, nonce, ok, bad){
   var b={ provider:provider, id_token:token };
   if(nonce) b.nonce=nonce;
   netPost('/auth/v1/token?grant_type=id_token', b, null,
-          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); }, bad);
+          function(d){ if(netTook(d)) ok(d); else bad(d, 0, 'token ≠'); },
+          function(d, s, m){ bad(netIdWhy(d, token, nonce), s, m); });
 }
 
 /* ---- a language, which belongs to the account --------------------------
