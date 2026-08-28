@@ -499,9 +499,21 @@ function stRow(p, n){
     '<span class="stv">'+(tot? (stFilled(p)+' / '+tot) : '—')+'</span>'+
     ICON_GO+'</button>';
 }
+/* ONE list of chapters. There were two: this one, and the chapters that say
+   what a word actually turns into, which sat behind a button at the foot of
+   it labelled 語順 -- so they were two steps down inside one of the sixteen.
+   「文法ページはいつ統合されんの？」 OWNER 2026-08-28.
+
+   The rule-made forms come first: docs/GRAMMAR-V2-SPEC.md §14 is the chapter
+   that says how a word changes, which is what the grammar is FOR. The
+   sixteen follow, in the order they were in, numbered on from the eight.
+   Nothing is folded away and nothing is named over either group -- they are
+   one list of chapters, and a heading saying so would be the app explaining
+   itself. */
 function stListHTML(){
-  var a=stAll(), i, rows='';
-  for(i=0;i<a.length;i++) rows+=stRow(a[i], i+1);
+  var g=g2Chaps(), a=stAll(), i, n=0, rows='';
+  for(i=0;i<g.length;i++) rows+=g2ChapRow(g[i], ++n);
+  for(i=0;i<a.length;i++) rows+=stRow(a[i], ++n);
   /* The rules that make a form out of a word were at the head of this list.
      They are not a stage of the grammar and they are about the dictionary, so
      they are behind the ... in the dictionary's bar -- wordsMore(). */
@@ -524,12 +536,6 @@ function stListHTML(){
       ? ''
       : '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('stAddPart') + '>'+
           ICON_ADD+t('stg.part.t')+'</button>')+
-    /* The way in to the chapter that is being rebuilt. It says the name of
-       what it opens and nothing else -- docs/GRAMMAR-V2-SPEC.md §14 is a page
-       about the word order among other things, and 語順 is what that is
-       called here already. */
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('go', ['gram', 'v2']) + '>'+
-      esc(t('stg.order.t'))+'</button>'+
     (can('gram')
       ? '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('openOwnPhase') + '>'+
           ICON_ADD+t('stg.own.add.btn')+'</button>'
@@ -630,14 +636,19 @@ function stFeatHTML(id){
 function vGram(){
   var gOpen=gOpenOf();
   var p;
-  /* docs/GRAMMAR-V2-SPEC.md §14 -- the page that DEFINES a language. It is
-     built beside the old chapter, not over it, so it arrives as an argument of
-     this route rather than as a route of its own: www/shell.js's PAGES is
-     another session's file and a view with no page there fails act-check.
-     When it is given a route, this branch is what moves. */
-  if(gOpen==='v2' || (gOpen && gOpen.indexOf('v2:')===0))
+  /* docs/GRAMMAR-V2-SPEC.md §14 -- the chapters that say what a word turns
+     into. They arrive as arguments of this route rather than as a route of
+     their own: www/shell.js's PAGES is another session's file and a view with
+     no page there fails act-check. Their names are on the one list below,
+     which is where they are opened from now.
+
+     An argument that names no chapter -- the bare `v2` the foot of the old
+     list used to open, or a chapter that has gone -- falls through to the
+     list rather than to a blank page. */
+  var c=(gOpen && gOpen.indexOf('v2:')===0)? g2ChapBy(gOpen.slice(3)) : null;
+  if(c)
     return '<div class="view">'+navTop()+
-      '<div class="body">'+g2Page(gOpen)+'</div></div>';
+      '<div class="body">'+g2Page(c)+'</div></div>';
   p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
     navTop()+
