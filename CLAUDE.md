@@ -338,6 +338,15 @@ they are two seconds and they catch what blanks a device.* *Watching a check fai
 one run, not a suite* — put the bug back, run the one check that holds it, watch it
 go red, take the bug out.
 
+**The build comes first and the gate comes after it** 「先に確認したいから、
+全部取り込んだら君がビルド出して、ゲートはビルド出してから確認でいいよ」OWNER
+2026-08-28. The leader integrates, triggers the build, and THEN the whole gate
+runs — because the thing that finds the bugs nothing here can find is a person
+holding a phone, and making them wait sixteen minutes for a green that has
+never once changed what the build contains is sixteen minutes of nobody
+looking at the app. If the gate then goes red, that is a fix and another
+build; that has cost less than the waiting did.
+
 **And then push, without running it green.** 「ゲートが緑になる確認は…まとめて。
 個人個人でやる必要ある？」 OWNER 2026-08-27. **Red is work and green is
 verification**: only the person holding the bug can see it go red, and the green is
