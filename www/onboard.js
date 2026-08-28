@@ -365,7 +365,19 @@ function obTourHTML(){
        A fixed element wearing it keeps its own left and top and takes the
        8px anyway, so the tap target sat eight pixels below the thing it was
        supposed to be over -- invisibly, because it has no colour. */
-    ((st.lt || st.look || !b)? '<button class="obtap"' + DO('obTourNext') +
+    /* ONE TAP TARGET, on every stop, over the lit thing and the hand together.
+
+       It used to be only for a lit thing that does nothing of its own. The
+       stops that DO something -- a tab of the bar, a row of the contents --
+       had none, so the hand standing under them was on the grey and a press
+       there did nothing. That is most of this walk, and the hand is the only
+       mark on the screen saying "press": it was found by filming the walk and
+       tapping the finger nine times without the app ever leaving the first
+       screen.
+
+       What a press DOES is obTourNext()'s to say, in one place, and it is not
+       the same answer on both kinds -- see there. */
+    ('<button class="obtap"' + DO('obTourNext') +
               ' style="position:fixed;background:none;z-index:42;'+
               /* THE LIT THING AND THE HAND, which is bigger than the light.
                  The hand stands under what it points at, and it was outside
@@ -374,7 +386,7 @@ function obTourHTML(){
                  rectangle as the hole above: the light says WHICH ONE, and
                  this says WHERE A THUMB LANDS. */
               (b? obTapBox(b, hb) : 'left:0;top:0;width:100%;height:100%')+'"'+
-              ' aria-label="'+esc(t(st.lab))+'"></button>' : '')+
+              ' aria-label="'+esc(t(st.lab))+'"></button>')+
     /* THE MOMENT. 「aが自作文字に変わる瞬間みたいなの見せたい」
        The key is theirs now -- the shape moved into the slot when they named
        it -- so what is left to show is what that key WAS. The roman letter is
@@ -473,8 +485,23 @@ function obTourArg(sel, want){
   }
   return null;
 }
-/* On to the next stop, for a lit thing that had nothing of its own to do. */
+/* What pressing the bright part of the screen does, and it is two different
+   answers written in one place.
+
+   A stop whose lit thing DOES something -- a tab of the bar, a row of the
+   contents -- presses that thing, and the walk is not moved from here at all:
+   the app moves and obTourAt() notices where it landed, exactly as when the
+   row itself is pressed. Nothing about "the app drives the tour" changes; the
+   hand simply becomes another way of pressing the row it points at.
+
+   A stop that is a PAGE, or a key, or a screen with nothing found to light,
+   has nothing of its own to do, so the walk moves itself. */
 function obTourNext(){
+  var st=obTourStop(), el;
+  if(!st.lt && !st.look){
+    el=obTourFind(st);
+    if(el && el.click){ el.click(); return; }
+  }
   if(obTour+1<OB_TOUR_STOPS.length){ obTour++; obTourGo(); return; }
   obTourDone();
 }
