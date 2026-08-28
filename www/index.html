@@ -549,11 +549,13 @@ canvas.pkc{width:34px;height:34px;display:block}
         display:flex;align-items:center;flex-wrap:wrap;gap:5px;
         font-size:.9rem;line-height:1.3}
 /* `0 1 auto` and not `1 1 auto`: the name takes the room it needs and no more,
-   so the time sits BESIDE it rather than being pushed to the far edge next to
-   the ... -- 「名前　まるまる分前　バッチ」 OWNER 2026-08-25. It still shrinks and
-   still ellipsises, which is the half that matters when a name is long; what it
-   no longer does is grow to fill the line. The ... stays right because `.pmw`
-   says `margin-left:auto`, which was already there and is what holds it. */
+   so the badge and the handle sit BESIDE it rather than being pushed to the
+   far edge next to the ... -- 「名前　まるまる分前　バッチ」 OWNER 2026-08-25,
+   「バッチは名前の横な？」 2026-08-28. It still shrinks and still ellipsises,
+   which is the half that matters when a name is too long for a line of its
+   own; what it no longer does is grow to fill the line. The ... stays right
+   because `.pmw` says `margin-left:auto`, which was already there and is what
+   holds it. */
 .pname{flex:0 1 auto;min-width:0;font-weight:700;font-size:.95rem;color:var(--tx);
        overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* What it is written in -- the place a timeline puts an affiliation, small and
