@@ -329,6 +329,8 @@ defLang('ja', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "場所",
       'me.loc.ph' : "",
+      'me.pic' : "画像",
+      'me.pic.change' : "画像を変える",
       'me.pic.drop' : "画像を外す",
       'me.pic.bad' : "この画像は読み込めませんでした",
       'notes.search' : "メモを検索",
