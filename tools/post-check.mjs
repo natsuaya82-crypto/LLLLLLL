@@ -652,6 +652,38 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- where the screen ends, for 11d and 11d2 ----------------------
+     The bottom of the box somebody writes in is not the bottom of what they
+     can see. Three things end this screen and the nearest one wins: the box
+     itself, the row of pictures fixed over the keyboard (opaque, z-index 20),
+     and the foot of `.view.fit`, which is --vvmin tall and below which there
+     is no phone. Naming which one it was is the whole use of the answer --
+     a field under the fold of its own box and a field behind the row of
+     pictures are two bugs and two fixes. */
+  const floorOf = (box) => {
+    const view = document.querySelector('.view.fit');
+    const bar = document.querySelector('.view.fit .pwbar');
+    let y = box.bottom, what = 'the fold of the box it is in';
+    if (view) {
+      const vb = view.getBoundingClientRect().bottom;
+      if (vb < y) { y = vb; what = 'the foot of the screen'; }
+    }
+    if (bar) {
+      const bt = bar.getBoundingClientRect().top;
+      if (bt < y) { y = bt; what = 'the row of pictures, which paints over it'; }
+    }
+    return { y: y, what: what };
+  };
+  const ceilOf = (box) => {
+    const view = document.querySelector('.view.fit');
+    let y = box.top, what = 'the top of the box it is in';
+    if (view) {
+      const vt = view.getBoundingClientRect().top;
+      if (vt > y) { y = vt; what = 'the top of the screen'; }
+    }
+    return { y: y, what: what };
+  };
+
   /* ---- 11d. on a reply, the person's own side still fits two fields ---
      The composer is laid out to --vvmin, which is the smallest the visible
      part has been -- that is, the screen with the keyboard up. A reply puts
@@ -666,7 +698,15 @@ const R = await pg.evaluate(async () => {
     const wasPW = PW;
     const root = document.documentElement;
     const hadMin = root.style.getPropertyValue('--vvmin');
+    const hadKb = root.style.getPropertyValue('--vvkb');
+    /* --vvkb as well, and not --vvmin on its own. The row of pictures is
+       fixed to `bottom:var(--vvkb)` -- that is what puts it ON the keyboard
+       -- so a screen given a keyboard's worth of --vvmin and no --vvkb has
+       its row at the foot of the 844px window instead, 544px below the
+       screen it is supposed to be standing on. Half a phone measures nothing:
+       the row is what the box somebody writes in has to clear. */
     root.style.setProperty('--vvmin', '300px');
+    root.style.setProperty('--vvkb', '544px');
 
     const other = POSTS.filter(q => q.id !== p.id)[0] || p;
     PW = pwBlank(); PW.to = other.id;
@@ -688,15 +728,17 @@ const R = await pg.evaluate(async () => {
       const ln = document.getElementById('pw-ln');
       if (ln) {
         const lb = ln.getBoundingClientRect(), sb = scroll.getBoundingClientRect();
-        if (lb.height < 1 || lb.bottom > sb.bottom + 1)
-          fails.push('the line being typed into is cut off by the box it is in ' +
-                     '(' + Math.round(lb.bottom - sb.bottom) + 'px past the ' +
-                     'bottom): the field somebody is looking at is the one that ' +
-                     'gave way');
+        const f = floorOf(sb);
+        if (lb.height < 1 || lb.bottom > f.y + 1)
+          fails.push('the line being typed into is cut off ' +
+                     Math.round(lb.bottom - f.y) + 'px past ' + f.what + ': ' +
+                     'the field somebody is looking at is the one that gave way');
       }
     }
     if (hadMin) root.style.setProperty('--vvmin', hadMin);
     else root.style.removeProperty('--vvmin');
+    if (hadKb) root.style.setProperty('--vvkb', hadKb);
+    else root.style.removeProperty('--vvkb');
     PW = wasPW;
   }
 
@@ -740,7 +782,33 @@ const R = await pg.evaluate(async () => {
 
      Asked of the RECTANGLE, per case, and never as a count of what is on the
      page: `#pw-mn` is drawn in every one of these and always was. Whether it
-     is on the screen is where it IS. */
+     is on the screen is where it IS.
+
+     AND THE RECTANGLE IT IS ASKED AGAINST IS THE SCREEN, WHICH IT WAS NOT.
+     This compared the meaning to `.pwscroll`'s box and stopped there, and
+     being inside that box does not mean being on the phone: `.pwscroll` had a
+     min-height, `.body` is overflow:hidden, and a box held open past the foot
+     of the body simply hangs off the bottom of the screen with the meaning
+     obediently inside it. It passed. Measured on master at 320x568 with the
+     keyboard up: `.pwscroll` ran 159 to 321 on a screen that ends at 308, the
+     meaning sat at 255-301, and `.pwbar` -- fixed, opaque, z-index 20 --
+     covered 255 to 308. The field was rendered, was inside its box, was under
+     the row of pictures, and could not be reached by scrolling anything.
+     **This check was green on the screen the owner reported.**
+     「投稿の返信画面みづらいや」 OWNER 2026-08-28.
+
+     So the floor is the nearest of three, and the message says which one it
+     was, because "under the fold" and "behind the row of pictures" are two
+     different bugs with two different fixes:
+
+       the box       `.pwscroll` -- it is there but wants scrolling, and there
+                     is no scrollbar on a phone to say so
+       the row       `.pwbar` is fixed to the keyboard and paints a background
+                     over whatever is beneath it
+       the screen    `.view.fit` is --vvmin tall and nothing below it exists
+
+     A floor of `min()` rather than three checks: the shallowest one is the
+     one that is true, and reporting the other two after it is noise. */
   {
     const wasPW = PW, root = document.documentElement;
     const hadMin = root.style.getPropertyValue('--vvmin');
@@ -755,8 +823,16 @@ const R = await pg.evaluate(async () => {
     /* 260 is the smallest a phone leaves: the extension caps a keyboard at
        0.55 of the screen, and 0.45 of an SE's 568 is 255. 508 is a 390x844
        with the system keyboard up, which is where this was measured when it
-       looked fine. */
-    for (const vv of [260, 380, 508]) {
+       looked fine.
+
+       308 IS A PHONE THE OWNER HOLDS, and the other three are not. An iPhone
+       SE2 is 320x568 and its system keyboard is 260, so 308 is what the
+       composer is actually laid out to on the narrower of the two devices
+       every one of these screens is confirmed on -- 260 is that phone's worst
+       case rather than its ordinary one, and a bug that lives between 308 and
+       380 is invisible to both. `press` measures one 402pt device, so nothing
+       else in the gate stands on the small phone at all. */
+    for (const vv of [260, 308, 380, 508]) {
       for (const dir of ['ltr', 'ttb-rl']) {
         for (const reply of [false, true]) {
           for (const pic of [false, true]) {
@@ -783,17 +859,17 @@ const R = await pg.evaluate(async () => {
             }
             const sb = scroll.getBoundingClientRect();
             const mb = mn.getBoundingClientRect();
-            const under = Math.round(mb.bottom - sb.bottom);
+            const f = floorOf(sb);
+            const under = Math.round(mb.bottom - f.y);
             if (under > 1)
-              fails.push('the meaning is ' + under + 'px under the fold of the ' +
-                         'box it is in (' + where + '). It is drawn, it is ' +
-                         'reachable by scrolling a box with no scrollbar on a ' +
-                         'phone, and somebody writing a post cannot see what ' +
-                         'their line means');
-            const over = Math.round(sb.top - mb.top);
+              fails.push('the meaning is ' + under + 'px under ' + f.what +
+                         ' (' + where + '). It is drawn, and somebody writing ' +
+                         'a post cannot see what their line means');
+            const c = ceilOf(sb);
+            const over = Math.round(c.y - mb.top);
             if (over > 1)
-              fails.push('the meaning is ' + over + 'px above the top of the ' +
-                         'box it is in (' + where + ')');
+              fails.push('the meaning is ' + over + 'px above ' + c.what +
+                         ' (' + where + ')');
           }
         }
       }
