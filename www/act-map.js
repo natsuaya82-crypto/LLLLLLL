@@ -149,6 +149,7 @@ act('obWhoGo', obWhoGo);
 act('setSignOut', setSignOut);
 act('setMail', setMail);
 act('setPwGo', setPwGo);
+act('setPwForgot', setPwForgot);
 act('obSkipDraw', obSkipDraw);
 act('obTourNext', obTourNext);
 act('openSnd', openSnd);

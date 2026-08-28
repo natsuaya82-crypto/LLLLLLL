@@ -115,6 +115,32 @@ function setPwGo(){
     }, function(d, st){ PWF.busy=false; PWF.msg=netWhy(d, st); render(); });
   }, function(d, st){ PWF.busy=false; PWF.msg=netWhy(d, st); render(); });
 }
+/* Forgotten it. The road is the door's -- the address, six digits in the
+   mail, then the new password (obMailForgot -> obResetGo -> obNewPwGo in
+   www/onboard.js) -- and it is opened rather than copied: a second mail-and-
+   code road in this file would be two places that both have to be right on
+   the day Supabase's template changes, and only one of them would be found.
+
+   obDoor() is what every other opening of it uses (setMail() below, obNeed()
+   in onboard.js) and it does the four things by itself: where to come back
+   to, the flag, the face, the render. Then obMailGo('forgot') turns that
+   face from "sign in" to "what is your address". Two renders where one would
+   do, and that is the price of calling the entrance instead of writing out
+   what is behind it.
+
+   Where you are standing is where the door sends you back to, which here is
+   this screen. That is onboard.js's sentence and not a choice made here.
+
+   The address is put in because this phone knows it -- it is the account
+   whose password is being changed, and setPwGo() above already asks
+   netMail() for it. A signed-in person being asked to type their own address
+   is the app pretending not to know. */
+function setPwForgot(){
+  var h=here();
+  OBM.em=netMail();
+  obDoor(h && h.r, h && h.a);
+  obMailGo('forgot');
+}
 function vSettings(){
   var p=PLANS.filter(function(x){return x.id===plan();})[0];
   return '<div class="view">'+navTop('')+'<div class="body">'+
@@ -235,7 +261,19 @@ function vSet(){
       (PWF.msg? '<div class="obmsg">'+esc(PWF.msg)+'</div>' : '')+
       '<button class="btn ghost" style="margin-top:18px"' + DO('setPwGo') +
         (PWF.busy? ' disabled':'') + '>'+
-        t(PWF.busy? 'ob.mail.wait' : 'set.pw.go')+'</button>';
+        t(PWF.busy? 'ob.mail.wait' : 'set.pw.go')+'</button>'+
+      /* And the way out for somebody who does not know the old one -- which
+         is most of the reason a person opens a password screen at all. It
+         existed and it was on the DOOR only: this form asks for the current
+         password and had no answer to "I do not have it", so the only road
+         to the mail-and-code road was to sign out first. Nothing new is
+         built here; setPwForgot() opens the door's own forgot face.
+
+         `.obskip` and the door's own key, because it is the door's own row.
+         Not a second `.btn.ghost`: two gold buttons one under the other say
+         the same thing twice, and this one is the quieter half. */
+      '<button class="obskip"' + DO('setPwForgot') + '>'+
+        t('ob.mail.to.forgot')+'</button>';
   } else if(id==='acct'){
     /* Signed in or not, and the way in or out. It said "guest" and offered two
        buttons that did nothing whatever the answer was. */
