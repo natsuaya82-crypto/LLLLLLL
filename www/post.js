@@ -1122,13 +1122,40 @@ function pwSetLn(v){
    borrowed from. It is a made language and its words are short; nobody has
    met this yet and the point is that it exists. */
 var POST_MAX=280;
-/* Shown only near the end, the way every composer does it -- a counter on
-   screen from the first letter is a scold. Numbers only, so there is nothing
-   in it to translate. */
+/* How much room is left, as a RING that empties as you type.
+   「カウントは打つほど減っていく輪、帯の中、常に出す」 OWNER 2026-08-28.
+
+   It was a number, and only from 40 left -- so for the first 240 characters
+   the screen said nothing at all about a limit that exists, and then a number
+   appeared out of nowhere. A ring that is whole when the field is empty and
+   shorter with every letter says the same thing continuously, which is the
+   point of the shape: you can see it going without reading anything.
+
+   The arc is one circle's stroke, dashed to its own circumference and pushed
+   round by however much has been used -- so what is drawn IS what is left.
+   `PW_RING` is 2*pi*8, the r below; the two have to be the same circle or the
+   ring is full at nine tenths. Rotated a quarter turn in the stylesheet so it
+   empties from the top.
+
+   Three states and no new colour: quiet while there is room, the colour
+   everything else on this screen is once the number appears, and the colour
+   of a problem once there is none left. **40 is not a new number** -- it is
+   the one this function already had for when to show the count, and the
+   count still appears exactly there. */
+var PW_RING=50.265;
 function pwLeftHTML(){
-  var left=POST_MAX-String(PW.ln||'').length;
-  if(left>40) return '';
-  return '<span class="pwleft'+(left<=0? ' bad':'')+'">'+left+'</span>';
+  var used=String(PW.ln||'').length, left=POST_MAX-used,
+      f=left/POST_MAX;
+  if(f<0) f=0;
+  if(f>1) f=1;
+  return '<span class="pwring'+(left<=0? ' bad' : (left<=40? ' near':''))+'">'+
+    '<svg viewBox="0 0 20 20" aria-hidden="true">'+
+      '<circle class="pwrt" cx="10" cy="10" r="8"></circle>'+
+      '<circle class="pwrf" cx="10" cy="10" r="8" stroke-dasharray="'+PW_RING+'" '+
+        'stroke-dashoffset="'+(PW_RING*(1-f))+'"></circle>'+
+    '</svg>'+
+    (left<=40? '<span class="pwleft">'+left+'</span>' : '')+
+    '</span>';
 }
 function pwLeftPaint(){
   var e=document.getElementById('pw-left');
