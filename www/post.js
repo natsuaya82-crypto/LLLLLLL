@@ -2671,6 +2671,19 @@ function postRow(p){
          voice. An empty div here is a gap above the picture that nothing
          explains. 「文字無しでもポストできるようにできない？」 */
       (p.ln? '<div class="pline '+dirClass(postDir(p))+'">'+postLnHTML(p)+'</div>' : '')+
+      /* THE MEANING COMES BEFORE THE PICTURE, and it used to come after it.
+         「翻訳は画像の上」 OWNER 2026-08-28.
+
+         A post is a line in a language nobody reading it speaks, and the row
+         under it is what it says. Those two are one thing and a photograph
+         stood between them: the line at the top of the post, the picture, and
+         then -- below the picture, a screen further down on a phone -- what
+         the line had meant. */
+      /* The natural language, in the reader's own if the post carries it and
+         in the author's if it does not -- which is every post until the
+         translator is wired up, and is not a failure. Not "always" any more:
+         a post with no line has nothing to mean. */
+      (postSay(p)? '<div class="pmn">'+esc(postSay(p))+'</div>' : '')+
       /* The pictures, and they are the one thing on a post that slides
          sideways. 「画像だけ横スライドできる感じ」 One is a picture; several
          are a strip, and the strip scrolls rather than the post. */
@@ -2686,11 +2699,6 @@ function postRow(p){
             }).join('')+'</div>'
         : '')+
       postVoHTML(p)+
-      /* The natural language, in the reader's own if the post carries it and
-         in the author's if it does not -- which is every post until the
-         translator is wired up, and is not a failure. Not "always" any more:
-         a post with no line has nothing to mean. */
-      (postSay(p)? '<div class="pmn">'+esc(postSay(p))+'</div>' : '')+
       /* Three layers, and there is no fourth.
 
            the writer's own letters      ln + ink

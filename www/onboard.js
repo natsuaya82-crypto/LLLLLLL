@@ -1143,9 +1143,7 @@ function obNameLater(){ ob.name=''; obGo(OB_IN); }
    THREE LAYERS, which is what the app shows and what makes a conlang
    timeline readable at all:
 
-     the line      in the letters this person has drawn -- postInk(), the
-                   app's own cut, so a letter with a shape arrives as that
-                   shape and the rest is text. 「自作文字って言ってんだろ」
+     the line      in THEIR letters, not this phone's -- the alphabet below.
      the meaning   under it, in the reader's own language -- `mn`, which
                    postSay() reads. 「人工言語人工文字でやったら翻訳がつくだろ」
                    This is the ONLY thing on the page in Japanese, and it is
@@ -1155,6 +1153,69 @@ function obNameLater(){ ob.name=''; obGo(OB_IN); }
    Nothing is pressable: there is no account, no thread and no picture behind
    any of it. One `pointer-events:none` on the wrapper; the rows are the real
    rows, untouched. */
+/* THE LETTERS ARE THEIRS, NOT THIS PHONE'S.
+
+   Six people who made a language, writing in it -- and somebody else's post is
+   in somebody else's letters. That is what post.js's line is for: a post
+   carries the shapes its line is written in, because the reader does not have
+   that alphabet. A timeline where every post is in MY letters is the bug rule
+   12 was written after.
+
+   It was cut with postInk() for one commit -- the READER's alphabet -- and at
+   this point in the onboarding that is one drawn letter, so the timeline came
+   out as roman with a single shape in it. 「なんでだからアルファベットなの？」
+   OWNER 2026-08-28.
+
+   So this is the mock's own alphabet, on the same 21-point lattice the glyph
+   editor draws on (GGRID: 40 + i*36): one to three strokes each, at most three
+   points a stroke, which is what a stroke IS in this app. A spine and one
+   mark, so they read as ONE alphabet somebody invented rather than fifteen
+   doodles -- and not from Latin letterforms, which an earlier go did and which
+   came out as plainly the roman alphabet in a thin font. */
+var OB_SNS_ABC={
+  a:[[[10,4],[10,16]],[[10,7],[15,4]]],
+  d:[[[10,4],[10,16]],[[6,16],[14,16]]],
+  e:[[[10,4],[10,16]],[[10,10],[15,10]]],
+  h:[[[10,4],[10,16]],[[6,4],[10,4]]],
+  i:[[[10,7],[10,16]]],
+  k:[[[10,4],[10,16]],[[10,6],[15,6]],[[10,11],[15,11]]],
+  l:[[[10,4],[10,16]],[[10,16],[5,13]]],
+  m:[[[6,16],[6,6],[10,4]],[[10,4],[14,6],[14,16]]],
+  n:[[[10,4],[10,16]],[[10,6],[15,6],[15,13]],[[15,13],[10,13]]],
+  o:[[[10,4],[15,10],[10,16]],[[10,16],[5,10],[10,4]]],
+  r:[[[10,4],[10,16]],[[10,4],[15,4]]],
+  s:[[[6,5],[14,8]],[[14,8],[6,12]],[[6,12],[14,15]]],
+  t:[[[10,4],[10,16]],[[5,8],[15,8]]],
+  u:[[[10,4],[10,16]],[[10,16],[15,16],[15,10]]],
+  v:[[[6,4],[10,16]],[[10,16],[14,4]]]
+};
+/* A point is a PAIR and not an {x,y}: otf5's toPolyline() reads p[0] and p[1].
+   Written as objects, glyphContours returned no contours at all, inkAdv()
+   answered null, and every canvas stayed at its untouched 300x150 -- nothing
+   threw and the lines simply were not on the screen. */
+function obSnsSt(ch){
+  var g=OB_SNS_ABC[ch], out=[], i, j, pts;
+  if(!g) return null;
+  for(i=0;i<g.length;i++){
+    pts=[];
+    for(j=0;j<g[i].length;j++) pts.push([40+g[i][j][0]*36, 40+g[i][j][1]*36]);
+    out.push({pts:pts});
+  }
+  return out;
+}
+/* The line cut into shapes and text -- the shape postCut() makes, handed to
+   post.js's own inkOfCut(), so the ink on these posts is built by the one
+   function that builds ink. */
+function obSnsInk(ln){
+  var s=String(ln||''), cut=[], txt='', i, st;
+  for(i=0;i<s.length;i++){
+    st=obSnsSt(s.charAt(i));
+    if(st){ if(txt){ cut.push({t:txt}); txt=''; } cut.push({st:st}); }
+    else txt+=s.charAt(i);
+  }
+  if(txt) cut.push({t:txt});
+  return inkOfCut(cut);
+}
 /* The faces and the photographs. Soft blurred gradients, which is what a
    compressed photograph looks like at thumbnail size -- flat clip-art hills
    were on here for one commit and read as exactly what they were.
@@ -1208,7 +1269,7 @@ function obSnsPost(w, i){
   var ln=t(w.l), pics=[], k;
   for(k=0;k<(w.pics||0);k++) pics.push(obSnsShot(i+k));
   return { id:'ob'+i, who:t(w.n), hd:t(w.h), at:Date.now()-w.ago*60000,
-           ln:ln, ink:postInk(ln), mn:t(w.m), dir:'ltr',
+           ln:ln, ink:obSnsInk(ln), mn:t(w.m), dir:'ltr',
            av:{pic:obSnsPic(i)}, pics:pics, re:w.re, bo:w.bo, mine:false };
 }
 function obSnsHTML(){
