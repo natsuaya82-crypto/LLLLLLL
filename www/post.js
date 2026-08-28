@@ -1802,6 +1802,11 @@ function pwMarkAtoms(units){
 /* One cell of vertical room per line, and a quarter of one between them --
    the same 1.25 the field's own font size is worked out with. */
 var PW_MARK_LEAD=1.25;
+/* And a margin down each side, because a line on a photograph does not run
+   into the edge of it 「左右に余白がある」. Not a new number: it is the
+   body's own 24px gutter, as a share of the 390 this screen is measured on,
+   which is what every other margin in the app is a share of. */
+var PW_MARK_EDGE=24/390;
 /* The lines a mark comes to, at its own size, inside the picture. The width
    to fill is the picture measured in this mark's cells: the picture is 1 wide
    and a cell is `s` of it, so there are 800/s of the 800-unit cells across.
@@ -1809,7 +1814,7 @@ var PW_MARK_LEAD=1.25;
    its own rather than being cut, because cutting it would lose what somebody
    drew. */
 function pwMarkLines(m){
-  var max=(m && m.s>0)? 800/m.s : 0,
+  var max=(m && m.s>0)? (1-2*PW_MARK_EDGE)*800/m.s : 0,
       atoms=pwMarkAtoms(pwMarkCut(m)),
       out=[], cur=[], w=0, i, aw, a;
   for(i=0;i<atoms.length;i++){
