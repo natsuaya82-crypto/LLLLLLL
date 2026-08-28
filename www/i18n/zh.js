@@ -313,6 +313,7 @@ defLang('zh', (function(){
       "ob.coach.draw" : "用手指画一条线。",
       "ob.coach.drawn" : "很好。可以再画，或继续。",
       "ob.draw.note" : "随时可以重画",
+      "ob.skip" : "直接登录",
       "ob.draw.done"              : "完成",
       "ob.draw.empty"             : "请先画一笔",
       "ob.lang.a"                 : "界面语言",

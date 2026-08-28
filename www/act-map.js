@@ -150,6 +150,7 @@ act('setSignOut', setSignOut);
 act('setMail', setMail);
 act('setPwGo', setPwGo);
 act('obSkipDraw', obSkipDraw);
+act('obSkipAll', obSkipAll);
 act('obTourNext', obTourNext);
 act('obTourBack', obTourBack);
 act('obSnsGo', obSnsGo);

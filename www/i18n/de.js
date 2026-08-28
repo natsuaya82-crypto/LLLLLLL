@@ -293,6 +293,7 @@ defLang('de', (function(){
       "ob.coach.draw" : "Zieh mit dem Finger eine Linie.",
       "ob.coach.drawn" : "Gut. Zieh weitere oder mach weiter.",
       "ob.draw.note" : "Du kannst es jederzeit neu zeichnen",
+      "ob.skip" : "Stattdessen anmelden",
       "ob.draw.done"              : "Fertig",
       "ob.draw.empty"             : "Zeichnen Sie zuerst einen Strich",
       "ob.lang.a"                 : "Sprache der Oberfläche",

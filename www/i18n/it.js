@@ -305,6 +305,7 @@ defLang('it', (function(){
       "ob.coach.draw" : "Traccia una linea con il dito.",
       "ob.coach.drawn" : "Bene. Aggiungine altre o vai avanti.",
       "ob.draw.note" : "Puoi ridisegnarla quando vuoi",
+      "ob.skip" : "Accedi",
       "ob.draw.done"              : "Fatto",
       "ob.draw.empty"             : "Disegni prima un tratto",
       "ob.lang.a"                 : "Lingua dell'interfaccia",

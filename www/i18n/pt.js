@@ -312,6 +312,7 @@ defLang('pt', (function(){
       "ob.coach.draw" : "Trace uma linha com o dedo.",
       "ob.coach.drawn" : "Bom. Acrescente mais ou siga em frente.",
       "ob.draw.note" : "Você pode redesenhar quando quiser",
+      "ob.skip" : "Entrar na conta",
       "ob.draw.done"              : "Pronto",
       "ob.draw.empty"             : "Desenhe um traço primeiro",
       "ob.lang.a"                 : "Idioma da interface",

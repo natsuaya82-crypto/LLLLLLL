@@ -353,6 +353,7 @@ defLang('fr', (function(){
       "ob.coach.draw" : "Tracez un trait avec le doigt.",
       "ob.coach.drawn" : "Bien. Ajoutez-en ou continuez.",
       "ob.draw.note" : "Vous pourrez le redessiner plus tard",
+      "ob.skip" : "Se connecter",
       "ob.draw.done"              : "Terminé",
       "ob.draw.empty"             : "Dessinez d'abord un trait",
       "ob.lang.a"                 : "Langue de l’interface",

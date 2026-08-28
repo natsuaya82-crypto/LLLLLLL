@@ -1383,6 +1383,8 @@ function obTakeCh(ch){
    showing somebody the keyboard is -- so with no letter drawn, the keyboard
    itself is what is lit, which is obTourFind()'s fallback and is the true
    sentence either way: this is where your letters are. */
+/* Past the drawing, the walk, the timeline and the name, to the door. */
+function obSkipAll(){ ob.lid=''; obTour=0; obGo(OB_IN); }
 function obSkipDraw(){ ob.lid=''; obTour=0; ob.step=OB_TOUR; save(); obTourGo(); }
 
 function obFinish(){
@@ -1480,6 +1482,21 @@ function obDrawHTML(){
     '<button class="btn"' + DO('obDone') + (n? '' : ' disabled') + '>'+
       t('ob.draw.done')+'</button>'+
     '<button class="obskip"' + DO('obSkipDraw') + '>'+t('ob.draw.later')+'</button>'+
+    /* Straight to the door, past all of it. 「ログインまでスキップ」 OWNER
+       2026-08-28 -- for somebody who has an account already and is looking at
+       this screen because they reinstalled the app.
+
+       It skips TO the door, not past it: the door is still the last step and
+       there is still no way round it (OWNER 2026-08-26, and act-check holds
+       it -- signed out, all 37 routes are the door). Signing in from there
+       ends the onboarding exactly as it does at the end of the walk, because
+       obIn() calls obFinish() whenever SET.done is false.
+
+       Here and nowhere else. This is the FIRST screen, which is where somebody
+       decides they do not want the walk; the name step already reaches the
+       door through 「あとで決める」, and the walk's own chevron comes back here.
+       Same class as the row above it, so the two are one height. */
+    '<button class="obskip"' + DO('obSkipAll') + '>'+t('ob.skip')+'</button>'+
     /* And that it is not for ever. 「あとで編集できるよって」 The same line the
        name step has, in the same place: what is being asked for here is the
        first stroke of an alphabet, and somebody who thinks it has to be right

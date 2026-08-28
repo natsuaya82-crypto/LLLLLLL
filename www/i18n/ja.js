@@ -221,6 +221,7 @@ defLang('ja', (function(){
       "ob.coach.draw" : "指で線を引いてみて。",
       "ob.coach.drawn" : "いいね。まだ引ける。終わったら次へ。",
       "ob.draw.note" : "あとで書き直せます",
+      "ob.skip" : "ログインへ",
       "ob.draw.done"              : "完了",
       "ob.draw.empty"             : "描いてください",
       "ob.lang.a"                 : "表示言語",

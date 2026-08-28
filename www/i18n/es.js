@@ -265,6 +265,7 @@ defLang('es', (function(){
       "ob.coach.draw" : "Traza una línea con el dedo.",
       "ob.coach.drawn" : "Bien. Añade más o continúa.",
       "ob.draw.note" : "Puedes volver a dibujarla cuando quieras",
+      "ob.skip" : "Iniciar sesión",
       "ob.draw.done"              : "Listo",
       "ob.draw.empty"             : "Dibuje un trazo primero",
       "ob.lang.a"                 : "Idioma de la interfaz",
