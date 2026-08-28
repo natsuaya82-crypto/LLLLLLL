@@ -186,7 +186,7 @@ function snsFilTop(){
      refuse one. It is the person's own text and not an interface string, so
      it does not go through t() -- the same as a word in the dictionary or
      the body of a post. */
-  return '<button class="navq"' + DO('go', ['filter']) + '>'+
+  return '<button class="navq navfil"' + DO('go', ['filter']) + '>'+
     esc(snsFil? snsFil.q : t(snsFilKey(snsFilNow())))+'</button>';
 }
 function vFilter(){
