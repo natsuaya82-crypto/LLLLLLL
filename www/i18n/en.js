@@ -316,6 +316,8 @@ defLang('en', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "Location",
       'me.loc.ph' : "",
+      'me.pic' : "Picture",
+      'me.pic.change' : "Change the picture",
       'me.pic.drop' : "Remove the picture",
       'me.pic.bad' : "That picture could not be read",
       'notes.search' : "Search notes",

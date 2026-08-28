@@ -413,6 +413,8 @@ defLang('it', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "Luogo",
       'me.loc.ph' : "",
+      'me.pic' : "Foto",
+      'me.pic.change' : "Cambia la foto",
       'me.pic.drop' : "Rimuovi la foto",
       'me.pic.bad' : "Impossibile leggere questa immagine",
       'notes.search' : "Cerca nelle note",
