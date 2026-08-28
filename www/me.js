@@ -536,19 +536,19 @@ function openMe(){
        The style is written here rather than in a class because `.pav` is worn
        by eight other screens. */
     /* 見出しは無し ── 「アイコンって文字いらない」(OWNER, 2026-08-25)。
-       それは顔の話で、下の四つの欄の話ではない。
+       それは顔の話で、下の四つの欄の話ではない。名札は欄の**左**、`.field.at`
+       ── 「アイコンだけ上にして。あとはリンクと同じ並びにして欲しい。」
+       OWNER 2026-08-28。リンクと場所の行が既にその形で、名前と ID をそれに
+       揃える。
 
-       名札は欄の**上**、欄は**全幅**、名前と ID は顔の**下**。
-       「場所も名前も二行にしないで。はみ出さない、二行にしない範囲の名前しか
-       設定できない。これだとなん文字？」 OWNER 2026-08-28 ── 測ったら
-       320px の端末で名前は全角 **4字** だった。上限は 30 で、4字の名前しか
-       付けられない画面になっていた。
+       **顔は単独で上に立つ。** 96px の顔が名前と ID の左に居たので、その二つ
+       だけ欄が 80px しか無く、320px の端末で日本語 4字で二行になっていた
+       ──「場所も名前も二行にしないで。はみ出さない、二行にしない範囲の名前
+       しか設定できない。これだとなん文字？」OWNER 2026-08-28。顔を外に出すと
+       四つとも同じ幅の行になる。
 
-       **字数ではなく並びが食っていた。** 96px の顔が名前と ID の左に居て、
-       さらに名札が 4.5em 取っていたので、欄に残るのが 80px しかない。顔の
-       下に出して名札を上に上げると、四つとも画面の幅いっぱいになる。
-       `.field` と `.field label` は三十の画面が着ている形で、新しい CSS は
-       足していない ── `.field.at`（名札が横に並ぶ形）をやめただけ。 */
+       欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
+       折り返せないので、書いた字が横に消えていた。 */
     '<div class="picrow" style="align-items:center">'+
       '<label class="pav" style="position:relative;width:96px;height:96px">'+
         postFace({who:meName(), lname:langName, av:postAvatar()})+
@@ -558,10 +558,12 @@ function openMe(){
     '</div>'+
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
        '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
-    '<div class="field"><label>'+esc(t('me.name'))+'</label>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
       lnField('me-nm', langName||'',
         ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), ME.name)+'</div>'+
-    '<div class="field"><label>'+esc(t('me.handle'))+'</label>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
       lnField('me-hd', meHandle(),
         ' maxlength="'+ME_MAX.handle+'" autocapitalize="none"' + IN('meSetHandle'),
         ME.handle)+'</div>'+
@@ -581,11 +583,13 @@ function openMe(){
        セッションの持ち物だった。取り込みと同じコミットで揃えた ──
        act-map は名前ではなく関数そのものを登録するので、関数より先に行を
        書くとアプリが読み込みで止まる。**分けられない。** */
-    '<div class="field"><label>'+esc(t('me.link'))+'</label>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
       lnField('me-lk', t('me.link.ph')||'',
         ' maxlength="'+ME_MAX.link+'" autocapitalize="none"' + IN('meSetLink'),
         ME.link||'')+'</div>'+
-    '<div class="field"><label>'+esc(t('me.loc'))+'</label>'+
+    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
+      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
       lnField('me-lc', t('me.loc.ph')||'',
         ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
