@@ -1596,7 +1596,7 @@ a screen the mirror never renders is a screen where a hard-coded string sits for
 
 Both checks print their coverage (`screens walked: 366`, `screens the mirror
 rendered: 275`) because nothing else in a green run would show it shrinking.
-`press` prints `buttons pressed: 9445  (222/222 distinct names)` for the same
+`press` prints `buttons pressed: 12410  (240/240 distinct names)` for the same
 reason — and it is what a
 change that is meant to alter nothing has to leave untouched. The count has
 moved four times, and each move is a change somebody made on purpose: it
@@ -1672,7 +1672,14 @@ It fell to 8453 when `wdMode` and the six faces in `tools/fixture.mjs` that set
 it came out — those six were being walked in a state the app could no longer be
 in — and coverage did not move: 213 of 213 names, still.
 
-**It was 8683 for three sessions' work integrated in one day, and is 9445 now.**
+**It was 8683 for three sessions' work integrated in one day, 9445 after that,
+and 12410 on 2026-08-28.** That last jump is a day of seven chapters landing at
+once -- the grammar list became one list of 24, the keyboard sheet gained the
+frames, the post's head folded to one line, the onboarding's SNS stage became
+the real timeline with a seal over it -- and it is written here rather than
+attributed move by move, because nobody wrote the number down between them.
+**That is the failure this paragraph exists to prevent**, and it happened
+again.
 Two of the moves inside it are worth keeping. `setWldDl` was reported by
 `press` as never pressed, and the reason was not that it sits behind a plan:
 the fixture did not seed `WLD`, so the first press of `setWldHide` hid the row

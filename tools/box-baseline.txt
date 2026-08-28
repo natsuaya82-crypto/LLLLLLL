@@ -85,8 +85,6 @@
 .povo | border-radius
 .ppic | border
 .ppic | border-radius
-.pvbox button | border
-.pvbox button | border-radius
 .pwpic | border
 .pwpic | border-radius
 .pwpicn | border-radius
