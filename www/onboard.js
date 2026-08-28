@@ -444,7 +444,13 @@ function obTourHTML(){
               'animation:vin .5s ease-out .9s 1 reverse forwards">'+esc(was)+'</span>' : '')+
     /* And the hand, which is the whole of what this screen says.
        「文字いらなくない？」 */
-    (hb? '<div class="obhand" aria-hidden="true" style="position:fixed;z-index:43;'+
+    /* AND NO HAND ON A STOP THAT MOVES ON BY ITSELF. The hand means "press
+       this", and there is nothing to press here: the key is lit, the letter
+       arrives on it, and the walk goes on to the back arrow -- where the hand
+       is waiting, because that one IS a press.
+       「aのところ触らなくてよくしたから指のマークなしで変わってるとこだけ見せて」
+       OWNER 2026-08-28. */
+    ((hb && !st.auto)? '<div class="obhand" aria-hidden="true" style="position:fixed;z-index:43;'+
               'pointer-events:none;color:var(--gold);line-height:0;'+
               'left:'+hb.left+'px;top:'+hb.top+'px;width:'+hb.w+'px;height:'+hb.h+'px;'+
               'animation:vopulse 1.1s ease-in-out infinite'+
