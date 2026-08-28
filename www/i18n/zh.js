@@ -414,6 +414,8 @@ defLang('zh', (function(){
       "sort.title"      : "排序",
       "sort.new"        : "最新",
       "sort.buzz"       : "热门",
+      "sns.save"        : "保存这个词",
+      "sns.saved"       : "已保存",
       'sns.search'            : "搜索 — @ 找人",
       'sns.nohit'             : "没有找到",
       'notif.like'            : "{0} 点了赞",

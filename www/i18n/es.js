@@ -366,6 +366,8 @@ defLang('es', (function(){
       "sort.title"      : "Orden",
       "sort.new"        : "Recientes",
       "sort.buzz"       : "Destacado",
+      "sns.save"        : "Guardar esta palabra",
+      "sns.saved"       : "Guardados",
       'sns.search'            : "Buscar — @ para personas",
       'sns.nohit'             : "No se encontró nada",
       'notif.like'            : "A {0} le gustó",

@@ -322,6 +322,8 @@ defLang('ja', (function(){
       'sort.title'      : "並べ替え",
       'sort.new'        : "最新",
       'sort.buzz'       : "話題",
+      'sns.save'        : "この言葉を保存",
+      'sns.saved'       : "保存した検索",
       'sns.search'            : "さがす　@で人",
       'sns.nohit'             : "見つかりません",
       'notif.like'            : "{0} がいいね",

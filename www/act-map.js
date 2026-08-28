@@ -190,6 +190,8 @@ act('kbMore', kbMore);
 act('kbNew', kbNew);
 act('snsSetFil', snsSetFil);
 act('snsSetSort', snsSetSort);
+act('snsSaveQ', snsSaveQ);
+act('snsPickSaved', snsPickSaved);
 act('postOpen', postOpen);
 act('postPic', postPic);
 act('postReply', postReply);

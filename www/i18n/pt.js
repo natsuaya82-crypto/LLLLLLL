@@ -413,6 +413,8 @@ defLang('pt', (function(){
       "sort.title"      : "Ordenar",
       "sort.new"        : "Recentes",
       "sort.buzz"       : "Destaques",
+      "sns.save"        : "Guardar esta palavra",
+      "sns.saved"       : "Guardados",
       'sns.search'            : "Procurar — @ para pessoas",
       'sns.nohit'             : "Nada encontrado",
       'notif.like'            : "{0} gostou",

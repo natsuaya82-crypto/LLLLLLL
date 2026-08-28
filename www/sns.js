@@ -128,6 +128,19 @@ function vFilter(){
         '<span class="sl">'+esc(t(snsFilKey(k)))+'</span>'+
         '<span class="sv">'+(snsFilNow()===k? ICON_TICK : '')+'</span></button>';
     }).join('')+
+    /* And the words somebody keeps, under the two timelines because they are
+       the same question asked a third way: what am I looking at. The heading
+       is a NAME and not an explanation -- vWsys puts `dir.title` over its
+       three directions in the same shape. Nothing at all when none are kept,
+       rather than a heading over an empty space. */
+    (snsSaved().length
+      ? '<div class="sec">'+esc(t('sns.saved'))+'</div>'+
+        snsSaved().map(function(q){
+          return '<button class="set"' + DO('snsPickSaved', [q]) + '>'+
+            '<span class="sl">'+esc(q)+'</span>'+
+            '<span class="sv">'+ICON_GO+'</span></button>';
+        }).join('')
+      : '')+
     '</div></div>';
 }
 /* Chosen, and then you are back on the thing it is about. The same shape as
@@ -747,6 +760,62 @@ function snsWhoRow(p){
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
     '</div>';
 }
+/* ---- the words somebody keeps ------------------------------------------
+   「検索ページで言葉を⭐️で保存、絞り込みから選ぶとその言葉で検索し直す」
+   OWNER 2026-08-28, through the leader -- and it is what the owner meant by
+   「自分が好きなトピックとか」 back when the filter was built. There are no
+   tags in this app and none have been invented: a kept word is a SEARCH
+   somebody made, and choosing it makes that search again.
+
+   WHERE THEY LIVE IS NOT SETTLED AND THIS IS NOT THE DECISION.
+   `SET` is the person's settings, which docs/ says outright is the phone's
+   ("What is NOT the timeline's -- a language's backup file, an exported
+   sheet, the settings -- is the phone's and stays there"), and a kept word is
+   in none of the things 「SNSは全部サーバー」 lists. So it is a setting today
+   and it persists with the rest of them, `setOnDisk()` copying every key it
+   finds. If the answer comes back that these belong to the ACCOUNT and
+   should follow somebody to a new phone, the two functions below are the
+   only places that read and write them, which is the whole reason they are
+   two functions and not a dozen `SET.saved` all over this file. */
+var ICON_STAR='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 4.2l2.35 4.76 5.25.76-3.8 3.7.9 5.23L12 16.18l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>';
+var ICON_STAR_ON='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M12 4.2l2.35 4.76 5.25.76-3.8 3.7.9 5.23L12 16.18l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"/></svg>';
+/* The one place they are read. An array of the words as they were typed. */
+function snsSaved(){
+  var a=SET.saved;
+  return (a && a.length)? a : [];
+}
+function snsIsSaved(q){
+  var a=snsSaved(), i, k=String(q||'').trim();
+  for(i=0;i<a.length;i++) if(a[i]===k) return true;
+  return false;
+}
+/* And the one place they are written. A toggle, because the star is one
+   button and pressing it again is how somebody takes a word off a list they
+   put it on -- a second screen to remove one would be a screen. Newest
+   first: the word just kept is the one being looked for. */
+function snsSaveQ(){
+  var k=String(snsQ||'').trim(), a=snsSaved(), out=[], i;
+  if(!k) return;
+  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
+  if(out.length===a.length) out.unshift(k);
+  SET.saved=out;
+  save();
+  render();
+}
+/* Chosen from the filter, and it SEARCHES rather than taking you to a field
+   with the word already in it. snsHits is emptied so that vExplore's own ask
+   fires -- that screen already asks for a query it has no answer for, and a
+   second ask here would be two places asking one question. */
+function snsPickSaved(q){
+  snsQ=String(q||'');
+  snsMode='posts';
+  snsHits=null;
+  goTab('explore');
+}
 /* ---- newest, or what people answered ------------------------------------
    「話題＝おすすめと同じバズ順（いいね1・リポスト3・返信5、同じ数なら新しい
    方が上）」 OWNER 2026-08-28, through the leader.
@@ -838,6 +907,14 @@ function vExplore(){
          keydown listener stops the key before it runs the name. */
       lnField('sns-q', t('sns.search'),
         ' enterkeyhint="search"' + IN('snsSetQ') + KD('snsGo'), snsQ)+
+      /* Kept, or not. Two drawings rather than a class, because "saved" is a
+         filled star and "not saved" is an outline of one, and that is the
+         whole difference -- there is no CSS for it to need. It is only there
+         when there is a word to keep. */
+      (snsQ.trim()
+        ? '<button class="sx"' + DO('snsSaveQ') + ' aria-label="'+
+            esc(t('sns.save'))+'">'+(snsIsSaved(snsQ)? ICON_STAR_ON : ICON_STAR)+'</button>'
+        : '')+
       '<button class="sx" id="sns-x"' + DO('snsClearQ') + (snsQ?'':' hidden')+
         ' aria-label="'+esc(t('words.clear'))+'">'+ICON_CROSS+'</button>'+
     '</div>'+

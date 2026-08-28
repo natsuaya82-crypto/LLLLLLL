@@ -454,6 +454,8 @@ defLang('fr', (function(){
       "sort.title"      : "Trier",
       "sort.new"        : "Récents",
       "sort.buzz"       : "Populaires",
+      "sns.save"        : "Garder ce mot",
+      "sns.saved"       : "Gardés",
       'sns.search'            : "Chercher — @ pour les gens",
       'sns.nohit'             : "Rien trouvé",
       'notif.like'            : "{0} a aimé",

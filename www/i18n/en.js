@@ -309,6 +309,8 @@ defLang('en', (function(){
       'sort.title'      : "Sort",
       'sort.new'        : "Latest",
       'sort.buzz'       : "Top",
+      'sns.save'        : "Keep this word",
+      'sns.saved'       : "Kept",
       'sns.search'            : "Search — @ for people",
       'sns.nohit'             : "Nothing found",
       'notif.like'            : "{0} liked this",

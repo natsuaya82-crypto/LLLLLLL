@@ -409,6 +409,8 @@ defLang('ru', (function(){
       "sort.title"      : "Сортировка",
       "sort.new"        : "Новые",
       "sort.buzz"       : "Популярное",
+      "sns.save"        : "Сохранить это слово",
+      "sns.saved"       : "Сохранённые",
       'sns.search'            : "Поиск — @ для людей",
       'sns.nohit'             : "Ничего не найдено",
       'notif.like'            : "{0} оценил это",

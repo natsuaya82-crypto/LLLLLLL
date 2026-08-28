@@ -585,6 +585,8 @@ defLang('ko', (function(){
       "sort.title"      : "정렬",
       "sort.new"        : "최신",
       "sort.buzz"       : "인기",
+      "sns.save"        : "이 단어 저장",
+      "sns.saved"       : "저장됨",
       'sns.search'            : "찾기 — @ 는 사람",
       'sns.nohit'             : "찾지 못했습니다",
       'notif.like'            : "{0} 님이 좋아합니다",
