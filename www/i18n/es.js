@@ -265,6 +265,7 @@ defLang('es', (function(){
       "ob.coach.draw" : "Traza una línea con el dedo.",
       "ob.coach.drawn" : "Bien. Añade más o continúa.",
       "ob.draw.note" : "Puedes volver a dibujarla cuando quieras",
+      "ob.skip" : "Iniciar sesión",
       "ob.draw.done"              : "Listo",
       "ob.draw.empty"             : "Dibuje un trazo primero",
       "ob.lang.a"                 : "Idioma de la interfaz",
@@ -600,7 +601,6 @@ defLang('es', (function(){
       "ob.name.note"      : "Se puede cambiar después",
       "ob.name.later"      : "Decidir después",
       "ob.draw.h"        : "Dibuja tu propia {0}.",
-      "ob.draw.later"     : "Dibujarla más tarde",
       /* the writing system */
       "script.show"     : "Mostrar",
       "script.show.own"   : "Tus letras",
