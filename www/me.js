@@ -536,29 +536,35 @@ function openMe(){
        The style is written here rather than in a class because `.pav` is worn
        by eight other screens. */
     /* 見出しは無し ── 「アイコンって文字いらない」(OWNER, 2026-08-25)。
-       名前・ID・リンク・位置情報は、名札と欄が一行に並ぶ `.field.at` で。
-       これは @ の欄が既に使っている形（`display:flex;align-items:center`）で、
-       新しい CSS は足していない。 */
+       それは顔の話で、下の四つの欄の話ではない。
+
+       名札は欄の**上**、欄は**全幅**、名前と ID は顔の**下**。
+       「場所も名前も二行にしないで。はみ出さない、二行にしない範囲の名前しか
+       設定できない。これだとなん文字？」 OWNER 2026-08-28 ── 測ったら
+       320px の端末で名前は全角 **4字** だった。上限は 30 で、4字の名前しか
+       付けられない画面になっていた。
+
+       **字数ではなく並びが食っていた。** 96px の顔が名前と ID の左に居て、
+       さらに名札が 4.5em 取っていたので、欄に残るのが 80px しかない。顔の
+       下に出して名札を上に上げると、四つとも画面の幅いっぱいになる。
+       `.field` と `.field label` は三十の画面が着ている形で、新しい CSS は
+       足していない ── `.field.at`（名札が横に並ぶ形）をやめただけ。 */
     '<div class="picrow" style="align-items:center">'+
       '<label class="pav" style="position:relative;width:96px;height:96px">'+
         postFace({who:meName(), lname:langName, av:postAvatar()})+
         '<input type="file" id="me-pic" accept="image/*" '+
           'style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0"' +
           CH('meSetPic') + '></label>'+
-      '<div style="flex:1 1 auto;min-width:0">'+
-        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
-          lnField('me-nm', langName||'',
-            ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), ME.name)+'</div>'+
-        '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
-          lnField('me-hd', meHandle(),
-            ' maxlength="'+ME_MAX.handle+'" autocapitalize="none"' + IN('meSetHandle'),
-            ME.handle)+'</div>'+
-      '</div>'+
     '</div>'+
     (ME.pic? '<button class="set" style="border-bottom:none"' + DO('meDropPic') + '>'+
        '<span class="sl bad">'+esc(t('me.pic.drop'))+'</span></button>' : '')+
+    '<div class="field"><label>'+esc(t('me.name'))+'</label>'+
+      lnField('me-nm', langName||'',
+        ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), ME.name)+'</div>'+
+    '<div class="field"><label>'+esc(t('me.handle'))+'</label>'+
+      lnField('me-hd', meHandle(),
+        ' maxlength="'+ME_MAX.handle+'" autocapitalize="none"' + IN('meSetHandle'),
+        ME.handle)+'</div>'+
     '<div class="sec">'+esc(t('me.bio'))+'</div>'+
     '<div class="field"><textarea id="me-bio" maxlength="'+ME_MAX.bio+'" '+
       'placeholder="'+esc(t('me.bio.ph'))+'"' +
@@ -566,20 +572,20 @@ function openMe(){
     /* リンクと場所。**両方とも自由入力**で、書式を決めない ──
        「自由入力です。」「だって自分の国入れたい人だっているやん」
        OWNER DECISION 2026-08-25。端末の位置ではなく、国コードでもなく、
-       候補の一覧も出さない。人が打った文字がそのまま入る。
+       候補の一覧も出さない。人が打った文字がそのまま入る。**2026-08-28 に
+       リンクの形を検査する話が出たが、この決定のままにしてある** ── 書式を
+       決めないのが決定で、検査を足すのはそれに反する。
 
        この枝が書けたのは欄と関数までで、`meSetLink`/`meSetLoc` の登録
        （www/act-map.js）と `me.link` `me.loc` の鍵（www/i18n）は他の
        セッションの持ち物だった。取り込みと同じコミットで揃えた ──
        act-map は名前ではなく関数そのものを登録するので、関数より先に行を
        書くとアプリが読み込みで止まる。**分けられない。** */
-    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
+    '<div class="field"><label>'+esc(t('me.link'))+'</label>'+
       lnField('me-lk', t('me.link.ph')||'',
         ' maxlength="'+ME_MAX.link+'" autocapitalize="none"' + IN('meSetLink'),
         ME.link||'')+'</div>'+
-    '<div class="field at" style="gap:14px;margin-bottom:20px">'+
-      '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.loc'))+'</span>'+
+    '<div class="field"><label>'+esc(t('me.loc'))+'</label>'+
       lnField('me-lc', t('me.loc.ph')||'',
         ' maxlength="'+ME_MAX.loc+'"' + IN('meSetLoc'), ME.loc||'')+'</div>');
 }
