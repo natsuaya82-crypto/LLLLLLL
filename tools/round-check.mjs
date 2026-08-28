@@ -136,10 +136,26 @@ const r = await pg.evaluate(({s}) => {
   /* the buttons themselves: down when there is nowhere to go. Read off the
      rail the screen actually draws, not off the stacks -- the stacks being
      right and the button being up are two statements. */
+  /* asked of the two buttons by name and not by counting `disabled` across
+     the rail -- the bin is down too when nothing is drawn, so a count is
+     answering about a third button as well as these two */
+  function railBtn(html, g){
+    var i = html.indexOf('data-g="' + g + '"');
+    if (i < 0) return null;
+    return html.slice(i, html.indexOf('</button>', i));
+  }
   GE = newGE(l.id, 'x');
-  out.coldRail = geRail(GE.st[GE.si], 0, 'top');
+  var coldRail = geRail(GE.st[GE.si], 0);
   GE.undo = ['[]']; GE.redo = ['[]'];
-  out.warmRail = geRail(GE.st[GE.si], 0, 'top');
+  var warmRail = geRail(GE.st[GE.si], 0);
+  out.hasRedo  = !!railBtn(coldRail, 'redo');
+  out.coldDown = ['undo','redo'].every(function(g){
+    return (railBtn(coldRail, g) || '').indexOf('disabled') !== -1; });
+  out.warmUp   = ['undo','redo'].every(function(g){
+    return (railBtn(warmRail, g) || '').indexOf('disabled') === -1; });
+  /* and it is ONE rail with all five on it. 「名前無くしたなら1列でいいよ全部」 */
+  out.railRows = (coldRail.match(/class="gtools"/g) || []).length;
+  out.railBtns = (coldRail.match(/data-g="/g) || []).length;
 
   /* ---- two fingers -------------------------------------------------
      「2本指を上下に開いたらズーム、スライドさせたら移動」 OWNER 2026-08-27.
@@ -287,11 +303,11 @@ say(r.oneStroke, 'a step back over a second stroke leaves one');
 say(r.bothBack, 'and the step forward gives every dot of both back');
 say(r.hasFwd, 'there is somewhere forward to go after a step back');
 say(r.fwdGone, 'and drawing something new empties it');
-say(r.coldRail.indexOf('data-g="redo"') !== -1, 'the rail carries a step forward');
-say((r.coldRail.match(/disabled/g) || []).length === 2,
-    'with nowhere to go both steps are down');
-say((r.warmRail.match(/disabled/g) || []).length === 0,
-    'and with somewhere to go both are up');
+say(r.hasRedo, 'the rail carries a step forward');
+say(r.coldDown, 'with nowhere to go both steps are down');
+say(r.warmUp, 'and with somewhere to go both are up');
+say(r.railRows === 1 && r.railBtns === 5,
+    'and it is one rail of five -- ' + r.railRows + ' row(s), ' + r.railBtns + ' marks');
 
 /* two fingers -- 「2本指を上下に開いたらズーム、スライドさせたら移動」 */
 say(r.pinDrew === 2, 'one finger down and moving is drawing a stroke');

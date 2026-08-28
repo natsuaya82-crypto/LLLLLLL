@@ -1027,9 +1027,8 @@ function vGlyph(){
        that was left for it is not left. What is under the page is the tab
        bar, which is what .body's own padding is already about. */
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
-    geRail(st, pts, 'top')+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
-    geRail(st, pts, 'bot')+
+    geRail(st, pts)+
     '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
     '</div></div>';
 }
@@ -2205,46 +2204,44 @@ function geBendable(){
   var st=GE && GE.st[GE.st.length-1];
   return !!(st && st.pts.length>=3);
 }
-/* ---- and it is two rails, not one --------------------------------------
-   「戻す進む、ズームは四角の上にしよう。四角の下は塗りとラウンドと消去で。」
-   OWNER 2026-08-27.
+/* ---- one rail, under the paper -----------------------------------------
+   「名前無くしたなら1列でいいよ全部」 OWNER 2026-08-28.
 
-       paper's top    undo   redo
-       paper's foot   fill   round   clear
+       paper's foot   undo   redo   fill   round   clear
 
-   Where you have BEEN is over the paper and what you are DOING is under it,
-   which is the sentence the split is: the two above take the drawing
-   somewhere it has already been, and the three below act on the drawing in
-   front of you.
+   It was two for a day, over the paper and under it, and that was the right
+   answer to a rail that had seven things on it with a word printed under
+   each. Taking the words away took the reason with it: five marks across a
+   390px phone are 78px apart, which is more room than any of them had when
+   there were four with captions. A second rail bought nothing and cost a
+   band of the screen on a page whose whole subject is the square in the
+   middle of it.
 
-   The two magnifiers are not on either. 「指でやるならボタンなし」 -- two
-   fingers do that now, so a button for it would be a second way to say the
-   same thing, and the seven that were in one row here is what the caption
-   under each of them could not fit under.
+   The two magnifiers are not here either. 「指でやるならボタンなし」 -- two
+   fingers do that now, so a button would be a second way to say the same
+   thing.
 
-   `half` says which of the two this call is. WITHOUT it every button comes
-   back in one row, which is what the onboarding's own drawing step asks for
-   -- there the canvas is inside a step of its own and the rail sits under it,
-   so there is no top for a top rail to be at. */
-function geRail(st, pts, half){
-  var top = (half!=='bot'), bot = (half!=='top');
+   ONE call, and the onboarding's first step makes the same one: the drawing
+   surface is the same surface there, and after this it is the same rail
+   under it. It was briefly not -- five in one row there and two rows here --
+   which is the shape this file warns about everywhere else. */
+function geRail(st, pts){
   return '<div class="gtools">'+
-    (top?
-      geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
-      geBtn('geRedo','redo','glyph.redo', !!GE.redo.length, false) : '')+
-    (bot?
-      geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
-      geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
-      geBtn('geClear','clear','glyph.clear', !!pts, false) : '')+
+    geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
+    geBtn('geRedo','redo','glyph.redo', !!GE.redo.length, false)+
+    geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
+    geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
+    geBtn('geClear','clear','glyph.clear', !!pts, false)+
   '</div>';
 }
 
 function geTools(){
-  /* Both rails, because there are two of them now and the first one on the
-     page holds only half the buttons. querySelector answered the top one and
-     left fill, round and clear frozen at whatever they were when the screen
-     was drawn -- so the bin stayed down over a drawing that had just been
-     made. */
+  /* querySelectorAll and not querySelector, though there is one rail again.
+     For a day there were two and this answered only the first of them, so
+     fill, round and clear stayed frozen at whatever they were when the
+     screen was drawn -- the bin down over a drawing that had just been made.
+     Asking for all of them is right either way and cannot go back to being
+     wrong. */
   var boxes=document.querySelectorAll('.gtools');
   if(!boxes.length) return;
   var st=GE.st[GE.si], pts=0;
