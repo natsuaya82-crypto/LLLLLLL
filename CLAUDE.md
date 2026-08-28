@@ -1142,8 +1142,15 @@ fourteen, and seven of those is three keys and a half. Centred, that is three
 frames and a half at each end. Pushed to one end — left or right — it is one run
 of seven, ending in a half. **Either way every one of those frames is a key you
 can press**: the sheet is a grid of frames, an empty frame is a dotted key, and
-pressing one puts in a key the width of the frame it was. There is no such state
-as a blank. 「エクセルと同じだって」「キーガーないところがあるのがおかしい」
+**pressing one SELECTS it**, the way pressing anything else on this sheet does.
+A key goes into it from the buttons over the sheet, the width of the frame it
+was. There is no such state as a blank.
+「エクセルと同じだって」「キーガーないところがあるのがおかしい」
+**「全部のます触ったら選択で」OWNER 2026-08-28** — and that last one settles a
+thing the sheet had two answers to: an empty frame put a key in on the press
+while a frame left by an alignment selected itself, and the two are drawn
+identically. One habit, no exceptions: **press to select, and the buttons over
+the sheet act on what is selected.**
 
 Rounding the odd half away is gone. It existed because a row off by half a key
 lines up with no column, so pressing a column's letter lights nothing on it —
