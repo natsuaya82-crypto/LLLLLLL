@@ -618,6 +618,7 @@ defLang('pt', (function(){
       "glyph.circle"      : "Curvar",
       "glyph.fill"     : "Preencher",
       "glyph.undo"        : "Desfazer",
+      "glyph.redo"        : "Refazer",
       "glyph.clear"       : "Limpar",
       "glyph.save"        : "Salvar",
       "glyph.saved"       : "{0} salva",

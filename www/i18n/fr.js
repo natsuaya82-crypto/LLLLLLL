@@ -659,6 +659,7 @@ defLang('fr', (function(){
       "glyph.circle"      : "Arrondir",
       "glyph.fill"     : "Remplir",
       "glyph.undo"        : "Annuler",
+      "glyph.redo"        : "Rétablir",
       "glyph.clear"       : "Tout effacer",
       "glyph.save"        : "Enregistrer",
       "glyph.saved"       : "{0} enregistrée",

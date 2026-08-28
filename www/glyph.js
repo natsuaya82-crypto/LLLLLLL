@@ -564,7 +564,7 @@ function newGE(lid, label){
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
-           si:src.length?src.length-1:-1, pi:-1, undo:[], pre:null,
+           si:src.length?src.length-1:-1, pi:-1, undo:[], redo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
            raw:null, rawFor:-1, z:1, cx:400, cy:400,
@@ -610,12 +610,38 @@ function newLetter(kind){
   var l=ltNew(v>=0? {val:v} : {});
   go('letter', l.id);
 }
-/* Every change stamps a copy of the whole letter — it is a few hundred bytes,
-   so there is no reason to be clever about it. */
+/* ---- the step back, and the step forward again --------------------------
+   Every change stamps a copy of the whole letter — it is a few hundred bytes,
+   so there is no reason to be clever about it.
+
+   THE SAME SHAPE AS THE KEYBOARD'S, because 「進むはキーボードと同じで！」
+   OWNER 2026-08-27 and that sentence is the specification. `www/keyboard.js`
+   § kbNoted/kbStep is the original: two stacks, what comes off one goes onto
+   the other, and a NEW change empties the forward one. There is one
+   difference in the bookkeeping and it is not a difference in behaviour: the
+   keyboard has to keep `KBU.cur` as a string because kbNoted() is called
+   after the change, from saveKb(); here every change is stamped BEFORE it
+   happens, so the live GE.st is always the current state and there is
+   nothing to keep beside it.
+
+   ONE PLACE pushes -- gePush() -- rather than the two that used to. geMark()
+   is one road in and the end of a gesture in geUp() is the other, and both
+   have to empty the forward stack: a step forward that survives a new stroke
+   would put back a drawing that was never in front of this one. The two
+   pushed and capped the stack in two copies of the same three lines, and a
+   third road added tomorrow would have been a third. */
+var GE_STEPS=60;
+function gePush(str){
+  if(!GE) return;
+  GE.undo.push(str);
+  if(GE.undo.length>GE_STEPS) GE.undo.shift();
+  /* Drawing something new is where you are now, so there is no longer a
+     forward. Exactly kbNoted()'s `KBU.r=[]`. */
+  GE.redo=[];
+}
 function geMark(){
   if(!GE) return;
-  GE.undo.push(JSON.stringify(GE.st));
-  if(GE.undo.length>60) GE.undo.shift();
+  gePush(JSON.stringify(GE.st));
 }
 /* ---- the toolbar ---------------------------------------------------------
    Two marks, because two is what a hand actually makes: a stroke and a ring.
@@ -634,6 +660,10 @@ var GICON={
      does. Stroked like the rest of them, so it goes gold with them. */
   'fill'  : '<path d="M12 4.4 20 19.6H4z"/><path d="M7.4 16.4h9.2M9.2 13h5.6M10.6 9.6h2.8"/>',
   'undo'  : '<path d="M4.5 9.5h10a5 5 0 0 1 0 10h-6"/><path d="M8 5.5 4 9.5l4 4"/>',
+  /* The same curve turned back the other way -- what every program that has
+     ever had these two has drawn, and what ICON_REDO already draws on the
+     sheet that builds a keyboard. 「進むはキーボードと同じで！」 */
+  'redo'  : '<path d="M19.5 9.5h-10a5 5 0 0 0 0 10h6"/><path d="M16 5.5l4 4-4 4"/>',
   'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
 };
 /* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
@@ -1327,14 +1357,31 @@ function geFill(){
   if(st && st.pts.length){ if(GE.fill) st.fill=true; else delete st.fill; }
   GE.pi=-1; render();
 }
-function geUndo(){
-  if(!GE.undo.length) return;
-  GE.st=JSON.parse(GE.undo.pop());
+/* Both steps are the same move in opposite directions, so they are one
+   function told which way -- kbStep()'s own sentence. What comes off one
+   stack goes onto the other, and the drawing put back is a copy, JSON out
+   and JSON in, so nothing on either stack is the live object.
+
+   It goes onto the other stack BEFORE the drawing is replaced, because the
+   thing a step forward gives back is the drawing you were standing on when
+   you pressed back. */
+/* geHist and not geStep: geStep() is the lattice's spacing, ten lines from
+   the top of this file, and a second `function geStep` would simply have
+   replaced it -- every dot, every letter and every font measured off
+   undefined, with nothing thrown. */
+function geHist(fwd){
+  if(!GE) return;
+  var from=fwd? GE.redo : GE.undo, to=fwd? GE.undo : GE.redo, str;
+  if(!from.length) return;
+  str=from.pop();
+  to.push(JSON.stringify(GE.st));
+  if(to.length>GE_STEPS) to.shift();
+  GE.st=JSON.parse(str);
   GE.si=GE.st.length-1; GE.pi=-1;
-  /* What comes back from undo is a finished drawing, not a stroke still under
-     the finger, so it is sealed like one. Left open, the last stroke's dots
-     stayed live and the next press -- meant to begin a new line -- landed on
-     one of them and dragged the old line out of shape instead. */
+  /* What comes back from a step is a finished drawing, not a stroke still
+     under the finger, so it is sealed like one. Left open, the last stroke's
+     dots stayed live and the next press -- meant to begin a new line --
+     landed on one of them and dragged the old line out of shape instead. */
   GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
   /* What came back is a drawing, not the stroke the rail was pointing at:
      the straight copy behind it belonged to a stroke that may no longer be
@@ -1343,6 +1390,8 @@ function geUndo(){
   GE.round=false; GE.flat=null; GE.flatBy='';
   render();
 }
+function geUndo(){ geHist(false); }
+function geRedo(){ geHist(true); }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
   GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
 /* Putting the drawing where the letter keeps it, and nothing else -- no
@@ -1923,10 +1972,7 @@ function geUp(ev){
      first tap files a snapshot; the taps that extend it do not. */
   if(GE.pre && GE.pre!==JSON.stringify(GE.st)){
     var only=GE.st[GE.si], fresh=!!(only && only.pts.length<=1);
-    if(fresh || GE.moved || GE.hit){
-      GE.undo.push(GE.pre);
-      if(GE.undo.length>60) GE.undo.shift();
-    }
+    if(fresh || GE.moved || GE.hit) gePush(GE.pre);
   }
   GE.pre=null;
   geDraw(); geTools();
@@ -1969,7 +2015,8 @@ function geRail(st, pts, half){
   var top = (half!=='bot'), bot = (half!=='top');
   return '<div class="gtools">'+
     (top?
-      geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false) : '')+
+      geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
+      geBtn('geRedo','redo','glyph.redo', !!GE.redo.length, false) : '')+
     (bot?
       geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
       geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
@@ -1992,6 +2039,7 @@ function geTools(){
   var S={ 'circle':[geBendable(), !!GE.round],
           'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
+          'redo'  :[!!GE.redo.length, false],
           'clear' :[!!pts, false] };
   var bi, b, i, s, g, cl;
   for(bi=0;bi<boxes.length;bi++){

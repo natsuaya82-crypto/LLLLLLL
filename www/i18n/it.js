@@ -611,6 +611,7 @@ defLang('it', (function(){
       "glyph.circle"      : "Curvare",
       "glyph.fill"     : "Riempi",
       "glyph.undo"        : "Indietro",
+      "glyph.redo"        : "Avanti",
       "glyph.clear"       : "Svuota",
       "glyph.save"        : "Salva",
       "glyph.saved"       : "{0} salvata",

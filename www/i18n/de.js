@@ -599,6 +599,7 @@ defLang('de', (function(){
       "glyph.circle"      : "Runden",
       "glyph.fill"     : "Füllen",
       "glyph.undo"        : "Zurück",
+      "glyph.redo"        : "Vor",
       "glyph.clear"       : "Leeren",
       "glyph.save"        : "Sichern",
       "glyph.saved"       : "{0} gesichert",

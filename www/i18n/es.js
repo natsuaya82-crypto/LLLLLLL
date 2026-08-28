@@ -571,6 +571,7 @@ defLang('es', (function(){
       "glyph.circle"      : "Curvar",
       "glyph.fill"     : "Relleno",
       "glyph.undo"        : "Deshacer",
+      "glyph.redo"        : "Rehacer",
       "glyph.clear"       : "Vaciar",
       "glyph.save"        : "Guardar",
       "glyph.saved"       : "{0} guardada",

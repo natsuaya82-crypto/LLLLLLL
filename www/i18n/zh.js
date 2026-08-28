@@ -619,6 +619,7 @@ defLang('zh', (function(){
       "glyph.circle"      : "圆",
       "glyph.fill"     : "填充",
       "glyph.undo"        : "撤销",
+      "glyph.redo"        : "重做",
       "glyph.clear"       : "清空",
       "glyph.save"        : "保存",
       "glyph.saved"       : "已保存 {0}",

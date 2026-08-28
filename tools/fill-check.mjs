@@ -160,6 +160,30 @@ const r = await pg.evaluate(({s}) => {
      down and still in GE comes back twice the next time the editor opens */
   out.leftGone = (GE === null);
 
+  /* ---- and it survives a step back and a step forward -----------------
+     「進むはキーボードと同じで！」 OWNER 2026-08-27.
+
+     A fill is a flag on a stroke, so it travels with the drawing on both
+     stacks -- and that is exactly the kind of claim this file exists to
+     stop trusting. Nothing about a dropped fill throws: the letter comes
+     back a line where it was an area, on a canvas that renders. So it is
+     counted in pixels through the real drawing code, on the way back and on
+     the way forward again, the same as everything else here. */
+  GE = newGE(l.id, ltName(l));
+  GE.st = [{ pts: tri }]; GE.si = 0; GE.seal = true;
+  var plain = ink(GE.st);
+  geFill();                                  /* the button, not the flag */
+  out.fFilled = ink(GE.st);
+  geUndo();
+  out.fBack = ink(GE.st);
+  geRedo();
+  out.fFwd  = ink(GE.st);
+  out.fPlain = plain;
+  /* and the flag itself, not only the pixels: a stroke that came back
+     without it inks the same as one that never had it, and only one of
+     those two is what somebody drew */
+  out.fFlag = !!(GE.st[0] && GE.st[0].fill);
+
   /* and the editor shows an area in its own colour, not the letter's */
   out.green = cssVar('--fill') || '';
   return out;
@@ -173,6 +197,13 @@ say(r.filled > r.outline * 2,
     'a triangle inks ' + r.outline + 'px drawn and ' + r.filled + 'px filled');
 say(r.lineFill === r.line,
     'two points have no inside: ' + r.line + 'px either way');
+say(r.fFilled > r.fPlain * 2,
+    'the fill button blackens the triangle: ' + r.fPlain + 'px -> ' + r.fFilled + 'px');
+say(r.fBack === r.fPlain,
+    'a step back takes the area off again -- ' + r.fBack + 'px');
+say(r.fFwd === r.fFilled,
+    'and the step forward gives the same area back -- ' + r.fFwd + 'px');
+say(r.fFlag, 'and the stroke carries the flag again, not only the pixels');
 say(r.bowFill > r.bow,
     'a stroke that crosses itself still inks: ' + r.bow + ' -> ' + r.bowFill + 'px');
 say(r.piecesFill > r.pieces * 2,

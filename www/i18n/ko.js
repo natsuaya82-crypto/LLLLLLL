@@ -790,6 +790,7 @@ defLang('ko', (function(){
       "glyph.circle"      : "원",
       "glyph.fill"     : "칠하기",
       "glyph.undo"        : "되돌리기",
+      "glyph.redo"        : "다시 실행",
       "glyph.clear"       : "모두 지우기",
       "glyph.save"        : "저장",
       "glyph.saved"       : "{0} 저장했습니다",

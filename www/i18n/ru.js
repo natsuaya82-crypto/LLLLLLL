@@ -616,6 +616,7 @@ defLang('ru', (function(){
       "glyph.circle"      : "Дуга",
       "glyph.fill"     : "Заливка",
       "glyph.undo"        : "Назад",
+      "glyph.redo"        : "Вперёд",
       "glyph.clear"       : "Очистить",
       "glyph.save"        : "Сохранить",
       "glyph.saved"       : "{0} сохранена",

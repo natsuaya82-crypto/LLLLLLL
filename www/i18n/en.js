@@ -516,6 +516,7 @@ defLang('en', (function(){
       'glyph.circle'      : "Round",
       'glyph.fill'     : "Fill",
       'glyph.undo'        : "Undo",
+      'glyph.redo'        : "Redo",
       'glyph.clear'       : "Clear",
       'glyph.save'        : "Save",
       'glyph.saved'       : "{0} saved",

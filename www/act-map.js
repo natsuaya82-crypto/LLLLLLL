@@ -84,6 +84,7 @@ act('ltWobEnd', ltWobEnd);
 act('ltForUnitGo', ltForUnitGo);
 act('ltSave', ltSave);
 act('geUndo', geUndo);
+act('geRedo', geRedo);
 act('geSave', geSave);
 act('geHintShow', geHintShow);
 act('go', go);

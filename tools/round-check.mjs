@@ -76,6 +76,70 @@ const r = await pg.evaluate(({s}) => {
   out.coldOff = !geBendable();
   GE.st = [{ pts: [P(4,4), P(10,10), P(4,16)] }]; GE.si = 0;
   out.warmOn = geBendable();
+
+  /* ---- and the step forward gives the bend back ----------------------
+     「進むはキーボードと同じで！」 OWNER 2026-08-27, so what is asked here
+     is what kb-check asks of kbRedo: what came off comes back EXACTLY, not
+     a shape bent a second time. Bending is not a pure function of the dots
+     -- geCircle reads GE.flat and GE.flatBy, which a step back throws away
+     -- so a step forward that re-ran the bend instead of putting the drawing
+     back would come out a different letter, on a canvas that renders and in
+     a font that installs. */
+  function steps(pts){
+    GE = newGE(l.id, 'x');
+    GE.st = [{ pts: JSON.parse(JSON.stringify(pts)) }];
+    GE.si = 0; GE.seal = true;
+    var drawn = JSON.stringify(GE.st);
+    geCircle();
+    var bent = JSON.stringify(GE.st);
+    geUndo();
+    var back = JSON.stringify(GE.st);
+    var midU = GE.undo.length, midR = GE.redo.length;
+    geRedo();
+    return { drawn:drawn, bent:bent, back:back, fwd:JSON.stringify(GE.st),
+             midU:midU, midR:midR, endU:GE.undo.length, endR:GE.redo.length };
+  }
+  var b = steps([P(4,4), P(10,10), P(4,16)]);
+  out.undoUnbends = (b.back === b.drawn);
+  out.redoRebends = (b.fwd === b.bent);
+  out.stackMid    = [b.midU, b.midR];
+  out.stackEnd    = [b.endU, b.endR];
+
+  /* a straight line is untouched by ROUND, so a step either way over it is
+     the same drawing three times -- and NOT a ring */
+  var d2 = [P(10,3),P(10,7),P(10,11),P(10,16)];
+  var st2 = steps(d2);
+  out.lineSteps = (st2.drawn === st2.bent && st2.bent === st2.back &&
+                   st2.back === st2.fwd);
+
+  /* every dot, over a drawing of more than one stroke: what a step back
+     gives up, a step forward gives back, to the number */
+  GE = newGE(l.id, 'x');
+  GE.st = [{ pts: [P(3,3), P(3,10)] }]; GE.si = 0; GE.seal = true;
+  geMark();
+  GE.st.push({ pts: [P(8,4), P(14,4), P(14,14)] }); GE.si = 1;
+  var two = JSON.stringify(GE.st);
+  geUndo();
+  out.oneStroke = (GE.st.length === 1);
+  geRedo();
+  out.bothBack = (JSON.stringify(GE.st) === two);
+
+  /* and drawing something new empties the forward stack -- kbNoted()'s own
+     `KBU.r = []`. A step forward that survived would put back a drawing this
+     one was never in front of. */
+  geUndo();
+  out.hasFwd = (GE.redo.length === 1);
+  geMark();
+  GE.st.push({ pts: [P(6,17), P(16,17)] }); GE.si = GE.st.length - 1;
+  out.fwdGone = (GE.redo.length === 0);
+
+  /* the buttons themselves: down when there is nowhere to go. Read off the
+     rail the screen actually draws, not off the stacks -- the stacks being
+     right and the button being up are two statements. */
+  GE = newGE(l.id, 'x');
+  out.coldRail = geRail(GE.st[GE.si], 0, 'top');
+  GE.undo = ['[]']; GE.redo = ['[]'];
+  out.warmRail = geRail(GE.st[GE.si], 0, 'top');
   return out;
 }, { s: seed.toString() });
 await br.close();
@@ -90,5 +154,24 @@ say(r.bendBack, 'and pressing again gives back exactly what was drawn');
 say(r.coldOff, 'with nothing drawn there is nothing to bend and the button is down');
 say(r.warmOn, 'with a stroke drawn it is up again');
 
+/* the step forward -- 「進むはキーボードと同じで！」 */
+say(r.undoUnbends, 'a step back over ROUND gives back the stroke as drawn');
+say(r.redoRebends, 'and the step forward gives back the bent one EXACTLY');
+say(r.stackMid[0] === 0 && r.stackMid[1] === 1,
+    'after the step back there is nothing behind and one thing ahead -- ' +
+    r.stackMid.join('/'));
+say(r.stackEnd[0] === 1 && r.stackEnd[1] === 0,
+    'and after the step forward it is the other way round -- ' + r.stackEnd.join('/'));
+say(r.lineSteps, 'a straight line is the same drawing through both steps -- still not a ring');
+say(r.oneStroke, 'a step back over a second stroke leaves one');
+say(r.bothBack, 'and the step forward gives every dot of both back');
+say(r.hasFwd, 'there is somewhere forward to go after a step back');
+say(r.fwdGone, 'and drawing something new empties it');
+say(r.coldRail.indexOf('data-g="redo"') !== -1, 'the rail carries a step forward');
+say((r.coldRail.match(/disabled/g) || []).length === 2,
+    'with nowhere to go both steps are down');
+say((r.warmRail.match(/disabled/g) || []).length === 0,
+    'and with somewhere to go both are up');
+
 if (bad.length) { console.error('\nround: ' + bad.length + ' failed'); process.exit(1); }
-console.log('\nround: done to a stroke, reversible, and it never bends a straight one.');
+console.log('\nround: done to a stroke, reversible both ways, and it never bends a straight one.');
