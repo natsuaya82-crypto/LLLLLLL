@@ -2183,42 +2183,42 @@ function postWhen(at){
    which is what stood in before there were accounts. The face and the head of
    the row both need it and they were answering it separately. */
 function postWho(p){ return String((p && (p.who || p.lname)) || ''); }
-/* The gloss, word by word, and a word is THREE lines now.
+/* The gloss, word by word, and a word is TWO lines.
 
-     「自作文字 / アルファベットでどう表記されるか / それを翻訳した形
-       にすべきでアルファベットならそもそも出さなくていいのよ」
-     「アルファベットで打っているときは、2段目を出さない ── 1段目と同じ綴りが
-       二回並ぶだけで意味がないから。これが正解」 OWNER 2026-08-28
+     「やっぱり、タイムラインも投稿も2段で。赤文字消して。」 OWNER 2026-08-28
+     ── 打った行と、翻訳した形。アルファベット表記の段は作らない。
 
-   It was one line: the meaning if the dictionary knew the word, and the
-   spelling in the colour of a problem if it did not. So the spelling had no
-   line of its own and appeared only as a failure, and 「同じ綴が並ぶと意味
-   わからんやろ」 -- typed in the alphabet, the spelling IS what is on the
-   line above, so a second copy of it says nothing.
+   It was ONE line: the meaning if the dictionary knew the word, and the
+   spelling **in the colour of a problem** if it did not. Two things were
+   wrong with that and the owner named both. The spelling had no line of its
+   own, so it appeared only as a failure; and a word typed on the phone's own
+   keyboard was never going to be in this dictionary, so calling it a problem
+   said nothing 「赤文字消して」.
 
-   Three lines, and the middle one only when there is something for it to
-   say: typed in the person's own letters, the alphabet spelling is a
-   different string from what was typed and is worth a line; typed in the
-   alphabet, it is the same string and the line is not drawn.
+     1  what was typed  -- the drawn letters, or the alphabet if that is what
+                           was typed. Set in the drawn letters on exactly the
+                           condition the field above it uses.
+     2  what it means
 
-   **The red is gone with it.** A word the dictionary does not know has its
-   spelling on its own line now, so it has nowhere to be missing FROM -- and
-   the meaning line is simply empty, which is what "no meaning" looks like.
+   A third line for the alphabet spelling was asked for and then withdrawn:
+   typed in the alphabet it is the same string twice
+   「アルファベットで打ってるのに同じ綴が並ぶと意味わからんやろ」, and two
+   lines is the answer for both sides of the app.
 
-   No class per line. Which line is which is WHERE it is, because the middle
-   one is not always there: first is what was typed, last is the meaning, and
-   anything between them is the spelling. A class for a line that only exists
-   while somebody is typing in their own letters is a class no walk ever puts
-   on anything, which `press` reports and is right to.
+   No class per line. Which line is which is WHERE it is -- first is what was
+   typed, last is what it means.
 
-   This is the composer's row and nothing else's -- `pwGl()` is the only
-   caller and `.pwgl` is worn in one place. The timeline draws the meaning the
-   post carries and has never drawn this. */
+   **What the second line says for a word the dictionary does not know is NOT
+   decided yet.** It is empty here, and that is a placeholder rather than an
+   answer -- the owner has been asked whether it should be empty or carry the
+   spelling in the ordinary colour. Do not read this line as the decision.
+
+   `pwGl()` is the only caller and `.pwgl` is worn in one place, so this is
+   the composer's row. The timeline draws the meaning the post carries. */
 function postGlossHTML(gl){
   return (gl||[]).map(function(g){
     return '<span class="pwg">'+
       '<span'+(g.face? ' class="tfont"' : '')+'>'+esc(g.own? g.raw : g.w)+'</span>'+
-      (g.own? '<span>'+esc(g.w)+'</span>' : '')+
       '<span>'+esc(g.m)+'</span>'+
       '</span>';
   }).join('');
