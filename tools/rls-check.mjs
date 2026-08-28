@@ -266,18 +266,29 @@ const CASES = [
   ['and nobody else sees it',                 'denied', B, 0,
     `select 1 from language where id='${LD}'`],
   /* And what the language is MADE of. A slice is the dictionary, the
-     alphabet, the keyboard -- the whole of what somebody spends months on --
-     and it is the one thing in this file that nobody but its owner may read.
-     Not even for a published language: publishing is a copy somebody is
-     given, not a door into the phone. */
+     alphabet, the keyboard -- the whole of what somebody spends months on.
+     LD is A's and is NOT published, so none of it is anybody else's, and
+     that is the half that may never move. */
   ['and puts its dictionary in it',           'ok',     A, 0,
     `insert into slice(language,kind,body) values ('${LD}','words','[1]')`],
+  /* An ARTICLE on the unpublished one, so that the two claims below are asked
+     of a row that is really there. Without it they select over nothing and
+     pass without touching the policy. */
+  ['and an article on it',                    'ok',     A, 0,
+    `insert into slice(language,kind,body) values ('${LD}','wld','{"where":"a valley"}')`],
   ['and reads it back',                       'ok',     A, 0,
     `select 1 from slice where language='${LD}' and kind='words'`],
   ['and writes over it',                      'ok',     A, 0,
     `update slice set body='[1,2]', no=2 where language='${LD}' and kind='words'`],
   ['B cannot read it',                        'denied', B, 0,
     `select 1 from slice where language='${LD}'`],
+  /* THE ONE THAT MAY NEVER MOVE. \u300c\u975e\u516c\u958b\u306b\u3057\u305f\u3089\u975e\u516c\u958b\u300d -- an unpublished
+     language's article is not readable by anybody else, and the About page is
+     exactly what somebody would come for. */
+  ['nor the article of a language kept private', 'denied', B, 0,
+    `select 1 from slice where language='${LD}' and kind='wld'`],
+  ['nor its letters, nor its keyboard',       'denied', B, 0,
+    `select 1 from slice where language='${LD}' and kind in ('letters','kb','snd','script')`],
   ['B cannot write into it',                  'denied', B, 0,
     `insert into slice(language,kind,body) values ('${LD}','letters','[]')`],
   ['B cannot rewrite it',                     'denied', B, 0,
@@ -286,12 +297,54 @@ const CASES = [
     `delete from slice where language='${LD}'`],
   ['nor can somebody with no account at all',  'denied', B, 1,
     `select 1 from slice where language='${LD}'`],
-  /* L is A's and it is PUBLISHED by this point in the file. A published
-     language is a copy somebody is given; what it is made of stays A's. */
-  ['B cannot read a published language\u2019s slices', 'denied', B, 0,
-    `select 1 from slice where language='${L}'`],
+  ['nor read a private article with no account', 'denied', B, 1,
+    `select 1 from slice where language='${LD}' and kind='wld'`],
+
+  /* L is A's and it is PUBLISHED by this point in the file.
+     ---------------------------------------------------------------------
+     \u300c\u3053\u306e\u8a00\u8a9e\u306b\u3064\u3044\u3066\u306f\u516c\u958b\u3057\u305f\u3089\u516c\u958b\u3001\u975e\u516c\u958b\u306b\u3057\u305f\u3089\u975e\u516c\u958b\u3060\u3051\u3069\u305d\u308c\u4ee5\u5916\u306b
+       \u3042\u3093\u306e\u304b\uff1f\u300d OWNER 2026-08-28. Two states and no third.
+
+     IT NEEDS REAL ROWS, and until 2026-08-28 it had none. `L` carried no
+     slice at all, so the claim that used to stand here -- "B cannot read a
+     published language's slices" -- was a select over an empty table. It
+     passed on the day it was written, it passed after the policy it was
+     about had been rewritten, and it never once touched the policy. A claim
+     that passes for the wrong reason is the thing this file exists to
+     catch, and this one was that for as long as it existed. */
+  ['A puts the article on the published one', 'ok',     A, 0,
+    `insert into slice(language,kind,body) values ('${L}','wld','{"where":"a valley"}')`],
+  ['and its letters',                         'ok',     A, 0,
+    `insert into slice(language,kind,body) values ('${L}','letters','[1]')`],
+  ['and its dictionary',                      'ok',     A, 0,
+    `insert into slice(language,kind,body) values ('${L}','words','[1]')`],
+  ['and its grammar',                         'ok',     A, 0,
+    `insert into slice(language,kind,body) values ('${L}','phases','[2]')`],
+  /* Published is published: the five the About page reads are readable, and
+     reading needs no account, the same as a post and a profile. */
+  ['B reads a published language\u2019s article', 'ok', B, 0,
+    `select 1 from slice where language='${L}' and kind='wld'`],
+  ['and its letters',                         'ok',     B, 0,
+    `select 1 from slice where language='${L}' and kind='letters'`],
+  ['and so does somebody with no account at all', 'ok', B, 1,
+    `select 1 from slice where language='${L}' and kind='wld'`],
+  /* AND THE DICTIONARY IS NOT THE PAGE. \u300c\u8a00\u8a9e\u30da\u30fc\u30b8\u516c\u958b\u3068\u5358\u8a9e\u3084\u6587\u5b57\u306edl\u53ef\u80fd\u306f
+     \u5225\u3060\u3057\u300d OWNER -- being allowed to READ somebody's page and being handed
+     the months of work behind it are two questions, and publishing the page
+     answers only the first. */
+  ['but not its dictionary',                  'denied', B, 0,
+    `select 1 from slice where language='${L}' and kind='words'`],
+  ['nor its grammar',                         'denied', B, 0,
+    `select 1 from slice where language='${L}' and kind='phases'`],
+  ['nor the dictionary with no account at all', 'denied', B, 1,
+    `select 1 from slice where language='${L}' and kind='words'`],
+  /* Publishing is a page being readable and never a way in. */
   ['B cannot put a slice on A\u2019s language', 'denied', B, 0,
-    `insert into slice(language,kind,body) values ('${L}','words','[]')`],
+    `insert into slice(language,kind,body) values ('${L}','lines','[]')`],
+  ['nor rewrite the article it can read',     'denied', B, 0,
+    `update slice set body='{}' where language='${L}' and kind='wld'`],
+  ['nor delete it',                           'denied', B, 0,
+    `delete from slice where language='${L}' and kind='wld'`],
 
   /* --- the record that settles arguments without anybody judging one --- */
   ['A records publishing A\u2019s language',  'ok',     A, 0,
@@ -793,14 +846,29 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename='post' and cmd='SELECT'
         and coalesce(qual,'') not like '%hidden_at%'`, '0'],
-  /* What a language is made of is the one thing in this file with no public
-     face at all. Every other table has a select policy somebody else passes;
-     this one must not, and "nobody has tried the right query yet" is not the
-     same statement. */
-  ['what a language is made of is nobody else\u2019s', `
+  /* What a language is made of has two doors and not one, and the shape of
+     the policy has to show both. \u300c\u516c\u958b\u3057\u305f\u3089\u516c\u958b\u3001\u975e\u516c\u958b\u306b\u3057\u305f\u3089\u975e\u516c\u958b\u300d
+     OWNER 2026-08-28.
+
+     The owner's door: whoever owns the language, at any setting. */
+  ['a language is always its owner\u2019s', `
      select count(*) from pg_policies
       where tablename='slice' and cmd='SELECT'
         and coalesce(qual,'') not like '%owner = auth.uid()%'`, '0'],
+  /* And the published door, which is what the About page is read through. */
+  ['and published is what opens the other one', `
+     select count(*) from pg_policies
+      where tablename='slice' and cmd='SELECT'
+        and coalesce(qual,'') not like '%published_at%'`, '0'],
+  /* AND IT IS NOT A BLANKET. Publishing a page opens the page -- \u300c\u8a00\u8a9e\u30da\u30fc\u30b8
+     \u516c\u958b\u3068\u5358\u8a9e\u3084\u6587\u5b57\u306edl\u53ef\u80fd\u306f\u5225\u3060\u3057\u300d -- so the policy names the kinds it
+     opens, and a policy that stopped naming any would be publishing handing
+     over the dictionary. The cases above prove which kinds; this proves that
+     the question is asked at all. */
+  ['and it opens named kinds, not everything', `
+     select count(*) from pg_policies
+      where tablename='slice' and cmd='SELECT'
+        and coalesce(qual,'') not like '%kind%'`, '0'],
   /* A language belongs to the ACCOUNT. Pointed at profile it could not be
      made until somebody had a handle, which is the one thing the first launch
      does not ask for. */
