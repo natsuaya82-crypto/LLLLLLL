@@ -176,10 +176,17 @@ Pushing to `master` is the owner's call and is asked for each time.
   answered `'ob'` for a brand new phone, correctly, and `vOb()` drew the door
   anyway because the door was the step `ob.step` was sitting on. So
   `open-check` boots from an empty `localStorage` and reads `#app` rather than
-  asking `appIs()` — three states, three screens: new phone → the onboarding,
-  finished then signed out → the door, finished and signed in → the app.
-  `appIs()` (`www/shell.js`, `b62ac29`) is the one that decides the three and
-  is correct; it was never the bug.
+  asking `appIs()` — **four** states, four screens: new phone → the
+  onboarding, part-way through in the walk → the app dimmed with one thing
+  lit, finished then signed out → the door, finished and signed in → the app.
+
+  The fourth is there because putting the door back at the end turned it up.
+  `appIs()` answers `'app'` for the walk before it asks about the session —
+  the walk IS the app — and it did not have to while the door was first,
+  because by then somebody was always signed in. Without that line a new
+  phone draws its first letter, presses done, and is shown the door. The
+  three answers `b62ac29` decided are unchanged: `obTourOn()` is
+  `!SET.done && ob.step===OB_TOUR`, false for every finished phone.
 
 ## 3. What is NOT built, however much it looks like it is
 

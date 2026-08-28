@@ -246,7 +246,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   終わりの扉がその言語のアカウントになる、という形で両立する。
 - Affected features: `www/onboard.js`（`OB_DRAW=0, OB_NAME=1, OB_IN=2,
   OB_TOUR=3`、`obName`/`obNameLater`/`obWhoGo`/`obFinish`）。`appIs()`
-  （`www/shell.js`）は**触らない** ── 2026-08-27 の三状態はそのまま正しい。
+  （`www/shell.js`）に一行 ── **歩き回りの間は 'app'**。2026-08-27 が決めた
+  三つの答えは一つも変えていない。扉が一歩目だった間、歩き回りは必ず
+  サインイン済みで走っていたので `appIs()` は偶然正しかった。扉を最後に
+  戻すと歩き回りはアカウントより先に走るので、この行が無いと**文字を描いた
+  直後に扉が出る** ── オーナーが報告した画面が一歩あとに出ていた。
 - Affected data: **何も消えず、新しく保存されるものも無い。** ただし
   **扉が最後になったことで、アカウントより先に文字と言語ができる** ──
   `obFinish()` が `netLangSync()` を呼ぶ。これが無いと、その人が描いたものは
