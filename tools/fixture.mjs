@@ -1367,6 +1367,12 @@ export function halfDone(){
     ['a face already chosen', () => {
         ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
         openMe(); const h = vForm(); ME.pic = ''; return h; }],
+    /* And the screen that face goes to when it is touched again. Taking the
+       picture off lives HERE now and nowhere else, so a walk that only ever
+       opened the profile called meDropPic an entry no screen names. */
+    ['the picture, touched again', () => {
+        ME.pic = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        openMePic(); const h = vForm(); ME.pic = ''; return h; }],
     ['searching the notes', () => { ntFind = true; ntQ = 'a';
                                     window.route='notes'; NAV=[{r:'notes'}];
                                     return vNotes(); }],

@@ -420,6 +420,8 @@ defLang('pt', (function(){
       'me.link.ph' : "https://",
       'me.loc'    : "Localização",
       'me.loc.ph' : "",
+      'me.pic' : "Foto",
+      'me.pic.change' : "Trocar a foto",
       'me.pic.drop' : "Remover a foto",
       'me.pic.bad' : "Não foi possível ler essa imagem",
       'notes.search' : "Buscar nas notas",
