@@ -779,7 +779,7 @@ defLang('pt', (function(){
       "set.pw.done"         : "Palavra-passe alterada",
       "net.needpw"         : "Preencha os dois.",
       "confirm.wipe"     : "Apagar tudo? A sua conta e todas as publicações, fotografias e gravações saem do servidor; todos os idiomas, letras e definições saem deste telefone, com as cópias de segurança. Não é possível desfazer.",
-      "confirm.wipe.langs": "Apagar os dados deste telefone? Saem todos os idiomas que estão nele: as palavras, as letras, o sistema de escrita, o teclado e as notas. A sua conta fica, e as suas publicações e definições também. As cópias de segurança ficam. Nada deste telefone pode ser recuperado.",
+      "confirm.wipe.langs": "Apagar os dados deste telefone? Saem todos os idiomas que estão nele: as palavras, as letras, o sistema de escrita, o teclado e as notas. As cópias de segurança também saem. As gravações e as folhas exportadas ficam. A sua conta fica, e as suas publicações e definições também. Nada deste telefone pode ser recuperado.",
       "langs.title"      : "Idiomas",
       "langs.mine"       : "Seus idiomas",
       "langs.reading"    : "Leitura",

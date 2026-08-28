@@ -304,6 +304,31 @@ function bkDropAll(then){
     .then(function(){ if(then) then(); })
     ['catch'](function(){ if(then) then(); });
 }
+/* The language backups alone, and nothing else in Documents.
+   「全部消えるって」OWNER 2026-08-28 -- said about 「端末のデータを消す」, which
+   is the languages on this phone. The backup files are the languages on this
+   phone: they are the copy that outlives the app, they sit where the Files app
+   shows them, and leaving them there is that row being untrue somewhere a
+   person can look.
+
+   `dropKept` and not `dropAll`, and the difference is the whole reason this
+   function exists rather than the one above being reused. `dropAll` empties
+   all three folders -- the recordings and the exported sheets with the
+   backups -- and that is the ACCOUNT going. Nobody has said a recording goes
+   when somebody tidies this phone's languages, so it does not. `dropKept` is
+   the Swift side's own line: `.json` under Languages/, generations included,
+   and it does not touch Documents itself.
+
+   Two callers now, and they are the two rows that take something away. Neither
+   of them knows which native call it is making -- that sentence is written
+   once, here, twice. */
+function bkDropKept(then){
+  var p=sharePlug();
+  if(!p){ if(then) then(); return; }
+  p('LinguaShare', 'dropKept', {})
+    .then(function(){ if(then) then(); })
+    ['catch'](function(){ if(then) then(); });
+}
 function bkRestore(then){
   var p=sharePlug();
   if(!p){ if(then) then(0); return; }

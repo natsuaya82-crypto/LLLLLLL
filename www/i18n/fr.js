@@ -820,7 +820,7 @@ defLang('fr', (function(){
       "set.pw.done"         : "Mot de passe changé",
       "net.needpw"         : "Remplissez les deux.",
       "confirm.wipe"     : "Tout effacer ? Votre compte et chaque publication, photo et enregistrement quittent le serveur ; chaque langue, lettre et réglage quitte ce téléphone, avec les sauvegardes. Rien ne peut être récupéré.",
-      "confirm.wipe.langs": "Effacer les données de ce téléphone ? Toutes les langues qui s'y trouvent partent : les mots, les lettres, le système d'écriture, le clavier et les notes. Votre compte reste, vos publications et vos réglages aussi. Les sauvegardes restent. Rien de ce téléphone ne peut être récupéré.",
+      "confirm.wipe.langs": "Effacer les données de ce téléphone ? Toutes les langues qui s'y trouvent partent : les mots, les lettres, le système d'écriture, le clavier et les notes. Les sauvegardes partent aussi. Les enregistrements et les feuilles exportées restent. Votre compte reste, vos publications et vos réglages aussi. Rien de ce téléphone ne peut être récupéré.",
       "langs.title"      : "Langues",
       "langs.mine"       : "Vos langues",
       "langs.reading"    : "Lecture",

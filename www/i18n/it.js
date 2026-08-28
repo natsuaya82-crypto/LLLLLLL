@@ -773,7 +773,7 @@ defLang('it', (function(){
       "set.pw.done"         : "Password cambiata",
       "net.needpw"         : "Compila entrambi.",
       "confirm.wipe"     : "Cancellare tutto? Il tuo account e ogni post, fotografia e registrazione se ne vanno dal server; ogni lingua, lettera e impostazione se ne va da questo telefono, insieme ai file di backup. Nulla può essere recuperato.",
-      "confirm.wipe.langs": "Cancellare i dati di questo telefono? Se ne va ogni lingua che c'è sopra: le parole, le lettere, il sistema di scrittura, la tastiera e le note. Il tuo account resta, e restano anche i tuoi post e le tue impostazioni. I file di backup restano. Da questo telefono non si può recuperare nulla.",
+      "confirm.wipe.langs": "Cancellare i dati di questo telefono? Se ne va ogni lingua che c'è sopra: le parole, le lettere, il sistema di scrittura, la tastiera e le note. Se ne vanno anche i file di backup. Le registrazioni e i fogli esportati restano. Il tuo account resta, e restano anche i tuoi post e le tue impostazioni. Da questo telefono non si può recuperare nulla.",
       "langs.title"      : "Lingue",
       "langs.mine"       : "Le tue lingue",
       "langs.reading"    : "Lettura",

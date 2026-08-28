@@ -761,7 +761,7 @@ defLang('de', (function(){
       "set.pw.done"         : "Passwort geändert",
       "net.needpw"         : "Beides ausfüllen.",
       "confirm.wipe"     : "Alles löschen? Dein Konto und jeder Beitrag, jedes Foto und jede Aufnahme gehen vom Server; jede Sprache, jeder Buchstabe und jede Einstellung geht von diesem Telefon, samt den Sicherungsdateien. Nichts lässt sich zurückholen.",
-      "confirm.wipe.langs": "Die Daten auf diesem Telefon löschen? Jede Sprache darauf geht: die Wörter, die Buchstaben, das Schriftsystem, die Tastatur und die Notizen. Dein Konto bleibt, deine Beiträge und Einstellungen auch. Die Sicherungsdateien bleiben. Von diesem Telefon lässt sich nichts zurückholen.",
+      "confirm.wipe.langs": "Die Daten auf diesem Telefon löschen? Jede Sprache darauf geht: die Wörter, die Buchstaben, das Schriftsystem, die Tastatur und die Notizen. Die Sicherungsdateien gehen auch. Die Aufnahmen und die exportierten Blätter bleiben. Dein Konto bleibt, deine Beiträge und Einstellungen auch. Von diesem Telefon lässt sich nichts zurückholen.",
       "langs.title"      : "Sprachen",
       "langs.mine"       : "Deine Sprachen",
       "langs.reading"    : "Zum Lesen",

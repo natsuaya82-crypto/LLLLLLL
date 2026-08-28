@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 「端末のデータを消す」がバックアップファイルも消すようになりました ── **IMPLEMENTED**
+
+一つ下の「**SPEC。まだコードに入っていません**」の項目が、これで
+**IMPLEMENTED** になりました。SPEC の DELETE REVIEW はそのまま有効です
+（消す範囲・消さないもの・`recoverable?` の欄、すべてあの通り）。ここは
+入った分だけを書きます。
+
+**入った一行**: `bkDropKept()`（`www/backup.js`）── `bkDropAll()` と同じ形で、
+`LinguaShare` の `dropKept` を呼びます。`dropKept` は Swift 側に元から在り、
+`Documents/Languages/` の `.json` **だけ**を消します（世代 `.1 .2` 込み、
+`Documents` そのものには触らない）。`wipeLangs()` がそれを、保存のあと・
+画面を移す前に呼びます ── `wipeAll()` の `bkDropAll()` と同じ場所で、
+同じ理由です（保存が言語を dirty にし、次の render がバックアップを書き出すので、
+先に消すと一本残る）。
+
+**`bkDropAll()` は使っていません。**あれは三フォルダ全部で、録音
+（`Documents/Voices/`）と書き出した PDF（`Documents/Sheets/`）まで持っていきます。
+それはアカウントが消えるときのものです。**この行が消すのは言語のバックアップだけ**で、
+録音と PDF は残ります。
+
+**確認の文が変わりました**（十言語すべて、`confirm.wipe.langs`）。
+「バックアップファイルも消えます。録音と書き出した PDF は残ります。」を足しました。
+**文とコードは同じコミットです** ── 消えないものを「消えます」と書く画面を
+一瞬も作らないためです。
+
+**守りは一つも足していません。**下の「戻せなくなる言語」は実在しますが、
+どう防ぐかはオーナーの決めごとで、まだ決まっていません
+（`docs/BACKLOG.md`）。決まる前に足すと、あとで外すことになります。
+
 ### 「端末のデータを消す」はバックアップファイルも消します ── **SPEC。まだコードに入っていません**
 
 **状態を先に**（`CLAUDE.md` の五つの状態）: **OWNER DECISION → SPEC** まで。

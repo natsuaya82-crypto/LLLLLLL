@@ -476,6 +476,21 @@ function wipeLangs(){
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
   save(); saveLetters(); saveNotes(); saveStg(); saveSnd();
+  /* And the backup files, which are the languages on this phone too --
+     「全部消えるって」OWNER 2026-08-28. The languages ALONE: bkDropKept() and
+     not bkDropAll(), because the recordings and the exported sheets sit in
+     Documents beside them and nobody has said those go when somebody tidies
+     this phone's languages. Which native call that is is backup.js's to know
+     and not this file's.
+
+     Last, and after the saves above rather than before them, which is the
+     reason written over the same call in wipeAll(): a save marks the language
+     dirty and the next render writes a fresh backup out, so dropping the
+     files first would leave one behind.
+
+     What this costs is written down in docs/CHANGELOG.md and is not softened
+     here: the backup was one of the two ways back, and now there is one. */
+  bkDropKept();
   /* and where you were standing was in a language that is not there.
      langOpen()'s own two lines: the last one leaves you on the cover of the
      empty language, which is the only way this row can be seen to have done
