@@ -366,7 +366,7 @@ iPhone の Ink 注釈、線のまま描かれた PDF）は**中心線**として
 **今は画面の道も形で入ります。** `renderPdf` がページを絵にするからで、Ink 注釈は
 画素になって届きます（`lt.sh`。太い細いは注釈が持っていた分だけ残る）。
 
-**注釈の `/InkList` を直接読めば電話は一切要りません。** そこが惜しいところです。
+**注釈の `/InkList` を直接読めば端末は一切要りません。** そこが惜しいところです。
 できない理由は一つで、**inflate が要る**こと ── Markup が保存した PDF は
 オブジェクトを圧縮オブジェクトストリームに入れて持ち、`www/sheet.js` は ES5 で
 依存も無く、それを解く手段がありません。`DecompressionStream` は iOS 16.4 から
@@ -672,7 +672,7 @@ styled and unworn 4 (baseline 4)`、`photographs 82`、
 
 `tools/side-baseline.txt` の三行（a flick keyboard being built 689/402、
 a keyboard of two layers 1023/402、three keyboards looking at one not applied
-422/402）は一つの故障で、`claude/yoo-kwdg28` が電話の幅で測って見つけた。
+422/402）は一つの故障で、`claude/yoo-kwdg28` が端末の幅で測って見つけた。
 
 札は「作るキーと同じ大きさ」なので 1+2+3 = 6 マス分。盤が 3 列だと、その
 6 マスは盤の二倍になる ── 今日の `kbCellW` が `--kbw / cols` で、列が減るほど
@@ -1395,7 +1395,7 @@ about — and is in the repo. It is not a check and is not in the gate.
 ただしこれは見立てで、仕様ではない。`tools/press.mjs` は今どのセッションの
 領域でもない。
 
-## 語順と三つの位置が、言語ではなく電話に付いている
+## 語順と三つの位置が、言語ではなく端末に付いている
 
 **2026-08-25、オーナーが否定の段のスクリーンショットを見て
 「動詞の前と決まったわけじゃないのに」と言ったところから出た。読んで
@@ -1559,7 +1559,7 @@ build #91 をオーナーが実機で触って出した約二十五件のうち�
 渡さなかったもの。**「抜けている」ではなく「まだやらない」と決めたもの。**
 どれも扉が無いから届いていないのではなく、決まっていないか、別の道具が要る。
 
-### 画面の上からなぞった PDF を読む ── 電話側 Swift が要る
+### 画面の上からなぞった PDF を読む ── 端末側 Swift が要る
 
 オーナー:「pdfで出るならその形式で上からなぞった文字のみ利用できるから
 その仕組みにして」。
@@ -1617,7 +1617,7 @@ commit `c757ac4` が四案を並べていて、①（段の中の「Lines」。`
 オーナー:「アカウントの設定に通報は意味がわからないのでいらないです」。
 
 設定の行は `mod.js` への唯一の扉で、`mod.js` は通報を**受ける**側 ── staff
-だけが開け、通報された投稿を電話から取り下げられる唯一の道。ファイルの頭に
+だけが開け、通報された投稿を端末から取り下げられる唯一の道。ファイルの頭に
 理由が書いてある:「"we act on reports within 24 hours" is something Apple
 asks about」。
 
@@ -1767,7 +1767,7 @@ www/i18n/en.js` に該当なし）。だからこのダイアログは「Upgrade
 **その枝はまだ `master` に入っていない**（`master..origin/claude/grammar2`
 = 7）。入った日にこれが起きる。
 
-cd61ec4 の移行が `SET.order` / `SET.gpos`（電話に一つ）を
+cd61ec4 の移行が `SET.order` / `SET.gpos`（端末に一つ）を
 `STG.order` / `STG.gpos`（言語ごと）へ写したとき、**値だけを配って
 `STG.set`（「この段は人が触った」という印）は触らなかった。**
 
@@ -1787,7 +1787,7 @@ cd61ec4 の移行が `SET.order` / `SET.gpos`（電話に一つ）を
 ```
 
 grammar2 は案1 で進めた。**逆にするなら移行のコミットだけ直せば足りる**
-（移行はまだ誰の電話でも走っていない ── DEVICE CONFIRMED ではない）ので、
+（移行はまだ誰の端末でも走っていない ── DEVICE CONFIRMED ではない）ので、
 決めるならその枝が `master` に入る前が一番安い。
 
 ## 段の副題、英語の二本だけは言い直しではない
@@ -2028,7 +2028,7 @@ is worth nothing on its own」に当たる。**着る者が消えたのに、着
 
 DELETE REVIEW は `docs/CHANGELOG.md` の同じ日の項目に在る。
 
-## 電話からファイルが出ていく道が二本ある ── 2026-08-27, claude/pw2
+## 端末からファイルが出ていく道が二本ある ── 2026-08-27, claude/pw2
 
 `www/card.js` の `cardDeliver()`（997行）と `www/wordsheet.js` の `exportCSV()`
 が、同じ一つの規則を二回書いている: **share sheet を先に、`<a download>` は

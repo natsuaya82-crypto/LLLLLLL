@@ -997,7 +997,7 @@ instead of appearing here.
   supabaseのエンタープライズで対応する予定
   ```
 
-  1. **アカウントを消したら全部消える。電話の中も含む。**
+  1. **アカウントを消したら全部消える。端末の中も含む。**
      前日の「アカウント消したら残るわけがないあほだろ」をサーバの話と読んだのは
      **狭すぎた。**「全部」である。
   2. **同期は常に。** 前の項目で「全部だって」の一語からは書き起こさない、と
@@ -1028,7 +1028,7 @@ instead of appearing here.
 - Affected docs: `docs/FEATURES.md` § 8、`docs/DATA_MODEL.md`、
   `docs/PAID_FEATURES.md`、`docs/DATA_SAFETY.md`（私の持ち物ではない ── 報告に書いた）。
 - Implementation status: **三つとも未実装。**
-  削除は `netDropMe()` がサーバだけを消す。電話を消すのは `wipeAll()` という
+  削除は `netDropMe()` がサーバだけを消す。端末を消すのは `wipeAll()` という
   **別のボタン**で、押されていない。同期は起動時一回（`www/boot.js`）。
 
 #### `DATA_SAFETY.md` と衝突しないこと。ここが大事
@@ -1113,7 +1113,7 @@ touched.** Erasing the phone is the other button」と決めて、そう書い�
   オンボーディングの扉（`www/onboard.js`）、最初の言語が作られる所
   （`www/core.js` の最上位）。
 - Affected data: 何も消えない。サーバに載る範囲が広がるだけであり、
-  電話の写しはそのまま残る。**費用には効く** ── プランに関係なく全員のスライスが
+  端末の写しはそのまま残る。**費用には効く** ── プランに関係なく全員のスライスが
   載るなら、ストレージと egress が人数に比例する（`docs/PAID_FEATURES.md`）。
 - Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`、
   `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/STATE.md`、

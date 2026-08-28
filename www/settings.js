@@ -729,7 +729,7 @@ function vPlans(){
 /* 実機でも、カードを押せばプランが変わる ── OWNER DECISION, 2026-08-25.
 
    08-23 の `6714cf55`「プラン画面が、電話の上では買う」より前は、実機でも
-   `SET.plan=id` を書くだけだった。それが今日 master に入って、電話の上で段を
+   `SET.plan=id` を書くだけだった。それが今日 master に入って、端末の上で段を
    試す唯一の道が塞がった ── App Store Connect にはまだ商品が一つも無いので
    (§7 の 17 番、オーナーしかできない)、`storeBuy` に渡した商品は必ず reject
    され、plan は free のまま動かない。実機では pro も plus も一切試せない。
