@@ -1216,38 +1216,10 @@ function obSnsInk(ln){
   if(txt) cut.push({t:txt});
   return inkOfCut(cut);
 }
-/* The faces and the photographs. Soft blurred gradients, which is what a
-   compressed photograph looks like at thumbnail size -- flat clip-art hills
-   were on here for one commit and read as exactly what they were.
-   They are the one place this file names a colour, and that is what a picture
-   IS: content, the way a photograph is, not a surface of the interface. */
-var OB_SNS_TONE=[['#b9a583','#6d5f4a'],['#8fa79b','#4f6257'],['#c4a29b','#7a5b58'],
-                 ['#98a2bd','#565f7d'],['#c2b585','#6f6647'],['#a898b5','#5f5270']];
-function obSnsSvg(w, h, body){
-  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'">'+
-    '<defs><filter id="b" x="-30%" y="-30%" width="160%" height="160%">'+
-    '<feGaussianBlur stdDeviation="'+Math.max(2,Math.round(w/22))+'"/></filter></defs>'+body+'</svg>');
-}
-function obSnsPic(i){
-  var c=OB_SNS_TONE[i%OB_SNS_TONE.length];
-  return obSnsSvg(80, 80, '<rect width="80" height="80" fill="'+c[0]+'"/><g filter="url(#b)">'+
-    '<circle cx="24" cy="26" r="26" fill="'+c[1]+'" opacity=".75"/>'+
-    '<circle cx="62" cy="58" r="30" fill="'+c[1]+'" opacity=".45"/>'+
-    '<circle cx="58" cy="14" r="18" fill="#fff" opacity=".35"/></g>');
-}
-function obSnsShot(i){
-  var c=OB_SNS_TONE[(i+3)%OB_SNS_TONE.length];
-  return obSnsSvg(160, 120,
-    '<rect width="160" height="120" fill="'+c[0]+'"/>'+
-    /* Blurred only where a photograph is blurred -- the far ground and the
-       light. A blur over the whole thing made a flat panel of colour, which is
-       what was on here for one commit. */
-    '<g filter="url(#b)"><ellipse cx="80" cy="66" rx="110" ry="26" fill="#fff" opacity=".3"/>'+
-    '<circle cx="'+(28+i*17)+'" cy="26" r="15" fill="#fff" opacity=".55"/></g>'+
-    '<path d="M0 120 L0 82 L34 54 L62 78 L92 48 L128 80 L160 62 L160 120 Z" fill="'+c[1]+'" opacity=".92"/>'+
-    '<path d="M0 120 L0 100 L40 78 L78 104 L112 86 L160 106 L160 120 Z" fill="'+c[1]+'"/>');
-}
+/* The faces and the photographs are FILES, in www/img/ beside the keyboard's
+   own. They were generated SVGs for three commits -- blurred gradients, then
+   flat clip-art hills -- and read as exactly what they were. A timeline is
+   people; a picture of one needs pictures. */
 /* Who is on it. The name, the handle and the LINE are one string each -- the
    same in all ten interface languages -- because a name is a name and a
    sentence somebody wrote in their own language is that sentence. The MEANING
@@ -1256,21 +1228,26 @@ function obSnsShot(i){
 
    The keys are written out whole rather than built from a number and a
    suffix: i18n-check reads the SOURCE for which keys a screen asks for. */
+/* Two people, and four posts between them. A slice of a timeline is what this
+   is -- not a directory -- so the same two faces come round again, which is
+   what a feed of people you follow actually looks like. */
+var OB_SNS_ME=[
+  {n:'ob.sns.a.n', h:'ob.sns.a.h', av:'img/av2.jpg'},
+  {n:'ob.sns.b.n', h:'ob.sns.b.h', av:'img/av1.jpg'}
+];
 var OB_SNS_WHO=[
-  {n:'ob.sns.1.n', h:'ob.sns.1.h', l:'ob.sns.1.l', m:'ob.sns.1.m', ago:4,    re:3,  bo:11, pics:1},
-  {n:'ob.sns.2.n', h:'ob.sns.2.h', l:'ob.sns.2.l', m:'ob.sns.2.m', ago:26,   re:1,  bo:4},
-  {n:'ob.sns.3.n', h:'ob.sns.3.h', l:'ob.sns.3.l', m:'ob.sns.3.m', ago:73,   re:12, bo:38, pics:2},
-  {n:'ob.sns.4.n', h:'ob.sns.4.h', l:'ob.sns.4.l', m:'ob.sns.4.m', ago:140,  re:0,  bo:2},
-  {n:'ob.sns.5.n', h:'ob.sns.5.h', l:'ob.sns.5.l', m:'ob.sns.5.m', ago:395,  re:5,  bo:19, pics:1},
-  {n:'ob.sns.6.n', h:'ob.sns.6.h', l:'ob.sns.6.l', m:'ob.sns.6.m', ago:1220, re:2,  bo:7}
+  {w:0, l:'ob.sns.1.l', m:'ob.sns.1.m', ago:4,   re:3,  bo:11},
+  {w:1, l:'ob.sns.2.l', m:'ob.sns.2.m', ago:26,  re:1,  bo:4,  pic:'img/pic2.jpg'},
+  {w:0, l:'ob.sns.3.l', m:'ob.sns.3.m', ago:73,  re:12, bo:38, pic:'img/pic1.jpg'},
+  {w:1, l:'ob.sns.4.l', m:'ob.sns.4.m', ago:190, re:2,  bo:7}
 ];
 /* One post, in the shape post.js reads: everything a reader needs is ON it. */
 function obSnsPost(w, i){
-  var ln=t(w.l), pics=[], k;
-  for(k=0;k<(w.pics||0);k++) pics.push(obSnsShot(i+k));
-  return { id:'ob'+i, who:t(w.n), hd:t(w.h), at:Date.now()-w.ago*60000,
+  var who=OB_SNS_ME[w.w], ln=t(w.l);
+  return { id:'ob'+i, who:t(who.n), hd:t(who.h), at:Date.now()-w.ago*60000,
            ln:ln, ink:obSnsInk(ln), mn:t(w.m), dir:'ltr',
-           av:{pic:obSnsPic(i)}, pics:pics, re:w.re, bo:w.bo, mine:false };
+           av:{pic:who.av}, pics:(w.pic? [w.pic] : []),
+           re:w.re, bo:w.bo, mine:false };
 }
 function obSnsHTML(){
   /* The shapes are canvases and a canvas is filled after the HTML is on the
