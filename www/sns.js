@@ -558,7 +558,7 @@ function vPhoto(){
 /* `snsMode` is which of the two the search is about -- people, or posts. It
    starts on people and goes back to people the moment anybody types.
    「それまでは人」 */
-var snsQ='', snsHits=null, snsMode='who';
+var snsQ='', snsHits=null, snsMode='who', snsSort='new';
 function snsSetQ(v){
   snsQ=String(v||'');
   /* Typing is looking for somebody again. A query that answered with posts
@@ -661,8 +661,59 @@ function snsWhoRow(p){
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
     '</div>';
 }
+/* ---- newest, or what people answered ------------------------------------
+   「話題＝おすすめと同じバズ順（いいね1・リポスト3・返信5、同じ数なら新しい
+   方が上）」 OWNER 2026-08-28, through the leader.
+
+   ONE place, and the weights are the whole of it: a like is one, a repost is
+   three, an answer is five. They are not the same act -- writing back costs
+   more than tapping a heart, and a repost puts a post in front of somebody
+   else's timeline -- so the number says how much of that happened rather
+   than how many times anything was touched.
+
+   Ties go to the newer one. Without that a hundred posts nobody has touched
+   come back in whatever order the answer arrived in, which is no order at
+   all and changes between two asks.
+
+   This is the comparator and NOT where the feed's own order is decided:
+   asking the server for 'rec' is www/net.js's, and this file must not grow a
+   second opinion about it. What it sorts is what a search brought back. */
+function snsBuzz(p){
+  return (p.li||0) + (p.bo||0)*3 + (p.re||0)*5;
+}
+function snsByBuzz(a, b){
+  var d=snsBuzz(b)-snsBuzz(a);
+  return d? d : ((b.at||0)-(a.at||0));
+}
+function snsByNew(a, b){ return (b.at||0)-(a.at||0); }
+/* Which of the two a search is showing. Where you are standing rather than
+   anything the language or the account has, so viewReset() drops it with the
+   query it is about. */
+function snsSortNow(){ return (snsSort==='buzz')? 'buzz' : 'new'; }
+function snsSortKey(k){ return (k==='buzz')? 'sort.buzz' : 'sort.new'; }
+/* The mark in the corner of the search's bar, the same corner the timeline
+   puts its filter in and for the same reason: what a list is sorted by is
+   not something to work out from the list. */
+function snsSortTop(){
+  return '<button class="navq"' + DO('go', ['sort']) + '>'+
+    esc(t(snsSortKey(snsSortNow())))+'</button>';
+}
+function vSort(){
+  var ks=['new','buzz'];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    ks.map(function(k){
+      return '<button class="set"' + DO('snsSetSort', [k]) + '>'+
+        '<span class="sl">'+esc(t(snsSortKey(k)))+'</span>'+
+        '<span class="sv">'+(snsSortNow()===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    '</div></div>';
+}
+function snsSetSort(k){
+  snsSort=(k==='buzz')? 'buzz' : 'new';
+  back();
+}
 function snsHitsHTML(){
-  var r=snsHits, out='', i;
+  var r=snsHits, out='', i, ps, by;
   if(!snsQ.trim() || !r) return '';
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
@@ -670,8 +721,14 @@ function snsHitsHTML(){
      not somebody you are looking for, and neither is what they wrote. */
   for(i=0;i<(r.who||[]).length;i++)
     if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
-  for(i=0;i<(r.posts||[]).length;i++)
-    if(!postBlocked(r.posts[i])) out+=postRow(r.posts[i]);
+  /* Sorted here rather than in the answer, because the answer is what the
+     server sent and re-sorting it is a question about this screen. slice()
+     first: sort() works in place, and snsHits is what came back. */
+  by=snsByNew;
+  if(snsSortNow()==='buzz') by=snsByBuzz;
+  ps=(r.posts||[]).slice().sort(by);
+  for(i=0;i<ps.length;i++)
+    if(!postBlocked(ps[i])) out+=postRow(ps[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
 function vExplore(){
@@ -679,7 +736,7 @@ function vExplore(){
   /* Asked once when the screen is built, so coming back to a query already
      typed shows its answer rather than an empty page. */
   if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);
-  return '<div class="view">'+rootTop('explore')+
+  return '<div class="view">'+rootTop('explore', snsSortTop())+
     '<div class="body">'+
     '<div class="search"><span class="lens">'+ICON_LENS+'</span>'+
       /* `enterkeyhint` is what makes the phone's own return key say Search,

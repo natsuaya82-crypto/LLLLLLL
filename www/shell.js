@@ -54,6 +54,7 @@ function viewReset(){
   KBH=null;                            /* and which row, column or key is being worked on */
   snsQ=''; snsHits=null; snsMode='who'; /* the search, what came back, and
                                           which of the two it is about */
+  snsSort='new';                       /* and newest or most answered */
   NOTES_HAVE=null;                     /* the notices, asked again */
   BKLIST=null;                         /* what is on the disk, asked again */
 }
@@ -420,6 +421,9 @@ var PAGES={
      so it is a route rather than something that slides up over the one you
      were on. */
   filter:  {tab:'feed', k:'feed.fil'},
+  /* And what a search is ordered by, chosen the same way and for the same
+     reason: choosing is a screen. */
+  sort:    {tab:'explore', k:'sort.title'},
   thread:  {tab:'feed', k:'post.thread'},
   photo:   {tab:'feed', k:'post.pic'},
   drafts:  {tab:'feed', k:'post.drafts.t'},

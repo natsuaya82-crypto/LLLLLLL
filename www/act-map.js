@@ -189,6 +189,7 @@ act('kbDrop', kbDrop);
 act('kbMore', kbMore);
 act('kbNew', kbNew);
 act('snsSetFil', snsSetFil);
+act('snsSetSort', snsSetSort);
 act('postOpen', postOpen);
 act('postPic', postPic);
 act('postReply', postReply);
