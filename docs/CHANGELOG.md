@@ -15,6 +15,93 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 「端末のデータを消す」はバックアップファイルも消します ── **SPEC。まだコードに入っていません**
+
+**状態を先に**（`CLAUDE.md` の五つの状態）: **OWNER DECISION → SPEC** まで。
+**IMPLEMENTED ではありません。**下の「入っていない一行」を読んでください。
+この項目は、同じ Unreleased の中にある
+「消す行が三本になりました」の DELETE REVIEW の
+`does the backup survive it? はい` を**置き換えます** ── あちらはその日
+そうだったことの記録なので書き換えません（`CHANGELOG` は書き換えない）。
+
+**オーナー 2026-08-28**（原文）:
+
+> 「全部消えるって」
+
+これは同じ日の
+
+> 「古い情報残すな。端末のデータはSNSは消えないで言語データが全部消えるの」
+
+を、「Documents のバックアップは消していません」という報告に対して言い直した
+ものです。**Documents のバックアップファイルも「端末の言語データ」に入ります。**
+
+**消すのは言語のバックアップだけです。**録音（`Documents/Voices/`）と書き出した
+PDF（`Documents/Sheets/`）は消しません。オーナーはそこを言っていません。
+
+#### DELETE REVIEW（端末のデータを消す ── バックアップファイルを足したもの）
+
+```
+who deletes      user action。設定 → アカウント → 端末のデータを消す
+                 → confirm.wipe.langs を「はい」。一度だけ訊く
+
+when             人が押して、確認に答えたとき。それ以外に走るところは無い
+
+what exactly     ① localStorage の鍵（既に入っている分。変更なし）
+                     langKeyOf(id, slice)  LANGS の全 id × SLICES の12本
+                     lingua.langs
+                 ② Documents/Languages/ の *.json  ← **足す分**
+                     世代（.1 .2）も含めて、その言語のものも他の言語のものも
+                     LinguaShare の `dropKept` が消す。**そのフォルダの
+                     .json だけ**で、Documents そのものには触らない
+
+                 **消さないもの**、名指しで:
+                   Documents/Voices/   録音。言われていない
+                   Documents/Sheets/   書き出した PDF。言われていない
+                   lingua.set          人の設定。テーマ・表示言語・プラン
+                   lingua.me           名前・顔・自己紹介
+                   lingua.posts        投稿の写し
+                   lingua.drafts       下書き
+                 サーバーには一切触らない。net* を一つも呼ばない
+
+why              「全部消えるって」── 端末に残っている言語データのうち、
+                 バックアップファイルだけが残るのは「端末のデータを消す」が
+                 嘘になる。Files アプリで見える場所なので、人にも見える嘘
+
+recoverable?     **サーバーからだけです。ここが変わりました。**
+                 前の版は「バックアップとサーバーの二つから戻せる」と
+                 書いていました。バックアップを消すので**一つ減ります**。
+                 そして、その一つには条件があります ──
+                 **サーバーに上がったことのある言語だけです。**
+                 一度も上がっていない言語は、この操作でどこからも
+                 戻せなくなります。起きうるかどうかは下の節に測ってあります
+
+does the backup survive it?
+                 **いいえ。言語のバックアップは消えます。**
+                 録音と PDF は残ります
+
+anything to do with the plan?    no。プランは一度も読まない
+
+migration / rollback
+                 移行なし。保存する形は変わらない
+```
+
+#### 入っていない一行 ── なぜ SPEC 止まりか
+
+`dropKept` は **Swift 側に既に在り**、`LinguaShare.swift` のメソッド一覧にも
+登録済みで、`Documents/Languages/` の `.json` だけを消します（録音にも PDF にも
+触りません）。**足りないのは JavaScript 側の呼び口だけです** ──
+`www/backup.js` には `bkDropAll()`（三フォルダ全部＝`dropAll`）しかなく、
+`dropKept` を呼ぶ関数がありません。
+
+`www/backup.js` はこのセッションの持ち物ではないので書いていません
+（`docs/SESSIONS.md` §1）。**`settings.js` の側に書くのは駄目です** ──
+バックアップの消し方を知っている場所が二つになり、`CLAUDE.md`
+「a rule lives in one place」そのものに当たります。
+
+**だから確認の文（`confirm.wipe.langs`）も直していません。**消えないものを
+「消えます」と書くのは、画面が嘘をつくということです。**文とコードは同じ
+コミットで入れます。**
+
 ### 設定の「読みの表示」の部屋が無くなりました
 
 **オーナー 2026-08-28**（原文）:
