@@ -512,7 +512,43 @@ function pwLn(){ return puaRoman(PW.ln); }
 function pwMn(){ return postGlossLine(postGloss(pwLn())); }
 /* And the row of it, which is drawn once when the screen is built and again
    on every letter typed. */
-function pwGl(){ return postGlossHTML(postGloss(pwLn())); }
+/* The red is for a word the dictionary does not know, and it was on EVERY
+   word it did not know -- so writing the meaning in Japanese, or anything
+   else that is not this language, came out as a line of red.
+   「赤文字は自作文字でアルファベット打ってる時だけ」 OWNER 2026-08-28.
+
+   What tells them apart is already in this file, one function down:
+   「What the Lingua keyboard typed is a private use code point and nothing
+   else on a phone types one」. So the gloss is built from the RAW line
+   rather than from the roman one, and each word carries whether it was typed
+   in the person's own letters. Split before the conversion, not after: a
+   letter's name may be more than one character, and splitting afterwards
+   would cut one letter in two.
+
+   `postGloss()` is untouched -- it answers what the meaning field falls back
+   to, which is about the words and not about the keyboard. */
+function pwGloss(){
+  var raw=String(PW.ln||'').split(/\s+/), out=[], i, rw, w;
+  for(i=0;i<raw.length;i++){
+    if(!raw[i]) continue;
+    rw=puaRoman(raw[i]);
+    w=findWord(rw);
+    out.push({w:rw, m:(w? wMns(w)[0]||'' : ''), p:(w? w.pos||'' : ''),
+              own:pwOwnTyped(raw[i])});
+  }
+  return out;
+}
+/* One character of the Lingua keyboard is enough: a word is typed in the
+   person's letters or it is not, and a half-typed one is still theirs. */
+function pwOwnTyped(raw){
+  var s=String(raw||''), lts=ltPuaOrder(), i, at;
+  for(i=0;i<s.length;i++){
+    at=s.charCodeAt(i)-PUA0;
+    if(at>=0 && at<lts.length) return true;
+  }
+  return false;
+}
+function pwGl(){ return postGlossHTML(pwGloss()); }
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -2117,10 +2153,14 @@ function postWhen(at){
 function postWho(p){ return String((p && (p.who || p.lname)) || ''); }
 /* The gloss, word by word. The composer shows the same row while you type --
    it is the same thing, so it is drawn by the same six lines. A word the
-   dictionary does not know stands in the colour of a problem. */
+   dictionary does not know stands in the colour of a problem -- but only
+   when it was typed in the person's OWN letters, which is what `own` says.
+   「赤文字は自作文字でアルファベット打ってる時だけ」 OWNER 2026-08-28: a word
+   typed on the phone's own keyboard is not this language and the dictionary
+   was never going to know it, so calling it a problem says nothing. */
 function postGlossHTML(gl){
   return (gl||[]).map(function(g){
-    return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
+    return '<span class="pwg'+((!g.m && g.own)? ' none':'')+'">'+esc(g.m || g.w)+'</span>';
   }).join('');
 }
 var PFACE={};
