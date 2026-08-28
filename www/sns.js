@@ -74,20 +74,23 @@ function snsLocked(r){
    Following is by HANDLE, off the post, the way everything on the reading side
    is: `p.hd` is who wrote it, frozen when it was written. Your own are in it,
    because a timeline of people you follow that leaves you out is a timeline
-   you cannot see yourself having spoken in. */
+   you cannot see yourself having spoken in.
+
+   THE TWO ARE NO LONGER A ROW OF TABS OVER THE TIMELINE.
+   「タイムラインの見た目 X すぎて炎上しそうだから、おすすめ・フォローなくして
+   基本おすすめ」 OWNER 2026-08-28. Two tabs across the head of a timeline is
+   the shape of somebody else's app, and this one arrives as the one it was
+   always going to arrive as.
+
+   `snsTab` stays and still starts at 'rec'. Which timeline is being asked for
+   is a real question -- `netFeed` takes it, and on a server the two are two
+   queries with two answers -- so what went is the ROW, not the question. It
+   is answered in the corner of the bar now, which is the block below. */
 var snsTab='rec';
-function snsSetTab(k){ snsTab=(k==='fo')? 'fo' : 'rec'; render(); }
 function snsMine(p){ return !!p.mine || meFollows(p.hd); }
 function snsList(){
   var all=postAll();
   return (snsTab==='fo')? all.filter(snsMine) : all;
-}
-function snsTabs(){
-  var tabs=[['rec','feed.rec'], ['fo','feed.fo']];
-  return '<div class="pftabs snstabs">'+tabs.map(function(x){
-    return '<button class="pftab'+(snsTab===x[0]?' on':'')+'"' + DO('snsSetTab', [x[0]]) + '>'+
-      esc(t(x[1]))+'</button>';
-  }).join('')+'</div>';
 }
 /* ---- and where the two are chosen ---------------------------------------
    「右上にフィルター作ってフォロー中、自分が好きなトピックとかで見れるように
@@ -192,9 +195,6 @@ function vFeed(){
        It is not a field: pressing it opens the screen a post is written on,
        which is where the letters, the photographs and the voice are. */
     (NET_BANNED? '' : dayRow())+
-    /* Under the row you write in and directly on top of the list they choose
-       between, because that is what they are about. */
-    snsTabs()+
     /* Frozen, said here and nowhere else. Not a notice -- 「通知はいらんて
        ホーム画面にバンでいいやん」 -- and not a coloured strip over a
        timeline that goes on scrolling underneath it: it takes the timeline's

@@ -188,7 +188,6 @@ act('kbGoBoard', kbGoBoard);
 act('kbDrop', kbDrop);
 act('kbMore', kbMore);
 act('kbNew', kbNew);
-act('snsSetTab', snsSetTab);
 act('snsSetFil', snsSetFil);
 act('postOpen', postOpen);
 act('postPic', postPic);
