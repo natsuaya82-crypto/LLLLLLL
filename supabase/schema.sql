@@ -299,6 +299,46 @@ alter table post add column if not exists hidden_at timestamptz;
 alter table post add column if not exists hidden_why text;
 create index if not exists post_hidden_idx on post(hidden_at) where hidden_at is not null;
 
+-- ---- not said yet ----------------------------------------------------------
+-- A draft. What somebody has written and not sent.
+--
+-- 「SNSは全部サーバー」 OWNER, said again on 2026-08-27. A draft is the
+-- timeline's, so it lives here and the phone keeps the copy that works with no
+-- signal -- the same sentence `post` is under, and CLAUDE.md § Online is where
+-- it is written down.
+--
+-- A TABLE OF ITS OWN, and not a column on `post`. `post_read` is
+-- `hidden_at is null or author = auth.uid() or is_staff()` -- everything not
+-- taken down is readable by anybody signed in -- so a draft kept in `post`
+-- is published unless every road that reads a post says "and not a draft",
+-- and a road that forgets to say it breaks NOTHING: the screen is right, the
+-- screenshots are right, and npm test is green, because there is only ever
+-- one person in a test. Here there is no such road to forget. Three tables
+-- reference post(id) as well -- quote, react, report -- and in the other
+-- shape a draft is a row somebody can like.
+--
+-- And a draft is not a post that has not happened yet. A post is frozen at the
+-- moment it is said (`body` above); a draft is the thing that keeps changing,
+-- and it carries no `ink` at all, because ink is cut onto a post as it is
+-- sent (CLAUDE.md rule 13).
+--
+-- `author` and not `owner`, the same word `post` uses for the same thing.
+-- Cascading from `profile`, which is what makes account deletion reach this:
+-- account_delete() at the foot of this file removes the auth.users row and
+-- everything of that person's follows it down. 「アカウント削除で残るものねえ
+-- って言ってんだろ何回言わせんだよ全部消える」 OWNER.
+--
+-- The id is minted on the PHONE, the way netPush() mints a post's, because a
+-- draft has to have the name it will be known by from the moment it is
+-- written -- including when it is written with no signal and goes up later.
+create table if not exists draft (
+  id         uuid primary key,
+  author     uuid not null references profile(id) on delete cascade,
+  body       jsonb not null,
+  updated_at timestamptz not null default now()
+);
+create index if not exists draft_author_idx on draft(author, updated_at desc);
+
 -- A word taken from somebody else's language and used in a post. This is the
 -- citation, and it is a table rather than a field in body because it is the
 -- thing being counted: how often a language is spoken by people who did not
@@ -434,6 +474,7 @@ alter table prompt      enable row level security;
 alter table follow      enable row level security;
 alter table block       enable row level security;
 alter table report      enable row level security;
+alter table draft       enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
 --
@@ -631,6 +672,38 @@ create policy post_edit on post for update
   using (is_member() and author = auth.uid()) with check (author = auth.uid());
 drop policy if exists post_drop on post;
 create policy post_drop on post for delete using (is_member() and author = auth.uid());
+
+-- draft: yours, and nobody else's -- READING INCLUDED.
+--
+-- This is the one policy block in this file where `select` is not `using
+-- (true)` or something close to it, and that is the whole point of the table
+-- existing. A draft is what somebody has written and NOT decided to say. Every
+-- other row here is either already public or on its way to being public; this
+-- one is the only thing in the app that is private by intention, so the read
+-- is locked to the author the same way the write is.
+--
+-- All four say the same sentence, and they say it separately because a policy
+-- is per command: `for all` would have been one line and one place to be
+-- wrong, and `using` on an insert is not checked at all. `is_member()` and not
+-- just `auth.uid() = author`, for the reason every other write here asks it --
+-- an anonymous session and a frozen account are both signed in.
+--
+-- `with check` on the update as well as `using`: without it, the author of a
+-- row may hand it to somebody else by writing their uuid into `author`, and
+-- what they would be handing over is a draft that person never wrote.
+--
+-- tools/rls-check.mjs is where somebody tries all four and cannot. A policy
+-- with no attempt against it is a policy nobody has read -- and a policy that
+-- is too wide throws nothing, so that file is the only thing holding this.
+drop policy if exists draft_read on draft;
+create policy draft_read on draft for select using (is_member() and author = auth.uid());
+drop policy if exists draft_make on draft;
+create policy draft_make on draft for insert with check (is_member() and author = auth.uid());
+drop policy if exists draft_edit on draft;
+create policy draft_edit on draft for update using (is_member() and author = auth.uid())
+                                            with check (author = auth.uid());
+drop policy if exists draft_drop on draft;
+create policy draft_drop on draft for delete using (is_member() and author = auth.uid());
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's

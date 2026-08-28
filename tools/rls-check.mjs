@@ -67,6 +67,12 @@ const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already ba
    watch what a new account is given. A and B are made before it on purpose:
    they are everybody who was already here, and nothing is written onto them. */
 const F = 'f0000000-0000-4000-8000-00000000000f';   /* somebody starting today */
+/* Two drafts. A's, which B tries every way there is to reach, and one more
+   for the two attempts that are about a row ARRIVING rather than a row that
+   is already there -- reusing A's id would be refused by the primary key,
+   and that reads exactly like the policy refusing it. */
+const DR = 'd0000000-0000-4000-8000-0000000000d1';  /* what A wrote and did not send */
+const DR2= 'd0000000-0000-4000-8000-0000000000d2';  /* the one B tries to plant */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
 
@@ -550,7 +556,54 @@ const CASES = [
      only the boost back, so a second like is refused by the primary key and
      would read as a ban that never lifted. */
   ['and B writes again',                      'ok',     B, 0,
-    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`]
+    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`],
+
+  /* --- a draft, which is the one thing here that is nobody else's ---------
+     Every other table in this file is either already public or on its way to
+     being public, and their select policies say so. `draft` is what somebody
+     has written and NOT decided to say, so the read is locked to the author
+     the same way the write is -- and a read policy that is too wide is
+     exactly the failure this whole file exists for: nothing throws, the app
+     looks right, and somebody's half-written post is readable by anybody with
+     the publishable key.
+
+     A writes one through the policy rather than it being seeded, for the
+     reason the note over the seeding says: a row put there by the owner of
+     the table is a row no policy ever had to allow. */
+  ['A keeps a draft',                         'ok',     A, 0,
+    `insert into draft(id,author,body) values ('${DR}','${A}','{\"ln\":\"secret\"}'::jsonb)`],
+  ['and reads it back',                       'ok',     A, 0,
+    `select 1 from draft where id='${DR}'`],
+  /* The four somebody else would try. READ FIRST and not last: it is the one
+     that costs somebody something even when nothing is written, and it is the
+     one a `for all` policy or a `using (true)` would hand over in silence. */
+  ['B cannot read A\u2019s draft',             'denied', B, 0,
+    `select 1 from draft where id='${DR}'`],
+  ['B cannot change it',                      'denied', B, 0,
+    `update draft set body='{\"ln\":\"x\"}'::jsonb where id='${DR}'`],
+  ['B cannot delete it',                      'denied', B, 0,
+    `delete from draft where id='${DR}'`],
+  ['nor can somebody with no account read one', 'denied', D, 1,
+    `select 1 from draft where id='${DR}'`],
+  /* And B cannot write one ONTO A -- a draft in A's list that A never wrote.
+     A separate statement from the three above: those are about rows that are
+     already there, and this is about arriving. */
+  ['B cannot write a draft onto A',           'denied', B, 0,
+    `insert into draft(id,author,body) values ('${DR2}','${A}','{}'::jsonb)`],
+  /* Nor hand their own away, which is the same row moving the other
+     direction and is what `with check` on the update is for. Without it the
+     three refusals above still pass and A ends up holding a draft B wrote. */
+  ['B keeps a draft of their own',            'ok',     B, 0,
+    `insert into draft(id,author,body) values ('${DR2}','${B}','{}'::jsonb)`],
+  ['nor hand it to A',                        'denied', B, 0,
+    `update draft set author='${A}' where id='${DR2}'`],
+  /* Deleting the account takes the drafts with it. Asked by DOING it, and
+     asked as the owner of the table rather than through a policy, because
+     what has to hold is that the row is GONE -- a select that returns nothing
+     because the reader may not see it would pass this while the draft sat
+     there. 「アカウント削除で残るものねえ」 OWNER. */
+  ['A\u2019s draft goes when A does',          'ok',     A, 0,
+    `select account_delete()`]
 ];
 
 /* The shape of the file itself, which the prose in schema.sql promises and
@@ -746,7 +799,33 @@ const SHAPE = [
   ['the media bucket is there and is public', `
      select count(*) from (select 1) x
       where not exists (select 1 from storage.buckets
-                         where id='post-media' and public)`, '0']
+                         where id='post-media' and public)`, '0'],
+  /* And what is left of A after A asked to be gone. This one is not about the
+     shape of the file -- it is the last case above, read back. It is HERE
+     rather than there because everything in this list is run as the owner of
+     the tables, and that is the only way to ask the question that is actually
+     being asked: is the row GONE. Asked as anybody else, a draft that sat
+     there untouched would answer "no rows" through draft_read and pass.
+     「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」 */
+  ['no draft outlives the account that wrote it', `
+     select count(*) from draft where author='${A}'`, '0'],
+  /* And all four of its policies actually name the author.
+     This is here because the three attempts above it CANNOT catch a widened
+     draft_edit or draft_drop on their own, and that was watched: with
+     draft_edit and draft_drop opened to `using (true)`, "B cannot change it"
+     and "B cannot delete it" both still passed. PostgreSQL makes an UPDATE or
+     a DELETE with a WHERE find its rows through the SELECT policy first, so
+     while draft_read is narrow those two are being refused by the READ and
+     not by the policy they are named after -- a pass for the wrong reason,
+     which is the one thing the head of this file says is worth knowing about.
+     Asked of the catalog, where it holds whatever the read policy says. */
+  ['a draft is the author\u2019s in all four policies', `
+     select count(*) from (select 1 from (values
+       ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) v(cmd)
+       where not exists (select 1 from pg_policies p
+                          where p.tablename='draft' and p.cmd=v.cmd
+                            and coalesce(p.qual,'') || coalesce(p.with_check,'')
+                                like '%auth.uid()%')) q`, '0']
 ];
 
 /* ---- a PostgreSQL to throw away ----------------------------------------- */

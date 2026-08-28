@@ -330,16 +330,54 @@ function draftsRead(){
 function draftsSave(){
   try{ localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS)); }catch(e){}
 }
+/* Every draft has a name. The ones written before there was a server to put
+   them on do not, so they are GIVEN one here and written back.
+
+   A migration that copies (docs/DATA_SAFETY.md § 2): nothing is read and then
+   removed, nothing is rewritten into a new shape, and a draft that already
+   has an id is not touched. It runs on the phone, once, against the only copy
+   of something somebody wrote -- so the only thing it may do is add.
+
+   netUUID() and not a counter: two phones holding the same account both name
+   drafts, and a name made on one must not be a name made on the other.
+   www/net.js is loaded before this file (www/index.html), which is why this
+   can run where it does. */
+function draftsName(){
+  var i, n=0;
+  for(i=0;i<DRAFTS.length;i++)
+    if(DRAFTS[i] && !DRAFTS[i].id){ DRAFTS[i].id=netUUID(); n++; }
+  if(n) draftsSave();
+}
+function draftById(id){
+  var i;
+  if(!id) return null;
+  for(i=0;i<DRAFTS.length;i++) if(DRAFTS[i] && DRAFTS[i].id===id) return DRAFTS[i];
+  return null;
+}
 draftsRead();
+draftsName();
 /* Saved as it stands: the line, the meaning, whom it answers, the pictures
    with their letters still placed on them, the recording, and whether it was
    going to be private. Not baked -- a draft is not a post, and baking is what
    sending does. */
 function draftKeep(){
   if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.b64)){ toast(t('post.none')); return; }
-  DRAFTS.push({at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to, pr:PW.pr||0,
-               pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv});
+  /* The name it already had, if this is one that was opened again. Reusing it
+     is what stops a draft opened and put back becoming two rows -- one on the
+     server nobody can reach and one in front of them. */
+  var d={id:PW.did || netUUID(), at:Date.now(), ln:PW.ln, mn:PW.mn, to:PW.to,
+         pr:PW.pr||0, pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+  DRAFTS.push(d);
+  /* The phone FIRST and always, whatever the network is doing. A draft is on
+     this phone the moment it is written, and it is written by somebody who
+     may be in a tunnel: 「書いたものが signal 無しで消えるのは駄目」. The
+     server is where it lives; this is the copy that works without one. */
   draftsSave();
+  /* And then up. Not waited on and its failure is not said: nothing on the
+     screen depends on the answer, the draft is already safe on the phone, and
+     the next time the drafts are opened draftsPull() sends up anything the
+     server has not got. */
+  netDraftUp(d);
   PW=pwBlank();
   toast(t('post.draft.kept'));
   goTab('feed');
@@ -357,15 +395,84 @@ function draftOpen(i){
   PW.ln=d.ln||''; PW.mn=d.mn||''; PW.to=d.to||''; PW.pr=d.pr||0;
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
   if(d.vo) PW.vo=d.vo;
+  /* The name it goes back under. Set after pwBlank() above, which does not
+     know about it.
+
+     The row on the server is NOT removed here, and that is the point: this
+     takes the draft out of the LIST so that it is not open in two places at
+     once (tools/draft-check.mjs), and an app that stopped here -- killed,
+     crashed, battery -- would otherwise have thrown away the only copy of
+     something somebody was in the middle of. It stays until the draft is put
+     back over it, thrown away, or posted. */
+  PW.did=d.id||'';
   openPost();
 }
 function draftDrop(i){
   i=parseInt(i, 10)||0;
   if(!DRAFTS[i]) return;
   if(!confirm(t('post.draft.del.q'))) return;
+  var d=DRAFTS[i];
   DRAFTS.splice(i, 1);
   draftsSave();
+  /* And off the server, because that is where it lived. A user action behind
+     a confirm, naming the one row it was given -- nothing here walks the
+     table asking what is stale (docs/DATA_SAFETY.md § DELETE REVIEW). */
+  if(d && d.id) netDraftDrop(d.id);
   render();
+}
+/* ---- the server's copy, come home --------------------------------------
+
+   A draft LIVES on the server (supabase/schema.sql § not said yet); DRAFTS is
+   the copy that works with no signal. So this fills in what this phone is
+   missing and NEVER writes over what is here.
+
+   That rule is docs/DATA_SAFETY.md § 2 and it is the one that matters: the
+   way a copy destroys somebody's work is by winning. A draft that is on this
+   phone and on the server is left exactly as this phone has it -- somebody
+   may have been editing it thirty seconds ago -- and only a draft this phone
+   has never seen is added.
+
+   Both directions, for the same reason netLangSync() goes both ways: a draft
+   written in a tunnel is on this phone and nowhere else, and the phone is not
+   where it lives. */
+function draftsPull(){
+  if(!netMember()) return;
+  netDrafts(function(rows){
+    var i, k, r, b, d, seen={}, got=0;
+    for(i=0;i<(rows||[]).length;i++){
+      r=rows[i];
+      if(!r || !r.id) continue;
+      seen[r.id]=1;
+      /* Open in the composer this moment. It was taken out of the list when
+         it was opened, and putting it back is the same post in two places,
+         which is the thing tools/draft-check.mjs holds. */
+      if(PW && PW.did===r.id) continue;
+      if(draftById(r.id)) continue;
+      d={}; b=r.body || {};
+      for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
+      d.id=r.id;
+      if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+      DRAFTS.push(d);
+      got++;
+    }
+    if(got){ draftsSave(); render(); }
+    /* And what the server has not got. Not waited on and not counted: each
+       one answers for itself, and one that does not go up is still on this
+       phone and is tried again the next time this runs. */
+    for(i=0;i<DRAFTS.length;i++)
+      if(DRAFTS[i] && DRAFTS[i].id && !seen[DRAFTS[i].id]) netDraftUp(DRAFTS[i]);
+  });
+}
+/* Once for the account signed in, rather than on every render: vDrafts() below
+   is drawn again every time this screen is. Keyed on the uid and not a
+   boolean, so signing in as somebody else asks again -- and so that the first
+   person's drafts are never what the second one is shown. */
+var DRAFTS_FOR='';
+function draftsPullOnce(){
+  var uid=(typeof SESS!=='undefined' && SESS && SESS.uid) || '';
+  if(!uid || DRAFTS_FOR===uid) return;
+  DRAFTS_FOR=uid;
+  draftsPull();
 }
 /* A page of its own. 「下書きはそこに入れないで。別ページに飛ぶ感じで」 A list
    at the foot of the screen you are writing on is a list under the thing it
@@ -373,6 +480,10 @@ function draftDrop(i){
    you go, and the composer carries only the way there. */
 function vDrafts(){
   var out='', i, d;
+  /* Asked for when they are looked at. There is no call in bootSession()
+     (www/boot.js) because that file is not this session's -- it is in the
+     report as the one thing left. */
+  draftsPullOnce();
   for(i=DRAFTS.length-1;i>=0;i--){
     d=DRAFTS[i];
     out+='<div class="dfrow">'+
@@ -1106,6 +1217,16 @@ function pwSendWith(ln, pics, vo){
   }
   POSTS.push(mine);
   savePosts();
+  /* It has stopped being a draft, so the row goes -- AFTER the post is
+     written and never before. The other order is somebody's writing gone on
+     the day the post itself would not go: what is on this phone now is the
+     post, which savePosts() has just put down and postCatchUp() keeps trying
+     to send, so there is nothing left for the draft to be the only copy of.
+
+     A post kept to yourself (`pv`) goes no further than this phone, and its
+     draft still goes: private is what the POST is, and the draft was never a
+     way of storing one. */
+  if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
   /* And it is told to the server, which today is told nothing. It is not
      waited on: the post is on this phone the moment it is written, and a
      person in a tunnel is still using this app. */

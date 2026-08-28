@@ -1200,6 +1200,114 @@ const R = await pg.evaluate(async () => {
                  'display, av), and an insert on a row that exists is a 409');
   } finally { netSend = realSend; }
 
+  /* ---- 14. a draft is the server's, and the phone is the copy ---------
+     「SNSは全部サーバー」 OWNER 2026-08-27, and CLAUDE.md § Online. A draft
+     used to be one flat key on this phone and nothing else, so a person who
+     changed phones lost what they had written and not sent.
+
+     Driven rather than grepped, and the REQUESTS are what is read: what has
+     to hold is what goes out. Three things, and the third is the one that
+     costs somebody something if it is wrong. */
+  const realSend2 = netSend;
+  let dsent = [];
+  netSend = function (method, path, body, tok, ok, bad) {
+    if (String(path).indexOf('/rest/v1/draft') === 0) {
+      dsent.push({ method, path, body });
+      /* An update that matched nothing, so netDraftUp() falls through to the
+         insert -- which is the branch worth driving: it is the one that puts a
+         draft the server has never seen on the server. */
+      if (ok) ok(method === 'PATCH' ? [] : null);
+      return;
+    }
+    return realSend.apply(this, arguments);
+  };
+  const wasDrafts = DRAFTS.slice();
+  const wasSess2 = SESS;
+  try {
+    SESS = { at: 'x', rt: 'y', uid: 'u1', anon: false };
+    DRAFTS = [];
+
+    /* it goes up, and it goes up with a name */
+    PW = pwBlank(); PW.ln = 'kano'; PW.mn = 'a mountain';
+    dsent = [];
+    draftKeep();
+    const kept = DRAFTS[DRAFTS.length - 1];
+    if (!kept || !kept.id)
+      fails.push('a draft was kept with no name on it, so there is nothing for ' +
+                 'the row on the server to be called and no way to say later ' +
+                 'that this one is that one');
+    if (!dsent.length)
+      fails.push('a draft was kept and NOTHING went to the server. That is the ' +
+                 'old shape: one flat key on this phone, and a person who ' +
+                 'changes phones loses what they wrote and did not send');
+    if (dsent.length && !dsent.some(r => r.method === 'POST'))
+      fails.push('the draft was never inserted -- the update matched no row ' +
+                 'and nothing followed it, so the draft exists nowhere but here');
+
+    /* opening one does NOT throw the server's copy away, and putting it back
+       goes back over the SAME row rather than leaving one behind */
+    const id = kept && kept.id;
+    dsent = [];
+    draftOpen(DRAFTS.length - 1);
+    if (dsent.some(r => r.method === 'DELETE'))
+      fails.push('opening a draft deleted it from the server. An app that ' +
+                 'stopped there -- killed, battery -- would have thrown away ' +
+                 'the only copy of what somebody was in the middle of');
+    if (PW.did !== id)
+      fails.push('a draft opened in the composer does not carry the name it ' +
+                 'came in under, so putting it back writes a SECOND row and ' +
+                 'the first is left on the server where nobody can reach it');
+    dsent = [];
+    draftKeep();
+    const again2 = DRAFTS[DRAFTS.length - 1];
+    if (again2 && again2.id !== id)
+      fails.push('a draft put back is a different draft (' + again2.id + ' was ' +
+                 id + '), so every open-and-close leaves a row behind');
+
+    /* posting it takes it off the server, and names the one it was */
+    draftOpen(DRAFTS.length - 1);
+    dsent = [];
+    pwSend();
+    await new Promise(r => setTimeout(r, 300));
+    const gone = dsent.filter(r => r.method === 'DELETE');
+    if (!gone.length)
+      fails.push('a draft that was posted is still a draft on the server, so ' +
+                 'it comes back down the next time the drafts are opened and ' +
+                 'the same post is written twice');
+    if (gone.length && gone[0].path.indexOf(id) < 0)
+      fails.push('posting deleted a draft that was not the one being posted (' +
+                 gone[0].path + ')');
+
+    /* and what comes down never wins. docs/DATA_SAFETY.md § 2: the way a copy
+       destroys somebody's work is by winning. */
+    DRAFTS = [{ id: 'd-keep', at: 1, ln: 'what this phone has' }];
+    netSend = function (method, path, body, tok, ok, bad) {
+      if (String(path).indexOf('/rest/v1/draft') === 0) {
+        if (method === 'GET' && ok)
+          ok([{ id: 'd-keep', body: { ln: 'what the server has' }, updated_at: null },
+              { id: 'd-new',  body: { ln: 'one this phone never saw' }, updated_at: null }]);
+        else if (ok) ok(method === 'PATCH' ? [] : null);
+        return;
+      }
+      return realSend.apply(this, arguments);
+    };
+    DRAFTS_FOR = '';
+    draftsPull();
+    await new Promise(r => setTimeout(r, 50));
+    const keptRow = DRAFTS.filter(d => d && d.id === 'd-keep')[0];
+    if (!keptRow || keptRow.ln !== 'what this phone has')
+      fails.push('a draft that is on this phone was written over by the ' +
+                 'server\u2019s copy. Somebody may have been editing it thirty ' +
+                 'seconds ago, and the way a copy destroys what somebody wrote ' +
+                 'is by winning (docs/DATA_SAFETY.md \u00a7 2)');
+    if (DRAFTS.filter(d => d && d.id === 'd-keep').length !== 1)
+      fails.push('a draft that is on this phone AND on the server came home as ' +
+                 'two drafts');
+    if (!DRAFTS.some(d => d && d.id === 'd-new'))
+      fails.push('a draft this phone has never seen did not come down at all, ' +
+                 'so changing phones still loses it');
+  } finally { netSend = realSend2; DRAFTS = wasDrafts; SESS = wasSess2; draftsSave(); }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
