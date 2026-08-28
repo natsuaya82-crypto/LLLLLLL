@@ -1080,41 +1080,53 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
    Before this the field was the only thing that could stretch, so it took the
    whole screen and the strip of photographs sat under the fold. */
-/* `min-height` is 44 and not 0, and that one number is load-bearing.
+/* THE FLOOR UNDER THE BOX SOMEBODY WRITES IN, and it has been four numbers.
 
    `flex:1` with a zero basis means this takes what is LEFT after the things
    that do not grow -- the bar with Post on it, the strip over the keyboard,
-   the quoted conversation on a reply -- and with `min-height:0` "what is
-   left" is allowed to be nothing. Measured on the reply composer with the
-   phone's keyboard up (--vvmin 300, which is an ordinary Japanese keyboard on
-   an ordinary phone): the field came out 49% visible, sliced flat across the
-   middle. At --vvmin 260 it was 0% -- the line you are typing into was not on
-   the screen at all -- and `.pwbar`'s border-top sits exactly on that clip
-   edge, so what is left looks like a hairline drawn through the row.
+   the quoted post on a reply -- and with `min-height:0` "what is left" is
+   allowed to be nothing. Measured on the reply composer with the phone's
+   keyboard up (--vvmin 300): the field came out 49% visible, sliced flat
+   across the middle. At --vvmin 260 it was 0% -- the line you are typing into
+   was not on the screen at all -- and `.pwbar`'s border-top sits exactly on
+   that clip edge, so what is left looks like a hairline drawn through the row.
+   So: 44, one row of writing. Then 88, because what is being written here is
+   TWO fields and one row is by construction not enough
+   （「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」）. Then 162 once,
+   said in one place instead of two, because the box you write in is two
+   fields whether or not this is a reply -- the line 44, that row's 6, the
+   meaning 10+44, the foot 6, and the floor a column needs.
+   「自分の言語で一行と意味がこのページで見れるように」 OWNER 2026-08-26.
+   The flex column is one thing with the rule below it: with no settled height
+   on `.pwtop` a vertical line cannot ask what it is inside. */
+/* 104 AND NOT 162, and the difference is the owner's small phone.
 
-   44 is the row unit this file already uses everywhere and the number press
-   measures targets against, so one full row of what is being written can
-   never be taken away. `.pwqs` gives up its space first, which costs nothing:
-   it scrolls inside itself and says so in its own rule.
+   162 was the line 44, the meaning 10+44, the foot 6, and the floor a column
+   needs -- measured on a 390, where there is room for all of it. A 320x568
+   with the keyboard up leaves 308, and by the time the line saying who is
+   being answered, the quoted post and the row of pictures have had theirs
+   there is not 162 left. A floor that cannot be met is not a floor, it is an
+   overflow: the box was held open past the bottom of a `.body` that is
+   overflow:hidden, so the field somebody types the MEANING into was on the
+   phone with no way to reach it. 「投稿の返信画面みづらいや」
 
-   88 on a reply, and that is not 44 rounded up. What is being written here is
-   TWO fields -- the line and the meaning under it -- so one row is by
-   construction not enough, and a reply is the only composer where anything
-   else is competing for the height. It came out as a placeholder with the
-   next field sliced off under it.
-   「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」 */
-/* The box you write in is TWO fields, and that does not change with whether
-   this is a reply. It was said twice in two numbers -- 44 here and 88 when a
-   quoted post was above it -- and two numbers for one fact is how they drift.
-   162 was measured with a word-by-word gloss between the line and the
-   meaning, which is gone (「やっぱり、タイムラインも投稿も2段で」 OWNER
-   2026-08-28): the line 44, that row's 6, the meaning 10+44, the foot 6, and
-   the floor a column needs. 「自分の言語で一行と意味がこのページで見れるように」
-   OWNER 2026-08-26. The flex column is one thing with the rule below it: with
-   no settled height on `.pwtop` a vertical line cannot ask what it is inside. */
-.view.fit .pwscroll{flex:1;min-width:0;min-height:162px;overflow:auto;
+   104 is the two fields and nothing else -- the line 44, the gap 10, the
+   meaning 46 -- which is 「自分の言語で一行と意味がこのページで見れるように」
+   OWNER 2026-08-26 and is the smallest this may be without breaking it. What
+   used to be in the other 58 is a column's floor (96, the vertical rule
+   below): a line that runs DOWN the page still asks for it, and on a 320 it
+   scrolls inside this box rather than pushing it off the screen.
+
+   The quoted post gives its room up first, which costs nothing -- it scrolls
+   inside itself and says so in its own rule -- and the person's own side of
+   the screen is the point of the screen. 「相手の投稿は小さく固定、その下から
+   自分が打てるようにしてくれ」 Measured, keyboard up: 320x568 gives the quote
+   40 and this 104 -- the line and the meaning both whole, neither of them
+   behind the row of pictures -- and 402x874 gives the quote its whole 76 and
+   this 298. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:104px;overflow:auto;
    display:flex;flex-direction:column}
-.view.fit .pwqs{flex:0 1 auto;min-height:44px}
+.view.fit .pwqs{flex:0 1 auto;min-height:0}
 .view.fit .pwtop{flex:1 1 auto;min-height:0}
 .view.fit .pwfield{display:flex;flex-direction:column;min-width:0}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
@@ -1730,31 +1742,37 @@ a.set{text-decoration:none}
 /* And the gap over it. The bar's own 8 and the body's 10 stack into 18px of
    nothing between the name of the screen and the face under it. */
 .dayrw{margin-top:-8px}
-/* The conversation a reply is going into, above what you are writing. It is
-   a LIST now and not one post, so it is shaped the way every other list in
-   this app is -- rows with a hairline between them -- rather than as a stack
-   of filled 14px panels, which is the chip problem again and is what the rule
-   at the head of this file is about. The last row's line is also the line
-   over the field.
+/* The post a reply is going into, above what you are writing. It is shaped
+   the way every other row in this app is -- a hairline under it -- rather
+   than as a filled 14px panel, which is the chip problem again and is what
+   the rule at the head of this file is about. Its line is also the line over
+   the field.
 
-   Capped and scrolling inside itself so a long thread cannot push the field
-   off the bottom. `--vvmin` and not `vh`: with the phone's keyboard up `vh`
-   is still the whole phone, which is the same reason the vertical field
-   below uses it. A third is what leaves the field its own two thirds. */
-/* min-height:0 is what lets it actually give the room up. A flex item's floor
-   is its content unless it is told otherwise, so `overflow:auto` on its own
-   made this shrink-proof: the cap stopped it growing and nothing made it get
-   out of the way, and what got clipped instead was the box below -- the one
-   somebody is writing in. A quarter rather than a third for the same reason:
-   the person's own side is the point of the screen and the quote is what they
-   are answering. It scrolls inside itself, so nothing is lost by being small. */
-.pwqs{margin:2px 0 12px;max-height:calc(var(--vvmin, 100vh) / 4);
-   min-height:0;overflow:auto}
-.pwq{display:flex;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
-.pwq .pav{width:34px;height:34px}
-.pwq .pname{font-size:.9rem}
-.pwq .pline{font-size:.98rem}
-.pwq .pmn{margin-top:2px;font-size:.9rem;color:var(--txm)}
+   SMALL, AND THE SAME SIZE ON EVERY PHONE. 「相手の投稿は小さく固定、その下
+   から自分が打てるようにしてくれ」 OWNER 2026-08-28. The cap was a quarter of
+   the visible part, which is a different number on every phone and the wrong
+   one on the small one: 320x568 with the keyboard up leaves 308, a quarter of
+   which is 77, and the floor under it (44) plus the composer's own floor
+   (162) plus the row of pictures (53) came to more screen than there is. What
+   overflowed went behind the row of pictures, and `.body` is overflow:hidden,
+   so the field somebody types the MEANING into was on the phone and could not
+   be reached. A quarter of a screen is not a size; 76px is.
+
+   `flex:0 0 auto` is the 固定 half: it does not grow into the composer's room
+   and does not shrink out of its own, so it is where it was whatever is
+   happening below it. A line too long for 76 scrolls inside itself, so
+   nothing is lost by it being small.
+
+   And the row itself is smaller than a post in the timeline -- 26px of face,
+   the type one step down, half the padding. It is what you are glancing at,
+   not what you are reading. */
+.pwqs{margin:2px 0 8px;max-height:76px;overflow:auto}
+.pwq{display:flex;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
+.pwq .pav{width:26px;height:26px}
+.pwq .pname{font-size:.82rem}
+.pwq .phandle{font-size:.78rem}
+.pwq .pline{font-size:.88rem}
+.pwq .pmn{margin-top:1px;font-size:.78rem;color:var(--txm)}
 /* What money buys that anybody can see, beside a name. Plus is the star
    drawn, Studio is the star filled -- outline against solid, which is the one
    difference that survives being fifteen pixels wide.
