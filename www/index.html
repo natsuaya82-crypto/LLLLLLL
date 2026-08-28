@@ -60,6 +60,18 @@ html[data-theme="light"]{
   --glassrim:rgba(26,23,18,.10); --glassspec:rgba(255,255,255,.9);
   --glassdrop:rgba(60,50,30,.16);
 }
+/* And one that is deliberately the SAME in both: the plate a line of letters
+   sits on when it is put on a photograph.
+   「行ごとに背景の板がある」── from the picture of Instagram the owner sent,
+   2026-08-28, where it is a black plate under white letters.
+
+   **A photograph has no theme.** The plate is lying on somebody's picture,
+   not on the app's ground: a person reading in the light theme may put
+   letters on a dark photograph and the other way round, so following the
+   theme would be following the wrong thing. It is the dark ground's value,
+   named here rather than written into `www/post.js`, because every colour
+   lives in these two blocks and the views only touch the variables. */
+html[data-theme="dark"], html[data-theme="light"]{ --mkplate:#0a0a0e }
 /* How much of the bottom of the screen the tab bar has. It is on every screen
    now, so everything that used to sit at the bottom sits on top of it, and
    every one of them measures from here rather than carrying its own number:
@@ -761,9 +773,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
-.pwgl{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:6px}
-.pwg{font-size:.76rem;color:var(--txm)}
-.pwg.none{color:var(--bad)}
 /* Spread edge to edge under the post, the way a thumb expects to find them. */
 /* Edge to edge under the post, the way a thumb expects to find them. */
 .pacts{display:flex;justify-content:space-between;margin:2px -8px -10px -10px}
@@ -829,6 +838,25 @@ canvas.pkc{width:34px;height:34px;display:block}
    number and nothing else, so there is no sentence in it to translate. */
 .pwleft{font-size:.8rem;color:var(--txm);text-align:right;margin-top:2px}
 .pwleft.bad{color:var(--bad)}
+/* How much room is left, as a ring that empties as you type.
+   「カウントは打つほど減っていく輪、帯の中、常に出す」 OWNER 2026-08-28.
+   The quarter turn is what makes it empty from the top rather than from
+   three o'clock; `butt` because a rounded cap draws ink where the arc has
+   already run out. Three states, no new colour: quiet, then the colour
+   everything on this screen is, then the colour of a problem. */
+.pwring{display:inline-flex;align-items:center;gap:6px}
+.pwring svg{width:20px;height:20px;display:block;transform:rotate(-90deg)}
+.pwring circle{fill:none;stroke-width:2}
+.pwring .pwrt{stroke:var(--line)}
+.pwring .pwrf{stroke:var(--txm);stroke-linecap:butt;
+              transition:stroke-dashoffset .12s linear}
+.pwring.near .pwrf{stroke:var(--gold)}
+.pwring.bad .pwrf{stroke:var(--bad)}
+/* Past the end there is no arc left to colour -- what is on the screen is the
+   empty ring, so the empty ring is what has to say it. */
+.pwring.bad .pwrt{stroke:var(--bad)}
+.pwring .pwleft{margin-top:0}
+.pwring.bad .pwleft{color:var(--bad)}
 .pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
 .fab{position:fixed;right:20px;bottom:calc(var(--tabh) + 20px);
@@ -1046,7 +1074,9 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 /* The box you write in is TWO fields, and that does not change with whether
    this is a reply. It was said twice in two numbers -- 44 here and 88 when a
    quoted post was above it -- and two numbers for one fact is how they drift.
-   162 is measured: the line 44, `.pwgl` 6, the meaning 10+44, the foot 6, and
+   162 was measured with a word-by-word gloss between the line and the
+   meaning, which is gone (「やっぱり、タイムラインも投稿も2段で」 OWNER
+   2026-08-28): the line 44, that row's 6, the meaning 10+44, the foot 6, and
    the floor a column needs. 「自分の言語で一行と意味がこのページで見れるように」
    OWNER 2026-08-26. The flex column is one thing with the rule below it: with
    no settled height on `.pwtop` a vertical line cannot ask what it is inside. */
@@ -1868,10 +1898,6 @@ a.set{text-decoration:none}
 .pfst b{color:var(--tx);font-weight:700;font-size:.92rem}
 .pfst:active{color:var(--gold)}
 .pftabs{display:flex;border-bottom:1px solid var(--line)}
-/* The timeline's two are the same strip, out to both edges of the screen
-   the way the rows under them go. Inside the body's padding the rule
-   under them stopped 24px short at each end and read as a box. */
-.snstabs{margin:0 -24px}
 .pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
        font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
 .pftab.on{color:var(--tx);border-bottom-color:var(--gold)}
@@ -2189,10 +2215,16 @@ a.set{text-decoration:none}
    is what a thumb presses to get back into a line, and a 40x16 target on a
    photograph is one somebody has to aim at. The text of a one-line input is
    centred in its box, so the line still sits where its canvas drew it. */
+/* A textarea now, and centred: a line on a photograph wraps inside the
+   picture rather than leaving it 「インスタと同じようにやって」 OWNER
+   2026-08-28. `pwMarkFit()` gives it the width the canvas wraps at and the
+   height what is in it comes to, so it never scrolls -- which is why the
+   overflow is hidden and the corner is not draggable. */
 .mktx{position:absolute;transform:translate(-50%,-50%);
       min-width:44px;min-height:44px;
-      background:none;border:0;padding:0;outline:1px dashed rgba(255,255,255,.7);
-      outline-offset:3px;line-height:1;font-family:inherit;
+      background:var(--mkplate);border:0;padding:0;outline:1px dashed rgba(255,255,255,.7);
+      outline-offset:3px;line-height:1.25;font-family:inherit;text-align:center;
+      resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:break-word;
       -webkit-appearance:none;appearance:none}
 .mktx::placeholder{color:rgba(255,255,255,.5)}
 .mktx:focus{outline:1px dashed rgba(255,255,255,.9)}
@@ -2575,14 +2607,9 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
                align-items:center;justify-content:center;gap:7px}
 .gtools svg{width:23px;height:23px;display:block;fill:none;stroke:currentColor;
             stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
-.gtools .gcap{font-size:.82rem;letter-spacing:.16em;text-transform:uppercase;color:var(--txm);
-            max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gtools button.on{color:var(--gold)}
-.gtools button.on .gcap{color:var(--gold)}
 .gtools button:disabled,.gtools button.off{opacity:.22}
 .gtools button:active{opacity:.55}
-html[lang="ja"] .gtools .gcap, html[lang="zh"] .gtools .gcap, html[lang="ko"] .gtools .gcap{
-  letter-spacing:.01em;font-size:.82rem}
 .ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
 /* The one switch the whole feature turns on. Everything it changes is a

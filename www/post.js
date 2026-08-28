@@ -510,9 +510,24 @@ FORM_OPEN.post=function(){ openPost(); };
    the field works on the roman spelling. */
 function pwLn(){ return puaRoman(PW.ln); }
 function pwMn(){ return postGlossLine(postGloss(pwLn())); }
-/* And the row of it, which is drawn once when the screen is built and again
-   on every letter typed. */
-function pwGl(){ return postGlossHTML(postGloss(pwLn())); }
+/* The composer is TWO rows, the same two the timeline is:
+   「やっぱり、タイムラインも投稿も2段で。赤文字消して。」
+   「これもお題のページと合わせるんだけど」 OWNER 2026-08-28
+
+     the line, in the letters somebody drew
+     what it means
+
+   A word-by-word gloss sat between them, and the red in it was a word the
+   dictionary did not know. The timeline dropped that row already -- the
+   comment at the foot of postRow() says why, and says the composer kept one
+   「where it is the writer checking their own line before it goes out」.
+   **That is superseded**: the owner has asked for the same two rows in both
+   places, and the day's-sentence row (`dayRow()` in sns.js) is those two
+   rows as well -- what is written, and the line under it.
+
+   The red went with the row that carried it. Nothing else did: `postGloss()`
+   and `postGlossLine()` are untouched and still fill the meaning field's
+   placeholder and the meaning a post falls back to. */
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -990,7 +1005,6 @@ function pwHTML(){
          what is in it and everything under it moves down. */
       lnField('pw-ln', t('post.ln.ph'), ' maxlength="'+POST_MAX+'"'+IN('pwSetLn'),
         PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
-      '<div class="pwgl" id="pw-gl">'+pwGl()+'</div>'+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1069,8 +1083,6 @@ function pwKbGuard(){
 }
 function pwSetLn(v){
   PW.ln=String(v||'');
-  var g=document.getElementById('pw-gl');
-  if(g) g.innerHTML=pwGl();
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');
@@ -1086,13 +1098,40 @@ function pwSetLn(v){
    borrowed from. It is a made language and its words are short; nobody has
    met this yet and the point is that it exists. */
 var POST_MAX=280;
-/* Shown only near the end, the way every composer does it -- a counter on
-   screen from the first letter is a scold. Numbers only, so there is nothing
-   in it to translate. */
+/* How much room is left, as a RING that empties as you type.
+   「カウントは打つほど減っていく輪、帯の中、常に出す」 OWNER 2026-08-28.
+
+   It was a number, and only from 40 left -- so for the first 240 characters
+   the screen said nothing at all about a limit that exists, and then a number
+   appeared out of nowhere. A ring that is whole when the field is empty and
+   shorter with every letter says the same thing continuously, which is the
+   point of the shape: you can see it going without reading anything.
+
+   The arc is one circle's stroke, dashed to its own circumference and pushed
+   round by however much has been used -- so what is drawn IS what is left.
+   `PW_RING` is 2*pi*8, the r below; the two have to be the same circle or the
+   ring is full at nine tenths. Rotated a quarter turn in the stylesheet so it
+   empties from the top.
+
+   Three states and no new colour: quiet while there is room, the colour
+   everything else on this screen is once the number appears, and the colour
+   of a problem once there is none left. **40 is not a new number** -- it is
+   the one this function already had for when to show the count, and the
+   count still appears exactly there. */
+var PW_RING=50.265;
 function pwLeftHTML(){
-  var left=POST_MAX-String(PW.ln||'').length;
-  if(left>40) return '';
-  return '<span class="pwleft'+(left<=0? ' bad':'')+'">'+left+'</span>';
+  var used=String(PW.ln||'').length, left=POST_MAX-used,
+      f=left/POST_MAX;
+  if(f<0) f=0;
+  if(f>1) f=1;
+  return '<span class="pwring'+(left<=0? ' bad' : (left<=40? ' near':''))+'">'+
+    '<svg viewBox="0 0 20 20" aria-hidden="true">'+
+      '<circle class="pwrt" cx="10" cy="10" r="8"></circle>'+
+      '<circle class="pwrf" cx="10" cy="10" r="8" stroke-dasharray="'+PW_RING+'" '+
+        'stroke-dashoffset="'+(PW_RING*(1-f))+'"></circle>'+
+    '</svg>'+
+    (left<=40? '<span class="pwleft">'+left+'</span>' : '')+
+    '</span>';
 }
 function pwLeftPaint(){
   var e=document.getElementById('pw-left');
@@ -1509,12 +1548,16 @@ function pwMarkHTML(){
          did not look like the answer.
          「薄灰色のやつ消して天仙のやつが実質その役割」 */
       ((!cr && sel)
-        ? '<input class="mktx sfont mkink c'+
+        /* A textarea, not an input: an input is one row that scrolls sideways
+           forever, and a line on a photograph wraps inside the picture now
+           「インスタと同じようにやって」. The value goes between the tags,
+           which is where a textarea keeps it. */
+        ? '<textarea class="mktx sfont mkink c'+
             Math.max(0, PW_COLS.indexOf(pwMarkCol(sel)))+'" id="mk-tx" '+
-            'value="'+esc(sel.tx||'')+'" placeholder="'+esc(t('post.mark.ph'))+'" '+
+            'rows="1" placeholder="'+esc(t('post.mark.ph'))+'" '+
             'autocomplete="off" autocorrect="off" spellcheck="false" '+
             'style="top:'+(sel.y*100)+'%;left:'+(sel.x*100)+'%"' +
-            IN('pwMarkText') + '>'
+            IN('pwMarkText') + '>'+esc(sel.tx||'')+'</textarea>'
         : '')+
       (cr? pwCutHTML() : '')+
     '</div>'+
@@ -1726,6 +1769,89 @@ function pwMarkAdv(units){
   }
   return w;
 }
+/* ---- a line on a photograph WRAPS -------------------------------------
+   「インスタと同じようにやって」 OWNER 2026-08-28, asked what a line typed
+   onto a photograph should do when it is longer than the picture.
+
+   It ran off the side and kept going: the field grew to whatever was in it
+   (`pwMarkFit` set its width to its own scrollWidth) and the canvas drew one
+   run left to right, so a long line left the frame at both ends and what was
+   typed first was no longer on the picture. That is the same complaint the
+   fields inside the app were fixed for 「全部改行して画面内に文字が収まる
+   ようにして欲しい」, arriving on the one surface that is not a field.
+
+   So a mark is LINES now, wrapped at the width of the picture and stacked
+   centred on the point it was left at. Everything that needs to know how big
+   a mark is asks these three -- the drawing, the hit box and the bake -- the
+   way they already all asked pwMarkWide(). */
+/* Where a line may break. A drawn letter is a piece on its own, so a line of
+   made letters breaks between letters the way a line of Japanese does; a run
+   of ordinary text breaks at its spaces and nowhere else, so a word is not
+   cut in half. The space is kept on the end of the piece before it, which is
+   what makes it disappear at the end of a line. */
+function pwMarkAtoms(units){
+  var out=[], i, u, parts, j;
+  for(i=0;i<units.length;i++){
+    u=units[i];
+    if(u.st){ out.push({st:u.st}); continue; }
+    parts=String(u.t||'').split(/(\s+)/);
+    for(j=0;j<parts.length;j++) if(parts[j]!=='') out.push({t:parts[j]});
+  }
+  return out;
+}
+/* One cell of vertical room per line, and a quarter of one between them --
+   the same 1.25 the field's own font size is worked out with. */
+var PW_MARK_LEAD=1.25;
+/* And a margin down each side, because a line on a photograph does not run
+   into the edge of it 「左右に余白がある」. Not a new number: it is the
+   body's own 24px gutter, as a share of the 390 this screen is measured on,
+   which is what every other margin in the app is a share of. */
+var PW_MARK_EDGE=24/390;
+/* The lines a mark comes to, at its own size, inside the picture. The width
+   to fill is the picture measured in this mark's cells: the picture is 1 wide
+   and a cell is `s` of it, so there are 800/s of the 800-unit cells across.
+   Nothing is dropped -- a single piece wider than the picture is a line of
+   its own rather than being cut, because cutting it would lose what somebody
+   drew. */
+function pwMarkLines(m){
+  var max=(m && m.s>0)? (1-2*PW_MARK_EDGE)*800/m.s : 0,
+      atoms=pwMarkAtoms(pwMarkCut(m)),
+      out=[], cur=[], w=0, i, aw, a;
+  for(i=0;i<atoms.length;i++){
+    a=atoms[i];
+    aw=a.st? ((inkAdv(a.st)||{w:800}).w) : String(a.t||'').length*440;
+    if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; }
+    cur.push(a); w+=aw;
+  }
+  if(cur.length) out.push(cur);
+  return out;
+}
+/* The plate a line sits on, exactly as wide as the line 「行ごとに背景の板が
+   ある。文字幅ぴったりの黒い板。行の長さで板の幅も変わる」 -- read off the
+   picture the owner sent of Instagram, 2026-08-28.
+
+   **The colour is named in the stylesheet and is not a new one.**
+   `--mkplate` is the dark ground's value, declared in index.html's two theme
+   blocks as the same colour in both -- 「Every colour lives in these two
+   blocks and nowhere else; the views only ever touch the variables.」
+
+   It does not follow the theme, and that is the point: **a photograph has no
+   theme.** The plate lies on somebody's picture rather than on the app's
+   ground, so a person reading in the light theme may put letters on a dark
+   photograph and the other way round. Following the theme would be following
+   the wrong thing, and Instagram does not either.
+
+   The letters keep the colour somebody picked from the eight -- the plate
+   goes behind them and changes nothing about them.
+
+   A cell tall, because that is what a line of this is: `k` is the cell over
+   800, so 800k is one cell. */
+function pwMarkPlate(x, units, k, ox, oy){
+  var w=pwMarkAdv(units)*k;
+  if(w<=0) return;
+  x.fillStyle=cssVar('--mkplate');
+  x.fillRect(ox, oy, w, 800*k);
+}
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
 function pwMarkRun(x, units, k, ox, oy, col){
   var i, a, cur=ox;
@@ -1752,10 +1878,18 @@ function pwMarkRun(x, units, k, ox, oy, col){
    the line's own advance. Asked in one place because the drawing, the hit box
    and the bake all need the same answer. */
 function pwMarkWide(m){
-  return m.s*(pwMarkAdv(pwMarkCut(m))/800);
+  var ls=pwMarkLines(m), w=0, i, a;
+  for(i=0;i<ls.length;i++){ a=pwMarkAdv(ls[i]); if(a>w) w=a; }
+  return m.s*(w/800);
+}
+/* And how TALL, which used to be `m.s` everywhere because a mark was one
+   line. One line still is; four are four, with a quarter cell between. */
+function pwMarkTall(m){
+  var n=pwMarkLines(m).length || 1;
+  return m.s*(1+(n-1)*PW_MARK_LEAD);
 }
 function pwMarkDraw(){
-  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, c, m, u, H, W,
+  var ms=pwMarks(), els=document.querySelectorAll('canvas.mkc'), i, j, c, m, u, H, W,
       dpr=window.devicePixelRatio||1, box=document.getElementById('mk-box');
   var bw=box? (box.getBoundingClientRect().width||300) : 300;
   for(i=0;i<els.length;i++){
@@ -1763,17 +1897,27 @@ function pwMarkDraw(){
     m=ms[parseInt(c.getAttribute('data-i'), 10)];
     if(!m) continue;
     c.style.width=(pwMarkWide(m)*100)+'%';
+    c.style.height='auto';
     c.style.left=(m.x*100)+'%';
     c.style.top=(m.y*100)+'%';
     /* The one being typed is drawn by the field itself -- it is the field --
        so its canvas would be the same line twice, half a pixel apart. */
     c.style.display=(parseInt(c.getAttribute('data-i'), 10)===pwMarkAt)? 'none' : '';
-    u=pwMarkCut(m);
+    u=pwMarkLines(m);
     if(!u.length) continue;
+    /* One cell tall per line plus the lead between them, and as wide as the
+       longest line -- both asked of the same two functions the hit box and
+       the bake ask. Each line is centred in that width, the way a caption on
+       a photograph is centred and the way the field above it is. */
     H=Math.max(40, Math.round(m.s*bw*dpr));
-    W=Math.max(1, Math.round(H*(pwMarkAdv(u)/800)));
-    c.width=W; c.height=H;
-    pwMarkRun(c.getContext('2d'), u, H/800, 0, 0, cssVar(pwMarkCol(m)));
+    W=Math.max(1, Math.round(H*(pwMarkWide(m)/m.s)));
+    c.width=W; c.height=Math.max(1, Math.round(pwMarkTall(m)*bw*dpr));
+    for(j=0;j<u.length;j++){
+      pwMarkPlate(c.getContext('2d'), u[j], H/800,
+        (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD);
+      pwMarkRun(c.getContext('2d'), u[j], H/800,
+        (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD, cssVar(pwMarkCol(m)));
+    }
   }
 }
 /* The field is set at the size the line will be on the picture, which is a
@@ -1794,19 +1938,28 @@ function pwMarkFit(){
      So: rendered once at a hundred, and set to whatever size makes it as wide
      as pwMarkWide() -- the one place that says how wide a mark is -- says the
      line is. Whatever the two renderers disagree about, they agree here. */
-  var want=pwMarkWide(m)*bw, fs=m.s*bw*1.25, at100;
+  /* Measured with the wrapping OFF and on the WHOLE line, because what is
+     being measured is the ratio between the two renderers and not a width:
+     let it wrap here and the answer is the width of one column of letters. */
+  var flat=m.s*(pwMarkAdv(pwMarkCut(m))/800)*bw, fs=m.s*bw*1.25, at100;
+  e.style.whiteSpace='pre';
   e.style.width='0px';
+  e.style.height='auto';
   e.style.fontSize='100px';
   at100=e.scrollWidth;
-  if(at100>0 && want>0) fs=100*want/at100;
+  if(at100>0 && flat>0) fs=100*flat/at100;
   e.style.fontSize=Math.max(11, Math.round(fs))+'px';
-  /* And a field has no width that follows what is typed into it -- left and
-     right do not stretch one the way they stretch a box, so the line ran out
-     of its own frame. Narrowed to nothing, asked how wide what is in it came
-     out, set to that. Narrowing first is what makes it come back in on a
-     delete. */
-  e.style.width='0px';
-  e.style.width=Math.max(44, e.scrollWidth+4)+'px';
+  /* And then the field is the BLOCK: as wide as the widest line the picture
+     leaves room for, wrapping there, and as tall as what that comes to.
+     「インスタと同じようにやって」 OWNER 2026-08-28 -- a line longer than the
+     picture wraps and stacks rather than leaving the frame, and the field has
+     to break in the same place the canvas does or what you type is not what
+     the photograph gets. Both ask pwMarkLines(); the sizes agree because the
+     two renderers were reconciled three lines up. */
+  e.style.whiteSpace='';
+  e.style.width=Math.max(44, Math.round(pwMarkWide(m)*bw)+4)+'px';
+  e.style.height='auto';
+  e.style.height=Math.max(44, e.scrollHeight)+'px';
   e.style.left=(m.x*100)+'%';
   e.style.top=(m.y*100)+'%';
 }
@@ -1840,7 +1993,7 @@ function pwMarkWhere(ev){
 function pwMarkHit(p){
   var ms=pwMarks(), i, m, hw, hh;
   for(i=ms.length-1;i>=0;i--){
-    m=ms[i]; hw=pwMarkWide(m)/2; hh=m.s/2;
+    m=ms[i]; hw=pwMarkWide(m)/2; hh=pwMarkTall(m)/2;
     if(p[0]>=m.x-hw && p[0]<=m.x+hw && p[1]>=m.y-hh && p[1]<=m.y+hh) return i;
   }
   return -1;
@@ -1956,19 +2109,29 @@ function pwBakeOne(pc, done){
   if(!ms.length){ done(pc.u); return; }
   var im=new Image();
   im.onload=function(){
-    var c=document.createElement('canvas'), x, i, m, st, k, out;
+    var c=document.createElement('canvas'), x, i, j, m, st, k, out;
     c.width=im.width; c.height=im.height;
     x=c.getContext('2d');
     x.drawImage(im, 0, 0, c.width, c.height);
     for(i=0;i<ms.length;i++){
       m=ms[i];
-      st=pwMarkCut(m);
+      st=pwMarkLines(m);
       if(!st.length) continue;
-      /* The same numbers the screen used: the height is a fraction of the
-         picture's width, and the line is centred on the point it was left at. */
+      /* The same numbers the screen used, asked of the same two functions:
+         the height is a fraction of the picture's width, the block is centred
+         on the point it was left at, and each line is centred in the block.
+         A line that wraps on the screen and not in the file would be a
+         photograph that is not the one somebody arranged. */
       k=(m.s*c.width)/800;
-      pwMarkRun(x, st, k, m.x*c.width-(pwMarkWide(m)*c.width)/2,
-                m.y*c.height-(m.s*c.width)/2, cssVar(pwMarkCol(m)));
+      for(j=0;j<st.length;j++){
+        pwMarkPlate(x, st[j], k,
+          m.x*c.width-(pwMarkAdv(st[j])*k)/2,
+          m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD);
+        pwMarkRun(x, st[j], k,
+          m.x*c.width-(pwMarkAdv(st[j])*k)/2,
+          m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD,
+          cssVar(pwMarkCol(m)));
+      }
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ done(pc.u); return; }
@@ -2115,14 +2278,6 @@ function postWhen(at){
    which is what stood in before there were accounts. The face and the head of
    the row both need it and they were answering it separately. */
 function postWho(p){ return String((p && (p.who || p.lname)) || ''); }
-/* The gloss, word by word. The composer shows the same row while you type --
-   it is the same thing, so it is drawn by the same six lines. A word the
-   dictionary does not know stands in the colour of a problem. */
-function postGlossHTML(gl){
-  return (gl||[]).map(function(g){
-    return '<span class="pwg'+(g.m? '':' none')+'">'+esc(g.m || g.w)+'</span>';
-  }).join('');
-}
 var PFACE={};
 function postFace(p){
   var av=p && p.av, k;
@@ -2550,10 +2705,11 @@ function postRow(p){
 
          It is not written onto a post any more either. Nothing read it
          once the line was gone, and a field written and never read is what
-         makes a codebase hard to read. The composer still shows one, where
-         it is the writer checking their own line before it goes out -- which
-         is the errand it was written for, and where the default meaning
-         comes from.
+         makes a codebase hard to read. **The composer does not show one
+         either, as of 2026-08-28** 「やっぱり、タイムラインも投稿も2段で。
+         赤文字消して。」 -- this row and the composer's are the same two rows
+         now, and so is the day's sentence. Where the default meaning comes
+         from is `postGloss()`, which is still here and is not a row.
 
          Posts made before this keep whatever is on them. Nothing goes and
          removes it: it is somebody's, and deleting what a person made
