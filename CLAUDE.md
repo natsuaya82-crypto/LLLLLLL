@@ -1134,16 +1134,24 @@ an end is for. Pushing a row right means putting it against the right, and half
 a key left over stays left over. It agrees with the sentence above: a row that
 ends up half a key out lines up with no column and lights for none.
 
-**Where a CENTRED row is short from is rounded to a whole key**, and that is the half
-of it that is easy to get wrong. A column is half a key, so half of what is
-left over is very often an odd number of columns — three keys on a sheet of
-ten leave fourteen, and seven of those is three keys and a half. Put that in
-front and every key on the row straddles two columns, and the letters across
-the top, which are the reason this is a sheet at all, stop naming anything on
-the row somebody has just worked on. 「行の中央寄せした後列がずれてるのはどう
-なる？」 The odd half goes to the other end instead: off centre by half a key,
-which nobody can see, and on a column, which is what the sheet is for. The
-drawing of a short row and the button that aligns one ask the same function.
+**A CENTRED row splits what is left over between its two ends, and half a frame
+at each end is the right answer.** 「中心に寄せたら半キーが二つできるけど寄せたら
+1つになるの」 OWNER 2026-08-28. A column is half a key, so half of what is left
+over is very often an odd number of columns — three keys on a sheet of ten leave
+fourteen, and seven of those is three keys and a half. Centred, that is three
+frames and a half at each end. Pushed to one end — left or right — it is one run
+of seven, ending in a half. **Either way every one of those frames is a key you
+can press**: the sheet is a grid of frames, an empty frame is a dotted key, and
+pressing one puts in a key the width of the frame it was. There is no such state
+as a blank. 「エクセルと同じだって」「キーガーないところがあるのがおかしい」
+
+Rounding the odd half away is gone. It existed because a row off by half a key
+lines up with no column, so pressing a column's letter lights nothing on it —
+and that is now simply what such a row does. `CLAUDE.md` says so two paragraphs
+up and it was already the answer for the QWERTY's inset third row: **a row with
+the band down it and no key lit is the row saying it does not line up with the
+columns**, which is what somebody needs to know before cutting one. The drawing
+of a short row and the button that aligns one ask the same function.
 
 Where a row is short from — left, centre, right — is written in **gap keys**,
 which this keyboard has had since it had a QWERTY. Nothing new is stored, and
